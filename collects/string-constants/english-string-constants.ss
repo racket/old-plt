@@ -239,6 +239,10 @@
  ;;; reverting a file
  (error-reverting "DrScheme - Error Reverting")
  (could-not-read "could not read \"~a\"")
+ (are-you-sure-revert
+  "Are you sure that you want to revert this file? This change cannot be undone.")
+ (are-you-sure-revert-title
+  "Revert?")
  
  ;;; finder dialog
  (must-specify-a-filename "You must specify a file name")

@@ -81,7 +81,9 @@
                (send p put (number->string number)))]
             [copy
              (lambda ()
-               (make-object whole/part-number-snip% number))]
+               (let ([s (make-object whole/part-number-snip% number)])
+                 (send s set-style (get-style))
+                 s))]
             [get-extent
              (lambda (dc x y w h descent space lspace rspace)
                (let* ([style (get-style)]

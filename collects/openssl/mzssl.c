@@ -63,6 +63,17 @@ struct sslplt {
   struct sslplt *next;
 };
 
+typedef struct {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  int s;
+  Scheme_Custodian_Reference *mref;
+} listener_t;
+
+static Scheme_Type ssl_listener_type;
+
+#define LISTENER_WAS_CLOSED(x) (((listener_t *)(x))->s == INVALID_SOCKET)
+
 /* create_ register_sslplt: called when a new sslplt structure needs to be 
    created. */
 struct sslplt *create_register_sslplt(SSL *ssl)
@@ -259,12 +270,25 @@ static int get_ssl_error_msg(int errid, const char **msg, int status, int has_st
     }
   } else {
     const char *c;
+    char buf[121];
 
-    c = dup_errstr(ERR_reason_error_string(errid));
-    if (c)
-      *msg = c;
-    else
-      *msg = "Unknown error";
+    if (errid == SSL_ERROR_SSL) {
+      errid = ERR_get_error();
+    }
+
+    if (errid && (ERR_GET_LIB(errid) == ERR_LIB_SYS)) {
+      *msg = NULL;
+      return ERR_GET_REASON(errid);
+    } else {
+      ERR_error_string(errid, buf);
+      buf[120] = 0;
+      
+      c = dup_errstr(buf);
+      if (c)
+	*msg = c;
+      else
+	*msg = "Unknown error";
+    }
   }
 
   return errid;
@@ -681,25 +705,25 @@ static Scheme_Output_Port *make_sslout_port(SSL *ssl, struct sslplt *data)
 /* check_host_and_convert: Make absolutely sure the first argument was a 
    string, and then convert it into a character string we can actually use.
    Or scream bloody murder if it wasn't a string. */
-char *check_host_and_convert(int argc, Scheme_Object *argv[])
+char *check_host_and_convert(const char *name, int argc, Scheme_Object *argv[], int pos)
 {
-  if(SCHEME_STRINGP(argv[0]) )
-    return SCHEME_STR_VAL(argv[0]); 
+  if(SCHEME_STRINGP(argv[pos]) )
+    return SCHEME_STR_VAL(argv[pos]); 
   
-  scheme_wrong_type("ssl-connect", "string", 0, argc, argv);
+  scheme_wrong_type(name, "string", pos, argc, argv);
   return NULL; /* unnecessary, but it makes GCC happy */
 }
 
 /* check_port_and_convert: Make absolutely sure the second argument
    was a potential port number, and if it is, convert it into a number
    we can actually use. Or scream if it wasn't kosher. */
-unsigned short check_port_and_convert(int argc, Scheme_Object *argv[])
+unsigned short check_port_and_convert(const char *name, int argc, Scheme_Object *argv[], int pos)
 {
-  if(SCHEME_INTP(argv[1]))
-    if(SCHEME_INT_VAL(argv[1]) >= 1)
-      if(SCHEME_INT_VAL(argv[1]) <= 65535)
-	return htons(SCHEME_INT_VAL(argv[1]));
-  scheme_wrong_type("ssl-connect", "exact integer in [1, 65535]", 1,argc,argv);
+  if(SCHEME_INTP(argv[pos]))
+    if(SCHEME_INT_VAL(argv[pos]) >= 1)
+      if(SCHEME_INT_VAL(argv[pos]) <= 65535)
+	return htons(SCHEME_INT_VAL(argv[pos]));
+  scheme_wrong_type(name, "exact integer in [1, 65535]", pos, argc,argv);
   return 0; /* unnessary and wrong, but it makes GCC happy */
 }
 
@@ -707,18 +731,17 @@ unsigned short check_port_and_convert(int argc, Scheme_Object *argv[])
    and convert it to the SSL method function we'll be using if they gave us
    a good argument. Otherwise scream. The third argument tells us if we want
    client or server method functions. */
-SSL_METHOD *check_encrypt_and_convert(int argc, Scheme_Object *argv[], int c)
+SSL_METHOD *check_encrypt_and_convert(const char *name, int argc, Scheme_Object *argv[], int pos, int c)
 {
   char *sym_val;
 
-  if(argc == 2)
+  if(argc <= pos)
     return (c ? SSLv23_client_method() : SSLv23_server_method());
     
-  if(!SCHEME_SYMBOLP(argv[2]))
-    scheme_wrong_type("ssl-connect", "one of 'sslv23, 'sslv2, 'sslv3, or 'tls",
-		      2, argc, argv);
-
-  sym_val = SCHEME_SYM_VAL(argv[2]);
+  if (!SCHEME_SYMBOLP(argv[pos]))
+    sym_val = "XXX";
+  else
+    sym_val = SCHEME_SYM_VAL(argv[pos]);
 
   if(!strcmp(sym_val, "sslv2-or-v3")) {
     return (c ? SSLv23_client_method() : SSLv23_server_method());
@@ -728,9 +751,9 @@ SSL_METHOD *check_encrypt_and_convert(int argc, Scheme_Object *argv[], int c)
     return (c ? SSLv3_client_method() : SSLv3_server_method());
   } else if(!strcmp(sym_val, "tls")) {
     return (c ? TLSv1_client_method() : TLSv1_server_method());
-  } else scheme_wrong_type("ssl-connect", 
-			   "one of 'sslv23, 'sslv2, 'sslv3, or 'tls", 
-			   2, argc, argv);
+  } else scheme_wrong_type(name, 
+			   "'sslv23, 'sslv2, 'sslv3, or 'tls", 
+			   pos, argc, argv);
   return NULL; /* unnecessary, but it makes GCC happy */
 }
 
@@ -774,7 +797,8 @@ void close_socket_and_dec(unsigned short sock)
  *****************************************************************************/
 
 static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
-				 char *address, int port)
+				 char *address, int port, int do_accept,
+				 char *cert_chain_file)
 {
   SSL_CTX *ctx = NULL;
   BIO *bio = NULL;
@@ -797,6 +821,21 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
     goto clean_up_and_die; 
   }
 
+  if (cert_chain_file) {
+    if (SSL_CTX_use_certificate_chain_file(ctx, cert_chain_file) != 1) {
+      err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+      if (!errstr)
+	errstr = "failed to load certificate chain file";
+      goto clean_up_and_die; 
+    }
+    if(SSL_CTX_use_RSAPrivateKey_file(ctx, cert_chain_file, SSL_FILETYPE_PEM) != 1) {
+      err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+      if (!errstr)
+	errstr = "failed to load private key file";
+      goto clean_up_and_die; 
+    }
+  }
+
   /* set up the full SSL object */
   ssl = SSL_new(ctx);
   if(!ssl) {
@@ -806,28 +845,33 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   SSL_set_bio(ssl, bio, bio);
 
   /* see if we can connect via SSL */
-  status = SSL_connect(ssl);
+  if (do_accept)
+    status = SSL_accept(ssl);
+  else
+    status = SSL_connect(ssl);
   while(status < 1) {
-    status = SSL_get_error(ssl, status);
-    if ((status == SSL_ERROR_WANT_READ) 
-	|| (status == SSL_ERROR_WANT_WRITE)) {
+    err = SSL_get_error(ssl, status);
+    if ((err == SSL_ERROR_WANT_READ) 
+	|| (err == SSL_ERROR_WANT_WRITE)) {
       if (!sptr) {
 	sptr = (int *)scheme_malloc_atomic(2 * sizeof(int));
 	sptr[0] = sock;
       }
-      sptr[1] = (status == SSL_ERROR_WANT_WRITE);
+      sptr[1] = (err == SSL_ERROR_WANT_WRITE);
 
       BEGIN_ESCAPEABLE(close_socket_and_dec, sock);
       scheme_block_until(ssl_check_sock, ssl_sock_needs_wakeup, 
 			 (void *)sptr, (float)0.0);
       END_ESCAPEABLE();
     } else {
-      err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+      err = get_ssl_error_msg(err, &errstr, status, 1);
       goto clean_up_and_die;
     }
-    status = SSL_connect(ssl);
+    if (do_accept)
+      status = SSL_accept(ssl);
+    else
+      status = SSL_connect(ssl);
   }
-  scheme_making_progress();
 
   sslplt = create_register_sslplt(ssl);
   retval[0] = (Scheme_Object*)make_named_sslin_port(ssl, sslplt, address);
@@ -838,10 +882,16 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   if(sock) closesocket(sock);
   if(ctx) SSL_CTX_free(ctx);
   if(ssl) SSL_free(ssl);
-  scheme_raise_exn(MZEXN_I_O_TCP, 
-		   "%s: connection to %s, port %d failed (%Z)",
-		   name,
-		   address, port, err, errstr);
+  if (do_accept)
+    scheme_raise_exn(MZEXN_I_O_TCP, 
+		     "%s: accepted connection failed (%Z)",
+		     name,
+		     err, errstr);
+  else
+    scheme_raise_exn(MZEXN_I_O_TCP, 
+		     "%s: connection to %s, port %d failed (%Z)",
+		     name,
+		     address, port, err, errstr);
   
   /* not strictly necessary, but it makes our C compiler happy */
   return NULL;
@@ -878,10 +928,10 @@ static void TCP_INIT(char *name)
 
 static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 {
-  char *address = check_host_and_convert(argc, argv);
-  unsigned short nport = check_port_and_convert(argc, argv);
+  char *address = check_host_and_convert("ssl-connect", argc, argv, 0);
+  unsigned short nport = check_port_and_convert("ssl-connect", argc, argv, 1);
   int port = SCHEME_INT_VAL(argv[1]);
-  SSL_METHOD *meth = check_encrypt_and_convert(argc, argv, 1);
+  SSL_METHOD *meth = check_encrypt_and_convert("ssl-connect", argc, argv, 2, 1);
   int status;
   const char *errstr = "Unknown error";
   int err = 0;
@@ -954,7 +1004,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
     }
   }
 
-  return finish_ssl("ssl-connect", sock, meth, address, port);
+  return finish_ssl("ssl-connect", sock, meth, address, port, 0, NULL);
 
  clean_up_and_die:
   if (sock != INVALID_SOCKET) closesocket(sock);
@@ -972,8 +1022,211 @@ static Scheme_Object *ssl_connect_break(int argc, Scheme_Object *argv[]) {
 }
 
 /*****************************************************************************
+ * SSL LISTENER: sadly, cut-and-paste from the MzScheme source.              *
+ *****************************************************************************/
+
+/* Forward declaration */
+static int stop_listener(Scheme_Object *o);
+
+static Scheme_Object *
+ssl_listen(int argc, Scheme_Object *argv[])
+{
+  unsigned short id, origid;
+  int backlog, errid;
+  int reuse = 0;
+  const char *address = NULL;
+# ifndef PROTOENT_IS_INT
+  struct protoent *proto;
+# endif
+
+  id = check_port_and_convert("ssl-listen", argc, argv, 0);
+  if (argc > 1) {
+    if (!SCHEME_INTP(argv[1]) || (SCHEME_INT_VAL(argv[1]) < 1))
+      scheme_wrong_type("ssl-listen", "small positive integer", 1, argc, argv);
+  }
+  if (argc > 2)
+    reuse = SCHEME_TRUEP(argv[2]);
+  if (argc > 3) {
+    if (!SCHEME_FALSEP(argv[3]))
+      address = check_host_and_convert("ssl-listen", argc, argv, 3);
+  }
+    
+  TCP_INIT("ssl-listen");
+
+  origid = (unsigned short)SCHEME_INT_VAL(argv[0]);
+  if (argc > 1)
+    backlog = SCHEME_INT_VAL(argv[1]);
+  else
+    backlog = 4;
+
+  scheme_security_check_network("tcp-listen", address, origid, 0);
+
+# ifndef PROTOENT_IS_INT
+  proto = getprotobyname("tcp");
+  if (proto)
+# endif
+  {
+    struct sockaddr_in tcp_listen_addr;
+
+    if (scheme_get_host_address(address, id, &tcp_listen_addr)) {
+      int s;
+
+      s = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
+      if (s != INVALID_SOCKET) {
+#ifdef USE_WINSOCK_TCP
+	unsigned long ioarg = 1;
+	ioctlsocket(s, FIONBIO, &ioarg);
+#else
+	fcntl(s, F_SETFL, MZ_NONBLOCKING);
+#endif
+
+	if (reuse) {
+	  setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+	}
+      
+	if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr))) {
+	  if (!listen(s, backlog)) {
+	    listener_t *l;
+
+	    l = (listener_t *)scheme_malloc_tagged(sizeof(listener_t));
+	    l->type = ssl_listener_type;
+	    l->s = s;
+	    {
+	      Scheme_Custodian_Reference *mref;
+	      mref = scheme_add_managed(NULL,
+					(Scheme_Object *)l,
+					(Scheme_Close_Custodian_Client *)stop_listener,
+					NULL,
+					1);
+	      l->mref = mref;
+	    }
+
+	    return (Scheme_Object *)l;
+	  }
+	}
+
+	errid = SOCK_ERRNO();
+
+	closesocket(s);
+      } else
+	errid = SOCK_ERRNO();
+    } else {
+      scheme_raise_exn(MZEXN_I_O_TCP,
+		       "ssl-listen: host not found: %s",
+		       address);
+      return NULL;
+    }
+  }
+# ifndef PROTOENT_IS_INT
+  else {
+    errid = SOCK_ERRNO();
+  }
+# endif
+
+  scheme_raise_exn(MZEXN_I_O_TCP,
+		   "sll-listen: listen on %d failed (%E)",
+		   origid, errid);
+
+  return NULL;
+}
+
+static int stop_listener(Scheme_Object *o)
+{
+  int was_closed = 0;
+
+  {
+    int s = ((listener_t *)o)->s;
+    if (s == INVALID_SOCKET)
+      was_closed = 1;
+    else {
+      closesocket(s);
+      ((listener_t *)o)->s = INVALID_SOCKET;
+      scheme_remove_managed(((listener_t *)o)->mref, o);
+    }
+  }
+
+  return was_closed;
+}
+
+static int tcp_check_accept(Scheme_Object *listener)
+{
+  if (LISTENER_WAS_CLOSED(listener))
+    return 1;
+
+  return check_socket_ready(((listener_t *)listener)->s, 0);
+}
+
+static void tcp_accept_needs_wakeup(Scheme_Object *listener, void *fds)
+{
+  socket_add_fds(((listener_t *)listener)->s, fds, 0);
+}
+
+static Scheme_Object *
+ssl_accept(int argc, Scheme_Object *argv[])
+{
+  int was_closed = 0, errid;
+  Scheme_Object *listener;
+  int s;
+  int l;
+  struct sockaddr_in tcp_accept_addr; /* Use a long name for precise GC's xform.ss */
+  SSL_METHOD *meth;
+  
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
+    scheme_wrong_type("ssl-accept", "ssl-listener", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("ssl-accept", "string", 1, argc, argv);
+
+  meth = check_encrypt_and_convert("ssl-accept", argc, argv, 2, 0);
+
+  listener = argv[0];
+
+  was_closed = LISTENER_WAS_CLOSED(listener);
+
+  if (!was_closed) {
+    scheme_block_until(tcp_check_accept, tcp_accept_needs_wakeup,
+		       listener, (float)0.0);
+    was_closed = LISTENER_WAS_CLOSED(listener);
+  }
+
+  if (was_closed) {
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "ssl-accept: listener is closed");
+    return NULL;
+  }
+  
+  s = ((listener_t *)listener)->s;
+
+  l = sizeof(tcp_accept_addr);
+
+  do {
+    s = accept(s, (struct sockaddr *)&tcp_accept_addr, &l);
+  } while ((s == -1) && (NOT_WINSOCK(errno) == EINTR));
+
+  if (s != INVALID_SOCKET) {
+# ifdef USE_WINSOCK_TCP
+    {
+      unsigned long ioarg = 1;
+      ioctlsocket(s, FIONBIO, &ioarg);
+    }
+# else
+    fcntl(s, F_SETFL, MZ_NONBLOCKING);
+# endif
+    
+    return finish_ssl("ssl-accept", s, meth, NULL, 0,
+		      1, SCHEME_STR_VAL(argv[1]));
+  }
+
+
+  errid = SOCK_ERRNO();
+  scheme_raise_exn(MZEXN_I_O_TCP,
+		   "ssl-accept: accept from listener failed (%E)", errid);
+
+  return NULL;
+}
+
+/*****************************************************************************
  * REGISTRATION FUNCTIONS: The functions that register the above externals so*
- * everybody else can use them.
+ * everybody else can use them.                                              *
  *****************************************************************************/
 
 /* scheme_initialize: called when the extension is first loaded */
@@ -986,6 +1239,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   
   SSL_library_init();
   daemon_attn = scheme_make_sema(0);
+  ssl_listener_type = scheme_make_type("<ssl-listener>");
   ssl_input_port_type = scheme_make_port_type("<ssl-input-port>");
   ssl_output_port_type = scheme_make_port_type("<ssl-output-port>");
   scheme_register_extension_global(&daemon_attn, 4);
@@ -1008,8 +1262,16 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   /* add ssl-connect */
   v = scheme_make_prim_w_arity(ssl_connect, "ssl-connect", 2, 3);
   scheme_add_global("ssl-connect", v, env);
+
   v = scheme_make_prim_w_arity(ssl_connect_break,"ssl-connect/enable-break",2,3);
   scheme_add_global("ssl-connect/enable-break", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_listen,"ssl-listen",1,4);
+  scheme_add_global("ssl-listen", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_accept,"ssl-accept",1,2);
+  scheme_add_global("ssl-accept", v, env);
+
   scheme_add_global("ssl-available?", scheme_true, env);
   scheme_finish_primitive_module(env);
 

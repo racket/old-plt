@@ -337,7 +337,7 @@ compilation.
  _Getting fields from info-table.ss files_
  -----------------------------------------
 
- The file _get-info.ss_ defines 
+ The file _getinfo.ss_ defines 
 
 > (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
 

@@ -6,7 +6,6 @@
            (lib "framework.ss" "framework")
            (lib "unitsig.ss")
            (lib "class.ss")
-           (prefix basis: (lib "basis.ss" "userspce"))
            (prefix pretty-print: (lib "pretty.ss"))
            (prefix print-convert: (lib "pconvert.ss"))
 	   (lib "include.ss")
@@ -26,12 +25,6 @@
       (finder:default-extension "scm")
       (application:current-app-name "DrScheme")
       (version:add-spec 'd 105)
-      
-      (define (valid-setting? setting)
-        (ormap (lambda (x)
-                 (equal? (basis:setting-name setting)
-                         (basis:setting-name x)))
-               (basis:get-settings)))
       
       (preferences:set-default 'drscheme:unit-window-size-percentage 1/2 
                                (lambda (x) (and (number? x) (<= 0 x 1))))

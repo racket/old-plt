@@ -616,7 +616,7 @@
                                    '(hide-hscroll hide-vscroll))]
             [hide-error-report-window (lambda () (send report-error-frame show #f))])
           
-          (define (report-error message)
+          (define (report-error message exn)
             (send* report-error-text
               (begin-edit-sequence)
               (lock #f)
@@ -638,52 +638,68 @@
                                                          last-position))
                   (fw:preferences:get
                    (drscheme:language-configuration:get-settings-preferences-symbol))
-                  (lambda (sexp run-in-evaluation-thread loop)
-                    (annotate sexp)
+                  (lambda (err? sexp run-in-evaluation-thread loop)
+                    (if err?
+                        (report-error (car sexp) (cdr sexp))
+                        (annotate sexp))
                     (loop))))
 
           ;; annotate : syntax -> void
           ;; annotates the program described by the sexp
           (define (annotate sexp)
-            (printf "~s~n" (syntax-object->datum sexp))
             (let loop ([sexp sexp]
                        [bound-vars null])
+              (annotate-original-keyword sexp keyword-style-str)
               (syntax-case sexp (lambda case-lambda if begin0 let-value letrec-values set!
                                   quote quote-syntax with-continuation-mark 
                                   #%app #%datum #%top)
                 [(lambda args bodies ...)
-                 (begin
-                   (printf "lambda: ~s~n" 
-                           (syntax-object->datum (list (syntax args) (syntax (bodies ...)))))
-                   (annotate-origin sexp keyword-style-str)
-                   (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
-                             (syntax->list (syntax (bodies ...)))))]
+                 (for-each (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                           (syntax->list (syntax (bodies ...))))]
                 [(case-lambda [argss bodiess ...]...)
-                 (begin
-                   (annotate-origin sexp keyword-style-str)
-                   (for-each
-                    (lambda (args bodies)
-                      (for-each
-                       (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
-                       (syntax->list bodies)))
-                    (syntax->list (syntax (argss ...)))
-                    (syntax->list (syntax ((bodiess ...) ...)))))]
+                 (for-each
+                  (lambda (args bodies)
+                    (for-each
+                     (lambda (sexp) (loop sexp (args->vars (syntax args) bound-vars)))
+                     (syntax->list bodies)))
+                  (syntax->list (syntax (argss ...)))
+                  (syntax->list (syntax ((bodiess ...) ...))))]
                 [(if test then else)
-                 (begin (annotate-origin sexp keyword-style-str)
-                        (loop (syntax test) bound-vars)
-                        (loop (syntax then) bound-vars)
-                        (loop (syntax else) bound-vars))]
-                [(begin0 bodies ...)
                  (begin
-                   (annotate-origin sexp keyword-style-str)
-                   (for-each (lambda (body) (loop body bound-vars))
-                             (syntax->list (syntax (bodies ...)))))]
-                ;let-values
-                ;letrec-values
-                ;set!
-                ;quote
-                ;quote-syntax
-                ;with-continuation-mark
+                   (loop (syntax test) bound-vars)
+                   (loop (syntax then) bound-vars)
+                   (loop (syntax else) bound-vars))]
+                [(begin0 bodies ...)
+                 (for-each (lambda (body) (loop body bound-vars))
+                           (syntax->list (syntax (bodies ...))))]
+                
+                [(let-values (((xss ...) es) ...) bs ...)
+                 (let ([new-vars (foldl 
+                                  args->vars
+                                  (apply append (map syntax->list
+                                                     (syntax->list (syntax ((xss ...) ...)))))
+                                  bound-vars)])
+                   (for-each (lambda (e) (loop e bound-vars)) (syntax->list (syntax (es ...))))
+                   (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
+                [(letrec-values (((xss ...) es) ...) bs ...)
+                 (let ([new-vars (foldl 
+                                  args->vars
+                                  (apply append (map syntax->list
+                                                     (syntax->list (syntax ((xss ...) ...)))))
+                                  bound-vars)])
+                   (for-each (lambda (e) (loop e new-vars)) (syntax->list (syntax (es ...))))
+                   (for-each (lambda (b) (loop b new-vars)) (syntax->list (syntax (bs ...)))))]
+                [(set! var E)
+                 (loop (syntax E) bound-vars)]
+                [(quote datum)
+                 (void)]
+                [(quote-syntax datum)
+                 (void)]
+                [(with-continuation-mark a b c)
+                 (begin
+                   (loop (syntax a) bound-vars)
+                   (loop (syntax b) bound-vars)
+                   (loop (syntax c) bound-vars))]
                 [(#%app pieces ...)
                  (for-each (lambda (arg) (loop arg bound-vars))
                            (syntax->list (syntax (pieces ...))))]
@@ -692,38 +708,70 @@
                 [(#%top var)
                  (void)]
                 
-                ; top-level only:
-                ;begin
-                ;define-values
-                ;define-syntaxes
-                ;module
+                [(begin es ...)
+                 (for-each (lambda (e) (loop e bound-vars))
+                           (syntax->list (syntax (e ...))))]
+                [(define-values (xs ...) b)
+                 (loop (syntax b) (args->vars (syntax (xs ...)) bound-vars))]
+                [(define-syntaxes (names ...) exp)
+                 (loop (syntax exp) bound-vars)]
+                [(module m-name lang bodies ...)
+                 (for-each (lambda (body) (loop body bound-vars))
+                           (syntax->list (syntax (bodies ...))))]
                 
                 ; top level or module top level only:
-                ;require
-                ;require-for-syntax
+                [(require require-spec)
+                 (void)]
+                [(require-for-syntax require-spec)
+                 (void)]
                 
                 ; module top level only:
-                ;provide
+                [(provide vars)
+                 (void)]
                 
-                [else (void)])))
+                [else 
+                 (if (identifier? sexp)
+                     '...
+                     (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+                             sexp
+                             (and (syntax? sexp)
+                                  (syntax-object->datum sexp))
+                             (and (syntax? sexp)
+                                  (syntax-source sexp))))])))
 
           ;; args->vars : syntax (listof syntax) -> (listof syntax)
           ;; transforms an argument list into a bunch of symbols/symbols and puts 
           ;; them on `incoming'
           (define (args->vars stx incoming)
-            (let ([first (syntax-e stx)])
-              (cond
-                [(cons? first)
-                 (args->vars (cdr first) (cons (car first) incoming))]
-                [(null? first)
-                 incoming]
-                [else (cons first incoming)])))
-                         
+            (if (null? stx)
+                incoming
+                (let ([first (syntax-e stx)])
+                  (cond
+                    [(cons? first) (args->vars (cdr first) (cons (car first) incoming))]
+                    [(null? first) incoming]
+                    [else (cons first incoming)]))))
+
           
-          ;; annotate-origin : syntax str -> void
+          ;; annotate-original-keyword : syntax str -> void
           ;; annotates the origin of the stx with style-name's style.
-          (define (annotate-origin stx style-name)
-            (printf "~s~n" (syntax-property stx 'origin)))
+          (define (annotate-original-keyword stx style-name)
+            (let* ([origin (syntax-property stx 'origin)]
+                   [to-be-annotated
+                    (cond
+                      [origin
+                       (let loop ([orign origin]
+                                  [stxs null])
+                         (cond
+                           [(cons? origin)
+                            (loop (car origin) (loop (cdr origin) stxs))]
+                           [(syntax? origin)
+                            (if (syntax-original? origin)
+                                (cons origin stxs)
+                                stxs)]))]
+                      [(cons? (syntax-e stx))
+                       (list (car (syntax-e stx)))]
+                      [else null])])
+              (for-each (lambda (stx) (color stx keyword-style-str)) to-be-annotated)))
           
           ;; color : syntax str -> void
           ;; colors the syntax with style-name's style
@@ -733,7 +781,7 @@
                 (let ([style (send (send source get-style-list)
                                    find-named-style
                                    style-name)]
-                      [pos (syntax-position stx)]
+                      [pos (- (syntax-position stx) 1)]
                       [span (syntax-span stx)])
                   (send source change-style style pos (+ pos span))))))
           

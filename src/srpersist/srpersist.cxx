@@ -21,10 +21,10 @@ typedef unsigned short WORD;
 typedef unsigned long DWORD;
 /* dummy typedefs -- only used in trace API, not ODBC as such */
 typedef void VOID; 
-typedef int CHAR; 
-typedef void * LPWSTR; 
-typedef int WCHAR; 
-typedef int GUID; 
+typedef short unsigned int * LPWSTR;
+typedef char CHAR;
+typedef char * GUID;
+typedef short unsigned int WCHAR;
 #endif
 
 /* 

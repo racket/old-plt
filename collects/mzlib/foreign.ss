@@ -28,8 +28,6 @@
                      (with-syntax ([(p ...) provides]) #'(provide p ...)))
               (syntax-case (car ps) (unsafe)
                 [(unsafe u)
-                 (loop (cons #'u provides) unsafes (cdr ps))
-                 #; ; disabled for now
                  (syntax-case #'u (rename)
                    [(rename from to)
                     (loop provides (cons (cons #'from #'to) unsafes) (cdr ps))]
@@ -72,6 +70,81 @@
      (begin (provide name) (define (name . args) body ...))]
     [(_ name expr)
      (begin (provide name) (define name expr))]))
+
+;; ----------------------------------------------------------------------------
+;; Compile-time support for fun-expanders
+
+;; The `_fun' macro tears its input apart and reassemble it using pieces from
+;; custom function types (macros).  This whole deal needs some work to make it
+;; play nicely with code certificates, so Matthew wrote the following code.
+;; The idea is to create a define-fun-syntax which is not really a new kind of
+;; a syntax transformer which should always be expanded with
+;; `expand-fun-syntax'.
+
+(begin-for-syntax
+  (define fun-cert-key (gensym))
+  (define-values (make-fun-syntax fun-syntax?
+                  fun-syntax-proc fun-syntax-certifier)
+    (let-values ([(desc make pred? get set!)
+                  (make-struct-type
+                   'fun-syntax #f 2 0 #f '() (current-inspector) 0)])
+      (values make pred?
+              (make-struct-field-accessor get 0 'proc)
+              (make-struct-field-accessor get 1 'certifier))))
+  (define (expand-fun-syntax stx)
+    (let loop ([stx stx])
+      (define (do-expand id id?) ; id? == are we expanding an identifier?
+        (define v           (syntax-local-value id (lambda () #f)))
+        (define set!-trans? (set!-transformer? v))
+        (define proc        (if set!-trans? (set!-transformer-procedure v) v))
+        (if (and (fun-syntax? proc) (or (not id?) set!-trans?))
+          ;; Do essentially the same thing that `local-expand' does.
+          ;;  First, create an "introducer" to mark introduced identifiers:
+          (let* ([introduce (make-syntax-introducer)]
+                 [expanded
+                  ;; Re-introduce mark related to expansion of `_fun':
+                  (syntax-local-introduce
+                   ;; Re-add mark specific to this expansion, cancelling
+                   ;;  some marks applied before expanding (leaving only
+                   ;;  introuced syntax marked)
+                   (introduce
+                    ;; Actually expand:
+                    (proc
+                     ;; Add mark specific to this expansion:
+                     (introduce
+                      ;; Remove mark related to expansion of `_fun':
+                      (syntax-local-introduce stx)))))])
+            ;; Certify based on definition of expander, then loop
+            ;;  to continue expanding:
+            (loop ((fun-syntax-certifier proc)
+                   expanded fun-cert-key introduce)))
+          stx))
+      (syntax-case stx ()
+        [(id . rest) (identifier? #'id) (do-expand #'id #f)]
+        [id          (identifier? #'id) (do-expand #'id #t)]
+        [_else stx]))))
+
+;; Use define-fun-syntax instead of define-syntax for forms that
+;;  are to be expanded by `_fun':
+(provide define-fun-syntax)
+(define-syntax define-fun-syntax
+  (syntax-rules ()
+    [(_ id trans)
+     (define-syntax id
+       (let* ([xformer trans]
+              [set!-trans? (set!-transformer? xformer)])
+         (unless (or (and (procedure? xformer)
+                          (procedure-arity-includes? xformer 1))
+                     set!-trans?)
+           (raise-type-error 'define-fun-syntax
+                             "procedure (arity 1) or set!-transformer"
+                             xformer))
+         (let ([f (make-fun-syntax (if set!-trans?
+                                     (set!-transformer-procedure xformer)
+                                     xformer)
+                                   ;; Capture definition-time certificates:
+                                   (syntax-local-certifier))])
+           (if set!-trans? (make-set!-transformer f) f))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; Getting and setting library objects
@@ -232,9 +305,14 @@
          (define stops
            (map (lambda (s) (datum->syntax-object type0 s #f))
                 '(#%app #%top #%datum)))
-         (define (with-arg x)
+         (define (with-arg t x)
            (syntax-case* x (=>) id=?
-             [(id => body) (identifier? #'id) (list #'id #'body)]
+             [(id => body) (identifier? #'id)
+              (begin
+                (list #'id
+                      ;; We're extracting #'body from its context, but
+                      ;;  we have a key if #'body needs certification:
+                      (syntax-recertify #'body t #f fun-cert-key)))]
              [_else x]))
          (let ([keys '()])
            (define (setkey! key val . id?)
@@ -246,7 +324,9 @@
                                    "(`~a:' expects an identifier)")
                     key type0)]
               [else (set! keys (cons (cons key val) keys))]))
-           (let loop ([t (local-expand type0 'expression stops)])
+           ;; Expand `type0' using expand-fun-syntax
+           (define orig (expand-fun-syntax type0))
+           (let loop ([t orig])
              (define (next rest . args) (apply setkey! args) (loop rest))
              (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:)
                            id=?
@@ -254,8 +334,11 @@
                 (next #'(x ...) 'type (syntax-case #'t () [#f #f] [_ #'t]))]
                [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
                [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
-               [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
-               [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
+               ;; in the following two cases pass along orig for recertifying
+               [(pre:      p  x ...) (next #'(x ...) 'pre
+                                                     (with-arg orig #'p))]
+               [(post:     p  x ...) (next #'(x ...) 'post
+                                                     (with-arg orig #'p))]
                [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
                [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
                [() (and (pair? keys) keys)]
@@ -435,8 +518,9 @@
 ;; The type looks like an identifier, but it's actually using the parameter
 (provide _string)
 (define-syntax _string
-  (syntax-id-rules (_string)
-    [_string (default-_string-type)]))
+  (syntax-id-rules ()
+    [(_ . xs) ((default-_string-type) . xs)]
+    [_ (default-_string-type)]))
 
 ;; _symbol is defined in C, since it uses simple C strings
 (provide _symbol)
@@ -457,8 +541,9 @@
           new-type)))))
 (provide _string/eof)
 (define-syntax _string/eof
-  (syntax-id-rules (_string/eof)
-    [_string/eof (string-type->string/eof-type _string)]))
+  (syntax-id-rules ()
+    [(_ . xs) ((string-type->string/eof-type _string) . xs)]
+    [_ (string-type->string/eof-type _string)]))
 
 ;; ----------------------------------------------------------------------------
 ;; Utility types
@@ -584,20 +669,25 @@
 ;;          (ret-name ffi-call)
 ;;          ...bindings for post-code...)
 ;;     return-expression)
+;;
+;; Finally, the code in a custom-function macro needs special treatment when it
+;; comes to dealing with code certificates, so instead of using
+;; `define-syntax', you should use `define-fun-syntax' (used in the same way).
 
 ;; _?
 ;; This is not a normal ffi type -- it is a marker for expressions that should
 ;; not be sent to the ffi function.  Use this to bind local values in a
 ;; computation that is part of an ffi wrapper interface.
 (provide _?)
-(define-syntax _? (syntax-id-rules (_?) [_? (type: #f)]))
+(define-fun-syntax _?
+  (syntax-id-rules () [(_ . xs) ((type: #f) . xs)] [_ (type: #f)]))
 
 ;; (_ptr <mode> <type>)
 ;; This is for pointers, where mode indicates input or output pointers (or
 ;; both).  If the mode is `o' (output), then the wrapper will not get an
 ;; argument for it, instead it generates the matching argument.
 (provide _ptr)
-(define-syntax _ptr
+(define-fun-syntax _ptr
   (syntax-rules (i o io)
     [(_ i  t) (type: _pointer
                pre:  (x => (let ([p (malloc t)]) (ptr-set! p t x) p)))]
@@ -612,7 +702,7 @@
 ;; This is similar to a (_ptr io <type>) argument, where the input is expected
 ;; to be a box, which is unboxed on entry and modified on exit.
 (provide _box)
-(define-syntax _box
+(define-fun-syntax _box
   (syntax-rules ()
     [(_ t) (type: _pointer
             bind: tmp ; need to save the box so we can get back to it
@@ -626,7 +716,7 @@
 ;; any case it can refer to a previous binding for the length of the list which
 ;; the C function will most likely require.
 (provide _list)
-(define-syntax _list
+(define-fun-syntax _list
   (syntax-rules (i o io)
     [(_ i  t  ) (type: _pointer
                  pre:  (x => (list->cblock x t)))]
@@ -640,7 +730,7 @@
 ;; (_vector <mode> <type> [<len>])
 ;; Same as _list, except that it uses Scheme vectors.
 (provide _vector)
-(define-syntax _vector
+(define-fun-syntax _vector
   (syntax-rules (i o io)
     [(_ i  t  ) (type: _pointer
                  pre:  (x => (vector->cblock x t)))]
@@ -658,13 +748,14 @@
 ;; is no real need for the `o', but it's there for consistency with the above
 ;; macros).
 (provide (rename _bytes* _bytes))
-(define-syntax _bytes*
-  (syntax-id-rules (_bytes* o)
-    [_bytes* _bytes]
+(define-fun-syntax _bytes*
+  (syntax-id-rules (o)
     [(_ o n) (type: _bytes
               pre:  (make-sized-byte-string (malloc n) n)
               ;; post is needed when this is used as a function output type
-              post: (x => (make-sized-byte-string x n)))]))
+              post: (x => (make-sized-byte-string x n)))]
+    [(_ . xs) (_bytes . xs)]
+    [_ _bytes]))
 
 ;; ----------------------------------------------------------------------------
 ;; Safe raw vectors
@@ -684,8 +775,8 @@
 ;; (_cvector <mode> [<type> <len>]) | _cevector
 ;; Same as _list etc above, except that it uses C vectors.
 (provide _cvector)
-(define-syntax _cvector
-  (syntax-id-rules (_cvector i o io)
+(define-fun-syntax _cvector
+  (syntax-id-rules (i o io)
     [(_ i     ) _cvector*]
     [(_ o  t n) (type: _pointer ; needs to be a pointer, not a cvector*
                  pre:  (malloc n t)
@@ -694,7 +785,8 @@
                  bind: tmp
                  pre:  (x => (cvector-ptr x))
                  post: (x => tmp))]
-    [_cvector   _cvector*]))
+    [(_ . xs)   (_cvector* . xs)]
+    [_          _cvector*]))
 
 (provide (rename allocate-cvector make-cvector))
 (define (allocate-cvector type len)

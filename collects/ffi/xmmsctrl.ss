@@ -19,7 +19,7 @@
 (define eq-bands 10)
 
 ;; used for getting the default session from the session parameter
-(define-syntax _session
+(define-fun-syntax _session
   (syntax-id-rules (_session)
     [_session (type: _int pre: (session))]))
 

@@ -23,7 +23,7 @@
       interp)))
 
 ;; This is for arguments that always use the value of current-interp
-(define-syntax _interp*
+(define-fun-syntax _interp*
   (syntax-id-rules ()
     [_ (type: _interp expr: (current-interp))]))
 

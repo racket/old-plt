@@ -1,6 +1,6 @@
 (module magick mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 
 (define libwand (ffi-lib "libWand" "6.0.1"))
 
@@ -50,7 +50,7 @@
    w)
   (error 'wand-exception "an undefined error occured with ~e" w))
 
-(define-syntax _status
+(define-fun-syntax _status
   (syntax-id-rules (_status)
     [_status (type: _bool
               1st-arg: 1st
@@ -2308,7 +2308,7 @@
 ;;   ReplaceMethod: Select any pixel that matches the target pixel.
 ;;   FloodfillMethod: Select the target pixel and matching neighbors.
 ;;   FillToBorderMethod: Select the target pixel and neighbors not matching
-;      border color.
+;;     border color.
 ;;   ResetMethod: Select all pixels.
 (defmagick* DrawMatte :
   _DrawingWand (x : _double*) (y : _double*) _PaintMethod -> _void)

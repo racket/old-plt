@@ -208,7 +208,7 @@
          [frames   (sf-info-frames info)]
          [channels (sf-info-channels info)]
          [stype    (case (sample-type)
-                     [(short) _int16] [(int) _int] [(float) _double])]
+                     [(short) _int16] [(int) _int] [(float) _double*])]
          [readf    (case (sample-type)
                      [(short) sf-readf-short]
                      [(int) sf-readf-int]
@@ -253,7 +253,7 @@
                        1 ; 1-channel if no data, or data is not made of lists
                        (length (car data)))]
          [stype      (case (sample-type)
-                       [(short) _int16] [(int) _int] [(float) _double])]
+                       [(short) _int16] [(int) _int] [(float) _double*])]
          [writef     (case (sample-type)
                        [(short) sf-writef-short]
                        [(int) sf-writef-int]

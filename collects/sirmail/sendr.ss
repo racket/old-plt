@@ -634,10 +634,11 @@
         (let ([re (regexp (format "~a\n" SEPARATOR))])
           (let ([m (regexp-match-positions re message-str)])
             (if m
-                (let ([header (string-append 
-			       (string-lf->crlf (substring message-str 0 (caar m)))
-			       (build-uptime-field) "\r\n"
-			       empty-header)]
+                (let ([header (encode-for-header
+			       (string-append 
+				(string-lf->crlf (substring message-str 0 (caar m)))
+				(build-uptime-field) "\r\n"
+				empty-header))]
                       [body-lines (regexp-split 
 				   #rx"\n" 
 				   (substring message-str (cdar m) (string-length message-str)))])

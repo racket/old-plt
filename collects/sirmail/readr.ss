@@ -2446,46 +2446,43 @@
 				    (send e get-text start 'eof #t #t))])
 	      (start-new-mailer
 	       #f
-	       (encode-for-header
-		(parse-encoded
-		 (or (extract-field "Reply-To" h) 
-		     (extract-field "From" h)
-		     "")))
-	       (encode-for-header
-		(if follow-up?
-		    (let ([to (parse-encoded (extract-field "To" h))]
-			  [cc (parse-encoded (extract-field "CC" h))])
-		      (if (or to cc)
-			  (let ([to (map
-				     caddr
-				     (filter
-				      not-me?
-				      (append
-				       (if to
-					   (extract-addresses to 'all)
-					   null)
-				       (if cc
-					   (extract-addresses cc 'all)
-					   null))))])
-			    (if (null? to)
-				""
-				(assemble-address-field to)))
-			  ""))
+	       (parse-encoded
+		(or (extract-field "Reply-To" h) 
+		    (extract-field "From" h)
 		    ""))
-	       (encode-for-header
-		(let ([s (parse-encoded (extract-field "Subject" h))])
-		  (cond
-		   [(not s) ""]
-		   [(regexp-match #rx"^[Rr][Ee][(]([0-9]+)[)]:(.*)$" s)
-		    ;; Other mailer is counting replies. We'll count, too.
-		    => (lambda (m)
-			 (format "~a(~a):~a"
-				 (substring s 0 2)
-				 (add1 (string->number (caddr m)))
-				 (cadddr m)))]
-		   [(regexp-match "^[Rr][Ee]:" s) s]
-		   [(regexp-match "^[Aa][Nn][Tt][Ww][Oo][Rr][Tt]:" s) s]
-		   [else (string-append "Re: " s)])))
+	       (if follow-up?
+		   (let ([to (parse-encoded (extract-field "To" h))]
+			 [cc (parse-encoded (extract-field "CC" h))])
+		     (if (or to cc)
+			 (let ([to (map
+				    caddr
+				    (filter
+				     not-me?
+				     (append
+				      (if to
+					  (extract-addresses to 'all)
+					  null)
+				      (if cc
+					  (extract-addresses cc 'all)
+					  null))))])
+			   (if (null? to)
+			       ""
+			       (assemble-address-field to)))
+			 ""))
+		   "")
+	       (let ([s (parse-encoded (extract-field "Subject" h))])
+		 (cond
+		  [(not s) ""]
+		  [(regexp-match #rx"^[Rr][Ee][(]([0-9]+)[)]:(.*)$" s)
+		   ;; Other mailer is counting replies. We'll count, too.
+		   => (lambda (m)
+			(format "~a(~a):~a"
+				(substring s 0 2)
+				(add1 (string->number (caddr m)))
+				(cadddr m)))]
+		  [(regexp-match "^[Rr][Ee]:" s) s]
+		  [(regexp-match "^[Aa][Nn][Tt][Ww][Oo][Rr][Tt]:" s) s]
+		  [else (string-append "Re: " s)]))
 	       (let ([id (extract-field "Message-Id" h)]
 		     [refs (extract-field "References" h)])
 		 (format "~a~a"

@@ -268,5 +268,19 @@
 					   (bytes->string/latin-1 s)))
 				     (bytes->string/latin-1 s)))]))
 		      (parse-encoded (bytes->string/latin-1 (cadddr (cddr m))))))
-		   s)))))))
+		   s))))
 
+      (define (encode-for-header s)
+	(let ([m (regexp-match #rx"^(.*?)([^\u0-\uFF]+)(.*)$" s)])
+	  (if m
+	      (string-append
+	       (protect-equal-question (cadr m))
+	       (format "=?UTF-8?b?~a=?="
+		       (regexp-replace* #rx#"[\r\n]+$"
+					(base64-encode (string->bytes/utf-8 (caddr m)))
+					#""))
+	       (encode-for-header (cadddr m)))
+	      (protect-equal-question s))))
+      
+      (define (protect-equal-question s)
+	(regexp-replace* #rx"[=][?]" s "=?UTF-8?PT8=?=")))))

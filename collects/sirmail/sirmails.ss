@@ -36,7 +36,8 @@
      confirm-box
 
      latin-1->windows-1252
-     parse-encoded))
+     parse-encoded
+     encode-for-header))
 
   (provide sirmail:send^)
   (define-signature sirmail:send^

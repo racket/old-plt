@@ -324,22 +324,22 @@ Whether or not the snip can be stretched in the Y dimension
 
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
-                  _bitmap-constant.ss_
+                  _include-bitmap.ss_
 
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 
-The bitmap-constant.ss library provides a `bitmap-constant' form that
+The include-bitmap.ss library provides a `include-bitmap form that
 takes a filename containing a bitmap and "inlines" the bitmap into the
 program. The advantage of "inlining" the bitmap is that a stand-alone
 executable can be created that contains the bitmap and does not refer
 to the original image file.
 
-> (bitmap-constant file-spec)                       SYNTAX
+> (include-bitmap file-spec)                       SYNTAX
 
 The `file-spec' is the same as for MzLib's `include': a path string, a
 `build-path' form, or a `lib' form.
 
-> (bitmap-constant/relative-to source file-spec)    SYNTAX
+> (include-bitmap/relative-to source file-spec)    SYNTAX
 
 Analogous to `include-at/relative-to', though only a source is needed
 (no context).

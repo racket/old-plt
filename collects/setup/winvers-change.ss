@@ -11,7 +11,9 @@
 (module winvers-change mzscheme
 
   (define verbose? #t)
-  (define binary-extensions '(#"exe" #"dll" #"lib" #"obj" #"o" #"so" #"def"))
+  (define binary-extensions '(#"exe" #"dll" #"lib" #"so" #"def"
+                              ;; #"obj" #"o"
+                              ))
   (define xxxs #"xxxxxxx")
   (define xxxs-re
     (bytes-append #"(?:lib(?:mzsch|mzgc|mred|uniplt_)(?:|3m)|"

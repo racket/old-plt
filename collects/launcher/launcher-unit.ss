@@ -310,7 +310,7 @@
 		(let* ([exedir (string-append 
 				plthome
 				;; null character marks end of executable directory
-				(string (latin-1-integer->char 0)))]
+				"\0")]
 		       [find-it ; Find the magic start
 			(lambda (magic s)
 			  (file-position p 0)

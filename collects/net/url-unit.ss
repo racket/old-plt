@@ -132,7 +132,7 @@
                               (cons (format "Host: ~a" (url-host url))
                                     (if post-data
                                         (cons
-                                         (format "Content-Length: ~a" (string-length post-data))
+                                         (format "Content-Length: ~a" (bytes-length post-data))
                                          strings)
                                         strings)))))
             (display "\r\n" client->server)
@@ -172,7 +172,7 @@
          [(url) (get-impure-port url '())]
          [(url strings) (getpost-impure-port #t url #f strings)]))
 
-      ;; post-impure-port : url [x list (str)] -> in-port
+      ;; post-impure-port : url x bytes [x list (str)] -> in-port
       (define post-impure-port
         (case-lambda
          [(url post-data) (post-impure-port url post-data '())]
@@ -203,7 +203,7 @@
          [(url) (get-pure-port url '())]
          [(url strings) (getpost-pure-port #t url #f strings)]))
 
-      ;; post-pure-port : url str [x list (str)] -> in-port
+      ;; post-pure-port : url bytes [x list (str)] -> in-port
       (define post-pure-port
         (case-lambda
          [(url post-data) (post-pure-port url post-data '())]

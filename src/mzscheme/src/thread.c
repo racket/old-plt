@@ -2439,7 +2439,7 @@ static int check_sleep(int need_activity, int sleep_now)
 	
 	t = p->sleep_time - (((float)d) / 1000);
 	if (t <= 0)
-	  t = 0.00001;
+	  t = (float)0.00001;
 	if (!max_sleep_time || (t < max_sleep_time))
 	  max_sleep_time = t;
       } 
@@ -3026,7 +3026,7 @@ sch_sleep(int argc, Scheme_Object *args[])
     scheme_wrong_type("sleep", "non-negative real number", 0, argc, args);
 
   if (argc) {
-    t = scheme_real_to_double(args[0]);
+    t = (float)scheme_real_to_double(args[0]);
     if (t < 0)
       scheme_wrong_type("sleep", "non-negative real number", 0, argc, args);
   } else
@@ -4009,7 +4009,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
 
   if (!SCHEME_FALSEP(argv[0])) {
     if (SCHEME_REALP(argv[0]))
-      timeout = scheme_real_to_double(argv[0]);
+      timeout = (float)scheme_real_to_double(argv[0]);
 
     if (timeout < 0.0) {
       scheme_wrong_type(name, "non-negative real number", 0, argc, argv);

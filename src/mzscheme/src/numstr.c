@@ -1681,11 +1681,9 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   case 2:
     {
       if (sgned) {
-	unsigned short sv = val;
-	*(unsigned short *)str = sv;
+	*(unsigned short *)str = (unsigned short)(val);
       } else {
-	short sv = val;
-	*(short *)str = sv;
+	*(short *)str = (short)(val);
       }
     }
     break;
@@ -1842,7 +1840,7 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
   d = scheme_get_val_as_double(n);
   
   if (size == 4)
-    *(float *)(SCHEME_STR_VAL(s)) = d;
+    *(float *)(SCHEME_STR_VAL(s)) = (float)(d);
   else {
     /* Don't use `double' cast, due to alignment concerns */
     memcpy(SCHEME_STR_VAL(s), &d, sizeof(double));

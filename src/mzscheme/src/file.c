@@ -2592,7 +2592,9 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 # endif
 #endif
 
+#if defined (USE_MAC_FILE_TOOLBOX) || ! defined (DOS_FILE_SYSTEM)
 failed:
+#endif
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM, 
 		   argv[0],
 		   (exists_ok < 0) ? exists_err_symbol : fail_err_symbol,

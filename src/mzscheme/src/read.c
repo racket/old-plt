@@ -2284,9 +2284,9 @@ static void pop_indentation(Scheme_Object *indentation)
 
 typedef struct CPort {
   MZTAG_IF_REQUIRED  
-  long pos, size;
+  unsigned long pos, size;
   unsigned char *start;
-  long symtab_size;
+  unsigned long symtab_size;
   long base;
   Scheme_Object *orig_port;
 } CPort;
@@ -2582,7 +2582,7 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_VECTOR: 
       {
 	Scheme_Object *vec;
-	int i;
+	unsigned int i;
 
 	l = read_compact_number(port);	
 	vec = scheme_make_vector(l, NULL);

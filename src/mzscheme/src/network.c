@@ -2291,7 +2291,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
 
 	if (reuse) {
-	  setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+	  setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)(&reuse), sizeof(int));
 	}
       
 	if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr))) {
@@ -2761,7 +2761,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
     unsigned long ioarg = 1;
     BOOL bc = 1;
     ioctlsocket(s, FIONBIO, &ioarg);
-    setsockopt(s, SOL_SOCKET, SO_BROADCAST, &bc, sizeof(BOOL));
+    setsockopt(s, SOL_SOCKET, SO_BROADCAST, (char *)(&bc), sizeof(BOOL));
   }
 #else
   fcntl(s, F_SETFL, MZ_NONBLOCKING);

@@ -728,7 +728,7 @@ static void print_compact_number(Scheme_Thread *p, long n)
   if (n < 0) {
     if (n > -256) {
       s[0] = 254;
-      s[1] = -n;
+      s[1] = (unsigned char)(-n);
       print_this_string(p, (char *)s, 0, 2);
       return;
     } else {
@@ -736,23 +736,23 @@ static void print_compact_number(Scheme_Thread *p, long n)
       s[0] = 255;
     }
   } else if (n < 252) {
-    s[0] = n;
+    s[0] = (unsigned char)n;
     print_this_string(p, (char *)s, 0, 1);
     return;
   } else if (n < 0x10000) {
     s[0] = 252;
-    s[1] = n & 0xFF;
-    s[2] = (n >> 8) & 0xFF;
+    s[1] = (unsigned char)(n & 0xFF);
+    s[2] = (unsigned char)((n >> 8) & 0xFF);
     print_this_string(p, (char *)s, 0, 3);
     return;
   } else {
     s[0] = 253;
   }
 
-  s[1] = n & 0xFF;
-  s[2] = (n >> 8) & 0xFF;
-  s[3] = (n >> 16) & 0xFF;
-  s[4] = (n >> 24) & 0xFF;  
+  s[1] = (unsigned char)(n & 0xFF);
+  s[2] = (unsigned char)((n >> 8) & 0xFF);
+  s[3] = (unsigned char)((n >> 16) & 0xFF);
+  s[4] = (unsigned char)((n >> 24) & 0xFF);  
   
   print_this_string(p, (char *)s, 0, 5);
 }
@@ -1040,7 +1040,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	long v = SCHEME_INT_VAL(obj);
 	if (v >= 0 && v < CPT_RANGE(SMALL_NUMBER)) {
 	  unsigned char s[1];
-	  s[0] = v + CPT_SMALL_NUMBER_START;
+	  s[0] = (unsigned char)(v + CPT_SMALL_NUMBER_START);
 	  print_this_string(p, (char *)s, 0, 1);
 	} else {
 	  print_compact(p, CPT_INT);

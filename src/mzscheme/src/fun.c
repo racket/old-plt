@@ -3132,7 +3132,7 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
   if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
-  data->flags = SCHEME_INT_VAL(v);
+  data->flags = (short)(SCHEME_INT_VAL(v));
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);

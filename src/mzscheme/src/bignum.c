@@ -437,7 +437,9 @@ static int bigdig_length(bigdig* array, int alloced)
 static Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object *b, int sub)
 {
   Scheme_Object *o;
-  long a_size, a_pos, b_size, b_pos, max_size;
+  long a_size, b_size, max_size;
+  short a_pos, b_pos;
+  
   bigdig *o_digs, *a_digs, *b_digs;
   SAFE_SPACE(asd) SAFE_SPACE(bsd)
 
@@ -642,7 +644,8 @@ Scheme_Object *scheme_bignum_min(const Scheme_Object *a, const Scheme_Object *b)
 assumes len a >= len b */
 static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, int op)
 {
-  long a_size, b_size, a_pos, b_pos, res_alloc, res_pos, i;
+  long a_size, b_size, a_pos, b_pos, res_alloc, i;
+  short res_pos;
   bigdig* a_digs, *b_digs, *res_digs, quick_digs[1];
   int carry_out_a, carry_out_b, carry_out_res, carry_in_a, carry_in_b, carry_in_res;
   Scheme_Object* o;
@@ -928,11 +931,11 @@ char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int a
   if (radix == 2)
     slen = WORD_SIZE * SCHEME_BIGLEN(b) + 2;
   else if (radix == 8)
-    slen = ceil(WORD_SIZE * SCHEME_BIGLEN(b) / 3.0) + 2;
+    slen = (int)(ceil(WORD_SIZE * SCHEME_BIGLEN(b) / 3.0) + 2);
   else if (radix == 16)
     slen = WORD_SIZE * SCHEME_BIGLEN(b) / 4 + 2;
   else /* (radix == 10) */
-    slen = ceil(WORD_SIZE * SCHEME_BIGLEN(b) * 0.30102999566398115) + 1;
+    slen = (int)(ceil(WORD_SIZE * SCHEME_BIGLEN(b) * 0.30102999566398115)) + 1;
 
 #ifdef MZ_PRECISE_GC
   str = (unsigned char *)MALLOC_PROTECT(slen);
@@ -1062,7 +1065,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
   o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   o->type = scheme_bignum_type;
 
-  alloc = ceil(len * log((double)radix) / (32 * log((double)2)));
+  alloc = (int)(ceil(len * log((double)radix) / (32 * log((double)2))));
 
   digs = PROTECT_RESULT(alloc);
 
@@ -1168,7 +1171,8 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
       *_stk_rp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
     return;
   } else {    
-    long n_size, d_size, q_alloc, r_alloc, n_pos, d_pos;
+    long n_size, d_size, q_alloc, r_alloc, d_pos;
+    short n_pos;
     bigdig *q_digs, *r_digs, *n_digs, *d_digs;
     Scheme_Object *q, *r;
 

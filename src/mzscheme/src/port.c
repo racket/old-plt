@@ -137,7 +137,8 @@ typedef struct Win_FD_Output_Thread {
 				  after every write); needflush indicates that
 				  a flush check is currently needed, but hasn't
 				  been started. */
-  volatile int done, err_no, buflen, bufstart, bufend; /* used for blocking, only */
+  volatile int done, err_no;
+  volatile unsigned int buflen, bufstart, bufend; /* used for blocking, only */
   unsigned char *buffer; /* used for blocking, only */
   HANDLE lock_sema, work_sema, ready_sema, you_clean_up_sema;
   /* lock_sema protects the fields, work_sema starts the flush or
@@ -285,8 +286,8 @@ static void register_port_wait();
 
 #ifdef MZ_FDS
 static long flush_fd(Scheme_Output_Port *op, 
-		     const char * volatile bufstr, volatile long buflen, 
-		     volatile long offset, int immediate_only);
+		     const char * volatile bufstr, volatile unsigned long buflen, 
+		     volatile unsigned long offset, int immediate_only);
 static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data);
 #endif
 
@@ -2077,7 +2078,7 @@ Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[])
     CHECK_PORT_CLOSED("port-file-identity", "input", p, ip->closed);
 
     if (SAME_OBJ(ip->sub_type, file_input_port_type)) {
-      fd = fileno((FILE *)((Scheme_Input_File *)ip->port_data)->f);
+      fd = MSC_IZE(fileno)((FILE *)((Scheme_Input_File *)ip->port_data)->f);
       fd_ok = 1;
     }
 #ifdef MZ_FDS
@@ -2092,7 +2093,7 @@ Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[])
     CHECK_PORT_CLOSED("port-file-identity", "output", p, op->closed);
 
     if (SAME_OBJ(op->sub_type, file_output_port_type))  {
-      fd = fileno((FILE *)((Scheme_Output_File *)op->port_data)->f);
+      fd = MSC_IZE (fileno)((FILE *)((Scheme_Output_File *)op->port_data)->f);
       fd_ok = 1;
     }
 #ifdef MZ_FDS
@@ -3509,7 +3510,6 @@ static void
 fd_close_input(Scheme_Input_Port *port)
 {
   Scheme_FD *fip;
-  int cr;
 
   fip = (Scheme_FD *)port->port_data;
 
@@ -3538,6 +3538,7 @@ fd_close_input(Scheme_Input_Port *port)
     FSClose(fip->fd);
 # else
     do {
+      int cr;
       cr = close(fip->fd);
     } while ((cr == -1) && (errno == EINTR));
 # endif
@@ -3551,8 +3552,15 @@ static void
 fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 {
   Scheme_FD *fip;
+
+#ifdef WINDOWS_FILE_HANDLES
+#else
+# ifdef MAC_FILE_HANDLES
+# else
   void *fds2;
   int n;
+# endif
+#endif
 
   fip = (Scheme_FD *)port->port_data;
 
@@ -4157,8 +4165,15 @@ static void
 fd_write_need_wakeup(Scheme_Object *port, void *fds)
 {
   Scheme_FD *fop;
+
+#ifdef WINDOWS_FILE_HANDLES
+#else
+# ifdef MAC_FILE_HANDLES
+# else
   void *fds2;
   int n;
+# endif
+#endif
 
   fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
 
@@ -4189,7 +4204,7 @@ static void release_flushing_lock(void *_fop)
 }
 
 static long flush_fd(Scheme_Output_Port *op, 
-		     const char * volatile bufstr, volatile long buflen, volatile long offset, 
+		     const char * volatile bufstr, volatile unsigned long buflen, volatile unsigned long offset, 
 		     int immediate_only)
      /* immediate_only == 1 => write at least one character, then give up;
 	immediate_only == 2 => never block */
@@ -4244,8 +4259,9 @@ static long flush_fd(Scheme_Output_Port *op,
 	if (fop->textmode) {
 	  /* Convert LF to CRLF. We're relying on the fact that WriteFile
 	     will write everything. */
-	  int i, c = 0;
-	  
+	  int c = 0;
+	  unsigned int i;
+
 	  for (i = offset; i < buflen; i++) {
 	    if (bufstr[i] == '\n')
 	      c++;
@@ -4643,7 +4659,6 @@ static void
 fd_close_output(Scheme_Output_Port *port)
 {
   Scheme_FD *fop = (Scheme_FD *)port->port_data;
-  int cr;
 
   if (fop->bufcount)
     flush_fd(port, NULL, 0, 0, 0);
@@ -4689,6 +4704,7 @@ fd_close_output(Scheme_Output_Port *port)
     FSClose(fop->fd);
 # else
     do {
+      int cr;
       cr = close(fop->fd);
     } while ((cr == -1) && (errno == EINTR));
 # endif
@@ -5812,7 +5828,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
 #ifdef WINDOWS_PROCESSES
   {
     SHELLEXECUTEINFO se;
-    int nplen, res;
+    int nplen;
 
     nplen = strlen(dir);
     dir = scheme_normal_path_case(dir, &nplen);

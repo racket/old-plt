@@ -146,79 +146,84 @@
 				    (if rel?
 					plthome
 					(get-target-directory)))])
+
 		  ;; Stop if no target directory:
-		  (when target-dir
+		  (if target-dir
 
-		    ;; Check declared dependencies (none means v103)
-		    (call-info info 'requires (lambda () null)
-			       (lambda (l) 
-				 (define (bad)
-				   (error "`requires' info is corrupt:" l))
-				 (when (void? l)
-				   (error "cannot install; archive is for an older version of PLT Scheme"))
-				 (unless (list? l) (bad))
-				 ;; Check each dependency:
-				 (for-each
-				  (lambda (d)
-				    (unless (and (list? d) (= 2 (length d)))
-				      (bad))
-				    (let ([coll-path (car d)]
-					  [version (cadr d)])
-				      (unless (and (pair? coll-path)
-						   (list? coll-path)
-						   (andmap string? coll-path)
-						   (list? version)
-						   (andmap number? version))
-					(bad))
-				      (with-handlers ([not-break-exn?
-						       (lambda (x)
-							 (error "cannot install; missing required collection"
-								coll-path))])
-					(apply collection-path coll-path))
-				      (let ([inst-version 
-					     (with-handlers ([not-break-exn? (lambda (x) null)])
-					       (let ([info (get-info coll-path)])
-						 (info 'version (lambda () null))))])
-					(let loop ([v version][iv inst-version])
-					  (unless (null? v)
-					    (when (or (null? iv)
-						      (not (= (car v) (car iv))))
-					      (error (format "cannot install; version ~a of collection ~s is required, but version ~a is installed"
-							     version coll-path 
-							     (if (null? inst-version)
-								 '<unknown>
-								 inst-version))))
-					    (loop (cdr v) (cdr iv)))))))
-				  l)))
-
-		    ;; Check for conflicts:
-		    (call-info info 'conflicts (lambda () null)
-			       (lambda (l) 
-				 (define (bad)
-				   (error "`conflicts' info is corrupt:" l))
-				 (unless (list? l) (bad))
-				 (for-each
-				  (lambda (coll-path)
-				    (unless (and (pair? coll-path)
-						 (list? coll-path)
-						 (andmap string? coll-path))
-				      (bad))
-				    (when (with-handlers ([not-break-exn? (lambda (x) #f)])
+		      ;; Check declared dependencies (none means v103)
+		      (begin
+			(call-info info 'requires (lambda () null)
+				   (lambda (l) 
+				     (define (bad)
+				       (error "`requires' info is corrupt:" l))
+				     (when (void? l)
+				       (error "cannot install; archive is for an older version of PLT Scheme"))
+				     (unless (list? l) (bad))
+				     ;; Check each dependency:
+				     (for-each
+				      (lambda (d)
+					(unless (and (list? d) (= 2 (length d)))
+					  (bad))
+					(let ([coll-path (car d)]
+					      [version (cadr d)])
+					  (unless (and (pair? coll-path)
+						       (list? coll-path)
+						       (andmap string? coll-path)
+						       (list? version)
+						       (andmap number? version))
+					    (bad))
+					  (with-handlers ([not-break-exn?
+							   (lambda (x)
+							     (error "cannot install; missing required collection"
+								    coll-path))])
 					    (apply collection-path coll-path))
-				      (error "cannot install; conflict with installed collection"
-					     coll-path)))
-				  l)))
+					  (let ([inst-version 
+						 (with-handlers ([not-break-exn? (lambda (x) null)])
+						   (let ([info (get-info coll-path)])
+						     (info 'version (lambda () null))))])
+					    (let loop ([v version][iv inst-version])
+					      (unless (null? v)
+						(when (or (null? iv)
+							  (not (= (car v) (car iv))))
+						  (error (format "cannot install; version ~a of collection ~s is required, but version ~a is installed"
+								 version coll-path 
+								 (if (null? inst-version)
+								     '<unknown>
+								     inst-version))))
+						(loop (cdr v) (cdr iv)))))))
+				      l)))
 
-		    (unless (and name unpacker)
-		      (error "bad name or unpacker"))
-		    (print-status
-		     (format "Unpacking ~a from ~a" name archive))
-		    (let ([u (eval (read p) n)])
-		      (unless (eval `(unit? ,u) n)
-			(error "expected a unit, got" u))
-		      (let ([unmztar (lambda (filter)
-				       (unmztar p filter target-dir print-status))])
-			(eval `(invoke-unit ,u ,target-dir ,unmztar) n)))))))
+			;; Check for conflicts:
+			(call-info info 'conflicts (lambda () null)
+				   (lambda (l) 
+				     (define (bad)
+				       (error "`conflicts' info is corrupt:" l))
+				     (unless (list? l) (bad))
+				     (for-each
+				      (lambda (coll-path)
+					(unless (and (pair? coll-path)
+						     (list? coll-path)
+						     (andmap string? coll-path))
+					  (bad))
+					(when (with-handlers ([not-break-exn? (lambda (x) #f)])
+						(apply collection-path coll-path))
+					  (error "cannot install; conflict with installed collection"
+						 coll-path)))
+				      l)))
+
+			(unless (and name unpacker)
+			  (error "bad name or unpacker"))
+			(print-status
+			 (format "Unpacking ~a from ~a" name archive))
+			(let ([u (eval (read p) n)])
+			  (unless (eval `(unit? ,u) n)
+			    (error "expected a unit, got" u))
+			  (let ([unmztar (lambda (filter)
+					   (unmztar p filter target-dir print-status))])
+			    (eval `(invoke-unit ,u ,target-dir ,unmztar) n))))
+
+		      ;; Cancelled: no collections
+		      null))))
 	    (lambda ()
 	      (kill)
 	      (close-input-port p64gz))))))

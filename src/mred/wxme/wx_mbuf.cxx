@@ -570,7 +570,7 @@ Bool wxMediaBuffer::CanEdit(int op, Bool recursive)
   }
 
   if (IsLocked()) {
-    if (op != wxEDIT_COPY)
+    if ((op != wxEDIT_COPY) && (op != wxEDIT_SELECT_ALL))
       return FALSE;
   }
 

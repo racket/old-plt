@@ -1,8 +1,77 @@
+(load-relative "loadtest.ss")
+
+;; test that expansion preserves source location information
+;; for fully expanded terms
+
+(SECTION 'EXPAND)
+
+(let () 
+  (define (compare-expansion stx) 
+    (let ([expanded (expand stx)])
+      (ensure-good-test-case stx expanded)
+      (test #t compare-objs stx expanded)))
+  
+  (define (compare-objs o1 o2)
+    (let loop ([o1 o1]
+               [o2 o2])
+      (cond
+        [(both? syntax? o1 o2)
+         (and (sel-same syntax-position o1 o2)
+              (sel-same syntax-source o1 o2)
+              (sel-same syntax-column o1 o2)
+              (sel-same syntax-line o1 o2)
+              (loop (syntax-e o1) (syntax-e o2)))]
+        [(both? pair? o1 o2)
+         (and (loop (car o1) (car o1))
+              (loop (cdr o1) (cdr o2)))]
+        [(both? vector? o1 o2)
+         (and (sel-same vector-length o1 o2)
+              (andmap loop 
+                      (vector->list o1)
+                      (vector->list o2)))]
+        [(both? null? o1 o2) #t]
+        [(both? symbol? o1 o2)
+         (eq? o1 o2)]
+        [(both? boolean? o1 o2)
+         (equal? o1 o2)]
+        [else #f])))
+  
+  ;; this error indicates that the expansion wasn't
+  ;; really idempotent, on the structure. Assume that
+  ;; the test case is broken, not expand.
+  (define (ensure-good-test-case o1 o2)
+    (let ([d1 (syntax-object->datum o1)]
+          [d2 (syntax-object->datum o2)])
+      (unless (equal? d1 d2)
+        (error 'compare-objs "bad test case: ~e ~e" d1 d2))))
+  
+  (define (sel-same sel o1 o2) (equal? (sel o1) (sel o2)))
+  (define (both? p? o1 o2) (and (p? o1) (p? o2)))
+  
+  (compare-expansion #''())
+  (compare-expansion #'(#%datum . 1))
+  (compare-expansion #'(#%datum . #t))
+  (compare-expansion #'(quote 1))
+  (compare-expansion #'(#%top . x))
+  (compare-expansion #'(if (#%top . a) (#%top . b) (#%top . c)))
+  (compare-expansion #'(if (#%top . a) (#%top . b)))
+  (compare-expansion #'(lambda (x) x))
+  (compare-expansion #'(case-lambda [() (#%datum . 1)] [(x) x]))
+  (compare-expansion #'(define-values (x) (#%top . x)))
+  (compare-expansion #'(define-syntaxes (s) (#%top . x)))
+  (compare-expansion #'(require mzscheme))
+  (compare-expansion #'(require-for-syntax mzscheme))
+  (compare-expansion #'(begin (#%top . x)))
+  (compare-expansion #'(begin0 (#%top . x)))
+  (compare-expansion #'(let-values (((x y) (#%top . p))) (#%top . q)))
+  (compare-expansion #'(letrec-values (((x y) (#%top . p))) (#%top . q)))
+  (compare-expansion #'(set! x (#%top . y)))
+  (compare-expansion #'(quote-syntax x))
+  (compare-expansion #'(with-continuation-mark (#%top . x) (#%top . x) (#%top . x)))
+  (compare-expansion #'(#%app (#%top . f))))
 
 ; Tests macro expansion by setting the eval handler and
 ;  running all tests
-
-(load-relative "loadtest.ss")
 
 (namespace-variable-value 
  'expand-load

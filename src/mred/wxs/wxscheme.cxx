@@ -1551,7 +1551,7 @@ public:
   char *result;
   wxClipboardClient *clipOwner;
   char *format;
-  long *length;
+  long length;
   Scheme_Object *sema;
 };
 
@@ -1561,9 +1561,11 @@ Scheme_Object *get_data_from_client(void *_gd, int, Scheme_Object **)
 {
   wxGetData *gd = (wxGetData *)_gd;
   char *result;
+  long length;
 
-  result = gd->clipOwner->GetData(gd->format, gd->length);
+  result = gd->clipOwner->GetData(gd->format, &length);
 
+  gd->length = length;
   gd->result = result;
   scheme_post_sema(gd->sema);
 
@@ -1581,7 +1583,6 @@ char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *l
     gd = new wxGetData;
     gd->clipOwner = clipOwner;
     gd->format = format;
-    gd->length = length;
     gd->sema = sema;
 
     cb = scheme_make_closed_prim((Scheme_Closed_Prim *)get_data_from_client, gd);
@@ -1612,7 +1613,8 @@ char *wxsGetDataInEventspace(wxClipboardClient *clipOwner, char *format, long *l
 	}
       }
     }
-    
+
+    *length = gd->length;
     return gd->result;
   } else
     return clipOwner->GetData(format, length);

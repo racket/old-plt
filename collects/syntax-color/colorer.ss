@@ -157,7 +157,8 @@
         (reset))
   
       (define (background-colorer)
-        ((channel-get sync))
+        (with-handlers ((void void))
+          ((channel-get sync)))
         (channel-put sync #f)
         (background-colorer))
   

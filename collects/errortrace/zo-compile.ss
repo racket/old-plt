@@ -4,12 +4,12 @@
   
   (provide zo-compile)
 
-  (define zo-do-compile
-    (make-errortrace-elaborator compile 
-				expand-syntax
-				list))
+  (define zo-compile
+    (let ([orig (current-compile)])
+      (lambda (stx immediate-eval?)
+	(if (null? (use-compiled-file-paths))
+	    (orig stx immediate-eval?)
+	    (orig (errortrace-annotate stx) immediate-eval?))))))
 
-  (define (zo-compile stx)
-    (zo-do-compile (namespace-syntax-introduce stx))))
 
 

@@ -185,6 +185,50 @@
 
 ;; Make sure restoring continuations restores the right marks
 ;;  for dynamic-wind thunks
+
+
+(let* ([x (make-parameter 0)]
+       [l null]
+       [add (lambda (a b)
+	      (set! l (append l (list (cons a b)))))]
+       [cp #f])
+  (let ([k (parameterize ([x 5])
+	     (dynamic-wind
+		 (lambda () (add 1 (x)))
+		 (lambda () (parameterize ([x 6])
+			      (let ([k+e (let/cc k (cons k void))])
+				(set! cp (current-parameterization))
+				(add 2 (x))
+				((cdr k+e))
+				(car k+e))))
+		 (lambda () (add 3 (x)))))])
+    (parameterize ([x 7])
+      (let/cc esc
+	(k (cons void esc)))))
+  (test l values '((1 . 5) (2 . 6) (3 . 5) (1 . 5) (2 . 6) (3 . 5)))
+  (test 6 call-with-parameterization cp (lambda () (x)))
+  (test 0 call-with-parameterization (current-parameterization) (lambda () (x))))
+
+(let* ([l null]
+       [add (lambda (a b)
+	      (set! l (append l (list (cons a b)))))]
+       [x (lambda ()
+	    (car (continuation-mark-set->list (current-continuation-marks) 
+					      'x)))])
+  (let ([k (with-continuation-mark 'x 5
+	     (dynamic-wind
+		 (lambda () (add 1 (x)))
+		 (lambda () (with-continuation-mark 'x 6
+			      (let ([k+e (let/cc k (cons k void))])
+				(add 2 (x))
+				((cdr k+e))
+				(car k+e))))
+		 (lambda () (add 3 (x)))))])
+    (with-continuation-mark 'x 7
+      (let/cc esc
+	(k (cons void esc)))))
+  (test l values '((1 . 5) (2 . 6) (3 . 5) (1 . 5) (2 . 6) (3 . 5))))
+
 (let ([k0 #f]
       [k1 #f]
       [k2 #f]
@@ -242,6 +286,13 @@
     (let/cc k (set! esc k) (k4 k))
     (let/cc k (set! esc k) (k5 void))
     (let/cc k (set! esc k) (k5 k))))
+
+(test #t parameterization? (current-parameterization))
+(test #f parameterization? (make-parameter 5))
+(arity-test current-parameterization 0 0)
+(arity-test call-with-parameterization 2 2)
+(err/rt-test (call-with-parameterization 10 (lambda () 12)))
+(err/rt-test (call-with-parameterization (current-parameterization) (lambda (x) 12)))
 
 ;; Create a deep stack with a deep mark stack
 

@@ -4,7 +4,6 @@
 
   (provide make-compilation-manager-load/use-compiled-handler
 	   managed-compile-zo
-	   current-managed-zo-compile
 	   make-caching-managed-compile-zo
 	   trust-existing-zos
 	   manager-compile-notify-handler
@@ -15,8 +14,6 @@
   (define indent (make-parameter ""))
   (define trust-existing-zos (make-parameter #f))
   
-  (define current-managed-zo-compile (make-parameter compile))
-
   (define my-max
     (case-lambda
       (() 0)
@@ -103,7 +100,7 @@
                                                  (set! external-deps
                                                        (cons (path->bytes ext-file)
                                                              external-deps)))])
-                           (get-module-code path mode (current-managed-zo-compile)))]
+                           (get-module-code path mode))]
                    [code-dir (get-code-dir mode path)])
               (if (not (directory-exists? code-dir))
                 (make-directory code-dir))

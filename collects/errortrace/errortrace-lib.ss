@@ -247,55 +247,46 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define (make-errortrace-elaborator orig begin-step combine)
-    (lambda (e)
-      ;; Loop to flatten top-level `begin's:
-      (let loop ([e e])
-	(let ([top-e (expand-syntax-to-top-form e)])
-	  (define (normal top-e)
-	    (let* ([ex (expand-syntax top-e)]
-		   [a (annotate-top ex #f)])
-	      (orig a)))
-	  (syntax-case top-e (begin module)
-	    [(begin expr ...)
-	     ;; Found a `begin', so expand/eval each contained
-	     ;; expression one at a time
-	     (foldl (lambda (e old-val)
-		      (combine old-val (loop e)))
-		    (void)
-		    (syntax->list #'(expr ...)))]
-	    [(module name . reste)
-	     (if (eq? (syntax-e #'name) 'errortrace-key)
-		 (orig top-e)
-		 (let ([top-e (expand-syntax top-e)])
-		   (syntax-case top-e (module #%plain-module-begin)
-		     [(module name init-import (#%plain-module-begin body ...))
-		      (normal #`(module name init-import 
-				  (#%plain-module-begin 
-				   #,((make-syntax-introducer)
-				      #'(require (lib "errortrace-key.ss" "errortrace")))
-				   #,((make-syntax-introducer)
-				      #'(require-for-syntax (lib "errortrace-key.ss" "errortrace")))
-				   body ...)))])))]
-	    [_else
-	     ;; Not `begin', so proceed with normal expand and eval
-	     (normal top-e)])))))
-  
-  (define errortrace-eval-handler
-    (let ([orig (current-eval)]
+  (define errortrace-annotate
+    (lambda (top-e)
+      (define (normal e)
+	(let ([ex (expand-syntax e)])
+	  (annotate-top ex #f)))
+      (syntax-case top-e (begin module)
+	[(module name . reste)
+	 (if (eq? (syntax-e #'name) 'errortrace-key)
+	     top-e
+	     (let ([top-e (expand-syntax top-e)])
+	       (syntax-case top-e (module #%plain-module-begin)
+		 [(module name init-import (#%plain-module-begin body ...))
+		  (normal
+		   #`(module name init-import 
+		       (#%plain-module-begin 
+			#,((make-syntax-introducer)
+			   #'(require (lib "errortrace-key.ss" "errortrace")))
+			#,((make-syntax-introducer)
+			   #'(require-for-syntax (lib "errortrace-key.ss" "errortrace")))
+			body ...)))])))]
+	[_else
+	 (normal top-e)])))
+
+  (define errortrace-compile-handler
+    (let ([orig (current-compile)]
           [ns (current-namespace)])
-      (let ([elab (make-errortrace-elaborator orig orig void)])
-	(lambda (e)
-	  (if (and (instrumenting-enabled)
-		   (eq? ns (current-namespace))
-		   (not (compiled-expression? (if (syntax? e)
-						  (syntax-e e)
-						  e))))
-	      (elab (if (syntax? e)
-			e
-			(namespace-syntax-introduce
-			 (datum->syntax-object #f e))))
-	      (orig e))))))
+      (lambda (e immediate-eval?)
+	(orig
+	 (if (and (instrumenting-enabled)
+		  (eq? ns (current-namespace))
+		  (not (compiled-expression? (if (syntax? e)
+						 (syntax-e e)
+						 e))))
+	     (errortrace-annotate
+	      (if (syntax? e)
+		  e
+		  (namespace-syntax-introduce
+		   (datum->syntax-object #f e))))
+	     e)
+	 immediate-eval?))))
 
   (define errortrace-error-display-handler
     (let ([orig (error-display-handler)])
@@ -308,9 +299,9 @@
               (orig (get-output-string p) exn))
             (orig msg exn)))))
   
-  (provide errortrace-eval-handler
+  (provide errortrace-compile-handler
            errortrace-error-display-handler
-	   make-errortrace-elaborator
+	   errortrace-annotate
            
            print-error-trace 
 	   error-context-display-depth 

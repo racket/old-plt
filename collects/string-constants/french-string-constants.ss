@@ -45,13 +45,13 @@
  (error-sending-bug-report "Erreur durant la soumission du formulaire de bug.")
  (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bug. Si votre connexion Internet fonctionne correctement, veuillez visiter:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\net soumettre votre bug en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est:\n~a")
  (bug-report-sent "Le bug a été correctement soumis.")
- (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, envoyez un email à scheme@cs.rice.edu.")
+ (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, veuillez envoyer un email à scheme@cs.rice.edu.")
  (illegal-bug-report "Formulaire de soumission de bug incomplet.")
  (pls-fill-in-field "Merci de compléter le champ \"~a\".")
  (malformed-email-address "Adresse email malformée.")
 
  ;;; check syntax
- (check-syntax "Syntaxe") ; "Correcteur de syntaxe" est long...
+ (check-syntax "Vérifier") ; "Syntaxe" ; "Correcteur de syntaxe" est long...
  (cs-italic "Italique")
  (cs-bold "Gras")
  (cs-underline "Souligné")
@@ -66,13 +66,13 @@
  (cs-name-duplication-error "Le nouveau nom que vous avez choisi, ~s, est en conflit avec un autre nom préexistant dans le même contexte.")
  
  ;;; info bar at botttom of drscheme frame
- (collect-button-label "Ramassage")
- (read-only "Lecture seulement")
- (read/write "Lecture/écriture")
- (auto-extend-selection "Sélection auto-étendable")
+ (collect-button-label "RdM") ; ramassage de miettes "Ramassage" ?
+ (read-only "L") ; "Lecture seulement"
+ (read/write "L/E") ; "Lecture/écriture"
+ (auto-extend-selection "Autosélection") ; "Sélection auto-étendable" ?
  (overwrite "Correction") ; vs Insertion ? surimpression ?
  (running "en cours")
- (not-running "en attente") ; pause ?
+ (not-running "attente") ; "en attente" ; pause ?
  
  ;;; misc
  (welcome-to-something "Bienvenue dans ~a.")
@@ -525,7 +525,7 @@
  
  ;;; welcoming message in repl
  (language "Language")
- (custom "personnaliser")
+ (custom "personnalisé")
  (teachpack "TeachPack")
  (welcome-to "Bienvenue dans")
  (version "version")

@@ -1046,6 +1046,7 @@ int scheme_pthread_semaphore_try_down(void *);
 #define HAS_STANDARD_IOB
 #define FILES_HAVE_FDS
 #define USE_UNIX_SOCKETS_TCP
+#define CLOSE_ALL_FDS_AFTER_FORK
 
  /* HAS_STANDARD_IOB, HAS_GNU_IOB, HAS_CYGWIN_IOB, HAS_LINUX_IOB,
     HAS_BSD_IOB, and HAS_SCO_IOB are mutually exclusive; they describe
@@ -1056,6 +1057,10 @@ int scheme_pthread_semaphore_try_down(void *);
     file desciptor, which can be select-ed to see if there are
     pending bytes. Don't use this unless one of the HAS_<X>_IOB
     flags is used. */
+
+ /* CLOSE_ALL_FDS_AFTER_FORK means that all fds except 0, 1, and 2
+    should be closed after performing a fork() for `process'
+    and `system' calls. */
 
  /* USE_UNIX_SOCKETS_TCP means that the tcp- procedures can be implemented
     with the standard Unix socket functions. */

@@ -3553,7 +3553,7 @@ do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
   if (!fp)
     filename_exn(name, "cannot open input file", filename, errno);
   scheme_file_open_count++;
-  
+
   return _scheme_make_named_file_input_port(fp, filename, regfile);
 }
 
@@ -5752,13 +5752,26 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	MSC_IZE(dup2)(from_subprocess[1], 1);
 	MSC_IZE(dup2)(err_subprocess[1], 2);
 	
-	/* Close unwanted descriptors */
+	/* Close unwanted descriptors. */
 	MSC_IZE(close)(to_subprocess[0]);
 	MSC_IZE(close)(to_subprocess[1]);
 	MSC_IZE(close)(from_subprocess[0]);
 	MSC_IZE(close)(from_subprocess[1]);
 	MSC_IZE(close)(err_subprocess[0]);
 	MSC_IZE(close)(err_subprocess[1]);
+
+#ifdef CLOSE_ALL_FDS_AFTER_FORK
+	/* Actually, unwanted includes everything
+	   except stdio. */
+#ifdef USE_ULIMIT
+	i = ulimit(4, 0);
+#else
+	i = getdtablesize();
+#endif
+	while (i-- > 3) {
+	  close(i);
+	}
+#endif	   
       } else {
 #ifdef USE_FD_PORTS
 	/* Reset stdout and stderr to original flags: */

@@ -24,7 +24,7 @@
      lf->crlf
      string-crlf->lf
      string-lf->crlf
-     string-split-crlf
+     header->lines
      enumerate
      find
      string->regexp

@@ -26,6 +26,16 @@
       (define (split s re)
 	(regexp-split re s))
 
+      (define (drop-last-if-empty orig-l)
+	(let loop ([l orig-l][accum null])
+	  (cond
+	   [(null? l) orig-l]
+	   [(null? (cdr l))
+	    (if (equal? #"" (car l))
+		(reverse accum)
+		orig-l)]
+	   [else (loop (cdr l) (cons (car l) accum))])))
+
       (define (splice l sep)
 	(if (null? l)
 	    #""
@@ -38,10 +48,10 @@
 	      (get-output-bytes p))))
       
       (define (split-crlf s)
-	(split s #rx#"\r\n"))
+	(drop-last-if-empty (split s #rx#"\r\n")))
 
       (define (split-lf s)
-	(split s #rx#"\n"))
+	(drop-last-if-empty (split s #rx#"\n")))
 
       (define (crlf->lf s)
 	(splice (split-crlf s) #"\n"))
@@ -55,8 +65,10 @@
       (define (string-lf->crlf s)
 	(regexp-replace* #rx"\n" s "\r\n"))
 
-      (define (string-split-crlf s)
-	(regexp-split #rx"\r\n" s))
+      (define (header->lines s)
+	(regexp-split #rx"\r\n" 
+		      ;; We don't want the extra empty line at the end:
+		      (substring s 0 (- (string-length s) 2))))
 
       (define (enumerate n)
 	(let loop ([n n][a null])

@@ -197,6 +197,19 @@
         (lambda ()
           (make-message 1.0 (make-default-entity) null)))
       
+      ;; Convert CRLF in input stream to LF
+      (define (convert-crlf input)
+	(let-values ([(f-input o) (make-pipe 4096)])
+	  (thread (lambda ()
+		    (let loop ()
+		      (when (regexp-match #"\r\n" input
+					  0 #f o)
+			(newline o)
+			(loop)))
+		    (close-output-port o)))
+	  f-input))
+		  
+
       (define mime-decode
         (lambda (entity input)
           (set-entity-body!
@@ -204,13 +217,16 @@
            (case (entity-encoding entity)
              ((quoted-printable)
               (lambda (output)
-                (qp-decode-stream input output)))
+		;; Convert CRLF in input stream to LF, since
+		;;  the qp decoder will keep the newline
+		;;  convention intact
+		(qp-decode-stream (convert-crlf input) output)))
              ((base64)
               (lambda (output)
 		(base64-decode-stream input output)))
              (else ;; 7bit, 8bit, binary
               (lambda (output)
-                (copy-port input output)))))))
+                (copy-port (convert-crlf input) output)))))))
 
       (define mime-analyze
         (opt-lambda (input (part #f))
@@ -268,7 +284,7 @@
                 [re:sep (regexp (string-append "^--" (regexp-quote boundary)))])
             (letrec ((eat-part (lambda ()
                                  (let-values ([(pin pout) (make-pipe)])
-                                   (let loop ((ln (read-line input)))
+                                   (let loop ((ln (read-bytes-line input)))
                                      (cond ((eof-object? ln)
                                             (close-output-port pout)
                                             (values pin;; part
@@ -282,8 +298,9 @@
                                             (close-output-port pout)
                                             (values pin #f #f))
                                            (else
-                                            (fprintf pout "~a~n" ln)
-                                            (loop (read-line input)))))))))
+					    (write-bytes ln pout)
+					    (newline pout)
+                                            (loop (read-bytes-line input)))))))))
               (eat-part) ;; preamble
               (let loop ()
                 (let-values ([(part close? eof?) (eat-part)])

@@ -153,7 +153,9 @@
                                 (ormap
                                  (lambda (enc data)
                                    (or (regexp-match-positions m (enclosure-subheader enc))
-                                       (regexp-match-positions m data)))
+                                       (ormap (lambda (bl)
+						(regexp-match-positions m bl))
+					      data)))
                                  enclosures enclosure-datas))
                             (loop)
                             b)))])
@@ -173,7 +175,7 @@
 			 (list
 			  "This is a multi-part message in MIME format."
 			  (format "--~a" boundary))
-			 (string-split-crlf
+			 (header->lines
 			  (insert-field
 			   "Content-Type"
 			   "text/plain; charset=UTF-8"
@@ -189,12 +191,11 @@
 			      (cons
 			       (format "--~a" boundary)
 			       (append
-				(string-split-crlf
+				(header->lines
 				 (enclosure-subheader enc))
 				data)))
 			    enclosures enclosure-datas))
 			  (list
-			   ""
 			   (format "--~a--" boundary))))))))
 
       (define (get-enclosure-type-and-encoding filename mailer-frame)
@@ -211,14 +212,15 @@
                    [alignment '(left center)])])
           (make-object message% (string-append 
                                  "File: "
-                                 (let ([l (string-length filename)])
-                                   (if (l . < . 58)
-                                       filename
-                                       (string-append
-                                        (substring filename 0 5)
-                                        "..."
-                                        (substring filename (- l 50) l)))))
-            d)
+				 (let ([filename (path->string filename)])
+				   (let ([l (string-length filename)])
+				     (if (l . < . 58)
+					 filename
+					 (string-append
+					  (substring filename 0 5)
+					  "..."
+					  (substring filename (- l 50) l))))))
+		       d)
           (let ([type-list (make-object choice% "Type:" types d void)]
                 [encoding-list (make-object choice% "Encoding:" encodings d void)]
 		[inline-check (make-object check-box% "Inline in recipient's view" d void)]
@@ -241,7 +243,7 @@
 				 (send type-list set-selection (findpos types t))
 				 (send encoding-list set-selection (findpos encodings e))
                                  (send inline-check set-value inline?)))]
-                    [suffix (let ([m (regexp-match "[.](.?.?.?)$" filename)])
+                    [suffix (let ([m (regexp-match "[.](.?.?.?)$" (path->string filename))])
                               (and m (cadr m)))])
                 (case (if suffix (string->symbol suffix) '???)
                   [(txt ss scm) (default "text/plain" "quoted-printable" #f)]
@@ -455,11 +457,11 @@
                              (when (and type encoding)
                                (let ([i (send enclosure-list new-item)]
                                      [enc (make-enclosure
-                                           file
+                                           (path->string file)
 					   (let ([fn (clean-filename
 						      (with-handlers ([void (lambda (x) "unknown")])
 							(let-values ([(base name dir?) (split-path file)])
-							  name)))])
+							  (path->string name))))])
 					     (insert-field
 					      "Content-Type" 
 					      (data-lines->data
@@ -613,7 +615,7 @@
       ;; clean-filename : string -> string
       ;; builds a filename from a name by sripping out bad chars.
       (define (clean-filename name)
-        (regexp-replace* "[ /:\\\"'`?*%<>$|]" name "_"))
+        (regexp-replace* "[ /:\\\"'`?*%<>$|\u100-\uFFFFFFF]" name "_"))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message Send                                          ;;

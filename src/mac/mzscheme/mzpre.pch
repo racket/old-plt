@@ -9,7 +9,7 @@
 #endif
 
 #ifdef OS_X
-  #include <Carbon/Carbon.h>
+  #include <Carbon/HIToolbox/Events.h>
 #else
 
   #define INCLUDE_WITHOUT_PATHS

@@ -26,8 +26,6 @@ static void strcpy(char *s, char *d)
 
 #include "simpledrop.h"
 
-extern char *wxFSSpecToPath(const FSSpec *);
-
 int scheme_mac_ready, scheme_mac_argc = 0;
 char **scheme_mac_argv;
 
@@ -209,15 +207,13 @@ static void Startup(char **argv, int argc)
 
 static int gone = 0;
 
-#ifndef OS_X
 #ifdef __cplusplus
 extern "C" {
 #endif
-  extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
+  extern char *scheme_mac_spec_to_path(FSSpec *spec);
 #ifdef __cplusplus
 };
 #endif
-#endif // OS_X
 
 static pascal short DoNothing(const AppleEvent *a, AppleEvent *b, long c)
 {
@@ -250,11 +246,7 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
   j = 0;
   for (i = 0; i < count; i++){
     AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
-#ifdef OS_X
-    files[i + j] = wxFSSpecToPath(&fss);
-#else        
-    files[i + j] = scheme_build_mac_filename(&fss, 0);
-#endif    
+    files[i + j] = scheme_mac_spec_to_path(&fss);
     if (!files[i + j])
      --j;
   }

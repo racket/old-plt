@@ -253,12 +253,10 @@ int wxMessageBox(char* message, char* caption, long style,
   return wxsMessageBox(message, caption, style, parent);
 }
 
-#ifndef OS_X
 extern "C" {
- extern char *scheme_build_mac_filename(FSSpec *f, int);
- extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
+ extern char *scheme_mac_spec_to_path(FSSpec *f);
+ extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
 };
-#endif
 
 //= T.P. ==============================================================================
 
@@ -402,7 +400,7 @@ char *wxFileSelector(char *message, char *default_path,
     	    
       for (index=1; index<=count; index++) {
         AEGetNthPtr(&(reply->selection),index,typeFSS, &theKeyword, &actualType, &fsspec,sizeof(fsspec),&actualSize);
-        temp = wxFSSpecToPath(&fsspec);
+        temp = scheme_mac_spec_to_path(&fsspec);
         newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
                                        strlen(temp) +
                                        log_base_10(strlen(temp)) + 3];
@@ -421,7 +419,7 @@ char *wxFileSelector(char *message, char *default_path,
       
       NavDisposeReply(reply);
       
-      return wxFSSpecToPath(&fsspec);
+      return scheme_mac_spec_to_path(&fsspec);
       
     } else { // saving file
         int strLen = 256;
@@ -470,7 +468,6 @@ char *wxFileSelector(char *message, char *default_path,
     AEDesc *startp = NULL;
     OSErr err;
     FSSpec fsspec;
-    long type;
     
     if (default_path && *default_path) {
       int len = strlen(default_path);
@@ -479,7 +476,7 @@ char *wxFileSelector(char *message, char *default_path,
       if (s[len - 1] != ':')
         s[len++] = ':';
       s[len] = 0;
-      if (scheme_mac_path_to_spec(s, &fsspec, &type)) {
+      if (scheme_mac_path_to_spec(s, &fsspec)) {
         startp = new AEDesc;
         if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp)) {
           startp = NULL;
@@ -529,7 +526,7 @@ char *wxFileSelector(char *message, char *default_path,
     	    		    &actualType, &fsspec,
     	    		    sizeof(fsspec),
     	    		    &actualSize);
-		temp = scheme_build_mac_filename(&fsspec, 0);
+		temp = scheme_mac_spec_to_path(&fsspec);
 		newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
 						       strlen(temp) +
 						       log_base_10(strlen(temp)) + 3];
@@ -548,7 +545,7 @@ char *wxFileSelector(char *message, char *default_path,
                         &actualSize);
        
 	    NavDisposeReply(reply);
-	    return scheme_build_mac_filename(&fsspec, 0);
+	    return scheme_mac_spec_to_path(&fsspec);
 	}
      } else 
        return NULL;
@@ -571,7 +568,7 @@ char *wxFileSelector(char *message, char *default_path,
 	   FSSpec sp;
 	   CInfoPBRec pb;
   	   OSErr myErr;
-	   if (scheme_mac_path_to_spec(default_path, &sp, NULL)) {
+	   if (scheme_mac_path_to_spec(default_path, &sp)) {
   	     pb.dirInfo.ioNamePtr = sp.name;
 	     pb.dirInfo.ioVRefNum = sp.parID; // sounds crazy, I know
 	     pb.dirInfo.ioFDirIndex = 0;
@@ -608,7 +605,7 @@ char *wxFileSelector(char *message, char *default_path,
 	if (!rep.sfGood)
 	  return NULL;
 	
-	name = scheme_build_mac_filename(&rep.sfFile, 0);
+	name = scheme_mac_spec_to_path(&rep.sfFile);
 	
 	if (flags & wxMULTIOPEN) {
 	    char *aggregate = new char[strlen(name) + log_base_10(strlen(name)) + 2];

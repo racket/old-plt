@@ -90,7 +90,6 @@
       (lambda x (size-font sub1))
       #\t))
 		 
-
   (define generic-frame%
     (class (fw:frame:standard-menus-mixin fw:frame:basic%) (name)
 

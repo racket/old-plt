@@ -123,8 +123,6 @@
 		 (send text lock #t)
 		 (send text end-edit-sequence)))])
 		 
-       (send font-name-control focus)
-
        (framework:preferences:add-callback
 	'drscheme:settings
 	(lambda (p v)

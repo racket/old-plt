@@ -93,7 +93,7 @@
   (require-for-syntax (lib "list.ss"))
   
 
-  (define frtime-version "0.2b -- Mon Jul 12 12:30:45 2004")
+  (define frtime-version "0.2b -- Tue Jul 13 13:39:45 2004")
   (define frtime-inspector (make-inspector))
   (print-struct #t)
 

@@ -586,8 +586,10 @@
 # undef HAS_STANDARD_IOB
 # define HAS_BSD_IOB
 
+#ifndef XONX
 # undef SYSTEM_TYPE_NAME
 # define SYSTEM_TYPE_NAME "macosx"
+#endif
 
 # define STACK_GROWS_DOWN
 # define SCHEME_BIG_ENDIAN

@@ -1,6 +1,10 @@
 ;; Interact with the stored data, the filesystem, etc. This can be swapped out
 ;; with another backend by changing the definitions of these procedures.
 
+;;; INVARIANT: A student in a course must be in the partners table, even if he
+;;;            or she is alone and cannot submit.
+;;;            This should be maintained by the database. Figure this out.
+
 (module backend mzscheme
   (require (lib "contract.ss")
            (lib "class.ss")
@@ -21,6 +25,13 @@
     (add-user! (string? number? . -> . any))
     (has-username? (string? number? . -> . boolean?))
     (courses (string? . -> . (listof course?)))
+    (can-add-partner? (number? number? . -> . boolean?))
+    (partners (number? number? . -> . (listof string?)))
+    (user-in-course? (string? number? . -> . boolean?))
+    (add-partner! (number? number? string? . -> . any))
+    (can-submit? (number? number? . -> . boolean?))
+    (id/username (string? . -> . number?))
+    (partnership-full? (number? number? . -> . boolean?))
     )
 
   (provide *connection*)
@@ -94,40 +105,174 @@
   (define (courses username)
     (let ((q (send *connection* query
                    (format
-                     (string-append "SELECT c.name, c.number, c_p.position "
-                                    "FROM courses c "
-                                    "JOIN course_people c_p "
-                                    "ON c.id = c_p.course_id "
-                                    "JOIN people p "
-                                    "ON p.id = c_p.person_id "
-                                    "WHERE p.username = '~a'")
-                           username))))
+                     (string-append
+                       "SELECT c.id, c.name, c.number, "
+                       "c_p.position, pt.can_submit, "
+                       "count(pt.partner_id) >= c.default_partnership_size "
+                       "FROM courses c "
+                       "JOIN course_people c_p ON c.id = c_p.course_id "
+                       "JOIN people p ON p.id = c_p.person_id "
+                       "LEFT JOIN partners pt ON pt.student_id = p.id "
+                       "WHERE pt.partner_id = "
+                       "(SELECT pt2.partner_id FROM partners pt2 "
+                       "JOIN people p2 ON p2.id = pt2.student_id "
+                       "WHERE p2.username = '~a' AND pt2.ended IS NULL)"
+                       "OR pt.partner_id IS NULL "
+                       "AND pt.ended IS NULL "
+                       "AND p.username = '~a' "
+                       "GROUP BY c.id, c.name, "
+                       "c.number, c_p.position, pt.can_submit, "
+                       "c.default_partnership_size")
+                     username username))))
       (cond
         ( (RecordSet? q)
           (map row->course (RecordSet-rows q)) )
         ( (ErrorResult? q)
-          (raise (make-exn:fail (format "An error occured: ~s~n"
-                                        (ErrorResult-message q))
-                              (current-continuation-marks))) )
-        ( else (raise (make-exn:fail (format "Unknown error: ~s~n" q)
+          (raise (make-exn:fail (string->immutable-string
+                                  (format "An error occured: ~s~n"
+                                          (ErrorResult-message q)))
+                                (current-continuation-marks))) )
+        ( else (raise (make-exn:fail (string->immutable-string
+                                       (format "Unknown error: ~s~n" q))
                                      (current-continuation-marks))) ))))
+
+  ;; The ID for a given username.
+  (define (id/username username)
+    (send *connection* query-value
+          (format "SELECT id FROM people WHERE username = '~a'"
+                  username)))
+
+  ;; Can the student add a partner?
+  (define (can-add-partner? sid cid)
+    (exists? "partners pt"
+             (format
+               (string-append
+                 "pt.ended IS NULL "
+                 "AND pt.partner_id = "
+                 " (SELECT partner_id FROM partners "
+                 "  WHERE student_id = ~a AND ended IS NULL) "
+                 "AND pt.course_id = ~a "
+                 "HAVING count(pt.partner_id) < "
+                 " (SELECT default_partnership_size "
+                 "  FROM courses WHERE id = ~a)")
+               sid cid cid)))
+
+  ;; All the partners for a student in a course
+  (define (partners sid cid)
+    (map bytes->string/utf-8
+         (send *connection* query-list
+               (format 
+                 (string-append
+                   "SELECT p.name "
+                   "FROM people p "
+                   "JOIN partners pt ON pt.student_id = p.id "
+                   "WHERE pt.ended IS NULL "
+                   "AND pt.partner_id =  "
+                   " (SELECT partner_id FROM partners "
+                   "  WHERE student_id = ~a AND ended IS NULL) "
+                   "AND pt.course_id = ~a "
+                   "AND p.id != ~a")
+                 sid cid sid))))
+
+  ;; Is the user in the course?
+  (define (user-in-course? username cid)
+    (exists?
+      (string-append
+        "people p "
+        "JOIN course_people c_p ON c_p.person_id = p.id "
+        "JOIN courses c ON c.id = c_p.course_id")
+      (format "p.username = '~a' AND c.id = ~a" username cid)))
+
+  ;; Add the student as a partner for this student.
+  (define (add-partner! sid cid username)
+    (let* ((p-sid (send *connection* query-value
+                        (format "SELECT id FROM people WHERE username = '~a'"
+                                username)))
+           (can-submit? 
+             (exists? "courses c JOIN partners pt ON pt.course_id = c.id"
+                      (format 
+                        (string-append
+                          "pt.course_id = ~a "
+                          "AND (pt.student_id = ~a OR pt.student_id = ~a) "
+                          "AND pt.ended IS NULL "
+                          "GROUP BY c.default_partnership_size "
+                          "HAVING c.default_partnership_size = (max(pt.partner_id) + 1) ")
+                        cid sid p-sid))))
+      (send *connection* exec
+            (format
+              (string-append
+                "UPDATE partners SET ended = now() "
+                "WHERE course_id = ~a "
+                "AND ended IS NULL "
+                "AND (student_id = ~a OR student_id = ~a)")
+              cid sid p-sid))
+      (send *connection* exec
+            (format
+              (string-append
+                "INSERT INTO partners "
+                "(student_id, partner_id, course_id, created, can_submit) "
+                "VALUES (~a, (SELECT max(partner_id) + 1 FROM partners), "
+                "~a, now(), '~a')")
+              sid cid (if can-submit? 't 'f)))
+      (send *connection* exec
+            (format
+              (string-append
+                "INSERT INTO partners "
+                "(student_id, partner_id, course_id, created, can_submit) "
+                "VALUES (~a, (SELECT max(partner_id) FROM partners), "
+                "~a, now(), '~a')")
+              p-sid cid (if can-submit? 't 'f)))))
+
+  ;; A student can submit assignments if the can_submit field is true.
+  (define (can-submit? sid cid)
+    (exists? "partners pt"
+             (format
+               (string-append
+                 "pt.can_submit = 't' "
+                 "AND pt.ended IS NULL "
+                 "AND pt.course_id = ~a "
+                 "AND pt.student_id = ~a")
+               cid sid)))
+
+  ;; Can the student modify his or her partnership?
+  (define (partnership-full? sid cid)
+    (exists? "partners pt JOIN courses c ON c.id = pt.course_id"
+             (format
+               (string-append
+                 "pt.partner_id = "
+                 " (SELECT partner_id FROM partners "
+                 "  WHERE student_id = ~a AND ended IS NULL) "
+                 "AND pt.course_id = ~a "
+                 "GROUP BY c.default_partnership_size "
+                 "HAVING count(pt.partner_id) >= c.default_partnership_size")
+               sid cid)))
 
   ;; ******************************************************************
 
   ;; Convert a row represented as a vector into a course.
   (define (row->course r)
-    (make-course (bytes->string/utf-8 (vector-ref r 0))
+    (make-course (vector-ref r 0)
                  (bytes->string/utf-8 (vector-ref r 1))
-                 (string->symbol (bytes->string/utf-8 (vector-ref r 2)))))
+                 (bytes->string/utf-8 (vector-ref r 2))
+                 (string->symbol (bytes->string/utf-8 (vector-ref r 3)))
+                 (let ((v (vector-ref r 4))) (if (sql-null? v) #f v))
+                 (vector-ref r 5)))
 
   ;; exists? : String String -> Boolean
   ;; Is something known and existant in the database?
   (define (exists? table where)
-    (not (= (length
-              (RecordSet-rows
-                (send *connection* query
-                      (string-append "SELECT 1 FROM " table " WHERE " where))))
-            0)))
+    (let ((q (send *connection* query
+                   (string-append "SELECT 1 FROM " table " WHERE " where))))
+      (cond
+        ( (RecordSet? q) (not (= (length (RecordSet-rows q)) 0)) )
+        ( (ErrorResult? q) (raise (make-exn:fail
+                                    (string->immutable-string
+                                      (bytes->string/utf-8
+                                        (ErrorResult-message q)))
+                                    (current-continuation-marks))) )
+        ( else (raise (make-exn:fail (string->immutable-string
+                                       (format "Got: ~s~n" q))
+                                    (current-continuation-marks))) ))))
 
   ;; dbify : String -> String
   ;; Escape any non-SQL-safe characters

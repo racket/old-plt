@@ -31,6 +31,7 @@
       (define page-student-main
         (page (session)
           "You Are Logged In As A Student"
+          (p (hyperlink (transition-student-partners session) "Partners"))
           (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
@@ -69,7 +70,6 @@
                 (password-input "password2")
                 (submit-button "Log in"))))
 
-
       ;; The courses a user is in.
       (define page-courses
         (page (session courses)
@@ -81,6 +81,7 @@
                           `(tr (td ,(hyperlink
                                       (transition-main 
                                         (make-session 
+                                          (session-id session)
                                           (session-username session)
                                           c))
                                       (course-name c)))
@@ -90,6 +91,22 @@
                                       "Student"
                                       "Non-student"))))
                         courses))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ;; Partnership management, student version
+      (define page-student-partners
+        (page (session partners)
+          "Partners"
+          (if (course-partnership-full? (session-course session))
+            ""
+            (form (transition-add-partner session) '()
+                  (text-input "Username" "username")
+                  (password-input "password")
+                  (submit-button "Add")))
+          '(h2 "Current Partners")
+          `(ul ,@(map (lambda (p) `(li ,p)) partners))
+          (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
 

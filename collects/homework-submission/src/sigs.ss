@@ -10,12 +10,15 @@
      page-create-user
      page-courses
      page-student-main
-     page-non-student-main))
+     page-student-partners
+     page-non-student-main
+     ))
 
   (define-signature transitions^
     (transition-login
      transition-main
      transition-student-main
+     transition-student-partners
      transition-non-student-main
      transition-log-in
      transition-log-out
@@ -23,6 +26,8 @@
      transition-update-password
      transition-create-user
      transition-create-a-user
-     transition-courses))
+     transition-courses
+     transition-add-partner
+     ))
 
   )

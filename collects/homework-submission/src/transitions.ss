@@ -27,6 +27,72 @@
       (define-transition transition-login
         (send/suspend/callback (page-login)))
 
+      ;; Direct transition to the login page. This clears the previously-
+      ;; stored continuations first.
+      (define-transition transition-log-out
+        (send/forward/callback (page-login)))
+
+      ;; Direct transition to the change password page.
+      (define-transition (transition-change-password session) 
+        (send/suspend/callback (page-change-password session)))
+
+      ;; Direction transition to the user creation page.
+      (define-transition transition-create-user
+        (send/suspend/callback (page-create-user)))
+
+      ;; Direct transition to the courses selection page.
+      (define-transition (transition-courses session)
+        (send/suspend/callback
+          (with-handlers ((exn:fail? (lambda (e)
+                                       (page-courses
+                                         session null (exn-message e)))))
+            (page-courses
+              session
+              (schedule (lambda () (backend-courses
+                                     (session-username session))))))))
+
+      ;; Direct transition to the main page for the position.
+      (define-transition (transition-main session)
+        (main session "Congrats, you've logged in."))
+
+      ;; Direct transition to the main student page.
+      (define-transition (transition-student-main session)
+        (main session "Congrats, you've logged in as a student."))
+
+      ;; Direct transition to the main non-student page.
+      (define-transition (transition-non-student-main session)
+        (main session "Congrats, you've logged in as a non-student."))
+
+      ;; update-course-partnership?/session : (session? . -> . session?)
+      ;; Update the can-submit? and partnership-full? fields of a course in a
+      ;; session. This is a common action.
+      (define (update-course-partnership?/session session)
+        (let ((c (session-course session)))
+          (make-session
+            (session-id session)
+            (session-username session)
+            (make-course
+              (course-id c)
+              (course-name c)
+              (course-number c)
+              (course-position c)
+              (schedule (lambda () (backend-can-submit?
+                                     (session-id session)
+                                     (course-id c))))
+              (schedule (lambda () (backend-partnership-full?
+                                     (session-id session)
+                                     (course-id c))))))))
+
+      ;; Direct transition to the partnership management page for students.
+      (define-transition (transition-student-partners session)
+        (send/suspend/callback
+          (page-student-partners
+            (update-course-partnership?/session session)
+            (schedule (lambda ()
+                        (backend-partners
+                          (session-id session)
+                          (course-id (session-course session))))))))
+
       ;; Action transition to the logged-in page.
       ;; ACTION: check that the username and password pair are correct.
       ;; If the username and password match, send page-courses; otherwise
@@ -39,18 +105,21 @@
               (page-login "Invalid username or password.")) )
           ( else 
             (send/suspend/callback
-              (page-courses (make-session username #f)
-                            (schedule (lambda () (backend-courses username)))
-                            "Congrats, you've logged in.")) )))
-
-      ;; Direct transition to the login page. This clears the previously-
-      ;; stored continuations first.
-      (define-transition transition-log-out
-        (send/forward/callback (page-login)))
-
-      ;; Direct transition to the change password page.
-      (define-transition (transition-change-password session) 
-        (send/suspend/callback (page-change-password session)))
+              (with-handlers ((exn:fail? (lambda (e)
+                                           (page-courses
+                                             (make-session 
+                                               (schedule
+                                                 (lambda ()
+                                                   (backend-id/username
+                                                     username)))
+                                               username #f)
+                                             null (exn-message e)))))
+                (page-courses
+                  (make-session 
+                    (schedule (lambda () (backend-id/username username)))
+                    username #f)
+                  (schedule (lambda () (backend-courses username)))
+                  "Congrats, you've logged in."))) )))
 
       ;; Action transition to the change password page.
       ;; ACTION: Change the password.
@@ -75,10 +144,6 @@
                 (lambda () (backend-update-password! username new-password1)))
               (main session "Your password has been changed.")
                ))))
-
-      ;; Direction transition to the user creation page.
-      (define-transition transition-create-user
-        (send/suspend/callback (page-create-user)))
 
       ;; Action transition to the logged-in page.
       ;; ACTION: create a user with a username and password. Check the
@@ -108,46 +173,93 @@
                                       (backend-create-account!
                                         name neu-id username password1)))
               (send/suspend/callback
-                (page-courses (make-session username #f)
-                              (schedule (lambda () (backend-courses username)))
-                                "Congrats, you've logged in.")) ))))
+                (with-handlers ((exn:fail? (lambda (e)
+                                             (page-courses
+                                               (make-session 
+                                                 (schedule
+                                                   (lambda ()
+                                                     (backend-id/username
+                                                       username)))
+                                                 username #f)
+                                               null (exn-message e)))))
+                  (page-courses
+                    (make-session 
+                      (schedule (lambda () (backend-id/username username)))
+                      username #f)
+                    (schedule (lambda () (backend-courses username)))
+                    "Congrats, you've logged in."))) ))))
 
-      ;; Direct transition to the courses selection page.
-      (define-transition (transition-courses session)
-        (send/suspend/callback
-          (page-courses
-            session
-            (schedule (lambda () (backend-courses
-                                   (session-username session)))))))
+      ;; Action transition to the partnership management page.
+      ;; Action: Add a student to the partnership for this student, if legal.
+      ;; Check that this student is not in a partnership of the correct size
+      ;; for the course, and that the selected partner entered the correct
+      ;; password. Add the selected partner to the partnership for this
+      ;; student. Send the partnership management page.
+      (define-action-transition (transition-add-partner session)
+        (username password)
+        (cond
+          ( (not (schedule
+                   (lambda ()
+                     (backend-can-add-partner?
+                       (session-id session)
+                       (course-id (session-course session))))))
+            (send/suspend/callback
+              (page-student-partners
+                (update-course-partnership?/session session)
+                (schedule (lambda ()
+                            (backend-partners
+                              (session-id session)
+                              (course-id (session-course session)))))
+                "Correct number of partners")) )
+          ( (not
+              (or
+                (schedule
+                  (lambda ()
+                    (backend-valid-username-password? username password)))
+                (schedule
+                  (lambda ()
+                    (backend-user-in-course?
+                      username (course-id (session-course session)))))))
+            (send/suspend/callback
+              (page-student-partners
+                (update-course-partnership?/session session)
+                (schedule (lambda ()
+                            (backend-partners
+                              (session-id session)
+                              (course-id (session-course session)))))
+                (format "~s is not in this course" username))) )
+          ( else
+            (let ((cid (course-id (session-course session)))
+                  (sid (session-id session)))
+              (schedule-transaction
+                (lambda () (backend-add-partner!  sid cid username)))
+              (send/suspend/callback
+                (page-student-partners
+                  (update-course-partnership?/session session)
+                  (schedule (lambda () (backend-partners sid cid)))
+                  (format "~s is added as a new partner for this course"
+                          username)))) )))
 
-      ;; Go to the main page for the position.
-      (define-transition (transition-main session)
-        (main session "Congrats, you've logged in."))
-
-      ;; Direct transition to the main student page.
-      (define-transition (transition-student-main session)
-        (main session "Congrats, you've logged in as a student."))
-
-      ;; Direct transition to the main non-student page.
-      (define-transition (transition-non-student-main session)
-        (main session "Congrats, you've logged in as a non-student."))
-
+      ;; **** Helpers ****
       ;; Go to the main page for the position.
       (define (main session message)
         (let ((c (session-course session)))
           (if (not c)
             (send/suspend/callback
-              (page-courses
-                session
-                (schedule
-                  (lambda () (backend-courses (session-username session))))
-                message))
-            (let ((p (course-position c)))
-              (case p
-                ( (student)
-                  (send/suspend/callback (page-student-main session message)) )
-                ( else 
-                  (send/suspend/callback (page-non-student-main session message)) ))))))
+              (with-handlers ((exn:fail? (lambda (e)
+                                           (page-courses
+                                             session null (exn-message e)))))
+                (page-courses
+                  session
+                  (schedule (lambda () (backend-courses
+                                         (session-username session))))
+                  message)))
+            (case (course-position c)
+              ( (student)
+                (send/suspend/callback (page-student-main session message)) )
+              ( else 
+                (send/suspend/callback
+                  (page-non-student-main session message)) )))))
 
       ))
 

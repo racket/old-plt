@@ -4,8 +4,16 @@ exec mzscheme -r "$0" "$@"
 |#
 
 (require (lib "class.ss")
-         "../src/backend.ss")
+         "../src/backend.ss"
+         "create-data.ss")
+(with-handlers ((exn? (lambda (e) (db-do "ROLLBACK") (raise e))))
+  (db-do "BEGIN")
+  (cleanup)
+  (setup)
+  (db-do "COMMIT")
+  )
 
+#|
 ;; db-do : String -> void
 ;; Execute the SQL statement.
 (define (db-do sql)
@@ -54,3 +62,4 @@ exec mzscheme -r "$0" "$@"
          "VALUES ((SELECT id FROM people WHERE name = 'The Test NonStudent'), "
          "(SELECT id FROM courses WHERE name = 'The Test Course'), "
          "'instructor')"))
+|#

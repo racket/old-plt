@@ -3,17 +3,26 @@
   (require (lib "contract.ss"))
 
   ;; A Session is a
-  ;; (make-session String Course)
-  (define-struct session (username course))
+  ;; (make-session Number String Course)
+  (define-struct session
+    (id username course)
+    (make-inspector))
 
   ;; A Course is a
-  ;; (make-course String String Symbol)
-  (define-struct course (name number position))
+  ;; (make-course Number String String Symbol Boolean Boolean)
+  (define-struct course
+    (id name number position can-submit? partnership-full?)
+    (make-inspector))
 
   (provide/contract
-    (struct course ((name string?)
+    (struct course ((id number?)
+                    (name string?)
                     (number string?)
-                    (position symbol?)))
-    (struct session ((username string?)
-                     (course (union course? not))))
+                    (position symbol?)
+                    (can-submit? boolean?)
+                    (partnership-full? boolean?)))
+    (struct session ((id number?)
+                     (username string?)
+                     (course (union course? not))
+                     ))
     ))

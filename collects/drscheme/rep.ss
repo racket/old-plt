@@ -885,6 +885,7 @@
 	  [running-callback-start
 	   (lambda ()
 	     (semaphore-wait turn-on-semaphore)
+	     (set! skip-turning-on #f)
 	     (unless waiting-to-turn-on
 	       (set! waiting-to-turn-on #t)
 	       (semaphore-post wait-to-turn-on))
@@ -894,7 +895,8 @@
 	     (semaphore-wait turn-on-semaphore)
 	     (when waiting-to-turn-on
 	       (set! skip-turning-on #t))
-	     (semaphore-post turn-on-semaphore))]
+	     (semaphore-post turn-on-semaphore)
+	     (conditionally-turn-running-off))]
 	  [running-thread
 	   (thread
 	    (lambda ()
@@ -904,6 +906,7 @@
 		(semaphore-wait turn-on-semaphore)
 		(unless skip-turning-on
 		  (update-running #t))
+		(set! waiting-to-turn-on #f)
 		(semaphore-post turn-on-semaphore)
 		(loop))))]
 
@@ -1077,11 +1080,11 @@
 			    (cond
 			     [(and (= depth 1)
 				   (not in-evaluation?))
+
 			      (system
 			       (lambda ()
 				 (reset-break-state)
-				 (running-callback-start)
-				 (set! depth (+ depth 1))))
+				 (running-callback-start)))
 
 			      (protect-user-evaluation
 			       (lambda ()
@@ -1089,8 +1092,10 @@
 				  (lambda ()
 				    (running-callback-stop)
 				    (wait-for-io-to-complete)
+				    (set! in-evaluation? #f)
 				    (set! depth (- depth 1)))))
 			       (lambda ()
+				 (set! in-evaluation? #t)
 				 (mzlib:thread:dynamic-enable-break
 				  (lambda ()
 				    (primitive-dispatch-handler eventspace)))))]

@@ -241,7 +241,9 @@
 							 (map typecheck-type (ast:type_declaration-params typedecl))
 							 "") name rtype)))]
 		      [($ ast:ptype_variant scll)
-		       (let* ([tscll (typecheck-scll name (ast:type_declaration-params typedecl) scll boundlist)]
+		       (let* ([nmapping (create-mapping (ast:type_declaration-params typedecl) null)]
+			      [nscll (map convert-param (repeat nmapping (length scll)) scll)]
+			      [tscll (typecheck-scll name (ast:type_declaration-params typedecl) scll boundlist)]
 			      [ntv (make-tvariant name (map syntax-object->datum (map car scll)) tscll)])
 			 (begin
 			   (hash-table-put! <constructors> name (cons name "some error"))
@@ -253,11 +255,11 @@
 	   (define (create-mapping params mapping)
 	     (if (null? params)
 		 mapping
-		 (if (get-type (syntax-object->datum (car params)))
+		 (if (get-type (syntax-object->datum (car params)) mapping)
 		     (create-mapping (cdr params) mapping)
 		     (create-mapping (cdr params) (cons (cons (syntax-object->datum (car params)) (fresh-type-var)) mapping)))))
 
-	   (define (convert-param mapping scll)
+	   (define (convert-param mapping current)
 	     (let* ([name (car current)]
 		    [ttypes (map convert-ttypes (repeat mapping (length (cdr current))) (cdr current))])
 	       (cons name ttypes)))
@@ -289,13 +291,6 @@
 		 null
 		 (let* ([current (car scll)]
 			[name (syntax-object->datum (car current))]
-			
-			[params-as-tvars (map make-tvar (map syntax-object->datum params))]
-			[utype-type (cond
-				     [(> (length params-as-tvars) 1) (make-<tuple> params-as-tvars)]
-				     [(= (length params-as-tvars) 1) (car params-as-tvars)]
-				     [else null])]
-			[ut/env (convert-tvars (make-usertype sname utype-type))]
 			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))))]
 )
 		   (begin
@@ -315,7 +310,7 @@
 			    [(= (length ttypes) 1)
 			     (make-tconstructor (car ttypes) sname)]
 			    [(= (length ttypes) 0)
-			     sname]) (typecheck-scll sname (cdr scll) boundlist))))))
+			     sname]) (typecheck-scll sname params (cdr scll) boundlist))))))
 
 	   (define (typecheck-match pelist testt context)
 	     (let* ([patenvs (map patcheck (repeat context (length pelist)) (repeat testt (length pelist)) (map car pelist))]
@@ -439,8 +434,13 @@
 		     (make-tvar (box null))]
 		    [($ ast:ptyp_var f)
 ;; Fix this! Should be similar to reading in the premade functions - or do we let the type checker figure it out later. Let's try that.
-		     
-		     (make-tvar (box null))]
+;		     (if (tvar? f)
+;			 f
+;			 (make-tvar (box null)))]
+		     (make-tvar (cond 
+				 [(syntax? f)  (syntax-object->datum f)]
+				 [(string? f) f]
+				 [else (raise-syntax-error #f (format "Bad ptyp_var: ~a" f))]))]
 		    [($ ast:ptyp_arrow label ct1 ct2)
 		     (make-arrow (list (typecheck-type ct1 boundlist)) (typecheck-type ct2 boundlist))]
 		    [($ ast:ptyp_tuple ctlist)
@@ -472,9 +472,9 @@
 			       ]
 			      [else
 			       (raise-syntax-error #f (format "~a takes no arguments but was given ~a" (car constructor)  ctlist) (at asttype (ast:core_type-src asttype)))]) )
-			   (if (not (null? (filter (lambda (bname) (equal? (unlongident name) bname)) boundlist)))
+			   (if (not (null? (filter (lambda (bname) (equal? (unlongident name) (car bname))) boundlist)))
 			       (unlongident name)
-			       (raise-syntax-error #f (format "Unknown constructor: ~a" (unlongident name)) (at asttype (ast:core_type-src asttype))))) )]
+			       (raise-syntax-error #f (format "Unknown constructor: ~a. Boundlist: ~a" (unlongident name) boundlist) (at asttype (ast:core_type-src asttype))))) )]
 		    [($ ast:ptyp_variant rfl abool ll)
 		     'comeslater
 		     ;; Need to implement this!!!
@@ -729,7 +729,7 @@
 	       (cons type uvprime)))
 
 	   (define (unify t1 t2 syn)
-;	     (pretty-print (format "unify ~a ~a" t1 t2))
+	     (pretty-print (format "unify ~a ~a" t1 t2))
 	     (cond
 ;	      [(eq? t1 t2) #t]
 	      [(tvar? t1) (unify-var t2 (tvar-tbox t1) syn)]

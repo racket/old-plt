@@ -79,7 +79,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   if (Title) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				      STATIC_FLAGS | WS_CLIPSIBLINGS,
+				      STATIC_FLAGS | WS_CLIPSIBLINGS
+				      | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
     HDC the_dc = GetWindowDC(static_label) ;
@@ -94,7 +95,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   HWND wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
 				     WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
-				     | WS_BORDER | WS_TABSTOP | WS_VISIBLE | WS_CLIPSIBLINGS,
+				     | WS_BORDER | WS_TABSTOP | WS_CLIPSIBLINGS
+				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				     wxhInstance, NULL);
   ms_handle = (HANDLE)wx_combo;
@@ -117,6 +119,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   Callback(func);
 
   SetSelection(0);
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
 
   return TRUE;
 }

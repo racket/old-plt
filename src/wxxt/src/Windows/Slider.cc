@@ -133,7 +133,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

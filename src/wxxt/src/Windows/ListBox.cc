@@ -159,7 +159,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

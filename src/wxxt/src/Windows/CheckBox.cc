@@ -109,7 +109,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }
@@ -168,7 +168,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

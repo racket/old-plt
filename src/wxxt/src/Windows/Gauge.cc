@@ -132,7 +132,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     SetValue(0);
 

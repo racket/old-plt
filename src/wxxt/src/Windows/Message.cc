@@ -330,7 +330,7 @@ Bool wxMessage::Create(wxPanel *panel,
     AllowResize(FALSE);
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

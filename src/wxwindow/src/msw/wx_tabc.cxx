@@ -25,7 +25,7 @@ BOOL wxTabChoice::MSWCommand(UINT param, WORD WXUNUSED(id))
 
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-			 int n, char **choices)
+			 int n, char **choices, int style)
   : wxItem(panel)
 {
   int x = 0, y = 0, i;
@@ -109,9 +109,15 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   SetSize(x, y, width, prc.bottom - prc.top);
 
-  ShowWindow(hwndTab, SW_SHOW);
+  if (style & wxINVISIBLE)
+    Show(FALSE);
+  else
+    ShowWindow(hwndTab, SW_SHOW);
+
   panel->AdvanceCursor(this);
   Callback(func);
+
+  
 }
 wxTabChoice::~wxTabChoice()
 {

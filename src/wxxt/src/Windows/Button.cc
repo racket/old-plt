@@ -105,7 +105,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, char *label,
     AllowResize(FALSE);
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }
@@ -162,7 +162,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     AllowResize(FALSE);
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

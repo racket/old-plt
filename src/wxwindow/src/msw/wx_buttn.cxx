@@ -77,7 +77,8 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
     height+= FB_MARGIN;
     
     wx_button =
-      wxwmCreateWindowEx(0, FafaButt, "?", FB_BITMAP | WS_CHILD | WS_CLIPSIBLINGS,
+      wxwmCreateWindowEx(0, FafaButt, "?", 
+			 FB_BITMAP | WS_CHILD | WS_CLIPSIBLINGS,
 			 0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 			 wxhInstance, NULL);
     SetBitmapDimensionEx(bitmap->ms_bitmap,
@@ -90,8 +91,8 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
   } else {
     wx_button =
       wxwmCreateWindowEx(0, "wxBUTTON", label, 
-			 BS_PUSHBUTTON | WS_CHILD
-			 | ((style & 1) ? WS_BORDER : 0) | WS_CLIPSIBLINGS,
+			 BS_PUSHBUTTON | WS_CHILD | WS_CLIPSIBLINGS
+			 | ((style & 1) ? WS_BORDER : 0),
 			 0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 			 wxhInstance, NULL);
   }
@@ -109,11 +110,17 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
   }
 
   SetSize(x, y, width, height);
-  ShowWindow(wx_button, SW_SHOW);
 
   Callback(Function);
 
+  if (!(style & wxINVISIBLE))
+    ShowWindow(wx_button, SW_SHOW);
+
   panel->AdvanceCursor(this);
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
+
   return TRUE;
 }
 

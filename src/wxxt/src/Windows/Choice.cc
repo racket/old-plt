@@ -160,7 +160,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 			 XtListHead);
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

@@ -102,9 +102,15 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 
   SetSize(x, y, width, height);
 
-  ShowWindow(wx_button, SW_SHOW);
+  if (!(style & wxINVISIBLE))
+    ShowWindow(wx_button, SW_SHOW);
+
   panel->AdvanceCursor(this);
   Callback(func);
+  
+  if (style & wxINVISIBLE)
+    Show(FALSE);
+
   return TRUE;
 }
 

@@ -158,7 +158,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     // ready
     return TRUE;

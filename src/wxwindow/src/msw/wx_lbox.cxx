@@ -112,7 +112,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (!Multiple)
     SendMessage(wx_list, LB_SETCURSEL, 0, 0);
 
-  ShowWindow(wx_list, SW_SHOW);
   no_items = N;
 
   ms_handle = (HANDLE)wx_list;
@@ -127,8 +126,18 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   ReleaseDC((HWND)ms_handle,the_dc) ;
 
   SetSize(x, y, width, height);
+
+  if (!(style & wxINVISIBLE)) {
+    if (static_label)
+      ShowWindow(static_label, SW_SHOW);
+    ShowWindow(wx_list, SW_SHOW);
+  }
+
   panel->AdvanceCursor(this);
   Callback(func);
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
 
   return TRUE;
 }

@@ -52,10 +52,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   windows_id = (int)NewId(this);
   
-  long msFlags = WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS;
-
   HWND wx_button =
-    wxwmCreateWindowEx(0, "zYzGauge", label, msFlags,
+    wxwmCreateWindowEx(0, "zYzGauge", label, 
+		       WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS,
 		       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 		       wxhInstance, NULL);
   
@@ -81,9 +80,18 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   ReleaseDC((HWND)ms_handle,the_dc) ;
 
   SetSize(x, y, width, height, wxSIZE_AUTO);
-  ShowWindow(wx_button, SW_SHOW);
+
+  if (!(style & wxINVISIBLE)) {
+    ShowWindow(wx_button, SW_SHOW);
+    if (static_label)
+      ShowWindow(static_label, SW_SHOW);
+  }
 
   panel->AdvanceCursor(this);
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
+
   return TRUE;
 }
 

@@ -74,7 +74,8 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   if (image) {
     static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
-				     | WS_VISIBLE | WS_GROUP | WS_CLIPSIBLINGS,
+				     | WS_GROUP | WS_CLIPSIBLINGS
+				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				     wxhInstance, NULL);
     
@@ -88,7 +89,8 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   } else if (is_icon) {
     static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
-				     | WS_VISIBLE | WS_GROUP | WS_CLIPSIBLINGS,
+				     | WS_GROUP | WS_CLIPSIBLINGS
+				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				     wxhInstance, NULL);
     
@@ -97,7 +99,8 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
 		(LPARAM)icn);
   } else {
     static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
-				     STATIC_FLAGS | WS_CLIPSIBLINGS,
+				     STATIC_FLAGS | WS_CLIPSIBLINGS
+				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				     wxhInstance, NULL);
   }
@@ -120,6 +123,10 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
 	  (is_icon ? icon_w : (image ? image->GetWidth() : -1)), 
 	  (is_icon ? icon_h : (image ? image->GetHeight() : -1)));
   panel->AdvanceCursor(this);
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
+
   return TRUE;
 }
 

@@ -129,7 +129,7 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   DWORD msflags = 0, exflags = 0;
   if (style & wxBORDER)
     exflags |= WS_EX_STATICEDGE;
-  msflags |= WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
+  msflags |= WS_CHILD | WS_CLIPSIBLINGS | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE);
 
   wxPanelWnd *wnd = new wxPanelWnd(cparent, wxPanelClassName, this, x, y, width, height, 
 				   msflags, exflags);
@@ -141,6 +141,9 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
     ((wxPanel *)parent)->AdvanceCursor(this);
   else
     InitEnable();
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
 
   return TRUE;
 }

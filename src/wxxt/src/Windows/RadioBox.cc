@@ -189,7 +189,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     }
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }
@@ -332,7 +332,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     }
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     return TRUE;
 }

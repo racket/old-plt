@@ -78,6 +78,8 @@ typedef short int WXTYPE;
 #define wxHSCROLL           0x00000002
 #define wxCAPTION           0x00000004
 
+#define wxINVISIBLE         0x00010000
+
 #define wxABSOLUTE_POSITIONING 8
                            // Hint to Windowing system not to try anything clever: ***OBSOLETE***
 /*

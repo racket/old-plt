@@ -129,7 +129,7 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
-      SetShown(FALSE);
+      Show(FALSE);
 
     // ready
     return TRUE;

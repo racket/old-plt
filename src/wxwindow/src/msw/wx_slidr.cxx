@@ -51,7 +51,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   // If label exists, create a static control for it.
   if (label) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				      STATIC_FLAGS | WS_CLIPSIBLINGS,
+				      STATIC_FLAGS | WS_CLIPSIBLINGS
+				      | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
     HDC the_dc = GetWindowDC(static_label) ;
@@ -64,7 +65,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
   if (!(style & (wxHORIZONTAL << 2))) {
     edit_value = wxwmCreateWindowEx(0, STATIC_CLASS, NULL,
-				    STATIC_FLAGS | WS_CLIPSIBLINGS,
+				    STATIC_FLAGS | WS_CLIPSIBLINGS
+				    | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				    0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				    wxhInstance, NULL);
   } else
@@ -74,7 +76,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   // Now create min static control
   sprintf(wxBuffer, "%d", min_value);
   static_min = wxwmCreateWindowEx(0, STATIC_CLASS, wxBuffer,
-				  STATIC_FLAGS | WS_CLIPSIBLINGS,
+				  STATIC_FLAGS | WS_CLIPSIBLINGS
+				  | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				  wxhInstance, NULL);
 #else
@@ -86,12 +89,13 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   
   long msStyle = 0;
   if (windowStyle & wxVERTICAL)
-    msStyle = SBS_VERT | WS_CHILD | WS_VISIBLE;
+    msStyle = SBS_VERT | WS_CHILD;
   else
-    msStyle = SBS_HORZ | WS_CHILD | WS_VISIBLE;
+    msStyle = SBS_HORZ | WS_CHILD;
     
   HWND scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", wxBuffer,
-				       msStyle | WS_CLIPSIBLINGS,
+				       msStyle | WS_CLIPSIBLINGS
+				       | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				       wxhInstance, NULL);
 
@@ -114,7 +118,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   // Finally, create max value static item
   sprintf(wxBuffer, "%d", max_value);
   static_max = wxwmCreateWindowEx(0, STATIC_CLASS, wxBuffer,
-				  STATIC_FLAGS | WS_CLIPSIBLINGS,
+				  STATIC_FLAGS | WS_CLIPSIBLINGS
+				  | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				  wxhInstance, NULL);
 #else
@@ -144,6 +149,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
   panel->AdvanceCursor(this);
   Callback(func);
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
 
   return TRUE;
 }

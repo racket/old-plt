@@ -71,7 +71,7 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   DWORD msflags = 0;
   if (style & wxBORDER)
     msflags |= WS_BORDER;
-  msflags |= WS_CHILD | WS_VISIBLE;
+  msflags |= WS_CHILD | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE);
   if (style & wxHSCROLL)
     msflags |= WS_HSCROLL;
   if (style & wxVSCROLL)
@@ -102,6 +102,9 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   if (style & wxGL_CONTEXT) {
     m_wxglc = new wxGLContext(this);
   }
+
+  if (style & wxINVISIBLE)
+    Show(FALSE);
 
   return TRUE;
 }

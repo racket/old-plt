@@ -142,7 +142,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   HWND the_handle = cparent->handle;
 
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
-				 GROUP_FLAGS,
+				 GROUP_FLAGS 
+				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				 0, 0, 0, 0,
 				 cparent->handle, (HMENU)NewId(this),
 				 wxhInstance, NULL);
@@ -188,7 +189,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
       bm_labels[i] = bmChoices[i];
       bm_labels[i]->selectedIntoDC++;
       radioButtons[i] = wxwmCreateWindowEx(0, FafaChck, tmp,
-					   groupStyle | BITRADIO_FLAGS,
+					   groupStyle | BITRADIO_FLAGS
+					   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 					   0, 0, 0, 0,
 					   the_handle, (HMENU)newId, wxhInstance, NULL);
 	
@@ -202,7 +204,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     } else {
       radioWidth[i] = radioHeight[i] = -1 ;
       radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
-					   groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
+					   groupStyle | RADIO_FLAGS
+					   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+					   0, 0, 0, 0,
 					   the_handle, (HMENU)newId, wxhInstance, NULL);
     }
 
@@ -217,7 +221,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
   // Create a dummy radio control to end the group.
   (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", 
-			   WS_GROUP | RADIO_FLAGS, 0, 0, 0, 0, 
+			   WS_GROUP | RADIO_FLAGS
+			   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+			   0, 0, 0, 0, 
 			   the_handle, (HMENU)NewId(this), wxhInstance, NULL);
 
   no_items = N;
@@ -228,6 +234,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   SetSize(x, y, width, height);
   panel->AdvanceCursor(this);
   Callback(func);
+
+  if (_style & wxINVISIBLE)
+    Show(FALSE);
 
   return TRUE;
 }

@@ -10,8 +10,6 @@
 
   (provide serve)
 
-  (define myprint printf)
-
   ;; for starters, we won't worry about headers or v-hosts
   ;; we'll just go directly off the URL
 
@@ -22,7 +20,6 @@
     (let* ([vp (url->virtual-path url)]
            [dir-part (virtual-path-directory-part vp)]
            [f-part (virtual-path-file-part vp)])
-      (myprint "dir-part = ~a   f-part = ~a~n"
                dir-part f-part)
       (cond
        [(and (not (null? dir-part))
@@ -37,7 +34,6 @@
   ;; serve-file: connection path -> void
   ;; serve the given file if it exists
   (define (serve-file conn path)
-    (myprint "the file: ~a~n" (path->string path))
     (cond
      [(file-exists? path)
       (output-file path (file-size path) 'get conn)]

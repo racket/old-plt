@@ -1,5 +1,6 @@
 (module test-server-resource-manager mzscheme
-  (require "test-harness.ss"
+  (require (lib "async-channel.ss")
+           "test-harness.ss"
            "server-resource-manager.ss")
 
   (define manager-custodian (make-custodian (current-custodian)))
@@ -103,6 +104,74 @@
                            (lambda (the-exn) #t)])
             (kill-server-resource! the-manager res1)
             #f)))
+
+
+  ;; ************************************************************
+  ;; ************************************************************
+  (define-struct (duvalaki server-resource) (cust) (make-inspector))
+
+  (define confirm-channel (make-async-channel))
+
+  (define (kill-duvalaki duv)
+    (sleep 3)
+    (async-channel-put confirm-channel 'goodbye)
+    (custodian-shutdown-all (duvalaki-cust duv)))
+
+  (define manager2-cust (make-custodian))
+
+  (define manager2 (start-server-resource-manager make-duvalaki kill-duvalaki
+                                                 manager2-cust))
+
+  ;; create-duv: -> (union duvalaki #f)
+  ;; if nothing exciting happens in 3 seconds return #f
+  (define (create-duv)
+    (let ([cust (make-custodian)]
+          [result-channel (make-channel)])
+      (parameterize ([current-custodian cust])
+        (thread
+         (lambda ()
+           (channel-put result-channel
+                        (new-server-resource manager2 300 cust))))
+        (thread
+         (lambda ()
+           (sleep 3)
+           (channel-put result-channel #f)))
+        (channel-get result-channel))))
+
+  (test "test for create-duv"
+        (lambda ()
+          (duvalaki? (create-duv))))
+
+  ;; should return only after kill operation is complete
+  (define duv1 (create-duv))
+
+  (test "test return only after kill"
+        (lambda ()
+          (kill-server-resource! manager2 duv1)
+          (eqv? 'goodbye (async-channel-try-get confirm-channel))))
+
+  ;; should not stall manager thread if calling thread gets killed
+
+  ;; create-and-kill-duvalaki: -> void
+  ;; create a duvalaki and kill it from the duvalaki thread
+  (define (create-and-kill-duvalaki)
+    (let ([cust (make-custodian)])
+      (parameterize ([current-custodian cust])
+        (thread
+         (lambda ()
+           (let ([duv (new-server-resource manager2 300 cust)])
+             (kill-server-resource! manager2 duv)))))))
+
+  (create-and-kill-duvalaki)
+  (test "check for dead after create-and-kill"
+        (lambda ()
+          (eqv? 'goodbye (async-channel-get confirm-channel))))
+
+  (test "should still be able to create one"
+        (lambda () (duvalaki? (create-duv))))
+
+  ;; ********************************************************************************
+  ;; some old stuff:
 
   ;; the following test is harder to make now that I have contracts
   ;; on the server-resource-manager interface

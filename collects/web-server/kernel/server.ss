@@ -7,7 +7,7 @@
 
   (define-signature server-config^
     (port max-waiting listen-ip initial-time-to-live serve-connection))
-  
+
   (define-signature server^ (serve))
 
   (define server@
@@ -18,8 +18,8 @@
       ;; serve: -> -> void
       ;; start the server and return a thunk to shut it down
       (define (serve)
-        (let* ([server-custodian (make-custodian)]
-               [shutdown-connection-manager (start-connection-manager server-custodian)])
+        (let* ([server-custodian (make-custodian)])
+          (start-connection-manager server-custodian)
           (parameterize ([current-custodian server-custodian])
             (let ([get-ports
                    (let ([listener (tcp-listen config:port config:max-waiting #t config:listen-ip)])
@@ -29,7 +29,7 @@
                  (server-loop server-custodian get-ports)))))
           (lambda ()
             (custodian-shutdown-all server-custodian))))
-      
+
       ;; server-loop: custodian (-> i-port o-port) -> void
       ;; start a thread to handle each incoming connection
       (define (server-loop server-custodian listener)
@@ -42,7 +42,7 @@
                   (new-connection config:initial-time-to-live
                                   ip op connection-cust #f))))
               (server-loop server-custodian listener)))))
-      
+
       ;; serve-connection: connection -> void
       ;; respond to all requests on this connection
       (define (serve-connection conn)
@@ -52,6 +52,6 @@
             [else
              (serve-connection conn)])))
       ))
-  
+
   )
-  
+

@@ -173,7 +173,7 @@
 (define a-special (make-special 7))
 (define b-special (make-special 19))
 
-(define (make-p stream special-size)
+(define (make-p stream special-size check-pos)
   ;; The `stream' arg is a list of strings and non-strings;
   ;;  characters from the strings are returned one by one,
   ;;  and the non-strings are returns as "special" literals.
@@ -209,9 +209,10 @@
      ;; Peek proc
      #f
      ;; Get special
-     (lambda ()
+     (lambda (where line col pos)
        (unless special-ready
 	 (error "special request when no special is ready"))
+       (check-pos where line col pos)
        (begin0
 	(values special-ready (special-size special-ready))
 	(set! special-ready #f))))))
@@ -222,7 +223,13 @@
 		    " "
 		    ,b-special
 		    "))")
-		  special-size)]
+		  special-size
+		  (lambda (w l c p)
+		    (test #f 'no-place w)
+		    (test 1 'no-place l)
+		    (test p 'no-place c)
+		    (test #f not (memq p '(7 15)))))]
+       [_ (port-count-lines! p)]
        [v (read p)])
   (test 'list car v)
   (test a-special cadr v)
@@ -234,8 +241,14 @@
 		    " "
 		    ,b-special
 		    " end))")
-		  special-size)]
-       [v (read-syntax 'dk p)]
+		  special-size
+		  (lambda (w l c p)
+		    (test 'dk 'dk-place w)
+		    (test 8 'no-place l)
+		    (test p + c 630)
+		    (test #f not (memq p '(707 715)))))]
+       [_ (port-count-lines! p)]
+       [v (read-syntax 'dk p '(7 70 700))]
        [l (syntax->list v)]
        [v2 (syntax-object->datum v)])
   (test 'list car v2)
@@ -243,10 +256,10 @@
   (test b-special caddr v2)
   (test 'end cadddr v2)
   
-  (test 2 syntax-position (car l))
-  (test 7 syntax-position (cadr l))
-  (test 15 syntax-position (caddr l))
-  (test 35 syntax-position (cadddr l))
+  (test 702 syntax-position (car l))
+  (test 707 syntax-position (cadr l))
+  (test 715 syntax-position (caddr l))
+  (test 735 syntax-position (cadddr l))
 
   ;; Read with specials as syntax syntax already:
   (let* ([stx v]
@@ -255,7 +268,12 @@
 		      " end))")
 		    (lambda (x)
 		      ;; pretend it's 100 wide
-		      100))]
+		      100)
+		    (lambda (w l c p)
+		      (test 'dk 'dk-place w)
+		    (test #f 'no-place l)
+		    (test #f 'no-place c)
+		    (test 7 'place p)))]
 	 [v (read-syntax 'dk p)]
 	 [l (syntax->list v)])
     ;; make sure syntax object is intact:
@@ -266,7 +284,12 @@
     (let* ([p (make-p `("(list "
 			,stx
 			" end))")
-		      (lambda (x) 100))]
+		      (lambda (x) 100)
+		    (lambda (w l c p)
+		      (test #f 'no-place w)
+		      (test #f 'no-place l)
+		      (test #f 'no-place c)
+		      (test 7 'place p)))]
 	   [v (read p)])
       (test `(list (list ,a-special ,b-special end) end) values v))))
 
@@ -276,7 +299,12 @@
 		    ,(list a-special b-special)
 		    " end))")
 		  (lambda (x)
-		    100))]
+		    100)
+		  (lambda (w l c p)
+		    (test 'dk 'dk-place w)
+		    (test #f 'no-place l)
+		    (test #f 'no-place c)
+		    (test 7 'place p)))]
        [v (read-syntax 'dk p)]
        [l (syntax->list v)])
   (test #t syntax? (cadr l))

@@ -306,4 +306,65 @@
 
 (test '("hey," "um..." "hi" "there") 'to-rest (send (instantiate to-rest3% ("hi" "there")) get-args))
 
+;; ------------------------------------------------------------
+;; Test public*, define-public, etc.
+
+(syntax-test #'(class object% public*))
+(syntax-test #'(class object% (public* . x)))
+(syntax-test #'(class object% (public* x)))
+(syntax-test #'(class object% (public* [x])))
+(syntax-test #'(class object% (public* [x . y])))
+(syntax-test #'(class object% (public* [x 7 8])))
+(syntax-test #'(class object% (public* [7 8])))
+
+(syntax-test #'(class object% override*))
+(syntax-test #'(class object% (override* . x)))
+(syntax-test #'(class object% (override* x)))
+(syntax-test #'(class object% (override* [x])))
+(syntax-test #'(class object% (override* [x . y])))
+(syntax-test #'(class object% (override* [x 7 8])))
+(syntax-test #'(class object% (override* [7 8])))
+
+(syntax-test #'(class object% private*))
+(syntax-test #'(class object% (private* . x)))
+(syntax-test #'(class object% (private* x)))
+(syntax-test #'(class object% (private* [x])))
+(syntax-test #'(class object% (private* [x . y])))
+(syntax-test #'(class object% (private* [x 7 8])))
+(syntax-test #'(class object% (private* [7 8])))
+
+(syntax-test #'(class object% define/public))
+(syntax-test #'(class object% (define/public)))
+(syntax-test #'(class object% (define/public x)))
+(syntax-test #'(class object% (define/public x 1 2)))
+(syntax-test #'(class object% (define/public 1 2)))
+(syntax-test #'(class object% (define/public (x 1) 2)))
+(syntax-test #'(class object% (define/public (1 x) 2)))
+(syntax-test #'(class object% (define/public (x . 1) 2)))
+
+(define c*1% (class object%
+	       (define/public (x) (f))
+	       (public*
+		[y (lambda () 2)]
+		[z (lambda () 3)])
+	       (private*
+		[f (lambda () 1)])
+	       (super-make-object)))
+
+(define c*2% (class c*1%
+	       (override*
+		[y (lambda () 20)])
+	       (define/override z (lambda () 30))
+	       (super-make-object)))
+
+(define o*1 (make-object c*1%))
+(define o*2 (make-object c*2%))
+
+(test 1 'o1 (send o*1 x))
+(test 2 'o1 (send o*1 y))
+(test 3 'o1 (send o*1 z))
+(test 1 'o2 (send o*2 x))
+(test 20 'o2 (send o*2 y))
+(test 30 'o2 (send o*2 z))
+
 (report-errs)

@@ -41,15 +41,18 @@
       (when drscheme-test-dir
 	(send top-panel stretchable-in-y #t)
 	(send bottom-panel stretchable-in-y #f)
-	(let* ([tests (function@:foldl 
-		       (lambda (x l)
-			 (if (and (file-exists? (build-path drscheme-test-dir x))
-				  (>= (string-length x) 3)
-				  (string=? ".ss" (substring x (- (string-length x) 3) (string-length x))))
-			     (cons x l)
-			     l))
-		       null
-		       (directory-list drscheme-test-dir))]
+	(let* ([tests
+		(function@:quicksort
+		 (function@:foldl 
+		  (lambda (x l)
+		    (if (and (file-exists? (build-path drscheme-test-dir x))
+			     (>= (string-length x) 3)
+			     (string=? ".ss" (substring x (- (string-length x) 3) (string-length x))))
+			(cons x l)
+			l))
+		  null
+		  (directory-list drscheme-test-dir))
+		 string<=?)]
 	       [lb (make-object mred:list-box% top-panel null null wx:const-single -1 -1 -1 -1 tests)])
 	  (make-object mred:button% bottom-panel (lambda (_1 _2)
 						   (let ([selection (send lb get-selection)])

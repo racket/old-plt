@@ -1296,6 +1296,7 @@ static Scheme_Object *atomic_sym;
 static Scheme_Object *stubborn_sym;
 static Scheme_Object *uncollectable_sym;
 static Scheme_Object *eternal_sym;
+static Scheme_Object *raw_sym;
 static Scheme_Object *fail_ok_sym;
 
 /* (malloc num type cpointer mode) -> pointer */
@@ -1304,7 +1305,8 @@ static Scheme_Object *fail_ok_sym;
  * - type: malloc the size of this type (or num instances of it),
  * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
- *   'atomic, 'stubborn, 'uncollectable, 'eternal
+ *   'atomic, 'stubborn, 'uncollectable, 'eternal, 'raw (the last one is for
+ *   using the real malloc)
  * - if an additional 'fail-ok flag is given, then scheme_malloc_fail_ok is
  *   used with the chosen malloc function
  * The arguments can be specified in any order at all since they are all
@@ -1356,6 +1358,7 @@ static Scheme_Object *foreign_malloc(int argc, Scheme_Object *argv[])
   else if (SAME_OBJ(mode, stubborn_sym))      mf = scheme_malloc_stubborn;
   else if (SAME_OBJ(mode, eternal_sym))       mf = scheme_malloc_eternal;
   else if (SAME_OBJ(mode, uncollectable_sym)) mf = scheme_malloc_uncollectable;
+  else if (SAME_OBJ(mode, raw_sym))           mf = malloc;
   else {
     scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
     return NULL; /* shush the compiler */
@@ -1377,6 +1380,23 @@ static Scheme_Object *foreign_end_stubborn_change(int argc, Scheme_Object *argv[
   if (ptr == NULL)
     scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   scheme_end_stubborn_change(ptr);
+  return scheme_void;
+}
+
+/* (free ptr) */
+/* This is useful for raw-malloced objects, including objects from C libraries
+ * that the library is mallocing itself. */
+#undef MYNAME
+#define MYNAME "free"
+static Scheme_Object *foreign_free(int argc, Scheme_Object *argv[])
+{
+  void *ptr;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
+  ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
+  if (ptr == NULL)
+    scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
+  free(ptr);
   return scheme_void;
 }
 
@@ -1815,6 +1835,8 @@ void scheme_init_foreign(Scheme_Env *env)
   uncollectable_sym = scheme_intern_symbol("uncollectable");
   MZ_REGISTER_STATIC(eternal_sym);
   eternal_sym = scheme_intern_symbol("eternal");
+  MZ_REGISTER_STATIC(raw_sym);
+  raw_sym = scheme_intern_symbol("raw");
   MZ_REGISTER_STATIC(fail_ok_sym);
   fail_ok_sym = scheme_intern_symbol("fail-ok");
   MZ_REGISTER_STATIC(abs_sym);
@@ -1863,6 +1885,8 @@ void scheme_init_foreign(Scheme_Env *env)
     scheme_make_prim_w_arity(foreign_malloc, "malloc", 1, 4), menv);
   scheme_add_global("end-stubborn-change",
     scheme_make_prim_w_arity(foreign_end_stubborn_change, "end-stubborn-change", 1, 1), menv);
+  scheme_add_global("free",
+    scheme_make_prim_w_arity(foreign_free, "free", 1, 1), menv);
   scheme_add_global("ptr-ref",
     scheme_make_prim_w_arity(foreign_ptr_ref, "ptr-ref", 2, 4), menv);
   scheme_add_global("ptr-set!",

@@ -1096,7 +1096,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   return NULL; /* shush the compiler */
 }
 
-{:(defsymbols atomic stubborn uncollectable eternal fail-ok):}
+{:(defsymbols atomic stubborn uncollectable eternal raw fail-ok):}
 
 /* (malloc num type cpointer mode) -> pointer */
 /* The arguments for this function are:
@@ -1104,7 +1104,8 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
  * - type: malloc the size of this type (or num instances of it),
  * - cpointer: a source pointer to copy contents from,
  * - mode: a symbol for different allocation functions to use - one of
- *   'atomic, 'stubborn, 'uncollectable, 'eternal
+ *   'atomic, 'stubborn, 'uncollectable, 'eternal, 'raw (the last one is for
+ *   using the real malloc)
  * - if an additional 'fail-ok flag is given, then scheme_malloc_fail_ok is
  *   used with the chosen malloc function
  * The arguments can be specified in any order at all since they are all
@@ -1154,6 +1155,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   else if (SAME_OBJ(mode, stubborn_sym))      mf = scheme_malloc_stubborn;
   else if (SAME_OBJ(mode, eternal_sym))       mf = scheme_malloc_eternal;
   else if (SAME_OBJ(mode, uncollectable_sym)) mf = scheme_malloc_uncollectable;
+  else if (SAME_OBJ(mode, raw_sym))           mf = malloc;
   else {
     scheme_signal_error(MYNAME": bad allocation mode: %V", mode);
     return NULL; /* shush the compiler */
@@ -1173,6 +1175,21 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   if (ptr == NULL)
     scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
   scheme_end_stubborn_change(ptr);
+  return scheme_void;
+}
+
+/* (free ptr) */
+/* This is useful for raw-malloced objects, including objects from C libraries
+ * that the library is mallocing itself. */
+{:(cdefine free 1):}
+{
+  void *ptr;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
+  ptr = SCHEME_FFIANYPTR_VAL(argv[0]);
+  if (ptr == NULL)
+    scheme_wrong_type(MYNAME, "non-null-cpointer", 0, argc, argv);
+  free(ptr);
   return scheme_void;
 }
 

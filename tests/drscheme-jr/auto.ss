@@ -189,6 +189,9 @@
   (define nss-diff (mk-diff no-struct-supertype?))
   (define ldo-diff (mk-diff lambda-in-define-only?))
 
+  (define false-string (pc-diff "false" "#f"))
+  (define true-string (pc-diff "true" "#t"))
+
   (start-copy jr-out copy-out #f)
   (start-copy jr-err copy-err #f)
   (start-copy copy-in jr-in #t)
@@ -211,7 +214,7 @@
   (try "(quote apple)" (pc-diff "'apple" "apple"))
   (try "'aPPle" (cs-diff (pc-diff "'aPPle" "aPPle")
 			 (pc-diff "'apple" "apple")))
-  (try "(eq? 'a 'A)" (cs-diff "#f" "#t"))
+  (try "(eq? 'a 'A)" (cs-diff false-string true-string))
   (try "apple" '(error "undefined.*apple$"))
   (try "'5" (gq-diff "5" '(error "'5 is not a symbol")))
   (try "'(apple)" (gq-diff (pc-diff "(list 'apple)" "(apple)")
@@ -253,7 +256,7 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;; prims ;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (try "(eq? 5 5)" 
-       (cb-diff '(error "expected symbols as arguments") "#t"))
+       (cb-diff '(error "expected symbols as arguments") true-string))
        
   (try "(cons 3 4)"
        (pl-diff '(error "second argument must be of type <list>")
@@ -307,10 +310,10 @@
   (try "(cond (else 53))" "53")
   (try "(cond (#t 54))" "54")
 
-  (try "(cond (5 5) (else 9))" (cb-diff '(error "neither #t nor #f") "5"))
-  (try "(if 5 51 5)" (cb-diff '(error "neither #t nor #f") "51"))
+  (try "(cond (5 5) (else 9))" (cb-diff '(error "neither true nor false") "5"))
+  (try "(if 5 51 5)" (cb-diff '(error "neither true nor false") "51"))
 
-  (try "(void? (cond (#f 32)))" (ft-diff "#t" '(error "no matching")))
+  (try "(void? (cond (#f 32)))" (ft-diff true-string '(error "no matching")))
 
   (try "(if #t 5 3)" "5")
   (try "(if (odd? 10) 5 3)" "3")
@@ -345,7 +348,7 @@
 	    (let ([z (set-a-b! anA 55)])
 	      (a-b anA)))
 	 "55")
-    (try '(a? (make-a 3 4)) "#t"))
+    (try '(a? (make-a 3 4)) true-string))
 
   (try "(define-struct (a 0) (b c))"
        (nss-diff '(error "ot an identifier")
@@ -371,7 +374,7 @@
 			  (odd? 9)
 			  (even? 10)
 			  (not (odd? 10))))
-	     "#t")
+	     true-string)
 
 	(try '(local ([define even?
 			(lambda (x)
@@ -387,7 +390,7 @@
 			  (odd? 9)
 			  (even? 10)
 			  (not (odd? 10))))
-	     "#t")
+	     true-string)
 
 	'...)
 
@@ -420,7 +423,7 @@
 
 	(try '(letrec ([x (lambda (y) x)])
 		(equal? x (x 5)))
-	     "#t")
+	     true-string)
 
 	(try '(letrec ([even?
 			(lambda (x)
@@ -436,7 +439,7 @@
 		     (odd? 9)
 		     (even? 10)
 		     (not (odd? 10))))
-	     "#t")
+	     true-string)
 
 	(try '(letrec ([x 5]
 		       [y x])
@@ -462,7 +465,7 @@
 	(try '(let ([g (rec f (lambda (x) f))])
 		(equal? g (g 5)))
 	     (nl-diff (mz-diff '(error "undefined.*: rec$")
-			       "#t")
+			       true-string)
 		      '(error "undefined.*: rec$")))
 	
 	'...)
@@ -500,22 +503,22 @@
   
   ;; ;;;;;;;;;;;;;;;;;; and, or ;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  (try '(and #t #t) "#t")
-  (try '(and #t #f) "#f")
-  (try '(and #f #t) "#f")
-  (try '(and #f #f) "#f")
-  (try '(or #t #t) "#t")
-  (try '(or #t #f) "#t")
-  (try '(or #f #t) "#t")
-  (try '(or #f #f) "#f")
+  (try '(and #t #t) true-string)
+  (try '(and #t #f) false-string)
+  (try '(and #f #t) false-string)
+  (try '(and #f #f) false-string)
+  (try '(or #t #t) true-string)
+  (try '(or #t #f) true-string)
+  (try '(or #f #t) true-string)
+  (try '(or #f #f) false-string)
 
-  (try '(and) (sao-diff "#t" '(error "Malformed and")))
-  (try '(or) (sao-diff "#f" '(error "Malformed or")))
+  (try '(and) (sao-diff true-string '(error "Malformed and")))
+  (try '(or) (sao-diff false-string '(error "Malformed or")))
     
-  (try '(and #t) (sao-diff "#t" '(error "Malformed and")))
-  (try '(or #t) (sao-diff "#t" '(error "Malformed or")))
-  (try '(and #f) (sao-diff "#f" '(error "Malformed and")))
-  (try '(or #f) (sao-diff "#f" '(error "Malformed or")))
+  (try '(and #t) (sao-diff true-string '(error "Malformed and")))
+  (try '(or #t) (sao-diff true-string '(error "Malformed or")))
+  (try '(and #f) (sao-diff false-string '(error "Malformed and")))
+  (try '(or #f) (sao-diff false-string '(error "Malformed or")))
 
   (try '(and 7) (sao-diff "7" '(error "Malformed and")))
   (try '(or 14) (sao-diff "14" '(error "Malformed or")))
@@ -524,9 +527,9 @@
   (try '(or 9 7) (cb-diff '(error "neither #t nor #f") "9"))
   (try '(and #t 7) (cb-diff '(error "neither #t nor #f") "7"))
   (try '(or #f 7) (cb-diff '(error "neither #t nor #f") "7"))
-  (try '(and #f 7) "#f")
-  (try '(or #t 7) "#t")
-  (try '(and 1 #f #f) (cb-diff '(error "neither #t nor #f") "#f"))
+  (try '(and #f 7) false-string)
+  (try '(or #t 7) true-string)
+  (try '(and 1 #f #f) (cb-diff '(error "neither #t nor #f") false-string))
   (try '(or 3 #t #t) (cb-diff '(error "neither #t nor #f") "3"))
 
   ;; ;;;;;;;;;;;;;;;;;; set!, begin, begin0, do, delay ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -556,10 +559,10 @@
 	     (pc-diff "(vector 0 1 2 3 4)"
 		      "#5(0 1 2 3 4)"))
 	
-	(try '(promise? (delay 5)) "#t")
+	(try '(promise? (delay 5)) true-string)
 	(try '(promise? (delay (let ([x (lambda (x) (x x))])
 				 (x x))))
-	     "#t")
+	     true-string)
 	(try '(let* ([x 5]
 		     [v (delay x)])
 		(force v))

@@ -168,7 +168,7 @@
   
   (define-struct (not-boolean struct:exn) (val))
   (define signal-not-boolean (make-parameter #f))
-  (define not-boolean-error-format "Condition value is neither #t nor #f: ~e")
+  (define not-boolean-error-format "Condition value is neither true nor false: ~e")
   
   ; there is a problem with Zodiac.  The problem is that Zodiac has not been
   ; distinguishing between top-level variables and those bound by unit clauses.

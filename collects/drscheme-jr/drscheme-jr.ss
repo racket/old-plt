@@ -500,7 +500,7 @@
 						  (mzlib function))]
 	   [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
 	   [interface : drscheme:interface^
-		      ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
+		      ((require-library-unit/sig "interface.ss" "userspce") aries drzodiac)]
 	   [drzodiac : zodiac:system^
 		     ((require-library-unit/sig "link.ss" "zodiac")
 		      (interface : zodiac:interface^)

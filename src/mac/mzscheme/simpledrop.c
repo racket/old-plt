@@ -1,7 +1,7 @@
 
 #ifndef OS_X
-  #include <Files.h>
-  #include <EPPC.h>
+# include <Files.h>
+# include <EPPC.h>
 #endif
 
 #ifndef FOR_STARTER
@@ -16,7 +16,7 @@
 extern int strlen(char *);
 
 #ifndef FOR_STARTER
-  extern int isspace(int);
+extern int isspace(int);
 #endif
 
 static void strcpy(char *s, char *d)
@@ -148,7 +148,11 @@ static void Startup(char **argv, int argc)
   if (!argc) {
     scheme_mac_argc = 1;
     scheme_mac_argv = (char **)scheme_malloc(sizeof(char *));
+#ifdef OS_X
+    scheme_mac_argv[0] = argv[0];
+#else
     scheme_mac_argv[0] = ThisAppName();
+#endif
     return;
   }
 
@@ -198,11 +202,15 @@ static void Startup(char **argv, int argc)
     scheme_mac_argv[0] = ThisAppName();
   }
 #else
+# ifdef OS_X
+  scheme_mac_argv = argv;
+  scheme_mac_argc = argc;
+# else
   scheme_mac_argc = argc + 1;
   scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
   for (i = 0; i < argc; i++)
     scheme_mac_argv[i + 1] = argv[i];
-  scheme_mac_argv[0] = ThisAppName();
+# endif
 #endif
 }
 
@@ -251,7 +259,7 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
     AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
     files[i + j] = scheme_mac_spec_to_path(&fss);
     if (!files[i + j])
-     --j;
+      --j;
   }
   AEDisposeDesc(&docList);
   
@@ -290,22 +298,22 @@ void Drop_GetArgs(int *argc, char ***argv)
     WaitNextEvent(highLevelEventMask, &event, -1, 0L);
     if (event.what == kHighLevelEvent) {
 #ifdef OS_X
-        AEProcessAppleEvent(&event);
+      AEProcessAppleEvent(&event);
 #else
-// high level events do not occur under OS X
-      if ((event.message == 'PLT ') && ((*(long *)&event.where) == 'cmdl')) {
-        /* Replaces OpenApp or OpenDocs: */
-        TargetID src;
-        unsigned long ref, len;
-        char *data;
-        data = (char *)scheme_malloc(5000);
-        len = 4999;
-        AcceptHighLevelEvent(&src, &ref, data, &len);
-        data[len] = 0;
-        scheme_mac_ready = 1;
-        parse_commandline(data, NULL, 0);
-      } else
-        AEProcessAppleEvent(&event);
+      // high level events do not occur under OS X
+	if ((event.message == 'PLT ') && ((*(long *)&event.where) == 'cmdl')) {
+	  /* Replaces OpenApp or OpenDocs: */
+	  TargetID src;
+	  unsigned long ref, len;
+	  char *data;
+	  data = (char *)scheme_malloc(5000);
+	  len = 4999;
+	  AcceptHighLevelEvent(&src, &ref, data, &len);
+	  data[len] = 0;
+	  scheme_mac_ready = 1;
+	  parse_commandline(data, NULL, 0);
+	} else
+	  AEProcessAppleEvent(&event);
 #endif
     }
   }

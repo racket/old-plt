@@ -1,8 +1,10 @@
 
-#include <Files.h>
-#ifndef OS_X
-  #include <EPPC.h>
-  #include <AppleEvents.h>
+#ifdef OS_X
+# include <Carbon/Carbon.h>
+#else
+# include <Files.h>
+# include <EPPC.h>
+# include <AppleEvents.h>
 #endif
 
 #ifndef FOR_STARTER
@@ -32,6 +34,9 @@ char **scheme_mac_argv;
 static char *ThisAppName(void)
 {	
 #ifndef FOR_STARTER
+# ifdef OS_X
+  return "not used";
+# else
   char *result, *dir;
   OSErr err;
   ProcessInfoRec info;
@@ -57,6 +62,7 @@ static char *ThisAppName(void)
   result[buffer[0] + dlen + 1] = 0;
   
   return result;
+# endif
 #else
   return "starter";
 #endif
@@ -84,7 +90,7 @@ static void parse_commandline(char *s, char *src, int addon)
 	token++;
       } else
 	ender = 0;
-    
+      
       if (ender) {
 	while (*token && (*token != ender))
 	  *(pos++) = *(token)++;
@@ -154,7 +160,7 @@ static void Startup(char **argv, int argc)
 
   scheme_mac_argv = NULL;
 
-#ifndef FOR_STARTER
+#if !defined(FOR_STARTER) && !defined(OS_X)
   if (argc == 1) {
     /* See if this file has startup flags */
     char buf[2048];
@@ -249,7 +255,7 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
     AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
     files[i + j] = scheme_mac_spec_to_path(&fss);
     if (!files[i + j])
-     --j;
+      --j;
   }
   AEDisposeDesc(&docList);
   
@@ -279,18 +285,20 @@ static void Install(void)
   err = AEInstallEventHandler(kCoreEventClass, kAEQuitApplication, NewAEEventHandlerUPP(SetUpQuitMessage), 0, 0);
 }
 
-void Drop_GetArgs(int *argc, char ***argv)
+void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
 {
+  *in_terminal = 1;
+
   Install();
   while (!scheme_mac_ready) {
     EventRecord event;
     
-    WaitNextEvent(highLevelEventMask, &event, -1, 0L);
+    WaitNextEvent(highLevelEventMask, &event, 0x7FFFFFFF, 0L);
     if (event.what == kHighLevelEvent) {
 #ifdef OS_X
-        AEProcessAppleEvent(&event);
+      AEProcessAppleEvent(&event);
 #else
-// high level events do not occur under OS X (per se, now they're just apple events)
+      // high level events do not occur under OS X (per se, now they're just apple events)
       if ((event.message == 'PLT ') && ((*(long *)&event.where) == 'cmdl')) {
         /* Replaces OpenApp or OpenDocs: */
         TargetID src;
@@ -307,13 +315,18 @@ void Drop_GetArgs(int *argc, char ***argv)
 #endif
     }
   }
-#ifdef OS_X // this is a truly obscene hack.
-  if (((*argc) > 1) && (strncmp((*argv)[1],"-psn_",5) == 0)) { // did the finder start this app?
-    *argc = scheme_mac_argc;
-    *argv = scheme_mac_argv;
+
+#ifdef OS_X
+  if (((*argc) > 1) && (strncmp((*argv)[1],"-psn_",5) == 0)) {
+    /* Finder started app --- no new arguments, but fix scheme_mac_argv[0] */
+    *in_terminal = 0;
+    scheme_mac_argv[0] = (*argv)[0];
+  } else {
+    /* Command-line start; don't change argv & argc: */
+    return;
   }
-#else    
+#endif  
+
   *argc = scheme_mac_argc;
   *argv = scheme_mac_argv;
-#endif  
 }

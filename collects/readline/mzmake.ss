@@ -27,7 +27,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   (ormap (lambda (x)
 	   (and (directory-exists? (build-path x "include" "readline"))
 		(or (file-exists? (build-path x "lib" "libreadline.a"))
-		    (file-exists? (build-path x "lib" "libreadline.so")))
+		    (file-exists? (build-path x "lib" "libreadline.so"))
+		    (file-exists? (build-path x "lib" "libreadline.dylib")))
 		x))
 	 search-path))
 
@@ -70,7 +71,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 
 ;; If we don't have a .so file, we need to make the linker
 ;;   use the whole archive:
-(when (not (file-exists? (build-path rl-path "lib" "libreadline.so")))
+(when (not (or (file-exists? (build-path rl-path "lib" "libreadline.so"))
+	       (file-exists? (build-path rl-path "lib" "libreadline.dylib"))))
   (case mach-id
     [(sparc-solaris i386-solaris)
      (add-flags current-extension-linker-flags

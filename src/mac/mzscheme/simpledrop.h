@@ -1,5 +1,5 @@
 /* Call to start: */
-extern void Drop_GetArgs(int *, char ***);
+extern void Drop_GetArgs(int *, char ***, int *in_terminal);
 
 /* You supply: */
 void Drop_Runtime(char **, int);

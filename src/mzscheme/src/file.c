@@ -3215,7 +3215,6 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
   do {
     char *s;
     int len;
-    base = TO_PATH(base);
     s = SCHEME_PATH_VAL(base);
     len = SCHEME_PATH_LEN(base);
     file = scheme_split_path(s, len, &base, &isdir);
@@ -3352,13 +3351,13 @@ static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[])
 
   bs = TO_PATH(argv[0]);
 
-  s = SCHEME_PATH_VAL(argv[0]);
-  len = SCHEME_PATH_LEN(argv[0]);
+  s = SCHEME_PATH_VAL(bs);
+  len = SCHEME_PATH_LEN(bs);
 
   if (has_null(s, len))
     raise_null_error("simplify-path", argv[0], "");
 
-  return do_simplify_path(argv[0], scheme_null);
+  return do_simplify_path(bs, scheme_null);
 }
 
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])

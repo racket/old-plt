@@ -15,12 +15,13 @@
    (lib "string-constant.ss" "string-constants")
    (lib "embedded-gui.ss" "embedded-gui")
    (lib "string-constant.ss" "string-constants")
+   "text-syntax-object.ss"
    "test-case.ss")
   
   (define-signature test-case-box^ (test-case-box% phase1 phase2))
   (define test-case-box@
     (unit/sig test-case-box^
-      (import drscheme:tool^)
+      (import drscheme:tool^ text->syntax-object^)
       
       (define test-case:program-editor% false)
       
@@ -57,46 +58,22 @@
                                     'unknown
                                     'disabled)))])
           
-          #;(any? (union integer? false?) (union integer? false?) (union integer? false?)
-                  . -> .
-                  any?)
+          #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
           (define/public read-special
             (opt-lambda (source (line false) (column false) (position false))
-              #;(syntax-object? (is-a?/c text%) . -> . syntax-object?)
-              ;; a syntax object representing the text with the color of the given object
+              #;((is-a?/c text%) . -> . syntax-object?)
               (define (text->syntax-object text)
-                (let ([port (open-input-text-editor text)])
-                  (define (read-all-syntax)
-                    (let* ([language-settings
-                            (preferences:get
-                             (drscheme:language-configuration:get-settings-preferences-symbol))]
-                           [language
-                            (drscheme:language-configuration:language-settings-language
-                             language-settings)]
-                           [settings
-                            (drscheme:language-configuration:language-settings-settings
-                             language-settings)])
-                      (if (drscheme:language-configuration:language-settings? language-settings)
-                          (let ([thunk (send language front-end/interaction
-                                             (open-input-text-editor text)
-                                             settings
-                                             (drscheme:teachpack:new-teachpack-cache '()))])
-                            (let loop ([stxs empty])
-                              (let ([expr (thunk)])
-                                (cond [(eof-object? expr) stxs]
-                                      [else (loop (cons expr stxs))]))))
-                          (error 'text->syntax-object "Invalid language settings"))))
-                  (match (read-all-syntax)
-                    [() (raise-read-error (string-constant test-case-empty-error)
-                                          source line #f position 1)]
-                    [(stx) stx]
-                    [(stx next rest-stx ...)
-                     (raise-read-error (string-constant test-case-too-many-expressions-error)
-                                       text
-                                       (syntax-line next)
-                                       (syntax-column next)
-                                       (syntax-position next)
-                                       (syntax-span next))])))
+                (match (text->syntax-objects text)
+                  [() (raise-read-error (string-constant test-case-empty-error)
+                                        source line #f position 1)]
+                  [(stx) stx]
+                  [(stx next rest-stx ...)
+                   (raise-read-error (string-constant test-case-too-many-expressions-error)
+                                     text
+                                     (syntax-line next)
+                                     (syntax-column next)
+                                     (syntax-position next)
+                                     (syntax-span next))]))
               (if enabled?
                   (with-syntax ([to-test-stx (text->syntax-object to-test)]
                                 [exp-stx (text->syntax-object expected)]
@@ -352,7 +329,7 @@
       (send tcb-sc set-version 1)
       (send (get-the-snip-class-list) add tcb-sc)
       ))
-
+  
   #;((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)
   ;; a snip which acts as a toggle button for rolling a window up and down
   (define turn-button-snip%

@@ -12,7 +12,8 @@
    (lib "string-constant.ss" "string-constants")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "private/test-case-box.ss"
-   "private/find-scheme-menu.ss")
+   "private/find-scheme-menu.ss"
+   "private/text-syntax-object.ss")
   
   (define-signature menu-extentions^ ())
   (define menu-extentions@
@@ -157,7 +158,8 @@
     (compound-unit/sig
      (import (TOOL : drscheme:tool^))
      (link (MENU   : menu-extentions^ (menu-extentions@ TOOL CASE))
-           (CASE   : test-case-box^ (test-case-box@ TOOL)))
+           (CASE   : test-case-box^ (test-case-box@ TOOL SYNTAX))
+           (SYNTAX : text->syntax-object^ (text->syntax-object@ TOOL)))
      (export (var (CASE phase1))
              (var (CASE phase2)))))
   )

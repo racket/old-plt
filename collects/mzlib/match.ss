@@ -114,7 +114,8 @@
            match-letrec 
            match-define)
 
-  (require-for-syntax (lib "stx.ss" "syntax"))
+  (require-for-syntax (lib "stx.ss" "syntax")
+                      (lib "etc.ss"))
  
  
   (define-struct (exn:misc:match exn:misc) (value))
@@ -190,15 +191,6 @@
                                       ((number? x) (number->string x))
                                       (else x)))
                                    l)))))
-           ;; we definitely want inturned variables here
-           (get-exp-var 
-            (let ((count 0))
-              (lambda () 
-                (set! count (add1 count))
-                (string->symbol 
-                 (string-append "exp" 
-                                (number->string count))))))
-
            ;; struct-pred-accessors - given a syntax object that is the 
            ;;   name of a structure this function returns two values: 
            ;; 1) the predicate function for that structure (i.e. posn?)
@@ -215,12 +207,12 @@
                                        (else (cons (car ac-list) 
                                                    (RC (cdr ac-list))))))))
                        (reverse (RC l))))))
-              (lambda (struct-name)
-                (let* ((info-on-struct (syntax-local-value struct-name))   
+              (lambda (struct-name failure-thunk)
+                (let* ((info-on-struct (syntax-local-value struct-name failure-thunk))   
                        (accessors (handle-acc-list 
                                    (list-ref info-on-struct accessors-index)))
                        (pred (list-ref info-on-struct pred-index)))
-                  (values pred accessors)))))
+                  (values pred accessors))))) 
            
            ;; unreachable - takes a list of unreached clauses and the original
            ;; match expression and prints a warning for each of the unreached
@@ -238,7 +230,16 @@
                    x
                    (syntax-object->datum match-expr)))
                 plist)))
-           
+           ;; it is important that we start
+           ;; the count over for each new row so
+           ;; that we can eliminate duplicate tests
+           (get-exp-var 
+            (let ((count 0))
+              (lambda () 
+                (set! count (add1 count))
+                (string->symbol 
+                 (string-append "exp" 
+                                (number->string count))))))
            ;; gen-match and its helper function gen are the workhorses
            ;; of the library.  It compiles a series of if expressions 
            ;; for a given pattern.  
@@ -263,19 +264,19 @@
            ;; and it should return a syntax object.
 
            (gen-match 
-            (lambda (exp tsf patlist stx . success-func) 
+            (opt-lambda (exp tsf patlist stx [success-func #f]) 
               (let* ((unrb (box #f))
                      (compiled-match
                       (quasisyntax/loc stx
                                        (let ((match-failure 
                                               (lambda () 
                                                 (match:error #,exp (quote #,stx)))))
-                                         #,(if (null? success-func)
-                                               (gen exp tsf patlist 
-                                                    stx unrb (syntax (match-failure)))
-                                               (gen exp tsf patlist 
-                                                    stx unrb (syntax (match-failure)) 
-                                                    (car success-func)))))))
+                                         #,(gen exp tsf patlist 
+                                                        stx 
+                                                        unrb 
+                                                        '()
+                                                        (syntax (match-failure)) 
+                                                        success-func)))))
                 (if (unbox unrb)
                   (unreachable (unbox unrb) stx))
                 compiled-match)))
@@ -296,7 +297,7 @@
            ;; bottom of the recursion tree.  For more information on this
            ;; function see the _next_ function.
            (gen 
-            (lambda (exp tsf patlist stx unreach-box failure-func . success-func)
+            (opt-lambda (exp tsf patlist stx unreach-box lbsf failure-func [success-func #f])
               (if (stx-null? patlist)
                   failure-func ;(quasisyntax/loc stx (match:error #,exp (quote #,stx)))
                   (with-syntax (((clause1 clauselist ...) patlist))
@@ -309,20 +310,26 @@
                                     ((pat body ...)
                                      (values (syntax pat) 
                                              (syntax (body ...)) #f)))))
-                      (let* ((fail (lambda (sf bv)
+                      (let* ((rest-of-clauses (syntax (clauselist ...)))
+                             (fail (lambda (sf bv lbsf)
+                                     ;; i don't pass the success-func forward
+                                     ;; because it is only used for match-define
+                                     ;; and match-letrec which only have one
+                                     ;; clause
                                      (gen exp
                                           sf
-                                          (syntax (clauselist ...)) 
+                                          rest-of-clauses
                                           stx 
                                           unreach-box
+                                          lbsf
                                           failure-func)))
                              (success 
                               (begin (let ((tail (syntax-object->datum 
                                                   (syntax (clauselist ...)))))
                                            (set-box! unreach-box 
                                                      (if (null? tail) #f tail)))
-                                     (if (null? success-func)
-                                         (lambda (sf bv)
+                                     (if (not success-func)
+                                         (lambda (sf bv lbsf)
                                            (if fail-sym 
                                                (quasisyntax/loc stx (call-with-current-continuation 
                                                   (lambda (fail-cont)
@@ -331,7 +338,7 @@
                                                            (lambda ()
                                                              (fail-cont 
                          ; it seems like fail is called twice in this situation
-                                                              #,(fail sf bv)))))
+                                                              #,(fail sf bv lbsf)))))
                                                       ((lambda (#,fail-sym
                                                                 #,@(map car bv))
                                                          #,@body) 
@@ -339,7 +346,7 @@
                                                        #,@(map cdr bv))))))
                                                (quasisyntax/loc stx ((lambda #,(map car bv) 
                                                     #,@body) #,@(map cdr bv)))))
-                                         (car success-func)))))
+                                         success-func))))
                         ;; next is the major internal function of gen
                         ;; This is implemented in what Wright terms as mock-continuation-passing
                         ;; style.  The functions that create the syntax for a match success and failure 
@@ -353,22 +360,49 @@
                         ;; look at how proper and improper lists are handled.
                         ;;
                         (let next ((p pat)
-                                   (e exp)
+                                   (e exp)  ;; this is the expression that has been abreviated 
+                                            ;; by reusing pairs
+                                   (ae exp) ;; this is the actual expression
+                                   (let-bound lbsf) ;; alist of let-bindings for pair reuse
                                    (sf tsf)
                                    (bv '())
                                    (kf fail)
                                    (ks success))
                           ;; this is a hacky way to get variables that are to be bound for a pattern
-                          (letrec ((getbindings               
+                          ;(write let-bound) (newline)
+                          ;(write e) (newline) (write ae) (newline)
+                          (letrec ((call-next-and-bind 
+                                    (lambda (pat e ae let-bound sf bv kf ks)
+                                      ;; first check to se if it is already bound by a let
+                                      ;; if not continue on with the bound name
+                                      ;; otherwise bind this one
+                                      (let ((binding-pair (assoc (syntax-object->datum ae) let-bound)))
+                                        (if binding-pair 
+                                            (next pat (cdr binding-pair) ae let-bound sf bv kf ks)
+                                            (let ((exp-var (get-exp-var)))
+                                              #`(let ((#,exp-var #,e))
+                                                  #,(next pat
+                                                          #`#,exp-var
+                                                          ae
+                                                          (cons (cons (syntax-object->datum ae) 
+                                                                      #`#,exp-var)
+                                                                let-bound)
+                                                          sf 
+                                                          bv 
+                                                          kf
+                                                          ks)))))))
+                                   (getbindings               
                                     (lambda (pat-syntax)
                                       (let/cc out
                                               (next
                                                pat-syntax
                                                (quote-syntax dummy)
+                                               (quote-syntax dummy)
+                                               let-bound
                                                '()
                                                '()
-                                               (lambda (sf bv) '(dummy-symbol))
-                                               (lambda (sf bv) (out (map car bv)))))))
+                                               (lambda (sf bv lbsf) '(dummy-symbol))
+                                               (lambda (sf bv lbsf) (out (map car bv)))))))
                                    (parse-quasi (lambda (phrase)
                                             (syntax-case phrase (unquote unquote-splicing)
                                               (p
@@ -380,6 +414,12 @@
                                                      (number? pat)))
                                                (syntax p))
                                               (p
+                                               ;; although it is not in the grammer for quasi patterns 
+                                               ;; it seems important to not allow unquote splicing to be 
+                                               ;; a symbol in this case `,@(a b c). In this unquote-splicing 
+                                               ;; is treated as a symbol and quoted to be matched.
+                                               ;; this is probably not what the programmer intends so
+                                               ;; it may be better to throw a syntax error
                                                (identifier? (syntax p))
                                                (syntax/loc phrase 'p))
                                               (,p (syntax p))
@@ -402,43 +442,62 @@
                                                (box? (syntax-object->datum (syntax p)))
                                                #`#,(box (parse-quasi (unbox (syntax-e (syntax p))))))
                                               (p (match:syntax-err
-                                                  (syntax-object->datum (syntax p)
-                                                  "syntax error in quasi-pattern")))))))
-
-
+                                                  (syntax-object->datum (syntax p))
+                                                  "syntax error in quasi-pattern"))))))
                             (syntax-case* p (_ quote quasiquote ? = and or not $ set! 
                                              get! ... ___ unquote unquote-splicing) stx-equal? 
-                              (_ (ks sf bv))
+                              (_ (ks sf bv let-bound))
                               (pt 
                                (and (identifier? (syntax pt))
+                                    (pattern-var? (syntax-object->datum (syntax pt)))
                                     (not (stx-dot-dot-k? (syntax pt))))
-                               (ks sf (cons (cons (syntax pt) e) bv)))
-                              (() (emit (quasisyntax/loc p (null? #,e)) sf bv kf ks))
+                               (ks sf (cons (cons (syntax pt) e) bv) let-bound))
+                              (() (emit (quasisyntax/loc p (null? #,e)) 
+                                        #`(null? #,ae)
+                                        let-bound
+                                        sf 
+                                        bv 
+                                        kf 
+                                        ks))
                               (pt 
                                ;; could convert the syntax once
                                (or (stx-? string? (syntax pt))  
                                    (stx-? boolean? (syntax pt)) 
                                    (stx-? char? (syntax pt)) 
                                    (stx-? number? (syntax pt)))
-                               (emit (quasisyntax/loc p (equal? #,e pt)) sf bv kf ks))
+                               (emit (quasisyntax/loc p (equal? #,e pt)) 
+                                     #`(equal? #,ae pt)
+                                     let-bound
+                                     sf bv kf ks))
                               ((quote _)
-                               (emit (quasisyntax/loc p (equal? #,e #,p)) sf bv kf ks))
+                               (emit (quasisyntax/loc p (equal? #,e #,p)) 
+                                     #`(equal? #,ae #,p)
+                                     let-bound
+                                     sf bv kf ks))
                               (`quasi-pat
-                               (next (parse-quasi (syntax quasi-pat)) e sf bv kf ks))
+                               (next (parse-quasi (syntax quasi-pat)) e ae let-bound sf bv kf ks))
                               ('item
-                               (emit (quasisyntax/loc p (equal? #,e #,p)) sf bv kf ks))
+                               (emit (quasisyntax/loc p (equal? #,e #,p)) 
+                                     #`(equal? #,ae #,p)
+                                     let-bound
+                                     sf bv kf ks))
                               ;('(items ...)
                                ;(emit (quasisyntax/loc p (equal? #,e #,p)) sf bv kf ks))
                               ((? pred pat1 pats ...)
                                (next (syntax (and (? pred) pat1 pats ...))
                                      e
+                                     ae
+                                     let-bound
                                      sf
                                      bv
                                      kf
                                      ks))
                               ;; could we check to see if a predicate is a procedure here?
                               ((? pred)
-                               (emit (quasisyntax/loc p (pred #,e)) sf bv kf ks))
+                               (emit (quasisyntax/loc p (pred #,e)) 
+                                     #`(pred #,ae)
+                                     let-bound
+                                     sf bv kf ks))
                               ;; syntax checking
                               ((? pred ...)
                                (match:syntax-err
@@ -447,7 +506,11 @@
                                     "a predicate pattern must have a predicate following the ?"
                                     "syntax error in predicate pattern")))
                               ((= op pat)
-                               (next (syntax pat)(quasisyntax/loc p (op #,e)) sf bv kf ks))
+                               (call-next-and-bind (syntax pat) 
+                                                   (quasisyntax/loc p (op #,e)) 
+                                                   #`(op #,ae) 
+                                                   let-bound 
+                                                   sf bv kf ks))
                               ;; syntax checking
                               ((= op ...)
                                (match:syntax-err
@@ -459,41 +522,52 @@
                                (let loop
                                    ((p (syntax (pats ...)))
                                     (seensofar sf)
-                                    (boundvars bv))
+                                    (boundvars bv)
+                                    (let-bound let-bound))
                                  (syntax-case p ()
-                                   (() (ks sf boundvars))
+                                   (() (ks sf boundvars let-bound))
                                    ((pat1 pats ...)
                                     (next (syntax pat1) 
                                           e 
+                                          ae
+                                          let-bound
                                           seensofar 
                                           boundvars  ;; keep collecting vars 
                                           kf
-                                          (lambda (sf bv) ;; if it succeeds check nest one
+                                          (lambda (sf bv lbsf) ;; if it succeeds check nest one
                                             (loop (syntax (pats ...))
-                                                  sf bv)))))))
+                                                  sf bv lbsf)))))))
                               ((or pats ...)
                                (let loop
                                    ((p (syntax (pats ...)))
                                     (seensofar sf)
-                                    (boundvars bv))
+                                    (boundvars bv)
+                                    (let-bound let-bound))
                                  (syntax-case p ()
-                                   (() (kf sf boundvars))
+                                   (() (kf sf boundvars let-bound))
                                    ((pat1 pats ...)
                                     (next (syntax pat1) 
                                           e 
+                                          ae
+                                          let-bound
                                           seensofar 
                                           bv         ;; get rid of collected vars and start over
-                                          (lambda (sf bv)             ; if it fails check next one  
+                                          (lambda (sf bv lbsf)             ; if it fails check next one  
                                             (loop (syntax (pats ...))
-                                                  sf bv))
+                                                  sf bv lbsf))
                                           ks)))))
                               ((not pat)
-                               (next (syntax pat) e sf bv ks kf)) ;; swap success and fail
+                               (next (syntax pat) e ae let-bound sf bv ks kf)) ;; swap success and fail
                               ;; could try to catch syntax local value error and rethrow syntax error
                               (($ struct-name fields ...)
                                (let ((num-of-fields (stx-length (syntax (fields ...)))))
                                  (let-values (((pred accessors) 
-                                               (struct-pred-accessors (syntax struct-name))))
+                                               (struct-pred-accessors 
+                                                (syntax struct-name)
+                                                (lambda () 
+                                                  (match:syntax-err
+                                                   (syntax struct-name) 
+                                                   "not a defined structure")))))
                                    (let ((dif (- (length accessors) num-of-fields)))
                                      (if (not (zero? dif))
                                          (match:syntax-err
@@ -502,16 +576,20 @@
                                            (if (> dif 0) "not enough " "too many ") 
                                            "fields for structure in pattern"))
                                          (emit (quasisyntax/loc stx (#,pred #,e)) 
+                                               #`(#,pred #,ae)
+                                               let-bound
                                                sf
                                                bv
                                                kf
                                                (let rloop ((n 0))
-                                                 (lambda (sf bv)
+                                                 (lambda (sf bv lbsf)
                                                    (if (= n num-of-fields)
-                                                       (ks sf bv)
-                                                       (next 
+                                                       (ks sf bv lbsf)
+                                                       (call-next-and-bind
                                                         (list-ref (syntax->list (syntax (fields ...))) n)
                                                         (quasisyntax/loc stx (#,(list-ref accessors n) #,e))
+                                                        #`(#,(list-ref accessors n) #,ae)
+                                                        let-bound
                                                         sf
                                                         bv
                                                         kf
@@ -528,7 +606,7 @@
                                     "syntax error in structure pattern")))
                               ((set! ident)
                                (identifier? (syntax ident))
-                               (ks sf (cons (cons (syntax ident) (setter e p)) bv)))
+                               (ks sf (cons (cons (syntax ident) (setter ae p)) bv) let-bound))
                               ;; syntax checking
                               ((set! ident ...)
                                (let ((x (length (syntax-e (syntax (ident ...))))))
@@ -541,7 +619,7 @@
                                                      "be one identifier after set! in pattern")))))
                               ((get! ident)
                                (identifier? (syntax ident))
-                               (ks sf (cons (cons (syntax ident) (getter e p)) bv)))
+                               (ks sf (cons (cons (syntax ident) (getter ae p)) bv) let-bound))
                               ((get! ident ...)
                                (let ((x (length (syntax-e (syntax (ident ...))))))
                                  (match:syntax-err
@@ -558,25 +636,29 @@
                                     (stx-dot-dot-k? (syntax dot-dot-k)))
                                (emit 
                                 (quasisyntax/loc stx (list? #,e))
+                                #`(list? #,ae)
+                                let-bound
                                 sf 
                                 bv 
                                 kf
-                                (lambda (sf bv)
+                                (lambda (sf bv lbsf)
                                   (let* ((k (stx-dot-dot-k? (syntax dot-dot-k)))
-                                         (ksucc (lambda (sf bv)
+                                         (ksucc (lambda (sf bv lbsf)
                                                   (let ((bound (getbindings (syntax pat)))) 
                                                     (syntax-case (syntax pat) (_)
-                                                      (_ (ks sf bv))
+                                                      (_ (ks sf bv lbsf))
                                                       (the-pat
                                                        (null? bound)
                                                        (with-syntax ((exp-sym (syntax exp-sym)))
                                                          (let* ((ptst (next 
                                                                        (syntax pat)
                                                                        (syntax exp-sym)
+                                                                       (syntax exp-sym)
+                                                                       lbsf
                                                                        sf
                                                                        bv
-                                                                       (lambda (sf bv) (syntax #f))
-                                                                       (lambda (sf bv) (syntax #t))))
+                                                                       (lambda (sf bv lbsf) (syntax #f))
+                                                                       (lambda (sf bv lbsf) (syntax #t))))
                                                                 (tst (syntax-case ptst ()
                                                                        ((pred eta)
                                                                         (and (identifier? 
@@ -590,13 +672,13 @@
                                                                         (quasisyntax/loc stx (lambda (exp-sym)
                                                                             #,ptst))))))
                                                            (assm (quasisyntax/loc stx (andmap #,tst #,e))
-                                                                 (kf sf bv)
-                                                                 (ks sf bv)))))
+                                                                 (kf sf bv lbsf)
+                                                                 (ks sf bv lbsf)))))
                                                       (id
                                                        (and (identifier? (syntax id))
                                                             (stx-equal? (syntax id)
                                                                         (car bound)))
-                                                       (next (syntax id) e sf bv kf ks))
+                                                       (next (syntax id) e ae let-bound sf bv kf ks))
                                                       (the-pat
                                                        (let ((binding-list-names 
                                                               (map (lambda (x)
@@ -619,15 +701,18 @@
                                                                               (lambda (x)
                                                                                 (quasisyntax/loc stx (reverse #,x)))
                                                                               binding-list-names))
-                                                                                  bv))
+                                                                                  bv) 
+                                                                       lbsf)
                                                                  #,(next (syntax the-pat)
                                                                          (syntax (car exp)) 
+                                                                         (syntax (car exp))
+                                                                         lbsf
                                                                          sf 
                                                                          bv  ;; we always start 
                                                                              ;; over with the old
                                                                              ;; bindings
                                                                          kf
-                                                                         (lambda (sf bv)
+                                                                         (lambda (sf bv lbsf)
                                                                            (quasisyntax/loc stx (loop 
                                                                               (cdr exp)
                                                                               #,@(map 
@@ -642,9 +727,14 @@
                                                                                     #,bindings-var))) 
                                                                                   bound binding-list-names)))))))))))))))
                                     (case k
-                                      ((0) (ksucc sf bv))
-                                      ((1) (emit (quasisyntax/loc stx (pair? #,e)) sf bv kf ksucc))
+                                      ((0) (ksucc sf bv let-bound))
+                                      ((1) (emit (quasisyntax/loc stx (pair? #,e)) 
+                                                 #`(pair? #,ae)
+                                                 lbsf
+                                                 sf bv kf ksucc))
                                       (else (emit (quasisyntax/loc stx (>= (length #,e) #,k))
+                                                  #`(>= (length #,ae) #,k)
+                                                  lbsf
                                                   sf bv kf ksucc)))))))
                               ;; handle proper and improper lists
                               ((car-pat . cdr-pat) ;pattern ;(pat1 pats ...)
@@ -653,24 +743,29 @@
                                              (stx-dot-dot-k? (syntax car-pat))))
                                (emit
                                 (quasisyntax/loc stx (pair? #,e))
+                                #`(pair? #,ae)
+                                let-bound
                                 sf
                                 bv
                                 kf
-                                (lambda (sf bv)
-                                  (next (syntax car-pat)
-                                        (add-a e)
+                                (lambda (sf bv lbsf)
+                                  (call-next-and-bind (syntax car-pat) 
+                                        #`(car #,e) ;(add-a e)
+                                        (add-a ae)
+                                        lbsf
                                         sf
                                         bv 
                                         kf
-                                        (lambda (sf bv)
-                                          (let ((cdr-exp-var (get-exp-var)))
-                                            #`(let ((#,cdr-exp-var (cdr #,e))) 
-                                                #,(next (syntax cdr-pat)
-                                                      #`#,cdr-exp-var
-                                                      sf
-                                                      bv
-                                                      kf
-                                                      ks))))))))
+                                        (lambda (sf bv lbsf)
+                                             (call-next-and-bind
+                                              (syntax cdr-pat)
+                                              #`(cdr #,e)
+                                              (add-d ae)
+                                              lbsf
+                                              sf
+                                              bv
+                                              kf
+                                              ks))))))
                               (pt 
                                (and (vector? (syntax-e (syntax pt)))
                                     (let* ((temp (syntax-e (syntax pt)))
@@ -686,26 +781,31 @@
                                       ;; 'pat' in pat ...
                                       (bound (getbindings (vector-ref vec-stx vlen))))
                                  (emit (quasisyntax/loc stx (vector? #,e))
+                                       #`(vector? #,ae)
+                                       let-bound
                                        sf
                                        bv
                                        kf
-                                       (lambda (sf bv)
+                                       (lambda (sf bv lbsf)
                                          (assm (quasisyntax/loc stx (>= (vector-length #,e) #,minlen))
-                                               (kf sf bv)
+                                               (kf sf bv lbsf)
                                                ((let vloop ((n 0))
-                                                  (lambda (sf bv)
+                                                  (lambda (sf bv lbsf)
                                                     (cond
                                                      ((not (= n vlen))
-                                                      (next (vector-ref vec-stx n)
-                                                            (quasisyntax/loc stx (vector-ref #,e #,n))
-                                                            sf
-                                                            bv
-                                                            kf
-                                                            (vloop (+ 1 n))))
+                                                      (call-next-and-bind
+                                                       (vector-ref vec-stx n)
+                                                       (quasisyntax/loc stx (vector-ref #,e #,n))
+                                                       #`(vector-ref #,ae #,n)
+                                                       lbsf
+                                                       sf
+                                                       bv
+                                                       kf
+                                                       (vloop (+ 1 n))))
                                                      ((eq? (syntax-object->datum 
                                                             (vector-ref vec-stx vlen)) 
                                                            '_)
-                                                      (ks sf bv))
+                                                      (ks sf bv lbsf))
                                                      (else 
                                                       (let* ((binding-list-names 
                                                               (map (lambda (x)
@@ -720,58 +820,76 @@
                                                              #,@(map (lambda (x) (quasisyntax/loc stx (#,x '())))
                                                                      binding-list-names))
                                                             (if (> #,vlen index)
-                                                                #,(ks sf (append (map cons bound
+                                                                #,(ks sf 
+                                                                      (append (map cons bound
                                                                                  binding-list-names)
-                                                                                 bv))
-                                                                #,(next (vector-ref vec-stx n)
-                                                                        (quasisyntax/loc stx (vector-ref #,e index))
-                                                                        sf
-                                                                        bv ;; we alway start over
-                                                                           ;; with the old bindings
-                                                                        kf
-                                                                        (lambda (sf bv)
-                                                                          (quasisyntax/loc stx (vloop 
-                                                                             (- index 1)
-                                                                             #,@(map 
-                                                                                 (lambda (b-var
+                                                                                 bv)
+                                                                      lbsf)
+                                                                #,(call-next-and-bind
+                                                                   (vector-ref vec-stx n)
+                                                                   (quasisyntax/loc stx (vector-ref #,e index))
+                                                                   #`(vector-ref #,ae index)
+                                                                   lbsf
+                                                                   sf
+                                                                   bv ;; we alway start over
+                                                                   ;; with the old bindings
+                                                                   kf
+                                                                   (lambda (sf bv lbsf)
+                                                                     (quasisyntax/loc 
+                                                                      stx (vloop 
+                                                                           (- index 1)
+                                                                           #,@(map 
+                                                                               (lambda (b-var
                                                                                         bindings-var)
-                                                                                       (quasisyntax/loc stx (cons
-                                                                                          #,(cdr
-                                                                                             (assq
-                                                                                              b-var
-                                                                                              bv))
-                                                                                          #,bindings-var)))
-                                                                                     bound
-                                                                                     binding-list-names)))))))))))))
+                                                                                 (quasisyntax/loc stx (cons
+                                                                                                       #,(cdr
+                                                                                                          (assq
+                                                                                                           b-var
+                                                                                                           bv))
+                                                                                                       #,bindings-var)))
+                                                                               bound
+                                                                               binding-list-names)))))))))))))
                                                 sf
-                                                bv))))))
+                                                bv
+                                                lbsf))))))
                               (pt 
                                (stx-? vector? (syntax pt))
                                (let ((vlen (stx-? vector-length (syntax pt))))
                                  (emit 
                                   (quasisyntax/loc stx (vector? #,e))
+                                  #`(vector? #,ae)
+                                  let-bound
                                   sf bv kf
-                                  (lambda (sf bv)
+                                  (lambda (sf bv lbsf)
                                     (emit (quasisyntax/loc stx (equal? (vector-length #,e) #,vlen))
+                                          #`(equal? (vector-length #,ae) #,vlen)
+                                          lbsf
                                           sf bv kf
                                           (let vloop ((n 0))
-                                            (lambda (sf bv)
+                                            (lambda (sf bv lbsf)
                                               (if (= n vlen)
-                                                  (ks sf bv)
-                                                  (next (vector-ref (syntax-e (syntax pt)) n)
-                                                        (quasisyntax/loc stx (vector-ref #,e #,n))
-                                                        sf
-                                                        bv
-                                                        kf
-                                                        (vloop (+ 1 n)))))))))))
+                                                  (ks sf bv lbsf)
+                                                  (call-next-and-bind 
+                                                   (vector-ref (syntax-e (syntax pt)) n)
+                                                   (quasisyntax/loc stx (vector-ref #,e #,n))
+                                                   #`(vector-ref #,ae #,n)
+                                                   lbsf
+                                                   sf
+                                                   bv
+                                                   kf
+                                                   (vloop (+ 1 n)))))))))))
                               (pt 
                                (stx-? box? (syntax pt))
                                (emit 
                                 (quasisyntax/loc stx (box? #,e))
+                                #`(box? #,ae)
+                                lbsf
                                 sf bv kf
-                                (lambda (sf bv)
-                                  (next (unbox (syntax-e (syntax pt)))
+                                (lambda (sf bv lbsf)
+                                  (call-next-and-bind (unbox (syntax-e (syntax pt)))
                                         (quasisyntax/loc stx (unbox #,e))
+                                        #`(unbox #,ae)
+                                        lbsf
                                         sf
                                         bv
                                         kf
@@ -789,11 +907,11 @@
            ;; emit adds implied truths to the test seen so far list so that
            ;; these truths can be checked against later.
            (emit
-            (lambda (tst sf bv kf ks)
-              (let ((test (syntax-object->datum tst)))
+            (lambda (tst act-test lbsf sf bv kf ks)
+              (let ((test (syntax-object->datum act-test)))
                 (cond
-                 ((in test sf) (ks sf bv))
-                 ((in `(not ,test) sf) (kf sf bv))
+                 ((in test sf) (ks sf bv lbsf))
+                 ((in `(not ,test) sf) (kf sf bv lbsf))
                  (else
                   (let* ((pred (car test))
                          (exp (cadr test))
@@ -816,8 +934,8 @@
                           (if (equal? pred 'list?)
                               (list `(not (null? ,exp)))
                               '()))
-                         (s (ks (cons test (append implied sf)) bv))
-                         (k (kf (cons `(not ,test) (append not-imp sf)) bv)))
+                         (s (ks (cons test (append implied sf)) bv lbsf))
+                         (k (kf (cons `(not ,test) (append not-imp sf)) bv lbsf)))
                     (assm tst k s)))))))
 
            ;; assm - this function is responsible for constructing the actual
@@ -1184,9 +1302,9 @@
                   (let* ((**match-bound-vars** '())
                          (compiled-match (gen-match (syntax the-exp);(syntax (list exp ...)) 
                                              '() 
-                                             (list (syntax ((pat ...) never-used))) 
+                                             (syntax (((pat ...) never-used))) 
                                              stx
-                                             (lambda (sf bv)
+                                             (lambda (sf bv lbsf)
                                                (set! **match-bound-vars** bv) 
                                                (quasisyntax/loc stx (begin 
                                                                       #,@(map (lambda (x)
@@ -1210,9 +1328,9 @@
                        (compiled-match 
                         (gen-match (syntax the-exp) 
                                    '() 
-                                   (list (syntax/loc (syntax pat) (pat never-used))) 
+                                   (syntax/loc (syntax pat) ((pat never-used))) 
                                    stx
-                                   (lambda (sf bv)
+                                   (lambda (sf bv lbsf)
                                      (set! **match-bound-vars** bv) 
                                      (quasisyntax/loc stx (begin 
                                                             #,@(map (lambda (x)
@@ -1235,3 +1353,4 @@
             match-define-mac)))
 
 )
+ ;end

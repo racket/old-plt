@@ -1217,7 +1217,7 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
       v = scheme_sync(2, a);
       END_ESCAPEABLE();
 
-      if (!SAME_OBJ(v, a[2]))
+      if (!SAME_OBJ(v, a[1]))
 	result = v;
     } else {
       scheme_block_until((Scheme_Ready_Fun)do_check_for_nested_event, NULL,

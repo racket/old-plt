@@ -199,7 +199,7 @@ Scheme_Env *scheme_basic_env()
     int i, k;
 
 #ifndef USE_TAGGED_ALLOCATION
-    Scheme_Local *all;
+    GC_CAN_IGNORE Scheme_Local *all;
 
     all = (Scheme_Local *)scheme_malloc_eternal(sizeof(Scheme_Local) * 2 * MAX_CONST_LOCAL_POS);
 # ifdef MEMORY_COUNTING_ON

@@ -85,10 +85,10 @@ version of the procedure, but the old information is also preserved.
 To retireve all profiling information accumulated so far, call
 `get-profile-results', which returns a list of lists that contain:
 
+  * the number of times the procedure was called.
+
   * the number of milliseconds of process time consumed by the
     procedure.
-
-  * the number of times the procedure was called.
 
   * the inferred name or source of the procedure.
 

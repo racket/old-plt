@@ -136,7 +136,7 @@
 	     (compile-file src dest
 			   (if eval?
 			       (lambda (expr)
-				 (expand-top-level-with-compile-time-evals expr))
+				 (expand-syntax-top-level-with-compile-time-evals expr))
 			       values)))))
 	(printf " [output to \"~a\"]~n" dest))
 

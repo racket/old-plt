@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.6 1998/07/09 18:09:44 mflatt Exp $
+ * $Id: ListBox.cc,v 1.7 1998/07/09 22:45:03 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -322,7 +322,9 @@ void wxListBox::SetInternalData(void)
 	ww, TRUE, (Boolean*)NULL);
    
     /* MATTHEW: Make sure current scroll pos is legal. */
-    Scroll(0, GetScrollPos(wxVERTICAL));
+    Position pos;
+    XtVaGetValues(X->handle, XtNy, &pos, NULL);
+    Scroll(0, pos);
 }
 
 void wxListBox::SetFirstItem(int n)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Gauge.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: Gauge.cc,v 1.2 1998/07/04 03:17:36 mflatt Exp $
  *
  * Purpose: gauge panel item
  *
@@ -123,6 +123,8 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 			    ? wxDEFAULT_GAUGE_WIDTH
 			    : lvh + wxDEFAULT_GAUGE_HEIGHT)));
     AddEventHandlers();
+
+    SetValue(0);
 
     return TRUE;
 }

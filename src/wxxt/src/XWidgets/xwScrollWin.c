@@ -650,8 +650,8 @@ void xws_set_scroll_direct(self,hlen,hpage,hpos,vlen,vpage,vpos)Widget self;long
 #endif
 #line 556 "XWidgets/xwScrollWin.w"
 {
-  XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, (float)hpos / hlen, (float)hpage / (hlen + hpage));
-  XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, (float)vpos / vlen, (float)vpage / (vlen + vpage));
+  XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, !hlen ? 0 : (float)hpos / hlen, (float)hpage / (hlen + hpage));
+  XfwfSetScrollbar(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, !vlen ? 0 : (float)vpos / vlen, (float)vpage / (vlen + vpage));
 }
 #line 561 "XWidgets/xwScrollWin.w"
 /*ARGSUSED*/

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.8 1998/04/10 15:07:22 mflatt Exp $
+ * $Id: Window.cc,v 1.9 1998/04/11 13:57:32 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -495,6 +495,9 @@ int wxWindow::GetScrollPos(int orient)
 {
     if (!X->scroll) return 0; // window is not scrollable
 
+    if (!(misc_flags & NO_AUTO_SCROLL_FLAG))
+      return 0;
+ 
     if (misc_flags & NO_AUTO_SCROLL_FLAG) {
       return orient == wxHORIZONTAL ? hs_pos : vs_pos;
     } else {
@@ -508,23 +511,27 @@ int wxWindow::GetScrollRange(int orient)
 {
     if (!X->scroll) return 0; // window is not scrollable
 
-    if (misc_flags & NO_AUTO_SCROLL_FLAG) {
-      return orient == wxHORIZONTAL ? hs_width : vs_width;
-    } else {
-      Dimension len;
-      XtVaGetValues(X->handle, orient == wxHORIZONTAL ? XtNwidth : XtNheight, &len, NULL);
-      return len;
-    }
+    if (!(misc_flags & NO_AUTO_SCROLL_FLAG))
+      return 0;
+ 
+    return orient == wxHORIZONTAL ? hs_width : vs_width;
 }
 
 int wxWindow::GetScrollPage(int orient)
 {
   if (!X->scroll) return 0; // window is not scrollable
   
-  if (misc_flags & NO_AUTO_SCROLL_FLAG) {
-    return (orient == wxHORIZONTAL) ? hs_page : vs_page;
+    if (!(misc_flags & NO_AUTO_SCROLL_FLAG))
+      return 0;
+ 
+  if (orient == wxHORIZONTAL) {
+    if (!hs_width)
+      return 0;
+    return hs_page;
   } else {
-    return 1;
+    if (!vs_width)
+      return 0;
+    return vs_page;
   }
 }
 
@@ -590,45 +597,51 @@ void wxWindow::SetScrollArea(int gwd, int ght)
 
 void wxWindow::SetScrollPos(int orient, int pos)
 {
-    if (orient == wxHORIZONTAL)	wxWindow::Scroll(pos < 0 ? 0 : pos, -1);
-    else			wxWindow::Scroll(-1, pos < 0 ? 0 : pos);
+  if (!(misc_flags & NO_AUTO_SCROLL_FLAG))
+    return;
+  
+  if (orient == wxHORIZONTAL)	wxWindow::Scroll(pos < 0 ? 0 : pos, -1);
+  else			        wxWindow::Scroll(-1, pos < 0 ? 0 : pos);
 }
 
 void wxWindow::SetScrollRange(int orient, int range)
 {
-  if (misc_flags & NO_AUTO_SCROLL_FLAG) {
-    if (orient == wxHORIZONTAL) {
-      hs_width = range;
-      if (hs_pos > hs_width)
-	hs_pos = hs_width;
-    } else {
-      vs_width = range;
-      if (vs_pos > vs_width)
-	vs_pos = vs_width;
-    }
+  if (!(misc_flags & NO_AUTO_SCROLL_FLAG))
+    return;
 
-    xws_set_scroll_direct(X->scroll, hs_width, hs_page, hs_pos, vs_width, vs_page, vs_pos);
+  if (orient == wxHORIZONTAL) {
+    hs_width = range;
+    if (hs_pos > hs_width)
+      hs_pos = hs_width;
   } else {
-    if (orient == wxHORIZONTAL) SetScrollArea(range, -1);
-    else			SetScrollArea(-1, range);
+    vs_width = range;
+    if (vs_pos > vs_width)
+      vs_pos = vs_width;
   }
+  
+  xws_set_scroll_direct(X->scroll, hs_width, hs_page, hs_pos, vs_width, vs_page, vs_pos);
 }
 
 void wxWindow::SetScrollPage(int orient, int range)
 {
-  if (misc_flags & NO_AUTO_SCROLL_FLAG) {
-    if (range <= 0)
-      range = 1;
-    if (orient == wxHORIZONTAL) {
+  if (!(misc_flags & NO_AUTO_SCROLL_FLAG))
+    return;
+  
+  if (range <= 0)
+    range = 1;
+  if (orient == wxHORIZONTAL) {
+    if (!hs_width)
+      hs_page = 1;
+    else
       hs_page = range;
-    } else {
-      vs_page = range;
-    }
-    
-    xws_set_scroll_direct(X->scroll, hs_width, hs_page, hs_pos, vs_width, vs_page, vs_pos);
   } else {
-    /* Do nothing */
+    if (!vs_width)
+      vs_page = 1;
+    else
+      vs_page = range;
   }
+
+  xws_set_scroll_direct(X->scroll, hs_width, hs_page, hs_pos, vs_width, vs_page, vs_pos);
 }
 
 //-----------------------------------------------------------------------------

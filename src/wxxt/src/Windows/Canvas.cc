@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.1 1996/01/10 14:57:03 markus Exp $
+ * $Id: Canvas.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -166,13 +166,17 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
       if (h_pixels > 0) {
 	h_units          = h_pixels;
 	h_size           = h_units * x_len;
-	h_units_per_page = x_page;
-      }
+	h_units_per_page = hs_page = x_page;
+	hs_width         = x_len;
+      } else
+	hs_width = 0;
       if (v_pixels > 0) {
 	v_units          = v_pixels;
 	v_size           = v_units * y_len;
-	v_units_per_page = y_page;
-      }
+	v_units_per_page = vs_page = y_page;
+	vs_width         = y_len;
+      } else
+	vs_width = 0;
        
       /* MATTHEW: [5] size = 0 safety: */
       if (!h_size)
@@ -204,7 +208,7 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
     } else {
       XtVaSetValues(X->scroll, XtNautoAdjustScrollbars, 0, NULL);
 
-      Arg a[4];
+      Arg a[8];
       a[0].name = XtNabs_height;
       a[0].value = 0;
       a[1].name = XtNrel_height;
@@ -213,27 +217,35 @@ void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,
       a[2].value = 0;
       a[3].name = XtNrel_width;
       *(float *)&(a[3].value) = 1.0;
+      a[4].name = XtNabs_x;
+      a[4].value = 0;
+      a[5].name = XtNabs_y;
+      a[5].value = 0;
+      a[6].name = XtNrel_x;
+      *(float *)&(a[6].value) = 0.0;
+      a[7].name = XtNrel_y;
+      *(float *)&(a[7].value) = 0.0;
 
-      XtSetValues(X->handle, a, 4);
+      XtSetValues(X->handle, a, 8);
 
       misc_flags |= 8;
       if (h_pixels > 0) {
-	SetScrollRange(wxHORIZONTAL, x_len);
-	SetScrollPage(wxHORIZONTAL, x_page);
+	hs_width = x_len;
+	hs_page = x_page;
 	SetScrollPos(wxHORIZONTAL, x_pos);
       } else {
-	SetScrollRange(wxHORIZONTAL, 0);
-	SetScrollPage(wxHORIZONTAL, 1);
+	hs_width = 0;
+	hs_page = 1;
 	SetScrollPos(wxHORIZONTAL, 0);
       }
 
       if (v_pixels > 0) {
-	SetScrollRange(wxVERTICAL, y_len);
-	SetScrollPage(wxVERTICAL, y_page);
+	vs_width = y_len;
+	vs_page = y_page;
 	SetScrollPos(wxVERTICAL, y_pos);
       } else {
-	SetScrollRange(wxVERTICAL, 0);
-	SetScrollPage(wxVERTICAL, 1);
+	vs_width = 0;
+	vs_page = 1;
 	SetScrollPos(wxVERTICAL, 0);
       }
     }

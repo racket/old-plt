@@ -49,6 +49,10 @@ int scheme_starting_up;
 
 Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 
+#define MAX_CONST_TOPLEVEL_DEPTH 16
+#define MAX_CONST_TOPLEVEL_POS 16
+Scheme_Object *toplevels[MAX_CONST_TOPLEVEL_DEPTH][MAX_CONST_TOPLEVEL_POS];
+
 Scheme_Env *scheme_initial_env;
 
 static Scheme_Object *kernel_symbol;
@@ -217,6 +221,38 @@ Scheme_Env *scheme_basic_env()
 	SCHEME_LOCAL_POS(v) = i;
 	
 	scheme_local[i][k] = v;
+      }
+    }
+  }
+
+  {
+    int i, k;
+
+#ifndef USE_TAGGED_ALLOCATION
+    GC_CAN_IGNORE Scheme_Toplevel *all;
+
+    all = (Scheme_Toplevel *)scheme_malloc_eternal(sizeof(Scheme_Toplevel) 
+						   * MAX_CONST_TOPLEVEL_DEPTH 
+						   * MAX_CONST_TOPLEVEL_POS);
+# ifdef MEMORY_COUNTING_ON
+    scheme_misc_count += sizeof(Scheme_Toplevel) * MAX_CONST_TOPLEVEL_DEPTH * MAX_CONST_TOPLEVEL_POS);
+# endif
+#endif
+
+    for (i = 0; i < MAX_CONST_TOPLEVEL_DEPTH; i++) {
+      for (k = 0; k < MAX_CONST_TOPLEVEL_POS; k++) {
+	Scheme_Toplevel *v;
+	
+#ifndef USE_TAGGED_ALLOCATION
+	v = (all++);
+#else
+	v = (Scheme_Toplevel *)scheme_malloc_eternal_tagged(sizeof(Scheme_Toplevel));
+#endif
+	v->type = scheme_toplevel_type;
+	v->depth = i;
+	v->position = k;
+	
+	toplevels[i][k] = (Scheme_Object *)v;
       }
     }
   }
@@ -1031,6 +1067,23 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
     return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
 }
 
+static Scheme_Object *make_toplevel(mzshort depth, int position, int resolved)
+{
+  Scheme_Toplevel *tl;
+
+  if (resolved) {
+    if ((depth < MAX_CONST_TOPLEVEL_DEPTH)
+	&& (position < MAX_CONST_TOPLEVEL_POS))
+      return toplevels[depth][position];
+  }
+
+  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
+  tl->type = (resolved ? scheme_toplevel_type : scheme_compiled_toplevel_type);
+  tl->depth = depth;
+  tl->position = position;
+  return (Scheme_Object *)tl;
+}
+
 Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env,
 						  Scheme_Compile_Info *rec, int drec)
 {
@@ -1038,15 +1091,10 @@ Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Com
   Comp_Prefix *cp = env->prefix;
   Scheme_Hash_Table *ht;
   Scheme_Object *o;
-  Scheme_Toplevel *tl;
 
   if (rec && rec[drec].dont_mark_local_use) {
     /* Make up anything; it's going to be ignored. */
-    tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
-    tl->type = scheme_compiled_toplevel_type;
-    tl->depth = 0;
-    tl->position = 0;
-    return (Scheme_Object *)tl;
+    return make_toplevel(0, 0, 0);
   }
 
   /* Register use at lambda, if any: */
@@ -1069,13 +1117,9 @@ Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Com
   if (o)
     return o;
 
-  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
-  tl->type = scheme_compiled_toplevel_type;
-  tl->depth = 0;
-  tl->position = cp->num_toplevels;
+  o = make_toplevel(0, cp->num_toplevels, 0);
 
   cp->num_toplevels++;
-  o = (Scheme_Object *)tl;  
   scheme_hash_set(ht, var, o);
 
   return o;
@@ -2160,17 +2204,13 @@ int scheme_resolve_toplevel_pos(Resolve_Info *info)
 
 Scheme_Object *scheme_resolve_toplevel(Resolve_Info *info, Scheme_Object *expr)
 {
-  Scheme_Toplevel *tl;
   int skip;
 
   skip = scheme_resolve_toplevel_pos(info);
 
-  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
-  tl->type = scheme_toplevel_type;
-  tl->depth = skip + SCHEME_TOPLEVEL_DEPTH(expr); /* depth is 0 (normal) or 1 (exp-time) */
-  tl->position = SCHEME_TOPLEVEL_POS(expr);
-
-  return (Scheme_Object *)tl;
+  return make_toplevel(skip + SCHEME_TOPLEVEL_DEPTH(expr), /* depth is 0 (normal) or 1 (exp-time) */
+		       SCHEME_TOPLEVEL_POS(expr),
+		       1);
 }
 
 int scheme_resolve_quote_syntax(Resolve_Info *info, int oldpos)
@@ -2490,16 +2530,11 @@ static Scheme_Object *write_toplevel(Scheme_Object *obj)
 
 static Scheme_Object *read_toplevel(Scheme_Object *obj)
 {
-  Scheme_Toplevel *tl;
-
   if (!SCHEME_PAIRP(obj)) return NULL;
 
-  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
-  tl->type = scheme_toplevel_type;
-  tl->depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
-  tl->position = SCHEME_INT_VAL(SCHEME_CDR(obj));
-
-  return (Scheme_Object *)tl;
+  return make_toplevel(SCHEME_INT_VAL(SCHEME_CAR(obj)),
+		       SCHEME_INT_VAL(SCHEME_CDR(obj)),
+		       1);
 }
 
 static Scheme_Object *write_variable(Scheme_Object *obj)

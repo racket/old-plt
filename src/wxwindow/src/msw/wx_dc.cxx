@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.25 1999/11/13 03:42:24 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.26 1999/11/29 19:01:48 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1509,7 +1509,7 @@ wxPrinterDC::wxPrinterDC(char *driver_name, char *device_name, char *file, Bool 
     pd->hwndOwner=NULL;
     pd->hDevMode=(HANDLE)NULL;
     pd->hDevNames=(HANDLE)NULL;
-    pd->Flags=PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS;
+    pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS | PD_HIDEPRINTTOFILE;
     pd->nFromPage=0;
     pd->nToPage=0;
     pd->nMinPage=0;

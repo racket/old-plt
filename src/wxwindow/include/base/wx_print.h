@@ -48,24 +48,7 @@ class wxPrintData: public wxObject
   DECLARE_DYNAMIC_CLASS(wxPrintData)
 
  public:
-#ifdef wx_msw
   void *printData;
-#endif
-  // These data members only used in non-Windows printing
-  // mode (wxPRINT_POSTSCRIPT)
-  int printFromPage;
-  int printToPage;
-  int printMinPage;
-  int printMaxPage;
-  int printNoCopies;
-  Bool printAllPages;
-  Bool printCollate;
-  Bool printToFile;
-  Bool printEnableSelection;
-  Bool printEnablePageNumbers;
-  Bool printEnableHelp;
-  Bool printEnablePrintToFile;
-  Bool printSetupDialog;
 
   wxPrintData(void);
   ~wxPrintData(void);
@@ -76,8 +59,6 @@ class wxPrintData: public wxObject
   int GetMaxPage(void);
   int GetNoCopies(void);
   Bool GetAllPages(void);
-  Bool GetCollate(void);
-  Bool GetPrintToFile(void);
   Bool GetSetupDialog(void);
 
   void SetFromPage(int);
@@ -85,23 +66,9 @@ class wxPrintData: public wxObject
   void SetMinPage(int);
   void SetMaxPage(int);
   void SetNoCopies(int);
-  void SetAllPages(Bool);
-  void SetCollate(Bool);
-  void SetPrintToFile(Bool);
   void SetSetupDialog(Bool);
 
-  void EnablePrintToFile(Bool);
-  void EnableSelection(Bool);
   void EnablePageNumbers(Bool);
-  void EnableHelp(Bool);
-
-  Bool GetEnablePrintToFile(void);
-  Bool GetEnableSelection(void);
-  Bool GetEnablePageNumbers(void);
-  Bool GetEnableHelp(void);
-  void GetSetupDialog(Bool);
-
-  void operator=(const wxPrintData& data);
 };
 
 /*
@@ -109,28 +76,18 @@ class wxPrintData: public wxObject
  * The common dialog for printing.
  */
  
-class wxPrintDialog: public wxDialogBox
+class wxPrintDialog
 {
-  DECLARE_DYNAMIC_CLASS(wxPrintDialog)
-
  private:
-  wxPrintData printData;
+  wxPrintData *printData;
   wxDC *printerDC;
   Bool destroyDC;
-  char *deviceName;
-  char *driverName;
-  char *portName;
-  wxWindow *dialogParent;
  public:
-  wxPrintDialog(void);
   wxPrintDialog(wxWindow *parent, wxPrintData *data = NULL);
   ~wxPrintDialog(void);
 
-  Bool Create(wxWindow *parent, wxPrintData *data = NULL);
-  virtual Bool Show(Bool flag);
-
-  virtual wxPrintData& GetPrintData(void) { return printData; }
-  virtual wxDC *GetPrintDC(void);
+  Bool Run();
+  wxDC *GetPrintDC(void);
 };
 
 /*
@@ -151,15 +108,12 @@ class wxPrinter: public wxObject
   static wxWindow *abortWindow;
   static Bool abortIt;
 
-  wxPrinter(wxPrintData *data = NULL);
+  wxPrinter();
   ~wxPrinter(void);
 
   virtual Bool Print(wxWindow *parent, wxPrintout *printout, Bool prompt = TRUE);
-  virtual Bool PrintDialog(wxWindow *parent);
   virtual wxWindow *CreateAbortWindow(wxWindow *parent, wxPrintout *printout);
-  virtual Bool Setup(wxWindow *parent);
   virtual void ReportError(wxWindow *parent, wxPrintout *printout, char *message);
-  virtual wxPrintData &GetPrintData(void);
   virtual inline Bool Abort(void) { return abortIt; }
 };
 
@@ -178,19 +132,6 @@ class wxPrintout: public wxObject
  private:
    char *printoutTitle;
    wxDC *printoutDC;
-
-   int pageWidthPixels;
-   int pageHeightPixels;
-
-   int pageWidthMM;
-   int pageHeightMM;
-
-   int PPIScreenX;
-   int PPIScreenY;
-   int PPIPrinterX;
-   int PPIPrinterY;
-
-   Bool isPreview;
  public:
   wxPrintout(char *title = "Printout");
   ~wxPrintout(void);
@@ -211,19 +152,6 @@ class wxPrintout: public wxObject
 
   inline wxDC *GetDC(void) { return printoutDC; }
   inline void SetDC(wxDC *dc) { printoutDC = dc; }
-  inline void SetPageSizePixels(int w, int  h) { pageWidthPixels = w; pageHeightPixels = h; }
-  inline void GetPageSizePixels(int *w, int  *h) { *w = pageWidthPixels; *h = pageHeightPixels; }
-  inline void SetPageSizeMM(int w, int  h) { pageWidthMM = w; pageHeightMM = h; }
-  inline void GetPageSizeMM(int *w, int  *h) { *w = pageWidthMM; *h = pageHeightMM; }
-
-  inline void SetPPIScreen(int x, int y) { PPIScreenX = x; PPIScreenY = y; }
-  inline void GetPPIScreen(int *x, int *y) { *x = PPIScreenX; *y = PPIScreenY; }
-  inline void SetPPIPrinter(int x, int y) { PPIPrinterX = x; PPIPrinterY = y; }
-  inline void GetPPIPrinter(int *x, int *y) { *x = PPIPrinterX; *y = PPIPrinterY; }
-
-  inline virtual Bool IsPreview(void) { return isPreview; }
-
-  inline virtual void SetIsPreview(Bool p) { isPreview = p; }
 };
 
 #endif // IN_CPROTO

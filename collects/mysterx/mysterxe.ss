@@ -809,7 +809,7 @@
      (lambda (arg)
        (for-each 
 	(lambda (obj) (when (com-object? (cdr obj))
-			    (undefine (car obj))))
+			    (mxprims:com-release-object (cdr obj))))
 	(make-global-value-list))
        (collect-garbage)
        (old-exit-handler arg))))

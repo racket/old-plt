@@ -50,6 +50,7 @@
    com-object-eq?
    com-object?	
    com-register-object
+   com-release-object
    make-document
    document?
    document-insert-html

@@ -489,12 +489,6 @@ static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
 	      int x, y;
 	      GetControlBounds(controlRef, &bounds);
 	      FrameRect(&bounds);
-	      wx_window->GetWinOrigin(&x, &y);
-	      if ((bounds.left != x)
-		  || (bounds.top != y)) {
-		printf("mismatch %d %d %d %d\n",
-		       bounds.left, x, bounds.top, y);
-	      }
 	    }
 #endif
 	    wx_window->Paint();
@@ -883,7 +877,8 @@ void wxWindow::OnWindowDSize(int dW, int dH, int dX, int dY)
   }
   
   if ((dW || dH) && (__type != wxTYPE_FRAME)) {
-    MrEdQueueOnSize(this);
+    // MrEdQueueOnSize(this);
+    OnSize(-1, -1);
   }
 }
 

@@ -119,7 +119,7 @@ static void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, AL
     ForeColor(blackColor);
     CopyPascalStringToC(*(StringHandle)cellData, wxBuffer);
     TextMode(srcOr);
-    DrawLatin1Text(wxBuffer, 0, -1, 0);
+    DrawUnicodeText(wxBuffer, 0, -1, 0);
   }
 }
 
@@ -296,7 +296,7 @@ void wxListBox::OnEvent(wxMouseEvent *event)
   if (event->ButtonDown()) {
     int startH;
     int startV;
-    Point startPt;
+    Point startPt, startPt0;
     int modifiers = 0;
     Bool doubleclick;
     ALCell cell;
@@ -304,9 +304,14 @@ void wxListBox::OnEvent(wxMouseEvent *event)
     event->Position(&startH,&startV); // client c.s.
 
     SetCurrentDC();
+
+    // For scroll bars:
+    startPt0.v = startV;
+    startPt0.h = startH - (cWindowWidth - 16);
     
     startPt.v = startV + SetOriginY; // port c.s.
     startPt.h = startH + SetOriginX;
+
     if (event->shiftDown)
       modifiers += shiftKey;
     if (event->altDown)
@@ -319,7 +324,7 @@ void wxListBox::OnEvent(wxMouseEvent *event)
 
     wxTracking();
 
-    doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
+    doubleclick = ::ALClick(startPt0, startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
 
     ReleaseCurrentDC();
     
@@ -841,6 +846,7 @@ void wxListBox::DoShow(Bool on)
   if (!on && cListTitle)
     cListTitle->DoShow(on);
 
+  ALShow(on, cListReference);
   wxWindow::DoShow(on);
 
   if (!on && cListTitle)

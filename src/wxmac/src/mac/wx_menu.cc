@@ -306,7 +306,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     CheckMemOK(nmh);
     {
       CFStringRef ct;
-      ct = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
+      ct = CFStringCreateWithCString(NULL, t, kCFStringEncodingUTF8);
       SetMenuTitleWithCFString(nmh, ct);
       CFRelease(ct);
     }
@@ -351,7 +351,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     ::AppendMenu(nmh, (ConstStr255Param)tmp);
     ::SetMenuItemText(nmh, i + offset, (ConstStr255Param)t);
-    ::SetMenuItemTextEncoding(nmh, i + offset, kCFStringEncodingISOLatin1);
+    ::SetMenuItemTextEncoding(nmh, i + offset, kCFStringEncodingUTF8);
     {
       Bool v;
       v = menuItem->IsChecked();
@@ -860,7 +860,7 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   wxPrepareMenuDraw();
   ::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)menustr);
-  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
+  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingUTF8);
   wxDoneMenuDraw();
   CheckHelpHack();
 }
@@ -898,7 +898,7 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   wxPrepareMenuDraw();
   ::AppendMenu(cMacMenu, (ConstStr255Param)pullrightSetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)pullrightLabel);
-  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
+  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingUTF8);
   ::SetMenuItemHierarchicalID(cMacMenu, no_items, SubMenu->cMacMenuId);
   wxDoneMenuDraw();
 

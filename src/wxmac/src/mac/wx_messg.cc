@@ -323,14 +323,14 @@ void wxMessage::Paint(void)
       ::GetFontInfo(&fontInfo);
       MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
       
-      DrawLatin1Text(cMessage, 0, -1, 0);
+      DrawUnicodeText(cMessage, 0, -1, 0);
     } else {
       Rect r = { SetOriginY, SetOriginX, 
 		 SetOriginY + clientHeight, SetOriginX + clientWidth };
       CFStringRef str;
 
 
-      str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingISOLatin1);
+      str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingUTF8);
 
       DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		       0, &r, teJustLeft, NULL);

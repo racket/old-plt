@@ -943,6 +943,70 @@ static int CALLBACK get_font(ENUMLOGFONT FAR*  lpelf,
 }
 #endif
 
+#ifdef wx_mac
+/* The actual name of a Mac font is not what you want to see on the
+   screen; the actual name is derived by encoding the pretty name
+   using the font's encoding. */
+char *wx_get_mac_font_name(FMFontFamily fam, unsigned char *fname, int *_l) 
+{
+  TextEncoding encoding;
+  TextToUnicodeInfo uinfo;
+  ByteCount converted = 0, ubytes = 0;
+  UniChar us_buf[128];      
+  OSErr err;
+  char *s;
+  int l;
+
+  FMGetFontFamilyName(fam, fname);
+  
+  s = (char *)fname + 1;
+  l = fname[0];
+
+  /* If the "encoded" name is all ASCII, then don't decode.
+     Otherwise, fonts like "Symbol" and "Zaph Chancery" get funny
+     names. */
+  {
+    int i;
+    for (i = 0; i < l; i++) {
+      if (((unsigned char *)s)[i] > 127)
+	break;
+    }
+    if (i == l) {
+      *_l = l;
+      return s;
+    }
+  }
+
+  FMGetFontFamilyTextEncoding(fam, &encoding);
+
+  CreateTextToUnicodeInfoByEncoding(encoding, &uinfo);
+  
+  /* Warning: we assume that the Unicode name will fit in us_buf: */
+  err = ConvertFromTextToUnicode(uinfo, l, s, 0,
+				 0, NULL,
+				 NULL, NULL,
+				 sizeof(us_buf), &converted, &ubytes,
+				 us_buf);
+
+  DisposeTextToUnicodeInfo(&uinfo);
+
+  if (!err) {
+    long ulen = ubytes / sizeof(UniChar);
+    l = scheme_utf8_encode((unsigned int *)us_buf, 0, ulen,
+			   NULL, 0, 1 /* UTF-16 */);
+    if (l < 256)
+      s = (char *)fname;
+    else
+      s = new WXGC_ATOMIC char[l];
+    l = scheme_utf8_encode((unsigned int *)us_buf, 0, ulen,
+			   (unsigned char *)s, 0, 1 /* UTF-16 */);
+  }
+
+  *_l = l;
+  return s;
+}
+#endif
+
 typedef int (*Indirect_Cmp_Proc)(const void *, const void *);
 
 static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
@@ -955,12 +1019,9 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   int last_pos = -1, last_len = 0;
 #endif
 #ifdef wx_mac
-  ATSFontFamilyIterator iterator;
-  ATSFontFamilyRef fam;
-  CFStringRef fname;
-  long ulen;
-  UniChar us_buf[128], *us;
-  char s_buf[256];
+  FMFontFamilyIterator iterator;
+  FMFontFamily fam;
+  Str255 fname;
 #endif
 #ifdef wx_msw
   gfData data;
@@ -1000,11 +1061,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 # ifndef OS_X
 #  define kFMDefaultIterationScope 0
 # endif
-
-  ATSFontFamilyIteratorCreate(kATSFontContextLocal,
-			      NULL, NULL,
-			      kATSOptionFlagsDefaultScope,
-			      &iterator);
+  FMCreateFontFamilyIterator(NULL, NULL, kFMDefaultIterationScope, &iterator);
 #endif
 #ifdef wx_msw
   data.mono_only = mono_only;
@@ -1058,25 +1115,9 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
     s = names[i++];
 #endif
 #ifdef wx_mac
-    if (ATSFontFamilyIteratorNext(iterator, &fam) != noErr)
+    if (FMGetNextFontFamily(&iterator, &fam) != noErr)
       break;
-    ATSFontFamilyGetName(fam, kATSOptionFlagsDefault, &fname);
-    ulen = CFStringGetLength(fname);
-    if (ulen < 128)
-      us = us_buf;
-    else
-      us = new WXGC_ATOMIC UniChar[ulen];
-    CFStringGetCharacters(fname, CFRangeMake(0, ulen), us);
-    CFRelease(fname);
-    
-    l = scheme_utf8_encode((unsigned int *)us, 0, ulen,
-			   NULL, 0, 1 /* UTF-16 */);
-    if (l < 256)
-      s = s_buf;
-    else
-      s = new WXGC_ATOMIC char[l];
-    l = scheme_utf8_encode((unsigned int *)us, 0, ulen,
-			   (unsigned char *)s, 0, 1 /* UTF-16 */);
+    s = wx_get_mac_font_name(fam, fname, &l);
 #endif
 #ifdef wx_msw
     if (i >= data.count)
@@ -1100,7 +1141,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
    ReleaseDC(NULL, dc);
 #endif
 #ifdef wx_mac
-   ATSFontFamilyIteratorRelease(&iterator);
+   FMDisposeFontFamilyIterator(&iterator);
 #endif
 
   /* But wait --- there's more! At least under X when Xft is enabled.

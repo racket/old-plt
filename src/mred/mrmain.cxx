@@ -194,6 +194,12 @@ static int do_main_loop(FinishArgs *fa)
   wxREGGLOB(xfa);
   xfa = fa;
 
+  if (!xfa->alternate_rep) {
+    ProcessSerialNumber psn;
+    GetCurrentProcess(&psn);    
+    SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
+  }
+
   wxDoMainLoop();
 
   return 0;
@@ -297,12 +303,6 @@ int main(int argc, char *argv[])
 # endif
 
   Drop_GetArgs(&argc, &argv, &wx_in_terminal);
-
-  {
-    ProcessSerialNumber psn;
-    GetCurrentProcess(&psn);    
-    SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
-  }
 
 # ifndef OS_X
   wx_original_argv_zero = argv[0];

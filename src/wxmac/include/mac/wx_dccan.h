@@ -141,17 +141,19 @@ class wxCanvasDC: public wxbCanvasDC
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);
-double DrawLatin1Text(const char *text, int d, int len = -1, int bit16 = FALSE, Bool qd_spacing = FALSE, 
-		      int smoothing = wxSMOOTHING_DEFAULT, float angle = 0.0,
-		      float scale_x = 1.0, float scale_y = 1.0,
-		      int use_start = 0, float start_x = 0.0, float start_y = 0.0,
-		      float device_dx = 0.0, float device_dy = 0.0);
-void GetLatin1TextWidth(const char *text, int d, int theStrlen, 
-			short txFont, short txSize, short txFace,
-			int bit16, float scale_y,
-			float* x, float* y,
-			float* descent, float* externalLeading,
-			Bool qd_spacing, float scale_x = 1.0);
+double DrawUnicodeText(const char *text, int d, int len = -1, int ucs4 = FALSE, Bool qd_spacing = FALSE, 
+		       int smoothing = wxSMOOTHING_DEFAULT, float angle = 0.0,
+		       float scale_x = 1.0, float scale_y = 1.0,
+		       int use_start = 0, float start_x = 0.0, float start_y = 0.0,
+		       float device_dx = 0.0, float device_dy = 0.0,
+		       int is_sym = 0);
+void GetUnicodeTextWidth(const char *text, int d, int theStrlen, 
+			 short txFont, short txSize, short txFace,
+			 int ucs4, float scale_y,
+			 float* x, float* y,
+			 float* descent, float* externalLeading,
+			 Bool qd_spacing, float scale_x = 1.0,
+			 int is_sym = 0);
 
 extern Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
 #define GetWhitePattern() &wx_white_pat

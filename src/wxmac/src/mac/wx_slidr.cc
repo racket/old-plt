@@ -197,7 +197,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
          
   ::EmbedControl(cMacControl, GetRootControl());
 
-  CreatePaintControl();
+  if (!(windowStyle & (wxHORIZONTAL << 2)))
+    CreatePaintControl();
 
   {
     wxWindow *p;
@@ -241,7 +242,7 @@ void wxSlider::Paint(void)
       sprintf(t,"%d",val);
     }
 
-    str = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
+    str = CFStringCreateWithCString(NULL, t, kCFStringEncodingUTF8);
     DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		     0, &r, teJustCenter, NULL);
     CFRelease(str);
@@ -309,14 +310,22 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     }
   }
 
+  if (cPaintControl) {
+    if (dW || dH) {
+      ::SizeControl(cPaintControl, 
+		    (valueRect.right - valueRect.left),
+		    (valueRect.bottom - valueRect.top));
+      if (!dX && !dY)
+	MaybeMoveControls();
+    }
+  }
+
   if (dX || dY) {	
     MaybeMoveControls();
   }
 
   if (cTitle)
     cTitle->cLabelText->OnClientAreaDSize(dW, dH, dX, dY);
-
-  wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
 
 void wxSlider::MaybeMoveControls()
@@ -333,6 +342,9 @@ void wxSlider::MaybeMoveControls()
     my = margin.Offset(wxTop);
 
     ::MoveControl(cMacControl, x + padLeft + mx, y + padTop + my);
+
+    if (cPaintControl)
+      ::MoveControl(cPaintControl, valueRect.left + x + mx, valueRect.top + y + my);
   }
 
   if (cTitle)

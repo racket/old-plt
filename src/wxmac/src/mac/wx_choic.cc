@@ -121,7 +121,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     CopyCStringToPascal(Choices[n],temp);
     ::AppendMenu(hDynMenu, "\ptemp");
     ::SetMenuItemText(hDynMenu, n + 1, temp);
-    ::SetMenuItemTextEncoding(hDynMenu, n + 1, kCFStringEncodingISOLatin1);
+    ::SetMenuItemTextEncoding(hDynMenu, n + 1, kCFStringEncodingUTF8);
   }
   no_strings = N;
 
@@ -289,7 +289,7 @@ void wxChoice::Append (char *Item)
   s[0] = n;
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
   ::SetMenuItemText(hDynMenu, no_strings + 1, s);
-  ::SetMenuItemTextEncoding(hDynMenu, no_strings + 1, kCFStringEncodingISOLatin1);
+  ::SetMenuItemTextEncoding(hDynMenu, no_strings + 1, kCFStringEncodingUTF8);
   no_strings++;
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);

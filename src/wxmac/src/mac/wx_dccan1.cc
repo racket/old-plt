@@ -775,9 +775,8 @@ void wxGL::Reset(CGrafPtr gp, int offscreen, int w, int h)
 #ifdef OS_X
   AGLContext ctx; 
 
+  ctx = (AGLContext)gl_ctx;
   if (gl_ctx) {
-    ctx = (AGLContext)gl_ctx;
-    
     if (this == current_gl_context) {
       aglSetCurrentContext(dummy);
     }

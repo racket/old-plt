@@ -80,7 +80,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect,SetOriginX + padLeft,SetOriginY + padTop);
 
-  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingUTF8);
   cMacControl = NULL;
   CreateCheckBoxControl(GetWindowFromPort(theMacGrafPort), &boundsRect, 
 			title, 0, FALSE, &cMacControl);
@@ -202,7 +202,7 @@ void wxCheckBox::SetLabel(char* label)
 
   if (label && cMacControl) {
     CFStringRef llabel;
-    llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
+    llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingUTF8);
     SetControlTitleWithCFString(cMacControl, llabel);
     CFRelease(llabel);
     RefreshIfUpdating();
@@ -305,7 +305,7 @@ void wxCheckBox::Paint(void)
 	GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
 	stop = (int)((cWindowHeight + fHeight) / 2);
 	::MoveTo(IC_BOX_SIZE + IC_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
-	DrawLatin1Text(labelString, 0);
+	DrawUnicodeText(labelString, 0);
       }
 
       top = (cWindowHeight - IC_BOX_SIZE) / 2;

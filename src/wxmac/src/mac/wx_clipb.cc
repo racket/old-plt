@@ -27,10 +27,16 @@
 
 extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
-static wxList *ClipboardFormats = NULL;
+extern "C" {
+  int scheme_utf8_decode(const unsigned char *s, int start, int len, 
+			 unsigned int *us, int dstart, int dlen,
+			 long *ipos, char utf16, int permissive);
+  int scheme_utf8_encode(const unsigned int *us, int start, int len, 
+			 unsigned char *s, int dstart,
+			 char utf16);
+};
 
-static TextToUnicodeInfo t2uinfo;
-static int t2u_ready = 0;
+static wxList *ClipboardFormats = NULL;
 
 static TextToUnicodeInfo m2uinfo;
 static int m2u_ready = 0;
@@ -117,8 +123,8 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
     return FALSE;
 
   if (format == 'TEXT') {
-    /* TEXT means MacRoman to the OS, but Latin-1 to MrEd.
-       If necessary, convert Latin-1 to Unicode and use utxt. */
+    /* TEXT means MacRoman to the OS, but UTF-8 to MrEd.
+       If necessary, convert UTF-8 to Unicode and use utxt. */
     int i;
 
     length = strlen((char *)obj);
@@ -130,27 +136,20 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
 
     if (i < length) {
       /* Convert. */
-      ByteCount ubytes, converted, usize;
-      char *unicode;
+      int ulen;
+      UniChar *unicode;
 
-      if (!t2u_ready) {
-	CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
-	t2u_ready = 1;
-      }
-
-      usize = length * 2;
-      unicode = new WXGC_ATOMIC char[usize];
-      
-      ConvertFromTextToUnicode(t2uinfo, length, (char *)obj, 0,
-			       0, NULL,
-			       NULL, NULL,
-			       usize, &converted, &ubytes,
-			       (UniCharArrayPtr)unicode);
-      
-      obj = (wxObject *)unicode;
+      ulen = scheme_utf8_decode((unsigned char *)obj, 0, length,
+				NULL, 0, -1,
+				NULL, 1/*UTF-16*/, '?');
+      unicode = new WXGC_ATOMIC UniChar[ulen];
+      ulen = scheme_utf8_decode((unsigned char *)obj, 0, length,
+				(unsigned int *)unicode, 0, -1,
+				NULL, 1/*UTF-16*/, '?');
       
       format = 'utxt';
-      length = usize;
+      obj = (wxObject *)unicode;
+      length = (ulen * sizeof(UniChar));
     }
   } else {
     length = (long)width * height;
@@ -184,7 +183,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   err = GetScrapFlavorSize(scrap, format, &length);
   if (err != noErr) {
     if (format == 'TEXT') {
-      /* Wanted Latin-1 text? Try Unicode, too... */
+      /* Wanted text? Try Unicode, too... */
       format = 'utxt';
       err = GetScrapFlavorSize(scrap, format, &length);
       if (err != noErr)
@@ -203,7 +202,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
 
   if (format == 'TEXT') {
     /* Got MacRoman. Convert to Unicode if necessary, 
-       then we'll convert to Latin-1... */
+       then we'll convert to UTF-8... */
     int i;
 
     for (i = 0; i < length; i++) {
@@ -212,7 +211,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
     }
 
     if (i == length) {
-      /* Plain ASCII, where MacRoman == Latin-1 */
+      /* Plain ASCII, where MacRoman == UTF-8 */
       result[length] = 0;
     } else {
       ByteCount ubytes, converted, usize;
@@ -239,19 +238,21 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   }
 
   if (format == 'utxt') {
-    /* Sleazy conversion from UCS16 to Latin-1: drop odd bytes */
-    char *l1;
-    int i, l1len;
+    /* UTF-8 Encode */
+    long sl;
+    char *s;
 
-    l1len = (length >> 1);
-    l1 = new WXGC_ATOMIC char[l1len + 1];
-    for (i = 0; i < l1len; i++) {
-      l1[i] = result[(i << 1) + 1];
-    }
-    l1[l1len] = 0;
-
-    result = l1;
-    length = l1len;
+    sl = scheme_utf8_encode((unsigned int *)result, 0, length,
+			    NULL, 0,
+			    1 /* UTF-16 */);
+    s = new WXGC_ATOMIC char[sl + 1];
+    sl = scheme_utf8_encode((unsigned int *)result, 0, length,
+			    (unsigned char *)s, 0,
+			    1 /* UTF-16 */);
+    s[sl] = 0;
+    
+    result = s;
+    length = sl;
   }
 
 

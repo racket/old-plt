@@ -14,20 +14,25 @@
 
 extern CGrafPtr wxMainColormap;
 
+extern "C" {
+  int scheme_utf8_decode(const unsigned char *s, int start, int len, 
+			 unsigned int *us, int dstart, int dlen,
+			 long *ipos, char utf16, int permissive);
+};
+
 static ATSUStyle theATSUstyle;
-static TextToUnicodeInfo t2uinfo;
 
 static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
 					       float angle, float scale_y);
-static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
-				 int just_meas, int given_font, 
-				 short txFont, short txSize, short txFace,
-				 int again, int qd_spacing, int smoothing,
-				 float angle, int sym_map,
-				 float scale_x, float scale_y,
-				 float pen_delta_x, int with_delta,
-				 float pen_start_x, float pen_start_y, float ddx, float ddy, int with_start);
+static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
+				  int just_meas, int given_font, 
+				  short txFont, short txSize, short txFace,
+				  int again, int qd_spacing, int smoothing,
+				  float angle, int sym_map,
+				  float scale_x, float scale_y,
+				  float pen_delta_x, int with_delta,
+				  float pen_start_x, float pen_start_y, float ddx, float ddy, int with_start);
 
 #ifndef FloatToFixed
 # define FloatToFixed(a) ((Fixed)((float) (a) * fixed1)) 
@@ -67,7 +72,7 @@ static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d, float angle)
+void wxCanvasDC::DrawText(const char* text, float x, float y, Bool ucs4, int d, float angle)
 {
   FontInfo fontInfo;
   float w;
@@ -80,14 +85,16 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d,
 
   ::GetFontInfo(&fontInfo);
   
-  w = DrawLatin1Text(text, d, -1, use16, TRUE, font->GetEffectiveSmoothing(user_scale_y), angle,
-		     user_scale_x, user_scale_y,
-		     1,
-		     x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
-		     y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
-		     device_origin_x + SetOriginX,
-		     device_origin_y + SetOriginY);
-
+  w = DrawUnicodeText(text, d, -1, ucs4, 
+		      TRUE, font->GetEffectiveSmoothing(user_scale_y), angle,
+		      user_scale_x, user_scale_y,
+		      1,
+		      x + (fontInfo.ascent * sin(angle)) - logical_origin_x,
+		      y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
+		      device_origin_x + SetOriginX,
+		      device_origin_y + SetOriginY,
+		      font->GetFamily() == wxSYMBOL);
+  
   CalcBoundingBox(x + w, y + fontInfo.ascent + fontInfo.descent);
   CalcBoundingBox(x, y);
 
@@ -126,7 +133,7 @@ float wxCanvasDC::GetCharWidth(void)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* descent,
-			       float* internalLeading, wxFont* the_font, Bool use16,
+			       float* internalLeading, wxFont* the_font, Bool ucs4,
 			       int d)
 {
   float x2, y2, descent2, externalLeading2;
@@ -135,10 +142,10 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
      in font selection. */
 
   if (the_font)
-    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16, 
+    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, ucs4, 
 			    user_scale_x, user_scale_y);
   else if (font)
-    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16,
+    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, ucs4,
 			user_scale_x, user_scale_y);
   else {
     *x = -1;
@@ -178,36 +185,30 @@ void wxCheckATSUCapability()
 #endif
 }
 
-double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing, int smoothing, float angle,
-		      float scale_x, float scale_y, int use_start, float start_x, float start_y, float ddx, float ddy)
+double DrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd_spacing, int smoothing, float angle,
+		       float scale_x, float scale_y, int use_start, float start_x, float start_y, float ddx, float ddy,
+		       int is_sym)
 {
   int i;
-  int is_sym = 0;
   int again = 0;
   float pen_delta = 0.0;
   int move_pen_at_end;
 
   if (theStrlen < 0) {
-    if (bit16) {
-      for (theStrlen = 0; text[theStrlen] || text[theStrlen+1]; theStrlen += 2) {
+    if (ucs4) {
+      int *t2 = (int *)text;
+      for (theStrlen = d; t2[theStrlen]; theStrlen++) {
       }
-      theStrlen >>= 1;
+      theStrlen -= d;
     } else
       theStrlen = strlen(text+d);
-  }
-  
-  {
-    GrafPtr iGrafPtr;
-    GetPort( &iGrafPtr );
-    if (GetPortTextFont(iGrafPtr) == 23)
-      is_sym = 1;
   }
 
   move_pen_at_end = qd_spacing && ALWAYS_USE_ATSU && !use_start;
 
   while (theStrlen) {
-    /* Check whether we need to go into Unicode mode to get Latin-1 output: */
-    if (!qd_spacing || ALWAYS_USE_ATSU) {
+    /* Check whether we need to go into Unicode mode: */
+    if (!qd_spacing || ALWAYS_USE_ATSU || ucs4) {
       i = 0;
     } else if (is_sym)
       /* Symbol font hack: don't convert */
@@ -220,7 +221,7 @@ double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd
     }
 
     if (i) {
-      /* Up to i, it's all ASCII, where MacRoman == Latin-1 */
+      /* Up to i, it's all ASCII, where MacRoman == UTF-8 */
       int reset_size = 0;
       Point pen_start, pen_end;
 
@@ -258,16 +259,16 @@ double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd
     if (theStrlen) {
       int amt;
 
-      if (!qd_spacing || ALWAYS_USE_ATSU)
+      if (!qd_spacing || ALWAYS_USE_ATSU || ucs4)
 	amt = theStrlen;
       else
 	amt = 1;
 
-      pen_delta += DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0, again, 
-				      qd_spacing, smoothing, angle, is_sym,
-				      scale_x, scale_y,
-				      pen_delta, move_pen_at_end || use_start,
-				      start_x, start_y, ddx, ddy, use_start);
+      pen_delta += DrawMeasUnicodeText(text, d, amt, ucs4, 0, 0, 0, 0, 0, again, 
+				       qd_spacing, smoothing, angle, is_sym,
+				       scale_x, scale_y,
+				       pen_delta, move_pen_at_end || use_start,
+				       start_x, start_y, ddx, ddy, use_start);
 	  
       d += amt;
       theStrlen -= amt;
@@ -284,32 +285,34 @@ double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd
   return pen_delta;
 }
 
-void GetLatin1TextWidth(const char *text, int d, int theStrlen, 
-			short txFont, short txSize, short txFace,
-			int bit16, float scale_y,
-			float* x, float* y,
-			float* descent, float* externalLeading,
-			Bool qd_spacing, float scale_x)
+void GetUnicodeTextWidth(const char *text, int d, int theStrlen, 
+			 short txFont, short txSize, short txFace,
+			 int ucs4, float scale_y,
+			 float* x, float* y,
+			 float* descent, float* externalLeading,
+			 Bool qd_spacing, float scale_x,
+			 int is_sym)
 {
   FontInfo fontInfo;
   const char *meas = NULL;
-  int i, is_sym = (txFont == 23);
+  int i;
 
   if (text) {
     if (theStrlen < 0) {
-      if (bit16) {
-	for (theStrlen = 0; text[theStrlen] || text[theStrlen+1]; theStrlen += 2) {
+      if (ucs4) {
+	int *t2 = (int *)text;
+	for (theStrlen = d; t2[theStrlen]; theStrlen++) {
 	}
-	theStrlen >>= 1;
+	theStrlen -= d;
       } else
 	theStrlen = strlen(text+d);
     }
 
-    if (!qd_spacing || ALWAYS_USE_ATSU) {
+    if (!qd_spacing || ALWAYS_USE_ATSU || ucs4) {
       i = 0;
     } else {
       if (!is_sym) {
-	/* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
+	/* Check whether we need to go into Unicode mode to get UTF-8 output: */
 	for (i = 0; i < theStrlen; i++) {
 	  if (((unsigned char *)text)[i + d] > 127)
 	    break;
@@ -331,16 +334,16 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 		      d, theStrlen);
 
   if (meas) {
-    /* it's all ASCII, where MacRoman == Latin-1 */
+    /* it's all ASCII, where MacRoman == UTF-8 */
     /* so *x is right */
   } else if (text) {
-    if (!qd_spacing || ALWAYS_USE_ATSU) {
-      *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
-			      1, 1, 
-			      txFont, txSize, txFace,
-			      0, qd_spacing, wxSMOOTHING_DEFAULT, 0.0, is_sym,
-			      scale_x, scale_y,
-			      0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
+    if (!qd_spacing || ALWAYS_USE_ATSU || ucs4) {
+      *x = DrawMeasUnicodeText(text, d, theStrlen, ucs4,
+			       1, 1, 
+			       txFont, txSize, txFace,
+			       0, qd_spacing, wxSMOOTHING_DEFAULT, 0.0, is_sym,
+			       scale_x, scale_y,
+			       0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
     } else {
       /* Need to split the string into parts */
       int again = 0;
@@ -370,13 +373,13 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 
 	  amt = 1;
       
-	  *x += DrawMeasLatin1Text(text, d, amt, bit16,
-				   1, 1, 
-				   txFont, txSize, txFace,
-				   again, qd_spacing,
-				   wxSMOOTHING_DEFAULT, 0.0, is_sym,
-				   scale_x, scale_y, 
-				   0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
+	  *x += DrawMeasUnicodeText(text, d, amt, ucs4,
+				    1, 1, 
+				    txFont, txSize, txFace,
+				    again, qd_spacing,
+				    wxSMOOTHING_DEFAULT, 0.0, is_sym,
+				    scale_x, scale_y, 
+				    0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
 	  d += amt;
 	  theStrlen -= amt;
 	  again = 1;
@@ -392,19 +395,18 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 
 #define QUICK_UBUF_SIZE 256
 
-static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
-				 int just_meas, int given_font, 
-				 short txFont, short txSize, short txFace,
-				 int again, int qd_spacing, int smoothing,
-				 float angle, int is_sym,
-				 float scale_x, float scale_y,
-				 float pen_delta, int use_pen_delta,
-				 float start_x, float start_y, float ddx, float ddy, int with_start)
+static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
+				  int just_meas, int given_font, 
+				  short txFont, short txSize, short txFace,
+				  int again, int qd_spacing, int smoothing,
+				  float angle, int is_sym,
+				  float scale_x, float scale_y,
+				  float pen_delta, int use_pen_delta,
+				  float start_x, float start_y, float ddx, float ddy, int with_start)
 {
   ATSUTextLayout layout;
-  ByteCount usize;
   UniCharCount ulen;
-  char *unicode, u_buf[QUICK_UBUF_SIZE];
+  UniChar *unicode, u_buf[QUICK_UBUF_SIZE];
   double result = 0;
   ATSLineLayoutOptions ll_attribs;
   GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag 
@@ -438,35 +440,58 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 #endif
 
   if (!theATSUstyle) {
-    CreateTextToUnicodeInfoByEncoding(kTextEncodingISOLatin1, &t2uinfo);
     ATSUCreateStyle(&theATSUstyle);
+    
   }
 
-  if (bit16) {
-    usize >>= theStrlen;
-    unicode = text;
-  } else {
-    usize = theStrlen * 2;
-    if (usize > QUICK_UBUF_SIZE)
-      unicode = new WXGC_ATOMIC char[usize];
+  if (ucs4) {
+    int i, extra, v;
+
+    /* Count characters that fall outside UCS-2: */
+    for (i = 0, extra = 0; i < theStrlen; i++) {
+      if (((int *)text)[d+i] > 0xFFFF)
+	extra++;
+    }
+
+    ulen = theStrlen + extra;
+    if (ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC UniChar[ulen];
     else
       unicode = u_buf;
-    ulen = theStrlen;
+    
+    /* UCS-4 -> UTF-16 conversion */
+    for (i = 0, extra = 0; i < theStrlen; i++) {
+      v = ((int *)text)[d+i];
+      if (v > 0xFFFF) {
+	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
+	extra++;
+	unicode[i+extra] = 0xDC000000 | (v & 0x3FF);
+      } else
+	unicode[i+extra] = v;
+    }
+  } else {
+    /* UTF-8 -> UTF-16 conversion */
+    ulen = scheme_utf8_decode((unsigned char *)text, d, 
+			      theStrlen, NULL, 0, -1, 
+			      NULL, 1 /*UTF-16*/, '?');
+    if (ulen > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC UniChar[ulen];
+    else
+      unicode = u_buf;
+    ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
+			      (unsigned int *)unicode, 0, -1, 
+			      NULL, 1 /*UTF-16*/, '?');
+  }
 
-    if (is_sym) {
-      int i, v, m;
-      for (i = 0; i < theStrlen; i++) {
-	v = ((unsigned char *)text)[d+i];
+  if (is_sym) {
+    unsigned int i;
+    int v, m;
+    for (i = 0; i < ulen; i++) {
+      v = unicode[d+i];
+      if (v < 256) {
 	m = symbol_map[v];
-	((UniCharArrayPtr)unicode)[i] = (m ? m : v);
+	unicode[i] = (m ? m : v);
       }
-    } else {
-      ByteCount ubytes, converted;
-      ConvertFromTextToUnicode(t2uinfo, theStrlen, text + d, 0,
-			       0, NULL,
-			       NULL, NULL,
-			       usize, &converted, &ubytes,
-			       (UniCharArrayPtr)unicode);
     }
   }
 
@@ -532,7 +557,7 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
 				  kATSUFromTextBeginning,
 				  kATSUToTextEnd,
-				  theStrlen,
+				  ulen,
 				  1,
 				  &ulen,
 				  &theATSUstyle,
@@ -561,6 +586,8 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     ATSUSetLayoutControls(layout, (lxNUM_TAGS - (use_cgctx ? 0 : 1) - (qd_spacing ? 0 : 1)),
 			  ll_theTags, ll_theSizes, ll_theValues);
   }
+
+  ATSUSetTransientFontMatching(layout, TRUE);
 
   if (angle != 0.0) {
     GC_CAN_IGNORE ATSUAttributeTag  r_theTags[] = { kATSULineRotationTag };

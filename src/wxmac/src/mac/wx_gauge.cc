@@ -248,9 +248,7 @@ void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
   if (dX || dY) {
     if (cMacControl) {
-      int x, y;
-      GetWinOrigin(&x, &y);
-      MoveControl(cMacControl, x + valueRect.left, y + valueRect.top);
+      MaybeMoveControls();
     }
   }
 
@@ -262,9 +260,24 @@ void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
 void wxGauge::MaybeMoveControls()
 {
+  {
+    int x, y, mx, my;
+    wxArea *c;
+    wxMargin margin;
+
+    GetWinOrigin(&x, &y);
+    c = ClientArea();
+    margin = c->Margin(this);
+    mx = margin.Offset(wxLeft);
+    my = margin.Offset(wxTop);
+
+    MoveControl(cMacControl, x + valueRect.left + mx, y + valueRect.top + my);
+  }
+
   if (cTitle)
     cTitle->cLabelText->MaybeMoveControls();
-  wxItem::MaybeMoveControls();
+
+  wxWindow::MaybeMoveControls();
 }
 
 // --------------------- Client API ---------------------

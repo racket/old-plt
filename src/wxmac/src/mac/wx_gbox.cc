@@ -37,7 +37,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
   OffsetRect(&boundsRect, SetOriginX, SetOriginY);
   
   if (label)
-    title = CFStringCreateWithCString(NULL, label, kCFStringEncodingISOLatin1);
+    title = CFStringCreateWithCString(NULL, label, kCFStringEncodingUTF8);
   else
     title = NULL;
 
@@ -184,7 +184,7 @@ void wxGroupBox::SetLabel(char *label)
     SetCurrentDC();
     {
       CFStringRef llabel;
-      llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingISOLatin1);
+      llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingUTF8);
       SetControlTitleWithCFString(cMacControl, llabel);
       CFRelease(llabel);
 

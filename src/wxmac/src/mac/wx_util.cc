@@ -290,7 +290,7 @@ Bool wxGetUserId(char *buf, int maxSize)
   CFStringRef username;
   
   username = CSCopyUserName(true);
-  return CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
+  return CFStringGetCString(username, buf, maxSize, kCFStringEncodingUTF8);
 }
 #else
 Bool wxGetUserId(char *buf, int maxSize)
@@ -306,7 +306,7 @@ Bool wxGetUserName(char *buf, int maxSize)
   CFStringRef username;
   
   username = CSCopyUserName(false);
-  return CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
+  return CFStringGetCString(username, buf, maxSize, kCFStringEncodingUTF8);
 }
 #else    
 Bool wxGetUserName(char *buf, int maxSize)

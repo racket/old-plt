@@ -1825,12 +1825,22 @@ static void remove_q_callback(Q_Callback_Set *cs, Q_Callback *cb)
   cb->prev = NULL;
 }
 
+static void call_one_callback(Q_Callback * volatile  cb)
+{
+  mz_jmp_buf savebuf;
+
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  if (!scheme_setjmp(scheme_error_buf))
+    scheme_apply_multi(cb->callback, 0, NULL);
+  scheme_clear_escape();
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+}
+
 static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),
 					 MrEdContext *tdata, int check_only)
 {
   Q_Callback_Set *cs = q_callbacks + hi;
-  Q_Callback * volatile cb;
-  mz_jmp_buf savebuf;
+  Q_Callback *cb;
 
   cb = cs->first;
   while (cb) {
@@ -1840,11 +1850,7 @@ static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdCon
 
       remove_q_callback(cs, cb);
 
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-      if (!scheme_setjmp(scheme_error_buf))
-	scheme_apply_multi(cb->callback, 0, NULL);
-      scheme_clear_escape();
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+      call_one_callback(cb);
 
       return cb->context;
     }
@@ -1901,18 +1907,7 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
 
 #if defined(wx_msw) || defined(wx_mac)
 
-static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)
-{
-  wxWindow *w = (wxWindow *)d;
-#ifdef wx_msw
-  w->OnPaint();
-#else
-  w->Paint();
-#endif
-  return scheme_void;
-}
-
-void MrEdQueuePaint(wxWindow *wx_window)
+static void MrEdQueueWindowCallback(wxWindow *wx_window, Scheme_Closed_Prim *scp)
 {
   MrEdContext *c;
   Q_Callback *cb;
@@ -1928,7 +1923,7 @@ void MrEdQueuePaint(wxWindow *wx_window)
 	Scheme_Closed_Primitive_Proc *prim;
 	prim = (Scheme_Closed_Primitive_Proc *)cb->callback;
 	if ((prim->data == wx_window)
-	    && (prim->prim_val == CAST_SCP call_on_paint)) {
+	    && (prim->prim_val == scp)) {
 	  /* on-paint already queued */
 	  return;
 	}
@@ -1937,13 +1932,41 @@ void MrEdQueuePaint(wxWindow *wx_window)
     cb = cb->prev;
   }
 
-  p = scheme_make_closed_prim(CAST_SCP call_on_paint, wx_window);
+  p = scheme_make_closed_prim(scp, wx_window);
 
   cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
   cb->context = c;
   cb->callback = p;
 
   insert_q_callback(q_callbacks + 1, cb);
+}
+
+static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)
+{
+  wxWindow *w = (wxWindow *)d;
+#ifdef wx_msw
+  w->OnPaint();
+#else
+  ((wxCanvas *)w)->OnPaint();
+#endif
+  return scheme_void;
+}
+
+void MrEdQueuePaint(wxWindow *wx_window)
+{
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_paint);
+}
+
+static Scheme_Object *call_on_size(void *d, int, Scheme_Object **argv)
+{
+  wxWindow *w = (wxWindow *)d;
+  w->OnSize(-1, -1);
+  return scheme_void;
+}
+
+void MrEdQueueOnSize(wxWindow *wx_window)
+{
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_size);
 }
 
 #endif
@@ -2199,7 +2222,7 @@ static Bool RecordInput(void *m, wxEvent *event, void *data)
   media->Insert("\n");
   start = media->GetStartPosition();
   len = start - ioFrame->endpos;
-  s = media->GetText(ioFrame->endpos, start);
+  s = media->GetTextUTF8(ioFrame->endpos, start);
   ioFrame->endpos = start;
 
   scheme_write_string(s, len, stdin_pipe);

@@ -31,6 +31,8 @@ extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
 extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
 extern int wx_write_png(char *file_name, wxBitmap *bm);
 
+extern char *wx_get_mac_font_name(FMFontFamily fam, unsigned char *fname, int *_l);
+
 extern int wxMenuBarHeight;
 
 CGrafPtr gMacFontGrafPort = NULL; // mac platform only
@@ -218,7 +220,6 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
 
   while (1) {
     char *name;
-    Str255 buffer;
     
     name = wxTheFontNameDirectory->GetScreenName(Font, Weight, Style);
 
@@ -229,8 +230,27 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
       macFontId = GetAppFont();
       break;
     } else {
-      CopyCStringToPascal(name,buffer);
-      macFontId = ::FMGetFontFamilyFromName((ConstStr255Param)buffer);
+      /* Look for a font whose decoded name matches "name": */
+      FMFontFamilyIterator iterator;
+      FMFontFamily fam;
+      Str255 fname;
+      char *s;
+      int l;
+      
+      FMCreateFontFamilyIterator(NULL, NULL, 0, &iterator);
+      while (1) {
+	if (FMGetNextFontFamily(&iterator, &fam) != noErr) {
+	  fam != kInvalidFontFamily;
+	  break;
+	}
+	s = wx_get_mac_font_name(fam, fname, &l);
+	s[l] = 0;
+	if (!strcmp(s, name))
+	  break;
+      }
+      FMDisposeFontFamilyIterator(&iterator);
+
+      macFontId = fam;
 
       if (macFontId != kInvalidFontFamily) 
 	break;
@@ -329,14 +349,15 @@ float wxFont::GetCharWidth(float scale_x, float scale_y)
 
 //-----------------------------------------------------------------------------
 void wxFont::GetTextExtent(char* string, int delta, float* x, float* y,
-			   float* descent, float* externalLeading, Bool use16,
+			   float* descent, float* externalLeading, Bool ucs4,
 			   float scale_x, float scale_y)
 {
-  GetLatin1TextWidth(string, delta, -1,
-		     GetMacFontNum(), point_size, GetMacFontStyle(),
-		     use16, scale_y,
-		     x, y, descent, externalLeading,
-		     TRUE, scale_x);
+  GetUnicodeTextWidth(string, delta, -1,
+		      GetMacFontNum(), point_size, GetMacFontStyle(),
+		      ucs4, scale_y,
+		      x, y, descent, externalLeading,
+		      TRUE, scale_x,
+		      family == wxSYMBOL);
 }
 
 //-----------------------------------------------------------------------------

@@ -91,7 +91,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 
   // First, create the control with a bogus rectangle;
   ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingUTF8);
   ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
   CFRelease(title);
 
@@ -227,7 +227,7 @@ void wxButton::SetLabel(char* label)
     if (cMacControl) {
       {
 	CFStringRef llabel;
-	llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingISOLatin1);
+	llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingUTF8);
 	SetControlTitleWithCFString(cMacControl, llabel);
 	CFRelease(llabel);
 	RefreshIfUpdating();

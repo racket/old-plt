@@ -566,29 +566,6 @@ static Scheme_Object *os_wxListBoxSetString(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxListBoxGetString(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nstring r;
-  objscheme_check_valid(os_wxListBox_class, "get-string in list-box%", n, p);
-  int x0;
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "get-string in list-box%"));
-
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
-  r = WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)p[0])->primdata)->GetString(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
-}
-
 static Scheme_Object *os_wxListBoxSetFirstItem(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1200,10 +1177,9 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxListBox_class);
 
-  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 23));
+  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string" " method", (Scheme_Method_Prim *)os_wxListBoxSetString, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string" " method", (Scheme_Method_Prim *)os_wxListBoxGetString, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-first-visible-item" " method", (Scheme_Method_Prim *)os_wxListBoxSetFirstItem, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set" " method", (Scheme_Method_Prim *)os_wxListBoxSet, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selections" " method", (Scheme_Method_Prim *)os_wxListBoxGetSelectionList, 0, 0));

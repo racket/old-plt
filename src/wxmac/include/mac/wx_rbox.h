@@ -81,10 +81,8 @@ public:
 //=============================================================================
 public:
 
-  int FindString(char* s);
   void SetSelection(int N);
   int GetSelection(void);
-  char* GetString(int N);
   void Enable(Bool enable);
   void Enable(int item, Bool enable);
   void DoShow(Bool show);

@@ -78,7 +78,6 @@ class wxListBox: public wxbListBox
   void Append(char *Item);
   void Append(char *Item, char *Client_data);
   void Set(int N, char *Choices[]);
-  int FindString(char *s);
   void Clear(void);
   void SetSelection(int N, Bool select = TRUE, Bool just_one = FALSE);
   void SetOneSelection(int N);
@@ -96,7 +95,6 @@ class wxListBox: public wxbListBox
   // For single or multiple choice list item
   int GetSelections(int **list_selections);
   Bool Selected(int N);
-  char *GetString(int N);
 #if 0 // CJC
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);
   void SetSize(int width, int height) { wxItem::SetSize(width, height); }
@@ -106,7 +104,6 @@ class wxListBox: public wxbListBox
   // Set the specified item at the first visible item
   // or scroll to max range.
   void SetFirstItem(int N) ;
-  void SetFirstItem(char *s) ;
 
   void SetBackgroundColour(wxColour*col) ;
   void SetLabelColour(wxColour*col) ;

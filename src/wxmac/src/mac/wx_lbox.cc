@@ -531,25 +531,6 @@ Boolean MyStringCompare(Handle cellData, ConstStr255Param searchData) {
 
 ALSearchUPP strcmpUPP = NewALSearchProc(MyStringCompare);
 
-int wxListBox::FindString(char *s)
-{
-  LongPt cell;
-  StringPtr pstr;
-  char *ss;
-  int result;
-
-  cell.h = cell.v = 0;
-
-  ss = new char[strlen(s) + 1];
-  pstr = (StringPtr)ss;
-  
-  CopyCStringToPascal(s,pstr);
-  
-  result = (ALSearch(pstr, strcmpUPP, &cell, cListReference) ? cell.v : -1);
-
-  return result;
-}
-
 void wxListBox::Clear(void)
 {
   if (no_items<=0)
@@ -560,27 +541,6 @@ void wxListBox::Clear(void)
   ReleaseCurrentDC();
   no_items = 0;
   cKeycnt = 0;
-}
-
-// Find string for position
-char *wxListBox::GetString(int N)
-{
-  if ((N < 0) || (N >= no_items))
-    return NULL;
-
-  {
-    LongPt cell = {N, 0};
-    StringHandle stringHandle;
-    OSErr result;
-    
-    result = ALGetCell((void **)&stringHandle, &cell, cListReference);
-    if (result != noErr) {
-      return NULL;
-    }
-    
-    CopyPascalStringToC(*stringHandle,wxBuffer);
-    return wxBuffer;
-  }
 }
 
 void wxListBox::SetString(int N, char *s)
@@ -658,16 +618,6 @@ void wxListBox::SetFirstItem(int N)
   ALScrollCells(0, fi - N, cListReference);
 
   ReleaseCurrentDC();
-}
-
-void wxListBox::SetFirstItem(char *s) 
-{
-  int N;
-
-  N = FindString(s) ;
-
-  if (N>=0)
-    SetFirstItem(N) ;
 }
 
 int wxListBox::GetFirstItem()

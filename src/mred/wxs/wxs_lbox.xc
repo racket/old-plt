@@ -88,7 +88,6 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 
 @ "set" : void Set(-int,string[]/bList/ubList/cList///push); : : /glueListSet[string.0.1.0.METHODNAME("list%","set")]//
 @ "set-first-visible-item" : void SetFirstItem(int); : : /RANGE[0] <> index
-@ "get-string" : nstring GetString(int); : : /RANGERET[0.XC_SCHEME_NULL]
 @ "set-string" : void SetString(int,string); : : /RANGE[0]
 
 @END

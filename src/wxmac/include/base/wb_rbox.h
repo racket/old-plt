@@ -37,13 +37,9 @@ class wxbRadioBox: public wxItem
 
   ~wxbRadioBox(void);
 
-  virtual int FindString(char *s) = 0;
   virtual void SetSelection(int N) = 0;
   virtual int GetSelection(void) = 0;
-  virtual char *GetStringSelection(void);
-  virtual Bool SetStringSelection(char *s);
   virtual int Number(void);
-  virtual char *GetString(int N) = 0;
   // Avoids compiler warning
   virtual void Enable(int item, Bool enable) = 0; // Enable/disable specific item
   

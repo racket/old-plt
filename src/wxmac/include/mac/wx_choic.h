@@ -54,8 +54,6 @@ class wxChoice: public wxbChoice
   void Clear(void);
   int GetSelection(void);
   void SetSelection(int n);
-  int FindString(char *s);
-  char *GetString(int n);
   char *GetLabel(void);
   void SetLabel(char *label);
 

@@ -39,15 +39,12 @@ class wxbListBox: public wxItem
   virtual void Append(char *Item) = 0;
   virtual void Append(char *Item, char *Client_data)= 0;
   virtual void Set(int N, char *Choices[]) = 0;
-  virtual int FindString(char *s) = 0;
   virtual void Clear(void) = 0;
   virtual void SetSelection(int N, Bool select = TRUE, Bool one = TRUE) = 0;
   virtual void SetOneSelection(int N) = 0;
   virtual char *GetClientData(int N) = 0;
   virtual void Deselect(int N) = 0;
   virtual int GetSelection(void) = 0;  // For single choice list item only
-  virtual char *GetStringSelection(void);
-  virtual Bool SetStringSelection(char *s);
   virtual Bool Selected(int N) = 0;
 
   virtual int Number(void);
@@ -55,12 +52,10 @@ class wxbListBox: public wxItem
 
   // For single or multiple choice list item
   virtual int GetSelections(int **list_selections) = 0;
-  virtual char *GetString(int N) = 0;
 
   // Set the specified item at the first visible item
   // or scroll to max range.
   virtual void SetFirstItem(int N)=0 ;
-  virtual void SetFirstItem(char *s) = 0;
 };
 
 #endif // IN_CPROTO

@@ -231,16 +231,18 @@ wxMenu::~wxMenu(void)
 
 // Helper function - Convert a wxMenu String into one you can give
 // to the Mac menu mgr AppendMenu();
-// setupstr should be used with AppendItem; showstr should then be used with SetMenuItemText
+// setupstr should be used with AppendItem; the result should then be used with SetMenuItemText
 // If stripCmds is TRUE, instead of replacing wxMenu string special chars, 
 // we delete them. This is appropriate for the menu text of a pulldown Menu.
-static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *itemName,
-			       Bool stripCmds)
+static char *BuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds)
 {
   int s, d;
   char spc = '\0';
+  char *showstr;
 
-  d = 1;
+  showstr = copystring(itemName);
+
+  d = 0;
   if (itemName[0] == '-') // Fix problem with leading hyphen
     showstr[d++] = ' ';
   for (s = 0; itemName[s] != '\0'; ) {
@@ -261,7 +263,7 @@ static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *item
     }
     s++;
   }
-  showstr[0] = (char)(d-1);
+  showstr[d] = 0;
   setupstr[1] = 'X'; // temporary menu item name
   if (spc && !stripCmds) {
     setupstr[2] = '/';
@@ -269,11 +271,12 @@ static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *item
     setupstr[0] = 3;
   } else
     setupstr[0] = 1;
+
+  return showstr;
 }
 
 MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle)
 {
-  char t[256], tmp[256];
   Str255 tempString;
   int i, offset;
   MenuHandle nmh;
@@ -284,29 +287,17 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
   wxMenuItem* menuItem;
 	
   if (!toHandle)  {
-    // Remove accel - not used in Mac Top Level Menus
-    int s = 0;
-    for (i = 0; title[i]; i++) {
-      if (title[i] == '&') {
-	if (title[i + 1])
-	  i++;
-	else
-	  break;
-      }
-      t[s++] = title[i];
-    }
-    t[s] = 0;
+    title = wxItemStripLabel(title);
 #if USE_HELP_MENU_HACK
-    helpflg = strncmp("Help", t, 4) ? 0 : 1;
+    helpflg = strncmp("Help", title, 4) ? 0 : 1;
 #else
     helpflg = 0;
 #endif
-    CopyCStringToPascal(t, tempString);
-    nmh = ::NewMenu(cMacMenuId ,tempString);
+    nmh = ::NewMenu(cMacMenuId , "\pTemp");
     CheckMemOK(nmh);
     {
       CFStringRef ct;
-      ct = CFStringCreateWithCString(NULL, t, kCFStringEncodingUTF8);
+      ct = CFStringCreateWithCString(NULL, title, kCFStringEncodingUTF8);
       SetMenuTitleWithCFString(nmh, ct);
       CFRelease(ct);
     }
@@ -332,26 +323,31 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     hId = 0;
     if (menuItem->itemId == -1) {
       // Separator
-      tmp[0] = t[0] = 1;
-      tmp[1] = t[1] = '-';			
+      title = "-";
+      tempString[0] = 1;
+      tempString[1] = '-';
     } else if (menuItem->subMenu) {
       wxMenu *subMenu;
-      BuildMacMenuString((StringPtr)tmp, (StringPtr)t, menuItem->itemName, TRUE);
+      title = BuildMacMenuString(tempString, menuItem->itemName, TRUE);
       subMenu = menuItem->subMenu;
       subMenu->wxMacInsertSubmenu();
       hId = subMenu->cMacMenuId;
     } else {
-      BuildMacMenuString((StringPtr)tmp, (StringPtr)t, menuItem->itemName, FALSE);
-      if (!i && doabouthack && helpflg && (!strncmp("About", &t[1], 5))) {
+      title = BuildMacMenuString(tempString, menuItem->itemName, FALSE);
+      if (!i && doabouthack && helpflg && (!strncmp("About", title, 5))) {
 	if (menu_bar) {
 	  // This is a very sad hack !
 	  menu_bar->iHelpMenuHackNum = 1;
 	}
       }
     }
-    ::AppendMenu(nmh, (ConstStr255Param)tmp);
-    ::SetMenuItemText(nmh, i + offset, (ConstStr255Param)t);
-    ::SetMenuItemTextEncoding(nmh, i + offset, kCFStringEncodingUTF8);
+    ::AppendMenu(nmh, tempString);
+    {
+      CFStringRef ct;
+      ct = CFStringCreateWithCString(NULL, title, kCFStringEncodingUTF8);
+      ::SetMenuItemTextWithCFString(nmh, i + offset, ct);
+      CFRelease(ct);
+    }
     {
       Bool v;
       v = menuItem->IsChecked();
@@ -846,7 +842,7 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
 {
   //	assert(Id >= 1);
   wxMenuItem* item;
-  Str255 menusetup, menustr;
+  Str255 menusetup;
 
   item = new wxMenuItem(this, checkable);
 
@@ -856,11 +852,15 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   menuItems->Append(item);
   no_items ++;
 
-  BuildMacMenuString(menusetup, menustr, item->itemName, FALSE);
+  Label = BuildMacMenuString(menusetup, item->itemName, FALSE);
   wxPrepareMenuDraw();
-  ::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);
-  ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)menustr);
-  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingUTF8);
+  ::AppendMenu(cMacMenu, menusetup);
+  {
+    CFStringRef ct;
+    ct = CFStringCreateWithCString(NULL, Label, kCFStringEncodingUTF8);
+    ::SetMenuItemTextWithCFString(cMacMenu, no_items, ct);
+    CFRelease(ct);
+  }
   wxDoneMenuDraw();
   CheckHelpHack();
 }
@@ -874,8 +874,8 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   //	assert(SubMenu->window_parent == NULL); // WCH : error if submenu is a child of another
 
   wxMenuItem* item;
-  Str255 pullrightSetup, pullrightLabel;
   wxMenu *ancestor;
+  Str255 menusetup;
 
 	// mflatt: If this menu is used, give up
   if (SubMenu->window_parent)
@@ -893,12 +893,16 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   menuItems->Append(item);
   no_items++;
 
-  BuildMacMenuString(pullrightSetup, pullrightLabel,item->itemName, TRUE);
+  Label = BuildMacMenuString(menusetup, item->itemName, TRUE);
 	
   wxPrepareMenuDraw();
-  ::AppendMenu(cMacMenu, (ConstStr255Param)pullrightSetup);
-  ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)pullrightLabel);
-  ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingUTF8);
+  ::AppendMenu(cMacMenu, menusetup);
+  {
+    CFStringRef ct;
+    ct = CFStringCreateWithCString(NULL, Label, kCFStringEncodingUTF8);
+    ::SetMenuItemTextWithCFString(cMacMenu, no_items, ct);
+    CFRelease(ct);
+  }
   ::SetMenuItemHierarchicalID(cMacMenu, no_items, SubMenu->cMacMenuId);
   wxDoneMenuDraw();
 

@@ -68,7 +68,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   int maxdfltw;
   int maxdflth;
   int n,w,h;
-  Str255 temp;
   OSErr err;
   Rect r = {0,0,0,0};
   SInt16 baselineOffset; // ignored
@@ -118,10 +117,13 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   CheckMemOK(hDynMenu);
   for (n = 0; n < N; n++) {
     // attempt to size control by width of largest string
-    CopyCStringToPascal(Choices[n],temp);
     ::AppendMenu(hDynMenu, "\ptemp");
-    ::SetMenuItemText(hDynMenu, n + 1, temp);
-    ::SetMenuItemTextEncoding(hDynMenu, n + 1, kCFStringEncodingUTF8);
+    {
+      CFStringRef ct;
+      ct = CFStringCreateWithCString(NULL, Choices[n], kCFStringEncodingUTF8);
+      ::SetMenuItemTextWithCFString(hDynMenu, n + 1, ct);
+      CFRelease(ct);
+    }
   }
   no_strings = N;
 
@@ -282,14 +284,13 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 
 void wxChoice::Append (char *Item)
 {
-  Str255 s;
-  int n;
-  n = strlen(Item);
-  memcpy(&s[1], Item, n);
-  s[0] = n;
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
-  ::SetMenuItemText(hDynMenu, no_strings + 1, s);
-  ::SetMenuItemTextEncoding(hDynMenu, no_strings + 1, kCFStringEncodingUTF8);
+  {
+    CFStringRef ct;
+    ct = CFStringCreateWithCString(NULL, Item, kCFStringEncodingUTF8);
+    ::SetMenuItemTextWithCFString(hDynMenu, no_strings + 1, ct);
+    CFRelease(ct);
+  }
   no_strings++;
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
@@ -323,31 +324,6 @@ void wxChoice::SetSelection (int n)
   ::SetControlValue(cMacControl,n+1);
   selection = n;
 }
-
-int wxChoice::FindString (char *s)
-{
-  int i;
-  Str255 ps;
-  Str255 temp;
-  CopyCStringToPascal(s,temp);
-  for (i = 0; i < no_strings; i++) {
-    ::GetMenuItemText(hDynMenu, i+1, ps);
-    if (!CompareString(ps,temp,NULL))
-      return i;
-  }
-  return -1;
-}
-
-char *wxChoice::GetString (int n)
-{
-  Str255 s;
-  if (n < 0 || n >= no_strings)
-    return NULL; // dummy
-  ::GetMenuItemText(hDynMenu, n+1, s);
-  CopyPascalStringToC(s, wxBuffer);
-  return copystring(wxBuffer);
-}
-
 
 void wxChoice::SetBackgroundColour(wxColour*col)
 {

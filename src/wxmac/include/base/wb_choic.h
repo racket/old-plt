@@ -39,10 +39,6 @@ class wxbChoice: public wxItem
   virtual void Clear(void) = 0;
   virtual int GetSelection(void) = 0;
   virtual void SetSelection(int n) = 0;
-  virtual int FindString(char *s) = 0;
-  virtual char *GetStringSelection(void);
-  virtual Bool SetStringSelection(char *s);
-  virtual char *GetString(int n) = 0;
 };
 
 #endif // IN_CPROTO

@@ -577,29 +577,6 @@ wxbChoice::~wxbChoice (void)
 {
 }
 
-char *wxbChoice::GetStringSelection (void)
-{
-  int sel;
-  sel = GetSelection ();
-  if (sel > -1)
-    return this->GetString (sel);
-  else
-    return NULL;
-}
-
-Bool wxbChoice::SetStringSelection (char *s)
-{
-  int sel;
-  sel = FindString (s);
-  if (sel > -1)
-    {
-      SetSelection (sel);
-      return TRUE;
-    }
-  else
-    return FALSE;
-}
-
 // Listbox item
 
 wxbListBox::wxbListBox (wxPanel * panel, wxFunction func,
@@ -627,30 +604,6 @@ int wxbListBox::Number (void)
   return no_items;
 }
 
-// For single selection items only
-char *wxbListBox::GetStringSelection (void)
-{
-  int sel;
-  sel = GetSelection ();
-  if (sel > -1)
-    return this->GetString (sel);
-  else
-    return NULL;
-}
-
-Bool wxbListBox::SetStringSelection (char *s)
-{
-  int sel;
-  sel  = FindString (s);
-  if (sel > -1)
-    {
-      SetOneSelection(sel);
-      return TRUE;
-    }
-  else
-    return FALSE;
-}
-
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
 			  char *Title,
 			  int x, int y, int width, int height,
@@ -672,30 +625,6 @@ wxbRadioBox::~wxbRadioBox (void)
 int wxbRadioBox::Number (void)
 {
   return no_items;
-}
-
-// For single selection items only
-char *wxbRadioBox::GetStringSelection (void)
-{
-  int sel;
-  sel = GetSelection ();
-  if (sel > -1)
-    return this->GetString (sel);
-  else
-    return NULL;
-}
-
-Bool wxbRadioBox::SetStringSelection (char *s)
-{
-  int sel;
-  sel = FindString (s);
-  if (sel > -1)
-    {
-      SetSelection (sel);
-      return TRUE;
-    }
-  else
-    return FALSE;
 }
 
 // Message

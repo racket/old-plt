@@ -270,23 +270,6 @@ void wxRadioBox::SetLabel(int item, wxBitmap* bitmap)
 }
 
 //-----------------------------------------------------------------------------
-int wxRadioBox::FindString(char* s)
-{
-  int result = -1, i;
-  int numberItems;
-  char* radioButtonLabel;
-
-  numberItems = cRadioButtons->Number();
-
-  for (i = 0; i < numberItems && result == -1; i++) {
-    radioButtonLabel = GetLabel(i);
-    if (strcmp(s, radioButtonLabel) == 0)
-      result = i;
-  }
-  return result;
-}
-
-//-----------------------------------------------------------------------------
 void wxRadioBox::SetSelection(int N)
 {
   int numberItems;
@@ -320,14 +303,6 @@ void wxRadioBox::SetSelection(int N)
 int wxRadioBox::GetSelection(void)
 {
   return selected;
-}
-
-//-----------------------------------------------------------------------------
-// Find string for position
-//-----------------------------------------------------------------------------
-char* wxRadioBox::GetString(int N) // WCH: duplicates GetLabel; so delete this
-{
-  return GetLabel(N);
 }
 
 //-----------------------------------------------------------------------------

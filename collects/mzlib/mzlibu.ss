@@ -8,7 +8,6 @@
 (require-library "synrule.ss")
 
 (require-library "spidey.ss")
-(require-library "zmathu.ss")
 (require-library "pconveru.ss")
 (require-library "dateu.ss")
 (require-library "inflateu.ss")

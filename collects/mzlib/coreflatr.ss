@@ -8,10 +8,10 @@
 	 [compile : mzlib:compile^ ((require-library-unit/sig "compiler.ss"))]
 	 [math : mzlib:math^ ((require-library-unit/sig "mathr.ss"))]
 	 [thread : mzlib:thread^ ((require-library-unit/sig "threadr.ss"))])
-   (export (unit pretty-print)
-	   (unit file)
-	   (unit function)
-	   (unit string)
-	   (unit compile)
-	   (unit math)
-	   (unit thread)))
+   (export (open pretty-print)
+	   (open file)
+	   (open function)
+	   (open string)
+	   (open compile)
+	   (open math)
+	   (open thread)))

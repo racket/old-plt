@@ -11,6 +11,7 @@
 (require-relative-library "compatu.ss")
 (require-relative-library "stringu.ss")
 (require-relative-library "compileu.ss")
+(require-relative-library "mathu.ss")
 (require-relative-library "threadu.ss")
 
 (require-relative-library "cores.ss")

@@ -126,6 +126,7 @@
  (bad-url:this "Bad URL: ~a")
  
  ;; Help Desk
+ (help-desk "Help Desk")
  (search-results "Search results")
  (search "Search")
  (search-for "Search for")

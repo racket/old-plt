@@ -1524,7 +1524,7 @@
 	   (unless (identifier? lit)
 	     (raise-syntax-error
 	      #f
-	      "literal is not a indentifier"
+	      "literal is not a identifier"
 	      x
 	      lit)))
 	 (stx->list kws))

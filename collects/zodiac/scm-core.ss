@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.30 1997/07/21 15:51:43 shriram Exp $
+; $Id: scm-core.ss,v 1.31 1997/08/11 20:15:18 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -158,6 +158,11 @@
 	  (else
 	    (internal-error expr "Invalid resolution in core: ~s" r))))))
 
+;	  (if (and (language<=? 'structured)
+;		(null? (cdr contents)))
+;	    (static-error expr
+;	      "Invalid procedure application or special form")
+
   (add-list-micro scheme-vocabulary
     (lambda (expr env attributes vocab)
       (let ((contents (expose-list expr)))
@@ -166,19 +171,15 @@
 	    (expand-expr (structurize-syntax `(quote ,expr) expr)
 	      env attributes vocab)
 	    (static-error expr "Empty combination is a syntax error"))
-	  (if (and (language<=? 'structured)
-		(null? (cdr contents)))
-	    (static-error expr
-	      "Invalid procedure application or special form")
-	    (let ((top-level? (get-top-level-status attributes)))
-	      (set-top-level-status attributes)
-	      (let ((bodies
-		      (map
-			(lambda (e)
-			  (expand-expr e env attributes vocab))
-			contents)))
-		(set-top-level-status attributes top-level?)
-		(create-app (car bodies) (cdr bodies) expr))))))))
+	  (let ((top-level? (get-top-level-status attributes)))
+	    (set-top-level-status attributes)
+	    (let ((bodies
+		    (map
+		      (lambda (e)
+			(expand-expr e env attributes vocab))
+		      contents)))
+	      (set-top-level-status attributes top-level?)
+	      (create-app (car bodies) (cdr bodies) expr)))))))
 
   (define lexically-resolved?
     (lambda (expr env)

@@ -17,7 +17,8 @@
 (require-library (begin-elaboration-time
 		   (build-path plt-home-directory
 		     "lib" "require.ss")))
-(plt:require-library "sparams.ss")
+(reference (begin-elaboration-time
+	     (build-path plt-home-directory "lib" "sparams.ss")))
 
 (reference "load.ss")
 
@@ -36,7 +37,9 @@
     (define dynamic-error
       (default-error-handler 'run-time-error))))
 
-(plt:require-library "sparamu.ss")
+(define plt:mzscheme-parameters@
+  (reference (begin-elaboration-time
+	       (build-path plt-home-directory "lib" "sparamu.ss"))))
 
 (define zodiac:invoke-system
   (lambda ()

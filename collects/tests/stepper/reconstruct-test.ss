@@ -116,9 +116,9 @@
                [annotated (annotate-exprs expanded expr-box action)]
                [eval-expr (lambda (expanded annotated)
                             (set-box! expr-box expanded)
-                            (eval annotated))])
+                            (reconstruct-completed expanded (eval annotated)))])
           (if expected-completed
-              (test expected-completed map reconstruct:reconstruct-completed expanded (map eval-expr expanded annotated))
+              (test expected-completed map eval-expr expanded annotated)
               (map eval-expr expanded annotated))
           (test #t null? expected-queue))))))
 
@@ -324,10 +324,42 @@
                           ((,highlight-placeholder) (36)))
                         `((define a5 (lambda (a5) (+ a5 13))) 36))
 
-;(test-beginner-sequence "(define c1 false) (define (d2 x) (or c1 false x)) (d2 false)"
-;                        `(((,highlight-placeholder) ((d2 false)))
-;                          ((,highlight-placeholder) ((or c1 false false)))
-;                          (((or ,highlight-placeholder ...
+(test-beginner-sequence "(define c1 false) (define (d2 x) (or c1 false x)) (d2 false)"
+                        `(((,highlight-placeholder) ((d2 false)))
+                          ((,highlight-placeholder) ((or c1 false false)))
+                          (((or ,highlight-placeholder false false)) (c1))
+                          (((or ,highlight-placeholder false false)) (false))
+                          ((,highlight-placeholder) ((or false false false)))
+                          ((,highlight-placeholder) ((or false false)))
+                          ((,highlight-placeholder) ((or false false)))
+                          ((,highlight-placeholder) (false)))
+                        `((define c1 false) (define (d2 x) (or c1 false x)) false))
+
+(test-beginner-sequence "(define (silly-choice str)
+                           (string-append str (if false str str) str))
+                         (silly-choice \"family\")"
+                        `(((,highlight-placeholder) ((silly-choice "family")))
+                          ((,highlight-placeholder) ((string-append "family" (if false "family" "family") "family")))
+                          (((string-append "family" ,highlight-placeholder "family")) ((if false "family" "family")))
+                          (((string-append "family" ,highlight-placeholder "family")) ("family"))
+                          ((,highlight-placeholder) ((string-append "family" "family" "family")))
+                          ((,highlight-placeholder) ("familyfamilyfamily")))
+                        '((define (silly-choice str) (string-append str (if false str str) str)) "familyfamilyfamily"))
+
+(test-beginner-sequence "(define (f x) (+ (g x) 10)) (define (g x) (- x 22)) (f 13)"
+                        `(((,highlight-placeholder) ((f 13)))
+                          ((,highlight-placeholder) ((+ (g 13) 10)))
+                          (((+ ,highlight-placeholder 10)) ((g 13)))
+                          (((+ ,highlight-placeholder 10)) ((- 13 22)))
+                          (((+ ,highlight-placeholder 10)) ((- 13 22)))
+                          (((+ ,highlight-placeholder 10)) (-9))
+                          ((,highlight-placeholder) ((+ -9 10)))
+                          ((,highlight-placeholder) (1)))
+                        `((define (f x) (+ (g x) 10)) (define (g x) (- x 22)) 1))
+
+(test-beginner-sequence "(define (f2 x) (+ (g2 x) 10))"
+                        `()
+                        `((define (f2 x) (+ (g2 x) 10))))
 
 
 (report-errs)

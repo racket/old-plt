@@ -123,9 +123,9 @@ Linking parameters:
                           mzdyn-thunk))
      where mzdyn-thunk produces (list "mzdyn.o") for the 'normal
      variant and (list "mzdyn3m.o") for the '3m variant (also see
-     `current-use-mzdyn?').
+     `current-use-mzdyn').
 
->  current-use-mzdyn? - whether the default standard link libraries
+>  current-use-mzdyn - whether the default standard link libraries
       include the mzdyn library.  Defaults to #t.
 
 >  link-variant - a symbol, either 'normal or '3m, that indicates the

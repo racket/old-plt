@@ -11,7 +11,7 @@
      current-make-link-input-strings
      current-make-link-output-strings
      current-standard-link-libraries
-     current-use-mzdyn?
+     current-use-mzdyn
      use-standard-linker
      link-variant
      expand-for-link-variant)))

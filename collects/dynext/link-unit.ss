@@ -90,10 +90,10 @@
       (define (expand-for-link-variant l)
 	(apply append (map (lambda (s) (if (path-string? s) (list (path-string->string s)) (s))) l)))
 
-      (define current-use-mzdyn? (make-parameter #t))
+      (define current-use-mzdyn (make-parameter #t))
       (define (mzdyn-maybe s)
         (lambda ()
-          (if (current-use-mzdyn?) (s) null)))
+          (if (current-use-mzdyn) (s) null)))
 
       (define (get-unix-link-flags)
 	(case (string->symbol (path->string (system-library-subpath)))
@@ -147,7 +147,7 @@
       (define msvc-link-output-strings (lambda (s) (list (string-append "/Fe" (path-string->string s)))))
       (define borland-link-output-strings (lambda (s) (list* "," (path-string->string s)
                                                              "," "," "c0d32.obj" "cw32.lib" "import32.lib"
-                                                             (if (current-use-mzdyn?)
+                                                             (if (current-use-mzdyn)
                                                                (list "," (path->string
                                                                           (build-path std-library-dir 
                                                                                       "bcc" 
@@ -201,7 +201,7 @@
 			   (mzdyn-maybe (filethunk (wrap-3m "mzdyn~a.o")))
 			   (file "init.o")
 			   (file "fixup.o"))]
-	   [win-borland? (map file (if (current-use-mzdyn?)
+	   [win-borland? (map file (if (current-use-mzdyn)
                                      (list "mzdynb.obj")
                                      null))]
 	   [else (list (wrap-xxxxxxx (wrap-3m "libmzsch~a~~a.lib"))
@@ -211,7 +211,7 @@
       
       (define (get-unix/macos-link-libraries)
 	(list (lambda ()
-		(if (current-use-mzdyn?)
+		(if (current-use-mzdyn)
                   (map (lambda (mz.o)
                          (path->string (build-path std-library-dir mz.o)))
                        ((wrap-3m "mzdyn~a.o")))
@@ -318,7 +318,7 @@
 			(let* ([dll-command
 				;; Generate DLL link information
 				`("--dllname" ,out 
-				  ,@(if (current-use-mzdyn?)
+				  ,@(if (current-use-mzdyn)
                                       `("--def" ,(path->string (build-path std-library-dir "gcc" "mzdyn.def")))
                                       `())
 				  "--base-file" ,basefile

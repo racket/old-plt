@@ -3,7 +3,7 @@
   (require "board.ss"
            "weights.scm")
   
-  (provide compute-move (struct search-player (x y id money capacity packages)) best-cmd)
+  (provide compute-move best-cmd)
   
   (define (weight-from-goal x) (* -1 x))
   
@@ -15,8 +15,6 @@
   ;(make-cord num num)
   (define-struct cord (x y))
   
-  ;(make-search-player num num num num num (list packages))
-  (define-struct search-player (x y id money capacity packages))
   (define current-player (make-parameter null))
   
   (define best-cmd (make-parameter null))

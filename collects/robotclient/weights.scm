@@ -1,9 +1,10 @@
 (module weights mzscheme
 
   (require (lib "list.ss"))
-	(require "board.ss")
-	(provide calc-weight
-		 update-robots)
+  (require "board.ss")
+  (provide calc-weight
+           update-robots
+           (struct search-player (x y id money capacity packages)))
 (define wall-threat-value (make-parameter 1))
 (define water-threat-value (make-parameter 1))
 (define blank-threat-value (make-parameter 1))

@@ -22,7 +22,7 @@ Allocating handles
 Before you can connect to a database, you need to allocate
 an environment handle, and a connection handle:
 
-    (define henv (alloc-env)
+    (define henv (alloc-env))
     (define hdbc (alloc-connect henv))
 
 We bind these identifiers to the handle values, so that
@@ -91,7 +91,7 @@ may contain several databases.  SQL has the USE statement
 to choose among them.  In SrPersist, we write:
 
     (prepare hstmt "USE test_db")
-    (execute hstmt)
+    (sql-execute hstmt)
 
 Note that some database systems, such as Microsoft Access, 
 do not allow you to switch databases in this way.  You can 
@@ -161,7 +161,7 @@ Now we can retrieve the data and print it out:
        (printf "Name: ~a  Age: ~a~n" 
 	       (read-buffer name-buffer)
 	       (read-buffer age-buffer))
-       (loop))  
+       (loop)))
 
 The code loops through each row and prints the 
 values stored in the buffers.  When all the 

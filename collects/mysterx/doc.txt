@@ -242,7 +242,7 @@ _MysterX_
   document window size.  An instance of
   <com-object> is returned.
 
-> append-object-from-coclasss :: (send an-mx-document append-object coclass)
+> append-object-from-coclasss :: (send an-mx-document append-object coclass [size])
 
   Append a COM object with class `coclass' to the
   end of the document.  `width' and `height' are
@@ -254,7 +254,7 @@ _MysterX_
   window size.  An instance of <com-object> is
   returned.
 
-> append-object-from-progid :: (send an-mx-document append-object progid)
+> append-object-from-progid :: (send an-mx-document append-object progid [size])
 
   Append a COM object with ProgID `progid' to the
   end of the document.  `width' and `height' are
@@ -566,8 +566,8 @@ _MysterX_
    property by following the indicated path of properties, where 
    each intermediate property is a <com-object>. 
 
-> (com-help a-com-object topic)
-> (com-help a-com-type topic)
+> (com-help a-com-object [topic])
+> (com-help a-com-type [topic])
 
   Starts the Window Help system with help about
   the COM object or COM type.  `a-com-object' is a

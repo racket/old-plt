@@ -2494,11 +2494,11 @@ Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, double *x, double *y,
   wxNode *node;
   wxSnipLocation *loc;
 
-  if (!admin)
-    return FALSE;
-
-  if (bottomRight)
+  if (bottomRight) {
+    if (!admin)
+      return FALSE;
     CheckRecalc();
+  }
 
   node = snipLocationList->FindPtr(thesnip);
   if (!node)

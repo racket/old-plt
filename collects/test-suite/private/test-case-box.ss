@@ -17,7 +17,8 @@
    "fixed-width-label-snip.ss"
    "grey-editor.ss"
    "button-snip.ss"
-   "test-case.ss")
+   "test-case.ss"
+   "tabbable-text.ss")
   
   (define-signature test-case-box^ (test-case-box%))
   (define test-case-box@
@@ -28,68 +29,48 @@
         (class* aligned-editor-snip% (readable-snip<%>)
           (inherit get-admin)
           
+          (field
+           [comment (new (tabbable-text-mixin (editor:keymap-mixin text:basic%)))]
+           [call (new (tabbable-text-mixin (clear-results-program-editor-mixin scheme:text%)))]
+           [expected (new (tabbable-text-mixin (clear-results-program-editor-mixin scheme:text%)))]
+           [enabled? true])
+          
           ;; read-one-special (integer? any? (union integer? false?) (union integer? false?)
           ;;                   (union integer? false?) . -> . any? integer? false?)
           ;; status: this contract is incorrectly written
           (define/public read-one-special
             (opt-lambda (index source (line false) (column false) (position false))
+              ;; (syntax-object? (is-a?/c text%) . -> . syntax-object?)
+              ;; a syntax object representing the text with the color of the given object
+              (define (text->syntax-object text)
+                (let ([port (open-input-text-editor text)])
+                  (letrec ([read-all-syntax
+                            (lambda ()
+                              (let ([stx (read-syntax text port)])
+                                (if (eof-object? stx)
+                                    (begin (close-input-port port)
+                                           empty)
+                                    (cons stx (read-all-syntax)))))])
+                    (match (read-all-syntax)
+                      [() (raise-read-error "Empty test case" source line #f position 1)]
+                      [(stx) stx]
+                      [(stx next rest-stx ...)
+                       (raise-read-error "Too many expressions in a test case."
+                                         text
+                                         (syntax-line next)
+                                         (syntax-column next)
+                                         (syntax-position next)
+                                         (syntax-span next))]))))
               (values
-               (with-syntax ([call-stx (text->syntax-object call)]
-                             [exp-stx (text->syntax-object expected)]
-                             [record (lambda (bool) (update (if bool 'pass 'fail)))]
-                             [set-actuals set-actuals])
-                 #'(test-case equal? call-stx exp-stx record set-actuals))
+               (if enabled?
+                   (with-syntax ([call-stx (text->syntax-object call)]
+                                 [exp-stx (text->syntax-object expected)]
+                                 [record (lambda (bool) (update (if bool 'pass 'fail)))]
+                                 [set-actuals set-actuals])
+                     #'(test-case equal? call-stx exp-stx record set-actuals))
+                   #'(define-values () (values)))
                1
                true)))
-          
-          ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
-          ;; set the text in the actual field to the value given
-          (define (set-actuals vals)
-            (send* actual
-              (lock false)
-              (begin-edit-sequence)
-              (erase))
-            (send (send (get-admin) get-editor) begin-edit-sequence)
-            (unless (andmap void? vals)
-              (let* ([last false]
-                     [port
-                      (make-custom-output-port
-                       false
-                       (lambda (s start end block?)
-                         (when last (send actual insert last))
-                         (set! last s)
-                         (string-length s))
-                       void 
-                       void)])
-                (for-each
-                 (lambda (val) (print val port))
-                 vals)
-                (unless (equal? "\n" last)
-                  (send actual insert last))))
-            (send (send (get-admin) get-editor) end-edit-sequence)
-            (send* actual
-              (end-edit-sequence)
-              (lock true)))
-          
-          ;; these edit-sequences are looping
-          (define (hide-entries)
-            (send* editor
-              ;(begin-edit-sequence)
-              (release-snip call-line)
-              (release-snip exp-line)
-              (release-snip act-line)
-              ;(end-edit-sequence)
-              ))
-          
-          ;; these edit-sequences are looping
-          (define (show-entries)
-            (send* editor
-              ;(begin-edit-sequence)
-              (insert call-line false)
-              (insert exp-line false)
-              (insert act-line false)
-              ;(end-edit-sequence)
-              ))
           
           ;; update ((symbols 'pass 'fail 'unknown) . -> . void?)
           ;; sets the test case to the proper view
@@ -98,6 +79,40 @@
             (cond [(symbol=? status 'unknown)
                    (send actual erase)]
                   [else (void)]))
+          
+          ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
+          ;; set the text in the actual field to the value given
+          (define (set-actuals vals)
+            (unless (empty? vals)
+              (send* actual
+                (lock false)
+                (begin-edit-sequence)
+                (erase))
+              (send (send (get-admin) get-editor) begin-edit-sequence)
+              (let ([port
+                     (make-custom-output-port
+                      false
+                      (lambda (s start end block?)
+                        (send actual insert s)
+                        (string-length s))
+                      void 
+                      void)])
+                (print (first vals) port)
+                (for-each
+                 (lambda (val)
+                   (newline port)
+                   (print val port))
+                 (rest vals)))
+              (send (send (get-admin) get-editor) end-edit-sequence)
+              (send* actual
+                (end-edit-sequence)
+                (lock true))))
+          
+          ;;;;;;;;;;
+          ;; Saving and Copying
+          
+          ;; this is incomplete. I'll fix it when insertion works.
+          (define/override (copy) (new test-case-box%))
           
           (define/override (write f)
             (send comment write-to-file f)
@@ -115,19 +130,41 @@
               (erase)
               (read-from-file f)))
           
+          ;;;;;;;;;;
+          ;; Layout
+          
+          (set-tabbing comment call expected)
+          
+          (define (hide-entries)
+            (send* editor
+              (begin-edit-sequence)
+              (release-snip call-line)
+              (release-snip exp-line)
+              (release-snip act-line)
+              (end-edit-sequence)))
+          
+          (define (show-entries)
+            (send* editor
+              (begin-edit-sequence)
+              (insert call-line false)
+              (insert exp-line false)
+              (insert act-line false)
+              (end-edit-sequence)))
+          
           (field
            [editor (new vertical-pasteboard%)]
            [turn-button
             (new turn-button-snip%
                  (turn-down hide-entries)
                  (turn-up show-entries))]
-           [comment (new scheme:text%)]
+           [enable-button
+            (new enable-button-snip%
+                 (enable (lambda () (set! enabled? true)))
+                 (disable (lambda () (set! enabled? false))))]
            [result (new result-snip%)]
-           [call (new update-aware:scheme:text%)]
-           [expected (new update-aware:scheme:text%)]
            [actual (new actual-text%)]
-           [top-line (make-top-line turn-button comment result)]
-           [call-line (make-line "Call" call)]
+           [top-line (make-top-line turn-button enable-button comment result)]
+           [call-line (make-line "Test" call)]
            [exp-line (make-line "Expected" expected)]
            [act-line (make-line "Actual" actual
                                 (grey-editor-snip-mixin editor-snip%))])
@@ -159,9 +196,8 @@
       ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how
       ;;        to make the results of the test case boxes be reset when (and only when) highlighting
       ;;        is being reset.
-      ;; Um, I can't find drscheme:unit:program-editor-mixin actually. It's not in drscheme:tool^
-      (define update-aware:scheme:text%
-        (class scheme:text%;(drscheme:unit:program-editor-mixin scheme:text%)
+      (define (clear-results-program-editor-mixin %)
+        (class %
           (inherit get-admin)
           (rename [super-after-insert after-insert]
                   [super-after-delete after-delete])
@@ -204,13 +240,14 @@
       ))
   
   ;; the top line of the test-case
-  (define (make-top-line turn-snip comment result-snip)
+  (define (make-top-line turn-snip enable-snip comment result-snip)
     (let ([pb (new horizontal-pasteboard%)])
       (send* pb
         (insert turn-snip false)
+        (insert enable-snip false)
         (insert (new editor-snip%
                      (editor comment)
-                     (min-width 550))
+                     (min-width 530))
                 false)
         (insert result-snip false))
       (new aligned-editor-snip%
@@ -239,13 +276,24 @@
   ;; a snip which acts as a toggle button for rolling a window up and down
   (define turn-button-snip%
     (class toggle-button-snip%
-      (inherit load-file)
       (init-field turn-down turn-up)
       (super-new
-       (images2 (cons (icon "turn-up.gif") (icon "turn-up-click.gif")))
        (images1 (cons (icon "turn-down.gif") (icon "turn-down-click.gif")))
-       (callback2 (lambda (b e) (turn-up)))
-       (callback1 (lambda (b e) (turn-down))))))
+       (images2 (cons (icon "turn-up.gif") (icon "turn-up-click.gif")))
+       (callback1 (lambda (b e) (turn-down)))
+       (callback2 (lambda (b e) (turn-up))))))
+  
+  ;; a snip which allows you to enable or disable a test case
+  (define enable-button-snip%
+    (class toggle-button-snip%
+      (init-field enable disable)
+      (super-new
+       (images1 (cons (test-icon "checkbox_enabled_checked.gif")
+                      (test-icon "checkbox_enabled_checked.gif")))
+       (images2 (cons (test-icon "checkbox_enabled_notchecked.gif")
+                      (test-icon "checkbox_enabled_notchecked.gif")))
+       (callback1 (lambda (b e) (disable)))
+       (callback2 (lambda (b e) (enable))))))
   
   ;; ((symbols 'pass 'fail 'unknown) . -> . result-snip%)
   ;; a snip which will display a pass/fail result
@@ -262,8 +310,6 @@
             [(pass) "small-check-mark.jpeg"]
             [(fail) "small-cross.jpeg"]
             [(unknown) "empty.jpeg"]))))
-      (define (test-icon str)
-        (build-path (collection-path "test-suite") "private" "icons" str))
       (super-new)
       (update status)))
   
@@ -278,7 +324,7 @@
   ;; a snip to label a text case field
   ;; STATUS: This code breaks single point of control for the names of the text fields.
   (define (field-label str)
-    (new (fixed-width-label-snip '("Call" "Expected" "Actual"))
+    (new (fixed-width-label-snip '("Test" "Expected" "Actual"))
          (label str)
          (top-margin 0)
          (bottom-margin 0)))
@@ -286,32 +332,8 @@
   (define (icon str)
     (build-path (collection-path "icons") str))
   
-  ;; (syntax-object? (is-a?/c text%) . -> . syntax-object?)
-  ;; a syntax object representing the text with the color of the given object
-  ;(define (text->syntax-object text)
-  ;  (datum->syntax-object
-  ;   #f
-  ;   (read-syntax text (open-input-text-editor text))
-  ;   (list text 1 0 1 1)))
-  (define (text->syntax-object text)
-    (let ([port (open-input-text-editor text)])
-      (letrec ([read-all-syntax
-                (lambda ()
-                  (let ([stx (read-syntax text port)])
-                    (if (eof-object? stx)
-                        (begin (close-input-port port)
-                               empty)
-                        (cons stx (read-all-syntax)))))])
-        (match (read-all-syntax)
-          [() (raise-read-error "Empty test box" text 1 1 1 1)]
-          [(stx) stx]
-          [(stx next rest-stx ...)
-           (raise-read-error "Too many expressions"
-                             text
-                             (syntax-line next)
-                             (syntax-column next)
-                             (syntax-position next)
-                             (syntax-span next))]))))
+  (define (test-icon str)
+    (build-path (collection-path "test-suite") "private" "icons" str))
   
   ;; a locked text hightlighted to show that it is inactive
   (define actual-text%
@@ -325,13 +347,12 @@
   ;;;;;;;;;;
   ;; tests
   
-  ;(define (test)
-  ;  (define align? #t)
-  ;  (define f (new frame% (label "test") (width 200) (height 200)))
-  ;  (define e (new (if align? vertical-pasteboard% pasteboard%)))
-  ;  (define c (new (if align? aligned-editor-canvas% editor-canvas%) (editor e) (parent f)))
-  ;  (define t (new test-case-box%))
-  ;  (send t resize 500 100)
-  ;  (send e insert t)
-  ;  (send f show #t))
+;  (define align? #t)
+;  (define f (new frame% (label "test") (width 200) (height 200)))
+;  (define e (new (if align? vertical-pasteboard% pasteboard%)))
+;  (define c (new (if align? aligned-editor-canvas% editor-canvas%) (editor e) (parent f)))
+;  (define t (new test-case-box%))
+;  (send t resize 500 100)
+;  (send e insert t)
+;  (send f show #t)
   )

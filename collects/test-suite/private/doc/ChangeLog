@@ -1,3 +1,16 @@
+2003/11/17
+  * Made event handling of the pasteboards work differently
+
+2003/11/13
+  * Added tabbing.
+  * Corrected the handling of multiple values in test case boxes.
+  * Made the empty test case error hightlight the full test case. It'd be
+    better to have it highlight just the part of the test case that is empty
+    but this is not possible with the current error highlighting system.
+
+2003/10/??
+  * Changed the test-suite tool to make test-case-boxes.
+
 2003/04/23
   * Added code highlighting to the "Too many expressions in a test box
     error message

@@ -25,18 +25,15 @@
       ;; Updates the needs-reset? when the the program is executed
       (define (test-case-mixin %)
         (class %
-      ;(define test-case-mixin
-      ;  (mixin (drscheme:unit:frame<%> top-level-window<%>) ()
           (inherit get-special-menu get-edit-target-object)
-          ;(rename [super-syncheck:button-callback syncheck:button-callback])
-          ;(define/override (syncheck:button-callback)
-          ;  (namespace-require '(lib "test-case.ss" "test-suite" "private"))
-          ;  (super-syncheck:button-callback))
+          
           (rename [super-execute-callback execute-callback])
           (define/override (execute-callback)
             (super-execute-callback)
             (set! needs-reset? true))
+          
           (super-new)
+          
           (new menu-item%
             (label "Insert Test Case")
             (parent (get-special-menu))
@@ -68,6 +65,11 @@
             (super-after-delete start len)
             (reset-test-case-boxes))
         
+          (rename [super-set-modified set-modified])
+          (define/override (set-modified b)
+            (super-set-modified b)
+            (when needs-reset? (reset-test-case-boxes)))
+          
           ;; set all of the test-case-boxes in the definitions text to an unevaluated state
           (define/public (reset-test-case-boxes)
             (when needs-reset?
@@ -81,7 +83,7 @@
           (super-new)))
       
       (drscheme:get/extend:extend-definitions-text clear-results-mixin)
-      
+
       (define require-macro-mixin
         (mixin ((class->interface drscheme:rep:text%)) ()
           (inherit get-user-namespace)

@@ -930,7 +930,7 @@
 	    [next-menu-id (lambda () other-offset)]
 	    [load-file
 	     (lambda (file)
-	       (load file))]
+	       (load/cd file))]
 	    [on-quit mred:exit:exit]
 
 	    [file-menu:revert #f]

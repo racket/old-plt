@@ -538,6 +538,7 @@ void GC_free_immobile_box(void **b)
       if(!ib->prev) immobile_boxes = ib->next;
       if(ib->next) ib->next->prev = ib->prev;
       free(ib);
+      return;
     }
   GCWARN("Attempted free of non-existent immobile box %p\n", b);
 }
@@ -1195,7 +1196,9 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
   struct objhead *info = (struct objhead *)((char*)ptr - WORD_SIZE);
   
   switch(page->page_type) {
-    case PAGE_TAGGED: mark_table[*(unsigned short*)ptr](ptr); break;
+    case PAGE_TAGGED: if(*(unsigned short*)ptr != scheme_thread_type)
+                        mark_table[*(unsigned short*)ptr](ptr); 
+                      break;
     case PAGE_ATOMIC: break;
     case PAGE_ARRAY: { 
       void **temp = ptr, **end = temp + info->size;

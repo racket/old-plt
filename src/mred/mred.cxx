@@ -1843,7 +1843,7 @@ wxFrame *MrEdApp::OnInit(void)
 
   def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
 					  "default-event-dispatch-handler",
-					  0, 0);
+					  1, 1);
   scheme_set_param(scheme_config, mred_event_dispatch_param, def_dispatch);
 
   MakeContext(mred_main_context, NULL);

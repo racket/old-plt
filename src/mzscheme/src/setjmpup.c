@@ -341,14 +341,11 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
   scheme_longjmp(b->buf, 1);
 }
 
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
 int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
 			     void * volatile start, Scheme_Jumpup_Buf *c)
 {
   int local;
+  long disguised_b;
 
   FLUSH_REGISTER_WINDOWS;
 
@@ -365,16 +362,19 @@ int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *base,
       }
     } else
       b->cont = NULL;
-    copy_stack(b, base, start GC_VAR_STACK_ARG);
+
+
+    /* b is a pointer into the middle of `base', which bad for precise
+     gc, so we hide it. */
+    disguised_b = (long)b;
+    b = NULL;
+
+    copy_stack((Scheme_Jumpup_Buf *)disguised_b, base, start GC_VAR_STACK_ARG);
     return 0;
   }
 
   return local;
 }
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
 
 void scheme_longjmpup(Scheme_Jumpup_Buf *b)
 {

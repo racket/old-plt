@@ -106,20 +106,66 @@ verbatim, the server evaluates the contained Scheme _servlet_ and
 serves the output.  Servlets are (by default) loaded in a
 case-sensitive manner. (Seach in help-desk for read-case-sensitive.)
 
-A servlet is a unit/sig that imports the servlet^ signature and
-exports nothing.  (Search in help-desk for more information on
-unit/sig and on signatures.)  To construct a unit/sig with the
-appropriate imports, the servlet must require the two modules
-providing unit/sigs and the servlet^ signature:
+The server supports two forms of servlets.  More may appear.
 
-(require (lib "unitsig.ss")
-         (lib "servlet-sig.ss" "web-server"))
-(unit/sig ()
-  (import servlet^)
-  ...insert servlet code here...)
+The first type of servlet is a module that provides three values:
+an interface-version, a timeout, and a start function.
 
-The last value in the unit/sig must be a response to an HTTP request.
-A Response is one of the following:
+(module a-module-servlet mzscheme
+  (provide interface-version timeout start)
+  
+  (define interface-version 'v1)
+  
+  (define timeout +inf.0)
+  
+  ; start : request -> response
+  (define (start initial-request)
+    `(html (head (title "A Test Page"))
+           (body ([bgcolor "white"])
+                 (p "This is a simple module servlet.")))))
+
+The _interface-version_ is a symbol indicating how the server
+should interact with the servlet.  The only supported value
+is 'v1 at this time.
+
+The _timeout_ is the number of seconds the server will allow the
+servlet to run before shutting it down.  Large values consume
+more memory, while smaller values annoy users by forcing them to
+restart their session.  The value can be adjusted dynamically by
+calling the _adjust-timeout!_ function.
+
+The _start_ function consumes a request, and produces a response.
+Each time a consumer visits the URL associated with the (beginning of
+the) servlet, the server calls the start function with the request
+sent from the browser.  The server then sends the response produced by
+the start function back to the browser.
+
+A request is
+ (make-request method uri headers bindings host-ip client-ip), where
+ - method : (Union 'get 'post)
+ - uri : URL see the net collection in help-desk for details
+ - headers : environment
+             optional HTTP headers for this request
+ - bindings : environment
+              name value pairs from the form submitted or the query part
+              of the URL.
+ - bindings/raw : either a string or an environment
+                  For file uploads bindings/raw is identical to bindings.
+                  Otherwise, it contains the unparsed get or post data.
+
+Usually, the bindings are the most useful part of a request.
+
+The path part of the URL supplies the file path to the servlet
+relative to the "servlets" directory.  However, paths may also contain
+extra path components that servlets may use as additional input.  For
+example all of the following URLs refer to the same servlet:
+
+  http://www.plt-scheme.org/servlets/my-servlet
+  http://www.plt-scheme.org/servlets/my-servlet/extra
+  http://www.plt-scheme.org/servlets/my-servlet/extra/directories
+
+
+A response is one of the following:
 
  - an X-expression representing HTML
    (Search for XML in help-desk.)
@@ -152,36 +198,29 @@ A Response is one of the following:
    it is more efficient to send fewer, larger strings.  Second, this
    response should not be used for data that must arrive reliably.
 
-   Also see make-html-response/incremental in the servlet-helpers section below.
-   
+Also see make-html-response/incremental in the servlet-helpers section below.
+
+The second type of servlet is a unit/sig that imports the servlet^
+signature and exports nothing.  (Search in help-desk for more
+information on unit/sig and on signatures.)  To construct a unit/sig
+with the appropriate imports, the servlet must require the two modules
+providing unit/sigs and the servlet^ signature:
+
+(require (lib "unitsig.ss")
+         (lib "servlet-sig.ss" "web-server"))
+(unit/sig ()
+  (import servlet^)
+  ...insert servlet code here...)
+
+The last value in the unit/sig must be a response.
 
 Evaluating (require (lib "servlet-sig.ss" "web-server")) loads
-the servlet^ signature consisting of the following imports:
-  - initial-request : request, where a request is
-    (make-request method uri headers bindings host-ip client-ip), where
-    - method : (Union 'get 'post)
-    - uri : URL see the net collection in help-desk for details
-    - headers : environment
-		optional HTTP headers for this request
-    - bindings : environment
-		 name value pairs from the form submitted or the query part
-                 of the URL.
-    - bindings/raw : either a string or an environment
-                     For file uploads bindings/raw is identical to bindings.
-                     Otherwise, it contains the unparsed get or post data.
+the servlet^ signature which contains the following import:
+  - initial-request : request
 
-The path part of the URL supplies the file path to the servlet relative to the
-"servlets" directory.  However, paths may also contain extra path components
-that servlets may use as additional input.  For example all of the following
-URLs refer to the same servlet:
-
-  http://www.plt-scheme.org/servlets/my-servlet
-  http://www.plt-scheme.org/servlets/my-servlet/extra
-  http://www.plt-scheme.org/servlets/my-servlet/extra/directories
-
-The above imports support handling a single input from a Web form. To ease the
-development of more interactive servlets, the servlet^ signature also provides
-the following functions:
+This supports handling a single input from a Web form. To ease the
+development of interactive servlets, the web-server collection also 
+provides the following functions:
 
 > send/suspend : (str -> response) -> request
 
@@ -206,6 +245,14 @@ the following functions:
   Calling adjust-timeout! allows the programmer to choose this number of
   seconds.  Larger numbers consume more resources while smaller numbers force
   the user to restart computations more often.
+
+Module servlets obtain these interaction functions via
+  (require (lib "servlet.ss" "web-server"))
+The functions work only during the dynamic extent of the start
+function, not during module initialization.
+
+Unit servlets receive the interaction functions as imports through the
+servlet^ signature.
 
 The servlet-helpers module, required with
   (require (lib "servlet-helpers.ss" "web-server"))
@@ -273,10 +320,23 @@ reloads the password file.  After updating a servlet, loading the URL
   http://my-host/conf/refresh-servlets
 causes the server to reload each servlet on the next invocation.
 This loses any per-servlet state (not per servlet instance state) computed
-before the unit invocation.    
+before the unit invocation.
 
-TeachPack
-=========
+Developing Servlets
+===================
+
+To develop module based servlets, open the module in DrScheme's
+definitions window.  After clicking the Execute button, require the
+module servlet development library.
+  (require (lib "develop-servlet.ss"))
+Then use the develop-servlet function to interact with the servlet
+using a Web browser.
+  (develop-servlet start)
+
+Entering both the require expression and the call to develop-servlet
+on one line allows DrScheme's history mechanism to recall both
+expressions at once.  This facilitates re-testing the servlet after
+making changes and clicking Execute, but it is not necessary.
 
 Choose "Add TeachPack..." from DrScheme's "Language" menu and select the
   plt/teachpack/servlet.ss
@@ -290,7 +350,6 @@ program in the definitions window as a servlet.  This adds all the necessary
 code to produce a unit suitable for the Web server's "servlets" directory.
 The servlet can use any selected teachpacks and language specific
 constructs just as the program in the defintions window can.
-
 
 File locations
 ==============
@@ -417,7 +476,7 @@ was the library's first use.
 > (channel-get-available c k) : Channel (TST -> a) -> (U a void)
   gets a value from the front of the channel queue, if available, and calls
   k with the value.  Otherwise, it returns void without calling k.
-  The original use of this funciton was to process all the remaining values in
+  The original use of this function was to process all the remaining values in
   the queue, but that still does not quite justify the CPSing.
 
 > (channel-try-get c fail) : Channel ( -> TST) -> TST

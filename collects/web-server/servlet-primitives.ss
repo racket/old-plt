@@ -4,6 +4,8 @@
            "configuration-structures.ss"
            "web-server.ss"
            "servlet-sig.ss"
+           "servlet.ss"
+           "internal-structs.ss"
            (lib "xml.ss" "xml")
            (lib "url.ss" "net")
            (lib "browser.ss" "net")
@@ -37,6 +39,7 @@
     (set! *page-channel* #f))
   
   ; : tst -> bool
+  ; FIX - xexpr->xml is not a good way to check validity
   (define (valid-response? page)
     (with-handlers ([void (lambda (exn) #f)])
       (or (response/full? page)
@@ -106,6 +109,8 @@
     ;(set-servlet-instance-cont-table!
     ; (hash-table-get invoke-id instances)
     ; (make-hash-table))
+    ; FIX - this is wrong.  The hash table must be cleared or the reference in the server must be reset, not our reference.
+    ; try (set-config-instances! the-config (make-hash-table))
     (set! instances (make-hash-table))
     (add-new-instance invoke-id instances)
     (the-send/suspend page-maker))

@@ -13,7 +13,7 @@
            (lib "browser-unit.ss" "browser")
            (lib "web-server-unit.ss" "web-server")
            (lib "configuration-structures.ss" "web-server")
-           (lib "contracts.ss")
+           (lib "contract.ss")
            (lib "servlet-sig.ss" "web-server"))
   
   (provide/contract 

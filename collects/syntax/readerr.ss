@@ -11,20 +11,22 @@
           [ordinal? (lambda (x)
                       (or (not x) 
                           (and (number? x) (exact? x) (positive? x) (integer? x))))]
-          [ordinal "positive exact integer"])
+          [ordinal "positive exact integer"]
+	  [cardinal? (lambda (x)
+		       (or (not x)
+			   (and (number? x) (exact? x) (not (negative? x)) (integer? x))))]
+	  [cardinal "non-negative exact integer"])
     
       (unless (string? msg)
         (bad-type 0 "string"))
       (unless (ordinal? line)
         (bad-type 2 ordinal))
-      (unless (ordinal? col)
-        (bad-type 3 ordinal))
+      (unless (cardinal? col)
+        (bad-type 3 cardinal))
       (unless (ordinal? pos)
         (bad-type 4 ordinal))
-      (unless (or (not span)
-                  (and (number? span) (exact? span) (not (negative? span)) (integer? span)))
-        (bad-type 5 "non-negative exact integer"))
-                  
+      (unless (cardinal? span)
+        (bad-type 5 cardinal))
       
       (raise
        (make-exn:read

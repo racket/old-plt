@@ -273,8 +273,9 @@ Source-location information is added to the error message using the
 last five arguments (if the `error-print-source-location' parameter is
 set to #t). The `source-v' argument is an arbitrary value naming the
 source location --- usually a file path string. Each of the `line-k',
-`col-k', and `pos-k' arguments is #f or a positive exact integer
-representing the location within `source-name' (as much as known), and
+`pos-k' arguments is #f or a positive exact integer representing the
+location within `source-name' (as much as known), `col-k' is a
+non-negaytive exact integer for the source column (if known), and
 `span-k' is #f or a non-negative exact integer for an item range
 starting from the indicated position.
 

@@ -70,7 +70,7 @@ abstract out the `hole and `(hole name) patterns.
   ;; hole-path = (make-hole-path (union #f symbol) symbol (listof (union 'car 'cdr)))
   (define-struct hole-path (name id path))
   
-  (define compiled-pattern (any? (listof hole-path?) symbol? . -> . (union false? (listof bindings?))))
+  (define compiled-pattern (any? (listof hole-path?) . -> . (union false? (listof bindings?))))
   
   (define-struct compiled-lang (lang ht across-ht))
   

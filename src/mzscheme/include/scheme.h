@@ -89,7 +89,7 @@ typedef long FILE;
 #endif
 
 #ifdef OS_X
-# include "carbon-precomp"
+# include "../carbon-precomp"
 #endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED

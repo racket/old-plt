@@ -8,7 +8,7 @@
 	 (override
 	   [on-event
 	    (lambda (ev)
-	      (printf "~aMOUSE ~a (~a,~a)  meta: ~a  control: ~a  alt: ~a  shift: ~a buttons: ~a ~a ~a~a~n" 
+	      (printf "~aMOUSE ~a (~a,~a)~n  meta: ~a  control: ~a  alt: ~a  shift: ~a~n  buttons: ~a ~a ~a~a~a~a~a~n" 
 		      (es-check)
 		      (send ev get-event-type)
 		      (send ev get-x)
@@ -22,10 +22,19 @@
 		      (send ev get-right-down)
 		      (if (send ev dragging?)
 			  " dragging"
+			  "")
+		      (if (send ev moving?)
+			  " moving"
+			  "")
+		      (if (send ev entering?)
+			  " entering"
+			  "")
+		      (if (send ev leaving?)
+			  " leaving"
 			  "")))]
 	   [on-char
 	    (lambda (ev)
-	      (printf "~aKEY code: ~a  rel-code: ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
+	      (printf "~aKEY code: ~a  rel-code: ~a~n  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 
 		      (es-check)
 		      (let ([v (send ev get-key-code)])
 			(if (symbol? v)

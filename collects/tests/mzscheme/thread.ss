@@ -81,7 +81,7 @@
   (test #f 'kept-going-after-shutdown? kept-going?))
 
 (err/rt-test (parameterize ([current-custodian cm]) (kill-thread (current-thread)))
-	     exn:misc?)
+	     exn:application:mismatch?)
 
 (test #t custodian? cm)
 (test #f custodian? 1)

@@ -227,10 +227,6 @@ static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
   READY_TO_RETURN;
 }
 
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
 static wxBitmap *dc_target(Scheme_Object *obj)
 {
   wxDC *dc;
@@ -243,10 +239,6 @@ static wxBitmap *dc_target(Scheme_Object *obj)
   }
   return (wxBitmap *)0x1; /* dont't return NULL because that matches unspecified mask */
 }
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
 
 @MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
 

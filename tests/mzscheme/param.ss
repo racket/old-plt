@@ -308,7 +308,7 @@
 		      '(let ([th (parameterize ([current-custodian main-cust])
 				    (thread (lambda () (sleep 1))))])
 			 (kill-thread th))
-		      exn:misc?
+		      exn:application:mismatch?
 		      (list "bad setting"))
 
 		(list exit-handler

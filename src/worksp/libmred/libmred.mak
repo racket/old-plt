@@ -36,12 +36,12 @@ ALL : "..\..\..\libmredxxxxxxx.dll"
 
 !ELSE 
 
-ALL : "wxme - Win32 Release" "libmzsch - Win32 Release" "libmzgc - Win32 Release" "wxwin - Win32 Release" "wxutils - Win32 Release" "wxs - Win32 Release" "jpeg - Win32 Release" "..\..\..\libmredxxxxxxx.dll"
+ALL : "zlib - Win32 Release" "png - Win32 Release" "wxme - Win32 Release" "libmzsch - Win32 Release" "libmzgc - Win32 Release" "wxwin - Win32 Release" "wxutils - Win32 Release" "wxs - Win32 Release" "jpeg - Win32 Release" "..\..\..\libmredxxxxxxx.dll"
 
 !ENDIF 
 
 !IF "$(RECURSE)" == "1" 
-CLEAN :"jpeg - Win32 ReleaseCLEAN" "wxs - Win32 ReleaseCLEAN" "wxutils - Win32 ReleaseCLEAN" "wxwin - Win32 ReleaseCLEAN" "libmzgc - Win32 ReleaseCLEAN" "libmzsch - Win32 ReleaseCLEAN" "wxme - Win32 ReleaseCLEAN" 
+CLEAN :"jpeg - Win32 ReleaseCLEAN" "wxs - Win32 ReleaseCLEAN" "wxutils - Win32 ReleaseCLEAN" "wxwin - Win32 ReleaseCLEAN" "libmzgc - Win32 ReleaseCLEAN" "libmzsch - Win32 ReleaseCLEAN" "wxme - Win32 ReleaseCLEAN" "png - Win32 ReleaseCLEAN" "zlib - Win32 ReleaseCLEAN" 
 !ELSE 
 CLEAN :
 !ENDIF 
@@ -98,7 +98,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
+LINK32_FLAGS=../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib ../png/release/png.lib ../zlib/release/zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -108,7 +108,9 @@ LINK32_OBJS= \
 	"..\wxwin\Release\wxwin.lib" \
 	"..\libmzgc\Release\libmzgcxxxxxxx.lib" \
 	"..\libmzsch\Release\libmzschxxxxxxx.lib" \
-	"..\wxme\Release\wxme.lib"
+	"..\wxme\Release\wxme.lib" \
+	"..\png\Release\png.lib" \
+	"..\zlib\Release\zlib.lib"
 
 "..\..\..\libmredxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -126,12 +128,12 @@ ALL : "..\..\..\libmredxxxxxxx.dll"
 
 !ELSE 
 
-ALL : "wxme - Win32 Debug" "libmzsch - Win32 Debug" "libmzgc - Win32 Debug" "wxwin - Win32 Debug" "wxutils - Win32 Debug" "wxs - Win32 Debug" "jpeg - Win32 Debug" "..\..\..\libmredxxxxxxx.dll"
+ALL : "zlib - Win32 Debug" "png - Win32 Debug" "wxme - Win32 Debug" "libmzsch - Win32 Debug" "libmzgc - Win32 Debug" "wxwin - Win32 Debug" "wxutils - Win32 Debug" "wxs - Win32 Debug" "jpeg - Win32 Debug" "..\..\..\libmredxxxxxxx.dll"
 
 !ENDIF 
 
 !IF "$(RECURSE)" == "1" 
-CLEAN :"jpeg - Win32 DebugCLEAN" "wxs - Win32 DebugCLEAN" "wxutils - Win32 DebugCLEAN" "wxwin - Win32 DebugCLEAN" "libmzgc - Win32 DebugCLEAN" "libmzsch - Win32 DebugCLEAN" "wxme - Win32 DebugCLEAN" 
+CLEAN :"jpeg - Win32 DebugCLEAN" "wxs - Win32 DebugCLEAN" "wxutils - Win32 DebugCLEAN" "wxwin - Win32 DebugCLEAN" "libmzgc - Win32 DebugCLEAN" "libmzsch - Win32 DebugCLEAN" "wxme - Win32 DebugCLEAN" "png - Win32 DebugCLEAN" "zlib - Win32 DebugCLEAN" 
 !ELSE 
 CLEAN :
 !ENDIF 
@@ -189,7 +191,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
+LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -199,7 +201,9 @@ LINK32_OBJS= \
 	"..\wxwin\Debug\wxwin.lib" \
 	"..\libmzgc\Debug\libmzgcxxxxxxx.lib" \
 	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
-	"..\wxme\Debug\wxme.lib"
+	"..\wxme\Debug\wxme.lib" \
+	"..\png\Debug\png.lib" \
+	"..\zlib\Debug\zlib.lib"
 
 "..\..\..\libmredxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -409,6 +413,58 @@ SOURCE=..\..\mred\MREDMSW.cxx
 "wxme - Win32 DebugCLEAN" : 
    cd "..\wxme"
    $(MAKE) /$(MAKEFLAGS) /F .\wxme.mak CFG="wxme - Win32 Debug" RECURSE=1 CLEAN 
+   cd "..\libmred"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libmred - Win32 Release"
+
+"png - Win32 Release" : 
+   cd "..\png"
+   $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Release" 
+   cd "..\libmred"
+
+"png - Win32 ReleaseCLEAN" : 
+   cd "..\png"
+   $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Release" RECURSE=1 CLEAN 
+   cd "..\libmred"
+
+!ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
+
+"png - Win32 Debug" : 
+   cd "..\png"
+   $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Debug" 
+   cd "..\libmred"
+
+"png - Win32 DebugCLEAN" : 
+   cd "..\png"
+   $(MAKE) /$(MAKEFLAGS) /F .\png.mak CFG="png - Win32 Debug" RECURSE=1 CLEAN 
+   cd "..\libmred"
+
+!ENDIF 
+
+!IF  "$(CFG)" == "libmred - Win32 Release"
+
+"zlib - Win32 Release" : 
+   cd "..\zlib"
+   $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Release" 
+   cd "..\libmred"
+
+"zlib - Win32 ReleaseCLEAN" : 
+   cd "..\zlib"
+   $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Release" RECURSE=1 CLEAN 
+   cd "..\libmred"
+
+!ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
+
+"zlib - Win32 Debug" : 
+   cd "..\zlib"
+   $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Debug" 
+   cd "..\libmred"
+
+"zlib - Win32 DebugCLEAN" : 
+   cd "..\zlib"
+   $(MAKE) /$(MAKEFLAGS) /F .\zlib.mak CFG="zlib - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\libmred"
 
 !ENDIF 

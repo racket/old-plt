@@ -37,7 +37,6 @@ ALL : "$(OUTDIR)\jpeg.lib"
 
 
 CLEAN :
-	-@erase "$(INTDIR)\cdjpeg.obj"
 	-@erase "$(INTDIR)\jcapimin.obj"
 	-@erase "$(INTDIR)\jcapistd.obj"
 	-@erase "$(INTDIR)\jccoefct.obj"
@@ -134,7 +133,6 @@ BSC32_SBRS= \
 LIB32=link.exe -lib
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)\jpeg.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)\cdjpeg.obj" \
 	"$(INTDIR)\jcapimin.obj" \
 	"$(INTDIR)\jcapistd.obj" \
 	"$(INTDIR)\jccoefct.obj" \
@@ -202,7 +200,6 @@ ALL : "$(OUTDIR)\jpeg.lib"
 
 
 CLEAN :
-	-@erase "$(INTDIR)\cdjpeg.obj"
 	-@erase "$(INTDIR)\jcapimin.obj"
 	-@erase "$(INTDIR)\jcapistd.obj"
 	-@erase "$(INTDIR)\jccoefct.obj"
@@ -299,7 +296,6 @@ BSC32_SBRS= \
 LIB32=link.exe -lib
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)\jpeg.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)\cdjpeg.obj" \
 	"$(INTDIR)\jcapimin.obj" \
 	"$(INTDIR)\jcapistd.obj" \
 	"$(INTDIR)\jccoefct.obj" \
@@ -368,12 +364,6 @@ LIB32_OBJS= \
 
 
 !IF "$(CFG)" == "jpeg - Win32 Release" || "$(CFG)" == "jpeg - Win32 Debug"
-SOURCE=..\..\wxcommon\jpeg\cdjpeg.c
-
-"$(INTDIR)\cdjpeg.obj" : $(SOURCE) "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) $(SOURCE)
-
-
 SOURCE=..\..\wxcommon\jpeg\jcapimin.c
 
 "$(INTDIR)\jcapimin.obj" : $(SOURCE) "$(INTDIR)"

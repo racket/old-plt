@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxcommon\jpeg,..\jpeg"
+				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxcommon\jpeg,..\jpeg,..\..\wxcommon\zlib"
 				PreprocessorDefinitions="DEBUG,__STDC__,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxcommon\jpeg,..\jpeg"
+				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxcommon\jpeg,..\jpeg,..\..\wxcommon\zlib"
 				PreprocessorDefinitions="NDEBUG,__STDC__,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"

@@ -44,6 +44,12 @@ Package=<4>
     Begin Project Dependency
     Project_Dep_Name wxme
     End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name png
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name zlib
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -87,6 +93,18 @@ Package=<4>
 
 ###############################################################################
 
+Project: "png"=..\png\png.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "wxme"=..\wxme\wxme.dsp - Package Owner=<4>
 
 Package=<5>
@@ -124,6 +142,18 @@ Package=<4>
 ###############################################################################
 
 Project: "wxwin"=..\wxwin\wxwin.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "zlib"=..\zlib\zlib.dsp - Package Owner=<4>
 
 Package=<5>
 {{{

@@ -1,0 +1,150 @@
+DrScheme now has lots of turtle primitives plus the top-level
+defintion pi, bound to 3.1415926535.
+
+Turtles adds these new functions:
+
+(turtles b)
+  show/hide the turtles window based on b.
+  b is optional, if left out, it toggles. 
+
+(move n)
+  move the turtle n pixels
+
+(draw n)
+  move the turtle n pixels and draw on that path.
+
+(erase n)
+  move the turtle n pixels and erase on that path.
+
+(move-offset h v)
+(draw-offset h v)
+(erase-offset h v)
+  just like move, draw and erase, except they take a horizontal and
+  vertical from the turtle's current position
+
+(turn theta)
+  turn the turtle theta degrees (in radians)
+
+(show b)
+  Hide the window where the turtles are being drawn if b is #f, 
+  or show it otherwise
+
+(clear)
+  erase the turtles window
+
+Turtles also adds these syntactic forms:
+
+(split E)
+  this is new to the world of turtles. It spawns a new turtle where
+  the turtle is currently and in order to distinguish the two turtles,
+  only the new one evaluates the expression E. For example, if you start
+  with a fresh turtle-window and type:
+
+		       (split (turn (/ pi 2)))
+
+  you will have two turtles, pointing at right angles to each other.
+  To see that, try this:
+
+			      (draw 100)
+
+  You should see two lines. Now, if you evaluate those two expression
+  again, you will have four turtles, etc..
+
+(split* E...)
+  split* is similar to split, except it creates as many turtles as
+  there are expressions and each turtles does one of the expression. For
+  example, to do what we did above, you could have does this:
+
+  (split* dont-move
+          '(turn (/ pi 2)))
+
+  and the second turtle will turn 90 degrees and the first turtle will
+  not move since evaluating a symbol doesn't cause and turtle movement.
+
+(tprompt E...)
+  
+  tprompt provides a way to limit the splitting of the turtles. Before
+  the expression E is run, the state of the turtles (how many, their
+  positions and headings) is "checkpointed," then E is evaluated and
+  the state of the turtles is restored, but all drawing that may have
+  occured during execution of E remains. 
+
+  For example, if you do this:
+  
+			 (tprompt (draw 100))
+
+  the turtle will move forward 100 pixels, draw a line there and then
+  be immediately put back in it's original position. Also, if you do this:
+
+		  (tprompt (split (turn (/ pi 2))))
+
+  the turtle will split into two turtles, one will turn 90 degrees and then
+  the turtles will be put back into their original state -- as if the split
+  never took place.
+
+  The fern functions in examples.ss demonstrate more advanced use of
+  tprompt.
+
+/home/robby/plt/lib/turex.ss defines these functions and values:
+
+(regular-poly sides radius)
+  draws a regular poly centered at the turtle with 
+  sides sides and with radius radius.
+
+(regular-polys sides s)
+  draws s regular polys spaced evenly outwards with sides sides.
+
+(radial-turtles  n)
+  places 2^n turtles spaced evenly pointing radially outward 
+
+(spaced-turtles n)
+  places 2^n turtles pointing in the same direction as the original turtle
+  evenly spaced in a line.
+
+(spokes)
+  draws some spokes, using raidial-turtles and spaced-turtles
+
+(spyro-gyra)
+  draws a spyro-grya reminicent shape
+
+(neato)
+  as the name says :)
+
+(grapics-bexam)
+  draws a fractal that came up on an exam I took.
+
+serp-size
+  a constant which is a good size for the serp procedures
+
+(serp serp-size)
+(serp-nosplit serp-size)
+  draws the Serpinski triangle in two different ways, the first using split
+  heavily. After running the first one, try executing (draw 10).
+
+koch-size
+  a constant which is a good size for the koch procedures
+
+(koch-split koch-size)
+(koch-draw koch-size)
+  draws the koch snowflake in two different ways.
+
+(lorenz a b c)
+  watch the lorenz "butterfly" attractor with inital values a b and c.
+
+(lorenz1)
+  a good setting for the lorenz attractor
+
+fern-size
+  a good size for the fern functions
+
+(fern1 fern-size)
+  You will probably want to point the turtle up before running
+  this one, with something like:
+
+			 (turn (- (/ pi 2)))
+
+(fern2 fern-size)
+  a fern -- you may need to backup a little for this one.
+
+
+

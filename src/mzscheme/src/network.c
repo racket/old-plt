@@ -47,6 +47,9 @@
 #ifdef IO_INCLUDE
 # include <io.h>
 #endif
+#ifdef INCLUDE_OSKIT_SOCKET
+# include <oskit/net/socket.h>
+#endif
 #ifdef NO_ERRNO_GLOBAL
 static int mzerrno = 0;
 # define errno mzerrno

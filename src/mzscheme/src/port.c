@@ -76,9 +76,6 @@ static int mzerrno = 0;
 # endif
 extern int osk_not_console; /* set by cmd-line flag */
 #endif
-#ifdef INCLUDE_OSKIT_SOCKET
-# include <oskit/net/socket.h>
-#endif
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 

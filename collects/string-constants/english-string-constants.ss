@@ -593,6 +593,10 @@
  (choose-language-menu-item-label "Choose Language...")
  (revert-to-language-defaults "Revert to Language Defaults")
  (language-docs-button-label "Language Docs")
+ (fraction-style "Fraction Style")
+ (use-mixed-fractions "Mixed fractions")
+ (use-repeating-decimals "Repeating decimals")
+ (decimal-notation-for-rationals "Use decimal notation for rationals")
  
  ;;; languages
  (beginning-student "Beginning Student")

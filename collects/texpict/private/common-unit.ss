@@ -1,6 +1,7 @@
 
 (module common-unit mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+           (lib "etc.ss"))
 
   (require "common-sig.ss")
 
@@ -308,45 +309,46 @@
 	(let ([make-append-boxes 
 	       (lambda (wcomb hcomb fxoffset fyoffset rxoffset ryoffset 
 			      combine-ascent combine-descent)
-		 (lambda (sep . args)
-		   (unless (number? sep)
-		     (set! args (cons sep args))
-		     (set! sep 0))
-		   (let append-boxes ([args args])
-		     (cond
-		      [(null? args) (blank)]
-		      [(null? (cdr args)) (car args)]
-		      [else
-		       (let* ([first (car args)]
-			      [rest (append-boxes (cdr args))]
-			      [w (wcomb (pict-width first) (pict-width rest) sep)]
-			      [h (hcomb (pict-height first) (pict-height rest) sep)]
-			      [fw (pict-width first)]
-			      [fh (pict-height first)]
-			      [rw (pict-width rest)]
-			      [rh (pict-height rest)]
-			      [fd1 (pict-ascent first)]
-			      [fd2 (pict-descent first)]
-			      [rd1 (pict-ascent rest)]
-			      [rd2 (pict-descent rest)]
-			      [dx1 (fxoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
-			      [dy1 (fyoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
-			      [dx2 (rxoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
-			      [dy2 (ryoffset fw fh rw rh sep fd1 fd2 rd1 rd2)])
-			 (make-pict
-			  `(picture 
-			    ,w ,h
-			    (put ,dx1
-				 ,dy1
-				 ,(pict-draw first))
-			    (put ,dx2
-				 ,dy2
-				 ,(pict-draw rest)))
-			  w h
-			  (combine-ascent fd1 rd1 fd2 rd2 fh rh h)
-			  (combine-descent fd2 rd2 fd1 rd1 fh rh h)
-			  (list (make-child first dx1 dy1)
-				(make-child rest dx2 dy2))))]))))]
+                 (rec *-append
+                   (lambda (sep . args)
+                     (unless (number? sep)
+                       (set! args (cons sep args))
+                       (set! sep 0))
+                     (let append-boxes ([args args])
+                       (cond
+                         [(null? args) (blank)]
+                         [(null? (cdr args)) (car args)]
+                         [else
+                          (let* ([first (car args)]
+                                 [rest (append-boxes (cdr args))]
+                                 [w (wcomb (pict-width first) (pict-width rest) sep)]
+                                 [h (hcomb (pict-height first) (pict-height rest) sep)]
+                                 [fw (pict-width first)]
+                                 [fh (pict-height first)]
+                                 [rw (pict-width rest)]
+                                 [rh (pict-height rest)]
+                                 [fd1 (pict-ascent first)]
+                                 [fd2 (pict-descent first)]
+                                 [rd1 (pict-ascent rest)]
+                                 [rd2 (pict-descent rest)]
+                                 [dx1 (fxoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
+                                 [dy1 (fyoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
+                                 [dx2 (rxoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
+                                 [dy2 (ryoffset fw fh rw rh sep fd1 fd2 rd1 rd2)])
+                            (make-pict
+                             `(picture 
+                               ,w ,h
+                               (put ,dx1
+                                    ,dy1
+                                    ,(pict-draw first))
+                               (put ,dx2
+                                    ,dy2
+                                    ,(pict-draw rest)))
+                             w h
+                             (combine-ascent fd1 rd1 fd2 rd2 fh rh h)
+                             (combine-descent fd2 rd2 fd1 rd1 fh rh h)
+                             (list (make-child first dx1 dy1)
+                                   (make-child rest dx2 dy2))))])))))]
 	      [2max (lambda (a b c) (max a b))]
 	      [zero (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 0)]
 	      [fv (lambda (a b . args) a)]

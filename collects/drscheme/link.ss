@@ -53,7 +53,7 @@
 
     (define load/invoke-tool
       (lambda (tool)
-	(load/cd (build-path mred:plt-home-directory (tool-file tool)))
+	(load/cd (build-path plt-home-directory (tool-file tool)))
 	(invoke-unit/sig (global-defined-value 'tool@) 
 			 mred^
 			 mzlib:core^

@@ -71,7 +71,7 @@
 		 (or (and (> len 4)
 			  (string=? (substring x (- len 4) len) "link"))
 		     (and (> len 6)
-			  (string=? (substring x (- len 4) len) "macros")))))])
+			  (string=? (substring x (- len 6) len) "macros")))))])
     (current-load (lambda (f)
 		    (let ([file (if (relative-path? f)
 				    (build-path (current-directory) f)

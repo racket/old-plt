@@ -152,7 +152,7 @@
 	 symbols)
         (printf "}; /* end of SYMBOL_STRS */~n~n")
 
-	(printf "static const char *SYMBOL_LENS[~a] = {~n" (length symbols))
+	(printf "static long SYMBOL_LENS[~a] = {~n" (length symbols))
         (for-each
 	 (lambda (s)
 	   (printf "  ~s,~n" (string-length (symbol->string s))))

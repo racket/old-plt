@@ -22,6 +22,8 @@
 #include "wximgfil.h"
 #include "wximgxbm.h"
 
+#include "../../../mzscheme/include/scheme.h"
+
 // Resource counting
 #if 0
 int pen_count, brush_count, font_count, bitmap_count;
@@ -249,7 +251,31 @@ Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
 
 Bool wxFont::GlyphAvailableNow(int c, HDC hdc, int screen_font)
 {
-  return glyph_exists_in_selected_font(hdc, c);
+  Bool avail;
+
+  if (screen_font && glyph_cache) {
+    Scheme_Hash_Table *ht;
+    Scheme_Object *v;
+    ht = (Scheme_Hash_Table *)glyph_cache;
+    v = scheme_hash_get(ht, scheme_make_integer(c));
+    if (v) {
+      return SCHEME_TRUEP(v);
+    }
+  }
+
+  avail = glyph_exists_in_selected_font(hdc, c);
+
+  if (screen_font) {
+    Scheme_Hash_Table *ht;
+    ht = (Scheme_Hash_Table *)glyph_cache;
+    if (!ht) {
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
+      glyph_cache = ht;
+    }
+    scheme_hash_set(ht, scheme_make_integer(c), avail ? scheme_true : scheme_false);
+  }
+
+  return avail;
 }
 
 Bool wxFont::ScreenGlyphAvailable(int c, Bool for_label)

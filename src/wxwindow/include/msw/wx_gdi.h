@@ -28,6 +28,8 @@ class wxFont: public wxbFont
   Font *c_f;
   HFONT c_f_cfont;
 
+  void *glyph_cache;
+
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
 	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, double Rotation = 0.0);

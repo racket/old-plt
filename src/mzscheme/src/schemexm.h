@@ -20,6 +20,7 @@
 #define scheme_current_thread_ptr (scheme_extension_table->scheme_current_thread_ptr)
 #define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
 #endif
+#define scheme_out_of_fuel (scheme_extension_table->scheme_out_of_fuel)
 #ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
 #define scheme_thread_w_custodian (scheme_extension_table->scheme_thread_w_custodian)

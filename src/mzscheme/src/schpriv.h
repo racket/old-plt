@@ -238,10 +238,6 @@ extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_pos;
 
 extern volatile int scheme_fuel_counter;
 
-void scheme_out_of_fuel(void);
-#define SCHEME_USE_FUEL(n) { \
-  if (DECREMENT_FUEL(scheme_fuel_counter, n) <= 0) { scheme_out_of_fuel(); }}
-
 extern Scheme_Thread *scheme_main_thread;
 
 /* Flags for Scheme_Thread's `running' field: */

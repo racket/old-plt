@@ -58,6 +58,7 @@ volatile int scheme_fuel_counter;
 Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
+void (*scheme_out_of_fuel)(void);
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk, Scheme_Config *config);
 Scheme_Object *(*scheme_thread_w_custodian)(Scheme_Object *thunk, Scheme_Config *config,

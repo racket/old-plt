@@ -2047,7 +2047,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
        len = SCHEME_STRLEN_VAL(str);
        s = (char *)scheme_malloc_atomic(len + clen);
        memcpy(s, prefix, clen);
-       memcpy(s + clen, msg, len);
+       memcpy(s + clen, msg, len + 1);
        slen = clen + len;
      } else
        s = "exception raised [message field is not a string]";

@@ -128,24 +128,28 @@
 				[else (path->complete-path resolved base)]))])]))))])
       normalize-path))
 
-					; Argument must be in normal form
-  (define explode-path
-    (lambda (orig-path)
+  ;; Argument must be in normal form
+  (define do-explode-path
+    (lambda (who orig-path)
       (let loop ([path orig-path][rest '()])
 	(let-values ([(base name dir?) (split-path path)])
-	  (if (or (and base
-		       (not (string? base)))
-		  (not (string? name)))
-	      (error 'explode-path "input was not in normal form: ~s" orig-path))
+	  (when (or (and base
+			 (not (string? base)))
+		    (not (string? name)))
+	    (raise-type-error who "path in normal form" orig-path))
 	  (if base
 	      (loop base (cons name rest))
 	      (cons name rest))))))
 
-					; Arguments must be in normal form
+  (define explode-path
+    (lambda (orig-path)
+      (do-explode-path 'explode-path orig-path)))
+
+  ;; Arguments must be in normal form
   (define find-relative-path
     (lambda (directory filename)
-      (let ([dir (explode-path directory)]
-	    [file (explode-path filename)])
+      (let ([dir (do-explode-path 'find-relative-path directory)]
+	    [file (do-explode-path 'find-relative-path filename)])
 	(if (string=? (normal-case-path (car dir))
 		      (normal-case-path (car file)))
 	    (let loop ([dir (cdr dir)]

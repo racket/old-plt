@@ -101,7 +101,7 @@
 
 	  (define f
 	    (make-object (frame-mixin
-			  (class framework:frame:standard-menus% args
+			  (class (framework:frame:standard-menus-mixin framework:frame:basic%) args
 			    (inherit get-edit-target-object)
 			    (rename [super-on-subwindow-char on-subwindow-char])
 			    (private

@@ -62,6 +62,11 @@
       (when frame-to-close (send frame-to-close close))
       (set! frame-to-close drs-frame)
 
+      ;; memory debugging
+      (collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)
+      (dump-memory-stats)
+
+
       (set-language-level! language)
       (fw:test:menu-select "Language" "Clear All Teachpacks")
       (for-each (lambda (teachpack)

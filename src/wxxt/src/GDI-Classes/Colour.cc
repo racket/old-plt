@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.2 1996/01/10 23:47:08 markus Exp $
+ * $Id: Colour.cc,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -238,8 +238,28 @@ static int alloc_close_color(Display *display, Colormap cmap, XColor *xc)
     return 0;
 }
 
-unsigned long wxColour::GetPixel(wxColourMap *cmap)
+unsigned long wxColour::GetPixel(wxColourMap *cmap, Bool is_color, Bool fg)
 {
+  if (!is_color) {
+    int white;
+    if (!X) {
+      white = 1;
+    } else if (fg) {
+      /* foreground: white = white, all else = black */
+      white = (((X->xcolor.red >> SHIFT) == 255)
+	       && ((X->xcolor.green >> SHIFT) == 255)
+	       && ((X->xcolor.blue >> SHIFT) == 255));
+    } else {
+      /* background: black = black, all else = white */
+      white = (X->xcolor.red || X->xcolor.green || X->xcolor.blue);
+    }
+
+    if (white)
+      return 0; /* WhitePixelOfScreen(wxAPP_SCREEN); */
+    else
+      return 1; /* BlackPixelOfScreen(wxAPP_SCREEN); */
+  }
+
     if (X) {
 	if (!X->have_pixel) {
 	    // no pixel value or wrong colourmap

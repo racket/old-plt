@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.9 1998/04/11 13:57:32 mflatt Exp $
+ * $Id: Window.cc,v 1.10 1998/07/18 21:51:05 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1519,10 +1519,12 @@ void wxWindow::CreateDC(void)
     dc->ok = TRUE;
     
     dc->Initialize(&init);
+#if 0
     // adjust background colour
     wxBrush bgbrush(*bg, wxSOLID); // I need a temporary background brush
     dc->SetBackground(&bgbrush);   // set GCs to current background colour
     dc->SetBackground(NULL);       // don't use a background brush
+#endif
 
     dc->X->is_window = TRUE;
 }

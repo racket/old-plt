@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.1.1.1 1997/12/22 17:28:48 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.2 1998/07/03 21:17:31 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -74,6 +74,8 @@ static int function[]   = { GXand, GXandInverted, GXandReverse, GXclear, GXcopy,
 #define WX_GC_CF 0
 #endif
 
+#define IS_COLOR (DEPTH > 1)
+
 #define FreeGetPixelCache() if (X->get_pixel_image_cache) DoFreeGetPixelCache()
 
 Pixmap* hatch_bitmaps = NULL;
@@ -122,7 +124,7 @@ wxWindowDC::wxWindowDC(void) : wxDC()
     }
 
     current_background_brush = wxWHITE_BRUSH;
-    current_background_brush->Lock(-1);
+    current_background_brush->Lock(1);
     current_brush = wxTRANSPARENT_BRUSH;
     current_brush->Lock(1);
     current_pen = wxBLACK_PEN;
@@ -157,7 +159,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxDC *_src,
     wxWindowDC *src;
     
     switch (_src->device) {
-    case wxDEVICE_WINDOW: // I can only handle CanvasDC and it's children
+    case wxDEVICE_WINDOW: // I can only handle CanvasDC and its children
     case wxDEVICE_MEMORY:
 	src = (wxWindowDC*)_src;
 	break;
@@ -208,7 +210,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxDC *_src,
 		       XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
 	    if (current_logical_fkt != old_logical_fkt)
 		SetLogicalFunction(old_logical_fkt);
-	} else if (src->X->depth == DEPTH)	{
+	} else if (src->X->depth == DEPTH) {
 	    int old_logical_fkt = current_logical_fkt;
 	    if (current_logical_fkt != rop)
 		SetLogicalFunction(rop);
@@ -667,7 +669,7 @@ void wxWindowDC::SetBackground(wxBrush *brush)
     
     if (current_background_brush) current_background_brush->Lock(1);
 
-    unsigned long pixel = brush->GetColour().GetPixel(current_cmap);
+    unsigned long pixel = brush->GetColour().GetPixel(current_cmap, IS_COLOR, 0);
 
     if (DRAW_WINDOW)
 	XSetWindowBackground(DPY, DRAW_WINDOW, pixel);
@@ -700,7 +702,7 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 
     values.fill_style = FillSolid;
     // wxXOR shall work the correct way
-    unsigned long pixel = brush->GetColour().GetPixel(current_cmap);
+    unsigned long pixel = brush->GetColour().GetPixel(current_cmap, IS_COLOR, 1);
     if (current_logical_fkt == wxXOR) {
 	XGCValues values_req;
 	XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
@@ -731,8 +733,14 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 		stipple = hatch_bitmaps[style-wxFIRST_HATCH];
 		values.fill_style = FillStippled;
 	    }
-	    if (stipple) XSetStipple(DPY, BRUSH_GC, stipple);
-	    if (tile)    XSetTile(DPY, BRUSH_GC, tile);
+	    if (stipple) {
+	      values.stipple = stipple;
+	      mask |= GCStipple;
+	    }
+	    if (tile) {
+	      values.tile = tile;
+	      mask |= GCTile;
+	    }
 	}
 	break;
     }
@@ -789,7 +797,7 @@ void wxWindowDC::SetPen(wxPen *pen)
     int scale = // needed for dash-scaling
     values.line_width = XLOG2DEVREL(pen->GetWidth());
     // wxXOR shall work the correct way
-    unsigned long pixel = pen->GetColour().GetPixel(current_cmap);
+    unsigned long pixel = pen->GetColour().GetPixel(current_cmap, IS_COLOR, 1);
     if (current_logical_fkt == wxXOR) {
 	XGCValues values_req;
 	XGetGCValues(DPY, PEN_GC, GCBackground, &values_req);
@@ -860,11 +868,17 @@ void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
 {
   XColor xcol;
 
-  xcol.pixel = src->GetPixel(current_cmap);
+  xcol.pixel = src->GetPixel(current_cmap, IS_COLOR, 1);
 
-  XQueryColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol);
-  
-  dest->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
+  if (IS_COLOR) {
+    XQueryColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol);
+    
+    dest->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
+  } else if (xcol.pixel == BlackPixel(DPY, DefaultScreen(DPY))) {
+    dest->Set(0, 0, 0);
+  } else {
+    dest->Set(255, 255, 255);
+  }
 }
 
 
@@ -976,7 +990,7 @@ void wxWindowDC::SetTextForeground(wxColour *col)
     if (!col)
 	return;
     current_text_fg = *col;
-    XSetForeground(DPY, TEXT_GC, current_text_fg.GetPixel(current_cmap));
+    XSetForeground(DPY, TEXT_GC, current_text_fg.GetPixel(current_cmap, IS_COLOR, 1));
 }
 
 void wxWindowDC::SetTextBackground(wxColour *col)
@@ -987,7 +1001,7 @@ void wxWindowDC::SetTextBackground(wxColour *col)
     if (!col)
 	return;
     current_text_bg = *col;
-    XSetBackground(DPY, TEXT_GC, current_text_bg.GetPixel(current_cmap));
+    XSetBackground(DPY, TEXT_GC, current_text_bg.GetPixel(current_cmap, IS_COLOR, 0));
 }
 
 //-----------------------------------------------------------------------------
@@ -1004,7 +1018,7 @@ void wxWindowDC::SetClippingRegion(float x, float y, float w, float h)
       h = 0;
 
     if (USER_REG)
-	XDestroyRegion(USER_REG);
+      XDestroyRegion(USER_REG);
     USER_REG = XCreateRegion();
     r.x      = XLOG2DEV(x);
     r.y      = XLOG2DEV(y);
@@ -1033,7 +1047,7 @@ void wxWindowDC:: GetClippingRegion(float *x, float *y, float *w, float *h)
 void wxWindowDC::DestroyClippingRegion(void)
 {
     if (USER_REG)
-	XDestroyRegion(USER_REG);
+      XDestroyRegion(USER_REG);
     USER_REG = NULL;
     SetCanvasClipping();
 }
@@ -1115,6 +1129,11 @@ void wxWindowDC::Destroy(void)
     if (TEXT_GC)   XFreeGC(DPY, TEXT_GC);
     if (BG_GC)     XFreeGC(DPY, BG_GC);
     PEN_GC = BRUSH_GC = TEXT_GC = BG_GC = NULL;
+
+    if (CURRENT_REG) XDestroyRegion(CURRENT_REG);
+    if (USER_REG) XDestroyRegion(USER_REG);
+    if (EXPOSE_REG) XDestroyRegion(EXPOSE_REG);
+    CURRENT_REG = USER_REG = EXPOSE_REG = NULL;
 }
 
 void wxWindowDC::SetCanvasClipping(void)

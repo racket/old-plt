@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.h,v 1.1 1996/01/10 14:56:13 markus Exp $
+ * $Id: Colour.h,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -62,7 +62,7 @@ public:
     unsigned char Blue(void);
 
     // alloc and free X pixel value
-    unsigned long GetPixel(wxColourMap* cmap=wxAPP_COLOURMAP);
+    unsigned long GetPixel(wxColourMap* cmap=wxAPP_COLOURMAP, Bool is_color=1, Bool fg=1);
     void FreePixel(Bool del);
 
     inline Bool  IsMutable(void) { return !locked; } 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.2 1997/12/27 19:51:59 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.3 1998/03/12 01:01:02 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -220,7 +220,7 @@ Bool wxBitmap::Create(int w, int h, int d)
     Destroy(); // destroy old bitmap if any
 
     /* MATTHEW: [5] */
-    if (d > 0) {
+    if (d > 1) {
       int c, *depths, n;
 
       n = ScreenCount(wxAPP_DISPLAY);

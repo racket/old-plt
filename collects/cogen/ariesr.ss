@@ -182,8 +182,8 @@
       ; distinguishes between these two types of binding:
       
       (define (is-unit-bound? varref)
-	(and (top-level-varref/bind/unit? varref)
-	     (top-level-varref/bind/unit-unit? varref)))
+	(and (z:top-level-varref/bind/unit? varref)
+	     (z:top-level-varref/bind/unit-unit? varref)))
 
       ; translate-bound-varref is a short piece of code which would otherwise appear
       ; twice: it translates a bound variable, inserting the undefined-value-check if
@@ -216,7 +216,7 @@
 	    
 	    [(z:top-level-varref? expr)
 	     (if (is-unit-bound? expr)
-		 (transate-bound-varref expr)
+		 (translate-bound-varref expr)
 		 (begin
 		   (check-for-keyword/proc expr)		   
 		   (wrap expr (z:varref-var expr))))]
@@ -282,18 +282,19 @@
 	    
 	    ; in MzScheme 100, there is no more letrec*-values.  letrec-values
 	    ; has taken its place.  binding initializers are always evaluated
-	    ; sequentially
+	    ; sequentially.  However, zodiac still uses a structure called 
+	    ; letrec*-values, at least for a while.
 	    
-	    [(z:letrec-values-form? expr)
+	    [(z:letrec*-values-form? expr)
 	     (let ([bindings
 		    (map (lambda (vars val)
 			   (for-each check-for-keyword vars)
 			   `(,(map z:binding-var vars)
 			     ,(annotate val)))
-			 (z:letrec-values-form-vars expr)
-			 (z:letrec-values-form-vals expr))])
+			 (z:letrec*-values-form-vars expr)
+			 (z:letrec*-values-form-vals expr))])
 	       (wrap expr
-		     `(#%letrec*-values ,bindings
+		     `(#%letrec-values ,bindings
 		       ,(annotate (z:letrec*-values-form-body expr)))))]
 
 	    ; since define-values may only occur at the top level, we must
@@ -335,8 +336,8 @@
 	    [(z:with-continuation-mark-form? expr)
 	     (wrap expr
 		   `(#%with-continuation-mark 
-		     ,(read->raw (z:with-continuation-mark-key expr))
-		     ,(read->raw (z:quote-form-expr (z:with-continuation-mark-val expr)))
+		     ,(annotate (z:with-continuation-mark-form-key expr))
+		     ,(annotate (z:quote-form-expr (z:with-continuation-mark-form-val expr)))
 		     ,(annotate expr)))]
 	    
 	    [(z:unit-form? expr)

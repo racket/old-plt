@@ -1130,12 +1130,14 @@ static char *ps_brush_hatch[] = { " 0 0 moveto 8 8",
 				  " 8 0 moveto 0 8",
 				  " 0 4 moveto 8 4 lineto closepath stroke 4 0 moveto 4 8",
 				  " 0 4 moveto 8 4",
-				  " 4 0 moveto 4 8" };
+				  " 4 0 moveto 4 8",
+				  " 0 0 moveto 0.1 0.1" };
 
 void wxPostScriptDC::SetBrush(wxBrush * brush)
 {
   unsigned char red, blue, green;
   int hatch_id;
+  char *hatch_size;
   double redPS, bluePS, greenPS;
 
   if (!pstream)
@@ -1181,6 +1183,7 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
   }
 
   hatch_id = -1;
+  hatch_size = "8";
   switch (brush->GetStyle()) {
   case wxBDIAGONAL_HATCH:
     hatch_id = 0;
@@ -1200,6 +1203,10 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
   case wxVERTICAL_HATCH:
     hatch_id = 5;
     break;
+  case wxCOLOR:
+    hatch_id = 6;
+    hatch_size = "0.3";
+    break;
   }
 
   redPS = (double) (((int) red) / 255.0);
@@ -1213,12 +1220,20 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     pstream->Out(" /PatternType 1 def\n");
     pstream->Out(" /PaintType 1 def\n");
     pstream->Out(" /TilingType 1 def\n");
-    pstream->Out(" /BBox [ 0 0 8 8 ] def\n");
-    pstream->Out(" /XStep 8 def\n");
-    pstream->Out(" /YStep 8 def\n");
+    pstream->Out(" /BBox [ 0 0 ");
+    pstream->Out(hatch_size);
+    pstream->Out(" ");
+    pstream->Out(hatch_size);
+    pstream->Out(" ] def\n");
+    pstream->Out(" /XStep ");
+    pstream->Out(hatch_size);
+    pstream->Out(" def\n");
+    pstream->Out(" /YStep ");
+    pstream->Out(hatch_size);
+    pstream->Out(" def\n");
     pstream->Out(" /PaintProc { begin gsave \n");
 
-    pstream->Out(" 0 setlinewidth\n");
+    pstream->Out(" 0.05 setlinewidth\n");
     pstream->Out(" [] 0 setdash\n");
     pstream->Out(" "); pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); 
     pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");

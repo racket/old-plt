@@ -659,9 +659,9 @@ void wxWindow::SetScrollArea(int gwd, int ght)
     XfwfCallComputeInside(X->scroll, &p, &p, &wd, &ht);
     // get missing sizes if any (gwd <0 || ght < 0)
     if (gwd < 0) { XtVaGetValues(X->handle, XtNwidth, &d, NULL);  gwd = d; }
-    if (!gwd) gwd = 1; /* MATTHEW: [5] */
+    if (!gwd) gwd = 1;
     if (ght < 0) { XtVaGetValues(X->handle, XtNheight, &d, NULL); ght = d; }
-    if (!ght) ght = 1; /* MATTHEW: [5] */
+    if (!ght) ght = 1;
     // compute correct (x,y)-position - 0<=x<=gwd-wd, 0<=y<=ght-ht
     x = min(x, gwd-wd); x = max(0, x);
     y = min(y, ght-ht); y = max(0, y); 

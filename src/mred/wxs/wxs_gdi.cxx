@@ -3330,7 +3330,7 @@ static void init_symset_cursor(void) {
   wxREGGLOB(cursor_wxCURSOR_SIZENWSE_sym);
   cursor_wxCURSOR_SIZENWSE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("size-nw/se"));
   wxREGGLOB(cursor_wxCURSOR_WAIT_sym);
-  cursor_wxCURSOR_WAIT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("arrow-watch"));
+  cursor_wxCURSOR_WAIT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("arrow+watch"));
   wxREGGLOB(cursor_wxCURSOR_WATCH_sym);
   cursor_wxCURSOR_WATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("watch"));
   wxREGGLOB(cursor_wxCURSOR_BLANK_sym);

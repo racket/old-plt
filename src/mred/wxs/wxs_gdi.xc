@@ -257,7 +257,7 @@
 // @SYM "right-button" : wxCURSOR_RIGHT_BUTTON
 // @SYM "sizing" : wxCURSOR_SIZING
 // @SYM "spraycan" : wxCURSOR_SPRAYCAN
-@SYM "arrow-watch" : wxCURSOR_WAIT
+@SYM "arrow+watch" : wxCURSOR_WAIT
 @SYM "watch" : wxCURSOR_WATCH
 @SYM "blank" : wxCURSOR_BLANK
 @ENDSYMBOLS

@@ -21,11 +21,8 @@
   
   ;; extract-zodiac-locations : mark-set -> (listof zodiac)
   (define (extract-zodiac-locations mark-set)
-    (printf "entering extract-zodiac-locations~n")
     (let ([mark-list (continuation-mark-set->list mark-set annotate:debug-key)])
-      (begin0
-        (map marks:mark-source mark-list)
-        (printf "exiting extract-zodiac-locations~n"))))
+      (map marks:mark-source mark-list)))
   
   (define (make-zodiac-mark location)
     (marks:make-cheap-mark location))

@@ -72,9 +72,9 @@
           [(eq? b-set 'all) a-set]
           [else (remq* (remq* a-set b-set) b-set)]))
   
-  (define (binding-set-remove a-set b-set) ; removes a from b
+  (define (binding-set-remove a-set b-set expr) ; removes a from b
     (cond [(eq? a-set 'all) null]
-          [(eq? b-set 'all) (e:internal-error a-set "tried to remove finite set of bindings from 'all")]
+          [(eq? b-set 'all) (e:internal-error expr "tried to remove finite set of bindings from 'all")]
           [else (remq* a-set b-set)]))
       
   (define never-undefined? never-undefined-getter)
@@ -121,7 +121,7 @@
            [var-clauses (map (lambda (x) 
                                (let ([var (ccond [(z:binding? x) (get-binding-name x)]
                                                  [(box? x) (if (null? (unbox x))
-                                                               (e:internal-error x "empty slot in make-debug-info")
+                                                               (e:internal-error source "empty slot in make-debug-info")
                                                                (z:varref-var (car (unbox x))))])])
                                  (list var x)))
                              kept-bindings)]
@@ -167,6 +167,17 @@
       `(#%let-values ((,arg-temp-syms ,annotated)) ,@full-body)))
   
   (define initial-env-package null)
+  
+  (define (extract-top-level-slots exprs)
+    (apply binding-set-union
+           (map (lambda (expr)
+                  (cond ([z:define-values-form? expr]
+                         (map z:top-level-varref/bind-slot (filter z:top-level-varref/bind? 
+                                                                   (z:define-values-form-vars expr))))
+                        ([z:begin-form? expr]
+                         (extract-top-level-slots (z:begin-form-bodies expr)))
+                        (else null)))
+                exprs)))
   
   ; annotate takes 
   ; a) a list of zodiac:read expressions,
@@ -517,7 +528,7 @@
                        [(free-bindings) (apply binding-set-union free-bindings-lists)]
                        [(debug-info) (make-debug-info-normal free-bindings)]
                        [(annotated) `(#%begin0 ,@annotated-bodies)])
-                   (values (ccond [(or cheap-wrap? ankle-wrap? (appropriate-wrap annotated free-bindings))]
+                   (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
                                   [foot-wrap?
                                    (wcm-wrap debug-info annotated)])
                            free-bindings))]
@@ -727,7 +738,7 @@
                            (let*-values
                                ([(annotated free-bindings)
                                  (lambda-body-recur body)]
-                                [(new-free-bindings) (binding-set-remove binding-list free-bindings)]
+                                [(new-free-bindings) (binding-set-remove binding-list free-bindings expr)]
                                 [(new-annotated) (list (utils:improper-map get-binding-name args) annotated)]) 
                              (values new-annotated new-free-bindings))))
                        (z:case-lambda-form-args expr)
@@ -813,7 +824,12 @@
                                     (import ,@(map get-binding-name imports))
                                     (export ,@exports)
                                     ,@clauses)]
-                     [(free-bindings) (apply binding-set-union free-vars-lists)])
+                     [(free-bindings) 
+                      (binding-set-remove
+                       (binding-set-union imports
+                                          (extract-top-level-slots (z:unit-form-clauses expr)))
+                       (apply binding-set-union free-vars-lists)
+                       expr)])
                   (values (appropriate-wrap annotated free-bindings) free-bindings))]
 	       
                [(z:compound-unit-form? expr)
@@ -904,38 +920,41 @@
                         (lambda (clause)
                           (cond
                             [(z:public-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) (dual-map no-enclosing-recur (z:public-clause-exprs clause))])
+                             (let*-values ([(ann-exprs free-var-sets) 
+                                            (dual-map no-enclosing-recur (z:public-clause-exprs clause))])
                                (values 
                                 `(public
                                    ,@(map (lambda (internal export expr)
                                             `((,(get-binding-name internal)
                                                ,(utils:read->raw export))
-                                              ,(cheap-wrap-recur expr)))
+                                              ,expr))
                                           (z:public-clause-internals clause)
                                           (z:public-clause-exports clause)
                                           ann-exprs))
                                 (z:public-clause-internals clause)
                                 (apply binding-set-union free-var-sets)))]
                             [(z:override-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) (dual-map no-enclosing-recur (z:override-clause-exprs clause))])
+                             (let*-values ([(ann-exprs free-var-sets) 
+                                            (dual-map no-enclosing-recur (z:override-clause-exprs clause))])
                                (values
                                 `(override
                                    ,@(map (lambda (internal export expr)
                                             `((,(get-binding-name internal)
                                                ,(utils:read->raw export))
-                                              ,(cheap-wrap-recur expr)))
+                                              ,expr))
                                           (z:override-clause-internals clause)
                                           (z:override-clause-exports clause)
                                           ann-exprs))
                                 (z:override-clause-internals clause)
                                 (apply binding-set-union free-var-sets)))]
                             [(z:private-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) (dual-map no-enclosing-recur (z:private-clause-exprs clause))])
+                             (let*-values ([(ann-exprs free-var-sets) 
+                                            (dual-map no-enclosing-recur (z:private-clause-exprs clause))])
                                (values
                                 `(private
                                    ,@(map (lambda (internal expr)
                                             `(,(get-binding-name internal)
-                                              ,(cheap-wrap-recur expr)))
+                                              ,expr))
                                           (z:private-clause-internals clause)
                                           ann-exprs))
                                 (z:private-clause-internals clause)
@@ -961,7 +980,8 @@
                               (z:rename-clause-internals clause)
                               null)]
                             [(z:sequence-clause? clause)
-                             (let*-values ([(ann-exprs free-var-sets) (dual-map no-enclosing-recur (z:public-clause-exprs clause))])
+                             (let*-values ([(ann-exprs free-var-sets) 
+                                            (dual-map no-enclosing-recur (z:sequence-clause-exprs clause))])
                                (values
                                 `(sequence
                                    ,@ann-exprs)
@@ -976,8 +996,12 @@
                          (triple-map process-clause (z:class*/names-form-inst-clauses expr))]
                         [(free-bindings)
                          (binding-set-remove
-                          (apply binding-set-union class-binding-sets)
-                          (apply binding-set-union free-binding-sets-clauses))]
+                          (apply binding-set-union
+                                 (list (z:class*/names-form-this expr)
+                                       (z:class*/names-form-super-init expr)) 
+                                 class-binding-sets)
+                          (apply binding-set-union free-binding-sets-clauses)
+                          expr)]
                         [(annotated)
                          `(#%class*/names
                            (,(get-binding-name (z:class*/names-form-this expr))
@@ -1003,7 +1027,7 @@
 (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
-  (printf "annotated: ~n~a~n" (car annotated-exprs))
+  ;(printf "annotated: ~n~a~n" (car annotated-exprs))
   (values annotated-exprs struct-proc-names))))
   
 )

@@ -13,7 +13,7 @@
 
   (define teachpack@
     (unit/sig drscheme:teachpack^
-      (import [drscheme:init : drscheme:init^])
+      (import)
 
       ;; type teachpack-cache = (make-teachpack-cache (listof cache-entry))
       ;; the timestamp indicates the last time this teachpack was loaded

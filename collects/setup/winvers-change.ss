@@ -17,6 +17,7 @@
   (define xxxs #"xxxxxxx")
   (define xxxs-re
     (bytes-append #"(?:lib(?:mzsch|mzgc|mred|uniplt_|pltgdi_)(?:|3m)|"
+                  #"[Pp][Ll][Tt][Gg][Dd][Ii]_|"
                   #"[Uu][Nn][Ii][Pp][Ll][Tt]_|"
                   #"(?:[Ll][Ii][Bb]|[Ss][Ss][Ll])[Ee][Aa][Yy]32)(" xxxs #")"))
   (define renaming

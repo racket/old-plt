@@ -11,7 +11,8 @@
   
   (define debugger-vc@ 
     (unit/sig debugger-vc^
-      (import debugger-model^)
+      (import debugger-model^
+              (drs-window))
       
       (define debugger-eventspace 
         (parameterize ([current-custodian user-custodian])
@@ -40,7 +41,7 @@
        (lambda () 
          (graphical-read-eval-print-loop debugger-eventspace #t)))
       
-      (define debugger-output (make-output-window))
+      (define debugger-output (make-output-window drs-window user-custodian))
       
       ; set up debugger eventspace
       
@@ -61,12 +62,26 @@
   
   ;; Debugger Output Window:
   
+  (define output-frame%
+    (class frame:basic% ()
+      
+      (init-field drs-window)
+      (init-field user-custodian)
+      
+      (define/override (on-close)
+        (send drs-window on-debugger-close)
+        (custodian-shutdown-all user-custodian))
+      
+      (super-instantiate ())))
+  
   ; make-output-window : (-> text:basic%)
-  (define (make-output-window)
-    (let* ([frame (instantiate frame:basic% () 
+  (define (make-output-window drs-window cust)
+    (let* ([frame (instantiate output-frame% () 
                     (label "Debugger Output")
                     (width 400)
-                    (height 400))]
+                    (height 400)
+                    (drs-window drs-window)
+                    (user-custodian cust))]
            [canvas (instantiate canvas:basic% () (parent (send frame get-area-container)))]
            [text (instantiate text:basic% ())])
       (send canvas set-editor text)

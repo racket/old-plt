@@ -94,17 +94,19 @@
                                         '(default=1))
                     (begin
                       (set! debugger-exists #t)
-                      (start-debugger program-expander))))))
+                      (start-debugger program-expander this))))))
           
-          (define (start-debugger program-expander)
+          (define (start-debugger program-expander drs-window)
             (define-values/invoke-unit/sig (go)
              (compound-unit/sig 
-               (import [EXPANDER : (program-expander)])
+               (import [EXPANDER : (program-expander)]
+                       [DRS-WINDOW : (drs-window)])
                (link [MODEL : debugger-model^ (debugger-model@ VIEW-CONTROLLER EXPANDER)] 
-                     [VIEW-CONTROLLER : debugger-vc^ (debugger-vc@ MODEL)])
+                     [VIEW-CONTROLLER : debugger-vc^ (debugger-vc@ MODEL DRS-WINDOW)])
                (export (var (MODEL go))))
              #f
-             (program-expander))
+             (program-expander)
+             (drs-window))
             (go))
           
           (rename [super-enable-evaluation enable-evaluation])

@@ -16,7 +16,10 @@
         (warn "Warning: MysterX binaries not installed\n")]
        [(not winsys-dir)
         (warn "Warning: Can't run REGSVR32 on libraries\n")]
-       [else (parameterize ((current-directory (make-dll-path)))
+       [else (parameterize ([current-directory (make-dll-path)]
+                            ;; temp fix: avoid using stdin since this will pop
+                            ;; up the stdio console
+                            [current-input-port (open-input-string "")])
                (for-each
                 (lambda (dll)
                   (if (system (format "~s /s ~a" ; /s = silent mode

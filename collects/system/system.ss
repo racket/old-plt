@@ -103,15 +103,14 @@
 	 (current-directory mred:system-source-directory)
 	 (unless (or mred:splash-frame no-show-splash?)
 	   (mred:open-splash mred:default-splash mred:default-splash-title #f))
-	 (when (eq? wx:platform 'unix)
-	   (let* ([default-path "/usr/local/transcript-4.0/lib/"]
-		  [path-box (box default-path)])
-	     (wx:get-resource "MrEd" "afmPath" path-box)
-	     (wx:set-afm-path 
-	      (if (or (directory-exists? (unbox path-box))
-		      (not (directory-exists? default-path)))
-		  (unbox path-box)
-		  default-path))))
+	 (let* ([default-path (build-path mred:plt-home-directory "afm")]
+		[path-box (box default-path)])
+	   (wx:get-resource "MrEd" "afmPath" path-box)
+	   (wx:set-afm-path 
+	    (if (or (directory-exists? (unbox path-box))
+		    (not (directory-exists? default-path)))
+		(unbox path-box)
+		default-path)))
 	 (load-system)
 	 (current-library-path (normalize-path (current-library-path)))
 	 (set! mred:plt-home-directory (normalize-path mred:plt-home-directory))

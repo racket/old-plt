@@ -68,9 +68,9 @@
 		    [($ ast:pstr_eval expr)
 		     (typecheck-ml expr context)]
 		    [($ ast:pstr_exception name decl)
-		     (let ([nconst (make-tconstructor (make-tuple (map typecheck-ml decl)) "exception")])
+		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-ml decl)) "exception")])
 		       (begin
-			 (hash-table-put! constructors (eval name) (make-tconstructor (make-tuple (map typecheck-ml decl))) "exception")
+			 (hash-table-put! constructors (eval name) (make-tconstructor (make-<tuple> (map typecheck-ml decl))) "exception")
 			 (make-mlexn (eval name) nconst)))]
 		       
 		    [else
@@ -83,7 +83,7 @@
 		     (constant-check (eval const))]
 
 		    [($ ast:pexp_tuple xlist)
-		     (make-tuple (map typecheck-ml xlist (repeat context (length xlist))))]
+		     (make-<tuple> (map typecheck-ml xlist (repeat context (length xlist))))]
 
 		    [($ ast:pexp_ident name)
 		     (let ([type (get-type (unlongident name) context)])
@@ -188,10 +188,10 @@
 			[ttypes (map typecheck-type (cdr current))])
 		   (begin
 		     (hash-table-put! constructors name (cons (make-tconstructor (if (> (length ttypes) 1)
-										 (make-tuple ttypes)
+										 (make-<tuple> ttypes)
 										 (car ttypes)) (make-usertype sname)) #`#,(string->symbol (format "make-~a" name))))
 		     (cons (make-tconstructor (if (> (length ttypes) 1)
-						 (make-tuple ttypes)
+						 (make-<tuple> ttypes)
 						 (car ttypes)) (make-usertype sname)) (typecheck-scll sname (cdr scll)))))))
 
 	   (define (typecheck-match pelist testt context)
@@ -291,7 +291,7 @@
 		    [($ ast:ptyp_arrow label ct1 ct2)
 		     (make-arrow (list (typecheck-type ct1)) (typecheck-type ct2))]
 		    [($ ast:ptyp_tuple ctlist)
-		     (make-tuple (map typecheck-type ctlist))]
+		     (make-<tuple> (map typecheck-type ctlist))]
 		    [($ ast:ptyp_constr name ctlist)
 		     (let ([constructor (hash-table-get constructors (unlongident name) (lambda () #f))])
 		       (if constructor
@@ -392,7 +392,7 @@
 		     (cons (constant-check const) (empty-context))]
 		    [($ ast:ppat_tuple plist)
 		     (let ([varenvs (map funenv plist)])
-		       (cons (make-tuple (map car varenvs)) (map cdr varenvs)))]
+		       (cons (make-<tuple> (map car varenvs)) (map cdr varenvs)))]
 		    [($ ast:ppat_construct longident cpat bool)
 		       (let* ([pat-type (hash-table-get constructors (unlongident longident) (lambda () #f))])
 			 (if pat-type
@@ -430,8 +430,8 @@
 			   (empty-context)
 			   (raise-syntax-error #f (format "Expected ~a but found ~a" type t2) patsyn))) ]
 		    [($ ast:ppat_tuple plist)
-		     (if (istype? "tuple" type)
-			 (let ([tlist (tuple-list type)])
+		     (if (istype? "<tuple>" type)
+			 (let ([tlist (<tuple>-list type)])
 			   (if (= (length tlist) (length plist))
 			       (let ([nenvs (map patenv plist tlist (repeat context (length plist)))])
 				 (foldl union-envs (car nenvs) (cdr nenvs)))
@@ -485,14 +485,15 @@
 	      [(string? type) null]
 	      [(arrow? type) (union (unsolved (car (arrow-arglist type)))
 				    (unsolved (arrow-result type)))]
-	      [(tuple? type) (foldl (lambda (ut sl)
-				      (union (unsolved ut) sl)) (unsolved (car (tuple-list type))) (cdr (tuple-list type)))]
+	      [(<tuple>? type) (foldl (lambda (ut sl)
+				      (union (unsolved ut) sl)) (unsolved (car (<tuple>-list type))) (cdr (<tuple>-list type)))]
 	      [(tlist? type) (unsolved (tlist-type type))]
 	      [(tvar? type) (let ([r (tvar-tbox type)])
 				  (if (null? (unbox r))
 				      (list r)
 				      (unsolved (unbox r))))]
-	      [(option? type) (unsolved option-type)]))
+	      [(option? type) (unsolved (option-type type))]
+	      [(ref? type) (unsolved (ref-type type))]))
 
 	   (define (env-unsolved r)
 	     (foldl (lambda (mapping tlist)
@@ -516,12 +517,13 @@
 				(cond
 				 [(string? t) t]
 				 [(arrow? t) (make-arrow (list (inst (car (arrow-arglist t)))) (inst (arrow-result t)))]
-				 [(tuple? t) (make-tuple (map inst (tuple-list t)))]
+				 [(<tuple>? t) (make-<tuple> (map inst (<tuple>-list t)))]
 				 [(tlist? t) (make-tlist (inst (tlist-type t)))]
 				 [(tvar? t) (if (null? (unbox (tvar-tbox t)))
 						(instVar (tvar-tbox t) tm)
 						(inst (unbox (tvar-tbox t))))]
-				 [(option? t) (make-option (inst (option-type t)))]))])
+				 [(option? t) (make-option (inst (option-type t)))]
+				 [(ref? t) (make-ref (inst (ref-type t)))]))])
 		 (inst type))))
 		 
 	   (define (schema type env)
@@ -533,44 +535,49 @@
 	   (define (unify t1 t2 syn)
 	     (cond
 ;	      [(eq? t1 t2) #t]
-	      [(tvar? t1) (unify-var t2 (tvar-tbox t1))]
+	      [(tvar? t1) (unify-var t2 (tvar-tbox t1) syn)]
 	      [(string? t1)
 	       (cond
 		[(and (string? t2) (equal? t1 t2)) #t]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn ) #f)])]
 
 	      [(arrow? t1)
 	       (cond
 		[(arrow? t2) (and (unify (car (arrow-arglist t1)) (car (arrow-arglist t2)) syn) (unify (arrow-result t1) (arrow-result t2) syn))]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f "Expected an arrow type" syn) #f)])]
-	      [(tuple? t1)
+	      [(<tuple>? t1)
 	       (cond
-		[(tuple? t2) (eval `(and ,@(map unify (tuple-list t1) (tuple-list t2) (repeat syn (length (tuple-list t1))))))]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
-		[else (begin (raise-syntax-error #f "Expected a tuple type" syn) #f)])]
+		[(<tuple>? t2) (eval `(and ,@(map unify (<tuple>-list t1) (<tuple>-list t2) (repeat syn (length (<tuple>-list t1))))))]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		[else (begin (raise-syntax-error #f "Expected a <tuple> type" syn) #f)])]
 	      [(tlist? t1)
 	       (cond
 		[(tlist? t2) (unify (tlist-type t1) (tlist-type t2) syn)]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f "Expected a list type" syn) #f)])]
 	      [(option? t1)
 	       (cond
-		[(option? t2) (unify (option-type t1) (option-type t2))]
-		[(tvar? t2) (unify-var t1 (tvar-tbox t2))]
-		[else (begin (raise-syntax-error #f "Expected an option type" syn) #f)])]))
+		[(option? t2) (unify (option-type t1) (option-type t2) syn)]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		[else (raise-syntax-error #f "Expected an option type" syn)])]
+	      [(ref? t1)
+	       (cond
+		[(ref? t2) (unify (ref-type t1) (ref-type t2) syn)]
+		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		[else (raise-syntax-error #f "Expected an option type" syn)])]))
 
-	   (define (unify-var type tbox)
+	   (define (unify-var type tbox syn)
 	     (if (null? (unbox tbox))
 		 (if (and (tvar? type) (eqv? (tvar-tbox type) tbox))
 		     #t
 		     (if (and (tvar? type) (not (null? (unbox (tvar-tbox type)))))
-			 (unify-var (unbox (tvar-tbox type)) tbox)
+			 (unify-var (unbox (tvar-tbox type)) tbox syn)
 			 (begin
 			   (set-box! tbox type)
 			   #t)))
-		 (unify (unbox tbox) type)))
+		 (unify (unbox tbox) type syn)))
 
 	   (define (lookup-ident uname syntax)
 	     (match uname
@@ -601,8 +608,8 @@
 	   (define (convert-tvars type mappings)
 	     (cond
 	      [(string? type) (cons type mappings)]
-	      [(tuple? type) (let ([tlist (convert-list (tuple-list type) mappings null)])
-			       (cons (make-tuple (reverse (car tlist))) (cdr tlist)))]
+	      [(<tuple>? type) (let ([tlist (convert-list (<tuple>-list type) mappings null)])
+			       (cons (make-<tuple> (reverse (car tlist))) (cdr tlist)))]
 	      [(arrow? type) (let* ([tlist (convert-list (arrow-arglist type) mappings null)]
 				    [restype (convert-tvars (arrow-result type) (cdr tlist))])
 			       (cons (make-arrow (reverse (car tlist)) (car restype)) (cdr restype)))]
@@ -620,6 +627,8 @@
 				    (cons newvar (cons (cons (tvar-tbox type) newvar) mappings)))))]
 	      [(option? type) (let ([mtype (convert-tvars (option-type type)  mappings)])
 				(cons (make-option (car mtype)) (cdr mtype)))]
+	      [(ref? type) (let ([rtype (convert-tvars (ref-type type) mappings)])
+			     (cons (make-ref (car rtype)) (cdr rtype)))]
 	      [else (raise-syntax-error #f "Bad type to convert!" type)]))
 
 	   (define (unconvert-tvars type mappings)
@@ -627,8 +636,8 @@
 	      [(tvariant? type) (cons type mappings)]
 	      [(list? type) (map unconvert-tvars type (repeat null (length type)))]
 	      [(string? type) (cons type mappings)]
-	      [(tuple? type) (let ([tlist (unconvert-list (tuple-list type) mappings null)])
-			       (cons (make-tuple (reverse (car tlist))) (cdr tlist)))]
+	      [(<tuple>? type) (let ([tlist (unconvert-list (<tuple>-list type) mappings null)])
+			       (cons (make-<tuple> (reverse (car tlist))) (cdr tlist)))]
 	      [(arrow? type) (let* ([tlist (unconvert-list (arrow-arglist type) mappings null)]
 				   [restype (unconvert-tvars (arrow-result type) (cdr tlist))])
 			      (cons (make-arrow (reverse (car tlist)) (car restype)) (cdr restype)))]
@@ -636,6 +645,8 @@
 			       (cons (make-tlist (car ltype)) (cdr ltype)))]
 	      [(option? type) (let ([otype (unconvert-tvars (option-type type) mappings)])
 				(cons (make-option (car otype)) (cdr otype)))]
+	      [(ref? type) (let ([rtype (unconvert-tvars (ref-type type) mappings)])
+			     (cons (make-ref (car rtype)) (cdr rtype)))]
 	      [(tvar? type) (let ([dbox (tvar-tbox type)])
 			      (if (null? (unbox dbox))
 				  (letrec ([tfunc (lambda (maplist)

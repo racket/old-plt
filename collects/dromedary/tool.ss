@@ -34,6 +34,10 @@
 
       (define (ml-tstyle type)
 	(cond
+	 [(option? type)
+	  (format "~a option" (ml-tstyle (option-type type)))]
+	 [(ref? type)
+	  (format "~a ref" (ml-tstyle (ref-type type)))]
 	 [(tvariant? type)
 	  (format "type ~a = ~a" (tvariant-name type)
 		  (letrec ([vtypes (lambda (varlist)
@@ -46,8 +50,8 @@
 				   (if (null? names)
 				       ""
 				       (if (null? (cdr names))
-					   (format "~a of ~a" (car names) (vtypes (tuple-list (tconstructor-argtype (car variants)))))
-					   (format "~a of ~a | ~a" (car names) (vtypes (tuple-list (tconstructor-argtype (car variants)))) (vars (cdr names) (cdr variants))))))])
+					   (format "~a of ~a" (car names) (vtypes (<tuple>-list (tconstructor-argtype (car variants)))))
+					   (format "~a of ~a | ~a" (car names) (vtypes (<tuple>-list (tconstructor-argtype (car variants)))) (vars (cdr names) (cdr variants))))))])
 		    (vars (tvariant-varnames type) (tvariant-variantlist type))))]
 	 [(tlist? type)
 	  (format "~a list" (ml-tstyle (tlist-type type)))]
@@ -57,15 +61,15 @@
 	      (if (arrow? (car (arrow-arglist type)))
 		  (format "(~a) -> ~a" (car (arrow-arglist type)) (arrow-result type))
 		  (format "~a -> ~a" (car (arrow-arglist type)) (arrow-result type))))]
-	 [(tuple? type)
-	  (letrec ([tupleformat (lambda (tlist)
-				  (let ([fstring (if (tuple? (car tlist))
+	 [(<tuple>? type)
+	  (letrec ([<tuple>format (lambda (tlist)
+				  (let ([fstring (if (<tuple>? (car tlist))
 						     (format "(~a)" (ml-tstyle (car tlist)))
 						     (format "~a" (ml-tstyle (car tlist))))])
 				    (if (null? (cdr tlist))
 					fstring
-					(format "~a, ~a" fstring (tupleformat (cdr tlist))))))])
-	    (tupleformat (tuple-list type)))]
+					(format "~a, ~a" fstring (<tuple>format (cdr tlist))))))])
+	    (<tuple>format (<tuple>-list type)))]
 	 [(tvar? type)
 	  (tvar-tbox type)]
 	 [(syntax? type)
@@ -74,6 +78,12 @@
 
       (define (ml-style value)
 	(cond
+	 [(option? value)
+	  (if (<voidstruct>? (option-type value))
+	      "None"
+	      (format "Some ~a" (ml-style (option-type value))))]
+	 [(box? value) (format "{contents = ~a}" (ml-style (unbox value)))]
+	 [(<unit>? value) "()"]
 	 [(list? value)
 	  (letrec ([listformat (lambda (clist)
 				 (if (null? clist)
@@ -83,16 +93,16 @@
 					 (format "~a; ~a" (ml-style (car clist)) (listformat (cdr clist))))))])
 	    (string-append "[" (listformat value)))]
 	 [(procedure? value) "<fun>"]
-	 [(tuple? value)
-	  (letrec ([tupleformat (lambda (tlist)
+	 [(<tuple>? value)
+	  (letrec ([<tuple>format (lambda (tlist)
 				  (if (null? (cdr tlist))
-				      (if (tuple? (car tlist))
+				      (if (<tuple>? (car tlist))
 					  (format "(~a)" (ml-style (car tlist)))
 					  (format "~a" (ml-style (car tlist))))
-				      (if (tuple? (car tlist))
-					  (format "(~a), ~a" (ml-style (car tlist)) (tupleformat (cdr tlist)))
-					  (format "~a, ~a" (ml-style (car tlist)) (tupleformat (cdr tlist))))))])
-	    (tupleformat (tuple-list value)))]
+				      (if (<tuple>? (car tlist))
+					  (format "(~a), ~a" (ml-style (car tlist)) (<tuple>format (cdr tlist)))
+					  (format "~a, ~a" (ml-style (car tlist)) (<tuple>format (cdr tlist))))))])
+	    (<tuple>format (<tuple>-list value)))]
 	 [(boolean? value)
 	  (if value
 	      "true"

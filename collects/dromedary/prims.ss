@@ -3,7 +3,7 @@
 		 (lib "match.ss")
 		 (lib "pretty.ss"))
 	(provide library-names user-types built-in-and-user-funcs constructors
-		 (struct tuple (list))
+		 (struct <tuple> (list))
 		 (struct arrow (arglist result))
 		 (struct tvar (tbox))
 		 (struct tlist (type))
@@ -12,13 +12,15 @@
 		 (struct usertype (name))
 		 (struct option (type))
 		 (struct <voidstruct> (dummy))
+		 (struct <unit> (dummy))
+		 (struct ref (type))
 		 (struct mlexn (name types))
 		 != <lt> <gt> <le> <ge> <or> <and>
 		 float? any?
 		 (all-from (lib "match.ss")))
 
 
-	(define-struct tuple (list) (make-inspector))
+	(define-struct <tuple> (list) (make-inspector))
 	(define-struct arrow (arglist result) (make-inspector))
 	(define-struct tvar (tbox) (make-inspector))
 	(define-struct tlist (type) (make-inspector))
@@ -26,6 +28,8 @@
 	(define-struct tconstructor (argtype result) (make-inspector))
 	(define-struct usertype (name))
 	(define-struct <voidstruct> (dummy))
+	(define-struct <unit> (dummy))
+	(define-struct ref (type))
 	(define-struct mlexn (name types))
 	(define-struct option (type))
 
@@ -90,6 +94,10 @@
 	   [else
 	    (pretty-print "Uncaught exception: Invalid_argument")]))
 
+	(define (<set-box!> b v)
+	  (begin (set-box! b v)
+		 (make-<unit> #f)))
+
 	(define (<or> a b)
 	  (or a b))
 
@@ -116,8 +124,9 @@
 	(hash-table-put! constructors "true" (cons "bool" #t))
 	(hash-table-put! constructors "false" (cons "bool" #f))
 	(hash-table-put! constructors "[]" (cons (make-tlist (make-tvar "'a")) null))
-;	(hash-table-put! constructors "::" (cons (make-arrow (list (make-tuple (list (make-tvar "'a") (make-tlist (make-tvar "'a"))))) (make-tlist (make-tvar "'a"))) cons))
-	(hash-table-put! constructors "::" (cons (make-tconstructor (make-tuple (list (make-tvar "'a") (make-tlist (make-tvar "'a")))) (make-tlist (make-tvar "'a"))) cons))
+	(hash-table-put! constructors "()" (cons "unit" (make-<unit> #f)))
+;	(hash-table-put! constructors "::" (cons (make-arrow (list (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a"))))) (make-tlist (make-tvar "'a"))) cons))
+	(hash-table-put! constructors "::" (cons (make-tconstructor (make-<tuple> (list (make-tvar "'a") (make-tlist (make-tvar "'a")))) (make-tlist (make-tvar "'a"))) cons))
 	(hash-table-put! constructors "list" (cons (make-tlist (make-tvar "'a")) "some error"))
 	(hash-table-put! constructors "float" (cons "float" "some error"))
 	(hash-table-put! constructors "int" (cons "int" "some error"))
@@ -153,6 +162,9 @@
 	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) append))
 	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string" "string") "string") string-append))
 	(hash-table-put! built-in-and-user-funcs "raise" (cons (make-arrow (list "exception") (make-tvar "'a")) raise))
+	(hash-table-put! built-in-and-user-funcs ":=" (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
+	(hash-table-put! built-in-and-user-funcs "ref" (cons (make-arrow (list (make-tvar "'a")) (make-ref (make-tvar "'a"))) box))
+	(hash-table-put! built-in-and-user-funcs "!" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-tvar "'a")) unbox))
 	
 
 	

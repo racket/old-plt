@@ -170,7 +170,7 @@
 	       (let ([testc (compile-ml test context)]
 		     [ifexpc (compile-ml ifexp context)]
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
-		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc)))]
+		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc) (make-<unit> #f)))]
 	      [($ ast:pexp_construct name expr bool)
 	       (let ([constr (hash-table-get constructors (unlongident name) (lambda () #f))])
 		 (if constr
@@ -178,7 +178,7 @@
 			 (cdr constr)
 			 (let ([args (compile-expr (ast:expression-pexp_desc expr) (ast:expression-pexp_src expr) context)])
 			   #`(#,(cdr constr) #,@(cond
-						[(tuple? args) (tuple-list args)]
+						[(<tuple>? args) (<tuple>-list args)]
 						[(list? args) args]
 						[else (list args)]))))
 		     (let ([rconstr (string->symbol (format "make-~a" (unlongident name)))]
@@ -206,7 +206,7 @@
 		 #`((match-lambda #,@tests) #,totest))]
 
 	      [($ ast:pexp_tuple xlist)
-	       #`(make-tuple (list #,@(compile-exps xlist context)))]
+	       #`(make-<tuple> (list #,@(compile-exps xlist context)))]
 
 	      [($ ast:pexp_try tryexp pelist)
 	       (let ([matches (compile-match pelist)]
@@ -242,7 +242,7 @@
 	      [($ ast:ppat_constant const)
 	       (eval const)]
 	      [($ ast:ppat_tuple tlist)
-	       #`($ tuple #,(map get-varpat tlist))]
+	       #`($ <tuple> #,(map get-varpat tlist))]
 	      [($ ast:ppat_constraint pat ct)
 	       (get-varpat pat)]
 	      [($ ast:ppat_any dummy)
@@ -255,7 +255,7 @@
 			(if constructor
 			    ;; Best way I can think of to do this is specail case
 			    (if (equal? (hash-table-get constructors (unlongident name)) cons)
-				;; The pattern should be a tuple of two
+				;; The pattern should be a <tuple> of two
 				(if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))]
 					  [tail (get-varpat (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))])
@@ -278,14 +278,14 @@
 	       const]
 	      [($ ast:ppat_tuple tlist)
 	       (let ([tests (map compile-test tlist (repeat (length tlist)) (repeat context (length tlist)))])
-	       #`($ tuple #,tests))]
+	       #`($ <tuple> #,tests))]
 	      [($ ast:ppat_construct name pat bool)
 	       (cond [(and (null? pat) (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
 		      (hash-table-get constructors name)]
 		     [(not bool)
 		      ;; Best way I can think of to do this is specail case
 		      (if (equal? (hash-table-get constructors name) cons)
-			  ;; The pattern should be a tuple of two
+			  ;; The pattern should be a <tuple> of two
 			  (if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 			      (let ([head (compile-test (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)]
 				    [tail (compile-test (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)])
@@ -314,7 +314,7 @@
 ;			       (cons (list (string->symbol variable)) (compile-ml (cdar pelist) context))])])]
 ;	      [($ ast:ppat_tuple tlist)
 ;	       (let ([tests (map compile-test tlist (repeat (length tlist)) (repeat context (length tlist)))])
-;		 (cons #'(dummy) #`(match dummy [($ tuple #,tests) #,(compile-ml (cdar pelist) context)])))]
+;		 (cons #'(dummy) #`(match dummy [($ <tuple> #,tests) #,(compile-ml (cdar pelist) context)])))]
 ;	      [($ ast:ppat_constraint pat type)
 ;	       (match (ast:pattern-ppat_desc pat)
 ;		      [($ ast:ppat_var variable)
@@ -371,8 +371,8 @@
      (define (flatten-tuple tlist)
        (if (null? tlist)
 	   null
-	   (if (tuple? (car tlist))
-	       (append (flatten-tuple (tuple-list (car tlist))) (flatten-tuple (cdr tlist)))
+	   (if (<tuple>? (car tlist))
+	       (append (flatten-tuple (<tuple>-list (car tlist))) (flatten-tuple (cdr tlist)))
 	       (cons (car tlist) (flatten-tuple (cdr tlist))))))
        
      (define (compile-exps bindings context)
@@ -423,7 +423,7 @@
 	   #f
 	   (or (equal? fun (car primlist)) (ml-primitive? fun (cdr primlist)))))
 
-     (define ml-prims (list + - * / equal? = < <= > >= <or> <and> != not append string-append)) 
+     (define ml-prims (list + - * / equal? = <gt> <ge> <lt> <le> <or> <and> != not append string-append set-box! unbox)) 
 
      (define (empty-context) 
        '(("+" operator +)

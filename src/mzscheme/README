@@ -15,7 +15,7 @@ MzScheme. (Please read the general notes if you plan on changing
 MzScheme or the default compilation flags.)
 
 -Matthew Flatt
- Rice University PLT
+ PLT
  mflatt@cs.rice.edu
  http://www.cs.rice.edu/~mflatt/
 
@@ -23,7 +23,9 @@ MzScheme or the default compilation flags.)
  Compiling for Unix (or BeOS or Cygwin)
 ========================================================================
 
-To compile the `mzscheme' executable for these platforms:
+Run the `mzmake' script to compile the `mzscheme' executable for the
+following platforms:
+
   Alpha OSF1
   BeOS
   DEC Ultrix
@@ -37,7 +39,6 @@ To compile the `mzscheme' executable for these platforms:
   SGI IRIX
   Sparc Solaris [see note below]
   Sparc SunOS4    
-run the `mzmake' script.
 
 [Solaris Note: To ensure that dynamic extensions work right, use the
  native Solaris `ld' rather than GNU's `ld'.]
@@ -72,26 +73,15 @@ To compile parts of MzScheme for embedding or extending:
   * `[mz]make libguile' creates lib/sys/libguile.a; this is
      libmzscheme.a + libgc.a + compatibility routines to support
      GNU's emerging GUILE high-level interface specification
-     (still experimental, and with a dim future)
+     (still experimental, and with an unpromising future)
 
   * `[mz]make dynlib' compiles mzdyn.o (for linking
      dynamically-loaded extensions to MzScheme) and puts
      it in lib/sys
 
-  * `[mz]make g-c' just compiles /lib/sys/libgc.a
+  * `[mz]make g-c' compiles /lib/sys/libgc.a only
 
-  * `[mz]make dynexample' compiles the example dynamic
-     extension objects/sys/dynexmpl.so; when this is loaded into
-     MzScheme, (by using load-extension), it defines a "date" 
-     procedure; mzscheme must be installed and mzc must be in
-     the path
-
-  * `[mz]make oe' compiles a larger example dynamic
-     extension objects/sys/oe.so; when this is loaded into
-     MzScheme, (by using load-extension), it defines "odd",
-     "even", "fib", and "fib2" procedures, and returns
-     two values (#t and #f) when loaded; mzscheme must be 
-     installed and mzc must be in the path
+See also plt/collects/mzscheme/examples/ for some example extensions.
 
 ------------------------------------------------------------------------
  Compiling for Multiple Unix Platforms
@@ -112,7 +102,7 @@ and library files are put in
   lib/sys
 
 The destination for the `mzscheme' binary does not use the
-MZPLTFORMSUFFIX enrionment variable. (That would be too easy.)
+MZPLTFORMSUFFIX environment variable. (That would be too easy.)
 Instead, the MZBUILDDIR environment variable designates a destination
 directory for the binary. If MZBUILDDIR is not defined, the binary is
 placed in the same directory as the main "Makefile".
@@ -125,14 +115,14 @@ To compile with MSVC, read the instructions in "plt\src\worksp\README".
 
 To compile with Cygwin's gcc, follow the Unix instructions above.
 Then, to set up the libraries for buidling extensions (or compiling
-with mzc), go to "plt\src\mzscheme\dynsrc" and run "gmkmzdyn.bat".
+with mzc), go to plt\src\mzscheme\dynsrc and run `gmkmzdyn.bat'.
 
 ========================================================================
  Compiling for MacOS
 ========================================================================
 
-Unpack the Compactor archive "plt:src:cw.cpt" to "plt:src:cw" and then
-see "plt:src:cw:ABOUT MZSCHEME".
+Unpack the Compactor archive plt:src:cw.cpt to plt:src:cw and then
+see `ABOUT MZSCHEME' in that folder.
 
 ========================================================================
  Compiling the OSKit-based kernel
@@ -142,7 +132,7 @@ Run `./oskmake' to build the OSKit-based MzScheme kernel. See `oskmake'
 for information about build options.
 
 For simplicity, the MzScheme kernel uses SGC rather than Boehm's
-conservative garbage collector. The "oskmake" script sets the
+conservative garbage collector. The `oskmake' script sets the
 necessary compilation flags.
 
 ========================================================================
@@ -158,15 +148,15 @@ By default, MzScheme is compiled:
 
  * without support for simple-precision floating point numbers.
 
-This can be changed by modifying sconfig.h or specifying -D compiler
-flags for the macros described in sconfig.h. (In the latter case, you
-may find it convenient to edit `mzmake'.)
+These options can be changed by modifying sconfig.h or specifying -D
+compiler flags for the macros described in sconfig.h. (In the latter
+case, you may find it convenient to edit `mzmake'.)
 
 ------------------------------------------------------------------------
 
 If you modify MzScheme and change any primitive syntax or the
 collection of built-in identifers, be sure to turn off
-USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start up.
+USE_COMPILED_MACROS in schminc.h. Otherwise, MzScheme won't start.
 See schminc.h for details.
 
 ------------------------------------------------------------------------

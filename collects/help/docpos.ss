@@ -1,5 +1,5 @@
 
-; Define an order one the standard docs:
+; Define an order on the standard docs:
 (cons
  ;; Order-assigning procedure:
  (lambda (d)
@@ -13,6 +13,7 @@
     [(misclib) 5]
     [(teach) 8]
     [(mzc) 10]
+    [(tools) 30]
     [(insidemz) 50]
     [else 100]))
  ;; Known manuals:
@@ -23,4 +24,5 @@
    ("framework" . "PLT Framework: GUI Application Framework")
    ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
    ("mzc" . "PLT mzc: MzScheme Compiler Manual")
-   ("insidemz" . "Inside PLT MzScheme")))
+   ("insidemz" . "Inside PLT MzScheme")
+   ("tools" . "PLT Tools: DrScheme Extension Manual")))

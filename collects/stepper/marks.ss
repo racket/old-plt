@@ -75,19 +75,26 @@
                   (printf " ~a : ~a~n" (car binding-pair) (cadr binding-pair)))
                 (caddr exposed))))
   
+  (define (binding-matches mark binding)
+    (let ([matches
+           (filter (lambda (b)
+                     (eq? binding (mark-binding-binding b)))
+                   (mark-bindings mark))])
+      (if (> (length matches) 1)
+          (error 'lookup-binding "multiple bindings found for ~a" binding)
+          matches)))
+  
   (define (lookup-binding mark-list binding)
     (if (null? mark-list)
         (error 'lookup-binding "variable not found in environment: ~a" binding)
-        (let* ([bindings (mark-bindings (car mark-list))]
-               [matches (filter (lambda (b)
-                                  (eq? binding (mark-binding-binding b)))
-                                bindings)])
+        (let ([matches (binding-matches (car mark-list) binding)])
           (cond [(null? matches)
                  (lookup-binding (cdr mark-list) binding)]
-                [(= (length matches) 1)
-                 (car matches)]
-                [else 
-                 (error 'lookup-binding "multiple bindings found for ~a" binding)]))))
+                [else
+                 (car matches)]))))
+  
+  (define (lookup-binding-list mark-list binding)
+    (apply append (map (lambda (x) (binding-matches x binding)) mark-list))) 
   
   ; I'm not really sure this belongs here, but it's a convenient spot.
   (define ankle-wrap-enabled 

@@ -81,5 +81,6 @@
                           mred
                           framework
                           drscheme
+                          error
                           stepper-view-controller)])       
       (export (open debug-wrapper) (open break)))

@@ -50,6 +50,7 @@
    expose-mark
    display-mark
    lookup-binding
+   lookup-binding-list
    debug-key
    extract-zodiac-locations
    extract-mark-list

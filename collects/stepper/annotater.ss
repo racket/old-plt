@@ -1017,10 +1017,11 @@
                                 `(sequence
                                    ,@ann-exprs)
                                 null
-                                (apply binding-set-union free-var-sets)))]))])
+                                (apply binding-set-union free-var-sets)))]))]
+                       [b-s-remove 
+                        (lambda (a b) (binding-set-remove a b expr))])
                    (let*-values
-                       ([(b-s-remove) (lambda (a b) (binding-set-remove a b expr))]
-                        [(ann-super-expr free-bindings-super-expr)
+                       ([(ann-super-expr free-bindings-super-expr)
                          (non-tail-recur (z:class*/names-form-super-expr expr))]
                         [(ann-interfaces free-binding-sets-interfaces)
                          (dual-map non-tail-recur (z:class*/names-form-interfaces expr))]
@@ -1067,7 +1068,7 @@
 (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
-  ;(printf "annotated: ~n~a~n" (car annotated-exprs))
+  (printf "annotated: ~n~a~n" (car annotated-exprs))
   (values annotated-exprs struct-proc-names))))
   
 )

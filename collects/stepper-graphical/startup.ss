@@ -10,7 +10,7 @@
   
   (define parent-drscheme-frame 
     (make-parameter #f (lambda (frame)
-                         (if (is-a? frame frame%
+                         (if (is-a? frame mred:frame%)
                              frame
                              (e:internal-error #f "non-frame given to parent-drscheme-frame parameter")))))
   
@@ -22,7 +22,7 @@
                   (lambda ()
                     (parent-drscheme-frame this)
                     (super-execute-callback))])
-       (sequence (super-init)))))
+       (sequence (apply super-init args)))))
 
   ;; ----- stepper startup
   

@@ -8,6 +8,18 @@
 	  mzlib:pretty-print^
 	  mred^)
 
+  (define default-font (send the-font-list find-or-create-font 10 'roman 'normal 'normal #f))
+  (fw:preferences:set-default 'paint-by-numbers:font default-font (lambda (f) (is-a? f font%)))
+  (fw:preferences:set-un/marshall 'paint-by-numbers:font
+				  (lambda (font)
+				    (list (send font get-point-size)
+					  (send font get-face)
+					  (send font get-family)
+					  (send font get-style)
+					  (send font get-weight)
+					  (send font get-underlined)))
+				  (lambda (lst) (apply (ivar the-font-list find-or-create-font) lst)))
+				    
   (define problems (car all:problemss))
 
   (define game-name "Paint by Numbers")
@@ -36,8 +48,51 @@
      (list "games" "paint-by-numbers")
      "Paint by Numbers Help"))
 
+  (define (configure-font frame)
+    (let ([font (get-font-from-user
+		 "Choose a font for the labels"
+		 frame
+		 (fw:preferences:get 'paint-by-numbers:font))])
+      (when font
+	(fw:preferences:set 'paint-by-numbers:font font))))
+
+  (define (size-font inc)
+    (let ([old-font (fw:preferences:get 'paint-by-numbers:font)])
+      (fw:preferences:set 'paint-by-numbers:font
+			  (if (send old-font get-face)
+			      (send the-font-list find-or-create-font
+				    (inc (send old-font get-point-size))
+				    (send old-font get-face)
+				    (send old-font get-family)
+				    (send old-font get-style)
+				    (send old-font get-weight)
+				    (send old-font get-underlined))
+			      (send the-font-list find-or-create-font
+				    (inc (send old-font get-point-size))
+				    (send old-font get-family)
+				    (send old-font get-style)
+				    (send old-font get-weight)
+				    (send old-font get-underlined))))))
+
+  (define (add-font-items menu)
+    (make-object menu-item%
+      "Choose Font"
+      menu
+      (lambda x (configure-font)))
+    (make-object menu-item%
+      "Make Board Bigger"
+      menu
+      (lambda x (size-font add1))
+      #\b)
+    (make-object menu-item%
+      "Make Board Tinier"
+      menu
+      (lambda x (size-font sub1))
+      #\t))
+		 
+
   (define generic-frame%
-    (class fw:frame:standard-menus% (name)
+    (class (fw:frame:standard-menus-mixin fw:frame:basic%) (name)
 
       (inherit set-label get-label get-area-container)
       (private
@@ -71,7 +126,6 @@
 	       (update-filename fn)
 	       (do-save))))])
       (rename [super-file-menu:between-new-and-open file-menu:between-new-and-open])
-
 
       (override
        [file-menu:new-string (lambda () "Puzzle")]
@@ -175,6 +229,7 @@
 	   (let ([rows (problem-rows prlmb)]
 		 [cols (problem-cols prlmb)])
 	     (set! problem prlmb)
+	     (when canvas (send canvas close-up))
 	     (set! canvas (make-object GUI:paint-by-numbers-canvas% canvas-panel rows cols))
 	     (send canvas-panel change-children (lambda (l) (list canvas))))
 	   (stretchable-width #f)
@@ -236,7 +291,10 @@
 					  (show-wrong)) #\h))
 	  (set! editor-item (make-object menu-item% "Edit this Puzzle" pbn-menu
 					 (lambda (_1 _2)
-					   (editor problem))))))
+					   (editor problem))))
+
+	  (make-object separator-menu-item% pbn-menu)
+	  (add-font-items pbn-menu)))
 
       (inherit top-panel help-button get-area-container)
       (private
@@ -269,6 +327,12 @@
 	[get-canvas
 	 (lambda ()
 	   canvas)])
+
+      (rename [super-on-close on-close])
+      (override
+       [on-close
+	(lambda ()
+	  (when canvas (send canvas close-up)))])
 
       (sequence
 	(set-problem problem)
@@ -311,6 +375,14 @@
 	 (lambda ()
 	   canvas)])
 
+
+      (rename [super-on-close on-close])
+      (override
+       [on-close
+	(lambda ()
+	  (when canvas (send canvas close-up))
+	  (super-on-close))])
+
       (sequence
 	(super-init editor-name))
 
@@ -323,12 +395,16 @@
       (sequence
 	(cond
 	 [(pair? indicator)
+	  (when canvas
+	    (send canvas close-up))
 	  (set! canvas
 		  (make-object GUI:design-paint-by-numbers-canvas%
 		    canvas-panel
 		    (car indicator)
 		    (cdr indicator)))]
 	 [(is-a? indicator bitmap%)
+	  (when canvas
+	    (send canvas close-up))
 	  (set! canvas
 		(make-object GUI:design-paint-by-numbers-canvas%
 		  canvas-panel
@@ -342,6 +418,8 @@
 		     biggest-editor biggest-editor)))
 	  (send canvas set-bitmap indicator)]
 	 [(problem? indicator)
+	  (when canvas
+	    (send canvas close-up))
 	  (set! canvas
 		(make-object GUI:design-paint-by-numbers-canvas%
 		  canvas-panel
@@ -354,7 +432,10 @@
       (sequence
 	(let* ([mb (get-menu-bar)]
 	       [pbn-menu (make-object menu% "Nonogram" mb)])
-	  (make-object menu-item% "Test Puzzle" pbn-menu (lambda (_1 _2) (test-puzzle)))))))
+	  (make-object menu-item% "Test Puzzle" pbn-menu (lambda (_1 _2) (test-puzzle)))
+
+	  (make-object separator-menu-item% pbn-menu)
+	  (add-font-items pbn-menu)))))
 
   (define (editor bitmap?)
     (let* ([default 15]

@@ -477,6 +477,7 @@
     template-unit        
     template-structure
     template-mvalues
+    template-image
     template-internal-class
     template-all-ivars
     template-dots

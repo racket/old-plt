@@ -25,6 +25,7 @@
    mrspidey:interaction^
    mrspidey:kernel^
    mrspidey:templates^
+   mred^
    (zodiac : zodiac:system^)
    mrspidey:zodiac^)
 
@@ -107,6 +108,7 @@
   (define AV-void  (void))
   (define AV-undefined (void))
   (define AV-top-s (void))
+  (define AV-image (void))
 
   (define (mk-tvar-nil)   (mk-Tvar-init-AV 'nil   AV-nil))
   (define (mk-tvar-numb)  (mk-Tvar-init-AV 'num   AV-numb))
@@ -121,6 +123,7 @@
 	(mk-Tvar-init-AV 'void  AV-void)
 	(mk-Tvar 'void)))
   (define (mk-tvar-undefined) (mk-Tvar-init-AV 'undefined AV-undefined))
+  (define (mk-tvar-image)   (mk-Tvar-init-AV 'image AV-image))
 
   (define (init-common-AV!)
     (unless (template? template-nil)
@@ -136,6 +139,7 @@
     (set! AV-void   (make-constructed-AV-template template-void))
     (set! AV-undefined (make-constructed-AV-template template-undefined))
     (set! AV-top-s  (make-constructed-AV-template template-top-s))
+    (set! AV-image  (make-constructed-AV-template template-image))
     )
 
   ;; ======================================================================
@@ -205,6 +209,10 @@
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact b))
 	       (make-constructed-AV 'box tvar-e))]
+	    [($ zodiac:external _ _ _ img)
+	     (if (is-a? img image-snip%)
+		 (make-constructed-AV 'image)
+		 (error "traverse-const-exact: unknown external ~s" img))]
 ;            [(? struct? s)
 ;	     (let ([tvar-e (mk-Tvar 'struct-field)])
 ;	       (printf "Found the struct!~n")

@@ -103,7 +103,7 @@
        
        (when (not (st:whole-program))
 	 (put-context-top-s defs env result))
-       
+
        ;;(show-stat-small)
 
        defs)))

@@ -37,7 +37,7 @@
     (analysis-set-arrow-filter! #f)
     (record-analyzed-file
      filename
-     (lambda () (open-code-file filename))
+     (open-code-file filename)
      (lambda () (analyze-program filename))))
 
   (define (calc-annotations defs)

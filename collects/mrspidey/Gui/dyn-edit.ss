@@ -48,10 +48,13 @@
       ;; keeps a list of all the snips in their source-locations
       [sniplist ()]
 
-      [insert-line
-        (lambda (s)
+      [insert-line-items
+        (lambda (items)
           (insert margin)
-          (insert s)
+          (for-each 
+	   (lambda (item)
+	     (insert item))
+	   items)
           (insert (string #\newline)))]
 
       ;; ----------

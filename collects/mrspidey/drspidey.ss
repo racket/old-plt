@@ -19,6 +19,8 @@
 
 ;; The code to be loaded from DrScheme
 
+(require-library "errortrace.ss" "errortrace")
+
 (require-relative-library "pltrc-co.ss")
 (require-relative-library "macros.ss")
 
@@ -160,6 +162,8 @@
 	       (MZLIB pretty-print)
 	       (MZLIB file)
 	       (MZLIB string)
+	       MRED	
+	       FRAMEWORK
 	       ZODIAC)]
 	 [GUI : mrspidey-gui^
 	      (mrspidey-gui@ 

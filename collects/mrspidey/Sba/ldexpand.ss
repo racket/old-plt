@@ -21,6 +21,8 @@
    mrspidey:CDL^
    mrspidey:interaction^
    mrspidey:languages^
+   (mred : mred^)
+   framework^
    (zodiac : zodiac:system^)
    (zodiac : mrspidey:zodiac^)
    mrspidey:mzlib:function^
@@ -36,16 +38,20 @@
 	 (unless (file-exists? filename)
 	   (mrspidey:error (format "Can't open file ~s, current directory ~s"
 				   filename (current-directory))))
-	 (let* ( [p (open-input-file filename 'text)]
-		 [p (system-expand-if-necy p)])
-	   p)))))
 
-  (define (zodiac:read* port filename)
+	 ; return a thunk which produces thunk for zodiac:read*
+	 (let ([txt (make-object mred:text%)])
+	   (send txt load-file filename)
+	   (lambda ()
+	     (gui-utils:read-snips/chars-from-buffer txt)))))))
+	    
+
+  (define (zodiac:read* thunk-thunk filename)
     (let* ( [default-loc (zodiac:make-location 1 1 0 filename)]                      
-            
+	    [thunk (thunk-thunk)]
 	    [reader (if (st:fake-reader)
-			(fake-zodiac-reader port default-loc)
-			(zodiac:read port default-loc))]
+			(fake-zodiac-reader thunk default-loc)
+			(zodiac:read thunk default-loc))]
 	    [sexps
 	     (recur loop ()
 		    (let* ([expr (reader)])
@@ -58,7 +64,6 @@
 			    (cons expr (loop))))))])
       (unless (null? sexps)
 	(mrspidey:zprogress "Reading" (zodiac:zodiac-finish (rac sexps))))
-      (close-input-port port)
       (when debugging-front
 	(printf "~n--Loaded file---------------------~n")
 	(for-each (lambda (sexp) (pretty-print (zodiac:stripper sexp))) sexps)

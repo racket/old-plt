@@ -152,6 +152,7 @@
   (define template-all-ivars (void))
   (define template-dots   (void))
   (define template-ivarset (void))
+  (define template-image (void))
 
   (define (init-default-constructor-env!)
     (pretty-debug ' (init-default-constructor-env!))
@@ -176,6 +177,7 @@
     (set! template-unit      (add-constructor! 'unit-result* #f))
     (set! template-structure (add-constructor! 'structure:))
     (set! template-mvalues   (add-constructor! 'mvalues #f))
+    (set! template-image   (add-constructor! 'image ))
     (set! template-internal-class 
 	  (extend-constructor-env! 
 	   (make-template

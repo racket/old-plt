@@ -18,7 +18,7 @@
 ; ----------------------------------------------------------------------
 ; ported to MrEd 100 by Paul Steckler 
 
-(define-struct fileinfo (filename frame thunk-port annotations))
+(define-struct fileinfo (filename frame thunk-thunk annotations))
 ;; annotations may also be (-> zodiac:parsed)
 
 (define NUM-EXTRA-LINES 20)
@@ -30,6 +30,19 @@
     (lambda () (begin-busy-cursor))
     thunk
     (lambda () (end-busy-cursor))))
+
+(define (read-text-line read-thunk)
+  (let loop ([items '()]
+	     [empty? #t])
+    (let ([ch (read-thunk)])
+      (if (and empty? (eof-object? ch))
+	  ch
+	  (if (or (eof-object? ch) 
+		  (and (char? ch) (char=? ch #\newline)))
+	      (reverse items)
+	      (if (is-a? ch image-snip%)
+		  (loop (cons (send ch copy) items) #f)
+		  (loop (cons ch items) #f)))))))
 
 ; ----------------------------------------------------------------------
 (define tm (void))
@@ -216,7 +229,7 @@
 
       [add-frame
        (match-lambda*
-        [( (and fi ($ fileinfo filename frame thunk-port thunk-expression))
+        [( (and fi ($ fileinfo filename frame thunk-thunk thunk-expression))
            show
            . first-frame-locs)
          (pretty-debug-gui
@@ -285,15 +298,15 @@
                           "about.html")))))))))]
 
       [local-record-analyzed-file
-        (lambda (filename thunk-port thunk-expression)
+        (lambda (filename thunk-thunk thunk-expression)
           (pretty-debug-gui
             `(local-record-analyzed-file ,filename 
-               ,thunk-port
+               ,thunk-thunk
                ,thunk-expression))
           (set! fileinfo*
             (append fileinfo*
               (list (make-fileinfo filename #f 
-                      thunk-port 
+                      thunk-thunk
                       thunk-expression)))))]
 
       ;; ------------------------------
@@ -378,8 +391,8 @@
           ;; create edit buffer, load file and add annotations
           (pretty-debug-gui `(annotate-edit ,mode ,filename))
           (match (filename->fileinfo filename)
-            [($ fileinfo filename frame thunk-port annotations)
-	     (let ([port (thunk-port)]
+            [($ fileinfo filename frame thunk-thunk annotations)
+	     (let ([read-thunk (thunk-thunk)]
 		   [edit 
 		    (make-object 
 		     (mode-edit-class mode)
@@ -394,16 +407,15 @@
                       (recur loop ([n 1])
                         (when (zero? (modulo n 50))
                           (mrspidey:progress s n))
-                        (let ([r (read-line port)])
+			(let ([line-items (read-text-line read-thunk)])
                           ;;(pretty-debug-gui `(inserting ,r))
-                          (if (eof-object? r)
+                          (if (eof-object? line-items)
                             (mrspidey:progress s (sub1 n))
                             (begin
-                              (send edit insert-line r)
+                              (send edit insert-line-items line-items)
                               (loop (add1 n))))))
                       (when (multiple-files)
-                        (for i 0 NUM-EXTRA-LINES (send edit insert-line ""))))
-                    (close-input-port port)
+                        (for i 0 NUM-EXTRA-LINES (send edit insert-line-items '("")))))
                     (pretty-debug-gui `(last-line ,(send edit last-line)))
                     (send edit change-style base-delta 
                       0 (send edit last-position))

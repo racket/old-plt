@@ -23,6 +23,8 @@
   (PRETTY-PRINT : mzlib:pretty-print^)
   (FILE : mzlib:file^)
   (STRING : mzlib:string^)
+  (MRED : mred^)
+  (FRAMEWORK : framework^)
   (ZODIAC : zodiac:system^))
  (link
   [ZAUX : mrspidey:zodiac^ 
@@ -50,7 +52,7 @@
 	INTERACTION FUNCTION PRETTY-PRINT FILE STRING)]
   [LOADEXPAND : mrspidey:loadexpand^
 	      ((require-relative-library-unit/sig "ldexpand.ss")
-	       CDL INTERACTION LANGUAGES ZODIAC ZAUX 
+	       CDL INTERACTION LANGUAGES MRED FRAMEWORK ZODIAC ZAUX 
 	       FUNCTION PRETTY-PRINT FILE STRING)]
   [HASH : mrspidey:hash^
 	((require-relative-library-unit/sig "hash.ss")
@@ -98,7 +100,7 @@
 	      CDL INTERACTION KERNEL)]
   [KERNEL-AUX : mrspidey:kernel-aux^
 	      ((require-relative-library-unit/sig "kern-aux.ss")
-	       CDL INTERACTION KERNEL TEMPLATES ZODIAC ZAUX)]
+	       CDL INTERACTION KERNEL TEMPLATES MRED ZODIAC ZAUX)]
   [ATYPE : mrspidey:atype^
 	 ((require-relative-library-unit/sig "atype.ss")
 	  CDL INTERACTION KERNEL KERNEL-AUX

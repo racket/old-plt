@@ -133,7 +133,7 @@
 		(when (and (is-a? frame project-aware-frame<%>)
 			   (eq? this (send frame project:get-project-window)))
 		  (send frame project:set-project-window #f))))
-        (shutdown-project))
+        (send rep shutdown))
       
       (define (has-file? file)
         (let ([n (file:normalize-path file)])
@@ -356,10 +356,6 @@
 			#f))))
 	    #f))
 
-      (define (shutdown-project)
-        (reset-hierlist)
-        (custodian-shutdown-all project-custodian))
-      
       ;; offer-to-save-files : (-> boolean)
       ;; returns true when the user has either saved or okay'd not saving
       ;; each file that is unsaved.
@@ -392,7 +388,8 @@
       (define (execute-project)
 	(when (offer-to-save-files)
           (let ([rep (get-editor)])
-            (send rep reset-console)
+	    (reset-hierlist)
+            (send rep initialize-console)
 	    (send rep run-in-evaluation-thread
 		  (lambda ()
 		    (when collection-paths
@@ -411,19 +408,32 @@
 		      (current-load
 		       (lambda (l)
 			 (dynamic-wind
-			  (lambda () (push-file l))
+			  (lambda ()
+			    (printf "push ~s~n" l)
+			    (push-file l))
 			  (lambda () (ol l))
-			  (lambda () (pop-file))))))
-		    
+			  (lambda ()
+			    (printf "pop ~s~n" l)
+			    (pop-file))))))))
+
+	    (send rep do-many-evals
+		  (lambda (single-iteration)
 		    (for-each
 		     (lambda (file)
-		       (cond
-			[(string? file) (load file)]
-			[else (apply require-library/proc file)]))
+		       (single-iteration
+			(lambda ()
+			  (cond
+			   [(string? file) (load file)]
+			   [else (apply require-library/proc file)]))))
 		     files))))))
       
       '(define (execute-project)
 	(when (offer-to-save-files)
+
+	  ;(define (shutdown-project)
+	  ;(reset-hierlist)
+	  ;(custodian-shutdown-all project-custodian))
+      
 	  (shutdown-project)
 	  (set! project-custodian (make-custodian))
 

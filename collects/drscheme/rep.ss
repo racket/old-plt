@@ -346,6 +346,7 @@
            need-interaction-cleanup?
            cleanup-interaction
            
+	   do-many-evals
            do-many-text-evals
            
            reset-break-state
@@ -1042,13 +1043,13 @@
                    #t))))]
 		    
 
-	;; do-many-evals : (((-> void) -> void) -> void)
+	;; do-many-evals : ((((-> void) -> void) -> void) -> void)
 	[define do-many-evals ; =Kernel=, =Handler=
 
 	  ;; run-loop has the loop. It expects one argument, a procedure that
 	  ;; can be called with a thunk. The argument to run-loop maintains the right
 	  ;; breaking state and calls the thunk it was called with.
-          (lambda (run-loop) 
+          (lambda (run-loop)  ;; (((-> void) -> void) -> void)
             (send context disable-evaluation)
             (cleanup-transparent-io)
             (reset-pretty-print-width)
@@ -1069,7 +1070,7 @@
                   ; This procedure must also ensure that breaks are off before
                   ;  returning or escaping.
                   (run-loop
-		   (lambda (thunk)
+		   (lambda (thunk) ;; (-> void)
                         ; Evaluate the user's expression. We're careful to turn on
                         ;   breaks as we go in and turn them off as we go out.
                         ;   (Actually, we adjust breaks however the user wanted it.)

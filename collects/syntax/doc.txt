@@ -45,46 +45,6 @@ _stx.ss_: deconstructing syntax objects
   initially).
 
 ======================================================================
-_qqstx.ss_: qausiquote for syntax
-======================================================================
-
-> quasiquote-syntax
-> unquote-syntax
-> unquote-splicing-syntax
-
-  Like `quasiquote', `unquote' and `unquote', but generates syntax
-  objects, in the same way that `syntax' is like `quote'.
-
-  `quasiquote-syntax' generates `syntax' expressions for "constants",
-  not `quote-syntax', which means that quoted portions are templates,
-  and they match pattern variables in scope. For example,
-
-      (with-syntax ([(x ...) (list 1 2 3)])
-         (quasiquote-syntax ((unquote-syntax (* 0 9)) x ...))))
-
-  produces syntax for (0 1 2 3). But beware of sequences that look
-  like templates but wil be broken apart by the quasuiquote
-  conversion. For example,
-
-      (with-syntax ([(x ...) (list 1 2 3)])
-         (quasiquote-syntax (x ... (unquote-syntax 8))))
-
-  doesn't work, because it expands to something like
-
-      (with-syntax ([(x ...) (list 1 2 3)])
-        (datum->syntax-object
-          <somestx>
-          (list (syntax x)
-                (syntax ...)
-                8)
-          <somestx>))
-
-  In general, the expansion of `quasiquote-syntax' preserves syntactic
-  "constants" (using `syntax') as much as possible withou analyzing
-  unquoted expressions. (This is analogous to constant preservation in
-  `quasiquote'.)
-
-======================================================================
 _kerncase.ss_: matching fully-expanded expressions
 ======================================================================
 

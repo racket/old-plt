@@ -307,7 +307,9 @@
 	    (fw:preferences:get 'drscheme:backtrace-window-width)
 	    (fw:preferences:get 'drscheme:backtrace-window-height)))
     (letrec ([text (make-object fw:text:basic%)]
-             [ec (make-object fw:canvas:wide-snip% (send current-backtrace-window get-area-container) text)]
+             [ec (make-object fw:canvas:wide-snip% 
+                   (send current-backtrace-window get-area-container)
+                   text)]
              [di-vec (list->vector dis)]
              [index 0]
              [how-many-at-once 100]
@@ -558,6 +560,24 @@
                     (send fr show #t)))))]
         [else (mred:bell)])))
 
+  (define arrow-cursor (make-object mred:cursor% 'arrow))
+  (define eof-icon-snip%
+    (class mred:image-snip% (rep)
+      (rename [super-on-event on-event])
+      (override
+        [on-event
+         (lambda (dc x y editor-x editor-y evt)
+           (cond
+             [(send evt get-left-down) (send rep submit-eof)]
+             [else (super-on-event dc x y editor-x editor-y evt)]))]
+        [adjust-cursor
+         (lambda (dc x y editorx editory evt)
+           arrow-cursor)])
+      (inherit get-flags set-flags)
+      (sequence
+        (super-init (build-path (collection-path "icons") "eof.gif"))
+        (set-flags (cons 'handles-events (get-flags))))))
+
   (define (make-text% super%)
     (rec rep-text%
       (class/d super% (context)
@@ -655,7 +675,9 @@
            shutdown
 	   kill-evaluation
 
-	   eof-received))
+	   submit-eof
+           show-eof-icon
+           hide-eof-icon))
         
         (unless (is-a? context context<%>)
           (error 'drscheme:rep:text% "expected an object that implements drscheme:rep:context<%> as initialization argument, got: ~e"
@@ -705,6 +727,7 @@
           (lambda ()
             (when transparent-text
               (set! saved-newline? #f) 
+              (hide-eof-icon)
               (send transparent-text shutdown)
               (set-position (last-position))
               (set-caret-owner #f)
@@ -739,7 +762,31 @@
               text)))
         
 	(define eof-received? #f)
-	(define (eof-received)
+        (define eof-icon-shown? #f)
+        (define (show-eof-icon) 
+          (unless eof-icon-shown?
+            (set! eof-icon-shown? #t)
+            (let ([c-locked? (locked?)])
+              (begin-edit-sequence)
+              (lock #f)
+              (insert (make-object eof-icon-snip% this)
+                      (- (last-position) 1)
+                      (- (last-position) 1))
+              (lock c-locked?)
+              (end-edit-sequence))))
+        (define (hide-eof-icon) 
+          (when eof-icon-shown?
+            (set! eof-icon-shown? #f)
+            (let ([c-locked? (locked?)])
+              (begin-edit-sequence)
+              (lock #f)
+              (delete (- (last-position) 2) (- (last-position) 1))
+              (lock c-locked?)
+              (end-edit-sequence))))
+	(define (submit-eof)
+          (when transparent-text
+            (send transparent-text eof-received))
+          (hide-eof-icon)
 	  (set! eof-received? #t))
 
         (define init-transparent-io-do-work  ; =Kernel=, =Handler=
@@ -2286,7 +2333,6 @@
 	 (lambda ()
 	   (set! shutdown? #t)
 	   (semaphore-post wait-for-sexp)
-	   (hide-eof-frame)
 	   (lock #t))]
 	[consumed-delta 
 	 (make-object mred:style-delta% 'change-bold)]
@@ -2307,39 +2353,25 @@
 	    (semaphore-post stream-start/end-protect)))]
 
 	[eof-submitted? #f]
-	[submit-eof
-	 (lambda x ; =Kernel=, =Handler=
+	[eof-received
+         (lambda () ; =Kernel=, =Handler=
 	   (set! eof-submitted? #t)
-	   (send rep-text eof-received)
 	   (semaphore-post wait-for-sexp))]
-	[eof-frame (let ([f (make-object mred:frame% "eof frame")])
-		     (make-object mred:button% "submit eof" f submit-eof)
-		     f)]
-	[eof-frame-shown? #f]
-	[hide-eof-frame
-	 (lambda ()
-	   (send eof-frame show #f)
-	   (set! eof-frame #f))]
-	[show-eof-frame
-	 (lambda ()
-	   (unless eof-frame-shown?
-	     (send eof-frame show #t)))]
-
 	[fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
 	 (lambda ()
-	   (show-eof-frame)
+	   (send rep-text show-eof-icon)
 	   (let* ([ready-char #f])
 	     (let loop ()
 	       (semaphore-wait stream-start/end-protect)
 	       (cond
-		[eof-submitted?
-		 (set! ready-char eof)]
-		[(< stream-start stream-end)
-		 (let ([s stream-start])
-		   (mark-consumed s (add1 s))
-		   (set! stream-start (add1 s))
-		   (set! ready-char (get-character s)))]
-		[else (void)])
+                 [(< stream-start stream-end)
+                  (let ([s stream-start])
+                    (mark-consumed s (add1 s))
+                    (set! stream-start (add1 s))
+                    (set! ready-char (get-character s)))]
+                 [eof-submitted?
+                  (set! ready-char eof)]
+                 [else (void)])
 	       (semaphore-post stream-start/end-protect)
 	       (or ready-char
 		   (begin

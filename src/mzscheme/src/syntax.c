@@ -2405,7 +2405,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
     if (SCHEME_STX_PAIRP(name) && SCHEME_STX_NULLP(SCHEME_STX_CDR(name))) {
       rhs_name = SCHEME_STX_CAR(name);
     } else {
-      rhs_name = name;
+      rhs_name = scheme_false;
     }
 
     if (!partial) {
@@ -2875,9 +2875,9 @@ do_begin_expand(char *name,
       Scheme_Expand_Info erec1;
       scheme_rec_add_certs(erec, drec, form);
       scheme_init_expand_recs(erec, drec, &erec1, 1);
-      erec1.value_name = scheme_false;
       boundname = scheme_check_name_property(form, erec[drec].value_name);
-      erec[drec].value_name = boundname;
+      erec1.value_name = boundname;
+      erec[drec].value_name = scheme_false;
       fst = SCHEME_STX_CAR(rest);
       rest = SCHEME_STX_CDR(rest);
       form = icons(scheme_expand_expr(fst, env, &erec1, 0),

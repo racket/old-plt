@@ -2305,6 +2305,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (rec[drec].comp)
       return compile_application(form, env, rec, drec);
     else {
+      rec[drec].value_name = scheme_false;
       naya = scheme_expand_list(form, scheme_no_defines(env), rec, drec);
       /* naya will be prefixed and returned... */
     }
@@ -2394,6 +2395,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     return compile_application(form, env, rec, drec);
   } else {
     scheme_rec_add_certs(rec, drec, form);
+    rec[drec].value_name = scheme_false;
     naya = scheme_expand_list(form, scheme_no_defines(env), rec, drec);
     /* naya will be prefixed returned... */
   }

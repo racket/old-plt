@@ -666,9 +666,9 @@
        (for-each (lambda (method generic)
                    (hash-table-put! table (string->symbol method) generic))
                  (list ,@(map (lambda (m)
-                                 (mangle-method-name (id-string (method-name m))
-                                                     (method-record-atypes (method-rec m))))
-                               methods))
+                               (mangle-method-name (id-string (method-name m))
+                                                   (method-record-atypes (method-rec m))))
+                             methods))
                  (list ,@generics))
        table))
   
@@ -1219,7 +1219,9 @@
   (define translate-throw
     (lambda (expr key src)
       (create-syntax #f `(let* ((obj ,expr)
-                                (exn (make-java:exception (send obj |getMessage|) (current-continuation-marks) obj)))
+                                (exn (make-java:exception 
+                                      (send (send obj |getMessage|) get-mzscheme-string) 
+                                      (current-continuation-marks) obj)))
                            (send obj set-exception! exn)
                            (,(create-syntax #f 'raise (build-src key)) exn)) 
                      (build-src src))))

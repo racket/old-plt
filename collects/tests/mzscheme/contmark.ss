@@ -5,36 +5,39 @@
 
 (SECTION 'continuation-marks)
 
-(test null current-continuation-marks 'key)
+(define (extract-current-continuation-marks key)
+  (continuation-mark-set->list (current-continuation-marks) key))
+
+(test null extract-current-continuation-marks 'key)
 
 (test '(10) 'wcm (with-continuation-mark 'key 10 
-		   (current-continuation-marks 'key)))
+		   (extract-current-continuation-marks 'key)))
 (test '(11) 'wcm (with-continuation-mark 'key 10 
 		   (with-continuation-mark 'key 11
-		     (current-continuation-marks 'key))))
+		     (extract-current-continuation-marks 'key))))
 (test '(9) 'wcm (with-continuation-mark 'key 10 
 	     (with-continuation-mark 'key2 9
 	       (with-continuation-mark 'key 11
-		 (current-continuation-marks 'key2)))))
+		 (extract-current-continuation-marks 'key2)))))
 (test '() 'wcm (with-continuation-mark 'key 10 
 	    (with-continuation-mark 'key2 9
 	      (with-continuation-mark 'key 11
-		(current-continuation-marks 'key3)))))
+		(extract-current-continuation-marks 'key3)))))
 
 (test '() 'wcm (let ([x (with-continuation-mark 'key 10 (list 100))])
-		 (current-continuation-marks 'key)))
+		 (extract-current-continuation-marks 'key)))
 
 (test '(11) 'wcm (with-continuation-mark 'key 11
-		   (let ([x (with-continuation-mark 'key 10 (current-continuation-marks 'key))])
-		     (current-continuation-marks 'key))))
+		   (let ([x (with-continuation-mark 'key 10 (extract-current-continuation-marks 'key))])
+		     (extract-current-continuation-marks 'key))))
 
 (test '((11) (10 11) (11)) 'wcm (with-continuation-mark 'key 11
-				  (list (current-continuation-marks 'key)
-					(with-continuation-mark 'key 10 (current-continuation-marks 'key))
-					(current-continuation-marks 'key))))
+				  (list (extract-current-continuation-marks 'key)
+					(with-continuation-mark 'key 10 (extract-current-continuation-marks 'key))
+					(extract-current-continuation-marks 'key))))
 
 (define (get-marks)
-  (current-continuation-marks 'key))
+  (extract-current-continuation-marks 'key))
 
 (define (tail-apply f)
   (with-continuation-mark 'key 'tail
@@ -73,7 +76,7 @@
     (begin
       (unless did-once?
 	(set! get-marks (let/cc k k)))
-      (set! l (cons (current-continuation-marks 'key) l))))
+      (set! l (cons (extract-current-continuation-marks 'key) l))))
 
    (if did-once?
        (unless did-twice?
@@ -106,7 +109,7 @@
 	     (loop (sub1 n) (cons n l))))
        (let loop ([n 1000])
 	 (if (zero? n)
-	     (current-continuation-marks 'x)
+	     (extract-current-continuation-marks 'x)
 	     (let ([x (with-continuation-mark 'x n (loop (sub1 n)))])
 	       x)))))
 
@@ -121,8 +124,8 @@
 	      (let loop ([n max])
 		(if (zero? n)
 		    (append
-		     (current-continuation-marks 'base)
-		     (current-continuation-marks r))
+		     (extract-current-continuation-marks 'base)
+		     (extract-current-continuation-marks r))
 		    (with-continuation-mark n n
 		      (loop (sub1 n))))))))
     (loop (sub1 n))))
@@ -141,7 +144,7 @@
 		    (semaphore-wait s1)
 		    (with-continuation-mark 'key 'b.4
 		      (begin
-			(set! result (current-continuation-marks 'key))
+			(set! result (extract-current-continuation-marks 'key))
 			(semaphore-post s2)))
 		    'ok))
 		'ok))))
@@ -159,12 +162,12 @@
 			 (with-continuation-mark 'key 'a.4
 			   (begin
 			     (semaphore-wait s2)
-			     (set! result (append (current-continuation-marks 'key) result))))
+			     (set! result (append (extract-current-continuation-marks 'key) result))))
 			 'ok))
 		     'ok))
 		 'ok)))))
   (test '(a.4 a.3 a.2 a.1 b.4 b.2 b.1) 'thread-marks result))
 
-(arity-test current-continuation-marks 1 1)
+(arity-test extract-current-continuation-marks 1 1)
 
 (report-errs)

@@ -27,14 +27,17 @@
   (define (maybe-cdr-op f)
     (lambda (x) (if (pair? x) (cons (car x) (f (cdr x))) (f x))))
   (define plthome-ify
-    (maybe-cdr-op (lambda (path)
-                    (if (and (string? path)
-                             (> (string-length path) plthome/-len)
-                             (equal? (substring path 0 plthome/-len) plthome/))
-                      (cons 'plthome (substring path plthome/-len))
-                      path))))
+    (maybe-cdr-op
+     (lambda (path)
+       (cond [(and (string? path)
+                   (> (string-length path) plthome/-len)
+                   (equal? (substring path 0 plthome/-len) plthome/))
+              (cons 'plthome (substring path plthome/-len))]
+             [(equal? path plthome) (cons 'plthome "")]
+             [else path]))))
   (define un-plthome-ify
-    (maybe-cdr-op (lambda (path)
-                    (if (and (pair? path) (eq? 'plthome (car path)))
-                      (build-path plthome (cdr path))
-                      path)))))
+    (maybe-cdr-op
+     (lambda (path)
+       (if (and (pair? path) (eq? 'plthome (car path)))
+         (if (equal? (cdr path) "") plthome (build-path plthome (cdr path)))
+         path)))))

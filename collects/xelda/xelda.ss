@@ -21,6 +21,7 @@
   ;;
   (define *excel-progid* "Excel.Application")
   (define *filename* #f)
+  (define *cached-ws* empty)
   (define xl (cci/progid *excel-progid*))
   (define wb #f)
   (define ws #f)
@@ -295,7 +296,7 @@
        [close-frame!
         (lambda()
           (set! *file-opened* #f)
-          (set-status! (format "Load Exel file~n"))
+          (set-status! (format "Load Excel file~n"))
           (send load-button enable #t)
           (send close-button enable #f)
           (send check-button enable #f)
@@ -335,8 +336,10 @@
      wb "SheetActivate"
      (lambda (wb-arg)
        (when ws
+         (unmark-errors)
          (com-unregister-event-handler ws "SelectionChange"))
        (set! ws (com-get-property wb "ActiveSheet"))
+       (set! *cached-ws* empty)
        (com-register-event-handler
         ws "SelectionChange"
         (lambda (rng)
@@ -363,7 +366,7 @@
                                                       (sub1 (+ row rows))))])
            (send *range-text-editor* erase)
            (send *range-text-editor* insert (format "~a:~a" left-top right-bottom))))))
-  (com-register-event-handler
+    (com-register-event-handler
      wb "BeforeClose"
      (lambda (cancel) (when *file-opened* (send frame close-frame!)))))
   
@@ -390,6 +393,7 @@
              (com-invoke (cellref->rng cell-ref) "ShowPrecedents" #t)))))))
   
   (define (preprocess)
+    (set! *cached-ws* empty)
     (set! all-formula-texts
           (begin
             (printf "Preprocessing all formula texts.... ")
@@ -399,7 +403,7 @@
              (lambda (cell) (com-get-property cell "Formula"))
              (lambda (formula)
                (and (not (string=? formula ""))
-                    (string=? (substring formula 0 1) "="))))))
+                    (eq? (string-ref formula 0) #\=))))))
     (set! all-names
           (begin
             (printf "done~nPreprocessing all names.... ")
@@ -458,11 +462,14 @@
                      (lambda (cell)
                        (with-handlers
                            ([void (lambda _ '((bad-unit-format bad-unit-format)))])
-                         (parse-unit                          
-                          (with-handlers
-                              ([void (lambda _ "empty_unit")])
-                            (com-invoke (com-get-property cell "Comment") 
-                                        "Text")))))
+                         (let ([txt (com-get-property cell "Text")])
+                           (cond [(string=? txt "") 'no-text-in-cell]
+                                 [else
+                                  (parse-unit                          
+                                   (with-handlers
+                                       ([void (lambda _ "empty_unit")])
+                                     (com-invoke (com-get-property cell "Comment") 
+                                                 "Text")))]))))
                      pair?))
                   (lambda (e) (dim? (second e))))])
             (set! bad-format-units (second good-and-bad))
@@ -567,35 +574,38 @@
   ; f extracts something from a cell
   ; pred? tests whether we're interested in it
   (define (iterate-over-worksheet f pred?)
-    (let* ([ur (com-get-property ws "UsedRange")]
-           [cells (com-get-property ur "Cells")]
-           [first-row (com-get-property cells "Row")]
-           [first-col (com-get-property cells "Column")]
-           [num-rows (com-get-property cells "Rows" "Count")]
-           [num-cols (com-get-property cells "Columns" "Count")]
-           [last-row (sub1 (+ first-row num-rows))]
-           [last-col (sub1 (+ first-col num-cols))])
-      (let row-loop ([curr-row first-row]
-                     [row-results null])
-        (if (> curr-row last-row)
-            row-results
-            (let col-loop ([curr-col first-col]
-                           [col-results null])
-              (if (> curr-col last-col)
-                  (row-loop (add1 curr-row) 
-                            (append col-results 
-                                    row-results))
-                  (let* ([curr-cell (get-cell curr-row curr-col)]
-                         [cell-content (f curr-cell)])
-                    (if (pred? cell-content)
-                        (col-loop (add1 curr-col)
-                                  (cons 
-                                   (list (string->symbol
-                                          (range-from-coords 
-                                           curr-row curr-col))
-                                         cell-content)
-                                   col-results))
-                        (col-loop (add1 curr-col) col-results)))))))))
+    (when (empty? *cached-ws*)
+      (let* ([ur (com-get-property ws "UsedRange")]
+             [cells (com-get-property ur "Cells")]
+             [first-row (com-get-property cells "Row")]
+             [first-col (com-get-property cells "Column")]
+             [num-rows (com-get-property cells "Rows" "Count")]
+             [num-cols (com-get-property cells "Columns" "Count")]
+             [last-row (sub1 (+ first-row num-rows))]
+             [last-col (sub1 (+ first-col num-cols))])
+        (let row-loop ([curr-row first-row]
+                       [row-results null])
+          (if (> curr-row last-row)
+              (set! *cached-ws* row-results)
+              (let col-loop ([curr-col first-col]
+                             [col-results null])
+                (if (> curr-col last-col)
+                    (row-loop (add1 curr-row) 
+                              (append col-results 
+                                      row-results))
+                    (col-loop (add1 curr-col)
+                              (cons (list (get-cell curr-row curr-col) curr-row curr-col)
+                                    col-results))))))))
+    (foldl (lambda (cached-cell selected-cells)
+             (let* ([cell-content (f (first cached-cell))]
+                    [curr-row (second cached-cell)]
+                    [curr-col (third cached-cell)])
+               (if (pred? cell-content)
+                   (cons (list (string->symbol
+                                (range-from-coords curr-row curr-col))
+                               cell-content)
+                         selected-cells)
+                   selected-cells))) empty *cached-ws*))
   
   (define (get-formula-loc-up loc)
     (let ([formula (call-parser parser (cadr (assoc loc all-formula-texts)))])
@@ -752,34 +762,20 @@
              [arg2-unit (compute-formula arg2 cell-loc)])
          (case op
            [(+ -) (check-equal-units (list arg1-unit arg2-unit) cell-loc)]
-           [(*) (cond
-                  ((empty-unit? arg1-unit) arg2-unit)
-                  ((empty-unit? arg2-unit) arg1-unit)
-                  (else (let ([result (gen-mult-units arg1-unit arg2-unit cell-loc)])
-                          (cond ((null? result) (empty-unit))
-                                (else result)))))]
-           [(/) (cond
-                  ((empty-unit? arg1-unit) (map (lambda(u)
-                                                  (let ([name (car u)]
-                                                        [exp (cadr u)])
-                                                    (list name (- 0 exp))))
-                                                arg2-unit))
-                  ((empty-unit? arg2-unit) arg1-unit)
-                  (else (let ([result (gen-div-units arg1-unit arg2-unit cell-loc)])
-                          (cond ((null? result) (empty-unit))
-                                (else result)))))]
-           [(^) (cond
-                  [(empty-unit? arg2-unit)
-                   (gen-exp-units arg1-unit
-                                  (cond
-                                    [(xl-number? arg2) (xl-number-val arg2)]
-                                    [(or (cell-ref? arg2)
-                                         (named-cell-ref? arg2))
-                                     (com-get-property (cellref->rng (formula-name arg2))
-                                                       "Value")]
-                                    [else 'bad-exp]) cell-loc)]
-                  [else ;;exp not a unitless integer
-                   (list (list 'error/exponentiation cell-loc))])]))]
+           [(*) (let ([result (gen-mult-units arg1-unit arg2-unit cell-loc)])
+                  (cond ((null? result) (empty-unit))
+                        (else result)))]
+           [(/) (let ([result (gen-div-units arg1-unit arg2-unit cell-loc)])
+                  (cond ((null? result) (empty-unit))
+                        (else result)))]
+           [(^) (gen-exp-units arg1-unit
+                               (cond
+                                 [(xl-number? arg2) (xl-number-val arg2)]
+                                 [(or (cell-ref? arg2)
+                                      (named-cell-ref? arg2))
+                                  (com-get-property (cellref->rng (formula-name arg2))
+                                                    "Value")]
+                                 [else 'bad-exp]) cell-loc)]))]
       [($ boolean-op name deps op arg1 arg2)
        (let ([arg1-unit (compute-formula arg1 cell-loc)]
              [arg2-unit (compute-formula arg2 cell-loc)])
@@ -817,7 +813,7 @@
        (let ([arg-units (map (lambda (a)
                                (compute-formula a cell-loc)) args)])
          (case fun
-           [(average sum min max) (check-equal-units arg-units cell-loc)]
+           [(average sum min max mina maxa) (check-equal-units arg-units cell-loc)]
            [(not or and)
             (if (andmap empty-unit? arg-units)
                 (empty-unit)
@@ -869,12 +865,12 @@
                                (list (list 'error/invalid-sqrt-dimension cell-loc))]))
                        (else (error fun "illegal use"))))]
            [(fact ln log) (let ([arg-unit (first arg-units)])
-                     (cond
-                       ((= 1 (length args))
-                        (if (empty-unit? arg-unit)
-                            arg-unit
-                            (list (list 'error/non-unitless-argument cell-loc))))
-                       (else (error fun "illegal use"))))]
+                            (cond
+                              ((= 1 (length args))
+                               (if (empty-unit? arg-unit)
+                                   arg-unit
+                                   (list (list 'error/non-unitless-argument cell-loc))))
+                              (else (error fun "illegal use"))))]
            [(isnumber)
             (cond ((= 1 (length arg-units)) (empty-unit))
                   (else (error fun "illegal use")))]
@@ -1086,7 +1082,7 @@
                               (create-constraints-for-formula
                                (gen-beta-var) a cell-loc)) args)])
          (case fun
-           [(average sum min max)
+           [(average sum min max mina maxa)
             (for-each (lambda (s)
                         (push-constraint (list '= sym s))) arg-syms)]
            [(not or and)
@@ -1131,11 +1127,11 @@
                         (push-constraint (list '@/ sym arg-sym sym))]
                        [else (error fun "illegal use")]))]
            [(fact ln log) (let ([arg-sym (first arg-syms)])
-                     (cond
-                       [(= 1 (length args))
-                        (push-constraint (list '= arg-sym (empty-unit)))
-                        (push-constraint (list '= sym (empty-unit)))]
-                       [else (error fun "illegal use")]))]
+                            (cond
+                              [(= 1 (length args))
+                               (push-constraint (list '= arg-sym (empty-unit)))
+                               (push-constraint (list '= sym (empty-unit)))]
+                              [else (error fun "illegal use")]))]
            [(isnumber)
             (cond [(= 1 (length arg-syms)) (push-constraint (list '= sym (empty-unit)))]
                   [else (error fun "illegal use")])]
@@ -1147,7 +1143,7 @@
                    (for-each (lambda (arg-sym)
                                (push-constraint (list '= arg-sym sym)))
                              (rest arg-syms))]
-                  [ese (error fun "illegal use")])]
+                  [else (error fun "illegal use")])]
            [(count) (push-constraint (list '= sym (empty-unit)))]
            [(frequency)
             (when (not (empty? arg-syms))
@@ -1237,13 +1233,16 @@
               (map 
                (lambda (op)
                  (if (dim-var? op)
-                     (let* ([rep (first 
-                                  (find-rep 
-                                   (first (hash-table-get hashed-constraints-vars op))))]
-                            [rep-u (second (hash-table-get hashed-constraints-vars rep))])
-                       (if (empty? rep-u)
-                           rep
-                           rep-u))
+                     (cond
+                       [(in-hash? hashed-constraints-vars op)
+                        (let* ([rep (first 
+                                     (find-rep 
+                                      (first (hash-table-get hashed-constraints-vars op))))]
+                               [rep-u (second (hash-table-get hashed-constraints-vars rep))])
+                          (if (empty? rep-u)
+                              rep
+                              rep-u))]
+                       [else op])
                      op))
                operands))]
            [map-replace 
@@ -1603,33 +1602,35 @@
              (printf "Cell ~a error!~n" cell))))))
   
   (define (unit-pp unit)
-    (let* ([unit-top-bottom (split-list unit (lambda (u) (> (second u) 0)))]
-           [unit-top (first unit-top-bottom)]
-           [unit-bottom (map (lambda (u) (list (first u) (- 0 (second u))))
-                             (second unit-top-bottom))]
-           [to-string
-            (lambda (unit)
-              (foldl 
-               (lambda (u visited)
-                 (string-append
-                  (cond [(> (second u) 1)
-                         (string-append "-" (symbol->string (first u)) 
-                                        "^" (number->string (second u)))]
-                        [else
-                         (string-append "-" (symbol->string (first u)))])
-                  visited))
-               ""
-               unit))]
-           [top-string (to-string unit-top)]
-           [bottom-string (to-string unit-bottom)]
-           [top-len (string-length top-string)]
-           [bottom-len (string-length bottom-string)])
-      (cond [(and (= 0 top-len) (= 0 bottom-len)) ""]
-            [(= 0 top-len) (substring bottom-string 1 bottom-len)]
-            [(= 0 bottom-len) (substring top-string 1 top-len)]
-            [else
-             (string-append (substring top-string 1 top-len) "/("
-                            (substring bottom-string 1 bottom-len) ")")])))
+    (cond [(empty-unit? unit) "()"]
+          [else
+           (let* ([unit-top-bottom (split-list unit (lambda (u) (> (second u) 0)))]
+                  [unit-top (first unit-top-bottom)]
+                  [unit-bottom (map (lambda (u) (list (first u) (- 0 (second u))))
+                                    (second unit-top-bottom))]
+                  [to-string
+                   (lambda (unit)
+                     (foldl 
+                      (lambda (u visited)
+                        (string-append
+                         (cond [(> (second u) 1)
+                                (string-append "-" (symbol->string (first u)) 
+                                               "^" (number->string (second u)))]
+                               [else
+                                (string-append "-" (symbol->string (first u)))])
+                         visited))
+                      ""
+                      unit))]
+                  [top-string (to-string unit-top)]
+                  [bottom-string (to-string unit-bottom)]
+                  [top-len (string-length top-string)]
+                  [bottom-len (string-length bottom-string)])
+             (cond [(and (= 0 top-len) (= 0 bottom-len)) ""]
+                   [(= 0 top-len) (substring bottom-string 1 bottom-len)]
+                   [(= 0 bottom-len) (substring top-string 1 top-len)]
+                   [else
+                    (string-append (substring top-string 1 top-len) "/("
+                                   (substring bottom-string 1 bottom-len) ")")]))]))
   
   (define (compare-actual-annotated)
     (for-each 

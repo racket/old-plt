@@ -55,10 +55,10 @@
    [pos-int (@ pos-digit number-sequence)]
    [letter (: (- "a" "z") (- "A" "Z"))]
    [letter-to-V (: (- "a" "v") (- "A" "V"))]
-   [letter-to-I (: (- "a" "i") (- "A" "I"))]
+   [letter-to-I (: (- "a" "h") (- "A" "H"))]
    [alphanum_ (: digit letter "_")]
    [alphanum (: letter digit)]
-   [cell-letter-sequence (: letter (@ letter-to-I letter-to-V))]
+   [cell-letter-sequence (: letter (@ letter-to-I letter) (@ (: "i" "I") letter-to-V))]
    [cell-number-sequence (: pos-digit (@ pos-digit digit)
                             (@ pos-digit digit digit)
                             (@ pos-digit digit digit digit))]
@@ -286,6 +286,7 @@
           (cond [(eq? $2 '/) (append $1 (invert $3))]
                 [else (append $1 $3)]))]
        [(LPAREN expr RPAREN) $2]
+       [(LPAREN RPAREN) (list (list 'empty_unit 1))]
        [(NUMBER) $1]
        [(MULT-OP expr)(prec NEG) (- 0 $2)]
        [(UNIT) (list (list (string->symbol $1) 1))]))))

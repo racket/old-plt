@@ -6,7 +6,7 @@ tests. Those names must be listed here. If no arguments are passed to
 the function, all tests will be run.
 
 
-|# io-test.ss #|
+|# io.ss #|
 
    This tests the drscheme's io implementation.
    
@@ -35,7 +35,7 @@ the function, all tests will be run.
 
 PR-based tests:
   
-  |# pr-144.ss
+     pr-144.ss
      pr-17.ss
      pr-246.ss
      pr-39.ss
@@ -44,7 +44,7 @@ PR-based tests:
      pr-51.ss
      pr-58.ss
      pr-80.ss
-     pr-99.ss #|
+     pr-99.ss 
 
 Ideally, each test should be run with a fresh invocation
 of DrScheme.  Since that's time-consuming, you can

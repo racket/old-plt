@@ -3,7 +3,8 @@
 (require-library "guis.ss" "tests" "utils")
 
 (define-signature drscheme:test-util^
-  (test-util-error
+  (do-execute
+   test-util-error
    poll-until
    wait-for-drscheme-frame
    wait-for-new-frame

@@ -1,5 +1,5 @@
 
-;; A window containing the DrScheme Design Recipe.  The recipe itself
+;; A window containing the HtDP Design Recipe.  The recipe itself
 ;; is defined by an external file, recipe.ss, in the same directory as
 ;; this code. The recipe text is post-processed in an ad hoc manner to
 ;; convert some LaTeX annotations to MrEd styles in an editor;

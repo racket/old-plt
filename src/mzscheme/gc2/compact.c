@@ -27,12 +27,11 @@
 #define COMPACT_THRESHOLD 0.2
 
 #ifdef _WIN32
-# define USE_MMAP 0
-# define USE_WINMAP 1
 # include <windows.h>
-#else
-# define USE_MMAP 1
-# define USE_WINMAP 0
+#endif
+#ifdef OSKIT
+# undef GENERATIONS
+# define GENERATIONS 0
 #endif
 
 #if defined(sparc) || defined(__sparc) || defined(__sparc__)
@@ -324,9 +323,69 @@ static void CRASH()
 /*                     OS-specific low-level allocator                        */
 /******************************************************************************/
 
-#if USE_MMAP
+/* Windows */
 
-#ifndef USE_MAP_ANON
+#if _WIN32
+
+void *malloc_pages(size_t len, size_t alignment)
+{
+  return (void *)VirtualAlloc(NULL, len, 
+			      MEM_COMMIT | MEM_RESERVE, 
+			      PAGE_READWRITE);
+}
+
+void free_pages(void *p, size_t len)
+{
+  VirtualFree(p, 0, MEM_RELEASE);
+}
+
+void flush_freed_pages(void)
+{
+}
+
+void protect_pages(void *p, size_t len, int writeable)
+{
+  DWORD old;
+  VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
+}
+
+# define MALLOCATOR_DEFINED
+#endif
+
+/******************************************************************************/
+
+/* OSKit */
+
+#if OSKIT
+# include <oskit/c/malloc.h>
+
+void *malloc_pages(size_t len, size_t alignment)
+{
+  void *p;
+  p = smemalign(alignment, len);
+  memset(p, 0, len);
+  return p;
+}
+
+void free_pages(void *p, size_t len)
+{
+  sfree(p, len);
+}
+
+void flush_freed_pages(void)
+{
+}
+
+# define MALLOCATOR_DEFINED
+#endif
+
+/******************************************************************************/
+
+/* Default: mmap */
+
+#ifndef MALLOCATOR_DEFINED
+
+#ifndef MAP_ANON
 int fd, fd_created;
 #endif
 
@@ -338,7 +397,7 @@ void *malloc_pages(size_t len, size_t alignment)
   if (!page_size)
     page_size = getpagesize();
 
-#ifndef USE_MAP_ANON
+#ifndef MAP_ANON
   if (!fd_created) {
     fd_created = 1;
     fd = open("/dev/zero", O_RDWR);
@@ -352,7 +411,7 @@ void *malloc_pages(size_t len, size_t alignment)
   /* May need to try twice to get a desired alignment: */
  try_again:
 
-#ifdef USE_MAP_ANON
+#ifdef MAP_ANON
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
 #else
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -455,54 +514,6 @@ void protect_pages(void *p, size_t len, int writeable)
   }
 
   mprotect(p, len, (writeable ? (PROT_READ | PROT_WRITE) : PROT_READ));
-}
-
-#endif
-
-/******************************************************************************/
-
-#if USE_WINMAP
-
-void *malloc_pages(size_t len, size_t alignment)
-{
-  return (void *)VirtualAlloc(NULL, len, 
-			      MEM_COMMIT | MEM_RESERVE, 
-			      PAGE_READWRITE);
-}
-
-void free_pages(void *p, size_t len)
-{
-  VirtualFree(p, 0, MEM_RELEASE);
-}
-
-void flush_freed_pages(void)
-{
-}
-
-void protect_pages(void *p, size_t len, int writeable)
-{
-  DWORD old;
-  VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
-}
-
-#endif
-
-/******************************************************************************/
-
-#if !USE_MMAP && !USE_WINMAP
-
-void *malloc_pages(size_t len, size_t alignment)
-{
-  return malloc(len);
-}
-
-void free_pages(void *p, size_t len)
-{
-  free(p);
-}
-
-void flush_freed_pages(void)
-{
 }
 
 #endif

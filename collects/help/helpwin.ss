@@ -149,15 +149,19 @@
 							    ""
 							    "Beg/Int/Adv: not available   ")
 							lib)
-						       (let ([drlib 
-							      (ormap (lambda (s)
-								       (let ([m (regexp-match "teach=(.*)" s)])
-									 (and m
-									      (format "Teaching library: select ~s using Set Library To... in DrScheme"
-										      (cadr m)))))
-								     l)])
-							 (if drlib
-							     drlib
+						       (let ([drlibs
+							      (filter values (map
+									      (lambda (s)
+										(let ([m (regexp-match "teach=(.*)" s)])
+										  (and m (cadr m))))
+									      l))])
+							 (if (pair? drlibs)
+							     (format "Teaching library: select ~a using Set Library To... in DrScheme"
+								     (let loop ([s (format "~s" (car drlibs))]
+										[l (cdr drlibs)])
+								       (if (null? l)
+									   s
+									   (loop (format "~a or ~s" s (car l)) (cdr l)))))
 							     "")))))]
 					      [on-navigate stop-search])
 					    (sequence (super-init #t (send f get-area-container))))))

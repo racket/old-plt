@@ -445,7 +445,7 @@
                            #f			; params
                            #f			; query
                            #f)			; fragment
-                          (url-error "scheme 'file' path ~s neither relative nor absolute")))
+                          (url-error "scheme 'file' path ~s neither relative nor absolute" path)))
                     (let-values (((host port path)
                                   (parse-host/port/path
 				   string path-start path-finish)))
@@ -465,6 +465,8 @@
   ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
   (define parse-host/port/path
     (lambda (path begin-point end-point)
+      (when (> begin-point end-point)
+	(url-error "Path ~s contains illegal characters" path))
       (let ((has-host? (and (>= (- end-point begin-point) 2)
                             (char=? (string-ref path begin-point) #\/)
                             (char=? (string-ref path (add1 begin-point))
@@ -486,6 +488,7 @@
                ;;    and the intended path is "/", but the URL is missing
                ;;    a "/" at the end.  has-host? must be true.
                (let ((host/path (substring path begin-point end-point)))
+		 (printf "here too~n")
                  (if has-host?
                      (values host/path #f "/")
                      (values #f #f host/path))))

@@ -12,6 +12,11 @@
           [utils : stepper:cogen-utils^]
           [marks : stepper:marks^])
 
+  (define stepper-initial-width 500)
+  (define stepper-initial-height 500)
+  (define stepper-minimum-width 300)
+  (define stepper-minimum-height 150)
+  
   (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
   (define reduct-highlight-color (make-object color% 255 255 255))
   (define redex-highlight-color (make-object color% 255 255 255))
@@ -473,7 +478,7 @@
          (lambda ()
            (send drscheme-frame stepper-frame #f)
            (super-on-close))])
-      (sequence (super-init "Stepper"))))
+      (sequence (super-init "Stepper" #f stepper-initial-width stepper-initial-height))))
 
 
   (define (stepper-wrapper drscheme-frame settings)
@@ -591,8 +596,8 @@
       (send button-panel stretchable-width #f)
       (send button-panel stretchable-height #f)
       (send canvas stretchable-height #t)
-      (send canvas min-width 500)
-      (send canvas min-height 500)
+      (send canvas min-width stepper-minimum-width)
+      (send canvas min-height stepper-minimum-height)
       (send previous-button enable #f)
       (send home-button enable #f)
       (send next-button enable #f)

@@ -124,12 +124,14 @@
 		   [(sema) (make-semaphore)])
 	(let ([copy
 	       (lambda (from)
-		 (copy-port from wt)
-		 (semaphore-wait sema)
-		 (if other-done?
-		     (close-output-port wt)
-		     (set! other-done? #t))
-		 (semaphore-post sema))])
+                 (thread 
+                  (lambda ()
+                    (copy-port from wt)
+                    (semaphore-wait sema)
+                    (if other-done?
+                        (close-output-port wt)
+                        (set! other-done? #t))
+                    (semaphore-post sema))))])
 	  (copy a)
 	  (copy b)
 	  rd))]))

@@ -290,6 +290,8 @@
    struct:exn-need-data
    make-exn-need-data
    exn-need-data?
+   exn-need-data-val
+   set-exn-need-data-val!
    struct:exn-still-executing
    make-exn-still-executing
    exn-still-executing?))

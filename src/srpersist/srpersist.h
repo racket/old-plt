@@ -2,10 +2,16 @@
 
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 
-#define sql_return(v,info,f) if (info == FALSE) \
+#define sql_return(v,retcode,f) if (retcode == success) \
                              { return v; } \
-                             else \
-                             { return raise_info_exn(v,f); }
+                             else if (retcode == with_info) \
+                             { return raise_info_exn(v,f); } \
+                             else if (retcode == need_data) \
+                             { return raise_need_data_exn(v,f); } \
+                             else { \
+			       scheme_signal_error("Unknown return code %X from %s",retcode,f); \
+                               return scheme_void; \
+			     } 
 
 #define SRP_PRIM_DECL(f) Scheme_Object *f(int,Scheme_Object **)
 
@@ -46,6 +52,10 @@
 #ifndef WIN32
 typedef long BOOL
 #endif
+
+typedef enum _return_code_ {
+  success,with_info,need_data
+} RETURN_CODE;
 
 typedef struct _buffer_tbl_entry_ {
   void *address;

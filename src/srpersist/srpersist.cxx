@@ -1451,23 +1451,34 @@ BOOL isUnsignedCharInt(Scheme_Object *s) {
   return TRUE;
 }
 
-Scheme_Object *raise_info_exn(Scheme_Object *val,char *f) {
+Scheme_Object *raise_valued_exn(Scheme_Object *val,char *f,
+				Scheme_Object *type,char *name) { 
   Scheme_Object *exn;
   Scheme_Object *argv[3];
   char buff[128];
 
-  sprintf(buff,"SQL_SUCCESS_WITH_INFO warning in %s",f);
+  sprintf(buff,"%s occurred in %s",name,f);
 
   argv[0] = scheme_make_string(buff);
   argv[1] = scheme_current_continuation_marks();
   argv[2] = val;
 
-  exn = scheme_make_struct_instance(WITH_INFO_EXN_TYPE,3,argv);
+  exn = scheme_make_struct_instance(type,3,argv);
 
   return scheme_apply(scheme_raise,1,&exn);  
 }
 
-BOOL checkSQLReturn(SQLRETURN sr,char *f) {
+
+
+Scheme_Object *raise_info_exn(Scheme_Object *val,char *f) {
+  return raise_valued_exn(val,f,WITH_INFO_EXN_TYPE,"SQL_SUCCESS_WITH_INFO"); 
+}
+
+Scheme_Object *raise_need_data_exn(Scheme_Object *val,char *f) {
+  return raise_valued_exn(val,f,NEED_DATA_EXN_TYPE,"SQL_NEED_DATA"); 
+}
+
+RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
   char buff[128];
   Scheme_Object *exn_object;
   Scheme_Object *argv[2];
@@ -1475,10 +1486,13 @@ BOOL checkSQLReturn(SQLRETURN sr,char *f) {
   switch (sr) {
 
   case SQL_SUCCESS :
-    return FALSE;
+    return success;
 
   case SQL_SUCCESS_WITH_INFO :
-    return TRUE;
+    return with_info;
+
+  case SQL_NEED_DATA :
+    return need_data;
 
   case SQL_NO_DATA :
 
@@ -1519,19 +1533,6 @@ BOOL checkSQLReturn(SQLRETURN sr,char *f) {
 
     break;
 
-  case SQL_NEED_DATA :
-
-    sprintf(buff,"SQL_NEED_DATA error in %s",f);
-
-    argv[0] = scheme_make_string(buff);
-    argv[1] = scheme_current_continuation_marks();
-
-    exn_object = scheme_make_struct_instance(ERROR_EXN_TYPE,2,argv);
-
-    scheme_apply(scheme_raise,1,&exn_object);
-
-    break;
-
   case SQL_STILL_EXECUTING :
 
 
@@ -1552,7 +1553,7 @@ BOOL checkSQLReturn(SQLRETURN sr,char *f) {
 
   }
 
-  return FALSE; // unreachable
+  return success; // unreachable
 }
 
 char *sqlReturnToString(SQLRETURN sr) {
@@ -1590,16 +1591,19 @@ char *sqlReturnToString(SQLRETURN sr) {
 
   after each native ODBC procedure is called, we have
 
-   hasInfo = checkSQLReturn(status_code,"scheme-name-of-procedure")
+   retcode = checkSQLReturn(status_code,"scheme-name-of-procedure")
    ...
-   sql_return(return_value,hasInfo,"scheme-name-of-procedure"); 
+   sql_return(return_value,retcode,"scheme-name-of-procedure"); 
 
   checkSQLReturn either
-   return FALSE, meaning the procedure succeeded, or 
-   returns TRUE, meaning the procedure succeeded with info, or
+   return success, meaning the procedure succeeded, or 
+   returns has_info , meaning the procedure succeeded with info, or
+   returns need_data, meaning the procedure failed and needs information, or
    raises an exception
 
-  if hasInfo is TRUE, sql_return raises an exception that
+  if retcode is with_info, sql_return raises exn-with-info, which
+   contains the return value
+  else if retcode is need_data, sql_return raises exn-need-data, which
    contains the return value
   otherwise, sql_return returns the return value 
 
@@ -1612,7 +1616,7 @@ Scheme_Object *srp_SQLAllocConnect(int argc,Scheme_Object **argv) {
   SQLHENV envHandle;
   SQLHDBC connectHandle;
   SRP_SQL_HDBC *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
     scheme_wrong_type("alloc-connect","sql_henv",0,argc,argv);
@@ -1622,36 +1626,36 @@ Scheme_Object *srp_SQLAllocConnect(int argc,Scheme_Object **argv) {
 
   sr = SQLAllocConnect(envHandle,&connectHandle);
 
-  hasInfo = checkSQLReturn(sr,"alloc-connect");
+  retcode = checkSQLReturn(sr,"alloc-connect");
 
   retval = (SRP_SQL_HDBC *)scheme_malloc(sizeof(SRP_SQL_HDBC));
   retval->type = sql_hdbc_type;
   retval->hdbc = connectHandle;
 
-  sql_return((Scheme_Object *)retval,hasInfo,"alloc-connect");
+  sql_return((Scheme_Object *)retval,retcode,"alloc-connect");
 }
 
 Scheme_Object *srp_SQLAllocEnv(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHENV envHandle;
   SRP_SQL_HENV *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   sr = SQLAllocEnv(&envHandle);
 
-  hasInfo = checkSQLReturn(sr,"alloc-env");
+  retcode = checkSQLReturn(sr,"alloc-env");
 
   retval = (SRP_SQL_HENV *)scheme_malloc(sizeof(SRP_SQL_HENV));
   retval->type = sql_henv_type;
   retval->henv = envHandle;
 
-  sql_return((Scheme_Object *)retval,hasInfo,"alloc-env");
+  sql_return((Scheme_Object *)retval,retcode,"alloc-env");
 }
 
 Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   char *handleTypeString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SCHEME_SYMBOLP(argv[0]) == FALSE) {
     scheme_wrong_type("alloc-handle","symbol",0,argc,argv);
@@ -1670,13 +1674,13 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 
     sr = SQLAllocHandle(SQL_HANDLE_ENV,SQL_NULL_HANDLE,&envHandle);
 
-    hasInfo = checkSQLReturn(sr,"alloc-handle");
+    retcode = checkSQLReturn(sr,"alloc-handle");
 
     retval = (SRP_SQL_HENV *)scheme_malloc(sizeof(SRP_SQL_HENV));
     retval->type = sql_henv_type;
     retval->henv = envHandle;
 
-    sql_return((Scheme_Object *)retval,hasInfo,"alloc-handle");
+    sql_return((Scheme_Object *)retval,retcode,"alloc-handle");
   }
 
   if (argc < 2) {
@@ -1694,13 +1698,13 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 
     sr = SQLAllocHandle(SQL_HANDLE_DBC,SQL_HENV_VAL(argv[1]),&dbcHandle);
 
-    hasInfo = checkSQLReturn(sr,"alloc-handle");
+    retcode = checkSQLReturn(sr,"alloc-handle");
 
     retval = (SRP_SQL_HDBC *)scheme_malloc(sizeof(SRP_SQL_HDBC));
     retval->type = sql_hdbc_type;
     retval->hdbc = dbcHandle;
 
-    sql_return((Scheme_Object *)retval,hasInfo,"alloc-handle");
+    sql_return((Scheme_Object *)retval,retcode,"alloc-handle");
   }
 
   if (stricmp(handleTypeString,"sql-handle-stmt") == 0) {
@@ -1713,13 +1717,13 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 
     sr = SQLAllocHandle(SQL_HANDLE_STMT,SQL_HDBC_VAL(argv[1]),&stmtHandle);
 
-    hasInfo = checkSQLReturn(sr,"alloc-handle");
+    retcode = checkSQLReturn(sr,"alloc-handle");
 
     retval = (SRP_SQL_HSTMT *)scheme_malloc(sizeof(SRP_SQL_HSTMT));
     retval->type = sql_hstmt_type;
     retval->hstmt = stmtHandle;
 
-    sql_return((Scheme_Object *)retval,hasInfo,"alloc-handle");
+    sql_return((Scheme_Object *)retval,retcode,"alloc-handle");
 
   }
 
@@ -1733,14 +1737,14 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 
     sr = SQLAllocHandle(SQL_HANDLE_DESC,SQL_HDBC_VAL(argv[1]),&descHandle);
 
-    hasInfo = checkSQLReturn(sr,"alloc-handle");
+    retcode = checkSQLReturn(sr,"alloc-handle");
 
     retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
     retval->type = sql_hdesc_type;
     retval->descType = EXPLICIT;
     retval->hdesc = descHandle;
 
-    sql_return((Scheme_Object *)retval,hasInfo,"alloc-handle");
+    sql_return((Scheme_Object *)retval,retcode,"alloc-handle");
   }
 
   scheme_signal_error("Handle type must be one of "
@@ -1757,7 +1761,7 @@ Scheme_Object *srp_SQLAllocStmt(int argc,Scheme_Object **argv) {
   SQLHDBC connectHandle;
   SQLHSTMT stmtHandle;
   SRP_SQL_HSTMT *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("alloc-stmt","sql_hdbc",0,argc,argv);
@@ -1767,13 +1771,13 @@ Scheme_Object *srp_SQLAllocStmt(int argc,Scheme_Object **argv) {
 
   sr = SQLAllocStmt(connectHandle,&stmtHandle);
 
-  hasInfo = checkSQLReturn(sr,"alloc-stmt");
+  retcode = checkSQLReturn(sr,"alloc-stmt");
 
   retval = (SRP_SQL_HSTMT *)scheme_malloc(sizeof(SRP_SQL_HSTMT));
   retval->type = sql_hstmt_type;
   retval->hstmt = stmtHandle;
 
-  sql_return((Scheme_Object *)retval,hasInfo,"alloc-stmt");
+  sql_return((Scheme_Object *)retval,retcode,"alloc-stmt");
 }
 
 Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
@@ -1784,7 +1788,7 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
   long buflen;
   int buftype;
   SQLINTEGER *indicator;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("bind-col","sql_hstmt",0,argc,argv);
@@ -1814,9 +1818,9 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
 
   sr = SQLBindCol(stmtHandle,colNumber,buftype,buffer,buflen,indicator);
 
-  hasInfo = checkSQLReturn(sr,"bind-col");
+  retcode = checkSQLReturn(sr,"bind-col");
 
-  sql_return(scheme_void,hasInfo,"bind-col");
+  sql_return(scheme_void,retcode,"bind-col");
 }
 
 Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
@@ -1830,7 +1834,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   unsigned long lengthPrecision;
   SQLPOINTER buffer;
   SQLINTEGER indicator;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("bind-param","sql-hstmt",0,argc,argv);
@@ -1888,15 +1892,15 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 		    lengthPrecision,decimalDigits,buffer,
 		    &indicator);
 
-  hasInfo = checkSQLReturn(sr,"bind-param");
+  retcode = checkSQLReturn(sr,"bind-param");
 
-  sql_return(scheme_void,hasInfo,"bind-param");
+  sql_return(scheme_void,retcode,"bind-param");
 }
 
 Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("cancel","sql-hstmt",0,argc,argv);
@@ -1906,15 +1910,15 @@ Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
 
   sr = SQLCancel(stmtHandle);
 
-  hasInfo = checkSQLReturn(sr,"cancel");
+  retcode = checkSQLReturn(sr,"cancel");
   
-  sql_return(scheme_void,hasInfo,"cancel");
+  sql_return(scheme_void,retcode,"cancel");
 }
 
 Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("close-cursor","sql-hstmt",0,argc,argv);
@@ -1924,9 +1928,9 @@ Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
 
   sr = SQLCloseCursor(stmtHandle);
 
-  hasInfo = checkSQLReturn(sr,"close-cancel");
+  retcode = checkSQLReturn(sr,"close-cancel");
   
-  sql_return(scheme_void,hasInfo,"close-cancel");
+  sql_return(scheme_void,retcode,"close-cancel");
 }
 
 Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
@@ -1941,7 +1945,7 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
   SQLSMALLINT actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("col-attribute","sql-hstmt",0,argc,argv);
@@ -1974,38 +1978,38 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
     bufflen = SQL_IS_INTEGER;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attribute");		       
+    retcode = checkSQLReturn(sr,"col-attribute");		       
     retval = (numBuffer == SQL_FALSE) ? scheme_false : scheme_true;
-    sql_return(retval,hasInfo,"col-attribute");
+    sql_return(retval,retcode,"col-attribute");
 
   case sqlinteger :
 
     bufflen = SQL_IS_INTEGER;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attribute");		       
+    retcode = checkSQLReturn(sr,"col-attribute");		       
     retval = scheme_make_integer_value((long)numBuffer);
-    sql_return(retval,hasInfo,"col-attribute");
+    sql_return(retval,retcode,"col-attribute");
 
   case namedinteger :
 
     bufflen = SQL_IS_INTEGER;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attribute");		       
+    retcode = checkSQLReturn(sr,"col-attribute");		       
     retval = scheme_intern_symbol(findIntegerName(fieldIdString,numBuffer,
 						namedColAttrIntegers,
 						sizeray(namedColAttrIntegers)));
-    sql_return(retval,hasInfo,"col-attribute");
+    sql_return(retval,retcode,"col-attribute");
 
   case string :
 
     bufflen = sizeof(buff);
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attribute");		       
+    retcode = checkSQLReturn(sr,"col-attribute");		       
     retval = scheme_make_sized_string(buff,actualLen,TRUE);
-    sql_return(retval,hasInfo,"col-attribute");
+    sql_return(retval,retcode,"col-attribute");
   }
 
   scheme_signal_error("sql-col-attribute: invalid attribute type");
@@ -2024,7 +2028,7 @@ Scheme_Object *srp_SQLColumns(int argc,Scheme_Object **argv) {
   SQLSMALLINT tableLen;
   SQLCHAR *column;
   SQLSMALLINT columnLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -2053,9 +2057,9 @@ Scheme_Object *srp_SQLColumns(int argc,Scheme_Object **argv) {
 		  table,tableLen,
 		  column,columnLen);
 
-  hasInfo = checkSQLReturn(sr,"columns");		       
+  retcode = checkSQLReturn(sr,"columns");		       
 
-  sql_return(scheme_void,hasInfo,"columns");
+  sql_return(scheme_void,retcode,"columns");
 }
 
 Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
@@ -2067,7 +2071,7 @@ Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
   SQLSMALLINT userLen;
   SQLCHAR *password;
   SQLSMALLINT passwordLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -2093,15 +2097,15 @@ Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
 		  user,userLen,
 		  password,passwordLen);
 		  
-  hasInfo = checkSQLReturn(sr,"connect");		       
+  retcode = checkSQLReturn(sr,"connect");		       
 
-  sql_return(scheme_void,hasInfo,"connect");
+  sql_return(scheme_void,retcode,"connect");
 }
 
 Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDESC srcDescHandle,targetDescHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   for (i = 0; i <= 1; i++) {
@@ -2115,9 +2119,9 @@ Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
 
   sr = SQLCopyDesc(srcDescHandle,targetDescHandle);
 
-  hasInfo = checkSQLReturn(sr,"copy-desc");		       
+  retcode = checkSQLReturn(sr,"copy-desc");		       
 
-  sql_return(scheme_void,hasInfo,"copy-desc");
+  sql_return(scheme_void,retcode,"copy-desc");
 }
 
 Scheme_Object *srp_SQLDataSources(int argc,Scheme_Object **argv) {
@@ -2129,7 +2133,7 @@ Scheme_Object *srp_SQLDataSources(int argc,Scheme_Object **argv) {
   SQLCHAR description[SQL_MAX_DSN_LENGTH + 1];
   SQLSMALLINT serverLen,descriptionLen;
   SRP_NAMED_SMALL_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   Scheme_Object *retval;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
@@ -2157,7 +2161,7 @@ Scheme_Object *srp_SQLDataSources(int argc,Scheme_Object **argv) {
 		      server,sizeof(server),&serverLen,
 		      description,sizeof(description),&descriptionLen);
 
-  hasInfo = checkSQLReturn(sr,"data-sources");		       
+  retcode = checkSQLReturn(sr,"data-sources");		       
 
   retval = scheme_make_pair(scheme_make_sized_string((char *)description,
 						     descriptionLen,TRUE),
@@ -2166,7 +2170,7 @@ Scheme_Object *srp_SQLDataSources(int argc,Scheme_Object **argv) {
 						     serverLen,TRUE),
 			    retval);
 
-  sql_return(retval,hasInfo,"data-sources");
+  sql_return(retval,retcode,"data-sources");
 }
 
 Scheme_Object *srp_SQLDescribeCol(int argc,Scheme_Object **argv) {
@@ -2181,7 +2185,7 @@ Scheme_Object *srp_SQLDescribeCol(int argc,Scheme_Object **argv) {
   SQLSMALLINT nullable;
   char *nullableString;
   char *dataTypeString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
   Scheme_Object *retval;
   
@@ -2201,7 +2205,7 @@ Scheme_Object *srp_SQLDescribeCol(int argc,Scheme_Object **argv) {
 		      &dataType,&colSize,&decimalDigits,
 		      &nullable);
 
-  hasInfo = checkSQLReturn(sr,"describe-col");		       
+  retcode = checkSQLReturn(sr,"describe-col");		       
 
   dataTypeString = "?";
 
@@ -2222,13 +2226,13 @@ Scheme_Object *srp_SQLDescribeCol(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_sized_string((char *)columnName,
 						     colNameLen,TRUE),retval);
   
-  sql_return(retval,hasInfo,"describe-col");
+  sql_return(retval,retcode,"describe-col");
 }
 
 Scheme_Object *srp_SQLDisconnect(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDBC dbcHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("disconnect","sql-hdbc",0,argc,argv);
@@ -2238,15 +2242,15 @@ Scheme_Object *srp_SQLDisconnect(int argc,Scheme_Object **argv) {
 
   sr = SQLDisconnect(dbcHandle);
 
-  hasInfo = checkSQLReturn(sr,"disconnect");
+  retcode = checkSQLReturn(sr,"disconnect");
   
-  sql_return(scheme_void,hasInfo,"disconnect");
+  sql_return(scheme_void,retcode,"disconnect");
 }
 
 Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLSMALLINT actionType;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   char *action;
 
   if (SQL_HDBCP(argv[0]) == FALSE && SQL_HENVP(argv[0]) == FALSE) {
@@ -2277,9 +2281,9 @@ Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
     sr = SQLEndTran(SQL_HANDLE_ENV,SQL_HENV_VAL(argv[0]),actionType);
   }
 
-  hasInfo = checkSQLReturn(sr,"end-tran");
+  retcode = checkSQLReturn(sr,"end-tran");
   
-  sql_return(scheme_void,hasInfo,"end-tran");
+  sql_return(scheme_void,retcode,"end-tran");
 }
 
 Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
@@ -2291,7 +2295,7 @@ Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
   SQLINTEGER nativeError;
   SQLCHAR text[2048];
   SQLSMALLINT textLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   Scheme_Object *retval;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
@@ -2314,7 +2318,7 @@ Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
 		state,&nativeError,
 		text,sizeof(text),&textLen);
 		
-  hasInfo = checkSQLReturn(sr,"error");
+  retcode = checkSQLReturn(sr,"error");
 
   retval = scheme_null;
   retval = scheme_make_pair(scheme_make_sized_string((char *)text,textLen,TRUE),
@@ -2324,7 +2328,7 @@ Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_string((const char *)state),
 			    retval);
 
-  sql_return(retval,hasInfo,"error");
+  sql_return(retval,retcode,"error");
 }
 
 Scheme_Object *srp_SQLExecDirect(int argc,Scheme_Object **argv) {
@@ -2332,7 +2336,7 @@ Scheme_Object *srp_SQLExecDirect(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLCHAR *stmt;
   SQLINTEGER stmtLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("exec-direct","sql-hstmt",0,argc,argv);
@@ -2348,15 +2352,15 @@ Scheme_Object *srp_SQLExecDirect(int argc,Scheme_Object **argv) {
 
   sr = SQLExecDirect(stmtHandle,stmt,stmtLen);
 
-  hasInfo = checkSQLReturn(sr,"exec-direct");  
+  retcode = checkSQLReturn(sr,"exec-direct");  
 
-  sql_return(scheme_void,hasInfo,"exec-direct");
+  sql_return(scheme_void,retcode,"exec-direct");
 }
 
 Scheme_Object *srp_SQLExecute(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("execute","sql-hstmt",0,argc,argv);
@@ -2366,15 +2370,15 @@ Scheme_Object *srp_SQLExecute(int argc,Scheme_Object **argv) {
 
   sr = SQLExecute(stmtHandle);
 
-  hasInfo = checkSQLReturn(sr,"execute");
+  retcode = checkSQLReturn(sr,"execute");
   
-  sql_return(scheme_void,hasInfo,"execute");
+  sql_return(scheme_void,retcode,"execute");
 }
 
 Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("fetch","sql-hstmt",0,argc,argv);
@@ -2384,9 +2388,9 @@ Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
 
   sr = SQLFetch(stmtHandle);
 
-  hasInfo = checkSQLReturn(sr,"fetch");
+  retcode = checkSQLReturn(sr,"fetch");
   
-  sql_return(scheme_void,hasInfo,"fetch");
+  sql_return(scheme_void,retcode,"fetch");
 }
 
 Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
@@ -2395,7 +2399,7 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
   SQLINTEGER offset;
   char *orientationString;
   SRP_NAMED_SMALL_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("fetch-scroll","sql-hstmt",0,argc,argv);
@@ -2437,15 +2441,15 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
 
   sr = SQLFetchScroll(stmtHandle,p->val,offset);
 
-  hasInfo = checkSQLReturn(sr,"fetch-scroll");  
+  retcode = checkSQLReturn(sr,"fetch-scroll");  
 
-  sql_return(scheme_void,hasInfo,"fetch-scroll");
+  sql_return(scheme_void,retcode,"fetch-scroll");
 }
 
 Scheme_Object *srp_SQLFreeConnect(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDBC connectionHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("free-connect","sql-hdbc",0,argc,argv);
@@ -2455,15 +2459,15 @@ Scheme_Object *srp_SQLFreeConnect(int argc,Scheme_Object **argv) {
 
   sr = SQLFreeConnect(connectionHandle);
 
-  hasInfo = checkSQLReturn(sr,"free-connect");  
+  retcode = checkSQLReturn(sr,"free-connect");  
 
-  sql_return(scheme_void,hasInfo,"free-connect");
+  sql_return(scheme_void,retcode,"free-connect");
 }
 
 Scheme_Object *srp_SQLFreeEnv(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHENV envHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
     scheme_wrong_type("free-env","sql-henv",0,argc,argv);
@@ -2473,14 +2477,14 @@ Scheme_Object *srp_SQLFreeEnv(int argc,Scheme_Object **argv) {
 
   sr = SQLFreeEnv(envHandle);
 
-  hasInfo = checkSQLReturn(sr,"free-env");  
+  retcode = checkSQLReturn(sr,"free-env");  
 
-  sql_return(scheme_void,hasInfo,"free-env");
+  sql_return(scheme_void,retcode,"free-env");
 }
 
 Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0])) {
     sr = SQLFreeHandle(SQL_HANDLE_ENV,SQL_HENV_VAL(argv[0]));
@@ -2500,9 +2504,9 @@ Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
 		      0,argc,argv);
   }
     
-  hasInfo = checkSQLReturn(sr,"free-handle");  
+  retcode = checkSQLReturn(sr,"free-handle");  
 
-  sql_return(scheme_void,hasInfo,"free-handle");
+  sql_return(scheme_void,retcode,"free-handle");
 }
 
 Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
@@ -2511,7 +2515,7 @@ Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
   SQLUSMALLINT option;
   char *optionString;
   SRP_NAMED_SMALL_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("free-stmt","sql-hstmt",0,argc,argv);
@@ -2535,9 +2539,9 @@ Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
 
   sr = SQLFreeStmt(hstmt,option);
 
-  hasInfo = checkSQLReturn(sr,"free-stmt");  
+  retcode = checkSQLReturn(sr,"free-stmt");  
 
-  sql_return(scheme_void,hasInfo,"free-stmt");
+  sql_return(scheme_void,retcode,"free-stmt");
 }
 
 Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
@@ -2551,7 +2555,7 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
   SQLINTEGER actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("get-connect-attr","sql-hdbc",0,argc,argv);
@@ -2587,33 +2591,33 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
   case sqlbool :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
+    retcode = checkSQLReturn(sr,"get-connect-attr");  			 
     retval = (number == SQL_FALSE) ? scheme_false : scheme_true;
-    sql_return(retval,hasInfo,"get-connect-attr");
+    sql_return(retval,retcode,"get-connect-attr");
 
   case string :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,buff,sizeray(buff),&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
+    retcode = checkSQLReturn(sr,"get-connect-attr");  			 
     retval = scheme_make_sized_string(buff,actualLen,TRUE);
-    sql_return(retval,hasInfo,"get-connect-attr");
+    sql_return(retval,retcode,"get-connect-attr");
 
   case sqluinteger :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
+    retcode = checkSQLReturn(sr,"get-connect-attr");  			 
     retval = scheme_make_integer_value_from_unsigned(number);
-    sql_return(retval,hasInfo,"get-connect-attr");
+    sql_return(retval,retcode,"get-connect-attr");
 
   case nameduinteger :
 
     sr = SQLGetConnectAttr(connectionHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-connect-attr");  			 
+    retcode = checkSQLReturn(sr,"get-connect-attr");  			 
 
     retval = scheme_intern_symbol(findIntegerName(attributeString,number,
 						    namedConnectAttrIntegers,
 						    sizeray(namedConnectAttrIntegers)));
-    sql_return(retval,hasInfo,"get-connect-attr");
+    sql_return(retval,retcode,"get-connect-attr");
 
   }
   
@@ -2630,7 +2634,7 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
   char buff[2048];
   SRP_NAMED_TYPED_CONSTANT *p;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("get-connect-option","sql-hdbc",0,argc,argv);
@@ -2666,39 +2670,39 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
   case sqlbool :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
+    retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = (number == SQL_FALSE) ? scheme_false : scheme_true;
-    sql_return(retval,hasInfo,"get-connect-option");
+    sql_return(retval,retcode,"get-connect-option");
 
   case string :
 
     sr = SQLGetConnectOption(connectionHandle,option,buff);
-    hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
+    retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = scheme_make_string(buff);
-    sql_return(retval,hasInfo,"get-connect-option");
+    sql_return(retval,retcode,"get-connect-option");
 
   case sqluinteger :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
+    retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = scheme_make_integer_value_from_unsigned(number);
-    sql_return(retval,hasInfo,"get-connect-option");
+    sql_return(retval,retcode,"get-connect-option");
 
   case nameduinteger :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
+    retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = scheme_intern_symbol(findIntegerName(optionString,number,
 						namedConnectAttrIntegers,
 						sizeray(namedConnectAttrIntegers)));
-    sql_return(retval,hasInfo,"get-connect-option");
+    sql_return(retval,retcode,"get-connect-option");
 
   case bitmask :
 
     sr = SQLGetConnectOption(connectionHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-connect-option");  			 
+    retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = bitsListFromBitMask(optionString,number);
-    sql_return(retval,hasInfo,"get-connect-option");
+    sql_return(retval,retcode,"get-connect-option");
   }
   
   return scheme_void; // for compiler
@@ -2710,7 +2714,7 @@ Scheme_Object *srp_SQLGetCursorName(int argc,Scheme_Object **argv) {
   SQLCHAR name[1024];
   SQLSMALLINT actualLen;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("get-cursor-name","sql-hstmt",0,argc,argv);
@@ -2720,10 +2724,10 @@ Scheme_Object *srp_SQLGetCursorName(int argc,Scheme_Object **argv) {
 
   sr = SQLGetCursorName(stmtHandle,name,sizeray(name),&actualLen);
 
-  hasInfo = checkSQLReturn(sr,"get-cursor-name");
+  retcode = checkSQLReturn(sr,"get-cursor-name");
 
   retval = scheme_make_sized_string((char *)name,actualLen,TRUE);
-  sql_return(retval,hasInfo,"get-cursor-name");
+  sql_return(retval,retcode,"get-cursor-name");
 }
 
 Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
@@ -2734,7 +2738,7 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
   SQLINTEGER bufferlen;
   SQLSMALLINT buffertype;
   SQLINTEGER *indicator;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("get-data","sql-hstmt",0,argc,argv);
@@ -2762,9 +2766,9 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
 
   sr = SQLGetData(stmtHandle,colNumber,buffertype,buffer,bufferlen,indicator);
 
-  hasInfo = checkSQLReturn(sr,"get-data");
+  retcode = checkSQLReturn(sr,"get-data");
 
-  sql_return(scheme_void,hasInfo,"get-data");
+  sql_return(scheme_void,retcode,"get-data");
 }
 
 Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
@@ -2777,7 +2781,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
   SQLINTEGER actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
     scheme_wrong_type("get-desc-field","sql-hdesc",0,argc,argv);
@@ -2815,10 +2819,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &smallIntVal,sizeof(SQLSMALLINT),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
  
     retval = scheme_make_integer(smallIntVal);
-    sql_return(retval,hasInfo,"get-desc-field");
+    sql_return(retval,retcode,"get-desc-field");
 
   case sqlinteger :
 
@@ -2827,10 +2831,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &intVal,sizeof(SQLINTEGER),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     retval = scheme_make_integer_value(intVal);
-    sql_return(retval,hasInfo,"get-desc-field");
+    sql_return(retval,retcode,"get-desc-field");
     
   case sqluinteger :
 
@@ -2839,10 +2843,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &uintVal,sizeof(SQLUINTEGER),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     retval = scheme_make_integer_value_from_unsigned(uintVal);
-    sql_return(retval,hasInfo,"get-desc-field");
+    sql_return(retval,retcode,"get-desc-field");
     
   case string :
 
@@ -2851,10 +2855,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 buff,sizeof(buff),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     retval = scheme_make_string(buff);
-    sql_return(retval,hasInfo,"get-desc-field");
+    sql_return(retval,retcode,"get-desc-field");
     
   case sqlbool :
 
@@ -2863,10 +2867,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &boolVal,sizeof(SQLINTEGER),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     retval = (boolVal == SQL_FALSE) ? scheme_false : scheme_true;
-    sql_return(retval,hasInfo,"get-desc-field");
+    sql_return(retval,retcode,"get-desc-field");
 
   case namedinteger :
     SQLINTEGER namedIntVal;
@@ -2874,12 +2878,12 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &namedIntVal,sizeof(SQLINTEGER),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     retval = scheme_intern_symbol(findIntegerName(fieldIdString,namedIntVal,
 						namedFieldDescriptors,
 						sizeray(namedFieldDescriptors)));
-    sql_return(retval,hasInfo,"get-desc-field");
+    sql_return(retval,retcode,"get-desc-field");
 
   case sqlbuffer :
     SQLPOINTER p;
@@ -2888,7 +2892,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &p,sizeof(SQLPOINTER),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     if (p == NULL) {
       scheme_signal_error("NULL data pointer");
@@ -2900,7 +2904,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
       scheme_signal_error("Internal buffer, can't be made into Scheme value");
     }
 
-    sql_return((Scheme_Object *)pBuffer,hasInfo,"get-desc-field");
+    sql_return((Scheme_Object *)pBuffer,retcode,"get-desc-field");
 
   case sqlindicator :
     SQLINTEGER *pIntVal;
@@ -2909,13 +2913,13 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &pIntVal,sizeof(SQLINTEGER *),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc_eternal(sizeof(SRP_SQL_INDICATOR));
     pIndicator->type = sql_indicator_type;
     pIndicator->value = *pIntVal;
 
-    sql_return((Scheme_Object *)pIndicator,hasInfo,"get-desc-field");
+    sql_return((Scheme_Object *)pIndicator,retcode,"get-desc-field");
 
   case arraystatus :
     SQLUSMALLINT *pSmallUintVal;
@@ -2924,7 +2928,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &pSmallUintVal,sizeof(SQLUSMALLINT *),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     pArrayStatus = (SRP_SQL_ARRAY_STATUS *)scheme_malloc_eternal(sizeof(SRP_SQL_ARRAY_STATUS));
     pArrayStatus->type = sql_array_status_type;
@@ -2932,7 +2936,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     pArrayStatus->descType = SQL_HDESC_DESCTYPE(argv[0]);
     pArrayStatus->values = pSmallUintVal;
 
-    sql_return((Scheme_Object *)pArrayStatus,hasInfo,"get-desc-field");
+    sql_return((Scheme_Object *)pArrayStatus,retcode,"get-desc-field");
 
   case bindingoffset :
     // SQLINTEGER *pIntVal;
@@ -2941,13 +2945,13 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &pIntVal,sizeof(SQLINTEGER *),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     pBindingOffset = (SRP_SQL_BINDING_OFFSET *)scheme_malloc_eternal(sizeof(SRP_SQL_BINDING_OFFSET));
     pBindingOffset->type = sql_binding_offset_type;
     pBindingOffset->val = pIntVal;
 
-    sql_return((Scheme_Object *)pBindingOffset,hasInfo,"get-desc-field");
+    sql_return((Scheme_Object *)pBindingOffset,retcode,"get-desc-field");
 
   case rowsprocessed :
     SQLUINTEGER *pUintVal;
@@ -2956,13 +2960,13 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &pUintVal,sizeof(SQLUINTEGER *),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     pRowsProcessed = (SRP_SQL_ROWS_PROCESSED *)scheme_malloc_eternal(sizeof(SRP_SQL_ROWS_PROCESSED));
     pRowsProcessed->type = sql_rows_processed_type;
     pRowsProcessed->val = pUintVal;
 
-    sql_return((Scheme_Object *)pRowsProcessed,hasInfo,"get-desc-field");
+    sql_return((Scheme_Object *)pRowsProcessed,retcode,"get-desc-field");
 
   case octetlength :
     // SQLINTEGER *pIntVal;
@@ -2971,13 +2975,13 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     sr = SQLGetDescField(descHandle,recNumber,fieldId,
 			 &pIntVal,sizeof(SQLINTEGER *),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-desc-field");
+    retcode = checkSQLReturn(sr,"get-desc-field");
 
     pOctetLength = (SRP_SQL_OCTET_LENGTH *)scheme_malloc_eternal(sizeof(SRP_SQL_OCTET_LENGTH));
     pOctetLength->type = sql_octet_length_type;
     pOctetLength->val = pIntVal;
 
-    sql_return((Scheme_Object *)pOctetLength,hasInfo,"get-desc-field");
+    sql_return((Scheme_Object *)pOctetLength,retcode,"get-desc-field");
 
   default :
     scheme_signal_error("sql-get-desc-field: unknown field type %X",fieldType);
@@ -3002,7 +3006,7 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
   SQLSMALLINT nullable; 
   char *nullableString;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
@@ -3021,7 +3025,7 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
 		     &type,&subtype,&length,&precision,
 		     &scale,&nullable);
 
-  hasInfo = checkSQLReturn(sr,"get-desc-rec");
+  retcode = checkSQLReturn(sr,"get-desc-rec");
 
   typeString = "?";
 
@@ -3053,7 +3057,7 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_sized_string((char *)name,
 						     actualLen,TRUE),retval);
   
-  sql_return(retval,hasInfo,"get-desc-rec");
+  sql_return(retval,retcode,"get-desc-rec");
 }
 
 Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
@@ -3065,7 +3069,7 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
   char *diagIdString;
   SQLSMALLINT actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE && 
       SQL_HDBCP(argv[0]) == FALSE &&
@@ -3108,9 +3112,9 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
     sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
 			 &intVal,0,&actualLen);
     
-    hasInfo = checkSQLReturn(sr,"get-diag-field");		       
+    retcode = checkSQLReturn(sr,"get-diag-field");		       
 
-    sql_return(scheme_make_integer_value(intVal),hasInfo,"get-diag-field");
+    sql_return(scheme_make_integer_value(intVal),retcode,"get-diag-field");
 
   case possiblynamedinteger :
 
@@ -3120,18 +3124,18 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
     sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
 			 &intVal,0,&actualLen);
     
-    hasInfo = checkSQLReturn(sr,"get-diag-field");		       
+    retcode = checkSQLReturn(sr,"get-diag-field");		       
 
     diagString = findIntegerName(diagIdString,intVal,
 			       namedDiagFieldIntegers,
 			       sizeray(namedDiagFieldIntegers));
 
     if (strcmp(diagString,NO_BIT_NAME) == 0) {
-      sql_return(scheme_make_integer_value(intVal),hasInfo,
+      sql_return(scheme_make_integer_value(intVal),retcode,
 		 "get-diag-field");
     }
 
-    sql_return (scheme_intern_symbol(diagString),hasInfo,"get-diag-field");
+    sql_return (scheme_intern_symbol(diagString),retcode,"get-diag-field");
 
   case string :
 
@@ -3140,10 +3144,10 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
     sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
 			 buffer,sizeof(buffer),&actualLen);
     
-    hasInfo = checkSQLReturn(sr,"get-diag-field");		       
+    retcode = checkSQLReturn(sr,"get-diag-field");		       
 
     sql_return(scheme_make_sized_string(buffer,actualLen,TRUE),
-	       hasInfo,"get-diag-field");
+	       retcode,"get-diag-field");
 
   case sqlreturn :
 
@@ -3152,10 +3156,10 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
     sr = SQLGetDiagField(handleType,handle,recNumber,diagId,
 			 &returnVal,sizeof(returnVal),&actualLen);
 
-    hasInfo = checkSQLReturn(sr,"get-diag-field");		       
+    retcode = checkSQLReturn(sr,"get-diag-field");		       
 
     sql_return(scheme_intern_symbol(sqlReturnToString(returnVal)),
-	       hasInfo,"get-diag-field");
+	       retcode,"get-diag-field");
 
   default :
 
@@ -3176,7 +3180,7 @@ Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
   SQLCHAR messageText[1024];
   SQLSMALLINT actualLen;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE && 
       SQL_HDBCP(argv[0]) == FALSE &&
@@ -3203,7 +3207,7 @@ Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
 		     messageText,sizeray(messageText),
 		     &actualLen);
 
-  hasInfo = checkSQLReturn(sr,"get-diag-rec");		       
+  retcode = checkSQLReturn(sr,"get-diag-rec");		       
 
   retval = scheme_null;
   retval = scheme_make_pair(scheme_make_sized_string((char *)messageText,
@@ -3211,7 +3215,7 @@ Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_integer(nativeError),retval);
   retval = scheme_make_pair(scheme_make_string((const char *)sqlState),retval);
 
-  sql_return(retval,hasInfo,"get-diag-rec");
+  sql_return(retval,retcode,"get-diag-rec");
 }
 
 Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
@@ -3223,7 +3227,7 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
   SRP_NAMED_TYPED_CONSTANT *p;
   SQLINTEGER actualLen;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) { 
     scheme_wrong_type("get-env-attr","sql-henv",0,argc,argv);
@@ -3256,22 +3260,22 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
     SQLUINTEGER number;
 
     sr = SQLGetEnvAttr(envHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-env-attr");		       
+    retcode = checkSQLReturn(sr,"get-env-attr");		       
 
     retval = scheme_intern_symbol(findIntegerName(attributeString,number,
 						namedEnvAttrIntegers,
 						sizeray(namedEnvAttrIntegers)));
-    sql_return(retval,hasInfo,"get-env-attr");
+    sql_return(retval,retcode,"get-env-attr");
 
   case sqlbool :
 
     SQLUINTEGER boolval;
 
     sr = SQLGetEnvAttr(envHandle,attribute,&boolval,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-env-attr");		       
+    retcode = checkSQLReturn(sr,"get-env-attr");		       
 
     retval = (boolval == SQL_FALSE) ? scheme_false : scheme_true;
-    sql_return(retval,hasInfo,"get-env-attr");
+    sql_return(retval,retcode,"get-env-attr");
   }
 
   scheme_signal_error("Unknown environment attribute type: %X",
@@ -3287,7 +3291,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
   char *functionString;
   SQLUSMALLINT supported[SQL_API_ODBC3_ALL_FUNCTIONS_SIZE];
   SRP_NAMED_SMALL_CONSTANT *p;  
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
@@ -3313,7 +3317,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
   
   sr = SQLGetFunctions(connectionHandle,function,supported);
 
-  hasInfo = checkSQLReturn(sr,"get-functions");		       
+  retcode = checkSQLReturn(sr,"get-functions");		       
 
   if (function == SQL_API_ALL_FUNCTIONS) {
     Scheme_Object *value;
@@ -3337,7 +3341,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
       }
     }
 
-    sql_return(retval,hasInfo,"get-functions");
+    sql_return(retval,retcode,"get-functions");
   }
   else if (function == SQL_API_ODBC3_ALL_FUNCTIONS) {
     Scheme_Object *value;
@@ -3357,14 +3361,14 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
 				retval);
     }
 
-    sql_return(retval,hasInfo,"get-functions");
+    sql_return(retval,retcode,"get-functions");
 
   }
   else if (*supported == SQL_TRUE) {
-    sql_return(scheme_true,hasInfo,"get-functions");
+    sql_return(scheme_true,retcode,"get-functions");
   }
   
-  sql_return(scheme_false,hasInfo,"get-functions");
+  sql_return(scheme_false,retcode,"get-functions");
 }
 
 Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
@@ -3383,7 +3387,7 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   SQLHDESC retDescHandle;
   SQLHSTMT retStmtHandle;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("get-info","sql-hdbc",0,argc,argv);
@@ -3435,51 +3439,51 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   case sqlusmallint :
 
     sr = SQLGetInfo(connectionHandle,infoName,&usmallint_value,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     sql_return(scheme_make_integer((long)usmallint_value),
-	       hasInfo,"get-info");
+	       retcode,"get-info");
 
   case sqluinteger :
 
     sr = SQLGetInfo(connectionHandle,infoName,&uinteger_value,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     sql_return(scheme_make_integer_value_from_unsigned(uinteger_value),
-	       hasInfo,"get-info");
+	       retcode,"get-info");
 
   case namedusmallint :
 
     sr = SQLGetInfo(connectionHandle,infoName,&usmallint_value,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     retval = 
       scheme_intern_symbol(findSmallIntName(infoNameString,usmallint_value,
 					    namedInfoSmallInts,
 					    sizeray(namedInfoSmallInts)));
-    sql_return(retval,hasInfo,"get-info");
+    sql_return(retval,retcode,"get-info");
 
   case nameduinteger :
 
     sr = SQLGetInfo(connectionHandle,infoName,&uinteger_value,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     retval = scheme_intern_symbol(findIntegerName(infoNameString,
 						  uinteger_value,
 						  namedInfoIntegers,
 						  sizeray(namedInfoIntegers)));
-    sql_return(retval,hasInfo,"get-info");
+    sql_return(retval,retcode,"get-info");
 
   case boolstring :
 
     sr = SQLGetInfo(connectionHandle,infoName,buffer,sizeray(buffer),&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     if (buffer[0] == 'Y' || buffer[0] == 'y') {
-      sql_return(scheme_true,hasInfo,"get-info");
+      sql_return(scheme_true,retcode,"get-info");
     }
     else if (buffer[0] == 'N' || buffer[0] == 'n') {
-      sql_return(scheme_false,hasInfo,"get-info");
+      sql_return(scheme_false,retcode,"get-info");
     }
     else {
       scheme_signal_error("sql-get-info: expected 'Y' or 'N', got %s",buffer);
@@ -3488,18 +3492,18 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   case string :
 
     sr = SQLGetInfo(connectionHandle,infoName,buffer,sizeray(buffer),&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     sql_return(scheme_make_sized_string(buffer,actualLen,TRUE),
-	       hasInfo,"get-info");
+	       retcode,"get-info");
 
   case bitmask :
 
     sr = SQLGetInfo(connectionHandle,infoName,&uinteger_value,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-info");    
+    retcode = checkSQLReturn(sr,"get-info");    
 
     sql_return(bitsListFromBitMask(infoNameString,uinteger_value),
-	       hasInfo,"get-info");
+	       retcode,"get-info");
 
   case henv :
 
@@ -3509,13 +3513,13 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
       sr = SQLGetInfo(connectionHandle,infoName,&retEnvHandle,0,&actualLen);
 
-      hasInfo = checkSQLReturn(sr,"get-info");    
+      retcode = checkSQLReturn(sr,"get-info");    
 
       retval = (SRP_SQL_HENV *)scheme_malloc(sizeof(SRP_SQL_HENV));
       retval->type = sql_henv_type;
       retval->henv = retEnvHandle;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-info");
+      sql_return((Scheme_Object *)retval,retcode,"get-info");
 
     }
 
@@ -3527,13 +3531,13 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
       sr = SQLGetInfo(connectionHandle,infoName,&retConnectHandle,0,&actualLen);
 
-      hasInfo = checkSQLReturn(sr,"get-info");    
+      retcode = checkSQLReturn(sr,"get-info");    
 
       retval = (SRP_SQL_HDBC *)scheme_malloc(sizeof(SRP_SQL_HDBC));
       retval->type = sql_hdbc_type;
       retval->hdbc = retConnectHandle;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-info");
+      sql_return((Scheme_Object *)retval,retcode,"get-info");
 
     }
 
@@ -3545,13 +3549,13 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
       sr = SQLGetInfo(connectionHandle,infoName,&retStmtHandle,0,&actualLen);
 
-      hasInfo = checkSQLReturn(sr,"get-info");    
+      retcode = checkSQLReturn(sr,"get-info");    
 
       retval = (SRP_SQL_HSTMT *)scheme_malloc(sizeof(SRP_SQL_HSTMT));
       retval->type = sql_hstmt_type;
       retval->hstmt = retStmtHandle;
       
-      sql_return((Scheme_Object *)retval,hasInfo,"get-info");
+      sql_return((Scheme_Object *)retval,retcode,"get-info");
 
     }
 
@@ -3563,13 +3567,13 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
       sr = SQLGetInfo(connectionHandle,infoName,&retDescHandle,0,&actualLen);
 
-      hasInfo = checkSQLReturn(sr,"get-info");    
+      retcode = checkSQLReturn(sr,"get-info");    
 
       retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
       retval->type = sql_hdesc_type;
       retval->hdesc = retDescHandle;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-info");
+      sql_return((Scheme_Object *)retval,retcode,"get-info");
 
     }
 
@@ -3590,7 +3594,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
   SQLUSMALLINT *smallnumpointer;
   SRP_NAMED_TYPED_CONSTANT *p;    
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("get-stmt-attr","sql-hstmt",0,argc,argv);
@@ -3621,35 +3625,35 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
   case sqluinteger :
 
     sr = SQLGetStmtAttr(stmtHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
 
     sql_return(scheme_make_integer_value_from_unsigned(number),
-	       hasInfo,"get-stmt-attr");
+	       retcode,"get-stmt-attr");
 
   case sqlbool :
 
     sr = SQLGetStmtAttr(stmtHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
     sql_return((number == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"get-stmt-attr");
+	       retcode,"get-stmt-attr");
 
   case nameduinteger :
 
     sr = SQLGetStmtAttr(stmtHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
 
     retval = scheme_intern_symbol(findIntegerName(attributeString,number,
 						  namedStmtAttributes,
 						  sizeray(namedStmtAttributes)));
 
-    sql_return(retval,hasInfo,"get-stmt-attr");
+    sql_return(retval,retcode,"get-stmt-attr");
     
   case possiblynameduinteger :
 
     char *attrName;
 
     sr = SQLGetStmtAttr(stmtHandle,attribute,&number,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
 
     attrName = findIntegerName(attributeString,number,
 			       namedStmtAttributes,
@@ -3660,14 +3664,14 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sql_return(scheme_intern_symbol(attrName),
-	       hasInfo,"get-stmt-attr");
+	       retcode,"get-stmt-attr");
 
   case rowstatus :
     
     SRP_SQL_ROW_STATUS *rowStatus;
 
     sr = SQLGetStmtAttr(stmtHandle,attribute,&smallnumpointer,0,&actualLen);
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
 
     // need to keep rowStatus around until cursor closed
     // conservatively, make it uncollectable
@@ -3677,20 +3681,20 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     rowStatus->numRows = 0;
     rowStatus->values = smallnumpointer;
 
-    sql_return((Scheme_Object *)rowStatus,hasInfo,"get-stmt-attr");
+    sql_return((Scheme_Object *)rowStatus,retcode,"get-stmt-attr");
 
   case sqlboxeduint :
 
     { SRP_SQL_BOXED_UINT *retval;
 
       sr = SQLGetStmtAttr(stmtHandle,attribute,&numpointer,0,&actualLen);
-      hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+      retcode = checkSQLReturn(sr,"get-stmt-attr");
 
       retval = (SRP_SQL_BOXED_UINT *)scheme_malloc(sizeof(SRP_SQL_BOXED_UINT));
       retval->type = sql_boxed_uint_type;
       retval->pointer = numpointer;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-stmt-attr");
+      sql_return((Scheme_Object *)retval,retcode,"get-stmt-attr");
     }
 
   case hdesc :
@@ -3698,7 +3702,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     { SRP_SQL_HDESC *retval;
 
       sr = SQLGetStmtAttr(stmtHandle,attribute,&number,0,&actualLen);
-      hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+      retcode = checkSQLReturn(sr,"get-stmt-attr");
 
       retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
       retval->type = sql_hdesc_type;
@@ -3723,7 +3727,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
       
       retval->hdesc = (SQLHDESC)number;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-stmt-attr");
+      sql_return((Scheme_Object *)retval,retcode,"get-stmt-attr");
     }
 
   case opparms :  
@@ -3735,14 +3739,14 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
       checkSQLReturn(sr,"get-stmt-attr");
       
       sr = SQLGetStmtAttr(stmtHandle,attribute,&smallnumpointer,0,&actualLen);
-      hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+      retcode = checkSQLReturn(sr,"get-stmt-attr");
     
       retval = (SRP_SQL_OP_PARMS *)scheme_malloc(sizeof(SRP_SQL_OP_PARMS));
       retval->type = sql_op_parms_type;
       retval->paramSetSize = paramSetSize;
       retval->values = smallnumpointer;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-stmt-attr");
+      sql_return((Scheme_Object *)retval,retcode,"get-stmt-attr");
     }
   }
 
@@ -3763,7 +3767,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   SQLUSMALLINT *smallnumpointer;
   SRP_NAMED_TYPED_CONSTANT *p;    
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("get-stmt-option","sql-hstmt",0,argc,argv);
@@ -3775,7 +3779,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
 
   optionString = SCHEME_SYM_VAL(argv[1]);
 
-  p = namedTypedConstSearch(optionString,stmtAttributes);
+  p = namedTypedConstSearch(optionString,stmtOptions);
 
   if (p == NULL) {
     scheme_signal_error("sql-get-stmt-option: invalid option: %s",
@@ -3795,35 +3799,35 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   case sqluinteger :
 
     sr = SQLGetStmtOption(stmtHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
 
     sql_return(scheme_make_integer_value_from_unsigned(number),
-	       hasInfo,"get-stmt-option");
+	       retcode,"get-stmt-option");
 
   case sqlbool :
 
     sr = SQLGetStmtOption(stmtHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
     sql_return((number == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"get-stmt-option");
+	       retcode,"get-stmt-option");
 
   case nameduinteger :
 
     sr = SQLGetStmtOption(stmtHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
 
     retval = 
       scheme_intern_symbol(findIntegerName(optionString,number,
 					   namedStmtAttributes,
 					   sizeray(namedStmtAttributes)));
-    sql_return(retval,hasInfo,"get-stmt-option");
+    sql_return(retval,retcode,"get-stmt-option");
     
   case possiblynameduinteger :
 
     char *attrName;
 
     sr = SQLGetStmtOption(stmtHandle,option,&number);
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
 
     attrName = findIntegerName(optionString,number,
 			       namedStmtAttributes,
@@ -3833,14 +3837,14 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
       return scheme_make_integer_value_from_unsigned(number);
     }
 
-    sql_return(scheme_intern_symbol(attrName),hasInfo,"get-stmt-option");
+    sql_return(scheme_intern_symbol(attrName),retcode,"get-stmt-option");
 
   case rowstatus :
     
     SRP_SQL_ROW_STATUS *rowStatus;
 
     sr = SQLGetStmtOption(stmtHandle,option,&smallnumpointer);
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
 
     // need to keep rowStatus around until cursor closed
     // conservatively, make it uncollectable
@@ -3850,20 +3854,20 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
     rowStatus->numRows = 0;
     rowStatus->values = smallnumpointer;
 
-    sql_return((Scheme_Object *)rowStatus,hasInfo,"get-stmt-option");
+    sql_return((Scheme_Object *)rowStatus,retcode,"get-stmt-option");
 
   case sqlboxeduint :
 
     { SRP_SQL_BOXED_UINT *retval;
 
       sr = SQLGetStmtOption(stmtHandle,option,&numpointer);
-      hasInfo = checkSQLReturn(sr,"get-stmt-option");
+      retcode = checkSQLReturn(sr,"get-stmt-option");
 
       retval = (SRP_SQL_BOXED_UINT *)scheme_malloc(sizeof(SRP_SQL_BOXED_UINT));
       retval->type = sql_boxed_uint_type;
       retval->pointer = numpointer;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-stmt-option");
+      sql_return((Scheme_Object *)retval,retcode,"get-stmt-option");
     }
 
   case hdesc :
@@ -3871,7 +3875,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
     { SRP_SQL_HDESC *retval;
 
       sr = SQLGetStmtOption(stmtHandle,option,&number);
-      hasInfo = checkSQLReturn(sr,"get-stmt-option");
+      retcode = checkSQLReturn(sr,"get-stmt-option");
 
       retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
       retval->type = sql_hdesc_type;
@@ -3896,7 +3900,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
       
       retval->hdesc = (SQLHDESC)number;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-stmt-option");
+      sql_return((Scheme_Object *)retval,retcode,"get-stmt-option");
     }
 
   case opparms :  
@@ -3905,7 +3909,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
       SQLUINTEGER paramSetSize;
 
       sr = SQLGetStmtOption(stmtHandle,SQL_ATTR_PARAMSET_SIZE,&paramSetSize);
-      hasInfo = checkSQLReturn(sr,"get-stmt-option");
+      retcode = checkSQLReturn(sr,"get-stmt-option");
       
       sr = SQLGetStmtOption(stmtHandle,option,&smallnumpointer);
       checkSQLReturn(sr,"get-stmt-option");
@@ -3915,7 +3919,7 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
       retval->paramSetSize = paramSetSize;
       retval->values = smallnumpointer;
 
-      sql_return((Scheme_Object *)retval,hasInfo,"get-stmt-option");
+      sql_return((Scheme_Object *)retval,retcode,"get-stmt-option");
     }
   }
 
@@ -3932,7 +3936,7 @@ Scheme_Object *srp_SQLGetTypeInfo(int argc,Scheme_Object **argv) {
   SQLSMALLINT dataType;
   char *dataTypeString;
   SRP_NAMED_SMALL_CONSTANT *p;    
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("get-type-info","sql-hstmt",0,argc,argv);
@@ -3957,16 +3961,16 @@ Scheme_Object *srp_SQLGetTypeInfo(int argc,Scheme_Object **argv) {
 
   sr = SQLGetTypeInfo(stmtHandle,dataType);
 
-  hasInfo = checkSQLReturn(sr,"get-type-info");
+  retcode = checkSQLReturn(sr,"get-type-info");
 
-  sql_return(scheme_void,hasInfo,"get-type-info");
+  sql_return(scheme_void,retcode,"get-type-info");
 }
 
 Scheme_Object *srp_SQLNumResultCols(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLSMALLINT colCount;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("num-result-cols","sql-hstmt",0,argc,argv);
@@ -3976,16 +3980,17 @@ Scheme_Object *srp_SQLNumResultCols(int argc,Scheme_Object **argv) {
 
   sr = SQLNumResultCols(stmtHandle,&colCount);
 
-  hasInfo = checkSQLReturn(sr,"num-result-cols");
+  retcode = checkSQLReturn(sr,"num-result-cols");
 
-  sql_return(scheme_make_integer(colCount),hasInfo,"num-result-cols");
+  sql_return(scheme_make_integer(colCount),retcode,"num-result-cols");
 }
 
 Scheme_Object *srp_SQLParamData(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLPOINTER buffer;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
+  SRP_SQL_BUFFER *retval;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("param-data","sql-hstmt",0,argc,argv);
@@ -3995,10 +4000,15 @@ Scheme_Object *srp_SQLParamData(int argc,Scheme_Object **argv) {
 
   sr = SQLParamData(stmtHandle,&buffer);
 
-  hasInfo = checkSQLReturn(sr,"param-data");
+  retcode = checkSQLReturn(sr,"param-data");
 
-  sql_return((Scheme_Object *)(lookupBufferFromAddress(buffer)),
-	     hasInfo,"param-data");
+  retval = lookupBufferFromAddress(buffer);
+
+  if (retval == NULL) {
+    scheme_signal_error("sql-param-data: no bound sql-buffer");
+  }
+
+  sql_return((Scheme_Object *)retval,retcode,"param-data");
 }
 
 Scheme_Object *srp_SQLPrepare(int argc,Scheme_Object **argv) {
@@ -4006,7 +4016,7 @@ Scheme_Object *srp_SQLPrepare(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLCHAR *text;
   SQLINTEGER textLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("prepare","sql-hstmt",0,argc,argv);
@@ -4022,9 +4032,9 @@ Scheme_Object *srp_SQLPrepare(int argc,Scheme_Object **argv) {
 
   sr = SQLPrepare(stmtHandle,text,textLen);
 
-  hasInfo = checkSQLReturn(sr,"prepare");
+  retcode = checkSQLReturn(sr,"prepare");
 
-  sql_return(scheme_void,hasInfo,"prepare");
+  sql_return(scheme_void,retcode,"prepare");
 }
 
 Scheme_Object *srp_SQLPutData(int argc,Scheme_Object **argv) {
@@ -4032,7 +4042,7 @@ Scheme_Object *srp_SQLPutData(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLPOINTER buffer;
   SQLINTEGER bufferLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("put-data","sql-hstmt",0,argc,argv);
@@ -4048,16 +4058,16 @@ Scheme_Object *srp_SQLPutData(int argc,Scheme_Object **argv) {
   
   sr = SQLPutData(stmtHandle,buffer,bufferLen);
 
-  hasInfo = checkSQLReturn(sr,"put-data");
+  retcode = checkSQLReturn(sr,"put-data");
 
-  sql_return(scheme_void,hasInfo,"put-data");
+  sql_return(scheme_void,retcode,"put-data");
 }
 
 Scheme_Object *srp_SQLRowCount(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLINTEGER rowCount;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("row-count","sql-hstmt",0,argc,argv);
@@ -4067,15 +4077,15 @@ Scheme_Object *srp_SQLRowCount(int argc,Scheme_Object **argv) {
   
   sr = SQLRowCount(stmtHandle,&rowCount);
 
-  hasInfo = checkSQLReturn(sr,"row-count");
+  retcode = checkSQLReturn(sr,"row-count");
 
   if (rowCount >= 0) {
     sql_return(scheme_make_integer_value((long)rowCount),
-	       hasInfo,"row-count");
+	       retcode,"row-count");
   }
 
   sql_return(scheme_intern_symbol("sql-row-count-unavailable"),
-	     hasInfo,"row-count");
+	     retcode,"row-count");
 }
 
 Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
@@ -4087,7 +4097,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
   SQLUINTEGER val;
   char *attributeValString;
   SRP_NAMED_TYPED_CONSTANT *p;    
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("set-connect-attr","sql-hdbc",0,argc,argv);
@@ -4122,9 +4132,9 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,(SQLPOINTER)boolVal,0);
-    hasInfo = checkSQLReturn(sr,"set-connect-attr");
+    retcode = checkSQLReturn(sr,"set-connect-attr");
 
-    sql_return(scheme_void,hasInfo,"set-connect-attr");
+    sql_return(scheme_void,retcode,"set-connect-attr");
 
   case sqluinteger :
 
@@ -4139,9 +4149,9 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,(SQLPOINTER)number,0);
-    hasInfo = checkSQLReturn(sr,"set-connect-attr");
+    retcode = checkSQLReturn(sr,"set-connect-attr");
 
-    sql_return(scheme_void,hasInfo,"set-connect-attr");
+    sql_return(scheme_void,retcode,"set-connect-attr");
 
   case nameduinteger :
 
@@ -4161,9 +4171,9 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,(SQLPOINTER)val,0);
-    hasInfo = checkSQLReturn(sr,"set-connect-attr");
+    retcode = checkSQLReturn(sr,"set-connect-attr");
 
-    sql_return(scheme_void,hasInfo,"set-connect-attr");
+    sql_return(scheme_void,retcode,"set-connect-attr");
 
   case string :
 
@@ -4178,9 +4188,9 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     len = SCHEME_STRLEN_VAL(argv[2]);
 
     sr = SQLSetConnectAttr(connectionHandle,attribute,s,len);
-    hasInfo = checkSQLReturn(sr,"set-connect-attr");
+    retcode = checkSQLReturn(sr,"set-connect-attr");
 
-    sql_return(scheme_void,hasInfo,"set-connect-attr");
+    sql_return(scheme_void,retcode,"set-connect-attr");
   }
 
   scheme_signal_error("sql-set-connect-attr: unknown attribute type: %X",
@@ -4198,7 +4208,7 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   SQLUINTEGER val;
   char *optionValString;
   SRP_NAMED_TYPED_CONSTANT *p;    
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("set-connect-option","sql-hdbc",0,argc,argv);
@@ -4233,9 +4243,9 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
     sr = SQLSetConnectAttr(connectionHandle,option,(SQLPOINTER)boolVal,0);
-    hasInfo = checkSQLReturn(sr,"set-connect-option");
+    retcode = checkSQLReturn(sr,"set-connect-option");
 
-    sql_return(scheme_void,hasInfo,"set-connect-option");
+    sql_return(scheme_void,retcode,"set-connect-option");
 
   case sqluinteger :
 
@@ -4250,9 +4260,9 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectAttr(connectionHandle,option,(SQLPOINTER)number,0);
-    hasInfo = checkSQLReturn(sr,"set-connect-option");
+    retcode = checkSQLReturn(sr,"set-connect-option");
 
-    sql_return(scheme_void,hasInfo,"set-connect-option");
+    sql_return(scheme_void,retcode,"set-connect-option");
 
   case nameduinteger :
 
@@ -4272,9 +4282,9 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetConnectAttr(connectionHandle,option,(SQLPOINTER)val,0);
-    hasInfo = checkSQLReturn(sr,"set-connect-option");
+    retcode = checkSQLReturn(sr,"set-connect-option");
 
-    sql_return(scheme_void,hasInfo,"set-connect-option");
+    sql_return(scheme_void,retcode,"set-connect-option");
 
   case string :
 
@@ -4289,9 +4299,9 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     len = SCHEME_STRLEN_VAL(argv[2]);
 
     sr = SQLSetConnectAttr(connectionHandle,option,s,len);
-    hasInfo = checkSQLReturn(sr,"set-connect-option");
+    retcode = checkSQLReturn(sr,"set-connect-option");
 
-    sql_return(scheme_void,hasInfo,"set-connect-option");
+    sql_return(scheme_void,retcode,"set-connect-option");
   }
 
   scheme_signal_error("sql-set-connect-option: unknown option type: %X",
@@ -4305,7 +4315,7 @@ Scheme_Object *srp_SQLSetCursorName(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLCHAR *name;
   SQLSMALLINT nameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("set-cursor-name","sql-hstmt",0,argc,argv);
@@ -4321,9 +4331,9 @@ Scheme_Object *srp_SQLSetCursorName(int argc,Scheme_Object **argv) {
 
   sr = SQLSetCursorName(stmtHandle,name,nameLen);
 
-  hasInfo = checkSQLReturn(sr,"set-cursor-name");
+  retcode = checkSQLReturn(sr,"set-cursor-name");
 
-  sql_return(scheme_void,hasInfo,"set-cursor-name");
+  sql_return(scheme_void,retcode,"set-cursor-name");
 }
 
 Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
@@ -4336,7 +4346,7 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
   SRP_CONST_TYPE fieldType;
   char *fieldIdString;
   SRP_NAMED_TYPED_CONSTANT *p;    
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
     scheme_wrong_type("set-desc-field","sql-hdesc",0,argc,argv);    
@@ -4514,9 +4524,9 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
     scheme_signal_error("sql-set-desc-field: unknown field type %X",fieldType);
   }
 
-  hasInfo = checkSQLReturn(sr,"set-desc-field");
+  retcode = checkSQLReturn(sr,"set-desc-field");
 
-  sql_return(scheme_void,hasInfo,"set-desc-field");
+  sql_return(scheme_void,retcode,"set-desc-field");
 }
 
 Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
@@ -4534,7 +4544,7 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   SRP_NAMED_SMALL_CONSTANT *p;    
   SQLINTEGER *length;
   SQLINTEGER indicator;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
     scheme_wrong_type("set-desc-rec","sql-hdesc",0,argc,argv);    
@@ -4614,9 +4624,9 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
 		     octetLen,precision,scale,buffer,
 		     length,&indicator);
   
-  hasInfo = checkSQLReturn(sr,"set-desc-rec");
+  retcode = checkSQLReturn(sr,"set-desc-rec");
 
-  sql_return(scheme_void,hasInfo,"set-desc-rec");
+  sql_return(scheme_void,retcode,"set-desc-rec");
 }
 
 Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
@@ -4626,7 +4636,7 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
   SRP_CONST_TYPE attributeType;
   char *attributeString;
   SRP_NAMED_TYPED_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
     scheme_wrong_type("set-env-attr","sql-henv",0,argc,argv);    
@@ -4673,9 +4683,9 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetEnvAttr(envHandle,attribute,(SQLPOINTER)val,0);
-    hasInfo = checkSQLReturn(sr,"set-env-attr");
+    retcode = checkSQLReturn(sr,"set-env-attr");
 
-    sql_return(scheme_void,hasInfo,"set-env-attr");
+    sql_return(scheme_void,retcode,"set-env-attr");
 
   case sqlbool :
 
@@ -4686,9 +4696,9 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
     boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
 
     sr = SQLSetEnvAttr(envHandle,attribute,(SQLPOINTER)boolVal,0);
-    hasInfo = checkSQLReturn(sr,"set-env-attr");
+    retcode = checkSQLReturn(sr,"set-env-attr");
     
-    sql_return(scheme_void,hasInfo,"set-env-attr");
+    sql_return(scheme_void,retcode,"set-env-attr");
   }
 
   scheme_signal_error("sql-set-env-attr: unknown attribute type: %X",
@@ -4709,7 +4719,7 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   SQLPOINTER buffer;
   SQLINTEGER *indicator;
   SRP_NAMED_SMALL_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("set-param","sql-hstmt",0,argc,argv);
@@ -4788,9 +4798,9 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   sr = SQLSetParam(stmtHandle,paramNumber,CDataType,paramType,
 		   precision,scale,buffer,indicator);
 
-  hasInfo = checkSQLReturn(sr,"set-param");
+  retcode = checkSQLReturn(sr,"set-param");
 
-  sql_return(scheme_void,hasInfo,"set-param");
+  sql_return(scheme_void,retcode,"set-param");
 }
 
 Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
@@ -4806,7 +4816,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
   SQLUINTEGER number;
   SQLUINTEGER boolVal;
   SQLUINTEGER paramSetSize;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("set-stmt-attr","sql-hstmt",0,argc,argv);
@@ -4843,9 +4853,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)number,0);
-    hasInfo = checkSQLReturn(sr,"set-stmt-attr");
+    retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-attr");
+    sql_return(scheme_void,retcode,"set-stmt-attr");
 
   case sqlbool :
 
@@ -4857,9 +4867,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)boolVal,0);
-    hasInfo = checkSQLReturn(sr,"set-stmt-attr");
+    retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-attr");
+    sql_return(scheme_void,retcode,"set-stmt-attr");
 
   case nameduinteger :
 
@@ -4878,9 +4888,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)val,0);
-    hasInfo = checkSQLReturn(sr,"set-stmt-attr");
+    retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-attr");
+    sql_return(scheme_void,retcode,"set-stmt-attr");
 
   case possiblynameduinteger :
 
@@ -4909,9 +4919,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
       scheme_wrong_type("set-stmt-attr","int or symbol",2,argc,argv);
     }
 
-    hasInfo = checkSQLReturn(sr,"set-stmt-attr");
+    retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-attr");
+    sql_return(scheme_void,retcode,"set-stmt-attr");
 
   case rowstatus :
     
@@ -4921,9 +4931,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_ROW_STATUS_VAL(argv[2]),0);
 
-    hasInfo = checkSQLReturn(sr,"set-stmt-attr");
+    retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-attr");
+    sql_return(scheme_void,retcode,"set-stmt-attr");
 
   case sqlboxeduint :
 
@@ -4933,9 +4943,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_BOXED_UINT_VAL(argv[2]),0);
     
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"get-stmt-attr");
+    sql_return(scheme_void,retcode,"get-stmt-attr");
 
   case hdesc :
 
@@ -4944,9 +4954,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_HDESC_VAL(argv[2]),0);
-    hasInfo = checkSQLReturn(sr,"get-stmt-attr");
+    retcode = checkSQLReturn(sr,"get-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"get-stmt-attr");
+    sql_return(scheme_void,retcode,"get-stmt-attr");
 
   case opparms :  
 
@@ -4966,9 +4976,9 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
       
     sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_OP_PARMS_VAL(argv[2]),0);
 
-    hasInfo = checkSQLReturn(sr,"set-stmt-attr");
+    retcode = checkSQLReturn(sr,"set-stmt-attr");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-attr");
+    sql_return(scheme_void,retcode,"set-stmt-attr");
 
   }
 
@@ -4990,7 +5000,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
   SQLUINTEGER number;
   SQLUINTEGER boolVal;
   SQLUINTEGER paramSetSize;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("set-stmt-option","sql-hstmt",0,argc,argv);
@@ -5002,7 +5012,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
 
   optionString = SCHEME_SYM_VAL(argv[1]);
 
-  p = namedTypedConstSearch(optionString,stmtAttributes);
+  p = namedTypedConstSearch(optionString,stmtOptions);
 
   if (p == NULL) {
     scheme_signal_error("sql-set-stmt-option: invalid statement option: %s",
@@ -5027,9 +5037,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtOption(stmtHandle,option,number);
-    hasInfo = checkSQLReturn(sr,"set-stmt-option");
+    retcode = checkSQLReturn(sr,"set-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-option");
+    sql_return(scheme_void,retcode,"set-stmt-option");
 
   case sqlbool :
 
@@ -5041,9 +5051,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtOption(stmtHandle,option,boolVal);
-    hasInfo = checkSQLReturn(sr,"set-stmt-option");
+    retcode = checkSQLReturn(sr,"set-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-option");
+    sql_return(scheme_void,retcode,"set-stmt-option");
 
   case nameduinteger :
 
@@ -5062,9 +5072,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtOption(stmtHandle,option,val);
-    hasInfo = checkSQLReturn(sr,"set-stmt-option");
+    retcode = checkSQLReturn(sr,"set-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-option");
+    sql_return(scheme_void,retcode,"set-stmt-option");
 
   case possiblynameduinteger :
 
@@ -5093,9 +5103,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
       scheme_wrong_type("set-stmt-option","int or symbol",2,argc,argv);
     }
 
-    hasInfo = checkSQLReturn(sr,"set-stmt-option");
+    retcode = checkSQLReturn(sr,"set-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-option");
+    sql_return(scheme_void,retcode,"set-stmt-option");
 
   case rowstatus :
     
@@ -5105,9 +5115,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
 
     sr = SQLSetStmtOption(stmtHandle,option,(SQLUINTEGER)SQL_ROW_STATUS_VAL(argv[2]));
 
-    hasInfo = checkSQLReturn(sr,"set-stmt-option");
+    retcode = checkSQLReturn(sr,"set-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-option");
+    sql_return(scheme_void,retcode,"set-stmt-option");
 
   case sqlboxeduint :
 
@@ -5117,9 +5127,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
 
     sr = SQLSetStmtOption(stmtHandle,option,(SQLUINTEGER)SQL_BOXED_UINT_VAL(argv[2]));
     
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"get-stmt-option");
+    sql_return(scheme_void,retcode,"get-stmt-option");
 
   case hdesc :
 
@@ -5128,9 +5138,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     }
 
     sr = SQLSetStmtAttr(stmtHandle,option,SQL_HDESC_VAL(argv[2]),0);
-    hasInfo = checkSQLReturn(sr,"get-stmt-option");
+    retcode = checkSQLReturn(sr,"get-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"get-stmt-option");
+    sql_return(scheme_void,retcode,"get-stmt-option");
 
   case opparms :  
 
@@ -5149,9 +5159,9 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
       
     sr = SQLSetStmtOption(stmtHandle,option,(SQLUINTEGER)SQL_OP_PARMS_VAL(argv[2]));
 
-    hasInfo = checkSQLReturn(sr,"set-stmt-option");
+    retcode = checkSQLReturn(sr,"set-stmt-option");
 
-    sql_return(scheme_void,hasInfo,"set-stmt-option");
+    sql_return(scheme_void,retcode,"set-stmt-option");
 
   }
 
@@ -5176,7 +5186,7 @@ Scheme_Object *srp_SQLSpecialColumns(int argc,Scheme_Object **argv) {
   char *scopeString;
   SQLSMALLINT nullable;
   char *nullableString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -5258,9 +5268,9 @@ Scheme_Object *srp_SQLSpecialColumns(int argc,Scheme_Object **argv) {
 			 tableName,tableNameLen,
 			 scope,nullable);
 
-  hasInfo = checkSQLReturn(sr,"special-columns");
+  retcode = checkSQLReturn(sr,"special-columns");
 
-  sql_return(scheme_void,hasInfo,"special-columns");
+  sql_return(scheme_void,retcode,"special-columns");
 }
 
 Scheme_Object *srp_SQLStatistics(int argc,Scheme_Object **argv) {
@@ -5276,7 +5286,7 @@ Scheme_Object *srp_SQLStatistics(int argc,Scheme_Object **argv) {
   char *uniqueString;
   SQLSMALLINT reserved;
   char *reservedString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -5338,9 +5348,9 @@ Scheme_Object *srp_SQLStatistics(int argc,Scheme_Object **argv) {
 		     tableName,tableNameLen,
 		     unique,reserved);
 
-  hasInfo = checkSQLReturn(sr,"statistics");
+  retcode = checkSQLReturn(sr,"statistics");
 
-  sql_return(scheme_void,hasInfo,"statistics");
+  sql_return(scheme_void,retcode,"statistics");
 }
 
 Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
@@ -5354,7 +5364,7 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
   SQLSMALLINT tableNameLen;
   SQLCHAR *tableType;
   SQLSMALLINT tableTypeLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -5439,9 +5449,9 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
 		 tableName,tableNameLen,
 		 tableType,tableTypeLen);
 
-  hasInfo = checkSQLReturn(sr,"tables");
+  retcode = checkSQLReturn(sr,"tables");
 
-  sql_return(scheme_void,hasInfo,"tables");
+  sql_return(scheme_void,retcode,"tables");
 
 }
 
@@ -5451,14 +5461,14 @@ Scheme_Object *srp_SQLTransact(int argc,Scheme_Object **argv) {
   SQLHDBC connectionHandle;
   SQLUSMALLINT action;
   char *actionString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
     scheme_wrong_type("transact","sql-henv",0,argc,argv);
   }
 
-  if (SQL_HDBCP(argv[1]) == FALSE) {
-    scheme_wrong_type("transact","sql-hdbc",1,argc,argv);
+  if (SQL_HDBCP(argv[1]) == FALSE && SCHEME_SYMBOLP(argv[1]) == FALSE) {
+    scheme_wrong_type("transact","sql-hdbc or symbol",1,argc,argv);
   }
 
   if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
@@ -5479,13 +5489,22 @@ Scheme_Object *srp_SQLTransact(int argc,Scheme_Object **argv) {
   }
 
   envHandle = SQL_HENV_VAL(argv[0]);
-  connectionHandle = SQL_HDBC_VAL(argv[1]);
+
+  if (SCHEME_SYMBOLP(argv[1])) {
+    if (stricmp(SCHEME_SYM_VAL(argv[1]),"sql-null-hdbc")) {
+      scheme_signal_error("transact: 'sql-null-hdbc is only allowed symbol for 2nd argument");
+    }
+    connectionHandle = SQL_NULL_HDBC;
+  }
+  else {
+    connectionHandle = SQL_HDBC_VAL(argv[1]);
+  }
 
   sr = SQLTransact(envHandle,connectionHandle,action);
 
-  hasInfo = checkSQLReturn(sr,"transaction");
+  retcode = checkSQLReturn(sr,"transaction");
 
-  sql_return(scheme_void,hasInfo,"transaction");
+  sql_return(scheme_void,retcode,"transaction");
 }
 
 // Functions in SQLEXT.H
@@ -5500,7 +5519,7 @@ Scheme_Object *srp_SQLDriverConnect(int argc,Scheme_Object **argv) {
   char *completionString;
   SQLUSMALLINT completion; 
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("driver-connect","sql-hdbc",0,argc,argv);
@@ -5543,10 +5562,10 @@ Scheme_Object *srp_SQLDriverConnect(int argc,Scheme_Object **argv) {
 			outConnectString,sizeray(outConnectString),
 			&actualLen,completion);
 
-  hasInfo = checkSQLReturn(sr,"driver-connect");
+  retcode = checkSQLReturn(sr,"driver-connect");
 
   retval = scheme_make_sized_string((char *)outConnectString,actualLen,TRUE);
-  sql_return(retval,hasInfo,"driver-connect"); 
+  sql_return(retval,retcode,"driver-connect"); 
 }
 
 Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
@@ -5557,7 +5576,7 @@ Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
   SQLCHAR outConnectString[2048];
   SQLSMALLINT actualLen;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("browse-connect","sql-hdbc",0,argc,argv);
@@ -5576,10 +5595,10 @@ Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
 			outConnectString,sizeray(outConnectString),
 			&actualLen);
 
-  hasInfo = checkSQLReturn(sr,"browse-connect");
+  retcode = checkSQLReturn(sr,"browse-connect");
 
   retval = scheme_make_sized_string((char *)outConnectString,actualLen,TRUE);
-  sql_return(retval,hasInfo,"browse-connect");
+  sql_return(retval,retcode,"browse-connect");
 }
 
 Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
@@ -5587,7 +5606,7 @@ Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLSMALLINT operation;
   char *operationString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("bulk-operations","sql-hstmt",0,argc,argv);
@@ -5620,9 +5639,9 @@ Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
 
   sr = SQLBulkOperations(stmtHandle,operation);
 
-  hasInfo = checkSQLReturn(sr,"bulk-operations");
+  retcode = checkSQLReturn(sr,"bulk-operations");
 
-  sql_return(scheme_void,hasInfo,"bulk-operations");
+  sql_return(scheme_void,retcode,"bulk-operations");
 }
 
 Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
@@ -5637,7 +5656,7 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
   SQLSMALLINT actualLen;
   SRP_NAMED_TYPED_CONSTANT *p;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("col-attributes","sql-hstmt",0,argc,argv);
@@ -5670,40 +5689,40 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
     bufflen = SQL_IS_INTEGER;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attributes");		       
+    retcode = checkSQLReturn(sr,"col-attributes");		       
     sql_return((numBuffer == SQL_FALSE) ? scheme_false : scheme_true,
-	       hasInfo,"col-attributes");
+	       retcode,"col-attributes");
 
   case sqlinteger :
 
     bufflen = SQL_IS_INTEGER;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attributes");		       
+    retcode = checkSQLReturn(sr,"col-attributes");		       
     sql_return(scheme_make_integer_value((long)numBuffer),
-	       hasInfo,"col-attributes");		       
+	       retcode,"col-attributes");		       
 
   case namedinteger :
 
     bufflen = SQL_IS_INTEGER;
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attributes");		       
+    retcode = checkSQLReturn(sr,"col-attributes");		       
 
     retval = 
       scheme_intern_symbol(findIntegerName(fieldIdString,numBuffer,
 					   namedColAttrsIntegers,
 					   sizeray(namedColAttrsIntegers)));
-    sql_return(retval,hasInfo,"col-attributes");
+    sql_return(retval,retcode,"col-attributes");
 
   case string :
 
     bufflen = sizeof(buff);
     sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
 			 buff,bufflen,&actualLen,&numBuffer);
-    hasInfo = checkSQLReturn(sr,"col-attributes");		       
+    retcode = checkSQLReturn(sr,"col-attributes");		       
     sql_return(scheme_make_sized_string(buff,actualLen,TRUE),
-	       hasInfo,"col-attributes"); 
+	       retcode,"col-attributes"); 
   }
 
   scheme_signal_error("sql-col-attributes: invalid attribute type");
@@ -5722,7 +5741,7 @@ Scheme_Object *srp_SQLColumnPrivileges(int argc,Scheme_Object **argv) {
   SQLSMALLINT tableNameLen;
   SQLCHAR *columnName;
   SQLSMALLINT columnNameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -5751,9 +5770,9 @@ Scheme_Object *srp_SQLColumnPrivileges(int argc,Scheme_Object **argv) {
 			   tableName,tableNameLen,
 			   columnName,columnNameLen);
 
-  hasInfo = checkSQLReturn(sr,"column-privileges");
+  retcode = checkSQLReturn(sr,"column-privileges");
 
-  sql_return(scheme_void,hasInfo,"column-privileges");
+  sql_return(scheme_void,retcode,"column-privileges");
 }
 
 Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
@@ -5766,7 +5785,7 @@ Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
   SQLSMALLINT nullable;
   char *nullableString;
   char *dataTypeString;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
   Scheme_Object *retval;
   
@@ -5785,7 +5804,7 @@ Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
 			&dataType,&paramSize,&decimalDigits,
 			&nullable);
 
-  hasInfo = checkSQLReturn(sr,"describe-param");		       
+  retcode = checkSQLReturn(sr,"describe-param");		       
 
   dataTypeString = "?";
 
@@ -5804,7 +5823,7 @@ Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_integer_value_from_unsigned(paramSize),retval);
   retval = scheme_make_pair(scheme_intern_symbol(dataTypeString),retval);
   
-  sql_return(retval,hasInfo,"describe-param");
+  sql_return(retval,retcode,"describe-param");
 }
 
 Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
@@ -5817,7 +5836,7 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   SRP_NAMED_SMALL_CONSTANT *p;      
   SQLINTEGER actualLen;
   SQLINTEGER maxRows;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("extended-fetch","sql-hstmt",0,argc,argv);
@@ -5825,10 +5844,6 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
 
   if (SCHEME_SYMBOLP(argv[1]) == FALSE) {
     scheme_wrong_type("extended-fetch","symbol",1,argc,argv);
-  }
-  
-  if (SCHEME_INTP(argv[2]) == FALSE) {
-    scheme_wrong_type("extended-fetch","int",2,argc,argv);
   }
   
   fetchTypeString = SCHEME_SYM_VAL(argv[1]);
@@ -5841,6 +5856,31 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   }
 
   fetchType = p->val;
+
+  switch(fetchType) {
+  case SQL_FETCH_NEXT :
+  case SQL_FETCH_PRIOR :
+  case SQL_FETCH_FIRST :
+  case SQL_FETCH_LAST :
+    if (argc > 2) {
+      scheme_signal_error("extended-fetch: Only two arguments allowed "
+			  "when given '%s",fetchTypeString);
+    }
+    rowNumber = 0;
+    break;
+
+  case SQL_FETCH_ABSOLUTE :
+  case SQL_FETCH_RELATIVE :
+  case SQL_FETCH_BOOKMARK :
+    if (SCHEME_INTP(argv[2]) == FALSE) {
+      scheme_wrong_type("extended-fetch","int",2,argc,argv);
+    }
+    rowNumber = SCHEME_INT_VAL(argv[1]);
+    break;
+
+  default :
+    ;
+  }
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
@@ -5856,14 +5896,12 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   rowStatus->numRows = 0;
   rowStatus->values = (SQLUSMALLINT *)scheme_malloc_eternal(maxRows * sizeof(SQLUSMALLINT));
 
-  rowNumber = SCHEME_INT_VAL(argv[1]);
-
   sr = SQLExtendedFetch(stmtHandle,fetchType,rowNumber,
 			&rowStatus->numRows,rowStatus->values);
 
-  hasInfo = checkSQLReturn(sr,"extended-fetch");
+  retcode = checkSQLReturn(sr,"extended-fetch");
 
-  sql_return((Scheme_Object *)rowStatus,hasInfo,"extended-fetch");
+  sql_return((Scheme_Object *)rowStatus,retcode,"extended-fetch");
 }
 
 Scheme_Object *srp_SQLForeignKeys(int argc,Scheme_Object **argv) {
@@ -5881,7 +5919,7 @@ Scheme_Object *srp_SQLForeignKeys(int argc,Scheme_Object **argv) {
   SQLSMALLINT foreignSchemaNameLen;
   SQLCHAR *foreignTableName;
   SQLSMALLINT foreignTableNameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -5922,15 +5960,15 @@ Scheme_Object *srp_SQLForeignKeys(int argc,Scheme_Object **argv) {
 		      foreignSchemaName,foreignSchemaNameLen,
 		      foreignTableName,foreignTableNameLen);
 
-  hasInfo = checkSQLReturn(sr,"foreign-keys");
+  retcode = checkSQLReturn(sr,"foreign-keys");
   
-  sql_return(scheme_void,hasInfo,"foreign-keys");
+  sql_return(scheme_void,retcode,"foreign-keys");
 }
 
 Scheme_Object *srp_SQLMoreResults(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("more-results","sql-hstmt",0,argc,argv);
@@ -5940,9 +5978,9 @@ Scheme_Object *srp_SQLMoreResults(int argc,Scheme_Object **argv) {
 
   sr = SQLMoreResults(stmtHandle);
 
-  hasInfo = checkSQLReturn(sr,"more-results");  
+  retcode = checkSQLReturn(sr,"more-results");  
 
-  sql_return(scheme_void,hasInfo,"more-results");  
+  sql_return(scheme_void,retcode,"more-results");  
 }
 
 Scheme_Object *srp_SQLNativeSql(int argc,Scheme_Object **argv) {
@@ -5953,7 +5991,7 @@ Scheme_Object *srp_SQLNativeSql(int argc,Scheme_Object **argv) {
   SQLCHAR *outSql;
   SQLINTEGER outSqlLen;
   SQLINTEGER actualLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("native-sql","sql-hdbc",0,argc,argv);
@@ -5976,17 +6014,17 @@ Scheme_Object *srp_SQLNativeSql(int argc,Scheme_Object **argv) {
 		    outSql,outSqlLen,
 		    &actualLen);
 
-  hasInfo = checkSQLReturn(sr,"native-sql");    
+  retcode = checkSQLReturn(sr,"native-sql");    
 
   sql_return(scheme_make_sized_string((char *)outSql,actualLen,TRUE),
-	     hasInfo,"native-sql");    
+	     retcode,"native-sql");    
 }
 
 Scheme_Object *srp_SQLNumParams(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLSMALLINT numParams;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("num-params","sql-hstmt",0,argc,argv);
@@ -5996,9 +6034,9 @@ Scheme_Object *srp_SQLNumParams(int argc,Scheme_Object **argv) {
 
   sr = SQLNumParams(stmtHandle,&numParams);
 
-  hasInfo = checkSQLReturn(sr,"num-params");    
+  retcode = checkSQLReturn(sr,"num-params");    
 
-  sql_return(scheme_make_integer(numParams),hasInfo,"num-params");
+  sql_return(scheme_make_integer(numParams),retcode,"num-params");
 }
 
 Scheme_Object *srp_SQLParamOptions(int argc,Scheme_Object **argv) {
@@ -6006,7 +6044,7 @@ Scheme_Object *srp_SQLParamOptions(int argc,Scheme_Object **argv) {
   SQLHSTMT stmtHandle;
   SQLUINTEGER cRow;
   SQLUINTEGER piRow;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("param-options","sql-hstmt",0,argc,argv);
@@ -6021,10 +6059,10 @@ Scheme_Object *srp_SQLParamOptions(int argc,Scheme_Object **argv) {
 
   sr = SQLParamOptions(stmtHandle,cRow,&piRow);
  
-  hasInfo = checkSQLReturn(sr,"param-options");    
+  retcode = checkSQLReturn(sr,"param-options");    
 
   sql_return(scheme_make_integer_value_from_unsigned(piRow),
-	     hasInfo,"param-options");    
+	     retcode,"param-options");    
 }
 
 Scheme_Object *srp_SQLPrimaryKeys(int argc,Scheme_Object **argv) {
@@ -6036,7 +6074,7 @@ Scheme_Object *srp_SQLPrimaryKeys(int argc,Scheme_Object **argv) {
   SQLSMALLINT schemaNameLen;
   SQLCHAR *tableName;
   SQLSMALLINT tableNameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6065,9 +6103,9 @@ Scheme_Object *srp_SQLPrimaryKeys(int argc,Scheme_Object **argv) {
 		      schemaName,schemaNameLen,
 		      tableName,tableNameLen);
 
-  hasInfo = checkSQLReturn(sr,"primary-keys");    
+  retcode = checkSQLReturn(sr,"primary-keys");    
 
-  sql_return(scheme_void,hasInfo,"primary-keys");    
+  sql_return(scheme_void,retcode,"primary-keys");    
 }
 
 Scheme_Object *srp_SQLProcedureColumns(int argc,Scheme_Object **argv) {
@@ -6081,7 +6119,7 @@ Scheme_Object *srp_SQLProcedureColumns(int argc,Scheme_Object **argv) {
   SQLSMALLINT procNameLen;
   SQLCHAR *columnName;
   SQLSMALLINT columnNameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6114,9 +6152,9 @@ Scheme_Object *srp_SQLProcedureColumns(int argc,Scheme_Object **argv) {
 			   procName,procNameLen,
 			   columnName,columnNameLen);
 
-  hasInfo = checkSQLReturn(sr,"procedure-columns");    
+  retcode = checkSQLReturn(sr,"procedure-columns");    
 
-  sql_return(scheme_void,hasInfo,"procedure-columns");    
+  sql_return(scheme_void,retcode,"procedure-columns");    
 
 }
 
@@ -6129,7 +6167,7 @@ Scheme_Object *srp_SQLProcedures(int argc,Scheme_Object **argv) {
   SQLSMALLINT schemaNameLen;
   SQLCHAR *procName;
   SQLSMALLINT procNameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6158,9 +6196,9 @@ Scheme_Object *srp_SQLProcedures(int argc,Scheme_Object **argv) {
 		     schemaName,schemaNameLen,
 		     procName,procNameLen);
 
-  hasInfo = checkSQLReturn(sr,"procedures");    
+  retcode = checkSQLReturn(sr,"procedures");    
 
-  sql_return(scheme_void,hasInfo,"procedures");    
+  sql_return(scheme_void,retcode,"procedures");    
 }
 
 Scheme_Object *srp_SQLSetPos(int argc,Scheme_Object **argv) {
@@ -6172,7 +6210,7 @@ Scheme_Object *srp_SQLSetPos(int argc,Scheme_Object **argv) {
   SQLUSMALLINT lock;
   char *lockString;
   SRP_NAMED_SMALL_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6213,9 +6251,9 @@ Scheme_Object *srp_SQLSetPos(int argc,Scheme_Object **argv) {
   
   sr = SQLSetPos(stmtHandle,rowNumber,operation,lock);
 
-  hasInfo = checkSQLReturn(sr,"set-pos");    
+  retcode = checkSQLReturn(sr,"set-pos");    
 
-  sql_return(scheme_void,hasInfo,"set-pos");    
+  sql_return(scheme_void,retcode,"set-pos");    
 }
 
 Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
@@ -6227,7 +6265,7 @@ Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
   SQLSMALLINT schemaNameLen;
   SQLCHAR *tableName;
   SQLSMALLINT tableNameLen;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6256,9 +6294,9 @@ Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
 			  schemaName,schemaNameLen,
 			  tableName,tableNameLen);
 
-  hasInfo = checkSQLReturn(sr,"table-privileges");    
+  retcode = checkSQLReturn(sr,"table-privileges");    
 
-  sql_return(scheme_void,hasInfo,"table-privileges");    
+  sql_return(scheme_void,retcode,"table-privileges");    
 }
 
 Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
@@ -6270,7 +6308,7 @@ Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
   SQLCHAR attributes[2048];
   SQLSMALLINT actualLen1,actualLen2;
   Scheme_Object *retval;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
     scheme_wrong_type("drivers","sql-henv",0,argc,argv);
@@ -6299,7 +6337,7 @@ Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
 		  description,sizeray(description),&actualLen1,
 		  attributes,sizeray(attributes),&actualLen2);
 
-  hasInfo = checkSQLReturn(sr,"drivers");    
+  retcode = checkSQLReturn(sr,"drivers");    
 
   retval = scheme_null;
   retval = scheme_make_pair(scheme_make_sized_string((char *)attributes,
@@ -6309,7 +6347,7 @@ Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
 						     actualLen1,TRUE),
 			    retval);
 					       
-  sql_return(retval,hasInfo,"drivers");    
+  sql_return(retval,retcode,"drivers");    
 }
 
 Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
@@ -6327,7 +6365,7 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   SQLINTEGER bufferLen;
   SQLINTEGER indicator;
   SRP_NAMED_SMALL_CONSTANT *p;      
-  BOOL hasInfo;
+  RETURN_CODE retcode;
   int i;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6429,9 +6467,9 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
 			valueSize,decimalDigits,
 			buffer,bufferLen,&indicator);
 
-  hasInfo = checkSQLReturn(sr,"bind-param");    
+  retcode = checkSQLReturn(sr,"bind-param");    
 
-  sql_return(scheme_void,hasInfo,"bind-param");
+  sql_return(scheme_void,retcode,"bind-param");
 }
 
 Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
@@ -6442,7 +6480,7 @@ Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
   SQLINTEGER keyset;
   SQLUSMALLINT rowset;
   SRP_NAMED_SMALL_CONSTANT *p;
-  BOOL hasInfo;
+  RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
     scheme_wrong_type("set-scroll-options","sql-hstmt",0,argc,argv);
@@ -6503,9 +6541,9 @@ Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
 
   sr = SQLSetScrollOptions(stmtHandle,concur,keyset,rowset);
 
-  hasInfo = checkSQLReturn(sr,"set-scroll-options");    
+  retcode = checkSQLReturn(sr,"set-scroll-options");    
 
-  sql_return(scheme_void,hasInfo,"set-scroll-options");    
+  sql_return(scheme_void,retcode,"set-scroll-options");    
 }
 
 Scheme_Object *stringArrayToSchemeSymbolList(char **strs,int count) {
@@ -6669,6 +6707,8 @@ void sortConsts(void) {
   namedTypedConstSort(settableConnectionAttributes);
   namedTypedConstSort(readOnlyConnectionAttributes);
   namedTypedConstSort(envAttributes);
+  namedTypedConstSort(stmtAttributes);
+  namedTypedConstSort(stmtOptions);
 
   namedConstSort(sqlFunctions);
   namedConstSort(diagFields);

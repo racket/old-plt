@@ -120,6 +120,21 @@ SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
 { "sql-attr-use-bookmarks", SQL_ATTR_USE_BOOKMARKS, nameduinteger },
 };
 
+SRP_NAMED_TYPED_CONSTANT stmtOptions[] = {
+{ "sql-async-enable", SQL_ASYNC_ENABLE, nameduinteger },
+{ "sql-concurrency", SQL_CONCURRENCY, nameduinteger },
+{ "sql-cursor-type", SQL_CURSOR_TYPE, nameduinteger },
+{ "sql-keyset-size", SQL_KEYSET_SIZE, sqluinteger },
+{ "sql-max-length", SQL_MAX_LENGTH, sqluinteger },
+{ "sql-max-rows", SQL_MAX_ROWS, sqluinteger },
+{ "sql-noscan", SQL_NOSCAN, nameduinteger },
+{ "sql-query-timeout", SQL_QUERY_TIMEOUT, sqluinteger },
+{ "sql-retrieve-data", SQL_RETRIEVE_DATA, nameduinteger  },
+{ "sql-rowset-size", SQL_ROWSET_SIZE, sqluinteger },
+{ "sql-simulate-cursor", SQL_SIMULATE_CURSOR, nameduinteger },
+{ "sql-use-bookmarks", SQL_USE_BOOKMARKS, nameduinteger },
+};
+
 SRP_NAMED_CONSTANT sqlFunctions[] = {
   { "sql-api-all-functions",SQL_API_ALL_FUNCTIONS},
   { "sql-api-odbc3-all-functions",SQL_API_ODBC3_ALL_FUNCTIONS},

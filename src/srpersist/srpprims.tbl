@@ -82,7 +82,7 @@ static SRP_PRIM srpPrims[] = {
   { srp_SQLColAttributes,"col-attributes",3,3 },  
   { srp_SQLColumnPrivileges,"column-privileges",5,5 }, 
   { srp_SQLDescribeParam,"describe-param",2,2 },  
-  { srp_SQLExtendedFetch,"extended-fetch",3,3 },  
+  { srp_SQLExtendedFetch,"extended-fetch",2,3 },  
   { srp_SQLForeignKeys,"foreign-keys",7,7 },      
   { srp_SQLMoreResults,"more-results",1,1 },      
   { srp_SQLNativeSql,"native-sql",2,2 },          

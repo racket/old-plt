@@ -13,21 +13,26 @@ char *withInfoFields[] = {
   "val",
 };
 
+char *needDataFields[] = { 
+  "val",
+};
+
 /* !!! These macros depend on order of definitions in srp_exns !!! */
 
 #define SRP_EXN_TYPE(n) ((*(srp_exns[n].pStructFuns))[0])
-#define WITH_INFO_EXN_TYPE (SRP_EXN_TYPE(0))
-#define NO_DATA_EXN_TYPE (SRP_EXN_TYPE(1))
-#define INVALID_HANDLE_EXN_TYPE (SRP_EXN_TYPE(2))
-#define ERROR_EXN_TYPE (SRP_EXN_TYPE(3))
-#define NEED_DATA_EXN_TYPE (SRP_EXN_TYPE(4))
-#define STILL_EXECUTING_EXN_TYPE (SRP_EXN_TYPE(5))
+
+#define WITH_INFO_EXN_TYPE       SRP_EXN_TYPE(0)
+#define NEED_DATA_EXN_TYPE       SRP_EXN_TYPE(1)
+#define NO_DATA_EXN_TYPE         SRP_EXN_TYPE(2)
+#define INVALID_HANDLE_EXN_TYPE  SRP_EXN_TYPE(3)
+#define ERROR_EXN_TYPE           SRP_EXN_TYPE(4)
+#define STILL_EXECUTING_EXN_TYPE SRP_EXN_TYPE(5)
 
 SRPSTRUCT srp_exns[] = {
   { "exn-with-info",&withInfoFuns,withInfoFields,sizeray(withInfoFields) },
+  { "exn-need-data",&needDataFuns,needDataFields,sizeray(needDataFields) },
   { "exn-no-data",&noDataFuns,NULL,0 },
   { "exn-invalid-handle",&invalidHandleFuns,NULL,0 },
   { "exn-error",&errorFuns,NULL,0 },
-  { "exn-need-data",&needDataFuns,NULL,0 },
   { "exn-still-executing",&stillExecutingFuns,NULL,0 },
 };

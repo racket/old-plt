@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libsndfile (ffi-lib "libsndfile.so"))
+(define libsndfile (ffi-lib "libsndfile"))
 
 ;; ==================== Types etc ====================
 

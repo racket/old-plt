@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libxosd (ffi-lib "libxosd.so"))
+(define libxosd (ffi-lib "libxosd"))
 
 ;; Use this type to properly destroy an xosd object
 (define _xosd (make-ctype (make-cpointer-type "xosd") #f

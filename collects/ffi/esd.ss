@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libesd (ffi-lib "libesd.so"))
+(define libesd (ffi-lib "libesd"))
 
 ;; Use this type to properly close the esd channel
 (define-struct esd (num))

@@ -1177,7 +1177,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_CHAR_STRINGP(val)) {
         mzchar* tmp;
         tmp = (mzchar*)(SCHEME_CHAR_STR_VAL(val));
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((mzchar**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_string_ucs_4; return tmp;
@@ -1190,7 +1190,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_CHAR_STRINGP(val)) {
         unsigned short* tmp;
         tmp = (unsigned short*)(ucs4_string_to_utf16_pointer(val));
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((unsigned short**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_string_utf_16; return tmp;
@@ -1203,7 +1203,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_FALSEP(val)||SCHEME_BYTE_STRINGP(val)) {
         char* tmp;
         tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_BYTE_STR_VAL(val));
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((char**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_bytes; return tmp;
@@ -1216,7 +1216,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_FALSEP(val)||SCHEME_PATH_STRINGP(val)) {
         char* tmp;
         tmp = (char*)(SCHEME_FALSEP(val)?NULL:SCHEME_PATH_VAL(val));
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((char**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_path; return tmp;
@@ -1229,7 +1229,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_SYMBOLP(val)) {
         char* tmp;
         tmp = (char*)(SCHEME_SYM_VAL(val));
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((char**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_symbol; return tmp;
@@ -1242,7 +1242,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (SCHEME_FFIANYPTRP(val)) {
         void* tmp;
         tmp = (void*)(SCHEME_FFIANYPTR_VAL(val));
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((void**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_pointer; return tmp;
@@ -1255,7 +1255,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (1) {
         Scheme_Object* tmp;
         tmp = (Scheme_Object*)(val);
-        if (basetype_p == NULL) {
+        if (basetype_p == NULL || tmp == NULL) {
           (((Scheme_Object**)dst)[0]) = tmp; return NULL;
         } else {
           *basetype_p = FOREIGN_scheme; return tmp;

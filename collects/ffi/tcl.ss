@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libtcl (ffi-lib "libtcl.so"))
+(define libtcl (ffi-lib "libtcl"))
 
 (define* current-interp
   (make-parameter

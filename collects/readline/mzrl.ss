@@ -2,8 +2,8 @@
 
 (require (lib "foreign.ss"))
 
-(define libtermcap  (ffi-lib "libtermcap.so")) ; needed
-(define libreadline (ffi-lib "libreadline.so"))
+(define libtermcap  (ffi-lib "libtermcap")) ; needed
+(define libreadline (ffi-lib "libreadline"))
 
 (define* readline
   (get-ffi-obj "readline" libreadline (_fun _string -> _string/eof)))

@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libwand (ffi-lib "libWand.so.6"))
+(define libwand (ffi-lib "libWand" "6.0.1"))
 
 ;; ===== Main Objects =========================================================
 
@@ -206,6 +206,8 @@
 
 ;; Used twice (PixelGetIndex/PixelSetIndex).
 (define _IndexPacket _Quantum)
+
+(define _MagickSizeType _uint64)
 
 ;; This type only needs to be created for PixelGetQuantumColor results.
 ;; (Could also define it as a macro for (_list ? _Quantum 4).)
@@ -1137,10 +1139,8 @@
   _MagickWand -> _string)
 
 ;; MagickGetImageSize returns the image size.
-;; (!!! This is probably wrong, the output should be MagickSizeType which is
-;; uint64.)
 (defmagick* MagickGetImageSize :
-  _MagickWand -> _ulong)
+  _MagickWand -> _MagickSizeType)
 
 ;; MagickGetImageType gets the image type.
 (defmagick* MagickGetImageType :

@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libcrypt (ffi-lib "libcrypt.so"))
+(define libcrypt (ffi-lib "libcrypt"))
 
 (define* crypt
   (get-ffi-obj "crypt" libcrypt (_fun _string _string -> _bytes)))

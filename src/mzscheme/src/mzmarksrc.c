@@ -49,6 +49,7 @@ toplevel_obj {
 
 cpointer_obj {
  mark:
+  gcMARK(SCHEME_PTR1_VAL((Scheme_Object *)p));
   gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));

@@ -1059,7 +1059,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
                    "    "ctype" tmp;" \\
                    "    tmp = ("ctype")("(f s->c)");")
                 (if ptr?
-                  (~ "    if (basetype_p == NULL) {" \\
+                  (~ "    if (basetype_p == NULL || tmp == NULL) {" \\
                      "      "x" = tmp; return NULL;" \\
                      "    } else {" \\
                      "      *basetype_p = FOREIGN_"cname"; return tmp;" \\

@@ -2,7 +2,7 @@
 
 (require (lib "foreign.ss"))
 
-(define libxmms (ffi-lib "libxmms.so"))
+(define libxmms (ffi-lib "libxmms"))
 
 (define* session
   (make-parameter

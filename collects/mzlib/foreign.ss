@@ -1,12 +1,11 @@
 ;; FFI Scheme interface
 
-(module ffi mzscheme
+(module foreign mzscheme
 
 (require #%foreign)
 (require-for-syntax (lib "stx.ss" "syntax"))
 
-(provide ffi-lib ctype-sizeof ctype-alignof
-         malloc end-stubborn-change
+(provide ctype-sizeof ctype-alignof malloc end-stubborn-change
          cpointer? ptr-ref ptr-set! ptr-equal?
          ctype? make-ctype make-cstruct-type register-finalizer
          make-sized-byte-string)
@@ -22,6 +21,62 @@
      (begin (provide name) (define (name . args) body ...))]
     [(_ name expr)
      (begin (provide name) (define name expr))]))
+
+;; ----------------------------------------------------------------------------
+;; Getting and setting library objects
+
+(define lib-suffix
+  (case (system-type)
+    [(unix)    "so"]
+    [(macosx)  "dylib"]
+    [(windows) "dll"]
+    [else (error 'foreign "unknown system type: ~s" (system-type))]))
+
+(provide (rename get-ffi-lib ffi-lib))
+(define (get-ffi-lib name . version)
+  (let ([version (if (pair? version) (string-append "." (car version)) "")])
+    (let loop ([name name])
+      (cond
+       [(ffi-lib? name) name]
+       [(path? name) (loop (path->string name))]
+       [(not (string? name)) (raise-type-error 'ffi-lib "library-name" name)]
+       [else (let ([name  (string-append name version)]
+                   [name* (string-append name "." lib-suffix version)])
+               (or (ffi-lib name #t)         ; try unmodified name first
+                   (ffi-lib name* #t)        ; try with platform-suffix
+                   (and (file-exists? name)  ; try a relative path
+                        (ffi-lib (build-path 'same name) #t))
+                   (and (file-exists? name*) ; relative with suffix
+                        (ffi-lib (build-path 'same name*) #t))
+                   ;; give up: call ffi-lib so it will raise an error
+                   (ffi-lib name)))]))))
+
+(define* (get-ffi-obj name lib type)
+  (let ([lib  (get-ffi-lib lib)]
+        [name (get-ffi-obj-name 'get-ffi-obj name)])
+    (ptr-ref (ffi-obj name lib) type)))
+
+;; It is important to use the set-ffi-obj! wrapper because it takes care of
+;; keeping a handle on the object -- otherwise, setting a callback hook will
+;; crash when the Scheme function is gone.
+(define* (set-ffi-obj! name lib type new)
+  (let* ([lib  (get-ffi-lib lib)]
+         [name (get-ffi-obj-name 'set-ffi-obj! name)]
+         [obj  (ffi-obj name lib)])
+    (let-values ([(new type) (get-lowlevel-object new type)])
+      (hash-table-put! ffi-objects-ref-table obj new)
+      (ptr-set! obj type new))))
+
+;; Used to convert strings and symbols to a byte-string that names an object
+(define (get-ffi-obj-name name objname)
+  (cond [(bytes? objname) objname]
+        [(symbol? objname) (get-ffi-obj-name name (symbol->string objname))]
+        [(string? objname) (string->bytes/utf-8 objname)]
+        [else (raise-type-error name "object-name" objname)]))
+
+;; This table keeps references to values that are set in foreign libraries, to
+;; avoid them being GCed.  See set-ffi-obj! above.
+(define ffi-objects-ref-table (make-hash-table))
 
 ;; ----------------------------------------------------------------------------
 ;; Function type
@@ -420,98 +475,6 @@
               post: (x => (make-sized-byte-string x n)))]))
 
 ;; ----------------------------------------------------------------------------
-;; Misc utilities
-
-;; Wrappers for retrieving and setting library values
-
-;; Used to convert strings and symbols to a byte-string that names an object
-(define (get-ffi-obj-name name objname . args)
-  (cond [(bytes? objname) objname]
-        [(symbol? objname) (get-ffi-obj-name name (symbol->string objname))]
-        [(string? objname) (string->bytes/utf-8 objname)]
-        [else (apply raise-type-error name "object-name" 0 objname args)]))
-
-(define* (get-ffi-obj name lib type)
-  (ptr-ref (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type) lib)
-           type))
-
-;; It is important to use the set-ffi-obj! wrapper because it takes care of
-;; keeping a handle on the object -- otherwise, setting a callback hook will
-;; crash when the Scheme function is gone.
-(define* (set-ffi-obj! name lib type new)
-  (let ([obj (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type new) lib)])
-    (let-values ([(new type) (get-lowlevel-object new type)])
-      (hash-table-put! ffi-objects-ref-table obj new)
-      (ptr-set! obj type new))))
-
-(define ffi-objects-ref-table (make-hash-table))
-
-;; Used by set-ffi-obj! to get the actual value so it can be kept around
-(define (get-lowlevel-object x type)
-  (let ([basetype (ctype-basetype type)])
-    (if basetype
-      (let ([s->c (ctype-scheme->c type)])
-        (get-lowlevel-object (if s->c (s->c x) x) basetype))
-      (values x type))))
-
-;; Converting Scheme lists to/from C vectors (going back requires a length)
-(define* (list->cblock l type)
-  (if (null? l)
-    #f ; null => NULL
-    (let ([cblock (malloc (length l) type)])
-      (let loop ([l l] [i 0])
-        (unless (null? l)
-          (ptr-set! cblock type i (car l))
-          (loop (cdr l) (add1 i))))
-      cblock)))
-(define* (cblock->list cblock type len)
-  (cond [(zero? len) '()]
-        [(cpointer? cblock)
-         (let loop ([i (sub1 len)] [r '()])
-           (if (< i 0)
-             r
-             (loop (sub1 i) (cons (ptr-ref cblock type i) r))))]
-        [else (error 'cblock->list
-                     "expecting a non-void pointer, got ~s" cblock)]))
-
-;; Converting Scheme vectors to/from C vectors
-(define* (vector->cblock v type)
-  (let ([len (vector-length v)])
-    (if (zero? len)
-      #f ; #() => NULL
-      (let ([cblock (malloc len type)])
-        (let loop ([i (sub1 len)])
-          (unless (< i 0)
-            (ptr-set! cblock type i (vector-ref v i))
-            (loop (add1 i))))
-        cblock))))
-(define* (cblock->vector cblock type len)
-  (cond [(zero? len) '#()]
-        [(cpointer? cblock)
-         (let ([v (make-vector len)])
-           (let loop ([i (sub1 len)])
-             (unless (< i 0)
-               (vector-set! v i (ptr-ref cblock type i))
-               (loop (sub1 i))))
-           v)]
-        [else (error 'cblock->vector
-                     "expecting a non-void pointer, got ~s" cblock)]))
-
-;; Useful for automatic definitions
-;; If a provided regexp begins with a "^" or ends with a "$", then
-;; `regexp-replace' is used, otherwise use `regexp-replace*'.
-(define* (regexp-replaces x rs)
-  (let loop ([str (if (bytes? x) (bytes->string/utf-8 x) (format "~a" x))]
-             [rs rs])
-    (if (null? rs)
-      str
-      (loop ((if (regexp-match #rx"^\\^|\\$$"
-                               (if (regexp? (caar rs))
-                                 (object-name (caar rs)) (caar rs)))
-               regexp-replace regexp-replace*)
-             (caar rs) str (cadar rs)) (cdr rs)))))
-
-;; ----------------------------------------------------------------------------
 ;; Safe raw vectors
 
 (define-struct cvector (ptr type length))
@@ -765,5 +728,73 @@
                                              0 x slot))
                          (ptr-set! x stype 'abs offset slot))
                        ...)))))]))
+
+;; ----------------------------------------------------------------------------
+;; Misc utilities
+
+;; Used by set-ffi-obj! to get the actual value so it can be kept around
+(define (get-lowlevel-object x type)
+  (let ([basetype (ctype-basetype type)])
+    (if basetype
+      (let ([s->c (ctype-scheme->c type)])
+        (get-lowlevel-object (if s->c (s->c x) x) basetype))
+      (values x type))))
+
+;; Converting Scheme lists to/from C vectors (going back requires a length)
+(define* (list->cblock l type)
+  (if (null? l)
+    #f ; null => NULL
+    (let ([cblock (malloc (length l) type)])
+      (let loop ([l l] [i 0])
+        (unless (null? l)
+          (ptr-set! cblock type i (car l))
+          (loop (cdr l) (add1 i))))
+      cblock)))
+(define* (cblock->list cblock type len)
+  (cond [(zero? len) '()]
+        [(cpointer? cblock)
+         (let loop ([i (sub1 len)] [r '()])
+           (if (< i 0)
+             r
+             (loop (sub1 i) (cons (ptr-ref cblock type i) r))))]
+        [else (error 'cblock->list
+                     "expecting a non-void pointer, got ~s" cblock)]))
+
+;; Converting Scheme vectors to/from C vectors
+(define* (vector->cblock v type)
+  (let ([len (vector-length v)])
+    (if (zero? len)
+      #f ; #() => NULL
+      (let ([cblock (malloc len type)])
+        (let loop ([i (sub1 len)])
+          (unless (< i 0)
+            (ptr-set! cblock type i (vector-ref v i))
+            (loop (add1 i))))
+        cblock))))
+(define* (cblock->vector cblock type len)
+  (cond [(zero? len) '#()]
+        [(cpointer? cblock)
+         (let ([v (make-vector len)])
+           (let loop ([i (sub1 len)])
+             (unless (< i 0)
+               (vector-set! v i (ptr-ref cblock type i))
+               (loop (sub1 i))))
+           v)]
+        [else (error 'cblock->vector
+                     "expecting a non-void pointer, got ~s" cblock)]))
+
+;; Useful for automatic definitions
+;; If a provided regexp begins with a "^" or ends with a "$", then
+;; `regexp-replace' is used, otherwise use `regexp-replace*'.
+(define* (regexp-replaces x rs)
+  (let loop ([str (if (bytes? x) (bytes->string/utf-8 x) (format "~a" x))]
+             [rs rs])
+    (if (null? rs)
+      str
+      (loop ((if (regexp-match #rx"^\\^|\\$$"
+                               (if (regexp? (caar rs))
+                                 (object-name (caar rs)) (caar rs)))
+               regexp-replace regexp-replace*)
+             (caar rs) str (cadar rs)) (cdr rs)))))
 
 )

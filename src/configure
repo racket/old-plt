@@ -5132,7 +5132,10 @@ fi
 echo "${ECHO_T}$cplusplusworks" >&6
   if test "$cplusplusworks" = "no" ; then
     MROPTIONS="$MROPTIONS -DOPERATOR_NEW_ARRAY"
+    echo "***************************************************"
     echo configure: C++ compiler/linker ${CXX} does not work
+    echo "***************************************************"
+    echo configure aborted
     exit 1
   fi
 

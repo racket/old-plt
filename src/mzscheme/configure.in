@@ -542,6 +542,18 @@ if test "${enable_mred}" = "yes" ; then
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"
   AC_LANG_CPLUSPLUS 
 
+  AC_MSG_CHECKING(whether C++ compiler works)
+  AC_TRY_RUN(int main() { return 0; }, cplusplusworks=yes, cplusplusworks=no, cplusplusworks=yes)
+  AC_MSG_RESULT($cplusplusworks) 
+  if test "$cplusplusworks" = "no" ; then
+    MROPTIONS="$MROPTIONS -DOPERATOR_NEW_ARRAY"
+    echo "***************************************************"
+    echo configure: C++ compiler/linker ${CXX} does not work
+    echo "***************************************************"
+    echo configure aborted
+    exit 1
+  fi 
+
 [ msg="whether new and new[] are different"   ]
   AC_MSG_CHECKING($msg)
   AC_TRY_RUN(
@@ -816,6 +828,7 @@ LIBS="$LIBS $EXTRALIBS"
 
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
+AC_SUBST(CXX)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(PREFLAGS)
 AC_SUBST(COMPFLAGS)

@@ -250,7 +250,7 @@ double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd
     if (theStrlen) {
       int amt;
 
-      if (!qd_spacing || (ALWAYS_USE_ATSU && (scale_x == 1.0)))
+      if (!qd_spacing || ALWAYS_USE_ATSU)
 	amt = theStrlen;
       else
 	amt = 1;
@@ -320,7 +320,7 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
     /* it's all ASCII, where MacRoman == Latin-1 */
     /* so *x is right */
   } else if (text) {
-    if (!qd_spacing || (ALWAYS_USE_ATSU && (scale_x == 1.0))) {
+    if (!qd_spacing || ALWAYS_USE_ATSU) {
       *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
 			      1, 1, 
 			      txFont, txSize, txFace,
@@ -573,8 +573,8 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 
     if (!with_start) {
       GetPen(&start);
-      start_x = start.v;
-      start_y = start.h;
+      start_x = start.h;
+      start_y = start.v;
     } else {
       start_x = (start_x * scale_x) + ddx;
       start_y = (start_y * scale_y) + ddy;
@@ -616,17 +616,26 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     
     {
       Fixed sx, sy;
-      float isx, isy;
 
-      isx = (start_x + (use_pen_delta ? (pen_delta * scale_x) : 0.0)) / scale_x;
-      isy = xOS_X_ONLY((portRect.top + (portRect.bottom - start_y)) / scale_y);
+      if (use_cgctx || with_start) {
+	float isx;
+	isx = (start_x + (use_pen_delta ? (pen_delta * scale_x) : 0.0)) / scale_x;
+	sx = FloatToFixed(isx);
+      } else {
+	sx = kATSUUseGrafPortPenLoc;
+      }
 
-      sx = (use_cgctx 
-	    ? FloatToFixed(isx) 
-	    : kATSUUseGrafPortPenLoc);
-      sy = (use_cgctx 
-	    ? FloatToFixed(isy)
-	    : kATSUUseGrafPortPenLoc);
+      if (use_cgctx) {
+	float isy;
+	isy = xOS_X_ONLY((portRect.top + (portRect.bottom - start_y)) / scale_y);
+	sy = FloatToFixed(isy);
+      } else if (with_start) {
+	float isy;
+	isy = (start_y / scale_y);
+	sy = FloatToFixed(isy);
+      } else {
+	sy = kATSUUseGrafPortPenLoc;
+      }
 
       ATSUDrawText(layout, 
 		   kATSUFromTextBeginning,

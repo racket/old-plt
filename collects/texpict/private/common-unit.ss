@@ -465,7 +465,7 @@
 		      ctl-superimpose
 		      cbl-superimpose)
 	(let ([make-superimpose 
-	       (lambda (get-h get-v get-th post-process)
+	       (lambda (get-h get-v get-th)
 		 (lambda boxes
 		   (let ([max-w (apply max (map pict-width boxes))]
 			 [max-h (apply max (map pict-height boxes))]
@@ -483,13 +483,21 @@
 							      max-a-complement (pict-ascent box))
 						      ,box))
 					    boxes))])
-		       (post-process p max-a max-d
-				     (lambda ()
-				       (andmap (lambda (b)
-						 (= (pict-height b)
-						    (+ (pict-ascent b) (pict-descent b))))
-					       boxes))
-				     boxes)))))]
+		       ;; Figure out top and bottom baselines by finding the picts again, etc:
+		       (let ([ys (map (lambda (box)
+					(let-values ([(x y) (find-lt p box)])
+					  y))
+				      boxes)])
+			 (let ([min-a (apply min (map (lambda (box y)
+							(+ (- (pict-height p) y) (pict-ascent box)))
+						      boxes ys))]
+			       [min-d (apply min (map (lambda (box y)
+							(+ (- y (pict-height box)) (pict-descent box)))
+						      boxes ys))])
+			   (make-pict (pict-draw p)
+				      (pict-width p) (pict-height p)
+				      min-a min-d
+				      (pict-children p))))))))]
 	      [norm (lambda (h a d ac dc) h)]
 	      [tbase (lambda (h a d ac dc) (+ a ac))] 
 	      [bbase (lambda (h a d ac dc) (+ d dc))] 
@@ -497,51 +505,23 @@
 	      [rt (lambda (m v . rest) (- m v))]
 	      [tline (lambda (m v md d mac a) (- mac (- v a)))]
 	      [bline (lambda (m v md d mac a) (- md d))]
-	      [c (lambda (m v . rest) (quotient* (- m v) 2))]
-	      [none (lambda (p a d one-line? boxes) p)]
-	      [preserve (lambda (p a d one-line? boxes)
-			  (if (or ((length boxes) . < . 2)
-				  (and (apply = (map pict-width boxes))
-				       (apply = (map pict-height boxes))
-				       (apply = (map pict-ascent boxes))
-				       (apply = (map pict-descent boxes))))
-			      (make-pict (pict-draw p)
-					 (pict-width p) (pict-height p)
-					 (pict-ascent (car boxes))
-					 (pict-descent (car boxes))
-					 (pict-children p))
-			      p))]
-	      [with-max-a (lambda (p a d one-line? boxes)
-			    (make-pict (pict-draw p)
-				       (pict-width p) (pict-height p)
-				       a (if (one-line?)
-					     (- (pict-height p) a)
-					     0)
-				       (pict-children p)))]
-	      [with-max-d (lambda (p a d one-line? boxes)
-			    (make-pict (pict-draw p)
-				       (pict-width p) (pict-height p)
-				       (if (one-line?)
-					   (- (pict-height p) d)
-					   0)
-				       d
-				       (pict-children p)))])
+	      [c (lambda (m v . rest) (quotient* (- m v) 2))])
 	  (values
-	   (make-superimpose lb rt norm none)
-	   (make-superimpose lb lb norm none)
-	   (make-superimpose lb c norm none)
-	   (make-superimpose lb tline tbase with-max-a)
-	   (make-superimpose lb bline bbase with-max-d)
-	   (make-superimpose rt rt norm none)
-	   (make-superimpose rt lb norm none)
-	   (make-superimpose rt c norm none)
-	   (make-superimpose rt tline tbase with-max-a)
-	   (make-superimpose rt bline bbase with-max-d)
-	   (make-superimpose c rt norm none)
-	   (make-superimpose c lb norm none)
-	   (make-superimpose c c norm preserve)
-	   (make-superimpose c tline tbase with-max-a)
-	   (make-superimpose c bline bbase with-max-d))))
+	   (make-superimpose lb rt norm)
+	   (make-superimpose lb lb norm)
+	   (make-superimpose lb c norm)
+	   (make-superimpose lb tline tbase)
+	   (make-superimpose lb bline bbase)
+	   (make-superimpose rt rt norm)
+	   (make-superimpose rt lb norm)
+	   (make-superimpose rt c norm)
+	   (make-superimpose rt tline tbase)
+	   (make-superimpose rt bline bbase)
+	   (make-superimpose c rt norm)
+	   (make-superimpose c lb norm)
+	   (make-superimpose c c norm)
+	   (make-superimpose c tline tbase)
+	   (make-superimpose c bline bbase))))
 
       (define table
 	(case-lambda

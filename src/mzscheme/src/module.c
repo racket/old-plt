@@ -45,6 +45,7 @@ static Scheme_Object *namespace_unprotect_module(int argc, Scheme_Object *argv[]
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_compiled_exports(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[]);
@@ -309,6 +310,12 @@ void scheme_init_module(Scheme_Env *env)
 						       "module-compiled-imports",
 						       1, 1,
 						       3, 3),
+			     env);
+  scheme_add_global_constant("module-compiled-exports",
+			     scheme_make_prim_w_arity2(module_compiled_exports,
+						       "module-compiled-exports",
+						       1, 1,
+						       2, 2),
 			     env);
 
   scheme_add_global_constant("module-path-index?",
@@ -1472,6 +1479,33 @@ static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
     a[2] = m->tt_requires;
     
     return scheme_values(3, a);
+  }
+
+  scheme_wrong_type("module-compiled-imports", "compiled module declaration", 0, argc, argv);
+  return NULL;
+}
+
+static Scheme_Object *module_compiled_exports(int argc, Scheme_Object *argv[])
+{
+  Scheme_Module *m;
+  Scheme_Object *a[2], *ml = scheme_null, *vl = scheme_null;
+  int i, n;
+      
+  m = scheme_extract_compiled_module(argv[0]);
+
+  if (m) {
+    n = m->num_var_provides;
+    for (i = m->num_provides - 1; i >= n; --i) {
+      ml = scheme_make_immutable_pair(m->provides[i], ml);
+    }
+    for (; i >= 0; --i) {
+      vl = scheme_make_immutable_pair(m->provides[i], vl);
+    }
+
+    a[0] = vl;
+    a[1] = ml;
+    
+    return scheme_values(2, a);
   }
 
   scheme_wrong_type("module-compiled-imports", "compiled module declaration", 0, argc, argv);

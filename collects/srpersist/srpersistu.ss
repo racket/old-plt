@@ -8,7 +8,7 @@
 	     (load-relative-extension 
 	      (string-append
 	       (build-path 
-		"compiled" "native" 
+		"lib"
 		(system-library-subpath)
 		(case (system-type)
 		  [(unix) "srpmain.so"]

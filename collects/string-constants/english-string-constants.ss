@@ -641,12 +641,10 @@
  (advanced-student "Advanced Student")
  (advanced-one-line-summary "Intermediate plus lambda and mutation")
  (full-language "Full") ;; also in the HtDP languages section
- (pretty-big-scheme "Pretty Big Scheme")
- (pretty-big-scheme-one-line-summary "Graphical, plus many standard libraries")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")
- (mred-lang-name "Graphical without debugging (MrEd)")
- (mzscheme-lang-name "Textual without debugging (MzScheme)")
+ (pretty-big-scheme "Pretty Big Scheme")
+ (pretty-big-scheme-one-line-summary "Graphical Scheme, plus many standard libraries")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, with no frills")
  (unknown-debug-frame "[unknown]")
@@ -658,9 +656,9 @@
  (files-interactions "~a's interactions") ;; filled with a filename
  (current-interactions "interactions")
  (current-definitions "definitions")
- (mzscheme-w/debug "Textual (MzScheme)")
+ (mzscheme-w/debug "Textual Scheme")
  (mzscheme-one-line-summary "PLT Scheme without the GUI library")
- (mred-w/debug "Graphical (MrEd)")
+ (mred-w/debug "Graphical Scheme")
  (mred-one-line-summary "PLT Scheme plus the GUI library")
 
  ;; profiling

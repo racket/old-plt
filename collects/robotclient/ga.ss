@@ -124,9 +124,9 @@
     (let ([board-file (string-append "boards/" board)]
           [packages-file (string-append "boards/" packages)])
       (apply (lambda (stdout stdin procid stderr utility)
-	       (printf (string-append "Starting game with players ~a on"
-				      "board ~a with package file ~a~n")
-		       players board packages)
+	       (printf (string-append "Starting game with players ~s on"
+				      "board ~s with package file ~s~n")
+		       players board-file packages-file)
 	       (flush-output (current-output-port))
 	       (let loop ((ls players) (threads '()))
 		 (cond

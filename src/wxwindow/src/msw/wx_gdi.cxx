@@ -33,6 +33,7 @@ void DeleteRegisteredGDIObject(HANDLE x);
 Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo, HPALETTE * phPal, HBITMAP * phBitmap);
 
 extern int read_JPEG_file(char *filename, wxBitmap *bm);
+extern int write_JPEG_file(char *filename, wxBitmap *bm, int quality_val);
 
 wxFont::wxFont(void)
 {
@@ -1453,7 +1454,6 @@ Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
 	return wxSaveXBM(filename, c, width, height);
 	break;
       }
-#if USE_XPM_IN_MSW
     case wxBITMAP_TYPE_XPM:
       {
 	HGDIOBJ orig = NULL;
@@ -1496,7 +1496,9 @@ Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
 
 	break;
       }
-#endif
+    case wxBITMAP_TYPE_JPEG:
+      return write_JPEG_file(filename, this, 75);
+      break;
     default:
       break;
   }

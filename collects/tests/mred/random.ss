@@ -317,8 +317,8 @@
   text%
   pasteboard%
 
-  (snip% text-snip% image-snip% editor-snip%)
-  (text-snip% tab-snip%)
+  (snip% string-snip% image-snip% editor-snip%)
+  (string-snip% tab-snip%)
   tab-snip%
   image-snip%
   editor-snip%

@@ -130,7 +130,7 @@
             [(eq? key (car args)) (loop (cdr args) (cons '() r))]
             [else (set-car! r (cons (car args) (car r)))
                   (loop (cdr args) r)])))
-  (define (filtered-map f l)
+  (define (filtmap f l)
     (let loop ([l l] [r '()])
       (if (null? l)
         (reverse! r)
@@ -141,11 +141,13 @@
      (let ([xs (map (lambda (x)
                       (syntax-case* x (-> ::) id=? [:: '::] [-> '->] [_  x]))
                     (syntax->list #'(x ...)))]
-           [inputs #f] [output #f] [pre '()] [post '()]
-           [input-names #f] [output-type #f] [output-expr #f])
-       (define (pre! x)  (set! pre  (append! pre  (list x))))
+           [inputs #f] [output #f] [bind '()] [pre '()] [post '()]
+           [input-names #f] [output-type #f] [output-expr #f]
+           [1st-arg #f] [prev-arg #f])
+       (define (bind! x) (set! bind (append! bind (list x))))
+       (define (pre!  x) (set! pre  (append! pre  (list x))))
        (define (post! x) (set! post (append! post (list x))))
-       (define (custom-type type0)
+       (define (custom-type-keys type0)
          (define stops
            (map (lambda (s) (datum->syntax-object type0 s #f))
                 '(#%app #%top #%datum)))
@@ -153,26 +155,38 @@
            (syntax-case* x (=>) id=?
              [(id => body) (identifier? #'id) (list #'id #'body)]
              [_else x]))
-         (let loop ([t (local-expand type0 'expression stops)]
-                    [empty? #t] [type #f] [pre #f] [post #f])
-           (syntax-case* t (type: pre: post:) id=?
-             [(type: t x ...)
-              (if type
-                (err "bad expansion of custom type (two type:s)" type0)
-                (loop #'(x ...) #f
-                      (syntax-case #'t () [#f #f] [_ #'t]) pre post))]
-             [(pre: p x ...)
-              (if pre
-                (err "bad expansion of custom type (two pre:s)" type0)
-                (loop #'(x ...) #f type (with-arg #'p) post))]
-             [(post: p x ...)
-              (if post
-                (err "bad expansion of custom type (two post:s)" type0)
-                (loop #'(x ...) #f type pre (with-arg #'p)))]
-             [() (and (not empty?) (list type pre post))]
-             [_else #f])))
+         (let ([keys '()])
+           (define (setkey! key val . id?)
+             (cond
+              [(assq key keys)
+               (err "bad expansion of custom type (two `~a:'s)" key type0)]
+              [(and (pair? id?) (car id?) (not (identifier? val)))
+               (err (string-append "bad expansion of custom type "
+                                   "(`~a:' expects an identifier)")
+                    key type0)]
+              [else (set! keys (cons (cons key val) keys))]))
+           (let loop ([t (local-expand type0 'expression stops)])
+             (define (next rest . args) (apply setkey! args) (loop rest))
+             (syntax-case* t (type: bind: pre: post: 1st-arg: prev-arg:) id=?
+               [(type: t x ...)
+                (next #'(x ...) 'type (syntax-case #'t () [#f #f] [_ #'t]))]
+               [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
+               [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
+               [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
+               [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
+               [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
+               [() (and (pair? keys) keys)]
+               [_else #f]))))
        (define (t-n-e clause type name expr)
-         (let ([s (custom-type type)])
+         (let ([keys (custom-type-keys type)])
+           (define (getkey key)
+             (cond [(assq key keys) => cdr] [else #f]))
+           (define (add-renamer body from to)
+             (with-syntax ([body body] [from from] [to to])
+               #'(let-syntax ([to (syntax-id-rules ()
+                                    [(_?_ . _rest_) (from . _rest_)]
+                                    [_?_ from])])
+                   body)))
            (define (arg x . no-expr?)
              (define use-expr?
                (and (list? x) (= 2 (length x)) (identifier? (car x))))
@@ -184,15 +198,33 @@
                  (err "got an expression for a custom type that do not use it"
                       clause)
                  (set! expr (void))))
-             (if use-expr?
-               #`(let ([#,(car x) #,name]) #,(cadr x))
-               x))
-           (when s
-             (set! type (car s))
-             (when (cadr  s) (pre!  #`[#,name #,(arg (cadr  s) #t)]))
-             (when (caddr s) (post! #`[#,name #,(arg (caddr s))])))
+             (set! x (if use-expr? (add-renamer (cadr x) name (car x)) x))
+             (cond [(getkey '1st) =>
+                    (lambda (v)
+                      (if 1st-arg
+                        (set! x (add-renamer x 1st-arg v))
+                        (err "got a custom type that wants 1st arg too early"
+                             clause)))])
+             (cond [(getkey 'prev) =>
+                    (lambda (v)
+                      (if prev-arg
+                        (set! x (add-renamer x prev-arg v))
+                        (err "got a custom type that wants prev arg too early"
+                             clause)))])
+             x)
+           (when keys
+             (set! type (getkey 'type))
+             (cond [(getkey 'bind) =>
+                    (lambda (x) (bind! #`[#,x #,name]))])
+             (cond [(getkey 'pre) =>
+                    (lambda (x) (pre!  #`[#,name #,(arg x #t)]))])
+             (cond [(getkey 'post) =>
+                    (lambda (x) (post! #`[#,name #,(arg x)]))]))
            (unless (or type expr)
-             (err "got ignored input, with no expression" clause))
+             (err "got ignored input with no expression" clause))
+           (when type ; remember these for later usages
+             (unless 1st-arg (set! 1st-arg name))
+             (set! prev-arg name))
            (list type name expr)))
        (let ([dd (split-by ':: xs)])
          (case (length dd)
@@ -254,43 +286,41 @@
                  [type          (t-n-e output-type #'type temp output-expr)])))
        (if (or (caddr output) input-names (ormap caddr inputs)
                (ormap (lambda (x) (not (car x))) inputs)
-               (pair? pre) (pair? post))
-         (let ([input-names (or input-names
-                                (filtered-map (lambda (i)
-                                                (and (not (caddr i)) (cadr i)))
-                                              inputs))]
-               [output-expr (let ([o (caddr output)])
-                              (or (and (not (void? o)) o)
-                                  (cadr output)))]
-               ;; if there is a string 'ffi-name property, use it as a name
-               [name (let ([n (cond [(syntax-property stx 'ffi-name)
-                                     => syntax-object->datum]
-                                    [else #f])])
-                       (if (string? n)
-                         (lambda (x)
-                           (syntax-property
-                            x 'inferred-name
-                            (string->symbol (string-append "ffi-wrapper:" n))))
-                         (lambda (x) x)))])
-           #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output)
-               (lambda (ffi)
-                 #,(name (quasisyntax/loc stx
-                           (lambda #,input-names
-                             (let* (#,@(filtered-map
-                                        (lambda (i)
-                                          (and (caddr i)
-                                               (not (void? (caddr i)))
-                                               #`[#,(cadr i) #,(caddr i)]))
-                                        inputs)
-                                    #,@pre
-                                    [#,(cadr output)
-                                     (ffi #,@(filtered-map
-                                              (lambda (x)
-                                                (and (car x) (cadr x)))
-                                              inputs))]
-                                    #,@post)
-                               #,output-expr)))))))
-         #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output))))]))
+               (pair? bind) (pair? pre) (pair? post))
+         (let* ([input-names (or input-names
+                                 (filtmap (lambda (i)
+                                            (and (not (caddr i)) (cadr i)))
+                                          inputs))]
+                [output-expr (let ([o (caddr output)])
+                               (or (and (not (void? o)) o)
+                                   (cadr output)))]
+                [args (filtmap (lambda (i) (and (caddr i)
+                                                (not (void? (caddr i)))
+                                                #`[#,(cadr i) #,(caddr i)]))
+                               inputs)]
+                [ffi-args (filtmap (lambda (x) (and (car x) (cadr x)))
+                                   inputs)]
+                ;; the actual wrapper body
+                [body (quasisyntax/loc stx
+                        (lambda #,input-names
+                          (let* (#,@args
+                                 #,@bind
+                                 #,@pre
+                                 [#,(cadr output) (ffi #,@ffi-args)]
+                                 #,@post)
+                            #,output-expr)))]
+                ;; if there is a string 'ffi-name property, use it as a name
+                [body (let ([n (cond [(syntax-property stx 'ffi-name)
+                                      => syntax-object->datum]
+                                     [else #f])])
+                        (if (string? n)
+                          (syntax-property
+                           body 'inferred-name
+                           (string->symbol (string-append "ffi-wrapper:" n)))
+                          body))])
+           #`(ffi-fun (list #,@(filtmap car inputs)) #,(car output)
+               (lambda (ffi) #,body)))
+         #`(ffi-fun (list #,@(filtmap car inputs)) #,(car output))))]))
 
 ;; ----------------------------------------------------------------------------
 ;; String types
@@ -425,15 +455,23 @@
 ;; Custom function type macros
 
 ;; These macros get expanded by the _fun type.  They can expand to a form that
-;; looks like (keyword: value ...), where the keyword is `type:' for the type
-;; that will be used, pre: for a binding that will be inserted before the ffi
-;; call, and post: for a binding after the ffi call.  These two bindings can be
-;; of the form (id => expr) to use the existing value.  Note that if the pre:
-;; expression is not (id => expr), then it means that there is no input for
-;; this argument.  Also note that if a custom type is used as an output type of
-;; a function, then only the post: code is used.  The resulting wrapper looks
-;; like:
+;; looks like (keyword: value ...), where the keyword is one of:
+;; * `type:'     for the type that will be used,
+;; * `bind:'     for an additional binding that holds the initial value,
+;; * `1st-arg:'  is used to name an identifier that will be bound to the value
+;;               of the 1st foreign argument in pre/post chunks (good for
+;;               common cases where the first argument has a special meaning,
+;;               eg, for method calls),
+;; * `prev-arg:' similar to 1st-arg: but for the previous argument,
+;; * `pre:'      for a binding that will be inserted before the ffi call,
+;; * `post:'     for a binding after the ffi call.
+;; The pre: and post: bindings can be of the form (id => expr) to use the
+;; existing value.  Note that if the pre: expression is not (id => expr), then
+;; it means that there is no input for this argument.  Also note that if a
+;; custom type is used as an output type of a function, then only the post:
+;; code is used.  The resulting wrapper looks like:
 ;;   (let* (...bindings for arguments...
+;;          ...bindings for bind: identifiers...
 ;;          ...bindings for pre-code...
 ;;          (ret-name ffi-call)
 ;;          ...bindings for post-code...)
@@ -454,15 +492,24 @@
 (define-syntax _ptr
   (syntax-rules (i o io)
     [(_ i  t) (type: _pointer
-               pre:  (x => (let ([p (malloc t)])
-                             (ptr-set! p t x) p)))]
+               pre:  (x => (let ([p (malloc t)]) (ptr-set! p t x) p)))]
     [(_ o  t) (type: _pointer
                pre:  (malloc t)
                post: (x => (ptr-ref x t)))]
     [(_ io t) (type: _pointer
-               pre:  (x => (let ([p (malloc t)])
-                             (ptr-set! p t x) p))
+               pre:  (x => (let ([p (malloc t)]) (ptr-set! p t x) p))
                post: (x => (ptr-ref x t)))]))
+
+;; (_box <type>)
+;; This is similar to a (_ptr io <type>) argument, where the input is expected
+;; to be a box, which is unboxed on entry and modified on exit.
+(provide _box)
+(define-syntax _box
+  (syntax-rules (i o io)
+    [(_ t) (type: _pointer
+            bind: tmp ; need to save the box so we can get back to it
+            pre:  (x => (let ([p (malloc t)]) (ptr-set! p t (unbox x)) p))
+            post: (x => (begin (box-set! tmp (ptr-ref x t)) tmp)))]))
 
 ;; (_list <mode> <type> [<len>])
 ;; Similar to _ptr, except that it is used for converting lists to/from C

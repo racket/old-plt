@@ -51,41 +51,14 @@
   (error 'wand-exception "an undefined error occured with ~e" w))
 
 (define-syntax _status
-  (syntax-rules ()
-    [(_ w) (type: _bool
-            post: (r => (unless r (raise-wand-exception w))))]))
+  (syntax-id-rules (_status)
+    [_status (type: _bool
+              1st-arg: 1st
+              post: (r => (unless r (raise-wand-exception 1st))))]))
 
-(define-syntax (defmagick stx)
-  ;; This is all a hack to find the bound name of the wand object so _status
-  ;; can be used with it.
-  (define (def name xs)
-    (unless (identifier? name)
-      (raise-syntax-error 'defmagic "expecting an identifier" stx name))
-    #`(define #,name
-        (get-ffi-obj '#,name libwand (_fun #,@xs))))
-  (define (sdef name args wand xs expr)
-    (unless (identifier? #'name)
-      (raise-syntax-error 'defmagic "expecting an identifier" stx name))
-    (let-values ([(wname wtype wexpr)
-                  (let ([tmp (car (generate-temporaries '(wand)))])
-                    (syntax-case wand (:)
-                      [(n : t)     (values #'n #'t  #f )]
-                      [(t = e)     (values tmp #'t  #'e)]
-                      [(n : t = e) (values #'n #'t  #'e)]
-                      [_else       (values tmp wand #f )]))])
-      (let* ([body (if wexpr
-                     #`(#,wname : #,wtype = #,wexpr)
-                     #`(#,wname : #,wtype))]
-             [body #`(#,body #,@xs -> (_status #,wname))]
-             [body (if args #`(#,args :: #,@body) body)]
-             [body (if expr #`(#,@body -> #,expr) body)])
-        (def name body))))
-  (syntax-case stx (: :: -> _status)
-    [(_ id : as :: w x ... -> _status -> o) (sdef #'id #'as #'w #'(x ...) #'o)]
-    [(_ id : as :: w x ... -> _status     ) (sdef #'id #'as #'w #'(x ...) #f )]
-    [(_ id :       w x ... -> _status -> o) (sdef #'id #f   #'w #'(x ...) #'o)]
-    [(_ id :       w x ... -> _status     ) (sdef #'id #f   #'w #'(x ...) #f )]
-    [(_ id : x ...) (def #'id #'(x ...))]))
+(define-syntax defmagick
+  (syntax-rules (:)
+    [(_ id : x ...) (define id (get-ffi-obj 'id libwand (_fun x ...)))]))
 
 (define-syntax defmagick*
   (syntax-rules ()

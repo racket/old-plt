@@ -269,11 +269,14 @@ static int last_was_option_down;
 
 /* WNE: a replacement for WaitNextEvent so we can get things like
    wheel events. */
-int WNE(EventRecord *e, double sleep_ticks)
+int WNE(EventRecord *e, double sleep_secs)
 {
+#if 0
+  return WaitNextEvent(everyEvent, e, sleep_secs * 60, NULL);
+#else
   EventRef ref;
 
-  if (noErr == ReceiveNextEvent(0, NULL, sleep_ticks, TRUE, &ref)) {
+  if (noErr == ReceiveNextEvent(0, NULL, sleep_secs, TRUE, &ref)) {
     Boolean ok, need_click = FALSE;
 
     if ((GetEventClass(ref) == kEventClassKeyboard)
@@ -318,7 +321,7 @@ int WNE(EventRecord *e, double sleep_ticks)
 	e->where.v = 20;
 	ok = TRUE;
       } else if ((GetEventClass(ref) == kEventClassMouse)
-	  && (GetEventKind(ref) == kEventMouseWheelMoved)) {
+		 && (GetEventKind(ref) == kEventMouseWheelMoved)) {
 	UInt32 modifiers;
 	EventMouseWheelAxis axis;
 	SInt32 delta;
@@ -341,6 +344,8 @@ int WNE(EventRecord *e, double sleep_ticks)
 	  e->where.v = pos.v;
 	  ok = TRUE;
 	}
+      } else {
+	SendEventToEventTarget(ref, GetEventDispatcherTarget());
       }
     }
     ReleaseEvent(ref);
@@ -358,6 +363,7 @@ int WNE(EventRecord *e, double sleep_ticks)
     return ok;
   }
   return FALSE;
+#endif
 }
 
 /* TransferQueue sucks all of the pending events out of the

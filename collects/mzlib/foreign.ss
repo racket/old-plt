@@ -142,26 +142,34 @@
 (provide (rename get-ffi-lib ffi-lib)
          ffi-lib? ffi-lib-name)
 (define (get-ffi-lib name . version)
-  (let ([version (if (pair? version) (string-append "." (car version)) "")]
-        [fullpath (lambda (p) (path->complete-path (expand-path p)))])
-    (let loop ([name name])
-      (cond
-       [(ffi-lib? name) name]
-       [(not name) (ffi-lib name)] ; #f => NULL => open this executable
-       [(path? name) (loop (path->string name))]
-       [(not (string? name)) (raise-type-error 'ffi-lib "library-name" name)]
-       [else (let ([name0 name]
-                   [name  (if (regexp-match lib-suffix-re name)
-                            (string-append name version)
-                            (string-append name "." lib-suffix version))])
-               (or (ffi-lib name #t)         ; try good name first
-                   (ffi-lib name0 #t)        ; try original
-                   (and (file-exists? name)  ; try a relative path
-                        (ffi-lib (fullpath name) #t))
-                   (and (file-exists? name0) ; relative with original
-                        (ffi-lib (fullpath name0) #t))
-                   ;; give up: call ffi-lib so it will raise an error
-                   (ffi-lib name)))]))))
+  (cond
+   [(ffi-lib? name) name]
+   [(not name) (ffi-lib name)] ; #f => NULL => open this executable
+   [(not (or (string? name) (path? name)))
+    (raise-type-error 'ffi-lib "library-name" name)]
+   [else
+    ;; A possible way that this might be misleading: say that there is a
+    ;; "foo.so" file in the current directory, which refers to some undefined
+    ;; symbol, trying to use this function with "foo.so" will try a dlopen with
+    ;; "foo.so" which isn't found, then it tries a dlopen with
+    ;; "/<curpath>/foo.so" which fails because of the undefined symbol, and
+    ;; since all fails, it will use (ffi-lib "foo.so") to raise the original
+    ;; file-not-found error.  This is because the dlopen doesn't provide a way
+    ;; to distinguish different errors (only dlerror, but that's unreliable).
+    (let* ([version (if (pair? version) (string-append "." (car version)) "")]
+           [fullpath (lambda (p) (path->complete-path (expand-path p)))]
+           [name0 (path->string (expand-path name))]     ; orig name
+           [name  (if (regexp-match lib-suffix-re name0) ; name + suffix
+                    (string-append name0 version)
+                    (string-append name0 "." lib-suffix version))])
+      (or (ffi-lib name #t)         ; try good name first
+          (ffi-lib name0 #t)        ; try original
+          (and (file-exists? name)  ; try a relative path
+               (ffi-lib (fullpath name) #t))
+          (and (file-exists? name0) ; relative with original
+               (ffi-lib (fullpath name0) #t))
+          ;; give up: call ffi-lib so it will raise an error
+          (ffi-lib name)))]))
 
 ;; These internal functions provide the functionality to be used by
 ;; get-ffi-obj, set-ffi-obj! and define-c below

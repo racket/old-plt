@@ -27,8 +27,7 @@ dynexample:
 oe:
 	$(MAKE) ../oe.so
 
-HEADERS = -I$(builddir)/../mzconfig.h \
-          $(srcdir)/../include/scheme.h $(srcdir)/../src/schemef.h \
+HEADERS = $(srcdir)/../include/scheme.h $(srcdir)/../src/schemef.h \
           $(srcdir)/../sconfig.h $(srcdir)/../uconfig.h
 
 MZDYNDEP = ../mzdyn.o $(srcdir)/../include/ext.exp $(srcdir)/../include/mzscheme.exp

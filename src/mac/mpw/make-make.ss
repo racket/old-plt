@@ -311,7 +311,6 @@
 	  "wx_dcmem.cc"
 	  "wx_print.cc"
 	  "wxMacDC.cc"
-	  "wxMacObj.cc"
 	  "wx_dcpr1.cc"
 	  "wx_rbox.cc"
 	  "wx_rbut.cc"
@@ -507,7 +506,7 @@
 	    (if debug? " -sym big" ""))
 
     (printf "\r::::MrEd \304 {OBJS}\r")
-    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}StdCRuntime.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}MrCPlusLib.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"
+    (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}StdCRuntime.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}MrCPlusLib.o\" -o ::::MrEd -c 'mReD' -m __appstart~a\r"
 	    (if debug? " -sym big" ""))
     (printf "\tRez ::cw:MrEd.r ::cw:MrEd_classic.r -o ::::MrEd -append\r")
     (when debug?

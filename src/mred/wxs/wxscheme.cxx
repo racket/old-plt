@@ -1443,7 +1443,7 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
     FInfo info;
 
 #ifndef OS_X
-    spec_ok = scheme_mac_path_to_spec(file, &spec);
+    spec_ok = scheme_mac_path_to_spec(filename, &spec);
 # else
     {
       FSRef ref;
@@ -2556,7 +2556,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
 			   global_env);
 
   scheme_install_xc_global("file-creator-and-type", 
-			   scheme_make_prim_w_arity(file_type_and_creator,
+			   scheme_make_prim_w_arity(CAST_SP file_type_and_creator,
 						    "file-creator-and-type", 
 						    1, 3), 
 			   global_env);

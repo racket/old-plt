@@ -42,9 +42,8 @@ char **scheme_mac_argv;
 
 #ifdef OS_X
 void GetStarterInfo();
-#endif
-
 extern char *wxFSRefToPath(FSRef fsref);
+#endif
 
 static char *ThisAppName(void)
 {	
@@ -273,7 +272,11 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
       files = (char **)malloc(sizeof(char *) * count);
   j = 0;
   for (i = 0; i < count; i++) {
+#ifdef OS_X
     err = AEGetNthPtr(&docList, i + 1, typeFSRef, &keywd, &retType, (Ptr)&fsref, sizeof(fsref), &size);
+#else
+    err = errAECoercionFail;
+#endif
     if (err != noErr) {
       if (err == errAECoercionFail) {
 	/* Try FSSpec: */
@@ -288,7 +291,11 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
 	fl = NULL;
       }
     } else {
+#ifdef OS_X
       fl = wxFSRefToPath(fsref);
+#else
+      fl = NULL;
+#endif
     }
 
     if (fl) {

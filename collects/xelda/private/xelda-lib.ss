@@ -55,8 +55,8 @@
   (define (check-equal-units unts sym)
     (let* ([us (map (lambda (_us)
                       (map (lambda (u)
-                             (cond ((eq? (car u) 'empty-unit)
-                                    (list 'empty-unit 1))
+                             (cond ((eq? (car u) 'empty_unit)
+                                    (list 'empty_unit 1))
                                    (else u))) _us)) unts)]
            [base-unit (first us)]
            [err-us (filter (lambda (u) (is-error-unit? u)) us)])

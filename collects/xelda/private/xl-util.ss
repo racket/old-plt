@@ -9,9 +9,27 @@
    cellref->numbers
    split-string
    in-list?
+   make-equiv-class
+   find-rep
+   union
    to-lower
    left-of
    top-of)   
+  
+  (define (make-equiv-class a) (list a))
+  
+  (define (find-rep equiv-class)
+    (let ([rep (last-pair equiv-class)])
+      (when (not (eq? equiv-class rep))
+        (set-cdr! equiv-class rep))
+      rep))
+  
+  (define (union equiv-class1 equiv-class2)
+    (let ([rep1 (find-rep equiv-class1)]
+          [rep2 (find-rep equiv-class2)])
+      (unless (eq? rep1 rep2)
+        (set-cdr! rep2 rep1))
+      rep1))
   
   (define (in-list? e l)
     (cond [(empty? l) #f]

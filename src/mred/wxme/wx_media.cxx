@@ -241,41 +241,40 @@ wxMediaBuffer *wxMediaEdit::CopySelf(void)
     m->SetTabs(t, tabcount, tabSpace, tabSpaceInUnits);
   }
 
-  /* Copy style list */
-  m->styleList->Copy(styleList);
+  CopySelfTo(m);
 
-  /* Copy all the snips: */
-  wxList *saveBuffer = wxmb_commonCopyBuffer, *copySnips;
-  wxList *saveBuffer2 = wxmb_commonCopyBuffer2, *copySnips2;
-  wxStyleList *saveStyles = wxmb_copyStyleList;
-  wxBufferData *saveData = wxmb_commonCopyRegionData;
+  m->SetFileFormat(GetFileFormat());
 
-  wxmb_commonCopyBuffer = copySnips = new wxList();
-  wxmb_commonCopyBuffer2 = copySnips2 = new wxList();
-  wxmb_copyStyleList = NULL;
-  wxmb_commonCopyRegionData = NULL;
-  Copy(FALSE, 0, 0, len);
-  wxmb_commonCopyBuffer = saveBuffer;
-  wxmb_commonCopyBuffer2 = saveBuffer2;
-  wxmb_copyStyleList = saveStyles;
-  wxmb_commonCopyRegionData = saveData;
+  m->SetWordbreakFunc(wordBreak, wordBreakData);
+  m->SetWordbreakMap(GetWordbreakMap());
+  m->SetBetweenThreshold(GetBetweenThreshold());
+  m->HideCaret(CaretHidden());
+  m->SetOverwriteMode(GetOverwriteMode());
 
-  wxNode *node;
-  BeginEditSequence();
-
-  for (node = copySnips->First(); node; node = node->Next())
-    m->Insert((wxSnip *)node->Data());
-
-  EndEditSequence();
-
-  /* Don't delete the snips themselves, though */
-  delete copySnips;
-  delete copySnips2;
-
-  m->SizeCacheInvalid();
+  m->SetAutowrapBitmap(autoWrapBitmap);
 
   /* All done! */
   return m;
+}
+
+void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
+{
+  wxMediaEdit *m;
+
+  if (b->bufferType != wxEDIT_BUFFER)
+	return;
+  m = (wxMediaEdit *)b;
+
+  /* Copy parameters, such as tab settings: */
+  if (tabs) {
+    float *t;
+
+    t = new float[tabcount];
+    memcpy(t, tabs, sizeof(float) * tabcount);
+    m->SetTabs(t, tabcount, tabSpace, tabSpaceInUnits);
+  }
+
+  wxMediaBuffer::CopySelfTo(m);
 }
 
 /******************************************************************/

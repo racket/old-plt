@@ -1520,6 +1520,7 @@ class wxMediaPrintout : public wxPrintout
 private:
   wxMediaBuffer *b;
   void *data;
+
   Bool fitToPage;
 
 public:
@@ -1776,6 +1777,8 @@ wxList *wxmb_commonCopyBuffer2 = NULL;
 wxStyleList *wxmb_copyStyleList = NULL;
 wxBufferData *wxmb_commonCopyRegionData = NULL;
 
+static int copyingSelf;
+
 static void InitCutNPaste()
 {
   if (!copyRing) {
@@ -1900,10 +1903,12 @@ void wxMediaBuffer::InstallCopyBuffer(long time, wxStyleList *sl)
   wxmb_copyStyleList = sl;
   wxmb_copyStyleList->AdjustUsage(TRUE);
 
+  if (copyingSelf != copyDepth) {
 #if ALLOW_X_STYLE_SELECTION
-  if (!xClipboardHack)
+    if (!xClipboardHack)
 #endif
-    wxTheClipboard->SetClipboardClient(&TheMediaClipboardClient, time);
+      wxTheClipboard->SetClipboardClient(&TheMediaClipboardClient, time);
+  }
 }
 
 void wxMediaBuffer::DoBufferPaste(long time, Bool local)
@@ -1959,6 +1964,93 @@ wxMediaClipboardClient::wxMediaClipboardClient()
 {
   formats.Add("TEXT");
   formats.Add("WXME");
+}
+
+void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
+{
+  /* Copy style list */
+  m->styleList->Copy(styleList);
+
+  /* Copy all the snips: */
+  wxList *saveBuffer = wxmb_commonCopyBuffer, *copySnips;
+  wxList *saveBuffer2 = wxmb_commonCopyBuffer2, *copySnips2;
+  wxStyleList *saveStyles = wxmb_copyStyleList;
+  wxBufferData *saveData = wxmb_commonCopyRegionData;
+  int save_cs = copyingSelf;
+
+  m->BeginEditSequence();
+
+  wxmb_commonCopyBuffer = copySnips = new wxList();
+  wxmb_commonCopyBuffer2 = copySnips2 = new wxList();
+  wxmb_copyStyleList = NULL;
+  wxmb_commonCopyRegionData = NULL;
+  copyingSelf = copyDepth + 1;
+  if (bufferType == wxEDIT_BUFFER) {
+    wxMediaEdit *e = (wxMediaEdit *)this;
+    e->Copy(TRUE, 0, 0, e->LastPosition());
+  } else {
+	wxMediaPasteboard *pb = (wxMediaPasteboard *)this;
+	wxSnip *s;
+	wxNode *n;
+	wxList *unselect = new wxList();
+
+	BeginEditSequence();
+    for (s = pb->FindFirstSnip(); s; s = s->Next()) {
+      if (!pb->IsSelected(s)) {
+        pb->AddSelected(s);
+        unselect->Append(s);
+	  }
+	}
+    pb->Copy(TRUE, 0);
+	for (n = unselect->First(); n; n = n->Next())
+	 pb->RemoveSelected((wxSnip *)n->Data());
+    EndEditSequence();
+  }
+  wxmb_commonCopyBuffer = saveBuffer;
+  wxmb_commonCopyBuffer2 = saveBuffer2;
+  wxmb_copyStyleList = saveStyles;
+  wxmb_commonCopyRegionData = saveData;
+  copyingSelf = save_cs;
+
+  wxNode *node, *node2;
+
+  node = copySnips->First();
+  node2 = copySnips2->First();
+  for (; node; node = node->Next(), node2 = node2->Next()) {
+	wxSnip *s = (wxSnip *)node->Data();
+	if (m->bufferType == wxEDIT_BUFFER)
+	  m->Insert(s);
+	else {
+      wxMediaPasteboard *pb = (wxMediaPasteboard *)m;
+	  pb->Insert(s, s); /* before itself -> at end */
+	}
+    m->SetSnipData(s, (wxBufferData *)node2->Data());
+  }
+
+  /* Don't delete the snips themselves, though */
+  delete copySnips;
+  delete copySnips2;
+
+  m->SizeCacheInvalid();
+
+  m->SetMinWidth(GetMinWidth());
+  m->SetMaxWidth(GetMaxWidth());
+  m->SetMinHeight(GetMinHeight());
+  m->SetMaxHeight(GetMaxHeight());
+ 
+  Bool t;
+  char *f;
+  f = GetFilename(&t);
+  m->SetFilename(f, t);
+
+  m->SetMaxUndoHistory(GetMaxUndoHistory());
+
+  m->SetKeymap(GetKeymap());
+
+  m->SetInactiveCaretThreshold(GetInactiveCaretThreshold());
+  m->SetLoadOverwritesStyles(GetLoadOverwritesStyles());
+
+  m->EndEditSequence();
 }
 
 char *wxMediaClipboardClient::GetData(char *format, long *size)

@@ -2027,9 +2027,25 @@ wxMediaBuffer *wxMediaPasteboard::CopySelf(void)
 
   pb = new wxMediaPasteboard();
 
+  CopySelfTo(pb);
+
   return pb;
 }
 
+void wxMediaPasteboard::CopySelfTo(wxMediaBuffer *b)
+{
+  wxMediaPasteboard *pb;
+
+  if (b->bufferType != wxPASTEBOARD_BUFFER)
+	return;
+  pb = (wxMediaPasteboard *)b;
+
+  wxMediaBuffer::CopySelfTo(pb);
+
+  pb->SetDragable(GetDragable());
+  pb->SetSelectionVisible(GetSelectionVisible());
+  pb->SetScrollStep(GetScrollStep());
+}
 
 float wxMediaPasteboard::GetDescent(void)
 {
@@ -2120,7 +2136,7 @@ void wxMediaPasteboard::Cut(Bool extend, long time)
 
 void wxMediaPasteboard::DoCopy(long time, Bool extend)
 {
-  wxSnip *asnip;
+  wxSnip *snip, *asnip;
   wxNode *node;
   wxSnipLocation *loc;
   wxStyleList *sl;
@@ -2128,11 +2144,11 @@ void wxMediaPasteboard::DoCopy(long time, Bool extend)
   wxmb_commonCopyRegionData = NULL;
 
   sl = (extend && wxmb_copyStyleList) ? wxmb_copyStyleList : styleList;
-
-  for (node = snipLocationList->First(); node; node = node->Next()) {
-    loc = (wxSnipLocation *)node->Data();
+  
+  for (snip = snips; snip; snip = snip->Next()) {
+    loc = SnipLoc(snip);
     if (loc->selected) {
-      asnip = loc->snip->Copy();
+      asnip = snip->Copy();
       asnip->SetAdmin(NULL);
       asnip->style = sl->Convert(asnip->style);  
       wxmb_commonCopyBuffer->Append(asnip);
@@ -2221,7 +2237,7 @@ void wxMediaPasteboard::Paste(long time)
 
 void wxMediaPasteboard::InsertPasteSnip(wxSnip *snip, wxBufferData *data)
 {
-  Insert(snip);
+  Insert(snip, snip);
   SetSnipData(snip, data);
 }
 

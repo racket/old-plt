@@ -147,7 +147,7 @@
 	   [compatible-space2 (make-object mred:vertical-panel% language-choice-panel)]
            [compatible-with-student-languages
 	    (make-object mred:check-box%
-	      "Compatible with student languages?" language-choice-panel
+	      "Compatible with student languages" language-choice-panel
 	      (lambda xxx
 		(let ([v (send compatible-with-student-languages get-value)])
 		  (basis:set-setting-teaching-primitives-and-syntax?! settings v)

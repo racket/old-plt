@@ -34,30 +34,26 @@
 
   (define real-time current-milliseconds)
 
-  (define getprop (void))
-  (define putprop (void))
-  (let ([table (make-hash-table)])
-    (letrec ([gp
-	      (case-lambda
-	       [(k prop) (gp k prop #f)]
-	       [(k prop def)
-		(let ([al (hash-table-get table k (lambda () #f))])
-		  (if al
-		      (let ([v (assq prop al)])
-			(if v
-			    (cdr v)
-			    def))
-		      def))])]
-	     [pp
-	      (lambda (k prop nv)
-		(let ([al (hash-table-get table k (lambda () '()))])
-		  (let ([v (assq prop al)])
-		    (if v
-			(set-cdr! v nv)
-			(hash-table-put! table k (cons (cons prop nv) al))))))])
-      (set! getprop gp)
-      (set! putprop pp)))
-  
+  (define table (make-hash-table))
+  (define getprop
+    (case-lambda
+     [(k prop) (getprop k prop #f)]
+     [(k prop def)
+      (let ([al (hash-table-get table k (lambda () #f))])
+	(if al
+	    (let ([v (assq prop al)])
+	      (if v
+		  (cdr v)
+		  def))
+	    def))]))
+  (define putprop
+    (lambda (k prop nv)
+      (let ([al (hash-table-get table k (lambda () '()))])
+	(let ([v (assq prop al)])
+	  (if v
+	      (set-cdr! v nv)
+	      (hash-table-put! table k (cons (cons prop nv) al)))))))
+
   ;; Chez's new-cafe
   (define new-cafe 
     (letrec ([nc

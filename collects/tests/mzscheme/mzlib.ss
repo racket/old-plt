@@ -8,6 +8,8 @@
 
 (load-relative "date.ss")
 
+(load-relative "compat.ss")
+
 (load-relative "cmdline.ss")
 
 (load-relative "pconvert.ss")

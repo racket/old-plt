@@ -1439,7 +1439,11 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
  check_top:
   *current_val = NULL;
 
-  name = SCHEME_STX_CAR(first);
+  if (SCHEME_STX_PAIRP(first))
+    name = SCHEME_STX_CAR(first);
+  else
+    name= first;
+
   if (!SCHEME_STX_SYMBOLP(name))
     return first;
 
@@ -1453,7 +1457,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 				  ? SCHEME_RESOLVE_MODIDS
 				  : 0));
 
-  *current_val = val;
+  if (SCHEME_STX_PAIRP(first))
+    *current_val = val;
 
   if (!val) {
     return first;
@@ -1461,52 +1466,6 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
     /* Yep, it's a macro; expand once */
     first = scheme_expand_expr(first, env, 1, boundname);
   } else {
-#if 0
-    if (SAME_OBJ(val, scheme_define_values_syntax)) {
-      /* Check the form of the definition: can't shadow syntax bindings. */
-      /* Only check identifier if the definition is well-formed. */
-      Scheme_Object *binding, *rest;
-      rest = SCHEME_STX_CDR(first);
-      if (SCHEME_STX_PAIRP(rest)) {
-	binding = SCHEME_STX_CAR(rest);
-	rest = SCHEME_STX_CDR(rest);
-	if (SCHEME_STX_PAIRP(rest) && SCHEME_NULLP(SCHEME_STX_CDR(rest))) {
-	  if (SCHEME_STX_SYMBOLP(binding)) {
-	    /* Binding part is ok */
-	  } else if (SCHEME_STX_PAIRP(binding)) {
-	    rest = SCHEME_STX_CDR(binding);
-	    binding = SCHEME_STX_CAR(binding);
-	    while (SCHEME_STX_PAIRP(rest)) {
-	      if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(rest)))
-		break;
-	      rest = SCHEME_STX_CDR(rest);
-	    }
-	    if (!SCHEME_STX_NULLP(rest) && !SCHEME_STX_SYMBOLP(rest))
-	      binding = NULL;
-	  } else
-	    binding = NULL;
-	  
-	  if (binding) {
-	    /* Check binding id for shadowing syntax */
-	    Scheme_Object *sdval;
-	    sdval = scheme_static_distance(binding, env, 
-					   SCHEME_NULL_FOR_UNBOUND
-					   + SCHEME_DONT_MARK_USE 
-					   + SCHEME_ENV_CONSTANTS_OK);
-	    if (sdval
-		&& (SAME_TYPE(SCHEME_TYPE(sdval), scheme_macro_type)
-		    || SAME_TYPE(SCHEME_TYPE(sdval), scheme_syntax_compiler_type))) {
-	      scheme_wrong_syntax("define-values (in unit or internal)",
-				  binding, orig,
-				  "unit/internal binding cannot shadow syntax names");
-	      return NULL;
-	    }
-	  }
-	}
-      }
-    }
-#endif
-
     return first;
   }
 
@@ -1816,7 +1775,9 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
   } else if (rec) {
     Scheme_Object *name;
     name = SCHEME_STX_CAR(form);
-    /* look for ((lambda (x) ...) ...) */
+    /* look for ((lambda (x) ...) ...); */
+    /* rator as a macro has to be a parenthesized expr, otherwise the
+       parens for application would have been the macro call. */
     if (SCHEME_STX_PAIRP(name) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(name))) {
       Scheme_Object *gval, *origname = name;
 
@@ -2051,8 +2012,9 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
   first = SCHEME_STX_CAR(forms);
 
-  if (SCHEME_STX_PAIRP(first)) {
-    Scheme_Object *name, *gval, *result;
+  {
+    Scheme_Object *gval, *result;
+    int more = 1;
 
     result = forms;
 
@@ -2060,7 +2022,6 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
        define-values, define-syntax, etc.: */
     first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
 
-    name = SCHEME_STX_PAIRP(first) ? SCHEME_STX_CAR(first) : scheme_void;
     if (SAME_OBJ(gval, scheme_begin_syntax)) {
       /* Inline content */
       Scheme_Object *orig_forms = forms;
@@ -2123,30 +2084,27 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       define_try_again:
 	if (!SCHEME_STX_NULLP(result)) {
 	  first = SCHEME_STX_CAR(result);
-	  if (SCHEME_STX_PAIRP(first)) {
-	    first = scheme_datum_to_syntax(first, forms, forms, 0, 0);
-	    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
-	    name = SCHEME_STX_CAR(first);
-	    if ((values && NOT_SAME_OBJ(gval, scheme_define_values_syntax))
-		|| (!values && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax))) {
-	      if (SAME_OBJ(gval, scheme_begin_syntax)) {
-		/* Inline content */
-		Scheme_Object *content;
+	  first = scheme_datum_to_syntax(first, forms, forms, 0, 0);
+	  first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
+	  more = 1;
+	  if ((values && NOT_SAME_OBJ(gval, scheme_define_values_syntax))
+	      || (!values && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax))) {
+	    if (SAME_OBJ(gval, scheme_begin_syntax)) {
+	      /* Inline content */
+	      Scheme_Object *content;
 
-		content = SCHEME_STX_CDR(first);
+	      content = SCHEME_STX_CDR(first);
 		
-		if (scheme_stx_proper_list_length(content) < 0)
-		  scheme_wrong_syntax("begin", NULL, first, 
-				      "bad syntax (" IMPROPER_LIST_FORM ")");
+	      if (scheme_stx_proper_list_length(content) < 0)
+		scheme_wrong_syntax("begin", NULL, first, 
+				    "bad syntax (" IMPROPER_LIST_FORM ")");
 		
-		result = scheme_append(scheme_flatten_syntax_list(content, NULL), 
-				       SCHEME_CDR(result));
-		goto define_try_again;
-	      } else
-		break;
-	    }
-	  } else
-	    break;
+	      result = scheme_append(scheme_flatten_syntax_list(content, NULL), 
+				     SCHEME_CDR(result));
+	      goto define_try_again;
+	    } else
+	      break;
+	  }
 	} else
 	  break;
       }
@@ -2156,7 +2114,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 				  scheme_make_immutable_pair(start, result));
 	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps(env), 0, 1);
 
-	name = NULL;
+	more = 0;
       } else {
 	/* Empty body: illegal. */
 	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
@@ -2164,7 +2122,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       }
     }
 
-    if (!name) {
+    if (!more) {
       if (rec)
 	result = scheme_compile_expr(result, env, rec, drec);
       else {

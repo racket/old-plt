@@ -1820,11 +1820,6 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
   Scheme_Compiled_Let_Value *last = NULL, *lv;
   DupCheckRecord r;
 
-#if 1
-  if (!SCHEME_STXP(form))
-    scheme_signal_error("not syntax: %V", form );
-#endif
-
   if (scheme_stx_proper_list_length(form) < 3)
     scheme_wrong_syntax(formname, NULL, form, NULL);
 
@@ -2408,28 +2403,20 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
 				       Scheme_Comp_Env *env, 
 				       Scheme_Compile_Info *rec, int drec)
 {
-#if 1
-  if (!SCHEME_STXP(forms))
-    scheme_signal_error("not syntax: %V", forms);
-#endif
-
   if (SCHEME_STX_PAIRP(forms) && SCHEME_STX_NULLP(SCHEME_STX_CDR(forms))) {
     /* If it's a begin, we have to check some more... */
     Scheme_Object *first, *val;
 
     first = SCHEME_STX_CAR(forms);
+    first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, &val);
 
-    if (SCHEME_STX_PAIRP(first)) {
-      first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, &val);
-      
-      if (SAME_OBJ(val, scheme_begin_syntax)) {
-	/* Flatten begin: */
-	Scheme_Object *rest;
-	rest = SCHEME_STX_CDR(first);
-	if (scheme_stx_proper_list_length(rest) > 0) {
-	  first = scheme_datum_to_syntax(rest, first, first, 0, 1);
-	  return scheme_compile_sequence(first, env, rec, drec);
-	}
+    if (SAME_OBJ(val, scheme_begin_syntax) && SCHEME_STX_PAIRP(first)) {      
+      /* Flatten begin: */
+      Scheme_Object *rest;
+      rest = SCHEME_STX_CDR(first);
+      if (scheme_stx_proper_list_length(rest) > 0) {
+	first = scheme_datum_to_syntax(rest, first, first, 0, 1);
+	return scheme_compile_sequence(first, env, rec, drec);
       }
     }
 

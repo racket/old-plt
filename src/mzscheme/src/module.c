@@ -72,6 +72,8 @@ static void eval_defmacro(Scheme_Object *names, int count,
 
 #define cons scheme_make_pair
 
+static Scheme_Object *modbeg_syntax;
+
 static Scheme_Object *kernel_symbol;
 static Scheme_Module *kernel;
 
@@ -133,11 +135,15 @@ void scheme_init_module(Scheme_Env *env)
 
   scheme_add_global_keyword("module", 
 			    scheme_make_compiled_syntax(module_syntax, 
-							module_expand), 
+							module_expand),
 			    env);
+
+  REGISTER_SO(modbeg_syntax);
+  modbeg_syntax = scheme_make_compiled_syntax(module_begin_syntax, 
+					      module_begin_expand);
+
   scheme_add_global_keyword("#%module-begin", 
-			    scheme_make_compiled_syntax(module_begin_syntax, 
-							module_begin_expand), 
+			    modbeg_syntax,
 			    env);
 
   scheme_add_global_keyword("require", 
@@ -1494,11 +1500,12 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 				Scheme_Compile_Info *rec, int drec,
 				int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *fm, *nm, *ii, *mb, *rn, *et_rn, *iidx, *self_modidx;
+  Scheme_Object *fm, *nm, *ii, *rn, *et_rn, *iidx, *self_modidx;
   Scheme_Module *iim;
   Scheme_Env *menv;
   Scheme_Module *m;
-  int saw_mb;
+  Scheme_Object *mbval;
+  int saw_mb, check_mb = 0;
 
   if (!scheme_is_toplevel(env))
     scheme_wrong_syntax("module", NULL, form, "illegal use (not at top-level)");
@@ -1555,18 +1562,11 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     prevent_cyclic_requires(iim, m->modname, menv);
   }
 
-  /* Expand the body of the module via `#%module-begin' */
-  fm = scheme_make_pair(module_begin_symbol, fm);
-
   rn = scheme_make_module_rename(0, 0);
   et_rn = scheme_make_module_rename(1, 0);
 
   menv->rename = rn;
   menv->et_rename = et_rn;
-
-  fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
-  fm = scheme_add_rename(fm, rn);
-  fm = scheme_add_rename(fm, et_rn);
 
   /* For each (direct) provide in iim, add a module rename to fm */
   if (SAME_OBJ(iim, kernel)) {
@@ -1597,7 +1597,36 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
-  if (!saw_mb) {
+  /* If fm isn't a single expression, it certainly needs a
+     `#%module-begin': */
+  if (SCHEME_PAIRP(fm) && SCHEME_STX_NULLP(SCHEME_STX_CDR(fm))) {
+    /* Perhaps expandable... */
+    fm = SCHEME_STX_CAR(fm);
+  } else {
+    fm = scheme_make_pair(module_begin_symbol, fm);
+    check_mb = 1;
+  }
+
+  fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
+  fm = scheme_add_rename(fm, rn);
+  fm = scheme_add_rename(fm, et_rn);
+
+  if (!check_mb) {
+    fm = scheme_check_immediate_macro(fm, env, rec, drec, depth, scheme_false, &mbval);
+
+    /* If expansion is not the primitive `#%module-begin', add local one: */
+    if (!SAME_OBJ(mbval, modbeg_syntax)) {
+      Scheme_Object *mb;
+      mb = scheme_datum_to_syntax(module_begin_symbol, form, form, 0, 1);
+      mb = scheme_add_rename(mb, rn);
+      mb = scheme_add_rename(mb, et_rn);
+      fm = scheme_make_pair(mb, fm);
+      fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
+      check_mb = 1;
+    }
+  }
+
+  if (check_mb && !saw_mb) {
     scheme_wrong_syntax("module", NULL, form, 
 			"no #%%module-begin binding in the module's language");
   }
@@ -1615,25 +1644,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   } else {
     fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
 
-    if (!SCHEME_STX_PAIRP(fm))
-      scheme_wrong_syntax("module", fm, form, "expanded body was not a #%%module-begin expression");
-    
-    mb = SCHEME_STX_CAR(fm);
-
-    if (!SCHEME_STX_SYMBOLP(mb)
-	|| !SAME_OBJ(module_begin_symbol, SCHEME_STX_VAL(mb)))
-      scheme_wrong_syntax("module", fm, form, "expanded body was not a #%%module-begin expression");
-    else if (scheme_stx_proper_list_length(fm) < 0)
-      scheme_wrong_syntax("module", fm, form, "expanded body was an ill-formed #%%module-begin expression");
-    
-    fm = SCHEME_STX_CDR(fm);
-    if (SCHEME_STXP(fm))
-      fm = SCHEME_STX_VAL(fm);
-
     fm = cons(module_symbol,
 	      cons(nm,
-		   cons(ii,
-			scheme_datum_to_syntax(fm, form, mb, 0, 0))));
+		   cons(ii, cons(fm, scheme_null))));
 
     fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
     
@@ -1967,7 +1980,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 
 	  if (rec)
-	    e = scheme_compiled_void();
+	    e = NULL;
 	  else {
 	    m = SCHEME_STX_CDR(e);
 	    m = SCHEME_STX_CAR(m);
@@ -2004,7 +2017,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 
 	  if (rec)
-	    e = scheme_compiled_void();
+	    e = NULL;
 	  normal = 0;
 	} else if (scheme_stx_module_eq(require_for_syntax_stx, fst, 0)) {	
 	  /************ require-for-syntax *************/
@@ -2039,7 +2052,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 
 	  if (rec)
-	    e = scheme_compiled_void();
+	    e = NULL;
 	  normal = 0;
 	} else if (scheme_stx_module_eq(provide_stx, fst, 0)) {
 	  /************ provide *************/
@@ -2184,7 +2197,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 
 	  if (rec)
-	    e = scheme_compiled_void();
+	    e = NULL;
 	  normal = 0;
 	} else
 	  normal = 1;
@@ -2193,12 +2206,14 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     } else
       normal = 1;
 
-    p = scheme_make_pair(scheme_make_pair(e, normal ? scheme_true : scheme_false), scheme_null);
-    if (last)
-      SCHEME_CDR(last) = p;
-    else
-      first = p;
-    last = p;
+    if (e) {
+      p = scheme_make_pair(scheme_make_pair(e, normal ? scheme_true : scheme_false), scheme_null);
+      if (last)
+	SCHEME_CDR(last) = p;
+      else
+	first = p;
+      last = p;
+    }
 
     if (normal)
       num_to_compile++;
@@ -2345,9 +2360,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     else
       exclude_hint = scheme_false;
   }
-  /* If reprovide_kernel is non-zero, we re-provideing all of it */
+  /* If reprovide_kernel is non-zero, we re-provide all of it */
 
-  /* Compute all provides */
+  /* Compute provide arrays */
   {
     int i, count;
     
@@ -2435,7 +2450,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     excount = count;
   }
 
-  /* Compute indirect provides: */
+  /* Compute indirect provides (which is everything at the top-level): */
   {
     int i, count, j;
     Scheme_Bucket **bs, *b;

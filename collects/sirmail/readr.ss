@@ -1609,21 +1609,38 @@
 	  (horiz-margin 2)
 	  (vert-margin 2)
           (stretchable-width #f)))
-      (define-values (show-new-mail-msg hide-new-mail-msg disconnected-msg)
+      
+      (define-values (show-new-mail-msg hide-new-mail-msg disconnected-msg enqueued-msg)
 	(let* ([orig-font (send disable-button-panel get-label-font)]
                [font (make-object font% (send orig-font get-point-size) 'system 'normal 'bold)])
 	  (send disable-button-panel set-label-font font)
 	  (let ([spacer (make-object message% "  " disable-button-panel)]
                 [m (make-object new-mail-message% font disable-button-panel)]
-		[d (make-object message% "Disconnected" disable-button-panel)])
+		[d (make-object message% "Disconnected" disable-button-panel)]
+                [e-msg (new message% (label "Mail Enqueued") (parent disable-button-panel))])
 	    (send disable-button-panel set-label-font font)
 	    (send m show #f)
+            (send e-msg show #f)
 	    (values (lambda () 
                       (send m set-message (length mailbox))
                       (send m show #t))
                     (lambda () (send m show #f))
-                    d))))
-              
+                    d
+                    e-msg))))
+      
+      (thread
+       (lambda ()
+         (let loop ()
+           (unless (and (object? main-frame)
+                        (send main-frame is-shown?)
+                        (procedure? enqueued-messages?))
+             (sleep 1/2)
+             (loop)))
+         (let loop ()
+           (when (send main-frame is-shown?)
+             (send enqueued-msg show (enqueued-messages?))
+             (sleep 1/2)
+             (loop)))))
 
       ;; Optional GC icon (lots of work for this little thing!)
       (when (get-pref 'sirmail:show-gc-icon)
@@ -2049,16 +2066,6 @@
       ;; returns true if there are messages to send
       (define (enqueued-messages?)
 	(not (= 0 (length (directory-list queue-directory)))))
-
-      ;; ask-about-queued-messages : -> void
-      (define (ask-about-queued-messages)
-	(when (enqueued-messages?)
-	  (let ([answer (confirm-box
-			 "SirMail"
-			 "Send Queued Messages?"
-			 #f)])
-	    (when (eq? 'yes answer)
-	      (send-queued-messages)))))
 
       ;; send-queued-messsages : -> void
       ;; sends the files queued in `queue-directory'
@@ -2763,7 +2770,4 @@
                     (loop eou-pos)))))))
         (hilite-urls/prefix "http:")
         (hilite-urls/prefix "https:")
-        (hilite-urls/prefix "ftp:"))
-
-      ;;; main init stuff (at least some of it)
-      (ask-about-queued-messages))))
+        (hilite-urls/prefix "ftp:")))))

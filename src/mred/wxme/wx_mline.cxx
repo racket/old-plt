@@ -1127,7 +1127,7 @@ wxMediaLine *wxMediaLine::Last()
 
 float wxMediaLine::GetLeftLocation(float maxWidth)
 {
-  int left;
+  float left;
   wxMediaParagraph *para;
 
   if (flags & WXLINE_STARTS_PARA) {

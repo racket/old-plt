@@ -31,10 +31,6 @@ class wxMediaFlashTimer : public wxTimer
   void Notify(void);
 };
 
-#if VERSION_F
 #include "wx_clipb.h"
-#else
-#include "wx_gclip.h"
-#endif
 
 #include "wx_ptreq.h"

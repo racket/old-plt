@@ -29,7 +29,6 @@ static const char eHOSTNAME[]  = "HostName";
 static const char eUSERID[]    = "UserId";
 static const char eUSERNAME[]  = "UserName";
 
-
 // For the following functions we SHOULD fill in support
 // for Windows-NT (which I don't know) as I assume it begin
 // a POSIX Unix (so claims MS) that it has some special
@@ -226,19 +225,48 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
 #undef TRY_HKEY
 
   if (key) {
-    long rlen;
-    
+    int key_needs_close = 0, elen, sep_pos, success = 0;
+    unsigned long rlen;
+
+    /* Split the value name from the registry entry: */
+    elen = strlen(entry);
+    for (sep_pos = elen - 1; (sep_pos >= 0) && (entry[sep_pos] != '\\'); sep_pos -= 1) {
+    }
+    if (sep_pos >= 0) {
+      HKEY hKey;
+      char *new_entry;
+
+      new_entry = new char[sep_pos + 1];
+      memcpy(new_entry, entry, sep_pos);
+      new_entry[sep_pos] = 0;
+      
+      /* Get a key for the entry: */
+      if (RegOpenKeyEx(key, new_entry, 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS) {
+	key = hKey;
+	key_needs_close = 1;
+      } else
+	return FALSE;
+      /* name starts after the separator */
+      sep_pos++;
+    } else
+      sep_pos = 0;
+
+    /* Get the value. Start by finding out how big it is: */
     rlen = 0;
-    if (RegQueryValue(key, entry, NULL, &rlen) == ERROR_SUCCESS) {
+    if (RegQueryValueEx(key, entry + sep_pos, NULL, NULL, NULL, &rlen) == ERROR_SUCCESS) {
       char *res;
       res = new char[rlen + 1];
-      if (RegQueryValue(key, entry, res, &rlen) == ERROR_SUCCESS) {
+      if (RegQueryValueEx(key, entry + sep_pos, NULL, NULL, (unsigned char *)res, &rlen) == ERROR_SUCCESS) {
 	res[rlen + 1] = 0;
 	*value = res;
-	return TRUE;
+	success = 1;
       }
     }
-    return FALSE;
+
+    if (key_needs_close)
+      RegCloseKey(key);
+    
+    return success;
   } else {
     static const char defunkt[] = "$$default";
     int no_file = !file;

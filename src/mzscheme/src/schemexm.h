@@ -393,6 +393,8 @@
 #define scheme_make_file_input_port (scheme_extension_table->scheme_make_file_input_port)
 #define scheme_make_named_file_input_port (scheme_extension_table->scheme_make_named_file_input_port)
 #define scheme_make_file_output_port (scheme_extension_table->scheme_make_file_output_port)
+#define scheme_make_fd_input_port (scheme_extension_table->scheme_make_fd_input_port)
+#define scheme_make_fd_output_port (scheme_extension_table->scheme_make_fd_output_port)
 #define scheme_make_byte_string_input_port (scheme_extension_table->scheme_make_byte_string_input_port)
 #define scheme_make_sized_byte_string_input_port (scheme_extension_table->scheme_make_sized_byte_string_input_port)
 #define scheme_make_byte_string_output_port (scheme_extension_table->scheme_make_byte_string_output_port)

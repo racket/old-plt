@@ -4883,6 +4883,16 @@ END_XFORM_SKIP;
 
 #endif
 
+Scheme_Object *
+scheme_make_fd_input_port(int fd, Scheme_Object *name, int regfile, int textmode)
+{
+#ifdef MZ_FDS
+  return make_fd_input_port(fd, name, regfile, textmode, NULL);
+#else
+  return NULL;
+#endif
+}
+
 /*========================================================================*/
 /*                    OSKit console input ports                           */
 /*========================================================================*/
@@ -6028,6 +6038,16 @@ END_XFORM_SKIP;
 #endif
 
 #endif
+
+Scheme_Object *
+scheme_make_fd_output_port(int fd, Scheme_Object *name, int regfile, int textmode, int read_too)
+{
+#ifdef MZ_FDS
+  return make_fd_output_port(fd, name, regfile, textmode, read_too);
+#else
+  return NULL;
+#endif
+}
 
 /*========================================================================*/
 /*                        system/process/execute                          */

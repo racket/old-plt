@@ -602,6 +602,8 @@ Scheme_Object *(*scheme_open_output_file_with_mode)(const char *name, const char
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
 Scheme_Object *(*scheme_make_named_file_input_port)(FILE *fp, Scheme_Object *name);
 Scheme_Object *(*scheme_make_file_output_port)(FILE *fp);
+Scheme_Object *(*scheme_make_fd_input_port)(int fd, Scheme_Object *name, int regfile, int win_textmode);
+Scheme_Object *(*scheme_make_fd_output_port)(int fd, Scheme_Object *name, int regfile, int win_textmode, int read_too);
 Scheme_Object *(*scheme_make_byte_string_input_port)(const char *str);
 Scheme_Object *(*scheme_make_sized_byte_string_input_port)(const char *str, long len);
 Scheme_Object *(*scheme_make_byte_string_output_port)();

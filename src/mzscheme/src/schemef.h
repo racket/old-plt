@@ -717,6 +717,9 @@ MZ_EXTERN Scheme_Object *scheme_make_file_input_port(FILE *fp);
 MZ_EXTERN Scheme_Object *scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name);
 MZ_EXTERN Scheme_Object *scheme_make_file_output_port(FILE *fp);
 
+MZ_EXTERN Scheme_Object *scheme_make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode);
+MZ_EXTERN Scheme_Object *scheme_make_fd_output_port(int fd, Scheme_Object *name, int regfile, int win_textmode, int read_too);
+
 MZ_EXTERN Scheme_Object *scheme_make_byte_string_input_port(const char *str);
 MZ_EXTERN Scheme_Object *scheme_make_sized_byte_string_input_port(const char *str, long len);
 MZ_EXTERN Scheme_Object *scheme_make_byte_string_output_port();

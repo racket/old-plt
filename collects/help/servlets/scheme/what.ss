@@ -37,8 +37,10 @@
       "in Scheme."))
     (P)
     "DrScheme supports many dialects of Scheme. "
-    "Five of the dialects are specifically designed for "
-    "teaching computer science:"
+    "The following dialects are specifically designed for "
+    "teaching computer science.  In DrScheme's "
+    (A ((HREF "/servlets/scheme/what.ss#lang-sel")) "language selection menu")
+    ", they are found under the heading " (B (TT "How to Design Programs")) "."
     (UL  
      (LI 
       (A ((NAME "beg") (VALUE "Beginning Student language"))) 
@@ -64,43 +66,55 @@
       (A ((NAME "adv") (VALUE "Advanced Student language")))
       ,(standout-text "Advanced Student")
       " adds mutable state."))
+    "The "
+    ,(standout-text "Essentials of Programming Languages")
+    " language is designed for use with the MIT Press "
+    "textbook with that name."
     (P)
-    "Other dialects are designed for practicing programmers:" 
-    (UL  
-     (LI 
-      (A ((NAME "r5rs2") (VALUE "R5RS Scheme language")))
-      ,(standout-text "R5RS")
-      " is a standard dialect of Scheme that is "
-      "defined by the " 
-      (A ((HREF "/doc/r5rs/"))
-	 "Revised(5) Report on the Algorithmic "
-	 "Language Scheme") ".")
+    "Other dialects are designed for practicing programmers. " 
+    "The " (A ((NAME "r5rs2") (VALUE "R5RS Scheme language")))
+    ,(standout-text "R5RS")
+    " is a standard dialect of Scheme that is "
+    "defined by the " 
+    (A ((HREF "/doc/r5rs/"))
+       "Revised(5) Report on the Algorithmic "
+       "Language Scheme") 
+    ". "
+    (A ((NAME "full") (VALUE "PLT Scheme language")))
+    "In DrScheme's "
+    (A ((HREF "/servlets/scheme/what.ss#lang-sel")) "language selection menu")
+    ", the following languages "
+    "are found under the heading " (B (TT "PLT")) ":"
+    (UL
      (LI  
-      (A ((NAME "full") (VALUE "PLT Scheme language")))
-      ,(standout-text "PLT")
+      ,(standout-text "Textual (MzScheme)")
       " is a superset of R5RS Scheme. "
       "In addition to the the base Scheme language, "
       "PLT Scheme provides exceptions, threads, "
       "objects, modules, components, regular expressions, "
       "TCP support, filesystem utilities, and process "
-      "control operations. PLT Scheme is defined in " 
+      "control operations. This language is defined in " 
       (A ((HREF "/doc/mzscheme/"))
-	 "PLT MzScheme: Language Manual") ". "
-	 (P)
-	 "More precisely, " 
-	 ,(standout-text "PLT") 
-	 " exists in two flavors: textual (a.k.a. MzScheme) "
-	 "and graphical (a.k.a. MrEd). "
-	 "The graphical flavor is described in "
-	 (A ((HREF "/doc/mred/"))
-	    "PLT MrEd: Graphical Toolbox Manual"))
-     (LI 
-      (A ((NAME "module") (VALUE "module")))
-      ,(standout-text "module")
-      " supports development using PLT Scheme's "
-      ,(manual-entry "mzscheme" "modules" `(CODE "module"))
-      " form, where the module's language is explicitly "
-      "declared in the code.")) 
+	 "PLT MzScheme: Language Manual") ". ")
+     (LI
+      ,(standout-text "Graphical (MrEd)")
+      " includes the " (standout-text "Textual (MzScheme)") " language "
+      "and adds a graphical toolbox, "
+      "described in "
+      (A ((HREF "/doc/mred/"))
+	 "PLT MrEd: Graphical Toolbox Manual"))
+     (LI
+      ,(standout-text "Pretty Big")
+      " is a superset of the " (standout-text "Advanced Student")
+      " language, and adds the graphical toolbox of the "
+      (standout-text "Graphical (MrEd)") " language."))
+    "The "
+    (A ((NAME "module") (VALUE "module")))
+    ,(standout-text "module")
+    " language supports development using PLT Scheme's "
+    ,(manual-entry "mzscheme" "modules" `(CODE "module"))
+    " form, where the module's language is explicitly "
+    "declared in the code."
     (P)
     "See "
     ,(manual-entry "drscheme" "language levels" "the DrScheme manual")
@@ -108,13 +122,15 @@
     "especially the teaching languages." 
     (P)
     "DrScheme's set of languages can be extended, "
-    "so the above list is potentially incomplete. "
-    "However, documentation for all languages is available "
+    "so the above list mentions only the languages installed "
+    "by default. "
+    "Documentation for all languages is available "
     "through the " 
     (A ((HREF "/servlets/manuals.ss")) "manuals page") "."
     (P)
+    (A ((NAME "lang-sel") (VALUE "language, setting")))
     "DrScheme's default language is Beginning Student. "
-    "To change thelanguage, select the " 
+    "To change the language, select the " 
     (B (TT  "Set Language...")) 
     " item in the " 
     (B (TT "Language")) " menu.")))

@@ -38,16 +38,14 @@ scheme_add_atexit_closer
 scheme_add_waitable
 scheme_add_waitable_through_sema
 scheme_is_waitable
-scheme_wait_on_waitable
-scheme_waitable_needs_wakeup
 scheme_object_wait_multiple
 scheme_object_wait_multiple_enable_break
+scheme_make_waitable_set
 scheme_add_swap_callback
 scheme_call_enable_break
 scheme_close_should_force_port_closed
 scheme_push_kill_action
 scheme_pop_kill_action
-scheme_init_schedule_info
 scheme_signal_error
 scheme_raise_exn
 scheme_warning
@@ -168,6 +166,7 @@ scheme_make_double
 scheme_make_char
 scheme_make_sema
 scheme_post_sema
+scheme_post_sema_all
 scheme_wait_sema
 scheme_wait_semas
 scheme_char_constants

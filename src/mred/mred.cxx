@@ -2004,6 +2004,15 @@ static char *pltcollects_from_resource;
 # define CMDLINE_STDIO_FLAG
 #endif
 
+#if defined(_IBMR2)
+static void dangerdanger(int)
+{
+  char *s = "mred: Danger - paging space low\n";
+  write(2, s, strlen(s));
+  scheme_collect_garbage();
+}
+#endif
+
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "cmdline.inc"
 #else
@@ -2253,7 +2262,7 @@ static void interrupt(int)
 #endif
 
 #if defined(_IBMR2)
-static void dangerdanger(int)
+static void dangerdanger_gui(int)
 {
   if (danger_signal_received) {
     fprintf(stderr, "mred: Danger - paging space STILL low - exiting\n");
@@ -2264,7 +2273,7 @@ static void dangerdanger(int)
     danger_signal_received = 1;
   }
   
-  signal(SIGDANGER, dangerdanger);
+  signal(SIGDANGER, dangerdanger_gui);
 }
 #endif
 
@@ -2291,7 +2300,7 @@ int actual_main(int argc, char **argv)
 int main(int argc, char *argv[])
 {
 #if defined(_IBMR2)
-  signal(SIGDANGER, dangerdanger);
+  signal(SIGDANGER, dangerdanger_gui);
 #endif
 #ifdef wx_x
 #if INTERRUPT_CHECK_ON

@@ -3182,12 +3182,12 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(Scheme_Object *obj, int n, 
   float x4;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-round-rectangle in region%");
-  x1 = objscheme_unbundle_float(p[1], "set-round-rectangle in region%");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-round-rectangle in region%");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-round-rectangle in region%");
+  x0 = objscheme_unbundle_float(p[0], "set-rounded-rectangle in region%");
+  x1 = objscheme_unbundle_float(p[1], "set-rounded-rectangle in region%");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-rounded-rectangle in region%");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-rounded-rectangle in region%");
   if (n > 4) {
-    x4 = objscheme_unbundle_float(p[4], "set-round-rectangle in region%");
+    x4 = objscheme_unbundle_float(p[4], "set-rounded-rectangle in region%");
   } else
     x4 = 20.0;
 
@@ -3276,7 +3276,7 @@ if (os_wxRegion_class) {
  scheme_add_method_w_arity(os_wxRegion_class, "set-arc", os_wxRegionSetArc, 6, 6);
  scheme_add_method_w_arity(os_wxRegion_class, "set-polygon", os_wxRegionSetPolygon, 1, 4);
  scheme_add_method_w_arity(os_wxRegion_class, "set-ellipse", os_wxRegionSetEllipse, 4, 4);
- scheme_add_method_w_arity(os_wxRegion_class, "set-round-rectangle", os_wxRegionSetRoundedRectangle, 4, 5);
+ scheme_add_method_w_arity(os_wxRegion_class, "set-rounded-rectangle", os_wxRegionSetRoundedRectangle, 4, 5);
  scheme_add_method_w_arity(os_wxRegion_class, "set-rectangle", os_wxRegionSetRectangle, 4, 4);
  scheme_add_method_w_arity(os_wxRegion_class, "get-dc", os_wxRegionGetDC, 0, 0);
 

@@ -297,7 +297,7 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "get-dc" : wxDC! GetDC()
   
 @ "set-rectangle" : void SetRectangle(float, float, nnfloat, nnfloat);
-@ "set-round-rectangle" : void SetRoundedRectangle(float, float, nnfloat, nnfloat, float=20.0);
+@ "set-rounded-rectangle" : void SetRoundedRectangle(float, float, nnfloat, nnfloat, float=20.0);
 @ "set-ellipse" : void SetEllipse(float, float, nnfloat, nnfloat);
 @ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
 @ "set-arc" : void SetArc(float, float, nnfloat, nnfloat, float, float);

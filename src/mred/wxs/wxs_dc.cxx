@@ -678,19 +678,19 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme
   class wxColour* x8;
 
   
-  x0 = objscheme_unbundle_wxBitmap(p[0], "draw-bitmap-region in dc<%>", 0);
-  x1 = objscheme_unbundle_float(p[1], "draw-bitmap-region in dc<%>");
-  x2 = objscheme_unbundle_float(p[2], "draw-bitmap-region in dc<%>");
-  x3 = objscheme_unbundle_float(p[3], "draw-bitmap-region in dc<%>");
-  x4 = objscheme_unbundle_float(p[4], "draw-bitmap-region in dc<%>");
-  x5 = objscheme_unbundle_float(p[5], "draw-bitmap-region in dc<%>");
-  x6 = objscheme_unbundle_float(p[6], "draw-bitmap-region in dc<%>");
+  x0 = objscheme_unbundle_wxBitmap(p[0], "draw-bitmap-section in dc<%>", 0);
+  x1 = objscheme_unbundle_float(p[1], "draw-bitmap-section in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-bitmap-section in dc<%>");
+  x3 = objscheme_unbundle_float(p[3], "draw-bitmap-section in dc<%>");
+  x4 = objscheme_unbundle_float(p[4], "draw-bitmap-section in dc<%>");
+  x5 = objscheme_unbundle_float(p[5], "draw-bitmap-section in dc<%>");
+  x6 = objscheme_unbundle_float(p[6], "draw-bitmap-section in dc<%>");
   if (n > 7) {
-    x7 = unbundle_symset_bitmapDrawStyle(p[7], "draw-bitmap-region in dc<%>");
+    x7 = unbundle_symset_bitmapDrawStyle(p[7], "draw-bitmap-section in dc<%>");
   } else
     x7 = wxSOLID;
   if (n > 8) {
-    x8 = objscheme_unbundle_wxColour(p[8], "draw-bitmap-region in dc<%>", 0);
+    x8 = objscheme_unbundle_wxColour(p[8], "draw-bitmap-section in dc<%>", 0);
   } else
     x8 = NULL;
 
@@ -1304,7 +1304,7 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "set-background-mode", os_wxDCSetBackgroundMode, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "try-color", os_wxDCTryColour, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap", os_wxDCDrawBitmap, 3, 5);
- scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-region", os_wxDCDrawBitmapRegion, 7, 9);
+ scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-section", os_wxDCDrawBitmapRegion, 7, 9);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-height", os_wxDCGetCharHeight, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCGetTextExtent, 3, 7);

@@ -379,6 +379,12 @@ int main(int argc, char *argv[])
 
 static int name_len;
 static wchar_t *my_name, *other_name;
+WINUSERAPI UINT WINAPI
+GetWindowModuleFileNameW(
+    HWND   hwnd,
+    LPWSTR pszFileName,
+    UINT   cchFileNameMax);
+
 
 static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 {
@@ -410,7 +416,7 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
   }
   w = i - 1;
 
-  v = malloc(len);
+  v = (char *)malloc(len);
   memcpy(v, MRED_GUID, gl);
   memcpy(v + gl, "OPEN", 4);
   memcpy(v + gl + 4, &w, sizeof(DWORD));
@@ -437,6 +443,7 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 char *wchar_to_char(wchar_t *wa, int len)
 {
   char *a;
+  int l;
 
   l = scheme_utf8_encode((unsigned int *)wa, 0, len, 
 			 NULL, 0,
@@ -458,7 +465,7 @@ static int parse_command_line(char ***_command, char *buf)
   int count = 0;
 
   maxargs = 49;
-  command = malloc((maxargs + 1) * sizeof(char *));
+  command = (char **)malloc((maxargs + 1) * sizeof(char *));
   
   parse = created = write = (unsigned char *)buf;
   while (*parse) {
@@ -494,7 +501,7 @@ static int parse_command_line(char ***_command, char *buf)
       command[count++] = (char *)created;
       if (count == maxargs) {
 	char **c2;
-	c2 = malloc(((2 * maxargs) + 1) * sizeof(char *));
+	c2 = (char **)malloc(((2 * maxargs) + 1) * sizeof(char *));
 	memcpy(c2, command, maxargs * sizeof(char *));
 	maxargs *= 2;
       }
@@ -511,9 +518,8 @@ static int parse_command_line(char ***_command, char *buf)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored, int nCmdShow)
 {
   LPWSTR m_lpCmdLine;
-  long argc, j;
+  long argc, j, l;
   char *a, **argv;
-  HANDLE mutex;
   
   /* Get command line: */
   m_lpCmdLine = GetCommandLineW();
@@ -528,7 +534,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
      GetModuleFileName, just in case */
   name_len = 1024;
   while (1) {
-    my_name = malloc(sizeof(wchar_t) * name_len);
+    my_name = (wchar_t *)malloc(sizeof(wchar_t) * name_len);
     l = GetModuleFileNameW(NULL, my_name, name_len);
     if (!l) {
       free(my_name);
@@ -545,16 +551,19 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
 
   /* Check for an existing instance: */
   if (my_name) {
+	int alreadyrunning;
+    HANDLE mutex;
+
     a = wchar_to_char(my_name, name_len);
     argv[0] = a;
   
     /* This mutex creation synchronizes multiple instances of
        the application that may have been started. */
     j = strlen(argv[0]);
-    a = malloc(j + 50);
+    a = (char *)malloc(j + 50);
     memcpy(a, argv[0], j);
     memcpy(a + j, "MrEd-" MRED_GUID, strlen(MRED_GUID) + 6);
-    mutex = CreateMutex(NULL, FALSE, cmdline_bytes);
+    mutex = CreateMutex(NULL, FALSE, a);
     alreadyrunning = (::GetLastError() == ERROR_ALREADY_EXISTS || 
 		      ::GetLastError() == ERROR_ACCESS_DENIED);
     // The call fails with ERROR_ACCESS_DENIED if the Mutex was 
@@ -562,9 +571,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
     // NULL for the SECURITY_ATTRIBUTES on Mutex creation);
     free(a);
     
-    if (my_name && already_running) {
+    if (my_name && alreadyrunning) {
       /* If another instance has been started, try to find it. */
-      other_name = malloc(sizeof(wchar_t) * (name_len + 2));
+      other_name = (wchar_t *)malloc(sizeof(wchar_t) * (name_len + 2));
       if (EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)argv)) {
 	return 0;
       }

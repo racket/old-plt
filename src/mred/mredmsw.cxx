@@ -226,10 +226,10 @@ void MrEdDispatchEvent(MSG *msg)
     int len;
     COPYDATASTRUCT *cd;
     len = strlen(MRED_GUID);
-    cd = (COPYDATASTRUCT *)msg->mParam;
+    cd = (COPYDATASTRUCT *)msg->lParam;
     if ((cd->cbData > len + 4 + sizeof(DWORD)) 
-	&& !strncmp(cd->lpData, MRED_GUID, len)) {
-      if (!strncmp(cd->lpData + len, "OPEN", 4)) {
+	&& !strncmp((char *)cd->lpData, MRED_GUID, len)) {
+      if (!strncmp((char *)cd->lpData + len, "OPEN", 4)) {
 	/* This is an "OPEN" event, with a command line.
 	   The command line's argv (sans argv[0]) is
 	   expressed as a DWORD for the number of args,
@@ -238,17 +238,17 @@ void MrEdDispatchEvent(MSG *msg)
 	DWORD w;
 	int cnt, i, pos;
 	char **argv, *s;
-	memcpy(&w, cd->cbData + len + 4, sizeof(DWORD));
+	memcpy(&w, (char *)cd->cbData + len + 4, sizeof(DWORD));
 	cnt = w;
 	pos = len + 4 + sizeof(DWORD);
 	argv = new char*[cnt];
 	for (i = 0; i < cnt; i++) {
 	  if (pos + sizeof(DWORD) <= cd->cbData) {
-	    memcpy(&w, cd->cbData + pos, sizeof(DWORD));
+	    memcpy(&w, (char *)cd->cbData + pos, sizeof(DWORD));
 	    pos += sizeof(DWORD);
 	    if (w >= 0 && (pos + w <= cd->cbData)) {
 	      s = new WXGC_ATOMIC char[w + 1];
-	      memcpy(s, cd->cbData + pos, w);
+	      memcpy(s, (char *)cd->cbData + pos, w);
 	      s[w] = NULL;
 	      pos += w;
 	    } else {

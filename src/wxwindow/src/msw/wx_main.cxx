@@ -286,8 +286,6 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
 	      int (*main)(int, char**))
 {
   void *mzscheme_stack_start;
-  char **command;
-  int count;
 
   mzscheme_stack_start = (void *)&mzscheme_stack_start;
 
@@ -311,7 +309,7 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
     char *name;
     char *d, *p;
     
-    name = copystring(argv[0]);
+    name = copystring(command[0]);
 
     strcpy(name, wxFileNameFromPath(name));
     wxStripExtension(name);

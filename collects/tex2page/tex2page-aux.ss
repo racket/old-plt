@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-08-03")
+(define *tex2page-version* "2003-08-15")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -1796,22 +1796,28 @@
 (define tex2page-string
   (lambda (s) (call-with-input-string/buffered s (lambda () (generate-html)))))
 
+(define make-external-title
+  (lambda (title)
+    (bgroup)
+    (let ((s
+           (tex-string->html-string
+             (string-append
+               "\\let\\\\\\ignorespaces"
+               "\\def\\resizebox#1#2#3{}"
+               "\\let\\thanks\\TIIPgobblegroup"
+               "\\let\\urlh\\TIIPgobblegroup "
+               title))))
+      (egroup)
+      s)))
+
 (define output-external-title
   (lambda ()
     (fluid-let
       ((*outputting-external-title?* #t))
       (emit "<title>")
       (emit-newline)
-      (bgroup)
-      (tex2page-string
-        (string-append
-          "\\let\\\\\\ignorespaces"
-          "\\def\\resizebox#1#2#3{}"
-          "\\let\\thanks\\TIIPgobblegroup"
-          "\\let\\urlh\\TIIPgobblegroup "
-          (or *title* *jobname*)))
+      (emit (or *title* *jobname*))
       (emit-newline)
-      (egroup)
       (emit "</title>")
       (emit-newline))))
 
@@ -1829,14 +1835,14 @@
     (do-end-para)
     (let ((title (get-group)))
       (unless *title* (flag-missing-piece 'document-title))
-      (write-aux `(!default-title ,title))
+      (write-aux `(!default-title ,(make-external-title title)))
       (output-title title))))
 
 (define do-latex-title
   (lambda ()
     (let ((title (get-group)))
       (unless *title* (flag-missing-piece 'document-title))
-      (write-aux `(!default-title ,title))
+      (write-aux `(!default-title ,(make-external-title title)))
       (toss-back-string title)
       (toss-back-string "\\def\\TIIPtitle"))))
 

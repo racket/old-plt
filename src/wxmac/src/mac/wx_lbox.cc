@@ -371,6 +371,7 @@ void wxListBox::OnEvent(wxMouseEvent& event) // WCH : mac only ?
 			commandEvent->commandString = GetString(which);
 			commandEvent->commandInt = which;
 			commandEvent->eventObject = this;
+			commandEvent->extraLong = (which >= 0) ? 1 : 0;
 	  		ProcessCommand(*commandEvent);
 		}
 	}

@@ -3603,7 +3603,7 @@ static void pipe_write(char *str, long len, Scheme_Output_Port *p)
   firstpos = pipe->bufend;
 
   if (avail < len) {
-    char *old;
+    unsigned char *old;
     int newlen;
 
     old = pipe->buf;
@@ -3742,7 +3742,7 @@ void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
 
   pipe = (Scheme_Pipe *)scheme_malloc(sizeof(Scheme_Pipe));
   pipe->buflen = 100;
-  pipe->buf = (char *)scheme_malloc_atomic(pipe->buflen);
+  pipe->buf = (unsigned char *)scheme_malloc_atomic(pipe->buflen);
   pipe->bufstart = pipe->bufend = 0;
   pipe->eof = 0;
 #ifdef MZ_REAL_THREADS

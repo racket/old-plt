@@ -63,14 +63,10 @@
 		    (list w h descent space lspace rspace))
 	  (super-get-extent dc x y w h descent space lspace rspace)
 
-	  (when (box? descent)
-	    (set-box! descent (+ (unbox descent) bottom-margin)))
-	  (when (box? space)
-	    (set-box! space (+ (unbox space) top-margin)))
-	  (when (box? lspace)
-	    (set-box! lspace (+ (unbox lspace) left-margin)))
-	  (when (box? rspace)
-	    (set-box! rspace (+ (unbox rspace) right-margin)))
+	  ;(when (box? descent) (set-box! descent (+ (unbox descent) bottom-margin)))
+	  ;(when (box? space) (set-box! space (+ (unbox space) top-margin)))
+	  ;(when (box? lspace) (set-box! lspace (+ (unbox lspace) left-margin)))
+	  ;(when (box? rspace) (set-box! rspace (+ (unbox rspace) right-margin)))
 
 	  (when (box? h)
 	    (set! height (unbox h)))

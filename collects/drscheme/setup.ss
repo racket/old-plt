@@ -4,6 +4,8 @@
 	    [mzlib : mzlib:core^])
     
     (mred:debug:printf 'invoke "drscheme:setup@")
+
+    (mred:set-preference-default 'drscheme:wrap-program? #f)
     (mred:set-preference-default 'drscheme:config #f)
     (mred:set-preference-default 'drscheme:use-setup? (eq? (mred:get-preference 'drscheme:config) 'mzschemeowl))
     (mred:set-preference-default 'drscheme:setup-dir "/home/comp210/")

@@ -220,11 +220,15 @@
 		(expose-list expr)))))))))
 
 (define convert-to-prim-format
-  (opt-lambda (sig-elements (prefix-symbol #f))
+  (opt-lambda (sig-elements (prefix #f))
     (convert-to-prim-format-helper sig-elements
-      (if prefix-symbol
-	(string-append (symbol->string prefix-symbol) ":")
-	""))))
+      (cond
+	((symbol? prefix)
+	  (string-append (symbol->string prefix) ":"))
+	((string? prefix)
+	  prefix)
+	(else
+	  "")))))
 
 (define convert-to-prim-format-helper
   (lambda (sig-elements prefix-string)
@@ -488,7 +492,8 @@
 		(convert-to-prim-format
 		  (signature-elements
 		    (tag-table-entry-signature
-		      (cu/s-tag-table-lookup/internal-error table tag))))))))
+		      (cu/s-tag-table-lookup/internal-error table tag)))
+		  (z:read-object tag))))))
 	(else
 	  (static-error expr "Malformed compound-unit/sig import clause"))))))
 
@@ -884,6 +889,112 @@
 	(else
 	  (static-error expr "Malformed unit path element"))))))
 
+(define cu/s-unit-path-tag+build-prefix-vocab (make-vocabulary))
+
+; Returns a pair of values:
+; - Prefix tag of unit-path as Scheme symbol
+; - String representing unit-path with ":" interspersed
+
+(add-sym-micro cu/s-unit-path-tag+build-prefix-vocab
+  (lambda (expr env attributes vocab)
+    (cons (z:read-object expr)
+      "")))
+
+(add-list-micro cu/s-unit-path-tag+build-prefix-vocab
+  (let* ((kwd '(:))
+	  (in-pattern-1 '(tag : sig))
+	  (in-pattern-2 '(tag id ...))
+	  (in-pattern-3 '((tag id ...) : sig))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
+	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd)))
+	      (cons (z:read-object tag)
+		""))))
+	((pat:match-against m&e-2 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd)))
+	      (cons (z:read-object tag)
+		(apply symbol-append
+		  (let loop ((ids ids))
+		    (if (null? ids) '("")
+		      (if (null? (cdr ids))
+			(list (z:read-object (car ids)))
+			(cons (z:read-object (car ids))
+			  (cons ":"
+			    (loop (cdr ids))))))))))))
+	((pat:match-against m&e-3 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd)))
+	      (cons (z:read-object tag)
+		(apply symbol-append
+		  (let loop ((ids ids))
+		    (if (null? ids) '("")
+		      (if (null? (cdr ids))
+			(list (z:read-object (car ids)))
+			(cons (z:read-object (car ids))
+			  (cons ":"
+			    (loop (cdr ids))))))))))))
+	(else
+	  (static-error expr "Malformed unit path element"))))))
+
+(define cu/s-unit-path-tag-vocab (make-vocabulary))
+
+; Returns prefix tag of unit-path as Scheme symbol
+
+(add-sym-micro cu/s-unit-path-tag-vocab
+  (lambda (expr env attributes vocab)
+    (z:read-object expr)))
+
+(add-list-micro cu/s-unit-path-tag-vocab
+  (let* ((kwd '(:))
+	  (in-pattern-1 '(tag : sig))
+	  (in-pattern-2 '(tag id ...))
+	  (in-pattern-3 '((tag id ...) : sig))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd))
+	  (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd)))
+	      (z:read-object tag))))
+	((pat:match-against m&e-2 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd)))
+	      (z:read-object tag))))
+	((pat:match-against m&e-3 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((tag (pat:pexpand 'tag p-env kwd))
+		   (ids (pat:pexpand '(id ...) p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd)))
+	      (cons (z:read-object tag)
+		(apply symbol-append
+		  (let loop ((ids ids))
+		    (if (null? ids) '("")
+		      (if (null? (cdr ids))
+			(list (z:read-object (car ids)))
+			(cons (z:read-object (car ids))
+			  (cons ":"
+			    (loop (cdr ids))))))))))))
+	(else
+	  (static-error expr "Malformed unit path element"))))))
+
 (define cu/s-build-link-names
   (opt-lambda (signature (prefix-string ""))
     (convert-to-prim-format-helper (signature-elements signature)
@@ -928,6 +1039,114 @@
 		(eq? raw-var (name-element-name (car elements))))
 	    (loop (cdr elements))))))))
 
+(define cu/s-prim-export-vocab (make-vocabulary))
+
+; Returns a fully-formed export element of the form
+;   (tag (internal-name external-name))
+; where each is a symbol or a z:symbol
+
+(define prefix-w/-:
+  (lambda (prefix name)
+    (if (or (symbol? prefix)
+	  (not (= (string-length prefix) 0)))
+      (symbol-append prefix ":" name)
+      name)))
+
+(add-micro-form 'var cu/s-prim-export-vocab
+  (let* ((kwd '(var))
+	  (in-pattern-1 '(var (unit-path variable)))
+	  (in-pattern-2 '(var (unit-path variable) external-variable))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
+		   (variable (pat:pexpand 'variable p-env kwd)))
+	      (let ((tag+prefix
+		      (expand-expr unit-path env attributes
+			cu/s-unit-path-tag+build-prefix-vocab)))
+		(cons (car tag+prefix)
+		  (list (list (prefix-w/-: (cdr tag+prefix)
+				(z:read-object variable))
+			  variable)))))))
+	((pat:match-against m&e-2 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
+		   (variable (pat:pexpand 'variable p-env kwd))
+		   (external (pat:pexpand 'external-variable p-env kwd)))
+	      (let ((tag+prefix
+		      (expand-expr unit-path env attributes
+			cu/s-unit-path-tag+build-prefix-vocab)))
+		(cons (car tag+prefix)
+		  (list (list (prefix-w/-: (cdr tag+prefix)
+				(z:read-object variable))
+			  external)))))))
+	(else
+	  (static-error expr "Malformed var export"))))))
+
+(add-micro-form 'open cu/s-prim-export-vocab
+  (let* ((kwd '(open))
+	  (in-pattern '(open unit-path))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd)))
+	      (let ((tag+prefix
+		      (expand-expr unit-path env attributes
+			cu/s-unit-path-tag+build-prefix-vocab))
+		     (final-sig
+		       (expand-expr unit-path env attributes
+			 cu/s-unit-path-extract-final-sig-vocab)))
+		(cons (car tag+prefix)
+		  (map list
+		    (convert-to-prim-format
+		      (signature-elements final-sig)
+		      (cdr tag+prefix))
+		    (convert-to-prim-format
+		      (signature-elements final-sig))))))))
+	(else
+	  (static-error expr "Malformed open export"))))))
+
+(add-micro-form 'unit cu/s-prim-export-vocab
+  (let* ((kwd '(unit))
+	  (in-pattern-1 '(unit unit-path))
+	  (in-pattern-2 '(unit unit-path variable))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd)))
+	      (let ((tag+prefix
+		      (expand-expr unit-path env attributes
+			cu/s-unit-path-tag+build-prefix-vocab))
+		     (final-sig
+		       (expand-expr unit-path env attributes
+			 cu/s-unit-path-extract-final-sig-vocab)))
+		(cons (car tag+prefix)
+		  (map list
+		    (convert-to-prim-format (signature-elements final-sig)
+		      (cdr tag+prefix))
+		    (convert-to-prim-format (signature-elements final-sig)
+		      (car tag+prefix))))))))
+	((pat:match-against m&e-2 expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
+		   (variable (pat:pexpand 'variable p-env kwd)))
+	      (internal-error expr "Unsupported"))))
+	(else
+	  (static-error expr "Malformed unit export"))))))
+
 (define cu/s-export-sign-vocab (make-vocabulary))
 
 (add-micro-form 'var cu/s-export-sign-vocab
@@ -943,20 +1162,14 @@
 	  (lambda (p-env)
 	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
 		   (variable (pat:pexpand 'variable p-env kwd)))
-	      (cu/s-verify-variable-in-path unit-path variable
-		env attributes)
-	      (make-cu/s-var-export (z:read-object variable)
-		(z:read-object variable)))))
+	      (list variable))))
 	((pat:match-against m&e-2 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
 		   (variable (pat:pexpand 'variable p-env kwd))
 		   (external (pat:pexpand 'external-variable p-env kwd)))
-	      (cu/s-verify-variable-in-path unit-path variable
-		env attributes)
-	      (make-cu/s-var-export (z:read-object variable)
-		(z:read-object external)))))
+	      (list external))))
 	(else
 	  (static-error expr "Malformed var export"))))))
 
@@ -973,14 +1186,14 @@
 	      (let ((final-sig
 		      (expand-expr unit-path env attributes
 			cu/s-unit-path-extract-final-sig-vocab)))
-		(make-cu/s-open-export final-sig)))))
+		(signature-exploded final-sig)))))
 	(else
 	  (static-error expr "Malformed open export"))))))
 
 (add-micro-form 'unit cu/s-export-sign-vocab
   (let* ((kwd '(unit))
-	  (in-pattern-1 '(unit (unit-path variable)))
-	  (in-pattern-2 '(unit (unit-path variable) external-variable))
+	  (in-pattern-1 '(unit unit-path))
+	  (in-pattern-2 '(unit unit-path variable))
 	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
@@ -989,18 +1202,20 @@
 	  =>
 	  (lambda (p-env)
 	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd)))
-	      (let ((final-sig
+	      (let ((tag
 		      (expand-expr unit-path env attributes
-			cu/s-unit-path-extract-final-sig-vocab)))
-		(make-cu/s-unit-export final-sig
-		  (extract-final-name unit-path))))))
+			cu/s-unit-path-tag-vocab))
+		     (final-sig
+		       (expand-expr unit-path env attributes
+			 cu/s-unit-path-extract-final-sig-vocab)))
+		(list (cons tag
+			(signature-exploded final-sig)))))))
 	((pat:match-against m&e-2 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((unit-path (pat:pexpand 'unit-path p-env kwd))
 		   (variable (pat:pexpand 'variable p-env kwd)))
-	      (make-cu/s-unit-export final-sig
-		(z:read-object variable)))))
+	      (internal-error expr "Unsupported"))))
 	(else
 	  (static-error expr "Malformed unit export"))))))
 
@@ -1066,23 +1281,43 @@
 					 (expand-expr l env attributes
 					   cu/s-link-prim-unit-names-vocab))
 				    in:links))
-		      (prim:exports 1729)
+		      (prim:exports (map (lambda (e)
+					   (expand-expr e env attributes
+					     cu/s-prim-export-vocab))
+				      in:exports))
 		      (sign:imports (map (lambda (i)
 					   (expand-expr i env attributes
 					     cu/s-sign-imports-vocab))
 				      in:imports))
-		      (sign:exports 1729))
-		(newline)
-		(expand-expr
-		  (structurize-syntax
-		    `(let ,(map list linkage:unit-vars linkage:unit-exprs)
-		       (#%verify-linkage-signature-match
-			 'compound-unit/sig
-			 ',linkage:tags
-			 (#%list ,@linkage:unit-vars)
-			 ',linkage:link-exports
-			 ',linkage:link-imports))
-		    expr)
-		  env attributes vocab)))))
+		      (sign:exports (apply append
+				      (map (lambda (e)
+					     (expand-expr e env attributes
+					       cu/s-export-sign-vocab))
+					in:exports))))
+		(let ((output
+			`(let ,(map list linkage:unit-vars linkage:unit-exprs)
+			   (#%verify-linkage-signature-match
+			     'compound-unit/sig
+			     ',linkage:tags
+			     (#%list ,@linkage:unit-vars)
+			     ',linkage:link-exports
+			     ',linkage:link-imports)
+			   (#%make-unit-with-signature
+			     (compound-unit
+			       (import ,@prim:imports)
+			       (link ,@(map (lambda (tag body)
+					      `(,tag
+						 ((#%unit-with-signature-unit
+						    ,tag)
+						   ,@body)))
+					 linkage:tags prim:links))
+			       (export ,@prim:exports))
+			     ',sign:imports
+			     ',sign:exports))))
+		  (expand-expr
+		    (structurize-syntax
+		      output
+		      expr)
+		    env attributes vocab))))))
 	(else
 	  (static-error expr "Malformed compound-unit/sig"))))))

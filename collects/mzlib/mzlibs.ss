@@ -7,7 +7,8 @@
  (require-library "dates.ss")
  (require-library "inflates.ss")
  (require-library "cmdlines.ss")
- (require-library "restarts.ss"))
+ (require-library "restarts.ss")
+ (require-library "transcrs.ss"))
 
 (define-signature mzlib^
   ((open mzlib:core^)

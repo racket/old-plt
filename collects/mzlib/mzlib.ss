@@ -10,3 +10,4 @@
 (require-library "inflate.ss")
 (require-library "cmdline.ss")
 (require-library "restart.ss")
+(require-library "transcr.ss")

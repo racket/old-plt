@@ -96,6 +96,14 @@
                [stored-mark-list #f]
                [text-region-table null] ; candidate for hash-table-ization, if speed is needed
 
+               [context-lbox-selection
+                (lambda ()
+                  (let ([selection-list (send context-lbox get-selections)])
+                    (if (= (length selection-list) 1)
+                        (car selection-list)
+                        (error 'context-lbox-selection "~a items selected in lbox; should be 1" 
+                               (length selection-list)))))]
+               
                [click-callback
                 (lambda (x y loc)
                   (for-each (lambda (entry)
@@ -112,10 +120,8 @@
                
                [listbox-callback
                 (lambda (list-box event)
-                  (let* ([selections (send list-box get-selections)]
-                         [_ (unless (= length selections 1)
-                              (error 'listbox-callback "# of listbox selections is not 1"))]
-                         [mark (send list-box get-data (car selections))]
+                  (let* ([selection (context-lbox-selection)]
+                         [mark (send list-box get-data selection)]
                          [source (mark-source mark)]
                          [source-file (z:location-file (z:zodiac-start source))]
                          [source-start (z:location-offset (z:zodiac-start source))]
@@ -134,6 +140,16 @@
                 
                [show-var-values
                 (lambda (binding x y)
+                  (let-values ([(mark) (send context-lbox get-data (context-lbox-selection))]
+                               [(before after)
+                                (let loop ([remaining stored-mark-list])
+                                  (cond [(null? remaining)
+                                         (error 'show-var-values "mark does not occur in stored list")]
+                                        [(eq? (car remaining) mark)
+                                         (values null (cdr remaining))]
+                                        [else
+                                         (let-values ([(a b) (loop (cdr remaining))])
+                                           (values (cons (car remaining) a) 
                   (let* ([
                          
                          [vals (if (z:top-level-varref? binding)
@@ -321,7 +337,7 @@
                     ; will show even stale marks
                     (send context-lbox append (zodiac-abbr (marks:mark-source mark)) mark))
                   mark-list)
-                 (send context-lbox set
+                 (send context-lbox select (- (send context-lbox get-number) 1))
                  (send frame show #t))])
                  
       (sequence (super-init))

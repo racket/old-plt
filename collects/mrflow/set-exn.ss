@@ -1,4 +1,6 @@
 ; exceptions for sets
+; This file is required by both set-hash.ss and set-list.ss
+; so we can't use contracts here because the sets are not always the same.
 
 (module set-exn mzscheme
   

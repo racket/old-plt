@@ -11,38 +11,37 @@
 (module assoc-set-hash mzscheme
   (require
    (lib "etc.ss") ; for opt-lambda
-   
    "assoc-set-exn.ss" ; no prefix so we can re-provide
-   (prefix argexn: "arg-mismatch-exn.ss")
+   "dbg.ss"
    (prefix cst: "constants.ss")
-   )
-  
-  (provide
-   exn:assoc-set?             ; value -> boolean
-   (struct exn:assoc-set:key-not-found (assoc-set key)) ; assoc-set value
-   (struct exn:assoc-set:duplicate-key (assoc-set key)) ; assoc-set value
-   assoc-set-make             ; (opt 'equal) -> assoc-set
-   assoc-set-reset            ; assoc-set -> assoc-set
-   assoc-set?                 ; value -> boolean
-   assoc-set-set              ; assoc-set value value (opt boolean) -> assoc-set
-   assoc-set-get              ; assoc-set value (opt (-> value)) -> value
-   assoc-set-in?              ; assoc-set value -> boolean
-   assoc-set-remove           ; assoc-set value (opt boolean) -> assoc-set
-   assoc-set-cardinality      ; assoc-set -> exact-non-negative-integer
-   assoc-set-empty?           ; assoc-set -> boolean
-   assoc-set-copy             ; assoc-set -> assoc-set
-   assoc-set-map              ; assoc-set (value value -> value) -> (listof value)
-   assoc-set-fold             ; assoc-set (value value value -> value) value -> value
-   assoc-set-for-each         ; assoc-set (value value -> value) -> assoc-set
-   assoc-set-for-each!        ; assoc-set (value value -> value) -> assoc-set
-   assoc-set-filter           ; assoc-set (value value -> boolean) (opt (union 'new 'same)) -> assoc-set
-   assoc-set-union            ; assoc-set assoc-set (value value -> value) (opt (union 'new 'first 'second)) -> assoc-set
-   assoc-set-intersection     ; assoc-set assoc-set (value value -> value) (opt (union 'new 'first 'second)) -> assoc-set
-   assoc-set-difference       ; assoc-set assoc-set (opt (union 'new 'first 'second)) -> assoc-set
    )
   
   ; table = (hashtableof value value)
   (define-struct assoc-set (cardinality table))
+  
+  (provide/contract
+   (exn:assoc-set? (any/c . -> . boolean?))
+   (struct exn:assoc-set:key-not-found ((assoc-set assoc-set?) (key any/c)))
+   (struct exn:assoc-set:duplicate-key ((assoc-set assoc-set?) (key any/c)))
+   (assoc-set-make (() ((symbols 'equal)) . opt-> . assoc-set?))
+   (assoc-set-reset (assoc-set? . -> . assoc-set?))
+   (assoc-set? (any/c . -> . boolean?))
+   (assoc-set-set ((assoc-set? any/c any/c) (boolean?) . opt-> . assoc-set?))
+   (assoc-set-get ((assoc-set? any/c) ((-> any)) . opt-> . any))
+   (assoc-set-in? (assoc-set? any/c . -> . boolean?))
+   (assoc-set-remove ((assoc-set? any/c) (boolean?) . opt-> . assoc-set?))
+   (assoc-set-cardinality (assoc-set? . -> . (and/c integer? (>=/c 0))))
+   (assoc-set-empty? (assoc-set? . -> . boolean?))
+   (assoc-set-copy (assoc-set? . -> . assoc-set?))
+   (assoc-set-map (assoc-set? (any/c any/c . -> . any) . -> . (listof any/c)))
+   (assoc-set-fold (assoc-set? (any/c any/c any/c . -> . any) any/c . -> . any))
+   (assoc-set-for-each (assoc-set? (any/c any/c . -> . any) . -> . assoc-set?))
+   (assoc-set-for-each! (assoc-set? (any/c any/c . -> . any) . -> . assoc-set?))
+   (assoc-set-filter ((assoc-set? (any/c any/c . -> . boolean?)) ((symbols 'new 'same)) . opt-> . assoc-set?))
+   (assoc-set-union ((assoc-set? assoc-set? (any/c any/c . -> . any)) ((symbols 'new 'first 'second)) . opt-> . assoc-set?))
+   (assoc-set-intersection ((assoc-set? assoc-set? (any/c any/c . -> . any)) ((symbols 'new 'first 'second)) . opt-> . assoc-set?))
+   (assoc-set-difference ((assoc-set? assoc-set?) ((symbols 'new 'first 'second)) . opt-> . assoc-set?))
+   )
   
   ; (opt 'equal) -> assoc-set
   ; we test the optional argument ourselves to preserve data abstraction even in the
@@ -50,9 +49,7 @@
   (define assoc-set-make
     (case-lambda
       [() (make-assoc-set 0 (make-hash-table))]
-      [(flag) (if (eq? flag 'equal)
-                  (make-assoc-set 0 (make-hash-table 'equal))
-                  (argexn:raise-arg-mismatch-exn "assoc-set-make" 'equal flag))]))
+      [(flag) (make-assoc-set 0 (make-hash-table 'equal))]))
   
   ; assoc-set -> assoc-set
   (define (assoc-set-reset assoc-set)
@@ -163,7 +160,8 @@
              (set-assoc-set-table! assoc-set (assoc-set-table new-assoc-set))
              (set-assoc-set-cardinality! assoc-set (assoc-set-cardinality new-assoc-set))
              assoc-set]
-            [else (argexn:raise-arg-mismatch-exn "assoc-set-filter" '(union new same) which-set)])))))
+            ;[else (argexn:raise-arg-mismatch-exn "assoc-set-filter" '(union new same) which-set)]
+            )))))
   
   ; assoc-set assoc-set (value value -> value) (opt (union 'new 'first 'second)) -> assoc-set
   (define assoc-set-union
@@ -192,7 +190,8 @@
                (union-second-set-into-first (assoc-set-copy assoc-set1) assoc-set2))]
           [(first) (union-second-set-into-first assoc-set1 assoc-set2)]
           [(second) (union-second-set-into-first assoc-set2 assoc-set1)]
-          [else (argexn:raise-arg-mismatch-exn "assoc-set-union" '(union new first second) which-set)]))))
+          ;[else (argexn:raise-arg-mismatch-exn "assoc-set-union" '(union new first second) which-set)]
+          ))))
   
   ; assoc-set assoc-set (value value -> value) (opt (union 'new 'first 'second)) -> assoc-set
   (define assoc-set-intersection
@@ -225,7 +224,8 @@
              (set-assoc-set-table! assoc-set2 (assoc-set-table new-assoc-set))
              (set-assoc-set-cardinality! assoc-set2 (assoc-set-cardinality new-assoc-set))
              assoc-set2]
-            [else (argexn:raise-arg-mismatch-exn "assoc-set-intersection" '(union new first second) which-set)])))))
+            ;[else (argexn:raise-arg-mismatch-exn "assoc-set-intersection" '(union new first second) which-set)]
+            )))))
   
   ; assoc-set assoc-set (opt (union 'new 'first 'second)) -> assoc-set
   (define assoc-set-difference
@@ -252,6 +252,7 @@
              (set-assoc-set-table! assoc-set2 (assoc-set-table new-assoc-set))
              (set-assoc-set-cardinality! assoc-set2 (assoc-set-cardinality new-assoc-set))
              assoc-set2]
-            [else (argexn:raise-arg-mismatch-exn "assoc-set-difference" '(union new first second) which-set)])))))
+            ;[else (argexn:raise-arg-mismatch-exn "assoc-set-difference" '(union new first second) which-set)]
+            )))))
   
   )

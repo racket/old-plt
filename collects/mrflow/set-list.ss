@@ -15,34 +15,34 @@
    (lib "list.ss") ; for foldr
    (lib "etc.ss") ; for opt-lambda
    "set-exn.ss" ; no prefix so we can re-provide
-   (prefix argexn: "arg-mismatch-exn.ss")
-   )
-  
-  (provide
-   exn:set?             ; value -> boolean
-   (struct exn:set:value-not-found (set value)) ; set value
-   (struct exn:set:duplicate-value (set value)) ; set value
-   set-make             ; (opt 'equal) -> set
-   set-reset            ; set -> set
-   set?                 ; value -> boolean
-   set-set              ; set value (opt boolean) -> set
-   set-in?              ; set value -> boolean
-   set-remove           ; set value (opt boolean) -> set
-   set-cardinality      ; set -> exact-non-negative-integer
-   set-empty?           ; set -> boolean
-   set-copy             ; set -> set
-   set-map              ; set (value -> value) -> (listof value)
-   set-fold             ; set (value value -> value) value -> value
-   set-for-each         ; set (value -> value) -> set
-   set-for-each!        ; set (value -> value) -> set
-   set-filter           ; set (value -> boolean) (opt (union 'new 'same)) -> set
-   set-union            ; set set (opt (union 'new 'first 'second)) -> set
-   set-intersection     ; set set (opt (union 'new 'first 'second)) -> set
-   set-difference       ; set set (opt (union 'new 'first 'second)) -> set
+   "dbg.ss"
    )
   
   ; table = (listof (cons value value))
   (define-struct set (=? cardinality table))
+  
+  (provide/contract
+   (exn:set? (any/c . -> . boolean?))
+   (struct exn:set:value-not-found ((set set?) (value any/c)))
+   (struct exn:set:duplicate-value ((set set?) (value any/c)))
+   (set-make (() ((symbols 'equal)) . opt-> . set?))
+   (set-reset (set? . -> . set?))
+   (set? (any/c . -> . boolean?))
+   (set-set ((set? any/c) (boolean?) . opt-> . set?))
+   (set-in? (set? any/c . -> . boolean?))
+   (set-remove ((set? any/c) (boolean?) . opt-> . set?))
+   (set-cardinality (set? . -> . (and/c integer? (>=/c 0))))
+   (set-empty? (set? . -> . boolean?))
+   (set-copy (set? . -> . set?))
+   (set-map (set? (any/c . -> . any) . -> . (listof any/c)))
+   (set-fold (set? (any/c any/c . -> . any) any/c . -> . any))
+   (set-for-each (set? (any/c . -> . any) . -> . set?))
+   (set-for-each! (set? (any/c . -> . any) . -> . set?))
+   (set-filter ((set? (any/c . -> . boolean?)) ((symbols 'new 'same)) . opt-> . set?))
+   (set-union ((set? set?) ((symbols 'new 'first 'second)) . opt-> . set?))
+   (set-intersection ((set? set?) ((symbols 'new 'first 'second)) . opt-> . set?))
+   (set-difference ((set? set?) ((symbols 'new 'first 'second)) . opt-> . set?))
+   )
   
   ; (opt 'equal) -> set
   ; we test the optional argument ourselves to preserve data abstraction even in the
@@ -50,9 +50,7 @@
   (define set-make
     (case-lambda
       [() (make-set eq? 0 '())]
-      [(flag) (if (eq? flag 'equal)
-                  (make-set equal? 0 '())
-                  (argexn:raise-arg-mismatch-exn "set-make" 'equal flag))]))
+      [(flag) (make-set equal? 0 '())]))
   
   ; set -> set
   ; doesn't change =?
@@ -185,8 +183,7 @@
             [(same)
              (set-set-table! set (set-table new-set))
              (set-set-cardinality! set (set-cardinality new-set))
-             set]
-            [else (argexn:raise-arg-mismatch-exn "set-filter" '(union new same) which-set)])))))
+             set])))))
   
   ; set set (opt (union 'new 'first 'second)) -> set
   (define set-union
@@ -238,8 +235,7 @@
           [(second)
            (set-set-cardinality! set2 (set-cardinality new-set))
            (set-set-table! set2 (set-table new-set))
-           set2]
-          [else (argexn:raise-arg-mismatch-exn "set-union" '(union new first second) which-set)]))))
+           set2]))))
   
   ; set set (opt (union 'new 'first 'second)) -> set
   (define set-intersection
@@ -286,8 +282,7 @@
           [(second)
            (set-set-cardinality! set2 (set-cardinality new-set))
            (set-set-table! set2 (set-table new-set))
-           set2]
-          [else (argexn:raise-arg-mismatch-exn "set-intersection" '(union new first second) which-set)]))))
+           set2]))))
   
   ; set set (opt (union 'new 'first 'second)) -> set
   (define set-difference
@@ -335,7 +330,6 @@
           [(second)
            (set-set-cardinality! set2 (set-cardinality new-set))
            (set-set-table! set2 (set-table new-set))
-           set2]
-          [else (argexn:raise-arg-mismatch-exn "set-difference" '(union new first second) which-set)]))))
+           set2]))))
   
   )

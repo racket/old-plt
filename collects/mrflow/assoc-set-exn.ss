@@ -1,4 +1,6 @@
-; exceptions for associative sets
+; Exceptions for associative sets
+; This file is required by both assoc-set-hash.ss and assoc-set-list.ss
+; so we can't use contracts here because the assoc-sets are not always the same.
 
 (module assoc-set-exn mzscheme
   (provide

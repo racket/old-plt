@@ -35,12 +35,12 @@
        (class super% args
 	 (inherit button-panel)
 	 (sequence (apply super-init args))
-	 (private
-	   [button (make-object mred:button%
+	 (public
+	   [analyze-button (make-object mred:button%
 				button-panel
 				(lambda (button evt) (invoke-spidey this))
 				spidey-bitmap)])
 	 (sequence
 	   (send button-panel change-children
 		 (lambda (l)
-		   (cons button (function@:remq button l)))))))))
+		   (cons analyze-button (function@:remq analyze-button l)))))))))

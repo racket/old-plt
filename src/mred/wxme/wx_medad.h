@@ -302,6 +302,7 @@ class wxMediaBuffer : public wxObject
 
   /* State */
   void Lock(Bool);
+  Bool IsLocked();
   Bool Modified(void);
   virtual void SetModified(Bool);
 

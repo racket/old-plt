@@ -2392,6 +2392,23 @@ static Scheme_Object *os_wxMediaBufferModified(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaBufferIsLocked(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->IsLocked();
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaBufferLock(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4528,7 +4545,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 109);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 110);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4541,7 +4558,8 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-image", os_wxMediaBufferInsertImage, 0, 4);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-box", os_wxMediaBufferInsertBox, 0, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-filename", os_wxMediaBufferGetFilename, 0, 1);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "modified?", os_wxMediaBufferModified, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "is-modified?", os_wxMediaBufferModified, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "is-locked?", os_wxMediaBufferIsLocked, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "lock", os_wxMediaBufferLock, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-cursor", os_wxMediaBufferSetCursor, 1, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-load-overwrites-styles", os_wxMediaBufferGetLoadOverwritesStyles, 0, 0);

@@ -1281,7 +1281,8 @@ int wxsGetImageType(char *fn)
     }
 
     fclose(f);
-  }
+  } else
+    type = 0;
 
   return type ? type : wxBITMAP_TYPE_XBM;
 }

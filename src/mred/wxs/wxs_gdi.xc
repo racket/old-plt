@@ -114,8 +114,6 @@
 @VAR CDB_FIX
 
 @ "find-color" : wxColour^ FindColour(string);
-@ "find-name" : string FindName(wxColour%);
-@ "append" : void Append(string, wxColour!);
 
 @CONSTANT "the-color-database" : wxColourDatabase! wxTheColourDatabase
 

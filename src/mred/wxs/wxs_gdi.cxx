@@ -1038,45 +1038,6 @@ os_wxColourDatabase::~os_wxColourDatabase()
 }
 
 #pragma argsused
-static Scheme_Object *os_wxColourDatabaseAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  string x0;
-  class wxColour* x1;
-
-  
-  x0 = (string)objscheme_unbundle_string(p[0], "append in color-database<%>");
-  x1 = objscheme_unbundle_wxColour(p[1], "append in color-database<%>", 0);
-
-  
-  ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxColourDatabaseFindName(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  string r;
-  objscheme_check_valid(obj);
-  class wxColour* x0;
-
-  
-  x0 = objscheme_unbundle_wxColour(p[0], "find-name in color-database<%>", 0);
-
-  
-  r = ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->FindName(*x0);
-
-  
-  
-  return objscheme_bundle_string((char *)r);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1101,10 +1062,8 @@ if (os_wxColourDatabase_class) {
     objscheme_add_global_class(os_wxColourDatabase_class, "color-database%", env);
     objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env);
 } else {
-  os_wxColourDatabase_class = objscheme_def_prim_class(env, "color-database%", "object%", NULL, 3);
+  os_wxColourDatabase_class = objscheme_def_prim_class(env, "color-database%", "object%", NULL, 1);
 
- scheme_add_method_w_arity(os_wxColourDatabase_class, "append", os_wxColourDatabaseAppend, 2, 2);
- scheme_add_method_w_arity(os_wxColourDatabase_class, "find-name", os_wxColourDatabaseFindName, 1, 1);
  scheme_add_method_w_arity(os_wxColourDatabase_class, "find-color", os_wxColourDatabaseFindColour, 1, 1);
 
 

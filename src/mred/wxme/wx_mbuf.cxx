@@ -1875,6 +1875,11 @@ void wxMediaBuffer::Lock(Bool lock)
   userLocked = lock;
 }
 
+Bool wxMediaBuffer::IsLocked()
+{
+  return userLocked;
+}
+
 Bool wxMediaBuffer::Modified(void)
 {
   return modified;

@@ -154,7 +154,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "set-cursor" : void SetCursor(wxCursor^,bool=TRUE); : : /CHECKVOIDABLEOK[0]
 
 @ "lock" : void Lock(bool);
-@ "modified?" : bool Modified();
+@ "is-locked?" : bool IsLocked();
+@ "is-modified?" : bool Modified();
 
 @ "get-filename" : nstring GetFilename(bool?=NULL);
 

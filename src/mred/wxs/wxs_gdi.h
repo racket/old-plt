@@ -21,8 +21,6 @@ void objscheme_setup_wxColour(void *env);
 int objscheme_istype_wxColour(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxColour(class wxColour *realobj);
 class wxColour *objscheme_unbundle_wxColour(Scheme_Object *obj, const char *where, int nullOK);
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
 #endif
 void objscheme_setup_wxColourDatabase(void *env);

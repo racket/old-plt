@@ -195,9 +195,9 @@ in several significant ways:
    new syntax system. However, a few new syntactic forms, which are
    usually implicit, use #%: `#%app', `#%datum', `#%top', etc.
 
- * `global-defined-value' has been renamed `namespace-variable-binding'
-   (for consistency with other names). `defined?' moved to the "etc.ss"
-   MzLib library, renamed to `namespace-defined?'.
+ * `global-defined-value' is replaced by `namespace-variable-value'
+   and `namespace-set-variable-value!'. The `defined?' procedure moved
+   to the "etc.ss" MzLib library, renamed as `namespace-defined?'.
 
  * Compiling an expression no longer links its global-variable
    references to a particular namespace. Instead, an implicit link

@@ -385,6 +385,8 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 
  start_over:
 
+  SCHEME_USE_FUEL(1);
+
   do {
     ch = scheme_getc(port);
   } while (isspace(ch));
@@ -722,8 +724,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 #ifdef DO_STACK_CHECK
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
-					 int mkstx,
-					 Scheme_Hash_Table *ht
+					 int mkstx
 					 CURRENTPROCPRM);
 
 static Scheme_Object *resolve_k(void)
@@ -731,20 +732,17 @@ static Scheme_Object *resolve_k(void)
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object *port = (Scheme_Object *)p->ku.k.p2;
-  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
-  p->ku.k.p3 = NULL;
 
-  return resolve_references(o, port, p->ku.k.i1, ht CURRENTPROCARG);
+  return resolve_references(o, port, p->ku.k.i1 CURRENTPROCARG);
 }
 #endif
 
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
-					 int mkstx,
-					 Scheme_Hash_Table *ht
+					 int mkstx
 					 CURRENTPROCPRM)
 {
   Scheme_Object *start = obj, *result;
@@ -759,11 +757,12 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
       p->ku.k.p1 = (void *)obj;
       p->ku.k.p2 = (void *)port;
       p->ku.k.i1 = mkstx;
-      p->ku.k.p3 = (void *)ht;
       return scheme_handle_stack_overflow(resolve_k);
     }
   }
 #endif
+
+  SCHEME_USE_FUEL(1);
 
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
     obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
@@ -786,13 +785,13 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
   if (SCHEME_PAIRP(obj)) {
     Scheme_Object *rr;
-    rr = resolve_references(SCHEME_CAR(obj), port, mkstx, ht CURRENTPROCARG);
+    rr = resolve_references(SCHEME_CAR(obj), port, mkstx CURRENTPROCARG);
     SCHEME_CAR(obj) = rr;
-    rr = resolve_references(SCHEME_CDR(obj), port, mkstx, ht CURRENTPROCARG);
+    rr = resolve_references(SCHEME_CDR(obj), port, mkstx CURRENTPROCARG);
     SCHEME_CDR(obj) = rr;
   } else if (SCHEME_BOXP(obj)) {
     Scheme_Object *rr;
-    rr = resolve_references(SCHEME_BOX_VAL(obj), port, mkstx, ht CURRENTPROCARG);
+    rr = resolve_references(SCHEME_BOX_VAL(obj), port, mkstx CURRENTPROCARG);
     SCHEME_BOX_VAL(obj) = rr;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
@@ -806,7 +805,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	rr = prev_rr;
       } else {
 	prev_v = SCHEME_VEC_ELS(obj)[i];
-	rr = resolve_references(prev_v, port, mkstx, ht CURRENTPROCARG);
+	rr = resolve_references(prev_v, port, mkstx CURRENTPROCARG);
 	prev_rr = rr;
       }
       SCHEME_VEC_ELS(obj)[i] = rr;
@@ -842,7 +841,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
 
   if (ht) {
     /* Resolve placeholders: */
-    v = resolve_references(v, port, !!stxsrc, ht CURRENTPROCARG);
+    v = resolve_references(v, port, !!stxsrc CURRENTPROCARG);
   }
 
   return v;
@@ -888,13 +887,12 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
   return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
 }
 
-Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, 
-					   Scheme_Hash_Table *ht)
+Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj)
 {
 #ifdef MZ_REAL_THREADS
   Scheme_Process *p = scheme_current_process;
 #endif
-  resolve_references(obj, NULL, 0, ht CURRENTPROCARG);
+  return resolve_references(obj, NULL, 0 CURRENTPROCARG);
 }
 
 /*========================================================================*/
@@ -2063,7 +2061,7 @@ static Scheme_Object *read_compact_quote(CPort *port,
   v = read_compact(port, &q_ht, 0 CURRENTPROCARG);
 
   if (q_ht)
-    resolve_references(v, NULL, 0, q_ht CURRENTPROCARG);
+    resolve_references(v, NULL, 0 CURRENTPROCARG);
   
   return v;
 }

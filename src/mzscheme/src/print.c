@@ -72,11 +72,12 @@ static Scheme_Hash_Table *global_constants_ht;
 
 #define HAS_SUBSTRUCT(obj, qk) \
    (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) \
-    || (qk(p->quick_print_box) && SCHEME_BOXP(obj)) \
-    || (qk(p->quick_print_struct)  \
+    || (qk(p->quick_print_box, 1) && SCHEME_BOXP(obj)) \
+    || (qk(p->quick_print_struct, 0)  \
 	&& SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)))
-#define ssQUICK(x) x
-#define ssALL(x) 1
+#define ssQUICK(x, isbox) x
+#define ssQUICKp(x, isbox) (p ? x : isbox)
+#define ssALL(x, isbox) 1
 
 #ifdef MZ_PRECISE_GC
 # define ZERO_SIZED(closure) !(closure->closure_size)
@@ -463,10 +464,33 @@ END_XFORM_SKIP;
 # endif
 #endif
 
+#ifdef DO_STACK_CHECK
+static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
+			      int *counter, Scheme_Process *p);
+
+static Scheme_Object *setup_graph_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
+  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p2;
+  int *counter = (int *)p->ku.k.p3;
+  Scheme_Process *pp = (Scheme_Process *)p->ku.k.p4;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
+
+  setup_graph_table(o, ht, counter, pp);
+
+  return scheme_false;
+}
+#endif
+
 static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
 			      int *counter, Scheme_Process *p)
 {
-  if (HAS_SUBSTRUCT(obj, ssQUICK)) {
+  if (HAS_SUBSTRUCT(obj, ssQUICKp)) {
     Scheme_Bucket *b;
 
     b = scheme_bucket_from_table(ht, (const char *)obj);
@@ -474,17 +498,34 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     if (!b->val)
       b->val = (void *)1;
     else {
-      if ((long)b->val == 1)
-	b->val = (void *)(long)++(*counter);
+      if ((long)b->val == 1) {
+	*counter += 2;
+	b->val = (void *)(long)*counter;
+      }
       return;
     }
   } else
     return;
 
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      scheme_current_process->ku.k.p1 = (void *)obj;
+      scheme_current_process->ku.k.p2 = (void *)ht;
+      scheme_current_process->ku.k.p3 = (void *)counter;
+      scheme_current_process->ku.k.p4 = (void *)p;
+      scheme_handle_stack_overflow(setup_graph_k);
+      return;
+    }
+  }
+#endif
+  SCHEME_USE_FUEL(1);
+
   if (SCHEME_PAIRP(obj)) {
     setup_graph_table(SCHEME_CAR(obj), ht, counter, p);
     setup_graph_table(SCHEME_CDR(obj), ht, counter, p);
-  } else if (p->quick_print_box && SCHEME_BOXP(obj)) {
+  } else if ((!p || p->quick_print_box) && SCHEME_BOXP(obj)) {
     setup_graph_table(SCHEME_BOX_VAL(obj), ht, counter, p);
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
@@ -493,14 +534,29 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     for (i = 0; i < len; i++) {
       setup_graph_table(SCHEME_VEC_ELS(obj)[i], ht, counter, p);
     }
-  } else if (p->quick_print_struct 
-	   && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) {
+  } else if (p && p->quick_print_struct 
+	     && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) {
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
       setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, p);
     }
   }
+}
+
+Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print)
+{
+  Scheme_Hash_Table *ht;
+  int counter = 1;
+
+  ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
+  setup_graph_table(o, ht, &counter, 
+		    for_print ? scheme_current_process : NULL);
+
+  if (counter > 1)
+    return ht;
+  else
+    return NULL;
 }
 
 static char *
@@ -542,11 +598,9 @@ print_to_string(Scheme_Object *obj,
     }
   }
 
-  if (cycles) {
-    int counter = 1;
-    ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
-    setup_graph_table(obj, ht, &counter, p);
-  } else
+  if (cycles)
+    ht = scheme_setup_datum_graph(obj, 1);
+  else
     ht = NULL;
 
   if ((maxl <= PRINT_MAXLEN_MIN) 
@@ -848,11 +902,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	return 1;
       } else {
 	if ((long)b->val > 0) {
-	  sprintf(quick_buffer, "#%ld=", ((long)b->val) - 2);
+	  sprintf(quick_buffer, "#%ld=", (((long)b->val) - 3) >> 1);
 	  print_this_string(p, quick_buffer, -1);
 	  b->val = (void *)(-(long)b->val);
 	} else {
-	  sprintf(quick_buffer, "#%ld#", -((long)b->val + 2));
+	  sprintf(quick_buffer, "#%ld#", ((-(long)b->val) - 3) >> 1);
 	  print_this_string(p, quick_buffer, -1);
 	  return 0;
 	}

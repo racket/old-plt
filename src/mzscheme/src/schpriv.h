@@ -387,8 +387,8 @@ Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 
-Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, 
-					   Scheme_Hash_Table *ht);
+Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj);
+Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 
 /*========================================================================*/
 /*                   syntax run-time structures                           */

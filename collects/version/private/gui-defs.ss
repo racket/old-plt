@@ -110,8 +110,10 @@
           (send frame show #t)))
    
      (define (show-error-ok title caption)
-       (show-ok title (format (string-constant vc-error-format)
-			      caption) #f))
+       (show-ok title 
+		(list (format (string-constant vc-error-format)
+			      caption))
+		#f))
 
      (define (make-wait-dialog parent title caption close-fun)
        (let ([dialog 

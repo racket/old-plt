@@ -28,8 +28,8 @@
 		details)))
       
       (define (show-error-ok title caption)
-	(show-ok #f
-		 (format (string-constant vc-error-format) caption)
+	(show-ok title
+		 (list (format (string-constant vc-error-format) caption))
 		 #f))
 
       (define (make-wait-dialog parent title caption close-fun)

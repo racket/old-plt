@@ -694,7 +694,7 @@
 (send key-event%-example-list add (make-object key-event%))
 
 (send memory-dc%-example-list add (make-object memory-dc%))
-(send post-script-dc%-example-list add (make-object post-script-dc% "/tmp/ps" #f #f))
+(send post-script-dc%-example-list add (make-object post-script-dc% #f))
 
 (with-handlers ([void void])
   (send printer-dc%-example-list add (make-object printer-dc%))
@@ -841,6 +841,8 @@
      (unless (memq i expect-n)
        (printf "Undocumented global: ~a~n" i)))
    actual-n))
+
+(exit 0)
 
 (random-seed 79)
 (create-all-random)

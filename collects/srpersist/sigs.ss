@@ -1,6 +1,6 @@
 ;; sigs.ss for srpersist collection
 
-(define-signature srpersist:srpersist^ 
+(define-signature srpersist:odbc-1.0^
 
   ; utility
 
@@ -10,7 +10,6 @@
    read-indicator
    set-indicator
    read-row-status
-   read-op-parms
    make-buffer
    read-buffer
    write-buffer
@@ -19,41 +18,26 @@
 
    alloc-connect
    alloc-env
-   alloc-handle
    alloc-stmt
    bind-col
-   bind-param
    cancel
-   close-cursor
-   col-attribute
    columns
    connect
-   copy-desc
    data-sources
    describe-col
    disconnect
-   end-tran
-   error
+   sql-error
    exec-direct
    execute
    fetch
-   fetch-scroll
    free-connect
    free-env
-   free-handle
    free-stmt
-   get-connect-attr
    get-connect-option
    get-cursor-name
    get-data
-   get-desc-field
-   get-desc-rec
-   get-diag-field
-   get-diag-rec
-   get-env-attr
    get-functions
    get-info
-   get-stmt-attr
    get-stmt-option
    get-type-info
    num-result-cols
@@ -61,14 +45,9 @@
    prepare
    put-data
    row-count
-   set-connect-attr
    set-connect-option
    set-cursor-name
-   set-desc-field
-   set-desc-rec
-   set-env-attr
    set-param
-   set-stmt-attr
    set-stmt-option
    special-columns
    statistics
@@ -90,8 +69,6 @@
    procedures
    set-pos
    table-privileges
-   drivers
-   bind-parameter
    set-scroll-options
 
    ; implementation of ODBC macro
@@ -100,17 +77,6 @@
 
    ; structures
 
-   struct:sql-numeric
-   make-sql-numeric
-   sql-numeric?
-   sql-numeric-precision
-   set-sql-numeric-precision!
-   sql-numeric-scale
-   set-sql-numeric-scale!
-   sql-numeric-sign
-   set-sql-numeric-sign!
-   sql-numeric-val
-   set-sql-numeric-val!
    struct:sql-date
    make-sql-date
    sql-date?
@@ -146,17 +112,83 @@
    set-sql-timestamp-second!
    sql-timestamp-fraction
    set-sql-timestamp-fraction!
-   struct:sql-guid
-   make-sql-guid
-   sql-guid?
-   sql-guid-data1
-   set-sql-guid-data1!
-   sql-guid-data2
-   set-sql-guid-data2!
-   sql-guid-data3
-   set-sql-guid-data3!
-   sql-guid-data4
-   set-sql-guid-data4!
+
+   ; exceptions
+
+   struct:exn-with-info
+   make-exn-with-info
+   exn-with-info?
+   exn-with-info-val
+   set-exn-with-info-val!
+   struct:exn-invalid-handle
+   make-exn-invalid-handle
+   exn-invalid-handle?
+   struct:exn-error
+   make-exn-error
+   exn-error?
+   struct:exn-need-data
+   make-exn-need-data
+   exn-need-data?
+   exn-need-data-val
+   set-exn-need-data-val!
+   struct:exn-still-executing
+   make-exn-still-executing
+   exn-still-executing?))
+
+(define-signature srpersist:odbc-2.0^
+
+  ;; ODBC procedures
+
+  ((open srpersist:odbc-1.0^)
+   bind-parameter
+   drivers))
+
+
+(define-signature srpersist:odbc-3.0^
+
+  ((open srpersist:odbc-2.0^)
+
+   ;; utility 
+
+   read-op-parms
+
+   ;; ODBC procedures
+
+   alloc-handle
+   bind-param
+   bulk-operations
+   close-cursor
+   col-attribute
+   copy-desc
+   end-tran
+   fetch-scroll
+   free-handle
+   get-connect-attr
+   get-desc-field
+   get-desc-rec
+   get-diag-field
+   get-diag-rec
+   get-env-attr
+   get-stmt-attr
+   set-connect-attr
+   set-desc-field
+   set-desc-rec
+   set-env-attr
+   set-stmt-attr
+
+   ;; structures
+
+   struct:sql-numeric
+   make-sql-numeric
+   sql-numeric?
+   sql-numeric-precision
+   set-sql-numeric-precision!
+   sql-numeric-scale
+   set-sql-numeric-scale!
+   sql-numeric-sign
+   set-sql-numeric-sign!
+   sql-numeric-val
+   set-sql-numeric-val!
    struct:sql-year-interval
    make-sql-year-interval
    sql-year-interval?
@@ -271,31 +303,25 @@
    sql-minute-to-second-interval-second
    set-sql-minute-to-second-interval-second!
 
-   ; exceptions
+   ;; exceptions
 
-   struct:exn-with-info
-   make-exn-with-info
-   exn-with-info?
-   exn-with-info-val
-   set-exn-with-info-val!
    struct:exn-no-data
    make-exn-no-data
-   exn-no-data?
-   struct:exn-invalid-handle
-   make-exn-invalid-handle
-   exn-invalid-handle?
-   struct:exn-error
-   make-exn-error
-   exn-error?
-   struct:exn-need-data
-   make-exn-need-data
-   exn-need-data?
-   exn-need-data-val
-   set-exn-need-data-val!
-   struct:exn-still-executing
-   make-exn-still-executing
-   exn-still-executing?))
+   exn-no-data?))
 
+(define-signature srpersist:odbc-3.5^
 
+  ((open srpersist:odbc-3.0^)
 
+   struct:sql-guid
+   make-sql-guid
+   sql-guid?
+   sql-guid-data1
+   set-sql-guid-data1!
+   sql-guid-data2
+   set-sql-guid-data2!
+   sql-guid-data3
+   set-sql-guid-data3!
+   sql-guid-data4
+   set-sql-guid-data4!))
 

@@ -26,6 +26,16 @@ _SrPersist_
  Loading
  -------
 
+ Before actually loading SrPersist, need to define the global variable 
+ odbc-version.  For example:
+
+     (define odbc-version 3.5)
+
+ Valid values of odbc-version are 1.0, 2.0, 3.0, and 3.5.  
+ The version here should be less than or equal to the ODBC version
+ used when compiling the SrPersist files.  See README in
+ the srpersist source directory for more details on compilation.
+
  There are two ways to load Srpersist.  The first is to treat
  it as a library:  
 
@@ -38,7 +48,9 @@ _SrPersist_
 
  binds `srpersist@' to the unit, with signature `srpersist^',
  which is defined in the file `sigs.ss' in the srpersist collection.
- This unit can be invoked or imported into other units as needed.
+ The contents of that signature depend on the value of 
+ odbc-version.   This unit can be invoked or imported into other 
+ units as needed.
 
  Overview of ODBC procedures
  ---------------------------
@@ -48,6 +60,13 @@ _SrPersist_
  SrPersist also has its own utility procedures, listed 
  under the heading "Utility" below.
 
+ For each procedure, we indicate the ODBC version in which it was 
+ introduced.  Therefore, some SrPersist procedures may not be available 
+ to your program.  If the variable odbc-version is greater than or 
+ equal to the ODBC version in which a procedure was introduced, the 
+ procedure will be available; otherwise, the procedure will not be 
+ available. 
+
  Exceptions
  ----------
 
@@ -55,12 +74,16 @@ _SrPersist_
  SrPersist exceptions correspond to the ODBC SQLRESULT codes, 
  as follows:
 
-  exn-no-data           SQL_NO_DATA
   exn-invalid-handle    SQL_INVALID_HANDLE
   exn-error             SQL_ERROR
   exn-still-executing   SQL_STILL_EXECUTING
   exn-need-data         SQL_NEED_DATA
   exn-with-info         SQL_SUCCESS_WITH_INFO
+  exn-no-data           SQL_NO_DATA
+
+ SQL_NO_DATA was introduced in ODBC 3.0, so the exn-no-data
+ exception may be raised only if SrPersist was compiled for 
+ ODBC 3.0 or greater.  
 
  Each of these exceptions is an ordinary Scheme structure
  derived from `struct:exn'.  Only `exn-need-data` and `exn-with-info' 
@@ -84,7 +107,7 @@ _SrPersist_
                       (printf "Value: ~a~n" (exn-with-info-val exn)))])
      ...)		      
 
- Applications can call sql-error, sql-get-diag-rec, or sql-get-diag-field
+ Applications can call sql-error, get-diag-rec, or get-diag-field
  to obtain additional information about an exception that
  has occurred (see the heading "Diagnostics", below).  No additional 
  information is available when the exception is `exn-invalid-handle'.
@@ -367,8 +390,59 @@ _SrPersist_
  exception is raised, which contains a connection string indicating 
  which attributes are missing. 
  
- Statements
- ----------
+ Statements and Parameters
+ -------------------------
+
+> (num-params hstmt)
+
+ ODBC 1.0.
+
+ Returns the number of parameters (placeholders indicated by a ?)
+ in the SQL associated with the statement handle `hstmt'.
+ The `prepare' procedure must be called before calling this 
+ procedure.
+
+> (bind-parameter hstmt num param-type sql-type col-size buff ind [digits])
+
+ ODBC 2.0.
+
+ Associates the sql-buffer `buff' with the parameter (a placeholder 
+ indicated by ? in an SQL statement) denoted by the statement 
+ handle `hstmt' and positive integer `num'.  The param-type is
+ one of the symbols 'sql-param-input, 'sql-param-output, or
+ 'sql-param-input-output.  `sql-type' is an SQL data type.
+ `col-size' is the number of bytes to be sent from the buffer 
+ to the parameter, or, if `sql-data-type' is any of 'sql-decimal,
+ 'sql-numeric, 'sql-float, 'sql-real, or 'sql-double, the number of
+ digits of precision used.  `ind' is an sql-indicator. The optional 
+ argument `digits' indicates the number of digits to the right of the 
+ decimal point, and is used if `sql-data-type' is 'sql-decimal, 
+ 'sql-numeric, 'sql-time, 'sql-timestamp, 'sql-type-time, 
+ 'sql-type-timestamp, 'sql-interval-second,  'sql-interval-day-to-second,  
+ 'sql-interval-hour-to-second, or 'sql-interval-minute-to-second.
+
+ The `prepare' procedure must be called before calling `bind-parameter'.
+
+> (bind-param hstmt num sql-type col-size buff ind [digits])
+
+ ODBC 3.0, deprecated in favor of bind-parameter.
+
+ Associates the sql-buffer `buff' with the parameter (a placeholder 
+ indicated by ? in an SQL statement) denoted by the statement 
+ handle `hstmt' and positive integer `num'. The arguments are as 
+ for the same-named arguments of procedure `bind-parameter'; some arguments
+ are omitted for `bind-param'.  Note that `bind-param' always 
+ assumes an input parameter, unlike `bind-parameter', which takes 
+ an argument to indicate the parameter type.
+
+> (set-param hstmt num sql-type buff ind)
+
+ ODBC 1.0, deprecated in favor of bind-parameter.
+
+ Associates the sql-buffer `buff' with the parameter (a placeholder 
+ indicated by ? in an SQL statement) denoted by the statement 
+ handle `hstmt' and positive integer `num'.  `sql-type' is an SQL 
+ data type.  `ind' is an sql-indicator.
 
 > (get-stmt-attr hstmt attr)
 
@@ -602,7 +676,7 @@ set-desc-field
  the SQL text, are replaced by the values bound to those parameters. 
  See `bind-parameter' and `bind-param'.
 
-> (sql-native-sql hdbc sql)
+> (native-sql hdbc sql)
 
  ODBC 1.0.
 
@@ -626,14 +700,14 @@ set-desc-field
  with the statement, or 2) the column associated with the
  statement, for use with bulk-operations or set-pos.
 
-> (sql-cancel hstmt)
+> (cancel hstmt)
 
  ODBC 1.0.
 
  Terminates processing of the statement given by the statement handle
  `hstmt'.
 
-> (sql-end-tran handle action)
+> (end-tran handle action)
 
  ODBC 3.0.
 
@@ -924,7 +998,15 @@ set-desc-field
    'sql-delete-by-bookmark   deletes rows identified by a bookmark
    'sql-fetch-by-bookmark    retrieves rows identified by a bookmark
 
- The details of using `bulk-operations' are complex, and 
- are outside the scope of this documentation.  See an 
- ODBC reference for information on using this procedure.
+ The details of using bulk-operations are beyond the scope of this
+ documentation.  Consult an ODBC reference for more information.
+
+> (row-count hstmt)
+
+ ODBC 1.0.
+
+ For the data source associated with the statement handle `hstmt', 
+ returns the number of rows affected by the most recent INSERT, 
+ UPDATE, or DELETE operation.
+
 

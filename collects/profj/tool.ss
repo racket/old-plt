@@ -328,20 +328,16 @@
           ;;execute-types: type-record 
           (define execute-types (create-type-record))
           
+          
           (define/public (front-end/complete-program input settings teachpack-cache)
             (set! execute-types (create-type-record))
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
-                            (input-port (lambda () (open-input-text-editor text 
-                                                                           (drscheme:language:text/pos-start input)
-                                                                           (drscheme:language:text/pos-end input)
-                                                                           (lambda (s) 
-                                                                             (if (equal? "test-case-box%"
-                                                                                         (send (send s get-snipclass)
-                                                                                               get-classname))
-                                                                                 (values (make-test-case s) 1)
-                                                                                 (values s 1)))
-                                                                           )))
+                            (input-port (lambda () 
+                                          (open-input-text-editor text 
+                                                                  (drscheme:language:text/pos-start input)
+                                                                  (drscheme:language:text/pos-end input)
+                                                                  (editor-filter #f))))
                             (values ((input-port)) text))])
               (let ((main-mod #f)
                     (require? #f)
@@ -392,12 +388,7 @@
                                           (open-input-text-editor text 
                                                                   (drscheme:language:text/pos-start input)
                                                                   (drscheme:language:text/pos-end input)
-                                                                  (lambda (s) 
-                                                                             (if (equal? "test-case-box%"
-                                                                                         (send (send s get-snipclass)
-                                                                                               get-classname))
-                                                                                 (values (make-test-case s) 1)
-                                                                                 (values s 1))))))
+                                                                  (editor-filter #f))))
                             (values ((input-port)) text))])
               (interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()
@@ -413,11 +404,14 @@
 
           (define/private (process-extras extras)
             (map (lambda (e)
-                   (if (test-case? e)
-                       (let-values (((syn throwaway throwaway2)
-                                     (send (test-case-test e) read-one-special 0 #f #f #f #f)))
-                         syn)
-                       (datum->syntax-object #f 1 #f)))
+                   (let-values (((syn throwaway throwaway2)
+                                 (if (test-case? e)
+                                     (send (test-case-test e) read-one-special 0 #f #f #f #f)
+                                     (begin 
+                                       (send (interact-case-box e) set-level level)
+                                       (send (interact-case-box e) set-records execute-types)
+                                       (send (interact-case-box e) read-one-special 0 #f #f #f #f)))))
+                     syn))
                  extras))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)
@@ -644,8 +638,8 @@
           (super-instantiate ())))
       
       (define snipclass-interactions (make-object snipclass-java-interactions%))
-      (send snipclass-comment set-version 1)
-      (send snipclass-comment set-classname "java-interactions-box%")
+      (send snipclass-interactions set-version 1)
+      (send snipclass-interactions set-classname "java-interactions-box%")
       (send (get-the-snip-class-list) add snipclass-interactions)
       
       (define java-interactions-box%
@@ -654,9 +648,36 @@
           (define/override (make-snip) (make-object java-interactions-box%))
           (define/override (get-corner-bitmap) ji-gif)
           (define/override (get-mesg) "Convert to comment")
-          
+          (define level 'full)
+          (define type-recs (create-type-record))
+          (define/public (set-level l) (set! level l))
+          (define/public (set-records tr) (set! type-recs tr))
+          (define-struct input-length (start-pos end-pos))
           (define/public (read-one-special index source line column position)
-            (values this 1 #t))
+            (let* ((ed (get-editor))
+                   (port (open-input-text-editor ed 0 'end (editor-filter #t)))
+                   (inputs-list null))
+              (let outer-loop ((c (read-char-or-special port)) (start 0))
+                (unless (eof-object? c)
+                  (let inner-loop ((put c) (offset start))
+                    (cond
+                      ((or (eq? put #\015) (eq? put #\012) (eof-object? put))
+                       (set! inputs-list (cons (make-input-length start offset) inputs-list))
+                       (outer-loop (read-char-or-special port) (add1 offset)))
+                      (else (inner-loop (read-char-or-special port) (add1 offset)))))))
+              (values (datum->syntax-object #f 
+                                            `(begin ,@(map 
+                                                       (lambda (input-len)
+                                                         (input-port 
+                                                          (lambda () 
+                                                            (open-input-text-editor ed 
+                                                                                    (input-length-start-pos input-len)
+                                                                                    (input-length-end-pos input-len)
+                                                                                    (editor-filter #t))))
+                                                         (interactions-offset (input-length-start-pos input-len))
+                                                         (compile-interactions ((input-port)) ed type-recs level))
+                                                       (reverse inputs-list)))
+                                            #f) 1 #t)))
           (super-instantiate ())
           (inherit set-snipclass get-editor)
           (set-snipclass snipclass-interactions)
@@ -686,6 +707,15 @@
       (drscheme:get/extend:extend-unit-frame java-interactions-box-mixin)
       
       ))
+
+  (define (editor-filter delay?)
+    (lambda (s)
+      (let ((name (send (send s get-snipclass) get-classname)))
+        (cond
+          ((equal? "test-case-box%" name) (values (make-test-case s) 1))
+          ((equal? "java-interactions-box%" name) (values (make-interact-case s) 1))
+          (delay? (values (lambda () (send s read-one-special 0 #f #f #f #f)) 1))
+          (else (values s 1))))))
   
   (provide format-java)
   ;formats a java value (number, character or Object) into a string

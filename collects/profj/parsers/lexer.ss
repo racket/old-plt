@@ -6,11 +6,11 @@
   ;; Lacks all Unicode support
 
   
-  (require (lib "lex.ss" "parser-tools")
-           "../parameters.ss")
+  (require (lib "lex.ss" "parser-tools"))
 
   (define-struct test-case (test))
-  (provide (struct test-case (test)))
+  (define-struct interact-case (box))
+  (provide (struct test-case (test)) (struct interact-case (box)))
   
   (provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
   
@@ -282,16 +282,8 @@
 
      ((special)
       (cond
-        (((interactions-box-test) special) (token-INTERACTIONS_BOX special))
+        ((interact-case? special) (token-INTERACTIONS_BOX special))
         ((test-case? special) (token-TEST_SUITE special))
-        #;        ((syntax? special)
-                   (syntax-case special ()
-                     ((define-values () (values)) (token-TEST_SUITE special))
-                     (else (if (and (syntax? special) (pair? (syntax-e special)) 
-                                    (symbol? (syntax-e (car (syntax-e special))))
-                                    (eq? 'test-case (syntax-e (car (syntax-e special)))))
-                               (token-TEST_SUITE special)
-                               (token-OTHER_SPECIAL special)))))
         (else (token-OTHER_SPECIAL special))))
           
      ;; 3.6

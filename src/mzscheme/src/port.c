@@ -2055,11 +2055,14 @@ make_fd_input_port(int fd, const char *filename)
 static Scheme_Object *normal_stdin;
 static int direct_cons_trygetchar() { return scheme_char_ready(normal_stdin) ? scheme_getc(normal_stdin) : -1; }
 static void direct_cons_putchar(int c) { }
+# define convert_scan_code(x) x
+# else
+#  include "pc_keys.inc"
 # endif
 
 typedef struct {
   int count, size, ready;
-  char *buffer;
+  unsigned char *buffer;
 } osk_console_input;
 
 static int
@@ -2074,8 +2077,15 @@ osk_char_ready (Scheme_Input_Port *port)
     return 1;
 
   k = direct_cons_trygetchar();
-  if (k >= 0) {
-    if (k == 8) { /* Backspace */
+  k = convert_scan_code(k); /* defined in pc_keys.inc; handles ctl-alt-del */
+  if (k > 0) {
+    if (k == 3) { /* Ctl-C */
+      scheme_break_thread(NULL);
+    } else if (k == 4) { /* Ctl-D */
+      if (!osk->count)
+	/* ready with !count => EOF */
+	osk->ready = 1;
+    } else if (k == 8) { /* Backspace */
       if (osk->count) {
 	direct_cons_putchar(8);
 	direct_cons_putchar(' '); /* space erases old letter */
@@ -2123,6 +2133,12 @@ static int osk_getc(Scheme_Input_Port *port)
   }
 
   osk = (osk_console_input *)port->port_data;
+
+  if (!osk->count) {
+    /* EOF */
+    osk->ready = 0;
+    return EOF;
+  }
 
   c = osk->buffer[osk->ready - 1];
   osk->ready++;

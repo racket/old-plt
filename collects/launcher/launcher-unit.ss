@@ -1,11 +1,11 @@
 
 (module launcher-unit mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "file.ss"))
 
   (require (lib "compile-sig.ss" "dynext"))
   (require (lib "link-sig.ss" "dynext"))
 
-  (require (lib "process.ss"))
   (require (lib "plist.ss" "xml"))
 
   (require "launcher-sig.ss")
@@ -343,8 +343,8 @@
 		     [src (build-path (collection-path "launcher")
 				      "Starter.app")])
 		(when (directory-exists? dest)
-		      (system* "/bin/rm" "-rf" dest))
-		(system* "/bin/cp" "-r" src dest)
+		  (delete-directory/files dest))
+		(copy-directory/files src dest)
 		(call-with-output-file (build-path dest 
 						   "Contents" 
 						   "Resources" 
@@ -353,7 +353,6 @@
 		    (write-plist 
 		     `(dict (assoc-pair "executable name"
 					,(build-path plthome 
-						     "bin"
 						     "MrEd.app"
 						     "Contents"
 						     "MacOS"

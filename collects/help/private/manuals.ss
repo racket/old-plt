@@ -6,7 +6,8 @@
 	   (lib "pregexp.ss")
            "colldocs.ss"
            "docpos.ss"
-	   (lib "util.ss" "help" "servlets" "private"))
+	   (lib "util.ss" "help" "servlets" "private")
+	   (lib "external.ss" "help" "servlets" "private"))
 
   ; to get CSS style spec
   (require (lib "xml.ss" "xml"))
@@ -15,6 +16,8 @@
   (provide find-manuals)
  
   (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
+
+  (define external-connections? (unbox external-box))
 
   (define (find-manuals)
     (let* ([sys-type (system-type)]
@@ -113,7 +116,7 @@
 	  
 	  (list "<H1>Installed Manuals</H1>")
 	  
-	  (if cvs-user?
+	  (if (and cvs-user? (not external-connections?))
 	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">refresh all manuals</a>")
 	      '())
 	  

@@ -8,7 +8,7 @@ typedef struct {
   int weight;
 } ColorCache;
 
-#define COLOR_CACHE_SIZE 100
+#define COLOR_CACHE_SIZE 1000
 
 static ColorCache cache[COLOR_CACHE_SIZE];
 static int cache_end;

@@ -1,36 +1,53 @@
 
-(make-mred-launcher args dest) - Creates the launcher `dest'. The `dest'
-   executeable will start MrEd with the command-line arguments
-   specified as strings in the list `args'. Extra arguments
-   passed to the launcher at run-time will be appended to this
-   list and passed on to MrEd.
+(make-mred-launcher args dest) - Creates the launcher `dest'. The 
+   `dest' executeable (for the current OS platform) will start 
+   MrEd with the command-line arguments specified as strings in 
+   the list `args'. Extra arguments passed to the launcher at 
+   run-time will be appended (modulo special X flag handling, as
+   described below) to this list and passed on to MrEd.
 
-   `make-mred-launcher' transforms `args as necessary to avoid
+   `make-mred-launcher' transforms `args' as necessary to avoid
    mutations caused by passing the strings through the
    platform-specific launching mechanism (e.g, as sh arguments), so
    the strings in `flags' arrive to MrEd intact.
 
+   For X Windows, the script created by `make-mred-launcher'
+   detects and handles X Windows flags specially when they
+   appear as the initial arguments to the script. Instead
+   of appending these arguments to the end of `args', they
+   are spliced in after any `--pre' or X Windows flags
+   already listed listed in `args'. The remaining arguments (i.e.,
+   all script flags and arguments after the last X Windows flag
+   or argument) are then appended after the spliced `args'.
+
 (make-mzscheme-launcher args dest) - Same as `make-mred-launcher',
-   but for starting MzScheme.
+   but for starting MzScheme. (No special X windows handling.)
+
 
 (make-mred-program-launcher collection dest) - Calls
    `make-mred-launcher' with arguments that start the MrEd program
-   implemednted by `collection': (list "-A" collection "--").
-    
+   implemednted by `collection': (list "-A" collection "--").    
 
 (make-mzscheme-program-launcher file collection dest) - Calls
    `make-mzscheme-launcher' with arguments that start the MzScheme
    program implemented by `file' in `collection': (list "-mvL-"
    file collection)
 
+
+(mred-program-launcher-path name) returns a pathname for an
+   executable in the current PLT home directory called `name'.
+   For Windows, the ".exe" suffix is automatically appended
+   to `name', and for X Windows `name' is changed to lowercase
+   and whitespace is changed to `-'.
+
+(mzscheme-program-launcher-path name) returns the same pathname
+   as (mred-program-launcher-path name).
+
+
 (install-mred-program-launcher collection name) - Calls
-   `make-mred-launcher' with the standard destination for
-   executables in the current PLT home directory. `name' is
-   used as the executable name. (The ".exe" suffix is automatically
-   appended for Windows.)
+   `make-mred-launcher' with the destintation returned
+   by (mred-program-launcher-path name).
 
 (install-mzscheme-program-launcher file collection name) - Calls
-   `make-mzscheme-launcher' with the standard desitnation for
-   executables in the current PLT home directory. `name' is
-   used as the executable name. (The ".exe" suffix is automatically
-   appended for Windows.)
+   `make-mzscheme-launcher' with the destintation returned
+   by (mzscheme-program-launcher-path name).

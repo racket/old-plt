@@ -57,32 +57,141 @@
 			 [else (cons (car l) (loop (cdr l) 0))])))
 		    s))])
       (string-append/spaces trans flags)))
-  
+
+  (define one-arg-x-flags '((xa "-display")
+			    (xb "-geometry")
+			    (xc "-bg" "-background") 
+			    (xd "-fg" "-foregound") 
+			    (xe "-font")
+			    (xf "-name")
+			    (xg "-selectionTimeout")
+			    (xh "-title")
+			    (xi "-xnllanguage")
+			    (xj "-xrm")))
+  (define no-arg-x-flags '((xk "-iconic") 
+			   (xl "-rv" "-reverse") 
+			   (xm "+rv") 
+			   (xn "-synchronous")))
+
+  (define (skip-pre-x-flags flags)
+    (let ([flags (if (and (pair? flags)
+			  (string=? (car flags) "--pre"))
+		     (if (null? (cdr flags))
+			 null
+			 (cddr flags))
+		     flags)]
+	  [xfmem (lambda (flag) (lambda (xf) (member flag (cdr xf))))])
+      (let loop ([f flags])
+	(if (null? f)
+	    null
+	    (if (ormap (xfmem (car f)) one-arg-x-flags)
+		(if (null? (cdr f))
+		    null
+		    (loop (cddr f)))
+		(if (ormap (xfmem (car f)) no-arg-x-flags)
+		    (loop (cdr f))
+		    f))))))
+
+  (define (output-x-arg-getter exec args)
+    (let* ([newline (string #\newline)]
+	   [or-flags
+	    (lambda (l)
+	      (if (null? (cdr l))
+		  (car l)
+		  (string-append
+		   (car l)
+		   (apply
+		    string-append
+		    (map (lambda (s) (string-append " | " s)) (cdr l))))))])
+      (apply
+       string-append
+       (append
+	(list "# Find X flags and shift them to the front" newline
+	      "findxend()" newline
+	      "{" newline
+	      " oneargflag=''" newline
+	      " case \"$1\" in" newline)
+	(map
+	 (lambda (f)
+	   (format (string-append
+		    "  ~a)" newline
+		    "     oneargflag=\"$1\"" newline
+		    "     ~a=\"$2\"" newline
+		    "   ;;" newline)
+		   (or-flags (cdr f))
+		   (car f)))
+	 one-arg-x-flags)
+	(map
+	 (lambda (f)
+	   (format "  ~a)~n    ~a=yes~n  ;;~n" (or-flags (cdr f)) (car f)))
+	 no-arg-x-flags)
+	(list
+	 (format (string-append
+		  "  *)~n    ~a~a~a  ;;~n"
+		  " esac~n"
+		  " shift~n"
+		  " if [ \"$oneargflag\" != '' ] ; then~n"
+		  "   if [ \"${1+n}\" != 'n' ] ; then echo $0: missing argument for standard X flag $oneargflag ; exit 1 ; fi~n"
+		  "   shift~n"
+		  " fi~n"
+		  " findxend ${1+\"$@\"}~n"
+		  "}~nfindxend ${1+\"$@\"}~n")
+		 exec 
+		 (apply
+		  string-append
+		  (append
+		   (map
+		    (lambda (f) (format " ${~a+\"~a\"} ${~a+\"$~a\"}" (car f) (cadr f) (car f) (car f)))
+		    one-arg-x-flags)
+		   (map
+		    (lambda (f) (format " ${~a+\"~a\"}" (car f) (cadr f)))
+		    no-arg-x-flags)))
+		 args))))))
+
   (define (make-unix-launcher kind flags dest)
     (install-template dest kind "sh" "sh") ; just for something that's executable
     (let* ([newline (string #\newline)]
-	   [str (str-list->sh-str flags)]
-	   [s (string-append
-	       "#!/bin/sh" newline
-	       "# This script was created by make-~a-launcher" newline
-	       newline
-	       "if [ \"$PLTHOME\" = '' ] ; then" newline
-	       "  PLTHOME=~a" newline
-	       "  export PLTHOME" newline
-	       "fi" newline
-	       newline
-	       "SYS=`${PLTHOME}/bin/archsys`" newline
-	       newline
-	       "exec ${PLTHOME}/.bin/${SYS}/~a ~a ${1+\"$@\"}" newline)])
+	   [post-flags (if (eq? kind 'mred)
+			   (skip-pre-x-flags flags)
+			   null)]
+	   [pre-flags (if (null? post-flags)
+			  flags
+			  (let loop ([f flags])
+			    (if (eq? f post-flags)
+				null
+				(cons (car f) (loop (cdr f))))))]
+	   [pre-str (str-list->sh-str pre-flags)]
+	   [post-str (str-list->sh-str post-flags)]
+	   [header (format
+		    (string-append
+		     "#!/bin/sh" newline
+		     "# This script was created by make-~a-launcher" newline
+		     newline
+		     "if [ \"$PLTHOME\" = '' ] ; then" newline
+		     "  PLTHOME=~a" newline
+		     "  export PLTHOME" newline
+		     "fi" newline
+		     newline
+		     "SYS=`${PLTHOME}/bin/archsys`" newline
+		     newline)
+		    kind plthome)]
+	   [exec (format
+		  "exec ${PLTHOME}/.bin/${SYS}/~a ~a"
+		  kind pre-str)]
+	   [args (format
+		  " ~a ${1+\"$@\"}~n"
+		  post-str)]
+	   [assemble-exec (if (and (eq? kind 'mred)
+				   (not (null? post-flags)))
+			      output-x-arg-getter
+			      string-append)])
       (unless plthome
 	(error 'make-unix-launcher 
 	       "unable to locate PLTHOME"))
       (let ([p (open-output-file dest 'truncate)])
-	(fprintf p s
-		 kind
-		 plthome
-		 kind
-		 str)
+	(fprintf p "~a~a"
+		 header
+		 (assemble-exec exec args))
 	(close-output-port p))))
   
   
@@ -172,9 +281,15 @@
 				 (string->list file)))]
 		       [(windows) (string-append file ".exe")]
 		       [else file]))
+
+  (define (mred-program-launcher-path name)
+    (build-path l-home (sfx name)))
   
+  (define (mzscheme-program-launcher-path name)
+    (mred-program-launcher-path name))
+
   (define (install-mred-program-launcher collection name)
-    (make-mred-program-launcher collection (build-path l-home (sfx name))))
+    (make-mred-program-launcher collection (mred-program-launcher-path name)))
   
   (define (install-mzscheme-program-launcher file collection name)
-    (make-mzscheme-program-launcher file collection (build-path l-home (sfx name)))))
+    (make-mzscheme-program-launcher file collection (mzscheme-program-launcher-path name))))

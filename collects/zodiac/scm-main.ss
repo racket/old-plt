@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.207 2000/05/30 19:53:38 shriram Exp $
+; $Id: scm-main.ss,v 1.208 2000/05/31 18:55:21 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1961,9 +1961,19 @@
 	      (let* ((params (pat:pexpand '(param ...) p-env kwd))
 		     (vals (pat:pexpand '(value ...) p-env kwd))
 		     (body (pat:pexpand body p-env kwd))
-		     (pzs (map generate-name params))
-		     (saves (map generate-name params))
-		     (swap (generate-name (structurize-syntax 'swap expr '(-1)))))
+		      ;; The following two have this strange code
+		      ;; because generate-name expects a z:symbol,
+		      ;; but the param can be an arbitrary expression,
+		      ;; not just the name of a parameter
+		     (pzs (map generate-name
+			    (map (lambda (param)
+				   (structurize-syntax 'pz param '(-1)))
+			      params)))
+		      (saves (map generate-name
+			      (map (lambda (param)
+				     (structurize-syntax 'save param '(-1)))
+				params)))
+		      (swap (generate-name (structurize-syntax 'swap expr '(-1)))))
 		(expand-expr
 		 (structurize-syntax
 		  (if (null? params)

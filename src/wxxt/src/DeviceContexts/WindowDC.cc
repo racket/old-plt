@@ -306,9 +306,8 @@ static wxBitmap *ScaleBitmap(wxBitmap *src,
     } else
       *retval = 0;
 
-    /* Resultof XGetImage isn't supposed to be destroyed? */
-    /* XDestroyImage(simg); */
-    /* XDestroyImage(timg); */
+    XDestroyImage(simg);
+    XDestroyImage(timg);
 
     xsrc = ysrc = 0;
     src = tmp;
@@ -427,8 +426,7 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 	  XIntersectRegion(bmrgn, rgn, rgn);
 	  XDestroyRegion(bmrgn);
 
-	  /* Resultof XGetImage isn't supposed to be destroyed? */
-	  /* XDestroyImage(simg); */
+	  XDestroyImage(simg);
 
 	  bmask = NULL; /* done via rgn */
 	}
@@ -747,6 +745,8 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	      XPutImage(wxAPP_DISPLAY, bpm, agc, img, 0, 0, 0, 0, mw, mh);
 	      XFreeGC(DPY, agc);
 	    }
+
+	    XDestroyImage(img);
 
 # ifdef WX_XR_PICTURE
 	    maskp = XRenderCreatePicture(wxAPP_DISPLAY,

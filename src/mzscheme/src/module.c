@@ -475,8 +475,8 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *modname, *modidx;
-  Scheme_Object *name;
-  Scheme_Module *m;
+  Scheme_Object *name, *srcname, *srcmname;
+  Scheme_Module *m, *srcm;
   Scheme_Env *env, *menv;
   int i, count;
 
@@ -494,23 +494,39 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
   env = scheme_get_env(scheme_config);
 
   m = scheme_module_load(modname, env);
-  
+  srcm = m;
+
+  srcmname = NULL;
+  srcname = NULL;
+
   if (SCHEME_SYMBOLP(name)) {
+  try_again:
+    
     /* Before starting, check whether the name is provided */
-    count = m->num_provides;
+    count = srcm->num_provides;
     for (i = 0; i < count; i++) {
-      if (SAME_OBJ(name, m->provides[i])) {
-	if (i < m->num_var_provides)
+      if (SAME_OBJ(name, srcm->provides[i])) {
+	if (i < srcm->num_var_provides) {
+	  srcmname = (srcm->provide_srcs ? srcm->provide_srcs[i] : scheme_false);
+	  if (SCHEME_FALSEP(srcmname))
+	    srcmname = srcm->modname;
+	  srcname = srcm->provide_src_names[i];
 	  break;
-	else {
+	} else {
 	  scheme_arg_mismatch("dynamic-require", "name is provided as syntax: ", name);
 	  return NULL;
 	}
       }
     }
     
+    if ((i == count) && srcm->reprovide_kernel) {
+      /* Check kernel. */
+      srcm = kernel;
+      goto try_again;
+    }
+
     if (i == count) {
-      scheme_arg_mismatch("dynamic-require", "name is not provided from the module: ", name);
+      scheme_arg_mismatch("dynamic-require", "name is not provided by the module: ", name);
       return NULL;
     }
   }
@@ -518,9 +534,9 @@ static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
   start_module(m, env, 0, modidx);
 
   if (SCHEME_SYMBOLP(name)) {
-    menv = scheme_module_access(modname, env);
+    menv = scheme_module_access(srcmname, env);
     
-    return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)name);
+    return (Scheme_Object *)scheme_lookup_in_table(menv->toplevel, (const char *)srcname);
   } else
     return scheme_void;
 }
@@ -577,8 +593,8 @@ static Scheme_Object *namespace_transfer_module(int argc, Scheme_Object *argv[])
   if (!SCHEME_SYMBOLP(argv[1]))
     scheme_wrong_type("namespace-transfer-module", "symbol", 1, argc, argv);
 
-  env = scheme_get_env(scheme_config);
-  to_env = (Scheme_Env *)argv[0];
+  env = (Scheme_Env *)argv[0];
+  to_env = scheme_get_env(scheme_config);
 
   todo = scheme_make_pair(argv[1], scheme_null);
   /* Check whether todo, or anything it needs, is already declared incompatibly: */

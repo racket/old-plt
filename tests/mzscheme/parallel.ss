@@ -5,10 +5,10 @@
 
 (with-handlers ([not-break-exn?
 		 (lambda (exn)
-		   (namespace-variable-binding
+		   (namespace-set-variable-value!
 		    'parallel-load
 		    "quiet.ss"))])
-  (namespace-variable-binding 'parallel-load))
+  (namespace-variable-value 'parallel-load))
 
 ; Runs n versions of test in parallel threads and namespaces, 
 ; waiting until all are done
@@ -59,4 +59,4 @@
 	    (directory-list dir))
   (delete-directory dir))
 
-(parallel 10 (path->complete-path parallel-load (current-load-relative-directory)))
+(parallel 3 (path->complete-path parallel-load (current-load-relative-directory)))

@@ -314,7 +314,7 @@
        (if (ifS-else body)
            (and (reachable-return? (ifS-then body))
                 (reachable-return? (ifS-else body)))))
-      ((throw? body) #f)
+      ((throw? body) #t)
       ((return? body) #t)
       ((while? body) (reachable-return? (while-loop body)))
       ((doS? body) (reachable-return? (doS-loop body)))

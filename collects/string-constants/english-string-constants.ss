@@ -564,7 +564,7 @@
  ;;; version checker
 
  (please-wait "Please wait")
- (checking-version-server "Checking PLT version server")
+ (connecting-version-server "Connecting to PLT version server")
  (network-timeout "Network timeout") 
  (cannot-connect  "Can't connect to PLT version server")
  (update-check "PLT update check")
@@ -575,7 +575,6 @@
  (binary-name "Binary")
  (updates-available "Updates are available at")
  (latest-binary-information-format "Latest released version: ~a (iteration ~a)")
- (connecting-version-server "Connecting to PLT version server")
  (update-dialog-title "PLT update status")
  (need-update-string "One or more installed PLT software packages needs updating")
  (no-update-string "All installed PLT software packages are up-to-date")

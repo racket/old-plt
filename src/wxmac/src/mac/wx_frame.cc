@@ -746,6 +746,7 @@ void wxFrame::MacUpdateWindow(void)
 		SetCurrentDC();
 		::BeginUpdate(theMacWindow);
         RgnHandle visibleRgn = NewRgn();
+>>>>>>> 1.59
 		if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),visibleRgn)))
 		{
  			// Erase update region
@@ -763,6 +764,11 @@ void wxFrame::MacUpdateWindow(void)
 #endif 				
 		}
 		::EndUpdate(theMacWindow);
+<<<<<<< wx_frame.cc
+		// TEMPORARY
+		fprintf(stderr,"Ending update normally. Update region cleared.\n");
+=======
+>>>>>>> 1.59
 	}
 }
 

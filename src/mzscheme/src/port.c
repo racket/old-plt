@@ -22,7 +22,7 @@
 */
 
 /* This file implements the most platform-specific aspects of MzScheme
-   port types, which means it deals with all the messy FILE and fie
+   port types, which means it deals with all the messy FILE and file
    descriptor issues, as well as implementing TCP. Also, `subprocess'
    is implemented here, since much of the work has to do with
    ports. */
@@ -5197,8 +5197,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	  /* Hopefully, the signal is delivered here. */
 	  if (tries) {
 	    /* Stubborn OS (e.g.,MacOS X) that doesn't deliver the signal during sleep(0) */
+	  	int unused = 0; // !@#$ library bug; this doesn't work right if the stack is aligned wrong
 	    struct timeval time;
-	    int select_result = 0;
 
 	    time.tv_sec = (long)0;
 	    time.tv_usec = (long)1000;

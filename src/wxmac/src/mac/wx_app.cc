@@ -621,7 +621,6 @@ void wxApp::doMacUpdateEvt(void)
 	} else {
 		BeginUpdate(theMacWindow);
 		EndUpdate(theMacWindow);
-		fprintf(stderr,"EndUpdate called because frame not found. Update Region emptied.\n");
 	}
 }
 

@@ -153,12 +153,13 @@ PROCEDURES -----------------------------------------------------------
   provides procedures, such as `extract-field, for manipulating the
   header.
 
-> (call/input-url url url->port-proc port->void-proc [list-of-strings]) -> void
+> (call/input-url url url->port-proc port->X-proc [list-of-strings]) -> X
 
   First argument is the URL to open.  Second is a procedure that takes
   a URL and turns it into a (pure or impure) port.  The third takes
   the (pure or impure) port and handles its contents.  The optional
-  fourth argument is a set of strings to send to the server.
+  fourth argument is a set of strings to send to the server. The result
+  of `call/input-url' is the result of the third argument procedure.
 
 > (current-proxy-servers) -> (list (list scheme string port-number) ...)
 > (current-proxy-servers server-mapping) -> void

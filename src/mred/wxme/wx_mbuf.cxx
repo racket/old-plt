@@ -43,7 +43,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#define NUM_MAX_UNDOS 100
+#define NUM_MAX_UNDOS 256
 
 #if ALLOW_X_STYLE_SELECTION
 Bool wxMediaXSelectionMode = TRUE;

@@ -7,7 +7,9 @@
 
 
 (define-signature prims^ (program argv))
-(define-signature drscheme-jr:settings^ (repl? show-banner? initialize-userspace setting startup-file))
+(define-signature drscheme-jr:settings^
+  (repl? show-banner? initialize-userspace setting startup-file
+	 run-in-new-user-thread))
 
 (define dr-jrU
   (unit/sig ()
@@ -121,12 +123,13 @@
                                                    (basis:setting-name s)))
                                            basis:settings)))))
 	       
-	       (let ([repl-thread (thread
-				   (lambda ()
-				     (when (string? file)
-				       (load/prompt file))
-				     (when settings:repl?
-                                       (repl))))])
+	       (let ([repl-thread
+		      (settings:run-in-new-user-thread
+		       (lambda ()
+			 (when (string? file)
+			   (load/prompt file))
+			 (when settings:repl?
+			   (repl))))])
 		 (mzlib:thread:dynamic-enable-break
 		  (lambda ()
 		    (let loop ()

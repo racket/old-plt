@@ -1339,7 +1339,10 @@
 								 basis:initial-offset
 								 filename)]
 				      [chars (begin0
-                                              (list (read-char p) (read-char p) (read-char p) (read-char p))
+                                              (list (read-char p)
+						    (read-char p)
+						    (read-char p)
+						    (read-char p))
                                               (close-input-port p))])
 				 (equal? chars (string->list "WXME"))))
 			  (let ([process-sexps
@@ -1356,7 +1359,8 @@
 			    (apply values 
 				   (let ([text (make-object drscheme:text:text%)])
 				     (parameterize ([mred:current-eventspace
-						     drscheme:init:system-eventspace]) ;; to get the right snipclasses
+						     ;; to get the right snipclasses
+						     drscheme:init:system-eventspace])
 				       (send text load-file filename))
 				     (begin0
                                       (process-text text process-sexps

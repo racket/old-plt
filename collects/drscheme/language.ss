@@ -337,7 +337,7 @@
 	     new-settings))))
       (and
        (fw:preferences:get 'framework:menu-bindings)
-       #\l))
+       #\u))
     (make-object mred:separator-menu-item% language-menu)
     (make-object mred:menu-item%
       "Add Teachpack..."

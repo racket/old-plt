@@ -7,19 +7,20 @@
 	   [offset 2]
 	   [indent 0]
 	   [indent-string ""])
-    (current-load (lambda (f)
-		    (let ([file (if (relative-path? f)
-				    (build-path (current-directory) f)
-				    f)])
-		      (dynamic-wind
-		       (lambda ()
-			 (set! indent-string (list->string (vector->list (make-vector indent #\space))))
-			 (set! indent (+ indent offset))
-			 (printf "~aLoading ~a...~n" indent-string file))
-		       (lambda () (old-handler file))
-		       (lambda ()
-			 (printf "~aLoaded ~a...~n" indent-string file)
-			 (set! indent (- indent offset)))))))))
+    (current-load
+     (lambda (f)
+       (let ([file (if (relative-path? f)
+		       (build-path (current-directory) f)
+		       f)])
+	 (dynamic-wind
+	  (lambda ()
+	    (set! indent-string (list->string (vector->list (make-vector indent #\space))))
+	    (set! indent (+ indent offset))
+	    (printf "~aLoading ~a...~n" indent-string file))
+	  (lambda () (old-handler file))
+	  (lambda ()
+	    (printf "~aLoaded ~a...~n" indent-string file)
+	    (set! indent (- indent offset)))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -58,6 +59,7 @@
     (define repl? #t)
     (define show-banner? #t)
     (define initialize-userspace void)
+    (define run-in-new-user-thread thread)
     
     (define setting (basis:get-default-setting))
 

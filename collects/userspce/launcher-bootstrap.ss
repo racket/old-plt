@@ -25,6 +25,17 @@
       
       (define show-banner? #f)
       (define repl? #f)
+      (define (run-in-new-user-thread thunk)
+	(parameterize ([current-eventspace (make-eventspace)])
+	  (let ([thread #f]
+		[sema (make-semaphore 0)])
+	    (queue-callback (lambda ()
+			      (set! thread (current-thread))
+			      (semaphore-post sema)))
+	    (semaphore-wait sema)
+	    (queue-callback
+	     thunk)
+	    thread)))
       (define (initialize-userspace)
 
         ;; invoke the teachpacks

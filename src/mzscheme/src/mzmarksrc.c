@@ -777,8 +777,8 @@ module_val {
   gcMARK(m->prefix);
   gcMARK(m->dummy);
 
-  gcMARK(m->rn);
-  gcMARK(m->et_rn);
+  gcMARK(m->rn_stx);
+  gcMARK(m->et_rn_stx);
 
   gcMARK(m->primitive);
  size:
@@ -857,6 +857,7 @@ mark_comp_env {
   gcMARK(e->base.uid);
   gcMARK(e->base.uids);
   gcMARK(e->base.dup_check);
+  gcMARK(e->base.intdef_name);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);

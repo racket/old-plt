@@ -1076,14 +1076,9 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 {
   Scheme_Env *menv, *env;
-  Scheme_Object *modchain, *name, *base_modidx;
+  Scheme_Object *modchain, *name;
 
   env = scheme_get_env(scheme_config);
-
-  if (env->module)
-    base_modidx = env->module->self_modidx;
-  else
-    base_modidx = scheme_false;
 
   name = scheme_module_resolve(scheme_make_modidx(argv[0], scheme_false, scheme_false));
 
@@ -2391,7 +2386,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   fm = scheme_add_rename(fm, et_rn);
 
   if (!check_mb) {
-    fm = scheme_check_immediate_macro(fm, benv, rec, drec, depth, scheme_false, 0, &mbval);
+    fm = scheme_check_immediate_macro(fm, benv, rec, drec, depth, scheme_false, 0, &mbval, NULL);
 
     /* If expansion is not the primitive `#%module-begin', add local one: */
     if (!SAME_OBJ(mbval, modbeg_syntax)) {

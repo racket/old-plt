@@ -96,6 +96,7 @@ typedef Scheme_Object *(*Lazy_Macro_Fun)(Scheme_Object *, int);
 static Scheme_Object *kernel_symbol;
 
 static int tl_id_counter = 0;
+static int intdef_counter = 0;
 
 static int builtin_ref_counter = 0;
 
@@ -1894,7 +1895,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
     genv = env->genv;
     modname = NULL;
 
-    if (genv->module) {
+    if (genv->module && !genv->rename) {
       /* Free variable. Maybe don't continue. */
       if (flags & SCHEME_SETTING) {
 	scheme_wrong_syntax(scheme_set_stx_string, NULL, src_find_id, "unbound variable in module");
@@ -1943,7 +1944,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags)
     return NULL;
   }
 
-  if (!modname && (flags & SCHEME_SETTING) && genv->module) {
+  if (!modname && (flags & SCHEME_SETTING) && (genv->module && !genv->rename)) {
     /* Check for set! of unbound variable: */
     
     if (!scheme_lookup_in_table(genv->toplevel, (const char *)find_global_id)) {
@@ -2723,9 +2724,33 @@ local_context(int argc, Scheme_Object *argv[])
     scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-context: not currently transforming");
 
-  if (env->flags & SCHEME_INTDEF_FRAME)
-    return scheme_intern_symbol("internal-define");
-  else if (scheme_is_module_env(env))
+  if (env->flags & SCHEME_INTDEF_FRAME) {
+    if (!env->intdef_name) {
+      Scheme_Object *sym, *pr, *prev = NULL;
+      Scheme_Comp_Env *lenv = env;
+      char buf[22];
+      while (1) {
+	sprintf(buf, "internal-define%d", intdef_counter++);
+	sym = scheme_make_symbol(buf); /* uninterned! */
+	pr = scheme_make_immutable_pair(sym, scheme_null);
+	lenv->intdef_name = pr;
+	if (prev)
+	  SCHEME_CDR(prev) = pr;
+	if (lenv->next->flags & SCHEME_INTDEF_FRAME) {
+	  if (lenv->next->intdef_name) {
+	    SCHEME_CDR(pr) = lenv->next->intdef_name;
+	    break;
+	  } else {
+	    prev = pr;
+	    lenv = lenv->next;
+	    /* Go again to continue building the list */
+	  }
+	} else
+	  break;
+      }
+    }
+    return env->intdef_name;
+  } else if (scheme_is_module_env(env))
     return scheme_intern_symbol("module");
   else if (scheme_is_toplevel(env))
     return scheme_intern_symbol("top-level");

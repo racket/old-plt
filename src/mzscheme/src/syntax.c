@@ -574,6 +574,11 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
     return scheme_void;
   } else
     g = 1;
+
+  /* Special handling of 0 values for define-syntaxes:
+     do nothing. */
+  if (defmacro && !g)
+    return scheme_void;
   
   l = vars;
   for (i = 0; SCHEME_PAIRP(l); i++, l = SCHEME_CDR(l)) {}
@@ -2483,7 +2488,7 @@ Scheme_Object *scheme_compile_sequence(Scheme_Object *forms,
     Scheme_Object *first, *val;
 
     first = SCHEME_STX_CAR(forms);
-    first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, 0, &val);
+    first = scheme_check_immediate_macro(first, env, rec, drec, -1, scheme_false, 0, &val, NULL);
 
     if (SAME_OBJ(val, scheme_begin_syntax) && SCHEME_STX_PAIRP(first)) {      
       /* Flatten begin: */

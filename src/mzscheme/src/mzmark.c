@@ -1986,6 +1986,9 @@ int module_val_MARK(void *p) {
   gcMARK(m->prefix);
   gcMARK(m->dummy);
 
+  gcMARK(m->rn_stx);
+  gcMARK(m->et_rn_stx);
+
   gcMARK(m->primitive);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
@@ -2018,6 +2021,9 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->comp_prefix);
   gcFIXUP(m->prefix);
   gcFIXUP(m->dummy);
+
+  gcFIXUP(m->rn_stx);
+  gcFIXUP(m->et_rn_stx);
 
   gcFIXUP(m->primitive);
   return
@@ -2193,6 +2199,7 @@ int mark_comp_env_MARK(void *p) {
   gcMARK(e->base.uid);
   gcMARK(e->base.uids);
   gcMARK(e->base.dup_check);
+  gcMARK(e->base.intdef_name);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
@@ -2217,6 +2224,7 @@ int mark_comp_env_FIXUP(void *p) {
   gcFIXUP(e->base.uid);
   gcFIXUP(e->base.uids);
   gcFIXUP(e->base.dup_check);
+  gcFIXUP(e->base.intdef_name);
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);

@@ -1523,7 +1523,7 @@ static void *compile_k(void)
 	form = scheme_check_immediate_macro(form, 
 					    env, &rec, 0,
 					    0, scheme_false, 
-					    0, &gval);
+					    0, &gval, NULL);
 	if (SAME_OBJ(gval, scheme_begin_syntax)) {
 	  if (scheme_stx_proper_list_length(form) > 1){
 	    form = SCHEME_STX_CDR(form);
@@ -1602,10 +1602,11 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    Scheme_Compile_Info *rec, int drec,
 					    int depth, Scheme_Object *boundname,
 					    int internel_def_pos,
-					    Scheme_Object **current_val)
+					    Scheme_Object **current_val,
+					    Scheme_Comp_Env **_xenv)
 {
   Scheme_Object *name, *val;
-  Scheme_Comp_Env *xenv = NULL;
+  Scheme_Comp_Env *xenv = (_xenv ? *_xenv : NULL);
 
  check_top:
   *current_val = NULL;
@@ -1643,9 +1644,11 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	/* It's a normal macro; expand once. Also, extend env to indicate
 	   an internal-define position, if necessary. */
 	if (!xenv) {
-	  if (internel_def_pos)
+	  if (internel_def_pos) {
 	    xenv = scheme_new_compilation_frame(0, SCHEME_INTDEF_FRAME, env);
-	  else
+	    if (_xenv)
+	      *_xenv = xenv;
+	  } else
 	    xenv = env;
 	}
 	if (rec && (!boundname || SCHEME_FALSEP(boundname))
@@ -2038,7 +2041,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (SCHEME_STX_PAIRP(name) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(name))) {
       Scheme_Object *gval, *origname = name;
 
-      name = scheme_check_immediate_macro(name, env, rec, drec, depth, boundname, 0, &gval);
+      name = scheme_check_immediate_macro(name, env, rec, drec, depth, boundname, 0, &gval, NULL);
       
       if (SAME_OBJ(gval, scheme_lambda_syntax)) {
 	Scheme_Object *argsnbody;
@@ -2191,11 +2194,14 @@ static Scheme_Object *check_top(const char *when, Scheme_Object *form, Scheme_Co
       } else
 	bad = 1;
 
-      if (bad || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
-	scheme_wrong_syntax(when, NULL, c, 
-			    (env->genv->phase
-			     ? "unbound variable in module (transformer environment)"
-			     : "unbound variable in module"));
+      if (!env->genv->rename) {
+	if (bad || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c))) {
+	  scheme_wrong_syntax(when, NULL, c, 
+			      (env->genv->phase
+			       ? "unbound variable in module (transformer environment)"
+			       : "unbound variable in module"));
+	}
+      }
     }
   }
 
@@ -2252,6 +2258,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
    before deciding what we have. */
 {
   Scheme_Object *first;
+  Scheme_Comp_Env *xenv = NULL;
   Scheme_Compile_Info recs[2];
 
   if (rec)
@@ -2282,7 +2289,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
     /* Check for macro expansion, which could mask the real
        define-values, define-syntax, etc.: */
-    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval);
+    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval, &xenv);
 
     if (SAME_OBJ(gval, scheme_begin_syntax)) {
       /* Inline content */
@@ -2370,7 +2377,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	if (!SCHEME_STX_NULLP(result)) {
 	  first = SCHEME_STX_CAR(result);
 	  first = scheme_datum_to_syntax(first, forms, forms, 0, 0);
-	  first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval);
+	  first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval, &xenv);
 	  more = 1;
 	  if (NOT_SAME_OBJ(gval, scheme_define_values_syntax)
 	      && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax)) {
@@ -4000,7 +4007,7 @@ static void *expand_k(void)
 
   if (just_to_top) {
     Scheme_Object *gval;
-    obj = scheme_check_immediate_macro(obj, env, NULL, 0, depth, scheme_false, 0, &gval);
+    obj = scheme_check_immediate_macro(obj, env, NULL, 0, depth, scheme_false, 0, &gval, NULL);
   } else
     obj = scheme_expand_expr(obj, env, depth, scheme_false);
 
@@ -4181,16 +4188,17 @@ local_expand(int argc, Scheme_Object **argv)
   if (!env)
     scheme_raise_exn(MZEXN_MISC, "local-expand: not currently transforming");
 
-  if (SAME_OBJ(argv[1], internal_define_symbol))
-    kind = SCHEME_INTDEF_FRAME;
-  else if (SAME_OBJ(argv[1], module_symbol))
+  if (SAME_OBJ(argv[1], module_symbol))
     kind = SCHEME_MODULE_BEGIN_FRAME;
   else if (SAME_OBJ(argv[1], top_level_symbol))
     kind = SCHEME_TOPLEVEL_FRAME;
   else if (SAME_OBJ(argv[1], expression_symbol))
     kind = 0;
-  else {
-    scheme_wrong_type("local-expand", "'expression, 'top-level, 'internal-define, or 'module",
+  else if (scheme_proper_list_length(argv[1]) > 0)
+    kind = SCHEME_INTDEF_FRAME;
+  else  {
+    scheme_wrong_type("local-expand", 
+		      "'expression, 'module, 'top-level, or non-empty list",
 		      1, argc, argv);
     return NULL;
   }
@@ -4204,6 +4212,9 @@ local_expand(int argc, Scheme_Object **argv)
 					 | SCHEME_FOR_STOPS
 					 | kind), 
 				     env);
+  if (kind == SCHEME_INTDEF_FRAME)
+    env->intdef_name = argv[1];
+
   local_mark = scheme_current_thread->current_local_mark;
   
   cnt = scheme_stx_proper_list_length(argv[2]);

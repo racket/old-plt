@@ -1295,11 +1295,13 @@ typedef struct Scheme_Comp_Env
   Scheme_Object *uid;            /* renaming symbol for syntax, if all the same */
   struct Scheme_Object **uids;   /* renaming symbol for syntax when multiple are needed */
 
-  struct Scheme_Object *renames; /* an stx lexical rename or an improper list of them */
+  struct Scheme_Object *renames; /* an stx lexical rename or a list of them */
 
   mzshort rename_var_count;      /* number of non-NULL `values' when `renames' was computed */
   mzshort rename_rstart;         /* leftover rstart from previous round; see env.c */
   Scheme_Hash_Table *dup_check;  /* table for finding colliding symbols in `values' */
+
+  Scheme_Object *intdef_name;    /* syntax-local-context name for INTDEF frames */
 
   struct Scheme_Comp_Env *next;
 } Scheme_Comp_Env;
@@ -1413,7 +1415,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    int drec,
 					    int depth, Scheme_Object *boundname,
 					    int int_def_pos,
-					    Scheme_Object **current_val);
+					    Scheme_Object **current_val,
+					    Scheme_Comp_Env **_xenv);
 
 Scheme_Object *scheme_apply_macro(Scheme_Object *name,
 				  Scheme_Object *f, Scheme_Object *code,

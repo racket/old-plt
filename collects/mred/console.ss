@@ -433,7 +433,7 @@
 		 (unless (void? v)
 		   (with-parameterization user-parameterization
 		     (lambda ()
-		       (write v this-result)))))]
+		       (mzlib:pretty-print:pretty-print v this-result)))))]
 	      [eval-and-display
 	       (lambda (str)
 		 (catch-errors

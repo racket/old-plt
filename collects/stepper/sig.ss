@@ -39,6 +39,7 @@
 (define-signature stepper:reconstruct^
   (reconstruct 
    final-mark-list?
+   result-step-stop-here?
    stop-here?))
 
   

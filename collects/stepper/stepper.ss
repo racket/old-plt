@@ -6,7 +6,7 @@
           (print-convert : mzlib:print-convert^)
           (mred : mred-interfaces^)
           (drscheme : drscheme:export^)
-          (zodiac : drscheme:zodiac^))
+          (zodiac : zodiac:system^))
   (link [ERROR : stepper:error^ ((unit/sig stepper:error^
                                    (import)
                                    (define default-error-handler
@@ -47,6 +47,7 @@
                   mred
                   drscheme
                   print-convert
+                  error
                   annotate
                   reconstruct
                   framework)])       

@@ -4,6 +4,7 @@
           mred-interfaces^
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
+          [e : stepper:error^]
           [a : stepper:annotate^]
           [r : stepper:reconstruct^]
           [f : framework^])
@@ -130,7 +131,7 @@
                           (insert #\newline))
                         sexp))
                      (let ([between (last-position)]
-                           [highlight-color (if (eq? break-kind 'pre-break)
+                           [highlight-color (if (eq? break-kind 'result-break)
                                                 result-highlight-color
                                                 redex-highlight-color)])
                        (insert (get-output-string output))
@@ -147,19 +148,23 @@
                  (lock #t))))
       (sequence (super-init line-spacing tabstops))))
   
-  (define (read-zodiac-exprs text handler)
-    (with-handlers ((exn:user? handler))
-      (let ([reader (z:read (f:gui-utils:read-snips/chars-from-buffer text)
+  (define (read-n-parse text vocabulary handler)
+    (let ([reader (z:read (f:gui-utils:read-snips/chars-from-buffer text)
                             (z:make-location 1 1 0 "stepper-text"))])
-        (let read-loop ([new-expr (reader)])
+      (let read-n-parse-loop ()
+        (let ([new-expr (begin
+                          (d:interface:set-zodiac-phase 'reader)
+                          (with-handlers 
+                              ((exn:read? handler))
+                            (reader)))])
           (if (z:eof? new-expr)
-              ()
-              (cons new-expr (read-loop (reader))))))))
-  
-  (define (parse-zodiac-exprs read-exprs vocabulary handler)
-    (with-handlers
-        ((exn:user? handler))
-      (z:scheme-expand-program read-exprs 'previous vocabulary)))
+              (values null null)
+              (let ([expanded (begin
+                                (d:interface:set-zodiac-phase 'expander)
+                                (with-handlers ((exn:syntax? handler))
+                                  (z:scheme-expand new-expr 'previous vocabulary)))])
+                (let-values ([(red-exprs parsed-exprs) (read-n-parse-loop)])
+                  (values (cons new-expr red-exprs) (cons expanded parsed-exprs)))))))))
 
   (define output-delta (make-object style-delta% 'change-family 'modern))
   (define result-delta (make-object style-delta% 'change-family 'modern))
@@ -224,14 +229,24 @@
                 (send next-button enable (not (eq? final-view view))))]
                          
              [break 
-              (lambda (mark-list all-defs current-def break-kind)
-                (when (or (eq? break-kind 'pre-break)
-                          (r:stop-here? mark-list))
+              (lambda (mark-list all-defs current-def break-kind returned-value-list)
+                (when (case break-kind
+                        [(result-break) 
+                         (r:result-step-stop-here? mark-list)]
+                        [(normal)
+                         (r:stop-here? mark-list)]
+                        [else 
+                         (e:internal-error 'break "unknown break type: ~s~n" break-kind)])
                   (parameterize ([current-eventspace drscheme-eventspace])
                     (queue-callback (lambda () 
                                       (apply store-step
                                              break-kind
-                                             (r:reconstruct expr-list mark-list all-defs current-def break-kind))
+                                             (r:reconstruct expr-list 
+                                                            mark-list
+                                                            all-defs
+                                                            current-def
+                                                            break-kind
+                                                            returned-value-list))
                                       (when (r:final-mark-list? mark-list)
                                         (set! final-view view-currently-updating))
                                       (update-view view-currently-updating))))
@@ -272,13 +287,13 @@
                           (set! par-cons (global-defined-value 'cons))
                           (set! par-vector (global-defined-value 'vector))
                           (set! par-vocabulary (d:basis:current-vocabulary))
-                          (let* ([red-exprs (read-zodiac-exprs text exn-handler)]
-                                 [parsed-exprs (parse-zodiac-exprs red-exprs (d:basis:current-vocabulary) exn-handler)])
-                            (let-values ([(annotated exprs)
-                                          (a:annotate red-exprs parsed-exprs break)])
-                              (set! expr-list exprs)
-                              (current-exception-handler exn-handler)
-                              (for-each primitive-eval annotated))))))))))]
+                          (let*-values ([(red-exprs parsed-exprs)
+                                         (read-n-parse text (d:basis:current-vocabulary) exn-handler)]
+                                        [(annotated exprs)
+                                         (a:annotate red-exprs parsed-exprs break)])
+                            (set! expr-list exprs)
+                            (current-exception-handler exn-handler)
+                            (for-each primitive-eval annotated)))))))))]
              
              [update-view/next-step
               (lambda (new-view)

@@ -5,7 +5,7 @@
           [s : stepper:settings^]
 	  stepper:shared^)
   
-    ; ANNOTATE SOURCE CODE
+  ; ANNOTATE SOURCE CODE
   
   ; gensyms for annotation:
   
@@ -18,6 +18,10 @@
   ; closure-temp: uninterned-symbol
   
   (define closure-temp (gensym "closure-temp-"))
+  
+  ; should-stop-temp : uninterned-symol
+  
+  (define should-stop-temp (gensym "should-stop-temp-"))
   
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  when a top-level and a non-top-level
@@ -72,7 +76,7 @@
 		 [(z:symbol? id)
 		  (z:read-object id)]
 		 [else
-		  (e:internal-error id "Given in check-for-keyword")])])
+		  (e:internal-error "Bad input to check-for-keyword: ~s" id)])])
 	  (when (and (keyword-name? real-id)
 		     (or disallow-procedures?
 			 (let ([gdv (global-defined-value real-id)])
@@ -190,23 +194,18 @@
   ; annotate takes an expression to annotate and a `break' function which will be inserted in
   ; the code.  It returns an annotated expression, ready for evaluation.
   
-  ; the zodiac-error-handler is an ugly hack and will hopefully disappear soon-ish.
-  
   (define (annotate red-exprs parsed-exprs break)
     (local
 	(  
-
-         
          (define (make-break kind)
-           `(#%lambda ()
+           `(#%lambda returned-value-list
              (,break (continuation-mark-set->list
                       (current-continuation-marks) 
                       (#%quote ,debug-key))
                      ,all-defs-list-sym
                      ,current-def-sym
-                     (#%quote ,kind))))
-         
-         
+                     (#%quote ,kind)
+                     returned-value-list)))
   
          ; wrap creates the w-c-m expression.
          
@@ -214,7 +213,7 @@
            `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,expr))
          
          (define (wcm-pre-break-wrap debug-info expr)
-           (simple-wcm-wrap debug-info `(#%begin (,(make-break 'pre-break)) ,expr)))
+           (simple-wcm-wrap debug-info `(#%begin (,(make-break 'result)) ,expr)))
          
          (define (break-wrap expr)
            `(#%begin (,(make-break 'normal)) ,expr))
@@ -222,7 +221,20 @@
          (define (simple-wcm-break-wrap debug-info expr)
            (simple-wcm-wrap debug-info (break-wrap expr)))
          
-        
+         (define (return-value-wrap expr)
+            `(#%let* ([,should-stop-temp #f]
+                      [result ,expr])
+             (,(make-break 'result-break) result)
+             result))
+
+;  For Multiple Values:         
+;           `(#%call-with-values
+;             (#%lambda ()
+;              expr)
+;             (#%lambda result-values
+;              (,(make-break 'result-break) result-values)
+;              (#%apply #%values result-values))))
+
          (define (find-read-expr expr)
            (let ([offset (z:location-offset (z:zodiac-start expr))])
              (let search-exprs ([exprs red-exprs])
@@ -311,7 +323,7 @@
                                                        (#%quote ,v)))
                                              ,v)
                                            v)])
-                       (values (wcm-break-wrap debug-info annotated) free-vars)))])
+                       (values (return-value-wrap (wcm-break-wrap debug-info annotated)) free-vars)))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -355,8 +367,9 @@
 		  [val debug-info (make-debug-info-app new-tail-bound
                                                        (var-set-union free-vars arg-temps)
                                                        'not-yet-called)]
-		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
-		 (values `(#%let ,let-clauses ,let-body) free-vars))]
+		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))]
+                  [val let-exp `(#%let ,let-clauses ,let-body)])
+		 (values let-exp free-vars))]
 	       
 	       [(z:struct-form? expr)
 		(let ([super-expr (z:struct-form-super expr)]
@@ -495,7 +508,13 @@
              (cond [(z:define-values-form? expr)
                     annotated]
                    [else
-                    `(#%define-values ,(list (top-level-exp-gensym-source expr)) ,annotated)]))))
+                    `(#%define-values ,(list (top-level-exp-gensym-source expr)) 
+                      ,(simple-wcm-wrap (make-debug-info '(#%quote not-a-source-expression)
+                                                         'all
+                                                         top-env
+                                                         null
+                                                         'guard-mark)
+                                       annotated))]))))
          
          ; body of local
          

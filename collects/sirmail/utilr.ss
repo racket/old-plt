@@ -230,7 +230,7 @@
       (define re:iso #rx#"[iI][sS][oO]-8859-1")
       (define re:utf-8 #rx#"[uU][tT][fF]-8")
 
-      (define re:encoded #rx#"^(.*)=[?]([^?]+)[?]([qQbB])[?](.*?)[?]=(.*)$")
+      (define re:encoded #rx#"^(.*?)=[?]([^?]+)[?]([qQbB])[?](.*?)[?]=(.*)$")
 
       (define (latin-1->windows-1252 encoding)
 	(if (regexp-match re:iso encoding)
@@ -248,8 +248,9 @@
 	     (let ([m (regexp-match re:encoded (string->bytes/latin-1 s (char->integer #\?)))])
 	       (if m
 		   (let ([s ((if (member (cadddr m) '(#"q" #"Q"))
-				 ;; quoted-printable
-				 qp-decode
+				 ;; quoted-printable, with special _ handling
+				 (lambda (x)
+				   (qp-decode (regexp-replace* #rx#"_" x #" ")))
 				 ;; base64:
 				 base64-decode)
 			     (cadddr (cdr m)))]
@@ -267,7 +268,19 @@
 					   (bytes->string/utf-8 r #\?)
 					   (bytes->string/latin-1 s)))
 				     (bytes->string/latin-1 s)))]))
-		      (parse-encoded (bytes->string/latin-1 (cadddr (cddr m))))))
+		      (let ([rest (cadddr (cddr m))])
+			(let ([rest
+			       ;; A CR-LF-space-encoding sequence means that we should
+			       ;; drop the space.
+			       (if (and (> (bytes-length rest) 4)
+					(= 13 (bytes-ref rest 0))
+					(= 10 (bytes-ref rest 1))
+					(= 32 (bytes-ref rest 2))
+					(let ([m (regexp-match-positions re:encoded rest)])
+					  (and m (= (caaddr m) 5))))
+				   (subbytes rest 3)
+				   rest)])
+			  (parse-encoded (bytes->string/latin-1 rest))))))
 		   s))))
 
       (define (encode-for-header s)

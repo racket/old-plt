@@ -135,11 +135,12 @@
 				    (with-handlers ([exn:fail?
 						     (lambda (exn)
 						       (raise (make-exn:make 
-							       (format "make: Failed to make ~a; ~a"
-								       (path-string->string (car line))
-								       (if (exn? exn)
-									   (exn-message exn)
-									   exn))
+							       (string->immutable-string
+								(format "make: Failed to make ~a; ~a"
+									(path-string->string (car line))
+									(if (exn? exn)
+									    (exn-message exn)
+									    exn)))
 							       (if (exn? exn)
 								   (exn-continuation-marks exn)
 								   (current-continuation-marks))

@@ -634,15 +634,16 @@
         (let ([re (regexp (format "~a\n" SEPARATOR))])
           (let ([m (regexp-match-positions re message-str)])
             (if m
-                (let ([header (encode-for-header
-			       (string-append 
+                (let ([header (re-encode-fields
+			       '("To" "CC" "BCC" "Subject")
+			       (string-append
 				(string-lf->crlf (substring message-str 0 (caar m)))
 				(build-uptime-field) "\r\n"
 				empty-header))]
                       [body-lines (regexp-split 
 				   #rx"\n" 
 				   (substring message-str (cdar m) (string-length message-str)))])
-                  (validate-header header)
+		  (validate-header header)
                   (let* ([to* (sm-extract-addresses (extract-field "To" header))]
                          [to (map car to*)]
                          [cc* (sm-extract-addresses (extract-field "CC" header))]
@@ -707,6 +708,19 @@
                 (message-box
                  "Error"
                  (format "Lost \"~a\" separator" SEPARATOR))))))
+
+      (define (re-encode-fields l header)
+	(cond
+	 [(null? l) header]
+	 [(extract-field (car l) header)
+	  => (lambda (v)
+	       (re-encode-fields 
+		(cdr l)
+		(replace-field
+		 (car l)
+		 (encode-for-header v)
+		 header)))]
+	 [else (re-encode-fields (cdr l) header)]))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Meta-Q Reflowing                                      ;;

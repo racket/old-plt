@@ -426,3 +426,10 @@
 	      (do-title))))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))))
+
+
+
+
+
+
+

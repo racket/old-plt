@@ -34,14 +34,13 @@
                        (build-path (translate-dir (cadr m))
                                    (build-relative-path (caddr m)))])))])
                (lambda (s)
-                 (let ([root (car (filesystem-root-list))])
-                   (cond
-                    [(string=? s "") ""]
-                    [(string=? s "/") root]
-                    [(char=? #\/ (string-ref s 0))
-                     (build-path root
-                                 (build-relative-path (substring s 1 (string-length s))))]
-                    [else (build-relative-path s)])))))
+		 (cond
+		   [(string=? s "") ""]
+		   [(string=? s "/") (car (filesystem-root-list))]
+		   [(char=? #\/ (string-ref s 0))
+		    (build-path (car (filesystem-root-list))
+				(build-relative-path (substring s 1 (string-length s))))]
+		   [else (build-relative-path s)]))))
 
     ; scheme : str + #f
     ; host : str + #f

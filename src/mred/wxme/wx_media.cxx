@@ -4507,8 +4507,6 @@ void wxMediaEdit::RefreshBox(double L, double T, double w, double h)
       refreshB = B;
   }
 
-  printf("Box: %lf %lf  %lf %lf\n", refreshB - refreshT,  refreshR - refreshL, refreshT, refreshL);
-
   drawCachedInBitmap = FALSE;
 }
 

@@ -588,6 +588,9 @@ static void SetPen(wxDC *dc, char *cname, double pw, int style)
   p = pl->FindOrCreatePen(cname, pw, style);
   if (p)
     dc->SetPen(p);
+  else {
+    scheme_arg_mismatch(METHODNAME("dc<%>", "set-pen"), "unknown color: ", scheme_make_utf8_string(cname));
+  }
 }
 
 static void SetBrush(wxDC *dc, wxColour *c, int style)
@@ -607,6 +610,9 @@ static void SetBrush(wxDC *dc, char *cname, int style)
   b = bl->FindOrCreateBrush(cname, style);
   if (b)
     dc->SetBrush(b);
+  else {
+    scheme_arg_mismatch(METHODNAME("dc<%>", "set-brush"), "unknown color: ", scheme_make_utf8_string(cname));
+  }
 }
 
 #ifdef MZ_PRECISE_GC

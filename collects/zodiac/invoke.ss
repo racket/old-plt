@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.26 1997/08/13 15:40:35 shriram Exp $
+; $Id: invoke.ss,v 1.27 1997/09/18 17:57:58 shriram Exp mflatt $
 
 (reference-library "coreu.ss")
 (reference-library "match.ss")
@@ -7,7 +7,7 @@
 
 (reference-library "sparams.ss" "backward")
 
-(reference "load.ss")
+(reference-relative-library "load.ss")
 
 (define zodiac:default-interface@
   (unit/sig zodiac:interface^

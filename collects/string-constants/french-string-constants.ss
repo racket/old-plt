@@ -626,7 +626,8 @@
   (insert-pb-box-item "Insérer une boite à dessin")
   (insert-image-item "Insérer une image...")
   (insert-comment-box-menu-item-label "Insérer une boite à commentaires")
-  (insert-lambda "Insérer &Lambda")
+  (insert-lambda "Insérer un &Lambda")
+  (insert-delta "Insérer un &Delta (define)")
   
   (wrap-text-item "Replier le texte")
   
@@ -1014,6 +1015,12 @@
   (module-browser... "Navigateur de modules...") ;; menu item title
   (module-browser-error-expanding "Erreur durant l'expansion du programme :\n\n~a")
   (module-browser-show-lib-paths "Montrer les fichiers chargés à l'aide de chemins de fichiers du type (lib ..)")
+  (module-browser-progress "Navigateur de modules : ~a") ;; prefix in the status line
+  (module-browser-compiling-defns "Navigateur de modules : compilation des définitions")
+  (module-browser-show-lib-paths/short "(require (lib ...))") ;; check box label in show module browser pane in drscheme window.
+  (module-browser-refresh "Rafraîchir") ;; button label in show module browser pane in drscheme window.
+  (module-browser-only-in-plt-and-module-langs
+   "Le navigateur de modules n'est disponible que pour les programmes écrits dans l'un des languages PLT ou dans le language \"module\", et seulement pour les programmes qui contiennent des modules.")
   
   (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
   (happy-birthday-matthew "Joyeux anniversaire, Matthew !")

@@ -1,22 +1,22 @@
 
-_Slib_ Initialization File
+_SLIB_ Initialization File
 --------------------------
 
-The "init.ss" file in the _slibinit_ collection is an slib
+The "init.ss" file in the _slibinit_ collection is an SLIB
 initialization file (tested with version 2d2).
 
-To use slib in MzScheme:
+To use SLIB in MzScheme:
 
   (load (build-path (collection-path "slibinit") "init.ss"))
 or
-  (require (lib "load.ss" "slibinit"))
+  (require (lib "load.ss" "slibinit"))     ; loads "init.ss"
 
 That's enough if the SCHEME_LIBRARY_PATH environment variable is
-defined, or if slib is installed as an "slib" collection (i.e., in an
+defined, or if SLIB is installed as an "slib" collection (i.e., in an
 "slib" directory in the same location as the "mzlib" directory).
 
-Note that slib is not integerated with MzScheme's module system.
-Instead, slib works in the top-level environment, and it provides its
+Note that SLIB is not integerated with MzScheme's module system.
+Instead, SLIB works in the top-level environment, and it provides its
 own "feature" system that re-defines `require'.
 
 

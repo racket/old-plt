@@ -71,7 +71,7 @@
     (sleep-for-a-while s))
   
   (define/provide (bigBang-double-native this accs gets privates i)
-                      (big-bang i this)
+    (big-bang i this)
     (on-tick-event
       (lambda (world)
 	(set! last-world world)

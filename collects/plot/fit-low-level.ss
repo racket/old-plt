@@ -53,7 +53,10 @@
  
 
  if(result_params == NULL)
- 	return scheme_null;
+	{
+ 	___result =  scheme_null;
+	}
+ else {
 
  int len = scheme_list_length(___arg6);
 
@@ -75,6 +78,7 @@
           scheme_make_pair(fit_asym_error_percent,
 	   scheme_make_pair(fit_rms,
 	    scheme_make_pair(fit_varience, scheme_null)))));
+	}
 "))	
    
   (provide fit-internal))

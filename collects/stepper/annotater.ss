@@ -332,7 +332,7 @@
                                         ,v)
                                       v)])
                   (values (if cheap-wrap?
-                              (if (and maybe-undef? (utils:signal-undefined))
+                              (if (or (and maybe-undef? (utils:signal-undefined)) truly-top-level?)
                                   (expr-cheap-wrap annotated)
                                   annotated)
                               (wcm-break-wrap debug-info (return-value-wrap annotated))) free-vars))]

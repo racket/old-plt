@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cxx,v 1.2 1999/11/18 16:35:06 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cxx,v 1.3 1999/11/19 22:02:46 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -230,9 +230,9 @@ Bool wxPostScriptDC::Create(Bool interactive)
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_color = *wxWHITE;
+  current_background_color.CopyFrom(wxWHITE);
 
-  current_text_foreground = *wxBLACK;
+  current_text_foreground.CopyFrom(wxBLACK);
 
   mapping_mode = MM_TEXT;
 #else
@@ -240,7 +240,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
   current_pen->Lock(1);
   current_brush = wxWHITE_BRUSH;
   current_brush->Lock(1);
-  current_background_color = *wxWHITE;
+  current_background_color.CopyFrom(wxWHITE);
 #endif
 
   title = NULL;
@@ -488,8 +488,10 @@ void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, f
       SetBrush(current_brush);
       
       pstream->Out("newpath\n");
-      pstream->Out(cos(start)*radius); pstream->Out(" "); pstream->Out(sin(start)*radius); pstream->Out(" moveto\n");
-      pstream->Out("0 0 "); pstream->Out(radius); pstream->Out(" "); pstream->Out(a1); pstream->Out(" "); pstream->Out(a2); pstream->Out(" arc\n");
+      pstream->Out(cos(start)*radius); pstream->Out(" "); 
+      pstream->Out(sin(start)*radius); pstream->Out(" moveto\n");
+      pstream->Out("0 0 "); pstream->Out(radius); pstream->Out(" "); pstream->Out(a1); 
+      pstream->Out(" "); pstream->Out(a2); pstream->Out(" arc\n");
 
       pstream->Out("0 0 lineto\n");
 
@@ -928,8 +930,9 @@ void wxPostScriptDC::SetPen (wxPen * pen)
       psdash = "[] 0";
       break;
     }
-  if (oldPen != pen)
+  if (oldPen != pen) {
     pstream->Out(psdash); pstream->Out(" setdash\n");
+  }
 
   // Line colour
   unsigned char red = pen->GetColour()->Red();
@@ -954,7 +957,8 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     float bluePS = (float) (((int) blue) / 255.0);
     float greenPS = (float) (((int) green) / 255.0);
 
-    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); 
+    pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
     
     currentRed = red;
     currentBlue = blue;
@@ -1061,7 +1065,8 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
 
   if (!(red == currentRed && green == currentGreen && blue == currentBlue)
       || (resetFont & RESET_COLOR)) {
-    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); 
+    pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
     currentRed = red;
     currentBlue = blue;
     currentGreen = green;
@@ -1089,7 +1094,8 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
     float greenPS = (float) (((int) green) / 255.0);
 
     pstream->Out("gsave newpath\n");
-    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+    pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); 
+    pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
     pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" moveto\n");
     pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y)); pstream->Out(" lineto\n");
     pstream->Out(XSCALE(x + tw)); pstream->Out(" "); pstream->Out(YSCALE (y + th)); pstream->Out(" lineto\n");
@@ -1118,7 +1124,8 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
       float redPS = (float) (((int) red) / 255.0);
       float bluePS = (float) (((int) blue) / 255.0);
       float greenPS = (float) (((int) green) / 255.0);
-      pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
+      pstream->Out(redPS); pstream->Out(" "); pstream->Out(greenPS); pstream->Out(" "); 
+      pstream->Out(bluePS); pstream->Out(" setrgbcolor\n");
       
       currentRed = red;
       currentBlue = blue;
@@ -1153,7 +1160,7 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
 
 void wxPostScriptDC::SetBackground (wxColour * c)
 {
-  current_background_color = *c;
+  current_background_color.CopyFrom(c);
 }
 
 void wxPostScriptDC::SetBackgroundMode(int mode)
@@ -1163,12 +1170,12 @@ void wxPostScriptDC::SetBackgroundMode(int mode)
 
 void wxPostScriptDC::SetTextBackground(wxColour *col)
 {
-  current_text_background = *col;  
+  current_text_background.CopyFrom(col);  
 }
 
 void wxPostScriptDC::SetTextForeground(wxColour *col)
 {
-  current_text_foreground = *col;
+  current_text_foreground.CopyFrom(col);
 }
 
 void wxPostScriptDC::TryColour(wxColour *src, wxColour *dest)
@@ -1218,8 +1225,9 @@ Bool wxPostScriptDC::StartDoc (char *message)
   }
 
   pstream->Out("%!PS-Adobe-2.0 EPSF-2.0\n");	/* PostScript magic strings */
-  if (title)
+  if (title) {
     pstream->Out("%%Title: "); pstream->Out(title); pstream->Out("\n");
+  }
   pstream->Out("%%Creator: "); pstream->Out("wxWindows (MrEd)"); pstream->Out("\n");
   pstream->Out("%%CreationDate: "); pstream->Out(wxNow()); pstream->Out("\n");
 
@@ -1228,8 +1236,9 @@ Bool wxPostScriptDC::StartDoc (char *message)
   if (wxGetEmailAddress(userID, sizeof(userID))) {
     pstream->Out("%%For: "); pstream->Out((char *)userID);
     char userName[245];
-    if (wxGetUserName(userName, sizeof(userName)))
+    if (wxGetUserName(userName, sizeof(userName))) {
       pstream->Out(" ("); pstream->Out((char *)userName); pstream->Out(")");
+    }
     pstream->Out("\n");
   } else if ( wxGetUserName(userID, sizeof(userID))) {
     pstream->Out("%%For: "); pstream->Out((char *)userID); pstream->Out("\n");

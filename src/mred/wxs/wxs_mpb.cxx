@@ -5610,7 +5610,7 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
     WITH_VAR_STACK(scheme_wrong_count("initialization in pasteboard%", 0, 0, n, p));
 
   
-  realobj = new os_wxMediaPasteboard(obj);
+  realobj = NEW_OBJECT(os_wxMediaPasteboard, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

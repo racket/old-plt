@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.7 1999/11/04 17:25:33 mflatt Exp $
+ * $Id: DC.cc,v 1.8 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -55,16 +55,23 @@ wxDC::wxDC(void)
     max_x = max_y = -100000.0;
     min_x = min_y =  100000.0;
 
-    current_background_color = *wxWHITE;
+    current_background_color.CopyFrom(wxWHITE);
     current_brush = wxTRANSPARENT_BRUSH;
     current_cmap = wxAPP_COLOURMAP;
     current_font = wxSWISS_FONT;
     current_map_mode = MM_TEXT;
     current_pen = wxBLACK_PEN;
     current_text_alignment = wxALIGN_TOP_LEFT;
-    current_text_bg = *wxWHITE;
+    current_text_bg.CopyFrom(wxWHITE);
     current_text_bgmode = wxTRANSPARENT;
-    current_text_fg = *wxBLACK;
+    current_text_fg.CopyFrom(wxBLACK);
+}
+
+wxColour *wxDC::GetBackground(void){
+  wxColour *c;
+  c = new wxColour();
+  c->CopyFrom(&current_background_color);
+  return c;
 }
 
 //-----------------------------------------------------------------------------
@@ -154,10 +161,13 @@ void wxDC::CalcBoundingBox(float x, float y)
 
 void wxDC::DrawSpline(int n, wxPoint pts[])
 {
-    wxList list;
-    for (int i=0; i<n; ++i)
-	list.Append((wxObject*)&pts[i]);
-    DrawSpline(&list);
+    wxList *list;
+    list = new wxList;
+    for (int i=0; i<n; ++i) {
+      list->Append((wxObject*)&pts[i]);
+    }
+    DrawSpline(list);
+    delete list;
 }
 
 void wxDC::DrawSpline(wxList *pts)
@@ -166,23 +176,27 @@ void wxDC::DrawSpline(wxList *pts)
 }
 
 void wxDC::DrawSpline(float x1, float y1, float x2, float y2,
-			    float x3,float y3)
+		      float x3,float y3)
 {
-    wxList list;
+    wxList *list;
+
+    list = new wxList;
 
     wxPoint *point1 = new wxPoint;
     point1->x = x1; point1->y = y1;
-    list.Append((wxObject*)point1);
+    list->Append((wxObject*)point1);
 
     wxPoint *point2 = new wxPoint;
     point2->x = x2; point2->y = y2;
-    list.Append((wxObject*)point2);
+    list->Append((wxObject*)point2);
 
     wxPoint *point3 = new wxPoint;
     point3->x = x3; point3->y = y3;
-    list.Append((wxObject*)point3);
+    list->Append((wxObject*)point3);
 
-    DrawSpline(&list);
+    DrawSpline(list);
+
+    delete list;
 }
 
 //-----------------------------------------------------------------------------

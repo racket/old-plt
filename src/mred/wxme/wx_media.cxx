@@ -22,9 +22,7 @@
  */
 
 #include "wx_dialg.h"
-#ifndef OLD_WXWINDOWS
 #include "wx_cmdlg.h"
-#endif
 #include "wx_utils.h"
 #include "wx_media.h"
 #include "wx_types.h"
@@ -773,7 +771,7 @@ void wxMediaEdit::SetPositionBiasScroll(int bias, long start, long end,
 Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, Bool refresh,
 				   long end, int bias)
 {
-  float topx, botx, topy, boty;
+  float topx, botx, topy, boty, w, h;
 
   if (flowLocked)
     return FALSE;
@@ -798,8 +796,8 @@ Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, Bool refresh,
   PositionLocation(start, &topx, &topy, TRUE, ateol, TRUE);
   PositionLocation(end, &botx, &boty, FALSE, ateol, TRUE);
 
-  float w = botx - topx;
-  float h = boty - topy;
+  w = botx - topx;
+  h = boty - topy;
 
   return admin->ScrollTo(topx, topy, w, h, refresh, bias);
 }
@@ -1479,8 +1477,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   
   AdjustClickbacks(start, start, addlen, NULL);
 
-  if (!modified)
-    AddUndo(new wxUnmodifyRecord);
+  if (!modified) {
+    wxUnmodifyRecord *ur;
+    ur = new wxUnmodifyRecord;
+    AddUndo(ur);
+  }
   if (!noundomode) {
     wxInsertRecord *ir;
     ir = new wxInsertRecord(start, addlen, 
@@ -1648,8 +1649,11 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
     withUndo = FALSE;
 
   if (withUndo) {
-    if (!modified)
-      AddUndo(new wxUnmodifyRecord);
+    if (!modified) {
+      wxUnmodifyRecord *ur;
+      ur = new wxUnmodifyRecord;
+      AddUndo(ur);
+    }
     rec = new wxDeleteRecord(start, end, deletionStreak || delayedStreak
 			     || deleteForceStreak || !modified);
   } else
@@ -2072,8 +2076,6 @@ void wxMediaEdit::Kill(long time, long start, long end)
 	/* Line has all spaces: move one more */
 	SetPosition(startpos, endpos + 1);
       }
-      
-      delete[] text;
     }
     start = startpos;
     end = endpos;
@@ -2191,13 +2193,11 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
       add_newline = 0;
     if (p >= alloc) {
       alloc = 2 * p;
-      delete[] s;
       s = new char[alloc];
     }
     memcpy(s, t, p - add_newline);
     if (add_newline)
       s[p - 1] = '\n';
-    delete[] t;
   }
   total = num;
   snip = snip->next;
@@ -2224,15 +2224,12 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
 	old = s;
 	s = new char[alloc];
 	memcpy(s, old, p);
-	delete[] old;
       }
 
       memcpy(s + p, t, offset);
       if (add_newline)
 	s[p + offset - 1] = '\n';
       p += offset;
-
-      /* delete[] t; - not needed */
     }
     total += num;
     snip = snip->next;
@@ -2413,15 +2410,12 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     if (!start && (tstart != lstart)) {
       start += (tstart - lstart);
       pstart += (tstart - lstart);
-      delete[] text;
       text = (unsigned char *)win->GetText(lstart, lend);
       tstart = lstart;
       goto try_start_again;
     }
 
     *startp = start + tstart;
-
-    delete[] text;
   }
 
   if (endp) {
@@ -2464,15 +2458,12 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     }
 
     if ((end == tend) && (tend != lend)) {
-      delete[] text;
       text = (unsigned char *)win->GetText(lstart, lstart + lend);
       tend = lend;
       goto try_end_again;
     }
 
     *endp = end + lstart;
-
-    delete[] text;
   }
 }
 
@@ -2664,9 +2655,6 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 	path = NULL;
       
       file = GetFile(path);
-      
-      if (path)
-	delete[] path;
     } else
       file = filename;
   }
@@ -2884,11 +2872,6 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 	path = pfile = NULL;
       
       file = PutFile(path, pfile);
-      
-      if (path) {
-	delete[] path;
-	delete[] pfile;
-      }
     } else
       file = filename;
   }
@@ -3008,8 +2991,9 @@ Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn *f, long start, Bool overwritesty
   if (!LastPosition()) {
     /* We probably destructively changed the style list. Reset the dummy snip. */
     snips->style = styleList->FindNamedStyle(STD_STYLE);
-    if (!snips->style)
+    if (!snips->style) {
       snips->style = styleList->BasicStyle();
+    }
   }
 
   return result;
@@ -3241,7 +3225,11 @@ long wxMediaEdit::FindLine(float y, Bool *onit)
   if (onit)
     *onit = TRUE;
 
-  return lineRoot->FindLocation(y)->GetLine();
+  {
+    wxMediaLine *line;
+    line = lineRoot->FindLocation(y);
+    return line->GetLine();
+  }
 }
 
 long wxMediaEdit::FindPosition(float x, float y, Bool *ateol, Bool *onit,
@@ -3312,10 +3300,15 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
   if (start <= 0) {
     if (wholeLine) {
-      if (x)
-	*x = firstLine->GetLeftLocation(maxWidth);
+      if (x) {
+	float xl;
+	xl = firstLine->GetLeftLocation(maxWidth);
+	*x = xl;
+      } 
       if (y) {
-	*y = firstLine->GetLocation();
+	float yl;
+	yl = firstLine->GetLocation();
+	*y = yl;
 	if (!top)
 	  *y += firstLine->h;
       }
@@ -3334,10 +3327,15 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
     line = lastLine;
 
     if (wholeLine || !len) {
-      if (x)
-	*x = line->GetRightLocation(maxWidth);
+      if (x) {
+	float xl;
+	xl = line->GetRightLocation(maxWidth);
+	*x = xl;
+      }
       if (y) {
-	*y = lastLine->GetLocation();
+	float yl;
+	yl = lastLine->GetLocation();
+	*y = yl;
 	if (!top)
 	  *y += lastLine->h;
       }
@@ -3348,7 +3346,9 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 
     if (wholeLine) {
       if (y) {
-	*y = line->GetLocation();
+	float yl;
+	yl = line->GetLocation();
+	*y = yl;
 	if (!top)
 	  *y += line->h;
       }
@@ -3382,6 +3382,8 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
       
       if ((start > snip->count)
 	  || ((wholeLine || start) && start == snip->count)) {
+	float v;
+
 	start -= snip->count;
 	if (!dc) {
 	  dc = admin->GetDC();
@@ -3392,7 +3394,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 	  }
 	}
 	
-	float v = 0.0;
+	v = 0.0;
 	snip->GetExtent(dc, horiz, topy, &v);
 	horiz += v;
       } else
@@ -3522,6 +3524,8 @@ long wxMediaEdit::LineEndPosition(long i, Bool visibleOnly)
 
 long wxMediaEdit::LineLength(long i)
 {
+  wxMediaLine *line;
+  
   if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
 
@@ -3529,8 +3533,9 @@ long wxMediaEdit::LineLength(long i)
     return 0;
   else if (i >= numValidLines)
     return 0;
-  
-  return lineRoot->FindLine(i)->len;
+
+  line = lineRoot->FindLine(i);
+  return line->len;
 }
 
 long wxMediaEdit::PositionParagraph(long i, Bool WXUNUSED(eol))
@@ -3868,8 +3873,14 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 
   count = styleList->Number();
   if (count) {
+    wxStyle *i2s;
+#ifdef MZ_PRECISE_GC
+    smap = (wxStyle **)GC_malloc(sizeof(wxStyle*) * count);
+#else
     smap = new (wxStyle*)[count];
-    smap[0] = newList->IndexToStyle(0); /* base style maps to base style */
+#endif
+    i2s = newList->IndexToStyle(0); /* base style maps to base style */
+    smap[0] = i2s;
     for (index = 1; index < count; index++) {
       style = styleList->IndexToStyle(index);
       name = style->GetName();
@@ -3880,7 +3891,9 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
 	
 	if (style->IsJoin()) {
 	  int shiftIndex;
-	  shiftIndex = styleList->StyleToIndex(style->GetShiftStyle());
+	  wxStyle *ss;
+	  ss = style->GetShiftStyle();
+	  shiftIndex = styleList->StyleToIndex(ss);
 	  
 	  newStyle = newList->FindOrCreateJoinStyle(smap[baseIndex], smap[shiftIndex]);
 	} else {
@@ -3953,10 +3966,10 @@ void wxMediaEdit::StyleHasChanged(wxStyle *style)
 Bool wxMediaEdit::ScrollTo(wxSnip *snip, float localx, float localy, 
 			   float w, float h, Bool refresh, int bias)
 {
+  float x, y;
+
   if (flowLocked)
     return FALSE;
-
-  float x, y;
 
   if (delayRefresh) {
     delayedscroll = -1;

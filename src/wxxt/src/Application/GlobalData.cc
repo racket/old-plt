@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.cc,v 1.3 1999/11/04 17:25:31 mflatt Exp $
+ * $Id: GlobalData.cc,v 1.4 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -59,7 +59,6 @@ wxColourDatabase* wxTheColourDatabase = 0;
 wxPenList*        wxThePenList = 0;
 wxBrushList*	  wxTheBrushList = 0;
 wxFontList*	  wxTheFontList = 0;
-wxGDIList*	  wxTheBitmapList = 0;
 
 //-- misc ---------------------------------------------------------------------
 

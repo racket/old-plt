@@ -83,18 +83,19 @@ class wxCanvasMediaAdmin : public wxMediaAdmin
 };
 
 /* Used by wxMediaSnipMediaAdmin: */
-typedef struct {
+class wxMSMA_SnipDrawState {
+ public:
   Bool drawing;
   float x, y;
   wxDC *dc;
-} wxMSMA_SnipDrawState;
+};
 
 class wxMediaSnipMediaAdmin : public wxMediaAdmin
 {
   friend class wxMediaSnip;
   friend class os_wxMediaSnipMediaAdmin;
   
-  wxMSMA_SnipDrawState state;
+  wxMSMA_SnipDrawState *state;
 
   wxMediaSnip *snip;
 

@@ -1821,7 +1821,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_align(p[1], "initialization in style-delta% (size case)"));
 
     
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1841,7 +1841,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in style-delta% (size case)"));
 
     
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1861,7 +1861,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "initialization in style-delta% (underline case)"));
 
     
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1881,7 +1881,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_weight(p[1], "initialization in style-delta% (weight case)"));
 
     
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1901,7 +1901,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_style(p[1], "initialization in style-delta% (style case)"));
 
     
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1921,7 +1921,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[1], "initialization in style-delta% (family case)"));
 
     
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1943,7 +1943,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
       x0 = wxCHANGE_NOTHING;
 
     x1 = 0;
-    realobj = new os_wxStyleDelta(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxStyleDelta, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2824,11 +2824,10 @@ static Scheme_Object *os_wxStyleListNotifyOnChange(Scheme_Object *obj, int n,  S
   wxStyleNotifyFunc x0;
   void* x1;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, obj);
   VAR_STACK_PUSH(1, p);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = (wxStyleNotifyFunc)NotifyCallbackToScheme;
@@ -3111,7 +3110,7 @@ static Scheme_Object *os_wxStyleList_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in style-list%", 0, 0, n, p));
 
   
-  realobj = new os_wxStyleList(obj);
+  realobj = NEW_OBJECT(os_wxStyleList, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

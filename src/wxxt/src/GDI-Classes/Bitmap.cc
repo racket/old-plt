@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.8 1999/01/14 22:24:11 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.9 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -589,22 +589,3 @@ wxCursor::~wxCursor(void)
 }
 
 void* wxCursor::GetHandle(void) { return (Xcursor ? &(Xcursor->x_cursor) : NULL); }
-
-//-----------------------------------------------------------------------------
-// GDIList
-//-----------------------------------------------------------------------------
-
-wxGDIList::wxGDIList(void) : wxList()
-{
-}
-
-wxGDIList::~wxGDIList (void)
-{
-    wxNode *node = First();
-    while (node) {
-	wxObject *object = (wxObject*)node->Data();
-	wxNode *next = node->Next();
-	delete object;
-	node = next;
-    }
-}

@@ -601,7 +601,7 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x8 = "gauge";
 
   if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = new os_wxsGauge(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  realobj = NEW_OBJECT(os_wxsGauge, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

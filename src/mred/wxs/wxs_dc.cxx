@@ -125,15 +125,17 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
-  wxColour *c = new wxColour();
-  *c = dc->GetTextBackground();
+  wxColour *c;
+  c = NEW_OBJECT(wxColour,());
+  c->CopyFrom(dc->GetTextBackground());
   return c;
 }
 
 static wxColour* dcGetTextForeground(wxDC *dc)
 {
-  wxColour *c = new wxColour();
-  *c = dc->GetTextForeground();
+  wxColour *c;
+  c = NEW_OBJECT(wxColour,());
+  c->CopyFrom(dc->GetTextForeground());
   return c;
 }
 
@@ -1721,7 +1723,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
     WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap-dc%", 0, 0, n, p));
 
   
-  realobj = new os_wxMemoryDC(obj);
+  realobj = NEW_OBJECT(os_wxMemoryDC, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1855,7 +1857,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
     x0 = TRUE;
 
   
-  realobj = new os_wxPostScriptDC(obj, x0);
+  realobj = NEW_OBJECT(os_wxPostScriptDC, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2004,7 +2006,7 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
     WITH_VAR_STACK(scheme_wrong_count("initialization in printer-dc%", 0, 0, n, p));
 
   
-  realobj = new os_basePrinterDC(obj);
+  realobj = NEW_OBJECT(os_basePrinterDC, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

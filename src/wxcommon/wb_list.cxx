@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.2 1999/11/12 22:33:04 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.3 1999/11/12 22:50:37 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -258,6 +258,16 @@ Bool wxList::DeleteObject (wxObject * object)
 
 }
 
+
+wxNode *wxList::Append(wxObject *object)
+{
+  wxNode *node = new wxNode(this, last_node, NULL, object);
+  if (!first_node)
+    first_node = node;
+  last_node = node;
+  n ++;
+  return node;
+}
 
 // Insert new node at front of list
 wxNode *wxList::Insert (wxObject * object)

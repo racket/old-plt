@@ -228,7 +228,7 @@ static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 @MACRO ubAnythingToLong = ((long){x})
 @MACRO cAnything = 1
 
-@ "notify-on-change" : long/bAnythingFromLong NotifyOnChange(wxStyleNotifyFunc//ubCallback//spCallback,-unknown#void*//ubData)
+@ "notify-on-change" : long/bAnythingFromLong NotifyOnChange(wxStyleNotifyFunc//ubCallback///spCallback/nopush,-unknown#void*//ubData)
 @ "forget-notification" : void ForgetNotification(long//ubAnythingToLong/cAnything)
 
 @END

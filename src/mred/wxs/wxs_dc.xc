@@ -38,15 +38,17 @@
 
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
-  wxColour *c = new wxColour();
-  *c = dc->GetTextBackground();
+  wxColour *c;
+  c = NEW_OBJECT(wxColour,());
+  c->CopyFrom(dc->GetTextBackground());
   return c;
 }
 
 static wxColour* dcGetTextForeground(wxDC *dc)
 {
-  wxColour *c = new wxColour();
-  *c = dc->GetTextForeground();
+  wxColour *c;
+  c = NEW_OBJECT(wxColour,());
+  c->CopyFrom(dc->GetTextForeground());
   return c;
 }
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Object.h,v 1.2 1999/11/04 17:25:32 mflatt Exp $
+ * $Id: Object.h,v 1.3 1999/11/19 16:28:10 mflatt Exp $
  *
  * Purpose: Top level object and memory debugging for wxWindows
  *
@@ -36,7 +36,11 @@
 
 #include "../../wxcommon/wxGC.h"
 
-#define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
+#ifdef MZ_PRECISE_GC
+# define WXGC_IGNORE(ptr) GC_finalization_weak_ptr((void **)&(ptr))
+#else
+# define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
+#endif
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE
 

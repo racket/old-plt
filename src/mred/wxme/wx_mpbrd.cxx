@@ -2183,11 +2183,9 @@ char *wxMediaPasteboard::GetFlattenedText(long *got)
       old = s;
       s = new char[alloc];
       memcpy(s, old, p);
-      delete[] old;
     }
     memcpy(s + p, t, offset);
     p += offset;
-    delete[] t;
 
     snip = snip->next;
   }
@@ -2429,9 +2427,6 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 	path = NULL;
       
       file = GetFile(path);
-      
-      if (path)
-	delete[] path;
     } else
       file = filename;
   }
@@ -2579,11 +2574,6 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 	path = pfile = NULL;
       
       file = PutFile(path, pfile);
-      
-      if (path) {
-	delete[] path;
-	delete[] pfile;
-      }
     } else
       file = filename;
   }
@@ -2696,8 +2686,6 @@ void wxMediaPasteboard::SetFilename(char *name, Bool temp)
 {
   wxSnip *snip;
 
-  if (filename)
-    delete[] filename;
   filename = copystring(name);
   tempFilename = temp;
 

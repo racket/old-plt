@@ -85,15 +85,7 @@ class wxList: public wxObject
   inline int Number(void) { return n; }
 
   // Append to end of list
-  inline wxNode *Append(wxObject *object)
-  {
-    wxNode *node = new wxNode(this, last_node, NULL, object);
-    if (!first_node)
-      first_node = node;
-    last_node = node;
-    n ++;
-    return node;
-  }
+  wxNode *Append(wxObject *object);
 
   // Insert at front of list
   wxNode *Insert(wxObject *object);

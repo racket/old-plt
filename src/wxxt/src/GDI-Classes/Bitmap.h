@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.h,v 1.3 1998/10/18 12:04:11 mflatt Exp $
+ * $Id: Bitmap.h,v 1.4 1999/11/04 17:25:34 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -92,12 +92,6 @@ public:
     virtual void* GetHandle(void); // return type Cursor*, GetPixmap returns NULL!
 private:
     wxCursor_Xintern *Xcursor;
-};
-
-class wxGDIList : public wxList { // GDI list representation (list of bitmaps)
-public:
-    wxGDIList(void);
-    ~wxGDIList(void);
 };
 
 #endif // Bitmap_h

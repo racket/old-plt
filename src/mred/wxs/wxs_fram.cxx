@@ -1009,7 +1009,7 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x7 = "frame";
 
   wxsCheckEventspace(METHODNAME("frame%","initialization"));if (!x4) x4 = -1;if (!x5) x5 = -1;
-  realobj = new os_wxFrame(obj, x0, x1, x2, x3, x4, x5, x6, x7);
+  realobj = NEW_OBJECT(os_wxFrame, (obj, x0, x1, x2, x3, x4, x5, x6, x7));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

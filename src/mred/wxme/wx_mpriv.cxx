@@ -330,8 +330,11 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 	&& !(startSnip->line->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE))
       startSnip->line->prev->MarkCheckFlow();
     
-    if (!modified)
-      AddUndo(new wxUnmodifyRecord);
+    if (!modified) {
+      wxUnmodifyRecord *ur;
+      ur = new wxUnmodifyRecord;
+      AddUndo(ur);
+    }
     if (rec)
       AddUndo(rec);
     if (delayRefresh)
@@ -740,8 +743,6 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
   p = -1;
 
  search_done:
-  delete[] smap;
-
   return justOne ? p : foundCount;
 }
 
@@ -1617,7 +1618,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 {
   wxMediaLine *line;
   wxSnip *snip;
-  float X, Y, descent, space;
+  float X, Y, descent, space, old_max_width;
   Bool _changed, resized;
 
   if (!calcGraphics)
@@ -1720,7 +1721,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
       snip->SizeCacheInvalid();
     }
 
-  float old_max_width = maxWidth;
+  old_max_width = maxWidth;
 
   if (flowInvalid && (maxWidth <= 0))
     maxWidth = A_VERY_BIG_NUMBER;
@@ -1745,13 +1746,13 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 #endif
 
   if (maxWidth > 0) {
+    float w;
     Bool fl = flowLocked, wl = writeLocked;
 
     /* If any flow is update, snip sizing methods will be called. */
     flowLocked = TRUE;
     writeLocked = TRUE;
 
-    float w;
     w = maxWidth - CURSOR_WIDTH;
     while (lineRoot->UpdateFlow(&lineRoot, this, w, dc)) {
       _changed = TRUE;

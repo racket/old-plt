@@ -33,7 +33,7 @@ class wxMediaLine
   
   float maxWidth;
 
-  class wxSnip *snip, *lastSnip, *scrollSnip;
+  wxSnip *snip, *lastSnip, *scrollSnip;
 
   long len, numscrolls;
   float lastH, lastW; /* height/width of last snip in line */

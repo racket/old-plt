@@ -33,6 +33,8 @@ extern "C" {
 
 #include "gc.h"
 
+/******************** Special kinds of GC *********************/
+
 #ifdef USE_SENORA_GC
 extern void *GC_cpp_malloc(size_t);
 #endif
@@ -50,6 +52,21 @@ extern "C" {
 # define wxREGGLOB(x) scheme_register_extension_global((void *)&x, sizeof(x))
 #else
 # define wxREGGLOB(x) /* empty */
+#endif
+
+#ifdef MZ_PRECISE_GC
+class gc_marking
+{
+ public:
+  virtual ~gc_marking() { }
+  /* Overridden in each subclass: */
+  virtual int gcMark(Mark_Proc mp);
+};
+
+extern void *GC_get_current_new();
+extern void *GC_pop_current_new();
+
+# define GC_register_finalizer_ignore_self GC_register_finalizer
 #endif
 
 /********************* The `gc' class *************************/
@@ -90,9 +107,9 @@ inline gc::gc(int cleanup) {
 
 inline gc::~gc(void)
 {
-  GC_register_finalizer_ignore_self(this, 0, 0, 0, 0);
-  if (__gc_external) 
+  if (__gc_external)
     gc_mark_external_invalid(__gc_external);
+  GC_register_finalizer_ignore_self(this, 0, 0, 0, 0);
 }
 
 /***** Allocators: ******/

@@ -461,7 +461,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
     x1 = NULL;
 
   
-  realobj = new os_wxMenu(obj, x0, x1);
+  realobj = NEW_OBJECT(os_wxMenu, (obj, x0, x1));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -962,7 +962,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
     x2 = NULL;
 
     x1 = __MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("menu-bar%","initialization"));x2 = __MakestringArray((1 < n) ? p[1] : scheme_null, &x0, METHODNAME("menu-bar%","initialization"));
-    realobj = new os_wxMenuBar(obj, x0, x1, x2);
+    realobj = NEW_OBJECT(os_wxMenuBar, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -978,7 +978,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
       WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar% (no argument case)", 0, 0, n, p));
 
     
-    realobj = new os_wxMenuBar(obj);
+    realobj = NEW_OBJECT(os_wxMenuBar, (obj));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1146,7 +1146,7 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", 0, 0, n, p));
 
   
-  realobj = new os_wxsMenuItem(obj);
+  realobj = NEW_OBJECT(os_wxsMenuItem, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

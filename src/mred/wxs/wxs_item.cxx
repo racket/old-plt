@@ -674,7 +674,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
       x5 = "message";
 
     { if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1]); if (x1 && BM_SELECTED(x1)) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[1]); }
-    realobj = new os_wxMessage(obj, x0, x1, x2, x3, x4, x5);
+    realobj = NEW_OBJECT(os_wxMessage, (obj, x0, x1, x2, x3, x4, x5));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -717,7 +717,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
       x5 = "message";
 
     
-    realobj = new os_wxMessage(obj, x0, x1, x2, x3, x4, x5);
+    realobj = NEW_OBJECT(os_wxMessage, (obj, x0, x1, x2, x3, x4, x5));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     

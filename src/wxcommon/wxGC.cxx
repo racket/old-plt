@@ -134,3 +134,13 @@ int GC_is_wx_object(void *v)
 }
 
 #endif
+
+/**********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+void gc_marking::gcMark(Mark_Proc mp)
+{
+}
+
+#endif

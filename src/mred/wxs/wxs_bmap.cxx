@@ -351,7 +351,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x2 = 0;
 
     
-    realobj = new os_wxBitmap(obj, x0, x1, x2);
+    realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -374,7 +374,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (datastring case)"));
 
     if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]);
-    realobj = new os_wxBitmap(obj, x0, x1, x2);
+    realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -398,7 +398,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x1 = 0;
 
     
-    realobj = new os_wxBitmap(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxBitmap, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     if (realobj->Ok()) scheme_process_block(0.0);

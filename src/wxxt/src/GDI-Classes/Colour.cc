@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.8 1999/11/10 03:46:20 mflatt Exp $
+ * $Id: Colour.cc,v 1.9 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -452,9 +452,11 @@ char *wxColourDatabase::FindName(wxColour *colour)
     unsigned char red   = colour->Red();
     unsigned char green = colour->Green();
     unsigned char blue  = colour->Blue();
+    wxNode *node;
     
-    for (wxNode *node = First(); node; node = node->Next()) {
-      wxColour *col = (wxColour*)node->Data ();
+    for (node = First(); node; node = node->Next()) {
+      wxColour *col;
+      col = (wxColour*)node->Data ();
       if (col->Red()==red && col->Green()==green && col->Blue()==blue) {
 	char *found = node->string_key;
 	if (found)

@@ -473,7 +473,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       x5 = 0;
 
     
-    realobj = new os_wxFont(obj, x0, x1, x2, x3, x4, x5);
+    realobj = NEW_OBJECT(os_wxFont, (obj, x0, x1, x2, x3, x4, x5));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -502,7 +502,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       x4 = 0;
 
     
-    realobj = new os_wxFont(obj, x0, x1, x2, x3, x4);
+    realobj = NEW_OBJECT(os_wxFont, (obj, x0, x1, x2, x3, x4));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -518,7 +518,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
       WITH_VAR_STACK(scheme_wrong_count("initialization in font% (no argument case)", 0, 0, n, p));
 
     
-    realobj = new os_wxFont(obj);
+    realobj = NEW_OBJECT(os_wxFont, (obj));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -725,7 +725,7 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
     WITH_VAR_STACK(scheme_wrong_count("initialization in font-list%", 0, 0, n, p));
 
   
-  realobj = new os_wxFontList(obj);
+  realobj = NEW_OBJECT(os_wxFontList, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1010,7 +1010,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in color% (color name case)"));
 
     
-    realobj = new os_wxColour(obj, x0);
+    realobj = NEW_OBJECT(os_wxColour, (obj, x0));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1032,7 +1032,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 0, 255, "initialization in color% (rgb values case)"));
 
     
-    realobj = new os_wxColour(obj, x0, x1, x2);
+    realobj = NEW_OBJECT(os_wxColour, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1048,7 +1048,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
       WITH_VAR_STACK(scheme_wrong_count("initialization in color% (no argument case)", 0, 0, n, p));
 
     
-    realobj = new os_wxColour(obj);
+    realobj = NEW_OBJECT(os_wxColour, (obj));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1390,7 +1390,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[1], "initialization in point% (xy values case)"));
 
     
-    realobj = new os_wxPoint(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxPoint, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1406,7 +1406,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
       WITH_VAR_STACK(scheme_wrong_count("initialization in point% (no argument case)", 0, 0, n, p));
 
     
-    realobj = new os_wxPoint(obj);
+    realobj = NEW_OBJECT(os_wxPoint, (obj));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1806,7 +1806,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[1], "initialization in brush% (color name case)"));
 
     
-    realobj = new os_wxBrush(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxBrush, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1827,7 +1827,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
     x1 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[1], "initialization in brush% (color% case)"));
 
     
-    realobj = new os_wxBrush(obj, x0, x1);
+    realobj = NEW_OBJECT(os_wxBrush, (obj, x0, x1));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1843,7 +1843,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
       WITH_VAR_STACK(scheme_wrong_count("initialization in brush% (no argument case)", 0, 0, n, p));
 
     
-    realobj = new os_wxBrush(obj);
+    realobj = NEW_OBJECT(os_wxBrush, (obj));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2026,7 +2026,7 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in brush-list%", 0, 0, n, p));
 
   
-  realobj = new os_wxBrushList(obj);
+  realobj = NEW_OBJECT(os_wxBrushList, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2638,7 +2638,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "initialization in pen% (color name case)"));
 
     
-    realobj = new os_wxPen(obj, x0, x1, x2);
+    realobj = NEW_OBJECT(os_wxPen, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2661,7 +2661,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "initialization in pen% (color% case)"));
 
     
-    realobj = new os_wxPen(obj, x0, x1, x2);
+    realobj = NEW_OBJECT(os_wxPen, (obj, x0, x1, x2));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2677,7 +2677,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
       WITH_VAR_STACK(scheme_wrong_count("initialization in pen% (no argument case)", 0, 0, n, p));
 
     
-    realobj = new os_wxPen(obj);
+    realobj = NEW_OBJECT(os_wxPen, (obj));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -2871,7 +2871,7 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
     WITH_VAR_STACK(scheme_wrong_count("initialization in pen-list%", 0, 0, n, p));
 
   
-  realobj = new os_wxPenList(obj);
+  realobj = NEW_OBJECT(os_wxPenList, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3096,7 +3096,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x0 = WITH_VAR_STACK(unbundle_symset_cursor(p[0], "initialization in cursor% (symbolic name case)"));
 
     
-    realobj = new os_wxCursor(obj, x0);
+    realobj = NEW_OBJECT(os_wxCursor, (obj, x0));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -3130,7 +3130,7 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x3 = 0;
 
     
-    realobj = new os_wxCursor(obj, x0, x1, x2, x3);
+    realobj = NEW_OBJECT(os_wxCursor, (obj, x0, x1, x2, x3));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -3697,7 +3697,7 @@ static Scheme_Object *os_wxRegion_ConstructScheme(Scheme_Object *obj, int n,  Sc
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[0], "initialization in region%", 0));
 
   
-  realobj = new os_wxRegion(obj, x0);
+  realobj = NEW_OBJECT(os_wxRegion, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

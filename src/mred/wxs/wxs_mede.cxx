@@ -7238,7 +7238,7 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
     x1 = NULL;
 
   x1 = __MakefloatArray((1 < n) ? p[1] : scheme_null, &x2, METHODNAME("text%","initialization"));
-  realobj = new os_wxMediaEdit(obj, x0, x1, x2);
+  realobj = NEW_OBJECT(os_wxMediaEdit, (obj, x0, x1, x2));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

@@ -63,10 +63,11 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
   minHeight = h;
   maxHeight = H;
 
-  if (useme && !useme->GetAdmin())
+  if (useme && !useme->GetAdmin()) {
     me = useme;
-  else
+  } else {
     me = wxsMakeMediaEdit();
+  }
   myAdmin = new wxMediaSnipMediaAdmin(this);
 
   if (!me->GetFilename(&istemp) || istemp)
@@ -330,6 +331,7 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
 		       int show_caret)
 {
   float w, h, r, b, orig_x, orig_y;
+  float t, l;
 
   wxMSMA_SnipDrawState save;
 
@@ -374,8 +376,6 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
   r = x + w;
   b = y + h;
   
-  float t, l;
-
   l = ((x > left) ? x : left);
   t = ((y > top) ? y : top);
   r = ((r < right) ? r : right);
@@ -621,19 +621,20 @@ wxMediaSnipMediaAdmin::wxMediaSnipMediaAdmin(wxMediaSnip *s)
 #endif
 
   snip = s;
-  state.drawing = 0;
+  state = new wxMSMA_SnipDrawState;
+  state->drawing = 0;
 
   // WXGC_IGNORE(snip);
-  WXGC_IGNORE(state.dc);
+  WXGC_IGNORE(state->dc);
 }
 
 wxDC *wxMediaSnipMediaAdmin::GetDC(float *xp, float *yp)
 {
-  if (state.drawing) {
+  if (state->drawing) {
     if (xp)
-      *xp = -state.x;
+      *xp = -state->x;
     if (yp)
-      *yp = -state.y;
+      *yp = -state->y;
   } else {
     if (xp)
       *xp = 0;
@@ -641,8 +642,8 @@ wxDC *wxMediaSnipMediaAdmin::GetDC(float *xp, float *yp)
       *yp = 0;
   }
   
-  if (state.drawing)
-    return state.dc;
+  if (state->drawing)
+    return state->dc;
   else {
     wxSnipAdmin *sadmin;
     sadmin = snip->GetAdmin();
@@ -656,23 +657,23 @@ wxDC *wxMediaSnipMediaAdmin::GetDC(float *xp, float *yp)
 void wxMediaSnipMediaAdmin::SaveState(wxMSMA_SnipDrawState *save, wxDC *dc, 
 				      float x, float y)
 {
-  save->drawing = state.drawing;
-  save->dc = state.dc;
-  save->x = state.x;
-  save->y = state.y;
+  save->drawing = state->drawing;
+  save->dc = state->dc;
+  save->x = state->x;
+  save->y = state->y;
 
-  state.drawing = TRUE;
-  state.x = x + snip->leftMargin;
-  state.y = y + snip->topMargin;
-  state.dc = dc;
+  state->drawing = TRUE;
+  state->x = x + snip->leftMargin;
+  state->y = y + snip->topMargin;
+  state->dc = dc;
 }
 
 void wxMediaSnipMediaAdmin::RestoreState(wxMSMA_SnipDrawState *saved)
 {
-  state.drawing = saved->drawing;
-  state.dc = saved->dc;
-  state.x = saved->x;
-  state.y = saved->y;
+  state->drawing = saved->drawing;
+  state->dc = saved->dc;
+  state->x = saved->x;
+  state->y = saved->y;
 }
 
 void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h, 
@@ -712,18 +713,20 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 	float rw, rh;
 	
 	/* We want the internal, non-overridden method: */
-	snip->wxMediaSnip::GetExtent(state.dc, 0, 0, &rw, &rh);
+	snip->wxMediaSnip::GetExtent(state->dc, 0, 0, &rw, &rh);
 
 	/* remember: sx and sy are in snip coordinates */
 
 	if (w) {
-	  float leftMargin = snip->leftMargin - sx;
+	  float leftMargin, rightMargin;
+
+	  leftMargin = snip->leftMargin - sx;
 	  if (leftMargin < 0)
 	    leftMargin = 0;
 	  sw -= leftMargin;
 	  rw -= snip->leftMargin;
 	  
-	  float rightMargin = snip->rightMargin - (rw - sw);
+	  rightMargin = snip->rightMargin - (rw - sw);
 	  if (rightMargin < 0)
 	    rightMargin = 0;
 	  sw -= rightMargin;
@@ -732,13 +735,15 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
 	  *w = sw;
 	}
 	if (h) {
-	  float topMargin = snip->topMargin - sy;
+	  float topMargin, bottomMargin;
+
+	  topMargin = snip->topMargin - sy;
 	  if (topMargin < 0)
 	    topMargin = 0;
 	  sh -= topMargin;
 	  rh -= snip->topMargin;
 
-	  float bottomMargin = snip->bottomMargin - (rh - sh);
+	  bottomMargin = snip->bottomMargin - (rh - sh);
 	  if (bottomMargin < 0)
 	    bottomMargin = 0;
 	  sh -= bottomMargin;

@@ -58,7 +58,7 @@ class wxSnipClass : public wxObject
   
   wxSnipClass();
 
-  virtual class wxSnip *Read(wxMediaStreamIn *) = 0;
+  virtual wxSnip *Read(wxMediaStreamIn *) = 0;
 
   virtual Bool ReadHeader(wxMediaStreamIn *);
   virtual void ReadDone(void);
@@ -107,6 +107,8 @@ extern wxStandardSnipClassList *wxGetTheSnipClassList();
 
 /******************************************************************/
 
+class wxMediaLine;
+
 class wxSnip : public wxObject
 {
  private:
@@ -118,7 +120,7 @@ class wxSnip : public wxObject
 
   /* For use only by the owning wxMediaBuffer */
   wxSnip *prev, *next;
-  class wxMediaLine *line;
+  wxMediaLine *line;
 
   void Init(void);
 
@@ -347,12 +349,14 @@ class wxSnipAdmin : public wxObject
 #define wxMSNIPBOX_XINSET 1
 #define wxMSNIPBOX_YINSET 1
 
+class wxMediaSnipMediaAdmin;
+
 class wxMediaSnip : public wxInternalSnip
 {
   friend class wxMediaSnipMediaAdmin;
 
   wxMediaBuffer *me;
-  class wxMediaSnipMediaAdmin *myAdmin;
+  wxMediaSnipMediaAdmin *myAdmin;
 
 #define TF_Flag(var) unsigned var : 1
   TF_Flag( withBorder );
@@ -458,7 +462,7 @@ class wxBufferDataClass : public wxObject
 
   wxBufferDataClass();
 
-  virtual class wxBufferData *Read(wxMediaStreamIn *) = 0;
+  virtual wxBufferData *Read(wxMediaStreamIn *) = 0;
 };
 
 class wxBufferData : public wxObject

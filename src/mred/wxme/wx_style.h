@@ -104,12 +104,14 @@ class wxStyleDelta : public wxObject
   void Copy(wxStyleDelta *delta);
 };
 
+class wxStyleList;
+
 class wxStyle : public wxObject
 {
   friend class wxStyleList;
 
  private:
-  class wxStyleList *styleList; /* Points back to the list owning the style */
+  wxStyleList *styleList; /* Points back to the list owning the style */
 
   char *name;
 

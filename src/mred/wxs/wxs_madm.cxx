@@ -968,7 +968,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
     x8 = NULL;
 
   if (!x3) x3 = -1;if (!x4) x4 = -1;
-  realobj = new os_wxMediaCanvas(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  realobj = NEW_OBJECT(os_wxMediaCanvas, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1748,7 +1748,7 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(Scheme_Object *obj, int n,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-admin%", 0, 0, n, p));
 
   
-  realobj = new os_wxMediaAdmin(obj);
+  realobj = NEW_OBJECT(os_wxMediaAdmin, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2727,7 +2727,7 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in snip-admin%", 0, 0, n, p));
 
   
-  realobj = new os_wxSnipAdmin(obj);
+  realobj = NEW_OBJECT(os_wxSnipAdmin, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3199,7 +3199,7 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(Scheme_Object *obj, int n, 
     WITH_VAR_STACK(scheme_wrong_count("initialization in snip-class%", 0, 0, n, p));
 
   
-  realobj = new os_wxSnipClass(obj);
+  realobj = NEW_OBJECT(os_wxSnipClass, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -4048,7 +4048,7 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     WITH_VAR_STACK(scheme_wrong_count("initialization in keymap%", 0, 0, n, p));
 
   
-  realobj = new os_wxKeymap(obj);
+  realobj = NEW_OBJECT(os_wxKeymap, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -4361,7 +4361,7 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(Scheme_Object *obj,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-wordbreak-map%", 0, 0, n, p));
 
   
-  realobj = new os_wxMediaWordbreakMap(obj);
+  realobj = NEW_OBJECT(os_wxMediaWordbreakMap, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

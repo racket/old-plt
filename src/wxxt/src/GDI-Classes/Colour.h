@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.h,v 1.3 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: Colour.h,v 1.4 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -50,6 +50,14 @@ public:
 
     wxColour* CopyFrom(wxColour*);
     wxColour* CopyFrom(const char*);
+
+#ifndef MZ_PRECISE_GC
+    wxColour& operator =(wxColour& x) { 
+      printf("Error: shouldn't use = on color objects anymore\n");
+      CopyFrom(&x);
+      return *this;
+    }
+#endif
 
     Bool Ok(void) { return (X!=NULL); }
 

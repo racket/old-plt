@@ -13,18 +13,13 @@ typedef EventRecord MrEdEvent;
 
 class wxTimer;
 
-typedef struct MrEdContextFrames {
+class MrEdContextFrames {
+ public:
   wxChildList *list;
-  struct MrEdContextFrames *next, *prev;
-} MrEdContextFrames;
+  MrEdContextFrames *next, *prev;
+};
 
-typedef struct MrEdFinalizedContext {
-#ifdef wx_xt
-  Widget toplevel;
-#endif
-  MrEdContextFrames *frames;
-  struct MrEdContext **real_context; /* atomic ptr to actual context */
-} MrEdFinalizedContext;
+class MrEdFinalizedContext;
 
 typedef struct MrEdContext {
   Scheme_Type type;
@@ -66,6 +61,15 @@ typedef struct MrEdContext {
   struct Context_Manager_Hop *mr_hop;
   Scheme_Manager_Reference *mref;
 } MrEdContext;
+
+class MrEdFinalizedContext {
+ public:
+#ifdef wx_xt
+  Widget toplevel;
+#endif
+  MrEdContextFrames *frames;
+  MrEdContext **real_context; /* atomic ptr to actual context */
+};
 
 extern MrEdContext *mred_contexts;
 

@@ -1929,7 +1929,7 @@ static Scheme_Object *os_wxSnip_ConstructScheme(Scheme_Object *obj, int n,  Sche
     WITH_VAR_STACK(scheme_wrong_count("initialization in snip%", 0, 0, n, p));
 
   
-  realobj = new os_wxSnip(obj);
+  realobj = NEW_OBJECT(os_wxSnip, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -3548,7 +3548,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(Scheme_Object *obj, int n,  
     x0 = 0;
 
   
-  realobj = new os_wxTextSnip(obj, x0);
+  realobj = NEW_OBJECT(os_wxTextSnip, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -5093,7 +5093,7 @@ static Scheme_Object *os_wxTabSnip_ConstructScheme(Scheme_Object *obj, int n,  S
     WITH_VAR_STACK(scheme_wrong_count("initialization in tab-snip%", 0, 0, n, p));
 
   
-  realobj = new os_wxTabSnip(obj);
+  realobj = NEW_OBJECT(os_wxTabSnip, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -6854,7 +6854,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "initialization in image-snip% (bitmap case)", 0));
 
     { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
-    realobj = new os_wxImageSnip(obj, x0);
+    realobj = NEW_OBJECT(os_wxImageSnip, (obj, x0));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -6891,7 +6891,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
       x3 = TRUE;
 
     
-    realobj = new os_wxImageSnip(obj, x0, x1, x2, x3);
+    realobj = NEW_OBJECT(os_wxImageSnip, (obj, x0, x1, x2, x3));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     if (x0) scheme_process_block(0.0);
@@ -8972,7 +8972,7 @@ static Scheme_Object *os_wxMediaSnip_ConstructScheme(Scheme_Object *obj, int n, 
     x13 = -1;
 
   
-  realobj = new os_wxMediaSnip(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13);
+  realobj = NEW_OBJECT(os_wxMediaSnip, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -9225,7 +9225,7 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, i
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-data-class%", 0, 0, n, p));
 
   
-  realobj = new os_wxBufferDataClass(obj);
+  realobj = NEW_OBJECT(os_wxBufferDataClass, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -9717,7 +9717,7 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-data%", 0, 0, n, p));
 
   
-  realobj = new os_wxBufferData(obj);
+  realobj = NEW_OBJECT(os_wxBufferData, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

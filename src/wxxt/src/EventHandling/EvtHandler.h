@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.h,v 1.5 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: EvtHandler.h,v 1.6 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -34,6 +34,7 @@ class wxCommandEvent;
 class wxItem;
 class wxKeyEvent;
 class wxMouseEvent;
+class wxScrollEvent;
 class wxWindow;
 
 class wxEvtHandler : public wxObject {

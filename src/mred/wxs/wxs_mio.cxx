@@ -473,7 +473,7 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-in-base%", 0, 0, n, p));
 
   
-  realobj = new os_wxMediaStreamInBase(obj);
+  realobj = NEW_OBJECT(os_wxMediaStreamInBase, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -815,7 +815,7 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out-base%", 0, 0, n, p));
 
   
-  realobj = new os_wxMediaStreamOutBase(obj);
+  realobj = NEW_OBJECT(os_wxMediaStreamOutBase, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -946,7 +946,7 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in editor-stream-in-string-base%"));
 
   x1 = SCHEME_STRTAG_VAL(p[0]);
-  realobj = new os_wxMediaStreamInStringBase(obj, x0, x1);
+  realobj = NEW_OBJECT(os_wxMediaStreamInStringBase, (obj, x0, x1));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1093,7 +1093,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
     WITH_VAR_STACK(scheme_wrong_count("initialization in editor-stream-out-string-base%", 0, 0, n, p));
 
   
-  realobj = new os_wxMediaStreamOutStringBase(obj);
+  realobj = NEW_OBJECT(os_wxMediaStreamOutStringBase, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1529,7 +1529,7 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamInBase(p[0], "initialization in editor-stream-in%", 0));
 
   
-  realobj = new os_wxMediaStreamIn(obj, x0);
+  realobj = NEW_OBJECT(os_wxMediaStreamIn, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1845,7 +1845,7 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOutBase(p[0], "initialization in editor-stream-out%", 0));
 
   
-  realobj = new os_wxMediaStreamOut(obj, x0);
+  realobj = NEW_OBJECT(os_wxMediaStreamOut, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

@@ -299,10 +299,12 @@ void wxSnip::GetExtent(wxDC *,
 float wxSnip::PartialOffset(wxDC *dc, 
 			    float x, float y, long offset)
 {
+  float w;
+
   if (!offset)
     return 0.0;
 
-  float w = 0.0;
+  w = 0.0;
   GetExtent(dc, x, y, &w);
   return w;
 }
@@ -1121,10 +1123,8 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
   
   snip = new wxImageSnip(loadfile, type, relative, inlined);
 
-  delete[] filename;
   if (delfile) {
     wxRemoveFile(delfile);
-    delete[] delfile;
   }
 
   snip->Resize(w, h);
@@ -1306,7 +1306,6 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
     }
 
     wxRemoveFile(fname);
-    delete[] fname;
 
     end = f->Tell();
     f->JumpTo(lenpos);
@@ -1317,9 +1316,6 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
 
 void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 {
-  if (filename) 
-    delete[] filename;
- 
   if (name && !*name)
     name = NULL;
 
@@ -1721,7 +1717,6 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
 
   for (node = unknowns->First(); node; node = next) {
     next = node->Next();
-    delete[] (char *)node->Data();
     delete node;
   }
 
@@ -1768,7 +1763,6 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
     sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", s);
     wxmeError(buffer2);
 
-    delete[] (char *)node->Data();
     delete node;
   }
 

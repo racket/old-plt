@@ -806,7 +806,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x10 = "checkBox";
 
   x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("choice%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = new os_wxChoice(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10);
+  realobj = NEW_OBJECT(os_wxChoice, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   delete[] x8;

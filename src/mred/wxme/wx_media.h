@@ -117,6 +117,8 @@ class wxMediaWordbreakMap : public wxObject
 
 extern wxMediaWordbreakMap *wxTheMediaWordbreakMap;
 
+class wxMediaLine;
+
 class wxMediaEdit : public wxMediaBuffer
 {
   friend class wxMediaLine;
@@ -482,7 +484,7 @@ class wxMediaEdit : public wxMediaBuffer
 
   wxStandardSnipAdmin *snipAdmin;
   
-  class wxMediaLine *lineRoot, *firstLine, *lastLine; /* Line information */
+  wxMediaLine *lineRoot, *firstLine, *lastLine; /* Line information */
   long numValidLines;
 
   float extraLineH;

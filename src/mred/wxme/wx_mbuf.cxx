@@ -75,6 +75,12 @@ static wxMediaXClipboardClient *TheMediaXClipboardClient;
 #endif
 
 typedef wxChangeRecord *wxChangeRecordPtr;
+#ifdef MZ_PRECISE_GC
+# define MALLOC_CRP(n) (wxChangeRecordPtr **)GC_malloc(sizeof(void*) * n)
+#else
+# define MALLOC_CRP(n) new wxChangeRecordPtr[n]
+#endif
+
 
 wxBitmap *wxMediaBuffer::bitmap;
 wxMemoryDC *wxMediaBuffer::offscreen = NULL;
@@ -100,6 +106,8 @@ static int bcounter = 0;
 wxMediaBuffer::wxMediaBuffer()
  : wxObject(WXGC_NO_CLEANUP)
 {
+  wxChangeRecordPtr *crpa;
+
   map = new wxKeymap();
   map->AdjustUsage(TRUE);
   // AddBufferFunctions(map);
@@ -114,9 +122,11 @@ wxMediaBuffer::wxMediaBuffer()
 
   undomode = redomode = interceptmode = FALSE;
   maxUndos = NUM_MAX_UNDOS;
-  changes = new wxChangeRecordPtr[maxUndos];
+  crpa = MALLOC_CRP(maxUndos);
+  changes = crpa;
   changes_start = changes_end = 0;
-  redochanges =  new wxChangeRecordPtr[maxUndos];
+  crpa =  MALLOC_CRP(maxUndos);
+  redochanges = crpa;
   redochanges_start = redochanges_end = 0;
 
   customCursor = NULL;
@@ -1480,7 +1490,7 @@ void wxMediaBuffer::SetMaxUndoHistory(int v)
   if (undomode || redomode || (v == maxUndos))
     return;
 
-  naya = new wxChangeRecordPtr[v];
+  naya = MALLOC_CRP(v);
   for (j = 0, i = changes_start; 
        (i != changes_end) && (j < v); 
        j++, i = (i + 1) % maxUndos) {
@@ -1489,7 +1499,7 @@ void wxMediaBuffer::SetMaxUndoHistory(int v)
   changes_start = 0;
   changes_end = v ? (j % v) : 0;
 
-  naya = new wxChangeRecordPtr[v];
+  naya = MALLOC_CRP(v);
   for (j = 0, i = redochanges_start; 
        (i != redochanges_end) && (j < v); 
        j++, i = (i + 1) % maxUndos) {
@@ -2223,9 +2233,10 @@ void wxStandardSnipAdmin::GetView(float *x, float *y, float *w, float *h, wxSnip
       mb = my + mh;
       mr = mx + mw;
       if (media->GetSnipLocation(snip, &sl, &st, FALSE)) {
+	float l, t, r, b;
+
 	media->GetSnipLocation(snip, &sr, &sb, TRUE);
 	
-	float l, t, r, b;
 	l = (mx > sl ? mx : sl);
 	t = (my > st ? my : st);
 	r = (mr > sr ? sr : mr);

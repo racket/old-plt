@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.10 1999/11/18 23:25:14 mflatt Exp $
+ * $Id: AppMain.cc,v 1.11 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -205,7 +205,6 @@ void wxCommonInit(void)
     wxThePenList = DEBUG_NEW wxPenList();
     wxTheBrushList = DEBUG_NEW wxBrushList();
     wxTheFontList = DEBUG_NEW wxFontList();
-    wxTheBitmapList = DEBUG_NEW wxGDIList();
 
     wxNORMAL_FONT = DEBUG_NEW wxFont (12, wxMODERN, wxNORMAL, wxNORMAL);
     wxSMALL_FONT = DEBUG_NEW wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);

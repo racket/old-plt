@@ -138,6 +138,9 @@ Window GetEventWindow(XEvent *e)
 
 static Bool CheckPred(Display *display, XEvent *e, char *args)
 {
+  Window window;
+  Widget widget;
+
   if (short_circuit)
     return FALSE;
 
@@ -145,8 +148,7 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
   printf("trying %s\n", get_event_type(e));
 #endif
 
-  Window window = GetEventWindow(e);
-  Widget widget;
+  window = GetEventWindow(e);
 
   if (window) {
     widget = XtWindowToWidget(display, window);
@@ -160,7 +162,8 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 
   if (widget) {
     Widget parent;
-    for (parent = widget; XtParent(parent); parent = XtParent(parent));
+    for (parent = widget; XtParent(parent); parent = XtParent(parent)) {
+    }
     
 #if 0
     printf("parent: %lx context: %lx\n", parent, parent_context);
@@ -188,7 +191,7 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
     } else {
       MrEdContext *c;
       
-      for (c = mred_contexts; c; c = c->next)
+      for (c = mred_contexts; c; c = c->next) {
 	if (c->finalized->toplevel == parent) {
 	  if (!c->ready) {
 #if 0
@@ -201,6 +204,7 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 	    goto found;
 	  }
 	}
+      }
 
       /* Toplevel without context; handle in the main context: */
 #if 0
@@ -317,8 +321,12 @@ void MrEdDispatchEvent(XEvent *event)
 	|| ((type == ClientMessage)
 	    && !strcmp(XGetAtomName(d, event->xclient.message_type), "WM_PROTOCOLS")
 	    && !strcmp(XGetAtomName(d, event->xclient.data.l[0]), "WM_DELETE_WINDOW"))) {
-      Window window = GetEventWindow(event);
+      Window window;
       Widget widget, ow, exempt = 0;
+      MrEdContext *c;
+      wxWindow *ew;
+
+      window = GetEventWindow(event);
 
       if (window)
 	widget = XtWindowToWidget(d, window);
@@ -326,8 +334,8 @@ void MrEdDispatchEvent(XEvent *event)
 	widget = 0;
       ow = widget;
 
-      MrEdContext *c = MrEdGetContext();
-      wxWindow *ew = c->modal_window;
+      c = MrEdGetContext();
+      ew = c->modal_window;
       if (ew) {
 	exempt = ew->GetHandle()->frame;
       }

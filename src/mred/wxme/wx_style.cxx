@@ -899,8 +899,8 @@ void wxStyleList::Clear(void)
 
   basic->font = wxTheFontList->FindOrCreateFont(defaultSize, wxDEFAULT,
 						wxNORMAL, wxNORMAL);
-  basic->foreground = *blackColour;
-  basic->background = *whiteColour;
+  basic->foreground.CopyFrom(blackColour);
+  basic->background.CopyFrom(whiteColour);
   basic->pen = wxThePenList->FindOrCreatePen(&basic->foreground, 0, wxSOLID);
   basic->brush = wxTheBrushList->FindOrCreateBrush(&basic->background, wxSOLID);
   basic->alignment = wxALIGN_BOTTOM;

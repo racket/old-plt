@@ -562,7 +562,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x8 = "button";
 
     { if (x2 && !x2->Ok()) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2]); if (x2 && BM_SELECTED(x2)) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2]); }if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = new os_wxButton(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    realobj = NEW_OBJECT(os_wxButton, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -617,7 +617,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
       x8 = "button";
 
     if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = new os_wxButton(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+    realobj = NEW_OBJECT(os_wxButton, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     

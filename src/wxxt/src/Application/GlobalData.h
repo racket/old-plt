@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.h,v 1.5 1999/11/04 17:25:32 mflatt Exp $
+ * $Id: GlobalData.h,v 1.6 1999/11/19 22:02:37 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -39,7 +39,6 @@ class wxColourMap;
 class wxCursor;
 class wxFont;
 class wxFontList;
-class wxGDIList;
 class wxList;
 class wxChildList;
 class wxPen;
@@ -91,7 +90,6 @@ extern wxColourDatabase* wxTheColourDatabase;
 extern wxPenList*	 wxThePenList;
 extern wxBrushList*	 wxTheBrushList;
 extern wxFontList*	 wxTheFontList;
-extern wxGDIList*	 wxTheBitmapList;
 
 //-- misc ---------------------------------------------------------------------
 

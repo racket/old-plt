@@ -202,7 +202,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Sch
     WITH_VAR_STACK(scheme_wrong_count("initialization in timer%", 0, 0, n, p));
 
   wxsCheckEventspace(METHODNAME("timer%","initialization"));
-  realobj = new os_wxTimer(obj);
+  realobj = NEW_OBJECT(os_wxTimer, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -743,7 +743,7 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, i
     WITH_VAR_STACK(scheme_wrong_count("initialization in clipboard-client%", 0, 0, n, p));
 
   
-  realobj = new os_wxClipboardClient(obj);
+  realobj = NEW_OBJECT(os_wxClipboardClient, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1543,7 +1543,7 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, in
     WITH_VAR_STACK(scheme_wrong_count("initialization in ps-setup%", 0, 0, n, p));
 
   
-  realobj = new os_wxPrintSetupData(obj);
+  realobj = NEW_OBJECT(os_wxPrintSetupData, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

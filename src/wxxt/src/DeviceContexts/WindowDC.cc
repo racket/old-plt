@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.31 1999/11/18 23:25:14 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.32 1999/11/19 14:15:38 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -121,7 +121,7 @@ wxWindowDC::wxWindowDC(void) : wxDC()
 						 verti_width, verti_height);
     }
 
-    current_background_color = *wxWHITE;
+    current_background_color.CopyFrom(wxWHITE);
     current_brush = wxTRANSPARENT_BRUSH;
     current_brush->Lock(1);
     current_pen = wxBLACK_PEN;
@@ -172,7 +172,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     ysrc = floor(ysrc);
 
     savePen = current_pen;
-    saveBack = current_background_color;
+    saveBack.CopyFrom(&current_background_color);
     /* Pen GC used for blit: */
     apen = wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop);
     SetPen(apen);
@@ -700,7 +700,7 @@ void wxWindowDC::SetBackground(wxColour *c)
   if (!DRAWABLE) /* MATTHEW: [5] */
     return;
   
-  current_background_color = *c;
+  current_background_color.CopyFrom(c);
   
   pixel = current_background_color.GetPixel(current_cmap, IS_COLOR, 0);
   
@@ -1160,7 +1160,7 @@ void wxWindowDC::SetTextForeground(wxColour *col)
 
     if (!col)
 	return;
-    current_text_fg = *col;
+    current_text_fg.CopyFrom(col);
     pixel = current_text_fg.GetPixel(current_cmap, IS_COLOR, 1);
     XSetForeground(DPY, TEXT_GC, pixel);
 }
@@ -1174,7 +1174,7 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 
     if (!col)
 	return;
-    current_text_bg = *col;
+    current_text_bg.CopyFrom(col);
     pixel = current_text_bg.GetPixel(current_cmap, IS_COLOR, 0);
     XSetBackground(DPY, TEXT_GC, pixel);
 }
@@ -1266,9 +1266,9 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     BRUSH_GC = XCreateGC(DPY, GC_drawable, mask, &values);
 
     // set drawing tools
-    c = current_text_fg; /* Don't pass &current_text_fg to SetTextForeground */
+    c.CopyFrom(&current_text_fg); /* Don't pass &current_text_fg to SetTextForeground */
     SetTextForeground(&c);
-    c = current_text_bg;
+    c.CopyFrom(&current_text_bg);
     SetTextBackground(&c);
     SetBackground(&current_background_color); 
     SetBrush(current_brush);

@@ -253,19 +253,22 @@ wxChildList *wxGetTopLevelWindowsList(wxObject *w)
 
 wxWindow *wxGetModalWindow(wxObject *w)
 {
-  MrEdContext *c = MrEdGetContext(w);
+  MrEdContext *c;
+  c = MrEdGetContext(w);
 
   return c->modal_window;
 }
 
-typedef struct MrEd_Saved_Modal {
+class MrEd_Saved_Modal {
+public:
   wxWindow *win;
   struct MrEd_Saved_Modal *next;
-} MrEd_Saved_Modal;
+};
 
 void wxPushModalWindow(wxObject *w, wxWindow *win)
 {
-  MrEdContext *c = MrEdGetContext(w);
+  MrEdContext *c;
+  c = MrEdGetContext(w);
 
   if (c->modal_window) {
     MrEd_Saved_Modal *save = new MrEd_Saved_Modal;
@@ -280,9 +283,10 @@ void wxPushModalWindow(wxObject *w, wxWindow *win)
 
 void wxPopModalWindow(wxObject *w, wxWindow *win)
 {
-  MrEdContext *c = MrEdGetContext(w);
+  MrEdContext *c;
   MrEd_Saved_Modal *save, *prev;
-  
+  c = MrEdGetContext(w);
+
   if (c->modal_window == win)
     c->modal_window = NULL;
 
@@ -313,14 +317,16 @@ wxBufferDataClassList *wxGetTheBufferDataClassList()
 
 int wxGetBusyState(void)
 {
-  MrEdContext *c = MrEdGetContext();
+  MrEdContext *c;
+  c = MrEdGetContext();
 
   return c->busyState;
 }
 
 void wxSetBusyState(int state)
 {
-  MrEdContext *c = MrEdGetContext();
+  MrEdContext *c;
+  c = MrEdGetContext();
 
   c->busyState = state;
 }
@@ -332,14 +338,16 @@ Bool wxIsPrimEventspace()
 
 int wxsIsContextShutdown(void *cx)
 {
-  MrEdContext *c = (MrEdContext *)cx;
+  MrEdContext *c;
+  c = (MrEdContext *)cx;
 
   return c->killed;
 }
 
 void *wxsCheckEventspace(char *who)
 {
-  MrEdContext *c = (MrEdContext *)wxGetContextForFrame();
+  MrEdContext *c;
+  c = (MrEdContext *)wxGetContextForFrame();
   
   if (c->killed)
     scheme_signal_error("%s: the current eventspace has been shutdown", who);
@@ -353,7 +361,8 @@ static wxPrintSetupData *orig_ps_setup;
 wxPrintSetupData *wxGetThePrintSetupData()
 {
   if (ps_ready) {
-    Scheme_Object *o = scheme_get_param(scheme_config, mred_ps_setup_param);
+    Scheme_Object *o;
+    o = scheme_get_param(scheme_config, mred_ps_setup_param);
     if (o)
       return wxsUnbundlePSSetup(o);
   }
@@ -363,7 +372,9 @@ wxPrintSetupData *wxGetThePrintSetupData()
 void wxSetThePrintSetupData(wxPrintSetupData *d)
 {
   if (ps_ready) {
-    scheme_set_param(scheme_config, mred_ps_setup_param, wxsBundlePSSetup(d));
+    Scheme_Object *o;
+    o = wxsBundlePSSetup(d);
+    scheme_set_param(scheme_config, mred_ps_setup_param, o);
   }
   orig_ps_setup = d;
 }
@@ -383,7 +394,8 @@ static void destroy_wxObject(wxWindow *w, void *)
 
 static void kill_eventspace(Scheme_Object *ec, void *)
 {
-  MrEdContext *c = ((Context_Manager_Hop *)ec)->context;
+  MrEdContext *c;
+  c = ((Context_Manager_Hop *)ec)->context;
 
   if (!c)
     return; /* must not have had any frames or timers */
@@ -393,7 +405,8 @@ static void kill_eventspace(Scheme_Object *ec, void *)
   {
     wxChildNode *node, *next;
     for (node = c->topLevelWindowList->First(); node; node = next) {
-      wxWindow *w = (wxWindow *)node->Data();
+      wxWindow *w;
+      w = (wxWindow *)node->Data();
       next = node->Next();
       if (w) {
 	w->ForEach(destroy_wxObject, NULL);
@@ -417,7 +430,9 @@ static void kill_eventspace(Scheme_Object *ec, void *)
 
 static void CollectingContext(void *cfx, void *)
 {
-  MrEdFinalizedContext *cf = (MrEdFinalizedContext *)cfx;
+  wxChildNode *cnode, *next;
+  MrEdFinalizedContext *cf;
+  cf = (MrEdFinalizedContext *)cfx;
 
   if (cf->frames->next)
     cf->frames->next->prev = cf->frames->prev;
@@ -430,10 +445,10 @@ static void CollectingContext(void *cfx, void *)
      is going away. (The frame would certainly have been finalized
      later during this set of finalizations, but that would be
      too late.) */
-  wxChildNode *cnode, *next;
   for (cnode = cf->frames->list->First(); cnode; cnode = next) {
+    wxFrame *fr;
     next = cnode->Next();
-    wxFrame *fr = (wxFrame *)cnode->Data();
+    fr = (wxFrame *)cnode->Data();
     if (fr)
       delete fr;
   }
@@ -446,13 +461,25 @@ static void CollectingContext(void *cfx, void *)
 
 static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 {
+  MrEdContextFrames *frames;
+  Context_Manager_Hop *mr_hop;
+
   if (!c) {
+    wxChildList *tlwl;
+    wxStandardSnipClassList *scl;
+    wxBufferDataClassList *bdcl;
+    MrEdFinalizedContext *fc;
+    
     c = (MrEdContext *)scheme_malloc_tagged(sizeof(MrEdContext));
 
-    c->topLevelWindowList = new wxChildList();
-    c->snipClassList = wxMakeTheSnipClassList();
-    c->bufferDataClassList = wxMakeTheBufferDataClassList();
-    c->finalized = new MrEdFinalizedContext;
+    tlwl = new wxChildList();
+    c->topLevelWindowList = tlwl;
+    scl = wxMakeTheSnipClassList();
+    c->snipClassList = scl;
+    bdcl = wxMakeTheBufferDataClassList();
+    c->bufferDataClassList = bdcl;
+    fc = new MrEdFinalizedContext;
+    c->finalized = fc;
   }
 
   c->ready = 1;
@@ -462,8 +489,8 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   c->busyState = 0;
   c->killed = 0;
 
-  MrEdContextFrames *frames;
-  frames = c->finalized->frames = new MrEdContextFrames;
+  frames = new MrEdContextFrames;
+  c->finalized->frames = frames;
   frames->next = mred_frames;
   frames->prev = NULL;
   frames->list = c->topLevelWindowList;
@@ -487,13 +514,17 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   c->type = mred_eventspace_type;
 
-  Context_Manager_Hop *mr_hop = (Context_Manager_Hop *)scheme_malloc_atomic(sizeof(Context_Manager_Hop));
+  mr_hop = (Context_Manager_Hop *)scheme_malloc_atomic(sizeof(Context_Manager_Hop));
   mr_hop->type = 0;
   mr_hop->context = c;
   c->mr_hop = mr_hop;
   scheme_weak_reference((void **)&mr_hop->context);
-
-  c->mref = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, kill_eventspace, NULL, 0);
+  
+  {
+    Scheme_Manager_Reference *mr;
+    mr = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, kill_eventspace, NULL, 0);
+    c->mref = mr;
+  }
 
   return c;
 }
@@ -514,8 +545,9 @@ static void ChainContextsList()
 #endif
 
     if (first) {
-      wxObject *o = first->Data();
+      wxObject *o;
       MrEdContext *c;
+      o = first->Data();
       c = MrEdGetContext(o);
       c->next = mred_contexts;
       mred_contexts = c;
@@ -551,19 +583,22 @@ Scheme_Object *MrEdEventspaceConfig(Scheme_Object *e)
 
 Scheme_Object *MrEdGetFrameList(void)
 {
-  MrEdContext *c = MrEdGetContext();
+  MrEdContext *c;
   Scheme_Object *l = scheme_null;
+  c = MrEdGetContext();
 
   if (c) {
     wxChildNode *node;
     for (node = c->topLevelWindowList->First(); node; node = node->Next()) {
-      wxObject *o = node->Data();
+      wxObject *o;
+      o = node->Data();
       if (node->IsShown()) {
 #ifdef wx_mac
 	/* Mac: some frames really represent dialogs. Any modal frame is
 	   a dialog, so extract its only child. */
 	if (((wxFrame *)o)->IsModal()) {
-	  wxChildNode *node2 = ((wxFrame *)o)->GetChildren()->First();
+	  wxChildNode *node2;
+	  node2 = ((wxFrame *)o)->GetChildren()->First();
 	  if (node2)
 	    o = node2->Data();
 	}
@@ -585,17 +620,21 @@ static wxTimer *TimerReady(MrEdContext *c)
   wxTimer *timer = mred_timers;
   
   if (c) {
-    while (timer && (timer->context != (void *)c))
+    while (timer && (timer->context != (void *)c)) {
       timer = timer->next;
+    }
   } else {
-    while (timer && !((MrEdContext *)timer->context)->ready)
+    while (timer && !((MrEdContext *)timer->context)->ready) {
       timer = timer->next;
+    }
   }
 
   if (timer) {
-    unsigned long now = (unsigned long)scheme_get_milliseconds();
+    unsigned long now;
     unsigned long goal = timer->expiration;
-    
+
+    now = (unsigned long)scheme_get_milliseconds();
+
     return ((now >= goal)
 	    ? timer
 	    : (wxTimer *)NULL);
@@ -606,14 +645,13 @@ static wxTimer *TimerReady(MrEdContext *c)
 static void DoTimer(wxTimer *timer)
 {
   int once;
+  mz_jmp_buf savebuf;
 
   if (timer->interval == -1)
     return;
 
   once = timer->one_shot;
   timer->one_shot = -1;
-
-  mz_jmp_buf savebuf;
 
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
   if (!scheme_setjmp(scheme_error_buf))
@@ -774,7 +812,8 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
 
 void wxDoNextEvent()
 {
-  MrEdContext *c = MrEdGetContext();
+  MrEdContext *c;
+  c = MrEdGetContext();
 
   if (!c->ready_to_go)
     if (c->handler_running == scheme_current_process)
@@ -791,7 +830,8 @@ int MrEdEventReady(MrEdContext *c)
 
 int wxEventReady()
 {
-  MrEdContext *c = MrEdGetContext();
+  MrEdContext *c;
+  c = MrEdGetContext();
 
   return (!c->ready_to_go
 	  && (c->handler_running == scheme_current_process)
@@ -914,11 +954,13 @@ static void event_found(MrEdContext *c)
       scheme_weak_resume_thread(c->handler_running);
     }
     c->waiting_for_nested = 0;
-  } else
-    scheme_thread_w_manager(scheme_make_closed_prim(handle_events, c), 
-			    c->main_config,
+  } else {
+    Scheme_Object *cp;
+    cp = scheme_make_closed_prim(handle_events, c);
+    scheme_thread_w_manager(cp, c->main_config,
 			    (Scheme_Manager *)scheme_get_param(c->main_config, 
 							       MZCONFIG_MANAGER));
+  }
 }
 
 static int try_q_callback(Scheme_Object *do_it, int hi)
@@ -1053,9 +1095,11 @@ void wxDoEvents()
     scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)oldm);
 #endif
 
-    scheme_thread(scheme_make_closed_prim(handle_events,
-					  c), 
-		  c->main_config);
+    {
+      Scheme_Object *cp;
+      cp = scheme_make_closed_prim(handle_events, c);
+      scheme_thread(cp, c->main_config);
+    }
 
     /* Block until initialized: */
     scheme_current_process->block_descriptor = -1;
@@ -1085,9 +1129,12 @@ void wxDoEvents()
   }
 }
 
+typedef int (*a_Block_Check_Function)(Scheme_Object *);
+
 void wxDispatchEventsUntil(int (*f)(void *), void *data)
 {
-  MrEdContext *c = MrEdGetContext();
+  MrEdContext *c;
+  c = MrEdGetContext();
 
   if (c->ready_to_go
       || (c->handler_running != scheme_current_process)) {
@@ -1096,7 +1143,7 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
     do {
       scheme_current_process->block_descriptor = -1;
       scheme_current_process->blocker = (Scheme_Object *)data;
-      scheme_current_process->block_check = (int (*)(Scheme_Object *))f;
+      scheme_current_process->block_check = (a_Block_Check_Function)f;
       do {
 	scheme_process_block(0);
       } while (!f(data));
@@ -1105,9 +1152,9 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
     } while (!f(data));
   } else {
     /* This is the main process. Handle events */
-    do
+    do {
       MrEdDoNextEvent(c, f, data);
-    while (!f(data));
+    } while (!f(data));
   }
 }
 
@@ -1124,8 +1171,9 @@ static void MrEdSleep(float secs, void *fds)
   {
     wxTimer *timer = mred_timers;
     
-    while (timer && !((MrEdContext *)timer->context)->ready)
+    while (timer && !((MrEdContext *)timer->context)->ready) {
       timer = timer->next;
+    }
     
     if (timer) {
       long done = (long)timer->expiration;
@@ -1159,11 +1207,14 @@ wxTimer::wxTimer(void)
  : wxObject(WXGC_NO_CLEANUP)
 #endif
 {
+  void *ctx;
+
   __type = wxTYPE_TIMER;
 
   next = prev = NULL;
 
-  context = (void *)MrEdGetContext();
+  ctx = (void *)MrEdGetContext();
+  context = ctx;
 
   WXGC_IGNORE(context);
 }
@@ -1174,6 +1225,8 @@ wxTimer::~wxTimer(void)
 
 Bool wxTimer::Start(int millisec, Bool _one_shot)
 {
+  unsigned long now;
+
   if (prev || next || (mred_timers == this))
     return FALSE;
 
@@ -1182,7 +1235,7 @@ Bool wxTimer::Start(int millisec, Bool _one_shot)
     interval = 1;
   one_shot = !!_one_shot;
 
-  unsigned long now = (unsigned long)scheme_get_milliseconds();
+  now = (unsigned long)scheme_get_milliseconds();
   expiration = now + interval;
 
   if (mred_timers) {
@@ -1244,14 +1297,15 @@ void wxTimer::Stop(void)
 /*                               Callbacks                                  */
 /****************************************************************************/
 
-typedef struct Q_Callback {
+class Q_Callback {
+public:
   MrEdContext *context;
   Scheme_Object *callback;
-  struct Q_Callback *prev;
-  struct Q_Callback *next;
-} Q_Callback;
+  Q_Callback *prev;
+  Q_Callback *next;
+};
 
-typedef struct Q_Callback_Set {
+typedef struct {
   Q_Callback *first;
   Q_Callback *last;
 } Q_Callback_Set;
@@ -1834,7 +1888,8 @@ static char *object_type_name(void *v)
   if (GC_is_wx_object(v)) {
     int t = ((wxObject *)v)->__type;
     if ((t >= 0) && (t < NUM_OBJ_KIND)) {
-      char *c = wxGetTypeName(t);
+      char *c;
+      c = wxGetTypeName(t);
       if (c)
 	return c;
       else
@@ -2021,10 +2076,14 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 #ifndef DONT_LOAD_INIT_FILE
 static char *get_init_filename(Scheme_Env *env)
 {
-  Scheme_Object *f = scheme_lookup_global(scheme_intern_symbol("find-graphical-system-path"), 
-					  env);
-  Scheme_Object *type = scheme_intern_symbol("init-file");
+  Scheme_Object *fgp;
+  Scheme_Object *f;
+  Scheme_Object *type;
   Scheme_Object *path;
+
+  fgp = scheme_intern_symbol("find-graphical-system-path");
+  f = scheme_lookup_global(fgp, env);
+  type = scheme_intern_symbol("init-file");
   
   path = _scheme_apply(f, 1, &type);
 
@@ -2151,6 +2210,8 @@ static Scheme_Env *setup_basic_env()
 
 wxFrame *MrEdApp::OnInit(void)
 {
+  MrEdContext *mmc;
+
   initialized = 0;
 
 #ifdef LIBGPP_REGEX_HACK
@@ -2186,12 +2247,13 @@ wxFrame *MrEdApp::OnInit(void)
 
   wxInitSnips(); /* and snip classes */
 
-  mred_main_context = new MrEdContext;
-  mred_main_context->topLevelWindowList = new wxChildList();
-  mred_main_context->snipClassList = wxMakeTheSnipClassList();
-  mred_main_context->bufferDataClassList = wxMakeTheBufferDataClassList();
+  mmc = new MrEdContext;
+  mred_main_context = mmc;
+  mmc->topLevelWindowList = new wxChildList();
+  mmc->snipClassList = wxMakeTheSnipClassList();
+  mmc->bufferDataClassList = wxMakeTheBufferDataClassList();
 
-  mred_main_context->finalized = new MrEdFinalizedContext;
+  mmc->finalized = new MrEdFinalizedContext;
 
   mred_only_context = mred_main_context;
 

@@ -807,7 +807,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
       x6 = "panel";
 
     if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxPanel(obj, x0, x1, x2, x3, x4, x5, x6);
+    realobj = NEW_OBJECT(os_wxPanel, (obj, x0, x1, x2, x3, x4, x5, x6));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -857,7 +857,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
       x6 = "panel";
 
     if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxPanel(obj, x0, x1, x2, x3, x4, x5, x6);
+    realobj = NEW_OBJECT(os_wxPanel, (obj, x0, x1, x2, x3, x4, x5, x6));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -907,7 +907,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
       x6 = "panel";
 
     if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxPanel(obj, x0, x1, x2, x3, x4, x5, x6);
+    realobj = NEW_OBJECT(os_wxPanel, (obj, x0, x1, x2, x3, x4, x5, x6));
     realobj->__gc_external = (void *)obj;
     objscheme_note_creation(obj);
     
@@ -1652,7 +1652,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
     x8 = "dialogBox";
 
   if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);wxsCheckEventspace(METHODNAME("dialog%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = new os_wxDialogBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  realobj = NEW_OBJECT(os_wxDialogBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.7 1999/11/04 17:25:33 mflatt Exp $
+ * $Id: DC.h,v 1.8 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -139,10 +139,7 @@ public:
     void  DrawSpline(float x1,float y1, float x2,float y2, float x3,float y3);
     void  EndDrawing(void)
 	{}
-    wxColour *GetBackground(void)
-	{ wxColour *c = new wxColour();
-          *c = current_background_color;
-	  return c; }
+    wxColour *GetBackground(void);
     wxBrush *GetBrush(void)
 	{ return current_brush; }
     wxFont *GetFont(void)

@@ -1167,7 +1167,7 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
     x11 = "button";
 
   if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = __MakestringArray((8 < n) ? p[8] : scheme_null, &x8, METHODNAME("list-box%","initialization"));
-  realobj = new os_wxListBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11);
+  realobj = NEW_OBJECT(os_wxListBox, (obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   delete[] x9;

@@ -999,7 +999,15 @@ void wxKeymap::ChainToKeymap(wxKeymap *km, Bool prefix)
     return;
 
   old = chainTo;
+#ifdef MZ_PRECISE_GC
+  {
+    wxKeymap **kma;
+    kma = GC_malloc(sizeof(wxKeymap*) * (chainCount + 1));
+    chainTo = kma;
+  }
+#else
   chainTo = new wxKeymapPtr[chainCount + 1];
+#endif
 
   memcpy(chainTo + (prefix ? 1 : 0), old, chainCount * sizeof(wxKeymap *));
   chainTo[prefix ? 0 : chainCount] = km;

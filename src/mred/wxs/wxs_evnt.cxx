@@ -94,7 +94,7 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
     WITH_VAR_STACK(scheme_wrong_count("initialization in event%", 0, 0, n, p));
 
   
-  realobj = new os_wxEvent(obj);
+  realobj = NEW_OBJECT(os_wxEvent, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -321,7 +321,7 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
   x0 = WITH_VAR_STACK(unbundle_symset_actionType(p[0], "initialization in control-event%"));
 
   
-  realobj = new os_wxCommandEvent(obj, x0);
+  realobj = NEW_OBJECT(os_wxCommandEvent, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -477,7 +477,7 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
     WITH_VAR_STACK(scheme_wrong_count("initialization in popup-event%", 0, 0, n, p));
 
   
-  realobj = new os_wxPopupEvent(obj);
+  realobj = NEW_OBJECT(os_wxPopupEvent, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -780,7 +780,7 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
     WITH_VAR_STACK(scheme_wrong_count("initialization in scroll-event%", 0, 0, n, p));
 
   
-  realobj = new os_wxScrollEvent(obj);
+  realobj = NEW_OBJECT(os_wxScrollEvent, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -1473,7 +1473,7 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
     WITH_VAR_STACK(scheme_wrong_count("initialization in key-event%", 0, 0, n, p));
 
   x0=wxEVENT_TYPE_CHAR;
-  realobj = new os_wxKeyEvent(obj, x0);
+  realobj = NEW_OBJECT(os_wxKeyEvent, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   
@@ -2178,7 +2178,7 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
   x0 = WITH_VAR_STACK(unbundle_symset_mouseEventType(p[0], "initialization in mouse-event%"));
 
   
-  realobj = new os_wxMouseEvent(obj, x0);
+  realobj = NEW_OBJECT(os_wxMouseEvent, (obj, x0));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

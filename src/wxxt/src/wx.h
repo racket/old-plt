@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wx.h,v 1.3 1999/11/04 17:25:31 mflatt Exp $
+ * $Id: wx.h,v 1.4 1999/11/12 17:27:43 mflatt Exp $
  *
  * Purpose: wxWindows Xt-port main include file
  *
@@ -219,17 +219,6 @@
 #if defined(Uses_wxLayout) || defined(Uses_wxMenu)
 #	define Uses_wxEvent
 #	define Uses_wxObject
-#endif
-
-//--- drawing classes ---------------------------------------------------------
-
-#if defined(Uses_wxGraphLayout)
-#	define Uses_wxDC
-#endif
-
-#if defined(Uses_wxTreeLayout)
-#	define Uses_wxDC
-#	define Uses_wxList
 #endif
 
 //--- device contexts ---------------------------------------------------------

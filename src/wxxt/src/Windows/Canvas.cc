@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.11 1999/11/04 17:25:37 mflatt Exp $
+ * $Id: Canvas.cc,v 1.12 1999/11/18 16:35:07 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -389,7 +389,6 @@ wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
     Create(parent, x, y, width, height, style, name);
 }
 
-/* MATTHEW */
 wxCanvas::wxCanvas(wxFrame *parent, int x, int y, int width, int height,
 		   int style, char *name) : wxItem()
 {
@@ -404,7 +403,6 @@ wxCanvas::wxCanvas(wxFrame *parent, int x, int y, int width, int height,
 Bool wxCanvas::Create(wxWindow *panel, int x, int y, int width, int height,
 		      int style, char *name)
 {
-  /* MATTHEW: [6] */
   if (!wxSubType(panel->__type, wxTYPE_PANEL))
     wxFatalError("parent has to be a wxFrame, wxPanel, or any subtype", "wxCanvas");
 

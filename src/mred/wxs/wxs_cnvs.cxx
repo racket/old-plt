@@ -1136,7 +1136,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
     x6 = "canvas";
 
   if (!x3) x3 = -1;if (!x4) x4 = -1;
-  realobj = new os_wxCanvas(obj, x0, x1, x2, x3, x4, x5, x6);
+  realobj = NEW_OBJECT(os_wxCanvas, (obj, x0, x1, x2, x3, x4, x5, x6));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

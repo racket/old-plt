@@ -63,7 +63,7 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
     WITH_VAR_STACK(scheme_wrong_count("initialization in object%", 0, 0, n, p));
 
   
-  realobj = new os_wxObject(obj);
+  realobj = NEW_OBJECT(os_wxObject, (obj));
   realobj->__gc_external = (void *)obj;
   objscheme_note_creation(obj);
   

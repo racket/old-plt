@@ -148,24 +148,71 @@ install:
 
 
 ################################
-# Sanity checks for Precise GC #
+#          Precise GC          #
 ################################
 
-XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme -rq ../mzscheme/gc2/xform.ss "gcc -E $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE)"
+XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme -rq ../mzscheme/gc2/xform.ss "gcc -E -I../mzscheme/gc2 $(OPTIONS) $(GUI) $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE)"
 
-test:
-	$(MAKE)
-	$(MAKE) xform
+gc2/xxx: 
+	gcc -E -H $(OPTIONS) $(GUI) -I../mzscheme/gc2 $(INC) -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src $(XINCLUDE) -o gc2/xxx wxme/wx_media.cxx
 
-xform:
-	# $(XFORM) $(WXDIR)/src/Windows/Window.cc gc2/Window.cc
-	# $(XFORM) $(WXDIR)/src/DeviceContexts/WindowDC.cc gc2/WindowDC.cc
-	# $(XFORM) wxme/wx_media.cxx gc2/wx_media.cc
-	# $(XFORM) wxme/wx_mpriv.cxx gc2/wx_mpriv.cc
-	# $(XFORM) wxme/wx_snip.cxx gc2/wx_snip.cc
-	# $(XFORM) wxme/wx_msnip.cxx gc2/wx_msnip.cc
-	# $(XFORM) wxme/wx_mbuf.cxx gc2/wx_mbuf.cc
-	# $(XFORM) wxme/wx_mpbrd.cxx gc2/wx_mpbrd.cc
-	# $(XFORM) wxme/wx_keym.cxx gc2/wx_keym.cc
-	# $(XFORM) wxme/wx_medio.cxx gc2/wx_medio.cc
-	$(XFORM) wxme/wx_style.cxx gc2/wx_style.cc
+gc2/Window.cc: $(WXDIR)/src/Windows/Window.cc
+	$(XFORM) $< $@
+
+gc2/WindowDC.cc: $(WXDIR)/src/DeviceContexts/WindowDC.cc
+	$(XFORM) $< $@
+
+gc2/wx_media.cc: wxme/wx_media.cxx
+	$(XFORM) $< $@
+
+gc2/wx_mpriv.cc: wxme/wx_mpriv.cxx
+	$(XFORM) $< $@
+
+gc2/wx_snip.cc: wxme/wx_snip.cxx
+	$(XFORM) $< $@
+
+gc2/wx_msnip.cc: wxme/wx_msnip.cxx
+	$(XFORM) $< $@
+
+gc2/wx_mbuf.cc: wxme/wx_mbuf.cxx
+	$(XFORM) $< $@
+
+gc2/wx_mpbrd.cc: wxme/wx_mpbrd.cxx
+	$(XFORM) $< $@
+
+gc2/wx_keym.cc: wxme/wx_keym.cxx
+	$(XFORM) $< $@
+
+gc2/wx_medio.cc: wxme/wx_medio.cxx
+	$(XFORM) $< $@
+
+gc2/wx_style.cc: wxme/wx_style.cxx
+	$(XFORM) $< $@
+
+gc2/mred.cc: mred.cxx
+	$(XFORM) $< $@
+
+gc2/mredx.cc: mredx.cxx
+	$(XFORM) $< $@
+
+
+gc2/$(OBJDIR)/%.o: gc2/%.cc
+	$(CXX) -DGC2_JUST_MACROS -include ../mzscheme/gc2/gc2.h -c $(CXXFLAGS) -o $@ $<
+
+XSRCS = gc2/Window.cc \
+  gc2/WindowDC.cc \
+  gc2/wx_media.cc \
+  gc2/wx_mpriv.cc \
+  gc2/wx_snip.cc \
+  gc2/wx_msnip.cc \
+  gc2/wx_mbuf.cc \
+  gc2/wx_mpbrd.cc \
+  gc2/wx_keym.cc \
+  gc2/wx_medio.cc \
+  gc2/wx_style.cc \
+  gc2/mred.cc \
+  gc2/mredx.cc
+
+XOBJS = ${XSRCS:.cc/=$(OBJDIR)/.o}
+
+xform: $(XSRCS)

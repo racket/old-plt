@@ -9,10 +9,9 @@
 (syntax-test #'(module m))
 (syntax-test #'(module 5 mzscheme))
 
-(error-test #'(module m 5) exn:application:type?) ; from std-mod-resolver
+(syntax-test #'(module m 5))
 
 (syntax-test #'(module m mzscheme . 1))
-(syntax-test #'(module m mzscheme (#%module-begin)))
 
 (syntax-test #'(#%module-begin))
 (syntax-test #'(+ (#%module-begin) 2))

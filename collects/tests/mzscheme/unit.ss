@@ -146,14 +146,14 @@
 
    (list x y z)))
 
-(test #t apply (lambda (x y z) (and (= x 7) (= z 8) (procedure? y) (= 0 (arity y))))
+(test #t apply (lambda (x y z) (and (= x 7) (= z 8) (procedure? y) (= 0 (procedure-arity y))))
       (invoke-unit m1))
 
 (test #t apply
       (lambda (x y-val a? set-a-b!)
 	(and (= x 7) (= y-val 56)
-	     (= 1 (arity a?))
-	     (= 2 (arity set-a-b!))))
+	     (= 1 (procedure-arity a?))
+	     (= 2 (procedure-arity set-a-b!))))
       (invoke-unit
        (compound-unit 
 	(import)
@@ -205,7 +205,7 @@
 	       (export)
 	       (define (filter v)
 		 (if (procedure? v)
-		     `(proc: ,(inferred-name v))
+		     `(proc: ,(object-name v))
 		     v))
 	       (display 
 		(map filter (list x v struct:a y make-x x? x-z both))

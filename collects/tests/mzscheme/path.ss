@@ -283,7 +283,7 @@
 
 (define (test-path expect f . args)
   (test (normal-case-path (expand-path expect))
-	(or (inferred-name f) 'unknown)
+	(or (object-name f) 'unknown)
 	(normal-case-path (expand-path (apply f args)))))
 
 (for-each

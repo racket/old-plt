@@ -157,7 +157,7 @@
 	     [s2 (make-semaphore 0)]
 	     [t (thread (lambda ()
 			  (semaphore-post s1)
-			  (with-handlers ([exn:misc:user-break? (lambda (x) (semaphore-post s2))])
+			  (with-handlers ([exn:break? (lambda (x) (semaphore-post s2))])
 			    (semaphore-wait (make-semaphore 0)))))])
 	(semaphore-wait s1)
 	(sleep SLEEP-TIME)
@@ -182,7 +182,7 @@
 
 ; Tests inspired by a question from David Tillman
 (define (read-line/expire1 port expiration)
-  (with-handlers ([exn:misc:user-break? (lambda (exn) #f)])
+  (with-handlers ([exn:break? (lambda (exn) #f)])
     (let ([timer (thread (let ([id (current-thread)])
 			   (lambda () 
 			     (sleep expiration)
@@ -306,7 +306,7 @@
 	      (lambda ()
 		(output 'is)
 		(with-handlers ([void (lambda (x) 
-					(if (exn:misc:user-break? x)
+					(if (exn:break? x)
 					    (output 'ibreak)
 					    (output 'iother))
 					(raise x))])
@@ -344,7 +344,7 @@
 (test #t exn:application? (chain 'wrong))
 (test-stream '(os ms mpre is iother mpost))
 
-(test #t exn:misc:user-break? (chain (let ([t (current-thread)]) (lambda (t1) (break-thread t)))))
+(test #t exn:break? (chain (let ([t (current-thread)]) (lambda (t1) (break-thread t)))))
 (test-stream '(os ms mpre is ibreak mpost))
 
 (test #t exn:thread? (chain (lambda (t1) (kill-thread t1))))

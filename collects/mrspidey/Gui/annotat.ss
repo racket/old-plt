@@ -996,11 +996,11 @@
                             (lambda (where)
                               (lambda (event) 
                                 (cond
-                                  [(send event button-down? 1)
+                                  [(send event button-down? 'left)
                                     (popup-load-menu
                                       src-edit offsets where 
                                       "child" dest-ta)]
-                                  [(send event button-down? 3) 
+                                  [(send event button-down? 'right) 
                                     (delete-refresh)
                                     #t]
                                   [else #f]))))])
@@ -1019,11 +1019,11 @@
                             (lambda (where)
                               (lambda (event) 
                                 (cond
-                                  [(send event button-down? 1)
+                                  [(send event button-down? 'left)
                                     (popup-load-menu
                                       dest-edit offsets where
                                       "parent" src-ta)]
-                                  [(send event button-down? 3) 
+                                  [(send event button-down? 'right) 
                                     (delete-refresh)
                                     #t]
                                   [else #f]))))])
@@ -1042,9 +1042,9 @@
                             (lambda (posn)
                               (lambda (event) 
                                 (cond
-                                  [(send event button-down? 1)
+                                  [(send event button-down? 'left)
                                     (send to arrow-zoom)]
-                                  [(send event button-down? 3) 
+                                  [(send event button-down? 'right) 
                                     (delete-refresh)
                                     #t]
                                   [else #f]))))])
@@ -1070,10 +1070,10 @@
                               (lambda (where)
                                 (lambda (event) 
                                   (cond
-                                    [(send event button-down? 1)
+                                    [(send event button-down? 'left)
                                       (popup-zoom-menu
                                         edit offsets where to direction)]
-                                    [(send event button-down? 3) 
+                                    [(send event button-down? 'right) 
                                       (delete-refresh)
                                       #t]
                                     [else #f]))))])

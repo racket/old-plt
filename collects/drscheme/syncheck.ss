@@ -487,7 +487,8 @@
           
           (inherit get-button-panel 
                    get-definitions-canvas 
-                   get-definitions-text 
+                   get-definitions-text
+                   get-interactions-text
                    get-directory)
           
           (rename [super-disable-evaluation disable-evaluation]
@@ -610,7 +611,18 @@
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
-            (check-syntax (get-definitions-text)))
+            (send (get-interactions-text)
+                  expand-program
+                  (drscheme:language:make-text/pos (get-definitions-text) 
+                                                   0
+                                                   (send (get-definitions-text)
+                                                         last-position))
+                  (fw:preferences:get
+                   (drscheme:language-configuration:get-settings-preferences-symbol))
+                  (lambda (sexp run-in-evaluation-thread loop)
+                    (display (datum->syntax-object sexp))
+                    (newline)
+                    (loop))))
           
           (super-instantiate ())
           
@@ -628,8 +640,6 @@
                 (lambda (l)
                   (cons check-syntax-button
                         (remove check-syntax-button l))))))
-
-      (define (check-syntax) (void))
       
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
       (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

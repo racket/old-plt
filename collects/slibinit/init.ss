@@ -118,7 +118,7 @@
 ;	transcript			;TRANSCRIPT-ON and TRANSCRIPT-OFF
 	char-ready?
 	macro				;has R4RS high level macros
-;	defmacro			;has Common Lisp DEFMACRO
+	defmacro			;has Common Lisp DEFMACRO
 	eval				;SLIB:EVAL is single argument eval
 ;	record				;has user defined data structures
 	values				;proposed multiple values
@@ -232,22 +232,36 @@
       (string->symbol
        (string-append "slib:G" (number->string *gensym-counter*))))))
 
-(define (macroexpand-1 x)
-  ;; Slib expects macroexpand-1 to return an `eq?' value if there's nothing
-  ;;  to expand. MzScheme returns an `equal?' value, instead.
-  ;; Of course, using will equal? is bad if the input contains cycles.
-  ;;  We assume that slib-based code won't try to use MzScheme's graph input
-  ;;  syntax, since it isn't standard.
-  (let ([xx (expand-once x)])
-    (if (equal? xx x)
-	x
-	xx)))
 
-(define macroexpand (lambda (s) (syntax-object->datum (expand s))))
+(define *defmacros*
+  (list (cons 'defmacro
+	      (lambda (name parms . body)
+		`(set! *defmacros* (cons (cons ',name (lambda ,parms ,@body))
+					 *defmacros*))))))
+(define (defmacro? m) (and (assq m *defmacros*) #t))
+
+(define (macroexpand-1 e)
+  (if (pair? e)
+      (let ((a (car e)))
+	(cond ((symbol? a) (set! a (assq a *defmacros*))
+	       (if a (apply (cdr a) (cdr e)) e))
+	      (else e)))
+      e))
+
+(define (macroexpand e)
+  (if (pair? e)
+      (let ((a (car e)))
+	(cond ((symbol? a)
+	       (set! a (assq a *defmacros*))
+	       (if a (macroexpand (apply (cdr a) (cdr e))) e))
+	      (else e)))
+      e))
 
 (define base:eval slib:eval)
-(define (defmacro:expand* x) (macroexpand x))
 (define (defmacro:eval x) (base:eval (defmacro:expand* x)))
+(define (defmacro:expand* x)
+  (slib:require 'defmacroexpand) 
+  (apply defmacro:expand* x '()))
 
 (define (defmacro:load <pathname>)
   (slib:eval-load <pathname> defmacro:eval))
@@ -332,7 +346,6 @@
 
 (slib:load (in-vicinity (library-vicinity) "require"))
 
-
 ;;; Hack `require' to try to work with both SLIB
 ;;; and MzScheme:
 
@@ -347,4 +360,34 @@
     [(_ req ...)
      #'(mz:require req ...)]))
 
+;; The rest are from:
+
+;;;"DrScheme.init" Initialization for SLIB for DrScheme	-*-scheme-*-
+;;  Friedrich Dominicus <frido@q-software-solutions.com>
+;;  Newsgroups: comp.lang.scheme
+;;  Date: 02 Oct 2000 09:24:57 +0200
+
+(define (make-exchanger obj)
+  (lambda (rep) (let ((old obj)) (set! obj rep) old)))
+(define (open-file filename modes)
+  (case modes
+    ((r rb) (open-input-file filename))
+    ((w wb) (open-output-file filename))
+    (else (slib:error 'open-file 'mode? modes))))
+(define (port? obj) (or (input-port? port) (output-port? port)))
+(define (call-with-open-ports . ports)
+  (define proc (car ports))
+  (cond ((procedure? proc) (set! ports (cdr ports)))
+	(else (set! ports (reverse ports))
+	      (set! proc (car ports))
+	      (set! ports (reverse (cdr ports)))))
+  (let ((ans (apply proc ports)))
+    (for-each close-port ports)
+    ans))
+(define (close-port port)
+  (cond ((input-port? port)
+	 (close-input-port port)
+	 (if (output-port? port) (close-output-port port)))
+	((output-port? port) (close-output-port port))
+	(else (slib:error 'close-port 'port? port))))
 

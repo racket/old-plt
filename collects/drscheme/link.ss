@@ -2,9 +2,6 @@
   (link [mred : mred-interfaces^ (mred-interfaces@)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
-
-	[url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
-
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^
 		       ((require-library "pconverr.ss")

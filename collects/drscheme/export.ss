@@ -11,14 +11,15 @@
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
-  (link [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
+  (link [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
+        [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
 					       (mzlib function)
 					       (mzlib string)
 					       (mzlib file)
 					       url
 					       (mred : mred^)
 					       framework
-					       (export* frame))]
+					       frame)]
 	[basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						   (import)
 						   (define in-mzscheme? #f)))]

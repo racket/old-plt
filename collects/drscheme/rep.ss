@@ -120,7 +120,7 @@
 		    "Invalid Library"
 		    "Library file does not contain a unit")
 		   #f)))
-	   (set! invoke-library (void))))))
+	   (set! invoke-library void)))))
     
   (define exception-reporting-rep (make-parameter #f))
 
@@ -265,7 +265,7 @@
 	  (string=? "MrEd Debug" name))))
 
   (define error-color (make-object mred:color% "PINK"))
-  (define color? (<= 8 (mred:get-display-depth)))
+  (define color? (< 8 (mred:get-display-depth)))
   
   (define (quote-regexp-specials s)
     (list->string

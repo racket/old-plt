@@ -610,5 +610,5 @@
 ;; -> string
 ;; stub for soon to come mred primitive
 (define (get-directory) 
-  (messsage-box "Directory choice not implemented" 
-                "The directory choice primitive is not yet implemented. Tune in later"))
+  (message-box "Directory choice not implemented" 
+               "The directory choice primitive is not yet implemented. Tune in later"))

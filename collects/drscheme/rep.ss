@@ -269,10 +269,9 @@
 	(public
 	  [transparent-edit #f]
 	  [transparent-snip #f]
-	  [this-in-char-ready? (lambda () (printf "this-in-char-ready?~n") #t)]
+	  [this-in-char-ready? (lambda () #t)]
 	  [cleanup-transparent-io
 	   (lambda ()
-	     (printf "cleanup-transparent-io ~a~n" transparent-edit)
 	     (when transparent-edit
 	       (set! saved-newline? #f) 
 	       (send transparent-edit shutdown)
@@ -287,7 +286,6 @@
 	[init-transparent-io
 	 (lambda (grab-focus?)
 	   (begin-edit-sequence)
-	   (printf "init-transparent-io ~a~n" transparent-edit)
 	   (if transparent-edit
 	       (when grab-focus?
 		 (let ([a (send transparent-edit get-admin)])
@@ -336,7 +334,6 @@
 	   (lambda ()
 	     (let ([s (make-semaphore 0)]
 		   [answer #f])
-	       (printf "this-in-read~n")
 	       (system
 		(lambda ()
 		  (mred:queue-callback
@@ -452,7 +449,6 @@
 	   (lambda (s)
 	     (queue-io
 	      (lambda ()
-		(printf "this-result-write.cleanup-transparent-io~n")
 		(cleanup-transparent-io)
 		(generic-write this
 			       s
@@ -496,7 +492,6 @@
 	     (lambda (s exn)
 	       (queue-io
 		(lambda ()
-		  (printf "this-err-write/exn.cleanup-transparent-io~n")
 		  (cleanup-transparent-io)
 		  (generic-write
 		   this
@@ -757,7 +752,6 @@
 	     (semaphore-post in-evaluation-semaphore)
 	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
-	     (printf "do-many-buffer-evals.cleanup-transparent-io~n")
 	     (cleanup-transparent-io)
 	     (reset-pretty-print-width)
 	     (ready-non-prompt)
@@ -771,7 +765,6 @@
 		 (lambda ()
 		   (protect-user-evaluation
 		    (lambda ()
-		      (printf "run-in-evaluation-thread; done~n")
 		      (cleanup-interaction))
 		    (lambda ()
 		      (process-edit
@@ -1174,7 +1167,6 @@
 	 (lambda ()
 	   (clear-previous-expr-positions)
 	   (shutdown-user-custodian)
-	   (printf "reset-console.cleanup-transparent-io~n")
 	   (cleanup-transparent-io)
 	   (set! should-collect-garbage? #t)
 

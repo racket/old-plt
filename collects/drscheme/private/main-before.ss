@@ -106,10 +106,7 @@
       
       (define default-font-name (get-family-builtin-face 'modern))
       
-      (preferences:set-default
-       'drscheme:font-name
-       default-font-name
-       string?)
+      (preferences:set-default 'drscheme:font-name default-font-name string?)
       
       (preferences:set-default
        'drscheme:font-size

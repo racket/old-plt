@@ -311,27 +311,23 @@
                   (set-arrow-end-x! arrow end-x)
                   (set-arrow-end-y! arrow end-y)))
               
-              (public syncheck:init-arrows)
-              (define (syncheck:init-arrows)
+              (define/public (syncheck:init-arrows)
                 (set! tacked-hash-table (make-hash-table))
                 (set! arrow-vector (make-vector (add1 (last-position)) null)))
-              (public syncheck:clear-arrows)
-              (define (syncheck:clear-arrows)
+              (define/public (syncheck:clear-arrows)
                 (when (or arrow-vector cursor-location)
                   (set! arrow-vector #f)
                   (set! cursor-location #f)
                   (invalidate-bitmap-cache)))
-              (public syncheck:add-menu)
-              (define (syncheck:add-menu start-pos end-pos make-menu)
+              (define/public (syncheck:add-menu start-pos end-pos make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
                   (let loop ([p start-pos])
                     (when (<= p end-pos)
                       (vector-set! arrow-vector p make-menu)
                       (loop (+ p 1))))))
-              (public syncheck:add-arrow)
-              (define (syncheck:add-arrow start-pos-left start-pos-right
-                                          end-pos-left end-pos-right
-                                          id-name same-names)
+              (define/public (syncheck:add-arrow start-pos-left start-pos-right
+                                                 end-pos-left end-pos-right
+                                                 id-name same-names)
                 (let* ([arrow (make-arrow start-pos-left start-pos-right
                                           end-pos-left end-pos-right
                                           0 0 0 0
@@ -470,35 +466,40 @@
               (define (rename-callback arrows)
                 (unless (null? arrows)
                   (let* ([arrow (car arrows)]
-                         [id-name (arrow-id-name arrow)]
-                         [new-id 
-                          (fw:keymap:call/text-keymap-initializer
-                           (lambda ()
-                             (get-text-from-user
-                              "Rename Identifier"
-                              (format "Rename ~a to:" id-name)
-                              #f
-                              (format "~a" id-name))))])
-                    (when new-id
-                      (let ([to-be-renamed (quicksort 
-                                            (arrow-same-ids arrow)
-                                            (lambda (x y) 
-                                              ((syntax-position x) . >= . (syntax-position y))))])
-                        (unless (null? to-be-renamed)
-                          (let ([first-one-source (syntax-source (car to-be-renamed))])
-                            (when (is-a? first-one-source text%)
-                              (send first-one-source begin-edit-sequence)
-                              (for-each (lambda (stx) 
-                                          (let ([source (syntax-source stx)])
-                                            (when (is-a? source text%)
-                                              (let* ([start (- (syntax-position stx) 1)]
-                                                     [end (+ start (syntax-span stx))])
-                                                (send source delete start end #f)
-                                                (send source insert new-id start start #f)))))
-                                        to-be-renamed)
-                              (invalidate-bitmap-cache)
-                              (send (get-top-level-window) syncheck:button-callback)
-                              (send first-one-source end-edit-sequence)))))))))
+                         [id-name (arrow-id-name arrow)])
+                    (cond
+                      [id-name
+                       (let ([new-id 
+                              (fw:keymap:call/text-keymap-initializer
+                               (lambda ()
+                                 (get-text-from-user
+                                  "Rename Identifier"
+                                  (format "Rename ~a to:" id-name)
+                                  #f
+                                  (format "~a" id-name))))])
+                         (when new-id
+                           (let ([to-be-renamed (quicksort 
+                                                 (arrow-same-ids arrow)
+                                                 (lambda (x y) 
+                                                   ((syntax-position x) . >= . (syntax-position y))))])
+                             (unless (null? to-be-renamed)
+                               (let ([first-one-source (syntax-source (car to-be-renamed))])
+                                 (when (is-a? first-one-source text%)
+                                   (send first-one-source begin-edit-sequence)
+                                   (for-each (lambda (stx) 
+                                               (let ([source (syntax-source stx)])
+                                                 (when (is-a? source text%)
+                                                   (let* ([start (- (syntax-position stx) 1)]
+                                                          [end (+ start (syntax-span stx))])
+                                                     (send source delete start end #f)
+                                                     (send source insert new-id start start #f)))))
+                                             to-be-renamed)
+                                   (invalidate-bitmap-cache)
+                                   (send (get-top-level-window) syncheck:button-callback)
+                                   (send first-one-source end-edit-sequence)))))))]
+                      [else 
+                       (message-box "DrScheme - Check Syntax"
+                                    "Cannot rename variables from imported modules.")]))))
               
               ;; jump-callback : (listof arrow) -> void
               ;; callback for the jump popup menu item
@@ -523,8 +524,7 @@
       (define (make-new-unit-frame% super%)
         (class super%
           (rename [super-clear-annotations clear-annotations])
-          (override clear-annotations)
-          (define (clear-annotations)
+          (define/override (clear-annotations)
             (super-clear-annotations)
             (syncheck:clear-highlighting))
           
@@ -539,17 +539,16 @@
           (field
             [button-visible? #t])
           
-          (override enable-evaluation)
-          (define (enable-evaluation)
+          (define/override (enable-evaluation)
             (send check-syntax-button enable #t)
             (super-enable-evaluation))
 
-          (override disable-evaluation)
-          (define (disable-evaluation)
+          (define/override (disable-evaluation)
             (send check-syntax-button enable #f)
             (super-disable-evaluation))
           
-          (define (clear-highlighting)
+          (define/public (syncheck:clear-highlighting)
+            (hide-error-report)
             (send (get-definitions-text) syncheck:clear-arrows)
             (let* ([list (send (get-definitions-text) get-style-list)]
                    [style (send list find-named-style "Standard")])
@@ -557,16 +556,61 @@
                 (send (get-definitions-text) change-style
                       style 0 (send (get-definitions-text) last-position)))))
           
-          (public syncheck:clear-highlighting)
-          (define (syncheck:clear-highlighting)
-            (hide-error-report)
-            (clear-highlighting))
+          (field
+           [report-error-parent-panel 'uninitialized-report-error-parent-panel]
+           [report-error-panel 'uninitialized-report-error-panel]
+           [report-error-text (make-object (fw:scheme:text-mixin 
+                                            (fw:editor:keymap-mixin
+                                             fw:text:hide-caret/selection%)))])
+          (send report-error-text auto-wrap #t)
+          (send report-error-text lock #t)
+          (rename [super-get-definitions/interactions-panel-parent 
+                   get-definitions/interactions-panel-parent])
+          (define/override (get-definitions/interactions-panel-parent)
+            (set! report-error-parent-panel
+                  (make-object vertical-panel%
+                    (super-get-definitions/interactions-panel-parent)))
+            (set! report-error-panel (instantiate horizontal-panel% ()
+                                       (parent report-error-parent-panel)
+                                       (stretchable-height #f)
+                                       (style '(border))))
+            (send report-error-parent-panel change-children (lambda (l) null))
+            (let ([message-panel (instantiate vertical-panel% ()
+                                   (parent report-error-panel)
+                                   (stretchable-width #f)
+                                   (alignment '(left center)))])
+              (make-object message% "Check Syntax" message-panel)
+              (make-object message% "Error Message" message-panel))
+            (let ([editor-canvas (make-object editor-canvas% 
+                                   report-error-panel
+                                   report-error-text
+                                   '(no-hscroll))])
+              (send editor-canvas set-line-count 2))
+            (make-object vertical-panel% report-error-parent-panel))
           
-          (public syncheck:enable-checking)
-          (define (syncheck:enable-checking on?)
-            (set! button-visible? on?)
-            (when (object? check-syntax-button)
-              (send check-syntax-button show on?)))
+          (define (hide-error-report) 
+            (when (member report-error-panel (send report-error-parent-panel get-children))
+              (send report-error-parent-panel change-children
+                    (lambda (l) (remq report-error-panel l)))))
+          
+          (define (show-error-report) 
+            (unless (member report-error-panel (send report-error-parent-panel get-children))
+              (send report-error-parent-panel change-children
+                    (lambda (l) (cons report-error-panel l)))))
+          
+          (define (report-error message exn)
+            (send* report-error-text
+              (begin-edit-sequence)
+              (lock #f)
+              (erase)
+              (insert message)
+              (change-style
+               report-error-style
+               0
+               (send report-error-text last-position))
+              (lock #t)
+              (end-edit-sequence))
+            (show-error-report))
           
           (rename [super-make-root-area-container make-root-area-container])
           (field
@@ -574,10 +618,7 @@
            [super-root 'uninitialized-super-root]
            [docs-panel 'uninitialized-docs-panel]
            [docs-panel-visible? #f]
-           [docs-messages 'uninitialized-docs-lines]
-           [report-error-panel 'uninitialized-report-error-panel]
-           [report-error-panel-visible? #t]
-           [report-error-text (make-object fw:text:hide-caret/selection%)])
+           [docs-messages 'uninitialized-docs-lines])
           (override make-root-area-container)
           (define (make-root-area-container % parent)
             (let* ([s-root (super-make-root-area-container
@@ -593,39 +634,24 @@
                           (send (send docs-panel get-label-font) get-point-size)
                           'modern 'normal 'normal #f))
               (send docs-panel stretchable-height #f)
-              
-              (set! report-error-panel (instantiate horizontal-panel% ()
-                                         (parent super-root)
-                                         (stretchable-height #f)))
-              (let ([message-panel (instantiate vertical-panel% ()
-                                     (parent report-error-panel)
-                                     (stretchable-width #f)
-                                     (alignment '(left center)))])
-                (make-object message% "Check Syntax" message-panel)
-                (make-object message% "Error Message" message-panel))
-              (send (make-object editor-canvas% report-error-panel report-error-text) set-line-count 2)
 
-              (update-docs/report-error-visibility)
+              (update-docs-visibility)
               
               r-root))
 
-          (define (update-docs/report-error-visibility)
+          (define (update-docs-visibility)
             (send super-root change-children 
                   (lambda (l) 
                     (let* ([first (if docs-panel-visible?
                                       (list docs-panel)
                                       null)]
-                           [snd (cons rest-panel first)]
-                           [thrd (if report-error-panel-visible?
-                                     (cons report-error-panel snd)
-                                     snd)])
-                      thrd))))
-
+                           [snd (cons rest-panel first)])
+                      snd))))
 
           (define (hide-docs-messages)
             (when docs-panel-visible?
               (set! docs-panel-visible? #f)
-              (update-docs/report-error-visibility)))
+              (update-docs-visibility)))
           (define (set-docs-messages lines)
             (when (< (length docs-messages) (length lines))
               (set! docs-messages
@@ -652,35 +678,13 @@
                 (send docs-panel change-children (lambda (l) to-be-shown)))
               (unless docs-panel-visible?
                 (set! docs-panel-visible? #t)
-                (update-docs/report-error-visibility))))
-           
-          (define (hide-error-report) 
-            (when report-error-panel-visible?
-              (set! report-error-panel-visible? #f)
-              (update-docs/report-error-visibility)))
-          
-          (define (show-error-report) 
-            (unless report-error-panel-visible?
-              (set! report-error-panel-visible? #t)
-              (update-docs/report-error-visibility)))
-          
-          (define (report-error message exn)
-            (send* report-error-text
-              (begin-edit-sequence)
-              (lock #f)
-              (erase)
-              (insert message)
-              (change-style
-               report-error-style
-               0
-               (send report-error-text last-position))
-              (lock #t)
-              (end-edit-sequence))
-            (show-error-report))
+                (update-docs-visibility))))
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
             (send (get-definitions-text) begin-edit-sequence)
+            (clear-annotations)
+            (send (get-definitions-text) syncheck:init-arrows)            
             (color-range (get-definitions-text)
                          0
                          (send (get-definitions-text) last-position)
@@ -705,301 +709,23 @@
                           (begin
                             (set! err-termination? #t)
                             (report-error (car sexp) (cdr sexp)))
-                          (let-values ([(new-binders new-varrefs new-tops) (annotate-basic sexp)])
+                          (let-values ([(new-binders new-varrefs new-tops
+                                         requires referenced-macros)
+                                        (annotate-basic sexp)])
                             (set! binders (append new-binders binders))
-                            (set! varrefs (append new-varrefs varrefs))
-                            (set! tops (append new-varrefs tops))))
+                            (set! varrefs (append (if requires
+                                                      (annotate-requires 
+                                                       new-varrefs
+                                                       requires
+                                                       referenced-macros)
+                                                      new-varrefs) 
+                                                  varrefs))
+                            (set! tops (append new-tops tops))))
                       (loop)))
               (unless err-termination? 
                 (annotate-variables users-namespace binders varrefs tops)))
             (send (get-definitions-text) end-edit-sequence))
 
-          ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
-          ;; colors the variables, free are turned unbound color, bound are turned
-          ;; bound color and all binders are turned bound color.
-          (define (annotate-variables users-namespace binders varrefs tops)
-            (send (get-definitions-text) syncheck:init-arrows)
-            (for-each (lambda (binder) 
-                        (when (syntax-original? binder)
-                          (color binder bound-variable-style-str)))
-                      binders)
-            (for-each (annotate-varref handle-no-binders/lexical binders varrefs) varrefs)
-            (for-each (annotate-varref (handle-no-binders/top users-namespace) binders varrefs) tops))
-          
-          ;; annotate-varref : (listof syntax) -> syntax -> void
-          ;; annotates a variable reference with either green or red,
-          ;; and adds the arrows from the varref to the 
-          ;; (possibly multiple) binding locations.
-          (define (annotate-varref handle-no-binders binders all-varrefs)
-            (lambda (varref)
-              (when (syntax-original? varref)
-                (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
-                       [binders (filter same-as-varref? binders)]
-                       [same-names (append binders (filter same-as-varref? all-varrefs))])
-                  (cond
-                    [(null? binders) (handle-no-binders varref)]
-                    [else
-                     (for-each 
-                      (lambda (binder) 
-                        (when (syntax-original? binder)
-                          (connect-variables binder varref same-names)))
-                      binders)
-                     (color varref bound-variable-style-str)])))))
-          
-          ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
-          (define (handle-no-binders/top users-namespace)
-            (lambda (varref)
-              (let ([defined-in-users-namespace?
-                     (with-handlers ([exn:variable? (lambda (x) #f)])
-                       (parameterize ([current-namespace users-namespace])
-                         (eval (syntax-e varref))
-                         #t))])
-                (if defined-in-users-namespace?
-                    (color varref bound-variable-style-str)
-                    (color varref unbound-variable-style-str)))))
-          
-          ;; handle-no-binders/lexical : syntax[original] -> void
-          (define (handle-no-binders/lexical varref)
-            (color varref unbound-variable-style-str))
-          
-          ;; connect-variable : syntax syntax (listof syntax) -> void
-          (define (connect-variables binding bound same-names)
-            (let* ([binding-source (syntax-source binding)]
-                   [binding-pos-left (- (syntax-position binding) 1)]
-                   [binding-pos-right (+ binding-pos-left (syntax-span binding))]
-                   [bound-pos-left (- (syntax-position bound) 1)]
-                   [bound-pos-right (+ bound-pos-left (syntax-span bound))])
-              (when (is-a? binding-source syncheck-text<%>)
-                (send binding-source syncheck:add-arrow
-                      binding-pos-left binding-pos-right
-                      bound-pos-left bound-pos-right
-                      (syntax-object->datum binding)
-                      same-names))))
-          
-          ;; annotate-basic : syntax -> (values (listof syntax) (listof syntax)
-          ;; annotates the lexical structure of the program `sexp', except
-          ;; for the variables in the program. returns the variables in two
-          ;; lists -- the first is the ones that occur in binding positions
-          ;; and the second is those that occur in bound positions
-          (define (annotate-basic sexp)
-            (let ([binders null]
-                  [varrefs null]
-                  [tops null])
-              (let loop ([sexp sexp])
-                (annotate-original-keywords sexp)
-                (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
-                                    quote quote-syntax with-continuation-mark 
-                                    #%app #%datum #%top #%module-begin
-                                    define-values define-syntaxes module
-                                    require require-for-syntax provide)
-                  [(lambda args bodies ...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (set! binders (combine-binders (syntax args) binders))
-                     (for-each loop (syntax->list (syntax (bodies ...)))))]
-                  [(case-lambda [argss bodiess ...]...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each
-                      (lambda (args bodies)
-                        (set! binders (combine-binders args binders))
-                        (for-each loop (syntax->list bodies)))
-                      (syntax->list (syntax (argss ...)))
-                      (syntax->list (syntax ((bodiess ...) ...)))))]
-                  [(if test then else)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (loop (syntax test))
-                     (loop (syntax then))
-                     (loop (syntax else)))]
-                  [(if test then)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (loop (syntax test))
-                     (loop (syntax then)))]
-                  [(begin bodies ...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each loop (syntax->list (syntax (bodies ...)))))]
-                  
-                  [(begin0 bodies ...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each loop (syntax->list (syntax (bodies ...)))))]
-                  
-                  [(let-values (((xss ...) es) ...) bs ...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each (lambda (x) (set! binders (combine-binders x binders)))
-                               (syntax->list (syntax ((xss ...) ...))))
-                     (for-each loop (syntax->list (syntax (es ...))))
-                     (for-each loop (syntax->list (syntax (bs ...)))))]
-                  [(letrec-values (((xss ...) es) ...) bs ...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each (lambda (x) (set! binders (combine-binders x binders)))
-                               (syntax->list (syntax ((xss ...) ...))))
-                     (for-each loop (syntax->list (syntax (es ...))))
-                     (for-each loop (syntax->list (syntax (bs ...)))))]
-                  [(set! var E)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (set! varrefs (cons (syntax var) varrefs))
-                     (loop (syntax E)))]
-                  [(quote datum)
-                   (begin 
-                     (when (syntax-original? sexp)
-                       (annotate-raw-keyword sexp))
-                     (when (syntax-original? (syntax datum))
-                       (color (syntax datum) constant-style-str)))]
-                  [(quote-syntax datum)
-                   (begin 
-                     (when (syntax-original? sexp)
-                       (annotate-raw-keyword sexp))
-                     (when (syntax-original? (syntax datum))
-                       (color (syntax datum) constant-style-str)))]
-                  [(with-continuation-mark a b c)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (loop (syntax a))
-                     (loop (syntax b))
-                     (loop (syntax c)))]
-                  [(#%app pieces ...)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each loop (syntax->list (syntax (pieces ...)))))]
-                  [(#%datum . datum)
-                   (begin
-                     (when (syntax-original? sexp)
-                       (color sexp constant-style-str)))]
-                  [(#%top . var)
-                   (begin
-                     (set! tops (cons (syntax var) tops)))]
-                  
-                  [(define-values vars b)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (set! binders (combine-binders (syntax vars) binders))
-                     (loop (syntax b)))]
-                  [(define-syntaxes names exp)
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (set! binders (combine-binders (syntax names) binders))
-                     (loop (syntax exp)))]
-                  [(module m-name lang (#%module-begin bodies ...))
-                   (begin
-                     (annotate-raw-keyword sexp)
-                     (for-each loop (syntax->list (syntax (bodies ...)))))]
-                  
-                  ; top level or module top level only:
-                  [(require require-spec)
-                   (begin
-                     (annotate-raw-keyword sexp))]
-                  [(require-for-syntax require-spec)
-                   (begin
-                     (annotate-raw-keyword sexp))]
-                  
-                  ; module top level only:
-                  [(provide vars)
-                   (begin
-                     (annotate-raw-keyword sexp))]
-                  
-                  [_
-                   (begin
-                     (cond
-                       [(identifier? sexp)
-                        (set! varrefs (cons sexp varrefs))]
-                       [else 
-;                        (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
-;                                 sexp
-;                                 (and (syntax? sexp)
-;                                      (syntax-object->datum sexp))
-;                                 (and (syntax? sexp)
-;                                      (syntax-source sexp)))
-                        (void)
-                        ]))]))
-              (values binders varrefs tops)))
-
-          ;; combine-binders : syntax (listof syntax) -> (listof syntax)
-          ;; transforms an argument list into a bunch of symbols/symbols and puts 
-          ;; them on `incoming'
-          ;; [could be more efficient if it processed the stx itself instead of append]
-          (define (combine-binders stx incoming)
-            (let ([lst (syntax->list stx)])
-              (if lst
-                  (append lst incoming)
-                  (cons stx incoming)))
-;            (if (null? stx)
-;                incoming
-;                (let ([first (syntax-e stx)])
-;                  (cond
-;                    [(cons? first) (args->vars (cdr first) (cons (car first) incoming))]
-;                    [(null? first) incoming]
-;                    [else (cons first incoming)])))
-            )
-
-          
-          ;; annotate-original-keywords : syntax -> void
-          ;; annotates the origin of the stx with style-name's style.
-          (define (annotate-original-keywords stx)
-            (let* ([origin (syntax-property stx 'origin)])
-              (when origin
-                (let loop ([origin origin])
-                  (cond
-                    [(cons? origin)
-                     (loop (car origin))
-                     (loop (cdr origin))]
-                    [(syntax? origin)
-                     (when (syntax-original? origin)
-                       (color origin keyword-style-str))])))))
-
-          ;; annotate-raw-keyword : syntax -> void
-          ;; annotates keywords when they were never expanded. eg.
-          ;; if someone just types `(lambda (x) x)' it has no 'origin
-          ;; field, but there still are keywords.
-          (define (annotate-raw-keyword stx)
-            (unless (syntax-property stx 'origin)
-              (let ([lst (syntax-e stx)])
-                (when (pair? lst)
-                  (let ([f-stx (car lst)])
-                    (when (syntax-original? f-stx)
-                      (color f-stx keyword-style-str)))))))
-          
-          ;; annotate-variable : syntax (listof identifer) -> void
-          (define (annotate-variable sexp bound-vars)
-            (cond
-              [(ormap (lambda (x) (and (module-identifier=? sexp x) x)) bound-vars)
-               (when (syntax-original? sexp)
-                 (color sexp bound-variable-style-str))]
-              [else
-               (when (syntax-original? sexp)
-                 (color sexp unbound-variable-style-str))]))
-
-          ;; annotate-arglist : syntax -> void
-          ;; annotates the (possibly improper) syntax list as bound variables
-          (define (annotate-arglist stx)
-            (for-each (lambda (stx) 
-                        (when (syntax-original? stx)
-                          (color stx bound-variable-style-str)))
-                      (syntax->list stx)))
-          
-          ;; color : syntax str -> void
-          ;; colors the syntax with style-name's style
-          (define (color stx style-name)
-            (let ([source (syntax-source stx)])
-              (when (is-a? source text%)
-                (let ([pos (- (syntax-position stx) 1)]
-                      [span (syntax-span stx)])
-                  (color-range source pos (+ pos span) style-name)))))
-
-          ;; color-range : text start finish style-name 
-          ;; colors a range in the text based on `style-name'
-          (define (color-range source start finish style-name)
-            (let ([style (send (send source get-style-list)
-                               find-named-style
-                               style-name)])
-              (send source change-style style start finish)))
-          
           (super-instantiate ())
           
           (field
@@ -1017,11 +743,392 @@
                   (cons check-syntax-button
                         (remove check-syntax-button l))))))
       
-      (define report-error-style 
-        (send (make-object style-delta% 'change-family 'modern)
-              set-delta
-              'change-italic))
+      (define report-error-style (make-object style-delta% 'change-italic))
       (send report-error-style set-delta-foreground "red")
+      
+       ;; type req/tag = (make-req/tag syntax sexp boolean)
+      (define-struct req/tag (req-stx req-sexp used?))
+      
+      ;; annotate-requires : (listof syntax) (listof syntax) (listof syntax[original])
+      ;;                     -> (listof syntax)
+      ;; returns the sublist of `varrefs' that did not come from module imports.
+      ;; effect: colors all require-bound ids from `tops' and draws arrow for them. 
+      (define (annotate-requires varrefs requires referenced-macros)
+        (let* ([req/tags (map (lambda (x) 
+                                (make-req/tag x 
+                                              (cadr (syntax-object->datum x))
+                                              #f))
+                              requires)]
+               [reduced-varrefs
+                (let loop ([varrefs varrefs])
+                  (cond
+                    [(null? varrefs) null]
+                    [else (let ([varref (car varrefs)])
+                            (if (annotate-require/varref req/tags varref)
+                                (loop (cdr varrefs))
+                                (cons varref (loop (cdr varrefs)))))]))])
+          (for-each (annotate-macro req/tags) referenced-macros)
+          (for-each annotate-unused-require req/tags)
+          reduced-varrefs))
+      
+      ;; update-usage : (listof req/tag) -> syntax[original] -> void
+      (define (annotate-macro req/tags)
+        (lambda (stx)
+          (let ([mod-req-path (get-module-req-path stx)])
+            (for-each (lambda (req/tag)
+                        (when (equal? (req/tag-req-sexp req/tag) mod-req-path)
+                          (connect-syntaxes (req/tag-req-stx req/tag) varref stx)
+                          (set-req/tag-used?! req/tag #t)))
+                      req/tags))))
 
+      ;; annotate-unused-require : syntax -> void
+      (define (annotate-unused-require req/tag)
+        (unless (req/tag-used? req/tag)
+          (color (req/tag-req-stx req/tag) unbound-variable-style-str)))
+      
+      ;; annotate-require/varref : (listof req/tags) syntax -> boolean
+      ;; returns #t if `varref' comes from a module import
+      ;; effect: colors `varref' and adds binding structure arrows,
+      ;;         if it is a require-bound ids,
+      (define (annotate-require/varref req/tags varref)
+        (let ([id-mod-path (get-module-req-path varref)])
+          (and id-mod-path
+               (let ([req/tag/f (memf (lambda (x) (equal? (req/tag-req-sexp x) id-mod-path))
+                                      req/tags)])
+                 (and req/tag/f
+                      (let ([req/tag (car req/tag/f)])
+                        (set-req/tag-used?! req/tag #t)
+                        (when (syntax-original? varref)
+                          (color varref bound-variable-style-str)
+                          (when (syntax-original? (req/tag-req-stx req/tag))
+                            (connect-syntaxes (req/tag-req-stx req/tag) varref #f #f)))
+                        #t))))))
+      
+      ;; get-module-req-path : syntax -> (union #f require-sexp)
+      (define (get-module-req-path stx)
+        (let ([binding (identifier-binding stx)])
+          (and (pair? binding)
+               (let ([mod-path (car binding)])
+                 (and (module-path-index? mod-path)
+                      (let-values ([(main rest) (module-path-index-split mod-path)])
+                        main))))))
+      
+      ;; annotate-variables : namespace (listof syntax) (listof syntax) -> void
+      ;; colors the variables, free are turned unbound color, bound are turned
+      ;; bound color and all binders are turned bound color.
+      (define (annotate-variables users-namespace binders varrefs tops)
+        (for-each (lambda (binder) 
+                    (when (syntax-original? binder)
+                      (color binder bound-variable-style-str)))
+                  binders)
+        (for-each (annotate-varref handle-no-binders/lexical binders varrefs)
+                  varrefs)
+        (for-each (annotate-varref (handle-no-binders/top users-namespace) binders varrefs)
+                  tops))
+      
+      ;; annotate-varref : (syntax -> void) (listof syntax) (listof syntax) -> syntax -> void
+      ;; annotates a variable reference with either green or red,
+      ;; and adds the arrows from the varref to the 
+      ;; (possibly multiple) binding locations.
+      (define (annotate-varref handle-no-binders all-binders all-varrefs)
+        (lambda (varref)
+          (when (syntax-original? varref)
+            (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
+                   [binders (filter same-as-varref? all-binders)]
+                   [same-names (append binders (filter same-as-varref? all-varrefs))])
+              (cond
+                [(null? binders) (handle-no-binders varref)]
+                [else
+                 (for-each 
+                  (lambda (binder) 
+                    (when (syntax-original? binder)
+                      (connect-syntaxes binder
+                                        varref
+                                        (syntax-object->datum binder)
+                                        same-names)))
+                  binders)
+                 (color varref bound-variable-style-str)])))))
+      
+          ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
+      (define (handle-no-binders/top users-namespace)
+        (lambda (varref)
+          (let ([defined-in-users-namespace?
+                 (with-handlers ([exn:variable? (lambda (x) #f)])
+                   (parameterize ([current-namespace users-namespace])
+                     (eval (syntax-e varref))
+                     #t))])
+            (if defined-in-users-namespace?
+                (color varref bound-variable-style-str)
+                (color varref unbound-variable-style-str)))))
+      
+          ;; handle-no-binders/lexical : syntax[original] -> void
+      (define (handle-no-binders/lexical varref)
+        (color varref unbound-variable-style-str))
+      
+      ;; connect-syntaxes : syntax[original] syntax[original]
+      ;;                    (union #f symbol) (union #f (listof syntax))
+      ;;                    -> void
+      ;; adds an arrow from `from' to `to'. 
+      ;; Passes `rename-name' and `rename-same-stxs' to syncheck:add-arrow
+      (define (connect-syntaxes from to rename-name rename-same-stxs)
+        (let* ([from-source (syntax-source from)]
+               [from-pos-left (- (syntax-position from) 1)]
+               [from-pos-right (+ from-pos-left (syntax-span from))]
+               [to-source (syntax-source to)]
+               [to-pos-left (- (syntax-position to) 1)]
+               [to-pos-right (+ to-pos-left (syntax-span to))])
+          (when (and (eq? from-source to-source)
+                     (is-a? from-source syncheck-text<%>))
+            (send from-source syncheck:add-arrow
+                  from-pos-left from-pos-right
+                  to-pos-left to-pos-right
+                  rename-name
+                  rename-same-stxs))))
+      
+      ;; annotate-basic : syntax -> (values (listof syntax)
+      ;;                                    (listof syntax)
+      ;;                                    (listof syntax)
+      ;;                                    (union #f (listof syntax))
+      ;;                                    (listof syntax[original]))
+      ;; annotates the lexical structure of the program `sexp', except
+      ;; for the variables in the program. returns the variables in several
+      ;; lists -- the first is the ones that occur in binding positions
+      ;; and the second is those that occur in bound positions. The third
+      ;; is those that occur in #%top's. The next value is #f if there was
+      ;; no module, or all of the require expressions if there was one.
+      ;; the last is the list of all original macro references.
+      (define (annotate-basic sexp)
+        (let ([binders null]
+              [varrefs null]
+              [tops null]
+              [has-module? #f]
+              [requires null]
+              [referenced-macros null])
+          (let loop ([sexp sexp])
+            (annotate-original-keywords sexp)            
+            (set! referenced-macros (append (get-referenced-macros sexp) referenced-macros))
+            (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
+                                quote quote-syntax with-continuation-mark 
+                                #%app #%datum #%top #%module-begin
+                                define-values define-syntaxes module
+                                require require-for-syntax provide)
+              [(lambda args bodies ...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (set! binders (combine-binders (syntax args) binders))
+                 (for-each loop (syntax->list (syntax (bodies ...)))))]
+              [(case-lambda [argss bodiess ...]...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (for-each
+                  (lambda (args bodies)
+                    (set! binders (combine-binders args binders))
+                    (for-each loop (syntax->list bodies)))
+                  (syntax->list (syntax (argss ...)))
+                  (syntax->list (syntax ((bodiess ...) ...)))))]
+              [(if test then else)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (loop (syntax test))
+                 (loop (syntax then))
+                 (loop (syntax else)))]
+              [(if test then)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (loop (syntax test))
+                 (loop (syntax then)))]
+              [(begin bodies ...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (for-each loop (syntax->list (syntax (bodies ...)))))]
+              
+              [(begin0 bodies ...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (for-each loop (syntax->list (syntax (bodies ...)))))]
+              
+              [(let-values (((xss ...) es) ...) bs ...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                           (syntax->list (syntax ((xss ...) ...))))
+                 (for-each loop (syntax->list (syntax (es ...))))
+                 (for-each loop (syntax->list (syntax (bs ...)))))]
+              [(letrec-values (((xss ...) es) ...) bs ...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                           (syntax->list (syntax ((xss ...) ...))))
+                 (for-each loop (syntax->list (syntax (es ...))))
+                 (for-each loop (syntax->list (syntax (bs ...)))))]
+              [(set! var E)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (set! varrefs (cons (syntax var) varrefs))
+                 (loop (syntax E)))]
+              [(quote datum)
+               (begin 
+                 (when (syntax-original? sexp)
+                   (annotate-raw-keyword sexp))
+                 (when (syntax-original? (syntax datum))
+                   (color (syntax datum) constant-style-str)))]
+              [(quote-syntax datum)
+               (begin 
+                 (when (syntax-original? sexp)
+                   (annotate-raw-keyword sexp))
+                 (when (syntax-original? (syntax datum))
+                   (color (syntax datum) constant-style-str)))]
+              [(with-continuation-mark a b c)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (loop (syntax a))
+                 (loop (syntax b))
+                 (loop (syntax c)))]
+              [(#%app pieces ...)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (for-each loop (syntax->list (syntax (pieces ...)))))]
+              [(#%datum . datum)
+               (begin
+                 (when (syntax-original? sexp)
+                   (color sexp constant-style-str)))]
+              [(#%top . var)
+               (begin
+                 (set! tops (cons (syntax var) tops)))]
+              
+              [(define-values vars b)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (set! binders (combine-binders (syntax vars) binders))
+                 (loop (syntax b)))]
+              [(define-syntaxes names exp)
+               (begin
+                 (annotate-raw-keyword sexp)
+                 (set! binders (combine-binders (syntax names) binders))
+                 (loop (syntax exp)))]
+              [;(module m-name lang (#%module-begin bodies ...))
+               ; use xxx here until Matthew explains why above pattern doesn't match...
+               (module m-name lang (xxx bodies ...))
+               (begin
+                 (set! has-module? #t)
+                 (annotate-raw-keyword sexp)
+                 (for-each loop (syntax->list (syntax (bodies ...)))))]
+              
+              ; top level or module top level only:
+              [(require require-spec)
+               (begin
+                 (set! requires (cons sexp requires))
+                 (annotate-raw-keyword sexp))]
+              [(require-for-syntax require-spec)
+               (begin
+                 (annotate-raw-keyword sexp))]
+              
+              ; module top level only:
+              [(provide vars)
+               (begin
+                 (annotate-raw-keyword sexp))]
+              
+              [_
+               (begin
+                 (cond
+                   [(identifier? sexp)
+                    (set! varrefs (cons sexp varrefs))]
+                   [else 
+;;                        (printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
+;;                                 sexp
+;;                                 (and (syntax? sexp)
+;;                                      (syntax-object->datum sexp))
+;;                                 (and (syntax? sexp)
+;;                                      (syntax-source sexp)))
+                    (void)
+                    ]))]))
+          (values binders varrefs tops (and has-module? requires) referenced-macros)))
+      
+      ;; get-referenced-macros : sexp -> syntax[original]
+      (define (get-referenced-macros sexp)
+        (let ([origin (syntax-property sexp 'origin)])
+          (if origin
+              (let loop ([origin origin]
+                         [stxs null])
+                (cond
+                  [(cons? origin) (loop (car origin) (loop (cdr origin) stxs))]
+                  [(syntax? origin) (if (syntax-original? origin)
+                                        (cons origin stxs)
+                                        stxs)]
+                  [else stxs]))
+              null)))
+
+          ;; combine-binders : syntax (listof syntax) -> (listof syntax)
+          ;; transforms an argument list into a bunch of symbols/symbols and puts 
+          ;; them on `incoming'
+          ;; [could be more efficient if it processed the stx itself instead of append]
+      (define (combine-binders stx incoming)
+        (let ([lst (syntax->list stx)])
+          (if lst
+              (append lst incoming)
+              (cons stx incoming))))
+      
+      
+          ;; annotate-original-keywords : syntax -> void
+          ;; annotates the origin of the stx with style-name's style.
+      (define (annotate-original-keywords stx)
+        (let* ([origin (syntax-property stx 'origin)])
+          (when origin
+            (let loop ([origin origin])
+              (cond
+                [(cons? origin)
+                 (loop (car origin))
+                 (loop (cdr origin))]
+                [(syntax? origin)
+                 (when (syntax-original? origin)
+                   (color origin keyword-style-str))])))))
+      
+          ;; annotate-raw-keyword : syntax -> void
+          ;; annotates keywords when they were never expanded. eg.
+          ;; if someone just types `(lambda (x) x)' it has no 'origin
+          ;; field, but there still are keywords.
+      (define (annotate-raw-keyword stx)
+        (unless (syntax-property stx 'origin)
+          (let ([lst (syntax-e stx)])
+            (when (pair? lst)
+              (let ([f-stx (car lst)])
+                (when (syntax-original? f-stx)
+                  (color f-stx keyword-style-str)))))))
+      
+          ;; annotate-variable : syntax (listof identifer) -> void
+      (define (annotate-variable sexp bound-vars)
+        (cond
+          [(ormap (lambda (x) (and (module-identifier=? sexp x) x)) bound-vars)
+           (when (syntax-original? sexp)
+             (color sexp bound-variable-style-str))]
+          [else
+           (when (syntax-original? sexp)
+             (color sexp unbound-variable-style-str))]))
+      
+          ;; annotate-arglist : syntax -> void
+          ;; annotates the (possibly improper) syntax list as bound variables
+      (define (annotate-arglist stx)
+        (for-each (lambda (stx) 
+                    (when (syntax-original? stx)
+                      (color stx bound-variable-style-str)))
+                  (syntax->list stx)))
+      
+          ;; color : syntax str -> void
+          ;; colors the syntax with style-name's style
+      (define (color stx style-name)
+        (let ([source (syntax-source stx)])
+          (when (is-a? source text%)
+            (let ([pos (- (syntax-position stx) 1)]
+                  [span (syntax-span stx)])
+              (color-range source pos (+ pos span) style-name)))))
+      
+          ;; color-range : text start finish style-name 
+          ;; colors a range in the text based on `style-name'
+      (define (color-range source start finish style-name)
+        (let ([style (send (send source get-style-list)
+                           find-named-style
+                           style-name)])
+          (send source change-style style start finish)))
+      
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
       (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

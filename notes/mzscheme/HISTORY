@@ -1,4 +1,4 @@
-Version 51, March 24, 1998
+Version 51, March 25, 1998
 Changed load/use-compiled: searches for .zo files in
  a "compiled/" subdirectory, and searches for .so/.dll
  files in (build-path "compiled" (system-library-subpath))

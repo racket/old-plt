@@ -1,9 +1,6 @@
 
 Check Syntax alpha-renaming does not work with `define-struct'.
 
-Check Syntax treats some primitives as unbound identifiers,
-  notably `first' and `rest'.
-
 The alpha-renaming feature of Check Syntax may miss some
   identifiers. Check which identifiers will be renamed by moving the
   mouse cursor over the *binding* occurrance of the variable you want

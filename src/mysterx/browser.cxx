@@ -19,17 +19,17 @@
 
 HWND browserHwnd;
 
-/* we don't worry about overflow, since 
+/* we don't worry about overflow, since
    Windows can't even create this many windows */
 unsigned long browserCount;
 static BOOL noBrowsersCache = TRUE;
 
 BROWSER_WINDOW_STYLE_OPTION styleOptions[6] = {
-  
+
   // keep alphabetic for bsearch()
-  
-  // { symbol,Win32 constant,TRUE=add/FALSE=remove } 
-  
+
+  // { symbol,Win32 constant,TRUE=add/FALSE=remove }
+
   { "iconize",WS_ICONIC,TRUE },
   { "maximize",WS_MAXIMIZE,TRUE },
   { "no-system-menu",WS_CAPTION | WS_SYSMENU,FALSE },
@@ -81,12 +81,12 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   }
 
   browserWindowInit.browserWindow.label = SCHEME_STR_VAL(argv[0]);
-  
+
   assignIntOrDefault(&browserWindowInit.browserWindow.width,argv,argc,1);
   assignIntOrDefault(&browserWindowInit.browserWindow.height,argv,argc,2);
   assignIntOrDefault(&browserWindowInit.browserWindow.x,argv,argc,3);
   assignIntOrDefault(&browserWindowInit.browserWindow.y,argv,argc,4);
-  
+
   if (SCHEME_PAIRP(argv[5]) == FALSE && argv[5] != scheme_null) {
     scheme_wrong_type("make-browser","list of symbols",5,argc,argv);
   }
@@ -95,15 +95,15 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   browserWindowInit.browserWindow.style = WS_OVERLAPPEDWINDOW;
 
   while (pSyms != scheme_null) {
-    
+
     currSym = SCHEME_CAR(pSyms);
-    
+
     if (SCHEME_SYMBOLP(currSym) == FALSE) {
       scheme_wrong_type("make-browser","list of symbols",5,argc,argv);
     }
-    
+
     currStyleOption = SCHEME_SYM_VAL(currSym);
-    
+
     pBwso = (BROWSER_WINDOW_STYLE_OPTION *)
               bsearch(currStyleOption,
 		      styleOptions,
@@ -115,7 +115,7 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
       scheme_signal_error("Invalid browser window style option: %s",
 			  currStyleOption);
     }
-    
+
     if (pBwso->enable) {
       browserWindowInit.browserWindow.style |= pBwso->bits;
     }
@@ -127,9 +127,9 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   }
 
   // mutex to protect association between new window and pIUnknown pointer to DHTML control
-  
+
   WaitForSingleObject(browserHwndMutex,INFINITE);
-  
+
   browserWindowInit.ppIStream = &pBrowserStream;
 
   browser = (MX_Browser_Object *)scheme_malloc(sizeof(MX_Browser_Object));
@@ -139,72 +139,72 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   // use _beginthread instead of CreateThread
   // because the use of HTMLHelp requires the use of
   // multithreaded C library
-  
+
   _beginthread(browserHwndMsgLoop,0,(void *)&browserWindowInit);
-  
+
   // wait until the window is created
-  
+
   WaitForSingleObject(createHwndSem,INFINITE);
 
   browser->destroy = FALSE;
   browser->hwnd = browserHwnd;
-  
+
   hr = CoGetInterfaceAndReleaseStream(pBrowserStream,IID_IUnknown,(void **)&pIUnknown);
-  
+
   ReleaseSemaphore(browserHwndMutex,1,NULL);
-  
+
   if (hr != S_OK || pIUnknown == NULL) {
     DestroyWindow(browserHwnd);
     codedComError("make-browser: Can't get browser IUnknown interface",hr);
   }
-  
+
   pIUnknown->QueryInterface(IID_IDHTMLPage,(void **)&pIDHTMLPage);
-  
+
   pIUnknown->Release();
 
   if (pIDHTMLPage == NULL) {
     scheme_signal_error("make-browser: Can't get IDHTMLPage interface");
   }
-  
+
   // workaround for inability to use exdisp.idl or mshtml.idl
-  
+
   pIStream = NULL;
   pIDHTMLPage->marshalWebBrowserToStream(&pIStream);
-  
+
   if (pIStream == NULL) {
     scheme_signal_error("make-browser: Can't get pIStream interface for browser");
   }
 
   hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IWebBrowser2,(void **)&pIWebBrowser2);
-  
+
   if (hr != S_OK || pIWebBrowser2 == NULL) {
     codedComError("make-browser: Can't get IWebBrowser2 interface",hr);
   }
 
   pIStream = NULL;
   pIDHTMLPage->marshalEventQueueToStream(&pIStream);
-  
+
   pIDHTMLPage->Release();
 
   if (pIStream == NULL) {
     scheme_signal_error("make-browser: Can't get IStream interface for event queue");
   }
-  
+
   hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IEventQueue,(void **)&pIEventQueue);
-  
+
   if (hr != S_OK || pIEventQueue == NULL) {
     codedComError("make-browser: Can't get event queue interface",hr);
   }
 
-  pIEventQueue->GetReaderSemaphore((int *)&browser->readSem);
-  
+  pIEventQueue->GetReaderSemaphore(&browser->readSem);
+
   if (browser->readSem == 0) {
     scheme_signal_error("make-browser: Error retrieving browser event read semaphore");
   }
 
   // setup event sink for browser
 
-  hr = pIWebBrowser2->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer); 
+  hr = pIWebBrowser2->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer);
 
   if (hr != S_OK || pIConnectionPointContainer == NULL) {
     signalCodedEventSinkError("make-browser: Unable to get browser connection point container",hr);
@@ -222,30 +222,26 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   hr = CoCreateInstance(CLSID_Sink,NULL,
 			CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
 			IID_IUnknown,(void **)&pIUnknown);
-  
+
   if (hr != S_OK || pIUnknown == NULL) {
     signalCodedEventSinkError("make-browser: Unable to create sink object",hr);
   }
 
   hr = pIUnknown->QueryInterface(IID_ISink,(void **)&pISink);
-  
+
   if (hr != S_OK || pISink == NULL) {
     signalCodedEventSinkError("make-browser: Unable to find sink interface",hr);
   }
-  
-  pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
-  
-  pISink->set_myssink_table((int)&myssink_table);
-  
+
+  pISink->set_myssink_table(&myssink_table);
+
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
 
   pIUnknown->Release();
-  
+
   if (hr != S_OK) {
     signalCodedEventSinkError("make-browser: Unable to connect sink to connection point",hr);
   }
-  
-  pIEventQueue->set_extension_table((int)scheme_extension_table); 
 
   browser->pIWebBrowser2 = pIWebBrowser2;
   browser->pISink = pISink;
@@ -318,7 +314,7 @@ Scheme_Object *mx_go_back(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-  return (pIWebBrowser2->GoBack() == S_OK) ? scheme_true : scheme_false; 
+  return (pIWebBrowser2->GoBack() == S_OK) ? scheme_true : scheme_false;
 }
 
 Scheme_Object *mx_go_forward(int argc,Scheme_Object **argv) {
@@ -330,7 +326,7 @@ Scheme_Object *mx_go_forward(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-  return (pIWebBrowser2->GoForward() == S_OK) ? scheme_true : scheme_false; 
+  return (pIWebBrowser2->GoForward() == S_OK) ? scheme_true : scheme_false;
 }
 
 Scheme_Object *mx_refresh(int argc,Scheme_Object **argv) {
@@ -395,7 +391,7 @@ Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {
 
   // register handler for NavigateComplete2 event (memID = 259)
 
-  pISink->register_handler(259,(int)argv[1]);
+  pISink->register_handler(259,argv[1]);
 
   return scheme_void;
 }
@@ -413,9 +409,9 @@ IHTMLDocument2 *IHTMLDocument2FromBrowser(Scheme_Object *obj) {
   if (hr != S_OK || pIDispatch == NULL) {
     scheme_signal_error("Error retrieving DHTML dispatch interface");
   }
-  
+
   hr = pIDispatch->QueryInterface(IID_IHTMLDocument2,(void **)&pIHTMLDocument2);
-  
+
   pIDispatch->Release();
 
   if (hr != S_OK || pIHTMLDocument2 == NULL) {
@@ -471,7 +467,7 @@ Scheme_Object *mx_print(int argc,Scheme_Object **argv) {
     codedComError("print: Error printing",hr);
   }
 
-  return scheme_void;  
+  return scheme_void;
 }
 
 Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
@@ -507,4 +503,3 @@ Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
 
   return retval;
 }
-

@@ -1335,10 +1335,7 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
 			      "Unable to find sink interface",hr);
   }
 
-  // COM won't take a function ptr
-  pISink->set_extension_table((int)scheme_extension_table);
-
-  pISink->set_myssink_table((int)&myssink_table);
+  pISink->set_myssink_table(&myssink_table);
 
   hr = pIConnectionPoint->Advise(pIUnknown,&cookie);
 
@@ -1441,7 +1438,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
     scheme_signal_error("Can't find event %s in type description",eventName);
   }
 
-  pISink->register_handler(pFuncDesc->memid,(int)argv[2]);
+  pISink->register_handler(pFuncDesc->memid, argv[2]);
 
   pITypeInfo->ReleaseFuncDesc(pFuncDesc);
 

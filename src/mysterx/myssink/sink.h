@@ -18,7 +18,7 @@ typedef struct _event_handler_entry_ { // entry in hash table
 
 /////////////////////////////////////////////////////////////////////////////
 // CSink
-class ATL_NO_VTABLE CSink : 
+class ATL_NO_VTABLE CSink :
         public CComObjectRootEx<CComSingleThreadModel>,
 	public CComCoClass<CSink, &CLSID_Sink>,
 	public IDispatchImpl<ISink, &IID_ISink, &LIBID_MYSSINKLib>
@@ -52,10 +52,9 @@ END_COM_MAP()
 
 // ISink
 public:
- STDMETHOD(set_extension_table)(int);
- STDMETHOD(set_myssink_table)(int);
- STDMETHOD(register_handler)(DISPID,int); 
- STDMETHOD(unregister_handler)(DISPID); 
+ STDMETHOD(set_myssink_table)(void *);
+ STDMETHOD(register_handler)(DISPID,void *);
+ STDMETHOD(unregister_handler)(DISPID);
 
  //override ATL implementations
 

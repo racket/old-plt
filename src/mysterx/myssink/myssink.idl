@@ -12,13 +12,13 @@ import "ocidl.idl";
 		uuid(DA064DCC-0881-11D3-B5CA-0060089002FE),
 		dual,
 		helpstring("ISink Interface"),
-		pointer_default(unique)
+		pointer_default(unique),
+                local
 	]
 	interface ISink : IDispatch
 	{
-		[id(0xFFFFFD00), helpstring("method set_extension_table")] HRESULT set_extension_table(int);
-		[id(0xFFFFFCFF), helpstring("method set_myssink_table")] HRESULT set_myssink_table(int);
-	        [id(0xFFFFFCFE), helpstring("method register_handler")] HRESULT register_handler(DISPID,int);
+		[id(0xFFFFFCFF), helpstring("method set_myssink_table")] HRESULT set_myssink_table(void *);
+	        [id(0xFFFFFCFE), helpstring("method register_handler")] HRESULT register_handler(DISPID,void *);
 	        [id(0xFFFFFCFD), helpstring("method unregister_handler")] HRESULT unregister_handler(DISPID);
     }
 [

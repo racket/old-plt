@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.139 1997/12/02 22:09:03 shriram Exp $
+; $Id: scm-main.ss,v 1.140 1998/02/26 16:53:04 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -252,7 +252,8 @@
 		      (val (pat:pexpand 'val p-env kwd)))
 		(for-each (lambda (var)
 			    (let ((r (resolve var env vocab)))
-			      (unless (top-level-resolution? r)
+			      (when (or (micro-resolution? r)
+				      (macro-resolution? r))
 				(static-error var
 				  "Cannot bind keyword ~s"
 				  (z:symbol-orig-name var)))))

@@ -2989,7 +2989,17 @@ add struct contracts for immutable structs?
                   val))
                (delay (p-app (force val))))))))))
   
+  #|
+   as with copy-struct in struct.ss, this first begin0
+   expansion "declares" that struct/c is an expression
+   preventing further expansion until the internal definition
+   context is sorted out.
+  |#
   (define-syntax (struct/c stx)
+    (syntax-case stx ()
+      [(_ . args) (syntax (begin0 (do-struct/c . args)))]))
+  
+  (define-syntax (do-struct/c stx)
     (syntax-case stx ()
       [(_ struct-name args ...)
        (and (identifier? (syntax struct-name))

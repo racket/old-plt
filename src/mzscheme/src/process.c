@@ -1107,6 +1107,7 @@ static void remove_process(Scheme_Process *r)
       r->next->prev = NULL;
     scheme_first_process = r->next;
   }
+  r->next = r->prev = NULL;
 
 #ifdef RUNSTACK_IS_GLOBAL
   if (r == scheme_current_process) {
@@ -1673,7 +1674,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 {
   long start, d;
 #ifndef MZ_REAL_THREADS
-  Scheme_Process *next, *prev, *p = scheme_current_process;
+  Scheme_Process *next, *p = scheme_current_process;
 #endif
   Scheme_Config *config = p->config;
 
@@ -1726,7 +1727,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     /* Find the next process. Skip processes that are definitely
        blocked. */
     
-    prev = next = p;
+    next = p;
     while (1) {
       next = next->next ? next->next : scheme_first_process;
       if (SAME_PTR(next, p)) {
@@ -1740,7 +1741,6 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
       } else if (next->external_break && scheme_can_break(next, next->config)) {
 	break;
       } else {
-	prev = next;
 	if (next->block_descriptor == -1) {
 	  if (next->block_check)
 	    if ((next->block_check)(next->blocker))
@@ -1785,6 +1785,13 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     p->block_descriptor = SLEEP_BLOCKED;
     p->block_start_sleep = start;
     p->sleep_time = sleep_time;
+  }
+
+  if (next && (!next->running || (next->running == 2))) {
+    /* In the process of selecting another thread, it was suspended or
+       removed. Very unusual, but possible if a block checker does
+       stange things. */
+    next = NULL;
   }
 
   if (next) {

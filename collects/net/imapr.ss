@@ -89,7 +89,7 @@
 	(loop (skip s 1) r accum eol-k eop-k)]
        [else
 	(case (string-ref s 0)
-	  [(#\") (let ([m (regexp-match "([^\"]*)\"(.*)" s)])
+	  [(#\") (let ([m (regexp-match "([^\"]*)\"(.*)" (skip s 1))])
 		   (if m
 		       (loop (caddr m) r (cons (cadr m) accum) eol-k eop-k)
 		       (error 'imap-read "didn't find end of quoted string in: ~a" s)))]
@@ -337,7 +337,7 @@
        (imap-send r w (format "LIST \"~a\" %" mailbox-name)
 	 (lambda (x)
 	   (let ([flags (cadr x)]
-		 [name (car (cddddr x))])
+		 [name (cadddr x)])
 	     (unless (eq? name mailbox-name-sym)
 		     (set! sub-folders 
 			   (cons 

@@ -767,8 +767,9 @@ int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, wxMediaStreamInBase *b, Bool s
     return 0;
   }
 
-  if (WXME_VERSION_FOUR(s)
-      || !strcmp(s->read_version, MRED_VERSION_STR)) {
+  if (!WXME_VERSION_ONE(s)
+      && !WXME_VERSION_TWO(s)
+      && !WXME_VERSION_THREE(s)) {
     /* Need to skip " ## " */
     char buf[4];
     b->Read((char *)buf, 4);

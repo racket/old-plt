@@ -3729,6 +3729,9 @@ Scheme_Object *scm_gluPartialDisk(void *p, int c, Scheme_Object **v) {
   return scheme_void;
 }		    
 
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
 
 Scheme_Object *scm_gluUnProject(void *p, int c, Scheme_Object **v)
 {
@@ -3771,6 +3774,10 @@ Scheme_Object* scm_gluUnProject4(void *p, int c, Scheme_Object **v)
  else
    return scheme_false;
 }
+#endif
+
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
 #endif
 
 /*****************************************************************************/

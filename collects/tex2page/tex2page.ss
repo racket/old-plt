@@ -16,7 +16,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r4")
+(define *tex2page-version* "4r5a")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -222,8 +222,6 @@
 
 (define *display-justification* 'center)
 
-(define *doing-urlh?* #f)
-
 (define *dotted-counters* #f)
 
 (define *dumping-nontex?* #f)
@@ -292,7 +290,7 @@
 
 (define *includeonly-list* #f)
 
-(define *index-alist* #f)
+(define *index-table* #f)
 
 (define *index-count* #f)
 
@@ -989,9 +987,10 @@
         (let ((c (snoop-actual-char)))
           (cond
            ((eof-object? c) #t)
+           ((char=? c #\newline) #t)
            ((char-whitespace? c) (get-actual-char))
            (else #t))))
-      (let ((newline-active? (or (find-chardef #\newline)))
+      (let ((newline-active? (find-chardef #\newline))
             (newline-already-read? #f))
         (let loop ()
           (let ((c (snoop-actual-char)))
@@ -1014,15 +1013,6 @@
       (let ((c (snoop-actual-char)))
         (unless (eof-object? c)
           (when (char-whitespace? c) (get-actual-char) (loop)))))))
-
-(define ignore-same-line-space
-  (lambda ()
-    (let loop ()
-      (let ((c (snoop-actual-char)))
-        (unless (eof-object? c)
-          (when (or (char=? c #\space) (char=? c *tab*))
-            (get-actual-char)
-            (loop)))))))
 
 (define munch-newlines
   (lambda ()
@@ -1071,10 +1061,7 @@
                  ((invisible-space? c) s)
                  ((char-alphabetic? c) (get-char) (loop (cons c s)))
                  (else
-                  (unless (or *math-mode?* *not-processing?*)
-                    ((if (eqv? *tex-format* 'texinfo)
-                       ignore-same-line-space
-                       ignorespaces)))
+                  (unless (or *math-mode?* *not-processing?*) (ignorespaces))
                   s)))))))
        (else (string #\\ c))))))
 
@@ -1299,7 +1286,7 @@
      ((string=? x "\\sectiondnumber")
       (table-get *section-counters* (string->number (ungroup (get-token))) 0))
      ((find-count x) => cadr)
-     (else (or (string->number (resolve-defs x)))))))
+     (else (or (string->number (or (resolve-defs x) x)))))))
 
 (define get-number-or-false
   (lambda ()
@@ -1441,6 +1428,7 @@
         (ignorespaces)
         (let ((c (snoop-actual-char)))
           (cond
+           ((eof-object? c) 'done)
            ((and (char=? c *esc-char*) first?) (get-ctl-seq))
            ((or (char-numeric? c) (char=? c #\.)) (get-real) (loop first?))
            ((or (char=? c #\') (char=? c #\")) (get-number) (loop first?))
@@ -1453,6 +1441,7 @@
                "dd"
                "em"
                "ex"
+               "filll"
                "fill"
                "fil"
                "in"
@@ -1566,7 +1555,7 @@
   (prim #f)
   (delay #f))
 
-(defstruct cdef (argpat '()) (expansion ""))
+(defstruct cdef (argpat #f) (expansion #f) (optarg #f) (active #f))
 
 (define copy-tdef
   (lambda (lft rt)
@@ -1577,6 +1566,13 @@
     (set!tdef.prim lft (tdef.prim rt))
     (set!tdef.delay lft (tdef.delay rt))))
 
+(define copy-cdef
+  (lambda (lft rt)
+    (set!cdef.argpat lft (cdef.argpat rt))
+    (set!cdef.expansion lft (cdef.expansion rt))
+    (set!cdef.optarg lft (cdef.optarg rt))
+    (set!cdef.active lft (cdef.active rt))))
+
 (define cleanse-tdef
   (lambda (d)
     (set!tdef.argpat d '())
@@ -1585,24 +1581,6 @@
     (set!tdef.thunk d #f)
     (set!tdef.prim d #f)
     (set!tdef.delay d #f)))
-
-(define tex-def-char
-  (lambda (char argpat expansion frame)
-    (unless frame (set! frame (top-texframe)))
-    (unless (and
-             (eqv? frame *global-texframe*)
-             (or (char=? char #\space) (char=? char #\newline)))
-      (let ((d
-             (cond
-              ((assoc char (texframe.chardefinitions frame)) => cdr)
-              (else
-               (let ((d (make-cdef)))
-                 (set!texframe.chardefinitions
-                   frame
-                   (cons (cons char d) (texframe.chardefinitions frame)))
-                 d)))))
-        (set!cdef.argpat d argpat)
-        (set!cdef.expansion d expansion)))))
 
 (define tex-def
   (lambda (name argpat expansion optarg thunk prim delay frame)
@@ -1703,6 +1681,83 @@
           frame
           (cons (list name) (texframe.dimens frame))))))))
 
+(define tex-def-char
+  (lambda (char argpat expansion frame)
+    (unless frame (set! frame (top-texframe)))
+    (let ((d (ensure-cdef char frame)))
+      (set!cdef.argpat d argpat)
+      (set!cdef.expansion d expansion)
+      (set!cdef.active d #t))))
+
+(define ensure-cdef
+  (lambda (c f)
+    (let ((x (assoc c (texframe.chardefinitions f))))
+      (if x
+        (cdr x)
+        (let ((d (make-cdef)))
+          (set!texframe.chardefinitions
+            f
+            (cons (cons c d) (texframe.chardefinitions f)))
+          d)))))
+
+(define find-chardef
+  (lambda (c)
+    (let ((x
+           (or (ormap
+                (lambda (f) (assoc c (texframe.chardefinitions f)))
+                *tex-env*)
+               (assoc c (texframe.chardefinitions *global-texframe*))
+               (assoc c (texframe.chardefinitions *primitive-texframe*)))))
+      (and x (let ((d (cdr x))) (and (cdef.active d) d))))))
+
+(define find-chardef-in-top-frame
+  (lambda (c)
+    (let ((x
+           (if (null? *tex-env*)
+             (or (assoc c (texframe.chardefinitions *global-texframe*))
+                 (assoc c (texframe.chardefinitions *primitive-texframe*)))
+             (assoc c (texframe.chardefinitions (car *tex-env*))))))
+      (and x (let ((d (cdr x))) (and (cdef.active d) d))))))
+
+(define do-defcsactive
+  (lambda (global?)
+    (ignorespaces)
+    (let* ((c (get-ctl-seq))
+           (argpat (get-def-arguments c))
+           (rhs (ungroup (get-group)))
+           (f (and global? *global-texframe*)))
+      (tex-def-char (string-ref c 1) argpat rhs f))))
+
+(define activate-cdef
+  (lambda (c)
+    (cond
+     ((find-chardef-in-top-frame c) => (lambda (y) (set!cdef.active y #t)))
+     (else
+      (let ((d (ensure-cdef c (top-texframe)))) (y (find-chardef c)))
+      (when y (copy-cdef d y))
+      (set!cdef.active d #t)))))
+
+(define deactivate-cdef
+  (lambda (c)
+    (cond
+     ((find-chardef-in-top-frame c) => (lambda (y) (set!cdef.active y #f)))
+     ((find-chardef c)
+      =>
+      (lambda (y)
+        (let ((d (ensure-cdef c (top-texframe))))
+          (copy-cdef d y)
+          (set!cdef.active d #f)))))))
+
+(define do-undefcsactive
+  (lambda () (ignorespaces) (deactivate-cdef (string-ref (get-ctl-seq) 1))))
+
+(define do-catcode
+  (lambda ()
+    (let* ((c (get-tex-char-spec)) (val (begin (get-equal-sign) (get-number))))
+      (if (= val 13)
+        (activate-cdef c)
+        (begin (deactivate-cdef c) (when (= val 0) (set! *esc-char* c)))))))
+
 (define do-global
   (lambda ()
     (ignorespaces)
@@ -1723,7 +1778,7 @@
        ((find-toks next) (do-toks= next #t))
        (else (toss-back-string next))))))
 
-(define do-external-title
+(define do-externaltitle
   (lambda ()
     (write-aux `(!preferred-title ,(tex-string->html-string (get-group))))))
 
@@ -1747,10 +1802,10 @@
       (emit-newline))))
 
 (define output-title
-  (lambda (tit)
+  (lambda (title)
     (emit "<h1 class=title align=center><br><br>")
     (bgroup)
-    (tex2page-string (string-append "\\let\\\\\\break " tit))
+    (tex2page-string (string-append "\\let\\\\\\break " title))
     (egroup)
     (emit "</h1>")
     (emit-newline)))
@@ -1758,17 +1813,17 @@
 (define do-subject
   (lambda ()
     (do-end-para)
-    (let ((tit (get-group)))
+    (let ((title (get-group)))
       (unless *title* (flag-missing-piece 'document-title))
-      (write-aux `(!default-title ,tit))
-      (output-title tit))))
+      (write-aux `(!default-title ,title))
+      (output-title title))))
 
 (define do-latex-title
   (lambda ()
-    (let ((tit (get-group)))
+    (let ((title (get-group)))
       (unless *title* (flag-missing-piece 'document-title))
-      (write-aux `(!default-title ,tit))
-      (toss-back-string tit)
+      (write-aux `(!default-title ,title))
+      (toss-back-string title)
       (toss-back-string "\\def\\TIIPtitle"))))
 
 (define do-title
@@ -1842,7 +1897,7 @@
     (when (null? *stylesheets*) (flag-missing-piece 'stylesheets))
     (write-aux `(!stylesheet ,(ungroup (get-group))))))
 
-(define do-input-css
+(define do-inputcss
   (lambda ()
     (ignorespaces)
     (let ((f (get-filename-possibly-braced)))
@@ -1864,7 +1919,7 @@
              (else (terror 'do-csname)))))
          (else (get-actual-char) (loop (cons c r))))))))
 
-(define do-css-block
+(define do-cssblock
   (lambda ()
     (unless *css-port*
       (let* ((f (string-append *jobname* *css-file-suffix*))
@@ -2392,7 +2447,7 @@
         (emit-newline)
         (emit "<tr><td align=right>")))))
 
-(define do-no-number (lambda () (set! *equation-numbered?* #f)))
+(define do-nonumber (lambda () (set! *equation-numbered?* #f)))
 
 (define indent-n-levels
   (lambda (n)
@@ -2574,7 +2629,7 @@
          ((string=? model "gray") "\\TIIPgray")
          (else "\\TIIPcolornamed"))))))
 
-(define do-define-color
+(define do-definecolor
   (lambda ()
     (let* ((name (get-peeled-group))
            (model (get-peeled-group))
@@ -2588,7 +2643,7 @@
             (let ((c (lassoc name *color-names* string=?)))
               (if c
                 (cdr c)
-                (terror 'do-define-color "Color name " name " not defined")))
+                (terror 'do-definecolor "Color name " name " not defined")))
             (let ((rgb #f)
                   (i
                    (open-input-string
@@ -2602,7 +2657,7 @@
                 (let* ((r (read i)) (g (read i)) (b (read i)))
                   (set! rgb (rgb.frac->hex r g b))))
                ((string=? model "gray") (set! rgb (cmyk->rgb 0 0 0 (read i))))
-               (else (terror 'do-define-color "Unknown color model")))
+               (else (terror 'do-definecolor "Unknown color model")))
               (close-input-port i)
               (egroup)
               rgb)))
@@ -2658,6 +2713,7 @@
                  (k (read i)))
             (close-input-port i)
             (egroup)
+            (ignorespaces)
             (emit "<font color=\"#")
             (emit (cmyk->rgb c m y k))
             (emit "\">")
@@ -2673,6 +2729,7 @@
                  (b (read i)))
             (close-input-port i)
             (egroup)
+            (ignorespaces)
             (emit "<font color=\"#")
             (emit (rgb.frac->hex r g b))
             (emit "\">")
@@ -2688,6 +2745,7 @@
                  (b (read i)))
             (close-input-port i)
             (egroup)
+            (ignorespaces)
             (emit "<font color=\"#")
             (emit (rgb.dec->hex r g b))
             (emit "\">")
@@ -2696,6 +2754,7 @@
           (let* ((i (open-input-string (tex-string->html-string (get-token))))
                  (g (read i)))
             (close-input-port i)
+            (ignorespaces)
             (emit "<font color=\"#")
             (emit (cmyk->rgb 0 0 0 (- 1 g)))
             (emit "\">")
@@ -2703,6 +2762,7 @@
          ((string=? sw "\\TIIPcolornamed")
           (let* ((name (get-peeled-group))
                  (c (lassoc name *color-names* string=?)))
+            (ignorespaces)
             (emit "<font color=\"")
             (emit (if c (begin (emit #\#) (cdr c)) name))
             (emit "\">")
@@ -2962,7 +3022,7 @@
       (!label label *html-page-count* name value)
       (write-label `(!label ,label ,*html-page-count* ,name ,value)))))
 
-(define do-input-external-labels
+(define do-inputexternallabels
   (lambda ()
     (let* ((f (get-filename-possibly-braced))
            (fq-f
@@ -2977,7 +3037,7 @@
           ((*label-source* fq-f) (*label-table* ext-label-table))
           (load-tex2page-data-file ext-label-file))))))
 
-(define do-include-external-labels
+(define do-includeexternallabels
   (lambda ()
     (let ((jobname (get-filename-possibly-braced)))
       (let ((ext-label-file
@@ -3005,7 +3065,7 @@
       (emit-anchor node-name)
       (do-label-aux tag-name))))
 
-(define do-html-page-label
+(define do-htmlpagelabel
   (lambda ()
     (let ((label (get-peeled-group)))
       (!label label *html-page-count* #f #f)
@@ -3013,7 +3073,7 @@
 
 (define do-ref (lambda () (do-ref-aux (get-label) #f #f)))
 
-(define do-ref-external
+(define do-refexternal
   (lambda ()
     (let ((ext-file (get-peeled-group)))
       (do-ref-aux (get-label) ext-file #f))))
@@ -3053,7 +3113,7 @@
     (let* ((text (get-group)) (lbl (get-peeled-group)))
       (do-ref-aux lbl #f text))))
 
-(define do-htmlref-external
+(define do-htmlrefexternal
   (lambda ()
     (let* ((text (get-group))
            (extf (get-peeled-group))
@@ -3177,7 +3237,7 @@
           (emit-link-stop))
         (non-fatal-error "***")))))
 
-(define do-html-page-ref
+(define do-htmlpageref
   (lambda ()
     (let ((label (get-peeled-group)))
       (let ((label-ref (label-bound? label)))
@@ -3220,7 +3280,10 @@
 (define do-urlh
   (lambda ()
     (emit-link-start (fully-qualify-url (get-url)))
-    (fluid-let ((*doing-urlh?* #t)) (tex2page-string (get-token)))
+    (bgroup)
+    (tex2page-string
+      (string-append "\\def\\\\{\\egroup\\endinput}" (get-token)))
+    (egroup)
     (emit-link-stop)))
 
 (define do-urlhd (lambda () (do-urlh) (get-token)))
@@ -3321,12 +3384,14 @@
       (write-bib-aux bibdata)
       (write-bib-aux "}")
       (write-bib-aux #\newline)
-      (unless (file-exists? bbl-file)
+      (cond
+       ((file-exists? bbl-file)
+        (set! *bibitem-num* 0)
+        (tex2page-file bbl-file)
+        (emit-newline))
+       (else
         (flag-missing-piece 'bibliography)
-        (non-fatal-error "Bibliography not generated; rerun TeX2page"))
-      (set! *bibitem-num* 0)
-      (tex2page-file bbl-file)
-      (emit-newline))))
+        (non-fatal-error "Bibliography not generated; rerun TeX2page"))))))
 
 (define do-thebibliography
   (lambda ()
@@ -3336,6 +3401,7 @@
         (if *using-chapters?*
           "\\chapter*{Bibliography}"
           "\\section*{References}")))
+    (bgroup)
     (set! *bibitem-num* 0)
     (tex2page-string "\\let\\em\\it")
     (tex2page-string "\\def\\newblock{ }")
@@ -3379,8 +3445,8 @@
       (ignorespaces)
       (unless (substring? "|)" idx-entry)
         (set! *index-count* (+ *index-count* 2))
-        (set! *index-alist*
-          (cons (cons *index-count* *html-page-count*) *index-alist*))
+        (!index *index-count* *html-page-count*)
+        (write-aux `(!index ,*index-count* ,*html-page-count*))
         (let ((tag
                (string-append
                  *html-node-prefix*
@@ -3415,7 +3481,7 @@
           (display "}" *index-port*)
           (newline *index-port*))))))
 
-(define do-input-index
+(define do-inputindex
   (lambda (insert-heading?)
     (set! *using-index?* #t)
     (when insert-heading?
@@ -3430,14 +3496,17 @@
       (unless (file-exists? ind-file)
         (flag-missing-piece 'index)
         (non-fatal-error "Index not generated; rerun TeX2page"))
-      (bgroup)
-      (tex2page-string "\\let\\indexspace\\par")
-      (tex2page-string "\\let\\item\\indexitem")
-      (tex2page-string "\\let\\subitem\\indexsubitem")
-      (tex2page-string "\\let\\subsubitem\\indexsubsubitem")
-      (tex2page-string "\\let\\(\\expandhtmlindex")
-      (tex2page-file ind-file)
-      (egroup))))
+      (tex2page-file ind-file))))
+
+(define do-theindex
+  (lambda ()
+    (bgroup)
+    (tex2page-string "\\let\\endtheindex\\egroup")
+    (tex2page-string "\\let\\indexspace\\par")
+    (tex2page-string "\\let\\item\\indexitem")
+    (tex2page-string "\\let\\subitem\\indexsubitem")
+    (tex2page-string "\\let\\subsubitem\\indexsubsubitem")
+    (tex2page-string "\\let\\(\\expandhtmlindex")))
 
 (define expand-html-index
   (lambda (item)
@@ -3450,12 +3519,12 @@
          ((get-csv)
           =>
           (lambda (s)
-            (let* ((n (string->number s)) (pageno (assv n *index-alist*)))
+            (let* ((n (string->number s)) (pageno (table-get *index-table* n)))
               (cond
                (pageno
                 (if first-link? (set! first-link? #f) (emit ", "))
                 (emit-page-node-link-start
-                  (cdr pageno)
+                  pageno
                   (string-append *html-node-prefix* "idx_" s))
                 (if item
                   (tex2page-string item)
@@ -3474,13 +3543,11 @@
       (emit "<em>see also</em> ")
       (tex2page-string other-entry))))
 
-(define do-index-item
-  (lambda (z)
+(define do-indexitem
+  (lambda (indent)
     (emit "<br>")
     (emit-newline)
-    (cond
-     ((string=? z "\\indexsubitem") (emit-nbsp 4))
-     ((string=? z "\\indexsubsubitem") (emit-nbsp 8)))
+    (emit-nbsp (* indent 4))
     (let loop ((s '()) (brace-nesting 0))
       (let ((c (snoop-actual-char)))
         (cond
@@ -3490,7 +3557,7 @@
             (cond
              ((or (string=? x "\\subitem") (string=? x "\\subsubitem"))
               (tex2page-string (list->string (reverse! s)))
-              (toss-back-char #\space)
+              (toss-back-char *invisible-space*)
               (toss-back-string x))
              (else
               (let ((xr (reverse! (string->list x))))
@@ -3520,9 +3587,9 @@
                     (tex2page-string (get-group))
                     (get-group))
                    (else
-                    (toss-back-char #\space)
+                    (toss-back-char *invisible-space*)
                     (toss-back-string x)
-                    (toss-back-char #\space)
+                    (toss-back-char *invisible-space*)
                     (loop (cons #\space (cons #\, s)) brace-nesting))))
                 (loop (cons #\space (cons #\, s)) brace-nesting)))
             (loop (cons #\, s) brace-nesting)))
@@ -3565,32 +3632,27 @@
         (emit-nbsp 2)))))
 
 (define do-plain-item
-  (lambda ()
+  (lambda (n)
     (do-end-para)
-    (emit "<blockquote>")
-    (do-para)
-    (add-afterpar (lambda () (emit "</blockquote>")))
-    (emit "<i>")
+    (emit "<table><tr><td width=20 valign=top align=right>")
+    (let loop ((n n))
+      (unless (<= n 1)
+        (emit "</td><td width=20 valign=top align=right>")
+        (loop (- n 1))))
     (tex2page-string (get-group))
-    (emit "</i>&nbsp;&nbsp;")))
+    (emit-nbsp 2)
+    (emit "</td><td>")
+    (do-para)
+    (add-afterpar (lambda () (emit "</td></tr></table>")))))
 
 (define do-item
   (lambda ()
     (let ((a #f))
       (when (pair? *tabular-stack*) (set! a (car *tabular-stack*)))
-      ((case a
-         ((description) do-description-item)
-         ((itemize enumerate) do-regular-item)
-         (else do-plain-item))))))
-
-(define do-itemitem
-  (lambda ()
-    (do-para)
-    (emit "<blockquote><blockquote>")
-    (add-afterpar (lambda () (emit "</blockquote></blockquote>")))
-    (emit "<i>")
-    (tex2page-string (get-group))
-    (emit "</i>&nbsp;&nbsp")))
+      (case a
+        ((description) (do-description-item))
+        ((itemize enumerate) (do-regular-item))
+        (else (do-plain-item 1))))))
 
 (define do-bigskip
   (lambda (type)
@@ -3615,7 +3677,7 @@
     (get-group)
     (do-bigskip "vspace")))
 
-(define do-math-style
+(define do-htmlmathstyle
   (lambda ()
     (call-with-input-string/buffered
       (ungroup (get-group))
@@ -3637,7 +3699,7 @@
                 ((no-in-text-image) (set! *use-image-for-intext-math?* #f)))
               (loop))))))))
 
-(define do-colophon
+(define do-htmlcolophon
   (lambda ()
     (call-with-input-string/buffered
       (ungroup (get-group))
@@ -3833,7 +3895,7 @@
     (emit "</head>")
     (emit-newline)
     (emit "<body")
-    (if (null? *stylesheets*) (emit " bgcolor=\"#ffffff\" text=\"#000000\""))
+    (when (null? *stylesheets*) (emit " bgcolor=\"#ffffff\" text=\"#000000\""))
     (emit ">")
     (emit-newline)))
 
@@ -3844,7 +3906,7 @@
   (lambda ()
     (set! *footnote-list* '())
     (output-html-preamble #t)
-    (unless (= *html-page-count* 0) (output-navigation-bar))))
+    (output-navigation-bar)))
 
 (define do-end-page
   (lambda ()
@@ -4341,7 +4403,7 @@
           (display (ungroup (get-group)) o)
           (dump-tex-postamble o))))))
 
-(define do-imgpreamble
+(define do-img-preamble
   (lambda ()
     (set! *imgpreamble*
       (fluid-let
@@ -4350,7 +4412,7 @@
           (let ((c (snoop-actual-char)))
             (cond
              ((eof-object? c)
-              (terror 'do-imgpreamble "Missing \\endimgpreamble"))
+              (terror 'do-img-preamble "Missing \\endimgpreamble"))
              ((char=? c *esc-char*)
               (let ((x (get-ctl-seq)))
                 (cond
@@ -4394,7 +4456,7 @@
          (ensure-file-deleted f)
          (set-cdr! c (open-output-file f)))
         (else
-         (set! f (actual-tex-filename f))
+         (set! f (actual-tex-filename f #f))
          (set-cdr! c (make-bport 'port (open-input-file f))))))))
 
 (define do-close-stream
@@ -4528,13 +4590,14 @@
     (let loop ()
       (let ((x (get-raw-token/is)))
         (if (ctl-seq? x)
-          (let ((z (resolve-defs x)))
-            (cond
-             ((not (eq? z x))
+          (cond
+           ((resolve-defs x)
+            =>
+            (lambda (z)
               (toss-back-char *invisible-space*)
               (toss-back-string z)
-              (loop))
-             (else x)))
+              (loop)))
+           (else x))
           x)))))
 
 (define do-if
@@ -4655,12 +4718,12 @@
       ((jpeg) ".jpeg")
       (else (set! *image-format* 'gif) ".gif"))))
 
-(define do-html-image-format
+(define do-htmlimageformat
   (lambda ()
     (set! *image-format* (string->symbol (ungroup (get-group))))
     (set! *img-file-extn* (find-img-file-extn))))
 
-(define do-html-img-magnification
+(define do-htmlimgmagnification
   (lambda ()
     (set! *img-magnification* (string->number (ungroup (get-group))))))
 
@@ -4854,7 +4917,7 @@
       (set! *epsf-ysize* #f)
       (set! *epsf-xsize* #f))))
 
-(define do-convert-mp-to-pdf
+(define do-convertmptopdf
   (lambda ()
     (let ((f (get-filename-possibly-braced))
           (img-file-stem (next-html-image-file-stem)))
@@ -4906,7 +4969,7 @@
             (display arg2 o)
             (display arg3 o)))))))
 
-(define do-mfpic-open-graphs-file
+(define do-mfpic-opengraphsfile
   (lambda ()
     (set! *mfpic-file-stem* (get-filename-possibly-braced))
     (when *mfpic-port* (close-output-port *mfpic-port*))
@@ -4932,7 +4995,7 @@
     (tex-def-prim "\\mfpframesep" eat-dimen)
     (tex-def-prim "\\mftitle" get-group)))
 
-(define do-mfpic-close-graphs-file
+(define do-mfpic-closegraphsfile
   (lambda ()
     (display "\\closegraphsfile" *mfpic-port*)
     (newline *mfpic-port*)
@@ -5137,30 +5200,53 @@
              (cons (substring p 0 i) r))
             (reverse! (cons p r))))))))
 
-(define find-some-file
-  (lambda (path . files)
-    (or (ormap (lambda (file) (and (file-exists? file) file)) files)
-        (ormap
-         (lambda (dir)
-           (ormap
-            (lambda (file)
-              (let ((qfile (string-append dir *directory-separator* file)))
-                (and (file-exists? qfile) qfile)))
-            files))
-         path))))
+(define kpsewhich
+  (lambda (f)
+    (let ((tmpf (string-append *aux-dir/* *jobname* "-Z-Z.temp")))
+      (system (string-append "kpsewhich " f " > " tmpf))
+      (let ((f (call-with-input-file tmpf read-line)))
+        (delete-file tmpf)
+        (if (eof-object? f)
+          #f
+          (let ((f (string-trim-blanks f)))
+            (cond
+             ((= (string-length f) 0) #f)
+             ((file-exists? f) f)
+             (else #f))))))))
+
+(define find-tex-file
+  (lambda (file)
+    (let ((files (list (string-append file ".tex") file)))
+      (or (ormap (lambda (file) (and (file-exists? file) file)) files)
+          (if (not (null? *tex2page-inputs*))
+            (ormap
+             (lambda (dir)
+               (ormap
+                (lambda (file)
+                  (let ((qfile (string-append dir *directory-separator* file)))
+                    (and (file-exists? qfile) qfile)))
+                files))
+             *tex2page-inputs*)
+            (kpsewhich file))))))
 
 (define actual-tex-filename
-  (lambda (f)
-    (or (find-some-file *tex2page-inputs* (string-append f ".tex") f) f)))
+  (lambda (f check-timestamp?)
+    (let ((f2 (find-tex-file f)))
+      (when (and (not *main-tex-file*) f2)
+        (set! *jobname* (file-stem-name f2))
+        (make-target-dir)
+        (initialize-global-texframe))
+      (when (not *main-tex-file*) (load-aux-file))
+      (when (and f2 check-timestamp?) (update-last-modification-time f2))
+      f2)))
 
 (define add-dot-tex-if-no-extension-provided
   (lambda (f)
     (let ((e (file-extension f))) (if e f (string-append f ".tex")))))
 
 (define ignore-tex-specific-text
-  (lambda (z)
-    (let* ((env (substring z 1 (string-length z)))
-           (endenv (string-append "\\end" env)))
+  (lambda (env)
+    (let ((endenv (string-append "\\end" env)))
       (let loop ()
         (let ((c (snoop-actual-char)))
           (cond
@@ -5197,7 +5283,7 @@
              (else (emit x) (loop)))))
          (else (get-actual-char) (emit c) (loop)))))))
 
-(define do-html-head-only
+(define do-htmlheadonly
   (lambda ()
     (when (null? *html-head*) (flag-missing-piece 'html-head))
     (let loop ((s '()))
@@ -5212,13 +5298,20 @@
              ((string=? x "\\endhtmlheadonly") 'done)
              ((string=? x "\\input")
               (let ((f (get-filename-possibly-braced)))
-                (call-with-input-file/buffered f do-html-head-only)
+                (call-with-input-file/buffered f do-htmlheadonly)
                 (loop '())))
              (else (write-aux `(!html-head ,x)) (loop '())))))
          (else (get-actual-char) (loop (cons c s))))))))
 
 (define resolve-chardefs
-  (lambda (c) (let ((y (find-chardef c))) (and y (cdef.expansion y)))))
+  (lambda (c)
+    (cond
+     ((find-chardef c)
+      =>
+      (lambda (y)
+        (get-actual-char)
+        (expand-tex-macro (tdef.optarg y) (tdef.argpat y) (tdef.expansion y))))
+     (else #f))))
 
 (define resolve-defs
   (lambda (x)
@@ -5228,15 +5321,19 @@
       (lambda (y)
         (cond
          ((tdef.delay y) => (lambda (z) z))
-         ((tdef.thunk y) x)
+         ((tdef.thunk y) #f)
          (else
           (cond
            ((and (inside-false-world?)
                  (not (if-aware-ctl-seq? x))
                  (> (length (tdef.argpat y)) 0))
-            x)
-           (else (expand-tex-macro y)))))))
-     (else x))))
+            #f)
+           (else
+            (expand-tex-macro
+              (tdef.optarg y)
+              (tdef.argpat y)
+              (tdef.expansion y))))))))
+     (else #f))))
 
 (define do-expandafter
   (lambda ()
@@ -5286,16 +5383,6 @@
     (tex-def-dotted-count "table" #f)
     (tex-def-dotted-count "equation" #f)
     (tex-def "\\empty" '() "" #f #f "\\empty" #f *global-texframe*)))
-
-(define find-chardef
-  (lambda (char)
-    (let ((c
-           (or (ormap
-                (lambda (fr) (assoc char (texframe.chardefinitions fr)))
-                *tex-env*)
-               (assoc char (texframe.chardefinitions *global-texframe*))
-               (assoc char (texframe.chardefinitions *primitive-texframe*)))))
-      (and c (cdr c)))))
 
 (define find-def
   (lambda (ctlseq)
@@ -5431,29 +5518,6 @@
       (get-by)
       (tex-def-count ctlseq (quotient curr-val (get-number)) global?))))
 
-(define do-catcode
-  (lambda ()
-    (let* ((c (get-tex-char-spec)) (val (begin (get-equal-sign) (get-number))))
-      (case val
-        ((0) (set! *esc-char* c))
-        ((13) (tex-def-char c '() "" #f))
-        (else
-         (let ((y (find-chardef c))) (when y (set!cdef.expansion y #f))))))))
-
-(define do-defcsactive
-  (lambda ()
-    (ignorespaces)
-    (let* ((c (get-ctl-seq)) (rhs (ungroup (get-group))))
-      (tex-def-char (string-ref c 1) '() rhs #f))))
-
-(define do-undefcsactive
-  (lambda ()
-    (ignorespaces)
-    (let* ((c (string-ref (get-ctl-seq) 1))
-           (fr (top-texframe))
-           (y (find-chardef c)))
-      (if y (set!cdef.expansion y #f) (tex-def-char c '() #f #f)))))
-
 (define do-newcommand
   (lambda (renew?)
     (ignorespaces)
@@ -5482,7 +5546,8 @@
       (tex-def
         ctlseq
         '()
-        (number->string (+ (string->number (resolve-defs ctlseq)) increment))
+        (number->string
+          (+ (string->number (or (resolve-defs ctlseq) ctlseq)) increment))
         #f
         global?))))
 
@@ -5884,11 +5949,8 @@
                       "Misformed macro call")))))))))))))
 
 (define expand-tex-macro
-  (lambda (d)
-    (let* ((argpat (tdef.argpat d))
-           (rhs (tdef.expansion d))
-           (optarg (tdef.optarg d))
-           (arg-pat-n (length argpat))
+  (lambda (optarg argpat rhs)
+    (let* ((arg-pat-n (length argpat))
            (k 0)
            (r
             (if (not optarg)
@@ -5932,12 +5994,12 @@
                      (else (cons #\# (aux (+ k 1))))))))
                (else (cons c (aux (+ k 1))))))))))))
 
-(define do-verb-escape-char
+(define do-verbescapechar
   (lambda ()
     (ignorespaces)
     (let* ((c1 (get-actual-char)) (c2 (get-actual-char)))
       (unless (char=? c1 *esc-char*)
-        (terror 'do-verb-escape-char "Arg must be \\<char>"))
+        (terror 'do-verbescapechar "Arg must be \\<char>"))
       (set! *esc-char-verb* c2))))
 
 (define do-verb-braced
@@ -6032,7 +6094,7 @@
       (emit "</code>"))
     (egroup)))
 
-(define do-verbatim-input
+(define do-verbatiminput
   (lambda ()
     (ignorespaces)
     (let ((f (get-filename-possibly-braced)))
@@ -6052,7 +6114,7 @@
         (do-para))
        (else (non-fatal-error "File " f " not found"))))))
 
-(define do-verb-write-file
+(define do-verbwritefile
   (lambda ()
     (let ((f (get-filename-possibly-braced)))
       (when *verb-port* (close-output-port *verb-port*))
@@ -6094,16 +6156,14 @@
               ((char=? c d) 'done)
               (else (write-char c p) (loop))))))))))
 
-(define do-make-html-image
+(define do-makehtmlimage
   (lambda ()
     (ignorespaces)
     (unless (char=? (snoop-actual-char) #\{)
-      (terror
-        'do-make-html-image
-        "\\makehtmlimage's argument must be a group"))
+      (terror 'do-makehtmlimage "\\makehtmlimage's argument must be a group"))
     (call-with-html-image-port dump-groupoid)))
 
-(define do-verb-write
+(define do-verbwrite
   (lambda () (verb-ensure-output-port) (dump-groupoid *verb-port*)))
 
 (define do-string
@@ -6185,12 +6245,12 @@
 
 (define *scm-special-symbols* (make-table 'equ string=?))
 
-(define do-scm-set-special-symbol
+(define do-scm-set-specialsymbol
   (lambda ()
     (let* ((sym (get-peeled-group)) (xln (get-group)))
       (hash-table-put! *scm-special-symbols* sym xln))))
 
-(define do-scm-unset-special-symbol
+(define do-scm-unset-specialsymbol
   (lambda ()
     (call-with-input-string/buffered
       (ungroup (get-group))
@@ -6278,7 +6338,7 @@
         (scm-emit-html-char c))
        (else (scm-output-token (scm-get-token)))))))
 
-(define scm-set-math-escape
+(define scm-set-mathescape
   (lambda (yes?)
     (let ((c
            (fluid-let
@@ -6491,7 +6551,7 @@
        result?))
     (egroup)))
 
-(define do-scm-input
+(define do-scminput
   (lambda ()
     (ignorespaces)
     (do-end-para)
@@ -6508,7 +6568,7 @@
     (egroup)
     (do-para)))
 
-(define do-scm-dribble
+(define do-scmdribble
   (lambda ()
     (verb-ensure-output-port)
     (fluid-let ((*scm-dribbling?* #t)) (do-scm #f))
@@ -6774,7 +6834,11 @@
         (cond
          ((tdef.delay y) => toss-back-string)
          ((tdef.thunk y) => (lambda (th) (th)))
-         (else (expand-tex-macro y)))))
+         (else
+          (expand-tex-macro
+            (tdef.optarg y)
+            (tdef.argpat y)
+            (tdef.expansion y))))))
      ((section-ctl-seq? z) => (lambda (n) (do-heading n)))
      (*math-mode?* (do-math-ctl-seq z))
      (else (trace-if *tracingcommands?* "Ignoring " z)))))
@@ -6843,35 +6907,33 @@
 
 (define do-tex-ctl-seq-completely
   (lambda (x)
-    (let ((z (resolve-defs x)))
-      (cond
-       ((not (eq? z x)) (tex2page-string z))
-       ((do-tex-prim (find-corresp-prim z))
-        =>
-        (lambda (y)
-          (if (eqv? y ':encountered-undefined-command) (emit x))))))))
+    (cond
+     ((resolve-defs x) => tex2page-string)
+     ((do-tex-prim (find-corresp-prim x))
+      =>
+      (lambda (y) (if (eqv? y ':encountered-undefined-command) (emit x)))))))
 
 (define inside-false-world?
   (lambda () (or (memv #f *tex-if-stack*) (memv '? *tex-if-stack*))))
 
 (define do-tex-ctl-seq
-  (lambda (x)
-    (trace-if *tracingcommands?* x)
-    (let ((z (resolve-defs x)))
-      (cond
-       ((not (eq? z x))
-        (trace-if *tracingmacros?* "    --> " z)
+  (lambda (z)
+    (trace-if *tracingcommands?* z)
+    (cond
+     ((resolve-defs z)
+      =>
+      (lambda (s)
+        (trace-if *tracingmacros?* "    --> " s)
         (toss-back-char *invisible-space*)
-        (toss-back-string z))
-       ((and *doing-urlh?* (string=? z "\\\\")) (egroup))
-       ((and (inside-false-world?) (not (if-aware-ctl-seq? z))) #f)
-       ((string=? z "\\enddocument") (probably-latex) ':encountered-bye)
-       ((string=? z "\\bye") ':encountered-bye)
-       ((string=? z "\\endinput") ':encountered-endinput)
-       ((find-count z) (do-count= z #f))
-       ((find-toks z) (do-toks= z #f))
-       ((find-dimen z) (do-dimen= z #f))
-       (else (do-tex-prim z))))))
+        (toss-back-string s)))
+     ((and (inside-false-world?) (not (if-aware-ctl-seq? z))) #f)
+     ((string=? z "\\enddocument") (probably-latex) ':encountered-bye)
+     ((string=? z "\\bye") ':encountered-bye)
+     ((string=? z "\\endinput") ':encountered-endinput)
+     ((find-count z) (do-count= z #f))
+     ((find-toks z) (do-toks= z #f))
+     ((find-dimen z) (do-dimen= z #f))
+     (else (do-tex-prim z)))))
 
 (define generate-html
   (lambda ()
@@ -6881,10 +6943,9 @@
          ((eof-object? c) #t)
          ((resolve-chardefs c)
           =>
-          (lambda (d)
-            (get-actual-char)
+          (lambda (s)
             (toss-back-char *invisible-space*)
-            (toss-back-string d)
+            (toss-back-string s)
             (loop)))
          ((char=? c *esc-char*)
           (let ((r (do-tex-ctl-seq (get-ctl-seq))))
@@ -6894,39 +6955,43 @@
               (else (loop)))))
          (else (get-actual-char) (do-tex-char c) (loop)))))))
 
-(define do-if-file-exists
+(define do-iffileexists
   (lambda ()
-    (let* ((file (ungroup (get-group)))
+    (let* ((file (actual-tex-filename (get-filename-possibly-braced) #f))
            (thene (ungroup (get-group)))
            (elsee (ungroup (get-group))))
-      (toss-back-string
-        (if (file-exists? (actual-tex-filename file)) thene elsee)))))
+      (tex2page-string (if file thene elsee)))))
 
-(define check-input-file-timestamp
+(define check-input-file-timestamp?
   (lambda (f)
-    (unless (or
-             *inputting-boilerplate?*
-             *ignore-timestamp?*
-             (> *html-only* 0)
-             (and (>= (string-length f) 3)
-                  (char=? (string-ref f 0) #\.)
-                  (char=? (string-ref f 1) #\/)))
-      (update-last-modification-time f))))
+    (cond
+     ((let ((e (file-extension f)))
+        (and e (member/string-ci=? e '(".t2p" ".bbl" ".ind"))))
+      #f)
+     (*inputting-boilerplate?* #f)
+     (*ignore-timestamp?* #f)
+     ((> *html-only* 0) #f)
+     ((and (>= (string-length f) 3)
+           (char=? (string-ref f 0) #\.)
+           (char=? (string-ref f 1) #\/))
+      #f)
+     (else #t))))
 
-(define do-input-if-file-exists
+(define do-inputiffileexists
   (lambda ()
-    (let* ((f (ungroup (get-group)))
+    (let* ((f (actual-tex-filename (get-filename-possibly-braced) #f))
            (then-txt (ungroup (get-group)))
            (else-txt (ungroup (get-group))))
-      (tex2page-string
-        (if (tex2page-file (actual-tex-filename f)) then-txt else-txt)))))
+      (cond
+       (f (tex2page-string then-txt) (tex2page-file f))
+       (else (tex2page-string else-txt))))))
 
 (define do-input
   (lambda ()
     (ignorespaces)
     (let ((f (get-filename-possibly-braced)))
       (let ((boilerplate-index *inputting-boilerplate?*))
-        (if (eqv? *inputting-boilerplate?* 0)
+        (when (eqv? *inputting-boilerplate?* 0)
           (set! *inputting-boilerplate?* #f))
         (fluid-let
           ((*inputting-boilerplate?*
@@ -6943,30 +7008,24 @@
                        "epsf.tex"
                        "tex2page"
                        "tex2page.tex")))
-            (tex2page-file (actual-tex-filename f))))))))
+            (let ((f2 (actual-tex-filename f (check-input-file-timestamp? f))))
+              (cond
+               (f2 (tex2page-file f2))
+               (else
+                (write-log #\()
+                (write-log f)
+                (write-log 'separation-space)
+                (write-log "not found)")
+                (write-log 'separation-space))))))))))
 
 (define tex2page-file
   (lambda (f)
     (write-log #\()
     (write-log f)
     (write-log 'separation-space)
-    (let ((r
-           (cond
-            ((file-exists? f)
-             (let ((gen-file?
-                     (let ((e (file-extension f)))
-                       (and e
-                            (member/string-ci=? e '(".t2p" ".bbl" ".ind"))))))
-               (unless gen-file? (check-input-file-timestamp f))
-               (set! f (tex2page-massage-file f))
-               (let ((r
-                      (call-with-input-file/buffered
-                        f
-                        (lambda ()
-                          (trace-if *tracingcommands?* "Inputting file " f)
-                          (generate-html)))))
-                 r)))
-            (else (write-log "not found") #f))))
+    (set! f (tex2page-massage-file f))
+    (trace-if *tracingcommands?* "Inputting file " f)
+    (let ((r (call-with-input-file/buffered f generate-html)))
       (write-log #\))
       (write-log 'separation-space)
       r)))
@@ -7008,7 +7067,8 @@
           ((*subjobname* (file-stem-name f))
            (*img-file-count* 0)
            (*imgdef-file-count* 0))
-          (tex2page-file (actual-tex-filename f)))))))
+          (tex2page-file
+            (actual-tex-filename f (check-input-file-timestamp? f))))))))
 
 (define do-eval-string
   (lambda (s)
@@ -7286,6 +7346,10 @@
         'value
         value))))
 
+(define !index
+  (lambda (index-number html-page-number)
+    (hash-table-put! *index-table* index-number html-page-number)))
+
 (define !last-modification-time (lambda (s) (set! *last-modification-time* s)))
 
 (define !last-page-number (lambda (n) (set! *last-page-number* n)))
@@ -7339,9 +7403,9 @@
 
 (define !html-head (lambda (s) (set! *html-head* (cons s *html-head*))))
 
-(define !default-title (lambda (tit) (unless *title* (set! *title* tit))))
+(define !default-title (lambda (title) (unless *title* (set! *title* title))))
 
-(define !preferred-title (lambda (tit) (set! *title* tit)))
+(define !preferred-title (lambda (title) (set! *title* title)))
 
 (define !infructuous-calls-to-tex2page
   (lambda (n) (set! *infructuous-calls-to-tex2page* n)))
@@ -7361,6 +7425,7 @@
                    ((!definitely-latex) !definitely-latex)
                    ((!external-labels) !external-labels)
                    ((!html-head) !html-head)
+                   ((!index) !index)
                    ((!index-page) !index-page)
                    ((!infructuous-calls-to-tex2page)
                     !infructuous-calls-to-tex2page)
@@ -7641,9 +7706,9 @@
     (tex2page-string (get-token))
     (emit ")<sup>1/2</sup>")))
 
-(tex-def-math-prim "\\left" (lambda () #f))
+(tex-def-math-prim "\\left" do-relax)
 
-(tex-def-math-prim "\\right" (lambda () #f))
+(tex-def-math-prim "\\right" do-relax)
 
 (tex-def-prim "\\AA" (lambda () (emit "&Aring;")))
 
@@ -7720,7 +7785,7 @@
 
 (tex-def-prim "\\cite" do-cite)
 
-(tex-def-prim "\\closegraphsfile" do-mfpic-close-graphs-file)
+(tex-def-prim "\\closegraphsfile" do-mfpic-closegraphsfile)
 
 (tex-def-prim "\\closein" (lambda () (do-close-stream 'in)))
 
@@ -7728,7 +7793,7 @@
 
 (tex-def-prim "\\color" do-color)
 
-(tex-def-prim "\\convertMPtoPDF" do-convert-mp-to-pdf)
+(tex-def-prim "\\convertMPtoPDF" do-convertmptopdf)
 
 (tex-def-prim "\\copyright" (lambda () (emit "&copy;")))
 
@@ -7738,7 +7803,7 @@
 
 (tex-def-prim "\\csname" do-csname)
 
-(tex-def-prim "\\cssblock" do-css-block)
+(tex-def-prim "\\cssblock" do-cssblock)
 
 (tex-def-prim "\\dag" (lambda () (emit *html-dagger*)))
 
@@ -7748,13 +7813,15 @@
 
 (tex-def-prim "\\def" (lambda () (do-def #f)))
 
-(tex-def-prim "\\defcsactive" do-defcsactive)
+(tex-def-prim "\\defcsactive" (lambda () (do-defcsactive #f)))
 
-(tex-def-prim "\\definecolor" do-define-color)
+(tex-def-prim "\\definecolor" do-definecolor)
+
+(tex-def-prim "\\DefineNamedColor" (lambda () (get-token) (do-definecolor)))
 
 (tex-def-prim "\\definitelylatex" definitely-latex)
 
-(tex-def-prim "\\defschememathescape" (lambda () (scm-set-math-escape #t)))
+(tex-def-prim "\\defschememathescape" (lambda () (scm-set-mathescape #t)))
 
 (tex-def-prim
   "\\description"
@@ -7865,7 +7932,9 @@
 
 (tex-def-prim "\\endtabular" do-end-tabular)
 
-(tex-def-prim "\\endthebibliography" (lambda () (emit "</table>") (do-para)))
+(tex-def-prim
+  "\\endthebibliography"
+  (lambda () (emit "</table>") (egroup) (do-para)))
 
 (tex-def-prim "\\enspace" (lambda () (emit-nbsp 2)))
 
@@ -7898,7 +7967,7 @@
 
 (tex-def-prim "\\expandhtmlindex" (lambda () (expand-html-index #f)))
 
-(tex-def-prim "\\externaltitle" do-external-title)
+(tex-def-prim "\\externaltitle" do-externaltitle)
 
 (tex-def-prim "\\fi" (lambda () (do-fi)))
 
@@ -7938,29 +8007,29 @@
 
 (tex-def-prim "\\htmladdimg" do-htmladdimg)
 
-(tex-def-prim "\\htmlcolophon" do-colophon)
+(tex-def-prim "\\htmlcolophon" do-htmlcolophon)
 
 (tex-def-prim "\\htmlgif" (lambda () (do-htmlimg "htmlgif")))
 
-(tex-def-prim "\\htmlheadonly" do-html-head-only)
+(tex-def-prim "\\htmlheadonly" do-htmlheadonly)
 
-(tex-def-prim "\\htmlimageformat" do-html-image-format)
+(tex-def-prim "\\htmlimageformat" do-htmlimageformat)
 
 (tex-def-prim "\\htmlimg" (lambda () (do-htmlimg "htmlimg")))
 
-(tex-def-prim "\\htmlimgmagnification" do-html-img-magnification)
+(tex-def-prim "\\htmlimgmagnification" do-htmlimgmagnification)
 
-(tex-def-prim "\\htmlmathstyle" do-math-style)
+(tex-def-prim "\\htmlmathstyle" do-htmlmathstyle)
 
 (tex-def-prim "\\htmlonly" (lambda () (set! *html-only* (+ *html-only* 1))))
 
-(tex-def-prim "\\htmlpagelabel" do-html-page-label)
+(tex-def-prim "\\htmlpagelabel" do-htmlpagelabel)
 
-(tex-def-prim "\\htmlpageref" do-html-page-ref)
+(tex-def-prim "\\htmlpageref" do-htmlpageref)
 
 (tex-def-prim "\\htmlref" do-htmlref)
 
-(tex-def-prim "\\htmlrefexternal" do-htmlref-external)
+(tex-def-prim "\\htmlrefexternal" do-htmlrefexternal)
 
 (tex-def-prim "\\Huge" (lambda () (do-switch "\\Huge")))
 
@@ -7980,7 +8049,7 @@
 
 (tex-def-prim "\\iffalse" do-iffalse)
 
-(tex-def-prim "\\iffileexists" do-if-file-exists)
+(tex-def-prim "\\IfFileExists" do-iffileexists)
 
 (tex-def-prim "\\ifmmode" do-ifmmode)
 
@@ -8001,7 +8070,7 @@
 
 (tex-def-prim "\\imgdef" (lambda () (make-reusable-img #f)))
 
-(tex-def-prim "\\imgpreamble" do-imgpreamble)
+(tex-def-prim "\\imgpreamble" do-img-preamble)
 
 (tex-def-prim
   "\\IMGtabbing"
@@ -8013,7 +8082,7 @@
 
 (tex-def-prim "\\include" do-include)
 
-(tex-def-prim "\\includeexternallabels" do-include-external-labels)
+(tex-def-prim "\\includeexternallabels" do-includeexternallabels)
 
 (tex-def-prim "\\includeonly" do-includeonly)
 
@@ -8021,29 +8090,27 @@
 
 (tex-def-prim "\\index" do-index)
 
-(tex-def-prim "\\indexitem" (lambda () (do-index-item "\\indexitem")))
+(tex-def-prim "\\indexitem" (lambda () (do-indexitem 0)))
 
-(tex-def-prim "\\indexsubitem" (lambda () (do-index-item "\\indexsubitem")))
+(tex-def-prim "\\indexsubitem" (lambda () (do-indexitem 1)))
 
-(tex-def-prim
-  "\\indexsubsubitem"
-  (lambda () (do-index-item "\\indexsubsubitem")))
+(tex-def-prim "\\indexsubsubitem" (lambda () (do-indexitem 2)))
 
 (tex-def-prim "\\input" do-input)
 
-(tex-def-prim "\\inputcss" do-input-css)
+(tex-def-prim "\\inputcss" do-inputcss)
 
-(tex-def-prim "\\inputexternallabels" do-input-external-labels)
+(tex-def-prim "\\inputexternallabels" do-inputexternallabels)
 
-(tex-def-prim "\\InputIfFileExists" do-input-if-file-exists)
+(tex-def-prim "\\InputIfFileExists" do-inputiffileexists)
 
-(tex-def-prim "\\inputindex" (lambda () (do-input-index #f)))
+(tex-def-prim "\\inputindex" (lambda () (do-inputindex #f)))
 
 (tex-def-prim "\\it" (lambda () (do-switch "\\it")))
 
 (tex-def-prim "\\item" do-item)
 
-(tex-def-prim "\\itemitem" do-itemitem)
+(tex-def-prim "\\itemitem" (lambda () (do-plain-item 2)))
 
 (tex-def-prim
   "\\itemize"
@@ -8062,9 +8129,7 @@
 
 (tex-def-prim "\\LaTeXe" do-latex2e-logo)
 
-(tex-def-prim
-  "\\latexonly"
-  (lambda () (ignore-tex-specific-text "\\latexonly")))
+(tex-def-prim "\\latexonly" (lambda () (ignore-tex-specific-text "latexonly")))
 
 (tex-def-prim
   "\\leftdisplays"
@@ -8080,7 +8145,7 @@
 
 (tex-def-prim "\\mailto" do-mailto)
 
-(tex-def-prim "\\makehtmlimage" do-make-html-image)
+(tex-def-prim "\\makehtmlimage" do-makehtmlimage)
 
 (tex-def-prim "\\maketitle" do-maketitle)
 
@@ -8132,7 +8197,7 @@
 
 (tex-def-prim "\\node" do-node)
 
-(tex-def-prim "\\nonumber" do-no-number)
+(tex-def-prim "\\nonumber" do-nonumber)
 
 (tex-def-prim
   "\\noslatexlikecomments"
@@ -8162,7 +8227,7 @@
 
 (tex-def-prim "\\oe" (lambda () (emit *html-oelig-cap*)))
 
-(tex-def-prim "\\opengraphsfile" do-mfpic-open-graphs-file)
+(tex-def-prim "\\opengraphsfile" do-mfpic-opengraphsfile)
 
 (tex-def-prim "\\openin" (lambda () (do-open-stream 'in)))
 
@@ -8186,7 +8251,7 @@
 
 (tex-def-prim "\\pounds" (lambda () (emit "&pound;")))
 
-(tex-def-prim "\\printindex" (lambda () (do-input-index #t)))
+(tex-def-prim "\\printindex" (lambda () (do-inputindex #t)))
 
 (tex-def-prim "\\quad" (lambda () (emit-nbsp 4)))
 
@@ -8210,7 +8275,7 @@
 
 (tex-def-prim "\\ref" do-ref)
 
-(tex-def-prim "\\refexternal" do-ref-external)
+(tex-def-prim "\\refexternal" do-refexternal)
 
 (tex-def-prim "\\relax" do-relax)
 
@@ -8256,13 +8321,13 @@
 
 (tex-def-prim "\\scmbuiltin" do-scm-set-builtins)
 
-(tex-def-prim "\\scmdribble" do-scm-dribble)
+(tex-def-prim "\\scmdribble" do-scmdribble)
 
-(tex-def-prim "\\scminput" do-scm-input)
+(tex-def-prim "\\scminput" do-scminput)
 
 (tex-def-prim "\\scmkeyword" do-scm-set-keywords)
 
-(tex-def-prim "\\scmspecialsymbol" do-scm-set-special-symbol)
+(tex-def-prim "\\scmspecialsymbol" do-scm-set-specialsymbol)
 
 (tex-def-prim "\\scmvariable" do-scm-set-variables)
 
@@ -8274,7 +8339,7 @@
 
 (tex-def-prim "\\sevenrm" (lambda () (do-switch "\\sevenrm")))
 
-(tex-def-prim "\\sf" (lambda () #f))
+(tex-def-prim "\\sf" do-relax)
 
 (tex-def-prim "\\sl" (lambda () (do-switch "\\sl")))
 
@@ -8320,7 +8385,7 @@
 
 (tex-def-prim "\\TeX" do-tex-logo)
 
-(tex-def-prim "\\texonly" (lambda () (ignore-tex-specific-text "\\texonly")))
+(tex-def-prim "\\texonly" (lambda () (ignore-tex-specific-text "texonly")))
 
 (tex-def-prim "\\textbf" (lambda () (do-function "\\textbf")))
 
@@ -8347,6 +8412,8 @@
 
 (tex-def-prim "\\thebibliography" do-thebibliography)
 
+(tex-def-prim "\\theindex" do-theindex)
+
 (tex-def-prim "\\TIIPbackslash" (lambda () (emit "\\")))
 
 (tex-def-prim "\\TIIPbr" do-br)
@@ -8366,6 +8433,8 @@
 (tex-def-prim "\\TIIPlatexenvasimage" do-following-latex-env-as-image)
 
 (tex-def-prim "\\TIIPnbsp" (lambda () (emit-nbsp 1)))
+
+(tex-def-prim "\\TIIPnewline" do-newline)
 
 (tex-def-prim "\\TIIPnull" get-actual-char)
 
@@ -8395,11 +8464,11 @@
 
 (tex-def-prim "\\undefcsactive" do-undefcsactive)
 
-(tex-def-prim "\\undefschememathescape" (lambda () (scm-set-math-escape #f)))
+(tex-def-prim "\\undefschememathescape" (lambda () (scm-set-mathescape #f)))
 
 (tex-def-prim "\\underline" (lambda () (do-function "\\underline")))
 
-(tex-def-prim "\\unscmspecialsymbol" do-scm-unset-special-symbol)
+(tex-def-prim "\\unscmspecialsymbol" do-scm-unset-specialsymbol)
 
 (tex-def-prim "\\url" do-url)
 
@@ -8422,15 +8491,15 @@
 
 (tex-def-prim "\\verbatim" do-verbatim-latex)
 
-(tex-def-prim "\\verbatiminput" do-verbatim-input)
+(tex-def-prim "\\verbatiminput" do-verbatiminput)
 
 (tex-def-prim "\\verbc" do-verbc)
 
-(tex-def-prim "\\verbescapechar" do-verb-escape-char)
+(tex-def-prim "\\verbescapechar" do-verbescapechar)
 
-(tex-def-prim "\\verbwrite" do-verb-write)
+(tex-def-prim "\\verbwrite" do-verbwrite)
 
-(tex-def-prim "\\verbwritefile" do-verb-write-file)
+(tex-def-prim "\\verbwritefile" do-verbwritefile)
 
 (tex-def-prim "\\vskip" (lambda () (eat-dimen) (do-bigskip "vskip")))
 
@@ -8627,6 +8696,10 @@
 (tex-def-prim "\\parbox" (lambda () (get-bracketed-text-if-any) (get-group)))
 
 (tex-def-prim
+  "\\ProvidesFile"
+  (lambda () (get-group) (get-bracketed-text-if-any)))
+
+(tex-def-prim
   "\\addcontentsline"
   (lambda () (get-group) (get-group) (get-group)))
 
@@ -8707,6 +8780,8 @@
 (tex-let-prim "\\ensuremath" "\\mathg")
 
 (tex-let-prim "\\epsffile" "\\epsfbox")
+
+(tex-let-prim "\\iffileexists" "\\IfFileExists")
 
 (tex-let-prim "\\htmlimgformat" "\\htmlimageformat")
 
@@ -8824,6 +8899,7 @@
 
 (define tex2page
   (lambda (tex-file)
+    (unless (= *write-log-index* 0) (newline))
     (fluid-let
       ((*afterpar* '())
        (*aux-dir* #f)
@@ -8842,7 +8918,6 @@
        (*current-tex2page-input* #f)
        (*current-tex-file* #f)
        (*display-justification* 'center)
-       (*doing-urlh?* #f)
        (*dotted-counters* (make-table 'equ string=?))
        (*dumping-nontex?* #f)
        (*equation-number* #f)
@@ -8874,7 +8949,7 @@
        (*in-para?* #f)
        (*in-small-caps?* #f)
        (*includeonly-list* #t)
-       (*index-alist* '())
+       (*index-table* (make-table))
        (*index-count* 0)
        (*index-page* #f)
        (*index-port* #f)
@@ -8936,14 +9011,10 @@
        (*verb-port* #f)
        (*verb-visible-space?* #f)
        (*write-log-index* 0)
+       (*write-log-possible-break?* #f)
        (*zeroth-html-page* #f))
-      (let ((f (actual-tex-filename tex-file)))
-        (when (file-exists? f)
-          (set! *main-tex-file* f)
-          (set! *jobname* (file-stem-name f))
-          (make-target-dir)
-          (initialize-global-texframe)))
-      (load-aux-file)
+      (set! *main-tex-file*
+        (actual-tex-filename tex-file (check-input-file-timestamp? tex-file)))
       (write-log "This is TeX2page, Version ")
       (write-log *tex2page-version*)
       (write-log #\space)
@@ -8971,8 +9042,8 @@
         (set! *html* (open-output-file *html-page*))
         (do-start)
         (let ((t2p-file
-                (actual-tex-filename (string-append *jobname* ".t2p"))))
-          (when (file-exists? t2p-file)
+                (actual-tex-filename (string-append *jobname* ".t2p") #f)))
+          (when t2p-file
             (fluid-let
               ((*html-only* (+ *html-only* 1)))
               (tex2page-file t2p-file))))

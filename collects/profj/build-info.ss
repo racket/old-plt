@@ -134,27 +134,47 @@
   
   ;import-class: string (list string) (list string) location type-records symbol bool-> void
   (define (import-class class path dir loc type-recs level add-to-env)
-    (cond
-      ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
-      ((file-exists? (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
-       (send type-recs add-class-record (read-record (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo")))
-       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #f)))
-      ((file-exists? (string-append (build-path (apply build-path dir) class) ".java"))
-       (send type-recs add-to-records 
-             (cons class path)
-             (lambda () 
-               (let* ((location (string-append class ".java"))
-                      (ast (call-with-input-file (string-append (build-path (apply build-path dir) class) ".java")
-                             (lambda (p) (parse p location level)))))
-                 (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
-                 (build-info ast level type-recs 'not_look_up)
-                 (send type-recs get-class-record (cons class path) (lambda () 'internal-error "Failed to add record"))
-                 )))
-       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
-      (else (file-error 'file (cons class path))))
-    (when add-to-env (send type-recs add-to-env class path loc))
-    (send type-recs add-class-req (cons class path) (not add-to-env) loc))
+    (let ((class-name (cons class path))
+          (type-path (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
+          (file-path (build-path (apply build-path dir) class))
+          (new-level (box level)))
+      (cond
+        ((send type-recs get-class-record class-name (lambda () #f)) void)
+        ((file-exists? type-path) 
+         (send type-recs add-class-record (read-record type-path))
+         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
+        ((check-file-exists? file-path new-level)
+         (send type-recs add-to-records 
+               class-name
+               (lambda () 
+                 (let* ((suffix (case (unbox new-level) 
+                                  ((beginner) ".bjava")
+                                  ((intermediate) ".ijava")
+                                  ((advanced ".ajava"))
+                                  ((full) ".java")))
+                        (location (string-append class suffix))
+                        (ast (call-with-input-file (string-append file-path suffix) 
+                               (lambda (p) (parse p location (unbox new-level))))))
+                   (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
+                   (build-info ast (unbox new-level) type-recs 'not_look_up)
+                   (send type-recs get-class-record class-name (lambda () 'internal-error "Failed to add record"))
+                   )))
+         (send type-recs add-require-syntax class-name (build-require-syntax class path dir #t)))
+        (else (file-error 'file (cons class path))))
+      (when add-to-env (send type-recs add-to-env class path loc))
+      (send type-recs add-class-req class-name (not add-to-env) loc)))
   
+  ;check-file-exists?: string box -> bool
+  ;side-effect: modifies contents of box
+  (define (check-file-exists? path level)
+    (cond
+      ((file-exists? (string-append path ".java")) (set-box! level 'full))
+      ((file-exists? (string-append path ".bjava")) (set-box! level 'beginner))
+      ((file-exists? (string-append path ".ijava")) (set-box! level 'intermediate))
+      ((file-exists? (string-append path ".ajava")) (set-box! level 'advanced))
+      (else #f)))
+    
+    
   ;add-my-package: type-records (list string) (list defs) loc symbol-> void
   (define (add-my-package type-recs package defs loc level)
     (let* ((dir (find-directory package (lambda () #f)))

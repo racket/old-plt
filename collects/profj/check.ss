@@ -1333,9 +1333,12 @@
                       (unless (lookup-exn thrown env type-recs)
                         (thrown-error (ref-type-class/iface thrown) name exp-type src)))
                     (method-record-throws method-record)))
+        (when (and (eq? level 'beginner)
+                   (eq? 'void (method-record-rtype method-record)))
+          (beginner-call-error name src))
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
-
+  
   ;check-method-args: (list type) (list type) id type src type-records -> void
   (define (check-method-args args atypes name exp-type src type-recs)
     (unless (= (length args) (length atypes))
@@ -1705,6 +1708,11 @@
                            n t thrown)
                    n src)))
       
+  ;beginner-call-error: id src -> void
+  (define (beginner-call-error name src)
+    (let ((n (id->ext-name name)))
+      (raise-error n (format "method ~a cannot be called in Beginner Java" n) n src)))
+  
   ;;Class Alloc errors
 
   ;class-alloc-error: symbol type src -> void

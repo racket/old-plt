@@ -167,7 +167,7 @@
       
       ;; 19.8.3
       (MethodDeclaration
-       [(MethodHeader MethodBody) (make-method (method-modifiers $1)
+       [(MethodHeader Block) (make-method (method-modifiers $1)
                                                (method-type $1)
                                                (method-type-parms $1)
                                                (method-name $1)
@@ -192,10 +192,6 @@
       (FormalParameter
        [(Type VariableDeclaratorId) (build-field-decl null $1 $2)])
       
-      (MethodBody
-       [(Block) $1]
-       [(SEMI_COLON) #f])
-      
       ;; 19.8.5      
       (ConstructorDeclaration
        [(ConstructorDeclarator ConstructorBody)
@@ -207,45 +203,20 @@
        [(IDENTIFIER O_PAREN C_PAREN) (list (make-id $1 (build-src 1)) null)])
       
       (ConstructorBody
-       [(O_BRACE ExplicitConstructorInvocation BlockStatements C_BRACE)
-	(make-block (cons $2 (reverse $3)) (build-src 4))]
-       [(O_BRACE ExplicitConstructorInvocation C_BRACE)
-	(make-block (list $2) (build-src 3))]
        [(O_BRACE BlockStatements C_BRACE)
 	(make-block 
 	 (cons (make-call #f #f #f (make-special-name #f #f "super") null #f)
 	       (reverse $2))
-	 (build-src 3))])
-      
-      (ExplicitConstructorInvocation
-       [(this O_PAREN ArgumentList C_PAREN SEMI_COLON)
-	(make-call #f (build-src 5) 
-                   #f (make-special-name #f (build-src 1) "this") (reverse $3) #f)]
-       [(this O_PAREN C_PAREN SEMI_COLON)
-	(make-call #f (build-src 4) 
-                   #f (make-special-name #f (build-src 1) "this") null #f)]
-       [(super O_PAREN ArgumentList C_PAREN SEMI_COLON)
-	(make-call #f (build-src 5) 
-                   #f (make-special-name #f (build-src 1) "super") (reverse $3) #f)]
-       [(super O_PAREN C_PAREN SEMI_COLON)
-	(make-call #f (build-src 4) 
-                   #f (make-special-name #f (build-src 1) "super") null #f)])
-      
+	 (build-src 3))]
+       [(O_BRACE C_BRACE) (make-block null (build-src 2))])
       
       ;; 19.11
       (Block
-       [(O_BRACE BlockStatements C_BRACE) (make-block (reverse $2) (build-src 3))]
-       [(O_BRACE C_BRACE) (make-block null (build-src 2))])
+       [(O_BRACE Statement C_BRACE) (make-block (list $2) (build-src 3))])
       
       (BlockStatements
-       [(Statement) (cond
-                      ((list? $1) $1)
-                      (else (list $1)))]
-       [(BlockStatements Statement) (cond
-                                      ((list? $2)
-                                       (append (reverse $2) $1))
-                                      (else
-                                       (cons $2 $1)))])
+       [(Statement) (if (list? $1) $1 (list $1))]
+       [(BlockStatements Statement) (if (list? $2) (append (reverse $2) $1) (cons $2 $1))])
       
       (BeginnerInteractions
        [(Statement) $1]
@@ -260,20 +231,8 @@
        [(IfThenElseStatementNoShortIf) $1])
       
       (StatementWithoutTrailingSubstatement
-       [(EmptyStatement) $1]
        [(Assignment SEMI_COLON) $1]
-;       [(ExpressionStatement) $1]
        [(ReturnStatement) $1])
-      
-      (EmptyStatement
-       [(SEMI_COLON) (make-block null (build-src 1))])
-      
-;      (ExpressionStatement
-;       [(StatementExpression SEMI_COLON) $1])
-      
-;      (StatementExpression
-;       [(MethodInvocation) $1]
-;       [(ClassInstanceCreationExpression) $1])
       
       (IfThenElseStatement
        [(if O_PAREN Expression C_PAREN StatementNoShortIf else Statement)
@@ -284,14 +243,10 @@
 	(make-ifS $3 $5 $7 (build-src 1) (build-src 7))])
       
       (ReturnStatement
-       [(return Expression SEMI_COLON) (make-return $2 (build-src 3))]
-       [(return SEMI_COLON) (make-return #f (build-src 2))])
+       [(return Expression SEMI_COLON) (make-return $2 (build-src 3))])
       
       ;; 19.12
       (Primary
-       [(PrimaryNoNewArray) $1])
-      
-      (PrimaryNoNewArray
        [(Literal) $1]
        [(this) (make-special-name #f (build-src 1) "this")]
        [(O_PAREN Expression C_PAREN) $2]
@@ -329,9 +284,6 @@
        [(Name) (name->access $1)])
       
       (UnaryExpression
-       [(UnaryExpressionNotPlusMinus) $1])
-      
-      (UnaryExpressionNotPlusMinus
        [(PostfixExpression) $1]
        [(~ UnaryExpression) (make-unary #f (build-src 2) '~ $2 (build-src 1))]
        [(! UnaryExpression) (make-unary #f (build-src 2) '! $2 (build-src 1))])
@@ -364,7 +316,6 @@
       
       (RelationalExpression
        [(ShiftExpression) $1]
-       ;; GJ - changed to remove shift/reduce conflict
        [(ShiftExpression < ShiftExpression)
         (make-bin-op #f (build-src 3) '< $1 $3 (build-src 2 2))]		
        [(RelationalExpression > ShiftExpression)
@@ -408,14 +359,8 @@
        [(ConditionalOrExpression OR ConditionalAndExpression)
 	(make-bin-op #f (build-src 3) 'oror $1 $3 (build-src 2 2))])
       
-      (ConditionalExpression
-       [(ConditionalOrExpression) $1])
-      
-      (AssignmentExpression
-       [(ConditionalExpression) $1])
-      
       (Assignment
-       [(LeftHandSide AssignmentOperator AssignmentExpression)
+       [(LeftHandSide AssignmentOperator ConditionalOrExpression)
 	(make-assignment #f (build-src 3) $1 $2 $3 (build-src 2 2))])
       
       (LeftHandSide
@@ -425,7 +370,7 @@
        [(=) '=])
       
       (Expression
-       [(AssignmentExpression) $1])
+       [(ConditionalOrExpression) $1])
       
       )))
   

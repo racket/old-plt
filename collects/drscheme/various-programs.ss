@@ -52,7 +52,7 @@
     (format "~
 (define f (make-object frame% \"Frame\"))~
 ~n(define b (make-object button%~
-~n            \"Button\"~
+~n            \"Close\"~
 ~n            frame~
 ~n            (lambda x (send frame show #f))))~
 ~n(send f show #t)"))

@@ -1,18 +1,30 @@
 
-(define (tread)
-  (let ([l (tcp-listen 40000)])
-    (let-values ([(r w) (tcp-accept l)])
-	(read-line)
-	(printf "Hit return to start reading~n")
-	(read-line)
-	(let loop ([last 'none-read])
-	  (let ([v (read r)])
-	    (if (eof-object? v)
-		last
-		(loop v)))))))
+(define id 40001)
 
-(define (twrite)
-  (let-values ([(r w) (tcp-connect "localhost" 40000)])
+(define (client host)
+  (lambda ()
+    (tcp-connect host id)))
+  
+(define server
+  (lambda ()
+    (let ([l (tcp-listen id)])
+      (tcp-accept l))))
+
+(define (tread connect)
+  (let-values ([(r w) (connect)])
+    (printf "Hit return to start reading~n")
+    (read-line)
+    (let loop ([last 'none-read])
+      (let ([v (read r)])
+	(if (eof-object? v)
+	    last
+	    (begin
+	      (when (zero? (modulo v 50000))
+		(printf "~a~n" v))
+	      (loop v)))))))
+
+(define (twrite connect)
+  (let-values ([(r w) (connect)])
     (let loop ([n 0])
       (if (tcp-port-send-waiting? w)
 	  (begin
@@ -29,5 +41,3 @@
 	  (begin
 	    (fprintf w "~s~n" n)
 	    (loop (add1 n)))))))
-
-		

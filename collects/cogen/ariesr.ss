@@ -43,13 +43,13 @@
 
     (define check-for-keyword
       (lambda (id)
-	(let ((id
+	(let ((real-id
 		(cond
 		  ((zodiac:bound? id) (zodiac:bound-orig-name id))
 		  ((zodiac:top-level-varref? id) (zodiac:id-var id))
 		  (else
 		    (error 'check-for-keyword "given ~s" id)))))
-	  (when (keyword-name? id)
+	  (when (keyword-name? real-id)
 	    (zodiac:interface:static-error id "Invalid use of keyword")))))
 
     (define annotate

@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Wed May 19 17:56:25 1999
+/* at Wed May 19 18:27:24 1999
  */
 /* Compiler settings for myssink.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext

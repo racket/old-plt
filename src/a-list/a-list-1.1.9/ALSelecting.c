@@ -18,6 +18,13 @@
 
 static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, ALHandle hAL);
 
+static void refresh(ALHandle hAL)
+{
+  void *ctl;
+  ALGetInfo(alRefCon, &ctl, hAL);
+  HIViewSetNeedsDisplay((ControlHandle)ctl, TRUE);
+}
+
 static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, ALHandle hAL)
 {	ALPtr	pAL;
 	RgnHandle	saveClip, auxRgn;
@@ -29,6 +36,11 @@ static void local_ALHiliteCell(const ALCellPtr theCell, unsigned long offset, AL
 	#pragma unused( offset )
 #endif
 	Rect		cellRect;
+
+	if (BTST((*hAL)->features, alFInhibitRedraw)) {
+	  refresh(hAL);
+	  return;
+	}
 
 	// The AL record must be already locked.
 	pAL = *hAL;
@@ -89,6 +101,11 @@ void _ALHiliteSelected(ALHandle hAL)
 	GWorldPtr			saveWorld;
 	GDHandle			saveDevice;
 	QDDrawingState	saveState;
+
+	if (BTST((*hAL)->features, alFInhibitRedraw)) {
+	  refresh(hAL);
+	  return;
+	}
 
 	// Hilite the selection range
 	if (BTST((*hAL)->flags, alFActive)) {

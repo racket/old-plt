@@ -54,7 +54,7 @@ MZMMM_wx_xt = ../../mzscheme/mzscheme3m
 MZMMM_wx_mac = env DYLD_FRAMEWORK_PATH="`pwd`/../../mzscheme" ../../mzscheme/mzscheme3m
 MZMMM = $(MZMMM_@WXVARIANT@)
 
-XFORM = $(MZMMM) -rq $(srcdir)/../../mzscheme/gc2/xform.ss "$(CPP) -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) @PREFLAGS@ $(XFORM_INC_@WXVARIANT@) @JPEG_INC@ @ZLIB_INC@"
+XFORM = $(MZMMM) -rq $(srcdir)/../../mzscheme/gc2/xform.ss --setup "$(CPP) -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) @PREFLAGS@ $(XFORM_INC_@WXVARIANT@) @JPEG_INC@ @ZLIB_INC@"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/xform-mod.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt

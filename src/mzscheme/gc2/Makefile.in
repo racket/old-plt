@@ -18,7 +18,7 @@ LIBS = @LIBS@
 
 PRE_MZ@OSX@ = env DYLD_FRAMEWORK_PATH="`pwd`/.."
 PRE_MZ@NOT_OSX@ = 
-XFORM = $(PRE_MZ) ../mzscheme -rq $(srcdir)/xform.ss "$(CPP) $(CPPFLAGS)"
+XFORM = $(PRE_MZ) ../mzscheme -rq $(srcdir)/xform.ss --setup "$(CPP) $(CPPFLAGS)"
 XSRCDIR = xsrc
 SRCDIR = $(srcdir)/../src
 

@@ -34,6 +34,13 @@ enum {
 
 static void local_ALDrawCells( Boolean doErase, ALHandle hAL );
 
+static void refresh(ALHandle hAL)
+{
+  void *ctl;
+  ALGetInfo(alRefCon, &ctl, hAL);
+  HIViewSetNeedsDisplay((ControlHandle)ctl, TRUE);
+}
+
 INLINE void local_ALClearHiliteBit(void)
 {	LMSetHiliteMode(LMGetHiliteMode() & 0x7F);	}
 
@@ -527,6 +534,9 @@ void _ALDrawListBorder(ALHandle hAL)
 	Boolean	focused, appearance = false;
 	OSStatus	status = noErr;
 
+	if (BTST((*hAL)->features, alFInhibitRedraw))
+	  return;
+
 	// Get the rectangle to draw.
 	ALGetViewRect(&box, hAL);
 	--box.top;
@@ -639,6 +649,11 @@ ALIST_API void ALDrawCell(const ALCellPtr theCell, ALHandle hAL)
 	if (theCell == nil || hAL == nil || *hAL == nil)
 		return;
 
+	if (BTST((*hAL)->features, alFInhibitRedraw)) {
+	  refresh(hAL);
+	  return;
+	}
+
 	if ( ALIsVisible( theCell, hAL ) ) {
 		offset = _ALCalcOffsetFromCell(theCell, &(*hAL)->dataBounds);
 		_ALCalcCellRect(&entireCellRect, theCell, true, hAL);
@@ -747,6 +762,11 @@ ALIST_API void ALUpdate( RgnHandle inUpdateRgn, ALHandle hAL )
 	// Sanity check.
 	if (hAL == nil || *hAL == nil)
 		return;
+
+	if (BTST((*hAL)->features, alFInhibitRedraw)) {
+	  refresh(hAL);
+	  return;
+	}
 
 	// lock the AL record
 	saveALLock = _ALSetHandleLock((Handle) hAL, true);

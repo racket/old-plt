@@ -75,6 +75,7 @@
 				 (append
 				  (list "-r"
 					"../../mzscheme/gc2/xform.ss")
+				  "--setup"
 				  (if objdest
 				      (if use-precomp
 					  (list "--precompiled" use-precomp)

@@ -28,24 +28,37 @@
 ;;       which can break "if (...) return; else ...".
 
 ;; To call for Precise GC:
-;;   mzscheme -qr xform.ss [--notes] [--depends] [--cgc] <cpp> <src> <dest>
+;;   mzscheme -qr xform.ss [--setup] [--precompile] [--precompiled <file>] [--notes] [--depends] [--cgc] <cpp> <src> <dest>
+;;
+;;   Or: Set the XFORM_PRECOMP=yes environment variable to imply --precompile
+;;       Set the XFORM_USE_PRECOMP=<file> to imply --precompiled <file>
 ;;
 ;; To call for Palm:
-;;   mzscheme -qr xform.ss [--notes] [--depends] --palm <cpp> <src> <dest> <mapdest>
+;;   mzscheme -qr xform.ss [--setup] [--notes] [--depends] --palm <cpp> <src> <dest> <mapdest>
 
 ;; General code conventions:
 ;;   e means a list of tokens, often ending in a '|;| token
 ;;   -e means a reversed list of tokens
 
-;; Setup an xform-collects tree for running xform.
-;; Delete existing xform-collects tree if it's for an old version
-(unless (and (file-exists? "xform-collects/version.ss")
-	     (equal? (version)
-		     (with-input-from-file "xform-collects/version.ss" read)))
-  (load-relative "setup.ss"))
+(if (string=? "--setup"
+	      (vector-ref (current-command-line-arguments) 0))
 
-(current-library-collection-paths (list (build-path (current-directory) "xform-collects")))
+    ;; Setup an xform-collects tree for running xform.
+    ;; Delete existing xform-collects tree if it's for an old version
+    (begin
+      (unless (and (file-exists? "xform-collects/version.ss")
+		   (equal? (version)
+			   (with-input-from-file "xform-collects/version.ss" read)))
+	(load-relative "setup.ss"))
+      
+      (current-library-collection-paths (list (build-path (current-directory) "xform-collects")))
+      
+      (error-print-width 100)
+      
+      (dynamic-require '(lib "xform-mod.ss" "xform") #f))
 
-(error-print-width 100)
+    ;; Otherwise, we assume that it's ok to use the collects
+    (dynamic-require (build-path (current-load-relative-directory)
+				 "xform-mod.ss")
+		     #f))
 
-(require (lib "xform-mod.ss" "xform"))

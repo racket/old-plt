@@ -22,40 +22,44 @@
 
   (define cmd-line (let ([l (vector->list (current-command-line-arguments))])
 		     (let ([l (cond
-			       [(equal? (car l) "--precompile")
-				(set! precompiling-header? #t)
-				(cdr l)]
-			       [(equal? (car l) "--xform")
+			       [(equal? (car l) "--setup")
 				(cdr l)]
 			       [else l])])
 		       (let ([l (cond
-				 [(equal? (car l) "--precompiled")
-				  (set! precompiled-header (cadr l))
-				  (cddr l)]
+				 [(equal? (car l) "--precompile")
+				  (set! precompiling-header? #t)
+				  (cdr l)]
+				 [(equal? (car l) "--xform")
+				  (cdr l)]
 				 [else l])])
-			 (let ([l (if (equal? (car l) "--notes")
-				      (begin
-					(set! show-info? #t)
-					(cdr l))
-				      l)])
-			   (let ([l (if (equal? (car l) "--depends")
+			 (let ([l (cond
+				   [(equal? (car l) "--precompiled")
+				    (set! precompiled-header (cadr l))
+				    (cddr l)]
+				   [else l])])
+			   (let ([l (if (equal? (car l) "--notes")
 					(begin
-					  (set! output-depends-info? #t)
+					  (set! show-info? #t)
 					  (cdr l))
 					l)])
-			     (let ([l (if (equal? (car l) "--palm")
+			     (let ([l (if (equal? (car l) "--depends")
 					  (begin
-					    (set! palm? #t)
-					    (set! pgc? #f)
-					    (set! pgc-really? #f)
+					    (set! output-depends-info? #t)
 					    (cdr l))
 					  l)])
-			       (let ([l (if (equal? (car l) "--cgc")
+			       (let ([l (if (equal? (car l) "--palm")
 					    (begin
+					      (set! palm? #t)
+					      (set! pgc? #f)
 					      (set! pgc-really? #f)
 					      (cdr l))
 					    l)])
-				 l))))))))
+				 (let ([l (if (equal? (car l) "--cgc")
+					      (begin
+						(set! pgc-really? #f)
+						(cdr l))
+					      l)])
+				   l)))))))))
   
   (define (filter-false s)
     (if (equal? s "-")

@@ -1516,12 +1516,15 @@ static char ghbn_hostname[256];
 
 static long gethostbyname_in_thread(void *data)
 {
-  return (long)gethostbyname(ghbn_hostname);
+  struct hostent *host;
+  host = gethostbyname(ghbn_hostname);
+  return *(long *)host->h_addr_list[0];
 }
 
 static void release_ghbn_lock(GHBN_Rec *rec)
 {
   ghbn_lock = 0;
+  CloseHandle(rec->th);
 }
 static int ghbn_lock_avail(Scheme_Object *_ignored)
 {
@@ -1555,6 +1558,7 @@ static void ghbn_thread_need_wakeup(Scheme_Object *_rec, void *fds)
   scheme_add_fd_handle((void *)rec->th, fds, 0);
 }
 
+#define HOST_RESULT_IS_ADDR
 static struct hostent *MZ_GETHOSTBYNAME(const char *name)
 {
   GHBN_Rec *rec;
@@ -1700,7 +1704,11 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     tcp_connect_dest_addr.sin_port = id;
     memset(&tcp_connect_dest_addr.sin_addr, 0, sizeof(tcp_connect_dest_addr.sin_addr));
     memset(&tcp_connect_dest_addr.sin_zero, 0, sizeof(tcp_connect_dest_addr.sin_zero));
+#ifdef HOST_RESULT_IS_ADDR
+    memcpy(&tcp_connect_dest_addr.sin_addr, &host, sizeof(long)); 
+#else
     memcpy(&tcp_connect_dest_addr.sin_addr, host->h_addr_list[0], host->h_length); 
+#endif
 
 #ifndef PROTOENT_IS_INT
     proto = getprotobyname("tcp");

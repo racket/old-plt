@@ -98,18 +98,15 @@
 # define SIGMZTHREAD SIGUSR2
 #endif
 
-#if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
-# ifndef NO_STDIO_THREADS
-#  include <windows.h>
+#if defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES)
+# include <windows.h>
 extern HANDLE scheme_break_semaphore;
-# endif
 #endif
 
 #if defined(FILES_HAVE_FDS) \
      || defined(USE_BEOS_PORT_THREADS) \
      || (defined(USE_WINSOCK_TCP) && defined(USE_TCP)) \
-     || ((defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)) \
-	     && !defined(NO_STDIO_THREADS))
+     || (defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES))
 # define USING_FDS
 # if (!defined(USE_WINSOCK_TCP) || !defined(USE_TCP)) && !defined(FILES_HAVE_FDS)
 #  include <sys/types.h>
@@ -2122,11 +2119,9 @@ void scheme_break_thread(Scheme_Thread *p)
       scheme_fuel_counter = 0;
   }
   scheme_weak_resume_thread(p);
-# if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
-#  ifndef NO_STDIO_THREADS
+# if defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES)
   if (!p->next)
     ReleaseSemaphore(scheme_break_semaphore, 1, NULL);
-#  endif
 # endif
 }
 

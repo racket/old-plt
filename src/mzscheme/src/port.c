@@ -50,9 +50,6 @@
 # include <sys/time.h>
 # include <signal.h>
 #endif
-#ifdef USE_BEOS_SOCKET_INCLUDE
-# include <be/net/socket.h>
-#endif
 #if defined(UNIX_PROCESSES)
 # include <signal.h>
 # include <sys/types.h>
@@ -60,12 +57,6 @@
 #endif
 #ifdef IO_INCLUDE
 # include <io.h>
-#endif
-#ifdef USE_BEOS_SNOOZE
-# include <be/kernel/OS.h>
-#endif
-#ifdef BEOS_PROCESSES
-# include <be/kernel/image.h>
 #endif
 #ifdef NO_ERRNO_GLOBAL
 static int mzerrno = 0;
@@ -85,28 +76,34 @@ extern int osk_not_console; /* set by cmd-line flag */
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 
-#if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
+#if defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES)
 static void init_thread_memory();
-# ifdef NO_STDIO_THREADS 
-#  undef DETECT_WIN32_CONSOLE_STDIN
-# else
-#  define WIN32_FD_HANDLES
-#  include <process.h>
-#  include <signal.h>
-#  include <io.h>
-#  include <fcntl.h>
-#  define OS_SEMAPHORE_TYPE HANDLE
-#  define OS_MUTEX_TYPE CRITICAL_SECTION
-#  define OS_THREAD_TYPE HANDLE
-# endif
+# define WIN32_FD_HANDLES
+# include <windows.h>
+# include <process.h>
+# include <signal.h>
+# include <io.h>
+# include <fcntl.h>
+# define OS_SEMAPHORE_TYPE HANDLE
+# define OS_MUTEX_TYPE CRITICAL_SECTION
+# define OS_THREAD_TYPE HANDLE
 #endif
-
-#ifdef USE_BEOS_PORT_THREADS
-# include <be/kernel/OS.h>
-# define OS_SEMAPHORE_TYPE sem_id
-typedef struct { int32 v; sem_id s; } mutex_id;
-# define OS_MUTEX_TYPE mutex_id
-# define OS_THREAD_TYPE thread_id
+#ifdef WINDOWS_FILE_HANDLES
+# define MZ_FDS
+typedef struct Win_FD_Input_Thread {
+  /* This is malloced for use in a Win32 thread */
+  HANDLE fd;
+  volatile int avail, err, eof, checking;
+  unsigned char *buffer;
+  HANDLE checking_sema, ready_sema, you_clean_up_sema;
+} Win_FD_Input_Thread;
+typedef struct Win_FD_Output_Thread {
+  /* This is malloced for use in a Win32 thread */
+  HANDLE fd;
+  volatile int done, err_no, buflen, bufstart, bufend;
+  unsigned char *buffer;
+  HANDLE lock_sema, work_sema, ready_sema, you_clean_up_sema;
+} Win_FD_Output_Thread;
 #endif
 
 typedef struct {
@@ -120,10 +117,10 @@ typedef struct {
   FILE *f;
 } Scheme_Output_File;
 
-#if defined(WIN32_FD_HANDLES) || defined(WINDOWS_PROCESSES)
+#if defined(WIN32_FD_HANDLES)
 # include <windows.h>
 #endif
-#ifdef WINDOWS_PROCESSES
+#if defined(WINDOWS_PROCESSES)
 # include <ctype.h>
 #endif
 
@@ -148,21 +145,42 @@ typedef struct Scheme_Subprocess {
 #ifdef USE_FD_PORTS
 # include <fcntl.h>
 # include <sys/stat.h>
+# define MZ_FDS
+#endif
+
+#ifdef MZ_FDS
+
 # define MZPORT_FD_BUFFSIZE 4096
+
+/* The Scheme_FD type is used for both input and output */
 typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
-  int fd;
+  int fd;                   /* fd is really a HANDLE in Windows */
   long bufcount, buffpos;
   char flushing, regfile, flush;
   unsigned char *buffer;
+
+# ifdef WINDOWS_FILE_HANDLES
+  /* for general case of pipes in Win 98 */
+  Win_FD_Input_Thread *th;
+  struct Win_FD_Output_Thread *oth;
+# endif
 } Scheme_FD;
-#define MZ_FLUSH_NEVER 0
-#define MZ_FLUSH_BY_LINE 1
-#define MZ_FLUSH_ALWAYS 2
+
+# define MZ_FLUSH_NEVER 0
+# define MZ_FLUSH_BY_LINE 1
+# define MZ_FLUSH_ALWAYS 2
+
 #endif
 
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
 # include <fcntl.h>
+#endif
+
+#ifdef WINDOWS_FILE_HANDLES
+# define FILENAME_EXN_E "%E"
+#else
+# define FILENAME_EXN_E "%e"
 #endif
 
 /* globals */
@@ -184,7 +202,7 @@ MZ_DLLSPEC int scheme_binary_mode_stdio;
 int scheme_special_ok;
 
 /* locals */
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 static Scheme_Object *fd_input_port_type;
 #endif
 #ifdef USE_OSKIT_CONSOLE
@@ -196,7 +214,7 @@ Scheme_Object *scheme_string_input_port_type;
 Scheme_Object *scheme_tcp_input_port_type;
 Scheme_Object *scheme_tcp_output_port_type;
 #endif
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 static Scheme_Object *fd_output_port_type;
 #endif
 static Scheme_Object *file_output_port_type;
@@ -205,10 +223,6 @@ Scheme_Object *scheme_user_input_port_type;
 Scheme_Object *scheme_user_output_port_type;
 Scheme_Object *scheme_pipe_read_port_type;
 Scheme_Object *scheme_pipe_write_port_type;
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-static Scheme_Object *tested_file_input_port_type;
-static Scheme_Object *tested_file_output_port_type;
-#endif
 
 int scheme_force_port_closed;
 
@@ -222,7 +236,7 @@ static int external_event_fd, put_external_event_fd, event_fd_set;
 
 static void register_port_wait();
 
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 static int flush_fd(Scheme_Output_Port *op, 
 		    char * volatile bufstr, volatile int buflen, 
 		    volatile int offset, int immediate_only);
@@ -246,19 +260,11 @@ static void default_sleep(float v, void *fds);
 static void register_traversers(void);
 #endif
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int tested);
-static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested);
+#if defined(WIN32_FD_HANDLES)
 OS_SEMAPHORE_TYPE scheme_break_semaphore;
-# define USING_TESTED_OUTPUT_FILE
-static void flush_tested(Scheme_Output_Port *port);
-static void tested_output_setvbuf(Scheme_Output_Port *port, int mode);
-#else
-# define make_tested_file_input_port(fp, name, t) scheme_make_named_file_input_port(fp, name)
-# define make_tested_file_output_port(fp, t) scheme_make_file_output_port(fp)
 #endif
 
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile);
 static Scheme_Object *make_fd_output_port(int fd, int regfile);
 #endif
@@ -280,23 +286,6 @@ static Scheme_Object *exact_symbol;
 #define fail_err_symbol scheme_false
 
 #include "schwinfd.h"
-
-#if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
-static status_t kill_my_team(void *t)
-{
-  thread_info info;
-  status_t v;
-
-  MZ_SIGSET(SIGINT, SIG_IGN);
-
-  get_thread_info((thread_id)t, &info);
-  wait_for_thread((thread_id)t, &v);
-
-  kill_team(info.team);
-
-  return 0;
-}
-#endif
 
 /*========================================================================*/
 /*                             initialization                             */
@@ -342,7 +331,7 @@ scheme_init_port (Scheme_Env *env)
   REGISTER_SO(scheme_orig_stdout_port);
   REGISTER_SO(scheme_orig_stderr_port);
   REGISTER_SO(scheme_orig_stdin_port);
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   REGISTER_SO(fd_input_port_type);
   REGISTER_SO(fd_output_port_type);
 #endif
@@ -361,10 +350,6 @@ scheme_init_port (Scheme_Env *env)
   REGISTER_SO(scheme_user_output_port_type);
   REGISTER_SO(scheme_pipe_read_port_type);
   REGISTER_SO(scheme_pipe_write_port_type);
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-  REGISTER_SO(tested_file_input_port_type);
-  REGISTER_SO(tested_file_output_port_type);
-#endif
 
 #if defined(UNIX_PROCESSES)
   REGISTER_SO(scheme_system_children);
@@ -376,12 +361,6 @@ scheme_init_port (Scheme_Env *env)
   END_XFORM_SKIP;
 #endif
 
-#if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
-  /* Extra help to make sure we terminate properly: */
-  resume_thread(spawn_thread(kill_my_team, "killer",
-			     B_NORMAL_PRIORITY, (void*)find_thread(NULL)));
-#endif
-
   if (!scheme_sleep)
     scheme_sleep = default_sleep;
   
@@ -390,7 +369,7 @@ scheme_init_port (Scheme_Env *env)
   scheme_string_input_port_type = scheme_make_port_type("<string-input-port>");
   scheme_string_output_port_type = scheme_make_port_type("<string-output-port>");
 
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   fd_input_port_type = scheme_make_port_type("<stream-input-port>");
   fd_output_port_type = scheme_make_port_type("<stream-output-port>");
 #endif
@@ -412,15 +391,8 @@ scheme_init_port (Scheme_Env *env)
   scheme_tcp_output_port_type = scheme_make_port_type("<tcp-output-port>");
 #endif
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-  tested_file_input_port_type = scheme_make_port_type("<file-input-port>");
-  tested_file_output_port_type = scheme_make_port_type("<file-output-port>");
-# ifdef WIN32_FD_HANDLES
+#ifdef WIN32_FD_HANDLES
   scheme_break_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-# endif
-# ifdef USE_BEOS_PORT_THREADS
-  scheme_break_semaphore = create_sem(0, NULL);
-# endif
 #endif
 
 #ifdef DETECT_WIN32_CONSOLE_STDIN
@@ -435,35 +407,47 @@ scheme_init_port (Scheme_Env *env)
 			    ? scheme_make_stdin()
 #ifdef USE_OSKIT_CONSOLE
 			    : (osk_not_console
-			       ? make_tested_file_input_port(stdin, "STDIN", 1)
+			       ? scheme_make_named_file_input_port(stdin, "STDIN")
 			       : make_oskit_console_input_port())
 #else
-# ifdef USE_FD_PORTS
+# ifdef MZ_FDS
+#  ifdef WINDOWS_FILE_HANDLES
+			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), "STDIN", 0)
+#  else
 			    : make_fd_input_port(0, "STDIN", 0)
+#  endif
 # else
-			    : make_tested_file_input_port(stdin, "STDIN", 1)
+			    : scheme_make_named_file_input_port(stdin, "STDIN")
 # endif
 #endif
 			    );
 
   scheme_orig_stdout_port = (scheme_make_stdout
 			     ? scheme_make_stdout()
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
+# ifdef WINDOWS_FILE_HANDLES
+			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 0)
+# else
 			     : make_fd_output_port(1, 0)
+# endif
 #else
-			     : make_tested_file_output_port(stdout, 1)
+			     : scheme_make_file_output_port(stdout)
 #endif
 			     );
 
   scheme_orig_stderr_port = (scheme_make_stderr
 			     ? scheme_make_stderr()
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
+# ifdef WINDOWS_FILE_HANDLES
+			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 0)
+# else
 			     : make_fd_output_port(2, 0)
+# endif
 #else
-			     : make_tested_file_output_port(stderr, 1)
+			     : scheme_make_file_output_port(stderr)
 #endif
 			     );
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   scheme_add_atexit_closer(flush_if_output_fds);
 #endif
 
@@ -540,7 +524,7 @@ void scheme_init_port_config(void)
 /*========================================================================*/
 
 /* Implement fd arrays (FD_SET, etc) with a runtime-determined size.
-   Also implement special hooks for Windows and BeOS "descriptors", like
+   Also implement special hooks for Windows "descriptors", like
    even queues and semaphores. */
 
 #ifdef USE_DYNAMIC_FDSET_SIZE
@@ -584,7 +568,7 @@ void scheme_fdzero(void *fd)
 
 #else
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
 # define fdset_type win_extended_fd_set
 #else
 # define fdset_type fd_set
@@ -592,16 +576,17 @@ void scheme_fdzero(void *fd)
 
 void *scheme_alloc_fdset_array(int count, int permanent)
 {
-#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES)
   void *fdarray;
   if (permanent)
     fdarray = scheme_malloc_eternal(count * sizeof(fdset_type));
   else
     fdarray = scheme_malloc_atomic(count * sizeof(fdset_type));
-# if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+# if defined(WIN32_FD_HANDLES)
   if (count) {
     ((win_extended_fd_set *)fdarray)->added = 0;
     ((win_extended_fd_set *)fdarray)->num_handles = 0;
+    ((win_extended_fd_set *)fdarray)->no_sleep = 0;
     ((win_extended_fd_set *)fdarray)->wait_event_mask = 0;
   }
 # endif
@@ -613,7 +598,7 @@ void *scheme_alloc_fdset_array(int count, int permanent)
 
 void *scheme_init_fdset_array(void *fdarray, int count)
 {
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
   if (count) {
     ((win_extended_fd_set *)fdarray)->added = 0;
     ((win_extended_fd_set *)fdarray)->num_handles = 0;
@@ -625,7 +610,7 @@ void *scheme_init_fdset_array(void *fdarray, int count)
 
 void *scheme_get_fdset(void *fdarray, int pos)
 {
-#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES)
   return ((fdset_type *)fdarray) + pos;
 #else
   return NULL;
@@ -637,7 +622,7 @@ void scheme_fdzero(void *fd)
 #if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
   FD_ZERO((fd_set *)fd);
 #endif
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
   ((win_extended_fd_set *)fd)->added = 0;
 #endif
 }
@@ -646,7 +631,7 @@ void scheme_fdzero(void *fd)
 
 void scheme_fdclr(void *fd, int n)
 {
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
   if (FD_ISSET(n, ((fd_set *)fd)))
     --((win_extended_fd_set *)fd)->added;
 #endif
@@ -657,7 +642,7 @@ void scheme_fdclr(void *fd, int n)
 
 void scheme_fdset(void *fd, int n)
 {
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
   if (!FD_ISSET(n, ((fd_set *)fd)))
     ((win_extended_fd_set *)fd)->added++;
 #endif
@@ -677,7 +662,7 @@ int scheme_fdisset(void *fd, int n)
 
 void scheme_add_fd_handle(void *h, void *fds, int repost)
 {
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
   win_extended_fd_set *efd = (win_extended_fd_set *)fds;
   OS_SEMAPHORE_TYPE *hs;
   int i, *rps;
@@ -697,6 +682,15 @@ void scheme_add_fd_handle(void *h, void *fds, int repost)
   efd->repost_sema = rps;
 #else
   /* Do nothing. */
+#endif
+}
+
+void scheme_add_fd_nosleep(void *fds)
+{
+#if defined(WIN32_FD_HANDLES)
+  win_extended_fd_set *efd = (win_extended_fd_set *)fds;
+  efd->no_sleep = 1;
+#else
 #endif
 }
 
@@ -724,6 +718,7 @@ typedef struct Scheme_Thread_Memory {
   MZTAG_IF_REQUIRED
   void *handle;
   void *subhandle;
+  int autoclose;
   struct Scheme_Thread_Memory *prev;
   struct Scheme_Thread_Memory *next;
 } Scheme_Thread_Memory;
@@ -755,9 +750,12 @@ void scheme_init_thread_memory()
   GC_collect_end_callback = scheme_resume_remembered_threads;
 }
 
-Scheme_Thread_Memory *scheme_remember_thread(void *t)
+Scheme_Thread_Memory *scheme_remember_thread(void *t, int autoclose)
 {
   Scheme_Thread_Memory *tm = tm_next;
+
+  tm->handle = t;
+  tm->autoclose = autoclose;
 
   tm->next = tm_start;
   if (tm->next)
@@ -807,12 +805,31 @@ void scheme_forget_subthread(struct Scheme_Thread_Memory *tm)
 
 void scheme_suspend_remembered_threads(void)
 {
-  Scheme_Thread_Memory *tm;
+  Scheme_Thread_Memory *tm, *next, *prev = NULL;
   
-  for (tm = tm_start; tm; tm = tm->next) {
-    SuspendThread((HANDLE)tm->handle);
-    if (tm->subhandle)
-      SuspendThread((HANDLE)tm->subhandle);
+  for (tm = tm_start; tm; tm = next) {
+    next = tm->next;
+
+    if (tm->autoclose) {
+      if (WaitForSingleObject(tm->handle, 0) == WAIT_OBJECT_0) {
+	CloseHandle((HANDLE)tm->handle);
+	tm->handle = NULL;
+	if (prev)
+	  prev->next = tm->next;
+	else
+	  tm_start = tm->next;
+#ifdef MZ_PRECISE_GC
+	free(tm);
+#endif
+      }
+    }
+
+    if (tm->handle) {
+      SuspendThread((HANDLE)tm->handle);
+      if (tm->subhandle)
+	SuspendThread((HANDLE)tm->subhandle);
+      prev = tm;
+    }
   }
 }
 
@@ -911,7 +928,7 @@ static int waitable_input_port_p(Scheme_Object *p)
   Scheme_Object *sub_type = ((Scheme_Input_Port *)p)->sub_type;
 
   return (SAME_OBJ(sub_type, file_input_port_type)
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 	  || SAME_OBJ(sub_type, fd_input_port_type)
 #endif
 #ifdef USE_OSKIT_CONSOLE
@@ -919,9 +936,6 @@ static int waitable_input_port_p(Scheme_Object *p)
 #endif
 #ifdef USE_TCP
 	  || SAME_OBJ(sub_type, scheme_tcp_input_port_type)
-#endif
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-	  || SAME_OBJ(sub_type, tested_file_input_port_type)
 #endif
 	  || SAME_OBJ(sub_type, scheme_pipe_read_port_type));
 }
@@ -970,7 +984,7 @@ static int waitable_output_port_p(Scheme_Object *p)
   Scheme_Object *sub_type = ((Scheme_Output_Port *)p)->sub_type;
 
   return (SAME_OBJ(sub_type, file_output_port_type)
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 	  || SAME_OBJ(sub_type, fd_output_port_type)
 #endif
 #ifdef USE_TCP
@@ -1161,7 +1175,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       buffer[offset + got] = 0;
 #endif
       got += fread(buffer + offset + got, 1, size, f);
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     } else if (SAME_OBJ(ip->sub_type, fd_input_port_type)
 	       && ((Scheme_FD *)ip->port_data)->regfile) {
       Scheme_FD *fip = (Scheme_FD *)ip->port_data;
@@ -1178,12 +1192,20 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       size -= n;
 
       if (size) {
+# ifdef WINDOWS_FILE_HANDLES
+	long rgot;
+	if (ReadFile((HANDLE)fip->fd, buffer + offset + got, size, &rgot, NULL))
+	  n = rgot;
+	else
+	  n = 0;
+# else
 	/* Since this is a regular file, we assume EINTR means no
 	   data was read yet. We could probably assume that EINTR wouldn't
 	   happen. */
 	do {
 	  n = read(fip->fd, buffer + offset + got, size);
 	} while ((n == -1) && (errno == EINTR));
+#endif
 	if (n > 0)
 	  got += n;
       }
@@ -1270,14 +1292,14 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
     Getc_Fun f = ip->getc_fun;
     Char_Ready_Fun cr = ip->char_ready_fun;
     Scheme_Thread *pr = scheme_current_thread;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     Scheme_FD *fip;
 #endif
 #ifdef USE_TCP
     Scheme_Tcp_Buf *data;
 #endif
 
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     fip = (SAME_OBJ(ip->sub_type, fd_input_port_type)
 	   ? (Scheme_FD *)ip->port_data
 	   : (Scheme_FD *)NULL);
@@ -1290,7 +1312,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 
     while (size) {
       if (got) {
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
 	if (!fip || !fip->bufcount)
 #endif
 #ifdef USE_TCP
@@ -1300,7 +1322,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 	      break;
 	pr->eof_on_error = 1;
       }
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
       /* Fast path for fds */
       if (fip && fip->bufcount) {
 	int n;
@@ -1821,8 +1843,13 @@ scheme_close_output_port(Scheme_Object *port)
       f(op);
     }
 
-    if (op->mref)
+    /* NOTE: Allow the possibility that some other thread finishes the
+       close while f blocks. */
+
+    if (op->mref) {
       scheme_remove_managed(op->mref, (Scheme_Object *)op);
+      op->mref = NULL;
+    }
 
     op->closed = 1;
   }
@@ -1893,7 +1920,7 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
     /* TCP ports */
     putten = scheme_tcp_write_nb_string(SCHEME_STR_VAL(str), size, start, 1, op);
 #endif
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   } else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
     /* fd ports */
     putten = flush_fd(op, SCHEME_STR_VAL(str), size + start, start, 1);
@@ -1925,13 +1952,9 @@ void scheme_flush_orig_outputs(void)
   while (1) {
     if (SAME_OBJ(op->sub_type, file_output_port_type))
       fflush(((Scheme_Output_File *)op->port_data)->f);
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     else if (SAME_OBJ(op->sub_type, fd_output_port_type))
       flush_fd(op, NULL, 0, 0, 0);
-#endif
-#ifdef USING_TESTED_OUTPUT_FILE
-    else if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
-      flush_tested(op);
 #endif
     
     if (diderr)
@@ -1955,13 +1978,9 @@ void scheme_flush_output(Scheme_Object *o)
 		       errno);
     }
   }
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   if (SAME_OBJ(op->sub_type, fd_output_port_type))
     flush_fd(op, NULL, 0, 0, 0);
-#endif
-#ifdef USING_TESTED_OUTPUT_FILE
-  if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
-    flush_tested(op);
 #endif
 }
 
@@ -1975,12 +1994,8 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
 
     if (SAME_OBJ(ip->sub_type, file_input_port_type))
       return scheme_true;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
-      return scheme_true;
-#endif
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-    if (SAME_OBJ(ip->sub_type, tested_file_input_port_type))
       return scheme_true;
 #endif
   } else if (SCHEME_OUTPORTP(p)) {
@@ -1988,12 +2003,8 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
 
     if (SAME_OBJ(op->sub_type, file_output_port_type))
       return scheme_true;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     else if (SAME_OBJ(op->sub_type, fd_output_port_type))
-      return scheme_true;
-#endif
-#ifdef USING_TESTED_OUTPUT_FILE
-    if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
       return scheme_true;
 #endif
   } else {
@@ -2029,7 +2040,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   scheme_make_string(filename),
 		   fail_err_symbol,
-		   "%s: %s: \"%q\"%s%q%s (%e)", 
+		   "%s: %s: \"%q\"%s%q%s (" FILENAME_EXN_E ")", 
 		   name, msg, filename,
 		   pre, rel, post,
 		   err);
@@ -2042,7 +2053,11 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   int fd;
   struct stat buf;
 #else
+# ifdef WINDOWS_FILE_HANDLES
+  HANDLE fd;
+# else
   FILE *fp;
+# endif
 #endif
   char *mode = "rb";
   char *filename;
@@ -2120,6 +2135,22 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     }
   }
 #else
+# ifdef WINDOWS_FILE_HANDLES
+  fd = CreateFile(filename,
+		  GENERIC_READ,
+		  FILE_SHARE_READ | FILE_SHARE_WRITE,
+		  NULL,
+		  OPEN_EXISTING,
+		  0,
+		  NULL);
+  if (fd == INVALID_HANDLE_VALUE) {
+    filename_exn(name, "cannot open input file", filename, GetLastError());
+    return NULL;
+  } else
+    regfile = (GetFileType(fd) == FILE_TYPE_DISK);
+
+  result = make_fd_input_port((int)fd, filename, regfile);
+# else
   if (scheme_directory_exists(filename)) {
     filename_exn(name, "cannot open directory as a file", filename, 0);
     return NULL;
@@ -2134,7 +2165,8 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   }
   scheme_file_open_count++;
 
-  result = make_tested_file_input_port(fp, filename, !regfile);
+  result = scheme_make_named_file_input_port(fp, filename);
+# endif
 #endif
 
   return result;
@@ -2148,7 +2180,12 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   int flags, regfile;
   struct stat buf;
 #else
+# ifdef WINDOWS_FILE_HANDLES
+  HANDLE fd;
+  int hmode, regfile;
+# else
   FILE *fp;
+# endif
 #endif
   int e_set = 0, m_set = 0, i;
   int existsok = 0, namelen;
@@ -2303,6 +2340,57 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   return make_fd_output_port(fd, regfile);
 
 #else
+# ifdef WINDOWS_FILE_HANDLES
+  if (!existsok)
+    hmode = CREATE_NEW;
+  else if (existsok < 0) {
+    if (mode[0] == 'a')
+      hmode = OPEN_ALWAYS;
+    else
+      hmode = TRUNCATE_EXISTING;
+  } else if (existsok  == 1)
+    hmode = CREATE_ALWAYS;
+  else if (existsok  == 2)
+    hmode = OPEN_ALWAYS;
+
+  fd = CreateFile(filename,
+		  GENERIC_WRITE,
+		  FILE_SHARE_READ | FILE_SHARE_WRITE,
+		  NULL,
+		  hmode,
+		  0,
+		  NULL);
+
+  if (fd == INVALID_HANDLE_VALUE) {
+    int err;
+    err = GetLastError();
+    if ((err == ERROR_ACCESS_DENIED) && (existsok < -1)) {
+      /* Delete and try again... */
+      if (DeleteFile(filename)) {
+	fd = CreateFile(filename,
+			GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL,
+			hmode,
+			0,
+			NULL);
+	if (fd == INVALID_HANDLE_VALUE)
+	  err = GetLastError();
+      }
+    }
+
+    if (fd == INVALID_HANDLE_VALUE) {
+      filename_exn(name, "cannot open output file", filename, err);
+      return NULL;
+    }
+  } else
+    regfile = (GetFileType(fd) == FILE_TYPE_DISK);
+
+  if (regfile && (mode[0] == 'a'))
+    SetFilePointer(fd, 0, NULL, FILE_END);
+
+  return make_fd_output_port((int)fd, regfile);
+# else
 
   if (scheme_directory_exists(filename)) {
     if (!existsok)
@@ -2316,32 +2404,32 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     return scheme_void;
   }
 
-#ifndef MAC_FILE_SYSTEM
+#  ifndef MAC_FILE_SYSTEM
   if (!existsok || (existsok == 1)) {
-#endif
+#  endif
     if (scheme_file_exists(filename)) {
       if (!existsok)
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 scheme_intern_symbol("already-exists"),
 			 "%s: file \"%q\" exists", name, filename);
-#ifdef MAC_FILE_SYSTEM
+#  ifdef MAC_FILE_SYSTEM
       if (existsok == 1) {
-#endif
+#  endif
 	if (MSC_IZE(unlink)(filename))
 	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
 			   "%s: error deleting \"%q\" (%e)", 
 			   name, filename, errno);
-#ifdef MAC_FILE_SYSTEM
+#  ifdef MAC_FILE_SYSTEM
       } else
 	creating = 0;
-#endif
+#  endif
     }
-#ifndef MAC_FILE_SYSTEM
+#  ifndef MAC_FILE_SYSTEM
   }
-#endif
+#  endif
 
   fp = fopen(filename, mode);
   if (!fp) {
@@ -2356,9 +2444,9 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 			   name, filename);
 	else {
 	  fp = fopen(filename, mode);
-#ifdef MAC_FILE_SYSTEM
+#  ifdef MAC_FILE_SYSTEM
 	  creating = 1;
-#endif
+#  endif
 	}
       }
     }
@@ -2367,23 +2455,14 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   }
   scheme_file_open_count++;
 
-#ifdef MAC_FILE_SYSTEM
+#  ifdef MAC_FILE_SYSTEM
   if (creating)
     scheme_file_create_hook(filename);
-#endif
-
-#ifdef USING_TESTED_OUTPUT_FILE
-  {
-    int regfile;
-    
-    regfile = scheme_is_regular_file(filename);
-    if (!regfile)
-      return make_tested_file_output_port(fp, 1);
-  }
-#endif
+#  endif
 
   return scheme_make_file_output_port(fp);
 
+# endif
 #endif
 }
 
@@ -2394,7 +2473,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
   FILE *f;
   Scheme_Indexed_String *is;
   int fd;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   int had_fd;
 #endif
   int wis;
@@ -2420,7 +2499,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
   is = NULL;
   wis = 0;
   fd = 0;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   had_fd = 0;
 #endif
 
@@ -2430,7 +2509,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     op = (Scheme_Output_Port *)argv[0];
     if (SAME_OBJ(op->sub_type, file_output_port_type)) {
       f = ((Scheme_Output_File *)op->port_data)->f;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     } else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
       fd = ((Scheme_FD *)op->port_data)->fd;
       had_fd = 1;
@@ -2446,7 +2525,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     ip = (Scheme_Input_Port *)argv[0];
     if (SAME_OBJ(ip->sub_type, file_input_port_type)) {
       f = ((Scheme_Input_File *)ip->port_data)->f;
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     } else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
       fd = ((Scheme_FD *)ip->port_data)->fd;
       had_fd = 1;
@@ -2467,7 +2546,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
   }
 
   if (!f
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
       && !had_fd
 #endif
       && !is)
@@ -2495,19 +2574,28 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 			 "file-position: position change failed on file (%e)",
 			 errno);
       }
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     } else if (had_fd) {
-      long n = SCHEME_INT_VAL(argv[1]);
+      long n = SCHEME_INT_VAL(argv[1]), lv;
 
       if (SCHEME_OUTPORTP(argv[0])) {
 	flush_fd((Scheme_Output_Port *)argv[0], NULL, 0, 0, 0);
       }
 
-      if (lseek(fd, n, 0) < 0) {
+# ifdef WINDOWS_FILE_HANDLES
+      lv = SetFilePointer((HANDLE)fd, n, NULL, FILE_BEGIN);
+# else
+      lv = lseek(fd, n, 0);
+# endif
+
+      if (lv < 0) {
+# ifdef WINDOWS_FILE_HANDLES
+	errno = GetLastError();
+# endif
 	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 fail_err_symbol,
-			 "file-position: position change failed on stream (%e)",
+			 "file-position: position change failed on stream (" FILENAME_EXN_E ")",
 			 errno);
       }
 
@@ -2558,9 +2646,13 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     long p;
     if (f) {
       p = ftell(f);
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     } else if (had_fd) {
+# ifdef WINDOWS_FILE_HANDLES
+      p = SetFilePointer((HANDLE)fd, 0, NULL, FILE_CURRENT);
+# else
       p = lseek(fd, 0, 1);
+# endif
       if (p < 0) {
 	if (SCHEME_INPORTP(argv[0])) {
 	  p = scheme_tell(argv[0]);
@@ -2608,7 +2700,7 @@ scheme_file_buffer(int argc, Scheme_Object *argv[])
   op = (Scheme_Output_Port *)argv[0];
 
   if (argc == 1) {
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
       Scheme_FD *fd = (Scheme_FD *)op->port_data;
       switch (fd->flush) {
@@ -2653,21 +2745,8 @@ scheme_file_buffer(int argc, Scheme_Object *argv[])
 	return NULL;
       }
     }
-#ifdef USING_TESTED_OUTPUT_FILE
-    if (SAME_OBJ(op->sub_type, tested_file_output_port_type)) {
-      int mode;
 
-      if (SAME_OBJ(s, block_symbol))
-	mode = _IOFBF;
-      else if (SAME_OBJ(s, line_symbol))
-	mode = _IOLBF;
-      else
-	mode = _IONBF;
-      tested_output_setvbuf(op, mode);
-    }
-#endif
-
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
     if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
       Scheme_FD *fd = (Scheme_FD *)op->port_data;
       if (SAME_OBJ(s, block_symbol))
@@ -2758,11 +2837,6 @@ file_char_ready (Scheme_Input_Port *port)
   if (fp->_r > 0)
     return 1;
 # endif
-# ifdef HAS_BEOS_IOB  
-  /* Not actually useful since BeOS doesn't have file descriptors... */
-  if (fp->buffer_pos)
-    return 1;
-# endif
 # ifdef HAS_OSKIT_IOB  
   if (fp->_r)
     return 1;
@@ -2819,7 +2893,7 @@ static int file_getc(Scheme_Input_Port *port)
   fp = fip->f;
 
   if (!fip->regfile && !file_char_ready(port)) {
-#if defined(FILES_HAVE_FDS) || defined(WIN32_FD_HANDLES)
+#if defined(FILES_HAVE_FDS)
     scheme_current_thread->block_descriptor = PORT_BLOCKED;
     scheme_current_thread->blocker = (Scheme_Object *)port;
 # define FILE_BLOCK_TIME (float)0.0
@@ -2829,7 +2903,7 @@ static int file_getc(Scheme_Input_Port *port)
     do {
       scheme_thread_block(FILE_BLOCK_TIME);
     } while (!file_char_ready(port));
-#if defined(FILES_HAVE_FDS) || defined(WIN32_FD_HANDLES)
+#if defined(FILES_HAVE_FDS)
     scheme_current_thread->block_descriptor = NOT_BLOCKED;
     scheme_current_thread->blocker = NULL;
 #endif
@@ -2946,7 +3020,12 @@ scheme_make_file_input_port(FILE *fp)
 /*                           fd input ports                               */
 /*========================================================================*/
 
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
+
+# ifdef WINDOWS_FILE_HANDLES
+static long WindowsFDReader(Win_FD_Input_Thread *th);
+static void WindowsFDICleanup(Win_FD_Input_Thread *th);
+# endif
 
 static int
 fd_char_ready (Scheme_Input_Port *port)
@@ -2961,6 +3040,27 @@ fd_char_ready (Scheme_Input_Port *port)
   if (fip->bufcount)
     return 1;
   else {
+#ifdef WINDOWS_FILE_HANDLES
+    if (!fip->th) {
+      /* No thread -- apparently wait works */
+      if (WaitForSingleObject((HANDLE)fip->fd, 0) == WAIT_OBJECT_0)
+	return 1;
+    } else {
+      if (fip->th->checking) {
+	if (WaitForSingleObject(fip->th->ready_sema, 0) == WAIT_OBJECT_0) {
+	  fip->th->checking = 0;
+	  return 1;
+	}
+      } else if (fip->th->avail || fip->th->err || fip->th->eof)
+	return 1;
+      else {
+	fip->th->checking = 1;
+	ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
+      }
+    }
+
+    return 0;
+#else
     int r;
     DECL_FDSET(readfds, 1);
     DECL_FDSET(exnfds, 1);
@@ -2978,7 +3078,7 @@ fd_char_ready (Scheme_Input_Port *port)
       r = select(fip->fd + 1, readfds, NULL, exnfds, &time);
     } while ((r == -1) && (errno == EINTR));
 
-#ifdef SOME_FDS_ARE_NOT_SELECTABLE
+# ifdef SOME_FDS_ARE_NOT_SELECTABLE
     /* Try a non-blocking read: */
     if (!r) {
       int c, ready;
@@ -2993,9 +3093,10 @@ fd_char_ready (Scheme_Input_Port *port)
 	r = 1;
       }
     }
-#endif
+# endif
 
     return r;
+#endif
   }
 }
 
@@ -3036,9 +3137,35 @@ static int fd_getc(Scheme_Input_Port *port)
       return fip->buffer[fip->buffpos++];
     }
 
+#ifdef WINDOWS_FILE_HANDLES
+    if (!fip->th) {
+      DWORD rgot;
+
+      rgot = MZPORT_FD_BUFFSIZE;
+      
+      if (ReadFile((HANDLE)fip->fd, fip->buffer, rgot, &rgot, NULL)) {
+	bc = rgot;
+      } else {
+	bc = -1;
+	errno = GetLastError();
+      }
+    } else {
+      if (fip->th->eof) {
+	bc = 0;
+      } else if (fip->th->err) {
+	bc = -1;
+	errno = fip->th->err;
+      } else {
+	bc = fip->th->avail;
+	fip->th->avail = 0;
+      }
+    }
+#else
     do {
       bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
     } while ((bc == -1) && (errno == EINTR));
+#endif
+
     fip->bufcount = bc;
 
     if (fip->bufcount < 0) {
@@ -3049,7 +3176,7 @@ static int fd_getc(Scheme_Input_Port *port)
       } else {
 	scheme_raise_exn(MZEXN_I_O_PORT_READ,
 			 port,
-			 "error reading from stream port \"%q\" (%e)",
+			 "error reading from stream port \"%q\" (" FILENAME_EXN_E ")",
 			 port->name, errno);
 	return 0;
       }
@@ -3074,9 +3201,20 @@ fd_close_input(Scheme_Input_Port *port)
 
   fip = (Scheme_FD *)port->port_data;
 
+#ifdef WINDOWS_FILE_HANDLES
+  if (fip->th) {
+    fip->th->checking = -1;
+    ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
+    if (WaitForSingleObject(fip->th->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
+      WindowsFDICleanup(fip->th);
+    } /* otherwise, thread is responsible for clean-up */
+  }
+  CloseHandle((HANDLE)fip->fd);
+#else
   do {
     cr = close(fip->fd);
   } while ((cr == -1) && (errno == EINTR));
+#endif
 
   --scheme_file_open_count;
 }
@@ -3090,10 +3228,26 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 
   fip = (Scheme_FD *)port->port_data;
 
+#ifdef WINDOWS_FILE_HANDLES
   n = fip->fd;
   MZ_FD_SET(n, (fd_set *)fds);
   fds2 = MZ_GET_FDSET(fds, 2);
   MZ_FD_SET(n, (fd_set *)fds2);
+#else
+  if (fip->th) {
+    if (!fip->checking) {
+      if (fip->avail || fip->err || fip->eof)
+	scheme_add_fd_nosleep(fds);
+      else {
+	fip->checking = 1;
+	ReleaseSemaphore(fip->th->checking_sema, 1, NULL);
+	scheme_add_fd_handle((void *)fip->th->ready_sema, fds, 1);
+      }
+    } else
+      scheme_add_fd_handle((void *)fip->th->ready_sema, fds, 1);
+  } else
+    scheme_add_fd_handle((void *)fip->fd, fds, 0);
+#endif
 }
 
 static Scheme_Object *
@@ -3131,7 +3285,75 @@ make_fd_input_port(int fd, const char *filename, int regfile)
     ip->name = s;
   }
 
+#ifdef WINDOWS_FILE_HANDLES
+  if (GetFileType((HANDLE)fd) != FILE_TYPE_DISK) {
+    Win_FD_Input_Thread *th;
+    DWORD id;
+    HANDLE h;
+ 
+    th = (Win_FD_Input_Thread *)malloc(sizeof(Win_FD_Input_Thread));
+
+    /* Replace buffer with a malloced one: */
+    bfr = (unsigned char *)malloc(MZPORT_FD_BUFFSIZE);
+    fip->buffer = bfr;
+    th->buffer = bfr;
+    
+    th->fd = (HANDLE)fd;
+    th->avail = 0;
+    th->err = 0;
+    th->eof = 0;
+    th->checking_sema = CreateSemaphore(NULL, 0, 1, NULL);
+    th->ready_sema = CreateSemaphore(NULL, 0, 1, NULL);
+    th->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);
+
+    h = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)WindowsFDReader, th, 0, &id);
+
+    scheme_remember_thread(h, 1);
+  }
+#endif
+
   return (Scheme_Object *)ip;
+}
+
+static long WindowsFDReader(Win_FD_Input_Thread *th)
+{
+  DWORD toget, got;
+
+  /* Non-pipe: get one char at a time: */
+  if (GetFileType((HANDLE)th->fd) == FILE_TYPE_PIPE)
+    toget = MZPORT_FD_BUFFSIZE;
+  else
+    toget = 1;
+
+  while (!th->eof && !th->err) {
+    WaitForSingleObject(th->checking_sema, INFINITE);
+
+    if (th->checking < 0)
+      break;
+
+    if (ReadFile(th->fd, th->buffer, toget, &got, NULL)) {
+      th->avail = got;
+      if (!got)
+	th->eof = 1;
+    } else {
+      th->err = GetLastError();
+    }
+
+    ReleaseSemaphore(th->ready_sema, 1, NULL);
+  }
+
+  if (WaitForSingleObject(th->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
+    WindowsFDICleanup(th);
+  } /* otherwise, main thread is responsible for clean-up */
+}
+
+static void WindowsFDICleanup(Win_FD_Input_Thread *th)
+{
+  CloseHandle(th->checking_sema);
+  CloseHandle(th->ready_sema);
+  CloseHandle(th->you_clean_up_sema);
+  free(th->buffer);
+  free(th);
 }
 
 #endif
@@ -3304,7 +3526,7 @@ make_oskit_console_input_port()
 
 # ifdef OSKIT_TEST
   REGISTER_SO(normal_stdin);
-  normal_stdin = make_tested_file_input_port(stdin, "STDIN", 1);
+  normal_stdin = scheme_make_named_file_input_port(stdin, "STDIN");
 # endif
 
   ip = _scheme_make_input_port(oskit_console_input_port_type,
@@ -3328,868 +3550,6 @@ void scheme_check_keyboard_input(void)
 }
 
 #endif
-
-/*========================================================================*/
-/*                   Windows/BeOS FILE input ports                        */
-/*========================================================================*/
-
-/* Win32/BeOS input ports that could block on reads. The BeOS
-   contortions are resonable, and they'll probably fix select()
-   in the future so this code is unneeded. The Win32 contortions
-   are insane, inefficient, and apparently unavoidable. */
-
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-
-#define TIF_BUFFER 500
-
-typedef struct {
-  MZTAG_IF_REQUIRED
-  FILE *fp;
-  OS_THREAD_TYPE th;             /* worker thread */
-  OS_SEMAPHORE_TYPE try_sema;    /* hit when a char is wanted */
-  OS_SEMAPHORE_TYPE ready_sema;  /* hit when a char is ready */
-#ifdef WIN32_FD_HANDLES
-  int primtype; /* console or pipe? */
-  OS_SEMAPHORE_TYPE interrupt;  /* hit when a char is ready */
-  int stupid_eof_check;
-  OS_SEMAPHORE_TYPE stupid_eof_check_going;
-  struct Scheme_Thread_Memory *thread_memory;
-#endif
-  int need_wait;                 /* 1 => use ready_sema */
-  OS_MUTEX_TYPE lock_mutex;      /* lock on remaining fields */
-  volatile int trying; /* indicates that it's already trying to read */
-  volatile int ready;  /* indicates that a character is ready */
-  volatile int err_no;  /* indicates an error */
-  int marked_tested;   /* did broken_tested_io increment */
-  int c[TIF_BUFFER];   /* ready character */
-} Tested_Input_File;
-
-#ifdef WIN32_FD_HANDLES
-# define RELEASE_SEMAPHORE(sem) ReleaseSemaphore(sem, 1, NULL);
-# define TRY_WAIT_SEMAPHORE(sem) (WaitForSingleObject(sem, 0) == WAIT_OBJECT_0)
-# define WAIT_SEMAPHORE(sem) WaitForSingleObject(sem, INFINITE);
-# define WAIT_THREAD(th) WaitForSingleObject(th, INFINITE);
-# define MAKE_SEMAPHORE() CreateSemaphore(NULL, 0, TIF_BUFFER, NULL);
-# define FREE_SEMAPHORE(sem) CloseHandle(sem)
-# define MAKE_MUTEX(m) InitializeCriticalSection(&m)
-# define ACQUIRE_MUTEX(m) EnterCriticalSection(&m)
-# define RELEASE_MUTEX(m) LeaveCriticalSection(&m)
-# define FREE_MUTEX(m) DeleteCriticalSection(&m)
-#endif
-#ifdef USE_BEOS_PORT_THREADS
-# define RELEASE_SEMAPHORE(sem) release_sem(sem)
-# define TRY_WAIT_SEMAPHORE(sem) (acquire_sem_etc(sem, 1, B_TIMEOUT, 0) == B_NO_ERROR)
-# define WAIT_SEMAPHORE(sem) while (acquire_sem(sem) != B_NO_ERROR) {}
-static status_t mz_thread_status;
-# define WAIT_THREAD(th) wait_for_thread(th, &mz_thread_status)
-# define MAKE_SEMAPHORE() create_sem(0, NULL)
-# define FREE_SEMAPHORE(sem) delete_sem(sem)
-# define MAKE_MUTEX(m) (m.v = 0, m.s = MAKE_SEMAPHORE())
-# define ACQUIRE_MUTEX(m) if (atomic_add(&m.v, 1) >= 1) { WAIT_SEMAPHORE(m.s); }
-# define RELEASE_MUTEX(m) if (atomic_add(&m.v, -1) > 1) { RELEASE_SEMAPHORE(m.s); }
-# define FREE_MUTEX(m) FREE_SEMAPHORE(m.s)
-
-static sem_id got_started;
-#endif
-
-static int broken_tested_io; /* triggers agressive exit strategy */
-
-static int tested_file_char_ready(Scheme_Input_Port *p)
-{
-  Tested_Input_File *tip;
-
-  tip = (Tested_Input_File *)p->port_data;
-
-  if (tip->ready || tip->err_no)
-    return 1;
- 
-  if (!tip->trying) {
-    tip->trying = TIF_BUFFER;
-    RELEASE_SEMAPHORE(tip->try_sema);
-    if (!tip->marked_tested) {
-      tip->marked_tested = 1;
-      broken_tested_io++;
-    }
-  }
-
-  return 0;
-}
-
-static int tested_file_getc(Scheme_Input_Port *p)
-{
-  Tested_Input_File *tip;
-
-  tip = (Tested_Input_File *)p->port_data;
-
-  if (!tested_file_char_ready(p)) {
-    scheme_current_thread->block_descriptor = PORT_BLOCKED;
-    scheme_current_thread->blocker = (Scheme_Object *)p;
-    do {
-      scheme_thread_block((float)0.0);
-    } while (!tested_file_char_ready(p));
-    scheme_current_thread->block_descriptor = NOT_BLOCKED;
-    scheme_current_thread->blocker = NULL;
-    scheme_current_thread->ran_some = 1;
-  }
-
-  /* Might get closed while we were waiting: */
-  if (p->closed) {
-    /* Call scheme_getc to signal the error */
-    scheme_getc((Scheme_Object *)p);
-    return 0; /* doesn't get here */
-  }
-
-  if (tip->ready) {
-    int c;
-    ACQUIRE_MUTEX(tip->lock_mutex);
-    if (tip->need_wait) {
-      WAIT_SEMAPHORE(tip->ready_sema);
-      tip->need_wait = 0;
-    }
-    c = tip->c[--tip->trying];
-    --tip->ready;
-    RELEASE_MUTEX(tip->lock_mutex);
-    return c;
-  } else {
-    /* must be an error */
-    if (!scheme_return_eof_for_error()) {
-      scheme_raise_exn(MZEXN_I_O_PORT_READ,
-		       p,
-		       "error reading from file port \"%q\" (%e)",
-		       p->name, tip->err_no);
-    }
-    return EOF;
-  }
-}
-
-static void tested_file_close_input(Scheme_Input_Port *p)
-{
-  Tested_Input_File *tip;
-
-  tip = (Tested_Input_File *)p->port_data;
-
-  tip->err_no = 1;
-
-#ifdef WIN32_FD_HANDLES
-  /* Tell reader thread to stop */
-  RELEASE_SEMAPHORE(tip->interrupt);
-#endif
-
-  fclose(tip->fp); /* BeOS: sends eof to reader thread */
-
-  --scheme_file_open_count;
-
-  RELEASE_SEMAPHORE(tip->try_sema);
-
-#ifdef WIN32_FD_HANDLES
-  if (WaitForSingleObject(tip->th, 5000) == WAIT_TIMEOUT) {
-    /* kill it if it's still there; according to the docs, we
-       shouldn't do this, but my experience is that if something
-       goes wrong, killing the thread makes my NT machine less
-       likely to hang. */
-    printf("have to kill reader thread\n");
-    TerminateThread(tip->th, -1);
-    broken_tested_io++;
-  }
-  scheme_forget_thread(tip->thread_memory);
-  CloseHandle(tip->th);
-  if (tip->stupid_eof_check_going)
-    CloseHandle(tip->stupid_eof_check_going);
-#else
-  WAIT_THREAD(tip->th);
-#endif
-
-  FREE_SEMAPHORE(tip->ready_sema);
-  FREE_SEMAPHORE(tip->try_sema);
-  FREE_MUTEX(tip->lock_mutex);
-  
-  if (tip->marked_tested)
-    --broken_tested_io;
-}
-
-static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
-{
-  Tested_Input_File *tip;
-
-  tip = (Tested_Input_File *)p->port_data;
-
-  if (!tip->need_wait) {
-    ACQUIRE_MUTEX(tip->lock_mutex);
-    if (tip->ready) {
-      /* A char turned up as we were preparing the wakeup... */
-      RELEASE_SEMAPHORE(tip->ready_sema);
-      tip->need_wait = -1;
-    } else
-      tip->need_wait = 1;
-    RELEASE_MUTEX(tip->lock_mutex);
-  }
-
-  scheme_add_fd_handle((void *)tip->ready_sema, fds, 1);
-}
-
-#ifdef WIN32_FD_HANDLES
-
-static int was_break;
-static BOOL CALLBACK that_was_a_break(DWORD x)
-{
-  if (x != CTRL_C_EVENT)
-    return FALSE;
-
-  was_break = 1;
-
-  {
-    Scheme_Thread *p = scheme_main_thread;
-    if (!p->external_break)
-      scheme_break_thread(p);
-  }
-
-  /* Unreliabale hack: */
-  Sleep(100); /* Give broken port time to notice it's a break */
-  was_break = 0;
-
-  return TRUE;
-}
-
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
-static long StupidEofCheck(Tested_Input_File *tip)
-{
-  DWORD got;
-  HANDLE h;
-
-  RELEASE_SEMAPHORE(tip->stupid_eof_check_going);
-  
-  h = (HANDLE)_get_osfhandle(_fileno(tip->fp));
-  if (ReadFile(h, NULL, 0, &got, NULL))
-    tip->stupid_eof_check = 1;
-  
-  return 0;
-}
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
-
-static int stupid_windows_machine;
-
-#endif
-
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
-static long read_for_tested_file(void *data)
-{
-  Tested_Input_File *tip;
-  int c = 0, i;
-
-#ifdef USE_BEOS_PORT_THREADS
-  signal(SIGINT, SIG_IGN);
-  RELEASE_SEMAPHORE(got_started);
-#endif
-
-#ifdef WIN32_FD_HANDLES
-  /* Try to make ctl-c work. */
-  SetConsoleCtrlHandler(that_was_a_break, TRUE);
-#endif
-
-  tip = (Tested_Input_File *)data;
-
-  while (!tip->err_no) {
-    WAIT_SEMAPHORE(tip->try_sema);
-    for (i = tip->trying; !tip->err_no && i--; ) {
-    try_again:
-#ifdef WIN32_FD_HANDLES
-# if defined(__BORLANDC__)
-#  define TIP_FP_CNT level
-# else
-#  define TIP_FP_CNT _cnt
-# endif
-      if (!tip->fp->TIP_FP_CNT) {
-	HANDLE file;
-	file = (HANDLE)_get_osfhandle(_fileno(tip->fp));
-	if (tip->primtype == FILE_TYPE_CHAR) {
-	  /* Console */
-	  HANDLE h[2];
-	  h[0] = file;
-	  h[1] = tip->interrupt;
-	  WaitForMultipleObjectsEx(2, h, FALSE, INFINITE, TRUE);
-	} else {
-	  /* Pipe */
-	  /* Is there really no better solution than polling?! */
-	  /* We can't use ReadFileEx because the pipe isn't necessarily
-	     created as overlayed. */
-	  while (!tip->err_no) {
-	    DWORD avail;
-	    /* Note: despite its name, PeekNamedPipe works on anonymous pipes. */
-	    if (!PeekNamedPipe(file, NULL, 0, NULL, &avail, NULL))
-	      break; /* let fgetc handle error */
-	    if (avail)
-	      break;
-
-	    /* Windows 98: PeekNamedPipe doesn't detect EOF! */
-	    if (stupid_windows_machine > 0) {
-	      DWORD id;
-	      HANDLE th;
-
-	      if (!tip->stupid_eof_check_going)
-		tip->stupid_eof_check_going = MAKE_SEMAPHORE();
-
-	      /* Perhaps unlikely: parent thread isn't memorized, yet: */
-	      while (!tip->thread_memory) {
-		Sleep(1);
-	      }
-
-	      tip->stupid_eof_check = 0;
-	      th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StupidEofCheck, tip, 0, &id);
-	      scheme_remember_subthread(tip->thread_memory, (void *)th);
-	      WAIT_SEMAPHORE(tip->stupid_eof_check_going);
-
-	      WaitForSingleObject(th, 100);
-	      TerminateThread(th, 0);
-	      scheme_forget_subthread(tip->thread_memory);
-	      CloseHandle(th);
-
-	      if (tip->stupid_eof_check)
-		break;
-	    }
-
-	    Sleep(100); /* Yuck Yuck Yuck Yuck */
-	  }
-	}
-	if (tip->err_no)
-	  break;
-      }
-#endif
-      c = fgetc(tip->fp);
-      tip->c[i] = c;
-      if (c == EOF) {
-	if (!feof(tip->fp)) {
-	  tip->err_no = errno;
-	  if (!tip->err_no)
-	    tip->err_no = 1;
-	} else {
-#ifdef WIN32_FD_HANDLES
-	  if (tip->primtype == FILE_TYPE_CHAR) {
-	    /* Console */
-	    /* Unreliabale hack: */
-	    Sleep(50); /* Give the break thread time, if it's there */
-	    if (was_break)
-	      goto try_again;
-	  }
-#endif
-	}
-      }
-      if (!tip->err_no) {
-	ACQUIRE_MUTEX(tip->lock_mutex);
-	tip->ready++;
-	if (tip->need_wait > 0) {
-	  RELEASE_SEMAPHORE(tip->ready_sema);
-	  tip->need_wait = -1;
-	}
-	RELEASE_MUTEX(tip->lock_mutex);
-      } else /* was error */
-	RELEASE_SEMAPHORE(tip->ready_sema);
-    }
-  }
-
-  return 0;
-}
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
-
-static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int tested)
-{
-  Scheme_Input_Port *ip;
-  Tested_Input_File *tip;
-
-  if (!tested)
-    return _scheme_make_named_file_input_port(fp, name, 1);
-    
-  tip = MALLOC_ONE_RT(Tested_Input_File);
-#ifdef MZ_PRECISE_GC
-  /* FIXME! */
-  /* Use malloc because the testing thread needs to access it. */
-  tip->type = scheme_rt_tested_input_file;
-  tip = (Tested_Input_File *)malloc(sizeof(Tested_Input_File));
-#endif
-#ifdef MZTAG_REQUIRED
-  tip->type = scheme_rt_tested_input_file;
-#endif
-
-  tip->fp = fp;
-
-  tip->ready = 0;
-  tip->trying = 0;
-  tip->err_no = 0;
-  tip->ready_sema = MAKE_SEMAPHORE();
-  tip->try_sema = MAKE_SEMAPHORE();
-#ifdef WIN32_FD_HANDLES
-  {
-    HANDLE h;
-    h = (HANDLE)_get_osfhandle(_fileno(tip->fp));
-    tip->primtype = GetFileType(h);
-  }
-  tip->interrupt = MAKE_SEMAPHORE();
-  tip->stupid_eof_check_going = NULL;
-#endif
-  MAKE_MUTEX(tip->lock_mutex);
-
-#ifdef WIN32_FD_HANDLES
-  if (!stupid_windows_machine) {
-    OSVERSIONINFO info;
-    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&info);
-    if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
-      stupid_windows_machine = -1; /* not as stupid */
-    else
-      stupid_windows_machine = 1;
-  }
-
-  /* Remap stdin, so system and process* don't get hung up. */
-  if (!_fileno(fp))
-    tip->fp = _fdopen(_dup(0), "rt");
-
-# ifdef NO_NEED_FOR_BEGINTHREAD
-#  define _beginthreadex CreateThread
-# endif
-# ifdef __BORLANDC__
-#  define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
-# else
-#  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
-# endif
-  {
-    DWORD id;
-    Scheme_Thread_Memory *tm;
-    void *th;
-    th = (void *)_beginthreadex(NULL, 5000, 
-				(MZ_LPTHREAD_START_ROUTINE)read_for_tested_file,
-				tip, 0, &id);
-    tip->th = th;
-    tm = scheme_remember_thread((void *)tip->th);
-    tip->thread_memory = tm;
-  }
-#endif
-
-#ifdef USE_BEOS_PORT_THREADS
-  {
-    sigset_t sigs;
-
-    if (!got_started)
-      got_started = create_sem(0, NULL);
-
-    /* Disable SIGINT until the child starts ignoring it */
-    sigemptyset(&sigs);
-    sigaddset(&sigs, SIGINT);
-    sigprocmask(SIG_BLOCK, &sigs, NULL);
-
-    tip->th = spawn_thread(read_for_tested_file, "port reader", 
-			   B_NORMAL_PRIORITY, tip);
-    if (tip->th < 0)
-      tip->th = 0;
-    else
-      resume_thread(tip->th);
-
-    WAIT_SEMAPHORE(got_started);
-    
-    sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-  }
-#endif
-
-  if (!tip->th) {
-    /* Thread creation failed; give up niceness: */
-    return scheme_make_named_file_input_port(fp, name);
-  }
-
-  ip = _scheme_make_input_port(tested_file_input_port_type,
-			       tip,
-			       tested_file_getc,
-			       NULL,
-			       tested_file_char_ready,
-			       tested_file_close_input,
-			       tested_file_need_wakeup,
-			       1);
-
-  {
-    name = scheme_strdup(name);
-    ip->name = name;
-  }
-
-  return (Scheme_Object *)ip;
-}
-
-#endif
-
-/*========================================================================*/
-/*                   Windows/BeOS FILE output ports                       */
-/*========================================================================*/
-
-/* See note above about input ports.  */
-
-#ifdef USING_TESTED_OUTPUT_FILE
-
-typedef struct {
-  MZTAG_IF_REQUIRED
-  FILE *fp;
-  OS_THREAD_TYPE th;             /* worker thread */
-  OS_SEMAPHORE_TYPE sema;        /* hit when output/flush is ready */
-  OS_SEMAPHORE_TYPE done_sema;   /* hit when output/flush is done */
-  int inuse;                     /* set when port in use */
-  volatile int working;          /* set when flush in progress */
-  volatile int ccount;           /* number of bytes to write; 0 means just flush */
-  volatile int done;             /* indicates thread should stop */
-  int marked_tested;             /* did broken_tested_io increment */
-  int err_no;                    /* indicates an error */
-  char c[TIF_BUFFER];            /* ready string */
-#ifdef WIN32_FD_HANDLES
-  struct Scheme_Thread_Memory *thread_memory;
-#endif
-} Tested_Output_File;
-
-static void release_inuse_lock(void *data)
-{
-  Tested_Output_File *top = (Tested_Output_File *)data;
-  top->inuse = 0;
-}
-
-static int file_done(Scheme_Object *port)
-{
-  Tested_Output_File *top;
-  top = (Tested_Output_File *)((Scheme_Output_Port *)port)->port_data;
-  return !top->working;
-}
-
-static void file_done_need_wakeup(Scheme_Object *port, void *fds)
-{
-  Tested_Output_File *top;
-  top = (Tested_Output_File *)((Scheme_Output_Port *)port)->port_data;
-
-  scheme_add_fd_handle((void *)top->done_sema, fds, 1);
-}
-
-static void wait_until_file_done(Scheme_Output_Port *op)
-{
-  if (!file_done((Scheme_Object *)op))
-    scheme_block_until(file_done, file_done_need_wakeup, (Scheme_Object *)op, 0.0);
-}
-
-static int file_unused(Scheme_Object *port)
-{
-  Tested_Output_File *top;
-  top = (Tested_Output_File *)((Scheme_Output_Port *)port)->port_data;
-  return !top->inuse;
-}
-
-static void wait_until_file_unused(Scheme_Output_Port *op)
-{
-  if (!file_unused((Scheme_Object *)op))
-    scheme_block_until(file_unused, NULL, (Scheme_Object *)op, 0.0);
-}
-
-static void tested_file_close_output(Scheme_Output_Port *p)
-{
-  Tested_Output_File *top;
-
-  top = (Tested_Output_File *)p->port_data;
-
-  if (!scheme_force_port_closed)
-    wait_until_file_unused(p);
-  /* Might get closed while we were waiting: */
-  if (p->closed)
-    return;
-
-  top->inuse = 1;
-
-  top->done = 1;
-
-#ifdef WIN32_FD_HANDLES
-  /*  The other thread may have an operation in progress.
-      Try to close below. */
-#else
-  fclose(top->fp);
-#endif
-
-  --scheme_file_open_count;
-
-  RELEASE_SEMAPHORE(top->sema);
-
-#ifdef WIN32_FD_HANDLES
-  if (WaitForSingleObject(top->th, 5000) == WAIT_TIMEOUT) {
-    /* kill it if it's still there; according to the docs, we
-       shouldn't do this, but my experience is that if something
-       goes wrong, killing the thread makes my NT machine less
-       likely to hang. */
-    printf("have to kill writer thread\n");
-    TerminateThread(top->th, -1);
-  }
-  scheme_forget_thread(top->thread_memory);
-  CloseHandle(top->th);
-
-  if (!top->working)
-    fclose(top->fp);
-  else {
-    top->working = 0;
-    /* BUG: fclose() would probably hang. We give up. */
-    broken_tested_io++;
-  }
-#else
-  WAIT_THREAD(top->th);
-#endif
-
-  FREE_SEMAPHORE(top->sema);
-  FREE_SEMAPHORE(top->done_sema);
-
-  if (top->marked_tested)
-    --broken_tested_io;
-
-  top->inuse = 0;
-}
-
-static void
-tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port)
-{
-  long len = llen, d = dd;
-  Tested_Output_File * volatile top;
-
-  if (!len)
-    return;
-
-  wait_until_file_unused(port);
-  /* Might get closed while we were waiting: */
-  if (port->closed)
-    return;
-
-  top = (Tested_Output_File *)port->port_data;
-  top->inuse = 1;
-
-  while (len) {
-    int n;
-
-    if (top->working) {
-      /* Flush/write in progress. 
-	 Must have previously broken out. */
-    } else {
-      if (len == -1) {
-	/* That's a flush request. */
-	top->ccount = 0;
-	len = 0;
-      } else {
-	n = len;
-	if (n > TIF_BUFFER)
-	  n = TIF_BUFFER;
-	memcpy(top->c, str + d, n);
-	top->ccount = n;
-	d += n;
-	len -= n;
-      }
-
-      /* Clear out potential old triggers: */
-      while (TRY_WAIT_SEMAPHORE(top->done_sema)) {
-      }
-
-      top->working = 1;
-      RELEASE_SEMAPHORE(top->sema);
-      if (!top->marked_tested) {
-	top->marked_tested = 1;
-	broken_tested_io++;
-      }
-    }
-
-    /* Need to block; remember that we're holding a lock. */
-    BEGIN_ESCAPEABLE(release_inuse_lock, top);
-    wait_until_file_done(port);
-    END_ESCAPEABLE();
-
-    if (top->err_no) {
-      top->inuse = 0;
-      scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
-		       port,
-		       "error writing to file port (%e)",
-		       top->err_no);
-    }
-  }
-
-  top->inuse = 0;
-
-  if (llen > 0) { 
-    while (llen--) {
-      if ((str[dd] == '\n') || (str[dd] == '\r')) {
-	flush_tested(port);
-	break;
-      }
-      dd++;
-    }
-  }
-}
-
-static void
-flush_tested(Scheme_Output_Port *port)
-{
-  tested_file_write_string(NULL, 0, -1, port);
-}
-
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
-static long write_for_tested_file(void *data)
-{
-  Tested_Output_File *top;
-
-#ifdef USE_BEOS_PORT_THREADS
-  signal(SIGINT, SIG_IGN);
-  RELEASE_SEMAPHORE(got_started);
-#endif
-
-  top = (Tested_Output_File *)data;
-
-  while (!top->done) {
-    WAIT_SEMAPHORE(top->sema);
-
-    if (!top->done) {
-      if (top->ccount) {
-	if (fwrite(top->c, top->ccount, 1, top->fp) != 1) {
-	  top->err_no = errno;
-	}
-      } else {
-	if (fflush(top->fp))
-	  top->err_no = errno;
-      }
-
-      top->working = 0;
-      RELEASE_SEMAPHORE(top->done_sema);
-    }
-  }
-
-  return 0;
-}
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
-
-static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
-{
-  Scheme_Output_Port *op;
-  Tested_Output_File *top;
-
-  if (!tested)
-    return scheme_make_file_output_port(fp);
-    
-  top = MALLOC_ONE_RT(Tested_Output_File);
-#ifdef MZ_PRECISE_GC
-  /* FIXME! */
-  top->type = scheme_rt_tested_output_file;
-  /* Use malloc because the testing thread needs to access it. */
-  top = (Tested_Output_File *)malloc(sizeof(Tested_Output_File));
-#endif
-#ifdef MZTAG_REQUIRED
-  top->type = scheme_rt_tested_output_file;
-#endif
-
-  top->fp = fp;
-
-  top->done = 0;
-  top->inuse = 0;
-  top->working = 0;
-  top->err_no = 0;
-  top->sema = MAKE_SEMAPHORE();
-  top->done_sema = MAKE_SEMAPHORE();
-
-#ifdef WIN32_FD_HANDLES
-  {
-    DWORD id;
-    Scheme_Thread_Memory *tm;
-    top->th = (void *)_beginthreadex(NULL, 5000, 
-				     (MZ_LPTHREAD_START_ROUTINE)write_for_tested_file,
-				     top, 0, &id);
-    tm = scheme_remember_thread((void *)top->th);
-    top->thread_memory = tm;
-  }
-#endif
-
-#ifdef USE_BEOS_PORT_THREADS
-  {
-    sigset_t sigs;
-
-    if (!got_started)
-      got_started = create_sem(0, NULL);
-
-    /* Disable SIGINT until the child starts ignoring it */
-    sigemptyset(&sigs);
-    sigaddset(&sigs, SIGINT);
-    sigprocmask(SIG_BLOCK, &sigs, NULL);
-
-    top->th = spawn_thread(write_for_tested_file, "port writer", 
-			   B_NORMAL_PRIORITY, top);
-    if (top->th < 0)
-      top->th = 0;
-    else
-      resume_thread(top->th);
-
-    WAIT_SEMAPHORE(got_started);
-    
-    sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-  }
-#endif
-
-  if (!top->th) {
-    /* Thread creation failed; give up niceness: */
-    return scheme_make_file_output_port(fp);
-  }
-
-  op = scheme_make_output_port(tested_file_output_port_type,
-			       top,
-			       tested_file_write_string,
-			       tested_file_close_output,
-			       NULL, NULL,
-			       1);
-
-  return (Scheme_Object *)op;  
-}
-
-static void tested_output_setvbuf(Scheme_Output_Port *port, int mode)
-{
-  scheme_raise_exn(MZEXN_I_O_PORT,
-		   (Scheme_Object *)port,
-		   "file-stream-buffer-mode: error changing buffering"
-		   " (not currently supported on for the port type)");
-}
-
-static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
-{
-  if (SCHEME_OUTPORTP(o)) {
-    Scheme_Output_Port *op = (Scheme_Output_Port *)o;
-    if (SAME_OBJ(op->sub_type, file_output_port_type)) {
-      scheme_close_output_port(o);
-    }
-  }
-}
-
-void force_exit(void)
-{
-  if (broken_tested_io)
-    _exit(scheme_exiting_result);
-}
-
-#endif
-
-void scheme_setup_forced_exit(void)
-{
-#ifdef USING_TESTED_OUTPUT_FILE
-  /* Arrange to skip the flushing of FILEs, because we don't want an
-     exit to get tied up by blocking input (only blocked output). 
-     Register force_exit before calling scheme_add_atexit_closer(),
-     otherwise the at-exit closers won't be called. */
-  atexit(force_exit);
-
-  scheme_add_atexit_closer(flush_each_output_file);
-#endif
-}
 
 /*========================================================================*/
 /*                           FILE output ports                            */
@@ -4269,8 +3629,13 @@ scheme_make_file_output_port(FILE *fp)
 /*                             fd output ports                            */
 /*========================================================================*/
 
+#ifdef MZ_FDS
 
-#ifdef USE_FD_PORTS
+#ifdef WINDOWS_FILE_HANDLES
+static int stupid_windows_machine;
+static long WindowsFDWriter(Win_FD_Output_Thread *oth);
+static void WindowsFDOCleanup(Win_FD_Output_Thread *oth);
+#endif
 
 static int
 fd_flush_done(Scheme_Object *port)
@@ -4287,6 +3652,31 @@ static void wait_until_fd_flushed(Scheme_Output_Port *op)
   scheme_block_until(fd_flush_done, NULL, (Scheme_Object *)op, 0.0);
 }
 
+#ifdef WINDOWS_FILE_HANDLES
+static int win_fd_flush_done(Scheme_Object *_oth)
+{
+  Win_FD_Output_Thread *oth = (Win_FD_Output_Thread *)_oth;
+  int done;
+  
+  WaitForSingleObject(oth->lock_sema, INFINITE);
+  done = (oth->err_no || !oth->buflen);
+  ReleaseSemaphore(oth->lock_sema, 1, NULL);
+
+  return done;
+}
+
+static void win_fd_flush_needs_wakeup(Scheme_Object *_oth, void *fds)
+{
+  if (win_fd_flush_done(_oth))
+    scheme_add_fd_nosleep(fds);
+  else {
+    Win_FD_Output_Thread *oth = (Win_FD_Output_Thread *)_oth;
+    
+    scheme_add_fd_handle(oth->ready_sema, fds, 1);
+  }
+}
+#endif
+
 static int
 fd_write_ready (Scheme_Object *port)
 {
@@ -4297,6 +3687,20 @@ fd_write_ready (Scheme_Object *port)
   if (fop->regfile)
     return 1;
 
+#ifdef WINDOWS_FILE_HANDLES
+  if (fop->oth) {
+    int retval;
+
+    WaitForSingleObject(fop->oth->lock_sema, INFINITE);
+    retval = (fop->oth->err_no || (fop->oth->buflen < MZPORT_FD_BUFFSIZE));
+    if (!retval)
+      WaitForSingleObject(fop->oth->ready_sema, 0); /* clear any leftover state */
+    ReleaseSemaphore(fop->oth->lock_sema, 1, NULL);
+
+    return retval;
+  } else
+    return 1;
+#else
   {
     DECL_FDSET(writefds, 1);
     DECL_FDSET(exnfds, 1);
@@ -4317,6 +3721,7 @@ fd_write_ready (Scheme_Object *port)
 
     return sr;
   }
+#endif
 }
 
 
@@ -4329,11 +3734,18 @@ fd_write_need_wakeup(Scheme_Object *port, void *fds)
 
   fop = (Scheme_FD *)((Scheme_Output_Port *)port)->port_data;
 
+#ifdef WINDOWS_FILE_HANDLES
+  if (fop->oth && !fd_write_ready(port))
+    scheme_add_fd_handle(fop->oth->ready_sema, fds, 1);
+  else
+    scheme_add_fd_nosleep(fds);
+#else
   n = fop->fd;
   fds2 = MZ_GET_FDSET(fds, 1);
   MZ_FD_SET(n, (fd_set *)fds2);
   fds2 = MZ_GET_FDSET(fds, 2);
   MZ_FD_SET(n, (fd_set *)fds2);
+#endif
 }
 
 static void release_flushing_lock(void *_fop)
@@ -4369,12 +3781,139 @@ static int flush_fd(Scheme_Output_Port *op,
     fop->bufcount = 0;
     /* If write is interrupted, we drop chars on the floor.
        Not ideal, but we'll go with it for now.
-       Note that write_string_avail supports break-reliable output. */
+       Note that write_string_avail supports break-reliable
+       output through `immediate_only'. */
 
     while (1) {
       long len;
-      int flags, errsaved;
-      
+      int errsaved, full_write_buffer;
+
+#ifdef WINDOWS_FILE_HANDLES
+      DWORD wrote;
+
+      full_write_buffer = 0;
+      errsaved = 0;
+      len = -1;
+
+      if (!fop->oth) {
+	int ft;
+
+	ft = GetFileType((HANDLE)fop->fd);
+
+	if (!stupid_windows_machine && (ft == FILE_TYPE_PIPE)) {
+	  DWORD old, nonblock = PIPE_NOWAIT;
+	  int ok;
+
+	  /* Put the pipe in non-blocking mode: */
+	  GetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL, NULL, NULL, 0);
+	  SetNamedPipeHandleState((HANDLE)fop->fd, &nonblock, NULL, NULL);
+	  ok = WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL);
+	  SetNamedPipeHandleState((HANDLE)fop->fd, &old, NULL, NULL);
+
+	  if (ok) {
+	    if (!wrote) {
+	      full_write_buffer = 1;
+	    } else {
+	      len = wrote;
+	    }
+	  } else {
+	    errsaved = GetLastError();
+	  }
+	} else
+	  full_write_buffer = 1; /* creates the writer thread... */
+
+	/* No thread because we haven't needed it, yet? */
+	if (full_write_buffer) {
+	  /* Note: we create a thread even for pipes that can be put in
+	     non-blocking mode because that seems to be the only way to
+	     get waitable behavior. */
+	  Win_FD_Output_Thread *oth;
+	  HANDLE h;
+	  DWORD id;
+	  unsigned char *bfr;
+
+	  oth = malloc(sizeof(Win_FD_Output_Thread));
+	  fop->oth = oth;
+
+	  bfr = (unsigned char *)malloc(MZPORT_FD_BUFFSIZE);
+	  oth->buffer = bfr;
+	  oth->buflen = 0;
+	  oth->bufstart = 0;
+	  oth->bufend = 0;
+
+	  oth->fd = (HANDLE)fop->fd;
+	  oth->err_no = 0;
+	  oth->done = 0;
+	  oth->lock_sema = CreateSemaphore(NULL, 1, 1, NULL);
+	  oth->work_sema = CreateSemaphore(NULL, 0, 1, NULL);
+	  oth->ready_sema = CreateSemaphore(NULL, 1, 1, NULL);
+	  oth->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);
+
+	  h = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)WindowsFDWriter, oth, 0, &id);
+	  
+	  scheme_remember_thread(h, 1);
+	}
+      }
+
+      if (fop->oth) {
+	Win_FD_Output_Thread *oth = fop->oth;
+
+	WaitForSingleObject(oth->lock_sema, INFINITE);
+	if (oth->err_no)
+	  errsaved = oth->err_no;
+	else if (oth->buflen == MZPORT_FD_BUFFSIZE) {
+	  full_write_buffer = 1;
+	  WaitForSingleObject(oth->ready_sema, 0); /* clear any leftover state */
+	} else {
+	  long topp;
+	  int was_pre;
+
+	  if (!oth->buflen) {
+	    /* Avoid fragmenting: */
+	    oth->bufstart = 0;
+	    oth->bufend = 0;
+	  }
+
+	  if (oth->bufstart <= oth->bufend) {
+	    was_pre = 1;
+	    topp = MZPORT_FD_BUFFSIZE;
+	  } else {
+	    was_pre = 0;
+	    topp = oth->bufstart;
+	  }
+
+	  wrote = topp - oth->bufend;
+	  if (wrote > buflen - offset)
+	    wrote = buflen - offset;
+
+	  memcpy(oth->buffer + oth->bufend, bufstr + offset, wrote);
+	  oth->buflen += wrote;
+	  len = wrote;
+
+	  oth->bufend += wrote;
+	  if (oth->bufend == MZPORT_FD_BUFFSIZE)
+	    oth->bufend = 0;
+	    
+	  if (was_pre) {
+	    if (wrote < buflen - offset) {
+	      /* Try continuing with a wrap-around: */
+	      wrote = oth->bufstart - oth->bufend;
+	      if (wrote > buflen - offset - len)
+		wrote = buflen - offset - len;
+		
+	      memcpy(oth->buffer + oth->bufend, bufstr + offset + len, wrote);
+	      oth->buflen += wrote;
+	      oth->bufend += wrote;
+	      len += wrote;
+	    }
+	  }
+	  ReleaseSemaphore(oth->work_sema, 1, NULL);
+	}
+	ReleaseSemaphore(oth->lock_sema, 1, NULL);
+      }
+#else
+      int flags;
+
       flags = fcntl(fop->fd, F_GETFL, 0);
       fcntl(fop->fd, F_SETFL, flags | MZ_NONBLOCKING);
 
@@ -4385,11 +3924,14 @@ static int flush_fd(Scheme_Output_Port *op,
       errsaved = errno;
       fcntl(fop->fd, F_SETFL, flags);
 
+      full_write_buffer = (errsaved == EAGAIN);
+#endif
+
       if (len < 0) {
 	if (scheme_force_port_closed) {
 	  /* Don't signal exn or wait. Just give up. */
 	  return 0;
-	} else if (errsaved == EAGAIN) {
+	} else if (full_write_buffer) {
 	  /* Need to block; remember that we're holding a lock. */
 	  BEGIN_ESCAPEABLE(release_flushing_lock, fop);
 	  scheme_block_until(fd_write_ready, 
@@ -4400,8 +3942,8 @@ static int flush_fd(Scheme_Output_Port *op,
 	  fop->flushing = 0;
 	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			   op,
-			   "error writing to stream port (%e)",
-			   errno);
+			   "error writing to stream port (" FILENAME_EXN_E ")",
+			   errsaved);
 	  return 0;
 	}
       } else if ((len + offset == buflen) || immediate_only) {
@@ -4470,9 +4012,35 @@ fd_close_output(Scheme_Output_Port *port)
   if (fop->flushing && !scheme_force_port_closed)
     wait_until_fd_flushed(port);
   
+#ifdef WINDOWS_FILE_HANDLES
+  if (fop->oth) {
+    if (!scheme_force_port_closed) {
+      /* If there's a work thread, wait until the port 
+	 is *really* flushed! */
+      scheme_block_until(win_fd_flush_done, win_fd_flush_needs_wakeup, (Scheme_Object *)fop->oth, 0.0);
+    }
+  }
+#endif
+
+  /* Make sure no close happened while we blocked above! */
+  if (port->closed)
+    return;
+
+#ifdef WINDOWS_FILE_HANDLES
+  if (fop->oth) {
+    fop->oth->done = 1;
+    ReleaseSemaphore(fop->oth->work_sema, 1, NULL);
+    if (WaitForSingleObject(fop->oth->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
+      WindowsFDOCleanup(fop->oth);
+    } /* otherwise, thread is responsible for clean-up */
+    fop->oth = NULL;
+  }
+  CloseHandle((HANDLE)fop->fd);
+#else
   do {
     cr = close(fop->fd);
   } while ((cr == -1) && (errno == EINTR));
+#endif
 
   --scheme_file_open_count;
 }
@@ -4482,6 +4050,19 @@ make_fd_output_port(int fd, int regfile)
 {
   Scheme_FD *fop;
   unsigned char *bfr;
+
+#ifdef WINDOWS_FILE_HANDLES
+  /* We'll need to know whether this is Win95 or WinNT: */
+  if (!stupid_windows_machine) {
+    OSVERSIONINFO info;
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&info);
+    if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
+      stupid_windows_machine = -1; /* not as stupid */
+    else
+      stupid_windows_machine = 1;
+  }
+#endif
 
   fop = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
@@ -4518,13 +4099,71 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
   }
 }
 
+#ifdef WINDOWS_FILE_HANDLES
+
+static long WindowsFDWriter(Win_FD_Output_Thread *oth)
+{
+  DWORD towrite, wrote, start;
+  int ok, more_work = 0, err_no;
+
+  while (!oth->err_no) {
+    if (!more_work)
+      WaitForSingleObject(oth->work_sema, INFINITE);
+
+    if (oth->done)
+      break;
+    
+    WaitForSingleObject(oth->lock_sema, INFINITE);
+    towrite = oth->buflen;
+    if (towrite > (MZPORT_FD_BUFFSIZE - oth->bufstart))
+      towrite = MZPORT_FD_BUFFSIZE - oth->bufstart;
+    start = oth->bufstart;
+    ReleaseSemaphore(oth->lock_sema, 1, NULL);
+
+    ok = WriteFile(oth->fd, oth->buffer + start, towrite, &wrote, NULL);
+    if (!ok)
+      err_no = GetLastError();
+    else
+      err_no = 0;
+
+    WaitForSingleObject(oth->lock_sema, INFINITE);
+    if (!ok)
+      oth->err_no = err_no;
+    else {
+      oth->bufstart += wrote;
+      oth->buflen -= wrote;
+      if (oth->bufstart == MZPORT_FD_BUFFSIZE)
+	oth->bufstart = 0;
+      more_work = oth->buflen > 0;
+    }
+    if ((oth->buflen < MZPORT_FD_BUFFSIZE) || oth->err_no)
+      ReleaseSemaphore(oth->ready_sema, 1, NULL);
+    ReleaseSemaphore(oth->lock_sema, 1, NULL);
+  }
+
+  if (WaitForSingleObject(oth->you_clean_up_sema, 0) != WAIT_OBJECT_0) {
+    WindowsFDOCleanup(oth);
+  } /* otherwise, main thread is responsible for clean-up */
+}
+
+static void WindowsFDOCleanup(Win_FD_Output_Thread *oth)
+{
+  CloseHandle(oth->lock_sema);
+  CloseHandle(oth->work_sema);
+  CloseHandle(oth->you_clean_up_sema);
+  free(oth->buffer);
+  free(oth);
+}
+
+#endif
+
 #endif
 
 /*========================================================================*/
 /*                        system/process/execute                          */
 /*========================================================================*/
 
-/* Unix, Windows, and BeOS support --- sadly, all mixed together */
+/* Unix, and Windows support --- all mixed together */
 
 #define MZ_FAILURE_STATUS -1
 
@@ -4564,8 +4203,8 @@ static int MyPipe(int *ph, int near_index) {
       a[near_index] = naya;
     }
 
-    ph[0] = _open_osfhandle((long)a[0], 0);
-    ph[1] = _open_osfhandle((long)a[1], 0);
+    ph[0] = (long)a[0];
+    ph[1] = (long)a[1];
 
     return 0;
   } else
@@ -4667,19 +4306,9 @@ static void init_sigchld(void)
 
 #endif
 
-/*********** Unix/Windows/BeOS: process status stuff *************/
+/*********** Unix/Windows: process status stuff *************/
 
-#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
-
-#ifdef BEOS_PROCESSES
-typedef struct {
-  MZTAG_IF_REQUIRED
-  thread_id t;
-  status_t result;
-  int done;
-  sem_id done_sem;
-} BeOSProcess;
-#endif
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
 
 static int subp_done(Scheme_Object *sp)
 {
@@ -4699,17 +4328,6 @@ static int subp_done(Scheme_Object *sp)
   } else
     return 1;
 #endif
-#ifdef BEOS_PROCESSES
-  BeOSProcess *p = (BeOSProcess *)sci;
-  if (p->done) {
-    if (p->done_sem) {
-      delete_sem(p->done_sem);
-      p->done_sem = 0;
-    }
-    return 1;
-  } else
-    return 0;
-#endif
 }
 
 static void subp_needs_wakeup(Scheme_Object *sp, void *fds)
@@ -4719,10 +4337,6 @@ static void subp_needs_wakeup(Scheme_Object *sp, void *fds)
   Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
   scheme_add_fd_handle((void *)(HANDLE)sci, fds, 0);
 # endif
-#endif
-#ifdef BEOS_PROCESSES
-  Scheme_Object *sci = ((Scheme_Subprocess *)sp)->handle;
-  scheme_add_fd_handle((void *)((BeOSProcess *)sci)->done_sem, fds, 1);
 #endif
 }
 
@@ -4758,15 +4372,6 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
       }
     }
 # endif
-# ifdef BEOS_PROCESSES
-    BeOSProcess *p = (BeOSProcess *)sp->handle;
-    if (p) {
-      if (p->done)
-	status = p->result;
-      else
-	going = 1;
-    }
-# endif
 #endif
 
     if (going)
@@ -4784,7 +4389,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 
 static void register_subprocess_wait()
 {
-#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
   scheme_add_waitable(scheme_subprocess_type, subp_done, subp_needs_wakeup, NULL);
 #endif
 }
@@ -4794,7 +4399,7 @@ static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
     scheme_wrong_type("subprocess-wait", "subprocess", 0, argc, argv);
 
-#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+#if defined(UNIX_PROCESSES) || defined(WINDOWS_PROCESSES)
   {
     Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
 
@@ -4911,9 +4516,9 @@ static long mz_spawnv(char *command, const char * const *argv,
   memset(&startup, 0, sizeof(startup));
   startup.cb = sizeof(startup);
   startup.dwFlags = STARTF_USESTDHANDLES;
-  startup.hStdInput = (HANDLE)_get_osfhandle(sin);
-  startup.hStdOutput = (HANDLE)_get_osfhandle(sout);
-  startup.hStdError = (HANDLE)_get_osfhandle(serr);
+  startup.hStdInput = (HANDLE)sin;
+  startup.hStdOutput = (HANDLE)sout;
+  startup.hStdError = (HANDLE)serr;
 
   /* If none of the stdio handles are consoles, specifically
      create the subprocess without a console: */
@@ -4936,81 +4541,6 @@ static long mz_spawnv(char *command, const char * const *argv,
 }
 
 #endif /* WINDOWS_PROCESSES */
-
-/*********** BeOS: emulate Windows interface, roughly *************/
-
-#ifdef BEOS_PROCESSES
-extern char **environ;
-static status_t wait_process(void *_p)
-{
-  BeOSProcess *p = (BeOSProcess *)_p;
-  status_t r;
-
-  signal(SIGINT, SIG_IGN);
-  RELEASE_SEMAPHORE(got_started);
-
-  if (wait_for_thread(p->t, &r) == B_NO_ERROR)
-    p->result = r;
-  else
-    p->result = MZ_FAILURE_STATUS;
-
-  p->done = 1;
-
-  release_sem(p->done_sem);
-
-  return 0;
-}
-
-static void delete_done_sem(void *_p)
-{
-  BeOSProcess *p = (BeOSProcess *)_p;
-  if (p->done_sem)
-    delete_sem(p->done_sem);
-}
-
-static long mz_spawnv(char *command, const char *  const *argv, int *pid)
-{
-  BeOSProcess *p = MALLOC_ONE_RT(BeOSProcess);
-  sigset_t sigs;
-  int i;
-
-#ifdef MZTAG_REQUIRED
-  p->type = scheme_rt_beos_process;
-#endif
-
-  for (i = 0; argv[i]; i++);
-
-  p->t = load_image(i, (char **)argv, environ);
-  
-  if (p->t <= 0)
-    return -1;
-
-  p->done = 0;
-  p->result = -1;
-  p->done_sem = create_sem(0, NULL);
-
-  scheme_register_finalizer(p, delete_done_sem, NULL, NULL, NULL);
-
-  if (!got_started)
-    got_started = create_sem(0, NULL);
-  
-  /* Disable SIGINT until the child starts ignoring it */
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGINT);
-  sigprocmask(SIG_BLOCK, &sigs, NULL);
-  
-  resume_thread(spawn_thread(wait_process, "process waiter",
-			     B_NORMAL_PRIORITY, p));
-
-  WAIT_SEMAPHORE(got_started);
-    
-  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-
-  *pid = (int)p;
-
-  return (long)p;
-}
-#endif
 
 /*********** All: The main system/process/execute function *************/
 
@@ -5037,7 +4567,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #if defined(WINDOWS_PROCESSES)
   int exact_cmdline = 0;
 #endif
-#if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+#if defined(WINDOWS_PROCESSES)
   int spawn_status;
 #endif
 
@@ -5053,11 +4583,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       if (SAME_OBJ(op->sub_type, file_output_port_type))
 	from_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
-# ifdef USING_TESTED_OUTPUT_FILE
-      else if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
-	from_subprocess[1] = MSC_IZE(fileno)(((Tested_Output_File *)op->port_data)->fp);
-# endif
-# ifdef USE_FD_PORTS
+# ifdef MZ_FDS
       else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
 # endif
@@ -5075,11 +4601,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       if (SAME_OBJ(ip->sub_type, file_input_port_type))
 	to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
-# if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-      else if (SAME_OBJ(ip->sub_type, tested_file_input_port_type))
-	to_subprocess[0] = MSC_IZE(fileno)(((Tested_Input_File *)ip->port_data)->fp);
-# endif
-# ifdef USE_FD_PORTS
+# ifdef MZ_FDS
       else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
 	to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
 # endif
@@ -5097,11 +4619,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
       if (SAME_OBJ(op->sub_type, file_output_port_type))
 	err_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
-# ifdef USING_TESTED_OUTPUT_FILE
-      else if (SAME_OBJ(op->sub_type, tested_file_output_port_type))
-	err_subprocess[1] = MSC_IZE(fileno)(((Tested_Output_File *)op->port_data)->fp);
-# endif
-# ifdef USE_FD_PORTS
+# ifdef MZ_FDS
       else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
 # endif
@@ -5185,27 +4703,18 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
   }
 
-#if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
+#if defined(WINDOWS_PROCESSES)
 
   /*--------------------------------------*/
-  /*        Execute: Windows/BeOS         */
+  /*        Execute: Windows              */
   /*--------------------------------------*/
 
-# if defined(BEOS_PROCESSES)
-  fflush(NULL);
-# else
   /* Windows: quasi-stdin is locked, and we'll say it doesn't matter */
   fflush(stdin);
   fflush(stdout);
   fflush(stderr);
-# endif
 
   {
-# ifdef BEOS_PROCESSES
-    int save0, save1, save2;
-# endif
-
-# ifdef WINDOWS_PROCESSES
     if (!exact_cmdline) {
       /* protect spaces, etc. in the arguments: */
       for (i = 0; i < (c - 3); i++) {
@@ -5214,19 +4723,6 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	argv[i] = cla;
       }
     }
-# endif
-
-# ifdef BEOS_PROCESSES
-    /* Save stdin and stdout */
-    save0 = MSC_IZE(dup)(0);
-    save1 = MSC_IZE(dup)(1);
-    save2 = MSC_IZE(dup)(2);
-    
-    /* Copy pipe descriptors to stdin and stdout */
-    MSC_IZE(dup2)(to_subprocess[0], 0);
-    MSC_IZE(dup2)(from_subprocess[1], 1);
-    MSC_IZE(dup2)(err_subprocess[1], 2);
-# endif
 
     /* Set real CWD - and hope no other thread changes it! */
     scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
@@ -5234,20 +4730,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 		     0);
 
     spawn_status = mz_spawnv(command, (const char * const *)argv,
-# ifdef WINDOWS_PROCESSES
 			     exact_cmdline,
 			     to_subprocess[0],
 			     from_subprocess[1],
 			     err_subprocess[1],
-# endif
 			     &pid);
-
-# ifdef BEOS_PROCESSES
-    /* Restore stdin and stdout */
-    MSC_IZE(dup2)(save0, 0);
-    MSC_IZE(dup2)(save1, 1);
-    MSC_IZE(dup2)(save2, 2);
-# endif
 
     if (spawn_status != -1)
       sc = (void *)spawn_status;
@@ -5452,15 +4939,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*        Create new port objects       */
   /*--------------------------------------*/
 
-#ifdef USE_FD_PORTS
   in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));
   out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
   err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
-#else
-  in = (in ? in : make_tested_file_input_port(MSCBOR_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
-  out = (out ? out : make_tested_file_output_port(MSCBOR_IZE(fdopen)(to_subprocess[1], "w"), 1));
-  err = (err ? err : make_tested_file_input_port(MSCBOR_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1));
-#endif
 
   /*--------------------------------------*/
   /*          Return result info          */
@@ -5564,14 +5045,13 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
 
 /* This code is used to implement sleeping when MzScheme is completely
    blocked on external objects, such as ports. For Unix, sleeping is
-   essentially just a select(). For Windows and BeOS, we essentially
-   have to implement select() ourselves, so that it works with both TCP
-   connections and stream ports all at once. (Why oh why don't they just
-   provide a select() that works?!?!) */
+   essentially just a select(). For Windows, we essentially have to
+   implement select() ourselves, so that it works with both TCP
+   connections and stream ports all at once. */
 
-/********************* Windows/BeOS TCP watcher *****************/
+/********************* Windows TCP watcher *****************/
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
 typedef struct 
 {
   MZTAG_IF_REQUIRED
@@ -5609,151 +5089,25 @@ END_XFORM_SKIP;
 
 #endif
 
-/********************* BeOS wait_multiple_sema *****************/
+/****************** Windows cleanup  *****************/
 
-#ifdef USE_BEOS_PORT_THREADS
-# define WAIT_OBJECT_0 1
-
-sem_id siggo, go;
-int32 done;
-int32 enable_sig_count;
-sem_id finished_first;
-
-static void check_enable_signals()
-{
-  signal(SIGINT, SIG_IGN);
-
-  if (atomic_add(&enable_sig_count, -1) == 1) {
-    /* We're the last child; re-enable signals */
-    release_sem(siggo);
-  }
-}
-
-static long wait_one_sema(void *s)
-{
-  int v;
-
-  check_enable_signals();
-
-  while (acquire_sem((sem_id)s) != B_NO_ERROR) {}
-
-  v = atomic_add(&done, 1);
-  if (!v)
-    finished_first = (sem_id)s;
-
-  release_sem(go);
-
-  return 0;
-}
-
-static long wait_timeout(void *t)
-{
-  int v;
-
-  check_enable_signals();
-
-  snooze((bigtime_t)(long)t);
-
-  v = atomic_add(&done, 1);
-  if (!v)
-    finished_first = -1;
-
-  release_sem(go);
-
-  return 0;
-}
-
-static int wait_multiple_sema(int count, sem_id *a, float timeout)
-{
-  int i, got = 0;
-  thread_id tot;
-  sigset_t sigs;
-
-  go = MAKE_SEMAPHORE();
-  siggo = MAKE_SEMAPHORE();
-  done = 0;
-  finished_first = 0;
-
-  if (!got_started)
-    got_started = create_sem(0, NULL);
-
-  /* Disable SIGINT until the children start ignoring it */
-  sigemptyset(&sigs);
-  sigaddset(&sigs, SIGINT);
-  sigprocmask(SIG_BLOCK, &sigs, NULL);
-
-  enable_sig_count = count + (timeout ? 1 : 0);
-
-  for (i = 0; i < count; i++)
-    resume_thread(spawn_thread(wait_one_sema, "multi-waiter", 
-			       B_NORMAL_PRIORITY, (void *)a[i]));
-  
-  if (timeout) {
-    tot = spawn_thread(wait_timeout, "multi-waiter timeout",
-		       B_NORMAL_PRIORITY, 
-		       (void *)(long)(timeout * 1000000));
-    resume_thread(tot);
-  } else
-    tot = 0;
-
-  while (acquire_sem(siggo) != B_NO_ERROR) {}
-
-  sigprocmask(SIG_UNBLOCK, &sigs, NULL);
-
-  FREE_SEMAPHORE(siggo);
-
-  /* Might be interrupted by a signal: */
-  acquire_sem(go);
-
-  /* Post to still-waiting semaphores. This dislodges the waiting 
-     threads. They won't change finished_first. */
-  for (i = 0; i < count; i++) {
-    if (a[i] != finished_first)
-      release_sem(a[i]);
-    else
-      got = i + WAIT_OBJECT_0;
-  }
-
-  /* Wait for everybody */
-  for (i = 0; i < count; i++)
-    if (a[i] != finished_first)
-      while (acquire_sem(go) != B_NO_ERROR) {}
-
-  if (tot && (finished_first != -1)) {
-    /* Wait for timeout, too. */
-    /* Be Book says to suspend & resume to wake up a snoozer */
-    suspend_thread(tot);
-    /* Be Book says snooze here - why?! */ snooze(1000);
-    resume_thread(tot);
-    while (acquire_sem(go) != B_NO_ERROR) {}
-  }
-
-  FREE_SEMAPHORE(go);
-
-  return got;
-}
-#endif
-
-/****************** Windows/BeOS cleanup  *****************/
-
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
 static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array, 
 			  int *rps, int count)
 {
   if ((result >= (long)WAIT_OBJECT_0) && (result < (long)WAIT_OBJECT_0 + count)) {
     result -= WAIT_OBJECT_0;
     if (rps[result])
-      RELEASE_SEMAPHORE(array[result]);
+      ReleaseSemaphore(array[result], 1, NULL);
   }
   
   /* Clear out break semaphore */
-  TRY_WAIT_SEMAPHORE(scheme_break_semaphore);
+  WaitForSingleObject(scheme_break_semaphore, 0);
 }
 #endif
 
 /******************** Main sleep function  *****************/
-/* The simple select() stuff is buried in Windows/BeOS
-   complexity. */
+/* The simple select() stuff is buried in Windows complexity. */
 
 static void default_sleep(float v, void *fds)
 {
@@ -5796,21 +5150,17 @@ static void default_sleep(float v, void *fds)
 
 #else
 # ifndef NO_SLEEP
-#  ifdef USE_BEOS_SNOOZE
-    snooze((bigtime_t)(v * 1000000));
+# ifndef NO_USLEEP
+   usleep((unsigned)(v * 1000));
 #  else
-#  ifndef NO_USLEEP
-    usleep((unsigned)(v * 1000));
-#   else
-    sleep(v);
-#   endif
+   sleep(v);
 #  endif
 # endif
 #endif
   } else {
-    /* Something to block on - sort our the parts in Windows/BeOS. */
+    /* Something to block on - sort our the parts in Windows. */
 
-#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP) || defined(USE_BEOS_PORT_THREADS)
+#if defined(FILES_HAVE_FDS) || defined(USE_WINSOCK_TCP)
     int limit;
     fd_set *rd, *wr, *ex;
     struct timeval time;
@@ -5856,14 +5206,17 @@ static void default_sleep(float v, void *fds)
     wr = (fd_set *)MZ_GET_FDSET(fds, 1);
     ex = (fd_set *)MZ_GET_FDSET(fds, 2);
 
-    /******* Start Windows/BeOS stuff *******/
+    /******* Start Windows stuff *******/
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+#if defined(WIN32_FD_HANDLES)
     {
       long result;
       OS_SEMAPHORE_TYPE *array, just_two_array[2], break_sema;
       int count, *rps, just_two_rps[2];
       int fd_added;
+
+      if (((win_extended_fd_set *)rd)->no_sleep)
+	return;
 
       fd_added = (((win_extended_fd_set *)rd)->added
 		  || ((win_extended_fd_set *)wr)->added
@@ -5878,16 +5231,11 @@ static void default_sleep(float v, void *fds)
 	rps = just_two_rps;
       }
       rps[count] = 0;
-# ifdef WIN32_THREADS
-      break_sema = (HANDLE)scheme_win32_get_break_semaphore(scheme_current_thread->thread);
-# else
       break_sema = scheme_break_semaphore;
-# endif
       array[count++] = break_sema;
 
       if (count && !fd_added) {
 	/* Simple: just wait for HANDLE-based input: */
-#if defined(WIN32_FD_HANDLES)
 	/* Extensions may handle events */
 	if (((win_extended_fd_set *)fds)->wait_event_mask
 	    && GetQueueStatus(((win_extended_fd_set *)fds)->wait_event_mask))
@@ -5905,10 +5253,6 @@ static void default_sleep(float v, void *fds)
 	  result = MsgWaitForMultipleObjects(count, array, FALSE, msec,
 					     ((win_extended_fd_set *)fds)->wait_event_mask);
 	}
-#endif
-#if defined(USE_BEOS_PORT_THREADS)
-	result = wait_multiple_sema(count, array, v);
-#endif
 	clean_up_wait(result, array, rps, count);
 	return;
       } else if (count) {
@@ -5920,9 +5264,7 @@ static void default_sleep(float v, void *fds)
 	OS_THREAD_TYPE th;
 	Tcp_Select_Info *info;
 	TCP_T fake;
-#if defined(WIN32_FD_HANDLES)
 	struct Scheme_Thread_Memory *thread_memory;
-#endif
 
 	info = MALLOC_ONE_RT(Tcp_Select_Info);
 #ifdef MZTAG_REQUIRED
@@ -5936,28 +5278,20 @@ static void default_sleep(float v, void *fds)
 	info->wr = wr;
 	info->ex = ex;
 
-#if defined(WIN32_FD_HANDLES)
 	{
 	  DWORD id;
-	  th = CreateThread(NULL, 5000, 
+	  th = CreateThread(NULL, 4096, 
 			    (LPTHREAD_START_ROUTINE)select_for_tcp,
 			    info, 0, &id);
 	  /* Not actually necessary, since GC can't occur during the
 	     thread's life, but better safe than sorry if we change the
 	     code later. */
-	  thread_memory = scheme_remember_thread((void *)th);
+	  thread_memory = scheme_remember_thread((void *)th, 0);
 	}
-#endif	
-#if defined(USE_BEOS_PORT_THREADS)
-	th = spawn_thread(select_for_tcp, "socket waiter",
-			  B_NORMAL_PRIORITY, info);
-	resume_thread(th);
-#endif
 
 	rps[count] = 0;
 	array[count++] = th;
 
-#if defined(WIN32_FD_HANDLES)
 	if (((win_extended_fd_set *)fds)->wait_event_mask
 	    && GetQueueStatus(((win_extended_fd_set *)fds)->wait_event_mask))
 	  result = WAIT_TIMEOUT; /* doesn't matter... */
@@ -5975,19 +5309,13 @@ static void default_sleep(float v, void *fds)
 					     v ? (DWORD)(v * 1000) : INFINITE,
 					     ((win_extended_fd_set *)fds)->wait_event_mask);
 	}
-#endif	
-#if defined(USE_BEOS_PORT_THREADS)
-	result = wait_multiple_sema(count, array, v);
-#endif
 	clean_up_wait(result, array, rps, count);
 
 	closesocket(fake); /* cause selector thread to end */
 
-#if defined(WIN32_FD_HANDLES)
 	WaitForSingleObject(th, INFINITE);
 	scheme_forget_thread(thread_memory);
 	CloseHandle(th);
-#endif
 	
 	return;
       }
@@ -6003,7 +5331,7 @@ static void default_sleep(float v, void *fds)
     }
 #endif
 
-    /******* End Windows/BeOS stuff *******/
+    /******* End Windows stuff *******/
 
 #if defined(FILES_HAVE_FDS)
     /* Watch for external events, too: */
@@ -6086,9 +5414,9 @@ void scheme_start_itimer_thread(long usec)
   DWORD id;
 
   if (!itimer) {
-    itimer = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ITimer, NULL, 0, &id);
+    itimer = CreateThread(NULL, 4096, (LPTHREAD_START_ROUTINE)ITimer, NULL, 0, &id);
     itimer_semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-    scheme_remember_thread(itimer);
+    scheme_remember_thread(itimer, 0);
   }
 
   itimer_delay = usec;
@@ -6196,25 +5524,17 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_thread_memory, mark_thread_memory);
 #endif
   GC_REG_TRAV(scheme_rt_input_file, mark_input_file);
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-  GC_REG_TRAV(scheme_rt_tested_input_file, mark_tested_input_file);
+#if defined(WIN32_FD_HANDLES)
   GC_REG_TRAV(scheme_rt_tcp_select_info, mark_tcp_select_info);
-#endif
-#ifdef USING_TESTED_OUTPUT_FILE
-  GC_REG_TRAV(scheme_rt_tested_output_file, mark_tested_output_file);
 #endif
   GC_REG_TRAV(scheme_rt_output_file, mark_output_file);
 
-#ifdef USE_FD_PORTS
+#ifdef MZ_FDS
   GC_REG_TRAV(scheme_rt_input_fd, mark_input_fd);
 #endif
 
 #if defined(UNIX_PROCESSES)
   GC_REG_TRAV(scheme_rt_system_child, mark_system_child);
-#endif
-
-#ifdef BEOS_PROCESSES
-  GC_REG_TRAV(scheme_rt_beos_process, mark_beos_process);
 #endif
 
 #ifdef USE_OSKIT_CONSOLE

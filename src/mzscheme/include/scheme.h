@@ -1218,8 +1218,6 @@ MZ_EXTERN void scheme_register_static(void *ptr, long size);
 # define MZ_REGISTER_STATIC(x) /* empty */
 #endif
 
-MZ_EXTERN void scheme_setup_forced_exit(void);
-
 MZ_EXTERN void scheme_start_atomic(void);
 MZ_EXTERN void scheme_end_atomic(void);
 

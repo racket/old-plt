@@ -757,7 +757,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
       PRINTF(SDESC);
 # ifdef DOS_FILE_SYSTEM
 #  if !defined(FILES_HAVE_FDS)
-#   if !defined(DETECT_WIN32_CONSOLE_STDIN) || defined(NO_STDIN_THREADS)
+#   if !defined(WINDOWS_FILE_HANDLES)
     PRINTF("Warning: read-eval-print-loop or read on a stream port may block threads.\n");
 #   endif
 #  endif
@@ -770,9 +770,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
   }
 #endif /* DONT_PARSE_COMMAND_LINE */
   
-  /* Avoid exiting problems under Windows: */
-  scheme_setup_forced_exit();
-
   global_env = mk_basic_env();
 
   sch_argv = scheme_make_vector(argc, scheme_null);

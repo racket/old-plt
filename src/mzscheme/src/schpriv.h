@@ -253,7 +253,7 @@ extern Scheme_Thread *scheme_main_thread;
 #define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
 
 #ifdef WINDOWS_PROCESSES
-MZ_EXTERN struct Scheme_Thread_Memory *scheme_remember_thread(void *);
+MZ_EXTERN struct Scheme_Thread_Memory *scheme_remember_thread(void *, int);
 void scheme_remember_subthread(struct Scheme_Thread_Memory *, void *);
 MZ_EXTERN void scheme_forget_thread(struct Scheme_Thread_Memory *);
 void scheme_forget_subthread(struct Scheme_Thread_Memory *);

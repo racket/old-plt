@@ -63,7 +63,7 @@
       (send d show #t)))
 
   (define go-unit
-    (unit (import startup-url extend-file-menu)
+    (unit (import startup-url)
 	  (export)
 
 	  (define collecting-thread #f)
@@ -120,7 +120,7 @@
 				    
 				    (override
 				      [file-menu:new-string (lambda () "Help Desk")]
-				      [file-menu:new (lambda (i e) (new-help-frame startup-url extend-file-menu))]
+				      [file-menu:new (lambda (i e) (new-help-frame startup-url))]
 
 				      [file-menu:open-string (lambda () "URL")]
 				      [file-menu:open
@@ -533,7 +533,7 @@
 	  ; Return the frame as the result
 	  f))
 
-  (define (new-help-frame startup-url extend-file-menu)
-    (invoke-unit go-unit startup-url extend-file-menu))
+  (define (new-help-frame startup-url)
+    (invoke-unit go-unit startup-url))
 
   (values new-help-frame open-url-from-user))

@@ -12,7 +12,7 @@
   (include "startup-url.ss")
 
   (define (start-help-desk new-drscheme)
-    (define framne-mixin (lambda (%) %))
+    (define frame-mixin (lambda (%) %))
     (unless new-help-frame
       (set!-values (new-help-frame
 		    open-url-from-user)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.37 1997/07/11 21:33:09 robby Exp robby $
+;; $Id: contkids.ss,v 1.38 1997/07/19 17:15:01 robby Exp robby $
 ;;
 
 ; need to export:
@@ -686,13 +686,14 @@
 			[style wx:const-retained]
 			[name "canvasmessage"])
 	  (private
-	    [mdc (make-object wx:memory-dc%)]
+	    [mdc 'canvas-message:not-yet-the-mdc]
 	    [bitmap 'canvas-message:not-yet-the-bitmap]
 	    [update-label
 	     (lambda (new-label)
 	       (cond
 		 [(is-a? new-label wx:bitmap%)
 		  (set! bitmap new-label)
+		  (set! mdc (make-object wx:memory-dc%))
 		  (send mdc select-object new-label)]
 		 [(string? new-label)
 		  (let* ([width 0]
@@ -703,6 +704,7 @@
 			  [bh (box 0)]
 			  [bl (box 0)]
 			  [bd (box 0)])
+		      (set! mdc (make-object wx:memory-dc%))
 		      (send* mdc 
 			(select-object (make-object wx:bitmap% 2 2))
 			(set-font font)
@@ -718,6 +720,9 @@
 			(set-text-background (make-object wx:colour% "WHITE"))
 			(draw-text new-label width-space 0))
 		      (set! bitmap tbitmap)))]
+		 [(pair? new-label)
+		  (set! mdc (car new-label))
+		  (set! bitmap (cdr new-label))]
 		 [else 
 		  (error 'canvas-message% 
 			 "expected the label to be a string or a wx:bitmap%")]))])

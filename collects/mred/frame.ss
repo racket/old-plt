@@ -945,14 +945,16 @@
 					  "lock-icon: setting to: ~a"
 					  locked-now?)
 		       (set! icon-currently-locked? locked-now?)
-		       (let ([bitmap
+		       (let ([label
 			      (if locked-now?
-				  (mred:icon:get-lock-bitmap)
-				  (mred:icon:get-unlock-bitmap))])
+				  (cons (mred:icon:get-lock-mdc)
+					(mred:icon:get-lock-bitmap))
+				  (cons (mred:icon:get-unlock-mdc)
+					(mred:icon:get-unlock-bitmap)))])
 			 (send lock-message
 			       set-label
-			       (if (send bitmap ok?)
-				   bitmap
+			       (if (send (car label) ok?)
+				   label
 				   (if locked-now? "Locked" "Unlocked"))))))))]
 	      
 	      [edit-position-changed-offset
@@ -1012,7 +1014,7 @@
 			    info-panel
 			    (let ([b (mred:icon:get-anchor-bitmap)])
 			      (if (send b ok?)
-				  b
+				  (cons (mred:icon:get-anchor-mdc) b)
 				  "Anchor"))
 			    -1 -1 wx:const-border)]
 	      [overwrite-message 
@@ -1024,7 +1026,7 @@
 			      info-panel 
 			      (let ([b (mred:icon:get-unlock-bitmap)])
 				(if (send b ok?)
-				    b
+				    (cons (mred:icon:get-unlock-mdc) b)
 				    "Unlocked"))
 			      -1 -1 wx:const-border)]
 	      [position-canvas (make-object mred:canvas:one-line-canvas%

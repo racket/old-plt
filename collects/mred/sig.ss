@@ -1,5 +1,5 @@
 ;;
-;; $Id: sig.ss,v 1.69 1997/07/11 21:33:09 robby Exp robby $
+;; $Id: sig.ss,v 1.70 1997/07/15 15:47:30 robby Exp $
 ;;
 
 (begin-elaboration-time
@@ -298,12 +298,17 @@
 
 (define-signature mred:icon^
   (get-icon
+
    get-paren-highlight-bitmap
    get-autowrap-bitmap
    get-reset-console-bitmap
+
    get-lock-bitmap
+   get-lock-mdc
    get-unlock-bitmap
+   get-unlock-mdc
    get-anchor-bitmap
+   get-anchor-mdc
    
    get-gc-on-dc
    get-gc-off-dc

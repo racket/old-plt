@@ -113,6 +113,12 @@
 	      (print-struct #t)
 	      (error-print-width 250)))
 	  (drscheme:basis:add-basis n bottom-eventspace)
+	  (with-parameterization p
+	    (lambda ()
+	      (eval
+	       `(allow-improper-lists
+		 ,(drscheme:language:setting-allow-improper-lists?
+		   (mred:get-preference 'drscheme:settings))))))
 	  p))))
 
   (define-struct process/zodiac-finish (error?))
@@ -163,9 +169,11 @@
 	     (with-parameterization system-parameterization
 	       (lambda ()
 		 (let ([c-locked? locked?])
+		   (begin-edit-sequence)
 		   (lock #f)
 		   (apply super-init-transparent-io x)
-		   (lock c-locked?)))))])
+		   (lock c-locked?)		   
+		   (end-edit-sequence)))))])
 
 	(private
 	  [escape-fn #f])
@@ -189,9 +197,11 @@
 	       (send frame ensure-interactions-shown)
 	       (let ([locked? (ivar interactions-edit locked?)])
 		 (send* interactions-edit
+		   (begin-edit-sequence)
 		   (lock #f)
 		   (this-err-write (string-append message (string #\newline)))
-		   (lock locked?)))
+		   (lock locked?)		   
+		   (end-edit-sequence)))
 	       (when (is-a? file wx:media-edit%)
 		 (send (send file get-canvas) set-focus)
 		 (send file begin-edit-sequence)
@@ -322,9 +332,11 @@
 	     (if (thread-running? evaluation-thread)
 		 (begin 
 		   (let ([c-locked? locked?])
+		     (begin-edit-sequence)
 		     (lock #f)
 		     (insert-prompt)
-		     (lock c-locked?)))
+		     (lock c-locked?)
+		     (end-edit-sequence)))
 		 (begin (lock #t)
 			(unless shutting-down?
 			  (mred:message-box
@@ -482,9 +494,11 @@
 					(lambda anss
 					  (let ([c-locked? locked?])
 					    (unless (andmap void? anss)
+					      (begin-edit-sequence)
 					      (lock #f)
 					      (for-each display-result anss)
-					      (lock c-locked?)))))
+					      (lock c-locked?)
+					      (end-edit-sequence)))))
 				       #f)))
 			     (lambda () 
 			       (set! current-thread-directory (current-directory))
@@ -597,7 +611,6 @@
 					wx:const-decorative)]
 		    [click-delta (make-object wx:style-delta%)]
 		    [red-delta (make-object wx:style-delta%)])
-	       (send delta set-delta wx:const-change-size 10)
 	       (send click-delta copy delta)
 	       (send click-delta set-delta-foreground "BLUE")
 	       (send click-delta set-delta wx:const-change-underline 1)

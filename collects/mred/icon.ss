@@ -4,10 +4,11 @@
 	    
     (mred:debug:printf 'invoke "mred:icon@")
 
+    (define icon-path (build-path mred:constants:plt-home-directory
+				  "icons"))
+
     (define (load-icon % name type)
-      (let ([p (build-path mred:constants:plt-home-directory
-			   "icons"
-			   name)]
+      (let ([p (build-path icon-path name)]
 	    [bitmap #f])
 	(unless (file-exists? p)
 	  (printf "WARNING: couldn't find ~a~n" p))
@@ -16,14 +17,51 @@
 	      bitmap
 	      (begin (set! bitmap (make-object % p type))
 		     bitmap)))))
+    
+    (define (load-bitmap/mdc % name type)
+      (let* ([p (build-path icon-path name)]
+	     [bitmap #f]
+	     [memory-dc #f]
+	     [force
+	      (lambda ()
+		(set! bitmap (make-object % p type))
+		(set! memory-dc (make-object wx:memory-dc%))
+		(when (send bitmap ok?)
+		  (send memory-dc select-object bitmap)))])
+	(unless (file-exists? p)
+	  (printf "WARNING: couldn't find ~a~n" p))
+	(values 
+	 (lambda ()
+	   (or bitmap
+	       (begin (force)
+		      bitmap)))
+	 (lambda ()
+	   (or memory-dc
+	       (begin (force)
+		      memory-dc))))))
 
-    (define get-anchor-bitmap (load-icon wx:bitmap% "anchor.gif" wx:const-bitmap-type-gif))
-    (define get-lock-bitmap (load-icon wx:bitmap% "lock.gif" wx:const-bitmap-type-gif))
-    (define get-unlock-bitmap (load-icon wx:bitmap% "unlock.gif" wx:const-bitmap-type-gif))
-    (define get-icon (load-icon wx:icon% "mred.xbm" wx:const-bitmap-type-xbm))
+    (define-values (get-anchor-bitmap get-anchor-mdc)
+      (load-bitmap/mdc wx:bitmap% "anchor.gif" wx:const-bitmap-type-gif))
+    (define-values (get-lock-bitmap get-lock-mdc)
+      (load-bitmap/mdc wx:bitmap% "lock.gif" wx:const-bitmap-type-gif))
+    (define-values (get-unlock-bitmap get-unlock-mdc)
+      (load-bitmap/mdc wx:bitmap% "unlock.gif" wx:const-bitmap-type-gif))
+
     (define get-autowrap-bitmap (load-icon wx:bitmap% "return.xbm" wx:const-bitmap-type-xbm))
     (define get-paren-highlight-bitmap (load-icon wx:bitmap% "paren.xbm" wx:const-bitmap-type-xbm))
     (define get-reset-console-bitmap (load-icon wx:bitmap% "reset.xbm" wx:const-bitmap-type-xbm))
+
+    (define get-icon 
+      (let ([icon #f]
+	    [p (build-path icon-path "mred.xbm")])
+	(unless (file-exists? p)
+	  (printf "WARNING: couldn't find ~a~n" p))
+	(lambda ()
+	  (or icon
+	      (begin
+		(set! icon (make-object wx:icon% p
+					wx:const-bitmap-type-xbm))
+		icon)))))
 
     (define-values (get-gc-on-dc get-gc-width get-gc-height)
       (let* ([get-bitmap (load-icon wx:bitmap% 

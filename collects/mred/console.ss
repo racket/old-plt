@@ -31,7 +31,9 @@
       (string-append
        "version "
        (mred:version:version)
-       ", Copyright (c) 1995-1997 PLT, Rice University (Matthew Flatt and Robert Bruce Findler)"))
+       "."
+       newline-string
+       "Copyright (c) 1995-1997 PLT, Rice University (Matthew Flatt and Robert Bruce Findler)"))
 
     (define credits-proc
       (lambda (indent-string)
@@ -71,13 +73,11 @@
       (make-object wx:style-delta%
 		   wx:const-change-family
 		   wx:const-decorative))
-    (send message-delta set-delta wx:const-change-size 10)
     (define url-delta
       (make-object wx:style-delta%
 		   wx:const-change-family
 		   wx:const-decorative))
     (send* url-delta
-      (set-delta wx:const-change-size 10)
       (set-delta-foreground "BLUE")
       (set-underlined-on #t))
 
@@ -729,9 +729,11 @@
 	       (when prompt-mode?
 		 (set! prompt-mode? #f)
 		 (let ([c-locked locked?])
+		   (begin-edit-sequence)
 		   (lock #f)
 		   (insert #\newline (last-position))
-		   (lock c-locked))))]
+		   (lock c-locked)		   
+		   (end-edit-sequence))))]
 	    
 	    [initialize-console
 	     (lambda ()

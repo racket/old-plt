@@ -722,4 +722,4 @@
 	    (apply super-init args)
 	    (add-h-link-style)))))
 
-    (define hyper-edit% (make-hyper-edit% mred:edit:media-edit%)))
+    (define hyper-edit% (make-hyper-edit% mred:edit:searching-edit%)))

@@ -622,6 +622,82 @@ void wxBitmap::FreeMaskBit()
   }
 }
 
+void *wxBitmap::GetLabelPixmap()
+{
+  if (!wxXRenderHere()
+      && !label_bm 
+      && loaded_mask
+      && (loaded_mask->GetDepth() != 1)
+      && (loaded_mask->GetWidth() == GetWidth())
+      && (loaded_mask->GetHeight() == GetHeight())) {
+    /* Manually construct the alpha-masked image */
+    int w, h;
+
+    w = GetWidth();
+    h = GetHeight();
+    label_bm = new wxBitmap(w, h, 0);
+    if (label_bm->Ok()) {
+      int i, j;
+      wxMemoryDC *src, *mask, *dest;
+      int br, bg, bb;
+
+      if (selectedTo)
+	selectedTo->EndSetPixel();
+      if (loaded_mask->selectedTo)
+	loaded_mask->selectedTo->EndSetPixel();
+
+      dest = new wxMemoryDC();
+      src = new wxMemoryDC(1);
+      mask = new wxMemoryDC(1);
+      
+      dest->SelectObject(label_bm);
+      src->SelectObject(this);
+      mask->SelectObject(loaded_mask);
+      
+      br = wxGREY->Red();
+      bg = wxGREY->Green();
+      bb = wxGREY->Blue();
+
+      src->BeginGetPixelFast(0, 0, w, h);
+      mask->BeginGetPixelFast(0, 0, w, h);
+      dest->BeginSetPixelFast(0, 0, w, h);
+      for (i = 0; i < w; i++) {
+	for (j = 0; j < h; j++) {
+	  int sr, sg, sb, mr, mg, mb, ialpha;
+	  src->GetPixelFast(i, j, &sr, &sg, &sb);
+	  mask->GetPixelFast(i, j, &mr, &mg, &mb);
+	  ialpha = (mr + mg + mb) / 3;
+	  mr = ((ialpha * br) + ((255 - ialpha) * sr)) / 255;
+	  mg = ((ialpha * bg) + ((255 - ialpha) * sg)) / 255;
+	  mb = ((ialpha * bb) + ((255 - ialpha) * sb)) / 255;
+	  dest->SetPixelFast(i, j, mr, mg, mb);
+	}
+      }
+      mask->EndGetPixelFast();
+      src->EndGetPixelFast();
+      dest->EndSetPixelFast();
+
+      src->SelectObject(NULL);
+      mask->SelectObject(NULL);
+      dest->SelectObject(NULL);
+    } else
+      label_bm = NULL;
+  }
+
+  if (label_bm)
+    return (void *)GETPIXMAP(label_bm);
+
+  return (void *)GETPIXMAP(this);
+}
+
+void wxBitmap::ReleaseLabel()
+{
+  if (!selectedIntoDC && label_bm) {
+    DELETE_OBJ label_bm;
+    label_bm = NULL;
+  }
+}
+
 //-----------------------------------------------------------------------------
 // wxCursor
 //-----------------------------------------------------------------------------

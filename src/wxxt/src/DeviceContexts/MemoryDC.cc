@@ -64,7 +64,9 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     return;
 
   EndSetPixel();
-  FreeGetPixelCache();
+
+  /* Skip wxMemoryDC, because the bitmap's cache is fine. */
+  wxWindowDC::FreeGetPixelCache(); 
 
   if (!read_only) {
     /* Bitmap selection memory and safety */

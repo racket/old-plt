@@ -22,7 +22,7 @@
    exn:assoc-set?             ; value -> boolean
    (struct exn:assoc-set:key-not-found (assoc-set key)) ; assoc-set value
    (struct exn:assoc-set:duplicate-key (assoc-set key)) ; assoc-set value
-   make-assoc-set             ; (opt 'equal) -> assoc-set
+   assoc-set-make             ; (opt 'equal) -> assoc-set
    assoc-set-reset            ; assoc-set -> assoc-set
    assoc-set?                 ; value -> boolean
    assoc-set-set              ; assoc-set value value (opt boolean) -> assoc-set
@@ -45,18 +45,15 @@
   ; table = (listof (cons value value))
   (define-struct assoc-set (=? cardinality table))
   
-  ; we'll need the real one later, since we set! make-assoc-set below
-  (define real-make-assoc-set make-assoc-set)
-  
   ; (opt 'equal) -> assoc-set
   ; we test the optional argument ourselves to preserve data abstraction even in the
   ; presence of an exception
-  (set! make-assoc-set
-        (case-lambda
-          [() (real-make-assoc-set eq? 0 '())]
-          [(flag) (if (eq? flag 'equal)
-                      (real-make-assoc-set equal? 0 '())
-                      (argexn:raise-arg-mismatch-exn "make-assoc-set" 'equal flag))]))
+  (define assoc-set-make
+    (case-lambda
+      [() (make-assoc-set eq? 0 '())]
+      [(flag) (if (eq? flag 'equal)
+                  (make-assoc-set equal? 0 '())
+                  (argexn:raise-arg-mismatch-exn "assoc-set-make" 'equal flag))]))
   
   ; assoc-set -> assoc-set
   ; doesn't change =?
@@ -156,7 +153,7 @@
   
   ; assoc-set -> assoc-set
   (define (assoc-set-copy assoc-set)
-    (real-make-assoc-set (assoc-set-=? assoc-set)
+    (make-assoc-set (assoc-set-=? assoc-set)
                          (assoc-set-cardinality assoc-set)
                          (copy-assoc-list (assoc-set-table assoc-set))))
   
@@ -200,7 +197,7 @@
                              (set! table (cons (cons key value) table))
                              (set! count (add1 count))))
                          (assoc-set-table assoc-set))
-               (real-make-assoc-set (assoc-set-=? assoc-set) count table)))])
+               (make-assoc-set (assoc-set-=? assoc-set) count table)))])
       (opt-lambda (assoc-set tester (which-assoc-set 'new))
         (let ([new-assoc-set (filter-into-new-assoc-set assoc-set tester)])
           (case which-assoc-set
@@ -225,10 +222,10 @@
                          [count 0])
                 (if (null? table1)
                     ; we have already copied table2, so we can destructively modify it
-                    (real-make-assoc-set =? (+ count count2)
+                    (make-assoc-set =? (+ count count2)
                                          (append! table2 acc))
                     (if (null? table2)
-                        (real-make-assoc-set =? (+ count count1)
+                        (make-assoc-set =? (+ count count1)
                                              (copy-reverse-and-prefix-assoc-lists table1 acc))
                         (let ([key1 (caar table1)])
                           ; search table2 for same key
@@ -277,9 +274,9 @@
                          [acc '()]
                          [count 0])
                 (if (null? table1)
-                    (real-make-assoc-set =? count acc)
+                    (make-assoc-set =? count acc)
                     (if (null? table2)
-                        (real-make-assoc-set =? count acc)
+                        (make-assoc-set =? count acc)
                         (let ([key1 (caar table1)])
                           ; search table2 for same key
                           (let loop-assoc-set2 ([t2 table2]
@@ -325,9 +322,9 @@
                          [acc '()]
                          [count 0])
                 (if (null? table1)
-                    (real-make-assoc-set =? count acc)
+                    (make-assoc-set =? count acc)
                     (if (null? table2)
-                        (real-make-assoc-set =? (+ count count1)
+                        (make-assoc-set =? (+ count count1)
                                              (copy-reverse-and-prefix-assoc-lists table1 acc))
                         (let ([key1 (caar table1)])
                           ; search table2 for same key

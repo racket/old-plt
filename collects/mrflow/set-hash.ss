@@ -19,7 +19,7 @@
    exn:set?             ; value -> boolean
    (struct exn:set:value-not-found (set value)) ; set value
    (struct exn:set:duplicate-value (set value)) ; set value
-   make-set             ; (opt 'equal) -> set
+   set-make             ; (opt 'equal) -> set
    set-reset            ; set -> set
    set?                 ; value -> boolean
    set-set              ; set value (opt boolean) -> set
@@ -41,18 +41,15 @@
   ; table = (hashtableof value value)
   (define-struct set (cardinality table))
   
-  ; we'll need the real one later, since we set! make-set below
-  (define real-make-set make-set)
-  
   ; (opt 'equal) -> set
   ; we test the optional argument ourselves to preserve data abstraction even in the
   ; presence of an exception
-  (set! make-set
-        (case-lambda
-          [() (real-make-set 0 (make-hash-table))]
-          [(flag) (if (eq? flag 'equal)
-                      (real-make-set 0 (make-hash-table 'equal))
-                      (argexn:raise-arg-mismatch-exn "make-set" 'equal flag))]))
+  (define set-make
+    (case-lambda
+      [() (make-set 0 (make-hash-table))]
+      [(flag) (if (eq? flag 'equal)
+                  (make-set 0 (make-hash-table 'equal))
+                  (argexn:raise-arg-mismatch-exn "set-make" 'equal flag))]))
   
   ; set -> set
   (define (set-reset set)
@@ -105,8 +102,8 @@
       (hash-table-for-each (set-table set)
                            (lambda (key value)
                              (hash-table-put! new-table key value)))
-      (real-make-set (set-cardinality set)
-                     new-table)))
+      (make-set (set-cardinality set)
+                new-table)))
   
   ; set (value -> value) -> (listof value)
   (define (set-map set f)
@@ -152,7 +149,7 @@
                                       (when (tester value)
                                         (hash-table-put! table value dummy)
                                         (set! count (add1 count)))))
-               (real-make-set count table)))])
+               (make-set count table)))])
       (opt-lambda (set tester (which-set 'new))
         (let ([new-set (filter-into-new-set set tester)])
           (case which-set
@@ -200,7 +197,7 @@
                                       (when (set-in? set2 value)
                                         (hash-table-put! table value dummy)
                                         (set! count (add1 count)))))
-               (real-make-set count table)))])
+               (make-set count table)))])
       (opt-lambda (set1 set2 (which-set 'new))
         (let ([new-set
                (if (< (set-cardinality set1) (set-cardinality set2))
@@ -230,7 +227,7 @@
                                       (unless (set-in? set2 value)
                                         (hash-table-put! table value dummy)
                                         (set! count (add1 count)))))
-               (real-make-set count table)))])
+               (make-set count table)))])
       (opt-lambda (set1 set2 (which-set 'new))
         (let ([new-set (difference-into-new-set set1 set2)])
           (case which-set

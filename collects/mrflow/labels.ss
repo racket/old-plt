@@ -17,7 +17,7 @@
    )
   
   ; type-var = (union type-var #f), trace = boolean, prim? = boolean
-  ; term = syntax-object, set = (hash-table-of label (cons (listof label) (listof label)),
+  ; term = syntax-object, set = (hash-table-of label (make-arrows (listof label) (listof label) (listof label)),
   ; edges = (hashtableof symbol edge))
   ; a flow graph label/node type-var is a type variable name used when reconstructing recursive
   ; types.

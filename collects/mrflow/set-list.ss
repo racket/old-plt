@@ -22,7 +22,7 @@
    exn:set?             ; value -> boolean
    (struct exn:set:value-not-found (set value)) ; set value
    (struct exn:set:duplicate-value (set value)) ; set value
-   make-set             ; (opt 'equal) -> set
+   set-make             ; (opt 'equal) -> set
    set-reset            ; set -> set
    set?                 ; value -> boolean
    set-set              ; set value (opt boolean) -> set
@@ -44,18 +44,15 @@
   ; table = (listof (cons value value))
   (define-struct set (=? cardinality table))
   
-  ; we'll need the real one later, since we set! make-set below
-  (define real-make-set make-set)
-  
   ; (opt 'equal) -> set
   ; we test the optional argument ourselves to preserve data abstraction even in the
   ; presence of an exception
-  (set! make-set
-        (case-lambda
-          [() (real-make-set eq? 0 '())]
-          [(flag) (if (eq? flag 'equal)
-                      (real-make-set equal? 0 '())
-                      (argexn:raise-arg-mismatch-exn "make-set" 'equal flag))]))
+  (define set-make
+    (case-lambda
+      [() (make-set eq? 0 '())]
+      [(flag) (if (eq? flag 'equal)
+                  (make-set equal? 0 '())
+                  (argexn:raise-arg-mismatch-exn "set-make" 'equal flag))]))
   
   ; set -> set
   ; doesn't change =?
@@ -84,7 +81,7 @@
                                           original-table)
                                       (loop (cdr table)))))))
       set))
-
+  
   ; set value -> boolean
   (define (set-in? set value)
     (let ([=? (set-=? set)])
@@ -116,7 +113,7 @@
                                         (cdr original-table)))
                                   (loop (cdr table) table))))))
       set))
-
+  
   ; set -> exact-non-negative-integer
   ; set-cardinality comes from the structure definition
   
@@ -132,16 +129,16 @@
       (if (null? l1)
           l2
           (loop (cdr l1) (cons (car l1) l2)))))
-
+  
   ; (listof value) -> (listof value)
   (define (copy-list l)
     (copy-reverse-and-prefix-lists l '()))
   
   ; set -> set
   (define (set-copy set)
-    (real-make-set (set-=? set)
-                   (set-cardinality set)
-                   (copy-list (set-table set))))
+    (make-set (set-=? set)
+              (set-cardinality set)
+              (copy-list (set-table set))))
   
   ; set (value -> value) -> (listof value)
   (define (set-map set f)
@@ -150,7 +147,7 @@
   ; set (value value -> value) value -> value
   (define (set-fold set f acc)
     (foldr f acc (set-table set)))
-           
+  
   ; set (value -> value) -> set
   (define (set-for-each set f)
     (for-each f (set-table set))
@@ -176,7 +173,7 @@
                         [new-table '()]
                         [count 0])
                (if (null? table)
-                   (real-make-set (set-=? set) count new-table)
+                   (make-set (set-=? set) count new-table)
                    (let ([value (car table)])
                      (if (tester value)
                          (loop (cdr table) (cons value new-table) (add1 count))
@@ -205,11 +202,11 @@
                          [count 0])
                 (if (null? table1)
                     ; we have already copied table2, so we can destructively modify it
-                    (real-make-set =? (+ count count2)
-                                   (append! table2 acc))
+                    (make-set =? (+ count count2)
+                              (append! table2 acc))
                     (if (null? table2)
-                        (real-make-set =? (+ count count1)
-                                       (copy-reverse-and-prefix-lists table1 acc))
+                        (make-set =? (+ count count1)
+                                  (copy-reverse-and-prefix-lists table1 acc))
                         (let ([value1 (car table1)])
                           ; search table2 for same value
                           (let loop-set2 ([t2 table2]
@@ -243,7 +240,7 @@
            (set-set-table! set2 (set-table new-set))
            set2]
           [else (argexn:raise-arg-mismatch-exn "set-union" '(union new first second) which-set)]))))
-      
+  
   ; set set (opt (union 'new 'first 'second)) -> set
   (define set-intersection
     (opt-lambda (set1 set2 (which-set 'new))
@@ -257,9 +254,9 @@
                          [acc '()]
                          [count 0])
                 (if (null? table1)
-                    (real-make-set =? count acc)
+                    (make-set =? count acc)
                     (if (null? table2)
-                        (real-make-set =? count acc)
+                        (make-set =? count acc)
                         (let ([value1 (car table1)])
                           ; search table2 for same value
                           (let loop-set2 ([t2 table2]
@@ -291,7 +288,7 @@
            (set-set-table! set2 (set-table new-set))
            set2]
           [else (argexn:raise-arg-mismatch-exn "set-intersection" '(union new first second) which-set)]))))
-      
+  
   ; set set (opt (union 'new 'first 'second)) -> set
   (define set-difference
     (opt-lambda (set1 set2 (which-set 'new))
@@ -305,10 +302,10 @@
                          [acc '()]
                          [count 0])
                 (if (null? table1)
-                    (real-make-set =? count acc)
+                    (make-set =? count acc)
                     (if (null? table2)
-                        (real-make-set =? (+ count count1)
-                                       (copy-reverse-and-prefix-lists table1 acc))
+                        (make-set =? (+ count count1)
+                                  (copy-reverse-and-prefix-lists table1 acc))
                         (let ([value1 (car table1)])
                           ; search table2 for same value
                           (let loop-set2 ([t2 table2]
@@ -340,5 +337,5 @@
            (set-set-table! set2 (set-table new-set))
            set2]
           [else (argexn:raise-arg-mismatch-exn "set-difference" '(union new first second) which-set)]))))
-   
+  
   )

@@ -10,28 +10,29 @@
            (prefix string: (lib "string.ss"))
            
            "labels.ss"
+           "set-hash.ss"
            (prefix cst: "constants.ss")
            ;(prefix types: "types.ss")
            (prefix err: "sba-errors.ss")
            )
   (provide
    ;sba-driver
-   create-label-from-term
+   (rename create-label-from-term-hack create-label-from-term)
    initialize-primitive-type-schemes
    check-primitive-types
    reset-all
    get-type-from-label
    pp-type
-   parents
-   children
+   get-parents-from-label
+   get-children-from-label
    has-member?
    ast-nodes
 
-   get-label-from-mzscheme-position
    get-mzscheme-position-from-label
    is-label-atom?
    get-span-from-label
    get-errors-from-label
+   get-source-from-label
    
    ;graph-nodes graph-edges ; XXX perf
    ;show-expanded ; XXX debug
@@ -39,28 +40,28 @@
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
   
-  ;  (define-syntax debug1
-  ;    (let ([counter 1])
-  ;      (lambda (stx)
-  ;        (syntax-case stx ()
-  ;          [(_ args ...)
-  ;           (begin
-  ;             (printf "debug counter: ~a~n" counter)
-  ;             (let* ([stx-args (syntax (args ...))]
-  ;                    [stx-args-list (syntax-e stx-args)]
-  ;                    [stx-out (datum->syntax-object
-  ;                              stx-args
-  ;                              `(#%app debug2 ,counter ,@stx-args-list))])
-  ;               (set! counter (add1 counter))
-  ;               stx-out))]))))
-  ;  
-  ;  (define (debug2 n . args)
-  ;    ;(when (and (label-cst? (cadr args))
-  ;    ;           (number? (label-cst-value (cadr args)))
-  ;    ;           (= 7 (label-cst-value (cadr args))))
-  ;    (printf "debug: ~a args: ~a~n" n args)
-  ;    ;  )
-  ;    (apply (car args) (cdr args)))
+;  (define-syntax debug1
+;    (let ([counter 1])
+;      (lambda (stx)
+;        (syntax-case stx ()
+;          [(_ args ...)
+;           (begin
+;             (printf "debug counter: ~a~n" counter)
+;             (let* ([stx-args (syntax (args ...))]
+;                    [stx-args-list (syntax-e stx-args)]
+;                    [stx-out (datum->syntax-object
+;                              stx-args
+;                              `(#%app debug2 ,counter ,@stx-args-list))])
+;               (set! counter (add1 counter))
+;               stx-out))]))))
+;  
+;  (define (debug2 n . args)
+;    ;(when (and (label-cst? (cadr args))
+;    ;           (number? (label-cst-value (cadr args)))
+;    ;           (= 7 (label-cst-value (cadr args))))
+;    (printf "debug: ~a args: ~a~n" n args)
+;    ;  )
+;    (apply (car args) (cdr args)))
   
   ;  ; XXX perf analysis
   (define ast-nodes 0)
@@ -84,7 +85,7 @@
   (define *errors* 'uninitialized)
   
   (define (reset-derivation)
-    (set! *errors* (err:make-error-table))
+    (set! *errors* (err:error-table-make))
     (set! *top-level-name->label* (make-hash-table))
     )
   
@@ -583,8 +584,11 @@
   (define (create-simple-label term)
     ;(set! graph-nodes (add1 graph-nodes))
     (let ([label (make-label #f #f #f term (make-hash-table) (make-hash-table))])
-      (associate-label-with-term-position label term)
+      (register-label-with-gui label)
       label))
+  
+  (define (create-dummy-label term)
+    (make-label #f #f #f term (make-hash-table) (make-hash-table)))
   
   ; create-simple-label is seldom used in the graph reconstruction from primitive type part
   ; of the code but used a lot in the graph derivation code, so rather than add a second
@@ -722,8 +726,8 @@
                                                                   ;(set! graph-nodes (add1 graph-nodes))
                                                                   (initialize-label-set-for-value-source
                                                                    null-label)
-                                                                  ;(associate-label-with-term-position
-                                                                  ; null-label rest-arg-term)
+                                                                  ;(register-label-with-gui
+                                                                  ; null-label)
                                                                   null-label)
                                                                 (let ([cons-label
                                                                        (make-label-cons
@@ -737,8 +741,8 @@
                                                                   ;(set! graph-nodes (add1 graph-nodes))
                                                                   (initialize-label-set-for-value-source
                                                                    cons-label)
-                                                                  ;(associate-label-with-term-position
-                                                                  ; cons-label rest-arg-term)
+                                                                  ;(register-label-with-gui
+                                                                  ; cons-label)
                                                                   cons-label)))])
                                                     ; we know args-label-around-inlabellist is not
                                                     ; a multiple value...
@@ -1064,8 +1068,8 @@
                                                                   ;(set! graph-nodes (add1 graph-nodes))
                                                                   (initialize-label-set-for-value-source
                                                                    cons-label)
-                                                                  ;(associate-label-with-term-position
-                                                                  ; cons-label rest-arg-term)
+                                                                  ;(register-label-with-gui
+                                                                  ; cons-label)
                                                                   cons-label)))])
                                                     ; we know args-label-around-inlabellist is not
                                                     ; a multiple value...
@@ -2086,6 +2090,14 @@
       (initialize-label-set-for-value-source mutator-case-lambda-label)
       mutator-case-lambda-label))
   
+  ; this is a hack because create-label-from-term doesn't currently pass around
+  ; a state, and we need the value of the real register-label-with-gui function in the local
+  ; register-label-with-gui function, so we use a global variable instead
+  (define register-label-with-gui-hack #f)
+  (define (create-label-from-term-hack term gamma enclosing-lambda-label register-label-with-gui)
+    (set! register-label-with-gui-hack register-label-with-gui)
+    (create-label-from-term term gamma enclosing-lambda-label))
+  
   ; syntax-object (listof (cons symbol label)) label (listof label) -> label
   ; gamma is the binding-variable-name-to-label environment
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
@@ -2206,7 +2218,7 @@
         (set-label-case-lambda-argss! label (vector-ref all-labels 2))
         (set-label-case-lambda-exps! label (vector-ref all-labels 3))
         (initialize-label-set-for-value-source label)
-        (associate-label-with-term-position label term)
+        (register-label-with-gui label)
         label)]
      [(#%app op actual-args ...)
       (set! ast-nodes (add1 ast-nodes))
@@ -2261,7 +2273,7 @@
                     (syntax-object->datum (syntax datum)))])
         ;(set! graph-nodes (add1 graph-nodes))
         (initialize-label-set-for-value-source label)
-        (associate-label-with-term-position label term)
+        (register-label-with-gui label)
         label)]
      [(quote sexp)
       (set! ast-nodes (add1 ast-nodes))
@@ -2274,7 +2286,7 @@
                     (syntax-object->datum (syntax sexp)))])
         ;(set! graph-nodes (add1 graph-nodes))
         (initialize-label-set-for-value-source label)
-        (associate-label-with-term-position label term)
+        (register-label-with-gui label)
         label)]
      [(define-values vars exp)
       (set! ast-nodes (add1 ast-nodes))
@@ -2376,8 +2388,8 @@
               (add-edge-and-propagate-set-through-edge
                exp-label
                distributive-unpacking-edge)))
-        (initialize-label-set-for-value-source define-label)
-        (associate-label-with-term-position define-label term)
+        ;(initialize-label-set-for-value-source define-label)
+        ;(register-label-with-gui define-label)
         define-label)]
      [(let-values ((vars exp) ...) body-exps ...)
       (set! ast-nodes (add1 ast-nodes))
@@ -2514,12 +2526,14 @@
                                                                                  (make-hash-table)
                                                                                  (make-hash-table)
                                                                                  cst:undefined)]
-                                                [binding-label (create-simple-label var-stx)])
+                                                ;[binding-label (create-simple-label var-stx)]
+                                                )
                                             (initialize-label-set-for-value-source undefined-label)
-                                            (add-edge-and-propagate-set-through-edge
-                                             undefined-label
-                                             (create-simple-edge binding-label))
-                                            binding-label))
+                                            ;(add-edge-and-propagate-set-through-edge
+                                            ; undefined-label
+                                            ; (create-simple-edge binding-label))
+                                            ;binding-label
+                                            undefined-label))
                                         single-clause-vars-stx))
                                  varss-stx)]
              [gamma-extended (list:foldl
@@ -2768,52 +2782,52 @@
         set!-label)]
      [(quote-syntax foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "quote-syntax not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(with-continuation-mark foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "with-continuation-mark not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(define-syntaxes foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "define-syntaxes not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(module foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "module not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(require foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "require not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(require-for-syntax foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "require-for-syntax not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(provide foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "provide not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [(#%plain-module-begin foo ...)
       (err:error-table-set *errors*
-                           (list (create-simple-label term))
+                           (list (create-dummy-label term))
                            'red
                            (format "#%plain-module-begin not yet implemented"))
-      (create-simple-label term)]
+      (create-dummy-label term)]
      [var
       ; we cannot directly return the binding label, because, even though it makes for a
       ; simpler graph and simpler types, it screws up the arrows
@@ -4196,19 +4210,11 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI INTERFACE
   
-  ; (hash-table-of number label)
-  ; need this for DrScheme, to find the label that
-  ; corresponds to the term starting at the given position
-  (define *position->label* 'uninitialized)
-  
-  ; syntax-object label -> void
-  (define (associate-label-with-term-position label term)
-    (when (syntax-original? term)
-      (hash-table-put! *position->label* (syntax-position term) label)))
-  
-  ; number -> (union label #f)
-  (define (lookup-label-from-position position)
-    (hash-table-get *position->label* position cst:thunk-false))
+  ; label -> void
+  (define (register-label-with-gui label)
+    (let ([term (label-term label)])
+      (when (syntax-original? term)
+        (register-label-with-gui-hack label))))
   
   (define type-var-counter 'uninitialized)
   (define (create-type-var-name)
@@ -4218,12 +4224,7 @@
   ; -> void
   (define (reset-gui)
     (set! type-var-counter 0)
-    (set! *position->label* (make-hash-table))
     )
-  
-  ; number -> (union label #f)
-  ; given a mzscheme position, returns the label associated with the terms that start at that offset.
-  (define get-label-from-mzscheme-position lookup-label-from-position)
   
   ; label -> positive-int
   ; returns start location of term associated with label
@@ -4247,6 +4248,10 @@
   ; extracts error messages.
   (define (get-errors-from-label label)
     (err:error-table-get *errors* label))
+  
+  ; label -> exact-non-negative-integer
+  (define (get-source-from-label label)
+    (syntax-source (label-term label)))
   
   ; (make-hash-tableof label (cons type-var type))
   (define *rec-types* 'uninitialized)
@@ -4562,33 +4567,36 @@
   ; returns list of labels from which label went in or out, depending on selector
   (define (get-parents/children selector)
     (letrec ([get (lambda (label)
-                    (list:foldr
-                     (lambda (unfiltered-parents-for-current-set-element filtered-parentss-so-far)
-                       (let* ([direct-parents-without-primitive-labels
-                               (list:filter (lambda (label)
-                                              (not (label-prim? label)))
-                                            unfiltered-parents-for-current-set-element)]
-                              [direct-or-indirect-original-parents
-                               (list:foldr
-                                (lambda (direct-parent original-parents-so-far)
-                                  (if (syntax-original? (label-term direct-parent))
-                                      (cons direct-parent original-parents-so-far)
-                                      (merge-lists (get direct-parent)
-                                                   original-parents-so-far)))
-                                '()
-                                direct-parents-without-primitive-labels)])
-                         (merge-lists direct-or-indirect-original-parents filtered-parentss-so-far)))
-                     '()
-                     (hash-table-map (label-set label)
-                                     (lambda (label arrows)
-                                       (selector arrows)))))])
+                    (let ([result (set-make)])
+                      (for-each
+                       (lambda (unfiltered-parents-for-current-set-element)
+                         (let* ([direct-parents-without-primitive-labels
+                                 (list:filter (lambda (label)
+                                                (not (label-prim? label)))
+                                              unfiltered-parents-for-current-set-element)]
+                                [direct-or-indirect-original-parents
+                                 (list:foldr
+                                  (lambda (direct-parent original-parents-so-far)
+                                    (if (syntax-original? (label-term direct-parent))
+                                        (cons direct-parent original-parents-so-far)
+                                        (merge-lists (get direct-parent)
+                                                     original-parents-so-far)))
+                                  '()
+                                  direct-parents-without-primitive-labels)])
+                           (for-each (lambda (parent)
+                                       (set-set result parent #f))
+                                     direct-or-indirect-original-parents)))
+                       (hash-table-map (label-set label)
+                                       (lambda (label arrows)
+                                         (selector arrows))))
+                      (set-map result cst:id)))])
       get))
   
   ; label -> (listof label)
-  (define parents (get-parents/children arrows-in))
+  (define get-parents-from-label (get-parents/children arrows-in))
   
   ; label -> (listof label)
-  (define children (get-parents/children arrows-out))
+  (define get-children-from-label (get-parents/children arrows-out))
   
   ; XXX fix this
   (define (has-member? type sym)

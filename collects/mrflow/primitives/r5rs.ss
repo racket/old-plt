@@ -422,7 +422,6 @@
  
  (string-append (forall ([a_string-append string])
                         (case-lambda
-                          ; the last element could be not a list => improper list
                           [(rest string string (listof string)) string]
                           [() ""]
                           [(a_string-append) a_string-append]

@@ -21,7 +21,7 @@
    exn:assoc-set?             ; value -> boolean
    (struct exn:assoc-set:key-not-found (assoc-set key)) ; assoc-set value
    (struct exn:assoc-set:duplicate-key (assoc-set key)) ; assoc-set value
-   make-assoc-set             ; (opt 'equal) -> assoc-set
+   assoc-set-make             ; (opt 'equal) -> assoc-set
    assoc-set-reset            ; assoc-set -> assoc-set
    assoc-set?                 ; value -> boolean
    assoc-set-set              ; assoc-set value value (opt boolean) -> assoc-set
@@ -44,18 +44,15 @@
   ; table = (hashtableof value value)
   (define-struct assoc-set (cardinality table))
   
-  ; we'll need the real one later, since we set! make-assoc-set below
-  (define real-make-assoc-set make-assoc-set)
-  
   ; (opt 'equal) -> assoc-set
   ; we test the optional argument ourselves to preserve data abstraction even in the
   ; presence of an exception
-  (set! make-assoc-set
-        (case-lambda
-          [() (real-make-assoc-set 0 (make-hash-table))]
-          [(flag) (if (eq? flag 'equal)
-                      (real-make-assoc-set 0 (make-hash-table 'equal))
-                      (argexn:raise-arg-mismatch-exn "make-assoc-set" 'equal flag))]))
+  (define assoc-set-make
+    (case-lambda
+      [() (make-assoc-set 0 (make-hash-table))]
+      [(flag) (if (eq? flag 'equal)
+                  (make-assoc-set 0 (make-hash-table 'equal))
+                  (argexn:raise-arg-mismatch-exn "assoc-set-make" 'equal flag))]))
   
   ; assoc-set -> assoc-set
   (define (assoc-set-reset assoc-set)
@@ -114,8 +111,8 @@
       (hash-table-for-each (assoc-set-table assoc-set)
                            (lambda (key value)
                              (hash-table-put! new-table key value)))
-      (real-make-assoc-set (assoc-set-cardinality assoc-set)
-                           new-table)))
+      (make-assoc-set (assoc-set-cardinality assoc-set)
+                      new-table)))
   
   ; assoc-set (value value -> value) -> (listof value)
   (define (assoc-set-map assoc-set f)
@@ -157,7 +154,7 @@
                                       (when (tester key value)
                                         (hash-table-put! table key value)
                                         (set! count (add1 count)))))
-               (real-make-assoc-set count table)))])
+               (make-assoc-set count table)))])
       (opt-lambda (assoc-set tester (which-set 'new))
         (let ([new-assoc-set (filter-set-into-new-assoc-set assoc-set tester)])
           (case which-set
@@ -212,7 +209,7 @@
                                                          (merge-values value
                                                                        (hash-table-get assoc-set2-table key cst:dummy)))
                                         (set! count (add1 count)))))
-               (real-make-assoc-set count table)))])
+               (make-assoc-set count table)))])
       (opt-lambda (assoc-set1 assoc-set2 merge-values (which-set 'new))
         (let ([new-assoc-set
                (if (< (assoc-set-cardinality assoc-set1) (assoc-set-cardinality assoc-set2))
@@ -242,7 +239,7 @@
                                       (unless (assoc-set-in? assoc-set2 key)
                                         (hash-table-put! table key value)
                                         (set! count (add1 count)))))
-               (real-make-assoc-set count table)))])
+               (make-assoc-set count table)))])
       (opt-lambda (assoc-set1 assoc-set2 (which-set 'new))
         (let ([new-assoc-set (difference-into-new-assoc-set assoc-set1 assoc-set2)])
           (case which-set

@@ -4,18 +4,18 @@
   (require
    (lib "tool.ss" "drscheme")
    (lib "unitsig.ss")
-   (lib "mred.ss" "mred")
-   (lib "class.ss")
    (lib "list.ss")
-   (prefix frame: (lib "framework.ss" "framework"))
+   (lib "class.ss")
+   (lib "mred.ss" "mred")
+   (prefix fw: (lib "framework.ss" "framework"))
    (prefix strcst: (lib "string-constant.ss" "string-constants"))
    
    (prefix cst: "constants.ss")
    (prefix sba: "constraints-gen-and-prop.ss")
    (prefix err: "sba-errors.ss")
-   (prefix saav: "snips-and-arrows-view.ss")
+   (prefix saa: "snips-and-arrows.ss")
    )
-
+  
   (provide tool@)
   
   (define tool@
@@ -53,7 +53,8 @@
       (define (phase1) 
         (drscheme:language:extend-language-interface
          mrflow-language-extension-interface<%>
-         mrflow-default-implementation-mixin))
+         mrflow-default-implementation-mixin)
+        (drscheme:unit:add-to-program-editor-mixin editor-mixin))
       
       (define (phase2) cst:void)
       
@@ -73,9 +74,6 @@
       (define red-style-delta (make-object style-delta% 'change-weight 'bold))
       (send red-style-delta set-delta-foreground "red")
       (send red-style-delta set-underlined-on #t)
-      
-      ; style before analysis
-      (define original-style (send (frame:scheme:get-style-list) find-named-style "standard"))
       
       ; symbol style-delta% -> style-delta%
       ; compares two style-deltas (one represented as a color/severity name, the other one as
@@ -143,14 +141,14 @@
       ; (listof symbol)
       ; this describes the order in which snips of different types will appear after
       ; insertion in the editor, from left to right, for a given label.
-      (define type-list '(type error))
+      (define snip-type-list '(type error))
       
       
       ; INTERFACE FOR MENUS
       ; symbol symbol -> string
       ; given a snip type and a menu action for snips (show/hide), return the corresponding
       ; menu text
-      (define (get-menu-text-from-type type action)
+      (define (get-menu-text-from-snip-type type action)
         (case type
           [(type)
            (case action
@@ -164,203 +162,43 @@
              [else (error 'get-menu-text-from-type "MrFlow internal error; unknown error action: ~a" action)])]
           [else (error 'get-menu-text-from-type "MrFlow internal error; unknown type: ~a" type)]))
       
-      ; gui-state menu% label symbol (-> (listof string)) -> menu-item%
-      ; create menu entries for snips
-      (define (create-snips-menu-item-by-type snips-and-arrows-gui-state menu label type get-snip-strings)
-        (if (saav:label-has-snips-of-this-type? snips-and-arrows-gui-state label type)
-            ; delete menu entry
-            (make-object menu-item%
-              (get-menu-text-from-type type 'hide)
-              menu
-              (lambda (item event)
-                (saav:remove-inserted-snips snips-and-arrows-gui-state label type)))
-            ; show menu entry
-            (let ([snip-strings (get-snip-strings)])
-              (unless (null? snip-strings)
-                (make-object menu-item%
-                  (get-menu-text-from-type type 'show)
-                  menu
-                  (lambda (item event)
-                    (saav:add-snips snips-and-arrows-gui-state label type snip-strings)))))))
-      
-      ; text% gui-state menu% label -> menu-item%
-      ; create menu entries for arrows
-      (define (create-arrow-menu-items this snips-and-arrows-gui-state menu label)
-        (let* ([parents (sba:parents label)]
-               [parents-max-arrows (length parents)]
-               [parents-tacked-arrows (saav:get-parents-tacked-arrows snips-and-arrows-gui-state label)]
-               [children (sba:children label)]
-               [children-max-arrows (length children)]
-               [children-tacked-arrows (saav:get-children-tacked-arrows snips-and-arrows-gui-state label)]
-               [max-arrows (+ parents-max-arrows children-max-arrows)]
-               [tacked-arrows (+ parents-tacked-arrows children-tacked-arrows)])
-          (when (< tacked-arrows max-arrows)
-            (make-object menu-item%
-              (strcst:string-constant mrflow-popup-menu-tack-all-arrows)
-              menu
-              (lambda (item event)
-                ; remove all (possibly untacked) arrows and add all arrows, tacked.
-                ; we could just add the untacked ones, but what we do here is simple
-                ; and efficient enough
-                (saav:remove-arrows snips-and-arrows-gui-state label 'all #t)
-                (for-each (lambda (parent-label)
-                            (saav:add-arrow snips-and-arrows-gui-state parent-label label #t))
-                          parents)
-                (for-each (lambda (child-label)
-                            (saav:add-arrow snips-and-arrows-gui-state label child-label #t))
-                          children)
-                (send this invalidate-bitmap-cache))))
-          (when (> tacked-arrows 0)
-            (make-object menu-item%
-              (strcst:string-constant mrflow-popup-menu-untack-all-arrows)
-              menu
-              (lambda (item event)
-                (saav:remove-arrows snips-and-arrows-gui-state label 'all #t)
-                (send this invalidate-bitmap-cache))))))
+      ; symbol label -> (-> (listof string))
+      ; given a snip type and a lable, returns a thunk that, when applied, will
+      ; give the content of the snips to be added for that type and label.
+      (define (get-snip-text-from-snip-type type label)
+        (case type
+          [(type)
+           (lambda ()
+             (list (sba:pp-type (sba:get-type-from-label label) 'gui)))]
+          [(error)
+           (lambda ()
+             (map err:sba-error-message (sba:get-errors-from-label label)))]))
       
       
-      ; DEFINITION WINDOW MIXIN
+      ; DEFINITION WINDOW MIXIN AND ALL EDITOR MIXIN
+      (define-values (register-label-with-gui editor-mixin definition-text-mixin)
+        (saa:make-snips-and-arrows-mixins
+         sba:get-source-from-label
+         sba:get-mzscheme-position-from-label
+         get-span-from-label
+         sba:get-parents-from-label
+         sba:get-children-from-label
+         (lambda (label) #f)
+         (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
+         (lambda (label) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
+         get-style-delta-from-label
+         get-box-style-delta-from-snip-type
+         get-menu-text-from-snip-type
+         get-snip-text-from-snip-type
+         snip-type-list
+         #t
+         tacked-arrow-brush
+         untacked-arrow-brush
+         arrow-pen
+         ))
+      
       (drscheme:get/extend:extend-definitions-text
-       (lambda (super%)
-         (class super%
-           
-           ; STATE
-           (define snips-and-arrows-gui-state
-             (saav:make-gui-state
-              this
-              sba:get-label-from-mzscheme-position
-              sba:get-mzscheme-position-from-label
-              get-span-from-label
-              get-style-delta-from-label
-              get-box-style-delta-from-snip-type
-              type-list
-              ))
-           ; (union #f label)
-           (define previous-label #f)
-           
-           
-           ; PUBLIC
-           ; -> void
-           (define/public (color-text)
-             (saav:color-text snips-and-arrows-gui-state))
-           
-           ; -> void
-           ; remove all snips and arrows, and reset text style
-           (define/public (clear-text)
-             (saav:clear-all-snips-and-arrows snips-and-arrows-gui-state)
-             ; don't do this if you want to keep the colors after analysis
-             (send this begin-edit-sequence #f)
-             (send this change-style original-style 0 (send this last-position))
-             (send this end-edit-sequence))
-           
-           
-           ; OVERRIDE
-           (rename [super-after-insert after-insert])
-           ; exact-non-negative-integer exact-non-negative-integer -> void
-           (define/override (after-insert start len)
-             (super-after-insert start len)
-             (saav:after-insert snips-and-arrows-gui-state start len))
-           
-           (rename [super-after-delete after-delete])
-           ; exact-non-negative-integer exact-non-negative-integer -> void
-           (define/override (after-delete start len)
-             (super-after-delete start len)
-             (saav:after-delete snips-and-arrows-gui-state start len))
-           
-           (inherit dc-location-to-editor-location find-position)
-           ; mouse-event% -> exact-non-negative-integer
-           (define (get-drscheme-pos event)
-             (let*-values ([(event-x) (send event get-x)]
-                           [(event-y) (send event get-y)]
-                           [(x y) (dc-location-to-editor-location
-                                   event-x event-y)])
-               (find-position x y)))
-           
-           (rename [super-on-paint on-paint])
-           ; boolean dc% real real real real real real symbol -> void
-           (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
-             (super-on-paint before? dc left top right bottom dx dy draw-caret)
-             (saav:on-paint snips-and-arrows-gui-state dc dx dy arrow-pen tacked-arrow-brush untacked-arrow-brush))
-           
-           (inherit get-canvas)
-           (rename [super-on-local-event on-local-event])
-           ; mouse-event% -> void
-           (define/override (on-local-event event)
-             (cond
-               [(not (saav:text-modified? snips-and-arrows-gui-state)) (super-on-local-event event)]
-               [(and (send event button-down? 'right)
-                     (saav:get-related-label-from-drscheme-pos snips-and-arrows-gui-state (get-drscheme-pos event)))
-                =>
-                (lambda (label)
-                  (let ([menu (make-object popup-menu%)])
-                    ; SNIPS
-                    (create-snips-menu-item-by-type
-                     snips-and-arrows-gui-state
-                     menu label 'type
-                     (lambda ()
-                       (list (sba:pp-type (sba:get-type-from-label label) 'gui))))
-                    (create-snips-menu-item-by-type
-                     snips-and-arrows-gui-state
-                     menu label 'error
-                     (lambda ()
-                       (map err:sba-error-message (sba:get-errors-from-label label))))
-                    ; ARROWS
-                    (create-arrow-menu-items this snips-and-arrows-gui-state menu label)
-                    
-                    (send (get-canvas) popup-menu menu
-                          (add1 (inexact->exact (floor (send event get-x))))
-                          (add1 (inexact->exact (floor (send event get-y)))))
-                    ))]
-               [(send event leaving?)
-                (when previous-label
-                  (saav:remove-arrows snips-and-arrows-gui-state previous-label #f #f)
-                  (set! previous-label #f)
-                  (send this invalidate-bitmap-cache))]
-               [(or (send event moving?)
-                    (send event entering?))
-                (let ([label (saav:get-related-label-from-drscheme-pos snips-and-arrows-gui-state (get-drscheme-pos event))])
-                  (if previous-label
-                      (if (eq? label previous-label)
-                          ; nothing to do, still pointing at same stuff
-                          cst:void
-                          (if label
-                              ; pointing at something new, remove old untacked arrows, add new ones
-                              (let ([parents (sba:parents label)]                                
-                                    [children (sba:children label)])
-                                (saav:remove-arrows snips-and-arrows-gui-state previous-label #f #f)
-                                (set! previous-label label)
-                                (for-each (lambda (parent-label)
-                                            (saav:add-arrow snips-and-arrows-gui-state parent-label label #f))
-                                          parents)
-                                (for-each (lambda (child-label)
-                                            (saav:add-arrow snips-and-arrows-gui-state label child-label #f))
-                                          children)
-                                (send this invalidate-bitmap-cache))
-                              ; not pointing at anything new, just remove old arrows
-                              (begin
-                                (saav:remove-arrows snips-and-arrows-gui-state previous-label #f #f)
-                                (set! previous-label #f)
-                                (send this invalidate-bitmap-cache))))
-                      (if label
-                          ; pointing at something, coming from nowhere, add arrows
-                          (let ([parents (sba:parents label)]                                
-                                [children (sba:children label)])
-                            (set! previous-label label)
-                            (for-each (lambda (parent-label)
-                                        (saav:add-arrow snips-and-arrows-gui-state parent-label label #f))
-                                      parents)
-                            (for-each (lambda (child-label)
-                                        (saav:add-arrow snips-and-arrows-gui-state label child-label #f))
-                                      children)
-                            (send this invalidate-bitmap-cache))
-                          ; pointing at nothing, coming from nowhere, do nothing
-                          cst:void)))]
-               [else (super-on-local-event event)]))
-           
-           (super-instantiate ())
-           ) ; class
-         )) ; drscheme:get/extend:extend-definitions-text
-      
+       definition-text-mixin)
       
       ; UNIT FRAME MIXIN
       (drscheme:get/extend:extend-unit-frame
@@ -372,7 +210,7 @@
            ; -> void
            (define/override (clear-annotations)
              (super-clear-annotations)
-             (send (get-definitions-text) clear-text))
+             (send (get-definitions-text) remove-all-snips-and-arrows-and-colors))
            
            (rename [super-enable-evaluation enable-evaluation])
            ; -> void
@@ -385,7 +223,7 @@
            (define/override (disable-evaluation)
              (super-disable-evaluation)
              (send analyze-button enable #f))
-          
+           
            (super-instantiate ())
            
            (inherit get-button-panel get-interactions-text)
@@ -400,7 +238,7 @@
                         [definitions-text (get-definitions-text)]
                         [interactions-text (get-interactions-text)]
                         [language-settings
-                         (frame:preferences:get
+                         (fw:preferences:get
                           (drscheme:language-configuration:get-settings-preferences-symbol))])
                     (clear-annotations)
                     (sba:reset-all)
@@ -437,12 +275,10 @@
                                        (sba:check-primitive-types)
                                        ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
                                        )
-                                     (send definitions-text begin-edit-sequence #f)
-                                     (send definitions-text color-text)
-                                     (send definitions-text end-edit-sequence))
+                                     (send definitions-text color-all-labels))
                                    (begin
                                      ;(printf "~a~n" (syntax-object->datum syntax-object-or-eof))
-                                     (sba:create-label-from-term syntax-object-or-eof '() #f)
+                                     (sba:create-label-from-term syntax-object-or-eof '() #f register-label-with-gui)
                                      (iter))))))
                           ; get-mrflow-primitives-filename defaults to R5RS
                           ; (see mrflow-default-implementation-mixin above), so if we arrive here,

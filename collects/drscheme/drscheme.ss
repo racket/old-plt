@@ -23,8 +23,6 @@
     (parameterize ([current-eventspace drscheme-eventspace])
       (start-drscheme))))
 
-(define start-drscheme-expression '(T))
-
 (cond
   [graphical-debug?
    (graphical-read-eval-print-loop)]

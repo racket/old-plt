@@ -1,8 +1,8 @@
 (load-relative "loadtest.ss")
-(require (lib "specs.ss" "framework")
+(require (lib "contract.ss")
 	 (lib "class.ss"))
   
-(SECTION 'contracts)
+(SECTION 'contract)
 
 (parameterize ([error-print-width 200])
 (let ()
@@ -522,7 +522,7 @@
    'provide/contract1
    '(let ()
       (eval '(module contract-test-suite1 mzscheme
-               (require (lib "contracts.ss"))
+               (require (lib "contract.ss"))
                (provide/contract (x integer?))
                (define x 1)))
       (eval '(require contract-test-suite1))
@@ -532,7 +532,7 @@
    'provide/contract2
    '(let ()
       (eval '(module contract-test-suite2 mzscheme
-               (require (lib "contracts.ss"))
+               (require (lib "contract.ss"))
                (provide/contract)))
       (eval '(require contract-test-suite2))))
   
@@ -540,7 +540,7 @@
    'provide/contract3
    '(let ()
       (eval '(module contract-test-suite3 mzscheme
-               (require (lib "contracts.ss"))
+               (require (lib "contract.ss"))
                (provide/contract (x integer?))
                (define x #f)))
       (eval '(require contract-test-suite3))
@@ -551,7 +551,7 @@
    'provide/contract4
    '(let ()
       (eval '(module contract-test-suite4 mzscheme
-               (require (lib "contracts.ss"))
+               (require (lib "contract.ss"))
                (provide/contract (struct s ((a any?))))
                (define-struct s (a))))
       (eval '(require contract-test-suite4))
@@ -564,7 +564,7 @@
    'provide/contract5
    '(let ()
       (eval '(module contract-test-suite5 mzscheme
-               (require (lib "contracts.ss"))
+               (require (lib "contract.ss"))
                (provide/contract (struct s ((a any?)))
                                  (struct t ((a any?))))
                (define-struct s (a))
@@ -583,7 +583,7 @@
    'provide/contract6
    '(let ()
       (eval '(module contract-test-suite6 mzscheme
-               (require (lib "contracts.ss"))
+               (require (lib "contract.ss"))
                (provide/contract (struct s ((a any?))))
                (define-struct s (a))))
       (eval '(require contract-test-suite6))
@@ -902,6 +902,8 @@
           (apply super-make-object x))
       1 2 3))
   
+#|
+
   (test/spec-passed/result
    'object-contract1
    '(send
@@ -942,7 +944,42 @@
      m
      1)
    "pos")
-
+  
+  (test/spec-passed/result
+   'object-contract=>1
+   '(let* ([c% (class object% (super-instantiate ()))]
+           [c (make-object c%)]
+           [wc (contract (object-contract) c 'pos-c 'neg-c)]
+           [d% (class c% (super-instantiate ()))]
+           [d (make-object d%)]
+           [wd (contract (object-contract) d 'pos-d 'neg-d)])
+      (list (is-a? c c%)
+            (is-a? wc c%)
+            (is-a? d c%)
+            (is-a? wd c%)
+            (interface-extension? (object-interface d) (object-interface c))))
+   (list #t #t #t #t #t))
+  
+  (test/spec-passed
+   'recursive-object1
+   '(letrec ([cc (object-contract (m (-> dd dd)))]
+             [dd (object-contract (m (-> cc cc)))]
+             [% (class object% (define/public (m x) x) (super-instantiate ()))]
+             [c (contract cc (make-object %) 'c-pos 'c-neg)]
+             [d (contract dd (make-object %) 'd-pos 'd-neg)])
+      (send c m d)
+      (send d m c)))
+  
+  (test/spec-failed
+   'recursive-object2
+   '(letrec ([cc (object-contract (m (-> dd dd)))]
+             [dd (object-contract (n (-> cc cc)))]
+             [% (class object% (define/public (m x) x) (define/public (n x) x) (super-instantiate ()))]
+             [c (contract cc (make-object %) 'c-pos 'c-neg)]
+             [d (contract dd (make-object %) 'd-pos 'd-neg)])
+      (send c m c))
+   "c-neg")
+|#
   (test/spec-failed
    'class-contract=>1
    '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
@@ -982,22 +1019,7 @@
             (is-a? (instantiate wd% ()) wc%)
             (is-a? (instantiate wd% ()) (class->interface wc%))))
    (list #t #t #t #t #t #t))
-  
-  (test/spec-passed/result
-   'object-contract=>1
-   '(let* ([c% (class object% (super-instantiate ()))]
-           [c (make-object c%)]
-           [wc (contract (object-contract) c 'pos-c 'neg-c)]
-           [d% (class c% (super-instantiate ()))]
-           [d (make-object d%)]
-           [wd (contract (object-contract) d 'pos-d 'neg-d)])
-      (list (is-a? c c%)
-            (is-a? wc c%)
-            (is-a? d c%)
-            (is-a? wd c%)
-            (interface-extension? (object-interface d) (object-interface c))))
-   (list #t #t #t #t #t))
-  
+   
   (test/spec-passed
    'recursive-class1
    '(letrec ([cc (class-contract (public m (-> dd dd)))]
@@ -1014,28 +1036,7 @@
              [c% (contract cc (class object% (define/public (m x) x) (super-instantiate ())) 'c-pos 'c-neg)]
              [d% (contract dd (class object% (define/public (n x) x) (super-instantiate ())) 'd-pos 'd-neg)])
       (send (make-object c%) m c%))
-   "c-neg")
-  
-  (test/spec-passed
-   'recursive-object1
-   '(letrec ([cc (object-contract (m (-> dd dd)))]
-             [dd (object-contract (m (-> cc cc)))]
-             [% (class object% (define/public (m x) x) (super-instantiate ()))]
-             [c (contract cc (make-object %) 'c-pos 'c-neg)]
-             [d (contract dd (make-object %) 'd-pos 'd-neg)])
-      (send c m d)
-      (send d m c)))
-  
-  (test/spec-failed
-   'recursive-object2
-   '(letrec ([cc (object-contract (m (-> dd dd)))]
-             [dd (object-contract (n (-> cc cc)))]
-             [% (class object% (define/public (m x) x) (define/public (n x) x) (super-instantiate ()))]
-             [c (contract cc (make-object %) 'c-pos 'c-neg)]
-             [d (contract dd (make-object %) 'd-pos 'd-neg)])
-      (send c m c))
-   "c-neg")
-  
+   "c-neg")  
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;

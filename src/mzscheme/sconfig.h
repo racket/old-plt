@@ -95,10 +95,12 @@
 # define USE_UNIX_SOCKETS_TCP
 # define USE_FCNTL_O_NONBLOCK
 
-# define INCLUDE_OSKIT_SOCKET
-# define htons(x) x
-# define MZ_PF_INET OSKIT_PF_INET
-# define PROTOENT_IS_INT IPPROTO_TCP
+# ifndef OSKIT_TEST
+#  define INCLUDE_OSKIT_SOCKET
+#  define htons(x) x
+#  define MZ_PF_INET OSKIT_PF_INET
+#  define PROTOENT_IS_INT IPPROTO_TCP
+# endif
 
 # define NO_USLEEP
 # define NO_SLEEP

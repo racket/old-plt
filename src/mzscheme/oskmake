@@ -31,7 +31,7 @@ LANG=""
 # Use Linux FS drivers?
 if [ "yes" ] ; then
   FS="-DOSK_LINUX_FILESYSTEMS"
-  EXTRA_OSK_LIBS="-loskit_linux_fs -loskit_linux_dev -loskit_diskpart"
+  EXTRA_OSK_LIBS="-loskit_linux_fs -loskit_linux_dev -loskit_diskpart -loskit_freebsd_net"
   export EXTRA_OSK_LIBS
 else
   FS=""

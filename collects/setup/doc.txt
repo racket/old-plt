@@ -30,8 +30,7 @@ services:
    arguments to Setup PLT, the files contained in the .plt
    archive are unpacked (according to specifications embedded in
    the .plt file; see below) and only the collections specified
-   by the plt file are compiled and setup (they are setup as if
-   the "-c" or "--clean" flag had been passed to setup plt)
+   by the plt file are compiled and setup.
 
  Compiling and Setting Up Collections
  ------------------------------------

@@ -408,10 +408,12 @@
 			     (fprintf (current-error-port)
 				      "Warning: can't handle union or record with union. ~a in line ~a.~n"
 				      name (tok-line v)))
-			   (if (or pointer?
-				   base-is-ptr?
-				   base-struct
-				   union?)
+			   (if (and (or pointer?
+					base-is-ptr?
+					base-struct
+					union?)
+				    ; Ignore these variables, for one reason or another:
+				    (not (memq name '(tcp_connect_dest_addr))))
 			       (begin
 				 (when label?
 				   (printf "/* ~a: ~a ~a*/~n" 

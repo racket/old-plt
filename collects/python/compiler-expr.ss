@@ -155,12 +155,10 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (if (= (length expressions) 1)
-                       (send (car expressions) to-scheme)
-                       `(,(py-so 'py-create) ,(py-so 'py-tuple%)
+        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-tuple%)
                                              (list ,@(map (lambda (e)
                                                             (send e to-scheme))
-                                                          expressions))))))
+                                                          expressions)))))
       
       (super-instantiate ())))
   

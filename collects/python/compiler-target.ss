@@ -44,6 +44,9 @@
         (for-each (lambda (x) (send x set-bindings! enclosing-scope)) sub-targets))
       
       ;;daniel
+      (define/public (get-sub-targets) sub-targets)
+      
+      ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so `(list ,@(map (lambda (t) (send t to-scheme))
@@ -58,6 +61,10 @@
 
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (x) (send x set-bindings! enclosing-scope)) sub-targets))
+
+      ;;daniel
+      (define/public (get-sub-targets) sub-targets)
+      
       (super-instantiate ())))
   
   (define tattribute-ref%

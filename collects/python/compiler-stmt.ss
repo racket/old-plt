@@ -1,7 +1,7 @@
 (module compiler-stmt mzscheme
   (require (lib "class.ss")
            (lib "list.ss")
-         ;  (lib "etc.ss")
+           (lib "etc.ss") ; build-list
 	   "compiler.ss"
 	  ; "compiler-expr.ss"
            "compiler-target.ss"
@@ -86,26 +86,130 @@
         (send expression set-bindings! enclosing-scope)
         (for-each (lambda (e) (send e set-bindings! enclosing-scope)) targets))
       
+      
+      (define (binding-targ? t)
+        (or (not (send scope is-bound? t))
+            (eq? (send scope binding-tid t) t)))
+      
+      (define (def-targ? t)
+        (and (not (is-a? t tattribute-ref%))
+             (binding-targ? t)))
+      
+      (define (set-targ? t)
+        (and (not (is-a? t tattribute-ref%))
+             (not (binding-targ? t))))
+      
+      (define (attr-targ? t)
+        (is-a? t tattribute-ref%))  
+      
+      ;; assignment-so: target% syntax-object -> syntax-object
+      (define (assignment-so target rhs)
+        (->orig-so
+         (cond
+           [(is-a? target tidentifier%) `(,(if (binding-targ? target)
+                                               'define
+                                               'set!) ,(send target to-scheme) ,rhs)]
+           [(is-a? target tattribute-ref%) `(,(py-so 'python-set-member!)
+                                             ,(send ((class-field-accessor tattribute-ref%
+                                                                           expression) target)
+                                                    to-scheme)
+                                             ',(send ((class-field-accessor tattribute-ref%
+                                                                            identifier) target)
+                                                     to-scheme)
+                                             ,rhs)]
+           [(or (is-a? target ttuple%)
+                (is-a? target tlist-display%)) (let ([targets (send target get-sub-targets)])
+                   (let* ([indexes (build-list (length targets) identity)]
+                             [def-targs (filter (lambda (i)
+                                                  (def-targ? (list-ref targets i)))
+                                                indexes)]
+                             [set-targs (filter (lambda (i)
+                                                  (set-targ? (list-ref targets i)))
+                                                indexes)]
+                             [attr-targs (filter (lambda (i)
+                                                   (attr-targ? (list-ref targets i)))
+                                                 indexes)])
+                        `(define-values ,(map (lambda (i)
+                                                (send (list-ref targets i) to-scheme))
+                                              def-targs)
+                           (begin ,@(map (lambda (i)
+                                            `(set! ,(send (list-ref targets i) to-scheme)
+                                                   (,(py-so 'python-index) ,rhs ,i)))
+                                          set-targs)
+                                   ,@(map (lambda (i)
+                                            `(,(py-so 'python-set-member!)
+                                             ,(send ((class-field-accessor tattribute-ref%
+                                                                           expression) (list-ref targets i))
+                                                    to-scheme)
+                                             ',(send ((class-field-accessor tattribute-ref%
+                                                                            identifier) (list-ref targets i))
+                                                     to-scheme)
+                                             (,(py-so 'python-index) ,rhs ,i)))
+                                          attr-targs)
+                                   (values ,@(map (lambda (i)
+                                                    `(,(py-so 'python-index) ,rhs ,i))
+                                                  def-targs))))))]
+           [else (error "target type not supported yet")])))
+      
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (if (= 1 (length targets)) ; simple assignment
-                       (if (is-a? (car targets) tattribute-ref%)
-                           `(,(py-so 'python-set-member!)
-                                 ,(send ((class-field-accessor tattribute-ref% expression) (car targets))
-                                              to-scheme)
-                                 ',(send ((class-field-accessor tattribute-ref% identifier) (car targets))
-                                              to-scheme)
-                                 ,(send expression to-scheme))
-                              ;; if it's bound, and the tid is not the same obj as this one,
-                              ;; then we set the bound variable.
-                              ;; otherwise we must declare it
-                           `(,(if (and (send scope is-bound? (car targets))
-                                       (not (eq? (send scope binding-tid (car targets))
-                                                           (car targets))))
-                                  'set!
-                                  'define) ,(send (car targets) to-scheme)
-                              ,(send expression to-scheme))))))
+        (let ([rhs (gensym 'rhs)])
+        (->orig-so `(begin (define ,rhs ,(send expression to-scheme))
+                             ,@(map (lambda (t)
+                                      (assignment-so t rhs))
+                                    targets)))))
+;        (printf "targets: ~a" targets)
+;        (->orig-so (if (= 1 (length targets)) ; simple assignment
+;                       (if (is-a? (car targets) tattribute-ref%)
+;                           `(,(py-so 'python-set-member!)
+;                                 ,(send ((class-field-accessor tattribute-ref% expression) (car targets))
+;                                              to-scheme)
+;                                 ',(send ((class-field-accessor tattribute-ref% identifier) (car targets))
+;                                              to-scheme)
+;                                 ,(send expression to-scheme))
+;                              ;; if it's bound, and the tid is not the same obj as this one,
+;                              ;; then we set the bound variable.
+;                              ;; otherwise we must declare it
+;                           `(,(if (and (send scope is-bound? (car targets))
+;                                       (not (eq? (send scope binding-tid (car targets))
+;                                                           (car targets))))
+;                                  'set!
+;                                  'define) ,(send (car targets) to-scheme)
+;                              ,(send expression to-scheme)))
+;                       ;; multiple assignment
+;                      (let* ([indexes (build-list (length targets) identity)]
+;                             [def-targs (filter (lambda (i)
+;                                                  (def-targ? (list-ref targets i)))
+;                                                indexes)]
+;                             [set-targs (filter (lambda (i)
+;                                                  (set-targ? (list-ref targets i)))
+;                                                indexes)]
+;                             [attr-targs (filter (lambda (i)
+;                                                   (attr-targ? (list-ref targets i)))
+;                                                 indexes)])
+;                        `(define-values ,(map (lambda (i)
+;                                                (send (list-ref targets i) to-scheme))
+;                                              def-targs)
+;                           (let ([rhs ,(send expression to-scheme)])
+;                            (begin ,@(map (lambda (i)
+;                                            `(set! ,(send (list-ref targets i) to-scheme)
+;                                                   (,(py-so 'python-index) rhs ,i)))
+;                                          set-targs)
+;                                   ,@(map (lambda (i)
+;                                            `(,(py-so 'python-set-member!)
+;                                             ,(send ((class-field-accessor tattribute-ref%
+;                                                                           expression) (list-ref targets i))
+;                                                    to-scheme)
+;                                             ',(send ((class-field-accessor tattribute-ref%
+;                                                                            identifier) (list-ref targets i))
+;                                                     to-scheme)
+;                                             (,(py-so 'python-index) rhs ,i)))
+;                                          attr-targs)
+;                                   (values ,@(map (lambda (i)
+;                                                    `(,(py-so 'python-index) rhs ,i))
+;                                                  def-targs)))))))))
+                                            
       
       (super-instantiate ())))
   

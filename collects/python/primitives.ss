@@ -321,6 +321,17 @@
                                (string-append "["
                                               (list-items-repr (py-list%->list x))
                                               "]"))]
+      [(py-is-a? x py-tuple%) (letrec ([tuple-items-repr
+                                       (lambda (l)
+                                         (cond
+                                           [(empty? l) ""]
+                                           [(empty? (rest l)) (py-object%->string (first l))]
+                                           [else (string-append (py-object%->string (first l))
+                                                                ", "
+                                                                (tuple-items-repr (rest l)))]))])
+                               (string-append "("
+                                              (tuple-items-repr (py-tuple%->list x))
+                                              ")"))]
       [(py-is-a? x py-dict%)
        (let ([dict-items-repr
               (lambda (ht)
@@ -369,6 +380,15 @@
                 al)
       hash-table))
   
+  
+  ;; python-index: (union py-list% py-tuple% py-dict%) number -> py-object%
+  (define (python-index indexable index)
+    (cond
+      [(py-is-a? indexable py-list%) (list-ref (py-list%->list indexable) index)]
+      [(py-is-a? indexable py-tuple%) (list-ref (py-tuple%->list indexable) index)]
+      [(py-is-a? indexable py-dict%) (error "python-index: dictionaries not yet supported")]
+      [else (error (format "python-index: cannot index into this: ~a"
+                           (py-object%->string indexable)))]))
   
   
   (define (has-member? class member-name)

@@ -136,11 +136,13 @@
        (if (input-port? file)
          (parameterize ([stdin file]) (process))
          (let-values ([(dir name _) (split-path file)])
-           (printf "~s\n" `(thunk (cd ,(if (string? dir) dir (cd)))
-                                  (current-file ,name)))
+           (printf "~s\n"
+                   `(thunk (cd ,(path->string (if (path? dir) dir (cd))))
+                           (current-file ,(path->string name))))
            (with-input-from-file file process)
-           (printf "~s\n" `(thunk (cd ,(cd)) ; return to original dir
-                                  (current-file #f))))))
+           (printf "~s\n"
+                   `(thunk (cd ,(path->string (cd))) ; return to original dir
+                           (current-file #f))))))
      files))
   (if (debug?)
     (do-files)

@@ -615,6 +615,20 @@ static void SetBrush(wxDC *dc, char *cname, int style)
   }
 }
 
+void wxDrawTabBase(wxDC *dc, double x, double y, double w, double h)
+{
+#ifdef wx_mac
+  dc->DrawTabBase(x, y, w, h);
+#endif
+}
+
+void wxDrawTab(wxDC *dc, mzstring s, double x, double y, double w, double h)
+{
+#ifdef wx_mac
+  dc->DrawTab(s, x, y, w, h);
+#endif
+}
+
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
@@ -692,6 +706,9 @@ START_XFORM_SKIP;
 @ Q "end-page" : void EndPage(); : : /CheckOk[METHODNAME("dc<%>","end-page")]
 
 @ "glyph-exists?" : bool GlyphAvailable(mzchar,wxFont^=NULL)
+
+@ m "draw-tab-base" : void wxDrawTabBase(double, double, double, double);
+@ m "draw-tab" : void wxDrawTab(mzstring, double, double, double, double);
 
 @END
 

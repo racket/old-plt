@@ -749,17 +749,17 @@ static void SetBrush(wxDC *dc, char *cname, int style)
   }
 }
 
-void wxDrawTabBase(wxDC *dc, double x, double y, double w, double h)
+void wxDrawTabBase(wxDC *dc, double x, double y, double w, double h, int state)
 {
 #ifdef wx_mac
-  dc->DrawTabBase(x, y, w, h);
+  dc->DrawTabBase(x, y, w, h, state);
 #endif
 }
 
-void wxDrawTab(wxDC *dc, mzstring s, double x, double y, double w, double h)
+void wxDrawTab(wxDC *dc, mzstring s, double x, double y, double w, double h, int state)
 {
 #ifdef wx_mac
-  dc->DrawTab(s, x, y, w, h);
+  dc->DrawTab(s, x, y, w, h, state);
 #endif
 }
 
@@ -1132,6 +1132,7 @@ static Scheme_Object *os_wxDCwxDrawTab(int n,  Scheme_Object *p[])
   double x2;
   double x3;
   double x4;
+  int x5;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1143,9 +1144,10 @@ static Scheme_Object *os_wxDCwxDrawTab(int n,  Scheme_Object *p[])
   x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-tab in dc<%>"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-tab in dc<%>"));
   x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "draw-tab in dc<%>"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "draw-tab in dc<%>"));
 
   
-  WITH_VAR_STACK(wxDrawTab(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
+  WITH_VAR_STACK(wxDrawTab(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5));
 
   
   
@@ -1162,6 +1164,7 @@ static Scheme_Object *os_wxDCwxDrawTabBase(int n,  Scheme_Object *p[])
   double x1;
   double x2;
   double x3;
+  int x4;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
@@ -1171,9 +1174,10 @@ static Scheme_Object *os_wxDCwxDrawTabBase(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-tab-base in dc<%>"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-tab-base in dc<%>"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-tab-base in dc<%>"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+4], "draw-tab-base in dc<%>"));
 
   
-  WITH_VAR_STACK(wxDrawTabBase(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3));
+  WITH_VAR_STACK(wxDrawTabBase(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   
   
@@ -2562,8 +2566,8 @@ void objscheme_setup_wxDC(Scheme_Env *env)
 
   os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 51));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-tab" " method", (Scheme_Method_Prim *)os_wxDCwxDrawTab, 5, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-tab-base" " method", (Scheme_Method_Prim *)os_wxDCwxDrawTabBase, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-tab" " method", (Scheme_Method_Prim *)os_wxDCwxDrawTab, 6, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-tab-base" " method", (Scheme_Method_Prim *)os_wxDCwxDrawTabBase, 5, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "glyph-exists?" " method", (Scheme_Method_Prim *)os_wxDCGlyphAvailable, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page" " method", (Scheme_Method_Prim *)os_wxDCEndPage, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-doc" " method", (Scheme_Method_Prim *)os_wxDCEndDoc, 0, 0));

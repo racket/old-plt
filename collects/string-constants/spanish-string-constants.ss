@@ -1,7 +1,8 @@
 (
 
  ;;; when translating this constant, substitue name of actual langauge for `English'
- (is-this-your-native-language "Spanish")
+ (is-this-your-native-language
+  "¿es español tu idioma materno?")
 
  (are-you-sure-you-want-to-switch-languages
   "Esto cambiará el idioma de la interfaz, lo que requiere que reinicies DrScheme. ¿Estas seguro(a)?")

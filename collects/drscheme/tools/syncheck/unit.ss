@@ -621,11 +621,6 @@
 					[pen (make-object wx:pen%
 					       (make-object wx:colour% "BLUE")
 					       1 wx:const-solid)])
-				   (printf "add arrow: ~a ~a (~a,~a) -> (~a,~a)~n"
-					   (zodiac:binding-var binding)
-					   (zodiac:binding-orig-name binding)
-					   z:start z:finish 
-					   start finish)
 				   (add-arrow z:start z:finish 
 					      start finish
 					      delta brush pen)))

@@ -131,7 +131,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, float angle)
   int ff_qual;
 
   if (angle != rotation) {
-    int int_angle = (int)(angle * 1800 / 3.141579);
+    int int_angle = (int)(angle * 1800 / 3.14159);
     if (!rotated_fonts) {
       rotated_fonts = new wxList(wxKEY_INTEGER);
     }
@@ -226,21 +226,23 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, float angle)
     ff_qual = CLEARTYPE_QUALITY;
   } else
     ff_qual = NONANTIALIASED_QUALITY;
+
+  orientation = angle * 1800 / 3.14159;
   
-  cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
+  cfont = CreateFont(-nHeight, 0, 0, orientation, ff_weight, ff_italic, (BYTE)ff_underline,
 		     0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		     ff_qual, DEFAULT_PITCH | ff_family, ff_face);
   
   if (!cfont) {
     /* Try defaulting to family: */
     ff_face = wxTheFontNameDirectory->GetScreenName(family, weight, style);
-    cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
+    cfont = CreateFont(-nHeight, 0, 0, orientation, ff_weight, ff_italic, (BYTE)ff_underline,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		       ff_qual, DEFAULT_PITCH | ff_family, ff_face);
   }
 
   if (!cfont)
-    cfont = CreateFont(12, 0, 0, 0,FW_NORMAL,0,(BYTE)0,
+    cfont = CreateFont(12, 0, 0, orientation, FW_NORMAL, 0,(BYTE)0,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		       ff_qual, DEFAULT_PITCH | FF_SWISS, NULL);
 

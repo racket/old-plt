@@ -3,12 +3,10 @@
 	[mzlib : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 		       mzlib (app : mred:application^))]
-	[hooks : mzlib:print-convert-hooks^ ((reference-unit/sig "phooks.ss"))]
 	[print-convert : mzlib:print-convert^
 		       ((reference-library-unit/sig "pconverr.ss")
 			(mzlib string@)
-			(mzlib function@)
-			hooks)]
+			(mzlib function@))]
 	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
 	       ((reference-unit/sig "basis.ss")

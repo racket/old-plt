@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.8 1998/11/17 13:11:50 mflatt Exp $
+ * $Id: Menu.cc,v 1.9 1998/12/05 01:08:21 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -125,10 +125,10 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     XtVaGetValues(X->menu, XtNx, &x, XtNy, &y, NULL);
     XtTranslateCoords(X->menu, x, y, &new_root_x, &new_root_y);
 
-    xevent.xmotion.x_root = root_x + 5;
-    xevent.xmotion.x = (root_x - new_root_x) + 5;
-    xevent.xmotion.y_root = root_y + 5;
-    xevent.xmotion.y = (root_y - new_root_y) + 5;
+    xevent.xmotion.x_root = new_root_x + 5;
+    xevent.xmotion.x = 5;
+    xevent.xmotion.y_root = new_root_y + 5;
+    xevent.xmotion.y = 5;
 
     XtAddGrab(X->shell, TRUE, FALSE);
     wxAddGrab(X->shell);

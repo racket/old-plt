@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.175 1999/02/25 22:36:37 mflatt Exp $
+; $Id: scm-main.ss,v 1.176 1999/03/12 17:22:31 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1653,22 +1653,41 @@
 
   (define parameterize-macro
     (let* ((kwd '())
-	   (in-pattern-1 `(_ () ,@(get-expr-pattern #t)))
-	   (out-pattern-1 `(let-values () ,@(get-expr-pattern #t)))
-	   (in-pattern-2 `(_ ((param value) rest ...) ,@(get-expr-pattern #t)))
-	   (out-pattern-2 `(let* ((pz param)
-				  (orig (pz)))
-			     (dynamic-wind
-			      (lambda () (pz value))
-			      (lambda () (parameterize (rest ...)
-					   ,@(get-expr-pattern #t)))
-			      (lambda () (pz orig)))))
+	   (body (get-expr-pattern #t))
+	   (in-pattern-1 `(_ () ,@body))
+	   (out-pattern-1 `(let-values () ,@body))
+	   (in-pattern-2 `(_ ((param value) ...) ,@body)))
 	   (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	   (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
-	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
-	    (static-error expr "Malformed parameterize")))))
+	    (let ([p-env (pat:match-against m&e-2 expr env)])
+	      (and p-env
+		   (let* ((params (pat:pexpand '(param ...) p-env kwd))
+			  (vals (pat:pexpand '(value ...) p-env kwd))
+			  (body (pat:pexpand body p-env kwd))
+			  (pzs (map generate-name params))
+			  (saves (map generate-name params))
+			  (swap (generate-name)))
+		     (expand-expr
+		      (structurize-syntax
+		       `(let ,(append
+			       (map list pzs params)
+			       (map list saves vals))
+			  (let ((,swap (lambda ()
+					 ,@(map 
+					    (lambda (save pz)
+					      `(let ([x ,save])
+						 (set! ,save (,pz))
+						 (,pz x)))
+					    saves pzs))))
+			    (#%dynamic-wind
+			     ,swap
+			     (#%lambda () ,@body)
+			     ,swap)))
+		       expr '(-1))
+		      env attributes vocab))))
+	    (static-error expr "Malformed parameterize"))))
 
   (add-primitivized-macro-form 'parameterize advanced-vocabulary parameterize-macro)
   (add-primitivized-macro-form 'parameterize scheme-vocabulary parameterize-macro)

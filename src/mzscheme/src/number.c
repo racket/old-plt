@@ -545,8 +545,8 @@ MSC_IZE(inline)
 int minus_zero_p(double d)
 {
   /* Relies on 4-byte "int": */
-  if (((int *)&d)[0] == ((int *)&scheme_floating_point_nzero)[0]
-      && ((int *)&d)[1] == ((int *)&scheme_floating_point_nzero)[1])
+  if (((int *) mzALIAS &d)[0] == ((int *) mzALIAS &scheme_floating_point_nzero)[0]
+      && ((int *) mzALIAS &d)[1] == ((int *) mzALIAS &scheme_floating_point_nzero)[1])
     return 1;
 
   return 0;

@@ -223,7 +223,7 @@ static void *print_to_string_k(void)
   int iswrite;
 
   obj = (Scheme_Object *)p->ku.k.p1;
-  len = (long *)p->ku.k.p2;
+  len = (long *) mzALIAS p->ku.k.p2;
   maxl = p->ku.k.i1;
   iswrite = p->ku.k.i2;
 

@@ -64,7 +64,7 @@ Scheme_Object *scheme_make_small_rational(long n, Small_Rational *s)
   s->num = scheme_make_integer(n);
   s->denom = one;
 
-  return (Scheme_Object *)s;
+  return (Scheme_Object *) mzALIAS s;
 }
 
 Scheme_Object *scheme_make_small_bn_rational(Scheme_Object *n, Small_Rational *s)
@@ -73,7 +73,7 @@ Scheme_Object *scheme_make_small_bn_rational(Scheme_Object *n, Small_Rational *s
   s->num = n;
   s->denom = one;
 
-  return (Scheme_Object *)s;
+  return (Scheme_Object *) mzALIAS s;
 }
 
 #ifdef MZ_XFORM
@@ -82,7 +82,7 @@ END_XFORM_SKIP;
 
 int scheme_is_rational_positive(const Scheme_Object *o)
 {
-  Scheme_Rational *r = (Scheme_Rational *)o;
+  Scheme_Rational *r = (Scheme_Rational *) mzALIAS o;
 
   if (SCHEME_INTP(r->num))
     return (SCHEME_INT_VAL(r->num) > 0);
@@ -92,7 +92,7 @@ int scheme_is_rational_positive(const Scheme_Object *o)
 
 Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
 {
-  Scheme_Rational *r = (Scheme_Rational *)o;
+  Scheme_Rational *r = (Scheme_Rational *) mzALIAS o;
   Scheme_Object *gcd, *tmpn;
   int negate = 0;
 
@@ -127,7 +127,7 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
   gcd = scheme_bin_gcd(r->num, r->denom);
 
   if (gcd == one)
-    return (Scheme_Object *)o;
+    return (Scheme_Object *) mzALIAS o;
 
   tmpn = scheme_bin_quotient(r->num, gcd);
   r->num = tmpn;
@@ -137,17 +137,17 @@ Scheme_Object *scheme_rational_normalize(const Scheme_Object *o)
   if (r->denom == one)
     return r->num;
 
-  return (Scheme_Object *)r;
+  return (Scheme_Object *) mzALIAS r;
 }
 
 Scheme_Object *scheme_rational_numerator(const Scheme_Object *n)
 {
-  return ((Scheme_Rational *)n)->num;
+  return ((Scheme_Rational *) mzALIAS n)->num;
 }
 
 Scheme_Object *scheme_rational_denominator(const Scheme_Object *n)
 {
-  return ((Scheme_Rational *)n)->denom;
+  return ((Scheme_Rational *) mzALIAS n)->denom;
 }
 
 Scheme_Object *scheme_make_fixnum_rational(long n, long d)
@@ -161,8 +161,8 @@ Scheme_Object *scheme_make_fixnum_rational(long n, long d)
   s.num = scheme_make_integer(n);
   s.denom = scheme_make_integer(d);
 
-  o = scheme_rational_normalize((Scheme_Object *)&s);
-  if (o == (Scheme_Object *)&s)
+  o = scheme_rational_normalize((Scheme_Object *) mzALIAS &s);
+  if (o == (Scheme_Object *) mzALIAS &s)
     return make_rational(s.num, s.denom, 0);
   else
     return o;
@@ -170,8 +170,8 @@ Scheme_Object *scheme_make_fixnum_rational(long n, long d)
 
 int scheme_rational_eq(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Rational *ra = (Scheme_Rational *)a;
-  Scheme_Rational *rb = (Scheme_Rational *)b;
+  Scheme_Rational *ra = (Scheme_Rational *) mzALIAS a;
+  Scheme_Rational *rb = (Scheme_Rational *) mzALIAS b;
 
   if (SCHEME_INTP(ra->num) && SCHEME_INTP(rb->num)) {
     if (ra->num != rb->num)
@@ -196,8 +196,8 @@ int scheme_rational_eq(const Scheme_Object *a, const Scheme_Object *b)
 
 int scheme_rational_lt(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Rational *ra = (Scheme_Rational *)a;
-  Scheme_Rational *rb = (Scheme_Rational *)b;
+  Scheme_Rational *ra = (Scheme_Rational *) mzALIAS a;
+  Scheme_Rational *rb = (Scheme_Rational *) mzALIAS b;
   Scheme_Object *ma, *mb;
 
   ma = scheme_bin_mult(ra->num, rb->denom);
@@ -230,7 +230,7 @@ int scheme_rational_ge(const Scheme_Object *a, const Scheme_Object *b)
 
 Scheme_Object *scheme_rational_negate(const Scheme_Object *o)
 {
-  Scheme_Rational *r = (Scheme_Rational *)o;
+  Scheme_Rational *r = (Scheme_Rational *) mzALIAS o;
 
   return make_rational(scheme_bin_minus(scheme_make_integer(0),
 					r->num), 
@@ -239,8 +239,8 @@ Scheme_Object *scheme_rational_negate(const Scheme_Object *o)
 
 Scheme_Object *scheme_rational_add(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Rational *ra = (Scheme_Rational *)a;
-  Scheme_Rational *rb = (Scheme_Rational *)b;
+  Scheme_Rational *ra = (Scheme_Rational *) mzALIAS a;
+  Scheme_Rational *rb = (Scheme_Rational *) mzALIAS b;
   Scheme_Object *ac, *bd, *sum, *cd;
   int no_normalize = 0;
 
@@ -291,8 +291,8 @@ Scheme_Object *scheme_rational_sub1(const Scheme_Object *n)
 
 Scheme_Object *scheme_rational_multiply(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Rational *ra = (Scheme_Rational *)a;
-  Scheme_Rational *rb = (Scheme_Rational *)b;
+  Scheme_Rational *ra = (Scheme_Rational *) mzALIAS a;
+  Scheme_Rational *rb = (Scheme_Rational *) mzALIAS b;
   Scheme_Object *gcd_ps, *gcd_rq, *p_, *r_, *q_, *s_;
 
   /* From Brad Lucier: */
@@ -332,7 +332,8 @@ Scheme_Object *scheme_rational_min(const Scheme_Object *a, const Scheme_Object *
 
 Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Object *d)
 { 
-  Scheme_Rational *rd = (Scheme_Rational *)d, *rn = (Scheme_Rational *)n, d_inv;
+  Scheme_Rational *rd = (Scheme_Rational *) mzALIAS d, *rn = (Scheme_Rational *) mzALIAS n;
+  Scheme_Rational d_inv;
 
   if ((SCHEME_INTP(rn->num) && SCHEME_INT_VAL(rn->num) == 1)
       && (SCHEME_INTP(rn->denom) && SCHEME_INT_VAL(rn->denom) == 1)) {
@@ -346,19 +347,19 @@ Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Objec
   d_inv.denom = rd->num;
   d_inv.num = rd->denom;
 
-  return scheme_rational_multiply(n, (Scheme_Object *)&d_inv);
+  return scheme_rational_multiply(n, (Scheme_Object *) mzALIAS &d_inv);
 }
 
 Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object *p)
 {
   double b, e, v;
 
-  if (((Scheme_Rational *)p)->denom == one) {
+  if (((Scheme_Rational *) mzALIAS p)->denom == one) {
     Scheme_Object *a[2], *n;
-    a[0] = ((Scheme_Rational *)o)->num;
-    a[1] = ((Scheme_Rational *)p)->num;
+    a[0] = ((Scheme_Rational *) mzALIAS o)->num;
+    a[1] = ((Scheme_Rational *) mzALIAS p)->num;
     n = scheme_expt(2, a);
-    a[0] = ((Scheme_Rational *)o)->denom;
+    a[0] = ((Scheme_Rational *) mzALIAS o)->denom;
     return make_rational(n, scheme_expt(2, a), 0);
   }
 
@@ -381,7 +382,7 @@ Scheme_Object *scheme_rational_power(const Scheme_Object *o, const Scheme_Object
 
 Scheme_Object *scheme_rational_truncate(const Scheme_Object *o)
 {
-  Scheme_Rational *r = (Scheme_Rational *)o;
+  Scheme_Rational *r = (Scheme_Rational *) mzALIAS o;
 
   return scheme_bin_quotient(r->num, r->denom);
 }
@@ -410,7 +411,7 @@ Scheme_Object *scheme_rational_ceiling(const Scheme_Object *o)
 
 Scheme_Object *scheme_rational_round(const Scheme_Object *o)
 {
-  Scheme_Rational *r = (Scheme_Rational *)o;
+  Scheme_Rational *r = (Scheme_Rational *) mzALIAS o;
   Scheme_Object *q, *qd, *delta, *half;
   int more = 0, can_eq_half, negative;
 
@@ -454,7 +455,7 @@ Scheme_Object *scheme_rational_round(const Scheme_Object *o)
 
 Scheme_Object *scheme_rational_sqrt(const Scheme_Object *o)
 {
-  Scheme_Rational *r = (Scheme_Rational *)o;
+  Scheme_Rational *r = (Scheme_Rational *) mzALIAS o;
   Scheme_Object *n, *d;
   double v;
 

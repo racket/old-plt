@@ -92,7 +92,7 @@ static Scheme_Object *bignum_one;
 
 #ifdef MZ_PRECISE_GC
 # define SAFE_SPACE(var) bigdig var[1];
-# define SCHEME_BIGDIG_SAFE(b, s) ((SCHEME_BIGDIG(b) == ((Small_Bignum *)b)->v) ? (s[0] = SCHEME_BIGDIG(b)[0], s) : SCHEME_BIGDIG(b))
+# define SCHEME_BIGDIG_SAFE(b, s) ((SCHEME_BIGDIG(b) == ((Small_Bignum *) mzALIAS b)->v) ? (s[0] = SCHEME_BIGDIG(b)[0], s) : SCHEME_BIGDIG(b))
 
 # define PROTECT(digarray, len) digarray = copy_to_protected(digarray, len * sizeof(bigdig), 0);
 # define RELEASE(digarray) free(digarray);
@@ -152,7 +152,7 @@ Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 
   o->v[0] = bv;
 
-  return (Scheme_Object *)o;
+  return (Scheme_Object *) mzALIAS o;
 }
 
 #ifdef MZ_XFORM
@@ -187,7 +187,7 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
 
   r->v[0] = v;
 
-  return (Scheme_Object*) r;
+  return (Scheme_Object*) mzALIAS r;
 }
 
 /*
@@ -247,7 +247,7 @@ Scheme_Object *scheme_bignum_normalize(const Scheme_Object *o)
   long v;
 
   if (!SCHEME_BIGNUMP(o))
-    return (Scheme_Object *)o;
+    return (Scheme_Object *) mzALIAS o;
 
   if (scheme_bignum_get_int_val(o, &v)) {
     long t;
@@ -256,9 +256,9 @@ Scheme_Object *scheme_bignum_normalize(const Scheme_Object *o)
     if (t == 0 || t == MAX_TWO_BIT_MASK)
       return scheme_make_integer(v);
     else
-      return (Scheme_Object*)o;
+      return (Scheme_Object*) mzALIAS o;
   } else
-    return (Scheme_Object*)o;
+    return (Scheme_Object*) mzALIAS o;
 }
 
 static Scheme_Object *make_single_bigdig_result(int pos, bigdig d)
@@ -274,8 +274,8 @@ static Scheme_Object *make_single_bigdig_result(int pos, bigdig d)
   SCHEME_BIGDIG(sm) = sm->v;
   sm->v[0] = d;
 
-  o = scheme_bignum_normalize((Scheme_Object *)sm);
-  if (SAME_OBJ(o, (Scheme_Object *)sm)) {
+  o = scheme_bignum_normalize((Scheme_Object *) mzALIAS sm);
+  if (SAME_OBJ(o, (Scheme_Object *) mzALIAS sm)) {
     sm = MALLOC_ONE_TAGGED(Small_Bignum);
     sm->o.type = scheme_bignum_type;
 #if MZ_PRECISE_GC
@@ -285,7 +285,7 @@ static Scheme_Object *make_single_bigdig_result(int pos, bigdig d)
     SCHEME_BIGLEN(sm) = 1;
     SCHEME_BIGDIG(sm) = sm->v;
     sm->v[0] = d;
-    return (Scheme_Object *)sm;
+    return (Scheme_Object *) mzALIAS sm;
   } else
     return o;
 }
@@ -396,14 +396,14 @@ Scheme_Object *scheme_bignum_negate(const Scheme_Object *n)
 
   len = SCHEME_BIGLEN(n);
 
-  if (SCHEME_BIGDIG(n) == ((Small_Bignum *)n)->v) {
+  if (SCHEME_BIGDIG(n) == ((Small_Bignum *) mzALIAS n)->v) {
     /* Can't share bigdig array when n is a Small_Bignum */
     o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Small_Bignum));
 #if MZ_PRECISE_GC
     ((Scheme_Bignum *)o)->allocated_inline = 1;
 #endif
     ((Small_Bignum *)o)->v[0] = SCHEME_BIGDIG(n)[0];
-    SCHEME_BIGDIG(o) = ((Small_Bignum *)o)->v;
+    SCHEME_BIGDIG(o) = ((Small_Bignum *) mzALIAS o)->v;
   } else {
     o = (Scheme_Object *)MALLOC_ONE_TAGGED(Scheme_Bignum);
     SCHEME_BIGDIG(o) = SCHEME_BIGDIG(n);

@@ -365,6 +365,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	case '5':
 	  {
 	    mzchar *u;
+	    long ltlen;
 	    u = (mzchar *)ptrs[pp++];
 	    if (type == 'u') {
 	      tlen = ints[ip++];
@@ -373,7 +374,8 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    } else {
 	      tlen = scheme_char_strlen(u);
 	    }
-	    t = scheme_utf8_encode_to_buffer_len(u, tlen, NULL, 0, (long *)&tlen);
+	    t = scheme_utf8_encode_to_buffer_len(u, tlen, NULL, 0, &ltlen);
+	    tlen = ltlen;
 	  }
 	  break;
 	default:
@@ -1514,7 +1516,7 @@ void scheme_wrong_return_arity(const char *where,
     v[0] = ':';
     v[1] = 0;
 
-    array = ((got == 1) ? (Scheme_Object **)&argv : argv);
+    array = ((got == 1) ? (Scheme_Object **) mzALIAS &argv : argv);
 
     origlen = len;
     len /= got;

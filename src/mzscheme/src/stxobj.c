@@ -721,8 +721,6 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
   Scheme_Object *v;
   int i;
 
-  if (!c) *(long *)0x0 = 1;
-
   v = scheme_make_vector((2 * c) + 2, NULL);
   SCHEME_VEC_ELS(v)[0] = newname;
   if (c > 15) {
@@ -2210,16 +2208,10 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	  if (SCHEME_NULLP(simplifies)) {
 	    simplifies = scheme_hash_get(lex_cache, old_key);
 	    /* assert: a is not NULL; see the simplify_lex_rename() call above */
-	    if (!simplifies)
-	      *(long *)0x0 = 1;
-	    if (!SCHEME_PAIRP(simplifies))
-	      *(long *)0x0 = 1;
 	  }
 	  a = SCHEME_CAR(simplifies);
 	  /* used up one simplification: */
 	  simplifies = SCHEME_CDR(simplifies);
-	  if (!SCHEME_LISTP(simplifies))
-	    *(long *)0x0 = 1;
 	}
 	  
 	/* Simplification may have left us with the null table: */

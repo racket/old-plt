@@ -108,6 +108,8 @@ extern unsigned long scheme_get_stack_base();
 # define HIDE_FROM_XFORM(x) x
 #endif
 
+#define mzALIAS (void *)
+
 /*========================================================================*/
 /*                             initialization                             */
 /*========================================================================*/
@@ -444,7 +446,7 @@ typedef struct Scheme_Structure
   Scheme_Object *slots[1];
 } Scheme_Structure;
 
-#define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *)o)->stype)
+#define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *) mzALIAS o)->stype)
 
 #define SCHEME_STRUCT_NUM_SLOTS(o) (SCHEME_STRUCT_TYPE(o)->num_slots)
 #define SCHEME_STRUCT_NAME_SYM(o) (SCHEME_STRUCT_TYPE(o)->name)
@@ -466,7 +468,7 @@ Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands
 
 Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a);
 
-#define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
+#define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *) mzALIAS obj)->stype->inspector)
 
 extern Scheme_Object *scheme_source_property;
 
@@ -583,7 +585,7 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 
 Scheme_Object *scheme_stx_strip_module_context(Scheme_Object *stx);
 
-#define SCHEME_STX_VAL(s) ((Scheme_Stx *)s)->val
+#define SCHEME_STX_VAL(s) ((Scheme_Stx *) mzALIAS s)->val
 
 #define SCHEME_STX_PAIRP(o) (SCHEME_PAIRP(o) || (SCHEME_STXP(o) && SCHEME_PAIRP(SCHEME_STX_VAL(o))))
 #define SCHEME_STX_SYMBOLP(o) (SCHEME_SYMBOLP(o) || (SCHEME_STXP(o) && SCHEME_SYMBOLP(SCHEME_STX_VAL(o))))
@@ -673,7 +675,7 @@ typedef struct Scheme_Local {
 #endif
 } Scheme_Local;
 
-#define SCHEME_LOCAL_POS(obj)    (((Scheme_Local *)(obj))->position)
+#define SCHEME_LOCAL_POS(obj)    (((Scheme_Local *) mzALIAS (obj))->position)
 
 typedef struct Scheme_Toplevel {
   Scheme_Type type;
@@ -681,8 +683,8 @@ typedef struct Scheme_Toplevel {
   int position;
 } Scheme_Toplevel;
 
-#define SCHEME_TOPLEVEL_DEPTH(obj)    (((Scheme_Toplevel *)(obj))->depth)
-#define SCHEME_TOPLEVEL_POS(obj)    (((Scheme_Toplevel *)(obj))->position)
+#define SCHEME_TOPLEVEL_DEPTH(obj)    (((Scheme_Toplevel *) mzALIAS (obj))->depth)
+#define SCHEME_TOPLEVEL_POS(obj)    (((Scheme_Toplevel *) mzALIAS (obj))->position)
 
 typedef struct Scheme_Let_Value {
   Scheme_Type type;
@@ -861,7 +863,7 @@ typedef struct Scheme_Escaping_Cont {
   int suspend_break;
 } Scheme_Escaping_Cont;
 
-#define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *)(obj))->f)
+#define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *) mzALIAS (obj))->f)
 
 int scheme_escape_continuation_ok(Scheme_Object *);
 
@@ -974,8 +976,8 @@ void scheme_get_outof_line(Scheme_Channel_Waiter *ch_w);
 
 #ifdef MPW_C
 /* Optimizer bug! */
-# define scheme_exact_zero ((Scheme_Object *)0x1)
-# define scheme_exact_one ((Scheme_Object *)0x3)
+# define scheme_exact_zero ((Scheme_Object *) mzALIAS 0x1)
+# define scheme_exact_one ((Scheme_Object *) mzALIAS 0x3)
 #else
 # define scheme_exact_zero scheme_make_integer(0)
 # define scheme_exact_one scheme_make_integer(1)
@@ -1001,9 +1003,9 @@ typedef struct {
   bigdig *digits;
 } Scheme_Bignum;
 
-#define SCHEME_BIGPOS(b) (((Scheme_Bignum *)b)->pos)
-#define SCHEME_BIGLEN(b) (((Scheme_Bignum *)b)->len)
-#define SCHEME_BIGDIG(b) (((Scheme_Bignum *)b)->digits)
+#define SCHEME_BIGPOS(b) (((Scheme_Bignum *) mzALIAS b)->pos)
+#define SCHEME_BIGLEN(b) (((Scheme_Bignum *) mzALIAS b)->len)
+#define SCHEME_BIGDIG(b) (((Scheme_Bignum *) mzALIAS b)->digits)
 
 typedef struct {
   Scheme_Bignum o;
@@ -1096,8 +1098,8 @@ typedef struct {
 
 typedef Scheme_Complex Small_Complex;
 
-#define _scheme_complex_real_part(n) (((Scheme_Complex *)(n))->r)
-#define _scheme_complex_imaginary_part(n) (((Scheme_Complex *)(n))->i)
+#define _scheme_complex_real_part(n) (((Scheme_Complex *) mzALIAS (n))->r)
+#define _scheme_complex_imaginary_part(n) (((Scheme_Complex *) mzALIAS (n))->i)
 
 Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *space);
 Scheme_Object *scheme_real_to_complex(const Scheme_Object *n);
@@ -1182,7 +1184,7 @@ extern int scheme_is_nan(double);
 # endif
 #endif
 
-#define IZI_REAL_PART(n) (((Scheme_Complex *)(n))->r)
+#define IZI_REAL_PART(n) (((Scheme_Complex *) mzALIAS (n))->r)
 
 extern double scheme_infinity_val, scheme_minus_infinity_val;
 extern double scheme_floating_point_zero;
@@ -1427,8 +1429,8 @@ typedef struct {
   Scheme_Object *vals[1];
 } Scheme_Closed_Compiled_Procedure;
 
-#define SCHEME_COMPILED_CLOS_CODE(c) ((Scheme_Closed_Compiled_Procedure *)c)->code
-#define SCHEME_COMPILED_CLOS_ENV(c) ((Scheme_Closed_Compiled_Procedure *)c)->vals
+#define SCHEME_COMPILED_CLOS_CODE(c) ((Scheme_Closed_Compiled_Procedure *) mzALIAS c)->code
+#define SCHEME_COMPILED_CLOS_ENV(c) ((Scheme_Closed_Compiled_Procedure *) mzALIAS c)->vals
 
 #define MAX_CONST_LOCAL_POS 64
 extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
@@ -2124,8 +2126,8 @@ Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 int scheme_regexp_is_byte(Scheme_Object *re);
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int byte, int * volatile result_is_err_string);
 
-#define SCHEME_SYM_UNINTERNEDP(o) (((Scheme_Symbol *)o)->keyex & 0x1)
-#define SCHEME_SYM_PARALLELP(o) (((Scheme_Symbol *)o)->keyex & 0x2)
-#define SCHEME_SYM_WEIRDP(o) (((Scheme_Symbol *)o)->keyex & 0x3)
+#define SCHEME_SYM_UNINTERNEDP(o) (((Scheme_Symbol *) mzALIAS o)->keyex & 0x1)
+#define SCHEME_SYM_PARALLELP(o) (((Scheme_Symbol *) mzALIAS o)->keyex & 0x2)
+#define SCHEME_SYM_WEIRDP(o) (((Scheme_Symbol *) mzALIAS o)->keyex & 0x3)
 
 #endif /* __mzscheme_private__ */

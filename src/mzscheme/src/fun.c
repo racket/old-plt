@@ -2757,8 +2757,6 @@ static void pre_post_dyn_wind(Scheme_Object *prepost)
   /* Cancel internal suspend in eval or dyn-wind, because we convert
      it to a parameterize. */
   --scheme_current_thread->suspend_break;
-  if (scheme_current_thread->suspend_break < 0)
-    *(long *)(0x0) = 1;
 
   config = scheme_extend_config(scheme_current_config(),
 				MZCONFIG_ENABLE_BREAK, 

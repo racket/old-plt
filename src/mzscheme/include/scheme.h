@@ -409,11 +409,11 @@ typedef struct Scheme_Vector {
 /*                        basic Scheme accessors                          */
 /*========================================================================*/
 
-#define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(obj))->u.char_val)
+#define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(void*)(obj))->u.char_val)
 #define SCHEME_INT_VAL(obj)  (OBJ_TO_LONG(obj)>>1)
-#define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(obj))->double_val)
+#define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(void*)(obj))->double_val)
 #ifdef MZ_USE_SINGLE_FLOATS
-# define SCHEME_FLT_VAL(obj)  (((Scheme_Float *)(obj))->float_val)
+# define SCHEME_FLT_VAL(obj)  (((Scheme_Float *)(void*)(obj))->float_val)
 # define SCHEME_FLOAT_VAL(obj) (SCHEME_DBLP(obj) ? SCHEME_DBL_VAL(obj) : SCHEME_FLT_VAL(obj))
 #else
 # define SCHEME_FLT_VAL(x) ((float)(SCHEME_DBL_VAL(x)))
@@ -429,15 +429,15 @@ typedef struct Scheme_Vector {
 #define SCHEME_BYTE_STRLEN_VAL(obj)  ((obj)->u.byte_str_val.tag_val)
 #define SCHEME_PATH_VAL(obj)  ((obj)->u.byte_str_val.string_val)
 #define SCHEME_PATH_LEN(obj)  ((obj)->u.byte_str_val.tag_val)
-#define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
-#define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
+#define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(void*)(obj))->s)
+#define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(void*)(obj))->len)
 
 #define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
 
 /* return a `char *' pointing to the string or the symbol name */
 #define SCHEME_STRSYM_VAL(obj) (SCHEME_SYMBOLP(obj) ? SCHEME_SYM_VAL(obj) : SCHEME_CHAR_STR_VAL(obj))
 
-#define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
+#define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(void*)(obj))->u.ptr_val)
 
 #define SCHEME_CAR(obj)      ((obj)->u.pair_val.car)
 #define SCHEME_CDR(obj)      ((obj)->u.pair_val.cdr)
@@ -446,14 +446,14 @@ typedef struct Scheme_Vector {
 #define SCHEME_CAAR(obj)     (SCHEME_CAR (SCHEME_CAR (obj)))
 #define SCHEME_CDDR(obj)     (SCHEME_CDR (SCHEME_CDR (obj)))
 
-#define SCHEME_VEC_SIZE(obj) (((Scheme_Vector *)(obj))->size)
-#define SCHEME_VEC_ELS(obj)  (((Scheme_Vector *)(obj))->els)
+#define SCHEME_VEC_SIZE(obj) (((Scheme_Vector *)(void*)(obj))->size)
+#define SCHEME_VEC_ELS(obj)  (((Scheme_Vector *)(void*)(obj))->els)
 #define SCHEME_VEC_BASE(obj) SCHEME_VEC_ELS(obj)
 
-#define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
+#define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(void*)(obj)))
 #define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj)
 
-#define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
+#define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(void*)(obj))->u.ptr_val)
 #define SCHEME_PTR1_VAL(obj) ((obj)->u.two_ptr_val.ptr1)
 #define SCHEME_PTR2_VAL(obj) ((obj)->u.two_ptr_val.ptr2)
 #define SCHEME_IPTR_VAL(obj) ((obj)->u.ptr_int_val.ptr)
@@ -589,13 +589,13 @@ typedef struct {
 #define SCHEME_ECONTP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_escaping_cont_type)
 #define SCHEME_CONT_MARK_SETP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_cont_mark_set_type)
 #define SCHEME_PROC_STRUCTP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_proc_struct_type)
-#define SCHEME_STRUCT_PROCP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_STRUCT_PROC))
-#define SCHEME_GENERICP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)obj)->flags & SCHEME_PRIM_IS_GENERIC))
+#define SCHEME_STRUCT_PROCP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)(void*)obj)->flags & SCHEME_PRIM_IS_STRUCT_PROC))
+#define SCHEME_GENERICP(obj) (SCHEME_CLSD_PRIMP(obj) && (((Scheme_Closed_Primitive_Proc *)(void*)obj)->flags & SCHEME_PRIM_IS_GENERIC))
 #define SCHEME_CLOSUREP(obj) (SAME_TYPE(SCHEME_TYPE(obj), scheme_closure_type) || SAME_TYPE(SCHEME_TYPE(obj), scheme_case_closure_type))
 
-#define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(obj))->prim_val)
-#define SCHEME_CLSD_PRIM(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->prim_val)
-#define SCHEME_CLSD_PRIM_DATA(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->data)
+#define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(void*)(obj))->prim_val)
+#define SCHEME_CLSD_PRIM(obj) (((Scheme_Closed_Primitive_Proc *)(void*)(obj))->prim_val)
+#define SCHEME_CLSD_PRIM_DATA(obj) (((Scheme_Closed_Primitive_Proc *)(void*)(obj))->data)
 #define SCHEME_CLOS_FUNC(obj) ((Scheme_Closure_Func)SCHEME_CAR(obj))
 #define SCHEME_CLOS_DATA(obj) SCHEME_CDR(obj)
 
@@ -647,7 +647,7 @@ enum {
 
 typedef struct Scheme_Env Scheme_Env;
 
-#define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
+#define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(void*)(obj))
 
 /*========================================================================*/
 /*                    setjmpup (continuation) support                     */
@@ -1064,9 +1064,9 @@ struct Scheme_Output_Port
   struct Scheme_Input_Port *input_half;
 };
 
-#define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
-#define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
-#define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
+#define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(void*)(obj))->port_data)
+#define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(void*)(obj))->port_data)
+#define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)(void*)obj)->name)
 
 #define SCHEME_SPECIAL (-2)
 
@@ -1104,9 +1104,9 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 
 /* Exploit the fact that these should never be dereferenced: */
 #ifndef FIRST_TWO_BYTES_ARE_LEGAL_ADDRESSES
-# define MZ_EVAL_WAITING_CONSTANT ((Scheme_Object *)0x2)
-# define MZ_APPLY_WAITING_CONSTANT ((Scheme_Object *)0x4)
-# define MZ_MULTIPLE_VALUES_CONSTANT ((Scheme_Object *)0x6)
+# define MZ_EVAL_WAITING_CONSTANT ((Scheme_Object *)(void*)0x2)
+# define MZ_APPLY_WAITING_CONSTANT ((Scheme_Object *)(void*)0x4)
+# define MZ_MULTIPLE_VALUES_CONSTANT ((Scheme_Object *)(void*)0x6)
 #endif
 
 #ifdef MZ_EVAL_WAITING_CONSTANT
@@ -1153,11 +1153,11 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 #define _scheme_tail_eval_wp scheme_tail_eval_wp
 
 #define _scheme_direct_apply_primitive_multi(prim, argc, argv) \
-    (((Scheme_Primitive_Proc *)prim)->prim_val(argc, argv))
+    (((Scheme_Primitive_Proc *)(void*)prim)->prim_val(argc, argv))
 #define _scheme_direct_apply_primitive(prim, argc, argv) \
     scheme_check_one_value(_scheme_direct_apply_primitive_multi(prim, argc, argv))
 #define _scheme_direct_apply_closed_primitive_multi(prim, argc, argv) \
-    (((Scheme_Closed_Primitive_Proc *)prim)->prim_val(((Scheme_Closed_Primitive_Proc *)prim)->data, argc, argv))
+    (((Scheme_Closed_Primitive_Proc *)(void*)prim)->prim_val(((Scheme_Closed_Primitive_Proc *)(void*)prim)->data, argc, argv))
 #define _scheme_direct_apply_closed_primitive(prim, argc, argv) \
     scheme_check_one_value(_scheme_direct_apply_closed_primitive_multi(prim, argc, argv))
 
@@ -1210,8 +1210,8 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #ifdef MZ_PRECISE_GC
 /* Need to make sure that a __gc_var_stack__ is always available where
    setjmp & longjmp are used. */
-# define scheme_longjmp(b, v) (((long *)((b).gcvs))[1] = (b).gcvs_cnt, \
-                               GC_variable_stack = (void **)(b).gcvs, \
+# define scheme_longjmp(b, v) (((long *)(void*)((b).gcvs))[1] = (b).gcvs_cnt, \
+                               GC_variable_stack = (void **)(void*)(b).gcvs, \
                                scheme_mz_longjmp((b).jb, v))
 # define scheme_setjmp(b)     ((b).gcvs = (long)__gc_var_stack__, \
                                (b).gcvs_cnt = (long)(__gc_var_stack__[1]), \
@@ -1505,7 +1505,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 # define MZ_FD_CLR(n, p) scheme_fdclr(p, n)
 # define MZ_FD_ISSET(n, p) scheme_fdisset(p, n)
 #else
-# define MZ_GET_FDSET(p, n) ((void *)(((fd_set *)p) + n))
+# define MZ_GET_FDSET(p, n) ((void *)(((fd_set *)(void*)p) + n))
 # define MZ_FD_ZERO(p) FD_ZERO(p)
 # define MZ_FD_SET(n, p) FD_SET(n, p)
 # define MZ_FD_CLR(n, p) FD_CLR(n, p)

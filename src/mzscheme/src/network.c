@@ -501,7 +501,7 @@ static long gethostbyname_in_thread(void *data)
   struct hostent *host;
   host = gethostbyname(ghbn_hostname);
   if (host)
-    return *(long *)host->h_addr_list[0];
+    return *(long *) mzALIAS host->h_addr_list[0];
   else
     return 0;
 }

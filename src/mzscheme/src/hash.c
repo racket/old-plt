@@ -632,14 +632,14 @@ static long hash_addr(Scheme_Object *o)
 
 static long hash_general(Scheme_Object *o)
 {
-  if (!(((short *)o)[1] & 0xFFFC)) {
+  if (!(((short *) mzALIAS o)[1] & 0xFFFC)) {
     if (!keygen)
       keygen += 4;
-    ((short *)o)[1] |= keygen;
+    ((short *) mzALIAS o)[1] |= keygen;
     keygen += 4;
   }
 
-  return *(long *)o;
+  return *(long *) mzALIAS o;
 }
 
 static long hash_symbol(Scheme_Object *o)

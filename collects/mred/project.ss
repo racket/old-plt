@@ -63,9 +63,9 @@
 			       project-filename
 			       reason #t)])
 		     (case act
-		       [cancel #f]
-		       [continue (set! project-ok-unsaved? #t) #t]
-		       [save (save-project #f) #t]))
+		       [(cancel) #f]
+		       [(continue) (set! project-ok-unsaved? #t) #t]
+		       [(save) (save-project #f) #t]))
 		   #t))]
 	    [check-project-all-saved
 	     (opt-lambda ([reason "Close Project"])

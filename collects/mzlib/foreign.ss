@@ -620,7 +620,7 @@
 (define* _cvector
   (make-ctype _pointer cvector-ptr
     (lambda (x)
-      (error '_vector
+      (error '_cvector
              "cannot automatically convert a C pointer to a cvector"))))
 
 (provide (rename allocate-cvector make-cvector))

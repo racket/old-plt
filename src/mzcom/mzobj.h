@@ -13,10 +13,14 @@ typedef struct {
   HRESULT *pHr;
   HANDLE readSem;
   HANDLE writeSem;
+  HANDLE resetSem;
+  HANDLE resetDoneSem;
   BOOL *pErrorState;
   BOOL *pResetFlag;
 } THREAD_GLOBALS;
 
+extern const DWORD dwTimeOut;
+extern const DWORD dwPause;
 extern HINSTANCE globHinst;
 extern DWORD WINAPI evalLoop(LPVOID);
 
@@ -36,9 +40,12 @@ class ATL_NO_VTABLE CMzObj :
     HANDLE inputMutex;
     HANDLE readSem;
     HANDLE writeSem;
-    HANDLE evalSems[2];
+    HANDLE resetSem;
+    HANDLE resetDoneSem;
+    HANDLE evalDoneSems[2];
     BSTR *globInput;
     BSTR globOutput;
+    BSTR lastOutput;
     DWORD threadId;
     HANDLE threadHandle;
     BOOL errorState;
@@ -70,8 +77,10 @@ END_CONNECTION_POINT_MAP()
 
 // IMzObj
 public:
+ STDMETHOD(Reset)(void);
  STDMETHOD(About)(void);
  STDMETHOD(Eval)(BSTR input,/*[out,retval]*/BSTR *output);
 };
 
 #endif //__MZOBJ_H_
+

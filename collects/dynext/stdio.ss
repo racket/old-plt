@@ -1,6 +1,6 @@
 
 (values
- (if (string=? (system-library-subpath) "rs6k-aix")
+ (if (member (system-library-subpath) '("rs6k-aix" "parisc-hpux"))
      (letrec ([pseudo-process* 
 	       (lambda (c . args)
 		 (if (null? args)

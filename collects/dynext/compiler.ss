@@ -30,16 +30,28 @@
   (define win-gcc?
     (let ([c (current-extension-compiler)])
       (and c (regexp-match "gcc.exe$" c))))
-  
-  (define unix-compile-flags '("-c" "-O2"))
+  (define unix-cc?
+    (let ([c (current-extension-compiler)])
+      (and c (regexp-match "[^g]cc$" c))))
+
+  (define gcc-compile-flags (append '("-c" "-O2")
+				    (case (string->symbol (system-library-subpath))
+				      [(parisc-hpux) '("-Aa" "-D_HPUX_SOURCE" "+z")]
+				      [else null])))
+  (define unix-compile-flags (append gcc-compile-flags
+				     (case (string->symbol (system-library-subpath))
+				       [(parisc-hpux) '("-Aa")]
+				       [else null])))
   (define msvc-compile-flags '("/c" "/O2"))
 
   (define current-extension-compiler-flags
     (make-parameter
      (case (system-type)
-       [(unix) unix-compile-flags]
+       [(unix) (if unix-cc?
+		   unix-compile-flags
+		   gcc-compile-flags)]
        [(windows) (if win-gcc?
-		      unix-compile-flags
+		      gcc-compile-flags
 		      msvc-compile-flags)]
        [(macos) '()])
      (lambda (l)
@@ -103,7 +115,9 @@
 			    (unless f
 			      (error 'use-standard-linker "cannot find ~a" n))
 			    (current-extension-compiler f))
-			  (current-extension-compiler-flags unix-compile-flags)
+			  (current-extension-compiler-flags (if (eq? name 'gcc)
+								gcc-compile-flags
+								unix-compile-flags))
 			  (current-make-compile-include-strings unix-compile-include-strings)
 			  (current-make-compile-input-strings (lambda (s) (list s)))
 			  (current-make-compile-output-strings unix-compile-output-strings)]
@@ -113,7 +127,7 @@
 			    (unless f
 			      (error 'use-standard-linker "cannot find gcc.exe"))
 			    (current-extension-compiler f))
-			  (current-extension-compiler-flags unix-compile-flags)
+			  (current-extension-compiler-flags gcc-compile-flags)
 			  (current-make-compile-include-strings unix-compile-include-strings)
 			  (current-make-compile-input-strings (lambda (s) (list s)))
 			  (current-make-compile-output-strings unix-compile-output-strings)]

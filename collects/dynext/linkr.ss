@@ -44,7 +44,7 @@
 			  (if (= 3 version)
 			      "-e _nostart"
 			      "-bnoentry")))]
-      [(parisc-hpux) "-b"]
+      [(parisc-hpux) (list "-b")]
       [else (list "-shared")]))
 
   (define msvc-linker-flags (list "/LD"))

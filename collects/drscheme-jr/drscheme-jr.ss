@@ -164,7 +164,8 @@
 	    (cond
 	     [(zodiac:eof? this) (void)]
 	     [(zodiac:eof? next) (mzrice-expand-eval this)]
-	     [else (loop next (read))])))))))
+	     [else (begin (mzrice-expand-eval this)
+			  (loop next (read)))])))))))
 
 (define parameterization (make-parameterization))
 

@@ -4,10 +4,11 @@ _Web-server_ Collection
 Launchers
 =========
 
-The _Web_ _server_ collection provides two launchers.  The "web-server" launcher
-starts the Web server.  The "web-server-monitor" launcher monitors a Web
-server by periodically sending it requests.  Both launchers support the
--h or --help flags which describe other available options.
+The _Web_ _server_ collection provides two launchers.  The
+"web-server" launcher starts the Web server.  The "web-server-monitor"
+launcher monitors a Web server by periodically sending it requests.
+Both launchers support the -h or --help flags which describe other
+available options.
 
 The command line 
   web-server [-p <port>] [-f <configuration-table-file>] [-a <ip-address>]
@@ -34,6 +35,9 @@ response, the monitor will notify <alert-email> of the problem.
 
 Another Start
 =============
+
+FIX - web-server.ss is not used
+      I have not decided how to update it yet. - ptg
 
 Requiring the library _web-server.ss_, via 
   (require (lib "web-server.ss" "web-server"))

@@ -15,7 +15,7 @@
     (max-waiting virtual-hosts access scripts initial-connection-timeout))
 
   ; more here - rename
-  (define-signature web-config/local^ (port listen-ip instances))
+  (define-signature web-config/local^ (port listen-ip instances make-servlet-namespace))
 
   (define-signature web-config^
     ((open web-config/pervasive^) (open web-config/local^))))

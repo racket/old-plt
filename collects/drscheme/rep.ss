@@ -37,6 +37,7 @@
 				    'hash-percent-syntax)])
 	    (with-parameterization p
 	      (lambda ()
+		(require-library-use-compiled #f)
 		(error-value->string-handler
 		 (lambda (x n)
 		   (let ([long-string 

@@ -412,8 +412,3 @@ Annotated examples are in the examples subdirectory of the parser-tools
 collection directory.
 
 
-Potential future additions:
-
-If you need any of these features, or if you have a different handy
-feature in mind, let me know.
-

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.2 1998/07/03 21:17:31 mflatt Exp $
+ * $Id: wxDefines.h,v 1.3 1998/08/08 03:33:00 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -382,7 +382,7 @@ enum {
 
 // defines for wxFrame, wxDialogBox, and wxEnhDialogBox
 #define wxBORDER		0x00000001
-#define wxCAPTION		0x00000002
+#define wxNO_CAPTION		0x00000002
 #define wxICONIZE		0x00000004
 #define wxMDI_CHILD		0x00000008
 #define wxMDI_PARENT		0x00000010
@@ -392,10 +392,10 @@ enum {
 #define wxMAXIMIZE_BOX		0x00000080
 #define wxSDI			0x00000100
 #define wxSTAYS_ON_TOP		0x00000200
-#define wxSYSTEM_MENU		0x00000400
-#define wxTHICK_FRAME		0x00000800
+#define wxNO_SYSTEM_MENU       	0x00000400
+#define wxNO_THICK_FRAME       	0x00000800
 #define wxTRANSIENT		0x00001000
-#define wxRESIZE_BORDER		0x00002000
+#define wxNO_RESIZE_BORDER     	0x00002000
 #define wxTINY_CAPTION_HORIZ	0x00004000
 #define wxTINI_CAPTION_VERT	0x00008000
 #define wxUSER_COLOURS		0x00010000
@@ -414,11 +414,9 @@ enum {
 #define wxRIGHT_COMMANDS        0x10000000
 #define wxSTATUS_FOOTER         wxDEFAULT
 
-#define wxDEFAULT_FRAME		(wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxTHICK_FRAME \
-				 | wxSYSTEM_MENU | wxCAPTION )
-#define wxDEFAULT_DIALOG_STYLE	(wxCAPTION | wxSYSTEM_MENU | wxTHICK_FRAME )
-#define wxENH_DEFAULT		(wxCAPTION | wxBOTTOM_COMMANDS | wxSTATUS_FOOTER \
-				 | wxNO_CANCEL_BUTTON)
+#define wxDEFAULT_FRAME		0
+#define wxDEFAULT_DIALOG_STYLE	0
+#define wxENH_DEFAULT		0
 #define wxMAX_STATUS		4
 
 // defines for wxItem and descendants

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.2 1998/01/27 16:38:58 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.3 1998/08/05 23:56:30 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -2139,7 +2139,7 @@ XPrinterDialog (wxWindow *parent)
 #if defined(sun) && defined(wx_xview)
 #	define PS_PREVIEW_COMMAND	"pageview"
 #	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
 #elif defined(VMS)
 #	define PS_PREVIEW_COMMAND	"view/format=ps/select=x_display"
@@ -2149,17 +2149,17 @@ XPrinterDialog (wxWindow *parent)
 #elif defined(__sgi)
 #	define PS_PREVIEW_COMMAND	"dps"
 #	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
 #elif defined(wx_x)
 #	define PS_PREVIEW_COMMAND	"ghostview"
 #	define PS_PRINTER_COMMAND	"lpr"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		NULL
 #elif defined(wx_msw)
 #	define PS_PREVIEW_COMMAND	NULL
 #	define PS_PRINTER_COMMAND	"print"
-#	define PS_PRINTER_OPTIONS	NULL
+#	define PS_PRINTER_OPTIONS	""
 #	define PS_AFM_PATH		"c:\\windows\\system\\"
 #else
 #	define PS_PREVIEW_COMMAND	NULL
@@ -2180,7 +2180,11 @@ wxPrintSetupData::wxPrintSetupData(void)
     printer_scale_y = 1.0;
     printer_translate_x = 0.0;
     printer_translate_y = 0.0;
-    printer_mode = PS_PREVIEW;
+#ifdef wx_x
+    printer_mode = PS_PRINTER;
+#else
+    printer_mode = PS_FILE;
+#endif
     afm_path = NULL;
     paper_name = NULL;
     print_colour = TRUE;
@@ -2316,7 +2320,7 @@ void wxInitializePrintSetupData(Bool init)
 {
   wxPrintSetupData *wxThePrintSetupData;
   
-  wxThePrintSetupData = DEBUG_NEW wxPrintSetupData;
+  wxThePrintSetupData = new wxPrintSetupData;
   
   wxThePrintSetupData->SetPrintPreviewCommand(PS_PREVIEW_COMMAND);
   wxThePrintSetupData->SetPrinterOrientation(PS_PORTRAIT);
@@ -2391,7 +2395,7 @@ void wxPrintPaperDatabase::ClearDatabase(void)
 void wxPrintPaperDatabase::AddPaperType(char *name, int wmm, int hmm,
 					int wp, int hp)
 {
-    Append(name, DEBUG_NEW wxPrintPaperType(name, wmm, hmm, wp, hp));
+    Append(name, new wxPrintPaperType(name, wmm, hmm, wp, hp));
 }
 
 wxPrintPaperType *wxPrintPaperDatabase::FindPaperType(char *name)

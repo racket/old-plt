@@ -28,10 +28,10 @@ static Scheme_Object *style_wxMCANVAS_HIDE_H_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_HIDE_V_SCROLL_sym = NULL;
 
 static void init_symset_style(void) {
-  style_wxMCANVAS_NO_H_SCROLL_sym = scheme_intern_symbol("no-h-scroll");
-  style_wxMCANVAS_NO_V_SCROLL_sym = scheme_intern_symbol("no-v-scroll");
-  style_wxMCANVAS_HIDE_H_SCROLL_sym = scheme_intern_symbol("hide-h-scroll");
-  style_wxMCANVAS_HIDE_V_SCROLL_sym = scheme_intern_symbol("hide-v-scroll");
+  style_wxMCANVAS_NO_H_SCROLL_sym = scheme_intern_symbol("no-hscroll");
+  style_wxMCANVAS_NO_V_SCROLL_sym = scheme_intern_symbol("no-vscroll");
+  style_wxMCANVAS_HIDE_H_SCROLL_sym = scheme_intern_symbol("hide-hscroll");
+  style_wxMCANVAS_HIDE_V_SCROLL_sym = scheme_intern_symbol("hide-vscroll");
 }
 
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
@@ -88,8 +88,8 @@ static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
 static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
 
 static void init_symset_bufferType(void) {
-  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("edit-buffer");
-  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard-buffer");
+  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("text");
+  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard");
 }
 
 static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {

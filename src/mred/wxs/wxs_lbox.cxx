@@ -78,7 +78,7 @@ static Scheme_Object *style_wxALWAYS_SB_sym = NULL;
 static Scheme_Object *style_wxHSCROLL_sym = NULL;
 
 static void init_symset_style(void) {
-  style_wxALWAYS_SB_sym = scheme_intern_symbol("always-sb");
+  style_wxALWAYS_SB_sym = scheme_intern_symbol("always-vscroll");
   style_wxHSCROLL_sym = scheme_intern_symbol("hscroll");
 }
 

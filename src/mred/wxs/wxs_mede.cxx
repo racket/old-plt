@@ -290,8 +290,8 @@ static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
 static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
 
 static void init_symset_bufferType(void) {
-  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("edit-buffer");
-  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard-buffer");
+  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("text");
+  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard");
 }
 
 static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {

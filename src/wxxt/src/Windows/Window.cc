@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.11 1998/08/01 12:42:15 mflatt Exp $
+ * $Id: Window.cc,v 1.12 1998/08/08 03:33:06 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -965,15 +965,8 @@ void wxWindow::OnPaint(void)
     XfwfCallExpose(X->handle, X->expose_event, X->expose_region);
 }
 
-void wxWindow::OnScroll(wxScrollEvent& event)
+void wxWindow::OnScroll(wxScrollEvent&)
 {
-  XfwfScrollInfo *sinfo = (XfwfScrollInfo*)event.eventHandle;
-  if (!sinfo) return; /* MATTHEW: [5] */
-
-  if (!(misc_flags & NO_AUTO_SCROLL_FLAG)) {
-    // sinfo->gx and sinfo->gy are set by the ScrolledWindow widget
-    XtMoveWidget(X->handle, sinfo->gx, sinfo->gy);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1204,46 +1197,57 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   wxScrollEvent &wxevent = *_wxevent;
   
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
+    int dir;
     switch (sinfo->reason) {
     case XfwfSUp:	
-      win->SetScrollPos(wxVERTICAL, win->vs_pos - 1);
+      win->SetScrollPos(dir = wxVERTICAL, win->vs_pos - 1);
       break;
     case XfwfSLeft:
-      win->SetScrollPos(wxHORIZONTAL, win->hs_pos - 1);
+      win->SetScrollPos(dir = wxHORIZONTAL, win->hs_pos - 1);
       break;
     case XfwfSDown:
-      win->SetScrollPos(wxVERTICAL, win->vs_pos + 1);
+      win->SetScrollPos(dir = wxVERTICAL, win->vs_pos + 1);
       break;
     case XfwfSRight:
-      win->SetScrollPos(wxHORIZONTAL, win->hs_pos + 1);
+      win->SetScrollPos(dir = wxHORIZONTAL, win->hs_pos + 1);
       break;
     case XfwfSPageUp:
-      win->SetScrollPos(wxVERTICAL, win->vs_pos - win->vs_page);
+      win->SetScrollPos(dir = wxVERTICAL, win->vs_pos - win->vs_page);
       break;
     case XfwfSPageLeft:
-      win->SetScrollPos(wxHORIZONTAL, win->hs_pos - win->hs_page);
+      win->SetScrollPos(dir = wxHORIZONTAL, win->hs_pos - win->hs_page);
       break;
     case XfwfSPageDown:
-      win->SetScrollPos(wxVERTICAL, win->vs_pos + win->vs_page);
+      win->SetScrollPos(dir = wxVERTICAL, win->vs_pos + win->vs_page);
       break;
     case XfwfSPageRight:
-      win->SetScrollPos(wxHORIZONTAL, win->hs_pos + win->hs_page);
+      win->SetScrollPos(dir = wxHORIZONTAL, win->hs_pos + win->hs_page);
       break;
     case XfwfSTop:
     case XfwfSLeftSide:
     case XfwfSBottom:
     case XfwfSRightSide:
+      dir = wxHORIZONTAL;
       break;
     case XfwfSDrag:
       { 
 	double x, y;
 	xws_get_scroll_pos(win->X->scroll, &x, &y);
 	win->wxWindow::Scroll((int)(win->hs_width * x), (int)(win->vs_width * y));
+	if (sinfo->flags & XFWF_VPOS)
+	  dir = wxVERTICAL;
+	else
+	  dir = wxHORIZONTAL;
       }
       break;
     default:
+      dir = wxHORIZONTAL;
       break;
     }
+    wxevent.pos = win->GetScrollPos(dir);
+  } else {
+    // sinfo->gx and sinfo->gy are set by the ScrolledWindow widget
+    XtMoveWidget(win->X->handle, sinfo->gx, sinfo->gy);
   }
   
   wxevent.eventHandle = (char*)p_XfwfScrollInfo;
@@ -1270,10 +1274,11 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   case XfwfSDrag:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_THUMBTRACK;
   default:
     break;
-    }
-    win->GetEventHandler()->OnScroll(wxevent);
+  }
 
-    wxevent.eventHandle = NULL; /* MATTHEW: [5] */
+  win->GetEventHandler()->OnScroll(wxevent);
+
+  wxevent.eventHandle = NULL; /* MATTHEW: [5] */
 }
 
 void wxWindow::WindowEventHandler(Widget w,

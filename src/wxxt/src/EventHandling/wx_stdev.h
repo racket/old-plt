@@ -87,6 +87,7 @@ class wxScrollEvent: public wxEvent
  public:
   wxScrollEvent();
 
+  int pos;
   int moveType;
   int direction;
 };

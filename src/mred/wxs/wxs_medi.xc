@@ -45,11 +45,6 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
   return cconvert(b, x, y, 0);
 }
 
-static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
-{
-  b->DoEdit(cmd, bl, t);
-}
-
 @MACRO rNULL = return NULL;
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
@@ -149,7 +144,6 @@ static void DoEditCommand(wxMediaBuffer *b, int cmd, Bool bl, long t)
 @ "append-font-items" : int AppendFontItems(wxMenu!,int=0);
 @ "do-edit" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
 @ "do-font" : void DoFont(int,bool=TRUE);
-@ m "do-edit-command" : void DoEditCommand(SYM[editOp],bool=TRUE,long=0);
 
 @ "set-keymap" : void SetKeymap(wxKeymap^=NULL);
 @ "get-keymap" : wxKeymap^ GetKeymap();

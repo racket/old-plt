@@ -633,7 +633,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
   scheme_compile_rec_done_local(rec, drec);
   if (SCHEME_STX_PAIRP(first) && SCHEME_STX_NULLP(SCHEME_STX_CDR(first)))
-    rec->value_name = SCHEME_STX_SYM(SCHEME_STX_CAR(variables));
+    rec[drec].value_name = SCHEME_STX_SYM(SCHEME_STX_CAR(variables));
 
   val = scheme_compile_expr(val, env, rec, drec);
 

@@ -687,9 +687,21 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   if (!data->name) {
     Scheme_Stx *cstx = (Scheme_Stx *)code;
     if (cstx->line > 0) {
-      char buf[30];
+      char buf[50], src[20];
       Scheme_Object *name;
-      sprintf(buf, "%ld.%ld", cstx->line, cstx->col);
+
+      src[0] = 0;
+      if (cstx->src && SCHEME_STRINGP(cstx->src)) {
+	if (SCHEME_STRLEN_VAL(cstx->src) < 20)
+	  memcpy(src, SCHEME_STR_VAL(cstx->src), SCHEME_STRLEN_VAL(cstx->src) + 1);
+	else
+	  memcpy(src, SCHEME_STR_VAL(cstx->src) + SCHEME_STRLEN_VAL(cstx->src) - 19, 20);
+      }
+
+      sprintf(buf, "%s%s%ld.%ld", 
+	      src, (src[0] ? ":" : ""),
+	      cstx->line, cstx->col);
+
       name = scheme_intern_symbol(buf);
       data->name = name;
     }

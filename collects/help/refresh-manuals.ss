@@ -2,6 +2,7 @@
   (require "private/docpos.ss"
            "private/search.ss"
            "private/manuals.ss"
+           "private/standard-urls.ss"
            (lib "plt-installer.ss" "setup")
            (lib "url.ss" "net")
            (lib "mred.ss" "mred")
@@ -47,7 +48,6 @@
               (delete-local-plt-files tmp-directory))
             (kill-thread thd))))]))
       
-  (define doc-url-format "http://download.plt-scheme.org/doc/pre-release/bundles/~a-doc.plt")
   (define (make-local-doc-filename tmp-dir stub)
     (build-path tmp-dir (format "~a-doc.plt" stub)))
 
@@ -96,7 +96,7 @@
   (define/contract download-doc
     (string? string? string? . -> . any)
     (lambda (tmp-dir stub full-name)
-      (let ([url (format doc-url-format stub)]
+      (let ([url (make-docs-plt-url stub)]
             [doc-name (make-local-doc-filename tmp-dir stub)])
         (display (format sc-refresh-downloading... full-name))
         (newline)

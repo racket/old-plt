@@ -144,12 +144,10 @@
                  (let ([m (regexp-match #rx"^/doc/([^/]*)/" s)])
                    (if m
                        (let* ([coll (cadr m)]
-                              [doc-dirs (find-doc-directories)]
-                              [doc-coll-names (map (lambda (x) (let-values ([(base name dir?) (split-path x)]) name))
-                                                   doc-dirs)]
+                              [index? (has-index-installed? coll)]
                               [just-visit-url?
-                               (or (member coll doc-coll-names)
-                                   (not (assoc coll known-docs)))])
+                               (or (not (assoc coll known-docs))
+                                   (has-index-installed? coll))])
                          (cond
                            [just-visit-url? url]
                            [else
@@ -159,7 +157,18 @@
                        url)))]
               [else url])))
         (super-instantiate ())))
-    
+
+    (define (has-index-installed? doc-coll)
+      (let loop ([docs-dirs (find-doc-directories)])
+        (cond
+          [(null? docs-dirs) #f]
+          [else
+           (let ([doc-dir (car docs-dirs)])
+             (let-values ([(base name dir?) (split-path doc-dir)])
+               (or (and (string=? doc-coll name)
+                        (get-index-file doc-dir))
+                   (loop (cdr docs-dirs)))))])))
+
     (define sk-bitmap #f)
     
     (define hd-editor-mixin

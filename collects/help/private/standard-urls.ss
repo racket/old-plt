@@ -26,7 +26,21 @@
    (goto-hd-location (hd-cookie? (lambda (sym)
                                    (memq sym hd-location-syms))
                                  . -> . 
-                                 any)))
+                                 any))
+   [make-docs-plt-url (string? . -> . string?)]
+   [make-docs-html-url (string? . -> . string?)])
+
+  (define (make-docs-plt-url manual-name)
+    (format "http://download.plt-scheme.org/doc/~a/bundles/~a-doc.plt"
+            (if (cvs?)
+                "pre-release"
+                (version))
+            manual-name))
+  
+  (define (make-docs-html-url manual-name)
+    (format "http://download.plt-scheme.org/doc/~a/html/~a/index.htm" 
+            (version)
+            manual-name))
   
   (define (prefix-with-server cookie suffix)
     (format "http://127.0.0.1:~a~a"

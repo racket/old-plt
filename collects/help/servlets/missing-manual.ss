@@ -3,19 +3,12 @@
            (lib "servlet-helpers.ss" "web-server"))
   
   (require "private/headelts.ss")
-  (require "private/util.ss")
-  
-  (define doc-root "http://download.plt-scheme.org/doc")
+  (require "private/util.ss"
+           "../private/standard-urls.ss")
   
   (define (no-manual manual label link)
-    (let* ([vno (version)]
-           [html-url (format "~a/~a/html/~a/index.htm" 
-                             doc-root vno manual)]
-           [plt-url (format "~a/~a/bundles/~a-doc.plt" 
-                            doc-root 
-                            (if (cvs?) "pre-release" vno)
-                            manual)])
-      
+    (let* ([html-url (make-docs-html-url manual)]
+           [plt-url (make-docs-plt-url manual)])
       `(html
         (head ,hd-css
               ,@hd-links 

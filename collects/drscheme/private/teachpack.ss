@@ -78,17 +78,18 @@
       ;; extract-provided-variables-from-module : string -> ()listof symbol)
       (define (extract-provided-variables-from-module filename)
         (let* ([module-stx 
-                (expand (parameterize [(read-case-sensitive #f)
-                                       (read-square-bracket-as-paren #t)
-                                       (read-curly-brace-as-paren #t)
-                                       (read-accept-box #t)
-                                       (read-accept-compiled #t)
-                                       (read-accept-bar-quote #t)
-                                       (read-accept-graph #t)
-                                       (read-decimal-as-inexact #t)
-                                       (read-accept-dot #t)
-                                       (read-accept-quasiquote #t)]
-                          (call-with-input-file filename (lambda (port) (read-syntax filename port)))))]
+                (parameterize ([current-namespace (make-namespace)])
+                  (expand (parameterize [(read-case-sensitive #f)
+                                         (read-square-bracket-as-paren #t)
+                                         (read-curly-brace-as-paren #t)
+                                         (read-accept-box #t)
+                                         (read-accept-compiled #t)
+                                         (read-accept-bar-quote #t)
+                                         (read-accept-graph #t)
+                                         (read-decimal-as-inexact #t)
+                                         (read-accept-dot #t)
+                                         (read-accept-quasiquote #t)]
+                            (call-with-input-file filename (lambda (port) (read-syntax filename port))))))]
                [var-prop (get-exported-names (syntax-property module-stx 'module-variable-provides))]
                [mac-prop (get-exported-names (syntax-property module-stx 'module-syntax-provides))])
           (append var-prop mac-prop)))

@@ -154,6 +154,8 @@
             ; a validity indicator.
 	    min-width
 	    min-height
+	    [set-min-height (lambda (v) (set! min-height v))]
+	    [set-min-width (lambda (v) (set! min-width v))]
 	    
 	    [default-x-stretch stretch-x]
 	    [default-y-stretch stretch-y]
@@ -330,8 +332,8 @@
 			       "container-child-init: Args to super-init: ~s"
 			       (apply make-default-size args))
 	    (apply super-init (apply make-default-size args))
-	    (set! min-width (get-width))
-	    (set! min-height (get-height))
+	    (set-min-width (get-width))
+	    (set-min-height (get-height))
 	    
 	    (set! object-ID counter)
 	    (set! counter (add1 counter))
@@ -412,8 +414,8 @@
 	  set-size
 	  stretchable-in-x
 	  stretchable-in-y
-	  min-height
-	  min-width)
+	  set-min-height
+	  set-min-width)
 	(private
 	  ; # pixels per unit of value.
 	  [pixels-per-value 1]
@@ -451,13 +453,13 @@
 		 (mred:debug:printf
 		  'container-child-set-min-sizes
 		  "container-child-set-min-sizes: setting sizes & leaving")
-		 (set! min-width (if horizontal
+		 (set-min-width (if horizontal
 				     (+ (* range pixels-per-value)
 					delta-w)
 				     ; client-height is the default
 				     ; dimension in the minor direction.
 				     (+ client-height delta-w)))
-		 (set! min-height (if horizontal
+		 (set-min-height (if horizontal
 				      (+ client-height delta-h)
 				      (+ (* range pixels-per-value)
 					 delta-h))))))])
@@ -522,8 +524,8 @@
 			 const-default-x-margin const-default-y-margin 
 			 #f #f list) args
 	(inherit
-	  min-width
-	  min-height
+	  set-min-width
+	  set-min-height
 	  stretchable-in-x
 	  stretchable-in-y
 	  get-client-size
@@ -577,12 +579,12 @@
 		  (string-append
 		   "container-child-set-min-sizes: "
 		   "setting sizes and leaving"))
-		 (set! min-width
+		 (set-min-width
 		       (if horizontal
 			   (+ (* range pixels-per-value)
 			      (- full-width client-w))
 			   full-width))
-		 (set! min-height
+		 (set-min-height
 		       (if horizontal
 			   full-height
 			   (+ (* range pixels-per-value)

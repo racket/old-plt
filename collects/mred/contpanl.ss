@@ -92,6 +92,7 @@
 	  
 	  ; list of panel's contents.
 	  [children null]
+	  [set-children (lambda (l) (set! children l))]
 	  
 	  ; add-child: adds an existing child to the panel.
 	  ; input: new-child: item% descendant to add
@@ -648,6 +649,7 @@
 	(inherit
 	  object-ID
 	  children
+	  set-children
 	  force-redraw)
 	
 	(rename
@@ -707,7 +709,7 @@
 		(string-append
 		 "container-panel-change-children: "
 		 "setting children and forcing redraw"))
-	       (set! children new-children)
+	       (set-children new-children)
 	       (force-redraw)))]
 	  
 	  [active-child

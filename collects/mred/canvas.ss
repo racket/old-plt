@@ -134,7 +134,7 @@
 			      [name ""] [style 0] [spp 100] [m ()])
 	  
 	  (inherit get-media call-as-primary-owner user-min-height
-		   get-size min-height)
+		   get-size set-min-height)
 	  (rename [super-set-media set-media])
 	  (private
 	    [update-size
@@ -151,7 +151,7 @@
 			      get-view null null null ch)))
 		     (get-size (box 0) h)
 		     (let ([new-min-height (+ height (- (unbox h) (unbox ch)))])
-		       (set! min-height new-min-height)
+		       (set-min-height new-min-height)
 		       (user-min-height new-min-height))))))])
 	  (public
 	    [style-flags (bitwise-ior wx:const-mcanvas-hide-h-scroll

@@ -184,6 +184,7 @@
 			((super) start len)))))])
 	  (public
 	    [resetting? #f]
+	    [set-resetting (lambda (v) (set! resetting? v))]
 	    [on-insert (on-something (lambda () super-on-insert))]
 	    [on-delete (on-something (lambda () super-on-delete))]
 	    [on-change-style (on-something (lambda () super-on-change-style) #t)])
@@ -255,6 +256,7 @@
 	    [set-prompt-mode (lambda (x) (set! prompt-mode? x))]
 	    [get-prompt (lambda () "> ")]
 	    [prompt-position 0]
+	    [set-prompt-position (lambda (v) (set! prompt-position v))]
 	    [find-prompt 
 	     (lambda (pos) 
 	       (if (> pos prompt-position)
@@ -595,14 +597,14 @@
 		 (lambda ()
 		   (when (number? prompt-position)
 		     (set! reset-console-end-position prompt-position))
-		   (set! resetting? #t)
+		   (set-resetting #t)
 		   (if (< (wx:display-depth) 8)
 		       (begin (reset-console-locations)
 			      (send (get-canvas) force-redraw))
 		       (when reset-console-end-position
 			 (change-style delta reset-console-start-position 
 				       reset-console-end-position)))
-		   (set! resetting? #f)))]
+		   (set-resetting #f)))]
 	      [on-paint
 	       (lambda (before dc left top right bottom dx dy draw-caret)
 		 (super-on-paint before dc left top right bottom
@@ -740,7 +742,7 @@
     (define make-transparent-io-edit%
       (lambda (super%)
 	(class-asi super%
-	  (inherit change-style prompt-position resetting? lock get-text
+	  (inherit change-style prompt-position set-prompt-position resetting? set-resetting lock get-text
 		   flush-console-output set-position last-position get-character
 		   do-pre-eval do-post-eval)
 	  (rename [super-on-insert on-insert]
@@ -771,10 +773,10 @@
 	     (lambda (start end)
 	       (flush-console-output)
 	       (let ([old-resetting resetting?])
-		 (set! resetting? #t)
+		 (set-resetting #t)
 		 (change-style consumed-delta start end)
-		 (set! resetting? old-resetting))
-	       (set! prompt-position end))]
+		 (set-resetting old-resetting))
+	       (set-prompt-position end))]
 	    [fetch-sexp
 	     (lambda ()
 	       (flush-console-output)
@@ -813,13 +815,13 @@
 	     (lambda (s style-funct)
 	       (super-generic-write s (lambda (start end)
 					(style-funct start end)
-					(set! prompt-position end))))]
+					(set-prompt-position end))))]
 	    [on-insert
 	     (lambda (start len)
 	       (let ([old-r resetting?])
-		 (set! resetting? #t)
+		 (set-resetting #t)
 		 (change-style input-delta start (+ start len))
-		 (set! resetting? old-r))
+		 (set-resetting old-r))
 	       (super-on-insert start len))]
 	    [potential-sexps null]
 	    [do-eval

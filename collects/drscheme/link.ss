@@ -1,6 +1,6 @@
 
 (define drscheme:toplevel-tools
-  (list (list "Stepper" (build-path "donkey" "donkey"))
+  (list (list "Stepper" (build-path "drscheme" "donkstub"))
 	(list "Syntax Checker" (build-path "drscheme" "mrslatex"))
 	(list "Analyzer" (build-path "drscheme" "spidstub"))
 

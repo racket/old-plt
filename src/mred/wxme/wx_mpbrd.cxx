@@ -2743,6 +2743,12 @@ Bool wxMediaPasteboard::RefreshDelayed(void)
     return admin->DelayRefresh();
 }
 
+Bool wxMediaPasteboard::InEditSequence(void)
+{
+  return !!sequence;
+}
+
+
 /************************************************************************/
 
 void wxMediaPasteboard::AddPasteboardFunctions(wxKeymap *tab)

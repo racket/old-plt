@@ -440,12 +440,15 @@ static void *WithContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
 #endif
 }
 
+@MACRO CheckGLOk[name] =  if (!((wxGL *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "GL context is not ok: ", THEOBJ));
+
+
 @CLASSBASE wxGL "gl-context" : "object"
 @INTERFACE "gl-context"
 
 @ "ok?" : bool Ok()
-@ "swap-buffers" : void SwapBuffers()
-@ m "call-as-current" : void[]/CastToSO//spAnything WithContext(void[]/CastToSO/CastFromSO/spAnything///push,void[]=NULL/CastToSO/CastFromSO/spAnything///push,bool=0)
+@ "swap-buffers" : void SwapBuffers() : : /CheckGLOk[METHODNAME("gl-context<%>","swap-buffers")]
+@ m "call-as-current" : void[]/CastToSO//spAnything WithContext(void[]/CastToSO/CastFromSO/spAnything///push,void[]=NULL/CastToSO/CastFromSO/spAnything///push,bool=0) : : /CheckGLOk[METHODNAME("gl-context<%>","swap-buffers")]
 
 @END
 

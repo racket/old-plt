@@ -248,6 +248,7 @@ class wxMediaBuffer : public wxObject
   virtual void BeginEditSequence(Bool undoable = TRUE) = 0;
   virtual void EndEditSequence(void) = 0;
   virtual Bool RefreshDelayed(void) = 0;
+  virtual Bool InEditSequence(void) = 0;
 
   virtual wxSnip *FindFirstSnip(void) = 0;
 

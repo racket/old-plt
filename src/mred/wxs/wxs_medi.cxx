@@ -3382,6 +3382,27 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(int n,  Scheme_Object *p[]
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxMediaBufferInEditSequence(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxMediaBuffer_class, "in-edit-sequence? in editor<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InEditSequence());
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxMediaBufferRefreshDelayed(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5306,7 +5327,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 119));
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 120));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbBufferToDC, 2, 2));
@@ -5355,6 +5376,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "num-scroll-lines" " method", (Scheme_Method_Prim *)os_wxMediaBufferNumScrollLines, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "scroll-line-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferScrollLineLocation, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-snip-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetSnipLocation, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "in-edit-sequence?" " method", (Scheme_Method_Prim *)os_wxMediaBufferInEditSequence, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "refresh-delayed?" " method", (Scheme_Method_Prim *)os_wxMediaBufferRefreshDelayed, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "end-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferEndEditSequence, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "begin-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferBeginEditSequence, 0, 1));

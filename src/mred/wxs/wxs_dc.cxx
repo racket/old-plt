@@ -2504,6 +2504,8 @@ static void *WithContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
 
 
 
+
+
 class os_wxGL : public wxGL {
  public:
 
@@ -2557,7 +2559,7 @@ static Scheme_Object *os_wxGLWithContext(int n,  Scheme_Object *p[])
   } else
     x2 = 0;
 
-  
+  if (!((wxGL *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("gl-context<%>","swap-buffers"), "GL context is not ok: ", THEOBJ));
   r = WITH_VAR_STACK(WithContext(((wxGL *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2));
 
   
@@ -2577,7 +2579,7 @@ static Scheme_Object *os_wxGLSwapBuffers(int n,  Scheme_Object *p[])
 
   
 
-  
+  if (!((wxGL *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("gl-context<%>","swap-buffers"), "GL context is not ok: ", THEOBJ));
   WITH_VAR_STACK(((wxGL *)((Scheme_Class_Object *)p[0])->primdata)->SwapBuffers());
 
   

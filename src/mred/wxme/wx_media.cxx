@@ -803,6 +803,11 @@ Bool wxMediaEdit::RefreshDelayed(void)
     return admin->DelayRefresh();
 }
 
+Bool wxMediaEdit::InEditSequence(void)
+{
+  return (delayRefresh > 0);
+}
+
 void wxMediaEdit::Recalculate(void)
 {
 }

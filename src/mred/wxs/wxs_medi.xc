@@ -115,6 +115,7 @@ static void NoInsertFile(wxMediaBuffer *)
 @ X "begin-edit-sequence" : void BeginEditSequence(bool=TRUE);
 @ X "end-edit-sequence" : void EndEditSequence();
 @ X "refresh-delayed?" : bool RefreshDelayed();
+@ X "in-edit-sequence?" : bool InEditSequence();
 
 @ X "get-snip-location" : bool GetSnipLocation(wxSnip!,float?=NULL,float?=NULL,bool=FALSE); : : : : XrZERO
 

@@ -79,7 +79,8 @@
    (define pretty-print-columns 
      (make-parameter 79
 		     (lambda (x)
-		       (unless (integer? x)
+		       (unless (or (eq? x 'infinity)
+				   (integer? x))
 			       (raise-type-error 
 				'pretty-print-columns
 				"integer or 'infinity"

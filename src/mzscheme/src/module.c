@@ -720,6 +720,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
       if (indirect_ok) {
 	/* Try indirect provides: */
 	srcm = m;
+	count = srcm->num_indirect_provides;
 	if (position >= 0) {
 	  i = position;
 	  if ((SCHEME_SYM_LEN(name) == SCHEME_SYM_LEN(srcm->indirect_provides[i]))
@@ -730,7 +731,6 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 	  } else
 	    i = count; /* not found */
 	} else {
-	  count = srcm->num_indirect_provides;
 	  for (i = 0; i < count; i++) {
 	    if (SAME_OBJ(name, srcm->indirect_provides[i])) {
 	      srcname = name;

@@ -275,6 +275,7 @@ static void check_tagged(char *where,
 			 UnitIds *m,
 			 int rename_ok,
 			 int name_only_ok,
+			 int must_have_ids,
 			 Scheme_Object *self_check)
 {
   while (SCHEME_PAIRP(l)) {
@@ -287,12 +288,21 @@ static void check_tagged(char *where,
 		 (name_only_ok < 0) ? tag_set : NULL, 
 		 NULL);
     } else {
+      Scheme_Object *rest;
+
       if (!SCHEME_PAIRP(tag_set)
 	  || !SCHEME_SYMBOLP(SCHEME_CAR(tag_set)))
 	scheme_wrong_syntax(where, tag_set, form,
 			    "bad syntax (tag must be an identifier)");
       
       tag = SCHEME_CAR(tag_set);
+      rest = SCHEME_CDR(tag_set);
+      
+      if (SCHEME_NULLP(rest) && must_have_ids)
+	scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
+			    tag_set, form,
+			    "bad syntax (no identifiers provided for %s)",
+			    must_have_ids < 0 ? "exporting" : "linking");
       
       if (SAME_OBJ(tag, self_check)) {
 	scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
@@ -301,18 +311,17 @@ static void check_tagged(char *where,
       }
 
       if (check_id)
-	check_id_list(where, SCHEME_CDR(tag_set), form, env, 
-		      m, SCHEME_CAR(tag_set), rename_ok);
+	check_id_list(where, rest, form, env, m, tag, rename_ok);
       else {
-	if (!SCHEME_PAIRP(SCHEME_CDR(tag_set))
-	    || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(tag_set)))
-	    || !SCHEME_PAIRP(SCHEME_CADR(tag_set)))
+	if (!SCHEME_PAIRP(rest)
+	    || !SCHEME_NULLP(SCHEME_CDR(rest))
+	    || !SCHEME_PAIRP(SCHEME_CAR(rest)))
 	  scheme_wrong_syntax(where, 
 			      tag_set, form, 
 			      "bad syntax (tag must be followed by a single "
 			      KIND " application)");
 	else {
-	  Scheme_Object *app = SCHEME_CADR(tag_set), *expr, *links;
+	  Scheme_Object *app = SCHEME_CAR(rest), *expr, *links;
 	  UnitIds ids;
 	  
 	  init_ids(&ids);
@@ -320,7 +329,7 @@ static void check_tagged(char *where,
 	  expr = SCHEME_CAR(app);
 	  links = SCHEME_CDR(app);
 	  
-	  check_tagged(where, links, form, env, 1, &ids, 0, -1, tag);
+	  check_tagged(where, links, form, env, 1, &ids, 0, -1, 1, tag);
 
 	  extend_ids(m, tag, expr, (Scheme_Object *)ids.first);
 	}
@@ -794,14 +803,14 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
 			with, form, 
 			"expected `link' keyword");
-  check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(with), form, env, 0, withs, 0, 0, NULL);
+  check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(with), form, env, 0, withs, 0, 0, 0, NULL);
 
   if (!SCHEME_PAIRP(export)
       || NOT_SAME_OBJ(SCHEME_CAR(export), export_symbol))
     scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
 			export, form,
 			"expected `export' keyword");
-  check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(export), form, env, 1, exports, 1, 0, NULL);
+  check_tagged(MAKE_COMPOUND_UNIT, SCHEME_CDR(export), form, env, 1, exports, 1, 0, -1, NULL);
 
   check_tags_unique(withs, MAKE_COMPOUND_UNIT, form, &drec, 0, 0, 0);
   /* Check that export tags were defined by withs: */

@@ -1321,3 +1321,86 @@
 		    env attributes vocab))))))
 	(else
 	  (static-error expr "Malformed compound-unit/sig"))))))
+
+; --------------------------------------------------------------------
+
+(define iu/s-linkage-vocab (make-vocabulary))
+
+(add-sym-micro iu/s-linkage-vocab
+  (lambda (expr env attributes vocab)
+    (cons expr
+      (signature-exploded (expand-expr expr env attributes sig-vocab)))))
+
+(add-list-micro iu/s-linkage-vocab
+  (let* ((kwd '(:))
+	  (in-pattern '(id : sig))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((in:id (pat:pexpand 'id p-env kwd))
+		   (in:sig (pat:pexpand 'sig p-env kwd)))
+	      (internal-error expr "Not implemented yet"))))
+	(else
+	  (static-error expr "Invalid invoke-linkage specification"))))))
+
+(define iu/s-imports-vocab (make-vocabulary))
+
+(add-sym-micro iu/s-imports-vocab
+  (lambda (expr env attributes vocab)
+    (convert-to-prim-format
+      (signature-elements (expand-expr expr env attributes sig-vocab)))))
+
+(add-list-micro iu/s-imports-vocab
+  (let* ((kwd '(:))
+	  (in-pattern '(id : sig))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((in:id (pat:pexpand 'id p-env kwd))
+		   (in:sig (pat:pexpand 'sig p-env kwd)))
+	      (internal-error expr "Not implemented yet"))))
+	(else
+	  (static-error expr "Invalid invoke-linkage specification"))))))
+
+(add-micro-form 'invoke-unit/sig scheme-vocabulary
+  (let* ((kwd '(invoke-unit/sig))
+	  (in-pattern '(invoke-unit/sig expr linkage ...))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((in:expr (pat:pexpand 'expr p-env kwd))
+		   (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
+	      (let ((proc:linkage (map (lambda (l)
+					 (expand-expr l env attributes
+					   iu/s-linkage-vocab))
+				    in:linkage))
+		     (proc:imports (apply append
+				     (map (lambda (l)
+					    (expand-expr l env attributes
+					      iu/s-imports-vocab))
+				       in:linkage))))
+		(expand-expr
+		  (structurize-syntax
+		    `(let ((unit ,in:expr))
+		       (#%verify-linkage-signature-match
+			 'invoke-unit/sig
+			 '(invoke)
+			 (#%list unit)
+			 '(())
+			 '(,proc:linkage))
+		       (invoke-unit
+			 (#%unit-with-signature-unit unit)
+			 ,@proc:imports))
+		    expr)
+		  env attributes vocab)))))
+	(else
+	  (static-error expr "Malformed invoke-unit/sig"))))))

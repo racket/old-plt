@@ -61,6 +61,10 @@
 ;;       | (vector lvp_1 ... lvp_n)        vector of n elements
 ;;       | (box pat)                       box
 ;;       | (struct struct-name (pat_1 ... pat_n)) a structure
+;;       | (regex exp)                     if regular expression exp matches
+;;       | (regex exp pat)                 if result of regexp-match matches pat
+;;       | (pregex exp)                    if pregexp.ss regular expression exp matches
+;;       | (pregex exp pat)                if result of pregexp-match matches pat
 ;;       | (list-no-order pat ...)         matches a list with no regard for 
 ;;                                         the order of the
 ;;                                         items in the list
@@ -123,7 +127,7 @@
 ;;
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; extra
+;; 
 
 (module plt-match mzscheme
   (provide 
@@ -136,6 +140,7 @@
    match-define
    match-test
    match:test-no-order
+   pregexp-match-with-error
    ) 
   
   (require-for-syntax (lib "stx.ss" "syntax")
@@ -144,9 +149,22 @@
                       (lib "include.ss")
                       (lib "struct.ss" "syntax")
                       (lib "pretty.ss"))
-  (require (lib "etc.ss")
+  (require (lib "pregexp.ss")
+           (lib "etc.ss")
            (lib "list.ss"))
   
+  ;; this makes pregexp errors a little more friendly
+  (define (pregexp-match-with-error regex str)
+    (if (or (string? regex)
+            (and (pair? regex)
+                 (equal? ':sub (car regex))))
+        (pregexp-match regex str)
+        (error 'match:pregex 
+               (string-append 
+                "this pattern expects either a S-regexp or a U-regexp,"
+                " given " (format "~s" regex) "; "
+                "other argument was " (format "~s" str)))))
+
   (define-struct (exn:misc:match exn:misc) (value))
   
   (define match:error

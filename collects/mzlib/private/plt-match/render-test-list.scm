@@ -26,43 +26,18 @@
   (include "emit-assm.scm")
   (include "parse-quasi.scm")
   (include "pattern-predicates.scm")
-  (define (keyword? x)
-    (let ((x (syntax-object->datum x)))
-      (member x
-              '(
-                quasiquote
-                quote
-                unquote
-                unquote-splicing
-                hash-table
-                list-no-order
-                list-rest
-                list
-                app
-                struct
-                var
-                vector
-                box
-                ?
-                and
-                or
-                not
-                set!
-                get!
-                ))))
+
   (define (append-if-necc sym stx)
     (syntax-case stx ()
       (() (syntax (list)))
       ((a ...)
        (quasisyntax/loc stx (#,sym a ...)))
       (p (syntax p))))
-
-                                        ;(write (syntax-object->datum p)) (newline)
   (syntax-case*
    p
    (_ list quote quasiquote vector box ? app and or not struct set! var
       list-rest get! ... ___ unquote unquote-splicing
-      list-no-order hash-table) stx-equal?
+      list-no-order hash-table regex pregex) stx-equal?
       (_ '()) ;(ks sf bv let-bound))
       (pt
        (and (identifier? (syntax pt))
@@ -187,6 +162,40 @@
         (if (zero? (length (syntax-e (syntax (pred? ...)))))
             "a predicate pattern must have a predicate following the ?"
             "syntax error in predicate pattern")))
+
+      ((regex reg-exp)
+       (render-test-list (quasisyntax/loc 
+                          p
+                          (and (? string?)
+                               (? (lambda (x) (regexp-match reg-exp x)))))
+                         ae 
+                         stx))
+      ((pregex reg-exp)
+       (render-test-list (quasisyntax/loc
+                          p
+                          (and (? string?)
+                               (? (lambda (x) (pregexp-match-with-error 
+                                               reg-exp x)))))
+                         ae 
+                         stx))
+
+      ((regex reg-exp pat)
+       (render-test-list (quasisyntax/loc
+                          p
+                          (and (? string?)
+                               (app (lambda (x) (regexp-match reg-exp x)) pat)))
+                         ae 
+                         stx))
+
+      ((pregex reg-exp pat)
+       (render-test-list (quasisyntax/loc
+                          p
+                          (and (? string?)
+                               (app (lambda (x) (pregexp-match-with-error 
+                                                   reg-exp x)) pat)))
+                         ae 
+                         stx))
+
       ((app op pat)
        (render-test-list (syntax pat)
                          (quasisyntax/loc p (op #,ae))

@@ -28,6 +28,12 @@
                         [args args])
             (syntax (args . body)))))
       
+      (define (keep-method-property orig new)
+        (let ([p (syntax-property orig 'method-arity-error)])
+          (if p
+              (syntax-property new 'method-arity-error p)
+              new)))
+      
       (define (annotate-let rec? env trans? varsl rhsl bodyl)
         (let ([varses (syntax->list varsl)]
               [rhses (syntax->list rhsl)]
@@ -148,7 +154,7 @@
 	     (with-syntax ([cl (annotate-lambda name expr 
 						(syntax args) (syntax body) 
 						env trans?)])
-	       (syntax/loc expr (lambda . cl)))]
+	       (keep-method-property expr (syntax/loc expr (lambda . cl))))]
 	    [(case-lambda [args . body] ...)
 	     (with-syntax ([clauses
 			    (map
@@ -156,7 +162,7 @@
 			       (annotate-lambda name expr args body env trans?))
 			     (syntax->list (syntax (args ...))) 
 			     (syntax->list (syntax (body ...))))])
-	       (syntax/loc expr (case-lambda . clauses)))]
+	       (keep-method-property expr (syntax/loc expr (case-lambda . clauses))))]
 	    
 	    ;; Wrap RHSs and body
 	    [(let-values ([vars rhs] ...) . body)

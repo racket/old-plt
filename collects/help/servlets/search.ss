@@ -2,8 +2,7 @@
 	 (lib "string.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
-         (lib "xml.ss" "xml")
-	 (lib "help-desk.ss" "help"))
+         (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
 (require "private/search-util.ss")

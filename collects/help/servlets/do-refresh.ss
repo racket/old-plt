@@ -1,7 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
-	 (lib "help-desk.ss" "help")
+	 (lib "help-desk-mz.ss" "help")
 	 (lib "xml.ss" "xml"))
 
 (require "private/util.ss")

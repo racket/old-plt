@@ -11,7 +11,8 @@
 
   (provide start-help-server
 	   hd-cookie->port
-	   hd-cookie?)
+	   hd-cookie?
+           wait-for-connection)
 
   (define-struct hd-cookie (port exit-proc) (make-inspector))
   (define hd-cookie->port hd-cookie-port)
@@ -72,6 +73,16 @@
 	  (servlet-root ,servlet-root)
 	  (password-authentication "passwords"))))
       (virtual-host-table))))
+
+  (define (wait-for-connection port)
+    (let loop ()
+      (with-handlers
+       ([void (lambda _ (sleep 1) (loop))])
+       (let-values 
+	([(iport oport) (tcp-connect "127.0.0.1" port)])
+	(sleep 1)
+	(close-output-port oport)
+	(close-input-port iport)))))
 
   (define start-help-server
     (opt-lambda ([use-port #f][external-connections? #f]) 

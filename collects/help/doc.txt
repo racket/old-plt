@@ -1,9 +1,33 @@
 The `help' collection provides tools for PLT _Help Desk_.
 
-The file help.ss is used to build the Help Desk launcher.
+The file help.ss is used to build the Help Desk launcher, which
+uses MrEd.  The file help-bg.ss is used to build a `background' 
+Help Desk launcher, which uses MzScheme.
 
-The file help-desk.ss provides the functions described
-in the following.
+There are two modules that Help Desk clients may load.
+The file `help-desk-mz.ss' provides a set of functions that 
+use only MzScheme.  The file `help-desk.ss' provides all the 
+functions provided by `help-desk-mz.ss', plus some that rely 
+on MrEd.
+
+The MrEd-dependent functions provided by `help-desk.ss' are:
+
+> search-for-docs : hd-cookie search-string search-type match-type lucky? -> void
+
+Searches for `search-string' in the documentation, using `search-type' 
+and `match-type', and displays result in the Help Desk browser.  The 
+`search-type' is one of "keyword", "keyword-index", or "keyword-index-text".
+The `match-type' is one of "exact-match", "containing-match", or 
+"regexp-match".  The `lucky?' parameter indicates whether to do a 
+lucky search or not; it is considered true for any value other than #f.
+
+> help-desk-browser : hd-cookie -> void
+
+Starts the Help Desk browser.  The `hd-cookie' argument is 
+obtained from `start-help-server', described below.
+
+The following functions are provided by both `help-desk-mz.ss' and
+`help-desk.ss'.  These functions rely only on MzScheme:
 
 _Server functions_
 ------------------
@@ -17,8 +41,8 @@ is an exact integer or #f, the default.  If a port number is
 given, the server attempts to use that port; otherwise, the 
 server attempts to find an available port.  The return value is 
 a structure that contains instance information about the
-server.  The cookie needs to be passed to some of the functions
-described below.  If the specified port is unavailable, or 
+server.  The cookie needs to be passed to some other Help Desk 
+functions described here.  If the specified port is unavailable, or 
 the server cannot find an unused port, an error occurs.
 
 > hd-cookie->port : hd-cookie -> number
@@ -29,13 +53,6 @@ used by the server.
 > hd-cookie? : obj -> boolean
 
 Returns #t if `obj' is a Help Desk cookie, #f otherwise. 
-
-_Browser functions_
--------------------
-
-> help-desk-browser : hd-cookie -> void
-
-Starts the Help Desk browser.
 
 _Manual ordering_
 -----------------
@@ -74,15 +91,6 @@ a full name for the manual.
 
 _Search functions_
 ------------------
-
-> search-for-docs : hd-cookie search-string search-type match-type lucky? -> void
-
-Searches for `search-string' in the documentation, using `search-type' 
-and `match-type', and displays result in the Help Desk browser.  The 
-`search-type' is one of "keyword", "keyword-index", or "keyword-index-text".
-The `match-type' is one of "exact-match", "containing-match", or 
-"regexp-match".  The `lucky?' parameter indicates whether to do a 
-lucky search or not; it is considered true for any value other than #f.
 
 > do-search : search-string num bool bool val f1 f2 f3 f4 -> (union string #f)
 

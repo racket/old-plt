@@ -2,7 +2,7 @@
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
 	 (lib "xml.ss" "xml")
-         (lib "help-desk.ss" "help"))
+         (lib "help-desk-mz.ss" "help"))
 
 (require "private/hd-css.ss")
 (require "private/util.ss")

@@ -1,6 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-         (lib "help-desk.ss" "help"))
+         (lib "help-desk-mz.ss" "help"))
 
 (require "../private/util.ss")
 (require "../private/hd-css.ss")

@@ -25,7 +25,6 @@
 	 [search-type (get-binding 'search-type)]
 	 [match-type (get-binding 'match-type)]
 	 [lucky? (get-binding 'lucky)])
-
   `(HTML 
     (HEAD ,hd-css)
     (FRAMESET ((ROWS ,(string-append search-height ",*")))

@@ -782,7 +782,6 @@ do not occur (fallbacks that are never fallen back to):
   term:repeated-identifier
   term:invalid-identifier
   term:proc-arity->=-1
-  term:set!-no-mutate-lambda-bound     ;; *
   term:def-not-at-top-level
   term:cannot-bind-kwd
   term:macro-error
@@ -805,7 +804,6 @@ do not occur (fallbacks that are never fallen back to):
   term:repeated-identifier
   term:invalid-identifier
   term:proc-arity->=-1
-  term:set!-no-mutate-lambda-bound    ;; *
   term:def-not-at-top-level
   term:cannot-bind-kwd
   term:macro-error
@@ -830,6 +828,7 @@ do not occur (fallbacks that are never fallen back to):
   term:def-not-at-top-level
   term:cannot-bind-kwd
   term:macro-error
+  term:set!-no-mutate-lambda-bound
 
 
 )#|  full scheme:   |#(

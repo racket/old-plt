@@ -1,7 +1,49 @@
 
-; Test pretty-print; relies on personal inspection of the results
+; Test pretty-print. Some of it relies on manual inspection of the results
+
+(if (not (defined? 'SECTION))
+    (load-relative "testing.ss"))
 
 (require-library "pretty.ss")
+
+(define (pp-string v)
+  (let ([p (open-output-string)])
+    (pretty-print v p)
+    (let ([s (get-output-string p)])
+      (substring s 0 (sub1 (string-length s))))))
+
+
+(test "10" pp-string 10)
+(test "1/2" pp-string 1/2)
+(test "-1/2" pp-string -1/2)
+(test "1/2+3/4i" pp-string 1/2+3/4i)
+(test "0.333" pp-string #i0.333)
+(test "2.0+1.0i" pp-string #i2+1i)
+
+(parameterize ([pretty-print-exact-as-decimal #t])
+  (test "10" pp-string 10)
+  (test "0.5" pp-string 1/2)
+  (test "-0.5" pp-string -1/2)
+  (test "3500.5" pp-string 7001/2)
+  (test "0.0001220703125" pp-string 1/8192)
+  (test "0.0000000000000006869768746897623487"
+	pp-string 6869768746897623487/10000000000000000000000000000000000)
+  (test "0.00000000000001048576" pp-string (/ (expt 5 20)))
+  
+  (test "1/3" pp-string 1/3)
+  (test "1/300000000000000000000000" pp-string 1/300000000000000000000000)
+  
+  (test "0.5+0.75i" pp-string 1/2+3/4i)
+  (test "0.5-0.75i" pp-string 1/2-3/4i)
+  (test "1/9+3/17i" pp-string 1/9+3/17i)
+  (test "0.333" pp-string #i0.333)
+  (test "2.0+1.0i" pp-string #i2+1i))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Manual part
+;;   (Why is this manual? Probably I was too lazy to make
+;;   a proper test suite.)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-struct s (a b c))
 
@@ -62,3 +104,7 @@
 	[else
 	 (loop (cdr modes) (arithmetic-shift n -1))]))
      (loop (add1 n))))
+
+
+
+(report-errs)

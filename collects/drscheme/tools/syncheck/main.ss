@@ -143,7 +143,7 @@
 					 'hide-vscroll))]
 		   [_ (send c set-line-count 1)]
 		   [_ (send c allow-tab-exit #t)]
-		   [e (make-object (class-asi simple-scheme-text%
+		   [e (make-object (class100 simple-scheme-text% ()
 				     (inherit change-style get-style-list)
 				     (rename [super-after-insert after-insert])
 				     (override
@@ -151,7 +151,8 @@
 				       (lambda (pos offset)
 					 (super-after-insert pos offset)
 					 (let ([style (send (get-style-list) find-named-style style-name)])
-					   (change-style style pos (+ pos offset))))])))]
+					   (change-style style pos (+ pos offset))))])
+                                     (sequence (super-init))))]
 		   [_ (fw:preferences:add-callback sym
 						   (lambda (sym v)
 						     (set-slatex-style sym v)
@@ -250,7 +251,7 @@
   (define make-graphics-text%
     (lambda (super%)
       (let* ([cursor-arrow (make-object mred:cursor% 'arrow)])
-	(class-asi super%
+	(class100 super% args
 	  (inherit set-cursor get-admin invalidate-bitmap-cache set-position
 		   position-location
 		   get-canvas last-position dc-location-to-editor-location
@@ -463,7 +464,8 @@
                                        (+ 1 (inexact->exact (floor (send event get-y)))))
                                  (super-on-local-event event)))]))]
                      [else (super-on-local-event event)])
-		    (super-on-local-event event))))])))))
+		    (super-on-local-event event))))]))
+        (sequence (apply super-init args)))))
   
   (define (make-clear-text super%)
     (class super% args
@@ -1113,15 +1115,16 @@
                       (mzlib:function:remove check-syntax-button l)))))))
   
   (define (make-syncheck-definitions-text% super%)
-    (class-asi super%
+    (class100 super% args
       (rename [super-clear-annotations clear-annotations])
       (inherit get-top-level-window)
       (override
-       [clear-annotations
-	(lambda ()
-	  (super-clear-annotations)
-	  (when (get-top-level-window)
-	    (send (get-top-level-window) syncheck:clear-highlighting)))])))
+        [clear-annotations
+         (lambda ()
+           (super-clear-annotations)
+           (when (get-top-level-window)
+             (send (get-top-level-window) syncheck:clear-highlighting)))])
+      (sequence (apply super-init args))))
   
   
   (drscheme:get/extend:extend-definitions-text make-graphics-text%)

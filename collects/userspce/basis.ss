@@ -117,9 +117,6 @@
 				print-whole/part-fractions
                                 
 				define-argv?))
-
-  ;(define _make-setting/parse make-setting/parse)
-  ;(define _setting/unparse setting/unparse)
   
   ;; settings : (list-of setting)
   (define settings

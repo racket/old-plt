@@ -41,10 +41,10 @@
                                         (let ([make/parse
                                                (lambda (inits)
                                                  (let ([select-field
-                                                        (lambda (field)
-                                                          (let ([m (assq field inits)])
+                                                        (lambda (fld)
+                                                          (let ([m (assq fld inits)])
                                                             (unless m
-                                                              (error 'make/parse "no binding for: ~a" field))
+                                                              (error 'make/parse "no binding for: ~a" fld))
                                                             (unless (= (length m) 2)
                                                               (error 'make/parse "malformed binding: ~a" m))
                                                             (cadr m)))])

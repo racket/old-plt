@@ -211,7 +211,7 @@
           (user-space-init base))
         (send repl-buffer reset #f)
         (send execute-button enable #f)
-        (evaluate (format "(load ~s)" execute-filename))))
+        (evaluate (format "(require (file ~s))" execute-filename))))
     (define (do-reset)
       (custodian-shutdown-all user-custodian)
       (user-space-init #f)

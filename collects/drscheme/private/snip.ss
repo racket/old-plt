@@ -14,7 +14,7 @@
     (unit/sig drscheme:snip^
       (import)
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
-
+      
       (define body-pen (send the-pen-list find-or-create-pen "BLACK" 0 'solid))
       (define body-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
       (define bw? (< (get-display-depth) 3))
@@ -28,11 +28,11 @@
 			     (list a b a b a b a b)
 			     8 8 1)])
 	      (send* pen
-		     (set-colour "BLACK")
-		     (set-stipple bitmap))
+                (set-colour "BLACK")
+                (set-stipple bitmap))
 	      (send* brush
-		     (set-colour "BLACK")
-		     (set-stipple bitmap))
+                (set-colour "BLACK")
+                (set-stipple bitmap))
 	      (values pen brush))
 	    (values
 	     (send the-pen-list find-or-create-pen
@@ -42,12 +42,13 @@
       
       (define separator-snipclass
         (make-object
-            (class100-asi snip-class%
+            (class100 snip-class% ()
               (override
                 [read (lambda (s) 
                         (let ([size-box (box 0)])
                           (send s get size-box)
-                          (make-object separator-snip%)))]))))
+                          (make-object separator-snip%)))])
+              (sequence (super-init)))))
       (send* separator-snipclass
         (set-version 1)
         (set-classname "drscheme:sepatator-snip%"))
@@ -61,9 +62,9 @@
         (class100 snip% ()
           (inherit get-style set-snipclass set-flags get-flags get-admin)
           (private-field
-	    [width 500]
-	    [height 1]
-	    [white-around 2])
+           [width 500]
+           [height 1]
+           [white-around 2])
           (override
             [write (lambda (s) 
                      (send s put (char->integer #\r)))]
@@ -88,17 +89,17 @@
                (set-box/f! w-box width)
                (set-box/f! h-box (+ (* 2 white-around) height)))]
             [draw
-               (lambda (dc x y left top right bottom dx dy draw-caret)
-                 (let ([orig-pen (send dc get-pen)]
-                       [orig-brush (send dc get-brush)])
-                   (send dc set-pen body-pen)
-                   (send dc set-brush body-brush)
-                   
-                   (send dc draw-rectangle (+ x 1)
-                         (+ white-around y) width height)
-                   
-                   (send dc set-pen orig-pen)
-                   (send dc set-brush orig-brush)))])
+             (lambda (dc x y left top right bottom dx dy draw-caret)
+               (let ([orig-pen (send dc get-pen)]
+                     [orig-brush (send dc get-brush)])
+                 (send dc set-pen body-pen)
+                 (send dc set-brush body-brush)
+                 
+                 (send dc draw-rectangle (+ x 1)
+                       (+ white-around y) width height)
+                 
+                 (send dc set-pen orig-pen)
+                 (send dc set-brush orig-brush)))])
           (sequence
             (super-init)
             (set-flags (cons 'hard-newline (get-flags)))
@@ -107,12 +108,13 @@
       (define make-snip-class
         (lambda (name get-%)
           (let ([ans (make-object
-                         (class100-asi snip-class%
+                         (class100 snip-class% ()
                            (override
                              [read (lambda (s) 
                                      (let ([size-box (box 0)])
                                        (send s get size-box)
-                                       (make-object (get-%) (unbox size-box))))])))])   
+                                       (make-object (get-%) (unbox size-box))))])
+                           (sequence (super-init))))])  
             (send* ans
               (set-version 1)
               (set-classname name))
@@ -130,11 +132,11 @@
       (define make-snip%
         (lambda (snip-class draw-snip)
           (rec
-	   this%
-	   (class100 snip% ([initial-size 12])
+              this%
+            (class100 snip% ([initial-size 12])
               (inherit get-style set-snipclass set-style)
               (private-field
-		[allowed-size initial-size])
+               [allowed-size initial-size])
               (override
                 [write (lambda (s) 
                          (send s put allowed-size))]
@@ -197,13 +199,13 @@
       
       (define whole/part-number-snipclass
         (make-object 
-            (class100 snip-class% args
+            (class100 snip-class% ()
               (override
                 [read
                  (lambda (p)
                    (make-object whole/part-number-snip%
                      (string->number (send p get-string))))])
-              (sequence (apply super-init args)))))
+              (sequence (super-init)))))
       (send whole/part-number-snipclass set-version 1)
       (send whole/part-number-snipclass set-classname 
             "drscheme:whole/part-number-snip")
@@ -212,7 +214,7 @@
       (define whole/part-number-snip%
         (class100* snip% (gui-utils:text-snip<%>) (_number . args)
 	  (private-field
-	    [number _number])
+           [number _number])
           (override
             [get-text
              (case-lambda
@@ -229,15 +231,15 @@
              (lambda ()
                (format " ~a " number))])
           (private-field
-            [wholes (cond
-                      [(= (floor number) 0) ""]
-                      [(= (ceiling number) 0) "-"]
-                      [(< number 0)
-                       (number->string (ceiling number))]
-                      [else
-                       (number->string (floor number))])]
-            [nums (number->string (numerator (- (abs number) (floor (abs number)))))]
-            [dens (number->string (denominator (- (abs number) (floor (abs number)))))])
+           [wholes (cond
+                     [(= (floor number) 0) ""]
+                     [(= (ceiling number) 0) "-"]
+                     [(< number 0)
+                      (number->string (ceiling number))]
+                     [else
+                      (number->string (floor number))])]
+           [nums (number->string (numerator (- (abs number) (floor (abs number)))))]
+           [dens (number->string (denominator (- (abs number) (floor (abs number)))))])
           (inherit get-style)
           (override
             [write

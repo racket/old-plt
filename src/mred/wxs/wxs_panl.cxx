@@ -942,6 +942,7 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 
 
 
+
 static Scheme_Object *dialogStyle_wxNO_CAPTION_sym = NULL;
 
 static void init_symset_dialogStyle(void) {

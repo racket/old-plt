@@ -156,7 +156,7 @@
 @ "set-color" : void SetColour(ubyte,ubyte,ubyte); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
-@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-stipple")]
+@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKOK[0.METHODNAME("brush%","set-stipple")]|CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-stipple")]
 
 @ "get-style" : SYM[brushStyle] GetStyle();
 @ "set-style" : void SetStyle(SYM[brushStyle]); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-style")]
@@ -200,6 +200,9 @@
 @SYM "butt" : wxCAP_BUTT
 @ENDSYMBOLS
 
+@MACRO CHECKBW[p.who] = if (x<p> && (x<p>->GetDepth() != 1)) scheme_arg_mismatch(<who>, "bitmap is not monochrome: ", p[<p>]);
+@MACRO CHECKEIGHT[p.who] = if (x<p> && ((x<p>->GetWidth() != 8) || (x<p>->GetHeight() != 8))) scheme_arg_mismatch(<who>, "bitmap is not 8x8: ", p[<p>]);
+
 @CLASSBASE wxPen "pen" : "object"
 
 @CREATOR (); <> no argument
@@ -219,7 +222,7 @@
 @ "set-color" : void SetColour(ubyte,ubyte,ubyte);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
-@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen".METHODNAME("pen%","set-stipple")]
+@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKBW[0.METHODNAME("pen%","set-stipple")]|CHECKEIGHT[0.METHODNAME("pen%","set-stipple")]|CHECKOK[0.METHODNAME("pen%","set-stipple")]|CHECKMUT[wxPen."pen".METHODNAME("pen%","set-stipple")]
 
 @ "get-style" : SYM[penStyle] GetStyle();
 @ "set-style" : void SetStyle(SYM[penStyle]); : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-style")]

@@ -48,6 +48,7 @@
 @END
 
 
+
 @BEGINSYMBOLS dialogStyle
 @SYM "no-caption" : wxNO_CAPTION
 @ENDSYMBOLS

@@ -1790,22 +1790,22 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   static wxBrush *outlineBrush = NULL;
 #if ALLOW_X_STYLE_SELECTION
   static wxBrush *outlineNonownerBrush = NULL;
-  static char xpattern[32] = {0x77, 0x77,
-			      0xff, 0xff,
-			      0xdd, 0xdd, 
-			      0xff, 0xff,
-			      0x77, 0x77,
-			      0xff, 0xff,
-			      0xdd, 0xdd,
-			      0xff, 0xff,
-			      0x77, 0x77,
-			      0xff, 0xff,
-			      0xdd, 0xdd, 
-			      0xff, 0xff,
-			      0x77, 0x77,
-			      0xff, 0xff,
-			      0xdd, 0xdd,
-			      0xff, 0xff};
+  static char xpattern[32] = {0x88, 0x88,
+			      0,    0,
+			      0x22, 0x22,
+			      0,    0,
+			      0x88, 0x88,
+			      0,    0,
+			      0x22, 0x22,
+			      0,    0,
+			      0x88, 0x88,
+			      0,    0,
+			      0x22, 0x22,
+			      0,    0,
+			      0x88, 0x88,
+			      0,    0,
+			      0x22, 0x22,
+			      0,    0};
 #endif
   static wxBrush *clearBrush = NULL;
 

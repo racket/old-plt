@@ -23,15 +23,11 @@ static Bool IsColor(wxBitmap *bm)
 
 @CLASSBASE wxBitmap "bitmap" : "object"
 
-@SET TYPE = char
-@SET NOTEST = 1
-@INCLUDE list.xci
+@MACRO STRINGENOUGH = if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]);
 
-@MACRO LISTENOUGH = if (scheme_proper_list_length(p[0]) < ((x1 * x2) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte list string too short: ", p[0]);
-
-@CREATOR (char[]/bList/ubList/cList,rint[1|10000],rint[1|10000]); : : /glueUncountedListSet[char.0.0.METHODNAME("bitmap%","initialization")]|LISTENOUGH// <> character list
+@CREATOR (string////string,rint[1|10000],rint[1|10000]); : : /STRINGENOUGH// <> string
 @CREATOR (rint[1|10000],rint[1|10000],bool=0); : : <> width/height
-@CREATOR (pathname,SYM[bitmapType]=0); <> pathname
+@CREATOR (pathname////string,SYM[bitmapType]=0); <> pathname
 
 @ "get-depth" : int GetDepth();
 @ "get-height" : int GetHeight();

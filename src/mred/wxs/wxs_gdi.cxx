@@ -1493,7 +1493,7 @@ static Scheme_Object *os_wxBrushSetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-stipple in brush%", 1);
 
-  if (x0 && !x0->Ok()) return scheme_void;if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-stipple"), "brush", "brush");
+  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bad bitmap: ", p[0]);if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-stipple"), "brush", "brush");
   ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0);
 
   
@@ -2031,6 +2031,7 @@ static Scheme_Object *bundle_symset_cap(int v) {
 
 
 
+
 class os_wxPen : public wxPen {
  public:
 
@@ -2116,7 +2117,7 @@ static Scheme_Object *os_wxPenSetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-stipple in pen%", 1);
 
-  if (x0 && !x0->Ok()) return scheme_void;if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-stipple"), "pen", "pen");
+  if (x0 && (x0->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not monochrome: ", p[0]);if (x0 && ((x0->GetWidth() != 8) || (x0->GetHeight() != 8))) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not 8x8: ", p[0]);if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bad bitmap: ", p[0]);if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-stipple"), "pen", "pen");
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0);
 
   

@@ -2567,7 +2567,7 @@ Scheme_Object *mx_com_event_type(int argc,Scheme_Object **argv) {
 
 BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
   long int longInt;
-  
+
   switch (vt) {
     
   case VT_NULL :
@@ -3413,14 +3413,26 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 		       numParamsPassed + 2,numParamsPassed + 2,
 		       argc,argv);
   }
-  
+
   switch(invKind) {
     
   case INVOKE_PROPERTYPUT :
     
+    // check that value is of expected type
+
+    if (schemeValueFitsElemDesc(argv[2],
+				&pVarDesc->elemdescVar) == FALSE) {
+      sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
+	      inv_kind_string(invKind),SCHEME_STR_VAL(argv[1]));
+      scheme_wrong_type(errBuff,
+			SCHEME_SYM_VAL(elemDescToSchemeType(&(pVarDesc->elemdescVar),FALSE,FALSE)),2,argc,argv);
+    }
+
     methodArguments->rgdispidNamedArgs = &dispidPropPut;
     methodArguments->cNamedArgs = methodArguments->cArgs = 1;
+
     break;
+
     
   case INVOKE_PROPERTYGET :
     
@@ -3430,7 +3442,7 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
     break;
     
   }
-  
+
   if (numParamsPassed > 0) {
     methodArguments->rgvarg = 
       (VARIANTARG *)scheme_malloc(numParamsPassed * sizeof(VARIANTARG));
@@ -3445,9 +3457,9 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
     // j = index of VARIANTARG's
     
     VariantInit(&methodArguments->rgvarg[j]);
+
     methodArguments->rgvarg[j].vt = 
       getVarTypeFromElemDesc(&pVarDesc->elemdescVar);
-    
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
@@ -3502,9 +3514,9 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (invKind == INVOKE_FUNC && isDispatchName(name)) {
     scheme_signal_error("com-invoke: IDispatch methods may not be called");
   }
-  
+
   // check arity, types of method arguments
-  
+
   pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
 
   numParamsPassed = buildMethodArguments(pTypeDesc,
@@ -3515,7 +3527,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (invKind != INVOKE_PROPERTYPUT) {
     VariantInit(&methodResult);
   }
-  
+
   // invoke requested method
 
   hr = pIDispatch->Invoke(pTypeDesc->memID,IID_NULL,LOCALE_SYSTEM_DEFAULT,

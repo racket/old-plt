@@ -9,7 +9,8 @@
    get-empty-list-name
    get-show-sharing
    get-cons
-   get-vector))
+   get-vector
+   get-vocabulary))
 
 (define-signature stepper:shared^
   (list-take

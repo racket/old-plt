@@ -1,7 +1,6 @@
 (unit/sig stepper:settings^
   (import mzlib:pretty-print^
           mred^
-          [b : userspace:basis^]
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [a : stepper:annotate^]
@@ -36,37 +35,103 @@
   (define par-vector #f)
   (define (get-vector) par-vector)
   
+  (define par-vocabulary #f)
+  (define (get-vocabulary) par-vocabulary)
+  
+  (define stepper-frame%
+    (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)))
+
   (define stepper-canvas%
     (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
       (rename (super-on-size on-size))
+      (inherit get-editor get-client-size show)
       (override 
         (on-size 
          (lambda (width height)
-           (super-on-size width height))))
+           (super-on-size width height)
+           (reset-pretty-print-width))))
+      (public (reset-pretty-print-width
+               (lambda ()
+                 (let ([editor (get-editor)])
+                   (when editor
+                     (let-values ([(client-width client-height) (get-client-size)])
+                       (send editor reset-pretty-print-width client-width (lambda (x) (show x)))))))))
       (sequence (super-init parent editor style scrolls-per-page))))
   
-      ;; PROVIDE DEFAULTS FOR THESE VARIABLES
-  ;;(send (send (get-style-list) basic-style) get-text-width dc)    
-; [reset-pretty-print-width
-;	   (lambda ()
-;	     (let* ([standard (send (get-style-list) find-named-style "Standard")])
-;	       (when standard
-;		 (let* ([admin (get-admin)]
-;			[width
-;			 (let ([bw (box 0)]
-;			       [b2 (box 0)])
-;			   (send admin get-view b2 b2 bw b2)
-;			   (unbox bw))]
-;			[dc (send admin get-dc)]
-;			[new-font (send standard get-font)]
-;			[old-font (send dc get-font)])
-;		   (send dc set-font new-font)
-;		   (let* ([char-width (send dc get-char-width)]
-;			  [min-columns 50]
-;			  [new-columns (max min-columns 
-;					    (floor (/ width char-width)))])
-;		     (send dc set-font old-font)
-;		     (mzlib:pretty-print:pretty-print-columns new-columns))))))]
+  (define stepper-text%
+    (class f:text:basic% (sexp redex error-msg (line-spacing 1.0) (tabstops null))
+      (inherit get-dc find-snip insert change-style highlight-range last-position lock erase)
+      (public (pretty-printed-width -1)
+              (clear-highlight-thunk (lambda () #f))
+              (reset-pretty-print-width 
+               (lambda (width show-proc)
+                 (when (= (last-position) 0)
+                   (show-proc #f)
+                   (insert "a")
+                   (change-style result-delta 0 1))
+                 (let* ([style (send (find-snip 0 'before) get-style)]
+                        [char-width (send style get-text-width (get-dc))]
+                        [min-columns 50]
+                        [new-columns (max min-columns 
+                                          (- (floor (/ width char-width)) 3))])
+                   (pretty-print-columns new-columns)
+                   (reformat-sexp show-proc))))
+              (reformat-sexp
+               (lambda (show-proc)
+                 (when (not (= pretty-printed-width (pretty-print-columns)))
+                   (set! pretty-printed-width (pretty-print-columns))
+                   (show-proc #f)
+                   (format-sexp)
+                   (show-proc #t))))
+              (format-sexp
+               (lambda ()
+                 (lock #f)
+                 (clear-highlight-thunk)
+                 (erase)
+                 (when (not (eq? sexp no-sexp))
+                   (let ([result (open-output-string)]
+                         [output (open-output-string)]
+                         [real-print-hook (pretty-print-print-hook)]
+                         [redex-begin #f]
+                         [redex-end #f])
+                     (parameterize ([current-output-port output]
+                                    [pretty-print-pre-print-hook
+                                     (lambda (value p)
+                                       (when (eq? value redex)
+                                         (set! redex-begin (file-position result))))]
+                                    [pretty-print-post-print-hook
+                                     (lambda (value p)
+                                       (when (eq? value redex)
+                                         (set! redex-end (file-position result))))])
+                       (for-each
+                        (lambda (expr)
+                          (pretty-print expr result)
+                          (fprintf result "~n"))
+                        sexp))
+                     (insert (get-output-string result))
+                     (insert #\newline)
+                     (let ([between (last-position)])
+                       (insert (get-output-string output))
+                       (change-style result-delta 0 between)
+                       (change-style output-delta between (last-position))
+                       (when (and redex-begin redex-end)
+                         (set! clear-highlight-thunk
+                               (highlight-range redex-begin redex-end highlight-color #f #f))))))
+                 (when error-msg
+                   (let ([error-begin (last-position)])
+                     (insert error-msg)
+                     (change-style error-delta error-begin (last-position))))
+                 (lock #t))))
+      (sequence (super-init line-spacing tabstops))))
+
+  (define output-delta (make-object style-delta% 'change-family 'modern))
+  (define result-delta (make-object style-delta% 'change-family 'modern))
+  (define error-delta (make-object style-delta% 'change-style 'italic))
+  (send error-delta set-delta-foreground "RED")
+
+  (define highlight-color (make-object color% 193 251 181))
+             
+  (define no-sexp (gensym "no-sexp-"))
   
   (define (stepper-go frame settings)
     (letrec ([edit (ivar frame definitions-text)]
@@ -76,40 +141,10 @@
              
              [history null]
              
-             [highlight-color (make-object color% 193 251 181)]
-             
              [store-step
               (lambda (reconstructed redex)
-                (let ([result (open-output-string)]
-                      [output (open-output-string)]
-                      [real-print-hook (pretty-print-print-hook)]
-                      [redex-begin #f]
-                      [redex-end #f])
-                  (parameterize ([current-output-port output]
-                                 [pretty-print-pre-print-hook
-                                  (lambda (value p)
-                                    (when (eq? value redex)
-                                      (set! redex-begin (file-position result))))]
-                                 [pretty-print-post-print-hook
-                                  (lambda (value p)
-                                    (when (eq? value redex)
-                                      (set! redex-end (file-position result))))])
-                    (for-each
-                     (lambda (expr)
-                       (pretty-print expr result)
-                       (fprintf result "~n"))
-                     reconstructed))
-                  (let ([outer-edit (make-object f:text:basic%)])
-                    (send outer-edit insert (get-output-string result))
-                    (send outer-edit insert #\newline)
-                    (let ([between (send outer-edit last-position)])
-                      (send outer-edit insert (get-output-string output))
-                      (send outer-edit change-style result-delta 0 between)
-                      (send outer-edit change-style output-delta between
-                            (send outer-edit last-position))
-                      (when (and redex-begin redex-end)
-                        (send outer-edit highlight-range redex-begin redex-end highlight-color #f #f))
-                      (set! history (append history (list outer-edit)))))))]
+                (let ([step-text (make-object stepper-text% reconstructed redex #f)])
+                  (set! history (append history (list step-text)))))]
              
              [view-currently-updating #f]
              [final-view #f]
@@ -129,12 +164,9 @@
               (lambda ()
                 (update-view (- view 1)))]
              
-             [s-frame (make-object f:frame:basic% "Stepper")]
-             [output-delta (make-object style-delta% 'change-family 'modern)]
-             [result-delta (make-object style-delta% 'change-family 'modern)]
-             [error-delta (make-object style-delta%)]
+             [s-frame (make-object stepper-frame% "Stepper")]
              
-             [button-panel (make-object horizontal-panel% s-frame)]
+             [button-panel (make-object horizontal-panel% (send s-frame get-area-container))]
              [home-button (make-object button% "Home" button-panel
                                        (lambda (_1 _2) (home)))]
              [previous-button (make-object button% "<< Previous" button-panel
@@ -142,12 +174,13 @@
              
              [next-button (make-object button% "Next >>" button-panel (lambda
                                                                           (_1 _2) (next)))]
-             [canvas (make-object stepper-canvas% s-frame)]
+             [canvas (make-object stepper-canvas% (send s-frame get-area-container))]
              
              [update-view
               (lambda (new-view)
                 (set! view new-view)
                 (send canvas set-editor (list-ref history view))
+                (send canvas reset-pretty-print-width)
                 (send previous-button enable (not (zero? view)))
                 (send home-button enable (not (zero? view)))
                 (send next-button enable (not (eq? final-view view))))]
@@ -171,17 +204,10 @@
                   (parameterize ([current-eventspace drscheme-eventspace])
                     (queue-callback
                      (lambda ()
-                       (let ([new-text (make-object f:text:basic%)])
-                         (when (> view-currently-updating 0)
-                           (send (list-ref history (- view-currently-updating 1))
-                                 copy-self-to
-                                 new-text))
-                         (let ([error-begin (send new-text last-position)])
-                           (send new-text insert (exn-message exn))
-                           (send new-text change-style error-delta error-begin (send new-text last-position))
-                           (set! history (append history (list new-text)))
-                           (set! final-view view-currently-updating)
-                           (update-view view-currently-updating))))))
+                       (let ([step-text (make-object stepper-text% no-sexp no-sexp (exn-message exn))])
+                         (set! history (append history (list step-text)))
+                         (set! final-view view-currently-updating)
+                         (update-view view-currently-updating)))))
                   (k)))]
              
              [stepper-start
@@ -191,21 +217,29 @@
                    (lambda ()
                      (call-with-current-continuation
                       (lambda (k)
-                        (let ([primitive-eval (current-eval)])
+                        (let ([primitive-eval (current-eval)]
+                              [primitive-vector vector])
                           (d:basis:initialize-parameters (make-custodian) null settings)
+                          (d:rep:invoke-library)
+                          (set! par-namespace (current-namespace))
+                          (set! par-global-defined-vars (map car (make-global-value-list)))
+                          (set! par-constructor-style-printing (p:constructor-style-printing))
+                          (set! par-abbreviate-cons-as-list (p:abbreviate-cons-as-list)) 
+                          (set! par-empty-list-name (p:empty-list-name))
+                          (set! par-show-sharing (p:show-sharing))
+                          (set! par-cons (global-defined-value 'cons))
+                          (set! par-vector (global-defined-value 'vector))
+                          (set! par-vocabulary (d:basis:current-vocabulary))
                           (let-values ([(annotated exprs)
                                         (a:annotate text break (make-exception-handler k))])
-                            (set! expr-list exprs)
-                            (set! par-namespace (current-namespace))
-                            (set! par-global-defined-vars (map car (make-global-value-list)))
-                            (set! par-constructor-style-printing (p:constructor-style-printing))
-                            (set! par-abbreviate-cons-as-list (p:abbreviate-cons-as-list)) 
-                            (set! par-empty-list-name (p:empty-list-name))
-                            (set! par-show-sharing (p:show-sharing))
-                            (set! par-cons (global-defined-value 'cons))
-                            (set! par-vector (global-defined-value 'vector))
+                              (set! expr-list exprs)
                             (current-exception-handler
                              (make-exception-handler k))
+;                            (for-each (lambda (expr)
+;                                        (queue-callback
+;                                         (lambda ()
+;                                           (eval expr))))
+;                                      annotated)
                             (for-each primitive-eval annotated)))))))))]
              
              [update-view/next-step
@@ -215,9 +249,6 @@
       
       
       
-      (send result-delta set-delta-foreground "BLACK")
-      (send output-delta set-delta-foreground "PURPLE")
-      (send error-delta set-delta-foreground "RED")
       (set! view-currently-updating 0)
       (stepper-start)
       (send button-panel stretchable-width #f)
@@ -227,14 +258,16 @@
       (send canvas min-height 500)
       (send previous-button enable #f)
       (send home-button enable #f)
+      (send (send s-frame edit-menu:get-undo-item) enable #f)
+      (send (send s-frame edit-menu:get-redo-item) enable #f)
       (send s-frame show #t)))
   
   (lambda (frame)
     (let ([settings (f:preferences:get 'drscheme:settings)])
-      (if (not (string=? (b:setting-name settings) "Beginner"))
+      (if (not (string=? (d:basis:setting-name settings) "Beginner"))
           (message-box "Stepper" 
                        (format "Language level is set to \"~a\".~nPlease set the language level to \"Beginner\"" 
-                               (b:setting-name settings))
+                               (d:basis:setting-name settings))
                        #f 
                        '(ok))
           (stepper-go frame settings)))))

@@ -2,6 +2,7 @@
   (import [z : zodiac:system^]
 	  mzlib:function^
 	  [e : stepper:error^]
+          [s : stepper:settings^]
 	  stepper:shared^)
   
     ; ANNOTATE SOURCE CODE
@@ -260,7 +261,7 @@
   
          (define parsed-exprs
            (parameterize ([current-exception-handler zodiac-exception-handler])
-             (z:scheme-expand-program exprs-read 'previous z:beginner-vocabulary)))  
+             (z:scheme-expand-program exprs-read 'previous (s:get-vocabulary))))  
   
          ; find-defined-vars extracts a list of what variables an expression
          ; defines.  In the case of a top-level expression which does not
@@ -509,13 +510,13 @@
              [current-def-setters (build-list (length parsed-exprs) current-def-setter)]
              [top-annotated-exprs (interlace current-def-setters annotated-exprs)]
              [final-current-def-setter (current-def-setter (length parsed-exprs))]
-             [final-break-exp (wcm-break-wrap (make-debug-info #f 
+             [final-break-exp (wcm-break-wrap (make-debug-info '(#%quote no-source-expression)
                                                                'all 
                                                                (map create-bogus-top-level-varref
                                                                     (apply append defined-top-vars))
                                                                ()
                                                                'final) 
-                                              'ignored-symbol)])
+                                              'dont-evaluate-this-symbol)])
            
            (values (append top-vars-annotation top-annotated-exprs (list final-current-def-setter
                                                                          final-break-exp))

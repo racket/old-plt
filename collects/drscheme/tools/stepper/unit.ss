@@ -14,8 +14,9 @@
 		  [f (parameterize ([mred:current-eventspace e])
 		       (mred:begin-busy-cursor)
 		       (make-object mred:frame% "The Foot"))]
-		  [p (make-object mred:vertical-panel% f)]
-		  [m (make-object mred:message% "Please wait, loading the foot." p)])
+		  [p (make-object mred:horizontal-panel% f)]
+		  [m (make-object mred:message% "Please wait, loading the foot." p)]
+                  [spacer-pane (make-object mred:grow-box-spacer-pane% p)])
 	     (send p stretchable-height #f)
 	     (send p stretchable-width #f)
 	     (send f show #t)
@@ -38,7 +39,7 @@
     (define stepper-bitmap
       (drscheme:unit:make-bitmap
        "Step"
-       (build-path (collection-path "icons") "foot.bmp")))
+       (build-path (collection-path "icons") "foot.gif")))
 
     (drscheme:get/extend:extend-unit-frame%
      (lambda (super%)

@@ -29,6 +29,7 @@
                    zodiac
                    (core function)
                    error
+                   stepper
                    shared)]
         [reconstruct : stepper:reconstruct^ 
                      ((require-library-unit/sig "reconstructr.ss" "stepper")
@@ -43,7 +44,6 @@
                  ((require-library-unit/sig "stepperr.ss" "stepper")
                   pretty
                   mred
-                  (drscheme basis)
                   drscheme
                   print-convert
                   annotate

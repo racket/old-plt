@@ -448,25 +448,27 @@
             (send search-menu enable #f)
             (send search-field focus))))
       
+      (define help-desk-frame-mixin #f)
       (define addl-mixins (lambda (x) x))
       (define (add-help-desk-mixin m)
-        (if addl-mixins
-            (set! addl-mixins (compose m addl-mixins))
-            (error 'add-help-desk-mixin "help desk frame has already been created")))
-      
+        (if help-desk-frame-mixin
+            (error 'add-help-desk-mixin "help desk frame has already been created")
+            (set! addl-mixins (compose m addl-mixins))))
       (define (make-help-desk-frame-mixin)
-        (begin0
-          (compose
-           (lambda (x) (class* x (help-desk-frame<%>) (super-new)))
-           addl-mixins
-           make-catch-url-frame-mixin
-           bug-report/help-desk-mixin
-           make-help-desk-framework-mixin
-           browser-scroll-frame-mixin
-           frame:searchable-mixin
-           frame:standard-menus-mixin
-           make-search-button-mixin)
-          (set! addl-mixins #f)))
+        (or help-desk-frame-mixin
+            (begin
+              (set! help-desk-frame-mixin
+                    (compose
+                     (lambda (x) (class* x (help-desk-frame<%>) (super-new)))
+                     addl-mixins
+                     make-catch-url-frame-mixin
+                     bug-report/help-desk-mixin
+                     make-help-desk-framework-mixin
+                     browser-scroll-frame-mixin
+                     frame:searchable-mixin
+                     frame:standard-menus-mixin
+                     make-search-button-mixin))
+              help-desk-frame-mixin)))
       
       (define new-help-desk
         (opt-lambda ([link home-page-url])

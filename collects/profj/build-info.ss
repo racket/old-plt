@@ -165,10 +165,11 @@
                         (add-def-info member pname type-recs current-loc #f (def-level def) req-syn)))
                     (def-members def))))))
   
-  ;build-anon-info: def (U void symbol) (list string) symbol type-records loc bool -> class-record
+  ;build-inner-info: def (U void string) (list string) symbol type-records loc bool -> class-record
   (define (build-inner-info def unique-name pname level type-recs current-loc look-in-table?)
     ;(add-def-info def pname type-recs current-loc look-in-table? level)
     (let ((record (process-class/iface def pname type-recs #f #f level)))
+      (when (string? unique-name) (set-class-record-name! record (list unique-name)))
       (send type-recs add-to-records 
             (if (eq? (def-kind def) 'statement) (list unique-name) (id-string (def-name def)))
             record)

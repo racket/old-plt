@@ -727,7 +727,7 @@
        (build-method-env (cdr parms)
                          (add-var-to-env (id-string (field-name (car parms)))
                                          (type-spec-to-type (field-type (car parms)) c-class level type-recs)
-                                         (if (memq 'final (map modifier-kind (field-modifiers (car parms))))
+                                         (if (memq 'final (field-modifiers (car parms)))
                                              final-parm
                                              parm)
                                          env)
@@ -1579,7 +1579,10 @@
                      (mods (field-record-modifiers record))
                      (public? (memq 'public mods))
                      (private? (memq 'private mods))
-                     (protected? (memq 'protected mods)))
+                     (protected? (memq 'protected mods))
+                     (local-inner-field-class? 
+                      (and (null? (cdr field-class))
+                           (lookup-local-inner (car field-class) env))))
                 
                 (when (and (special-name? obj)
                            (not (lookup-var-in-env fname env)))
@@ -1616,8 +1619,11 @@
                                                                  (public? 'public)
                                                                  (protected? 'protected)
                                                                  (else 'package))
-                                                               (car field-class)))
-                (add-required c-class (car field-class) (cdr field-class) type-recs)
+                                                               (if local-inner-field-class?
+                                                                   (inner-rec-unique-name local-inner-field-class?)
+                                                                   (car field-class))))
+                (unless local-inner-field-class?
+                  (add-required c-class (car field-class) (cdr field-class) type-recs))
                 (unless (eq? level 'full)
                   (when (is-field-restricted? fname field-class)
                     (restricted-field-access-err (field-access-field acc) field-class src)))

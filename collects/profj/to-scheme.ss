@@ -644,7 +644,26 @@
                                      ,(translate-implements (header-implements header))
                              
                              (super-instantiate ())
-                                     
+                             
+                             ,@(if (> depth 0)
+                                   `((init-field 
+                                      ,@(let loop ((d depth))
+                                          (cond
+                                            ((= d 0) null)
+                                            (else 
+                                             (cons (string->symbol (format "encl-this-~a~~f" d))
+                                                   (loop (sub1 d))))))))
+                                   null)
+                             
+                             ,@(if (null? closure-args)
+                                   null
+                                   `((init-field 
+                                      ,@(let loop ((args 
+                                                    (map id-string closure-args)))
+                                          (cond
+                                            ((null? args) null)
+                                            (else (cons (string->symbol (format "~a~~f" (car args)))
+                                                        (loop (cdr args)))))))))
                              ,@(map (lambda (f) (translate-field (map modifier-kind (field-modifiers f))
                                                                  (field-type f)
                                                                  (field-name f)
@@ -661,25 +680,7 @@
                              
                              ,@(generate-inner-makers (members-inner class-members) 
                                                       depth type-recs)
-                             ,@(if (> depth 0)
-                                   `(list (init-field 
-                                           ,@(let loop ((d depth))
-                                               (cond
-                                                 ((= d 0) null)
-                                                 (else 
-                                                  (cons (string->symbol (format "encl-this-~a~~f" d))
-                                                        (loop (sub1 d))))))))
-                                   null)
                              
-                             ,@(if (null? closure-args)
-                                   null
-                                   `(list (init-field 
-                                           ,@(let loop ((args 
-                                                         (map id-string closure-args)))
-                                               (cond
-                                                 ((null? args) null)
-                                                 (else (string->symbol (format "~a/~f" (car args)))
-                                                       (loop (cdr args))))))))
                              
                              ,@(map (lambda (m) (translate-method (method-type m)
                                                                   (map modifier-kind (method-modifiers m))
@@ -815,7 +816,8 @@
   ;generate-inner-makers: (list def) int type-records -> (list syntax)
   (define (generate-inner-makers defs depth type-recs)
     (apply append
-           (map (lambda (d) (build-inner-makers d depth type-recs)) defs)))
+           (map (lambda (d) (build-inner-makers d depth type-recs)) 
+                (filter (lambda (d) (not (memq (def-kind d) '(anonymous statement)))) defs))))
   
   ;build-inner-makers: def int type-records -> (list syntax)
   (define (build-inner-makers def depth type-recs)
@@ -831,7 +833,7 @@
             (encls-this (reverse (let loop ((d depth))
                                    (cond
                                      ((= d 0) null)
-                                     (else (cons (string->symbol (format "encl-this-~a-f" d))
+                                     (else (cons (string->symbol (format "encl-this-~a~~f" d))
                                                  (loop (sub1 d))))))))
             (parm-types (map (lambda (p) (type-spec-to-type (field-type p) #f 'full type-recs)) parms)))
         (make-syntax #f
@@ -1005,7 +1007,8 @@
   (define (create-generic-methods methods)
     (map (lambda (method)
            (let* ((m-name (id-string (method-name method)))
-                  (name ((if (constructor? m-name) build-constructor-name mangle-method-name)
+                  (name ((if (eq? 'ctor (method-record-rtype (method-rec method)))
+                             build-constructor-name mangle-method-name)
                          m-name
                          (method-record-atypes (method-rec method)))))
              (make-syntax #f `(define ,(build-identifier (build-generic-name (class-name) name))
@@ -1031,7 +1034,7 @@
   ;                  src bool int method-record type-records -> syntax
   (define (translate-method type modifiers id parms block all-tail? src inner? depth rec type-recs)
     (let* ((final (final? modifiers))
-           (ctor? (constructor? (id-string id)))
+           (ctor? (eq? 'ctor (method-record-rtype rec)));(constructor? (id-string id)))
            (method-string ((if ctor? build-constructor-name mangle-method-name)
                            (id-string id)
                            (method-record-atypes rec)))
@@ -1805,7 +1808,7 @@
   
   ;translate-specified-this: string src -> syntax
   (define (translate-specified-this var src)
-    (make-syntax #f (build-identifier (string-append var "-f")) (build-src src)))
+    (make-syntax #f (build-identifier (string-append var "~f")) (build-src src)))
   
   ;translate-call: (U expression #f) (U special-name id) (list syntax) method-record src-> syntax
   (define (translate-call expr method-name args method-record src)
@@ -1951,7 +1954,8 @@
                                                    (find-inner class-string (current-local-classes))))))
                               (cond
                                 ((null? args) null)
-                                (else (translate-id (id-string (car args)) #f)))))))
+                                (else (cons (translate-id (string-append (id-string (car args)) "~f") #f)
+                                            (loop (cdr args)))))))))
              (send new-o ,default-ctor ,@args)
              new-o))
          (inner?

@@ -113,7 +113,7 @@
            [source-dir (build-path "c-generation")]
            [specs-list (map (make-make-spec source-dir target-dir) trans-list)])
 
-      (current-directory (collection-path "homogeneous-vectors"))
+      (current-directory (build-path (collection-path "srfi") "4"))
       (make-directory* target-dir)
       (make-directory* source-dir)
       

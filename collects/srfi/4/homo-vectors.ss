@@ -6,7 +6,8 @@
                                             prim:homo-vector-set! prim:homo-vector? prim:homo-vector+ prim:homo-vector- 
                                             prim:homo-vector* prim:homo-vector-norm prim:homo-vector-type 
                                             prim:make-homo-vector-uninitialized prim:make-homo-vector)
-                  (load-extension (build-path (collection-path "homogeneous-vectors")
+                  (load-extension (build-path (collection-path "srfi")
+                                              "4"
                                               "compiled" 
                                               "native" 
                                               (system-library-subpath) 

@@ -30,10 +30,6 @@ normal-bin:
 	$(MAKE) mzlibrary
 	$(MAKE) mzscheme 
 
-aixdl-bin:
-	$(MAKE) aixdl
-	$(MAKE) normal-bin
-
 cygwin-bin:
 	$(MAKE) cygwin-dll-setup
 	$(MAKE) starter
@@ -62,9 +58,6 @@ dynexample:
 oe:
 	$(MAKE) dynlib
 	cd dynsrc; $(MAKE) oe
-
-aixdl:
-	cd aixdlfcn; $(MAKE)
 
 cygwin-dll-setup:
 	cd src; $(MAKE) mzheaders
@@ -200,13 +193,11 @@ clean:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
 	/bin/rm -f *.o core
-	/bin/rm -f aixdlfcn/dlfcn.o
 	/bin/rm -f mzdyn.o libgc.a libmzscheme.a libdl.a mzscheme mzscheme.multiboot
 	cd gc; $(MAKE) clean
 	cd sgc; $(MAKE) clean
 	cd src; $(MAKE) clean
 	cd dynsrc; $(MAKE) clean
-	cd aixdlfcn; $(MAKE) clean
 	cd guile; $(MAKE) clean
 
 install:

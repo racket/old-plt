@@ -15,6 +15,8 @@ AC_ARG_ENABLE(osthreads, ""  feature: osthreads      use OS threads to implement
 AC_ARG_ENABLE(oskit, ""  feature: oskit          compile OSKit-based MzScheme kernel)
 AC_ARG_ENABLE(smalloskit, ""  feature: smalloskit     compile small OSKit-based MzScheme kernel)
 
+AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w sources)
+
 ###### Some flags imply other flags #######
 
 if test "${enable_smalloskit}" = "yes" ; then
@@ -119,9 +121,21 @@ fi
 AC_CHECK_LIB(m, cos)
 AC_CHECK_LIB(dl, dlopen)
 
-MZLIBS="$LIBS"
+if test "${enable_wbuild}" = "yes" ; then
+  MAKE_WBUILD=wb
+  WBUILD="x/wbuild/src/wbuild"
+  WBUILD="$WBUILD --no-init-file --no-lines -i \$(srcdir)/XWidgets"
+  WBUILD="$WBUILD -c \$(srcdir)/XWidgets -d \$(srcdir)/XWidgets"
+  WBUILD="$WBUILD -p . \$(srcdir)/x/wbuild/wbuild.cfg"
+else
+  MAKE_WBUILD=
+  WBUILD="sh \$(PLTSRCDIR)/wxxt/src/XWidgets/dummy.wbuild"
+fi
 
 ############## platform tests ################
+
+# for flags we don't want to use in config tests:
+EXTRALIBS=
 
 OS=`uname -s`
 case $OS in
@@ -130,7 +144,7 @@ case $OS in
       5.*)
        if test "${enable_osthreads}" = "yes" ; then
 	 OPTIONS="${OPTIONS} -DSOLARIS_THREADS"
-	 LIBS="$LIBS -lthread"
+	 LIBS="-lthread"
        fi
        STATICLINK="-Wl,-Bstatic" # after -ldl
        LIBS="$LIBS -lsocket -lnsl -lintl"
@@ -140,8 +154,7 @@ case $OS in
     esac
     ;;
   AIX)
-    AC_CHECK_LIB(dl, dlopen, , MZBINTARGET=aixdl-bin)
-    LIBS="$LIBS -Wl,-bE:\$(srcdir)/../mzscheme/include/mzscheme.exp"
+    EXTRALIBS="-Wl,-brtl,-bE:\$(srcdir)/../mzscheme/include/mzscheme.exp"
     ;;
   FreeBSD)
     LIBS="$LIBS -rdynamic"
@@ -151,7 +164,7 @@ case $OS in
   IRIX)
     if test "${enable_osthreads}" = "yes" ; then
       OPTIONS="$OPTIONS -DIRIX_SPROCS"
-      LIBS="$LIBS sproc.o"
+      EXTRALIBS="sproc.o"
     fi
     STATICLINK="/usr/lib/libC.a /usr/lib/libmalloc.a"
     ;;
@@ -182,7 +195,7 @@ case $OS in
   CYGWIN*)
     MZBINTARGET=cygwin-bin
     MZINSTALLTARGET=cygwin-install
-    LIBS="$LIBS gmzwin.exp"
+    EXTRALIBS="$LIBS gmzwin.exp"
     ;;
   BeOS)
     if test "${enable_sgc_debug}" = "no" ; then
@@ -218,8 +231,9 @@ if test "${enable_mred}" = "yes" ; then
 [ msg="whether new and new[] are different"   ]
   AC_MSG_CHECKING($msg)
   AC_TRY_RUN(
-   inline void *operator new(long size) { return (void *)0x1; }
-[  inline void *operator new[](long size) { return (void *)0x2; }  ]
+[  #include <stddef.h> ]
+   inline void *operator new(size_t size) { return (void *)0x1; }
+[  inline void *operator new[](size_t size) { return (void *)0x2; }  ]
    class C { int x; };
    int main() {
 [    return (new C) == (new C[10]);       ]
@@ -243,6 +257,8 @@ fi
 
 ############## final output ################
 
+LIBS="$LIBS $EXTRALIBS"
+
 AC_SUBST(CC)
 AC_SUBST(CFLAGS)
 AC_SUBST(CPP)
@@ -251,6 +267,7 @@ AC_SUBST(AS)
 AC_SUBST(RANLIB)
 AC_SUBST(AR)
 AC_SUBST(ARFLAGS)
+AC_SUBST(WBUILD)
 
 AC_SUBST(x_includes)
 AC_SUBST(x_libraries)
@@ -262,13 +279,13 @@ AC_SUBST(X_EXTRA_LIBS)
 AC_SUBST(OPTIONS)
 AC_SUBST(MROPTIONS)
 AC_SUBST(GCDIR)
-AC_SUBST(MZLIBS)
 AC_SUBST(MZBINTARGET)
 AC_SUBST(MZINSTALLTARGET)
 
 AC_SUBST(MAKE_MRED)
 AC_SUBST(MAKE_MRED2K)
 AC_SUBST(MAKE_MREDINSTALL)
+AC_SUBST(MAKE_WBUILD)
 
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)
@@ -290,8 +307,7 @@ makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
              mzscheme/gc/Makefile mzscheme/sgc/Makefile
-             mzscheme/gc2/Makefile mzscheme/guile/Makefile
-             mzscheme/aixdlfcn/Makefile"
+             mzscheme/gc2/Makefile mzscheme/guile/Makefile"
 
 if test "${enable_mred}" = "yes" ; then
   makefiles="$makefiles
@@ -303,5 +319,12 @@ if test "${enable_mred}" = "yes" ; then
                wxxt/contrib/xpm/lib/GNUmakefile"
 fi
 
-AC_OUTPUT($makefiles)
+if test "${enable_wbuild}" = "yes" ; then
+ subbuilds=wxxt/src/x/wbuild
+ AC_CONFIG_AUX_DIR( wxxt/src/x/wbuild ) 
+ AC_CONFIG_SUBDIRS( $subbuilds )
+else
+ subbuilds= 
+fi
 
+AC_OUTPUT($makefiles)

@@ -70,7 +70,7 @@ $suspend = 0;
 
 %nonprocs = ();
 
-print "#!\n" if $exports;
+print "#!..\n" if $exports;
 print "EXPORTS\n" if ($winex || $gwinex);
 
 if ($list) {

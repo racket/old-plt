@@ -3,18 +3,12 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 822 "XWidgets/xwFrame.w"
 #include <string.h>
-#line 823 "XWidgets/xwFrame.w"
 #include <stdio.h>
-#line 824 "XWidgets/xwFrame.w"
 #include <X11/Xmu/Converters.h>
-#line 825 "XWidgets/xwFrame.w"
 #include <X11/Xmu/CharSet.h>
-#line 829 "XWidgets/xwFrame.w"
 #include <X11/bitmaps/gray>
 #include <./xwFrameP.h>
-#line 536 "XWidgets/xwFrame.w"
 static void set_shadow(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -29,79 +23,66 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 206 "XWidgets/xwFrame.w"
 static void class_initialize(
 #if NeedFunctionPrototypes
 void
 #endif
 );
-#line 229 "XWidgets/xwFrame.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 252 "XWidgets/xwFrame.w"
 static void realize(
 #if NeedFunctionPrototypes
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 266 "XWidgets/xwFrame.w"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 284 "XWidgets/xwFrame.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 347 "XWidgets/xwFrame.w"
 static void _expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 377 "XWidgets/xwFrame.w"
 static void compute_inside(
 #if NeedFunctionPrototypes
 Widget,Position *,Position *,int *,int *
 #endif
 );
-#line 390 "XWidgets/xwFrame.w"
 static Dimension  total_frame_width(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 400 "XWidgets/xwFrame.w"
 static XtGeometryResult  query_geometry(
 #if NeedFunctionPrototypes
 Widget,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 453 "XWidgets/xwFrame.w"
 static XtGeometryResult  geometry_manager(
 #if NeedFunctionPrototypes
 Widget ,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 480 "XWidgets/xwFrame.w"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 501 "XWidgets/xwFrame.w"
 static void change_managed(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 564 "XWidgets/xwFrame.w"
 #define done(type, value) do {\
       if (to->addr != NULL) {\
           if (to->size < sizeof(type)) {\
@@ -119,40 +100,32 @@ Widget
   }while (0 )
 
 
-#line 678 "XWidgets/xwFrame.w"
 static void create_darkgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 722 "XWidgets/xwFrame.w"
 static void create_lightgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 765 "XWidgets/xwFrame.w"
 static void compute_topcolor(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
 #endif
 );
-#line 776 "XWidgets/xwFrame.w"
 static void compute_bottomcolor(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
 #endif
 );
-#line 678 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 678 "XWidgets/xwFrame.w"
 static void create_darkgc(Widget self)
 #else
-#line 678 "XWidgets/xwFrame.w"
 static void create_darkgc(self)Widget self;
 #endif
-#line 679 "XWidgets/xwFrame.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -190,16 +163,12 @@ static void create_darkgc(self)Widget self;
     }
     ((XfwfFrameWidget)self)->xfwfFrame.darkgc = XtGetGC(self, mask, &values);
 }
-#line 722 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 722 "XWidgets/xwFrame.w"
 static void create_lightgc(Widget self)
 #else
-#line 722 "XWidgets/xwFrame.w"
 static void create_lightgc(self)Widget self;
 #endif
-#line 723 "XWidgets/xwFrame.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -237,16 +206,12 @@ static void create_lightgc(self)Widget self;
     }
     ((XfwfFrameWidget)self)->xfwfFrame.lightgc = XtGetGC(self, mask, &values);
 }
-#line 765 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 765 "XWidgets/xwFrame.w"
 static void compute_topcolor(Widget self,int  offset,XrmValue * value)
 #else
-#line 765 "XWidgets/xwFrame.w"
 static void compute_topcolor(self,offset,value)Widget self;int  offset;XrmValue * value;
 #endif
-#line 766 "XWidgets/xwFrame.w"
 {
     static Pixel color;
 #if 1
@@ -256,16 +221,12 @@ static void compute_topcolor(self,offset,value)Widget self;int  offset;XrmValue 
 #endif
     value->addr = (XtPointer) &color;
 }
-#line 776 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 776 "XWidgets/xwFrame.w"
 static void compute_bottomcolor(Widget self,int  offset,XrmValue * value)
 #else
-#line 776 "XWidgets/xwFrame.w"
 static void compute_bottomcolor(self,offset,value)Widget self;int  offset;XrmValue * value;
 #endif
-#line 777 "XWidgets/xwFrame.w"
 {
     static Pixel color;
 #if 1
@@ -277,27 +238,16 @@ static void compute_bottomcolor(self,offset,value)Widget self;int  offset;XrmVal
 }
 
 static XtResource resources[] = {
-#line 41 "XWidgets/xwFrame.w"
 {XtNcursor,XtCCursor,XtRCursor,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.cursor),XtOffsetOf(XfwfFrameRec,xfwfFrame.cursor),XtRImmediate,(XtPointer)None },
-#line 45 "XWidgets/xwFrame.w"
 {XtNframeType,XtCFrameType,XtRFrameType,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.frameType),XtOffsetOf(XfwfFrameRec,xfwfFrame.frameType),XtRImmediate,(XtPointer)XfwfRaised },
-#line 51 "XWidgets/xwFrame.w"
 {XtNframeWidth,XtCFrameWidth,XtRDimension,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.frameWidth),XtOffsetOf(XfwfFrameRec,xfwfFrame.frameWidth),XtRImmediate,(XtPointer)0 },
-#line 57 "XWidgets/xwFrame.w"
 {XtNouterOffset,XtCOuterOffset,XtRDimension,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.outerOffset),XtOffsetOf(XfwfFrameRec,xfwfFrame.outerOffset),XtRImmediate,(XtPointer)0 },
-#line 62 "XWidgets/xwFrame.w"
 {XtNinnerOffset,XtCInnerOffset,XtRDimension,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.innerOffset),XtOffsetOf(XfwfFrameRec,xfwfFrame.innerOffset),XtRImmediate,(XtPointer)0 },
-#line 86 "XWidgets/xwFrame.w"
 {XtNshadowScheme,XtCShadowScheme,XtRShadowScheme,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.shadowScheme),XtOffsetOf(XfwfFrameRec,xfwfFrame.shadowScheme),XtRImmediate,(XtPointer)XfwfAuto },
-#line 87 "XWidgets/xwFrame.w"
 {XtNtopShadowColor,XtCTopShadowColor,XtRPixel,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.topShadowColor),XtOffsetOf(XfwfFrameRec,xfwfFrame.topShadowColor),XtRCallProc,(XtPointer)compute_topcolor },
-#line 88 "XWidgets/xwFrame.w"
 {XtNbottomShadowColor,XtCBottomShadowColor,XtRPixel,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.bottomShadowColor),XtOffsetOf(XfwfFrameRec,xfwfFrame.bottomShadowColor),XtRCallProc,(XtPointer)compute_bottomcolor },
-#line 89 "XWidgets/xwFrame.w"
 {XtNtopShadowStipple,XtCTopShadowStipple,XtRBitmap,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.topShadowStipple),XtOffsetOf(XfwfFrameRec,xfwfFrame.topShadowStipple),XtRImmediate,(XtPointer)NULL },
-#line 90 "XWidgets/xwFrame.w"
 {XtNbottomShadowStipple,XtCBottomShadowStipple,XtRBitmap,sizeof(((XfwfFrameRec*)NULL)->xfwfFrame.bottomShadowStipple),XtOffsetOf(XfwfFrameRec,xfwfFrame.bottomShadowStipple),XtRImmediate,(XtPointer)NULL },
-#line 95 "XWidgets/xwFrame.w"
 {XtNborderWidth,XtCBorderWidth,XtRDimension,sizeof(((XfwfFrameRec*)NULL)->core.border_width),XtOffsetOf(XfwfFrameRec,core.border_width),XtRImmediate,(XtPointer)0 },
 };
 
@@ -365,7 +315,6 @@ XtInherit_set_color,
 };
 WidgetClass xfwfFrameWidgetClass = (WidgetClass) &xfwfFrameClassRec;
 /*ARGSUSED*/
-#line 536 "XWidgets/xwFrame.w"
 static void set_shadow(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     Position x, y;
@@ -406,16 +355,12 @@ WidgetClass class;
   if (class == xfwfFrameWidgetClass) return;
   super = (XfwfFrameWidgetClass)class->core_class.superclass;
 }
-#line 206 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 206 "XWidgets/xwFrame.w"
 static void class_initialize(void)
 #else
-#line 206 "XWidgets/xwFrame.w"
 static void class_initialize()
 #endif
-#line 207 "XWidgets/xwFrame.w"
 {
     static XtConvertArgRec screenArg[] = {
     {XtBaseOffset, (XtPointer)XtOffset(Widget, core.screen), sizeof(Screen*)}};
@@ -433,16 +378,12 @@ static void class_initialize()
     XtSetTypeConverter(XtRShadowScheme, XtRString, cvtShadowSchemeToString,
                        NULL, 0, XtCacheNone, NULL);
 }
-#line 229 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 229 "XWidgets/xwFrame.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 229 "XWidgets/xwFrame.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 230 "XWidgets/xwFrame.w"
 {
     Dimension frame;
 
@@ -454,16 +395,12 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     if (((XfwfFrameWidget)self)->core.width < 2 * frame) ((XfwfFrameWidget)self)->core.width = 2 * frame;
     if (((XfwfFrameWidget)self)->core.height < 2 * frame) ((XfwfFrameWidget)self)->core.height = 2 * frame;
 }
-#line 252 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 252 "XWidgets/xwFrame.w"
 static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attributes)
 #else
-#line 252 "XWidgets/xwFrame.w"
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
-#line 253 "XWidgets/xwFrame.w"
 {
     *mask |= CWCursor;
     attributes->cursor = ((XfwfFrameWidget)self)->xfwfFrame.cursor;
@@ -476,30 +413,22 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
     create_lightgc(self);
     create_darkgc(self);
 }
-#line 266 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 266 "XWidgets/xwFrame.w"
 static void destroy(Widget self)
 #else
-#line 266 "XWidgets/xwFrame.w"
 static void destroy(self)Widget self;
 #endif
-#line 267 "XWidgets/xwFrame.w"
 {
   if (((XfwfFrameWidget)self)->xfwfFrame.darkgc) XtReleaseGC(self, ((XfwfFrameWidget)self)->xfwfFrame.darkgc); ((XfwfFrameWidget)self)->xfwfFrame.darkgc = NULL;
   if (((XfwfFrameWidget)self)->xfwfFrame.lightgc) XtReleaseGC(self, ((XfwfFrameWidget)self)->xfwfFrame.lightgc); ((XfwfFrameWidget)self)->xfwfFrame.lightgc = NULL;
 }
-#line 284 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 284 "XWidgets/xwFrame.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 284 "XWidgets/xwFrame.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 285 "XWidgets/xwFrame.w"
 {
     Boolean need_redisplay = False;
 
@@ -552,16 +481,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 
     return need_redisplay;
 }
-#line 347 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 347 "XWidgets/xwFrame.w"
 static void _expose(Widget self,XEvent * event,Region  region)
 #else
-#line 347 "XWidgets/xwFrame.w"
 static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 348 "XWidgets/xwFrame.w"
 {
     Position x, y;
     int w, h;
@@ -586,16 +511,12 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
     }
     xfwfCommonClassRec.xfwfCommon_class._expose(self, event, region);
 }
-#line 377 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 377 "XWidgets/xwFrame.w"
 static void compute_inside(Widget self,Position * x,Position * y,int * w,int * h)
 #else
-#line 377 "XWidgets/xwFrame.w"
 static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;int * w;int * h;
 #endif
-#line 378 "XWidgets/xwFrame.w"
 {
     xfwfCommonClassRec.xfwfCommon_class.compute_inside(self, x, y, w, h);
     *x += ((XfwfFrameWidget)self)->xfwfFrame.outerOffset + ((XfwfFrameWidget)self)->xfwfFrame.frameWidth + ((XfwfFrameWidget)self)->xfwfFrame.innerOffset;
@@ -603,29 +524,21 @@ static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;in
     *w -= 2 * (((XfwfFrameWidget)self)->xfwfFrame.outerOffset + ((XfwfFrameWidget)self)->xfwfFrame.frameWidth + ((XfwfFrameWidget)self)->xfwfFrame.innerOffset);
     *h -= 2 * (((XfwfFrameWidget)self)->xfwfFrame.outerOffset + ((XfwfFrameWidget)self)->xfwfFrame.frameWidth + ((XfwfFrameWidget)self)->xfwfFrame.innerOffset);
 }
-#line 390 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 390 "XWidgets/xwFrame.w"
 static Dimension  total_frame_width(Widget self)
 #else
-#line 390 "XWidgets/xwFrame.w"
 static Dimension  total_frame_width(self)Widget self;
 #endif
-#line 391 "XWidgets/xwFrame.w"
 {
     return xfwfCommonClassRec.xfwfCommon_class.total_frame_width(self) + ((XfwfFrameWidget)self)->xfwfFrame.outerOffset + ((XfwfFrameWidget)self)->xfwfFrame.frameWidth + ((XfwfFrameWidget)self)->xfwfFrame.innerOffset ;
 }
-#line 400 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 400 "XWidgets/xwFrame.w"
 static XtGeometryResult  query_geometry(Widget self,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 400 "XWidgets/xwFrame.w"
 static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
-#line 401 "XWidgets/xwFrame.w"
 {
     XtWidgetGeometry request2, reply2;
     XtGeometryResult result;
@@ -667,13 +580,10 @@ static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetG
     reply->stack_mode = reply2.stack_mode;
     return XtGeometryAlmost;
 }
-#line 453 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 167 "XWidgets/xwFrame.w"
 static XtGeometryResult  geometry_manager(Widget  child,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 167 "XWidgets/xwFrame.w"
 static XtGeometryResult  geometry_manager(child,request,reply)Widget  child;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
 { Widget self = XtParent(child); {
@@ -698,16 +608,12 @@ static XtGeometryResult  geometry_manager(child,request,reply)Widget  child;XtWi
     return XtGeometryAlmost;
 }
 }
-#line 480 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 480 "XWidgets/xwFrame.w"
 static void resize(Widget self)
 #else
-#line 480 "XWidgets/xwFrame.w"
 static void resize(self)Widget self;
 #endif
-#line 481 "XWidgets/xwFrame.w"
 {
     Position x, y;
     int w, h;
@@ -720,16 +626,12 @@ static void resize(self)Widget self;
     h -= 2 * ((XfwfFrameWidget)child)->core.border_width;
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), ((XfwfFrameWidget)child)->core.border_width);
 }
-#line 501 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 501 "XWidgets/xwFrame.w"
 static void change_managed(Widget self)
 #else
-#line 501 "XWidgets/xwFrame.w"
 static void change_managed(self)Widget self;
 #endif
-#line 502 "XWidgets/xwFrame.w"
 {
     XtWidgetGeometry request2, reply2;
     XtGeometryResult result;
@@ -749,19 +651,12 @@ static void change_managed(self)Widget self;
     h -= 2 * ((XfwfFrameWidget)child)->core.border_width;
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), ((XfwfFrameWidget)child)->core.border_width);
 }
-#line 103 "XWidgets/xwFrame.w"
-#line 109 "XWidgets/xwFrame.w"
-#line 114 "XWidgets/xwFrame.w"
-#line 120 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 120 "XWidgets/xwFrame.w"
 void XfwfDrawFrame(Widget self,int  x,int  y,int  w,int  h,FrameType  tp,int  t,GC  lightgc,GC  darkgc)
 #else
-#line 120 "XWidgets/xwFrame.w"
 void XfwfDrawFrame(self,x,y,w,h,tp,t,lightgc,darkgc)Widget self;int  x;int  y;int  w;int  h;FrameType  tp;int  t;GC  lightgc;GC  darkgc;
 #endif
-#line 121 "XWidgets/xwFrame.w"
 {
     XPoint tlPoints[7], brPoints[7];
 
@@ -811,16 +706,12 @@ void XfwfDrawFrame(self,x,y,w,h,tp,t,lightgc,darkgc)Widget self;int  x;int  y;in
     }
 
 }
-#line 586 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 586 "XWidgets/xwFrame.w"
 Boolean  cvtStringToFrameType(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 586 "XWidgets/xwFrame.w"
 Boolean  cvtStringToFrameType(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 587 "XWidgets/xwFrame.w"
 {
     String s = (String) from->addr;
 
@@ -838,16 +729,12 @@ Boolean  cvtStringToFrameType(display,args,num_args,from,to,converter_data)Displ
     XtDisplayStringConversionWarning(display, s, XtRFrameType);
     done(FrameType, XfwfRaised);
 }
-#line 607 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 607 "XWidgets/xwFrame.w"
 Boolean  cvtFrameTypeToString(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 607 "XWidgets/xwFrame.w"
 Boolean  cvtFrameTypeToString(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 608 "XWidgets/xwFrame.w"
 {
     if (*num_args != 0)
         XtAppErrorMsg(XtDisplayToApplicationContext(display),
@@ -864,16 +751,12 @@ Boolean  cvtFrameTypeToString(display,args,num_args,from,to,converter_data)Displ
     }
     return FALSE;
 }
-#line 630 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 630 "XWidgets/xwFrame.w"
 Boolean  cvtStringToShadowScheme(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 630 "XWidgets/xwFrame.w"
 Boolean  cvtStringToShadowScheme(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 631 "XWidgets/xwFrame.w"
 {
     String s = (String) from->addr;
 
@@ -890,16 +773,12 @@ Boolean  cvtStringToShadowScheme(display,args,num_args,from,to,converter_data)Di
     XtDisplayStringConversionWarning(display, s, XtRShadowScheme);
     done(ShadowScheme, XfwfAuto);
 }
-#line 650 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 650 "XWidgets/xwFrame.w"
 Boolean  cvtShadowSchemeToString(Display * display,XrmValuePtr  args,Cardinal * num_args,XrmValuePtr  from,XrmValuePtr  to,XtPointer * converter_data)
 #else
-#line 650 "XWidgets/xwFrame.w"
 Boolean  cvtShadowSchemeToString(display,args,num_args,from,to,converter_data)Display * display;XrmValuePtr  args;Cardinal * num_args;XrmValuePtr  from;XrmValuePtr  to;XtPointer * converter_data;
 #endif
-#line 651 "XWidgets/xwFrame.w"
 {
     if (*num_args != 0)
         XtAppErrorMsg(XtDisplayToApplicationContext(display),
@@ -917,16 +796,12 @@ Boolean  cvtShadowSchemeToString(display,args,num_args,from,to,converter_data)Di
     }
     return FALSE;
 }
-#line 789 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 789 "XWidgets/xwFrame.w"
 Pixmap  GetGray(Widget self)
 #else
-#line 789 "XWidgets/xwFrame.w"
 Pixmap  GetGray(self)Widget self;
 #endif
-#line 790 "XWidgets/xwFrame.w"
 {
   if (!((XfwfFrameWidget)self)->xfwfFrame.gray) {
     ((XfwfFrameWidget)self)->xfwfFrame.gray = XCreateBitmapFromData(XtDisplay(self), XtWindow(self),
@@ -934,16 +809,12 @@ Pixmap  GetGray(self)Widget self;
   }
   return ((XfwfFrameWidget)self)->xfwfFrame.gray;
 }
-#line 798 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 798 "XWidgets/xwFrame.w"
 Pixmap  GetLightGray(Widget self)
 #else
-#line 798 "XWidgets/xwFrame.w"
 Pixmap  GetLightGray(self)Widget self;
 #endif
-#line 799 "XWidgets/xwFrame.w"
 {
   if (!((XfwfFrameWidget)self)->xfwfFrame.lightGray) {
     static char light_bits[] = { 0x02, 0x04, 0x01};
@@ -953,16 +824,12 @@ Pixmap  GetLightGray(self)Widget self;
   }
   return ((XfwfFrameWidget)self)->xfwfFrame.lightGray;
 }
-#line 809 "XWidgets/xwFrame.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 809 "XWidgets/xwFrame.w"
 Pixmap  GetDarkGray(Widget self)
 #else
-#line 809 "XWidgets/xwFrame.w"
 Pixmap  GetDarkGray(self)Widget self;
 #endif
-#line 810 "XWidgets/xwFrame.w"
 {
   if (!((XfwfFrameWidget)self)->xfwfFrame.darkGray) {
     static char dark_bits[] = { 0x05, 0x03, 0x06};

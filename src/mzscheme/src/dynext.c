@@ -46,6 +46,14 @@ static Boolean get_ext_file_spec(FSSpec *spec, const char *filename );
 static Boolean load_ext_file_spec(FSSpec *spec, CFragConnectionID *connID);
 #endif
 
+#if	defined(RTLD_NOW)
+#define	DLOPEN_MODE	RTLD_NOW
+#elif	defined(RTLD_LAZY)
+#define	DLOPEN_MODE	(RTLD_LAZY)
+#else
+#define	DLOPEN_MODE	(1)
+#endif
+
 #ifdef SHL_DYNAMIC_LOAD
 #include <dl.h>
 #include <errno.h>
@@ -234,7 +242,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
       filename = s;
     }
     
-    dl = dlopen((char *)filename, 1);
+    dl = dlopen((char *)filename, DLOPEN_MODE);
     if (!dl)
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),

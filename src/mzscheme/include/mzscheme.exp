@@ -1,4 +1,4 @@
-#!
+#!..
 scheme_init_jmpup_buf
 scheme_setjmpup_relative
 scheme_longjmpup

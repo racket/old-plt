@@ -3,14 +3,10 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 509 "XWidgets/xwScrollbar.w"
 #include <xwArrow.h>
-#line 510 "XWidgets/xwScrollbar.w"
 #include <xwSlider2.h>
-#line 511 "XWidgets/xwScrollbar.w"
 #include <stdio.h>
 #include <./xwScrollbarP.h>
-#line 445 "XWidgets/xwScrollbar.w"
 static void Scroll(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -25,70 +21,57 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 202 "XWidgets/xwScrollbar.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 285 "XWidgets/xwScrollbar.w"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 317 "XWidgets/xwScrollbar.w"
 static void insert_child(
 #if NeedFunctionPrototypes
 Widget 
 #endif
 );
-#line 332 "XWidgets/xwScrollbar.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 361 "XWidgets/xwScrollbar.w"
 static void scroll_response(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 373 "XWidgets/xwScrollbar.w"
 static void up(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 394 "XWidgets/xwScrollbar.w"
 static void down(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 418 "XWidgets/xwScrollbar.w"
 static void thumbscroll(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 433 "XWidgets/xwScrollbar.w"
 static void copy_background(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
 #endif
 );
-#line 373 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 373 "XWidgets/xwScrollbar.w"
 static void up(Widget  arrow,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 373 "XWidgets/xwScrollbar.w"
 static void up(arrow,client_data,call_data)Widget  arrow;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 374 "XWidgets/xwScrollbar.w"
 {
     Widget self = (Widget) client_data;
     XfwfScrollInfo info;
@@ -105,16 +88,12 @@ static void up(arrow,client_data,call_data)Widget  arrow;XtPointer  client_data;
     }
     XtCallCallbackList(self, ((XfwfScrollbarWidget)self)->xfwfScrollbar.scrollCallback, &info);
 }
-#line 394 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 394 "XWidgets/xwScrollbar.w"
 static void down(Widget  arrow,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 394 "XWidgets/xwScrollbar.w"
 static void down(arrow,client_data,call_data)Widget  arrow;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 395 "XWidgets/xwScrollbar.w"
 {
     Widget self = (Widget) client_data;
     XfwfScrollInfo info;
@@ -131,16 +110,12 @@ static void down(arrow,client_data,call_data)Widget  arrow;XtPointer  client_dat
     }
     XtCallCallbackList(self, ((XfwfScrollbarWidget)self)->xfwfScrollbar.scrollCallback, &info);
 }
-#line 418 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 418 "XWidgets/xwScrollbar.w"
 static void thumbscroll(Widget  w,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 418 "XWidgets/xwScrollbar.w"
 static void thumbscroll(w,client_data,call_data)Widget  w;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 419 "XWidgets/xwScrollbar.w"
 {
     Widget self = (Widget) client_data;
     XfwfScrollInfo *info = (XfwfScrollInfo*) call_data;
@@ -151,42 +126,27 @@ static void thumbscroll(w,client_data,call_data)Widget  w;XtPointer  client_data
 	info->flags &= XFWF_HPOS;
     XtCallCallbackList(self, ((XfwfScrollbarWidget)self)->xfwfScrollbar.scrollCallback, info);
 }
-#line 433 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 433 "XWidgets/xwScrollbar.w"
 static void copy_background(Widget self,int  offset,XrmValue * value)
 #else
-#line 433 "XWidgets/xwScrollbar.w"
 static void copy_background(self,offset,value)Widget self;int  offset;XrmValue * value;
 #endif
-#line 434 "XWidgets/xwScrollbar.w"
 {
     value->addr = (XtPointer) &((XfwfScrollbarWidget)self)->core.background_pixel;
 }
 
 static XtResource resources[] = {
-#line 50 "XWidgets/xwScrollbar.w"
 {XtNvertical,XtCVertical,XtRBoolean,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.vertical),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.vertical),XtRImmediate,(XtPointer)True },
-#line 82 "XWidgets/xwScrollbar.w"
 {XtNscrollCallback,XtCScrollCallback,XtRCallback,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.scrollCallback),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.scrollCallback),XtRImmediate,(XtPointer)NULL },
-#line 98 "XWidgets/xwScrollbar.w"
 {XtNscrollResponse,XtCScrollResponse,XtRXTCallbackProc,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.scrollResponse),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.scrollResponse),XtRImmediate,(XtPointer)scroll_response },
-#line 104 "XWidgets/xwScrollbar.w"
 {XtNinitialDelay,XtCInitialDelay,XtRCardinal,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.initialDelay),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.initialDelay),XtRImmediate,(XtPointer)500 },
-#line 109 "XWidgets/xwScrollbar.w"
 {XtNrepeatDelay,XtCRepeatDelay,XtRCardinal,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.repeatDelay),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.repeatDelay),XtRImmediate,(XtPointer)50 },
-#line 118 "XWidgets/xwScrollbar.w"
 {XtNincrement,XtCIncrement,XtRFloat,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.increment),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.increment),XtRString,(XtPointer)"0.05"},
-#line 125 "XWidgets/xwScrollbar.w"
 {XtNscrollbarForeground,XtCScrollbarForeground,XtRPixel,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.scrollbarForeground),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.scrollbarForeground),XtRCallProc,(XtPointer)copy_background },
-#line 129 "XWidgets/xwScrollbar.w"
 {XtNshadow,XtCShadow,XtRDimension,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.shadow),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.shadow),XtRImmediate,(XtPointer)2 },
-#line 134 "XWidgets/xwScrollbar.w"
 {XtNminsize,XtCMinsize,XtRDimension,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.minsize),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.minsize),XtRImmediate,(XtPointer)20 },
-#line 140 "XWidgets/xwScrollbar.w"
 {XtNframeWidth,XtCFrameWidth,XtRDimension,sizeof(((XfwfScrollbarRec*)NULL)->xfwfFrame.frameWidth),XtOffsetOf(XfwfScrollbarRec,xfwfFrame.frameWidth),XtRImmediate,(XtPointer)2 },
-#line 144 "XWidgets/xwScrollbar.w"
 {XtNframeType,XtCFrameType,XtRFrameType,sizeof(((XfwfScrollbarRec*)NULL)->xfwfFrame.frameType),XtOffsetOf(XfwfScrollbarRec,xfwfFrame.frameType),XtRImmediate,(XtPointer)XfwfSunken },
 };
 
@@ -260,7 +220,6 @@ scroll_response,
 };
 WidgetClass xfwfScrollbarWidgetClass = (WidgetClass) &xfwfScrollbarClassRec;
 /*ARGSUSED*/
-#line 445 "XWidgets/xwScrollbar.w"
 static void Scroll(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XfwfScrollInfo info;
@@ -340,16 +299,12 @@ WidgetClass class;
   if (c->xfwfScrollbar_class.scroll_response == XtInherit_scroll_response)
     c->xfwfScrollbar_class.scroll_response = super->xfwfScrollbar_class.scroll_response;
 }
-#line 202 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 202 "XWidgets/xwScrollbar.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 202 "XWidgets/xwScrollbar.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 203 "XWidgets/xwScrollbar.w"
 {
     Position x, y, xa2, xslider, ya2, yslider;
     int w, h, wa, ha, wslider, hslider;
@@ -429,16 +384,12 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     XtVaGetValues(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, XtNscrollResponse, &((XfwfScrollbarWidget)self)->xfwfScrollbar.slider_scroll, NULL);
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.initializing = False;
 }
-#line 285 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 285 "XWidgets/xwScrollbar.w"
 static void resize(Widget self)
 #else
-#line 285 "XWidgets/xwScrollbar.w"
 static void resize(self)Widget self;
 #endif
-#line 286 "XWidgets/xwScrollbar.w"
 {
     Position x, y, xa2, xslider, ya2, yslider;
     int w, h, wa, ha, wslider, hslider;
@@ -465,13 +416,10 @@ static void resize(self)Widget self;
     XtConfigureWidget(((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow2, xa2, ya2, max(1, wa), max(1, ha), 0);
     XtConfigureWidget(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, xslider, yslider, max(1, wslider), max(1, hslider), 0);
 }
-#line 317 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 174 "XWidgets/xwScrollbar.w"
 static void insert_child(Widget  child)
 #else
-#line 174 "XWidgets/xwScrollbar.w"
 static void insert_child(child)Widget  child;
 #endif
 { Widget self = XtParent(child); {
@@ -485,16 +433,12 @@ static void insert_child(child)Widget  child;
     }
 }
 }
-#line 332 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 332 "XWidgets/xwScrollbar.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 332 "XWidgets/xwScrollbar.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 333 "XWidgets/xwScrollbar.w"
 {
     if (((XfwfScrollbarWidget)old)->xfwfScrollbar.vertical != ((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical) {
 	XtWarning("Cannot change the \"vertical\" resource of a scrollbar\n");
@@ -515,31 +459,23 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     }
     return False;
 }
-#line 361 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 361 "XWidgets/xwScrollbar.w"
 static void scroll_response(Widget  wdg,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 361 "XWidgets/xwScrollbar.w"
 static void scroll_response(wdg,client_data,call_data)Widget  wdg;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 362 "XWidgets/xwScrollbar.w"
 {
     Widget self = (Widget) client_data;
 
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.slider_scroll(wdg, ((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, call_data);
 }
-#line 172 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 172 "XWidgets/xwScrollbar.w"
 void XfwfSetScrollbar(Widget self,double  pos,double  size)
 #else
-#line 172 "XWidgets/xwScrollbar.w"
 void XfwfSetScrollbar(self,pos,size)Widget self;double  pos;double  size;
 #endif
-#line 173 "XWidgets/xwScrollbar.w"
 {
     if (! XtIsSubclass(self, xfwfScrollbarWidgetClass))
 	XtError("XfwfSetScrollbar called with incorrect widget type");
@@ -553,16 +489,12 @@ void XfwfSetScrollbar(self,pos,size)Widget self;double  pos;double  size;
 	XfwfMoveThumb(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, pos, 0.0);
     }
 }
-#line 187 "XWidgets/xwScrollbar.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 187 "XWidgets/xwScrollbar.w"
 void XfwfGetScrollbar(Widget self,double * hpos,double * vpos)
 #else
-#line 187 "XWidgets/xwScrollbar.w"
 void XfwfGetScrollbar(self,hpos,vpos)Widget self;double * hpos;double * vpos;
 #endif
-#line 188 "XWidgets/xwScrollbar.w"
 {
     XfwfScrollInfo info;
 

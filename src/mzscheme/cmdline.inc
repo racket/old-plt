@@ -145,6 +145,9 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
 int osk_not_console = 0;
 #endif
 
+#if defined(_IBMR2)
+static void dangerdanger(int);
+#endif
 
 static int run_from_cmd_line(int argc, char *argv[], 
 			     Scheme_Env *(*mk_basic_env)(void),

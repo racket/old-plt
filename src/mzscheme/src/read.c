@@ -649,11 +649,45 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
     }
 }
 
+#ifdef DO_STACK_CHECK
+static Scheme_Object *resolve_references(Scheme_Object *obj, 
+					 Scheme_Object *port,
+					 Scheme_Hash_Table *ht);
+static Scheme_Object *resolve_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
+  Scheme_Object *port = (Scheme_Object *)p->ku.k.p2;
+  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p3;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
+
+  return resolve_references(o, port, ht);
+}
+#endif
+
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
 					 Scheme_Hash_Table *ht)
 {
   Scheme_Object *start = obj;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+# ifndef MZ_REAL_THREADS
+      Scheme_Process *p = scheme_current_process;
+# endif
+      p->ku.k.p1 = (void *)obj;
+      p->ku.k.p2 = (void *)port;
+      p->ku.k.p3 = (void *)ht;
+      return scheme_handle_stack_overflow(resolve_k);
+    }
+  }
+#endif
 
   if (SAME_TYPE(SCHEME_TYPE(obj), scheme_placeholder_type)) {
     obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
@@ -682,12 +716,20 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
     Scheme_Object **array;
+    Scheme_Object *prev_rr, *prev_v;
 
+    prev_v = prev_rr = NULL;
     len = SCHEME_VEC_SIZE(obj);
     array = SCHEME_VEC_ELS(obj);
     for (i = 0; i < len; i++) {
       Scheme_Object *rr;
-      rr = resolve_references(array[i], port, ht);
+      if (array[i] == prev_v) {
+	rr = prev_rr;
+      } else {
+	prev_v = array[i];
+	rr = resolve_references(prev_v, port, ht);
+	prev_rr = rr;
+      }
       array[i] = rr;
     }
   }

@@ -4,8 +4,8 @@
 
 srcdir = @srcdir@
 
-all: $(srcdir)/../../include \
-		../Application \
+all: @MAKE_WBUILD@ \
+                ../Application \
 		../DataStructures \
 		../DeviceContexts \
 		../Dialogs \
@@ -24,9 +24,6 @@ clean:
 	cd ../../contrib/xpm/lib; $(MAKE) clean
 	rm -f ../../contrib/xpm/lib/libXpm.a
 	cd ../../utils/image/src; $(MAKE) cleaneach
-
-$(srcdir)/../../include:
-	cd $(srcdir)/../.. ; tar xf include.tar
 
 ../Application:
 	mkdir $@
@@ -48,3 +45,6 @@ $(srcdir)/../../include:
 	mkdir $@
 ../XWidgets:
 	mkdir $@
+
+wb:
+	cd wbuild; $(MAKE)

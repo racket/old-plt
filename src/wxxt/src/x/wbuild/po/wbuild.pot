@@ -1,0 +1,85 @@
+msgid ""
+msgstr ""
+"Date: 2000-04-05 06:59:57-0600\n"
+"From: Matthew Flatt,,,, <mflatt@c281491-a>\n"
+"Content-Type: text/plain; charset=\n"
+"Xgettext-Options: --default-domain=wbuild --directory=../../../../../../wxxt/src/x/wbuild --add-comments --keyword=_ --keyword=N_ --files-from=../../../../../../wxxt/src/x/wbuild/po/POTFILES.in\n"
+"Files: src/wbuild.c src/util.c src/generatec.c src/generateh.c src/generatedoc.c src/declarefunc.c src/printbody.c\n"
+
+#: src/wbuild.c:267
+msgid ""
+"wbuild usage:\n"
+"wbuild [options] input-files\n"
+"-v, --version\t\tPrint version and exit\n"
+"-h, --help\t\tPrint this message and exit\n"
+"-l, --no-lines\t\tDon't generate #line directives\n"
+"-p, --include-prefix\tSpecify prefix for generated #include directives\n"
+"-O, --only\t\tSet class to output code for\n"
+"-i, --include-dir\tdirectory for generated include files\n"
+"-c, --c-dir\t\tdirectory for generated c files\n"
+"-d, --doc-dir, --documentation-dir\n"
+"\t\t\tdirectory for generated documentation files\n"
+"    --force\t\tForce regeneration of all files, ignoring timestamps\n"
+"    --no-init-file\tDo not read initialization file\n"
+"\n"
+"Report bugs to free-widgets-bugs@let.rug.nl\n"
+msgstr ""
+
+#: src/wbuild.c:286
+msgid ""
+"Copyright (C) %s Joel N. Weber II\n"
+"This is free software; see the source for copying conditions.  There is NO\n"
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
+msgstr ""
+
+#: src/wbuild.c:291
+msgid "Written by %s\n"
+msgstr ""
+
+#: src/util.c:1113
+msgid "%s:%d: cyclic dependency found in superclasses of %s\n"
+msgstr ""
+
+#: src/generatec.c:466
+msgid "%s:%d: method \"%s\" or class \"%s\" not found\n"
+msgstr ""
+
+#: src/generatec.c:851
+msgid "superclass %s not found\n"
+msgstr ""
+
+#: src/generateh.c:184 src/generateh.c:234 src/generateh.c:705
+msgid "%s:%d: Missing type for `%s'\n"
+msgstr ""
+
+#: src/generatedoc.c:149
+msgid "%s:%d: unmatched \"|\" in text\n"
+msgstr ""
+
+#: src/printbody.c:62
+msgid "%s:%d: (in %s) no superclass (#) defined\n"
+msgstr ""
+
+#: src/printbody.c:80
+msgid "%s:%d: (in %s) identifier `#%s' is unknown\n"
+msgstr ""
+
+#: src/printbody.c:111
+msgid "%s:%d: (in %s) identifier `$%s' is unknown\n"
+msgstr ""
+
+#: src/printbody.c:134 src/printbody.c:188
+msgid "%s:%d: (in %s) missing `)' after `$%s(%s'\n"
+msgstr ""
+
+#: src/printbody.c:144 src/printbody.c:197
+msgid "%s:%d: (in %s) class `%s' is not a superclass\n"
+msgstr ""
+
+#: src/printbody.c:154
+msgid "%s:%d: (in %s) missing identifier after `$(%s)'\n"
+msgstr ""
+
+#: src/printbody.c:207
+msgid "%s:%d: (in %s) missing identifier after `$%s()'\n"
+msgstr ""

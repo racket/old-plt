@@ -3,12 +3,9 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 454 "XWidgets/xwEnforcer.w"
 #include <stdio.h>
-#line 455 "XWidgets/xwEnforcer.w"
 #include "xwTabString.h"
 #include <./xwEnforcerP.h>
-#line 61 "XWidgets/xwEnforcer.w"
 static void propagateKey(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -23,104 +20,84 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 98 "XWidgets/xwEnforcer.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 113 "XWidgets/xwEnforcer.w"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 122 "XWidgets/xwEnforcer.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 160 "XWidgets/xwEnforcer.w"
 static void _expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 203 "XWidgets/xwEnforcer.w"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 221 "XWidgets/xwEnforcer.w"
 static void insert_child(
 #if NeedFunctionPrototypes
 Widget 
 #endif
 );
-#line 244 "XWidgets/xwEnforcer.w"
 static void change_managed(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 277 "XWidgets/xwEnforcer.w"
 static XtGeometryResult  geometry_manager(
 #if NeedFunctionPrototypes
 Widget ,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 310 "XWidgets/xwEnforcer.w"
 static void compute_inside(
 #if NeedFunctionPrototypes
 Widget,Position *,Position *,int *,int *
 #endif
 );
-#line 332 "XWidgets/xwEnforcer.w"
 static void highlight_border(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 373 "XWidgets/xwEnforcer.w"
 static void unhighlight_border(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 403 "XWidgets/xwEnforcer.w"
 static char  propagateTranslation[] = "<KeyPress> : propagateKey() \n <KeyRelease> : propagateKey()";;
-#line 404 "XWidgets/xwEnforcer.w"
 static XtTranslations  propagate_trans = NULL ;;
-#line 408 "XWidgets/xwEnforcer.w"
 static void compute_label_size(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 426 "XWidgets/xwEnforcer.w"
 static void make_textgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 439 "XWidgets/xwEnforcer.w"
 static void make_graygc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 408 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 408 "XWidgets/xwEnforcer.w"
 static void compute_label_size(Widget self)
 #else
-#line 408 "XWidgets/xwEnforcer.w"
 static void compute_label_size(self)Widget self;
 #endif
-#line 409 "XWidgets/xwEnforcer.w"
 {
     int direction, ascent, descent;
     XCharStruct overall;
@@ -135,16 +112,12 @@ static void compute_label_size(self)Widget self;
 	((XfwfEnforcerWidget)self)->xfwfEnforcer.labelWidth = ((XfwfEnforcerWidget)self)->xfwfEnforcer.labelHeight = 0;
     }
 }
-#line 426 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 426 "XWidgets/xwEnforcer.w"
 static void make_textgc(Widget self)
 #else
-#line 426 "XWidgets/xwEnforcer.w"
 static void make_textgc(self)Widget self;
 #endif
-#line 427 "XWidgets/xwEnforcer.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -156,16 +129,12 @@ static void make_textgc(self)Widget self;
     mask = GCFont | GCBackground | GCForeground;
     ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc = XtGetGC(self, mask, &values);
 }
-#line 439 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 439 "XWidgets/xwEnforcer.w"
 static void make_graygc(Widget self)
 #else
-#line 439 "XWidgets/xwEnforcer.w"
 static void make_graygc(self)Widget self;
 #endif
-#line 440 "XWidgets/xwEnforcer.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -179,27 +148,16 @@ static void make_graygc(self)Widget self;
 }
 
 static XtResource resources[] = {
-#line 21 "XWidgets/xwEnforcer.w"
 {XtNshrinkToFit,XtCShrinkToFit,XtRBoolean,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.shrinkToFit),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.shrinkToFit),XtRImmediate,(XtPointer)FALSE },
-#line 25 "XWidgets/xwEnforcer.w"
 {XtNrel_width,XtCRel_width,XtRFloat,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.rel_width),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.rel_width),XtRString,(XtPointer)"0.0"},
-#line 26 "XWidgets/xwEnforcer.w"
 {XtNrel_height,XtCRel_height,XtRFloat,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.rel_height),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.rel_height),XtRString,(XtPointer)"0.0"},
-#line 27 "XWidgets/xwEnforcer.w"
 {XtNabs_width,XtCAbs_width,XtRPosition,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.abs_width),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.abs_width),XtRImmediate,(XtPointer)10 },
-#line 28 "XWidgets/xwEnforcer.w"
 {XtNabs_height,XtCAbs_height,XtRPosition,sizeof(((XfwfEnforcerRec*)NULL)->xfwfBoard.abs_height),XtOffsetOf(XfwfEnforcerRec,xfwfBoard.abs_height),XtRImmediate,(XtPointer)10 },
-#line 34 "XWidgets/xwEnforcer.w"
 {XtNlabel,XtCLabel,XtRString,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.label),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.label),XtRImmediate,(XtPointer)NULL },
-#line 38 "XWidgets/xwEnforcer.w"
 {XtNfont,XtCFont,XtRFontStruct,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.font),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.font),XtRString,(XtPointer)XtDefaultFont },
-#line 42 "XWidgets/xwEnforcer.w"
 {XtNforeground,XtCForeground,XtRPixel,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.foreground),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.foreground),XtRString,(XtPointer)XtDefaultForeground },
-#line 48 "XWidgets/xwEnforcer.w"
 {XtNalignment,XtCAlignment,XtRAlignment,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.alignment),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.alignment),XtRImmediate,(XtPointer)XfwfTop },
-#line 53 "XWidgets/xwEnforcer.w"
 {XtNpropagateTarget,XtCPropagateTarget,XtRPropagateTarget,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.propagateTarget),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.propagateTarget),XtRImmediate,(XtPointer)0 },
-#line 55 "XWidgets/xwEnforcer.w"
 {XtNdrawgray,XtCDrawgray,XtRBoolean,sizeof(((XfwfEnforcerRec*)NULL)->xfwfEnforcer.drawgray),XtOffsetOf(XfwfEnforcerRec,xfwfEnforcer.drawgray),XtRImmediate,(XtPointer)FALSE },
 };
 
@@ -273,7 +231,6 @@ XtInherit_set_abs_location,
 };
 WidgetClass xfwfEnforcerWidgetClass = (WidgetClass) &xfwfEnforcerClassRec;
 /*ARGSUSED*/
-#line 61 "XWidgets/xwEnforcer.w"
 static void propagateKey(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 #if 0
@@ -310,16 +267,12 @@ WidgetClass class;
   if (class == xfwfEnforcerWidgetClass) return;
   super = (XfwfEnforcerWidgetClass)class->core_class.superclass;
 }
-#line 98 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 98 "XWidgets/xwEnforcer.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 98 "XWidgets/xwEnforcer.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 99 "XWidgets/xwEnforcer.w"
 {
     if (propagate_trans == NULL)
         propagate_trans = XtParseTranslationTable(propagateTranslation);
@@ -333,30 +286,22 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     /* make_textgc($); - On demand */
     compute_label_size(self);
 }
-#line 113 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 113 "XWidgets/xwEnforcer.w"
 static void destroy(Widget self)
 #else
-#line 113 "XWidgets/xwEnforcer.w"
 static void destroy(self)Widget self;
 #endif
-#line 114 "XWidgets/xwEnforcer.w"
 {
   if (((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc) XtReleaseGC(self, ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc); ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc = NULL;
   if (((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc) XtReleaseGC(self, ((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc); ((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc = NULL;
 }
-#line 122 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 122 "XWidgets/xwEnforcer.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 122 "XWidgets/xwEnforcer.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 123 "XWidgets/xwEnforcer.w"
 {
     Boolean need_redraw = False;
 
@@ -389,16 +334,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 
     return need_redraw;
 }
-#line 160 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 160 "XWidgets/xwEnforcer.w"
 static void _expose(Widget self,XEvent * event,Region  region)
 #else
-#line 160 "XWidgets/xwEnforcer.w"
 static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 161 "XWidgets/xwEnforcer.w"
 {
     int w, h;
     Position x, y;
@@ -437,16 +378,12 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	}
     }
 }
-#line 203 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 203 "XWidgets/xwEnforcer.w"
 static void resize(Widget self)
 #else
-#line 203 "XWidgets/xwEnforcer.w"
 static void resize(self)Widget self;
 #endif
-#line 204 "XWidgets/xwEnforcer.w"
 {
     Position x, y;
     int w, h;
@@ -459,13 +396,10 @@ static void resize(self)Widget self;
     h -= 2 * ((XfwfEnforcerWidget)child)->core.border_width;
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), ((XfwfEnforcerWidget)child)->core.border_width);
 }
-#line 221 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 174 "XWidgets/xwEnforcer.w"
 static void insert_child(Widget  child)
 #else
-#line 174 "XWidgets/xwEnforcer.w"
 static void insert_child(child)Widget  child;
 #endif
 { Widget self = XtParent(child); {
@@ -485,16 +419,12 @@ static void insert_child(child)Widget  child;
     }
 }
 }
-#line 244 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 244 "XWidgets/xwEnforcer.w"
 static void change_managed(Widget self)
 #else
-#line 244 "XWidgets/xwEnforcer.w"
 static void change_managed(self)Widget self;
 #endif
-#line 245 "XWidgets/xwEnforcer.w"
 {
     Widget child;
     Position x, y; int w, h;
@@ -523,13 +453,10 @@ static void change_managed(self)Widget self;
     
     XtConfigureWidget(child, x, y, max(1, w), max(1, h), ((XfwfEnforcerWidget)child)->core.border_width);
 }
-#line 277 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 167 "XWidgets/xwEnforcer.w"
 static XtGeometryResult  geometry_manager(Widget  child,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 167 "XWidgets/xwEnforcer.w"
 static XtGeometryResult  geometry_manager(child,request,reply)Widget  child;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
 { Widget self = XtParent(child); {
@@ -561,16 +488,12 @@ static XtGeometryResult  geometry_manager(child,request,reply)Widget  child;XtWi
     return XtGeometryNo;
 }
 }
-#line 310 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 310 "XWidgets/xwEnforcer.w"
 static void compute_inside(Widget self,Position * x,Position * y,int * w,int * h)
 #else
-#line 310 "XWidgets/xwEnforcer.w"
 static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;int * w;int * h;
 #endif
-#line 311 "XWidgets/xwEnforcer.w"
 {
     xfwfBoardClassRec.xfwfCommon_class.compute_inside(self, x, y, w, h);
     /* change sizes to have enough space for the label */
@@ -588,16 +511,12 @@ static void compute_inside(self,x,y,w,h)Widget self;Position * x;Position * y;in
 	}
     }
 }
-#line 332 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 332 "XWidgets/xwEnforcer.w"
 static void highlight_border(Widget self)
 #else
-#line 332 "XWidgets/xwEnforcer.w"
 static void highlight_border(self)Widget self;
 #endif
-#line 333 "XWidgets/xwEnforcer.w"
 {
     XRectangle  rect[4];
     Position    x, y;
@@ -637,16 +556,12 @@ static void highlight_border(self)Widget self;
     if (!((XfwfEnforcerWidget)self)->xfwfCommon.bordergc) create_bordergc(self);
     XFillRectangles(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfCommon.bordergc, &rect[0], 4);
 }
-#line 373 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 373 "XWidgets/xwEnforcer.w"
 static void unhighlight_border(Widget self)
 #else
-#line 373 "XWidgets/xwEnforcer.w"
 static void unhighlight_border(self)Widget self;
 #endif
-#line 374 "XWidgets/xwEnforcer.w"
 {
     Position   x, y;
     int  w, h;

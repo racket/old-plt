@@ -241,6 +241,35 @@ Scheme_Object *mx_element_append_text(int argc,Scheme_Object **argv) {
   return mx_element_stuff_html(argc,argv,L"AfterEnd","element-append-text"); 
 }
 
+Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
+  IHTMLElement *pIHTMLElement;
+  BSTR htmlBSTR;
+
+  if (MX_ELEMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("element-replace-html","mx-element",0,argc,argv);
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("element-replace-html","string",0,argc,argv);
+  }
+
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("Element no longer valid");
+  }
+
+  MX_ELEMENT_VALIDITY(argv[0]) = FALSE;   
+
+  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);   
+
+  htmlBSTR = schemeStringToBSTR(argv[1]);
+
+  pIHTMLElement->put_outerHTML(htmlBSTR);
+
+  SysFreeString(htmlBSTR);
+
+  return scheme_void;
+}
+
 Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   BSTR attributeBSTR;
@@ -252,6 +281,10 @@ Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
     scheme_wrong_type("element-attribute","string",0,argc,argv);
+  }
+
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("Element no longer valid");
   }
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
@@ -288,6 +321,10 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
     scheme_signal_error("Attribute must have a type in {string,integer,float,double,{#t,#f}}");
   }
 
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("Element no longer valid");
+  }
+
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   attributeBSTR = schemeStringToBSTR(argv[1]);
@@ -315,6 +352,10 @@ Scheme_Object *mx_element_remove_attribute(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-remove-attribute!","string",1,argc,argv);
   }
 
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("Element no longer valid");
+  }
+
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   attributeBSTR = schemeStringToBSTR(argv[1]);
@@ -340,6 +381,10 @@ Scheme_Object *mx_element_tag(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-tag","mx-element",0,argc,argv);
   }
 
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("Element no longer valid");
+  }
+
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   pIHTMLElement->get_tagName(&tagBSTR);
@@ -358,6 +403,10 @@ Scheme_Object *mx_element_click(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-click","mx-element",0,argc,argv);
   }
 
+  if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
+    scheme_signal_error("Element no longer valid");
+  }
+
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   pIHTMLElement->click();
@@ -370,6 +419,10 @@ Scheme_Object *mx_element_click(int argc,Scheme_Object **argv) {
 IHTMLStyle *styleInterfaceFromElement(Scheme_Object *o) {
   IHTMLElement *pIHTMLElement;
   IHTMLStyle *pIHTMLStyle;
+
+  if (MX_ELEMENT_VALIDITY(o) == FALSE) {
+    scheme_signal_error("Element no longer valid");
+  }
 
   pIHTMLElement = MX_ELEMENT_VAL(o);
 

@@ -78,6 +78,7 @@ typedef struct _com_document_ {
 
 typedef struct _mx_element_ {
   Scheme_Type type;
+  BOOL valid;
   IHTMLElement *pIHTMLElement;
 } MX_Element;
 
@@ -125,6 +126,7 @@ typedef struct _document_window_style_option {
 #define MX_DOCUMENT_EVENTQUEUE(o) (((MX_Document_Object *)o)->pIEventQueue)
 
 #define MX_ELEMENTP(o) (o->type == mx_element_type)
+#define MX_ELEMENT_VALIDITY(o) (((MX_Element *)o)->valid)
 #define MX_ELEMENT_VAL(o) (((MX_Element *)o)->pIHTMLElement)
 
 #define MX_EVENTP(o) (o->type == mx_event_type)
@@ -192,6 +194,7 @@ MX_PRIM_DECL(mx_document_pred);
 
 MX_PRIM_DECL(mx_element_insert_html);
 MX_PRIM_DECL(mx_element_append_html);
+MX_PRIM_DECL(mx_element_replace_html);
 MX_PRIM_DECL(mx_element_insert_text);
 MX_PRIM_DECL(mx_element_append_text);
 MX_PRIM_DECL(mx_element_attribute);

@@ -69,8 +69,9 @@ static MX_PRIM mxPrims[] = {
 
   { mx_element_insert_html,"element-insert-html",2,2 },
   { mx_element_append_html,"element-append-html",2,2 },
-  { mx_element_insert_html,"element-insert-text",2,2 },
-  { mx_element_append_html,"element-append-text",2,2 },
+  { mx_element_insert_text,"element-insert-text",2,2 },
+  { mx_element_append_text,"element-append-text",2,2 },
+  { mx_element_replace_html,"element-replace-html",2,2 },
   { mx_element_attribute,"element-attribute",2,2 },
   { mx_element_set_attribute,"element-set-attribute!",3,3 },
   { mx_element_click,"element-click",1,1 },
@@ -2251,6 +2252,7 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval = (MX_Element *)scheme_malloc(sizeof(MX_Element));
 
   retval->type = mx_element_type;
+  retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
 
   return (Scheme_Object *)retval;

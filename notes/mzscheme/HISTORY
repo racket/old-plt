@@ -13,7 +13,7 @@
    threads are now released when the reader end is closed.
 
  * MacOS: changed `split-path' to preserve the colon suffix on a root
-   name.
+   name. (PR 1597, indirectly)
 
 103/2:
 

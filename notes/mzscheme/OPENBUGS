@@ -5,8 +5,6 @@ Inexact (i.e., floating-point) numbers are not write/read invariant
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'
 
-Under MacOS, server TCP (via `tcp-listen') does not work reliably
-
 Under MacOS, in the standalone MzScheme application, a blocking read 
  from stdin blocks all MzScheme threads
 

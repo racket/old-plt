@@ -29,6 +29,7 @@ Added raise-mismatch-error
 MacOS: getenv and putenv work within MzScheme; in a file called
  "Environment" resides in MzScheme's folder, it provides the
  initial environment
+MacOS: fixed TCP problems
 Changed handling of inexact can complex numbers towards compliance
  with Brad Lucier's proposal:
   (* 0 x) = 0 for all x

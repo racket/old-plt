@@ -28,7 +28,7 @@ include ../../../src/xtmake.env
 
 XPMCC = $(CC)
 
-XPM_CC = $(XPMCC) $(CFLAGS) -DZPIPE -c
+XPM_CC = $(XPMCC) $(CFLAGS) -c
 
 OBJDIR = objects/sys$(MZPLATFORMSUFFIX)
 LIBDIR = lib/sys$(MZPLATFORMSUFFIX)

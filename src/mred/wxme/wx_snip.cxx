@@ -680,6 +680,19 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
       }
   }
 
+#ifdef wx_x
+  if (style->GetUnderlined()) {
+    float descent = style->GetTextDescent(dc);
+    float h = style->GetTextHeight(dc);
+    
+    if (descent >= 2)
+      y += h - (descent / 2);
+    else
+      y += h - descent;
+    dc->DrawLine(x, y, x + w + GC_LINE_EXTEND, y);
+  }
+#endif
+
   text[count] = save;
 }
 

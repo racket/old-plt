@@ -520,7 +520,9 @@
                                (class-record-methods super)) methods super-name level))
     (andmap (lambda (iface iface-name)
               (implements-all? (class-record-methods iface) methods iface-name level))
-            ifaces))
+            ifaces
+            ifaces-name
+            ))
   
   (define (implements-all? inherit-methods methods name level)
     (or (null? inherit-methods)

@@ -16,7 +16,7 @@
 	 (identifier? (syntax name))
 	 (let ([sig (get-sig 'define-signature expr (syntax-e (syntax name))
 			     (syntax sig))])
-	   (with-syntax ([content (explode-sig sig)])
+	   (with-syntax ([content (explode-sig sig #f)])
 	     (syntax (define-syntax name
 		       (make-sig (quote content))))))])))
 
@@ -27,7 +27,7 @@
 	 (identifier? (syntax name))
 	 (let ([sig (get-sig 'let-signature expr (syntax-e (syntax name))
 			     (syntax sig))])
-	   (with-syntax ([content (explode-sig sig)])
+	   (with-syntax ([content (explode-sig sig #f)])
 	     (syntax (letrec-syntax ([name (make-sig (quote content))])
 		       . body))))])))
   
@@ -54,8 +54,8 @@
 				     (signature-vars sig))
 				    expr)]
 			  [body (reverse! (parse-unit-body a-unit))]
-			  [import-sigs (explode-named-sigs (parse-unit-imports a-unit))]
-			  [export-sig (explode-sig sig)])
+			  [import-sigs (explode-named-sigs (parse-unit-imports a-unit) #f)]
+			  [export-sig (explode-sig sig #f)])
 	    (syntax
 	     (make-unit/sig
 	      (unit
@@ -77,7 +77,8 @@
 			link-imports
 			flat-exports
 			exploded-imports
-			exploded-exports)
+			exploded-exports
+			boxed-interned-symbol-vectors)
 		       (parse-compound-unit expr (syntax body))]
 		      [(t) (lambda (l) (datum->syntax-object expr l expr))])
 	   (with-syntax ([(tag ...) (t tags)]
@@ -89,16 +90,17 @@
 			 [(link-import ...) (t link-imports)]
 			 [flat-exports (t flat-exports)]
 			 [exploded-imports (t exploded-imports)]
-			 [exploded-exports (t exploded-exports)])
+			 [exploded-exports (t exploded-exports)]
+			 [interned-vectors (t (unbox boxed-interned-symbol-vectors))])
 	     (syntax/loc
 	      expr
-	      (let ([tagx uexpr] ...)
+	      (let ([tagx uexpr] ... . interned-vectors)
 		(verify-linkage-signature-match
 		 'compound-unit/sig
 		 '(tag ...)
 		 (list tagx ...)
-		 'exploded-link-imports
-		 'exploded-link-exports)
+		 `exploded-link-imports
+		 `exploded-link-exports)
 		;; All checks done. Make the unit:
 		(make-unit/sig
 		 (compound-unit
@@ -107,8 +109,8 @@
 			      . link-import)]
 			...)
 		  (export . flat-exports))
-		 'exploded-imports
-		 'exploded-exports)))))])))
+		 `exploded-imports
+		 `exploded-exports)))))])))
 
   (define-syntax invoke-unit/sig
     (lambda (expr)
@@ -117,7 +119,7 @@
 	 (let ([sigs (parse-invoke-vars 'invoke-unit/sig (syntax (sig ...)) expr)])
 	   (with-syntax ([exploded-sigs (datum->syntax-object
 					 expr
-					 (explode-named-sigs sigs) 
+					 (explode-named-sigs sigs #f)
 					 expr)]
 			 [flat-sigs (datum->syntax-object
 				     expr
@@ -145,11 +147,11 @@
 	       [ex-sig (get-sig 'unit->unit/sig expr #f (syntax ex-sig))])
 	   (with-syntax ([exploded-imports (datum->syntax-object
 					    expr
-					    (explode-named-sigs im-sigs)
+					    (explode-named-sigs im-sigs #f)
 					    expr)]
 			 [exploded-exports (datum->syntax-object
 					    expr
-					    (explode-sig ex-sig)
+					    (explode-sig ex-sig #f)
 					    expr)])
 	     (syntax
 	      (make-unit/sig
@@ -222,7 +224,7 @@
 	[(_ name)
 	 (identifier? (syntax name))
 	 (let ([sig (get-sig 'signature->symbols stx #f (syntax name))])
-	   (with-syntax ([e (explode-sig sig)])
+	   (with-syntax ([e (explode-sig sig #f)])
 	     (syntax 'e)))])))
 
   ;; Internal:
@@ -243,11 +245,11 @@
 		       (identifier? (syntax prefix)))
 	     (badsyntax (syntax prefix) "prefix is not an identifier"))
 	   (let ([ex-sig (get-sig formname (syntax orig) #f (syntax signame))])
-	     (let ([ex-exploded (explode-sig ex-sig)]
+	     (let ([ex-exploded (explode-sig ex-sig #f)]
 		   [ex-flattened (flatten-signature #f ex-sig)])
 	       (let ([im-sigs
 		      (parse-invoke-vars formname (syntax imports) (syntax orig))])
-		 (let ([im-explodeds (explode-named-sigs im-sigs)]
+		 (let ([im-explodeds (explode-named-sigs im-sigs #f)]
 		       [im-flattened (flatten-signatures im-sigs)]
 		       [d->s (lambda (x) (datum->syntax-object (syntax orig) x (syntax orig)))])
 		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))

@@ -250,30 +250,46 @@
 				    id))
 			      elems))))))
 
+  (define (intern-vector intern-box v)
+    (if (and intern-box
+	     (andmap symbol? (vector->list v)))
+	(or (ormap (lambda (i)
+		     (and (equal? v (cadr i))
+			  (list 'unquote (car i))))
+		   (unbox intern-box))
+	    (let ([name (car (generate-temporaries '(idvec)))])
+	      (set-box! intern-box
+			(cons (list name v)
+			      (unbox intern-box)))
+	      (list 'unquote name)))
+	v))
+
   (define explode-sig
-    (lambda (sig)
-      (list->vector
-       (map
-	(lambda (v)
-	  (if (symbol? v)
-	      v
-	      (cons
-	       (signature-name v)
-	       (explode-sig v))))
-	(signature-elems sig)))))
+    (lambda (sig intern-box)
+      (intern-vector
+       intern-box
+       (list->vector
+	(map
+	 (lambda (v)
+	   (if (symbol? v)
+	       v
+	       (cons
+		(signature-name v)
+		(explode-sig v intern-box))))
+	 (signature-elems sig))))))
 
   (define explode-named-sig
-    (lambda (s)
+    (lambda (s intern-box)
       (cons
        (cond
 	[(signature-name s)]
 	[(signature-src s)]
 	[else inline-sig-name])
-       (explode-sig s))))
+       (explode-sig s intern-box))))
 
   (define explode-named-sigs
-    (lambda (sigs)
-      (map explode-named-sig sigs)))
+    (lambda (sigs intern-box)
+      (map (lambda (sig) (explode-named-sig sig intern-box)) sigs)))
 
   (define sort-signature-elems
     (lambda (elems)
@@ -611,9 +627,9 @@
 				       (verify-signature-match
 					'compound-unit/sig #f
 					(format "signature ~s" (signature-src use-sig))
-					(explode-sig use-sig)
+					(explode-sig use-sig #f)
 					(format "signature ~s" (signature-src sig))
-					(explode-sig sig)))))]
+					(explode-sig sig #f)))))]
 				[flatten-subpath
 				 (lambda (base last use-sig name sig p)
 				   (cond
@@ -893,7 +909,8 @@
 					     (format 
 					      "bad `export' sub-clause")
 					     export)]))
-			  export-list)])
+			  export-list)]
+			[interned-vectors (box null)])
 		   (check-unique (map
 				  (lambda (s)
 				    (if (signature? s)
@@ -908,11 +925,11 @@
 						 name)))
 		   (values (map link-name links)
 			   (map link-expr links)
-			   (map (lambda (link) (explode-sig (link-sig link))) links)
+			   (map (lambda (link) (explode-sig (link-sig link) interned-vectors)) links)
 			   (map
 			    (lambda (link)
 			      (map (lambda (sep)
-				     (explode-named-sig (sig-explode-pair-sigpart sep)))
+				     (explode-named-sig (sig-explode-pair-sigpart sep) interned-vectors))
 				   (link-links link)))
 			    links)
 			   (flatten-signatures imports)
@@ -924,14 +941,16 @@
 				    (link-links link))))
 				links)
 			   (map sig-explode-pair-exploded exports)
-			   (explode-named-sigs imports)
+			   (explode-named-sigs imports interned-vectors)
 			   (explode-sig
 			    (make-signature
 			     'dummy
 			     'dummy
 			     (apply
 			      append
-			      (map sig-explode-pair-sigpart exports))))))))))]
+			      (map sig-explode-pair-sigpart exports)))
+			    interned-vectors)
+			   interned-vectors))))))]
 	[_else (raise-syntax-error 
 		'compound-unit/sig
 		"bad syntax"

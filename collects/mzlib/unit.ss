@@ -467,6 +467,7 @@
 	       (let ([constituents (generate-temporaries tags)]
 		     [unit-export-positionss (generate-temporaries tags)]
 		     [unit-setups (generate-temporaries tags)]
+		     [unit-extracts (generate-temporaries tags)]
 		     [unit-export-lists
 		      ;; For each tag, get all expected exports
 		      (let* ([hts (map (lambda (x) (make-hash-table)) tags)]
@@ -519,44 +520,82 @@
 						     (hash-table-put! ht (syntax-e (car l)) p)
 						     (loop (cdr l) (add1 p))))
 						 ht))
-					     unit-export-lists)])
+					     unit-export-lists)]
+		       [interned-integer-lists null]
+		       [interned-id-lists null])
 		   (let ([make-mapping
 			  (lambda (v)
 			    (syntax-case v ()
 			      [(tag . exs)
-			       (let ([ex-poss (map-tag (syntax tag)
-						       unit-export-positionss)]
-				     [setup (map-tag (syntax tag)
-						     unit-setups)]
+			       (let ([extract (map-tag (syntax tag)
+						       unit-extracts)]
 				     [ht (map-tag (syntax tag)
 						  unit-export-hts)])
-				 (map
-				  (lambda (e)
-				    (let ([pos (hash-table-get
-						ht
-						(syntax-e
-						 (syntax-case e ()
-						   [(iid eid) (syntax iid)]
-						   [id e])))])
-				      (with-syntax ([ex-poss ex-poss]
-						    [setup setup]
-						    [pos (datum->syntax-object
-							  (quote-syntax here)
-							  pos
-							  #f)])
-					(syntax 
-					 (vector-ref (car setup)
-						     (vector-ref ex-poss pos))))))
-				  (syntax->list (syntax exs))))]
-			      [import (list v)]))])
-		     (let ([export-mapping (apply append (map make-mapping exports))]
+				 (with-syntax ([extract extract]
+					       [pos-name
+						(let ([il
+						       (map
+							(lambda (e)
+							  (hash-table-get
+							   ht
+							   (syntax-e
+							    (syntax-case e ()
+							      [(iid eid) (syntax iid)]
+							      [id e]))))
+							(syntax->list (syntax exs)))])
+						  (or (ormap (lambda (i)
+							       (and (equal? il (cadadr i))
+								    (car i)))
+							     interned-integer-lists)
+						      (let ([name (car (generate-temporaries 
+									(list (syntax tag))))])
+							(set! interned-integer-lists
+							      (cons `(,name ',il)
+								    interned-integer-lists))
+							name)))])
+				   (syntax (map extract pos-name))))]
+			      [import v]))]
+			 [collapse (lambda (l)
+				     (let loop ([l l])
+				       (cond
+					[(null? l) null]
+					[(identifier? (car l))
+					 (let-values ([(ids rest)
+						       (let loop ([l l][ids null])
+							 (if (or (null? l)
+								 (not (identifier? (car l))))
+							     (values (reverse ids) l)
+							     (loop (cdr l) (cons (car l) ids))))])
+					   (let ([name
+						  (let ([id-syms (map syntax-e ids)])
+						    (or (ormap (lambda (i)
+								 (and (equal? id-syms (cadr i))
+								      (car i)))
+							       interned-id-lists)
+							(let ([name 
+							       (car (generate-temporaries (list 'ids)))])
+							  (set! interned-id-lists
+								(cons (list* name id-syms ids)
+								      interned-id-lists))
+							  name)))])
+					     (cons name
+						   (loop rest))))]
+					[else (cons (car l) (loop (cdr l)))])))])
+		     (let ([export-mapping (collapse (map make-mapping exports))]
 			   [import-mappings (map (lambda (linkage-list)
-						   (apply append 
-							  (map make-mapping linkage-list)))
+						   (collapse
+						    (map make-mapping linkage-list)))
 						 linkages)])
 		       (with-syntax ([(constituent ...) constituents]
 				     [(unit-export-positions ...) unit-export-positionss]
 				     [(unit-setup ...) unit-setups]
+				     [(unit-extract ...) unit-extracts]
+				     [interned-integer-lists interned-integer-lists]
+				     [interned-id-lists (map (lambda (i)
+							       (with-syntax ([name (car i)]
+									     [ids (cddr i)])
+								 (syntax [name (list . ids)])))
+							     interned-id-lists)]
 				     [(unit-export-list ...) unit-export-lists]
 				     [(import-mapping ...) import-mappings]
 				     [(unit-import-count ...) 
@@ -596,11 +635,20 @@
 			       (quote export-names)
 			       (lambda ()
 				 (let ([unit-setup ((unit-go constituent))] ...)
-				   (list (vector . export-mapping)
-					 (lambda (ivar ...)
-					   (void) ;; in case there are no units
-					   ((list-ref unit-setup 1) . import-mapping)
-					   ...))))))))))))))))])))
+				   (let ([unit-extract
+					  (lambda (pos)
+					    (vector-ref (car unit-setup)
+							(vector-ref unit-export-positions pos)))]
+					 ...
+					 .
+					 interned-integer-lists)
+				     (list (list->vector (append . export-mapping))
+					   (lambda (ivar ...)
+					     (let interned-id-lists
+						 (void) ;; in case there are no units
+					       (apply (list-ref unit-setup 1) 
+						      (append . import-mapping))
+					       ...))))))))))))))))))])))
 
   (define (check-unit u n)
     (unless (unit? u)

@@ -72,7 +72,6 @@
 		  (current-library-path ,(current-library-path))
 		  (require-library "core.ss")
 		  (require-library "pconvert.ss")
-		  (require-library "sparams.ss")
 		  (load (build-path mred:system-source-directory "sig.ss"))
 		  (invoke-open-unit ,(mred:make-invokable-unit) mred))))
 	mred:debug:new-eval)
@@ -111,7 +110,6 @@
 (define mzlib:constant-lib? #t)
 (require-library "corec.ss")
 (require-library "triggerc.ss")
-(require-library "sparams.ss")
 
 (current-library-path (normalize-path (current-library-path)))
 

@@ -658,7 +658,7 @@ void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if ((GrafPtr)theMacGrafPort != qd.thePort)
-	  ::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
+	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
 	if (cParentArea && !wxSubType(__type, wxTYPE_FRAME)) {
@@ -676,7 +676,7 @@ void wxWindow::SetCurrentMacDC(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if ((GrafPtr)theMacGrafPort != qd.thePort)
-	  ::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
+	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
@@ -692,7 +692,7 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if ((GrafPtr)theMacGrafPort != qd.thePort)
-	  ::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
+	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform

@@ -592,14 +592,14 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		Rect srcr = {iysrc, ixsrc, iysrc + height, ixsrc + width};
 		Rect destr = {y, x, y+h, x+w };
 		
-		GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
+		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
         BitMap *dstbm;
         PixMapHandle destpixh;
-        if ((((CGrafPtr)theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
+        if (((theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
           destpixh = NULL;
           dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
         } else {
-          destpixh = ((CGrafPtr)theMacGrafPort)->portPixMap;
+          destpixh = (theMacGrafPort)->portPixMap;
 		  dstbm = (BitMap *)(* destpixh);
         }
 

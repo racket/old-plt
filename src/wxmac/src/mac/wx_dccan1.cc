@@ -181,7 +181,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 	 
         CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	if ((GrafPtr)theMacGrafPort != qd.thePort)
-	  ::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
+	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
@@ -224,7 +224,7 @@ void wxCanvasDC::SetCanvasClipping(void)
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 		 
 		::GetGWorld(&savep, &savegd);  
-		::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
+		::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 		wxMacSetClip();
 
@@ -389,7 +389,7 @@ void wxCanvasDC::SetBackground(wxColour* color)
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 		 
 		::GetGWorld(&savep, &savegd);  
-		::SetGWorld((CGrafPtr)theMacGrafPort, wxGetGDHandle());
+		::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
         InstallColor(color, FALSE);
 

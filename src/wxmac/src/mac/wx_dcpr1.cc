@@ -92,7 +92,7 @@ void wxPrinterDC::Create(THPrint pData)
     }
 
     cMacDC = new wxMacDC((CGrafPtr)&(prPort->gPort));
-	GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	
 	cMacDoingDrawing = FALSE;
 

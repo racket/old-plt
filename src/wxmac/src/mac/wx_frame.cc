@@ -115,7 +115,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 		::SetWTitle((WindowPtr)theMacWindow, theWindowTitle);
 		
-		SetWRefCon((GrafPtr)theMacWindow, (long)this);
+		SetWRefCon((GrafPtr)GetWindowPort((WindowPtr)theMacWindow), (long)this);
 		
 	} else {
 #endif
@@ -651,7 +651,7 @@ void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD,
     ::GetGWorld(&oldPort, &oldGD);
 
 	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
-	::SetGWorld((CGrafPtr)theMacWindow, wxGetGDHandle());
+	::SetGWorld(GetWindowPort(theMacWindow), wxGetGDHandle());
 
 	savePortH = theMacWindow->portRect.left;
 	savePortV = theMacWindow->portRect.top;

@@ -460,7 +460,7 @@ static void *mark(void *p)
 	return ((void **)p)[1];
 
       if (!(size & 1)) {
-	if ((long)new_untagged_low & 0x40) {
+	if ((long)new_untagged_low & 0x4) {
 	  new_untagged_low--;
 	  *(long *)new_untagged_low = 0;
 	}

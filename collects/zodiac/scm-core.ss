@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.55 1999/04/22 21:42:33 mflatt Exp $
+; $Id: scm-core.ss,v 1.56 1999/05/06 14:01:22 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -170,7 +170,7 @@
     (lambda (expr env vocab attributes)
       (let ((r (resolve expr env vocab)))
 	(if (or (macro-resolution? r) (micro-resolution? r))
-	    (static-error 
+            (static-error 
 	     expr
 	     "Invalid use of keyword ~s" (z:symbol-orig-name expr))
 	    r))))

@@ -1,4 +1,4 @@
-Time-stamp: <00/06/13 14:22:38 shriram>
+Time-stamp: <00/06/13 14:34:49 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -51,8 +51,8 @@ TYPES ----------------------------------------------------------------
   5 = params, 6 = query, 7 = fragment
 
   If the scheme is "file", then the path is a platform-dependent
-  string as constructed using build-path.  Otherwise it's a url-path
-  as defined in the standard.
+  string to be reconstructed using build-path.  Otherwise it's a
+  url-path as defined in the standard.
 
 > pure-port
 
@@ -68,7 +68,7 @@ TYPES ----------------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (absolute?-/-path->filesystem-path string) -> path-string
+> (abs?-url-path->fs-path string) -> path-string
 
   Procedure that handles the translation of URL paths to paths on the
   local filesystem (eg, for URLs with scheme "file", ie, URLs of the
@@ -94,19 +94,19 @@ PROCEDURES -----------------------------------------------------------
 
 > unixpath->path
 
-  Deprecated name for absolute?-/-path->filesystem-path.
+  Deprecated name for abs?-url-path->fs-path.
 
 > (get-pure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns a pure port corresponding to it.  Writes the
-  optional strings to the server.  Uses
-  absolute?-/-path->filesystem-path for "file" schemes.
+  optional strings to the server.  Uses abs?-url-path->fs-path for
+  "file" schemes.
 
 > (get-impure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns an impure port corresponding to it.  Writes
-  the optional strings to the server.  Uses
-  absolute?-/-path->filesystem-path for "file" schemes.
+  the optional strings to the server.  Uses abs?-url-path->fs-path for
+  "file" schemes.
 
 > (display-pure-port input-port) -> void
 

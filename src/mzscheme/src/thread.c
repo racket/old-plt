@@ -157,6 +157,8 @@ typedef struct Scheme_Thread_Set {
 
 Scheme_Thread_Set *thread_set_top;
 
+static int num_running_threads = 1;
+
 #ifdef LINK_EXTENSIONS_BY_TABLE
 Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
@@ -1743,6 +1745,8 @@ static TSET_IL Scheme_Object *get_t_set_prev(Scheme_Object *o)
 
 static void schedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
 {
+  num_running_threads++;
+
   while (1) {
     set_t_set_next(s, t_set->first);
     if (t_set->first)
@@ -1762,6 +1766,8 @@ static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
 {
   Scheme_Object *prev;
   Scheme_Object *next;
+
+  --num_running_threads;
 
   while (1) {
     prev = get_t_set_prev(s);
@@ -6542,6 +6548,8 @@ static Scheme_Object *current_stats(int argc, Scheme_Object *argv[])
     
     switch (SCHEME_VEC_SIZE(v)) {
     default:
+    case 7:
+      SCHEME_VEC_ELS(v)[6] = scheme_make_integer(num_running_threads);
     case 6:
       SCHEME_VEC_ELS(v)[5] = scheme_make_integer(scheme_overflow_count);
     case 5:

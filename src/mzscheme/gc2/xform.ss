@@ -1142,6 +1142,8 @@
 				    (lambda () null)
 				    (make-live-var-info #f -1 0 null null null 0) #t)])
 	  (if (and (not important-conversion?)
+		   (not (and function-name
+			     (eq? class-name function-name)))
 		   (null? (live-var-info-new-vars live-vars))
 		   (zero? (live-var-info-maxlive live-vars))
 		   (<= (live-var-info-num-calls live-vars) 1))

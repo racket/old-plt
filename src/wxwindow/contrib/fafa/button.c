@@ -273,7 +273,7 @@ void DrawFafaButton(HWND w, HDC h)
 			DrawString( h, & r, tmp, s ) ;
 			break ;
 		case FB_BITMAP:
-			bmp = GetBitmap() ;
+			bmp = ffGetBitmap() ;
 			width = GetBitmapW() ;
 			height = GetBitmapH() ;
 			DrawPodium( h, & r, s ) ;
@@ -316,7 +316,7 @@ void DrawFafaButton(HWND w, HDC h)
 
 void	ChangeButtonFocus( HWND w, int on )
 {
-	if ( ( on != 0 ) ^ TstF( GetState(), FB_FOCUS ) )
+	if ( ( on != 0 ) ^ TstF( ffGetState(), FB_FOCUS ) )
 		{
 		HDC	h ;
 		RECT	r ;

@@ -283,7 +283,7 @@ static	void	DrawCheckFocus( HDC h, RECT * r, LPSTR s )
 
 static	void	ChangeCheckFocus( HWND w, int on )
 {
-	if ( ( on != 0 ) ^ TstF( GetState(), FB_FOCUS ) )
+	if ( ( on != 0 ) ^ TstF( ffGetState(), FB_FOCUS ) )
 		{
 		HDC	h ;
 		RECT	r ;

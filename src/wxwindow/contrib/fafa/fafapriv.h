@@ -75,7 +75,7 @@ enum	{				/* Extra BYTES, Offsets : */
 #define	XorState(f) SetWindowWord(w,OF_STATE,(WORD)(GetWindowWord(w,OF_STATE )^(f)))
 #define	TstState(f) ( ( GetWindowWord( w, OF_STATE ) & (f) ) != 0 )
 
-#define	GetState()	GetWindowWord( w, OF_STATE )
+#define	ffGetState()	GetWindowWord( w, OF_STATE )
 #define	GetStyle()	GetWindowLong( w, GWL_STYLE )
 #define	SetStyle(s)	SetWindowLong( w, GWL_STYLE , (LONG) (s))
 
@@ -85,7 +85,7 @@ enum	{				/* Extra BYTES, Offsets : */
 #define	GetFont()	(HFONT)GetWindowLong( w, OF_FONT )
 #define	SetFont( f )	SetWindowLong( w, OF_FONT, ( LONG ) ( f ) )
 
-#define	GetBitmap()	(HBITMAP)GetWindowLong( w, OF_BITMAP )
+#define	ffGetBitmap()	(HBITMAP)GetWindowLong( w, OF_BITMAP )
 #define	SetBitmap( f )	SetWindowLong( w, OF_BITMAP, ( LONG ) ( f ) )
 
 #define	GetBitmapW()	GetWindowWord( w, OF_BWIDTH )

@@ -188,7 +188,7 @@ text:			DrawTaggedText( h, & r, ( int ) GetStX( v ),
 					( int ) GetStY( v ), MyAtoi( t ) ) ;
 			break ;
 		case FS_BITMAP:
-			bmp = GetBitmap() ;
+			bmp = ffGetBitmap() ;
 			width = GetBitmapW() ;
 			height = GetBitmapH() ;
 			if ( v & WS_BORDER )

@@ -445,7 +445,7 @@
                                                      (find-strictfp modifiers))
                                     (process-members members old-methods cname type-recs level)))
                                ((ctor?) (has-ctor? m)))
-                   
+                                      
                    (unless ctor?
                      (when (and (eq? level 'beginner) (not (memq 'abstract test-mods)))
                        (beginner-ctor-error 'none (header-id info) (id-src (header-id info))))
@@ -453,7 +453,7 @@
                    
                    (when (and ctor? (eq? level 'beginner) (memq 'abstract test-mods))
                      (beginner-ctor-error 'abstract (header-id info) (id-src (header-id info))))
-                   
+
                    (valid-field-names? f members m level type-recs)
                    (valid-method-sigs? m members level type-recs)
 
@@ -507,9 +507,13 @@
 			   members)
                      
                      record))))))
-        (if look-in-table?
-            (get-record (send type-recs get-class-record cname #f build-record) type-recs)
-            (build-record)))))
+        (cond
+          ((class-record? (send type-recs get-class-record cname)) => 
+           (lambda (rec) rec))
+          (look-in-table?
+           (get-record (send type-recs get-class-record cname #f build-record) type-recs))
+          (else
+           (build-record))))))
   
   ;find-strictfp (list modifier) -> modifier
   (define (find-strictfp mods)

@@ -2466,7 +2466,7 @@
   (define (ctor-arg-error kind args atypes name src)
     (let ((n (type->ext-name name))
           (givens (map type->ext-name args))
-          (expecteds (map type->ext-name atypes))
+          (expecteds (get-string-of-types (list atypes)))
           (awitht "arguments with types"))
       (raise-error n
                    (case kind
@@ -2475,7 +2475,7 @@
                               n (length expecteds) awitht expecteds (length givens) awitht givens))
                      ((type)
                       (format "Constructor for ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
-                              n awitht (map type->ext-name (cdr atypes)) (car givens) (type->ext-name (car atypes)))))
+                              n awitht (get-string-of-types (list (cdr atypes))) (car givens) (type->ext-name (car atypes)))))
                    n src)))
 
   ;ctor-overload-error: symbol type (list type) src -> void

@@ -2145,7 +2145,7 @@
          (cond
            ((eof? tok) (parse-error "Expected a )" ps pe))
            ((c-paren? tok) (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok?))
-           (else (parse-error (format "Expression in parens must have close paren, found ~a instead" out) ps end))))
+           (else (parse-error (format "Expression in parens must have an operator or a close paren, found ~a instead" out) ps end))))
         ;Advanced
         ((instanceof)
          (cond

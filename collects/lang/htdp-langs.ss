@@ -219,7 +219,8 @@ to the original stdout of DrScheme.
           ;(define/override (get-one-line-summary) one-line-summary)
           (define/public (get-htdp-style-delta) style-delta)
           
-          (super-instantiate ())))
+          (super-instantiate ()
+            (language-url "http://www.htdp.org/"))))
       
       (define (language-extension %)
         (class %

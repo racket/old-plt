@@ -1,12 +1,13 @@
 
 (module writer mzscheme
   (require (lib "unitsig.ss")
-	  (lib "list.ss"))
-
+           (lib "list.ss")
+           (lib "etc.ss"))
+  
   (require "sig.ss")
-
+  
   (provide writer@)
-
+  
   (define writer@
     (unit/sig writer^
       (import xml-structs^)
@@ -21,15 +22,9 @@
       
       (define html-empty-tags '(param meta link isindex input img hr frame col br basefont base area))
       
-      ;; var-argify : (a Output-port -> b) -> (a [Output-port] -> b)
-      (define (var-argify f)
-	(case-lambda
-	 [(x out) (f x out)]
-	 [(x) (f x (current-output-port))]))
-      
       ;; gen-write/display-xml/content : (Nat Output-port -> Void) -> Content [Output-Port]-> Void
       (define (gen-write/display-xml/content dent)
-	(var-argify (lambda (c out) (write-xml-content c 0 dent out))))
+	(opt-lambda (c [out (current-output-port)]) (write-xml-content c 0 dent out)))
       
       ;; indent : Nat Output-port -> Void
       (define (indent n out)
@@ -47,10 +42,29 @@
       
       ;; gen-write/display-xml : (Content [Output-port] -> Void) -> Document [Output-port] -> Void
       (define (gen-write/display-xml output-content)
-	(var-argify (lambda (doc out)
-		      (display-outside-misc (prolog-misc (document-prolog doc)) out)
-		      (output-content (document-element doc) out)
-		      (display-outside-misc (document-misc doc) out))))
+	(opt-lambda (doc [out (current-output-port)])
+          (let ([prolog (document-prolog doc)])
+            (display-outside-misc (prolog-misc prolog) out)
+            (display-dtd (prolog-dtd prolog) out)
+            (display-outside-misc (prolog-misc2 prolog) out))
+          (output-content (document-element doc) out)
+          (display-outside-misc (document-misc doc) out)))
+      
+      ; display-dtd : document-type oport -> void
+      (define (display-dtd dtd out)
+        (when dtd
+          (fprintf out "<!DOCTYPE ~a" (document-type-name dtd))
+          (let ([external (document-type-external dtd)])
+            (cond
+              [(external-dtd/public? external)
+               (fprintf out " PUBLIC \"~a\" \"~a\""
+                        (external-dtd/public-public external)
+                        (external-dtd-system external))]
+              [(external-dtd/system? external)
+               (fprintf out " SYSTEM \"~a\"" (external-dtd-system external))]
+              [(not external) (void)]))
+          (display ">" out)
+          (newline out)))
       
       ;; write-xml : Document [Output-port] -> Void
       (define write-xml (gen-write/display-xml write-xml/content))
@@ -62,20 +76,20 @@
       (define (display-outside-misc misc out)
 	(for-each (lambda (x)
 		    ((cond
-		      [(comment? x) write-xml-comment]
-		      [(pi? x) write-xml-pi]) x 0 void out)
+                       [(comment? x) write-xml-comment]
+                       [(pi? x) write-xml-pi]) x 0 void out)
 		    (newline out))
 		  misc))
       
       ;; write-xml-content : Content Nat (Nat Output-Stream -> Void) Output-Stream -> Void
       (define (write-xml-content el over dent out)
 	((cond
-	  [(element? el) write-xml-element]
-	  [(pcdata? el) write-xml-pcdata]
-	  [(entity? el) write-xml-entity]
-	  [(comment? el) write-xml-comment]
-	  [(pi? el) write-xml-pi]
-	  [else (error 'write-xml-content "received ~a" el)])
+           [(element? el) write-xml-element]
+           [(pcdata? el) write-xml-pcdata]
+           [(entity? el) write-xml-entity]
+           [(comment? el) write-xml-comment]
+           [(pi? el) write-xml-pi]
+           [else (error 'write-xml-content "received ~a" el)])
 	 el over dent out))
       
       ;; write-xml-element : Element Nat (Nat Output-Stream -> Void) Output-Stream -> Void

@@ -24,6 +24,8 @@
       ;; The position of the next token to be read
       (define current-pos start-pos)
       
+      (define get-token #f)
+      
       ;; ---------------------- Interactions state ----------------------------
       ;; The position to start the coloring at.
       (define start-pos 0)
@@ -33,7 +35,7 @@
       ;; ---------------------- Preferences -----------------------------------
       (define should-color? #t)
       (define remove-prefs-callback-thunk #f)
-      
+      (define prefix #f)
       
       ;; ---------------------- Multi-threading -------------------------------
       ;; A list of thunks that color the buffer
@@ -103,7 +105,7 @@
                                           (node-token-length min-tree)))
             (sync-invalid))))
       
-      (define (re-tokenize prefix get-token)
+      (define (re-tokenize)
         (let-values (((type data new-token-start new-token-end) (get-token in)))
           (let ((old-breaks (break-enabled)))
             (break-enabled #f)
@@ -131,11 +133,11 @@
                     (break-enabled old-breaks))
                   (else
                    (break-enabled old-breaks)
-                   (re-tokenize prefix get-token)))))
+                   (re-tokenize)))))
               (else
                (break-enabled old-breaks))))))
     
-      (define/public (do-insert/delete prefix get-token port-wrapper edit-start-pos change-length)
+      (define/public (do-insert/delete edit-start-pos change-length)
         (when should-color?
           (when (> edit-start-pos start-pos)
             (set! edit-start-pos (sub1 edit-start-pos)))
@@ -146,14 +148,16 @@
             (set! invalid-tokens-start (+ orig-token-end change-length))
             (set! current-pos (+ start-pos orig-token-start))
             (set! input-port-start-pos (+ start-pos orig-token-start))
-            (set! in (port-wrapper (open-input-text-editor
-                                    this
-                                    input-port-start-pos
-                                    end-pos))))
+            (set! in (open-input-text-editor
+                      this
+                      input-port-start-pos
+                      end-pos)))
           (colorer-callback)))
       
-      (define/public (start prefix get-token port-wrapper)
+      (define/public (start prefix- get-token-)
         (reset)
+        (set! prefix prefix-)
+        (set! get-token get-token-)
         (unless remove-prefs-callback-thunk
           (set! remove-prefs-callback-thunk
                 (preferences:add-callback
@@ -162,59 +166,58 @@
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
         (unless background-thread
-;          (parameterize ((initial-exception-handler background-exn-handler))
-            (set! background-thread (thread (lambda () (background-colorer prefix get-token)))));)
-        (do-insert/delete prefix get-token port-wrapper start-pos 0))
+          (parameterize ((initial-exception-handler background-exn-handler))
+            (set! background-thread (thread (lambda () (background-colorer))))))
+        (do-insert/delete start-pos 0))
         
         
-      (define/public (stop prefix get-token port-wrapper)
+      (define/public (stop)
         (when remove-prefs-callback-thunk
           (remove-prefs-callback-thunk)
           (set! remove-prefs-callback-thunk #f))
         (change-style (send (get-style-list) find-named-style "Standard")
                       start-pos end-pos #f)
         (reset)
-        (when background-thread
-          (kill-thread background-thread)
-          (set! background-thread #f)))
-
-      
-;      (define (colorer-callback)
-;        (channel-put sync #f)
-;        (sleep .1)
-;        (break-thread background-thread)
-;        (begin-edit-sequence #f)
-;        (color)
-;        (end-edit-sequence)
-;        (queue-callback colorer-callback))
-      
-;      (define (background-exn-handler exn)
-;        (set! background-cont (exn:break-continuation exn))
-;        ((current-error-escape-handler)))
-          
-;      (define (background-colorer prefix get-token)
-;        (channel-get sync)
-;        (if background-cont
-;            (background-cont #f)
-;            (with-handlers ((not-break-exn? void))
-;              (re-tokenize prefix get-token)))
-;        (background-colorer prefix get-token))
-      
+        (set! prefix #f)
+        (set! get-token #f))
       
       (define (colorer-callback)
         (channel-put sync #f)
-        (channel-get sync)
+        (sleep .1)
+        (break-thread background-thread)
         (begin-edit-sequence #f)
         (color)
-        (end-edit-sequence))
+        (end-edit-sequence)
+        (queue-callback colorer-callback))
       
-
-      (define (background-colorer prefix get-token)
+      (define (background-exn-handler exn)
+        (set! background-cont (exn:break-continuation exn))
+        (set! background-thread (thread background-colorer))
+        ((error-escape-handler)))
+          
+      (define (background-colorer)
         (channel-get sync)
-        (with-handlers ((void void))
-          (re-tokenize prefix get-token))
-        (channel-put sync #f)
-        (background-colorer prefix get-token))
+        (if background-cont
+            (background-cont #f)
+            (with-handlers ((not-break-exn? void))
+              (re-tokenize)))
+        (background-colorer))
+      
+      
+;      (define (colorer-callback)
+;        (channel-put sync #f)
+;        (channel-get sync)
+;        (begin-edit-sequence #f)
+;        (color)
+;        (end-edit-sequence))
+;      
+;      
+;      (define (background-colorer)
+;        (channel-get sync)
+;        (with-handlers ((void void))
+;          (re-tokenize))
+;        (channel-put sync #f)
+;        (background-colorer))
   
       (super-instantiate ())))
   
@@ -230,22 +233,22 @@
       (rename (super-on-disable-surrogate on-disable-surrogate))
       (define/override (on-disable-surrogate text)
         (super-on-disable-surrogate text)
-        (send text stop prefix get-token port-wrapper))
+        (send text stop))
       
       (rename (super-on-enable-surrogate on-enable-surrogate))
       (define/override (on-enable-surrogate text)
         (super-on-enable-surrogate text)
-        (send text start prefix get-token port-wrapper))
+        (send text start prefix get-token))
       
       (rename (super-after-insert after-insert))
       (define/override (after-insert text _ edit-start-pos change-length)
         (super-after-insert text _ edit-start-pos change-length)
-        (send text do-insert/delete prefix get-token port-wrapper edit-start-pos change-length))
+        (send text do-insert/delete edit-start-pos change-length))
       
       (rename (super-after-delete after-delete))
       (define/override (after-delete text _ edit-start-pos change-length)
         (super-after-delete text _ edit-start-pos change-length)
-        (send text do-insert/delete prefix get-token port-wrapper edit-start-pos (- change-length)))
+        (send text do-insert/delete edit-start-pos (- change-length)))
       
       (super-instantiate ())
       ))

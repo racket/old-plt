@@ -8,7 +8,6 @@ _default-style.ss_
       unbound-variable 
       bound-variable 
       primitive
-      global
       constant
       comment
       base

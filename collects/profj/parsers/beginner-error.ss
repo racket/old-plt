@@ -35,7 +35,7 @@
                  (else
                   (if (prim-type? (get-tok first-tok))
                       (parse-field first-tok (getter) 'start getter)
-                       (parse-expression first-tok 'start getter))))))
+                      (parse-expression null first-tok 'start getter))))))
           
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
@@ -65,7 +65,11 @@
   ;token = (list lex-token position position)
   (define (get-tok token) (car token))
   (define (get-start token) (cadr token))
-  (define (get-end token) (caddr token))
+  (define (get-end token) 
+    (if (or (eq? (get-token-name (get-tok token)) 'STRING_LIT)
+            (eq? (get-token-name (get-tok token)) 'STRING_ERROR))
+        (cadr (token-value (get-tok token)))
+        (caddr token)))
   
   (define (output-format tok)
     (cond
@@ -82,7 +86,10 @@
          ((PERIOD) ".")))
       ((keyword? tok) (format "keyword ~a" (get-token-name tok)))
       ((id-token? tok) (format "identifier ~a" (token-value tok)))
+      ((eq? (get-token-name tok) 'STRING_LIT) (format "string ~a" (car (token-value tok))))
       ((literal-token? tok) (format "value ~a" (token-value tok)))
+      ((eq? (get-token-name tok) 'STRING_ERROR)
+       (format "malformed string ~a" (car (token-value tok))))
       (else (get-token-name tok))))
   
   ;parse-definition: token token symbol (-> token) -> void
@@ -593,7 +600,7 @@
            ((EOF) (parse-error "Declaration must end with a ';'" ps pe))
            ((SEMI_COLON) (getter))
            (else
-            (parse-error "Expected an end to this declartion, found ~a" out start end)))))))
+            (parse-error (format "Expected an end to this declartion, found ~a" out) start end)))))))
 
     
   ;parse-statement: token token symbol (->token) -> token
@@ -683,6 +690,8 @@
             (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter) 'c-paren getter))
            ((new) (parse-expression cur-tok (getter) 'class-alloc-start getter))
            ((IDENTIFIER) (parse-expression cur-tok (getter) 'name getter))
+           ((STRING_ERROR)
+            (parse-error (format "String must end with '~a', which is not found" #\") start end))
            (else 
             (parse-error (format "Expected an expression, ~a is not the valid beginning of an expression" out) start end))))
         ((op-or-end)

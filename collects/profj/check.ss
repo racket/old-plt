@@ -1375,7 +1375,6 @@
            (handle-call-error 
             (lambda (exn)
               (when (or (not (access? expr)) (memq level '(beginner intermediate))) (raise exn))
-;              (unless (or (access? expr) (not (eq? level 'full)) (not (eq? level 'advanced))) (raise exn))
               (if (eq? level 'full)
                   (let ((record (car (find-static-class 
                                       (append (access-name expr) (list name))
@@ -1927,7 +1926,7 @@
   (define (call-arg-error kind name args exp src)
     (let ((n (id->ext-name name))
           (t (get-call-type exp))
-          (as (map type->ext-name exp)))
+          (as (map type->ext-name args)))
       (raise-error n
                    (case kind
                      ((number)

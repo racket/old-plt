@@ -1351,12 +1351,12 @@
         ((+)
          (cond 
            ((and (is-string-type? type) (is-string-type? left-type))
-            (make-syntax #f `(send ,left concat_java.lang.String (javaRuntime:convert-to-string ,right)) source))
+            (make-syntax #f `(send ,left concat-java.lang.String (javaRuntime:convert-to-string ,right)) source))
            ((and (is-string-type? type) (is-string-type? right-type))
-            (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String ,right) source))
+            (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String ,right) source))
            ((is-string-type? type)
             (make-syntax #f 
-                         `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String 
+                         `(send (javaRuntime:convert-to-string ,left) concat-java.lang.String 
                                 (javaRuntime:convert-to-string ,right)) 
                          source))
            (else

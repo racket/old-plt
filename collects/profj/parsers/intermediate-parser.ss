@@ -41,7 +41,12 @@
        [(TRUE_LIT) (make-literal 'boolean (build-src 1) #t)]
        [(FALSE_LIT) (make-literal 'boolean (build-src 1) #f)]
        [(CHAR_LIT) (make-literal 'char (build-src 1) $1)]
-       [(STRING_LIT) (make-literal 'string (build-src 1) $1)]
+       [(STRING_LIT) (make-literal 'string 
+                                    (make-src (position-line $1-start-pos)
+                                                     (position-col $1-start-pos)
+                                                     (+ (position-offset $1-start-pos) (interactions-offset))
+                                                     (- (position-offset (cadr $1)) (position-offset $1-start-pos)))
+                                   (car $1))]
        [(NULL_LIT) (make-literal 'null (build-src 1) #f)])
       
       ;; 19.4

@@ -36,7 +36,7 @@
     continue    goto       package       synchronized))
 
   (define-tokens java-vals
-    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER))  
+    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER STRING_ERROR))  
 
   (define (trim-string s f l)
     (substring s f (- (string-length s) l)))
@@ -139,14 +139,53 @@
 		 "+"	"-"	"*"	"/"	"&" "|"	"^"	"%"	"<<" ">>" ">>>"
 		 "+="	"-="	"*="	"/="	"&="	"|="	"^="	"%="	"<<="	">>="	">>>=")))
 
+  ;;Old get-string
   ;; 3.10.5
-  (define get-string
-    (lexer
-     (#\" null)
-     (EscapeSequence (cons (EscapeSequence->char lexeme)
-                           (get-string input-port)))
-     ((^ CR LF) (cons (string-ref lexeme 0)
-                      (get-string input-port)))))
+  ;(define get-string
+  ;  (lexer
+  ;   (#\" null)
+  ;   (EscapeSequence (cons (EscapeSequence->char lexeme)
+  ;                         (get-string input-port)))
+  ;   ((^ CR LF) (cons (string-ref lexeme 0)
+  ;                    (get-string input-port)))))
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;String lexer
+  
+  (define (get-string input-port)
+    (letrec ((tokens (get-string-tokens input-port))
+             (last-token (list-ref tokens (sub1 (length tokens))))
+             (tokens->string
+              (lambda (toks)
+                (if (null? (cdr toks))
+                    ""
+                    (string-append (string (token-value (car (car toks))))
+                                   (tokens->string (cdr toks)))))))
+      (if (eq? 'STRING_END (get-token-name last-token))
+          (token-STRING_LIT (list (tokens->string tokens) (caddr last-token)))
+          (token-STRING_ERROR (list (tokens->string tokens) (caddr last-token))))))
+  
+  (define (get-string-tokens input-port)
+    (let ((tok (get-str-tok input-port)))
+      (case (get-token-name tok)
+        ((STRING_EOF) (list tok))
+        ((STRING_END) (list tok))
+        (else (cons tok (get-string-tokens input-port))))))
+
+  (define (get-token-name tok)
+    (if (token? (car tok))
+        (token-name (car tok))
+        (car tok)))
+  
+  (define-tokens str-tok (STRING_CHAR))
+  (define-empty-tokens err (STRING_END STRING_EOF))
+  
+  (define get-str-tok
+    (lexer-src-pos
+     (#\" (token-STRING_END))
+     (EscapeSequence (token-STRING_CHAR (EscapeSequence->char lexeme)))
+     ((^ CR LF) (token-STRING_CHAR (string-ref lexeme 0)))
+     ((: (eof) #\032) (token-STRING_EOF))))
   
   ;; 3.10.6
   (define (EscapeSequence->char es)
@@ -186,7 +225,8 @@
      ("null" (token-NULL_LIT))
 
      ;; 3.10.5
-     (#\" (token-STRING_LIT (list->string (get-string input-port))))
+     (#\" (get-string input-port))
+      ;(token-STRING_LIT (list->string (get-string input-port))))
 
      ;; 3.10.4
      ((@ #\' (^ CR LF #\' #\\) #\')

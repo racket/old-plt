@@ -47,7 +47,11 @@
   (let* ([bindings (request-bindings initial-request)]
 	 [extract-fun (lambda (sym)
 			(extract-binding/single sym bindings))]
-	 [vals (map extract-fun names)])
+	 [vals (map extract-fun names)]
+	 [new-browser? (with-handlers 
+		       ((void (lambda _ #f)))
+		       (extract-binding/single 'new-browser bindings))])
+				     
 
     (when (not (string->number (car vals)))
 	  (add-error!
@@ -58,6 +62,8 @@
 	     ([void (lambda _ 
 		      (add-error! "Error saving configuration"))])
 	     (put-prefs names vals)))
+
+    (put-prefs '(new-browser) `(,(if new-browser? #t #f)))
 
     (if (errors?)
 	 (make-error-page error-msgs)

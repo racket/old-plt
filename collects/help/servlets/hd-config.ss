@@ -20,6 +20,8 @@
     (get-pref/default 'search-link search-link-default))
   (define sys-link-color 
     (get-pref/default 'sys-link sys-link-default))
+  (define new-browser
+    (get-pref/default 'new-browser new-browser-default))
 
   (define (make-option default)
     (lambda (s)
@@ -60,6 +62,16 @@
        (P)
        (FORM ((ACTION "/servlets/update-config.ss")
 	      (METHOD "POST"))
+	     (TABLE ((ALIGN "center"))
+		    ,(let ([attrs '((TYPE "checkbox")
+			      (NAME "new-browser")
+			      (VALUE "dummy"))])
+		       `(TR (TD
+			     (INPUT ,(if new-browser 
+					 (cons '(CHECKED "true") attrs)
+					 attrs)))
+			    (TD (B "Request new window for Help Desk browser")))))
+	     (P)
 	     (TABLE ((BGCOLOR "white")
 		     (ALIGN "center")
 		     (BORDER "2")

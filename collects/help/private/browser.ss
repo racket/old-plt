@@ -1,14 +1,13 @@
 (module browser mzscheme
-  (require (lib "browser.ss" "net"))
+  (require (lib "browser.ss" "net")
+	   (lib "util.ss" "help" "servlets" "private"))
   (require "server.ss")
 
   (provide help-desk-browser
 	   help-desk-navigate)
 
   (define (help-desk-navigate url)
-    (if (eq? (system-type) 'windows)
-	(shell-execute #f url "" (current-directory) 'SW_SHOWNORMAL)
-	(send-url url #t)))
+    (send-url url (get-pref/default 'new-browser new-browser-default)))
 
   (define (help-desk-browser hd-cookie)
     (help-desk-navigate 

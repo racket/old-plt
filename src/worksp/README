@@ -84,7 +84,7 @@ be the simplest and surest way to avoid confusing versioning
 problems.)
 
 For local testing, you can use the "xxxxxxx" libraries directly. For
-any binaries that wil be distributed, however, the placeholder should
+any binaries that will be distributed, however, the placeholder should
 be replaced with a specific version.
 
 To replace the "xxxxxxx" with a specific version, run

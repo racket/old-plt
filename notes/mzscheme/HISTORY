@@ -2,6 +2,10 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.15
+Added 'module-begin to the set of possible results from
+ `syntax-local-context'.
+
 Version 299.14
 Removed fluid-let-syntax
 Added (lib "stxparam.ss"), partly as a replacement for

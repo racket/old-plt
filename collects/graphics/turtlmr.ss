@@ -1,10 +1,10 @@
-(let ([turtles:window #f]
-      [turtles:shown? #f])
 (unit/sig turtle^
   (import [wx : wx^]
-	  mzlib:function^
-	  turtle:create-window^)
+	  mzlib:function^)
   
+  (define turtles:window #f)
+  (define turtles:shown? #f)
+
   (define plot-window%
     (class wx:frame% (name width height)
       (inherit show set-menu-bar)
@@ -83,20 +83,23 @@
 	   (- (unbox h) user/client-offset))))
   
   (define-struct turtle (x y angle))
+  ; x : int
+  ; y: int
+  ; angle : int
+
   (define-struct cached (turtles cache))
+  ; turtles : (list-of turtle)
+  ; cache : turtle -> turtle
+
   (define-struct tree (children))
-  
-  ;; *Turtles* is either a
-  ;;    - list of turtles or
-  ;;    - a tree with a list of *cached-Turtles*
-  ;; 
-  ;; *cached-Turtles* is a pair of a *Turtle* 
-  ;;		    and a function that 
-  ;;                  maps turtles to turtles, 
-  ;;                  applying the cache.
+  ; children : (list-of cached)
   
   (define Clear-Turtle (make-turtle (/ turtle-window-size 2)
 				    (/ turtle-window-size 2) 0))
+
+  ;; Turtles is either a
+  ;;    - (list-of turtle) or
+  ;;    - tree 
   (define Turtles (list Clear-Turtle))
   
   ;; the cache contains a turtle-offset, which is represented
@@ -104,26 +107,17 @@
   (define Empty-Cache (make-turtle 0 0 0))
   (define Cache Empty-Cache)
   
-  (define init-error (lambda _ (error 'turtles "window is not shown. apply `turtles' to no arguments")))
-  (define line (if turtles:window
-		   (ivar turtles:window draw-line)
-		   init-error))
-  (define wipe-line (if turtles:window
-			(ivar turtles:window wipe-line)
-			init-error))
-  (define clear-window (if turtles:window
-			   (ivar turtles:window clear)
-			   init-error))
-  (define save-turtle-bitmap
-    (lambda (filename type)
-      (if turtles:window
-	  (send (ivar turtles:window bitmap) save-file filename type)
-	  (init-error))))
+  (define init-error (lambda _ (error 'turtles "Turtles not initialized. Evaluate (turtles).")))
+  (define inner-line init-error)
+  (define inner-wipe-line init-error)
+  (define inner-clear-window init-error)
+  (define inner-save-turtle-bitmap init-error)
 
-  ; clear the turtles window on each execution
-  (when turtles:window
-    (send turtles:window clear))
-  
+  (define line (lambda (a b c d) (inner-line a b c d)))
+  (define wipe-line (lambda (a b c d) (inner-wipe-line a b c d)))
+  (define clear-window (lambda () (inner-clear-window)))
+  (define save-turtle-bitmap (lambda (x y) (inner-save-turtle-bitmap x y)))
+
   (define turtles
     (case-lambda
      [() (turtles #t)]
@@ -131,13 +125,13 @@
       (set! turtles:shown? x)
       (unless turtles:window
 	(set! turtles:window
-	      (create-turtle-window plot-window%
-				    "Turtles"
-				    turtle-window-size
-				    turtle-window-size))
-	(set! line (ivar turtles:window draw-line))
-	(set! wipe-line (ivar turtles:window wipe-line))
-	(set! clear-window (ivar turtles:window clear)))
+	      (make-object plot-window%
+		"Turtles"
+		turtle-window-size
+		turtle-window-size))
+	(set! inner-line (ivar turtles:window draw-line))
+	(set! inner-wipe-line (ivar turtles:window wipe-line))
+	(set! inner-clear-window (ivar turtles:window clear)))
       (send turtles:window show x)]))
   
   (define clear 
@@ -313,7 +307,7 @@
 		      (splitfn (lambda () 
 				 (turn (/ pi 2)))))))
     (draw 10)
-    (clear))))
+    (clear)))
 
 
 

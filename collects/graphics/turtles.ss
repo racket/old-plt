@@ -16,7 +16,4 @@
    splitfn split*fn 
    turtle-window-size pi))
 
-(define-signature turtle:create-window^ 
-  (create-turtle-window))
-
 

@@ -182,20 +182,36 @@
 	  (define translate-pattern
 	    (lambda (pattern)
 	      (let ([expanded (parameterize ([current-namespace translation-namespace])
-				(expand-defmacro pattern))])
-		(let loop ([in expanded])
-		  (match in
-		    [`(#%repeat ,p) (make-prepeat (loop p))]
-		    [`(#%cons ,p1 ,p2) (cons (loop p1) (loop p2))]
-		    [`(#%box ,p) (box (loop p))]
-		    [`(#%vector ,@ps) (apply vector (map loop ps))]
-		    [`(#%quote ,p) p]
-		    [`null null]
-		    [(? symbol? in) (make-id in)]
-		    [(or (? number? in) (? char? in) (? string? in)) in]
-		    [(? null? in) null]
-		    [x (error 'translate-pattern "unrecognized pattern: ~s, in ~s"
-			      x pattern)])))))
+				(expand-defmacro pattern))]
+		    [dups (make-hash-table)])
+		(values
+		 dups
+		 (let loop ([in expanded])
+		   (match in
+		     [`(#%repeat ,p) (make-prepeat (loop p))]
+		     [`(#%cons ,p1 ,p2) (cons (loop p1) (loop p2))]
+		     [`(#%box ,p) (box (loop p))]
+		     [`(#%vector ,@ps) (apply vector (map loop ps))]
+		     [`(#%quote ,p) p]
+		     [`null null]
+		     [(? symbol? in) 
+		      (let/ec k
+			(let ([new-id (gensym "rmatch:dup")])
+			  (hash-table-put! 
+			   dups
+			   in
+			   (cons
+			    new-id
+			    (hash-table-get 
+			     dups 
+			     in (lambda ()
+				  (hash-table-put! dups in null)
+				  (k (make-id in))))))
+			  (make-id new-id)))]
+		     [(or (? number? in) (? char? in) (? string? in)) in]
+		     [(? null? in) null]
+		     [x (error 'translate-pattern "unrecognized pattern: ~s, in ~s"
+			       x pattern)]))))))
 	  
 	  (define main
 	    (lambda (expression pattern-body-pairs)
@@ -213,18 +229,27 @@
 		     ,@(map (lambda (pattern-body-pair)
 			      (let*-values ([(pattern) (car pattern-body-pair)]
 					    [(bodies) (cdr pattern-body-pair)]
-					    [(translation) (translate-pattern pattern)]
+					    [(dups translation) (translate-pattern pattern)]
 					    [(traversal names-count names)
 					     (parse-pattern translation)]
-					    [(code) (traverse-traversal traversal main)])
+					    [(code) (traverse-traversal traversal main)]
+					    [(dup-vars) (let loop ([dups (hash-table-map dups cons)])
+							  (cond
+							    [(null? dups) null]
+							    [else (if (= (length (car dups)) 1)
+								      (loop (cdr dups))
+								      (cons (car dups) (loop (cdr dups))))]))])
 				`(let/ec ,inner-k
 				   (let-values ([,names 
 						 (parameterize ([current-exception-handler
 								 (lambda (exn)
-								   ;(display (exn-message exn))
-								   ;(newline)
+								   (display (exn-message exn))
+								   (newline)
 								   (,inner-k #f))])
 						   ,code)])
+				     (unless (and ,@(map (lambda (vars) `(equal? ,@vars))
+							 dup-vars))
+				       (,inner-k #f))
 				     (call-with-values (lambda () (begin ,@bodies))
 						       ,outer-k)))))
 			    pattern-body-pairs)
@@ -365,6 +390,9 @@
   (3-at-x '(vector 'x "abc" #\f `(3) `(,x)) '(vector 'x "abc" #\f (list 3) (list 3)))
   (3-at-x '`(box ,x) ''(box 3))
 
+  (test-equal 3 '(rmatch (list 3 4) ([(list x x) x] [(list x 4) x])))
+  (test-equal 3 '(rmatch (list 3 3) ([(list x x) x])))
+  
   (33s-at-x '(... (box x)) '(list (box 3) (box 3) (box 3)))
 
   (test-equal 3 '(let ([x 3]) (let+ ([vals [x 1] [y x]]) y)))

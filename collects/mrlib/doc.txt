@@ -202,3 +202,104 @@ One function is provided:
 Draws the data-sets on the dc<%> configured by the setup.
 Uses window coordinates that will accommodate all of the
 data sets.
+
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                     _aligned-pasteboard.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+The aligned-pasteboard collection provides classes derived
+from pasteboard% with geometry management that mirrors that
+of vertical-panel% and horizontal-panel%
+
+It provides: horizontal-pasteboard%, vertical-pasteboard%,
+aligned-editor-snip%, aligned-editor-canvas%,
+aligned-pasteboard<%>,aligned-pasteboard-parent<%>, and
+aligned-snip<%>
+
+============================================================
+
+The _horizontal-pasteboard%_ and _vertical-pasteboard%_
+classes are derived from pasteboard%. They implement the
+aligned-pasteboard<%> interface and override the
+after-insert, after-delete, after-reorder, and resized
+methods.
+
+============================================================
+
+_aligned-pasteboard<%>_'s implements the following methods.
+
+> (send an-aligned-pasteboard realign width height)
+
+  width: nonnegative
+  height: nonnegative
+
+Realigns the children inside the aligned-pasteboard<%> to
+the given width and height.
+
+> (send an-aligned-pasteboard realign)
+
+Realigns the children inside the aligned-pasteboard<%> to
+the previously alloted width and height.
+
+> (send an-aligned-pasteboard set-aligned-min-sizes)
+
+Calculates the minimum width and height of the of the
+pasteboard based on childrens min-sizes and stores it for
+later retrival via the getters.
+
+> (send an-aligned-pasteboard get-aligned-min-width)
+
+The minimum width an aligned-pasteboard can be and still
+fit the widths of all of its children.
+
+> (send an-aligned-pasteboard get-aligned-min-height)
+
+The minimum height an aligned-pasteboard can be and still
+fit the heights of all of its children.
+
+============================================================
+
+The _aligned-editor-snip%_ and aligned-editor-canvas%_
+classes are derived from editor-snip% and editor-canvas%
+respectivly and implement aligned-pasteboard-parent<%>.
+
+Both classes also send the realign method to their editor
+when they are resized.
+
+============================================================
+
+The _aligned-pasteboard-parent<%>_ interface must be
+implemented by any class who's editor is an
+aligned-pasteboard<%>.
+
+> (send an-aligned-pasteboard-parent set-aligned-min-sizes)
+
+Sets the aligned-min-sizes of the child editor of the
+aligned-pasteboard-parent<%>
+
+============================================================
+
+The _aligned-snip<%>_ interface must be implemented
+by any snip class who's objects will be stretchable when
+inserted into an aligned-pasteboard<%>.
+
+> (send an-aligned-snip get-aligned-min-width)
+
+The minimum width that the snip can be resized to
+
+> (send an-aligned-snip get-aligned-min-height)
+
+The minimum height that the snip can be resized to
+
+> (send an-aligned-snip stretchable-width)
+
+Whether or not the snip can be stretched in the X dimention
+
+> (send an-aligned-snip stretchable-height)
+
+Whether or not the snip can be stretched in the Y dimention
+
+============================================================

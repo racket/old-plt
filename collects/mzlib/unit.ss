@@ -354,7 +354,7 @@
 		(raise
 		 (make-exn:fail:unit
 		  (string->immutable-string
-		   (format "compount-unit: unit for tag ~s has no ~s export" 
+		   (format "compound-unit: unit for tag ~s has no ~s export" 
 			   tag ex))
 		  (current-continuation-marks)))]
 	       [(eq? (car l) ex)

@@ -27,11 +27,11 @@
 		  (lambda (l)
 		    (map
 		     (lambda (a)
-		       (cons (syntax->datum (let ([s (symbol->string (syntax-e a))])
-					      (if (char=? #\* (string-ref s (sub1 (string-length s))))
-						  (substring s 0 (sub1 (string-length s)))
-						  s))
-					    #f (quote-syntax here))))
+		       (datum->syntax (let ([s (symbol->string (syntax-e a))])
+					(if (char=? #\* (string-ref s (sub1 (string-length s))))
+					    (substring s 0 (sub1 (string-length s)))
+					    s))
+				      #f (quote-syntax here)))
 		     l))])
 	     (let ([clauses
 		    (let loop ([csrcs (syntax->list (syntax (clause ...)))][clauses null])
@@ -147,6 +147,7 @@
 				   (let ([formals
 					  (let loop ([f (syntax arg-formals)])
 					    (syntax-case f ()
+					      [() null]
 					      [(arg . rest)
 					       (identifier? (syntax arg))
 					       (cons (syntax arg) (loop (syntax rest)))]

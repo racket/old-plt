@@ -436,6 +436,9 @@
                         (lambda () (error 'get-compilation-location "Internal error: location not found"))))
       (define/public (set-composite-location name dir) (hash-table-put! compilation-location name dir))
       (define/public (get-composite-location name)
+        ;(printf "get-composite-location for ~a~n" name)
+        ;(hash-table-for-each compilation-location
+        ;                     (lambda (k v) (printf "~a -> ~a~n" k v)))
         (hash-table-get compilation-location name 
                         (lambda () (error 'get-composite-location "Internal error: name not found"))))
       

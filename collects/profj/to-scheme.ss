@@ -372,7 +372,7 @@
                   (cons (make-syntax #f `(module ,(module-name) mzscheme
                                            (require (lib "class.ss")
                                                     (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
-                                                    (prefic c: (lib "contract.ss"))
+                                                    (prefix c: (lib "contract.ss"))
                                                     ,@(remove-dup-syntax (translate-require reqs type-recs)))
                                            ,@(map car translated-defs))
                                      #f)

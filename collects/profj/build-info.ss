@@ -1,4 +1,3 @@
-#cs
 (module build-info mzscheme
   
   (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
@@ -143,7 +142,8 @@
     (let* ((name (id-string (def-name def)))
            (defname (cons name pname))
            (native-name (cons (string-append name "-native-methods") pname))
-           (dir (dir-path-path (find-directory pname (lambda () (list (build-path 'same)))))))
+           (dir (dir-path-path (find-directory pname (lambda () 
+                                                       (make-dir-path (build-path 'same) #f))))))
       (unless (memq 'private (map modifier-kind (header-modifiers (def-header def))))
         (send type-recs add-to-env name pname current-loc)
         (when (execution?) (send type-recs add-to-env name pname 'interactions)))
@@ -282,8 +282,14 @@
     
   ;add-my-package: type-records (list string) (list defs) loc symbol-> void
   (define (add-my-package type-recs package defs loc level)
-    (let* ((dir (find-directory package (lambda () #f)))
+    (let* ((dir (find-directory package 
+                                (lambda () 
+                                  (let-values (((base cur dir?) (split-path (current-directory))))
+                                    (and (equal? (apply build-path package) cur)
+                                         (make-dir-path (build-path 'same) #f))))))
            (classes (if dir (get-class-list dir) null)))
+      ;(printf "~n~nadd-my-package package ~a~n" package)
+      ;(printf "add-my-package: dir ~a class ~a~n" dir classes)
       (for-each (lambda (c) 
                   (import-class c package dir loc type-recs level #f #t)
                   (send type-recs add-to-env c package loc))
@@ -320,7 +326,7 @@
             (make-dir-path dir #t)))
          ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
           (make-dir-path (apply collection-path (cddr path)) #t))
-         (else (list "mzlib"))))
+         (else (make-dir-path (list "mzlib") #t))))
       (else
        (when (null? (classpath)) (classpath (get-classpath)))
        (let loop ((paths (classpath)))

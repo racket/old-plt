@@ -1,5 +1,5 @@
 
-Check Syntax alpha-renaming does not work with {\tt define-struct}.
+Check Syntax alpha-renaming does not work with `define-struct'.
 
 Check Syntax treats some primitives as unbound identifiers,
   notably `first' and `rest'.

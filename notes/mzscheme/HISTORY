@@ -1,4 +1,4 @@
-Version 100alpha2, ??, 1998
+Version 100alpha2, April 28, 1999
 Changed class syntax, splitting public clause use into:
  public : defines ivars not in superclass
  override : defines ivars already in superclass
@@ -22,13 +22,15 @@ Removed secure-primitive-exception-types
 Removed readable type symbols (e.g., #<procedure>)
 Removed semaphore-callback (MrEd now has queue-callback)
 Removed parameterizations (but not parameters!)
+parameterize sets parameter values in parallel (like let)
+ instead of in series (like let*)
 Fixed unfairness in threads (perpetually creating threads
  would starve certain threads, particularly the main thread)
 Unreachable thread blocked on an unreachable semaphore is
  garbage-collectable
-Added channels
 Added current-memory-use
 Fixed weak hash table bug (could drop keys too soon)
+Added optional peek-proc argument to make-input-port
 Changed TCP writes to block when the underlying implementation
  blocks, and removed tcp-port-send-waiting?
 Asynchronous breaks are now disabled during dynamic-wind

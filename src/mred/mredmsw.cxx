@@ -92,14 +92,13 @@ static MrEdContext *GetContext(HWND hwnd)
    then LetOtherThreadsRun is called every X milliseconds to give
    other MrEd threads a chance to run. */
 
+static int sleep_thread_enabled = 1;
 static UINT sleep_thread_timer_id;
 static void StartSleepThreadTimer(void);
 
 void CALLBACK LetOtherThreadsRun(HWND, UINT, UINT, DWORD)
 {
-  sleep_thread_timer_id = 0;
   scheme_process_block(0.0);
-  StartSleepThreadTimer();
 }
 
 void StopSleepThreadTimer(void)
@@ -113,8 +112,22 @@ void StopSleepThreadTimer(void)
 static void StartSleepThreadTimer(void)
 {
   StopSleepThreadTimer();
-  sleep_thread_timer_id = SetTimer(0, NULL, 100, LetOtherThreadsRun);
+  if (sleep_thread_enabled)
+    sleep_thread_timer_id = SetTimer(0, NULL, 100, LetOtherThreadsRun);
 }
+
+void MrEdEnableSleepCallback(Bool on)
+{
+  sleep_thread_enabled = on;
+
+  if (!on)
+    StopSleepThreadTimer();
+  else
+    StartSleepThreadTimer();
+}
+
+/* End of LetOtherThreadsRun callback */
+/**********************************************************************/
 
 typedef struct {
   MrEdContext *c, *c_return;
@@ -122,9 +135,6 @@ typedef struct {
   int remove;
   HWND wnd;
 } CheckInfo;
-
-/* End of LetOtherThreadsRun callback */
-/**********************************************************************/
 
 static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 {

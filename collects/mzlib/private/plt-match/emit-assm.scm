@@ -23,6 +23,7 @@
 (define emit
   (lambda (act-test-func ae let-bound sf bv kf ks)
     (let ((test (syntax-object->datum (act-test-func ae))))
+      ;(write test)(newline)
       (cond
        ((in test sf) (ks sf bv))
        ((in `(not ,test) sf) (kf sf bv))
@@ -35,8 +36,12 @@
                     (list `(not (null? ,exp)))
                     '()))
                (s (ks (cons test (append implied sf)) bv))
-               (k (kf (cons `(not ,test) (append not-imp sf)) bv)))
-          (assm (act-test-func (subst-bindings ae let-bound)) k s)))))))
+               (k (kf (cons `(not ,test) (append not-imp sf)) bv))
+               (the-test (act-test-func (subst-bindings ae let-bound))))
+          (assm (syntax-case the-test (struct-pred)
+                  ((struct-pred the-rest ...) (syntax (the-rest ...)))
+                  (reg (syntax reg)))
+                k s))))))) 
 
 ;;!(function assm
 ;;          (form (assm tst main-fail main-succ) -> syntax)
@@ -47,6 +52,8 @@
   (lambda (tst main-fail main-succ)
     (let ((s (syntax-object->datum main-succ))
           (f (syntax-object->datum main-fail)))
+      ;; this is for match-count
+      (set! node-count (add1 node-count))
       (cond ((equal? s f) main-succ)
             ((and (eq? s #t) (eq? f #f)) tst)
             (else

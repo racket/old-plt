@@ -31,12 +31,13 @@
 ;;       | (match exp clause ...)
 ;;       | (match-lambda clause ...) 
 ;;       | (match-lambda* clause ...)
-;;       | (match-let ((pat exp) ...) body)
-;;       | (match-let* ((pat exp) ...) body)
-;;       | (match-letrec ((pat exp) ...) body)
+;;       | (match-let ((pat exp) ...) body ...)
+;;       | (match-let var ((pat exp) ...) body ...)
+;;       | (match-let* ((pat exp) ...) body ...)
+;;       | (match-letrec ((pat exp) ...) body ...)
 ;;       | (match-define pat exp)
 ;;
-;; clause ::= (pat body) | (pat => exp)
+;; clause ::= (pat body) | (pat (=> identifier) exp)
 ;;
 ;;         patterns:                       matches:
 ;;
@@ -131,8 +132,9 @@
    match-let*
    match-letrec
    match-define
+   match-count
    match:test-no-order
-   )
+   ) 
   
   (require-for-syntax (lib "stx.ss" "syntax")
                       (lib "etc.ss")
@@ -166,10 +168,33 @@
                       match-let
                       match-let*
                       match-letrec
-                      match-define)
+                      match-define
+                      match-count
+                      )
 
     (include "private/plt-match/match-inc.scm")    
-    
+
+    (define node-count 0)
+
+    ;;!(syntax match-count)
+    ;; This macro only returns a number.  This number represents the
+    ;; number of nodes generated in the process of compiling the match 
+    ;; expresseion.  This gives one and idea as to the size of the 
+    ;; compiled expression.  This is mostly used for testing.
+    (define match-count/proc 
+      (lambda (stx)
+        (syntax-case stx (=>)
+          ((_ exp clause ...)
+           (begin
+             (set! node-count 0)
+             (quasisyntax/loc 
+              stx 
+              (let ((x exp)) #,(gen-match (syntax x)
+                                        '()
+                                        (syntax (clause ...))
+                                        stx)))
+             #`#,node-count)))))
+
     (define match/proc 
       (lambda (stx)
         (syntax-case stx (=>)
@@ -180,6 +205,7 @@
                                         '()
                                         (syntax (clause ...))
                                         stx)))))))
+
     (define match-lambda/proc 
       (lambda (stx)
         (syntax-case stx ()
@@ -201,7 +227,7 @@
            (syntax/loc stx (let name () body1 body ...))]
           [(_ name ([pat1 exp1] [pat exp]...) body1 body ...)
            (identifier? (syntax name))
-           (let ((pat-list (syntax-object->datum (syntax (list pat1 pat ...))))
+           (let ((pat-list (syntax-object->datum (syntax (pat1 pat ...))))
                  (real-name (syntax-object->datum (syntax name))))
              (if (andmap pattern-var? pat-list)
                  (syntax/loc 

@@ -1,4 +1,21 @@
-;; This library is used by match.ss
+;; This library is used by match.ss and plt-match.ss
+
+;;! (function match:syntax-err
+;;          (form (match:syntax-err object message . detail) -> void)
+;;          (contract (any string . any) -> void)
+;;          (example (match:syntax-err (syntax here) "Bad error" (vector))
+;;                   -> void)
+;;          (contract object -> (normally a syntax object that
+;;                               that helps determine the source location
+;;                               of the error)))
+;; This function is used to report malformed match expressions.
+(define match:syntax-err (lambda (obj msg . detail)
+                           (apply
+                            raise-syntax-error
+                            'match
+                            msg
+                            obj
+                            detail)))
 
 ;;! (function pattern-var?
 ;;    (form (pattern-var? pattern-element) -> bool)
@@ -18,8 +35,8 @@
                       quote
                       unquote
                       unquote-splicing
- ;                      hash-table
-;                       list-no-order
+;                      hash-table
+;                      list-no-order
 ;                       list-rest
 ;                       list
 ;                       app

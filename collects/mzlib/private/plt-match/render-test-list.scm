@@ -356,6 +356,7 @@
         "improperly formed hash table pattern"))
 
       ((struct struct-name (fields ...))
+       (identifier? (syntax struct-name))
        (let ((num-of-fields (stx-length (syntax (fields ...)))))
          (let-values (((pred accessors mutators)
                        (struct-pred-accessors-mutators
@@ -373,12 +374,12 @@
                    "fields for structure in pattern"))
                  (cons
                   (make-shape-test
-                   `(,pred ,(syntax-object->datum ae))
+                   `(struct-pred ,pred ,(syntax-object->datum ae))
                    ae
                    (lambda (ks kf let-bound)
                      (lambda (sf bv)
                        (emit (lambda (exp) 
-                               (quasisyntax/loc stx (#,pred #,exp)))
+                               (quasisyntax/loc stx (struct-pred #,pred #,exp)))
                              ae
                              let-bound
                              sf

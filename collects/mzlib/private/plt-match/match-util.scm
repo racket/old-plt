@@ -1,22 +1,5 @@
 ;; This library is used by match.ss
 
-;;! (function match:syntax-err
-;;          (form (match:syntax-err object message . detail) -> void)
-;;          (contract (any string . any) -> void)
-;;          (example (match:syntax-err (syntax here) "Bad error" (vector))
-;;                   -> void)
-;;          (contract object -> (normally a syntax object that
-;;                               that helps determine the source location
-;;                               of the error)))
-;; This function is used to report malformed match expressions.
-(define match:syntax-err (lambda (obj msg . detail)
-                           (apply
-                            raise-syntax-error
-                            'match
-                            msg
-                            obj
-                            detail)))
-
 ;;! (function stx-length
 ;;          (form (syntax-length syntax-obj) -> int)
 ;;          (contract syntax-object -> int)
@@ -81,6 +64,7 @@
   (let ((accessors-index 3)
         (mutators-index 4)
         (pred-index 2)
+        (struct-type-index 0)
         (handle-acc-list
          (lambda (l)
            (letrec ((RC
@@ -96,8 +80,11 @@
                          (list-ref info-on-struct accessors-index)))
              (mutators (handle-acc-list
                         (list-ref info-on-struct mutators-index)))
-             (pred (list-ref info-on-struct pred-index)))
+             (pred (list-ref info-on-struct pred-index))
+             )
         (values pred accessors mutators)))))
+
+
 
 ;;!(function get-exp-var
 ;;          (form (get-exp-var) -> syntax)
@@ -114,6 +101,7 @@
 ;; redundant.  If e can be determined to be true from the list of
 ;; tests l then e is "in" l.
 (define in (lambda (e l)
+             ;(write e)(newline)
              (or (member e l)
                  (and (eq? (car e) 'list?)
                       (or (member `(null? ,(cadr e)) l)
@@ -121,8 +109,21 @@
                  (and (eq? (car e) 'not)
                       (let* ((srch (cadr e))
                              (const-class (equal-test? srch)))
+                        ;(write srch)
                         (cond
-                         (const-class 
+                         ;;Experimental
+;                          ((equal? (car srch) 'struct-pred)
+;                           (let mem ((l l))
+;                             (if (null? l)
+;                                 #f
+;                                 (let ((x (car l)))
+;                                   (if (and (equal? (car x)
+;                                                    'struct-pred)
+;                                            (not (equal? (cadr x) (cadr srch)))
+;                                            (equal? (cddr x) (cddr srch)))
+;                                       #t
+;                                       (mem (cdr l)))))))
+                         (const-class  
                           (let mem ((l l))
                             (if (null? l)
                                 #f
@@ -154,14 +155,26 @@
                             (if (null? l)
                                 #f
                                 (let ((x (car l)))
-                                  (or (and (equal?
-                                            (cadr x)
-                                            (cadr srch))
-                                           (disjoint?
+                                  (or (and (disjoint?
                                             x)
                                            (not (equal?
                                                  (car x)
-                                                 (car srch))))
+                                                 (car srch)))
+                                           (cond ((equal?
+                                                   (car srch)
+                                                   'struct-pred)
+                                                  (equal? 
+                                                   (cadr x)
+                                                   (caddr srch)))
+                                                 ((equal?
+                                                   (car x)
+                                                   'struct-pred)
+                                                  (equal? 
+                                                   (cadr srch)
+                                                   (caddr x)))
+                                                 (else (equal?
+                                                        (cadr x)
+                                                        (cadr srch)))))
                                       (mem (cdr l)))))))
                          ((eq? (car srch) 'list?) 
                           (let mem ((l l))
@@ -231,7 +244,7 @@
                               (else #f))))))
 
 (define match:disjoint-predicates
-  '(null? pair? symbol? boolean? number? string? char?
+  '(struct-pred null? pair? symbol? boolean? number? string? char?
           procedure? vector?
           box?)) ; These are based on chez scheme
 

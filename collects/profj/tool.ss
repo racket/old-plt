@@ -28,9 +28,9 @@
         `((keyword ,(make-style-delta "black" #f #f #f))
           (string ,(make-style-delta "darkgreen" #f #f #f))
           (literal ,(make-style-delta "darkgreen" #f #f #f))
-          (comment ,(make-style-delta "mediumgray" #f #f #f))
+          (comment ,(make-style-delta "dimgray" #f #f #f))
           (error ,(make-style-delta "red" #f #f #f))
-          (identifier ,(make-style-delta "blue" #f #f #f))
+          (identifier ,(make-style-delta "darkblue" #f #f #f))
           (default ,(make-style-delta "darkgray" #f #f #f))))
       
       (add-to-colorer-prefs "Java" styles)

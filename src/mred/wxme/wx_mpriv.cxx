@@ -46,7 +46,7 @@
 #include "wx_gcrct.h"
 
 /* Debugging: */
-#define CHECK_CONSISTENCY 1
+#define CHECK_CONSISTENCY 0
 #define LOOK_FOR_ZEROED 0
 #define PLOT_SNIP_DOT 0
 

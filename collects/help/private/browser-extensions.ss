@@ -34,12 +34,13 @@
 			      (stretchable-height #f)
 			      (style '(deleted)))]
 	    [cb (instantiate check-box% ()
-			     (label (string-constant plt:hd:use-homebrew-browser))
-			     (parent cbp)
-			     (callback
-			      (lambda (cb evt)
-				(preferences:set 'drscheme:help-desk:separate-browser
-						 (not (send cb get-value))))))])
+                  (label (string-constant plt:hd:use-homebrew-browser))
+                  (parent cbp)
+                  (value (preferences:get 'drscheme:help-desk:separate-browser))
+                  (callback
+                   (lambda (cb evt)
+                     (preferences:set 'drscheme:help-desk:separate-browser
+                                      (not (send cb get-value))))))])
        ;; Put checkbox panel at the top:
        (send panel change-children (lambda (l) (cons cbp l)))
        (preferences:add-callback 

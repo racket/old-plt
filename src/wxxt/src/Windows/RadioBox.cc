@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: RadioBox.cc,v 1.3 1998/04/10 15:07:22 mflatt Exp $
+ * $Id: RadioBox.cc,v 1.4 1998/04/22 14:38:47 mflatt Exp $
  *
  * Purpose: radio box panel item
  *
@@ -81,6 +81,8 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 		   int x, int y, int width, int height, int n, char **choices,
 		   int num_rows, long style, char *name)
 {
+    int i;
+
     if ( (num_toggles = n) <= 0 ) {
 	wxDebugMsg("%s created without items (n=0)!\n", name);
 	return TRUE;
@@ -134,7 +136,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     // create the toggles
     toggles = (void*)new Widget[num_toggles];
     enabled = new Bool[num_toggles];
-    for (int i=0; i < num_toggles; ++i) {
+    for (i=0; i < num_toggles; ++i) {
         enabled[i] = 1;
 	char num_name[10]; sprintf(num_name, "%d", i);
 	char *label = wxGetCtlLabel(choices[i]);
@@ -166,7 +168,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
 
-    for (int i=0; i < num_toggles; ++i)
+    for (i=0; i < num_toggles; ++i)
       XtInsertEventHandler(((Widget*)toggles)[i],
 			   KeyPressMask |	// for PreOnChar
 			   ButtonPressMask |	// for PreOnEvent

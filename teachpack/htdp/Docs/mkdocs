@@ -23,6 +23,7 @@ string=? ; exec mzscheme -qr $0 "$@"
     "Ping-Pong"
     "Protect-the-Wall"
     "Scheme Web Servlets"
+    "Simplified Scheme Web Servlets"
     ))
 
 ; Defines go to be the go from thtml2html

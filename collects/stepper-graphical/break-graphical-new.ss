@@ -90,9 +90,9 @@
   
   ;(equal? (collapse-tree (list 3 4 (list (list 5 6) (cons 7 8)) (list 9)))
   ;        (list 9 8 7 6 5 4 3))
-  
+
   (define (add-to-popup popup val)
-    
+    (cond ([struct? val]
   
   (define debugger%
     (class object% (drscheme-frame)
@@ -110,7 +110,20 @@
                                 (add-to-popup pm val))
                               values)
                     (send f popup-menu 0 0)))]
-                    
+               
+               [highlight-var
+                (lambda (z)
+                  (let* ([start (z:location-offset (z:zodiac-start z))]
+                         [finish (z:location-offset (z:zodiac-finish z))])
+                    (send editor change-style var-style start finish)
+                    (lambda ()
+                      (send editor change-style standard-style start finish))))]
+               
+               ; highlight-vars 
+               ; to save time, highlight-vars just builds a big cons tree of
+               ; undo-highlight thunks; collapse-tree is then used to untangle
+               ; them into a list (ignoring all nulls).
+                  
                [highlight-vars
                 (lambda (mark)
                   (let* ([src (mark-source mark)]
@@ -118,11 +131,7 @@
                           (let recur ([src src])
                             (cond ; we need a z:parsed iterator...
                               [(z:varref? src)
-                               (let* ([start (z:location-offset (z:zodiac-start src))]
-                                      [finish (z:location-offset (z:zodiac-finish src))])
-                                 (send editor change-style var-style start finish)
-                                 (lambda ()
-                                   (send editor change-style standard-style start finish)))]
+                               (highlight-var src)]
                               [(z:app? src)
                                (map recur (cons (z:app-fun src) (z:app-args src)))]
                               [(z:struct-form? src)
@@ -140,8 +149,12 @@
                               [(z:begin0-form? src)
                                (map recur (z:begin0-form-bodies src))]
                               [(z:let-values-form? src)
-                               (let loop ([bindings (apply append (z:let-form-bindings src))])
-                                 (
+                               (cons
+                                (map (lambda (lhs)
+                                         
+                                         (apply append (z:let-values-form-vars src))
+                                (let loop ([bindings (apply append (z:let-form-bindings src))])
+                                  (unless 
                         
 )
       (public [set-zodiac!

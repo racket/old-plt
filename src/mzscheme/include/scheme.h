@@ -115,6 +115,22 @@ typedef jmpbuf jmp_buf[1];
 
 #define GC_MIGHT_USE_REGISTERED_STATICS
 
+/* Set up MZ_EXTERN for DLL build */
+#if SCHEME_DIRECT_EMBEDDED && defined(WINDOWS_DYNAMIC_LOAD) \
+    && defined(_MSC_VER) && !defined(SCHEME_EMBEDDED_NO_DLL)
+# define MZ_DLLIMPORT __declspec(dllimport)
+# ifdef __mzscheme_private__
+#  define MZ_DLLSPEC __declspec(dllexport)
+# else
+#  define MZ_DLLSPEC __declspec(dllimport)
+# endif
+#else
+# define MZ_DLLSPEC
+# define MZ_DLLIMPORT
+#endif
+
+#define MZ_EXTERN extern MZ_DLLSPEC
+
 #ifdef __cplusplus
 extern "C" 
 {
@@ -952,7 +968,7 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 #  define scheme_fuel_counter (*scheme_fuel_counter_ptr)
 # endif
 #else
-extern volatile int scheme_fuel_counter;
+MZ_EXTERN volatile int scheme_fuel_counter;
 #endif
 
 #ifdef FUEL_AUTODECEREMENTS
@@ -966,7 +982,7 @@ extern volatile int scheme_fuel_counter;
 #define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_thread)
 
 #if SCHEME_DIRECT_EMBEDDED
-extern Scheme_Object *scheme_eval_waiting;
+MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #define scheme_tail_eval(obj) \
  (scheme_eval_wait_expr = obj, SCHEME_EVAL_WAITING)
 #endif
@@ -1083,38 +1099,38 @@ extern void *scheme_malloc_envunbox(size_t);
 #if SCHEME_DIRECT_EMBEDDED
 
 #if defined(_IBMR2)
-extern long scheme_stackbottom;
+MZ_EXTERN long scheme_stackbottom;
 #endif
 
-extern int scheme_defining_primitives;
+MZ_EXTERN int scheme_defining_primitives;
 
 /* These flags must be set before MzScheme is started: */
-extern int scheme_case_sensitive; /* Defaults to 0 */
-extern int scheme_no_keywords; /* Defaults to 0 */
-extern int scheme_allow_set_undefined; /* Defaults to 0 */
-extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
-extern int scheme_curly_braces_are_parens; /* Defaults to 1 */
-extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
-extern int scheme_hash_percent_globals_only; /* Defaults to 0 */
-extern int scheme_binary_mode_stdio; /* Windows-MacOS-specific. Defaults to 0 */
+MZ_EXTERN int scheme_case_sensitive; /* Defaults to 0 */
+MZ_EXTERN int scheme_no_keywords; /* Defaults to 0 */
+MZ_EXTERN int scheme_allow_set_undefined; /* Defaults to 0 */
+MZ_EXTERN int scheme_square_brackets_are_parens; /* Defaults to 1 */
+MZ_EXTERN int scheme_curly_braces_are_parens; /* Defaults to 1 */
+MZ_EXTERN int scheme_hash_percent_syntax_only; /* Defaults to 0 */
+MZ_EXTERN int scheme_hash_percent_globals_only; /* Defaults to 0 */
+MZ_EXTERN int scheme_binary_mode_stdio; /* Windows-MacOS-specific. Defaults to 0 */
 
-extern Scheme_Thread *scheme_current_thread;
-extern Scheme_Thread *scheme_first_thread;
+MZ_EXTERN Scheme_Thread *scheme_current_thread;
+MZ_EXTERN Scheme_Thread *scheme_first_thread;
 
 /* Set these global hooks (optionally): */
-extern void (*scheme_exit)(int v);
-extern void (*scheme_console_printf)(char *str, ...);
-extern void (*scheme_console_output)(char *str, long len);
-extern void (*scheme_sleep)(float seconds, void *fds);
-extern void (*scheme_notify_multithread)(int on);
-extern void (*scheme_wakeup_on_input)(void *fds);
-extern int (*scheme_check_for_break)(void);
+MZ_EXTERN void (*scheme_exit)(int v);
+MZ_EXTERN void (*scheme_console_printf)(char *str, ...);
+MZ_EXTERN void (*scheme_console_output)(char *str, long len);
+MZ_EXTERN void (*scheme_sleep)(float seconds, void *fds);
+MZ_EXTERN void (*scheme_notify_multithread)(int on);
+MZ_EXTERN void (*scheme_wakeup_on_input)(void *fds);
+MZ_EXTERN int (*scheme_check_for_break)(void);
 #ifdef MZ_PRECISE_GC
-extern void *(*scheme_get_external_stack_val)(void);
-extern void (*scheme_set_external_stack_val)(void *);
+MZ_EXTERN void *(*scheme_get_external_stack_val)(void);
+MZ_EXTERN void (*scheme_set_external_stack_val)(void *);
 #endif
 #ifdef USE_WIN32_THREADS
-extern void (*scheme_suspend_main_thread)(void);
+MZ_EXTERN void (*scheme_suspend_main_thread)(void);
 int scheme_set_in_main_thread(void);
 void scheme_restore_nonmain_thread(void);
 #endif
@@ -1125,44 +1141,44 @@ extern long scheme_creator_id;
 extern void (*scheme_handle_aewait_event)(EventRecord *e);
 #endif
 
-extern Scheme_Object *(*scheme_make_stdin)(void);
-extern Scheme_Object *(*scheme_make_stdout)(void);
-extern Scheme_Object *(*scheme_make_stderr)(void);
+MZ_EXTERN Scheme_Object *(*scheme_make_stdin)(void);
+MZ_EXTERN Scheme_Object *(*scheme_make_stdout)(void);
+MZ_EXTERN Scheme_Object *(*scheme_make_stderr)(void);
 
-void scheme_set_banner(char *s);
-Scheme_Object *scheme_set_exec_cmd(char *s);
+MZ_EXTERN void scheme_set_banner(char *s);
+MZ_EXTERN Scheme_Object *scheme_set_exec_cmd(char *s);
 
 /* Initialization */
-Scheme_Env *scheme_basic_env(void);
+MZ_EXTERN Scheme_Env *scheme_basic_env(void);
 
 #ifdef USE_MSVC_MD_LIBRARY
-void GC_pre_init(void);
+MZ_EXTERN void GC_pre_init(void);
 #endif
 
-void scheme_check_threads(void);
-void scheme_wake_up(void);
-int scheme_get_external_event_fd(void);
+MZ_EXTERN void scheme_check_threads(void);
+MZ_EXTERN void scheme_wake_up(void);
+MZ_EXTERN int scheme_get_external_event_fd(void);
 
 /* image dump enabling startup: */
-int scheme_image_main(int argc, char **argv);
-extern int (*scheme_actual_main)(int argc, char **argv);
+MZ_EXTERN int scheme_image_main(int argc, char **argv);
+MZ_EXTERN int (*scheme_actual_main)(int argc, char **argv);
 
 /* GC registration: */
 #ifdef GC_MIGHT_USE_REGISTERED_STATICS
-void scheme_set_stack_base(void *base, int no_auto_statics);
+MZ_EXTERN void scheme_set_stack_base(void *base, int no_auto_statics);
 #endif
 
-void scheme_register_static(void *ptr, long size);
+MZ_EXTERN void scheme_register_static(void *ptr, long size);
 #if defined(MUST_REGISTER_GLOBALS) || defined(GC_MIGHT_USE_REGISTERED_STATICS)
 # define MZ_REGISTER_STATIC(x)  scheme_register_static((void *)&x, sizeof(x))
 #else
 # define MZ_REGISTER_STATIC(x) /* empty */
 #endif
 
-void scheme_setup_forced_exit(void);
+MZ_EXTERN void scheme_setup_forced_exit(void);
 
-void scheme_start_atomic(void);
-void scheme_end_atomic(void);
+MZ_EXTERN void scheme_start_atomic(void);
+MZ_EXTERN void scheme_end_atomic(void);
 
 #endif /* SCHEME_DIRECT_EMBEDDED */
 

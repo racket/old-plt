@@ -221,10 +221,6 @@ int main(int argc, char **argv)
   scheme_set_stack_base(stack_start, 1);
 #endif
 
-#ifdef USE_MSVC_MD_LIBRARY
-  GC_pre_init();
-#endif
-
 #if defined(OSKIT) && !defined(OSKIT_TEST) && !KNIT
   oskit_prepare(&argc, &argv);
 #endif

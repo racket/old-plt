@@ -913,6 +913,19 @@ extern void GC_noop(void *p, ...);
 #  include  "gc_local_alloc.h"
 #endif
 
+/* PLTSCHEME: */
+GC_API void (*GC_custom_finalize)(void);
+GC_API void (*GC_push_last_roots)(void);
+GC_API void (*GC_push_last_roots_again)(void);
+GC_API void (*GC_collect_start_callback)(void);
+GC_API void (*GC_collect_end_callback)(void);
+GC_API void (*GC_out_of_memory)(void);
+GC_API int GC_did_mark_stack_overflow(void);
+GC_API void GC_mark_from_mark_stack(void);
+GC_API void GC_flush_mark_stack(void);
+GC_API long GC_get_memory_use(void);
+GC_API void GC_pre_init(void);
+
 #ifdef __cplusplus
     }  /* end of extern "C" */
 #endif

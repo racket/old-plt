@@ -179,7 +179,7 @@ int scheme_file_open_count;
 
 int scheme_internal_checking_char;
 
-int scheme_binary_mode_stdio;
+MZ_DLLSPEC int scheme_binary_mode_stdio;
 
 int scheme_special_ok;
 
@@ -724,8 +724,8 @@ typedef struct Scheme_Thread_Memory {
 
 Scheme_Thread_Memory *tm_start, *tm_next;
 
-extern void (*GC_collect_start_callback)(void);
-extern void (*GC_collect_end_callback)(void);
+extern MZ_DLLIMPORT void (*GC_collect_start_callback)(void);
+extern MZ_DLLIMPORT void (*GC_collect_end_callback)(void);
 
 void scheme_init_thread_memory()
 {

@@ -57,7 +57,10 @@ extern void *GC_cpp_malloc(size_t);
 
 #ifdef WX_REGISTER_GLOBAL_MEMORY
 extern "C" {
-  void scheme_register_static(void *p, long size);
+# ifdef wx_msw
+	__declspec(dllimport)
+# endif
+	void scheme_register_static(void *p, long size);
 }
 # define wxREGGLOB(x) scheme_register_static((void *)&x, sizeof(x))
 #else

@@ -26,8 +26,6 @@ static void *current_mouse_context = NULL;
 // when the window isn't yet associated with the handle
 wxWnd *wxWndHook = NULL;
 
-extern void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags);
-
 extern long last_msg_time; /* timeStamp implementation */
 
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);

@@ -35,6 +35,13 @@
 # define WIN32
 #endif
 
+#ifdef IS_MRMAIN
+# define MRED_EXTERN extern __declspec(dllimport)
+#else
+# define MRED_EXTERN extern __declspec(dllexport)
+# define MRED_EXPORT __declspec(dllexport)
+#endif
+
 typedef short int WXTYPE;
 
 // Macro to cut down on compiler warnings.

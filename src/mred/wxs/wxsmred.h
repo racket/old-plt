@@ -25,8 +25,8 @@ extern Bool wxSchemeYield(void *sema);
 
 extern wxWindow *wxLocationToWindow(int x, int y);
 
-extern void mred_wait_eventspace(void);
+MRED_EXTERN void mred_wait_eventspace(void);
 
 extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 
-Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv);
+MRED_EXTERN Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv);

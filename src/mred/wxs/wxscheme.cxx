@@ -76,8 +76,8 @@ public:
 
 
 static GCBitmap *gc_bitmaps = NULL;
-extern "C" void (*GC_collect_start_callback)(void);
-extern "C" void (*GC_collect_end_callback)(void);
+extern "C" MZ_EXTERN void (*GC_collect_start_callback)(void);
+extern "C" MZ_EXTERN void (*GC_collect_end_callback)(void);
 static void (*orig_collect_start_callback)(void);
 static void (*orig_collect_end_callback)(void);
 static void collect_start_callback(void);
@@ -1411,8 +1411,8 @@ static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
 }
 
 extern "C" {
-  void scheme_start_atomic(void);
-  void scheme_end_atomic(void);
+  MZ_EXTERN void scheme_start_atomic(void);
+  MZ_EXTERN void scheme_end_atomic(void);
 }
 
 static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)

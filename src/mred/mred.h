@@ -77,7 +77,7 @@ extern MrEdContext *mred_contexts;
 
 MrEdContext *MrEdGetContext(wxObject *w = NULL);
 
-int MrEdGetNextEvent(int peek, int current_only, MrEdEvent *, MrEdContext **);
+extern int MrEdGetNextEvent(int peek, int current_only, MrEdEvent *, MrEdContext **);
 void MrEdDispatchEvent(MrEdEvent *);
 
 void MrEdInitFirstContext(MrEdContext *c);
@@ -86,7 +86,7 @@ void MrEdDestroyContext(MrEdFinalizedContext *c);
 
 #ifdef wx_msw
 void MrEdMSWSleep(float secs, void *fds);
-void mred_clean_up_gdi_objects(void);
+MRED_EXTERN void mred_clean_up_gdi_objects(void);
 #endif
 
 #ifdef wx_mac
@@ -96,13 +96,15 @@ void MrEdMacSleep(float secs);
 typedef void *(*ForEachFrameProc)(wxObject *, void *);
 void *MrEdForEachFrame(ForEachFrameProc fp, void *data);
 
-
 /* Startup: */
-extern int wxEntry(int, char **);
-extern void wxCreateApp(void);
-extern int mred_finish_cmd_line_run(void);
-extern void wxDoMainLoop();
-extern void mred_run_from_cmd_line(int argc, char **argv, Scheme_Env *(*mk_basic_env)(void));
+MRED_EXTERN void wxCreateApp(void);
+MRED_EXTERN void wxDoMainLoop();
+
+typedef int (*MrEd_Finish_Cmd_Line_Run_Proc)(void);
+typedef void (*MrEd_Run_From_Cmd_Line_Proc)(int argc, char **argv, Scheme_Env *(*mk_basic_env)(void));
+
+MRED_EXTERN MrEd_Finish_Cmd_Line_Run_Proc mred_finish_cmd_line_run;
+MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "schvers.h"

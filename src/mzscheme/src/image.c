@@ -46,7 +46,7 @@
 extern void *GC_get_stack_base();
 #endif
 
-int (*scheme_actual_main)(int argc, char **argv);
+MZ_DLLSPEC int (*scheme_actual_main)(int argc, char **argv);
 
 static Scheme_Object *(*scheme_dump_heap)(char *filename) = NULL;
 static Scheme_Object *(*scheme_load_heap)(char *filename, Scheme_Object *argvec) = NULL;

@@ -86,6 +86,14 @@ void GC_pre_init(void)
   GC_obj_kinds[i++].ok_freelist = &GC_sobjfreelist[0];
 # endif
 }
+
+# ifdef MD_LIB_MAIN
+BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved)
+{
+  if (reason == DLL_PROCESS_ATTACH)
+    GC_pre_init();
+}
+# endif
 #endif
 
 # ifdef ATOMIC_UNCOLLECTABLE

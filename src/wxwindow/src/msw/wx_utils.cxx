@@ -231,9 +231,6 @@ Bool wxGetResource(const char *section, const char *entry, int *value, const cha
 }
 #endif // USE_RESOURCES
 
-extern int wxGetBusyState();
-extern void wxSetBusyState(int);
-
 extern void wxResetCurrentCursor(void);
 
 extern HCURSOR wxMSWSetCursor(HCURSOR c);

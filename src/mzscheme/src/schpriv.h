@@ -254,9 +254,9 @@ extern Scheme_Thread *scheme_main_thread;
 #define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
 
 #ifdef WINDOWS_PROCESSES
-struct Scheme_Thread_Memory *scheme_remember_thread(void *);
+MZ_EXTERN struct Scheme_Thread_Memory *scheme_remember_thread(void *);
 void scheme_remember_subthread(struct Scheme_Thread_Memory *, void *);
-void scheme_forget_thread(struct Scheme_Thread_Memory *);
+MZ_EXTERN void scheme_forget_thread(struct Scheme_Thread_Memory *);
 void scheme_forget_subthread(struct Scheme_Thread_Memory *);
 void scheme_suspend_remembered_threads(void);
 void scheme_resume_remembered_threads(void);
@@ -956,8 +956,6 @@ Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Obje
 Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object *d);
 Scheme_Object *scheme_complex_power(const Scheme_Object *a, const Scheme_Object *b);
 Scheme_Object *scheme_complex_sqrt(const Scheme_Object *a);
-Scheme_Object *scheme_complex_real_part(const Scheme_Object *a);
-Scheme_Object *scheme_complex_imaginary_part(const Scheme_Object *a);
 int scheme_is_complex_exact(const Scheme_Object *o);
 
 /****** Inexacts ******/

@@ -171,8 +171,8 @@ static Scheme_Custodian *main_custodian;
 
 long scheme_total_gc_time;
 static long start_this_gc_time;
-extern void (*GC_collect_start_callback)(void);
-extern void (*GC_collect_end_callback)(void);
+extern MZ_DLLIMPORT void (*GC_collect_start_callback)(void);
+extern MZ_DLLIMPORT void (*GC_collect_end_callback)(void);
 static void get_ready_for_GC(void);
 static void done_with_GC(void);
 
@@ -194,7 +194,7 @@ static int tls_pos = 0;
 #ifdef MZ_PRECISE_GC
 extern long GC_get_memory_use(void *c);
 #else
-extern long GC_get_memory_use();
+extern MZ_DLLIMPORT long GC_get_memory_use();
 #endif
 
 static Scheme_Object *empty_symbol;

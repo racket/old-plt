@@ -41,17 +41,17 @@ static int dgc_size;
 
 extern int scheme_num_copied_stacks;
 
-extern void (*GC_out_of_memory)(void);
-extern void GC_register_late_disappearing_link(void **link, void *obj);
+extern MZ_DLLIMPORT void (*GC_out_of_memory)(void);
+extern MZ_DLLIMPORT void GC_register_late_disappearing_link(void **link, void *obj);
 
 static int use_registered_statics;
 
 #if !defined(MZ_PRECISE_GC) && !defined(USE_SENORA_GC)
-extern void GC_init();
-extern void GC_push_finalizer_structures(void);
-extern void GC_push_stubborn_structures(void);
-extern unsigned long GC_get_stack_base();
-extern void (*GC_push_other_roots)();
+extern MZ_DLLIMPORT void GC_init();
+extern MZ_DLLIMPORT void GC_push_finalizer_structures(void);
+extern MZ_DLLIMPORT void GC_push_stubborn_structures(void);
+extern MZ_DLLIMPORT unsigned long GC_get_stack_base();
+extern MZ_DLLIMPORT void (*GC_push_other_roots)();
 static void (*orig_GC_push_other_roots)();
 
 static void push_roots()
@@ -676,7 +676,7 @@ int scheme_diff_pointer(void *a, void *b)
 extern "C" 
 {
 #endif
-  extern void GC_dump(void);
+  extern MZ_DLLIMPORT void GC_dump(void);
 #ifdef __cplusplus
 };
 #endif

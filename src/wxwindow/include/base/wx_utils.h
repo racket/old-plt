@@ -102,6 +102,9 @@ class wxCursor;
 extern wxCursor *wxHOURGLASS_CURSOR;
 void wxBeginBusyCursor(wxCursor *cursor = wxHOURGLASS_CURSOR);
  
+extern int wxGetBusyState(void);
+extern void wxSetBusyState(int);
+
 // Restore cursor to normal
 void wxEndBusyCursor(void);
  

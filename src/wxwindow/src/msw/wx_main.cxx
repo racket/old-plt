@@ -242,12 +242,12 @@ static int parse_command_line(int count, char **command, char *buf, int maxargs)
   return count;
 }
 
-extern "C" int main(int, char**);
 extern void wxCreateApp(void);
-extern "C" void scheme_set_stack_base(void *, int);
+extern "C" __declspec(dllimport) void scheme_set_stack_base(void *, int);
 
-extern "C" int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), 
-				LPSTR m_lpCmdLine, int nCmdShow )
+int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), 
+	      LPSTR m_lpCmdLine, int nCmdShow,
+	      int (*main)(int, char**))
 {
   void *mzscheme_stack_start;
 

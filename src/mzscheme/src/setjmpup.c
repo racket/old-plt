@@ -52,10 +52,10 @@ void (*scheme_set_external_stack_val)(void *);
    stack copy to account for pointers to the interior of collectable
    objects. */     
 
-extern void GC_push_all_stack(void *, void *);
-extern void GC_flush_mark_stack(void);
-extern void (*GC_push_last_roots)(void);
-extern void (*GC_push_last_roots_again)(void);
+extern MZ_DLLIMPORT void GC_push_all_stack(void *, void *);
+extern MZ_DLLIMPORT void GC_flush_mark_stack(void);
+extern MZ_DLLIMPORT void (*GC_push_last_roots)(void);
+extern MZ_DLLIMPORT void (*GC_push_last_roots_again)(void);
 /* GC_push_last_roots_again is called after marking eager
    finalizations (once at each stage). We rely on the fact that no
    copied stack will be referenced by (or affected the ordering of)
@@ -65,8 +65,8 @@ extern void (*GC_push_last_roots_again)(void);
 # define GC_is_marked(p) GC_base(p)
 # define GC_did_mark_stack_overflow() 0
 #else
-extern int GC_is_marked(void *);
-extern int GC_did_mark_stack_overflow(void);
+extern MZ_DLLIMPORT int GC_is_marked(void *);
+extern MZ_DLLIMPORT int GC_did_mark_stack_overflow(void);
 #endif
 
 #define get_copy(s_c) (((CopiedStack *)s_c)->_stack_copy)

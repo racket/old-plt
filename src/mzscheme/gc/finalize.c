@@ -155,7 +155,7 @@ signed_word * log_size_ptr;
 
 /* PLTSCHEME: GC_register_late_disappearing_link */
 static int late_dl; /* a stupid way to pass arguments (to minimize my changes). */
-void GC_register_late_disappearing_link(void **link, void *obj)
+GC_API void GC_register_late_disappearing_link(void **link, void *obj)
 {
   late_dl= 1;
   GC_general_register_disappearing_link((GC_PTR *)link, (GC_PTR)obj);

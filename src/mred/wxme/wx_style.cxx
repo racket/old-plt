@@ -1173,10 +1173,6 @@ void wxStyleList::StyleWasChanged(wxStyle *which)
   }
 }
 
-#ifndef MZ_PRECISE_GC
-extern "C" void scheme_weak_reference(void **p);
-#endif
-
 void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
 {
   NotificationRec *rec, *orec;

@@ -126,6 +126,11 @@ extern void wxMediaIOCheckLSB(void);
 
 #include "mred.h"
 
+/* Set by mrmain.cxx: */
+/* (The indirection is needed to avoid mutual .dll dependencies.) */
+MrEd_Finish_Cmd_Line_Run_Proc mred_finish_cmd_line_run;
+MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
+
 #if 0
 /* Force initialization of the garbage collector (currently needed
    only when supporting Irix sprocs) */
@@ -2438,7 +2443,7 @@ MrEdApp::MrEdApp()
 #endif
 }
 
-extern "C" void (*GC_out_of_memory)(void);
+extern "C" MZ_EXTERN void (*GC_out_of_memory)(void);
 
 static void MrEdOutOfMemory(void)
 {
@@ -2770,10 +2775,10 @@ int MrEdApp::OnExit(void)
 
 void wxCreateApp(void)
 {
-  wxREGGLOB(orig_ps_setup);
-  wxREGGLOB(q_callbacks);
-
   if (!TheMrEdApp) {
+    wxREGGLOB(orig_ps_setup);
+    wxREGGLOB(q_callbacks);
+
     wxREGGLOB(TheMrEdApp);
     TheMrEdApp = new MrEdApp;
   }  

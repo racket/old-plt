@@ -1679,6 +1679,7 @@ void GC_default_push_other_roots GC_PROTO((void))
 
 # endif /* SOLARIS_THREADS || ... */
 
+/* PLTSCHEME: GC_API */
 void (*GC_push_other_roots) GC_PROTO((void)) = GC_default_push_other_roots;
 
 #endif

@@ -24,6 +24,8 @@
 #define Uses_XtIntrinsicP
 #define Uses_XLib
 
+#define IS_MRMAIN
+
 #include "wx.h"
 
 class wxStandardSnipClassList;
@@ -194,7 +196,7 @@ static void do_graph_repl(Scheme_Env *env)
 
 static FinishArgs *xfa;
 
-int mred_finish_cmd_line_run(void)
+static int finish_cmd_line_run(void)
 {
   return finish_cmd_line_run(xfa, do_graph_repl);
 }
@@ -209,7 +211,7 @@ static int do_main_loop(FinishArgs *fa)
   return 0;
 }
 
-void mred_run_from_cmd_line(int argc, char **argv, Scheme_Env *(*mk_basic_env)(void))
+static void run_from_cmd_line(int argc, char **argv, Scheme_Env *(*mk_basic_env)(void))
 {
   run_from_cmd_line(argc, argv, mk_basic_env, do_main_loop);
 }
@@ -350,6 +352,18 @@ int main(int argc, char *argv[])
 #endif
 
   scheme_actual_main = actual_main;
+  mred_run_from_cmd_line = run_from_cmd_line;
+  mred_finish_cmd_line_run = finish_cmd_line_run;
 
   return scheme_image_main(argc, argv);
 }
+
+
+#ifdef wx_msw 
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR m_lpCmdLine, int nCmdShow)
+{
+  return wxWinMain(hInstance, hPrevInstance, m_lpCmdLine, nCmdShow, main);
+}
+
+#endif

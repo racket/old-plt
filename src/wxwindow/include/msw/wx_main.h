@@ -49,4 +49,11 @@ class wxApp: public wxbApp
 
 extern HINSTANCE wxhInstance;
 
+MRED_EXTERN int wxEntry(int argc, char **argv);
+MRED_EXTERN void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags);
+
+MRED_EXTERN int wxWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR m_lpCmdLine, int nCmdShow,
+			  int (*main)(int, char**));
+
+
 #endif

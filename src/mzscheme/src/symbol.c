@@ -37,7 +37,7 @@
 #endif
 
 #ifndef MZ_PRECISE_GC
-extern void (*GC_custom_finalize)(void);
+extern MZ_DLLIMPORT void (*GC_custom_finalize)(void);
 #endif
 #ifndef USE_SENORA_GC
 extern int GC_is_marked(void *);

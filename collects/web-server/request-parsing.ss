@@ -3,7 +3,8 @@
            (lib "url.ss" "net")
            (lib "string.ss")
            (lib "list.ss")
-           
+
+           "util.ss"
            "internal-structs.ss"
            )
   
@@ -11,19 +12,12 @@
            read-headers
            get-host
            close-connection?
-           read-bindings
-           lowercase-symbol!)
+           read-bindings)
 
 ;  (provide/contract
 ;   [read-request-line (input-port? . -> . symbol? bytes? bytes? bytes?)])
 
-  ; lowercase-symbol! : (union string bytes) -> symbol
-  (define (lowercase-symbol! s)
-    (let ([s (if (bytes? s)
-                 (bytes->string/utf-8 s)
-                 s)])
-      (string-lowercase! s)
-      (string->symbol s)))
+
   
   
   ;; **************************************************

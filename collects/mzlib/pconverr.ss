@@ -372,3 +372,6 @@
 	(current-prompt-read (lambda ()
 			       (display (current-read-eval-convert-print-prompt))
 			       (read))))))
+
+;; TEST SUITE MOVED to mzscheme command test suite area.
+;; At Rice: ~mflatt/proj/mred/mzscheme/tests/pconvert.ss

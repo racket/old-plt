@@ -310,8 +310,7 @@
 	    [syncheck:init-arrows
 	     (lambda ()
 	       (set! tacked-hash-table (make-hash-table))
-	       (set! arrow-vector
-		     (make-vector (add1 (last-position)) null)))]
+	       (set! arrow-vector (make-vector (add1 (last-position)) null)))]
 	    [syncheck:clear-arrows
 	     (lambda () 
 	       (when (or arrow-vector cursor-location)
@@ -416,12 +415,12 @@
 		    (cond
 		     [(send event moving?)
 		      (let ([pos (get-pos event)])
-			(unless (and cursor-location
-				     (= pos cursor-location))
-			  (set! cursor-location pos)
-			  (for-each update-poss (vector-ref arrow-vector cursor-location))
-			  (invalidate-bitmap-cache))
-			(super-on-local-event event))]
+                        (unless (and cursor-location
+                                     (= pos cursor-location))
+                          (let ([old-pos pos])
+                            (set! cursor-location pos)
+                            (for-each update-poss (vector-ref arrow-vector cursor-location))
+                            (invalidate-bitmap-cache))))]
 		     [(send event button-down? 'right)
 		      (let* ([pos (get-pos event)]
 			     [arrows (vector-ref arrow-vector pos)])
@@ -514,9 +513,7 @@
 	   (lambda ()
 	     (let* ([list (send definitions-text get-style-list)]
 		    [style (send list find-named-style "Standard")])
-	       (send* definitions-text
-		 (syncheck:clear-arrows)
-		 (syncheck:init-arrows))
+	       (send definitions-text syncheck:clear-arrows)
 	       (if style
 		   (send definitions-text
 			 change-style style 0 (send definitions-text last-position))
@@ -827,6 +824,7 @@
 					; reset all of the buffer to the default style
 					; and clear out arrows
 		       (syncheck:clear-highlighting)
+                       (send definitions-text syncheck:init-arrows)
 		       
 		       ;; color each exp
 		       (let ([semaphore (make-semaphore 0)]

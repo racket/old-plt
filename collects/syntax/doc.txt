@@ -263,6 +263,35 @@ representing the location within `source-name' (as much as known), and
 `span-k' is #f or a non-negative exact integer for an item range
 starting from the indicated position.
 
+======================================================================
+_boundmap.ss_: mapping bound identifiers
+======================================================================
+
+> (make-bound-identifier-mapping) - produces a hash-table-like value
+   for storing a mapping from syntax identifiers to arbitrary
+   values.
+
+   The mapping uses `bound-identifier=?' to compare mapping keys, but
+   also uses a hash table based on symbol equality to make the mapping
+   efficient in the common case (i.e., where the identifiers print
+   differently).
+
+> (bound-identifier-mapping? v) - #t if v was produced by
+   `make-bound-identifier-mapping', #f otherwise.
+
+> bound-identifier-mapping-get : (bound-identifier-mapping?
+				  identifier?
+				  [(-> any)]
+				  . opt-> . 
+				  any)
+  - Like `hash-table-get' for bound-identifier mappings.
+
+> bound-identifier-mapping-put! : (bound-identifier-mapping?
+				   identifier?
+				   any?
+				   . -> .
+				   void?)
+  - Like `hash-table-put! for bound-identifier mappings.
 
 ======================================================================
 _zodiac.ss_, _zodiac-unit.ss_, and _zodiac-sig.ss_: compatibility
@@ -285,3 +314,4 @@ source-location information determines relative-path resolution.  The
 `expr-stx' is used for reporting syntax errors. The `build-path-stx'
 is usualyl #'build-path; it provides an identifier to compare to parts
 of `path-spec-stx' to recognize the `build-path' keyword.
+

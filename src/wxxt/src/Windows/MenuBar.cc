@@ -446,6 +446,9 @@ void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
   }
 
 #ifdef MZ_PRECISE_GC
+  /* Stupid call forces creation of __gc_var_stack__: */
+  if (menu) menu->GetParent();
+  
   XFORM_RESET_VAR_STACK;
 #endif
 }
@@ -463,6 +466,9 @@ void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
   }
 
 #ifdef MZ_PRECISE_GC
+  /* Stupid call forces creation of __gc_var_stack__: */
+  if (menu) menu->GetParent();
+  
   XFORM_RESET_VAR_STACK;
 #endif
 }

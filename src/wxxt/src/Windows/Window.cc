@@ -1074,14 +1074,20 @@ void wxWindow::OnScroll(wxScrollEvent*)
 // apply event handling to a wxWindow
 //-----------------------------------------------------------------------------
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static void FreeSaferef(Widget WXUNUSED(w), wxWindow** winp,
 			XtPointer WXUNUSED(null))
 {
   FREE_SAFEREF((char *)winp);
-#ifdef MZ_PRECISE_GC
-  XFORM_RESET_VAR_STACK;
-#endif
+  /* No XFORM_RESET_VAR_STACK because this one isn't xformed. */
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void wxWindow::FocusChangeCallback(void*,
 				   wxWindow **winp,

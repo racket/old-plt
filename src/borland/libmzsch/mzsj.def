@@ -1,0 +1,3 @@
+EXPORTS
+ _scheme_setjmp
+ _scheme_longjmp

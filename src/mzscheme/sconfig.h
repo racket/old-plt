@@ -509,12 +509,9 @@
 
 #endif
 
-  /******** Windows with MS Visual C++ or CYGWIN **********/
-  /* See the "windows" directory for more MSVC details.   */
-  /* MzScheme is probably no longer Borland-friendly,     */
-  /* since it currently relies on one MSVC-style inline   */
-  /* assembly file. Nevertheless, the old flags and       */
-  /* instructions have been preserved.                    */
+  /**** Windows with MS Visual C, Cygwin gcc, or Borland *****/
+  /* See the "worksp" directory for more MSVC details.       */
+  /* See the "borland" directory for more Borland details.   */
 
 #if (defined(__CYGWIN32__) || defined(__BORLANDC__) \
      || (defined(_MSC_VER) \

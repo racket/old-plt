@@ -232,7 +232,7 @@
 			     (lambda () (pretty-print (syntax-object->datum p)))
 			     'replace)
 			  (let ([opt-expanded (expand p)])
-			    (pretty-print (syntax-object->datum opt-expanded))
+			    ;; (pretty-print (syntax-object->datum opt-expanded))
 			    opt-expanded)))))
 		   exprs)))))
 

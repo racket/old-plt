@@ -12,7 +12,7 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 1a3,
+;Configured for Scheme dialect plt by scmxlate, v 1a4,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p9")
+(define *tex2page-version* "4p10")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -157,6 +157,14 @@
 
 (define *bibitem-num* 0)
 
+(define *colophon-first-page* #t)
+
+(define *colophon-timestamp* #t)
+
+(define *colophon-credit-tex2page* #t)
+
+(define *colophon-link-to-tex2page-website* #t)
+
 (define *comment-char* #\%)
 
 (define *css-port* #f)
@@ -241,8 +249,6 @@
 
 (define *infructuous-calls-to-tex2page* #f)
 
-(define *input-dirs* #f)
-
 (define *inputting-boilerplate?* #f)
 
 (define *inside-appendix?* #f)
@@ -291,8 +297,6 @@
 
 (define *section-counter-dependencies* #f)
 
-(define *self-promote?* #f)
-
 (define *slatex-like-comments?* #f)
 
 (define *slatex-math-escape* #f)
@@ -314,8 +318,6 @@
 (define *tex-format* #f)
 
 (define *tex-if-stack* '())
-
-(define *timestamp?* #f)
 
 (define *title* #f)
 
@@ -395,28 +397,6 @@
                    (cons char (cons (approp-case (cadr (assv nextval dd))) s)))
                   (loop r (cdr dd) s))
                 (loop2 (- q 1) r (cons char s))))))))))
-
-(define sort!
-  (lambda (s <<)
-    (let quicksort ((j 0) (k (- (length s) 1)))
-      (when (< j k)
-        (let ((s_j (list-ref s j)))
-          (let loop ((i j) (r (+ j 1)))
-            (cond
-             ((<= r k)
-              (loop
-               (let ((s_r (list-ref s r)))
-                 (if (<< s_r s_j)
-                   (begin
-                     (set-car! (list-tail s r) (list-ref s i))
-                     (set-car! (list-tail s i) s_r)
-                     (+ i 1))
-                   i))
-               (+ r 1)))
-             (else
-              (quicksort j (- i 1))
-              (quicksort (if (= i j) (+ i 1) i) k))))))
-      s)))
 
 (define string-index
   (lambda (s c)
@@ -622,8 +602,9 @@
         (newline)
         (set! *write-log-index* 0)))
     (unless (and (= *write-log-index* 0) (char? x) (char-whitespace? x))
-      (display x *log-port*)
-      (display x)
+      (case x
+        ((#\newline) (newline *log-port*) (newline))
+        (else (display x *log-port*) (display x)))
       (flush-output))
     (set! *write-log-index*
       (+
@@ -754,12 +735,29 @@
 (define snoop-actual-char
   (lambda ()
     (let ((c (snoop-char)))
-      (cond ((invisible-space? c) (get-char) (snoop-actual-char)) (else c)))))
+      (cond
+       ((eof-object? c) c)
+       ((invisible-space? c) (get-char) (snoop-actual-char))
+       ((char=? c *return*)
+        (get-char)
+        (let ((c (snoop-actual-char)))
+          (if (and (not (eof-object? c)) (char=? c #\newline))
+            c
+            (begin (toss-back-char #\newline) #\newline))))
+       (else c)))))
 
 (define get-actual-char
   (lambda ()
     (let ((c (get-char)))
-      (cond ((invisible-space? c) (get-actual-char)) (else c)))))
+      (cond
+       ((eof-object? c) c)
+       ((invisible-space? c) (get-actual-char))
+       ((char=? c *return*)
+        (let ((c (snoop-actual-char)))
+          (if (and (not (eof-object? c)) (char=? c #\newline))
+            (get-actual-char)
+            #\newline)))
+       (else c)))))
 
 (define get-line
   (lambda ()
@@ -768,11 +766,6 @@
         (cond
          ((eof-object? c) (if (null? r) c (list->string (reverse! r))))
          ((char=? c #\newline) (list->string (reverse! r)))
-         ((and (char-whitespace? c)
-               (let ((c2 (snoop-actual-char)))
-                 (or (eof-object? c2) (char=? c2 #\newline))))
-          (get-actual-char)
-          (list->string (reverse! r)))
          (else (loop (cons c r))))))))
 
 (define ignorespaces
@@ -1243,17 +1236,6 @@
   (lambda (s ss) (ormap (lambda (x) (string-ci=? x s)) ss)))
 
 (define endenvironment-delims '(#\( #\) #\[ #\] #\' #\` #\" #\; #\, #\@ #\|))
-
-(define check-for-endenvironment
-  (lambda ()
-    (list->string
-      (reverse!
-        (let loop ((s '()))
-          (let ((c (snoop-actual-char)))
-            (cond
-             ((eof-object? c) s)
-             ((or (char-whitespace? c) (memv c endenvironment-delims)) s)
-             (else (get-actual-char) (loop (cons c s))))))))))
 
 (defstruct
   texframe
@@ -2229,9 +2211,6 @@
 (define emit-page-node-link-start
   (lambda (pageno node) (emit-ext-page-node-link-start #f pageno node)))
 
-(define emit-node-link-start
-  (lambda (node) (emit-ext-page-node-link-start #f #f node)))
-
 (define emit-link-stop (lambda () (emit "</a>")))
 
 (define do-label (lambda () (do-label-aux (get-label))))
@@ -2322,23 +2301,6 @@
           (string-append *html-page-suffix* (number->string label-pageno)))
         *output-extn*))))
 
-(define hyperize-text
-  (lambda (text label-ref)
-    (when label-ref
-      (emit-page-node-link-start
-        (vector-ref label-ref 0)
-        (vector-ref label-ref 1)))
-    (tex2page-string text)
-    (unless label-ref (non-fatal-error "***"))
-    (when label-ref (emit-link-stop))))
-
-'(define do-htmlref
-   (lambda ()
-     (let* ((text (get-group))
-            (lbl (get-label))
-            (label-ref (label-bound? lbl)))
-       (hyperize-text text label-ref))))
-
 (define do-htmlref
   (lambda ()
     (let* ((text (get-group)) (lbl (get-label))) (do-ref-aux lbl #f text))))
@@ -2398,7 +2360,7 @@
       (write-log "Unresolved cross-reference")
       (if (> (length *unresolved-xrefs*) 1) (write-log "s"))
       (write-log ": ")
-      (set! *unresolved-xrefs* (sort! *unresolved-xrefs* string-ci<?))
+      (set! *unresolved-xrefs* (reverse! *unresolved-xrefs*))
       (write-log (car *unresolved-xrefs*))
       (for-each
         (lambda (x) (write-log #\,) (write-log #\space) (write-log x))
@@ -2614,10 +2576,7 @@
 (define display-index-entry
   (lambda (s o)
     (for-each
-      (lambda (c)
-        (display
-          (if (or (char=? c *return*) (char=? c #\newline)) #\space c)
-          o))
+      (lambda (c) (display (if (or (char=? c #\newline)) #\space c) o))
       (string->list s))))
 
 (define do-index
@@ -2837,28 +2796,48 @@
     (get-group)
     (do-bigskip "vspace")))
 
+(define do-colophon
+  (lambda ()
+    (call-with-input-string/buffered
+      (ungroup (get-group))
+      (lambda ()
+        (let loop ()
+          (ignore-all-whitespace)
+          (let ((c (snoop-actual-char)))
+            (unless (eof-object? c)
+              (case (string->symbol (scm-get-token))
+                ((last-page) (set! *colophon-first-page* #f))
+                ((no-timestamp) (set! *colophon-timestamp* #f))
+                ((dont-credit-tex2page ingrate)
+                 (set! *colophon-credit-tex2page* #f))
+                ((dont-link-to-tex2page-website)
+                 (set! *colophon-link-to-tex2page-website* #f)))
+              (loop))))))))
+
 (define output-colophon
   (lambda ()
-    (do-end-para)
-    (emit "<div class=smallprint>")
-    (emit-newline)
-    (when (and
-           *timestamp?*
-           *last-modification-time*
-           (> *last-modification-time* 0))
-      (emit "Last modified: ")
-      (emit (seconds->human-time *last-modification-time*))
-      (emit "<br>")
-      (emit-newline))
-    (emit "HTML conversion by ")
-    (when *self-promote?*
-      (emit-link-start
-        "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html"))
-    (emit "TeX2page ")
-    (emit *tex2page-version*)
-    (when *self-promote?* (emit-link-stop))
-    (emit "</div>")
-    (emit-newline)))
+    (when (or *colophon-timestamp* *colophon-credit-tex2page*)
+      (do-end-para)
+      (emit "<div class=smallprint><i>")
+      (emit-newline)
+      (when (and
+             *colophon-timestamp*
+             *last-modification-time*
+             (> *last-modification-time* 0))
+        (emit "Last modified: ")
+        (emit (seconds->human-time *last-modification-time*))
+        (emit "<br>")
+        (emit-newline))
+      (when *colophon-credit-tex2page*
+        (emit "HTML conversion by ")
+        (when *colophon-link-to-tex2page-website*
+          (emit-link-start
+            "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html"))
+        (emit "TeX2page ")
+        (emit *tex2page-version*)
+        (when *colophon-link-to-tex2page-website* (emit-link-stop)))
+      (emit "</i></div>")
+      (emit-newline))))
 
 (define output-navigation-bar
   (lambda ()
@@ -2888,7 +2867,7 @@
                  *output-extn*)))))
       (unless (and first-page? last-page?)
         (do-end-para)
-        (emit "<div class=navigation>[Go to ")
+        (emit "<div class=navigation><i>[Go to ")
         (emit "<span")
         (when first-page? (emit " class=disable"))
         (emit ">")
@@ -2943,7 +2922,7 @@
             (emit "index")
             (unless index-page? (emit-link-stop))
             (emit "</span>")))
-        (emit "]</div>")
+        (emit "]</i></div>")
         (do-para)))))
 
 (define do-eject
@@ -3025,8 +3004,14 @@
   (lambda ()
     (output-footnotes)
     (output-navigation-bar)
-    (when (= *html-page-count* 0) (output-colophon))
+    (when (and *colophon-first-page* (= *html-page-count* 0))
+      (output-colophon))
     (do-end-para)
+    (when (and
+           (not *colophon-first-page*)
+           (= *html-page-count* *last-page-number*))
+      (printf "printing colophon on last page~%")
+      (output-colophon))
     (output-html-postamble)
     (write-log #\space)
     (write-log #\[)
@@ -3081,8 +3066,6 @@
     (write-log #\.)
     (write-log #\newline)
     (close-output-port *log-port*)))
-
-(define do-underline (lambda (c) (emit "<u>") (emit c) (emit "</u>")))
 
 (define do-diacritic
   (lambda (diac)
@@ -3475,9 +3458,6 @@
               (get-actual-char)
               (loop (string-append r (string c)))))))))))
 
-(define do-unknown-if
-  (lambda () (set! *tex-if-stack* (cons '? *tex-if-stack*))))
-
 (define do-iffalse (lambda () (set! *tex-if-stack* (cons #f *tex-if-stack*))))
 
 (define do-iftrue (lambda () (set! *tex-if-stack* (cons #t *tex-if-stack*))))
@@ -3861,18 +3841,6 @@
             (display "}" o)
             (newline o)))))
     (when (eq? inline-or-display? 'display) (emit "</div>") (do-para))))
-
-(define do-latex-picture
-  (lambda ()
-    (source-img-file
-      (call-with-image-port
-        (lambda (o)
-          (fluid-let
-            ((*not-processing?* #t))
-            (display "\\begin{picture}" o)
-            (dump-till-end-env "picture" o)
-            (display "\\end{picture}" o)
-            (newline o)))))))
 
 (define do-box
   (lambda ()
@@ -4898,13 +4866,6 @@
         (do-para))
        (else (terror 'do-verbatim-file "I can't find file \"" f #\"))))))
 
-(define verb-set-filename
-  (lambda ()
-    (let ((f (get-filename)))
-      (if *verb-port* (close-output-port *verb-port*))
-      (ensure-file-deleted f)
-      (set! *verb-port* (open-output-file f)))))
-
 (define verb-ensure-output-port
   (lambda ()
     (unless *verb-port*
@@ -5081,19 +5042,6 @@
               (let ((s (scm-get-token)))
                 (set! *scm-keywords* (cons s *scm-keywords*))
                 (loop)))))))))
-
-(define do-input-dirs
-  (lambda ()
-    (call-with-input-string/buffered
-      (ungroup (get-group))
-      (lambda ()
-        (let loop ()
-          (ignore-all-whitespace)
-          (let ((c (snoop-actual-char)))
-            (unless (eof-object? c)
-              (let ((f (get-filename)))
-                (set! *input-dirs* (cons f *input-dirs*)))
-              (loop))))))))
 
 (define scm-emit-html-char
   (lambda (c)
@@ -5655,9 +5603,6 @@
             (if add? (+ new-value (counter.value counter)) new-value))))
        (else #f)))))
 
-(define toss-back-line-as-group
-  (lambda (s) (toss-back-char #\}) (toss-back-string s) (toss-back-char #\{)))
-
 (define do-tex-prim
   (lambda (z)
     (cond
@@ -6067,7 +6012,7 @@
 
 (define update-last-modification-time
   (lambda (f)
-    (when *timestamp?*
+    (when *colophon-timestamp*
       (let ((s (file-or-directory-modify-seconds f)))
         (when (and
                s
@@ -6079,11 +6024,15 @@
 
 (define probably-latex
   (lambda ()
-    (set! *latex-probability* (+ *latex-probability* 1))
-    (if (>= *latex-probability* 2)
-      (unless (eqv? *tex-format* 'latex)
-        (!definitely-latex)
-        (write-aux `(!definitely-latex))))))
+    (when (null? *tex-env*)
+      (set! *latex-probability* (+ *latex-probability* 1))
+      (if (>= *latex-probability* 2) (definitely-latex)))))
+
+(define definitely-latex
+  (lambda ()
+    (unless (eqv? *tex-format* 'latex)
+      (!definitely-latex)
+      (write-aux `(!definitely-latex)))))
 
 (define !toc-page (lambda (p) (set! *toc-page* p)))
 
@@ -6689,6 +6638,8 @@
 
 (tex-def-prim "\\defcsactive" do-defcsactive)
 
+(tex-def-prim "\\definitelylatex" definitely-latex)
+
 (tex-def-prim "\\defschememathescape" (lambda () (scm-set-math-escape #t)))
 
 (tex-def-prim
@@ -6861,6 +6812,8 @@
 
 (tex-def-prim "\\htmladdimg" do-htmladdimg)
 
+(tex-def-prim "\\htmlcolophon" do-colophon)
+
 (tex-def-prim "\\htmlgif" (lambda () (do-htmlimg "htmlgif")))
 
 (tex-def-prim "\\htmlheadonly" do-html-head-only)
@@ -7027,13 +6980,15 @@
 
 (tex-def-prim "\\newtoks" (lambda () (do-newtoks #f)))
 
-(tex-def-prim "\\noad" (lambda () (set! *self-promote?* #f)))
+(tex-def-prim
+  "\\noad"
+  (lambda () (set! *colophon-link-to-tex2page-website* #f)))
 
 (tex-def-prim "\\nocite" do-nocite)
 
 (tex-def-prim "\\node" do-node)
 
-(tex-def-prim "\\notimestamp" (lambda () (set! *timestamp?* #f)))
+(tex-def-prim "\\notimestamp" (lambda () (set! *colophon-timestamp* #f)))
 
 (tex-def-prim "\\nr" (lambda () (do-cr "\\nr")))
 
@@ -7397,8 +7352,6 @@
 
 (tex-def-prim "\\thispagestyle" get-group)
 
-(tex-def-prim "\\usepackage" get-group)
-
 (tex-def-prim "\\externallabels" (lambda () (get-group) (get-group)))
 
 (tex-let-prim "\\markboth" "\\externallabels")
@@ -7477,8 +7430,6 @@
 
 (tex-def-prim "\\parbox" (lambda () (get-bracketed-text-if-any) (get-group)))
 
-(tex-let-prim "\\usepackage" "\\parbox")
-
 (tex-def-prim
   "\\addcontentsline"
   (lambda () (get-group) (get-group) (get-group)))
@@ -7499,7 +7450,13 @@
 
 (tex-def-prim "\\nopagebreak" get-bracketed-text-if-any)
 
+(tex-def-prim
+  "\\usepackage"
+  (lambda () (get-bracketed-text-if-any) (get-group) (probably-latex)))
+
 (tex-let-prim "\\enskip" "\\enspace")
+
+(tex-let-prim "\\colophon" "\\htmlcolophon")
 
 (tex-let-prim "\\path" "\\verb")
 
@@ -7647,6 +7604,10 @@
        (*aux-dir/* "")
        (*aux-port* #f)
        (*bibitem-num* 0)
+       (*colophon-first-page* #t)
+       (*colophon-timestamp* #t)
+       (*colophon-credit-tex2page* #t)
+       (*colophon-link-to-tex2page-website* #t)
        (*comment-char* #\%)
        (*css-port* #f)
        (*current-mfpic-file-stem* #f)
@@ -7689,7 +7650,6 @@
        (*index-page* #f)
        (*index-port* #f)
        (*infructuous-calls-to-tex2page* 0)
-       (*input-dirs* '())
        (*inputting-boilerplate?* #f)
        (*inside-appendix?* #f)
        (*jobname* "texput")
@@ -7712,7 +7672,6 @@
        (*scm-port* #f)
        (*section-counter-dependencies* (make-table))
        (*section-counters* (make-table))
-       (*self-promote?* #t)
        (*slatex-like-comments?* #f)
        (*stylesheets* '())
        (*subjobname* #f)
@@ -7723,7 +7682,6 @@
        (*tex-env* '())
        (*tex-format* 'plain)
        (*tex-if-stack* '())
-       (*timestamp?* #t)
        (*title* #f)
        (*toc-list* '())
        (*toc-page* #f)

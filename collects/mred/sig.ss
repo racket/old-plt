@@ -46,7 +46,7 @@
    const-default-posn
    const-default-spacing
    const-default-border
-   (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
+   (struct child-info (x-posn y-posn x-min y-min x-margin y-margin x-stretch y-stretch))
    get-two-int-values
    non-negative-number?
    same-dimension?

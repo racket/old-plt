@@ -1267,7 +1267,6 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
     ss = s;
     s = malloc(varlen + vallen + 2);
     memcpy(s, ss, varlen + vallen + 2);
-    s = ss;
     
     /* Free old, if in table: */
     if (putenv_str_table) {

@@ -233,7 +233,7 @@ static Scheme_Object *tested_file_input_port_type;
 
 static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol;
-static Scheme_Object *replace_symbol, *truncate_symbol;
+static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol;
 
 #ifdef USE_MAC_TCP
 static int num_tcp_send_buffers = 0;
@@ -481,6 +481,7 @@ scheme_init_port (Scheme_Env *env)
     REGISTER_SO(error_symbol);
     REGISTER_SO(replace_symbol);
     REGISTER_SO(truncate_symbol);
+    REGISTER_SO(truncate_replace_symbol);
 
     text_symbol = scheme_intern_symbol("text");
     binary_symbol = scheme_intern_symbol("binary");
@@ -488,6 +489,7 @@ scheme_init_port (Scheme_Env *env)
     error_symbol = scheme_intern_symbol("error");
     replace_symbol = scheme_intern_symbol("replace");
     truncate_symbol = scheme_intern_symbol("truncate");
+    truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
 
     default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
 						    "default-port-read-handler", 
@@ -2379,8 +2381,9 @@ do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
       scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[offset + 1],
 		       scheme_intern_symbol("input file mode"),
-		       "%s: bad mode '%s", name,
-		       scheme_symbol_name(argv[offset + 1]));
+		       "%s: bad mode: %s%s", name,
+		       scheme_make_provided_string(argv[offset + 1], 1, NULL),
+		       scheme_make_args_string("other ", offset + 1, argc, argv));
   }
   
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -2447,6 +2450,9 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
     } else if (SAME_OBJ(argv[i], truncate_symbol)) {
       existsok = -1;
       e_set++;
+    } else if (SAME_OBJ(argv[i], truncate_replace_symbol)) {
+      existsok = -2;
+      e_set++;
     } else if (SAME_OBJ(argv[i], error_symbol)) {
       /* This is the default */
       e_set++;
@@ -2460,15 +2466,17 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
       scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[i],
 		       scheme_intern_symbol("output file mode"),
-		       "%s: bad mode '%s", name,
-		       scheme_symbol_name(argv[i]));
+		       "%s: bad mode: %s%s", name,
+		       scheme_make_provided_string(argv[i], 1, NULL),
+		       scheme_make_args_string("other ", i, argc, argv));
 
     if (m_set > 1 || e_set > 1)
       scheme_raise_exn(MZEXN_APPLICATION_MODE_CONFLICT,
 		       argv[i],
 		       argv[0],
 		       "%s: conflicting or redundant "
-		       "file modes given", name);
+		       "file modes given%s", name,
+		       scheme_make_args_string("", -1, argc, argv));
   }
 
   filename = SCHEME_STR_VAL(argv[0]);
@@ -2507,8 +2515,26 @@ do_open_output_file (char *name, int offset, int argc, Scheme_Object *argv[])
 #endif
 
   fp = fopen(filename, mode);
-  if (!fp)
-    filename_exn(name, "cannot open output file", filename, errno);
+  if (!fp) {
+    if (existsok < -1) {
+      /* Can't truncate; try to replace */
+      if (scheme_file_exists(filename)) {
+	if (MSC_IZE(unlink)(filename))
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE_EXISTS,
+			   argv[0],
+			   "%s: error deleting \"%s\"", 
+			   name, filename);
+	else {
+	  fp = fopen(filename, mode);
+#ifdef MAC_FILE_SYSTEM
+	  creating = 1;
+#endif
+	}
+      }
+    }
+    if (!fp)
+      filename_exn(name, "cannot open output file", filename, errno);
+  }
   scheme_file_open_count++;
 
 #ifdef MAC_FILE_SYSTEM

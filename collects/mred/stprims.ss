@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.10 1997/08/15 19:31:12 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.11 1997/08/15 22:35:37 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -17,7 +17,6 @@
   (define run-error error)
   
   (define time-stamp current-milliseconds)
-    
   
   ;;
   ;; Return list of window's ancestors from root down to window
@@ -324,14 +323,5 @@
 		  (send-mouse-event new-window enter))
 		(send new-window set-focus)
 		(void))))]))))
-  
-  ;;
-  ;; Provide no op as a way to catch pending errors.
-  ;; void runs in the handler thread.
-  ;;
-  
-  (define noop
-    (lambda ()
-      (mred:test:run-one void)))
   
   )

@@ -1,3 +1,19 @@
+
+                                   
+    ;;        ;;                   
+     ;         ;                   
+     ;         ;                   
+  ;;;;   ;;;   ;;;;  ;;  ;;   ;;; ;
+ ;   ;  ;   ;  ;   ;  ;   ;  ;   ; 
+ ;   ;  ;;;;;  ;   ;  ;   ;  ;   ; 
+ ;   ;  ;      ;   ;  ;   ;  ;   ; 
+ ;   ;  ;   ;  ;   ;  ;   ;  ;   ; 
+  ;;; ;  ;;;  ; ;;;    ;;; ;  ;;;; 
+                                 ; 
+                                 ; 
+                              ;;;  
+
+
 (drscheme:debug:make-debug-error-display-handler
  ((string? (union any? exn?) . -> . void?)
   . -> .
@@ -48,6 +64,24 @@
   ()
   "Hides the backtrace window.")
 
+
+
+
+                            
+                 ;          
+                            
+                            
+  ;;;  ; ;;;   ;;;   ; ;;;  
+ ;   ;  ;;  ;    ;    ;   ; 
+  ;;;   ;   ;    ;    ;   ; 
+     ;  ;   ;    ;    ;   ; 
+ ;   ;  ;   ;    ;    ;   ; 
+  ;;;  ;;;  ;; ;;;;;  ;;;;  
+                      ;     
+                      ;     
+                     ;;;    
+
+
 (drscheme:snip:make-repeating-decimal-snip
  (number? boolean? . -> . (is-a?/c snip%))
  (num show-prefix?)
@@ -73,6 +107,22 @@
 "See also"
 "@flink drscheme:snip:make-repeating-decimal-snip %"
 ".")
+
+
+                            
+                 ;          
+                       ;    
+                       ;    
+;;  ;; ; ;;;   ;;;    ;;;;; 
+ ;   ;  ;;  ;    ;     ;    
+ ;   ;  ;   ;    ;     ;    
+ ;   ;  ;   ;    ;     ;    
+ ;   ;  ;   ;    ;     ;   ;
+  ;;; ;;;;  ;; ;;;;;    ;;; 
+                            
+                            
+                            
+
 
 (drscheme:unit:open-drscheme-window
  (case->
@@ -106,6 +156,23 @@
 ""
 "The \\iscmintf{area-container} argument is used to"
 "find the font for the label")
+
+
+
+                     
+                     
+                     
+                     
+ ; ;;;   ;;;  ; ;;;  
+  ;     ;   ;  ;   ; 
+  ;     ;;;;;  ;   ; 
+  ;     ;      ;   ; 
+  ;     ;   ;  ;   ; 
+ ;;;;    ;;;   ;;;;  
+               ;     
+               ;     
+              ;;;    
+
 
 (drscheme:rep:current-rep
   (-> (is-a?/c drscheme:rep:text%))
@@ -175,6 +242,21 @@
 "implementation will fail. It may, however, return"
 "\\rawscm{\\#f} more often.")
 
+
+                                   
+   ;;;                             
+  ;                                
+  ;                                
+ ;;;;;  ; ;;;  ;;;;  ;;; ;    ;;;  
+  ;      ;         ;  ; ; ;  ;   ; 
+  ;      ;      ;;;;  ; ; ;  ;;;;; 
+  ;      ;     ;   ;  ; ; ;  ;     
+  ;      ;     ;   ;  ; ; ;  ;   ; 
+ ;;;;   ;;;;    ;;; ;;; ; ;;  ;;;  
+                                   
+                                   
+                                   
+
 (drscheme:frame:draw-button-label
  ((is-a?/c dc<%>) (union false? string?) (>/c 5) (>/c 5) boolean?
   . -> .
@@ -208,6 +290,22 @@
 "@flink drscheme:frame:draw-button-label %"
 ")."
 "")
+
+
+                                                                      
+                           ;                                       ;; 
+                ;         ;                 ;                       ; 
+                ;         ;                 ;                       ; 
+  ;;; ;  ;;;   ;;;;;     ;    ;;;  ;;; ;;; ;;;;;   ;;;  ; ;;;    ;;;; 
+ ;   ;  ;   ;   ;        ;   ;   ;   ; ;    ;     ;   ;  ;;  ;  ;   ; 
+ ;   ;  ;;;;;   ;       ;    ;;;;;    ;     ;     ;;;;;  ;   ;  ;   ; 
+ ;   ;  ;       ;       ;    ;       ; ;    ;     ;      ;   ;  ;   ; 
+ ;   ;  ;   ;   ;   ;  ;     ;   ;  ;   ;   ;   ; ;   ;  ;   ;  ;   ; 
+  ;;;;   ;;;     ;;;   ;      ;;;  ;;   ;;   ;;;   ;;;  ;;;  ;;  ;;; ;
+     ;                ;                                               
+     ;                                                                
+  ;;;                                                                 
+
 
 (drscheme:get/extend:extend-interactions-text
  (case->
@@ -315,6 +413,38 @@
 "@flink drscheme:get/extend:extend-unit-frame"
 "raises an error, disallowing any more extensions.")
 
+
+
+                                                        
+ ;;;                                                    
+   ;                                                    
+   ;                                                    
+   ;    ;;;;  ; ;;;    ;;; ;;;  ;;  ;;;;    ;;; ;  ;;;  
+   ;        ;  ;;  ;  ;   ;  ;   ;      ;  ;   ;  ;   ; 
+   ;     ;;;;  ;   ;  ;   ;  ;   ;   ;;;;  ;   ;  ;;;;; 
+   ;    ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;     
+   ;    ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;   ; 
+ ;;;;;;  ;;; ;;;;  ;;  ;;;;   ;;; ;  ;;; ;  ;;;;   ;;;  
+                          ;                    ;        
+                          ;                    ;        
+                       ;;;                  ;;;         
+
+
+                                                                                           
+                        ;;;    ;                                         ;                 
+                       ;                                         ;                         
+                       ;                                         ;                         
+  ;;;    ;;;  ; ;;;   ;;;;;  ;;;     ;;; ;;;  ;;  ; ;;;  ;;;;   ;;;;;  ;;;     ;;;  ; ;;;  
+ ;   ;  ;   ;  ;;  ;   ;       ;    ;   ;  ;   ;   ;         ;   ;       ;    ;   ;  ;;  ; 
+ ;      ;   ;  ;   ;   ;       ;    ;   ;  ;   ;   ;      ;;;;   ;       ;    ;   ;  ;   ; 
+ ;      ;   ;  ;   ;   ;       ;    ;   ;  ;   ;   ;     ;   ;   ;       ;    ;   ;  ;   ; 
+ ;   ;  ;   ;  ;   ;   ;       ;    ;   ;  ;   ;   ;     ;   ;   ;   ;   ;    ;   ;  ;   ; 
+  ;;;    ;;;  ;;;  ;; ;;;;   ;;;;;   ;;;;   ;;; ; ;;;;    ;;; ;   ;;;  ;;;;;   ;;;  ;;;  ;;
+                                        ;                                                  
+                                        ;                                                  
+                                     ;;;                                                   
+
+
 (drscheme:language-configuration:add-language
  ((is-a?/c drscheme:language:language<%>)
   . -> .
@@ -377,6 +507,22 @@
 
 "Determines if the argument is a langauge-settings or not.")
 
+
+                                                        
+ ;;;                                                    
+   ;                                                    
+   ;                                                    
+   ;    ;;;;  ; ;;;    ;;; ;;;  ;;  ;;;;    ;;; ;  ;;;  
+   ;        ;  ;;  ;  ;   ;  ;   ;      ;  ;   ;  ;   ; 
+   ;     ;;;;  ;   ;  ;   ;  ;   ;   ;;;;  ;   ;  ;;;;; 
+   ;    ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;     
+   ;    ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;   ;  ;   ; 
+ ;;;;;;  ;;; ;;;;  ;;  ;;;;   ;;; ;  ;;; ;  ;;;;   ;;;  
+                          ;                    ;        
+                          ;                    ;        
+                       ;;;                  ;;;         
+
+
 (drscheme:language:extend-language-interface
  (interface?
   ((implementation?/c drscheme:language:language<%>) . ->d . (lambda (%) (subclass?/c %)))
@@ -409,6 +555,15 @@
 "to"
 "@flink drscheme:language:extend-language-interface %"
 ".")
+
+(drscheme:language:get-language-extensions
+ (-> (listof interface?))
+ ()
+ "\\phase{2}"
+ ""
+ "Returns a list of the interfaces passed to"
+ "@flink drscheme:language:extend-language-interface %"
+ ".")
 
 (drscheme:language:use-stand-alone-executable?
  ((union false? (is-a?/c frame%) (is-a?/c dialog%))
@@ -617,6 +772,24 @@
 "Constructs a vector whose first index is the symbol"
 "\\rawscm{'struct:simple-settings}"
 "and the other elements are the fields of \\var{simple-settings}.")
+
+
+
+                                                               
+;;             ;;;                     ;;               ;;     
+ ;               ;                      ;                ;     
+ ;               ;                      ;                ;     
+ ; ;;    ;;;     ;   ; ;;;           ;;;;   ;;;    ;;;   ;  ;; 
+ ;;  ;  ;   ;    ;    ;   ;         ;   ;  ;   ;  ;   ;  ; ;   
+ ;   ;  ;;;;;    ;    ;   ;  ;;;;;  ;   ;  ;;;;;   ;;;   ;;    
+ ;   ;  ;        ;    ;   ;         ;   ;  ;          ;  ; ;   
+ ;   ;  ;   ;    ;    ;   ;         ;   ;  ;   ;  ;   ;  ;  ;  
+;;; ;;;  ;;;   ;;;;;; ;;;;           ;;; ;  ;;;    ;;;  ;;   ;;
+                      ;                                        
+                      ;                                        
+                     ;;;                                       
+
+
 
 (drscheme:help-desk:open-url
  (string? . -> . void?)

@@ -21,6 +21,13 @@
    
    arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)
   
+  (define typeset-size
+    (let ([size 9])
+      (case-lambda
+        [() size]
+        [(x) (set! size x)])))
+    
+  
   (define (snipize obj)
     (if (is-a? obj snip%)
         obj
@@ -33,11 +40,21 @@
   
   (define (set-box/f! b v) (when (box? b) (set-box! b v)))
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                                     ;;;
-  ;;;                   POSTSCRIPT                        ;;;
-  ;;;                                                     ;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+                                                                      
+                                                    ;                 
+                       ;                                         ;    
+                       ;                                         ;    
+; ;;;    ;;;    ;;;   ;;;;;   ;;;    ;;;   ; ;;;  ;;;   ; ;;;   ;;;;; 
+ ;   ;  ;   ;  ;   ;   ;     ;   ;  ;   ;   ;       ;    ;   ;   ;    
+ ;   ;  ;   ;   ;;;    ;      ;;;   ;       ;       ;    ;   ;   ;    
+ ;   ;  ;   ;      ;   ;         ;  ;       ;       ;    ;   ;   ;    
+ ;   ;  ;   ;  ;   ;   ;   ; ;   ;  ;   ;   ;       ;    ;   ;   ;   ;
+ ;;;;    ;;;    ;;;     ;;;   ;;;    ;;;   ;;;;   ;;;;;  ;;;;     ;;; 
+ ;                                                       ;            
+ ;                                                       ;            
+;;;                                                     ;;;           
+
   
   (define ps-figure-editor-admin%
     (class editor-admin% 
@@ -127,11 +144,21 @@
       (make-object ps-figure-editor-admin% filename editor)
       (send editor set-admin editor-admin)))
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                                     ;;;
-  ;;;                    ALIGNMENT                        ;;;
-  ;;;                                                     ;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+                                                               
+        ;;;      ;                                             
+          ;                                               ;    
+          ;                                               ;    
+ ;;;;     ;    ;;;     ;;; ;; ;;;  ;;; ;    ;;;  ; ;;;   ;;;;; 
+     ;    ;      ;    ;   ;  ;;  ;  ; ; ;  ;   ;  ;;  ;   ;    
+  ;;;;    ;      ;    ;   ;  ;   ;  ; ; ;  ;;;;;  ;   ;   ;    
+ ;   ;    ;      ;    ;   ;  ;   ;  ; ; ;  ;      ;   ;   ;    
+ ;   ;    ;      ;    ;   ;  ;   ;  ; ; ;  ;   ;  ;   ;   ;   ;
+  ;;; ; ;;;;;; ;;;;;   ;;;; ;;;  ;;;; ; ;;  ;;;  ;;;  ;;   ;;; 
+                          ;                                    
+                          ;                                    
+                       ;;;                                     
+
   
   (define (para-align alignment)
     (lambda (snip)
@@ -161,11 +188,20 @@
           new)
         snip))
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                                     ;;;        
-  ;;;                     BRACKETS                        ;;;
-  ;;;                                                     ;;;        
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+                                                        
+;;                          ;;                          
+ ;                           ;              ;           
+ ;                           ;              ;           
+ ;;;;   ; ;;;  ;;;;    ;;;   ;  ;;   ;;;   ;;;;;   ;;;  
+ ;   ;   ;         ;  ;   ;  ; ;    ;   ;   ;     ;   ; 
+ ;   ;   ;      ;;;;  ;      ;;     ;;;;;   ;      ;;;  
+ ;   ;   ;     ;   ;  ;      ; ;    ;       ;         ; 
+ ;   ;   ;     ;   ;  ;   ;  ;  ;   ;   ;   ;   ; ;   ; 
+; ;;;   ;;;;    ;;; ;  ;;;  ;;   ;;  ;;;     ;;;   ;;;  
+                                                        
+                                                        
+                                                        
   
   (define bracket-snip%
     (class editor-snip% 
@@ -205,93 +241,100 @@
         (send text insert (send between-snip copy)))))
   
   (define double-bracket-snip%
-    (class* bracket-snip% () (between-snip)
+    (class bracket-snip%
+      (inherit-field between-snip)
       (inherit get-style)
-      (override
-        [copy
-         (lambda ()
-           (let ([snip (make-object double-bracket-snip% between-snip)])
-             (send snip set-style (get-style))
-             snip))])
+      (define/override (copy)
+        (let ([snip (make-object double-bracket-snip% between-snip)])
+          (send snip set-style (get-style))
+          snip))
       
-      (inherit height width)
+      (inherit get-height get-width)
       (rename [super-draw draw])
-      (override
-        [draw
-         (lambda (dc x y left top right bottom dx dy draw-caret)
-           (let ([vertical-line
-                  (lambda (x)
-                    (send dc draw-line x y x (+ y height -1)))]
-                 [horizontal-lines
-                  (lambda (x)
-                    (send dc draw-line x y (+ x 5) y)
-                    (send dc draw-line x (+ y height -1) (+ x 5) (+ y height -1)))]
-                 [old-pen (send dc get-pen)])
-             
-             (when (is-a? dc post-script-dc%)
-               (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
-             
-             (horizontal-lines x)
-             (horizontal-lines (+ x width -6))
-             (vertical-line x)
-             (vertical-line (+ x width -1))
-             (vertical-line (+ x 3))
-             (vertical-line (+ x width -4))
-             
-             (send dc set-pen old-pen))
-           (super-draw dc x y left top right bottom dx dy draw-caret))])
+      (define/override draw
+        (lambda (dc x y left top right bottom dx dy draw-caret)
+          (let ([vertical-line
+                 (lambda (x)
+                   (send dc draw-line x y x (+ y (get-height) -1)))]
+                [horizontal-lines
+                 (lambda (x)
+                   (send dc draw-line x y (+ x 5) y)
+                   (send dc draw-line x (+ y (get-height) -1) (+ x 5) (+ y (get-height) -1)))]
+                [old-pen (send dc get-pen)])
+            
+            (when (is-a? dc post-script-dc%)
+              (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
+            
+            (horizontal-lines x)
+            (horizontal-lines (+ x (get-width) -6))
+            (vertical-line x)
+            (vertical-line (+ x (get-width) -1))
+            (vertical-line (+ x 3))
+            (vertical-line (+ x (get-width) -4))
+            
+            (send dc set-pen old-pen))
+          (super-draw dc x y left top right bottom dx dy draw-caret)))
       (inherit set-snipclass)
-      (sequence
-        (super-init between-snip 6 1 6 1)
-        (set-snipclass double-bracket-snipclass))))
+      (super-instantiate () 
+        (left-margin 6)
+        (top-margin 1)
+        (right-margin 6)
+        (bottom-margin 1))
+      (set-snipclass double-bracket-snipclass)))
   
   (define single-bracket-snip%
-    (class* bracket-snip% () (between-snip)
+    (class bracket-snip% 
+      (inherit-field between-snip)
       (inherit get-style)
-      (override
-        [copy
-         (lambda ()
-           (let ([snip (make-object single-bracket-snip% between-snip)])
-             (send snip set-style (get-style))
-             snip))])
+      (define/override copy
+        (lambda ()
+          (let ([snip (make-object single-bracket-snip% between-snip)])
+            (send snip set-style (get-style))
+            snip)))
       
-      (inherit height width)
+      (inherit get-height get-width)
       (rename [super-draw draw])
-      (override
-        [draw
-         (lambda (dc x y left top right bottom dx dy draw-caret)
-           (let ([vertical-line
-                  (lambda (x)
-                    (send dc draw-line x y x (+ y height -1)))]
-                 [horizontal-lines
-                  (lambda (x)
-                    (send dc draw-line x y (+ x 3) y)
-                    (send dc draw-line x (+ y height -1) (+ x 3) (+ y height -1)))]
-                 [old-pen (send dc get-pen)])
-             
-             (when (is-a? dc post-script-dc%)
-               (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
-             
-             (horizontal-lines (+ x 1))
-             (horizontal-lines (+ x width -5))
-             (vertical-line (+ x 1))
-             (vertical-line (+ x width -2))
-             (send dc set-pen old-pen))
-           (super-draw dc x y left top right bottom dx dy draw-caret))])
+      (define/override draw
+        (lambda (dc x y left top right bottom dx dy draw-caret)
+          (let ([vertical-line
+                 (lambda (x)
+                   (send dc draw-line x y x (+ y (get-height) -1)))]
+                [horizontal-lines
+                 (lambda (x)
+                   (send dc draw-line x y (+ x 3) y)
+                   (send dc draw-line 
+                         x 
+                         (+ y (get-height) -1) 
+                         (+ x 3) 
+                         (+ y (get-height) -1)))]
+                [old-pen (send dc get-pen)])
+            
+            (when (is-a? dc post-script-dc%)
+              (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid)))
+            
+            (horizontal-lines (+ x 1))
+            (horizontal-lines (+ x (get-width) -5))
+            (vertical-line (+ x 1))
+            (vertical-line (+ x (get-width) -2))
+            (send dc set-pen old-pen))
+          (super-draw dc x y left top right bottom dx dy draw-caret)))
       (inherit set-snipclass)
-      (sequence
-        (super-init between-snip 4 1 4 1)
-        (set-snipclass single-bracket-snipclass))))
+      (super-instantiate ()
+        (left-margin 4)
+        (top-margin 1)
+        (right-margin 4)
+        (bottom-margin 1))
+      (set-snipclass single-bracket-snipclass)))
   
   (define bracket-snipclass%
-    (class snip-class% (%)
-      (override
-        [read
-         (lambda (p)
-           (let* ([bs (make-object % (make-object snip%))]
-                  [t (send bs get-editor)])
-             (send t read-from-file p)))])
-      (sequence (super-init))))
+    (class snip-class% 
+      (init-field %)
+      (define/override read
+        (lambda (p)
+          (let* ([bs (make-object % (make-object snip%))]
+                 [t (send bs get-editor)])
+            (send t read-from-file p))))
+      (super-instantiate ())))
   
   (define single-bracket-snipclass (make-object bracket-snipclass% single-bracket-snip%))
   (send single-bracket-snipclass set-version 1)
@@ -311,61 +354,68 @@
   (define (single-bracket snip)
     (make-object single-bracket-snip% (snipize snip)))
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                                     ;;;
-  ;;;                         GREEK                       ;;;
-  ;;;                                                     ;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+                                   
+                            ;;     
+                             ;     
+                             ;     
+  ;;; ; ; ;;;   ;;;    ;;;   ;  ;; 
+ ;   ;   ;     ;   ;  ;   ;  ; ;   
+ ;   ;   ;     ;;;;;  ;;;;;  ;;    
+ ;   ;   ;     ;      ;      ; ;   
+ ;   ;   ;     ;   ;  ;   ;  ;  ;  
+  ;;;;  ;;;;    ;;;    ;;;  ;;   ;;
+     ;                             
+     ;                             
+  ;;;                              
   
   ;; greek : (union char string number) -> snip
   ;; renders the alphabetic characters in the argument into greek letters
   (define greek
     (letrec ([snipclass
               (make-object (class snip-class% ()
-                             (override
-                               [read
-                                (lambda (stream-in)
-                                  (make-object greek-snip%
-                                    (send stream-in get-string)
-                                    (send stream-in get-number)))])
-                             (sequence (super-init))))]
+                             (define/override read
+                               (lambda (stream-in)
+                                 (make-object greek-snip%
+                                   (send stream-in get-string)
+                                   (send stream-in get-number))))
+                             (super-instantiate ())))]
              [greek-snip%
-              (class snip% (str size)
+              (class snip% 
+                (init-field str size)
                 (inherit get-style)
-                (private
+                (field
                   [font
                    (send the-font-list find-or-create-font
                          size 'symbol 'normal 'normal #f)])
-                (override
-                  [write
-                   (lambda (stream-out)
-                     (send stream-out << str)
-                     (send stream-out << size))]
-                  [get-extent
-                   (lambda (dc x y wb hb descentb spaceb lspace rspace)
-                     (let-values ([(width height descent ascent)
-                                   (send dc get-text-extent str font)])
-                       (set-box/f! wb (max 0 width))
-                       (set-box/f! hb (max 0 height))
-                       (set-box/f! descentb (max 0 descent))
-                       (set-box/f! spaceb (max 0 ascent))
-                       (set-box/f! lspace 0)
-                       (set-box/f! rspace 0)))]
-                  [draw
-                   (lambda (dc x y left top right bottom dx dy draw-caret)
-                     (let ([old-font (send dc get-font)])
-                       (send dc set-font font)
-                       (send dc draw-text str x y)
-                       (send dc set-font old-font)))]
-                  [copy
-                   (lambda ()
-                     (let ([snip (make-object greek-snip% str size)])
-                       (send snip set-style (get-style))
-                       snip))])
+                (define/override write
+                  (lambda (stream-out)
+                    (send stream-out << str)
+                    (send stream-out << size)))
+                (define/override get-extent
+                  (lambda (dc x y wb hb descentb spaceb lspace rspace)
+                    (let-values ([(width height descent ascent)
+                                  (send dc get-text-extent str font)])
+                      (set-box/f! wb (max 0 width))
+                      (set-box/f! hb (max 0 height))
+                      (set-box/f! descentb (max 0 descent))
+                      (set-box/f! spaceb (max 0 ascent))
+                      (set-box/f! lspace 0)
+                      (set-box/f! rspace 0))))
+                (define/override draw
+                  (lambda (dc x y left top right bottom dx dy draw-caret)
+                    (let ([old-font (send dc get-font)])
+                      (send dc set-font font)
+                      (send dc draw-text str x y)
+                      (send dc set-font old-font))))
+                (define/override copy
+                  (lambda ()
+                    (let ([snip (make-object greek-snip% str size)])
+                      (send snip set-style (get-style))
+                      snip)))
                 (inherit set-snipclass)
-                (sequence
-                  (super-init)
-                  (set-snipclass snipclass)))])
+                (super-instantiate ())
+                (set-snipclass snipclass))])
       
       (send snipclass set-version 1)
       (send snipclass set-classname "robby:greek")
@@ -378,18 +428,31 @@
           (make-object greek-snip% str (typeset-size))))))
   
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                                     ;;;
-  ;;;                       DRAWINGS                      ;;;
-  ;;;                                                     ;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+                                                        
+    ;;                         ;                        
+     ;                                                  
+     ;                                                  
+  ;;;;  ; ;;;  ;;;;  ;;; ;;; ;;;   ; ;;;    ;;; ;  ;;;  
+ ;   ;   ;         ;  ;   ;    ;    ;;  ;  ;   ;  ;   ; 
+ ;   ;   ;      ;;;;  ; ; ;    ;    ;   ;  ;   ;   ;;;  
+ ;   ;   ;     ;   ;  ; ; ;    ;    ;   ;  ;   ;      ; 
+ ;   ;   ;     ;   ;   ; ;     ;    ;   ;  ;   ;  ;   ; 
+  ;;; ; ;;;;    ;;; ;  ; ;   ;;;;; ;;;  ;;  ;;;;   ;;;  
+                                               ;        
+                                               ;        
+                                            ;;;         
   
-  ;; drawing : ((dc -> exact-int exact-int exact-int) (dc exact-int
-  ;; exact-int -> void) -> snip) get-extent determines the amount of
+  ;; drawing :   (string
+  ;;              (->* (dc) (exact-int exact-int exact-int exact-int exact-int)) 
+  ;;              (dc exact-int exact-int . -> . void) 
+  ;;           -> snip)
+  ;; eextent determines the amount of
   ;; space the new snip needs. The six results are the width, height,
   ;; descent, ascent, lspace and rspace. (The descent and space do not
   ;; actually add space to the snip, they only helps to determine
-  ;; where to lineup adjacent snips.)  draw actually draws the snip.
+  ;; where to lineup adjacent snips.)  ddraw actually draws the snip.
+  ;; name is a unique string identifing this snip, for copy and paste.
   (define (drawing name eextent ddraw)
     (unless (string? name)
       (error
@@ -404,64 +467,62 @@
     (letrec ([drawing%
               (class snip% ()
                 (inherit get-style)
-                (override
-                  [write
-                   (lambda (stream-out)
-                     (send stream-out put name))]
-                  [copy
-                   (lambda ()
-                     (let ([ans (make-object drawing%)])
-                       (send ans set-style (get-style))
-                       ans))]
-                  [draw
-                   (lambda (dc x y left top right bottom dx dy draw-caret)
-                     (ddraw dc x y))]
-                  [get-extent
-                   (lambda (dc x y width-b height-b descent-b space-b lspace-b rspace-b)
-                     (let ([old-font (send dc get-font)])
-                       (send dc set-font (send (get-style) get-font))
-                       (let-values ([(width height descent space lspace rspace) (eextent dc)])
-                         (set-box/f! width-b width)
-                         (set-box/f! height-b height)
-                         (set-box/f! descent-b descent)
-                         (set-box/f! space-b space)
-                         (set-box/f! lspace-b lspace)
-                         (set-box/f! rspace-b rspace))
-                       (send dc set-font old-font)))])
+                (define/override write
+                  (lambda (stream-out)
+                    (send stream-out put name)))
+                (define/override copy
+                  (lambda ()
+                    (let ([ans (make-object drawing%)])
+                      (send ans set-style (get-style))
+                      ans)))
+                (define/override draw
+                  (lambda (dc x y left top right bottom dx dy draw-caret)
+                    (ddraw dc x y)))
+                (define/override get-extent
+                  (lambda (dc x y width-b height-b descent-b space-b lspace-b rspace-b)
+                    (let ([old-font (send dc get-font)])
+                      (send dc set-font (send (get-style) get-font))
+                      (let-values ([(width height descent space lspace rspace) (eextent dc)])
+                        (set-box/f! width-b width)
+                        (set-box/f! height-b height)
+                        (set-box/f! descent-b descent)
+                        (set-box/f! space-b space)
+                        (set-box/f! lspace-b lspace)
+                        (set-box/f! rspace-b rspace))
+                      (send dc set-font old-font))))
                 (inherit set-snipclass)
-                (sequence
-                  (super-init)
-                  (set-snipclass drawing-snipclass)))])
+                (super-instantiate ())
+                (set-snipclass drawing-snipclass))])
       (send drawing-snipclass add-drawing name drawing%)
       (make-object drawing%)))
   
   (define drawing-snipclass
-    (make-object (class/d snip-class% ()
-                          ((override read)
-                           (public add-drawing))
-                          
-                          (define drawing-table null)
-                          
-                          (define (add-drawing name class%)
-                            (let ([binding (assoc name drawing-table)])
-                              (if binding
-                                  (set-car! (cdr binding) class%)
-                                  (set! drawing-table (cons (list name class%) drawing-table)))))
-                          
-                          (define (read stream-in)
-                            (let* ([name (send stream-in get-string)]
-                                   [class (assoc name drawing-table)])
-                              (if class
-                                  (make-object (cadr class))
-                                  (let* ([bad-bitmap (make-object bitmap% 10 10 #t)]
-                                         [bdc (make-object bitmap-dc% bad-bitmap)])
-                                    (send bdc clear)
-                                    (send bdc draw-rectangle 0 0 10 10)
-                                    (send bdc draw-line 0 0 10 10)
-                                    (send bdc draw-line 10 0 0 10)
-                                    (send bdc set-bitmap #f)
-                                    (make-object image-snip% bad-bitmap)))))
-                          (super-init))))
+    (make-object (class snip-class% ()
+                   (override read)
+                   (public add-drawing)
+                   
+                   (define drawing-table null)
+                   
+                   (define (add-drawing name class%)
+                     (let ([binding (assoc name drawing-table)])
+                       (if binding
+                           (set-car! (cdr binding) class%)
+                           (set! drawing-table (cons (list name class%) drawing-table)))))
+                   
+                   (define (read stream-in)
+                     (let* ([name (send stream-in get-string)]
+                            [class (assoc name drawing-table)])
+                       (if class
+                           (make-object (cadr class))
+                           (let* ([bad-bitmap (make-object bitmap% 10 10 #t)]
+                                  [bdc (make-object bitmap-dc% bad-bitmap)])
+                             (send bdc clear)
+                             (send bdc draw-rectangle 0 0 10 10)
+                             (send bdc draw-line 0 0 10 10)
+                             (send bdc draw-line 10 0 0 10)
+                             (send bdc set-bitmap #f)
+                             (make-object image-snip% bad-bitmap)))))
+                   (super-instantiate ()))))
   (send drawing-snipclass set-version 1)
   (send drawing-snipclass set-classname "robby:drawing")
   (send (get-the-snip-class-list) add drawing-snipclass)
@@ -608,262 +669,274 @@
                        (void)))])
       (values arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)))
   
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;;                                                     ;;;
-  ;;;                     SUB/SUPERSCRIPT                 ;;;
-  ;;;                                                     ;;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
+
+                                                               
+              ;;           ;                                   
+               ;          ;                                    
+               ;          ;                                    
+  ;;;  ;;  ;;  ;;;;      ;    ;;;  ;;  ;; ; ;;;    ;;;   ; ;;; 
+ ;   ;  ;   ;  ;   ;     ;   ;   ;  ;   ;  ;   ;  ;   ;   ;    
+  ;;;   ;   ;  ;   ;    ;     ;;;   ;   ;  ;   ;  ;;;;;   ;    
+     ;  ;   ;  ;   ;    ;        ;  ;   ;  ;   ;  ;       ;    
+ ;   ;  ;   ;  ;   ;   ;     ;   ;  ;   ;  ;   ;  ;   ;   ;    
+  ;;;    ;;; ;; ;;;    ;      ;;;    ;;; ; ;;;;    ;;;   ;;;;  
+                      ;                    ;                   
+                                           ;                   
+                                          ;;;                  
+
   (define-struct size (width height descent space left right))
   (define-struct pos (x y))
   
   (define position-admin%
-    (class/d snip-admin% (position-snip calc-positions snips)
-             ((public get-sizes get-poss)
-              (override get-dc get-editor
-                        get-view get-view-size
-                        needs-update
-                        recounted release-snip
-                        resized
-                        scroll-to
-                        set-caret-owner
-                        update-cursor))
-             
-             (define sizes (map (lambda (snip) (make-size 0 0 0 0 0 0)) snips))
-             (define poss (map (lambda (snip) (make-pos 0 0)) snips))
-             
-             (define (get-sizes)
+    (class snip-admin%
+      (init-field position-snip calc-positions snips)
+      (public get-sizes get-poss)
+      (override get-dc get-editor
+                get-view get-view-size
+                needs-update
+                recounted release-snip
+                resized
+                scroll-to
+                set-caret-owner
+                update-cursor)
+      
+      (define sizes (map (lambda (snip) (make-size 0 0 0 0 0 0)) snips))
+      (define poss (map (lambda (snip) (make-pos 0 0)) snips))
+      
+      (define (get-sizes)
+        (update-sizes/poss)
+        sizes)
+      
+      (define (get-poss)
+        (update-sizes/poss)
+        poss)
+      
+      (define (update-sizes/poss)
+        (with-editor
+         (lambda (editor)
+           (let ([dc (send editor get-dc)])
+             (when dc
+               (set! sizes 
+                     (map
+                      (lambda (snip)
+                        (let ([bwb (box 0)]
+                              [bhb (box 0)]
+                              [bdb (box 0)]
+                              [bsb (box 0)]
+                              [blb (box 0)]
+                              [brb (box 0)]
+                              [xb (box 0)]
+                              [yb (box 0)])
+                          ;(send editor get-snip-location position-snip xb yb)
+                          (send snip get-extent dc (unbox xb) (unbox yb) bwb bhb bdb bsb blb brb)
+                          (make-size (unbox bwb)
+                                     (unbox bhb)
+                                     (unbox bdb)
+                                     (unbox bsb)
+                                     (unbox blb)
+                                     (unbox brb))))
+                      snips))
+               (set! poss (calc-positions sizes)))))))
+      
+      (define (with-editor f)
+        (let ([admin (send position-snip get-admin)])
+          (if admin
+              (let ([editor (send admin get-editor)])
+                (if editor
+                    (f editor)
+                    #f))
+              #f)))
+      (define (with-editor-admin f)
+        (with-editor
+         (lambda (editor)
+           (let ([admin (send editor get-admin)])
+             (if admin
+                 (f admin)
+                 #f)))))
+      
+      (define (get-dc)
+        (with-editor (lambda (editor) (send editor get-dc))))
+      (define (get-editor) (with-editor (lambda (x) x)))
+      (define (get-view xb yb wb hb wanted-snip)
+        (for-each (lambda (b) (set-box/f! b 10)) (list xb yb wb hb))
+        (with-editor
+         (lambda (editor)
+           (if wanted-snip
+               (begin
+                 (update-sizes/poss)
+                 (let loop ([snips snips]
+                            [sizes sizes]
+                            [poss poss])
+                   (cond
+                     [(null? snips) (void)]
+                     [else
+                      (let ([snip (car snips)]
+                            [size (car sizes)]
+                            [pos (car poss)])
+                        (if (eq? wanted-snip snip)
+                            (begin
+                              (set-box/f! xb (pos-x pos))
+                              (set-box/f! yb (pos-y pos))
+                              (set-box/f! wb (size-width size))
+                              (set-box/f! hb (size-height size)))
+                            (loop (cdr snips)
+                                  (cdr sizes)
+                                  (cdr poss))))])))
+               (send editor get-view xb yb wb hb wanted-snip))))
+        (void))
+      
+      (define (get-view-size wb hb)
+        (set-box/f! wb 10)
+        (set-box/f! hb 10)
+        (with-editor
+         (lambda (editor)
+           (send editor get-view #f #f wb hb position-snip))))
+      
+      (define (needs-update wanted-snip localx localy w h)
+        (with-editor-admin
+         (lambda (admin)
+           (update-sizes/poss)
+           (let-values ([(thisx thisy)
+                         (let loop ([snips snips]
+                                    [poss poss])
+                           (cond
+                             [(null? snips) (values 0 0)]
+                             [else (let ([snip (car snips)]
+                                         [pos (car poss)])
+                                     (if (eq? wanted-snip snip)
+                                         (values (pos-x pos)
+                                                 (pos-y pos))
+                                         (loop (cdr snips)
+                                               (cdr poss))))]))])
+             (send admin needs-update position-snip thisx thisy w h)))))
+      
+      (define (refresh-snip wanted-snip)
+        (with-editor
+         (lambda (editor)
+           (let ([dc (send editor get-dc)])
+             (when dc
                (update-sizes/poss)
-               sizes)
-             
-             (define (get-poss)
-               (update-sizes/poss)
-               poss)
-             
-             (define (update-sizes/poss)
-               (with-editor
-                (lambda (editor)
-                  (let ([dc (send editor get-dc)])
-                    (when dc
-                      (set! sizes 
-                            (map
-                             (lambda (snip)
-                               (let ([bwb (box 0)]
-                                     [bhb (box 0)]
-                                     [bdb (box 0)]
-                                     [bsb (box 0)]
-                                     [blb (box 0)]
-                                     [brb (box 0)]
-                                     [xb (box 0)]
-                                     [yb (box 0)])
-                                 ;(send editor get-snip-location position-snip xb yb)
-                                 (send snip get-extent dc (unbox xb) (unbox yb) bwb bhb bdb bsb blb brb)
-                                 (make-size (unbox bwb)
-                                            (unbox bhb)
-                                            (unbox bdb)
-                                            (unbox bsb)
-                                            (unbox blb)
-                                            (unbox brb))))
-                             snips))
-                      (set! poss (calc-positions sizes)))))))
-             
-             (define (with-editor f)
-               (let ([admin (send position-snip get-admin)])
-                 (if admin
-                     (let ([editor (send admin get-editor)])
-                       (if editor
-                           (f editor)
-                           #f))
-                     #f)))
-             (define (with-editor-admin f)
-               (with-editor
-                (lambda (editor)
-                  (let ([admin (send editor get-admin)])
-                    (if admin
-                        (f admin)
-                        #f)))))
-             
-             (define (get-dc)
-               (with-editor (lambda (editor) (send editor get-dc))))
-             (define (get-editor) (with-editor (lambda (x) x)))
-             (define (get-view xb yb wb hb wanted-snip)
-               (for-each (lambda (b) (set-box/f! b 10)) (list xb yb wb hb))
-               (with-editor
-                (lambda (editor)
-                  (if wanted-snip
-                      (begin
-                        (update-sizes/poss)
-                        (let loop ([snips snips]
-                                   [sizes sizes]
-                                   [poss poss])
-                          (cond
-                            [(null? snips) (void)]
-                            [else
-                             (let ([snip (car snips)]
-                                   [size (car sizes)]
-                                   [pos (car poss)])
-                               (if (eq? wanted-snip snip)
-                                   (begin
-                                     (set-box/f! xb (pos-x pos))
-                                     (set-box/f! yb (pos-y pos))
-                                     (set-box/f! wb (size-width size))
-                                     (set-box/f! hb (size-height size)))
-                                   (loop (cdr snips)
-                                         (cdr sizes)
-                                         (cdr poss))))])))
-                      (send editor get-view xb yb wb hb wanted-snip))))
-               (void))
-             
-             (define (get-view-size wb hb)
-               (set-box/f! wb 10)
-               (set-box/f! hb 10)
-               (with-editor
-                (lambda (editor)
-                  (send editor get-view #f #f wb hb position-snip))))
-             
-             (define (needs-update wanted-snip localx localy w h)
-               (with-editor-admin
-                (lambda (admin)
-                  (update-sizes/poss)
-                  (let-values ([(thisx thisy)
-                                (let loop ([snips snips]
-                                           [poss poss])
-                                  (cond
-                                    [(null? snips) (values 0 0)]
-                                    [else (let ([snip (car snips)]
-                                                [pos (car poss)])
-                                            (if (eq? wanted-snip snip)
-                                                (values (pos-x pos)
-                                                        (pos-y pos))
-                                                (loop (cdr snips)
-                                                      (cdr poss))))]))])
-                    (send admin needs-update position-snip thisx thisy w h)))))
-             
-             (define (refresh-snip wanted-snip)
-               (with-editor
-                (lambda (editor)
-                  (let ([dc (send editor get-dc)])
-                    (when dc
-                      (update-sizes/poss)
-                      (let loop ([snips snips]
-                                 [sizes sizes])
-                        (cond
-                          [(null? snips) (void)]
-                          [else
-                           (let ([snip (car snips)]
-                                 [size (car sizes)])
-                             (if (eq? snip wanted-snip)
-                                 (needs-update snip 0 0 (size-width size) (size-height size))
-                                 (loop (cdr snips))))])))))))
-             
-             (define (recounted snip update-now?)
-               (when update-now?
-                 (refresh-snip snip)))
-             
-             (define (release-snip snip) #f)
-             
-             (define (resized snip refresh?)
-               (update-sizes/poss)
-               (when refresh?
-                 (refresh-snip snip)))
-             
-             (define (scroll-to wanted-snip localx localy w h refresh? bias)
-               (with-editor-admin
-                (lambda (admin)
-                  (let-values ([(thisx thisy)
-                                (let loop ([snips snips]
-                                           [poss poss])
-                                  (cond
-                                    [(null? snips) (values 0 0)]
-                                    [else (let ([snip (car snips)]
-                                                [pos (car poss)])
-                                            (if (eq? wanted-snip snip)
-                                                (values (pos-x pos)
-                                                        (pos-y pos))
-                                                (loop (cdr snips)
-                                                      (cdr poss))))]))])
-                    (send admin scroll-to thisx thisy w h refresh? bias)))))
-             
-             (define (set-caret-owner snip domain)
-               (void))
-             
-             (define (update-cursor)
-               (with-editor-admin
-                (lambda (admin)
-                  (send admin update-cursor))))
-             
-             (super-init)
-             (for-each (lambda (snip) (send snip set-admin this)) snips)))
+               (let loop ([snips snips]
+                          [sizes sizes])
+                 (cond
+                   [(null? snips) (void)]
+                   [else
+                    (let ([snip (car snips)]
+                          [size (car sizes)])
+                      (if (eq? snip wanted-snip)
+                          (needs-update snip 0 0 (size-width size) (size-height size))
+                          (loop (cdr snips))))])))))))
+      
+      (define (recounted snip update-now?)
+        (when update-now?
+          (refresh-snip snip)))
+      
+      (define (release-snip snip) #f)
+      
+      (define (resized snip refresh?)
+        (update-sizes/poss)
+        (when refresh?
+          (refresh-snip snip)))
+      
+      (define (scroll-to wanted-snip localx localy w h refresh? bias)
+        (with-editor-admin
+         (lambda (admin)
+           (let-values ([(thisx thisy)
+                         (let loop ([snips snips]
+                                    [poss poss])
+                           (cond
+                             [(null? snips) (values 0 0)]
+                             [else (let ([snip (car snips)]
+                                         [pos (car poss)])
+                                     (if (eq? wanted-snip snip)
+                                         (values (pos-x pos)
+                                                 (pos-y pos))
+                                         (loop (cdr snips)
+                                               (cdr poss))))]))])
+             (send admin scroll-to thisx thisy w h refresh? bias)))))
+      
+      (define (set-caret-owner snip domain)
+        (void))
+      
+      (define (update-cursor)
+        (with-editor-admin
+         (lambda (admin)
+           (send admin update-cursor))))
+      
+      (super-instantiate ())
+      (for-each (lambda (snip) (send snip set-admin this)) snips)))
   
   (define position-snip%
-    (class/d snip% (position-snipclass calc-positions calc-size _snips) 
-             ((inherit set-snipclass get-style)
-              (override get-extent draw copy write))
-             
-             (define snips (map (lambda (snip) (send snip copy)) _snips))
-             
-             (define (write p)
-               (send p << (length snips))
-               (for-each (lambda (snip)
-                           (send p << (send (send snip get-snipclass) get-classname))
-                           (send snip write p))
-                         snips))
-             
-             (define (copy)
-               (let ([snip (make-object position-snip%
-                             position-snipclass
-                             calc-positions
-                             calc-size
-                             snips)])
-                 (send snip set-style (get-style))
-                 snip))
-             
-             (define (get-extent dc x y wb hb db sb lb rb)
-               (let ([sizes (send admin get-sizes)])
-                 (let ([size (calc-size sizes)])
-                   (set-box/f! wb (size-width size))
-                   (set-box/f! hb (size-height size))
-                   (set-box/f! db (size-descent size))
-                   (set-box/f! sb (size-space size))
-                   (set-box/f! lb (size-left size))
-                   (set-box/f! rb (size-right size)))))
-             
-             (define (draw dc x y left top right bottom dx dy draw-caret)
-               (let ([positions (calc-positions (send admin get-sizes))])
-                 (for-each
-                  (lambda (snip pos)
-                    (send snip draw dc
-                          (+ x (pos-x pos))
-                          (+ y (pos-y pos))
-                          left top right bottom dx dy draw-caret))
-                  snips
-                  positions)))
-             
-             (super-init)
-             
-             (define admin (make-object position-admin% this calc-positions snips))
-             (set-snipclass position-snipclass)))
+    (class snip%
+      (init-field position-snipclass calc-positions calc-size _snips) 
+      (inherit set-snipclass get-style)
+      (override get-extent draw copy write)
+      
+      (define snips (map (lambda (snip) (send snip copy)) _snips))
+      
+      (define (write p)
+        (send p << (length snips))
+        (for-each (lambda (snip)
+                    (send p << (send (send snip get-snipclass) get-classname))
+                    (send snip write p))
+                  snips))
+      
+      (define (copy)
+        (let ([snip (make-object position-snip%
+                      position-snipclass
+                      calc-positions
+                      calc-size
+                      snips)])
+          (send snip set-style (get-style))
+          snip))
+      
+      (define (get-extent dc x y wb hb db sb lb rb)
+        (let ([sizes (send admin get-sizes)])
+          (let ([size (calc-size sizes)])
+            (set-box/f! wb (size-width size))
+            (set-box/f! hb (size-height size))
+            (set-box/f! db (size-descent size))
+            (set-box/f! sb (size-space size))
+            (set-box/f! lb (size-left size))
+            (set-box/f! rb (size-right size)))))
+      
+      (define (draw dc x y left top right bottom dx dy draw-caret)
+        (let ([positions (calc-positions (send admin get-sizes))])
+          (for-each
+           (lambda (snip pos)
+             (send snip draw dc
+                   (+ x (pos-x pos))
+                   (+ y (pos-y pos))
+                   left top right bottom dx dy draw-caret))
+           snips
+           positions)))
+      
+      (super-instantiate ())
+      
+      (define admin (make-object position-admin% this calc-positions snips))
+      (set-snipclass position-snipclass)))
   
   (define position-snipclass%
-    (class/d snip-class% (calc-positions calc-size)
-             ((override read))
-             
-             (define (read f)
-               (define (get-next)
-                 (let* ([classname (send f get-string)]
-                        [snipclass (send (get-the-snip-class-list) find classname)])
-                   (send snipclass read f)))
-               
-               (make-object position-snip% 
-                 this
-                 calc-positions
-                 calc-size
-                 (let loop ([n (send f get-exact)])
-                   (cond
-                     [(<= n 0) null]
-                     [else (cons (get-next) (loop (- n 1)))]))))
-             
-             (super-init)))
+    (class snip-class% 
+      (init-field calc-positions calc-size)
+      (override read)
+      
+      (define (read f)
+        (define (get-next)
+          (let* ([classname (send f get-string)]
+                 [snipclass (send (get-the-snip-class-list) find classname)])
+            (send snipclass read f)))
+        
+        (make-object position-snip% 
+          this
+          calc-positions
+          calc-size
+          (let loop ([n (send f get-exact)])
+            (cond
+              [(<= n 0) null]
+              [else (cons (get-next) (loop (- n 1)))]))))
+      
+      (super-instantiate ())))
   
   (define (position calc-positions calc-size name)
     (define position-snipclass (make-object position-snipclass% calc-positions calc-size))

@@ -333,6 +333,8 @@
 			 (when file
 			   (let* ([types '("application/postscript"
 					   "text/plain"
+                                           "image/jpeg"
+                                           "image/gif"
 					   "application/octet-stream")]
 				  [type (get-choices-from-user
 					 "Content Type"

@@ -18,7 +18,8 @@
       (BODY 
        (A ((NAME "mail") (VALUE "mailing lists")))
        (H1  "Mailing Lists")
-       "PLT maintains two English-language mailing lists: one for announcements, "	   "the other for discussion.  There is a discussion list in Spanish." 
+       "PLT maintains two English-language mailing lists: one for announcements, "
+       "the other for discussion.  There is a discussion list in Spanish." 
        (P)
        (HR)
        (P)

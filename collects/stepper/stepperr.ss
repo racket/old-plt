@@ -173,18 +173,18 @@
   (define stepper-text%
     (class f:text:basic% (pre-sexp pre-redex post-sexp post-redex break-kind error-msg (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase
-               begin-edit-sequence end-edit-sequence get-start-position)
+               begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
       (public (pretty-printed-width -1)
               (char-width 0)
               (clear-highlight-thunks null)
               (now-finished-exprs finished-exprs)
+              [reset-style
+               (lambda ()
+                 (change-style (send (get-style-list) find-named-style "Standard")))]
               (reset-pretty-print-width 
                (lambda (canvas)
                  (begin-edit-sequence)
-                 (when (= (last-position) 0)
-                   (insert "a")
-                   (change-style result-delta 0 1))
-                 (let* ([style (send (find-snip 0 'before) get-style)]
+                 (let* ([style (send (get-style-list) find-named-style "Standard")]
                         [_ (set! char-width (send style get-text-width (send canvas get-dc)))]
                         [canvas-width (let-values ([(client-width client-height)
                                                     (send canvas get-client-size)])
@@ -261,23 +261,25 @@
                  (insert (make-object separator-snip%))
                  (when (not (eq? pre-sexp no-sexp))
                    (insert #\newline)
+                   (reset-style)
                    (format-sexp pre-sexp pre-redex redex-highlight-color)
                    (insert #\newline)
                    (insert (make-object separator-snip%))
                    (insert #\newline))
                  (cond [(not (eq? post-sexp no-sexp))
+                        (reset-style)
                         (format-sexp post-sexp post-redex result-highlight-color)]
                        [error-msg
                         (let ([before-error-msg (last-position)])
+                          (reset-style)
                           (insert error-msg)
                           (change-style error-delta before-error-msg (last-position)))])
                  (end-edit-sequence)
                  (lock #t))])
-      (sequence (super-init line-spacing tabstops))))
+      (sequence (super-init line-spacing tabstops)
+                (set-style-list (f:scheme:get-style-list)))))
   
 
-  (define output-delta (make-object style-delta% 'change-family 'modern))
-  (define result-delta (make-object style-delta% 'change-family 'modern))
   (define error-delta (make-object style-delta% 'change-style 'italic))
   (send error-delta set-delta-foreground "RED")
 
@@ -322,19 +324,35 @@
          
          (define read-n-parse-next-expr
            (let* ([reader (z:read (f:gui-utils:read-snips/chars-from-buffer text)
-                                  (z:make-location 1 1 0 "stepper-text"))])
+                                  (z:make-location 1 1 0 "stepper-text"))]
+                  [zodiac-eventspace (make-eventspace)]
+                  [zodiac-semaphore (make-semaphore)]
+                  [zodiac-read-expr #f]
+                  [zodiac-parsed-expr #f])
+             (parameterize ([current-eventspace zodiac-eventspace])
+               (queue-callback
+                (lambda ()
+                  (d:basis:initialize-parameters (make-custodian) settings)
+                  (d:rep:invoke-library)
+                  (semaphore-post zodiac-semaphore))))
+             (semaphore-wait zodiac-semaphore)
              (lambda (handler)
-               (d:interface:set-zodiac-phase 'reader)
-               (let ([new-expr (with-handlers
-                                   ((exn:read? handler))
-                                 (reader))])
-                 (if (z:eof? new-expr)
-                     (values new-expr #f)
-                     (begin
-                       (d:interface:set-zodiac-phase 'expander)
-                       (values new-expr
-                               (with-handlers ((exn:syntax? handler))
-                                 (z:scheme-expand new-expr 'previous user-vocabulary)))))))))
+               (parameterize ([current-eventspace zodiac-eventspace])
+                 (queue-callback
+                  (lambda ()
+                    (d:interface:set-zodiac-phase 'reader)
+                    (let ([new-expr (with-handlers
+                                        ((exn:read? handler))
+                                      (reader))])
+                      (set! zodiac-read-expr new-expr)
+                      (when (not (z:eof? new-expr))
+                        (begin
+                          (d:interface:set-zodiac-phase 'expander)
+                          (set! zodiac-parsed-expr 
+                                (z:scheme-expand new-expr 'previous user-vocabulary))))
+                      (semaphore-post zodiac-semaphore)))))
+               (semaphore-wait zodiac-semaphore)
+               (values zodiac-read-expr zodiac-parsed-expr))))
          
          (define (check-for-repeated-names expr exn-handler)
            (with-handlers
@@ -435,11 +453,13 @@
                   (reconstruct-helper 
                    (lambda (reconstructed redex)
                      (set! held-expr reconstructed)
-                     (set! held-redex redex))))]
+                     (set! held-redex redex)
+                     (semaphore-post stepper-semaphore)))
+                  (semaphore-wait stepper-semaphore))]
                [(result-break)
                 (when (if (not (null? returned-value-list))
                           (not (r:skip-redex-step? mark-list))
-                          (and ;(not (eq? held-expr no-sexp))   ;;;;; this doesn't make sense!!!
+                          (and (not (eq? held-expr no-sexp))
                                (not (r:skip-result-step? mark-list))))
                   (reconstruct-helper 
                    (lambda (reconstructed redex)
@@ -467,6 +487,7 @@
              (parameterize ([current-eventspace drscheme-eventspace])
                (queue-callback
                 (lambda ()
+                  (printf "beginning exception handler~n")
                   (let ([step-text (if held-expr
                                        (make-object stepper-text% held-expr held-redex no-sexp no-sexp #f (exn-message exn))
                                        (make-object stepper-text% no-sexp no-sexp no-sexp no-sexp #f (exn-message exn)))])

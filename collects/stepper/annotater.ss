@@ -317,7 +317,7 @@
                                     (wcm-wrap debug-info (break-wrap expr)))]
                   [non-local-ref 
                    (lambda (varref)
-                     (eq? (var-set-intersect (list varref) top-env-no-structs) null))]
+                     (s:check-pre-defined-var (z:varref-var varref)))]
 
                   
                   [translate-varref

@@ -38,7 +38,8 @@
    annotate))
 
 (define-signature stepper:reconstruct^
-  (reconstruct-completed
+  (expose-mark-list
+   reconstruct-completed
    reconstruct-current
    final-mark-list?
    skip-result-step?

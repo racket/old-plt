@@ -228,8 +228,11 @@
                             ;; Already Connected
                             (cond
                               [(eq? mode 'reselect)
-			       (check-validity (or (imap-uidvalidity connection) 0) void)
-			       (values connection (imap-messages connection) (imap-new? connection))]
+			       (let-values ([(count new) (with-disconnect-handler
+							  (lambda ()
+							    (imap-noop connection)))])
+				 (check-validity (or (imap-uidvalidity connection) 0) void)
+				 (values connection (imap-messages connection) (imap-new? connection)))]
 			      [(eq? mode 'check-new)
                                (let-values ([(count new) (with-disconnect-handler
 							  (lambda ()

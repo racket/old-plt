@@ -84,12 +84,12 @@
 	      null
 	      (cons (get-last l) (get-rest l))))))
 
-    ; get-two-int-results: a wrapper around functions that need to return
+    ; get-two-int-values: a wrapper around functions that need to return
     ;   two results.
     ; input: function: a function which takes two boxes and returns results
     ;          in them.
     ; returns: the contents of the two boxes (as multiple values)
-    (define get-two-int-results
+    (define get-two-int-values
       (lambda (function)
 	(let ([a (box 0)]
 	      [b (box 0)])
@@ -219,14 +219,15 @@
 	    ; intended to be called by item's parent upon resize.
 	    [get-info
 	      (lambda ()
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-get-info
 		  "Entering get-info; object ~s" object-ID)
 		(let* ([min-size (get-min-size)]
 		       [result (make-child-info (default-x) (default-y)
 						(car min-size) (cadr min-size)
 						(stretchable-in-x?)
 						(stretchable-in-y?))])
-		  (mred:debug:printf 'container "Result: ~s" result)
+		  (mred:debug:printf 'container-get-info "Result: ~s"
+		    result)
 		  result))]
 	    
 	    ; force-redraw: unconditionally trigger redraw.
@@ -237,7 +238,7 @@
 	    ;   invalid.
 	    [force-redraw
 	      (lambda ()
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-force-redraw
 		  "Entering force-redraw; object ~s" object-ID)
 		(let ([parent (get-parent)])
 		  (unless (null? parent)
@@ -249,14 +250,18 @@
 	    ; returns: a list containing the minimum width & height.
 	    [get-min-size
 	      (lambda ()
-		(mred:debug:printf 'container "get-min-size; object ~s;  "
+		(mred:debug:printf 'container-get-min-size
+		  "get-min-size; object ~s;  "
 		  object-ID)
-		(mred:debug:printf 'container "Result:  ~s"
+		(mred:debug:printf 'container-get-min-size
+		  "Result:  ~s"
 		  (list min-width min-height))
 		(list
 		  (max min-width (user-min-width))
 		  (max min-height (user-min-height))))])
 	  (sequence
+	    (mred:debug:printf 'container-child-init "Args to super-init: ~s"
+	      (apply make-default-size args))
 	    (apply super-init (apply make-default-size args))
 	    (set! min-width (get-width))
 	    (set! min-height (get-height))
@@ -342,18 +347,18 @@
 	  [set-min-sizes
 	    (lambda (range style)
 	      (let-values ([(client-width client-height)
-			    (get-two-int-results get-client-size)])
+			    (get-two-int-values get-client-size)])
 		(let ([delta-w (- (get-width) client-width)]
 		      [delta-h (- (get-height) client-height)]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
-		  (mred:debug:printf 'min-size
+		  (mred:debug:printf 'container-set-min-sizes
 		    "entering gauge set-min-size; args ~s ~s"
 		    range style)
-		  (mred:debug:printf 'min-size
+		  (mred:debug:printf 'container-set-min-sizes
 		    "client size: ~s x ~s"
 		    client-width client-height)
-		  (mred:debug:printf 'min-size
+		  (mred:debug:printf 'container-set-min-sizes
 		    "actual size: ~s x ~s"
 		    (get-width) (get-height))
 		  (set! min-width (if horizontal?
@@ -380,7 +385,8 @@
 				     style)
 			     args))
 		    args)])
-	    (mred:debug:printf 'min-size "Args to gauge: ~s" new-args)
+	    (mred:debug:printf 'container-gauge-init
+	      "Args to gauge: ~s" new-args)
 	    (apply super-init new-args)
 	    (apply (lambda (parent lable range x y w h style . args)
 		     (set-min-sizes range style)
@@ -411,7 +417,7 @@
 			    args))))
     
     (define message%
-      (make-item% wx:message% #t #t list))
+      (make-item% wx:message% #f #f list))
     ; we don't need to process the size args at all cause there aren't
     ; any. Therefore, we just need to bundle the args up in a list.  list
     ; already does that.
@@ -449,19 +455,19 @@
 	  [set-min-size
 	    (lambda (min-val max-val style)
 	      (let-values ([(client-w client-h)
-			    (get-two-int-results get-client-size)])
+			    (get-two-int-values get-client-size)])
 		(let ([full-width (get-width)]
 		      [full-height (get-height)]
 		      [range (add1 (- max-val min-val))]
 		      [horizontal? (positive? (bitwise-and style
 						wx:const-horizontal))])
-		  (mred:debug:printf 'min-size
+		  (mred:debug:printf 'container-set-min-sizes
 		    "Entering slider's set-min-size; args ~s ~s ~s"
 		    min-val max-val style)
-		  (mred:debug:printf 'min-size
+		  (mred:debug:printf 'container-set-min-sizes
 		    "Client size: ~s x ~s"
 		    client-w client-h)
-		  (mred:debug:printf 'min-size
+		  (mred:debug:printf 'container-set-min-sizes
 		    "Full size: ~s x ~s"
 		    full-width full-height)
 		  (set! min-width
@@ -563,11 +569,11 @@
 	    [find-min-size
 	      (lambda ()
 		(let-values ([(width height)
-			      (get-two-int-results get-client-size)])
-		  (mred:debug:printf 'media-canvas
+			      (get-two-int-values get-client-size)])
+		  (mred:debug:printf 'conatiner-canvas-find-min-size
 		    "Entering find-min-size.  client size: ~s x ~s"
 		    width height)
-		  (mred:debug:printf 'media-canvas
+		  (mred:debug:printf 'container-canvas-find-min-size
 		    "Full size: ~s x ~s" (get-width) (get-height))
 		  (let* ([delta-x (- (get-width) width)]
 			 [delta-y (- (get-height) height)])
@@ -665,11 +671,12 @@
 	  ; effects: upon exit, children-info is eq? to result.
 	  [get-children-info
 	   (lambda ()
-	     (mred:debug:printf 'container
+	     (mred:debug:printf 'container-get-children-info
 				"Entering get-children-info; object ~s"
 				object-ID)
 	     (unless children-info
-	       (mred:debug:printf 'container "Recomputing children info")
+	       (mred:debug:printf 'container-get-children-info
+		 "Recomputing children info")
 	       (set! children-info (map (lambda (child)
 					  (send child get-info))
 					children)))
@@ -682,14 +689,14 @@
 	  ;   itself and all of its children.
 	  [force-redraw
 	   (lambda ()
-	     (mred:debug:printf 'container
+	     (mred:debug:printf 'container-force-redraw
 				"Entering force-redraw; object ~s" object-ID)
 	     (set! children-info #f)
 	     (set! curr-width #f)
 	     (let ([parent (get-parent)])
 	       (if (null? parent)
 		   (let-values ([(width height)
-				 (get-two-int-results get-client-size)])
+				 (get-two-int-values get-client-size)])
 		     (redraw width height))
 		   (send parent force-redraw))))]
 	  
@@ -718,7 +725,7 @@
 				       curr-info)))))))])
 	     (lambda ()
 	       (let-values ([(client-w client-h)
-			     (get-two-int-results get-client-size)])
+			     (get-two-int-values get-client-size)])
 		 (let ([min-client-size
 			 (gms-helper (get-children-info)
 			   const-default-spacing const-default-spacing)]
@@ -737,13 +744,13 @@
 	  ; effects: causes children to redraw themselves.
 	  [on-size
 	    (lambda (new-width new-height)
-	      (mred:debug:printf 'container
+	      (mred:debug:printf 'container-on-size
 				 "Entering on-size; object ID ~s;  " object-ID)
-	      (mred:debug:printf 'container
+	      (mred:debug:printf 'container-on-size
 				 "New size: ~s x ~s" new-width new-height)
 	      (let-values ([(client-width client-height)
-			    (get-two-int-results get-client-size)])
-		(mred:debug:printf 'container
+			    (get-two-int-values get-client-size)])
+		(mred:debug:printf 'container-on-size
 				   "Client size: ~s x ~s" client-width
 				   client-height)
 		(unless (and (number? curr-width)
@@ -752,7 +759,7 @@
 			     (= client-height curr-height))
 		  (set! curr-width client-width)
 		  (set! curr-height client-height)
-		  (mred:debug:printf 'container
+		  (mred:debug:printf 'container-on-size
 				     "On-size is forcing a redraw.")
 		  (redraw client-width client-height))))]
 	  
@@ -806,6 +813,9 @@
 	    get-width
 	    get-height
 	    get-client-size)
+
+	  (rename
+	    [super-on-size on-size])
 	  
 	  (private
 	    
@@ -825,9 +835,9 @@
 	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	      (lambda (new-panel)
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-insert-panel
 		  "Entering insert-panel, object ~s" object-ID)
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-insert-panel
 		  "Argument: ~s; ID ~s" new-panel
 		  (ivar new-panel object-ID))
 		(unless (is-a? new-panel panel%)
@@ -839,7 +849,9 @@
 		    "Added panel ~s to a frame (~s) not its parent"
 		    new-panel this))
 		(set! panel new-panel)
-		(send panel set-size 0 0 (get-width) (get-height))
+		(let-values ([(client-w client-h)
+			      (get-two-int-values get-client-size)])
+		  (send panel set-size 0 0 client-w client-h))
 		(force-redraw))]
 	    
 	    [get-panel
@@ -848,7 +860,7 @@
 
 	    [force-redraw
 	      (lambda ()
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-force-redraw
 		  "Entering force-redraw; object ~s" object-ID)
 		(on-size (get-width) (get-height)))]
 	    
@@ -863,9 +875,12 @@
 	    ;            independantly.
 	    [on-size
 	      (lambda (new-width new-height)
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-on-size
 		  "FRAME: Entered frame's on-size; args ~s ~s"
 		  new-width new-height)
+		(mred:debug:printf 'container-on-size
+		  "Calling super-class's on-size")
+		(super-on-size new-width new-height)
 		(unless (null? panel)
 		  (let ([p-x (box 0)]
 			[p-y (box 0)])
@@ -915,27 +930,34 @@
 			   ; quantities.
 			   [f-width (+ new-w delta-w)]
 			   [f-height (+ new-h delta-h)])
-		      (mred:debug:printf 'container
+		      (mred:debug:printf 'container-on-size
 			"FRAME: panel client ~s x ~s"
 			p-client-width p-client-height)
-		      (mred:debug:printf 'container
+		      (mred:debug:printf 'container-on-size
 			"FRAME: size differences: ~s, ~s"
 			delta-w delta-h)
-		      (mred:debug:printf 'container
+		      (mred:debug:printf 'container-on-size
 			"FRAME: New size: ~s x ~s"
 			new-w new-h)
-		      (send panel set-size const-default-posn
-			const-default-posn
-			(+ (- f-width delta-w) p-delta-w)
-			(+ (- f-height delta-h) p-delta-h))
+		      (begin
+			(mred:debug:printf 'container-on-size
+			  "Resizing panel to ~s x ~s"
+			  (+ (- f-width delta-w) p-delta-w)
+			  (+ (- f-height delta-h) p-delta-h))
+			(send panel set-size const-default-posn
+			  const-default-posn
+			  (+ (- f-width delta-w) p-delta-w)
+			  (+ (- f-height delta-h) p-delta-h))
+			(mred:debug:printf 'container-on-size
+			  "Resized panel"))
 		      (unless (and (= new-width f-width)
 				(= new-height f-height))
-			(mred:debug:printf 'container
+			(mred:debug:printf 'container-on-size
 			  "FRAME: Resizing to ~s x ~s"
 			  f-width f-height)
 			(set-size const-default-posn const-default-posn
 			  f-width f-height)))))
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-on-size
 		  "FRAME: Leaving onsize at the end."))])
 	  (sequence
 	    (apply super-init args)
@@ -981,7 +1003,7 @@
 			   (compute-y y-accum kid-info))))])
 	  (lambda ()
 	    (let-values ([(client-w client-h)
-			  (get-two-int-results
+			  (get-two-int-values
 			    (ivar container get-client-size))])
 	      (let* ([border (send container border)]
 		     [min-client-size
@@ -1270,10 +1292,10 @@
 	  ; only place the active child.
 	  [place-children
 	    (lambda (children-info width height)
-	      (mred:debug:printf 'container
+	      (mred:debug:printf 'container-place-children
 		"Entering place-children; object ~s" object-ID)
 	      (unless (null? active)
-		(mred:debug:printf 'container
+		(mred:debug:printf 'container-place-children
 		  "Placing active child")
 		(let* ([active-info (send active get-info)]
 		       [x-stretch (child-info-x-stretch active-info)]
@@ -1296,7 +1318,7 @@
 
 	  [redraw
 	    (lambda (width height)
-	      (mred:debug:printf 'container
+	      (mred:debug:printf 'container-redraw
 		"Entering redraw; object ~s" object-ID)
 	      (unless (null? active)
 		(apply
@@ -1304,8 +1326,8 @@
 		  ; we don't really care about the children info...
 		  (place-children null width height))))])
 	(sequence
-	  (mred:debug:printf 'container
+	  (mred:debug:printf 'container-single-panel
 	    "About to call single-panel's super-init")
-	  (mred:debug:printf 'container
+	  (mred:debug:printf 'container-single-panel
 	    "Function: ~s  Args: ~s" super-init args)
 	  (apply super-init args))))))

@@ -41,15 +41,19 @@
 		(define current-type '("unit"))
 		
 		;; format-typevalue: scheme-value -> string
-		(define (format-typevalue value)
+		(define (format-typevalue value typechoice)
 		  (let ([firsttype (car current-type)])
 		    (begin
 		      (set! current-type (cdr current-type))
-		      (if (<voidstruct>? value)
-			  (if (arrow? firsttype)
-			      (format "~a = <fun>" (ml-tstyle firsttype))
-			      (format "~a~n" (ml-tstyle firsttype)))
-			  (format "~a = ~a~n" (ml-tstyle firsttype) (ml-style value))))))
+		      (if (eq? typechoice 'nocheck)
+			  (if (<voidstruct>? value)
+			      (format "~n")
+			      (format "~a~n" (ml-style value)))
+			  (if (<voidstruct>? value)
+			      (if (arrow? firsttype)
+				  (format "~a = <fun>" (ml-tstyle firsttype))
+				  (format "~a~n" (ml-tstyle firsttype)))
+			      (format "~a = ~a~n" (ml-tstyle firsttype) (ml-style value)))))))
 		
 		
 		;; ml-tstyle: ml-type -> string
@@ -243,9 +247,9 @@
 		(define/public (front-end/complete-program input settings) (front-end input settings 0))
 		(define/public (front-end/interaction input settings) (front-end input settings (drscheme:language:text/pos-start input)))
 		(define/public (front-end input settings offset)
-		  (let-values ([(port name current-parse)
+		  (let-values ([(port name current-parse type-choice)
 				(if (string? input)
-				    (values (open-input-file input) #f null);(path->complete-path input))
+				    (values (open-input-file input) #f null (dromedary-settings-typechoice settings));(path->complete-path input))
 				    (let ([text (drscheme:language:text/pos-text input)])
 					;				(parse-error-port (lambda ()
 					;						    (open-input-string
@@ -258,7 +262,9 @@
 					      get-text
 					      (drscheme:language:text/pos-start input)
 					      (drscheme:language:text/pos-end input)))
-				       text null)))])
+				       text 
+				       null
+				       (dromedary-settings-typechoice settings))))])
 		    
 		    (lambda ()
 		      (syntax-as-top
@@ -280,7 +286,9 @@
 									       #f))])
 				     
 				     (begin
-				       (set! current-type (flatten (typecheck-all cur-parse name)))
+				       (if (eq? type-choice 'nocheck)
+					   (set! current-type '("unit"))
+					   (set! current-type (flatten (typecheck-all cur-parse name type-choice))))
 				       (set! current-parse (map syntaxify (flatten (compile-all cur-parse name))))
 					;(pretty-print (format "current-type: ~e" current-type))
 					;(pretty-print (format "current-parse: ~e" (map syntax-object->datum current-parse)))
@@ -329,7 +337,7 @@
           (define/public (render-value value settings port port-write) (begin
 									 (display (ml-style value) port)));(format-typevalue value) port))
           (define/public (render-value/format value settings port port-write width)
-	    (display (format-typevalue value) port))
+	    (display (format-typevalue value (dromedary-settings-typechoice settings)) port))
           (define/public (unmarshall-settings x) 
 	    (if (and (pair? x) (= (length x) 1)
 		     (pair? (car x)) (= (length (car x)) 1))

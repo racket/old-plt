@@ -293,9 +293,13 @@
 						[(list? args) args]
 						[else (list args)]))))
 		     (let ([rconstr (string->symbol (format "make-~a" (unlongident name)))]
-			   [args (if (null? expr) #f (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context))])
+			   [args (cond
+				  [(null? expr) #f]
+				  [(ast:pexp_tuple? expr) 
+				   (compile-constr-args (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)]
+				  [else (compile-ml expr context)])])
 		       (if args
-			   #`(#,rconstr #,@args)
+			   #`(#,rconstr #,args)
 			       #`(#,rconstr #f)
 			       ))))]
 ;	       (cond
@@ -532,7 +536,15 @@
 	       (append (flatten-tuple (<tuple>-list (car tlist))) (flatten-tuple (cdr tlist)))
 	       (cons (car tlist) (flatten-tuple (cdr tlist))))))
        
-     (define (compile-exps bindings context)
+     (define (compile-constr-args exps context)
+;       (pretty-print (format "compile-contr-args ~a" exps))
+       (let ([blen (length exps)])
+	 (cond
+	  [(= blen 0) #f]
+	  [(= blen 1) (compile-ml (car exps) context)]
+	  [else #`(make-<tuple> (list #,@(map compile-ml exps (repeat context (length exps)))))])))
+
+     (define (compile-exps bindings context)       
        (if (null? bindings)
 	   null
 	   (cons (compile-ml (car bindings) context) (compile-exps (cdr bindings) context))))

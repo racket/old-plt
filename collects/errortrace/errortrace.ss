@@ -41,10 +41,6 @@
 	  (let ([v (cdr (hash-table-get profile-info key))])
 	    (set-car! v (+ (- (current-process-milliseconds) start) (car v))))))))
   
-  (export-indirect register-profile-start
-		   register-profile-done
-		   profile-key)
-
   (define (get-profile-results)
     (hash-table-map profile-info (lambda (key val)
                                    (let ([count (cadr val)]
@@ -145,7 +141,6 @@
   ;; Stacktrace instrumenter
 
   (define key (gensym 'key))
-  (export-indirect key)
 
   ;; with-mark : stx stx -> stx
   (define (with-mark mark expr)

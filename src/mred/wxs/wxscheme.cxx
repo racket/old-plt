@@ -1524,23 +1524,23 @@ int wxsGetImageType(char *fn)
   if (f) {
     switch ((unsigned)fgetc(f)) {
     case 'B':
-      expect = "M";
+      expect = (unsigned char *)"M";
       type = wxBITMAP_TYPE_BMP;
       break;
     case '#':
-      expect = "define";
+      expect = (unsigned char *)"define";
       type = wxBITMAP_TYPE_XBM;
       break;
     case '/':
-      expect = "* XPM */";
+      expect = (unsigned char *)"* XPM */";
       type = wxBITMAP_TYPE_XPM;
       break;
     case 'G':
-      expect = "IF8";
+      expect = (unsigned char *)"IF8";
       type = wxBITMAP_TYPE_GIF;
       break;
     case 0xFF:
-      expect = "\xD8\xFF\xE0";
+      expect = (unsigned char *)"\xD8\xFF\xE0";
       type = wxBITMAP_TYPE_JPEG;
       break;
     default:

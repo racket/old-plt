@@ -1763,8 +1763,18 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
 	  }
       wxReadMediaGlobalFooter(mf);
     } else {
-      str = wxTheClipboard->GetClipboardString(time);
-      InsertPasteString(str);
+      wxBitmap *bm = NULL;
+      
+      if (!pasteTextOnly)
+	bm = wxTheClipboard->GetClipboardBitmap(time);
+      if (bm) { 
+	snip = new wxImageSnip(bm);
+	InsertPasteSnip(snip, NULL);
+      } else {
+	str = wxTheClipboard->GetClipboardString(time);
+	/* no data => empty string */
+	InsertPasteString(str);
+      }
     }
   }
 }

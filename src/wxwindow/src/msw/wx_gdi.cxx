@@ -30,6 +30,8 @@ void DeleteRegisteredGDIObject(HANDLE x);
 
 Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo, HPALETTE * phPal, HBITMAP * phBitmap);
 
+extern int read_JPEG_file(char *filename, wxBitmap *bm);
+
 wxFont::wxFont(void)
 {
   COUNT_P(font_count);
@@ -1243,6 +1245,18 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
     }
     if (cmap)
       bitmapColourMap = cmap;
+  }
+  else if (flags & wxBITMAP_TYPE_JPEG)
+  {
+    Bool success;
+    success = read_JPEG_file(bitmap_file, this);
+    if (!success) {
+      if (ms_bitmap) {
+	DeleteRegisteredGDIObject(ms_bitmap);
+	ms_bitmap = NULL;
+      }
+      ok = FALSE;
+    }
   }
   
   if (oldSel && ok)

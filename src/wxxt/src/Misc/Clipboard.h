@@ -50,6 +50,10 @@ class wxClipboard : public wxObject
   /* Get data from the clipboard in the format "TEXT". */
   char *GetClipboardString(long time);
 
+
+  void SetClipboardBitmap(wxBitmap *, long time);
+  wxBitmap *GetClipboardBitmap(long time);
+
   /* Get data from the clipboard */
   char *GetClipboardData(char *format, long *length, long time);
 

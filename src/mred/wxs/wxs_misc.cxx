@@ -346,6 +346,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 
 
+
 class os_wxClipboard : public wxClipboard {
  public:
 
@@ -371,6 +372,54 @@ static Scheme_Object *os_wxClipboard_interface;
 os_wxClipboard::~os_wxClipboard()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+static Scheme_Object *os_wxClipboardGetClipboardBitmap(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxBitmap* r;
+  objscheme_check_valid(obj);
+  ExactLong x0;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "get-clipboard-bitmap in clipboard<%>"));
+
+  
+  r = WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardBitmap(x0));
+
+  
+  
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxBitmap(r));
+}
+
+static Scheme_Object *os_wxClipboardSetClipboardBitmap(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(obj);
+  class wxBitmap* x0 INIT_NULLED_OUT;
+  ExactLong x1;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-clipboard-bitmap in clipboard<%>", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[1], "set-clipboard-bitmap in clipboard<%>"));
+
+  
+  WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardBitmap(x0, x1));
+
+  
+  
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -503,8 +552,10 @@ void objscheme_setup_wxClipboard(void *env)
   wxREGGLOB(os_wxClipboard_class);
   wxREGGLOB(os_wxClipboard_interface);
 
-  os_wxClipboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 5));
+  os_wxClipboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 7));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bitmap", os_wxClipboardGetClipboardBitmap, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bitmap", os_wxClipboardSetClipboardBitmap, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data", os_wxClipboardGetClipboardData, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string", os_wxClipboardGetClipboardString, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-client", os_wxClipboardGetClipboardClient, 0, 0));

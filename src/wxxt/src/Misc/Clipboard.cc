@@ -4,7 +4,7 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: Clipboard.cc,v 1.6 2000/05/11 17:10:50 mflatt Exp $
+ * RCS_ID:      $Id: Clipboard.cc,v 1.7 2000/06/13 15:05:05 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -228,6 +228,23 @@ void wxClipboard::SetClipboardString(char *str, long time)
   if (!got_selection) {
     cbString = NULL;
   }
+}
+
+void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
+{
+  if (clipOwner) {
+    clipOwner->BeingReplaced();
+    clipOwner = NULL;
+  }
+
+  cbString = NULL;
+
+  /* Don't know how to put a bitmap into the clipboard. */
+}
+
+wxBitmap *wxClipboard::GetClipboardBitmap(long time)
+{
+  return NULL;
 }
 
 static void wxGetTargets(Widget WXUNUSED(w), XtPointer WXUNUSED(cbv), Atom *WXUNUSED(sel), Atom *WXUNUSED(type),

@@ -51,8 +51,18 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
       HDC hdcMem = CreateCompatibleDC(NULL);
       HDC hdcSrc = CreateCompatibleDC(NULL);
       HBITMAP old = (HBITMAP)::SelectObject(hdcSrc, wxBM->ms_bitmap);
-      HBITMAP hBitmap = CreateCompatibleBitmap(hdcMem,
-                                  wxBM->GetWidth(), wxBM->GetHeight());
+      HPALETTE origPal = NULL;
+
+      wxColourMap *cm = wxBM->GetColourMap();
+      if (cm && cm->ms_palette)
+	origPal = SelectPalette(hdcSrc, cm->ms_palette, TRUE);
+
+      HBITMAP hBitmap;
+      BITMAP bm;
+
+      GetObject(wxBM->ms_bitmap, sizeof(BITMAP), (LPSTR)&bm);
+      hBitmap = CreateBitmapIndirect(&bm);
+
       if (!hBitmap)
         return FALSE;
       HBITMAP old1 = (HBITMAP)SelectObject(hdcMem, hBitmap);
@@ -66,6 +76,8 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
       Bool success = (Bool)::SetClipboardData(CF_BITMAP, hBitmap);
 
       // Clean up
+      if (origPal)
+	SelectPalette(hdcSrc, origPal, TRUE);
       SelectObject(hdcSrc, old);
       DeleteDC(hdcSrc);
       DeleteDC(hdcMem);      
@@ -161,14 +173,15 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
       DeleteDC(hdcSrc);
       DeleteDC(hdcMem);
 
-      // Create and return a new wxBitmap
+      // Create a new wxBitmap
       wxBitmap *wxBM = new wxBitmap;
       wxBM->ms_bitmap = hNewBitmap;
       wxBM->SetWidth(bm.bmWidth);
       wxBM->SetHeight(bm.bmHeight);
-      wxBM->SetDepth(bm.bmPlanes);
+      wxBM->SetDepth(-1);
       wxBM->SetOk(TRUE);
-      return (wxObject *)wxBM;
+
+      return wxBM;
       break;
     }
     case wxCF_METAFILE:
@@ -357,6 +370,40 @@ char *wxClipboard::GetClipboardString(long time)
   }
 
   return str;
+}
+
+void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
+{
+  if (clipOwner) {
+    clipOwner->BeingReplaced();
+    clipOwner = NULL;
+  }
+  if (cbString) {
+    delete[] cbString;
+    cbString = NULL;
+  }
+  
+  if (wxOpenClipboard()) {
+    wxEmptyClipboard();
+    wxSetClipboardData(wxCF_BITMAP, bm, 0, 0);
+    wxCloseClipboard();
+  }
+}
+
+wxBitmap *wxClipboard::GetClipboardBitmap(long time)
+{
+  wxBitmap *bm;
+
+  if (clipOwner || cbString)
+    return NULL;
+
+  if (wxOpenClipboard()) {
+    bm = (wxBitmap *)wxGetClipboardData(wxCF_BITMAP, NULL);
+    wxCloseClipboard();
+  } else
+    bm = NULL;
+  
+  return bm;
 }
 
 char *wxClipboard::GetClipboardData(char *format, long *length, long time)

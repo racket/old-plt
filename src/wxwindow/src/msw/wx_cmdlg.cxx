@@ -173,32 +173,42 @@ char *wxFileSelector(char *message,
     success = 0;
 
   if (success && (flags & wxMULTIOPEN)) {
-    /* Calculate size... */
-    char *s, *result;
-    int len = 0, dirlen, filelen;
+    if (of->nFileOffset && !file_buffer[of->nFileOffset - 1]) {
+      /* Calculate size... */
+      char *s, *result;
+      int len = 0, dirlen, filelen;
 
-    s = file_buffer;
-    dirlen = strlen(s);
-    s += dirlen + 1;
-    while (*s) {
-      filelen = strlen(s);
-      len += dirlen + filelen + 8;
-      s += filelen + 1;
-    }
+      s = file_buffer;
+      dirlen = strlen(s);
+      s += dirlen + 1;
+      while (*s) {
+	filelen = strlen(s);
+	len += dirlen + filelen + 8;
+	s += filelen + 1;
+      }
 
-    result = new WXGC_ATOMIC char[len];
-    len = 0;
-    s = file_buffer + dirlen + 1;
-    while (*s) {
-      filelen = strlen(s);
-      sprintf(result + len, "%5d ", filelen + dirlen);
-      memcpy(result + len + 6, file_buffer, dirlen);
-      memcpy(result + len + 6 + dirlen, s, filelen);
-      s += filelen + 1;
-      len += filelen + dirlen + 6;
+      result = new WXGC_ATOMIC char[len];
+      len = 0;
+      s = file_buffer + dirlen + 1;
+      while (*s) {
+	filelen = strlen(s);
+	sprintf(result + len, "%5d ", filelen + dirlen);
+	memcpy(result + len + 6, file_buffer, dirlen);
+	memcpy(result + len + 6 + dirlen, s, filelen);
+	s += filelen + 1;
+	len += filelen + dirlen + 6;
+      }
+      result[len] = 0;
+      return result;
+    } else {
+      int len;
+	  char *result;
+      len = strlen(file_buffer);
+      result = new WXGC_ATOMIC char[len + 7];
+      sprintf(result, "%5d ", len);
+      memcpy(result + 6, file_buffer, len + 1);
+	  file_buffer = result;
     }
-    result[len] = 0;
-    return result;
   }
 
   if (success)

@@ -112,7 +112,7 @@
 					  label)]
 		      [id (append -1 label-with-key help checkable?)])
 		 (unless menu-bar
-		   (error 'mred:menu% "append-item: must set the menubar before appending items"))
+		   (error 'mred:menu% "append-item: must add the menu to a menubar before appending items"))
 		 (set! callbacks (cons (cons id callback) callbacks))
 		 (for-each (let ([keymap-string (string-append "append-item:" (number->string id) "/")])
 			     (lambda (symbol)

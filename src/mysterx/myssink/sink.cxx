@@ -51,6 +51,25 @@ EVENT_HANDLER_ENTRY *CSink::lookupHandler(DISPID dispId) {
   return NULL;
 }
 
+// destructor
+
+CSink::~CSink(void) {
+  EVENT_HANDLER_ENTRY *p,*psave;
+  int i;
+
+  for (i = 0; i < EVENT_HANDLER_TBL_SIZE; i++) {
+    p = &eventHandlerTable[i];
+    while (p != NULL) {
+      if (p->handler) {
+	scheme_gc_ptr_ok(p->handler);
+      }
+      psave = p;
+      p = p->next;
+      scheme_gc_ptr_ok(psave);
+    }
+  }
+}
+
 // import Scheme extension table
 
 STDMETHODIMP CSink::set_extension_table(int p)
@@ -114,6 +133,7 @@ STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
 
   while (p != NULL) {
     if (p->dispId == dispId) { // set existing entry to NULL
+      scheme_gc_ptr_ok(p->handler);
       p->handler = NULL;
       return S_OK;
     }

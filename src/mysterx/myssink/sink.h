@@ -40,7 +40,10 @@ private:
 
 public:
   CSink() {
+    memset(eventHandlerTable,0,sizeof(eventHandlerTable));
   }
+
+  ~CSink();
 
 DECLARE_REGISTRY_RESOURCEID(IDR_SINK)
 

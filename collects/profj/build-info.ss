@@ -4,7 +4,7 @@
            "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" 
            "restrictions.ss" "parser.ss" "profj-pref.ss")
 
-  (provide build-info build-interactions-info find-implicit-import load-lang)
+  (provide build-info build-interactions-info build-inner-info find-implicit-import load-lang)
   
   ;-------------------------------------------------------------------------------
   ;General helper functions for building information
@@ -127,6 +127,11 @@
 			(set-id-string! id (string-append prefix (id-string id))))
 		      (add-def-info member pname level type-recs current-loc #f #t)))
 		  (def-members def)))))
+  
+  ;build-anon-info: def (list string) symbol type-records loc bool -> void
+  (define (build-inner-info def pname level type-recs current-loc look-in-table?)
+    (add-def-info def pname type-recs current-loc look-in-table? level)
+    (process-class/iface def pname type-recs #f level))
   
   ;add-to-queue: (list definition) -> void
   (define (add-to-queue defs)

@@ -7,6 +7,7 @@
            "error-messaging.ss"
            "restrictions.ss"
            "profj-pref.ss"
+           "build-info.ss"
            (lib "class.ss")
            (lib "list.ss")
            (lib "string.ss"))
@@ -200,11 +201,11 @@
       (set-def-uses! iface (send type-recs get-class-reqs))
       (send type-recs set-class-reqs old-reqs)))
   
-  ;check-inner def symbol type-records (list string) env bool -> void
-  (define (check-inner-def def level type-recs c-class env declare?)
+  ;check-inner def symbol type-records (list string) env -> void
+  (define (check-inner-def def level type-recs c-class env)
     (let ((p-name (cdr c-class)))
-;      (when declare?
-;        (add-inner-defn-info def null level type-recs (def-file def) #t))
+      (when (or (eq? (def-kind def) 'anon) (eq? (def-kind def) 'statement))
+        (build-inner-info def p-name level type-recs (def-file def) #t))
       (if (interface-def? def)
         (check-interface def p-name level type-recs)
         (check-class def p-name level type-recs (add-var-to-env "encl-this-1" 
@@ -273,7 +274,7 @@
                      (loop (cdr rest) statics 
                            (add-var-to-env name type obj-field fields)))))
               ((def? member)
-               (check-inner-def member level type-recs c-class field-env #f)
+               (check-inner-def member level type-recs c-class field-env)
                (loop (cdr rest) statics fields))
               ))))
       (let ((assigns (get-assigns members level (car c-class)))
@@ -1323,7 +1324,7 @@
                        (cdr accs))))
                    ((and (memq level '(beginner intermediate advanced)) (not first-binding) (> (length acc) 1)
                          (with-handlers ((exn:syntax? (lambda (e) #f))) 
-                           (type-exists? first-acc null (id-src (car acc)) level type-recs)))
+                           (type-exists? first-acc null c-class (id-src (car acc)) level type-recs)))
                     (build-field-accesses
                      (make-access #f
                                   (expr-src exp)
@@ -1482,6 +1483,7 @@
                            (with-handlers ((exn:syntax? (lambda (exn) #f)))
                              (type-exists? (id-string (car (access-name expr)))
                                            null
+                                           c-class
                                            (id-src (car (access-name expr)))
                                            level
                                            type-recs)))
@@ -1642,8 +1644,12 @@
   ;;Skip package access controls
   ;; 15.9
   ;;check-class-alloc: expr name (list type) src type-records (list string) env symbol bool-> type
-  (define (check-class-alloc exp name args src type-recs c-class env level static?)
-    (let* ((type (name->type name c-class (name-src name) level type-recs))
+  (define (check-class-alloc exp name/def args src type-recs c-class env level static?)
+    (let* ((name (if (def? name/def)
+                  (begin (check-inner-def name/def level type-recs c-class env)
+                         (make-name (def-name name/def) null (id-src (def-name name/def))))
+                  name/def))
+           (type (name->type name/def c-class (name-src name) level type-recs))
            (class-record (send type-recs get-class-record type))
            (methods (get-method-records (ref-type-class/iface type) class-record)))
       (unless (equal? (ref-type-class/iface type) (car c-class))

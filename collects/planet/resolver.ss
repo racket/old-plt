@@ -369,10 +369,11 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; do-require : string string syntax PKG -> symbol
   ; requires the given filename, which must be a module, in the given path.
   (define (do-require file path module-path stx pkg)
-    ((current-module-name-resolver) 
-     `(file ,(apply build-path (pkg-path pkg) (append path (list file))))
-     module-path
-     stx))
+    (parameterize ((current-load-relative-directory (pkg-path pkg)))
+      ((current-module-name-resolver) 
+       `(file ,(apply build-path (pkg-path pkg) (append path (list file))))
+       module-path
+       stx)))
 
 
 ; ============================================================

@@ -383,12 +383,13 @@
         (unless (directory-exists? dir)
 	  (make-directory dir))
 	(let ([file (build-path dir "mzrice")])
-	  (with-parameterization parameterization
-	    (lambda ()
-             (eval `(#%define argv 
-			      ,(write-image-to-file 
-				file 
-				(lambda () user-argv))))))))))
+	  (let ([argv
+		 (write-image-to-file 
+		  file 
+		  (lambda () user-argv))])
+	    (with-parameterization parameterization
+	      (lambda ()
+               (eval `(#%define argv ,argv)))))))))
   
   (printf "Welcome to MzRice version ~a, Copyright (c) 1995-97 PLT~n"
 	  (version))

@@ -2,6 +2,8 @@
 
 string=? ; exec mred -magqvf $0
 
+(fprintf (current-error-port) "hello.2~n")
+
 (require-library "function.ss")
 (require-library "pretty.ss")
 (require-library "macro.ss")
@@ -98,7 +100,7 @@ string=? ; exec mred -magqvf $0
 	(+ (length signature-names) (length interface-names)))
 
 (define cdb-file (build-path framework-dir 'up 'up "src" "doc" "framework-mred-interfaces.cdb"))
-(fprintf "building cdb file: ~a~n" cdb-file)
+(fprintf (current-error-port) "building cdb file: ~a~n" cdb-file)
 (call-with-output-file cdb-file
   (lambda (port)
     (parameterize ([current-output-port port])

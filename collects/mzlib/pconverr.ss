@@ -174,10 +174,15 @@
 		    answer)))]
 	     [get-whole/frac
 	      (lambda (exact-num)
-		(let* ([num (numerator exact-num)]
-		       [den (denominator exact-num)])
-		  (values (quotient num den)
-			  (/ (modulo num den) den))))]
+		(let ([split 
+		       (lambda (real)
+			 (let* ([num (numerator real)]
+				[den (denominator real)])
+			   (values (quotient num den)
+				   (/ (modulo num den) den))))])
+		  (let-values ([(whole frac) (split (real-part exact-num))]
+			       [(whole-i frac-i) (split (imag-part exact-num))])
+		    (values whole frac whole-i frac-i))))]
 	     [print
 	      (lambda (in-quasiquote? first-time)
 		(lambda (expr)
@@ -189,9 +194,10 @@
 			  (or (and (number? expr)
 				   (or (inexact? expr)
 				       (not (whole/fractional-exact-numbers))
-				       (let-values ([(whole frac) (get-whole/frac expr)])
-					 (or (zero? whole)
-					     (zero? frac)))))
+				       (and (real? expr)
+					    (or (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
+						  (and (or (zero? whole)
+							   (zero? frac))))))))
 			      (and (symbol? expr)
 				   (not (eq? expr 'quasiquote))
 				   (not (eq? expr 'quote))
@@ -299,12 +305,23 @@
 					       (lambda () 
 						 '(unit ...)))]
 				[(and (number? expr) (exact? expr))
-				 (let-values ([(whole frac) (get-whole/frac expr)])
-				   (if (or (zero? whole)
-					   (zero? frac)
-					   (not (whole/fractional-exact-numbers)))
-				       expr
-				       `(+ ,whole ,frac)))]
+				 (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
+				   (cond
+				     [(not (whole/fractional-exact-numbers)) expr]
+				     [(and (or (zero? whole)
+					       (zero? frac))
+					   (zero? whole-i)
+					   (zero? frac-i))
+				      expr]
+				     [(real? expr) `(+ ,whole ,frac)]
+				     [(and (or (zero? whole) (zero? frac))
+					   (or (zero? whole-i) (zero? frac-i)))
+				      `(+ ,(real-part expr) (* +1i ,(imag-part expr)))]
+				     [(or (zero? whole-i) (zero? frac-i))
+				      `(+ (+ ,whole ,frac) (* +1i ,(imag-part expr)))]
+				     [(or (zero? whole) (zero? frac))
+				      `(+ ,(real-part expr) (* +1i (+ ,whole-i ,frac-i)))]
+				     [else `(+ (+ ,whole ,frac) (* +1i (+ ,whole-i ,frac-i)))]))]
 				[else expr]))
 			   recur)))])
 		    (let ([es (convert-share-info-expand-shared? csi)])

@@ -14,8 +14,13 @@
 (define (xc) (class '() ()))
 
 (begin
-  (define-struct test (value constructor-sexp shared-constructor-sexp
-			     quasi-sexp shared-quasi-sexp cons-as-list))
+  (define-struct test (value constructor-sexp
+			     whole/frac-constructor-sexp
+			     shared-constructor-sexp
+			     quasi-sexp
+			     whole/frac-quasi-sexp
+			     shared-quasi-sexp
+			     cons-as-list))
   
   (define-struct no-cons-test (value constructor-sexp shared-constructor-sexp
 				     quasi-sexp shared-quasi-sexp))
@@ -33,58 +38,132 @@
     (lambda (test-case)
       (let* ([before (get-value test-case)]
 	     [cmp
-	      (lambda (selector constructor-style? quasi-read? sharing? cons-as-list?)
+	      (lambda (selector constructor-style?
+				quasi-read?
+				sharing?
+				cons-as-list?
+				whole/fractional-numbers?)
 		(unless (parameterize ([constructor-style-printing constructor-style?]
 				       [show-sharing sharing?]
 				       [quasi-read-style-printing quasi-read?]
-				       [abbreviate-cons-as-list cons-as-list?])
+				       [abbreviate-cons-as-list cons-as-list?]
+				       [whole/fractional-exact-numbers whole/fractional-numbers?])
 			  (test (selector test-case) print-convert before))
-		  (printf ">> (constructor-style-printing ~a) (quasi-read-style-printing ~a) (show-sharing ~a) (abbreviate-cons-as-list ~a)~n"
-			  constructor-style? quasi-read? sharing? cons-as-list?)))])
+		  (printf
+		   ">> (constructor-style-printing ~a) (quasi-read-style-printing ~a) (show-sharing ~a) (abbreviate-cons-as-list ~a) (whole/fractional-exact-numbers ~a)~n"
+		   constructor-style? quasi-read? 
+		   sharing? cons-as-list?
+		   whole/fractional-numbers?)))])
 	;(printf "testing: ~s~n" before)
 	;(printf ".") (flush-output (current-output-port))
 	(cond
 	  [(test? test-case)
-	   (cmp test-shared-constructor-sexp #t #f #t #t)
-	   (cmp test-constructor-sexp #t #f #f #t)
-	   (cmp test-shared-quasi-sexp #f #f #t #t)
-	   (cmp test-quasi-sexp #f #f #f #t)
-	   (cmp test-cons-as-list #t #f #f #f)]
+	   (cmp test-constructor-sexp #t #f #f #t #f)
+	   (cmp test-whole/frac-constructor-sexp #t #f #f #t #t)
+	   (cmp test-shared-constructor-sexp #t #f #t #t #f)
+	   (cmp test-quasi-sexp #f #f #f #t #f)
+	   (cmp test-whole/frac-quasi-sexp #f #f #f #t #t)
+	   (cmp test-shared-quasi-sexp #f #f #t #t #f)
+	   (cmp test-cons-as-list #t #f #f #f #f)]
 	  [(no-cons-test? test-case)
-	   (cmp no-cons-test-shared-constructor-sexp #t #f #t #t)
-	   (cmp no-cons-test-constructor-sexp #t #f #f #t)
-	   (cmp no-cons-test-shared-quasi-sexp #f #f #t #t)
-	   (cmp no-cons-test-quasi-sexp #f #f #f #t)]
+	   (cmp no-cons-test-shared-constructor-sexp #t #f #t #t #t)
+	   (cmp no-cons-test-constructor-sexp #t #f #f #t #t)
+	   (cmp no-cons-test-shared-quasi-sexp #f #f #t #t #t)
+	   (cmp no-cons-test-quasi-sexp #f #f #f #t #t)]
 	  [(same-test? test-case)
-	   (cmp same-test-sexp #t #t #t #t)
-	   (cmp same-test-sexp #t #t #t #f)
-	   (cmp same-test-sexp #t #t #f #t)
-	   (cmp same-test-sexp #t #t #f #f)
-	   (cmp same-test-sexp #t #f #t #t)
-	   (cmp same-test-sexp #t #f #t #f)
-	   (cmp same-test-sexp #t #f #f #t)
-	   (cmp same-test-sexp #t #f #f #f)
-	   (cmp same-test-sexp #f #t #t #t)
-	   (cmp same-test-sexp #f #t #t #f)
-	   (cmp same-test-sexp #f #t #f #t)
-	   (cmp same-test-sexp #f #t #f #f)
-	   (cmp same-test-sexp #f #f #t #t)
-	   (cmp same-test-sexp #f #f #t #f)
-	   (cmp same-test-sexp #f #f #f #t)
-	   (cmp same-test-sexp #f #f #f #f)]))))
+	   (cmp same-test-sexp #t #t #t #t #t)
+	   (cmp same-test-sexp #t #t #t #t #f)
+	   (cmp same-test-sexp #t #t #t #f #t)
+	   (cmp same-test-sexp #t #t #t #f #f)
+	   (cmp same-test-sexp #t #t #f #t #t)
+	   (cmp same-test-sexp #t #t #f #t #f)
+	   (cmp same-test-sexp #t #t #f #f #t)
+	   (cmp same-test-sexp #t #t #f #f #f)
+
+	   (cmp same-test-sexp #t #f #t #t #t)
+	   (cmp same-test-sexp #t #f #t #t #f)
+	   (cmp same-test-sexp #t #f #t #f #t)
+	   (cmp same-test-sexp #t #f #t #f #f)
+	   (cmp same-test-sexp #t #f #f #t #t)
+	   (cmp same-test-sexp #t #f #f #t #f)
+	   (cmp same-test-sexp #t #f #f #f #t)
+	   (cmp same-test-sexp #t #f #f #f #f)
+
+	   (cmp same-test-sexp #f #t #t #t #t)
+	   (cmp same-test-sexp #f #t #t #t #f)
+	   (cmp same-test-sexp #f #t #t #f #t)
+	   (cmp same-test-sexp #f #t #t #f #f)
+	   (cmp same-test-sexp #f #t #f #t #t)
+	   (cmp same-test-sexp #f #t #f #t #f)
+	   (cmp same-test-sexp #f #t #f #f #t)
+	   (cmp same-test-sexp #f #t #f #f #f)
+
+	   (cmp same-test-sexp #f #f #t #t #t)
+	   (cmp same-test-sexp #f #f #t #t #f)
+	   (cmp same-test-sexp #f #f #t #f #t)
+	   (cmp same-test-sexp #f #f #t #f #f)
+	   (cmp same-test-sexp #f #f #f #t #t)
+	   (cmp same-test-sexp #f #f #f #t #f)
+	   (cmp same-test-sexp #f #f #f #f #t)
+	   (cmp same-test-sexp #f #f #f #f #f)]))))
 
   (define 
     tests
     (list
      (make-same-test "abc" "abc")
-     (make-same-test 8 8)
      (make-same-test 'a ''a)
-     (make-test (list 1) '(list 1) '(list 1) '`(1) '`(1) '(cons 1 null))
+
+     (make-same-test 8 8)
+     (make-same-test 1/2 1/2)
+     (make-same-test 1.1 1.1)
+
+     (make-test 3/2 3/2 '(+ 1 1/2) 3/2 3/2 '(+ 1 1/2) 3/2 3/2)
+
+     (make-test (list 1) '(list 1) '(list 1) '(list 1) '`(1) '`(1) '`(1) '(cons 1 null))
+     (make-test (list 1/2) '(list 1/2) '(list 1/2) '(list 1/2)
+		'`(1/2) '`(1/2)  '`(1/2)
+		'(cons 1/2 null))
+     (make-test (list 3/2) '(list 3/2) '(list (+ 1 1/2)) '(list 3/2)
+		'`(3/2) '`(,(+ 1 1/2)) '`(3/2)
+		'(cons 3/2 null))
+     (make-test (list 1/2+1/2i) 
+		'(list 1/2+1/2i) 
+		'(list (+ 1/2 (* 0+1i 1/2))) 
+		'(list 1/2+1/2i)
+		'`(1/2+1/2i) 
+		'`(,(+ 1/2 (* 0+1i 1/2)))  
+		'`(1/2+1/2i)
+		'(cons 1/2+1/2i null))
+     (make-test (list 3/2+1/2i) 
+		'(list 3/2+1/2i) 
+		'(list (+ (+ 1 1/2) (* 0+1i 1/2))) 
+		'(list 3/2+1/2i)
+		'`(3/2+1/2i) 
+		'`(,(+ (+ 1 1/2) (* 0+1i 1/2)))  
+		'`(3/2+1/2i)
+		'(cons 3/2+1/2i null))
+     (make-test (list 1/2+3/2i) 
+		'(list 1/2+3/2i) 
+		'(list (+ 1/2 (* 0+1i (+ 1 1/2)))) 
+		'(list 1/2+3/2i)
+		'`(1/2+3/2i) 
+		'`(,(+ 1/2 (* 0+1i (+ 1 1/2))))  
+		'`(1/2+3/2i)
+		'(cons 1/2+3/2i null))
+     (make-test (list 3/2+3/2i) 
+		'(list 3/2+3/2i) 
+		'(list (+ (+ 1 1/2) (* 0+1i (+ 1 1/2)))) 
+		'(list 3/2+3/2i)
+		'`(3/2+3/2i) 
+		'`(,(+ (+ 1 1/2) (* 0+1i (+ 1 1/2))))  
+		'`(3/2+3/2i)
+		'(cons 3/2+3/2i null))
+
      (make-same-test (vector 0 0 0 0 0 0 0 0 0 0) '(vector 0 0 0 0 0 0 0 0 0 0))
      (make-same-test (delay 1) '(delay ...))
      (make-same-test (let-struct a (a) (make-a 3)) '(make-a 3))
      (make-same-test (box 3) '(box 3))
-     (make-test null 'null 'null '`() '`() 'null)
+     (make-test null 'null 'null 'null '`() '`() '`() 'null)
      (make-same-test add1 'add1)
      (make-same-test (void) '(void))
      (make-same-test (unit (import) (export)) '(unit ...))
@@ -127,6 +206,8 @@
      (make-test (list 'a (box (list ())) (cons 1 '()))
 		'(list (quote a) (box (list null)) (list 1))
 		'(list (quote a) (box (list null)) (list 1))
+		'(list (quote a) (box (list null)) (list 1))
+		'`(a ,(box `(())) (1))
 		'`(a ,(box `(())) (1))
 		'`(a ,(box `(())) (1))
 		'(cons 'a 
@@ -136,12 +217,16 @@
      (make-test (let ([x (list 1)]) (set-car! x x) x)
 		'(shared ([-0- (list -0-)]) -0-)
 		'(shared ([-0- (list -0-)]) -0-)
+		'(shared ([-0- (list -0-)]) -0-)
+		'(shared ([-0- `(,-0-)]) -0-)
 		'(shared ([-0- `(,-0-)]) -0-)
 		'(shared ([-0- `(,-0-)]) -0-)
 		'(shared ([-0- (cons -0- null)]) -0-))
      (make-test (let ([x (list 1)]) (set-cdr! x x) x)
 		'(shared ([-0- (cons 1 -0-)]) -0-)
 		'(shared ([-0- (cons 1 -0-)]) -0-)
+		'(shared ([-0- (cons 1 -0-)]) -0-)
+		'(shared ([-0- `(1 . ,-0-)]) -0-)
 		'(shared ([-0- `(1 . ,-0-)]) -0-)
 		'(shared ([-0- `(1 . ,-0-)]) -0-)
 		'(shared ([-0- (cons 1 -0-)]) -0-))
@@ -151,10 +236,14 @@
 		  (append b (list (list 2 3))))
 		'(shared ([-1- (list -1- (list 1 2 3) (list 2 3))])
 		   (list -1- (list 1 2 3) (list 2 3) (list 2 3)))
+		'(shared ([-1- (list -1- (list 1 2 3) (list 2 3))])
+		   (list -1- (list 1 2 3) (list 2 3) (list 2 3)))
 		'(shared ([-1- (list -1- -3- -4-)]
 			  [-3- (cons 1 -4-)]
 			  [-4- (list 2 3)])
 		   (list -1- -3- -4- (list 2 3)))
+		'(shared ([-1- `(,-1- (1 2 3) (2 3))])
+		   `(,-1- (1 2 3) (2 3) (2 3)))
 		'(shared ([-1- `(,-1- (1 2 3) (2 3))])
 		   `(,-1- (1 2 3) (2 3) (2 3)))
 		'(shared ([-1- `(,-1- ,-3- ,-4-)]
@@ -235,7 +324,8 @@
   (test-not-shared #t #t)
   (test-not-shared #f #f)
   (test-not-shared 1 1)
-  (test-not-shared 3276832768 3276832768)
+  (test-not-shared 3276832768327683276832768327683276832768
+		   3276832768327683276832768327683276832768)
   (test-not-shared (regexp "") '(regexp ...))
   (let ([in (open-input-string "")]) (test-not-shared in in))
   (let ([out (open-output-string)]) (test-not-shared out out))

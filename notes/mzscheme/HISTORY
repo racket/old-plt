@@ -2,15 +2,29 @@
 Version 102/11:
 
  * Added 'update to the set of flags for `open-output-file' et al.
-   'update mode opens an existign file without truncating it, and
+   'update mode opens an existing file without truncating it, and
    allows overwriting of the file's existing data, especially in
    combination with `file-position'.
+
+ * Fixed a bug in interface checking. In an `interface' expression, an
+   ivar declaration for some name was allowed when a superinterface
+   already contained the ivar name through a derivation
+   requirement. It now raises an exception.
+
+ * Added -k <n> <m> flag to MzScheme, which loads code embedded in the
+   executable from file position <n> to <m>. This flag will be useful
+   for creating stand-alone executables by appending code to the
+   normal MzScheme/MrEd executable. Details in a forthcoming mzc
+   update. (This is something of a hack, but I think it will be
+   useful.)
+
+ * Fixed `arithmetic-shift' for a -32 shift argument. (PR 1421)
 
  * Inside MzScheme:
 
     - Not all import ports keep line counts anymore (it's wasteful for
       programs using block I/O on binary data, and it's mostly useful
-      only with `load'). -1 return from scheme_tell_line() indicates
+      only with `load'). -1 returned from scheme_tell_line() indicates
       that line counts are not ketp. scheme_count_lines() enables
       line-counting for an input port. Note that there's no MzScheme
       primitive that provides line information.
@@ -289,11 +303,13 @@ Changed default exit handler to return only results in 0 to 255
 Changed time-apply to return four values, and to take an argument
  list to provide to the timed procedure
 Changed angle on inexact zero (0 for 0.0, pi for -0.0)
+Fixed arithmetic-shift for a -32 shift
 Fixed angle on +nan.0
 Fixed expt on 0 and a negative number
 Added 'exec-file flag to find-system-path
 Added square and mergesort to MzLib's function.ss
 Added tcp-addresses
+Added -k command-line flag
 Inside MzScheme: provided a way to fix the GC--thread problems
  under Windows, via GC_use_registered_statics
 Inside MzScheme: scheme_basic_env() initializes break-enabled

@@ -1800,10 +1800,13 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
       updateRight = realWidth;
   }
 
-  if (updateTop != updateBottom || updateLeft != updateRight)
-    admin->NeedsUpdate(updateLeft, updateTop, 
-		       updateRight - updateLeft + 1, 
-		       updateBottom - updateTop + 1);
+  if (updateTop != updateBottom || updateLeft != updateRight) {
+    /* Bizarre MSVC bug: if we inline w & h, h is wrong */
+    float w = updateRight - updateLeft + 1;
+    float h = updateBottom - updateTop + 1;
+
+    admin->NeedsUpdate(updateLeft, updateTop, w, h);
+  }
 
   updateNonemtpy = FALSE;
 

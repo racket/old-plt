@@ -1223,7 +1223,7 @@ void wxCanvasMediaAdmin::GrabCaret(int dist)
 }
 
 void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy, 
-				       float w, float h)
+				     float w, float h)
 {
   if (updateBlock)
     return;

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.21 1998/12/07 02:52:30 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.22 1999/01/12 03:09:28 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1164,37 +1164,25 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
       case WM_QUERYENDSESSION:
 	{
 	  // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
-	  /* MATTHEW: [11] */
-#if WXGARBAGE_COLLECTION_ON
-	  if (wnd->OnClose())
-	    {
-	      if (wnd->wx_window) wnd->wx_window->Show(FALSE);
-	    }
+	  if (wnd->OnClose()) {
+	    if (wnd->wx_window)
+	      wnd->wx_window->Show(FALSE);
+	  }
 	  retval = 0L;
-#else
-	  retval = wnd->OnClose();
-#endif
 	  break;
 	}
       case WM_CLOSE:
 	{
-	  if (wnd->OnClose())
-	    /* MATTHEW: [11] */
-#if WXGARBAGE_COLLECTION_ON
-	    {
-	      if (wnd->wx_window) wnd->wx_window->Show(FALSE);
-	    }
+	  if (wnd->OnClose()) {
+	    if (wnd->wx_window) 
+	      wnd->wx_window->Show(FALSE);
+	  }
 	  retval = 1L;
-#else
-	  retval = 0L;
-	  else
-	    retval = 1L;
-#endif
 	  break;
         }
 	
       default:
-  default_action:
+      default_action:
 	if (wnd)
 	  retval = wnd->DefWindowProc(message, wParam, lParam );
 	else retval = DefWindowProc( hWnd, message, wParam, lParam );
@@ -1572,33 +1560,20 @@ LONG APIENTRY _EXPORT
       case WM_QUERYENDSESSION:
 	{
 	  // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
-	  /* MATTHEW: [11] */
-#if WXGARBAGE_COLLECTION_ON
 	  if (wnd->OnClose()) {
 	    if (wnd->wx_window)
 	      wnd->wx_window->Show(FALSE);
 	  }
 	  return 0;
-#else
-	  retval = wnd->OnClose();
-#endif
 	  break;
 	}
       case WM_CLOSE:
 	{
-	  if (wnd->OnClose())
-	    /* MATTHEW: [11] */
-#if WXGARBAGE_COLLECTION_ON
-	    {
-	      if (wnd->wx_window)
-		wnd->wx_window->Show(FALSE);
-	    }
+	  if (wnd->OnClose()) {
+	    if (wnd->wx_window)
+	      wnd->wx_window->Show(FALSE);
+	  }
 	  return 1;
-#else
-	  retval = 0L;
-	  else
-	    retval = 1L;
-#endif
 	  break;
         }
 

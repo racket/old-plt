@@ -180,13 +180,13 @@ void os_wxButton::OnDropFile(epathname x0)
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnDropFile(x0);
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -215,14 +215,14 @@ Bool os_wxButton::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
     SET_VAR_STACK();
     return FALSE;
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return 1; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
   {
      Bool resval;
@@ -256,14 +256,14 @@ Bool os_wxButton::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
     SET_VAR_STACK();
     return FALSE;
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return 1; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
   {
      Bool resval;
@@ -329,12 +329,12 @@ void os_wxButton::OnSetFocus()
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnSetFocus();
   } else {
-  mz_jmp_buf savebuf;
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  mz_jmp_buf *savebuf, newbuf;
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -361,12 +361,12 @@ void os_wxButton::OnKillFocus()
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxButton::OnKillFocus();
   } else {
-  mz_jmp_buf savebuf;
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  mz_jmp_buf *savebuf, newbuf;
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }

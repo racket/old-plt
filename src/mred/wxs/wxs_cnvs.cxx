@@ -232,13 +232,13 @@ void os_wxCanvas::OnDropFile(epathname x0)
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnDropFile(x0);
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -267,14 +267,14 @@ Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
     SET_VAR_STACK();
     return FALSE;
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return 1; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
   {
      Bool resval;
@@ -308,14 +308,14 @@ Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
     SET_VAR_STACK();
     return FALSE;
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
   p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return 1; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
   {
      Bool resval;
@@ -381,12 +381,12 @@ void os_wxCanvas::OnSetFocus()
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnSetFocus();
   } else {
-  mz_jmp_buf savebuf;
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  mz_jmp_buf *savebuf, newbuf;
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -413,12 +413,12 @@ void os_wxCanvas::OnKillFocus()
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnKillFocus();
   } else {
-  mz_jmp_buf savebuf;
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  mz_jmp_buf *savebuf, newbuf;
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -446,13 +446,13 @@ void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnScroll(x0);
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxScrollEvent(x0));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -480,13 +480,13 @@ void os_wxCanvas::OnChar(class wxKeyEvent* x0)
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnChar(x0);
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x0));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -514,13 +514,13 @@ void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnEvent(x0);
   } else {
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x0));
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }
@@ -547,12 +547,12 @@ void os_wxCanvas::OnPaint()
     SET_VAR_STACK();
     READY_TO_RETURN; ASSELF wxCanvas::OnPaint();
   } else {
-  mz_jmp_buf savebuf;
-  COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  mz_jmp_buf *savebuf, newbuf;
+  savebuf = scheme_current_thread->error_buf; scheme_current_thread->error_buf = &newbuf; if (scheme_setjmp(newbuf)) { scheme_current_thread->error_buf = savebuf; scheme_clear_escape(); return; }
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_current_thread->error_buf = savebuf;
   
      READY_TO_RETURN;
   }

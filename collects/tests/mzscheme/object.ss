@@ -516,5 +516,16 @@
 	  (test "primsubclass%" (sub-class-name-g o3))
 	  (test #f (sub-detail-g o3)))))))
 
+
+; Test for override/rename order
+(define bsc (class null ()
+	    (public [x (lambda () 10)])))
+(define orc (class bsc ()
+	      (public [y (lambda () (super-x))])
+	      (override [x (lambda () 20)])
+	      (rename [super-x x])
+	      (sequence (super-init))))
+(test 10 (ivar (make-object orc) y))
+
 (report-errs)
 

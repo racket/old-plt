@@ -4,11 +4,7 @@
 
   (require (lib "unitsig.ss"))
 
-  (provide 
-   srpersist:odbc-1.0^
-   srpersist:odbc-2.0^
-   srpersist:odbc-3.0^
-   srpersist:odbc-3.5^)
+  (provide srpersist:odbc^)
 
   (define-signature srpersist:odbc-1.0^
 
@@ -130,6 +126,9 @@
      
      ; exceptions
 
+     struct:exn-not-implemented
+     make-exn-not-implemented
+     exn-not-implemented?
      struct:exn-with-info
      make-exn-with-info
      exn-with-info?
@@ -148,7 +147,10 @@
      set-exn-need-data-val!
      struct:exn-still-executing
      make-exn-still-executing
-     exn-still-executing?))
+     exn-still-executing?
+     struct:exn-no-data
+     make-exn-no-data
+     exn-no-data?))
   
   (define-signature srpersist:odbc-2.0^
 
@@ -316,13 +318,7 @@
      sql-minute-to-second-interval-minute
      set-sql-minute-to-second-interval-minute!
      sql-minute-to-second-interval-second
-     set-sql-minute-to-second-interval-second!
-     
-     ;; exceptions
-     
-     struct:exn-no-data
-     make-exn-no-data
-     exn-no-data?))
+     set-sql-minute-to-second-interval-second!))
   
   (define-signature srpersist:odbc-3.5^
     
@@ -338,7 +334,11 @@
      sql-guid-data3
      set-sql-guid-data3!
      sql-guid-data4
-     set-sql-guid-data4!)))
+     set-sql-guid-data4!))
+
+  (define-signature srpersist:odbc^
+    
+    ((open srpersist:odbc-3.5^))))
 
 
 

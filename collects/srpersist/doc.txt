@@ -51,13 +51,7 @@
 
  To load SrPersist, use
 
-   (require (lib "invoke-n.m.ss" "srpersist"))
-
- where n.m is one of 1.0, 2.0, 3.0, or 3.5, indicating an
- ODBC version.  The version used to invoke SrPersist should 
- be less than or equal to the ODBC version used when compiling 
- the SrPersist files.  See README in the SrPersist source directory 
- for more details on compilation.
+   (require (lib "srpersist.ss" "srpersist"))
 
  For Windows, if you get errors when loading, your Windows installation 
  may be missing certain ODBC libraries.  Look for ODBC Data Sources 
@@ -141,6 +135,10 @@
  to obtain additional information about an exception that
  has occurred (see the heading "Diagnostics", below).  No additional 
  information is available when the exception is `exn-invalid-handle'.
+
+ If you attempt to use an ODBC procedure which is not available 
+ in the ODBC version specified when compiling SrPersist, you
+ will get an exn-not-implemented exception.
 
  Besides these SrPersist-particular exceptions, other kinds of errors 
  may raise exceptions.  For example, passing a value of the
@@ -295,6 +293,8 @@
 
 > (get-env-attr henv attr)
 
+ ODBC 3.0.
+
  Given an environment handle `henv', returns the value of the
  attribute `attr'.  The possible values for `attr' and the
  resulting return values are:
@@ -317,6 +317,8 @@
  significance of these attributes.
 
 > (set-env-attr henv attr val)
+
+ ODBC 3.0.
 
  Given an environment handle `henv', sets the value of its associated 
  attribute `attr' to the value `val'.  See `get-env-attr' for the
@@ -341,6 +343,8 @@
 
 > (browse-connect hdbc connect-string)
 
+ ODBC 1.0.
+
  Connects to a data source, given a connection handle `hdbc'
  and connection string `connect-string'.  The connection string
  consists of keyword and value pairs.  See `driver-connect'
@@ -355,6 +359,8 @@
  which attributes are missing. 
  
 > (driver-connect hdbc connect-string prompt)
+
+ ODBC 1.0.
 
  Connects to an ODBC driver, given a connection handle `hdbc',
  the string `connect-string', and the symbol `prompt'.
@@ -1235,6 +1241,8 @@
 
 > (set-connect-attr hdbc attr val)
 
+ ODBC 3.0.
+
  For a connection handle `hdbc', sets the attribute indicated by the 
  symbol `attr' to be `val'.  The type of `val' depends on `attr', 
  as follows:
@@ -2047,6 +2055,8 @@
 
 > (column-privileges hstmt catalog schema table column)
 
+ ODBC 1.0.
+
  Creates a result data set describing column privileges in the current 
  data source.  There are at least eight columns in the resulting data set; a
  driver may add columns.  The contents of those columns are beyond the scope 
@@ -2058,6 +2068,8 @@
  wildcard, or a percent sign "%", which matches zero or more characters.
 
 > (columns hstmt catalog schema table column)
+
+ ODBC 1.0. 
 
  Creates a result data set describing columns in the current data source.
  There are at least eighteen columns in the resulting data set; a

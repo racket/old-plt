@@ -1,22 +1,9 @@
-;; srpersist.ss
+(module srpersist mzscheme
+  (require (lib "unitsig.ss"))
+  (require (lib "private/sigs.ss" "srpersist"))
+  (require (lib "private/srpmain.ss" "srpersist"))
+  (provide-signature-elements srpersist:odbc^))
 
-(unless (defined? 'odbc-version)
-	(error "odbc-version not defined: should be a number between 1.0 and 3.51"))
 
-(require-library "macro.ss")
-(require-library "cores.ss")
-(require-library "srpersistu.ss" "srpersist")
 
-(cond
-
- [(>= odbc-version 3.5)
-  (require-library "invoke-3.5.ss" "srpersist")]
-
- [(>= odbc-version 3.0)
-  (require-library "invoke-3.0.ss" "srpersist")]
-
- [(>= odbc-version 2.0)
-  (require-library "invoke-2.0.ss" "srpersist")]
-
- [(>= odbc-version 1.0)
-  (require-library "invoke-1.0.ss" "srpersist")])
+   	

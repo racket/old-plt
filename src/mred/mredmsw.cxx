@@ -14,6 +14,8 @@
 
 #include "mred.h"
 
+#define OS_SEMAPHORE_TYPE HANDLE
+
 #include "../mzscheme/src/schwinfd.h"
 
 #include <winsock.h>

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_stdev.cxx,v 1.2 1998/08/09 20:55:20 mflatt Exp $
+ * RCS_ID:      $Id: wb_stdev.cxx,v 1.3 1998/08/15 02:15:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -48,6 +48,8 @@ wxPopupEvent::wxPopupEvent()
 
 wxScrollEvent::wxScrollEvent()
 {
+  direction = wxHORIZONTAL;
+  moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
 }
 
 /*

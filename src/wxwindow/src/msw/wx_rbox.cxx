@@ -25,7 +25,11 @@
 BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 {
   if (param == BN_CLICKED)  {
-    selected = id;
+    wxNode *n;
+    int i;
+    for (n = subControls.First(); n; n = n->Next(), i++)
+      if (id == (long)n->Data())
+	selected = i;
     wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
     ProcessCommand(*event);
     return TRUE;
@@ -180,7 +184,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
 				 GROUP_FLAGS,
 				 0, 0, 0, 0,
-				 cparent->handle, (HMENU)NewId(),
+				 cparent->handle, (HMENU)NewId(this),
 				 wxhInstance, NULL);
 
   the_handle = cparent->handle ;
@@ -200,7 +204,6 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   SubclassControl((HWND)ms_handle);
 
   // Some radio boxes test consecutive id.
-  (void)NewId();
   radioButtons = new HWND[N];
   radioWidth = new int[N];
   radioHeight = new int[N];
@@ -213,7 +216,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     long groupStyle = 0;
     if (i == 0 && _style==0)
       groupStyle = WS_GROUP;
-    long newId = i;
+    long newId = NewId(this);
     radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
 					 groupStyle | RADIO_FLAGS, 0, 0, 0, 0,
 					 the_handle, (HMENU)newId, wxhInstance, NULL);
@@ -232,7 +235,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   // Create a dummy radio control to end the group.
   (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", 
 			   WS_GROUP | RADIO_FLAGS, 0, 0, 0, 0, 
-			   the_handle, (HMENU)NewId(), wxhInstance, NULL);
+			   the_handle, (HMENU)NewId(this), wxhInstance, NULL);
 
   no_items = N;
   SetSelection(0);
@@ -306,7 +309,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
 				 GROUP_FLAGS,
 				 0, 0, 0, 0,
-				 cparent->handle,(HMENU)NewId(),wxhInstance,NULL) ;
+				 cparent->handle,(HMENU)NewId(this),wxhInstance,NULL) ;
 
   HDC the_dc = GetWindowDC((HWND)ms_handle) ;
   if (labelFont && labelFont->GetInternalFont(the_dc))
@@ -318,7 +321,6 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   // Subclass again for purposes of dialog editing mode
   SubclassControl((HWND)ms_handle);
 
-  (void)NewId() ;
   radioButtons = new HWND[N];
 
   bm_labels = new wxBitmap*[N];
@@ -341,7 +343,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
     long groupStyle = 0;
     if (i == 0 && _style==0)
       groupStyle = WS_GROUP;
-    long newId = i;
+    long newId = NewId(this);
 #if FAFA_LIB && !CTL3D
     radioWidth[i]  = Choices[i]->GetWidth()  + FB_MARGIN ;
     radioHeight[i] = Choices[i]->GetHeight() + FB_MARGIN ;
@@ -403,7 +405,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   // Create a dummy radio control to end the group.
   (void)wxwmCreateWindowEx(0, RADIO_CLASS, "", 
 			   WS_GROUP|RADIO_FLAGS, 0, 0, 0, 0,
-			   the_handle, (HMENU)NewId(), wxhInstance, NULL);
+			   the_handle, (HMENU)NewId(this), wxhInstance, NULL);
 
   no_items = N;
   SetSelection(0);

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.9 1998/09/21 05:21:15 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.10 1998/09/23 01:11:11 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <math.h>
 
 #ifdef wx_xview
 extern Xv_Server xview_server;

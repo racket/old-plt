@@ -82,7 +82,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, char *label,
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
 
   HWND wx_button =
     wxwmCreateWindowEx(0, "wxBUTTON", label, 
@@ -144,7 +144,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
 
 #if FAFA_LIB
   if (width<0)

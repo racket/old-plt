@@ -73,7 +73,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   if (label) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, label,
 				      STATIC_FLAGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
@@ -86,7 +86,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   } else
     static_label = NULL;
 
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
   
   long msFlags = WS_CHILD | WS_VISIBLE | WS_TABSTOP;
 

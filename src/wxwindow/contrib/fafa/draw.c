@@ -20,7 +20,7 @@
 |-----------------------------------------------------------------------|
 */
 
-#define	MARGE_FOCUS		6		/* marge cadre focus */
+#define	MARGE_FOCUS		2		/* marge cadre focus */
 #define	DEFAULT_BTM		8200		/* bitmap par defaut */
 
 HBITMAP		DisableBitmap ;		/* bitmap pour controles disables */

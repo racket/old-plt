@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.7 1998/09/17 05:20:17 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.8 1998/09/21 05:21:16 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -25,10 +25,32 @@
 FARPROC wxGenericControlSubClassProc = 0;
 
 wxNonlockingHashTable *wxControlHandleList = NULL;
+wxNonlockingHashTable *wxItemIdList = NULL;
 
 extern HCURSOR wxMSWSetCursor(HCURSOR c);
 
 extern long last_msg_time; /* MATTHEW: timeStamp implementation */
+
+long NewId(wxItem *item)
+{
+  WORD id;
+
+  if (!wxItemIdList)
+    wxItemIdList = new wxNonlockingHashTable;
+
+  do {
+    id = (WORD)rand();
+  } while (wxItemIdList->Get((long)id));
+
+  wxItemIdList->Put(id, item);
+
+  return id;
+}
+
+void DoneIds(wxItem *item)
+{
+  wxItemIdList->DeleteObject(item);
+}
 
 IMPLEMENT_ABSTRACT_CLASS(wxItem, wxWindow)
 
@@ -45,6 +67,8 @@ wxItem::wxItem(void)
 
 wxItem::~wxItem(void)
 {
+  DoneIds(this);
+
   isBeingDeleted = TRUE;
   
   // item may be a menu, so check.

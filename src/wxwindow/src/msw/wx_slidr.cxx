@@ -91,7 +91,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   if (label) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
@@ -108,7 +108,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     edit_value = wxwmCreateWindowEx(0, "EDIT", NULL,
 				    ES_AUTOHSCROLL | ES_LEFT | WS_VISIBLE | WS_CHILD |
 				    WS_TABSTOP | ES_READONLY,
-				    0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				    0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				    wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(edit_value);
@@ -121,7 +121,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   sprintf(wxBuffer, "%d", min_value);
   static_min = wxwmCreateWindowEx(0, STATIC_CLASS, wxBuffer,
 				  STATIC_FLAGS,
-				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				  wxhInstance, NULL);
 # if CTL3D
   Ctl3dSubclassCtl(static_min);
@@ -131,7 +131,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 #endif
 
   // Now create slider
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
   
   long msStyle = 0;
   if (windowStyle & wxVERTICAL)
@@ -167,7 +167,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   sprintf(wxBuffer, "%d", max_value);
   static_max = wxwmCreateWindowEx(0, STATIC_CLASS, wxBuffer,
 				  STATIC_FLAGS,
-				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				  0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				  wxhInstance, NULL);
 # if CTL3D
   Ctl3dSubclassCtl(static_max);
@@ -579,7 +579,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
       width -= slider_width;
       if (labelPosition == wxVERTICAL) {
 	if (label_width > slider_width)
-	  height -= (label_width - slider_width);
+	  width -= (label_width - slider_width);
       } else {
 	width -= label_width + 1;
       }
@@ -588,15 +588,23 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 	x_offset += (int)width;
     }
 
+#if SHOW_MIN_MAX
+    int mmcy = ecy;
+    int mmsep = esep;
+#else
+    int mmcy = 0;
+    int mmsep = 0;
+#endif
+
     int slider_length;
     if (height >= 0)
-      slider_length = (int)(height - 2*ecy - 2*esep);
+      slider_length = (int)(height - 2*mmcy - 2*mmsep);
     else
       slider_length = -1;
     // Slider must have a minimum/default length
     if (slider_length < 0)
       slider_length = 100;
-    int total_height = slider_length + 2*ecy + 2*esep;
+    int total_height = slider_length + 2*mmcy + 2*mmsep;
 
     if (static_label) {
       int dxs, dx, dys, dy;
@@ -643,6 +651,9 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 	  if (height < 0)
 	    height = 0;
 	}
+	slider_length -= cys - 2;
+	if (slider_length < 0)
+	  slider_length = 0;
       }
     }
 
@@ -650,7 +661,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
       // Center current value to the right of the slider
       MoveWindow(edit_value, 
 		 x_offset + slider_width - val_width + ecx/2,
-		 y_offset + ecy + 1 + (slider_length - ecy)/2, 
+		 y_offset + mmcy + mmsep + (slider_length - ecy)/2, 
 		 val_width, (int)ecy, 
 		 TRUE);
 
@@ -664,7 +675,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 #endif
     }
 
-    MoveWindow((HWND)ms_handle, x_offset + (val_width - cy)/2, y_offset + ecy + esep, 
+    MoveWindow((HWND)ms_handle, x_offset + (val_width - ecy)/2, y_offset + mmcy + mmsep, 
 	       cy, slider_length, TRUE);
   }
 

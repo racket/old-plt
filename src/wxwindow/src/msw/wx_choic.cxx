@@ -105,7 +105,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   if (Title) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
@@ -118,7 +118,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   } else
     static_label = NULL;
   
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
 
   HWND wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
 				     WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
@@ -337,9 +337,9 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
 
       label_x = (float)x;
       label_y = (float)y + 4;
-      label_width += (float)clx;
+      label_width += (float)clx/2;
 
-      control_x = label_x + label_width + clx;
+      control_x = label_x + label_width;
       control_y = (float)y;
       if (width >= 0)
         control_width = width - (control_x - label_x);

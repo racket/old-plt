@@ -100,7 +100,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (Title) {
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
 #if CTL3D
     Ctl3dSubclassCtl(static_label);
@@ -129,7 +129,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (style & wxHSCROLL)
     wstyle |= WS_HSCROLL;
 
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
 
   HWND wx_list = wxwmCreateWindowEx(0, "wxLISTBOX", NULL,
 				    wstyle | WS_CHILD,

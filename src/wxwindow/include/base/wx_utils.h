@@ -51,17 +51,6 @@ char *wxNow(void);
 // Make a copy of this string using 'new'
 char *copystring(const char *s);
 
-// Generate a unique ID
-long wxNewId(void);
-#define NewId wxNewId
-
-// Ensure subsequent IDs don't clash with this one
-void wxRegisterId(long id);
-#define RegisterId wxRegisterId
-
-// Return the current ID
-long wxGetCurrentId(void);
-
 // Useful buffer
 extern char *wxBuffer;
 

@@ -65,5 +65,8 @@ class wxItem: public wxbItem
    virtual Bool MSWOnMeasure(MEASUREITEMSTRUCT *WXUNUSED(item)) { return FALSE; };
 };
 
+long NewId(wxItem *i);
+void DoneIds(wxItem *i);
+
 #endif // IN_CPROTO
 #endif // wx_itemh

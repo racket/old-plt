@@ -75,7 +75,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title,
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
 
   isFafa = CHECK_IS_FAFA ;
   checkWidth = -1 ;
@@ -139,7 +139,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId();
+  windows_id = (int)NewId(this);
 
 #if FAFA_LIB // && !CTL3D
   if (width<0)

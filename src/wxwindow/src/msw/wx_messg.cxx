@@ -60,7 +60,7 @@ Bool wxMessage::Create(wxPanel *panel, char *label, int x, int y, long style, ch
 
   HWND static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
 					STATIC_FLAGS,
-					0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 					wxhInstance, NULL);
 #if CTL3D
   Ctl3dSubclassCtl(static_item);
@@ -110,7 +110,7 @@ Bool wxMessage::Create(wxPanel *panel, wxBitmap *image, int x, int y, long style
   HWND static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 					FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
 					| WS_VISIBLE | WS_GROUP,
-					0, 0, 0, 0, cparent->handle, (HMENU)NewId(),
+					0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 					wxhInstance, NULL);
   if (image) {
     SetBitmapDimensionEx(image->ms_bitmap,
@@ -180,10 +180,7 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (width == -1 && ((sizeFlags & wxSIZE_AUTO_WIDTH) != wxSIZE_AUTO_WIDTH))
     actualWidth = ww;
   else if (width == -1) {
-    int cx;
-    int cy;
-    wxGetCharSize((HWND)ms_handle, &cx, &cy,labelFont);
-    actualWidth = (int)(current_width + cx) ;
+    actualWidth = (int)(current_width);
   }
 
   // If we're prepared to use the existing height, then...
@@ -220,9 +217,12 @@ void wxMessage::SetLabel(char *label)
     ::ScreenToClient(cparent->handle, &point);
   }
 
+#if 0
+  /* No resize. */
   GetTextExtent(label, &w, &h, NULL, NULL, labelFont);
   MoveWindow((HWND)ms_handle, point.x, point.y, (int)(w + 10), (int)h,
              TRUE);
+#endif
   SetWindowText((HWND)ms_handle, label);
 }
 
@@ -243,10 +243,13 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   GetSize(&w, &h);
   RECT rect;
   rect.left = x; rect.top = y; rect.right = x + w; rect.bottom = y + h;
-  
+
+#if 0  
+  /* No resize */
   MoveWindow((HWND)ms_handle, x, y, bitmap->GetWidth(), bitmap->GetHeight(),
              FALSE);
-  
+#endif
+
   SetBitmapDimensionEx(bitmap->ms_bitmap,
 		       bitmap->GetWidth(),
 		       bitmap->GetHeight(),

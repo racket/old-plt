@@ -112,6 +112,8 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
     menuId = (WORD)rand();
   } while (wxMenuItemIDs->Get((long)menuId));
 
+  wxMenuItemIDs->Put(menuId, this);
+
   item->menuId = menuId;
 
   menuItems.Append(item);
@@ -323,8 +325,9 @@ void wxMenu::SetLabel(long Id,char *label)
   HMENU mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
   if (mh) {
     if (!item->subMenu) {
-      UINT was_flag = GetMenuState(mh,Id,MF_BYPOSITION);
-      ModifyMenu(mh,pos,MF_BYPOSITION|MF_STRING|was_flag,Id,label);
+      UINT was_flag = GetMenuState(mh, pos, MF_BYPOSITION);
+      ModifyMenu(mh, pos, MF_BYPOSITION|MF_STRING|was_flag, 
+		 item->menuId, label);
     } else {
       ModifyMenu(mh, pos, MF_BYPOSITION|MF_STRING|MF_POPUP,
 		 (UINT)item->subMenu->save_ms_handle, label);

@@ -72,7 +72,7 @@ Bool wxScrollBar::Create(wxPanel *panel, wxFunction func,
     panel->GetValidPosition(&x, &y);
 
     // Now create scrollbar
-    windows_id = (int)NewId();
+    windows_id = (int)NewId(this);
      DWORD _direction = direction == wxHORIZONTAL ?
                         SBS_HORZ: SBS_VERT;
 	 HWND scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", "scrollbar",

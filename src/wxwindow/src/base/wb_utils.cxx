@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_utils.cxx,v 1.3 1998/07/15 02:38:01 mflatt Exp $
+ * RCS_ID:      $Id: wb_utils.cxx,v 1.4 1998/07/23 15:16:49 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -53,25 +53,6 @@ copystring (const char *s)
   memcpy (news, s, len);	// Should be the fastest
 
   return news;
-}
-
-// Id generation
-static long wxCurrentId = 100;
-
-long 
-wxNewId (void)
-{
-  return wxCurrentId++;
-}
-
-long
-wxGetCurrentId(void) { return wxCurrentId; }
-
-void 
-wxRegisterId (long id)
-{
-  if (id >= wxCurrentId)
-    wxCurrentId = id + 1;
 }
 
 void 

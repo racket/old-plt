@@ -81,6 +81,10 @@ static Scheme_Type sslplt_type;
 
 #define LISTENER_WAS_CLOSED(x) (((listener_t *)(x))->s == INVALID_SOCKET)
 
+#ifndef MZPRECISE_GC
+# define GC_CAN_IGNORE /* empty */
+#endif
+
 /* create_ register_sslplt: called when a new sslplt structure needs to be 
    created. */
 struct sslplt *create_register_sslplt(SSL *ssl)
@@ -948,7 +952,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   int status;
   const char *errstr = "Unknown error";
   int err = 0;
-  struct sockaddr_in addr;
+  GC_CAN_IGNORE struct sockaddr_in addr;
   int sock;
 #ifndef PROTOENT_IS_INT
   struct protoent *proto;
@@ -1098,7 +1102,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
   if (proto)
 # endif
   {
-    struct sockaddr_in tcp_listen_addr;
+    GC_CAN_IGNORE struct sockaddr_in tcp_listen_addr;
 
     if (scheme_get_host_address(address, id, &tcp_listen_addr)) {
       int s;
@@ -1308,7 +1312,7 @@ ssl_accept(int argc, Scheme_Object *argv[])
   Scheme_Object *listener;
   int s;
   int l;
-  struct sockaddr_in tcp_accept_addr; /* Use a long name for precise GC's xform.ss */
+  GC_CAN_IGNORE struct sockaddr_in tcp_accept_addr;
   
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
     scheme_wrong_type("ssl-accept", "ssl-listener", 0, argc, argv);

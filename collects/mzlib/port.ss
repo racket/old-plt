@@ -29,18 +29,35 @@
 
   (define (line-mode-symbol? s)
     (memq s '(linefeed return return-linefeed any any-one)))
+
+  (define (evt?/false v)
+    (or (eq? #f v) (evt? v)))
   
-  (provide/contract (read-bytes-avail!-evt (mutable-bytes? input-port-with-progress-evts? 
+  (provide/contract (read-bytes-avail!-evt (mutable-bytes? input-port-with-progress-evts?
 							   . -> . evt?))
-		    (read-bytes!-evt (mutable-bytes? input-port-with-progress-evts? 
+		    (peek-bytes-avail!-evt (mutable-bytes? exact-non-negative-integer? evt?/false
+							   input-port-with-progress-evts? 
+							   . -> . evt?))
+		    (read-bytes!-evt (mutable-bytes? input-port-with-progress-evts? . -> . evt?))
+		    (peek-bytes!-evt (mutable-bytes? exact-non-negative-integer? evt?/false
+						     input-port-with-progress-evts? 
 						     . -> . evt?))
 		    (read-bytes-evt (exact-non-negative-integer? input-port-with-progress-evts? 
 								 . -> . evt?))
+		    (peek-bytes-evt (exact-non-negative-integer? exact-non-negative-integer? evt?/false
+								 input-port-with-progress-evts? 
+								 . -> . evt?))
 		    (read-string!-evt (mutable-string? input-port-with-progress-evts? 
+						       . -> . evt?))
+		    (peek-string!-evt (mutable-string? exact-non-negative-integer? evt?/false
+						       input-port-with-progress-evts? 
 						       . -> . evt?))
 		    (read-string-evt (exact-non-negative-integer? input-port-with-progress-evts? 
 								  . -> . evt?))
-		    (regexp-match-evt ((union regexp? byte-regexp? string? bytes?) 
+		    (peek-string-evt (exact-non-negative-integer? exact-non-negative-integer? evt?/false
+								  input-port-with-progress-evts? 
+								  . -> . evt?))
+		    (regexp-match-evt ((union regexp? byte-regexp? string? bytes?)
 				       input-port-with-progress-evts? 
 				       . -> . evt?))
 
@@ -724,7 +741,7 @@
 		 (cond
 		  [(eq? n 0) 
 		   ;; Not ready, yet.
-		   (wrap-evt (car ports) (lambda (x) 0))]
+		   (peek-bytes-avail!-evt str skip unless-evt (car ports))]
 		  [(eof-object? n)
 		   ;; Port is exhausted, or we skipped past its input.
 		   ;; If skip is not zero, we need to figure out
@@ -846,23 +863,27 @@
 			  (break-thread t))))
 	      ch))))))
 
-  (define (read-at-least-bytes!-evt orig-bstr input-port need-more? shrink combo)
+  (define (read-at-least-bytes!-evt orig-bstr input-port need-more? shrink combo 
+				    peek-offset prog-evt)
     ;; go is the main reading function, either called directly for
     ;; a poll, or called in a thread for a non-poll read
     (define (go nack ch poll?)
       (let try-again ([pos 0][bstr orig-bstr])
-	(let* ([progress-evt (port-progress-evt input-port)]
+	(let* ([progress-evt (or prog-evt 
+				 (port-progress-evt input-port))]
 	       [v ((if poll? 
 		       peek-bytes-avail!* 
 		       peek-bytes-avail!)
-		   bstr pos progress-evt input-port pos)])
+		   bstr (+ pos (or peek-offset 0)) progress-evt input-port pos)])
 	  (cond
 	   ;; the first two cases below are shortcuts, and not
 	   ;;  strictly necessary
 	   [(sync/timeout 0 nack) (void)]
 	   [(sync/timeout 0 progress-evt) (if poll?
 					      #f
-					      (try-again pos bstr))]
+					      (if prog-evt
+						  (void)
+						  (try-again pos bstr)))]
 	   [(and poll? (equal? v 0)) #f]
 	   [(and (number? v) (need-more? bstr (+ pos v)))
 	    => (lambda (bstr)
@@ -874,6 +895,11 @@
 			[else v])]
 		   [result (combo bstr v2)])
 	      (cond
+	       [peek-offset
+		(if poll?
+		    result
+		    (sync (or prog-evt never-evt)
+			  (channel-put-evt ch result)))]
 	       [(port-commit-peeked (if (number? v2) v2 1)
 				    progress-evt
 				    (if poll?
@@ -888,42 +914,62 @@
 		(let ([result (combo bstr eof)])
 		  (if poll?
 		      result
-		      (channel-put-evt ch result)))]
+		      (channel-put ch result)))]
 	       [poll? #f]
 	       [else (try-again 0 orig-bstr)]))]))))
     (if (zero? (bytes-length orig-bstr))
 	(wrap-evt always-evt (lambda (x) 0))
 	(poll-or-spawn go)))
   
-  (define (read-bytes-avail!-evt bstr input-port)
+  (define (-read-bytes-avail!-evt bstr input-port peek-offset prog-evt)
     (read-at-least-bytes!-evt bstr input-port 
 			      (lambda (bstr v) (if (zero? v)
 						   bstr
 						   #f))
 			      (lambda (bstr v) v)
-			      (lambda (bstr v) v)))
+			      (lambda (bstr v) v)
+			      peek-offset prog-evt))
 
-  (define (read-bytes!-evt bstr input-port)
+  (define (read-bytes-avail!-evt bstr input-port)
+    (-read-bytes-avail!-evt bstr input-port #f #f))
+
+  (define (peek-bytes-avail!-evt bstr peek-offset prog-evt input-port)
+    (-read-bytes-avail!-evt bstr input-port peek-offset prog-evt))
+
+  (define (-read-bytes!-evt bstr input-port peek-offset prog-evt)
     (read-at-least-bytes!-evt bstr input-port 
 			      (lambda (bstr v)
 				(if (v . < . (bytes-length bstr))
 				    bstr
 				    #f))
 			      (lambda (bstr v) v)
-			      (lambda (bstr v) v)))
+			      (lambda (bstr v) v)
+			      peek-offset prog-evt))
+
+  (define (read-bytes!-evt bstr input-port)
+    (-read-bytes!-evt bstr input-port #f #f))
   
-  (define (read-bytes-evt len input-port)
+  (define (peek-bytes!-evt bstr peek-offset prog-evt input-port)
+    (-read-bytes!-evt bstr input-port peek-offset prog-evt))
+  
+  (define (-read-bytes-evt len input-port peek-offset prog-evt)
     (let ([bstr (make-bytes len)])
       (wrap-evt
-       (read-bytes!-evt bstr input-port)
+       (-read-bytes!-evt bstr input-port peek-offset prog-evt)
        (lambda (v)
 	 (if (number? v)
 	     (if (= v len)
 		 bstr
 		 (subbytes bstr 0 v))
 	     v)))))
+
+  (define (read-bytes-evt len input-port)
+    (-read-bytes-evt len input-port #f #f))
 	   
-  (define (read-string-evt goal input-port)
+  (define (peek-bytes-evt len peek-offset prog-evt input-port)
+    (-read-bytes-evt len input-port peek-offset prog-evt))
+  
+  (define (-read-string-evt goal input-port peek-offset prog-evt)
     (if (zero? goal)
 	(wrap-evt always-evt (lambda (x) ""))
 	(let ([bstr (make-bytes goal)]
@@ -957,7 +1003,8 @@
 				       (if ((bytes-utf-8-length bstr #\? 0 v) . > . goal)
 					   (sub1 v)
 					   v))
-				     cons)
+				     cons
+				     peek-offset prog-evt)
 	   (lambda (bstr+v)
 	     (let ([bstr (car bstr+v)]
 		   [v (cdr bstr+v)])
@@ -965,15 +1012,27 @@
 		   (bytes->string/utf-8 bstr #\? 0 v)
 		   v)))))))
 
-  (define (read-string!-evt str input-port)
+  (define (read-string-evt goal input-port)
+    (-read-string-evt goal input-port #f #f))
+    
+  (define (peek-string-evt goal peek-offset prog-evt input-port)
+    (-read-string-evt goal input-port peek-offset prog-evt))
+
+  (define (-read-string!-evt str input-port peek-offset prog-evt)
     (wrap-evt
-     (read-string-evt (string-length str) input-port)
+     (-read-string-evt (string-length str) input-port peek-offset prog-evt)
      (lambda (s)
        (if (string? s)
 	   (begin
 	     (string-copy! str 0 s)
 	     (string-length s))
 	   s))))
+
+  (define (read-string!-evt str input-port)
+    (-read-string!-evt str input-port #f #f))
+
+  (define (peek-string!-evt str peek-offset prog-evt input-port)
+    (-read-string!-evt str input-port peek-offset prog-evt))
 
   (define (regexp-match-evt pattern input-port)
     (define (go nack ch poll?)

@@ -187,8 +187,7 @@
 		"group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
 		"paren" "prefs" "project" "sparen" "ssmode"
-		"htmlmode"
-		"hypredit" "hyprfram" "hyprdial"
+		"html" "hypredit" "hyprfram" "hyprdial"
 
 		;; linking code
 		"link"))

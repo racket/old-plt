@@ -1,3 +1,6 @@
+(define-signature mred:html^
+  (html-convert))
+
 (define-signature mred:exn^
   ((struct exn ())
    (struct exn:unknown-preference ())))

@@ -72,13 +72,12 @@
 	    [hyper-dialog : mred:hyper-dialog^ 
 			  (mred:hyper-dialog@ debug hyper-edit (core file@))]
 	    [hyper-edit : mred:hyper-edit^ 
-			(mred:hyper-edit@ debug edit hyper-dialog (core file@)
-					(core string@))]
+			(mred:hyper-edit@ debug edit hyper-dialog html
+					  (core file@) (core string@))]
 	    [hyper-frame : mred:hyper-frame^ 
 			 (mred:hyper-frame@ debug hyper-edit hyper-dialog container
 					  editor-frame canvas group handler)]
-	    [html : mred:html-mode^ 
-		  (mred:html-mode@ handler hyper-frame hyper-edit)])
+	    [html : mred:html^ (mred:html@ debug (core string@))])
       (export (unit debug)
 	      (open constants)
 	      (open (exn : mred:exn-external^))

@@ -7,7 +7,7 @@
   (require (prefix kern: (lib "kerncase.ss" "syntax"))
            (prefix list: (lib "list.ss"))
            (prefix etc: (lib "etc.ss"))
-           (prefix string: (lib "string.ss"))
+
            (lib "match.ss")
            
            "labels.ss"
@@ -4437,17 +4437,15 @@
                    (get-handle-or-type-var label)))
   
   ; label -> type-union
+  ; label-set should move from a hash-table to an assoc-set, then we can use
+  ; assoc-set-cardinality instead of going through the list twice.
   (define (typeU label)
-    (let ([union-content (hash-table-map (label-set label) (lambda (label arrows) (typeT label)))])
-      ; XXX taken care of by type simplifaction?
-      ;[union-length (length union-content)])
-      ;(cond
-      ;[(= union-length 0) (make-type-empty)]
-      ;[(= union-length 1) (car union-content)]
-      ;[else
-      (make-type-union union-content)
-      ;])
-      ))
+    (let* ([union-content (hash-table-map (label-set label) (lambda (label arrows) (typeT label)))]
+           [union-length (length union-content)])
+      (cond
+        [(= union-length 0) (make-type-empty)]
+        [(= union-length 1) (car union-content)]
+        [else (make-type-union union-content)])))
   
   ; label -> type
   (define (typeT label)

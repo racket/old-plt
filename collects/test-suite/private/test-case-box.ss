@@ -4,12 +4,15 @@
   
   (require
    (lib "class.ss")
+   (lib "list.ss")
    (lib "mred.ss" "mred")
    (lib "unitsig.ss")
    (lib "tool.ss" "drscheme")
    (lib "etc.ss")
+   (lib "match.ss")
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "framework.ss" "framework")
+   (lib "readerr.ss" "syntax")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "fixed-width-label-snip.ss"
    "grey-editor.ss"
@@ -23,6 +26,7 @@
       
       (define test-case-box%
         (class* aligned-editor-snip% (readable-snip<%>)
+          (inherit get-admin)
           
           ;; read-one-special (integer? any? (union integer? false?) (union integer? false?)
           ;;                   (union integer? false?) . -> . any? integer? false?)
@@ -40,7 +44,6 @@
           
           ;; set-actuals ((is-a?/c expand-program%) (listof any?) . -> . void?)
           ;; set the text in the actual field to the value given
-          (inherit get-admin)
           (define (set-actuals vals)
             (send* actual
               (lock false)
@@ -153,8 +156,9 @@
       (send tcb-sc set-version 1)
       (send (get-the-snip-class-list) add tcb-sc)
       
-      ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how to make
-      ;; the results of the test case boxes be reset when (and only when) highlighting is being reset.
+      ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how
+      ;;        to make the results of the test case boxes be reset when (and only when) highlighting
+      ;;        is being reset.
       ;; Um, I can't find drscheme:unit:program-editor-mixin actually. It's not in drscheme:tool^
       (define update-aware:scheme:text%
         (class scheme:text%;(drscheme:unit:program-editor-mixin scheme:text%)
@@ -284,11 +288,30 @@
   
   ;; (syntax-object? (is-a?/c text%) . -> . syntax-object?)
   ;; a syntax object representing the text with the color of the given object
+  ;(define (text->syntax-object text)
+  ;  (datum->syntax-object
+  ;   #f
+  ;   (read-syntax text (open-input-text-editor text))
+  ;   (list text 1 0 1 1)))
   (define (text->syntax-object text)
-    (datum->syntax-object
-     #f
-     (read-syntax text (open-input-text-editor text))
-     (list text 1 0 1 1)))
+    (let ([port (open-input-text-editor text)])
+      (letrec ([read-all-syntax
+                (lambda ()
+                  (let ([stx (read-syntax text port)])
+                    (if (eof-object? stx)
+                        (begin (close-input-port port)
+                               empty)
+                        (cons stx (read-all-syntax)))))])
+        (match (read-all-syntax)
+          [() (raise-read-error "Empty test box" text 1 1 1 1)]
+          [(stx) stx]
+          [(stx next rest-stx ...)
+           (raise-read-error "Too many expressions"
+                             text
+                             (syntax-line next)
+                             (syntax-column next)
+                             (syntax-position next)
+                             (syntax-span next))]))))
   
   ;; a locked text hightlighted to show that it is inactive
   (define actual-text%

@@ -7,9 +7,10 @@
 ;;
 ;; Special thanks go out to:
 ;; Robert Bruce Findler for support and bug detection.
+;; Scott Owens for the new constructor grammer.
 ;; Doug Orleans for pointing out that pairs should be reused while
 ;; matching lists.
-;;
+;; 
 ;;
 ;; Originally written by Andrew K. Wright, 1993 (wright@research.nj.nec.com)
 ;; which in turn was adapted from code written by Bruce F. Duba, 1991.
@@ -52,6 +53,7 @@
 ;;       | character                       a character
 ;;       | 'sexp                           an s-expression
 ;;       | 'symbol                         a symbol (special case of s-expr)
+;;       | (var id)                        allows one to use ..k or _ as identifiers
 ;;       | (list lvp_1 ... lvp_n)               list of n elements
 ;;       | (list-rest lvp_1 ... lvp_n pat) an improper list of n elements
 ;;                                         plus a last element which represents
@@ -110,15 +112,12 @@
 ;;                                           of remainder must match qp_n+1
 ;;       | #&qp                            box
 ;;       | ,pat                            a pattern
-;;       | ,@(lvp . . . lvp-n)
-;;       | ,@(lvp-1 . . . lvp-n . pat)
+;;       | ,@(list lvp . . . lvp-n)
+;;       | ,@(list-rest lvp-1 . . . lvp-n pat)
 ;;       | ,@`qp                           qp must evaluate to a list as 
 ;;                                         so that this rule resembles the 
 ;;                                         above two rules
 ;;
-;; The names (quote, quasiquote, unquote, unquote-splicing, ?, _, $,
-;; and, or, not, set!, get!, list-no-order, hash-table, ..., ___) 
-;; cannot be used as pattern variables.</pre>
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -132,13 +131,11 @@
    match-let*
    match-letrec
    match-define
-   match-count
    match:test-no-order
    ) 
   
   (require-for-syntax (lib "stx.ss" "syntax")
                       (lib "etc.ss")
-                      ;(lib "pretty.ss")
                       (lib "list.ss")
                       (lib "include.ss"))
   
@@ -169,31 +166,11 @@
                       match-let*
                       match-letrec
                       match-define
-                      match-count
                       )
 
     (include "private/plt-match/match-inc.scm")    
 
     (define node-count 0)
-
-    ;;!(syntax match-count)
-    ;; This macro only returns a number.  This number represents the
-    ;; number of nodes generated in the process of compiling the match 
-    ;; expresseion.  This gives one and idea as to the size of the 
-    ;; compiled expression.  This is mostly used for testing.
-    (define match-count/proc 
-      (lambda (stx)
-        (syntax-case stx (=>)
-          ((_ exp clause ...)
-           (begin
-             (set! node-count 0)
-             (quasisyntax/loc 
-              stx 
-              (let ((x exp)) #,(gen-match (syntax x)
-                                        '()
-                                        (syntax (clause ...))
-                                        stx)))
-             #`#,node-count)))))
 
     (define match/proc 
       (lambda (stx)

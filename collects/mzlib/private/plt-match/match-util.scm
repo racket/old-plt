@@ -112,7 +112,7 @@
                         ;(write srch)
                         (cond
                          ;;Experimental
-;                          ((equal? (car srch) 'struct-pred)
+                   ;       ((equal? (car srch) 'struct-pred)
 ;                           (let mem ((l l))
 ;                             (if (null? l)
 ;                                 #f

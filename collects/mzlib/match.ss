@@ -125,6 +125,7 @@
    match-let*
    match-letrec
    match-define
+   match-test
    )
 
   (require-for-syntax (lib "stx.ss" "syntax")
@@ -159,6 +160,8 @@
                       match-let*
                       match-letrec
                       match-define
+                      match-test
+                      m:match-test
                       m:match
                       m:match-letrec
                       m:match-define
@@ -312,6 +315,35 @@
                      #,@(map handle-clause 
                              (syntax-e (syntax (clause ...))))))))))
 
+(define m:match-test/proc 
+      (lambda (stx)
+        (syntax-case stx (=>)
+          ((_ clause ...)
+           (begin
+             (set! node-count 0)
+              (let-values (((stx t rt gc) (time-apply gen-match 
+                                   (list (syntax x)
+                                         '()
+                                         (syntax (clause ...))
+                                         stx))))
+                #`(list ; (let ((dat-struct (seconds->date (current-seconds))))
+                        ;         (list (date-month dat-struct)
+                        ;              (date-day dat-struct)
+                        ;           (date-year dat-struct)));
+                        ;           (list #,@(get-date)) 
+                        #,node-count
+                        #,rt)))))))
+
+ (define match-test/proc
+      (lambda (stx)
+        (syntax-case stx ()
+          ((_ clause ...)
+           (quasisyntax/loc 
+            stx 
+            (m:match-test  
+                     #,@(map handle-clause 
+                             (syntax-e (syntax (clause ...))))))))))
+
     (define match-letrec/proc
       (lambda (stx)
         (syntax-case stx ()
@@ -377,10 +409,9 @@
                     not
                     $
                     set!
-                    var
                     get!
-                    unquote
-                    unquote-splicing
+                    ;unquote
+                    ;unquote-splicing
                     )))
         (let/ec out
           (let loop ((x x))
@@ -415,6 +446,7 @@
            (quasisyntax/loc 
             stx #,(box (convert-quasi (unbox (syntax-e stx))))))
           (pat stx)))
+      ;(write (syntax-object->datum stx))(newline)
       (syntax-case* 
        stx
        (_ ? = and or not $ set! get! quasiquote 

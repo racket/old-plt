@@ -183,7 +183,7 @@
    (import struct:a a?)
    (export x? make-x x-z both)
    
-   (define-syntax a (list #'struct:a #f #'a? (list #f) (list #f)))
+   (define-syntax a (list #'struct:a #f #'a? (list #f) (list #f) #f))
 
    (define-struct (x a) (y z))
    (define both (lambda (v)

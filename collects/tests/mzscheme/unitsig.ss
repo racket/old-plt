@@ -274,7 +274,7 @@
    m2-2^
    (import m2-1^)
 
-   (define-syntax a (list #'struct:a #f #f (list #f) (list #f)))
+   (define-syntax a (list #'struct:a #f #f (list #f) (list #f) #f))
 
    (define-struct (x a) (y z))
    (define both (lambda (v)

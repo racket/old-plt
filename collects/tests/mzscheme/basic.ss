@@ -1850,7 +1850,7 @@
 (arity-test version 0 0)
 (arity-test banner 0 0)
 (arity-test system-type 0 1)
-(arity-test system-library-subpath 0 0)
+(arity-test system-library-subpath 0 1)
 (arity-test current-command-line-arguments 0 1)
 
 (report-errs)

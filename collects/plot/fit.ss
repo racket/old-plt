@@ -44,9 +44,9 @@
            (error-given (if (= num-vars 2)
                             (list-ref rest 2)
                             (list-ref rest 1)))
-           (err-data (if (list? error-given)
-                      error-given
-                      (build-list (length x-data) (lambda (x) 1))))
+           (err-data (if (null? error-given)
+                         (build-list (length x-data) (lambda (x) 1))
+                         error-given))
            (final-function (if (= num-vars 2)
                                (fit-fun-function  function)
                                (lambda (x y . rest)

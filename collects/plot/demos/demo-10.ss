@@ -1,8 +1,8 @@
-(require (lib "plot.ss" "plplot"))
+(require (lib "plot.ss" "plot"))
 
-(require (lib "syntax.ss" "plplot")
+(require (lib "syntax.ss" "plot")
          (lib "class.ss")
-         (lib "renderer-helpers.ss" "plplot"))
+         (lib "renderer-helpers.ss" "plot"))
 ; (number -> number) mumbo-jumbo -> 2d-renderer
 (define dashed-line
   (r-lambda fun 2dview (x-min x-max) ((samples 100) (segments 20) (color 'red) (width 1))    
@@ -21,11 +21,6 @@
                         (map (lambda (x) (vector x (fun x))) dash))) 
                 x-lists))))
                      ;                                  
-;(define dashed-line-renderer
- ; (class* (renderer<%>)
- ;   (init-fields) ...
- ;   
- ;   (render
-;     )))
-    
+
 (plot (dashed-line (lambda (x) x) '((color red))))
+(plot3d (surface (lambda (x y) (* (sin x) (sin y)))))

@@ -119,9 +119,13 @@ typedef jmpbuf jmp_buf[1];
 #define GC_MIGHT_USE_REGISTERED_STATICS
 
 #ifdef OS_X
-#ifdef MACINTOSH_EVENTS
-#include "macosxpre.h"
-#endif
+ #ifdef MACINTOSH_EVENTS
+  #ifdef XONX
+   #include "macosxonxpre.h"
+  #else
+   #include "macosxpre.h"
+  #endif
+ #endif
 #endif
 
 /* Set up MZ_EXTERN for DLL build */

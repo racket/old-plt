@@ -309,6 +309,7 @@ case $OS in
       # don't use X Libraries: 
       LIBS="-framework Carbon"
     else
+      CFLAGS="$CFLAGS -DXONX"
       LIBS="-framework Carbon $LIBS"
     fi
     ;;
@@ -366,7 +367,6 @@ case $OS in
         MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre"
       ;;
       cc)
-#        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre.h"
       ;;
       *)
         echo "unrecognized compiler: $CC"

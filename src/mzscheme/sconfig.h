@@ -664,7 +664,9 @@
 
 # define USE_TM_GMTOFF_FIELD
 
+#ifndef XONX
 # define MACINTOSH_EVENTS
+#endif
 
 # ifndef OS_X
 #  define OS_X 1

@@ -2367,6 +2367,7 @@ case $OS in
       # don't use X Libraries: 
       LIBS="-framework Carbon"
     else
+      CFLAGS="$CFLAGS -DXONX"
       LIBS="-framework Carbon $LIBS"
     fi
     ;;
@@ -2414,19 +2415,19 @@ cross_compiling=$ac_cv_prog_cc_cross
 
  msg="for inline keyword" 
 echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2417: checking $msg" >&5
+echo "configure:2418: checking $msg" >&5
 if test "$cross_compiling" = yes; then
   inline=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 2422 "configure"
+#line 2423 "configure"
 #include "confdefs.h"
 static inline int foo() { return 0; }
    int main() {
       return foo();
    }
 EOF
-if { (eval echo configure:2429: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2430: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   inline=yes
 else
@@ -2449,7 +2450,6 @@ case $OS in
         MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre"
       ;;
       cc)
-#        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre.h"
       ;;
       *)
         echo "unrecognized compiler: $CC"
@@ -2500,7 +2500,7 @@ else
 #line 2500 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int) throw();
+extern "C" void exit(int);
 #endif
   #include <stddef.h> 
    inline void *operator new(size_t size) { return (void *)0x1; }
@@ -2567,7 +2567,7 @@ else
 #line 2567 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
-extern "C" void exit(int) throw();
+extern "C" void exit(int);
 #endif
   #include <X11/Intrinsic.h>
   #include <X11/XKBlib.h>

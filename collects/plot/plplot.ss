@@ -1,7 +1,6 @@
 (module plplot mzscheme
 
-(require (lib "foreign.ss") (lib "etc.ss") (lib "list.ss")
-         (rename #%foreign _fmark _fmark))
+(require (lib "foreign.ss") (lib "etc.ss") (lib "list.ss"))
 
 (define libplplot
   (ffi-lib
@@ -26,7 +25,7 @@
           (lambda (b) (error "this list type does not specify a size"))))))
 
 
-(define (_matrix-of type . len? )
+(define (_matrix-of type)
   (_list-of (_list-of type)))
 
 (define-syntax define*
@@ -219,7 +218,7 @@
     (t4         : _int = (PLcGrid-ny grid))
     (levels     : (_list i _plflt))
     (nlevels    : _int = (length levels))
-    (pltr       : _fmark = (get-ffi-obj "pltr1" libplplot _fmark))
+    (pltr       : _fpointer = (get-ffi-obj "pltr1" libplplot _fpointer))
     (grid       : _PLcGrid-pointer)
     -> _void)))
 
@@ -246,9 +245,9 @@
     (fill_width : _int = 1)
     (cont_col   : _int = 1)
     (cont_width : _int = 0)
-    (fill_fun   : _fmark = (get-ffi-obj "c_plfill" libplplot _fmark))
+    (fill_fun   : _fpointer = (get-ffi-obj "c_plfill" libplplot _fpointer))
     (rectan     : _int = 1)
-    (pltr       : _fmark = (get-ffi-obj "pltr1" libplplot _fmark))
+    (pltr       : _fpointer = (get-ffi-obj "pltr1" libplplot _fpointer))
     (grid       : _PLcGrid-pointer)
     -> _void)))
 

@@ -1,17 +1,15 @@
 (module fit-low-level mzscheme
   (require (lib "foreign.ss") (lib "etc.ss"))
-  (require (rename #%foreign ffi-callback ffi-callback)
-           (rename #%foreign _fmark _fmark))
   (unsafe!)
 
   (define libfit
     (ffi-lib (build-path (this-expression-source-directory)
                          "compiled" "native" (system-library-subpath)
-                         "libfit")))  
+                         "libfit")))
 
   (define do-fit-int
     (get-ffi-obj "do_fit" libfit
-      (_fun (func      : _fmark)
+      (_fun (func      : (_fun _int _pointer -> _double))
             (val-num   : _int = (length x-values))
             (x-values  : (_list i _double*))
             (y-values  : (_list i _double*))
@@ -22,14 +20,10 @@
             -> (_list o _double* param-num))))
 
   (define (do-fit callback x-vals y-vals z-vals errors params)
-    (define c-callback
-      (ffi-callback
-       (lambda (argc argv)
-         (let ((args [cblock->list argv _double argc]))
-           (apply callback args)))
-       (list _int _pointer)
-       _double))
-    (do-fit-int c-callback x-vals y-vals z-vals errors params))
+    (do-fit-int (lambda (argc argv)
+                  (let ([args (cblock->list argv _double argc)])
+                    (apply callback args)))
+                x-vals y-vals z-vals errors params))
 
   (define get-asym-error
     (get-ffi-obj "get_asym_error" libfit

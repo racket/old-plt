@@ -1122,7 +1122,7 @@
 		   #\R)
       (make-object menu-item% "&Follow Up" msg-menu
         (lambda (i e) (do-reply #t quote-in-reply?))
-        #\F)
+        #\t)
       (make-object menu-item% "F&orward" msg-menu
         (lambda (i e) (do-forward))
         #\Z)

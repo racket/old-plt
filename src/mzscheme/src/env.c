@@ -273,28 +273,6 @@ Scheme_Env *scheme_basic_env()
   return env;
 }
 
-#if USE_COMPILED_STARTUP
-Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env)
-{
-  Scheme_Object *port, *expr, *saved;
-  Scheme_Process *p = scheme_current_process;
-  Scheme_Config *config = p->config;
-
-  port = scheme_make_sized_string_input_port(str, len);
-
-  saved = scheme_get_param(config, MZCONFIG_ENV);
-  scheme_set_param(config, MZCONFIG_ENV, (Scheme_Object *)env);
-  expr = scheme_internal_read(port, NULL, 1, scheme_config
-#ifdef MZ_REAL_THREADS
-			      , p
-#endif
-			      );
-  scheme_set_param(config, MZCONFIG_ENV, saved);
-
-  return _scheme_eval_compiled(expr, env);
-}
-#endif
-
 static void make_init_env(void)
 {
   Scheme_Env *env;
@@ -798,7 +776,9 @@ scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flag
     if (SCHEME_STX_SYMBOLP(vals))
       frame->values[i] = vals;
     else {
-      frame->values[i] = SCHEME_STX_CAR(vals);
+      Scheme_Object *a;
+      a = SCHEME_STX_CAR(vals);
+      frame->values[i] = a;
       vals = SCHEME_STX_CDR(vals);
     }
   }
@@ -854,9 +834,11 @@ static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
 
   if (!env->uid) {
     char name[20];
+    Scheme_Object *sym;
     env_uid_counter++;
     sprintf(name, "env%d", env_uid_counter);
-    env->uid = scheme_make_symbol(name); /* uninterned! */
+    sym = scheme_make_symbol(name); /* uninterned! */
+    env->uid = sym;
   }
   return env->uid;
 }
@@ -1255,19 +1237,22 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
   char *key;
 
   if (r->count <= 5) {
-    for (i = 0; i < r->count; i++)
+    for (i = 0; i < r->count; i++) {
       if (scheme_stx_bound_eq(symbol, r->syms[i], r->phase))
 	scheme_wrong_syntax(where, symbol, form,
 			    "duplicate %s name", what);
+    }
 
     if (r->count < 5) {
       r->syms[r->count++] = symbol;
       return;
     } else {
-      r->ht = scheme_hash_table(7, SCHEME_hash_bound_id, 0, 0);
+      Scheme_Hash_Table *ht;
+      ht = scheme_hash_table(7, SCHEME_hash_bound_id, 0, 0);
+      r->ht = ht;
       for (i = 0; i < r->count; i++) {
 	key = (char *)r->syms[i];
-	scheme_add_to_table(r->ht, key, (void *)scheme_true, 0);
+	scheme_add_to_table(ht, key, (void *)scheme_true, 0);
       }
     }
   }

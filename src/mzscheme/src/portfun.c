@@ -2106,7 +2106,7 @@ static Scheme_Object *do_load_handler(void *data)
 
 static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *port;
+  Scheme_Object *port, *name;
   int ch;
   Scheme_Process *p = scheme_current_process;
   Scheme_Config *config = p->config;
@@ -2147,7 +2147,8 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->p = p;
   lhd->config = config;
   lhd->port = port;
-  lhd->stxsrc = scheme_make_string(((Scheme_Input_Port *)port)->name);
+  name = scheme_make_string(((Scheme_Input_Port *)port)->name);
+  lhd->stxsrc = name;
 
   return scheme_dynamic_wind(NULL, do_load_handler, post_load_handler,
 			     NULL, (void *)lhd);

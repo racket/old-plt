@@ -989,10 +989,11 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
       scheme_wrong_syntax("struct", parent_expr, forms, "improper name-parent expression");
       return NULL;
     }
+    parent_expr = SCHEME_STX_CAR(parent_expr);
     if (in_rec)
-      parent_expr = scheme_compile_expr(SCHEME_STX_CAR(parent_expr), env, in_rec, drec);
+      parent_expr = scheme_compile_expr(parent_expr, env, in_rec, drec);
     else
-      parent_expr = scheme_expand_expr(SCHEME_STX_CAR(parent_expr), env, depth, scheme_false);
+      parent_expr = scheme_expand_expr(parent_expr, env, depth, scheme_false);
   } else {
     parent_expr = NULL;
 
@@ -1004,11 +1005,14 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     scheme_wrong_syntax("struct", base_symbol, form, "struct name must be an identifier");
   
   if (in_rec) {
+    Scheme_Object *fields;
+
     info = MALLOC_ONE_TAGGED(Struct_Info);
     info->type = scheme_struct_info_type;
     
     info->name = SCHEME_STX_SYM(base_symbol);
-    info->fields = scheme_syntax_to_datum(field_symbols, 0, NULL);
+    fields = scheme_syntax_to_datum(field_symbols, 0, NULL);
+    info->fields = fields;
     info->parent_type_expr = parent_expr ? parent_expr : scheme_null;
   } else
     info = NULL;
@@ -1016,12 +1020,13 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
   count = 0;
   l = field_symbols;
   while (!SCHEME_STX_NULLP(l)) {
+    Scheme_Object *a;
     count++;
     if (!SCHEME_STX_PAIRP(l))
       scheme_wrong_syntax("struct", l, form, "badly formed field list");
-    if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l)))
-      scheme_wrong_syntax("struct", SCHEME_STX_CAR(l), 
-			  form, "field name must be an identifier");
+    a = SCHEME_STX_CAR(l);
+    if (!SCHEME_STX_SYMBOLP(a))
+      scheme_wrong_syntax("struct", a, form, "field name must be an identifier");
     l = SCHEME_STX_CDR(l);
   }
 
@@ -1031,12 +1036,13 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
     return scheme_make_syntax_compiled(STRUCT_EXPD, (Scheme_Object *)info);
   } else {
-    Scheme_Object *base;
+    Scheme_Object *base, *rest;
     base = (parent_expr 
 	    ? icons(base_symbol,
 		    icons(parent_expr, scheme_null))
 	    : base_symbol);
-    return scheme_datum_to_syntax(icons(SCHEME_STX_CAR(forms),
+    rest = SCHEME_STX_CAR(forms);
+    return scheme_datum_to_syntax(icons(rest,
 					icons(base,
 					      icons(field_symbols, scheme_null))),
 				  forms, forms, 0);

@@ -73,7 +73,47 @@
 
 (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
 
-(require-library "function.ss")
+(import (lib "unit.ss"))
+
+;(require-library "function.ss")
+;; Temp:
+(define filter
+  (lambda (f list)
+    (unless (and (procedure? f)
+		 (procedure-arity-includes? f 1))
+      (raise-type-error 'filter "procedure (arity 1)" f))
+    (let loop ([l list])
+      (cond
+       [(null? l) null]
+       [(pair? l)
+	(let* ([keep? (f (car l))]
+	       [frest (loop (cdr l))])
+	  (if keep?
+	      (cons (car l) frest)
+	      frest))]
+       [else (raise (make-exn:application:mismatch
+		     (format "filter: second argument must be a (proper) list; given ~e" list)
+		     (current-continuation-marks)
+		     list))]))))
+(define remove
+  (letrec ([rm (case-lambda 
+		[(item list) (rm item list equal?)]
+		[(item list equal?)
+		 (let loop ([list list])
+		   (cond
+		    [(null? list) ()]
+		    [(equal? item (car list)) (cdr list)]
+		    [else (cons (car list)
+				(loop (cdr list)))]))])])
+    rm))
+(define last-pair
+  (lambda (l)
+    (if (pair? l)
+	(if (pair? (cdr l))
+	    (last-pair (cdr l))
+	    l)
+	(raise-type-error 'last-pair "pair" l))))
+
 ;(require-library "errortrace.ss" "errortrace")
 (error-print-width 100)
 

@@ -563,10 +563,10 @@ scheme_named_map_1(char *name, Scheme_Object *(*fun)(Scheme_Object*, Scheme_Obje
       return (scheme_null);
   else if (SCHEME_STX_PAIRP(lst)) {
     Scheme_Object *v;
-    v = fun(SCHEME_STX_CAR(lst), form);
-    return scheme_make_pair(v,
-			    scheme_named_map_1(name, fun, 
-					       SCHEME_STX_CDR(lst), form));
+    v = SCHEME_STX_CAR(lst);
+    v = fun(v, form);
+    lst = SCHEME_STX_CDR(lst);
+    return scheme_make_pair(v, scheme_named_map_1(name, fun, lst, form));
   } else {
     scheme_wrong_syntax(name, lst, form, "bad syntax (" IMPROPER_LIST_FORM ")");
     return scheme_void;

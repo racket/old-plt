@@ -643,7 +643,8 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   data->type = scheme_compiled_unclosed_procedure_type;
 
-  params = allparams = SCHEME_STX_CAR(SCHEME_STX_CDR(code));
+  params = SCHEME_STX_CDR(code);
+  params = allparams = SCHEME_STX_CAR(params);
 
   data->num_params = 0;
   for (; SCHEME_STX_PAIRP(params); params = SCHEME_STX_CDR(params)) {
@@ -655,7 +656,8 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
     data->num_params++;
   }
 
-  forms = SCHEME_STX_CDR(SCHEME_STX_CDR(code));
+  forms = SCHEME_STX_CDR(code);
+  forms = SCHEME_STX_CDR(forms);
 
   frame = scheme_new_compilation_frame(data->num_params, SCHEME_LAMBDA_FRAME, env);
   params = allparams;

@@ -14,6 +14,9 @@ int variable_obj_MARK(void *p) {
   gcMARK(b->key);
   gcMARK(b->val);
 
+  if (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+      gcMARK(((Scheme_Bucket_With_Home *)b)->home);
+
   return
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
@@ -25,6 +28,9 @@ int variable_obj_FIXUP(void *p) {
 
   gcFIXUP(b->key);
   gcFIXUP(b->val);
+
+  if (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+      gcFIXUP(((Scheme_Bucket_With_Home *)b)->home);
 
   return
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
@@ -1056,38 +1062,6 @@ int syntax_compiler_FIXUP(void *p) {
 }
 
 
-int promise_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Promise));
-}
-
-int promise_val_MARK(void *p) {
-  Scheme_Promise *pr = (Scheme_Promise *)p;
-
-  gcMARK(pr->val);
-  gcMARK(pr->multi_array);
-#ifdef MZ_REAL_THREADS
-  gcMARK(pr->sema);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Promise));
-}
-
-int promise_val_FIXUP(void *p) {
-  Scheme_Promise *pr = (Scheme_Promise *)p;
-
-  gcFIXUP(pr->val);
-  gcFIXUP(pr->multi_array);
-#ifdef MZ_REAL_THREADS
-  gcFIXUP(pr->sema);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Promise));
-}
-
-
 int process_val_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Process));
@@ -1125,6 +1099,8 @@ int process_val_MARK(void *p) {
   gcMARK(pr->overflow);
   
   gcMARK(pr->current_local_env);
+  gcMARK(pr->current_local_mark);
+  gcMARK(pr->current_local_name);
   
   gcMARK(pr->print_buffer);
   gcMARK(pr->print_port);
@@ -1144,7 +1120,7 @@ int process_val_MARK(void *p) {
   
   gcMARK(pr->list_stack);
   
-  gcMARK(pr->vector_memory);
+  gcMARK(pr->rn_memory);
   
   gcMARK(pr->kill_data);
   gcMARK(pr->private_kill_data);
@@ -1191,6 +1167,8 @@ int process_val_FIXUP(void *p) {
   gcFIXUP(pr->overflow);
   
   gcFIXUP(pr->current_local_env);
+  gcFIXUP(pr->current_local_mark);
+  gcFIXUP(pr->current_local_name);
   
   gcFIXUP(pr->print_buffer);
   gcFIXUP(pr->print_port);
@@ -1210,7 +1188,7 @@ int process_val_FIXUP(void *p) {
   
   gcFIXUP(pr->list_stack);
   
-  gcFIXUP(pr->vector_memory);
+  gcFIXUP(pr->rn_memory);
   
   gcFIXUP(pr->kill_data);
   gcFIXUP(pr->private_kill_data);
@@ -1310,10 +1288,26 @@ int namespace_val_SIZE(void *p) {
 int namespace_val_MARK(void *p) {
   Scheme_Env *e = (Scheme_Env *)p;
 
-  gcMARK(e->globals);
-  gcMARK(e->syntax);
-  gcMARK(e->modules);
+  gcMARK(e->module);
+  gcMARK(e->module_registry);
+
+  gcMARK(e->rename);
+  gcMARK(e->et_rename);
+
   gcMARK(e->init);
+
+  gcMARK(e->syntax);
+  gcMARK(e->exp_env);
+  gcMARK(e->val_env);
+  gcMARK(e->module_syntax);
+
+  gcMARK(e->shadowed_syntax);
+
+  gcMARK(e->link_midx);
+  gcMARK(e->for_syntax_of);
+
+  gcMARK(e->toplevel);
+  gcMARK(e->modules);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -1322,10 +1316,26 @@ int namespace_val_MARK(void *p) {
 int namespace_val_FIXUP(void *p) {
   Scheme_Env *e = (Scheme_Env *)p;
 
-  gcFIXUP(e->globals);
-  gcFIXUP(e->syntax);
-  gcFIXUP(e->modules);
+  gcFIXUP(e->module);
+  gcFIXUP(e->module_registry);
+
+  gcFIXUP(e->rename);
+  gcFIXUP(e->et_rename);
+
   gcFIXUP(e->init);
+
+  gcFIXUP(e->syntax);
+  gcFIXUP(e->exp_env);
+  gcFIXUP(e->val_env);
+  gcFIXUP(e->module_syntax);
+
+  gcFIXUP(e->shadowed_syntax);
+
+  gcFIXUP(e->link_midx);
+  gcFIXUP(e->for_syntax_of);
+
+  gcFIXUP(e->toplevel);
+  gcFIXUP(e->modules);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -1394,6 +1404,84 @@ int svector_val_FIXUP(void *p) {
 }
 
 
+int stx_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
+}
+
+int stx_val_MARK(void *p) {
+  Scheme_Stx *stx = (Scheme_Stx *)p;
+  gcMARK(stx->val);
+  gcMARK(stx->src);
+  gcMARK(stx->wraps);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
+}
+
+int stx_val_FIXUP(void *p) {
+  Scheme_Stx *stx = (Scheme_Stx *)p;
+  gcFIXUP(stx->val);
+  gcFIXUP(stx->src);
+  gcFIXUP(stx->wraps);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
+}
+
+
+int module_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+}
+
+int module_val_MARK(void *p) {
+  Scheme_Module *m = (Scheme_Module *)p;
+  gcMARK(m->modname);
+
+  gcMARK(m->et_imports);
+  gcMARK(m->imports);
+
+  gcMARK(m->body);
+  gcMARK(m->et_body);
+
+  gcMARK(m->exports);
+  gcMARK(m->export_srcs);
+  gcMARK(m->export_src_names);
+
+  gcMARK(m->kernel_exlcusion);
+
+  gcMARK(m->indirect_exports);
+  gcMARK(m->self_modidx);
+
+  gcMARK(m->accessible);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+}
+
+int module_val_FIXUP(void *p) {
+  Scheme_Module *m = (Scheme_Module *)p;
+  gcFIXUP(m->modname);
+
+  gcFIXUP(m->et_imports);
+  gcFIXUP(m->imports);
+
+  gcFIXUP(m->body);
+  gcFIXUP(m->et_body);
+
+  gcFIXUP(m->exports);
+  gcFIXUP(m->export_srcs);
+  gcFIXUP(m->export_src_names);
+
+  gcFIXUP(m->kernel_exlcusion);
+
+  gcFIXUP(m->indirect_exports);
+  gcFIXUP(m->self_modidx);
+
+  gcFIXUP(m->accessible);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+}
+
+
 #endif  /* TYPE */
 
 /**********************************************************************/
@@ -1408,9 +1496,11 @@ int mark_comp_env_SIZE(void *p) {
 int mark_comp_env_MARK(void *p) {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
+  gcMARK(e->base.uid);
   gcMARK(e->base.genv);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
+  gcMARK(e->base.renames);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
@@ -1424,9 +1514,11 @@ int mark_comp_env_MARK(void *p) {
 int mark_comp_env_FIXUP(void *p) {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
+  gcFIXUP(e->base.uid);
   gcFIXUP(e->base.genv);
   gcFIXUP(e->base.next);
   gcFIXUP(e->base.values);
+  gcFIXUP(e->base.renames);
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);
@@ -1447,7 +1539,6 @@ int mark_const_binding_MARK(void *p) {
   Constant_Binding *b = (Constant_Binding *)p;
     
   gcMARK(b->name);
-  gcMARK(b->rename);
   gcMARK(b->val);
   gcMARK(b->next);
   
@@ -1459,7 +1550,6 @@ int mark_const_binding_FIXUP(void *p) {
   Constant_Binding *b = (Constant_Binding *)p;
     
   gcFIXUP(b->name);
-  gcFIXUP(b->rename);
   gcFIXUP(b->val);
   gcFIXUP(b->next);
   
@@ -1468,13 +1558,13 @@ int mark_const_binding_FIXUP(void *p) {
 }
 
 
-int mark_link_info_SIZE(void *p) {
+int mark_resolve_info_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Link_Info));
+  gcBYTES_TO_WORDS(sizeof(Resolve_Info));
 }
 
-int mark_link_info_MARK(void *p) {
-  Link_Info *i = (Link_Info *)p;
+int mark_resolve_info_MARK(void *p) {
+  Resolve_Info *i = (Resolve_Info *)p;
   
   gcMARK(i->old_pos);
   gcMARK(i->new_pos);
@@ -1482,11 +1572,11 @@ int mark_link_info_MARK(void *p) {
   gcMARK(i->next);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Link_Info));
+  gcBYTES_TO_WORDS(sizeof(Resolve_Info));
 }
 
-int mark_link_info_FIXUP(void *p) {
-  Link_Info *i = (Link_Info *)p;
+int mark_resolve_info_FIXUP(void *p) {
+  Resolve_Info *i = (Resolve_Info *)p;
   
   gcFIXUP(i->old_pos);
   gcFIXUP(i->new_pos);
@@ -1494,7 +1584,7 @@ int mark_link_info_FIXUP(void *p) {
   gcFIXUP(i->next);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Link_Info));
+  gcBYTES_TO_WORDS(sizeof(Resolve_Info));
 }
 
 
@@ -1734,459 +1824,6 @@ int mark_cont_mark_chain_FIXUP(void *p) {
 
 
 #endif  /* FUN */
-
-/**********************************************************************/
-
-#ifdef MARKS_FOR_OBJECT_C
-
-int mark_object_val_SIZE(void *p) {
-  Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)GC_resolve(obj->o.sclass);
-  
-  return
-  gcBYTES_TO_WORDS((sizeof(Internal_Object) 
-		    + (sizeof(Scheme_Object *) * (sclass->num_slots - 1))));
-}
-
-int mark_object_val_MARK(void *p) {
-  Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)GC_resolve(obj->o.sclass);
-  
-  int i;
-  
-  gcMARK( obj->o.sclass);
-  sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
-  
-  for (i = sclass->num_slots; i--; ) {
-    gcMARK(obj->slots[i]);
-  }
-
-  return
-  gcBYTES_TO_WORDS((sizeof(Internal_Object) 
-		    + (sizeof(Scheme_Object *) * (sclass->num_slots - 1))));
-}
-
-int mark_object_val_FIXUP(void *p) {
-  Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)GC_resolve(obj->o.sclass);
-  
-  int i;
-  
-  gcFIXUP_TYPED_NOW(Scheme_Object *, obj->o.sclass);
-  sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
-  
-  for (i = sclass->num_slots; i--; ) {
-    gcFIXUP(obj->slots[i]);
-  }
-
-  return
-  gcBYTES_TO_WORDS((sizeof(Internal_Object) 
-		    + (sizeof(Scheme_Object *) * (sclass->num_slots - 1))));
-}
-
-
-int mark_class_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class));
-}
-
-int mark_class_val_MARK(void *p) {
-  Scheme_Class *c = (Scheme_Class *)p;
-  
-  gcMARK(c->ivars);
-  gcMARK(c->piu.insti.data);
-  
-  gcMARK(c->heritage);
-  gcMARK(c->superclass);
-  gcMARK(c->super_init_name);
-  gcMARK(c->equiv_intf);
-  
-  gcMARK(c->public_names);
-  gcMARK(c->public_map);
-  gcMARK(c->vslot_map);
-  gcMARK(c->vslot_kind);
-  
-  gcMARK(c->ivar_map);
-  gcMARK(c->ref_map);
-  
-  gcMARK(c->cmethods);
-  gcMARK(c->cmethod_ready_level);
-  gcMARK(c->cmethod_source_map);
-  gcMARK(c->closure_saved);
-  
-  gcMARK(c->defname);
-  
-  gcMARK(c->interfaces);
-  gcMARK(c->interface_maps);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class));
-}
-
-int mark_class_val_FIXUP(void *p) {
-  Scheme_Class *c = (Scheme_Class *)p;
-  
-  gcFIXUP(c->ivars);
-  gcFIXUP(c->piu.insti.data);
-  
-  gcFIXUP(c->heritage);
-  gcFIXUP(c->superclass);
-  gcFIXUP(c->super_init_name);
-  gcFIXUP(c->equiv_intf);
-  
-  gcFIXUP(c->public_names);
-  gcFIXUP(c->public_map);
-  gcFIXUP(c->vslot_map);
-  gcFIXUP(c->vslot_kind);
-  
-  gcFIXUP(c->ivar_map);
-  gcFIXUP(c->ref_map);
-  
-  gcFIXUP(c->cmethods);
-  gcFIXUP(c->cmethod_ready_level);
-  gcFIXUP(c->cmethod_source_map);
-  gcFIXUP(c->closure_saved);
-  
-  gcFIXUP(c->defname);
-  
-  gcFIXUP(c->interfaces);
-  gcFIXUP(c->interface_maps);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class));
-}
-
-
-int mark_generic_data_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Generic_Data));
-}
-
-int mark_generic_data_val_MARK(void *p) {
-  Generic_Data *g = (Generic_Data *)p;
-    
-  gcMARK(g->clori);
-  gcMARK(g->ivar_name);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Generic_Data));
-}
-
-int mark_generic_data_val_FIXUP(void *p) {
-  Generic_Data *g = (Generic_Data *)p;
-    
-  gcFIXUP(g->clori);
-  gcFIXUP(g->ivar_name);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Generic_Data));
-}
-
-
-int mark_interface_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Interface));
-}
-
-int mark_interface_val_MARK(void *p) {
-  Scheme_Interface *i = (Scheme_Interface *)p;
-
-  gcMARK(i->names);
-  gcMARK(i->name_map);
-  gcMARK(i->supers);
-  gcMARK(i->supclass);
-  gcMARK(i->super_offsets);
-  gcMARK(i->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Interface));
-}
-
-int mark_interface_val_FIXUP(void *p) {
-  Scheme_Interface *i = (Scheme_Interface *)p;
-
-  gcFIXUP(i->names);
-  gcFIXUP(i->name_map);
-  gcFIXUP(i->supers);
-  gcFIXUP(i->supclass);
-  gcFIXUP(i->super_offsets);
-  gcFIXUP(i->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Interface));
-}
-
-
-int mark_class_data_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Class_Data));
-}
-
-int mark_class_data_val_MARK(void *p) {
-  Class_Data *d = (Class_Data *)p;
-  
-  gcMARK(d->ivars);
-  gcMARK(d->ivar_names);
-  gcMARK(d->cmethod_names);
-  gcMARK(d->cmethods);
-  
-  gcMARK(d->closure_map);
-  
-  gcMARK(d->super_init_name);
-  gcMARK(d->super_expr);
-  
-  gcMARK(d->interface_exprs);
-  
-  gcMARK(d->defname);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Class_Data));
-}
-
-int mark_class_data_val_FIXUP(void *p) {
-  Class_Data *d = (Class_Data *)p;
-  
-  gcFIXUP(d->ivars);
-  gcFIXUP(d->ivar_names);
-  gcFIXUP(d->cmethod_names);
-  gcFIXUP(d->cmethods);
-  
-  gcFIXUP(d->closure_map);
-  
-  gcFIXUP(d->super_init_name);
-  gcFIXUP(d->super_expr);
-  
-  gcFIXUP(d->interface_exprs);
-  
-  gcFIXUP(d->defname);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Class_Data));
-}
-
-
-int mark_interface_data_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Interface_Data));
-}
-
-int mark_interface_data_val_MARK(void *p) {
-  Interface_Data *d = (Interface_Data *)p;
-
-  gcMARK(d->names);
-  gcMARK(d->super_exprs);
-  gcMARK(d->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Interface_Data));
-}
-
-int mark_interface_data_val_FIXUP(void *p) {
-  Interface_Data *d = (Interface_Data *)p;
-
-  gcFIXUP(d->names);
-  gcFIXUP(d->super_exprs);
-  gcFIXUP(d->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Interface_Data));
-}
-
-
-int mark_dup_check_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(DupCheckRecord));
-}
-
-int mark_dup_check_MARK(void *p) {
-  DupCheckRecord *r = (DupCheckRecord *)p;
-  
-  gcMARK(r->scheck_hash);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(DupCheckRecord));
-}
-
-int mark_dup_check_FIXUP(void *p) {
-  DupCheckRecord *r = (DupCheckRecord *)p;
-  
-  gcFIXUP(r->scheck_hash);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(DupCheckRecord));
-}
-
-
-int mark_class_var_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(ClassVariable));
-}
-
-int mark_class_var_MARK(void *p) {
-  ClassVariable *cvar = (ClassVariable *)p;
-  
-  gcMARK(cvar->name);
-  gcMARK(cvar->next);
-  
-  switch(cvar->vartype) {
-  case varPUBLIC:
-  case varOVERRIDE:
-  case varPRIVATE:
-  case varNOTHING:
-  case varINPUT:
-    gcMARK(cvar->u.value);
-    break;
-  case varINHERIT:
-  case varRENAME:
-    gcMARK(cvar->u.source.name);
-    break;
-  default:
-    break;
-  }
-
-  return
-  gcBYTES_TO_WORDS(sizeof(ClassVariable));
-}
-
-int mark_class_var_FIXUP(void *p) {
-  ClassVariable *cvar = (ClassVariable *)p;
-  
-  gcFIXUP(cvar->name);
-  gcFIXUP(cvar->next);
-  
-  switch(cvar->vartype) {
-  case varPUBLIC:
-  case varOVERRIDE:
-  case varPRIVATE:
-  case varNOTHING:
-  case varINPUT:
-    gcFIXUP(cvar->u.value);
-    break;
-  case varINHERIT:
-  case varRENAME:
-    gcFIXUP(cvar->u.source.name);
-    break;
-  default:
-    break;
-  }
-
-  return
-  gcBYTES_TO_WORDS(sizeof(ClassVariable));
-}
-
-
-int mark_class_method_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(CMethod));
-}
-
-int mark_class_method_MARK(void *p) {
-  CMethod *m = (CMethod *)p;
-  
-  gcMARK(m->closed_name);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(CMethod));
-}
-
-int mark_class_method_FIXUP(void *p) {
-  CMethod *m = (CMethod *)p;
-  
-  gcFIXUP(m->closed_name);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(CMethod));
-}
-
-
-int mark_class_assembly_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class_Assembly));
-}
-
-int mark_class_assembly_MARK(void *p) {
-  mark_class_data_val_MARK(p);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class_Assembly));
-}
-
-int mark_class_assembly_FIXUP(void *p) {
-  mark_class_data_val_FIXUP(p);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class_Assembly));
-}
-
-
-int mark_init_object_rec_SIZE(void *p) {
-  Init_Object_Rec *r = (Init_Object_Rec *)p;
-
-  return
-  gcBYTES_TO_WORDS((sizeof(Init_Object_Rec)
-		    + ((r->count - 1) * sizeof(Init_Frame))));
-}
-
-int mark_init_object_rec_MARK(void *p) {
-  Init_Object_Rec *r = (Init_Object_Rec *)p;
-
-  int i;
-  
-  for (i = r->count; i--; ) {
-    gcMARK(r->frames[i].cmethods);
-    gcMARK(r->frames[i].refs);
-    gcMARK(r->frames[i].ivars);
-  }
-
-  return
-  gcBYTES_TO_WORDS((sizeof(Init_Object_Rec)
-		    + ((r->count - 1) * sizeof(Init_Frame))));
-}
-
-int mark_init_object_rec_FIXUP(void *p) {
-  Init_Object_Rec *r = (Init_Object_Rec *)p;
-
-  int i;
-  
-  for (i = r->count; i--; ) {
-    gcFIXUP(r->frames[i].cmethods);
-    gcFIXUP(r->frames[i].refs);
-    gcFIXUP(r->frames[i].ivars);
-  }
-
-  return
-  gcBYTES_TO_WORDS((sizeof(Init_Object_Rec)
-		    + ((r->count - 1) * sizeof(Init_Frame))));
-}
-
-
-int mark_super_init_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(SuperInitData));
-}
-
-int mark_super_init_data_MARK(void *p) {
-  SuperInitData *d = (SuperInitData *)p;
-  
-  gcMARK(d->o);
-  gcMARK(d->irec);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(SuperInitData));
-}
-
-int mark_super_init_data_FIXUP(void *p) {
-  SuperInitData *d = (SuperInitData *)p;
-  
-  gcFIXUP(d->o);
-  gcFIXUP(d->irec);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(SuperInitData));
-}
-
-
-#endif  /* OBJECT */
 
 /**********************************************************************/
 
@@ -3157,7 +2794,6 @@ int mark_struct_info_val_MARK(void *p) {
   gcMARK(i->name);
   gcMARK(i->fields);
   gcMARK(i->parent_type_expr);
-  gcMARK(i->inspector_expr);
   gcMARK(i->memo_names);
 
   return
@@ -3170,7 +2806,6 @@ int mark_struct_info_val_FIXUP(void *p) {
   gcFIXUP(i->name);
   gcFIXUP(i->fields);
   gcFIXUP(i->parent_type_expr);
-  gcFIXUP(i->inspector_expr);
   gcFIXUP(i->memo_names);
 
   return
@@ -3210,389 +2845,7 @@ int mark_struct_proc_info_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_SYNTAX_C
 
-int mark_linker_name_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Linker_Name));
-}
-
-int mark_linker_name_MARK(void *p) {
-  Linker_Name *n = (Linker_Name *)p;
-  
-  gcMARK(n->sym);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Linker_Name));
-}
-
-int mark_linker_name_FIXUP(void *p) {
-  Linker_Name *n = (Linker_Name *)p;
-  
-  gcFIXUP(n->sym);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Linker_Name));
-}
-
-
 #endif  /* SYNTAX */
-
-/**********************************************************************/
-
-#ifdef MARKS_FOR_UNIT_C
-
-int mark_unit_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Unit));
-}
-
-int mark_unit_val_MARK(void *p) {
-  Scheme_Unit *u = (Scheme_Unit *)p;
-
-  gcMARK(u->exports);
-  gcMARK(u->data);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Unit));
-}
-
-int mark_unit_val_FIXUP(void *p) {
-  Scheme_Unit *u = (Scheme_Unit *)p;
-
-  gcFIXUP(u->exports);
-  gcFIXUP(u->data);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Unit));
-}
-
-
-int mark_unit_body_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyData));
-}
-
-int mark_unit_body_val_MARK(void *p) {
-  BodyData *b = (BodyData *)p;
-
-  gcMARK(b->body);
-  gcMARK(b->closure_map);
-  gcMARK(b->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyData));
-}
-
-int mark_unit_body_val_FIXUP(void *p) {
-  BodyData *b = (BodyData *)p;
-
-  gcFIXUP(b->body);
-  gcFIXUP(b->closure_map);
-  gcFIXUP(b->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyData));
-}
-
-
-int compound_unit_data_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(CompoundData));
-}
-
-int compound_unit_data_val_MARK(void *p) {
-  CompoundData *d = (CompoundData *)p;
-
-  gcMARK(d->exports);
-  gcMARK(d->subunit_exprs);
-  gcMARK(d->tags);
-  gcMARK(d->param_counts);
-  gcMARK(d->param_maps);
-  gcMARK(d->defname);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(CompoundData));
-}
-
-int compound_unit_data_val_FIXUP(void *p) {
-  CompoundData *d = (CompoundData *)p;
-
-  gcFIXUP(d->exports);
-  gcFIXUP(d->subunit_exprs);
-  gcFIXUP(d->tags);
-  gcFIXUP(d->param_counts);
-  gcFIXUP(d->param_maps);
-  gcFIXUP(d->defname);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(CompoundData));
-}
-
-
-int invoke_unit_data_val_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(InvokeUnitData));
-}
-
-int invoke_unit_data_val_MARK(void *p) {
-  InvokeUnitData *d = (InvokeUnitData *)p;
-  
-  gcMARK(d->anchor_positions);
-  gcMARK(d->exports);
-  gcMARK(d->anchors);
-  gcMARK(d->expr);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(InvokeUnitData));
-}
-
-int invoke_unit_data_val_FIXUP(void *p) {
-  InvokeUnitData *d = (InvokeUnitData *)p;
-  
-  gcFIXUP(d->anchor_positions);
-  gcFIXUP(d->exports);
-  gcFIXUP(d->anchors);
-  gcFIXUP(d->expr);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(InvokeUnitData));
-}
-
-
-int mark_unit_id_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(UnitId));
-}
-
-int mark_unit_id_MARK(void *p) {
-  UnitId *id = (UnitId *)p;
-
-  gcMARK(id->tag);
-  gcMARK(id->int_id);
-  gcMARK(id->ext_id);
-  gcMARK(id->next);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(UnitId));
-}
-
-int mark_unit_id_FIXUP(void *p) {
-  UnitId *id = (UnitId *)p;
-
-  gcFIXUP(id->tag);
-  gcFIXUP(id->int_id);
-  gcFIXUP(id->ext_id);
-  gcFIXUP(id->next);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(UnitId));
-}
-
-
-int mark_body_expr_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyExpr));
-}
-
-int mark_body_expr_MARK(void *p) {
-  BodyExpr *body = (BodyExpr *)p;
-  
-  switch (body->btype) {
-  case mm_body_def: 
-    gcMARK(body->u.def.expr);
-    gcMARK(body->u.def.vars);
-    break;
-  case mm_body_seq:
-    gcMARK(body->u.seq.expr);
-    break;
-  }    
-  gcMARK(body->next);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyExpr));
-}
-
-int mark_body_expr_FIXUP(void *p) {
-  BodyExpr *body = (BodyExpr *)p;
-  
-  switch (body->btype) {
-  case mm_body_def: 
-    gcFIXUP(body->u.def.expr);
-    gcFIXUP(body->u.def.vars);
-    break;
-  case mm_body_seq:
-    gcFIXUP(body->u.seq.expr);
-    break;
-  }    
-  gcFIXUP(body->next);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyExpr));
-}
-
-
-int mark_body_var_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyVar));
-}
-
-int mark_body_var_MARK(void *p) {
-  BodyVar *v = (BodyVar *)p;
-
-  gcMARK(v->id);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyVar));
-}
-
-int mark_body_var_FIXUP(void *p) {
-  BodyVar *v = (BodyVar *)p;
-
-  gcFIXUP(v->id);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(BodyVar));
-}
-
-
-int mark_param_map_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(ParamMap));
-}
-
-int mark_param_map_MARK(void *p) {
-  ParamMap *map = (ParamMap *)p;
-
-  if (map->index >=0)
-    gcMARK(map->u.ext_id);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(ParamMap));
-}
-
-int mark_param_map_FIXUP(void *p) {
-  ParamMap *map = (ParamMap *)p;
-
-  if (map->index >=0)
-    gcFIXUP(map->u.ext_id);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(ParamMap));
-}
-
-
-int mark_export_source_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(ExportSource));
-}
-
-int mark_export_source_MARK(void *p) {
-  ExportSource *s = (ExportSource *)p;
-
-  gcMARK(s->ext_id);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(ExportSource));
-}
-
-int mark_export_source_FIXUP(void *p) {
-  ExportSource *s = (ExportSource *)p;
-
-  gcFIXUP(s->ext_id);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(ExportSource));
-}
-
-
-int mark_unit_data_closure_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(UnitDataClosure));
-}
-
-int mark_unit_data_closure_MARK(void *p) {
-  UnitDataClosure *cl = (UnitDataClosure *)p;
-
-  gcMARK(cl->data);
-  gcMARK(cl->env);
-  gcMARK(cl->closure_saved);
-  gcMARK(cl->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(UnitDataClosure));
-}
-
-int mark_unit_data_closure_FIXUP(void *p) {
-  UnitDataClosure *cl = (UnitDataClosure *)p;
-
-  gcFIXUP(cl->data);
-  gcFIXUP(cl->env);
-  gcFIXUP(cl->closure_saved);
-  gcFIXUP(cl->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(UnitDataClosure));
-}
-
-
-int mark_compound_linked_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(CompoundLinkedData));
-}
-
-int mark_compound_linked_data_MARK(void *p) {
-  CompoundLinkedData *d = (CompoundLinkedData *)p;
-  
-  gcMARK(d->subunits);
-  gcMARK(d->boxMapsList);
-  gcMARK(d->tags);
-  gcMARK(d->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(CompoundLinkedData));
-}
-
-int mark_compound_linked_data_FIXUP(void *p) {
-  CompoundLinkedData *d = (CompoundLinkedData *)p;
-  
-  gcFIXUP(d->subunits);
-  gcFIXUP(d->boxMapsList);
-  gcFIXUP(d->tags);
-  gcFIXUP(d->defname);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(CompoundLinkedData));
-}
-
-
-int mark_do_invoke_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Do_Invoke_Data));
-}
-
-int mark_do_invoke_data_MARK(void *p) {
-  Do_Invoke_Data *d = (Do_Invoke_Data *)p;
-
-  gcMARK(d->boxes);
-  gcMARK(d->anchors);
-  gcMARK(d->unit);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Do_Invoke_Data));
-}
-
-int mark_do_invoke_data_FIXUP(void *p) {
-  Do_Invoke_Data *d = (Do_Invoke_Data *)p;
-
-  gcFIXUP(d->boxes);
-  gcFIXUP(d->anchors);
-  gcFIXUP(d->unit);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Do_Invoke_Data));
-}
-
-
-#endif  /* UNIT */
 
 /**********************************************************************/
 
@@ -3618,6 +2871,32 @@ int mark_regexp_FIXUP(void *p) {
 
 
 #endif  /* REGEXP */
+
+/**********************************************************************/
+
+#ifdef MARKS_FOR_STXOBJ_C
+
+int mark_rename_table_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Module_Renames));
+}
+
+int mark_rename_table_MARK(void *p) {
+  Module_Renames *rn = (Module_Renames *)p;
+  gcMARK(rn->ht);
+  return
+  gcBYTES_TO_WORDS(sizeof(Module_Renames));
+}
+
+int mark_rename_table_FIXUP(void *p) {
+  Module_Renames *rn = (Module_Renames *)p;
+  gcFIXUP(rn->ht);
+  return
+  gcBYTES_TO_WORDS(sizeof(Module_Renames));
+}
+
+
+#endif  /* STXOBJ */
 
 /**********************************************************************/
 

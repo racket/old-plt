@@ -1799,9 +1799,9 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_STX:
       {
 	if (!local_rename_memory) {
-	  Scheme_Hash_Table *ht;
-	  ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-	  local_rename_memory = ht;
+	  Scheme_Hash_Table *rht;
+	  rht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	  local_rename_memory = rht;
 	}
 
 	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);

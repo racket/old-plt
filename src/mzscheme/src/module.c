@@ -1206,9 +1206,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (rec)
 	  e = scheme_compiled_void();
 	else {
+	  m = SCHEME_STX_CDR(e);
+	  m = SCHEME_STX_CAR(m);
 	  m = scheme_make_pair(define_syntax_stx,
-			       scheme_make_pair(SCHEME_STX_CADR(e),
-						scheme_make_pair(code, scheme_null)));
+			       scheme_make_pair(m, scheme_make_pair(code, scheme_null)));
 	  e = scheme_datum_to_syntax(m, e, e, 0);
 	}
 	normal = 0;
@@ -1304,8 +1305,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    if (!SCHEME_STX_PAIRP(SCHEME_STX_CDR(a))
 		|| !SCHEME_STX_PAIRP(SCHEME_STX_CDR(SCHEME_STX_CDR(a))))
 	      scheme_wrong_syntax("export", a, form, "bad syntax");
-	    inm = SCHEME_STX_CADR(a);
-	    enm = SCHEME_STX_CADR(SCHEME_STX_CDR(a));
+	    inm = SCHEME_STX_CDR(a);
+	    inm = SCHEME_STX_CAR(inm);
+	    enm = SCHEME_STX_CDR(a);
+	    enm = SCHEME_STX_CAR(enm);
 	    if (!SCHEME_STX_SYMBOLP(inm))
 	      scheme_wrong_syntax("export", a, form, "bad syntax (internal name is not an identifier)");
 	    if (!SCHEME_STX_SYMBOLP(enm))
@@ -1328,7 +1331,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(a))))
 	      scheme_wrong_syntax("export", a, form, "bad syntax (data following all keyword)");
 	    
-	    midx = scheme_make_modidx(scheme_syntax_to_datum(SCHEME_STX_CADR(a), 0, NULL),
+	    midx = SCHEME_STX_CDR(a);
+	    midx = SCHEME_STX_CAR(midx);
+	    midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
 				      scheme_false);
 
 	    reexported = scheme_make_pair(scheme_make_pair(midx, scheme_make_pair(a, scheme_null)), 
@@ -1341,7 +1346,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    if (scheme_stx_proper_list_length(a) < 0)
 	      scheme_wrong_syntax("export", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
 
-	    midx = scheme_make_modidx(scheme_syntax_to_datum(SCHEME_STX_CADR(a), 0, NULL),
+	    midx = SCHEME_STX_CDR(a);
+	    midx = SCHEME_STX_CAR(midx);
+	    midx = scheme_make_modidx(scheme_syntax_to_datum(midx, 0, NULL),
 				      scheme_false);
 	    exns = SCHEME_STX_CDR(SCHEME_STX_CDR(a));
 	    
@@ -1796,7 +1803,8 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       else if (len < 2)
 	scheme_wrong_syntax("import", i, form, "bad syntax (module name missing)");
 
-      idx = SCHEME_STX_CADR(i);
+      idx = SCHEME_STX_CDR(i);      
+      idx = SCHEME_STX_CAR(idx);
 
       prefix = NULL;
       exns = SCHEME_STX_CDR(SCHEME_STX_CDR(i));
@@ -1809,6 +1817,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
     } else if (SCHEME_STX_PAIRP(i)
 	       && SAME_OBJ(rename_symbol, SCHEME_STX_VAL(SCHEME_STX_CAR(i)))) {
       int len;
+      Scheme_Object *rest;
 
       len = scheme_stx_proper_list_length(i);
       if (len != 4) {
@@ -1828,9 +1837,12 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	return NULL;
       }
 
-      idx = SCHEME_STX_CADR(i);
-      iname = SCHEME_STX_CADR(SCHEME_STX_CDR(i));
-      ename = SCHEME_STX_CADR(SCHEME_STX_CDR(SCHEME_STX_CDR(i)));
+      rest = SCHEME_STX_CDR(i);
+      idx = SCHEME_STX_CAR(rest);
+      rest = SCHEME_STX_CDR(rest);
+      iname = SCHEME_STX_CAR(rest);
+      rest = SCHEME_STX_CDR(rest);
+      ename = SCHEME_STX_CAR(rest);
 
       if (!SCHEME_STX_SYMBOLP(iname))
 	scheme_wrong_syntax("import", i, form, "bad syntax (internal name is not an identifier)");

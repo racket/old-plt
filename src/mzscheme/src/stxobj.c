@@ -41,12 +41,17 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 #define HOME_MAP(a) ((a) ? ((Scheme_Env *)a)->modules : NULL)
 
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
 
 typedef struct Module_Renames {
   Scheme_Type type; /* = scheme_rename_table_type */
+  MZ_HASH_KEY_EX
   char plus_kernel, nonmodule;
   Scheme_Hash_Table *ht; /* localname -> (cons modidx exportname) */
   long phase;
@@ -83,6 +88,10 @@ static Module_Renames *krn;
 
 void scheme_init_stx(Scheme_Env *env)
 {
+#ifdef MZ_PRECISE_GC
+  register_traversers();
+#endif
+
   scheme_add_global_constant("syntax?", 
 			     scheme_make_folding_prim(syntax_p,
 						      "syntax?",
@@ -235,8 +244,9 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
   v = scheme_make_vector((2 * c) + 1, NULL);
   SCHEME_VEC_ELS(v)[0] = newname;
 
-  for (i = 0; i < c; i++)
+  for (i = 0; i < c; i++) {
     SCHEME_VEC_ELS(v)[c + 1 + i] = scheme_false;
+  }
 
   return v;
 }
@@ -511,8 +521,9 @@ static Scheme_Object *get_marks(Scheme_Object *awl)
 
   while (1) {
     /* Skip over renames: */
-    while (!SCHEME_NULLP(awl) && !SCHEME_NUMBERP(SCHEME_CAR(awl)))
+    while (!SCHEME_NULLP(awl) && !SCHEME_NUMBERP(SCHEME_CAR(awl))) {
       awl = SCHEME_CDR(awl);
+    }
 
     if (SCHEME_NULLP(awl))
       break;
@@ -913,8 +924,9 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
   Scheme_Object *l = lst, *lflat, *first, *last;
 
   /* Check whether the list ends in a null: */
-  while (SCHEME_PAIRP(l))
+  while (SCHEME_PAIRP(l)) {
     l = SCHEME_CDR(l);
+  }
 
   if (SCHEME_NULLP(l)) {
     /* Yes. We're done: */
@@ -1820,3 +1832,21 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
 	  ? scheme_true
 	  : scheme_false);
 }
+
+/**********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+START_XFORM_SKIP;
+
+#define MARKS_FOR_STXOBJ_C
+#include "mzmark.c"
+
+static void register_traversers(void)
+{
+  GC_REG_TRAV(scheme_rename_table_type, mark_rename_table);
+}
+
+END_XFORM_SKIP;
+
+#endif

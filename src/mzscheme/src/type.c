@@ -112,16 +112,12 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_integer_type, "<fixnum-integer>");
   set_name(scheme_double_type, "<inexact-number>");
   set_name(scheme_float_type, "<inexact-number*>");
-  set_name(scheme_object_type, "<object>");
-  set_name(scheme_class_type, "<class>");
-  set_name(scheme_class_data_type, "<class-code>");
   set_name(scheme_generic_type, "<unknown-external>");
   set_name(scheme_undefined_type, "<undefined>");
   set_name(scheme_eof_type, "<eof>");
   set_name(scheme_input_port_type, "<input-port>");
   set_name(scheme_output_port_type, "<output-port>");
   set_name(scheme_process_type, "<thread>");
-  set_name(scheme_promise_type, "<promise>");
   set_name(scheme_string_type, "<string>");
   set_name(scheme_struct_info_type, "<struct-info>");
   set_name(scheme_structure_type, "<struct>");
@@ -146,16 +142,9 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_namespace_type, "<namespace>");
   set_name(scheme_config_type, "<parameterization>");
   set_name(scheme_will_executor_type, "<will-executor>");
-  set_name(scheme_interface_type, "<interface>");
   set_name(scheme_random_state_type, "<pseudo-random-generator>");
   set_name(scheme_regexp_type, "<regexp>");
   set_name(scheme_rename_table_type, "<rename-table>");
-
-  set_name(scheme_compiled_unit_type, "<unit-code>");
-  set_name(scheme_unit_compound_data_type, "<compound-unit-code>");
-  set_name(scheme_invoke_unit_data_type, "<invoke-unit-code>");
-
-  set_name(scheme_interface_data_type, "<interface-code>");
 
   set_name(scheme_compilation_top_type, "<compiled-code>");
 
@@ -173,6 +162,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_module_index_type, "<module-index>");
 
   set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_reserved_2_type, "<reserved2>");
   set_name(scheme_reserved_3_type, "<reserved3>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -419,12 +409,14 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_id_macro_type, small_object);
 
-  GC_REG_TRAV(scheme_stx_type, bad_trav);
+  GC_REG_TRAV(scheme_stx_type, stx_val);
+  GC_REG_TRAV(scheme_module_type, module_val);
 
   GC_REG_TRAV(scheme_module_begin_type, small_object);
 
+  GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
+  GC_REG_TRAV(scheme_reserved_2_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
-  GC_REG_TRAV(scheme_reserved_5_type, bad_trav);
 }
 
 END_XFORM_SKIP;

@@ -503,7 +503,6 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_null_type, hash_addr);
   PROC(scheme_pair_type, hash_general);
   PROC(scheme_vector_type, hash_general);
-  PROC(scheme_closure_type, hash_general);
   PROC(scheme_input_port_type, hash_general);
   PROC(scheme_output_port_type, hash_general);
   PROC(scheme_eof_type, hash_addr);
@@ -512,11 +511,8 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_void_type, hash_addr);
   PROC(scheme_syntax_compiler_type, hash_general);
   PROC(scheme_macro_type, hash_general);
-  PROC(scheme_promise_type, hash_general);
   PROC(scheme_box_type, hash_general);
   PROC(scheme_process_type, hash_general);
-  PROC(scheme_object_type, hash_general);
-  PROC(scheme_class_type, hash_general);
   PROC(scheme_structure_type, hash_general);
   PROC(scheme_cont_mark_set_type, hash_general);
   PROC(scheme_sema_type, hash_general);
@@ -524,13 +520,11 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_weak_box_type, hash_general);
   PROC(scheme_struct_type_type, hash_general);
   PROC(scheme_id_macro_type, hash_general);
-  PROC(scheme_unit_type, hash_general);
-  PROC(scheme_exp_time_type, hash_general);
   PROC(scheme_listener_type, hash_general);
   PROC(scheme_namespace_type, hash_general);
   PROC(scheme_config_type, hash_general);
   PROC(scheme_will_executor_type, hash_general);
-  PROC(scheme_interface_type, hash_general);
+  PROC(scheme_stx_type, hash_general);
   PROC(scheme_manager_type, hash_general);
   PROC(scheme_random_state_type, hash_general);
   PROC(scheme_regexp_type, hash_general);

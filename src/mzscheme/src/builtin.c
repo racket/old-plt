@@ -31,6 +31,28 @@
 #endif
 #endif
 
+#if USE_COMPILED_STARTUP
+Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env)
+{
+  Scheme_Object *port, *expr, *saved;
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Config *config = p->config;
+
+  port = scheme_make_sized_string_input_port(str, len);
+
+  saved = scheme_get_param(config, MZCONFIG_ENV);
+  scheme_set_param(config, MZCONFIG_ENV, (Scheme_Object *)env);
+  expr = scheme_internal_read(port, NULL, 1, scheme_config
+#ifdef MZ_REAL_THREADS
+			      , p
+#endif
+			      );
+  scheme_set_param(config, MZCONFIG_ENV, saved);
+
+  return _scheme_eval_compiled(expr, env);
+}
+#endif
+
 void scheme_add_embedded_builtins(Scheme_Env *env)
 {
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)

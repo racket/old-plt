@@ -28,18 +28,16 @@ OBJS =  salloc.o \
 	hash.o \
 	image.o \
 	list.o \
+	module.o \
 	network.o \
 	numarith.o \
 	number.o \
 	numcomp.o \
 	numstr.o \
-        objclass.o \
-        object.o \
 	port.o \
 	portfun.o \
 	print.o \
 	process.o \
-	promise.o \
         rational.o \
 	read.o \
 	regexp.o \
@@ -51,8 +49,6 @@ OBJS =  salloc.o \
 	symbol.o \
 	syntax.o \
 	type.o \
-        unit.o \
-        unitsig.o \
 	vector.o \
 	main.o \
 	gc2.o
@@ -72,18 +68,16 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/hash.c \
 	$(XSRCDIR)/image.c \
 	$(XSRCDIR)/list.c \
+	$(XSRCDIR)/module.c \
 	$(XSRCDIR)/network.c \
 	$(XSRCDIR)/numarith.c \
 	$(XSRCDIR)/numcomp.c \
 	$(XSRCDIR)/number.c \
 	$(XSRCDIR)/numstr.c \
-        $(XSRCDIR)/objclass.c \
-        $(XSRCDIR)/object.c \
 	$(XSRCDIR)/port.c \
 	$(XSRCDIR)/portfun.c \
 	$(XSRCDIR)/print.c \
 	$(XSRCDIR)/process.c \
-	$(XSRCDIR)/promise.c \
         $(XSRCDIR)/rational.c \
 	$(XSRCDIR)/read.c \
 	$(XSRCDIR)/regexp.c \
@@ -95,8 +89,6 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/symbol.c \
 	$(XSRCDIR)/syntax.c \
 	$(XSRCDIR)/type.c \
-        $(XSRCDIR)/unit.c \
-        $(XSRCDIR)/unitsig.c \
 	$(XSRCDIR)/vector.c \
 	$(XSRCDIR)/main.c
 
@@ -140,6 +132,8 @@ $(XSRCDIR)/hash.c: ../src/hash.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/hash.c $(XSRCDIR)/hash.c
 $(XSRCDIR)/image.c: ../src/image.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/image.c $(XSRCDIR)/image.c
+$(XSRCDIR)/module.c: ../src/list.o $(XFORMDEP)
+	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/module.c
 $(XSRCDIR)/list.c: ../src/list.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/list.c $(XSRCDIR)/list.c
 $(XSRCDIR)/network.c: ../src/network.o $(XFORMDEP)
@@ -152,10 +146,6 @@ $(XSRCDIR)/numcomp.c: ../src/numcomp.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/numcomp.c $(XSRCDIR)/numcomp.c
 $(XSRCDIR)/numstr.c: ../src/numstr.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/numstr.c $(XSRCDIR)/numstr.c
-$(XSRCDIR)/objclass.c: ../src/objclass.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/objclass.c $(XSRCDIR)/objclass.c
-$(XSRCDIR)/object.c: ../src/object.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/object.c $(XSRCDIR)/object.c
 $(XSRCDIR)/port.c: ../src/port.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/port.c $(XSRCDIR)/port.c
 $(XSRCDIR)/portfun.c: ../src/portfun.o $(XFORMDEP)
@@ -164,8 +154,6 @@ $(XSRCDIR)/print.c: ../src/print.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/print.c $(XSRCDIR)/print.c
 $(XSRCDIR)/process.c: ../src/process.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/process.c $(XSRCDIR)/process.c
-$(XSRCDIR)/promise.c: ../src/promise.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/promise.c $(XSRCDIR)/promise.c
 $(XSRCDIR)/rational.c: ../src/rational.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/rational.c $(XSRCDIR)/rational.c
 $(XSRCDIR)/read.c: ../src/read.o $(XFORMDEP)
@@ -188,10 +176,6 @@ $(XSRCDIR)/syntax.c: ../src/syntax.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/syntax.c $(XSRCDIR)/syntax.c
 $(XSRCDIR)/type.c: ../src/type.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/type.c $(XSRCDIR)/type.c
-$(XSRCDIR)/unit.c: ../src/unit.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/unit.c $(XSRCDIR)/unit.c
-$(XSRCDIR)/unitsig.c: ../src/unitsig.o $(XFORMDEP)
-	$(XFORM) $(SRCDIR)/unitsig.c $(XSRCDIR)/unitsig.c
 $(XSRCDIR)/vector.c: ../src/vector.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/vector.c $(XSRCDIR)/vector.c
 $(XSRCDIR)/main.c: ../main.o $(XFORMDEP)
@@ -228,6 +212,8 @@ image.o: $(XSRCDIR)/image.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/image.c -o image.o
 list.o: $(XSRCDIR)/list.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/list.c -o list.o
+module.o: $(XSRCDIR)/module.c
+	$(CC) $(CFLAGS) -c $(XSRCDIR)/module.c -o module.o
 network.o: $(XSRCDIR)/network.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/network.c -o network.o
 numarith.o: $(XSRCDIR)/numarith.c
@@ -238,10 +224,6 @@ numcomp.o: $(XSRCDIR)/numcomp.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/numcomp.c -o numcomp.o
 numstr.o: $(XSRCDIR)/numstr.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/numstr.c -o numstr.o
-objclass.o: $(XSRCDIR)/objclass.c
-	$(CC) $(CFLAGS) -c $(XSRCDIR)/objclass.c -o objclass.o
-object.o: $(XSRCDIR)/object.c
-	$(CC) $(CFLAGS) -c $(XSRCDIR)/object.c -o object.o
 port.o: $(XSRCDIR)/port.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/port.c -o port.o
 portfun.o: $(XSRCDIR)/portfun.c
@@ -250,8 +232,6 @@ print.o: $(XSRCDIR)/print.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/print.c -o print.o
 process.o: $(XSRCDIR)/process.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/process.c -o process.o
-promise.o: $(XSRCDIR)/promise.c
-	$(CC) $(CFLAGS) -c $(XSRCDIR)/promise.c -o promise.o
 rational.o: $(XSRCDIR)/rational.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/rational.c -o rational.o
 read.o: $(XSRCDIR)/read.c
@@ -274,10 +254,6 @@ syntax.o: $(XSRCDIR)/syntax.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/syntax.c -o syntax.o
 type.o: $(XSRCDIR)/type.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/type.c -o type.o
-unit.o: $(XSRCDIR)/unit.c
-	$(CC) $(CFLAGS) -c $(XSRCDIR)/unit.c -o unit.o
-unitsig.o: $(XSRCDIR)/unitsig.c
-	$(CC) $(CFLAGS) -c $(XSRCDIR)/unitsig.c -o unitsig.o
 vector.o: $(XSRCDIR)/vector.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/vector.c -o vector.o
 main.o: $(XSRCDIR)/main.c

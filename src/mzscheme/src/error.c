@@ -1361,8 +1361,9 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 		       argc);
 
     args = MALLOC_N(Scheme_Object *, argc - 3);
-    for (i = 3; i < argc; i++)
+    for (i = 3; i < argc; i++) {
       args[i - 3] = argv[i];
+    }
 
     scheme_wrong_type(scheme_symbol_val(argv[0]),
 		      SCHEME_STR_VAL(argv[1]),

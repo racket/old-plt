@@ -8,6 +8,9 @@ variable_obj {
   gcMARK(b->key);
   gcMARK(b->val);
 
+  if (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+      gcMARK(((Scheme_Bucket_With_Home *)b)->home);
+
  size:
   ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
    ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
@@ -436,20 +439,6 @@ syntax_compiler {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
-promise_val {
- mark:
-  Scheme_Promise *pr = (Scheme_Promise *)p;
-
-  gcMARK(pr->val);
-  gcMARK(pr->multi_array);
-#ifdef MZ_REAL_THREADS
-  gcMARK(pr->sema);
-#endif
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Promise));
-}
-
 process_val {
  mark:
   Scheme_Process *pr = (Scheme_Process *)p;
@@ -483,6 +472,8 @@ process_val {
   gcMARK(pr->overflow);
   
   gcMARK(pr->current_local_env);
+  gcMARK(pr->current_local_mark);
+  gcMARK(pr->current_local_name);
   
   gcMARK(pr->print_buffer);
   gcMARK(pr->print_port);
@@ -502,7 +493,7 @@ process_val {
   
   gcMARK(pr->list_stack);
   
-  gcMARK(pr->vector_memory);
+  gcMARK(pr->rn_memory);
   
   gcMARK(pr->kill_data);
   gcMARK(pr->private_kill_data);
@@ -553,10 +544,26 @@ namespace_val {
  mark:
   Scheme_Env *e = (Scheme_Env *)p;
 
-  gcMARK(e->globals);
-  gcMARK(e->syntax);
-  gcMARK(e->modules);
+  gcMARK(e->module);
+  gcMARK(e->module_registry);
+
+  gcMARK(e->rename);
+  gcMARK(e->et_rename);
+
   gcMARK(e->init);
+
+  gcMARK(e->syntax);
+  gcMARK(e->exp_env);
+  gcMARK(e->val_env);
+  gcMARK(e->module_syntax);
+
+  gcMARK(e->shadowed_syntax);
+
+  gcMARK(e->link_midx);
+  gcMARK(e->for_syntax_of);
+
+  gcMARK(e->toplevel);
+  gcMARK(e->modules);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -587,6 +594,41 @@ svector_val {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
+stx_val {
+ mark:
+  Scheme_Stx *stx = (Scheme_Stx *)p;
+  gcMARK(stx->val);
+  gcMARK(stx->src);
+  gcMARK(stx->wraps);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
+}
+
+module_val {
+ mark:
+  Scheme_Module *m = (Scheme_Module *)p;
+  gcMARK(m->modname);
+
+  gcMARK(m->et_imports);
+  gcMARK(m->imports);
+
+  gcMARK(m->body);
+  gcMARK(m->et_body);
+
+  gcMARK(m->exports);
+  gcMARK(m->export_srcs);
+  gcMARK(m->export_src_names);
+
+  gcMARK(m->kernel_exlcusion);
+
+  gcMARK(m->indirect_exports);
+  gcMARK(m->self_modidx);
+
+  gcMARK(m->accessible);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Module));
+}
+
 END type;
 
 /**********************************************************************/
@@ -597,9 +639,11 @@ mark_comp_env {
  mark:
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
+  gcMARK(e->base.uid);
   gcMARK(e->base.genv);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
+  gcMARK(e->base.renames);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
@@ -615,7 +659,6 @@ mark_const_binding {
   Constant_Binding *b = (Constant_Binding *)p;
     
   gcMARK(b->name);
-  gcMARK(b->rename);
   gcMARK(b->val);
   gcMARK(b->next);
   
@@ -623,9 +666,9 @@ mark_const_binding {
   gcBYTES_TO_WORDS(sizeof(Constant_Binding));
 }
 
-mark_link_info {
+mark_resolve_info {
  mark:
-  Link_Info *i = (Link_Info *)p;
+  Resolve_Info *i = (Resolve_Info *)p;
   
   gcMARK(i->old_pos);
   gcMARK(i->new_pos);
@@ -633,7 +676,7 @@ mark_link_info {
   gcMARK(i->next);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Link_Info));
+  gcBYTES_TO_WORDS(sizeof(Resolve_Info));
 }
 
 
@@ -748,208 +791,6 @@ mark_cont_mark_chain {
 }
 
 END fun;
-
-/**********************************************************************/
-
-START object;
-
-mark_object_val {
-  Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)GC_resolve(obj->o.sclass);
-  
- mark:
-  int i;
-  
-  gcFIXUP_TYPED_NOW(Scheme_Object *, obj->o.sclass);
-  sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
-  
-  for (i = sclass->num_slots; i--; ) {
-    gcMARK(obj->slots[i]);
-  }
-
- size:
-  gcBYTES_TO_WORDS((sizeof(Internal_Object) 
-		    + (sizeof(Scheme_Object *) * (sclass->num_slots - 1))));
-}
-
-mark_class_val {
- mark:
-  Scheme_Class *c = (Scheme_Class *)p;
-  
-  gcMARK(c->ivars);
-  gcMARK(c->piu.insti.data);
-  
-  gcMARK(c->heritage);
-  gcMARK(c->superclass);
-  gcMARK(c->super_init_name);
-  gcMARK(c->equiv_intf);
-  
-  gcMARK(c->public_names);
-  gcMARK(c->public_map);
-  gcMARK(c->vslot_map);
-  gcMARK(c->vslot_kind);
-  
-  gcMARK(c->ivar_map);
-  gcMARK(c->ref_map);
-  
-  gcMARK(c->cmethods);
-  gcMARK(c->cmethod_ready_level);
-  gcMARK(c->cmethod_source_map);
-  gcMARK(c->closure_saved);
-  
-  gcMARK(c->defname);
-  
-  gcMARK(c->interfaces);
-  gcMARK(c->interface_maps);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class));
-}
-
-mark_generic_data_val {
- mark:
-  Generic_Data *g = (Generic_Data *)p;
-    
-  gcMARK(g->clori);
-  gcMARK(g->ivar_name);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Generic_Data));
-}
-
-mark_interface_val {
- mark:
-  Scheme_Interface *i = (Scheme_Interface *)p;
-
-  gcMARK(i->names);
-  gcMARK(i->name_map);
-  gcMARK(i->supers);
-  gcMARK(i->supclass);
-  gcMARK(i->super_offsets);
-  gcMARK(i->defname);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Interface));
-}
-
-mark_class_data_val {
- mark:
-  Class_Data *d = (Class_Data *)p;
-  
-  gcMARK(d->ivars);
-  gcMARK(d->ivar_names);
-  gcMARK(d->cmethod_names);
-  gcMARK(d->cmethods);
-  
-  gcMARK(d->closure_map);
-  
-  gcMARK(d->super_init_name);
-  gcMARK(d->super_expr);
-  
-  gcMARK(d->interface_exprs);
-  
-  gcMARK(d->defname);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Class_Data));
-}
-
-mark_interface_data_val {
- mark:
-  Interface_Data *d = (Interface_Data *)p;
-
-  gcMARK(d->names);
-  gcMARK(d->super_exprs);
-  gcMARK(d->defname);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(Interface_Data));
-}
-
-mark_dup_check {
- mark:
-  DupCheckRecord *r = (DupCheckRecord *)p;
-  
-  gcMARK(r->scheck_hash);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(DupCheckRecord));
-}
-
-mark_class_var {
- mark:
-  ClassVariable *cvar = (ClassVariable *)p;
-  
-  gcMARK(cvar->name);
-  gcMARK(cvar->next);
-  
-  switch(cvar->vartype) {
-  case varPUBLIC:
-  case varOVERRIDE:
-  case varPRIVATE:
-  case varNOTHING:
-  case varINPUT:
-    gcMARK(cvar->u.value);
-    break;
-  case varINHERIT:
-  case varRENAME:
-    gcMARK(cvar->u.source.name);
-    break;
-  default:
-    break;
-  }
-
- size:
-  gcBYTES_TO_WORDS(sizeof(ClassVariable));
-}
-
-mark_class_method {
- mark:
-  CMethod *m = (CMethod *)p;
-  
-  gcMARK(m->closed_name);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(CMethod));
-}
-
-mark_class_assembly {
- mark:
-  mark_class_data_val_MARK(p);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Class_Assembly));
-}
-
-mark_init_object_rec {
-  Init_Object_Rec *r = (Init_Object_Rec *)p;
-
- mark:
-  int i;
-  
-  for (i = r->count; i--; ) {
-    gcMARK(r->frames[i].cmethods);
-    gcMARK(r->frames[i].refs);
-    gcMARK(r->frames[i].ivars);
-  }
-
- size:
-  gcBYTES_TO_WORDS((sizeof(Init_Object_Rec)
-		    + ((r->count - 1) * sizeof(Init_Frame))));
-}
-
-mark_super_init_data {
- mark:
-  SuperInitData *d = (SuperInitData *)p;
-  
-  gcMARK(d->o);
-  gcMARK(d->irec);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(SuperInitData));
-}
-
-END object;
 
 /**********************************************************************/
 
@@ -1398,7 +1239,6 @@ mark_struct_info_val {
   gcMARK(i->name);
   gcMARK(i->fields);
   gcMARK(i->parent_type_expr);
-  gcMARK(i->inspector_expr);
   gcMARK(i->memo_names);
 
  size:
@@ -1422,175 +1262,7 @@ END struct;
 
 START syntax;
 
-mark_linker_name {
- mark:
-  Linker_Name *n = (Linker_Name *)p;
-  
-  gcMARK(n->sym);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Linker_Name));
-}
-
 END syntax;
-
-/**********************************************************************/
-
-START unit;
-
-mark_unit_val {
- mark:
-  Scheme_Unit *u = (Scheme_Unit *)p;
-
-  gcMARK(u->exports);
-  gcMARK(u->data);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Unit));
-}
-
-mark_unit_body_val {
- mark:
-  BodyData *b = (BodyData *)p;
-
-  gcMARK(b->body);
-  gcMARK(b->closure_map);
-  gcMARK(b->defname);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(BodyData));
-}
-
-compound_unit_data_val {
- mark:
-  CompoundData *d = (CompoundData *)p;
-
-  gcMARK(d->exports);
-  gcMARK(d->subunit_exprs);
-  gcMARK(d->tags);
-  gcMARK(d->param_counts);
-  gcMARK(d->param_maps);
-  gcMARK(d->defname);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(CompoundData));
-}
-
-invoke_unit_data_val {
- mark:
-  InvokeUnitData *d = (InvokeUnitData *)p;
-  
-  gcMARK(d->anchor_positions);
-  gcMARK(d->exports);
-  gcMARK(d->anchors);
-  gcMARK(d->expr);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(InvokeUnitData));
-}
-
-mark_unit_id {
- mark:
-  UnitId *id = (UnitId *)p;
-
-  gcMARK(id->tag);
-  gcMARK(id->int_id);
-  gcMARK(id->ext_id);
-  gcMARK(id->next);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(UnitId));
-}
-
-mark_body_expr {
- mark:
-  BodyExpr *body = (BodyExpr *)p;
-  
-  switch (body->btype) {
-  case mm_body_def: 
-    gcMARK(body->u.def.expr);
-    gcMARK(body->u.def.vars);
-    break;
-  case mm_body_seq:
-    gcMARK(body->u.seq.expr);
-    break;
-  }    
-  gcMARK(body->next);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(BodyExpr));
-}
-
-mark_body_var {
- mark:
-  BodyVar *v = (BodyVar *)p;
-
-  gcMARK(v->id);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(BodyVar));
-}
-
-mark_param_map {
- mark:
-  ParamMap *map = (ParamMap *)p;
-
-  if (map->index >=0)
-    gcMARK(map->u.ext_id);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(ParamMap));
-}
-
-mark_export_source {
- mark:
-  ExportSource *s = (ExportSource *)p;
-
-  gcMARK(s->ext_id);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(ExportSource));
-}
-
-mark_unit_data_closure {
- mark:
-  UnitDataClosure *cl = (UnitDataClosure *)p;
-
-  gcMARK(cl->data);
-  gcMARK(cl->env);
-  gcMARK(cl->closure_saved);
-  gcMARK(cl->defname);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(UnitDataClosure));
-}
-
-mark_compound_linked_data {
- mark:
-  CompoundLinkedData *d = (CompoundLinkedData *)p;
-  
-  gcMARK(d->subunits);
-  gcMARK(d->boxMapsList);
-  gcMARK(d->tags);
-  gcMARK(d->defname);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(CompoundLinkedData));
-}
-
-mark_do_invoke_data {
- mark:
-  Do_Invoke_Data *d = (Do_Invoke_Data *)p;
-
-  gcMARK(d->boxes);
-  gcMARK(d->anchors);
-  gcMARK(d->unit);
-  
- size:
-  gcBYTES_TO_WORDS(sizeof(Do_Invoke_Data));
-}
-
-END unit;
 
 /**********************************************************************/
 
@@ -1604,6 +1276,20 @@ mark_regexp {
 }
 
 END regexp;
+
+/**********************************************************************/
+
+START stxobj;
+
+mark_rename_table {
+ mark:
+  Module_Renames *rn = (Module_Renames *)p;
+  gcMARK(rn->ht);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Module_Renames));
+}
+
+END stxobj;
 
 /**********************************************************************/
 

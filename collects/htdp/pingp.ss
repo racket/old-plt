@@ -170,7 +170,7 @@
 		  (play (make-ball p1 (make-speed (rn-10-10) (rn-10-10))) p1 1)
 		  (play ball1 p1 (add1 i))))))
 	;; --- clean up
-	(printf "You kept the ball in play for ~s seconds." (- (current-seconds) start-time))
+	(printf "You kept the ball in play for ~s seconds.\n" (- (current-seconds) start-time))
 	(stop)))
 
     ;; move-paddle : (box posn) (box posn) (union #f mouse-click) -> void

@@ -13,7 +13,7 @@
 #include "wx_utils.h"
 #include "wx_dialg.h"
 #ifndef OLD_WXWINDOWS
-#include "wx_cmdlg.h"
+# include "wx_cmdlg.h"
 #endif
 #include "wx_media.h"
 #include "edjr.h"

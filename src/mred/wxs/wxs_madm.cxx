@@ -1851,118 +1851,12 @@ class wxMediaAdmin *objscheme_unbundle_wxMediaAdmin(Scheme_Object *obj, const ch
 }
 
 
-#define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
-
-
-
-
-
-class os_wxCanvasMediaAdmin : public wxCanvasMediaAdmin {
- public:
-  FIXCMA
-
-  ~os_wxCanvasMediaAdmin();
-};
-
-Scheme_Object *os_wxCanvasMediaAdmin_class;
-
-os_wxCanvasMediaAdmin::~os_wxCanvasMediaAdmin()
-{
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasMediaAdminGetCanvas(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxMediaCanvas* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxCanvasMediaAdmin *)((Scheme_Class_Object *)obj)->primdata)->GetCanvas();
-
-  
-  
-  return objscheme_bundle_wxMediaCanvas(r);
-}
-
-static Scheme_Object *objscheme_classname_os_wxCanvasMediaAdmin(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:canvas-media-admin%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:canvas-media-admin%");
-}
-
-void objscheme_setup_wxCanvasMediaAdmin(void *env)
-{
-if (os_wxCanvasMediaAdmin_class) {
-    objscheme_add_global_class(os_wxCanvasMediaAdmin_class,  "wx:canvas-media-admin%", env);
-} else {
-  os_wxCanvasMediaAdmin_class = objscheme_def_prim_class(env, "wx:canvas-media-admin%", "wx:media-admin%", NULL, 2);
-
-  scheme_add_method_w_arity(os_wxCanvasMediaAdmin_class,"get-class-name",objscheme_classname_os_wxCanvasMediaAdmin, 0, 0);
-
- scheme_add_method_w_arity(os_wxCanvasMediaAdmin_class, "get-canvas", os_wxCanvasMediaAdminGetCanvas, 0, 0);
-
-
-  scheme_made_class(os_wxCanvasMediaAdmin_class);
-
-  objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxCanvasMediaAdmin, wxTYPE_CANVAS_MEDIA_ADMIN);
-
-}
-}
-
-int objscheme_istype_wxCanvasMediaAdmin(Scheme_Object *obj, const char *stop, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxCanvasMediaAdmin_class))
-    return 1;
-  else {
-    if (!stop)
-       return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:canvas-media-admin% object or " XC_NULL_STR: "wx:canvas-media-admin% object", -1, 0, &obj);
-    return 0;
-  }
-}
-
-Scheme_Object *objscheme_bundle_wxCanvasMediaAdmin(class wxCanvasMediaAdmin *realobj)
-{
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
-
-  if (!realobj) return XC_SCHEME_NULL;
-
-  if (realobj->__gc_external)
-    return (Scheme_Object *)realobj->__gc_external;
-  if ((realobj->__type != wxTYPE_CANVAS_MEDIA_ADMIN) && (sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
-    return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxCanvasMediaAdmin_class);
-
-  obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
-  obj->primflag = 0;
-
-  realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
-  return (Scheme_Object *)obj;
-}
-
-class wxCanvasMediaAdmin *objscheme_unbundle_wxCanvasMediaAdmin(Scheme_Object *obj, const char *where, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
-
-  (void)objscheme_istype_wxCanvasMediaAdmin(obj, where, nullOK);
-  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
-  if (o->primflag)
-    return (os_wxCanvasMediaAdmin *)o->primdata;
-  else
-    return (wxCanvasMediaAdmin *)o->primdata;
-}
-
+// #define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
+// @CLASSBASE wxCanvasMediaAdmin "wx:canvas-media-admin":"wx:media-admin"
+// @CLASSID wxTYPE_CANVAS_MEDIA_ADMIN
+// @VAR FIXCMA
+// @ "get-canvas" : wxMediaCanvas! GetCanvas()
+// @END
 
 #define FIXMSMA os_wxMediaSnipMediaAdmin() : wxMediaSnipMediaAdmin(NULL) {}
 

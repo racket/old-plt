@@ -29,13 +29,6 @@ void objscheme_setup_wxMediaAdmin(void *env);
 int objscheme_istype_wxMediaAdmin(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMediaAdmin(class wxMediaAdmin *realobj);
 class wxMediaAdmin *objscheme_unbundle_wxMediaAdmin(Scheme_Object *obj, const char *where, int nullOK);
-extern Scheme_Object *objscheme_bundle_wxMediaCanvas(class wxMediaCanvas *);
-#endif
-void objscheme_setup_wxCanvasMediaAdmin(void *env);
-#ifndef WXS_SETUP_ONLY
-int objscheme_istype_wxCanvasMediaAdmin(Scheme_Object *obj, const char *stop, int nullOK);
-Scheme_Object *objscheme_bundle_wxCanvasMediaAdmin(class wxCanvasMediaAdmin *realobj);
-class wxCanvasMediaAdmin *objscheme_unbundle_wxCanvasMediaAdmin(Scheme_Object *obj, const char *where, int nullOK);
 extern Scheme_Object *objscheme_bundle_wxMediaSnip(class wxMediaSnip *);
 #endif
 void objscheme_setup_wxMediaSnipMediaAdmin(void *env);

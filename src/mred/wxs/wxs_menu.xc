@@ -69,7 +69,7 @@
 @CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0."wx:menu-bar%::initialization"] | glueListSet[string.1.2.0."wx:menu-bar%::initialization"]// <> wx:menu% list
 
 @ "append" : void Append(wxMenu!,string);
-@ "delete" : bool Delete(wxMenu!,int=0);
+@ "delete" : bool Delete(wxMenu^,int=0);
 @ "check" : void Check(int,bool); : : /CHECKNEGVOID[0]
 @ "checked?" : bool Checked(int); : : /CHECKNEGFALSE[0]
 @ "enable" : void Enable(int,bool); : : /CHECKNEGVOID[0]

@@ -94,17 +94,12 @@ typedef void *(*CAPOFunc)(void*);
 
 @END
 
-#define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
-
-@CLASSBASE wxCanvasMediaAdmin "wx:canvas-media-admin":"wx:media-admin"
-
-@CLASSID wxTYPE_CANVAS_MEDIA_ADMIN
-
-@VAR FIXCMA
-
-@ "get-canvas" : wxMediaCanvas! GetCanvas()
-
-@END
+// #define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
+// @CLASSBASE wxCanvasMediaAdmin "wx:canvas-media-admin":"wx:media-admin"
+// @CLASSID wxTYPE_CANVAS_MEDIA_ADMIN
+// @VAR FIXCMA
+// @ "get-canvas" : wxMediaCanvas! GetCanvas()
+// @END
 
 #define FIXMSMA os_wxMediaSnipMediaAdmin() : wxMediaSnipMediaAdmin(NULL) {}
 

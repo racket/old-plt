@@ -123,7 +123,7 @@ class os_wxCanvas : public wxCanvas {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
-  void OnScroll(class wxCommandEvent& x0);
+  void OnScroll(class wxScrollEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
   void OnPaint();
@@ -312,7 +312,7 @@ wxCanvas::OnKillFocus();
   }
 }
 
-void os_wxCanvas::OnScroll(class wxCommandEvent& x0)
+void os_wxCanvas::OnScroll(class wxScrollEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -334,7 +334,7 @@ void os_wxCanvas::OnScroll(class wxCommandEvent& x0)
 wxCanvas::OnScroll(x0);
   } else {
   
-  p[0] = objscheme_bundle_wxCommandEvent(&x0);
+  p[0] = objscheme_bundle_wxScrollEvent(&x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -557,10 +557,10 @@ static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Obj
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  class wxCommandEvent* x0;
+  class wxScrollEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxCommandEvent(p[0], "wx:canvas%::on-scroll", 0);
+  x0 = objscheme_unbundle_wxScrollEvent(p[0], "wx:canvas%::on-scroll", 0);
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { return scheme_void; }
   if (((Scheme_Class_Object *)obj)->primflag)

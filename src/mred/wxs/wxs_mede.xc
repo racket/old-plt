@@ -35,7 +35,14 @@
 @SYM "after-or-none" : wxSNIP_AFTER_OR_NULL
 @ENDSYMBOLS
 
-@INCLUDE wxs_bkt.xci
+@BEGINSYMBOLS breakType > ONE
+@SYM "caret" : wxBREAK_FOR_CARET
+@SYM "line" : wxBREAK_FOR_LINE
+@SYM "selection" : wxBREAK_FOR_SELECTION
+@SYM "user1" : wxBREAK_FOR_USER_1
+@SYM "user2" : wxBREAK_FOR_USER_2
+@ENDSYMBOLS
+
 @INCLUDE wxs_fcs.xci
 
 @CLASSBASE wxMediaEdit "wx:media-edit" : "wx:media-buffer"

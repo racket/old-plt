@@ -7,30 +7,45 @@
 
 @HEADER
 
-@BEGINSYMBOLS eventClass > ONE
-@SYM "key" : wxTYPE_KEY_EVENT
-@SYM "command" : wxTYPE_COMMAND_EVENT
-@SYM "mouse" : wxTYPE_MOUSE_EVENT
-@ENDSYMBOLS
-
 @CLASSBASE wxEvent "wx:event":"wx:object"
 
-@IVAR "event-class" : SYM[eventClass] eventClass
-@IVAR "event-object" : wxObject^ eventObject
+@CREATOR ()
+
+@IVAR "time-stamp" : long timeStamp
 
 @END
 
-@BEGINSYMBOLS commandType > ONE
+@BEGINSYMBOLS actionType > ONE
 @SYM "button" : wxEVENT_TYPE_BUTTON_COMMAND
 @SYM "check-box" : wxEVENT_TYPE_CHECKBOX_COMMAND
 @SYM "choice" : wxEVENT_TYPE_CHOICE_COMMAND
 @SYM "list-box" : wxEVENT_TYPE_LISTBOX_COMMAND
+@SYM "list-box-dclick" : wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND
 @SYM "text" : wxEVENT_TYPE_TEXT_COMMAND
 @SYM "slider" : wxEVENT_TYPE_SLIDER_COMMAND
 @SYM "radio-box" : wxEVENT_TYPE_RADIOBOX_COMMAND
 @SYM "text-enter" : wxEVENT_TYPE_TEXT_ENTER_COMMAND
-@SYM "set-focus" : wxEVENT_TYPE_SET_FOCUS
-@SYM "kill-focus" : wxEVENT_TYPE_KILL_FOCUS
+@SYM "menu" : wxEVENT_TYPE_MENU_SELECT
+@ENDSYMBOLS
+
+@CLASSBASE wxCommandEvent "wx:control-event":"wx:event"
+
+@CREATOR (SYM[actionType])
+
+@IVAR "event-type" : SYM[actionType] eventType
+
+@END
+
+
+@CLASSBASE wxPopupEvent "wx:popup-event":"wx:control-event"
+
+@CREATOR ()
+
+@IVAR "menu-id" : int menuId
+
+@END
+
+@BEGINSYMBOLS scrollMoveType > ONE
 @SYM "scroll-top" : wxEVENT_TYPE_SCROLL_TOP
 @SYM "scroll-bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
 @SYM "scroll-line-up" : wxEVENT_TYPE_SCROLL_LINEUP
@@ -40,33 +55,17 @@
 @SYM "scroll-thumb" : wxEVENT_TYPE_SCROLL_THUMBTRACK
 @ENDSYMBOLS
 
-Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
-{
-   return (ce->extraLong == 2);
-}
+@INCLUDE wxs_ornt.xci
 
-@CLASSBASE wxCommandEvent "wx:command-event":"wx:event"
+@CLASSBASE wxScrollEvent "wx:scroll-event":"wx:event"
 
-@CREATOR (SYM[commandType])
+@CREATOR ()
 
-@ "checked?" : bool Checked();
-@ "is-selection?" : bool IsSelection();
-@ m "is-double-click?" : bool CommandEventIsDoubleClick();
-
-@IVAR "event-type" : SYM[commandType] eventType
-@IVAR "selection-type" : long extraLong
-@IVAR "selection" : int commandInt
-@IVAR "string" : nstring commandString
-
-// These will be removed in the next version
-#define __commandInt commandInt
-#define __commandString commandString
-#define __extraLong extraLong
-@IVAR "command-int" : int __commandInt
-@IVAR "command-string" : nstring __commandString
-@IVAR "extra-long" : long __extraLong
+@IVAR "event-type" : SYM[scrollMoveType] moveType
+@IVAR "direction" : SYM[orientation] direction
 
 @END
+
 
 @BEGINSYMBOLS keyCode > ONE/CHAR
 @SYM "escape" : WXK_ESCAPE
@@ -142,17 +141,13 @@ Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 @CLASSBASE wxKeyEvent "wx:key-event":"wx:event"
 
 @MACRO SETX0 = x0=wxEVENT_TYPE_CHAR;
-
 @CREATOR (-int=wxEVENT_TYPE_CHAR); : : /SETX0
-
-// @ "key-code" : SYM[keyCode] KeyCode();
 
 @IVAR "key-code" : SYM[keyCode] keyCode
 @IVAR "shift-down" : bool shiftDown
 @IVAR "control-down" : bool controlDown
 @IVAR "meta-down" : bool metaDown
 @IVAR "alt-down" : bool altDown
-@IVAR "time-stamp" : long timeStamp
 
 @IVAR "x" : float x
 @IVAR "y" : float y
@@ -167,25 +162,32 @@ Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 @SYM "right-down" : wxEVENT_TYPE_RIGHT_DOWN
 @SYM "right-up" : wxEVENT_TYPE_RIGHT_UP
 @SYM "motion" : wxEVENT_TYPE_MOTION
-@SYM "enter-window" : wxEVENT_TYPE_ENTER_WINDOW
-@SYM "leave-window" : wxEVENT_TYPE_LEAVE_WINDOW
+@SYM "enter" : wxEVENT_TYPE_ENTER_WINDOW
+@SYM "leave" : wxEVENT_TYPE_LEAVE_WINDOW
 @SYM "left-dclick" : wxEVENT_TYPE_LEFT_DCLICK
 @SYM "middle-dclick" : wxEVENT_TYPE_MIDDLE_DCLICK
 @SYM "right-dclick" : wxEVENT_TYPE_RIGHT_DCLICK
+@ENDSYMBOLS
+
+#define NEGATIVE_ONE (-1)
+@BEGINSYMBOLS buttonId > ONE
+@SYM "all" : NEGATIVE_ONE
+@SYM "left" : 1
+@SYM "middle" : 2
+@SYM "right" : 3
 @ENDSYMBOLS
 
 @CLASSBASE wxMouseEvent "wx:mouse-event":"wx:event"
 
 @CREATOR (SYM[mouseEventType]);
 
-@ "button?" : bool Button(int);
-@ "button-d-click?" : bool ButtonDClick(int=-1);
-@ "button-down?" : bool ButtonDown(int=-1);
-@ "button-up?" : bool ButtonUp(int=-1);
+@ "button-changed?" : bool Button(SYM[buttonId]);
+@ "button-dclick?" : bool ButtonDClick(SYM[buttonId]=-1);
+@ "button-down?" : bool ButtonDown(SYM[buttonId]=-1);
+@ "button-up?" : bool ButtonUp(SYM[buttonId]=-1);
 @ "dragging?" : bool Dragging();
 @ "entering?" : bool Entering();
 @ "leaving?" : bool Leaving();
-@ "is-button?" : bool IsButton();
 @ "moving?" : bool Moving();
 
 @IVAR "event-type" : SYM[mouseEventType] eventType
@@ -198,6 +200,5 @@ Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 @IVAR "alt-down" : bool altDown
 @IVAR "x" : float x
 @IVAR "y" : float y
-@IVAR "time-stamp" : long timeStamp
 
 @END

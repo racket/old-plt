@@ -17,120 +17,78 @@
 #include "wxscomon.h"
 
 
-static Scheme_Object *eventClass_wxTYPE_KEY_EVENT_sym = NULL;
-static Scheme_Object *eventClass_wxTYPE_COMMAND_EVENT_sym = NULL;
-static Scheme_Object *eventClass_wxTYPE_MOUSE_EVENT_sym = NULL;
-
-static void init_symset_eventClass(void) {
-  eventClass_wxTYPE_KEY_EVENT_sym = scheme_intern_symbol("key");
-  eventClass_wxTYPE_COMMAND_EVENT_sym = scheme_intern_symbol("command");
-  eventClass_wxTYPE_MOUSE_EVENT_sym = scheme_intern_symbol("mouse");
-}
-
-static int unbundle_symset_eventClass(Scheme_Object *v, const char *where) {
-  if (!eventClass_wxTYPE_MOUSE_EVENT_sym) init_symset_eventClass();
-  if (0) { }
-  else if (v == eventClass_wxTYPE_KEY_EVENT_sym) { return wxTYPE_KEY_EVENT; }
-  else if (v == eventClass_wxTYPE_COMMAND_EVENT_sym) { return wxTYPE_COMMAND_EVENT; }
-  else if (v == eventClass_wxTYPE_MOUSE_EVENT_sym) { return wxTYPE_MOUSE_EVENT; }
-  if (where) scheme_wrong_type(where, "eventClass symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_eventClass(Scheme_Object *v, const char *where) {
-  if (!eventClass_wxTYPE_MOUSE_EVENT_sym) init_symset_eventClass();
-  if (0) { }
-  else if (v == eventClass_wxTYPE_KEY_EVENT_sym) { return 1; }
-  else if (v == eventClass_wxTYPE_COMMAND_EVENT_sym) { return 1; }
-  else if (v == eventClass_wxTYPE_MOUSE_EVENT_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "eventClass symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_eventClass(int v) {
-  if (!eventClass_wxTYPE_MOUSE_EVENT_sym) init_symset_eventClass();
-  switch (v) {
-  case wxTYPE_KEY_EVENT: return eventClass_wxTYPE_KEY_EVENT_sym;
-  case wxTYPE_COMMAND_EVENT: return eventClass_wxTYPE_COMMAND_EVENT_sym;
-  case wxTYPE_MOUSE_EVENT: return eventClass_wxTYPE_MOUSE_EVENT_sym;
-  default: return NULL;
-  }
-}
-
 
 
 
 class os_wxEvent : public wxEvent {
  public:
 
+  os_wxEvent(Scheme_Object * obj);
   ~os_wxEvent();
 };
 
 Scheme_Object *os_wxEvent_class;
+
+os_wxEvent::os_wxEvent(Scheme_Object * o)
+: wxEvent()
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
 
 os_wxEvent::~os_wxEvent()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-static Scheme_Object *objscheme_wxEvent_GeteventClass(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *objscheme_wxEvent_GettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  int v;
+  long v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-event-class", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-time-stamp", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
-    v = ((os_wxEvent *)cobj->primdata)->wxEvent::eventClass;
+    v = ((os_wxEvent *)cobj->primdata)->wxEvent::timeStamp;
   else
-    v = ((wxEvent *)cobj->primdata)->eventClass;
+    v = ((wxEvent *)cobj->primdata)->timeStamp;
 
-  return bundle_symset_eventClass(v);
+  return scheme_make_integer(v);
 }
 
-static Scheme_Object *objscheme_wxEvent_SeteventClass(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  int v;
+  long v;
 
-  if (n != 1) scheme_wrong_count("set-event-class", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-time-stamp", 1, 1, n, p);
 
-  v = unbundle_symset_eventClass(p[0], "wx:event%::event-class");
-  ((wxEvent *)cobj->primdata)->eventClass = v;
+  v = objscheme_unbundle_integer(p[0], "wx:event%::time-stamp");
+  ((wxEvent *)cobj->primdata)->timeStamp = v;
 
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_wxEvent_GeteventObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
+#pragma argsused
+static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
-  class wxObject* v;
+  os_wxEvent *realobj;
 
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-event-object", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxEvent *)cobj->primdata)->wxEvent::eventObject;
-  else
-    v = ((wxEvent *)cobj->primdata)->eventObject;
+  
+  if (n != 0) 
+    scheme_wrong_count("wx:event%::initialization", 0, 0, n, p);
 
-  return objscheme_bundle_wxObject(v);
-}
-
-static Scheme_Object *objscheme_wxEvent_SeteventObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  class wxObject* v;
-
-  if (n != 1) scheme_wrong_count("set-event-object", 1, 1, n, p);
-
-  v = objscheme_unbundle_wxObject(p[0], "wx:event%::event-object", 1);
-  ((wxEvent *)cobj->primdata)->eventObject = v;
-
-  return scheme_void;
+  
+  realobj = new os_wxEvent(obj);
+  
+  
+  ((Scheme_Class_Object *)obj)->primdata = realobj;
+  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  ((Scheme_Class_Object *)obj)->primflag = 1;
+  return obj;
 }
 
 static Scheme_Object *objscheme_classname_os_wxEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -145,15 +103,13 @@ void objscheme_setup_wxEvent(void *env)
 if (os_wxEvent_class) {
     objscheme_add_global_class(os_wxEvent_class,  "wx:event%", env);
 } else {
-  os_wxEvent_class = objscheme_def_prim_class(env, "wx:event%", "wx:object%", NULL, 5);
+  os_wxEvent_class = objscheme_def_prim_class(env, "wx:event%", "wx:object%", os_wxEvent_ConstructScheme, 3);
 
   scheme_add_method_w_arity(os_wxEvent_class,"get-class-name",objscheme_classname_os_wxEvent, 0, 0);
 
 
-  scheme_add_method_w_arity(os_wxEvent_class,"get-event-class", objscheme_wxEvent_GeteventClass, 0, 0);
-  scheme_add_method_w_arity(os_wxEvent_class,"set-event-class", objscheme_wxEvent_SeteventClass, 1, 1);
-  scheme_add_method_w_arity(os_wxEvent_class,"get-event-object", objscheme_wxEvent_GeteventObject, 0, 0);
-  scheme_add_method_w_arity(os_wxEvent_class,"set-event-object", objscheme_wxEvent_SeteventObject, 1, 1);
+  scheme_add_method_w_arity(os_wxEvent_class,"get-time-stamp", objscheme_wxEvent_GettimeStamp, 0, 0);
+  scheme_add_method_w_arity(os_wxEvent_class,"set-time-stamp", objscheme_wxEvent_SettimeStamp, 1, 1);
 
   scheme_made_class(os_wxEvent_class);
 
@@ -211,130 +167,84 @@ class wxEvent *objscheme_unbundle_wxEvent(Scheme_Object *obj, const char *where,
 }
 
 
-static Scheme_Object *commandType_wxEVENT_TYPE_BUTTON_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_CHOICE_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_TEXT_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SLIDER_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SET_FOCUS_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_KILL_FOCUS_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_TOP_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_LINEUP_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = NULL;
-static Scheme_Object *commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = NULL;
+static Scheme_Object *actionType_wxEVENT_TYPE_MENU_SELECT_sym = NULL;
 
-static void init_symset_commandType(void) {
-  commandType_wxEVENT_TYPE_BUTTON_COMMAND_sym = scheme_intern_symbol("button");
-  commandType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = scheme_intern_symbol("check-box");
-  commandType_wxEVENT_TYPE_CHOICE_COMMAND_sym = scheme_intern_symbol("choice");
-  commandType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = scheme_intern_symbol("list-box");
-  commandType_wxEVENT_TYPE_TEXT_COMMAND_sym = scheme_intern_symbol("text");
-  commandType_wxEVENT_TYPE_SLIDER_COMMAND_sym = scheme_intern_symbol("slider");
-  commandType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = scheme_intern_symbol("radio-box");
-  commandType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = scheme_intern_symbol("text-enter");
-  commandType_wxEVENT_TYPE_SET_FOCUS_sym = scheme_intern_symbol("set-focus");
-  commandType_wxEVENT_TYPE_KILL_FOCUS_sym = scheme_intern_symbol("kill-focus");
-  commandType_wxEVENT_TYPE_SCROLL_TOP_sym = scheme_intern_symbol("scroll-top");
-  commandType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = scheme_intern_symbol("scroll-bottom");
-  commandType_wxEVENT_TYPE_SCROLL_LINEUP_sym = scheme_intern_symbol("scroll-line-up");
-  commandType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = scheme_intern_symbol("scroll-line-down");
-  commandType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = scheme_intern_symbol("scroll-page-up");
-  commandType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = scheme_intern_symbol("scroll-page-down");
-  commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = scheme_intern_symbol("scroll-thumb");
+static void init_symset_actionType(void) {
+  actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym = scheme_intern_symbol("button");
+  actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym = scheme_intern_symbol("check-box");
+  actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym = scheme_intern_symbol("choice");
+  actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = scheme_intern_symbol("list-box");
+  actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym = scheme_intern_symbol("list-box-dclick");
+  actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = scheme_intern_symbol("text");
+  actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = scheme_intern_symbol("slider");
+  actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = scheme_intern_symbol("radio-box");
+  actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = scheme_intern_symbol("text-enter");
+  actionType_wxEVENT_TYPE_MENU_SELECT_sym = scheme_intern_symbol("menu");
 }
 
-static int unbundle_symset_commandType(Scheme_Object *v, const char *where) {
-  if (!commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_commandType();
+static int unbundle_symset_actionType(Scheme_Object *v, const char *where) {
+  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
   if (0) { }
-  else if (v == commandType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return wxEVENT_TYPE_BUTTON_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return wxEVENT_TYPE_CHECKBOX_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_CHOICE_COMMAND_sym) { return wxEVENT_TYPE_CHOICE_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_LISTBOX_COMMAND_sym) { return wxEVENT_TYPE_LISTBOX_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_TEXT_COMMAND_sym) { return wxEVENT_TYPE_TEXT_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_SLIDER_COMMAND_sym) { return wxEVENT_TYPE_SLIDER_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return wxEVENT_TYPE_RADIOBOX_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return wxEVENT_TYPE_TEXT_ENTER_COMMAND; }
-  else if (v == commandType_wxEVENT_TYPE_SET_FOCUS_sym) { return wxEVENT_TYPE_SET_FOCUS; }
-  else if (v == commandType_wxEVENT_TYPE_KILL_FOCUS_sym) { return wxEVENT_TYPE_KILL_FOCUS; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_TOP_sym) { return wxEVENT_TYPE_SCROLL_TOP; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_BOTTOM_sym) { return wxEVENT_TYPE_SCROLL_BOTTOM; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_LINEUP_sym) { return wxEVENT_TYPE_SCROLL_LINEUP; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym) { return wxEVENT_TYPE_SCROLL_LINEDOWN; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return wxEVENT_TYPE_SCROLL_PAGEUP; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return wxEVENT_TYPE_SCROLL_PAGEDOWN; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return wxEVENT_TYPE_SCROLL_THUMBTRACK; }
-  if (where) scheme_wrong_type(where, "commandType symbol", -1, 0, &v);
+  else if (v == actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return wxEVENT_TYPE_BUTTON_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return wxEVENT_TYPE_CHECKBOX_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym) { return wxEVENT_TYPE_CHOICE_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym) { return wxEVENT_TYPE_LISTBOX_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym) { return wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_TEXT_COMMAND_sym) { return wxEVENT_TYPE_TEXT_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym) { return wxEVENT_TYPE_SLIDER_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return wxEVENT_TYPE_RADIOBOX_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return wxEVENT_TYPE_TEXT_ENTER_COMMAND; }
+  else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return wxEVENT_TYPE_MENU_SELECT; }
+  if (where) scheme_wrong_type(where, "actionType symbol", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_commandType(Scheme_Object *v, const char *where) {
-  if (!commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_commandType();
+static int istype_symset_actionType(Scheme_Object *v, const char *where) {
+  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
   if (0) { }
-  else if (v == commandType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_CHOICE_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_LISTBOX_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_TEXT_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SLIDER_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SET_FOCUS_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_KILL_FOCUS_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_TOP_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_BOTTOM_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_LINEUP_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return 1; }
-  else if (v == commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "commandType symbol", -1, 0, &v);
+  else if (v == actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_TEXT_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym) { return 1; }
+  else if (v == actionType_wxEVENT_TYPE_MENU_SELECT_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "actionType symbol", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_commandType(int v) {
-  if (!commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_commandType();
+static Scheme_Object *bundle_symset_actionType(int v) {
+  if (!actionType_wxEVENT_TYPE_MENU_SELECT_sym) init_symset_actionType();
   switch (v) {
-  case wxEVENT_TYPE_BUTTON_COMMAND: return commandType_wxEVENT_TYPE_BUTTON_COMMAND_sym;
-  case wxEVENT_TYPE_CHECKBOX_COMMAND: return commandType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym;
-  case wxEVENT_TYPE_CHOICE_COMMAND: return commandType_wxEVENT_TYPE_CHOICE_COMMAND_sym;
-  case wxEVENT_TYPE_LISTBOX_COMMAND: return commandType_wxEVENT_TYPE_LISTBOX_COMMAND_sym;
-  case wxEVENT_TYPE_TEXT_COMMAND: return commandType_wxEVENT_TYPE_TEXT_COMMAND_sym;
-  case wxEVENT_TYPE_SLIDER_COMMAND: return commandType_wxEVENT_TYPE_SLIDER_COMMAND_sym;
-  case wxEVENT_TYPE_RADIOBOX_COMMAND: return commandType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym;
-  case wxEVENT_TYPE_TEXT_ENTER_COMMAND: return commandType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym;
-  case wxEVENT_TYPE_SET_FOCUS: return commandType_wxEVENT_TYPE_SET_FOCUS_sym;
-  case wxEVENT_TYPE_KILL_FOCUS: return commandType_wxEVENT_TYPE_KILL_FOCUS_sym;
-  case wxEVENT_TYPE_SCROLL_TOP: return commandType_wxEVENT_TYPE_SCROLL_TOP_sym;
-  case wxEVENT_TYPE_SCROLL_BOTTOM: return commandType_wxEVENT_TYPE_SCROLL_BOTTOM_sym;
-  case wxEVENT_TYPE_SCROLL_LINEUP: return commandType_wxEVENT_TYPE_SCROLL_LINEUP_sym;
-  case wxEVENT_TYPE_SCROLL_LINEDOWN: return commandType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym;
-  case wxEVENT_TYPE_SCROLL_PAGEUP: return commandType_wxEVENT_TYPE_SCROLL_PAGEUP_sym;
-  case wxEVENT_TYPE_SCROLL_PAGEDOWN: return commandType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym;
-  case wxEVENT_TYPE_SCROLL_THUMBTRACK: return commandType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym;
+  case wxEVENT_TYPE_BUTTON_COMMAND: return actionType_wxEVENT_TYPE_BUTTON_COMMAND_sym;
+  case wxEVENT_TYPE_CHECKBOX_COMMAND: return actionType_wxEVENT_TYPE_CHECKBOX_COMMAND_sym;
+  case wxEVENT_TYPE_CHOICE_COMMAND: return actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym;
+  case wxEVENT_TYPE_LISTBOX_COMMAND: return actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym;
+  case wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND: return actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym;
+  case wxEVENT_TYPE_TEXT_COMMAND: return actionType_wxEVENT_TYPE_TEXT_COMMAND_sym;
+  case wxEVENT_TYPE_SLIDER_COMMAND: return actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym;
+  case wxEVENT_TYPE_RADIOBOX_COMMAND: return actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym;
+  case wxEVENT_TYPE_TEXT_ENTER_COMMAND: return actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym;
+  case wxEVENT_TYPE_MENU_SELECT: return actionType_wxEVENT_TYPE_MENU_SELECT_sym;
   default: return NULL;
   }
 }
 
 
-Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
-{
-   return (ce->extraLong == 2);
-}
 
 
-
-
-
-// These will be removed in the next version
-#define __commandInt commandInt
-#define __commandString commandString
-#define __extraLong extraLong
 
 class os_wxCommandEvent : public wxCommandEvent {
  public:
@@ -358,57 +268,6 @@ os_wxCommandEvent::~os_wxCommandEvent()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-#pragma argsused
-static Scheme_Object *os_wxCommandEventCommandEventIsDoubleClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = CommandEventIsDoubleClick(((wxCommandEvent *)((Scheme_Class_Object *)obj)->primdata));
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCommandEventIsSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxCommandEvent *)((Scheme_Class_Object *)obj)->primdata)->IsSelection();
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCommandEventChecked(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxCommandEvent *)((Scheme_Class_Object *)obj)->primdata)->Checked();
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
 static Scheme_Object *objscheme_wxCommandEvent_GeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
@@ -422,7 +281,7 @@ static Scheme_Object *objscheme_wxCommandEvent_GeteventType(Scheme_Object *obj, 
   else
     v = ((wxCommandEvent *)cobj->primdata)->eventType;
 
-  return bundle_symset_commandType(v);
+  return bundle_symset_actionType(v);
 }
 
 static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -433,188 +292,8 @@ static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, 
 
   if (n != 1) scheme_wrong_count("set-event-type", 1, 1, n, p);
 
-  v = unbundle_symset_commandType(p[0], "wx:command-event%::event-type");
+  v = unbundle_symset_actionType(p[0], "wx:control-event%::event-type");
   ((wxCommandEvent *)cobj->primdata)->eventType = v;
-
-  return scheme_void;
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_GetextraLong(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  long v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-selection-type", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::extraLong;
-  else
-    v = ((wxCommandEvent *)cobj->primdata)->extraLong;
-
-  return scheme_make_integer(v);
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_SetextraLong(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  long v;
-
-  if (n != 1) scheme_wrong_count("set-selection-type", 1, 1, n, p);
-
-  v = objscheme_unbundle_integer(p[0], "wx:command-event%::selection-type");
-  ((wxCommandEvent *)cobj->primdata)->extraLong = v;
-
-  return scheme_void;
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_GetcommandInt(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  int v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-selection", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::commandInt;
-  else
-    v = ((wxCommandEvent *)cobj->primdata)->commandInt;
-
-  return scheme_make_integer(v);
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_SetcommandInt(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  int v;
-
-  if (n != 1) scheme_wrong_count("set-selection", 1, 1, n, p);
-
-  v = objscheme_unbundle_integer(p[0], "wx:command-event%::selection");
-  ((wxCommandEvent *)cobj->primdata)->commandInt = v;
-
-  return scheme_void;
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_GetcommandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  nstring v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-string", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::commandString;
-  else
-    v = ((wxCommandEvent *)cobj->primdata)->commandString;
-
-  return objscheme_bundle_string((char *)v);
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_SetcommandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  nstring v;
-
-  if (n != 1) scheme_wrong_count("set-string", 1, 1, n, p);
-
-  v = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:command-event%::string");
-  ((wxCommandEvent *)cobj->primdata)->commandString = v;
-
-  return scheme_void;
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_Get__commandInt(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  int v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-command-int", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::__commandInt;
-  else
-    v = ((wxCommandEvent *)cobj->primdata)->__commandInt;
-
-  return scheme_make_integer(v);
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_Set__commandInt(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  int v;
-
-  if (n != 1) scheme_wrong_count("set-command-int", 1, 1, n, p);
-
-  v = objscheme_unbundle_integer(p[0], "wx:command-event%::command-int");
-  ((wxCommandEvent *)cobj->primdata)->__commandInt = v;
-
-  return scheme_void;
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_Get__commandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  nstring v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-command-string", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::__commandString;
-  else
-    v = ((wxCommandEvent *)cobj->primdata)->__commandString;
-
-  return objscheme_bundle_string((char *)v);
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_Set__commandString(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  nstring v;
-
-  if (n != 1) scheme_wrong_count("set-command-string", 1, 1, n, p);
-
-  v = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:command-event%::command-string");
-  ((wxCommandEvent *)cobj->primdata)->__commandString = v;
-
-  return scheme_void;
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_Get__extraLong(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  long v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-extra-long", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxCommandEvent *)cobj->primdata)->wxCommandEvent::__extraLong;
-  else
-    v = ((wxCommandEvent *)cobj->primdata)->__extraLong;
-
-  return scheme_make_integer(v);
-}
-
-static Scheme_Object *objscheme_wxCommandEvent_Set__extraLong(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  long v;
-
-  if (n != 1) scheme_wrong_count("set-extra-long", 1, 1, n, p);
-
-  v = objscheme_unbundle_integer(p[0], "wx:command-event%::extra-long");
-  ((wxCommandEvent *)cobj->primdata)->__extraLong = v;
 
   return scheme_void;
 }
@@ -627,8 +306,8 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
 
   
   if (n != 1) 
-    scheme_wrong_count("wx:command-event%::initialization", 1, 1, n, p);
-  x0 = unbundle_symset_commandType(p[0], "wx:command-event%::initialization");
+    scheme_wrong_count("wx:control-event%::initialization", 1, 1, n, p);
+  x0 = unbundle_symset_actionType(p[0], "wx:control-event%::initialization");
 
   
   realobj = new os_wxCommandEvent(obj, x0);
@@ -643,37 +322,22 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
 static Scheme_Object *objscheme_classname_os_wxCommandEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:command-event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:command-event%");
+  if (n) scheme_wrong_count("wx:control-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("wx:control-event%");
 }
 
 void objscheme_setup_wxCommandEvent(void *env)
 {
 if (os_wxCommandEvent_class) {
-    objscheme_add_global_class(os_wxCommandEvent_class,  "wx:command-event%", env);
+    objscheme_add_global_class(os_wxCommandEvent_class,  "wx:control-event%", env);
 } else {
-  os_wxCommandEvent_class = objscheme_def_prim_class(env, "wx:command-event%", "wx:event%", os_wxCommandEvent_ConstructScheme, 18);
+  os_wxCommandEvent_class = objscheme_def_prim_class(env, "wx:control-event%", "wx:event%", os_wxCommandEvent_ConstructScheme, 3);
 
   scheme_add_method_w_arity(os_wxCommandEvent_class,"get-class-name",objscheme_classname_os_wxCommandEvent, 0, 0);
 
- scheme_add_method_w_arity(os_wxCommandEvent_class, "is-double-click?", os_wxCommandEventCommandEventIsDoubleClick, 0, 0);
- scheme_add_method_w_arity(os_wxCommandEvent_class, "is-selection?", os_wxCommandEventIsSelection, 0, 0);
- scheme_add_method_w_arity(os_wxCommandEvent_class, "checked?", os_wxCommandEventChecked, 0, 0);
 
   scheme_add_method_w_arity(os_wxCommandEvent_class,"get-event-type", objscheme_wxCommandEvent_GeteventType, 0, 0);
   scheme_add_method_w_arity(os_wxCommandEvent_class,"set-event-type", objscheme_wxCommandEvent_SeteventType, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-selection-type", objscheme_wxCommandEvent_GetextraLong, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-selection-type", objscheme_wxCommandEvent_SetextraLong, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-selection", objscheme_wxCommandEvent_GetcommandInt, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-selection", objscheme_wxCommandEvent_SetcommandInt, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-string", objscheme_wxCommandEvent_GetcommandString, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-string", objscheme_wxCommandEvent_SetcommandString, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-command-int", objscheme_wxCommandEvent_Get__commandInt, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-command-int", objscheme_wxCommandEvent_Set__commandInt, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-command-string", objscheme_wxCommandEvent_Get__commandString, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-command-string", objscheme_wxCommandEvent_Set__commandString, 1, 1);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"get-extra-long", objscheme_wxCommandEvent_Get__extraLong, 0, 0);
-  scheme_add_method_w_arity(os_wxCommandEvent_class,"set-extra-long", objscheme_wxCommandEvent_Set__extraLong, 1, 1);
 
   scheme_made_class(os_wxCommandEvent_class);
 
@@ -690,7 +354,7 @@ int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nu
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:command-event% object or " XC_NULL_STR: "wx:command-event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "wx:control-event% object or " XC_NULL_STR: "wx:control-event% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -729,6 +393,438 @@ class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *obj, cons
   else
     return (wxCommandEvent *)o->primdata;
 }
+
+
+
+
+
+
+class os_wxPopupEvent : public wxPopupEvent {
+ public:
+
+  os_wxPopupEvent(Scheme_Object * obj);
+  ~os_wxPopupEvent();
+};
+
+Scheme_Object *os_wxPopupEvent_class;
+
+os_wxPopupEvent::os_wxPopupEvent(Scheme_Object * o)
+: wxPopupEvent()
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
+
+os_wxPopupEvent::~os_wxPopupEvent()
+{
+    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  int v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-menu-id", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxPopupEvent *)cobj->primdata)->wxPopupEvent::menuId;
+  else
+    v = ((wxPopupEvent *)cobj->primdata)->menuId;
+
+  return scheme_make_integer(v);
+}
+
+static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  int v;
+
+  if (n != 1) scheme_wrong_count("set-menu-id", 1, 1, n, p);
+
+  v = objscheme_unbundle_integer(p[0], "wx:popup-event%::menu-id");
+  ((wxPopupEvent *)cobj->primdata)->menuId = v;
+
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  os_wxPopupEvent *realobj;
+
+  
+  if (n != 0) 
+    scheme_wrong_count("wx:popup-event%::initialization", 0, 0, n, p);
+
+  
+  realobj = new os_wxPopupEvent(obj);
+  
+  
+  ((Scheme_Class_Object *)obj)->primdata = realobj;
+  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  ((Scheme_Class_Object *)obj)->primflag = 1;
+  return obj;
+}
+
+static Scheme_Object *objscheme_classname_os_wxPopupEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(obj);
+  if (n) scheme_wrong_count("wx:popup-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("wx:popup-event%");
+}
+
+void objscheme_setup_wxPopupEvent(void *env)
+{
+if (os_wxPopupEvent_class) {
+    objscheme_add_global_class(os_wxPopupEvent_class,  "wx:popup-event%", env);
+} else {
+  os_wxPopupEvent_class = objscheme_def_prim_class(env, "wx:popup-event%", "wx:control-event%", os_wxPopupEvent_ConstructScheme, 3);
+
+  scheme_add_method_w_arity(os_wxPopupEvent_class,"get-class-name",objscheme_classname_os_wxPopupEvent, 0, 0);
+
+
+  scheme_add_method_w_arity(os_wxPopupEvent_class,"get-menu-id", objscheme_wxPopupEvent_GetmenuId, 0, 0);
+  scheme_add_method_w_arity(os_wxPopupEvent_class,"set-menu-id", objscheme_wxPopupEvent_SetmenuId, 1, 1);
+
+  scheme_made_class(os_wxPopupEvent_class);
+
+
+}
+}
+
+int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
+      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxPopupEvent_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    scheme_wrong_type(stop, nullOK ? "wx:popup-event% object or " XC_NULL_STR: "wx:popup-event% object", -1, 0, &obj);
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxPopupEvent(class wxPopupEvent *realobj)
+{
+  Scheme_Class_Object *obj;
+  Scheme_Object *sobj;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+    return sobj;
+  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxPopupEvent_class);
+
+  obj->primdata = realobj;
+  objscheme_register_primpointer(&obj->primdata);
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  objscheme_backpointer(&realobj->__gc_external);
+  return (Scheme_Object *)obj;
+}
+
+class wxPopupEvent *objscheme_unbundle_wxPopupEvent(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  (void)objscheme_istype_wxPopupEvent(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  objscheme_check_valid(obj);
+  if (o->primflag)
+    return (os_wxPopupEvent *)o->primdata;
+  else
+    return (wxPopupEvent *)o->primdata;
+}
+
+
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = NULL;
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = NULL;
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = NULL;
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = NULL;
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = NULL;
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = NULL;
+static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = NULL;
+
+static void init_symset_scrollMoveType(void) {
+  scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = scheme_intern_symbol("scroll-top");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = scheme_intern_symbol("scroll-bottom");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = scheme_intern_symbol("scroll-line-up");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = scheme_intern_symbol("scroll-line-down");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = scheme_intern_symbol("scroll-page-up");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = scheme_intern_symbol("scroll-page-down");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = scheme_intern_symbol("scroll-thumb");
+}
+
+static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
+  if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_scrollMoveType();
+  if (0) { }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym) { return wxEVENT_TYPE_SCROLL_TOP; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym) { return wxEVENT_TYPE_SCROLL_BOTTOM; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym) { return wxEVENT_TYPE_SCROLL_LINEUP; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym) { return wxEVENT_TYPE_SCROLL_LINEDOWN; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return wxEVENT_TYPE_SCROLL_PAGEUP; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return wxEVENT_TYPE_SCROLL_PAGEDOWN; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return wxEVENT_TYPE_SCROLL_THUMBTRACK; }
+  if (where) scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_scrollMoveType(Scheme_Object *v, const char *where) {
+  if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_scrollMoveType();
+  if (0) { }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym) { return 1; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym) { return 1; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym) { return 1; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym) { return 1; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym) { return 1; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym) { return 1; }
+  else if (v == scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "scrollMoveType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_scrollMoveType(int v) {
+  if (!scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym) init_symset_scrollMoveType();
+  switch (v) {
+  case wxEVENT_TYPE_SCROLL_TOP: return scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym;
+  case wxEVENT_TYPE_SCROLL_BOTTOM: return scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym;
+  case wxEVENT_TYPE_SCROLL_LINEUP: return scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym;
+  case wxEVENT_TYPE_SCROLL_LINEDOWN: return scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym;
+  case wxEVENT_TYPE_SCROLL_PAGEUP: return scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym;
+  case wxEVENT_TYPE_SCROLL_PAGEDOWN: return scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym;
+  case wxEVENT_TYPE_SCROLL_THUMBTRACK: return scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym;
+  default: return NULL;
+  }
+}
+
+
+
+static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
+static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
+
+static void init_symset_orientation(void) {
+  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+}
+
+static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_orientation(Scheme_Object *v, const char *where) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  if (0) { }
+  else if (v == orientation_wxVERTICAL_sym) { return 1; }
+  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_orientation(int v) {
+  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+  switch (v) {
+  case wxVERTICAL: return orientation_wxVERTICAL_sym;
+  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
+  default: return NULL;
+  }
+}
+
+
+
+
+
+class os_wxScrollEvent : public wxScrollEvent {
+ public:
+
+  os_wxScrollEvent(Scheme_Object * obj);
+  ~os_wxScrollEvent();
+};
+
+Scheme_Object *os_wxScrollEvent_class;
+
+os_wxScrollEvent::os_wxScrollEvent(Scheme_Object * o)
+: wxScrollEvent()
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
+
+os_wxScrollEvent::~os_wxScrollEvent()
+{
+    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+static Scheme_Object *objscheme_wxScrollEvent_GetmoveType(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  int v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-event-type", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxScrollEvent *)cobj->primdata)->wxScrollEvent::moveType;
+  else
+    v = ((wxScrollEvent *)cobj->primdata)->moveType;
+
+  return bundle_symset_scrollMoveType(v);
+}
+
+static Scheme_Object *objscheme_wxScrollEvent_SetmoveType(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  int v;
+
+  if (n != 1) scheme_wrong_count("set-event-type", 1, 1, n, p);
+
+  v = unbundle_symset_scrollMoveType(p[0], "wx:scroll-event%::event-type");
+  ((wxScrollEvent *)cobj->primdata)->moveType = v;
+
+  return scheme_void;
+}
+
+static Scheme_Object *objscheme_wxScrollEvent_Getdirection(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  Scheme_Class_Object *cobj;
+  int v;
+
+  objscheme_check_valid(obj);
+  if (n) scheme_wrong_count("get-direction", 0, 0, n, p);
+  cobj = (Scheme_Class_Object *)obj;
+  if (cobj->primflag)
+    v = ((os_wxScrollEvent *)cobj->primdata)->wxScrollEvent::direction;
+  else
+    v = ((wxScrollEvent *)cobj->primdata)->direction;
+
+  return bundle_symset_orientation(v);
+}
+
+static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  objscheme_check_valid(obj);
+  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  int v;
+
+  if (n != 1) scheme_wrong_count("set-direction", 1, 1, n, p);
+
+  v = unbundle_symset_orientation(p[0], "wx:scroll-event%::direction");
+  ((wxScrollEvent *)cobj->primdata)->direction = v;
+
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  os_wxScrollEvent *realobj;
+
+  
+  if (n != 0) 
+    scheme_wrong_count("wx:scroll-event%::initialization", 0, 0, n, p);
+
+  
+  realobj = new os_wxScrollEvent(obj);
+  
+  
+  ((Scheme_Class_Object *)obj)->primdata = realobj;
+  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  ((Scheme_Class_Object *)obj)->primflag = 1;
+  return obj;
+}
+
+static Scheme_Object *objscheme_classname_os_wxScrollEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(obj);
+  if (n) scheme_wrong_count("wx:scroll-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("wx:scroll-event%");
+}
+
+void objscheme_setup_wxScrollEvent(void *env)
+{
+if (os_wxScrollEvent_class) {
+    objscheme_add_global_class(os_wxScrollEvent_class,  "wx:scroll-event%", env);
+} else {
+  os_wxScrollEvent_class = objscheme_def_prim_class(env, "wx:scroll-event%", "wx:event%", os_wxScrollEvent_ConstructScheme, 5);
+
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"get-class-name",objscheme_classname_os_wxScrollEvent, 0, 0);
+
+
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"get-event-type", objscheme_wxScrollEvent_GetmoveType, 0, 0);
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"set-event-type", objscheme_wxScrollEvent_SetmoveType, 1, 1);
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"get-direction", objscheme_wxScrollEvent_Getdirection, 0, 0);
+  scheme_add_method_w_arity(os_wxScrollEvent_class,"set-direction", objscheme_wxScrollEvent_Setdirection, 1, 1);
+
+  scheme_made_class(os_wxScrollEvent_class);
+
+
+}
+}
+
+int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
+      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxScrollEvent_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    scheme_wrong_type(stop, nullOK ? "wx:scroll-event% object or " XC_NULL_STR: "wx:scroll-event% object", -1, 0, &obj);
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxScrollEvent(class wxScrollEvent *realobj)
+{
+  Scheme_Class_Object *obj;
+  Scheme_Object *sobj;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+    return sobj;
+  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxScrollEvent_class);
+
+  obj->primdata = realobj;
+  objscheme_register_primpointer(&obj->primdata);
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  objscheme_backpointer(&realobj->__gc_external);
+  return (Scheme_Object *)obj;
+}
+
+class wxScrollEvent *objscheme_unbundle_wxScrollEvent(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  (void)objscheme_istype_wxScrollEvent(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  objscheme_check_valid(obj);
+  if (o->primflag)
+    return (os_wxScrollEvent *)o->primdata;
+  else
+    return (wxScrollEvent *)o->primdata;
+}
+
 
 
 static Scheme_Object *keyCode_WXK_ESCAPE_sym = NULL;
@@ -1102,9 +1198,6 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
 
 
 
-// @ "key-code" : SYM[keyCode] KeyCode();
-
-
 
 class os_wxKeyEvent : public wxKeyEvent {
  public:
@@ -1278,36 +1371,6 @@ static Scheme_Object *objscheme_wxKeyEvent_SetaltDown(Scheme_Object *obj, int n,
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_wxKeyEvent_GettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  long v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-time-stamp", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxKeyEvent *)cobj->primdata)->wxKeyEvent::timeStamp;
-  else
-    v = ((wxKeyEvent *)cobj->primdata)->timeStamp;
-
-  return scheme_make_integer(v);
-}
-
-static Scheme_Object *objscheme_wxKeyEvent_SettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  long v;
-
-  if (n != 1) scheme_wrong_count("set-time-stamp", 1, 1, n, p);
-
-  v = objscheme_unbundle_integer(p[0], "wx:key-event%::time-stamp");
-  ((wxKeyEvent *)cobj->primdata)->timeStamp = v;
-
-  return scheme_void;
-}
-
 static Scheme_Object *objscheme_wxKeyEvent_Getx(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
@@ -1400,7 +1463,7 @@ void objscheme_setup_wxKeyEvent(void *env)
 if (os_wxKeyEvent_class) {
     objscheme_add_global_class(os_wxKeyEvent_class,  "wx:key-event%", env);
 } else {
-  os_wxKeyEvent_class = objscheme_def_prim_class(env, "wx:key-event%", "wx:event%", os_wxKeyEvent_ConstructScheme, 17);
+  os_wxKeyEvent_class = objscheme_def_prim_class(env, "wx:key-event%", "wx:event%", os_wxKeyEvent_ConstructScheme, 15);
 
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-class-name",objscheme_classname_os_wxKeyEvent, 0, 0);
 
@@ -1415,8 +1478,6 @@ if (os_wxKeyEvent_class) {
   scheme_add_method_w_arity(os_wxKeyEvent_class,"set-meta-down", objscheme_wxKeyEvent_SetmetaDown, 1, 1);
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-alt-down", objscheme_wxKeyEvent_GetaltDown, 0, 0);
   scheme_add_method_w_arity(os_wxKeyEvent_class,"set-alt-down", objscheme_wxKeyEvent_SetaltDown, 1, 1);
-  scheme_add_method_w_arity(os_wxKeyEvent_class,"get-time-stamp", objscheme_wxKeyEvent_GettimeStamp, 0, 0);
-  scheme_add_method_w_arity(os_wxKeyEvent_class,"set-time-stamp", objscheme_wxKeyEvent_SettimeStamp, 1, 1);
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-x", objscheme_wxKeyEvent_Getx, 0, 0);
   scheme_add_method_w_arity(os_wxKeyEvent_class,"set-x", objscheme_wxKeyEvent_Setx, 1, 1);
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-y", objscheme_wxKeyEvent_Gety, 0, 0);
@@ -1499,8 +1560,8 @@ static void init_symset_mouseEventType(void) {
   mouseEventType_wxEVENT_TYPE_RIGHT_DOWN_sym = scheme_intern_symbol("right-down");
   mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym = scheme_intern_symbol("right-up");
   mouseEventType_wxEVENT_TYPE_MOTION_sym = scheme_intern_symbol("motion");
-  mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = scheme_intern_symbol("enter-window");
-  mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = scheme_intern_symbol("leave-window");
+  mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = scheme_intern_symbol("enter");
+  mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = scheme_intern_symbol("leave");
   mouseEventType_wxEVENT_TYPE_LEFT_DCLICK_sym = scheme_intern_symbol("left-dclick");
   mouseEventType_wxEVENT_TYPE_MIDDLE_DCLICK_sym = scheme_intern_symbol("middle-dclick");
   mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym = scheme_intern_symbol("right-dclick");
@@ -1564,6 +1625,53 @@ static Scheme_Object *bundle_symset_mouseEventType(int v) {
 }
 
 
+#define NEGATIVE_ONE (-1)
+static Scheme_Object *buttonId_NEGATIVE_ONE_sym = NULL;
+static Scheme_Object *buttonId_1_sym = NULL;
+static Scheme_Object *buttonId_2_sym = NULL;
+static Scheme_Object *buttonId_3_sym = NULL;
+
+static void init_symset_buttonId(void) {
+  buttonId_NEGATIVE_ONE_sym = scheme_intern_symbol("all");
+  buttonId_1_sym = scheme_intern_symbol("left");
+  buttonId_2_sym = scheme_intern_symbol("middle");
+  buttonId_3_sym = scheme_intern_symbol("right");
+}
+
+static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
+  if (!buttonId_3_sym) init_symset_buttonId();
+  if (0) { }
+  else if (v == buttonId_NEGATIVE_ONE_sym) { return NEGATIVE_ONE; }
+  else if (v == buttonId_1_sym) { return 1; }
+  else if (v == buttonId_2_sym) { return 2; }
+  else if (v == buttonId_3_sym) { return 3; }
+  if (where) scheme_wrong_type(where, "buttonId symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_buttonId(Scheme_Object *v, const char *where) {
+  if (!buttonId_3_sym) init_symset_buttonId();
+  if (0) { }
+  else if (v == buttonId_NEGATIVE_ONE_sym) { return 1; }
+  else if (v == buttonId_1_sym) { return 1; }
+  else if (v == buttonId_2_sym) { return 1; }
+  else if (v == buttonId_3_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "buttonId symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_buttonId(int v) {
+  if (!buttonId_3_sym) init_symset_buttonId();
+  switch (v) {
+  case NEGATIVE_ONE: return buttonId_NEGATIVE_ONE_sym;
+  case 1: return buttonId_1_sym;
+  case 2: return buttonId_2_sym;
+  case 3: return buttonId_3_sym;
+  default: return NULL;
+  }
+}
+
+
 
 
 
@@ -1601,23 +1709,6 @@ static Scheme_Object *os_wxMouseEventMoving(Scheme_Object *obj, int n,  Scheme_O
 
   
   r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Moving();
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxMouseEventIsButton(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->IsButton();
 
   
   
@@ -1685,7 +1776,7 @@ static Scheme_Object *os_wxMouseEventButtonUp(Scheme_Object *obj, int n,  Scheme
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:mouse-event%::button-up?");
+    x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-up?");
   } else
     x0 = -1;
 
@@ -1707,7 +1798,7 @@ static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Sche
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:mouse-event%::button-down?");
+    x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-down?");
   } else
     x0 = -1;
 
@@ -1729,7 +1820,7 @@ static Scheme_Object *os_wxMouseEventButtonDClick(Scheme_Object *obj, int n,  Sc
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:mouse-event%::button-d-click?");
+    x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-dclick?");
   } else
     x0 = -1;
 
@@ -1750,7 +1841,7 @@ static Scheme_Object *os_wxMouseEventButton(Scheme_Object *obj, int n,  Scheme_O
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:mouse-event%::button?");
+  x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-changed?");
 
   
   r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Button(x0);
@@ -2060,36 +2151,6 @@ static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Sc
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_wxMouseEvent_GettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  Scheme_Class_Object *cobj;
-  long v;
-
-  objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-time-stamp", 0, 0, n, p);
-  cobj = (Scheme_Class_Object *)obj;
-  if (cobj->primflag)
-    v = ((os_wxMouseEvent *)cobj->primdata)->wxMouseEvent::timeStamp;
-  else
-    v = ((wxMouseEvent *)cobj->primdata)->timeStamp;
-
-  return scheme_make_integer(v);
-}
-
-static Scheme_Object *objscheme_wxMouseEvent_SettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  long v;
-
-  if (n != 1) scheme_wrong_count("set-time-stamp", 1, 1, n, p);
-
-  v = objscheme_unbundle_integer(p[0], "wx:mouse-event%::time-stamp");
-  ((wxMouseEvent *)cobj->primdata)->timeStamp = v;
-
-  return scheme_void;
-}
-
 #pragma argsused
 static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
@@ -2123,19 +2184,18 @@ void objscheme_setup_wxMouseEvent(void *env)
 if (os_wxMouseEvent_class) {
     objscheme_add_global_class(os_wxMouseEvent_class,  "wx:mouse-event%", env);
 } else {
-  os_wxMouseEvent_class = objscheme_def_prim_class(env, "wx:mouse-event%", "wx:event%", os_wxMouseEvent_ConstructScheme, 32);
+  os_wxMouseEvent_class = objscheme_def_prim_class(env, "wx:mouse-event%", "wx:event%", os_wxMouseEvent_ConstructScheme, 29);
 
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-class-name",objscheme_classname_os_wxMouseEvent, 0, 0);
 
  scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?", os_wxMouseEventMoving, 0, 0);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "is-button?", os_wxMouseEventIsButton, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?", os_wxMouseEventLeaving, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "entering?", os_wxMouseEventEntering, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?", os_wxMouseEventDragging, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?", os_wxMouseEventButtonUp, 0, 1);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?", os_wxMouseEventButtonDown, 0, 1);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button-d-click?", os_wxMouseEventButtonDClick, 0, 1);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button?", os_wxMouseEventButton, 1, 1);
+ scheme_add_method_w_arity(os_wxMouseEvent_class, "button-dclick?", os_wxMouseEventButtonDClick, 0, 1);
+ scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 1, 1);
 
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type", objscheme_wxMouseEvent_GeteventType, 0, 0);
   scheme_add_method_w_arity(os_wxMouseEvent_class,"set-event-type", objscheme_wxMouseEvent_SeteventType, 1, 1);
@@ -2157,8 +2217,6 @@ if (os_wxMouseEvent_class) {
   scheme_add_method_w_arity(os_wxMouseEvent_class,"set-x", objscheme_wxMouseEvent_Setx, 1, 1);
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-y", objscheme_wxMouseEvent_Gety, 0, 0);
   scheme_add_method_w_arity(os_wxMouseEvent_class,"set-y", objscheme_wxMouseEvent_Sety, 1, 1);
-  scheme_add_method_w_arity(os_wxMouseEvent_class,"get-time-stamp", objscheme_wxMouseEvent_GettimeStamp, 0, 0);
-  scheme_add_method_w_arity(os_wxMouseEvent_class,"set-time-stamp", objscheme_wxMouseEvent_SettimeStamp, 1, 1);
 
   scheme_made_class(os_wxMouseEvent_class);
 

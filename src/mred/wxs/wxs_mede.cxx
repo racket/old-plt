@@ -234,7 +234,6 @@ static Scheme_Object *bundle_symset_findKind(int v) {
 }
 
 
-
 static Scheme_Object *breakType_wxBREAK_FOR_CARET_sym = NULL;
 static Scheme_Object *breakType_wxBREAK_FOR_LINE_sym = NULL;
 static Scheme_Object *breakType_wxBREAK_FOR_SELECTION_sym = NULL;
@@ -251,54 +250,40 @@ static void init_symset_breakType(void) {
 
 static int unbundle_symset_breakType(Scheme_Object *v, const char *where) {
   if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
-  Scheme_Object *i, *l = v;
-  long result = 0;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
   if (0) { }
-  else if (i == breakType_wxBREAK_FOR_CARET_sym) { result = result | wxBREAK_FOR_CARET; }
-  else if (i == breakType_wxBREAK_FOR_LINE_sym) { result = result | wxBREAK_FOR_LINE; }
-  else if (i == breakType_wxBREAK_FOR_SELECTION_sym) { result = result | wxBREAK_FOR_SELECTION; }
-  else if (i == breakType_wxBREAK_FOR_USER_1_sym) { result = result | wxBREAK_FOR_USER_1; }
-  else if (i == breakType_wxBREAK_FOR_USER_2_sym) { result = result | wxBREAK_FOR_USER_2; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "breakType symbol list", -1, 0, &v);
+  else if (v == breakType_wxBREAK_FOR_CARET_sym) { return wxBREAK_FOR_CARET; }
+  else if (v == breakType_wxBREAK_FOR_LINE_sym) { return wxBREAK_FOR_LINE; }
+  else if (v == breakType_wxBREAK_FOR_SELECTION_sym) { return wxBREAK_FOR_SELECTION; }
+  else if (v == breakType_wxBREAK_FOR_USER_1_sym) { return wxBREAK_FOR_USER_1; }
+  else if (v == breakType_wxBREAK_FOR_USER_2_sym) { return wxBREAK_FOR_USER_2; }
+  if (where) scheme_wrong_type(where, "breakType symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_breakType(Scheme_Object *v, const char *where) {
   if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
-  Scheme_Object *i, *l = v;
-  long result = 1;
-  while (SCHEME_PAIRP(l)) {
-  i = SCHEME_CAR(l);
   if (0) { }
-  else if (i == breakType_wxBREAK_FOR_CARET_sym) { ; }
-  else if (i == breakType_wxBREAK_FOR_LINE_sym) { ; }
-  else if (i == breakType_wxBREAK_FOR_SELECTION_sym) { ; }
-  else if (i == breakType_wxBREAK_FOR_USER_1_sym) { ; }
-  else if (i == breakType_wxBREAK_FOR_USER_2_sym) { ; }
-  else { break; } 
-  l = SCHEME_CDR(l);
-  }
-  if (SCHEME_NULLP(l)) return result;
-  if (where) scheme_wrong_type(where, "breakType symbol list", -1, 0, &v);
+  else if (v == breakType_wxBREAK_FOR_CARET_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_LINE_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_SELECTION_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_USER_1_sym) { return 1; }
+  else if (v == breakType_wxBREAK_FOR_USER_2_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "breakType symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_breakType(int v) {
   if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
-  Scheme_Object *l = scheme_null;
-  if (v & wxBREAK_FOR_CARET) l = scheme_make_pair(breakType_wxBREAK_FOR_CARET_sym, l);
-  if (v & wxBREAK_FOR_LINE) l = scheme_make_pair(breakType_wxBREAK_FOR_LINE_sym, l);
-  if (v & wxBREAK_FOR_SELECTION) l = scheme_make_pair(breakType_wxBREAK_FOR_SELECTION_sym, l);
-  if (v & wxBREAK_FOR_USER_1) l = scheme_make_pair(breakType_wxBREAK_FOR_USER_1_sym, l);
-  if (v & wxBREAK_FOR_USER_2) l = scheme_make_pair(breakType_wxBREAK_FOR_USER_2_sym, l);
-  return l;
+  switch (v) {
+  case wxBREAK_FOR_CARET: return breakType_wxBREAK_FOR_CARET_sym;
+  case wxBREAK_FOR_LINE: return breakType_wxBREAK_FOR_LINE_sym;
+  case wxBREAK_FOR_SELECTION: return breakType_wxBREAK_FOR_SELECTION_sym;
+  case wxBREAK_FOR_USER_1: return breakType_wxBREAK_FOR_USER_1_sym;
+  case wxBREAK_FOR_USER_2: return breakType_wxBREAK_FOR_USER_2_sym;
+  default: return NULL;
+  }
 }
+
 
 
 static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;

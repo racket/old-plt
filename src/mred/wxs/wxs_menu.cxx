@@ -1017,7 +1017,7 @@ static Scheme_Object *os_wxMenuBarDelete(Scheme_Object *obj, int n,  Scheme_Obje
   int x1;
 
   
-  x0 = objscheme_unbundle_wxMenu(p[0], "wx:menu-bar%::delete", 0);
+  x0 = objscheme_unbundle_wxMenu(p[0], "wx:menu-bar%::delete", 1);
   if (n > 1) {
     x1 = objscheme_unbundle_integer(p[1], "wx:menu-bar%::delete");
   } else

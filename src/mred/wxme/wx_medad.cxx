@@ -396,8 +396,6 @@ void wxMediaCanvas::OnEvent(wxMouseEvent &event)
       media->SetAdmin(admin);
     }
     
-    event.eventObject = this;
-
     SetCustomCursor(media->AdjustCursor(event));
     media->OnEvent(event);
     
@@ -431,7 +429,6 @@ void wxMediaCanvas::UpdateCursorNow(void)
   event->x = last_x;
   event->y = last_y;
   event->timeStamp = 0L;
-  event->eventObject = this;
 
   wxCanvasMediaAdmin *oldadmin;
     
@@ -453,8 +450,6 @@ void wxMediaCanvas::OnChar(wxKeyEvent &event)
       media->SetAdmin(admin);
     }
 
-    event.eventObject = this;
-    
     media->OnChar(event);
     
     if (PTRNE(oldadmin, admin)) {
@@ -986,7 +981,7 @@ void wxMediaCanvas::GetScroll(int *x, int *y)
 #endif
 }
 
-void wxMediaCanvas::OnScroll(wxCommandEvent &)
+void wxMediaCanvas::OnScroll(wxScrollEvent &)
 {
   if (noloop)
     return;

@@ -1409,6 +1409,8 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxsMenuItem(global_env);
   objscheme_setup_wxEvent(global_env);
   objscheme_setup_wxCommandEvent(global_env);
+  objscheme_setup_wxPopupEvent(global_env);
+  objscheme_setup_wxScrollEvent(global_env);
   objscheme_setup_wxKeyEvent(global_env);
   objscheme_setup_wxMouseEvent(global_env);
   objscheme_setup_wxDC(global_env);
@@ -1433,7 +1435,7 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxMediaSnip(global_env);
   objscheme_setup_wxSnipAdmin(global_env);
   objscheme_setup_wxMediaAdmin(global_env);
-  objscheme_setup_wxCanvasMediaAdmin(global_env);
+  // objscheme_setup_wxCanvasMediaAdmin(global_env);
   objscheme_setup_wxMediaSnipMediaAdmin(global_env);
   objscheme_setup_wxBufferData(global_env);
   objscheme_setup_wxBufferDataClass(global_env);

@@ -1,6 +1,4 @@
 #ifndef WXS_SETUP_ONLY
-extern Scheme_Object *objscheme_bundle_wxObject(class wxObject *);
-extern class wxObject *objscheme_unbundle_wxObject(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxEvent(void *env);
 #ifndef WXS_SETUP_ONLY
@@ -13,6 +11,18 @@ void objscheme_setup_wxCommandEvent(void *env);
 int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxCommandEvent(class wxCommandEvent *realobj);
 class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *obj, const char *where, int nullOK);
+#endif
+void objscheme_setup_wxPopupEvent(void *env);
+#ifndef WXS_SETUP_ONLY
+int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int nullOK);
+Scheme_Object *objscheme_bundle_wxPopupEvent(class wxPopupEvent *realobj);
+class wxPopupEvent *objscheme_unbundle_wxPopupEvent(Scheme_Object *obj, const char *where, int nullOK);
+#endif
+void objscheme_setup_wxScrollEvent(void *env);
+#ifndef WXS_SETUP_ONLY
+int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nullOK);
+Scheme_Object *objscheme_bundle_wxScrollEvent(class wxScrollEvent *realobj);
+class wxScrollEvent *objscheme_unbundle_wxScrollEvent(Scheme_Object *obj, const char *where, int nullOK);
 #endif
 void objscheme_setup_wxKeyEvent(void *env);
 #ifndef WXS_SETUP_ONLY

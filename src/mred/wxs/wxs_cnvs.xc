@@ -58,7 +58,7 @@ static void FillZero(int *a, int *b) {
 @ "get-scroll-range" : int GetScrollRange(int);
 @ "get-scroll-page" : int GetScrollPage(int);
 
-@ v "on-scroll" : void OnScroll(wxCommandEvent%); : : / PANELREDIRECT[return scheme_void]
+@ v "on-scroll" : void OnScroll(wxScrollEvent%); : : / PANELREDIRECT[return scheme_void]
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

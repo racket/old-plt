@@ -387,7 +387,7 @@ class wxMediaCanvas : public wxCanvas
   virtual void OnEvent(wxMouseEvent &event);
   virtual void OnChar(wxKeyEvent &event);
   virtual void OnPaint(void);
-  virtual void OnScroll(wxCommandEvent& event);
+  virtual void OnScroll(wxScrollEvent& event);
   virtual void OnSetFocus();
   virtual void OnKillFocus();
   virtual void OnFocus(Bool focus);

@@ -27,11 +27,6 @@
     
   (define stx-for-original-property (read-syntax #f (open-input-string "original")))
   (define (stx-for-source) stx-for-original-property)
-;    (let ((ip ((input-port))))
-;      (let loop ((syn (read-syntax #f ip)))
-;        (if (and (not (interactions?)) (pair? (syntax-e syn)))
-;            (loop (read-syntax #f ip))
-;            syn))))
   (define (create-syntax oddness sexpression source)
     (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source stx-for-original-property))
   (define (make-syntax oddness sexpression source)
@@ -238,12 +233,16 @@
              ;find-cycle: def -> void
              (find-cycle 
               (lambda (def)
+;                (printf "find-cycle for def ~a with reqs ~a~n" (id-string (def-name def))
+;                        (map req-class (def-uses def)))
+;                (printf "find-cycle required defs found were ~a~n" 
+;                        (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
                 (for-each (lambda (reqD)
                             (cond
                               ((or (completed? reqD) (in-cycle? reqD)) (void))
                               ((or (dependence-on-cycle reqD) (exists-path-to-cycle? reqD))
                                (hash-table-put! cycle reqD 'in-cycle)
-                               (find-cycle def))))
+                               (find-cycle reqD))))
                           (filter (lambda (x) x) (map find (def-uses def))))))
              
              ;exists-path-to-cycle: def -> bool
@@ -288,14 +287,19 @@
       
       (for-each (lambda (def)
                   (unless (completed? def)
+;                    (printf "Started on def ~a~n" (id-string (def-name def)))
                     (set! cycle (make-hash-table))
                     (hash-table-put! cycle def 'in-cycle)
                     (find-cycle def)
+;                    (printf "Completed looking for cycle for def ~a~n" (id-string (def-name def)))
+;                    (printf "hashtable for def ~a includes ~a~n" (id-string (def-name def))
+;                            (hash-table-map cycle (lambda (k v) (cons (id-string (def-name k)) v))))
                     (let ((cyc (filter (lambda (d)
                                          (eq? (hash-table-get cycle d) 'in-cycle))
                                        (hash-table-map cycle (lambda (k v) k)))))
                       (for-each (lambda (c) (hash-table-put! completed c 'completed))
                                 cyc)
+;                      (printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
                       (set! cycles (cons cyc cycles)))))
                 defs)
       cycles))

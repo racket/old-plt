@@ -697,6 +697,9 @@
           (define/public (set-records tr) (set! type-recs tr))
           (define/public (set-ret-kind k) (set! ret-list? k)) 
           (define-struct input-length (start-pos end-pos))
+
+          (define/private (newline? char) (memq char '(#\015 #\012)))
+          
           (define/public (read-one-special index source line column position)
             (let* ((ed (get-editor))
                    (port (open-input-text-editor ed 0 'end (editor-filter #t)))
@@ -705,9 +708,19 @@
                 (unless (eof-object? c)
                   (let inner-loop ((put c) (offset start))
                     (cond
-                      ((or (eq? put #\015) (eq? put #\012) (eof-object? put))
+                      ((eof-object? put)
                        (set! inputs-list (cons (make-input-length start offset) inputs-list))
                        (outer-loop (read-char-or-special port) (add1 offset)))
+                      ((newline? put) 
+                       (let ((new-put (read-char-or-special port))) 
+                         (if (or (eof-object? new-put) (newline? new-put))
+                             (begin
+                               (set! inputs-list (cons (make-input-length start (add1 offset)) inputs-list))
+                               (outer-loop (read-char-or-special port) (+ 2 offset)))
+                             (inner-loop new-put (add1 offset)))))
+                      #;((or (eq? put #\015) (eq? put #\012) (eof-object? put))
+                         (set! inputs-list (cons (make-input-length start offset) inputs-list))
+                         (outer-loop (read-char-or-special port) (add1 offset)))
                       (else (inner-loop (read-char-or-special port) (add1 offset)))))))
               (let ((syntax-list (map 
                                   (lambda (input-len)
@@ -722,7 +735,12 @@
                                   (reverse inputs-list))))
                 (if ret-list?
                     (values syntax-list 1 #t)
-                    (values (datum->syntax-object #f `(begin ,@syntax-list) #f) 1 #t)))))
+                    (values (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f) 1 #t)))))
+          (define (remove-requires syn)
+            (syntax-case syn ()
+              ((begin (require x ...) exp ...) (syntax (begin exp ...)))
+              (else syn)))
+          
           (super-instantiate ())
           (inherit set-snipclass get-editor)
           (set-snipclass snipclass-interactions)

@@ -47,7 +47,7 @@
   ;;(make-interface-def header (list member) src src string symbol (list req) symbol)
   (p-define-struct (interface-def def) ())
   
-  ;;(make-require string (list string))
+  ;;(make-req string (list string))
   (p-define-struct req (class path))
   
   ;;(make-header id (list modifier) (list name) (list name) (list gj-info) src)

@@ -1777,6 +1777,12 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     return;
   }
 
+  if (MX_COM_OBJP(val)) {
+   pVariantArg->pdispVal = MX_COM_OBJ_VAL(val);
+   pVariantArg->vt = VT_DISPATCH;
+   return;
+  }
+
   if (MX_IUNKNOWNP(val)) {
     pVariantArg->vt = VT_UNKNOWN;
     pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);

@@ -478,7 +478,7 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 1), 
 			     env);
   
-  scheme_add_waitable_through_sema(scheme_will_executor_type, will_executor_sema, NULL, 0);
+  scheme_add_waitable_through_sema(scheme_will_executor_type, will_executor_sema, NULL);
 
 
   scheme_add_global_constant("collect-garbage", 
@@ -1683,7 +1683,9 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
 
 static void register_thread_wait()
 {
-  scheme_add_waitable(scheme_thread_type, thread_wait_done, NULL, NULL, 0);
+  scheme_add_waitable(scheme_thread_type, 
+		      (Scheme_Ready_Fun_FPC)thread_wait_done, 
+		      NULL, NULL, 0);
 }
 
 void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data)
@@ -2547,9 +2549,8 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
 		       Scheme_Object *data, float delay)
 {
   int result;
-  Scheme_Object *target = NULL;
   Scheme_Thread *p = scheme_current_thread;
-  Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC *)_f;
+  Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)_f;
   Scheme_Schedule_Info *sinfo;
 
   sinfo = scheme_new_schedule_info(0);
@@ -2964,7 +2965,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
   int i;
   Waiting *waiting = (Waiting *)s;
   Waitable *w;
-  Scheme_Object *o, *target;
+  Scheme_Object *o;
   Scheme_Schedule_Info *r_sinfo;
 
   if (waiting->result)
@@ -3160,8 +3161,8 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
   waiting->start_time = start_time;
 
   {
-    Scheme_Object *ts;
-    Waiting *tws;
+    Scheme_Object **ts;
+    Waitable **tws;
 
     ts = MALLOC_N(Scheme_Object*, argc-1);
     waiting->ts = ts;

@@ -1072,7 +1072,7 @@ user_write_ready(Scheme_Output_Port *port)
 {
   Scheme_Schedule_Info *sinfo;
   
-  sinfo = scheme_new_schedule_info(&sinfo, 0);
+  sinfo = scheme_new_schedule_info(0);
 
   return scheme_user_port_write_probably_ready(port, sinfo);
 }

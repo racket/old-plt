@@ -536,13 +536,13 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   if (scheme_is_waitable(v))
     return v;
 
-  if (scheme_check_proc_arity(NULL, v, 0, 1, &v))
+  if (scheme_check_proc_arity(NULL, 0, 0, 1, &v))
     return v;
   
   if (!((SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
 	|| (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))))
     scheme_arg_mismatch("waitable-property-guard",
-			"property value is not a waitable, procedure, or exact non-negative integer",
+			"property value is not a waitable, procedure (arity 0), or exact non-negative integer",
 			v);
 
   if (SCHEME_BIGNUMP(v))
@@ -910,7 +910,7 @@ static Scheme_Object *struct_info(int argc, Scheme_Object *argv[])
 static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
 {
   Scheme_Struct_Type *stype, *parent;
-  Scheme_Object *a[6], *insp, *ims;
+  Scheme_Object *a[7], *insp, *ims;
   int p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type))

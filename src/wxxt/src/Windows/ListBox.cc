@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.4 1998/02/27 02:41:35 mflatt Exp $
+ * $Id: ListBox.cc,v 1.5 1998/07/08 22:01:13 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -110,7 +110,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNshadeSurplus,   FALSE,
 	 XtNdefaultColumns, 1,
 	 XtNforceColumns,   TRUE,
-	 XtNmaxSelectable,  (multiple & wxMULTIPLE) ? 10000 : 1, /* MATTHEW */
+	 XtNmaxSelectable,  (multiple & wxSINGLE) ? 1 : 10000,
+	 XtNclickExtends,   (Boolean)(multiple & wxEXTENDED),
 	 NULL);
 
     Set(n, choices);
@@ -447,11 +448,11 @@ void wxListBox::SetClientData(int n, char *_client_data)
 
 void wxListBox::SetSelection(int n, Bool select)
 {
-    if (0 <= n && n < num_choices)
-	if (select)
-	    XfwfMultiListHighlightItem(MULTILIST, n);
-	else
-	    XfwfMultiListUnhighlightItem(MULTILIST, n);
+  if (0 <= n && n < num_choices)
+    if (select)
+      XfwfMultiListHighlightItem(MULTILIST, n);
+    else
+      XfwfMultiListUnhighlightItem(MULTILIST, n);
 }
 
 Bool wxListBox::SetStringSelection(char *s)
@@ -474,9 +475,18 @@ void wxListBox::SetString(int n, char *s)
 
 void wxListBox::Command(wxCommandEvent &event)
 {
-  if (event.extraLong)
+  if (event.extraLong) {
+    if (style & wxMULTIPLE) {
+      /* Deselect others */
+      int c, *l;
+      c = GetSelections(&l);
+      while (c--) {
+	if (l[c] != event.commandInt)
+	  SetSelection(l[c], 0);
+      }
+    }
     SetSelection(event.commandInt);
-  else
+  } else
     Deselect(event.commandInt);
   ProcessCommand (event);
 }
@@ -494,34 +504,26 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
     wxCommandEvent            &event = *_event;
 
     if (rs->action == XfwfMultiListActionDClick
-    &&  lbox->allow_dclicks) {
-	event.eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
-	// double click invokes OnDefaultAction
-	lbox->parent->GetEventHandler()->OnDefaultAction(lbox);
-	return; /* MATTHEW */
+	&&  lbox->allow_dclicks) {
+      event.eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
+      // double click invokes OnDefaultAction
+      lbox->parent->GetEventHandler()->OnDefaultAction(lbox);
+      return; /* MATTHEW */
     }
 
-    if (rs->action != XfwfMultiListActionUnhighlight)
-      event.commandInt    = lbox->GetSelection();
-    else
-      event.commandInt    = -1;
+    event.commandInt    = rs->item;
 
-    if (event.commandInt > -1) {
-	event.commandString = lbox->GetString(event.commandInt);
-	event.clientData    = lbox->GetClientData(event.commandInt);
-    } else {
-	event.commandString = NULL;
-	event.clientData    = NULL;
-    }
-    event.extraLong     = (rs->action==XfwfMultiListActionHighlight ||
-			   rs->action==XfwfMultiListActionDClick);
+    event.commandString = lbox->GetString(event.commandInt);
+    event.clientData    = lbox->GetClientData(event.commandInt);
+
+    event.extraLong     = (rs->action==XfwfMultiListActionHighlight
+			   || rs->action==XfwfMultiListActionDClick);
     event.eventObject   = lbox;
 
     int max_select;
     XtVaGetValues(lbox->X->handle, XtNmaxSelectable, &max_select, NULL);
-    if (max_select==1 
-    && (!event.extraLong || event.commandInt <= -1))
-	return;
-
+    if (max_select == 1 && (!event.extraLong || event.commandInt <= -1))
+      return;
+    
     lbox->ProcessCommand(event);
 }

@@ -196,6 +196,7 @@
 #define	XtNsensitiveArray	"sensitiveArray"
 #define	XtNmaxSelectable	"maxSelectable"
 #define	XtNshadeSurplus		"shadeSurplus"
+#define XtNclickExtends         "clickExtends"
 
 #define	XtNrowHeight		"rowHeight"
 #define	XtNcolumnWidth		"columnWidth"

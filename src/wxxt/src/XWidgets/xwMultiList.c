@@ -126,6 +126,7 @@ static Boolean			RowColumnToItem();
 static Boolean			ItemToRowColumn();
 
 static void			Select();
+static void			SelectOne();
 static void			Unselect();
 static void			Toggle();
 static void			Extend();
@@ -168,6 +169,8 @@ static Boolean		RowColumnToItem(XfwfMultiListWidget mlw,
 static Boolean		ItemToRowColumn(XfwfMultiListWidget mlw,
 				int item_index, int *row_ptr, int *column_ptr);
 static void		Select(XfwfMultiListWidget mlw, XEvent *event,
+				String *params, Cardinal *num_params);
+static void		SelectOne(XfwfMultiListWidget mlw, XEvent *event,
 				String *params, Cardinal *num_params);
 static void		Unselect(XfwfMultiListWidget mlw, XEvent *event,
 				String *params, Cardinal *num_params);
@@ -241,6 +244,9 @@ static XtResource resources[] =
 	{XtNtablist, XtCTablist, XtRString, sizeof(int *),
 	    MultiListFieldOffset(tablist), XtRImmediate, (XtPointer)NULL },
 
+	{XtNclickExtends, XtCBoolean, XtRBoolean, sizeof(Boolean),
+            MultiListFieldOffset(clickExtends), XtRString, "False"}
+
 };
 
 /*===========================================================================*
@@ -251,10 +257,15 @@ static XtResource resources[] =
 
 static char defaultTranslations[] =
 "	Ctrl <Btn1Down>:			Toggle()\n\
-	Shift <Btn1Down>:			Extend()\n\
+	Shift <Btn1Down>:			SelectOne()\n\
 	<Btn1Down>:			        Select()\n\
-	Button1 <Btn1Motion>:			Extend()\n\
-	<Btn1Up>:				Notify()";
+	Button1 <Btn1Motion>:			Extend()";
+
+static char extendTranslations[] =
+"	Ctrl <Btn1Down>:			Toggle()\n\
+	Shift <Btn1Down>:			SelectOne()\n\
+	<Btn1Down>:			        SelectOne()\n\
+	Button1 <Btn1Motion>:			Extend()";
 
 static XtActionsRec actions[] =
 {
@@ -262,7 +273,7 @@ static XtActionsRec actions[] =
 	{"Unselect",				(XtActionProc)Unselect},
 	{"Toggle",				(XtActionProc)Toggle},
 	{"Extend",				(XtActionProc)Extend},
-	{"Notify",				(XtActionProc)Notify},
+	{"SelectOne",				(XtActionProc)SelectOne},
 	{NULL,					(XtActionProc)NULL}
 };
 
@@ -345,6 +356,11 @@ Widget request,new;
 	MultiListTabs(mlw) = XfwfTablist2Tabs(MultiListTabList(mlw));
 	RecalcCoords(mlw,(MultiListWidth(mlw) == 0),
 		     (MultiListHeight(mlw) == 0));
+	if (MultiListClickExtends(mlw)) {
+	  XtTranslations t = XtParseTranslationTable(extendTranslations);
+	  XtOverrideTranslations((Widget)new, t);
+	  XtFree((char *)t);
+	}
 } /* Initialize */
 
 
@@ -1268,6 +1284,36 @@ Cardinal *num_params;
 		MultiListMostRecentItem(mlw) = item_index;
 		XfwfMultiListHighlightItem(mlw,item_index);
 	}
+        Notify(mlw,event,params,num_params);
+} /* End Select */
+
+
+/* ARGSUSED */
+static void SelectOne(mlw,event,params,num_params)
+XfwfMultiListWidget mlw;
+XEvent *event;
+String *params;
+Cardinal *num_params;
+{
+	int click_x,click_y;
+	int status,item_index,row,column;
+
+	click_x = event->xbutton.x;
+	click_y = event->xbutton.y;
+	PixelToRowColumn(mlw,click_x,click_y,&row,&column);
+	MultiListMostRecentAct(mlw) = XfwfMultiListActionHighlight;
+	status = RowColumnToItem(mlw,row,column,&item_index);
+	if ((status == False) ||
+	    (!MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
+	{
+		MultiListMostRecentItem(mlw) = -1;
+	}
+	    else
+	{
+		MultiListMostRecentItem(mlw) = item_index;
+		XfwfMultiListHighlightItem(mlw,item_index);
+	}
+        Notify(mlw,event,params,num_params);
 } /* End Select */
 
 
@@ -1304,6 +1350,7 @@ Cardinal *num_params;
 	if ((status == True) &&
 	    (MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
 		XfwfMultiListUnhighlightItem(mlw,item_index);
+        Notify(mlw,event,params,num_params);
 } /* End Unselect */
 
 
@@ -1356,6 +1403,7 @@ Cardinal *num_params;
 			XfwfMultiListToggleItem(mlw,item_index);
 		MultiListMostRecentItem(mlw) = item_index;
 	}
+        Notify(mlw,event,params,num_params);
 } /* End Toggle */
 
 
@@ -1368,7 +1416,8 @@ Cardinal *num_params;
 
 	The MultiListMostRecentAct(mlw) variable is used to determine
 	if items are to be selected or unselected.  This routine performs
-	select or unselect actions on each item it is called on.
+	select or unselect actions on each item it is called on. If something
+        changes, Notify is called right away.
 
  *---------------------------------------------------------------------------*/
 
@@ -1389,11 +1438,20 @@ Cardinal *num_params;
 	if ((status == True) &&
 	    (MultiListItemSensitive(MultiListNthItem(mlw,item_index))))
 	{
-		MultiListMostRecentItem(mlw) = item_index;
-		if (MultiListMostRecentAct(mlw) == XfwfMultiListActionHighlight)
-			XfwfMultiListHighlightItem(mlw,item_index);
-		    else
-			XfwfMultiListUnhighlightItem(mlw,item_index);
+	  XfwfMultiListItem *item;
+	  item = MultiListNthItem(mlw,item_index);
+	  MultiListMostRecentItem(mlw) = item_index;
+	  if (MultiListMostRecentAct(mlw) == XfwfMultiListActionHighlight) {
+	    if (MultiListItemHighlighted(item) == False) {
+	      XfwfMultiListHighlightItem(mlw,item_index);
+	      Notify(mlw,event,params,num_params);
+	    }
+	  } else {
+	    if (MultiListItemHighlighted(item) == True) {
+	      XfwfMultiListUnhighlightItem(mlw,item_index);
+	      Notify(mlw,event,params,num_params);
+	    }
+	  }
 	}
 } /* End Extend */
 

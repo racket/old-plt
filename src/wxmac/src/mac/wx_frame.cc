@@ -78,7 +78,14 @@ wxFrame::wxFrame // Constructor (for frame window)
   WindowAttributes windowAttributes;
   
   if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
-    windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
+#ifdef OS_X
+      if (parentFrame) {
+	  WXGC_IGNORE(this, cSheetParent);
+	  cSheetParent = parentFrame;
+	  windowClass = kSheetWindowClass;
+      } else
+#endif
+	  windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
     if (cStyle & wxNO_RESIZE_BORDER) {
       windowAttributes = kWindowNoAttributes;
     } else {
@@ -679,7 +686,12 @@ void wxFrame::Show(Bool show)
 
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
-    ::ShowWindow(theMacWindow);
+#ifdef OS_X
+      if (sheetParent)
+	  ::ShowSheetWindow(theMacWindow, GetWindowFromPort(cParentSheet->cMacDC->macGrafPort()));
+      else
+#endif
+	  ::ShowWindow(theMacWindow);
     ::SelectWindow(theMacWindow); 
     
     if (cMacDC->currentUser() == this)

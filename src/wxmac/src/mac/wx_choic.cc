@@ -225,7 +225,7 @@ void wxChoice::DrawChoice(Bool active)
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);
       MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
-      DrawLatin1Text(sTitle, 0, -1, 0);
+      DrawLatin1Text((char *)sTitle, 0, -1, 0);
     } else {
       Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
 		 SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };

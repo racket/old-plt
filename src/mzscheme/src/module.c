@@ -3787,10 +3787,10 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 		       check_dup_require, ht, 0, 
 		       NULL, 0, 0);
 
-  /* Dummy lets us access a top-level environment: */
-  dummy = scheme_make_environment_dummy(env);
-
   if (rec) {
+    /* Dummy lets us access a top-level environment: */
+    dummy = scheme_make_environment_dummy(env);
+
     scheme_compile_rec_done_local(rec, drec);
     scheme_default_compile_rec(rec, drec);
     return scheme_make_syntax_compiled(REQUIRE_EXPD, 

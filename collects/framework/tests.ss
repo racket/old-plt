@@ -3,8 +3,7 @@
 (require-library "mred-interfaces.ss" "framework")
 
 (define-signature framework:keys^
-  (shifted-key-list
-   get-shifted-key-list))
+  (get-shifted-key-list))
 
 (define-signature framework:test^
   (run-interval
@@ -12,7 +11,7 @@
    reraise-error
    run-one
 
-   current-eventspaces
+   current-get-eventspaces
 
    button-push
    set-check-box!

@@ -594,6 +594,7 @@
                           equal?
                           get-family
                           get-face
+                          get-transparent-text-backing-on
                           copy
                           set-delta-background
                           set-delta-foreground
@@ -628,8 +629,7 @@
                           set-delta-face
                           set-transparent-text-backing-off
                           get-transparent-text-backing-off
-                          set-transparent-text-backing-on
-                          get-transparent-text-backing-on))
+                          set-transparent-text-backing-on))
                       ($$string-snip<%>
                         (interface
                           ()
@@ -774,7 +774,7 @@
                           client->screen
                           screen->client))
                       ($$separator-menu-item<%>
-                        (interface () get-parent delete is-deleted? restore))
+                        (interface () get-parent delete restore is-deleted?))
                       ($$scroll-event<%>
                         (interface
                           ()
@@ -1308,6 +1308,7 @@
                           set
                           append
                           on-drop-file
+                          select
                           get-data
                           set-data
                           set-string
@@ -1341,7 +1342,6 @@
                           delete
                           is-selected?
                           focus
-                          select
                           get-number
                           is-enabled?
                           get-top-level-window
@@ -1945,6 +1945,7 @@
                       ($$checkable-menu-item<%>
                         (interface
                           ()
+                          get-help-string
                           command
                           get-label
                           set-label
@@ -1954,14 +1955,13 @@
                           delete
                           set-help-string
                           is-enabled?
-                          is-deleted?
                           get-x-shortcut-prefix
                           set-x-shortcut-prefix
                           get-plain-label
-                          get-help-string
                           set-shortcut
                           get-shortcut
                           restore
+                          is-deleted?
                           is-checked?))
                       ($$check-box<%>
                         (interface
@@ -2116,8 +2116,8 @@
                         (class*
                           vertical-panel%
                           ($$panel<%> $$vertical-panel<%>)
-                          (parent [style '(border)])
-                          (sequence (super-init parent '(border)))))
+                          args
+                          (sequence (apply super-init args))))
                       ($$vertical-pane%
                         (class*
                           vertical-pane%
@@ -2326,8 +2326,8 @@
                         (class*
                           horizontal-panel%
                           ($$horizontal-panel<%> $$panel<%>)
-                          (parent [style '(border)])
-                          (sequence (super-init parent '(border)))))
+                          args
+                          (sequence (apply super-init args))))
                       ($$horizontal-pane%
                         (class*
                           horizontal-pane%
@@ -2822,6 +2822,7 @@
                           style%
                           special-control-key
                           snip-class-list%
+                          sleep/yield
                           shortcut-menu-item<%>
                           set-editor-print-margin
                           register-collecting-blit

@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-run.ss,v 1.2 1998/11/19 20:53:19 robby Exp $
+;; $Id: testr.ss,v 1.4 1998/11/23 19:22:00 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -171,14 +171,14 @@
 	  (semaphore-wait sem)
 	  (reraise-error)))))
 
-  (define current-eventspaces
+  (define current-get-eventspaces
     (make-parameter (lambda () (list (mred:current-eventspace)))))
 
   (define (get-active-frame)
     (ormap (lambda (eventspace)
 	     (parameterize ([mred:current-eventspace eventspace])
 	       (mred:get-top-level-focus-window)))
-	   ((current-eventspaces))))
+	   ((current-get-eventspaces))))
 
   (define (get-focused-window)
     (let ([f (get-active-frame)])
@@ -354,27 +354,30 @@
 	  'f4 'f5 'f6 'f7 'f8 'f9 'f10 'f11 'f12 'f13 'f14 'f15 'f16 'f17
 	  'f18 'f19 'f20 'f21 'f22 'f23 'f24 'numlock 'scroll))
 
-  (define (keystroke key . modifier-list)
-    (cond
-      [(not (or (char? key) (memq key valid-key-symbols)))
-       (arg-error key-tag "expects char or valid key symbol, given: ~s" key)]
-      [(verify-list  modifier-list  legal-keystroke-modifiers)
-       => (lambda (mod) (arg-error key-tag "unknown key modifier: ~s" mod))]
-      [else
-       (run-one
-	(lambda ()
-	  (let ([window (get-focused-window)])
-	    (cond
-	      [(not window)
-	       (run-error key-tag "no focused window")]
-	      [(not (send window is-shown?))
-	       (run-error key-tag "focused window is not shown")]
-	      [(not (in-active-frame? window))
-	       (run-error key-tag "focused window is not in active frame")]
-	      [else
-	       (let ([event (make-key-event key window modifier-list)])
-		 (send-key-event window event)
-		 (void))]))))]))
+  (define keystroke
+    (case-lambda
+     [(key) (keystroke key null)]
+     [(key modifier-list)
+      (cond
+	[(not (or (char? key) (memq key valid-key-symbols)))
+	 (arg-error key-tag "expects char or valid key symbol, given: ~s" key)]
+	[(verify-list  modifier-list  legal-keystroke-modifiers)
+	 => (lambda (mod) (arg-error key-tag "unknown key modifier: ~s" mod))]
+	[else
+	 (run-one
+	  (lambda ()
+	    (let ([window (get-focused-window)])
+	      (cond
+		[(not window)
+		 (run-error key-tag "no focused window")]
+		[(not (send window is-shown?))
+		 (run-error key-tag "focused window is not shown")]
+		[(not (in-active-frame? window))
+		 (run-error key-tag "focused window is not in active frame")]
+		[else
+		 (let ([event (make-key-event key window modifier-list)])
+		   (send-key-event window event)
+		   (void))]))))])]))
   
   ;; delay test for on-char until all ancestors decline pre-on-char.
 
@@ -656,6 +659,3 @@
 		  (send-mouse-event new-window enter))
 		(send new-window set-focus)
 		(void))))])))))
-
-
-    

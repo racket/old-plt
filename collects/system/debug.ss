@@ -84,16 +84,18 @@
 (mred:debug:when (list 'load)
   (letrec* ([old-handler (current-load)]
 	    [offset-string "  "]
-	    [indent-string ""])
+	    [indent-string ""]
+	    [conter-max-size 4]
+	    [counter-mt-string (make-string counter-max-size #\space)])
     (current-load (lambda (f)
 		    (let* ([file (if (relative-path? f)
 				     (build-path (current-directory) f)
 				     f)]
 			   [counter-string
-			    (let ([MAX-SIZE 4]
-				  [str (format "~a" (and (defined? 'mred:splash-counter)
+			    (let ([str (format "~a" (and (defined? 'mred:splash-counter)
 							 mred:splash-counter))])
-			      (string-append (make-string (- MAX-SIZE (string-length str)) #\space)
+			      (string-append (make-string (- counter-max-size
+							     (string-length str)) #\space)
 					     str
 					     (string #\space)))])
 		      (mred:debug:printf 'load "~a~aLoading ~a..." counter-string indent-string file)
@@ -115,5 +117,7 @@
 					   (lambda () (old-handler f))
 					   list))
 			       outdent)])
-			(mred:debug:printf 'load "~a~aLoaded ~a." counter-string indent-string file)
+			(mred:debug:printf 'load "~a~aLoaded ~a."
+					   mt-counter-string
+					   indent-string file)
 			(apply values answer)))))))

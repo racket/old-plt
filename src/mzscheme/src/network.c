@@ -1278,9 +1278,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
 
   data = (Scheme_Tcp *)port->port_data;
 
-#ifdef USE_MAC_TCP
  top:
-#endif
 
   if (data->b.hiteof)
     return EOF;
@@ -1331,6 +1329,19 @@ static long tcp_get_string(Scheme_Input_Port *port,
     data->b.bufmax = rn;
   }
   errid = SOCK_ERRNO();
+
+  /* Is it possible that an EAGAIN error occurs? That means that data
+     isn't ready, even though select() says that data is ready. It
+     seems to happen for at least one user, and there appears to be
+     no harm in protecting against it. */
+# ifdef USE_WINSOCK_TCP
+#  define RECV_NOT_READY(e) ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
+# else
+#  define RECV_NOT_READY(e) ((errid == EWOULDBLOCK) || (errid == EAGAIN))
+# endif
+  if (RECV_NOT_READY(errid))
+    goto top;
+
 #endif
 #ifdef USE_MAC_TCP
   /* Allow only one read at a time: */

@@ -1,5 +1,6 @@
 (module framework-wrap mzscheme
-  (require "mred-wrap.ss"
+  (require (lib "unitsig.ss")
+           "mred-wrap.ss"
            (prefix orig: (lib "mred-sig.ss" "mred"))
            (lib "framework-unit.ss" "framework"))
 

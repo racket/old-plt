@@ -1,6 +1,8 @@
+
 (module link mzscheme
   (require (lib "unitsig.ss")
-           "init.ss"
+            "drsig.ss"
+          "init.ss"
            "edit.ss"
            "export.ss"
            "main-before.ss"

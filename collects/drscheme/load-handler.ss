@@ -1,14 +1,15 @@
+
 (module load-handlers mzscheme
+  (require "mred-wrap.ss"
+           "framework-wrap.ss"
+           (lib "zodiac.ss" "syntax")
+           (lib "basis.ss" "userspce"))
+  
   (provide
    process-text/zodiac
    process-text/no-zodiac
    process-text
    drscheme-load-handler)
-  
-  (require "mred-wrap.ss"
-           "framework-wrap.ss"
-           (lib "zodiac.ss" "syntax")
-           (lib "basis.ss" "userspce"))
 
 
   

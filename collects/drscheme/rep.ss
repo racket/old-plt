@@ -7,8 +7,9 @@
 
 
 (module rep mzscheme
-  
-  (require (lib "mred-wrap.ss")
+  (require (lib "unitsig.ss")
+           "drsig.ss"
+           (lib "mred-wrap.ss")
            (lib "framework-wrap.ss")
            (prefix mzlib:pretty-print: (lib "pretty.ss"))
            (prefix print-convert: (lib "pconvert.ss"))

@@ -1,5 +1,7 @@
 (module snip mzscheme
-  (require "mred-wrap.ss"
+  (require (lib "unitsig.ss")
+           "drsig.ss"
+           "mred-wrap.ss"
            "framework-wrap.ss"
            (lib "zodiac.ss" "syntax"))
   

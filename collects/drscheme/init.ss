@@ -1,5 +1,8 @@
+
 (module init mzscheme
-  (require "mred-wrap.ss")
+  (require (lib "unitsig.ss")
+           "drsig.ss"
+           "mred-wrap.ss")
   (provide init@)
   
   (define init@

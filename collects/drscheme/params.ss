@@ -1,5 +1,8 @@
+
 (module get-extend mzscheme
-  (require "mred-wrap.ss"
+  (require (lib "unitsig.ss")
+           "drsig.ss"
+           "mred-wrap.ss"
            (prefix mzlib:function (lib "etc.ss")))
   
   (provide get-extend@)

@@ -1,6 +1,8 @@
 
 (module main-before mzscheme
-  (require "mred-wrap.ss"
+  (require (lib "unitsig.ss")
+           "drsig.ss"
+           "mred-wrap.ss"
            "framework-wrap.ss"
            "unitsig.ss"
            "class.ss"

@@ -1,5 +1,8 @@
+
 (module language mzscheme
-  (require "mred-wrap.ss"
+  (require (lib "unitsig.ss")
+           "drsig.ss"
+           "mred-wrap.ss"
            "framework-wrap.ss"
            (prefix drscheme:unit: "unit.ss")
            (prefix zodiac: (lib "zodiac.ss" "syntax"))

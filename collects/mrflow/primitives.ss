@@ -236,18 +236,34 @@
  
  (list? (top -> boolean))
  
+ ; this is a nice type, the rest argument does all the work
  (list (forall ([a top])
-               (a *-> a)))
+               (case-lambda
+                [a a])))
  
- ;(length ((listof top) -> exact-integer))
+ (length ((listof top) -> exact-integer))
  
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; not R5RS, just for testing
  
  (id (forall ([a top]) (a -> a)))
- 
  (void (-> (void)))
- 
+ (foo (cons 1 2))
  (pi 3.1)
- 
+ ; one required argument that has to be a list, the elements are then extracted
+ (gather-one1 (forall ([a top])
+                      ((listof a) -> a)))
+ (gather-one2 (forall ([a top])
+                      (case-lambda
+                       [((listof a)) a])))
+ ; unknown number of arguments that are converted into a list by the rest argument,
+ ; then extracted
+ (gather-many1 (forall ([a top])
+                       (a *-> a)))
+ (gather-many2 (forall ([a top])
+                       (case-lambda
+                        [(listof a) a])))
+ ; don't try this at home
+ ;(gather-other (forall ([a top])
+ ;                      ((a) *-> a)))
  )

@@ -284,7 +284,7 @@
                     (let-values (((start-f end-f error-f) (send parens match-forward (- here start-pos)))
                                  ((start-b end-b error-b) (send parens match-backward (- here start-pos))))
                       (when (and start-f end-f
-                                 (not (and error-f (< (+ start-pos error-f) current-pos) (not up-to-date?))))
+                                 (not (and error-f (<= (+ start-pos error-f) current-pos) (not up-to-date?))))
                         (highlight start-f end-f here error-f))
                       (when (and start-b end-b)
                         (highlight start-b end-b here error-b)))))))

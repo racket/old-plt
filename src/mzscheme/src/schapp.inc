@@ -13,10 +13,10 @@
 #  include "mzstkchk.h"
   {
 #  ifndef ERROR_ON_OVERFLOW
-    Scheme_Process *p = scheme_current_process;
-    p->ku.k.p1 = (void *)rator;
-    p->ku.k.i1 = argc;
-    p->ku.k.p2 = (void *)argv;
+    Scheme_Process *cp = scheme_current_process;
+    cp->ku.k.p1 = (void *)rator;
+    cp->ku.k.i1 = argc;
+    cp->ku.k.p2 = (void *)argv;
 #  endif
     return scheme_handle_stack_overflow(do_apply_known_k);
   }

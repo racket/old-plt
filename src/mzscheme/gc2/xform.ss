@@ -1,4 +1,7 @@
 
+; No calls of the form (f)(...)
+; Pass the address of arrays, records, and non-pointers only
+
 (define cmd-line (vector->list argv))
 
 (define cpp (car cmd-line))
@@ -513,10 +516,10 @@
 		 (map (lambda (e) (get-pointer-vars e "PTRLOCAL" #f)) decls))]
 	       [vars (begin
 		       (ormap (lambda (var)
-				(when (assq var extra-vars)
+				(when (assq (car var) extra-vars)
 				  (error 'xform 
 					 "No es bueno: pointerful variable ~a shadowed in decls at line ~a"
-					 var
+					 (car var)
 					 (tok-line (caar decls)))))
 			      
 			      local-vars)
@@ -538,10 +541,19 @@
 		       [(body-x live-vars)
 			(let loop ([body body])
 			  (if (null? body)
+			      ;; Locally-defined arrays and records are always live.
 			      ;; Start with 0 maxlive in case we want to check whether anything
-			      ;;  was pushed in the block
+			      ;;  was pushed in the block.
 			      (values null (make-live-var-info -1
-							       (live-var-info-vars live-vars)
+							       (append
+								(let loop ([vars local-vars])
+								  (cond
+								   [(null? vars) null]
+								   [(or (array-type? (cdar vars))
+									(struct-type? (cdar vars)))
+								    (cons (car vars) (loop (cdr vars)))]
+								   [else (loop (cdr vars))]))
+								(live-var-info-vars live-vars))
 							       (live-var-info-new-vars live-vars)
 							       (live-var-info-num-calls live-vars)))
 			      (let*-values ([(rest live-vars) (loop (cdr body))]

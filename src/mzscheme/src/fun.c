@@ -108,8 +108,6 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj);
 static Scheme_Object *rep;
 
 typedef void (*DW_PrePost_Proc)(void *);
-typedef Scheme_Object *(*DW_Act_Proc)(void *);
-typedef Scheme_Object *(*DW_Jmp_Handler)(void *);
 
 #define CONS(a,b) scheme_make_pair(a,b)
 
@@ -716,11 +714,11 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   scheme_init_lambda_rec(rec, &lam);
 
   {
-    Scheme_Object *code;
-    code = scheme_compile_sequence(forms, 
-				   scheme_no_defines(frame), 
-				   &lam);
-    data->code = code;
+    Scheme_Object *datacode;
+    datacode = scheme_compile_sequence(forms, 
+				       scheme_no_defines(frame), 
+				       &lam);
+    data->code = datacode;
   }
 
   scheme_merge_lambda_rec(rec, &lam);
@@ -801,7 +799,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
 	/* We get `p' again because it might be a nestee: */
-	Scheme_Process *p = scheme_current_process;
+	Scheme_Process *pp = scheme_current_process;
 	Scheme_Overflow *overflow;
 
 	overflow = MALLOC_ONE_RT(Scheme_Overflow);
@@ -811,8 +809,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
       
 	memcpy(&overflow->cont, &scheme_overflow_cont, 
 	       sizeof(Scheme_Jumpup_Buf));
-	overflow->prev = p->overflow;
-	p->overflow = overflow;
+	overflow->prev = pp->overflow;
+	pp->overflow = overflow;
       
 	memcpy(&overflow->savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 	if (scheme_setjmp(scheme_error_buf)) {
@@ -821,22 +819,22 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  void *p1, *p2, *p3, *p4;
 	  int i1, i2;
 	
-	  p1 = p->ku.k.p1;
-	  p2 = p->ku.k.p2;
-	  p3 = p->ku.k.p3;
-	  p4 = p->ku.k.p4;
-	  i1 = p->ku.k.i1;
-	  i2 = p->ku.k.i2;
+	  p1 = pp->ku.k.p1;
+	  p2 = pp->ku.k.p2;
+	  p3 = pp->ku.k.p3;
+	  p4 = pp->ku.k.p4;
+	  i1 = pp->ku.k.i1;
+	  i2 = pp->ku.k.i2;
 	
 	  /* stack overflow is a lot of work; force a sleep */
 	  scheme_process_block(0);
 	
-	  p->ku.k.p1 = p1;
-	  p->ku.k.p2 = p2;
-	  p->ku.k.p3 = p3;
-	  p->ku.k.p4 = p4;
-	  p->ku.k.i1 = i1;
-	  p->ku.k.i2 = i2;
+	  pp->ku.k.p1 = p1;
+	  pp->ku.k.p2 = p2;
+	  pp->ku.k.p3 = p3;
+	  pp->ku.k.p4 = p4;
+	  pp->ku.k.i1 = i1;
+	  pp->ku.k.i2 = i2;
 	
 	  {
 	    Overflow_K_Proc f = scheme_overflow_k;
@@ -844,14 +842,14 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  }
 	}
       
-	overflow = p->overflow;
+	overflow = pp->overflow;
 	memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
-	p->overflow = overflow->prev;
+	pp->overflow = overflow->prev;
 	memcpy(&scheme_overflow_cont, &overflow->cont, 
 	       sizeof(Scheme_Jumpup_Buf));
 	overflow = NULL; /* Maybe helps GC */
 	/* Reset overflow buffer and continue */
-	if (scheme_setjmp(p->overflow_buf)) {
+	if (scheme_setjmp(pp->overflow_buf)) {
 	  /* handle again */
 	} else
 	  scheme_longjmpup(&scheme_overflow_cont);
@@ -2478,9 +2476,9 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
   cpudur = cpuend - cpustart;
 
   if (v == SCHEME_MULTIPLE_VALUES) {
-    Scheme_Process *p = scheme_current_process;
-    v = scheme_build_list(p->ku.multiple.count,
-			  p->ku.multiple.array);
+    Scheme_Process *cp = scheme_current_process;
+    v = scheme_build_list(cp->ku.multiple.count,
+			  cp->ku.multiple.array);
   } else
     v = scheme_make_pair(v, scheme_null);
 

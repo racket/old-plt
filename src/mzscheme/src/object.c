@@ -968,17 +968,17 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
   num_supers = data->num_supers;
   il = scheme_null;
   for (i = 0; i < num_supers; i++) {
-    Scheme_Object *in;
-    in = _scheme_eval_compiled_expr(data->super_exprs[i]);
-    if (SCHEME_INTERFACEP(in)) {
-      il = cons(in, il);
+    Scheme_Object *sin;
+    sin = _scheme_eval_compiled_expr(data->super_exprs[i]);
+    if (SCHEME_INTERFACEP(sin)) {
+      il = cons(sin, il);
     } else {
       const char *symname;
       symname = (data->defname ? scheme_symbol_name(data->defname) : "");
       scheme_raise_exn(MZEXN_OBJECT,
 		       "interface: interface expression returned "
 		       "a non-interface: %s%s%s",
-		       scheme_make_provided_string(in, 1, NULL),
+		       scheme_make_provided_string(sin, 1, NULL),
 		       data->defname ? " for interface: " : "",
 		       symname);
       return NULL;
@@ -1939,12 +1939,12 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     vars = SCHEME_CDR(vars);
 
     if (SAME_OBJ(tag, seq_symbol)) {
-      Scheme_Object *l = vars;
-      while (SCHEME_PAIRP(l)) {
-	l = SCHEME_CDR(l);
+      Scheme_Object *ll = vars;
+      while (SCHEME_PAIRP(ll)) {
+	ll = SCHEME_CDR(ll);
       }
-      if (!SCHEME_NULLP(l))
-	scheme_wrong_syntax(CLASS_STAR, l, form, 
+      if (!SCHEME_NULLP(ll))
+	scheme_wrong_syntax(CLASS_STAR, ll, form, 
 			    "bad syntax in sequence clause"
 			    " (" IMPROPER_LIST_FORM ")");
       

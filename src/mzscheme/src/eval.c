@@ -909,10 +909,10 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	  
 	  if (binding) {
 	    /* Check binding id for shadowing syntax */
-	    Scheme_Object *val;
-	    val = scheme_static_distance(binding, env, 
-					 SCHEME_DONT_MARK_USE 
-					 + SCHEME_ENV_CONSTANTS_OK);
+	    Scheme_Object *sdval;
+	    sdval = scheme_static_distance(binding, env, 
+					   SCHEME_DONT_MARK_USE 
+					   + SCHEME_ENV_CONSTANTS_OK);
 	    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
 		|| SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_compiler_type)) {
 	      scheme_wrong_syntax("define-values (in unit or internal)",
@@ -2042,7 +2042,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 # endif
 # include "mzstkchk.h"
   {
-    Scheme_Process *p = scheme_current_process;
     p->ku.k.p1 = (void *)obj;
     p->ku.k.i1 = num_rands;
     if (num_rands >= 0) {

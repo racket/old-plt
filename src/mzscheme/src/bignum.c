@@ -1369,9 +1369,9 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
       len = 0;
       v = SCHEME_INT_VAL(n);
     } else {
-      Scheme_Bignum *b = (Scheme_Bignum *)n;
-      len = (b->len - 1) * LOG_BIG_RADIX;
-      v = b->digits[b->len - 1];
+      Scheme_Bignum *b_n = (Scheme_Bignum *)n;
+      len = (b_n->len - 1) * LOG_BIG_RADIX;
+      v = b_n->digits[b_n->len - 1];
     }
     
     while (v) {

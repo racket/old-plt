@@ -2522,15 +2522,15 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	  /* It was a link. Is the new result relative? */
 	  if (!scheme_is_complete_path(SCHEME_STR_VAL(new_result),
 				       SCHEME_STRTAG_VAL(new_result))) {
-	    Scheme_Object *a[2], *result_base;
+	    Scheme_Object *aa[2], *result_base;
 	    /* Yes - resolve it relative to result's base: */
 	    scheme_split_pathname(SCHEME_STR_VAL(result),
 				  SCHEME_STRTAG_VAL(result),
 				  &result_base,
 				  &isdir);
-	    a[0] = result_base;
-	    a[1] = new_result;
-	    new_result = scheme_build_pathname(2, a);
+	    aa[0] = result_base;
+	    aa[1] = new_result;
+	    new_result = scheme_build_pathname(2, aa);
 	  }
 	  
 	  /* Simplify the new result */

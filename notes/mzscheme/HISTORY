@@ -2,6 +2,16 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.17:
+
+ * Added `read-accept-quasiquote' to control whether the reader
+   accepts backquote and comma in input (for DrScheme's teaching
+   languages).
+
+ * Renamed "2k" to "PGC" (for "precise garbage collection").
+
+ * Upgraded to gc 6.0alpha9.
+
 Version 199.15:
 
  * Added `error-print-source-location', which controls whether error
@@ -208,7 +218,7 @@ Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
 Default for pconvert.ss's whole/fractional-exact-numbers parameter
  changed to #f
-Upgraded to gc 6.0alpha4
+Upgraded to gc 6.0alpha9
 
 Version 103, August 28, 2000
 Changed define-values and set!-values to require distinct variables

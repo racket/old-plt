@@ -1,5 +1,5 @@
 (module info (lib "infotab.ss" "setup")
-  (define name "HTML")
+  (define name "Net")
   
   (define help-desk-message
     "Mz/Mr: See the \"To load\" section of each collection for the command to load it.")

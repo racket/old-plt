@@ -178,12 +178,16 @@
 	(lambda (ast)
 
 	  (cond 
-	   [(or (zodiac:quote-form? ast) 
-		(zodiac:binding? ast)
-		(zodiac:varref? ast))
+	   [(zodiac:quote-form? ast) 
 	    (syntax-object->datum (zodiac:zodiac-stx ast))]
+
+	   [(zodiac:binding? ast)
+	    (zodiac:binding-var ast)]
+
+	   [(zodiac:varref? ast)
+	    (zodiac:varref-var ast)]
 	   
-					; compound sexps
+	   ;; compound sexps
 	   [(zodiac:define-values-form? ast)
 	    `(define-values ,(map zodiac->sexp (zodiac:define-values-form-vars ast))
 	       ,(zodiac->sexp/annotate (zodiac:define-values-form-val ast)))]

@@ -6,7 +6,7 @@
 ;; setting the known? and known-val fields as possible.
 
 ;; Known-value analysis is used for constant propagation, but
-;;  more importantly, it's used for compiling tail recusrsion
+;;  more importantly, it's used for compiling tail recursion
 ;;  as a goto. mzc can only compile tail recursion as a goto
 ;;  when it knows the actual destination of the jump.
 
@@ -228,6 +228,7 @@
 			      (zodiac:structurize-syntax new-v v)))))]
 		      [else v]))
 		  v))]
+	   [(top-level-varref/bind-from-lift? v) (top-level-varref/bind-from-lift-lambda v)]
 	   [else v])))
 
       ;; extract-varref-known-val works for bindings, too.

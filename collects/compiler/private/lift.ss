@@ -200,7 +200,7 @@
 				    [else 'static])
 				   
 				   ;; Check the free variable - references a liftable proc?
-				   (let ([v (extract-varref-known-val (car l))])
+				   (let ([v (extract-ast-known-value (extract-varref-known-val (car l)))])
 				     (if (zodiac:case-lambda-form? v)
 					 (let ([vl (let ([l (get-liftable! v)])
 						     (cond
@@ -270,8 +270,8 @@
 		     ;; VARIABLE REFERENCES (A-VALUES)
 		     ;;
 		     [(zodiac:bound-varref? ast)
-		      (let ([v (extract-varref-known-val ast)])
-
+		      (let ([v (extract-ast-known-value (extract-varref-known-val ast))])
+						
 			(if (zodiac:case-lambda-form? v)
 
 			    (let ([lifted (let ([l (procedure-code-liftable (get-annotation v))])

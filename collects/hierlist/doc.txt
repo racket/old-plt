@@ -73,7 +73,7 @@ _hierlist_ defines three classes:
 >  is-selected? :: (send an-item is-selected?) - returns #t or #f
 
 >  select :: (send an-item select on?) - selects or deselects the
-     item; hierarchical-list%'s select is called
+     item; hierarchical-list%'s on-select is called
 
 >  user-data :: (send an-item user-data) - returns user data;
      initialized to #f

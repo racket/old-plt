@@ -284,6 +284,10 @@
 #define scheme_build_mac_filename (scheme_extension_table->scheme_build_mac_filename)
 #define scheme_mac_path_to_spec (scheme_extension_table->scheme_mac_path_to_spec)
 #endif
+#ifdef USE_MAC_CARBON_FILE_TOOLBOX
+#define scheme_carbon_spec_to_path (scheme_extension_table->scheme_carbon_spec_to_path)
+#define scheme_carbon_path_to_spec (scheme_extension_table->scheme_carbon_path_to_spec)
+#endif
 #define scheme_alloc_fdset_array (scheme_extension_table->scheme_alloc_fdset_array)
 #define scheme_init_fdset_array (scheme_extension_table->scheme_init_fdset_array)
 #define scheme_get_fdset (scheme_extension_table->scheme_get_fdset)

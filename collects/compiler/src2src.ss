@@ -185,16 +185,16 @@
 	      (hash-table-put! table (syntax-e stx) (cons (cons stx s) l))
 	      s)))))
 
-  (define global-ht (make-hash-table))
-  (define et-global-ht (make-hash-table))
+  (define-struct tables (global-ht et-global-ht))
 
   (define global%
-    (class100 exp% (-stx -trans?)
+    (class100 exp% (-stx -trans? -tables)
       (private-field
        [stx -stx]
        [trans? -trans?]
+       [tables -tables]
        [mbind #f]
-       [bucket (global-bucket (if trans? et-global-ht global-ht) stx)])
+       [bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) stx)])
       (private
 	[get-mbind!
 	 (lambda ()
@@ -233,7 +233,7 @@
 
 	[can-dup/move? (lambda () (valueable?))]
 
-	[clone (lambda (env) (make-object global% stx trans?))]
+	[clone (lambda (env) (make-object global% stx trans? tables))]
 
 	[global->local (lambda (env)
 			 (or (ormap (lambda (e)
@@ -423,12 +423,13 @@
 	(super-init stx))))
 
   (define top-def% 
-    (class100 exp% (-stx -formname -varnames -expr)
+    (class100 exp% (-stx -formname -varnames -expr -tables)
       (private-field
        [stx -stx]
        [formname -formname]
        [varnames -varnames]
        [expr -expr]
+       [tables -tables]
        [globals #f])
       (override
 	[nonbind-sub-exprs (lambda () (list expr))]
@@ -458,21 +459,21 @@
 		       (unless globals
 			 (set! globals
 			       (map (lambda (v)
-				      (make-object global% v #f))
+				      (make-object global% v #f tables))
 				    varnames)))
 		       globals)])
       (sequence
 	(super-init stx))))
 
   (define variable-def% 
-    (class100 top-def% (-stx -varnames -expr)
+    (class100 top-def% (-stx -varnames -expr -tables)
       (sequence
-	(super-init -stx (quote-syntax define-values) -varnames -expr))))
+	(super-init -stx (quote-syntax define-values) -varnames -expr -tables))))
 
   (define syntax-def% 
-    (class100 top-def% (-stx -varnames -expr)
+    (class100 top-def% (-stx -varnames -expr -tables)
       (sequence
-	(super-init -stx (quote-syntax define-syntaxes) -varnames -expr))))
+	(super-init -stx (quote-syntax define-syntaxes) -varnames -expr -tables))))
 
   (define (install-values vars expr)
     (when (= 1 (length vars))
@@ -550,11 +551,12 @@
 	(super-init stx (void)))))
 
   (define app%
-    (class100 exp% (-stx -rator -rands)
+    (class100 exp% (-stx -rator -rands -tables)
       (private-field
        [stx -stx]
        [rator -rator]
-       [rands -rands])
+       [rands -rands]
+       [tables -tables])
       (rename [super-simplify simplify]
 	      [super-valueable? valueable?])
       (override
@@ -629,12 +631,15 @@
 			   (eq? 1 (send (car rands) get-const-val)))
 		      (and (is-a? (cadr rands) constant%)
 			   (eq? 1 (send (cadr rands) get-const-val)))))
-	     (make-object app% (make-object global% (quote-syntax add1) (send rator is-trans?))
+	     (make-object app% 
+			  stx
+			  (make-object global% (quote-syntax add1) (send rator is-trans?) tables)
 			  (list
 			   (if (and (is-a? (car rands) constant%)
 				    (eq? 1 (send (car rands) get-const-val)))
 			       (cadr rands)
-			       (car rands))))]
+			       (car rands)))
+			  tables)]
 	    ;; (- x 1) => (sub1 x)
 	    [(and (is-a? rator global%)
 		  (send rator is-kernel?)
@@ -642,8 +647,11 @@
 		  (= 2 (length rands))
 		  (and (is-a? (cadr rands) constant%)
 		       (eq? 1 (send (cadr rands) get-const-val))))
-	     (make-object app% (make-object global% (quote-syntax sub1)  (send rator is-trans?))
-			  (list (car rands)))]
+	     (make-object app% 
+			  stx
+			  (make-object global% (quote-syntax sub1)  (send rator is-trans?) tables)
+			  (list (car rands))
+			  tables)]
 
 	    ;; (car x) where x is known to be a list construction
 	    [(and (is-a? rator global%)
@@ -670,6 +678,59 @@
 	       (send (car rands) drop-uses)
 	       val)]
 
+	    ;; (memv x '(c ...)) in a boolean context => (if (eq[v]? x 'c) ...)
+	    ;; relevant to the output of `case'
+	    [(and (eq? (context-need ctx) 'bool) 
+		  (is-a? rator global%)
+		  (send rator is-kernel?)
+		  (eq? (send rator orig-name) 'memv)
+		  (= 2 (length rands))
+		  (is-a? (car rands) ref%)
+		  (is-a? (cadr rands) constant%)
+		  (list? (send (cadr rands) get-const-val)))
+	     (let ([xformed
+		    (let ([l (send (cadr rands) get-const-val)]
+			  [l-stx (syntax->list (send (cadr rands) get-stx))]
+			  [false (make-object constant% (datum->syntax-object #f #f) #f)]
+			  [true (make-object constant% (datum->syntax-object #f #t) #t)])
+		      (if (null? l)
+			  false
+			  (let loop ([l l][l-stx l-stx])
+			    (let ([test
+				   (make-object app%
+						stx
+						(make-object global% 
+							     (let ([a (car l)])
+							       (if (or (symbol? a)
+								       (and (number? a)
+									    (exact? a)
+									    (integer? a)
+									    ;; fixnums:
+									    (<= (- (expt 2 29))
+										a
+										(expt 2 29))))
+								   (quote-syntax eq?)
+								   (quote-syntax eqv?)))
+							     (send rator is-trans?)
+							     tables)
+						(list
+						 (car rands)
+						 (make-object constant% 
+							      (car l-stx)
+							      (car l)))
+						tables)])
+			      (cond
+			       [(null? (cdr l)) test]
+			       [else (let ([rest (loop (cdr l) (cdr l-stx))])
+				       ;; increment use count:
+				       (send (car rands) set-known-values)
+				       (make-object if%
+						    stx
+						    test
+						    true
+						    rest))])))))])
+	       (send xformed simplify ctx))]
+
 	    ;; inlining
 	    [(and (is-a? rator binding%)
 		  (is-a? (send rator get-value) lambda%)
@@ -689,10 +750,12 @@
 	    [else this]))]
 
 	[clone (lambda (env) (make-object app%
+					  stx
 					  (send rator clone env)
 					  (map (lambda (rand)
 						 (send rand clone env))
-					       rands)))]
+					       rands)
+					  tables))]
 
 	[sexpr
 	 (lambda ()
@@ -1193,14 +1256,15 @@
 
 
   (define module%
-    (class100 exp% (-stx -body -et-body -name -init-req -req-prov)
+    (class100 exp% (-stx -body -et-body -name -init-req -req-prov -tables)
       (private-field
        [stx -stx]
        [body -body]
        [et-body -et-body]
        [req-prov -req-prov]
        [name -name]
-       [init-req -init-req])
+       [init-req -init-req]
+       [tables -tables])
       (rename
        [super-deorganize deorganize])
       (override
@@ -1293,10 +1357,13 @@
 								     (send (car defs) get-stx)
 								     (make-object global%
 										  (quote-syntax values)
-										  #f)
+										  #f
+										  tables)
 								     (map (lambda (var)
 									    (make-object ref% var var))
-									  lex-vars))))
+									  lex-vars)
+								     tables))
+					   tables)
 			      l))))])
 	       (set! body -body)
 	       (set! et-body -et-body)))
@@ -1331,14 +1398,18 @@
 					      (loop (cdr bindingss) vars))
 					(loop2 (cdr bindings) (cdr vars) (cons (car vars) accum))))))]
 		     [bindings (apply append bindingss)])
-		 (let ([env (map cons bindings (map (lambda (var) (make-object global% var #f)) vars))])
+		 (let ([env (map cons bindings 
+				 (map (lambda (var) 
+					(make-object global% var #f tables)) 
+				      vars))])
 		   (set! body
 			 (append
 			  (map (lambda (vars body)
 				 (make-object variable-def%
 					      stx
 					      vars
-					      (send body substitute env)))
+					      (send body substitute env)
+					      tables))
 			       varss bodys)
 			  (cdr body)))))))
 	   (super-deorganize))]
@@ -1441,17 +1512,17 @@
 	  var)))
 
   (define (make-parse top?)
-    (lambda (stx env trans? in-module?)
+    (lambda (stx env trans? in-module? tables)
       (kernel-syntax-case stx trans?
 	[id
 	 (identifier? stx)
 	 (let ([a (stx-bound-assq stx env)])
 	   (if a
 	       (make-object ref% stx (cdr a))
-	       (make-object global% stx trans?)))]
+	       (make-object global% stx trans? tables)))]
 
 	[(#%top . id)
-	 (make-object global% (syntax id) trans?)]
+	 (make-object global% (syntax id) trans? tables)]
 	
 	[(#%datum . val)
 	 (make-object constant% stx (syntax-object->datum (syntax val)))]
@@ -1460,25 +1531,27 @@
 	 (make-object variable-def% 
 		      stx
 		      (syntax->list (syntax names))
-		      (parse (syntax rhs) env #f in-module?))]
+		      (parse (syntax rhs) env #f in-module? tables)
+		      tables)]
 	
 	[(define-syntaxes names rhs)
 	 (make-object syntax-def% 
 		      stx
 		      (syntax->list (syntax names))
-		      (parse (syntax rhs) env #t in-module?))]
+		      (parse (syntax rhs) env #t in-module? tables)
+		      tables)]
 	
 	[(begin . exprs)
 	 (make-object begin%
 		      stx
-		      (map (lambda (e) ((if top? parse-top parse) e env trans? in-module?))
+		      (map (lambda (e) ((if top? parse-top parse) e env trans? in-module? tables))
 			   (syntax->list (syntax exprs))))]
 
 	[(begin0 expr . exprs)
 	 (make-object begin0%
 		      stx
-		      (parse (syntax expr) env trans? in-module?)
-		      (parse (syntax (begin . exprs)) env trans? in-module?))]
+		      (parse (syntax expr) env trans? in-module? tables)
+		      (parse (syntax (begin . exprs)) env trans? in-module? tables))]
 
 	[(quote expr)
 	 (make-object constant% stx (syntax-object->datum (syntax expr)))]
@@ -1492,7 +1565,7 @@
 			stx
 			(list args)
 			(list norm?)
-			(list (parse (syntax (begin . body)) env trans? in-module?))))]
+			(list (parse (syntax (begin . body)) env trans? in-module? tables))))]
 
 	[(case-lambda [args . body] ...)
 	 (let-values ([(envs argses norm?s)
@@ -1512,38 +1585,38 @@
 			norm?s
 			(map (lambda (env body)
 			       (with-syntax ([body body])
-				 (parse (syntax (begin . body)) env trans? in-module?)))
+				 (parse (syntax (begin . body)) env trans? in-module? tables)))
 			     envs
 			     (syntax->list (syntax (body ...))))))]
 	
 	[(let-values . _)
 	 (parse-let let% #f stx env
-		    (lambda (b env) (parse b env trans? in-module?)))]
+		    (lambda (b env) (parse b env trans? in-module? tables)))]
 	[(letrec-values . _)
 	 (parse-let letrec% #t stx env
-		    (lambda (b env) (parse b env trans? in-module?)))]
+		    (lambda (b env) (parse b env trans? in-module? tables)))]
 
 	[(set! var rhs)
 	 (make-object set!% 
 		      stx
-		      (parse (syntax var) env trans? in-module?)
-		      (parse (syntax rhs) env trans? in-module?))]
+		      (parse (syntax var) env trans? in-module? tables)
+		      (parse (syntax rhs) env trans? in-module? tables))]
 
 	[(if test then . else)
 	 (make-object if%
 		      stx
-		      (parse (syntax test) env trans? in-module?)
-		      (parse (syntax then) env trans? in-module?)
+		      (parse (syntax test) env trans? in-module? tables)
+		      (parse (syntax then) env trans? in-module? tables)
 		      (if (null? (syntax-e (syntax else)))
-			  (parse (quote-syntax (#%app void)) env trans? in-module?)
-			  (parse (car (syntax-e (syntax else))) env trans? in-module?)))]
+			  (parse (quote-syntax (#%app void)) env trans? in-module? tables)
+			  (parse (car (syntax-e (syntax else))) env trans? in-module? tables)))]
 	
 	[(with-continuation-mark k v body)
 	 (make-object wcm% 
 		      stx
-		      (parse (syntax k) env trans? in-module?)
-		      (parse (syntax v) env trans? in-module?)
-		      (parse (syntax body) env trans? in-module?))]
+		      (parse (syntax k) env trans? in-module? tables)
+		      (parse (syntax v) env trans? in-module? tables)
+		      (parse (syntax body) env trans? in-module? tables))]
 	
 	[(#%app)
 	 (make-object constant% stx null)]
@@ -1551,12 +1624,13 @@
 	[(#%app func . args)
 	 (make-object app% 
 		      stx
-		      (parse (syntax func) env trans? in-module?)
-		      (map (lambda (v) (parse v env trans? in-module?)) (syntax->list (syntax args))))]
+		      (parse (syntax func) env trans? in-module? tables)
+		      (map (lambda (v) (parse v env trans? in-module? tables)) (syntax->list (syntax args)))
+		      tables)]
 
 	[(module name init-require (#%plain-module-begin . body))
 	 (let* ([body (map (lambda (x)
-			     (parse x env #f #t))
+			     (parse x env #f #t tables))
 			   (syntax->list (syntax body)))]
 		[et-body
 		 (filter (lambda (x) (x . is-a? . syntax-def%)) body)]
@@ -1573,7 +1647,8 @@
 			et-body
 			(syntax name)
 			(syntax init-require)
-			req-prov))]
+			req-prov
+			tables))]
 
 	[(require . i) (make-object require/provide% stx)]
 	[(require-for-syntax . i) (make-object require/provide% stx)]
@@ -1584,6 +1659,9 @@
   (define parse (make-parse #f))
   (define parse-top (make-parse #t))
 
+  (define (create-tables)
+    (make-tables (make-hash-table) (make-hash-table)))
+
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Optimizer
   ;; the driver function
@@ -1591,7 +1669,7 @@
 
   (define optimize 
     (opt-lambda (e [for-mzc? #f])
-      (let ([p (parse-top e null #f #f)])
+      (let ([p (parse-top e null #f #f (create-tables))])
 	(send p reorganize)
 	(send p set-known-values)
 	(let ([p (send p simplify (make-context 'all null))])

@@ -135,21 +135,6 @@
 			      (zodiac:set-app-fun! ast (new-fun newname))
 			      (zodiac:set-app-args! ast (list (car args)))))
 		    #f] ; always return #f => use the (possibly mutated) ast
-		   [(memv) ; (memv x '(c)) => (eqv x c); important for `case' elaboration
-		    (when (and (= 2 (length args))
-			       (zodiac:quote-form? (cadr args)))
-		      (let ([quoted (zodiac:quote-form-expr (cadr args))])
-			(when (and (syntax->list (zodiac:zodiac-stx quoted))
-				   (= 1 (length (syntax->list (zodiac:zodiac-stx quoted)))))
-			  (zodiac:set-app-fun! ast (new-fun 'eqv?))
-			  (zodiac:set-app-args! ast 
-						(list (car args)
-						      (zodiac:make-quote-form
-						       (zodiac:zodiac-stx fun)
-						       (make-empty-box)
-						       (zodiac:make-read
-							(car (syntax->list (zodiac:zodiac-stx quoted))))))))))
-		    #f] ; always return #f => use the (possibly mutated) ast
 		   [(verify-linkage-signature-match)
 		    ;; Important optimization for compound-unit/sig: mark signature-defining vectors
 		    ;;  as immutable

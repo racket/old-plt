@@ -22,9 +22,9 @@
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define PLAIN_OR_2K "@2k"
+# define PLAIN_OR_PGC "@PGC"
 #else
-# define PLAIN_OR_2K ""
+# define PLAIN_OR_PGC ""
 #endif
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
@@ -51,5 +51,5 @@ char *scheme_initialize_internal(
   scheme_extension_table = table;
 #endif
 
-  return MZSCHEME_VERSION PLAIN_OR_2K;
+  return MZSCHEME_VERSION PLAIN_OR_PGC;
 }

@@ -3885,6 +3885,19 @@ typedef struct ReplyItem {
 } ReplyItem;
 static ReplyItem *reply_queue;
 
+#ifdef MZ_PRECISE_GC
+static int mark_reply_item(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ReplyItem *r = (ReplyItem *)p;
+
+    gcMARK(r->next);
+  }
+
+  return sizeof(ReplyItem);
+}
+#endif
+
 static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *rgn)
 {
    mz_jmp_buf save;
@@ -3937,6 +3950,9 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
     handlerInstalled = TRUE;
     AEInstallEventHandler(kCoreEventClass, kAEAnswer, NewAEEventHandlerProc(HandleAnswer), 0, 0);
     REGISTER_SO(reply_queue);
+#ifdef MZ_PRECISE_GC
+    GC_register_traverser(scheme_rt_compile_info, mark_comp_info);
+#endif
   }
   
   AEGetAttributePtr(ae, keyReturnIDAttr, typeLongInteger, &rtype, &id, sizeof(long), &sz);

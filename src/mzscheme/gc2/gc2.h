@@ -72,6 +72,8 @@ typedef void *(*Mark_Proc)(void *);
 typedef int (*Traverse_Proc)(void *, Mark_Proc);
 void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc);
 
+#define gcMARK(x) x = mark(x)
+
 # ifdef __cplusplus
 };
 # endif

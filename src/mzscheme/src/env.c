@@ -80,6 +80,10 @@ static Scheme_Object *write_local(Scheme_Object *obj);
 static Scheme_Object *read_local(Scheme_Object *obj);
 static Scheme_Object *read_local_unbox(Scheme_Object *obj);
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 static void hash_percent(const char *name, Scheme_Object *obj, 
 			 Scheme_Env *, int add);
 static void add_primitive_symbol(Scheme_Object *sym, Scheme_Object *obj, 
@@ -205,6 +209,10 @@ Scheme_Env *scheme_basic_env ()
   }
 
   scheme_init_true_false();
+
+#ifdef MZ_PRECISE_GC
+  register_traversers();
+#endif
 
 #ifdef TIME_STARTUP_PROCESS
   printf("pre-process @ %ld\n", scheme_get_process_milliseconds());
@@ -521,7 +529,7 @@ static Scheme_Env *make_env (void)
 
   env->init = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
 #ifdef MZTAG_REQUIRED
-  env->init->type = scheme_rt_env;
+  env->init->type = scheme_rt_comp_env;
 #endif
   env->init->num_bindings = 0;
   env->init->next = NULL;
@@ -885,7 +893,7 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
 
   frame = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
 #ifdef MZTAG_REQUIRED
-  frame->type = scheme_rt_full_env;
+  frame->type = scheme_rt_comp_env;
 #endif
 
   frame->values = MALLOC_N(Scheme_Object *, count);
@@ -1614,3 +1622,60 @@ static Scheme_Object *read_local_unbox(Scheme_Object *obj)
 			   SCHEME_INT_VAL(obj));
 }
 
+/**********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+static int mark_comp_env(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
+
+    gcMARK(e->basic.genv);
+    gcMARK(e->basic.next);
+    gcMARK(e->basic.values);
+
+    gcMARK(e->data.stat_dists);
+    gcMARK(e->data.sd_depths);
+    gcMARK(e->data.constants);
+    gcMARK(e->data.use);
+  }
+
+  return sizeof(Scheme_Full_Comp_Env);
+}
+
+static int mark_const_binding(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Constant_Binding *b = (Constant_Binding *)p;
+    
+    gcMARK(b->name);
+    gcMARK(b->val);
+    gcMARK(b->next);
+  } 
+  
+  return sizeof(Constant_Binding);
+}
+
+static int mark_link_info(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Link_Info *i = (Link_Info *)i;
+
+    gcMARK(i->old_pos);
+    gcMARK(i->new_pos);
+    gcMARK(i->flags);
+    gcMARK(i->next);
+  }
+
+  return sizeof(Link_Info);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_rt_comp_env, mark_comp_env);
+  GC_register_traverser(scheme_rt_constant_binding, mark_const_binding);
+  GC_register_traverser(scheme_rt_link_info, mark_link_info);
+}
+
+#endif

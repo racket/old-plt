@@ -109,6 +109,10 @@ static Scheme_Object *rep;
 
 #define CONS(a,b) scheme_make_pair(a,b)
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 #ifdef USE_DIFFTIME
 static time_t base_time;
 #endif
@@ -126,6 +130,10 @@ scheme_init_fun (Scheme_Env *env)
   Scheme_Object *o;
 
   if (scheme_starting_up) {
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
+
     REGISTER_SO(scheme_void);
     REGISTER_SO(scheme_void_func);
     REGISTER_SO(scheme_tail_call_waiting);
@@ -2565,3 +2573,68 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 
   return (Scheme_Object *)data;
 }
+
+
+/**********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+static int mark_closure_info(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Closure_Info *i = (Closure_Info *)p;
+
+    gcMARK(i->local_flags);
+    gcMARK(i->real_closure_map);
+  }
+
+  return sizeof(Closure_Info);
+}
+
+static int mark_dyn_wind_cell(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Dynamic_Wind_List *l = (Scheme_Dynamic_Wind_List *)p;
+
+    gcMARK(l->dw);
+    gcMARK(l->next);
+  }
+  
+  return sizeof(Scheme_Dynamic_Wind_List);
+}
+
+static int mark_dyn_wind_info(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Dyn_Wind *d = (Dyn_Wind *)p;
+
+    gcMARK(d->pre);
+    gcMARK(d->act);
+    gcMARK(d->post);
+  }
+
+  return sizeof(Dyn_Wind);
+}
+
+static int mark_cont_mark_chain(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Cont_Mark_Chain *c = (Scheme_Cont_Mark_Chain *)p;
+
+    gcMARK(c->key);
+    gcMARK(c->val);
+    gcMARK(c->next);
+  }
+
+  return sizeof(Scheme_Cont_Mark_Chain);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_rt_closure_info, mark_closure_info);
+  GC_register_traverser(scheme_rt_dyn_wind_cell, mark_dyn_wind_cell);
+  GC_register_traverser(scheme_rt_dyn_wind_info, mark_dyn_wind_info);
+  GC_register_traverser(scheme_rt_cont_mark_chain, mark_cont_mark_chain);
+}
+
+#endif

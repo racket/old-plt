@@ -1019,9 +1019,9 @@ static int mark_struct_val(void *p, Mark_Proc mark)
   if (mark) {
     int i;
     for(i = s->stype->num_slots; i--; )
-      s->slots[i] = mark(s->slots[i]);
+      gcMARK(s->slots[i]);
 
-    s->stype = mark(s->stype);
+    gcMARK(s->stype);
   } 
 
   return (sizeof(Scheme_Structure) 
@@ -1036,7 +1036,7 @@ static int mark_struct_type_val(void *p, Mark_Proc mark)
     int i;
     for (i = t->name_pos + 1; i--; )
       t->parent_types[i] = t->parent_types[i];
-    t->type_name = mark(t->type_name);
+    gcMARK(t->type_name);
   }
 
   return (sizeof(Scheme_Struct_Type)
@@ -1048,10 +1048,10 @@ static int mark_struct_info_val(void *p, Mark_Proc mark)
   if (mark) {
     Struct_Info *i = (Struct_Info *)p;
 
-    i->name = mark(i->name);
-    i->fields = mark(i->fields);
-    i->parent_type_expr = mark(i->parent_type_expr);
-    i->memo_names = mark(i->memo_names);
+    gcMARK(i->name);
+    gcMARK(i->fields);
+    gcMARK(i->parent_type_expr);
+    gcMARK(i->memo_names);
   } 
 
   return sizeof(Struct_Info);

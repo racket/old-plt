@@ -114,8 +114,7 @@ enum {
   scheme_svector_type,
 
 #ifdef MZTAG_REQUIRED
-  scheme_rt_env,
-  scheme_rt_full_env,
+  scheme_rt_comp_env,
   scheme_rt_constant_binding,
   scheme_rt_link_info,
   scheme_rt_compile_info,

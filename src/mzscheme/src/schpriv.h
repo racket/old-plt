@@ -327,7 +327,6 @@ typedef struct Scheme_Saved_Stack {
   Scheme_Object **runstack_start;
   Scheme_Object **runstack;
   long runstack_size;
-  Scheme_Object **runstack_last_mark;
   struct Scheme_Saved_Stack *prev;
 } Scheme_Saved_Stack;
 

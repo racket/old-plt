@@ -290,14 +290,14 @@ static int local_obj(void *p, Mark_Proc mark)
 static int second_of_cons(void *p, Mark_Proc mark)
 {
   if (mark)
-    PTR2_VAL((Scheme_Object *)p) = mark(PTR2_VAL((Scheme_Object *)p));
+    gcMARK(PTR2_VAL((Scheme_Object *)p));
   return sizeof(Scheme_Object);
 }
 
 static int second_of_cons(void *p, Mark_Proc mark)
 {
   if (mark)
-    ((Scheme_Small_Object *)p)->u.ptr_value = mark(((Scheme_Small_Object *)p)->u.ptr_value);
+    gcMARK(((Scheme_Small_Object *)p)->u.ptr_value);
 
   return sizeof(Scheme_Small_Object);
 }
@@ -309,7 +309,7 @@ static int app_rec(void *p, Mark_Proc mark)
   if (mark) {
     int i = r->num_args;
     while (i--)
-      r->args[i] = mark(r->args[i]);
+      gcMARK(r->args[i]);
   }
 
   return (sizeof(Scheme_App_Rec) 
@@ -324,7 +324,7 @@ static int seq_rec(void *p, Mark_Proc mark)
   if (mark) {
     int i = s->count;
     while (i--)
-      s->array[i] = mark(s->array[i]);
+      gcMARK(s->array[i]);
   }
 
   return (sizeof(Scheme_Sequence)
@@ -336,9 +336,9 @@ static int branch_rec(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Branch_Rec *b = (Scheme_Branch_Rec *)p;
     
-    b->test = mark(b->test);
-    b->tbranch = mark(b->tbranch);
-    b->fbranch = mark(b->fbranch);
+    gcMARK(b->test);
+    gcMARK(b->tbranch);
+    gcMARK(b->fbranch);
   }
 
   return sizeof(Scheme_Branch_Rec);
@@ -350,9 +350,9 @@ static int unclosed_proc(void *p, Mark_Proc mark)
     Scheme_Closure_Compilation_Data *d = (Scheme_Closure_Compilation_Data *)p;
 
     if (d->name)
-      d->name = mark(d->name);
-    data->code = mark(data->code);
-    data->closure_map = mark(data->closure_map);
+      gcMARK(d->name);
+    gcMARK(data->code);
+    gcMARK(data->closure_map);
   }
 
   return sizeof(Scheme_Closure_Compilation_Data);
@@ -363,8 +363,8 @@ static int let_value(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Let_Value *l = (Scheme_Let_Value *)p;
 
-    l->value = mark(l->value);
-    l->body = mark(l->body);
+    gcMARK(l->value);
+    gcMARK(l->body);
   }
 
   return sizeof(Scheme_Let_Value);
@@ -375,7 +375,7 @@ static int let_void(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Let_Void *l = (Scheme_Let_Void *)p;
 
-    l->body = mark(l->body);
+    gcMARK(l->body);
   }
 
   return sizeof(Scheme_Let_Void);
@@ -388,8 +388,8 @@ static int letrec(void *p, Mark_Proc mark)
     int i = l->count;
 
     while (i--)
-      l->procs[i] = mark(l->procs[i]);
-    l->body = mark(l->body);
+      gcMARK(l->procs[i]);
+    gcMARK(l->body);
   }
 
   return sizeof(Scheme_Letrec);
@@ -400,8 +400,8 @@ static int let_one(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Let_One *l = (Scheme_Let_One *)p;
 
-    l->value = mark(l->value);
-    l->body = mark(l->body);
+    gcMARK(l->value);
+    gcMARK(l->body);
   }
 
   return sizeof(Scheme_Let_One);
@@ -412,9 +412,9 @@ static int with_cont_mark(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_With_Continuation_Mark *w = (Scheme_With_Continuation_Mark *)p;
 
-    w->key = mark(w->key);
-    w->val = mark(w->val);
-    w->body = mark(w->body);
+    gcMARK(w->key);
+    gcMARK(w->val);
+    gcMARK(w->body);
   }
 
   return sizeof(Scheme_Let_One);
@@ -425,9 +425,9 @@ static int comp_unclosed_proc(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Closure_Compilation_Data *c = (Scheme_Closure_Compilation_Data *)p;
 
-    c->closure_map = mark(c->closure_map);
-    c->code = mark(c->code);
-    c->name = mark(c->name);
+    gcMARK(c->closure_map);
+    gcMARK(c->code);
+    gcMARK(c->name);
   }
 
   return sizeof(Scheme_Closure_Compilation_Data);
@@ -438,9 +438,9 @@ static int comp_let_value(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Compiled_Let_Value *c = (Scheme_Compiled_Let_Value *)p;
 
-    c->flags = mark(c->flags);
-    c->value = mark(c->value);
-    c->body = mark(c->body);
+    gcMARK(c->flags);
+    gcMARK(c->value);
+    gcMARK(c->body);
   }
 
   return sizeof(Scheme_Compiled_Let_Value);
@@ -451,7 +451,7 @@ static int let_header(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Let_Header *h = (Scheme_Let_Header *)p;
 
-    h->body = mark(h->body);
+    gcMARK(h->body);
   }
 
   return sizeof(Scheme_Let_Header);
@@ -467,7 +467,7 @@ static int closed_prim_proc(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Closed_Primitive_Proc *c = (Scheme_Closed_Primitive_Proc *)p;
 
-    SCHEME_CLSD_PRIM_DATA(prim) = mark(SCHEME_CLSD_PRIM_DATA(prim));
+    gcMARK(SCHEME_CLSD_PRIM_DATA(prim));
   }
 
   return sizeof(Scheme_Closed_Primitive_Proc);
@@ -480,8 +480,8 @@ static int linked_closure(void *p, Mark_Proc mark)
   if (mark) {
     int i = c->closure_size;
     while (i--)
-      c->vals[i] = mark(c->vals[i]);
-    c->code = mark(c->code);
+      gcMARK(c->vals[i]);
+    gcMARK(c->code);
   }
   
   return (sizeof(Scheme_Closed_Compiled_Procedure)
@@ -496,8 +496,8 @@ static int case_closure(void *p, Mark_Proc mark)
     int i;
 
     for (i = c->count; i--; )
-      c->array[i] = mark(c->array[i]);
-    c->name = mark(c->name);
+      gcMARK(c->array[i]);
+    gcMARK(c->name);
   }
 
   return (sizeof(Scheme_Case_Lambda)
@@ -506,23 +506,72 @@ static int case_closure(void *p, Mark_Proc mark)
 
 static void mark_cjs(Scheme_Continuation_Jump_State *cjs, Mark_Proc mark)
 {
+  gcMARK(cjs->jumping_to_continuation);
+  gcMARK(cjs->u.vals);
 }
+
+static void mark_stack_state(Scheme_Stack_State *ss, Mark_Proc mark)
+{
+
+  Scheme_Object **old = ss->runstack_start;
+
+  gcMARK(ss->runstack_saved);
+  gcMARK(ss->runstack_start);
+  ss->runstack = ss->runstack_start + (ss->runstack - old);
+}
+
+static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
+{
+  gcMARK(buf->copy);
+  gcMARK(buf->cont);
+}
+
 
 static int cont_proc(void *p, Mark_Proc mark)
 {
   if (mark) {
     Scheme_Cont *c = (Scheme_Cont *)p;
 
-    c->dw = mark(c->dw);
-    c->ok = mark(c->ok);
-    c->home = mark(c->home);
-    c->current_local_env = mark(c->current_local_env);
-    c->save_overflow = mark(c->save_overflow);
-
+    gcMARK(c->dw);
+    gcMARK(c->ok);
+    gcMARK(c->home);
+    gcMARK(c->current_local_env);
+    gcMARK(c->save_overflow);
+    
+    mark_jmpup(&c->buf, mark);
     mark_cjs(&c->cjs, mark);
+    mark_stack_state(&c->ss, mark);
   }
 
   return sizeof(Scheme_Cont);
+}
+
+static int mark_dyn_wind(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Dynamic_Wind *dw = (Scheme_Dynamic_Wind *)p;
+
+    gcMARK(dw->data);
+    gcMARK(dw->current_local_env);
+    gcMARK(dw->cont);
+    gcMARK(dw->prev);
+    
+    mark_stack_state(&dw->envss, mark);
+  }
+
+  return sizeof(Scheme_Dynamic_Wind);
+}
+
+static int mark_overflow(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Overflow *o = (Scheme_Overflow *)p;
+
+    gcMARK(o->prev);
+    mark_jmpup(&o->buf, mark);
+  }
+
+  return sizeof(Scheme_Overflow);
 }
 
 static int escaping_cont_proc(void *p, Mark_Proc mark)
@@ -530,9 +579,9 @@ static int escaping_cont_proc(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
-    c->home = mark(c->home);
-    c->ok = mark(c->ok);
-    c->f = mark(c->f);
+    gcMARK(c->home);
+    gcMARK(c->ok);
+    gcMARK(c->f);
 
     mark_cjs(&c->cjs, mark);
   }
@@ -550,7 +599,7 @@ static int bignum_obj(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-    b->digits = mark(b->digits);
+    gcMARK(b->digits);
   }
 
   return sizeof(Scheme_Bignum);
@@ -561,8 +610,8 @@ static int rational_obj(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Rational *r = (Scheme_Rational *)p;
 
-    r->num = mark(r->num);
-    r->denom = mark(r->denom);
+    gcMARK(r->num);
+    gcMARK(r->denom);
   }
 
   return sizeof(Scheme_Rational);
@@ -587,8 +636,8 @@ static int complex_obj(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Complex *c = (Scheme_Complex *)p;
 
-    c->r = mark(c->r);
-    c->i = mark(c->i);
+    gcMARK(c->r);
+    gcMARK(c->i);
   }
 
   return sizeof(Scheme_Complex);
@@ -597,7 +646,7 @@ static int complex_obj(void *p, Mark_Proc mark)
 static int string_obj(void *p, Mark_Proc mark)
 {
   if (mark) {
-    SCHEME_STR_VAL(p) = mark(SCHEME_STR_VAL(p));
+    gcMARK(SCHEME_STR_VAL(p));
   }
 
   return sizeof(Scheme_Object);
@@ -615,8 +664,8 @@ static int cons_cell(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Object *o = (Scheme_Object *)p;
 
-    SCHEME_CAR(o) = mark(SCHEME_CAR(o));
-    SCHEME_CDR(o) = mark(SCHEME_CDR(o));
+    gcMARK(SCHEME_CAR(o));
+    gcMARK(SCHEME_CDR(o));
   }
 
   return sizeof(Scheme_Object);
@@ -628,7 +677,7 @@ static int vector_obj(void *p, Mark_Proc mark)
 
   if (mark) {
     for (i = vec->size; i--; )
-      vec->els[i] = mark(vec->els[i]);
+      gcMARK(vec->els[i]);
   }
 
   return (sizeof(Scheme_Vector) 
@@ -640,10 +689,10 @@ static int input_port(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
 
-    ip->sub_type = mark(ip->sub_type);
-    ip->port_data = mark(ip->port_data);
-    ip->name = mark(ip->name);
-    ip->read_handler = mark(ip->read_handler);
+    gcMARK(ip->sub_type);
+    gcMARK(ip->port_data);
+    gcMARK(ip->name);
+    gcMARK(ip->read_handler);
   }
 
   return sizeof(Scheme_Input_Port);
@@ -654,11 +703,11 @@ static int output_port(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)p;
 
-    op->sub_type = mark(op->sub_type);
-    op->port_data = mark(op->port_data);
-    op->display_handler = mark(op->display_handler);
-    op->write_handler = mark(op->write_handler);
-    op->print_handler = mark(op->print_handler);
+    gcMARK(op->sub_type);
+    gcMARK(op->port_data);
+    gcMARK(op->display_handler);
+    gcMARK(op->write_handler);
+    gcMARK(op->print_handler);
   }
 
   return sizeof(Scheme_Output_Port);
@@ -675,10 +724,10 @@ static int promise_val(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Promise *pr = (Scheme_Promise *)p;
 
-    pr->val = mark(pr->val);
-    pr->multi_array = mark(pr->multi_array);
+    gcMARK(pr->val);
+    gcMARK(pr->multi_array);
 #ifdef MZ_REAL_THREADS
-    pr->sema = mark(pr->sema);
+    gcMARK(pr->sema);
 #endif
   }
 
@@ -690,60 +739,60 @@ static int process_val(void *_p, Mark_Proc mark)
   if (mark) {
     Scheme_Process *p = (Scheme_Process *)_p;
 
-    p->next = mark(p->next);
-    p->prev = mark(p->prev);
+    gcMARK(p->next);
+    gcMARK(p->prev);
 
     mark_cjs(&p->cjs, mark);
 
-    p->config = mark(p->config);
+    gcMARK(p->config);
 
     {
       Scheme_Object **rs = p->runstack_start;
-      p->runstack_start = mark(p->runstack_start);
+      gcMARK(p->runstack_start);
       p->runstack = p->runstack_start + (rs - p->runstack);
-      p->runstack_saved = mark(p->runstack_saved);
+      gcMARK(p->runstack_saved);
     }
 
-    p->cont_mark_stack_segments = mark(p->cont_mark_stack_segments);
+    gcMARK(p->cont_mark_stack_segments);
     
-    p->cc_ok = mark(p->cc_ok);
-    p->ec_ok = mark(p->ec_ok);
-    p->dw = mark(p->dw);
+    gcMARK(p->cc_ok);
+    gcMARK(p->ec_ok);
+    gcMARK(p->dw);
     
-    p->nester = mark(p->nester);
-    p->nestee = mark(p->nestee);
+    gcMARK(p->nester);
+    gcMARK(p->nestee);
     
-    p->blocker = mark(p->blocker);
-    p->overflow = mark(p->overflow);
+    gcMARK(p->blocker);
+    gcMARK(p->overflow);
     
-    p->current_local_env = mark(p->current_local_env);
+    gcMARK(p->current_local_env);
     
-    p->print_buffer = mark(p->print_buffer;);
-    p->print_port = mark(p->print_port);
+    gcMARK(p->print_buffer);
+    gcMARK(p->print_port);
     
-    p->overflow_reply = mark(p->overflow_reply);
+    gcMARK(p->overflow_reply);
     
-    p->tail_buffer = mark(p->tail_buffer);
+    gcMARK(p->tail_buffer);
     
-    p->ku.k.p1 = mark(p->ku.k.p1);
-    p->ku.k.p2 = mark(p->ku.k.p2);
-    p->ku.k.p3 = mark(p->ku.k.p3);
-    p->ku.k.p4 = mark(p->ku.k.p4);
+    gcMARK(p->ku.k.p1);
+    gcMARK(p->ku.k.p2);
+    gcMARK(p->ku.k.p3);
+    gcMARK(p->ku.k.p4);
     
 #ifdef MZ_REAL_THREADS
-    p->done_sema = mark(p->done_sema);
+    gcMARK(p->done_sema);
 #endif
     
-    p->list_stack = mark(p->list_stack);
+    gcMARK(p->list_stack);
     
-    p->vector_memory = mark(p->vector_memory);
+    gcMARK(p->vector_memory);
     
-    p->kill_data = mark(p->kill_data);
+    gcMARK(p->kill_data);
     
-    p->user_tls = mark(p->user_tls);
+    gcMARK(p->user_tls);
     
-    p->mr_hop = mark(p->mr_hop);
-    p->mref = mark(p->mref);
+    gcMARK(p->mr_hop);
+    gcMARK(p->mref);
   }
 
   return sizeof(Scheme_Process);
@@ -753,7 +802,7 @@ static int cont_mark_set_val(void *p, Mark_Proc mark)
 {
   if (mark) {
     Scheme_Cont_Mark_Set *s = (Scheme_Cont_Mark_Set *)p;
-    s->chain = mark(s->chain);
+    gcMARK(s->chain);
   }
 
   return sizeof(Scheme_Cont_Mark_Set);
@@ -765,8 +814,8 @@ static int sema_val(void *p, Mark_Proc mark)
     Scheme_Sema *s = (Scheme_Sema *)p;
 
 #if SEMAPHORE_WAITING_IS_COLLECTABLE
-    s->first = mark(s->first);
-    s->last = mark(s->last);
+    gcMARK(s->first);
+    gcMARK(s->last);
 #endif
   }
 
@@ -778,7 +827,7 @@ static int hash_table_val(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p;
 
-    ht->buckets = mark(ht->buckets);
+    gcMARK(ht->buckets);
   }
 
   return sizeof(Scheme_Hash_Table);
@@ -789,9 +838,9 @@ static int namespace_val(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Env *e = (Scheme_Env *)p;
 
-    e->globals = mark(e->globals);
-    e->loaded_libraries = mark(e->loaded_libraries);
-    e->init = mark(e->init);
+    gcMARK(e->globals);
+    gcMARK(e->loaded_libraries);
+    gcMARK(e->init);
   }
 
   return sizeof(Scheme_Env);
@@ -806,7 +855,7 @@ static int compilation_top_val(void *p, Mark_Proc mark)
 {
   if (mark) {
     Scheme_Compilation_Top *t = (Scheme_Compilation_Top *)p;
-    t->code = mark(t->code);
+    gcMARK(t->code);
   }
 
   return sizeof(Scheme_Compilation_Top);
@@ -817,7 +866,7 @@ static int svector_val(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Object *o = (Scheme_Object *)p;
 
-    SCHEME_SVEC_VEC(o) = mark(SCHEME_SVEC_VEC(o));
+    gcMARK(SCHEME_SVEC_VEC(o));
   }
 
   return sizeof(Scheme_Object);
@@ -855,6 +904,8 @@ static void register_traversers(void)
   GC_register_traverser(scheme_linked_closure_type, linked_closure);
   GC_register_traverser(scheme_case_closure_type, case_closure);
   GC_register_traverser(scheme_cont_type, cont_proc);
+  GC_register_traverser(scheme_rt_dyn_wind, mark_dyn_wind);
+  GC_register_traverser(scheme_rt_overflow, mark_overflow);
   GC_register_traverser(scheme_escaping_cont_type, escaping_cont_proc);
 
   GC_register_traverser(scheme_char_type, char_obj);

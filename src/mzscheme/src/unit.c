@@ -3103,9 +3103,9 @@ static int mark_unit_val(void *p, Mark_Proc mark)
   if (mark) {
     Scheme_Unit *u = (Scheme_Unit *)p;
 
-    u->exports = mark(u->exports);
-    u->export_debug_names = mark(u->export_debug_names);
-    u->data = mark(u->data);
+    gcMARK(u->exports);
+    gcMARK(u->export_debug_names);
+    gcMARK(u->data);
   }
 
   return sizeof(Scheme_Unit);
@@ -3116,9 +3116,9 @@ static int mark_unit_body_val(void *p, Mark_Proc mark)
   if (mark) {
     BodyData *b = (BodyData *)p;
 
-    b->body = mark(b->body);
-    b->closure_map = mark(b->closure_map);
-    b->defname = mark(b->defname);
+    gcMARK(b->body);
+    gcMARK(b->closure_map);
+    gcMARK(b->defname);
   } 
   
   return sizeof(BodyData);
@@ -3130,11 +3130,11 @@ static int compound_unit_data_val(void *p, Mark_Proc mark)
     CompoundData *d = (CompoundData *)p;
 
     d->export = mark(d->exports);
-    d->subunit_exprs = mark(d->subunit_exprs);
-    d->tags = mark(d->tags);
-    d->param_counts = mark(d->param_counts);
-    d->param_maps = mark(d->param_maps);
-    d->defname = mark(d->defname);
+    gcMARK(d->subunit_exprs);
+    gcMARK(d->tags);
+    gcMARK(d->param_counts);
+    gcMARK(d->param_maps);
+    gcMARK(d->defname);
   } 
 
   return sizeof(CompoundData);
@@ -3145,10 +3145,10 @@ static int invoke_unit_data_val(void *p, Mark_Proc mark)
   if (mark) {
     InvokeUnitData *d = (InvokeUnitData *)p;
 
-    d->anchor_positions = mark(d->anchor_positions);
-    d->exports = mark(d->exports);
-    d->anchors = mark(d->anchors);
-    d->expr = mark(d->expr);
+    gcMARK(d->anchor_positions);
+    gcMARK(d->exports);
+    gcMARK(d->anchors);
+    gcMARK(d->expr);
   }
   
   return sizeof(InvokeUnitData);

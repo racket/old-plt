@@ -7660,9 +7660,9 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
 static int mark_listener_val(void *p, Mark_Proc mark)
 {
   if (mark) {
-    p->mref = mark(p->mref);
+    gcMARK(p->mref);
 #ifdef USE_MAC_TCP
-    p->datas = mark(p->datas);
+    gcMARK(p->datas);
 #endif
   }
 

@@ -131,11 +131,19 @@ unsigned long scheme_stack_boundary;
 
 #define REGISTYPE(f) f ## _type
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 void
 scheme_init_eval (Scheme_Env *env)
 {
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
+
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
 
     REGISTER_SO(scheme_eval_waiting);
     REGISTER_SO(scheme_multiple_values);
@@ -3316,3 +3324,69 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
 
   return scheme_make_syntax_link(f, first);
 }
+
+/**********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+static int mark_comp_info(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Compile_Info *i = (Scheme_Compile_Info *)p;
+
+    gcMARK(i->value_name);
+  }
+
+  return sizeof(Scheme_Compile_Info);
+}
+
+static int mark_cont_mark(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Cont_Mark *cm = (Scheme_Cont_Mark *)p;
+
+    gcMARK(cm->key);
+    gcMARK(cm->val);
+    gcMARK(cm->cached_chain);
+  }
+
+  return sizeof(Scheme_Cont_Mark);
+}
+
+static int mark_saved_stack(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Saved_Stack *saved = (Scheme_Saved_Stack *) p;
+    Scheme_Object **old = saved->runstack_start;
+
+    gcMARK(saved->prev);
+    gcMARK(saved->runstack_start);
+    saved->runstack = saved->runstack_start + (saved->runstack - old);
+  }
+
+  return sizeof(Scheme_Saved_Stack);
+}
+
+static int mark_eval_in_env(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Eval_In_Env *ee = (Eval_In_Env *)p;
+
+    gcMARK(ee->e);
+    gcMARK(ee->config);
+    gcMARK(ee->namespace);
+    gcMARK(ee->old);
+  }
+  
+  return sizeof(Eval_In_Env);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_rt_compile_info, mark_comp_info);
+  GC_register_traverser(scheme_rt_cont_mark, mark_cont_mark);
+  GC_register_traverser(scheme_rt_saved_stack, mark_saved_stack);
+  GC_register_traverser(scheme_rt_saved_stack, mark_eval_in_env);
+}
+
+#endif

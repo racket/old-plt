@@ -187,14 +187,25 @@
 	 (make-directory* base))
        (make-directory dir)))
 
+   ;; make-temporary-file generates a file name and then tries to
+   ;; create the corresponding file. If the create fails, the function
+   ;; checks whether the file already exists, and tries a new name if
+   ;; so, otherwise propgating the error (on the theory that it's an
+   ;; access problem that the caller should know about). It's possible
+   ;; that the file existed and caused the open to fail, but was then
+   ;; deleted before make-temporary-file checked for the file. This is
+   ;; a documented limitation.
+
    (define make-temporary-file
      (case-lambda
       [(template)
        (let ([tmpdir (find-system-path 'temp-dir)])
 	 (let loop ([s (current-seconds)][ms (current-milliseconds)])
-	   (let ([name (build-path tmpdir (format template (format "~a~a" s ms)))])
+	   (let ([name (build-path tmpdir (format template (format "~a~a~a" s ms (random 1000))))])
 	     (with-handlers ([exn:i/o:filesystem? (lambda (x) 
-						    (if (file-exists? name)
+						    (if (or (file-exists? name)
+							    (directory-exists? name)
+							    (link-exists? name))
 							;; try again with a new name
 							(loop (- s (random 10))
 							      (+ ms (random 10)))

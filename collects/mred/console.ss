@@ -1,6 +1,8 @@
 (define mred:console@
   (unit/s mred:console^
-    (import [mred:debug mred:debug^] [mred:edit mred:edit^]
+    (import [mred:debug mred:debug^] 
+	    [mred:preferences mred:preferences^]
+	    [mred:edit mred:edit^]
 	    [mred:frame mred:frame^] [mred:exit mred:exit^]
 	    [mred:finder mred:finder^] [mred:handler mred:handler^]
 	    [mred:gui-utils mred:gui-utils^] [mred:scheme-mode mred:scheme-mode^]
@@ -443,8 +445,7 @@
 		   (make-output-port this-out-write generic-close))]
 		[make-this-err
 		 (lambda ()
-		   (make-output-port this-err-write 
-				     generic-close))])
+		   (make-output-port this-err-write generic-close))])
 	       (sequence
 		 (apply super-init args)
 		 (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
@@ -531,6 +532,11 @@
 		     (set! other-offset
 			   (send edit append-edit-items edit-menu edit-offset))
 		     
+		     (send edit-menu append-separator)
+		     (send edit-menu append-item "Preferences..."
+			   (lambda ()
+			     (mred:preferences:preferences-dialog)))
+
 		     (send mb append file-menu "File")
 		     (send mb append edit-menu "Edit")
 		     mb))]

@@ -1,9 +1,10 @@
 (define mred:autosave@
   (unit/s mred:autosave^
-    (import [mred:debug mred:debug^])
+    (import [mred:debug mred:debug^]
+	    [mred:preferences mred:preferences^])
     
-    (define autosave-delay 60)
-    (define autosaving-on? #t)
+    (define autosave-delay (mred:preferences:get-preference 'autosave-delay))
+    (define autosaving-on? (mred:preferences:get-preference 'autosaving-on?))
 
     (define register-autosave
       (let* ([objects '()]

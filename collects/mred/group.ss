@@ -4,137 +4,137 @@
 	    [mred:exit mred:exit^] [mred:autosave mred:autosave^]
 	    [mred:handler mred:handler^] [mzlib:function mzlib:function^])
 
-    (mred:debug:printf "mred:group@~n")
+    (mred:debug:printf "mred:group@")
 
     (define buffer-group%
       (let ([untitled-number 0])
 	(let-struct buffer (name type edit modified-ok)
 	  (class '() ()
-		 (private
-		  [buffers '()])
-		 (public
-		  [autosave? #t]
-		  [for-each-buffer
-		   (lambda (f)
-		     (for-each
-		      (lambda (b)
-			(f (buffer-type b)
-			   (buffer-name b)
-			   (buffer-edit b)))
-		      buffers))]
-		  [find-buffer
-		   (opt-lambda (type pred [otherwise (lambda () #f)])
-		     (catch exit
-			    (for-each
-			     (lambda (b)
-			       (if (and (eq? (buffer-type b) type)
-					(pred (buffer-name b)
-					      (buffer-edit b)))
-				   (exit (buffer-edit b))))
-			     buffers)
-			    (otherwise)))]
-		  [find-buffer-by-name
-		   (lambda (type name)
-		     (find-buffer type
-				  (lambda (bname edit)
-				    (if bname
-					(string=? bname name)
-					(equal? name 
-						(send edit get-filename))))))]
-		  [add-buffer
-		   (lambda (type name edit)
-		     (set! buffers (cons (make-buffer name type edit #f) 
-					 buffers)))]
-		  [kill-buffer
-		   (lambda (edit)
-		     (set! buffers 
-			   (mzlib:function:remove edit buffers
-						   (lambda (edit b)
-						     (eq? edit (buffer-edit b))))))]
-		  
-		  [reset-buffer-state
-		   (lambda (edit)
-		     (for-each
-		      (lambda (buffer)
-			(if (eq? (buffer-edit buffer) edit)
-			    (set-buffer-modified-ok! buffer #f)))
-		      buffers))]
-		  
-		  [check-buffers-for-quit
-		   (lambda ()
-		     (check-buffers "Quit"))]
-		  [check-buffers
-		   (opt-lambda ([reason "Close"][pred #f])
-		     (let loop ([buffers buffers])
-		       (if (not (null? buffers))
-			   (let* ([buffer (car buffers)]
-				  [type (buffer-type buffer)]
-				  [modified-ok (buffer-modified-ok buffer)]
-				  [edit (buffer-edit buffer)])
-			     (if (and (eq? type 'file)
-				      (not modified-ok)
-				      (send edit modified?)
-				      (or (not pred)
-					  (pred edit)))
-				 (let* ([name (send edit get-filename)]
-					[name (if (null? name)
-						  "Untitled"
-						  name)])
-				   (let ([action
-					  (mred:gui-utils:unsaved-warning name 
-									   reason
-									   #t)])
-				     (case action
-				       [cancel #f]
-				       [continue
-					(set-buffer-modified-ok! buffer #t)
-					(if autosave?
-					    (send edit remove-autosave))
-					(check-buffers reason pred)]
-				       [save
-					(and (send edit save-file)
-					     (check-buffers reason pred))])))
-				 (loop (cdr buffers)))))))]
-		  [make-untitled-name
-		   (lambda ()
-		     (set! untitled-number (add1 untitled-number))
-		     (string-append "Untitled " 
-				    (number->string untitled-number)))]
-		  
-		  [clear
-		   (lambda ()
-		     (set! buffers '())
-		     #t)]
-
-		  [pick
-		   (lambda (canvas)
-		     (let ([which
-			    (wx:get-single-choice-index
-			     "Select a buffer"
-			     "Buffers"
-			     (map (lambda (buffer)
-				    (let ([name (buffer-name buffer)])
-				      (if name
-					  name
-					  (send (buffer-edit buffer) 
-						get-filename))))
-				  buffers)
-			     () -1 -1 #t 400 200)])
-		       (if (>= which 0)
-			   (send canvas set-media
-				 (buffer-edit (list-ref buffers which))))))]
-
-		  [do-autosave
-		   (lambda ()
-		     (for-each
-		      (lambda (buffer)
-			(unless (buffer-modified-ok buffer)
-			  (send (buffer-edit buffer) do-autosave)))
-		      buffers))])
-		 (sequence
-		   (mred:exit:insert-exit-callback check-buffers-for-quit)
-		   (if autosave?
-		       (mred:autosave:register-autosave this)))))))
+	    (private
+	      [buffers '()])
+	    (public
+	      [autosave? mred:autosave:autosaving-on?]
+	      [for-each-buffer
+	       (lambda (f)
+		 (for-each
+		  (lambda (b)
+		    (f (buffer-type b)
+		       (buffer-name b)
+		       (buffer-edit b)))
+		  buffers))]
+	      [find-buffer
+	       (opt-lambda (type pred [otherwise (lambda () #f)])
+		 (catch exit
+		   (for-each
+		    (lambda (b)
+		      (if (and (eq? (buffer-type b) type)
+			       (pred (buffer-name b)
+				     (buffer-edit b)))
+			  (exit (buffer-edit b))))
+		    buffers)
+		   (otherwise)))]
+	      [find-buffer-by-name
+	       (lambda (type name)
+		 (find-buffer type
+			      (lambda (bname edit)
+				(if bname
+				    (string=? bname name)
+				    (equal? name 
+					    (send edit get-filename))))))]
+	      [add-buffer
+	       (lambda (type name edit)
+		 (set! buffers (cons (make-buffer name type edit #f) 
+				     buffers)))]
+	      [kill-buffer
+	       (lambda (edit)
+		 (set! buffers 
+		       (mzlib:function:remove edit buffers
+					      (lambda (edit b)
+						(eq? edit (buffer-edit b))))))]
+	      
+	      [reset-buffer-state
+	       (lambda (edit)
+		 (for-each
+		  (lambda (buffer)
+		    (if (eq? (buffer-edit buffer) edit)
+			(set-buffer-modified-ok! buffer #f)))
+		  buffers))]
+	      
+	      [check-buffers-for-quit
+	       (lambda ()
+		 (check-buffers "Quit"))]
+	      [check-buffers
+	       (opt-lambda ([reason "Close"][pred #f])
+		 (let loop ([buffers buffers])
+		   (if (not (null? buffers))
+		       (let* ([buffer (car buffers)]
+			      [type (buffer-type buffer)]
+			      [modified-ok (buffer-modified-ok buffer)]
+			      [edit (buffer-edit buffer)])
+			 (if (and (eq? type 'file)
+				  (not modified-ok)
+				  (send edit modified?)
+				  (or (not pred)
+				      (pred edit)))
+			     (let* ([name (send edit get-filename)]
+				    [name (if (null? name)
+					      "Untitled"
+					      name)])
+			       (let ([action
+				      (mred:gui-utils:unsaved-warning name 
+								      reason
+								      #t)])
+				 (case action
+				   [cancel #f]
+				   [continue
+				    (set-buffer-modified-ok! buffer #t)
+				    (if autosave?
+					(send edit remove-autosave))
+				    (check-buffers reason pred)]
+				   [save
+				    (and (send edit save-file)
+					 (check-buffers reason pred))])))
+			     (loop (cdr buffers)))))))]
+	      [make-untitled-name
+	       (lambda ()
+		 (set! untitled-number (add1 untitled-number))
+		 (string-append "Untitled " 
+				(number->string untitled-number)))]
+	      
+	      [clear
+	       (lambda ()
+		 (set! buffers '())
+		 #t)]
+	      
+	      [pick
+	       (lambda (canvas)
+		 (let ([which
+			(wx:get-single-choice-index
+			 "Select a buffer"
+			 "Buffers"
+			 (map (lambda (buffer)
+				(let ([name (buffer-name buffer)])
+				  (if name
+				      name
+				      (send (buffer-edit buffer) 
+					    get-filename))))
+			      buffers)
+			 () -1 -1 #t 400 200)])
+		   (if (>= which 0)
+		       (send canvas set-media
+			     (buffer-edit (list-ref buffers which))))))]
+	      
+	      [do-autosave
+	       (lambda ()
+		 (for-each
+		  (lambda (buffer)
+		    (unless (buffer-modified-ok buffer)
+		      (send (buffer-edit buffer) do-autosave)))
+		  buffers))])
+	    (sequence
+	      (mred:exit:insert-exit-callback check-buffers-for-quit)
+	      (if autosave?
+		  (mred:autosave:register-autosave this)))))))
 
     (define frame-group%
       (let ([b-group% buffer-group%])

@@ -14,7 +14,8 @@
    set-preference
    save-user-preferences
    read-user-preferences
-   restore-defaults))
+   restore-defaults
+   preferences-dialog))
 
 (define-signature mred:autoload^
   (autoload-paths

@@ -5,7 +5,7 @@
 
 (define mred:scheme-mode@
   (unit/s mred:scheme-mode^
-    (import [mred:debug mred:debug^] 
+    (import [mred:debug mred:debug^] [mred:preferences mred:preferences^]
 	    [mred:application mred:application^]
 	    [mred:mode mred:mode^]
 	    [mred:match-cache mred:match-cache^] [mred:paren mred:paren^] 
@@ -128,10 +128,12 @@
 	     (lambda (edit)
 	       (highlight-parens edit))]
 	    
+	    [no-highlighting (not (mred:preferences:get-preference 'highlight-parens))]
+
 	    [highlight-parens
 	     (let ([clear-old-location (lambda () (void))])
 	       (opt-lambda (edit [just-clear? #f])
-		 (if suspend-highlight?
+		 (if (or no-highlighting suspend-highlight?)
 		     (set! just-once #t)
 		     (begin 
 		       (set! just-once #f)
@@ -166,15 +168,10 @@
 							 (values here end-pos)
 							 (k (void))))]
 						  [else (k (void))])])
-				    (let* ([pen (make-object wx:pen% "black" 1 wx:const-stipple)]
-					   [brush (make-object wx:brush% "black" wx:const-stipple)])
-				      (if (or #t (<= (wx:display-depth) 8))
-					  (begin (send pen set-stipple mred:icon:paren-highlight-bitmap)
-						 (send brush set-stipple mred:icon:paren-highlight-bitmap))
-					  (begin (send pen set-colour "light salmon")
-						 (send brush set-colour "light salmon")))
-				      (set! clear-old-location
-					    (send edit add-range left right pen brush)))))))))
+				    (set! clear-old-location
+					    (send edit add-range left right 
+						  mred:icon:paren-highlight-bitmap 
+						  'I-am-not-a-color))))))))
 			(lambda () (send edit end-edit-sequence)))))))]
 	    
 	    [get-limit

@@ -1,8 +1,10 @@
 (define mred:autoload@
   (unit/s mred:autoload^
-    (import [mred:debug mred:debug^] [mzlib:file mzlib:file^])
+    (import [mred:debug mred:debug^]
+	    [mred:preferences mred:preferences^]
+	    [mzlib:file mzlib:file^])
 
-   (define autoload-paths '("/usr/local/lib/plt/mred/autoload/"))
+   (define autoload-paths (mred:preferences:get-preference 'autoload-paths))
 
    (define make-autoload
      (lambda (name file)

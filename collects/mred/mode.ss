@@ -31,7 +31,7 @@
 
 	      [after-set-position (lambda (edit) (void))]
 
-	      [on-focus (lambda (edit on?) #f)]
+	      [on-focus (lambda (edit on?) (void))]
 
 
 	      [file-format wx:const-media-ff-same]

@@ -22,44 +22,34 @@
 
 #include "schpriv.h"
 
-/* Got this working for MSVC unoptimized. I'm too lazy to get it
-   right with optimization. */
-#pragma optimize("", off)
-
-int scheme_mz_setjmp(mz_jmp_buf b)
+int __declspec(naked) scheme_mz_setjmp(mz_jmp_buf b)
 {
   __asm {
-	mov ECX, [EBP+4]
-	mov EAX, [EBP+8]
-	mov EDX, [EBP]
-	mov [EAX], EDX
+    mov ECX, [ESP]
+	mov EAX, [ESP+4]
+	mov [EAX], EBP
 	mov [EAX+4], EBX
 	mov [EAX+8], EDI
 	mov [EAX+12], ESI
 	mov [EAX+16], ESP
 	mov [EAX+20], ECX
+	mov EAX, 0
+	ret
   }
-
-  return 0;
 }
 
-void scheme_mz_longjmp(mz_jmp_buf b, int v)
+void __declspec(naked) scheme_mz_longjmp(mz_jmp_buf b, int v)
 {
   __asm {
-	mov EAX, [EBP+12]
-	mov ECX, [EBP+8]
+    mov EAX, [ESP+8]
+	mov ECX, [ESP+4]
 	mov ESP, [ECX+16]
 	mov EBP, [ECX]
-	mov [ESP+12], EBP
-	mov EBP, ESP
-	add EBP, 12
 	mov EBX, [ECX+4]
-	mov [ESP+8], EBX
 	mov EDI, [ECX+8]
-	mov [ESP], EDI
 	mov ESI, [ECX+12]
-	mov [ESP+4], ESI
 	mov ECX, [ECX+20]
-	mov [EBP+4], ECX
+	mov [ESP], ECX
+	ret
   }
 }

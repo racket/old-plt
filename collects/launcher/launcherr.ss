@@ -204,30 +204,28 @@
 	  [p (open-input-file dest)]
 	  [m (string->list "<Command Line: Replace This")]
 	  [x (string->list "<Executable Directory: Replace This")])
-      ; null character marks end of executable directory
-      (let* ([exedir (string-append
-					;plthome
-		      "d:\\plt"
+      (let* ([exedir (string-append 
+		      plthome
+		      ;; null character marks end of executable directory
 		      (string (latin-1-integer->char 0)))]
 	     [pos-fun ; Find the magic start
-	      (lambda 
-	       (magic s)
-	       (file-position p 0)
-	       (let loop ([pos 0][l magic])
-		 (cond
-		  [(null? l) (- pos (length magic))]
-		  [else (let ([c (read-char p)])
-			  (when (eof-object? c)
-				(close-input-port p)
-				(when (file-exists? dest)
-				      (delete-file dest))
-				(error 
-				 'make-windows-launcher 
-				 (format
-				  "Couldn't find ~a position in template" s)))
-			     (if (eq? c (car l))
-				 (loop (add1 pos) (cdr l))
-				 (loop (add1 pos) magic)))])))]
+	      (lambda (magic s)
+		(file-position p 0)
+		(let loop ([pos 0][l magic])
+		  (cond
+		   [(null? l) (- pos (length magic))]
+		   [else (let ([c (read-char p)])
+			   (when (eof-object? c)
+			     (close-input-port p)
+			     (when (file-exists? dest)
+			       (delete-file dest))
+			     (error 
+			      'make-windows-launcher 
+			      (format
+			       "Couldn't find ~a position in template" s)))
+			   (if (eq? c (car l))
+			       (loop (add1 pos) (cdr l))
+			       (loop (add1 pos) magic)))])))]
 	     [len-fun
 	      (lambda (magic)
 		(+ (length magic)
@@ -240,15 +238,6 @@
 	     [len-exedir (len-fun x)]
 	     [pos-command (pos-fun m "command-line")]
 	     [len-command (len-fun m)]
-	     [end-pos (max pos-command pos-exedir)]
-	     [end-len (if (eq? end-pos pos-command)
-			  len-command
-			  len-exedir)]
-	     [total (+ end-pos end-len
-		       (let loop ([c 0])
-			 (if (eof-object? (read-char p))
-			     c
-			     (loop (add1 c)))))]
 	     [write-magic
 	      (lambda (p s pos len)
 		(file-position p pos)
@@ -263,17 +252,14 @@
 		      (when (file-exists? dest)
 			    (delete-file dest))
 		      (error 'make-windows-launcher es)))]
-	     [v (make-vector total #\000)])
-	(file-position p 0)
-	(let loop ([pos 0][c total])
-	  (unless (zero? c)
-	    (vector-set! v pos (read-char p))
-	    (loop (add1 pos) (sub1 c))))
+	     [content (begin
+			(file-position p 0)
+			(read-string (file-size dest)))])
 	(close-input-port p)
 	(check-len len-exedir exedir "executable home directory is too long")
 	(check-len len-command str "collection/file name is too long")
 	(let ([p (open-output-file dest 'truncate)])
-	  (display (list->string (vector->list v)) p)
+	  (display content p)
 	  (write-magic p exedir pos-exedir len-exedir)   
 	  (write-magic p str pos-command len-command)   
 	  (close-output-port p)))))

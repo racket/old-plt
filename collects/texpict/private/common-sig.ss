@@ -34,6 +34,7 @@
      clip-ascent    ; pict -> pict
      lift           ; pict -> pict
      drop           ; pict -> pict
+     baseless       ; pict -> pict
      inset          ; pict i -> pict
                     ; pict hi vi -> pict
                     ; pict l t r b -> pict

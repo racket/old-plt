@@ -163,6 +163,10 @@
 			 (pict-descent p))
 		     (pict-children p))))
 
+      (define (baseless p)
+	(let ([p (lift p (pict-descent p))])
+	  (drop p (- (pict-ascent p) (pict-height p)))))
+
       (define (refocus p c)
 	(let-values ([(x y) (find-lt p c)])
 	  (let ([p (inset p 

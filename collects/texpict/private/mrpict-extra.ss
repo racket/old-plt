@@ -65,8 +65,12 @@
 				    (raise-type-error 'dc-for-parameter "dc<%> object or #f" x))
 				  x)))
 
-      (define (dc f w h a d)
-	(make-pict `(prog ,f ,h) w h a d null))
+      (define dc 
+	(case-lambda
+	 [(f w h a d)
+	  (make-pict `(prog ,f ,h) w h a d null)]
+	 [(f w h)
+	  (dc f w h h 0)]))
       (define prog-picture dc)
 
       (define current-expected-text-scale (make-parameter (list 1 1)))
@@ -233,7 +237,7 @@
 					      (send dc draw-text string (+ x dx) (+ y dy)
 						    combine? 0 angle)
 					      (send dc set-font f)))
-					  pw ph 0 0))))))))]))
+					  pw ph ph 0))))))))]))
 
       (define caps-text
 	(case-lambda

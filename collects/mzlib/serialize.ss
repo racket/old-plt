@@ -68,9 +68,14 @@
 								     #`(access v #,(sub1 n))
 								     r))))))
 						  ;; The serializer id: --------------------
-						  (quote-syntax
-						   #,((syntax-local-certifier)
-						      deserialize-id))
+						  (quote-syntax #,deserialize-id)
+						  ;; Alternate --- does the same thing, due to the way
+						  ;;  this macro is set up:
+						  #;
+						  (let ([b (identifier-binding (quote-syntax #,deserialize-id))])
+						    (if (list? b)
+							(cons '#,deserialize-id (caddr b))
+							'#,deserialize-id))
 						  ;; Can handle cycles? --------------------
 						  ;;  Yes, as long as we have mutators for the
 						  ;;  superclass.
@@ -381,7 +386,12 @@
 
       (define (make-deserialize-provide stx deserializer-id-stx)
 	(if (eq? 'top-level (syntax-local-context))
-	    null
+	    ;; Top level; in case deserializer-id-stx is macro-introduced,
+	    ;;  explicitly use namespace-set-variable-value!
+	    (list (quasisyntax/loc stx
+		    (namespace-set-variable-value! '#,deserializer-id-stx 
+						   #,deserializer-id-stx )))
+	    ;; In a module; provide:
 	    (list (quasisyntax/loc stx
 		    (provide #,deserializer-id-stx)))))
 
@@ -431,16 +441,27 @@
        (lambda ()
 	 (let ([id
 		(let ([path+name
-		       (let ([b (identifier-binding deserialize-id)])
+		       (cond
+			[(identifier? deserialize-id)
+			 (let ([b (identifier-binding deserialize-id)])
+			   (cons
+			    (and (list? b)
+				 (collapse-module-path-index 
+				  (caddr b)
+				  `(file ,(build-path (serialize-info-dir info)
+						      "here.ss"))))
+			    (syntax-e deserialize-id)))]
+			[(symbol? deserialize-id)
+			 (cons #f deserialize-id)]
+			[else
 			 (cons
-			  (and (list? b)
-			       (collapse-module-path-index 
-				(caddr b)
-				`(file ,(build-path (serialize-info-dir info)
-						    "here.ss"))))
-			  (if (list? b)
-			      (cadddr b)
-			      (syntax-e deserialize-id))))])
+			  (if (symbol? (cdr deserialize-id))
+			      (cdr deserialize-id)
+			      (collapse-module-path-index 
+			       (cdr deserialize-id)
+			       `(file ,(build-path (serialize-info-dir info)
+						   "here.ss"))))
+			  (car deserialize-id))])])
 		  (hash-table-get 
 		   mod-map path+name
 		   (lambda ()

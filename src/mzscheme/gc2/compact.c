@@ -286,9 +286,6 @@ MPage **mpage_maps;
 #define OBJ_OFFSET(p)      ((((long)(p)) & MPAGE_MASK) >> LOG_WORD_SIZE)
 #define OBJ_PAGE_START(p)  (void **)(((long)(p)) & MPAGE_START)
 
-#define UNTAGGED_EOM       (MPAGE_SIZE + 1)
-#define UNTAGGED_EOM_HEAD  0x00004000
-
 /* One MSet for every type of MPage: */
 
 typedef struct {
@@ -1021,12 +1018,17 @@ static void set_alloc_boundary(void *p, MPage *page)
 {
   long offset;
 
-  offset = OBJ_OFFSET(p);
-  if (offset) {
-    if (!page)
-      page = find_page(p);
-    page->alloc_boundary = offset;
-    SET_OBJ_HEAD(p, UNTAGGED_EOM_HEAD);
+  if (p) {
+    offset = OBJ_OFFSET(p);
+    if (offset) {
+      if (!page)
+	page = find_page(p);
+      page->alloc_boundary = offset;
+    } else {
+      if (!page)
+	page = find_page(p - 1);
+      page->alloc_boundary = MPAGE_WORDS;
+    }
   }
 }
 
@@ -1390,7 +1392,7 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 {
   void **top;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
   
   while (p < top) {
     Type_Tag tag;
@@ -1398,8 +1400,6 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
 
-    if (size == UNTAGGED_EOM)
-      break;
 #if ALIGN_DOUBLES
     if (size == 1) {
       p++;
@@ -1470,16 +1470,12 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
 {
   void **top;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size, i;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM) {
-      break;
-    }
 
 #if RECORD_MARK_SRC
     mark_src = p;
@@ -1540,7 +1536,7 @@ static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
 {
   void **top;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     int i, elem_size, size;
@@ -1549,9 +1545,6 @@ static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
     Mark_Proc traverse;
     
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM)
-      break;
       
     mp = p + 1;
     p += size;
@@ -1610,16 +1603,12 @@ static void propagate_xtagged_whole_mpage(void **p, MPage *page)
 {
   void **top;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM) {
-      break;
-    }
 
 #if RECORD_MARK_SRC
     mark_src = p + 1;
@@ -1910,7 +1899,7 @@ static void retarget_mpage(void **p, MPage *page)
 
   page->compact_boundary = MPAGE_WORDS;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
 #if CHECKS
   if (dest == startp) {
@@ -1928,16 +1917,6 @@ static void retarget_mpage(void **p, MPage *page)
     head = OBJ_HEAD(p);
       
     size = (head & OBJ_SIZE_MASK) + 1;
-    
-    if (size == UNTAGGED_EOM) {
-#if CHECKS
-      if (p < startp + page->alloc_boundary) {
-	/* Premature end */
-	CRASH(21);
-      }
-#endif
-      break;
-    }
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
@@ -2032,8 +2011,11 @@ static void retarget_all_mpages()
   MPage *page;
   int i;
 
-  for (i = 0; i < NUM_SETS; i++)
+  for (i = 0; i < NUM_SETS; i++) {
+    sets[i]->low = 0;
+    sets[i]->high = 0;
     sets[i]->compact_to_offset = MPAGE_WORDS;
+  }
 
   for (page = first; page; page = page->next) {
     if (!(page->flags & (MFLAG_BIGBLOCK | MFLAG_OLD))) {
@@ -2073,7 +2055,7 @@ static void compact_mpage(void **p, MPage *page)
 
   boundary = page->compact_boundary;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
@@ -2082,16 +2064,6 @@ static void compact_mpage(void **p, MPage *page)
     head = OBJ_HEAD(p);
 
     size = (head & OBJ_SIZE_MASK) + 1;
-    
-    if (size == UNTAGGED_EOM) {
-#if CHECKS
-      if (p < startp + page->alloc_boundary) {
-	/* Premature end */
-	CRASH(21);
-      }
-#endif
-      break;
-    }
 
 #if CHECKS
     if (size >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {
@@ -2205,16 +2177,13 @@ static void freelist_mpage(void **p, MPage *page)
   }
 
   offsets = page->u.offsets;
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
     OffsetArrTy v;
 
     size = *(long *)p + 1;
-    
-    if (size == UNTAGGED_EOM)
-      break;
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
@@ -2377,16 +2346,13 @@ static void fixup_tagged_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     Type_Tag tag;
     long size;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM)
-      break;
 
     if (all || (OBJ_HEAD(p) & OBJ_COLOR_MASK)) {
       tag = *(Type_Tag *)(p + 1);
@@ -2418,15 +2384,12 @@ static void fixup_array_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM)
-      break;
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
@@ -2454,7 +2417,7 @@ static void fixup_tagged_array_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
@@ -2464,9 +2427,6 @@ static void fixup_tagged_array_mpage(void **p, MPage *page, int all)
     Fixup_Proc traverse;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM)
-      break;
 
     if (all || (OBJ_HEAD(p) & OBJ_COLOR_MASK)) {
       mp = p + 1;
@@ -2495,15 +2455,12 @@ static void fixup_xtagged_mpage(void **p, MPage *page, int all)
   long bp_delta = page->backpointer_page - p;
 #endif
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM)
-      break;
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
@@ -2980,12 +2937,7 @@ static void set_ending_tags(void)
   int i;
 
   for (i = 0; i < NUM_SETS; i++) {
-    if (sets[i]->low < sets[i]->high) {
-#if NOISY
-      GCPRINT(GCOUTF, "End tagI: %lx\n", sets[i]->low);
-#endif
-      set_alloc_boundary(sets[i]->low, sets[i]->malloc_page);
-    }
+    set_alloc_boundary(sets[i]->low, sets[i]->malloc_page);
   }
 }
 
@@ -3534,16 +3486,17 @@ static void gcollect(int full)
 
   if (compact) {
     for (i = 0; i < NUM_SETS; i++) {
-      sets[i]->malloc_page = sets[i]->compact_page;
-      sets[i]->low = sets[i]->compact_to + sets[i]->compact_to_offset;
-      sets[i]->high = sets[i]->compact_to + MPAGE_WORDS;
-#if NOISY
-      GCPRINT(GCOUTF, "Alloc %d from: %lx\n", i, sets[i]->low);
-#endif
       if (sets[i]->compact_to_offset < MPAGE_WORDS) {
+	sets[i]->malloc_page = sets[i]->compact_page;
+	sets[i]->low = sets[i]->compact_to + sets[i]->compact_to_offset;
+	sets[i]->high = sets[i]->compact_to + MPAGE_WORDS;
 	sets[i]->compact_page->age = 0;
 	sets[i]->compact_page->refs_age = 0;
 	sets[i]->compact_page->flags |= MFLAG_MODIFIED;
+      } else {
+	sets[i]->malloc_page = NULL;
+	sets[i]->low = 0;
+	sets[i]->high = 0;
       }
     }
 
@@ -4102,17 +4055,13 @@ static long scan_tagged_mpage(void **p, MPage *page)
 {
   void **top, **bottom = p;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
   
   while (p < top) {
     Type_Tag tag;
     long size;
 
     size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM) {
-      return (p - bottom);
-    }
     
 #if ALIGN_DOUBLES
     if (size == 1) {
@@ -4146,30 +4095,26 @@ static long scan_tagged_mpage(void **p, MPage *page)
 #endif
   }
 
-  return MPAGE_WORDS;
+  return page->alloc_boundary;
 }
 
 static long scan_untagged_mpage(void **p, MPage *page)
 {
   void **top, **bottom = p;
 
-  top = p + MPAGE_WORDS;
+  top = p + page->alloc_boundary;
 
   while (p < top) {
     long size;
 
     size = *(long *)p + 1;
 
-    if (size == UNTAGGED_EOM) {
-      return (p - bottom);
-    }
-
     dump_info_array[size - 1] += 1;
 
     p += size;
   } 
 
-  return MPAGE_WORDS;
+  return page->alloc_boundary;
 }
 
 /* HACK! */

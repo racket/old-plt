@@ -1062,6 +1062,40 @@
 	    [(make-box)
 	     (format "\\makebox(~a, ~a)[~a]{~a}"
 		     (cadr s) (caddr s) (cadddr s) (car (cddddr s)))]
-	    [else (error 'output "bad tag: ~s" tag)])))))
+	    [else (error 'pict->string "bad tag: ~s" tag)])))))
+
+(define (pict->commands s)
+  (let output ([s (fixup-top (optimize (pict-draw s)))])
+    (if (string? s)
+	(list s)
+	(let ([tag (car s)])
+	  (case tag
+	    [(local)
+	     (output (cadr s))]
+	    [(begin)
+	     (apply append (map output (cdr s)))]
+	    [(picture)
+	     (apply append (map output (cdddr s)))]
+	    [(color)
+	     `((with-color ,(cadr s) ,(output (cddr s))))]
+	    [(thickness)
+	     `((with-thickness ,(cadr s) ,(output (caddr s))))]
+	    [(put)
+	     `((offset ,(cadr s) ,(caddr s) ,(output (cadddr s))))]
+	    [(qbezier)
+	     `((bezier ,@(cddr s)))]
+	    [(line vector)
+	     `((,tag ,(cadr s) ,(caddr s) ,(cadddr s)))]
+	    [(circle circle*)
+	     `((,tag ,(cadr s)))]
+	    [(frame)
+	     `((frame ,(output (cadr s))))]
+	    [(colorbox)
+	     `((colorbox ,(cadr s) ,(output (caddr s))))]
+	    [(oval)
+	     `((oval ,(caddr s) ,(cadddr s) ,(cadr s)))]
+	    [(make-box)
+	     `((make-box ,(cadr s) ,(caddr s) ,(cadddr s) ,(car (cddddr s))))]
+	    [else (error 'pict->commands "bad tag: ~s" tag)])))))
 
 )

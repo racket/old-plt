@@ -112,4 +112,6 @@
 
    pict->string
 
+   pict->commands
+   
    use-old-connect))

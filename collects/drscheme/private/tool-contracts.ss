@@ -1029,12 +1029,14 @@
    "to the dialog.")
   
   (drscheme:language-configuration:fill-language-dialog
-   ((is-a?/c vertical-panel%)
-    (is-a?/c area-container<%>)
-    drscheme:language-configuration:language-settings?
-    . -> .
+   (opt->
+    ((is-a?/c vertical-panel%)
+     (is-a?/c area-container<%>)
+     drscheme:language-configuration:language-settings?)
+    ((union false? (is-a?/c top-level-window<%>)))
     drscheme:language-configuration:language-settings?)
-   (panel button-panel language-setting)
+   ((panel button-panel language-setting)
+    ((re-center #f)))
    "This procedure accepts two parent panels and"
    "fills them with the contents of the language dialog."
    "It is used to include language configuration controls"
@@ -1047,7 +1049,12 @@
    "show the details of a language."
    ""
    "The \\var{language-setting} is the default"
-   "language to show in the dialog.")
+   "language to show in the dialog."
+   
+   "The \\var{re-center} argument is used when the \\gui{Show Details}"
+   "button is clicked. If that argument is a \\iscmintf{top-level-window},"
+   "the \\gui{Show Details} callback will recenter the window each time"
+   "it is clicked. Otherwise, the argument is not used.")
                                                         
  ;;;                                                    
    ;                                                    

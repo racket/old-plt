@@ -43,6 +43,7 @@ enum {
   scheme_rational_type,
   scheme_float_type, /* 30 */
   scheme_double_type,
+  scheme_complex_izi_type,
   scheme_complex_type,
   scheme_string_type,
   scheme_symbol_type,
@@ -50,8 +51,8 @@ enum {
   scheme_pair_type,
   scheme_vector_type,
   scheme_closure_type,
-  scheme_input_port_type,
-  scheme_output_port_type,   /* 40 */
+  scheme_input_port_type,   /* 40 */
+  scheme_output_port_type,
   scheme_eof_type,
   scheme_true_type,
   scheme_false_type, 
@@ -60,8 +61,8 @@ enum {
   scheme_macro_type,
   scheme_promise_type,
   scheme_box_type,
-  scheme_process_type,
-  scheme_object_type,  /* 50 */
+  scheme_process_type,  /* 50 */
+  scheme_object_type,
   scheme_class_type,
   scheme_structure_type,
   scheme_generic_type, 
@@ -70,8 +71,8 @@ enum {
   scheme_hash_table_type,
   scheme_generic_data_type,
   scheme_weak_box_type, 
-  scheme_struct_type_type,
-  scheme_id_macro_type,  /* 60 */
+  scheme_struct_type_type,  /* 60 */
+  scheme_id_macro_type,
   scheme_unit_type,
   scheme_exp_time_type,
   scheme_listener_type,
@@ -80,8 +81,8 @@ enum {
   scheme_defaulting_config_type, 
   scheme_will_executor_type,
   scheme_interface_type,
-  scheme_manager_type,
-  scheme_random_state_type, /* 70 */
+  scheme_manager_type,  /* 70 */
+  scheme_random_state_type,
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
@@ -96,8 +97,8 @@ enum {
   scheme_tail_call_waiting_type,
   scheme_class_data_type,
   scheme_undefined_type, 
-  scheme_struct_info_type,
-  scheme_multiple_values_type, /* 80 */
+  scheme_struct_info_type,  /* 80 */
+  scheme_multiple_values_type,
   scheme_placeholder_type,
   scheme_case_lambda_sequence_type,
   scheme_begin0_sequence_type,
@@ -108,9 +109,9 @@ enum {
   scheme_unit_compound_data_type,
   scheme_invoke_unit_data_type,
 
-  scheme_interface_data_type,
+  scheme_interface_data_type,  /* 90 */
 
-  scheme_svector_type, /* 90 */
+  scheme_svector_type,
 
   _scheme_last_type_
 };

@@ -76,7 +76,7 @@ static Scheme_Object *name (const Scheme_Object *n1, const Scheme_Object *n2)
                       waybigs, swaybigs, waysmalls, swaysmalls, \
                       combinezero, firstzero, sfirstzero, secondzero, ssecondzero, \
                       nanchk, snanchk, \
-                      complexwrap, exactzerowrapl, exactzerowrapr, numbertype) \
+                      complexwrap, noniziwrap, exactzerowrapl, exactzerowrapr, numbertype) \
 rettype \
 name (const Scheme_Object *n1, const Scheme_Object *n2) \
 { \
@@ -111,7 +111,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 						      &sr)), \
 		   (n2)); \
       complexwrap( \
-      if (t2 == scheme_complex_type) { \
+      if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
         Small_Complex sc; \
 	return cxop((scheme_make_small_complex(n1, &sc)), \
 		    (n2)); \
@@ -156,7 +156,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 	return fop(d1, scheme_rational_to_float(n2)); \
       } \
       complexwrap( \
-      if (t2 == scheme_complex_type) { \
+      if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
         Small_Complex sc; \
         snanchk(d1); \
 	return cxop((scheme_make_small_complex(n1, &sc)), \
@@ -202,7 +202,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 	return fop(d1, scheme_rational_to_double(n2)); \
       } \
       complexwrap( \
-      if (t2 == scheme_complex_type) { \
+      if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
         Small_Complex sc; \
         nanchk(d1); \
 	return cxop((scheme_make_small_complex(n1, &sc)), \
@@ -241,7 +241,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 	 return rop((scheme_integer_to_rational(n1)), \
 		    (n2)); \
        complexwrap( \
-       if (t2 == scheme_complex_type) { \
+       if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
          Small_Complex sc; \
 	 return cxop((scheme_make_small_complex(n1, &sc)), \
 		     (n2)); \
@@ -282,7 +282,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
        if (t2 == scheme_rational_type) \
 	 return rop((n1), (n2)); \
        complexwrap( \
-       if (t2 == scheme_complex_type) { \
+       if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
          Small_Complex sc; \
 	 return cxop((scheme_make_small_complex(n1, &sc)), (n2)); \
        } \
@@ -290,7 +290,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
        WRONG_TYPE(scheme_name, numbertype, n2); \
     } \
   complexwrap( \
-  else if (t1 == scheme_complex_type) \
+  else if (noniziwrap((t1 == scheme_complex_type) ||) (t1 == scheme_complex_izi_type)) \
     { \
        Small_Complex sc; \
        if (SCHEME_INTP(n2)) \
@@ -315,7 +315,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
        if (t2 == scheme_rational_type) \
          return cxop((n1), \
 		     (scheme_make_small_complex(n2, &sc))); \
-       if (t2 == scheme_complex_type) \
+       if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) \
 	 return cxop((n1), (n2)); \
        WRONG_TYPE(scheme_name, numbertype, n2); \
     } \
@@ -376,7 +376,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 0, 0, 0, 0, \
                 GEN_SCHEME_BOOL_APPLY, badfunc, badfunc, badfunc, badfunc, \
                 nanckop, snanckop, \
-                GEN_IDENT, exzeopl, exzeopr, "number")
+                GEN_IDENT, GEN_IDENT, exzeopl, exzeopr, "number")
 
 #define GEN_BIN_DIV_OP(name, scheme_name, iop, fop, fsop, bn_op, rop, cxop) \
   GEN_BIN_THING(Scheme_Object *, name, scheme_name, \
@@ -386,9 +386,9 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 GEN_MAKE_NZERO, GEN_MAKE_SNZERO, GEN_MAKE_PZERO, GEN_MAKE_SPZERO, \
                 GEN_APPLY3, GEN_MAKE_ZERO_Z, GEN_MAKE_SZERO_Z, GEN_SAME_INF_Z, GEN_SAME_SINF_Z, \
                 NAN_CHECK_NAN_IF_WEIRD, SNAN_CHECK_NAN_IF_WEIRD, \
-                GEN_IDENT, GEN_RETURN_0, GEN_OMIT, "number")
+                GEN_IDENT, GEN_IDENT, GEN_RETURN_0, GEN_OMIT, "number")
 
-#define GEN_BIN_COMP(name, scheme_name, iop, fop, bn_op, rop, cxop, waybig, waysmall, firstzero, secondzero, complexwrap, numbertype) \
+#define GEN_BIN_COMP(name, scheme_name, iop, fop, bn_op, rop, cxop, waybig, waysmall, firstzero, secondzero, complexwrap, noniziwrap, numbertype) \
  GEN_BIN_THING(int, name, scheme_name, \
                iop, fop, fop, bn_op, rop, cxop, \
                GEN_IDENT, GEN_FIRST_ONLY, \
@@ -396,7 +396,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                waybig, waybig, waysmall, waysmall, \
                GEN_SCHEME_BOOL_APPLY, firstzero, firstzero, secondzero, secondzero, \
                NAN_CHECK_0_IF_WEIRD, NAN_CHECK_0_IF_WEIRD, \
-               complexwrap, GEN_OMIT, GEN_OMIT, numbertype)
+               complexwrap, noniziwrap, GEN_OMIT, GEN_OMIT, numbertype)
 
 #define GEN_BIN_INT_OP(name, scheme_name, op, bigop) \
 static Scheme_Object * \
@@ -500,7 +500,7 @@ name (int argc, Scheme_Object *argv[]) \
      d = scheme_bignum_to_double(o); \
    } else if (t == scheme_rational_type) { \
      d = scheme_rational_to_double(o); \
-   } else if (t == scheme_complex_type) \
+   } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) \
      return complex_fun(o); \
    else { \
      scheme_wrong_type(#scheme_name, "number", 0, argc, argv); \

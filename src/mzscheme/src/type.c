@@ -141,6 +141,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_weak_box_type, "<weak-box>");
   set_name(scheme_rational_type, "<fractional-number>");
   set_name(scheme_complex_type, "<complex-number>");
+  set_name(scheme_complex_izi_type, "<inexactly-real-number>");
   set_name(scheme_struct_type_type, "<struct-type>");
   set_name(scheme_exp_time_type, "<expansion-time-value>");
   set_name(scheme_listener_type, "<tcp-listener>");

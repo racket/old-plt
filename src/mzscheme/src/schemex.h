@@ -267,6 +267,7 @@ int (*scheme_wait_sema)(Scheme_Object *o, int just_try);
 Scheme_Object **scheme_char_constants;
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);
 int (*scheme_get_unsigned_int_val)(Scheme_Object *o, unsigned long *v);
+double (*scheme_real_to_double)(Scheme_Object *r);
 const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
 /* Bignums */
 Scheme_Object *(*scheme_make_bignum)(long v);

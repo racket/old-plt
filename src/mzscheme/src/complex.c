@@ -36,10 +36,11 @@ static Scheme_Object *make_complex(const Scheme_Object *r, const Scheme_Object *
   c->type = scheme_complex_type;
   c->r = (Scheme_Object *)r;
   c->i = (Scheme_Object *)i;
-  
-  return normalize 
-    ? scheme_complex_normalize((Scheme_Object *)c) 
-      : (Scheme_Object *)c;
+
+  if (normalize)
+    return scheme_complex_normalize((Scheme_Object *)c);
+  else
+    return (Scheme_Object *)c;
 }
 
 Scheme_Object *scheme_make_complex(const Scheme_Object *r, const Scheme_Object *i)
@@ -74,13 +75,27 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
 
   if (c->i == zero)
     return c->r;
-  if (c->r == zero)
-    return (Scheme_Object *)c; /* No coercions */
+  if (c->r == zero) {
+    /* No coercions, but check izi type */
+    if (SCHEME_DBLP(c->i)) {
+      if (!SCHEME_DBL_VAL(c->i))
+	c->type = scheme_complex_izi_type;
+    } 
+#ifdef MZ_USE_SINGLE_FLOATS
+    if (SCHEME_FLTP(c->i)) {
+      if (!SCHEME_FLT_VAL(c->i))
+	c->type = scheme_complex_izi_type;
+    }
+#endif
+    return (Scheme_Object *)c; 
+  }
 
   if (SCHEME_DBLP(c->i)) {
     if (!SCHEME_DBLP(c->r)) {
       c->r = scheme_make_double(scheme_get_val_as_double(c->r));
     }
+    if (!SCHEME_DBL_VAL(c->i))
+      c->type = scheme_complex_izi_type;
   }
 
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -88,9 +103,16 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
     if (!SCHEME_FLTP(c->r)) {
       if (SCHEME_DBLP(c->r)) {
 	c->i = scheme_make_double(SCHEME_FLT_VAL(c->i));
+	if (!SCHEME_DBL_VAL(c->i))
+	  c->type = scheme_complex_izi_type;
       } else {
 	c->r = scheme_make_float(scheme_get_val_as_float(c->r));
+	if (!SCHEME_FLT_VAL(c->i))
+	  c->type = scheme_complex_izi_type;
       }
+    } else {
+      if (!SCHEME_FLT_VAL(c->i))
+	c->type = scheme_complex_izi_type;
     }
   }
 #endif

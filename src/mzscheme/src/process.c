@@ -1928,18 +1928,9 @@ sch_sleep(int argc, Scheme_Object *args[])
   if (argc && !SCHEME_REALP(args[0]))
     scheme_wrong_type("sleep", "real", 0, argc, args);
 
-  if (argc) {
-    if (SCHEME_INTP(args[0]))
-      t = SCHEME_INT_VAL(args[0]);
-    else if (SCHEME_DBLP(args[0]))
-      t = SCHEME_DBL_VAL(args[0]);
-    else if (SCHEME_BIGNUMP(args[0]))
-      t = scheme_bignum_to_float(args[0]);
-    else if (SCHEME_RATIONALP(args[0]))
-      t = scheme_rational_to_float(args[0]);
-    else
-      t = 0;
-  } else
+  if (argc)
+    t = scheme_real_to_double(args[0]);
+  else
     t = 0;
 
   scheme_process_block(t);

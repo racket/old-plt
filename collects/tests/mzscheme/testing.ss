@@ -75,7 +75,12 @@
 	(cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
 	(cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))
 	(cons exn:i/o:port:user? (cons exn:i/o:port-port input-port?))
-	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))))
+	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))
+	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-detail (lambda (x)
+								    (memq x '(generic-failure
+									      ill-formed-path
+									      already-exists
+									      wrong-version)))))))
 
 (define mz-test-syntax-errors-allowed? #t)
 

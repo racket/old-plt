@@ -11,4 +11,4 @@
   (collect-garbage)
   (dump-memory-stats)
   (time (tic-tac-toe 1 1))
-  (loop))
+  '(loop))

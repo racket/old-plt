@@ -1491,6 +1491,51 @@
 	    (test v string->number s))
 	  (loop (cdr l))))
 
+;; Test special inexact names in complex combinations:
+(let ([parts '(+inf.0 -inf.0 +nan.0 1 0 0.0 1/2)])
+  (for-each
+   (lambda (a)
+     (for-each
+      (lambda (b)
+	(let ([rect (format "~a~a~ai"
+			    a
+			    (if (member b '(+inf.0 -inf.0 +nan.0))
+				""
+				"+")
+			    b)]
+	      [polar (format "~a@~a" a b)])
+	  (test (make-rectangular a b) string->number rect)
+	  (test (make-polar a b) string->number polar)))
+      parts))
+   parts)
+
+  (for-each
+   (lambda (a)
+     (let ([rect1 (format "~a+1/0i" a)]
+	   [rect2 (format "1/0~a~ai"
+			  (if (member a '(+inf.0 -inf.0 +nan.0))
+			      ""
+			      "+")
+			  a)]
+	   [polar1 (format "~a@1/0" a)]
+	   [polar2 (format "1/0@~a" a)]
+	   [dbz-test (lambda (s)
+		       (test 'div 'divide-by-zero
+			     (with-handlers ([(lambda (x)
+						(and (exn:read? x)
+						     (regexp-match "division by zero" 
+								   (exn-message x))))
+					      (lambda (x) 'div)])
+			       (read (open-input-string s)))))])
+       (test #f string->number rect1)
+       (test #f string->number rect2)
+       (test #f string->number polar1)
+       (test #f string->number polar2)
+       (dbz-test rect1)
+       (dbz-test rect2)
+       (dbz-test polar1)
+       (dbz-test polar2)))
+   parts))
 
 (test #f string->number "88" 7)
 (test #f string->number "")

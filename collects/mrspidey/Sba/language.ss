@@ -343,9 +343,6 @@
        (false          false)
        (boolean=?      (bool bool -> bool))
 
-       ;; units	
-       (unit/sig?      (_ -> bool))	
-	
        ;; numbers
        (complex?       (_ -> bool)       (predicate* (#t num) _))
        (real?          (_ -> bool)       (predicate* (#t num) _))
@@ -685,6 +682,7 @@
     (add-constructor! 'custodian)
     (add-constructor! 'will-executor)
     (add-constructor! 'tcp-listener)
+    (add-constructor! 'unit)
 
     (add-default-primitives!
      `(
@@ -922,6 +920,7 @@
        ;; ------ units
        (unit/sig->unit         (forall (a) (a -> a)))
        (unit?                  (_ -> bool))
+       (unit/sig?              (_ -> bool) (predicate unit))	
 
        ;; ------ threads and namespaces
        ;; ---- threads

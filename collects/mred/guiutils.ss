@@ -199,8 +199,8 @@
       (opt-lambda (filename action [can-save-now? #f])
 	(let* ([result (void)]
 	       [dialog%
-		(class wx:dialog-box% ()
-		  (inherit show new-line fit tab center)
+		(class mred:container:dialog-box% ()
+		  (inherit show new-line fit tab center set-size)
 		  (private
 		    [on-dont-save
 		     (lambda args
@@ -216,28 +216,28 @@
 		       (show #f))])
 		  (sequence
 		    (super-init () "Warning" #t)
-		    (let ([msg
-			   (make-object wx:message% this
-					(string-append "The file \""
-						       filename
-						       "\" is not saved."))])
-		      (new-line)
-		      (make-object wx:button% this
+		    (let* ([panel (make-object mred:container:vertical-panel% this)]
+			   [msg
+			    (make-object mred:container:message% panel
+					 (string-append "The file \""
+							filename
+							"\" is not saved."))]
+			   [button-panel
+			    (make-object mred:container:horizontal-panel% panel)])
+		      (make-object mred:container:button% button-panel
 				   on-dont-save 
-				   (string-append action " anyway"))
-		      
-		      (tab 50)
-		      (let ([now (make-object wx:button% this
+				   (string-append action " Anyway"))
+		      (let ([now (make-object mred:container:button% button-panel
 					      on-save-now "Save")]
-			    [cancel (make-object wx:button% this
+			    [cancel (make-object mred:container:button% button-panel
 						 on-cancel "Cancel")])
 			(if (not can-save-now?)
 			    (begin (send cancel set-focus)
 				   (send now show #f))
 			    (send now set-focus)))
-		      (fit)
 		      (send msg center wx:const-horizontal))
 		    
+		    (set-size -1 -1 10 10)
 		    (center wx:const-both)
 		    
 		    (show #t)))])

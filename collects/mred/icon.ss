@@ -12,7 +12,7 @@
       (let ([p (build-path icon-path name)]
 	    [bitmap #f])
 	(unless (file-exists? p)
-	  (printf "WARNING: couldn't find ~a~n" p))
+	  (fprintf (current-error-port) "WARNING: couldn't find ~a~n" p))
 	(lambda ()
 	  (if bitmap
 	      bitmap
@@ -30,7 +30,7 @@
 		(when (send bitmap ok?)
 		  (send memory-dc select-object bitmap)))])
 	(unless (file-exists? p)
-	  (printf "WARNING: couldn't find ~a~n" p))
+	  (fprintf (current-error-port) "WARNING: couldn't find ~a~n" p))
 	(values 
 	 (lambda ()
 	   (or bitmap
@@ -56,7 +56,7 @@
       (let ([icon #f]
 	    [p (build-path icon-path "mred.xbm")])
 	(unless (file-exists? p)
-	  (printf "WARNING: couldn't find ~a~n" p))
+	  (fprintf (current-error-port) "WARNING: couldn't find ~a~n" p))
 	(lambda ()
 	  (or icon
 	      (begin

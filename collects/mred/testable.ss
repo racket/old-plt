@@ -1,5 +1,5 @@
 ;;
-;; $Id: testable.ss,v 1.1 1997/07/11 20:11:27 krentel Exp krentel $
+;; $Id: testable.ss,v 1.2 1997/07/30 20:48:01 krentel Exp robby $
 ;;
 ;; Testable classes go between last wx: class and first mred: class.
 ;; Keep track of currently active frame and focused window.
@@ -66,6 +66,4 @@
   (define testable-multi-text%   (add-get-focus wx:multi-text%))
   
   (define testable-frame%        (add-get-focus (add-get-active wx:frame%)))
-  (define testable-dialog-box%   (add-get-focus (add-get-active wx:dialog-box%)))
-  
-  )
+  (define testable-dialog-box%   (add-get-focus (add-get-active wx:dialog-box%))))

@@ -1,14 +1,7 @@
 (compound-unit/sig (import [init : drscheme:init^]
 			   [params : plt:userspace:params^])
   (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-	[appliction : mred:application^ 
-		    ((unit/sig mred:application^
-		       (import)
-		       (define app-name "DrScheme")
-		       (define console #f)
-		       (define eval-string void)))]
-	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
-		       core appliction)]
+	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred") core)]
 	[rice : ricedefs^ ((reference-library-unit/sig "ricedefr.ss" "userspce")
 			   params)]
 	[graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics")

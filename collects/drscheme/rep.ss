@@ -55,9 +55,11 @@
       (let* ([p (make-parameterization drscheme:init:eval-thread-parameterization)]
 	     [userspace-branch-handler
 	      (lambda ()
-		(make-parameterization-with-sharing 
-		 p p (list current-exception-handler)
-		 (lambda (x) #f)))]
+		(let ([p (make-parameterization-with-sharing 
+			  p p (list current-exception-handler)
+			  (lambda (x) #f))])
+		  ((in-parameterization p current-exception-handler) user-exception-handler)
+		  p))]
 	     [bottom-eventspace 
 	      (parameterize ([current-custodian user-custodian])
 		(wx:make-eventspace (userspace-branch-handler)))]
@@ -94,6 +96,13 @@
 	    (debug-info-handler (let ([drs-debug-info
 				       (lambda () (unbox aries:error-box))])
 				  drs-debug-info))
+	    (current-exception-handler user-exception-handler)
+	    (error-display-handler (let ([error-display-handler
+					  (lambda (msg)
+					    (with-parameterization drscheme:init:system-parameterization
+					      (lambda ()
+						(mred:message-box msg "Uncaught Error"))))])
+				     error-display-handler))
 	    (current-namespace n)
 	    (break-enabled #t)
 	    (wx:current-eventspace bottom-eventspace)
@@ -115,6 +124,8 @@
     (lambda (super%)
       (class super% args
 	(inherit insert change-style
+		 cleanup-transparent-io 
+		 transparent-snip set-caret-owner
 		 clear-previous-expr-positions
 		 get-end-position
 		 set-clickback
@@ -142,6 +153,7 @@
 		 reset-pretty-print-width
 		 scroll-to-position)
 	(rename
+	  [super-init-transparent-io init-transparent-io]
 	  [super-initialize-console initialize-console]
 	  [super-reset-console reset-console]
 	  [super-init-transparent-io-do-work init-transparent-io-do-work])
@@ -154,6 +166,11 @@
 	  [load-success? #f])
 	
 	(public
+	  [init-transparent-io
+	   (lambda (grab-focus?)
+	     (super-init-transparent-io grab-focus?)
+	     (when (eq? (current-thread) evaluation-thread)
+	       (set-caret-owner transparent-snip wx:const-focus-display)))]
 	  [init-transparent-io-do-work
 	   (lambda (grab-focus?)
 	     (with-parameterization drscheme:init:system-parameterization
@@ -446,17 +463,19 @@
 	     
 	     (mred:debug:printf 'console-threading "cleanup-evaluation: turning off busy cursor")
 	     (wx:end-busy-cursor)
+	     (cleanup-transparent-io)
 	     (send (get-frame) enable-evaluation)
 	     (reset-break-state)
+	     (begin-edit-sequence)	     
+	     (set-caret-owner null wx:const-focus-display)
 	     (if (thread-running? evaluation-thread)
-		 (begin 
-		   (let ([c-locked? locked?])
-		     (begin-edit-sequence)
-		     (lock #f)
-		     (insert-prompt)
-		     (lock c-locked?)
-		     (end-edit-sequence)))
+		 (let ([c-locked? locked?])
+		   (lock #f)
+		   (insert-prompt)
+		   (lock c-locked?)
+		   (end-edit-sequence))
 		 (begin (lock #t)
+			(end-edit-sequence)
 			(unless shutting-down?
 			  (mred:message-box
 			   (format "The evaluation thread is no longer running, ~
@@ -486,6 +505,7 @@
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.2")
 		   (semaphore-post in-evaluation-semaphore)
 		   (send (get-frame) disable-evaluation)
+		   (cleanup-transparent-io)
 		   (reset-pretty-print-width)
 		   (ready-non-prompt)
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
@@ -619,7 +639,7 @@
 			(lambda (exn)
 			  (with-parameterization drscheme:init:system-parameterization
 			    (lambda ()
-			      (report-exception-error exn this)))
+			      (report-exception-error exn)))
 			  ((error-escape-handler))
 			  (with-parameterization drscheme:init:system-parameterization
 			    (lambda ()
@@ -657,55 +677,40 @@
 	   (lambda (filename)
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
-		 (unless (and (file-exists? filename)
-			      (member 'read (file-or-directory-permissions filename)))
-		   (with-parameterization user-param
-		     (lambda () (drscheme:init:primitive-load filename))))
 		 (let* ([p (open-input-file filename)]
 			[loc (zodiac:make-location 0 0 0 filename)]
 			[chars (begin0
 				 (list (read-char p) (read-char p) (read-char p) (read-char p))
 				 (close-input-port p))]
-			[user-load-relative-directory (in-parameterization user-param current-load-relative-directory)]
-			[old-load-relative-directory (user-load-relative-directory)])
-		   (dynamic-wind
-		    (lambda ()
-		      (let-values ([(base name must-be-dir?)
-				    (split-path
-				     (mzlib:file@:normalize-path filename))])
-			(user-load-relative-directory base)))
-		    (lambda ()
-		      (let ([process-sexps
-			     (let ([last (list (void))])
-			       (lambda (sexp recur)
-				 (cond
-				   [(process-finish? sexp)
-				    (if (process-finish-error? sexp)
-					(escape)
-					last)]
-				   [else
-				    (set! last
-					  (call-with-values
-					   (lambda ()
-					     (with-handlers ([(lambda (x) #t)
-							      (lambda (exn) 
-								(report-exception-error exn this))])
-					       (with-parameterization user-param
-						 (lambda ()
-						   (drscheme:init:primitive-eval sexp)))))
-					   (lambda x x)))
-				    (recur)])))])
-			(apply values 
-			      (if (equal? chars (list #\W #\X #\M #\E))
-				  (let ([edit (make-object drscheme:edit:edit%)])
-				    (send edit load-file filename)
-				    (process-edit edit process-sexps
-						  0 
-						  (send edit last-position)
-						  #t))
-				  (process-file filename process-sexps #t)))))
-		    (lambda ()
-		      (user-load-relative-directory old-load-relative-directory)))))))])
+			[process-sexps
+			 (let ([last (list (void))])
+			   (lambda (sexp recur)
+			     (cond
+			       [(process-finish? sexp)
+				(if (process-finish-error? sexp)
+				    (escape)
+				    last)]
+			       [else
+				(set! last
+				      (call-with-values
+				       (lambda ()
+					 (with-handlers ([(lambda (x) #t)
+							  (lambda (exn) 
+							    (report-exception-error exn))])
+					   (with-parameterization user-param
+					     (lambda ()
+					       (drscheme:init:primitive-eval sexp)))))
+				       (lambda x x)))
+				(recur)])))])
+		   (apply values 
+			  (if (equal? chars (list #\W #\X #\M #\E))
+			      (let ([edit (make-object drscheme:edit:edit%)])
+				(send edit load-file filename)
+				(process-edit edit process-sexps
+					      0 
+					      (send edit last-position)
+					      #t))
+			      (process-file filename process-sexps #t)))))))])
 	(private 
 	  [insert-delta
 	   (lambda (s delta)
@@ -729,6 +734,7 @@
 	     (lambda ()
 	       (clear-previous-expr-positions)
 	       (custodian-shutdown-all user-custodian)
+	       (cleanup-transparent-io)
 	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
@@ -742,7 +748,6 @@
 		     (current-input-port this-in)
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
-		     (current-exception-handler user-exception-handler)
 		     (exit-handler (lambda (arg)
 				     (with-parameterization drscheme:init:system-parameterization
 				       (lambda ()

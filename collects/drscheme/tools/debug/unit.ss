@@ -23,14 +23,16 @@
 	 [button (make-object
 		  mred:button%
 		  button-panel
-		  (lambda (button evt)
+		  (lambda (button evt)			      
 		    (if (and rep-thread
 			     (thread-running? rep-thread))
 			(mred:message-box "already created a rep in the xterm")
-			(set! rep-thread (thread 
-					  (lambda ()
-					    (read-eval-print-loop)
-					    (printf "~nREP finished~n"))))))
+			(set! rep-thread 
+			      (thread 
+			       (lambda ()
+				 (load "~/.mzschemerc")
+				 (read-eval-print-loop)
+				 (printf "~nREP finished~n"))))))
 		  (if (send bitmap ok?)
 		      bitmap
 		      "Console"))])

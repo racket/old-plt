@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.12 1997/08/19 21:59:26 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.13 1997/08/29 22:11:09 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -55,35 +55,62 @@
       (cond [(null? l)  #f]
 	    [(member (car l) valid)  (verify-list (cdr l) valid)]
 	    [else  (car l)])))
+  
+  (define verify-item 
+    (lambda (item valid)
+      (verify-list (list item) valid)))
     
     
   ;;
   ;; BUTTONS are pushed by
   ;; (send <button> command <wx:command-event>)
-  ;; button : must explicitly supply the button.
-  ;;
+  ;; button : must either explicitly supply the button
+  ;;          or supply a string naming the button.
   ;; Button must be shown and in active frame.
   ;;
   
   (define button-tag 'mred:test:button-push)
   
+  (define (find-button b-desc)
+    (cond
+      [(string? b-desc)
+       (let* ([active-frame (mred:test:get-active-frame)]
+	      [_ (unless active-frame
+		   (run-error button-tag
+			      "could not find button: ~a, no active frame" 
+			      b-desc))]
+	      [found
+	       (let loop ([panel (send active-frame get-top-panel)])
+		 (ormap (lambda (child)
+			  (cond
+			    [(and (is-a? child wx:button%)
+				  (equal? (send child get-label) b-desc))
+			     child]
+			    [(is-a? child wx:panel%) (loop child)]
+			    [else #f]))
+			(ivar panel children)))])
+	 (if found
+	     found
+	     (run-error button-tag "no button named ~a in active frame"
+			b-desc)))]
+      [(is-a? b-desc wx:button%) b-desc]
+      [else (run-error button-tag "expected either a button or string as input, received: ~a"
+		       b-desc)]))
+
   (define button-push
-    (lambda (button)
-      (cond
-	[(not (is-a? button wx:button%))
-	 (arg-error button-tag "expected wx:button, given: ~s" button)]
-	[else
-	 (mred:test:run-one
-	  (lambda ()
-	    (cond
-	      [(not (send button is-shown?))
-	       (run-error button-tag "button is not shown")]
-	      [(not (in-active-frame? button))
-	       (run-error button-tag "button is not in active frame")]
-	      [else
-	       (let ([event  (make-button-event button)])
-		 (send button command event)
-		 (void))])))])))
+    (lambda (button-input)
+      (mred:test:run-one
+       (lambda ()
+	 (let ([button (find-button button-input)])
+	   (cond
+	     [(not (send button is-shown?))
+	      (run-error button-tag "button is not shown")]
+	     [(not (in-active-frame? button))
+	      (run-error button-tag "button is not in active frame")]
+	     [else
+	      (let ([event  (make-button-event button)])
+		(send button command event)
+		(void))]))))))
   
   (define make-button-event
     (lambda (button)
@@ -262,44 +289,132 @@
   ;; MODIFIER KEYS (SHIFT, META, CONTROL, ALT).
   ;; 
   
-  (define mouse-click
-    (let ([tag  'mred:test:mouse-click])
-      (lambda (x y)
-	(cond
-	  [(not (and (real? x) (real? y)))
-	   (arg-error tag "x, y must be reals.")]
-	  [else
-	   (mred:test:run-one
-	    (lambda ()
-	      (let
-		  ([canvas  (mred:test:get-focused-window)]
-		   [motion  (make-object wx:mouse-event% wx:const-event-type-motion)]
-		   [down    (make-object wx:mouse-event% wx:const-event-type-left-down)]
-		   [up      (make-object wx:mouse-event% wx:const-event-type-left-up)])
-		(send motion set-x x)  (send motion set-y y)
-		(send down   set-x x)  (send down   set-y y)
-		(send up     set-x x)  (send up     set-y y)
-		(cond
-		  [(not (is-a? canvas wx:canvas%))
-		   (run-error tag "focused window is not canvas")]
-		  [(not (send canvas is-shown?))
-		   (run-error tag "canvas is not shown")]
-		  [else
-		   (send-mouse-event canvas motion)
-		   (send-mouse-event canvas down)
-		   (send-mouse-event canvas up)
-		   (void)]))))]))))
+  (define mouse-tag 'mred:test:mouse-action)
+  (define legal-mouse-buttons (list 'left 'middle 'right))
+  (define legal-mouse-modifiers
+    (list 'alt 'control 'meta 'shift 'noalt 'nocontrol 'nometa 'noshift))
   
+  (define mouse-click
+    (lambda (button x y . modifier-list)
+      (cond 
+	[(verify-item button legal-mouse-buttons)
+	 => (lambda (button)
+	      (run-error mouse-tag "unknown mouse button: ~s" button))]
+	[(not (real? x))
+	 (run-error mouse-tag "expected real, given: ~s" x)]
+	[(not (real? y))
+	 (run-error mouse-tag "expected real, given: ~s" y)]
+	[(verify-list modifier-list legal-mouse-modifiers)
+	 => (lambda (mod) 
+	      (run-error mouse-tag "unknown mouse modifier: ~s" mod))]
+	[else
+	 (mred:test:run-one
+	  (lambda ()
+	    (let ([window  (mred:test:get-focused-window)])
+	      (cond 
+		[(not window)
+		 (run-error mouse-tag "no focused window")]
+		[(not (send window is-shown?))
+		 (run-error mouse-tag "focused window is not shown")]
+		[(not (in-active-frame? window))
+		 (run-error mouse-tag "focused window is not in active frame")]
+		[else
+		 (let ([motion  (make-mouse-event 'motion window x y modifier-list)]
+		       [down    (make-mouse-event (list button 'down) 
+						  window x y modifier-list)]
+		       [up      (make-mouse-event (list button 'up)
+						  window x y modifier-list)])
+		   (send-mouse-event window motion)
+		   (send-mouse-event window down)
+		   (send-mouse-event window up)
+		   (void))]))))])))
+	 
+    
   ;; NEED TO MOVE THE CHECK FOR 'ON-EVENT TO HERE.
   
   (define send-mouse-event
     (lambda (window event)
       (let loop ([l  (ancestor-list window)])
 	(cond
-	  [(null? l)  (send window on-event event)]
+	  [(null? l)
+	   (if (ivar-in-class? 'on-event (object-class window))
+	       (send window on-event event)
+	       (run-error mouse-tag "focused window does not have on-event"))]
 	  [(send (car l) pre-on-event window event)  #f]
 	  [else  (loop (cdr l))]))))
   
+  ;;
+  ;; Make mouse event.
+  ;;
+  
+  (define make-mouse-event
+    (lambda (type window x y modifier-list)
+      (let ([event  (make-object wx:mouse-event% (mouse-type-const type))])
+	(send event set-event-object window)
+	(when (and (pair? type) (not (eq? (cadr type) 'up)))
+	  (set-mouse-modifiers event (list (car type))))
+	(set-mouse-modifiers event modifier-list)
+	(send event set-x x)
+	(send event set-y y)
+	(send event set-time-stamp (time-stamp))
+	event)))
+  
+  (define set-mouse-modifiers
+    (lambda (event modifier-list)
+      (unless (null? modifier-list)
+	(let ([mod  (car modifier-list)])
+	  (cond
+	    [(eq? mod 'alt)        (send event set-alt-down     #t)]
+	    [(eq? mod 'control)    (send event set-control-down #t)]
+	    [(eq? mod 'meta)       (send event set-meta-down    #t)]
+	    [(eq? mod 'shift)      (send event set-shift-down   #t)]
+	    [(eq? mod 'left)       (send event set-left-down    #t)]
+	    [(eq? mod 'middle)     (send event set-middle-down  #t)]
+	    [(eq? mod 'right)      (send event set-right-down   #t)]
+	    [(eq? mod 'noalt)      (send event set-alt-down     #f)]
+	    [(eq? mod 'nocontrol)  (send event set-control-down #f)]
+	    [(eq? mod 'nometa)     (send event set-meta-down    #f)]
+	    [(eq? mod 'noshift)    (send event set-shift-down   #f)]
+	    [else  (run-error mouse-tag "unknown mouse modifier: ~s" mod)]))
+	(set-mouse-modifiers event (cdr modifier-list)))))
+      
+  (define mouse-type-const
+    (lambda (type)
+      (cond
+	[(symbol? type)
+	 (cond
+	   [(eq? type 'motion)  wx:const-event-type-motion]
+	   [(eq? type 'enter)   wx:const-event-type-enter-window]
+	   [(eq? type 'leave)   wx:const-event-type-leave-window]
+	   [else  (bad-mouse-type type)])]
+	[(and (pair? type) (pair? (cdr type)))
+	 (let ([button (car type)] [action (cadr type)])
+	   (cond
+	     [(eq? button 'left)
+	      (cond 
+		[(eq? action 'down)    wx:const-event-type-left-down]
+		[(eq? action 'up)      wx:const-event-type-left-up]
+		[(eq? action 'dclick)  wx:const-event-type-left-dclick]
+		[else  (bad-mouse-type type)])]
+	     [(eq? button 'middle)
+	      (cond
+		[(eq? action 'down)    wx:const-event-type-middle-down]
+		[(eq? action 'up)      wx:const-event-type-middle-up]
+		[(eq? action 'dclick)  wx:const-event-type-middle-dclick]
+		[else  (bad-mouse-type type)])]
+	     [(eq? button 'right)
+	      (cond
+		[(eq? action 'down)    wx:const-event-type-right-down]
+		[(eq? action 'up)      wx:const-event-type-right-up]
+		[(eq? action 'dclick)  wx:const-event-type-right-dclick]
+		[else  (bad-mouse-type type)])]
+	     [else  (bad-mouse-type type)]))]
+	[else  (bad-mouse-type type)])))
+  
+  (define bad-mouse-type
+    (lambda (type)
+      (run-error mouse-tag "unknown mouse event type: ~s" type)))
+
   
   ;;
   ;; Move mouse to new window.

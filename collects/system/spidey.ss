@@ -6,7 +6,10 @@
 	(lambda (port)
 	  (pretty-print
 	   `(begin-elaboration-time
+
+	     ;; instead of this, use nowx-sig.ss and set the wx manually
 	     (define mred:explicit-wx? #t)
+
 	     (current-library-collection-paths
 	      (list ,@(map (lambda (x)
 			     `(build-path plt:home-directory

@@ -1,3 +1,5 @@
+(require-library "compile.ss")
+
 (letrec* ([old-handler (current-load)]
 	  [offset-string "  "]
 	  [error-offset "## "]

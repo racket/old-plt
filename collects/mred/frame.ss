@@ -89,9 +89,6 @@
 		      [handled? (if edit-should-handle?
 				    #f
 				    (send keymap handle-key-event this event))])
-		 '(printf "canvas ~a focus? ~a edit-should-handle? ~a handled? ~a~n"
-			  canvas (send canvas is-focus-on?)
-			  edit-should-handle? handled?)
 		 (or handled?
 		     (super-pre-on-char receiver event))))]
 	    [pre-on-event
@@ -169,8 +166,9 @@
 			       'unix)]
 			  [build-id
 			   (lambda (name post)
-			     (let ([name-string (symbol->string name)])
-			       (string->symbol (string-append name-string post))))]
+			     (let* ([name-string (symbol->string name)]
+				    [answer (string->symbol (string-append name-string post))])
+			       answer))]
 			  [build-public-clause
 			   (opt-lambda (item)
 			     (let ([name (an-item-name item)]
@@ -308,7 +306,7 @@
 					       #f
 					       "About "
 					       "...")
-				 (make-between 'help-menu 'after-help-menu #f))])
+				 (make-between 'help-menu 'after-about #f))])
                   `(class-asi super%
                      (inherit make-menu on-close show)
                      (rename [super-make-menu-bar make-menu-bar])
@@ -331,7 +329,7 @@
 
     (define make-simple-frame%
       (lambda (super%)
-	(class super% ([name mred:application:app-name])
+	(class super% ([name (mred:application:current-app-name)])
 	  (inherit panel get-client-size set-icon get-menu-bar
 		   make-menu show active-edit active-canvas)
 	  (rename [super-can-close? can-close?]
@@ -405,14 +403,20 @@
 					       (send edit get-end-position))
 				       (values #f #f))])
 		       (send edit begin-edit-sequence)
-		       (let ([status (send edit load-file filename #f)])
+		       (let ([status (send edit load-file
+					   filename
+					   wx:const-media-ff-same
+					   #f)])
 			 (if status
-			     (when (is-a? edit wx:media-edit%)
-			       (send edit set-position start end))
-			     (mred:gui-utils:message-box
-			      (format "could not read ~a" filename)
-			      "Error Reverting")))
-		       (send edit end-edit-sequence)))
+			     (begin
+			       (when (is-a? edit wx:media-edit%)
+				 (send edit set-position start end))
+			       (send edit end-edit-sequence))
+			     (begin
+			       (send edit end-edit-sequence)
+			       (mred:gui-utils:message-box
+				(format "could not read ~a" filename)
+				"Error Reverting"))))))
 		 #t))]
 	    [file-menu:save (lambda ()
 			      (send (get-edit) save-file)
@@ -483,7 +487,7 @@
 
 	  (public
 	    [help-menu:about (lambda () (mred:console:credits))]
-	    [help-menu:about-string mred:application:app-name]
+	    [help-menu:about-string (mred:application:current-app-name)]
 	    [help-menu:after-help-menu
 	     (let ([reg (regexp "<TITLE>(.*)</TITLE>")])
 	       (lambda (help-menu)
@@ -932,9 +936,6 @@
 				   (send edit last-position)
 				   rb)
 			     (send edit position-location 0 lb)
-			     '(printf "width: ~a ~a ~a ~a~n" 
-				      (send canvas user-min-width)
-				      lb rb (send time-edit last-position))
 			     (send canvas user-min-width 
 				   (+ magic-space (- (unbox rb) (unbox lb)))))))))])
 	    

@@ -60,6 +60,7 @@
 			 [wx:current-eventspace eventspace])
 	    (let ([allow-improper-lists zodiac:allow-improper-lists]
 		  [eq?-only-compares-symbols drscheme:language:eq?-only-compares-symbols])
+	      (load (build-path (collection-path "system") "debug.ss"))
 	      (invoke-open-unit/sig c@ #f 
 				    (drscheme:init : drscheme:init^)
 				    plt:userspace:params^)))))))

@@ -8,7 +8,6 @@
 	    [mred:constants : mred:constants^]
 	    [mred:preferences : mred:preferences^]
 	    [mred:gui-utils : mred:gui-utils^]
-	    [mred:application : mred:application^]
 	    [mred : mred:container^]
 	    [mred:mode : mred:mode^]
 	    [mred:match-cache : mred:match-cache^]
@@ -176,6 +175,8 @@
 			    find-named-style "Basic")
 		      scheme-mode-standard-style-delta))
 	  (send style set-delta scheme-mode-standard-style-delta)))
+
+    (define scheme-mode-allow-console-eval (make-parameter #f))
 
     (define make-scheme-mode% 
       (lambda (super%)
@@ -756,9 +757,13 @@
 	       (super-install edit))]
 	    [evaluate-region
 	     (lambda (edit start end)
-	       (mred:application:eval-string (send edit get-text start end))
-	       #t)]
-	    
+	       (and (scheme-mode-allow-console-eval)
+		    (let* ([str (send edit get-text start end)]
+			   [ce (send (global-defined-value 'mred:console)
+				     get-edit)])
+		      (send ce eval-and-display str)
+		      (send ce insert-prompt)
+		      #t)))]
 
 	    [select-text
 	     (lambda (f forward?)

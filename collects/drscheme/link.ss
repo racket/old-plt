@@ -1,8 +1,7 @@
 (compound-unit/sig (import [I : mred:application-imports^])
   (link [init : drscheme:init^ ((reference-unit/sig "init.ss") mred)]
 	[mzlib : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
-	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
-		       mzlib (app : mred:application^))]
+	[mred : mred^ ((reference-library-unit/sig "link.ss" "mred") mzlib)]
 	[print-convert : mzlib:print-convert^
 		       ((reference-library-unit/sig "pconverr.ss")
 			(mzlib string@)

@@ -13,26 +13,26 @@
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
   (link [rep : drscheme:rep^
-	     ((reference-unit/sig "rep.ss")
+	     ((reference-relative-library-unit/sig "rep.ss")
 	      mred mzlib print-convert aries zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
-	       ((reference-unit/sig "frame.ss")
+	       ((reference-relative-library-unit/sig "frame.ss")
 		mred mzlib basis
 		setup unit
 		compound-unit app zodiac)]
 	[unit : drscheme:unit^
-	  ((reference-unit/sig "unit.ss")
+	  ((reference-relative-library-unit/sig "unit.ss")
 	   mred mzlib app setup compound-unit frame edit rep
 	   language get/extend face)]
 	[compound-unit : drscheme:compound-unit^
-	  ((reference-unit/sig "cunit.ss")
+	  ((reference-relative-library-unit/sig "cunit.ss")
 	   mred mzlib unit frame face)]
-	[signature : drscheme:signature^ ((reference-unit/sig "sig.ss")
+	[signature : drscheme:signature^ ((reference-relative-library-unit/sig "sig.ss")
 					  mred)]
-	[program : drscheme:program^ ((reference-unit/sig "prog.ss"))]
+	[program : drscheme:program^ ((reference-relative-library-unit/sig "prog.ss"))]
 	[get/extend : drscheme:get/extend^
-		    ((reference-unit/sig "params.ss") 
+		    ((reference-relative-library-unit/sig "params.ss") 
 		     mred unit frame rep mzlib)])
   (export (unit frame)
 	  (unit unit)

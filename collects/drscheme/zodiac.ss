@@ -126,12 +126,13 @@
 		     non-function-names)
 	   ht)]
 	[function-names
-	 (foldl (lambda (x l)
-		  (if (hash-table-get bad-names-table x (lambda () #f))
-		      l
-		      (cons x l)))
-		null
-		all-names)])
+	 (let loop ([names all-names])
+	   (cond
+	     [(null? names) null]
+	     [else (let ([x (car names)])
+		     (if (hash-table-get bad-names-table x (lambda () #f))
+			 (loop (cdr names))
+			 (cons x (loop (cdr names)))))]))])
    `(unit/sig drscheme:zodiac^
       (import [mred : mred^]
 	      [beginner : zodiac:system^]

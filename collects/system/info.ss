@@ -3,6 +3,8 @@
     [(name) "MrEd"]
     [(app-unit-library) "app.ss"]
     [(app-sig-library) "sig.ss"]
-    [(splash-image-path) (with-handlers ([void (lambda (x) "mred.gif")]) (build-path (collection-path "icons") "mred.gif"))]
-    [(splash-max) 95]
+    [(splash-image-path) (with-handlers ([void (lambda (x) "mred.gif")])
+			   (build-path (collection-path "icons") "mred.gif"))]
+    [(splash-max) 81]
+    [(splash-depth) 6]
     [else (error 'mred-info "Unknown request: ~s" request)]))

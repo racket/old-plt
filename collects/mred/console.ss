@@ -710,6 +710,7 @@
 	  
 	  (public
 	    [transparent-edit #f]
+	    [transparent-snip #f]
 	    [this-in-char-ready? (lambda () #t)]
 	    [cleanup-transparent-io
 	     (lambda ()
@@ -735,11 +736,12 @@
 		  (lambda ()		  
 		    (when starting-at-prompt-mode?
 		      (set! prompt-mode? #f)
-		      (insert #\newline))
+		      (insert (string #\newline) (last-position) (last-position) #f))
 		    (send transparent-edit set-auto-set-wrap #t)
 		    (let ([snip (make-object wx:media-snip% transparent-edit)])
-		      (insert snip)
-		      (insert #\newline)
+		      (set! transparent-snip snip)
+		      (insert snip (last-position) (last-position) #f)
+		      (insert (string #\newline) (last-position) (last-position) #f)
 		      (for-each (lambda (c) (send c add-wide-snip snip))
 				canvases))
 		    (when grab-focus?
@@ -1194,7 +1196,7 @@
 	(class super% args
 	  (inherit change-style prompt-position set-prompt-position resetting? set-resetting lock get-text
 		   flush-console-output set-position last-position get-character
-		   clear-undos set-auto-set-wrap
+		   clear-undos set-auto-set-wrap locked?
 		   do-pre-eval do-post-eval)
 	  (rename [super-on-insert on-insert]
 		  [super-on-local-char on-local-char]
@@ -1237,24 +1239,35 @@
 	     (lambda ()
 	       (flush-console-output)
 	       (let loop ()
-		 (semaphore-wait potential-sexps-protect)
-		 (cond
-		   [shutdown? 
-		    (semaphore-post potential-sexps-protect)
-		    (void)]
-		   [(null? potential-sexps)
-		    (semaphore-post potential-sexps-protect)
-		    (wx:yield wait-for-sexp)
-		    (loop)]
-		   [else (let* ([sexp (car potential-sexps)]
-				[start (car sexp)]
-				[end (cdr sexp)]
-				[text (get-text start end #t)])
-			   (set! potential-sexps (cdr potential-sexps))
-			   (mark-consumed start end)
-			   (clear-undos)
-			   (semaphore-post potential-sexps-protect)
-			   (read (open-input-string text)))])))]
+		 (let ([yield/loop? #f]
+		       [answer #f])
+		   (dynamic-wind
+		    (lambda ()
+		      (set! yield/loop? #f)
+		      (set! answer #f)
+		      (semaphore-wait potential-sexps-protect))
+		    (lambda ()
+		      (cond
+			[shutdown? 
+			 (void)]
+			[(null? potential-sexps)
+			 (set! yield/loop? #t)]
+			[else (let* ([sexp (car potential-sexps)]
+				     [start (car sexp)]
+				     [end (cdr sexp)]
+				     [text (get-text start end #t)])
+				(set! potential-sexps (cdr potential-sexps))
+				(mark-consumed start end)
+				(clear-undos)
+				(set! answer (read (open-input-string text))))]))
+		    (lambda ()
+		      (semaphore-post potential-sexps-protect)))
+		   (cond
+		     [yield/loop?
+		      (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
+		      (loop)]
+		     [answer answer]
+		     [else (void)]))))]
 	    [fetch-char
 	     (lambda ()
 	       (flush-console-output)
@@ -1263,20 +1276,34 @@
 			(mark-consumed pos (add1 pos))
 			(get-character pos))])
 		 (let loop ()
-		   (semaphore-wait potential-sexps-protect)
-		   (cond
-		     [(not (null? potential-sexps))
-		      (let ([first-sexp (car potential-sexps)])
-			(set! potential-sexps null)
-			(semaphore-post potential-sexps-protect)
-			(found-char (car first-sexp)))]
-		     [(< prompt-position (last-position))
-		      (semaphore-post potential-sexps-protect)
-		      (found-char prompt-position)]
-		     [else 
-		      (semaphore-post potential-sexps-protect)
-		      (wx:yield wait-for-sexp)
-		      (loop)]))))]
+		   (let ([first-case? #f]
+			 [second-case? #f]
+			 [third-case? #f])
+		     (dynamic-wind
+		      (lambda ()
+			[set! first-case? #f]
+			[set! second-case? #f]
+			[set! third-case? #f]
+			(semaphore-wait potential-sexps-protect))
+		      (lambda ()
+			(cond
+			  [(not (null? potential-sexps))
+			   (let ([first-sexp (car potential-sexps)])
+			     (set! potential-sexps null)
+			     (set! first-case? (found-char (car first-sexp))))]
+			  [(< prompt-position (last-position))
+			   (set! second-case? #t)]
+			  [else 
+			   (set! third-case? #t)]))
+		      (lambda ()
+			(semaphore-post potential-sexps-protect)))
+		     (cond
+		       [first-case? first-case?]
+		       [second-case? 
+			(found-char prompt-position)]
+		       [third-case?
+			(wx:yield wait-for-sexp)
+			(loop)])))))]
 	    [takeover void]
 	    [get-prompt (lambda () "")]
 	    [generic-write
@@ -1354,12 +1381,12 @@
 		       (let ((file (mred:finder:get-file)))
 			 (when file
 			   (load-file file)))))
-	       (send file-menu append-item "Show Console History..." show-interactions-history)
+	       (send file-menu append-item "Show Console History" show-interactions-history)
 	       (send file-menu append-separator))])
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-frame%")
-	    (super-init (string-append mred:application:app-name "Console"))
+	    (super-init (string-append (mred:application:current-app-name) "Console"))
 	    (mred:debug:printf 'super-init "after console-frame%")
 	    (let ([edit (get-edit)])
 	      (send edit set-file-format wx:const-media-ff-std)

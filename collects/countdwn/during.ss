@@ -7,10 +7,14 @@
   (define remember-around
     (opt-lambda (name first second)
       (let ([open (apply (ivar edit new-counter)
-			 (string-append name " start")
+			 (if (string? name)
+			     (string-append name " start")
+			     name)
 			 first)]
 	    [closed (apply (ivar edit new-counter)
-			   (string-append name " end")
+			   (if (string? name)
+			       (string-append name " end")
+			       name)
 			   second)])
 	(send open set-open)
 	(send closed set-close)))))

@@ -1,6 +1,18 @@
 SYSTEM HISTORY
 --------------
 Version 51:
+ - the collection paths are not normalized anymore
+
+ - the application startup procedure is new (again). The unit/sig
+   version is improved, and the non unitized approach now receives all
+   of the arguments, even the processed ones.
+
+ - the splash screen flag has changed.
+
+ - mred no longer imports a unit of the mred:application signature. Instead, 
+   the parameter mred:current-app-name is used to get and set the
+   applications name. The eval-string and frame are not used.
+
  - CACHE-WRITE-COUNT in a console-edit is no longer used.
 
  - do not use the frame method on-close anymore. Use can-close? and

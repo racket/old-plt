@@ -1,13 +1,19 @@
 ;;
-;; $Id: sig.ss,v 1.78 1997/10/16 21:55:00 robby Exp $
+;; $Id: sig.ss,v 1.79 1997/10/22 15:36:03 robby Exp robby $
 ;;
 
-(begin-elaboration-time
- (if mred:explicit-wx?
-     `(reference "wxs.ss")
-     `(define-signature mred:wx^ ())))
+(require-library "cores.ss")
+(require-library "macro.ss")
+(require-library "match.ss")
+(require-library "minsig.ss" "mred")
 
 (reference-library "dates.ss")
+
+(define-signature mred:control^
+  (media-text%
+   media-multi-text%
+   media-text-canvas%
+   media-text-edit%))
 
 (define-signature mred:graph^
   (node-snip%
@@ -61,51 +67,18 @@
    (struct exn:during-preferences ())
    (struct exn:url ())))
 
-(define-signature mred:container-children^
-  (const-default-size
-   const-default-posn
-   const-default-spacing
-   const-default-border
-   (struct child-info (x-posn y-posn x-min y-min x-margin y-margin x-stretch y-stretch))
-   get-two-int-values
-   non-negative-number?
-   same-dimension?
-   make-item%
-   button%
-   check-box%
-   choice%
-   gauge%
-   list-box%
-   message%
-   radio-box%
-   slider%
-   text%
-   multi-text%
-   canvas%
-   media-canvas%
-   text-window%
-   canvas-message%))
-
 (define-signature mred:hyper-loader^
   (open-hyper-make
    open-hyper-view
    hyper-text-require))
 
 (define-signature mred:application^
-  (console
-   app-name
-   eval-string))
+  (current-app-name))
 
 (define-signature mred:html-mode^
   ())
 
 (define-signature mred:debug^ (printf exit? on?))
-
-(define-signature mred:constants^
-  (debug-on
-   debug-param
-   original-input-port
-   original-output-port))
 
 (define-signature mred:exn-external^
   (exn? exn:unknown-preference? exn:during-preferences? exn:url?))
@@ -124,37 +97,6 @@
    add-preference-panel
    show-preferences-dialog
    hide-preferences-dialog))
-
-(define-signature mred:container-frames^
-  (frame% dialog-box%))
-
-(define-signature mred:container-children-export^
-  (const-default-size
-   const-default-posn
-   const-default-spacing
-   const-default-border
-   (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
-   button%
-   check-box%
-   choice%
-   gauge%
-   list-box%
-   message%
-   radio-box%
-   slider%
-   text%
-   multi-text%
-   canvas%
-   media-canvas%
-   text-window%
-   canvas-message%))
-
-(define-signature mred:container-panels^
-  (debug-borders
-   panel%
-   horizontal-panel%
-   vertical-panel%
-   single-panel%))
 
 (define-signature mred:autoload^
   (make-autoload))
@@ -385,7 +327,8 @@
    scheme-backward-containing-sexp))
 
 (define-signature mred:scheme-mode^
-  (scheme-mode-tabify-on-return?
+  (scheme-mode-allow-console-eval
+   scheme-mode-tabify-on-return?
    scheme-mode-match-round-to-square?
    scheme-media-wordbreak-map
    scheme-init-wordbreak-map
@@ -432,13 +375,6 @@
    open-hyper-make
    hyper-text-require))
 
-(define-signature mred:container^
-  ((open mred:container-frames^)
-   (open mred:container-children-export^)
-   (open mred:container-panels^)))
-
-(reference "stsigs.ss")
-
 (define-signature mred^
   ((unit constants : mred:constants^)
    (open mred:version^)
@@ -457,6 +393,6 @@
    (open mred:testable-window^)
    (unit test : mred:self-test-export^)
    (open mred:url^)
-   (open mred:graph^)))
-
-(define-signature mred:application-imports^ (argv))
+   (open mred:graph^)
+   (open mred:application^)
+   (open mred:control^)))

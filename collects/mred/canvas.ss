@@ -165,51 +165,71 @@
 	  (inherit get-media)
 	  (rename [super-on-size on-size])
 	  (private
-	    [snips null]
+	    [wide-snips null]
+	    [tall-snips null]
 	    [autowrap-snips? (mred:preferences:get-preference 'mred:auto-set-wrap?)]
 	    [update-snip-size
-	     (lambda (s)
+	     (lambda (width?)
+	       (lambda (s)
 	       (let* ([width (box 0)]
+		      [height (box 0)]
 		      [leftm (box 0)]
 		      [rightm (box 0)]
+		      [topm (box 0)]
+		      [bottomm (box 0)]
 		      [left-edge-box (box 0)]
+		      [top-edge-box (box 0)]
 		      [snip-media (send s get-this-media)]
 		      [edit (get-media)])
-		 (send (send edit get-admin)
-		       get-view null null width null)
-		 (send s get-margin leftm (box 0) rightm (box 0))
-		 (send edit get-snip-position-and-location
-		       s (box 0) left-edge-box null)
-		 (let ([snip-width (- (unbox width)
-				      (unbox left-edge-box)
-				      (unbox leftm)
-				      (unbox rightm)
-				      
-				      ;; this two is the space that 
-				      ;; the caret needs at the right of
-				      ;; a buffer.
-				      2)])
-		   (send* s 
-		     (set-min-width snip-width)
-		     (set-max-width snip-width))
-		   (unless (null? snip-media)
-		     (send snip-media set-max-width
-			   (if autowrap-snips?
-			       snip-width
-			       0))))))])
+		 (unless (null? edit)
+		   (let ([admin (send edit get-admin)])
+		     (send admin get-view null null width height)
+		     (send s get-margin leftm topm rightm bottomm)
+		     (send edit get-snip-position-and-location
+			   s null left-edge-box top-edge-box)
+		     (if width?
+			 (let ([snip-width (- (unbox width)
+					      (unbox left-edge-box)
+					      (unbox leftm)
+					      (unbox rightm)
+					      
+					      ;; this two is the space that 
+					      ;; the caret needs at the right of
+					      ;; a buffer.
+					      2)])
+			   (send* s 
+				  (set-min-width snip-width)
+				  (set-max-width snip-width))
+			   (unless (null? snip-media)
+			     (send snip-media set-max-width
+				   (if autowrap-snips?
+				       snip-width
+				       0))))
+			 (let ([snip-height (- (unbox height)
+					       (unbox top-edge-box)
+					       (unbox topm)
+					       (unbox bottomm))])
+			   (send* s 
+				  (set-min-height snip-height)
+				  (set-max-height snip-height)))))))))])
 	  (public
 	    [widen-snips
 	     (lambda (x)
 	       (set! autowrap-snips? x)
-	       (for-each update-snip-size snips))]
+	       (for-each (update-snip-size #t) wide-snips))]
 	    [add-wide-snip
 	     (lambda (snip)
-	       (set! snips (cons snip snips))
-	       (update-snip-size snip))]
+	       (set! wide-snips (cons snip wide-snips))
+	       ((update-snip-size #t) snip))]
+	    [add-tall-snip
+	     (lambda (snip)
+	       (set! tall-snips (cons snip tall-snips))
+	       ((update-snip-size #f) snip))]
 	    [on-size
 	     (lambda (width height)
 	       (super-on-size width height)
-	       (for-each update-snip-size snips))]))))
+	       (for-each (update-snip-size #t) wide-snips)
+	       (for-each (update-snip-size #f) tall-snips))]))))
 
     (define wrapping-canvas% (make-wrapping-canvas% mred:container:media-canvas%))
     (define frame-title-canvas% (make-frame-title-canvas% wrapping-canvas%))

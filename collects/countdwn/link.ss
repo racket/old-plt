@@ -2,12 +2,7 @@
  (import [I : mred:application-imports^])
  (link [C : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
        [T : mzlib:date^ ((reference-library-unit/sig "dater.ss") (C function@))]
-       [A : mred:application^ ((unit/sig mred:application^
-				 (import)
-				 (define app-name "Countdown")
-				 (define eval-string void)
-				 (define console #f)))]
-       [M : mred^ ((reference-library-unit/sig "link.ss" "mred") C A)]
+       [M : mred^ ((reference-library-unit/sig "link.ss" "mred") C)]
        [R : countdown^ ((reference-unit/sig "remind.ss") T 
 			(C thread@) (C function@) (C pretty-print@)
 			M)]

@@ -1,3 +1,5 @@
+(require-library "sig.ss" "mred")
+
 (define-signature countdown^
   (main-edit%))
 

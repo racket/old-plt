@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.44 1997/10/16 18:07:40 robby Exp robby $
+;; $Id: contkids.ss,v 1.45 1997/10/16 18:11:51 robby Exp robby $
 ;;
 
 ; need to export:
@@ -141,6 +141,17 @@
 		get-client-size
 		get-size)
 	    
+	      (rename [super-enable enable])
+	      (private [enabled? #t])
+	      (public
+		[enable
+		 (lambda (b)
+		   (begin0 (super-enable b)
+			   (set! enabled? b)))]
+		[is-enabled? (lambda () enabled?)])
+		       
+
+
               (rename
                 [super-set-size set-size])
 	    

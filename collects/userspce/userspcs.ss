@@ -1,5 +1,5 @@
 (reference-library "cores.ss")
-(reference "ricedefs.ss")
+(reference-relative-library "ricedefs.ss")
 ;(reference "sparams.ss")
 
 (define-signature plt:userspace^

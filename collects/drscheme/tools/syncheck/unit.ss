@@ -281,10 +281,10 @@
 			      (improper-for-each f (cdr lis))))
 	  (else (f lis)))))
     
-    (define-structure (graphic pos* locs->thunks draw-fn click-fn))
-    (define-structure (arrow start-pos-left start-pos-right end-pos-left end-pos-right
-			     start-x start-y end-x end-y
-			     id-name rename))
+    (define-struct graphic (pos* locs->thunks draw-fn click-fn))
+    (define-struct arrow (start-pos-left start-pos-right end-pos-left end-pos-right
+					 start-x start-y end-x end-y
+					 id-name rename))
 
     (define TACKED-BRUSH (send wx:the-brush-list find-or-create-brush "BLUE" wx:const-solid))
     (define UNTACKED-BRUSH (send wx:the-brush-list find-or-create-brush "WHITE" wx:const-solid))
@@ -521,7 +521,7 @@
 	  (private
 	    [button-callback
 	     (lambda ()
-	       (letrec* ([user-param (ivar interactions-edit param)]
+	       (letrec* ([user-param (ivar interactions-edit user-param)]
 			 [add-arrow (ivar definitions-edit syncheck:add-arrow)]
 			 [find-string (ivar definitions-edit find-string)]
 			 [change-style (lambda (s x y)
@@ -777,7 +777,8 @@
 		    (let ([built-in?
 			   (lambda (s)
 			     (parameterize ([current-namespace 
-					     ((in-parameterization (ivar interactions-edit param) 
+					     ((in-parameterization (ivar interactions-edit
+									 user-param) 
 								   current-namespace))])
 			       (built-in-name s)))])
 		      (for-each (lambda (var)
@@ -815,16 +816,18 @@
 		  (lambda ()
 		    (send definitions-edit end-edit-sequence)
 		    (send definitions-edit set-styles-fixed #t)
-		    (wx:end-busy-cursor)))))]
-	    [button (make-object mred:button% button-panel
-				 (lambda (button evt) (button-callback))
-				 syncheck-bitmap)])
+		    (wx:end-busy-cursor)))))])
+	  (public
+	    [check-syntax-button
+	     (make-object mred:button% button-panel
+			  (lambda (button evt) (button-callback))
+			  syncheck-bitmap)])
 	  (sequence
 	    (send definitions-edit set-styles-fixed #t)
 	    (send button-panel change-children
 		  (lambda (l)
-		    (cons button
-			  (mzlib:function@:remove button l))))))))
+		    (cons check-syntax-button
+			  (mzlib:function@:remove check-syntax-button l))))))))
       
       (drscheme:get/extend:extend-definitions-edit% make-graphics:media-edit%)
       (drscheme:get/extend:extend-unit-frame% make-new-unit-frame%))

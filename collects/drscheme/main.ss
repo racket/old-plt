@@ -6,7 +6,10 @@
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:get/extend : drscheme:get/extend^])
   
-  (mred:add-version-spec 'd 3)
+  (mred:debug:printf 'invoke "drscheme:main@")
+
+  (mred:current-app-name "DrScheme")
+  (mred:add-version-spec 'd 4)
   
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)

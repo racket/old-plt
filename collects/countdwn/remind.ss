@@ -318,9 +318,13 @@
 		   (set! first-time? #f)
 		   (insert (string #\newline) (get-start-position) -1 #f))
 	       (insert outer (get-start-position) -1 #f)
-	       (send* label-edit
-		 (insert name 0 0 #f)
-		 (change-style label-delta 0 (string-length name)))
+	       (cond
+		[(string? name)
+		 (send label-edit insert name 0 0 #f)
+		 (send label-edit change-style label-delta 0 (send label-edit last-position))]
+		[(procedure? name)
+		 (name label-edit)]
+		[else (error 'remember "expected procedure or string as first argument, got: ~a~n")])
 	       (send* main
 		 (insert label (send main get-start-position) -1 #f)
 		 (insert (string #\newline) (send main get-start-position) -1 #f)

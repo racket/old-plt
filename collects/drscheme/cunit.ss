@@ -53,22 +53,6 @@
 	 (lambda (snip evt)
 	   (let loop ([s (find-next-selected-snip null)])
 	     (unless (null? s)
-	       '(printf "evt: button-d-click? ~a button-down? ~a button-up? ~a
-button? 1 ~a button? 2 ~a button? 3 ~a
-dragging? ~a entering? ~a get-alt-down ~a get-control-down ~a
-get-left-down ~a get-meta-down ~a get-middle-down ~a get-right-down ~a
-get-shift-down ~a  get-time-stamp ~a  get-x ~a  get-y ~a  
-is-button? ~a  leaving? ~a  moving?~a~n"
-			(send evt button-d-click?) (send evt button-down?) (send evt button-up?)
-			(send evt button? 1) (send evt button? 2) (send evt button? 3)
-			(send evt dragging?) (send evt entering?) (send evt get-alt-down) (send evt get-control-down)
-			(send evt get-left-down) (send evt get-meta-down) (send evt get-middle-down) (send evt get-right-down)
-			(send evt get-shift-down) (send evt get-time-stamp) (send evt get-x) (send evt get-y)
-			(send evt is-button?) (send evt leaving?) (send evt moving?))
-	       '(printf "get-event-class ~a get-event-object ~a~n get-event-type ~a~n~n"
-			(send evt get-event-class)
-			(send evt get-event-object)
-			(send evt get-event-type))
 	       (let ([unit (send s get-unit)])
 		 (send unit create-frame)
 		 (send (send unit get-frame) show #t))

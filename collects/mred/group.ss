@@ -8,7 +8,6 @@
 	    [mred:exit : mred:exit^]
 	    [mred:autosave : mred:autosave^]
 	    [mred:handler : mred:handler^]
-	    [mred:application : mred:application^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:file : mzlib:file^])
 	    

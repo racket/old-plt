@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.6 1998/10/16 15:55:56 mflatt Exp $
+ * $Id: Window.h,v 1.7 1999/04/08 16:12:11 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -190,6 +190,7 @@ protected:
     static void WindowEventHandler(Widget w,   wxWindow **win,
 				   XEvent *ev, Boolean *continue_to_dispatch_return);
     static void ScrollEventHandler(Widget w, wxWindow **win, XtPointer p_XfwfScrollInfo);
+    void RegisterAll(Widget ww);
 #   endif
 protected:
     friend void wxXSetBusyCursor(wxWindow *, wxCursor *); /* MATTHEW */

@@ -197,6 +197,7 @@
 #define	XtNmaxSelectable	"maxSelectable"
 #define	XtNshadeSurplus		"shadeSurplus"
 #define XtNclickExtends         "clickExtends"
+#define XtNdrawgray             "drawgray"
 
 #define	XtNrowHeight		"rowHeight"
 #define	XtNcolumnWidth		"columnWidth"

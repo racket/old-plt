@@ -1,6 +1,6 @@
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwLabel.w,v 1.3 1998/12/05 01:08:21 mflatt Exp $
+# $Id: xwLabel.w,v 1.4 1998/12/06 05:06:18 mflatt Exp $
 
 @class XfwfLabel (XfwfBoard) @file=xwLabel
 
@@ -109,6 +109,8 @@ resources |hlStart| and |hlLength|.
 	@var int hlStart = 0
 	@var int hlLength = 0
 
+        @var Boolean drawgray = FALSE
+
 
 @private
 
@@ -215,7 +217,8 @@ updated.
 	|| $alignment != $old$alignment)
 	need_count = True;
 
-    if ($sensitive != $old$sensitive)
+    if (($sensitive != $old$sensitive)
+        || ($drawgray != $old$drawgray))
 	if ($label != NULL || $pixmap != 0) need_redisplay = True;
 
     if ($rvStart != $old$rvStart || $rvLength != $old$rvLength
@@ -394,7 +397,7 @@ the |rv_gc| GC.
     }
     if ($label != NULL || $pixmap != 0) {
 	/* Gray out if not sensitive */
-	if (! $sensitive) {
+	if (! $sensitive || $drawgray) {
 	    if (!$graygc) make_graygc($);
 	    XSetRegion(XtDisplay($), $graygc, reg);
 	    XFillRectangle(XtDisplay($), XtWindow($), $graygc, rect.x,

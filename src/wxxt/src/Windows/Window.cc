@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.28 1999/07/17 15:27:44 mflatt Exp $
+ * $Id: Window.cc,v 1.29 1999/08/15 16:52:42 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -41,6 +41,8 @@
 #define  Uses_ShellWidget
 #define  Uses_SimpleWidget
 #define  Uses_EnforcerWidget
+#define  Uses_LabelWidget
+#define  Uses_MultiListWidget
 #include "widgets.h"
 
 #include <X11/keysym.h> // needed for IsFunctionKey, etc.
@@ -704,8 +706,15 @@ void wxWindow::CaptureMouse(void)
 
 void wxWindow::ChangeToGray(Bool gray)
 {
+#if 0
   if (!wxSubType(__type, wxTYPE_FRAME))
     XtSetSensitive(X->handle, !gray);
+#else
+  if (XtIsSubclass(X->handle, xfwfLabelWidgetClass)
+      || XtIsSubclass(X->handle, xfwfMultiListWidgetClass))
+    XtVaSetValues(X->handle, XtNdrawgray, (Boolean)gray, NULL);
+#endif
+
   if (XtIsSubclass(X->frame, xfwfEnforcerWidgetClass))
     XtVaSetValues(X->frame, XtNdrawgray, (Boolean)gray, NULL);
 
@@ -833,6 +842,9 @@ void wxWindow::ReleaseMouse(void)
 void wxWindow::SetFocus(void)
 {
   if (!X->frame) // forbid, if no widget associated
+    return;
+
+  if (IsGray())
     return;
 
   if (misc_flags & FOCUS_FLAG)
@@ -1007,7 +1019,9 @@ Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *event)
       || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
     p = NULL;
 
-  return ((p && CallPreOnChar(p, event)) || win->PreOnChar(this, event));
+  return ((p && CallPreOnChar(p, event))
+	  || win->IsGray()
+	  || win->PreOnChar(this, event));
 }
 
 Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *event)
@@ -1022,7 +1036,9 @@ Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *event)
       || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
     p = NULL;
 
-  return ((p && CallPreOnEvent(p, event)) || win->PreOnEvent(this, event));
+  return ((p && CallPreOnEvent(p, event)) 
+	  || win->IsGray()
+	  || win->PreOnEvent(this, event));
 }
 
 void wxWindow::OnPaint(void)
@@ -1062,6 +1078,30 @@ void wxWindow::FocusChangeCallback(void*,
   }
 }
 
+void wxWindow::RegisterAll(Widget ww)
+{
+  XtInsertEventHandler
+    (ww,
+     ButtonPressMask |	// for OnEvent
+     ButtonReleaseMask |
+     ButtonMotionMask |
+     PointerMotionMask |
+     PointerMotionHintMask,
+     FALSE,
+     (XtEventHandler)wxWindow::WindowEventHandler,
+     (XtPointer)saferef,
+     XtListHead);
+  
+  if (XtIsComposite(ww)) {
+    Widget *w;
+    Cardinal c, i;
+
+    XtVaGetValues(ww, XtNchildren, &w, XtNnumChildren, &c, NULL);
+    for (i = 0; i < c; i++)
+      RegisterAll(w[i]);
+  }
+}
+
 void wxWindow::AddEventHandlers(void)
 {
     if (!X->frame || !X->handle) // forbid, if no widget associated
@@ -1073,13 +1113,13 @@ void wxWindow::AddEventHandlers(void)
 			 SubstructureNotifyMask,// for adding of window-eventhandler
 			 TRUE,			// for OnClose
 			 (XtEventHandler)wxWindow::FrameEventHandler,
-			 (XtPointer)saferef, /* MATTHEW */
+			 (XtPointer)saferef,
 			 XtListHead);
     // handle expose events (works only for subclasses of xfwfCommonWidgetClass)
     if (XtIsSubclass(X->handle, xfwfCommonWidgetClass)) {
 	XtAddCallback(X->handle, XtNexposeCallback,
 		      (XtCallbackProc)wxWindow::ExposeEventHandler,
-		      (XtPointer)saferef); /* MATTHEW */
+		      (XtPointer)saferef);
 	XtVaSetValues(X->handle, XtNuseExposeCallback, TRUE, NULL);
       XtAddCallback(X->handle, XtNfocusHiliteChange,
 		    (XtCallbackProc)FocusChangeCallback, 
@@ -1089,7 +1129,7 @@ void wxWindow::AddEventHandlers(void)
     if (X->scroll) {
       XtAddCallback(X->scroll, XtNscrollCallback,
 		    (XtCallbackProc)wxWindow::ScrollEventHandler,
-		    (XtPointer)saferef); /* MATTHEW */
+		    (XtPointer)saferef);
       if (XtIsSubclass(X->scroll, xfwfCommonWidgetClass))
 	XtAddCallback(X->scroll, XtNfocusHiliteChange,
 		      (XtCallbackProc)FocusChangeCallback, 
@@ -1099,7 +1139,7 @@ void wxWindow::AddEventHandlers(void)
     if (XtIsSubclass(X->frame, xfwfCommonWidgetClass)) {
       XtAddCallback(X->frame, XtNonDestroy,
 		    (XtCallbackProc)FreeSaferef,
-		    (XtPointer)saferef); /* MATTHEW */
+		    (XtPointer)saferef);
       XtAddCallback(X->frame, XtNfocusHiliteChange,
 		    (XtCallbackProc)FocusChangeCallback, 
 		    (XtPointer)saferef);
@@ -1123,7 +1163,7 @@ void wxWindow::AddEventHandlers(void)
 	NoEventMask : ExposureMask), // for OnPaint (non-xfwfCommonWidget-subclasses)
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
-       (XtPointer)saferef, /* MATTHEW */
+       (XtPointer)saferef,
        XtListHead);
 
     if (__type == wxTYPE_LIST_BOX) {
@@ -1137,9 +1177,12 @@ void wxWindow::AddEventHandlers(void)
 	 PointerMotionHintMask,
 	 FALSE,
 	 (XtEventHandler)wxWindow::WindowEventHandler,
-	 (XtPointer)saferef, /* MATTHEW */
+	 (XtPointer)saferef,
 	 XtListHead);
     }
+
+    if (win->X->scroll)
+      RegisterAll(win->X->scroll);
 
     XtInsertEventHandler
       (win->X->frame,	// handle events for frame widget
@@ -1153,7 +1196,7 @@ void wxWindow::AddEventHandlers(void)
 	? (KeyPressMask | KeyReleaseMask) : NoEventMask),
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
-       (XtPointer)saferef, /* MATTHEW */
+       (XtPointer)saferef,
        XtListHead);
 }
 
@@ -1493,9 +1536,9 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE;
 	if (!win->CallPreOnEvent(win, &wxevent)) {
-	  if (subWin)
+	  if (subWin) {
 	    *continue_to_dispatch_return = TRUE;
-	  else {
+	  } else {
 	    if (Press 
 		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
 		&& !wxSubType(win->__type, wxTYPE_PANEL))
@@ -1543,10 +1586,10 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent.middleDown	= xev->xcrossing.state & Button2Mask;
 	wxevent.rightDown	= xev->xcrossing.state & Button3Mask;
 	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
+	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
 	if (!win->CallPreOnEvent(win, &wxevent))
 	  win->GetEventHandler()->OnEvent(wxevent);
 	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
-	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
       }
       break;
     case MotionNotify: {
@@ -1573,10 +1616,15 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent.middleDown	= xev->xmotion.state & Button2Mask;
 	wxevent.rightDown	= xev->xmotion.state & Button3Mask;
 	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
-	if (!win->CallPreOnEvent(win, &wxevent))
-	  win->GetEventHandler()->OnEvent(wxevent);
+	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */
+	if (!win->CallPreOnEvent(win, &wxevent)) {
+	  if (subWin)
+	    *continue_to_dispatch_return = TRUE;
+	  else
+	    win->GetEventHandler()->OnEvent(wxevent);
+	}
 	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
-	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ }
+      }
 	break;
       /* MATTHEW : [5] Use focus in/out for OnActivate */
     case FocusIn:

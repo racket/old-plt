@@ -130,6 +130,7 @@ typedef struct
 	char			*tablist;
 	int			*tabs;
 	Boolean                 clickExtends;
+	Boolean                 drawgray;
 } XfwfMultiListPart;
 
 typedef struct _XfwfMultiListRec
@@ -178,6 +179,7 @@ typedef struct _XfwfMultiListRec
 #define	MultiListMaxSelectable(w)	(InstanceMultiList(w)->max_selectable)
 #define	MultiListShadeSurplus(w)	(InstanceMultiList(w)->shade_surplus)
 #define	MultiListClickExtends(w)	(InstanceMultiList(w)->clickExtends)
+#define	MultiListDrawGray(w)	        (InstanceMultiList(w)->drawgray)
 
 #define	MultiListColWidth(w)		(InstanceMultiList(w)->col_width)
 #define	MultiListRowHeight(w)		(InstanceMultiList(w)->row_height)

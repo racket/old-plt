@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwSlider2.w,v 1.3 1998/11/09 17:25:09 mflatt Exp $
+# $Id: xwSlider2.w,v 1.4 1999/07/21 17:34:57 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -385,6 +385,7 @@ needs to be redrawn.
 	$scrollResponse = $old$scrollResponse;
 	XtWarning("scrollResponse resource may only be queried, not set");
     }
+
     return need_redisplay;
 }
 

@@ -246,7 +246,10 @@ static XtResource resources[] =
 	    MultiListFieldOffset(tablist), XtRImmediate, (XtPointer)NULL },
 
 	{XtNclickExtends, XtCBoolean, XtRBoolean, sizeof(Boolean),
-            MultiListFieldOffset(clickExtends), XtRString, "False"}
+            MultiListFieldOffset(clickExtends), XtRString, "False"},
+
+	{XtNdrawgray, XtCBoolean, XtRBoolean, sizeof(Boolean),
+            MultiListFieldOffset(drawgray), XtRString, "False"}
 
 };
 
@@ -536,7 +539,8 @@ XfwfMultiListWidget cpl,rpl,npl;
 		/* Changes That Require Redraw */
 
 	if ((MultiListSensitive(cpl) != MultiListSensitive(npl)) ||
-	    (MultiListAncesSensitive(cpl) != MultiListAncesSensitive(npl)))
+	    (MultiListAncesSensitive(cpl) != MultiListAncesSensitive(npl)) ||
+	    (MultiListDrawGray(cpl) != MultiListDrawGray(npl)))
 	{
 		redraw = True;
 	}
@@ -1100,6 +1104,7 @@ int row,column;
 	{
 		item = MultiListNthItem(mlw,item_index);
 		if ((!MultiListSensitive(mlw)) ||
+                    (MultiListDrawGray(mlw)) ||
 		    (!MultiListItemSensitive(item)))	/* Insensitive */
 		{
 		        if (MultiListItemHighlighted(item))	/* Selected */

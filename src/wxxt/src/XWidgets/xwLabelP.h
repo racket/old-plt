@@ -46,6 +46,7 @@ int  rvStart;
 int  rvLength;
 int  hlStart;
 int  hlLength;
+Boolean  drawgray;
 /* private state */
 int  nlines;
 int * tabs;

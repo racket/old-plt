@@ -3,11 +3,11 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 508 "XWidgets/xwScrollbar.w"
-#include <xwArrow.h>
 #line 509 "XWidgets/xwScrollbar.w"
-#include <xwSlider2.h>
+#include <xwArrow.h>
 #line 510 "XWidgets/xwScrollbar.w"
+#include <xwSlider2.h>
+#line 511 "XWidgets/xwScrollbar.w"
 #include <stdio.h>
 #include <./xwScrollbarP.h>
 #line 445 "XWidgets/xwScrollbar.w"
@@ -318,6 +318,7 @@ static void Scroll(self,event,params,num_params)Widget self;XEvent*event;String*
 	break;
     default: break;				/* Not understood */
     }
+
     XtCallCallbackList(self, ((XfwfScrollbarWidget)self)->xfwfScrollbar.scrollCallback, &info);
 }
 

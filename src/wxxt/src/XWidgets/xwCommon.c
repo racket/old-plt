@@ -1076,7 +1076,7 @@ static Boolean  would_accept_focus(self)Widget self;
     int i;
     Widget child;
 
-    if (! XtIsRealized(self) || ! ((XfwfCommonWidget)self)->core.sensitive || ! ((XfwfCommonWidget)self)->core.visible || ! ((XfwfCommonWidget)self)->xfwfCommon.traversalOn)
+    if (! XtIsRealized(self) || ! ((XfwfCommonWidget)self)->core.sensitive || ! ((XfwfCommonWidget)self)->core.ancestor_sensitive || ! ((XfwfCommonWidget)self)->core.visible || ! ((XfwfCommonWidget)self)->xfwfCommon.traversalOn)
         return False;
     else {
         for (i = 0; i < ((XfwfCommonWidget)self)->composite.num_children; i++) {

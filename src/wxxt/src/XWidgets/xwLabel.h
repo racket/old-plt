@@ -165,6 +165,16 @@ _XFUNCPROTOBEGIN
 #define XtRInt "Int"
 #endif
 
+#ifndef XtNdrawgray
+#define XtNdrawgray "drawgray"
+#endif
+#ifndef XtCDrawgray
+#define XtCDrawgray "Drawgray"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 typedef struct _XfwfLabelClassRec *XfwfLabelWidgetClass;
 typedef struct _XfwfLabelRec *XfwfLabelWidget;
 externalref WidgetClass xfwfLabelWidgetClass;

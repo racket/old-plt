@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.7 1998/12/06 05:06:18 mflatt Exp $
+# $Id: xwCommon.w,v 1.8 1998/12/06 17:44:47 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -552,7 +552,7 @@ resources are set and none of the children wants the focus.
     int i;
     Widget child;
 
-    if (! XtIsRealized($) || ! $sensitive || ! $visible || ! $traversalOn)
+    if (! XtIsRealized($) || ! $sensitive || ! $ancestor_sensitive || ! $visible || ! $traversalOn)
         return False;
     else {
         for (i = 0; i < $num_children; i++) {

@@ -3,24 +3,24 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 726 "XWidgets/xwSlider2.w"
-#include <X11/bitmaps/gray>
 #line 727 "XWidgets/xwSlider2.w"
+#include <X11/bitmaps/gray>
+#line 728 "XWidgets/xwSlider2.w"
 #include <stdio.h>
 #include <./xwSlider2P.h>
-#line 480 "XWidgets/xwSlider2.w"
+#line 481 "XWidgets/xwSlider2.w"
 static void start(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 533 "XWidgets/xwSlider2.w"
+#line 534 "XWidgets/xwSlider2.w"
 static void finish(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 553 "XWidgets/xwSlider2.w"
+#line 554 "XWidgets/xwSlider2.w"
 static void drag(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -91,52 +91,52 @@ static Boolean  set_values(
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 405 "XWidgets/xwSlider2.w"
+#line 406 "XWidgets/xwSlider2.w"
 static void scroll_response(
 #if NeedFunctionPrototypes
 Widget ,XtPointer ,XtPointer 
 #endif
 );
-#line 581 "XWidgets/xwSlider2.w"
+#line 582 "XWidgets/xwSlider2.w"
 static void create_gc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 604 "XWidgets/xwSlider2.w"
+#line 605 "XWidgets/xwSlider2.w"
 static void create_graygc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 623 "XWidgets/xwSlider2.w"
+#line 624 "XWidgets/xwSlider2.w"
 static void create_thumbgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 643 "XWidgets/xwSlider2.w"
+#line 644 "XWidgets/xwSlider2.w"
 static void create_thumblightgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 685 "XWidgets/xwSlider2.w"
+#line 686 "XWidgets/xwSlider2.w"
 static void create_thumbdarkgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 581 "XWidgets/xwSlider2.w"
+#line 582 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 581 "XWidgets/xwSlider2.w"
+#line 582 "XWidgets/xwSlider2.w"
 static void create_gc(Widget self)
 #else
-#line 581 "XWidgets/xwSlider2.w"
+#line 582 "XWidgets/xwSlider2.w"
 static void create_gc(self)Widget self;
 #endif
-#line 582 "XWidgets/xwSlider2.w"
+#line 583 "XWidgets/xwSlider2.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -155,16 +155,16 @@ static void create_gc(self)Widget self;
     mask = GCFont | GCBackground | GCForeground;
     ((XfwfSlider2Widget)self)->xfwfLabel.rv_gc = XtGetGC(self, mask, &values);
 }
-#line 604 "XWidgets/xwSlider2.w"
+#line 605 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 604 "XWidgets/xwSlider2.w"
+#line 605 "XWidgets/xwSlider2.w"
 static void create_graygc(Widget self)
 #else
-#line 604 "XWidgets/xwSlider2.w"
+#line 605 "XWidgets/xwSlider2.w"
 static void create_graygc(self)Widget self;
 #endif
-#line 605 "XWidgets/xwSlider2.w"
+#line 606 "XWidgets/xwSlider2.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -179,16 +179,16 @@ static void create_graygc(self)Widget self;
     mask = GCForeground | GCStipple | GCFillStyle;
     ((XfwfSlider2Widget)self)->xfwfLabel.graygc = XtGetGC(self, mask, &values);
 }
-#line 623 "XWidgets/xwSlider2.w"
+#line 624 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 623 "XWidgets/xwSlider2.w"
+#line 624 "XWidgets/xwSlider2.w"
 static void create_thumbgc(Widget self)
 #else
-#line 623 "XWidgets/xwSlider2.w"
+#line 624 "XWidgets/xwSlider2.w"
 static void create_thumbgc(self)Widget self;
 #endif
-#line 624 "XWidgets/xwSlider2.w"
+#line 625 "XWidgets/xwSlider2.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -204,16 +204,16 @@ static void create_thumbgc(self)Widget self;
     }
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc = XtGetGC(self, mask, &values);
 }
-#line 643 "XWidgets/xwSlider2.w"
+#line 644 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 643 "XWidgets/xwSlider2.w"
+#line 644 "XWidgets/xwSlider2.w"
 static void create_thumblightgc(Widget self)
 #else
-#line 643 "XWidgets/xwSlider2.w"
+#line 644 "XWidgets/xwSlider2.w"
 static void create_thumblightgc(self)Widget self;
 #endif
-#line 644 "XWidgets/xwSlider2.w"
+#line 645 "XWidgets/xwSlider2.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -251,16 +251,16 @@ static void create_thumblightgc(self)Widget self;
     }
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc = XtGetGC(self, mask, &values);
 }
-#line 685 "XWidgets/xwSlider2.w"
+#line 686 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 685 "XWidgets/xwSlider2.w"
+#line 686 "XWidgets/xwSlider2.w"
 static void create_thumbdarkgc(Widget self)
 #else
-#line 685 "XWidgets/xwSlider2.w"
+#line 686 "XWidgets/xwSlider2.w"
 static void create_thumbdarkgc(self)Widget self;
 #endif
-#line 686 "XWidgets/xwSlider2.w"
+#line 687 "XWidgets/xwSlider2.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -396,7 +396,7 @@ scroll_response,
 };
 WidgetClass xfwfSlider2WidgetClass = (WidgetClass) &xfwfSlider2ClassRec;
 /*ARGSUSED*/
-#line 480 "XWidgets/xwSlider2.w"
+#line 481 "XWidgets/xwSlider2.w"
 static void start(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     Dimension w, h;
@@ -444,7 +444,7 @@ static void start(self,event,params,num_params)Widget self;XEvent*event;String*p
 }
 
 /*ARGSUSED*/
-#line 533 "XWidgets/xwSlider2.w"
+#line 534 "XWidgets/xwSlider2.w"
 static void finish(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XfwfScrollInfo info;
@@ -460,7 +460,7 @@ static void finish(self,event,params,num_params)Widget self;XEvent*event;String*
 }
 
 /*ARGSUSED*/
-#line 553 "XWidgets/xwSlider2.w"
+#line 554 "XWidgets/xwSlider2.w"
 static void drag(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XfwfScrollInfo info;
@@ -721,21 +721,22 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 	((XfwfSlider2Widget)self)->xfwfSlider2.scrollResponse = ((XfwfSlider2Widget)old)->xfwfSlider2.scrollResponse;
 	XtWarning("scrollResponse resource may only be queried, not set");
     }
+
     return need_redisplay;
 }
 #define range(x) (0.0 <=(x )&&(x )<=1.0 )
 
 
-#line 405 "XWidgets/xwSlider2.w"
+#line 406 "XWidgets/xwSlider2.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 405 "XWidgets/xwSlider2.w"
+#line 406 "XWidgets/xwSlider2.w"
 static void scroll_response(Widget  wdg,XtPointer  client_data,XtPointer  call_data)
 #else
-#line 405 "XWidgets/xwSlider2.w"
+#line 406 "XWidgets/xwSlider2.w"
 static void scroll_response(wdg,client_data,call_data)Widget  wdg;XtPointer  client_data;XtPointer  call_data;
 #endif
-#line 406 "XWidgets/xwSlider2.w"
+#line 407 "XWidgets/xwSlider2.w"
 {
     Widget self = (Widget) client_data;
     XfwfScrollInfo *inf = (XfwfScrollInfo *)call_data;

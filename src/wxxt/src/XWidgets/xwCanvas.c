@@ -156,5 +156,6 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 	    XChangeWindowAttributes(XtDisplay(self), XtWindow(self), mask, &attributes);
 	}
     }
+
     return FALSE; /* there is no need to redraw */
 }

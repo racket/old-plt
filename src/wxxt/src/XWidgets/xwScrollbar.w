@@ -3,7 +3,7 @@
 # 2 Nov '92
 # Version 1.0 for FWF V4.0
 # 
-# $Id: xwScrollbar.w,v 1.3 1998/09/09 16:02:52 mflatt Exp $
+# $Id: xwScrollbar.w,v 1.4 1998/09/09 16:05:14 mflatt Exp $
 
 @CLASS XfwfScrollbar (XfwfBoard)  @file = xwScrollbar
 
@@ -499,6 +499,7 @@ subclasses |XfwfVScrollbar| and |XfwfHScrollbar| do that.
 	break;
     default: break;				/* Not understood */
     }
+
     XtCallCallbackList($, $scrollCallback, &info);
 }
 

@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.1 (see README for history)
 # 
-# $Id: xwScrollWin.w,v 1.7 1998/09/08 15:08:01 mflatt Exp $
+# $Id: xwScrollWin.w,v 1.8 1999/07/21 17:53:02 mflatt Exp $
 
 @CLASS XfwfScrolledWindow (XfwfBoard)  @file = xwScrollWin
 
@@ -246,6 +246,7 @@ The |scrollResponse| resource may not be changed.
 	$scrollResponse = $old$scrollResponse;
 	XtWarning("scrollResponse resource may only be queried, not set");
     }
+
     return False;
 }
 

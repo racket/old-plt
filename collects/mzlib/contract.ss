@@ -2072,6 +2072,7 @@ add structu contracts for immutable structs?
   (provide any?
            anaphoric-contracts
            flat-rec-contract
+           flat-murec-contract
 	   union
            and/c
 	   not/f
@@ -2110,8 +2111,40 @@ add structu contracts for immutable structs?
               name))))]
       [(_ name ctc ...)
        (raise-syntax-error 'flat-rec-contract "expected first argument to be an identifier" stx (syntax name))]))
-  
 
+  (define-syntax (flat-murec-contract stx)
+    (syntax-case stx  ()
+      [(_ ([name ctc ...] ...) body1 body ...)
+       (andmap identifier? (syntax->list (syntax (name ...))))
+       (with-syntax ([((ctc-id ...) ...) (map generate-temporaries
+                                              (syntax->list (syntax ((ctc ...) ...))))]
+                     [(pred-id ...) (generate-temporaries (syntax (name ...)))]
+                     [((pred-arm-id ...) ...) (map generate-temporaries
+                                               (syntax->list (syntax ((ctc ...) ...))))])
+         (syntax 
+          (let* ([pred-id (lambda (x) (error 'flat-murec-contract "applied too soon"))] ...
+                 [name (flat-contract (let ([name (lambda (x) (pred-id x))]) name))] ...)
+            (let-values ([(ctc-id ...) (values (coerce-contract flat-rec-contract ctc) ...)] ...)
+              (begin
+                (void)
+                (unless (flat-contract? ctc-id)
+                  (error 'flat-rec-contract "expected flat contracts as arguments, got ~e" ctc-id))
+                ...) ...
+              (set! pred-id
+                    (let ([pred-arm-id (flat-contract-predicate ctc-id)] ...)
+                      (lambda (x)
+                        (or (pred-arm-id x) ...)))) ...
+              body1
+              body ...))))]
+      [(_ ([name ctc ...] ...) body1 body ...)
+       (for-each (lambda (name)
+                   (unless (identifier? name)
+                     (raise-syntax-error 'flat-rec-contract
+                                         "expected an identifier" stx name))))]
+      [(_ ([name ctc ...] ...))
+       (raise-syntax-error 'flat-rec-contract "expected at least one body expression" stx)]))
+      
+  
   (define anaphoric-contracts
     (case-lambda
       [() (make-anaphoric-contracts (make-hash-table 'weak))]

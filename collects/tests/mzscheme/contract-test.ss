@@ -1938,6 +1938,11 @@
   (test-flat-contract '(box/p (flat-contract boolean?)) (box #t) #f)
   
   (test-flat-contract '(flat-rec-contract sexp (cons/p sexp sexp) number?) '(1 2 . 3) '(1 . #f))
+  (test-flat-contract '(flat-murec-contract ([even1 (union null? (cons/p number? even2))] 
+                                             [even2 (cons/p number? even1)])
+                                            even1)
+                      '(1 2 3 4)
+                      '(1 2 3))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;

@@ -273,36 +273,47 @@
   ;;----------------------------------------------------------------------
   ;; INLINING
 
-  ;; Only inline fairly simple things
-  (define (expression-inline-cost body init-size)
-    (let loop ([body body][size init-size][k (lambda (x) x)])
+  ;; Only inline fairly simple things; also check for variables needed
+  ;;  that are not in the destination scope
+  (define (expression-inline-cost body env init-size)
+    (let loop ([body body][env env][size init-size][k (lambda (x) x)])
       (if (>= size (compiler:option:max-inline-size))
 	  size
 	  (cond
 	   [(zodiac:quote-form? body) (k size)]
+	   [(zodiac:bound-varref? body) 
+	    (if (memq (zodiac:bound-varref-binding body) env)
+		(k size)
+		; Out of scope - no inling
+		(* 2 (compiler:option:max-inline-size)))]
 	   [(zodiac:varref? body) (k size)]
 	   [(zodiac:app? body) (loop (zodiac:app-fun body) 
+				     env
 				     (+ size  (length (zodiac:app-args body)) 1)
 				     (lambda (size)
 				       (let kloop ([l (zodiac:app-args body)][size size])
 					 (if (null? l)
 					     (k size)
-					     (loop (car l) size
+					     (loop (car l) env size
 						   (lambda (size)
 						     (kloop (cdr l) size)))))))]
-	   [(zodiac:if-form? body) (loop (zodiac:if-form-test body) (+ size 3)
+	   [(zodiac:if-form? body) (loop (zodiac:if-form-test body) env (+ size 3)
 					 (lambda (size)
-					   (loop (zodiac:if-form-else body) size
+					   (loop (zodiac:if-form-else body) env size
 						 (lambda (size)
-						   (loop (zodiac:if-form-then body) size k)))))]
+						   (loop (zodiac:if-form-then body) env size k)))))]
 	   [(zodiac:let-values-form? body) (loop (car (zodiac:let-values-form-vals body)) 
+						 env
 						 (+ size 3)
 						 (lambda (size)
-						   (loop (zodiac:let-values-form-body body) size k)))]
+						   (loop (zodiac:let-values-form-body body)
+							 (append (zodiac:let-values-form-vars body) env)
+							 size k)))]
 	   [(zodiac:begin-form? body) (let bloop ([size size][exprs (zodiac:begin-form-bodies body)])
 					(if (null? exprs)
 					    (k size)
 					    (loop (car exprs)
+						  env
 						  (+ size 1)
 						  (lambda (size)
 						    (bloop size (cdr exprs))))))]
@@ -438,7 +449,7 @@
 		     ast))])
      ast))
 
-  (define (check-for-inlining ast inlined tail? inline dont-inline)
+  (define (check-for-inlining ast env inlined tail? inline dont-inline)
     (if (or tail? (>= inlined (compiler:option:max-inline-size)))
 	(dont-inline "tail or depth")
 	(let ([c (zodiac:app-fun ast)])
@@ -455,12 +466,13 @@
 		       [(and (zodiac:list-arglist? (car argses))
 			     (= (length (zodiac:app-args ast))
 				(length (zodiac:arglist-vars (car argses)))))
-			;; Inline if simple enough
+			;; Inline if lexical scope of destination includes the lexical
+			;;  scope of the source, and simple enough
 			(let* ([body (car bodies)]
-			       [new-size (expression-inline-cost body inlined)])
+			       [orig-vars (zodiac:arglist-vars (car argses))]
+			       [new-size (expression-inline-cost body (append orig-vars env) inlined)])
 			  (if (< new-size (compiler:option:max-inline-size))
-			      (let* ([orig-vars (zodiac:arglist-vars (car argses))]
-				     [vars (map copy-inlined-binding orig-vars)]
+			      (let* ([vars (map copy-inlined-binding orig-vars)]
 				     [vals (zodiac:app-args ast)]
 				     [new-body (copy-inlined-body body (map cons orig-vars vars))]
 				     [v (let loop ([vars vars][vals vals])
@@ -499,8 +511,8 @@
   ;;  9) returns multiple values?: #t, 'possible, or #f
   ;;
   (define analyze-expression!
-    (lambda (ast bound-vars tail?)
-      (let ([local-vars bound-vars]
+    (lambda (ast just-bound-vars env tail?)
+      (let ([local-vars just-bound-vars]
 	    [locals-used empty-set]
 	    [captured-vars empty-set]
 	    [free-vars empty-set]
@@ -531,7 +543,7 @@
 		; all variables which are free in nested closures are
 		; free in this closure (since we need them in the
 		; environment) except those that are already in the
-		; environment: bound-vars (typically the arguments)
+		; environment: just-bound-vars (typically the arguments)
 		; and local-vars. New captured variables are also
 		; added: free variables and captured variables in
 		; nested closures. (Captured variables are always
@@ -557,7 +569,7 @@
 		    (set! global-vars
 			  (set-union (code-global-vars code) global-vars))))]
 	     [analyze-code-body!
-	      (lambda (ast locals tail? code)
+	      (lambda (ast locals env tail? code)
 		(add-child-code! code)
 		(let-values ([(body free-vars
 				    local-vars 
@@ -569,6 +581,7 @@
 				    multi)
 			      (analyze-expression! ast
 						   locals
+						   (append (set->list locals) env)
 						   tail?)])
 		  
 		  (set-code-free-vars! code (set-union free-vars
@@ -589,7 +602,7 @@
 		  
 		  body))]
 	     [analyze-varref!
-	      (lambda (ast tail? need-varref?)
+	      (lambda (ast env tail? need-varref?)
 		(cond
 		 
 		 ;;-----------------------------------------------------------------
@@ -611,7 +624,10 @@
 		  (let* ([zbinding (zodiac:bound-varref-binding ast)]
 			 [binding (compiler:bound-varref->binding ast)]
 			 [known-value (extract-varref-known-val ast)])
-		    
+		
+		    ;; Extra checking for debugging:
+		    ; (unless (memq zbinding env) (compiler:internal-error ast "unbound variable"))
+    
 		    ; While we're at it, make sure MrSpidey and mzc agree on the
 		    ; mutability of variables.
 		    '(when (compiler:option:use-mrspidey)
@@ -757,15 +773,15 @@
 	     
 	     [analyze!-ast
 	      ;; Like analyze, but drop the multi-return info in the result
-	      (lambda (ast inlined tail?)
-		(let-values ([(ast multi) (analyze! ast inlined tail?)])
+	      (lambda (ast env inlined tail?)
+		(let-values ([(ast multi) (analyze! ast env inlined tail?)])
 		  ast))]
 	     
 	     [analyze!-sv
 	      ;; Like analyze, but make sure the expression is not definitely
 	      ;;  multi-valued
-	      (lambda (ast inlined tail?)
-		(let-values ([(ast multi) (analyze! ast inlined tail?)])
+	      (lambda (ast env inlined tail?)
+		(let-values ([(ast multi) (analyze! ast env inlined tail?)])
 		  (when (eq? multi #t)
 		    ((if (compiler:option:stupid) compiler:warning compiler:error)
 		     ast
@@ -775,7 +791,7 @@
 	     [analyze!
 	      ;; Returns (values ast multi)
 	      ;;    where multi = #f, #t, 'possible
-	      (lambda (ast inlined tail?)
+	      (lambda (ast env inlined tail?)
 		(when (compiler:option:debug)
 		  (zodiac:print-start! debug:port ast)
 		  (newline debug:port))
@@ -804,10 +820,10 @@
 		 ;;    capture the right name in closures.
 		 ;;
 		 [(zodiac:bound-varref? ast) 
-		  (values (analyze-varref! ast tail? #f) #f)]
+		  (values (analyze-varref! ast env tail? #f) #f)]
 
 		 [(zodiac:top-level-varref? ast)
-		  (values (analyze-varref! ast tail? #f) #f)]
+		  (values (analyze-varref! ast env tail? #f) #f)]
 		 
 		 ;;--------------------------------------------------------------------
 		 ;; LAMBDA EXPRESSIONS
@@ -837,9 +853,11 @@
 						  L-max-arity
 						  multi)
 				     
-				     (analyze-expression! body
-							  (improper-list->set args)
-							  #t)])
+				     (let ([just-bound (improper-list->set args)])
+				       (analyze-expression! body
+							    just-bound
+							    (append (set->list just-bound) env)
+							    #t))])
 				 
 				 (let ([case-code (make-case-code
 						   free-lambda-vars
@@ -932,7 +950,7 @@
 		 ;;
 		 [(zodiac:let-values-form? ast)
 		  (let*-values ([(val val-multi) 
-				 (analyze! (car (zodiac:let-values-form-vals ast)) inlined #f)]
+				 (analyze! (car (zodiac:let-values-form-vals ast)) env inlined #f)]
 				[(vars) (car (zodiac:let-values-form-vars ast))]
 				[(convert-set!-val)
 				 (lambda ()   
@@ -961,6 +979,7 @@
 			  
 			  (let-values ([(body body-multi)
 					(analyze! (zodiac:let-values-form-body ast) 
+						  (cons var env)
 						  inlined tail?)]
 				       [(known-val) (extract-varref-known-val var)])
 			    
@@ -1012,6 +1031,7 @@
 			  ; analyze the body
 			  (let-values ([(body body-multi) 
 					(analyze! (zodiac:let-values-form-body ast)
+						  (append vars env)
 						  inlined
 						  tail?)])
 			    (zodiac:set-let-values-form-body! ast body)
@@ -1059,21 +1079,23 @@
 		      ;
 		      (let* ([vars (map car (zodiac:letrec*-values-form-vars ast))])
 			(set! local-vars (set-union (list->set vars) local-vars))
-			(let-values ([(vals) (map (lambda (val)
-						    (analyze!-sv val inlined #f))
-						  (zodiac:letrec*-values-form-vals ast))]
-				     [(body body-multi) (analyze! 
-							 (zodiac:letrec*-values-form-body ast) 
-							 inlined
-							 tail?)]
-				     [(vars) (map car (zodiac:letrec*-values-form-vars ast))])
-			  
-			  (for-each (lambda (var) (set-binding-rec?! (get-annotation var) #t))
-				    vars)
-			  (zodiac:set-letrec*-values-form-vals! ast vals)
-			  (zodiac:set-letrec*-values-form-body! ast body)
-
-			  (values ast body-multi)))
+			(let ([new-env (append vars env)])
+			  (let-values ([(vals) (map (lambda (val)
+						      (analyze!-sv val new-env inlined #f))
+						    (zodiac:letrec*-values-form-vals ast))]
+				       [(body body-multi) (analyze! 
+							   (zodiac:letrec*-values-form-body ast) 
+							   new-env
+							   inlined
+							   tail?)]
+				       [(vars) (map car (zodiac:letrec*-values-form-vars ast))])
+			    
+			    (for-each (lambda (var) (set-binding-rec?! (get-annotation var) #t))
+				      vars)
+			    (zodiac:set-letrec*-values-form-vals! ast vals)
+			    (zodiac:set-letrec*-values-form-body! ast body)
+			    
+			    (values ast body-multi))))
 		      
 		      ;-----------------------------------------------------------
 		      ; POSSIBLY POORLY BEHAVED LETREC
@@ -1084,16 +1106,16 @@
 			(debug "rewriting letrec~n")
 			(let ([new-ast (letrec->let+set! ast)])
 			  (debug "reanalyzing...~n")
-			  (analyze! new-ast inlined tail?))))]
+			  (analyze! new-ast env inlined tail?))))]
 
 		 ;;-----------------------------------------------------
 		 ;; IF EXPRESSIONS
 		 ;;
 		 ;; just analyze the 3 branches.  Very easy
 		 [(zodiac:if-form? ast)
-		  (zodiac:set-if-form-test! ast (analyze!-sv (zodiac:if-form-test ast) inlined #f))
-		  (let-values ([(then then-multi) (analyze! (zodiac:if-form-then ast) inlined tail?)]
-			       [(else else-multi) (analyze! (zodiac:if-form-else ast) inlined tail?)])
+		  (zodiac:set-if-form-test! ast (analyze!-sv (zodiac:if-form-test ast) env inlined #f))
+		  (let-values ([(then then-multi) (analyze! (zodiac:if-form-then ast) env inlined tail?)]
+			       [(else else-multi) (analyze! (zodiac:if-form-else ast) env inlined tail?)])
 		    (zodiac:set-if-form-then! ast then)
 		    (zodiac:set-if-form-else! ast else)
 		    
@@ -1108,11 +1130,11 @@
 		  (let ([last-multi
 			 (let loop ([bodies (zodiac:begin-form-bodies ast)])
 			   (if (null? (cdr bodies))
-			       (let-values ([(e last-multi) (analyze! (car bodies) inlined tail?)])
+			       (let-values ([(e last-multi) (analyze! (car bodies) env inlined tail?)])
 				 (set-car! bodies e)
 				 last-multi)
 			       (begin
-				 (set-car! bodies (analyze!-ast (car bodies) inlined #f))
+				 (set-car! bodies (analyze!-ast (car bodies) env inlined #f))
 				 (loop (cdr bodies)))))])
 
 		    (values ast last-multi))]
@@ -1123,9 +1145,9 @@
 		 ;;
 		 ;; analyze the branches
 		 [(zodiac:begin0-form? ast)
-		  (let-values ([(0expr 0expr-multi) (analyze! (zodiac:begin0-form-first ast) inlined #f)])
+		  (let-values ([(0expr 0expr-multi) (analyze! (zodiac:begin0-form-first ast) env inlined #f)])
 		    (zodiac:set-begin0-form-first! ast 0expr)
-		    (zodiac:set-begin0-form-rest! ast (analyze!-ast (zodiac:begin0-form-rest ast) inlined #f))
+		    (zodiac:set-begin0-form-rest! ast (analyze!-ast (zodiac:begin0-form-rest ast) env inlined #f))
 		    (let ([var (get-annotation ast)])
 		      (add-local-var! var))
 		    (values ast 0expr-multi))]
@@ -1138,11 +1160,11 @@
 		 ;;
 		 [(zodiac:set!-form? ast)
 
-		  (let ([target (analyze-varref! (zodiac:set!-form-var ast) #f #t)])
+		  (let ([target (analyze-varref! (zodiac:set!-form-var ast) env #f #t)])
 		    (zodiac:set-set!-form-var! ast target)
 		    (zodiac:set-set!-form-val! 
 		     ast 
-		     (analyze!-sv (zodiac:set!-form-val ast) inlined #f)))
+		     (analyze!-sv (zodiac:set!-form-val ast) env inlined #f)))
 		  
 		  (values ast #f)]
 		 
@@ -1154,35 +1176,35 @@
 		 [(zodiac:define-values-form? ast)
 		  (zodiac:set-define-values-form-vars!
 		   ast
-		   (map (lambda (v) (analyze-varref! v #f #t)) 
+		   (map (lambda (v) (analyze-varref! v env #f #t)) 
 			(zodiac:define-values-form-vars ast)))
 		  (zodiac:set-define-values-form-val! 
 		   ast
-		   (analyze!-ast (zodiac:define-values-form-val ast) inlined #f))
+		   (analyze!-ast (zodiac:define-values-form-val ast) env inlined #f))
 		  (values ast #f)]
 		 
 		 ;;-------------------------------------------------------------------
 		 ;; APPLICATIONS
-		 ;;   analyze all the parts.  Duh.  replace with a compiler:app
-		 ;;   annotated with tail?
+		 ;;   analyze all the parts.  replace with a compiler:app
+		 ;;    annotated with tail?
 		 ;;  If this is a call to a primitive, check the arity.
 		 ;;
 		 [(zodiac:app? ast)
-
 		  (check-for-inlining
 		   ast
+		   env
 		   inlined
 		   tail?
 		   (lambda (new-ast new-inlined)
 		     (when (compiler:option:verbose)
 		       (compiler:warning ast "inlining procedure call"))
 		     ; We inlined - analyze the new form
-		     (analyze! new-ast new-inlined tail?))
+		     (analyze! new-ast env new-inlined tail?))
 		   (lambda (why)
 		     '(begin
 			(zodiac:print-start! (current-output-port) ast) 
 			(printf "no inlining: ~a~n" (eval why)))
-		     (let* ([fun (let ([v (analyze!-sv (zodiac:app-fun ast) inlined #f)])
+		     (let* ([fun (let ([v (analyze!-sv (zodiac:app-fun ast) env inlined #f)])
 				   (if (zodiac:varref? v)
 				       v
 				       ; known non-procedure!
@@ -1195,7 +1217,7 @@
 					 (set-binding-known-but-used?! 
 					  (get-annotation (zodiac:bound-varref-binding var)) 
 					  #t)
-					 (analyze-varref! var #f #t))))]
+					 (analyze-varref! var env #f #t))))]
 			    [primfun (app-prim-name (get-annotation ast))]
 			    [multi (if primfun
 				       (let ([a (primitive-result-arity 
@@ -1206,7 +1228,7 @@
 					  [else 'possible]))
 				       'possible)]
 			    [args (map (lambda (arg)
-					 (analyze!-sv arg inlined #f))
+					 (analyze!-sv arg env inlined #f))
 				       (zodiac:app-args ast))])
 		       
 		       ; for all functions, do this stuff
@@ -1226,7 +1248,7 @@
 		 [(zodiac:struct-form? ast)
 		  (let ([super (zodiac:struct-form-super ast)])
 		    (when super
-		      (zodiac:set-struct-form-super! ast (analyze!-sv super inlined #f)))
+		      (zodiac:set-struct-form-super! ast (analyze!-sv super env inlined #f)))
 		    (values ast #t))]
 
 		 ;;--------------------------------------------------------------------
@@ -1249,6 +1271,7 @@
 		    ;; recur on the body
 		    (let ([body (analyze-code-body! body
 						    (list->set (append imports defines anchors))
+						    env
 						    #t
 						    code)])
 		      (register-code-vars! code #t)
@@ -1273,7 +1296,7 @@
 		 [(zodiac:compound-unit-form? ast)
 		  (for-each (lambda (link)
 			      (set-car! (cdr link)
-					(analyze!-sv (cadr link) inlined #f)))
+					(analyze!-sv (cadr link) env inlined #f)))
 			    (zodiac:compound-unit-form-links ast))
 		  
 		  (register-arity! (length (zodiac:compound-unit-form-links ast)))
@@ -1353,14 +1376,14 @@
 		 [(zodiac:invoke-form? ast)
 		  (zodiac:set-invoke-form-unit!
 		   ast 
-		   (analyze!-sv (zodiac:invoke-form-unit ast) inlined #f))
+		   (analyze!-sv (zodiac:invoke-form-unit ast) env inlined #f))
 
 		  (set-annotation!
 		   ast
 		   (make-invoke-info
 		    (map 
 		     (lambda (v)
-		       (let ([v (analyze-varref! v #f #t)])
+		       (let ([v (analyze-varref! v env #f #t)])
 			 (if (zodiac:bound-varref? v)
 			     (let ([binding (get-annotation (zodiac:bound-varref-binding v))])
 			       (when (binding-known? binding)
@@ -1403,10 +1426,10 @@
 		    ; Analyze super-expr & interfaces
 		    (zodiac:set-class*/names-form-super-expr! 
 		     ast 
-		     (analyze!-sv (zodiac:class*/names-form-super-expr ast) inlined #f))
+		     (analyze!-sv (zodiac:class*/names-form-super-expr ast) env inlined #f))
 		    (zodiac:set-class*/names-form-interfaces! 
 		     ast
-		     (map (lambda (i) (analyze!-sv i inlined #f))
+		     (map (lambda (i) (analyze!-sv i env inlined #f))
 			  (zodiac:class*/names-form-interfaces ast)))
 		    
 		    ; To create the class assembly, super + interfaces are collected as args
@@ -1418,6 +1441,7 @@
 		      (set-car! l
 				(analyze-code-body! (car l)
 						    (list->set bindings)
+						    env
 						    #f
 						    code)))
 
@@ -1427,6 +1451,7 @@
 		     (lambda (var ast)
 		       (analyze-code-body! ast
 					   (list->set bindings)
+					   env
 					   #f
 					   code)))
 		    
@@ -1442,7 +1467,7 @@
 		 [(zodiac:interface-form? ast)
 		  (zodiac:set-interface-form-super-exprs!
 		   ast
-		   (map (lambda (expr) (analyze!-sv expr inlined #f))
+		   (map (lambda (expr) (analyze!-sv expr env inlined #f))
 			(zodiac:interface-form-super-exprs ast)))
 
 		  (register-arity! (length (zodiac:interface-form-super-exprs ast)))
@@ -1461,7 +1486,7 @@
 	  
 	  ;; analyze the expression and return it with the local variables
 	  ;; it creates.  
-	  (let-values ([(ast multi) (analyze! ast 0 tail?)])
+	  (let-values ([(ast multi) (analyze! ast env 0 tail?)])
 	    (values ast
 		    free-vars
 		    local-vars

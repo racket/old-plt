@@ -255,7 +255,7 @@
 			 (reverse! children-acc))
 		    max-arity)
 	    (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars children new-max-arity multi)
-			  (analyze-expression! (car sexps) empty-set (null? (cdr sexps)))])
+			  (analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])
 	      (loop (cdr sexps) 
 		    (cons exp source-acc) 
 		    (cons local-vars locals-acc)
@@ -1007,10 +1007,12 @@
 			  
 			  ;value
 			  (lambda ()
+			    (fprintf c-port "#define MZC_SRC_FILE ~s~n" input-name)
 			    (when (compiler:option:unsafe) (fprintf c-port "#define MZC_UNSAFE 1~n"))
 			    (when (compiler:option:disable-interrupts) (fprintf c-port "#define MZC_DISABLE_INTERRUPTS 1~n"))
 			    (when (compiler:option:fixnum-arithmetic) (fprintf c-port "#define MZC_FIXNUM 1~n"))
-			    (fprintf c-port "#include \"~ascheme.h\"~n"
+			    
+			    (fprintf c-port "~n#include \"~ascheme.h\"~n"
 				     (if (compiler:option:compile-for-embedded)
 					 ""
 					 "e"))

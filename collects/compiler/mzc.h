@@ -17,17 +17,35 @@
 #define _scheme_direct_apply_closed_primitive_poll(prim, argc, argv) \
     (DO_FUEL_POLL, _scheme_direct_apply_closed_primitive(prim, argc, argv))
 
+
+#ifdef KEEP_CLOSURE_COUNT
+static int closure_alloc_cnt;
+static void print_closures()
+{
+  printf("closures allocated in " MZC_SRC_FILE ": %d\n", closure_alloc_cnt);
+}
+# define CLOSURE_ALLOC_PP closure_alloc_inc(), 
+static void closure_alloc_inc()
+{
+  if (!closure_alloc_cnt)
+    atexit(print_closures);
+  closure_alloc_cnt++;
+}
+#else
+# define CLOSURE_ALLOC_PP /**/
+#endif
+
 #define _scheme_make_c_proc_closure(cfunc, rec, name, amin, amax) \
-  ((Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, &rec->data, name, amin, amax))
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, &rec->data, name, amin, amax))
 
 #define _scheme_make_c_proc_closure_empty(cfunc, rec, name, amin, amax) \
-  ((Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, NULL, name, amin, amax))
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, NULL, name, amin, amax))
 
 #define _scheme_make_c_case_proc_closure(cfunc, rec, name, ccnt, cses) \
-  ((Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, &rec->data, name, ccnt, cses))
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, &rec->data, name, ccnt, cses))
 
 #define _scheme_make_c_case_proc_closure_empty(cfunc, rec, name, ccnt, cses) \
-  ((Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, NULL, name, ccnt, cses))
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, NULL, name, ccnt, cses))
 
 #define _scheme_make_c_unit_closure_basic(cfunc, rec, name, imc, exc, expts, datav) \
   (rec->unit.type = scheme_unit_type, \

@@ -1207,7 +1207,7 @@
 
 	  [define-values-form-folder 
 	    (lambda (a _ rhs-fv)
-	      (send this binder-set-minus 
+	      (binder-set-minus 
 		    rhs-fv 
 		    (list->set (zodiac:define-values-form-vars a))))]
 	  
@@ -1217,7 +1217,7 @@
 	     ; binders in vals-fvs are free in the let
 
 	     (set-union (fold-sets vals-fvs)
-			(send this binder-set-minus body-fv 
+			(binder-set-minus body-fv 
 			      (fold-sets
 			       (map list->set 
 				    (zodiac:let-values-form-vars a))))))]
@@ -1229,7 +1229,7 @@
 	     ; binders in vals-fvs are free in the letrec*, unless
 	     ;   they are among the vars
 
-	     (send this binder-set-minus (set-union body-fv (fold-sets vals-fvs))
+	     (binder-set-minus (set-union body-fv (fold-sets vals-fvs))
 			(fold-sets
 			 (map list->set (zodiac:letrec*-values-form-vars a)))))]
 
@@ -1290,7 +1290,7 @@
 			       (class-code-inherit-bindings class-code)
 			       (class-code-rename-bindings class-code)))])
 
-	       (send this binder-set-minus
+	       (binder-set-minus
 		     (fold-sets 
 		      (list super-expr-fvs interface-fvs init-vars-fvs inst-clause-varrefs))
 		     binders)))]
@@ -1348,7 +1348,7 @@
 			     (append (unit-code-defines unit-code)
 				     (unit-code-exports unit-code)))
 			   imports-fv)])
-	       (send this binder-set-minus
+	       (binder-set-minus
 		     (fold-sets clauses-fv)
 		     (fold-sets binders))))]
 
@@ -1490,7 +1490,7 @@
 	      [varref-action
 	       (lambda (a)
 
-		 (send this default-action a)
+		 (default-action a)
 
 		 ; snarf flow information from binder
 
@@ -1512,7 +1512,7 @@
 		    ; this case needed to propagate AV information
 		    ; from RHS to LHS, which Spidey doesn't seem to do
 
-		    (send this default-action a)
+		    (default-action a)
 
 		    (when prim?
 			  (set-unknown! rhs #t)
@@ -1549,7 +1549,7 @@
 		    ; from RHS to LHS, which Spidey doesn't seem to do
 		    ; as in define-values-form case
 
-		    (send this default-action a)
+		    (default-action a)
 
 		    (when prim?
 			  (set-unknown! lhs #t)
@@ -1934,7 +1934,7 @@
 		   [app-action
 		    (lambda (a)
 		      (let ([rator (zodiac:app-fun a)]) 
-			(send this default-action a)
+			(default-action a)
 			(when (unknown? rator)
 			    (set-theta! rator empty-set))))]
 
@@ -3278,7 +3278,9 @@
 				 (when (< old-arg-rep-len new-arg-rep-len)
 				       (compiler:warning 
 					a 
-					"added formal arguments to procedure"))))
+					(format 
+					 "added formal arguments (~a) to procedure"
+					 (- new-arg-rep-len old-arg-rep-len))))))
 			 
 			 ; update local var information
 

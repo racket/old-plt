@@ -65,6 +65,12 @@
      (A ((HREF "/servlets/acknowledge.ss"))
 	(FONT ((COLOR "limegreen"))
 	      "Acknowledgements")))
+    'nbsp 'nbsp 'nbsp 'nbsp
+    (B
+     (A ((HREF "/servlets/bug-report.ss")
+	 (TARGET "_top"))
+	(FONT ((COLOR "limegreen"))
+	      "Send a bug report")))
     (P)
     (I "Version: " ,(plt-version)))))
 

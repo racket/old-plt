@@ -1342,38 +1342,42 @@
 	    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	      (static-error expr "Malformed with-handlers"))))))
 
-    (add-micro-form 'define-macro scheme-vocabulary
-      (let* ((kwd '(define-macro))
-	      (in-pattern '(define-macro macro-name macro-handler))
-	      (m&e (pat:make-match&env in-pattern kwd)))
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((macro-name (pat:pexpand 'macro-name p-env kwd))
-		       (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
-		  (valid-syntactic-id? macro-name)
-		  (let* ((real-name (sexp->raw macro-name))
-			  (raw-handler (sexp->raw macro-handler))
-			  (real-handler (with-parameterization
-					  zodiac-user-parameterization
-					  (lambda ()
-					    (eval raw-handler))))
-			  (cache-table (make-hash-table)))
-		    (unless (procedure? real-handler)
-		      (static-error expr "Expander is not a procedure"))
-		    (add-macro-form real-name vocab
-		      (lambda (m-expr m-env)
-			(structurize-syntax
-			  (apply real-handler
-			    (let ((in (cdr (sexp->raw m-expr cache-table))))
-			      in))
-			  m-expr '() cache-table)))
-		    (expand-expr (structurize-syntax '(#%void) expr)
-		      env attributes vocab)))))
-	    (else
-	      (static-error expr "Malformed define-macro"))))))
+    (let ((d-m-handler
+	    (lambda (d-m-kwd)
+	      (add-micro-form d-m-kwd scheme-vocabulary
+		(let* ((kwd `(,d-m-kwd))
+			(in-pattern `(,d-m-kwd macro-name macro-handler))
+			(m&e (pat:make-match&env in-pattern kwd)))
+		  (lambda (expr env attributes vocab)
+		    (cond
+		      ((pat:match-against m&e expr env)
+			=>
+			(lambda (p-env)
+			  (let ((macro-name (pat:pexpand 'macro-name p-env kwd))
+				 (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
+			    (valid-syntactic-id? macro-name)
+			    (let* ((real-name (sexp->raw macro-name))
+				    (raw-handler (sexp->raw macro-handler))
+				    (real-handler (with-parameterization
+						    zodiac-user-parameterization
+						    (lambda ()
+						      (eval raw-handler))))
+				    (cache-table (make-hash-table)))
+			      (unless (procedure? real-handler)
+				(static-error expr "Expander is not a procedure"))
+			      (add-macro-form real-name vocab
+				(lambda (m-expr m-env)
+				  (structurize-syntax
+				    (apply real-handler
+				      (let ((in (cdr (sexp->raw m-expr cache-table))))
+					in))
+				    m-expr '() cache-table)))
+			      (expand-expr (structurize-syntax '(#%void) expr)
+				env attributes vocab)))))
+		      (else
+			(static-error expr "Malformed define-macro")))))))))
+      (d-m-handler 'define-macro)
+      (d-m-handler '#%define-macro))
 
     (add-macro-form 'unquote scheme-vocabulary
       (lambda (expr env)

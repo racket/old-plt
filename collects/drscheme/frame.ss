@@ -38,7 +38,6 @@
 	   (lambda (% parent)
 	     (let* ([s-root (super-make-root-panel mred:vertical-panel% parent)]
 		    [root (make-object % s-root)])
-	       (send* s-root (border 0) (spacing 0))
 	       (set! root-panel s-root)
 	       root))])
 
@@ -464,10 +463,6 @@
 		       (lambda args (do-help))
 		       "Help")
 	  
-	  (send scheme-only-panel border 1)
-	  (send button-panel border 1)
-	  (send top-panel border 1)
-	  (send top-panel spacing 10)
 	  (send scheme-only-panel stretchable-in-y #f)
 	  (send button-panel stretchable-in-y #f)
 	  (send button-panel stretchable-in-x #f) 

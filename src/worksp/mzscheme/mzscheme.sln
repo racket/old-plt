@@ -1,9 +1,9 @@
 Microsoft Visual Studio Solution File, Format Version 7.00
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmzgc", "..\libmzgc\libmzgc.vcproj", "{CB68718B-24BF-43E3-9E96-BCF9B37CFE2D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mzscheme", "mzscheme.vcproj", "{EB7023C8-6D72-4DE4-ADFC-3913C4C70991}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmzsch", "..\libmzsch\libmzsch.vcproj", "{2D99E176-BCA5-4B8E-B25C-1B2D7179C188}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mzscheme", "mzscheme.vcproj", "{EB7023C8-6D72-4DE4-ADFC-3913C4C70991}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmzgc", "..\libmzgc\libmzgc.vcproj", "{CB68718B-24BF-43E3-9E96-BCF9B37CFE2D}"
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution

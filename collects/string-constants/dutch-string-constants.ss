@@ -779,6 +779,7 @@
  (module-browser-error-expanding "Error expanding the program:\n\n~a")
 
  (happy-birthday-matthias "Lang zal Matthias leven!")
+ (happy-birthday-matthew "Lang zal Matthew leven!")
 
  (mrflow-using-default-language-title "Verstektaal gebruikt")
  (mrflow-using-default-language "Er bestaat geen typetabel voor de primitieven van uw huidige taal.  Gelieve R5RS te gebruiken.")

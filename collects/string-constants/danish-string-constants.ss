@@ -791,6 +791,7 @@
  (module-browser-error-expanding "Fejl under udfoldelse (expansion) af programmet:\n\n~a")
 
  (happy-birthday-matthias "Tillykke med fødselsdagen, Matthias!")
+ (happy-birthday-matthew "Tillykke med fødselsdagen, Matthew!")
 
  (mrflow-using-default-language-title "Sprog, som bruges når andet ikke er valgt")
  (mrflow-using-default-language "Det sprog, som anvendes nu, har ikke en typetabel defineret for dets primitiver. R5RS Scheme bruges i stedet.")

@@ -964,6 +964,7 @@
  (module-browser-error-expanding "Erreur durant l'expansion du programme :\n\n~a")
  
  (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
+ (happy-birthday-matthew "Joyeux anniversaire, Matthew !")
  
  (mrflow-using-default-language-title "Language par défaut utilisé")
  (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")

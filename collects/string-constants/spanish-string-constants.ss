@@ -735,7 +735,8 @@
  (editor-prefs-panel-label "Editando")
  (fraction-style "Estilo de fracción")
  (happy-birthday-matthias "¡Feliz cumpleaños Matthias!")
- 
+ (happy-birthday-matthew "¡Feliz cumpleaños Matthew!")
+
  (module-browser "Módulo Navegador")
  (module-browser-adding-file "Añadiendo archivo: ~a...")
  (module-browser-error-expanding "Error al expandir el programa:\n\n~a")

@@ -4,8 +4,8 @@ Windows and Mac OS: "primitive" dialogs don't get closed by
 
 Mac OS: std file dialog and print dialogs block MzScheme threads
 
-Windows: System menu navigation in a menuless MDI window leads to a
- crash
+Windows 95/98/Me: System menu navigation in a menuless MDI window
+ leads to a crash.
 
-A top-level-window<%>'s on-move method is not reliably called; also,
- the result from get-x, get-y, and is-iconized? are not reliable
+The result from get-x, get-y, and is-iconized? of
+ top-level-window<%> are not completely reliable.

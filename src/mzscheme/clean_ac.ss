@@ -22,7 +22,7 @@
 	    (loop (sub1 n))))
 	(loop #f)]
        [(and skip (regexp-match "--prefix" l))
-	(printf "  --prefix=TARGETDIR      install to TARGETDIR/plt~n")
+	(printf "  --prefix=TARGETDIR      install to TARGETDIR (usually <something>/plt)~n")
 	(loop skip)]
        [skip
 	(loop (add1 skip))]

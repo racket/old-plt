@@ -13,8 +13,9 @@ hierlist defines three classes:
    (new-list) - creates and returns a new (empty) hierarchical-list-compound-item%
    (delete-item i) - delete hierarchical-list-item% i from the list
    (get-items) - returns a list of the items in the list
-   (select i) - called for new select of hierarchical-list-item% i
-   (double-select i) - called for double-click on i, hierarchical-list-item% or #f
+   (select i) - called for new select of i, hierarchical-list-item%  or #f,
+                where #f means that no item is now selected
+   (double-select i) - called for double-click on i hierarchical-list-item% i
    (item-opened i) - called when the arrow on i is turned down
    (item-closed i) - called when the arrow on i is turned up
 

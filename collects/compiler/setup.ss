@@ -49,7 +49,10 @@
 	  (map list specifics))
        ("Setup specific <collection>s only" "collection")]))
    (lambda (collections . archives) 
-     (values collections archives))
+     (values (if (null? collections)
+		 null
+		 (car collections))
+	     archives))
    '("archive")
    (lambda (s)
      (display s)

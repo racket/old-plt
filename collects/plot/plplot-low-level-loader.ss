@@ -18,6 +18,7 @@
   (require-and-provide
    '(lib "plplot-low-level.ss" "plot")
    u8vec->scheme-string
+   pl-setup-page
    pl-setup-memory
    pl-set-device 
    pl-set-output-file 
@@ -39,6 +40,8 @@
    pl-y-error-bars
    pl-world-3d
    pl-plot3d
-   pl-box3))
+   pl-box3
+   pl-poly3
+   pl-line3))
   
     

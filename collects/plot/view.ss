@@ -54,12 +54,17 @@
         start-plot 
         finish-plot
         
-        get-renderer)
+        get-renderer
+        
+        get-height
+        get-width)
       
       (init-field
        renderer)
       
       (fields-with-accessors
+       (height 600)
+       (width 800)
        (x-min -5)
        (x-max 5)
        (y-min -5)
@@ -70,8 +75,8 @@
        (device 'png))   
      
       (define bitmap #f)
-      (define x-size 640)
-      (define y-size 480)
+      (define x-size 800)
+      (define y-size 600)
      
       (inherit 
         set-bitmap
@@ -117,8 +122,10 @@
       (define (start-plot)
         (cond
           [(eq? device 'png)           
-           (set! bitmap (make-temporary-file))        
+           (set! bitmap (make-temporary-file))
+           
            (init-colors)
+           (pl-setup-page  width height) 
            (pl-set-device "png") 
            (pl-set-output-file bitmap) 
            (pl-init-plot)]
@@ -242,7 +249,9 @@
   
   (define 3d-view%
     (class* plot-view% ()
-      (public        
+      (public 
+        plot-polygon        
+        plot-line
         plot-surface
         get-z-min
         get-z-max
@@ -287,7 +296,19 @@
         (with-handlers ((exn? (lambda (ex) (finish-plot) (raise ex))))
           ((get-renderer) this))
         (finish-plot)
-        this) 
+        this)
+      
+      ; plot a polygon in 3 space
+      (define (plot-polygon x y z draw ifc)
+        (pl-poly3 (length x) x y z draw ifc))
+      
+      
+      ; plot a line in 3 space
+      ; x y and z are lists of equal length
+      (define (plot-line x y z)
+        (pl-line3 (length x) x y z))
+      
+      
       (super-instantiate ())
       (plot)))
  

@@ -22,14 +22,15 @@
                                (x-values samples x-min x-max)))
               ((parametric) (map func (x-values samples t-min t-max))))))
         (send* 2dplotview 
-          (set-line-color color) (set-line-width width))
-        (case mapping
-          ((cartesian) points)
-          ((polar) (map 
-                    (lambda (point)  ; convert to cartesian from theta, r
-                      (vector 
-                       (* (vector-y point) (cos (vector-x point)))
-                       (* (vector-y point) (sin (vector-x point)))))))))))
+          (set-line-color color) (set-line-width width)
+          (plot-line 
+           (case mapping
+             ((cartesian) points)
+             ((polar) (map 
+                       (lambda (point)  ; convert to cartesian from theta, r
+                         (vector 
+                          (* (vector-y point) (cos (vector-x point)))
+                          (* (vector-y point) (sin (vector-x point)))))))))))))
   
     ; error-bars : (listof (vector x y err)) [symbol] -> (2dplotview -> nothing)
   (define error-bars
@@ -109,7 +110,7 @@
              (grid (zgrid fun3d x-vals y-vals samples)))
           (send* 3dplotview 
             (set-line-color color) (set-line-width width) 
-            (plot3d x-vals y-vals grid)))))
+            (plot-surface x-vals y-vals grid)))))
   
   (provide (all-defined)))
 

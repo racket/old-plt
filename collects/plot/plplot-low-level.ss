@@ -53,6 +53,30 @@ typedef struct
         return ar;
         }")
   
+  ; makes an array of ints from a list
+  (c-declare
+  
+  "int * int_list_to_array(Scheme_Object * list)
+       {
+        
+        int * ar = (int *)scheme_malloc(scheme_list_length(list) * sizeof(int));
+        int i = 0;
+        while(!SCHEME_NULLP(list))
+        {
+         Scheme_Object * car = SCHEME_CAR(list);
+         double tmp;
+                
+         tmp = (int)scheme_real_to_double(car);
+         ar[i] = tmp;
+         list = SCHEME_CDR(list);
+         i++;
+         }
+        
+        return ar;
+        }
+  
+  ")
+  
   ; makes an array of arrays of doubles from a scheme list
   (c-declare 
    "double ** list_of_list_to_array(Scheme_Object * list)
@@ -69,6 +93,13 @@ typedef struct
            return grid;
            }")
   
+  ; setup the page
+  
+  (define pl-setup-page
+    (c-lambda (int int) void
+              "plspage(0.,0.,___arg1,___arg2,0,0);
+  "))
+              
   ; set output device
   (define pl-set-device
     (c-lambda (char-string) void "plsdev"))
@@ -94,6 +125,8 @@ typedef struct
   ___result = scheme_make_sized_string((char *) vec->els, vec->length, 0);
 "))
 
+  
+  
   ; initialize the plot
   (define pl-init-plot
     (c-lambda () void "plinit"))
@@ -222,6 +255,32 @@ typedef struct
   ; 
   (define pl-box3
     (c-lambda (char-string char-string double int char-string char-string double int char-string char-string double int ) void "plbox3"))
+  
+  ; pl-poly3 
+  ; draw a polygon in 3 space
+  ; args are n x y z, draw (array of draw/not draw) , ifcc (directionality for hidden line removal) 1 or 0
+  (define pl-poly3
+    (c-lambda (int scheme-object scheme-object scheme-object scheme-object int) void
+              "plpoly3(___arg1, 
+                       list_to_array(___arg2),
+                       list_to_array(___arg3),
+                       list_to_array(___arg4),
+                       int_list_to_array(___arg5),
+                       ___arg6);
+  "))
+  
+  ; pl-line3 
+  ; draws a line in 3 space
+  ; arsg are n, x y z (lists of number)
+  (define pl-line3
+    (c-lambda (int scheme-object scheme-object scheme-object) void
+              "plline3(___arg1, 
+                       list_to_array(___arg2),
+                       list_to_array(___arg3),
+                       list_to_array(___arg4));
+  "))
+  
+  
 
                            
               

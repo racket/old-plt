@@ -49,12 +49,15 @@
 (define errors
   (map caddr raw-data))
 
-(require (lib "fit.ss" "plplot"))
-(require (lib "plot.ss" "plplot"))
+(define experemental-data (map vector times vals errors))
 
-(plot (points (map vector times vals))
+(require (lib "plot.ss" "plot"))
+
+(plot (mix (points experemental-data '((char 16)))
+           (error-bars experemental-data))
       (x-min 0) (x-max 40)
-      (y-min -40) (y-max 50))
+      (y-min -40) (y-max 50)
+      (width 400) (height 300))
 
 (define 
   (theta x a tau phi T theta0)
@@ -70,11 +73,13 @@
    '((a 40)(theta0 10) (T 15) (phi -0.5) (tau 15))
    times
    vals
-   1))
+   errors))
               
   
-(plot (mix* (points (map vector times vals) '((color red)))
-            (line (fit-result-function result)))
+(plot (mix* 
+       (points (map vector times vals) '((char 16) (color red)))
+       (error-bars experemental-data)
+       (line (fit-result-function result)))
       (x-min -5) (x-max 40)
       (y-min -40) (y-max 50))
        

@@ -99,12 +99,19 @@
 	      (list (format "No handins accepted so far for user ~s, assignment ~s" user hi)))))
 
       (define (solution-link k hi)
-	(let* ([soln (build-path (if (directory-exists? (build-path "active" hi))
-				     "active"
-				     "inactive")
-				 hi
-				"solution"
-				(format "~asol.scm" hi))])
+	(let* ([soln-dir (build-path (if (directory-exists? (build-path "active" hi))
+					 "active"
+					 "inactive")
+				     hi
+				     "solution")]
+	       [soln (let ([f (build-path soln-dir (format "~asol.scm" hi))])
+		       (if (or (file-exists? f)
+			       (not (directory-exists? soln-dir)))
+			   f
+			   (let ([l (directory-list soln-dir)])
+			     (if (= 1 (length l))
+				 (car l)
+				 f))))])
 	  (if (file-exists? soln)
 	      `((a ((href ,(make-k k soln)))
 		   "Solution"))

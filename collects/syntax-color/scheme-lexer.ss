@@ -36,7 +36,7 @@
    [z (: "z" "Z")]
    [digit (- "0" "9")]
    [whitespace (: #\newline #\return #\tab #\space #\vtab)]
-   [line-comment (@ ";" (* (^ #\newline)) (: #\newline (eof)))]
+   [line-comment (@ ";" (* (^ #\newline)))]
    [character (: (@ "#\\" any)
                  (@ "#\\" character-name)
                  (@ "#\\" (- "0" "3") (- "0" "7") (- "0" "7")))]

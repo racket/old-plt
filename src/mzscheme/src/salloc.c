@@ -1349,12 +1349,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_generic_type:
     s = 0; /* Unknown */
     break;
-  case scheme_type_symbol_type:
-    s = sizeof(Scheme_Small_Object);
-#if FORCE_KNOWN_SUBPARTS
-    e = COUNT(SCHEME_PTR_VAL(root));
-#endif
-    break;
   case scheme_bignum_type:
     {
       int count = SCHEME_BIGLEN(root);

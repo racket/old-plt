@@ -8,7 +8,7 @@
 		((require-library "splash.ss" "framework")
 		 (build-path (collection-path "icons") "plt.gif")
 		 "DrScheme"
-		 123
+		 81
 		 5)])
     (require-relative-library "drsig.ss")
     (let ([unit (require-relative-library "link.ss")])

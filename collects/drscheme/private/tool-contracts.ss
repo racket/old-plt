@@ -1,4 +1,4 @@
-                       
+(module tool-contracts "tool-contract-language.ss"                       
                        
                      ; 
                      ; 
@@ -9,8 +9,6 @@
  ;      ; ;   ;   ;  ; 
  ;      ;;    ;   ;  ; 
   ;;;;   ;     ;;;;; ; 
-                       
-                       
                        
 
 
@@ -107,7 +105,32 @@
 "continues expanding the rest of the contents of the"
 "definitions window. If the first argument to \\var{iter} was"
 "eof, this argument is just the primitive"
-"\\rawscm{void}.")
+"\\rawscm{void}."
+""
+"See also"
+"@flink drscheme:eval:expand-program/multiple.")
+
+(drscheme:eval:expand-program/multiple
+ (drscheme:language-configuration:language-settings?
+  boolean?
+  (-> void?)
+  (-> void?)
+  . -> .
+  (((union eof-object? syntax? (cons/p string? any?))
+    (-> any)
+    . -> .
+    any)
+   . -> .
+   void?))
+ (language-settings eval-compile-time-part? init kill-termination)
+
+ "This function is just like"
+ "@flink drscheme:eval:expand-program"
+ "except that it is curried and the second application"
+ "can be used multiple times."
+ "Use this function if you want to initialize the user's"
+ "thread (and namespace, etc) once but have program text"
+ "that comes from multiple sources.")
 
 (drscheme:eval:build-user-eventspace/custodian
  ((drscheme:language-configuration:language-settings?
@@ -864,21 +887,41 @@
  "@flink drscheme:language:extend-language-interface %"
  ".")
 
-(drscheme:language:use-stand-alone-executable?
- ((union false? (is-a?/c frame%) (is-a?/c dialog%))
-  . -> .
-  boolean?)
- (parent)
+(drscheme:language:put-executable-file
+ ((is-a?/c top-level-window<%>) string? . -> . (union false? string?))
+ (parent program-filename)
+ "Calls the MrEd primitive"
+ "@flink put-file"
+ "with arguments appropriate for creating an executable"
+ "from the file \\var{program-filename}. ")
 
-"Prompts the user, with an explanatory dialog, asking if they"
-"want to create a stand-alone executable or a launcher. See"
-"also "
-"@flink drscheme:language:create-module-based-stand-alone-executable "
-"and"
-"@flink drscheme:language:create-module-based-launcher %"
-"."
-""
-"Uses \\var{parent} as the parent to the explanatory dialog.")
+(drscheme:language:create-executable-gui
+ ((union false? (is-a?/c top-level-window<%>))
+  (union false? string?)
+  boolean?
+  boolean?
+  . -> .
+  (union false?
+	 (list/p (symbols 'no-show 'launcher 'stand-alone)
+		 (symbols 'no-show 'mred 'mzscheme)
+		 string?)))
+ (parent program-name show-type? show-base?)
+ "Opens a dialog to prompt the user about their choice of executable."
+ "If \\var{show-type?} is \\scm{\\#t}, the user is prompted about"
+ "a choice of executable: stand-alone, or launcher. If \\var{show-base?}"
+ "is \\scm{\\#t}, the user is prompted about a choice of base"
+ "binary: mzscheme or mred."
+ ""
+ "The \\var{program-name} argument is used to construct the default"
+ "executable name in a platform-specific manner."
+ ""
+ "The \\var{parent} argument is used for the parent of the dialog."
+ ""
+ "The result of this function is \\scm{\\#f} if the user cancel's"
+ "the dialog and a list of three items indicating what options"
+ "they chose. If either \\var{show-type?} or \\var{show-base?}"
+ "was \\scm{\\#f}, the corresponding result will be \\scm{'no-show},"
+ "otherwise it will indicate the user's choice.")
 
 (drscheme:language:create-module-based-stand-alone-executable 
  (string? string? any? any? any? boolean? boolean?
@@ -1148,3 +1191,4 @@
  "See also"
  "@flink drscheme:teachpack:install-teachpacks %"
  ".")
+)

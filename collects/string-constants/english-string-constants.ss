@@ -577,6 +577,13 @@
   "Use the mred binary for this executable?\n\nIf yes, your program can use the (lib \"mred.ss\" \"mred\") library. If no, DrScheme will use mzscheme as the binary for this executable and you cannot use that library.\n\nIf unsure, choose yes.")
  (inline-saved-program-in-executable/windows/path
    "WARNING! The generated executable relies on three DLLs: libmred.dll, libmzsch.gll, and libgc.dll, which are located at\n\n~a\n\nThe executable finds the DLLs either in the executable's directory or through the PATH enviornment variable.\n\nWhen you installed DrScheme, the installer adjusted the user's PATH to include the directory where the DLLs were installed. Beware of configuration or user changes since installation.\n\nIf you move the executable to another machine, you must also copy the DLLs to the other machine --- either to the same directory as the executable, or to a directory in the other machine's PATH.")
+ (launcher "Launcher")
+ (stand-alone "Stand-alone")
+ (executable-type "Type")
+ (executable-base "Base")
+ (filename "Filename: ")
+ (create "Create")
+ (please-choose-an-executable-filename "Please choose a filename to save the executable.")
   
  ;;; buttons
  (execute-button-label "Execute") 

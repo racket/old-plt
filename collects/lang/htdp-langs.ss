@@ -226,15 +226,17 @@ to the original stdout of DrScheme.
           
           (inherit get-module get-transformer-module get-init-code
                    use-namespace-require/copy?)
-          (define/override (create-executable setting parent program-filename executable-filename)
-            (drscheme:language:create-module-based-stand-alone-executable
-             program-filename
-             executable-filename
-             (get-module)
-             (get-transformer-module)
-             (get-init-code setting)
-             #t
-             (use-namespace-require/copy?)))
+          (define/override (create-executable setting parent program-filename)
+            (let ([executable-filename (drscheme:language:put-executable-file parent program-filename)])
+              (when executable-filename
+                (drscheme:language:create-module-based-stand-alone-executable
+                 program-filename
+                 executable-filename
+                 (get-module)
+                 (get-transformer-module)
+                 (get-init-code setting)
+                 #t
+                 (use-namespace-require/copy?)))))
           
           (define/override (get-style-delta)
             (get-htdp-style-delta))

@@ -46,6 +46,12 @@
           (begin
             (provide (rename id-rename id) ...)
             (require (lib "contract-helpers.scm" "mzlib" "private"))
+
+            ;; this is here to check for unbound ids.
+            ;; put outer `void' just in case we start printing out module
+            ;; body values (say in the module language or something)
+            ;(begin (begin (void) id ...) (void)) 
+
 	    (define contract-id ctrct) ...
             (define-syntax id-rename
               (make-set!-transformer

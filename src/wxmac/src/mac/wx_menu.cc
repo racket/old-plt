@@ -536,12 +536,18 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
 		::AddResMenu(appleMenuHandle, 'DRVR');
 	}
 	if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
-#ifdef PPCC
 		Str255 t = "\pAboutÉ";
+		wxNode *n = mbar->wxHelpHackMenu->menuItems.Nth(mbar->iHelpMenuHackNum - 1);
+		if (n) {
+		  wxMenuItem *i = (wxMenuItem *)n->Data();
+		  if (i) {
+		    char *s = i->GetLabel();
+		    strcpy((char *)t, s);
+		    CtoPstr((char *)t);
+		  }
+		}
+		
 		::InsertMenuItem(appleMenuHandle, t, 0);
-#else
-		::InsertMenuItem(appleMenuHandle, "\pAboutÉ", 0);
-#endif
 	} else {
 		char buffer[256];
 		strcpy(buffer, wxTheApp->GetDefaultAboutItemName());

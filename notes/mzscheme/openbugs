@@ -1,6 +1,4 @@
 
-MacOS: copy-file still unimplemented
-
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'

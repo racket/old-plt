@@ -36,7 +36,15 @@ Scheme_Object *SCHEME_RATIONAL_FROM_FLOAT(FP_TYPE d)
 {
   double frac, i;
   int count, exponent, is_neg;
-  Scheme_Object *int_part, *frac_part, *frac_num, *frac_denom, *two;
+  Scheme_Object *int_part, *frac_part, *frac_num, *frac_denom, *two, *result;
+#ifdef COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS
+  int negate;
+  if (d < 0) {
+    d = -d;
+    negate = 1;
+  } else
+    negate = 0;
+#endif
 
   SCHEME_CHECK_FLOAT("inexact->exact", d, "rational");
 
@@ -47,8 +55,13 @@ Scheme_Object *SCHEME_RATIONAL_FROM_FLOAT(FP_TYPE d)
 
   int_part = SCHEME_BIGNUM_FROM_FLOAT(i);
 
-  if (!frac)
+  if (!frac) {
+#ifdef COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS
+   if (negate)
+     return scheme_bin_minus(scheme_make_integer(0), int_part);
+#endif  
     return int_part;
+  }
 
   frac_num = scheme_make_integer(0);
   frac_denom = one;
@@ -70,5 +83,12 @@ Scheme_Object *SCHEME_RATIONAL_FROM_FLOAT(FP_TYPE d)
 
   frac_part = scheme_bin_div(frac_num, frac_denom);
 
-  return scheme_bin_plus(int_part, frac_part);
+  result = scheme_bin_plus(int_part, frac_part);
+
+#ifdef COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS
+  if (negate)
+    return scheme_bin_minus(scheme_make_integer(0), result);
+#endif
+
+  return result;
 }

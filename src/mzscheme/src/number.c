@@ -758,13 +758,21 @@ GEN_NARY_COMP(gt_eq, ">=", scheme_bin_gt_eq, SCHEME_REALP, REAL_NUMBER_STR)
 #define LESS_OR_EQUAL(x, y) (x <= y)
 #define GREATER_OR_EQUAL(x, y) (x >= y)
 
+#ifdef NAN_LT_COMPARISON_WRONG
+# define fLESS_THAN(x, y) (!(x >= y) && (x == x) && (y == y))
+# define fLESS_OR_EQUAL(x, y) (!(x > y) && (x == x) && (y == y))
+#else
+# define fLESS_THAN LESS_THAN
+# define fLESS_OR_EQUAL LESS_OR_EQUAL
+#endif
+
 #define COMP_NADA(a, b) 0
 
-GEN_BIN_COMP(scheme_bin_eq, "=", EQUAL, scheme_bignum_eq, scheme_rational_eq, scheme_complex_eq, 0, 0, inexact_p, inexact_p, GEN_IDENT, "number")
-GEN_BIN_COMP(scheme_bin_lt, "<", LESS_THAN, scheme_bignum_lt, scheme_rational_lt, COMP_NADA, 0, 1, positive_p, negative_p, GEN_OMIT, REAL_NUMBER_STR)
-GEN_BIN_COMP(scheme_bin_gt, ">", GREATER_THAN, scheme_bignum_gt, scheme_rational_gt, COMP_NADA, 1, 0, negative_p, positive_p, GEN_OMIT, REAL_NUMBER_STR)
-GEN_BIN_COMP(scheme_bin_lt_eq, "<=", LESS_OR_EQUAL, scheme_bignum_le, scheme_rational_le, COMP_NADA, 0, 1, positive_p, negative_p, GEN_OMIT, REAL_NUMBER_STR)
-GEN_BIN_COMP(scheme_bin_gt_eq, ">=", GREATER_OR_EQUAL, scheme_bignum_ge, scheme_rational_ge, COMP_NADA, 1, 0, negative_p, positive_p, GEN_OMIT, REAL_NUMBER_STR)
+GEN_BIN_COMP(scheme_bin_eq, "=", EQUAL, EQUAL, scheme_bignum_eq, scheme_rational_eq, scheme_complex_eq, 0, 0, inexact_p, inexact_p, GEN_IDENT, "number")
+GEN_BIN_COMP(scheme_bin_lt, "<", LESS_THAN, fLESS_THAN, scheme_bignum_lt, scheme_rational_lt, COMP_NADA, 0, 1, positive_p, negative_p, GEN_OMIT, REAL_NUMBER_STR)
+GEN_BIN_COMP(scheme_bin_gt, ">", GREATER_THAN, GREATER_THAN, scheme_bignum_gt, scheme_rational_gt, COMP_NADA, 1, 0, negative_p, positive_p, GEN_OMIT, REAL_NUMBER_STR)
+GEN_BIN_COMP(scheme_bin_lt_eq, "<=", LESS_OR_EQUAL, fLESS_OR_EQUAL, scheme_bignum_le, scheme_rational_le, COMP_NADA, 0, 1, positive_p, negative_p, GEN_OMIT, REAL_NUMBER_STR)
+GEN_BIN_COMP(scheme_bin_gt_eq, ">=", GREATER_OR_EQUAL, GREATER_OR_EQUAL, scheme_bignum_ge, scheme_rational_ge, COMP_NADA, 1, 0, negative_p, positive_p, GEN_OMIT, REAL_NUMBER_STR)
 
 static Scheme_Object *
 zero_p (int argc, Scheme_Object *argv[])
@@ -842,7 +850,7 @@ negative_p (int argc, Scheme_Object *argv[])
 #ifdef MZ_USE_SINGLE_FLOATS
   if (t == scheme_float_type) {
     float d = SCHEME_FLT_VAL(o);
-# ifdef NAN_EQUALS_ANYTHING
+# if defined(NAN_EQUALS_ANYTHING) || defined(NAN_LT_COMPARISON_WRONG)
     if (MZ_IS_NAN(d))
       return scheme_false;
 # endif
@@ -851,7 +859,7 @@ negative_p (int argc, Scheme_Object *argv[])
 #endif
   if (t == scheme_double_type) {
     double d = SCHEME_DBL_VAL(o);
-#ifdef NAN_EQUALS_ANYTHING
+# if defined(NAN_EQUALS_ANYTHING) || defined(NAN_LT_COMPARISON_WRONG)
     if (MZ_IS_NAN(d))
       return scheme_false;
 #endif
@@ -2031,6 +2039,14 @@ atan_prim (int argc, Scheme_Object *argv[])
       return zerod;
     }
 
+#ifdef ATAN2_DOESNT_WORK_WITH_INFINITIES
+	if ((MZ_IS_POS_INFINITY(v) || MZ_IS_NEG_INFINITY(v))
+		&& (MZ_IS_POS_INFINITY(v2) || MZ_IS_NEG_INFINITY(v2))) {
+	  v = MZ_IS_POS_INFINITY(v) ? 1.0 : -1.0;
+	  v2 = MZ_IS_POS_INFINITY(v2) ? 1.0 : -1.0;
+	}
+#endif
+
     v = atan2(v, v2);
   } else {
     v = atan(v);
@@ -2071,9 +2087,14 @@ Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
   else if (SCHEME_FLTP(n))
     n = scheme_make_float((float)sqrt(SCHEME_FLT_VAL(n)));
 #endif
-  else if (SCHEME_DBLP(n))
-    n = scheme_make_double(sqrt(SCHEME_DBL_VAL(n)));
-  else if (SCHEME_RATIONALP(n))
+  else if (SCHEME_DBLP(n)) {
+    double d = SCHEME_DBL_VAL(n);
+#ifdef SQRT_NAN_IS_WRONG
+    if (MZ_IS_NAN(d))
+      return nan_object;
+#endif
+    n = scheme_make_double(sqrt(d));
+  } else if (SCHEME_RATIONALP(n))
     n = scheme_rational_sqrt(n);
 
   if (imaginary)

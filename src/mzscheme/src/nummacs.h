@@ -372,9 +372,9 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 NAN_CHECK_NAN_IF_WEIRD, SNAN_CHECK_NAN_IF_WEIRD, \
                 GEN_IDENT, "number")
 
-#define GEN_BIN_COMP(name, scheme_name, ifop, bn_op, rop, cxop, waybig, waysmall, firstzero, secondzero, complexwrap, numbertype) \
+#define GEN_BIN_COMP(name, scheme_name, iop, fop, bn_op, rop, cxop, waybig, waysmall, firstzero, secondzero, complexwrap, numbertype) \
  GEN_BIN_THING(int, name, scheme_name, \
-               ifop, ifop, ifop, bn_op, rop, cxop, \
+               iop, fop, fop, bn_op, rop, cxop, \
                GEN_IDENT, GEN_FIRST_ONLY, \
                waybig, waybig, waysmall, waysmall, \
                waybig, waybig, waysmall, waysmall, \

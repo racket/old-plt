@@ -556,16 +556,33 @@
 (error-test '(char-ci>=? 1 #\a))
 
 (define (ascii-range start end)
-  (let ([s (char->integer start)]
-	[e (char->integer end)])
-    (let loop ([n e][l (list end)])
+  (let ([s (or (and (number? start) start) (char->integer start))]
+	[e (or (and (number? end) end) (char->integer end))])
+    (let loop ([n e][l (list (integer->char e))])
       (if (= n s)
 	  l
 	  (let ([n (sub1 n)])
 	    (loop n (cons (integer->char n) l)))))))
 
-(define uppers (ascii-range #\A #\Z))
-(define lowers (ascii-range #\a #\z))
+(define basic-uppers (ascii-range #\A #\Z))
+(define uppers basic-uppers)
+(define basic-lowers (ascii-range #\a #\z))
+(define lowers basic-lowers)
+(when (eq? (system-type) 'macos)
+  ; There are more alphabetics:
+  (set! uppers (append uppers
+  					   (ascii-range 128 134)
+  					   (ascii-range 174 175)
+  					   (ascii-range 203 206)
+  					   (ascii-range 217 217)
+  					   (ascii-range 229 239)
+  					   (ascii-range 241 244)))
+  (set! lowers (append lowers
+  					   (ascii-range 135 159)
+  					   (ascii-range 190 191)
+  					   (ascii-range 207 207)
+  					   (ascii-range 216 216)
+  					   (ascii-range 245 245))))
 (define alphas (append uppers lowers))
 (define digits (ascii-range #\0 #\9))
 (define whites (list #\newline #\return #\space #\page #\tab #\vtab))
@@ -614,19 +631,21 @@
 (error-test '(integer->char 10000000000000000))
 (error-test '(char->integer 5))
 
-(define (test-up/down case case-name members memassoc)
+(define (test-up/down case case-name members amembers memassoc)
   (let loop ([n 0])
     (unless (= n 256)
       (let ([c (integer->char n)])
 	(if (memq c members)
-	    (test (cdr (assq c memassoc)) case c)
+	    (if (memq c amembers)
+	      (test (cdr (assq c memassoc)) case c)
+	      (test (case c) case c)) ; BOGUS! Could twea kMac testing here
 	    (test n `(char->integer (,case-name (integer->char ,n))) (char->integer (case c)))))
       (loop (add1 n))))
   (arity-test case 1 1)
   (error-test `(,case-name 2)))
 
-(test-up/down char-upcase 'char-upcase lowers (map cons lowers uppers))
-(test-up/down char-downcase 'char-downcase uppers (map cons uppers lowers))
+(test-up/down char-upcase 'char-upcase lowers basic-lowers (map cons basic-lowers basic-uppers))
+(test-up/down char-downcase 'char-downcase uppers basic-uppers (map cons basic-uppers basic-lowers))
 
 (SECTION 6 7)
 (test #t string? "The word \"recursion\\\" has many meanings.")

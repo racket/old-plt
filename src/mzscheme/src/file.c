@@ -1189,7 +1189,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
 	raise_null_error("rename-file", argv[0], "");
   dest = SCHEME_STR_VAL(argv[1]);
-  if (has_null(src, SCHEME_STRTAG_VAL(argv[1])))
+  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
 	raise_null_error("rename-file", argv[1], "");
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -1288,7 +1288,7 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
 	raise_null_error("copy-file", argv[0], "");
   dest = SCHEME_STR_VAL(argv[1]);
-  if (has_null(src, SCHEME_STRTAG_VAL(argv[1])))
+  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
 	raise_null_error("copy-file", argv[1], "");
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),

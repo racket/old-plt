@@ -228,13 +228,11 @@ GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, 1)
 static Scheme_Object *
 char_alphabetic (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-alphabetic?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return scheme_false;
 
   return isalpha(c) ? scheme_true : scheme_false;
 }
@@ -242,13 +240,11 @@ char_alphabetic (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 char_numeric (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-numeric?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return scheme_false;
 
   return isdigit(c) ? scheme_true : scheme_false;
 }
@@ -256,13 +252,11 @@ char_numeric (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 char_whitespace (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-whitespace?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return scheme_false;
 
   return isspace(c) ? scheme_true : scheme_false;
 }
@@ -270,13 +264,11 @@ char_whitespace (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 char_upper_case (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-upper-case?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return scheme_false;
 
   return isupper(c) ? scheme_true : scheme_false;
 }
@@ -284,13 +276,11 @@ char_upper_case (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 char_lower_case (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-lower-case?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return scheme_false;
 
   return islower(c) ? scheme_true : scheme_false;
 }
@@ -325,13 +315,11 @@ integer_to_char (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 char_upcase (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-upcase");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return argv[0];
 
   return _scheme_make_char(toupper(c));
 }
@@ -339,13 +327,11 @@ char_upcase (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 char_downcase (int argc, Scheme_Object *argv[])
 {
-  signed char c;
+  unsigned char c;
 
   CHAR_UN_CHECK("char-downcase");
 
   c = SCHEME_CHAR_VAL(argv[0]);
-  if (c <= 0)
-    return argv[0];
 
   return _scheme_make_char(tolower(c));
 }

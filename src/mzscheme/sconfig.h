@@ -418,6 +418,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define WINDOWS_PROCESSES
 # define DETECT_WIN32_CONSOLE_STDIN
 
+
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
@@ -502,6 +503,10 @@ int scheme_win32_semaphore_try_down(void *);
 
 # if !defined(__powerc)
 #  define MACINTOSH_SET_STACK
+#  define COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS
+#  define NAN_LT_COMPARISON_WRONG
+#  define SQRT_NAN_IS_WRONG
+#  define ATAN2_DOESNT_WORK_WITH_INFINITIES
 # else
 #  define CODEFRAGMENT_DYNAMIC_LOAD
 # endif
@@ -788,6 +793,9 @@ int scheme_win32_semaphore_try_down(void *);
  /* NAN_EQUALS_ANYTHING indicates that the compiler is broken and
     equality comparisons with +nan.0 always return #t. Currently
     used for MSVC++ */
+    
+ /* NAN_LT_COMPARISON_WRONG indicates that +nan.0 is not handled correctly
+    by < or <=. Probably the compiler implements < as !>. */
 
  /* USE_EXPLICT_FP_FORM_CHECK circumvents bugs in strtod() under Linux,
     SunOS/Solaris, and HP/UX by explicit pre-checking the form of the 
@@ -796,6 +804,16 @@ int scheme_win32_semaphore_try_down(void *);
  /* POW_HANDLES_INF_CORRECTLY inidicates that thw pow() library procedure
     handles +/-inf.0 correctly. Otherwise, code in inserted to specifically
     check for infinite arguments. */
+    
+ /* ATAN2_DOESNT_WORK_WITH_INFINITIES indicates that atan2(+/-inf, +/-inf)
+    is not the same as atan2(1, 1). */ 
+    
+ /* SQRT_NAN_IS_WRONG indicates that (sqrt +nan.0) must be forced to +nan.0
+    (i.e., the C library function is bad). */
+    
+ /* COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS computes inexact->exact of some
+    negative inexact number x by computing the result for -x and negating
+    it. Use this if (inexact->exact -0.1) is wrong. */
 
   /***********************/
  /* Stack Maniuplations */

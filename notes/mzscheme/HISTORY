@@ -59,6 +59,12 @@ MzLib functio.ss: added remv*, remq*, remove*, filter,
  and assf
 MzLib constan.ss: added constant-signature-content macro
 MzLib pconver.ss: added whole/fractional-exact-numbers
+MacOS: MzScheme always prompts for extra arguments, even if
+  a file is dragged onto the application or a launcher program
+  starts it
+MacOS: Fixed problems with inexact arithmetic: inexact->exact
+  for certain negative numbers and miscellaenous inf.0 and
+  nan.0 problems
 
 Version 50, August 26, 1997
 Added compile-time inferrence of names for closures, classes,

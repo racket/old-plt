@@ -282,7 +282,7 @@ scheme_intern_symbol(const char *name)
     for (i = 0; i < len; i++) {
       int c = name[i];
 
-      if (isupper(c))
+      /* if (isupper(c)) */
 	c = tolower(c);
 
       naya[i] = c;

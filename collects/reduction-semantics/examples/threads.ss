@@ -17,24 +17,26 @@ semaphores make things much more predictable...
          (threads e ...)))
      (sema-count number
                  none)
-     (e (e e)
-        (+ e e)
-        (* e e)
-        (set! variable e)
+     (e (set! variable e)
         (begin e ...)
+        (semaphore variable)
         (semaphore-wait e)
         (semaphore-post e)
+        (lambda (variable) e)
+        (e e)
         variable
-        v)
+        (list e ...)
+        (cons e e)
+        number
+        (void))
      (p-ctxt ((store (variable v) ...)
               (semas (variable sema-count) ...)
               (threads e ... e-ctxt e ...)))
      (e-ctxt (e-ctxt e)
              (v e-ctxt)
-             (+ e-ctxt e)
-             (+ v e-ctxt)
-             (* e-ctxt e)
-             (* v e-ctxt)
+             (cons e-ctxt e)
+             (cons v e-ctxt)
+             (list v ... e-ctxt e ...)
              (set! variable e-ctxt)
              (begin e-ctxt e ...)
              (semaphore-wait e-ctxt)
@@ -42,20 +44,19 @@ semaphores make things much more predictable...
              hole)
      (v (semaphore variable)
         (lambda (variable) e)
+        (list v ...)
         number
         (void))))
   
   (define reductions
     (list
      (reduction lang
-                (in-hole (name c p-ctxt) (+ (name n1 number) (name n2 number)))
-                (replace c hole (+ n1 n2)))
-     (reduction lang
-                (in-hole (name c p-ctxt) (* (name n1 number) (name n2 number)))
-                (replace c hole (* n1 n2)))
-     (reduction lang
                 (in-hole (name c p-ctxt) (begin v (name e1 e) (name e2 e) (name es e) ...))
                 (replace c hole `(begin ,e1 ,e2 ,@es)))
+     (reduction lang
+                (in-hole (name c p-ctxt) 
+                         (cons (name v v) (list (name vs v) ...)))
+                (replace c hole `(list ,v ,@vs)))
      (reduction lang
                 (in-hole (name c p-ctxt) (begin v (name e1 e)))
                 (replace c hole e1))
@@ -163,18 +164,18 @@ semaphores make things much more predictable...
   
   (gui lang
        reductions
-       `((store (y 3))
+       `((store (y (list)))
          (semas)
-         (threads (set! y (+ y y))
-                  (set! y (* y y)))))
+         (threads (set! y (cons 1 y))
+                  (set! y (cons 2 y)))))
   
   (gui lang
        reductions
-       `((store (y 3))
+       `((store (y (list)))
          (semas (x 1))
          (threads (begin (semaphore-wait (semaphore x)) 
-                         (set! y (+ y y)) 
+                         (set! y (cons 1 y)) 
                          (semaphore-post (semaphore x)))
                   (begin (semaphore-wait (semaphore x))
-                         (set! y (* y y))
+                         (set! y (cons 2 y))
                          (semaphore-post (semaphore x)))))))

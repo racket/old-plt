@@ -127,9 +127,8 @@ pict snip :
             (send (get-editor) write-to-file stream-out))
           (define/override (make-snip) (new pict-snip%))
           
-          (rename [super-get-extent get-extent])
           (define/override (get-extent dc x y wb hb descent space lspace rspace)
-            (super-get-extent dc x y wb hb descent space lspace rspace)
+            (super get-extent dc x y wb hb descent space lspace rspace)
             (when (or (not has-ever-been-in-show-picts-mode?)
                       show-picts?)
               (when (box? wb) (set! width (unbox wb)))
@@ -349,25 +348,24 @@ pict snip :
                   pict
                   (new-p pict-drawer width height))))))
           
-          (rename [super-on-event on-event])
           (define/override (on-event evt)
             (cond
               [(send evt leaving?)
                (update-mouse #f #f)
-               (super-on-event evt)]
+               (super on-event evt)]
               [(or (send evt moving?)
                    (send evt entering?))
                (let-values ([(pos text) (get-pos/text evt)])
                  (update-mouse text pos))
-               (super-on-event evt)]
+               (super on-event evt)]
               [(send evt button-down? 'right)
                (let-values ([(pos text) (get-pos/text evt)])
                  (if (and pos text)
                      (unless (show-menu evt text pos)
-                       (super-on-event evt))
-                     (super-on-event evt)))]
+                       (super on-event evt))
+                     (super on-event evt)))]
               [else
-               (super-on-event evt)]))
+               (super on-event evt)]))
           
           ;; show-menu : ... -> boolean
           ;; result indicates if a menu was shown
@@ -495,16 +493,14 @@ pict snip :
                 (send slideshow-canvas init-auto-scrollbars #f #f 0 0)))
           (define/public (slideshow:has-permanent-picts?) permanent-picts)
           
-          (rename [super-make-root-area-container make-root-area-container])
           (define/override (make-root-area-container cls parent)
-            (set! slideshow-parent-panel (super-make-root-area-container slideshow-dragable% parent))
+            (set! slideshow-parent-panel (super make-root-area-container slideshow-dragable% parent))
             (let ([root (make-object cls slideshow-parent-panel)])
               (set! everything-else-panel root)
               root))
           
-          (rename [super-update-shown update-shown])
           (define/override (update-shown)
-            (super-update-shown)
+            (super update-shown)
             (if slideshow-panel-visible?
                 (begin
                   (unless slideshow-panel (build-slideshow-panel))
@@ -550,11 +546,10 @@ pict snip :
                             (loop (cdr picts)
                                   (+ y (p-height pict))))])))))
           
-          (rename [super-clear-annotations clear-annotations])
           (define/override (clear-annotations)
             (send (get-definitions-text) slideshow:clear-picts)
             (send (get-interactions-text) slideshow:clear-picts)
-            (super-clear-annotations))
+            (super clear-annotations))
           
           (super-new)
           
@@ -573,12 +568,11 @@ pict snip :
       (define slideshow-dragable%
         (class panel:horizontal-dragable%
           (inherit get-percentages)
-          (rename [super-after-percentage-change after-percentage-change])
-          (define/override (after-percentage-change)
+          (define/augment (after-percentage-change)
             (let ([percentages (get-percentages)])
               (when (= 2 (length percentages))
                 (preferences:set 'plt:slideshow:panel-percentage (car percentages))))
-            (super-after-percentage-change))
+            (inner (void) after-percentage-change))
           (super-new)))
 
       (define has-info-bkg-color (make-object color% "gray"))
@@ -643,17 +637,15 @@ pict snip :
       
       (define (slideshow-mixin lang%)
         (class lang%
-          (rename [super-front-end/complete-program front-end/complete-program])
           (define/override (front-end/complete-program input settings teachpack-cache)
-            (let ([st (super-front-end/complete-program input settings teachpack-cache)])
+            (let ([st (super front-end/complete-program input settings teachpack-cache)])
               (lambda ()
                 (let ([sv (st)])
                   (cond
                     [(syntax? sv) (rewrite-syntax sv)]
                     [else sv])))))
-          (rename [super-front-end/interaction front-end/interaction])
           (define/override (front-end/interaction input settings teachpack-cache)
-            (let ([st (super-front-end/interaction input settings teachpack-cache)])
+            (let ([st (super front-end/interaction input settings teachpack-cache)])
               (lambda ()
                 (let ([sv (st)])
                   (cond

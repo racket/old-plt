@@ -109,25 +109,21 @@ If the namespace does not, they are colored the unbound color.
       ;;  the arrows are cleared.
       (define clearing-text-mixin
         (fw:mixin ((class->interface text%)) ()
-          (rename [super-after-insert after-insert]
-                  [super-on-insert on-insert]
-                  [super-after-delete after-delete]
-                  [super-on-delete on-delete])
           
           (inherit begin-edit-sequence end-edit-sequence)
           (define/override (on-delete start len)
             (begin-edit-sequence)
-            (super-on-delete start len))
+            (super on-delete start len))
           (define/override (after-delete start len)
-            (super-after-delete start len)
+            (super after-delete start len)
             (clean-up)
             (end-edit-sequence))
           
           (define/override (on-insert start len)
             (begin-edit-sequence)
-            (super-on-insert start len))
+            (super on-insert start len))
           (define/override (after-insert start len)
-            (super-after-insert start len)
+            (super after-insert start len)
             (clean-up)
             (end-edit-sequence))
 
@@ -151,8 +147,6 @@ If the namespace does not, they are colored the unbound color.
                        get-canvas last-position dc-location-to-editor-location
                        find-position begin-edit-sequence end-edit-sequence)
               
-              (rename [super-on-paint on-paint]
-                      [super-on-event on-event])
               
               ;; arrow-vectors : 
               ;; (union 
@@ -390,9 +384,8 @@ If the namespace does not, they are colored the unbound color.
 
               (inherit get-top-level-window)
 
-              (rename [super-on-change on-change])
               (define/override (on-change)
-                (super-on-change)
+                (super on-change)
                 (when arrow-vectors
                   (flush-arrow-coordinates-cache)
                   (let ([any-tacked? #f])
@@ -426,7 +419,7 @@ If the namespace does not, they are colored the unbound color.
                        (loop (- n 1)))))))
               
               (define/override (on-paint before dc left top right bottom dx dy draw-caret)
-                (super-on-paint before dc left top right bottom dx dy draw-caret)
+                (super on-paint before dc left top right bottom dx dy draw-caret)
                 (when (and arrow-vectors (not before))
                   (let ([draw-arrow2
                          (lambda (arrow)
@@ -547,7 +540,7 @@ If the namespace does not, they are colored the unbound color.
                          (when f
                            (send f update-status-line 'drscheme:check-syntax:mouse-over #f)))
                        (invalidate-bitmap-cache))
-                     (super-on-event event)]
+                     (super on-event event)]
                     [(or (send event moving?)
                          (send event entering?))
                      (let-values ([(pos text) (get-pos/text event)])
@@ -592,7 +585,7 @@ If the namespace does not, they are colored the unbound color.
                             (set! cursor-location #f)
                             (set! cursor-text #f)
                             (invalidate-bitmap-cache))]))
-                     (super-on-event event)]
+                     (super on-event event)]
                     [(send event button-down? 'right)
                      (let-values ([(pos text) (get-pos/text event)])
                        (if (and pos text)
@@ -601,7 +594,7 @@ If the namespace does not, they are colored the unbound color.
                                (let ([vec-ents (vector-ref arrow-vector pos)])
                                  (cond
                                    [(null? vec-ents)
-                                    (super-on-event event)]
+                                    (super on-event event)]
                                    [else
                                     (let* ([menu (make-object popup-menu% #f)]
                                            [arrows (filter arrow? vec-ents)]
@@ -633,9 +626,9 @@ If the namespace does not, they are colored the unbound color.
                                       (send (get-canvas) popup-menu menu
                                             (+ 1 (inexact->exact (floor (send event get-x))))
                                             (+ 1 (inexact->exact (floor (send event get-y))))))]))))
-                           (super-on-event event)))]
-                    [else (super-on-event event)])
-                  (super-on-event event)))
+                           (super on-event event)))]
+                    [else (super on-event event)])
+                  (super on-event event)))
 
               ;; tack/untack-callback : (listof arrow) -> void
               ;; callback for the tack/untack menu item
@@ -775,10 +768,8 @@ If the namespace does not, they are colored the unbound color.
       
       (define (make-new-unit-frame% super%)
         (class* super% (syncheck-frame<%>)
-          (rename [super-clear-annotations clear-annotations]
-		  [super-on-close on-close])
           (define/override (clear-annotations)
-            (super-clear-annotations)
+            (super clear-annotations)
             (hide-error-report)
             (syncheck:clear-highlighting))
           
@@ -788,17 +779,15 @@ If the namespace does not, they are colored the unbound color.
                    get-interactions-text
                    get-directory)
           
-          (rename [super-disable-evaluation disable-evaluation]
-                  [super-enable-evaluation enable-evaluation])
           (define button-visible? #t)
           
           (define/override (enable-evaluation)
             (send check-syntax-button enable #t)
-            (super-enable-evaluation))
+            (super enable-evaluation))
 
           (define/override (disable-evaluation)
             (send check-syntax-button enable #f)
-            (super-disable-evaluation))
+            (super disable-evaluation))
           
           (define cleanup-texts '())
           (define/public (syncheck:clear-highlighting)
@@ -822,7 +811,7 @@ If the namespace does not, they are colored the unbound color.
           
 	  (define/override (on-close)
 	    (send report-error-text on-close)
-	    (super-on-close))
+	    (super on-close))
 
           (define report-error-parent-panel 'uninitialized-report-error-parent-panel)
           (define report-error-panel 'uninitialized-report-error-panel)
@@ -830,12 +819,10 @@ If the namespace does not, they are colored the unbound color.
           (send report-error-text auto-wrap #t)
           (send report-error-text set-autowrap-bitmap #f)
           (send report-error-text lock #t)
-          (rename [super-get-definitions/interactions-panel-parent 
-                   get-definitions/interactions-panel-parent])
           (define/override (get-definitions/interactions-panel-parent)
             (set! report-error-parent-panel
                   (make-object vertical-panel%
-                    (super-get-definitions/interactions-panel-parent)))
+                    (super get-definitions/interactions-panel-parent)))
             (set! report-error-panel (instantiate horizontal-panel% ()
                                        (parent report-error-parent-panel)
                                        (stretchable-height #f)
@@ -889,14 +876,13 @@ If the namespace does not, they are colored the unbound color.
 
             (show-error-report))
           
-          (rename [super-make-root-area-container make-root-area-container])
           (define rest-panel 'uninitialized-root)
           (define super-root 'uninitialized-super-root)
           (define docs-panel 'uninitialized-docs-panel)
           (define docs-panel-visible? #f)
           (define docs-messages 'uninitialized-docs-lines)
           (define/override (make-root-area-container % parent)
-            (let* ([s-root (super-make-root-area-container
+            (let* ([s-root (super make-root-area-container
                             vertical-panel%
                             parent)]
                    [r-root (make-object % s-root)])

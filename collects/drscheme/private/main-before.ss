@@ -6,7 +6,7 @@
            (lib "framework.ss" "framework")
            "unitsig.ss"
            "class.ss"
-           (lib "basis.ss" "userspce")
+           (prefix basis: (lib "basis.ss" "userspce"))
            (prefix pretty-print: (lib "pretty.ss"))
            (prefix print-convert: (lib "pconvert.ss"))
            (lib "list.ss")

@@ -197,7 +197,9 @@
 			     ;; Check for matching open-something (forward) or close-something (backward)
 			     (let ([match (match-string-at-pos pos c starters)])
 			       (cond
-				[(not match)
+				[(or (not match)
+				     (and backward? (member match eol-comment-list)))
+				 ;; Not a special character
 				 (cond
 				  [(past-end? pos)  ; end of file
 				   (done-k eof-answer)]

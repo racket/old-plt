@@ -334,22 +334,12 @@ program. The advantage of "inlining" the bitmap is that a stand-alone
 executable can be created that contains the bitmap and does not refer
 to the original image file.
 
-> (bitmap-constant file-spec)     SYNTACTIC FORM
+> (bitmap-constant file-spec)                       SYNTAX
 
-The `file-spec' datum must have one of the following forms:
+The `file-spec' is the same as for MzLib's `include'.
 
- - string: a filename
+> (bitmap-constant/relative-to source file-spec)    SYNTAX
 
- - (build-path datum ...): the filename produced by applying
-   `build-path' to the `datum's
-
- - (lib file-string collection-string ...): the filename
-   for `file-string' in the collection identified by the sequence of
-   `collection-string's (or "mzlib" if none are provided)
-
-If the path produced by `file-spec' is relative, it is resolved with
-respect to the source-file location associated to the `file-spec'
-datum. If there is no asscoiated source file, the current
-load-relative directory is used, and if there is no current
-load-relative directory, the current directory is used.
+Analogous to `include-at/relative-to', though only a source is needed
+(no context).
 

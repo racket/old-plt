@@ -66,6 +66,7 @@ static Scheme_Object *andmap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_ec (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
+static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *is_void_func (int argc, Scheme_Object *argv[]);
 static Scheme_Object *dynamic_wind (int argc, Scheme_Object *argv[]);
@@ -201,6 +202,12 @@ scheme_init_fun (Scheme_Env *env)
   
   scheme_add_global_constant("call-with-current-continuation", o, env);
   scheme_add_global_constant("call/cc", o, env);  
+
+  scheme_add_global_constant("current-continuation-marks", 
+			     scheme_make_prim_w_arity(cc_marks,  
+						      "current-continuation-marks", 
+						      1, 1),
+			     env);
 
   scheme_add_global_constant("void", scheme_void_func, env);  
   scheme_add_global_constant("void?", 
@@ -1804,6 +1811,50 @@ call_cc (int argc, Scheme_Object *argv[])
     return ret;
   }
 }
+
+static Scheme_Object *
+cc_marks(int argc, Scheme_Object *argv[])
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *first = scheme_null, *last = NULL, **s, **limit, *key;
+  Scheme_Saved_Stack *csaved = NULL;
+
+  key = argv[0];
+
+  do {
+    if (csaved) {
+      s = csaved->runstack;
+      limit = csaved->runstack_start + csaved->runstack_size;
+    } else {
+      s = p->runstack;
+      limit = p->runstack_start + p->runstack_size;
+    }
+
+    while (s < limit) {
+      if (!*s) {
+	s++;
+	if (SAME_OBJ(key, *s)) {
+	  Scheme_Object *pr = scheme_make_pair(s[1], scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = pr;
+	  else
+	    first = pr;
+	  last = pr;
+	}
+	s++;
+      }
+      s++;
+    }
+
+    if (!csaved)
+      csaved = p->runstack_saved;
+    else
+      csaved = csaved->prev;
+  } while (csaved);
+
+  return first;
+}
+
 
 typedef struct {
   Scheme_Object *pre, *act, *post;

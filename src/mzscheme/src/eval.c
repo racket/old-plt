@@ -85,6 +85,8 @@ static Scheme_Object *read_sequence(Scheme_Object *obj);
 static Scheme_Object *read_sequence_save_first(Scheme_Object *obj);
 static Scheme_Object *write_branch(Scheme_Object *obj);
 static Scheme_Object *read_branch(Scheme_Object *obj);
+static Scheme_Object *write_with_cont_mark(Scheme_Object *obj);
+static Scheme_Object *read_with_cont_mark(Scheme_Object *obj);
 static Scheme_Object *write_syntax(Scheme_Object *obj);
 static Scheme_Object *read_syntax(Scheme_Object *obj);
 
@@ -174,6 +176,8 @@ scheme_init_eval (Scheme_Env *env)
     scheme_install_type_reader(REGISTYPE(scheme_sequence), read_sequence);
     scheme_install_type_writer(REGISTYPE(scheme_branch), write_branch);
     scheme_install_type_reader(REGISTYPE(scheme_branch), read_branch);
+    scheme_install_type_writer(REGISTYPE(scheme_with_cont_mark), write_with_cont_mark);
+    scheme_install_type_reader(REGISTYPE(scheme_with_cont_mark), read_with_cont_mark);
     scheme_install_type_writer(REGISTYPE(scheme_syntax), write_syntax);
     scheme_install_type_reader(REGISTYPE(scheme_syntax), read_syntax);
 
@@ -612,6 +616,14 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
     return link_sequence(expr, info);
   case scheme_branch_type:
     return link_branch(expr, info);
+  case scheme_with_cont_mark_type:
+    {
+      Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
+      wcm->key = scheme_link_expr(wcm->key, info);
+      wcm->val = scheme_link_expr(wcm->val, info);
+      wcm->body = scheme_link_expr(wcm->body, info);
+      return (Scheme_Object *)wcm;
+    }
   case scheme_compiled_unclosed_procedure_type:
     return scheme_link_closure_compilation(expr, info);
   case scheme_compiled_let_void_type:
@@ -2051,12 +2063,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  p->tail_buffer_set = 0;
 #endif
       } else {
-	RUNSTACK = old_runstack;
 	if (num_rands) {
 	  scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1),
 			     0, 0, num_rands, rands);
 	  return NULL; /* Doesn't get here */
 	}
+	RUNSTACK = old_runstack;
       }
       
       {
@@ -2563,7 +2575,27 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  goto eval_top;
 	}
+      
+      case scheme_with_cont_mark_type:
+	{
+	  Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)obj;
+	  Scheme_Object *key, *val;
+	  
+	  UPDATE_THREAD_RSPTR();
+	  key = _scheme_eval_compiled_expr_wp(wcm->key, p);
+	  val = _scheme_eval_compiled_expr_wp(wcm->val, p);
 
+	  PUSH_RUNSTACK(p, RUNSTACK, 3);
+
+	  RUNSTACK[0] = NULL; /* A NULL embedded in the runstack indicates a continuation mark */
+	  RUNSTACK[1] = key;
+	  RUNSTACK[2] = val;
+
+	  obj = wcm->body;
+
+	  goto eval_top;
+	}
+      
       default:
 	v = obj;
 	goto returnv;
@@ -2577,7 +2609,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #ifdef AGRESSIVE_ZERO_FOR_GC
     p->ku.apply.tail_rands = NULL;
 #endif
-    RUNSTACK = old_runstack;
+    RUNSTACK = old_runstack; /* <<<<<<<<<<<<<< */
     goto apply_top;
   }
 
@@ -3151,6 +3183,28 @@ static Scheme_Object *read_branch(Scheme_Object *obj)
   return MAKE_BRANCH(SCHEME_CAR(obj), 
 		     SCHEME_CAR(SCHEME_CDR(obj)),
 		     SCHEME_CDR(SCHEME_CDR(obj)));
+}
+
+static Scheme_Object *write_with_cont_mark(Scheme_Object *obj)
+{
+  Scheme_With_Continuation_Mark *wcm;
+
+  wcm = (Scheme_With_Continuation_Mark *)obj;
+
+  return cons(wcm->key, cons(wcm->val, wcm->body));
+}
+
+static Scheme_Object *read_with_cont_mark(Scheme_Object *obj)
+{
+  Scheme_With_Continuation_Mark *wcm;
+
+  wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
+  wcm->type = scheme_with_cont_mark_type;
+  wcm->key = SCHEME_CAR(obj);
+  wcm->val = SCHEME_CADR(obj);
+  wcm->body = SCHEME_CDR(SCHEME_CDR(obj));
+
+  return (Scheme_Object *)wcm;
 }
 
 static Scheme_Object *write_syntax(Scheme_Object *obj)

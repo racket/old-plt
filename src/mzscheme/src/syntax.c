@@ -61,6 +61,9 @@ static Scheme_Object *empty_cond_expand(Scheme_Object *form, Scheme_Comp_Env *en
 static Scheme_Object *unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 
+static Scheme_Object *with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
+static Scheme_Object *with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
+
 /* non-standard */
 static Scheme_Object *defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
@@ -128,6 +131,7 @@ static Scheme_Object *set_symbol;
 static Scheme_Object *quote_symbol;
 static Scheme_Object *if_symbol;
 static Scheme_Object *case_lambda_symbol;
+static Scheme_Object *with_continuation_mark_symbol;
 
 static Scheme_Object *define_macro_symbol;
 static Scheme_Object *define_id_macro_symbol;
@@ -186,6 +190,7 @@ scheme_init_syntax (Scheme_Env *env)
     REGISTER_SO(quote_symbol);
     REGISTER_SO(if_symbol);
     REGISTER_SO(case_lambda_symbol);
+    REGISTER_SO(with_continuation_mark_symbol);
     
     REGISTER_SO(define_macro_symbol);
     REGISTER_SO(define_id_macro_symbol);
@@ -223,6 +228,7 @@ scheme_init_syntax (Scheme_Env *env)
     if_symbol = scheme_intern_symbol("#%if");
     set_symbol = scheme_intern_symbol("#%set!");
     case_lambda_symbol = scheme_intern_symbol("#%case-lambda");
+    with_continuation_mark_symbol = scheme_intern_symbol("#%with-continuation-mark");
 
     define_macro_symbol = scheme_intern_symbol("#%define-macro");
     define_id_macro_symbol = scheme_intern_symbol("#%define-id-macro");
@@ -348,6 +354,11 @@ scheme_init_syntax (Scheme_Env *env)
 							unquote_expand), 
 			    env);
 
+  scheme_add_global_keyword("with-continuation-mark", 
+			    scheme_make_compiled_syntax(with_cont_mark_syntax, 
+							with_cont_mark_expand), 
+			    env);
+
   scheme_add_global_keyword("define-macro", scheme_defmacro_syntax, env);
   scheme_add_global_keyword("define-id-macro", scheme_def_id_macro_syntax, env);
   scheme_add_global_keyword("define-expansion-time", scheme_def_exp_time_syntax, env);
@@ -416,7 +427,7 @@ static int check_form(char *name, Scheme_Object *form)
   return i;
 }
 
-static void bad_form(Scheme_Object *form, char *name, int l)
+static void bad_form(Scheme_Object *form, const char *name, int l)
 { 
   scheme_wrong_syntax(name, NULL, form, 
 		      "bad syntax (has %d part%s after keyword)", 
@@ -781,6 +792,75 @@ if_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   rest = scheme_expand_list(rest, env, depth);
 
   return cons(if_symbol, cons(test, rest));
+}
+
+static Scheme_Object *
+with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
+{
+  Scheme_Object *key, *val, *expr, *name;
+  Scheme_Compile_Info recs[3];
+  Scheme_With_Continuation_Mark *wcm;
+  int len = check_form("with-continuation-mark", form);
+
+  if (len != 4)
+    bad_form(form, "with-continuation-mark", len);
+
+  env = scheme_no_defines(env);
+
+  form = SCHEME_CDR(form);
+  key = SCHEME_CAR(form);
+  form = SCHEME_CDR(form);
+  val = SCHEME_CAR(form);
+  expr = SCHEME_CADR(form);
+
+  name = rec->value_name;
+  scheme_compile_rec_done_local(rec);
+
+  scheme_init_compile_recs(rec, recs, 3);
+  recs[3].value_name = name;
+
+  key = scheme_compile_expr(key, env, &recs[0]);
+  val = scheme_compile_expr(val, env, &recs[1]);
+  expr = scheme_compile_expr(expr, env, &recs[2]);
+
+  scheme_merge_compile_recs(rec, recs, 3);
+
+  rec->max_let_depth += 3;
+  
+  wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
+  wcm->type = scheme_with_cont_mark_type;
+  wcm->key = key;
+  wcm->val = val;
+  wcm->body = expr;
+  
+  return (Scheme_Object *)wcm;
+}
+
+static Scheme_Object *
+with_cont_mark_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
+{
+  Scheme_Object *key, *val, *expr;
+  int len = check_form("with-continuation-mark", form);
+
+  if (len != 4)
+    bad_form(form, "with-continuation-mark", len);
+
+  env = scheme_no_defines(env);
+
+  form = SCHEME_CDR(form);
+  key = SCHEME_CAR(form);
+  form = SCHEME_CDR(form);
+  val = SCHEME_CAR(form);
+  expr = SCHEME_CADR(form);
+
+  key = scheme_expand_expr(key, env, depth);
+  val = scheme_expand_expr(val, env, depth);
+  expr = scheme_expand_expr(expr, env, depth);
+
+  return cons(with_continuation_mark_symbol,
+	      cons(key,
+		   (cons(val,
+			 cons(expr, scheme_null)))));
 }
 
 static Scheme_Object *

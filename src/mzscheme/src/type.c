@@ -88,6 +88,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_sequence_type, "<sequence-code>");
   set_name(scheme_case_lambda_sequence_type, "<case-lambda-code>");
   set_name(scheme_begin0_sequence_type, "<begin0-code>");
+  set_name(scheme_with_cont_mark_type, "<with-continuation-mark-code>");
 
   set_name(scheme_let_value_type, "<let-value-code>");
   set_name(scheme_let_void_type, "<let-void-code>");

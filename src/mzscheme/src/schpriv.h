@@ -173,6 +173,12 @@ typedef struct Scheme_Let_Header {
   Scheme_Object *body;
 } Scheme_Let_Header;
 
+typedef struct {
+  Scheme_Type type;
+  Scheme_Object *key;
+  Scheme_Object *val;
+  Scheme_Object *body;
+} Scheme_With_Continuation_Mark;
 
 /* ininitializarion */
 void scheme_init_stack_check(void);

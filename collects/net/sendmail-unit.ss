@@ -68,18 +68,29 @@
 			    (let loop ((to recipients) (indent header-space))
 			      (if (null? to)
 				  (newline writer)
-				  (let ((first (car to)))
+				  (let ((first (car to))
+					[rest (cdr to)])
 				    (let ((len (string-length first)))
 				      (if (>= (+ len indent) 80)
 					  (begin
-					    (fprintf writer "~n    ~a, " first)
-					    (loop (cdr to) (+ len header-space 2)))
+					    (fprintf writer
+					      (if (null? rest)
+						  "~n    ~a"
+						  "~n    ~a, ")
+					      first)
+					    (loop (cdr to)
+					      (+ len header-space 2)))
 					  (begin
-					    (fprintf writer "~a, " first)
+					    (fprintf writer
+					      (if (null? rest)
+						  "~a "
+						  "~a, ")
+					      first)
 					    (loop (cdr to)
 						  (+ len indent 2))))))))))))
 		(write-recipient-header "To" to-recipients)
-		(write-recipient-header "CC" cc-recipients))
+		(unless (null? cc-recipients)
+		  (write-recipient-header "CC" cc-recipients)))
 	      (fprintf writer "Subject: ~a~n" subject)
 	      (fprintf writer "X-Mailer: MzScheme: see www.plt-scheme.org~n")
 	      (for-each (lambda (s)

@@ -820,7 +820,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
-		err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice); // SET-ORIGIN FLAGGED
+		err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
 		if (err) {
 			bm->SetOk(FALSE);
 			return FALSE;
@@ -833,7 +833,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		unsigned int byte;
 		unsigned char *buf = picinfo.pic;
  		GetForeColor(&cpix);	// probably 0,0,0
- 		::EraseRect(&bounds); // SET-ORIGIN FLAGGED
+ 		::EraseRect(&bounds);
  		if (picinfo.type == PIC8) {
  			for (y = 0; y < picinfo.h; y++) {
  				for (x = 0; x < picinfo.w; x++) {
@@ -841,7 +841,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 					cpix.red = Mac_xform24(picinfo.r[byte]);
   					cpix.green = Mac_xform24(picinfo.g[byte]);
  					cpix.blue = Mac_xform24(picinfo.b[byte]);
- 					::SetCPixel(x, y, &cpix); // SET-ORIGIN FLAGGED
+ 					::SetCPixel(x, y, &cpix);
  				}
  			}
  		}
@@ -851,7 +851,7 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
  					cpix.blue = Mac_xform24(*buf++);
  					cpix.green = Mac_xform24(*buf++);
  					cpix.red = Mac_xform24(*buf++);
- 					::SetCPixel(x, y, &cpix); // SET-ORIGIN FLAGGED
+ 					::SetCPixel(x, y, &cpix);
  				}
  			}
 		}

@@ -61,9 +61,10 @@ void wxRectBorder::DoShow(Bool on)
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
+                OffsetRect(&clientRect,SetOriginX,SetOriginY);
 		
-		::EraseRect(&clientRect); // SET-ORIGIN FLAGGED
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
+		::EraseRect(&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 	
 	wxWindow::DoShow(on);
@@ -79,33 +80,34 @@ void wxRectBorder::Paint(void)
 	int clientWidth, clientHeight;
 	GetClientSize(&clientWidth, &clientHeight);
 	Rect clientRect = {0, 0, clientHeight, clientWidth};
+        OffsetRect(&clientRect,SetOriginX,SetOriginY);
 	int margin;
 
 	margin = ParentArea()->Margin().Offset(Direction::wxTop) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.left, clientRect.top); // SET-ORIGIN FLAGGED
-		::LineTo(clientRect.right - margin, clientRect.top); // SET-ORIGIN FLAGGED
+		::MoveTo(clientRect.left, clientRect.top);
+		::LineTo(clientRect.right - margin, clientRect.top);
 	}
 
 	margin = ParentArea()->Margin().Offset(Direction::wxBottom) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.left, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
-		::LineTo(clientRect.right - margin, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
+		::MoveTo(clientRect.left, clientRect.bottom - margin);
+		::LineTo(clientRect.right - margin, clientRect.bottom - margin);
 	}
 
 	margin = ParentArea()->Margin().Offset(Direction::wxLeft) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.left, clientRect.top); // SET-ORIGIN FLAGGED
-		::LineTo(clientRect.left, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
+		::MoveTo(clientRect.left, clientRect.top);
+		::LineTo(clientRect.left, clientRect.bottom - margin);
 	}
 
 	margin = ParentArea()->Margin().Offset(Direction::wxRight) - cWhitespace;
 	if (margin > 0) {
 		::PenSize(margin, margin);
-		::MoveTo(clientRect.right - margin, clientRect.top); // SET-ORIGIN FLAGGED
-		::LineTo(clientRect.right - margin, clientRect.bottom - margin); // SET-ORIGIN FLAGGED
+		::MoveTo(clientRect.right - margin, clientRect.top);
+		::LineTo(clientRect.right - margin, clientRect.bottom - margin);
 	}
 }

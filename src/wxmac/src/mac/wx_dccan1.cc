@@ -534,12 +534,12 @@ void wxCanvasDC::wxMacSetClip(void)
 		Rect zeroClipRect = {0, 0, 0, 0};
 		::ClipRect(&zeroClipRect);
 	} else {
-		if (current_reg)
-                    Rgn rgn = ::NewRgn();
-                    :;CopyRgn(current_reg,rgn);
+		if (current_reg) {
+                    RgnHandle rgn = ::NewRgn();
+                    ::CopyRgn(current_reg,rgn);
                     ::OffsetRgn(rgn,SetOriginX,SetOriginY);
                     ::SetClip(current_reg);
-		else {
+                } else {
 			Rect largestClipRect = {-32767, -32767, 32767, 32767};
 			::ClipRect(&largestClipRect);
 		}

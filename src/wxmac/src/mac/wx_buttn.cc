@@ -166,7 +166,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	bounds.right += 2 * IB_MARGIN_X;
 	cWindowHeight = bounds.bottom;
 	cWindowWidth = bounds.right;
-        OffsetRect(bounds,SetOriginX,SetOriginY);
+        OffsetRect(&bounds,SetOriginX,SetOriginY);
         
 	::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
         	

@@ -1640,6 +1640,18 @@
 			isa = PBXRezBuildPhase;
 			name = "ResourceManager Resources";
 		};
+		0518BA90013ED35D810A736F = {
+			isa = PBXFileReference;
+			name = mrmain.cxx;
+			path = /Users/clements/plt/src/mred/mrmain.cxx;
+			refType = 0;
+		};
+		0518BA91013ED35D810A736F = {
+			fileRef = 0518BA90013ED35D810A736F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		05952DFCFFF02D1B11CA0E50 = {
 			buildRules = (
 			);
@@ -2537,6 +2549,7 @@
 		20286C2AFDCF999611CA2CEA = {
 			children = (
 				03172A9000BAB0A57F000001,
+				0518BA90013ED35D810A736F,
 				03172A9100BAB0A57F000001,
 				5E4220ED00FC401E7F000001,
 				0E7DA8BF00ED23787F000001,
@@ -2594,7 +2607,7 @@
 			);
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxcommon/jpeg /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mred/wxs /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Developer/Headers/FlatCarbon";
+				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxcommon/jpeg /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mred/wxs /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Users/clements/plt/src/a-list/c-headers /Developer/Headers/FlatCarbon";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements /Users/clements/plt/src/mac/proj-builder/MrEd/build";
 				OPTIMIZATION_CFLAGS = "";
@@ -2679,6 +2692,7 @@
 				0E7DA8C200ED23FA7F000001,
 				0E7DA8C400ED24437F000001,
 				5E4220EE00FC401E7F000001,
+				0518BA91013ED35D810A736F,
 			);
 			isa = PBXSourcesBuildPhase;
 			name = Sources;

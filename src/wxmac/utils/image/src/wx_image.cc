@@ -109,10 +109,10 @@ Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		QDErr err;
 		GWorldPtr	newGWorld;
 		Rect	bounds = {0, 0, bm->GetHeight(), bm->GetWidth()};
-		err = NewGWorld(&bm->x_pixmap, 0, &bounds, NULL, NULL, noNewDevice); // SET-ORIGIN FLAGGED
+		err = NewGWorld(&bm->x_pixmap, 0, &bounds, NULL, NULL, noNewDevice);
 		if (!err) {
 		  SetGWorld(bm->x_pixmap, 0);
-		  DrawPicture(ph, &bounds); // SET-ORIGIN FLAGGED
+		  DrawPicture(ph, &bounds);
 		  DisposeHandle((Handle)ph);
 		  SetGWorld(saveport, savegd);
 		  return TRUE;

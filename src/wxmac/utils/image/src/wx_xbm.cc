@@ -258,7 +258,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
-		err = NewGWorld(&newGWorld, 1, &bounds, NULL, NULL, 0); // SET-ORIGIN FLAGGED
+		err = NewGWorld(&newGWorld, 1, &bounds, NULL, NULL, 0);
 		if (err) {
 			bm->SetOk(FALSE);
 			return FALSE;
@@ -272,11 +272,11 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		unsigned int byte;
 		unsigned char *buf = xbmImage->pic;
  		GetForeColor(&cpix);	// probably 0,0,0
- 		::EraseRect(&bounds); // SET-ORIGIN FLAGGED
+ 		::EraseRect(&bounds);
 		for (i = 0; i < xbmImage->pHIGH; i++) {
 			for (j = 0; j < xbmImage->pWIDE; j++) {
 				if (*buf++) {
-					::SetCPixel(j, i, &cpix); // SET-ORIGIN FLAGGED
+					::SetCPixel(j, i, &cpix);
 				}
 			}
 		}
@@ -327,7 +327,7 @@ Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	for (i = 0, p = pic; i < h; i++)
 	  for (j = 0; j < w; j++, p++) {
 	    RGBColor cpix;
-	    ::GetCPixel(j, i, &cpix); // SET-ORIGIN FLAGGED
+	    ::GetCPixel(j, i, &cpix);
 	    *p = (cpix.red || cpix.blue || cpix.green);
 	  }
 	

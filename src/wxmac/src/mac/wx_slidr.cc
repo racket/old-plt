@@ -140,8 +140,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	  valueRect.right = valueRect.left + vwid + adjust;
 	}
 	valuebase = (int)fDescent;
-	
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL, // SET-ORIGIN FLAGGED
+        
+        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
 			TRUE, value, min_value, max_value, scrollBarProc, (long)this);
 	CheckMemOK(cMacControl);
 	
@@ -190,8 +191,10 @@ void wxSlider::Paint(void)
 		SetFont(valueFont);
 		SetTextInfo();
 		
-		::MoveTo(valueRect.left, valueRect.bottom - valuebase); // SET-ORIGIN FLAGGED
-		::EraseRect(&valueRect); // SET-ORIGIN FLAGGED
+                Rect r = valueRect;
+                OffsetRect(&r,SetOriginX,SetOriginY);
+		::MoveTo(r.left, r.bottom - valuebase);
+		::EraseRect(&r);
 		char t[8];
 		sprintf(t,"%d",::GetControlValue(cMacControl));
 		::DrawText(t,0,strlen(t));
@@ -269,13 +272,13 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 		Point pt = {startV, startH};
 		SetCurrentDC();
 		int part;
-		part = ::TestControl(cMacControl, pt); // SET-ORIGIN FLAGGED
+		part = ::TestControl(cMacControl, pt);
 		if (part) {
 		  if (part == kControlIndicatorPart) {
-		    if (::TrackControl(cMacControl, pt, NULL)) // SET-ORIGIN FLAGGED
+		    if (::TrackControl(cMacControl, pt, NULL))
 		      TrackPart(part);
 		  } else 
-		    ::TrackControl(cMacControl, pt, SCTrackActionProcUPP); // SET-ORIGIN FLAGGED
+		    ::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
 		}
 	}
 }
@@ -303,8 +306,10 @@ void wxSlider::TrackPart(int part)
 	
 	if (!(windowStyle & (wxHORIZONTAL << 2))) {
 		// Draw the new value
-		::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase); // SET-ORIGIN FLAGGED
-		::EraseRect(&valueRect); // SET-ORIGIN FLAGGED
+                Rect r = valueRect;
+                OffsetRect(&r,SetOriginX,SetOriginY);
+		::MoveTo(r.left+HSP, r.bottom - valuebase);
+		::EraseRect(&r);
 		char t[8];
 		sprintf(t,"%d",::GetControlValue(cMacControl));
 		::DrawText(t,0,strlen(t));
@@ -335,8 +340,10 @@ void wxSlider::SetValue(int value)
 	SetCurrentDC();
 	::SetControlValue(cMacControl, value);
 	if (!(windowStyle & (wxHORIZONTAL << 2))) {
-	  ::MoveTo(valueRect.left+HSP, valueRect.bottom - valuebase); // SET-ORIGIN FLAGGED
-	  ::EraseRect(&valueRect); // SET-ORIGIN FLAGGED
+          Rect r = valueRect;
+          OffsetRect(&r,SetOriginX,SetOriginY);
+	  ::MoveTo(r.left+HSP, r.bottom - valuebase);
+	  ::EraseRect(&r);
 	  char t[8];
 	  sprintf(t,"%d",::GetControlValue(cMacControl));
 	  ::DrawText(t,0,strlen(t));

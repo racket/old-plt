@@ -314,7 +314,7 @@ void wxCheckBox::Paint(void)
 	  }
 	  int top = (cWindowHeight - IC_BOX_SIZE) / 2;
 	  Rect r = { top, 0, top + IC_BOX_SIZE, IC_BOX_SIZE };
-          OffsetRect(&r,SetOriginX,SetOriginY)
+          OffsetRect(&r,SetOriginX,SetOriginY);
           ForeColor(blackColor);
 	  PenSize(1, 1);
 	  FrameRect(&r);

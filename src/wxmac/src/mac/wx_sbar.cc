@@ -107,13 +107,14 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 	int clientWidth = ClientArea()->Width();
 	int clientHeight = ClientArea()->Height();
 	Rect boundsRect = {0, 0, clientHeight, clientWidth};
+        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	wxMacString theMacLabel = label;
 	const Bool drawNow = TRUE;
 	const short offValue = 0;
 	const short minValue = 0;
 	const short maxValue = 0;
 	long refCon = (long)this;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(), // SET-ORIGIN FLAGGED
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
 			drawNow, offValue, minValue, maxValue, scrollBarProc, refCon);
 	CheckMemOK(cMacControl);
 	
@@ -219,7 +220,9 @@ void wxScrollBar::Paint(void)
  		PenState oldPenState;
  		::GetPenState(&oldPenState);
  		::PenNormal();
- 		::FrameRect(&controlRect); // SET-ORIGIN FLAGGED
+                Rect r = controlRect;
+                OffsetRect(&r,SetOriginX,SetOriginY);
+ 		::FrameRect(&r);
  		::SetPenState(&oldPenState);
  	}
  	// GRW
@@ -271,15 +274,15 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 		SetCurrentDC();
 	
 		int startH, startV;
-		event->Position(&startH, &startV); // client c.s.
+		event->Position(&startH, &startV); // frame c.s.
 
-		Point startPt = {startV, startH}; // client c.s.
-		int thePart = ::TestControl(cMacControl, startPt); // SET-ORIGIN FLAGGED
+		Point startPt = {startV, startH}; // frame c.s.
+		int thePart = ::TestControl(cMacControl, startPt);
 		if (thePart)
 		{
 			if (thePart == kControlIndicatorPart)
 			{
-				if (::TrackControl(cMacControl, startPt, NULL)) // SET-ORIGIN FLAGGED
+				if (::TrackControl(cMacControl, startPt, NULL))
 				{
 					Bool horizontal = cStyle & wxHSCROLL;
 					wxWhatScrollData positionScrollData =
@@ -295,7 +298,7 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 			}
 			else
 			{
-				::TrackControl(cMacControl, startPt, TrackActionProcUPP); // SET-ORIGIN FLAGGED
+				::TrackControl(cMacControl, startPt, TrackActionProcUPP);
 			}
 		}
 	}
@@ -391,8 +394,8 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 	if (dX || dY)
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put new origin at (0, 0)
-		::MoveControl(cMacControl, 0, 0); // SET-ORIGIN FLAGGED
+		SetCurrentDC(); // put new origin at (SetOriginX,SetOriginY)
+		::MoveControl(cMacControl, SetOriginX, SetOriginY);
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
@@ -402,6 +405,7 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
+                OffsetRect(&clientRect,SetOriginX,SetOriginY);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }

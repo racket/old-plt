@@ -128,7 +128,9 @@ void wxGauge::Paint(void)
 
 	SetCurrentDC();
 
-	FrameRect(&valueRect); // SET-ORIGIN FLAGGED
+        Rect s = valueRect;
+        OffsetRect(&s,SetOriginX,SetOriginY);
+	FrameRect(&s);
 
 	Rect r, w;
 	r = valueRect;
@@ -160,7 +162,8 @@ void wxGauge::Paint(void)
 			c.blue = 66 << 8;
 			RGBForeColor(&c);
 		}
-		PaintRect(&r); // SET-ORIGIN FLAGGED
+                OffsetRect(&r,SetOriginX,SetOriginY);
+		PaintRect(&r);
 	}
 	
 	if (value < range) {
@@ -172,7 +175,8 @@ void wxGauge::Paint(void)
 			RGBForeColor(&c);
 		} else
 			ForeColor(whiteColor);
-		PaintRect(&w); // SET-ORIGIN FLAGGED
+                OffsetRect(&w,SetOriginX,SetOriginY);
+		PaintRect(&w);
 	}
 
 	RGBForeColor(&save);

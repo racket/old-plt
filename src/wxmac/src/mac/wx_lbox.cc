@@ -262,6 +262,7 @@ void wxListBox::Paint(void)
 	::ALUpdate(visibleRgn, cListReference);
 	
 	/* White out any empty space in the list: */
+        /* The following has not been updated to deal with the non-SetOrigin world */
 /*	Point last, dlast;
 	Rect lastR, allR;
 	last.v = (**cListHandle).visible.bottom - 1;
@@ -276,12 +277,12 @@ void wxListBox::Paint(void)
 	allR = (**cListHandle).rView;
 	if (allR.bottom > lastR.bottom) {
 		allR.top = lastR.bottom;
-		::EraseRect(&allR); // SET-ORIGIN FLAGGED
+		::EraseRect(&allR);
 	}
 	if (allR.right > lastR.right) {
 		allR.top = (**cListHandle).rView.top;
 		allR.left = lastR.right;
-		::EraseRect(&allR); // SET-ORIGIN FLAGGED
+		::EraseRect(&allR);
 	}
 */	
 	wxWindow::Paint();
@@ -318,7 +319,8 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	
 	if (!cHidden && (dW || dH || dX || dY))
 	{
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect); // SET-ORIGIN FLAGGED
+                OffsetRect(&viewRect,SetOriginX,SetOriginY);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
 	}
 	
 	wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
@@ -360,13 +362,13 @@ static void ManualScroll(ListHandle list, ControlHandle scroll, Point startPt, i
 {
 	if (part == kControlIndicatorPart) {
 	  int oldPos = ::GetControlValue(scroll);
-	  if (::TrackControl(scroll, startPt, NULL)) { // SET-ORIGIN FLAGGED
+	  if (::TrackControl(scroll, startPt, NULL)) {
          int newPos = ::GetControlValue(scroll);
          ::LScroll(0, newPos - oldPos, list);
 	  }
 	} else {
 	  trackList = list;
-	  ::TrackControl(scroll, startPt, TrackActionProcUPP); // SET-ORIGIN FLAGGED
+	  ::TrackControl(scroll, startPt, TrackActionProcUPP);
 	}
 }
 
@@ -393,7 +395,7 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		  modifiers += controlKey;
 
 /*		if ((**cListHandle).vScroll) {
-		  int thePart = ::TestControl((**cListHandle).vScroll, startPt); // SET-ORIGIN FLAGGED
+		  int thePart = ::TestControl((**cListHandle).vScroll, startPt);
 		  if (thePart) {
 		    ManualScroll(cListHandle, (**cListHandle).vScroll, startPt, thePart);
 		    return;
@@ -401,7 +403,8 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		}
 */
 		/* Click past the last cell => ignore it */
-/*		if (PtInRect(startPt, &(**cListHandle).rView)) { // SET-ORIGIN FLAGGED
+                /* This code has not been updated to work in the post-SetOrigin world */
+/*		if (PtInRect(startPt, &(**cListHandle).rView)) {
 		  Cell lastCell = { no_items - 1, 0 };
 		  Rect r;
 		  LRect(&r, lastCell, cListHandle);
@@ -421,7 +424,8 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		
 			cellWasClicked = false;			
 		
-//		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE) // SET-ORIGIN FLAGGED
+                /* this code has not been updated to work in the post-SetOrigin world */
+//		if (PtInRect(startPt, &(**cListHandle).rView) == FALSE)
 //			return;							// ie in the scroll bars
 
 //		ALCell cell;

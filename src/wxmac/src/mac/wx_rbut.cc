@@ -86,13 +86,14 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 	int clientWidth = ClientArea()->Width();
 	int clientHeight = ClientArea()->Height();
 	Rect boundsRect = {0, 0, clientHeight, clientWidth};
+        OffsetRect(&boundsRect,SetOriginX,SetOriginY);
 	wxMacString theMacLabel = label;
 	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
 	const short offValue = 0;
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(), // SET-ORIGIN FLAGGED
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
 			drawNow, offValue, minValue, maxValue, radioButProc + useWFont, refCon);
 	CheckMemOK(cMacControl);
 #else
@@ -133,8 +134,9 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
 	cWindowWidth = bounds.right + IR_CIRCLE_SIZE + IR_X_SPACE;
 	if (cWindowHeight < IR_MIN_HEIGHT)
 	  cWindowHeight = IR_MIN_HEIGHT;
+        OffsetRect(&bounds,SetOriginX,SetOriginY);
 
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds); // SET-ORIGIN FLAGGED
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
 }
 
 //=============================================================================
@@ -233,7 +235,8 @@ void wxRadioButton::Paint(void)
 	if (cHidden) return;
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-	::EraseRect(&r); // SET-ORIGIN FLAGGED
+        OffsetRect(&r,SetOriginX,SetOriginY);
+	::EraseRect(&r);
 	if (cMacControl) {
 		::Draw1Control(cMacControl);
 	} else {
@@ -247,21 +250,22 @@ void wxRadioButton::Paint(void)
 		float fLeading = 0.0;
 		GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
 		int stop = (int)((cWindowHeight + fHeight) / 2);
-		::MoveTo(IR_CIRCLE_SIZE + IR_X_SPACE, (short)(stop - fDescent - fLeading)); // SET-ORIGIN FLAGGED
+		::MoveTo(IR_CIRCLE_SIZE + IR_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
 	  	::DrawText(labelString, 0, strlen(labelString));
 	  }
 	  int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
 	  Rect r = { top, 0, top + IR_CIRCLE_SIZE, IR_CIRCLE_SIZE };
+          OffsetRect(&r,SetOriginX,SetOriginY);
 	  PenSize(1, 1);
 	  ForeColor(blackColor);
-	  FrameOval(&r); // SET-ORIGIN FLAGGED
+          FrameOval(&r);
 	  InsetRect(&r, 1, 1);
 	  ForeColor(whiteColor);
-	  PaintOval(&r); // SET-ORIGIN FLAGGED
+	  PaintOval(&r);
 	  ForeColor(blackColor);
 	  if (bitmapState) {
 	    InsetRect(&r, IR_ON_INSET - 1, IR_ON_INSET - 1);
-		PaintOval(&r);	     // SET-ORIGIN FLAGGED
+		PaintOval(&r);
 	  }
 	  cMacDC->setCurrentUser(NULL);
 	}
@@ -271,10 +275,11 @@ void wxRadioButton::Highlight(Bool on)
 {
 	int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
 	Rect r = { top + 1, 1, top + IR_CIRCLE_SIZE - 1, IR_CIRCLE_SIZE - 1};
+        OffsetRect(&r,SetOriginX,SetOriginY);
 	if (!on)
 		ForeColor(whiteColor);
 	PenSize(1, 1);
-	FrameOval(&r); // SET-ORIGIN FLAGGED
+	FrameOval(&r);
 	if (!on) ForeColor(blackColor);
 }
 
@@ -316,13 +321,13 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 			SetCurrentDC();
 		
 			int startH, startV;
-			event->Position(&startH, &startV); // client c.s.
+			event->Position(&startH, &startV); // frame c.s.
 		
-			Point startPt = {startH, startV}; // client c.s.
+			Point startPt = {startH, startV}; // frame c.s.
 			int trackResult;
 			if (::StillDown()) {
 				if (cMacControl)
-				  trackResult = ::TrackControl(cMacControl, startPt, NULL); // SET-ORIGIN FLAGGED
+				  trackResult = ::TrackControl(cMacControl, startPt, NULL);
 				else
 				  trackResult = Track(startPt);
 			} else
@@ -360,8 +365,8 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 	if (dX || dY)
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put new origin at (0, 0)
-		::MoveControl(cMacControl, 0, 0); // SET-ORIGIN FLAGGED
+		SetCurrentDC(); // put new origin at (SetOriginX,SetOriginY)
+		::MoveControl(cMacControl, SetOriginX, SetOriginY);
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
@@ -371,6 +376,7 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect); // SET-ORIGIN FLAGGED
+                OffsetRect(&clientRect,SetOriginX,SetOriginY);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }

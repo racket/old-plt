@@ -594,6 +594,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		
 		Rect srcr = {iysrc, ixsrc, iysrc + (int)height, ixsrc + (int)width};
 		Rect destr = {y, x, y+h, x+w };
+                OffsetRect(&destr,SetOriginX,SetOriginY);
 		
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
@@ -611,7 +612,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		PixMapHandle srpixh = pixmap = ::GetGWorldPixMap(source->x_pixmap);
 		// ::LockPixels(srpixh);
 
-		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL); // SET-ORIGIN FLAGGED
+		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL);
 
 		// ::UnlockPixels(srpixh);
 		CalcBoundingBox(xdest, ydest);

@@ -3,8 +3,10 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 453 "XWidgets/xwEnforcer.w"
+#line 454 "XWidgets/xwEnforcer.w"
 #include <stdio.h>
+#line 455 "XWidgets/xwEnforcer.w"
+#include "xwTabString.h"
 #include <./xwEnforcerP.h>
 #line 61 "XWidgets/xwEnforcer.w"
 static void propagateKey(
@@ -97,13 +99,13 @@ static void compute_label_size(
 Widget
 #endif
 );
-#line 425 "XWidgets/xwEnforcer.w"
+#line 426 "XWidgets/xwEnforcer.w"
 static void make_textgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 438 "XWidgets/xwEnforcer.w"
+#line 439 "XWidgets/xwEnforcer.w"
 static void make_graygc(
 #if NeedFunctionPrototypes
 Widget
@@ -124,24 +126,25 @@ static void compute_label_size(self)Widget self;
     XCharStruct overall;
 
     if (((XfwfEnforcerWidget)self)->xfwfEnforcer.label) {
-	XTextExtents(((XfwfEnforcerWidget)self)->xfwfEnforcer.font, ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label),
+	int len = strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label);
+	XTextExtents(((XfwfEnforcerWidget)self)->xfwfEnforcer.font, ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, len,
 		     &direction, &ascent, &descent, &overall);
-	((XfwfEnforcerWidget)self)->xfwfEnforcer.labelWidth  = overall.width;
+	((XfwfEnforcerWidget)self)->xfwfEnforcer.labelWidth  = XfwfTextWidth(((XfwfEnforcerWidget)self)->xfwfEnforcer.font, ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, len, NULL);
 	((XfwfEnforcerWidget)self)->xfwfEnforcer.labelHeight = ascent + descent;
     } else {
 	((XfwfEnforcerWidget)self)->xfwfEnforcer.labelWidth = ((XfwfEnforcerWidget)self)->xfwfEnforcer.labelHeight = 0;
     }
 }
-#line 425 "XWidgets/xwEnforcer.w"
+#line 426 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 425 "XWidgets/xwEnforcer.w"
+#line 426 "XWidgets/xwEnforcer.w"
 static void make_textgc(Widget self)
 #else
-#line 425 "XWidgets/xwEnforcer.w"
+#line 426 "XWidgets/xwEnforcer.w"
 static void make_textgc(self)Widget self;
 #endif
-#line 426 "XWidgets/xwEnforcer.w"
+#line 427 "XWidgets/xwEnforcer.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -153,16 +156,16 @@ static void make_textgc(self)Widget self;
     mask = GCFont | GCBackground | GCForeground;
     ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc = XtGetGC(self, mask, &values);
 }
-#line 438 "XWidgets/xwEnforcer.w"
+#line 439 "XWidgets/xwEnforcer.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 438 "XWidgets/xwEnforcer.w"
+#line 439 "XWidgets/xwEnforcer.w"
 static void make_graygc(Widget self)
 #else
-#line 438 "XWidgets/xwEnforcer.w"
+#line 439 "XWidgets/xwEnforcer.w"
 static void make_graygc(self)Widget self;
 #endif
-#line 439 "XWidgets/xwEnforcer.w"
+#line 440 "XWidgets/xwEnforcer.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -411,19 +414,19 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	
 	switch (((XfwfEnforcerWidget)self)->xfwfEnforcer.alignment) {
 	case XfwfTop:
-	  XDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
-			   x, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
-			   ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label));
+	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
+			      x, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
+			      ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label), NULL, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font);
 	  break;
 	case XfwfTopLeft:
-	  XDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
-			   0, y+((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
-			   ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label));
+	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
+			      0, y+((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
+			      ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label), NULL, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font);
 	  break;
 	case XfwfLeft:
-	  XDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
-			   0, y+(h-((XfwfEnforcerWidget)self)->xfwfEnforcer.labelHeight)/2+((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
-			   ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label));
+	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
+			      0, y+(h-((XfwfEnforcerWidget)self)->xfwfEnforcer.labelHeight)/2+((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
+			      ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label), NULL, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font);
 	  break;
 	}
 

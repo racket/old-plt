@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Slider.cc,v 1.5 1998/09/06 01:54:03 mflatt Exp $
+ * $Id: Slider.cc,v 1.6 1998/09/17 03:30:41 mflatt Exp $
  *
  * Purpose: slider panel item
  *
@@ -66,8 +66,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     ChainToPanel(panel, style, name);
 
     Bool vert = (panel->GetLabelPosition() == wxVERTICAL);
-
-    label = wxGetCtlLabel(label);
+   
+    // label = wxGetCtlLabel(label);
 
     minimum = min_value;
     maximum = max_value;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: CheckBox.cc,v 1.2 1998/02/05 23:00:31 mflatt Exp $
+ * $Id: CheckBox.cc,v 1.3 1998/08/08 03:33:03 mflatt Exp $
  *
  * Purpose: check box panel item
  *
@@ -69,7 +69,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
 {
     ChainToPanel(panel, style, name);
 
-    label = wxGetCtlLabel(label);
+    // label = wxGetCtlLabel(label);
     bm_label = NULL;
 
     // create frame

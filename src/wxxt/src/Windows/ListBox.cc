@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.10 1998/09/08 15:07:57 mflatt Exp $
+ * $Id: ListBox.cc,v 1.11 1998/11/17 13:11:49 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -512,4 +512,38 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
       event.eventType = wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND;
 
     lbox->ProcessCommand(event);
+}
+
+void wxListBox::OnChar(wxKeyEvent &e)
+{
+  int delta = 0;
+
+  switch (e.keyCode) {
+  case WXK_UP:
+    delta = -1;
+    break;
+  case WXK_DOWN:
+    delta = 1;
+    break;
+  }
+
+  if (delta && num_choices) {
+    int *sels;
+    int n = GetSelections(&sels);
+    if (n <= 1) {
+      int s;
+      if (n == 1)
+	s = sels[0];
+      else if (delta < 0)
+	s = 2;
+      else
+	s = -1;
+
+      SetSelection(s + delta);
+      if (s != GetSelection()) {
+	wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	ProcessCommand(*event);
+      }
+    }
+  }
 }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.7 1998/09/11 01:25:30 mflatt Exp $
+ * $Id: Menu.cc,v 1.8 1998/11/17 13:11:50 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -167,8 +167,9 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
       /* Hack to avoid parse: */
       item->label= copystring(label);
       item->key_binding = NULL;
-    } else
+    } else {
       wxGetLabelAndKey(label, &item->label, &item->key_binding);
+    }
     item->help_text = help;
     item->ID        = id; 
     item->enabled   = TRUE;

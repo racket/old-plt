@@ -1,7 +1,7 @@
 #
 # 1.0 (Feb 1995)
 #
-# $Id: xwEnforcer.w,v 1.2 1998/01/31 01:16:35 mflatt Exp $
+# $Id: xwEnforcer.w,v 1.3 1998/02/27 22:24:01 mflatt Exp $
 
 @class XfwfEnforcer (XfwfBoard) @file=xwEnforcer
 
@@ -173,19 +173,19 @@ the label to it.
 	
 	switch ($alignment) {
 	case XfwfTop:
-	  XDrawImageString(XtDisplay($), XtWindow($), $textgc,
-			   x, $font->ascent,
-			   $label, strlen($label));
+	  XfwfDrawImageString(XtDisplay($), XtWindow($), $textgc,
+			      x, $font->ascent,
+			      $label, strlen($label), NULL, $font);
 	  break;
 	case XfwfTopLeft:
-	  XDrawImageString(XtDisplay($), XtWindow($), $textgc,
-			   0, y+$font->ascent,
-			   $label, strlen($label));
+	  XfwfDrawImageString(XtDisplay($), XtWindow($), $textgc,
+			      0, y+$font->ascent,
+			      $label, strlen($label), NULL, $font);
 	  break;
 	case XfwfLeft:
-	  XDrawImageString(XtDisplay($), XtWindow($), $textgc,
-			   0, y+(h-$labelHeight)/2+$font->ascent,
-			   $label, strlen($label));
+	  XfwfDrawImageString(XtDisplay($), XtWindow($), $textgc,
+			      0, y+(h-$labelHeight)/2+$font->ascent,
+			      $label, strlen($label), NULL, $font);
 	  break;
 	}
 
@@ -411,9 +411,10 @@ label.
     XCharStruct overall;
 
     if ($label) {
-	XTextExtents($font, $label, strlen($label),
+	int len = strlen($label);
+	XTextExtents($font, $label, len,
 		     &direction, &ascent, &descent, &overall);
-	$labelWidth  = overall.width;
+	$labelWidth  = XfwfTextWidth($font, $label, len, NULL);
 	$labelHeight = ascent + descent;
     } else {
 	$labelWidth = $labelHeight = 0;
@@ -451,3 +452,5 @@ label.
 @IMPORTS
 
 @incl <stdio.h>
+@incl "xwTabString.h"
+

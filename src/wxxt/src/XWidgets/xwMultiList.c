@@ -1136,9 +1136,9 @@ int row,column;
 		str_y = ul_y + FontAscent(MultiListFont(mlw)) +
 			((int)MultiListRowHeight(mlw) - text_h) / 2;
 		XfwfDrawString(XtDisplay(mlw),XtWindow(mlw),fg_gc,
-			    str_x,str_y,MultiListItemString(item),
-			    strlen(MultiListItemString(item)),
-				MultiListTabs(mlw));
+			       str_x,str_y,MultiListItemString(item),
+			       strlen(MultiListItemString(item)),
+			       MultiListTabs(mlw), NULL);
 	}
 } /* End RedrawRowColumn */
 	

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: String.cc,v 1.1.1.1 1997/12/22 17:28:55 mflatt Exp $
+ * $Id: String.cc,v 1.2 1998/11/09 17:25:08 mflatt Exp $
  *
  * Purpose: string copy and conversion
  *
@@ -23,6 +23,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define  Uses_wxObject
 #include "wx.h"
 
 #include <string.h>
@@ -35,7 +36,7 @@ char *copystring(const char *s)
 {
     if (s == NULL) s = "";
     size_t len = strlen (s) + 1;
-    char *news = new char[len];
+    char *news = new WXGC_ATOMIC char[len];
     memcpy(news, s, len);        // Should be the fastest
     return news;
 }
@@ -90,12 +91,15 @@ char *wxLongToString(long number)
 
 void wxGetLabelAndKey(char *label, char **clean_label, char **clean_key)
 {
-    char *amp, *key;
+    char *key;
 
     *clean_label = copystring(label); // make private copy
+#if 0
+    char *amp;
     if ((amp = strchr(*clean_label, '&'))) { // is there an ampersand? -> erase
 	memmove(amp, amp+1, strlen(amp+1) + 1);
     }
+#endif
     if ((key=strchr(*clean_label, '\t'))) // is there a key binding? -> split
 	*key++ ='\0';
     if (clean_key)

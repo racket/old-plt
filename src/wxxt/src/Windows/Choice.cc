@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.8 1998/11/12 18:14:45 mflatt Exp $
+ * $Id: Choice.cc,v 1.9 1998/11/17 13:11:47 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -178,11 +178,61 @@ void  wxChoice::GetSize(int *width, int *height)
 // methods to access internal data
 //-----------------------------------------------------------------------------
 
+static char *protect_amp(char *s)
+{
+  if (strchr(s, '&')) {
+    /* protect "&" */
+    int i, amp = 0;
+    char *s2;
+    for (i = 0; s[i]; i++)
+      if (s[i] == '&')
+	amp++;
+
+    s2 = new WXGC_ATOMIC char[i + amp + 1];
+    for (i = 0, amp = 0; s[i]; i++, amp++) {
+      s2[amp] = s[i];
+      if (s[i] == '&') {
+	s2[++amp] = '&';
+      }
+    }
+    s2[amp] = 0;
+    return s2;
+  } else
+    return s;
+}
+
+static char *unprotect_amp(char *s)
+{
+  if (strchr(s, '&')) {
+    /* strip "&&" */
+    int i, amp = 0;
+    char *s2;
+    for (i = 0; s[i]; i++)
+      if (s[i] == '&') {
+	amp++;
+	i++;
+      }
+
+    s2 = new WXGC_ATOMIC char[i - amp + 1];
+    amp = 0;
+    for (i = 0; s[i]; i++, amp++) {
+      if (s[i] == '&')
+	i++;
+      s2[amp] = s[i];
+    }
+    s2[amp] = 0;
+    return s2;
+  } else
+    return s;
+}
+
 void wxChoice::Append(char *s)
 {
-    choice_menu->Append(num_choices++, s, (char *)(-1));
-    if (num_choices == 1)
-      XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, s, NULL);
+  s = protect_amp(s);
+
+  choice_menu->Append(num_choices++, s, (char *)(-1));
+  if (num_choices == 1)
+    XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, s, NULL);
 }
 
 void wxChoice::Clear(void)
@@ -196,26 +246,32 @@ void wxChoice::Clear(void)
 
 int wxChoice::FindString(char *s)
 {
-    return choice_menu->FindItem(s, 0);
+  s = protect_amp(s);
+
+  return choice_menu->FindItem(s, 0);
 }
 
 char *wxChoice::GetString(int n)
 {
-    return choice_menu->GetLabel(n);
+  char *s = choice_menu->GetLabel(n);
+
+  return s ? unprotect_amp(s) : NULL;
 }
 
 char *wxChoice::GetStringSelection(void)
 {
-    return choice_menu->GetLabel(selection);
+  char *s = choice_menu->GetLabel(selection);
+  
+  return s ? unprotect_amp(s) : NULL;
 }
 
 void wxChoice::SetSelection(int n)
 {
-    if (0 <= n && n < num_choices) {
-	selection = n;
-	char *label = GetString(selection);
-	XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, label, NULL);
-    }
+  if (0 <= n && n < num_choices) {
+    selection = n;
+    char *label = choice_menu->GetLabel(n);
+    XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, label, NULL);
+  }
 }
 
 Bool wxChoice::SetStringSelection(char *s)

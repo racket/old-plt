@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.7 1998/08/18 20:03:41 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.8 1998/11/12 18:14:46 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -37,6 +37,7 @@ SOFTWARE.
 
 #include <xwMenuP.h>
 #include <xwTools3d.h>
+#include <xwTabString.h>
 
 #define XtNtopShadowPixmap       "topShadowPixmap"
 #define XtCTopShadowPixmap       "TopShadowPixmap"
@@ -616,11 +617,7 @@ static void ReleaseShadowGCs(MenuWidget mw)
 
 static unsigned StringWidth(MenuWidget mw, char *s)
 {
-    XCharStruct xcs;
-    int         dummy;
-
-    XTextExtents(mw->menu.font, s, strlen(s), &dummy, &dummy, &dummy, &xcs);
-    return xcs.width;
+    return XfwfTextWidth(mw->menu.font, s, strlen(s), NULL);
 }
 
 static void GetResourceName(char *in, char *out)
@@ -811,13 +808,12 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	}
     }
     if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL)))
-	XDrawString(
-	    XtDisplay(mw), ms->win,
-	    item->enabled || item->type==MENU_TEXT ?
-	    mw->menu.normal_GC : mw->menu.inactive_GC,
-	    x+ms->wLeft+extra_x,
-	    y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
-	    label, strlen(label));
+      XfwfDrawString(XtDisplay(mw), ms->win,
+		     item->enabled || item->type==MENU_TEXT ?
+		     mw->menu.normal_GC : mw->menu.inactive_GC,
+		     x+ms->wLeft+extra_x,
+		     y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
+		     label, strlen(label), NULL, mw->menu.font);
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
 	    XtDisplay((Widget)mw), ms->win,
@@ -841,12 +837,11 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
     DrawTextItem(mw, ms, item, x, y);
     if ((!mw->menu.horizontal || ms->prev)
     && (key=ResourcedText(mw, item, SUBRESOURCE_KEY)))
-	XDrawString(
-	    XtDisplay(mw), ms->win,
-	    item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
-	    x+ms->wLeft+ms->wMiddle+(3 * mw->menu.spacing),
-	    y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
-	    key, strlen(key));
+      XfwfDrawString(XtDisplay(mw), ms->win,
+		     item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
+		     x+ms->wLeft+ms->wMiddle+(3 * mw->menu.spacing),
+		     y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
+		     key, strlen(key), NULL, mw->menu.font);
 }
 
 static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,

@@ -463,16 +463,16 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 	    x = rect.x + (rect.width - w1 - w2 - w3)/2;\
 	if (w1)\
 	    XfwfDrawImageString(dpy, win, ((XfwfLabelWidget)self)->xfwfLabel.gc, x, y, ((XfwfLabelWidget)self)->xfwfLabel.label + from,\
-			     rstart - from, ((XfwfLabelWidget)self)->xfwfLabel.tabs);\
+			     rstart - from, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
 	if (w2)\
 	    XfwfDrawImageString(dpy, win, ((XfwfLabelWidget)self)->xfwfLabel.rv_gc, x + w1, y, ((XfwfLabelWidget)self)->xfwfLabel.label\
-			     + rstart, rend - rstart, ((XfwfLabelWidget)self)->xfwfLabel.tabs);\
+			     + rstart, rend - rstart, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
 	if (w3)\
 	    XfwfDrawImageString(dpy, win, ((XfwfLabelWidget)self)->xfwfLabel.gc, x + w1 + w2, y, ((XfwfLabelWidget)self)->xfwfLabel.label +\
-			     rend, to - rend, ((XfwfLabelWidget)self)->xfwfLabel.tabs);\
+			     rend, to - rend, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
  	if (w4)\
  	    XfwfDrawString(dpy, win, ((XfwfLabelWidget)self)->xfwfLabel.hl_gc, x + w5, y, ((XfwfLabelWidget)self)->xfwfLabel.label\
- 			     + hstart, hend - hstart, ((XfwfLabelWidget)self)->xfwfLabel.tabs);\
+ 			     + hstart, hend - hstart, ((XfwfLabelWidget)self)->xfwfLabel.tabs, ((XfwfLabelWidget)self)->xfwfLabel.font);\
     }while (0 )
 
 

@@ -1,6 +1,6 @@
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwLabel.w,v 1.1.1.1 1997/12/22 17:29:02 mflatt Exp $
+# $Id: xwLabel.w,v 1.2 1998/01/31 01:16:36 mflatt Exp $
 
 @class XfwfLabel (XfwfBoard) @file=xwLabel
 
@@ -316,16 +316,16 @@ the |rv_gc| GC.
 	    x = rect.x + (rect.width - w1 - w2 - w3)/2;
 	if (w1)
 	    XfwfDrawImageString(dpy, win, $gc, x, y, $label + from,
-			     rstart - from, $tabs);
+			     rstart - from, $tabs, $font);
 	if (w2)
 	    XfwfDrawImageString(dpy, win, $rv_gc, x + w1, y, $label
-			     + rstart, rend - rstart, $tabs);
+			     + rstart, rend - rstart, $tabs, $font);
 	if (w3)
 	    XfwfDrawImageString(dpy, win, $gc, x + w1 + w2, y, $label +
-			     rend, to - rend, $tabs);
+			     rend, to - rend, $tabs, $font);
  	if (w4)
  	    XfwfDrawString(dpy, win, $hl_gc, x + w5, y, $label
- 			     + hstart, hend - hstart, $tabs);
+ 			     + hstart, hend - hstart, $tabs, $font);
     } while (0)
 
 @proc _expose

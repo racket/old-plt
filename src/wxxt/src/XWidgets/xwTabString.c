@@ -14,8 +14,8 @@
  *	the "tabs" argument is NULL, works exactly like its
  *	counterpart.
  */
-void
-XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs)
+static void
+doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, draw)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -24,40 +24,65 @@ XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs)
      String string;
      int length;
      int *tabs;
+     XFontStruct *font;
+     void (*draw)();
 {
-	register char	*p, *ep;
-	register int	tx, tab;
+  register char	*p, *ep, *ap;
+  register int	tx, tab;
+  
+  if (!length)
+    return;
+ 
+  tab = tx = 0;
+  for (p = string; length; )
+    {
+      if (tabs)
+	ep = strnchr(p, '\t', length);
+      else
+	ep = NULL;
+      if (font)
+	ap = strnchr(p, '&', length);
+      else
+	ap = NULL;
 
-	tab = tx = 0;
-	for (p = string; length; )
-	{
-		ep = strnchr(p, '\t', length);
-		if (ep && tabs)
-		{
-			XDrawImageString(display, drawable, gc, x+tx, y,
-				p, ep - p);
-			tx = tabs[tab++];
-			length -= ep - p + 1;
-			p = ep + 1;
-		}
-		else
-		{
-			XDrawImageString(display, drawable, gc, x+tx, y,
-				p, length);
-			break;
-		}
+      if (ep && ap) {
+	if ((long)ep < (long)ap)
+	  ap = NULL;
+	else
+	  ep = NULL;
+      }
+
+      if (ep) {
+	draw(display, drawable, gc, x+tx, y, p, ep - p);
+	tx = tabs[tab++];
+	length -= ep - p + 1;
+	p = ep + 1;
+      } else if (ap) {
+	draw(display, drawable, gc, x+tx, y, p, ap - p);
+	tx += XTextWidth(font, p, ap - p);
+	length -= ap - p + 1;
+	p = ap + 1;
+	if (length) {
+	  /* Underline next */
+	  XCharStruct overall;
+	  int dir, ascent, descent;
+	  draw(display, drawable, gc, x+tx, y, p, 1);
+	  XTextExtents(font, p, 1, &dir, &ascent, &descent, &overall);
+	  if (*p != '&')
+	    XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+overall.width, y+1);
+	  length -= 1;
+	  p += 1;
+	  tx += overall.width;
 	}
+      } else {
+	draw(display, drawable, gc, x+tx, y, p, length);
+	break;
+      }
+    }
 }
 
-/*
- *	Like DrawString, except it takes an additional  "tabs"
- *	argument, used to specify what horizontal pixel position to
- *	move to when tab characters are present in the string.  If
- *	the "tabs" argument is NULL, works exactly like its
- *	counterpart.
- */
 void
-XfwfDrawString(display, drawable, gc, x, y, string, length, tabs)
+XfwfDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt)
      Display *display;
      Drawable drawable;
      GC gc;
@@ -66,29 +91,24 @@ XfwfDrawString(display, drawable, gc, x, y, string, length, tabs)
      String string;
      int length;
      int *tabs;
+     XFontStruct *fnt;
 {
-	register char	*p, *ep;
-	register int	tx, tab;
+  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, XDrawImageString);
+}
 
-	tab = tx = 0;
-	for (p = string; length; )
-	{
-		ep = strnchr(p, '\t', length);
-		if (ep && tabs)
-		{
-			XDrawString(display, drawable, gc, x+tx, y,
-				p, ep - p);
-			tx = tabs[tab++];
-			length -= ep - p + 1;
-			p = ep + 1;
-		}
-		else
-		{
-			XDrawString(display, drawable, gc, x+tx, y,
-				p, length);
-			break;
-		}
-	}
+void
+XfwfDrawString(display, drawable, gc, x, y, string, length, tabs, fnt)
+     Display *display;
+     Drawable drawable;
+     GC gc;
+     int x;
+     int y;
+     String string;
+     int length;
+     int *tabs;
+     XFontStruct *fnt;
+{
+  doDrawImageString(display, drawable, gc, x, y, string, length, tabs, fnt, XDrawString);
 }
 
 /*
@@ -137,27 +157,60 @@ XfwfTextWidth(font, str, length, tabs)
      int length;
      int *tabs;
 {
-	register char	*p, *ep;
-	register int	tx, tab, rc;
+  register char	*p, *ep, *c = NULL, *pp;
+  register int	tx, tab, rc, ll;
 
-	tab = tx = 0;
- 	if (length == 0) return 0;
-	for (p = str; length; )
-	{
-		ep = strnchr(p, '\t', length);
-		if (ep && tabs)
-		{
-			tx = tabs[tab++];
-			length -= ep - p + 1;
-			p = ep + 1;
-		}
-		else
-		{
-			rc = XTextWidth(font, p, length);
-			if (rc < 0) return rc; else return rc + tx;
-		}
-	}
-	return -1;
+  if (!length)
+    return 0;
+ 
+  p = pp = str;
+  ll = length;
+
+  while (1) {
+    ep = strnchr(pp, '&', ll);
+    if (ep) {
+      int l = ep - p;
+      if (!c)
+	c = XtMalloc(length + 1);
+      memmove(c, p, l);
+      memmove(c + l, p + l + 1, length - l); /* gets nul char */
+      length -= 1;
+      p = c;
+      if (length > l) {
+	pp = c + l + 1; /* Skip next char */
+	ll = length - (l + 1);
+      } else {
+	pp = p;
+	ll = length;
+      }
+    } else
+      break;
+  }
+
+  tab = tx = 0;
+  if (length == 0) {
+    if (c)
+      XtFree(c);
+    return 0;
+  }
+  for (; length; ) {
+    ep = strnchr(p, '\t', length);
+    if (ep && tabs) {
+      tx = tabs[tab++];
+      length -= ep - p + 1;
+      p = ep + 1;
+    } else {
+      rc = XTextWidth(font, p, length);
+      if (c)
+	XtFree(c);
+      if (rc < 0) return rc; else return rc + tx;
+    }
+  }
+
+  if (c)
+    XtFree(c);
+
+  return -1;
 }
 
 /*

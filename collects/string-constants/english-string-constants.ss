@@ -1007,5 +1007,10 @@ please adhere to these guidelines:
  (wizard-next "Next")
  (wizard-back "Back")
  (wizard-finish "Finish")
+
+ ;; warnings about closing a drscheme frame when the program
+ ;; might still be doing something interesting
+ (program-is-still-running "The program in the definitions window is still running. Close anyway?")
+  (program-has-open-windows "The program in the definitions window has open windows. Close this window anyway?")
  
  )

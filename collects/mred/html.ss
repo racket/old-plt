@@ -11,6 +11,41 @@
     (define cached-name (make-vector 10 ""))
     (define cached-use (make-vector 10 0))
 
+    ;; assumes that there is at least one filesystem root.
+    ;; if the path is relative, it just arbitrarily picks the first
+    ;; filesystem root.
+    ;; empty string input yields empty string output, should it be an error?
+    ;; assumes / as the first character is the only way to specify an
+    ;; absolute path. Is that valid?
+    ;; paths ending in "/" are translated into paths ending in "/."
+    (define unixpath->path
+      (letrec* ([r (regexp "([^/]*)/(.*)")]
+		[translate-dir
+		 (lambda (s)
+		   (cond
+		    [(string=? s "") 'same] ;; handle double slashes
+		    [(string=? s "..") 'up]
+		    [(string=? s ".") 'same]
+		    [else s]))]
+		[build-relative-path
+		 (lambda (s)
+		   (let ([m (regexp-match r s)])
+		     (cond
+		      [(string=? s "") 'same]
+		      [(not m) s]
+		      [else
+		       (build-path (translate-dir (cadr m))
+				   (build-relative-path (caddr m)))])))])
+	       (lambda (s)
+		 (let ([root (car (filesystem-root-list))])
+		   (cond
+		    [(string=? s "") ""]
+		    [(string=? s "/") root]
+		    [(char=? #\/ (string-ref s 0))
+		     (build-path root
+				 (build-relative-path (substring s 1 (string-length s))))]
+		    [else (build-relative-path s)])))))
+    
     (define cache-image
       (lambda (filename)
 	(if (null? filename)
@@ -128,7 +163,7 @@
 		  (let ([m (or (regexp-match re:quote-img s)
 			       (regexp-match re:img s))])
 		    (if m
-			(let ([s (cadr m)])
+			(let ([s (unixpath->path (cadr m))])
 			  (if (relative-path? s)
 			      (build-path base-path s)
 			      s))
@@ -452,7 +487,8 @@
 				    [(a) (let-values ([(name tag label) (parse-href args)])
 						     (if (or name tag)
 							 (begin
-							   (add-link pos end-pos name 
+							   (add-link pos end-pos 
+								     (unixpath->path name)
 								     (or tag "top")
 								     #t)
 							   (make-link-style pos end-pos))

@@ -113,7 +113,7 @@
 					  (lambda ()
 					    (when abort-commit-dialog
 					      (send abort-commit-dialog show #f))
-					    (send status set-label "Handin sucessful.")
+					    (send status set-label "Handin successful.")
 					    (set! committing? #f)
 					    (done-interface))))))))]
 		      [style '(border)]))

@@ -234,7 +234,16 @@
      `(picture ,w ,(- h d)
 	       (put 0 ,(- d) ,(pict-draw b))))))
 
+(define (thickness mode b)
+  (let* ([w (pict-width b)]
+	 [h (pict-height b)])
+    (extend-pict
+     b 0 0 0 0 0
+     `(picture ,w ,h
+	       (thickness ,mode ,(pict-draw b))))))
 
+(define (thick b) (thickness 'thicklines b))
+(define (thin b) (thickness 'thinlines b))
 
 (define delimit-str
   "\\hbox{$\\~a{\\hbox{$\\left~a\\rule{0pt}{~apt}\\right.$}}$}")
@@ -934,6 +943,12 @@
 		   (optimize next)
 		   (list* 'color (cadr s) 
 			  (list 'put dx dy (optimize next)))))]
+	    [(thickness)
+	     (let ([t (cadr s)]
+		   [p (caddr s)])
+	       (list 'put dx dy 
+		     (list 'thickness t 
+			   (optimize p))))]
 	    [(put)
 	     (let ([x (cadr s)]
 		   [y (caddr s)]
@@ -962,19 +977,26 @@
 	    [(line vector circle circle* make-box oval) s]
 	    [else (error 'optimize "bad tag: ~s" tag)])))))
 
-(define (fixup-color s)
-  (if (and (pair? s) (eq? (car s) 'color))
-      ;; Drop initial put
-      (list* 'color (cadr s) (caddr (cdddr s)))
-      ;; Do nothing
-      s))
+(define (fixup-top s)
+  (cond
+   [(and (pair? s) (eq? (car s) 'color))
+    ;; Drop initial put
+    (list* 'color (cadr s) (caddr (cdddr s)))]
+   [(and (pair? s) (eq? (car s) 'put))
+    ;; Wrap initial put (from thickness) in a pair of braces
+    `(local ,(cadddr s))]
+   [else
+    ;; Do nothing
+    s]))
 
 (define (pict->string s)
-  (let output ([s (fixup-color (optimize (pict-draw s)))])
+  (let output ([s (fixup-top (optimize (pict-draw s)))])
     (if (string? s)
 	s
 	(let ([tag (car s)])
 	  (case tag
+	    [(local)
+	     (format "{~a}~n" (output (cadr s)))]
 	    [(begin)
 	     (apply string-append (map output (cdr s)))]
 	    [(picture)
@@ -984,6 +1006,8 @@
 	    [(color)
 	     (format "\\special{color push ~a}~n~a\\special{color pop}~n"
 		     (cadr s) (output (cddr s)))]
+	    [(thickness)
+	     (format "\\~a~a" (cadr s) (output (caddr s)))]
 	    [(put)
 	     (format "\\put(~a,~a){~a}~n" (cadr s) (caddr s) (output (cadddr s)))]
 	    [(qbezier)

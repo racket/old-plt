@@ -1,13 +1,13 @@
 
 (module string mzscheme
   (provide string-lowercase!
-	  string-uppercase!
-	  eval-string
-	  read-from-string
-	  read-from-string-all
-	  expr->string
-	  newline-string
-	  regexp-match-exact?)
+	   string-uppercase!
+	   eval-string
+	   read-from-string
+	   read-from-string-all
+	   expr->string
+	   newline-string
+	   regexp-match-exact?)
 
   (define make-string-do!
     (lambda (translate)

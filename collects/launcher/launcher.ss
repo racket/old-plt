@@ -1,15 +1,19 @@
-(require-library "file.ss")
-(require-library "compile.ss" "dynext")
-(require-library "link.ss" "dynext")
-                         
-(require-relative-library "launchers.ss")
 
-(begin-elaboration-time
-  (require-library "invoke.ss"))
+(module launcher mzscheme
+  (require (lib "unitsig.ss"))
 
-(define-values/invoke-unit/sig launcher-maker^
-  (require-relative-library "launcherr.ss")
-  #f
-  mzlib:file^
-  dynext:compile^
-  dynext:link^)
+  (require (lib "compile-sig.ss" "dynext")
+	   (lib "compile.ss" "dynext")
+	   (lib "link-sig.ss" "dynext")
+	   (lib "link.ss" "dynext"))
+
+  (require "launcher-sig.ss"
+	   "launcher-unit.ss")
+  
+  (define-values/invoke-unit/sig launcher^ 
+    launcher@
+    #f
+    dynext:compile^
+    dynext:link^)
+
+  (provide-signature-elements launcher^))

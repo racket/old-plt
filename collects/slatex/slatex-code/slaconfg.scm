@@ -115,7 +115,7 @@
      list-of-slatex-files)))
 
 (if (eq? dialect 'mzscheme)
-    (require-library "compile.ss"))
+    (namespace-require '(lib "compile.ss")))
 
 (case dialect
   ((bigloo)

@@ -97,13 +97,6 @@
 	     null
 	     (until (split alox null)))))))
 
-  (define ignore-errors
-    (polymorphic
-     (lambda (thunk)
-       (let/ec escape
-         (with-handlers ([not-break-exn? (lambda (x) (escape (void)))])
-           (thunk))))))
-  
   (define remove
     (polymorphic
      (letrec ([rm (case-lambda 

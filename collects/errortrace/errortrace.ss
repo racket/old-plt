@@ -3,7 +3,8 @@
 ;; See doc.txt for information.
 
 (module errortrace mzscheme
-  (import (lib "kerncase.ss" "syntax"))
+  (import (lib "kerncase.ss" "syntax")
+	  (lib "stx.ss" "syntax"))
   (import (lib "list.ss") (lib "pretty.ss"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

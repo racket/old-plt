@@ -1936,6 +1936,8 @@
   (define -re:auto (regexp "^,"))
   (define -module-hash-table-table (make-hash-table-weak)) ; weak map from namespace to module ht
   
+  (define -loading-filename (gensym))
+
   (define standard-module-name-resolver
     (lambda (s relto)
       (let ([get-dir (lambda ()
@@ -2003,15 +2005,26 @@
 			       ht)))])
 		  ;; unless it has been loaded already...
 		  (unless (hash-table-get ht modname (lambda () #f))
+		    ;; Currently loading?
+		    (let ([l (continuation-mark-set->list
+			      (current-continuation-marks)
+			      -loading-filename)])
+		      (for-each
+		       (lambda (s)
+			 (when (string=? s filename)
+			   (error
+			    'standard-module-name-resolver
+			    "cycle in loading at ~e: ~e"
+			    filename
+			    l)))
+		       l))
 		    (hash-table-put! ht modname #t)
 		    (let ([prefix (string->symbol abase)])
-		      (parameterize ([current-module-name-prefix prefix])
-			(load/use-compiled filename))))
+		      (with-continuation-mark -loading-filename filename
+			(parameterize ([current-module-name-prefix prefix])
+			  (load/use-compiled filename)))))
 		  ;; Result is the module name:
 		  modname))))))))
-
-  ;; This module must be invoked at startup!
-  (current-module-name-resolver standard-module-name-resolver)
 
   (define (find-library-collection-paths)
     (path-list-string->path-list
@@ -2112,7 +2125,8 @@
 	   collection-path load/use-compiled
 	   simple-return-primitive? port? not-break-exn?
 	   find-library-collection-paths
-	   interaction-environment scheme-report-environment null-environment))
+	   interaction-environment scheme-report-environment null-environment
+	   standard-module-name-resolver))
 
 ;;----------------------------------------------------------------------
 ;; #%stxmz-body
@@ -2171,3 +2185,6 @@
   ;; Special start-up require copies bindings to top-level
   (require mzscheme)
   (require-for-syntax mzscheme))
+
+(current-module-name-resolver standard-module-name-resolver)
+

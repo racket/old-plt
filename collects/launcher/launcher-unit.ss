@@ -10,7 +10,7 @@
   (provide launcher@)
 
   (define launcher@
-    (unit/sig launcher-maker^
+    (unit/sig launcher^
       (import [c : dynext:compile^]
 	      [l : dynext:link^])
 

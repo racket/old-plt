@@ -1166,11 +1166,11 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     
     i = ip->ungotten_count;
     s = (unsigned char *)ip->ungotten;
+    size -= l;
     while (l--)
       buffer[got++] = s[--i];
     
     ip->ungotten_count = i;
-    size -= l;
   }
 
   if (size) {

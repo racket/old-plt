@@ -824,36 +824,36 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 "wxwin - Win32 Release" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Release" 
    cd "..\mred"
 
 "wxwin - Win32 ReleaseCLEAN" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
 
 "wxwin - Win32 Debug" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Debug" 
    cd "..\mred"
 
 "wxwin - Win32 DebugCLEAN" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 SGC"
 
 "wxwin - Win32 SGC" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 SGC" 
    cd "..\mred"
 
 "wxwin - Win32 SGCCLEAN" : 
-   cd "..\wxwin"
+   cd "\Matthew\plt\src\worksp\wxwin"
    $(MAKE) /$(MAKEFLAGS) /F .\wxwin.mak CFG="wxwin - Win32 SGC" RECURSE=1 CLEAN 
    cd "..\mred"
 
@@ -862,36 +862,36 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 "mzsrc - Win32 Release" : 
-   cd "..\mzsrc"
+   cd "\Matthew\plt\src\worksp\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Release" 
    cd "..\mred"
 
 "mzsrc - Win32 ReleaseCLEAN" : 
-   cd "..\mzsrc"
+   cd "\Matthew\plt\src\worksp\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
 
 "mzsrc - Win32 Debug" : 
-   cd "..\mzsrc"
+   cd "\Matthew\plt\src\worksp\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Debug" 
    cd "..\mred"
 
 "mzsrc - Win32 DebugCLEAN" : 
-   cd "..\mzsrc"
+   cd "\Matthew\plt\src\worksp\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 SGC"
 
 "mzsrc - Win32 SGC" : 
-   cd "..\mzsrc"
+   cd "\Matthew\plt\src\worksp\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 SGC" 
    cd "..\mred"
 
 "mzsrc - Win32 SGCCLEAN" : 
-   cd "..\mzsrc"
+   cd "\Matthew\plt\src\worksp\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 SGC" RECURSE=1 CLEAN 
    cd "..\mred"
 
@@ -900,24 +900,24 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 "gc - Win32 Release" : 
-   cd "..\gc"
+   cd "\Matthew\plt\src\worksp\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Release" 
    cd "..\mred"
 
 "gc - Win32 ReleaseCLEAN" : 
-   cd "..\gc"
+   cd "\Matthew\plt\src\worksp\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
 
 "gc - Win32 Debug" : 
-   cd "..\gc"
+   cd "\Matthew\plt\src\worksp\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Debug" 
    cd "..\mred"
 
 "gc - Win32 DebugCLEAN" : 
-   cd "..\gc"
+   cd "\Matthew\plt\src\worksp\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mred"
 
@@ -928,36 +928,36 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 "wxs - Win32 Release" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Release" 
    cd "..\mred"
 
 "wxs - Win32 ReleaseCLEAN" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
 
 "wxs - Win32 Debug" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Debug" 
    cd "..\mred"
 
 "wxs - Win32 DebugCLEAN" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 SGC"
 
 "wxs - Win32 SGC" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 SGC" 
    cd "..\mred"
 
 "wxs - Win32 SGCCLEAN" : 
-   cd "..\wxs"
+   cd "\Matthew\plt\src\worksp\wxs"
    $(MAKE) /$(MAKEFLAGS) /F .\wxs.mak CFG="wxs - Win32 SGC" RECURSE=1 CLEAN 
    cd "..\mred"
 
@@ -966,36 +966,36 @@ SOURCE=..\..\mzscheme\utils\xcglue.c
 !IF  "$(CFG)" == "mred - Win32 Release"
 
 "wxutils - Win32 Release" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Release" 
    cd "..\mred"
 
 "wxutils - Win32 ReleaseCLEAN" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
 
 "wxutils - Win32 Debug" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Debug" 
    cd "..\mred"
 
 "wxutils - Win32 DebugCLEAN" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mred"
 
 !ELSEIF  "$(CFG)" == "mred - Win32 SGC"
 
 "wxutils - Win32 SGC" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 SGC" 
    cd "..\mred"
 
 "wxutils - Win32 SGCCLEAN" : 
-   cd "..\wxutils"
+   cd "\Matthew\plt\src\worksp\wxutils"
    $(MAKE) /$(MAKEFLAGS) /F .\wxutils.mak CFG="wxutils - Win32 SGC" RECURSE=1 CLEAN 
    cd "..\mred"
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.14 1999/04/20 12:26:49 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.15 1999/05/15 18:17:06 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -512,7 +512,9 @@ char *wxFrame::GetTitle(void)
   return wxBuffer;
 }
 
-void wxFrame::SetIcon(wxBitmap *wx_icon)
+static wxBitmap *black_bg = NULL;
+
+void wxFrame::SetIcon(wxBitmap *wx_icon, wxBitmap *bg)
 {
   icon = wx_icon;
     
@@ -521,14 +523,34 @@ void wxFrame::SetIcon(wxBitmap *wx_icon)
   if (wnd->icon)
     DestroyIcon(wnd->icon);
 
-  if (!wx_icon)
+  if (!wx_icon || !wx_icon->Ok())
     wnd->icon = 0;
   else {
     ICONINFO info;
-    info.fIcon = TRUE;
-    info.hbmMask = info.hbmColor = icon->ms_bitmap;
-    wnd->icon = CreateIconIndirect(&info);
+
+    if (!bg || !bg->Ok()) {
+      if (!black_bg || (black_bg->GetWidth() != icon->GetWidth())
+	  || (black_bg->GetHeight() != icon->GetHeight())) {
+	black_bg = new wxBitmap(icon->GetWidth(), icon->GetHeight());
+	wxMemoryDC *mdc = new wxMemoryDC();
+	mdc->SelectObject(black_bg);
+	mdc->SetBackground(wxBLACK);
+	mdc->Clear();
+	mdc->SelectObject(NULL);
+      }
+      bg = black_bg;
+    }
+
+    if (bg->Ok()) {
+      info.fIcon = TRUE;
+      info.hbmMask = bg->ms_bitmap;
+      info.hbmColor = icon->ms_bitmap;
+      wnd->icon = CreateIconIndirect(&info);
+    } else
+      wnd->icon = NULL;
   }
+
+  SendMessage(GetHWND(), WM_SETICON, (WORD)FALSE, (DWORD)wnd->icon);
 }
 
 void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))

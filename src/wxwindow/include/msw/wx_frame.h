@@ -53,7 +53,7 @@ class wxFrame: public wxbFrame
   char *GetTitle(void);
 
   // Set icon
-  void SetIcon(wxBitmap *icon);
+  void SetIcon(wxBitmap *icon, wxBitmap *bg = NULL);
 
   // Create status line
   void CreateStatusLine(int number=1, char *name = "status_line");

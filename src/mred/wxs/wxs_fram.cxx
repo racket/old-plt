@@ -742,12 +742,17 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   class wxBitmap* x0;
+  class wxBitmap* x1;
 
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-icon in frame%", 0);
+  if (n > 1) {
+    x1 = objscheme_unbundle_wxBitmap(p[1], "set-icon in frame%", 0);
+  } else
+    x1 = NULL;
 
-  if (x0 && !x0->Ok()) return scheme_void;
-  ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetIcon(x0);
+  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[0]);if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[1]);
+  ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetIcon(x0, x1);
 
   
   
@@ -886,7 +891,7 @@ if (os_wxFrame_class) {
  scheme_add_method_w_arity(os_wxFrame_class, "get-menu-bar", os_wxFrameGetMenuBar, 0, 0);
 #endif
  scheme_add_method_w_arity(os_wxFrame_class, "set-menu-bar", os_wxFrameSetMenuBar, 1, 1);
- scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 1);
+ scheme_add_method_w_arity(os_wxFrame_class, "set-icon", os_wxFrameSetIcon, 1, 2);
  scheme_add_method_w_arity(os_wxFrame_class, "iconize", os_wxFrameIconize, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "set-title", os_wxFrameSetTitle, 1, 1);
 

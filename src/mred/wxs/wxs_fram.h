@@ -10,6 +10,7 @@ extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const ch
 extern Scheme_Object *objscheme_bundle_wxMenuBar(class wxMenuBar *);
 extern class wxMenuBar *objscheme_unbundle_wxMenuBar(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxMenuBar(class wxMenuBar *);
 extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *, const char *, int);
 #endif

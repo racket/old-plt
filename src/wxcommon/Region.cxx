@@ -18,6 +18,7 @@ typedef struct {
 # define CGPATH ((PathTarget *)target)->path
 # define PathTargetPath_t CGMutablePathRef
 # define CGXFORM (&current_xform)
+# define PATHPATH ((CGMutablePathRef)target)
 #endif
 
 #ifdef wx_msw
@@ -2172,7 +2173,7 @@ void wxPath::AddPath(wxPath *p)
 void wxPath::Install(long target, double dx, double dy)
 {
   int i = 0;
-  double lx, ly;
+  double lx = 0.0, ly = 0.0;
 
 #ifdef WX_USE_CAIRO
   cairo_new_path(CAIRO_DEV);
@@ -2183,6 +2184,9 @@ void wxPath::Install(long target, double dx, double dy)
 #ifdef WX_USE_CAIRO
       cairo_close_path(CAIRO_DEV);
 #endif
+#ifdef wx_mac
+      CGPathCloseSubpath(PATHPATH);;
+#endif
 #ifdef wx_msw
       wxGPathCloseFigure(PATH_GP);
 #endif
@@ -2191,6 +2195,9 @@ void wxPath::Install(long target, double dx, double dy)
 #ifdef WX_USE_CAIRO
       cairo_move_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
 #endif
+#ifdef wx_mac
+      CGPathMoveToPoint(PATHPATH, NULL, cmds[i+1]+dx, cmds[i+2]+dy);
+#endif
       lx = cmds[i+1];
       ly = cmds[i+2];
       i += 3;
@@ -2198,6 +2205,9 @@ void wxPath::Install(long target, double dx, double dy)
       if ((cmds[i+1] != lx) || (cmds[i+2] != ly)) {
 #ifdef WX_USE_CAIRO
 	cairo_line_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
+#endif
+#ifdef wx_mac
+	CGPathAddLineToPoint(PATHPATH, NULL, cmds[i+1]+dx, cmds[i+2]+dy);
 #endif
 #ifdef wx_msw
 	wxGPathAddLine(PATH_GP, lx+dx, ly+dy, cmds[i+1]+dx, cmds[i+2]+dy);
@@ -2213,6 +2223,12 @@ void wxPath::Install(long target, double dx, double dy)
 		       cmds[i+1]+dx, cmds[i+2]+dy, 
 		       cmds[i+3]+dx, cmds[i+4]+dy, 
 		       cmds[i+5]+dx, cmds[i+6]+dy);
+#endif
+#ifdef wx_mac
+	CGPathAddCurveToPoint(PATHPATH, NULL, 
+			      cmds[i+1]+dx, cmds[i+2]+dy, 
+			      cmds[i+3]+dx, cmds[i+4]+dy, 
+			      cmds[i+5]+dx, cmds[i+6]+dy);
 #endif
 #ifdef wx_msw
 	wxGPathAddBezier(PATH_GP, lx+dx, ly+dy, 

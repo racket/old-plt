@@ -24,7 +24,7 @@
 ;; For more information about a phase, see the file
 ;;  implementing that phase.
 ;;
-;; All steps up to 10 work on a Scheme program, representated
+;; All steps up to vmphase.ss work on a Scheme program, representated
 ;;  as a zodiac AST. The AST produced by zodiac is destructively
 ;;  modified by each phase (usually); mzc-specific information is
 ;;  stored in the AST as ``annotations''. At the implementation file
@@ -719,6 +719,7 @@
 	      ;;-----------------------------------------------------------------------
 	      ;; Representation Choosing 
 	      ;;    From this stage, we have to work with separate code bodies, as well
+	      ;;    as the list of top-level expressions.
 	      
 	      (when (compiler:option:verbose) 
 		(printf 
@@ -751,7 +752,10 @@
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine Scheme translation
 	      ;;   Here we turn our code into VM Scheme as we enter the arena of
-	      ;;   low level transformations and optimizations
+	      ;;    low level transformations and optimizations.
+	      ;;   This transformation may create new local variables, so
+	      ;;    we have to update the local variable set for each top-level
+	      ;;    expression or code body.
 	      
 	      (when (compiler:option:verbose) (printf " transforming to Virtual Machine form~n"))
 	      (when (compiler:option:debug) (debug " = VMPHASE =~n"))
@@ -863,6 +867,7 @@
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine Optimization Pass
 	      ;;
+	      ;;  As in the previous phase, new local variables may be created.
 	      
 	      (when (compiler:option:verbose) (printf " optimizing Virtual Machine code~n"))
 	      
@@ -920,7 +925,6 @@
 			  
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine -> ANSI C translation
-	      ;;  This code is probably too low level right now.
 	      ;;
 	      (when (compiler:option:verbose)
 		(printf " [emitting ~a C to \"~a\"]~n" 

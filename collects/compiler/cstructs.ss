@@ -1,250 +1,251 @@
 ;; Compiler structures
 ;; (c) 1996-7 Sebastian Good
 
-(unit/sig
- compiler:cstructs^
- (import compiler:library^
-	 (zodiac : zodiac:system^)
-	 compiler:zlayer^
-	 mzlib:function^)
+;; Mostly structure definitions, mostly for annotations.
 
-;;----------------------------------------------------------------------------
-;; VARREF ATTRIBUTES
-;;  Used as the annotation for zodiac:varref objects
+(unit/sig compiler:cstructs^
+  (import compiler:library^
+	  (zodiac : zodiac:system^)
+	  compiler:zlayer^
+	  mzlib:function^)
 
-(define (varref:empty-attributes) empty-set)
-(define (varref:add-attribute! ast attr)
-  (set-annotation! ast (set-union (make-singleton-set attr)
-				  (get-annotation ast))))
-(define (varref:has-attribute? ast attr)
-  (set-memq? attr (get-annotation ast)))
+  ;;----------------------------------------------------------------------------
+  ;; VARREF ATTRIBUTES
+  ;;  Used as the annotation for zodiac:varref objects
 
-(define varref:static 'varref:static)
-(define varref:per-load-static 'varref:per-load-static)
-(define varref:primitive 'varref:primitive)
-(define varref:symbol 'varref:symbol)
-(define varref:inexact 'varref:inexact)
-(define varref:env 'varref:env)
+  (define (varref:empty-attributes) empty-set)
+  (define (varref:add-attribute! ast attr)
+    (set-annotation! ast (set-union (make-singleton-set attr)
+				    (get-annotation ast))))
+  (define (varref:has-attribute? ast attr)
+    (set-memq? attr (get-annotation ast)))
 
-;;----------------------------------------------------------------------------
-;; AST NODES
-;;  New AST nodes to augment the zodiac set:
-		
-; AST node for the creation of a closure (replaces, e.g., a lambda expression)
-(define-struct (compiler:make-closure zodiac:struct:zodiac) (lambda free-vars args name))
+  (define varref:static 'varref:static)
+  (define varref:per-load-static 'varref:per-load-static)
+  (define varref:primitive 'varref:primitive)
+  (define varref:symbol 'varref:symbol)
+  (define varref:inexact 'varref:inexact)
+  (define varref:env 'varref:env)
 
-;;----------------------------------------------------------------------------
-;; ANNOTATION STRUCTURES
-;;
+  ;;----------------------------------------------------------------------------
+  ;; AST NODES
+  ;;  New AST nodes to augment the zodiac set:
+  
+  ; AST node for the creation of a closure (replaces, e.g., a lambda expression)
+  (define-struct (compiler:make-closure zodiac:struct:zodiac) (lambda free-vars args name))
 
-; mzc annotation for a zodiac:binding, installed in the `known'
-; analysis phase
-(define-struct binding (rec?       ; part of a letrec recursive binding set
-			mutable?   ; set!ed? (but not for unit or letrec definitions)
-			unit-i/e?  ; is imported/exported (including uses by invoke)
-			anchor     ; zodiac:binding - anchor binding for this binding
-			letrec-set?; set! to implement a letrec
-			ivar?      ; is a class ivar?
-			known?     ; has ``known'' value?
-			val
-			; ``known'' value as an abitrary AST (so it's
-			; really only known if this is a constant
-			known-but-used? 
-			; known value used in an improper way?
-			; if so, always preserve the variable (i.e., don't
-			; propagate it away entirely)
-			rep        ; reprsentation (#f until rep-choosing phase)
-			))
+  ;;----------------------------------------------------------------------------
+  ;; ANNOTATION STRUCTURES
+  ;;
 
-; copy a binding record
-(define (copy-binding b)
-  (make-binding (binding-rec? b)
-		(binding-mutable? b)
-		(binding-unit-i/e? b)
-		(binding-anchor b)
-		(binding-letrec-set? b)
-		(binding-ivar? b)
-		(binding-known? b)
-		(binding-val b)
-		(binding-known-but-used? b)
-		(binding-rep b)))
+  ; mzc annotation for a zodiac:binding, installed in the `known'
+  ; analysis phase
+  (define-struct binding (rec?       ; part of a letrec recursive binding set
+			  mutable?   ; set!ed? (but not for unit or letrec definitions)
+			  unit-i/e?  ; is imported/exported (including uses by invoke)
+			  anchor     ; zodiac:binding - anchor binding for this binding
+			  letrec-set?; set! to implement a letrec
+			  ivar?      ; is a class ivar?
+			  known?     ; has ``known'' value?
+			  val
+			  ; ``known'' value as an abitrary AST (so it's
+			  ; really only known if this is a constant
+			  known-but-used? 
+			  ; known value used in an improper way?
+			  ; if so, always preserve the variable (i.e., don't
+			  ; propagate it away entirely)
+			  rep        ; reprsentation (#f until rep-choosing phase)
+			  ))
 
-(define-struct code (; The following fields, XXX-vars, are
-		     ; all sets of zodiac:bindings
-		     free-vars
-		     ; lexical variables that are free in the 
-		     ; closur ebody (i.e., kept in the closure)
-		     local-vars 
-		     ; variables introduced during the evaluation
-		     ; of the closure body, including the argument
-		     ; variables if this closure is for a lambda
-		     global-vars 
-		     ; ``global'' variables used by this closure's
-		     ; body; we capture globals that are specific
-		     ; to the namespace at load-time
-		     used-vars
-		     ; local variables that are actually used in
-		     ; an expression after they are introduced
-		     captured-vars 
-		     ; free and used variables that are free within
-		     ; a closure that is created by this closure's
-		     ; body
+  ; copy a binding record
+  (define (copy-binding b)
+    (make-binding (binding-rec? b)
+		  (binding-mutable? b)
+		  (binding-unit-i/e? b)
+		  (binding-anchor b)
+		  (binding-letrec-set? b)
+		  (binding-ivar? b)
+		  (binding-known? b)
+		  (binding-val b)
+		  (binding-known-but-used? b)
+		  (binding-rep b)))
 
-		     parent
-		     ; #f if this is a top-level expression, container
-		     ; code otherwise
-		     case-parent
-		     ; #f, unless it's a code in a case-lambda, then
-		     ; it's the case-code containing this code
+  (define-struct code (; The following fields, XXX-vars, are
+		       ; all sets of zodiac:bindings
+		       free-vars
+		       ; lexical variables that are free in the 
+		       ; code (i.e., kept in a closure)
+		       local-vars 
+		       ; variables introduced during the evaluation
+		       ; of the code; includes, for example, the argument
+		       ; variables if this is a lambda closure
+		       global-vars 
+		       ; ``global'' variables used by this code;
+		       ; we capture globals that are specific to
+		       ; the namespace at load-time
+		       used-vars
+		       ; local variables that are eventually used in
+		       ; an expression after they are introduced in the
+		       ; code
+		       captured-vars 
+		       ; free and used variables that are free within
+		       ; a closure that is created by this code
 
-		     children
-		     ; list of children code structures
-		     ))
+		       parent
+		       ; #f if this is a top-level expression, container
+		       ; code otherwise
+		       case-parent
+		       ; #f, unless it's a code in a case-lambda, then
+		       ; it's the case-code containing this code
 
-; Structure for the annotation given to closures, such
-;  as lambdas or units. The actual annotation will be
-;  an instance of a sub-type of `code', depending on
-;  the kind of closure.
-(define-struct (closure-code struct:code)
-  (; Representation and implementation info
-   rep 
-   alloc-rep
-   label   ; integer - id within vehicle
-   vehicle ; integer - vehicle id
-   
-   max-arity
-   ; max number of args in applications
-   ; within the closure (which is unrelated
-   ; to the number of arguments used to invoke
-   ; this closure, if it happens to be a
-   ; lambda)
-   
-   return-multi 
-   ; #f (always single), #t (never single), 
-   ; or 'possible
-   
-   name
-   ; inferred name - can be #f, a varref, a binding,
-   ;                 or a list of inferred names.
-   ;   (see also vm->c:extract-inferred-name)
-   ))
+		       children
+		       ; list of children code structures
+		       ))
 
-; Annotation type for case-lambda closures:
-(define-struct (procedure-code struct:closure-code) 
-  (case-codes 
-   ; A list of case-code records
-   case-arities
-   ; An integer indicating which
-   ; arity record in compiler:case-lambdas
-   ; contains MzScheme information for
-   ; the arity of the case-lambda. For
-   ; single-case lambdas, this is #f
-   ; because the arity information is
-   ; inlined.
-   ))
+  ; Structure for the annotation given to closures, such
+  ;  as lambdas or units. The actual annotation will be
+  ;  an instance of a sub-type of `code', depending on
+  ;  the kind of closure.
+  (define-struct (closure-code struct:code)
+    (; Representation and implementation info
+     rep 
+     alloc-rep
+     label   ; integer - id within vehicle
+     vehicle ; integer - vehicle id
+     
+     max-arity
+     ; max number of args in applications
+     ; within the closure (which is unrelated
+     ; to the number of arguments used to invoke
+     ; this closure, if it happens to be a
+     ; lambda)
+     
+     return-multi 
+     ; #f (always single), #t (never single), 
+     ; or 'possible
+     
+     name
+     ; inferred name - can be #f, a varref, a binding,
+     ;                 or a list of inferred names.
+     ;   (see also vm->c:extract-inferred-name)
+     ))
 
-(define-struct (case-code struct:code)
-  (; Does the compilation of this case use continue?
-   ; If so, output the case body within while(1){...}
-   has-continue?))
+  ; Annotation type for case-lambda closures:
+  (define-struct (procedure-code struct:closure-code) 
+    (case-codes 
+     ; A list of case-code records
+     case-arities
+     ; An integer indicating which
+     ; arity record in compiler:case-lambdas
+     ; contains MzScheme information for
+     ; the arity of the case-lambda. For
+     ; single-case lambdas, this is #f
+     ; because the arity information is
+     ; inlined.
+     ))
 
-;; annotations given to a unit
-(define-struct (unit-code struct:closure-code)
-  (defines
-    ; a list of zodiac:lexical-bindings
-    exports
-    ; a list of zodiac:lexical-bindings
-    import-anchors
-    ; a list of zodiac:lexical-bindings for anchors
-    export-anchors
-    ; a list of zodiac:lexical-bindings for anchors
-    export-list-offset 
-    ; integer - an index into the 
-    ; compiler:total-unit-exports list, which
-    ; contains information for describing
-    ; the unit to MzScheme
-    ))
+  (define-struct (case-code struct:code)
+    (; Does the compilation of this case use continue?
+     ; If so, output the case body within while(1){...}
+     has-continue?))
 
-(define-struct (class-code struct:closure-code)
-  (public-lookup-bindings
-   ; a list of zodiac:lexical-bindings
-   ; corresponding to possibly overridden
-   ; public ivars; these are the bindings
-   ; used to extract ivar values within
-   ; the class
-   public-define-bindings
-   ; a list of zodiac:lexical-bindings
-   ; corresponding to unoverridden
-   ; public ivars; these are the bindings
-   ; used only for installing the locally-
-   ; defined values for ivars
-   private-bindings
-   ; a list of zodiac:lexical-bindings
-   inherit-bindings
-   ; a list of zodiac:lexical-bindings
-   rename-bindings
-   ; a list of zodiac:lexical-bindings
-   assembly 
-   ; integer - an index into the
-   ; compiler:classes list, which
-   ; contains information for describing
-   ; the class to MzScheme
-   ))
+  ;; annotations given to a unit
+  (define-struct (unit-code struct:closure-code)
+    (defines
+      ; a list of zodiac:lexical-bindings
+      exports
+      ; a list of zodiac:lexical-bindings
+      import-anchors
+      ; a list of zodiac:lexical-bindings for anchors
+      export-anchors
+      ; a list of zodiac:lexical-bindings for anchors
+      export-list-offset 
+      ; integer - an index into the 
+      ; compiler:total-unit-exports list, which
+      ; contains information for describing
+      ; the unit to MzScheme
+      ))
 
-(define-struct invoke-info (anchors
-			    ; a list of zodiac:lexical-bindings for the
-			    ; sources of dynamically-linked variables
-			    ))
+  (define-struct (class-code struct:closure-code)
+    (public-lookup-bindings
+     ; a list of zodiac:lexical-bindings
+     ; corresponding to possibly overridden
+     ; public ivars; these are the bindings
+     ; used to extract ivar values within
+     ; the class
+     public-define-bindings
+     ; a list of zodiac:lexical-bindings
+     ; corresponding to unoverridden
+     ; public ivars; these are the bindings
+     ; used only for installing the locally-
+     ; defined values for ivars
+     private-bindings
+     ; a list of zodiac:lexical-bindings
+     inherit-bindings
+     ; a list of zodiac:lexical-bindings
+     rename-bindings
+     ; a list of zodiac:lexical-bindings
+     assembly 
+     ; integer - an index into the
+     ; compiler:classes list, which
+     ; contains information for describing
+     ; the class to MzScheme
+     ))
 
-(define-struct compound-info (assembly 
-			      ; integer - an index into the
-			      ; compiler:compounds list, which
-			      ; contains information for describing
-			      ; the compound unit to MzScheme
-			      imports
-			      ; constant reference, a zodiac:varref, for import spec
-			      exports
-			      ; constant reference for export spec
-			      links
-			      ; constant reference for link spec
+  (define-struct invoke-info (anchors
+			      ; a list of zodiac:lexical-bindings for the
+			      ; sources of dynamically-linked variables
 			      ))
 
-(define-struct interface-info (assembly 
-			       ; integer - an index into the
-			       ; compiler:interfaces list, which
-			       ; contains information for describing
-			       ; the interface to MzScheme
-			       name
-			       ; the inferred name; see the `name' field
-			       ; in the `code' struct
-			       ))
+  (define-struct compound-info (assembly 
+				; integer - an index into the
+				; compiler:compounds list, which
+				; contains information for describing
+				; the compound unit to MzScheme
+				imports
+				; constant reference, a zodiac:varref, for import spec
+				exports
+				; constant reference for export spec
+				links
+				; constant reference for link spec
+				))
 
-;; annotations given to zodiac:app AST nodes
-(define-struct app (tail?
-		    ; tail application?
-		    prim?
-		    ; application of a known primitive?
-		    prim-name
-		    ; MzScheme name for the known primitive, or #f
-		    ))
+  (define-struct interface-info (assembly 
+				 ; integer - an index into the
+				 ; compiler:interfaces list, which
+				 ; contains information for describing
+				 ; the interface to MzScheme
+				 name
+				 ; the inferred name; see the `name' field
+				 ; in the `code' struct
+				 ))
 
-;;----------------------------------------------------------------------------
-;; ACCESSOR
-;;
+  ;; annotations given to zodiac:app AST nodes
+  (define-struct app (tail?
+		      ; tail application?
+		      prim?
+		      ; application of a known primitive?
+		      prim-name
+		      ; MzScheme name for the known primitive, or #f
+		      ))
 
-; Retrives the *annotation* of a zodiac:binding for a zodiac:bound-varref.
-; (Compare to zodiac:bound-varref-binding, which returns the
-; zodiac:binding itself, rather than its annotation.)
-(define compiler:bound-varref->binding 
-  (compose get-annotation zodiac:bound-varref-binding))
+  ;;----------------------------------------------------------------------------
+  ;; ACCESSOR
+  ;;
 
-;;----------------------------------------------------------------------------
-;; error/warning structures
-;;
-(define-struct compiler:message (ast message))
-(define-struct (compiler:error struct:compiler:message) ())
-(define-struct (compiler:fatal-error struct:compiler:message) ())
-(define-struct (compiler:internal-error struct:compiler:message) ())
-(define-struct (compiler:warning struct:compiler:message) ())
+  ; Retrives the *annotation* of a zodiac:binding for a zodiac:bound-varref.
+  ; (Compare to zodiac:bound-varref-binding, which returns the
+  ; zodiac:binding itself, rather than its annotation.)
+  (define compiler:bound-varref->binding 
+    (compose get-annotation zodiac:bound-varref-binding))
 
-)
+  ;;----------------------------------------------------------------------------
+  ;; error/warning structures
+  ;;
+  (define-struct compiler:message (ast message))
+  (define-struct (compiler:error struct:compiler:message) ())
+  (define-struct (compiler:fatal-error struct:compiler:message) ())
+  (define-struct (compiler:internal-error struct:compiler:message) ())
+  (define-struct (compiler:warning struct:compiler:message) ())
+
+  )

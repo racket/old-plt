@@ -1,4 +1,7 @@
 
+;; The core Scheme->C compiler linkage, including everything
+;;  that's common to MrSpidey and non-MrSpidey compilation.
+
 (compound-unit/sig
  (import (FUNCTION : mzlib:function^)
 	 (PRETTY-PRINT : mzlib:pretty-print^)

@@ -1,3 +1,12 @@
+;; Main compilation procedures
+;; (c) 1997-8 PLT, Rice University
+
+;; The various procedures provided by this library are implemented
+;;  by dynamically linking to code supplied by the MzLib, dynext, and
+;;  compiler collections.
+
+;; The Scheme->C compiler is loaded as either sploadr.ss (link in
+;;  real MrSpidey) or loadr.ss (link in trivial MrSpidey stubs).
 
 (unit/sig
  compiler^

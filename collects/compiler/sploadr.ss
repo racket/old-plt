@@ -1,4 +1,7 @@
 
+;; A compound unit for Scheme->C compilation using MrSpidey
+;;  analysis.
+
 (compound-unit/sig
  (import (FUNCTION : mzlib:function^)
 	 (PRETTY-PRINT : mzlib:pretty-print^)

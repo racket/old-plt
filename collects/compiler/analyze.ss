@@ -14,7 +14,7 @@
 	 compiler:rep^
 	 compiler:driver^
 	 mzlib:function^
-	 (mrspidey : mrspidey:sba^))
+	 (mrspidey : compiler:mrspidey^))
 
 (define compiler:global-symbols (make-hash-table))
 (define compiler:add-global-varref!
@@ -427,9 +427,9 @@
 		(zodiac:print-start! debug:port ast)
 		(newline debug:port))
 
-	      (let* ([ftype (mrspidey:parsed-ftype ast)])
-		(when ftype
-		  (printf "Type for ~a: ~a~n" ast (mrspidey:FlowType->SDL ftype))))
+	      '(let* ([sdltype (mrspidey:SDL-type ast)])
+		(when sdltype
+		  (printf "Type for ~a: ~a~n" ast sdltype)))
 
 	      (cond
 		

@@ -15,9 +15,14 @@
 
  (define (make-extension-compiler mode prefix)
    (let ([u (parameterize ([current-namespace load-namespace])
-	       (require-library "refer.ss")
-	       (require-library "sigload.ss" "compiler")
-	       (require-library "loadr.ss" "compiler"))]
+	      (require-library "refer.ss")
+	      (if (use-mrspidey)
+		  (begin
+		    (require-library "spsigload.ss" "compiler")
+		    (require-library "sploadr.ss" "compiler"))
+		  (begin
+		    (require-library "sigload.ss" "compiler")
+		    (require-library "loadr.ss" "compiler"))))]
 	 [init (unit/sig 
 		()
 		(import compiler:inner^)

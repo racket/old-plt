@@ -25,7 +25,7 @@
 	  dynext:file^
 	  mzlib:function^
 	  mzlib:pretty-print^
-	  (mrspidey : mrspidey:sba^))
+	  (mrspidey : compiler:mrspidey^))
   (rename (compile-extension* compile-extension))
   
   (define driver:debug #f)

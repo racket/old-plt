@@ -1,6 +1,7 @@
 
 (require-library "functios.ss")
 (require-library "files.ss")
+(require-library "strings.ss")
 (require-library "prettys.ss")
 
 (require-library "compiles.ss" "dynext")
@@ -11,8 +12,6 @@
 (require-library "sigs.ss" "zodiac")
 
 (require-library "sparams.ss" "backward")
-
-(require-library "sbasig.ss" "mrspidey")
 
 (require-relative-library "sig.ss")
 
@@ -410,3 +409,13 @@
    vm->c:emit-class-prologue
    vm->c:emit-class-epilogue
    vm->c-expression))
+
+(define-signature compiler:mrspidey^
+  (analyze-program-sexps
+   binding-mutated
+   SDL-type))
+
+(define-signature compiler:basic-link^
+  ((unit ZODIAC : zodiac:system^)
+   (unit ZLAYER : compiler:zlayer^)
+   (unit DRIVER : compiler:driver^)))

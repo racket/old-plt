@@ -13,8 +13,13 @@
 
 (require-library "option.ss" "compiler")
 
+(when (compiler:option:use-mrspidey)
+  (require-relative-library "spsigload.ss"))
+
 (invoke-open-unit/sig
- (require-relative-library-unit/sig "loadr.ss")
+ (if (compiler:option:use-mrspidey)
+     (require-relative-library-unit/sig "sploadr.ss")
+     (require-relative-library-unit/sig "loadr.ss"))
  mzc
  mzlib:function^
  mzlib:pretty-print^

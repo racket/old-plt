@@ -1,8 +1,0 @@
-// EventNew.cpp : Implementation of CEvent
-#include "stdafx.h"
-#include "Myspage.h"
-#include "EventNew.h"
-
-/////////////////////////////////////////////////////////////////////////////
-// CEvent
-

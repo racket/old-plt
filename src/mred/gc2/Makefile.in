@@ -271,8 +271,8 @@ macxsrc/wx_rbut.cc: $(WXMACDIR)/mac/wx_rbut.cc $(WXMACBDIR)/wx_rbut.o $(XFORMDEP
 	$(XFORMWP) $(WXMACDIR)/mac/wx_rbut.cc macxsrc/wx_rbut.cc
 macxsrc/wx_sbar.cc: $(WXMACDIR)/mac/wx_sbar.cc $(WXMACBDIR)/wx_sbar.o $(XFORMDEP) $(MACXPRECOMP)
 	$(XFORMWP) $(WXMACDIR)/mac/wx_sbar.cc macxsrc/wx_sbar.cc
-macxsrc/wxMargin.cc: $(WXMACDIR)/mac/wxMargin.cc $(WXMACBDIR)/wxMargin.o $(XFORMDEP) $(MACXPRECOMP)
-	$(XFORMWP) $(WXMACDIR)/mac/wxMargin.cc macxsrc/wxMargin.cc
+macxsrc/wxMargin.cc: $(WXMACDIR)/mac/wxMargin.cc $(WXMACBDIR)/wxMargin.o $(XFORMDEP)
+	$(XFORM) $(WXMACDIR)/mac/wxMargin.cc macxsrc/wxMargin.cc
 macxsrc/wx_dialg.cc: $(WXMACDIR)/mac/wx_dialg.cc $(WXMACBDIR)/wx_dialg.o $(XFORMDEP) $(MACXPRECOMP)
 	$(XFORMWP) $(WXMACDIR)/mac/wx_dialg.cc macxsrc/wx_dialg.cc
 macxsrc/wx_screen.cc: $(WXMACDIR)/mac/wx_screen.cc $(WXMACBDIR)/wx_screen.o $(XFORMDEP) $(MACXPRECOMP)
@@ -289,8 +289,8 @@ macxsrc/wxScrollArea.cc: $(WXMACDIR)/mac/wxScrollArea.cc $(WXMACBDIR)/wxScrollAr
 	$(XFORMWP) $(WXMACDIR)/mac/wxScrollArea.cc macxsrc/wxScrollArea.cc
 macxsrc/wx_gauge.cc: $(WXMACDIR)/mac/wx_gauge.cc $(WXMACBDIR)/wx_gauge.o $(XFORMDEP) $(MACXPRECOMP)
 	$(XFORMWP) $(WXMACDIR)/mac/wx_gauge.cc macxsrc/wx_gauge.cc
-macxsrc/wxScrollData.cc: $(WXMACDIR)/mac/wxScrollData.cc $(WXMACBDIR)/wxScrollData.o $(XFORMDEP) $(MACXPRECOMP)
-	$(XFORMWP) $(WXMACDIR)/mac/wxScrollData.cc macxsrc/wxScrollData.cc
+macxsrc/wxScrollData.cc: $(WXMACDIR)/mac/wxScrollData.cc $(WXMACBDIR)/wxScrollData.o $(XFORMDEP)
+	$(XFORM) $(WXMACDIR)/mac/wxScrollData.cc macxsrc/wxScrollData.cc
 macxsrc/wx_gdi.cc: $(WXMACDIR)/mac/wx_gdi.cc $(WXMACBDIR)/wx_gdi.o $(XFORMDEP) $(MACXPRECOMP)
 	$(XFORMWP) $(WXMACDIR)/mac/wx_gdi.cc macxsrc/wx_gdi.cc
 macxsrc/wx_app.cc: $(WXMACDIR)/mac/wx_app.cc $(WXMACBDIR)/wx_app.o $(XFORMDEP) $(MACXPRECOMP)
@@ -664,8 +664,8 @@ mwx_rbut.o: macxsrc/wx_rbut.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_rbut.o macxsrc/wx_rbut.cc
 mwx_sbar.o: macxsrc/wx_sbar.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_sbar.o macxsrc/wx_sbar.cc
-mwxMargin.o: macxsrc/wxMargin.cc $(MACPRECOMPDEP)
-	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwxMargin.o macxsrc/wxMargin.cc
+mwxMargin.o: macxsrc/wxMargin.cc
+	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwxMargin.o macxsrc/wxMargin.cc
 mwx_dialg.o: macxsrc/wx_dialg.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_dialg.o macxsrc/wx_dialg.cc
 mwx_screen.o: macxsrc/wx_screen.cc $(MACPRECOMPDEP)
@@ -682,8 +682,8 @@ mwxScrollArea.o: macxsrc/wxScrollArea.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwxScrollArea.o macxsrc/wxScrollArea.cc
 mwx_gauge.o: macxsrc/wx_gauge.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_gauge.o macxsrc/wx_gauge.cc
-mwxScrollData.o: macxsrc/wxScrollData.cc $(MACPRECOMPDEP)
-	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwxScrollData.o macxsrc/wxScrollData.cc
+mwxScrollData.o: macxsrc/wxScrollData.cc
+	$(CXX) $(MACXFLAG) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwxScrollData.o macxsrc/wxScrollData.cc
 mwx_gdi.o: macxsrc/wx_gdi.cc $(MACPRECOMPDEP)
 	$(CXX) $(MACXFLAG) $(MACUSEPRECOMP) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o mwx_gdi.o macxsrc/wx_gdi.cc
 mwx_app.o: macxsrc/wx_app.cc $(MACPRECOMPDEP)

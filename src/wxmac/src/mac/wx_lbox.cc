@@ -222,8 +222,12 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (N)
     this->Set(N, Choices);
   
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 
   OnClientAreaDSize(1, 1, 1, 1);
@@ -261,6 +265,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   Rect viewRect;
   int clientWidth;
+  wxArea *carea;
 
   if (cHidden) return;
 
@@ -271,12 +276,14 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   
   SetCurrentDC();
   
+  carea = ClientArea();
+
   viewRect.top = VIEW_RECT_OFFSET + 1;
-  viewRect.bottom = ClientArea()->Height() - VIEW_RECT_OFFSET;
+  viewRect.bottom = carea->Height() - VIEW_RECT_OFFSET;
   viewRect.left = VIEW_RECT_OFFSET;
-  viewRect.right = ClientArea()->Width() - VIEW_RECT_OFFSET;
+  viewRect.right = carea->Width() - VIEW_RECT_OFFSET;
   
-  clientWidth = ClientArea()->Width() - VIEW_RECT_OFFSET;
+  clientWidth = carea->Width() - VIEW_RECT_OFFSET;
   /*if (cHaveVScroll)*/ clientWidth -= KSBWidth;
 
   OffsetRect(&viewRect,SetOriginX,SetOriginY);
@@ -899,8 +906,13 @@ void wxListBox::DoShow(Bool on)
 
 void wxListBox::InternalGray(int gray_amt)
 {
-  if (cListTitle)
-    ((wxLabelArea *)cListTitle)->GetMessage()->InternalGray(gray_amt);
+  if (cListTitle) {
+    wxLabelArea *la;
+    wxWindow *w;
+    la = (wxLabelArea *)cListTitle;
+    w = la->GetMessage();
+    w->InternalGray(gray_amt);
+  }
   wxItem::InternalGray(gray_amt);
 }
 

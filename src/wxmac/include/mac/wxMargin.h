@@ -10,6 +10,8 @@
 #ifndef wxMarginh
 #define wxMarginh
 
+#include "wxDirection.h"
+
 /* For the precise-GC transformer, we pretend that wxMargin is
    atomic. It has no pointers, after all. */
 #ifdef MZ_PRECISE_GC

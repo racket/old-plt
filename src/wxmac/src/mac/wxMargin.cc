@@ -8,7 +8,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "wxMargin.h"
-#include "wxDirection.h"
 
 /**********************************************************************
   WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING

@@ -91,8 +91,12 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 
   ::EmbedControl(cMacControl, GetRootControl());
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -131,13 +135,19 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
     cWindowHeight = IR_MIN_HEIGHT;
   OffsetRect(&bounds,SetOriginX,SetOriginY);
   
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
-  else {
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
+  
+  {
     int vis;
     vis = SetCurrentMacDC();
-    if (vis)
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+    if (vis) {
+      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+    }
   }
 
   InitInternalGray();
@@ -150,7 +160,7 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
 //-----------------------------------------------------------------------------
 wxRadioButton::~wxRadioButton(void)
 {
-  if (cMacControl) ::DisposeControl(cMacControl);
+  if (cMacControl) { ::DisposeControl(cMacControl); }
   if (buttonBitmap)
     --buttonBitmap->selectedIntoDC;
 }
@@ -301,10 +311,11 @@ void wxRadioButton::DoShow(Bool show)
   if (!CanShow(show)) return;
 
   if (cMacControl) {
-    if (show)
+    if (show) {
       ::ShowControl(cMacControl);
-    else
+    } else {
       ::HideControl(cMacControl);
+    }
   }
 
   wxWindow::DoShow(show);

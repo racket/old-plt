@@ -6,13 +6,7 @@
 // Updated:	
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef WX_CARBON
-# include <Printing.h>
-# include <QuickDraw.h>
-#endif
+#include "common.h"
 #include "wx_dcpr.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"

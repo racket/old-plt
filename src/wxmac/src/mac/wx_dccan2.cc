@@ -7,12 +7,7 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef WX_CARBON
-# include <QDOffscreen.h>
-#endif
+#include "common.h"
 #include "wx_dccan.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"
@@ -713,8 +708,11 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   ox = SetOriginX;
   oy = SetOriginY;
   SetOriginX = SetOriginY = 0;
-  if (canvas)
-    canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+  if (canvas) {
+    wxArea *area;
+    area = canvas->ClientArea();
+    area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+  }
 
   GetThemeDrawingState(&state);
 

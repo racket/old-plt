@@ -56,6 +56,8 @@ wxFrame::wxFrame // Constructor (for frame window)
   ControlRef rootControl;
   wxMargin contentAreaMargin;
   WindowPtr theMacWindow;
+  wxArea *carea, *parea;
+  wxMargin pam;
   
   InitDefaults();
 
@@ -135,7 +137,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   }
   
   CheckMemOK(theMacWindow);
-  
+
   cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
 
   // Calculate the platformArea size
@@ -146,18 +148,22 @@ wxFrame::wxFrame // Constructor (for frame window)
   platformMargin.SetMargin(theContRect.top - theStrucRect.top, wxTop);
   platformMargin.SetMargin(theStrucRect.right - theContRect.right, wxRight);
   platformMargin.SetMargin(theStrucRect.bottom - theContRect.bottom, wxBottom);
-  PlatformArea()->SetMargin(platformMargin);
+  parea = PlatformArea();
+  parea->SetMargin(platformMargin);
 
   // The client has the requested window position, not the window: must move
   SetCurrentDC();
-  contentAreaMargin = ContentArea()->Margin(wxScreen::gScreenWindow);
+  carea = ContentArea();
+  contentAreaMargin = carea->Margin(wxScreen::gScreenWindow);
   theMacX = contentAreaMargin.Offset(wxLeft);
   theMacY = contentAreaMargin.Offset(wxTop);
   MoveWindow(theMacWindow, theMacX, theMacY, FALSE);
 
   // The client has the requested window size, not the window: must resize
-  theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-  theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+  parea = PlatformArea();
+  pam = parea->Margin();
+  theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+  theMacHeight = cWindowHeight - pam.Offset(wxVertical);
   SizeWindow(theMacWindow, theMacWidth, theMacHeight, FALSE);
   
   wx_cursor = wxSTANDARD_CURSOR;
@@ -272,9 +278,14 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	// Invalidate grow box:
 	int oldMacWidth, oldMacHeight;
 	Rect oldGrowRect;
+	wxArea *parea;
+	wxMargin pam;
 
-	oldMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-	oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+	parea = PlatformArea();
+	pam = parea->Margin();
+      
+	oldMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+	oldMacHeight = cWindowHeight - pam.Offset(wxVertical);
 	::SetRect(&oldGrowRect, oldMacWidth - 15, oldMacHeight - 15, oldMacWidth, oldMacHeight);
 	if (SetCurrentMacDC()) {
 	  InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldGrowRect);
@@ -298,7 +309,9 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
     {
       wxMargin contentAreaMargin;
       int theMacX, theMacY;
-      contentAreaMargin = ContentArea()->Margin(wxScreen::gScreenWindow);
+      wxArea *carea;
+      carea = ContentArea();
+      contentAreaMargin = carea->Margin(wxScreen::gScreenWindow);
       theMacX = contentAreaMargin.Offset(wxLeft);
       theMacY = contentAreaMargin.Offset(wxTop);
       ::MoveWindow(theMacWindow, theMacX, theMacY, FALSE);
@@ -307,8 +320,12 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
   if (widthIsChanged || heightIsChanged)
     {
       int theMacWidth, theMacHeight;
-      theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-      theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+      wxArea *parea;
+      wxMargin pam;
+      parea = PlatformArea();
+      pam = parea->Margin();
+      theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+      theMacHeight = cWindowHeight - pam.Offset(wxVertical);
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;
@@ -317,8 +334,8 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	// Invalidate new region:
 	int w, h;
 	Rect r;
-	w = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-	h = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+	w = cWindowWidth - pam.Offset(wxHorizontal);
+	h = cWindowHeight - pam.Offset(wxVertical);
 	if (SetCurrentMacDC()) {
 	  if (dw) {
 	    r.top = 0;
@@ -382,8 +399,9 @@ void wxFrame::Maximize(Bool maximize)
 	::EraseRect(GetPortBounds(theMacGrafPort,&portBounds));
 	::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
 	InvalWindowRect(theMacWindow,&portBounds);
-      } else
+      } else {
 	::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
+      }
 
       cMaximized = maximize;
 
@@ -392,9 +410,14 @@ void wxFrame::Maximize(Bool maximize)
       if (cStatusPanel) {
 	int theMacWidth, theMacHeight;
 	int w, h;
+	wxArea *parea;
+	wxMargin pam;
 
-	theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-	theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+	parea = PlatformArea();
+	pam = parea->Margin();
+
+	theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+	theMacHeight = cWindowHeight - pam.Offset(wxVertical);
 	if (cStatusPanel->SetCurrentDC()) {
 	  Rect r = {0, 0, 10000, 10000};
 	  OffsetRect(&r,SetOriginX,SetOriginY);
@@ -466,6 +489,7 @@ void wxFrame::CreateStatusLine(int number, char* name)
   wxMargin clientAreaMargin;
   int statusLineHeight;
   int clientWidth, clientHeight;
+  wxArea *carea;
 
   if (status_line_exists) return;
 
@@ -492,13 +516,15 @@ void wxFrame::CreateStatusLine(int number, char* name)
 #endif
   // cStatusPanel->SetJustify(wxLeft);
 
-  clientAreaMargin = ClientArea()->Margin(wxScreen::gScreenWindow);
+  carea = ClientArea();
+
+  clientAreaMargin = carea->Margin(wxScreen::gScreenWindow);
   {
     int o;
     o = clientAreaMargin.Offset(wxBottom);
     clientAreaMargin.SetMargin(o + statusLineHeight - 1, wxBottom);
   }
-  ClientArea()->SetMargin(clientAreaMargin);
+  carea->SetMargin(clientAreaMargin);
   OnSize(cWindowWidth, cWindowHeight);
 }
 
@@ -529,14 +555,16 @@ void wxFrame::SetStatusEraser(wxBrush* b)
 //-----------------------------------------------------------------------------
 void wxFrame::SetMenuBar(wxMenuBar* menu_bar)
 {
-  WindowPtr theMacWindow;
+  WindowPtr theMacWindow,front;
   wxMenuBar* oldMenuBar;
-
-  // mflatt: if this menu bar is already in use, give up
+  CGrafPtr graf;
+  
+  // if this menu bar is already in use, give up
   if (menu_bar && menu_bar->menu_bar_frame)
     return;
 
-  theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
+  graf = cMacDC->macGrafPort();
+  theMacWindow = GetWindowFromPort(graf);
   oldMenuBar = wx_menu_bar;
   if (oldMenuBar) {
     wx_menu_bar = NULL;
@@ -548,7 +576,8 @@ void wxFrame::SetMenuBar(wxMenuBar* menu_bar)
   if (menu_bar) menu_bar->menu_bar_frame = this;
   wx_menu_bar = menu_bar;
 
-  if (theMacWindow == ::FrontWindow()) {
+  front = ::FrontWindow();
+  if (front == theMacWindow) {
     NowFront(TRUE);
   }
 }
@@ -619,13 +648,20 @@ void wxFrame::ShowAsActive(Bool flag)
     // Invalidate grow box (appearance changes with window active/inactive)
     if (SetCurrentDC()) {
       int theMacWidth, theMacHeight;
-      theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-      theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+      wxArea *parea;
+      wxMargin pam;
+
+      parea = PlatformArea();
+      pam = parea->Margin();
+
+      theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
+      theMacHeight = cWindowHeight - pam.Offset(wxVertical);
       {
 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
 	// Erase it now if we're becoming inactive
-	if (!flag)
+	if (!flag) {
 	  ::EraseRect(&growRect);
+	}
 	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&growRect);
       }
     }
@@ -633,7 +669,7 @@ void wxFrame::ShowAsActive(Bool flag)
   
   if (flag && !cFocusWindow && children) {
     wxChildNode *node;
-      wxWindow *win;
+    wxWindow *win;
     node = children->First();
     while (node) {
       win = (wxWindow *)(node->Data());
@@ -743,17 +779,26 @@ void wxFrame::Show(Bool show)
   wxChildList *tlw;
 
   if (show == IsVisible()) {
-    if (show)
-      ::SelectWindow(GetWindowFromPort(cMacDC->macGrafPort()));
+    if (show) {
+      CGrafPtr graf;
+      graf = cMacDC->macGrafPort();
+      ::SelectWindow(GetWindowFromPort(graf));
+    }
     return;
   }
   
   cUserHidden = !show;
 
-  if (window_parent)
-    window_parent->GetChildren()->Show(this, show);
-  if (cParentArea)
-    cParentArea->Windows()->Show(this, show);
+  if (window_parent) {
+    wxChildList *cl;
+    cl = window_parent->GetChildren();
+    cl->Show(this, show);
+  }
+  if (cParentArea) {
+    wxChildList *cl;
+    cl = cParentArea->Windows();
+    cl->Show(this, show);
+  }
   tlw = wxTopLevelWindows(ContextWindow());
   tlw->Show(this, show);
 
@@ -777,7 +822,9 @@ void wxFrame::Show(Bool show)
       wxMacRecalcNewSize(FALSE); // recalc new position only
     } else
 #endif
-      ::ShowWindow(theMacWindow);
+      { 
+	::ShowWindow(theMacWindow);
+      }
     ::SelectWindow(theMacWindow); 
 
     if (cMacDC->currentUser() == this)
@@ -804,7 +851,9 @@ void wxFrame::Show(Bool show)
       }
     } else
 #endif
-      ::HideWindow(theMacWindow);
+      {
+	::HideWindow(theMacWindow);
+      }
   }
 
   /* Paint(); */
@@ -813,9 +862,13 @@ void wxFrame::Show(Bool show)
 //-----------------------------------------------------------------------------
 Bool wxFrame::IsFrontWindow(void)
 {
-  WindowPtr theMacWindow;
+  WindowPtr theMacWindow, front;
   theMacWindow = macWindow();
-  return (theMacWindow ? theMacWindow == ::FrontWindow() : FALSE);
+  if (theMacWindow) {
+    front = ::FrontWindow();
+    return (theMacWindow == front);
+  } else
+    return FALSE;
 }
 
 //-----------------------------------------------------------------------------
@@ -880,8 +933,12 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
 {
   if (!(cStyle & wxNO_RESIZE_BORDER)) {
     int theMacWidth, theMacHeight;
-    theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
-    theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
+    wxArea *parea;
+    wxMargin m;
+    parea = PlatformArea();
+    m = parea->Margin();
+    theMacWidth = cWindowWidth - m.Offset(wxHorizontal);
+    theMacHeight = cWindowHeight - m.Offset(wxVertical);
     if (((theMacWidth-15 >= x && theMacWidth-15 <= x + w)
 	 || (theMacWidth >= x && theMacWidth <= x + w))
 	&& (theMacHeight-15 >= y && theMacHeight-15 <= y + h)

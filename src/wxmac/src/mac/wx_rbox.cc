@@ -108,8 +108,12 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
   if (width < 0 || height < 0)
     Fit();
 	
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -174,8 +178,12 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
   if (width < 0 || height < 0)
     Fit(); // WCH: need wxHorizontal and wxVertical for Fit(direction)
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 

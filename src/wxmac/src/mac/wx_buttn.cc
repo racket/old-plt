@@ -105,8 +105,12 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 
   if (style & 1) OnSetDefault(TRUE);
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -164,11 +168,16 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
   cWindowHeight = bounds.bottom;
   cWindowWidth = bounds.right;
   OffsetRect(&bounds,SetOriginX,SetOriginY);
-  
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
-  else
-    ::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
+
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+    else {
+      ::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
+    }
+  }
 
   InitInternalGray();
 }
@@ -181,7 +190,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 wxButton::~wxButton(void)
 {
   if (buttonBitmap == NULL) {
-    if (cMacControl) ::DisposeControl(cMacControl);
+    if (cMacControl) { ::DisposeControl(cMacControl); }
     cMacControl = NULL;
   } else
     --buttonBitmap->selectedIntoDC;
@@ -198,8 +207,9 @@ char* wxButton::GetLabel(void)
   Str255	pTitle;
   if (buttonBitmap)
     return NULL;
-  if (cMacControl)
+  if (cMacControl) {
     ::GetControlTitle(cMacControl, pTitle);
+  }
   CopyPascalStringToC(pTitle, wxBuffer);
   return wxBuffer;
 }
@@ -384,10 +394,11 @@ void wxButton::DoShow(Bool show)
 
   if (!buttonBitmap && cMacControl) {
     SetCurrentDC();
-    if (show)
+    if (show) {
       ::ShowControl(cMacControl);
-    else
+    } else {
       ::HideControl(cMacControl);
+    }
   }
   
   wxWindow::DoShow(show);
@@ -470,8 +481,9 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 
   isVisible = cMacControl && IsShown();
   hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
-  if (hideToPreventFlicker) 
+  if (hideToPreventFlicker) {
     ::HideControl(cMacControl);
+  }
 
   if (dW || dH)
     {
@@ -486,7 +498,9 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
       MaybeMoveControls();
     }
 
-  if (hideToPreventFlicker) ::ShowControl(cMacControl);
+  if (hideToPreventFlicker) {
+    ::ShowControl(cMacControl);
+  }
 
   if (!cHidden && (dW || dH || dX || dY))
     {

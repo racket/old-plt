@@ -740,9 +740,9 @@ void wxSetCursor(wxCursor *cursor)
 	  SetThemeCursor(kThemeIBeamCursor);
 	else if (cursor->cMacCursor == (Cursor **)hackCROSS_CURSOR)
 	  SetThemeCursor(kThemeCrossCursor);
-	else if (cursor->cMacCursor)
+	else if (cursor->cMacCursor) {
 	  ::SetCursor(*(cursor->cMacCursor));
-	else
+	} else
 	  SetThemeCursor(kThemeArrowCursor);
       }
     } else

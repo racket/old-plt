@@ -7,12 +7,7 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef WX_CARBON
-# include <Quickdraw.h>
-#endif
+#include "common.h"
 #include "wx_dcmem.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"

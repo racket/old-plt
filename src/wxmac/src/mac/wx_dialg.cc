@@ -25,6 +25,10 @@
 
 extern wxApp* wxTheApp;
 
+#ifdef MZ_PRECISE_GC
+extern "C" void *scheme_malloc_atomic(size_t);
+#endif
+
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Other methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -80,10 +84,13 @@ void wxDialogBox::OnSize(int x, int y)
   // Count the number of _subwindow_ children
   int noChildren = 0;
   wxChildNode *node;
+  wxChildList *cl;
   wxWindow *win;
   int client_x, client_y;
 
-  for (node = GetChildren()->First(); node; node = node->Next()) {
+  cl = GetChildren();
+  
+  for (node = cl->First(); node; node = node->Next()) {
     WXTYPE winType;
     
     win = (wxWindow *)(node->Data());
@@ -480,7 +487,9 @@ char *wxFileSelector(char *message, char *default_path,
 
       if (f) {
 	CGrafPtr graf;
-	graf = f->MacDC()->macGrafPort();
+	wxMacDC *mdc;
+	mdc = f->MacDC();
+	graf = mdc->macGrafPort();
 	dialogOptions.parentWindow = GetWindowFromPort(graf);
 	dialogOptions.modality = kWindowModalityWindowModal;
       }
@@ -544,7 +553,7 @@ char *wxFileSelector(char *message, char *default_path,
     
     // get the user's reply:
 #ifdef MZ_PRECISE_GC
-    reply = (NavReplyRecord *)scheme-malloc_atomic(sizeof(NavReplyRecord));
+    reply = (NavReplyRecord *)scheme_malloc_atomic(sizeof(NavReplyRecord));
 #else
     reply = new NavReplyRecord;
 #endif

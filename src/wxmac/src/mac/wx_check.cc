@@ -95,8 +95,12 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 
   ::EmbedControl(cMacControl, GetRootControl());
   
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow*p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -139,8 +143,12 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
   }
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow*p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -151,7 +159,7 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
 //-----------------------------------------------------------------------------
 wxCheckBox::~wxCheckBox(void)
 {
-  if (cMacControl) ::DisposeControl(cMacControl);
+  if (cMacControl) { ::DisposeControl(cMacControl); }
   if (buttonBitmap) --buttonBitmap->selectedIntoDC;
 }
 
@@ -290,9 +298,9 @@ void wxCheckBox::Paint(void)
   {
     Rect r = { 0, 0, cWindowHeight, cWindowWidth};
     ::OffsetRect(&r,SetOriginX,SetOriginY);
-    if (cMacControl)
+    if (cMacControl) {
       ::Draw1Control(cMacControl);
-    else {
+    } else {
       int top;
       Rect r;
 
@@ -363,10 +371,11 @@ void wxCheckBox::DoShow(Bool show)
 
   if (cMacControl) {
     SetCurrentDC();
-    if (show)
+    if (show) {
       ::ShowControl(cMacControl);
-    else
+    } else {
       ::HideControl(cMacControl);
+    }
   }
   
   wxWindow::DoShow(show);

@@ -7,15 +7,11 @@
  * Copyright:	(c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "common.h"
 #include "wx_messg.h"
 #include "wx_utils.h"
 #include "wx_slidr.h"
 
-
-#define MEANING_CHARACTER	'0'
 
 // Slider
 /* 
@@ -206,8 +202,12 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
          
   ::EmbedControl(cMacControl, GetRootControl());
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 	
   return TRUE;
@@ -259,11 +259,12 @@ void wxSlider::DoShow(Bool show)
 
   SetCurrentDC();
 
-  if (show)
+  if (show) {
     ::ShowControl(cMacControl);
-  else
+  } else {
     ::HideControl(cMacControl);
-		
+  }
+
   if (!show && cTitle)
     cTitle->DoShow(show);
 		
@@ -280,9 +281,11 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     int clientWidth, clientHeight;
     int vwid, vhgt;
     Rect r;
+    wxArea *carea;
 
-    clientWidth = ClientArea()->Width();
-    clientHeight= ClientArea()->Height();
+    carea = ClientArea();
+    clientWidth = carea->Width();
+    clientHeight= carea->Height();
 
     vwid = valueRect.right - valueRect.left;
     vhgt = valueRect.bottom - valueRect.top;
@@ -341,8 +344,9 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 	if (part == kControlIndicatorPart) {
 	  if (::TrackControl(cMacControl, pt, SCTrackActionProcUPP))
 	    TrackPart(part);
-	} else 
+	} else {
 	  ::TrackControl(cMacControl, pt, SCTrackActionProcUPP);
+	}
       }
     }
   }
@@ -357,16 +361,24 @@ void wxSlider::TrackPart(int part)
 
   switch (part) {
   case kControlUpButtonPart:
-    ::SetControlValue(cMacControl, max(s_min, oldval-1));
+    {
+      ::SetControlValue(cMacControl, max(s_min, oldval-1));
+    }
   break;
   case kControlDownButtonPart:
-    ::SetControlValue(cMacControl, min(s_max, oldval+1));
+    {
+      ::SetControlValue(cMacControl, min(s_max, oldval+1));
+    }
   break;
   case kControlPageUpPart:
-    ::SetControlValue(cMacControl, max(s_min, oldval-page_size));
+    {
+      ::SetControlValue(cMacControl, max(s_min, oldval-page_size));
+    }
   break;
   case kControlPageDownPart:
-    ::SetControlValue(cMacControl, min(s_max, oldval+page_size));
+    {
+      ::SetControlValue(cMacControl, min(s_max, oldval+page_size));
+    }
   break;
   case kControlIndicatorPart:
     break;
@@ -434,7 +446,12 @@ void wxSlider::SetLabel(char *label)
 
 void wxSlider::InternalGray(int gray_amt)
 {
-  if (cTitle)
-    ((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray_amt);
+  if (cTitle) {
+    wxLabelArea *la;
+    wxWindow *w;
+    la = (wxLabelArea *)cTitle;
+    w = la->GetMessage();
+    w->InternalGray(gray_amt);
+  }
   wxItem::InternalGray(gray_amt);
 }

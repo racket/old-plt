@@ -161,7 +161,9 @@ BOOL wxGIF::ReadHeader(FILE *fp)
 
   if (dscgif.pflds & 0x80) {
     long tp = 0;
-    rgbTable = new unsigned char[3*TabCol.sogct];
+    char *ss;
+    ss = new char[3*TabCol.sogct];
+    rgbTable = (unsigned char *)ss;
     fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
     for (i = 0; i < TabCol.sogct; i++) {
       TabCol.paleta[i].r = rgbTable[tp++];

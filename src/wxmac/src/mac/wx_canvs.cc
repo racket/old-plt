@@ -127,8 +127,12 @@ void wxCanvas::InitDefaults(void)
       new wxScrollArea(this, this, (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL));
     }
   
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -167,9 +171,11 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   if (wx_dc) {
     int clientWidth, clientHeight;
     Rect paintRect;
+    wxArea *carea;
 
-    clientWidth = ClientArea()->Width();
-    clientHeight= ClientArea()->Height();
+    carea = ClientArea();
+    clientWidth = carea->Width();
+    clientHeight= carea->Height();
     paintRect.top = 0;
     paintRect.left = 0;
     paintRect.bottom = clientHeight;
@@ -568,13 +574,15 @@ void wxCanvas::DoShow(Bool show)
 {
   wxChildNode* node;
   wxWindow* theChildWindow;
+  wxChildList *cl;
 
   if (!CanShow(show)) return;
 
   if (show)
     wxWindow::DoShow(show);
 
-  node = GetChildren()->First();
+  cl = GetChildren();
+  node = cl->First();
   while (node) {
     theChildWindow = (wxWindow*)node->Data();
     theChildWindow->DoShow(show);
@@ -665,23 +673,30 @@ int wxCanvas::GetScrollPos(int dir)
 
 int wxCanvas::GetScrollPage(int dir)
 {
+  wxScrollData *sdata;
+
   if (scrollAutomanaged) return 0;
 
   if (!cScroll) return 1;
   
   if (!GetScrollRange(dir)) return 0;
-  
-  return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxPageW
+
+  sdata = cScroll->GetScrollData();
+  return sdata->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxPageW
 					    : wxWhatScrollData::wxPageH);
 }
 int wxCanvas::GetScrollRange(int dir)
 {
+  wxScrollData *sdata;
+
   if (scrollAutomanaged) return 0;
 
   if (!cScroll) return 0;
   
-  return cScroll->GetScrollData()->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxSizeW
-					    : wxWhatScrollData::wxSizeH);
+  sdata = cScroll->GetScrollData();
+
+  return sdata->GetValue((dir == wxHORIZONTAL) ? wxWhatScrollData::wxSizeW
+			 : wxWhatScrollData::wxSizeH);
 }
 
 

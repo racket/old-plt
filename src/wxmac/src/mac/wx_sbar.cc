@@ -20,7 +20,7 @@
 # include <Windows.h>
 #endif
 
-pascal void	TrackActionProc(ControlHandle theControl,short partCode);
+static pascal void TrackActionProc(ControlHandle theControl,short partCode);
 
 //	Functions which are called from external scope, but in turn invoke
 //	DocWindow methods. These really could be moved t
@@ -98,6 +98,7 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
   const short maxValue = 0;
   CGrafPtr theMacGrafPort;
   int clientWidth, clientHeight;
+  wxArea *carea;
   Rect boundsRect = {0, 0, 0, 0};
   
   InitDefaults(function);
@@ -110,8 +111,9 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
   //////////////////////////////////////////
   SetCurrentMacDC();
   theMacGrafPort = cMacDC->macGrafPort();
-  clientWidth = ClientArea()->Width();
-  clientHeight = ClientArea()->Height();
+  carea = ClientArea();
+  clientWidth = carea->Width();
+  clientHeight = carea->Height();
   boundsRect.bottom = clientHeight;
   boundsRect.right = clientWidth;
   OffsetRect(&boundsRect,SetOriginX,SetOriginY);
@@ -128,9 +130,13 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
   
   ::EmbedControl(cMacControl, GetRootControl());
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
-  
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
+
   cGrandcursor = TRUE;
 }
 
@@ -228,10 +234,11 @@ void wxScrollBar::DoShow(Bool show)
   if (!CanShow(show)) return;
 
   SetCurrentDC();
-  if (show)
+  if (show) {
     ::ShowControl(cMacControl);
-  else
+  } else {
     ::HideControl(cMacControl);
+  }
   wxWindow::DoShow(show);
 }
 
@@ -242,8 +249,7 @@ void wxScrollBar::Enable(Bool enable)
     SetCurrentDC();
     if (enable) {
       ActivateControl(cMacControl);
-    }
-    else {
+    } else {
       DeactivateControl(cMacControl);
     }
   }
@@ -264,13 +270,12 @@ void wxScrollBar::ShowAsActive(Bool flag)
 }
 
 //-----------------------------------------------------------------------------
-pascal void TrackActionProc(ControlHandle theControl, short thePart);
-pascal void TrackActionProc(ControlHandle theControl, short thePart)
+static pascal void TrackActionProc(ControlHandle theControl, short thePart)
 {
   wxScrollBar* scrollBar;
   void *rc;
 
-  rc = GetControlReference(theControl);
+  rc = (void *)GetControlReference(theControl);
   scrollBar = (wxScrollBar*)GET_SAFEREF(rc);
   if (scrollBar) scrollBar->TrackAction(thePart);
 }
@@ -310,8 +315,9 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
       } else {
 	int down;
 	down = StillDown();
-	if (down)
+	if (down) {
 	  ::TrackControl(cMacControl, startPt, TrackActionProcUPP);
+	}
       }
     }
   }
@@ -430,8 +436,9 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
     ::SizeControl(cMacControl, clientWidth, clientHeight);
   }
 
-  if (dX || dY)
+  if (dX || dY) {
     ::MoveControl(cMacControl, SetOriginX, SetOriginY);
+  }
 }
 
 
@@ -442,5 +449,8 @@ wxWindow *wxScrollBar::EnterLeaveTarget()
 
 wxCursor *wxScrollBar::GetEffectiveCursor(void)
 {
-  return GetParent()->GetParent()->GetEffectiveCursor();
+  wxWindow *p;
+  p = GetParent();
+  p = p->GetParent();
+  return p->GetEffectiveCursor();
 }

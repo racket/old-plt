@@ -7,12 +7,7 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef WX_CARBON
-# include <QuickDraw.h>
-#endif
+#include "common.h"
 #include "wx_dccan.h"
 #include "wx_utils.h"
 
@@ -295,8 +290,8 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   char *unicode, u_buf[QUICK_UBUF_SIZE];
   double result = 0;
   ATSLineLayoutOptions ll_attribs;
-  ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag };
-  ByteCount    ll_theSizes[] = { sizeof(ATSLineLayoutOptions) };
+  GC_CAN_IGNORE ATSUAttributeTag  ll_theTags[] = { kATSULineLayoutOptionsTag };
+  GC_CAN_IGNORE ByteCount    ll_theSizes[] = { sizeof(ATSLineLayoutOptions) };
   ATSUAttributeValuePtr ll_theValues[ sizeof(ll_theTags) / sizeof(ATSUAttributeTag) ];
 
   if (!theATSUstyle) {
@@ -431,22 +426,22 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 {
  OSStatus status = noErr;
  
- ATSUAttributeTag  theTags[] = { kATSUFontTag,
-				 kATSUSizeTag,
-				 kATSUQDBoldfaceTag,
-				 kATSUQDItalicTag,
-				 kATSUQDUnderlineTag,
-				 kATSUQDCondensedTag,
-				 kATSUQDExtendedTag,
-				 kATSUColorTag };
- ByteCount    theSizes[] = { sizeof(ATSUFontID),
-			     sizeof(Fixed),
-			     sizeof(Boolean),
-			     sizeof(Boolean),
-			     sizeof(Boolean),
-			     sizeof(Boolean),
-			     sizeof(Boolean),
-			     sizeof(RGBColor) };
+ GC_CAN_IGNORE ATSUAttributeTag  theTags[] = { kATSUFontTag,
+					       kATSUSizeTag,
+					       kATSUQDBoldfaceTag,
+					       kATSUQDItalicTag,
+					       kATSUQDUnderlineTag,
+					       kATSUQDCondensedTag,
+					       kATSUQDExtendedTag,
+					       kATSUColorTag };
+ GC_CAN_IGNORE ByteCount    theSizes[] = { sizeof(ATSUFontID),
+					   sizeof(Fixed),
+					   sizeof(Boolean),
+					   sizeof(Boolean),
+					   sizeof(Boolean),
+					   sizeof(Boolean),
+					   sizeof(Boolean),
+					   sizeof(RGBColor) };
  ATSUAttributeValuePtr theValues[ sizeof(theTags) / sizeof(ATSUAttributeTag) ];
  
  ATSUFontID   atsuFont;

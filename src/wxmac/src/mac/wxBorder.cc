@@ -46,8 +46,12 @@ wxBorder::wxBorder // Constructor (given parentArea)
   
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
 }
 
 //=============================================================================

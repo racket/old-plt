@@ -63,33 +63,38 @@ void wxRectBorder::Paint(void)
     int clientWidth, clientHeight;
     Rect clientRect;
     int margin;
-    
+    wxArea *area;
+    wxMargin m;
+
     GetClientSize(&clientWidth, &clientHeight);
     ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
 
-    margin = ParentArea()->Margin().Offset(wxTop) - cWhitespace;
+    area = ParentArea();
+    m = area->Margin();
+
+    margin = m.Offset(wxTop) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.left, clientRect.top);
       ::LineTo(clientRect.right - margin, clientRect.top);
     }
 
-    margin = ParentArea()->Margin().Offset(wxBottom) - cWhitespace;
+    margin = m.Offset(wxBottom) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.left, clientRect.bottom - margin);
       ::LineTo(clientRect.right - margin, clientRect.bottom - margin);
     }
 
-    margin = ParentArea()->Margin().Offset(wxLeft) - cWhitespace;
+    margin = m.Offset(wxLeft) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.left, clientRect.top);
       ::LineTo(clientRect.left, clientRect.bottom - margin);
     }
 
-    margin = ParentArea()->Margin().Offset(wxRight) - cWhitespace;
+    margin = m.Offset(wxRight) - cWhitespace;
     if (margin > 0) {
       ::PenSize(margin, margin);
       ::MoveTo(clientRect.right - margin, clientRect.top);
@@ -106,17 +111,22 @@ void wxRectBorder::ChangeToGray(Bool gray)
     RgnHandle rgn, rgn2;
     int margin;
     Rect clientRect;
-
+    wxArea *area;
+    wxMargin m;
     int clientWidth, clientHeight;
+
     GetClientSize(&clientWidth, &clientHeight);
     ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
 
     /* We should really get all 4 margins... */
-    margin = ParentArea()->Margin().Offset(wxTop);
+    area = ParentArea();
+    m = area->Margin();
+    margin = m.Offset(wxTop);
     
     rgn = NewRgn();
     if (rgn) {
+      CGrafPtr graf;
       RectRgn(rgn, &clientRect);
       rgn2 = NewRgn();
       if (rgn2) {
@@ -125,7 +135,8 @@ void wxRectBorder::ChangeToGray(Bool gray)
 	DiffRgn(rgn, rgn2, rgn);
 	DisposeRgn(rgn2);
       }
-      InvalWindowRgn(GetWindowFromPort(cMacDC->macGrafPort()), rgn);
+      graf = cMacDC->macGrafPort();
+      InvalWindowRgn(GetWindowFromPort(graf), rgn);
       DisposeRgn(rgn);
     }
   }

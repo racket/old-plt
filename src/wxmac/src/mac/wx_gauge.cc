@@ -7,15 +7,10 @@
  * Copyright:	(c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "common.h"
 #include "wx_utils.h"
 #include "wx_gauge.h"
 #include "wx_messg.h"
-
-#define MEANING_CHARACTER	'0'
-
 
 // Slider
 /* 
@@ -109,8 +104,12 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
     } else
       cTitle = NULL;
   
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();  
 }
 
@@ -216,9 +215,12 @@ void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
   if (dW || dH) {	
     int clientWidth, clientHeight, vwid, vhgt;
+    wxArea *carea;
 
-    clientWidth = ClientArea()->Width();
-    clientHeight= ClientArea()->Height();
+    carea = ClientArea();
+
+    clientWidth = carea->Width();
+    clientHeight= carea->Height();
 
     vwid = valueRect.right - valueRect.left;
     vhgt = valueRect.bottom - valueRect.top;
@@ -292,7 +294,12 @@ void wxGauge::SetLabel(char *label)
 
 void wxGauge::InternalGray(int gray_amt)
 {
-  if (cTitle)
-    ((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray_amt);
+  if (cTitle) {
+    wxLabelArea *la;
+    wxWindow *w;
+    la = (wxLabelArea *)cTitle;
+    w = la->GetMessage();
+    w->InternalGray(gray_amt);
+  }
   wxItem::InternalGray(gray_amt);
 }

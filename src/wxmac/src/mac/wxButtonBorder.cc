@@ -53,15 +53,23 @@ void wxButtonBorder::Paint(void)
 
   if (cHidden) return;
 
-  margin = ParentArea()->Margin().Offset(wxTop);
+  {
+    wxArea *area;
+    wxMargin m;
+    area = ParentArea();
+    m = area->Margin();
+    margin = m.Offset(wxTop);
+  }
   if (margin)
     {	
       int clientWidth, clientHeight;
       Rect clientRect;
       PenState oldPenState;
+      wxArea *carea;
 
-      clientWidth = ClientArea()->Width();
-      clientHeight = ClientArea()->Height();
+      carea = ClientArea();
+      clientWidth = carea->Width();
+      clientHeight = carea->Height();
       SetCurrentDC();
       ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
       OffsetRect(&clientRect,SetOriginX,SetOriginY);

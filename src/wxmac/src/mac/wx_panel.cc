@@ -101,7 +101,9 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
       DoShow(FALSE);
   } else {
     if (x == -1 && y == -1 && w == -1 && h == -1) {
-      if (parent->GetChildren()->Number() == 1) {
+      wxChildList *cl;
+      cl = parent->GetChildren();
+      if (cl->Number() == 1) {
 	/* Fill the frame/dialog */
 	int w, h;
 	parent->GetClientSize(&w, &h);
@@ -289,10 +291,14 @@ void wxPanel::Fit(void)
 { // Fit panel around its items
   int maxX = 0;
   int maxY = 0;
+  wxChildList *cl;
   wxChildNode* childWindowNode;
   wxWindow* childWindow;
+  wxArea *carea;
 
-  childWindowNode = ClientArea()->Windows()->First();
+  carea = ClientArea();
+  cl = carea->Windows();
+  childWindowNode = cl->First();
   while (childWindowNode) {
     int x, y, w, h;
 
@@ -379,6 +385,7 @@ void wxPanel::DoShow(Bool show)
 {
   wxNode* areaNode;
   wxArea* area;
+  wxChildList *cl;
   wxChildNode* childWindowNode;
   wxWindow* childWindow;
 
@@ -394,7 +401,8 @@ void wxPanel::DoShow(Bool show)
   areaNode = cAreas->First();
   while (areaNode) {
     area = (wxArea*)areaNode->Data();
-    childWindowNode = area->Windows()->First();
+    cl = area->Windows();
+    childWindowNode = cl->First();
     while (childWindowNode) {
       childWindow = (wxWindow*)childWindowNode->Data();
       childWindow->DoShow(show);
@@ -417,72 +425,6 @@ void wxPanel::Paint(void)
 //-----------------------------------------------------------------------------
 void wxPanel::OnChar(wxKeyEvent *event)
 {
-  switch (event->keyCode)
-    {
-    case 0x03:	// enter
-    case 0x0D:	// return
-      OnDefaultAction(NULL);
-      return;
-
-    case 0x09:	// tab
-      {
-	// Step through panel items that want focus
-	wxFrame* rootFrame;
-	wxWindow* currentWindow;
-	wxChildNode* childWindowNode;
-	wxWindow* childWindow;
-	wxWindow* wrapWindow = NULL;
-
-	rootFrame = GetRootFrame();
-	currentWindow = rootFrame->GetFocusWindow();
-
-	// Tab steps forward, Shift-Tab steps backwards
-#if 0
-	Bool backwards = event->shiftDown;
-	if (backwards)
-	  childWindowNode = cClientArea->Windows()->Last();
-	else
-#endif
-	  childWindowNode = cClientArea->Windows()->First();
-
-	// Find current focus window
-	while (childWindowNode)
-	  {
-	    childWindow = (wxWindow*)childWindowNode->Data();
- 				// In case we end up wrapping
-	    if (!wrapWindow && childWindow->WantsFocus() && childWindow->CanAcceptEvent())
-	      wrapWindow = childWindow;
- 				// We actually want to be positioned one after/before the current window
-#if 0
-	    if (backwards)
-	      childWindowNode = childWindowNode->Previous();
-	    else
-#endif
-	      childWindowNode = childWindowNode->Next();
-	    if (childWindow  == currentWindow)
-	      break;
-	  }
-	// Look for next window in chain that wants focus
-	while (childWindowNode)
-	  {
-	    childWindow = (wxWindow*)childWindowNode->Data();
-	    if (childWindow->WantsFocus() && childWindow->CanAcceptEvent())
-	      break;
-#if 0 					
-	    if (backwards)
-	      childWindowNode = childWindowNode->Previous();
-	    else
-#endif 
-	      childWindowNode = childWindowNode->Next();
-	  }
-	// Set new focus window
-	rootFrame->SetFocusWindow((childWindowNode)?childWindow:wrapWindow);
-	return;
-      }
-
-    default:
-      break;
-    }
 }
 
 

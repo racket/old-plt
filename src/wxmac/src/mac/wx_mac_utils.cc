@@ -7,21 +7,14 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "common.h"
 #include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
 #include "wx_dialg.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
-#ifndef WX_CARBON
-# include <Memory.h>
-# include <QuickDraw.h>
-# include <ToolUtils.h>
-# include <Dialogs.h>
-#endif
 
 char *wxP2C(const unsigned char *p)
 {

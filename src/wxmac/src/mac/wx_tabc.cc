@@ -20,6 +20,10 @@
 #define TAB_CONTENT_MARGIN 2
 #define TAB_TITLE_SPACE 20
 
+#ifdef MZ_PRECISE_GC
+extern "C" void *scheme_malloc_atomic(size_t);
+#endif
+
 static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Rect *boundsRect)
 {
   ControlTabEntry *array;
@@ -104,8 +108,12 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
 
   ::EmbedControl(cMacControl, GetRootControl());
   
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow*p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 }
 
@@ -192,8 +200,9 @@ void wxTabChoice::Paint(void)
   if (SetCurrentDC()) {
     Rect r = { 0, 0, cWindowHeight, cWindowWidth};
     ::OffsetRect(&r,SetOriginX,SetOriginY);
-    if (cMacControl)
+    if (cMacControl) {
       ::Draw1Control(cMacControl);
+    }
   }
 }
 
@@ -204,10 +213,11 @@ void wxTabChoice::DoShow(Bool show)
 
   if (cMacControl) {
     SetCurrentDC();
-    if (show)
+    if (show) {
       ::ShowControl(cMacControl);
-    else
+    } else {
       ::HideControl(cMacControl);
+    }
   }
   
   wxWindow::DoShow(show);
@@ -276,14 +286,16 @@ void wxTabChoice::Append(char *s)
 
   naya = MakeTabs(cMacDC->macGrafPort(), tab_count, tab_labels, &r);
 
-  if (cMacControl)
+  if (cMacControl) {
     ::DisposeControl(cMacControl);
+  }
   cMacControl = naya;
 
   ::EmbedControl(cMacControl, GetRootControl());
   
-  if (cHidden)
+  if (cHidden) {
     ::HideControl(cMacControl);
+  }
   if (!cActive)
     DeactivateControl(cMacControl);
   if (!OS_Active()) {

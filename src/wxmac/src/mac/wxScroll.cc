@@ -101,9 +101,11 @@ void wxScroll::SetScrollData
  )
 {
   wxScrollData* scrollData;
+  wxScroll *root;
   scrollData = GetScrollData();
   scrollData->SetValue(newScrollData, whatScrollData);
-  RootScroll()->OnSetScrollData(scrollData, whatScrollData, e);
+  root = RootScroll();
+  root->OnSetScrollData(scrollData, whatScrollData, e);
 }
 
 //-----------------------------------------------------------------------------
@@ -115,9 +117,11 @@ void wxScroll::SetScrollData
  )
 {
   wxScrollData* scrollData;
+  wxScroll *root;
   scrollData = GetScrollData();
   scrollData->SetValue(value, whatScrollData);
-  RootScroll()->OnSetScrollData(scrollData, whatScrollData, e);
+  root = RootScroll();
+  root->OnSetScrollData(scrollData, whatScrollData, e);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

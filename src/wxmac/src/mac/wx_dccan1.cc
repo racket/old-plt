@@ -7,12 +7,8 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "common.h"
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#ifndef WX_CARBON
-# include <QuickDraw.h>
-#endif
 #include "wx_dccan.h"
 #include "wx_canvs.h"
 #include "wx_utils.h"
@@ -118,9 +114,13 @@ wxCanvasDC::~wxCanvasDC(void)
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
   
-  if (current_reg) ::DisposeRgn(current_reg);
+  if (current_reg) {
+    ::DisposeRgn(current_reg);
+  }
   current_reg = NULL;
-  if (onpaint_reg) ::DisposeRgn(onpaint_reg);
+  if (onpaint_reg) {
+    ::DisposeRgn(onpaint_reg);
+  }
   onpaint_reg = NULL;
 }
 
@@ -174,8 +174,11 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
   }
   
   SetOriginX = SetOriginY = 0;
-  if (canvas)
-    canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+  if (canvas) {
+    wxArea *area;
+    area = canvas->ClientArea();
+    area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+  }
 
   if (cMacDC->currentUser() != this) { 
     // must setup platform
@@ -207,19 +210,22 @@ void wxCanvasDC::SetCanvasClipping(void)
   if (!Ok() || !cMacDC)
     return;
 
-  if (current_reg) ::DisposeRgn(current_reg);
+  if (current_reg) {
+    ::DisposeRgn(current_reg);
+  }
   if (clipping || onpaint_reg) {
     current_reg = ::NewRgn();
     CheckMemOK(current_reg);
   } else
     current_reg = NULL;
   
-  if (onpaint_reg && clipping)
+  if (onpaint_reg && clipping) {
     ::SectRgn(clipping->rgn, onpaint_reg, current_reg) ;
-  else if (clipping)
+  } else if (clipping) {
     ::CopyRgn(clipping->rgn, current_reg) ;
-  else if (onpaint_reg)
+  } else if (onpaint_reg) {
     ::CopyRgn(onpaint_reg, current_reg);
+  }
 
   theCurrentUser = cMacDC->currentUser();
   if (theCurrentUser == this) { 
@@ -241,8 +247,11 @@ void wxCanvasDC::SetCanvasClipping(void)
     oox = SetOriginX;
     ooy = SetOriginY;
     SetOriginX = SetOriginY = 0;
-    if (canvas)
-      canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+    if (canvas) {
+      wxArea *area;
+      area = canvas->ClientArea();
+      area->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+    }
 
     wxMacSetClip();
 
@@ -285,7 +294,7 @@ void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
 void wxCanvasDC::SetPaintRegion(Rect* paintRect)
   //-----------------------------------------------------------------------------
 {
-  if (onpaint_reg) ::DisposeRgn(onpaint_reg);
+  if (onpaint_reg) { ::DisposeRgn(onpaint_reg); }
   onpaint_reg = ::NewRgn();
   CheckMemOK(onpaint_reg);
   ::RectRgn(onpaint_reg, paintRect);
@@ -492,8 +501,9 @@ void wxCanvasDC::wxMacSetClip(void)
 	::OffsetRgn(rgn,SetOriginX,SetOriginY);
 	::SetClip(rgn);
 	DisposeRgn(rgn);
-      } else
+      } else {
 	::SetClip(current_reg);
+      }
     } else {
       Rect largestClipRect = {-32767, -32767, 32767, 32767};
       ::ClipRect(&largestClipRect);
@@ -643,7 +653,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     {
       float ps;
       ps = font->GetPointSize();
-      ::TextSize(floor(ps * user_scale_y));
+      ::TextSize((short)floor(ps * user_scale_y));
     }
     ::TextFace(font->GetMacFontStyle());
     ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);

@@ -187,8 +187,9 @@ void wxApp::doMacPreEvent()
     {
       if (!m129)
 	m129 = GetMenu(129);
-      if (m129)
+      if (m129) {
 	::InsertMenu(m129, 0);
+      }
     }
     {
       CGrafPtr savep;
@@ -936,11 +937,11 @@ void wxApp::doMacInContent(WindowPtr window)
 	  wxFrame* frontFrame;
 	  frontFrame = findMacWxFrame(FrontWindow());
 	  if (!frontFrame) wxFatalError("No wxFrame for frontWindow.");
-	  if (0 && !frontFrame->IsModal())
-	    {
-	      ::SelectWindow(window); //WCH : should I be calling some wxMethod?
-	    }
-	  else ::SysBeep(3);
+	  if (0 && !frontFrame->IsModal()) {
+	    ::SelectWindow(window); //WCH : should I be calling some wxMethod?
+	  } else {
+	    ::SysBeep(3);
+	  }
 	}
       else
 	{

@@ -128,6 +128,8 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
  ) :
  wxbWindow (windowName)
 {
+  wxChildList *wl, *cl;
+  
   cStyle = style;
   children = new wxChildList();
   cScroll = NULL;
@@ -145,14 +147,16 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
   InitDefaults();
 
   cParentArea = parentScreen->ClientArea();
-  cParentArea->Windows()->Append(this);
+  wl = cParentArea->Windows();
+  wl->Append(this);
 
   window_parent = parentScreen;
   window_parent->AddChild(this);
 
   // Frames are initially hidden!
-  window_parent->GetChildren()->Show(this, FALSE);
-  cParentArea->Windows()->Show(this, FALSE);
+  cl = window_parent->GetChildren();
+  cl->Show(this, FALSE);
+  wl->Show(this, FALSE);
 
   cMacDC = NULL; // will set cMacDC later
 
@@ -174,6 +178,8 @@ wxWindow::wxWindow // Constructor (given parentArea)
  ) :
  wxbWindow (windowName)
 {
+  wxChildList *wl;
+
   cStyle = style;
   children = new wxChildList();
   cScroll = NULL;
@@ -189,7 +195,8 @@ wxWindow::wxWindow // Constructor (given parentArea)
   InitDefaults();
 
   cParentArea = parentArea;
-  cParentArea->Windows()->Append(this);
+  wl = cParentArea->Windows();
+  wl->Append(this);
 
   window_parent = cParentArea->ParentWindow();
 
@@ -216,6 +223,8 @@ wxWindow::wxWindow // Constructor (given parentWindow)
  ) :
  wxbWindow (windowName)
 {
+  wxChildList *wl;
+
   cStyle = style;
   children = new wxChildList();
   cScroll = NULL;
@@ -231,7 +240,8 @@ wxWindow::wxWindow // Constructor (given parentWindow)
   InitDefaults();
 
   cParentArea = parentWindow->ClientArea();
-  cParentArea->Windows()->Append(this);
+  wl = cParentArea->Windows();
+  wl->Append(this);
 
   window_parent = parentWindow;
 
@@ -626,8 +636,12 @@ void wxWindow::Fit(void)
   int maxY = 0;
   wxChildNode* childWindowNode;
   wxWindow* childWindow;
+  wxArea *carea;
+  wxChildList *wl;
 
-  childWindowNode = ClientArea()->Windows()->First();
+  carea = ClientArea();
+  wl = carea->Windows();
+  childWindowNode = wl->First();
   while (childWindowNode)
     {
       int x, y, w, h;
@@ -689,8 +703,12 @@ void wxWindow::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   { // Notify child windows of area resize.
     wxChildNode* childWindowNode;
     wxWindow* childWindow;
+    wxArea *carea;
+    wxChildList *wl;
 
-    childWindowNode = ClientArea()->Windows()->First();
+    carea = ClientArea();
+    wl = carea->Windows();
+    childWindowNode = wl->First();
     while (childWindowNode) {
       childWindow = (wxWindow*)childWindowNode->Data();
       if (childWindow) {
@@ -896,16 +914,22 @@ void wxWindow::SetForeground(void) // mac platform only
     PenPat(GetBlackPattern()); // WCH: must use PenPixPat for stipple
   }
   
-  pixel = cBrush->GetColour()->pixel;
+  {
+    wxColour *c;
+    c = cBrush->GetColour();
+    pixel = c->pixel;
+  }
   if (cColour)
     RGBForeColor(&pixel);
   else {
     unsigned char red, blue, green;
     Bool isWhiteColour;
+    wxColour *c;
 
-    red = cBrush->GetColour()->Red();
-    blue = cBrush->GetColour()->Blue();
-    green = cBrush->GetColour()->Green();
+    c = cBrush->GetColour();
+    red = c->Red();
+    blue = c->Blue();
+    green = c->Green();
     isWhiteColour =
       (red == (unsigned char )255 &&
        blue == (unsigned char)255 &&
@@ -942,8 +966,10 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect)
     wxWindow* windowParent;
     Rect parentClipRect;
     int parentAreaX, parentAreaY;
+    wxArea *parea;
 
-    windowParent = ParentArea()->ParentWindow();
+    parea = ParentArea();
+    windowParent = parea->ParentWindow();
     windowParent->GetClipRect(cParentArea, &parentClipRect);
     wxMargin parentAreaMargin = area->Margin(cParentArea);
     parentAreaX = parentAreaMargin.Offset(wxLeft);
@@ -1169,8 +1195,10 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *_win, wxMouseEvent *evt)
 	    QueueLeaveEvent(p, win, evt);
 	  p = p->GetParent();
 	}
-      } else
-	p = win->GetRootFrame()->GetParent();
+      } else {
+	p = win->GetRootFrame();
+	p = p->GetParent();
+      }
       
       entered = win;
       
@@ -1199,9 +1227,11 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *_win, wxMouseEvent *evt)
 static Bool IsCaptureAncestorArea(wxArea *area)
 {
   wxChildNode* childWindowNode;
+  wxChildList *wl;
   wxWindow *p, *w;
 
-  childWindowNode = area->Windows()->First();
+  wl = area->Windows();
+  childWindowNode = wl->First();
   while (childWindowNode) { 
     p = (wxWindow*)childWindowNode->Data();
     for (w = wxWindow::gMouseWindow; w; w = w->GetParent()) {
@@ -1263,7 +1293,9 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
       if (!capThis) {
 	wxChildNode* childWindowNode;
 	wxWindow* childWindow;
-	childWindowNode = hitArea->Windows()->First();
+	wxChildList *wl;
+	wl = hitArea->Windows();
+	childWindowNode = wl->First();
 	while (childWindowNode && !result) {
 	  childWindow = (wxWindow*)childWindowNode->Data();
 	  result = childWindow->SeekMouseEventArea(areaMouseEvent);
@@ -1413,6 +1445,7 @@ void wxWindow::Activate(Bool flag) // mac platform only
   wxArea* area;
   wxChildNode* childWindowNode;
   wxWindow* childWindow;
+  wxChildList *wl;
 
   cActive = flag;
   ShowAsActive(flag);
@@ -1420,7 +1453,8 @@ void wxWindow::Activate(Bool flag) // mac platform only
   areaNode = cAreas->First();
   while (areaNode) {
     area = (wxArea*)areaNode->Data();
-    childWindowNode = area->Windows()->First();
+    wl = area->Windows();
+    childWindowNode = wl->First();
     while (childWindowNode) {
       childWindow = (wxWindow*)childWindowNode->Data();
       childWindow->Activate(flag);
@@ -1453,6 +1487,7 @@ void wxWindow::Paint(void)
   wxNode* areaNode;
   wxArea* area;
   wxChildNode* childWindowNode;
+  wxChildList *wl;
   wxWindow* childWindow;
 
   if (cHidden) return;
@@ -1460,7 +1495,8 @@ void wxWindow::Paint(void)
   areaNode = cAreas->Last();
   while (areaNode) {
     area = (wxArea*)areaNode->Data();
-    childWindowNode = area->Windows()->First();
+    wl = area->Windows();
+    childWindowNode = wl->First();
     while (childWindowNode)
       {
 	childWindow = (wxWindow*)childWindowNode->Data();
@@ -1552,8 +1588,10 @@ void wxWindow::ChildrenInternalGray(int gray_amt)
 {
   wxChildNode *node;
   wxWindow *w;
+  wxChildList *cl;
   
-  for (node = GetChildren()->First(); node; node = node->Next()) {
+  cl = GetChildren();
+  for (node = cl->First(); node; node = node->Next()) {
     w = (wxWindow *)(node->Data());
     w->InternalGray(gray_amt);
   }
@@ -1608,8 +1646,11 @@ void wxWindow::AddWhiteRgn(RgnHandle r)
 {
   wxChildNode *node;
   wxWindow *c;
+  wxChildList *cl;
 
-  for (node = GetChildren()->First(); node; node = node->Next()) {
+  cl = GetChildren ();
+
+  for (node = cl->First(); node; node = node->Next()) {
     c = (wxWindow *)(node->Data());
     if (!c->cHidden)
       c->AddWhiteRgn(r);
@@ -1647,10 +1688,16 @@ void wxWindow::Show(Bool v)
   if (v == cUserHidden)
     return;
   
-  if (window_parent)
-    window_parent->GetChildren()->Show(this, !v);
-  if (cParentArea)
-    cParentArea->Windows()->Show(this, !v);
+  if (window_parent) {
+    wxChildList *cl;
+    cl = window_parent->GetChildren();
+    cl->Show(this, !v);
+  }
+  if (cParentArea) {
+    wxChildList *wl;
+    wl = cParentArea->Windows();
+    wl->Show(this, !v);
+  }
 
   cUserHidden = v;
   DoShow(!v);
@@ -1865,6 +1912,7 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
     wxMargin hitAreaMargin;
     int hitAreaX, hitAreaY, areaX, areaY;
     wxChildNode* childWindowNode;
+    wxChildList *wl;
     wxWindow* childWindow;
 
     hitAreaMargin = hitArea->Margin(hitArea->ParentWindow());
@@ -1872,7 +1920,8 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
     hitAreaY = hitAreaMargin.Offset(wxTop);
     areaX = hitX - hitAreaX; // hit area c.s.
     areaY = hitY - hitAreaY; // hit area c.s.
-    childWindowNode = hitArea->Windows()->First();
+    wl = hitArea->Windows();
+    childWindowNode = wl->First();
     while (childWindowNode && !result) {
       childWindow = (wxWindow*)childWindowNode->Data();
       result = childWindow->AdjustCursor(areaX, areaY);
@@ -1923,8 +1972,10 @@ void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
 {
   wxChildNode *node, *next;
   wxWindow *c;
+  wxChildList *cl;
 
-  for (node = GetChildren()->First(); node; node = next) {
+  cl = GetChildren();
+  for (node = cl->First(); node; node = next) {
     c = (wxWindow *)(node->Data());
     next = node->Next();
     if (c) {

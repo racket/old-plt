@@ -844,7 +844,7 @@
                                     (method-parms (cadr wrong-code))))))
              (raise-syntax-error (string->symbol m-name)
                                  ((get-error-message type) (format "~a(~a)" m-name 
-                                                                   (if (null? parms)
+                                                                   (if (null? (method-parms (cadr wrong-code)))
                                                                        ""
                                                                        (substring parms 0 (sub1 (string-length parms)))))
                                                            (car (class-record-name (car wrong-code))))

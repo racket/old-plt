@@ -2441,6 +2441,13 @@ static wxGL *current_gl_context = NULL;
 static int gl_registered;
 static XVisualInfo *vi, *sb_vi;
 
+static int errorFlagged;
+static int FlagError(Display*, XErrorEvent*)
+{
+  errorFlagged = 1;
+  return 0;
+}
+
 Visual *wxGetGLWindowVisual()
 {
   if (!gl_registered) {
@@ -2449,6 +2456,7 @@ Visual *wxGetGLWindowVisual()
     int n, i;
     GC_CAN_IGNORE int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, GLX_DEPTH_SIZE, 1, None };
     GC_CAN_IGNORE int gl_sb_attribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 1, None };
+    X_Err_Handler old_handler;
 
     wxREGGLOB(current_gl_context); 
     gl_registered = 1;
@@ -2459,9 +2467,23 @@ Visual *wxGetGLWindowVisual()
        get a list of attribute-equivalent visuals, then find the'
        ones with the right GL properties... */
 
-    suggested_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_attribs);
-    suggested_sb_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_sb_attribs);
+    XSync(wxAPP_DISPLAY, FALSE);
+    old_handler = XSetErrorHandler(FlagError);
+    errorFlagged = 0;
 
+    suggested_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_attribs);
+    if (errorFlagged) {
+      suggested_vi = NULL;
+      errorFlagged = 0;
+    }
+    suggested_sb_vi = glXChooseVisual(wxAPP_DISPLAY, XScreenNumberOfScreen(wxAPP_SCREEN), gl_sb_attribs);
+    if (errorFlagged) {
+      suggested_sb_vi = NULL;
+      errorFlagged = 0;
+    }
+
+    XSetErrorHandler(old_handler);
+    
     vis = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
 					    DefaultColormapOfScreen(wxAPP_SCREEN)));
     
@@ -2482,6 +2504,9 @@ Visual *wxGetGLWindowVisual()
 			   | VisualBitsPerRGBMask),
 			  &tmpl, &n);
 
+    XSync(wxAPP_DISPLAY, FALSE);
+    old_handler = XSetErrorHandler(FlagError);
+
     /* Search for double-buffered and single-buffered: */
     {
       int want_db;
@@ -2491,7 +2516,6 @@ Visual *wxGetGLWindowVisual()
 	  if (want_db) {
 	    if (suggested_vi) {
 	      if (visi[i].visualid == suggested_vi->visualid) {
-		printf("got suggested vi\n");
 		vi = suggested_vi;
 		break;
 	      }
@@ -2499,7 +2523,6 @@ Visual *wxGetGLWindowVisual()
 	  } else {
 	    if (suggested_sb_vi) {
 	      if (visi[i].visualid == suggested_sb_vi->visualid) {
-		printf("got suggested sb_vi\n");
 		sb_vi = suggested_sb_vi;
 		break;
 	      }
@@ -2516,13 +2539,13 @@ Visual *wxGetGLWindowVisual()
 	  for (i = 0; i < n; i++) {
 	    int v, v2;
 	    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_USE_GL, &v);
-	    if (v) {
+	    if (v && !errorFlagged) {
 	      glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_LEVEL, &v);
-	      if (!v)  {
+	      if (!v && !errorFlagged)  {
 		glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STEREO, &v);
-		if (!v)  {
+		if (!v && !errorFlagged)  {
 		  glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_DOUBLEBUFFER, &v);
-		  if (v == want_db) {
+		  if ((v == want_db) && !errorFlagged) {
 		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_AUX_BUFFERS, &v);
 		    glXGetConfig(wxAPP_DISPLAY, visi + i, GLX_STENCIL_SIZE, &v2);
 		    if ((v <= min_aux_match) && (v2 <= min_sten_match)) {
@@ -2542,6 +2565,8 @@ Visual *wxGetGLWindowVisual()
 	}
       }
     }
+
+    XSetErrorHandler(old_handler);
   }  
 
   if (vi)

@@ -112,7 +112,7 @@ static void NoInsertFile(wxMediaBuffer *)
 
 @ X "style-has-changed" : void StyleHasChanged(wxStyle^);
 
-@ X "begin-edit-sequence" : void BeginEditSequence(bool=TRUE);
+@ X "begin-edit-sequence" : void BeginEditSequence(bool=TRUE,bool=TRUE);
 @ X "end-edit-sequence" : void EndEditSequence();
 @ X "refresh-delayed?" : bool RefreshDelayed();
 @ X "in-edit-sequence?" : bool InEditSequence();

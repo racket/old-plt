@@ -224,7 +224,7 @@ class wxMediaEdit : public wxMediaBuffer
   virtual void DoPaste(long start, long time);
 
   /* For making a lot of changes to be displayed at once: */
-  void BeginEditSequence(Bool undoable = TRUE);
+  void BeginEditSequence(Bool undoable = TRUE, Bool interruptSeqs = TRUE);
   void EndEditSequence(void);
   Bool RefreshDelayed(void);
   Bool InEditSequence(void);
@@ -442,6 +442,15 @@ class wxMediaEdit : public wxMediaBuffer
 
   TF_Flag( keepAnchorStreak );
 
+  TF_Flag( streaksPushed );
+  TF_Flag( saveTypingStreak );
+  TF_Flag( saveDeletionStreak );
+  TF_Flag( saveDelayedStreak );
+  TF_Flag( saveVcursorStreak );
+  TF_Flag( saveKillStreak );
+  TF_Flag( saveAnchorStreak );
+  TF_Flag( saveExtendStreak );
+
   TF_Flag( dragging );
   TF_Flag( tracking );
   TF_Flag( extraLine ); /* Empty line at end of file with no representative */
@@ -607,6 +616,9 @@ class wxMediaEdit : public wxMediaBuffer
   void CalcCaretLocation(void);
   
   void EndStreaks(int exception = 0);
+
+  void PushStreaks(void);
+  void PopStreaks(void);
  protected:
   Bool ReadInsert(wxSnip *snip);
   void InsertPasteSnip(wxSnip *snip, wxBufferData *);

@@ -246,7 +246,7 @@ class wxMediaBuffer : public wxObject
   virtual void StyleHasChanged(wxStyle *style) = 0;
 
   /* For making a lot of changes to be displayed at once: */
-  virtual void BeginEditSequence(Bool undoable = TRUE) = 0;
+  virtual void BeginEditSequence(Bool undoable = TRUE, Bool interruptSeqs = TRUE) = 0;
   virtual void EndEditSequence(void) = 0;
   virtual Bool RefreshDelayed(void) = 0;
   virtual Bool InEditSequence(void) = 0;

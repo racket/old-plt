@@ -420,6 +420,31 @@ void wxMediaEdit::EndStreaks(int exception)
   prevPasteStart = -1;
 }
 
+void wxMediaEdit::PushStreaks(void)
+{
+  streaksPushed = TRUE;
+  saveTypingStreak = typingStreak;
+  saveDeletionStreak = deletionStreak;
+  saveDelayedStreak = delayedStreak;
+  saveVcursorStreak = vcursorStreak;
+  saveKillStreak = killStreak;
+  saveAnchorStreak = anchorStreak;
+  saveExtendStreak = extendStreak;
+}
+
+void wxMediaEdit::PopStreaks(void)
+{
+  if (streaksPushed) {
+    streaksPushed = FALSE;
+    typingStreak = saveTypingStreak;
+    deletionStreak = saveDeletionStreak;
+    delayedStreak = saveDelayedStreak;
+    vcursorStreak = saveVcursorStreak;
+    killStreak = saveKillStreak;
+    anchorStreak = saveAnchorStreak;
+    extendStreak = saveExtendStreak;
+  }
+}
 
 /****************************************************************/
 

@@ -92,7 +92,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   void StyleHasChanged(wxStyle *style);
 
   /* For making a lot of changes to be displayed at once: */
-  void BeginEditSequence(Bool undoable = TRUE);
+  void BeginEditSequence(Bool undoable = TRUE, Bool interruptSeqs = TRUE);
   void EndEditSequence(void);
   Bool RefreshDelayed(void);
   Bool InEditSequence(void);

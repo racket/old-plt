@@ -579,9 +579,6 @@ void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int 
   maxl.height = maxh;
 
   SetWindowResizeLimits(GetWindowFromPort(cMacDC->macGrafPort()), &minl, &maxl);
-);
-
-  cFrame->EnforceSize(minw, minh, maxw, maxh, incw, inch);
 }
 
 //-----------------------------------------------------------------------------

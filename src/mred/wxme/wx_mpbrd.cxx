@@ -2719,7 +2719,7 @@ void wxMediaPasteboard::StyleHasChanged(wxStyle *style)
 
 /************************************************************************/
 
-void wxMediaPasteboard::BeginEditSequence(Bool undoable)
+void wxMediaPasteboard::BeginEditSequence(Bool undoable, Bool interruptSeqs)
 {
   WaitSequenceLock();
 

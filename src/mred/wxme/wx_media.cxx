@@ -755,9 +755,12 @@ void wxMediaEdit::AfterSetSizeConstraint(void)
 
 /****************************************************************/
 
-void wxMediaEdit::BeginEditSequence(Bool undoable)
+void wxMediaEdit::BeginEditSequence(Bool undoable, Bool interruptSeqs)
 {
   WaitSequenceLock();
+
+  if (!delayRefresh && !interruptSeqs)
+    PushStreaks();
 
   EndStreaks(wxSTREAK_EXCEPT_DELAYED);
 
@@ -785,6 +788,7 @@ void wxMediaEdit::EndEditSequence(void)
 
   if (!(--delayRefresh)) {
     EndStreaks();
+    PopStreaks();
     Redraw();
 #if ALLOW_X_STYLE_SELECTION
     needXCopy = FALSE;

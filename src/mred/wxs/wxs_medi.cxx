@@ -3504,6 +3504,7 @@ static Scheme_Object *os_wxMediaBufferBeginEditSequence(int n,  Scheme_Object *p
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaBuffer_class, "begin-edit-sequence in editor<%>", n, p);
   Bool x0;
+  Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
@@ -3513,9 +3514,13 @@ static Scheme_Object *os_wxMediaBufferBeginEditSequence(int n,  Scheme_Object *p
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "begin-edit-sequence in editor<%>"));
   } else
     x0 = TRUE;
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "begin-edit-sequence in editor<%>"));
+  } else
+    x1 = TRUE;
 
   
-  WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->BeginEditSequence(x0));
+  WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->BeginEditSequence(x0, x1));
 
   
   
@@ -5457,7 +5462,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "in-edit-sequence?" " method", (Scheme_Method_Prim *)os_wxMediaBufferInEditSequence, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "refresh-delayed?" " method", (Scheme_Method_Prim *)os_wxMediaBufferRefreshDelayed, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "end-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferEndEditSequence, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "begin-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferBeginEditSequence, 0, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "begin-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferBeginEditSequence, 0, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "style-has-changed" " method", (Scheme_Method_Prim *)os_wxMediaBufferStyleHasChanged, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "write-to-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferWriteToFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "read-from-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferReadFromFile, 1, 2));

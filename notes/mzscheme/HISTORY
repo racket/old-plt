@@ -1,3 +1,8 @@
+
+Version 205.5
+Added optional namespace argument to most of the
+ namespace- primitives
+
 Version 205.3
 Changed syntax-local-get-shadower to add the current
  module expansion context, if any

@@ -25,15 +25,4 @@ comparing the color guesses of a player with the (random) choices of
 
 </menu>
 
-<br>
-
-Sample session: First set teachpack to <code> master.ss </code>. Execute
-and play as follows: 
-<br> 
-<pre>
-> (master check-guess)
-... 
-</pre>
-
-
 #include foot.tinc

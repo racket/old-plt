@@ -20,20 +20,7 @@
   the functions <code>reveal-for-list</code> and <code>draw-next-part</code>. 
 
 </menu>
-The use of the operations is explained in more detail in the corresponding
-exercises.</p>
-
-<br>
-
-Sample session: Define the required functions. Execute and play: 
-
-<pre>
-> (hangman make-word reveal draw-next-part)
-... 
-
-> (hangman-list-repl (list 'a 'l 'e) (list '_ '_ '_) reveal draw-next-part)
-... 
-</pre>
+</p>
 
 <br>
 

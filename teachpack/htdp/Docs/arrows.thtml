@@ -3,8 +3,11 @@
 
 <<LIBDESC>>{arrow.ss}
 
+<p>A shape is a class of data for which <code>move</code> and
+<code>draw</code> operations can be drawn. </p>
+
 <p>The teachpack <code>arrow.ss</code> implements controller for moving
-pictures across a canvass. It provides three operations: 
+shapes across a canvass. It provides three operations: 
 <menu>
   <li> <code>control-left-right : shape number move draw -> true <code>:
 
@@ -31,20 +34,39 @@ pictures across a canvass. It provides three operations:
 
 <p>Example: 
 <pre>
+;; A shape is a structure: 
+;;   (make-posn num num)
+
+;; RAD : the radius of the simple disk moving across a canvas
 (define RAD 10)
 
-(define (translate sh delta)
-  (make-posn (+ (posn-x sh) delta) (posn-y sh)))
-
+;; move : shape number -> shape or false 
+;; to move a shape by delta according to translate 
+;; effect: to redraw it 
 (define (move sh delta)
   (cond
-    [(and (clear-solid-disk sh RAD) (draw-solid-disk (translate sh delta) RAD))
+    [(and (clear-solid-disk sh RAD)
+          (draw-solid-disk (translate sh delta) RAD))
      (translate sh delta)]
     [else false]))
 
-(start 100 100)
+;; translate : shape number -> shape 
+;; to translate a shape by delta in the x direction 
+(define (translate sh delta)
+  (make-posn (+ (posn-x sh) delta) (posn-y sh)))
 
-(control-left-right (make-posn 10 20) 10 move)
+;; draw-it : shape -> true
+;; to draw a shape on the canvas: a disk with radius
+(define (draw-it sh)
+  (draw-solid-disk sh RAD))
+
+;; TESTS: 
+
+;; this creates the canvas
+(start 100 50)
+
+;; this creates the controller GUI
+(control-left-right (make-posn 10 20) 10 move draw-it)
 </pre>
 
 #include foot.tinc

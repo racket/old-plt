@@ -47,10 +47,10 @@ The teachpack <code>pingp.ss</code> provides the graphical help
 functions for a student implementation of the demonic ping-pong game: 
 <menu>
 
-  <li><code>tracer : posn speed mover number -> true</code><br>
+  <li><code>trace : posn speed mover number -> true</code><br>
   shows movement of a ball according to <code>mover</code>; for example, <br>
 
-  <code>(tracer (make-posn 10 10) (make-vec 1 2) mover 55)</code><br>
+  <code>(trace (make-posn 10 10) (make-vec 1 2) mover 55)</code><br>
 
   constructs a 55-unit trace of a ball that starts at (10,10) and moves (1,2)
   each time unit. The function <code>mover</code> is ternary and consumes 

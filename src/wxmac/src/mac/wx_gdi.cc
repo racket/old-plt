@@ -243,14 +243,14 @@ float wxFont::GetCharWidth(void)
 
 //-----------------------------------------------------------------------------
 void wxFont::GetTextExtent(char* string, float* x, float* y,
-							float* descent, float* externalLeading, Bool use16)
+			   float* descent, float* externalLeading, Bool use16)
 {
 	FontInfo fontInfo;
 	*x = ::TextFontInfo(GetMacFontNum(),
 	                    point_size,
 	                    GetMacFontStyle(),
 	                    &fontInfo, string);
-	*y = fontInfo.ascent + fontInfo.descent + fontInfo.leading; // height
+	*y = fontInfo.ascent + fontInfo.descent; // height
 	if (descent) *descent = fontInfo.descent;
 	if (externalLeading) *externalLeading = fontInfo.leading;
 }

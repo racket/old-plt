@@ -928,7 +928,7 @@
 	       (set! tracking-on? #f)
 	       (reset-sorting-tracking)]))
 
-          (super-new (style '(no-border hide-hscroll hide-vscroll)))
+          (super-new (style '(hide-hscroll hide-vscroll)))
 	  (set-no-sublists #t)
 	  (selectable #f)))
            
@@ -1457,7 +1457,7 @@
 
             (super on-event evt))
 
-	  (super-new (style '(no-border no-hscroll)))
+	  (super-new (style '(no-hscroll)))
           (show-focus #t)))
       
       ;; header-changing-action: bool thunk -> thunk-result
@@ -1659,12 +1659,11 @@
                              (parent top-half)
                              (stretchable-height #f)
 			     (vertical-inset 1)))
-      (new horizontal-pane% [parent top-half] [min-height 1] [stretchable-height #f])
       (define header-list (make-object header-list% top-half))
       (send (send header-list get-editor) set-line-spacing 0)
       (define message (new editor-canvas% 
 			   [parent sizing-panel]
-			   [style '(no-border auto-hscroll)]))
+			   [style '(auto-hscroll)]))
       (send header-list min-height 20)
       (send header-list stretchable-height #t)
       (send header-list set-no-sublists #t)

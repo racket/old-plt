@@ -343,7 +343,7 @@
 
 	(define c (new editor-canvas% 
 		       [parent (send mailer-frame get-area-container)]
-		       [style '(no-border auto-hscroll)]))
+		       [style '(auto-hscroll)]))
         (define message-editor-super%
           (color:text-mixin 
            (editor:backup-autosave-mixin

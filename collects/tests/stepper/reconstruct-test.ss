@@ -28,38 +28,37 @@
           (let ([mark-list (continuation-mark-set->list mark-set key)])
             (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list)))))))
         
-(define (annotate-expr stx lang num-steps action)
-  (let loop ([env annotate:initial-env-package] [exprs (if lang 
-                                                           (wrap-expand-unwrap (list stx) lang)
-                                                           (list (expand stx)))])
-    (if (null? exprs)
+(define (annotate-exprs stx-list num-steps action)
+  (let loop ([env annotate:initial-env-package] [stxs stx-list])
+    (if (null? stxs)
         null
-        (let*-values ([(break) (make-break num-steps stx action)]
+        (let*-values ([(break) (make-break num-steps (car stxs) action)]
                       [(annotated new-env)
-                       (annotate:annotate (car exprs) env break 'foot-wrap)])
-          (cons annotated (loop new-env (cdr exprs)))))))
+                       (annotate:annotate (expand (car stxs)) env break 'foot-wrap)])
+          (cons annotated (loop new-env (cdr stxs)))))))
 
-(define (test-expr stx lang num-steps selector)
+(define (test-expr stx-list num-steps)
   (let/ec k
-    (map eval (selector (annotate-expr stx lang num-steps k)))))
+    (map eval (annotate-exprs stx-list num-steps k))))
 
-(define (test-sequence source lang result-list oper)
+(define (test-sequence source-list result-list)
   (for-each (lambda (result step-num)
-              (test result test-expr source lang step-num oper))
+              (test result test-expr source-list step-num))
             result-list
             (build-list (length result-list) (lambda (x) x))))
 
-(define (test-mz-sequence source result-list)
-  (test-sequence source 'mzscheme result-list cdr))
+(define (test-mz-sequence source-list result-list)
+  (test-sequence source-list result-list))
 
-(test `((,highlight-placeholder) (+)) test-expr #'+ 'mzscheme 0 cdr)
-(test-mz-sequence #'(+ 3 4)
+(test `((,highlight-placeholder) (+)) test-expr (list #'+) 0)
+
+(test-mz-sequence (list #'(+ 3 4))
                   `((((,highlight-placeholder 3 4)) (+))            
                     (((,highlight-placeholder 3 4)) (+))
                     ((,highlight-placeholder) ((+ 3 4)))
                     ((,highlight-placeholder) (7))))
 
-(test-mz-sequence #'((lambda (x) (+ x 3)) 4)
+(test-mz-sequence (list #'((lambda (x) (+ x 3)) 4))
                   `(((,highlight-placeholder) (((lambda (x) (+ x 3)) 4)))
                     ((,highlight-placeholder) ((+ 4 3)))
                     (((,highlight-placeholder 4 3)) (+))
@@ -67,16 +66,16 @@
                     ((,highlight-placeholder) ((+ 4 3)))
                     ((,highlight-placeholder) (7))))
 
-(test-mz-sequence #'(if 3 4 5)
+(test-mz-sequence (list #'(if 3 4 5))
                   `(((,highlight-placeholder) ((if 3 4 5)))
                     ((,highlight-placeholder) (4))))
 
-(test-mz-sequence #'((lambda (x) x) 3)
+(test-mz-sequence (list #'((lambda (x) x) 3))
                   `(((,highlight-placeholder) (((lambda (x) x) 3)))
                     ((,highlight-placeholder) (3))))
 
 ; 'begin' not yet supported by reconstruct
-;(test-mz-sequence #'((lambda (x) x) (begin (+ 3 4) (+ 4 5)))
+;(test-mz-sequence (list #'((lambda (x) x) (begin (+ 3 4) (+ 4 5))))
 ;                  `((((begin (,highlight-placeholder 3 4) (+ 4 5))) (+))
 ;                    (((begin (,highlight-placeholder 3 4) (+ 4 5))) (+))
 ;                    (((begin ,highlight-placeholder (+ 4 5))) ((+ 3 4)))
@@ -88,11 +87,11 @@
 ;                    ((,highlight-placeholder) ((+ 4 5)))
 ;                    ((,highlight-placeholder) (9))))
 
-(test-mz-sequence #'((lambda (a) (lambda (b) (+ a b))) 14)
+(test-mz-sequence (list #'((lambda (a) (lambda (b) (+ a b))) 14))
                   `(((,highlight-placeholder) (((lambda (a) (lambda (b) (+ a b))) 14)))
                     ((,highlight-placeholder) ((lambda (b) (+ 14 b))))))
 
-(test-mz-sequence #'((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)
+(test-mz-sequence (list #'((case-lambda ((a) 3) ((b c) (+ b c))) 5 6))
                   `(((,highlight-placeholder) (((case-lambda ((a) 3) ((b c) (+ b c))) 5 6)))
                     ((,highlight-placeholder) ((+ 5 6)))
                     (((,highlight-placeholder 5 6)) (+))
@@ -101,17 +100,17 @@
                     ((,highlight-placeholder) (11))))
 
 ; reconstruct does not handle one-armed if's:
-;(test-mz-sequence #'(if 3 4)
+;(test-mz-sequence (list #'(if 3 4))
 ;                  `(((,highlight-placeholder) ((if 3 4)))
 ;                    ((,highlight-placeholder) (4))))
 
 ; reconstruct does not handle begin0
 
-(test-mz-sequence #'(let ([a 3]) 4)
+(test-mz-sequence (list #'(let ([a 3]) 4))
                   `(((,highlight-placeholder) ((let-values ([(a) 3]) 4)) (,highlight-placeholder ,highlight-placeholder) ((define-values (a_0) 3) (begin 4)))
                     (((define a_0 3))))) 
 
-(test-mz-sequence #'(let ([a (+ 4 5)] [b (+ 9 20)]) (+ a b))
+(test-mz-sequence (list #'(let ([a (+ 4 5)] [b (+ 9 20)]) (+ a b)))
                   `(((,highlight-placeholder) ((let-values ([(a) (+ 4 5)] [(b) (+ 9 20)]) (+ a b))) 
                      (,highlight-placeholder ,highlight-placeholder ,highlight-placeholder) 
                      ((define-values (a_0) (+ 4 5)) (define-values (b_1) (+ 9 20)) (begin (+ a_0 b_1))))
@@ -133,12 +132,34 @@
                     ((,highlight-placeholder) ((+ 9 29)))
                     ((,highlight-placeholder) (38))))
 
+(test-mz-sequence (list #'((call/cc call/cc) (call/cc call/cc)))
+                  `(((((,highlight-placeholder call/cc) (call/cc call/cc))) (call/cc))
+                    ((((,highlight-placeholder call/cc) (call/cc call/cc))) (call-with-current-continuation))
+                    ((((call-with-current-continuation ,highlight-placeholder) (call/cc call/cc))) (call/cc))
+                    ((((call-with-current-continuation ,highlight-placeholder) (call/cc call/cc))) (call-with-current-continuation))
+                    (((,highlight-placeholder (call/cc call/cc))) ((call-with-current-continuation call-with-current-continuation)))
+                    (((,highlight-placeholder (call/cc call/cc))) ((lambda args ...)))
+                    ((((lambda args ...) (,highlight-placeholder call/cc))) (call/cc))
+                    ((((lambda args ...) (,highlight-placeholder call/cc))) (call-with-current-continuation))
+                    ((((lambda args ...) (call-with-current-continuation ,highlight-placeholder))) (call/cc))
+                    ((((lambda args ...) (call-with-current-continuation ,highlight-placeholder))) (call-with-current-continuation))
+                    ((((lambda args ...) ,highlight-placeholder)) ((call-with-current-continuation call-with-current-continuation)))
+                    ((((lambda args ...) ,highlight-placeholder)) ((lambda args ...)))
+                    ((,highlight-placeholder) (((lambda args ...) (lambda args ...))))))
+
 ;(test-mz-sequence #'(begin (define g 3) g)
 ;                  `(((,highlight-placeholder) (g))
 ;                    ((,highlight-placeholder) 3)))
 
 ;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 
+(require (lib "htdp-beginner.ss" "lang"))
+
+(test-sequence (list #'(if true 3 4))
+               `((((if ,highlight-placeholder 3 4)) (true))
+                 (((if ,highlight-placeholder 3 4)) (true))
+                 ((,highlight-placeholder) ((if true 3 4)))
+                 ((,highlight-placeholder) (3))))
 
 
 (report-errs)

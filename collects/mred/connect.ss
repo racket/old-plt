@@ -38,7 +38,13 @@
 
     (define make-connections-media-canvas%
       (lambda (%)
-	(class % (parent x y width height name style scrolls-per-page init-buffer)
+	(class % (parent [x -1] [y -1]
+			 [width -1]
+			 [height -1]
+			 [name ""]
+			 [style 0]
+			 [scrolls-per-page 100]
+			 [init-buffer null])
 	  (rename [super-set-media set-media]
 		  [super-on-set-focus on-set-focus])
 	  (public

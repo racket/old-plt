@@ -2,7 +2,7 @@
 
 (module arg-mismatch-exn mzscheme
   (require
-   (lib "specs.ss" "framework") ; contracts
+   (lib "contracts.ss")
    )
   
   (provide/contract

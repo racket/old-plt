@@ -1358,7 +1358,8 @@ void GC_push_selected GC_PROTO(( \
 #endif
                                 /* Do either of the above, depending	*/
 				/* on the third arg.			*/
-void GC_push_all_stack GC_PROTO((ptr_t b, ptr_t t));
+/* PLTSCHEME: GC_API */
+GC_API void GC_push_all_stack GC_PROTO((ptr_t b, ptr_t t));
 				    /* As above, but consider		*/
 				    /*  interior pointers as valid  	*/
 void GC_push_all_eager GC_PROTO((ptr_t b, ptr_t t));
@@ -1388,7 +1389,8 @@ void GC_push_current_stack GC_PROTO((ptr_t cold_gc_frame));
   			/* stack for scanning.				*/
 void GC_push_roots GC_PROTO((GC_bool all, ptr_t cold_gc_frame));
   			/* Push all or dirty roots.	*/
-extern void (*GC_push_other_roots) GC_PROTO((void));
+/* PLTSCHEME: GC_API */
+GC_API void (*GC_push_other_roots) GC_PROTO((void));
   			/* Push system or application specific roots	*/
   			/* onto the mark stack.  In some environments	*/
   			/* (e.g. threads environments) this is		*/
@@ -1401,8 +1403,9 @@ extern void GC_push_gc_structures GC_PROTO((void));
 			/* Thus implicitly pushed.  But we must do this	*/
 			/* explicitly if normal root processing is 	*/
 			/* disabled.  Calls the following:		*/
-	extern void GC_push_finalizer_structures GC_PROTO((void));
-	extern void GC_push_stubborn_structures GC_PROTO((void));
+/* PLTSCHEME: GC_API */
+	GC_API void GC_push_finalizer_structures GC_PROTO((void));
+	GC_API void GC_push_stubborn_structures GC_PROTO((void));
 #	ifdef THREADS
 	  extern void GC_push_thread_structures GC_PROTO((void));
 #	endif
@@ -1477,7 +1480,8 @@ void GC_register_dynamic_libraries GC_PROTO((void));
   		/* Add dynamic library data sections to the root set. */
   
 /* Machine dependent startup routines */
-ptr_t GC_get_stack_base GC_PROTO((void));	/* Cold end of stack */
+/* PLTSCHEME: GC_API */
+GC_API ptr_t GC_get_stack_base GC_PROTO((void));	/* Cold end of stack */
 #ifdef IA64
   ptr_t GC_get_register_stack_base GC_PROTO((void));
   					/* Cold end of register stack.	*/
@@ -1790,7 +1794,8 @@ void GC_print_block_list GC_PROTO((void));
 void GC_print_hblkfreelist GC_PROTO((void));
 void GC_print_heap_sects GC_PROTO((void));
 void GC_print_static_roots GC_PROTO((void));
-void GC_dump GC_PROTO((void));
+/* PLTSCHEME: GC_API */
+GC_API void GC_dump GC_PROTO((void));
 
 #ifdef KEEP_BACK_PTRS
    void GC_store_back_pointer(ptr_t source, ptr_t dest);

@@ -45,6 +45,7 @@ static Scheme_Object *read_accept_graph(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_compiled(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_box(int, Scheme_Object *[]);
 static Scheme_Object *read_accept_pipe_quote(int, Scheme_Object *[]);
+static Scheme_Object *read_decimal_as_inexact(int, Scheme_Object *[]);
 static Scheme_Object *print_graph(int, Scheme_Object *[]);
 static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
@@ -187,6 +188,11 @@ void scheme_init_read(Scheme_Env *env)
 						       "read-accept-bar-quote",
 						       MZCONFIG_CAN_READ_PIPE_QUOTE), 
 			     env);
+  scheme_add_global_constant("read-decimal-as-inexact",
+			     scheme_register_parameter(read_decimal_as_inexact,
+						       "read-decimal-as-inexact",
+						       MZCONFIG_READ_DECIMAL_INEXACT), 
+			     env);
   scheme_add_global_constant("print-graph", 
 			     scheme_register_parameter(print_graph, 
 						       "print-graph",
@@ -260,6 +266,12 @@ static Scheme_Object *
 read_accept_pipe_quote(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("read-accept-pipe-quote", MZCONFIG_CAN_READ_PIPE_QUOTE);
+}
+
+static Scheme_Object *
+read_decimal_as_inexact(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("read-decimal-as-inexact", MZCONFIG_READ_DECIMAL_INEXACT);
 }
 
 static Scheme_Object *

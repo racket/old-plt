@@ -227,7 +227,7 @@ float wxFont::GetCharHeight(void)
 	               point_size,
 	               GetMacFontStyle(),
 	               &fontInfo, NULL);
-	return fontInfo.ascent + fontInfo.descent + fontInfo.leading;
+	return fontInfo.ascent + fontInfo.descent;
 }
 
 //-----------------------------------------------------------------------------

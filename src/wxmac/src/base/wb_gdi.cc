@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.16 1999/10/05 11:00:24 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.17 1999/10/05 13:55:55 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1500,5 +1500,5 @@ int wxFontNameDirectory::GetFamily(int fontid)
   return item->family;
 }
 
-#include "wx_rgn.h"
-#include "wb_rgn.cc"
+#include "::::wxcommon:Region.h"
+#include "::::wxcommon:Region.cxx"

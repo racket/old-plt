@@ -1,1 +1,0 @@
-mzc --cc matrix.c fit.c

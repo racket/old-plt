@@ -656,7 +656,7 @@
 		   ;; ensure that there is a newline before the snip is inserted
 		   (unless (member 'hard-newline
 				   (send (find-snip (last-position) 'before) get-flags))
-		     (insert #\newline (last-position) (last-position) #f))
+		     (insert (string #\newline) (last-position) (last-position) #f))
 		   
 		   (when starting-at-prompt-mode?
 		     (set-prompt-mode #f))
@@ -715,7 +715,7 @@
 	   (let ([time-of-last-call (current-milliseconds)])
 	     (lambda (edit s style-func)
 	       (when prompt-mode?
-		 (insert #\newline (last-position) (last-position) #f)
+		 (insert (string #\newline) (last-position) (last-position) #f)
 		 (set-prompt-mode #f))
 
 	       (let* ([start (send edit last-position)]

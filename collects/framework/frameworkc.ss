@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.6 1999/02/11 17:19:11 robby Exp $
+;; $Id: frameworkc.ss,v 1.7 1999/02/16 03:31:53 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -41,7 +41,7 @@
 	[pasteboard : framework:pasteboard^ ((require-relative-library "pasteboard.ss")
 					     mred editor)]
 	[text : framework:text^ ((require-relative-library "text.ss")
-				 mred editor preferences keymap gui-utils
+				 mred icon editor preferences keymap gui-utils
 				 core:function)]
 
 	[gui-utils : framework:gui-utils^ ((require-relative-library "guiutils.ss") mred)]

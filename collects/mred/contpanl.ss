@@ -8,7 +8,7 @@
 ; make-item%
 ; child-info
 (unit/sig mred:container-panels^
-  (import mred:wx^
+  (import [wx : wx^]
 	  [mred:constants : mred:constants^]
 	  [mred:connections : mred:connections^]
 	  [mzlib:function : mzlib:function^]

@@ -1,449 +1,449 @@
-(unit/sig mred:wx^ (import)
+(unit/sig wx^ (import)
 
 ; (define union (lambda (a b c) (or a b c)))
 
-(define wx:set-afm-path (type: (str -> void)))
-(define wx:const-event-type-scroll-bottom
+(define set-afm-path (type: (str -> void)))
+(define const-event-type-scroll-bottom
   (type: num))
-(define wx:const-snip-newline (type: num))
-(define wx:const-default-dialog-style
+(define const-snip-newline (type: num))
+(define const-default-dialog-style
   (type: num))
-(define wx:new-id (type: (-> num)))
-(define wx:register-id (type: (num -> void)))
-(define wx:const-event-type-scroll-top
+(define new-id (type: (-> num)))
+(define register-id (type: (num -> void)))
+(define const-event-type-scroll-top
   (type: num))
-(define wx:const-local-select (type: num))
-(define wx:the-font-name-directory
+(define const-local-select (type: num))
+(define the-font-name-directory
   (type: wxfontnamedirectory-object))
-(define wx:const-x-select (type: num))
-(define wx:begin-busy-cursor
+(define const-x-select (type: num))
+(define begin-busy-cursor
   (type: (optional wxcursor-object -> void)))
-(define wx:const-mm-text (type: num))
-(define wx:const-default-select (type: num))
-(define wx:is-busy? (type: (-> bool)))
-(define wx:const-cursor-spraycan (type: num))
-(define wx:const-mm-lometric (type: num))
-(define wx:const-break-for-line (type: num))
-(define wx:end-busy-cursor (type: (-> void)))
-(define wx:const-mm-metric (type: num))
-(define wx:const-snip-after (type: num))
-(define wx:display-size
+(define const-mm-text (type: num))
+(define const-default-select (type: num))
+(define is-busy? (type: (-> bool)))
+(define const-cursor-spraycan (type: num))
+(define const-mm-lometric (type: num))
+(define const-break-for-line (type: num))
+(define end-busy-cursor (type: (-> void)))
+(define const-mm-metric (type: num))
+(define const-snip-after (type: num))
+(define display-size
   (type: ((box num) (box num) -> void)))
-(define wx:const-cursor-sizenwse (type: num))
-(define wx:const-mm-points (type: num))
-(define wx:const-snip-before (type: num))
-(define wx:find-window-by-label
+(define const-cursor-sizenwse (type: num))
+(define const-mm-points (type: num))
+(define const-snip-before (type: num))
+(define find-window-by-label
   (type: (str optional
               (union null wxwindow-object)
               ->
               (union null wxwindow-object))))
-(define wx:const-mm-twips (type: num))
-(define wx:const-media-ff-copy (type: num))
-(define wx:find-window-by-name
+(define const-mm-twips (type: num))
+(define const-media-ff-copy (type: num))
+(define find-window-by-name
   (type: (str optional
               (union null wxwindow-object)
               ->
               (union null wxwindow-object))))
-(define wx:const-cursor-sizenesw (type: num))
-(define wx:const-colour (type: num))
-(define wx:const-media-ff-same (type: num))
-(define wx:strip-menu-codes (type: (str -> str)))
-(define wx:const-xor (type: num))
-(define wx:const-media-ff-text (type: num))
-(define wx:get-free-memory (type: (-> num)))
-(define wx:const-cursor-right-button (type: num))
-(define wx:const-src-invert (type: num))
-(define wx:const-media-ff-std (type: num))
-(define wx:get-resource
+(define const-cursor-sizenesw (type: num))
+(define const-colour (type: num))
+(define const-media-ff-same (type: num))
+(define strip-menu-codes (type: (str -> str)))
+(define const-xor (type: num))
+(define const-media-ff-text (type: num))
+(define get-free-memory (type: (-> num)))
+(define const-cursor-right-button (type: num))
+(define const-src-invert (type: num))
+(define const-media-ff-std (type: num))
+(define get-resource
   (type: (union str str)))
-(define wx:const-set (type: num))
-(define wx:const-media-ff-guess (type: num))
-(define wx:write-resource
+(define const-set (type: num))
+(define const-media-ff-guess (type: num))
+(define write-resource
   (type: (union str str)))
-(define wx:const-cursor-question-arrow
+(define const-cursor-question-arrow
   (type: num))
-(define wx:const-or-reverse (type: num))
-(define wx:const-move-word (type: num))
-(define wx:const-or-invert (type: num))
-(define wx:const-move-page (type: num))
-(define wx:yield
+(define const-or-reverse (type: num))
+(define const-move-word (type: num))
+(define const-or-invert (type: num))
+(define const-move-page (type: num))
+(define yield
   (type: (optional semaphore -> bool)))
-(define wx:const-cursor-point-right (type: num))
+(define const-cursor-point-right (type: num))
 (define duplicate-key-event
   (type: (wxkeyevent-object -> wxkeyevent-object)))
-(define wx:const-or (type: num))
-(define wx:const-move-line (type: num))
-(define wx:flush-display (type: (-> void)))
+(define const-or (type: num))
+(define const-move-line (type: num))
+(define flush-display (type: (-> void)))
 (define duplicate-mouse-event
   (type: (wxmouseevent-object -> wxmouseevent-object)))
-(define wx:const-no-op (type: num))
-(define wx:const-move-simple (type: num))
-(define wx:const-cursor-point-left (type: num))
-(define wx:const-nor (type: num))
-(define wx:const-edit-kill (type: num))
-(define wx:const-nand (type: num))
-(define wx:const-edit-paste (type: num))
-(define wx:const-cursor-painr-brush (type: num))
-(define wx:const-invert (type: num))
-(define wx:const-edit-copy (type: num))
-(define wx:const-equiv (type: num))
-(define wx:const-edit-cut (type: num))
-(define wx:const-cursor-no-entry (type: num))
-(define wx:const-copy (type: num))
-(define wx:const-edit-clear (type: num))
-(define wx:const-clear (type: num))
-(define wx:const-edit-redo (type: num))
-(define wx:const-cursor-middle-button
+(define const-no-op (type: num))
+(define const-move-simple (type: num))
+(define const-cursor-point-left (type: num))
+(define const-nor (type: num))
+(define const-edit-kill (type: num))
+(define const-nand (type: num))
+(define const-edit-paste (type: num))
+(define const-cursor-painr-brush (type: num))
+(define const-invert (type: num))
+(define const-edit-copy (type: num))
+(define const-equiv (type: num))
+(define const-edit-cut (type: num))
+(define const-cursor-no-entry (type: num))
+(define const-copy (type: num))
+(define const-edit-clear (type: num))
+(define const-clear (type: num))
+(define const-edit-redo (type: num))
+(define const-cursor-middle-button
   (type: num))
-(define wx:const-and-reverse (type: num))
-(define wx:const-size-auto (type: num))
-(define wx:const-edit-undo (type: num))
-(define wx:const-and-invert (type: num))
-(define wx:const-process-enter (type: num))
-(define wx:const-cursor-magnifier (type: num))
-(define wx:const-and (type: num))
-(define wx:const-always-sb (type: num))
-(define wx:const-cursor-watch (type: num))
-(define wx:const-winding-rule (type: num))
-(define wx:const-bitmap-type-pict-resource
+(define const-and-reverse (type: num))
+(define const-size-auto (type: num))
+(define const-edit-undo (type: num))
+(define const-and-invert (type: num))
+(define const-process-enter (type: num))
+(define const-cursor-magnifier (type: num))
+(define const-and (type: num))
+(define const-always-sb (type: num))
+(define const-cursor-watch (type: num))
+(define const-winding-rule (type: num))
+(define const-bitmap-type-pict-resource
   (type: num))
-(define wx:const-needed-sb (type: num))
-(define wx:const-cursor-wait (type: num))
-(define wx:const-cursor-left-button (type: num))
-(define wx:const-oddeven-rule (type: num))
-(define wx:const-sb-mask (type: num))
-(define wx:const-cursor-sizing (type: num))
-(define wx:const-k-scroll (type: num))
-(define wx:const-bitmap-type-pict (type: num))
-(define wx:const-extended (type: num))
-(define wx:get-media-print-margin
+(define const-needed-sb (type: num))
+(define const-cursor-wait (type: num))
+(define const-cursor-left-button (type: num))
+(define const-oddeven-rule (type: num))
+(define const-sb-mask (type: num))
+(define const-cursor-sizing (type: num))
+(define const-k-scroll (type: num))
+(define const-bitmap-type-pict (type: num))
+(define const-extended (type: num))
+(define get-media-print-margin
   (type: (optional
            (union null (box num))
            optional
            (union null (box num))
            ->
            void)))
-(define wx:const-cursor-sizewe (type: num))
-(define wx:const-cursor-bullseye (type: num))
-(define wx:const-k-numlock (type: num))
-(define wx:const-multiple (type: num))
-(define wx:const-cursor-sizens (type: num))
-(define wx:const-k-f24 (type: num))
-(define wx:const-bitmap-type-xpm (type: num))
-(define wx:const-single (type: num))
-(define wx:set-media-print-margin
+(define const-cursor-sizewe (type: num))
+(define const-cursor-bullseye (type: num))
+(define const-k-numlock (type: num))
+(define const-multiple (type: num))
+(define const-cursor-sizens (type: num))
+(define const-k-f24 (type: num))
+(define const-bitmap-type-xpm (type: num))
+(define const-single (type: num))
+(define set-media-print-margin
   (type: (optional num optional num -> void)))
-(define wx:const-pos-use-minus-one (type: num))
-(define wx:const-cursor-pencil (type: num))
-(define wx:const-k-f23 (type: num))
-(define wx:const-multiple-mask (type: num))
-(define wx:const-cursor-ibeam (type: num))
-(define wx:const-k-f22 (type: num))
-(define wx:const-bitmap-type-xbm (type: num))
-(define wx:read-media-global-header
+(define const-pos-use-minus-one (type: num))
+(define const-cursor-pencil (type: num))
+(define const-k-f23 (type: num))
+(define const-multiple-mask (type: num))
+(define const-cursor-ibeam (type: num))
+(define const-k-f22 (type: num))
+(define const-bitmap-type-xbm (type: num))
+(define read-media-global-header
   (type: (wxmediastreamin-object -> bool)))
-(define wx:const-cursor-hand (type: num))
-(define wx:const-horizontal-hatch (type: num))
-(define wx:const-k-f21 (type: num))
-(define wx:const-size-use-exsiting (type: num))
-(define wx:const-cursor-cross (type: num))
-(define wx:const-k-f20 (type: num))
-(define wx:const-bitmap-type-gif (type: num))
-(define wx:read-media-global-footer
+(define const-cursor-hand (type: num))
+(define const-horizontal-hatch (type: num))
+(define const-k-f21 (type: num))
+(define const-size-use-exsiting (type: num))
+(define const-cursor-cross (type: num))
+(define const-k-f20 (type: num))
+(define const-bitmap-type-gif (type: num))
+(define read-media-global-footer
   (type: (wxmediastreamin-object -> bool)))
-(define wx:const-cursor-char (type: num))
-(define wx:const-fdiagonal-hatch (type: num))
-(define wx:const-k-f19 (type: num))
-(define wx:const-cursor-arrow (type: num))
-(define wx:const-k-f18 (type: num))
-(define wx:const-bitmap-type-bmp-resource
+(define const-cursor-char (type: num))
+(define const-fdiagonal-hatch (type: num))
+(define const-k-f19 (type: num))
+(define const-cursor-arrow (type: num))
+(define const-k-f18 (type: num))
+(define const-bitmap-type-bmp-resource
   (type: num))
-(define wx:write-media-global-header
+(define write-media-global-header
   (type: (wxmediastreamout-object -> bool)))
-(define wx:const-size-auto-height (type: num))
-(define wx:const-crossdiag-hatch (type: num))
-(define wx:const-k-f17 (type: num))
-(define wx:const-k-f16 (type: num))
-(define wx:const-bitmap-type-bmp (type: num))
-(define wx:write-media-global-footer
+(define const-size-auto-height (type: num))
+(define const-crossdiag-hatch (type: num))
+(define const-k-f17 (type: num))
+(define const-k-f16 (type: num))
+(define const-bitmap-type-bmp (type: num))
+(define write-media-global-footer
   (type: (wxmediastreamout-object -> bool)))
-(define wx:the-pen-list (type: wxpenlist-object))
-(define wx:const-bdiagonal-hatch (type: num))
-(define wx:const-k-f15 (type: num))
-(define wx:const-editable (type: num))
-(define wx:const-size-auto-width (type: num))
-(define wx:const-k-f14 (type: num))
-(define wx:const-bitmap-discard-colourmap
+(define the-pen-list (type: wxpenlist-object))
+(define const-bdiagonal-hatch (type: num))
+(define const-k-f15 (type: num))
+(define const-editable (type: num))
+(define const-size-auto-width (type: num))
+(define const-k-f14 (type: num))
+(define const-bitmap-discard-colourmap
   (type: num))
-(define wx:add-media-buffer-functions
+(define add-media-buffer-functions
   (type: (wxkeymap-object -> void)))
-(define wx:const-k-f13 (type: num))
-(define wx:const-dot-dash (type: num))
-(define wx:const-k-f12 (type: num))
-(define wx:const-bitmap-type-default (type: num))
-(define wx:add-media-editor-functions
+(define const-k-f13 (type: num))
+(define const-dot-dash (type: num))
+(define const-k-f12 (type: num))
+(define const-bitmap-type-default (type: num))
+(define add-media-editor-functions
   (type: (wxkeymap-object -> void)))
-(define wx:const-short-dash (type: num))
-(define wx:const-k-f11 (type: num))
-(define wx:const-long-dash (type: num))
-(define wx:const-k-f10 (type: num))
-(define wx:add-media-pasteboard-functions
+(define const-short-dash (type: num))
+(define const-k-f11 (type: num))
+(define const-long-dash (type: num))
+(define const-k-f10 (type: num))
+(define add-media-pasteboard-functions
   (type: (wxkeymap-object -> void)))
-(define wx:const-dot (type: num))
-(define wx:const-k-f9 (type: num))
-(define wx:const-cap-butt (type: num))
-(define wx:const-k-f8 (type: num))
-(define wx:media-set-x-selection-mode
+(define const-dot (type: num))
+(define const-k-f9 (type: num))
+(define const-cap-butt (type: num))
+(define const-k-f8 (type: num))
+(define media-set-x-selection-mode
   (type: (bool -> void)))
-(define wx:const-cap-projecting (type: num))
-(define wx:const-k-f7 (type: num))
-(define wx:const-cap-round (type: num))
-(define wx:const-join-round (type: num))
-(define wx:const-k-f6 (type: num))
-(define wx:the-style-list
+(define const-cap-projecting (type: num))
+(define const-k-f7 (type: num))
+(define const-cap-round (type: num))
+(define const-join-round (type: num))
+(define const-k-f6 (type: num))
+(define the-style-list
   (type: wxstylelist-object))
-(define wx:get-the-snip-class-list
+(define get-the-snip-class-list
   (type: (-> wxsnipclasslist-object)))
-(define wx:const-join-miter (type: num))
-(define wx:const-k-f5 (type: num))
-(define wx:const-snip-draw-show-inactive-caret
+(define const-join-miter (type: num))
+(define const-k-f5 (type: num))
+(define const-snip-draw-show-inactive-caret
   (type: num))
-(define wx:const-join-bevel (type: num))
-(define wx:const-k-f4 (type: num))
-(define wx:const-k-f3 (type: num))
-(define wx:const-backingstore (type: num))
-(define wx:const-snip-draw-show-caret
+(define const-join-bevel (type: num))
+(define const-k-f4 (type: num))
+(define const-k-f3 (type: num))
+(define const-backingstore (type: num))
+(define const-snip-draw-show-caret
   (type: num))
-(define wx:const-k-f2 (type: num))
-(define wx:the-clipboard
+(define const-k-f2 (type: num))
+(define the-clipboard
   (type: (union null wxclipboard-object)))
-(define wx:const-retained (type: num))
-(define wx:get-the-buffer-data-class-list
+(define const-retained (type: num))
+(define get-the-buffer-data-class-list
   (type: (-> wxbufferdataclasslist-object)))
-(define wx:const-k-f1 (type: num))
-(define wx:const-allow-auto-resize (type: num))
-(define wx:const-border (type: num))
-(define wx:const-snip-draw-no-caret (type: num))
-(define wx:exit (type: (-> void)))
-(define wx:const-k-divide (type: num))
-(define wx:bell (type: (-> void)))
-(define wx:const-focus-immediate (type: num))
-(define wx:const-change-normal-colour
+(define const-k-f1 (type: num))
+(define const-allow-auto-resize (type: num))
+(define const-border (type: num))
+(define const-snip-draw-no-caret (type: num))
+(define exit (type: (-> void)))
+(define const-k-divide (type: num))
+(define bell (type: (-> void)))
+(define const-focus-immediate (type: num))
+(define const-change-normal-colour
   (type: num))
-(define wx:the-brush-list
+(define the-brush-list
   (type: wxbrushlist-object))
-(define wx:const-k-decimal (type: num))
-(define wx:const-tiny-caption-vert (type: num))
-(define wx:const-media-ff-text-force-cr
+(define const-k-decimal (type: num))
+(define const-tiny-caption-vert (type: num))
+(define const-media-ff-text-force-cr
   (type: num))
-(define wx:const-k-subtract (type: num))
-(define wx:const-pasteboard-buffer (type: num))
-(define wx:const-k-separator (type: num))
-(define wx:const-tiny-caption-horiz (type: num))
-(define wx:const-change-alignment (type: num))
-(define wx:const-edit-select-all (type: num))
-(define wx:const-stipple (type: num))
-(define wx:const-k-add (type: num))
-(define wx:const-vertical-hatch (type: num))
-(define wx:const-k-multiply (type: num))
-(define wx:const-edit-insert-image (type: num))
-(define wx:const-cross-hatch (type: num))
-(define wx:const-k-numpad9 (type: num))
-(define wx:const-change-toggle-underline
+(define const-k-subtract (type: num))
+(define const-pasteboard-buffer (type: num))
+(define const-k-separator (type: num))
+(define const-tiny-caption-horiz (type: num))
+(define const-change-alignment (type: num))
+(define const-edit-select-all (type: num))
+(define const-stipple (type: num))
+(define const-k-add (type: num))
+(define const-vertical-hatch (type: num))
+(define const-k-multiply (type: num))
+(define const-edit-insert-image (type: num))
+(define const-cross-hatch (type: num))
+(define const-k-numpad9 (type: num))
+(define const-change-toggle-underline
   (type: num))
-(define wx:const-solid (type: num))
-(define wx:const-k-numpad8 (type: num))
-(define wx:const-event-type-right-dclick
+(define const-solid (type: num))
+(define const-k-numpad8 (type: num))
+(define const-event-type-right-dclick
   (type: num))
-(define wx:const-edit-insert-graphic-box
+(define const-edit-insert-graphic-box
   (type: num))
-(define wx:const-transparent (type: num))
-(define wx:const-k-numpad7 (type: num))
-(define wx:const-k-numpad6 (type: num))
-(define wx:const-event-type-middle-dclick
+(define const-transparent (type: num))
+(define const-k-numpad7 (type: num))
+(define const-k-numpad6 (type: num))
+(define const-event-type-middle-dclick
   (type: num))
-(define wx:const-change-toggle-weight
+(define const-change-toggle-weight
   (type: num))
-(define wx:const-edit-insert-text-box
+(define const-edit-insert-text-box
   (type: num))
-(define wx:const-k-numpad5 (type: num))
-(define wx:const-k-numpad4 (type: num))
-(define wx:const-event-type-left-dclick
+(define const-k-numpad5 (type: num))
+(define const-k-numpad4 (type: num))
+(define const-event-type-left-dclick
   (type: num))
-(define wx:const-k-numpad3 (type: num))
-(define wx:const-change-toggle-style (type: num))
-(define wx:const-k-numpad2 (type: num))
-(define wx:const-event-type-leave-window
+(define const-k-numpad3 (type: num))
+(define const-change-toggle-style (type: num))
+(define const-k-numpad2 (type: num))
+(define const-event-type-leave-window
   (type: num))
-(define wx:const-k-numpad1 (type: num))
-(define wx:const-align-center (type: num))
-(define wx:const-k-numpad0 (type: num))
-(define wx:const-event-type-enter-window
+(define const-k-numpad1 (type: num))
+(define const-align-center (type: num))
+(define const-k-numpad0 (type: num))
+(define const-event-type-enter-window
   (type: num))
-(define wx:const-align-bottom (type: num))
-(define wx:const-k-help (type: num))
-(define wx:const-align-top (type: num))
-(define wx:const-k-insert (type: num))
-(define wx:const-event-type-motion (type: num))
-(define wx:const-change-family (type: num))
-(define wx:the-colour-database
+(define const-align-bottom (type: num))
+(define const-k-help (type: num))
+(define const-align-top (type: num))
+(define const-k-insert (type: num))
+(define const-event-type-motion (type: num))
+(define const-change-family (type: num))
+(define the-colour-database
   (type: wxcolourdatabase-object))
-(define wx:const-k-snapshot (type: num))
-(define wx:const-change-smaller (type: num))
-(define wx:const-k-execute (type: num))
-(define wx:const-event-type-right-up (type: num))
-(define wx:const-change-bigger (type: num))
-(define wx:const-k-print (type: num))
-(define wx:const-change-italic (type: num))
-(define wx:const-break-for-user-2 (type: num))
-(define wx:const-k-select (type: num))
-(define wx:const-event-type-right-down
+(define const-k-snapshot (type: num))
+(define const-change-smaller (type: num))
+(define const-k-execute (type: num))
+(define const-event-type-right-up (type: num))
+(define const-change-bigger (type: num))
+(define const-k-print (type: num))
+(define const-change-italic (type: num))
+(define const-break-for-user-2 (type: num))
+(define const-k-select (type: num))
+(define const-event-type-right-down
   (type: num))
-(define wx:const-change-bold (type: num))
-(define wx:const-k-down (type: num))
-(define wx:const-change-size (type: num))
-(define wx:const-break-for-user-1 (type: num))
-(define wx:hourglass-cursor
+(define const-change-bold (type: num))
+(define const-k-down (type: num))
+(define const-change-size (type: num))
+(define const-break-for-user-1 (type: num))
+(define hourglass-cursor
   (type: wxcursor-object))
-(define wx:const-k-right (type: num))
-(define wx:const-event-type-middle-up
+(define const-k-right (type: num))
+(define const-event-type-middle-up
   (type: num))
-(define wx:const-change-weight (type: num))
-(define wx:const-hide-readonly (type: num))
-(define wx:the-media-wordbreak-map
+(define const-change-weight (type: num))
+(define const-hide-readonly (type: num))
+(define the-media-wordbreak-map
   (type: wxmediawordbreakmap-object))
-(define wx:const-k-up (type: num))
-(define wx:const-change-style (type: num))
-(define wx:const-break-for-selection (type: num))
-(define wx:const-save (type: num))
-(define wx:the-font-list
+(define const-k-up (type: num))
+(define const-change-style (type: num))
+(define const-break-for-selection (type: num))
+(define const-save (type: num))
+(define the-font-list
   (type: wxfontlist-object))
-(define wx:const-k-left (type: num))
-(define wx:const-event-type-middle-down
+(define const-k-left (type: num))
+(define const-event-type-middle-down
   (type: num))
-(define wx:const-change-normal (type: num))
-(define wx:const-open (type: num))
-(define wx:const-k-home (type: num))
-(define wx:const-change-nothing (type: num))
-(define wx:const-break-for-caret (type: num))
-(define wx:const-ps-printer (type: num))
-(define wx:const-k-end (type: num))
-(define wx:const-event-type-left-up (type: num))
-(define wx:const-base (type: num))
-(define wx:const-ps-file (type: num))
-(define wx:const-slant (type: num))
-(define wx:const-k-next (type: num))
-(define wx:const-snip-after-or-null (type: num))
-(define wx:const-ps-preview (type: num))
-(define wx:const-italic (type: num))
-(define wx:const-k-prior (type: num))
-(define wx:const-event-type-left-down
+(define const-change-normal (type: num))
+(define const-open (type: num))
+(define const-k-home (type: num))
+(define const-change-nothing (type: num))
+(define const-break-for-caret (type: num))
+(define const-ps-printer (type: num))
+(define const-k-end (type: num))
+(define const-event-type-left-up (type: num))
+(define const-base (type: num))
+(define const-ps-file (type: num))
+(define const-slant (type: num))
+(define const-k-next (type: num))
+(define const-snip-after-or-null (type: num))
+(define const-ps-preview (type: num))
+(define const-italic (type: num))
+(define const-k-prior (type: num))
+(define const-event-type-left-down
   (type: num))
-(define wx:const-ps-landscape (type: num))
-(define wx:const-bold (type: num))
-(define wx:const-k-capital (type: num))
-(define wx:const-snip-before-or-null (type: num))
-(define wx:const-ps-portrait (type: num))
-(define wx:const-light (type: num))
-(define wx:const-k-pause (type: num))
-(define wx:const-event-type-char (type: num))
-(define wx:const-focus-global (type: num))
-(define wx:const-centre (type: num))
-(define wx:const-normal (type: num))
-(define wx:const-k-menu (type: num))
-(define wx:const-focus-display (type: num))
-(define wx:const-center (type: num))
-(define wx:const-system (type: num))
-(define wx:const-k-control (type: num))
-(define wx:const-event-type-virt-listbox-command
+(define const-ps-landscape (type: num))
+(define const-bold (type: num))
+(define const-k-capital (type: num))
+(define const-snip-before-or-null (type: num))
+(define const-ps-portrait (type: num))
+(define const-light (type: num))
+(define const-k-pause (type: num))
+(define const-event-type-char (type: num))
+(define const-focus-global (type: num))
+(define const-centre (type: num))
+(define const-normal (type: num))
+(define const-k-menu (type: num))
+(define const-focus-display (type: num))
+(define const-center (type: num))
+(define const-system (type: num))
+(define const-k-control (type: num))
+(define const-event-type-virt-listbox-command
   (type: num))
-(define wx:const-edit-buffer (type: num))
-(define wx:const-change-underline (type: num))
-(define wx:const-icon-mask (type: num))
-(define wx:const-teletype (type: num))
-(define wx:const-k-shift (type: num))
-(define wx:const-icon-asterisk (type: num))
-(define wx:const-modern (type: num))
-(define wx:const-k-clear (type: num))
-(define wx:const-event-type-scrollbar-command
+(define const-edit-buffer (type: num))
+(define const-change-underline (type: num))
+(define const-icon-mask (type: num))
+(define const-teletype (type: num))
+(define const-k-shift (type: num))
+(define const-icon-asterisk (type: num))
+(define const-modern (type: num))
+(define const-k-clear (type: num))
+(define const-event-type-scrollbar-command
   (type: num))
-(define wx:const-icon-stop (type: num))
-(define wx:const-swiss (type: num))
-(define wx:const-k-mbutton (type: num))
-(define wx:const-icon-question (type: num))
-(define wx:const-script (type: num))
-(define wx:const-k-cancel (type: num))
-(define wx:const-event-type-kill-focus
+(define const-icon-stop (type: num))
+(define const-swiss (type: num))
+(define const-k-mbutton (type: num))
+(define const-icon-question (type: num))
+(define const-script (type: num))
+(define const-k-cancel (type: num))
+(define const-event-type-kill-focus
   (type: num))
-(define wx:const-icon-hand (type: num))
-(define wx:const-mcanvas-hide-v-scroll
+(define const-icon-hand (type: num))
+(define const-mcanvas-hide-v-scroll
   (type: num))
-(define wx:const-roman (type: num))
-(define wx:const-k-rbutton (type: num))
-(define wx:const-readonly (type: num))
-(define wx:const-no (type: num))
-(define wx:const-decorative (type: num))
-(define wx:const-k-lbutton (type: num))
-(define wx:const-event-type-set-focus
+(define const-roman (type: num))
+(define const-k-rbutton (type: num))
+(define const-readonly (type: num))
+(define const-no (type: num))
+(define const-decorative (type: num))
+(define const-k-lbutton (type: num))
+(define const-event-type-set-focus
   (type: num))
-(define wx:const-yes (type: num))
-(define wx:const-mcanvas-hide-h-scroll
+(define const-yes (type: num))
+(define const-mcanvas-hide-h-scroll
   (type: num))
-(define wx:const-default (type: num))
-(define wx:const-k-start (type: num))
-(define wx:const-cancel (type: num))
-(define wx:const-k-delete (type: num))
-(define wx:const-event-type-text-enter-command
+(define const-default (type: num))
+(define const-k-start (type: num))
+(define const-cancel (type: num))
+(define const-k-delete (type: num))
+(define const-event-type-text-enter-command
   (type: num))
-(define wx:const-caption (type: num))
-(define wx:const-yes-no (type: num))
-(define wx:const-mcanvas-no-v-scroll (type: num))
-(define wx:const-k-space (type: num))
-(define wx:const-ok (type: num))
-(define wx:const-hscroll (type: num))
-(define wx:const-k-escape (type: num))
-(define wx:const-event-type-radiobox-command
+(define const-caption (type: num))
+(define const-yes-no (type: num))
+(define const-mcanvas-no-v-scroll (type: num))
+(define const-k-space (type: num))
+(define const-ok (type: num))
+(define const-hscroll (type: num))
+(define const-k-escape (type: num))
+(define const-event-type-radiobox-command
   (type: num))
-(define wx:const-msnipbox-yinset (type: num))
-(define wx:concat-files
+(define const-msnipbox-yinset (type: num))
+(define concat-files
   (type: (str str str -> bool)))
-(define wx:const-mcanvas-no-h-scroll (type: num))
-(define wx:const-k-return (type: num))
-(define wx:const-vscroll (type: num))
-(define wx:copy-file (type: (str str -> bool)))
-(define wx:const-k-tab (type: num))
-(define wx:const-event-type-slider-command
+(define const-mcanvas-no-h-scroll (type: num))
+(define const-k-return (type: num))
+(define const-vscroll (type: num))
+(define copy-file (type: (str str -> bool)))
+(define const-k-tab (type: num))
+(define const-event-type-slider-command
   (type: num))
-(define wx:const-msnipbox-xinset (type: num))
-(define wx:get-temp-file-name
+(define const-msnipbox-xinset (type: num))
+(define get-temp-file-name
   (type: (str -> str)))
-(define wx:const-password (type: num))
-(define wx:const-k-back (type: num))
-(define wx:get-host-name (type: (-> str)))
-(define wx:const-event-type-menu-command
+(define const-password (type: num))
+(define const-k-back (type: num))
+(define get-host-name (type: (-> str)))
+(define const-event-type-menu-command
   (type: num))
-(define wx:const-msnipbox-ymargin (type: num))
-(define wx:get-email-address (type: (-> str)))
-(define wx:get-user-id (type: (-> str)))
-(define wx:const-event-type-multitext-command
+(define const-msnipbox-ymargin (type: num))
+(define get-email-address (type: (-> str)))
+(define get-user-id (type: (-> str)))
+(define const-event-type-multitext-command
   (type: num))
-(define wx:const-msnipbox-xmargin (type: num))
-(define wx:get-user-name (type: (-> str)))
-(define wx:string-match?
+(define const-msnipbox-xmargin (type: num))
+(define get-user-name (type: (-> str)))
+(define string-match?
   (type: (str str optional bool optional bool -> bool)))
-(define wx:const-event-type-text-command
+(define const-event-type-text-command
   (type: num))
-(define wx:const-snip-uses-buffer-path
+(define const-snip-uses-buffer-path
   (type: num))
-(define wx:set-display (type: (str -> bool)))
-(define wx:const-overwrite-prompt (type: num))
-(define wx:get-display-name (type: (-> str)))
-(define wx:const-vertical (type: num))
-(define wx:const-event-type-listbox-command
+(define set-display (type: (str -> bool)))
+(define const-overwrite-prompt (type: num))
+(define get-display-name (type: (-> str)))
+(define const-vertical (type: num))
+(define const-event-type-listbox-command
   (type: num))
-(define wx:const-snip-height-depends-on-y
+(define const-snip-height-depends-on-y
   (type: num))
-(define wx:file-selector
+(define file-selector
   (type: (str optional
               str
               optional
@@ -462,9 +462,9 @@
               num
               ->
               str)))
-(define wx:const-icon-information (type: num))
-(define wx:const-horizontal (type: num))
-(define wx:message-box
+(define const-icon-information (type: num))
+(define const-horizontal (type: num))
+(define message-box
   (type: (str optional
               str
               optional
@@ -477,12 +477,12 @@
               num
               ->
               num)))
-(define wx:const-both (type: num))
-(define wx:const-event-type-choice-command
+(define const-both (type: num))
+(define const-event-type-choice-command
   (type: num))
-(define wx:const-snip-width-depends-on-y
+(define const-snip-width-depends-on-y
   (type: num))
-(define wx:get-text-from-user
+(define get-text-from-user
   (type: (str optional
               str
               optional
@@ -497,9 +497,9 @@
               bool
               ->
               str)))
-(define wx:const-icon-exclamation (type: num))
-(define wx:const-default-frame (type: num))
-(define wx:get-multiple-choice
+(define const-icon-exclamation (type: num))
+(define const-default-frame (type: num))
+(define get-multiple-choice
   (type: (str str
               (listof str)
               num
@@ -518,12 +518,12 @@
               num
               ->
               num)))
-(define wx:const-resize-border (type: num))
-(define wx:const-event-type-checkbox-command
+(define const-resize-border (type: num))
+(define const-event-type-checkbox-command
   (type: num))
-(define wx:const-snip-height-depends-on-x
+(define const-snip-height-depends-on-x
   (type: num))
-(define wx:get-single-choice
+(define get-single-choice
   (type: (str str
               (listof str)
               optional
@@ -540,7 +540,7 @@
               num
               ->
               str)))
-(define wx:get-single-choice-index
+(define get-single-choice-index
   (type: (str str
               (listof str)
               optional
@@ -557,15 +557,15 @@
               num
               ->
               num)))
-(define wx:const-resize-box (type: num))
-(define wx:colour-display? (type: (-> bool)))
-(define wx:const-maximize-box (type: num))
-(define wx:const-event-type-button-command
+(define const-resize-box (type: num))
+(define colour-display? (type: (-> bool)))
+(define const-maximize-box (type: num))
+(define const-event-type-button-command
   (type: num))
-(define wx:const-snip-width-depends-on-x
+(define const-snip-width-depends-on-x
   (type: num))
-(define wx:display-depth (type: (-> num)))
-(define wx:get-single-choice-data
+(define display-depth (type: (-> num)))
+(define get-single-choice-data
   (type: (str str
               (listof str)
               (listof str)
@@ -583,76 +583,76 @@
               num
               ->
               str)))
-(define wx:const-minimize-box (type: num))
-(define wx:set-cursor
+(define const-minimize-box (type: num))
+(define set-cursor
   (type: (wxcursor-object -> void)))
-(define wx:const-system-menu (type: num))
-(define wx:const-type-mouse-event (type: num))
-(define wx:const-snip-handles-events (type: num))
-(define wx:get-printer-command (type: (-> str)))
-(define wx:make-meta-file-placeable
+(define const-system-menu (type: num))
+(define const-type-mouse-event (type: num))
+(define const-snip-handles-events (type: num))
+(define get-printer-command (type: (-> str)))
+(define make-meta-file-placeable
   (type: (str num num num num num -> bool)))
-(define wx:const-thick-frame (type: num))
-(define wx:const-type-key-event (type: num))
-(define wx:get-printer-file (type: (-> str)))
-(define wx:const-mdi-child (type: num))
-(define wx:const-type-command-event (type: num))
-(define wx:const-snip-hard-newline (type: num))
-(define wx:get-printer-mode (type: (-> num)))
-(define wx:get-printer-preview-command
+(define const-thick-frame (type: num))
+(define const-type-key-event (type: num))
+(define get-printer-file (type: (-> str)))
+(define const-mdi-child (type: num))
+(define const-type-command-event (type: num))
+(define const-snip-hard-newline (type: num))
+(define get-printer-mode (type: (-> num)))
+(define get-printer-preview-command
   (type: (-> str)))
-(define wx:const-mdi-parent (type: num))
-(define wx:get-printer-options (type: (-> str)))
-(define wx:const-sdi (type: num))
-(define wx:const-event-type-scroll-thumbtrack
+(define const-mdi-parent (type: num))
+(define get-printer-options (type: (-> str)))
+(define const-sdi (type: num))
+(define const-event-type-scroll-thumbtrack
   (type: num))
-(define wx:const-snip-can-append (type: num))
-(define wx:get-printer-scaling
+(define const-snip-can-append (type: num))
+(define get-printer-scaling
   (type: ((box num) (box num) -> void)))
-(define wx:get-printer-orientation
+(define get-printer-orientation
   (type: (-> num)))
-(define wx:const-maximize (type: num))
-(define wx:get-print-paper-name (type: (-> str)))
-(define wx:const-minimize (type: num))
-(define wx:const-event-type-scroll-pagedown
+(define const-maximize (type: num))
+(define get-print-paper-name (type: (-> str)))
+(define const-minimize (type: num))
+(define const-event-type-scroll-pagedown
   (type: num))
-(define wx:get-afm-path (type: (-> str)))
-(define wx:get-printer-translation
+(define get-afm-path (type: (-> str)))
+(define get-printer-translation
   (type: ((box num) (box num) -> void)))
-(define wx:const-iconize (type: num))
-(define wx:set-printer-command
+(define const-iconize (type: num))
+(define set-printer-command
   (type: (str -> void)))
-(define wx:const-stay-on-top (type: num))
-(define wx:const-event-type-scroll-pageup
+(define const-stay-on-top (type: num))
+(define const-event-type-scroll-pageup
   (type: num))
-(define wx:set-printer-file
+(define set-printer-file
   (type: (str -> void)))
-(define wx:set-printer-preview-command
+(define set-printer-preview-command
   (type: (str -> void)))
-(define wx:set-printer-mode
+(define set-printer-mode
   (type: (num -> void)))
-(define wx:const-event-type-scroll-linedown
+(define const-event-type-scroll-linedown
   (type: num))
-(define wx:set-printer-options
+(define set-printer-options
   (type: (str -> void)))
-(define wx:set-printer-orientation
+(define set-printer-orientation
   (type: (num -> void)))
-(define wx:const-snip-anchored (type: num))
-(define wx:set-printer-scaling
+(define const-snip-anchored (type: num))
+(define set-printer-scaling
   (type: (num num -> void)))
-(define wx:const-event-type-scroll-lineup
+(define const-event-type-scroll-lineup
   (type: num))
-(define wx:const-snip-invisible (type: num))
-(define wx:set-print-paper-name
+(define const-snip-invisible (type: num))
+(define set-print-paper-name
   (type: (str -> void)))
-(define wx:set-printer-translation
+(define set-printer-translation
   (type: (num num -> void)))
-(define wx:const-snip-is-text (type: num))
+(define const-snip-is-text (type: num))
 
-(define wx:object% (class null () (public)))
+(define object% (class null () (public)))
 
-(define wx:window%
-  (class wx:object%
+(define window%
+  (class object%
          ()
          (public
            (get-text-extent
@@ -709,8 +709,8 @@
            (pre-on-char
              (type: (wxwindow-object wxkeyevent-object -> bool))))))
 
-(define wx:item%
-  (class wx:window%
+(define item%
+  (class window%
          ()
          (public
            (get-button-colour (type: (-> wxcolour-object)))
@@ -732,8 +732,8 @@
            (get-label (type: (-> str)))
            (get-char-width (type: (-> num))))))
 
-(define wx:message%
-  (class wx:item%
+(define message%
+  (class item%
          (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
            init2-arg-str-or-init2-arg-wxbitmap-object
            (init3 (type: num))
@@ -744,8 +744,8 @@
            (set-label
              (type: (union (wxbitmap-object -> void) (str -> void)))))))
 
-(define wx:canvas%
-  (class wx:window%
+(define canvas%
+  (class window%
          (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
            (init2 (type: num))
            (init3 (type: num))
@@ -843,8 +843,8 @@
            (allow-double-click (type: (bool -> void)))
            (destroy-clipping-region (type: (-> void))))))
 
-(define wx:clipboard-client%
-  (class wx:object%
+(define clipboard-client%
+  (class object%
          ()
          (public
            (get-data (type: (str -> str)))
@@ -852,8 +852,8 @@
            (get-types (type: (-> str)))
            (being-replaced (type: (-> void))))))
 
-(define wx:dc%
-  (class wx:object%
+(define dc%
+  (class object%
          ()
          (public
            (get-text-background
@@ -964,8 +964,8 @@
                              ->
                              bool))))))
 
-(define wx:media-stream-in%
-  (class wx:object%
+(define media-stream-in%
+  (class object%
          (init1-arg-wxmediastreaminbase-object)
          (public
            (jump-to (type: (num -> void)))
@@ -985,16 +985,16 @@
                              ((box num) -> wxmediastreamin-object))))
            (set-boundary (type: (num -> void))))))
 
-(define wx:cursor%
-  (class wx:object%
+(define cursor%
+  (class object%
          (init1-arg-str-or-init1-arg-num
            (init2 (type: num))
            (init3 (type: num))
            (init4 (type: num)))
          (public (ok? (type: (-> bool))))))
 
-(define wx:media-stream-in-base%
-  (class wx:object%
+(define media-stream-in-base%
+  (class object%
          ()
          (public
            (read (type: ((listof char) -> num)))
@@ -1003,8 +1003,8 @@
            (skip (type: (num -> void)))
            (bad? (type: (-> bool))))))
 
-(define wx:list-box%
-  (class wx:item%
+(define list-box%
+  (class item%
          (init1-arg-wxpanel-object
            |init2-arg-(wxlistbox-object wxevent-object -> void)|
            init3-arg-str
@@ -1039,15 +1039,15 @@
            (append
              (type: (union (str -> void) (str str -> void)))))))
 
-(define wx:int-point%
-  (class wx:object%
+(define int-point%
+  (class object%
          (init1-arg-num init2-arg-num)
          (public
            (get-y (type: (union (num -> void) (-> num))))
            (get-x (type: (union (num -> void) (-> num)))))))
 
-(define wx:brush%
-  (class wx:object%
+(define brush%
+  (class object%
          (init1-arg-wxcolour-object-or-init1-arg-str
            init2-arg-num-or-init2-arg-num)
          (public
@@ -1060,8 +1060,8 @@
            (set-style (type: (num -> void)))
            (set-stipple (type: (wxbitmap-object -> void))))))
 
-(define wx:mult-colour%
-  (class wx:object%
+(define mult-colour%
+  (class object%
          ()
          (public
            (get-b (type: (union (num -> void) (-> num))))
@@ -1070,8 +1070,8 @@
            (set (type: (num num num -> void)))
            (get-r (type: (union (num -> void) (-> num)))))))
 
-(define wx:media-wordbreak-map%
-  (class wx:object%
+(define media-wordbreak-map%
+  (class object%
          ()
          (public
            (adjust-usage (type: (bool -> void)))
@@ -1079,8 +1079,8 @@
            (get-map (type: (num -> num)))
            (set-map (type: (num num -> void))))))
 
-(define wx:panel%
-  (class wx:canvas%
+(define panel%
+  (class canvas%
          (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
            (init2 (type: num))
            (init3 (type: num))
@@ -1137,15 +1137,15 @@
            (advance-cursor
              (type: (wxwindow-object -> void))))))
 
-(define wx:point%
-  (class wx:object%
+(define point%
+  (class object%
          (init1-arg-num init2-arg-num)
          (public
            (get-y (type: (union (num -> void) (-> num))))
            (get-x (type: (union (num -> void) (-> num)))))))
 
-(define wx:snip%
-  (class wx:object%
+(define snip%
+  (class object%
          ()
          (public
            (get-flags (type: (-> num)))
@@ -1231,8 +1231,8 @@
              (type: (union ((union null wxsnipclass-object) -> void)
                            (-> (union null wxsnipclass-object))))))))
 
-(define wx:bitmap%
-  (class wx:object%
+(define bitmap%
+  (class object%
          (|init1-arg-(listof char)-or-init1-arg-num-or-init1-arg-str|
            (init2 (type: num))
            (init3 (type: num))
@@ -1252,8 +1252,8 @@
            (ok? (type: (-> bool)))
            (get-width (type: (-> num))))))
 
-(define wx:font%
-  (class wx:object%
+(define font%
+  (class object%
          (init1-arg-num-or-init1-arg-num
            init2-arg-num-or-init2-arg-str
            init3-arg-num-or-init3-arg-num
@@ -1268,8 +1268,8 @@
            (get-style (type: (-> num)))
            (get-point-size (type: (-> num))))))
 
-(define wx:style-list%
-  (class wx:object%
+(define style-list%
+  (class object%
          ()
          (public
            (copy (type: (wxstylelist-object -> void)))
@@ -1304,8 +1304,8 @@
            (index-to-style
              (type: (num -> (union null wxstyle-object)))))))
 
-(define wx:media-admin%
-  (class wx:object%
+(define media-admin%
+  (class object%
          ()
          (public
            (get-dc
@@ -1339,21 +1339,21 @@
            (grab-caret (type: (optional num -> void)))
            (needs-update (type: (num num num num -> void))))))
 
-(define wx:pen-list%
-  (class wx:object%
+(define pen-list%
+  (class object%
          ()
          (public
            (find-or-create-pen
              (type: (union (wxcolour-object num num -> wxpen-object)
                            (str num num -> wxpen-object)))))))
 
-(define wx:media-stream-in-string-base%
-  (class wx:media-stream-in-base%
+(define media-stream-in-string-base%
+  (class media-stream-in-base%
          (init1-arg-str)
          (public)))
 
-(define wx:check-box%
-  (class wx:item%
+(define check-box%
+  (class item%
          (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
            |init2-arg-(wxcheckbox-object wxevent-object -> void)-or-init2-arg-(wxcheckbox-object wxevent-object -> void)|
            init3-arg-str-or-init3-arg-wxbitmap-object
@@ -1369,8 +1369,8 @@
              (type: (union (wxbitmap-object -> void) (str -> void))))
            (get-value (type: (-> bool))))))
 
-(define wx:media-stream-out-base%
-  (class wx:object%
+(define media-stream-out-base%
+  (class object%
          ()
          (public
            (tell (type: (-> num)))
@@ -1378,8 +1378,8 @@
            (bad? (type: (-> bool)))
            (write (type: ((listof char) -> void))))))
 
-(define wx:gauge%
-  (class wx:item%
+(define gauge%
+  (class item%
          (init1-arg-wxpanel-object
            init2-arg-str
            init3-arg-num
@@ -1395,8 +1395,8 @@
            (get-range (type: (-> num)))
            (get-value (type: (-> num))))))
 
-(define wx:image-snip%
-  (class wx:snip%
+(define image-snip%
+  (class snip%
          ((init1 (type: str))
           (init2 (type: num))
           (init3 (type: bool))
@@ -1477,8 +1477,8 @@
            (match? (type: (wxsnip-object -> bool)))
            (resize (type: (num num -> bool))))))
 
-(define wx:menu-bar%
-  (class wx:object%
+(define menu-bar%
+  (class object%
          (|init1-arg-(listof wxmenu-object)|
            |init2-arg-(listof str)|)
          (public
@@ -1498,8 +1498,8 @@
            (append (type: (wxmenu-object str -> void)))
            (find-menu-item (type: (str str -> num))))))
 
-(define wx:colour-database%
-  (class wx:object%
+(define colour-database%
+  (class object%
          ()
          (public
            (find-colour
@@ -1507,8 +1507,8 @@
            (find-name (type: (wxcolour-object -> str)))
            (append (type: (str wxcolour-object -> void))))))
 
-(define wx:text-snip%
-  (class wx:snip%
+(define text-snip%
+  (class snip%
          ((init1 (type: num)))
          (public
            (own-caret (type: (bool -> void)))
@@ -1581,11 +1581,11 @@
                           ->
                           void))))))
 
-(define wx:colour-map%
-  (class wx:object% () (public)))
+(define colour-map%
+  (class object% () (public)))
 
-(define wx:tab-snip%
-  (class wx:text-snip%
+(define tab-snip%
+  (class text-snip%
          ()
          (public
            (own-caret (type: (bool -> void)))
@@ -1656,8 +1656,8 @@
            (match? (type: (wxsnip-object -> bool)))
            (resize (type: (num num -> bool))))))
 
-(define wx:colour%
-  (class wx:object%
+(define colour%
+  (class object%
          (init1-arg-num-or-init1-arg-str
            init2-arg-num
            init3-arg-num)
@@ -1670,8 +1670,8 @@
            (ok? (type: (-> bool)))
            (blue (type: (-> num))))))
 
-(define wx:event%
-  (class wx:object%
+(define event%
+  (class object%
          ()
          (public
            (get-event-object
@@ -1682,8 +1682,8 @@
            (get-event-class
              (type: (union (num -> void) (-> num)))))))
 
-(define wx:pen%
-  (class wx:object%
+(define pen%
+  (class object%
          (init1-arg-wxcolour-object-or-init1-arg-str
            init2-arg-num-or-init2-arg-num
            init3-arg-num-or-init3-arg-num)
@@ -1703,8 +1703,8 @@
            (get-width (type: (-> num)))
            (get-join (type: (-> num))))))
 
-(define wx:frame%
-  (class wx:window%
+(define frame%
+  (class window%
          (|init1-arg-(union null wxframe-object)|
            init2-arg-str
            (init3 (type: num))
@@ -1746,8 +1746,8 @@
            (set-icon (type: (wxicon-object -> void)))
            (on-menu-select (type: (num -> void))))))
 
-(define wx:buffer-data-class-list%
-  (class wx:object%
+(define buffer-data-class-list%
+  (class object%
          ()
          (public
            (nth (type: (num -> (union null wxbufferdataclass-object))))
@@ -1757,14 +1757,14 @@
            (find (type: (str -> (union null wxbufferdataclass-object))))
            (add (type: (wxbufferdataclass-object -> void))))))
 
-(define wx:canvas-media-admin%
-  (class wx:media-admin%
+(define canvas-media-admin%
+  (class media-admin%
          ()
          (public
            (get-canvas (type: (-> wxmediacanvas-object))))))
 
-(define wx:font-list%
-  (class wx:object%
+(define font-list%
+  (class object%
          ()
          (public
            (find-or-create-font
@@ -1778,8 +1778,8 @@
                                 ->
                                 wxfont-object)))))))
 
-(define wx:menu%
-  (class wx:object%
+(define menu%
+  (class object%
          ((init1 (type: str))
           (init2 (type: (wxmenu-object wxevent-object -> void))))
          (public
@@ -1800,8 +1800,8 @@
              (type: (union (num str wxmenu-object optional str -> void)
                            (num str optional str optional bool -> void)))))))
 
-(define wx:choice%
-  (class wx:item%
+(define choice%
+  (class item%
          (init1-arg-wxpanel-object
            |init2-arg-(wxchoice-object wxevent-object -> void)|
            init3-arg-str
@@ -1825,8 +1825,8 @@
            (get-string (type: (num -> str)))
            (append (type: (str -> void))))))
 
-(define wx:keymap%
-  (class wx:object%
+(define keymap%
+  (class object%
          ()
          (public
            (handle-key-event
@@ -1886,8 +1886,8 @@
              (type: (wxkeymap-object -> void)))
            (get-double-click-interval (type: (-> num))))))
 
-(define wx:style%
-  (class wx:object%
+(define style%
+  (class object%
          ()
          (public
            (get-colour (type: (-> wxcolour-object)))
@@ -1913,8 +1913,8 @@
            (get-face (type: (-> str)))
            (set-delta (type: (wxstyledelta-object -> void))))))
 
-(define wx:canvas-dc%
-  (class wx:dc%
+(define canvas-dc%
+  (class dc%
          ()
          (public
            (begin-set-pixel (type: (-> void)))
@@ -1924,8 +1924,8 @@
            (get-pixel
              (type: (num num (union null wxcolour-object) -> bool))))))
 
-(define wx:command-event%
-  (class wx:event%
+(define command-event%
+  (class event%
          (init1-arg-num)
          (public
            (checked? (type: (-> bool)))
@@ -1939,8 +1939,8 @@
            (get-selection (type: (-> num)))
            (get-string (type: (-> str))))))
 
-(define wx:snip-admin%
-  (class wx:object%
+(define snip-admin%
+  (class object%
          ()
          (public
            (release-snip (type: (wxsnip-object -> bool)))
@@ -1979,8 +1979,8 @@
            (get-media
              (type: (-> (union null wxmediabuffer-object)))))))
 
-(define wx:snip-class-list%
-  (class wx:object%
+(define snip-class-list%
+  (class object%
          ()
          (public
            (nth (type: (num -> (union null wxsnipclass-object))))
@@ -1990,8 +1990,8 @@
            (find (type: (str -> (union null wxsnipclass-object))))
            (add (type: (wxsnipclass-object -> void))))))
 
-(define wx:text-window%
-  (class wx:window%
+(define text-window%
+  (class window%
          (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
            (init2 (type: num))
            (init3 (type: num))
@@ -2035,20 +2035,20 @@
            (get-last-position (type: (-> num)))
            (remove (type: (num num -> void))))))
 
-(define wx:media-stream-out-string-base%
-  (class wx:media-stream-out-base%
+(define media-stream-out-string-base%
+  (class media-stream-out-base%
          ()
          (public (get-string (type: (-> str))))))
 
-(define wx:post-script-dc%
-  (class wx:dc%
+(define post-script-dc%
+  (class dc%
          (init1-arg-str
            (init2 (type: bool))
            (init3 (type: (union null wxwindow-object))))
          (public)))
 
-(define wx:style-delta%
-  (class wx:object%
+(define style-delta%
+  (class object%
          ((init1 (type: num)) (init2 (type: num)))
          (public
            (get-family
@@ -2100,8 +2100,8 @@
            (set-delta
              (type: (num optional num -> wxstyledelta-object))))))
 
-(define wx:font-name-directory%
-  (class wx:object%
+(define font-name-directory%
+  (class object%
          ()
          (public
            (get-family (type: (num -> num)))
@@ -2115,8 +2115,8 @@
              (type: (num num num -> str)))
            (get-font-name (type: (num -> str))))))
 
-(define wx:button%
-  (class wx:item%
+(define button%
+  (class item%
          (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
            |init2-arg-(wxbutton-object wxevent-object -> void)-or-init2-arg-(wxbutton-object wxevent-object -> void)|
            init3-arg-str-or-init3-arg-wxbitmap-object
@@ -2131,8 +2131,8 @@
              (type: (union (wxbitmap-object -> void) (str -> void))))
            (set-default (type: (-> void))))))
 
-(define wx:add-colour%
-  (class wx:object%
+(define add-colour%
+  (class object%
          ()
          (public
            (get-b (type: (union (num -> void) (-> num))))
@@ -2141,8 +2141,8 @@
            (set (type: (num num num -> void)))
            (get-r (type: (union (num -> void) (-> num)))))))
 
-(define wx:clipboard%
-  (class wx:object%
+(define clipboard%
+  (class object%
          ()
          (public
            (set-clipboard-client
@@ -2153,21 +2153,21 @@
              (type: (-> (union null wxclipboardclient-object))))
            (get-clipboard-string (type: (num -> str))))))
 
-(define wx:icon%
-  (class wx:bitmap%
+(define icon%
+  (class bitmap%
          (init1-arg-str (init2 (type: num)))
          (public)))
 
-(define wx:brush-list%
-  (class wx:object%
+(define brush-list%
+  (class object%
          ()
          (public
            (find-or-create-brush
              (type: (union (wxcolour-object num -> wxbrush-object)
                            (str num -> wxbrush-object)))))))
 
-(define wx:key-event%
-  (class wx:event%
+(define key-event%
+  (class event%
          (init1-arg-num)
          (public
            (get-alt-down
@@ -2185,14 +2185,14 @@
            (get-shift-down
              (type: (union (bool -> void) (-> bool)))))))
 
-(define wx:media-snip-media-admin%
-  (class wx:media-admin%
+(define media-snip-media-admin%
+  (class media-admin%
          ()
          (public
            (get-snip (type: (-> wxmediasnip-object))))))
 
-(define wx:media-snip%
-  (class wx:snip%
+(define media-snip%
+  (class snip%
          ((init1 (type: (union null wxmediabuffer-object)))
           (init2 (type: bool))
           (init3 (type: num))
@@ -2298,8 +2298,8 @@
                           void)))
            (set-margin (type: (num num num num -> void))))))
 
-(define wx:media-canvas%
-  (class wx:canvas%
+(define media-canvas%
+  (class canvas%
          (init1-arg-wxframe-object-or-init1-arg-wxpanel-object
            (init2 (type: num))
            (init3 (type: num))
@@ -2338,11 +2338,11 @@
            (get-media
              (type: (-> (union null wxmediabuffer-object)))))))
 
-(define wx:meta-file-dc%
-  (class wx:dc% ((init1 (type: str))) (public)))
+(define meta-file-dc%
+  (class dc% ((init1 (type: str))) (public)))
 
-(define wx:timer%
-  (class wx:object%
+(define timer%
+  (class object%
          ()
          (public
            (notify (type: (-> void)))
@@ -2350,15 +2350,15 @@
            (stop (type: (-> void)))
            (interval (type: (-> num))))))
 
-(define wx:memory-dc%
-  (class wx:canvas-dc%
+(define memory-dc%
+  (class canvas-dc%
          (init1-arg-wxcanvasdc-object)
          (public
            (select-object
              (type: ((union null wxbitmap-object) -> void))))))
 
-(define wx:mouse-event%
-  (class wx:event%
+(define mouse-event%
+  (class event%
          (init1-arg-num)
          (public
            (get-right-down
@@ -2389,16 +2389,16 @@
            (button? (type: (num -> bool)))
            (moving? (type: (-> bool))))))
 
-(define wx:printer-dc%
-  (class wx:dc%
+(define printer-dc%
+  (class dc%
          (init1-arg-str
            init2-arg-str
            init3-arg-str
            (init4 (type: bool)))
          (public)))
 
-(define wx:buffer-data%
-  (class wx:object%
+(define buffer-data%
+  (class object%
          ()
          (public
            (get-next
@@ -2409,8 +2409,8 @@
              (type: (union ((union null wxbufferdataclass-object) -> void)
                            (-> (union null wxbufferdataclass-object))))))))
 
-(define wx:meta-file%
-  (class wx:object%
+(define meta-file%
+  (class object%
          ()
          (public
            (set-clipboard
@@ -2418,8 +2418,8 @@
            (play (type: (wxdc-object -> void)))
            (ok? (type: (-> bool))))))
 
-(define wx:text%
-  (class wx:item%
+(define text%
+  (class item%
          (init1-arg-wxpanel-object
            |init2-arg-(wxtext-object wxevent-object -> void)|
            init3-arg-str
@@ -2439,8 +2439,8 @@
            (set-editable (type: (bool -> void)))
            (cut (type: (-> void))))))
 
-(define wx:slider%
-  (class wx:item%
+(define slider%
+  (class item%
          (init1-arg-wxpanel-object
            |init2-arg-(wxslider-object wxevent-object -> void)|
            init3-arg-str
@@ -2456,8 +2456,8 @@
            (set-value (type: (num -> void)))
            (get-value (type: (-> num))))))
 
-(define wx:snip-class%
-  (class wx:object%
+(define snip-class%
+  (class object%
          ()
          (public
            (read (type: (wxmediastreamin-object
@@ -2474,8 +2474,8 @@
              (type: (union (num -> void) (-> num))))
            (read-done (type: (-> void))))))
 
-(define wx:media-buffer%
-  (class wx:object%
+(define media-buffer%
+  (class object%
          ()
          (public
            (set-filename
@@ -2673,8 +2673,8 @@
            (set-modified (type: (bool -> void)))
            (set-max-height (type: (num -> void))))))
 
-(define wx:buffer-data-class%
-  (class wx:object%
+(define buffer-data-class%
+  (class object%
          ()
          (public
            (read (type: (wxmediastreamin-object
@@ -2685,8 +2685,8 @@
            (get-required
              (type: (union (bool -> void) (-> bool)))))))
 
-(define wx:media-stream-out%
-  (class wx:object%
+(define media-stream-out%
+  (class object%
          (init1-arg-wxmediastreamoutbase-object)
          (public
            (jump-to (type: (num -> void)))
@@ -2703,8 +2703,8 @@
                                     (num -> wxmediastreamout-object)))))
            (ok? (type: (-> bool))))))
 
-(define wx:multi-text%
-  (class wx:text%
+(define multi-text%
+  (class text%
          (init1-arg-wxpanel-object
            |init2-arg-(wxmultitext-object wxevent-object -> void)|
            init3-arg-str
@@ -2719,8 +2719,8 @@
            (get-value (type: (-> str)))
            (on-char (type: (wxkeyevent-object -> void))))))
 
-(define wx:media-pasteboard%
-  (class wx:media-buffer%
+(define media-pasteboard%
+  (class media-buffer%
          ()
          (public
            (move (type: (union (wxsnip-object num num -> void)
@@ -2922,8 +2922,8 @@
            (move-to (type: (wxsnip-object num num -> void)))
            (after-save-file (type: (bool -> void))))))
 
-(define wx:media-edit%
-  (class wx:media-buffer%
+(define media-edit%
+  (class media-buffer%
          ((init1 (type: num))
           (init2 (type: (listof num))))
          (public
@@ -3331,8 +3331,8 @@
            (add-editor-functions
              (type: (wxkeymap-object -> void))))))
 
-(define wx:radio-box%
-  (class wx:item%
+(define radio-box%
+  (class item%
          (init1-arg-wxpanel-object-or-init1-arg-wxpanel-object
            |init2-arg-(wxradiobox-object wxevent-object -> void)-or-init2-arg-(wxradiobox-object wxevent-object -> void)|
            init3-arg-str-or-init3-arg-str
@@ -3355,8 +3355,8 @@
            (get-selection (type: (-> num)))
            (get-string (type: (num -> str))))))
 
-(define wx:dialog-box%
-  (class wx:panel%
+(define dialog-box%
+  (class panel%
          (|init1-arg-(union null wxwindow-object)|
            init2-arg-str
            (init3 (type: bool))

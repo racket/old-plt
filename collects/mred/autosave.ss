@@ -1,5 +1,5 @@
 (unit/sig mred:autosave^
-  (import mred:wx^
+  (import [wx : wx^]
 	  [mred:constants : mred:constants^]
 	  [mred:exit : mred:exit^]
 	  [mred:preferences : mred:preferences^])

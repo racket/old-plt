@@ -1,5 +1,5 @@
 (compound-unit/sig (import [function : mzlib:function^]
-			   [wx : mred:wx^])
+			   [wx : wx^])
   (link [constants : mred:constants^ ((reference-unit/sig "constant.ss"))]
 	[testable : mred:testable-window^
 		  ((reference-unit/sig "testable.ss") wx)]

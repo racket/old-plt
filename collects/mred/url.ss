@@ -10,7 +10,7 @@
 ;   "pure" = the MIME headers have been read
 
   (unit/sig mred:url^
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^]
 	    [f : mzlib:function^]
             [gui : mred:gui-utils^]

@@ -1,9 +1,9 @@
 ;;
-;; $Id: linkwx.ss,v 1.1 1997/12/01 18:43:29 robby Exp mflatt $
+;; $Id: linkwx.ss,v 1.2 1997/12/04 21:27:36 mflatt Exp robby $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^]
-			   [wx : mred:wx^])
+			   [wx : wx^])
   (link [minimal : mred:minimal^ ((reference-library-unit/sig "minimal.ss" "mred")
 				  (core function@)
 				  wx)]

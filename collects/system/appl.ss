@@ -104,6 +104,7 @@
 		     (load/cd init-file))))))])
       (compound-unit/sig (import (I : mred:application-imports^))
 	(link
+	 [wx : wx^ (wx@)]
 	 [flat-mred : ((open mred^) console)
 		    ((compound-unit/sig (import [I : mred:application-imports^])
 		       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
@@ -115,4 +116,5 @@
 		       (export (open mred)
 			       (open console)))
 		     I)])
-	(export (unit flat-mred mred))))))
+	(export (unit flat-mred mred)
+		(unit wx))))))

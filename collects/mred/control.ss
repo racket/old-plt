@@ -1,9 +1,9 @@
 
 (unit/sig mred:control^
-  (import mred:wx^
-	  (mred : mred:edit^)
-	  (mred : mred:canvas^)
-	  (mred : mred:container^))
+  (import [wx : wx^]
+	  [mred : mred:edit^]
+	  [mred : mred:canvas^]
+	  [mred : mred:container^])
   
   ; Helper for media-text%
   (define media-text-edit% 

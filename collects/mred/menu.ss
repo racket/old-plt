@@ -1,6 +1,6 @@
 
   (unit/sig mred:menu^
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^]
 	    [mzlib:function : mzlib:function^])
 	    

@@ -1,5 +1,5 @@
 ;;
-;; $Id: containr.ss,v 1.32 1997/07/11 20:09:29 krentel Exp robby $
+;; $Id: containr.ss,v 1.33 1997/12/01 18:31:19 robby Exp robby $
 ;;
 
 ; resizes too small really confuse things, since client sizes wrap (-2
@@ -35,7 +35,7 @@
 
   (compound-unit/sig
 
-    (import [wx : mred:wx^]
+    (import [wx : wx^]
 	    [constants : mred:constants^]
             [testable  : mred:testable-window^]
             [connections : mred:connections^]

@@ -6,7 +6,7 @@
 ; child-info
 
     (unit/sig mred:container-frames^
-      (import mred:wx^
+      (import [wx : wx^]
 	      [mred:constants : mred:constants^]
 	      [mred:connections : mred:connections^]
 	      mred:container-children^

@@ -1,6 +1,6 @@
 
   (unit/sig mred:autoload^
-    (import mred:wx^
+    (import [wx : wx^]
       [mred:constants : mred:constants^]
       [mred:preferences : mred:preferences^]
       [mzlib:file : mzlib:file^])

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stdrs.ss,v 1.4 1997/08/15 22:34:43 krentel Exp mflatt $
+;; $Id: stdrs.ss,v 1.5 1997/12/04 21:25:15 mflatt Exp robby $
 ;;
 ;; Helper functions for finding pieces of DrScheme console,
 ;; at least how I think it's put together.
@@ -13,9 +13,8 @@
 
 (unit/sig mred:test:drscheme^
   
-  (import 
-    mred:wx^
-    [mred : mred:testable-window^])
+  (import [wx : wx^]
+	  [mred : mred:testable-window^])
   
   (define drs-error error)  ;; naive error reporting.
   

@@ -1,10 +1,10 @@
 ;;
-;; $Id: connect.ss,v 1.16 1997/07/07 15:12:30 krentel Exp krentel $
+;; $Id: connect.ss,v 1.17 1997/07/11 20:08:51 krentel Exp robby $
 ;;
 
   (unit/sig mred:connections^
 
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^]
 	    [mzlib:function : mzlib:function^]
             [mred : mred:testable-window^])

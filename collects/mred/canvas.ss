@@ -1,5 +1,5 @@
   (unit/sig mred:canvas^
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^]
 	    [mred:container : mred:container^]
 	    [mred:edit : mred:edit^]

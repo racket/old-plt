@@ -1,6 +1,6 @@
 
   (unit/sig mred:find-string^
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^]
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]

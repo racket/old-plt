@@ -1,5 +1,5 @@
 ;;
-;; $Id: testable.ss,v 1.3 1997/12/01 18:31:19 robby Exp mflatt $
+;; $Id: testable.ss,v 1.4 1997/12/04 21:25:45 mflatt Exp robby $
 ;;
 ;; Testable classes go between last wx: class and first mred: class.
 ;; Keep track of currently active frame and focused window.
@@ -12,7 +12,7 @@
 ;;
 
 (unit/sig mred:testable-window^
-  (import mred:wx^)
+  (import [wx : wx^])
 
   (define inactive-frame-value   #f)
   (define unfocused-window-value #f)

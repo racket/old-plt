@@ -1,5 +1,5 @@
 ;;
-;; $Id: stlink.ss,v 1.10 1997/08/15 22:36:07 krentel Exp mflatt $
+;; $Id: stlink.ss,v 1.11 1997/12/04 21:24:19 mflatt Exp robby $
 ;;
 ;; Link the gui tester together into compound unit.
 ;;
@@ -10,7 +10,7 @@
 (compound-unit/sig
 
   (import 
-    [wx       : mred:wx^]
+    [wx       : wx^]
     [testable : mred:testable-window^]
     [keymap   : mred:keymap^])
 

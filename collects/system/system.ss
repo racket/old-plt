@@ -1,7 +1,6 @@
 ;; dont open a spash screen if the splash image is #f
 
-;(load-relative "loader.ss")
-
+'(load-relative "loader.ss")
 (error-print-width 250)
 
 '(define-macro min
@@ -29,29 +28,6 @@
 (mred:debug:printf 'startup "current-library-collection-paths: ~s"
 		   (current-library-collection-paths))
 
-(define mred:startup
-  (lambda args
-    (let* ([orig-width 100]
-	   [orig-height 100]
-	   [frame (make-object wx:frame% null "mred:startup default" 
-			       orig-width orig-height)]
-	   [panel (make-object wx:panel% frame)]
-	   [button (make-object wx:button% 
-				panel 
-				(lambda (button evt) (exit))
-				"Quit")]
-	   [bw (send button get-width)]
-	   [bh (send button get-height)]
-	   [w (box 0)]
-	   [h (box 0)])
-      (send button set-size 0 0 bw bh)
-      (send frame get-client-size w h)
-      (let ([new-w (+ bw (- orig-width (unbox w)))]
-	    [new-h (+ bh (- orig-height (unbox h)))])
-	(send frame set-size 0 0 new-w new-h)
-	(send panel set-size 0 0 new-w new-h))
-      (send frame show #t))))
-
 ;; called with the arguments on the command line
 (define mred:initialize
   (lambda input-args
@@ -61,7 +37,7 @@
 	   [app-name "MrEd"]
 	   [app-collection "system"]
 	   [app-unit-library "nuapp.ss"]
-	   [app-sig-library "sig.ss"]
+	   [app-sig-library "nusig.ss"]
 	   [splash-path (with-handlers ([(lambda (x) #t)
 					 (lambda (x) "mred.gif")])
 			  (build-path (collection-path "icons") "mred.gif"))]
@@ -162,5 +138,9 @@
       (unless app-determined?
 	(set! basic-info (require-library "info.ss" "system")))
       (when output-spidey-file
-	((load-relative "spidey.ss") output-spidey-file app-collection basic-info))
-      (mred:startup-application app-collection basic-info remaining-args))))
+	((load-relative "spidey.ss")
+	 output-spidey-file app-collection basic-info))
+      (mred:startup-application app-collection
+				basic-info
+				remaining-args
+				void))))

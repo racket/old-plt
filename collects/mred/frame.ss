@@ -1,5 +1,5 @@
   (unit/sig mred:frame^
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^]
 	    [mred:console : mred:console^]
 	    [mred:preferences : mred:preferences^]
@@ -155,7 +155,7 @@
 		      (if (string=? special "")
 			  (string-append base suffix)
 			  (string-append base " " special suffix)))])
-          (begin-elaboration-time (reference-library "macro.ss"))
+          ;(begin-elaboration-time (reference-library "macro.ss"))
 	  (begin-elaboration-time
             (let-struct between (menu name separator)
               (let-struct an-item (name help-string proc key menu-string-before menu-string-after)

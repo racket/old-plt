@@ -1,7 +1,7 @@
 
 (lambda (request)
   (case request
-    [(name) "MrEd"]
+    [(name) "MrEd Collection"]
     [(compile-prefix) '(begin
 			 (read-case-sensitive #t)
 			 (require-library "wxs.ss" "system")

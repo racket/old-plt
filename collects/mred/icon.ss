@@ -1,5 +1,5 @@
   (unit/sig mred:icon^
-    (import mred:wx^
+    (import [wx : wx^]
 	    [mred:constants : mred:constants^])
 	    
     (mred:debug:printf 'invoke "mred:icon@")

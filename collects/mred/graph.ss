@@ -1,5 +1,5 @@
 (unit/sig mred:graph^
-  (import mred:wx^
+  (import [wx : wx^]
 	  [mred:constants : mred:constants^]
 	  [mred:edit : mred:edit^]
 	  [mred:gui-utils : mred:gui-utils^]

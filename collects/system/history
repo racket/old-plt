@@ -1,6 +1,9 @@
 SYSTEM HISTORY
 --------------
 Version 51:
+ - mred:original-output-port is now called mred:constants:original-output-port
+   mred:original-input-port is now called mred:constants:original-input-port
+
  - MrEd's collections are now documented.
 
  - the collection paths are not normalized anymore

@@ -46,6 +46,10 @@ START_XFORM_SKIP;
 
 extern Bool wxsCheckIsPopupMenu(void *m);
 
+#ifndef wx_mac
+#define wxRESIZE_CORNER 0
+#endif
+
 static Scheme_Object *style_wxMCANVAS_NO_H_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_NO_V_SCROLL_sym = NULL;
 static Scheme_Object *style_wxMCANVAS_HIDE_H_SCROLL_sym = NULL;
@@ -56,6 +60,7 @@ static Scheme_Object *style_wxINVISIBLE_sym = NULL;
 static Scheme_Object *style_wxCONTROL_BORDER_sym = NULL;
 static Scheme_Object *style_wxTRANSPARENT_WIN_sym = NULL;
 static Scheme_Object *style_wxBORDER_sym = NULL;
+static Scheme_Object *style_wxRESIZE_CORNER_sym = NULL;
 
 static void init_symset_style(void) {
   REMEMBER_VAR_STACK();
@@ -79,12 +84,14 @@ static void init_symset_style(void) {
   style_wxTRANSPARENT_WIN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
   wxREGGLOB(style_wxBORDER_sym);
   style_wxBORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
+  wxREGGLOB(style_wxRESIZE_CORNER_sym);
+  style_wxRESIZE_CORNER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("resize-corner"));
 }
 
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!style_wxBORDER_sym) WITH_VAR_STACK(init_symset_style());
+  if (!style_wxRESIZE_CORNER_sym) WITH_VAR_STACK(init_symset_style());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -100,6 +107,7 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   else if (i == style_wxCONTROL_BORDER_sym) { result = result | wxCONTROL_BORDER; }
   else if (i == style_wxTRANSPARENT_WIN_sym) { result = result | wxTRANSPARENT_WIN; }
   else if (i == style_wxBORDER_sym) { result = result | wxBORDER; }
+  else if (i == style_wxRESIZE_CORNER_sym) { result = result | wxRESIZE_CORNER; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

@@ -31,6 +31,10 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 #endif
 }
 
+#ifndef wx_mac
+#define wxRESIZE_CORNER 0
+#endif
+
 @BEGINSYMBOLS canvasStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
 @SYM "control-border" : wxCONTROL_BORDER
@@ -40,6 +44,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @SYM "no-autoclear" : wxNO_AUTOCLEAR
 @SYM "deleted" : wxINVISIBLE
 @SYM "transparent" : wxTRANSPARENT_WIN
+@SYM "resize-corner" : wxRESIZE_CORNER
 @ENDSYMBOLS
 
 @INCLUDE wxs_ornt.xci

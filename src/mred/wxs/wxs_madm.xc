@@ -27,6 +27,10 @@
 extern Bool wxsCheckIsPopupMenu(void *m);
 @MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[POFFSET+<p>])) scheme_wrong_type(<n>, "popup-menu% object", <p>+POFFSET, n, p);
 
+#ifndef wx_mac
+#define wxRESIZE_CORNER 0
+#endif
+
 @BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "no-hscroll" : wxMCANVAS_NO_H_SCROLL
 @SYM "no-vscroll" : wxMCANVAS_NO_V_SCROLL
@@ -38,6 +42,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "control-border" : wxCONTROL_BORDER
 @SYM "transparent" : wxTRANSPARENT_WIN
 @SYM "border" : wxBORDER
+@SYM "resize-corner" : wxRESIZE_CORNER
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci

@@ -57,6 +57,10 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 #endif
 }
 
+#ifndef wx_mac
+#define wxRESIZE_CORNER 0
+#endif
+
 static Scheme_Object *canvasStyle_wxBORDER_sym = NULL;
 static Scheme_Object *canvasStyle_wxCONTROL_BORDER_sym = NULL;
 static Scheme_Object *canvasStyle_wxVSCROLL_sym = NULL;
@@ -65,6 +69,7 @@ static Scheme_Object *canvasStyle_0_sym = NULL;
 static Scheme_Object *canvasStyle_wxNO_AUTOCLEAR_sym = NULL;
 static Scheme_Object *canvasStyle_wxINVISIBLE_sym = NULL;
 static Scheme_Object *canvasStyle_wxTRANSPARENT_WIN_sym = NULL;
+static Scheme_Object *canvasStyle_wxRESIZE_CORNER_sym = NULL;
 
 static void init_symset_canvasStyle(void) {
   REMEMBER_VAR_STACK();
@@ -84,12 +89,14 @@ static void init_symset_canvasStyle(void) {
   canvasStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
   wxREGGLOB(canvasStyle_wxTRANSPARENT_WIN_sym);
   canvasStyle_wxTRANSPARENT_WIN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
+  wxREGGLOB(canvasStyle_wxRESIZE_CORNER_sym);
+  canvasStyle_wxRESIZE_CORNER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("resize-corner"));
 }
 
 static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!canvasStyle_wxTRANSPARENT_WIN_sym) WITH_VAR_STACK(init_symset_canvasStyle());
+  if (!canvasStyle_wxRESIZE_CORNER_sym) WITH_VAR_STACK(init_symset_canvasStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -103,6 +110,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   else if (i == canvasStyle_wxNO_AUTOCLEAR_sym) { result = result | wxNO_AUTOCLEAR; }
   else if (i == canvasStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else if (i == canvasStyle_wxTRANSPARENT_WIN_sym) { result = result | wxTRANSPARENT_WIN; }
+  else if (i == canvasStyle_wxRESIZE_CORNER_sym) { result = result | wxRESIZE_CORNER; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

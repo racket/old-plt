@@ -189,6 +189,9 @@ static int default_wheel_amt;
 #else
 # define wxmeBORDER wxBORDER
 #endif
+#ifndef wx_mac
+# define wxRESIZE_CORNER 0
+#endif
 
 wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int x, int y,
@@ -203,7 +206,8 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 	    + INIT_SB 
 	    + (style & wxINVISIBLE ? wxINVISIBLE : 0)
 	    + (style & wxTRANSPARENT_WIN ? wxTRANSPARENT_WIN : 0)
-	    + (style & wxCONTROL_BORDER ? wxCONTROL_BORDER : 0)), 
+	    + (style & wxCONTROL_BORDER ? wxCONTROL_BORDER : 0)
+	    + (style & wxRESIZE_CORNER ? wxRESIZE_CORNER : 0)), 
 	   name)
 {
   static int type_added = FALSE;

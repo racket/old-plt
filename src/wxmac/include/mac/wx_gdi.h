@@ -34,9 +34,6 @@ class wxFont: public wxbFont
 	void Create(int PointSize, int FontId, int Family, int Style, int Weight, Bool underlined);
 
  public:
- 	static CGrafPtr gMacFontGrafPort; // mac platform only
-
- public:
 	wxFont(void);
 	wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool underlined = FALSE);
 	wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 

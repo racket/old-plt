@@ -1,20 +1,13 @@
 
 MrEd Engine:
 
-* macos: needs weak-holding pen, brush, and font lists
-
-* macos: crash on printing definitions
-
 * macos: drawing points, etc?
-
-* macos: list-box enhancements
-
-* macos check: drag outisde view => should keep going even
-   if mouse is still
 
   -------------------- ^- fix for 51   v- leave for later
 
 * MacOS needs way to control the 0-window menu bar
+
+* MacOS: bitmaps' don't print with platform-specific printing
 
 * X Windows and drawing into b & w bitmaps: black and white
    are reversed when using certain kinds of displays

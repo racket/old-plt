@@ -238,19 +238,12 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 	{ // must setup platform
 		cMacDC->setCurrentUser(this);
 		int theRootX = 0, theRootY = 0;
-		if(canvas)
-		{
-#if 1
+		if (canvas)
 			canvas->ClientArea()->FrameContentAreaOffset(&theRootX, &theRootY);
-#else
-			canvas->GetPosition(&theRootX, &theRootY);
-#endif
-		}
 		::SetOrigin(-theRootX, -theRootY);
 		wxMacSetClip();
 		cMacCurrentTool = kPenTool; /* to force setting bg, etc. */
 		wxMacSetCurrentTool(kNoTool);
-		SetLogicalFunction(current_logical_function);
 	}
 }
 
@@ -370,48 +363,7 @@ void wxCanvasDC::DestroyClippingRegion(void)
 void wxCanvasDC::SetFont(wxFont *the_font)
 {
 	font = the_font;
-
-	wxObject* theCurrentUser = cMacDC->currentUser();
-	if (theCurrentUser == this)
-	{ // must update platfrom
-		GrafPtr theOldPort = qd.thePort;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
-
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
-	}
-
-#ifdef wx_xview
-  // Set the font according to the current scaling
-  int scaled_size = (int)(user_scale_y*font->GetPointSize() + 0.5);
-  Xv_Font xfont = wxFontPool->FindNearestFont(font->GetFamily(), font->GetStyle(),
-                       font->GetWeight(), scaled_size, font->GetUnderlined(), 0, 0);
-  font->x_font = xfont;
-  Font theFont = (Font)xv_get(xfont, XV_XID);
-#endif
-#ifdef wx_motif
-/*
-        int res_x = (int)(DisplayWidth(dpy, screen)/(DisplayWidthMM(dpy, screen)/25.4));
-        int res_y = (int)(DisplayHeight(dpy, screen)/(DisplayHeightMM(dpy, screen)/25.4));
-*/
-  int res_x = 100;
-  int res_y = 100;
-
-  int scaled_size = (int)(10 * ((int)(user_scale_y*font->GetPointSize() + 0.5)));
-
-  XFontStruct *fontStruct = wxFontPool->FindNearestFont(font->GetFamily(), font->GetStyle(),
-                                                   font->GetWeight(), scaled_size,
-                                                   font->GetUnderlined(), res_x, res_y);
-  font->xFont = fontStruct;
-  Font theFont = fontStruct->fid;
-#endif
-#ifdef wx_motif_wch
-  XSetFont(display, gc, theFont);
-#endif
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XSetFont(display, gcBacking, theFont);
-#endif
+	ToolChanged(kTextTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -421,123 +373,7 @@ void wxCanvasDC::SetPen(wxPen *pen)
 	current_pen = pen;
 	if (current_pen) current_pen->Lock(1);
 
-	if (cMacDC->currentUser() == this && cMacCurrentTool == kPenTool)
-	{
-		wxMacSetCurrentTool(kNoTool); // platform pen no longer valid
-	}
-
-#ifdef wx_motif_wch
-  if (!same_style)
-  {
-    int scaled_width = (int)XLOG2DEVREL(pen->GetWidth());
-    if (scaled_width < 0)
-      scaled_width = 0;
-
-    int style;
-    int join ;
-    int cap ;
-    static char dotted[] = {2, 5};
-    static char short_dashed[] = {4, 4};
-    static char long_dashed[] = {4, 8};
-    static char dotted_dashed[] = {6, 6, 2, 6};
-
-    // We express dash pattern in pen width unit, so we are
-    // independent of zoom factor and so on...
-    int req_nb_dash ;
-    char *req_dash ;
-
-    switch (pen->GetStyle())
-    {
-      case wxUSER_DASH:
-        req_nb_dash = current_pen_nb_dash ;
-        req_dash = current_pen_dash ;
-        style = LineOnOffDash;
-        break;
-      case wxDOT:
-        req_nb_dash = 2 ;
-        req_dash = dotted ;
-        style = LineOnOffDash;
-        break;
-      case wxSHORT_DASH:
-        req_nb_dash = 2 ;
-        req_dash = short_dashed ;
-        style = LineOnOffDash;
-        break;
-      case wxLONG_DASH:
-        req_nb_dash = 2 ;
-        req_dash = long_dashed ;
-        style = LineOnOffDash;
-        break;
-      case wxDOT_DASH:
-        req_nb_dash = 4 ;
-        req_dash = dotted_dashed ;
-        style = LineOnOffDash;
-        break;
-      case wxSTIPPLE:
-      case wxSOLID:
-      case wxTRANSPARENT:
-      default:
-        style = LineSolid;
-        req_dash = NULL ;
-        req_nb_dash = 0 ;
-    }
-
-    if (req_dash&&req_nb_dash)
-    {
-      char *real_req_dash = new char[req_nb_dash] ;
-      if (real_req_dash)
-      {
-        int factor = scaled_width==0? 1:scaled_width ;
-        for (int i=0;i<req_nb_dash;i++)
-          real_req_dash[i] = req_dash[i]*factor ;
-#ifdef wx_motif_wch
-        XSetDashes(display, gc, 0, real_req_dash, req_nb_dash);
-#endif
-#ifdef wx_motif
-        if (canvas && canvas->is_retained)
-          XSetDashes(display,gcBacking,0,real_req_dash,req_nb_dash);
-#endif
-        delete [] real_req_dash ;
-      }
-      else
-      {
-        // No Memory. We use non-scaled dash pattern...
-#ifdef wx_motif_wch
-        XSetDashes(display, gc, 0, req_dash, req_nb_dash);
-#endif
-#ifdef wx_motif
-        if (canvas && canvas->is_retained)
-          XSetDashes(display,gcBacking,0,req_dash,req_nb_dash);
-#endif
-      }
-    }
- 
-    switch(pen->GetCap())
-    {
-    case wxCAP_PROJECTING: cap = CapProjecting ; break ;
-    case wxCAP_BUTT:       cap = CapButt ;       break ;
-    case wxCAP_ROUND:
-    default:               cap = CapRound ;      break ;
-    }
-
-    switch(pen->GetJoin())
-    {
-    case wxJOIN_BEVEL: join = JoinBevel ; break ;
-    case wxJOIN_MITER: join = JoinMiter ; break ;
-    case wxJOIN_ROUND:
-    default:           join = JoinRound ; break ;
-    }
-
-#ifdef wx_motif
-    XSetLineAttributes(display, gc, scaled_width, style, cap, join);
-#endif
-#ifdef wx_motif
-    if (canvas && canvas->is_retained)
-      XSetLineAttributes(display, gcBacking, scaled_width, style, cap, join);
-#endif
-  }
-
-#endif
+    ToolChanged(kPenTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -547,79 +383,43 @@ void wxCanvasDC::SetBrush(wxBrush *brush)
 	current_brush = brush;
 	if (current_brush) current_brush->Lock(1);
 
-	if (cMacDC->currentUser() == this && cMacCurrentTool == kBrushTool)
-	{
-		wxMacSetCurrentTool(kNoTool); // platform brush no longer valid
-	}
+    ToolChanged(kBrushTool);
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetBackground(wxBrush* brush)
+void wxCanvasDC::InstallColor(wxColour &c, int fg)
 {
-	if (current_background_brush) current_background_brush->Lock(-1);
-	current_background_brush = brush;
-	if (current_background_brush) current_background_brush->Lock(1);
-
-	if (cMacDC->currentUser() == this
-		&& (cMacCurrentTool != kBlitTool)
-		&& (cMacCurrentTool != kColorBlitTool))
-	{ // must update platform
-		if (!current_background_brush) {
-			BackColor(whiteColor);
-			return;
-		}
-	
-		GrafPtr theOldPort = qd.thePort;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
-
-		RGBColor pixel = current_background_brush->GetColour().pixel;
-		if (Colour)
-			RGBBackColor(&pixel);
-		else
-		{
-			unsigned char red = current_background_brush->GetColour().Red();
-			unsigned char blue = current_background_brush->GetColour().Blue();
-			unsigned char green = current_background_brush->GetColour().Green();
-			Bool isBlackColour =
+   RGBColor pixel;
+   pixel = c.pixel;
+   if (Colour) {
+	  if (fg)
+	    RGBForeColor(&pixel);
+	  else
+	    RGBBackColor(&pixel);
+   } else {
+		unsigned char red = c.Red();
+		unsigned char blue = c.Blue();
+		unsigned char green = c.Green();
+		if (fg) {
+		  Bool isWhiteColour =
+			(red == (unsigned char )255 &&
+			 blue == (unsigned char)255 &&
+			 green == (unsigned char)255);
+		  ForeColor(isWhiteColour ? whiteColor : blackColor);
+		} else {
+		  Bool isBlackColour =
 				(red == (unsigned char )0 &&
 				 blue == (unsigned char)0 &&
 				 green == (unsigned char)0);
-			BackColor(isBlackColour ? blackColor : whiteColor);
+		  BackColor(isBlackColour ? blackColor : whiteColor);
 		}
-	
-		int theBrushStyle = current_background_brush->GetStyle();
-		if (theBrushStyle == wxSOLID)
-			BackPat(&qd.white);
-		else if (theBrushStyle == wxTRANSPARENT)
-			BackPat(&qd.white);
-		else if (IS_HATCH(theBrushStyle))
-		{
-			macGetHatchPattern(theBrushStyle, cMacPattern);
-			BackPat(&cMacPattern);
-		}
-		else
-		{
-			BackPat(&qd.white);
-		}
-
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
 	}
 }
 
-//-----------------------------------------------------------------------------
-void wxCanvasDC::SetLogicalFunction(int function)
+void wxCanvasDC::InstallLogicalFunction(int function)
 {
-	current_logical_function = function;
-
-	if (cMacDC->currentUser() == this)
-	{ // must update platform
-		GrafPtr theOldPort = qd.thePort;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
-
 		int theMacPenMode;
-		switch (current_logical_function)
+		switch (function)
 		{
 			case wxCLEAR:  theMacPenMode = patBic; break;
 			case wxXOR:  theMacPenMode = patXor; break;
@@ -642,9 +442,41 @@ void wxCanvasDC::SetLogicalFunction(int function)
 		}
 	
 		PenMode(theMacPenMode);
+}
+
+//-----------------------------------------------------------------------------
+void wxCanvasDC::SetBackground(wxBrush* brush)
+{
+	if (current_background_brush) current_background_brush->Lock(-1);
+	current_background_brush = brush;
+	if (current_background_brush) current_background_brush->Lock(1);
+
+	if (cMacDC->currentUser() == this
+		&& (cMacCurrentTool == kNoTool))
+	{ // must update platform to kNoTool
+		if (!current_background_brush) {
+			BackColor(whiteColor);
+			return;
+		}
+	
+		GrafPtr theOldPort = qd.thePort;
+		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
+
+        InstallColor(current_background_brush->GetColour(), FALSE);
 
 		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
 	}
+
+	ToolChanged(kNoTool);
+}
+
+//-----------------------------------------------------------------------------
+void wxCanvasDC::SetLogicalFunction(int function)
+{
+	current_logical_function = function;
+    ToolChanged(kPenTool);
+    ToolChanged(kBrushTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -673,8 +505,13 @@ void wxCanvasDC::SetMapMode(int mode)
   // Then we just need to find the scaling factor from ? to mm and multiply
   // by the first scaling factor.
 
-  pixel_width = 640;
-  pixel_height = 480;
+  if (wxSubType(__type, wxTYPE_DC_PRINTER)) {
+    pixel_width = 800;
+    pixel_height = 1200;
+  } else {
+    pixel_width = 640;
+    pixel_height = 480;
+  }
   mm_width = 225;
   mm_height = 169;
 
@@ -716,17 +553,7 @@ void wxCanvasDC::SetMapMode(int mode)
     }
   }
 
-	if (cMacDC->currentUser() == this)
-	{ // must update platform
-		GrafPtr theOldPort = qd.thePort;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
-
-		if (cMacCurrentTool == kPenTool)
-			wxMacSetCurrentTool(kPenTool); // Force recalculation of line width
-
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
-	}
+  ToolChanged(kNoTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -736,17 +563,7 @@ void wxCanvasDC::SetUserScale(float x, float y)
 	user_scale_x = x;
 	user_scale_y = y;
 
-	if (cMacDC->currentUser() == this)
-	{ // must update platform
-		GrafPtr theOldPort = qd.thePort;
-		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort((GrafPtr)theMacGrafPort);
-
-		if (cMacCurrentTool == kPenTool)
-			wxMacSetCurrentTool(kPenTool); // Force recalculation of line width
-
-		if ((GrafPtr)theMacGrafPort != theOldPort) ::SetPort(theOldPort);
-	}
+	ToolChanged(kNoTool);
 }
 
 //-----------------------------------------------------------------------------
@@ -782,11 +599,8 @@ void wxCanvasDC::wxMacSetClip(void)
 		::ClipRect(&zeroClipRect);
 	} else {
 		if (current_reg)
-		{
 			::SetClip(current_reg);
-		}
-		else
-		{
+		else {
 			Rect largestClipRect = {-32767, -32767, 32767, 32767};
 			::ClipRect(&largestClipRect);
 		}
@@ -794,6 +608,7 @@ void wxCanvasDC::wxMacSetClip(void)
 }
 
 //-----------------------------------------------------------------------------
+
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 {
 	SetCurrentDC();
@@ -804,15 +619,11 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 
 	RGBColor pixel;
 
-	if ((whichTool != kBlitTool)
-		&& (whichTool != kColorBlitTool)) {
-	  cMacCurrentTool = kNoTool;
-	  SetBackground(current_background_brush);
-	}
-
 	switch (whichTool)
 	{
 		case kNoTool:
+			InstallColor(current_background_brush->GetColour(), FALSE);
+            InstallLogicalFunction(wxCOPY);
 			break;
 		case kBrushTool:
 			int theBrushStyle = current_brush->GetStyle();
@@ -820,30 +631,16 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 				PenPat(&qd.black);
 			else if (theBrushStyle == wxTRANSPARENT)
 				PenPat(&qd.white); // WCH : does this work??
-			else if (IS_HATCH(theBrushStyle))
-			{
+			else if (IS_HATCH(theBrushStyle)) {
 				macGetHatchPattern(theBrushStyle, cMacPattern);
 				PenPat(&cMacPattern);
-			}
-			else
-			{
+			} else {
 				PenPat(&qd.black);
 			}
 	
-			pixel = current_brush->GetColour().pixel;
-			if (Colour)
-				RGBForeColor(&pixel);
-			else
-			{
-				unsigned char red = current_brush->GetColour().Red();
-				unsigned char blue = current_brush->GetColour().Blue();
-				unsigned char green = current_brush->GetColour().Green();
-				Bool isWhiteColour =
-					(red == (unsigned char )255 &&
-					 blue == (unsigned char)255 &&
-					 green == (unsigned char)255);
-				ForeColor(isWhiteColour ? whiteColor : blackColor);
-			}
+			InstallColor(current_background_brush->GetColour(), FALSE);
+			InstallColor(current_brush->GetColour(), TRUE);
+			InstallLogicalFunction(current_logical_function);
 			break;
 		case kPenTool:
 			int thePenWidth = current_pen->GetWidth();
@@ -855,50 +652,37 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 				PenPat(&qd.black);
 			else if (thePenStyle == wxTRANSPARENT)
 				PenPat(&qd.white);
-			else if (IS_HATCH(thePenStyle))
-			{
+			else if (IS_HATCH(thePenStyle)) {
 				macGetHatchPattern(thePenStyle, cMacPattern);
 				PenPat(&cMacPattern);
-			}
-			else
-			{
+			} else {
 				PenPat(&qd.black);
 			}
 
-			pixel = current_pen->GetColour().pixel;
-			if (Colour)
-				RGBForeColor(&pixel);
+			InstallColor(current_pen->GetColour(), TRUE);
+			InstallColor(current_background_brush->GetColour(), FALSE);
+			InstallLogicalFunction(current_logical_function);
+			break;
+		case kTextTool:
+			InstallColor(current_text_foreground, TRUE);
+			if (current_bk_mode != wxTRANSPARENT)
+			  InstallColor(current_text_background, FALSE);
 			else
-			{
-				unsigned char red = current_pen->GetColour().Red();
-				unsigned char blue = current_pen->GetColour().Blue();
-				unsigned char green = current_pen->GetColour().Green();
-				Bool isWhiteColour =
-					(red == (unsigned char )255 &&
-					 blue == (unsigned char)255 &&
-					 green == (unsigned char)255);
-				ForeColor(isWhiteColour ? whiteColor : blackColor);
-			}
+			   BackColor(whiteColor);
+			::TextFont(font->GetMacFontNum());
+	        ::TextSize(font->GetPointSize());
+	        ::TextFace(font->GetMacFontStyle());
+			InstallLogicalFunction(wxCOPY);
 			break;
 		case kBlitTool:
 			ForeColor(blackColor);
 			BackColor(whiteColor);
+			InstallLogicalFunction(wxCOPY);
 			break;
 		case kColorBlitTool:
 			BackColor(whiteColor);
-			pixel = current_pen->GetColour().pixel;
-			if (Colour)
-				RGBForeColor(&pixel);
-			else {
-				unsigned char red = current_pen->GetColour().Red();
-				unsigned char blue = current_pen->GetColour().Blue();
-				unsigned char green = current_pen->GetColour().Green();
-				Bool isWhiteColour =
-					(red == (unsigned char )255 &&
-					 blue == (unsigned char)255 &&
-					 green == (unsigned char)255);
-				ForeColor(isWhiteColour ? whiteColor : blackColor);
-			}
+			InstallColor(current_pen->GetColour(), TRUE);
+			InstallLogicalFunction(wxCOPY);
 			break;
 		case kQuillTool:
 			break;

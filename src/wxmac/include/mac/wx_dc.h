@@ -24,12 +24,18 @@ class wxDC: public wxbDC
 	wxMacDC* cMacDC; // mac platform only
 	Pattern cMacPattern; // mac platform only (temp work pattern)
 
-	enum wxMacToolType {kNoTool, kPenTool, kBrushTool, kQuillTool, kBlitTool, kColorBlitTool}; // mac platform only
+	enum wxMacToolType {kNoTool, kPenTool, kBrushTool, kQuillTool, kBlitTool, kColorBlitTool, kTextTool}; // mac platform only
 	wxMacToolType cMacCurrentTool; // mac platform only
 
  public:
 	wxDC(void);
 	~wxDC(void);
+	
+	virtual void SetTextForeground(wxColour *colour);
+    virtual void SetTextBackground(wxColour *colour);
+    virtual void SetBackgroundMode(int mode);
+
+    void ToolChanged(wxMacToolType tool);
 
 // Mac platform only
 	void wxMacDrawPoint(int x1, int y1);

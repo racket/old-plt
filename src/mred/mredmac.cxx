@@ -714,15 +714,13 @@ void MrEdDispatchEvent(EventRecord *e)
       }
     }
 
-    Point o = {0, 0};
-    GetPort(&p);
-    SetPort(w);
-    GlobalToLocal(&o);
-    OffsetRgn(rgn, o.h, o.v);
-    InvalRgn(rgn);
-    SetPort(p);
-
-    DisposeRgn(rgn);
+	if (!((WindowRecord *)w)->updateRgn)
+	  ((WindowRecord *)w)->updateRgn = rgn;
+	else {
+      RgnHandle update = ((WindowRecord *)w)->updateRgn;
+	  UnionRgn(update, rgn, update);
+      DisposeRgn(rgn);
+    }
   }
     
   wxTheApp->doMacPreEvent();

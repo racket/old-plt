@@ -116,6 +116,9 @@ class wxCanvasDC: public wxbCanvasDC
   void wxMacSetCurrentTool(wxMacToolType whichTool); // Internal only
 
   void TryColour(wxColour *src, wxColour *dest);
+  
+  void InstallColor(wxColour &c, int fg);
+  void InstallLogicalFunction(int func);
 };
 
 #endif // IN_CPROTO

@@ -221,8 +221,8 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 
 	int dw, dh;
 
-	dw = cWindowWidth - width;
-	dh = cWindowHeight - height;
+	dw = width - cWindowWidth;
+	dh = height - cWindowHeight;
 
     if (xIsChanged) cWindowX = x;
     if (yIsChanged) cWindowY = y;
@@ -257,12 +257,12 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 		if (dw) {
 	 			r.top = 0;
 	 			r.bottom = h;
-	 			r.left = w - dw;
+	 			r.left = max(0, w - dw);
 	 			r.right = w;
 		 		::InvalRect(&r);
 	 		}
 	 		if (dh) {
-	 			r.top = h - dw;
+	 			r.top = max(0, h - dh);
 	 			r.bottom = h;
 	 			r.left = 0;
 	 			r.right = w;
@@ -328,14 +328,16 @@ void wxFrame::Maximize(Bool maximize)
 //-----------------------------------------------------------------------------
 // Mac platform only; internal use only.
 //-----------------------------------------------------------------------------
-void wxFrame::wxMacRecalcNewSize(void)
+void wxFrame::wxMacRecalcNewSize(Bool resize)
 {
 	Rect theStrucRect = wxMacGetStrucRect();
 	Rect theContRect = wxMacGetContRect();
 	cWindowX = theStrucRect.left;
 	cWindowY = theStrucRect.top - GetMBarHeight(); // WCH: kludge
-	cWindowWidth = theStrucRect.right - theStrucRect.left;
-	cWindowHeight = theStrucRect.bottom - theStrucRect.top;
+	if (resize) {
+	  cWindowWidth = theStrucRect.right - theStrucRect.left;
+	  cWindowHeight = theStrucRect.bottom - theStrucRect.top;
+	}
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

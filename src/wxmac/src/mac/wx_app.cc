@@ -36,6 +36,8 @@ extern void wxDoEvents();
 extern void wxDoNextEvent();
 extern int wxEventReady();
 
+extern CGrafPtr gMacFontGrafPort;
+
 wxScreen *theScreen;
 #if 0
 extern wxList gTimerList;
@@ -57,8 +59,8 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 	::InitDialogs(0L);
 	::InitCursor();
 
-	wxFont::gMacFontGrafPort = new CGrafPort;
-	::OpenPort((GrafPtr)wxFont::gMacFontGrafPort);
+	gMacFontGrafPort = new CGrafPort;
+	::OpenPort((GrafPtr)gMacFontGrafPort);
 
 	cMacCursorRgn = ::NewRgn(); // forces cursor-move event right away
 	CheckMemOK(cMacCursorRgn);
@@ -791,7 +793,7 @@ void wxApp::doMacInDrag(WindowPtr window)
 		Rect dragBoundsRect = qd.screenBits.bounds;
 		::InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
 		::DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
-		theMacWxFrame->wxMacRecalcNewSize(); // Actually, recalc new position only
+		theMacWxFrame->wxMacRecalcNewSize(FALSE); // recalc new position only
 	}
 }
 

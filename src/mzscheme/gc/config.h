@@ -429,7 +429,11 @@
 
 # ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
-#   define ALIGNMENT 2
+#   ifdef USE_POWERPC_FOUR_BYTE_ALIGN
+#      define ALIGNMENT 4
+#   else
+#      define ALIGNMENT 2
+#   endif
 #   ifdef MACOS
 #     ifndef __LOWMEM__
 #     include <LowMem.h>

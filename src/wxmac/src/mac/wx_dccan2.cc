@@ -20,13 +20,6 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_canvs.h"
 #include "wx_privt.h"
 
-//#include "bdiag.xbm"
-//#include "fdiag.xbm"
-//#include "cdiag.xbm"
-//#include "horiz.xbm"
-//#include "verti.xbm"
-//#include "cross.xbm"
-
 static PixMapHandle	bdiag,
 		cdiag,
 		fdiag,
@@ -40,19 +33,20 @@ static PixMapHandle	bdiag,
 
 extern CGrafPtr wxMainColormap;
 
+// constant to convert radian to degree
+#define RAD2DEG 57.2957795131
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::Clear(void)
 //-----------------------------------------------------------------------------
 {
 	SetCurrentDC();
+	wxMacSetCurrentTool(kNoTool);
 
 	int w, h;
 	if (canvas)
-	{
 		canvas->GetVirtualSize(&w, &h);
-	}
-	else
-	{
+	else {
 		w = pixmapWidth;
 		h = pixmapHeight;
 	}
@@ -78,9 +72,12 @@ void wxCanvasDC::GetSize(float *width, float *height)
 void wxCanvasDC::CrossHair(float x, float y)
 //-----------------------------------------------------------------------------
 {
+   if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
+     return;
+
 	SetCurrentDC();
 
-	if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+	wxMacSetCurrentTool(kPenTool);
 	int xx = XLOG2DEV(x);
 	int yy = YLOG2DEV(y);
 	float ww, hh;
@@ -128,19 +125,18 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
 void wxCanvasDC::IntDrawLine(int x1, int y1, int x2, int y2)
 //-----------------------------------------------------------------------------
 {
-	SetCurrentDC();
-	if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
-	wxMacDrawLine(XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
-	CalcBoundingBox(x1, y1); // WCH: not in original. Why not?
-	CalcBoundingBox(x2, y2); // WCH: not in original. Why not?
+    DrawLine(x1, y1, x2, y2);
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
 //-----------------------------------------------------------------------------
 {
+    if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
+      return;
+
 	SetCurrentDC();
-	if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+	wxMacSetCurrentTool(kPenTool);
 	wxMacDrawLine(XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
 	CalcBoundingBox(x1, y1);
 	CalcBoundingBox(x2, y2);
@@ -151,83 +147,73 @@ void wxCanvasDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
 {
 	SetCurrentDC();
 
-#ifdef wx_motif_wch
-  int xx1 = XLOG2DEV(x1) ;
-  int yy1 = YLOG2DEV(y1) ;
-  int xx2 = XLOG2DEV(x2) ;
-  int yy2 = YLOG2DEV(y2) ;
-  int xxc = XLOG2DEV(xc) ;
-  int yyc = YLOG2DEV(yc) ;
- 
-  double dx = xx1 - xxc ;
-  double dy = yy1 - yyc ;
-  double radius = sqrt(dx*dx+dy*dy) ;
-  int r = (int)radius ;
- 
-  double radius1,radius2 ;
- 
-  if (xx1==xx2 && yy1==yy2)
-  {
-    radius1 = 0.0 ;
-    radius2 = 360.0 ;
-  }
-  else if (radius==0.0)
-    radius1 = radius2 = 0.0 ;
-  else
-  {
-    if (xx1-xxc == 0)
-      if (yy1-yyc<0)
-        radius1 = 90.0 ;
-      else
-        radius1 = -90.0 ;
-    else
-        radius1 = -atan2((double)(yy1-yyc),(double)(xx1-xxc))*360.0 / (2*M_PI) ;
+    int xx1 = XLOG2DEV(x1); int yy1 = XLOG2DEV(y1);
+    int xx2 = XLOG2DEV(x2); int yy2 = XLOG2DEV(y2);
+    int xxc = XLOG2DEV(xc); int yyc = XLOG2DEV(yc);
+    double dx1 = xx1 - xxc; double dy1 = yy1 - yyc;
+    // double dx2 = xx1 - xxc; double dy2 = yy1 - yyc;
+    double radius1 = sqrt(dx1*dx1+dy1*dy1);
+    // double radius2 = sqrt(dx2*dx2+dy2*dy2);
+    int    r      = (int)radius1;
+    double degrees1, degrees2;
 
-    if (xx2-xxc==0)
-      if (yy2-yyc<0)
-        radius2 = 90.0 ;
-      else
-        radius2 = -90.0 ;
-    else
-        radius2 = -atan2((double)(yy2-yyc),(double)(xx2-xxc))*360.0 / (2*M_PI) ;
-  }
-  radius1 *= 64.0 ;
-  radius2 *= 64.0 ;
-  int alpha1 = (int)radius1 ;
-  int alpha2 = (int)(radius2-radius1) ;
-  while (alpha2<=0)
-    alpha2 += 360*64 ;
-  while (alpha2>360*64)
-    alpha2 -= 360*64 ;
+    if (xx1 == xx2 && yy1 == yy2) {
+	degrees1 = 0.0;
+	degrees2 = 360.0;
+    } else if (radius1 == 0.0) {
+	degrees1 = degrees2 = 0.0;
+    } else {
+	degrees1 = (xx1 - xxc == 0) ?
+	    (yy1 - yyc < 0) ? 90.0 : -90.0 :
+	    -atan2(double(yy1-yyc), double(xx1-xxc)) * RAD2DEG;
+	degrees2 = (xx2 - xxc == 0) ?
+	    (yy2 - yyc < 0) ? 90.0 : -90.0 :
+	    -atan2(double(yy2-yyc), double(xx2-xxc)) * RAD2DEG;
+    }
+    
+    /* Convert to QD angles for clockwise arc: */
+    int alpha1 = -degrees2 + 90;
+    int alpha2 = -degrees1 + 90;
+    if (alpha1 < 0)
+      alpha1 += 360;
+    while (alpha2 < alpha1)
+      alpha2 += 360;
+    if (alpha2 >= 360) {
+      alpha1 -= 360;
+      alpha2 -= 360;
+    }
 
-  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-  {
-    if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
-#ifdef wx_motif_wch
-    XFillArc(display, pixmap, gc,
-             xxc-r,yyc-r,2*r,2*r,alpha1,alpha2) ; 
-#endif
-  }
+    int width = r;
+    int height = r;
 
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-  {
-    if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
-#ifdef wx_motif_wch
-    XDrawArc(display, pixmap, gc,
-             xxc-r,yyc-r,2*r,2*r,alpha1,alpha2) ; 
-#endif
-  }
-  CalcBoundingBox(x1, y1);
-  CalcBoundingBox(x2, y2);
-#endif
+	Rect rect;
+	rect.left = xxc - width;
+	rect.top = yyc - height;
+	rect.right = rect.left + 2 * width;
+	rect.bottom = rect.top + 2 * height;
+
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kBrushTool);
+      PaintArc(&rect, alpha1, alpha2);
+    }
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kPenTool);
+      FrameArc(&rect, alpha1, alpha2);
+    }
+	
+	CalcBoundingBox(x1, y1);
+    CalcBoundingBox(x2, y2);
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawPoint(float x, float y)
 //-----------------------------------------------------------------------------
 {
+    if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
+      return;
+
 	SetCurrentDC();
-	if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+	wxMacSetCurrentTool(kPenTool);
 	wxMacDrawPoint(XLOG2DEV(x), YLOG2DEV(y));
 	CalcBoundingBox(x, y);
 }
@@ -262,16 +248,11 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 	{
 		if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
 		PaintPoly(thePolygon);
-#ifdef wx_motif_wch
-		XSetFillRule(display,gc,fillStyle==wxODDEVEN_RULE?EvenOddRule:WindingRule);
-		XFillPolygon(display, pixmap, gc, xpoints1, n, Convex, 0);
-		XSetFillRule(display,gc,EvenOddRule); // default mode
-#endif
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+		wxMacSetCurrentTool(kPenTool);
 		FramePoly(thePolygon);
 	}
 
@@ -286,7 +267,7 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		SetCurrentDC();
-		if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+		wxMacSetCurrentTool(kPenTool);
 	
 		Point *xpoints = new Point[n];
 	
@@ -319,7 +300,7 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
 		SetCurrentDC();
-		if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+		wxMacSetCurrentTool(kPenTool);
 	
 		Point *xpoints = new Point[n];
 	
@@ -357,13 +338,13 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 	Rect theRect = {top, left, bottom, right};
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
+		wxMacSetCurrentTool(kBrushTool);
 		PaintRect(&theRect);
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+		wxMacSetCurrentTool(kPenTool);
 		FrameRect(&theRect);
 	}
 	CalcBoundingBox(x, y);
@@ -390,13 +371,13 @@ void wxCanvasDC::DrawRoundedRectangle
 
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
+		wxMacSetCurrentTool(kBrushTool);
 		PaintRoundRect(&theRect, phys_rwidth, phys_rheight);
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+		wxMacSetCurrentTool(kPenTool);
 		FrameRoundRect(&theRect, phys_rwidth, phys_rheight);
 	}
 
@@ -415,13 +396,13 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 	Rect theRect = {top, left, bottom, right};
 	if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kBrushTool) wxMacSetCurrentTool(kBrushTool);
+		wxMacSetCurrentTool(kBrushTool);
 		PaintOval(&theRect);
 	}
 
 	if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	{
-		if (cMacCurrentTool != kPenTool) wxMacSetCurrentTool(kPenTool);
+		wxMacSetCurrentTool(kPenTool);
 		FrameOval(&theRect);
 	}
 	CalcBoundingBox(x, y);
@@ -514,14 +495,26 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		int iysrc = source->LogicalToDeviceY(ysrc);
 		Rect srcr = {iysrc, ixsrc, iysrc + h, ixsrc + w};
 		Rect destr = {y, x, y+h, x+w };
+		
+		GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
+        BitMap *dstbm;
+        PixMapHandle destpixh;
+        if ((((CGrafPtr)theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
+          destpixh = NULL;
+          dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
+        } else {
+          destpixh = ((CGrafPtr)theMacGrafPort)->portPixMap;
+		  ::LockPixels(destpixh);
+		  dstbm = (BitMap *)(* destpixh);
+        }
+
 		// Lock PixMaps
-		int rs;
-		rs = ::LockPixels(pixmap);
 		PixMapHandle srpixh = source->pixmap;
-		rs = ::LockPixels(srpixh);
-		CopyBits((BitMap *) (* srpixh),   (BitMap *)(* pixmap),
-			&srcr, &destr, mode, NULL);
-		::UnlockPixels(pixmap);
+		int rs = ::LockPixels(srpixh);
+
+		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL);
+
+		if (destpixh) ::UnlockPixels(destpixh);
 		::UnlockPixels(srpixh);
 		CalcBoundingBox(xdest, ydest);
 		CalcBoundingBox(xdest + width, ydest + height);

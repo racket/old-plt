@@ -41,3 +41,27 @@ void wxDC::wxMacDrawLine(int x1, int y1, int x2, int y2)
 	MoveTo(x1, y1);
 	LineTo(x2, y2);
 }
+
+void wxDC::SetTextForeground(wxColour *colour)
+{
+  wxbDC::SetTextForeground(colour);
+  ToolChanged(kTextTool);
+}
+
+void wxDC::SetTextBackground(wxColour *colour)
+{
+  wxbDC::SetTextBackground(colour);
+  ToolChanged(kTextTool);
+}
+
+void wxDC::SetBackgroundMode(int mode)
+{
+  wxbDC::SetBackgroundMode(mode);
+  ToolChanged(kTextTool);
+}
+
+void wxDC::ToolChanged(wxMacToolType tool)
+{
+   if ((tool == kNoTool) || (cMacCurrentTool == tool))
+     cMacCurrentTool = kNoTool;
+}

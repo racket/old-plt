@@ -14,6 +14,8 @@
 #ifdef __MWERKS__
 #if defined(__powerc)
 #include <MacHeadersPPC>
+/* MATTHEW: use 4-byte alignment */
+# define USE_POWERPC_FOUR_BYTE_ALIGN
 #else
 #include <MacHeaders68K>
 #endif

@@ -32,8 +32,8 @@ static const char sccsid[] = "%W% %G%";
 #define BUTTON_V_SPACE 10
 #endif
 
-#define IB_MARGIN_X 2
-#define IB_MARGIN_Y 2
+#define IB_MARGIN_X 3
+#define IB_MARGIN_Y 3
 
 //=============================================================================
 // Public constructors
@@ -315,18 +315,79 @@ void wxButton::Enable(Bool enable)
 }
 
 //-----------------------------------------------------------------------------
+static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, int cColour)
+{
+  static wxColour *dark, *darker, *lite;
+  wxColour *back, *bright, *dim;
+  
+  if (!dark) {
+  	wxColour *norm; 
+    norm = &wxCONTROL_BACKGROUND_BRUSH->GetColour();
+    
+#   define DARK_SCALE(x) (x - (x >> 2))
+#   define DARKER_SCALE(x) (x >> 1)
+#   define LITE_SCALE(x) 0xFF
+
+    dark = new wxColour(DARK_SCALE(norm->Red()), 
+    				    DARK_SCALE(norm->Green()), 
+    				    DARK_SCALE(norm->Blue()));
+    				    
+    darker = new wxColour(DARKER_SCALE(norm->Red()), 
+    				      DARKER_SCALE(norm->Green()), 
+    				      DARKER_SCALE(norm->Blue()));
+    				    
+    lite = new wxColour(LITE_SCALE(norm->Red()), 
+    				    LITE_SCALE(norm->Green()), 
+    				    LITE_SCALE(norm->Blue()));
+  }
+
+  if (pressed) {
+    back = dark;
+    dim = &wxCONTROL_BACKGROUND_BRUSH->GetColour();
+    bright = darker;
+  } else {
+    back = &wxCONTROL_BACKGROUND_BRUSH->GetColour();
+    dim = darker;
+    bright = lite;
+  }
+
+  Rect rr = *r;
+  InsetRect(&rr, 1, 1);
+  
+  if (cColour)
+    RGBBackColor(&back->pixel);
+  ::EraseRect(&rr);
+  FrameRoundRect(r, 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y);
+  if (cColour) {
+    RGBForeColor(&bright->pixel);  
+    MoveTo(rr.left + 1, rr.top);
+    LineTo(rr.right - 2, rr.top);
+    
+    MoveTo(rr.left, rr.top + 1);
+    LineTo(rr.left, rr.bottom - 2);
+
+    RGBForeColor(&dim->pixel);  
+    MoveTo(rr.left + 1, rr.bottom - 1);
+    LineTo(rr.right - 2, rr.bottom - 1);
+    
+    MoveTo(rr.right - 1, rr.top + 1);
+    LineTo(rr.right - 1, rr.bottom - 2);
+    
+    ForeColor(blackColor);
+  }
+  buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y);
+}
+
 void wxButton::Paint(void)
 {
 	if (cHidden) return;
 	SetCurrentDC();
-	Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-	::EraseRect(&r);
+	Rect r = { 0, 0, cWindowHeight, cWindowWidth };
 	if (buttonBitmap) {
-		FrameRoundRect(&r, 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y);
-		buttonBitmap->DrawMac(IB_MARGIN_X, IB_MARGIN_Y);
-	}
-	else if (cMacControl) {
-		Bool isVisible = (**cMacControl).contrlVis == 255;
+	    PaintBitmapButton(&r, buttonBitmap, 0, cColour);
+	} else if (cMacControl) {
+	    ::EraseRect(&r);
+	    Bool isVisible = (**cMacControl).contrlVis == 255;
 		if (!isVisible) return;
 		::Draw1Control(cMacControl);
 	}
@@ -361,8 +422,8 @@ void wxButton::Highlight(Bool flag) // mac platform only
 {
 	if (buttonBitmap) {
 		SetCurrentDC();
-		Rect bounds = {1, 1, cWindowHeight - 1, cWindowWidth - 1};
-		::InvertRect(&bounds /* , 2 * IB_MARGIN_X, 2 * IB_MARGIN_Y */);
+		Rect bounds = {0, 0, cWindowHeight, cWindowWidth};
+		PaintBitmapButton(&bounds, buttonBitmap, flag, cColour);
 	} else if (cMacControl) {
 		if (cEnable)
 		{

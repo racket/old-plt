@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.2 1998/01/14 03:04:09 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.3 1998/02/14 18:04:19 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -541,7 +541,7 @@ wxInitializeStockObjects (void)
   wxWHITE_BRUSH->Lock(1);
   wxBLACK_BRUSH->Lock(1);
   
-  wxColour ctlGray(0xF0, 0xF0, 0xF0);
+  wxColour ctlGray(0xE8, 0xE8, 0xE8);
   wxCONTROL_BACKGROUND_BRUSH = new wxBrush(ctlGray, wxSOLID);
   wxCONTROL_BACKGROUND_BRUSH->Lock(1);
 

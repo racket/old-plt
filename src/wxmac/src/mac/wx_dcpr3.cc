@@ -37,8 +37,7 @@ void wxPrinterDC::DrawText(const char* text, float x, float y, Bool use16)
 	::TextSize(font->GetPointSize());
 	::TextFace(font->GetMacFontStyle());
 
-    //if (cMacCurrentTool != kPenTool)
-      wxMacSetCurrentTool(kPenTool);
+      wxMacSetCurrentTool(kTextTool);
 
 	FontInfo fontInfo;
 	::GetFontInfo(&fontInfo);

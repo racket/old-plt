@@ -23,7 +23,7 @@ static const char sccsid[] = "%W% %G%";
 #if USE_IMAGE_LOADING_IN_MAC
 #include "wx_image.h"
 #endif
-CGrafPtr wxFont::gMacFontGrafPort = NULL; // mac platform only
+CGrafPtr gMacFontGrafPort = NULL; // mac platform only
 
 wxGDIList   *wxTheIconList = NULL;
 wxGDIList   *wxTheCursorList = NULL;
@@ -176,33 +176,58 @@ wxFont::~wxFont()
 #endif
 }
 
+static long TextFontInfo(int font, int size, int face, FontInfo *finfo, char *str)
+{
+  static int fn, sz = -1, fc;
+  static FontInfo fontInfo;
+  long result = 0;
+  int isdiff = ((fn != font)
+                || (sz != size)
+                || (fc != face));
+      
+  if (str || isdiff) {
+    GrafPtr oldPort;
+	::GetPort(&oldPort);
+	::SetPort((GrafPtr)gMacFontGrafPort);
+	
+	if (isdiff) {
+	  ::TextFont(fn = font);
+	  ::TextSize(sz = size);
+	  ::TextFace(fc = face);
+	}
+	
+	::GetFontInfo(&fontInfo);
+	
+	if (str)
+	  result = TextWidth(str, 0, strlen(str));
+	
+	::SetPort(oldPort);
+  }
+  
+  memcpy(finfo, &fontInfo, sizeof(FontInfo));
+  
+  return result;
+}
+
 //-----------------------------------------------------------------------------
 float wxFont::GetCharHeight(void)
 {
-	GrafPtr oldPort;
-	::GetPort(&oldPort);
-	::SetPort((GrafPtr)gMacFontGrafPort);
-	::TextFont(GetMacFontNum());
-	::TextSize(point_size);
-	::TextFace(GetMacFontStyle());
 	FontInfo fontInfo;
-	::GetFontInfo(&fontInfo);
-	::SetPort(oldPort);
+	::TextFontInfo(GetMacFontNum(),
+	               point_size,
+	               GetMacFontStyle(),
+	               &fontInfo, NULL);
 	return fontInfo.ascent + fontInfo.descent + fontInfo.leading;
 }
 
 //-----------------------------------------------------------------------------
 float wxFont::GetCharWidth(void)
 {
-	GrafPtr oldPort;
-	::GetPort(&oldPort);
-	::SetPort((GrafPtr)gMacFontGrafPort);
-	::TextFont(GetMacFontNum());
-	::TextSize(point_size);
-	::TextFace(GetMacFontStyle());
 	FontInfo fontInfo;
-	::GetFontInfo(&fontInfo);
-	::SetPort(oldPort);
+	::TextFontInfo(GetMacFontNum(),
+	               point_size,
+	               GetMacFontStyle(),
+	               &fontInfo, NULL);
 	return fontInfo.widMax;
 }
 
@@ -210,22 +235,14 @@ float wxFont::GetCharWidth(void)
 void wxFont::GetTextExtent(char* string, float* x, float* y,
 							float* descent, float* externalLeading, Bool use16)
 {
-	GrafPtr oldPort;
-	::GetPort(&oldPort);
-	::SetPort((GrafPtr)gMacFontGrafPort);
-	::TextFont(GetMacFontNum());
-	::TextSize(point_size);
-	::TextFace(GetMacFontStyle());
 	FontInfo fontInfo;
-	::GetFontInfo(&fontInfo);
-	*x = TextWidth(string, 0, strlen(string)); // width
-#if 0	// CJC, mflatt
-	*x += 5; // WCH: kludge, to handle italic font and word wrapping at end of line
-#endif
+	*x = ::TextFontInfo(GetMacFontNum(),
+	                    point_size,
+	                    GetMacFontStyle(),
+	                    &fontInfo, string);
 	*y = fontInfo.ascent + fontInfo.descent + fontInfo.leading; // height
 	if (descent) *descent = fontInfo.descent;
 	if (externalLeading) *externalLeading = fontInfo.leading;
-	::SetPort(oldPort);
 }
 
 //-----------------------------------------------------------------------------

@@ -693,6 +693,7 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 			SetForeground();
 		}
 		::ClipRect(&theClipRect);
+		PenMode(patCopy);
 		SetTextInfo();
 	}
 }

@@ -6,12 +6,6 @@
    with -D or some other compiler-dependent way), then define
    FLAGS_ALREADY_SET, and this file will be ignored.
 
-   One flag cannot be set in this file: INCLUDE_WITHOUT_PATHS.
-   Define this flag if your compiler doesn't like #include
-   statements with relative paths using ".." and "/". (You will
-   have to #define this for Macintosh CodeWarrior in the project 
-   header.)
-
    The best flag settings are already provided for some auto-detected
    architecture/system/compilers. Otherwise, the default settings 
    are generic Unix.  Send other architecture/system/compiler-specific 

@@ -68,12 +68,12 @@
 # include <errno.h>
 #endif
 #ifdef MACINTOSH_EVENTS
-  #ifdef OS_X
-    #include <Carbon/HIToolbox/Processes.h>
-    #include <Carbon/HIToolbox/AEInteraction.h>
-    #include <ApplicationServices/AE/AppleEvents.h>
-    #include <CoreServices/CarbonCore/Aliases.h>
-  #endif
+# ifdef OS_X
+#  include <Carbon/HIToolbox/Processes.h>
+#  include <Carbon/HIToolbox/AEInteraction.h>
+#  include <ApplicationServices/AE/AppleEvents.h>
+#  include <CoreServices/CarbonCore/Aliases.h>
+# endif
 #endif
 
 #if defined(S_IFDIR) && !defined(S_ISDIR)

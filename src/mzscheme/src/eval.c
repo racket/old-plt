@@ -1516,6 +1516,9 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
       else
 	xenv = env;
     }
+    if (rec && (!boundname || SCHEME_FALSEP(boundname))
+	&& rec[drec].value_name)
+      boundname = rec[drec].value_name;
     first = scheme_expand_expr(first, xenv, 1, boundname);
   } else {
     return first;

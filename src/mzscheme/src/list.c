@@ -800,7 +800,8 @@ immutablep (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v = argv[0];
 
-  return ((SCHEME_IMMUTABLEP(v)
+  return ((!SCHEME_INTP(v)
+	   && SCHEME_IMMUTABLEP(v)
 	   && (SCHEME_PAIRP(v)
 	       || SCHEME_VECTORP(v)
 	       || SCHEME_STRINGP(v)

@@ -14,6 +14,17 @@
 
   (on-installer-run doc-collections-changed)
 
+  (define (get-icon size)
+    (let* ([dir (collection-path "icons")]
+	   [icon (make-object bitmap% (build-path dir (format "help~a.xpm" size)))]
+	   [mask (make-object bitmap% (build-path dir (format "help~a.xbm" size)))])
+      (if (and (send icon ok?)
+	       (send mask ok?))
+	  (values icon mask)
+	  (values #f #f))))
+  (define-values (icon16 mask16) (get-icon "16x16"))
+  (define-values (icon32 mask32) (get-icon "32x32"))
+
   (define (open-url-from-user parent goto-url)
     (letrec ([d (make-object dialog% "Open URL" parent 500)]
 	     [t (make-object text-field% "URL:" d
@@ -201,6 +212,11 @@
 					   [else (super-on-subwindow-char w e)]))])
 				    (sequence (apply super-init args))))
 				 (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 60)))))
+
+	  (when icon16
+	    (send f set-icon icon16 mask16 'small))
+	  (when icon32
+	    (send f set-icon icon32 mask32 'large))
 
 	  (define html-panel (make-object (class hyper-panel% ()
 					    (inherit get-canvas)

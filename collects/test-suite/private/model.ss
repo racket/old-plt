@@ -114,13 +114,17 @@
           ;; set-expander (-> void?)
           ;; create a program expander and store it in the field
           (define/private (set-expander)
-            (set! expander
-                  (instantiate expand-program% ()
-                    (language language)
-                    (teachpacks teachpacks)
-                    (error-handler (send window get-error-handler))
-                    (clean-up post-execute-cleanup)
-                    (load-path (path-only (send program get-text))))))
+            (let* ([filename (send program get-text)]
+                   [path (if (string=? "" filename)
+                             false
+                             (path-only filename))])
+              (set! expander
+                    (instantiate expand-program% ()
+                      (language language)
+                      (teachpacks teachpacks)
+                      (error-handler (send window get-error-handler))
+                      (clean-up post-execute-cleanup)
+                      (load-path path)))))
           
           ;; reset-cases (-> void?)
           ;; reset all the test cases to unknown state

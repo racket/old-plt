@@ -240,6 +240,15 @@ Various common pieces of code that both the client and server need to access
   
   (define (wrap x) (begin (write x) (newline) x))
   
+  (define (with-logging logfile f)
+    (let* ((null-out (open-output-nowhere))
+           (outport
+            (if logfile
+                (with-handlers ((exn:fail:filesystem? (lambda (e) null-out)))
+                  (open-output-file logfile 'append))
+                null-out)))
+      (parameterize ([current-output-port outport])
+        (f))))
   
   ;; ============================================================
   ;; TREE STUFF

@@ -1,11 +1,16 @@
 (module util mzscheme
   
   (require "config.ss"
+           "planet-archives.ss"
+           
            "private/planet-shared.ss"
            "private/linkage.ss"
+
            (lib "pack.ss" "setup")
            (lib "contract.ss")
-           (lib "file.ss"))
+           (lib "file.ss")
+           (lib "list.ss")
+           (lib "plt-single-installer.ss" "setup"))
 
   #| The util collection provides a number of useful functions for interacting with the PLaneT system. |#
   
@@ -16,34 +21,11 @@
    get-installed-planet-archives
    remove-pkg
    unlink-all)
-  
-  (define (repository-tree)
-    (define (id x) x)
-    (filter-tree-by-pattern
-     (directory->tree (CACHE-DIR) (lambda (x) (not (regexp-match ".*/CVS$" (path->string x)))) 4)
-     (list id id id string->number string->number)))
-    
+
   ;; current-cache-contents : -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
   ;; returns the packages installed in the local PLaneT cache
   (define (current-cache-contents)
     (cdr (tree->list (repository-tree))))
-  
-  ;; get-installed-planet-dirs : -> listof path[absolute, dir]
-  ;; directories of all installed planet archives
-  (define (get-installed-planet-archives)
-    (with-handlers ((exn:fail:filesystem:no-directory? (lambda (e) '())))
-      (tree-apply 
-       (lambda (rep-name owner package maj min) 
-         (let ((x (list 
-                   (build-path (CACHE-DIR) owner package (number->string maj) (number->string min))
-                   owner
-                   package
-                   '()
-                   maj 
-                   min)))
-           x))
-       (repository-tree)
-       3)))
   
   ;; get-installed-package : string string nat nat -> PKG | #f
   ;; gets the package associated with this package, if any
@@ -54,6 +36,8 @@
   (define unlink-all remove-all-linkage!)
   
   ;; to remove:
+  ;;   -- setup-plt -c the package
+  ;;   -- remove relevant infodomain cache entries
   ;;   -- delete files from cache directory
   ;;   -- remove any existing linkage for package
   ;; returns #t if the removal worked; #f if no package existed.
@@ -61,10 +45,31 @@
     (let ((p (get-installed-package owner name maj min)))
       (and p
            (let ((path (pkg-path p)))
+             (with-logging 
+              (LOG-FILE)
+              (lambda () 
+                (printf "\n============= Removing ~a =============\n" (list owner name maj min))
+                (clean-planet-package path (list owner name '() maj min))))
+             (remove-infodomain-entries path)
              (delete-directory/files path)
              (trim-directory (CACHE-DIR) path)
              (remove-linkage-to! p)))))
     
+  ;; this really should go somewhere else. But what should setup's behavior be
+  ;; when a package is cleaned? should it clear info-domain entries out? I think
+  ;; no; an uncompiled package isn't necessarily not to be indexed and so on.
+  ;; remove-infodomain-entries : path -> void
+  (define (remove-infodomain-entries path)
+    (let* ([pathbytes (path->bytes path)]
+           [cache-file (build-path (find-system-path 'addon-dir) "cache.ss")]
+           [cache-lines (with-input-from-file cache-file read)])
+      (with-output-to-file cache-file
+       (lambda ()
+         (if (pair? cache-lines)
+             (write (filter (lambda (line) (not (and (pair? line) (equal? (car line) pathbytes)))) cache-lines))
+             (printf "\n")))
+        'truncate/replace)))
+  
   ;; listof X * listof X -> nonempty listof X
   ;; returns de-prefixed version of l2 if l1 is a proper prefix of l2; 
   ;; signals an error otherwise.

@@ -228,6 +228,9 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
          (do-require file-name path module-path stx pkg))]
       [_ (raise-syntax-error 'require (format "Illegal PLaneT invocation: ~e" (cdr spec)) stx)]))
   
+  ;; get-path : planet-request  -> path
+  
+  
   ; pkg-spec->full-pkg-spec : PKG-SPEC syntax -> FULL-PKG-SPEC
   (define (pkg-spec->full-pkg-spec spec stx)
     (define (pkg name maj lo hi path) (make-pkg-spec name maj lo hi path stx))
@@ -300,18 +303,14 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                   "Internal PLaneT error: trying to install already-installed package" 
                   (current-continuation-marks)))
           (begin
-            (let* ((null-out (open-output-nowhere))
-                   (outport
-                    (if (LOG-FILE)
-                        (with-handlers ((exn:fail:filesystem? (lambda (e) null-out)))
-                          (open-output-file (LOG-FILE) 'append))
-                        null-out)))
-              (parameterize ([current-output-port outport])
-                (printf "\n============= Installing ~a on ~a =============\n" 
-                        (pkg-spec-name pkg)
-                        (current-time))
-                (install-planet-package path the-dir (list owner (pkg-spec-name pkg) extra-path maj min)))
-              (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir))))))
+            (with-logging
+             (LOG-FILE)
+             (lambda ()
+               (printf "\n============= Installing ~a on ~a =============\n" 
+                       (pkg-spec-name pkg)
+                       (current-time))
+               (install-planet-package path the-dir (list owner (pkg-spec-name pkg) extra-path maj min))))
+            (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir)))))
          
   ; download-package : FULL-PKG-SPEC -> RESPONSE
   ; RESPONSE ::= (list #f string) | (list #t path[file] Nat Nat)

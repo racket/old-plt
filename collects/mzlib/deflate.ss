@@ -2221,7 +2221,9 @@
   
   (deflate-inner in out)
 
-  (flush_outbuf))
+  (flush_outbuf)
+
+  (values bytes_in bytes_out crc))
 
 (define (gzip-through-ports in out origname time_stamp)
   

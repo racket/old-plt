@@ -1406,7 +1406,7 @@ static void event_found(MrEdContext *c)
     Scheme_Object *cp, *cust;
 
     cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
-    cust = scheme_get_param(c->main_config, MZCONFIG_CUSTODIAN);
+    cust = scheme_get_thread_param(c->main_config, c->main_cells, MZCONFIG_CUSTODIAN);
     scheme_thread_w_details(cp, c->main_config, c->main_cells, (Scheme_Custodian *)cust, 0);
   }
 }
@@ -2279,6 +2279,8 @@ static void MrEdSchemeMessages(char *msg, ...)
 {
   va_list args;
 
+  scheme_start_atomic();
+
 #if WINDOW_STDIO
   if (!wx_in_terminal) {
     static int opening = 0;
@@ -2313,8 +2315,10 @@ static void MrEdSchemeMessages(char *msg, ...)
 #if REDIRECT_STDIO
   if (!mrerr)
     mrerr = fopen("mrstderr.txt", "w");
-  if (!mrerr)
+  if (!mrerr) {
+    scheme_end_atomic_no_swap();
     return;
+  }
 #endif
 
   va_start(args, msg);
@@ -2377,6 +2381,9 @@ static void MrEdSchemeMessages(char *msg, ...)
 #if !WINDOW_STDIO && !WCONSOLE_STDIO
   vfprintf(mrerr, msg, args);
 #endif
+
+  scheme_end_atomic_no_swap();
+
   va_end(args);
 }
 

@@ -371,11 +371,16 @@
 	  (if (null? (call-live v))
 	      (display/indent v "FUNCCALL_EMPTY(")
 	      (begin
-		(display/indent v (format "FUNCCALL(SETUP_~a((SETUP(~a)" 
-					  (call-tag v)
-					  (total-push-size (call-live v))))
-		(push-vars (call-live v) "" ", ")
-		(display/indent v ")), ")))
+		(display/indent v (format "FUNCCALL(SETUP_~a(" 
+					  (call-tag v)))
+		(if show-info?
+		    (begin
+		      (display/indent v (format "(SETUP(~a)" 
+						(total-push-size (call-live v))))
+		      (push-vars (call-live v) "" ", ")
+		      (display/indent v ")"))
+		    (display/indent v "_"))
+		(display/indent v "), ")))
 	  (print-it (append (call-func v) (list (call-args v))) indent #f)
 	  (display/indent v ")")]
 	 [(block-push? v)
@@ -1081,7 +1086,8 @@
 	(tok-line body-v)
 	(tok-file body-v)
 	(seq-close body-v)
-	(let-values ([(body-e live-vars)
+	(let-values ([(orig-body-e) body-e]
+		     [(body-e live-vars)
 		      (convert-body (if c++-class
 					(let* ([new-vars-box (box null)]
 					       [e (begin
@@ -1132,7 +1138,15 @@
 					null)
 				    (lambda () null)
 				    (make-live-var-info #f -1 0 null null null 0) #t)])
-	  (list->seq body-e)))))))
+	  (if (and (null? (live-var-info-new-vars live-vars))
+		   (zero? (live-var-info-maxlive live-vars))
+		   (<= (live-var-info-num-calls live-vars) 1))
+	      ;; No conversion necessary
+	      (list->seq
+	       (cons
+		(make-note 'note #f #f "/* No conversion */")
+		orig-body-e))
+	      (list->seq body-e))))))))
 
 (define (convert-class-vars body-e arg-vars c++-class new-vars-box)
   (let ([el (body->lines body-e #f)])

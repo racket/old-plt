@@ -786,7 +786,8 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   export = SCHEME_CAR(l);
 
   params = check_params(MAKE_COMPOUND_UNIT, params, form, env, &drec, 1, 0);
-  *num_params = scheme_list_length(params);
+  c = scheme_list_length(params);
+  *num_params = c;
 
   if (!SCHEME_PAIRP(with)
       || NOT_SAME_OBJ(SCHEME_CAR(with), with_symbol))

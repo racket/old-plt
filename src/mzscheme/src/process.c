@@ -1483,6 +1483,12 @@ static Scheme_Object *thread_k()
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
   
+
+#ifdef MZ_PRECISE_GC
+  /* Stupid call to ensure that xform.ss puts __gc_var_stack__ here. */
+  scheme_make_char('M');
+#endif
+
   return make_subprocess(thunk,
 #ifdef MZ_PRECISE_GC
 			 (void *)&__gc_var_stack__,
@@ -3097,11 +3103,19 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
   }
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 Scheme_Env *scheme_get_env(Scheme_Config *c)
 {
   Scheme_Object *o = scheme_get_param(c, MZCONFIG_ENV);
   return (Scheme_Env *)o;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 /****************************************/
 

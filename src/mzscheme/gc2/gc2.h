@@ -347,7 +347,7 @@ extern void *GC_alloc_space, *GC_alloc_top;
 #endif
 
 /* Macros: */
-#define gcMARK(x) GC_mark(x)
+#define gcMARK(x) GC_mark((void *)x)
 #define gcMARK_TYPED(t, x) gcMARK(x)
 #define gcFIXUP_TYPED(t, x) GC_fixup(&(x))
 #define gcFIXUP(x) gcFIXUP_TYPED(void*, x)

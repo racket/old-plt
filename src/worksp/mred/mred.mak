@@ -3541,7 +3541,6 @@ BuildCmds= \
 SOURCE=.\Mred.rc
 DEP_RSC_MRED_R=\
 	".\mred.ico"\
-	".\mreddoc.ico"\
 	".\..\..\wxwindow\include\msw\wx.rc"\
 	
 

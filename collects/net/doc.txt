@@ -1,4 +1,4 @@
-Time-stamp: <00/06/13 15:05:09 shriram>
+Time-stamp: <00/06/15 14:50:00 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -139,14 +139,15 @@ PROCEDURES -----------------------------------------------------------
 > (get-pure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns a pure port corresponding to it.  Writes the
-  optional strings to the server.  Uses file://path->fs-path for
-  "file" schemes.
+  optional strings to the server.  For the "file" scheme, uses
+  open-input-file, does not handle exceptions, and ignores the
+  optional strings.
 
 > (get-impure-port url [list-of-strings]) -> input-port
 
   Takes a URL and returns an impure port corresponding to it.  Writes
-  the optional strings to the server.  Uses file://path->fs-path for
-  "file" schemes.
+  the optional strings to the server.  There are no impure ports with
+  scheme "file".
 
 > (display-pure-port input-port) -> void
 

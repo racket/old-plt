@@ -27,5 +27,6 @@
        `(module stamp mzscheme
           (provide stamp)
           (define stamp ,date-stamp))
-       port))
+       port)
+      (newline port))
     'text 'truncate))

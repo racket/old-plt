@@ -37,15 +37,6 @@
             [mred : mred^]
             [zodiac : zodiac:system^])
 
-    (rename (user-defined? defined?)
-            (user-macro? macro?)
-            (user-syntax? syntax?)
-            (user-id-macro? id-macro?)
-            (user-expansion-time-value? expansion-time-value?)
-            (user-global-defined-value global-defined-value))
-
-;    (define unit-with-signature->unit (global-defined-value 'unit/sig->unit))
-
     (define library-unit #f)
 
     (define level->number
@@ -76,15 +67,8 @@
                     #f)))
             (set! library-unit #f)))))
 
-    (define user-defined? 'user-defined?)
-    (define user-macro? 'user-macro?)
-    (define user-syntax? 'user-syntax?)
-    (define user-id-macro? 'user-id-macro?)
-    (define user-expansion-time-value? 'expansion-time-value?)
-    (define user-global-defined-value 'user-global-defined-value)
-    
-    (define build-basis
-      (lambda (eval)
+    (define add-basis
+      (lambda (n)
         (let* ([plt:userspace@ (global-defined-value 'plt:userspace@)]
                [l@
                 (unit/sig ()
@@ -94,10 +78,14 @@
                [params@ (unit/sig plt:parameters^
                           (import)
                           (define case-sensitive? params:case-sensitive?) 
-                          (define allow-set!-on-undefined? params:allow-set!-on-undefined?)
-                          (define allow-improper-lists? params:allow-improper-lists?)
-                          (define unmatched-cond/case-is-error? params:unmatched-cond/case-is-error?) 
-                          (define check-syntax-level params:check-syntax-level))]
+                          (define allow-set!-on-undefined? 
+			    params:allow-set!-on-undefined?)
+                          (define allow-improper-lists? 
+			    params:allow-improper-lists?)
+                          (define unmatched-cond/case-is-error?
+			    params:unmatched-cond/case-is-error?) 
+                          (define check-syntax-level 
+			    params:check-syntax-level))]
                [c@
                 (compound-unit/sig
                   (import)
@@ -105,33 +93,9 @@
                         [userspace : plt:userspace^ (plt:userspace@ params)]
                         [library : () (l@ userspace)])
                   (export (open userspace)))])
-          ((global-defined-value 'install-unit-with-signature) eval)
-          (let-values
-              ([(d? m? s? id? etv? gdv)
-                (eval
-                 `(#%begin
-                   (#%invoke-open-unit-with-signature ,c@ #f)
-                   (#%exit-handler (#%lambda (arg) (,mred:exit)))
-                   
-                   (#%error-display-handler
-                    (#%lambda (msg)
-                              (,display msg)
-                              (,newline)
-                              (wx:message-box
-                               (string-append "Internal Error: " msg)
-                               "Internal Error!")))
-                   (#%print-struct #t)
-                   (#%error-print-width 250)
-                   (#%break-enabled #t)
-                   (#%values defined? macro? syntax?
-                             id-macro? expansion-time-value?
-                             global-defined-value)))])
-            (set! user-defined? d?)
-            (set! user-macro? m?)
-            (set! user-syntax? s?)
-            (set! user-id-macro? id?)
-            (set! user-expansion-time-value? etv?)
-            (set! user-global-defined-value gdv)))))))
+	  (install-unit-with-signature n)
+	  (parameterize ([current-namespace n])
+	    (invoke-open-unit/sig c@ #f)))))))
 
 (define mred:make-invokable-unit
   (lambda ()
@@ -142,36 +106,37 @@
 	     [print-convert : mzlib:print-convert^
                (mzlib:print-convert@ (mzlib string@) (mzlib function@) hooks)]
 	     [trigger : mzlib:trigger^ (mzlib:trigger@)]
-	     [mred : mred^ (mred@ mzlib trigger app)]
-	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac mred)]
+	     [mred : mred^ (mred@ mzlib trigger (app : mred:application^))]
+	     [interface : zodiac:interface^
+			(drscheme:zodiac-interface@ zodiac mred)]
 	     [basis : drscheme:basis^ (drscheme:basis@ params mred zodiac)]
 	     [params : plt:parameters^ (drscheme:parameters@ mred basis)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
-	     [aries : plt:aries^ (plt:aries@ zodiac interface (basis : plt:aries:predicates^))]
+	     [aries : plt:aries^ (plt:aries@ zodiac interface)]
 	     [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
 	     [tool : drscheme:tool^ 
-		   (drscheme:tool@ mred mzlib print-convert zodiac (app : drscheme:export^) params)]
-	     [spawn : drscheme:spawn^
-		    (drscheme:spawn@ mred mzlib print-convert
+		   (drscheme:tool@ mred mzlib print-convert zodiac
+				 (app : drscheme:export^) params)]
+	     [rep : drscheme:rep^
+		    (drscheme:rep@ mred mzlib print-convert
 				     params aries zodiac
-				     interface basis)]
-	     [edit : drscheme:edit^ (drscheme:edit@ mred print-convert spawn)]
+				     interface app basis)]
 	     [frame : drscheme:frame^
-		    (drscheme:frame@ mred mzlib basis setup tool)]
+		    (drscheme:frame@ mred mzlib rep basis
+				   setup tool compound-unit)]
 	     [unit : drscheme:unit^
-		    (drscheme:unit@ mred mzlib basis setup compound-unit tool)]
+		    (drscheme:unit@ mred mzlib basis 
+				  setup compound-unit tool frame)]
 	     [compound-unit : drscheme:compound-unit^
-		    (drscheme:compound-unit@ mred mzlib unit edit spawn)]
-	     [project : drscheme:project^
-		      (drscheme:project@ mred mzlib frame edit spawn app)]
-	     [app : mred:application^ (drscheme:application@ mred mzlib project)])
+		    (drscheme:compound-unit@ mred mzlib unit frame)]
+	     [app : drscheme:app^ (drscheme:application@ mred mzlib)])
        (export (unit mred)
 	       (unit app mred)
 	       (open mzlib)
 	       (open print-convert)
 	       (unit setup drscheme:setup)
 	       (unit tool drscheme:tool)
-	       (unit spawn drscheme:spawn)
+	       (unit rep drscheme:rep)
 	       (unit unit drscheme:unit)
 	       (unit aries drscheme:aries)
 	       (unit compound-unit drscheme:compound-unit)

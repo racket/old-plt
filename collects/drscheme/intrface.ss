@@ -13,17 +13,17 @@
 	  (cond
 	   [(is-a? file wx:media-edit%)
 	    (let* ([frame (send file get-frame)]
-		   [console-edit (send frame get-console-edit)]
+		   [console-edit (ivar frame interactions-edit)]
 		   [console-end-position (send console-edit get-end-position)]
 		   [escape (send console-edit get-escape)])
-	      (send (send file get-frame) set-show-mode 'both)
+	      (send frame ensure-interactions-shown)
 	      (send console-edit this-err-write string)
 	      (send (send file get-canvas) set-focus)
 	      (send file set-position start finish)
 	      (send file scroll-to-position start #f (send file last-position) -1)
-	      (send console-edit user-eval '(set-box! ((debug-info-handler)) #f))
-	      (when escape
-		(escape)))]
+	      (if escape
+		  (escape)
+		  ((error-escape-handler))))]
 	   [else
 	    (wx:message-box
 	     (format "~a: ~a.~a-~a.~a: ~a" file
@@ -31,7 +31,8 @@
 			   (zodiac:location-column start-location)
 			   (zodiac:location-line end-location)
 			   (zodiac:location-column end-location)
-			   string))
+			   string)
+	     "Error")
 	    ((error-escape-handler))]))))
 
     (define report-error

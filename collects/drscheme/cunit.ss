@@ -1,49 +1,14 @@
- ;; need to fix: set project type
 
 (define drscheme:compound-unit@
   (unit/sig drscheme:compound-unit^
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
 	    [drscheme:unit : drscheme:unit^]
-	    [drscheme:edit : drscheme:edit^]
-	    [drscheme:spawn : drscheme:spawn^])
+	    [drscheme:frame : drscheme:frame^])
 
     (mred:debug:printf 'invoke "drscheme:compound-unit@")
 
     (mred:set-preference-default 'drscheme:project-visible? #f)
-
-    (define snip%
-      (class-asi drscheme:unit:snip%
-	(inherit width height name)
-	(rename [super-draw draw])
-	(private
-	  [frame #f])
-	(public
-	  [snipclass compound-unit-snipclass]
-	  [open
-	   (lambda ()
-	     (if frame
-		 (send frame show #f)
-		 (make-object frame% name)))]
-	  [this% snip%]
-	  [draw
-	   (lambda (dc x y left top right bottom dx dy draw-caret)
-	     (let ([space 2])
-	       (send dc draw-rectangle x y width height)
-	       (set! width (- width (* 2 space)))
-	       (set! height (- height (* 2 space)))
-	       (super-draw dc (+ x space) (+ y space) left top right bottom dx dy draw-caret)
-	       (set! width (+ width (* 2 space)))
-	       (set! height (+ height (* 2 space)))))])))
-
-    (define snip-class%
-      (let ([s% snip%])
-	(class-asi drscheme:unit:snip-class%
-	  (public
-	    [snip% s%]
-	    [classname "drscheme:compound-unit:snip%"]))))
-
-    (define compound-unit-snipclass (make-object snip-class%))
 
     (define project-pasteboard%
       (class-asi mred:pasteboard%
@@ -99,7 +64,7 @@
 	       [(string=? footer size-footer-string)
 		(let* ([s (send stream get-string)]
 		       [l (mzlib:string@:read-string s)])
-		  (send (get-frame) set-size -1 -1 (car l) (cadr l))
+		  '(send (get-frame) set-size -1 -1 (car l) (cadr l))
 		  #t)]
 	       [else (super-read-footer-from-file stream footer)]))]
 	  [write-footers-to-file
@@ -150,8 +115,10 @@
 			 [right (unbox rightbox)] [bottom (unbox bottombox)])
 		(cond
 		 [(null? relatives)
+		  '(printf "invalidating: ~a~n" (list left top right bottom))
 		  (invalidate-bitmap-cache left top
-					   (- right left) (- bottom top))]
+					   (- right left) (- bottom top))
+		  '(invalidate-bitmap-cache 0 0 -1 -1)]
 		 [else 
 		  (let ([relative (car relatives)])
 		    (get-snip-location relative leftbox topbox #f)
@@ -166,17 +133,25 @@
 	    (invalidate-snip&parents&children snip)
 	    (super-on-move-to snip x y dragging?))]
 	 [on-default-event
-	  (let ([from-x #f]
-		[from-y #f]
-		[last-x 0]
-		[last-y 0]
-		[orig-snip #f]
-		[restore-dc
-		 (lambda (f)
-		   (let* ([dc (get-dc)]
-			  [old-function (send dc get-logical-function)])
-		     (f dc)
-		     (send dc set-logical-function old-function)))])
+	  (let* ([from-x #f]
+		 [from-y #f]
+		 [last-x 0]
+		 [last-y 0]
+		 [orig-snip #f]
+		 [restore-dc
+		  (lambda (f)
+		    (let* ([dc (get-dc)]
+			   [old-function (send dc get-logical-function)])
+		      (f dc)
+		      (send dc set-logical-function old-function)))]
+		 [restore-drawing-state
+		  (lambda ()
+		    (restore-dc
+		     (lambda (dc)
+		       (send dc set-logical-function wx:const-xor)
+		       (send dc draw-line from-x from-y last-x last-y)
+		       (set! from-x #f)
+		       (set! from-y #f))))])
 	    (lambda (evt)
 	      '(printf "evt: ~a dragging? ~a button-up? ~a button-down? ~a button3 ~a~n"
 		       evt (send evt dragging?) (send evt button-up?) (send evt button-down?)
@@ -185,6 +160,7 @@
 		    [y (send evt get-y)])
 		(cond
 		 [(send evt button-down? 3)
+		  (printf "dragging.1~n")
 		  (let ([s (find-snip x y)])
 		    (unless (null? s)
 		      (set! orig-snip s)
@@ -201,18 +177,15 @@
 		     (set! last-y y)
 		     (send dc draw-line from-x from-y last-x last-y)))]
 		 [(and from-x (send evt button-up? 3))
-		  (restore-dc
-		   (lambda (dc)
-		     (send dc set-logical-function wx:const-xor)
-		     (send dc draw-line from-x from-y last-x last-y)
-		     (set! from-x #f)
-		     (set! from-y #f)))
+		  (restore-drawing-state)
 		  (let ([s (find-snip x y)])
 		    (unless (null? s)
 		      (send s add-parent orig-snip)
 		      (send orig-snip add-child s)))]
-		 [else (super-on-default-event evt)]))))]
-
+		 [else
+		  (when from-x
+		    (restore-drawing-state))
+		  (super-on-default-event evt)]))))]
 	 [on-paint
 	  (letrec*
 	      ([get-center 
@@ -339,7 +312,6 @@
 		  (void))])
 	    (lambda (before dc left top right bottom dx dy draw-caret)
 	      (unless before
-		(send dc destroy-clipping-region)
 		(let* ([draw-children
 			(lambda (snip)
 			  (let*-values ([(sl st sr sb) (get-rectangle snip)]
@@ -385,54 +357,78 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 		(send s open)
 		(loop (find-next-selected-snip s)))))])))
 
-    (define make-frame%
-      (lambda (super%)
-	(class super% ([fn #f])
-	  (inherit show canvas edit active-edit)
-	  (public
-	    [filename (if fn
-			  fn
-			  "Untitled")]
-	    [file-menu:new-string "Unit"]
-	    [file-menu:new
-	     (lambda ()
-	       (let ([name (wx:get-text-from-user "Name of unit" "New Unit")])
-		 (unless (null? name)
-		   (send (active-edit) insert (make-object drscheme:unit:snip% name)))))]
-	    [file-menu:between-new-and-open
-	     (lambda (file-menu)
-	       (send file-menu append-item "New Compound Unit..."
-		     (lambda ()
-		       (let ([name (wx:get-text-from-user "Name of compound unit" "New Compound Unit")])
-			 (unless (null? name)
-			   (send (active-edit) insert (make-object snip% name)))))))]
-
-	    ;; move these to simple-menu-frame%
-	    [file-menu:revert
-	     (lambda ()
-	       (send (active-edit) load-file (send (active-edit) get-filename)))]
-	    [file-menu:save
-	     (lambda ()
-	       (send (active-edit) save-file (send (active-edit) get-filename)))]
-	    [file-menu:save-as
-	     (lambda ()
-	       (send (active-edit) save-file ""))])
-	  (public
-	    [edit% project-pasteboard%])
-	  (sequence
-	    (super-init filename))
-	  (sequence
-	    (send edit set-filename filename)
-	    (when (file-exists? filename)
-	      (send edit load-file filename))
+    (define frame%
+      (class drscheme:frame:frame% (fn frameset [snip #f] [show? #t])
+	(inherit show canvas edit)
+	(public
+	  [on-close
+	   (lambda ()
+	     (when snip
+	       (send snip on-close-frame (send edit get-filename))))]
+	  [filename (if fn
+			fn
+			"Untitled")]
+	  
+	  [file-menu:between-open-and-save
+	   (lambda (file-menu)
+	     (send file-menu append-separator)
+	     (send file-menu append-item "Add Unit..."
+		   (lambda ()
+		     (let ([name (wx:get-text-from-user "Name of unit" "New Unit")])
+		       (unless (null? name)
+			 (send edit insert 
+			       (make-object drscheme:unit:snip% name #f))))))
+	     
+	     (send file-menu append-item "Add Compound Unit..."
+		   (lambda ()
+		     (let ([name (wx:get-text-from-user "Name of compound unit" "New Compound Unit")])
+		       (unless (null? name)
+			 (send edit insert 
+			       (make-object snip% name #f))))))	     
+	     (send file-menu append-separator))])
+	(public
+	  [get-edit% (lambda () project-pasteboard%)])
+	(sequence
+	  (super-init filename))
+	(sequence
+	  (send edit set-filename filename)
+	  (when (file-exists? filename)
+	    (send edit load-file filename))
+	  (when show?
 	    (show #t)))))
 
-    (define frame%
-      (make-frame% mred:editor-frame%))
+    (define snip%
+      (let ([f% frame%])
+	(class-asi drscheme:unit:snip%
+	  (inherit width height)
+	  (rename [super-draw draw])
+	  (public
+	    [snipclassq compound-unit-snipclass]
+	    [frame% f%]
+	    [this% snip%]
+	    [draw
+	     (lambda (dc x y left top right bottom dx dy draw-caret)
+	       (let ([space 2])
+		 (send dc draw-rectangle x y width height)
+		 (set! width (- width (* 2 space)))
+		 (set! height (- height (* 2 space)))
+		 (super-draw dc (+ x space) (+ y space) left top right bottom dx dy draw-caret)
+		 (set! width (+ width (* 2 space)))
+		 (set! height (+ height (* 2 space)))))]))))
+
+    (define snip-class%
+      (let ([s% snip%])
+	(class-asi drscheme:unit:snip-class%
+	  (public
+	    [snip% s%]
+	    [version 1]
+	    [classname "drscheme:compound-unit:snip%"]))))
+
+    (define compound-unit-snipclass (make-object snip-class%))
 
     (mred:insert-format-handler "Compound Units"
 				(list "cut")
 				(opt-lambda ([name null] [group #f])
-				  (make-object frame% name)))))
+				  (make-object frame% name group #f)))))
 
 

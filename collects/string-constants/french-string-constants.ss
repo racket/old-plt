@@ -134,16 +134,18 @@
  (bad-url:this "URL incorrect : ~a")
  
  ;; Help Desk
- (search-results "Résultats de la recherche")
+ (help "Aide")
  (help-desk "Aide")
- (help-desk-n "Aide ~a")
- (about-help-desk "A propos de l'Aide")
- (help-desk-about-string
-  "L'Aide est une source complète d'information à propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT.")
- (help-on-help "Aide de l'Aide")
- (help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' à partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déjà, cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
- (find-docs-for "Chercher dans les docs :")
+ (search-results "Résultats de la recherche")
  (search "Chercher")
+ (search-for "Chercher")
+ (lucky "J'ai de la chance")
+ (options "Options")
+ (configure-hd "Configurer")
+ (hd-home "Page principale de l'Aide")
+ (show-manuals "Liste des manuels")
+ (send-bug-report "Signaler un bogue") ; Envoyer un formulaire de bogue
+ (query-bug-reports "Chercher parmi les bogues connus")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "par mot clef")
  (search-for-keyword-or-index "par mot clef ou entrée dans l'index")
@@ -151,27 +153,43 @@
  (exact-match "mot exact")
  (containing-match "contenant le mot")
  (regexp-match "expression régulière")
- (feeling-lucky "J'ai de la chance")
  (nothing-found-for-search-key "Rien n'a été trouvé pour \"~a\".")
  (searching "Recherche en cours...")
  (search-stopped "(Recherche stoppée.)")
  (search-stopped-too-many-matches "(Recherche stoppée - trop d'entrées ont été trouvées.)")
- (reload "Rafraîchir")
- (help "Aide")
- (searching... "Recherche en cours...")
- (nothing-found-for-empty-search "Rien n'a été trouvé pour cette recherche vide.")
  (nothing-found-for "Rien n'a été trouvé pour ~a.")
+ (error-finding-docs "Documentation introuvable.\n\n~a")
  (and "et")
- (error-finding-docs
-  "Documentation introuvable.\n\n~a")
- (manual-installed-date "(~a installé)")
+ (refresh "rafraîchir") 
+ (refresh-all-manuals "rafraîchir tous les manuels")
+ (manual-installed-date "(installé le ~a)")
  
+ ; Help Desk configuration
+			     
+ (hd-configuration "Configuration de l'Aide")
+ (hd-search-frame-options "Options pour le cadre de recherche")
+ (hd-height "Hauteur")
+ (hd-bg-color "Couleur de fond")
+ (hd-pixels "pixels")
+ (hd-text-color "Couleur du texte")
+ (hd-link-color "couleur des liends")
+ (hd-text-sample "Le texte dans le cadre de recherche apparaît dans cette couleur")
+ (hd-link-sample "Les liens dans le cadre de recherche apparaîssent dans cette couleur")
+ (hd-save-changes "Sauvegarder les modifications")
+ (hd-reset "Réinitialisation des options")
+ (hd-defaults "Valeurs par défaut")
+ (hd-javascript-note
+    "Les choix que vous faites sont montrés ici si vous avez Javascript et un navigateur récent")
+
  ;; refreshing manuals
- (refreshing-manuals "Re-téléchargement des manuels")
- (refresh-downloading... "Téléchargement de ~a...")
- (refresh-deleting... "Effacement de l'ancienne version de ~a...")
- (refresh-installing... "Installation de la nouvelle version de ~a...")
- 
+ (refresh-downloading "Téléchargement de ~a")
+ (refresh-deleting "Effacement de l'ancienne version de ~a")
+ (refresh-installing "Installation de la nouvelle version de ~a")
+ (refresh-progress "Progrès du téléchargement des manuels")
+ (refresh-done "Fin du téléchargement des manuels par CVS")
+ (refresh-installation-log "Journal de l'installation")
+ (refresh-stopped "Téléchargement des manuels stoppé")
+
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")
  (proxy-direct-connection "Connexion directe")
@@ -231,7 +249,6 @@
  
  ;;; preferences
  (preferences "Préférences")
- (preferences-category "Catégorie")
  (saving-preferences "Sauvegarde des préférences")
  (error-unmarshalling "Erreur durant la dessérialisation de la préférence ~a.")
  (error-saving-preferences "Erreur durant la sauvegarde des préférences : ~a.")
@@ -462,6 +479,7 @@
  (insert-text-box-item "Insérer une boite texte")
  (insert-pb-box-item "Insérer une boite à dessin")
  (insert-image-item "Insérer une image...")
+ (insert-comment-box-menu-item-label "Insérer une boite à commentaires")
  (wrap-text-item "Replier le texte")
  
  (windows-menu-label "Fe&nêtres")
@@ -478,9 +496,6 @@
  (about-info "Auteurs et détails concernant ce logiciel.")
  (about-menu-item "A propos de ...")
  (help-menu-check-for-updates "Regarder les mises à jour...")
- 
- ;;; help-desk-specific menus
- (new-help-desk "&Nouvelle Aide")
  
  ;; open here's new menu item
  (create-new-window-or-clear-current
@@ -572,7 +587,8 @@
  (clear-error-highlight-item-help-string "Efface le surlignage rose après une erreur")
  (reindent-menu-item-label "&Réindenter")
  (reindent-all-menu-item-label "Réindenter &tout")
- (comment-out-menu-item-label "&Commenter")
+ (semicolon-comment-out-menu-item-label "&Commenter à l'aide de points-virgules")
+ (box-comment-out-menu-item-label "&Commenter à l'aide d'une boite")
  (uncomment-menu-item-label "&Décommenter")
  
  ;;; executables
@@ -678,12 +694,10 @@
  (advanced-student "Etudiant niveau avancé")
  (advanced-one-line-summary "Intermédiaire plus lambda et mutation")
  (full-language "Complet") ;; also in the HtDP languages section
- (pretty-big-scheme "Assez gros Scheme")
- (pretty-big-scheme-one-line-summary "Graphique, plus de nombreuses bibliothèques standards")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS et languages semblabes")
- (mred-lang-name "Graphique sans débogage (MrEd)")
- (mzscheme-lang-name "Textuel sans débogage (MzScheme)")
+ (pretty-big-scheme "Assez gros Scheme")
+ (pretty-big-scheme-one-line-summary "Graphique, plus de nombreuses bibliothèques standards")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, de base")
  (unknown-debug-frame "[inconnu]")
@@ -836,4 +850,9 @@
  
  (stepper-program-has-changed "Avertissement : le programme a été modifié.")
  (stepper-program-window-closed "Avertissement : la fenêtre du programme a disparu.")
+
+ (wizard-next "Suivant")
+ (wizard-back "Précédent")
+ (wizard-finish "Fin")
+
  )

@@ -2575,7 +2575,8 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 	int neg;
 	neg = minus_zero_p(v);
 	v = (neg ? -1.0f : 1.0f);
-      }
+      } else if (MZ_IS_NAN(v))
+	return single_nan_object;
       if (v > 0)
 	return zeroi;
       else
@@ -2588,7 +2589,8 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 	int neg;
 	neg = minus_zero_p(v);
 	v = (neg ? -1.0 : 1.0);
-      }
+      } else if (MZ_IS_NAN(v))
+	return nan_object;
       if (v > 0)
 	return zeroi;
       else

@@ -2018,6 +2018,12 @@ add struct contracts for immutable structs?
         [(_ ([x dom] ...) rng)
          (for-each (lambda (x) (unless (identifier? x) (raise-syntax-error '->r "expected identifier" stx x)))
                    (syntax->list (syntax (x ...))))]
+        [(_ (x ...) rng)
+         (for-each (lambda (x)
+                     (syntax-case x ()
+                       [(x y) (identifier? (syntax x)) (void)]
+                       [bad (raise-syntax-error '->r "expected identifier and contract" stx (syntax bad))]))
+                   (syntax->list (syntax (x ...))))]
         [(_ x dom rng)
          (raise-syntax-error '->r "expected list of identifiers and expression pairs" stx (syntax x))]
         

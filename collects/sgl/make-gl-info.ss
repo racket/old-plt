@@ -1028,7 +1028,7 @@ static void scheme_load_enum(Scheme_Env *env)
 
 end-string
                  )
-        (for-each
+        #;(for-each
          (lambda (e)
            (printf "  #ifdef ~a~n" e)
            (printf "  scheme_add_global(\"~a\", scheme_make_integer_value_from_unsigned(~a), env);~n" e e)

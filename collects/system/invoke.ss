@@ -10,6 +10,8 @@
 	(lambda (port)
 	  (pretty-print
 	   `(begin-elaboration-time
+	     (define plt:home-directory ,plt:home-directory)
+	     (define mred:plt-home-directory ,mred:plt-home-directory)
 	     (current-library-path ,(current-library-path)))
 	   port)
 	  (pretty-print `(reference-library "cores.ss") port)

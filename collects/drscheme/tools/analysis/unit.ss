@@ -17,6 +17,8 @@
 		       (make-object mred:frame% null "Spidey"))]
 		  [p (make-object mred:vertical-panel% f)]
 		  [m (make-object mred:message% p "Please wait, loading the Analysis.")])
+	     (send p stretchable-in-y #f)
+	     (send p stretchable-in-x #f)
 	     (send f show #t)
 	     (parameterize ([wx:current-eventspace e])
 		(wx:flush-display) (wx:yield))

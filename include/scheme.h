@@ -871,7 +871,7 @@ typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      int nonblock);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port, 
 				       char *buffer, long offset, long size,
-				       long skip,
+				       Scheme_Object *skip,
 				       int nonblock);
 typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);

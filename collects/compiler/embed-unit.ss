@@ -45,19 +45,15 @@
 
       ;; Find the magic point in the binary:
       (define (find-cmdline)
-	(define magic (string->list "[Replace me for EXE hack"))
-	(let loop ([pos 0][l magic])
-	  (cond
-	   [(null? l) (- pos (length magic))]
-	   [else (let ([c (read-char)])
-		   (when (eof-object? c)
-		     (error 
-		      'make-embedding-executable
-		      (format
-		       "can't find cmdline position in executable")))
-		   (if (eq? c (car l))
-		       (loop (add1 pos) (cdr l))
-		       (loop (add1 pos) magic)))])))
+	(let ([m (regexp-match-positions "\\[Replace me for EXE hack" (current-input-port))])
+	  (if m
+	      (begin
+		(fprintf (current-error-port) "~a~n" (caar m))
+		(caar m))
+	      (error 
+	       'make-embedding-executable
+	       (format
+		"can't find cmdline position in executable")))))
 
       (define (data-fork-size dest)
 	(if (eq? (system-type) 'macos)

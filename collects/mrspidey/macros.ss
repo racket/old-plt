@@ -20,7 +20,7 @@
 
 (begin-elaboration-time
   (if (not (defined? 'MRSPIDEY-DEBUGGING))
-    (begin
+    '(begin-elaboration-time
       ; (printf "Debugging off~n")
       (define-macro pretty-debug (lambda args           '(#%void)))
       (define-macro pretty-debug-traverse (lambda args  '(#%void)))
@@ -44,7 +44,7 @@
     
       )
   
-    (begin
+    '(begin-elaboration-time
       (define-macro pretty-debug (lambda args
         `(when debugging (pretty-print-debug ,@args))))
       (define-macro pretty-debug-traverse (lambda args

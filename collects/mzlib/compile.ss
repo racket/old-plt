@@ -24,6 +24,7 @@
       (with-input-from-file* 
        src
        (lambda ()
+	 (port-count-lines! (current-input-port))
 	 (with-handlers ([not-break-exn?
 			  (lambda (exn)
 			    (with-handlers ([void void])

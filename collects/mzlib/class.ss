@@ -295,10 +295,10 @@
 			[proc-shape (lambda (name expr xform?)
 				      ;; expands an expression so we can check whether
 				      ;; it has the right form
-				      (define (expand expr)
+				      (define (expand expr locals)
 					(local-expand
 					 expr
-					 expand-stop-names))
+					 (append locals expand-stop-names)))
 				      ;; Checks whether the vars sequence is well-formed
 				      (define (vars-ok? vars)
 					(or (identifier? vars)
@@ -308,7 +308,7 @@
 						 (vars-ok? (stx-cdr vars)))))
 				      ;; mk-name: constructs a method name
 				      ;; for error reporting, etc.
-				      (define (mk-name)
+				      (define (mk-name name)
 					(datum->syntax-object 
 					 #f 
 					 (string->symbol (format "~a method~a~a" 
@@ -319,31 +319,18 @@
 								 (or class-name 
 								     ""))) 
 					 #f))
-				      ;; Need a local rename?
-				      (define (make-xforms rec-name new-name)
-					(if rec-name
-					    (with-syntax ([old-name rec-name]
-							  [new-name new-name]
-							  [the-obj the-obj])
-					      (syntax
-					       ((old-name (make-direct-method-map 
-							   (quote-syntax the-obj)
-							   (quote-syntax new-name))))))
-					    (syntax ())))
 				      ;; -- tranform loop starts here --
-				      (let loop ([stx expr][can-expand? #t][rec-name #f][new-name #f])
+				      (let loop ([stx expr][can-expand? #t][name name][locals null])
 					(syntax-case stx (lambda case-lambda letrec-values let-values)
 					  [(lambda vars body1 body ...)
 					   (vars-ok? (syntax vars))
 					   (if xform?
 					       (with-syntax ([the-obj the-obj]
-							     [xforms (make-xforms rec-name new-name)]
-							     [name (mk-name)])
+							     [name (mk-name name)])
 						 (syntax/loc stx 
 						   (let ([name
 							  (lambda (the-obj . vars) 
-							    (letrec-syntax xforms
-								body1 body ...))])
+							    body1 body ...)])
 						     name)))
 					       stx)]
 					  [(lambda . _)
@@ -352,43 +339,77 @@
 					   (andmap vars-ok? (syntax->list (syntax (vars ...))))
 					   (if xform?
 					       (with-syntax ([the-obj the-obj]
-							     [xforms (make-xforms rec-name new-name)]
-							     [name (mk-name)])
+							     [name (mk-name name)])
 						 (syntax/loc stx
 						   (let ([name
 							  (case-lambda [(the-obj . vars) 
-									(letrec-syntax xforms
-									    body1 body ...)] ...)])
+									body1 body ...] ...)])
 						     name)))
 					       stx)]
 					  [(case-lambda . _)
 					   (bad "ill-formed case-lambda expression for method" stx)]
-					  [(let- ([(id1) expr]) id2)
+					  [(let- ([(id) expr] ...) let-body)
 					   (and (or (module-identifier=? (syntax let-) 
 									 (quote-syntax let-values))
 						    (module-identifier=? (syntax let-) 
 									 (quote-syntax letrec-values)))
-						(identifier? (syntax id1))
-						(identifier? (syntax id2))
-						(bound-identifier=? (syntax id1) (syntax id2)))
+						(andmap identifier? (syntax->list (syntax (id ...)))))
 					   (let* ([letrec? (module-identifier=? (syntax let-) 
 										(quote-syntax letrec-values))]
-						  [id1 (syntax id1)]
-						  [new-id (if (and letrec? xform?)
-							      (datum->syntax-object
-							       #f
-							       (gensym (syntax-e id1))
-							       id1)
-							      id1)])
-					     (with-syntax ([proc (loop (syntax expr) 
-								       #t
-								       (and letrec? id1)
-								       new-id)]
-							   [new-id new-id])
-					       (syntax/loc stx (let- ([(new-id) proc]) new-id))))]
+						  [ids (syntax->list (syntax (id ...)))]
+						  [new-ids (if xform?
+							       (map
+								(lambda (id)
+								  (datum->syntax-object
+								   #f
+								   ;; NOT HYGIENIC!!
+								   (gensym (box (syntax-e id)))))
+								ids)
+							       ids)]
+						  [body-locals (append ids locals)]
+						  [exprs (map (lambda (expr id)
+								(loop expr #t id (if letrec?
+										     body-locals
+										     locals)))
+							      (syntax->list (syntax (expr ...)))
+							      ids)]
+						  [body (let ([body (syntax let-body)])
+							  (if (identifier? body)
+							      (ormap (lambda (id new-id)
+								       (and (bound-identifier=? body id)
+									    new-id))
+								     ids new-ids)
+							      (loop body #t name body-locals)))])
+					     (unless body
+					       (bad "bad form for method definition" stx))
+					     (with-syntax ([(proc ...) exprs]
+							   [(new-id ...) new-ids]
+							   [mappings
+							    (if xform?
+								(map
+								 (lambda (old-id new-id)
+								   (with-syntax ([old-id old-id]
+										 [new-id new-id]
+										 [the-obj the-obj])
+								     (syntax (old-id (make-direct-method-map 
+										      (quote-syntax the-obj)
+										      (quote-syntax new-id))))))
+								 ids new-ids)
+								null)]
+							   [body body])
+					       (if xform?
+						   (if letrec?
+						       (syntax/loc stx (letrec-syntax mappings
+									 (let- ([(new-id) proc] ...) 
+									       body)))
+						       (syntax/loc stx (let- ([(new-id) proc] ...) 
+									     (letrec-syntax mappings
+									       body))))
+						   (syntax/loc stx (let- ([(new-id) proc] ...) 
+									 body)))))]
 					  [_else 
 					   (if can-expand?
-					       (loop (expand stx) #f rec-name new-name)
+					       (loop (expand stx locals) #f name locals)
 					       (bad "bad form for method definition" stx))])))])
 		   ;; Do the extraction:
 		   (let-values ([(methods private-methods exprs)

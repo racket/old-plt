@@ -105,8 +105,16 @@
 
     (define (grow s)
       (super-grow (min upper-limit (- s pickiness))))
-    (define (set-limit v)
-      (set! upper-limit v))
+    (define set-limit 
+      ;; Test method-declaration shape:
+      (let* ([check-pickiness (lambda (p)
+				(unless (= p pickiness)
+				  (error 'ack)))]
+	     [set-upper (lambda (v p)
+			  (check-pickiness p)
+			  (set! upper-limit v))])
+	(lambda (v)
+	  (set-upper v pickiness))))
 
     (super-instantiate () (size 12))))
 

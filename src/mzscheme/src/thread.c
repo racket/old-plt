@@ -1099,7 +1099,8 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
     /* The custodian was shut down in the time that it took
        to allocate o. This situation should be avoided if at
        all possible, but here's the fail-safe. */
-    f(o, data);
+    if (f)
+      f(o, data);
     return NULL;
   }
 

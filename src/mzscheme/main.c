@@ -409,6 +409,7 @@ int start_linux_fs(char *diskname, char *partname)
   oskit_blkio_t *disk;
   oskit_blkio_t *part;
   oskit_filesystem_t *fs;
+  oskit_statfs_t sfs;
   oskit_dir_t *root;
 # define MAX_PARTS 30
   diskpart_t part_array[MAX_PARTS];
@@ -419,17 +420,20 @@ int start_linux_fs(char *diskname, char *partname)
   printf(">> Initializing devices\n");
   oskit_dev_init();
   oskit_linux_init_ide();
-  oskit_linux_init_scsi();
+  /* oskit_linux_init_scsi(); */
+  printf(">> Probing devices\n");
   oskit_dev_probe();
+  printf(">> Filesystem initialization\n");
   CHECK("fsinit", fs_linux_init());
 
   id.uid = 0;
   id.gid = 0;
   id.ngroups = 0;
   id.groups = 0;
-  CHECK("makeprinciple", oskit_principal_create(&id, &cur_principal));
+  printf(">> Making principal\n");
+  CHECK("makeprincipal", oskit_principal_create(&id, &cur_principal));
 
-  printf(">> Opening disk\n");
+  printf(">> Opening disk %s\n", diskname);
   CHECK("diskopen", oskit_linux_block_open(diskname, OSKIT_DEV_OPEN_ALL, &disk));
 
   printf(">> Reading partitions\n");
@@ -441,6 +445,7 @@ int start_linux_fs(char *diskname, char *partname)
 
   printf(">> Mounting filesystem\n");
   CHECK("mount", fs_linux_mount(part, 0, &fs));
+  printf(">> Getting root\n");
   CHECK("getroot", oskit_filesystem_getroot(fs, &root));
 
   fs_init(root);

@@ -37,11 +37,13 @@ test: $(OBJS) $(OBJDIR)/test.o $(OBJDIR)/sgc.o
 $(OBJDIR)/gc.a: objects $(OBJDIR) $(OBJS)
 	$(MAKE) gcobjects
 	$(AR) ruv $(OBJDIR)/gc.a $(OBJS)
+	$(RANLIB) $(OBJDIR)/gc.a
 
 gcobjects: $(OBJS)
 
 c++: $(OBJDIR)/gc_cpp.o
 	$(AR) ruv $(OBJDIR)/gc.a gc_cpp.o
+	$(RANLIB) $(OBJDIR)/gc.a
 
 $(OBJDIR):
 	mkdir $(OBJDIR)

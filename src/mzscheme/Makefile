@@ -70,6 +70,9 @@ GCLIBMAKEEXTRA = no-extra-lib
 # system name for installation
 INSTALLSYS = `../../bin/archsys`
 
+# output file for the OSKit-based MzScheme
+MZOSKDEST = mzscheme.multiboot
+
 ################################################################################
 
 # Export string for making src & GC
@@ -98,7 +101,7 @@ oskit:
 	$(XMAKE) g-c
 	$(XMAKE) dynlib
 	$(XMAKE) mzlibrary
-	$(XMAKE) mzscheme.multiboot
+	$(XMAKE) $(MZOSKDEST)
 
 mzschemelib: 
 	./ifaix $(XMAKE) aixdl
@@ -196,9 +199,9 @@ $(MZSCHEME): objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDI
 	$(CC) $(MAIN_CFLAGS_NODBG) -o $(MZSCHEME) $(OBJDIR)/main.o $(SPECIALIZINGOBJECTS) -L$(LIBDIR)/ -lmzscheme -lgc $(LIBS)
 
 # OSKit-based MzScheme
-mzscheme.multiboot : objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDIR)/main.o
+$(MZOSKDEST) : objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDIR)/main.o
 	$(LD) -Ttext 100000 $(LDFLAGS) $(OSKIT_LDFLAGS) $(OSKHOME)/lib/oskit/multiboot.o \
-		-o mzscheme.multiboot $(OBJDIR)/main.o -L$(LIBDIR)/ -lmzscheme -lgc \
+		-o $(MZOSKDEST) $(OBJDIR)/main.o -L$(LIBDIR)/ -lmzscheme -lgc \
                 -L$(OSKHOME)/lib -loskit_kern $(EXTRA_OSK_LIBS) \
                 -loskit_freebsd_c -loskit_c -loskit_lmm \
                 -loskit_freebsd_m -loskit_fs \

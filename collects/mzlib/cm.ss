@@ -13,6 +13,8 @@
   (define trace (make-parameter void))
   (define indent (make-parameter ""))
   (define trust-existing-zos (make-parameter #f))
+
+  (define (trace-printf fmt . args) ((trace) (string-append (indent) (apply format fmt args))))
   
   (define my-max
     (case-lambda
@@ -74,11 +76,11 @@
       (let ([p (open-output-file fail-path 'truncate/replace)])
 	(display reason p)
 	(close-output-port p)))
-    ((trace) (format "~afailure" (indent))))
+    (trace-printf "failure"))
 
   (define (compile-zo mode path)
     ((manager-compile-notify-handler) path)
-    ((trace) (format "~acompiling: ~a" (indent) path))
+    (trace-printf "compiling: ~a" path)
     (parameterize ([indent (string-append "  " (indent))])
       (let ([zo-name (bytes->path (bytes-append (get-compilation-path mode path) #".zo"))])
         (cond
@@ -126,7 +128,7 @@
                            ", which appears to be in the future"
                            ""))))
               (write-deps code mode path external-deps)))])))
-    ((trace) (format "~aend compile: ~a" (indent) path)))
+    (trace-printf "end compile: ~a" path))
 
   (define (format-date date)
     (format "~a:~a:~a:~a:~a:~a"
@@ -160,7 +162,8 @@
 	  (with-handlers ([exn:fail:filesystem?
 			   (lambda (ex)
 			     (apply first-date l))])
-	    (file-or-directory-modify-seconds (f)))
+            (let ([name (f)])
+              (file-or-directory-modify-seconds name)))
 	  (apply first-date l))]))
   
   (define (compile-root mode path up-to-date)
@@ -170,12 +173,12 @@
 	(cond
           (stamp stamp)
           (else
-           ((trace) (format "~achecking: ~a" (indent) path))
+           (trace-printf "checking: ~a" path)
            (let ((path-zo-time (get-compiled-time mode path #f))
                  (path-time 
                   (with-handlers ((exn:fail:filesystem? 
                                    (lambda (ex)
-                                     ((trace) (format "~a~a does not exist" (indent) path))
+                                     (trace-printf "~a does not exist" path)
                                      #f)))
                     (file-or-directory-modify-seconds path))))
              (cond
@@ -183,7 +186,7 @@
                (else
                 (cond
                   ((> path-time path-zo-time) 
-		   ((trace) (format "~anewer src..." (indent)))
+		   (trace-printf "newer src...")
 		   (compile-zo mode path))
                   (else
                    (let ((deps (with-handlers ((exn:fail:filesystem? (lambda (ex) (list (version)))))
@@ -193,7 +196,7 @@
                      (cond
                        ((or (not (pair? deps))
                             (not (equal? (version) (car deps))))
-			((trace) (format "~anewer version..." (indent)))
+			(trace-printf "newer version...")
                         (compile-zo mode path))
                        ((ormap (lambda (d)
 				 ;; str => str is a module file name (check transitive dates)
@@ -207,7 +210,7 @@
 					      (file-or-directory-modify-seconds (cdr d)))]
 					   [else -inf.0])])
 				   (when (> t path-zo-time)
-				     ((trace) (format "~anewer: ~a (~a > ~a)..." (indent) d t path-zo-time)))
+				     (trace-printf "newer: ~a (~a > ~a)..." d t path-zo-time))
 				   (> t path-zo-time)))
 			       (map un-plthome-ify (cdr deps)))
                         (compile-zo mode path))))))
@@ -241,30 +244,36 @@
 		(lambda (path mod-name)
 		  (cond
                     [(not mod-name)
-                     ((trace) (format "~askipping:  ~a mod-name ~s" (indent) path mod-name))
+                     (trace-printf "skipping:  ~a mod-name ~s" path mod-name)
                      (default-handler path mod-name)]
                     [(not (member (car modes) (use-compiled-file-paths)))
-                     ((trace) (format "~askipping:  ~a compiled-paths ~s" (indent) path (use-compiled-file-paths)))
+                     (trace-printf "skipping:  ~a compiled-paths ~s" path (use-compiled-file-paths))
                      (default-handler path mod-name)]
                     [(not (eq? compilation-manager-load-handler (current-load/use-compiled)))
-                     ((trace) (format "~askipping:  ~a current-load/use-compiled changed ~s"
-                                      (indent) path (current-load/use-compiled)))
+                     (trace-printf "skipping:  ~a current-load/use-compiled changed ~s" 
+                                   path
+                                   (current-load/use-compiled))
                      (default-handler path mod-name)]
                     [(not (eq? orig-eval (current-eval)))
-                     ((trace) (format "~askipping:  ~a orig-eval ~s current-eval ~s" 
-                                      (indent) path orig-eval (current-eval)))
+                     (trace-printf "skipping:  ~a orig-eval ~s current-eval ~s" 
+                                   path orig-eval 
+                                   (current-eval))
                      (default-handler path mod-name)]
                     [(not (eq? orig-load (current-load)))
-                     ((trace) (format "~askipping:  ~a orig-load ~s current-load ~s" 
-                                      (indent) path orig-load (current-load)))
+                     (trace-printf "skipping:  ~a orig-load ~s current-load ~s" 
+                                   path
+                                   orig-load
+                                   (current-load))
                      (default-handler path mod-name)]
                     [(not (eq? orig-namespace (current-namespace)))
-                     ((trace) (format "~askipping:  ~a orig-namespace ~s current-namespace ~s" 
-                                      (indent) path orig-namespace (current-namespace)))
+                     (trace-printf "skipping:  ~a orig-namespace ~s current-namespace ~s" 
+                                   path
+                                   orig-namespace
+                                   (current-namespace))
                      (default-handler path mod-name)]
                     [else 
-                     ((trace) (format "~aprocessing: ~a" (indent) path))
+                     (trace-printf "processing: ~a" path)
                      (compile-root (car modes) path cache)
-		     ((trace) (format "~adone: ~a" (indent) path))
+		     (trace-printf "done: ~a" path)
                      (default-handler path mod-name)]))])
 	compilation-manager-load-handler))))

@@ -15,11 +15,12 @@
   
   (define (printf . args) (apply fprintf drscheme:init:original-output-port args))
 
-  (define (priviledged thunk)
+  (define (system thunk)
     (parameterize ([current-output-port drscheme:init:original-output-port]
 		   [current-error-port drscheme:init:original-error-port]
 		   [current-custodian drscheme:init:system-custodian]
-		   [current-eventspace drscheme:init:system-eventspace])
+		   [mred:current-eventspace drscheme:init:system-eventspace]
+		   [break-enabled #f])
       (thunk)))
   
   ;; keymap stuff that now must be here
@@ -324,7 +325,9 @@
 	[get-prompt (lambda () "> ")])
       (public
 	[user-setting (fw:preferences:get 'drscheme:settings)]
-	[user-custodian (make-custodian)])
+	[user-custodian (make-custodian)]
+	[user-eventspace #f]
+	[user-thread #f])
       (private
 	[in-evaluation? #f]
 	[in-evaluation-semaphore (make-semaphore 1)]
@@ -362,28 +365,29 @@
 	     (do-many-buffer-evals this start end)))])
       (public
 	[cleanup-evaluation
-	 (lambda (thread-to-watch)
-	   (printf "end busy cursor~n")
-	   (mred:end-busy-cursor)
-	   (cleanup-transparent-io)
-	   (send (get-top-level-window) enable-evaluation)
-	   (begin-edit-sequence)	     
-	   (set-caret-owner #f 'display)
+	 (lambda ()
+	   (system
+	    (lambda ()
+	      (mred:end-busy-cursor)
+	      (cleanup-transparent-io)
+	      (send (get-top-level-window) enable-evaluation)
+	      (begin-edit-sequence)	     
+	      (set-caret-owner #f 'display)
 
-	   (if (thread-running? thread-to-watch)
-	       (let ([c-locked? (locked?)])
-		 (lock #f)
-		 (insert-prompt)
-		 (lock c-locked?)
-		 (end-edit-sequence))
-	       (begin (lock #t)
-		      (end-edit-sequence)
-		      (unless shutting-down?
-			(mred:message-box
-			 "Warning"
-			 (format "The evaluation thread is no longer running, ~
+	      (if (thread-running? user-thread)
+		  (let ([c-locked? (locked?)])
+		    (lock #f)
+		    (insert-prompt)
+		    (lock c-locked?)
+		    (end-edit-sequence))
+		  (begin (lock #t)
+			 (end-edit-sequence)
+			 (unless shutting-down?
+			   (mred:message-box
+			    "Warning"
+			    (format "The evaluation thread is no longer running, ~
 			 so no evaluation can take place until ~
-			 the next execution."))))))])
+			 the next execution."))))))))])
       (public
 	[do-many-buffer-evals
 	 (lambda (edit start end)
@@ -393,7 +397,6 @@
 	     (cleanup-transparent-io)
 	     (reset-pretty-print-width)
 	     (ready-non-prompt)
-	     (printf "begin busy cursor~n")
 	     (mred:begin-busy-cursor)
 	     (when should-collect-garbage?
 	       (set! should-collect-garbage? #f)
@@ -467,8 +470,6 @@
 	[eval-thread-thunks null]
 	[eval-thread-state-sema (make-semaphore 1)]
 	[eval-thread-queue-sema (make-semaphore 0)]
-
-	[yield-count 0]
 	
 	[evaluation-sucessful 'not-yet-evaluation-sucessful]
 	[cleanup-sucessful 'not-yet-cleanup-sucessful]
@@ -482,66 +483,63 @@
 	   (set! in-evaluation? #t)
 	   (semaphore-post in-evaluation-semaphore)
 
-	   ;; this thread must be the user's thread.
-	   ;; the user can only have one main thread
-	   (let ([thread-to-watch (current-thread)])
+	   (fluid-let ([breakable-thread user-thread]
+		       [evaluation-sucessful  (make-semaphore 0)]
+		       [cleanup-semaphore (make-semaphore 1)]
+		       [cleanup-sucessful (make-semaphore 0)]
+		       [thread-grace
+			(system
+			 (lambda ()
+			   (thread
+			    (lambda ()
+			      (semaphore-wait evaluation-sucessful)
 
-	     (fluid-let ([breakable-thread thread-to-watch]
-			 [evaluation-sucessful  (make-semaphore 0)]
-			 [cleanup-semaphore (make-semaphore 1)]
-			 [cleanup-sucessful (make-semaphore 0)]
-			 [thread-grace
-			  (thread
-			   (lambda ()
-			     (semaphore-wait evaluation-sucessful)
+			      (semaphore-wait cleanup-semaphore)
 
-			     (semaphore-wait cleanup-semaphore)
+			      (parameterize ([current-custodian drscheme:init:system-custodian])
+				(kill-thread thread-kill))
 
-			     (parameterize ([current-custodian drscheme:init:system-custodian])
-			       (kill-thread thread-kill))
+			      (cleanup)
+			      (semaphore-post cleanup-sucessful)))))]
+		       [thread-kill
+			(system
+			 (lambda ()
+			   (thread 
+			    (lambda ()
+			      (thread-wait user-thread)
 
-			     (cleanup thread-to-watch)
-			     (semaphore-post cleanup-sucessful)))]
-			 [thread-kill
-			  (thread 
-			   (lambda ()
-			     (thread-wait thread-to-watch)
+			      (semaphore-wait cleanup-semaphore)
 
-			     (semaphore-wait cleanup-semaphore)
+			      (parameterize ([current-custodian drscheme:init:system-custodian])
+				(kill-thread thread-grace))
 
-			     (parameterize ([current-custodian drscheme:init:system-custodian])
-			       (kill-thread thread-grace))
+			      (cleanup)
+			      (semaphore-post cleanup-sucessful)))))])
 
-			     (cleanup thread-to-watch)
-			     (semaphore-post cleanup-sucessful)))])
+	     (let/ec k
+	       (fluid-let ([error-escape-k 
+			    (lambda ()
+			      (semaphore-post evaluation-sucessful)
+			      (k (void)))])
+		 (thunk)))
 
-	       (let/ec k
-		 (fluid-let ([error-escape-k 
-			      (lambda ()
-				(semaphore-post evaluation-sucessful)
-				(k (void)))])
-		   (thunk)))
-
-	       (semaphore-post evaluation-sucessful)
-	       (semaphore-wait cleanup-sucessful)
+	     (semaphore-post evaluation-sucessful)
+	     (semaphore-wait cleanup-sucessful)
 
 
-	       (semaphore-wait in-evaluation-semaphore)
-	       (set! in-evaluation? #f)
-	       (semaphore-post in-evaluation-semaphore))))])
+	     (semaphore-wait in-evaluation-semaphore)
+	     (set! in-evaluation? #f)
+	     (semaphore-post in-evaluation-semaphore)))])
       (public
 	[evaluation-thread #f]
 	[run-in-evaluation-thread 
 	 (lambda (thunk)
-	   (printf "run-in-evaluation-thread.1~n")
 	   (semaphore-wait eval-thread-state-sema)
-	   (printf "run-in-evaluation-thread.2~n")
 	   (set! eval-thread-thunks (append eval-thread-thunks (list thunk)))
 	   (semaphore-post eval-thread-state-sema)
 	   (semaphore-post eval-thread-queue-sema))]
 	[init-evaluation-thread
 	 (lambda ()
-	   (printf "init-evaluation-thread.1~n")
 	   (set! user-custodian (make-custodian))
 	   (set! user-eventspace (parameterize ([current-custodian user-custodian])
 				   (mred:make-eventspace)))
@@ -552,6 +550,8 @@
 		(mzlib:thread:dynamic-disable-break
 		 (lambda ()
 
+		   (set! user-thread (current-thread))
+
 		   (initialize-parameters)
 
 		   (let ([drscheme-error-escape-handler
@@ -560,16 +560,12 @@
 		     (error-escape-handler drscheme-error-escape-handler)
 		     (basis:bottom-escape-handler drscheme-error-escape-handler))
 
-		   (set! yield-count 0)
 		   (send (get-top-level-window) not-running)
 		   (set! evaluation-thread (current-thread))
 		   (let loop ()
 		     (unless (semaphore-try-wait? eval-thread-queue-sema)
-		       (fluid-let ([yield-count (+ yield-count 1)])
-			 (mred:yield eval-thread-queue-sema)))
-		     (printf "evaluation-thread sleeping~n")
+		       (mred:yield eval-thread-queue-sema))
 		     (semaphore-wait eval-thread-state-sema)
-		     (printf "evaluation-thread awakened~n")
 		     (let ([thunk (car eval-thread-thunks)])
 		       (set! eval-thread-thunks (cdr eval-thread-thunks))
 		       (semaphore-post eval-thread-state-sema)
@@ -688,12 +684,13 @@
 
 	  [this-in-read
 	   (lambda ()
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (init-transparent-io #t)
-		  (send transparent-edit fetch-char))
-		#f)))])
+	     (system
+	      (lambda ()
+		(mred:queue-callback
+		 (lambda ()
+		   (init-transparent-io #t)
+		   (send transparent-edit fetch-char))
+		 #f))))])
 
 
 	(public
@@ -741,65 +738,67 @@
 		   (style-func start end))
 		 (send edit lock c-locked?)
 		 (send edit end-edit-sequence))))]
-	  [generic-close (lambda () '())]
-	  
+	  [generic-close (lambda () (void))]
 	  
 	  [saved-newline? #f]
 
 	  [this-result-write 
 	   (lambda (s)
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (generic-write this
-				 s 
-				 (lambda (start end)
-				   (change-style result-delta
-						 start end))))
-		#f)))]
+	     (system
+	      (lambda ()
+		(mred:queue-callback
+		 (lambda ()
+		   (generic-write this
+				  s 
+				  (lambda (start end)
+				    (change-style result-delta
+						  start end))))
+		 #f))))]
 	  [this-out-write
 	   (lambda (s)
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (init-transparent-io #f)
-		  (let* ([old-saved-newline? saved-newline?]
-			 [len (and (string? s)
-				   (string-length s))]
-			 [s1 (if (and len
-				      (> len 0)
-				      (char=? (string-ref s (- len 1)) #\newline))
-				 (begin 
-				   (set! saved-newline? #t)
-				   (substring s 0 (- len 1)))
-				 (begin
-				   (set! saved-newline? #f)
-				   s))]
-			 [gw
-			  (lambda (s)
-			    (generic-write
-			     transparent-edit
-			     s
-			     (lambda (start end)
-			       (when transparent-edit
-				 (send transparent-edit
-				       change-style output-delta start end)))))])
-		    (when old-saved-newline?
-		      (gw (string #\newline)))
-		    (gw s1)))
-		#f)))]
+	     (system
+	      (lambda ()
+		(mred:queue-callback
+		 (lambda ()
+		   (init-transparent-io #f)
+		   (let* ([old-saved-newline? saved-newline?]
+			  [len (and (string? s)
+				    (string-length s))]
+			  [s1 (if (and len
+				       (> len 0)
+				       (char=? (string-ref s (- len 1)) #\newline))
+				  (begin 
+				    (set! saved-newline? #t)
+				    (substring s 0 (- len 1)))
+				  (begin
+				    (set! saved-newline? #f)
+				    s))]
+			  [gw
+			   (lambda (s)
+			     (generic-write
+			      transparent-edit
+			      s
+			      (lambda (start end)
+				(when transparent-edit
+				  (send transparent-edit
+					change-style output-delta start end)))))])
+		     (when old-saved-newline?
+		       (gw (string #\newline)))
+		     (gw s1)))
+		 #f))))]
 	  [this-err-write
 	   (lambda (s)
-	     (parameterize ([mred:current-eventspace drscheme:init:system-eventspace])
-	       (mred:queue-callback
-		(lambda ()
-		  (cleanup-transparent-io)
-		  (generic-write this
-				 s
-				 (lambda (start end)
-				   (change-style error-delta 
-						 start end))))
-		#f)))]
+	     (system
+	      (lambda ()
+		(mred:queue-callback
+		 (lambda ()
+		   (cleanup-transparent-io)
+		   (generic-write this
+				  s
+				  (lambda (start end)
+				    (change-style error-delta 
+						  start end))))
+		 #f))))]
 	  
 	  [this-err (make-output-port this-err-write generic-close)]
 	  [this-out (make-output-port this-out-write generic-close)]
@@ -871,7 +870,6 @@
 	[repl-initially-active? #f])
       
       (private
-	[user-eventspace #f]
 	[initialize-parameters
 	 (lambda ()
 	   (basis:initialize-parameters

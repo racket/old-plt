@@ -6,20 +6,15 @@
 	  (drscheme : drscheme:export^)
 	  [zodiac : drscheme:zodiac^])
   
-  (define system-parameterization (current-parameterization))
-
   (define test-thread
     (let ([kill-old void])
       (lambda (test thunk)
 	(kill-old)
 	(let ([thread-desc (thread
 			    (lambda ()
-			      (with-parameterization system-parameterization
-				(lambda ()
-				  (let ([p (core:file:normalize-path test)])
-				    (printf "t>> ~a started~n" p)
-				    (thunk)
-				    (printf "t>> ~a finished~n" p))))))])
+			      (printf "t>> ~a started~n" test)
+			      (thunk)
+			      (printf "t>> ~a finished~n" test)))])
 	  (set! kill-old
 		(lambda ()
 		  (when (thread-running? thread-desc)
@@ -33,10 +28,15 @@
        (let ([startup "~/.mzschemerc"])
 	 (when (file-exists? startup)
 	   (load startup)))
-       (read-eval-print-loop)
-       (printf "~nt>> REPL finished~n"))))
+       (read-eval-print-loop))))
 
-  (define (run-test-suite file) (test-thread file (lambda () (load/cd file))))
+  (define (run-test-suite file)
+    (test-thread
+     file
+     (lambda ()
+       ((load (build-path (collection-path "tests" "drscheme")
+			  "run-test.ss"))
+	file))))
 
   (fw:preferences:set-default 'drscheme:test-suite:file-name "repl-tests.ss" string?)
   (fw:preferences:set-default 'drscheme:test-suite:run-interval 10 number?)
@@ -104,8 +104,8 @@
 			     (fw:preferences:set
 			      'drscheme:test-suite:file-name
 			      test)
-			     (run-test-suite 
-			      (build-path drscheme-test-dir test))))))))
+			     (run-test-suite
+			      test)))))))
 	       focus))
 
 	    (let* ([pre-times (list 0 10 50 100 500)]

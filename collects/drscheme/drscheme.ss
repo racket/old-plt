@@ -13,17 +13,13 @@
 
 (load-relative "start-drs.ss")
 
-(define run-test void)
-
 (define (T)
-  (set! run-test (lambda x (error 'run-test "not defined")))
   (when drscheme-custodian (custodian-shutdown-all drscheme-custodian))
   (set! drscheme-custodian (make-custodian))
   (parameterize ([current-custodian drscheme-custodian])
     (set! drscheme-eventspace (make-eventspace))
     (parameterize ([current-eventspace drscheme-eventspace])
       (start-drscheme)))
-  (set! run-test (load (build-path (collection-path "tests" "drscheme") "run-test.ss")))
   (send loading-message set-label ""))
 
 (define start-drscheme-expression '(T))

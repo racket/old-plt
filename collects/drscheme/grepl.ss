@@ -112,6 +112,14 @@
 			     frame-width
 			     frame-height))
   (define repl-buffer (make-object esq:text%))
+  (define evaluation-thread #f)
+  (define break-button (make-object button%
+			 "Break"
+			 frame
+			 (lambda (_1 _2)
+			   (if evaluation-thread
+			       (break-thread evaluation-thread)
+			       (message-box "REPL" "No breakable thread")))))
   (define repl-display-canvas (make-object editor-canvas% frame))
 
   ;; User space initialization
@@ -172,6 +180,11 @@
 	       [(or (zero? n) (null? l)) previous-expressions]
 	       [else (cons (car l) (loop (- n 1) (cdr l)))])))))
 
+  (define (cleanup-after-evaluation)
+    (send break-button enable #f)
+    (set! evaluation-thread #f)
+    (send repl-buffer new-prompt))
+
   (define (evaluate expr-str)
     (remember expr-str)
     (parameterize ([current-eventspace user-eventspace])
@@ -179,18 +192,23 @@
        (lambda ()
 	 (current-parameterization user-parameterization)
 	 (dynamic-wind
-	  void
+	  (lambda ()
+	    (set! evaluation-thread (current-thread))
+	    (send break-button enable #t))
 	  (lambda () 
 	    (call-with-values
-	     (lambda () (eval (read (open-input-string expr-str))))
+	     (lambda ()
+	       (eval (read (open-input-string expr-str))))
 	     (lambda results
 	       (for-each 
 		(lambda (v) (print v user-value-port) (newline))
 		results))))
 	  (lambda ()
-	    (send repl-buffer new-prompt)))))))
+	    (cleanup-after-evaluation)))))))
 
   (define waiting (make-semaphore 0))
+
+  (send break-button enable #f)
 
   (let ([mb (make-object menu-bar% frame)])
     (let ([m (make-object menu% "&File" mb)])

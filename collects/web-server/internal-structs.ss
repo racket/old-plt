@@ -15,4 +15,10 @@
   ; more here - check if method is needed.  (I think it's for purge-table.)
   ; note: the url is the initial starting url without instance or continuation specific stuff at the end.
   ; servlet-stuff = (make-servlet-stuff url sym instance-table (response -> void) (instance -> doesn't) method)
-  (provide-define-struct servlet-stuff (url invoke-id instances output-page resume method)))
+  (provide-define-struct servlet-stuff (url invoke-id instances output-page resume method))
+  
+  ;; a connection is a structure
+  ;; (make-connection custodian input-port output-port timer boolean)
+  (provide-define-struct connection (i-port o-port close?))
+  
+  )

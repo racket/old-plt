@@ -45,10 +45,9 @@
         (update-channel! (car resume))
         ((cadr resume) (caddr resume)))))
   
-  ; add-new-instance : sym instance-table -> void
-  (define (add-new-instance invoke-id instances)
-    (hash-table-put! instances invoke-id
-                     (make-servlet-instance 0 (make-async-channel) (make-hash-table))))
+  ; add-new-instance : servlet-instance sym instance-table -> void
+  (define (add-new-instance new-instance invoke-id instances)
+    (hash-table-put! instances invoke-id new-instance))
   
   (define TEXT/HTML-MIME-TYPE "text/html")
   

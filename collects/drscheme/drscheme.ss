@@ -30,4 +30,4 @@
                                         #f
                                         (program argv get-dropped-files))
   (close-splash))
-(yield (make-semaphore 0))
+

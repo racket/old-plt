@@ -1,20 +1,8 @@
-(require-library "macro.ss")
-(require-library "match.ss")
-(require-library "file.ss")
+(module url mzscheme
+  (require (lib "unitsig.ss")
+           "url-sig.ss"
+           "url-unit.ss")
+  (provide-signature-elements net:url^)
 
-(require-library "urlu.ss" "net")
+  (define-values/invoke-unit/sig net:url^ url@))
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
-
-(define-values/invoke-unit/sig mzlib:url^
-  (compound-unit/sig
-    (import
-      (FILE : mzlib:file^))
-    (link
-      (URL : mzlib:url^
-	(mzlib:url@ FILE)))
-    (export
-      (open URL)))
-  #f
-  mzlib:file^)

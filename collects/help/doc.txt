@@ -372,8 +372,8 @@ These libraries are used to build dynamic portions of the documentation.
   it returns html code that shows an error. Because the link is
   a "file:" link, it cannot link to a particular anchor in the target.
 > (findreldoc to-doc-path manual index-key label)
-  Like `fonddoc', but `to-doc-path' is a Unix-style relative path that
-  reachs the "docs" collection. The resulting link is relative, and
+  Like `finddoc', but `to-doc-path' is a Unix-style relative path that
+  reaches the "docs" collection. The resulting link is relative, and
   it can point to a specific anchor in the target.
 
 > Installed Components

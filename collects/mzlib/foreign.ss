@@ -876,8 +876,8 @@
                            [(types) (list stype ...)]
                            [(offset ...) (apply values
                                                 (compute-offsets types))])
+               (define-cpointer-type _TYPE)
                (define _TYPE* (_cpointer TYPE-tag (make-cstruct-type types)))
-               (define-cpointer-tag _TYPE)
                (values _TYPE* _TYPE TYPE? TYPE-tag
                        (lambda (slot ...)
                          (let ([block (malloc _TYPE*)])

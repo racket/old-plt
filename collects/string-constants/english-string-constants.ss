@@ -260,7 +260,7 @@
  (ask-before-changing-format "Ask before changing save format")
  (wrap-words-in-editor-buffers "Wrap words in editor buffers")
  (show-status-line "Show status-line")
- (count-from-one "Count line and column numbers from one") 
+ (count-columns-from-one "Count column numbers from one")
  (display-line-numbers "Display line numbers in buffer; not character offsets")
  (enable-keybindings-in-menus "Enable keybindings in menus")
  (automatically-to-ps "Automatically print to postscript file")

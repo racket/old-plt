@@ -27,14 +27,23 @@
   
   (define (how-long-ago diff)
     (let-values ([(seconds minutes hours days) (apply values (how-long-ago-list diff))])
-      (string-append
-       (build-ele days "day" " ")
-       (build-ele hours "hour" " ")
-       (build-ele minutes "minute" " ")
-       (if minutes
-           "and "
-           "")
-       (build-ele seconds "second" ""))))
+      (cond
+	[days
+	 (string-append
+	  (build-ele days "day" "")
+	  " and "
+	  (build-ele hours "hour" ""))]
+	[hours
+	 (string-append
+	  (build-ele hours "hour" "")
+	  " and "
+	  (build-ele minutes "minute" ""))]
+	[minutes
+	 (build-ele minutes "minute" "")
+	 " and "
+	 (build-ele seconds "second" "")]
+	[else
+	 (build-ele seconds "second" "")])))
   
   (define (build-ele count name extra)
     (cond
@@ -60,6 +69,20 @@
                           (loop (cdr divs)
                                 (quotient diff div)))))])))
 
+
+  (define (how-much-memory)
+    (let loop ([n (current-memory-use)])
+      (cond
+	[(< n 1000) (format "~a" n)]
+	[else (format "~a,~a"
+		      (loop (quotient n 1000))
+		      (pad-3 (modulo n 1000)))])))
+
+  (define (pad-3 n)
+    (cond
+      [(< n 10) (format "00~a" n)]
+      [(< n 100) (format "0~a" n)]
+      [else (format "~a" n)]))
 
   (provide send@)
   (define send@
@@ -595,7 +618,9 @@
 	      (send message-editor insert (system-library-subpath))
 	      (send message-editor insert ") up ")
 	      (send message-editor insert (how-long-ago (- (current-seconds) invoked-time)))
-	      (send message-editor insert #\newline)
+	      (send message-editor insert ", mem ")
+	      (send message-editor insert (how-much-memory))
+	      (send message-editor insert "k\n")
 	      (send message-editor insert SEPARATOR)
 	      (send message-editor insert #\newline)
 	      (let ([message-start (send message-editor last-position)])

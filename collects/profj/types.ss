@@ -242,7 +242,7 @@
   (define-struct method-record (name modifiers rtype atypes throws override class) (make-inspector))
 
   ;;(make-inner-record string (list symbol) bool)
-  (define-struct inner-record (name modifiers class?))
+  (define-struct inner-record (name modifiers class?) (make-inspector))
 
   ;;(make-scheme-record string (list string) path (list scheme-val))
   (define-struct scheme-record (name path dir provides))

@@ -16,18 +16,24 @@
     (let ((str (symbol->string s)))
       (string->symbol (substring str 0 (sub1 (string-length str))))))
 
+  (define update-class-with-inner (make-parameter (lambda (x) (void))))
+  (define current-method (make-parameter ""))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Environment functions
 
   ;env =>
-  ;(make-environment (list var-type) (list string) (list type) (list string))
-  (define-struct environment (types set-vars exns labels))
+  ;(make-environment (list var-type) (list string) (list type) (list string) (list inner-rec))
+  (define-struct environment (types set-vars exns labels local-inners))
   
   ;Constant empty environment
-  (define empty-env (make-environment null null null null))
+  (define empty-env (make-environment null null null null null))
 
   ;; var-type => (make-var-type string type properties)
   (define-struct var-type (var type properties))
+  
+  ;;inner-rec ==> (make-inner-rec string class-rec)
+  (define-struct inner-rec (name record))
   
   ;;Environment variable properties
   ;;(make-properties bool bool bool bool bool bool)
@@ -47,7 +53,8 @@
     (make-environment (cons (make-var-type name type properties) (environment-types env))
                       (environment-set-vars env)
                       (environment-exns env)
-                      (environment-labels env)))
+                      (environment-labels env)
+                      (environment-local-inners env)))
   
   ;; lookup-var-in-env: string env -> (U var-type boolean)
   (define (lookup-var-in-env name env)
@@ -84,7 +91,8 @@
       (make-environment (remove-from-env (environment-types env))
                         (environment-set-vars env)
                         (environment-exns env)
-                        (environment-labels env))))
+                        (environment-labels env)
+                        (environment-local-inners env))))
   
   ;;lookup-containing-class-depth: string env -> num
   (define (lookup-containing-class-depth name env)
@@ -118,7 +126,8 @@
       (make-environment (update-env (environment-types env))
                         (environment-set-vars env)
                         (environment-exns env)
-                        (environment-labels env))))
+                        (environment-labels env)
+                        (environment-local-inners env))))
 
   ;;add-set-to-env: string env -> env
   (define (add-set-to-env name env)
@@ -127,7 +136,8 @@
                           (cons name (environment-set-vars env))
                           (environment-set-vars env))
                       (environment-exns env)
-                      (environment-labels env)))
+                      (environment-labels env)
+                      (environment-local-inners env)))
   
   ;;var-set?: string env -> bool
   (define (var-set? name env)
@@ -146,14 +156,16 @@
                          (srfi:lset-intersection equal? (environment-set-vars env-1)
                                                  (environment-set-vars env-2))))
                       (environment-exns base-env)
-                      (environment-labels base-env)))
+                      (environment-labels base-env)
+                      (environment-local-inners base-env)))
   
   ;;add-exn-to-env: type env -> env
   (define (add-exn-to-env exn env)
     (make-environment (environment-types env)
                       (environment-set-vars env)
                       (cons exn (environment-exns env))
-                      (environment-labels env)))
+                      (environment-labels env)
+                      (environment-local-inners env)))
   
   ;;add-exns-to-env: (list type) env -> env
   (define (add-exns-to-env exns env)
@@ -173,12 +185,31 @@
     (make-environment (environment-types env)
                       (environment-set-vars env)
                       (environment-exns env)
-                      (cons label (environment-labels env))))
+                      (cons label (environment-labels env))
+                      (environment-local-inners env)))
   
   ;;lookup-label: string env -> bool
   (define (lookup-label label env)
     (member label (environment-labels env)))
-    
+
+  ;;add-local-inner-to-env: string class-rec env -> env
+  (define (add-local-inner-to-env name rec env)
+    (make-environment (environment-types env)
+                      (environment-set-vars env)
+                      (environment-exns env)
+                      (environment-labels env)
+                      (cons (make-inner-rec name rec) (environment-local-inners env))))
+  
+  ;;lookup-local-inner: string env -> (U class-rec #f)
+  (define (lookup-local-inner name env)
+    (letrec ((lookup 
+              (lambda (l)
+                (and (not (null? l))
+                    (or (and (equal? name (inner-rec-name (car l)))
+                             (inner-rec-record (car l)))
+                        (lookup (cdr l)))))))
+      (lookup (environment-local-inners env))))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Generic helper functions
 
@@ -255,8 +286,10 @@
   ;check-class: class-def (list string) symbol type-records env -> void
   (define (check-class class package-name level type-recs class-env)
     (let ((old-reqs (send type-recs get-class-reqs))
+          (old-update (update-class-with-inner))
           (name (id-string (def-name class))))
-      ;    (send type-recs set-location! (def-file class))
+      (update-class-with-inner (lambda (inner)
+                                 (set-def-members! (cons inner (def-members class)))))
       (send type-recs set-class-reqs (def-uses class))
       (let ((this-ref (make-ref-type name package-name)))
         (check-members (def-members class)
@@ -271,19 +304,23 @@
                            (name-src (car (header-extends (def-header class)))))
                        ))
       (set-def-uses! class (send type-recs get-class-reqs))
+      (update-class-with-inner old-update)
       (send type-recs set-class-reqs old-reqs)))
 
   ;check-interface: interface-def (list string) symbol type-recs -> void
   (define (check-interface iface p-name level type-recs)
-    (let ((old-reqs (send type-recs get-class-reqs)))
-;    (send type-recs set-location! (def-file iface))
+    (let ((old-reqs (send type-recs get-class-reqs))
+          (old-update (update-class-with-inner)))
+      (update-class-with-inner (lambda (inner)
+                                 (set-def-members! (cons inner (def-members class)))))
       (send type-recs set-class-reqs (def-uses iface))
       (check-members (def-members iface) empty-env level type-recs 
                      (cons (id-string (def-name iface)) p-name) #t #f (def-kind iface) #f)
       (set-def-uses! iface (send type-recs get-class-reqs))
+      (update-class-with-inner old-update)
       (send type-recs set-class-reqs old-reqs)))
   
-  ;check-inner def symbol type-records (list string) env -> void
+  ;check-inner def symbol type-records (list string) env -> class-record
   (define (check-inner-def def level type-recs c-class env)
     (let ((p-name (cdr c-class))
           (inner-env (update-env-for-inner env))
@@ -422,7 +459,8 @@
                               (environment-types env))
                       (environment-set-vars env)
                       (environment-exns env)
-                      (environment-labels env)))
+                      (environment-labels env)
+                      (environment-local-inners env)))
 
   ;field-needs-set?: field symbol bool-> bool
   (define (field-needs-set? field level abst-class?)
@@ -896,6 +934,12 @@
                       level
                       c-c
                       type-recs))
+        ((def? statement) 
+         (check-local-inner statement
+                                env
+                                level
+                                c-c
+                                type-recs))
         ((break? statement)
          (check-break (break-label statement)
                       (break-src statement)
@@ -1080,6 +1124,14 @@
         (else
          (loop (cdr stmts) (type/env-e (check-s (car stmts) block-env)))))))
       
+  ;check-local-inner: def env symbol (list string) type-records -> type/env
+  (define (check-local-inner def env level c-class type-recs)
+    ((update-class-with-inner) def)
+    (make-type/env (make-ref-type (id-string (def-name def)) null) 
+                   (add-local-inner-to-env 
+                    (id-string (def-name def))
+                    (check-inner-def def level c-class type-recs env) env)))
+  
   ;check-break: (U id #f) src bool bool symbol env-> type/env
   (define (check-break label src in-loop? in-switch? level env)
     (cond
@@ -1266,6 +1318,9 @@
                                            c-class
                                            env
                                            level static?)))
+        ((def? exp) 
+         (set-expr-type exp
+                        (check-local-inner exp type-recs c-class env level static?)))
         ((array-alloc? exp)
          (set-expr-type exp
                         (check-array-alloc (array-alloc-name exp)
@@ -2086,12 +2141,16 @@
         ((if (class-alloc? exp) set-class-alloc-ctor-record! set-inner-alloc-ctor-record!)exp const)
         (make-type/env type (cadr args/env)))))
   
-  ;check-inner-alloc: exp type id (list exp) (exp env -> type/env) src type-records (list string) 
+  ;check-inner-alloc: exp exp id (list exp) (exp env -> type/env) src type-records (list string) 
   ;                   env symbol bool -> type/env
-  (define (check-inner-alloc exp obj-type name args check-e src type-recs c-class env level static?)
-    (let ((class-rec (send type-recs get-class-record obj-type)))
+  (define (check-inner-alloc exp obj name args check-e src type-recs c-class env level static?)
+    (let* ((obj-type/env (check-e obj env))
+           (obj-type (type/env-t obj-type/env))
+           (cur-env (type/env-e obj-type/env))
+           (class-rec (send type-recs get-class-record obj-type)))
       (unless (ref-type? obj-type) (inner-on-non-obj obj-type src))
-      (unless (member (id-string name) (map inner-record-name (class-record-inners class-rec)))
+      (unless (member (id-string name) 
+                      (map bytes->string/locale (map inner-record-name (class-record-inners class-rec))))
         (check-inner-error obj-type name src))
       (set-id-string! name (string-append (ref-type-class/iface obj-type) "." (id-string name)))
       (check-class-alloc exp (make-name name null (id-src name)) args check-e src type-recs c-class env level static?)))
@@ -2101,6 +2160,7 @@
       (raise-error t
                    (format "class invocation cannot be preceeded by non-object value ~a" t)
                    t src)))
+  
   (define (check-inner-error type name src)
     (let ((t (type->ext-name type))
           (n (id->ext-name name)))

@@ -1286,6 +1286,7 @@
                            type-recs))
         ((block? statement)
          (translate-block (block-stmts statement) (block-src statement) type-recs))        
+        ((def? statement) (create-syntax #f '(void) #f))
         ((break? statement)
          (translate-break (break-label statement)  (break-src statement)))
         ((continue? statement)

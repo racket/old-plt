@@ -166,7 +166,7 @@
 (define (set-subset? s1 s2)
   (let ([l1 (set->list s1)]
 	[l2 (set->list s2)])
-    (andmap (lambda (elt) (member elt l2)) l1)))
+    (andmap (lambda (elt) (memq elt l2)) l1)))
 
 (define set-map
   (lambda (f s)
@@ -196,6 +196,13 @@
      (lambda (b) 
        (eq? the-name (binding-name b)))
      binders)))
+
+(define (remove-duplicates elts)
+  (if (null? elts)
+      '()
+      (if (memq (car elts) (cdr elts))
+	  (remove-duplicates (cdr elts))
+	  (cons (car elts) (remove-duplicates (cdr elts))))))
 
 (define (add-binders-to-scope old-bindings new-bindings)
   (for-each 

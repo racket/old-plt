@@ -1,4 +1,4 @@
-;; lightweight.ss
+; lightweight.ss
 ;; code for Steckler/Wand lightweight closures
 
 (unit/sig compiler:lightweight^
@@ -54,7 +54,7 @@
 
   (define-values
     (phi set-phi!)
-    (add-annotation 'phi (lambda () '())))
+    (add-annotation 'phi (lambda () #f)))
 
   ; prim is #t iff a node may evaluate to a Scheme primitive
 
@@ -95,6 +95,20 @@
   (define-values
     (candidate-vars set-candidate-vars!)
     (add-annotation 'candidate-vars (lambda () empty-set)))
+
+  ; escape? is a predicate which is true iff a function may escape
+  ; from a unit
+
+  (define-values
+    (escape? set-escape!)
+    (add-annotation 'escape? (lambda () #f)))
+
+  ; unknown? is a predicate which is true iff an expression may
+  ; evaluate to an unknown procedure
+
+  (define-values
+    (unknown? set-unknown!)
+    (add-annotation 'unknown? (lambda () #f)))
 
   ; disjoint set union-find
 
@@ -468,7 +482,7 @@
 	       (lambda (t)
 		 (rec-traverse-with-scope-binders 
 		  t 
-		  (append defines imports export-vs)))])
+		  (remove-duplicates (append defines imports export-vs))))])
 
 	 (send zactor unit-form-action ast n binders)
 
@@ -937,26 +951,26 @@
 	     (let* ([unit-code (get-annotation a)]
 		    [binders ; lexical-binding set list
 		     (cons (list->set 
-			    (append (unit-code-defines unit-code)
-				    (unit-code-exports unit-code)))
+			     (append (unit-code-defines unit-code)
+				     (unit-code-exports unit-code)))
 			   imports-fv)])
 	       (send this binder-set-minus
 		     (fold-sets clauses-fv)
 		     (fold-sets binders))))]
 
 	  [compound-unit-form-folder
-	   (lambda (_ imports-fv unit-args-fv linked-units-fv)
+	   (lambda (_ imports-fvs unit-args-fvs linked-units-fvs)
 	     (send this binder-set-minus
-		   (fold-sets (list unit-args-fv linked-units-fv))
-		   imports-fv))]
+		   (fold-sets (append unit-args-fvs linked-units-fvs))
+		   (fold-sets imports-fvs)))]
 
 	  [invoke-unit-form-folder
-	   (lambda (_ unit-fv variables-fv)
-	     (fold-sets (cons unit-fv variables-fv)))]
+	   (lambda (_ unit-fv variables-fvs)
+	     (fold-sets (cons unit-fv variables-fvs)))]
 
 	  [invoke-open-unit-form-folder
-	   (lambda (_ unit-fv variables-fv)
-	     (fold-sets (cons unit-fv variables-fv)))])
+	   (lambda (_ unit-fv variables-fvs)
+	     (fold-sets (cons unit-fv variables-fvs)))])
 
 	 (sequence (super-init))))
 
@@ -1047,28 +1061,122 @@
     [lambdas-from-AVs
      (set-from-AVs lambda-lookup)]
 
+    [prop-phi-and-prim-to-binder 
+     (lambda (v)
+       (when (zodiac:bound-varref? v)
+	     (let ([b (zodiac:bound-varref-binding v)])
+	       (when b
+		     (let* ([v-phi (phi v)]
+			    [v-prim (prim v)]
+			    [b-phi (phi b)]
+			    [new-b-phi (if b-phi
+					 (set-union b-phi v-phi)
+					 v-phi)])
+		       (set-phi! b new-b-phi)
+		       (when v-prim
+			     (set-prim! b #t)))))))]
+
     [do-set-zactor 
      (make-object
       (class zactor% ()
 	     (override
 	      [default-action
 		(lambda (a _ __) 
-		  (when (zodiac:parsed? a)
+		  (when (and (zodiac:parsed? a)
+			     (not (phi a)))
 			(let ([avs (get-AVs-at-node a)])
 			  (when (set-find mrspidey:prim-av? avs)
 				(set-prim! a #t))
 			  (set-phi! a 
 				    (lambdas-from-AVs avs)))))]
+	      [varref-action
+	       (lambda (a depth bs)
+
+		 (send this default-action a depth bs)
+
+		 ; snarf flow information from binder
+
+		 (when (zodiac:bound-varref? a)
+		       (let ([b (zodiac:bound-varref-binding a)])
+			 (when b
+			       (let ([b-phi (phi b)])
+				 (when b-phi
+				       (set-phi! a (set-union (phi a)
+							      b-phi))))))))]
+	      [define-values-form-action 
+		(lambda (a depth bs)
+		  (let* ([vs (zodiac:define-values-form-vars a)]
+			 [rhs (zodiac:define-values-form-val a)]
+			 [rhs-avs (get-AVs-at-node rhs)]
+			 [rhs-lambdas (lambdas-from-AVs rhs-avs)]
+			 [prim? (set-find mrspidey:prim-av? rhs-avs)])
+
+		    ; this case needed to propagate AV information
+		    ; from RHS to LHS, which Spidey doesn't seem to do
+
+		    (send this default-action a depth bs)
+
+		    (when prim?
+			  (set-prim! rhs #t)
+			  (for-each
+			   (lambda (v)
+			     (set-prim! v #t))
+			   vs))
+
+		    (set-phi! rhs rhs-lambdas)
+
+		    ; merge information in case of multiple values
+		    ; probably can do better
+
+		    (for-each
+		     (lambda (v)
+
+		       (set-phi! v rhs-lambdas)
+
+		       ; propagate flow information to ghost binders
+
+		       (prop-phi-and-prim-to-binder v))
+
+		     vs)))]
+
+	      [set!-form-action
+		(lambda (a depth bs)
+		  (let* ([lhs (zodiac:set!-form-var a)]
+			 [rhs (zodiac:set!-form-val a)]
+			 [rhs-avs (get-AVs-at-node rhs)]
+			 [rhs-lambdas (lambdas-from-AVs rhs-avs)]
+			 [prim? (set-find mrspidey:prim-av? rhs-avs)])
+
+		    ; case needed to propagate AV information
+		    ; from RHS to LHS, which Spidey doesn't seem to do
+		    ; as in define-values-form case
+
+		    (send this default-action a depth bs)
+
+		    (when prim?
+			  (set-prim! lhs #t)
+			  (set-prim! rhs #t))
+
+		    (set-phi! lhs rhs-lambdas)
+		    (set-phi! rhs rhs-lambdas)
+
+		    (prop-phi-and-prim-to-binder lhs)))]
+
 	      [top-level-varref/bind-action
 	       (lambda (a _ __) 
-		 (let ([avs (get-AVs-at-node a)])
+		 (unless (phi a)
 
-		   ; try to use both Spidey and MzC prim annotations
+			 ; may have been set if subterm of a define
 
-		   (when (or (set-find mrspidey:prim-av? avs)
-			     (varref:has-attribute? a varref:primitive))
-			 (set-prim! a #t))
-		   (set-phi! a (lambdas-from-AVs avs))))]
+			 (let ([avs (get-AVs-at-node a)])
+			   
+			   ; try to use both Spidey and MzC prim annotations
+
+			   (when (or (set-find mrspidey:prim-av? avs)
+				     (varref:has-attribute? a varref:primitive))
+				 (set-prim! a #t))
+
+			   (set-phi! a (lambdas-from-AVs avs)))))]
 	      [quote-form-action
 	       (lambda (a _ __)
 		 (set-prim! a #f)
@@ -1076,6 +1184,220 @@
 	     (sequence (super-init))))])
 
     (traverse-ast-with-zactor ast do-set-zactor)))
+
+(define (escape-analyze ast)
+  (let* ([done #f]
+	 [unit-init #f]
+	 [set-unknown-and-set-flag! 
+	  (lambda (a)
+	    (unless (unknown? a)
+		    (set-unknown! a #t)
+		    (set! done #f)))]
+	 [set-escape-and-set-flag! 
+	  (lambda (a)
+	    (unless (escape? a)
+		    (set-escape! a #t)
+		    (set! done #f)))]
+	 [flow-closure-as-list
+	  (lambda (flow)
+	    (let* ([closed #f]
+		   [result (set->list flow)])
+	      (let loop ([new-ones result])
+		(let ([body-lambdas
+		       (set->list
+			(fold-sets
+			 (apply append 
+				(map (lambda (bodies) (map phi bodies))
+				     (map zodiac:case-lambda-form-bodies 
+					  new-ones)))))]
+		      [new-this-iter '()])
+		
+		  (set! closed #t)
+
+		  (for-each
+		   (lambda (bl)
+		     (when (not (memq bl result))
+			   (set! closed #f)
+			   (set! new-this-iter (cons bl new-this-iter))))
+		   body-lambdas)
+		
+		  (set! result (append new-this-iter result))
+
+		  (if closed
+
+		      result
+
+		      (loop new-this-iter))))))]
+	 [mark-as-escaping!
+	  (lambda (a)
+	    (let ([arglists (zodiac:case-lambda-form-args a)])
+	      (set-escape-and-set-flag! a)
+	      (for-each
+	       (lambda (arglist)
+		 (for-each
+		  set-unknown-and-set-flag! 
+		  (zodiac:arglist-vars arglist)))
+	       arglists)))]
+	 [init-unknown!
+	  (lambda (term)
+	    (unless (unknown? term)
+		    (set-unknown! term #t)
+		    (set! done #f)))]
+	 [prop-unknown 
+	  (lambda (from to)
+	    (let ([unknown-from (unknown? from)]
+		  [unknown-to (unknown? to)])
+	      (when (and unknown-from
+			 (not unknown-to))
+		    (set-unknown-and-set-flag! to))))]
+	 [escape-zactor
+	  (make-object
+	   (class zactor% ()
+		  (override
+		   [if-form-action
+		    (lambda (a _ __)
+		      (prop-unknown (zodiac:if-form-then a) a)
+		      (prop-unknown (zodiac:if-form-else a) a))]
+		   [set!-form-action
+		    (lambda (a _ __)
+		      (prop-unknown (zodiac:set!-form-val a) 
+				    (zodiac:set!-form-var a)))]
+		   [define-values-form-action
+		    (lambda (a _ __)
+		      (let ([val (zodiac:define-values-form-val a)]) 
+			(for-each
+			 (lambda (var)
+			   (prop-unknown val var))
+			 (zodiac:define-values-form-vars a))))]
+		   [let-values-form-action
+		     (lambda (a _ __)
+		       (let ([binderss (zodiac:let-values-form-vars a)]
+			     [vals (zodiac:let-values-form-vals a)]) 
+			 (for-each
+			  (lambda (val)
+			    (for-each
+			     (lambda (binders)
+			       (for-each 
+				(lambda (b)
+				  (prop-unknown val b))
+				binders))
+			     binderss))
+			  vals)
+			 (prop-unknown (zodiac:let-values-form-body a)
+				       a)))]
+		   [letrec*-values-form-action
+		     (lambda (a _ __)
+		       (let ([binderss (zodiac:letrec*-values-form-vars a)]
+			     [vals (zodiac:letrec*-values-form-vals a)]) 
+			 (for-each
+			  (lambda (val)
+			    (for-each
+			     (lambda (binders)
+			       (for-each
+				(lambda (b)
+				  (prop-unknown val b))
+				binders))
+			     binderss))
+			  vals)
+			 (prop-unknown (zodiac:letrec*-values-form-body a)
+				       a)))]
+		   [varref-action 
+		    (lambda (a _ __)
+		      (when (zodiac:bound-varref? a)
+			    (let ([binder (zodiac:bound-varref-binding a)])
+			      (when binder 
+				    (prop-unknown binder a)
+				    (when (escape? binder)
+					  (for-each
+					   mark-as-escaping! 
+					   (set->list (phi a))))))))]
+		   [case-lambda-form-action
+		    (lambda (a _ __)
+		      (let ([bodies (zodiac:case-lambda-form-bodies a)])
+			(for-each
+			 (lambda (body)
+			   (prop-unknown body a))
+			 bodies)
+			(when (escape? a)
+			      (for-each
+			       (lambda (body)
+				 (for-each
+				  mark-as-escaping!
+				  (flow-closure-as-list (phi body))))
+			       bodies))))]
+		   [app-action
+		    (lambda (a _ __)
+		      (let ([rator (zodiac:app-fun a)]
+			    [rands (zodiac:app-args a)])
+
+			; anything passed to unknown rator is escaping
+
+			(when (unknown? rator)
+			      (for-each
+			       (lambda (rand)
+				 (for-each 
+				  mark-as-escaping! 
+				  (set->list (phi rand))))
+			       rands))
+
+			; if the rator is unknown, so is the app
+
+			(prop-unknown rator a)
+
+			; an unknown value passed to a Scheme prim is unknown
+			; e.g. (car unknown-list)
+
+			(when (and (prim rator)
+				   (ormap unknown? rands)
+				   (not (unknown? a)))
+			      (set-unknown-and-set-flag! a))
+
+			; if any function returns an unknown,
+			; the app is unknown
+
+			(for-each
+			 (lambda (bodies)
+			   (for-each
+			    (lambda (body)
+			      (prop-unknown body a))
+			    bodies))
+			 (map zodiac:case-lambda-form-bodies 
+			      (set->list (phi rator))))))]
+		   [begin0-form-action
+		    (lambda (a _ __)
+		      (prop-unknown (car (zodiac:begin0-form-bodies a))
+				    a))]
+		   [begin-form-action
+		    (lambda (a _ __)
+		      (prop-unknown (car (last-pair 
+					  (zodiac:begin-form-bodies a)))
+				    a))]
+
+		   [unit-form-action
+		    (lambda (a _ __)
+		      (unless unit-init
+			      (let* ([imports (zodiac:unit-form-imports a)]
+				     [unit-code (get-annotation a)]
+				     [export-vs (unit-code-exports unit-code)])
+				(for-each
+				 init-unknown!
+				 imports)
+				(for-each
+				 set-escape-and-set-flag!
+				 export-vs))
+			      (set! unit-init #t)))]
+		   [compound-unit-form-action
+		    (lambda (a _ __)
+		      (let* ([imports (zodiac:compound-unit-form-imports a)])
+			(for-each
+			 init-unknown!
+			 imports)))])
+		  (sequence (super-init))))])
+    (let loop ()
+      (set! done #t)
+      (traverse-ast-with-zactor ast escape-zactor)
+      (unless done 
+	      (loop)))))
 
 (define (initialize-invariance-sets ast)
 
@@ -1099,7 +1421,7 @@
 		   [default-action
 		     (lambda (a _ scope-binders) 		   
 		       (when (zodiac:parsed? a)
-			     (unless (theta a) ; may have been set 
+			     (unless (theta a) ; may have been already set 
 				     (set-theta! a scope-binders))))]
 
 		   [varref-action
@@ -1157,19 +1479,23 @@
 
 		      (let* ([argss (zodiac:case-lambda-form-args a)]
 		       
-			     ; argss : arglist list
+				 ; argss : arglist list
 		       
-			     [binderss (map zodiac:arglist-vars argss)]
+				 [binderss (map zodiac:arglist-vars argss)]
 
-			     ; binderss : lexical-binding list list
+				 ; binderss : lexical-binding list list
 
-			     [code (get-annotation a)]
-			     [fvs (code-free-vars code)])
+				 [code (get-annotation a)]
+				 [fvs (code-free-vars code)])
 
 			; rule proc-inv
 			; also, exclude mutable variables as possible parameters
 
-			(set-theta! a (set-intersect (immutable-only scope-binders) fvs))
+		      (if (escape? a)
+
+			  (set-theta! a empty-set)
+
+			  (set-theta! a (set-intersect (immutable-only scope-binders) fvs)))
 
 			; handles rule app-inv-bv
 			; do this at lambdas, so only done once
@@ -1182,6 +1508,13 @@
 				(set-theta! b scope-binders))
 			      binders))
 			 binderss)))]
+
+		   [app-action
+		    (lambda (a depth scope-binders)
+		      (let ([rator (zodiac:app-fun a)]) 
+			(send this default-action a depth scope-binders)
+			(when (unknown? rator)
+			    (set-theta! rator empty-set))))]
 
 		   [class*/names-form-action
 
@@ -2318,34 +2651,19 @@
 
 		       0))]
 
-
 		  [compound-unit-form-folder
-		   (lambda (a _ __ clauses-maxs)
-		     (let* ([code (get-annotation a)]
-			    [curr-max (closure-code-max-arity code)] 
-			    [links (zodiac:compound-unit-form-links ast)]
-			    [compound-unit-max (max (length links)
-						    (max-over-list clauses-maxs))])
-
-		       ; no shrinkage
-
-		       (set-closure-code-max-arity! 
-			code 
-			(max curr-max compound-unit-max))
-
-		       ; stop propagation at unit boundary
-
-		       0))]
+		   (lambda (a _ __ ___)
+		     (let ([links (zodiac:compound-unit-form-links a)])
+		       (length links)))]
 
 		  [invoke-unit-form-folder
-		   (lambda (a _ variables-max)
-		     (let* ([vars (zodiac:invoke-unit-form-variables a)]
-			    [arg-max (add1 (* 2 (length vars)))])
-		     (max arg-max (max-over-list variables-max))))]
+		   (lambda (a _ __)
+		     (let ([vars (zodiac:invoke-unit-form-variables a)])
+		       (add1 (* 2 (length vars)))))]
 
 		  [invoke-open-unit-form-folder
-		   (lambda (_ unit-max variables-max)
-		     (max unit-max (max-over-list variables-max)))])
+		   (lambda (_ unit-max variables-maxs)
+		     (max unit-max (max-over-list variables-maxs)))])
 
 		 (sequence (super-init))))])
 
@@ -2381,169 +2699,175 @@
 		  (override
 		   [case-lambda-form-action 
 		    (lambda (a _ __)
-		      (let* ([old-arg-rep-len (get-arg-rep-len a)]
-			     [code (get-annotation a)]
-			     [class-rep (equiv-pi-rep a)]
-			     [pi-list (pi class-rep)]
-			     [case-codes (procedure-code-case-codes code)] 
-			     [case-fv-binder-sets (map code-free-vars case-codes)]
-			     [filter-pis
-			      (lambda (fv-set)
-				(list->set 
-				 (filter
-				  (lambda (v)
-				    (not (member (zodiac:binding-var v) pi-list)))
-				  (set->list fv-set))))]
-			     [new-binder-lists '()]
-			     [transform-lambda-case
-			      (lambda (arglist body fv-binder-set) 
-				(let ([this-case-body-varrefs (get-varrefs body)]
-				      [this-case-new-binders 
-				       (map (lambda (v) 
-					      (make-fresh-binder-at v a))
-					    pi-list)])
-				  
-				  ; save new-binder info in reverse order
-				  
-				  (set! new-binder-lists 
-					(cons this-case-new-binders new-binder-lists))
-				  ; tentatively give all binders dummy annotations
-				  ; in case they don't bind anything
 
-				  (for-each
-				   (lambda (b)
-				     (set-annotation! b binder:empty-anno))
-				   this-case-new-binders)
+		      ; transform only if Spidey-analyzed
 
-				  ; add new parameters
+		      (when 
 
-				  (unless (null? this-case-new-binders)
-
-					  (zodiac:set-arglist-vars! 
-					   arglist
-					   (append this-case-new-binders
-						   (zodiac:arglist-vars arglist))))
-				  
-				  ; wire varrefs to new parameters
-				  
-				  (for-each
-				   (lambda (v) 
-				     (let ([v-name (zodiac:varref-var v)])
-				       (ormap (lambda (pi-elt new-binder)
-
-						(if (eq? v-name pi-elt)
-						    
-						    (begin
-
-						      (let ([old-binder (zodiac:bound-varref-binding v)])
-							
-							; grab annotation from old binder, copy bits to new
-
-							(set-annotation! new-binder
-									 (copy-binding-for-light-closures
-									  (get-annotation old-binder)))
-							
-							; wire in new binder
-							
-							(zodiac:set-bound-varref-binding! v new-binder)))
-
-						    ; else
-						    
-						    #f))
-					      pi-list
-					      this-case-new-binders)))
-				   this-case-body-varrefs)))]
-			     [sym-arglist->ilist-arglist
-			      (lambda (as)
-				(let ([the-vars (zodiac:arglist-vars as)])
-				  (if (and (zodiac:sym-arglist? as)
-					   (> (length the-vars) 1))
-				      (zodiac:make-ilist-arglist the-vars)
-				      as)))])
+		       (mrspidey:parsed-ftype a)
 			
-			; update global vars 
+		       (let* ([old-arg-rep-len (get-arg-rep-len a)]
+			      [code (get-annotation a)]
+			      [class-rep (equiv-pi-rep a)]
+			      [pi-list (pi class-rep)]
+			      [case-codes (procedure-code-case-codes code)] 
+			      [case-fv-binder-sets (map code-free-vars case-codes)]
+			      [new-binder-lists '()]
+			      [transform-lambda-case
+			       (lambda (arglist body fv-binder-set) 
+				 (let ([this-case-body-varrefs (get-varrefs body)]
+				       [this-case-new-binders 
+					(map (lambda (v) 
+					       (make-fresh-binder-at v a))
+					     pi-list)])
+				   
+				   ; save new-binder info in reverse order
+				   
+				   (set! new-binder-lists 
+					 (cons this-case-new-binders new-binder-lists))
+				   ; tentatively give all binders dummy annotations
+				   ; in case they don't bind anything
 
-			(set-code-global-vars! 
-			 code 
-			 (set-union-singleton (code-global-vars code)
-					      const:the-per-load-statics-table))
+				   (for-each
+				    (lambda (b)
+				      (set-annotation! b binder:empty-anno))
+				    this-case-new-binders)
 
-			(for-each
-			 (lambda (cc)
-			   (set-code-global-vars! 
-			    cc 
-			    (set-union-singleton (code-global-vars cc)
-						 const:the-per-load-statics-table)))
-			 case-codes)
+				   ; add new parameters
 
-			; for each case in the case-lambda
-			
-			(for-each transform-lambda-case
-				  (zodiac:case-lambda-form-args a)
-				  (zodiac:case-lambda-form-bodies a)
-				  case-fv-binder-sets)
+				   (unless (null? this-case-new-binders)
 
-			(zodiac:set-case-lambda-form-args! 
-			 a
-			 (map sym-arglist->ilist-arglist (zodiac:case-lambda-form-args a))) 
+					   (zodiac:set-arglist-vars! 
+					    arglist
+					    (append this-case-new-binders
+						    (zodiac:arglist-vars arglist))))
+				   
+				   ; wire varrefs to new parameters
+				   
+				   (for-each
+				    (lambda (v) 
+				      (let ([v-name (zodiac:varref-var v)])
+					(ormap (lambda (pi-elt new-binder)
 
-			(when (compiler:option:verbose)
-			      (let ([new-arg-rep-len (get-arg-rep-len a)]) 
-				(when (< old-arg-rep-len new-arg-rep-len)
-				      (compiler:warning a "added formal arguments to procedure"))))
-			
-			; update local var information
+						 (if (eq? v-name pi-elt)
+						     
+						     (begin
 
-			; free variable information to be updated post-transformation
+						       (let ([old-binder (zodiac:bound-varref-binding v)])
+							 
+							 ; grab annotation from old binder, copy bits to new
 
-			(set! new-binder-lists (reverse new-binder-lists))
+							 (set-annotation! new-binder
+									  (copy-binding-for-light-closures
+									   (get-annotation old-binder)))
+							 
+							 ; wire in new binder
+							 
+							 (zodiac:set-bound-varref-binding! v new-binder)))
 
-			(for-each
-			 (lambda (case-code new-binder-list)
-			   (add-code-local+used-vars! 
-			    case-code
-			    (list->set new-binder-list)))
-			 case-codes
-			 new-binder-lists)))]
+						     ; else
+						     
+						     #f))
+					       pi-list
+					       this-case-new-binders)))
+				    this-case-body-varrefs)))]
+			      [sym-arglist->ilist-arglist
+			       (lambda (as)
+				 (let ([the-vars (zodiac:arglist-vars as)])
+				   (if (and (zodiac:sym-arglist? as)
+					    (> (length the-vars) 1))
+				       (zodiac:make-ilist-arglist the-vars)
+				       as)))])
+
+
+			 ; update global vars 
+
+			 (set-code-global-vars! 
+			  code 
+			  (set-union-singleton (code-global-vars code)
+					       const:the-per-load-statics-table))
+
+			 (for-each
+			  (lambda (cc)
+			    (set-code-global-vars! 
+			     cc 
+			     (set-union-singleton (code-global-vars cc)
+						  const:the-per-load-statics-table)))
+			  case-codes)
+
+			 ; for each case in the case-lambda
+			 
+			 (for-each transform-lambda-case
+				   (zodiac:case-lambda-form-args a)
+				   (zodiac:case-lambda-form-bodies a)
+				   case-fv-binder-sets)
+
+			 (zodiac:set-case-lambda-form-args! 
+			  a
+			  (map sym-arglist->ilist-arglist (zodiac:case-lambda-form-args a))) 
+
+			 (when (compiler:option:verbose)
+			       (let ([new-arg-rep-len (get-arg-rep-len a)]) 
+				 (when (< old-arg-rep-len new-arg-rep-len)
+				       (compiler:warning 
+					a 
+					"added formal arguments to procedure"))))
+			 
+			 ; update local var information
+
+			 ; free variable information to be updated post-transformation
+
+			 (set! new-binder-lists (reverse new-binder-lists))
+
+			 (for-each
+			  (lambda (case-code new-binder-list)
+			    (add-code-local+used-vars! 
+			     case-code
+			     (list->set new-binder-list)))
+			  case-codes
+			  new-binder-lists))))]
 
 		   [app-action
 		    (lambda (a _ scope-binders)
-		      (let* ([old-app (zodiac:parsed->raw a)]
-			     [rator (zodiac:app-fun a)]
-			     [rands (zodiac:app-args a)]
-			     [old-rands-len (length rands)]
-			     [class-rep (equiv-pi-rep rator)]
-			     [pi-list (pi class-rep)]
-			     [new-vars
-			      (map 
-			       (lambda (v)
-				 (let* ([f (find-binder v)]
-					[binder ((find-binder v) 
-						 scope-binders)]
-					[new-v (zodiac:make-lexical-varref
-						(zodiac:zodiac-origin a)
-						(zodiac:zodiac-start a)
-						(zodiac:zodiac-finish a)
-						(make-empty-box)
-						v
-						binder)])
 
-				   (set-annotation! new-v 
-						    (varref:empty-attributes))
+		      ; transform only if Spidey-analyzed
 
-				   (varref:add-attribute! new-v varref:env)
+		      (when 
 
-				   new-v))
-			       pi-list)])
+		       (mrspidey:parsed-ftype a)
+		       
+		       (let* ([old-app (zodiac:parsed->raw a)]
+			      [rator (zodiac:app-fun a)]
+			      [rands (zodiac:app-args a)]
+			      [class-rep (equiv-pi-rep rator)]
+			      [pi-list (pi class-rep)]
+			      [new-vars
+			       (map 
+				(lambda (v)
+				  (let* ([binder ((find-binder v) scope-binders)]
+					 [new-v (zodiac:make-lexical-varref
+						 (zodiac:zodiac-origin a)
+						 (zodiac:zodiac-start a)
+						 (zodiac:zodiac-finish a)
+						 (make-empty-box)
+						 v
+						 binder)])
 
-			(zodiac:set-app-args! a (append new-vars rands))
+				    (set-annotation! new-v 
+						     (varref:empty-attributes))
 
-			(when (compiler:option:verbose)
-			      (let ([new-rands-len 
-				     (length (zodiac:app-args a))])
-				(when (< old-rands-len new-rands-len)
-					(compiler:warning a 
-							  "added arguments to application"))))))])
+				    (varref:add-attribute! new-v varref:env)
+
+				    new-v))
+				pi-list)])
+
+			 (zodiac:set-app-args! a (append new-vars rands))
+
+			 (when (and (compiler:option:verbose)
+				    (> (length new-vars) 0))
+			       (compiler:warning 
+				a 
+				"added arguments to application")))))])
 		  
 		  (sequence 
 		    (super-init))))])
@@ -2551,6 +2875,69 @@
     (traverse-ast-with-zactor ast transform-zactor)
     (update-max-arities! ast)
     (update-variable-sets! ast)))
+
+(define (dump-escape ast)
+  (let ([de-zactor
+	 (make-object
+	  (class zactor% ()
+		 (override
+		  [case-lambda-form-action
+		   (lambda (a _ __)
+		     (when (escape? a)
+			   (printf "~n*** marked as escaping ***~n~a~n~n"
+				   (zodiac:parsed->raw a))))])
+		  (sequence 
+		    (super-init))))])
+
+    (traverse-ast-with-zactor ast de-zactor)))
+
+; (define (dump-annos ast)
+;  (let* ([dump-zactor
+;	  (make-object
+;	   (class zactor% ()
+;		  (override
+;		   [case-lambda-form-action 
+;		    (lambda (a _ __)
+;		      (let ([the-pi (pi a)]
+;			    [the-theta (theta a)])
+;			(printf "~nlambda: ~a~n" (zodiac:parsed->raw a))
+;			(printf "the-pi: ~a~n" the-pi)
+;			(printf "the-theta: ~a~n" (map zodiac:parsed->raw (set->list the-theta)))))])
+;		  (sequence (super-init))))])
+;    (traverse-ast-with-zactor ast dump-zactor)))
+
+(define (lightweight-analyze-and-transform asts)
+
+  (for-each 
+   make-global-tables 
+   asts)
+  
+  (for-each 
+   (lambda (ast)
+     (closure-analyze ast)
+     (escape-analyze ast)
+
+     (dump-escape ast)
+
+     (initialize-invariance-sets ast)
+     (initialize-protocol-eq-classes ast))
+   asts)
+  
+  (for-each
+   (lambda (ast)
+     (invariance-analyze ast)
+     (set-protocol-eq-classes ast)
+     (compute-protocols ast))
+   asts)
+
+;  (for-each
+;   (lambda (ast)
+;     (dump-annos ast))
+;   asts)
+
+  (for-each
+   lightweight-transform
+   asts))
 
 ) ; end unit/sig
 

@@ -1,19 +1,20 @@
+(begin-elaboration-time 
 
-(require-library "functios.ss")
-(require-library "files.ss")
-(require-library "strings.ss")
-(require-library "prettys.ss")
+ (require-library "functios.ss")
+ (require-library "files.ss")
+ (require-library "strings.ss")
+ (require-library "prettys.ss")
 
-(require-library "compiles.ss" "dynext")
-(require-library "links.ss" "dynext")
-(require-library "files.ss" "dynext")
+ (require-library "compiles.ss" "dynext")
+ (require-library "links.ss" "dynext")
+ (require-library "files.ss" "dynext")
 
-(require-library "zsigs.ss" "zodiac")
-(require-library "sigs.ss" "zodiac")
+ (require-library "zsigs.ss" "zodiac")
+ (require-library "sigs.ss" "zodiac")
 
-(require-library "sparams.ss" "backward")
+ (require-library "sparams.ss" "backward")
 
-(require-relative-library "sig.ss")
+ (require-relative-library "sig.ss") )
 
 (define-signature compiler:library^
   (logical-inverse
@@ -49,6 +50,7 @@
    set-subset?
    set-map
    set-filter
+   remove-duplicates
    binding-name
    find-binder
    add-binders-to-scope
@@ -273,14 +275,7 @@
    analyze-expression!))
 
 (define-signature compiler:lightweight^
-  (make-global-tables
-   closure-analyze
-   initialize-invariance-sets
-   initialize-protocol-eq-classes
-   invariance-analyze
-   set-protocol-eq-classes
-   compute-protocols
-   lightweight-transform))
+  (lightweight-analyze-and-transform))
 
 (define-signature compiler:closure^
   (compiler:closure-list
@@ -389,7 +384,7 @@
 
 (define-signature compiler:driver^
   ((open compiler:inner^)
-   
+
    compiler:error
    compiler:fatal-error
    compiler:internal-error

@@ -552,15 +552,6 @@
 		(verbose-time spidey-unit-thunk)
 		(compiler:report-messages! #t)))
 
-	      ; force Spidey to annotate ast
-	      ; do we need this?????
-
-;	      (when (or (compiler:option:use-mrspidey)
-;			(compiler:option:use-mrspidey-for-units))
-;		    (map zodiac->sexp/annotate (block-source s:file-block))
-;		    (printf "~n")
-;		    (flush-output))
-
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 	      
 	      ;;-----------------------------------------------------------------------
@@ -676,43 +667,8 @@
 
 		    (let ([lightweight-thunk
 			   (lambda ()
-
-			     (let* ([ast-list (block-source s:file-block)]
-				    [code-list (block-codes s:file-block)]) 
-
-			       (for-each 
-				make-global-tables 
-				ast-list)
-
-			       (for-each 
-				(lambda (ast)
-				  (closure-analyze ast)
-				  (initialize-invariance-sets ast)
-				  (initialize-protocol-eq-classes ast))
-				ast-list)
-		       
-			       (for-each
-				(lambda (ast)
-				  (invariance-analyze ast)
-				  (set-protocol-eq-classes ast)
-				  (compute-protocols ast))
-				ast-list)
-			       
-			       (for-each
-				lightweight-transform
-				ast-list)
-
-;			       (printf "~n;; transformed program -->~n")
-;			       
-;			       (for-each
-;				(lambda (ast)
-;				  (printf "~s~n~n" (zodiac:parsed->raw ast)))
-;				ast-list)
-;
-;			       (printf ";; end transformed program~n~n")
-;
-			       ))])
-	  
+			     (lightweight-analyze-and-transform 
+			      (block-source s:file-block)))])
 		      (verbose-time lightweight-thunk)
 		      (compiler:report-messages! #t)))
 

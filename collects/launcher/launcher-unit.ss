@@ -305,15 +305,15 @@
 	    ;; Independent launcher (needed for Setup PLT):
 	    (begin
 	      (install-template dest kind "mzstart.exe" "mrstart.exe")
-	      (let ([str (str-list->dos-str flags)]
+	      (let ([bstr (string->bytes/utf-8 (str-list->dos-str flags))]
 		    [p (open-input-file dest)]
-		    [m "<Command Line: Replace This[^>]*>"]
-		    [x "<Executable Directory: Replace This[^>]*>"]
-		    [v "<Executable Variant: Replace This>"])
-		(let* ([exedir (string-append 
-				plthome
+		    [m #rx#"<Command Line: Replace This[^>]*>"]
+		    [x #rx#"<Executable Directory: Replace This[^>]*>"]
+		    [v #rx#"<Executable Variant: Replace This>"])
+		(let* ([exedir (bytes-append
+				(path->bytes plthome)
 				;; null character marks end of executable directory
-				"\0")]
+				#"\0")]
 		       [find-it ; Find the magic start
 			(lambda (magic s)
 			  (file-position p 0)
@@ -336,28 +336,29 @@
 		       [pos-command (car command-poslen)]
 		       [len-command (- (cdr command-poslen) (car command-poslen))]
 		       [pos-variant (car variant-poslen)]
+		       [space (char->integer #\space)]
 		       [write-magic
 			(lambda (p s pos len)
 			  (file-position p pos)
 			  (display s p)
-			  (display (make-string (- len (string-length s)) #\space) p))]
+			  (display (make-bytes (- len (bytes-length s)) space) p))]
 		       [check-len
 			(lambda (len s es)
-			  (when (> (string-length s) len)
+			  (when (> (bytes-length s) len)
 				(when (file-exists? dest)
 				  (delete-file dest))
-				(error 
-				 (format	
+				(error
+				 (format
 				  "~a exceeds limit of ~a characters with ~a characters: ~a"
 				  es len (string-length s) s))))])
 		  (close-input-port p)
 		  (check-len len-exedir exedir "executable home directory")
-		  (check-len len-command str "collection/file name")
+		  (check-len len-command bstr "collection/file name")
 		  (let ([p (open-output-file dest 'update)])
 		    (write-magic p exedir pos-exedir len-exedir)   
-		    (write-magic p str pos-command len-command)   
+		    (write-magic p bstr pos-command len-command)   
 		    (when (eq? '3m (current-launcher-variant))
-		      (write-magic p "3" pos-variant 1))
+		      (write-magic p #"3" pos-variant 1))
 		    (close-output-port p)))))))
       
       ;; OS X launcher code:

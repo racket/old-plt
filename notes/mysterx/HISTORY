@@ -1,4 +1,4 @@
-version 104:
+Version 200
 
 Added support for paths of property names in
  com-get-property and com-set-property!
@@ -8,9 +8,10 @@ Removed right-click context menu from browser
  windows, because Language option caused errors
 Added navigate/status, refresh, iconize, restore, and 
  print methods to mx-browser%
-Fixed and documented keycode, altpressed, ctrlpressed, 
- and shiftpressed attributes of key-{down,up,pressed}
+Fixed and documented keycode, alt-key, ctrl-key, 
+ and shift-key attributes of key-{down,up,pressed}
  HTML events
+Increased size of HTML event queue to 8192 from 50
 
 Version 103-p1:
 

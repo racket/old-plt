@@ -2836,10 +2836,6 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     }
   }
   
-  if (numParamsPassed > 0) {
-    scheme_gc_ptr_ok(methodArguments->rgvarg);
-  }
-
   return numParamsPassed;
 }
 
@@ -2904,10 +2900,6 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
       getVarTypeFromElemDesc(&pVarDesc->elemdescVar);
     
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
-  }
-
-  if (numParamsPassed > 0) {
-    scheme_gc_ptr_ok(methodArguments->rgvarg);
   }
 
   return numParamsPassed;

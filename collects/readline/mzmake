@@ -29,8 +29,14 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 					  (loop (cdr l)))]
      [else (cdr l)])))
 
+(define mach-id (string->symbol (system-library-subpath)))
+
+(when (and (eq? mach-id 'i386-linux)
+	   (file-exists? "/usr/lib/libreadline.so"))
+      (set! mach-id 'i386-linux/readline))
+
 ; Compiler flags
-(case (string->symbol (system-library-subpath))
+(case mach-id
   [(sparc-solaris i386-linux)
    (add-flags current-extension-compiler-flags
 	      (list "-I/home/mflatt/proj/readline-2.1"))]
@@ -40,7 +46,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   [else (void)])
 
 ; Linker flags
-(case (string->symbol (system-library-subpath))
+(case mach-id
   [(sparc-solaris)
    (add-flags current-extension-linker-flags
 	      (list* "-ltermcap"

@@ -7669,9 +7669,231 @@ static int mark_listener_val(void *p, Mark_Proc mark)
   return sizeof(listener_t);
 }
 
+#ifdef WINDOWS_PROCESSES
+static int mark_thread_memory(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Thread_Memory *tm = (Scheme_Thread_Memory *)p;
+    gcMARK(tm->prev);
+    gcMARK(tm->next);
+  }
+
+  return sizeof(Scheme_Thread_Memory);
+}
+#endif
+
+static int mark_input_file(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Input_File *i = (Scheme_Input_File *)p;
+
+    gcMARK(i->f);
+  }
+
+  return sizeof(Scheme_Input_File);
+}
+
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+static int mark_tested_input_file(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Tested_Input_File *tip = (Tested_Input_File *)p;
+
+    gcMARK(tip->fp);
+#ifdef WIN32_FD_HANDLES
+    gcMARK(tip->thread_memory);
+#endif
+  }
+
+  return sizeof(Tested_Input_File);
+}
+
+static int mark_tcp_select_info(void *p, Mark_Proc mark)
+{
+  if (mark) {
+  }
+
+  return sizeof(Tcp_Select_Info);
+}
+#endif
+
+static int mark_indexed_string(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
+    
+    gcMARK(p->string);
+  }
+
+  return sizeof(Scheme_Indexed_String);
+}
+
+static int mark_output_file(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Output_File *o = (Scheme_Output_File *)p;
+
+    gcMARK(o->f);
+  }
+
+  return sizeof(Scheme_Output_File);
+}
+
+static int mark_load_handler_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    LoadHandlerData *d = (LoadHandlerData *)p;
+    
+    gcMARK(d->config);
+    gcMARK(d->port);
+    gcMARK(d->p);
+  }
+
+  return sizeof(LoadHandlerData);
+}
+
+static int mark_load_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    LoadData *d = (LoadData *)p;
+
+    gcMARK(d->filename);
+    gcMARK(d->config);
+    gcMARK(d->load_dir);
+    gcMARK(d->old_load_dir);
+  }
+
+  return sizeof(LoadData);
+}
+
+static int mark_pipe(void *_p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Pipe *p = (Scheme_Pipe *)_p;
+    
+    gcMARK(p->buf);
+#ifdef MZ_REAL_THREADS
+    gcMARK(p->wait_sem);
+#endif
+  }
+
+  return sizeof(Scheme_Pipe);
+}
+
+#ifdef USE_TCP
+static int mark_tcp(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Tcp *tcp = (Scheme_Tcp *)p;
+
+# ifdef USE_MAC_TCP
+    gcMARK(tcp->tcp);
+    gcMARK(tcp->activeRcv);
+# endif
+  }
+
+  return sizeof(Scheme_Tcp);
+}
+
+# ifdef USE_MAC_TCP
+static int mark_write_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    WriteData *d = (WriteData *)p;
+    
+    gcMARK(d->xpb);
+  }
+
+  return sizeof(WriteData);
+}
+# endif
+#endif
+
+#ifdef USE_FD_PORTS
+static int mark_input_fd(void *p, Mark_Proc mark)
+{
+  if (mark) {
+  }
+
+  return sizeof(Scheme_FD);
+}
+#endif
+
+#if defined(UNIX_PROCESSES)
+static int mark_system_child(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    System_Child *sc = (System_Child *)p;
+
+    gcMARK(sc->next);
+  }
+
+  return sizeof(System_Child);
+}
+#endif
+
+#ifdef BEOS_PROCESSES
+static int mark_beos_process(void *p, Mark_Proc mark)
+{
+  if (mark) {
+  }
+
+  return sizeof(BeOSProcess);
+}
+#endif
+
+#ifdef USE_OSKIT_CONSOLE
+static int mark_oskit_console_input(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    osk_console_input *c = (osk_console_input *)p;
+    
+    gcMARK(c->buffer);
+    gcMARK(c->next);
+  }
+
+  return sizeof(osk_console_input);
+}
+#endif
+
 static void register_traversers(void)
 {
   GC_register_traverser(scheme_listener_type, listener_val);  
+#ifdef WINDOWS_PROCESSES
+  GC_register_traverser(scheme_rt_thread_memory, mark_thread_memory);
+#endif
+  GC_register_traverser(scheme_rt_input_file, mark_input_file);
+#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
+  GC_register_traverser(scheme_rt_tested_input_file, mark_tested_input_file);
+  GC_register_traverser(scheme_rt_tcp_select_info, mark_tcp_select_info);
+#endif
+  GC_register_traverser(scheme_rt_indexed_string, mark_indexed_string);
+  GC_register_traverser(scheme_rt_output_file, mark_output_file);
+  GC_register_traverser(scheme_rt_load_handler_data, mark_load_handler_data);
+  GC_register_traverser(scheme_rt_load_data, mark_load_data);
+  GC_register_traverser(scheme_rt_pipe, mark_pipe);
+#ifdef USE_TCP
+  GC_register_traverser(scheme_rt_tcp, mark_tcp);
+# ifdef USE_MAC_TCP
+  GC_register_traverser(scheme_rt_write_data, mark_write_data);
+# endif
+#endif
+
+#ifdef USE_FD_PORTS
+  GC_register_traverser(scheme_rt_input_fd, mark_input_fd);
+#endif
+
+#if defined(UNIX_PROCESSES)
+  GC_register_traverser(scheme_rt_system_child, mark_system_child);
+#endif
+
+#ifdef BEOS_PROCESSES
+  GC_register_traverser(scheme_rt_beos_process, mark_beos_process);
+#endif
+
+#ifdef USE_OSKIT_CONSOLE
+  GC_register_traverser(scheme_rt_oskit_console_input, mark_oskit_console_input);
+#endif
 }
 
 #endif

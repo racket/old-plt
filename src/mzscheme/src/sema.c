@@ -28,8 +28,19 @@ static Scheme_Object *block_sema_p(int n, Scheme_Object **p);
 static Scheme_Object *block_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
+
 void scheme_init_sema(Scheme_Env *env)
 {
+#ifdef MZ_PRECISE_GC
+  if (scheme_starting_up) {
+    register_traversers();
+  }
+#endif
+
   scheme_add_global_constant("make-semaphore", 
 			     scheme_make_prim_w_arity(make_sema,
 						      "make-semaphore", 
@@ -399,4 +410,42 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
   return scheme_void;
 }
 
+/**********************************************************************/
+
+#ifdef MZ_PRCISE_GC
+
+static int mark_breakable_wait(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    BreakableWait *w = (BreakableWait *)p;
+    
+    gcMARK(p->config);
+    gcMARK(p->orig_param_val);
+    gcMARK(p->sema);
+  }
+
+  return sizeof(BreakableWait);
+}
+
+static int mark_sema_waiter(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Sema_Waiter *w = (Scheme_Sema_Waiter *)p;
+
+    gcMARK(p->p);
+    gcMARK(p->prev);
+    gcMARK(p->next);
+  }
+
+  return sizeof(Scheme_Sema_Waiter);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_rt_breakable_wait, mark_breakable_wait);
+  GC_register_traverser(scheme_rt_sema_waiter, mark_sema_waiter);
+}
+
 #endif
+
+#endif /* NO_SCHEME_THREADS */

@@ -3154,6 +3154,115 @@ static int invoke_unit_data_val(void *p, Mark_Proc mark)
   return sizeof(InvokeUnitData);
 }
 
+static int mark_unit_id(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    UnitId *id = (UnitId *)p;
+
+    gcMARK(id->tag);
+    gcMARK(id->int_id);
+    gcMARK(id->ext_id);
+    gcMARK(id->next);
+  }
+  
+  return sizeof(UnitId);
+}
+
+static int mark_body_expr(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    BodyExpr *body = (BodyExpr *)p;
+
+    switch (body->btype) {
+    case mm_body_def: 
+      gcMARK(body->u.def.expr);
+      gcMARK(body->u.def.vars);
+      break;
+    case mm_body_seq:
+      gcMARK(body->u.seq.expr);
+      break;
+    }    
+    gcMARK(body->next);
+  }
+  
+  return sizeof(BodyExpr);
+}
+
+static int mark_body_var(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    BodyVar *v = (BodyVar *)p;
+
+    gcMARK(v->id);
+  }
+  
+  return sizeof(BodyVar);
+}
+
+static int mark_param_map(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ParamMap *map = (ParamMap *)p;
+
+    if (map->index >=0)
+      gcMARK(map->ext_id);
+  }
+  
+  return sizeof(ParamMap);
+}
+
+static int mark_export_source(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ExportSource *s = (ExportSource *)p;
+
+    gcMARK(s->ext_id);
+  }
+  
+  return sizeof(ExportSource);
+}
+
+static int mark_unit_data_closure(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    UnitDataClosure *cl = (UnitDataClosure *)p;
+
+    gcMARK(cl->data);
+    gcMARK(cl->env);
+    gcMARK(cl->closure_saved);
+    gcMARK(cl->defname);
+  }
+  
+  return sizeof(UnitDataClosure);
+}
+
+static int mark_compound_linked_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    CompoundLinkedData *d = (CompoundLinkedData *)p;
+
+    gcMARK(d->subunits);
+    gcMARK(d->boxMapsList);
+    gcMARK(d->tags);
+    gcMARK(d->defname);
+  }
+  
+  return sizeof(CompoundLinkedData);
+}
+
+static int mark_do_invoke_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Do_Invoke_Data *d = (Do_Invoke_Data *)p;
+
+    gcMARK(d->boxes);
+    gcMARK(d->anchors);
+    gcMARK(d->unit);
+  }
+  
+  return sizeof(Do_Invoke_Data);
+}
+
 static void register_traversers(void)
 {
   GC_register_traverser(scheme_unit_type, mark_unit_val);
@@ -3161,6 +3270,15 @@ static void register_traversers(void)
   GC_register_traverser(scheme_unit_body_data_type, unit_body_val);
   GC_register_traverser(scheme_unit_compound_data_type, compound_unit_data_val);
   GC_register_traverser(scheme_invoke_unit_data_type, invoke_unit_data_val);
+
+  GC_register_traverser(scheme_rt_unit_id, mark_unit_id);
+  GC_register_traverser(scheme_rt_body_expr, mark_body_expr);
+  GC_register_traverser(scheme_rt_body_var, mark_body_var);
+  GC_register_traverser(scheme_rt_param_map, mark_param_map);
+  GC_register_traverser(scheme_rt_export_source, mark_export_source);
+  GC_register_traverser(scheme_rt_unit_data_closure, mark_unit_data_closure);
+  GC_register_traverser(scheme_rt_compound_linked_data, mark_compound_linked_data);
+  GC_register_traverser(scheme_rt_do_invoke_data, mark_do_invoke_data);
 }
 
 #endif

@@ -1057,11 +1057,25 @@ static int mark_struct_info_val(void *p, Mark_Proc mark)
   return sizeof(Struct_Info);
 }
 
+static int mark_struct_proc_info(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Struct_Proc_Info *i = (Struct_Proc_Info *)p;
+
+    gcMARK(i->struct_type);
+    gcMARK(i->func_name);
+  } 
+
+  return sizeof(Struct_Proc_Info);
+}
+
 static void register_traversers(void)
 {
   GC_register_traverser(scheme_structure_type, mark_struct_val);
   GC_register_traverser(scheme_struct_type_type, mark_struct_type_val);
   GC_register_traverser(scheme_struct_info_type, mark_struct_info_val);
+
+  GC_register_traverser(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }
 
 #endif

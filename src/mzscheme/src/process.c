@@ -252,7 +252,7 @@ static Scheme_Object **config_map;
 
 typedef struct {
   MZTAG_IF_REQUIRED
-  unsigned long key;
+  Scheme_Object *key;
   Scheme_Object *guard;
   Scheme_Object *defval;
 } ParamData;
@@ -260,7 +260,7 @@ typedef struct {
 typedef struct ParamExtensionRecData {
   MZTAG_IF_REQUIRED
   Scheme_Object *p;
-  unsigned long key;
+  Scheme_Object *key;
 } ParamExtensionRecData;
 
 typedef struct ParamExtensionRec {
@@ -2637,7 +2637,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
     argv2 = argv;    
 
   return scheme_param_config("parameter-procedure", 
-			     (long)scheme_make_pair((Scheme_Object *)((ParamData *)data)->key,
+			     (long)scheme_make_pair(((ParamData *)data)->key,
 						    ((ParamData *)data)->defval),
 			     argc, argv2,
 			     -2, NULL, NULL, 0);
@@ -2657,7 +2657,7 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
 #ifdef MZTAG_REQUIRED
   data->type = scheme_rt_param_data;
 #endif
-  data->key = (unsigned long)k;
+  data->key = (Scheme_Object *)k;
   data->defval = argv[0];
   data->guard = ((argc > 1) ? argv[1] : NULL);
 
@@ -2688,7 +2688,7 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   erec->data->type = scheme_rt_param_ext_rec_data;
 #endif
   erec->data->p = p;
-  erec->data->key = (unsigned long)k;
+  erec->data->key = (Scheme_Object *)k;
 
   scheme_weak_reference((void **)&erec->data->p);
 
@@ -3984,11 +3984,92 @@ static int mark_manager_val(void *p, Mark_Proc mark)
   return sizeof(Scheme_Manager);
 }
 
+static int mark_namespace_option(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_NSO *o = (Scheme_NSO *)p;
+
+    gcMARK(o->key);
+  }
+
+  return sizeof(Scheme_NSO);
+}
+
+static int mark_param_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ParamData *d = (ParamData *)p;
+
+    gcMARK(d->guard);
+    gcMARK(d->defval);
+  }
+
+  return sizeof(ParamData);
+}
+
+static int mark_param_ext_rec(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ParamExtensionRec *r = (ParamExtensionRec *)p;
+    
+    gcMARK(r->key);
+    gcMARK(r->data);
+    gcMARK(r->next);
+  }
+
+  return sizeof(ParamExtensionRec);
+}
+
+static int mark_param_ext_rec_data(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ParamExtensionRecData *d = (ParamExtensionRecData *)p;
+
+    gcMARK(d->key);
+    gcMARK(d->p);
+  }
+
+  return sizeof(ParamExtensionRecData);
+}
+
+static int mark_will(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    ActiveWill *w = (ActiveWill *)p;
+
+    gcMARK(w->o);
+    gcMARK(w->proc);
+    gcMARK(w->w);
+    gcMARK(w->next);
+  }
+
+  return sizeof(ActiveWill);
+}
+
+static int mark_will_registration(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    WillRegistration *r = (WillRegistration *)p;
+ 
+    gcMARK(r->proc);
+    gcMARK(r->w);
+  }
+
+  return sizeof(WillRegistration);
+}
+
 static void register_traversers(void)
 {
   GC_register_traverser(scheme_config_type, mark_config_val);
   GC_register_traverser(scheme_will_executor_type, mark_will_executor_val);
   GC_register_traverser(scheme_manager_type, mark_manager_val);
+
+  GC_register_traverser(scheme_rt_namespace_option, mark_namespace_option);
+  GC_register_traverser(scheme_rt_param_data, mark_param_data);
+  GC_register_traverser(scheme_rt_param_ext_rec, mark_param_ext_rec);
+  GC_register_traverser(scheme_rt_param_ext_rec_data, mark_param_ext_rec_data);
+  GC_register_traverser(scheme_rt_will, mark_will);
+  GC_register_traverser(scheme_rt_will_registration, mark_will_registration);
 }
 
 #endif

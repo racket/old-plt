@@ -145,6 +145,10 @@ static Linker_Name *linker_names;
 
 static Scheme_Object *nonempty_cond;
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 #define cons(a,b) scheme_make_pair(a,b)
 
 #define max(a, b) (((a) > (b)) ? (a) : (b))
@@ -153,6 +157,10 @@ void
 scheme_init_syntax (Scheme_Env *env)
 {
   if (scheme_starting_up) {
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
+
     REGISTER_SO(scheme_define_values_syntax);
     REGISTER_SO(scheme_defmacro_syntax);
     REGISTER_SO(scheme_def_id_macro_syntax);
@@ -2663,3 +2671,26 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
   return (Scheme_Object *)cl;
 }
 
+/**********************************************************************/
+
+#ifdef MZ_PRCISE_GC
+
+static int mark_linker_name(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Linker_Name *n = (Linker_name *)p;
+    
+    gcMARK(n->sym);
+  }
+
+  return sizeof(Linker_Name);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_rt_linker_name, mark_linker_name);
+}
+
+#endif
+
+#endif /* NO_SCHEME_THREADS */

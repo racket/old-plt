@@ -202,14 +202,14 @@
 	  [p (open-input-file dest)]
 	  [m (string->list "<Command Line: Replace This")]
 	  [x (string->list "<Executable Directory: Replace This")])
-      ; null character at end marks end of executable directory
+      ; null character marks end of executable directory
       (let* ([exedir (string-append plthome 
 				    (string (latin-1-integer->char 0)))]
-	     [pos-fun
-              ; Find the magic start
+	     [pos-fun ; Find the magic start
 	      (lambda 
-	       (magic s init-pos)
-	       (let loop ([pos init-pos][l magic])
+	       (magic s)
+	       (file-position p 0)
+	       (let loop ([pos 0][l magic])
 		 (cond
 		  [(null? l) (- pos (length magic))]
 		  [else (let ([c (read-char p)])
@@ -232,13 +232,15 @@
 		       (if (or (eof-object? v) (eq? v #\>))
 			   c
 			   (loop (add1 c)))))))]
-	     ; exedir precedes command line in m{r,z}start.exe
-	     ; that's the reverse of their order in source code start.c!
-	     [pos-exedir (pos-fun x "executable path" 0)]
+	     [pos-exedir (pos-fun x "executable path")]
 	     [len-exedir (len-fun x)]
-	     [pos-command (pos-fun m "command-line" (+ pos-exedir len-exedir))]
+	     [pos-command (pos-fun m "command-line")]
 	     [len-command (len-fun m)]
-	     [total (+ pos-command len-command
+	     [end-pos (max pos-command pos-exedir)]
+	     [end-len (if (eq? end-pos pos-command)
+			  len-command
+			  len-exedir)]
+	     [total (+ end-pos end-len
 		       (let loop ([c 0])
 			 (if (eof-object? (read-char p))
 			     c

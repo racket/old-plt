@@ -6,8 +6,8 @@
 <p>The teachpack <code>master.ss</code> provides the single operation
 <code>master</code>, which implements a simple GUI selecting two colors,
 evaluating the two guesses, and displaying an answer. The operation
-consumes the program <code>check-guess</code> and then plays
-TeachMasterMind. The program <code>check-guess</code> is responsible for
+consumes the function <code>check-guess</code> and then plays
+TeachMasterMind. The function <code>check-guess</code> is responsible for
 comparing the color guesses of a player with the (random) choices of
 <code>master.</code> </p>
 

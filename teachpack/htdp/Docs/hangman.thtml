@@ -8,7 +8,7 @@
 <code>draw.ss</code> provides and the following two: 
 <menu>
   <li><code> hangman : make-word reveal draw-next-part -> true</code>
-  <br> that is, it consumes three auxiliary programs: 
+  <br> that is, it consumes three auxiliary functions: 
   <code>make-word,</code> 
   <code>reveal,</code>  and 
   <code>draw-next-part</code>
@@ -17,7 +17,7 @@
 
   <li><code> hangman-list : reveal-for-list draw-next-part -> true</code>
   <br> that is, it consumes 
-  the programs <code>reveal-for-list</code> and <code>draw-next-part</code>. 
+  the functions <code>reveal-for-list</code> and <code>draw-next-part</code>. 
 
 </menu>
 The use of the operations is explained in more detail in the corresponding
@@ -25,7 +25,7 @@ exercises.</p>
 
 <br>
 
-Sample session: Define the required programs. Execute and play: 
+Sample session: Define the required functions. Execute and play: 
 
 <pre>
 > (hangman make-word reveal draw-next-part)

@@ -15,6 +15,7 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
     "Directories"
     "Rectangles"
     "Graphing Functions"
+    "GUI"
     "Lkup GUI"
     "Arrows GUI"
     "Guess GUI"))

@@ -53,7 +53,7 @@ functions for a student implementation of the demonic ping-pong game:
   <code>(tracer (make-posn 10 10) (make-vec 1 2) mover 55)</code><br>
 
   constructs a 55-unit trace of a ball that starts at (10,10) and moves (1,2)
-  each time unit. The program <code>mover</code> is ternary and consumes 
+  each time unit. The function <code>mover</code> is ternary and consumes 
   the current position, the current speed, and a time period (number). 
   <br>
 
@@ -63,7 +63,7 @@ functions for a student implementation of the demonic ping-pong game:
   <code>(trace-ball (make-ball (make-posn 10 10) (make-posn 1 2)) ball-posn mover 55)</code><br>
 
   constructs a 55-unit trace of a ball that starts at (10,10) and moves (1,2)
-  each time unit. The program <code>mover</code> is binary and consumes a ball
+  each time unit. The function <code>mover</code> is binary and consumes a ball
   and a time period (number). 
   <br>
 

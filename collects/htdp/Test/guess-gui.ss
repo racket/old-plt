@@ -1,10 +1,10 @@
 ;; TeachPack : guess-gui.ss
-;; Language: Advanced
+;; Language: Beginning 
 
 ;; ------------------------------------------------------------------------
 ;; model : button% event% -> true
 (define (model x y)
-  (view (convert (build-list 3 control))))
+  (view (convert (list (control 0) (control 1) (control 2)))))
 
 ;; convert : (listof DIGIT) -> number 
 ;; to convert a list of digits into a number 

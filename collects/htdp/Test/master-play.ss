@@ -1,7 +1,3 @@
-;; Todo: figure out how to switch to N > 2 
-
-(reference-file "master-lib.ss")
-
 (define-signature masterTS (go))
 
 (define (masterT N)

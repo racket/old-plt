@@ -59,13 +59,14 @@
     ((empty? word1) empty)
     (else (cons (reveal1 (first word1) (first word2) letter)
                 (reveal-list (rest word1) (rest word2) letter)))))
-
+#|
 (define (reveal-list l1 l2 gu)
   (map (lambda (x1 x2)
          (cond
            [(eq? x1 gu) gu]
            [else x2]))
        l1 l2))
+|#
 
 ;; TESTS: 
 

@@ -1,4 +1,4 @@
-(load "tester.ss")
+; (load "tester.ss")
 
 #| ------------------------------------------------------------------------
 draw-next-part :
@@ -31,12 +31,11 @@ credit: John Clements
        (draw-circle (make-posn 120 50) 30 RED)))))
 
 ;; reveal-list : list-of-letters list-of-letters letter -> list-of-letters
-(define (reveal-list l1 l2 gu)
-  (map (lambda (x1 x2)
-	 (cond
-	   [(eq? x1 gu) gu]
-	   [else x2]))
-    l1 l2))
+(define (reveal-list word1 word2 letter)
+  (cond
+    ((empty? word1) empty)
+    (else (cons (reveal1 (first word1) (first word2) letter)
+                (reveal-list (rest word1) (rest word2) letter)))))
 
 
 ;; TESTS: 
@@ -44,8 +43,8 @@ credit: John Clements
 ;(start 200 400)
 ;(hangman-list reveal-list draw-next-part)
 ;
-(test-error (hangman-list reveal-list))
-(test-error (hangman-list reveal-list 1))
-(test-error (hangman-list 1 reveal-list))
-(test-error (hangman-list cons first))
+; (hangman-list reveal-list)
+; (hangman-list reveal-list 1)
+; (hangman-list 1 reveal-list)
+; (hangman-list cons first)
 

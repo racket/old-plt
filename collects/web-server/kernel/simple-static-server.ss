@@ -2,6 +2,7 @@
   (require (lib "xml.ss" "xml")
            (lib "unitsig.ss")
            (lib "tcp-sig.ss" "net")
+           "error-response.ss"
            "request-parsing.ss"
            "response.ss"
            "util.ss"
@@ -23,7 +24,7 @@
       (cond
        [(and (not (null? dir-part))
              (string=? (car dir-part) ".."))
-        (do-404-error conn 'get)]
+        (report-error 404 conn 'get)]
        [(string=? f-part "")
         (serve-file conn (apply build-path `(,(current-directory) ,@dir-part
                                              "index.html")))]
@@ -36,7 +37,7 @@
     (cond
      [(file-exists? path)
       (output-file conn path 'get (get-mime-type path))]
-     [else (do-404-error conn 'get)]))
+     [else (report-error 404 conn 'get)]))
 
 
   ;; **************************************************
@@ -46,21 +47,6 @@
   ;; this is not fully implemented and will be configurable
   (define (get-mime-type ignored)
     "text/html")
-
-  ;; do-404-error: connection symbol -> void
-  ;; report that the file was not found
-  (define (do-404-error conn method)
-    (output-response/method
-     conn
-     (make-response/full
-      404 "File not found" '() (current-seconds) "text/html"
-      (list (xexpr->string
-             `(html (head (title "File not found"))
-                    (body
-                     (p "The file referred to by"
-                        "this url was not found"))))))
-     method))
-
 
   (define my-config@
     (unit/sig server-config^

@@ -20,6 +20,7 @@
 		       [console-edit (send frame get-console-edit)])
 		   ;; grab the current edit for this frame (it changes)
 		   (send edit insert "toy")
+		   (send console-edit insert "toy")
 		   (send console-edit send-scheme 'toy)
 		   (wx:bell)))])
 	  
@@ -47,9 +48,8 @@
     (for-each (lambda (x)
 		(printf "checking: ~a against ~a" x (eval x)))
 	      (list 'mred:make-child-info
-		    'zodiac:make-zodiac))
+		    'zodiac:make-parsed))
 
-    
     (printf "invoked toy@~n")))
 
 (printf "loaded toy@~n")

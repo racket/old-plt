@@ -74,7 +74,7 @@
 				    (raise x)))])
 	  (check-reply r 220)
 	  (log "hello~n")
-	  (fprintf w "HELO ~a~a" ID crlf)
+	  (fprintf w "EHLO ~a~a" ID crlf)
 	  (check-reply r 250)
 	  
 	  (log "from~n")

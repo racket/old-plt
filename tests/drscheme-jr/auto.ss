@@ -560,8 +560,8 @@
 
   (let ([kws '(#%interface
 	       #%unit #%unit/sig
-	       #%invoke-open-unit #%invoke-unit #%compound-unit
-	       #%invoke-open-unit/sig #%invoke-unit/sig #%compound-unit/sig
+	       #%invoke-unit #%compound-unit
+	       #%invoke-unit/sig #%compound-unit/sig
 	       #%struct #%define-struct
 	       #%quote #%quasiquote #%unquote #%unquote-splicing
 	       #%define-expansion-time #%let-expansion-time

@@ -111,4 +111,85 @@
        (let ([=> 17]) (evcase 3 [3 =>]))))
 (compile-allow-cond-fallthrough save-comp)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(require-library "invoke.ss")
+
+(define make-z
+  (lambda (x-val)
+    (unit
+     (import z)
+     (export (x z) y)
+     
+     (define x x-val)
+     (define y (lambda () (- z x))))))
+    
+(define z1 (make-z 8))
+(define z2 (make-z 7))
+
+(define m3
+  (compound-unit
+   (import)
+   (link [Z1 (z1 (Z2 z))][Z2 (z2 (Z1 z))])
+   (export [Z1 (y y1) (z x1)][Z2 (y y2) (z x2)])))
+
+(define-values/invoke-unit (y1 x1 y2 x2) m3)
+(test '(-1 1 8 7) 'invoke-open-unit (list (y1) (y2) x1 x2))
+
+; Linking environments
+
+(when (defined? 'x)
+  (undefine 'x))
+
+(define (make--eval)
+  (let ([n (make-namespace)])
+    (lambda (e)
+      (let ([orig (current-namespace)])
+	(dynamic-wind
+	 (lambda () (current-namespace n))
+	 (lambda () 
+	   (require-library "invoke.ss")
+	   (eval e))
+	 (lambda () (current-namespace orig)))))))
+
+(define u
+  (unit
+   (import)
+   (export x)
+   (define x 5)))
+(define e (make--eval))
+(e (list 'define-values/invoke-unit '(x) u #f))
+(test #f defined? 'x)
+(test #t e '(defined? 'x))
+
+(define u2
+  (let ([u u])
+    (unit
+     (import)
+     (export)
+     (global-define-values/invoke-unit (x) u #f))))
+(define e (make--eval))
+(e (list 'define-values/invoke-unit '() u2 #f))
+(test #f defined? 'x)
+(test #t e '(defined? 'x))
+
+
+; Export var from embedded unit:
+
+(define-signature e ((unit w : (embedded-v))))
+(define-values/invoke-unit/sig (embedded-v)
+ (compound-unit/sig
+  (import)
+  (link [E : e ((compound-unit/sig
+		 (import)
+		 (link [w : (embedded-v) ((unit/sig (embedded-v)
+						    (import)
+						    (define embedded-v 0)))])
+		 (export (unit w))))])
+  (export (var ((E w) embedded-v)))))
+(test 0 'embedded-v embedded-v)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (report-errs)
+

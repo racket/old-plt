@@ -1,7 +1,11 @@
 
 The _Essentials of Programming Languages_ (a.k.a _EoPL_) language in
 DrScheme provides all of the functions of R5RS, plus the forms and
-procedures described below.
+procedures described below. It is intended for use with the textbook
+
+  Essentials of Programming Languages, Second Edition
+  Friedman, Wand, and Haynes
+  MIT Press, 2001
 
 Differences from the book:
 
@@ -39,7 +43,6 @@ Differences from the book:
 > sllgen:make-string-scanner
 > sllgen:make-string-parser
 > sllgen:make-stream-parser
-> sllgen:make-rep-loop
 > sllgen:make-define-datatypes
 > sllgen:show-define-datatypes
 > sllgen:list-define-datatypes
@@ -49,14 +52,16 @@ Differences from the book:
   arguments must be either quoted literal tables or identifiers that
   are defined (at the top level) to quoted literal tables.
 
+> sllgen:make-rep-loop
+
+  Defined in the EoPL textbook's Appendix A.
+
 > eopl:error
-> error
 > eopl:printf
-> printf
 
-  As in the book, with out without the "eopl" prefix
+  As in the book.
 
-> list-of?
+> list-of
 > always?
 
   As in the book.

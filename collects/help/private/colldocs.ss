@@ -35,10 +35,7 @@
                                         (loop (cdr files)))])))))]
                 
 		[l (quicksort (append collections-docs general-docs)
-			      (lambda (a b)
-				(if (string-ci<? (car (car a)) (car (car b)))
-				    #f
-				    (string-ci<? (cadr (car a)) (cadr (car b))))))])
+			      (lambda (a b) (string<=? (cdr a) (cdr b))))])
 	   (values (map car l) (map cdr l)))]
 	[else (let ([path (car collection-paths)])
 		(let cloop ([l (with-handlers ([void (lambda (x) null)]) (directory-list path))]

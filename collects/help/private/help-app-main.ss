@@ -9,6 +9,7 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
   (require (lib "cmdline.ss")
            (lib "class.ss")
            (lib "framework.ss" "framework")
+           (lib "external.ss" "browser")
 	   "../bug-report.ss" ;; load now to init the preferences early
 	   "browser-extensions.ss"
 	   "server.ss"
@@ -20,8 +21,6 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
   (command-line
    "help-desk"
    (current-command-line-arguments))
-  
-  (preferences:add-warnings-checkbox-panel)
   
   (preferences:add-panel
    (list (string-constant font-prefs-panel-title))
@@ -39,7 +38,8 @@ It is only loaded when Help Desk is run by itself (outside DrScheme).
         'framework:standard-style-list:font-size
         (lambda (p v) (send size set-value v)))
        hp)))
-  
+  (preferences:add-warnings-checkbox-panel)
+  (install-help-browser-preference-panel)
   (preferences:start-writing-timer)
   
   (define the-hd-cookie (start-help-server (lambda (x) x)))

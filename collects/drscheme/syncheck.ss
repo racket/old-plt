@@ -32,6 +32,7 @@ Check Syntax separates four classes of identifiers:
   TODO:
        
      - write test suite for arrows and menus
+     - symbols or preferences don't begin with framework: or plt: or anything like that.
      - figure out how annotate-raw-keyword can go away
 |#
 
@@ -88,8 +89,7 @@ Check Syntax separates four classes of identifiers:
                      
 
       ;; prefix-style : (union symbol string) -> string
-      (define (prefix-style x) (format "syntax-coloring:Scheme Color:~a" x))
-      
+      (define (prefix-style x) (format "syntax-coloring:Scheme:~a" x))      
             
       ;; all strings naming styles
       (define unbound-variable-style-str (prefix-style 'unbound-variable))
@@ -1343,13 +1343,13 @@ Check Syntax separates four classes of identifiers:
                 (if high-level? module-transformer-identifier=? module-identifier=?)
                 [(lambda args bodies ...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (add-binders (syntax args) binders)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (for-each (lambda (bodies/stx) (annotate-tail-position/last sexp 
                                                                                (syntax->list bodies/stx)
                                                                                tail-ht))
@@ -1362,7 +1362,7 @@ Check Syntax separates four classes of identifiers:
                     (syntax->list (syntax ((bodiess ...) ...)))))]
                 [(if test then else)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position sexp (syntax then) tail-ht)
                    (annotate-tail-position sexp (syntax else) tail-ht)
                    (loop (syntax test))
@@ -1370,13 +1370,13 @@ Check Syntax separates four classes of identifiers:
                    (loop (syntax then)))]
                 [(if test then)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position sexp (syntax then) tail-ht)
                    (loop (syntax test))
                    (loop (syntax then)))]
                 [(begin bodies ...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
@@ -1384,18 +1384,18 @@ Check Syntax separates four classes of identifiers:
                 ;; different tail behavior.
                 [(begin0 body)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position sexp (syntax body) tail-ht)
                    (loop (syntax body)))]
                 
                 [(begin0 bodies ...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
                 [(let-values (((xss ...) es) ...) bs ...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
                    (for-each (lambda (x) (add-binders x binders))
                              (syntax->list (syntax ((xss ...) ...))))
@@ -1403,7 +1403,7 @@ Check Syntax separates four classes of identifiers:
                    (for-each loop (syntax->list (syntax (bs ...)))))]
                 [(letrec-values (((xss ...) es) ...) bs ...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
                    (for-each (lambda (x) (add-binders x binders))
                              (syntax->list (syntax ((xss ...) ...))))
@@ -1411,40 +1411,43 @@ Check Syntax separates four classes of identifiers:
                    (for-each loop (syntax->list (syntax (bs ...)))))]
                 [(set! var e)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (add-id (if high-level? high-varrefs varrefs) (syntax var))
                    (loop (syntax e)))]
                 [(quote datum)
                  (begin 
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    ;(color-internal-structure (syntax datum) constant-style-str)
                    )]
                 [(quote-syntax datum)
                  (begin 
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    ;(color-internal-structure (syntax datum) constant-style-str)
                    )]
                 [(with-continuation-mark a b c)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (annotate-tail-position sexp (syntax c) tail-ht)
                    (loop (syntax a))
                    (loop (syntax b))
                    (loop (syntax c)))]
                 [(#%app pieces ...)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (for-each loop (syntax->list (syntax (pieces ...)))))]
                 [(#%datum . datum)
-                 ;(color-internal-structure (syntax datum) constant-style-str)
-                 (void)
+                 (begin
+                   ;(color-internal-structure (syntax datum) constant-style-str)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs)))
                  ]
                 [(#%top . var)
-                 (add-id tops (syntax var))]
+                 (begin
+                   (add-id tops (syntax var))
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs)))]
                 
                 [(define-values vars b)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (add-binders (syntax vars) binders)
                    (when jump-to-id
                      (for-each (lambda (id)
@@ -1454,28 +1457,28 @@ Check Syntax separates four classes of identifiers:
                    (loop (syntax b)))]
                 [(define-syntaxes names exp)
                  (begin
-                   (annotate-raw-keyword sexp)
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (add-binders (syntax names) binders)
                    (level-loop (syntax exp) #t))]
                 [(module m-name lang (#%plain-module-begin bodies ...))
                  (begin
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    ((annotate-require-open user-namespace user-directory) (syntax lang))
                    (set! requires (cons (syntax lang) requires))
-                   (annotate-raw-keyword sexp)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 
                 ; top level or module top level only:
                 [(require require-specs ...)
                  (let ([new-specs (map trim-require-prefix
                                        (syntax->list (syntax (require-specs ...))))])
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (for-each (annotate-require-open user-namespace user-directory) new-specs)
-                   (set! requires (append new-specs requires))
-                   (annotate-raw-keyword sexp))]
+                   (set! requires (append new-specs requires)))]
                 [(require-for-syntax require-specs ...)
                  (let ([new-specs (map trim-require-prefix (syntax->list (syntax (require-specs ...))))])
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs))
                    (for-each (annotate-require-open user-namespace user-directory) new-specs)
-                   (set! require-for-syntaxes (append new-specs require-for-syntaxes))
-                   (annotate-raw-keyword sexp))]
+                   (set! require-for-syntaxes (append new-specs require-for-syntaxes)))]
                 
                 ; module top level only:
                 [(provide provide-specs ...)
@@ -1487,7 +1490,7 @@ Check Syntax separates four classes of identifiers:
                                   (add-id varrefs provided-var))
                                 provided-vars))
                              provided-varss)
-                   (annotate-raw-keyword sexp))]
+                   (annotate-raw-keyword sexp (if high-level? macrefs high-macrefs)))]
                 
                 [id
                  (identifier? (syntax id))
@@ -1914,7 +1917,7 @@ Check Syntax separates four classes of identifiers:
                                  test)))
                         possible-suffixes)))))
 
-      ;; add-referenced-macros : sexp id-set -> void
+      ;; add-macrefs : sexp id-set -> void
       (define (add-macrefs sexp id-set)
         (let ([origin (syntax-property sexp 'origin)])
           (when origin
@@ -2008,17 +2011,18 @@ Check Syntax separates four classes of identifiers:
                (when (syntax-original? stx)
                  (add-id id-set stx))]))))
       
-      ;; annotate-raw-keyword : syntax -> void
+      ;; annotate-raw-keyword : syntax id-map -> void
       ;; annotates keywords when they were never expanded. eg.
       ;; if someone just types `(lambda (x) x)' it has no 'origin
       ;; field, but there still are keywords.
-      (define (annotate-raw-keyword stx)
+      (define (annotate-raw-keyword stx id-map)
         (unless (syntax-property stx 'origin)
           (let ([lst (syntax-e stx)])
             (when (pair? lst)
               (let ([f-stx (car lst)])
-                (when (syntax-original? f-stx)
-                  (printf "~s\n" `(color ,f-stx keyword-style-str))))))))
+                (when (and (syntax-original? f-stx)
+                           (identifier? f-stx))
+                  (add-id id-map f-stx)))))))
             
       ;; color-internal-structure : syntax str -> void
       (define (color-internal-structure stx style-name)

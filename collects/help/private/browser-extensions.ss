@@ -18,7 +18,6 @@
            make-bug-report/help-desk-mixin)
   
   ;; where should the pref stuff really go?
-  (install-help-browser-preference-panel)
   (preferences:set-default 'drscheme:help-desk:last-url-string "" string?)
   (preferences:set-default 'drscheme:help-desk:frame-width 350 number?)
   (preferences:set-default 'drscheme:help-desk:frame-height 400 number?)

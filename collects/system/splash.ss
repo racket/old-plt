@@ -44,7 +44,22 @@
 				[else wx:const-bitmap-type-default])))]
 		  [bitmap (make-object wx:bitmap% filename flag)])
 	     (if (send bitmap ok?)
-		 (let* ([frame (parameterize ([wx:current-eventspace (wx:make-eventspace)])
+		 (let* ([logo-memory-dc (make-object wx:memory-dc%)]
+			[_ (send logo-memory-dc select-object bitmap)]
+			[canvas%
+			 (class wx:canvas% args
+			   (inherit get-dc)
+			   (public
+			     [on-paint
+			      (lambda ()
+				(send (get-dc) blit 0 0 
+				      (send bitmap get-width)
+				      (send bitmap get-height)
+				      logo-memory-dc
+				      0 0))])
+			   (sequence
+			     (apply super-init args)))]
+			[frame (parameterize ([wx:current-eventspace (wx:make-eventspace)])
 				 (make-object wx:dialog-box% '() title))]
 			[width (box 0.)]
 			[height (box 0.)]
@@ -63,15 +78,26 @@
 			     '(send panel set-item-cursor 0 (unbox by))))]
 			[_ (send panel set-item-cursor 0 0)]
 			
-			[message (make-object wx:message% panel bitmap)]
+			[logo-canvas (make-object canvas% panel)]
 			[_ (ready-cursor)]
 			[text-message (make-object wx:message% panel (format "Welcome to ~a" title))]
 			[_ (ready-cursor)]
 			[gauge (make-object wx:gauge% panel null mred:splash-max)]
 			[text-msg-height (send text-message get-height)]
 			[text-msg-width (send text-message get-width)]
-			[msg-width (send message get-width)]
-			[msg-height (send message get-height)]
+			[logo-width 0]
+			[logo-height 0]
+			[_ (let ([wb (box 0)]
+				 [hb (box 0)]
+				 [bw (send bitmap get-width)]
+				 [bh (send bitmap get-height)])
+			     (send logo-canvas set-size 0 0 bw bh)
+			     (send logo-canvas get-client-size wb hb)
+			     (let ([w (+ bw (- bw (unbox wb)))]
+				   [h (+ bh (- bh (unbox hb)))])
+			       (send logo-canvas set-size 0 0 w h)
+			       (set! logo-width w)
+			       (set! logo-height h)))]
 			[gauge-height (send gauge get-height)])
 
 		   (set! clear-state (lambda () (set! gauge (void))))
@@ -84,20 +110,68 @@
 			 [bwidth (box 0.)]
 			 [bheight (box 0.)]
 			 [margin 2])
-		     (send message set-size 0 0 msg-width msg-height)
 		     (send text-message set-size
-			   0 (+ margin msg-height)
-			   msg-width
+			   0 (+ margin logo-height)
+			   logo-width
 			   text-msg-height)
 		     (send gauge set-size
-			   0 (+ (* 2 margin) msg-height text-msg-height)
-			   msg-width gauge-height)
+			   0 (+ (* 2 margin) logo-height text-msg-height)
+			   logo-width gauge-height)
 		     (send gauge get-position bx by)
 		     (send gauge get-size bwidth bheight)
 		     (send panel set-size 0 0
-			   msg-width
-			   (+ (* 2 margin) msg-height text-msg-height gauge-height)))
+			   logo-width
+			   (+ (* 2 margin) logo-height text-msg-height gauge-height)))
 		   
+		   (when (getenv "MREDDEBUG")
+		     (let-values ([(base _1 _2) (split-path filename)])
+		       (let ([mars (build-path base "recycle.gif")])
+			 (when (file-exists? mars)
+			   (let* ([img-mdc (make-object wx:memory-dc%)]
+				  [img-bitmap (make-object wx:bitmap% mars wx:const-bitmap-type-gif)]
+				  [bw (send img-bitmap get-width)]
+				  [bh (send img-bitmap get-height)])
+			     (when (and (< bw logo-width)
+					(< bh logo-height))
+			       (let* ([on-mdc (make-object wx:memory-dc%)]
+				      [on-bitmap (make-object wx:bitmap% bw bh)]
+				      [off-mdc (make-object wx:memory-dc%)]
+				      [off-bitmap (make-object wx:bitmap% bw bh)]
+				      [lw (send bitmap get-width)]
+				      [lh (send bitmap get-height)]
+				      [bx (/ (- lw bw) 2)]
+				      [by (/ (- lh bw) 2)])
+				 (send on-mdc select-object on-bitmap)
+				 (send off-mdc select-object off-bitmap)
+				 (send img-mdc select-object img-bitmap)
+				 (send off-mdc clear)
+				 (send off-mdc blit 0 0 bw bh logo-memory-dc bx by)
+				 (send on-mdc clear)
+				 (send on-mdc blit 0 0 bw bh logo-memory-dc bx by)
+				 (time 
+				  (let* ([color (make-object wx:colour% "WHITE")]
+					 [red (ivar color red)]
+					 [green (ivar color green)]
+					 [blue (ivar color blue)]
+					 [get-pixel (ivar img-mdc get-pixel)]
+					 [set-pen (ivar on-mdc set-pen)]
+					 [draw-point (ivar on-mdc draw-point)]
+					 [find-or-create-pen (ivar wx:the-pen-list find-or-create-pen)])
+				    (let loop ([x bw]
+					       [y bh])
+				      (get-pixel x y color)
+				      (unless (= 255 (red) (green) (blue))
+					(set-pen (find-or-create-pen color 1 wx:const-solid))
+					(draw-point x y))
+				      (cond
+					[(= x y 0) (void)]
+					[(= x 0) (loop bw (sub1 y))]
+					[else (loop (sub1 x) y)]))))
+				 (wx:register-collecting-blit 
+				  logo-canvas 
+				  bx by bw bh
+				  on-mdc off-mdc))))))))
+
 		   (let* ([panel-width (send panel get-width)]
 			  [panel-height (send panel get-height)])
 		     (send frame set-size 0 0 panel-width panel-height)

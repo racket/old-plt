@@ -1,3 +1,13 @@
+101/6:
+
+ * Added continuation field to exn:misc:user-break, an escape
+   continuation that continues from the point of the break.
+
+   Note that full continuation hops are disallowed across the boundary
+   between the raising of an exception and the invocation of the
+   exception handler.
+
+
 101/5:
 
  * Added latin-1-integer->char and char->latin-1-integer.
@@ -18,6 +28,7 @@
 Version 101, ??
 Added 'sys-dir to find-system-path
 Added latin-1-integer->char and char->latin-1-integer
+Added continuation field to exn:misc:user-break
 Windows: all network sockets are closed on exit
 Fixed (acos 0)
 

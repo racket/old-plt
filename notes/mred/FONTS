@@ -1,10 +1,9 @@
 
-Do not read this file. If you want to change the fonts in MrEd, use
-the preferences dialog instead.
-
-Ok, if you're still reading, you must really want to do something that
-can't be done via the preferences dialog. Most likely, it *can* be
-done, and this file will tell you how if you're patient enough.
+This file describes how to set up mappings for PostScript fonts and
+complex X fonts for MrEd within a configuration file. However, you
+will probably find that it's much easier to use the set-screen-name,
+set-post-script-name, and set-afm-name methods provided by
+the-font-name-directory.
 
 ---------------------------------------------------
     1. Welcome to the Weird World of MrEd Fonts
@@ -187,15 +186,15 @@ Suppose we define the default font for all of "Default", and then
 we want "Roman" to use this setting, too. We could copy the
 resource entry, like this:
 
- mred.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
- mred.ScreenRoman__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+ mred.ScreenDefault__: +-*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+ mred.ScreenRoman__: +-*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
 
 but the MrEd font-reading system provides a better syntax for
 referencing another resource entry. When a resource value contains
 "${x}", then the "${x}" fragment is replaced by the resource value of
 "x". Thus, the above could be re-written:
 
- mred.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+ mred.ScreenDefault__: +-*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
  mred.ScreenRoman__: ${ScreenDefault__}
 
 But wait, there's more...
@@ -210,7 +209,7 @@ for the desired font weight. Similarly, "$[style]" is replaced with
 the desired style. Parameterizing expressions can be embedded in 
 referencing expressions, like this:
 
-  mred.ScreenDefault__: -*-*-${Def$[weight]}-r-normal-*-*-%d-*-*-*-*-*-*
+  mred.ScreenDefault__: +-*-*-${Def$[weight]}-r-normal-*-*-%d-*-*-*-*-*-*
   mred.DefMedium: medium
   mred.DefBold: bold
   mred.DefLight: medium
@@ -228,8 +227,8 @@ We're not done, yet...
 
 Consider the following resource configuration:
 
-  MrEd.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
-  MrEd.ScreenDefaultBold_: -*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefault__: +-*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefaultBold_: +-*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
   MrEd.ScreenRoman__: ${ScreenDefault__}
 
 The effect of this statement is probably not what was intended; when
@@ -237,8 +236,8 @@ a bold version of the "Roman" font is needed, "ScreenRoman__"
 references "ScreenDefault__", which does not specify a bold font.
 We could try to remedy the situation this way:
 
-  MrEd.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
-  MrEd.ScreenDefaultBold_: -*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefault__: +-*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefaultBold_: +-*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
   MrEd.ScreenRoman__: ${ScreenDefault$[weight]_}
 
 but this does not work either. It works fine for bold "Roman", now, 
@@ -250,8 +249,8 @@ Wildcarding can be specified in a reference by separating each
 wildcardable field with a comma. This resource specification does
 what we want:
 
-  MrEd.ScreenDefault__: -*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
-  MrEd.ScreenDefaultBold_: -*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefault__: +-*-*-medium-r-normal-*-*-%d-*-*-*-*-*-*
+  MrEd.ScreenDefaultBold_: +-*-*-bold-r-normal-*-*-%d-*-*-*-*-*-*
   MrEd.ScreenRoman__: ${ScreenDefault,$[weight],_}
 
 Since "$[weight]" is set off by commas, it can be wildcarded if no

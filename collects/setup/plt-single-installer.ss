@@ -52,7 +52,7 @@
 					     soption
 					     compiler)]
 			  [setup : () (setup@
-				       SOPTION
+				       soption
 				       compiler
 				       option
 				       launcher)])

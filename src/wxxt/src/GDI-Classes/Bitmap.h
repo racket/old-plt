@@ -78,10 +78,14 @@ public:
   void SetMask(wxBitmap *bm) { loaded_mask = bm; }
   wxBitmap *GetMask() { return loaded_mask; }
 
+  wxBitmap *GetMaskBit();
+  void FreeMaskBit();
+
 public:
     wxBitmap_Xintern *Xbitmap;
     wxColourMap      *cmap;
     wxBitmap         *loaded_mask;
+    wxBitmap         *maskBit;
 
 public:
     int selectedIntoDC;

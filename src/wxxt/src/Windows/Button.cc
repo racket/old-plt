@@ -123,7 +123,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 		      long style, char *name)
 {
     wxWindow_Xintern *ph;
-    Pixmap pm;
+    Pixmap pm, mpm;
     Widget wgt;
 
     if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
@@ -131,6 +131,8 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 
     bitmap->selectedIntoDC++;
     bm_label = bitmap;
+
+    bm_label_mask = CheckMask(bm_label);
 
     ChainToPanel(panel, style, name);
 
@@ -152,9 +154,14 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
     X->frame = wgt;
     // create widget
     pm = GETPIXMAP(bitmap);
+    if (bm_label_mask)
+      mpm = GETPIXMAP(bm_label_mask);
+    else
+      mpm = 0;
     wgt = XtVaCreateManagedWidget
 	("button", xfwfButtonWidgetClass, X->frame,
 	 XtNpixmap,      pm,
+	 XtNmaskmap,     mpm,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        font->GetInternalFont(),
@@ -182,7 +189,10 @@ wxButton::~wxButton(void)
 {
   if (bm_label) {
     --bm_label->selectedIntoDC;
-    XtVaSetValues(X->handle, XtNpixmap, NULL, NULL);
+    XtVaSetValues(X->handle, XtNpixmap, NULL, XtNmaskmap, NULL, NULL);
+  }
+  if (bm_label_mask) {
+    --bm_label_mask->selectedIntoDC;
   }
 }
 
@@ -218,12 +228,26 @@ void wxButton::SetLabel(wxBitmap *bitmap)
 {
   if (bm_label && bitmap && bitmap->Ok() && (bitmap->selectedIntoDC >= 0)
       && (bitmap->GetDepth()==1 || bitmap->GetDepth()==wxDisplayDepth())) {
-    Pixmap pm;
+    Pixmap pm, mpm;
+
     --bm_label->selectedIntoDC;
+    if (bm_label_mask) {
+      --bm_label_mask->selectedIntoDC;
+      bm_label_mask = NULL;
+    }
+
     bm_label = bitmap;
     bm_label->selectedIntoDC++;
+
+    bm_label_mask = CheckMask(bm_label);
+
     pm = GETPIXMAP(bitmap);
-    XtVaSetValues(X->handle, XtNpixmap, pm, NULL);
+    if (bm_label_mask)
+      mpm = GETPIXMAP(bm_label_mask);
+    else
+      mpm = 0;
+
+    XtVaSetValues(X->handle, XtNpixmap, pm, XtNmaskmap, mpm, NULL);
   }
 }
 

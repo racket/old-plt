@@ -248,7 +248,7 @@ Bool wxMessage::Create(wxPanel *panel,
     wxWindow_Xintern *ph;
     Widget wgt;
     const char *lblT;
-    void *lblV;
+    void *lblV, *maskmap;
 
     if (iconID) {
       if (!icons_loaded) {
@@ -276,6 +276,8 @@ Bool wxMessage::Create(wxPanel *panel,
     
     if (!bitmap)
       bm_label = NULL;
+
+    bm_label_mask = CheckMask(bm_label);
 
     ChainToPanel(panel, style, name);
 
@@ -306,10 +308,16 @@ Bool wxMessage::Create(wxPanel *panel,
       lblV = label;
     }
 
+    if (bm_label_mask)
+      maskmap = (void *)GETPIXMAP(bm_label_mask);
+    else
+      maskmap = 0;
+
     // create widget
     wgt = XtVaCreateManagedWidget
 	("message", xfwfLabelWidgetClass, X->frame,
 	 lblT,           lblV,
+	 XtNmaskmap,     maskmap,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
@@ -346,7 +354,10 @@ wxMessage::~wxMessage()
 {
   if (bm_label) {
     --bm_label->selectedIntoDC;
-    XtVaSetValues(X->handle, XtNpixmap, NULL, NULL);
+    XtVaSetValues(X->handle, XtNpixmap, NULL, XtNmaskmap, NULL, NULL);
+  }
+  if (bm_label_mask) {
+    --bm_label_mask->selectedIntoDC;
   }
 }
 
@@ -384,12 +395,28 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 
   if (bm_label && bitmap && bitmap->Ok() && (bitmap->selectedIntoDC >= 0)
       && (bitmap->GetDepth()==1 || bitmap->GetDepth()==wxDisplayDepth())) {
-    Pixmap pm;
+    Pixmap pm, mpm;
+
     --bm_label->selectedIntoDC;
+    if (bm_label_mask) {
+      --bm_label_mask->selectedIntoDC;
+      bm_label_mask = NULL;
+    }
+
     bm_label = bitmap;
     bm_label->selectedIntoDC++;
+
+    bm_label_mask = CheckMask(bm_label);
+
     pm = GETPIXMAP(bitmap);
-    XtVaSetValues(X->handle, XtNlabel, NULL, XtNpixmap, pm, NULL);
+    if (bm_label_mask)
+      mpm = GETPIXMAP(bm_label_mask);
+    else
+      mpm = 0;
+    XtVaSetValues(X->handle, 
+		  XtNlabel, NULL, 
+		  XtNpixmap, pm, 
+		  XtNmaskmap, mpm, NULL);
   }
 }
 

@@ -86,7 +86,7 @@ private:
 
     void* toggles; // of type Widget*
     Bool* enabled;
-    wxBitmap** bm_labels;
+    wxBitmap **bm_labels, **bm_label_masks;
     int   num_toggles;
 };
 

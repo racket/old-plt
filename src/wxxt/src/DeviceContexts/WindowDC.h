@@ -198,8 +198,7 @@ protected:
     void  Initialize(wxWindowDC_Xinit* init);
     void  Destroy(void);
 
-    /* Implement GetPixel */
-    void DoFreeGetPixelCache(void);
+    virtual void FreeGetPixelCache(void);
 
     wxWindowDC_Xintern* X;
 };

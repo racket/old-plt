@@ -93,6 +93,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     }
 
     bm_labels = NULL;
+    bm_label_masks = NULL;
 
     ChainToPanel(panel, style, name);
 
@@ -285,16 +286,19 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
       wxBitmap **ba;
       ba = (wxBitmap **)GC_malloc(num_toggles * sizeof(wxBitmap *));
       bm_labels = ba;
+      ba = (wxBitmap **)GC_malloc(num_toggles * sizeof(wxBitmap *));
+      bm_label_masks = ba;
     }
 #else
     bm_labels = new wxBitmap*[num_toggles];
+    bm_label_masks = new wxBitmap*[num_toggles];
 #endif
     for (i=0; i < num_toggles; ++i) {
 	char num_name[10];
-
 	char *kind;
 	void *label;
 	wxBitmap *achoice;
+	void *mpm;
 
 	sprintf(num_name, "%d", i);
 
@@ -306,14 +310,23 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 	  label = (void *)GETPIXMAP(achoice);
 	  bm_labels[i] = achoice;
 	  achoice->selectedIntoDC++;
+	  achoice = CheckMask(bm_labels[i]);
+	  bm_label_masks[i] = achoice;
+	  if (achoice)
+	    mpm = (void *)GETPIXMAP(achoice);
+	  else
+	    mpm = NULL;
 	} else {
 	  kind = XtNlabel;
 	  label = (char *)"<bad-image>";
 	  bm_labels[i] = NULL;
+	  bm_label_masks[i] = NULL;
+	  mpm = NULL;
 	}
 
 	wgt = XtVaCreateManagedWidget(num_name, xfwfToggleWidgetClass, X->handle,
 				      kind,             label,
+				      XtNmaskmap,       mpm,
 				      XtNbackground,    wxGREY_PIXEL,
 				      XtNforeground,    wxBLACK_PIXEL,
 				      XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
@@ -370,9 +383,18 @@ wxRadioBox::~wxRadioBox(void)
       if (bm_labels[i]) {
 	wxBitmap *bm = bm_labels[i];
 	--bm->selectedIntoDC;
-	XtVaSetValues(((Widget*)toggles)[i], XtNpixmap, NULL, NULL);
+	XtVaSetValues(((Widget*)toggles)[i], 
+		      XtNpixmap, NULL, 
+		      XtNmaskmap, NULL, 
+		      NULL);
+      }
+      if (bm_label_masks[i]) {
+	wxBitmap *bm = bm_label_masks[i];
+	--bm->selectedIntoDC;
       }
     }
+    bm_labels = NULL;
+    bm_label_masks = NULL;
   }
 }
 
@@ -466,15 +488,32 @@ void wxRadioBox::SetLabel(int item, wxBitmap *bitmap)
 {
   if (0 <= item && item < num_toggles
       && bm_labels && bm_labels[item]) {
-    Pixmap pm;
+    Pixmap pm, mpm;
     wxBitmap *obm;
-    pm = GETPIXMAP(bitmap);
+
     obm = bm_labels[item];
     --obm->selectedIntoDC;
+    obm = bm_label_masks[item];
+    if (obm)
+      --obm->selectedIntoDC;
+
     bm_labels[item] = bitmap;
     bitmap->selectedIntoDC++;
-    XtVaSetValues(TOGGLES[item], XtNlabel, NULL,
-		  XtNpixmap, pm, NULL);
+
+    obm = CheckMask(bitmap);
+    bm_label_masks[item] = obm;
+
+    pm = GETPIXMAP(bitmap);
+    if (obm)
+      mpm = GETPIXMAP(obm);
+    else
+      mpm = 0;
+
+    XtVaSetValues(TOGGLES[item], 
+		  XtNlabel, NULL,
+		  XtNpixmap, pm, 
+		  XtNmaskmap, mpm, 
+		  NULL);
   }
 }
 

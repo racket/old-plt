@@ -147,6 +147,11 @@ static void count_lines(self)Widget self;
 	((XfwfLabelWidget)self)->xfwfLabel.label_width  = (Dimension)width;
 	((XfwfLabelWidget)self)->xfwfLabel.label_height = (Dimension)height;
 	((XfwfLabelWidget)self)->xfwfLabel.label_depth  = depth;
+	if (((XfwfLabelWidget)self)->xfwfLabel.maskmap) {
+	  XGetGeometry(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.maskmap, &root,
+		       &x, &y, &width, &height, &bw, &depth);
+	  ((XfwfLabelWidget)self)->xfwfLabel.mask_depth  = depth;
+	}
     }
     /* add border */
     ((XfwfLabelWidget)self)->xfwfLabel.label_width += ((XfwfLabelWidget)self)->xfwfLabel.leftMargin + ((XfwfLabelWidget)self)->xfwfLabel.rightMargin;
@@ -159,6 +164,7 @@ static XtResource resources[] = {
 {XtNfont,XtCFont,XtRFontStruct,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.font),XtOffsetOf(XfwfLabelRec,xfwfLabel.font),XtRString,(XtPointer)XtDefaultFont },
 {XtNxfont,XtCXFont,XtRvoid,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.xfont),XtOffsetOf(XfwfLabelRec,xfwfLabel.xfont),XtRPointer,(XtPointer)NULL },
 {XtNpixmap,XtCPixmap,XtRPixmap,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.pixmap),XtOffsetOf(XfwfLabelRec,xfwfLabel.pixmap),XtRImmediate,(XtPointer)0 },
+{XtNmaskmap,XtCMaskmap,XtRPixmap,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.maskmap),XtOffsetOf(XfwfLabelRec,xfwfLabel.maskmap),XtRImmediate,(XtPointer)0 },
 {XtNforeground,XtCForeground,XtRPixel,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.foreground),XtOffsetOf(XfwfLabelRec,xfwfLabel.foreground),XtRString,(XtPointer)XtDefaultForeground },
 {XtNtext_bg,XtCText_bg,XtRPixel,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.text_bg),XtOffsetOf(XfwfLabelRec,xfwfLabel.text_bg),XtRPointer,(XtPointer)NULL },
 {XtNalignment,XtCAlignment,XtRAlignment,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.alignment),XtOffsetOf(XfwfLabelRec,xfwfLabel.alignment),XtRImmediate,(XtPointer)0 },
@@ -187,10 +193,10 @@ XfwfLabelClassRec xfwfLabelClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  17,
+/* num_resources 	*/  18,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
-/* compress_exposure 	*/  XtExposeCompressMultiple ,
+/* compress_exposure 	*/  XtExposeCompressMaximal ,
 /* compress_enterleave 	*/  True ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  destroy,
@@ -475,13 +481,11 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	    x = rect.x + rect.width - width;
 	else
 	    x = rect.x + (rect.width - width)/2;
-	if (((XfwfLabelWidget)self)->xfwfLabel.label_depth == 1) { /* depth */
-	    XCopyPlane(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.pixmap, XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.gc,
-		       0, 0, width, height, x, y, 1L);
-	} else {
-	    XCopyArea(XtDisplay(self), ((XfwfLabelWidget)self)->xfwfLabel.pixmap, XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.gc,
-		      0, 0, width, height, x, y);
-	}
+	wxDrawBitmapLabel(XtDisplay(self), 
+			  ((XfwfLabelWidget)self)->xfwfLabel.pixmap, ((XfwfLabelWidget)self)->xfwfLabel.maskmap, 
+			  XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.gc,
+			  x, y, width, height, 
+			  ((XfwfLabelWidget)self)->xfwfLabel.label_depth, ((XfwfLabelWidget)self)->xfwfLabel.mask_depth);
     }
 
     /* Gray out if not sensitive */

@@ -42,6 +42,7 @@ within the label.
 @ Instead of a label a |pixmap| may be displayed if |label| is NULL.
 
 	@var Pixmap pixmap = 0
+	@var Pixmap maskmap = 0
 
 @ The foreground color is the color used to draw the
 text.
@@ -138,7 +139,7 @@ necessary for the complete label to be visible. |label_width| and
 @ For a pixmap label I need the |label_depth|.
 
 	@var unsigned int label_depth
-
+	@var unsigned int mask_depth
 
 @methods
 
@@ -360,13 +361,11 @@ responsible for drawing the frame.
 	    x = rect.x + rect.width - width;
 	else
 	    x = rect.x + (rect.width - width)/2;
-	if ($label_depth == 1) { /* depth */
-	    XCopyPlane(XtDisplay($), $pixmap, XtWindow($), $gc,
-		       0, 0, width, height, x, y, 1L);
-	} else {
-	    XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc,
-		      0, 0, width, height, x, y);
-	}
+	wxDrawBitmapLabel(XtDisplay($), 
+			  $pixmap, $maskmap, 
+			  XtWindow($), $gc,
+			  x, y, width, height, 
+			  $label_depth, $mask_depth);
     }
 
     /* Gray out if not sensitive */
@@ -477,6 +476,11 @@ private variables |nlines|, |label_width| and |label_height|.
 	$label_width  = (Dimension)width;
 	$label_height = (Dimension)height;
 	$label_depth  = depth;
+	if ($maskmap) {
+	  XGetGeometry(XtDisplay($), $maskmap, &root,
+		       &x, &y, &width, &height, &bw, &depth);
+	  $mask_depth  = depth;
+	}
     }
     /* add border */
     $label_width += $leftMargin + $rightMargin;

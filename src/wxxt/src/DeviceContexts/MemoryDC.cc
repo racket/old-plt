@@ -58,8 +58,6 @@ wxMemoryDC::~wxMemoryDC(void)
 #endif
 }
 
-#define FreeGetPixelCache() if (X->get_pixel_image_cache) DoFreeGetPixelCache()
-
 void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 {
   if (bitmap == selected)
@@ -149,4 +147,11 @@ void wxMemoryDC::GetSize(double *w, double *h)
     *w = 0;
     *h = 0;
   }
+}
+
+void wxMemoryDC::FreeGetPixelCache()
+{
+  if (selected)
+    selected->FreeMaskBit();
+  wxWindowDC::FreeGetPixelCache();
 }

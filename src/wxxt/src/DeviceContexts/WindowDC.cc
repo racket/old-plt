@@ -46,6 +46,7 @@
 #  include <X11/Xft/Xft.h>
 # endif
 #endif
+#include <X11/Intrinsic.h>
 
 #define  UseXtRegions
 #include "wx_rgn.h"
@@ -55,6 +56,7 @@
 
 extern "C" { 
 #include "XWidgets/wxAllocColor.h"
+#include "XWidgets/xwTabString.h"
 extern int wx_alloc_color_is_fast;
 };
 #include "wx_visual.h"
@@ -90,8 +92,6 @@ static int fill_rule[]  = { EvenOddRule, WindingRule };
 #endif
 
 #define IS_COLOR (DEPTH > 1)
-
-#define FreeGetPixelCache() if (X->get_pixel_image_cache) DoFreeGetPixelCache()
 
 static Pixmap* hatch_bitmaps = NULL;
 
@@ -466,11 +466,8 @@ int wxXRenderHere(void)
 # endif
 #endif
 
-#ifdef WX_XR_PICTURE
 static XRenderPictFormat *format, *mask_format, *alpha_format;
-#endif
 
-#ifdef WX_XR_PICTURE
 long wxMakeXrenderPicture(Drawable d, int color)
 {
   /* Create format records, if not done already: */
@@ -497,14 +494,13 @@ long wxMakeXrenderPicture(Drawable d, int color)
 				      &pf,
 				      0);
   }
-  
+
   return (long)XRenderCreatePicture(wxAPP_DISPLAY,
 				    d,
 				    color ? format : mask_format,
 				    0,
 				    NULL);
 }
-#endif
 
 long wxMakePicture(Drawable d, int color)
 {
@@ -681,55 +677,14 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	  maskp = TO_PICTURE(p);
 # endif
 	} else {
-	  /* Difficult. Need to create an 8-bit alpha (grayscale)
-	     pixmap by reading pixels of the mask pixmap. Note that we
-	     don't worry about a colormap for this pixmap; it will be
-	     interpreted as graysacle by Xrender. */
+	  /* Need an 8-bit alpha (grayscale) mask. */
 	  wxBitmap *bm;
-	  wxMemoryDC *tmp;
-	  wxColour *c;
-	  int mw, mh, v;
 
-	  mw = mask->GetWidth();
-	  mh = mask->GetHeight();
-	  
-	  bm = new wxBitmap();
-	  bm->Create(mw, mh, 8);
-	  
-	  if (bm->Ok()) {
+	  bm = mask->GetMaskBit();
+	  if (bm) {
 	    Pixmap bpm;
-	    XImage *img;
-	    int i, j;
-	  
+	    
 	    bpm = GETPIXMAP(bm);
-
-	    tmp = new wxMemoryDC(1);
-	    tmp->SelectObject(mask);
-	    
-	    c = new wxColour(0, 0, 0);
-	    img = XGetImage(wxAPP_DISPLAY, bpm, 0, 0, mw, mh, AllPlanes, ZPixmap);
-	    
-	    tmp->BeginGetPixelFast(0, 0, mw, mh);
-	    for (i = 0; i < mw; i++) {
-	      for (j = 0; j < mh; j++) {
-		int r_c, g_c, b_c;
-		tmp->GetPixelFast(i, j, &r_c, &g_c, &b_c);
-		v = (r_c + g_c + b_c) / 3;
-		XPutPixel(img, i, j, 255 - v);
-	      }
-	    }
-	    tmp->EndGetPixelFast();
-
-	    tmp->SelectObject(NULL);
-
-	    {
-	      GC agc;
-	      agc = XCreateGC(DPY, bpm, 0, NULL);
-	      XPutImage(wxAPP_DISPLAY, bpm, agc, img, 0, 0, 0, 0, mw, mh);
-	      XFreeGC(DPY, agc);
-	    }
-
-	    XDestroyImage(img);
 
 # ifdef WX_XR_PICTURE
 	    maskp = XRenderCreatePicture(wxAPP_DISPLAY,
@@ -818,7 +773,6 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	XftDrawDestroy(maskd);	
 # endif
 	maskp = 0;
-	DELETE_OBJ free_bmp;
       }
 
 # if WX_RENDER_CAN_SCALE
@@ -1014,6 +968,73 @@ Bool wxWindowDC::GCBlit(double xdest, double ydest, double w, double h, wxBitmap
 
     return retval; // !retval => something is wrong with the drawables
 }
+
+void doDrawBitmapLabel(Display *dpy, 
+		       Pixmap pixmap, Pixmap maskmap,
+		       Drawable drawable, GC agc,
+		       int x, int y, int width, int height, 
+		       int depth, int mask_depth)
+{
+#ifdef WX_USE_XRENDER
+  if (mask_depth > 1) {
+    Picture dest, src, mask;
+
+    dest = (Picture)wxMakeXrenderPicture(drawable, 1);
+    src = (Picture)wxMakeXrenderPicture(pixmap, (depth > 1));
+    mask = XRenderCreatePicture(wxAPP_DISPLAY,
+				maskmap,
+				alpha_format,
+				0,
+				NULL);
+
+    XRenderComposite(wxAPP_DISPLAY,
+		     PictOpOver,
+		     src,
+		     mask,
+		     dest,
+		     0, 0,
+		     0, 0,
+		     x, y, width, height);
+
+    XRenderFreePicture(dpy, dest);
+    XRenderFreePicture(wxAPP_DISPLAY, src);
+    XRenderFreePicture(wxAPP_DISPLAY, mask);
+
+    return;
+  }
+#endif
+
+  if (mask_depth == 1) {
+    XSetClipMask(dpy, agc, maskmap);
+    XSetClipOrigin(dpy, agc, x, y);
+  }
+
+  if (depth == 1) {
+    XCopyPlane(dpy, pixmap, drawable, agc,
+	       0, 0, width, height, x, y, 1);
+  } else {
+    XCopyArea(dpy, pixmap, drawable, agc,
+	      0, 0, width, height, x, y);
+  }
+
+  if (mask_depth == 1) {
+    XSetClipMask(dpy, agc, None);
+    XSetClipOrigin(dpy, agc, 0, 0);
+  }
+}
+
+extern "C" {
+  void wxDrawBitmapLabel(Display *dpy, 
+			 Pixmap pixmap, Pixmap maskmap,
+			 Drawable drawable, GC agc,
+			 int x, int y, int width, int height, 
+			 int depth, int mask_depth) {
+    return doDrawBitmapLabel(dpy, pixmap, maskmap,
+			     drawable, agc,
+			     x, y, width, height, 
+			     depth, mask_depth);
+  }
+};
 
 void wxWindowDC::Clear(void)
 {
@@ -2829,9 +2850,10 @@ void wxWindowDC::SetPixelFast(int i, int j, int red, int green, int blue)
   pixel = XPutPixel(get_pixel_image_cache, i, j, pixel);  
 }
 
-void wxWindowDC::DoFreeGetPixelCache(void)
+void wxWindowDC::FreeGetPixelCache(void)
 {
-  EndSetPixel();
+  if (X->get_pixel_image_cache) 
+    EndSetPixel();
 }
 
 Bool wxWindowDC::BeginGetPixelFast(int x, int y, int w, int h)

@@ -35,6 +35,7 @@ String  tablist;
 XFontStruct * font;
 void * xfont;
 Pixmap  pixmap;
+Pixmap  maskmap;
 Pixel  foreground;
 Pixel  text_bg;
 Alignment  alignment;
@@ -54,6 +55,7 @@ GC  graygc;
 Dimension  label_width;
 Dimension  label_height;
 unsigned  int  label_depth;
+unsigned  int  mask_depth;
 } XfwfLabelPart;
 
 typedef struct _XfwfLabelRec {

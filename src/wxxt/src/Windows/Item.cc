@@ -30,6 +30,7 @@
 #define  Uses_XtIntrinsic
 #define  Uses_wxItem
 #define  Uses_wxPanel
+#define  Uses_wxBitmap
 #include "wx.h"
 #include "widgets.h" // for <X11/StringDefs.h>
 
@@ -88,4 +89,30 @@ char *wxGetCtlLabel(char *label)
 #endif
 
   return label;
+}
+
+wxBitmap *wxItem::CheckMask(wxBitmap *bm)
+{
+  wxBitmap *mbm;
+
+  if (!bm)
+    return NULL;
+
+  mbm = bm->GetMask();
+  if (mbm 
+      && (mbm->GetWidth() == bm->GetWidth())
+      && (mbm->GetHeight() == bm->GetHeight())) {
+    if (mbm->selectedIntoDC >= 0) {
+      if (mbm->GetDepth() > 1) {
+	/* Need mask */
+	mbm = mbm->GetMaskBit();
+	if (!mbm)
+	  return NULL;
+      }
+      mbm->selectedIntoDC++;
+      return mbm;
+    }
+  }
+
+  return NULL;
 }

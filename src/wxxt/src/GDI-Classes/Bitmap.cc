@@ -270,6 +270,8 @@ Bool wxBitmap::Create(int w, int h, int d)
 // destroy bitmap
 void wxBitmap::Destroy(void)
 {
+  FreeMaskBit();
+
   if (Xbitmap) {
     XFreePixmap(wxAPP_DISPLAY, Xbitmap->x_pixmap); // free pixmap
     GC_free_accounting_shadow(Xbitmap->account);
@@ -545,6 +547,80 @@ long wxBitmap::GetPicture(void) {
     return 0;
 }
 #endif
+
+wxBitmap *wxBitmap::GetMaskBit()
+{
+  wxBitmap *bm;
+  wxMemoryDC *tmp;
+  wxColour *c;
+  int mw, mh, v, mono;
+
+  /* Need to create an 8-bit alpha (grayscale) pixmap or 1-bit mask by
+     reading pixels of the mask pixmap. Even in the 8-bit case, we
+     don't worry about a colormap for this pixmap; it will be
+     interpreted as graysacle by Xrender. */
+
+  if (maskBit)
+    return maskBit;
+
+  mono = !wxXRenderHere();
+
+  mw = GetWidth();
+  mh = GetHeight();
+	  
+  bm = new wxBitmap();
+  bm->Create(mw, mh, mono ? 1 : 8);
+	  
+  if (bm->Ok()) {
+    Pixmap bpm;
+    XImage *img;
+    int i, j;
+	  
+    bpm = GETPIXMAP(bm);
+
+    tmp = new wxMemoryDC(1);
+    tmp->SelectObject(this);
+	    
+    c = new wxColour(0, 0, 0);
+    img = XGetImage(wxAPP_DISPLAY, bpm, 0, 0, mw, mh, AllPlanes, ZPixmap);
+	    
+    tmp->BeginGetPixelFast(0, 0, mw, mh);
+    for (i = 0; i < mw; i++) {
+      for (j = 0; j < mh; j++) {
+	int r_c, g_c, b_c;
+	tmp->GetPixelFast(i, j, &r_c, &g_c, &b_c);
+	v = (r_c + g_c + b_c) / 3;
+	XPutPixel(img, i, j, 255 - v);
+      }
+    }
+    tmp->EndGetPixelFast();
+
+    tmp->SelectObject(NULL);
+
+    {
+      GC agc;
+      agc = XCreateGC(wxAPP_DISPLAY, bpm, 0, NULL);
+      XPutImage(wxAPP_DISPLAY, bpm, agc, img, 0, 0, 0, 0, mw, mh);
+      XFreeGC(wxAPP_DISPLAY, agc);
+    }
+
+    XDestroyImage(img);
+
+    maskBit = bm;
+  } else {
+    DELETE_OBJ bm;
+  }
+
+  return maskBit;
+}
+
+void wxBitmap::FreeMaskBit()
+{
+  if (maskBit) {
+    DELETE_OBJ maskBit;
+    maskBit = NULL;
+  }
+}
 
 //-----------------------------------------------------------------------------
 // wxCursor

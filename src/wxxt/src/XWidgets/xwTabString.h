@@ -33,6 +33,12 @@ extern int	XfwfTextWidth(Display *display, XFontStruct *font, wxExtFont f, Strin
 			      int *tabs);
 extern char *	strnchr(char *s, int c, int n);
 
+extern void wxDrawBitmapLabel(Display *display, 
+			      Pixmap pixmap, Pixmap maskmap, 
+			      Drawable drawable, GC gc,
+			      int x, int y, int width, int height, 
+			      int depth, int mask_depth);
+
 #else
 
 extern void	XfwfDrawImageString();

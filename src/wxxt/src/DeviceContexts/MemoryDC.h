@@ -46,6 +46,8 @@ public:
     virtual void InitPicture();
 #endif
 
+  virtual void FreeGetPixelCache(void);
+
 private:
     wxBitmap *selected; /* Need to keep pointer or it will be GC'ed */
     Bool read_only;

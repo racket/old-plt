@@ -61,7 +61,7 @@ public:
     virtual char  *GetLabel(void);
 
 private:
-  wxBitmap *bm_label;
+  wxBitmap *bm_label, *bm_label_mask;
 };
 
 #define wxMSGICON_APP 1

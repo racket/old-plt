@@ -34,15 +34,19 @@ class wxCommandEvent;
 class wxColour;
 class wxFont;
 class wxPanel;
+class wxBitmap;
 
 class wxItem : public wxWindow {
 public:
-    wxItem(void);
+  wxItem(void);
+  
+  // chain panel<->item, copy colours, fonts, and style
+  void ChainToPanel(wxPanel *parent, long style=0, char *name=NULL);
+  virtual void  Command(wxCommandEvent *event);
+  void  ProcessCommand(wxCommandEvent *event);
+  
+  wxBitmap *CheckMask(wxBitmap *bm);
 
-    // chain panel<->item, copy colours, fonts, and style
-    void ChainToPanel(wxPanel *parent, long style=0, char *name=NULL);
-    virtual void  Command(wxCommandEvent *event);
-            void  ProcessCommand(wxCommandEvent *event);
 protected:
     wxFunction callback;
     wxFont     *label_font;

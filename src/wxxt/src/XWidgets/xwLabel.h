@@ -55,6 +55,16 @@ _XFUNCPROTOBEGIN
 #define XtRPixmap "Pixmap"
 #endif
 
+#ifndef XtNmaskmap
+#define XtNmaskmap "maskmap"
+#endif
+#ifndef XtCMaskmap
+#define XtCMaskmap "Maskmap"
+#endif
+#ifndef XtRPixmap
+#define XtRPixmap "Pixmap"
+#endif
+
 #ifndef XtNforeground
 #define XtNforeground "foreground"
 #endif

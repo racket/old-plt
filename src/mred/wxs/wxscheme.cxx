@@ -1176,14 +1176,17 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 /*                        PostScript hooks                             */
 /***********************************************************************/
 
-static Scheme_Object *ps_draw_text, *ps_get_text_extent;
+static Scheme_Object *ps_draw_text, *ps_get_text_extent, *ps_expand_name, *ps_glyph_exists;
 
 static Scheme_Object *SetPSProcs(int, Scheme_Object *a[])
 {
   wxREGGLOB(ps_draw_text);
   wxREGGLOB(ps_get_text_extent);
+  wxREGGLOB(ps_expand_name);
   ps_draw_text = a[0];
   ps_get_text_extent = a[1];
+  ps_expand_name = a[2];
+  ps_glyph_exists = a[3];
   return scheme_void;
 }
 
@@ -1246,6 +1249,34 @@ extern void wxPostScriptGetTextExtent(const char *fontname,
       if (topSpace) *topSpace = 0;
     }
   }
+}
+
+char *wxPostScriptFixupFontName(const char *fontname)
+{
+  if (ps_expand_name) {
+    Scheme_Object *a[1], *v;
+    v = scheme_make_sized_offset_utf8_string((char *)fontname, 0, -1);
+    a[0] = v;
+    v = scheme_apply(ps_expand_name, 1, a);
+    if ((v != a[0]) && SCHEME_CHAR_STRINGP(v)) {
+      v = scheme_char_string_to_byte_string(v);
+      fontname = SCHEME_BYTE_STR_VAL(v);
+    }
+  }
+  return (char *)fontname;
+}
+
+Bool wxPostScriptGlyphExists(const char *fontname, int c)
+{
+  if (ps_glyph_exists) {
+    Scheme_Object *a[2], *v;
+    v = scheme_make_sized_offset_utf8_string((char *)fontname, 0, -1);
+    a[0] = v;
+    a[1] = scheme_make_integer_value(c);
+    v = scheme_apply(ps_expand_name, 2, a);
+    return SCHEME_TRUEP(v);
+  }
+  return TRUE;
 }
 
 /***********************************************************************/
@@ -2941,7 +2972,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("set-ps-draw-text/get-text-extent",
 			   scheme_make_prim_w_arity(CAST_SP SetPSProcs,
 						    "set-ps-draw-text/get-text-extent",
-						    2, 2),
+						    4, 4),
 			   global_env);
 
 

@@ -257,10 +257,10 @@ class os_wxFont : public wxFont {
 
   os_wxFont CONSTRUCTOR_ARGS(());
 #ifndef MZ_PRECISE_GC
-  os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4 = 0, int x5 = wxSMOOTHING_DEFAULT, Bool x6 = 0));
+  os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2 = wxNORMAL, int x3 = wxNORMAL, Bool x4 = 0, int x5 = wxSMOOTHING_DEFAULT, Bool x6 = 0));
 #endif
 #ifndef MZ_PRECISE_GC
-  os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0, int x6 = wxSMOOTHING_DEFAULT, Bool x7 = 0));
+  os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3 = wxNORMAL, int x4 = wxNORMAL, Bool x5 = 0, int x6 = wxSMOOTHING_DEFAULT, Bool x7 = 0));
 #endif
   ~os_wxFont();
 #ifdef MZ_PRECISE_GC
@@ -538,13 +538,19 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     VAR_STACK_PUSH(2, x1);
 
     
-    if ((n < (POFFSET+5)) || (n > (POFFSET+8))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (font name case)", POFFSET+5, POFFSET+8, n, p, 1));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+8))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (font name case)", POFFSET+3, POFFSET+8, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "initialization in font% (font name case)"));
     x1 = (cstring)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in font% (font name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+2], "initialization in font% (font name case)"));
-    x3 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+3], "initialization in font% (font name case)"));
-    x4 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+4], "initialization in font% (font name case)"));
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+3], "initialization in font% (font name case)"));
+    } else
+      x3 = wxNORMAL;
+    if (n > (POFFSET+4)) {
+      x4 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+4], "initialization in font% (font name case)"));
+    } else
+      x4 = wxNORMAL;
     if (n > (POFFSET+5)) {
       x5 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+5], "initialization in font% (font name case)"));
     } else
@@ -581,12 +587,18 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     VAR_STACK_PUSH(1, realobj);
 
     
-    if ((n < (POFFSET+4)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (family case)", POFFSET+4, POFFSET+7, n, p, 1));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (family case)", POFFSET+2, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "initialization in font% (family case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+1], "initialization in font% (family case)"));
-    x2 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+2], "initialization in font% (family case)"));
-    x3 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+3], "initialization in font% (family case)"));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+2], "initialization in font% (family case)"));
+    } else
+      x2 = wxNORMAL;
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+3], "initialization in font% (family case)"));
+    } else
+      x3 = wxNORMAL;
     if (n > (POFFSET+4)) {
       x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "initialization in font% (family case)"));
     } else

@@ -55,8 +55,8 @@
 @CLASSBASE wxFont "font":"object"
 
 @CREATOR (); <> no argument
-@CREATOR (rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> family
-@CREATOR (rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> font name
+@CREATOR (rint[1|255],SYM[family],SYM[style]=wxNORMAL,SYM[weight]=wxNORMAL,bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> family
+@CREATOR (rint[1|255],cstring,SYM[family],SYM[style]=wxNORMAL,SYM[weight]=wxNORMAL,bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> font name
 
 @ "get-family" : SYM[family] GetFamily();
 @ "get-face" : nstring GetFaceString();

@@ -70,6 +70,8 @@ extern void wxPostScriptGetTextExtent(const char *fontname,
 				      const char *text, int dt, int use16, 
 				      int font_size,
 				      float *x, float *y, float *descent, float *topSpace);
+extern char *wxPostScriptFixupFontName(const char *fontname);
+extern Bool wxPostScriptGlyphExists(const char *fontname, int c);
 
 # define YSCALE(y) ((paper_h) - ((y) * user_scale_y + device_origin_y))
 # define XSCALE(x) ((x) * user_scale_x + device_origin_x)
@@ -199,27 +201,6 @@ void PSStream::Out(long l)
   } else
     sprintf(buf, "%ld", l);
   Out(buf);
-}
-
-static char *read_line_up_to(char *s, long size, Scheme_Object *port)
-{
-  int i, c;
-  
-  size -= 1;
-  for (i = 0; i < size; i++) {
-    c = scheme_getc(port);
-    if (c == EOF) {
-      if (!i)
-	return NULL;
-      else
-	break;
-    } else if ((c == '\r') || (c == '\n'))
-      break;
-    else
-      s[i] = c;
-  }
-  s[i] = 0;
-  return s;
 }
 
 wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent, Bool usePaperBBox)
@@ -1310,7 +1291,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
     if (!current_font_name
 	|| (next_font_size != current_font_size)
 	|| strcmp(next_font_name, current_font_name)) {
-      pstream->Out("/"); pstream->Out(next_font_name); pstream->Out(" findfont\n");
+      pstream->Out("/"); pstream->Out(wxPostScriptFixupFontName(next_font_name)); pstream->Out(" findfont\n");
       pstream->Out(next_font_size); pstream->Out(" scalefont setfont\n");
 
       current_font_size = next_font_size;
@@ -1374,7 +1355,21 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
 
 Bool wxPostScriptDC::GlyphAvailable(int c, wxFont *f)
 {
-  return TRUE;
+  const char *name;
+  int family, style, weight;
+
+  if (!f)
+    f = current_font;
+
+  family = f->GetFontId();
+  style = f->GetStyle();
+  weight = f->GetWeight();
+
+  name = wxTheFontNameDirectory->GetPostScriptName(family, weight, style);
+  if (!name)
+    name = "Times-Roman";
+
+  return wxPostScriptGlyphExists(name, c);
 }
 
 void wxPostScriptDC::SetBackground (wxColour * c)

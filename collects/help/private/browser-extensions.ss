@@ -111,7 +111,7 @@
       (class %
         
         (rename [super-get-editor% get-editor%])
-        (define/override (get-editor%) (sk-bday-editor-mixin (super-get-editor%)))
+        (define/override (get-editor%) (hd-editor-mixin (super-get-editor%)))
         
         (define/override (remap-url url)
           (let ([internal-url-test (hd-cookie-url-on-server-test hd-cookie)]
@@ -163,7 +163,7 @@
     
     (define sk-bitmap #f)
     
-    (define sk-bday-editor-mixin
+    (define hd-editor-mixin
       (mixin (editor<%>) ()
         (rename [super-on-paint on-paint])
         (inherit dc-location-to-editor-location get-admin)
@@ -195,6 +195,14 @@
             (values (unbox wb)
                     (unbox hb))))
 
+        (inherit get-canvas)
+        (define/override (init-browser-status-line top-level-window) 
+          (send top-level-window change-search-to-status))
+        (define/override (update-browser-status-line top-level-window s) 
+          (send top-level-window set-search-status-contents s))
+        (define/override (close-browser-status-line top-level-window) 
+          (send  top-level-window change-status-to-search))
+        
         (super-instantiate ())))
     
     (lambda (%)
@@ -346,6 +354,15 @@
                                (stretchable-height #f)))
           main-panel))
       
+      ;; these methods have the same name as the methods in the browser.
+      (define/public (change-search-to-status)
+        (send search/status-panel active-child status-panel))
+      (define/public (set-search-status-contents s)
+        (send status-message set-label s))
+      (define/public (change-status-to-search) 
+        (send search/status-panel active-child field-panel))
+      
+      
       (super-instantiate ()
         (label (string-constant help-desk)))
       
@@ -354,6 +371,10 @@
         (send (send hp get-canvas) allow-tab-exit #t))
       
       (inherit get-menu-bar)
+      (field [search/status-panel #f]
+             [field-panel #f]
+             [status-panel #f]
+             [status-message #f])
       (let ()
         (define search-menu (instantiate menu% ()
                               (label (string-constant plt:hd:search))
@@ -370,8 +391,19 @@
                                   (shortcut #\l)
                                   (callback
                                    (lambda (x y) (search-callback #t)))))
-        (define field-panel (instantiate horizontal-panel% ()
-                              (parent search-panel)))
+        (define stupid-internal-define-syntax1
+          (set! search/status-panel (new panel:single% 
+                                         (parent search-panel)
+                                         (stretchable-width #t))))
+        (define stupid-internal-define-syntax2
+          (set! field-panel (new horizontal-panel% (parent search/status-panel))))
+        (define stupid-internal-define-syntax3
+          (set! status-panel (new horizontal-panel% (parent search/status-panel))))
+        (define stupid-internal-define-syntax4
+          (set! status-message (new message% 
+                                    (parent status-panel)
+                                    (stretchable-width #t)
+                                    (label ""))))
         (define search-field (instantiate text-field% ()
                                (label (string-constant plt:hd:find-docs-for))
                                (callback (lambda (x y)

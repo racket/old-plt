@@ -233,11 +233,14 @@ static int skip_next_return;
 extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp);
 
+extern wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease, HWND handle);
+
 int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 		 long *result, int tramp)
 {
   int retval = 1;
   int nc = 0;
+  int skip = 0;
 
   *result = 0;
   
@@ -383,10 +386,14 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	    skip_next_return = 1;
 	    retval = 1;
 	    /* Otherwise, already covered by WM_CHAR */
-	  } else
+	  } else {
 	    retval = 0;
-	} else
+	    skip = 1;
+	  }
+	} else {
+	  skip = 1;
 	  retval = 0;
+	}
       }
 
     case WM_SYSCHAR: /* ^^^ fallthrough */
@@ -397,68 +404,23 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	}
       }
     case WM_CHAR:  /* ^^^ fallthrough */
-      {
-	int id = wParam;
-	int tempControlDown = FALSE;
+      if (!skip) {
+	wxKeyEvent *event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+	
+	event = wxMakeCharEvent(wParam, lParam, 
+				((message == WM_CHAR) || (message == WM_SYSCHAR)), 
+				FALSE, hWnd);
 
-	if ((message == WM_CHAR) || (message == WM_SYSCHAR)) {
-	  if ((id > 0) && (id < 27)) {
-	    switch (id) {
-	    case 13:
-	      if (skip_next_return) {
-		skip_next_return = 0;
-		retval = 0; /* Return already consumes to close popup */
-		id = -1;
-	      } else
-		id = WXK_RETURN;
-	      break;
-	    case 8:
-	      id = WXK_BACK;
-	      break;
-	    case 9:
-	      id = WXK_TAB;
-	      break;
-	    default:
-	      tempControlDown = TRUE;
-	      id = id + 96;
-	    } 
-	  }
-	} else
-	  if ((id = wxCharCodeMSWToWX(wParam)) == 0)
-	    id = -1;
-
-	if (id >= 0) {
-	  wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
-	  wxKeyEvent &event = *_event;
-	  
-	  if (::GetKeyState(VK_SHIFT) >> 1)
-	    event.shiftDown = TRUE;
-	  if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
-	    event.controlDown = TRUE;
-	  if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
-	    event.metaDown = TRUE;
-	  
-	  event.keyCode = id;
-	  event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-	  
-	  POINT pt;
-	  GetCursorPos(&pt);
-	  RECT rect;
-	  GetWindowRect((HWND)item->handle,&rect);
-	  pt.x -= rect.left;
-	  pt.y -= rect.top;
-	  event.x = (float)pt.x;
-	  event.y = (float)pt.y;
-
+	if (event) {
 	  /* Don't call pre-on-char for a ENTER press when
 	     a choice menu is dropped-down */
 	  if (wx_choice_dropped)
-	    if (event.keyCode == 13)
+	    if (event->keyCode == 13)
 	      retval = 1;
 
-	  if (item->CallPreOnChar(item, &event))
+	  if (item->CallPreOnChar(item, event))
 	    retval = 0;
-	  else if (event.metaDown)
+	  else if (event->metaDown)
 	    retval = 0;
 	}
       }

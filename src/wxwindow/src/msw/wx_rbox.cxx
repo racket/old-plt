@@ -560,6 +560,11 @@ void wxRadioBox::GetSize(int *width, int *height)
   *height = rect.bottom - rect.top;
 }
 
+void wxRadioBox::GetClientSize(int *width, int *height)
+{
+  GetSize(width, height);
+}
+
 void wxRadioBox::GetPosition(int *x, int *y)
 {
   wxWindow *parent = GetParent();

@@ -67,6 +67,7 @@ class wxRadioBox: public wxbRadioBox
   void Enable(int item, Bool enable);
   void Enable(Bool enable);
   void Show(int item, Bool show);
+  void GetClientSize(int *width, int *height);
 
   int ButtonFocus(int i);
 };

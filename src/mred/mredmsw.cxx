@@ -165,6 +165,20 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
     result = 1;
   }
 
+  /* XP uses messages above 0x4000 to hilite items in the task bar,
+     etc. In any case, these messages won't be handled by us, so they
+     can't trigger Scheme code. (If 0x4000 handling ends up sending a
+     window a message that we *do* handle, we'll end up ignoring it,
+     as we do for all unexpected messages that can call into
+     Scheme.) */
+  {
+    MSG msg;
+    while (PeekMessage(&msg, NULL, 0x4000, 0xFFFF, PM_REMOVE)) {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
+  }
+
   return result;
 }
 
@@ -349,7 +363,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
       tramp = 1;
       *res = 1;
     } else
-      tramp = 0;
+      tramp = 1;
     break;
   default:
     tramp = 0;

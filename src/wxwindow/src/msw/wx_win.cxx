@@ -978,12 +978,12 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       int x = (short)LOWORD(lParam);
       int y = (short)HIWORD(lParam);
       if (!wnd->OnMouseMove(x, y, wParam, 1)) {
-	retval = 1;
+	retval = 0;
 	break;
       }
       
       if (dialog)
-	retval = 0;
+	retval = 1;
       else
 	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
@@ -1853,7 +1853,7 @@ static int generic_ascii_code[256];
 
 #define THE_SCAN_CODE(lParam) ((((unsigned long)lParam) >> 16) & 0x1FF)
 
-void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
+wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease, HWND handle)
 {
   int id;
   Bool tempControlDown = (::GetKeyState(VK_CONTROL) >> 1);
@@ -1923,7 +1923,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
     }
   } 
 
-  if ((id > -1) && wx_window) {
+  if (id > -1) {
     wxKeyEvent *event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 
     if (::GetKeyState(VK_SHIFT) >> 1)
@@ -1947,6 +1947,16 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
     event->x = pt.x;
     event->y = pt.y;
 
+    return event;
+  } else
+    return NULL;
+}
+
+void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
+{
+  wxKeyEvent *event = wxMakeCharEvent(wParam, lParam, isASCII, isRelease, handle);
+
+  if (event && wx_window) {
     if (!wx_window->CallPreOnChar(wx_window, event))
       if (!wx_window->IsGray())
 	wx_window->OnChar(event);

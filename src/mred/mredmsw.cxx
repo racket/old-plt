@@ -75,9 +75,10 @@ void MrEdDestroyContext(MrEdFinalizedContext *)
 
 void MrEdSyncCurrentDir(void)
 {
-  scheme_os_setcwd(SCHEME_BYTE_STR_VAL(scheme_get_param(scheme_config,
-							MZCONFIG_CURRENT_DIRECTORY)),
-		   0);
+  Scheme_Object *v;
+  
+  v = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_DIRECTORY);
+  scheme_os_setcwd(SCHEME_PATH_VAL(v), 0);
 }
 
 int MrEdGetDoubleTime(void)
@@ -429,7 +430,14 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
 #endif
 
   if (!tramp && scheme_current_thread) {
-    HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+    Scheme_Object *v;
+    HiEventTramp *het;
+
+    v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+    if (SCHEME_FALSEP(v))
+      het = NULL;
+    else
+      het = (HiEventTramp *)SCHEME_CAR(v);
 
     if (het) {
       /* we're in restricted mode; general calls into Scheme are bad */
@@ -594,7 +602,15 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 
 
   if (!tramp && ((message == WM_VSCROLL) || (message == WM_HSCROLL))) {
-    HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+    HiEventTramp *het;
+    Scheme_Object *v;
+
+    v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+    if (SCHEME_FALSEP(v))
+      het = NULL;
+    else
+      het = (HiEventTramp *)SCHEME_CAR(v);
+
     if (het) {
       mred_het_run_some(NULL, NULL);
       if (het->in_progress && !het->timer_on) {
@@ -626,7 +642,14 @@ static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv)
 
 static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-  HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  HiEventTramp *het;
+  Scheme_Object *v;
+  
+  v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+  if (SCHEME_FALSEP(v))
+    het = NULL;
+  else
+    het = (HiEventTramp *)SCHEME_CAR(v);
 
   if (het) {
 #if wxLOG_EVENTS

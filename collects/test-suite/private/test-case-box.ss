@@ -37,7 +37,7 @@
           
           (init-field
            [enabled? true]
-           [actual-show? false]
+           [actual-show? true]
            [collapsed? false]
            [to-test (new test-case:program-editor%)]
            [expected (new test-case:program-editor%)])
@@ -227,14 +227,15 @@
             (send right show (not collapsed?)))
             
           (field
-           [pb (new aligned-pasteboard% (align 'horizontal))]
+           [pb (new aligned-pasteboard%)]
+           [main (new horizontal-alignment% (parent pb))]
            [left (new vertical-alignment%
-                      (parent pb)
-                      #;(show? (not collapsed?)))]
+                      (parent main)
+                      (show? (not collapsed?)))]
            [right (new vertical-alignment%
-                       (parent pb)
-                       #;(show? (not collapsed?)))]
-           [button-pane (new vertical-alignment% (parent pb))]
+                       (parent main)
+                       (show? (not collapsed?)))]
+           [button-pane (new vertical-alignment% (parent main))]
            [to-test-pane (new vertical-alignment% (parent left))]
            [expected-pane (new vertical-alignment% (parent right))]
            [actual-pane (new vertical-alignment%
@@ -244,39 +245,51 @@
           (super-new (editor pb))
           
           (define (labeled-field alignment label text)
-            (send* alignment
-              ;; I string-append here to give space after the label
-              ;; They look a lot better without something right after them.
-              (add (make-object string-snip% (string-append label "     ")))
-              (add (new stretchable-editor-snip%
-                        (editor text)
-                        (stretchable-height false)))))
+            ;; I string-append here to give space after the label
+            ;; They look a lot better without something right after them.
+            (new snip-wrapper%
+                 (snip (make-object string-snip% (string-append label "     ")))
+                 (parent alignment))
+            (new snip-wrapper%
+                 (snip (new stretchable-editor-snip%
+                            (editor text)
+                            (stretchable-height false)))
+                 (parent alignment)))
           
-            (labeled-field to-test-pane (string-constant test-case-to-test) to-test)
-            (labeled-field expected-pane (string-constant test-case-expected) expected)
-            (send* actual-pane
-              (add (make-object string-snip% (string-constant test-case-actual)))
-              (add (new (grey-editor-snip-mixin stretchable-editor-snip%)
-                        (editor actual)
-                        (stretchable-height false))))
+          (labeled-field to-test-pane (string-constant test-case-to-test) to-test)
+          (labeled-field expected-pane (string-constant test-case-expected) expected)
           
-            (send* button-pane
-              (add result)
-              ;; NOTE: When you add the collapse feature, be sure that
-              ;; error-reporting on collapsed test-cases highlight the
-              ;; test-case. (PR6955)
-              (add (new turn-button-snip%
-                        (state (if collapsed? 'up 'down))
-                        (turn-down
-                         (lambda () (collapse true)))
-                        (turn-up
-                         (lambda () (collapse false)))))
-              (add (new turn-button-snip%
-                        (state (if actual-show? 'down 'up))
-                        (turn-down
-                         (lambda () (show-actual false)))
-                        (turn-up
-                         (lambda () (show-actual true))))))
+          (new snip-wrapper%
+               (snip (make-object string-snip% (string-constant test-case-actual)))
+               (parent actual-pane))
+          (new snip-wrapper%
+               (snip (new (grey-editor-snip-mixin stretchable-editor-snip%)
+                          (editor actual)
+                          (stretchable-height false)))
+               (parent actual-pane))
+          
+          (new snip-wrapper%
+               (snip result)
+               (parent button-pane))
+          ;; NOTE: When you add the collapse feature, be sure that
+          ;; error-reporting on collapsed test-cases highlight the
+          ;; test-case. (PR6955)
+          (new snip-wrapper%
+               (snip (new turn-button-snip%
+                          (state (if collapsed? 'up 'down))
+                          (turn-down
+                           (lambda () (collapse true)))
+                          (turn-up
+                           (lambda () (collapse false)))))
+               (parent button-pane))
+          (new snip-wrapper%
+               (snip (new turn-button-snip%
+                          (state (if actual-show? 'down 'up))
+                          (turn-down
+                           (lambda () (show-actual false)))
+                          (turn-up
+                           (lambda () (show-actual true)))))
+               (parent button-pane))
           
           (set-tabbing to-test expected)
           

@@ -267,6 +267,7 @@ static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost);
 static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Thread *p);
 static void suspend_thread(Scheme_Thread *p);
+static void wait_until_suspend_ok();
 
 static int check_sleep(int need_activity, int sleep_now);
 
@@ -1960,6 +1961,10 @@ Scheme_Object *scheme_thread_w_custodian_killkind(Scheme_Object *thunk, Scheme_C
   if (is_stack_too_shallow()) {
     Scheme_Thread *p = scheme_current_thread;
 
+    /* Don't mangle the stack if we're in atomic mode, because that
+       probably means a MrEd HET trampoline, etc. */
+    wait_until_suspend_ok();
+
     p->ku.k.p1 = thunk;
     p->ku.k.p2 = config;
     p->ku.k.p3 = mgr;
@@ -2025,6 +2030,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     mgr = (Scheme_Custodian *)scheme_get_param(p->config, MZCONFIG_CUSTODIAN);
 
   SCHEME_USE_FUEL(25);
+
+  wait_until_suspend_ok();
 
   np = MALLOC_ONE_TAGGED(Scheme_Thread);
   np->type = scheme_thread_type;
@@ -2521,6 +2528,7 @@ void scheme_thread_block(float sleep_time)
 
   if (p->running & MZTHREAD_USER_SUSPENDED) {
     /* This thread was suspended. */
+    wait_until_suspend_ok();
     if (!p->next) {
       /* Suspending the main thread... */
       select_thread(NULL);
@@ -2679,6 +2687,7 @@ void scheme_thread_block(float sleep_time)
 
   /* Suspended while I was asleep? */
   if (p->running & MZTHREAD_USER_SUSPENDED) {
+    wait_until_suspend_ok();
     if (!p->next)
       scheme_thread_block(0.0); /* main thread handled at top of this function */
     else
@@ -2805,12 +2814,23 @@ void scheme_end_atomic(void)
   }
 }
 
+static void wait_until_suspend_ok()
+{
+  while (do_atomic && scheme_on_atomic_timeout) {
+    scheme_on_atomic_timeout();
+  }
+}
+
 void scheme_weak_suspend_thread(Scheme_Thread *r)
 {
   Scheme_Thread *swap_to = r->next;
 
   if (r->running & MZTHREAD_SUSPENDED)
     return;
+
+  if (r == scheme_current_thread) {
+    wait_until_suspend_ok();
+  }
   
   if (r->prev) {
     r->prev->next = r->next;
@@ -2954,6 +2974,7 @@ void scheme_kill_thread(Scheme_Thread *p)
 {
   if (do_kill_thread(p)) {
     /* Suspend/kill self: */
+    wait_until_suspend_ok();
     if (p->suspend_to_kill)
       suspend_thread(p);
     else
@@ -3076,6 +3097,9 @@ static void suspend_thread(Scheme_Thread *p)
     scheme_weak_resume_thread(p);
     p->running |= MZTHREAD_USER_SUSPENDED;
   } else {
+    if (p == scheme_current_thread) {
+      wait_until_suspend_ok();
+    }
     p->running |= MZTHREAD_USER_SUSPENDED;
     scheme_weak_suspend_thread(p); /* ok if p is scheme_current_thread */
     if (p == scheme_current_thread) {

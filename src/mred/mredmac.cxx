@@ -2093,9 +2093,7 @@ ControlPartCode wxHETTrackControl(ControlRef theControl, Point startPoint, Contr
   c->start = startPoint;
   c->proc = actionProc;
 
-  scheme_start_atomic();
   v = wxHiEventTrampoline(call_tc, (void *)c);
-  scheme_end_atomic();
 
   return v;
 }

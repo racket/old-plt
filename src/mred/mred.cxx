@@ -3241,6 +3241,7 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
   
   scheme_init_jmpup_buf(&het->progress_cont->buf);
 
+  scheme_start_atomic();
   scheme_dynamic_wind(pre_het, act_het, post_het, NULL, het);
 
   if (het->timer_on) {
@@ -3249,6 +3250,8 @@ int wxHiEventTrampoline(int (*f)(void *), void *data)
     KillTimer(NULL, het->timer_id);
 # endif
   }
+
+  scheme_end_atomic();
 
   if (het->in_progress) {
     /* we have leftover work; jump and finish it (non-atomically) */
@@ -3312,6 +3315,8 @@ static void het_run_new(HiEventTramp * volatile het)
 
 static void het_do_run_new(HiEventTramp * volatile het, int *iteration)
 {
+  /* This function just makes room on the stack, eventually calling
+     het_run_new(). */
   int new_iter[32];
 
   if (iteration[0] == 3) {

@@ -1,14 +1,14 @@
-(define graphical-debug? #f)
+(define graphical-debug? #t)
 (define textual-debug? #f)
 
 (require-library "macro.ss")
 (when graphical-debug?
   (require-library "grepl.ss" "drscheme"))
 (when (or graphical-debug? textual-debug?)
-  (require-library "rload.ss" "drscheme"))
+  (require-library "rload.ss" "drscheme")
+  (require-library "errortrace.ss" "errortrace"))
 
 (require-library "mred-interfaces.ss" "framework")
-(require-library "errortrace.ss" "errortrace")
 
 (error-print-width 80)
 

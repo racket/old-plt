@@ -12,7 +12,11 @@
 	  [drscheme:app : drscheme:app^]
 	  [basis : userspace:basis^]
 	  [drscheme:edit : drscheme:edit^])
-  
+
+  ;; Max length of output queue (user's thread blocks if the
+  ;; queue is full):
+  (define output-limit-size 500)
+
   ;; note: the parameter basis:current-setting contains the setting
   ;; currently in use in the repl. The preference drscheme:setting,
   ;; however, contains the current settings in the language dialog.
@@ -359,6 +363,7 @@
 
 	(private
 	  [flushing-event-running? #f]
+	  [limiting-sema (make-semaphore)]
 	  [io-collected-thunks null]
 	  [io-collected-edits null]
 	  [run-io-collected-thunks
@@ -366,7 +371,8 @@
 	     ;; also need to start edit-sequence in any affected
 	     ;; transparent io boxes.
 	     (begin-edit-sequence)
-	     (for-each (lambda (t) (t)) (reverse io-collected-thunks))
+	     (for-each (lambda (t) (semaphore-post limiting-sema) (t))
+		       (reverse io-collected-thunks))
 	     (for-each (lambda (e) (send e end-edit-sequence)) io-collected-edits)
 	     (end-edit-sequence)
 
@@ -380,10 +386,12 @@
 		  (mred:queue-callback
 		   (lambda ()
 		     (run-io-collected-thunks)
-		     (semaphore-post semaphore)))))
+		     (semaphore-post semaphore))
+		   #f)))
 	       (semaphore-wait semaphore)))]
 	  [queue-io
 	   (lambda (thunk)
+	     (semaphore-wait limiting-sema)
 	     (let ([this-eventspace user-eventspace])
 	       (system
 		(lambda ()
@@ -400,7 +408,9 @@
 		       (mred:queue-callback
 			(lambda ()
 			  (run-io-collected-thunks)
-			  (set! flushing-event-running? #f))))))))))])
+			  (set! flushing-event-running? #f))
+			#f)))
+		   #f)))))])
 
 	(public
 	  [generic-write
@@ -436,59 +446,53 @@
 
 	  [this-result-write 
 	   (lambda (s)
-	     (system
+	     (queue-io
 	      (lambda ()
-		(queue-io
-		 (lambda ()
-		   (cleanup-transparent-io)
-		   (generic-write this
-				  s
-				  (lambda (start end)
-				    (change-style result-delta
-						  start end))))))))]
+		(cleanup-transparent-io)
+		(generic-write this
+			       s
+			       (lambda (start end)
+				 (change-style result-delta
+					       start end))))))]
 	  [this-out-write
 	   (lambda (s)
-	     (system
+	     (queue-io
 	      (lambda ()
-		(queue-io
-		 (lambda ()
-		   (init-transparent-io #f)
-		   (let* ([old-saved-newline? saved-newline?]
-			  [len (and (string? s)
-				    (string-length s))]
-			  [s1 (if (and len
-				       (> len 0)
-				       (char=? (string-ref s (- len 1)) #\newline))
-				  (begin 
-				    (set! saved-newline? #t)
-				    (substring s 0 (- len 1)))
-				  (begin
-				    (set! saved-newline? #f)
-				    s))]
-			  [gw
-			   (lambda (s)
-			     (generic-write
-			      transparent-edit
-			      s
-			      (lambda (start end)
-				(when transparent-edit
-				  (send transparent-edit
-					change-style output-delta start end)))))])
-		     (when old-saved-newline?
-		       (gw (string #\newline)))
-		     (gw s1)))))))]
+		(init-transparent-io #f)
+		(let* ([old-saved-newline? saved-newline?]
+		       [len (and (string? s)
+				 (string-length s))]
+		       [s1 (if (and len
+				    (> len 0)
+				    (char=? (string-ref s (- len 1)) #\newline))
+			       (begin 
+				 (set! saved-newline? #t)
+				 (substring s 0 (- len 1)))
+			       (begin
+				 (set! saved-newline? #f)
+				 s))]
+		       [gw
+			(lambda (s)
+			  (generic-write
+			   transparent-edit
+			   s
+			   (lambda (start end)
+			     (when transparent-edit
+			       (send transparent-edit
+				     change-style output-delta start end)))))])
+		  (when old-saved-newline?
+		    (gw (string #\newline)))
+		  (gw s1)))))]
 	  [this-err-write
 	   (lambda (s)
-	     (system
+	     (queue-io
 	      (lambda ()
-		(queue-io
-		 (lambda ()
-		   (cleanup-transparent-io)
-		   (generic-write this
-				  s
-				  (lambda (start end)
-				    (change-style error-delta 
-						  start end))))))))]
+		(cleanup-transparent-io)
+		(generic-write this
+			       s
+			       (lambda (start end)
+				 (change-style error-delta 
+					       start end))))))]
 	  
 	  [this-err (make-output-port this-err-write generic-close)]
 	  [this-out (make-output-port this-out-write generic-close)]
@@ -516,8 +520,10 @@
 						       (and (is-a? x mred:original:snip%) 1))]
 						    [mzlib:pretty-print:pretty-print-print-hook
 						     (lambda (x _ port)
-						       (port-out-write x))])
-				       (pretty v p 'infinity)))))))])
+						       (port-out-write x))]
+						    [mzlib:pretty-print:pretty-print-columns
+						     'infinity])
+				       (pretty v p)))))))])
 		  (handler-maker port-display-handler 
 				 mzlib:pretty-print:pretty-display 
 				 original-display-handler)
@@ -831,6 +837,7 @@
 	   (set! user-custodian (make-custodian))
 	   (set! user-eventspace (parameterize ([current-custodian user-custodian])
 				   (mred:make-eventspace)))
+	   (set! limiting-sema (make-semaphore output-limit-size))
 	   (parameterize ([mred:current-eventspace user-eventspace]
 			  [current-custodian user-custodian])
 	     (mred:queue-callback

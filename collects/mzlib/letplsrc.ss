@@ -47,7 +47,8 @@
 				     (+ vals sub-values)
 				     (append sub-names names)))])))]
 		[(prepeat? pattern)
-		 (let-values ([(sub-traversal sub-values sub-names) (parse-pattern (prepeat-pattern pattern))])
+		 (let-values ([(sub-traversal sub-values sub-names)
+			       (parse-pattern (prepeat-pattern pattern))])
 		   (values (make-trepeat sub-traversal)
 			   sub-values
 			   sub-names))]
@@ -99,8 +100,10 @@
 				    (cond
 				      [(zero? n) null]
 				      [else (cons (f (- n 1)) (loop (- n 1)))])))]
-			[sub-names (n-list value-count (lambda (n) (gensym (format "...sub~a" n))))]
-			[rec-sub-names (n-list value-count (lambda (n) (gensym (format "...rec~a" n))))])
+			[sub-names (n-list value-count
+					   (lambda (n) (gensym (format "...sub~a" n))))]
+			[rec-sub-names (n-list value-count
+					       (lambda (n) (gensym (format "...rec~a" n))))])
 		   `(let ,loop ([,l ,above-name])
 		      (cond
 			[(null? ,l) (values ,@(n-list value-count (lambda (i) 'null)))]
@@ -175,8 +178,8 @@
 				       [else `(#%cons ,(car l) ,(loop (cdr l)))]))))
 	      (add-not-yet-macro '... (lambda (x) `(#%repeat ,x)))
 	      (add-not-yet-macro 'repeat (lambda (x) `(#%repeat ,x)))
-	      (add-not-yet-macro 'cons (lambda (x y) `(#%cons ,x ,y)))
 	      (add-not-yet-macro 'box (lambda (x) `(#%box ,x)))
+	      (add-not-yet-macro 'cons (lambda (x y) `(#%cons ,x ,y)))
 	      (add-not-yet-macro 'vector (lambda x `(#%vector ,@x)))))
 	  
 	  (define translate-pattern
@@ -321,6 +324,7 @@
 	 [(null? l) `(begin ,@bodies)]
 	 [else (translate-binding (car l) (loop (cdr l)))])))))
 
+
 #|
 (define (test)
 
@@ -340,8 +344,7 @@
 	  (error name "failed with pattern: ~s and value ~s, got: ~s" pattern value test-result)))))
   
   (define (test-equal ans expr)
-    (unless (equal? ans
-		    (with-handlers ([(lambda (x) #T)
+    (let ([got (with-handlers ([(lambda (x) #T)
 				     (lambda (x)
 				       (display
 					(if (exn? x)
@@ -349,8 +352,9 @@
 					    x))
 				       (newline)
 				       'DIFFERENT-FROM-IT-ALL)])
-		      (eval expr)))
-      (error 'test-equal "~s didn't evaluate to ~s" expr ans)))
+		      (eval expr))])
+      (unless (equal? ans got)
+	(error 'test-equal "~s:~nexpected ~s~n     got:~s~n" expr ans got))))
 				       
   (define 3-at-x (test-at-x 3 '3-at-x))
   (define 33s-at-x (test-at-x (list 3 3 3) '33s-at-x))
@@ -392,6 +396,17 @@
 
   (test-equal 3 '(rmatch (list 3 4) ([(list x x) x] [(list x 4) x])))
   (test-equal 3 '(rmatch (list 3 3) ([(list x x) x])))
+
+  (test-equal (list 3) '(rmatch (list 3) ([(repeat x) x])))
+  (test-equal (list 'x 'z)
+	      '(rmatch (list (list 'x 'y) (list 'z 'w)) ([(repeat `(,x ,y)) x])))
+  (test-equal
+   `(x 1 y)
+   '(rmatch '(letrec ([x 1]) y) ([`(letrec ([,x ,v]) ,b) (list x v b)])))
+  
+  (test-equal
+   `((x) (1) y)
+   '(rmatch '(letrec ([x 1]) y) ([`(letrec ,(repeat `[,x ,v]) ,b) (list x v b)])))
   
   (33s-at-x '(... (box x)) '(list (box 3) (box 3) (box 3)))
 

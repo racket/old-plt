@@ -121,10 +121,12 @@
 (define-struct (note struct:tok) (s))
 
 (define-struct vtype ())
+(define-struct (pointer-type struct:vtype) (base stars))
 (define-struct (array-type struct:vtype) (count))
 (define-struct (struct-type struct:vtype) (struct))
 (define-struct (struct-array-type struct:struct-type) (count))
 (define-struct (union-type struct:vtype) ())
+(define-struct (non-pointer-type struct:vtype) (base))
 
 (define-struct live-var-info (tag maxlive maxpush vars new-vars pushed-vars num-calls))
 
@@ -535,7 +537,13 @@
 	 [minpos (if (or (eq? base 'struct)
 			 (eq? base 'union))
 		     1
-		     0)])
+		     0)]
+	 [non-ptr-base (case (tok-n (car e))
+			 [(int long short double float char) (list (tok-n (car e)))]
+			 [(unsigned)
+			  (if (memq (tok-n (cadr e)) '(int long char))
+			      (list 'unsigned (tok-n (cadr e))))]
+			 [else #f])])
     (let loop ([l (- (length e) 2)][array-size #f][pointers null][non-pointers null])
       (if (<= l minpos)
 	  (values pointers non-pointers)
@@ -578,6 +586,13 @@
 		   [else (let* ([name (tok-n v)]
 				[pointer? (or (eq? 'pointer array-size)
 					      (eq? '* (tok-n (list-ref e (sub1 l)))))]
+				[star-count (+ (if (eq? 'pointer array-size)
+						   1 
+						   0)
+					       (let loop ([l (sub1 l)])
+						 (if (eq? '* (tok-n (list-ref e l)))
+						     (add1 (loop (sub1 l)))
+						     0)))]
 				[base-struct (or base-struct
 						 (and base-is-ptr?
 						      (struct-type? (cdr base-is-ptr?))
@@ -631,20 +646,26 @@
 						     (make-struct-array-type base-struct array-size)]
 						    [(number? array-size)
 						     (make-array-type array-size)]
-						    [pointer? (make-vtype)]
+						    [pointer? (make-pointer-type (or (and base (list base))
+										     non-ptr-base)
+										 star-count)]
 						    [base-struct
 						     (make-struct-type base-struct)]
 						    [union?
 						     (make-union-type)]
 						    [else
-						     (make-vtype)]))
+						     (make-pointer-type (or (and base (list base))
+									    non-ptr-base)
+									star-count)]))
 					     pointers)
 				       non-pointers))
 			       (begin
 				 (when label?
 				   (printf "/* NP ~a: ~a */~n" 
 					   comment name))
-				 (loop (sub1 l) #f pointers (cons (cons name '???) non-pointers)))))]))))))))
+				 (loop (sub1 l) #f pointers (cons (cons name 
+									(make-non-pointer-type non-ptr-base)) 
+								  non-pointers)))))]))))))))
 
 (define (get-pointer-vars e comment union-ok?)
   (let-values ([(pointers non-pointers)
@@ -721,34 +742,34 @@
 		    (cdr e))
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
-(define (find-c++-class class-name)
+(define (find-c++-class class-name report-err?)
   (and class-name
        (let ([m (assoc class-name c++-classes)])
 	 (if m
 	     (cdr m)
 	     (begin
-	       (log-error "[CLASS]: Unknown class ~a."
-			  class-name)
+	       (when report-err?
+		 (log-error "[CLASS]: Unknown class ~a."
+			    class-name))
 	       #f)))))
 
-(define (is-c++-class-member? var c++-class c++-class-members)
+(define (get-c++-class-member var c++-class c++-class-members)
   (and c++-class
        (let ([m (assoc var (c++-class-members c++-class))])
-	 (if m
-	     m
+	 (or m
 	     (let ([parent (c++-class-parent c++-class)])
 	       (and parent
 		    (if (c++-class? parent)
-			(is-c++-class-var? var parent)
-			(let ([parent (find-c++-class parent)])
+			(get-c++-class-member var parent c++-class-members)
+			(let ([parent (find-c++-class parent #t)])
 			  (set-c++-class-parent! c++-class parent)
-			  (is-c++-class-member? var parent c++-class-members)))))))))
+			  (get-c++-class-member var parent c++-class-members)))))))))
 
-(define (is-c++-class-var? var c++-class)
-  (is-c++-class-member? var c++-class c++-class-top-vars))
+(define (get-c++-class-var var c++-class)
+  (get-c++-class-member var c++-class c++-class-top-vars))
 
-(define (is-c++-class-method? var c++-class)
-  (is-c++-class-member? var c++-class c++-class-prototyped))
+(define (get-c++-class-method var c++-class)
+  (get-c++-class-member var c++-class c++-class-prototyped))
 
 (define (convert-function e)
   (let*-values ([(body-v len) (let* ([len (sub1 (length e))]
@@ -780,9 +801,9 @@
 		     (values (tok-n (car e))
 			     (tok-n (caddr e)))]
 		    [else (loop (cdr e))]))]
-		[(c++-class) (let ([c++-class (find-c++-class class-name)])
+		[(c++-class) (let ([c++-class (find-c++-class class-name #t)])
 			       (and c++-class
-				    (is-c++-class-method? function-name c++-class)
+				    (get-c++-class-method function-name c++-class)
 				    c++-class))])
      (append
       (let loop ([e e][len len])
@@ -820,7 +841,7 @@
 		  (let-values ([(pointers non-pointers) (get-vars e "CVTLOCAL" #f)])
 		    (for-each
 		     (lambda (var)
-		       (when (is-c++-class-var? (car var) c++-class)
+		       (when (get-c++-class-var (car var) c++-class)
 			 (log-error "[SHADOW++] ~a in ~a: Class variable ~a shadowed in decls."
 				    (tok-line (caar decls)) (tok-file (caar decls))
 				    (car var))))
@@ -857,7 +878,7 @@
 	     [(and can-convert?
 		   (pair? (cdr e))
 		   (parens? (cadr e))
-		   (is-c++-class-method? (tok-n v) c++-class))
+		   (get-c++-class-method (tok-n v) c++-class))
 	      ;; method call:
 	      (list*
 	       (make-tok sElF (tok-line v) (tok-col v) (tok-file v))
@@ -877,7 +898,7 @@
 		  (tok-n v) (tok-line v) (tok-col v) (tok-file v) (seq-close v)
 		  (loop (seq-in v) #t))]
 		[(and can-convert?
-		      (is-c++-class-var? (tok-n v) c++-class))
+		      (get-c++-class-var (tok-n v) c++-class))
 		 (make-parens
 		  "(" (tok-line v) (tok-col v) (tok-file v) ")"
 		  (list (make-tok sElF (tok-line v) (tok-col v) (tok-file v))
@@ -1059,7 +1080,26 @@
 	;; Call
 	(call-k))))
 
-(define (lift-out-calls args live-vars)
+(define (resolve-indirection v get-c++-class-member c++-class)
+  (and (parens? v)
+       (= 3 (length (seq-in v)))
+       (eq? '-> (tok-n (cadr (seq-in v))))
+       (let ([lhs (car (seq-in v))])
+	 (cond
+	  [(eq? sElF (tok-n lhs))
+	   (get-c++-class-member (tok-n (caddr (seq-in v))) c++-class)]
+	  [(resolve-indirection lhs get-c++-class-var c++-class)
+	   => (lambda (m)
+		(let ([type (cdr m)])
+		  (and (pointer-type? type)
+		       (= 1 (pointer-type-stars type))
+		       (= 1 (length (pointer-type-base type))))
+		  (let ([c++-class (find-c++-class (car (pointer-type-base type)) #f)])
+		    (and c++-class
+			 (get-c++-class-member (tok-n (caddr (seq-in v))) c++-class)))))]
+	  [else #f]))))
+
+(define (lift-out-calls args live-vars c++-class)
   (let ([e (seq-in args)])
     (if (null? e)
 	(values null args null null live-vars)
@@ -1084,15 +1124,22 @@
 			      e-
 			      (cdr e-)))]) ; skip comma
 		(and (looks-like-call? e-)
-		     (cast-or-call e- (lambda () #f) (lambda () (cons (and (null? (cddr e-)) 
-									   (cadr e-))
+		     (cast-or-call e- (lambda () #f) (lambda () (cons (or (and (null? (cddr e-)) 
+									       (cadr e-))
+									  (and (= 3 (length (cdr e-)))
+									       (eq? '-> (tok-n (caddr e-)))
+									       (make-parens
+										"(" #f #f #f ")"
+										(reverse (cdr e-)))))
 								      (car e-))))))
 	      => (lambda (call-form)
 		   (let* ([call-func (car call-form)]
 			  [call-args (cdr call-form)]
 			  [p-m (and must-convert?
 				    call-func
-				    (assq (tok-n call-func) (prototyped)))])
+				    (if (parens? call-func)
+					(resolve-indirection call-func get-c++-class-method c++-class)
+					(assq (tok-n call-func) (prototyped))))])
 		     (if p-m
 			 (let ([new-var (gensym '__funcarg)])
 			   (loop (cdr el)
@@ -1194,7 +1241,7 @@
 			    ;; Split args into setup (calls) and args.
 			    ;; List newly-created vars (in order) in new-vars.
 			    ;; Make sure each setup ends with a comma.
-			    (lift-out-calls args live-vars)]
+			    (lift-out-calls args live-vars c++-class)]
 			   [(args live-vars)
 			    (convert-paren-interior args vars 
 						    c++-class
@@ -1284,32 +1331,83 @@
        [(eq? '= (tok-n (car e-)))
 	;; Check for assignments where the LHS can move due to
 	;; a function call on the RHS
-	(when (> (live-var-info-num-calls live-vars) orig-num-calls)
-	  (let ([assignee (cdr e-)])
-	    (when (and assignee
-		       (not (null? assignee))
-		       (or (if (brackets? (car assignee))
-			       (or (not (or (null? (cddr assignee))
-					    (eq? ': (tok-n (caddr assignee)))))
-				   (let ([v (cadr assignee)])
-				     (or (not (symbol? (tok-n v)))
-					 (let ([m (assq (tok-n v) vars)])
-					   (and m
-						(not (or (array-type? (cdr m))
-							 (struct-array-type? (cdr m)))))))))
-			       (not (symbol? (tok-n (car assignee)))))
-			   (and (symbol? (tok-n (car assignee)))
-				(not (null? (cdr assignee)))
-				(not (memq (tok-n (cadr assignee)) '(else :)))
-				(not (and (parens? (cadr assignee))
-					  (pair? (cddr assignee))
-					  (memq (tok-n (caddr assignee)) '(if while for until))))))
-		       (not (eq? 'exn_table (tok-n (car (last-pair e-))))))
-	      (fprintf (current-error-port)
-		       "Warning [ASSIGN] ~a in ~a: suspicious assignment with a function call, LHS ends ~s.~n"
-		       (tok-line (car e-)) (tok-file (car e-))
-		       (tok-n (cadr e-))))))
-	(loop (cdr e-) (cons (car e-) result) live-vars)]
+	(if (> (live-var-info-num-calls live-vars) orig-num-calls)
+	    (let ([assignee (cdr e-)])
+	      ;; Special case: (YYY -> ivar) = XXX;
+	      (let ([special-case-type (and (not (null? assignee))
+					    (null? (cdr assignee))
+					    (= 2 (length result))
+					    (call? (car result))
+					    (eq? semi (tok-n (cadr result)))
+					    (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class)])
+					      (and m (cdr m))))])
+		(if (and special-case-type
+			 (or (non-pointer-type? special-case-type)
+			     (pointer-type? special-case-type)))
+		    ;; Change to (newvar = XXX, (YYY -> ivar) = newvar)
+		    (let ([new-var (gensym '__assign)]
+			  [v (car e-)]
+			  [type->decl
+			   (lambda (x)
+			     (if (non-pointer-type? x)
+				 (map (lambda (x) (make-tok x #f #f #f)) (non-pointer-type-base x))
+				 (append (map (lambda (x) (make-tok x #f #f #f)) (pointer-type-base x))
+					 (let loop ([n (pointer-type-stars x)])
+					   (if (zero? n)
+					       null
+					       (cons (make-tok '* #f #f #f) (loop (sub1 n))))))))])
+		      (loop null
+			    (list
+			     (make-parens
+			      "(" (tok-file v) (tok-line v) (tok-col v) ")"
+			      (list (make-tok new-var #f #f #f)
+				    (make-tok '= #f #f #f)
+				    (car result)
+				    (make-tok '|,| #f #f #f)
+				    (car assignee)
+				    v
+				    (make-tok new-var (tok-file v) (tok-line v) (tok-col v))))
+			     (cadr result)) ; semicolon
+			    ;; Add new variable to the list:
+			    (make-live-var-info
+			     (live-var-info-tag live-vars)
+			     (live-var-info-maxlive live-vars)
+			     (live-var-info-maxpush live-vars)
+			     (live-var-info-vars live-vars)
+			     ;; Add newly-created vars for lifting to declaration set
+			     (cons (append (type->decl special-case-type)
+					   (list
+					    (make-tok new-var #f #f #f)
+					    (make-tok semi #f #f #f)))
+				   (live-var-info-new-vars live-vars))
+			     (live-var-info-pushed-vars live-vars)
+			     (live-var-info-num-calls live-vars))))
+		    (begin
+		      (when (and (not (null? assignee))
+				 (or (if (brackets? (car assignee))
+					 (or (not (or (null? (cddr assignee))
+						      (eq? ': (tok-n (caddr assignee)))))
+					     (let ([v (cadr assignee)])
+					       (or (not (symbol? (tok-n v)))
+						   ;; Assignment to locally-declared array is fine:
+						   (let ([m (assq (tok-n v) vars)])
+						     (and m
+							  (not (or (array-type? (cdr m))
+								   (struct-array-type? (cdr m)))))))))
+					 (not (symbol? (tok-n (car assignee)))))
+				     (and (symbol? (tok-n (car assignee)))
+					  (not (null? (cdr assignee)))
+					  (not (memq (tok-n (cadr assignee)) '(else :)))
+					  (not (and (parens? (cadr assignee))
+						    (pair? (cddr assignee))
+						    (memq (tok-n (caddr assignee)) '(if while for until))))))
+				 (not (eq? 'exn_table (tok-n (car (last-pair e-))))))
+			(fprintf (current-error-port)
+				 "Warning [ASSIGN] ~a in ~a: suspicious assignment with a function call, LHS ends ~s.~n"
+				 (tok-line (car e-)) (tok-file (car e-))
+				 (tok-n (cadr e-))))
+		      (loop (cdr e-) (cons (car e-) result) live-vars)))))
+	    (loop (cdr e-) (cons (car e-) result) live-vars))]
        [(braces? (car e-))
 	(let*-values ([(v) (car e-)]
 		      ;; do/while/for: we'll need a fixpoint for live-vars

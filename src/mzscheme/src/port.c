@@ -1815,7 +1815,7 @@ fd_write_need_wakeup(Scheme_Object *port, void *fds)
 
   n = fop->fd;
   fds2 = MZ_GET_FDSET(fds, 1);
-  MZ_FD_SET(n, (fd_set *)fds);
+  MZ_FD_SET(n, (fd_set *)fds2);
   fds2 = MZ_GET_FDSET(fds, 2);
   MZ_FD_SET(n, (fd_set *)fds2);
 }

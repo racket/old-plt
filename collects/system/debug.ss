@@ -8,7 +8,7 @@
 			    (#%quote invoke)
 			    (#%quote splash))])
     (box
-     (#%let ([debug-env (#%or "(list 'console-threading)"
+     (#%let ([debug-env (#%or ;"(list 'console-threading)"
 			      (getenv "MREDDEBUG"))
 	     ])
        (#%if debug-env

@@ -1,3 +1,4 @@
+
 (unit/sig drscheme:language^
   (import [wx : wx^]
 	  [mred : mred^]
@@ -71,9 +72,6 @@
 					   (when (= which len)
 					     (show-specifics #t))
 					   (when (< which len)
-					     (print-struct #t)
-					     (printf "setting language to: ~a~n"
-						     (list-ref basis:settings which))
 					     (mred:set-preference
 					      'drscheme:settings
 					      (basis:copy-setting (second (list-ref basis:settings which)))))))
@@ -225,9 +223,6 @@
 		   (compare-check-box abbreviate-cons-as-list? basis:setting-abbreviate-cons-as-list?)
 		   (eq? (printer-number->symbol (send printing get-selection))
 			(basis:setting-printing setting))
-		   (printf "language dialog.compare: ~a ~a~n"
-			   (send vocab get-selection)
-			   (length basis:level-symbols))
 		   (if (= (send vocab get-selection)
 			  (length basis:level-symbols))
 		       (not (basis:setting-use-zodiac? setting))

@@ -21,8 +21,6 @@
 
 (define mzlib:print-convert@ (reference-library-unit/sig "pconverr.ss"))
 
-(define mzlib:print-convert-hooks@ (reference-library-unit/sig "pchookr.ss"))
-
 #|
 
 (let ()

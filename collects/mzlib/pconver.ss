@@ -7,11 +7,10 @@
   (compound-unit/sig
    (import)
    (link [convert@ : mzlib:print-convert^
-		   (mzlib:print-convert@ string@ function@ hooks@)]
+		   (mzlib:print-convert@ string@ function@)]
 	 [string@ : mzlib:string^ (mzlib:string@)]
-	 [function@ : mzlib:function^ (mzlib:function@)]
-	 [hooks@ : mzlib:print-convert-hooks^ (mzlib:print-convert-hooks@)])
-   (export (open convert@) (open hooks@)))
+	 [function@ : mzlib:function^ (mzlib:function@)])
+   (export (open convert@)))
   #f)
 
 

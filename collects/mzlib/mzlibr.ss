@@ -6,9 +6,7 @@
 	 [convert@ : mzlib:print-convert^
 		   ((require-reference-unit/sig "pconverr.ss") 
 		    (core@ string@) 
-		    (core@ function@) 
-		    hooks@)]
-	 [hooks@ : mzlib:print-convert-hooks^ ((require-reference-unit/sig pchookr.ss"))]
+		    (core@ function@))]
 	 [date@ : mzlib:date^ ((require-reference-unit/sig "dater.ss")
 			       (core@ function@))]
 	 [inflate@ : mzlib:inflate^ ((require-reference-unit/sig "inflater.ss"))])
@@ -16,7 +14,6 @@
 	   (unit trigger@)
 	   (unit zmath@)
 	   (unit convert@)
-	   (unit hooks@)
 	   (unit date@)
 	   (unit inflate@)))
 

@@ -10,3 +10,8 @@
 (constant print-convert-expr)
 (constant build-share)
 (constant get-shared)
+
+(constant current-build-share-name-hook)
+(constant current-build-share-hook)
+(constant current-print-convert-hook)
+

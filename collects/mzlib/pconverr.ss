@@ -1,8 +1,6 @@
-  (unit/sig
-      mzlib:print-convert^
+  (unit/sig mzlib:print-convert^
     (import (s : mzlib:string^)
-	    (f : mzlib:function^)
-	    (hooks@ : mzlib:print-convert-hooks^))
+	    (f : mzlib:function^))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; the value stored in the hash table.  Contains the name
@@ -29,8 +27,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define-struct convert-share-info (share-hash expand-shared?))
 
+    (define current-build-share-name-hook (make-parameter (lambda (e) #f)
+							  (lambda (f)
+							    (unless (procedure-arity-includes? f 1)
+								    (raise-type-error 'current-build-share-name-hook "procedure of arity 1" f))
+							    f)))
+    (define current-build-share-hook (make-parameter (lambda (e base sub) (base e))
+						     (lambda (f)
+						       (unless (procedure-arity-includes? f 3)
+							       (raise-type-error 'current-build-share-hook "procedure of arity 3" f))
+						       f)))
+    (define current-print-convert-hook (make-parameter (lambda (e base sub) (base e))
+						       (lambda (f)
+							 (unless (procedure-arity-includes? f 3)
+								 (raise-type-error 'current--hook "procedure of arity 3" f))
+							 f)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; builds the hash table
+    ;; --------- THIS PROCEDURE IS EXPORTED ----------
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define build-share
       (lambda (expr)
@@ -40,7 +55,7 @@
 	     [csi (make-convert-share-info share-hash #f)]
 	     [hash
 	      (lambda (obj)
-		(let ([name (hooks@:build-share-name-hook obj)])
+		(let ([name ((current-build-share-name-hook) obj)])
 		  (hash-table-put! share-hash obj
 				   (make-share-info (if name (car name) share-cnt) #f)))
 		(set! share-cnt (add1 share-cnt)))]
@@ -54,20 +69,26 @@
 		    val)))]
 	     [build
 	      (lambda (expr)
-		(cond
-		  [(or (procedure? expr) (regexp? expr) (promise? expr) (string? expr)
-		       (class? expr) (object? expr))
-		   (build-sub expr)]
-		  [(box? expr) (unless (build-sub expr)
-				 (build (unbox expr)))]
-		  [(pair? expr) (unless (build-sub expr)
-				  (build (car expr))
-				  (build (cdr expr)))]
-		  [(vector? expr) (unless (build-sub expr)
-				    (for-each build (vector->list expr)))]
-		  [(struct? expr) (unless (build-sub expr)
-				    (for-each build (vector->list (struct->vector expr))))]
-		  [else (hooks@:build-share-hook expr build)]))])
+		((current-build-share-hook)
+		 expr
+		 (lambda (expr)
+		   (cond
+		    [(or (number? expr) (symbol? expr) (type-symbol? expr) (boolean? expr)
+			 (char? expr) (void? expr) (regexp? expr) (null? expr)
+			 (eq? expr (letrec ([x x]) x))) ; #<undefined> test - yuck
+		     'atomic]
+		    [(inferred-name expr) 'atomic]
+		    [(box? expr) (unless (build-sub expr)
+					 (build (unbox expr)))]
+		    [(pair? expr) (unless (build-sub expr)
+					  (build (car expr))
+					  (build (cdr expr)))]
+		    [(vector? expr) (unless (build-sub expr)
+					    (for-each build (vector->list expr)))]
+		    [(struct? expr) (unless (build-sub expr)
+					    (for-each build (vector->list (struct->vector expr))))]
+		    [else (build-sub expr)]))
+		 build-sub))])
 	  (build expr)
 	  csi)))
 
@@ -82,6 +103,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; prints an expression given that it has already been hashed. This
     ;; does not include the list of shared items.
+    ;; --------- THIS PROCEDURE IS EXPORTED ----------
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define print-convert-expr
       (lambda (csi expr unroll-once?)
@@ -194,61 +216,63 @@
 					    (build-unnamed))
 					(build-unnamed))))])
 			  (lambda ()
-			    (cond
-			      [(hooks@:before-test? expr) (hooks@:before-convert expr recur)]
-			      [(null? expr) (guard (lambda () 'null))]
-			      [(and (list? expr)
-				    (abbreviate-cons-as-list)
-				    (or (and first-time
-					     (doesnt-contain-shared-conses (cdr expr)))
-					(doesnt-contain-shared-conses expr)))
-			       (guard (lambda ()
-					`(list ,@(map recur expr))))]
-			      [(pair? expr)
-			       (guard
-				(lambda ()
-				  `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
-			      [(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
-			      [(box? expr) `(box ,(recur (unbox expr)))]
-			      [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
-			      [(symbol? expr) `',expr]
-			      [(string? expr) expr]
-			      [(primitive? expr) (string->symbol (primitive-name expr))]
-			      [(procedure? expr)
-			       (build-named 
-				expr
-				(lambda ()
-				  (let ([arity (arity expr)])
-				    (if (list? arity)
-					`(case-lambda . ,(make-lambda-helper arity))
-					`(lambda ,(make-lambda-helper arity) ...)))))]
-			      [(regexp? expr)
-			       '(regexp ...)]
-			      [(class? expr) 
-			       (build-named 
-				expr
-				(lambda () '(class ...)))]
-			      [(object? expr) `(make-object ,(build-named 
-							      expr
-							      (lambda () '(class ...))))]
-			      [(void? expr) '(void)]
-			      [(promise? expr) '(delay ...)]
-			      [(struct? expr)
-			       (let ([name (symbol->string
-					    (vector-ref (struct->vector expr) 0))])
-				 (cons (string->symbol
-					(string-append
-					 "make-" (substring name
-							    (string-length "struct:")
-							    (string-length name))))
-				       (map recur (cdr (vector->list
-							(struct->vector expr))))))]
-			      [(unit? expr) (build-named 
-					     expr
-					     (lambda () 
-					       '(unit ...)))]
-			      [else (hooks@:print-convert-hook
-				     expr recur)])))])
+			    ((current-print-convert-hook)
+			     expr
+			     (lambda (expr)
+			       (cond
+				[(null? expr) (guard (lambda () 'null))]
+				[(and (list? expr)
+				      (abbreviate-cons-as-list)
+				      (or (and first-time
+					       (doesnt-contain-shared-conses (cdr expr)))
+					  (doesnt-contain-shared-conses expr)))
+				 (guard (lambda ()
+					  `(list ,@(map recur expr))))]
+				[(pair? expr)
+				 (guard
+				  (lambda ()
+				    `(cons ,(recur (car expr)) ,(recur (cdr expr)))))]
+				[(weak-box? expr) `(make-weak-box ,(recur (weak-box-value expr)))]
+				[(box? expr) `(box ,(recur (unbox expr)))]
+				[(vector? expr) `(vector ,@(map recur (vector->list expr)))]
+				[(symbol? expr) `',expr]
+				[(string? expr) expr]
+				[(primitive? expr) (string->symbol (primitive-name expr))]
+				[(procedure? expr)
+				 (build-named 
+				  expr
+				  (lambda ()
+				    (let ([arity (arity expr)])
+				      (if (list? arity)
+					  `(case-lambda . ,(make-lambda-helper arity))
+					  `(lambda ,(make-lambda-helper arity) ...)))))]
+				[(regexp? expr)
+				 '(regexp ...)]
+				[(class? expr) 
+				 (build-named 
+				  expr
+				  (lambda () '(class ...)))]
+				[(object? expr) `(make-object ,(build-named 
+								expr
+								(lambda () '(class ...))))]
+				[(void? expr) '(void)]
+				[(promise? expr) '(delay ...)]
+				[(struct? expr)
+				 (let ([name (symbol->string
+					      (vector-ref (struct->vector expr) 0))])
+				   (cons (string->symbol
+					  (string-append
+					   "make-" (substring name
+							      (string-length "struct:")
+							      (string-length name))))
+					 (map recur (cdr (vector->list
+							  (struct->vector expr))))))]
+				[(unit? expr) (build-named 
+					       expr
+					       (lambda () 
+						 '(unit ...)))]
+				[else expr]))
+			   recur)))])
 		    (let ([es (convert-share-info-expand-shared? csi)])
 		      (set-convert-share-info-expand-shared?! csi #f)
 		      (if (and lookup
@@ -289,6 +313,7 @@
 			 (print-convert-expr csi (car s) #t))))
 	       shared))))
 
+    ;; --------- THIS PROCEDURE IS EXPORTED ----------
     (define get-shared
       (case-lambda
        [(csi) (get-shared csi #f)]
@@ -324,6 +349,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; takes an expression and completely converts it to show sharing
     ;; (or if just-circular, just circularity) and special forms.
+    ;; --------- THIS PROCEDURE IS EXPORTED ----------
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define print-convert
       (case-lambda

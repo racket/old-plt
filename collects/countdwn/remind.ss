@@ -206,6 +206,15 @@
 		  (set! last-time-before-current? (< current seconds)))
 		(update-date-edit))))
   
+  (define paren-snip%
+    (class-asi wx:media-snip%
+      (private
+	[what 'not-paren])
+      (public
+	[set-open (lambda () (set! what 'open))]
+	[set-close (lambda () (set! what 'close))]
+	[get-paren (lambda () what)])))
+
   (define main-edit%
     (class (make-hidden-edit% mred:media-edit%) args
       (inherit begin-edit-sequence end-edit-sequence
@@ -247,13 +256,15 @@
 		 [admin (get-admin)])
 	     (lock #f)
 	     (delete 0 (last-position) #f)
-	     (let ([current (current-seconds)])
+	     (let ([current (current-seconds)]
+		   [step (string #\tab)])
 	       (let loop ([lines (quicksort lines
 					    (lambda (x y)
 					      (<= (get-seconds x)
 						  (get-seconds y))))]
 			  [first? #t]
-			  [crossed-line? #f])
+			  [crossed-line? #f]
+			  [this-inset ""])
 		 (cond
 		   [(null? lines) (void)]
 		   [else (let* ([outer (car lines)]
@@ -261,17 +272,29 @@
 				[insert-separator?
 				 (and (not this-above-line?)
 				      (not crossed-line?)
-				      (not first?))])
+				      (not first?))]
+				[next-inset (case (send outer get-paren)
+					      [(not-paren) this-inset]
+					      [(open) (string-append this-inset step)]
+					      [(close) (substring this-inset
+								   0
+								   (- (string-length this-inset)
+								      (string-length step)))])]
+				[inset (if (eq? (send outer get-paren) 'close)
+					   next-inset
+					   this-inset)])
 			   (when insert-separator?
 			     (insert (string #\newline) (get-start-position) -1 #f)
 			     (insert (make-object mred:separator-snip%) (get-start-position) -1 #f))
 			   (when (and (not first?) 
 				      (not insert-separator?))
 			     (insert (string #\newline) (get-start-position) -1 #f))
+			   (insert inset (get-start-position) -1 #f)
 			   (insert outer (get-start-position) -1 #f)
 			   (loop (cdr lines)
 				 #f
-				 (or crossed-line? insert-separator?)))])))
+				 (or crossed-line? insert-separator?)
+				 next-inset))])))
 	     (lock #t)))]
 	
 	[new-counter
@@ -288,7 +311,7 @@
 		    [label-edit (make-object inner-edit%)]
 		    [label (make-snip label-edit)]
 		    [main (make-object inner-edit%)]
-		    [outer (make-object wx:media-snip% main #t 4 4 4 4)])
+		    [outer (make-object paren-snip% main #t 4 4 4 4)])
 	       (set! counters (cons display counters))
 	       (set! lines (cons outer lines))
 	       (if first-time?
@@ -306,8 +329,9 @@
 		 (insert display (send main get-start-position) -1 #f))
 	       (for-each (lambda (e) (send e lock #t))
 			 (list date-edit label-edit main))
-	       (send (get-canvas) add-wide-snip outer))
-	     (lock #t)))]
+	       (send (get-canvas) add-wide-snip outer)
+	       (lock #t)
+	       outer)))]
 	[sync
 	 (lambda ()
 	   (sort-lines)

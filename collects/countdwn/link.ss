@@ -13,6 +13,11 @@
 			M)]
        [B : before^ ((reference-unit/sig "before.ss") R M)]
        [D : during^ ((reference-unit/sig "during.ss") B)]
-       [U : () ((reference-unit/sig "user.ss") D)]
+       [U : () ((reference-unit/sig "user.ss") 
+		D
+		T
+		(C function@)
+		(C string@)
+		(C pretty-print@))]
        [F : () ((reference-unit/sig "after.ss") B)])
  (export))

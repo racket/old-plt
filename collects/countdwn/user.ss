@@ -1,3 +1,7 @@
 (unit/sig ()
-  (import during^)
+  (import during^
+	  mzlib:date^
+	  mzlib:function^
+	  mzlib:string^
+	  mzlib:pretty-print^)
   (include "~/.countdownrc"))

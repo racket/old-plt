@@ -2,7 +2,7 @@
 ;; current version number.
 (module winvers mzscheme
   (require (lib "file.ss"))
-  
+
   (define plthome
     (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
       (or (let ([p (getenv "PLTHOME")])
@@ -15,7 +15,7 @@
                           (and (string? base)
                                (complete-path? base)
                                (normal-case-path (expand-path base)))))))))))
-  
+
   (define (make-copy)
     (let ([tmpdir (find-system-path 'temp-dir)])
       (let ([vers (build-path tmpdir "setvers")])
@@ -40,30 +40,21 @@
        (let ([exe (make-copy)])
          (putenv "PLTHOME" plthome)
          (printf "re-launching first time...~n")
-         (subprocess (current-output-port)
-                     (current-input-port)
-                     (current-error-port)
-                     exe
-                     "-mvqL-"
-                     "winvers.ss"
-                     "setup"
-                     "patch"))]
+         (subprocess
+          (current-output-port) (current-input-port) (current-error-port)
+          exe "-mvqL-" "winvers.ss" "setup" "patch"))]
       [(equal? argv #("patch"))
        (sleep 1) ; time for other process to end
        (patch-files)
        (printf "re-launching last time...~n")
-       (subprocess (current-output-port)
-                   (current-input-port)                     
-                   (current-error-port)
-                   (build-path plthome "mzscheme.exe")
-                     "-mvqL-"
-                     "winvers.ss"
-                     "setup"
-                   "finish")]
+       (subprocess
+        (current-output-port) (current-input-port) (current-error-port)
+        (build-path plthome "mzscheme.exe")
+        "-mvqL-" "winvers.ss" "setup" "finish")]
       [(equal? argv #("finish"))
        (sleep 1) ; time for other process to end
-       (delete-directory/files (build-path (find-system-path 'temp-dir) 
-                                           "setvers"))
+       (delete-directory/files
+        (build-path (find-system-path 'temp-dir) "setvers"))
        (printf "done!~n")]
       [else
        (error 'winvers "unknown command line: ~e" argv)])))

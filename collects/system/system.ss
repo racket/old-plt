@@ -96,6 +96,8 @@
 ;; called with the arguments on the command line
 (define mred:initialize
   (let ([files-to-open null]
+	[eval-string
+	 (lambda (s) (eval (open-input-string s)))]
 	[todo null]
 	[no-show-splash? #f])
     (lambda args

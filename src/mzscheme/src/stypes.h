@@ -78,7 +78,7 @@ enum {
   scheme_listener_type,
   scheme_namespace_type, 
   scheme_config_type,
-  scheme_reserved_1_type, 
+  scheme_stx_type, 
   scheme_will_executor_type,
   scheme_interface_type,
   scheme_manager_type,  /* 70 */
@@ -114,7 +114,7 @@ enum {
   scheme_svector_type,
 
 #ifdef MZTAG_REQUIRED
-  _scheme_last_normal_type_,
+  _scheme_last_normal_type_, /* 92 */
 
   scheme_rt_comp_env,
   scheme_rt_constant_binding,
@@ -123,7 +123,7 @@ enum {
   scheme_rt_cont_mark,
   scheme_rt_saved_stack,
   scheme_rt_eval_in_env,
-  scheme_rt_reply_item,
+  scheme_rt_reply_item, /* 100 */
   scheme_rt_closure_info,
   scheme_rt_overflow,
   scheme_rt_dyn_wind_cell,
@@ -133,7 +133,7 @@ enum {
   scheme_rt_dup_check,
   scheme_rt_class_var,
   scheme_rt_class_method,
-  scheme_rt_class_assembly,
+  scheme_rt_class_assembly, /* 110 */
   scheme_rt_init_obj_rec,
   scheme_rt_super_init_data,
   scheme_rt_thread_memory,
@@ -143,7 +143,7 @@ enum {
   scheme_rt_tested_input_file,
   scheme_rt_tested_output_file,
   scheme_rt_indexed_string,
-  scheme_rt_output_file,
+  scheme_rt_output_file,  /* 120 */
   scheme_rt_load_handler_data,
   scheme_rt_load_data,
   scheme_rt_pipe,
@@ -153,7 +153,7 @@ enum {
   scheme_rt_write_data,
   scheme_rt_tcp_select_info,
   scheme_rt_namespace_option,
-  scheme_rt_param_data,
+  scheme_rt_param_data, /* 130 */
   scheme_rt_will,
   scheme_rt_will_registration,
   scheme_rt_breakable_wait,
@@ -163,7 +163,7 @@ enum {
   scheme_rt_unit_id,
   scheme_rt_body_expr,
   scheme_rt_body_var,
-  scheme_rt_param_map,
+  scheme_rt_param_map, /* 140 */
   scheme_rt_export_source,
   scheme_rt_unit_data_closure,
   scheme_rt_compound_linked_data,
@@ -173,7 +173,7 @@ enum {
   scheme_rt_cpp_object,
   scheme_rt_cpp_array_object,
   scheme_rt_stack_object,
-  scheme_rt_preallocated_object,
+  scheme_rt_preallocated_object, /* 150 */
   scheme_process_hop_type,
   scheme_rt_breakable,
 #endif

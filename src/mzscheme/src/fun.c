@@ -302,9 +302,9 @@ scheme_init_fun (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
 
-  scheme_add_global_constant("syntax?", 
+  scheme_add_global_constant("syntax-compiler?", 
 			     scheme_make_folding_prim(syntax_p, 
-						      "syntax?", 
+						      "syntax-compiler?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("macro?", 

@@ -290,7 +290,7 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
 
   saved = scheme_get_param(config, MZCONFIG_ENV);
   scheme_set_param(config, MZCONFIG_ENV, (Scheme_Object *)env);
-  expr = scheme_internal_read(port, 1, scheme_config
+  expr = scheme_internal_read(port, NULL, 1, scheme_config
 #ifdef MZ_REAL_THREADS
 			      , p
 #endif
@@ -351,6 +351,7 @@ static void make_init_env(void)
   MZTIMEIT(numarith, scheme_init_numarith(env));
   MZTIMEIT(numcomp, scheme_init_numcomp(env));
   MZTIMEIT(numstr, scheme_init_numstr(env));
+  MZTIMEIT(stx, scheme_init_stx(env));
   MZTIMEIT(port, scheme_init_port(env));
   MZTIMEIT(portfun, scheme_init_port_fun(env));
 #ifndef NO_TCP_SUPPORT

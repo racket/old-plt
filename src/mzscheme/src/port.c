@@ -1478,6 +1478,28 @@ scheme_tell_line (Scheme_Object *port)
   return line;
 }
 
+long
+scheme_tell_column (Scheme_Object *port)
+{
+  Scheme_Input_Port *ip;
+  long col;
+
+  ip = (Scheme_Input_Port *)port;
+
+  if (!ip->count_lines)
+    return -1;
+
+  BEGIN_LOCK_PORT(ip->sema);
+
+  CHECK_PORT_CLOSED("#<primitive:get-file-column>", "input", port, ip->closed);
+
+  col = ip->charsSinceNewline;
+
+  END_LOCK_PORT(ip->sema);
+
+  return col;
+}
+
 void
 scheme_count_lines (Scheme_Object *port)
 {

@@ -42,6 +42,7 @@ static Scheme_Object *call_with_input_file (int, Scheme_Object *[]);
 static Scheme_Object *with_input_from_file (int, Scheme_Object *[]);
 static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
+static Scheme_Object *read_syntax_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
@@ -268,6 +269,11 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(read_f,
 						      "read", 
 						      0, 1), 
+			     env);
+  scheme_add_global_constant("read-syntax", 
+			     scheme_make_prim_w_arity(read_syntax_f,
+						      "read-syntax", 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("read-char", 
 			     scheme_make_prim_w_arity(read_char, 
@@ -1369,7 +1375,7 @@ static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
   if ((Scheme_Object *)argv[0] == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  return scheme_internal_read(argv[0],
+  return scheme_internal_read(argv[0], ((argc > 1) ? argv[1] : NULL),
 			      SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
 			      p->config
 #ifdef MZ_REAL_THREADS
@@ -1399,7 +1405,39 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port,
+    return scheme_internal_read(port, NULL,
+				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
+				p->config
+#ifdef MZ_REAL_THREADS
+				, p
+#endif
+				);
+  }
+}
+
+static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *port;
+
+  if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
+    scheme_wrong_type("read-syntax", "input-port", 0, argc, argv);
+
+  if (argc > 1)
+    port = argv[1];
+  else
+    port = CURRENT_INPUT_PORT(p->config);
+  
+  if (((Scheme_Input_Port *)port)->read_handler) {
+    Scheme_Object *o[2];
+    o[0] = port;
+    o[1] = argv[0];
+    return _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 2, o);
+  } else {
+    if (port == scheme_orig_stdin_port)
+      scheme_flush_orig_outputs();
+
+    return scheme_internal_read(port, argv[0],
 				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
 				p->config
 #ifdef MZ_REAL_THREADS
@@ -2020,7 +2058,7 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Object *last_val = scheme_void, *obj, **save_array = NULL;
   int save_count = 0;
 
-  while ((obj = scheme_internal_read(port,
+  while ((obj = scheme_internal_read(port, NULL,
 				     1,
 				     config
 #ifdef MZ_REAL_THREADS

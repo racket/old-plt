@@ -126,7 +126,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_struct_info_type, "<struct-info>");
   set_name(scheme_structure_type, "<struct>");
   set_name(scheme_symbol_type, "<symbol>");
-  set_name(scheme_syntax_compiler_type, "<syntax>");
+  set_name(scheme_syntax_compiler_type, "<syntax-compiler>");
   set_name(scheme_macro_type, "<macro>");
   set_name(scheme_id_macro_type, "<id-macro>");
   set_name(scheme_vector_type, "<vector>");
@@ -167,7 +167,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_manager_type, "<custodian>");
   set_name(scheme_cont_mark_set_type, "<continuation-mark-set>");
   
-  set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_stx_type, "<syntax>");
+
   set_name(scheme_reserved_5_type, "<reserved5>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -413,7 +414,8 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_svector_type, svector_val);
 
-  GC_REG_TRAV(scheme_reserved_1_type, bad_trav);
+  GC_REG_TRAV(scheme_stx_type, bad_trav);
+
   GC_REG_TRAV(scheme_reserved_3_type, bad_trav);
   GC_REG_TRAV(scheme_reserved_5_type, bad_trav);
 }

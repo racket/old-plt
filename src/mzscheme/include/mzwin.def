@@ -168,6 +168,7 @@ EXPORTS
  scheme_compile
  scheme_make_promise_value
  scheme_read
+ scheme_read_syntax
  scheme_write
  scheme_display
  scheme_write_w_max
@@ -192,6 +193,7 @@ EXPORTS
  scheme_tell
  scheme_output_tell
  scheme_tell_line
+ scheme_tell_column
  scheme_count_lines
  scheme_close_input_port
  scheme_close_output_port

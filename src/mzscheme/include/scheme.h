@@ -275,6 +275,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
 #define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
 
+#define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
 
 /*========================================================================*/
 /*                        basic Scheme accessors                          */

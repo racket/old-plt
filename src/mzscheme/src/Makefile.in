@@ -45,6 +45,7 @@ OBJS =  salloc.o \
 	setjmpup.o \
 	string.o \
 	struct.o \
+	stxobj.o \
 	symbol.o \
 	syntax.o \
 	type.o \
@@ -86,6 +87,7 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/setjmpup.c \
 	$(srcdir)/string.c \
 	$(srcdir)/struct.c \
+	$(srcdir)/stxobj.c \
 	$(srcdir)/symbol.c \
 	$(srcdir)/syntax.c \
 	$(srcdir)/type.c \
@@ -207,6 +209,8 @@ string.o: $(srcdir)/string.c
 	$(CC) $(CFLAGS) -c $(srcdir)/string.c -I. -o string.o
 struct.o: $(srcdir)/struct.c
 	$(CC) $(CFLAGS) -c $(srcdir)/struct.c -o struct.o
+stxobj.o: $(srcdir)/stxobj.c
+	$(CC) $(CFLAGS) -c $(srcdir)/stxobj.c -o stxobj.o
 symbol.o: $(srcdir)/symbol.c
 	$(CC) $(CFLAGS) -c $(srcdir)/symbol.c -o symbol.o
 syntax.o: $(srcdir)/syntax.c
@@ -297,6 +301,8 @@ string.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include
          $(srcdir)/../src/stypes.h    $(srcdir)/schvers.h
 struct.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h $(srcdir)/mzmark.c
+stxobj.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+         $(srcdir)/../src/stypes.h
 symbol.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h   
 syntax.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \

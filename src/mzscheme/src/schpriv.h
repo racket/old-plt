@@ -115,6 +115,7 @@ void scheme_init_symbol_table(void);
 void scheme_init_symbol_type(Scheme_Env *env);
 void scheme_init_type(Scheme_Env *env);
 void scheme_init_list(Scheme_Env *env);
+void scheme_init_stx(Scheme_Env *env);
 void scheme_init_port(Scheme_Env *env);
 void scheme_init_port_fun(Scheme_Env *env);
 void scheme_init_network(Scheme_Env *env);
@@ -363,7 +364,33 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2);
 
 /*========================================================================*/
-/*                       syntax structures                                */
+/*                         syntax objects                                 */
+/*========================================================================*/
+
+typedef struct Scheme_Stx {
+  Scheme_Type type;
+  short hash_code; /* Precise GC */
+  Scheme_Object *val;
+  long line, col;
+  Scheme_Object *src;
+  Scheme_Object *xtra;
+  Scheme_Object *marks;
+} Scheme_Stx;
+
+Scheme_Object *scheme_make_stx(Scheme_Object *val, 
+			       long line, long col, 
+			       Scheme_Object *src);
+Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
+				     long line, long col);
+Scheme_Object *scheme_make_graphref_stx(Scheme_Object *stx, 
+					long line, long col);
+
+Scheme_Object *scheme_new_mark();
+Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m);
+Scheme_Object *scheme_stx_content(Scheme_Object *o);
+
+/*========================================================================*/
+/*                   syntax run-time structures                           */
 /*========================================================================*/
 
 typedef struct {
@@ -992,9 +1019,9 @@ Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 
 #ifndef MZ_REAL_THREADS
-Scheme_Object *scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *);
+Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *);
 #else
-Scheme_Object *scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *, Scheme_Process *p);
+Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *, Scheme_Process *p);
 #endif
 void scheme_internal_display(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);

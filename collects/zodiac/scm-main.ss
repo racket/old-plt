@@ -1553,15 +1553,20 @@
 		  (unless (and (quote-form? c)
 			    (z:string? (quote-form-expr c)))
 		    (static-error collection "Does not yield a string"))
-		  (expand-expr
-		    (structurize-syntax
-		      (if (member (z:read-object (quote-form-expr f))
-			    mzscheme-libraries-provided)
-			`(#%void)
-			`(require-library ,(quote-form-expr f)
-			   ,(quote-form-expr c)))
-		      expr)
-		    env attributes vocab)))))
+		  (let ((raw-f (z:read-object (quote-form-expr f)))
+			 (raw-c (z:read-object (quote-form-expr c))))
+		    (unless (relative-path? raw-f)
+		      (static-error f
+			"Library path ~s must be a relative path"
+			raw-f))
+		    (expand-expr
+		      (structurize-syntax
+			(if (member raw-f mzscheme-libraries-provided)
+			  `(#%void)
+			  `(require-library ,(quote-form-expr f)
+			     ,(quote-form-expr c)))
+			expr)
+		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed reference-library"))))))
 

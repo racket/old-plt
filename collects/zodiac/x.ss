@@ -163,7 +163,7 @@
 					 (exn?
 					   (lambda (exn)
 					     (internal-error expr
-					       "Macro expansion error: ~a"
+					       "Macro expansion error: ~s"
 					       exn))))
 			  (let* ((rewriter (macro-resolution-rewriter r))
 				  (m (new-mark))

@@ -891,6 +891,12 @@
 				(z:string? (quote-form-expr c)))
 			(static-error collection
 			  "Does not yield a string"))
+		      (let ((raw-f (z:read-object (quote-form-expr f)))
+			     (raw-c (z:read-object (quote-form-expr c))))
+			(unless (relative-path? raw-f)
+			  (static-error f
+			    "Library path ~s must be a relative path"
+			    raw-f))
 			(expand-expr
 			  (structurize-syntax
 			    `(let ((result (#%require-library
@@ -905,15 +911,16 @@
 				       '#%make-exn:unit:signature:non-signed-unit
 				       '#%make-exn:unit:non-unit)
 				     ,(format
-					"~s: result from ~s is not ~aunit"
+					"~s: result from ~s in collection ~a not a ~aunit"
 					form-name
-					(sexp->raw (quote-form-expr f))
+					raw-f
+					raw-c
 					(if sig? "signed " ""))
 				     ((debug-info-handler))
 				     result)))
 			       result)
 			    expr)
-			  env attributes vocab)))))
+			  env attributes vocab))))))
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 

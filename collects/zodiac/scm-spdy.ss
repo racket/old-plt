@@ -287,11 +287,13 @@
 		  (let* ((raw-f (z:read-object (quote-form-expr f)))
 			  (raw-c (z:read-object (quote-form-expr c)))
 			  (raw-filename
-			    (if (complete-path? raw-f)
-			      raw-f
+			    (if (relative-path? raw-f)
 			      (or (mzlib:find-library raw-f raw-c)
 				(static-error file
-				  "No such library file found")))))
+				  "No such library file found"))
+			      (static-error f
+				"Library path ~s must be a relative path"
+				raw-f))))
 		    (if (member raw-f mzscheme-libraries-provided)
 		      (expand-expr (structurize-syntax '(#%void) expr)
 			env attributes vocab)
@@ -408,20 +410,23 @@
 		      (unless (and (quote-form? c)
 				(z:string? (quote-form-expr c)))
 			(static-error collection "Does not yield a string"))
-		      (create-reference-unit-form
-			(path->complete-path
-			  (or (mzlib:find-library (z:read-object
-						    (quote-form-expr f))
-				(z:read-object (quote-form-expr c)))
-			    (static-error expr
-			      "Unable to locate library ~a in collection ~a"
-			      (z:read-object (quote-form-expr f))
-			      (z:read-object (quote-form-expr c))))
-			  (or (current-load-relative-directory)
-			    (current-directory)))
-			'exp
-			signed?
-			expr)))))
+		      (let ((raw-f (z:read-object (quote-form-expr f)))
+			     (raw-c (z:read-object (quote-form-expr c))))
+			(unless (relative-path? raw-f)
+			  (static-error f
+			    "Library path ~s must be a relative path"
+			    raw-f))
+			(create-reference-unit-form
+			  (path->complete-path
+			    (or (mzlib:find-library raw-f raw-c)
+			      (static-error expr
+				"Unable to locate library ~a in collection ~a"
+				raw-f raw-c))
+			    (or (current-load-relative-directory)
+			      (current-directory)))
+			  'exp
+			  signed?
+			  expr))))))
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 

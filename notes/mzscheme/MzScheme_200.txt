@@ -67,7 +67,9 @@ in several important ways:
    
    The `send' form works as before, but there is no `ivar' form.
    Field values are accessed through procedures constructed with
-   `make-class-field-accessor'. See the MzLib documentation for
+   `make-class-field-accessor'. Instances are contructed with either
+   `make-object' or the new `instantiate' form; the latter supports
+   by-name initialization arguments. See the MzLib documentation for
    details.
 
    The "class-old.ss" library in MzLib implements precisely the old

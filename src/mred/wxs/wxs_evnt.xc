@@ -10,6 +10,7 @@
 @CLASSBASE wxEvent "event":"object" / nofnl
 
 @CREATOR ()
+@ARGNAMES
 
 @IVAR "time-stamp" : ExactLong timeStamp
 
@@ -33,6 +34,7 @@
 @CLASSBASE wxCommandEvent "control-event":"event" / nofnl
 
 @CREATOR (SYM[actionType])
+@ARGNAMES event-type
 
 @IVAR "event-type" : SYM[actionType] eventType
 
@@ -42,6 +44,7 @@
 @CLASSBASE wxPopupEvent "popup-event":"control-event" / nofnl
 
 @CREATOR ()
+@ARGNAMES
 
 @CLASSID wxTYPE_POPUP_EVENT
 
@@ -64,6 +67,7 @@
 @CLASSBASE wxScrollEvent "scroll-event":"event" / nofnl
 
 @CREATOR ()
+@ARGNAMES
 
 @IVAR "event-type" : SYM[scrollMoveType] moveType
 @IVAR "direction" : SYM[orientation] direction
@@ -145,6 +149,7 @@
 
 @MACRO SETX0 = x0=wxEVENT_TYPE_CHAR;
 @CREATOR (-int=wxEVENT_TYPE_CHAR); : : /SETX0
+@ARGNAMES
 
 @IVAR "key-code" : SYM[keyCode] keyCode
 @IVAR "shift-down" : bool shiftDown
@@ -180,6 +185,7 @@
 @CLASSBASE wxMouseEvent "mouse-event":"event" / nofnl
 
 @CREATOR (SYM[mouseEventType]);
+@ARGNAMES event-type
 
 @ "button-changed?" : bool Button(SYM[buttonId]=-1);
 @ "button-down?" : bool ButtonDown(SYM[buttonId]=-1);

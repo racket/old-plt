@@ -1287,10 +1287,6 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    int int_def_pos,
 					    Scheme_Object **current_val);
 
-Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
-					       Scheme_Object *form, Scheme_Comp_Env *env,
-					       Scheme_Compile_Info *rec, int drec, 
-					       int depth, Scheme_Object *boundname);
 Scheme_Object *scheme_apply_macro(Scheme_Object *name,
 				  Scheme_Object *f, Scheme_Object *code,
 				  Scheme_Comp_Env *env, Scheme_Object *boundname);

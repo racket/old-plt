@@ -245,7 +245,7 @@ static void* MyGetOrigin(wxDC *dc)
 
 
 
-#define DO_OK_CHECK(name) if (!((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(name, "device context is not ok", THEOBJ));
+#define DO_OK_CHECK(name) if (!((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(name, "device context is not ok: ", THEOBJ));
 
 
 

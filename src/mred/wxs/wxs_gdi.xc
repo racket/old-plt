@@ -294,6 +294,7 @@ static void *RgnBoundingBox(wxRegion *r)
 @CLASSBASE wxRegion "region" : "object"
 
 @CREATOR (wxDC!)
+@ARGNAMES dc
 
 @ "get-dc" : wxDC! GetDC()
   

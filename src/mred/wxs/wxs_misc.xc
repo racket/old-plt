@@ -27,6 +27,7 @@
 @CLASSBASE wxTimer "timer" : "object"
 
 @CREATOR (); : : /CHECKEVENTSPACE[METHODNAME("timer%","initialization")]
+@ARGNAMES
 
 @ "interval" : int Interval();
 @ v "notify" : void Notify();
@@ -100,6 +101,7 @@ static wxClipboard* wxGetTheClipboard()
 @CLASSBASE wxClipboardClient "clipboard-client" : "object"
 
 @CREATOR ()
+@ARGNAMES
 
 @ V "on-replaced" : void BeingReplaced();
 @ V "get-data" : nstring GetData(string,-long*); : //setStringSize[1] : : : XrNULL
@@ -139,6 +141,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 @CLASSBASE wxPrintSetupData "ps-setup" : "object"
 
 @CREATOR ()
+@ARGNAMES
 
 @ "get-command" : string GetPrinterCommand();
 @ "get-file" : string GetPrinterFile();

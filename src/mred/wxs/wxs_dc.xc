@@ -218,6 +218,7 @@ static void* MyGetOrigin(wxDC *dc)
 @CLASSID wxTYPE_DC_MEMORY
 
 @CREATOR ()
+@ARGNAMES
 
 @ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","get-pixel")]
 @ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","set-pixel")]
@@ -234,6 +235,7 @@ static void* MyGetOrigin(wxDC *dc)
 @INCLUDE wxs_dorf.xci
 
 @CREATOR (bool=TRUE,wxWindow^=NULL) : : /DLGORFRAME[1.METHODNAME("post-script-dc%","initialization")]
+@ARGNAMES [interactive? #t] [parent #f]
 
 @END
 
@@ -280,6 +282,7 @@ START_XFORM_SKIP;
 @CLASSID wxTYPE_DC_PRINTER
 
 @CREATOR (wxWindow^=NULL); : : /DLGORFRAME[0.METHODNAME("printer-dc%","initialization")]
+@ARGNAMES [parent #f]
 
 @END
 
@@ -323,6 +326,7 @@ public:
 @CLASSID wxTYPE_DC_METAFILE
 
 @CREATOR (string=NULL);
+@ARGNAMES [filename #f]
 
 @ "close" : baseMetaFile! baseClose()
 

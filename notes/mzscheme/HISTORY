@@ -2,6 +2,58 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.14:
+
+ * Fixed syntax bugs introduced in 199.13.
+
+ * Converted many MrEd classes to have by-name initialization
+   arguments. The order is unchanged from previous versions of MrEd,
+   but arguments have been added. For example, the complete list of
+   frame% argument is now: `label', `parent', `width', `height', `x',
+   `y', `style', `enabled', `border', `spacing', `alignment',
+   `min-width', `min-height', `stretchable-width', and
+   `stretchable-height'.
+
+ * Changed slightly the way initialization arguments are handled in
+   "class.ss".
+
+   1) When by-position arguments are converted to by-name arguments,
+      and when there are more by-position arguments than init
+      variables in the instantiated class, then the leftover arguments
+      are converted using the superclass's init variables, and so
+      on. If a class contains an `init-rest' declaration with a
+      variable, then leftover by-position arguments are instead
+      rejected with a "too many arguments" error. (If the class
+      contains an `init-rest' declaration with a variable, then the
+      leftover by-position arguments are accumulated into a list.)
+
+      Consequently, a class like
+
+            (class frame%
+              (super-instantiate ()))
+
+      accepts by-position arguments just like frame%.
+
+      The expansion of a `class100' form always has an `init-rest'
+      clause.
+
+   2) Multiple by-name arguments can use the same name, which is
+      potentially useful when an initialization variable is shadowed
+      by a derived class; by-name arguments are consumed leftmost
+      first, and implicit arguments to `super-instantiate' or
+      `super-init' are always added to the right of the argument list.
+      The main consequence is in error reporting; illegal by-name
+      arguments that happen to have the same name as an internal
+      superclass argument (i.e.,internal in the sense that a
+      corresponding value is provided to `super-instantiate' or
+      `super-init') are reported as unused arguments, instead of
+      duplicate arguments.
+
+ * When a (Unix-format) relative-path string is used with `require',
+   an exception is raised if the path contains anything other than
+   alpha-numeric characters, -, _, ., and space, or if the path
+   contains a leading or trailing slash.
+
 Version 199.13:
 
  * Changed the error display handler to take a `raise'd value (usually

@@ -1503,16 +1503,13 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   return first;
 }
 
-Scheme_Object *
-scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
-				Scheme_Object *form, Scheme_Comp_Env *env,
-				Scheme_Compile_Info *rec, int drec, 
-				int depth, Scheme_Object *boundname)
+static Scheme_Object *
+compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
+			 Scheme_Object *form, Scheme_Comp_Env *env,
+			 Scheme_Compile_Info *rec, int drec, 
+			 int depth, Scheme_Object *boundname)
 {
   Scheme_Object *xformer;
-
-  if (!depth)
-    return form; /* We've gone as deep as requested */
 
   xformer = (Scheme_Object *)SCHEME_PTR_VAL(macro);
 
@@ -1537,18 +1534,9 @@ scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
   if (!boundname)
     boundname = scheme_false;
 
-  form = scheme_apply_macro(name, xformer, form, env, boundname);
+  return scheme_apply_macro(name, xformer, form, env, boundname);
 
-  if (rec)
-    return scheme_compile_expr(form, env, rec, drec);
-  else {
-    if (depth > 0)
-      --depth;
-    if (depth)
-      return scheme_expand_expr(form, env, depth, boundname);
-    else
-      return form;
-  }
+  /* caller expects rec[drec] to be used to compile the result... */
 }
 
 static Scheme_Object *compile_expand_expr_k(void)
@@ -1582,18 +1570,22 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *name, *var, *rest, *stx, *normal;
   GC_CAN_IGNORE char *not_allowed;
 
+ top:
+
 #ifdef DO_STACK_CHECK
-# include "mzstkchk.h"
   {
-    Scheme_Thread *p = scheme_current_thread;
-    p->ku.k.p1 = (void *)form;
-    p->ku.k.p2 = (void *)env;
-    p->ku.k.p3 = (void *)rec;
-    p->ku.k.p4 = (void *)boundname;
-    p->ku.k.i3 = drec;
-    p->ku.k.i1 = depth;
-    p->ku.k.i2 = app_position;
-    return scheme_handle_stack_overflow(compile_expand_expr_k);
+# include "mzstkchk.h"
+    {
+      Scheme_Thread *p = scheme_current_thread;
+      p->ku.k.p1 = (void *)form;
+      p->ku.k.p2 = (void *)env;
+      p->ku.k.p3 = (void *)rec;
+      p->ku.k.p4 = (void *)boundname;
+      p->ku.k.i3 = drec;
+      p->ku.k.i1 = depth;
+      p->ku.k.i2 = app_position;
+      return scheme_handle_stack_overflow(compile_expand_expr_k);
+    }
   }
 #endif
 
@@ -1643,7 +1635,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    return NULL;
 	  }
 	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type))
-	  return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
+	  goto macro;
 	
 	if (rec) {
 	  scheme_compile_rec_done_local(rec, drec);
@@ -1681,7 +1673,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	/* apply to local variable: compile it normally */
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
-	  return scheme_compile_expand_macro_app(name, var, form, env, rec, drec, depth, boundname);
+	  goto macro;
 	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	  if (rec) {
 	    Scheme_Syntax *f;
@@ -1750,7 +1742,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  return f(form, env, depth, boundname);
 	}
       } else {
-	return scheme_compile_expand_macro_app(stx, var, form, env, rec, drec, depth, boundname);
+	goto macro;
       }
     }
   } else {
@@ -1761,6 +1753,22 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			not_allowed,
 			SCHEME_STX_VAL(stx));
     return NULL;
+  }
+
+ macro:
+  if (!rec && !depth)
+    return form; /* We've gone as deep as requested */
+
+  form = compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
+  if (rec)
+    goto top;
+  else {
+    if (depth > 0)
+      --depth;
+    if (depth)
+      goto top;
+    else
+      return form;
   }
 }
 

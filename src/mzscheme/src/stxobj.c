@@ -228,7 +228,7 @@ void scheme_init_stx(Scheme_Env *env)
   REGISTER_SO(source_symbol);
   REGISTER_SO(origin_symbol);
   REGISTER_SO(lexical_symbol);
-  source_symbol = scheme_make_symbol("source");
+  source_symbol = scheme_make_symbol("source"); /* not interned! */
   origin_symbol = scheme_intern_symbol("origin");
   lexical_symbol = scheme_intern_symbol("lexical");
 

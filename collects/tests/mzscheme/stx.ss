@@ -298,4 +298,12 @@
 (require mt2)
 (run-mt2-test test)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(test '(1 2 3) syntax-object->datum (syntax (1 2 3)))
+(test '(1 ... 2 3) syntax-object->datum (syntax (... (1 ... 2 3))))
+
+(syntax-test #'(syntax (a (... ...))))
+(syntax-test #'(syntax (... ...)))
+
 (report-errs)

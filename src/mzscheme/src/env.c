@@ -1622,7 +1622,7 @@ namespace_variable_binding(int argc, Scheme_Object *argv[])
   Scheme_Env *env;
 
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("namespace-defined-value", "symbol", 0, argc, argv);
+    scheme_wrong_type("namespace-variable-binding", "symbol", 0, argc, argv);
 
   env = scheme_get_env(scheme_config);
 
@@ -1631,7 +1631,7 @@ namespace_variable_binding(int argc, Scheme_Object *argv[])
 
     bucket = scheme_global_bucket(argv[0], env);
 
-    scheme_set_global_bucket("namespace-defined-value", bucket, argv[1], 1);
+    scheme_set_global_bucket("namespace-variable-binding", bucket, argv[1], 1);
 
     return scheme_void;
   } else {
@@ -1639,7 +1639,7 @@ namespace_variable_binding(int argc, Scheme_Object *argv[])
     
     if (!v)
       scheme_raise_exn(MZEXN_VARIABLE, argv[0],
-		       "namespace-defined-value: %S is not defined",
+		       "namespace-variable-binding: %S is not defined",
 		       argv[0]);
 
     return v;

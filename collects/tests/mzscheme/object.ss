@@ -160,7 +160,7 @@
 
 (err/rt-test (class color-fish% (override die) (define die (lambda () 'x))) exn:object?)
 
-(define old-style-fish%
+(define rest-arg-fish%
   (class fish%
     (public greeting)
 
@@ -184,11 +184,88 @@
 
     (super-instantiate () (size 12))))
 
-(err/rt-test (instantiate old-style-fish% () (-first-name "Gil") (last-name "Finn")) exn:object?)
+(define rest-fish (make-object rest-arg-fish% "Gil" "Finn" "Slick"))
 
-(define old-fish (make-object old-style-fish% "Gil" "Finn" "Slick"))
+(test "Gil Finn, a.k.a.: (Slick)" 'osf (send rest-fish greeting))
 
-(test "Gil Finn, a.k.a.: (Slick)" 'osf (send old-fish greeting))
+;; Missing last-name:
+(err/rt-test (instantiate rest-arg-fish% () (-first-name "Gil") (-nicknames null)) 
+	     exn:object?)
 
+(define rest-fish-0 (instantiate rest-arg-fish% () (-first-name "Gil") (last-name "Finn")))
+(test "Gil Finn, a.k.a.: ()" 'osf (send rest-fish-0 greeting))
+
+;; Keyword order doesn't matter:
+(define rest-fish-0.5 (instantiate rest-arg-fish% () (last-name "Finn") (-first-name "Gil")))
+(test "Gil Finn, a.k.a.: ()" 'osf (send rest-fish-0.5 greeting))
+
+(err/rt-test (instantiate rest-arg-fish% () 
+			  (-first-name "Gil") (last-name "Finn") 
+			  (-nicknames "Slick"))
+	     exn:object?)
+(err/rt-test (instantiate rest-arg-fish% () 
+			  (-first-name "Gil") (last-name "Finn") 
+			  (anything "Slick"))
+	     exn:object?)
+
+;; Redundant by-pos:
+(err/rt-test (instantiate rest-arg-fish% ("Gil") (-first-name "Gilly") (last-name "Finn"))
+	     exn:object?)
+
+(define no-rest-fish%
+  (class fish%
+    (public greeting)
+
+    (init-field first-name)
+    (init-field last-name)
+    (init-rest)
+
+    (define (greeting)
+      (format "~a ~a" last-name first-name))
+
+    (super-instantiate (12))))
+
+;; Too many by-pos:
+(err/rt-test (instantiate no-rest-fish% ("Gil" "Finn" "hi" "there"))
+	     exn:object?)
+
+(define no-rest-0 (instantiate no-rest-fish% ("Gil" "Finn")))
+(test 12 'norest (send no-rest-0 get-size))
+
+(define allow-rest-fish%
+  (class fish%
+    (public greeting)
+
+    (init-field first-name)
+    (init-field last-name)
+
+    (define (greeting)
+      (format "~a ~a" last-name first-name))
+
+    (super-instantiate ())))
+
+;; Too many by-pos:
+(err/rt-test (instantiate no-rest-fish% ("Gil" "Finn" 18 20))
+	     exn:object?)
+
+(define no-rest-0 (instantiate allow-rest-fish% ("Gil" "Finn" 18)))
+(test 18 'allowrest (send no-rest-0 get-size))
+
+
+(define allow-rest/size-already-fish%
+  (class fish%
+    (public greeting)
+
+    (init-field first-name)
+    (init-field last-name)
+
+    (define (greeting)
+      (format "~a ~a" last-name first-name))
+
+    (super-instantiate (12))))
+
+;; Unused by-pos:
+(err/rt-test (instantiate allow-rest/size-already-fish% ("Gil" "Finn" 18))
+	     exn:object?)
 
 (report-errs)

@@ -14,6 +14,9 @@
 ;;   unit-check-xl-file
 ;;   unit-recheck-xl-file)
 
+;;
+;; GLOBALS
+;;
 (define *excel-progid* "Excel.Application")
 (define *filename* #f)
 (define xl (cci/progid *excel-progid*))
@@ -24,21 +27,21 @@
 (define symbol-table #f)
 (define parser (make-parser symbol-table))
 (define all-formulas #f)
-(define all-formula-dependencies #f)
-(define all-formula-leaves #f)
 (define all-units #f)
-(define all-dollar-formats #f)
 (define hashed-units #f)
 (define hashed-vars #f)
 (define hashed-constraints-vars #f)
 (define constraints #f)
-(define all-leaves-units #f)
 (define error-cells #f)
 (define colored-dependents #f)
+(define all-non-circular-formulas #f)
+(define all-circular-formulas #f)
 
 (define-struct dependent (count orig-color) (make-inspector))
 
+;;
 ;; Constraint functions
+;;
 (define (init-constraints) (set! constraints (list empty empty)))
 
 (define (push-constraint c)
@@ -82,11 +85,16 @@
                          l))]
          [map-replace 
           (lambda (c)
-            (cond [(symbol? sym2) (replace c)]
-                  [else 
-                   (cons (constraint-operator c) 
-                         (cons (constraint-var c)
-                               (replace (rest (rest c)))))]))])
+            (cond [(eq? (constraint-operator c) '@)
+                   (cond [(dim-var? sym2) (replace c)]
+                         [else 
+                          (cons (constraint-operator c) 
+                                (cons (constraint-var c)
+                                      (replace (rest (rest c)))))])]
+                  [(and (not (dim? (second c)))
+                        (not (dim? (third c))))
+                   (replace c)]
+                  [else c]))])
     (set! constraints 
           (list
            (remove-duplicates
@@ -94,7 +102,9 @@
                     (map map-replace (first constraints))))
            (remove-duplicates (map map-replace (second constraints)))))))
 
+;;
 ;; Event handlers
+;;
 (com-register-event-handler 
  xl "SheetBeforeRightClick"
  (lambda (ws rng b)
@@ -374,9 +384,9 @@
 (define (preprocess)
   (set! all-formula-texts
         (begin
-          (printf "Computing all formula texts.... ")
-          (update-status! (format "=================UNIT CHECKING==============~n"))
-          (update-status! "Computing all formula texts.... ")
+          (printf "Preprocessing all formula texts.... ")
+          (update-status! (format "+++SPREADSHEET PREPROCESSING BEGIN+++~n"))
+          (update-status! "Preprocessing all formula texts.... ")
           (iterate-over-worksheet
            (lambda (cell) (com-get-property cell "Formula"))
            (lambda (formula)
@@ -384,8 +394,8 @@
                   (string=? (substring formula 0 1) "="))))))
   (set! all-names
         (begin
-          (printf "DONE~nComputing all names.... ")
-          (update-status! (format "DONE~nComputing all names.... "))
+          (printf "DONE~nPreprocessing all names.... ")
+          (update-status! (format "DONE~nPreprocessing all names.... "))
           (iterate-over-worksheet
            (lambda (cell) (with-handlers
                               ([void (lambda _ "")])
@@ -395,14 +405,14 @@
            (lambda (s) (not (string=? s ""))))))
   (set! symbol-table
         (begin
-          (printf "DONE~nComputing symbol-table.... ")
-          (update-status! (format "DONE~nComputing symbol-table.... "))
+          (printf "DONE~nPreprocessing symbol-table.... ")
+          (update-status! (format "DONE~nPreprocessing symbol-table.... "))
           (map (lambda (pr) (list (cadr pr) (car pr))) all-names)))
   (set! parser (make-parser symbol-table))
   (set! all-formulas
         (begin
-          (printf "DONE~nComputing all formulas.... ")
-          (update-status! (format "DONE~nComputing all formulas.... "))
+          (printf "DONE~nPreprocessing all formulas.... ")
+          (update-status! (format "DONE~nPreprocessing all formulas.... "))
           (formula-sort
            (map (lambda (f)
                   (let ([cell (car f)]
@@ -427,38 +437,12 @@
                        (list (car frm-text)
                              (call-parser parser (cadr frm-text))))
                      all-formula-texts)))))
-  (set! all-formula-dependencies
-        (begin
-          (printf "DONE~nComputing all formula dependencies.... ")
-          (update-status! (format "DONE~nComputing all formula dependencies.... "))
-          (map (lambda (frm)
-                 (list (car frm)
-                       (formula-dependencies (cadr frm))))
-               all-formulas)))
-  (set! all-formula-leaves
-        (begin
-          (printf "DONE~nComputing all formula leaves.... ")
-          (update-status! (format "DONE~nComputing all formula leaves.... "))
-          (remove-duplicates
-           (filter (lambda (cell)
-                     (not (assq cell all-formula-dependencies)))
-                   (apply append (map cadr all-formula-dependencies))))))
-  (set! all-dollar-formats
-        (begin
-          (printf "DONE~nComputing all formats.... ")
-          (update-status! (format "DONE~nComputing all formats.... "))
-          (iterate-over-worksheet
-           (lambda (cell) (with-handlers
-                              ([void (lambda _ "")])
-                            (com-get-property cell "NumberFormat")))
-           (lambda (nf)
-             (and (not (string=? "" nf))
-                  (char=? #\$ (string-ref nf 0)))))))
+  (compute-all-circular-formulas)
   ; assumes comment containing Scheme pair is a unit annotation
   (set! all-units
         (begin
-          (printf "DONE~nComputing all units.... ")
-          (update-status! (format "DONE~nComputing all units.... "))
+          (printf "DONE~nPreprocessing all units.... ")
+          (update-status! (format "DONE~nPreprocessing all units.... "))
           (map (lambda (entry)
                  (list (car entry)
                        (canonicalize-units (cadr entry))))
@@ -475,22 +459,34 @@
   (set! hashed-vars (make-hash-table))
   (set! hashed-constraints-vars (make-hash-table))
   (init-constraints)
-  (set! all-leaves-units
-        (begin
-          (printf "DONE~nComputing all leaves units.... ")
-          (update-status! (format "DONE~nComputing all leaves units.... "))
-          (map (lambda (lv)
-                 (let ([lv-unit (assq lv all-units)])
-                   (cond ((not lv-unit) (list lv (empty-unit)))
-                         (else lv-unit)))) all-formula-leaves)))
   (printf "DONE~n")
   (update-status! (format "DONE~n"))
+  (update-status! (format "+++SPREADSHEET PREPROCESSING END+++~n"))
   (init-hash
    hashed-units
    (filter (lambda (u) (not (assq (car u) all-formulas)))
            all-units))
   (set! error-cells (make-hash-table))
   (set! colored-dependents (make-hash-table)))
+
+(define (compute-all-circular-formulas)
+  (letrec ([is-circular?
+            (lambda (f fs)
+              (ormap 
+               (lambda (dep)
+                 (or (in-list? dep fs)
+                     (let ([dep_f (assq dep all-formulas)])
+                       (and dep_f
+                            (is-circular? dep_f (cons (car dep_f) fs))))))
+               (formula-dependencies (cadr f))))])
+    (set! all-circular-formulas empty)
+    (set! all-non-circular-formulas empty)
+    (for-each
+     (lambda (f)
+       (if (is-circular? f (list (car f)))
+           (set! all-circular-formulas (cons f all-circular-formulas))
+           (set! all-non-circular-formulas (cons f all-non-circular-formulas))))
+     all-formulas)))
 
 (define (open-xl-workbook xl fname)
   (let ([wbs (com-get-property xl "Workbooks")])
@@ -809,7 +805,7 @@
                  ((empty-unit? prec-unit) num-unit)
                  (else '((error/non-empty-precision 1))))))
             (else (error fun "illegal use")))]
-         [(large) (let ([split-units (split-large-args arg-units empty-unit?)])
+         [(large) (let ([split-units (split-large-args arg-units)])
                     (cond
                       ((= 1 (length (car split-units)))
                        (check-equal-units (cadr split-units)))
@@ -874,27 +870,50 @@
               (begin
                 (compute-cell-unit f)
                 (printf "Computed unit for cell ~a~n" (car f))))
-            all-formulas))
+            all-non-circular-formulas))
 
 (define (compute-formulas-circular)
+  (compute-formulas)
+  (printf "Assigning dimension variables for formulas.... ")
+  (update-status! (format "+++UNIT CHECKING BEGIN+++~n"))
+  (update-status! "Assigning dimension variables for formulas.... ");
   (assign-variables)
+  (printf "DONE~nCreating constraints.... ")
+  (update-status! (format "DONE~nCreating constraints.... "))
   (create-constraints)
+  (printf "DONE~nPruning constraints.... ")
+  (update-status! (format "DONE~nPruning constraints.... "))
   (prune-constraints)
+  (printf "DONE~nFlattening constraints.... ")
+  (update-status! (format "DONE~nFlattening constraints.... "))
   (flatten-constraints)
-  (solve-constraints))
+  (printf "DONE~nSolving constraints.... ")
+  (update-status! (format "DONE~nSolving constraints.... "))
+  (solve-constraints)
+  (printf "DONE~n")
+  (update-status! (format "DONE~n"))
+  (update-status! (format "+++UNIT CHECKING END+++~n")))
+
+
+(define (gen-alpha-var)
+  (string->symbol (string-append "a_" (symbol->string (gensym)))))
+
+(define (gen-beta-var)
+  (string->symbol (string-append "b_" (symbol->string (gensym)))))
 
 (define (assign-variables)
   (for-each (lambda (f)
-              (let ([a_s (string->symbol (string-append "a_" (symbol->string (gensym))))])
-                (hash-table-put! hashed-vars a_s (list (car f) '((error/missing-units))))
+              (let ([a_s (gen-alpha-var)])
+                (hash-table-put! hashed-vars a_s 
+                                 (list (car f) '((error/missing-dimensions 1))))
                 (hash-table-put! hashed-units (car f) a_s)))
-            all-formulas))
+            all-circular-formulas))
 
 (define (create-constraints)
   (for-each (lambda (f)
               (let ([a_s (hash-table-get hashed-units (car f))])
                 (create-constraints-for-formula a_s (cadr f) (car f))))
-            all-formulas))
+            all-circular-formulas))
 
 (define (create-constraints-for-formula sym formula cell-loc)
   (match formula
@@ -913,68 +932,70 @@
      (case op
        [(+ -)
         (push-constraint 
-         (list '= sym (create-constraints-for-formula (gensym) arg1 cell-loc)))
+         (list '= sym (create-constraints-for-formula (gen-beta-var) arg1 cell-loc)))
         (push-constraint
-         (list '= sym (create-constraints-for-formula (gensym) arg2 cell-loc)))]
+         (list '= sym (create-constraints-for-formula (gen-beta-var) arg2 cell-loc)))]
        [(*) 
         (push-constraint 
          (list '@ sym 
-               (create-constraints-for-formula (gensym) arg1 cell-loc)
-               (create-constraints-for-formula (gensym) arg2 cell-loc)))]
+               (create-constraints-for-formula (gen-beta-var) arg1 cell-loc)
+               (create-constraints-for-formula (gen-beta-var) arg2 cell-loc)))]
        [(/) 
         (push-constraint 
          (list '@/ sym
-               (create-constraints-for-formula (gensym) arg1 cell-loc)
-               (create-constraints-for-formula (gensym) arg2 cell-loc)))]
+               (create-constraints-for-formula (gen-beta-var) arg1 cell-loc)
+               (create-constraints-for-formula (gen-beta-var) arg2 cell-loc)))]
        [(^)
         (push-constraint
-         (list '= (create-constraints-for-formula (gensym) arg2 cell-loc) (empty-unit)))])]
+         (list '= (create-constraints-for-formula
+                   (gen-beta-var) arg2 cell-loc) (empty-unit)))])]
     [($ boolean-op name deps op arg1 arg2)
      (push-constraint 
       (list '= 
-            (create-constraints-for-formula (gensym) arg1 cell-loc)
-            (create-constraints-for-formula (gensym) arg2 cell-loc)))
+            (create-constraints-for-formula (gen-beta-var) arg1 cell-loc)
+            (create-constraints-for-formula (gen-beta-var) arg2 cell-loc)))
      (push-constraint (list '= sym (empty-unit)))]
     [($ unary-op name deps op arg)
      (push-constraint
-      (list '= sym (create-constraints-for-formula (gensym) arg cell-loc)))]
+      (list '= sym (create-constraints-for-formula (gen-beta-var) arg cell-loc)))]
     [($ tbl-left name deps input-cell)
      (let* ([input-cell-sym (create-constraints-for-formula 
-                             (gensym)
+                             (gen-beta-var)
                              (make-cell-ref input-cell empty)
                              input-cell)]
             [left-cell (left-of cell-loc)]
             [formula-cell (get-formula-loc-up cell-loc)]
             [formula-sym (create-constraints-for-formula 
-                          (gensym) 
+                          (gen-beta-var) 
                           (make-cell-ref formula-cell empty)
                           formula-cell)]
             [left-cell-sym (create-constraints-for-formula
-                            (gensym) 
+                            (gen-beta-var) 
                             (make-cell-ref left-cell empty)
                             left-cell)])
        (push-constraint (list '= left-cell-sym input-cell-sym))
        (push-constraint (list '= sym formula-sym)))]
     [($ tbl-top name deps input-cell)
      (let* ([input-cell-sym (create-constraints-for-formula 
-                             (gensym)
+                             (gen-beta-var)
                              (make-cell-ref input-cell empty)
                              input-cell)]
             [top-cell (top-of cell-loc)]
             [formula-cell (get-formula-loc-left cell-loc)]
             [formula-sym (create-constraints-for-formula
-                          (gensym) 
+                          (gen-beta-var) 
                           (make-cell-ref formula-cell empty)
                           formula-cell)]
             [top-cell-sym (create-constraints-for-formula 
-                           (gensym) 
+                           (gen-beta-var) 
                            (make-cell-ref top-cell empty)
                            top-cell)])
        (push-constraint (list '= top-cell-sym input-cell-sym))
        (push-constraint (list '= sym formula-sym)))]
     [($ application name deps fun args) 
      (let ([arg-syms (map (lambda (a)
-                            (create-constraints-for-formula (gensym) a cell-loc)) args)])
+                            (create-constraints-for-formula
+                             (gen-beta-var) a cell-loc)) args)])
        (case fun
          [(average sum min max)
           (for-each (lambda (s)
@@ -1015,6 +1036,11 @@
                    (push-constraint (list '= arg-sym (empty-unit)))
                    (push-constraint (list '= sym (empty-unit)))]
                   [else (error fun "illegal use")]))]
+         [(sqrt) (let ([arg-sym (first arg-syms)])
+                   (cond
+                     [(= 1 (length args))
+                      (push-constraint (list '@/ sym arg-sym sym))]
+                     [else (error fun "illegal use")]))]
          [(fact) (let ([arg-sym (first arg-syms)])
                    (cond
                      [(= 1 (length args))
@@ -1040,8 +1066,8 @@
                        (let* ([cell-xy (get-row-col-num cell-loc)]
                               [M1-row (car cell-xy)]
                               [M2-col (cadr cell-xy)]
-                              [M1-row-sym (gensym)]
-                              [M2-col-sym (gensym)])
+                              [M1-row-sym (gen-beta-var)]
+                              [M2-col-sym (gen-beta-var)])
                          (for-each (lambda (s)
                                      (push-constraint (list '= M1-row-sym s)))
                                    (matrix-row-syms (car Ms) M1-row))
@@ -1054,7 +1080,24 @@
   sym)
 
 (define (alpha-var? a)
-  (and (symbol? a) (char=? #\a (string-ref (symbol->string a) 0))))
+  (and (symbol? a)
+       (let [(l (string->list (symbol->string a)))]
+         (and (> (length l) 3)
+              (equal? (first l) #\a)
+              (equal? (second l) #\_)
+              (equal? (third l) #\g)))))
+
+(define (beta-var? b)
+  (and (symbol? b)
+       (let [(l (string->list (symbol->string b)))]
+         (and (> (length l) 3)
+              (equal? (first l) #\b)
+              (equal? (second l) #\_)
+              (equal? (third l) #\g)))))
+
+(define (dim-var? s) (or (alpha-var? s) (beta-var? s)))
+
+(define (dim? u) (and (list? u) (list? (first u))))
 
 (define (prune-constraints)
   (letrec ([loop (lambda ()
@@ -1062,19 +1105,18 @@
                      (let* ([c (pop-eq-constraint)]
                             [get-syms 
                              (lambda (c)
-                               (cond [(or (and (symbol? (third c))
-                                               (not (alpha-var? (third c))))
-                                          (list? (second c)))
+                               (cond [(or (and (alpha-var? (third c))
+                                               (beta-var? (second c)))
+                                          (dim? (second c)))
                                       (list (third c) (second c))]
                                      [else (list (second c) (third c))]))]
                             [syms (get-syms c)]
                             [sym1 (first syms)]
                             [sym2 (second syms)])
-                       (when (symbol? sym1)
-                         (replace-in-constraints sym1 sym2)
+                       (replace-in-constraints sym1 sym2)
+                       (add-to-constraints-vars sym1 sym2)
+                       (when (dim-var? sym2)
                          (replace-in-constraints-vars sym1 sym2))
-                       (when (alpha-var? sym1)
-                         (add-to-constraints-vars sym1 sym2))
                        (loop))))])
     (loop)))
 
@@ -1094,7 +1136,7 @@
    (lambda (key val)
      (hash-table-put! hashed-constraints-vars key
                       (map (lambda (s)
-                             (cond [(eq? sym1 s) sym2]
+                             (cond [(equal? sym1 s) sym2]
                                    [else s]))
                            val)))))
 
@@ -1111,14 +1153,14 @@
         [operator (constraint-operator constraint)]
         [var (constraint-var constraint)])
     (cond
-      [(and (symbol? left-side) (symbol? right-side))
+      [(and (dim-var? left-side) (dim-var? right-side))
        (append (expand-var left-side (cons var deps))
                (cons operator 
                      (expand-var right-side (cons var deps))))]
-      [(symbol? left-side)
+      [(dim-var? left-side)
        (append (expand-var left-side (cons var deps))
                (list operator right-side))]
-      [(symbol? right-side)
+      [(dim-var? right-side)
        (append (list left-side operator)
                (expand-var right-side (cons var deps)))]
       [else (list left-side operator right-side)])))
@@ -1128,20 +1170,20 @@
             (lambda (l)
               (cond [(empty? l) empty]
                     [(eq? '@ (first l))
-                     (cond [(symbol? (second l))
+                     (cond [(dim-var? (second l))
                             (cons (list (list (second l) 1))
                                   (to-dims (rest (rest l))))]
                            [else (cons (second l)
                                        (to-dims (rest (rest l))))])]
                     [(eq? '@/ (first l))
-                     (cond [(symbol? (second l))
+                     (cond [(dim-var? (second l))
                             (cons (list (list (second l) -1))
                                   (to-dims (rest (rest l))))]
                            [else (cons (list (list (first (first (second l)))
                                                    (- 0 (second (first (second l))))))
                                        (to-dims (rest (rest l))))])]
                     [else
-                          (cond [(symbol? (second l))
+                     (cond [(dim-var? (second l))
                             (cons (list (list (second l) 1))
                                   (to-dims (rest (rest l))))]
                            [else (cons (second l) (to-dims (rest (rest l))))])]))]
@@ -1150,8 +1192,8 @@
                              [else (gen-mult-units (first l) (simplify (rest l)))]))])
     (filter 
      (lambda (c)
-      (not (and (= 3 (length c))
-                (eq? (first c) (third c)))))
+       (not (and (= 3 (length c))
+                 (eq? (first c) (third c)))))
      (map 
       (lambda (c)
         (if (= 3 (length c))
@@ -1187,15 +1229,25 @@
      (let ([var (first c)]
            [right-side (rest (rest c))])
        (when (not (not (assq var right-side)))
-         (let ([var_exp (- (second (assq var right-side)) 1)])
+         (let ([var_exp (- (second (assq var right-side)) 1)]
+               [filtered-right-side (filter (lambda (u)
+                                              (not (eq? (first u) var)))
+                                            right-side)])
            (cond [(= 0 var_exp) (add-to-constraints-vars var '((error/infinity 1)))]
-                 [(empty? (filter (lambda (u) (not (symbol? (first u))))
-                                  right-side))
+                 [(andmap (lambda (u) (dim-var? (first u))) right-side)
                   (for-each 
                    (lambda (u)
-                     (when (symbol? (first u))
-                       (add-to-constraints-vars (first u) (empty-unit))))
+                     (add-to-constraints-vars (first u) (empty-unit)))
                    right-side)]
+                 [(and (andmap (lambda (u) (not (dim-var? (first u))))
+                               filtered-right-side)
+                       (andmap (lambda (u) (integer? (/ (second u) var_exp)))
+                               filtered-right-side))
+                  (add-to-constraints-vars
+                   var
+                   (map (lambda (u)
+                          (list (first u) (/ (second u) (- 0 var_exp))))
+                        filtered-right-side))]                                          
                  [else (add-to-constraints-vars var '((error/not-empty 1)))])))))
    cs)
   (filter 
@@ -1207,11 +1259,11 @@
    (lambda (c)
      (let ([right-side (rest (rest c))])
        (cond
-         [(ormap (lambda (u) (symbol? (first u))) right-side)
+         [(ormap (lambda (u) (dim-var? (first u))) right-side)
           (add-to-constraints-vars (first c) '((error/infinity)))
           (for-each
            (lambda (u)
-             (when (symbol? (first u))
+             (when (dim-var? (first u))
                (add-to-constraints-vars (first u) '((error/infinity)))))
            right-side)]
          [else
@@ -1225,8 +1277,10 @@
    (lambda (var vals) (resolve-constraints-var var))))
 
 (define (resolve-constraints-var var)
-  (let* ([vals (hash-table-get hashed-constraints-vars var)]
-         [vars-dims (split-list vals (lambda (v) (symbol? v)))]
+  (let* ([vals (cond [(in-hash? hashed-constraints-vars var)
+                      (hash-table-get hashed-constraints-vars var)]
+                     [else '(((error/missing-dimensions 1)))])]
+         [vars-dims (split-list vals (lambda (v) (dim-var? v)))]
          [vars (first vars-dims)]
          [dims (second vars-dims)]
          [dims-only 
@@ -1246,8 +1300,8 @@
                                             var
                                             (list (first errs)))]
       [(empty? actual-dims) (hash-table-put! hashed-constraints-vars
-                                              var
-                                              '(((error/missing-dims 1))))]
+                                             var
+                                             '(((error/missing-dimensions 1))))]
       [(= 1 (length actual-dims)) (hash-table-put! hashed-constraints-vars
                                                    var
                                                    actual-dims)]
@@ -1263,7 +1317,7 @@
        (let ([cell-loc (first (hash-table-get hashed-vars var))])
          (hash-table-put! hashed-vars var (list cell-loc (first val)))
          (hash-table-put! hashed-units cell-loc (first val)))))))
-         
+
 (define (expand-var var deps)
   (if (and (in-constraints? var)
            (not (in-list? var deps)))
@@ -1384,16 +1438,16 @@
     (loop comment 0 (string-length comment))))
 
 (define (unit-check)
-  (compute-formulas)
+  (compute-formulas-circular)
+  (update-status! (format "+++ERROR REPORTING+++~n"))
   (mark-error-cells)
-  (compare-actual-annotated)
-  (update-status! (format "-----------------UNIT CHECKING DONE!---------------~n")))
+  (compare-actual-annotated))
 
 (define (unit-check-circular)
   (compute-formulas-circular)
+  (update-status! (format "+++ERROR REPORTING+++~n"))
   (mark-error-cells)
-  (compare-actual-annotate)
-  (update-status! (format "-----------------UNIT CHECKING DONE!----------------~n")))
+  (compare-actual-annotate))
 
 (define (cellref->rng cell)
   (let ([xy (cellref->numbers cell)])
@@ -1461,7 +1515,7 @@
   (let ([row-cells (get-range-cells (first-cell-in-row M row)
                                     (last-cell-in-row M row))])
     (map (lambda (cellref)
-           (let ([sym (gensym)])
+           (let ([sym (gen-beta-var)])
              (cond [(in-hash? hashed-units cellref)
                     (let ([u (hash-table-get hashed-units cellref)])
                       (cond [(in-hash? hashed-vars u) u]
@@ -1493,7 +1547,7 @@
   (let ([col-cells (get-range-cells (first-cell-in-col M col)
                                     (last-cell-in-col M col))])
     (map (lambda (cellref)
-           (let ([sym (gensym)])
+           (let ([sym (gen-beta-var)])
              (cond [(in-hash? hashed-units cellref)
                     (let ([u (hash-table-get hashed-units cellref)])
                       (cond [(in-hash? hashed-vars u) u]
@@ -1555,9 +1609,5 @@
       (else '()))))
 
 (define (split-large-args l)
-  (letrec ([loop (lambda (l1 l2)
-                   (cond [(= (length l1) 1) (list l1 l2)]
-                         [else (loop (rest l1) (cons (first l1) l2))]))])
-    (cond
-      [(empty? l) (list empty empty)]
-      [else (loop l empty)])))
+  (let ([reversed-l (reverse l)])
+    (list (list (first reversed-l)) (reverse (rest reversed-l)))))

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.2 1996/01/10 23:46:44 markus Exp $
+ * $Id: DC.h,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -207,6 +207,8 @@ public:
 	{ return ok; }
     void SetBackgroundMode(int mode)
 	{ current_text_bgmode = mode; }
+    int GetBackgroundMode()
+	{ return current_text_bgmode; }
     void SetOptimization(Bool opt)
 	{ optimize = opt; }
     void SetTextAlignment(int new_alignment)

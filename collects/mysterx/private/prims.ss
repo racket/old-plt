@@ -3,7 +3,7 @@
 (module prims mzscheme
   (require "mxmain.ss")
 
-  (provide
+  (provide 
    mx-version
    com-invoke
    com-set-property!
@@ -11,7 +11,7 @@
    com-methods
    com-get-properties
    com-set-properties
-   com-events
+   com-events	
    com-method-type
    com-get-property-type
    com-set-property-type
@@ -22,7 +22,7 @@
    date->com-date
    com-date?
    com-currency?
-   com-currency->number
+   com-currency->number	
    number->com-currency
    com-scode?
    com-scode->number
@@ -57,7 +57,7 @@
    restore
    register-navigate-handler
    current-url
-   current-document
+   current-document	
    print
    document?
    document-title
@@ -75,7 +75,7 @@
    element-get-text
    element-insert-text
    element-append-text
-   element-focus
+   element-focus	
    element-selection
    element-set-selection!
    element-attribute
@@ -281,5 +281,20 @@
    event-error?
    block-until-event
    process-win-events
-   com-omit
-   %%initialize-dotnet-runtime))
+   com-omit))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

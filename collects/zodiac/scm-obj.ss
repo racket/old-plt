@@ -72,11 +72,11 @@
     (define-struct private-clause (internals exprs))
     (define-struct local-clause (exports internals exprs))
     (define-struct inherit-clause (inheriteds))
-    (define-struct inherit-from-clause (super inheriteds))
+    (define-struct (inherit-from-clause struct:inherit-clause) (super))
     (define-struct rename-clause (internals inheriteds))
-    (define-struct rename-from-clause (super internals inheriteds))
+    (define-struct (rename-from-clause struct:rename-clause) (super))
     (define-struct share-clause (exports internals inheriteds))
-    (define-struct share-from-clause (super exports internals inheriteds))
+    (define-struct (share-from-clause struct:share-clause) (super))
     (define-struct sequence-clause (exprs))
 
     ; ----------------------------------------------------------------------
@@ -672,12 +672,12 @@
 					     (inherit-from-entry-super e)
 					     env)
 					   (make-inherit-from-clause
+					     (map car
+					       (ivar-entry-bindings e))
 					     (car
 					       (expand-exprs
 						 (list
-						   (inherit-from-entry-super e))))
-					     (map car
-					       (ivar-entry-bindings e))))
+						   (inherit-from-entry-super e))))))
 					 ((rename-entry? e)
 					   (make-rename-clause
 					     (map car (ivar-entry-bindings e))
@@ -687,12 +687,12 @@
 					     (rename-from-entry-super e)
 					     env)
 					   (make-rename-from-clause
+					     (map car (ivar-entry-bindings e))
+					     (rename-from-entry-inheriteds e)
 					     (car
 					       (expand-exprs
 						 (list
-						   (rename-from-entry-super e))))
-					     (map car (ivar-entry-bindings e))
-					     (rename-from-entry-inheriteds e)))
+						   (rename-from-entry-super e))))))
 					 ((share-entry? e)
 					   (make-share-clause
 					     (share-entry-exports e)
@@ -703,13 +703,13 @@
 					     (share-from-entry-super e)
 					     env)
 					   (make-share-from-clause
+					     (share-from-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (share-from-entry-inheriteds e)
 					     (car
 					       (expand-exprs
 						 (list
-						   (share-from-entry-super e))))
-					     (share-from-entry-exports e)
-					     (map car (ivar-entry-bindings e))
-					     (share-from-entry-inheriteds e)))
+						   (share-from-entry-super e))))))
 					 ((sequence-entry? e)
 					   (make-sequence-clause
 					     (expand-exprs
@@ -882,30 +882,39 @@
 			       (local-clause-internals clause)
 			       (local-clause-exports clause)
 			       (local-clause-exprs clause))))
-		      ((inherit-clause? clause)
-			`(inherit
-			   ,@(map (lambda (inherited)
-				    (p->r inherited))
-			       (inherit-clause-inheriteds clause))))
 		      ((inherit-from-clause? clause)
 			`(inherit-from
 			   ,(p->r (inherit-from-clause-super clause))
 			   ,@(map (lambda (inherited)
 				    (p->r inherited))
-			       (inherit-from-clause-inheriteds clause))))
+			       (inherit-clause-inheriteds clause))))
+		      ((inherit-clause? clause)
+			`(inherit
+			   ,@(map (lambda (inherited)
+				    (p->r inherited))
+			       (inherit-clause-inheriteds clause))))
+		      ((rename-from-clause? clause)
+			`(rename-from
+			   ,(p->r (rename-from-clause-super clause))
+			   ,@(map (lambda (internal inherited)
+				    `(,(p->r internal) ,(sexp->raw inherited)))
+			       (rename-clause-internals clause)
+			       (rename-clause-inheriteds clause))))
 		      ((rename-clause? clause)
 			`(rename
 			   ,@(map (lambda (internal inherited)
 				    `(,(p->r internal) ,(sexp->raw inherited)))
 			       (rename-clause-internals clause)
 			       (rename-clause-inheriteds clause))))
-		      ((rename-from-clause? clause)
-			`(rename-from
-			   ,(p->r (rename-from-clause-super clause))
-			   ,@(map (lambda (internal inherited)
-				    `(,(p->r internal) ,(sexp->raw inherited)))
-			       (rename-from-clause-internals clause)
-			       (rename-from-clause-inheriteds clause))))
+		      ((share-from-clause? clause)
+			`(share-from
+			   ,(p->r (share-from-clause-super clause))
+			   ,@(map (lambda (internal export inherited)
+				    `((,(p->r internal) ,(sexp->raw export))
+				       ,(sexp->raw inherited)))
+			       (share-clause-internals clause)
+			       (share-clause-exports clause)
+			       (share-clause-inheriteds clause))))
 		      ((share-clause? clause)
 			`(share
 			   ,@(map (lambda (internal export inherited)
@@ -914,15 +923,6 @@
 			       (share-clause-internals clause)
 			       (share-clause-exports clause)
 			       (share-clause-inheriteds clause))))
-		      ((share-from-clause? clause)
-			`(share-from
-			   ,(p->r (share-from-clause-super clause))
-			   ,@(map (lambda (internal export inherited)
-				    `((,(p->r internal) ,(sexp->raw export))
-				       ,(sexp->raw inherited)))
-			       (share-from-clause-internals clause)
-			       (share-from-clause-exports clause)
-			       (share-from-clause-inheriteds clause))))
 		      ((sequence-clause? clause)
 			`(sequence
 			   ,@(map p->r (sequence-clause-exprs clause))))))

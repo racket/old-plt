@@ -267,6 +267,17 @@
   (define error-color (make-object mred:color% "PINK"))
   (define color? (<= 8 (mred:get-display-depth)))
   
+  (define (quote-regexp-specials s)
+    (list->string
+     (let loop ([chars (string->list s)])
+       (cond
+	[(null? chars) null]
+	[else
+	 (case (car chars)
+	   [(#\( #\) #\* #\+ #\? #\[ #\] #\. #\^ #\$ #\\)
+	    (cons #\\ (cons (car chars) (loop (cdr chars))))]
+	   [else (cons (car chars) (loop (cdr chars)))])]))))
+
   (define (make-text% super%)
     (class super% args
       (inherit insert change-style
@@ -649,7 +660,7 @@
 		  (gw s1)))))]
 
 	  [this-err-write/exn ; =User=
-	   (let* ([raw-symbol-chars "a-z/*!?>:-"]
+	   (let* ([raw-symbol-chars "a-z/!>:-\\*\\?"]
 		  [symbol-chars (format "[~a]" raw-symbol-chars)]
 		  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
 		  [fallthru-regexp (regexp (format "^()(~a*): " symbol-chars))]
@@ -671,7 +682,7 @@
 		     (cond
 		      [(exn:variable? exn)
 		       (let* ([var (symbol->string (exn:variable-id exn))]
-			      [regexp (format "^(.*)(~a)" var)]
+			      [regexp (format "^(.*)(~a)" (quote-regexp-specials var))]
 			      [match (regexp-match regexp s)])
 			 (when match
 			   (let* ([var-start (+ start (string-length (cadr match)))]

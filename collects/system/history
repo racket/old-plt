@@ -1,0 +1,42 @@
+SYSTEM HISTORY
+--------------
+Version 45:
+
+- panel is now get-panel to support fancier interactions in the class
+  heirarchy. The searching panel in the search frame is now in it's
+  own panel, with only what sub-classes see as the result of (get-panel)
+  as it's other child.
+- active-canvas and active-edit can now return #f, when the active
+  item in a frame is not a canvas
+- all instance variables class% (e.g. edit% and canvas% on frames) 
+  have been changed to get-class%, to support inheiritance.
+- added extra optional arg to mred:local-busy-cursor and
+  mred:show-busy-cursor that specifies the timeout
+- frame title prefixes are now handled by the frame, and
+  the set-frame-prefix and set-frame-title methods correctly
+  update the graphical frame with it's new title.
+
+Version 44:
+- .html files (with file: links) are supported
+- system now provides and uses a better dialog buildling classes. 
+  See toolbox manual for more info
+- changed do-eval and do-save-and-eval-or-read-avail
+  to accept a range in the edit rather than a string
+- added read-snips/chars-from-buffer, a function that takes an edit and 
+  produces a thunk. That thunk returns either a snip or a character, for
+  each character and non-text snip in the edit.  
+- added a check so that edits will now save themselves in mred's format
+  if there are non-text snips in the edit.
+
+Version 43:
+- replaced search dialogue
+- new application startup procedure
+- mred:frame% changed to mred:editor-frame%
+- mred:canvas% changed to mred:editor-canvas%
+- mred:console-frame renamed to mred:console
+- mred:console-edit and mred:console-canvas gone, use
+  (ivar mred:console edit) and (ivar mred:console canavs)
+- expanded keybindings -- most movement keys now
+  have a shifted form that selects text
+- added mred:standard-menus-frame% which gets the right keybindings for
+  the different platforms

@@ -6446,7 +6446,7 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
 #if (ODBCVER >= 0x0300)
   SQLINTEGER actualLen;
 #endif
-  SQLINTEGER maxRows;
+  SQLINTEGER numRows;
   RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -6473,6 +6473,7 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   case SQL_FETCH_PRIOR :
   case SQL_FETCH_FIRST :
   case SQL_FETCH_LAST :
+
     if (argc > 2) {
       scheme_signal_error("extended-fetch: Only two arguments allowed "
 			  "when given '%s",fetchTypeString);
@@ -6483,6 +6484,7 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   case SQL_FETCH_ABSOLUTE :
   case SQL_FETCH_RELATIVE :
   case SQL_FETCH_BOOKMARK :
+
     if (SCHEME_INTP(argv[2]) == FALSE) {
       scheme_wrong_type("extended-fetch","integer",2,argc,argv);
     }
@@ -6496,10 +6498,10 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
 #if (ODBCVER >= 0x0300)
-  sr = SQLGetStmtAttr(stmtHandle,SQL_ATTR_MAX_ROWS,&maxRows,0,&actualLen);
+  sr = SQLGetStmtAttr(stmtHandle,SQL_ATTR_ROW_ARRAY_SIZE,&numRows,0,&actualLen);
   checkSQLReturn(sr,"get-stmt-attr");
 #else
-  sr = SQLGetStmtOption(stmtHandle,SQL_MAX_ROWS,&maxRows);
+  sr = SQLGetStmtOption(stmtHandle,SQL_ROWSET_SIZE,&numRows);
   checkSQLReturn(sr,"get-stmt-option");
 #endif
 
@@ -6509,8 +6511,8 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc(sizeof(SRP_SQL_ROW_STATUS));
   scheme_dont_gc_ptr(rowStatus);
   rowStatus->type = sql_row_status_type;
-  rowStatus->numRows = 1; /* can we do better? */
-  rowStatus->values = (SQLUSMALLINT *)scheme_malloc(maxRows * sizeof(SQLUSMALLINT));
+  rowStatus->numRows = 1; 
+  rowStatus->values = (SQLUSMALLINT *)scheme_malloc(numRows * sizeof(SQLUSMALLINT));
   rowStatus->usesSchemeStorage = TRUE;
   scheme_dont_gc_ptr(rowStatus->values);
 

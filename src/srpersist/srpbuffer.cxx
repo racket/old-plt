@@ -39,6 +39,13 @@ typedef void *LPWSTR;
 #include "srpbuffer.h"
 #include "srpersist.h"
 
+#if HASINT64
+#ifndef WIN32
+SRPINT64 _atoi64(char *);
+SRPUINT64 _atoui64(char *);
+#endif
+#endif
+
 Scheme_Object *readCharBuffer(char *buffer,long width,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i,j;
@@ -1176,7 +1183,7 @@ Scheme_Object *readUBigIntBuffer(SRPUINT64 *buffer,long arrayLength,long ndx) {
 SRPUINT64 _atoui64(char *s) {
   SRPUINT64 retval;
 
-  retval = 0ui64;
+  retval = 0;
 
   while(*s && isdigit(*s)) {
     retval *= 10;
@@ -1186,6 +1193,43 @@ SRPUINT64 _atoui64(char *s) {
 
   return retval;
 }
+
+#ifndef WIN32
+// Windows has native _atoi64()
+SRPINT64 add64(SRPINT64 n1, SRPINT64 n2) { 
+  return n1 + n2;
+}
+
+SRPINT64 sub64(SRPINT64 n1, SRPINT64 n2) { 
+  return n1 - n2;
+}
+
+SRPINT64 _atoi64(char *s) {
+  SRPINT64 retval;
+  SRPINT64 (*f)(SRPINT64,SRPINT64);
+  BOOL isNeg;  
+
+  isNeg = *s == '-';
+
+  if (isNeg || *s == '+') {
+    f = (isNeg ? sub64 : add64);
+    s++;
+  }
+  else {
+    f = add64;
+  }
+
+  retval = 0;
+
+  while(*s && isdigit(*s)) {
+    retval *= 10;
+    retval = (*f)(retval,*s - '0');
+    s++;
+  }
+
+  return retval;
+}
+#endif
 #endif
 
 #if HASINT64

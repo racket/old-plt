@@ -281,9 +281,9 @@ int sizeofCDataType(SQLSMALLINT type) {
 #if HASINT64
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
-    return sizeof(__int64);
+    return sizeof(SRPINT64);
   case SQL_C_UBIGINT :
-    return sizeof(unsigned __int64);
+    return sizeof(SRPUINT64);
 #endif
 #endif
 
@@ -1488,7 +1488,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
       scheme_wrong_type("write-buffer","integer",1,argc,argv);
     }
 
-    writeUBigIntBuffer((unsigned __int64 *)buffer,argv[1],ndx); 
+    writeUBigIntBuffer((SRPUINT64 *)buffer,argv[1],ndx); 
 #endif
 #endif
 

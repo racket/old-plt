@@ -427,7 +427,7 @@
          
   ;; subset? : integer-set integer-set -> bool
   (define (subset? s1 s2)
-    (subset?-helper (integer-set-contents s1) (integer-set-contents s1)))
+    (subset?-helper (integer-set-contents s1) (integer-set-contents s2)))
     
   (define int (flat-named-contract "exact-integer" int?))
   (provide/contract (struct integer-set ((contents (flat-named-contract "integer-set-list" well-formed-set?))))

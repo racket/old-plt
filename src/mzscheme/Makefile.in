@@ -17,7 +17,7 @@ RANLIB = @RANLIB@
 GCDIR = gc
 
 # system name for installation
-INSTALLSYS = `../../bin/archsys`
+INSTALLSYS = `$(srcdir)/../../bin/archsys`
 
 ################################################################################
 
@@ -213,19 +213,19 @@ install:
 	$(MAKE) @MZINSTALLTARGET@
 
 normal-install:
-	if [ ! -d ../../.bin ] ; then mkdir ../../.bin ; fi
-	if [ ! -d ../../.bin/$(INSTALLSYS) ] ; then mkdir ../../.bin/$(INSTALLSYS) ; fi
-	rm -f ../../.bin/$(INSTALLSYS)/mzscheme
-	cp $(MZSCHEME) ../../.bin/$(INSTALLSYS)/mzscheme
-	if [ ! -d ../../collects/mzscheme/lib/$(INSTALLSYS) ] ; then mkdir ../../collects/mzscheme/lib/$(INSTALLSYS) ; fi
-	cp mzdyn.o ../../collects/mzscheme/lib/$(INSTALLSYS)/mzdyn.o
-	cp libgc.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libgc.a
-	cp libmzscheme.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libmzscheme.a
+	if [ ! -d $(srcdir)/../../.bin ] ; then mkdir $(srcdir)/../../.bin ; fi
+	if [ ! -d $(srcdir)/../../.bin/$(INSTALLSYS) ] ; then mkdir $(srcdir)/../../.bin/$(INSTALLSYS) ; fi
+	rm -f $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
+	cp $(MZSCHEME) $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
+	if [ ! -d $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS) ] ; then mkdir $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS) ; fi
+	cp mzdyn.o $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)/mzdyn.o
+	cp libgc.a $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)/libgc.a
+	cp libmzscheme.a $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)/libmzscheme.a
 
 cygwin-install:
-	# rm -f ../../mzscheme.exe
-	# cp $(MZSCHEME).exe ../../mzscheme.exe
-	cd dynsrc; command ./gmkmzdyn.bat
-	# cp mzstart.exe ../../collects/launcher/mzstart.exe
-	cp $(LIBDIR)/libgc.a ../../collects/mzscheme/lib/win32/i386/libgc.a
-	cp $(LIBDIR)/libmzscheme.a ../../collects/mzscheme/lib/win32/i386/libmzscheme.a
+	rm -f $(srcdir)/../../mzscheme.exe
+	cp $(MZSCHEME).exe $(srcdir)/../../mzscheme.exe
+	cd $(srcdir)/dynsrc; command ./gmkmzdyn.bat
+	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
+	cp libgc.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libgc.a
+	cp libmzscheme.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libmzscheme.a

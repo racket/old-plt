@@ -106,10 +106,10 @@ clean:
 	cd wxs; $(MAKE) clean
 
 install:
-	if [ ! -d ../../.bin ] ; then mkdir ../../.bin ; fi
-	if [ ! -d ../../.bin/$(INSTALLSYS) ] ; then mkdir ../../.bin/$(INSTALLSYS) ; fi
-	rm -f ../../.bin/$(INSTALLSYS)/mred
-	cp mred ../../.bin/$(INSTALLSYS)/mred
+	if [ ! -d $(srcdir)/../../.bin ] ; then mkdir $(srcdir)/../../.bin ; fi
+	if [ ! -d $(srcdir)/../../.bin/$(INSTALLSYS) ] ; then mkdir $(srcdir)/../../.bin/$(INSTALLSYS) ; fi
+	rm -f $(srcdir)/../../.bin/$(INSTALLSYS)/mred
+	cp mred $(srcdir)/../../.bin/$(INSTALLSYS)/mred
 
 # Precise GC:
 include gc2/GNUmakefile

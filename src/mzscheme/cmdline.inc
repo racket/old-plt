@@ -449,6 +449,10 @@ static int run_from_cmd_line(int argc, char *argv[],
 #  endif
 # endif
 #endif
+
+#ifdef USE_FD_PORTS
+   fflush(stdout);
+#endif
   }
 #endif /* DONT_PARSE_COMMAND_LINE */
   

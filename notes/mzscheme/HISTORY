@@ -4,6 +4,25 @@ Version 102/10:
  * Switched to `configure'-based Makefiles (autoconf). See
    plt/src/README, and use plt/src/configure.
 
+ * Added `process[*]/ports', which is like `process[*]', but it takes
+   three file-stream ports to use for the subprocess's stdio streams:
+   an input port for the process's stdin, and output ports for the
+   process's stdout and stderr.
+
+   If #f is provided for one of the streams, then `process[*]/ports'
+   makes a pipe and return the other end for the corresponding stream,
+   as for `process[*]'. But when a port is provided for a particular
+   stream, `process[*]/ports' does not create the corresponding pipe,
+   and instead use the given port, returning #f for that stream.
+
+   If a provided port is not a file-stream port (created by
+   `open-input-file' or `process[*][/file-ports]', or one of the
+   original stdio ports), then an exception would be raised.
+
+ * Added `file-stream-port?', useful with `process[*]/ports' and
+   `file-position' (which requires a file-stream port for changing the
+   position).
+
  * Changed `read-string!' to `read-string-avail!', which reads only as
    many characters as are immediately ready, blocking only if no chars
    are available. (The old `read-string!' can be efficiently
@@ -42,28 +61,8 @@ Version 102/10:
 
  * Unix: changed MzScheme's `open-input-file' and `open-output-file'
    (etc.) to use fd-based ports instead of FILE*-based ports. This
-   move gives MzScheme finer control over input and output, and it
-   makes sense now that the relatively new fd ports have been tested
-   for a while.
-
- * Added `process[*]/ports', which is like `process[*]', but it takes
-   three file-stream ports to use for the subprocess's stdio streams:
-   an input port for the process's stdin, and output ports for the
-   process's stdout and stderr.
-
-   If #f is provided for one of the streams, then `process[*]/ports'
-   makes a pipe and return the other end for the corresponding stream,
-   as for `process[*]'. But when a port is provided for a particular
-   stream, `process[*]/ports' does not create the corresponding pipe,
-   and instead use the given port, returning #f for that stream.
-
-   If a provided port is not a file-stream port (created by
-   `open-input-file' or `process[*][/file-ports]', or one of the
-   original stdio ports), then an exception would be raised.
-
- * Added `file-stream-port?', useful with `process[*]/ports' and
-   `file-position' (which requires a file-stream port for changing the
-   position).
+   change gives MzScheme finer control over input and output; it makes
+   sense now that fd-based ports have been tested for a few months.
 
  * Fixed regexp to work with `-' as the last character in a `[...]'
    pattern. (The bug was introduced in 102/8.) (PR 1381)

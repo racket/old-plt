@@ -73,6 +73,7 @@ static int mzerrno = 0;
 #  include <process.h>
 #  include <signal.h>
 #  define OS_SEMAPHORE_TYPE HANDLE
+#  define OS_MUTEX_TYPE CRITICAL_SECTION
 #  define OS_THREAD_TYPE HANDLE
 # endif
 #endif
@@ -81,6 +82,10 @@ static int mzerrno = 0;
 # include <be/kernel/OS.h>
 # define OS_SEMAPHORE_TYPE sem_id
 # define OS_THREAD_TYPE thread_id
+#endif
+
+#ifdef WIN32_FD_HANDLES
+static Scheme_Object *all_tested_ports;
 #endif
 
 typedef struct Scheme_Indexed_String {
@@ -991,7 +996,7 @@ void scheme_fdclr(void *fd, int n)
     --((win_extended_fd_set *)fd)->added;
 #endif
 #if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
-  FD_CLR(n, ((fd_set *)fd));
+  FD_CLR((unsigned)n, ((fd_set *)fd));
 #endif
 }
 
@@ -1040,7 +1045,7 @@ static void add_fd_handle(OS_SEMAPHORE_TYPE h, void *fds, int repost)
 
 Scheme_Object *scheme_make_port_type(const char *name)
 {
-  return scheme_intern_symbol(name);
+  return scheme_make_symbol(name);
 }
 
 Scheme_Input_Port *
@@ -1844,14 +1849,19 @@ make_fd_input_port(int fd, const char *filename)
 /* Win32/BeOS input ports that could block on reads */
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 
+#define TIF_BUFFER 100
+
 typedef struct {
   FILE *fp;
-  OS_THREAD_TYPE th;           /* worker thread */
-  OS_SEMAPHORE_TYPE ready_sema;   /* hit when a char is ready */
-  OS_SEMAPHORE_TYPE try_sema;     /* hit when a char is wanted */
-  char trying;         /* indicates that it's already trying to read */
-  char ready;          /* indicates that a character is ready */
-  int c;               /* ready character */
+  OS_THREAD_TYPE th;             /* worker thread */
+  OS_SEMAPHORE_TYPE try_sema;    /* hit when a char is wanted */
+  OS_SEMAPHORE_TYPE ready_sema;  /* hit when a char is ready */
+  int need_wait;                 /* 1 => use ready_sema */
+  OS_MUTEX_TYPE lock_mutex;      /* lock on remaining fields */
+  int trying;          /* indicates that it's already trying to read */
+  int ready;           /* indicates that a character is ready */
+  int eof;             /* indicates end-of-file reached */
+  int c[TIF_BUFFER];   /* ready character */
 } Tested_Input_File;
 
 #ifdef WIN32_FD_HANDLES
@@ -1859,8 +1869,12 @@ typedef struct {
 # define TRY_WAIT_SEMAPHORE(sem) (WaitForSingleObject(sem, 0) == WAIT_OBJECT_0)
 # define WAIT_SEMAPHORE(sem) WaitForSingleObject(sem, INFINITE);
 # define WAIT_THREAD(th) WaitForSingleObject(th, INFINITE);
-# define MAKE_SEMAPHORE() CreateSemaphore(NULL, 0, 1, NULL);
+# define MAKE_SEMAPHORE() CreateSemaphore(NULL, 0, TIF_BUFFER, NULL);
 # define FREE_SEMAPHORE(sem) CloseHandle(sem)
+# define MAKE_MUTEX(m) InitializeCriticalSection(&m)
+# define ACQUIRE_MUTEX(m) EnterCriticalSection(&m)
+# define RELEASE_MUTEX(m) LeaveCriticalSection(&m)
+# define FREE_MUTEX(m) DeleteCriticalSection(&m)
 #endif
 #ifdef USE_BEOS_PORT_THREADS
 # define RELEASE_SEMAPHORE(sem) release_sem(sem)
@@ -1880,23 +1894,14 @@ static int tested_file_char_ready(Scheme_Input_Port *p)
 
   tip = (Tested_Input_File *)p->port_data;
 
-  if (tip->ready)
+  if (tip->ready || tip->eof)
     return 1;
  
   if (!tip->trying) {
-    tip->trying = 1;
+    tip->trying = TIF_BUFFER;
     RELEASE_SEMAPHORE(tip->try_sema);
   }
 
-  if (tip->trying) {
-    if (TRY_WAIT_SEMAPHORE(tip->ready_sema)) {
-      tip->ready = 1;
-      tip->trying = 0;
-      return 1;
-    } else
-      return 0;
-  }
-  
   return 0;
 }
 
@@ -1917,10 +1922,19 @@ static int tested_file_getc(Scheme_Input_Port *p)
     scheme_current_process->ran_some = 1;
   }
 
-  if (tip->c != EOF)
-    tip->ready = 0;
-
-  return tip->c;
+  if (tip->ready) {
+    int c;
+    ACQUIRE_MUTEX(tip->lock_mutex);
+    if (tip->need_wait) {
+      WAIT_SEMAPHORE(tip->ready_sema);
+      tip->need_wait = 0;
+    }
+    c = tip->c[--tip->trying];
+    --tip->ready;
+    RELEASE_MUTEX(tip->lock_mutex);
+    return c;
+  } else /* must be EOF */
+    return EOF;
 }
 
 static void tested_file_close_input(Scheme_Input_Port *p)
@@ -1929,7 +1943,13 @@ static void tested_file_close_input(Scheme_Input_Port *p)
 
   tip = (Tested_Input_File *)p->port_data;
 
-  fclose(tip->fp); /* sends EOF to reader thread */
+  /* send EOF to reader thread */
+#ifdef WIN32_FD_HANDLES
+  CloseHandle((HANDLE)_get_osfhandle(_fileno(tip->fp)));
+#else
+  fclose(tip->fp); 
+#endif
+
   --scheme_file_open_count;
 
   RELEASE_SEMAPHORE(tip->try_sema);
@@ -1942,6 +1962,22 @@ static void tested_file_close_input(Scheme_Input_Port *p)
 
   FREE_SEMAPHORE(tip->ready_sema);
   FREE_SEMAPHORE(tip->try_sema);
+  FREE_MUTEX(tip->lock_mutex);
+
+#ifdef WIN32_FD_HANDLES
+  {
+    Scheme_Object *v, *prev = NULL;
+    for (v = all_tested_ports; SCHEME_PAIRP(v); prev = v, v = SCHEME_CDR(v)) {
+      if (SCHEME_CAR(v) == (Scheme_Object *)p) {
+	if (prev)
+	  SCHEME_CDR(prev) = SCHEME_CDR(v);
+	else
+	  all_tested_ports = SCHEME_CDR(v);
+	break;
+      }
+    }
+  }
+#endif
 }
 
 static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
@@ -1950,13 +1986,34 @@ static void tested_file_need_wakeup(Scheme_Input_Port *p, void *fds)
 
   tip = (Tested_Input_File *)p->port_data;
 
+  if (!tip->need_wait) {
+    ACQUIRE_MUTEX(tip->lock_mutex);
+    if (tip->ready) {
+      /* A char turned up as we were preparing the wakeup... */
+      RELEASE_SEMAPHORE(tip->ready_sema);
+      tip->need_wait = -1;
+    } else
+      tip->need_wait = 1;
+    RELEASE_MUTEX(tip->lock_mutex);
+  }
+
   add_fd_handle(tip->ready_sema, fds, 1);
 }
+
+#ifdef WIN32_FD_HANDLES
+void close_all_tested_ports(void)
+{
+  while (!SCHEME_NULLP(all_tested_ports)) {
+    Scheme_Object *p = SCHEME_CAR(all_tested_ports);
+    tested_file_close_input((Scheme_Input_Port *)p);
+  }
+}
+#endif
 
 static long read_for_tested_file(void *data)
 {
   Tested_Input_File *tip;
-  int c = 0;
+  int c = 0, i;
 
 #ifdef USE_BEOS_PORT_THREADS
   signal(SIGINT, SIG_IGN);
@@ -1965,10 +2022,21 @@ static long read_for_tested_file(void *data)
 
   tip = (Tested_Input_File *)data;
 
-  while (c != EOF) {
+  while (!tip->eof) {
     WAIT_SEMAPHORE(tip->try_sema);
-    c = tip->c = fgetc(tip->fp);
-    RELEASE_SEMAPHORE(tip->ready_sema);
+    for (i = tip->trying; !tip->eof && i--; ) {
+      c = fgetc(tip->fp);
+      tip->c[i] = c;
+      if (c == EOF)
+	tip->eof = feof(tip->fp);
+      ACQUIRE_MUTEX(tip->lock_mutex);
+      tip->ready++;
+      if (tip->need_wait > 0) {
+	RELEASE_SEMAPHORE(tip->ready_sema);
+	tip->need_wait = -1;
+      }
+      RELEASE_MUTEX(tip->lock_mutex);
+    }
   }
 
   return 0;
@@ -1988,8 +2056,10 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 
   tip->ready = 0;
   tip->trying = 0;
+  tip->eof = 0;
   tip->ready_sema = MAKE_SEMAPHORE();
   tip->try_sema = MAKE_SEMAPHORE();
+  MAKE_MUTEX(tip->lock_mutex);
 
 #ifdef WIN32_FD_HANDLES
 # ifdef NO_NEED_FOR_BEGINTHREAD
@@ -1997,9 +2067,9 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 # endif
   {
     DWORD id;
-    tip->th = _beginthreadex(NULL, 5000, 
-			     (LPTHREAD_START_ROUTINE)read_for_tested_file,
-			     tip, 0, &id);
+    tip->th = (void *)_beginthreadex(NULL, 5000, 
+				     (LPTHREAD_START_ROUTINE)read_for_tested_file,
+				     tip, 0, &id);
   }
 #endif
 
@@ -2042,6 +2112,15 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 			       1);
 
   ip->name = scheme_strdup(name);
+
+#ifdef WIN32_FD_HANDLES
+  if (!all_tested_ports) {
+    REGISTER_SO(all_tested_ports);
+    all_tested_ports = scheme_null;
+    atexit(close_all_tested_ports);
+  }
+  all_tested_ports = scheme_make_pair((Scheme_Object *)ip, all_tested_ports);
+#endif
 
   return (Scheme_Object *)ip;
 }
@@ -6537,7 +6616,7 @@ static int wait_multiple_sema(int count, sem_id *a, float timeout)
 static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array, 
 			  int *rps, int count)
 {
-  if ((result >= WAIT_OBJECT_0) && (result < WAIT_OBJECT_0 + count)) {
+  if ((result >= (long)WAIT_OBJECT_0) && (result < (long)WAIT_OBJECT_0 + count)) {
     result -= WAIT_OBJECT_0;
     if (rps[result])
       RELEASE_SEMAPHORE(array[result]);

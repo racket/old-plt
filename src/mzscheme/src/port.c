@@ -3709,6 +3709,7 @@ static void with_unset_output_port(void *d)
   Scheme_Config *config = scheme_config;
 
   scheme_set_param(config, MZCONFIG_OUTPUT_PORT, SCHEME_CDR(SCHEME_CDR((Scheme_Object *)d)));
+  scheme_close_output_port(SCHEME_CAR(SCHEME_CDR((Scheme_Object *)d)));
 }
 
 static Scheme_Object *
@@ -3746,6 +3747,7 @@ static void with_unset_input_port(void *d)
   Scheme_Config *config = scheme_config;
 
   scheme_set_param(config, MZCONFIG_INPUT_PORT, SCHEME_CDR(SCHEME_CDR((Scheme_Object *)d)));
+  scheme_close_input_port(SCHEME_CAR(SCHEME_CDR((Scheme_Object *)d)));
 }
 
 static Scheme_Object *

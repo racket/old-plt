@@ -8,7 +8,8 @@
          "test-serve-static-jpeg.ss"
          "test-web-server.ss"
          "test-servlets.ss"
-         "test-errors.ss")
+         "test-errors.ss"
+         "test-send.ss")
 
 (test/text-ui test-web-server)
 (test/text-ui test-serve-static-html)
@@ -16,3 +17,4 @@
 (test/text-ui test-authentication)
 (test/text-ui test-errors)
 (test/text-ui test-servlets)
+(test/text-ui test-send)

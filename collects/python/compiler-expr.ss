@@ -5,13 +5,14 @@
 	   "compiler.ss"
 	   "compiler-target.ss"
          ;  "empty-context.ss")
-       ;    "primitives.ss"
-          ; "runtime-context.ss")
+           "primitives.ss"
+	   "runtime-support.ss"
+           "runtime-context.ss"
            )
   
   (provide (all-defined))
   
-  (define py-so (lambda (x) x))
+  (define (py-so x) (datum->syntax-object #'here x)); (lambda (x) x))
   ; program identifiers should search the top level
 ;  (define program-context ;empty-context)
 ;                          #f)

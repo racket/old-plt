@@ -177,9 +177,9 @@
   ; see on-execute in the drscheme extension manual
   (define (init-python-namespace python-namespace)
     (my-dynamic-require python-namespace '(lib "base.ss" "python"))
-    ;(my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
+    (my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
     ;(my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
-    ;(my-dynamic-require python-namespace '(lib "primitives.ss" "python"))
+    (my-dynamic-require python-namespace '(lib "primitives.ss" "python"))
     )
   
   (define (my-dynamic-require dest-namespace spec)

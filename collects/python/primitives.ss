@@ -814,22 +814,23 @@
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (cond
                                                 [(list? v)
-                                                 (printf "PT LIST~n")
+                                                 ;(printf "PT LIST~n")
                                                  (python-set-member! this
                                                                      scheme-list-key
                                                                      v)]
                                                 [(number? v)
-                                                 (printf "PT NUM: ~a~n" v)
+                                                 ;(printf "PT NUM: ~a~n" v)
                                                  (python-set-member! this
                                                                      scheme-list-key
                                                                      (build-list v identity))]
                                                 [(py-is-a? v py-tuple%)
-                                                 (printf "PT TUP~n")
+                                                 ;(printf "PT TUP~n")
                                                  (python-set-member! this
                                                                      scheme-list-key
                                                                      (py-tuple%->list v))]
                                                 [else (error "Invalid argument to tuple constructor")])
-                                              (printf "new tuple is ~a~n" (py-tuple%->list this))))
+                                              ;(printf "new tuple is ~a~n" (py-tuple%->list this))
+					      ))
                         (__getitem__ ,(py-lambda '__getitem__ (this key)
                                                  (simple-get-item this key list->py-tuple% py-tuple%->list)))
                         (__setitem__ ,(py-lambda '__setitem__ (this key value)

@@ -1106,7 +1106,6 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn &f)
 /***************************************************************/
 
 wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
-  : wxInternalSnip(TRUE)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_IMAGE_SNIP;
@@ -1128,8 +1127,6 @@ wxImageSnip::wxImageSnip(char *name, long type, Bool relative, Bool inlineImg)
 
 wxImageSnip::~wxImageSnip()
 {
-  if (filename)
-    delete[] filename;
 }
 
 void wxImageSnip::SizeCacheInvalid(void)

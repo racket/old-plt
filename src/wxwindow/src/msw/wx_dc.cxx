@@ -1264,7 +1264,8 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
   if (theFont) {
     oldFont = font;
     SetFont(theFont);
-  }
+  } else
+    SetFont(font);
 
   dc = ThisDC();
 

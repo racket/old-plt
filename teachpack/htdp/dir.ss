@@ -1,3 +1,5 @@
 (module dir mzscheme
-  (require (lib "dir.ss" "htdp"))
-  (provide (all-from (list "dir.ss" "htdp"))))
+  (require (all-except (lib "dir.ss" "htdp") file-size)
+	   (rename (lib "dir.ss" "htdp") file--size file-size))
+  (provide (rename file--size file-size)
+	   (all-from (lib "dir.ss" "htdp"))))

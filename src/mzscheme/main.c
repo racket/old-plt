@@ -94,12 +94,13 @@ static void dangerdanger(int ignored)
 static Scheme_Object *orig_evaluator;
 #endif
 
-#ifndef MACINTOSH_EVENTS
 extern Scheme_Process *scheme_main_process;
 
-#ifdef MZ_REAL_THREADS
+#ifndef MACINTOSH_EVENTS
+
+# ifdef MZ_REAL_THREADS
 extern int scheme_dont_send_break_signal;
-#endif
+# endif
  
 static void user_break_hit(int ignore)
 {
@@ -133,6 +134,18 @@ static int WeAreFront()
   return r;
 }
 
+static int is_break_event(EventRecord *e)
+{
+   if ((e->what == keyDown)
+       && ((((e->message & charCodeMask) == '.') 
+            && (e->modifiers & cmdKey))
+           || (((e->message & charCodeMask) == 3)
+	           && (e->modifiers & controlKey))))
+	 return 1;
+  else
+    return 0;
+}
+
 static int check_break_flag()
 {
 #ifdef MACINTOSH_GIVE_TIME
@@ -143,11 +156,7 @@ static int check_break_flag()
       EventRecord e;
       front = WeAreFront();
       while (WaitNextEvent(everyEvent, &e, front ? 0 : 30, NULL)) {
-        if ((e.what == keyDown)
-            && ((((e.message & charCodeMask) == '.') 
-                 && (e.modifiers & cmdKey))
-                || (((e.message & charCodeMask) == 3)
-	                && (e.modifiers & controlKey)))) {
+        if (is_break_event(&e)) {
 	       return 1;
 	     }
 # ifdef MACINTOSH_SIOUX
@@ -162,10 +171,31 @@ static int check_break_flag()
 
 static void handle_one(EventRecord *e)
 {
+  if (is_break_event(e)) {
+    Scheme_Process *p = scheme_main_process;
+    if (!p->external_break)
+      scheme_break_thread(p);
+  }
+  
 # ifdef MACINTOSH_SIOUX
   SIOUXHandleOneEvent(e);
 # endif
 }
+
+static void MacSleep(float secs, void *fds)
+{
+   EventRecord e;
+   if (WaitNextEvent(everyEvent, &e, secs * 60, NULL)) {
+     if (is_break_event(&e)) {
+       Scheme_Process *p = scheme_main_process;
+       if (!p->external_break)
+         scheme_break_thread(p);
+     }
+     
+     handle_one(&e);
+   }
+}
+
 #endif
 
 #endif
@@ -301,6 +331,8 @@ int actual_main(int argc, char *argv[])
 #endif
 
   scheme_handle_aewait_event = handle_one;
+
+  scheme_sleep = MacSleep;
 
   Drop_GetArgs(&argc, &argv);
 #endif

@@ -4931,6 +4931,7 @@ static short tcpDriverId;
 #define	SOCK_STATE_CONNECTED 5 /* Socket is connected. */
 #define	SOCK_STATE_CLOSING 6 /* Socket is closing */
 #define	SOCK_STATE_LIS_CLOSE 7 /* Socket closed while listening */
+#define	SOCK_STATE_CLOSED 8 /* Socket closed nicely */
 
 typedef struct TCPiopbX {
   TCPiopb pb;
@@ -4967,11 +4968,14 @@ static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
     break;
     
   case TCPTerminate:
-    if (t->state != SOCK_STATE_LIS_CLOSE)
+    if (t->state != SOCK_STATE_LIS_CLOSE) {
       if (t->state == SOCK_STATE_LISTENING || t->state == SOCK_STATE_LIS_CON)
 	t->state = SOCK_STATE_LIS_CLOSE;
+      else if (t->state == SOCK_STATE_CLOSING)
+        t->state == SOCK_STATE_CLOSED;
       else
 	t->state = SOCK_STATE_UNCONNECTED;
+    }
     break;
   }
 }
@@ -5109,7 +5113,7 @@ static int tcp_addr(char *address, struct hostInfo *info)
 /* Forward prototype: */
 static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount);
 
-#define STREAM_BUFFER_SIZE 8192
+#define STREAM_BUFFER_SIZE 16384
 
 static TCPiopbX *mac_make_xpb(Scheme_Tcp *data)
 {
@@ -5117,7 +5121,7 @@ static TCPiopbX *mac_make_xpb(Scheme_Tcp *data)
 
   xpb = (TCPiopbX *)scheme_malloc(sizeof(TCPiopbX));
   
-  memcpy(xpb, data->tcp.create_pb, sizeof(TCPiopb ));
+  memcpy(xpb, data->tcp.create_pb, sizeof(TCPiopb));
 
   xpb->data = data;
 
@@ -5174,37 +5178,7 @@ static void mac_tcp_close(Scheme_Tcp *data)
   pb->csParam.close.ulpTimeoutValue = 60 /* seconds */;
   pb->csParam.close.ulpTimeoutAction = 1 /* 1:abort 0:report */;
   PBControlSync((ParamBlockRec*)pb);
-	
-#if 0
-	/* I don't know what this is for: */
-  if (!pb.ioResult) {
-#define TCP_MAX_WDS 10
-    rdsEntry rdsarray[TCP_MAX_WDS+1];
-    int passcount;
-    const int maxpass = 8;
 
-    for (passcount = 0; passcount < maxpass; passcount++) {
-      pb->csCode = TCPNoCopyRcv;
-      pb->csParam.receive.commandTimeoutValue = 1; /* seconds, 0 = blocking */
-      pb->csParam.receive.rdsPtr = (Ptr)rdsarray;
-      pb->csParam.receive.rdsLength = TCP_MAX_WDS;
-      
-      PBControlSync((ParamBlockRec*)pb);
-      
-      if (pb.ioResult)
-	break;
-      
-      pb->csCode = TCPRcvBfrReturn;
-      pb->csParam.receive.rdsPtr = (Ptr)rdsarray;
-      
-      PBControlSync((ParamBlockRec*)pb);
-      
-      if (pb->ioResult)
-	break;
-    }
-  }
-#endif
-  
   pb->csCode = TCPRelease;
   PBControlSync((ParamBlockRec*)pb);
 
@@ -5218,6 +5192,9 @@ static void mac_tcp_close(Scheme_Tcp *data)
 	else
 	  prev->next = x->next;
 	break;
+      } else {
+        prev = x;
+        x = x->next;
       }
     }
   }
@@ -5470,14 +5447,14 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
   data->sendbuftrying = 0;
 
 #ifndef USE_MAC_TCP
-#ifdef USE_WINSOCK_TCP
+# ifdef USE_WINSOCK_TCP
   {
     unsigned long ioarg = 1;
     ioctlsocket(tcp, FIONBIO, &ioarg);
   }
-#else
+# else
   fcntl(tcp, F_SETFL, TCP_NONBLOCKING);
-#endif
+# endif
 #endif
 
   return data;
@@ -5600,7 +5577,8 @@ static int tcp_getc(Scheme_Input_Port *port)
     default:
       break;
     }
-  } else if (data->tcp.state == SOCK_STATE_CLOSING) {
+  } else if (data->tcp.state == SOCK_STATE_CLOSING 
+             || data->tcp.state == SOCK_STATE_CLOSED) {
     data->bufmax = 0;
     errid = 0;
   } else

@@ -32,13 +32,13 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   (error 'readline-installer
 	 "can't find readline include files and/or library; try editing `search-path' in mzmake.ss"))
 
-(require-library "make.ss" "make")
-(require-library "link.ss" "dynext")
-(require-library "compile.ss" "dynext")
-(require-library "file.ss" "dynext")
+(import (lib "make.ss" "make"))
+(import (lib "link.ss" "dynext"))
+(import (lib "compile.ss" "dynext"))
+(import (lib "file.ss" "dynext"))
 
-(require-library "file.ss")
-(require-library "functio.ss")
+(import (lib "file.ss"))
+(import (lib "list.ss"))
 
 (make-print-checking #f)
 

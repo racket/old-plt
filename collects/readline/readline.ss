@@ -1,2 +1,6 @@
 
-(load-relative-extension (build-path "compiled" "native" (system-library-subpath) "mzrl.so"))
+(module readline mzscheme
+  (import "mzrl.ss") ;; should load .so form
+  
+  (export readline add-history))
+

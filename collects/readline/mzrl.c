@@ -8,13 +8,6 @@
 #endif
 #include <readline/readline.h>
 
-/* For pre-102 compatibility: */
-#ifndef MZ_DECL_VAR_REG
-# define MZ_DECL_VAR_REG(x) /* empty */
-# define MZ_VAR_REG(p, x)   /* empty */
-# define MZ_CWVR(x)         x
-#endif
-
 extern Function *rl_event_hook;
 
 Scheme_Object *do_readline(int argc, Scheme_Object **argv)
@@ -72,15 +65,23 @@ static int block(void)
 
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
-  Scheme_Object *a[2];
-  MZ_DECL_VAR_REG(2);
-  MZ_VAR_REG(0, a[0]);
-  MZ_VAR_REG(1, a[1]);
+  Scheme_Object *v;
+  MZ_DECL_VAR_REG(1);
+  MZ_VAR_REG(1, env);
 
-  a[0] = MZ_CWVR(scheme_make_prim_w_arity(do_readline, "readline", 1, 1));
-  a[1] = MZ_CWVR(scheme_make_prim_w_arity(do_add_history, "add-history", 1, 1));
+  v = MZ_CWVR(scheme_intern_symbol("mzrl"));
   
-  return MZ_CWVR(scheme_values(2, a));
+  env = MZ_CWVR(scheme_primitive_module(v, env));
+
+  v = MZ_CWVR(scheme_make_prim_w_arity(do_readline, "readline", 1, 1));
+  MZ_CWVR(scheme_add_global("readline", v, env));
+
+  v = MZ_CWVR(scheme_make_prim_w_arity(do_add_history, "add-history", 1, 1));
+  MZ_CWVR(scheme_add_global("add-history", v, env));
+  
+  MZ_CWVR(scheme_finish_primitive_module(env));
+
+  return scheme_void;
 }
 
 Scheme_Object *scheme_initialize(Scheme_Env *env)

@@ -1,35 +1,45 @@
 
-(require-relative-library "makes.ss")
+(module make mzscheme
+  (import (lib "unitsig.ss"))
 
-(begin-elaboration-time
-  (require-library "invoke.ss"))
+  (import "make-sig.ss"
+	  "make-unit.ss")
+  
+  (define-values/invoke-unit/sig make^ make@)
 
-(define-values/invoke-unit/sig make:make^
-  (require-relative-library "maker.ss"))
+  (export-signature-elements make^)
 
-(define-macro make
-  (let ([make (lambda (spec argv)
-		(let ([form-error (lambda (s . p) (apply raise-syntax-error 'make s spec p))])
-		  (and (or (list? spec) (form-error "illegal specification (not a sequence)"))
-		       (or (pair? spec) (form-error "empty specification"))
-		       (andmap
-			(lambda (line)
-			  (and (or (and (list? line) (>= (length line) 2))
-				   (form-error "clause does not have at least 2 parts" line))
-			       (let ([name (car line)])
-				 (or (list? (cadr line))
-				     (line-error "second part of clause is not a sequence" (cadr line))))))
-			spec))
-		  `(make/proc (list ,@(map (lambda (line)
-					 `(list ,(car line)
-						(list ,@(cadr line))
-						,@(let ([l (cddr line)])
-						    (if (null? l)
-							null
-							`((lambda ()
-							    ,@l))))))
-				       spec))
-			  ,argv)))])
-    (case-lambda
-     [(spec) (make spec #())]
-     [(spec argv) (make spec argv)])))
+  (define-syntax make
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ spec)
+	 (syntax (make spec #()))]
+	[(_ spec argv)
+	 (let ([form-error (lambda (s . p) 
+			     (apply raise-syntax-error 'make s stx p))])
+	   (let ([sl (syntax->list (syntax spec))])
+	     (unless (list? sl)
+	       (form-error "illegal specification (not a sequence)"))
+	     (unless (pair? sl)
+	       (form-error "empty specification"))
+	     (andmap
+	      (lambda (line)
+		(let ([ll (syntax->list line)])
+		  (unless (and (list? ll) (>= (length ll) 2))
+		    (form-error "clause does not have at least 2 parts" line))
+		  (let ([name (car ll)])
+		    (unless (syntax->list (cadr ll))
+		      (form-error "second part of clause is not a sequence" (cadr ll))))))
+	      sl)
+	     (with-syntax ([(line ...)
+			    (map (lambda (line)
+				   (syntax-case line () 
+				     [(target deps) (syntax (list target (list . deps)))]
+				     [(target deps . c) (syntax (list target (list . deps)
+								      (lambda () . c)))]))
+				 sl)])
+	       (syntax (make/proc 
+			(list line ...)
+			argv)))))])))
+
+  (export make))

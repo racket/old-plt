@@ -422,12 +422,23 @@ static inline double approx_dist(double x, double y)
   return ((x < y) ? x : y);
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+static wxMemoryDC *make_memdc(void)
+{
+  return new wxMemoryDC(1);
+}
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static void ScaleSection(wxMemoryDC *dest, wxBitmap *src, 
 			 double tx, double ty, double ww2, double hh2,
 			 double fx, double fy, double ww, double hh)
 {
-  double xs, ys, r, g, b, t, dx, dy, wt, si, sj;
-  int i, j, starti, endi, startj, endj, p, xi, xj, sbmw, sbmh, w, h, w2, h2;
+  double xs, ys, r, g, b, t, dx, dy, wt, si, sj, dist_base;
+  int i, j, starti, endi, startj, endj, p, xi, xj, sbmw, sbmh, w, h, w2, h2, ispan, jspan;
   unsigned char *s = NULL, *s2 = NULL;
   wxMemoryDC *srcdc = NULL;
   SETUP_VAR_STACK(5);
@@ -477,13 +488,26 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
   s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
 
+  if (w > w2) {
+    ispan = (w / w2) - 1;    
+  } else {
+    ispan = 0;
+  }
+  if (h > h2) {
+    jspan = (h / h2) - 1;
+    dist_base += 0.5;
+  } else {
+    jspan = 0;
+  }
+  dist_base = 0.01;
+
 #ifdef wx_msw
   srcdc = (wxMemoryDC *)src->selectedInto;
 #endif
   if (!srcdc) {
     if (!temp_mdc) {
       wxREGGLOB(temp_mdc);
-      temp_mdc = WITH_VAR_STACK(new wxMemoryDC(1));
+      temp_mdc = WITH_VAR_STACK(make_memdc());
     }
     WITH_VAR_STACK(temp_mdc->SelectObject(src));
     /* Might fail, so we double-check: */
@@ -503,27 +527,27 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
     temp_mdc->SelectObject(NULL);
   }
 
-  for (i = 0; i < w2; i++) {
-    si = (double)i / xs;
-    starti = (int)floor(si);
-    endi = (int)ceil(si);
-    if (endi >= w)
-      endi = w - 1;
-
-    for (j = 0; j < h2; j++) {
-      sj = (double)j / ys;
-      startj = (int)floor(sj);
-      endj = (int)ceil(sj);
-      if (endj >= h)
-	endj = h - 1;
+  for (j = 0; j < h2; j++) {
+    sj = (double)j / ys;
+    startj = (int)floor(sj);
+    endj = (int)ceil(sj) + jspan;
+    if (endj >= h)
+      endj = h - 1;
+    
+    for (i = 0; i < w2; i++) {
+      si = (double)i / xs;
+      starti = (int)floor(si);
+      endi = (int)ceil(si) + ispan;
+      if (endi >= w)
+	endi = w - 1;
 
       r = g = b = t = 0.0;
 
-      for (xi = starti; xi <= endi; xi++) {
-	for (xj = startj; xj <= endj; xj++) {
+      for (xj = startj; xj <= endj; xj++) {
+	for (xi = starti; xi <= endi; xi++) {
 	  dx = ((xi * xs) - i);
 	  dy = ((xj * ys) - j);
-	  wt = ((double)1 / (0.001 + approx_dist(dx, dy)));
+	  wt = ((double)1 / (dist_base + approx_dist(dx, dy)));
 	  p = ((xj * w) + xi) * 4;
 	  r += (wt * s[p+1]);
 	  g += (wt * s[p+2]);

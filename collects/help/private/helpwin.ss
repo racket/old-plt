@@ -1,6 +1,8 @@
+
 (module helpwin mzscheme
   (require (lib "unitsig.ss")
            "sig.ss"
+           (lib "getinfo.ss" "setup")
            (lib "list.ss")
            (lib "string.ss")
            (lib "file.ss")
@@ -12,8 +14,7 @@
   
   (define helpwin@
     (unit/sig help-window^
-      (import setup:info^
-              help:search^
+      (import help:search^
               browser^
               setup:plt-installer^
               mred^

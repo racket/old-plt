@@ -1,5 +1,6 @@
 (module help-unit mzscheme
   (require (lib "unitsig.ss")
+           (lib "browser-unit.ss" "browser")
            "help-sig.ss"
            "private/sig.ss"
            "private/helpwin.ss"
@@ -16,7 +17,7 @@
               [mixin : (frame-mixin)]
               [doc-position : help:doc-position^])
       (link [browser : browser^ (browser@ plt-installer mred)]
-            [search : help:search^ (search@ doc-position function)]
-            [helpwin : help:help-window^ (helpwin@ info search browser plt-installer mred framework mixin)])
+            [search : search^ (search@ doc-position function)]
+            [helpwin : help-window^ (helpwin@ search browser plt-installer mred framework mixin)])
       (export (open helpwin)
               (var (search doc-collections-changed))))))

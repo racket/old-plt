@@ -324,24 +324,24 @@ _Supplemental Help Desk documentation libraries_
 These libraries are used to build dynamic portions of the documentation.
 
 > Installed Components
-
   The _installed-components.ss_ library is a module that defines one procedure:
 > (help-desk:installed-components)
   It returns a string of xhtml with documentation extracted from the 
   _'blurb_ fields of the info.ss files in each collection.
-
-
   
 > Design Recipe Window
-
   the _recipewin.ss_ library contains a module that defines one procedure:
 > (help-desk:recipewin)
   This procedures opens up a design recipe browser to help programmers
   follow the design recipes from _How to Design Programs_.
-
   
 > Bug Report
-
   The _bug-report.ss_ library contains a module that defines one procedure:
 > (help-desk:report-bug)
   This opens a window for a user to submit a bug report about DrScheme.
+
+> Known Manuals
+  The _docpos.ss_ library contains a module that defines one procedure:
+> (find-manuals)
+  It returns a string version of html code that, when rendered, shows
+  the installed and known uninstalled manuals.

@@ -1,4 +1,4 @@
-(module sig mzscheme
+(module framework-sig mzscheme
   (require (lib "unitsig.ss")
 	   "test-sig.ss"
 	   "gui-utils-sig.ss"

@@ -3048,9 +3048,9 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
 
   if ((!strcmp(from_e, "UTF-8")
        || !strcmp(from_e, "UTF-8-permissive")
-       || mzLOCALE_IS_UTF_8(from_e))
+       || (!*from_e && mzLOCALE_IS_UTF_8(from_e)))
       && (!strcmp(to_e, "UTF-8")
-	  || mzLOCALE_IS_UTF_8(to_e))) {
+	  || (!*to_e && mzLOCALE_IS_UTF_8(to_e)))) {
     /* Use the built-in UTF-8<->UTF-8 converter: */
     kind = mzUTF8_KIND;
     if (!strcmp(from_e, "UTF-8-permissive"))

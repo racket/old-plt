@@ -215,11 +215,12 @@
 		    (error-escape-handler old-esc-handler))))))]))
 
 (if (not (defined? 'error-test))
-    (define error-test
-      (case-lambda 
-       [(expr) (error-test expr exn:application:type?)]
-       [(expr exn?)
-	(thunk-error-test (lambda () (eval expr)) expr exn?)])))
+    (global-defined-value 
+     'error-test
+     (case-lambda 
+      [(expr) (error-test expr exn:application:type?)]
+      [(expr exn?)
+       (thunk-error-test (lambda () (eval expr)) expr exn?)])))
 
 (define (syntax-test expr)
   (error-test expr exn:syntax?)

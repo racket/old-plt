@@ -58,6 +58,9 @@
 (syntax-test '(unit (import i) (export (a x) b) (define x 5) (define b 6)))
 (syntax-test '(unit (import i) (export (a x) b) (set! a 5) (define b 6)))
 
+(syntax-test '(unit (import i) (export) (set! g 5)))
+(syntax-test '(unit (import i) (export) (set! i 5)))
+
 ; Empty exports are syntactically ok::
 (error-test '(compound-unit (import) (link (A (0))) (export (A))) exn:unit:non-unit?)
 (error-test '(compound-unit (import) (link (A (0 (B))) (B (0))) (export)) exn:unit:non-unit?)

@@ -68,6 +68,7 @@
 (let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]
       [aliases (list (cons "call/cc" "call-with-current-continuation")
 		     (cons "call/ec" "call-with-escaping-continuation")
+		     (cons "interaction-environment" "current-namespace")
 		     (cons "unit/sig?" "unit-with-signature?")
 		     (cons "unit/sig->unit" "unit-with-signature-unit")
 		     (cons "unit-with-signature->unit" "unit-with-signature-unit"))])
@@ -85,7 +86,10 @@
 			      (if m
 				  (cdr m)
 				  sr))])
-		   (equal? st (primitive-name value))))))
+		   (or (equal? st (primitive-name value))
+		       (and (fprintf (current-error-port)
+				     "different: ~a ~a~n" st (primitive-name value))
+			    #f))))))
 	 gvl)))
 
 (define (test-empty . flags)

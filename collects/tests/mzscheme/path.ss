@@ -253,7 +253,8 @@
 
 (define (test-path expect f . args)
   (test (normal-case-path (expand-path expect))
-	normal-case-path (expand-path (apply f args))))
+	(or (inferred-name f) 'unknown)
+	(normal-case-path (expand-path (apply f args)))))
 
 (for-each
  (lambda (absol)
@@ -333,13 +334,25 @@
 (error-test '(path->complete-path 1))
 (error-test '(path->complete-path "a" 1))
 
+(test (build-path "a" "b") simplify-path (build-path "a" "b"))
+(let ([full-path
+       (lambda args (apply build-path (current-directory) args))])
+  (test (full-path "a" "b") simplify-path (build-path "a" 'same "b"))
+  (test (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'up "b"))
+  (test (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'same 'up "b" 'same 'same))
+  (test (full-path "a" "b") simplify-path (build-path 'same "noexistsdir" 'same 'up "a" 'same "b" 'same 'same)))
+(arity-test simplify-path 1 1)
+
+(arity-test expand-path 1 1)
+(arity-test resolve-path 1 1)
+
 (map
  (lambda (f)
    (error-test `(,f (string #\a #\nul #\b)) exn:i/o:filesystem:path?))
  '(build-path split-path file-exists? directory-exists?
 	      delete-file directory-list make-directory delete-directory
 	      file-modify-seconds file-or-directory-permissions 
-	      expand-path resolve-path path->complete-path
+	      expand-path resolve-path simplify-path path->complete-path
 	      open-input-file open-output-file))
 (map 
  (lambda (f)

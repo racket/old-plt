@@ -1242,6 +1242,18 @@
 (test-cc-values call/cc)
 (test-cc-values call/ec)
 
+(test 'ok
+      'ec-cc-exn-combo
+      (with-handlers ([void (lambda (x) 'ok)])
+	(define f
+	  (let ([k #f])
+	    (lambda (n)
+	      (case n
+		[(0) (let/ec r (r (set! k (let/cc k k))))]
+		[(1) (k)]))))
+	(f 0)
+	(f 1)))
+
 (arity-test call/cc 1 1)
 (arity-test call/ec 1 1)
 (error-test '(call/cc 4))

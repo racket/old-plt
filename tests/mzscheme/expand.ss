@@ -3,7 +3,7 @@
 ;  running all tests
 
 (unless (defined? 'expand-load)
-   (define expand-load "all.ss"))
+  (global-defined-value 'expand-load "all.ss"))
 
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))

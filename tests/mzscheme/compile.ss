@@ -3,7 +3,7 @@
 ;  by setting the eval handler and running all tests
 
 (unless (defined? 'compile-load)
-   (define compile-load "all.ss"))
+  (global-defined-value 'compile-load "all.ss"))
 
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))

@@ -72,6 +72,9 @@
   (syntax-test  `(,cl* ,@renames () () () (rename ((x y) y))))
   (syntax-test  `(,cl* ,@renames () () () (rename ((1) y))))
 
+  (syntax-test  `(,cl* ,@renames () () () (inherit x) (sequence (set! x 5))))
+  (syntax-test  `(,cl* ,@renames () () () (rename [x y]) (sequence (set! x 5))))
+
   (syntax-test  `(,cl* ,@renames () () () (sequence 1 . 2)))
   
   (syntax-test  `(,cl* ,@renames () () () (public [x 7] [x 9])))
@@ -452,62 +455,66 @@
 (do-override-tests #f)
 
 (when (defined? 'primclass%)
-      (error-test '(make-object primclass%) exn:application:arity?)
-      (error-test '(make-object primsubclass%) exn:application:arity?)
+  (error-test '(make-object primclass%) exn:application:arity?)
+  (error-test '(make-object primsubclass%) exn:application:arity?)
 
-      (define o (make-object primclass% 'tester))
-      (arity-test (ivar o name) 0 0)
-      (test 'tester (ivar o name))
-      (test "primclass%" (ivar o class-name))
-
+  (let ()
+    (define o (make-object primclass% 'tester))
+    (arity-test (ivar o name) 0 0)
+    (test 'tester (ivar o name))
+    (test "primclass%" (ivar o class-name))
+    
+    (let ()
       (define o2 (make-object primsubclass% 'tester))
       (arity-test (ivar o2 name) 0 0)
       (arity-test (ivar o2 detail) 0 0)
       (test 'tester (ivar o2 name))
       (test #f (ivar o2 detail))
       (test "primsubclass%" (ivar o2 class-name))
-
+      
       (do-override-tests 'primclass%)
       (do-override-tests 'primsubclass%)
 
-      (define name-g (make-generic primclass% name))
-      (define class-name-g (make-generic primclass% class-name))
+      (let ()
+	(define name-g (make-generic primclass% name))
+	(define class-name-g (make-generic primclass% class-name))
+	
+	(define sub-name-g (make-generic primsubclass% name))
+	(define sub-class-name-g (make-generic primsubclass% class-name))
+	(define sub-detail-g (make-generic primsubclass% detail))
+	
+	(test 'tester (name-g o))
+	(test "primclass%" (class-name-g o))
+	
+	(test 'tester (name-g o2))
+	(test "primsubclass%" (class-name-g o2))
+	(test 'tester (sub-name-g o2))
+	(test "primsubclass%" (sub-class-name-g o2))
+	(test #f (sub-detail-g o2))
 
-      (define sub-name-g (make-generic primsubclass% name))
-      (define sub-class-name-g (make-generic primsubclass% class-name))
-      (define sub-detail-g (make-generic primsubclass% detail))
+	(let ()
+	  (define c%
+	    (class primsubclass% ()
+	      (inherit name detail class-name)
+	      (sequence (super-init 'example))
+	      (public
+		[n name]
+		[d detail]
+		[c class-name])))
 
-      (test 'tester (name-g o))
-      (test "primclass%" (class-name-g o))
+	  (define o3 (make-object c%))
+	  (test 'example (ivar o3 n))
+	  (test #f (ivar o3 d))
+	  (test "primsubclass%" (ivar o3 c))
+	  (test 'example (ivar o3 name))
+	  (test #f (ivar o3 detail))
+	  (test "primsubclass%" (ivar o3 class-name))
 
-      (test 'tester (name-g o2))
-      (test "primsubclass%" (class-name-g o2))
-      (test 'tester (sub-name-g o2))
-      (test "primsubclass%" (sub-class-name-g o2))
-      (test #f (sub-detail-g o2))
-
-      (define c%
-	(class primsubclass% ()
-	   (inherit name detail class-name)
-	   (sequence (super-init 'example))
-	   (public
-	    [n name]
-	    [d detail]
-	    [c class-name])))
-
-      (define o3 (make-object c%))
-      (test 'example (ivar o3 n))
-      (test #f (ivar o3 d))
-      (test "primsubclass%" (ivar o3 c))
-      (test 'example (ivar o3 name))
-      (test #f (ivar o3 detail))
-      (test "primsubclass%" (ivar o3 class-name))
-
-      (test 'example (name-g o3))
-      (test "primsubclass%" (class-name-g o3))
-      (test 'example (sub-name-g o3))
-      (test "primsubclass%" (sub-class-name-g o3))
-      (test #f (sub-detail-g o3)))
+	  (test 'example (name-g o3))
+	  (test "primsubclass%" (class-name-g o3))
+	  (test 'example (sub-name-g o3))
+	  (test "primsubclass%" (sub-class-name-g o3))
+	  (test #f (sub-detail-g o3)))))))
 
 (report-errs)
 

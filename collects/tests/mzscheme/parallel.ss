@@ -47,4 +47,4 @@
 	      (semaphore-wait done)
 	      (loop (sub1 n))))))
 
-(parallel 3 (path->complete-path "all.ss" (current-load-relative-directory)))
+(parallel 3 (path->complete-path "quiet.ss" (current-load-relative-directory)))

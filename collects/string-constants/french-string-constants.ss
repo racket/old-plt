@@ -66,7 +66,7 @@
  (bug-report-submit "Soumettre")
  (sending-bug-report "Soumission du formulaire de bogue en cours...")
  (error-sending-bug-report "Erreur durant la soumission du formulaire de bogue.")
- (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bogue. Si votre connexion Internet fonctionne correctement, veuillez visiter:\n\n    http://bugs.plt-scheme.org/\n\net soumettre votre bogue en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est:\n~a")
+ (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bogue. Si votre connexion Internet fonctionne correctement, veuillez visiter :\n\n    http://bugs.plt-scheme.org/\n\net soumettre votre bogue en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est :\n~a")
  (bug-report-sent "Le bogue a été correctement soumis.")
  (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, veuillez envoyer un email à scheme@plt-scheme.org.")
  (illegal-bug-report "Formulaire de soumission de bogue incomplet.")
@@ -86,7 +86,7 @@
  (cs-open-file "Ouvrir ~a")
  (cs-rename-var "Renommer ~a")
  (cs-rename-id "Renommer l'identifieur")
- (cs-rename-var-to "Renommer ~a en:")
+ (cs-rename-var-to "Renommer ~a en :")
  (cs-name-duplication-error "Le nouveau nom que vous avez choisi, ~s, est en conflit avec un autre nom préexistant dans le même contexte.")
  
  ;;; info bar at botttom of drscheme frame
@@ -116,19 +116,19 @@
   "Le fichier n'a pas encore de nom complet car il n'a pas encore été sauvegardé.")
  (cannot-open-because-dne "Impossible d'ouvrir ~a car le fichier n'existe pas.")
  (interactions-out-of-sync
-  "ATTENTION: la fenêtre d'interaction et la fenêtre de définition ne sont pas synchronisées. Cliquez sur Exécuter.")
+  "ATTENTION : la fenêtre d'interaction et la fenêtre de définition ne sont pas synchronisées. Cliquez sur Exécuter.")
  (file-is-not-saved "Le fichier \"~a\" n'a pas été sauvegardé.")
  (save "Sauvegarder")
  (please-choose-either "Choisissez \"~a\" ou \"~a\".")
  (close-anyway "Fermer quand même")
  
  (url "URL")
- (url: "URL:")
+ (url: "URL :")
  (open-url... "Ouvrir l'URL...")
  (open-url "Ouvrir l'URL")
  (browse... "Naviguer...")
  (bad-url "URL incorrect")
- (bad-url:this "URL incorrect: ~a")
+ (bad-url:this "URL incorrect : ~a")
  
  ;; Help Desk
  (search-results "Résultats de la recherche")
@@ -139,7 +139,7 @@
   "L'Aide est une source complète d'information à propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2001 PLT.")
  (help-on-help "Aide de l'Aide")
  (help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' à partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déjà, cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
- (find-docs-for "Chercher dans les docs:")
+ (find-docs-for "Chercher dans les docs :")
  (search "Chercher")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "par mot clef")
@@ -172,7 +172,7 @@
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")
  (proxy-direct-connection "Connexion directe")
- (proxy-use-proxy "Utiliser le proxy:")
+ (proxy-use-proxy "Utiliser le proxy :")
  (proxy-host "Machine")
  (proxy-port "Port")
  (proxy-bad-host "Mauvaise machine proxy")
@@ -182,7 +182,7 @@
  (forward-in-browser-history "Avancer")
  (home "Maison")
  (browser "Navigateur")
- (cannot-display-url "Impossible de montrer l'URL ~s: ~a")
+ (cannot-display-url "Impossible de montrer l'URL ~s : ~a")
  (install? "Installer ?")  ;; if a .plt file is found (title of dialog)
  ; package => paquetage, pas tres clair...
  (you-have-selected-an-installable-package "Vous avez sélectionné un logiciel qui peut être installé.")
@@ -222,11 +222,11 @@
  (preferences-category "Catégorie")
  (saving-preferences "Sauvegarde des préférences")
  (error-unmarshalling "Erreur durant la dessérialisation de la préférence ~a.")
- (error-saving-preferences "Erreur durant la sauvegarde des préférences: ~a.")
+ (error-saving-preferences "Erreur durant la sauvegarde des préférences : ~a.")
  (error-reading-preferences "Erreur durant la lecture des préférences.")
  (expected-list-of-length2 "espérait une liste de longueur 2.")
  (scheme-prefs-panel-label "Scheme")
- (warnings-prefs-panel-label "Avertissement")
+ (warnings-prefs-panel-label "Avertissements")
  (editor-prefs-panel-label "Edition")
  (highlight-parens "Griser les paires de parenthèses.")
  (fixup-parens "Corriger les parenthèses.")
@@ -264,24 +264,24 @@
  (font-size "Taille de la police")
  (set-font "Appliquer la police...")
  (select-font-name "Sélectionnez une police")
- (example-text "Example de texte:")
+ (example-text "Example de texte :")
  (only-warn-once "Prévenir une fois seulement quand exécutions et interactions n'ont pas été synchronisées.")
  
  ; warning message when lockfile is around
  (waiting-for-pref-lock "Attente sur le fichier de verrouillage des préférences...")
  (pref-lock-not-gone
-  "Les préférences sont verrouillées par le fichier:\n\n   ~a\n\nqui empêche les préférences d'être sauvegardées. Assurez-vous qu'aucun logiciel PLT n'est en cours d'exécution et effacer le fichier.")
+  "Les préférences sont verrouillées par le fichier :\n\n   ~a\n\nqui empêche les préférences d'être sauvegardées. Assurez-vous qu'aucun logiciel PLT n'est en cours d'exécution et effacer le fichier.")
  (still-locked-exit-anyway? "Les préférences n'ont pu être sauvegardées correctement. Quitter quand même ?")
 
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indentation")
  
  ; filled with define, lambda, or begin
- (enter-new-keyword "Entrez un nouveau mot clef ressemblant à ~a:")
+ (enter-new-keyword "Entrez un nouveau mot clef ressemblant à ~a :")
  (x-keyword "Mot clef ~a")
  (x-like-keywords "Mots clefs ressemblant à ~a")
  
- (expected-a-symbol "espérait un symbole, trouvé: ~a")
+ (expected-a-symbol "espérait un symbole, trouvé : ~a")
  (already-used-keyword "\"~a\" est déjà un mot clef avec une indentation spéciale.")
  (add-keyword "Ajouter")
  (remove-keyword "Enlever")
@@ -492,7 +492,7 @@
  (drscheme-internal-error "Erreur interne de DrScheme.")
  
  ;;; tools
- (invalid-tool-spec "La spécification d'outil qui se trouve dans le fichier info.ss de la collection ~a est invalide. Espérait soit une chaîne de caractères, soit une liste de chaînes de caractères, trouvé: ~e")
+ (invalid-tool-spec "La spécification d'outil qui se trouve dans le fichier info.ss de la collection ~a est invalide. Espérait soit une chaîne de caractères, soit une liste de chaînes de caractères, trouvé : ~e")
  (error-loading-tool-title "DrScheme - Erreur durant le chargement de l'outil ~s; ~s")
  (error-invoking-tool-title "Erreur durant l'invocation de l'outil ~s;~s")
  (tool-tool-names-same-length
@@ -562,11 +562,11 @@
  (definitions-not-saved "La fenêtre de définition n'a pas été sauvegardée. L'exécutable va utiliser la dernière version sauvegardée de la fenêtre de définition. Continuer ?")
  (inline-saved-program-in-executable?
   "Insérer dans l'exécutable le programme sauvegardé ? Si oui, vous pourrez copier l'exécutable sur un autre ordinateur ~a, mais l'exécutable sera probablement gros. Si vous choisissez non, vous ne pourrez pas copier l'exécutable sur un autre ordinateur, mais il sera bien plus petit. De plus, si vous choisissez non, l'exécutable utilisera toujours la version la plus récente du programme.")
- (inline-saved-program-in-executable/windows
-  "ATTENTION: sous Windows, vous avez également besoin de libmred.dll, libmzsch.dll et libmzgc.dll pour pouvoir exécuter un exécutable.")
  (use-mred-binary?
   "Utiliser le binaire de mred pour cet exécutable ?\n\nSi oui, votre program peut utiliser la bibliothèque (lib \"mred.ss\" \"mred\"). Si non, DrScheme va choisir mzscheme comme binaire pour cet exécutable.\n\nASi vous n'êtes pas sûr, choisissez oui.")
- 
+  (inline-saved-program-in-executable/windows/path
+   "ATTENTION ! L'exécutable généré a besoin de trois DLLs : libmred.dll, libmzsch.gll et libgc.dll, qui sont localisées dans\n\n~a\n\nL'exécutable trouve les DLLs soit dans le répertoire ou se trouve l'exécutable soit en utilisant la variable d'environnement PATH.\n\nQuand vous avez installé DrScheme, l'installateur a modifié le PATH de l'utilisateur pour y inclure le répertoire dans lequel les DLLs se trouvent. Méfiez-vous des changements de configuration ou des changements faits par l'utilisateur depuis l'installation.\n\nSi vous deplacez l'exécutable sur une autre machine, vous devez également copier les DLLS sur l'autre machine, soit dans le même répertoire que l'exécutable, soit dans un répertoire qui figure dans le PATH sur l'autre machine.")
+   
  ;;; buttons
  (execute-button-label "Exécuter") 
  (save-button-label "Sauvegarder")
@@ -585,7 +585,7 @@
  (whole-part "Partie entière")
  (numerator "Numérateur")
  (denominator "Dénominateur")
- (invalid-number "Nombre invalide: doit être un nombre réel exact non-entier.")
+ (invalid-number "Nombre invalide : doit être un nombre réel exact non-entier.")
  (insert-fraction-menu-item-label "Insérer une fraction...")
  
  ;; number snip popup menu
@@ -724,19 +724,19 @@
  (vc-connecting-version-server "Connexion au server de version de PLT en cours")
  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau") 
  (vc-cannot-connect "Impossible de se connecter au serveur de version de PLT")
- ;(collections-not-installed "Les collections suivantes ne sont pas installées:")
- ;(collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant:")
+ ;(collections-not-installed "Les collections suivantes ne sont pas installées :")
+ ;(collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant :")
  (vc-network-failure "Erreur réseau")
  (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour")
- (vc-binary-information-format "Version binaire installée: ~a (itération ~a)")
- (vc-details-format "~a~nDétails:~n~a")
- (vc-details-text "Détails:~n")
- (vc-error-format "Erreur: ~a") 
+ (vc-binary-information-format "Version binaire installée : ~a (itération ~a)")
+ (vc-details-format "~a~nDétails :~n~a")
+ (vc-details-text "Détails :~n")
+ (vc-error-format "Erreur : ~a") 
  (vc-current-format "~a v.~a (itération ~a) est à jour")
  (vc-update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
  (vc-binary-name "Binaire")
  (vc-updates-available "Les mises à jour sont disponibles à")
- (vc-latest-binary-information-format "Version la plus récente: ~a (itération ~a)")
+ (vc-latest-binary-information-format "Version la plus récente : ~a (itération ~a)")
  (vc-update-dialog-title "Etat des mises à jour")
  (vc-need-update-string "Un ou plusieurs des logiciels PLT installés doivent être mis à jour")
  (vc-no-update-string "Tous les logiciels PLT installés sont à jour")
@@ -749,16 +749,16 @@
  (large-semicolon-letters "Grandes lettres en points-virgules")
  (text-to-insert "Texte à inserer")
 
- (module-browser-filename-format "Nom de fichier complet: ~a (~a lignes)")
- (module-browser-root-filename "Nom de fichier de la racine: ~a")
+ (module-browser-filename-format "Nom de fichier complet : ~a (~a lignes)")
+ (module-browser-root-filename "Nom de fichier de la racine : ~a")
  (module-browser-font-size-gauge-label "Taille de la police")
  (module-browser-progress-label "Avancement du navigateur de modules")
- (module-browser-adding-file "Ajout du fichier: ~a...")
+ (module-browser-adding-file "Ajout du fichier : ~a...")
  (module-browser-laying-out-graph-label "Tracer le graph")
  (module-browser-open-file-format "Ouvrir ~a")
  (module-browser "Navigateur de modules") ;; frame title
  (module-browser... "Navigateur de modules...") ;; menu item title
- (module-browser-error-expanding "Erreur durant l'expansion du programme:\n\n~a")
+ (module-browser-error-expanding "Erreur durant l'expansion du programme :\n\n~a")
  
  (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
 
@@ -766,9 +766,9 @@
  (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")
  (mrflow-button-title "Analyzer")
  (mrflow-unknown-style-delta-error-title "Delta de Style de boîte inconnu")
- (mrflow-unknown-style-delta-error "Delta de style de boîte inconnu: ~a")
+ (mrflow-unknown-style-delta-error "Delta de style de boîte inconnu : ~a")
  (mrflow-coloring-error-title "Couleur inconnue")
- (mrflow-coloring-error "Pas de style défini pour la couleur: ~a")
+ (mrflow-coloring-error "Pas de style défini pour la couleur : ~a")
  (mrflow-popup-menu-show-type "Montrer le type")
  (mrflow-popup-menu-hide-type "Cacher le type")
  (mrflow-popup-menu-show-errors "Montrer les erreurs")
@@ -776,13 +776,13 @@
  (mrflow-popup-menu-tack-all-arrows "Coller toutes les flèches")
  (mrflow-popup-menu-untack-all-arrows "Décoller toutes les flèches")
  (mrflow-read-exception-title "Exception lecture")
- (mrflow-read-exception "Exception durant la lecture: ~a")
+ (mrflow-read-exception "Exception durant la lecture : ~a")
  (mrflow-syntax-exception-title "Exception syntaxique")
- (mrflow-syntax-exception "Exception syntaxique: ~a")
+ (mrflow-syntax-exception "Exception syntaxique : ~a")
  (mrflow-unknown-exception-title "Exception inconnue")
- (mrflow-unknown-exception "Exception inconnue: ~a")
+ (mrflow-unknown-exception "Exception inconnue : ~a")
  (mrflow-language-primitives-error-title "Erreur pour les primitives du language")
- (mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du language: ~a")
+ (mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du language : ~a")
 
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Insérer une boîte XML")
@@ -802,6 +802,6 @@
  (show-recent-items-window-label "Fichiers récemment ouverts")
  (switch-anyway "Changer de fichier quand même")
 
- (stepper-program-has-changed "Avertissement: le programme a été modifié.")
- (stepper-program-window-closed "Avertissement: la fenêtre du programme a disparu.")
+ (stepper-program-has-changed "Avertissement : le programme a été modifié.")
+ (stepper-program-window-closed "Avertissement : la fenêtre du programme a disparu.")
  )

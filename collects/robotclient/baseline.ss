@@ -107,7 +107,6 @@
           (q (create-queue))
 	  (count 0))
       (enqueue! q (list (cons px py)))
-      (time
       (let loop ()
 	(set! count (add1 count))
 	(cond
@@ -137,7 +136,7 @@
 					(cons x (add1 y))
 					(cons x (sub1 y))))))
               (loop)))))))))
-    )
+   
   (define path (make-parameter null))
   
   (define (compute-baseline-move packages robots)

@@ -1,0 +1,16 @@
+David Goldberg
+Kathy Gray
+Scott Owens
+Adam Wick
+
+Our entry is written in the mzscheme dialect of Scheme.
+
+Our player uses a breadth-first-search to plan paths to homes and
+package destinations.  If other robots are nearby, a weighted
+heuristic search kicks in to figure out the interaction with the other
+robot.
+
+Our runme is a shell script that invokes a mzscheme executable, we
+have assumed that the path to the mzscheme executable is
+"/usr/local/bin/mzscheme".  If this is not the case, please alter the
+first line of the runme script with the appropriate location.

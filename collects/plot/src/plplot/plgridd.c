@@ -2,9 +2,9 @@
 #include "plplotP.h"
 
 #ifdef WITH_CSA
-#include "../lib/csa/csa.h"
+#include "csa.h"
 #endif
-#include "../lib/csa/nan.h" /* this is handy */
+#include "nan.h" /* this is handy */
 
 #ifdef HAVE_QHULL
 #include "../lib/nn/nn.h"

@@ -6,12 +6,12 @@
     modify it under the terms of the GNU Library General Public
     License as published by the Free Software Foundation; either
     version 2 of the License, or (at your option) any later version.
-
+  
     This library is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
     Library General Public License for more details.
-
+  
     You should have received a copy of the GNU Library General Public
     License along with this library; if not, write to the Free
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -943,18 +943,18 @@ scheme_make_output_port(Scheme_Object *subtype,
 #ifdef MZ_REAL_THREADS
 
 # define BEGIN_LOCK_PORT(sema) \
-    { mz_jmp_buf savebuf; \
-      ADD_PORT_LOCK() \
-      scheme_wait_sema(sema, 0); \
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
-      if (scheme_setjmp(scheme_error_buf)) { \
-        scheme_post_sema(sema); \
-        scheme_longjmp(savebuf, 1); \
-      } else {
+	{ mz_jmp_buf savebuf; \
+	  ADD_PORT_LOCK() \
+	  scheme_wait_sema(sema, 0); \
+	  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
+	  if (scheme_setjmp(scheme_error_buf)) { \
+		scheme_post_sema(sema); \
+		scheme_longjmp(savebuf, 1); \
+	  } else {
 # define END_LOCK_PORT(sema) \
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); \
-      SUB_PORT_LOCK() \
-      scheme_post_sema(sema); } }
+	  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); \
+	  SUB_PORT_LOCK() \
+	  scheme_post_sema(sema); } }
 
 # ifdef MZ_KEEP_LOCK_INFO
 int scheme_port_lock_c;
@@ -1246,28 +1246,28 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       } else
 #endif
 #ifdef USE_TCP
-      /* Fast path for tcp */
-      if (data && (data->bufpos < data->bufmax)) {
-	int n;
-	n = data->bufmax - data->bufpos;
-	n = ((size <= n)
-	     ? size
-	     : n);
+	/* Fast path for tcp */
+	if (data && (data->bufpos < data->bufmax)) {
+	  int n;
+	  n = data->bufmax - data->bufpos;
+	  n = ((size <= n)
+	       ? size
+	       : n);
 	  
-	memcpy(buffer + offset + got, data->buffer + data->bufpos, n);
-	data->bufpos += n;
-	got += n;
-	size -= n;
-      } else
+	  memcpy(buffer + offset + got, data->buffer + data->bufpos, n);
+	  data->bufpos += n;
+	  got += n;
+	  size -= n;
+	} else
 #endif
-	{
-	  c = f(ip);
-	  if (c != EOF) {
-	    buffer[offset + got++] = c;
-	    --size;
-	  } else
-	    break;
-	}
+	  {
+	    c = f(ip);
+	    if (c != EOF) {
+	      buffer[offset + got++] = c;
+	      --size;
+	    } else
+	      break;
+	  }
     }
   
     pr->eof_on_error = 0;
@@ -1760,7 +1760,7 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
     return scheme_make_integer(0);
 
   if (SAME_OBJ(op->sub_type, file_output_port_type)
-	     || SAME_OBJ(op->sub_type, scheme_user_output_port_type)) {
+      || SAME_OBJ(op->sub_type, scheme_user_output_port_type)) {
     /* FILE or user port: put just one, because we don't know how
        to guarantee the right behavior on errors. */
     char str2[1];
@@ -1862,7 +1862,7 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
       return scheme_true;
 #endif
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-    if (SAME_OBJ(op->sub_type, tested_file_input_port_type))
+    if (SAME_OBJ(ip->sub_type, tested_file_input_port_type))
       return scheme_true;
 #endif
   } else if (SCHEME_OUTPORTP(p)) {
@@ -2570,10 +2570,10 @@ static int try_get_fd_char(int fd, int *ready)
     return 0;
   } else {
     *ready = 1;
-     if (!c)
-       return EOF;
-     else
-       return buf[0];
+    if (!c)
+      return EOF;
+    else
+      return buf[0];
   }
 }
 #endif
@@ -4688,9 +4688,11 @@ static char *cmdline_protect(char *s)
   return s;
 }
 
-static long mz_spawnv(char *command, const char * const *argv, int *pid)
+static long mz_spawnv(char *command, const char * const *argv,
+		      int sin, int sout, int serr, int *pid)
 {
   int i, l, len = 0;
+  long cr_flag;
   char *cmdline;
   STARTUPINFO startup;
   PROCESS_INFORMATION info;
@@ -4714,12 +4716,21 @@ static long mz_spawnv(char *command, const char * const *argv, int *pid)
   memset(&startup, 0, sizeof(startup));
   startup.cb = sizeof(startup);
   startup.dwFlags = STARTF_USESTDHANDLES;
-  startup.hStdInput = (HANDLE)_get_osfhandle(0);
-  startup.hStdOutput = (HANDLE)_get_osfhandle(1);
-  startup.hStdError = (HANDLE)_get_osfhandle(2);
+  startup.hStdInput = (HANDLE)_get_osfhandle(sin);
+  startup.hStdOutput = (HANDLE)_get_osfhandle(sout);
+  startup.hStdError = (HANDLE)_get_osfhandle(serr);
+
+  /* If none of the stdio handles are consoles, specifically
+     create the subprocess without a console: */
+  if ((GetFileType(startup.hStdInput) != FILE_TYPE_CHAR)
+      && (GetFileType(startup.hStdOutput) != FILE_TYPE_CHAR)
+      && (GetFileType(startup.hStdError) != FILE_TYPE_CHAR))
+    cr_flag = CREATE_NO_WINDOW;
+  else
+    cr_flag = 0;
 
   if (CreateProcess(command, cmdline, NULL, NULL, 1,
-		    CREATE_NO_WINDOW, NULL, NULL,
+		    cr_flag, NULL, NULL,
 		    &startup, &info)) {
     CloseHandle(info.hThread);
     *pid = info.dwProcessId;
@@ -4867,8 +4878,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       if (SAME_OBJ(ip->sub_type, file_input_port_type))
 	to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
 # if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-      else if (SAME_OBJ(op->sub_type, tested_file_input_port_type))
-	to_subprocess[0] = MSC_IZE(fileno)(((Tested_Input_File p)ip->port_data)->fp;
+      else if (SAME_OBJ(ip->sub_type, tested_file_input_port_type))
+	to_subprocess[0] = MSC_IZE(fileno)(((Tested_Input_File *)ip->port_data)->fp);
 # endif
 # ifdef USE_FD_PORTS
       else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
@@ -4976,8 +4987,18 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 # endif
 
   {
+# ifdef BEOS_PROCESSES
     int save0, save1, save2;
+# endif
 
+    /* protect spaces, etc. in the arguments: */
+    for (i = 0; i < (c - 3); i++) {
+      char *cla;
+      cla = cmdline_protect(argv[i]);
+      argv[i] = cla;
+    }
+
+# ifdef BEOS_PROCESSES
     /* Save stdin and stdout */
     save0 = MSC_IZE(dup)(0);
     save1 = MSC_IZE(dup)(1);
@@ -4987,31 +5008,34 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     MSC_IZE(dup2)(to_subprocess[0], 0);
     MSC_IZE(dup2)(from_subprocess[1], 1);
     MSC_IZE(dup2)(err_subprocess[1], 2);
-
-    /* protect spaces, etc. in the arguments: */
-    for (i = 0; i < (c - 3); i++) {
-      char *cla;
-      cla = cmdline_protect(argv[i]);
-      argv[i] = cla;
-    }
+# endif
 
     /* Set real CWD - and hope no other thread changes it! */
     scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
 						     MZCONFIG_CURRENT_DIRECTORY)),
 		     0);
 
-    spawn_status = mz_spawnv(command, (const char * const *)argv, &pid);
+    spawn_status = mz_spawnv(command, (const char * const *)argv,
+# ifdef WINDOWS_PROCESSES
+			     to_subprocess[0],
+			     from_subprocess[1],
+			     err_subprocess[1],
+# endif
+			     &pid);
 
+# ifdef BEOS_PROCESSES
     /* Restore stdin and stdout */
     MSC_IZE(dup2)(save0, 0);
     MSC_IZE(dup2)(save1, 1);
     MSC_IZE(dup2)(save2, 2);
-    
+# endif
+
     if (spawn_status != -1)
       sc = (void *)spawn_status;
   }
 
 #else
+
 
   /*--------------------------------------*/
   /*            Execute: Unix             */
@@ -5150,7 +5174,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #endif
 	END_XFORM_SKIP;
 
-      	err = MSC_IZE(execv)(command, argv);
+	err = MSC_IZE(execv)(command, argv);
 
 	/* If we get here it failed; give up */
 
@@ -5503,7 +5527,7 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 
 #ifdef MZ_REAL_THREADS
 # define CHECK_MZBREAK_SIGNAL(t) { if (scheme_current_thread->break_received) \
-                                     (t)->tv_sec = 0, (t)->tv_usec = 0; \
+                                      (t)->tv_sec = 0, (t)->tv_usec = 0; \
                                    scheme_current_thread->select_tv = t; }
 # define DONE_MZBREAK_CHECK() (scheme_current_thread->select_tv = NULL, \
                                scheme_current_thread->break_received = 0)
@@ -5588,9 +5612,9 @@ static void default_sleep(float v, void *fds)
     limit = ulimit(4, 0);
 #  else
 #   ifdef FIXED_FD_LIMIT
-      limit = FIXED_FD_LIMIT;
+    limit = FIXED_FD_LIMIT;
 #   else
-      limit = getdtablesize();
+    limit = getdtablesize();
 #   endif
 #  endif    
 #endif
@@ -5722,7 +5746,7 @@ static void default_sleep(float v, void *fds)
     /* Stupid Windows: give select() empty fd_sets and it ignores the timeout. */
     if (!rd->fd_count && !wr->fd_count && !ex->fd_count) {
       if (v)
-        Sleep((DWORD)(v * 1000));
+	Sleep((DWORD)(v * 1000));
       return;
     }
 #endif
@@ -5869,7 +5893,7 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
 }
 
 void scheme_count_output_port(Scheme_Object *port, long *s, long *e, 
-			     Scheme_Hash_Table *ht)
+			      Scheme_Hash_Table *ht)
 {
   Scheme_Output_Port *op = (Scheme_Output_Port *)port;
 

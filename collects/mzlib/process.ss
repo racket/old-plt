@@ -115,7 +115,9 @@
 		  [it (streamify-in cin in #t)]
 		  [et (streamify-out cerr err #t)])
 	      (subprocess-wait subp)
-	      (break-thread it) ; stop piping output to subprocess
+	      (when it
+		;; stop piping output to subprocess
+		(break-thread it))
 	      ;; wait for other pipes to run dry:
 	      (when (thread? ot)
 		(thread-wait ot))

@@ -1,15 +1,75 @@
 
-(invoke-unit
+(invoke-open-unit
  (unit 
    (import)
-   (export)
+   (export profiling-enabled profile-poll-interval get-profile-counts)
    
    (define key (gensym 'key))
-   
+
+   (define profile-thread #f)
+   (define profile-key (gensym))
+
+   (define profiling-enabled (make-parameter #f))
+
+   (define init-profile-count 10)
+   (define profile-count init-profile-count)
+   (define last-profile-time (current-milliseconds))
+
+   (define (profile-now)
+     (set! profile-count (sub1 profile-count))
+     (if (zero? profile-count)
+	 (begin
+	   (set! profile-count init-profile-count)
+	   (if (and (profiling-enabled)
+		    (> (abs (- (current-milliseconds) last-profile-time))
+		       (profile-poll-interval)))
+	       (begin
+		 (set! last-profile-time (current-milliseconds))
+		 #t)
+	       #f))
+	 #f))
+
+   (define profile-poll-interval (make-parameter 1))
+
+   (define profile-info (make-hash-table))
+
+   (define (register-profile-info key)
+     (let ([v (hash-table-get profile-info key)])
+       (set-car! v (add1 (car v)))
+       (let ([v (cdddr v)])
+	 (set-car! v (cons (current-continuation-marks profile-key) (car v))))))
+       
+   (define (get-profile-counts)
+     (hash-table-map profile-info (lambda (key val)
+				    (let ([count (car val)]
+					  [name (cadr val)]
+					  [file (caddr val)]
+					  [cmss (cadddr val)])
+				      (list count name file
+					    (map
+					     (lambda (cms)
+					       (map (lambda (k)
+						      (let ([v (hash-table-get profile-info k)])
+							(list (cadr v) (caddr v))))
+						    cms))
+					     cmss))))))
+
    (define (with-mark mark expr)
      `(#%with-continuation-mark
        (#%quote ,key) (#%quote (,current-file . ,mark))
        ,expr))
+
+   (define (profile-point body name expr)
+     (if (profiling-enabled)
+	 (let ([key (gensym)])
+	   (hash-table-put! profile-info key (list 0 (or name expr) current-file null))
+	   `((#%when (,profile-now)
+		(,register-profile-info (#%quote ,key)))
+             (#%with-continuation-mark
+	      (#%quote ,profile-key) (#%quote ,key)
+	      (#%begin
+	       ,@body))))
+	 body))
    
    (define (make-annotate top? name)
      (lambda (expr)
@@ -27,9 +87,10 @@
 	 (if (eq? (car expr) '#%begin)
 	     `(#%begin ,@(map annotate-top (cdr expr)))
 	     `(,(car expr) ,(cadr expr) 
-			   ,(with-mark expr (annotate-named 
-					     (let ([name (cadr expr)])
-					       (and (symbol? name) name))
+			   ,(with-mark expr (annotate-named
+					     (and (eq? (car expr) '#%define-values)
+						  (= 1 (length (cadr expr)))
+						  (caadr expr))
 					     (caddr expr)))))]
 	[(pair? expr)
 	 (with-mark
@@ -37,16 +98,25 @@
 	  (case (car expr)
 	    [(#%quote) expr]
 	    [(#%lambda)
-	     `(#%lambda ,(cadr expr) ,@(map annotate (cddr expr)))]
+	     `(#%lambda ,(cadr expr)
+			,@(profile-point 
+			   (map annotate (cddr expr))
+			   name expr))]
 	    [(#%case-lambda)
 	     `(#%case-lambda 
 	       ,@(map (lambda (clause)
-			`(,(car clause) ,@(map annotate (cdr clause))))
+			`(,(car clause) 
+			  ,@(profile-point
+			     (map annotate (cdr clause))
+			     name expr)))
 		      (cdr expr)))]
 	    [(#%let-values #%letrec-values)
 	     `(,(car expr)
 	       ,(map (lambda (clause)
-		       `(,(car clause) ,(annotate (cadr clause))))
+		       `(,(car clause) ,(annotate-named
+					 (and (= (length (car clause)) 1)
+					      (caar clause))
+					 (cadr clause))))
 		     (cadr expr))
 	       ,@(map annotate (cddr expr)))]
 	    [(#%set!)
@@ -114,6 +184,7 @@
 	(if (with-handlers ([void (lambda (x) #f)])
 	      (global-defined-value '#%with-continuation-mark))
 	    (let ([a (annotate-top (expand-defmacro e))])
+	      ; (printf "~s~n" a)
 	      (orig a))
 	    ;; The empty namespace, maybe? Don't annotate.
 	    (orig e)))))

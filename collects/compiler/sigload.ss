@@ -58,8 +58,7 @@
    global-defined-value*
 
    compiler:label-number
-   compiler:reset-label-number!
-   compiler:bad-chars))
+   compiler:reset-label-number!))
 
 
 (define-signature compiler:cstructs^

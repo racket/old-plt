@@ -49,6 +49,11 @@
 		 (format "vm-optimize: bad case label ~a" case)))
 	(cons label case))))
 
+(define a-val/l-val/immediate? (one-of vm:global-varref? vm:primitive-varref? vm:local-varref? 
+				       vm:symbol-varref? vm:inexact-varref? 
+				       vm:static-varref? vm:bucket? vm:per-load-statics-table?
+				       vm:struct-ref? vm:deref? vm:immediate?))
+
 (define vm-optimize!
   (lambda (current-lambda current-case)
     (letrec ([closure-info
@@ -543,10 +548,7 @@
 		  ;;====================================================================
 		  ;; A-VALUES, L-VALUES, IMMEDIATES
 
-		  [((one-of vm:global-varref? vm:primitive-varref? vm:local-varref? 
-			    vm:symbol-varref? vm:inexact-varref? 
-			    vm:static-varref? vm:bucket? vm:per-load-statics-table?
-			    vm:struct-ref? vm:deref? vm:immediate?) 
+		  [(a-val/l-val/immediate? 
 		    ast)
 		   (list ast)]
 		  

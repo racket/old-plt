@@ -493,11 +493,13 @@
   (define total-real-time 0)
   (define verbose-time
     (lambda (thunk)
-      (let-values ([(vals cpu real) (time-apply thunk)])
+      (let-values ([(gc-start) (current-gc-milliseconds)]
+		   [(vals cpu real) (time-apply thunk)]
+		   [(gc-end) (current-gc-milliseconds)])
 	(set! total-cpu-time (+ total-cpu-time cpu))
 	(set! total-real-time (+ total-real-time real))
 	(when (compiler:option:verbose)
-	  (printf "      [cpu: ~ams, real: ~ams]~n" cpu real))
+	  (printf "      [cpu: ~ams, real: ~ams gc: ~ams]~n" cpu real (- gc-end gc-start)))
 	(apply values vals))))
 
   ;;-----------------------------------------------------------------------------

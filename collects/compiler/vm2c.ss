@@ -102,14 +102,14 @@
 
 (define vm->c:emit-export-symbol-definitions!
   (lambda (port)
-    (let loop ([l (reverse compiler:total-unit-exports)][pos 0])
+    (let sloop ([l (reverse compiler:total-unit-exports)][pos 0])
       (unless (null? l)
 	  (fprintf port
 		   "~aS.unit_exports[~a] = ~a;~n"
 		   vm->c:indent-spaces
 		   pos
 		   (vm->c:make-symbol-const-string (car l)))
-	  (loop (cdr l) (add1 pos))))))
+	  (sloop (cdr l) (add1 pos))))))
 
 (define vm->c:emit-prim-ref-declarations!
   (lambda (port)
@@ -169,11 +169,11 @@
   (fprintf port "  /* Write fields as an array to help C comiplers */~n")
   (fprintf port "  /* that don't like really big records. */~n")
   (fprintf port "  Scheme_Object * _consts_[~a];~n" (length l))
-  (let loop ([l l][n 0])
+  (let svloop ([l l][n 0])
     (unless (null? l)
       (fprintf port "# define ~a _consts_[~a]~n"
 	       (vm->c:convert-symbol (car l)) n)
-      (loop (cdr l) (add1 n)))))
+      (svloop (cdr l) (add1 n)))))
 
 ; when statics have binding information, this will look more like 
 ; emit-local-variable-declarations!
@@ -234,7 +234,7 @@
 
 (define (vm->c:emit-case-arities-definitions! port)
   (fprintf port "   /* arity information for compiled case-lambdas */~n")
-  (let loop ([l (reverse compiler:case-lambdas)][pos 0])
+  (let caloop ([l (reverse compiler:case-lambdas)][pos 0])
     (unless (null? l)
        (let* ([ast (car l)]
 	      [args (zodiac:case-lambda-form-args ast)])
@@ -247,20 +247,20 @@
 	       (fprintf port "~a  arities = (short *)scheme_malloc_atomic(~a * sizeof(short));~n"
 			vm->c:indent-spaces
 			(* 2 (length args)))
-	       (let loop ([l args][n 0])
+	       (let cailoop ([l args][n 0])
 		 (unless (null? l)
 			 (let-values ([(min-arity max-arity) (compiler:formals->arity (car l))])
 			   (fprintf port "~a  arities[~a] = ~a;~n~a  arities[~a] = ~a;~n"
 				    vm->c:indent-spaces (* 2 n) min-arity
 				    vm->c:indent-spaces (add1 (* 2 n)) max-arity))
-			 (loop (cdr l) (add1 n))))
+			 (cailoop (cdr l) (add1 n))))
 	       (fprintf port "~a  S.casesArities[~a] = arities;~n"
 			vm->c:indent-spaces pos)
 	       (fprintf port "~a}~n" vm->c:indent-spaces))))
-       (loop (cdr l) (add1 pos)))))
+       (caloop (cdr l) (add1 pos)))))
 
 (define (vm->c:emit-compound-definitions! port)
-  (let loop ([l (reverse compiler:compounds)][pos 0])
+  (let cdloop ([l (reverse compiler:compounds)][pos 0])
     (unless (null? l)
        (let* ([ast (car l)]
 	      [info (get-annotation ast)])
@@ -284,10 +284,10 @@
 	"~a  S.compoundAssemblies[~a] = scheme_assemble_compound_unit(imports, links, exports);~n"
 	vm->c:indent-spaces pos)
        (fprintf port "~a}~n" vm->c:indent-spaces)
-       (loop (cdr l) (add1 pos)))))
+       (cdloop (cdr l) (add1 pos)))))
 
 (define (vm->c:emit-class-definitions! port)
-  (let loop ([l (reverse compiler:classes)][pos 0])
+  (let cldloop ([l (reverse compiler:classes)][pos 0])
     (unless (null? l)
        (let ([ast (car l)])
 	 (let* ([code (get-annotation ast)]
@@ -336,10 +336,10 @@
 		      mina  maxa
 		      (closure-code-vehicle code)
 		      vm->c:indent-spaces)))))
-       (loop (cdr l) (add1 pos)))))
+       (cldloop (cdr l) (add1 pos)))))
 
 (define (vm->c:emit-interface-definitions! port)
-  (let loop ([l (reverse compiler:interfaces)][pos 0])
+  (let idloop ([l (reverse compiler:interfaces)][pos 0])
     (unless (null? l)
        (let* ([ast (car l)]
 	      [names (zodiac:interface-form-variables ast)])
@@ -364,7 +364,7 @@
 	  (length names)
 	  (if (null? names) "NULL" "names"))
 	 (fprintf port "~a}~n" vm->c:indent-spaces))
-       (loop (cdr l) (add1 pos)))))
+       (idloop (cdr l) (add1 pos)))))
 
 (define (vm->c:emit-top-levels! kind return? per-load? count vm-list locals-list globals-list max-arity c-port)
   ;; count == -1 => go to the end of the list
@@ -1098,15 +1098,7 @@
 
 (define vm->c:convert-symbol
   (lambda (sym)
-    (let ([text (symbol->string sym)])
-      (let loop ([n 0])
-	(if (= n (string-length text))
-	    text
-	    (let ([char (string-ref text n)])
-	      (when (member char compiler:bad-chars)
-		    (string-set! text n #\_))
-	      (loop (add1 n))))))))
-
+    (compiler:clean-string (symbol->string sym))))
 
 (define vm->c:convert-char
   (lambda (char)
@@ -1155,6 +1147,21 @@
 	      (format "vm->c:extract-inferred-name: bad var type: ~a"
 		      var))]))))
 
+(define single-arity?
+  (one-of vm:global-varref?
+	  vm:local-varref?
+	  vm:static-varref?
+	  vm:primitive-varref?
+	  vm:symbol-varref?
+	  vm:struct-ref?
+	  vm:deref?
+	  vm:ref?
+	  vm:cast?
+	  vm:immediate?))
+
+(define is-primitive?
+  (one-of primitive? primitive-closure?))
+
 (define vm->c-expression
   (lambda (ast code port indent-level no-seq-braces?)
     (let process ([ast ast] [indent-level indent-level] [own-line? #t] [braces? (not no-seq-braces?)])
@@ -1192,7 +1199,7 @@
 	 ;;    if (!SCHEME_FALSEP(A)) { V ... } else { V ...}
 	 [(vm:if? ast)
 	  (emit-indentation)
-	  (let loop ([ast ast])
+	  (let iloop ([ast ast])
 	    (let ([test (vm:if-test ast)]
 		  [then (vm:if-then ast)]
 		  [else (vm:if-else ast)])
@@ -1213,7 +1220,7 @@
 		 [(and (= 1 (length else-vals))
 		       (vm:if? (car else-vals)))
 		  (emit-indentation) (emit "else ")
-		  (loop (car else-vals))]
+		  (iloop (car else-vals))]
 		 [(not (null? else-vals))
 		  (emit-indentation) (emit "else~n")
 		  (process (vm:if-else ast) indent-level #f #t)]
@@ -1284,22 +1291,13 @@
 		 [val (vm:set!-val ast)]
 		 [num-to-set (length vars)]
 		 [return-arity
-		  (or (and ((one-of vm:global-varref?
-				    vm:local-varref?
-				    vm:static-varref?
-				    vm:primitive-varref?
-				    vm:symbol-varref?
-				    vm:struct-ref?
-				    vm:deref?
-				    vm:ref?
-				    vm:cast?
-				    vm:immediate?) ast)
+		  (or (and (single-arity? ast)
 			   1)
 		      (and (vm:apply? val) 
 			   (vm:apply-prim val)
 			   (let ([proc (global-defined-value* (vm:apply-prim val))])
 			     (and
-			      ((one-of primitive? primitive-closure?) proc)
+			      (is-primitive? proc)
 			      (primitive-result-arity proc))))
 		      (and (vm:struct? val)
 			   (length (vm:struct-fields val)))
@@ -1325,12 +1323,12 @@
 		       (emit "}")
 		       (if (not (null? vars))
 			   (emit "~n"))
-		       (let loop ([vars vars] [n 0])
+		       (let aloop ([vars vars] [n 0])
 			 (unless (null? vars)
 			   (emit-indentation)
 			   (process-set! (car vars) (format "scheme_multiple_array[~a]" n) #f)
 			   (emit ";~n")
-			   (loop (cdr vars) (+ n 1))))
+			   (aloop (cdr vars) (+ n 1))))
 		       )))]
 	      
 		;; not an application.
@@ -1356,7 +1354,7 @@
 		  (length (vm:args-vals ast))))
 	  (if (null? (vm:args-vals ast))
 	      (emit-indentation)
-	      (let loop ([n 0] [args (vm:args-vals ast)])
+	      (let arloop ([n 0] [args (vm:args-vals ast)])
 		(unless (null? args)
 		  (emit-indentation)
 		  (let ([argtype (vm:args-type ast)])
@@ -1371,12 +1369,12 @@
 		  ; (emit ")") ;; DEBUGGING
 		  (unless (null? (cdr args))
 		    (emit ";~n"))
-		  (loop (add1 n) (cdr args)))))]
+		  (arloop (add1 n) (cdr args)))))]
 
 	 [(vm:register-args? ast)
 	  (let ([vars (vm:register-args-vars ast)]
 		[vals (vm:register-args-vals ast)])
-	    (let loop ([vars vars][vals vals])
+	    (let raloop ([vars vars][vals vals])
 	      (let ([var (car vars)]
 		    [val (car vals)])
 		(emit-indentation)
@@ -1384,7 +1382,7 @@
 		(process val indent-level #f #f)
 		(unless (null? (cdr vars))
 		  (emit ";~n")
-		  (loop (cdr vars) (cdr vals))))))]
+		  (raloop (cdr vars) (cdr vals))))))]
 
 	 ;; (alloc ) -> malloc
 	 ;; a bit complicated

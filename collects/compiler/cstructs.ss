@@ -13,21 +13,19 @@
   ;; VARREF ATTRIBUTES
   ;;  Used as the annotation for zodiac:varref objects
 
-  (define (varref:empty-attributes) empty-set)
+  (define (varref:empty-attributes) 0)
   (define (varref:add-attribute! ast attr)
-    (set-annotation! ast (set-union (make-singleton-set attr)
-				    (get-annotation ast))))
+    (set-annotation! ast (bitwise-ior attr (get-annotation ast))))
   (define (varref:has-attribute? ast attr)
     (let ([anno (get-annotation ast)])
-      (and (set? anno)
-	   (set-memq? attr anno))))
+      (and (number? anno) (positive? (bitwise-and attr anno)))))
 
-  (define varref:static 'varref:static)
-  (define varref:per-load-static 'varref:per-load-static)
-  (define varref:primitive 'varref:primitive)
-  (define varref:symbol 'varref:symbol)
-  (define varref:inexact 'varref:inexact)
-  (define varref:env 'varref:env)
+  (define varref:static 1)
+  (define varref:per-load-static 2)
+  (define varref:primitive 4)
+  (define varref:symbol 8)
+  (define varref:inexact 16)
+  (define varref:env 32)
 
   ;;----------------------------------------------------------------------------
   ;; AST NODES

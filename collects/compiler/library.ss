@@ -13,9 +13,12 @@
       (not (fun obj)))))
 
 (define one-of
-  (lambda preds
+  (case-lambda
+   [(p1 p2) (lambda (obj)
+	      (or (p1 obj) (p2 obj)))]
+   [preds 
     (lambda (obj)
-      (ormap (lambda (p) (p obj)) preds))))
+      (ormap (lambda (p) (p obj)) preds))]))
 
 (define all-of
   (lambda preds
@@ -306,16 +309,18 @@
     (begin0 compiler:label-number
 	    (set! compiler:label-number (add1 compiler:label-number)))))
 
-(define compiler:bad-chars
-  (string->list "#+-.*/<=>!?:$%_&~^@;^()[]{}|\\,~\"`' "))
+(define bad-chars "][#+-.*/<=>!?:$%_&~^@;^(){}|\\,~\"`' ")
+(define bad-char-list (string->list bad-chars))
+(define re:bad-char (regexp (string-append "[" bad-chars "]")))
 
 (define (compiler:clean-string s)
-  (let* ((str (string->list s)))
-    (list->string
-     (map (lambda (c) (if (member c compiler:bad-chars)
-			  #\_
-			  c))
-	  str))))
+  (if (regexp-match re:bad-char s)
+      (list->string
+       (map (lambda (c) (if (memq c bad-char-list)
+			    #\_
+			    c))
+	    (string->list s)))
+      s))
 
 (define (protect-comment s)
     (string-append

@@ -368,11 +368,11 @@
   add-color<%>
   mult-color<%>
   style-delta%
-  style%
+  style<%>
   style-list%
 
-  (editor-admin%  editor-snip-editor-admin%)
-  editor-snip-editor-admin%
+  (editor-admin%  editor-snip-editor-admin<%>)
+  editor-snip-editor-admin<%>
   snip-admin%
   
   (editor<%> text% pasteboard%)
@@ -386,11 +386,11 @@
   editor-snip%
 
   snip-class%
-  snip-class-list%
+  snip-class-list<%>
 
   editor-data%
   editor-data-class%
-  editor-data-class-list%
+  editor-data-class-list<%>
 
   keymap%
   editor-wordbreak-map%
@@ -848,7 +848,7 @@
 (send style-delta%-example-list add sd)
 (define sl (make-object style-list%))
 (send style-list%-example-list add sl)
-(send style%-example-list add (send sl basic-style))
+(send style<%>-example-list add (send sl basic-style))
 
 (define e (make-object text%))
 (send c set-editor e)
@@ -857,7 +857,7 @@
 
 (define s (make-object editor-snip%))
 (send e insert s)
-(send editor-snip-editor-admin%-example-list add (send (send s get-editor) get-admin))
+(send editor-snip-editor-admin<%>-example-list add (send (send s get-editor) get-admin))
 (send snip-admin%-example-list add (make-object snip-admin%))
 
 (send tab-snip%-example-list add (make-object tab-snip%))
@@ -865,11 +865,11 @@
 (send editor-snip%-example-list add (make-object editor-snip%))
 
 (send snip-class%-example-list add (make-object snip-class%))
-(send snip-class-list%-example-list add (get-the-snip-class-list))
+(send snip-class-list<%>-example-list add (get-the-snip-class-list))
 
 (send editor-data%-example-list add (make-object editor-data%))
 (send editor-data-class%-example-list add (make-object editor-data-class%))
-(send editor-data-class-list%-example-list add (get-the-editor-data-class-list))
+(send editor-data-class-list<%>-example-list add (get-the-editor-data-class-list))
 
 (send keymap%-example-list add (make-object keymap%))
 (send editor-wordbreak-map%-example-list add the-editor-wordbreak-map)

@@ -65,7 +65,7 @@ Scheme_Object *arrays_to_list(int c1, Scheme_Object **ns1,
   int c, i1, i2;
 
   ns = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object*) * (c1 + c2));
-  i1 = i2 = 0;
+  c = i1 = i2 = 0;
   while ((i1 < c1) || (i2 < c2)) {
     if (i1 >= c1) {
       ns[c++] = ns2[i2++];

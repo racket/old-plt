@@ -13,6 +13,24 @@ away. Otherwise, you may have to modified "mzmake.ss" to get it to
 work.
 
 
+Normal use of readline
+----------------------
+
+The _rep.ss_ library installs a readline-based function for the
+prompt-and-read part of MzScheme's read-eval-print loop.
+
+I put the following in my ~/.mzschemerc so that MzScheme always starts
+with readline support:
+
+ (require-library "rep.ss" "readline")
+
+The readline history is stored across invocations in ~/.mzrl.history,
+assuming MzScheme exits normally.
+
+
+Direct bindings for readline hackers
+------------------------------------
+
 The _readline.ss_ library provides two functions:
 
 > (readline prompt-string) - prints the given prompt string and reads
@@ -21,12 +39,16 @@ The _readline.ss_ library provides two functions:
 > (add-history s) - adds the given string to the readline history,
   which is accessible to the user via the up-arrow key
 
-The _rep.ss_ library installs a readline-based function to implent the
-prompt-and-read part of MzScheme's read-eval-print loop.
 
-KNOWN BUG :Hitting ctl-C more than once tends to make readline or
-MzScheme crash.
+Known Bugs
+----------
+
+Hitting ctl-C more than once tends to make either readline or MzScheme
+crash (I'm not sure which one).
+
 
 
                                                    mflatt@cs.utah.edu
 
+Note to self: pack with
+ (pack "readline.plt" "readline" '("collects/readline") '(("readline")))

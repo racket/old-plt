@@ -1,0 +1,5 @@
+#!/home/cs/grad/sowens/plt/bin/mzscheme -rq
+
+(require "client.ss")
+
+(start-client #f #f (vector-ref argv 0) (vector-ref argv 1))

@@ -96,7 +96,7 @@
       (define/public (end) (send f show #t))
       
       (define/public (set-robots l)
-        (sleep/yield .25)
+        ;;(sleep/yield .25)
         (let ((b (list->vector (map string-copy board))))
           (for-each
            (lambda (robot)

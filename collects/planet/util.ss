@@ -133,16 +133,19 @@
     (case-lambda
       [(dir) 
        (let-values ([(path name must-be-dir?) (split-path dir)])
-         (make-planet-archive dir (string-append (path->string name) ".plt")))]
+         (make-planet-archive 
+          dir 
+          (build-path (normalize-path (current-directory))
+                      (string-append (path->string name) ".plt"))))]
       [(dir archive-name)
-       (pack archive-name
-             "archive" 
-             (list (find-relative-path (normalize-path (current-directory)) 
-                                       (normalize-path dir)))
-             null
-             std-filter
-             #t
-             'file
-             #f
-             #f)
+       (parameterize ((current-directory dir))
+         (pack archive-name
+               "archive" 
+               (list ".")
+               null
+               std-filter
+               #t
+               'file
+               #f
+               #f))
        (normalize-path archive-name)])))

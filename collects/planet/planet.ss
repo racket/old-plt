@@ -94,7 +94,7 @@ PLANNED FEATURES:
   (define (do-archive p)
     (unless (directory-exists? p)
       (fail (format "No such directory: ~a" p)))
-    (make-planet-archive p))
+    (make-planet-archive (normalize-path p)))
   
   (define (remove owner pkg majstr minstr)
     (let ((maj (string->number majstr))

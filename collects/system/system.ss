@@ -209,5 +209,5 @@
 		(set! non-unit-startup? #t)
 		(set! app-unit-library "nuapp.ss")
 		(apply mred:initialize rest)]
-	       [else (set! extra-args (cons extra-args (list arg)))
+	       [else (set! extra-args (append extra-args (list arg)))
 		     (loop rest)]))]))))))

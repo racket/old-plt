@@ -43,6 +43,8 @@
    settings
    get-default-setting
 
+   zodiac-vocabulary?
+   
    error-display/debug-handler
    current-vocabulary
    current-setting

@@ -128,25 +128,25 @@
 			       (whole/fractional-exact-numbers #f)
 			       (printing r4rs-style)
 			       (define-argv? #t))))
-	  (vector 'MzSchemeDebug (make-setting/parse
-				  `((use-zodiac? #t)
-				    (vocabulary-symbol mzscheme-debug)
-				    (case-sensitive? #f)
-				    (allow-set!-on-undefined? #f)
-				    (unmatched-cond/case-is-error? #f)
-				    (allow-improper-lists? #t)
-				    (allow-reader-quasiquote? #t)
-				    (sharing-printing? #f)
-				    (abbreviate-cons-as-list? #t)
-				    (signal-undefined #f)
-				    (signal-not-boolean #f)
-				    (eq?-only-compares-symbols? #f)
-				    (<=-at-least-two-args #f)
-				    (disallow-untagged-inexact-numbers #f)
-				    (print-tagged-inexact-numbers #f)
-				    (whole/fractional-exact-numbers #f)
-				    (printing r4rs-style)
-				    (define-argv? #t))))))
+	  (vector '|MzScheme Debug| (make-setting/parse
+				     `((use-zodiac? #t)
+				       (vocabulary-symbol mzscheme-debug)
+				       (case-sensitive? #f)
+				       (allow-set!-on-undefined? #f)
+				       (unmatched-cond/case-is-error? #f)
+				       (allow-improper-lists? #t)
+				       (allow-reader-quasiquote? #t)
+				       (sharing-printing? #f)
+				       (abbreviate-cons-as-list? #t)
+				       (signal-undefined #f)
+				       (signal-not-boolean #f)
+				       (eq?-only-compares-symbols? #f)
+				       (<=-at-least-two-args #f)
+				       (disallow-untagged-inexact-numbers #f)
+				       (print-tagged-inexact-numbers #f)
+				       (whole/fractional-exact-numbers #f)
+				       (printing r4rs-style)
+				       (define-argv? #t))))))
 
   ;; level->number : symbol -> int
   (define level->number
@@ -163,7 +163,7 @@
   (define level-symbols (list 'beginner 'intermediate 'advanced 'mzscheme 'mzscheme-debug))
 
   ;; level-strings : (list-of string)
-  (define level-strings (list "Beginner" "Intermediate" "Advanced" "MzScheme" "MzSchemeDebug"))
+  (define level-strings (list "Beginner" "Intermediate" "Advanced" "MzScheme" "MzScheme Debug"))
 
   ;; find-setting-name : setting -> symbol
   (define (find-setting-name setting)
@@ -181,6 +181,10 @@
   
   ;; get-default-setting : _ -> setting
   (define (get-default-setting) (copy-setting (vector-ref (mzlib:function:first (reverse settings)) 1)))
+
+  ;; zodiac-vocabulary? : symbol -> boolean
+  (define (zodiac-vocabulary? sym)
+    (not (eq? sym 'mzscheme)))
 
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
@@ -533,7 +537,7 @@
 				     [(intermediate) zodiac:intermediate-vocabulary]
 				     [(advanced) zodiac:advanced-vocabulary]
 				     [(mzscheme-debug) zodiac:scheme-vocabulary]
-				     [else (error 'init "bad vocabulary spec: ~a" (setting-vocabulary-symbol setting))]))))
+				     [else (error 'init "bad vocabulary spec: ~a ~e" (setting-vocabulary-symbol setting) setting)]))))
 	    
 	    (read-case-sensitive (setting-case-sensitive? setting))
 

@@ -345,6 +345,14 @@ scheme_force_value(Scheme_Object *obj)
     Scheme_Thread *p = scheme_current_thread;
     Scheme_Object *v;
 
+    /* Watch out for use for use of tail buffer: */
+    if (p->ku.apply.tail_rands == p->tail_buffer) {
+      GC_CAN_IGNORE Scheme_Object **tb; 
+      p->tail_buffer = NULL; /* so args aren't zeroed */ 
+      tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
+      p->tail_buffer = tb;
+    }
+    
     v = _scheme_apply_multi(p->ku.apply.tail_rator, 
 			    p->ku.apply.tail_num_rands, 
 			    p->ku.apply.tail_rands);

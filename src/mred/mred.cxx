@@ -2576,9 +2576,7 @@ static char *pltcollects_from_resource;
 #define TAKEDOWN_GETENV_HACK /* empty */
 #endif
 
-#ifdef wx_x
-# define CMDLINE_STDIO_FLAG
-#endif
+#define CMDLINE_STDIO_FLAG
 #define VERSION_YIELD_FLAG
 
 #if defined(_IBMR2)

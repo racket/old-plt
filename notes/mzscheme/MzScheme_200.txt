@@ -5,19 +5,34 @@ in several important ways:
  * There is a new module system that supports only top-level,
    first-order modules. The library-collection system now works with
    the module system. In particular, `require-library' has been
-   replaced by `import'.
+   replaced by `require'.
 
  * There is no built-in object or unit system. These have been moved
-   to externally defined syntax modules: "class.ss", "unit.ss", and
+   to MzLib-defined syntax modules: "class.ss", "unit.ss", and
    "unitsig.ss" in the "mzlib" collection. For example, to get the old
-   class system, use `(import (lib "class.ss"))'.
+   class system, use `(require (lib "class.ss"))'.
 
  * The core syntax system is "hygienic"; `define-macro' has been
    replaced by `define-syntax'.
 
    In general, there is no easy way to convert a `define-macro' macro
    to `define-syntax'; re-writing an old-style macro with
-   `define-syntax' and `syntax-case' is usually quite easy.
+   `define-syntax' and `syntax-case' is usually quite easy. The
+   following works somethimes, though:
+
+    (define-syntax define-macro
+      (lambda (stx)
+	(syntax-case stx ()
+	  [(_ name proc)
+	   (syntax
+	    (define-syntax name
+	      (lambda (stx)
+		(datum->syntax (apply proc (cdr (syntax->datum stx)))
+			       #f (quote-syntax here)))))])))
 
  * All #% names are gone, since they are unnecessary with the new
    syntax system.
+
+ * `global-define-value' is renamed `namespace-variable-binding' (for
+   consistency with other names). `defined?' is gone, but it can be
+   implemented with `namespace-variable-binding'.

@@ -1088,7 +1088,7 @@ static void prevent_cyclic_requires(Scheme_Module *m, Scheme_Object *modname, Sc
 
   if (SAME_OBJ(m->modname, modname)) {
     scheme_wrong_syntax("module", NULL, modname, 
-			"require cycle detected for re-definition of module");
+			"import cycle detected for re-definition of module");
   }
 
   /* Check et_requires: */
@@ -1247,7 +1247,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   if (!SCHEME_STX_SYMBOLP(nm))
     scheme_wrong_syntax("module", nm, form, "module name is not an identifier");
   fm = SCHEME_STX_CDR(fm);
-  if (!SCHEME_STX_PAIRP(form))
+  if (!SCHEME_STX_PAIRP(fm))
     scheme_wrong_syntax("module", NULL, form, NULL);
   ii = SCHEME_STX_CAR(fm);
   fm = SCHEME_STX_CDR(fm);
@@ -1411,7 +1411,7 @@ static void check_require_name(Scheme_Object *name, Scheme_Object *nominal_modid
   /* Check that it's not yet defined: */
   if (toplevel) {
     if (scheme_lookup_in_table(toplevel, (const char *)name)) {
-      scheme_wrong_syntax("module", name, e, "required identifier already defined");
+      scheme_wrong_syntax("module", name, e, "imported identifier already defined");
     }
   }
 	    
@@ -1422,13 +1422,13 @@ static void check_require_name(Scheme_Object *name, Scheme_Object *nominal_modid
 	&& SAME_OBJ(SCHEME_VEC_ELS(vec)[2], exname))
       return; /* already required, same source */
     scheme_wrong_syntax("module", name, e, 
-			"identifier already required (from a different source)");
+			"identifier already imported (from a different source)");
   }
 	    
   /* Not syntax: */
   if (syntax) {
     if (scheme_lookup_in_table(syntax, (const char *)name)) {
-      scheme_wrong_syntax("module", name, e, "required identifier already defined");
+      scheme_wrong_syntax("module", name, e, "imported identifier already defined");
     }
   }
 
@@ -1608,7 +1608,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    /* Not required: */
 	    if (scheme_lookup_in_table(required, (const char *)name)) {
-	      scheme_wrong_syntax("module", name, e, "identifier is already required");
+	      scheme_wrong_syntax("module", name, e, "identifier is already imported");
 	      return NULL;
 	    }
 
@@ -1651,7 +1651,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Not required: */
 	  if (scheme_lookup_in_table(required, (const char *)name)) {
-	    scheme_wrong_syntax("module", name, e, "identifier is already required");
+	    scheme_wrong_syntax("module", name, e, "identifier is already imported");
 	    return NULL;
 	  }
 
@@ -1939,7 +1939,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       if (SCHEME_NULLP(l)) {
 	/* Didn't require the named module */
 	scheme_wrong_syntax("provide", midx, SCHEME_CADR(SCHEME_CAR(rx)),
-			    "no require for the module name");
+			    "no `require' matching the module name");
       }
 
       exns = SCHEME_CDR(SCHEME_CDR(SCHEME_CAR(rx)));
@@ -2081,7 +2081,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 	} else {
 	  /* Not defined! */
-	  scheme_wrong_syntax("module", name, form, "provided identifier not defined or required");
+	  scheme_wrong_syntax("module", name, form, "provided identifier not defined or imported");
 	}
       }
     }
@@ -2466,7 +2466,7 @@ static void check_dup_require(Scheme_Object *name, Scheme_Object *nominal_modidx
   if (i) {
     if (same_modidx(modidx, SCHEME_CAR(i)) && SAME_OBJ(srcname, SCHEME_CDR(i)))
       return; /* same source */
-    scheme_wrong_syntax("require", name, e, "duplicate require identifier");
+    scheme_wrong_syntax("require", name, e, "duplicate import identifier");
   } else
     scheme_add_to_table((Scheme_Hash_Table *)ht, (const char *)name, 
 			scheme_make_pair(modidx, srcname), 0);

@@ -2524,6 +2524,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
     if (SCHEME_INTP(obj)) {
       UPDATE_THREAD_RSPTR();
+      if (rands == p->tail_buffer)
+	MAKE_TAIL_BUFFER_SAFE();
       scheme_wrong_rator(obj, num_rands, rands);
       return NULL; /* doesn't get here */
     }

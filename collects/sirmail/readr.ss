@@ -1217,8 +1217,9 @@
 				(as-background
 				 enable-main-frame
 				 (lambda (bad-break break-ok)
-				   (copy-messages-to (list item) mailbox-name)
-				   (purge-messages (list item)))
+				   (with-handlers ([void no-status-handler])
+				     (copy-messages-to (list item) mailbox-name)
+				     (purge-messages (list item))))
 				 void)))))
                          (status ""))))
                  (set! dragging-item #f))]
@@ -1347,21 +1348,19 @@
       
       (define (copy-marked-to dest-mailbox-name)
 	(let* ([marked (filter message-marked? mailbox)])
-          (copy-messages-to marked dest-mailbox-name)))
+	  (as-background
+	   enable-main-frame
+	   (lambda (break-bad break-ok)
+	     (copy-messages-to marked dest-mailbox-name))
+	   void)))
       
       (define (copy-messages-to marked dest-mailbox-name)
         (unless (null? marked)
           (let-values ([(imap count new next-uid) (connect)])
             (check-positions imap marked)
             (status "Copying messages to ~a..." dest-mailbox-name)
-            (as-background
-             enable-main-frame
-             (lambda (break-bad break-ok)
-               (status "Copying messages to ~a..." dest-mailbox-name)
-               (with-handlers ([void no-status-handler])
-                 (imap-copy imap (map message-position marked) dest-mailbox-name)))
-             void)
-            (status "Copied to ~a" dest-mailbox-name))))
+	    (imap-copy imap (map message-position marked) dest-mailbox-name)
+	    (status "Copied to ~a" dest-mailbox-name))))
       
       (define (auto-file)
 	(as-background

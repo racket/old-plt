@@ -8,3 +8,6 @@
 
 (define-signature dtd^ (read-sgml-dtd summarize-dtd))
 (define-signature entity-expander^ (empty-entity-expander extend-entity-expander expand-entities))
+
+(require-library "functios.ss")
+(require-library "strings.ss")

@@ -276,15 +276,13 @@
 	     [arrow-root-radius 3.5]
 	     [cursor-arrow (make-object wx:cursor% wx:const-cursor-arrow)])
 	(class-asi (drscheme:parameters:current-definitions-edit%)
-	  (inherit set-cursor get-admin invalidate-bitmap-cache)
+	  (inherit set-cursor get-admin invalidate-bitmap-cache set-position)
 	  (rename
 	   [super-after-insert after-insert]
 	   [super-after-delete after-delete]
 	   [super-on-paint on-paint]
 	   [super-on-event on-event]
 	   [super-resized resized])
-	  
-	  (public)
 	  (private
 	    [add-graphic
 	     (lambda (pos* locs->thunks)
@@ -303,8 +301,10 @@
 		      [yrb (box 0)])
 		 (send this position-location left-pos xlb ylb #t)
 		 (send this position-location right-pos xrb yrb #f)
-		 (cons (/ (+ (unbox xlb) (unbox xrb)) 2)
-		       (/ (+ (unbox ylb) (unbox yrb)) 2))))]
+		 (list (cons (/ (+ (unbox xlb) (unbox xrb)) 2)
+			     (/ (+ (unbox ylb) (unbox yrb)) 2))
+		       (cons (unbox xlb) (unbox ylb))
+		       (cons (unbox xrb) (unbox yrb)))))]
 	    [calc-graphic-thunks!
 	     (lambda (graphic)
 	       (match-let*
@@ -337,15 +337,17 @@
 	    [syncheck:add-arrow
 	     (lambda (start-pos-left start-pos-right
 				     end-pos-left end-pos-right
-				     delta brush pen
-				     clickback-head clickback-root)
+				     delta brush pen)
 	       (add-graphic 
 		(list (list start-pos-left start-pos-right)
 		      (list end-pos-left end-pos-right))
 		(match-lambda
-		 [((start-x . start-y) (end-x . end-y))
+		 [(((start-x . start-y) (start-left . start-top) (start-right . start-bottom))
+		   ((end-x . end-y) (end-left . end-top) (end-right . end-bottom)))
 		  (let* 
-		      ([ofs-x   (- start-x end-x)]
+		      ([perm-arrow-on? #f]
+		       [tmp-arrow-on? #f]
+		       [ofs-x   (- start-x end-x)]
 		       [ofs-y   (- start-y end-y)]
 		       [len     (sqrt (+ (* ofs-x ofs-x) (* ofs-y ofs-y)))]
 		       [ofs-x   (/ ofs-x len)]
@@ -370,25 +372,27 @@
 		       [pts (list pt1 pt2 pt3)]
 		       [draw-fn
 			(lambda (dc dx dy)
-			  (let ([old-brush (send dc get-brush)]
-				[old-pen   (send dc get-pen)]
-				[old-logfn (send dc get-logical-function)])
-			    (send dc set-brush brush)
-			    (send dc set-pen pen)
-			    ;; (send dc set-logical-function wx:const-or)
-			    (send dc draw-line
-				  (+ start-x dx) (+ start-y dy)
-				  (+ end-x dx) (+ end-y dy))
-			    (send dc draw-polygon pts dx dy)
-			    (send dc draw-ellipse 
-				  (- (+ start-x dx) arrow-root-radius)
-				  (- (+ start-y dy) arrow-root-radius)
-				  (* 2 arrow-root-radius)
-				  (* 2 arrow-root-radius))
-			    (send dc set-brush old-brush)
-			    (send dc set-pen old-pen)                    
-			    (send dc set-logical-function old-logfn)))]
-		       [on-head?
+			  (when (or tmp-arrow-on?
+				    perm-arrow-on?)
+			    (let ([old-brush (send dc get-brush)]
+				  [old-pen   (send dc get-pen)]
+				  [old-logfn (send dc get-logical-function)])
+			      (send dc set-brush brush)
+			      (send dc set-pen pen)
+			      ;; (send dc set-logical-function wx:const-or)
+			      (send dc draw-line
+				    (+ start-x dx) (+ start-y dy)
+				    (+ end-x dx) (+ end-y dy))
+			      (send dc draw-polygon pts dx dy)
+			      (send dc draw-ellipse 
+				    (- (+ start-x dx) arrow-root-radius)
+				    (- (+ start-y dy) arrow-root-radius)
+				    (* 2 arrow-root-radius)
+				    (* 2 arrow-root-radius))
+			      (send dc set-brush old-brush)
+			      (send dc set-pen old-pen)                    
+			      (send dc set-logical-function old-logfn))))]
+		       [OLD-on-head?
 			(lambda (x y)
 			  (let*
 			      ([xs (map (lambda (pt) (send pt get-x)) pts)]
@@ -401,29 +405,49 @@
 				 (<= x max-x)
 				 (>= y min-y)
 				 (<= y max-y))))]
-		       [on-root?
+		       [OLD-on-root?
 			(lambda (x y)
 			  (and (>= x (- start-x arrow-root-radius))
 			       (<= x (+ start-x arrow-root-radius))
 			       (>= y (- start-y arrow-root-radius))
 			       (<= y (+ start-y arrow-root-radius))))]
+		       [on-head?
+			(lambda (x y)
+			  (and (<= start-left x start-right)
+			       (<= start-top y start-bottom)))]
+		       [on-root?
+			(lambda (x y)
+			  (and (<= end-left x end-right)
+			       (<= end-top y end-bottom)))]
+			   
 		       [event-fn
-			(lambda (event x y)
-			  (cond
-			   [(on-head? x y)
-			    (set-cursor cursor-arrow)
-			    (clickback-head event)
-			    (clickback-root #f)]
-			   [(on-root? x y)
-			    (set-cursor cursor-arrow)
-			    (clickback-root event)
-			    (clickback-head #f)]
-			   [else 
-			    (clickback-head #f)
-			    (clickback-root #f)
-			    ;; Back to default cursor
-			    ;; (set-cursor '())
-			    #f]))])
+			(let ([last (void)])
+			  (lambda (event x y)
+			    (let* ([head? (on-head? x y)]
+				   [this-time (or head? (on-root? x y))])
+			      (when this-time
+				(set-cursor cursor-arrow))
+			      (cond
+			       [(send event moving?)
+				(when (void? last)
+				  (set! last (not this-time)))
+				(when (or (and (not this-time) last)
+					  (and this-time (not last)))
+				  (set! tmp-arrow-on? this-time)
+				  (let ([color (if this-time "WHITE" "BLUE")])
+				    (send brush set-colour color))
+				  (invalidate-bitmap-cache)
+				  (set! last this-time))
+				#f]
+			       [(send event button-up?)
+				(when this-time
+				  (set! perm-arrow-on? (not perm-arrow-on?))
+				  (invalidate-bitmap-cache)
+				  (if head?
+				      (set-position end-pos-left end-pos-right)
+				      (set-position start-pos-left start-pos-right)))
+				#f]
+			       [else #f]))))])
 		    
 		    ;; Return draw-thunk and event function
 		    (cons draw-fn event-fn))])))])
@@ -596,27 +620,7 @@
 					[brush (make-object wx:brush% "BLUE" wx:const-solid)]
 					[pen (make-object wx:pen%
 					       (make-object wx:colour% "BLUE")
-					       1 wx:const-solid)]
-					[make-clickback
-					 (lambda (start end)
-					   (let ([last (void)])
-					     (lambda (evt)
-					       (cond
-						[(or (not evt)
-						     (send evt moving?))
-						 (when (void? last)
-						   (set! last (not evt)))
-						 (when (or (and (not evt) last)
-							   (and evt (not last)))
-						   (let ([color (if evt "RED" "BLUE")])
-						     (send brush set-colour color))
-						   (send edit invalidate-bitmap-cache)
-						   (set! last evt))
-						 #f]
-						[(send evt button-up?)
-						 (send edit set-position start end)
-						 #t]
-						[else #f]))))])
+					       1 wx:const-solid)])
 				   (printf "add arrow: ~a ~a (~a,~a) -> (~a,~a)~n"
 					   (zodiac:binding-var binding)
 					   (zodiac:binding-orig-name binding)
@@ -624,9 +628,7 @@
 					   start finish)
 				   (add-arrow z:start z:finish 
 					      start finish
-					      delta brush pen
-					      (make-clickback z:start z:finish)
-					      (make-clickback start finish))))
+					      delta brush pen)))
 			       (color bound-style)]
 			      
 			      [(zodiac:top-level-varref? zodiac-ast)
@@ -738,18 +740,18 @@
 		       (read-loop)))))
 	       
 	       ; color the top-level varrefs
-	       (let ([user-defined?
+	       (let ([built-in?
 		      (lambda (s)
 			(with-parameterization (ivar interactions-edit param)
 			  (lambda ()
-			    (eval `(defined? ',s)))))])
+			    (built-in-name s))))])
 		 (for-each (lambda (var)
 			     (let ([id (zodiac:varref-var var)])
 			       (change-style
 				(cond
 				  [(hash-table-get defineds id (lambda () #f))
 				   bound-style]
-				  [(user-defined? id) primitive-style]
+				  [(built-in? id) primitive-style]
 				  [else unbound-style])
 				(zodiac:location-offset (zodiac:zodiac-start var))
 				(add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))

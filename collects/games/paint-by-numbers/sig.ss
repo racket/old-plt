@@ -30,7 +30,6 @@ types:
 
 |#
 
-(require-library "mred-interfaces.ss" "framework")
 (require-library "frameworks.ss" "framework")
 (require-library "raw-sig.ss" "games" "paint-by-numbers")
 (require-library "errortrace.ss" "errortrace")

@@ -6,7 +6,7 @@
 	  paint-by-numbers:problem^
 	  [all : paint-by-numbers:all-problems^]
 	  mzlib:pretty-print^
-	  mred-interfaces^)
+	  mred^)
 
   (define problems (car all:problemss))
 

@@ -7,8 +7,21 @@
 	   "sexp-to-re.ss"
 	   (lib "list.ss"))
   
-  (provide generate-table get-special-action filter-out-specials)
+  (provide generate-table get-special-action filter-out-specials wrap-action)
   
+  
+  ;; wrap-action: (syntax-object or #f) symbol syntax-object syntax-object -> syntax-object
+  (define (wrap-action action result-name ctxt loc)
+    (if action
+        (let ((parms (datum->syntax-object
+                      action
+                      `(start-pos end-pos ,result-name return-without-pos input-port))))
+          (datum->syntax-object ctxt
+                                `(lambda ,parms ,action)
+                                loc))
+        (datum->syntax-object ctxt #'void loc)))
+        
+    
   ;; get-special-action: (syntax-object list) symbol 'a -> syntax-object or 'a
   ;; Returns the first action from a rule of the form ((which-special) action)
   (define (get-special-action rules which-special none)
@@ -34,9 +47,9 @@
           (filter-out-specials (cdr rules) which-specials))
          (_ (cons (car rules) (filter-out-specials (cdr rules) which-specials)))))))
   
-  ;; generate-table : (syntax-object list) syntax-object -> lexer-table
+  ;; generate-table : (syntax-object list) syntax-object syntax-object -> lexer-table
   ;; Creates the lexer's tables from a list of sexp-regex, action pairs.
-  (define (generate-table rules s)
+  (define (generate-table rules lexer-stx s)
     (let* (
            ;; A counter
            (index -1)
@@ -47,11 +60,7 @@
                      (map 
                       (lambda (x) 
                         (let ((action (cadr (syntax->list x))))
-                          (datum->syntax-object
-                           action
-                           `(lambda (start-pos end-pos lexeme return-without-pos input-port)
-                              ,action)
-                           action)))
+                          (wrap-action action 'lexeme lexer-stx action)))
                       rules)))
            
            ;; big-re combines the sexp-res into one, so a single dfa can be built

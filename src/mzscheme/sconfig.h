@@ -500,7 +500,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 #endif
 
-  /************** HP/UX with gcc ****************/
+  /************** HP/UX with cc ****************/
 
 #if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
 
@@ -518,6 +518,8 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_DIVIDE_MAKE_INFINITY
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
+
+# define NO_INLINE_KEYWORD
 
 # define USE_ULIMIT
 

@@ -74,7 +74,7 @@ case $OS in
     make $GCOPTS CC=cc NONLINKOPTIONS=-iee_with_inexact RANLIB=':' DEBUGFLAGS='' WARN='' $*
     ;;
   HP-UX)
-    make CC=cc OPT=-O WARN='' OPTIONS='-Aa -D_HPUX_SOURCE +k' AR='ar' LIBS='-lm -Wl,-E' DYNOPTIONS='+z' $GCOPTS DEBUGFLAGS='' "$@"
+    make CC=cc OPT=-O WARN='' OPTIONS='-Wp,-H,64000 -Aa -D_HPUX_SOURCE +k' AR='ar' LIBS='-lm -Wl,-E' DYNOPTIONS='+z' $GCOPTS DEBUGFLAGS='' "$@"
     # gcc:
     # make AR='ar' LIBS='-Wl,-E' DYNOPTIONS='-fPIC' $GCOPTS DEBUGFLAGS='' "$@"
     ;;

@@ -7173,7 +7173,8 @@ static void default_sleep(float v, void *fds)
 
 #if defined(WIN32_FD_HANDLES)
 	result = MsgWaitForMultipleObjects(count, array, FALSE, 
-					   v ? (DWORD)(v * 1000) : INFINITE),
+					   v ? (DWORD)(v * 1000) : INFINITE,
+					   ((win_extended_fd_set *)fds)->wait_event_mask),
 #endif	
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);

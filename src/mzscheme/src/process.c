@@ -2433,6 +2433,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 #endif
 
   np->overflow_set = p->overflow_set;
+  np->cc_start = p->cc_start;
   memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
 
   /* In case it's not yet set in the main thread... */

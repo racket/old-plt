@@ -50,6 +50,7 @@ static Boolean load_ext_file_spec(FSSpec *spec, CFragConnectionID *connID);
 #include <dl.h>
 #include <errno.h>
 #define dlopen(file, flag) ((void *)shl_load(file, BIND_IMMEDIATE, 0L))
+#define dlclose(dl) (shl_unload((shl_t)dl))
 void *dlsym(void *_handle, const char *name)
 {
   void *result;

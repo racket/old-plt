@@ -2,7 +2,7 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.3 2004/08/10 14:14:22 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.4 2004/08/10 15:54:04 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -50,16 +50,19 @@
                    ('a (make-temp-class 'a 'Object
                                         (list (make-field
                                                (make-ground-type 'int)
+                                               (make-class-type 'a)
                                                'foo))
                                         null))
                    ('b (make-temp-class 'b 'a
                                         (list
                                          (make-field (make-ground-type 'bool)
+                                                     (make-class-type 'b)
                                                      'bar))
                                         null))
                    ('c (make-temp-class 'c 'a
                                         (list
                                          (make-field (make-class-type 'Object)
+                                                     (make-class-type 'c)
                                                      'baz))
                                         null)))
                   (make-binary-prim '* (make-num-lit 3)
@@ -84,7 +87,10 @@
        (assert-parse-exn
         "duplicate class definition"
         (make-temp-class 'a 'Object
-                         (list (make-field (make-ground-type 'int) 'foo)) null)
+                         (list (make-field (make-ground-type 'int)
+                                           (make-class-type 'a)
+                                           'foo))
+                         null)
         (parse-init-program
          '((class a Object ([int first-defn-of-a]))
            (class a Object ([int foo]))
@@ -262,26 +268,27 @@
                          (parse-expr '(cast x))))
 
      (make-test-case "definition"
-       (assert-equal?
-        (parse-defn '(class foo Object
-                       ((int x)
-                        (Object y)
-                        (bar a)
-                        (baz b)
-                        (quux c))
-                       (foo get-foo ((int x)) null)))
-        (make-temp-class
-         'foo
-         'Object
-         (list (make-field (make-ground-type 'int) 'x)
-               (make-field (make-class-type 'Object) 'y)
-               (make-field (make-class-type 'bar) 'a)
-               (make-field (make-class-type 'baz) 'b)
-               (make-field (make-class-type 'quux) 'c))
-         (list (make-method (make-class-type 'foo) 'get-foo
-                            (list 'x)
-                            (list (make-ground-type 'int))
-                            (make-nil))))))
+       (let ([foo-type (make-class-type 'foo)])
+         (assert-equal?
+          (parse-defn '(class foo Object
+                         ((int x)
+                          (Object y)
+                          (bar a)
+                          (baz b)
+                          (quux c))
+                         (foo get-foo ((int x)) null)))
+          (make-temp-class
+           'foo
+           'Object
+           (list (make-field (make-ground-type 'int) foo-type 'x)
+                 (make-field (make-class-type 'Object) foo-type 'y)
+                 (make-field (make-class-type 'bar) foo-type 'a)
+                 (make-field (make-class-type 'baz) foo-type 'b)
+                 (make-field (make-class-type 'quux) foo-type 'c))
+           (list (make-method (make-class-type 'foo) 'get-foo
+                              (list 'x)
+                              (list (make-ground-type 'int))
+                              (make-nil)))))))
 
      (make-test-case "defn: malformed"
        (assert-parse-exn "bad definition" '(class foo (x y) () ())
@@ -317,8 +324,10 @@
                [foo (make-class (make-class-type 'foo) obj null null)]
                [bar (make-class
                      (make-class-type 'bar) foo
-                     (list (make-field (make-ground-type 'int) 'x)
-                           (make-field (make-class-type 'foo) 'f))
+                     (list (make-field (make-ground-type 'int)
+                                       (make-class-type 'bar) 'x)
+                           (make-field (make-class-type 'foo)
+                                       (make-class-type 'bar) 'f))
                      (list (make-method (make-ground-type 'int)
                                         'zero
                                         null

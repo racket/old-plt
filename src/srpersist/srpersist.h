@@ -240,6 +240,7 @@ SRP_PRIM_DECL(srp_make_indicator);
 SRP_PRIM_DECL(srp_read_indicator);
 SRP_PRIM_DECL(srp_set_indicator);
 SRP_PRIM_DECL(srp_free_indicator);
+SRP_PRIM_DECL(srp_make_row_status);
 SRP_PRIM_DECL(srp_read_row_status);
 SRP_PRIM_DECL(srp_free_row_status);
 SRP_PRIM_DECL(srp_make_boxed_uint);

@@ -556,7 +556,7 @@ Scheme_Object *srp_make_boxed_uint(int argc,Scheme_Object **argv) {
   }
 
   retval = (SRP_SQL_BOXED_UINT *)scheme_malloc(sizeof(SRP_SQL_BOXED_UINT));
-  scheme_dont_gc_ptr((Scheme_Object *)retval);
+  scheme_dont_gc_ptr((Scheme_Object *)pint);
 
   retval->type = sql_boxed_uint_type;
   retval->pointer = pint;
@@ -751,6 +751,31 @@ Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
 }
 
 
+Scheme_Object *srp_make_row_status(int argc,Scheme_Object **argv) {
+  SQLUINTEGER numRows;
+  SRP_SQL_ROW_STATUS *retval;
+
+  if (argc == 1) {
+    if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE ||
+	scheme_get_unsigned_int_val(argv[0],&numRows) == 0 ||
+	numRows == 0) {
+      scheme_wrong_type("make-row-status","positive exact integer",0,argc,argv);
+    }
+  }
+  else {
+    numRows = 1;
+  }
+
+  retval = (SRP_SQL_ROW_STATUS *)scheme_malloc(sizeof(SRP_SQL_ROW_STATUS));
+  retval->type = sql_row_status_type;
+  retval->values = (SQLUSMALLINT *)scheme_malloc(numRows * sizeof(SQLUSMALLINT));
+  scheme_dont_gc_ptr(retval->values);
+  retval->usesSchemeStorage = TRUE;
+  retval->numRows = numRows;
+
+  return (Scheme_Object *)retval;
+}
+
 Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
   SQLUSMALLINT *values;
   SQLUINTEGER numRows;
@@ -765,15 +790,29 @@ Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
   values = SQL_ROW_STATUS_VAL(argv[0]);
   numRows = SQL_ROW_STATUS_LEN(argv[0]);
 
-  retval = scheme_null;
+  if (argc == 1) { /* whole array */  
+    retval = scheme_null;
+    for (i = numRows-1; i >= 0; i--) {
+      symbol = scheme_intern_symbol(rowStatusToString(values[i]));
+      retval = scheme_make_pair(symbol,retval);
+    }
+  }
+  else {
+    long ndx;
 
-  for (i = numRows-1; i >= 0; i--) {
-    symbol = scheme_intern_symbol(rowStatusToString(values[i]));
-    retval = scheme_make_pair(symbol,retval);
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("read-row-status","nonnegative exact integer",1,argc,argv);
+    }
+
+    if (scheme_get_int_val(argv[1],&ndx) == 0 || ndx < 0 || ndx >= (long)numRows) {
+      scheme_signal_error("read-row-status: index argument (%V) outside range [0..%d]",
+			  argv[1],numRows-1);
+    }
+    
+    retval = scheme_intern_symbol(rowStatusToString(values[ndx]));
   }
 
   return retval;
-
 }
 
 Scheme_Object *srp_free_row_status(int argc,Scheme_Object **argv) {
@@ -2366,7 +2405,7 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
   colNumber = SCHEME_INT_VAL(argv[1]);
 
   buffer = SQL_BUFFER_VAL(argv[2]);
-  buflen = SQL_BUFFER_LEN(argv[2]);
+  buflen = SQL_BUFFER_WIDTH(argv[2]);
   buftype = SQL_BUFFER_CTYPE(argv[2]);
 
   indicator = SQL_INDICATOR_VAL(argv[3]);
@@ -4366,13 +4405,10 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     sr = SQLGetStmtAttr(stmtHandle,attribute,&smallnumpointer,0,&actualLen);
     retcode = checkSQLReturn(sr,"get-stmt-attr");
 
-    /* need to keep rowStatus around until cursor closed
-       conservatively, make it uncollectable for now */
-
     rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc(sizeof(SRP_SQL_ROW_STATUS));
     scheme_dont_gc_ptr(rowStatus);
     rowStatus->type = sql_row_status_type;
-    rowStatus->numRows = 0;
+    rowStatus->numRows = 1; /* can we do better? */ 
     rowStatus->values = smallnumpointer;
     rowStatus->usesSchemeStorage = FALSE;
 
@@ -6473,7 +6509,7 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc(sizeof(SRP_SQL_ROW_STATUS));
   scheme_dont_gc_ptr(rowStatus);
   rowStatus->type = sql_row_status_type;
-  rowStatus->numRows = 0;
+  rowStatus->numRows = 1; /* can we do better? */
   rowStatus->values = (SQLUSMALLINT *)scheme_malloc(maxRows * sizeof(SQLUSMALLINT));
   rowStatus->usesSchemeStorage = TRUE;
   scheme_dont_gc_ptr(rowStatus->values);

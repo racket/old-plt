@@ -169,8 +169,10 @@ class PSStream : public wxObject {
 void PSStream::Out(float n)
 {
   if (int_width > 0) {
-    if ((float)(long)n == n)
+    if ((float)(long)n == n) {
       Out((long)n);
+      return;
+    }
   }
   fprintf(f, "%f", n);
 }
@@ -1707,7 +1709,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
     // read in new font metrics **************************************
 
     // 1. construct filename ******************************************
-    name = wxTheFontNameDirectory->GetAFMName(Family, Weight, Style);
+    name = wxTheFontNameDirectory->GetPostScriptName(Family, Weight, Style);
     if (name && afm_path) {
       int len = strlen(afm_path);
       // get the directory of the AFM files

@@ -30,44 +30,6 @@
 #endif
 
 char *font_defaults[] = {
-  "FamilySystem", "System",
-  "FamilyDefault", "Default",
-  "FamilyRoman", "Roman",
-  "FamilyDecorative", "Decorative",
-  "FamilyModern", "Modern",
-  "FamilyTeletype", "Teletype",
-  "FamilySwiss", "Swiss",
-  "FamilyScript", "Script",
-  "FamilySymbol", "Symbol",
-
-  "AfmMedium", "",
-  "AfmBold", "Bo",
-  "AfmLight", "",
-  "AfmStraight", "",
-  "AfmItalic", "${AfmSlant}",
-  "AfmSlant", "O",
-  "AfmStraightTimes", "",
-  "AfmItalicTimes", "${AfmSlantTimes}",
-  "AfmSlantTimes", "I",
-  "AfmRoman", "Ro",
-  "AfmTimes", "Times",
-  "AfmHelvetica", "Helv",
-  "AfmCourier", "Cour",
-
-  "Afm___", "${AfmTimes,$[weight],$[style]}",
-
-  "AfmTimes__", "${AfmTimes}${Afm$[weight]}${Afm$[style]Times}",
-  "AfmTimesMediumStraight", "${AfmTimes}${AfmRoman}",
-  "AfmTimesLightStraight", "${AfmTimes}${AfmRoman}",
-  "AfmTimes_Italic", "${AfmTimes}${Afm$[weight]}${AfmItalicTimes}",
-  "AfmTimes_Slant", "${AfmTimes}${Afm$[weight]}${AfmItalicTimes}",
-
-  "AfmSwiss__", "${AfmHelvetica}${Afm$[weight]}${Afm$[style]}",
-  "AfmModern__", "${AfmCourier}${Afm$[weight]}${Afm$[style]}",
-  "AfmSymbol__", "Sym",
-
-  "AfmTeletype__", "${AfmModern,$[weight],$[style]}",
-
   "PostScriptMediumStraight", "",
   "PostScriptMediumItalic", "-Oblique",
   "PostScriptMediumSlant", "-Oblique",
@@ -78,7 +40,13 @@ char *font_defaults[] = {
   "PostScriptBoldItalic", "-BoldOblique",
   "PostScriptBoldSlant", "-BoldOblique",
 
-  "PostScript___", "${PostScriptTimes,$[weight],$[style]}",
+  "PostScript___", "${PostScript$[family],$[weight],$[style]}",
+
+  "PostScriptSystem__", "${PostScriptTimes,$[weight],$[style]}",
+  "PostScriptDefault__", "${PostScriptTimes,$[weight],$[style]}",
+  "PostScriptRoman__", "${PostScriptTimes,$[weight],$[style]}",
+  "PostScriptDecorative__", "${PostScriptTimes,$[weight],$[style]}",
+  "PostScriptScript__", "${PostScriptTimes,$[weight],$[style]}",
 
   "PostScriptTimesMedium", "",
   "PostScriptTimesLight", "",
@@ -183,7 +151,7 @@ enum {
 class wxSuffixMap {
  public:
   char *map[wxNUM_WEIGHTS][wxNUM_STYLES];
-  void Initialize(const char *, const char *, int weight, int style);
+  void Initialize(const char *, const char *, int weight, int style, int fam);
 
   wxSuffixMap();
 
@@ -222,7 +190,7 @@ class wxFontNameItem : public wxObject
   int id;
   int family;
   char *name;
-  wxSuffixMap *screen, *printing, *afm;
+  wxSuffixMap *screen, *printing;
   Bool isfamily;
   wxFontNameItem();
 };
@@ -231,7 +199,6 @@ wxFontNameItem::wxFontNameItem()
 {
   screen = new wxSuffixMap;
   printing = new wxSuffixMap;
-  afm = new wxSuffixMap;
 }
 
 static int WCoordinate(int w)
@@ -342,7 +309,7 @@ void wxInitializeFontNameDirectory(void)
 }
 
 void wxSuffixMap::Initialize(const char *resname, const char *devresname,
-			     int wt, int st)
+			     int wt, int st, int fam)
 {
   const char *weight, *style;
   char *v = NULL, *rname;
@@ -437,7 +404,34 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	  } else if (!strcmp(name, "style")) {
 	    r = style;
 	  } else if (!strcmp(name, "family")) {
-	    r = resname;
+	    switch (fam) {
+	    case wxSYSTEM:
+	      r = "System";
+	      break;
+	    case wxDECORATIVE:
+	      r = "Decorative";
+	      break;
+	    case wxROMAN:
+	      r = "Roman";
+	      break;
+	    case wxMODERN:
+	      r = "Modern";
+	      break;
+	    case wxTELETYPE:
+	      r = "Teletype";
+	      break;
+	    case wxSWISS:
+	      r = "Swiss";
+	      break;
+	    case wxSCRIPT:
+	      r = "Script";
+	      break;
+	    case wxSYMBOL:
+	      r = "Symbol";
+	      break;
+	    default:
+	      r = "Default";
+	    }
 	  } else {
 	    r = "";
 	    printf("Bad font macro name \"%s\"\n", name);
@@ -543,38 +537,12 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname)
 {
   wxFontNameItem *item;
-  char *fam, resource[256];
   
   item = new wxFontNameItem;
 
   item->id = fontid;
   item->family = family;
   item->isfamily = (resname[0] != '@');
-  
-  sprintf(resource, "Family%s", resname);
-  fam = NULL;
-  SearchResource((const char *)resource, NULL, 0, (char **)&fam);
-  if (fam) {
-    if (!strcmp(fam, "System"))
-      item->family = wxSYSTEM;
-    else if (!strcmp(fam, "Default"))
-      item->family = wxDEFAULT;
-    else if (!strcmp(fam, "Roman"))
-      item->family = wxROMAN;
-    else if (!strcmp(fam, "Decorative"))
-      item->family = wxDECORATIVE;
-    else if (!strcmp(fam, "Modern"))
-      item->family = wxMODERN;
-    else if (!strcmp(fam, "Teletype"))
-      item->family = wxTELETYPE;
-    else if (!strcmp(fam, "Swiss"))
-      item->family = wxSWISS;
-    else if (!strcmp(fam, "Script"))
-      item->family = wxSCRIPT;
-    else if (!strcmp(fam, "Symbol"))
-      item->family = wxSYMBOL;
-  }
-
   item->name = copystring(resname);
 
   table->Put(fontid, item);
@@ -585,7 +553,7 @@ int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
   int id;
   char *s;
 
-  if ((id = GetFontId(name)))
+  if ((id = GetFontId(name, family)))
     return id;
 
   id = GetNewFontId();
@@ -612,7 +580,7 @@ char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
 
   /* Check for init */
   if (!item->screen->map[wt][st])
-    item->screen->Initialize(item->name, "Screen", wt, st);
+    item->screen->Initialize(item->name, "Screen", wt, st, item->family);
 
   return item->screen->map[wt][st];
 }
@@ -672,7 +640,7 @@ char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
 
   /* Check for init */
   if (!item->printing->map[wt][st])
-    item->printing->Initialize(item->name, "PostScript", wt, st);
+    item->printing->Initialize(item->name, "PostScript", wt, st, item->family);
 
   return item->printing->map[wt][st];
 }
@@ -693,42 +661,6 @@ void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, c
   item->printing->map[wt][st] = s;
 }
 
-char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
-{
-  int wt, st;
-  wxFontNameItem *item;
-
-  item = (wxFontNameItem *)table->Get(fontid);
-
-  if (!item)
-    return NULL;
-
-  wt = WCoordinate(weight);
-  st = SCoordinate(style);
-
-  /* Check for init */
-  if (!item->afm->map[wt][st])
-    item->afm->Initialize(item->name, "Afm", wt, st);
-
-  return item->afm->map[wt][st];
-}
-
-void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
-{
-  wxFontNameItem *item;
-  int wt, st;
-
-  item = (wxFontNameItem *)table->Get(fontid);
-
-  if (!item)
-    return;
-
-  wt = WCoordinate(weight);
-  st = SCoordinate(style);
-
-  item->afm->map[wt][st] = s;
-}
-
 char *wxFontNameDirectory::GetFontName(int fontid)
 {
   wxFontNameItem *item;
@@ -743,7 +675,7 @@ char *wxFontNameDirectory::GetFontName(int fontid)
   return item->name + 1;
 }
 
-int wxFontNameDirectory::GetFontId(const char *name)
+int wxFontNameDirectory::GetFontId(const char *name, int family)
 {
   wxNode *node;
 
@@ -752,7 +684,9 @@ int wxFontNameDirectory::GetFontId(const char *name)
   while ((node = table->Next())) {
     wxFontNameItem *item;
     item = (wxFontNameItem *)node->Data();
-    if (!item->isfamily && !strcmp(name, item->name+1))
+    if (!item->isfamily 
+	&& !strcmp(name, item->name+1)
+	&& item->family == family)
       return item->id;
   }
 

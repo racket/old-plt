@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: FontDirectory.h,v 1.2 1999/11/19 22:02:46 mflatt Exp $
+ * $Id: FontDirectory.h,v 1.3 1999/11/27 17:11:40 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -41,17 +41,15 @@ class wxFontNameDirectory : public wxObject
   ~wxFontNameDirectory();
   char *GetScreenName(int fontid, int weight, int style);
   char *GetPostScriptName(int fontid, int weight, int style);
-  char *GetAFMName(int fontid, int weight, int style);
   void SetScreenName(int fontid, int weight, int style, char *s);
   void SetPostScriptName(int fontid, int weight, int style, char *s);
-  void SetAFMName(int fontid, int weight, int style, char *s);
 
   void Initialize(int fontid, int family, const char *name);
   int GetNewFontId(void);
   
   int FindOrCreateFontId(const char *name, int family);
 
-  int GetFontId(const char *name);
+  int GetFontId(const char *name, int family);
   char *GetFontName(int fontid);
   int GetFamily(int fontid);
 };

@@ -650,7 +650,7 @@
        (set-signal-stale?! b #f)
        (let ([new-value (thunk)])
          ; consider modifying this test in order to support, e.g., mutable structs
-         (when (not (equal? value new-value))
+         (when (or (vector? new-value) (not (equal? value new-value)))
            (set-signal-value! b new-value)
            (propagate b)))]
       [_ (void)]))
@@ -1122,7 +1122,7 @@
         (syntax (begin))
         (syntax->list (syntax clauses)))]))
   
-  (define undefined?/lifted (lambda (arg) (lift true undefined? arg)))
+  (define undefined?/lifted (lambda (arg) (lift false undefined? arg)))
   (define frp:pair? (lambda (arg) (lift true pair? arg)))
   (define frp:null? (lambda (arg) (lift true null? arg)))
   (define frp:cons (lambda (a d) (lift false cons a d)))

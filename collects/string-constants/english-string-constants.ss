@@ -965,6 +965,8 @@ please adhere to these guidelines:
  
  ;; test coverage
  (test-coverage-clear? "Changing the definitions window invalidates the test coverage information. Continue?")
+ (test-coverage-clear-and-do-not-ask-again "Yes, and don't ask again")
+ (test-coverage-ask? "Ask about clearing test coverage?")
 
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

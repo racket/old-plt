@@ -15,8 +15,7 @@
 	 [get-binding (lambda (sym) (extract-binding/single sym bindings))]
 	 [tmp-directory (get-binding 'tmpdir)]
 	 [label (get-binding 'label)]
-	 [manual (get-binding 'manual)]
-         [install-sem (make-semaphore 0)])
+	 [manual (get-binding 'manual)])
     (make-html-response/incremental
      (lambda (show)
        (show "<HTML>"
@@ -42,24 +41,21 @@
 			     (ID "stop")
 			     (NAME "stop")
 			     (VALUE "Stop"))))))
-       (thread
-	(lambda ()
-	  (let-values ([(iport oport) (make-pipe)])
-            (set-progress-input-port! iport)		   
-	    (set-progress-output-port! oport)		   
-	    (semaphore-post progress-semaphore)
-	    (doc-collections-changed)
-	    (download-known-doc tmp-directory manual)
-	    (delete-known-doc tmp-directory manual)
-	    (run-setup-plt tmp-directory manual)
-	    (delete-directory/r tmp-directory)
-	    (close-output-port oport)
-	    (close-input-port iport)
-	    (semaphore-post install-sem))))
-       (semaphore-wait install-sem)
+       (let-values ([(iport oport) (make-pipe)])
+         (set-progress-input-port! iport)		   
+         (set-progress-output-port! oport)		   
+	 (semaphore-post progress-semaphore)
+         (doc-collections-changed)
+	 (download-known-doc tmp-directory manual)
+         (delete-known-doc tmp-directory manual)
+         (run-setup-plt tmp-directory manual)
+	 (delete-directory/r tmp-directory)
+	 (close-output-port oport)
+	 (close-input-port iport))
        (show (xexpr->string
 	      `(A ((HREF ,(string-append "/doc/" manual "/"))
 		   (TARGET "main"))
 		  "Click here"))
 	     " to view manual")
        (show "</BODY></HTML>")))))
+

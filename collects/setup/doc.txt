@@ -62,7 +62,12 @@ Additional info.ss fields trigger additional setup actions:
 
    where lib is the file named by mzscheme-launcher-libraries
    and <colls> ... are the collections (and subcollections)
-   of the info.ss file. 
+   of the info.ss file. In addition, 
+
+    (build-path (collection-path <colls> ...) <suffixless-file>)
+
+   is provided for the optional "aux" argument (for icons, etc.),
+   where <suffixless-file> is <file> without its suffix.
 
    If compile-subcollections mentions a subcollection with
    this field, the executable is also set up for that subcollection.

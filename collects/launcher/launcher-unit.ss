@@ -1,7 +1,8 @@
 
 (module launcher-unit mzscheme
   (require (lib "unitsig.ss")
-	   (lib "file.ss"))
+	   (lib "file.ss")
+	   (lib "etc.ss"))
 
   (require (lib "compile-sig.ss" "dynext"))
   (require (lib "link-sig.ss" "dynext"))
@@ -215,7 +216,7 @@
 			no-arg-x-flags)))
 		     args))))))
 
-      (define (make-unix-launcher kind variant flags dest)
+      (define (make-unix-launcher kind variant flags dest aux-root)
 	(install-template dest kind "sh" "sh") ; just for something that's executable
 	(let* ([newline (string #\newline)]
 	       [post-flags (if (eq? kind 'mred)
@@ -258,7 +259,7 @@
 		     (assemble-exec exec args))
 	    (close-output-port p))))
       
-      (define (make-windows-launcher kind variant flags dest)
+      (define (make-windows-launcher kind variant flags dest aux-root)
 	(install-template dest kind "mzstart.exe" "mrstart.exe")
 	(let ([str (str-list->dos-str flags)]
 	      [p (open-input-file dest)]
@@ -330,9 +331,9 @@
       ;; OS X launcher code:
      
       ; make-macosx-launcher : symbol (listof str) pathname ->  
-      (define (make-macosx-launcher kind variant flags dest)
+      (define (make-macosx-launcher kind variant flags dest aux-root)
 	(if (eq? kind 'mzscheme) 
-	    (make-unix-launcher kind variant flags dest)
+	    (make-unix-launcher kind variant flags dest aux-root)
 	    (begin
 	      (unless plthome
 		      (error 'make-unix-launcher 
@@ -355,8 +356,14 @@
 		(copy-file exec-name (build-path dest "Contents" "MacOS" name))
 		(copy-file (build-path src "Contents" "PkgInfo")
 			   (build-path dest "Contents" "PkgInfo"))
-		(copy-file (build-path src "Contents" "Resources" "Starter.icns")
-			   (build-path dest "Contents" "Resources" "Starter.icns"))
+		(let ([icon (or (and aux-root
+				     (let ([icon (string-append aux-root ".icns")])
+				       (printf "trying ~a~n" icon)
+				       (and (file-exists? icon)
+					    icon)))
+				(build-path src "Contents" "Resources" "Starter.icns"))])
+		  (copy-file icon
+			     (build-path dest "Contents" "Resources" "Starter.icns")))
 		(let ([orig-plist (call-with-input-file (build-path src
 								    "Contents"
 								    "Info.plist")
@@ -474,7 +481,7 @@
       
       ;; end of lazy install-aliases code for mac added by jbc 2000-6
       
-      (define (make-macos-launcher kind variant flags dest)
+      (define (make-macos-launcher kind variant flags dest aux-root)
 	(maybe-install-aliases)
 	(install-template dest kind "GoMz" "GoMr")
 	(let ([p (open-output-file dest 'truncate)])
@@ -488,19 +495,30 @@
 	  [(macos) make-macos-launcher]
 	  [(macosx) make-macosx-launcher]))
       
-      (define (make-mred-launcher flags dest)
-	(let ([variant (current-launcher-variant)])
-	  ((get-maker) 'mred variant flags dest)))
+      (define make-mred-launcher
+	(opt-lambda (flags dest [aux-root #f])
+	  (let ([variant (current-launcher-variant)])
+	    ((get-maker) 'mred variant flags dest aux-root))))
       
-      (define (make-mzscheme-launcher flags dest)
-	(let ([variant (current-launcher-variant)])
-	  ((get-maker) 'mzscheme variant flags dest)))
+      (define make-mzscheme-launcher
+	(opt-lambda (flags dest [aux-root #f])
+	  (let ([variant (current-launcher-variant)])
+	    ((get-maker) 'mzscheme variant flags dest aux-root))))
       
+      (define (strip-suffix s)
+	(regexp-replace "[.]..?.?$" s ""))
+
       (define (make-mred-program-launcher file collection dest)
-	(make-mred-launcher (list "-mqvL" file collection "--") dest))
+	(make-mred-launcher (list "-mqvL" file collection "--") 
+			    dest
+			    (build-path (collection-path collection)
+					(strip-suffix file))))
       
       (define (make-mzscheme-program-launcher file collection dest)
-	(make-mzscheme-launcher (list "-mqvL" file collection "--") dest))
+	(make-mzscheme-launcher (list "-mqvL" file collection "--") 
+				dest
+				(build-path (collection-path collection)
+					    (strip-suffix file))))
       
       (define l-home (if (memq (system-type) '(unix))
 			 (build-path plthome "bin")

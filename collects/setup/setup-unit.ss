@@ -409,7 +409,9 @@
 					     (format
 					      "~s"
 					      `(require (lib ,mzll ,@(cc-collection cc))))))
-					p))))
+					p
+					(build-path (apply collection-path (cc-collection cc))
+						    (regexp-replace "[.]..?.?$" mzll ""))))))
 				 mzlls mzlns)
 				(setup-printf 
 				 "Warning: ~a launcher library list ~s doesn't match name list ~s"

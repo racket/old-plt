@@ -44,12 +44,14 @@ wxButton::wxButton // Constructor (given parentPanel, label)
  int			width,
  int			height,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
  wxbButton (parentPanel, function, x, y, width, height, style, windowName)
      
 {
+  SetFont(_font, 13);
   Create(parentPanel, function, label, x, y, width, height, style, windowName, objectType);
 }
 
@@ -79,8 +81,6 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   
   Callback(function);
 
-  font = buttonFont; // WCH: mac platform only
-  
   label = wxItemStripLabel(label);
 
   SetCurrentMacDC();
@@ -132,6 +132,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
  int			width,
  int			height,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
@@ -139,6 +140,8 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 {
   CGrafPtr theMacGrafPort;
   Rect bounds;
+
+  SetFont(_font, 13);
 
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
     buttonBitmap = bitmap;

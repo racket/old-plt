@@ -43,6 +43,7 @@ class wxRadioButton: public wxItem
      int			width = -1,
      int			height = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "radioButton",
      WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
      );
@@ -71,6 +72,7 @@ class wxRadioButton: public wxItem
      int			width = -1,
      int			height = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "radioButton",
      WXTYPE		objectType = wxTYPE_ITEM // WCH: must use wxTYPE_RADIO_BUTTON
      );

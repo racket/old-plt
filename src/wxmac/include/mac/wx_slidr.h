@@ -34,7 +34,7 @@ public:
 
   wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x = -1, int y = -1,
-           long style = 0, char *name = "slider",
+           long style = 0, wxFont *_font = NULL, char *name = "slider",
            WXTYPE objectType = wxTYPE_SLIDER);
   ~wxSlider(void);
 

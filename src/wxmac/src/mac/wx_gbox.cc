@@ -23,14 +23,14 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
+wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style, wxFont *_font)
  : wxItem (panel, -1, -1, -1, -1, style,  "group-box")
 {
   CGrafPtr theMacGrafPort;
   Rect boundsRect = {0, 0, 10, 10};
   CFStringRef title;
 
-  font = buttonFont;
+  SetFont(_font, 11);
   
   SetCurrentMacDC();
   theMacGrafPort = cMacDC->macGrafPort();
@@ -43,6 +43,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 
   cMacControl = NULL;
   CreateGroupBoxControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, TRUE, &cMacControl);
+
+  wxSetControlFont(cMacControl, font);
 
   if (title)
     CFRelease(title);

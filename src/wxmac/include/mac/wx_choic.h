@@ -32,7 +32,6 @@ class wxChoice: public wxbChoice
   int             selection;
   int             labelbase;			// number pixels from top to baseline
   int             valuebase;			// ""
-  wxFont*		valueFont;
   short		PopUpID;			// Mac Menu Mgr ID - never reused I hope
   wxLabelArea*	cTitle;
         
@@ -42,7 +41,7 @@ class wxChoice: public wxbChoice
   wxChoice(wxPanel *panel, wxFunction func, char *Title,
            int x = -1, int y = -1, int width = -1, int height = -1,
            int N = 0, char **Choices = NULL,
-           long style = 0, char *name = "choice"
+           long style = 0, wxFont *_font = NULL, char *name = "choice"
 	);
   ~wxChoice(void);
 

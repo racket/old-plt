@@ -49,6 +49,7 @@ class wxRadioBox: public wxbRadioBox
      char**		Choices = NULL,
      int			majorDim = 0,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "radioBox",
      WXTYPE		objectType = wxTYPE_RADIO_BOX
      );
@@ -66,6 +67,7 @@ class wxRadioBox: public wxbRadioBox
      wxBitmap**	Choices = NULL,
      int			majorDim = 0,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "radioBox",
      WXTYPE		objectType = wxTYPE_RADIO_BOX
      );

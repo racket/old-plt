@@ -25,6 +25,8 @@ class wxFont ;
 class wxbItem: public wxWindow
 {
  public:
+
+    wxFont *font;
  
     wxbItem(void);
 
@@ -40,12 +42,6 @@ class wxbItem: public wxWindow
 
    ~wxbItem(void);
 
-   wxFont *buttonFont ;
-   wxFont *labelFont ;
-   wxColour *backColour ;
-   wxColour *labelColour;
-   wxColour *buttonColour;
-
    int labelPosition;
    virtual void SetLabel(char *label) = 0;
    virtual char *GetLabel(void) = 0;
@@ -53,22 +49,10 @@ class wxbItem: public wxWindow
    virtual void Command(wxCommandEvent *event);        // Simulates an event
    virtual void ProcessCommand(wxCommandEvent *event); // Calls the callback and 
 
-   // inline virtual void Show(Bool show) {};
-   virtual int GetLabelPosition(void);
-   virtual void SetLabelPosition(int pos);
-
   // Places item in centre of panel - so can't be used BEFORE panel->Fit()
   void Centre(int direction = wxHORIZONTAL);
 
-  inline virtual wxFont  *GetLabelFont(void)        { return labelFont ; }
-  inline virtual wxFont  *GetButtonFont(void)       { return buttonFont ; }
-  inline virtual wxColour*GetBackgroundColour(void) { return backColour ; }
-  inline virtual wxColour*GetLabelColour(void)      { return labelColour ; }
-  inline virtual wxColour*GetButtonColour(void)     { return buttonColour ; }
-
-  virtual void SetBackgroundColour(wxColour*col) = 0 ;
-  virtual void SetLabelColour(wxColour*col) = 0 ;
-  virtual void SetButtonColour(wxColour*col) = 0 ;
+  wxFont *GetFont() { return font; }
 };
 
 #endif // IN_CPROTO

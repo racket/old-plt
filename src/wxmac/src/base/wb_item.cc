@@ -120,31 +120,10 @@ wxbItem::wxbItem // Constructor (given parentArea)
 	) :
 		wxWindow ( windowName, parentArea, wxNEGPOS_IS_DEFAULT(x), wxNEGPOS_IS_DEFAULT(y), width, height, style)
 {
-    if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
-    	cParentArea == window_parent->ClientArea()) {
-      wxPanel* parentPanel;
-      parentPanel = (wxPanel*) window_parent;
-      backColour = parentPanel->backColour;
-      buttonColour = parentPanel->buttonColour;
-      buttonFont = parentPanel->buttonFont;
-      if (!buttonFont) buttonFont = wxNORMAL_FONT;
-      labelColour = parentPanel->labelColour;
-      labelFont = parentPanel->labelFont;
-      if (style & wxVERTICAL_LABEL)
-	labelPosition = wxVERTICAL;
-      else if (style & wxHORIZONTAL_LABEL)
-	labelPosition = wxHORIZONTAL;
-      else
-	labelPosition = parentPanel->label_position;
-    } else {
-      backColour = NULL;
-      buttonColour = NULL;
-      buttonFont = NULL;
-      if (!buttonFont) buttonFont = wxNORMAL_FONT;
-      labelColour = NULL;
-      labelFont = NULL;
-      labelPosition = wxHORIZONTAL;
-    }
+  if (style & wxVERTICAL_LABEL)
+    labelPosition = wxVERTICAL;
+  else
+    labelPosition = wxHORIZONTAL;
 }
 
 //-----------------------------------------------------------------------------
@@ -160,31 +139,10 @@ wxbItem::wxbItem // Constructor (given parentWindow)
 	) :
 		wxWindow ( windowName, parentWindow, wxNEGPOS_IS_DEFAULT(x), wxNEGPOS_IS_DEFAULT(y), width, height, style)
 {
-    if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
-    	cParentArea == window_parent->ClientArea()) {
-      wxPanel* parentPanel;
-      parentPanel = (wxPanel*) window_parent;
-      backColour = parentPanel->backColour;
-      buttonColour = parentPanel->buttonColour;
-      buttonFont = parentPanel->buttonFont;
-      if (!buttonFont) buttonFont = wxNORMAL_FONT;
-      labelColour = parentPanel->labelColour;
-      labelFont = parentPanel->labelFont;
-      if (style & wxVERTICAL_LABEL)
-	labelPosition = wxVERTICAL;
-      else if (style & wxHORIZONTAL_LABEL)
-	labelPosition = wxHORIZONTAL;
-      else
-	labelPosition = parentPanel->label_position;
-    } else {
-      backColour = NULL;
-      buttonColour = NULL;
-      buttonFont = NULL;
-      if (!buttonFont) buttonFont = wxNORMAL_FONT; // KLUDGE
-      labelColour = NULL;
-      labelFont = NULL;
-      labelPosition = wxHORIZONTAL;
-    }
+  if (style & wxVERTICAL_LABEL)
+    labelPosition = wxVERTICAL;
+  else
+    labelPosition = wxHORIZONTAL;
 }
 
 //-----------------------------------------------------------------------------
@@ -194,11 +152,6 @@ wxbItem::wxbItem // Constructor (given objectType; i.e., menu or menuBar)
 	) :
 		wxWindow ( windowName)
 {
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
   labelPosition = wxHORIZONTAL;
 }
 
@@ -215,16 +168,6 @@ wxbItem::~wxbItem (void)
         parent->defaultItem = NULL;
     }
   }
-}
-
-int wxbItem::GetLabelPosition (void)
-{
-  return labelPosition;
-}
-
-void wxbItem::SetLabelPosition (int pos)
-{
-  labelPosition = pos;
 }
 
 void wxbItem::Centre (int direction)
@@ -631,11 +574,6 @@ int wxbRadioBox::Number (void)
 wxbMessage::wxbMessage (void)
 {
   __type = wxTYPE_MESSAGE;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
 }
 
 wxbMessage::wxbMessage (wxPanel * panel, char *label, int x, int y, long style, char *name)

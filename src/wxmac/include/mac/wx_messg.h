@@ -36,6 +36,7 @@ class wxMessage: public wxbMessage
      int 		x = -1,
      int			y = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "message",
      WXTYPE		objectType = wxTYPE_MESSAGE
      );
@@ -59,6 +60,7 @@ class wxMessage: public wxbMessage
      int 		x = -1,
      int			y = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "message",
      WXTYPE		objectType = wxTYPE_MESSAGE
      );
@@ -82,6 +84,7 @@ class wxMessage: public wxbMessage
      int 		x = -1,
      int			y = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "message",
      WXTYPE		objectType = wxTYPE_MESSAGE
      );
@@ -93,6 +96,7 @@ class wxMessage: public wxbMessage
      int 		x = -1,
      int			y = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "message",
      WXTYPE		objectType = wxTYPE_MESSAGE
      );

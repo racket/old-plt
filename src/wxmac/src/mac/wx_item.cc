@@ -75,31 +75,13 @@ wxItem::~wxItem(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxItem::SetBackgroundColour(wxColour*col)
+void wxItem::SetFont(wxFont *fnt, int defsize)
 {
-  backColour = col;
-  ChangeColour();
+  if (!fnt) {
+    fnt = wxTheFontList->FindOrCreateFont(defsize, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
+  }
+  font = fnt;
 }
-
-//-----------------------------------------------------------------------------
-void wxItem::SetLabelColour(wxColour*col)
-{
-  labelColour = col ;
-  ChangeColour();
-}
-
-//-----------------------------------------------------------------------------
-void wxItem::SetButtonColour(wxColour*col)
-{
-  buttonColour = col ;
-  ChangeColour();
-}
-
-//-----------------------------------------------------------------------------
-void wxItem::ChangeColour(void)
-{
-}
-
 
 //-----------------------------------------------------------------------------
 void wxItem::ChangeToGray(Bool gray)

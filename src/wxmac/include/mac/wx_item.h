@@ -52,6 +52,8 @@ class wxItem: public wxbItem
 
   void IgnoreKeyboardEvents();
 
+  void SetFont(wxFont *_font, int defsize);
+
  protected:
   virtual void ChangeToGray(Bool gray);
     

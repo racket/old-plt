@@ -48,6 +48,7 @@ class wxButton: public wxbButton
      int			width = -1,
      int			height = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "button",
      WXTYPE		objectType = wxTYPE_BUTTON
      );
@@ -62,6 +63,7 @@ class wxButton: public wxbButton
      int			width = -1,
      int			height = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "button",
      WXTYPE		objectType = wxTYPE_BUTTON
      );

@@ -58,6 +58,7 @@ class wxListBox: public wxbListBox
 		int N = 0, 
 		char **Choices = NULL,
 		long style = 0, 
+	        wxFont *_font = NULL,
 		char *name = "listBox",
 		WXTYPE		objectType = wxTYPE_LIST_BOX
 		);

@@ -27,7 +27,8 @@ class wxGauge: public wxbGauge
 
  public:
   wxGauge(wxPanel *panel, char *label, int range, int x = -1, int y = -1,
-           int width = -1, int height = -1, long style = 0, char *name = "gauge");
+	  int width = -1, int height = -1, long style = 0, 
+	  wxFont *_font = NULL, char *name = "gauge");
   ~wxGauge(void);
 
   virtual void SetShadowWidth(int w) {}

@@ -15,7 +15,7 @@
 class wxGroupBox : public wxItem
 {
  public:
-  wxGroupBox(wxPanel *panel, char *label, int style);
+  wxGroupBox(wxPanel *panel, char *label, int style, wxFont *_font = NULL);
   ~wxGroupBox();
 
   virtual void DoShow(Bool show);

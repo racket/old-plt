@@ -40,6 +40,7 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, label)
  int			width,
  int			height,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
@@ -67,6 +68,8 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   Rect boundsRect = {0, 0, 0, 0};
   CFStringRef theMacLabel;
   SInt16 baselineOffset; // ignored
+
+  SetFont(_font, 13);
 
   buttonBitmap = NULL;
   Callback(function);
@@ -117,12 +120,15 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
  int			width,
  int			height,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
  wxItem (parentPanel, x, y, width, height, style, windowName)
 {
   Rect bounds;
+
+  SetFont(_font, 13);
 
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
     buttonBitmap = bitmap;

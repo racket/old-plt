@@ -36,12 +36,13 @@ wxMessage::wxMessage // Constructor (given parentArea)
  int 		x,
  int			y,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
   wxbMessage(parentArea, x, y, 0, 0, style, windowName)
 {
-  CreateWxMessage(label, labelFont);
+  CreateWxMessage(label, _font);
 }
 
 //-----------------------------------------------------------------------------
@@ -70,11 +71,12 @@ wxMessage::wxMessage // Constructor (given parentPanel)
  int			y,
  long		style,
  char*		windowName,
+ wxFont         *_font,
  WXTYPE		objectType
  ) :
   wxbMessage(parentPanel, x, y, 0, 0, style, windowName)
 {
-  CreateWxMessage(label, labelFont);
+  CreateWxMessage(label, _font);
 }
 
 //-----------------------------------------------------------------------------
@@ -101,6 +103,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
  int 		x,
  int			y,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :
@@ -108,6 +111,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
 {
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
+    SetFont(_font, 13);
     sBitmap = bitmap;
     sBitmap->selectedIntoDC++;
     cMessage = NULL;
@@ -124,7 +128,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
       Show(FALSE);
     InitInternalGray();
   } else
-    CreateWxMessage("<bad-image>");
+    CreateWxMessage("<bad-image>", font);
 }
 
 static int icons_ready;
@@ -166,6 +170,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
 
   if (msg_icons[iconID - 1]) {
     icon_id = iconID;
+    SetFont(_font, 13);
 #ifdef OS_X    
     SetClientSize(64, 64);
 #else
@@ -216,6 +221,8 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
 {
   double clientWidth;
   double clientHeight;
+
+  SetFont(theFont, 13);
 
   if (cStyle & wxBORDER) new wxBorderArea(this);
   sBitmap = NULL;

@@ -62,10 +62,11 @@ wxChoice::wxChoice()
 
 wxChoice::wxChoice (wxPanel * panel, wxFunction func, char *Title,
 		    int x, int y, int width, int height, int N, char **Choices,
-		    long style, char *name
+		    long style,  wxFont *_font, char *name
 		    ):
 		    wxbChoice (panel, func, Title, x, y, width, height, N, Choices, style, name)
 {
+  SetFont(_font, 13);
   Create (panel, func, Title, x, y, width, height, N, Choices, style, name);
 }
 
@@ -86,17 +87,11 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   SInt16 baselineOffset; // ignored
   
   windowStyle = style;
-  valueFont = buttonFont ? buttonFont : wxNORMAL_FONT;
   Callback (func);
   padLeft = padRight = PAD_X;
   padTop = padBottom = PAD_Y;
   
   SetCurrentMacDC();
-  /*	if (!buttonFont)
-	buttonFont = wxNORMAL_FONT;
-	*/
-  if (!labelFont)
-    labelFont = wxNORMAL_FONT;
 
   if (Title)
     Title = wxItemStripLabel(Title);
@@ -109,7 +104,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   if (Title) {
     int n;
     char *naya_s;
-    GetTextExtent(Title, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
+    GetTextExtent(Title, &fWidth, &fHeight, &fDescent, &fLeading, font);
     if (fHeight < 12) fHeight = 12; 
     n = strlen(Title);
     naya_s = new char[n+1];
@@ -151,7 +146,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   ::SetControlMinimum(cMacControl, 1);
   ::SetControlMaximum(cMacControl, no_strings);
 
-  wxSetControlFont(cMacControl, valueFont);
+  wxSetControlFont(cMacControl, font);
 
   // Now, ignore the font data and let the control find the "best" size 
   err = ::GetBestControlRect(cMacControl, &r, &baselineOffset);
@@ -185,7 +180,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   SetSelection(0);
 
   if (Title) {
-    cTitle = new wxLabelArea(this, Title, labelFont,
+    cTitle = new wxLabelArea(this, Title, font,
 			     ((labelPosition == wxVERTICAL) ? wxTop : wxLeft),
 			     0,
 			     ((labelPosition == wxVERTICAL) ? 0 : ((maxdflth - lblh) / 2) + PAD_Y + 1));

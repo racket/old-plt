@@ -16,7 +16,7 @@ class wxTabChoice : public wxItem
 {
  public:
   wxTabChoice(wxPanel *panel, wxFunction func, char *label, 
-              int N, char **Choices, int style);
+              int N, char **Choices, int style, wxFont *_font = NULL);
   ~wxTabChoice();
 
   int   GetSelection(void);

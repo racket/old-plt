@@ -86,11 +86,13 @@ wxListBox::wxListBox(
 		     int N, 
 		     char **Choices, 
 		     long style, 
+		     wxFont *_font,
 		     char *windowName,
 		     WXTYPE		objectType
 		     ) 
 : wxbListBox (parentPanel, func, Title, Multiple, x, y, width, height, N, Choices, style, windowName)
 {
+  SetFont(_font, 13);
   cDataList = new wxList(wxKEY_INTEGER);
   Create(parentPanel, func, Title, Multiple, x, y, width, height, N, Choices,
          style, windowName);

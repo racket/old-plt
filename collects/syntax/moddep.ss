@@ -2,6 +2,10 @@
 (module moddep mzscheme
   (require (lib "etc.ss"))
 
+  (provide moddep-current-open-input-file)
+  (define moddep-current-open-input-file
+    (make-parameter open-input-file))
+  
   (provide with-module-reading-parameterization)
   (define (with-module-reading-parameterization thunk)
     (parameterize ((read-case-sensitive #t)
@@ -86,7 +90,7 @@
 	   (or (and (not bm) am) (and am bm (>= am bm))))))
 
   (define (read-one path src?)
-    (let ([p (open-input-file path)])
+    (let ([p ((moddep-current-open-input-file) path)])
       (when src? (port-count-lines! p))
       (dynamic-wind
        void

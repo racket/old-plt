@@ -14,6 +14,7 @@ enum {
   scheme_let_void_type,
   scheme_letrec_type, /* 10 */
   scheme_let_one_type,
+  scheme_with_cont_mark_type,
 
   _scheme_values_types_, /* All following types are values */
   
@@ -28,20 +29,20 @@ enum {
   _scheme_compiled_values_types_,
 
   /* procedure types */
-  scheme_prim_type, /* 19 */
-  scheme_closed_prim_type, /* 20 */
+  scheme_prim_type, /* 20 */
+  scheme_closed_prim_type,
   scheme_linked_closure_type,
   scheme_case_closure_type,
   scheme_cont_type,
   scheme_escaping_cont_type,
 
   /* basic types */
-  scheme_char_type, /* 25 */
+  scheme_char_type, /* 26 */
   scheme_integer_type,
   scheme_bignum_type,
   scheme_rational_type,
-  scheme_float_type,
-  scheme_double_type, /* 30 */
+  scheme_float_type, /* 30 */
+  scheme_double_type,
   scheme_complex_type,
   scheme_string_type,
   scheme_symbol_type,
@@ -50,8 +51,8 @@ enum {
   scheme_vector_type,
   scheme_closure_type,
   scheme_input_port_type,
-  scheme_output_port_type,
-  scheme_eof_type,   /* 40 */
+  scheme_output_port_type,   /* 40 */
+  scheme_eof_type,
   scheme_true_type,
   scheme_false_type, 
   scheme_void_type,
@@ -60,8 +61,8 @@ enum {
   scheme_promise_type,
   scheme_box_type,
   scheme_process_type,
-  scheme_object_type,
-  scheme_class_type,  /* 50 */
+  scheme_object_type,  /* 50 */
+  scheme_class_type,
   scheme_structure_type,
   scheme_generic_type, 
   scheme_type_symbol_type, 
@@ -70,8 +71,8 @@ enum {
   scheme_generic_data_type,
   scheme_weak_box_type, 
   scheme_struct_type_type,
-  scheme_id_macro_type,
-  scheme_unit_type,  /* 60 */
+  scheme_id_macro_type,  /* 60 */
+  scheme_unit_type,
   scheme_exp_time_type,
   scheme_listener_type,
   scheme_namespace_type, 
@@ -83,8 +84,8 @@ enum {
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
-  scheme_reserved_1_type,
-  scheme_reserved_2_type, /* 70 */
+  scheme_reserved_1_type, /* 70 */
+  scheme_reserved_2_type,
   scheme_reserved_3_type,
 
   /* more internal types: */
@@ -96,8 +97,8 @@ enum {
   scheme_class_data_type,
   scheme_undefined_type, 
   scheme_struct_info_type,
-  scheme_multiple_values_type,
-  scheme_placeholder_type, /* 80 */
+  scheme_multiple_values_type, /* 80 */
+  scheme_placeholder_type,
   scheme_case_lambda_sequence_type,
   scheme_begin0_sequence_type,
 
@@ -109,7 +110,7 @@ enum {
 
   scheme_interface_data_type,
 
-  scheme_svector_type,
+  scheme_svector_type, /* 90 */
 
   _scheme_last_type_
 };

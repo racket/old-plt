@@ -48,7 +48,7 @@
     (delete-file tmp-proj)
     (delete-file debug-out)
 
-    (unless (rename-file ext-out dest-file)
+    (unless (rename-file-or-directory ext-out dest-file)
       (unless (copy-file ext-out dest-file)
       (error name "couldn't move output to destination: ~a" 
       	     output-file))))

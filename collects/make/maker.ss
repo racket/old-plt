@@ -41,13 +41,13 @@
 			       (let ([line (assoc s spec)]
 				     [date (if (directory-exists? s)
 					       +inf.0
-					       (file-modify-seconds s))])
+					       (file-or-directory-modify-seconds s))])
 				 (if line
 				     (let ([deps (cadr line)])
 				       (for-each (lambda (d) (make-file d (string-append " " indent))) deps)
 				       (when (or (not date)
 						 (ormap (lambda (dep) (and (file-exists? dep)
-									   (> (file-modify-seconds dep) date))) 
+									   (> (file-or-directory-modify-seconds dep) date))) 
 							deps))
 					     (let ([l (cddr line)])
 					       (unless (null? l)

@@ -81,6 +81,7 @@ enum {
   MZEXN_I_O_FILESYSTEM_PATH_USERNAME,
   MZEXN_I_O_FILESYSTEM_FILE,
   MZEXN_I_O_FILESYSTEM_DIRECTORY,
+  MZEXN_I_O_FILESYSTEM_RENAME,
   MZEXN_I_O_FILESYSTEM_COLLECTION,
   MZEXN_I_O_FILESYSTEM_FILE_EXISTS,
   MZEXN_I_O_FILESYSTEM_LINK,
@@ -201,6 +202,7 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
+  { 4, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
@@ -321,6 +323,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_I_O_FILESYSTEM_PATH_USERNAME].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM_FILE].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM_DIRECTORY].args = 3;
+  exn_table[MZEXN_I_O_FILESYSTEM_RENAME].args = 4;
   exn_table[MZEXN_I_O_FILESYSTEM_COLLECTION].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM_FILE_EXISTS].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM_LINK].args = 3;
@@ -397,6 +400,7 @@ static const char *MZEXN_READ_VECTOR_LENGTH_FIELDS[1] = { "input" };
 static const char *MZEXN_I_O_READ_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_WRITE_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_FILESYSTEM_FIELDS[1] = { "pathname" };
+static const char *MZEXN_I_O_FILESYSTEM_RENAME_FIELDS[1] = { "destination" };
 static const char *MZEXN_I_O_PORT_CLOSED_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_USER_PORT_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_TCP_CONNECT_FIELDS[2] = { "address", "port-id" };
@@ -492,6 +496,7 @@ static const char *MZEXN_MISC_IMAGE_FIELDS[1] = { "name" };
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_PATH_USERNAME, EXN_PARENT(MZEXN_I_O_FILESYSTEM_PATH), "exn:i/o:filesystem:path:username", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_FILE, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:file", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_DIRECTORY, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:directory", 0, NULL)
+  SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_RENAME, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:rename", 1, MZEXN_I_O_FILESYSTEM_RENAME_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_COLLECTION, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:collection", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_FILE_EXISTS, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:file-exists", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM_LINK, EXN_PARENT(MZEXN_I_O_FILESYSTEM), "exn:i/o:filesystem:link", 0, NULL)

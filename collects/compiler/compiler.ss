@@ -238,8 +238,8 @@
 		     (lambda (ss)
 		       (let* ([base (extract-base-filename/ss ss 'compile-collection)]
 			      [zo (build-path "compiled" (append-zo-suffix base))]
-			      [ss-date (file-modify-seconds ss)]
-			      [zo-date (file-modify-seconds zo)])
+			      [ss-date (file-or-directory-modify-seconds ss)]
+			      [zo-date (file-or-directory-modify-seconds zo)])
 			 (if (or (not ss-date) (not zo-date) (> ss-date zo-date))
 			     (with-handlers ([void (lambda (exn)
 						     (delete-file zo)

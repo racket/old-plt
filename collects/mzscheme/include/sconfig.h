@@ -556,7 +556,7 @@ int scheme_win32_semaphore_try_down(void *);
 
 #if defined(__MWERKS__)
 
-# if defined(__powerc)
+# if defined(__POWERPC__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-mac"
 # else
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "68k-mac"
@@ -573,7 +573,7 @@ int scheme_win32_semaphore_try_down(void *);
 # define MACINTOSH_GIVE_TIME
 # define MACINTOSH_SIOUX
 
-# if !defined(__powerc)
+# if !defined(__POWERPC__)
 #  define MACINTOSH_SET_STACK
 #  define COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS
 #  define NAN_LT_COMPARISON_WRONG
@@ -594,7 +594,7 @@ int scheme_win32_semaphore_try_down(void *);
 # define STACK_SAFETY_MARGIN 10000
 
 # define TIME_SYNTAX
-# define USE_DIFFTIME
+# define USE_MACTIME
 # define CLOCK_IS_USER_TIME
 # define DIR_FUNCTION
 # define TIME_TYPE_IS_UNSIGNED
@@ -696,6 +696,8 @@ int scheme_win32_semaphore_try_down(void *);
  /* USE_FTIME uses ftime instead of gettimeofday; only for TIME_SYNTAX */
  
  /* USE_DIFFTIME uses time and difftime; only for TIME_SYNTAX */
+ 
+ /* USE_MACTIME uses the Mac toolbox to implement time functions. */
 
  /* CLOCK_IS_USER_TIME uses the system time for user milliseconds. */
 

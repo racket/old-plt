@@ -394,8 +394,7 @@ to the original stdout of DrScheme.
          (language-numbers '(-500 2))
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
-         (allow-sharing? #f)
-         (accept-quasiquote? #f)))
+         (allow-sharing? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()

@@ -1926,7 +1926,7 @@
 								       &-vars
 								       c++-class
 								       live-vars
-								       #f #f))])
+								       #f #f #f))])
 			      (values (cons e rest) live-vars))]))])
 	    ;; Collect live vars and look for function calls in decl section.
 	    (let ([live-vars
@@ -1941,7 +1941,7 @@
 					     ;; We're not really interested in the conversion.
 					     ;; We just want to get live vars and
 					     ;; complain about function calls:
-					     (convert-function-calls (car el) extra-vars &-vars c++-class live-vars "in decls" #f)])
+					     (convert-function-calls (car el) extra-vars &-vars c++-class live-vars "in decls" #f #t)])
 				 (dloop (cdr el) live-vars))))))])
 	      ;; Calculate vars to push in this block
 	      (let ([newly-pushed (filter (lambda (x)
@@ -2319,7 +2319,7 @@
 	     live-vars))]
    [else live-vars]))
 
-(define (convert-function-calls e vars &-vars c++-class live-vars complain-not-in memcpy?)
+(define (convert-function-calls e vars &-vars c++-class live-vars complain-not-in memcpy? braces-are-aggregates?)
   ;; e is a single statement
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
@@ -2412,7 +2412,7 @@
 						    ok-calls
 						    sub-memcpy?)]
 			   [(func live-vars)
-			    (convert-function-calls (reverse func) vars &-vars c++-class live-vars "rator" #f)]
+			    (convert-function-calls (reverse func) vars &-vars c++-class live-vars "rator" #f #f)]
 			   ;; Process lifted-out function calls:
 			   [(setups live-vars)
 			    (let loop ([setups setups][new-vars new-vars][result null][live-vars live-vars])
@@ -2428,7 +2428,7 @@
 										 (live-var-info-vars live-vars)
 										 (lambda (a b)
 										   (eq? a (car b)))))
-									#f #f)])
+									#f #f #f)])
 				    (loop (cdr setups)
 					  (cdr new-vars)
 					  (cons (list* (make-tok (caar new-vars) #f #f)
@@ -2592,7 +2592,7 @@
 				 (tok-n (cadr e-))))
 		      (loop (cdr e-) (cons (car e-) result) live-vars)))))
 	    (loop (cdr e-) (cons (car e-) result) live-vars))]
-       [(braces? (car e-))
+       [(and (braces? (car e-)) (not braces-are-aggregates?))
 	(let*-values ([(v) (car e-)]
 		      ;; do/while/for: we'll need a fixpoint for live-vars
 		      ;;  (We'll get the fixpoint by poing things twice)
@@ -2742,7 +2742,7 @@
 			  (values null live-vars)
 			  (let-values ([(rest live-vars) (loop (cdr el))])
 			    (let-values ([(e live-vars)
-					  (convert-function-calls (car el) vars &-vars c++-class live-vars complain-not-in memcpy?)])
+					  (convert-function-calls (car el) vars &-vars c++-class live-vars complain-not-in memcpy? #f)])
 			      (values (cons e rest) live-vars)))))])
 	(values ((get-constructor v)
 		 (tok-n v)

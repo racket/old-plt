@@ -951,6 +951,7 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     scheme_current_process->block_descriptor = -1;
     scheme_current_process->blocker = (Scheme_Object *)c;
     scheme_current_process->block_check = check_for_nested_event;
+    scheme_current_process->block_needs_wakeup = NULL;
     do {
       scheme_process_block(0);
     } while (!check_for_nested_event((Scheme_Object *)c));
@@ -1309,6 +1310,7 @@ void wxDispatchEventsUntil(int (*f)(void *), void *data)
       scheme_current_process->block_descriptor = -1;
       scheme_current_process->blocker = (Scheme_Object *)data;
       scheme_current_process->block_check = (a_Block_Check_Function)f;
+      scheme_current_process->block_needs_wakeup = NULL;
       do {
 	scheme_process_block(0);
       } while (!f(data));

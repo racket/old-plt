@@ -42,7 +42,7 @@ This gives you the following syntactic forms:
    input-port, matches the re's against the buffer and returns the
    result of executing the corresponding action.  Each action is
    scheme code that has the same scope as its lexer definition, except
-   that the variables get-start-pos, get-end-pos, get-lexeme,
+   that the variables start-pos, end-pos, lexeme,
    return-without-pos and input-port are also bound in the action
    (hiding any outside binding).
    > start-pos - a position struct for the first character matched
@@ -95,8 +95,8 @@ a generated parser, but may not be the right choice when using the
 lexer in other situations.
 
 
-Several values are also provided for manipulating the position structures
-returned by get-start-pos and get-end-pos:
+Several values are also provided for manipulating the position
+structures tracked by start-pos and end-pos:
 
 > (position-offset position) - the offset of the character in the stream.
 > (position-line position) - the line number of the character.
@@ -262,9 +262,8 @@ lexer generator:
    of a lexer.
 
 parser:
-1) Increase speed of parser generator.  It's quite slow right now.  I
-   doubt much can be done short of making mzscheme allocation/GC
-   faster
+1) Increase speed of parser generator.  I doubt much can be done short
+   of making mzscheme faster.
 2) Fisher-Burke error recovery.  Automatically figure out a "good"
    token to insert when an error is encountered.
 3) Possibly change the $1 style to something like SML/NJ YACC uses.
@@ -277,5 +276,5 @@ parser:
 
 both:
 1) Increase runtime speed.  I doubt much can be done short of making
-   mzscheme allocation/GC faster
+   mzscheme faster.
 2) Add more information for check syntax to draw arrows to more things

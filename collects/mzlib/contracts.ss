@@ -84,46 +84,56 @@
        (raise-syntax-error 'define/contract "expected identifier in first position"
                            define-stx
                            (syntax name))]))
-      
+  
+  (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
+  
   ;; (provide/contract (id expr) ...)
   ;; provides each `id' with the contract `expr'.
   (define-syntax (provide/contract provide-stx)
     (syntax-case provide-stx ()
+      [(_) (raise-syntax-error 'provide/contract "must provide at least one id")]
       [(_ (id ctrct) ...)
        (andmap identifier? (syntax->list (syntax (id ...))))
        (with-syntax ([(id-rename ...)
-		      (map (lambda (x)
+                      (map (lambda (x)
                              (datum->syntax-object
                               provide-stx
                               (string->symbol
                                (format "provide/contract-id-~a-ACK-DONT_USE_ME"
-				       (syntax-object->datum x)))))
+                                       (syntax-object->datum x)))))
                            (syntax->list (syntax (id ...))))]
-		     [(contract-id ...)
+                     [(contract-id ...)
                       (map (lambda (x)
                              (datum->syntax-object
                               provide-stx
                               (string->symbol
                                (format "provide/contract-contract-id-~a-ACK-DONT_USE_ME"
-				       (syntax-object->datum x)))))
+                                       (syntax-object->datum x)))))
                            (syntax->list (syntax (id ...))))]
-                     [pos-blame-stx (datum->syntax-object provide-stx 'here)]
+                     [pos-module-source (datum->syntax-object
+                                         provide-stx
+                                         (string->symbol
+                                          (format 
+                                           "provide/contract-pos-module-source-~a-ACK-DONT_USE_ME"
+                                           (car (syntax->list (syntax (id ...)))))))]
+                     [pos-stx (datum->syntax-object provide-stx 'here)]
                      [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)])
          (syntax
           (begin
             (provide (rename id-rename id) ...)
             (require (lib "contract-helpers.scm" "mzlib" "private"))
-
+            
+            (define pos-module-source (module-source-as-symbol #'pos-stx))
             ;; this is here to check for unbound ids.
             ;; put outer `void' just in case we start printing out module
             ;; body values (say in the module language or something)
-	    (if #f (begin (void) id ...))
-
-	    (define contract-id ctrct) ...
+            (if #f (begin (void) id ...))
+            
+            (define contract-id ctrct) ...
             (define-syntax id-rename
               (make-set!-transformer
                (lambda (stx)
-                 (with-syntax ([neg-blame-stx (datum->syntax-object stx 'here)])
+                 (with-syntax ([neg-stx (datum->syntax-object stx 'here)])
                    (syntax-case stx (set!)
                      [(set! _ body) (raise-syntax-error
                                      #f 
@@ -134,8 +144,8 @@
                       (syntax 
                        ((-contract contract-id
                                    id
-                                   (module-source-as-symbol (quote-syntax pos-blame-stx)) 
-                                   (module-source-as-symbol (quote-syntax neg-blame-stx))
+                                   pos-module-source
+                                   (module-source-as-symbol #'neg-stx)
                                    (quote-syntax _))
                         arg
                         (... ...)))]
@@ -144,8 +154,8 @@
                       (syntax 
                        (-contract contract-id
                                   id  
-                                  (module-source-as-symbol (quote-syntax pos-blame-stx)) 
-                                  (module-source-as-symbol (quote-syntax neg-blame-stx))
+                                  pos-module-source 
+                                  (module-source-as-symbol #'neg-stx)
                                   (quote-syntax _)))])))))
             ...)))]
       [(_ clauses ...)

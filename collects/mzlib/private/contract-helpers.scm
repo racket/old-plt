@@ -29,9 +29,11 @@
       (cond
         [(symbol? src-module) src-module]
         [(module-path-index? src-module) 
-	 (let/ec k
-           (string->symbol
-            (resolve-module-path-index 
-             src-module
-             (lambda () (k 'top-level)))))]
+         (let-values ([(path base) (module-path-index-split src-module)])
+           (if path
+               (string->symbol
+                (resolve-module-path-index
+                 src-module
+                 (current-load-relative-directory)))
+               'top-level))]
         [else 'top-level]))))

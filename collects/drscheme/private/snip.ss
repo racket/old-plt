@@ -14,7 +14,8 @@ carry over the computation of the original
 	   (lib "mred.ss" "mred")
 	   (lib "class.ss")
 	   (lib "class100.ss")
-           (lib "framework.ss" "framework"))
+           (lib "framework.ss" "framework")
+           (lib "string-constant.ss" "string-constants"))
   
   (provide snip@)
   
@@ -26,48 +27,34 @@ carry over the computation of the original
         (interface ()
           read-special))
       
+      ;; make-repeating-decimal-snip : number boolean -> snip
+      (define (make-repeating-decimal-snip number e-prefix?)
+        (instantiate number-snip% ()
+          [number number]
+          [decimal-prefix (if e-prefix? "#e" "")]))
+      
+      ;; make-fraction-snip : number boolean -> snip
+      (define (make-fraction-snip number e-prefix?)
+        (let ([n (instantiate number-snip% ()
+                   [number number]
+                   [decimal-prefix (if e-prefix? "#e" "")])])
+          (send n reverse-fraction-view)
+          n))
+
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
       (define bw? (< (get-display-depth) 3))
-
       
-                                                               
-                                             ;                 
-                                     ;                         
-                                     ;                         
- ; ;;;   ;;;  ; ;;;    ;;;   ;;;;   ;;;;;  ;;;   ; ;;;    ;;; ;
-  ;     ;   ;  ;   ;  ;   ;      ;   ;       ;    ;;  ;  ;   ; 
-  ;     ;;;;;  ;   ;  ;;;;;   ;;;;   ;       ;    ;   ;  ;   ; 
-  ;     ;      ;   ;  ;      ;   ;   ;       ;    ;   ;  ;   ; 
-  ;     ;   ;  ;   ;  ;   ;  ;   ;   ;   ;   ;    ;   ;  ;   ; 
- ;;;;    ;;;   ;;;;    ;;;    ;;; ;   ;;;  ;;;;; ;;;  ;;  ;;;; 
-               ;                                             ; 
-               ;                                             ; 
-              ;;;                                         ;;;  
-
-                                                 
-    ;;                  ;                  ;;;   
-     ;                                       ;   
-     ;                                       ;   
-  ;;;;   ;;;    ;;;   ;;;   ;;; ;   ;;;;     ;   
- ;   ;  ;   ;  ;   ;    ;    ; ; ;      ;    ;   
- ;   ;  ;;;;;  ;        ;    ; ; ;   ;;;;    ;   
- ;   ;  ;      ;        ;    ; ; ;  ;   ;    ;   
- ;   ;  ;   ;  ;   ;    ;    ; ; ;  ;   ;    ;   
-  ;;; ;  ;;;    ;;;   ;;;;; ;; ; ;;  ;;; ; ;;;;;;
-                                                 
-                                                 
-      
-      (define repeating-decimal-snip-class%
+      (define number-snip-class%
         (class snip-class%
           (define/override (read f)
-            (instantiate repeating-decimal-number% ()
+            (instantiate number-snip% ()
               [number (string->number (send f get-string))]
               [decimal-prefix (send f get-string)]))
           (super-instantiate ())))
       
-      (define repeating-decimal-snipclass (make-object repeating-decimal-snip-class%))
-      (send repeating-decimal-snipclass set-version 2)
-      (send repeating-decimal-snipclass set-classname "drscheme:repeating-decimal")
+      (define number-snipclass (make-object number-snip-class%))
+      (send number-snipclass set-version 2)
+      (send number-snipclass set-classname "drscheme:number")
       
       (define arrow-cursor (make-object cursor% 'arrow))
 
@@ -75,12 +62,23 @@ carry over the computation of the original
       ;; indicates how many digits to fetch for each click
       (define cut-off 25)
       
-      (define repeating-decimal-number%
+      (define number-snip%
         (class snip%
-          (init-field number
-                      [decimal-prefix ""])
+          (init-field
+           ;; number : number
+           ;; this is the number to show
+           number
+
+           ;; decimal-prefix : string
+           ;; this prefix is shown on the string when it is viewed in
+           ;; the decimal view
+           [decimal-prefix ""])
+        
+          ;; fraction-view? : boolean
+          ;; this field holds the current view state
+          (field [fraction-view? #f])
           
-          ;; these fields are for the drawing code
+          ;; these fields are for the drawing code for decimal printing
           (field 
            ;; clickable-portion : (union #f string)
            [clickable-portion #f]
@@ -89,17 +87,38 @@ carry over the computation of the original
            ;; barred-portion : (union #f string)
            [barred-portion #f])
           
-          ;; these fields are for the expansion calculation code
-          (field [whole-part (floor number)]
-                 [init-num (* 10 (numerator (- number whole-part)))]
-                 [den (denominator (- number whole-part))])
+          ;; these fields are for the fractional printing view
+          (field
+           ;; wholes : string
+           ;; the whole-number portion of the fraction, as a string
+           [wholes (cond
+                     [(= (floor number) 0) ""]
+                     [(= (ceiling number) 0) "-"]
+                     [(< number 0)
+                      (number->string (ceiling number))]
+                     [else
+                      (number->string (floor number))])]
+           ;; nums : string
+           ;; the numerator, as a string
+           [nums (number->string (numerator (- (abs number) (floor (abs number)))))]
+
+           ;; dens : string
+           ;; the denominator, as a string
+           [dens (number->string (denominator (- (abs number) (floor (abs number)))))])
+
+          ;; these fields are for the decimal expansion calculation code
+          (field
+           [whole-part (floor number)]
+           [init-num (* 10 (numerator (- number whole-part)))]
+           [den (denominator (- number whole-part))])
           
           ;; ht : number -o> (cons digit number)
           ;; this maps from divisors of the denominator to
           ;; digit and new divisor pairs. Use this
           ;; to read off the decimal expansion.
-          (field [ht (make-hash-table 'equal)]
-                 [expansions 0])
+          (field
+           [ht (make-hash-table 'equal)]
+           [expansions 0])
           
           ;; this field holds the state of the current computation
           ;; of the numbers digits. If it is a number, it corresponds
@@ -115,6 +134,14 @@ carry over the computation of the original
           ;; a number indiates a repeat starting at `number' in `ht'.
           (field [repeat 'unk])
           
+          ;; reverse-fraction-view : -> void
+          ;; toggles the view
+          (define/public (reverse-fraction-view)
+            (set! fraction-view? (not fraction-view?))
+            (let ([admin (get-admin)])
+              (when admin
+                (send admin resized this #t))))
+
           ;; iterate : number -> void
           ;; computes the next sequence of digits (`n' times)
           ;; and update the strings for GUI drawing
@@ -250,7 +277,7 @@ carry over the computation of the original
             (send f put decimal-prefix))
           
           (define/override (copy)
-            (let ([snip (instantiate repeating-decimal-number% ()
+            (let ([snip (instantiate number-snip% ()
                           [number number]
                           [decimal-prefix decimal-prefix])])
               (send snip iterate expansions)
@@ -259,7 +286,24 @@ carry over the computation of the original
           (inherit get-style)
           
           (define/override (get-extent dc x y wb hb descent space lspace rspace)
-            (get-decimal-extent dc x y wb hb descent space lspace rspace))
+            (if fraction-view?
+                (get-fraction-extent dc x y wb hb descent space lspace rspace)
+                (get-decimal-extent dc x y wb hb descent space lspace rspace)))
+          
+          (define (get-fraction-extent dc x y w h descent space lspace rspace)
+            (let* ([style (get-style)]
+                   [th (send style get-text-height dc)]
+                   [old-font (send dc get-font)])
+              (send dc set-font (send style get-font))
+              (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
+                           [(dw dh da dd) (send dc get-text-extent dens)]
+                           [(ww wh wa wd) (send dc get-text-extent wholes)])
+                (set-box/f! h (+ nh dh 1))
+                (set-box/f! w (+ ww (max nw dw)))
+                (set-box/f! descent (+ wd (/ dh 2)))
+                (set-box/f! space  (+ wa (/ nh 2)))
+                (set-box/f! lspace 0)
+                (set-box/f! rspace 0))))
           
           (define (get-decimal-extent dc x y wb hb descent space lspace rspace)
             (let ([font (send (get-style) get-font)])
@@ -284,9 +328,23 @@ carry over the computation of the original
                 (values 0 0 0 0)))
           
           (define/override (draw dc x y left top right bottom dx dy draw-caret?)
-            (draw-fraction dc x y))
+            (if fraction-view?
+                (draw-fraction dc x y)
+                (draw-decimals dc x y)))
           
           (define (draw-fraction dc x y)
+            (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
+                         [(dw dh da dd) (send dc get-text-extent dens)]
+                         [(ww wh wa wd) (send dc get-text-extent wholes)])
+              (let ([frac-w (max nw dw)])
+                (send dc draw-text nums (+ x ww (- frac-w nw)) y)
+                (send dc draw-text dens (+ x ww (- (/ dw 2)) (/ frac-w 2)) (+ y nh 1))
+                (send dc draw-text wholes x (+ y (/ nh 2)))
+                (send dc draw-line
+                      (+ x ww) (+ y dh)
+                      (+ x ww (max nw dw) -1) (+ y dh)))))
+          
+          (define (draw-decimals dc x y)
             (define (draw-digits digits x)
               (if digits
                   (let-values ([(w h a d) (send dc get-text-extent digits)])
@@ -310,10 +368,33 @@ carry over the computation of the original
             (let ([sx (- (send evt get-x) x)]
                   [sy (- (send evt get-y) y)])
               (cond
-                [(send evt button-up?)
+                [(send evt button-down? 'right)
+                 (let ([admin (get-admin)])
+                   (when admin
+                     (let ([popup-menu (make-right-clickable-menu)])
+                       (send admin popup-menu popup-menu this (+ sx 1) (+ sy 1)))))]
+                [(send evt button-up? 'left)
                  (when (in-clickable-portion? dc sx sy)
                    (iterate/reflow))]
                 [else (void)])))
+
+          (define (make-right-clickable-menu)
+            (let ([menu (make-object popup-menu%)])
+              (make-object menu-item% 
+                (if fraction-view?
+                    (string-constant show-decimal-expansion)
+                    (string-constant show-fraction-view))
+                menu
+                (lambda (x y)
+                  (reverse-fraction-view)))
+              (when (and (not fraction-view?)
+                         clickable-portion)
+                (make-object menu-item% 
+                  (string-constant show-more-decimal-places)
+                  menu
+                  (lambda (x y)
+                    (iterate/reflow))))
+              menu))
 
           (define (in-clickable-portion? dc sx sy)
             (and clickable-portion
@@ -327,121 +408,11 @@ carry over the computation of the original
           (super-instantiate ())
           (inherit set-snipclass set-flags get-flags)
           (set-flags (cons 'handles-events (get-flags)))
-          (set-snipclass repeating-decimal-snipclass)
+          (set-snipclass number-snipclass)
           (iterate 1))) ;; calc first digits
       
       ;; hash-table-bound? : hash-table TST -> boolean
       (define (hash-table-bound? ht key)
         (let/ec k
           (hash-table-get ht key (lambda () (k #f)))
-          #t))                                                
-
-      ;; make-repeating-fraction-snip : number boolean -> snip
-      (define (make-repeating-fraction-snip number e-prefix?)
-        (instantiate repeating-decimal-number% ()
-          [number number]
-          [decimal-prefix (if e-prefix? "#e" "")]))
-
-
-                                                        
-   ;;;                                ;                 
-  ;                           ;                         
-  ;                           ;                         
- ;;;;;  ; ;;;  ;;;;    ;;;   ;;;;;  ;;;     ;;;  ; ;;;  
-  ;      ;         ;  ;   ;   ;       ;    ;   ;  ;;  ; 
-  ;      ;      ;;;;  ;       ;       ;    ;   ;  ;   ; 
-  ;      ;     ;   ;  ;       ;       ;    ;   ;  ;   ; 
-  ;      ;     ;   ;  ;   ;   ;   ;   ;    ;   ;  ;   ; 
- ;;;;   ;;;;    ;;; ;  ;;;     ;;;  ;;;;;   ;;;  ;;;  ;;
-                                                        
-                                                        
-                                                        
-      
-      (define whole/part-number-snipclass
-        (make-object 
-            (class100 snip-class% ()
-              (override
-                [read
-                 (lambda (p)
-                   (make-object whole/part-number-snip%
-                     (string->number (send p get-string))))])
-              (sequence (super-init)))))
-      (send whole/part-number-snipclass set-version 1)
-      (send whole/part-number-snipclass set-classname 
-            "drscheme:whole/part-number-snip")
-      (send (get-the-snip-class-list) add whole/part-number-snipclass)
-      
-      (define whole/part-number-snip%
-        (class100* snip% (special<%>) (_number . args)
-	  (private-field
-           [number _number])
-          (public
-            [read-special
-             (lambda (file line col pos)
-               (values
-                ;(datum->syntax-object #f number (list file line col pos 1))
-                number
-                1))])
-          (override
-            [get-text
-             (case-lambda
-              [(offset num) (get-text offset num #f)]
-              [(offset num flattened?) (number->string number)])])
-          (public
-            [get-number (lambda () number)]
-            [get-formatted-string (lambda ()
-                                    (if (or (string=? "" wholes)
-                                            (string=? "-" wholes))
-                                        (format "~a~a/~a" wholes nums dens)
-                                        (format "~a ~a/~a" wholes nums dens)))])
-          (private-field
-           [wholes (cond
-                     [(= (floor number) 0) ""]
-                     [(= (ceiling number) 0) "-"]
-                     [(< number 0)
-                      (number->string (ceiling number))]
-                     [else
-                      (number->string (floor number))])]
-           [nums (number->string (numerator (- (abs number) (floor (abs number)))))]
-           [dens (number->string (denominator (- (abs number) (floor (abs number)))))])
-          (inherit get-style)
-          (override
-            [write
-             (lambda (p)
-               (send p put (number->string number)))]
-            [copy
-             (lambda ()
-               (let ([s (make-object whole/part-number-snip% number)])
-                 (send s set-style (get-style))
-                 s))]
-            [get-extent
-             (lambda (dc x y w h descent space lspace rspace)
-               (let* ([style (get-style)]
-                      [th (send style get-text-height dc)]
-                      [old-font (send dc get-font)])
-                 (send dc set-font (send style get-font))
-                 (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
-                              [(dw dh da dd) (send dc get-text-extent dens)]
-                              [(ww wh wa wd) (send dc get-text-extent wholes)])
-                   (set-box/f! h (+ nh dh 1))
-                   (set-box/f! w (+ ww (max nw dw)))
-                   (set-box/f! descent (+ wd (/ dh 2)))
-                   (set-box/f! space  (+ wa (/ nh 2)))
-                   (set-box/f! lspace 0)
-                   (set-box/f! rspace 0))))]
-            [draw
-             (lambda (dc x y left top right bottom dx dy draw-caret)
-               (let-values ([(nw nh na nd) (send dc get-text-extent nums)]
-                            [(dw dh da dd) (send dc get-text-extent dens)]
-                            [(ww wh wa wd) (send dc get-text-extent wholes)])
-                 (let ([frac-w (max nw dw)])
-                   (send dc draw-text nums (+ x ww (- frac-w nw)) y)
-                   (send dc draw-text dens (+ x ww (- (/ dw 2)) (/ frac-w 2)) (+ y nh 1))
-                   (send dc draw-text wholes x (+ y (/ nh 2)))
-                   (send dc draw-line
-                         (+ x ww) (+ y dh)
-                         (+ x ww (max nw dw) -1) (+ y dh)))))])
-          (inherit set-snipclass)
-          (sequence 
-            (super-init)
-            (set-snipclass whole/part-number-snipclass)))))))
+          #t)))))

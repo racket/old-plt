@@ -1,17 +1,17 @@
 
 (with-handlers ([not-break-exn?
 		 (lambda (exn)
-		   (namespace-variable-binding
+		   (namespace-set-variable-value!
 		    'flat-load
 		    "all.ss"))])
-  (namespace-variable-binding 'flat-load))
+  (namespace-variable-value 'flat-load))
 
 (with-handlers ([not-break-exn?
 		 (lambda (exn)
-		   (namespace-variable-binding
+		   (namespace-set-variable-value!
 		    'lines-per-file
 		    +inf.0))])
-  (namespace-variable-binding 'lines-per-file))
+  (namespace-variable-value 'lines-per-file))
 
 (require (lib "pretty.ss"))
 
@@ -75,7 +75,15 @@
 		  (and (pair? e) (pair? (cdr e))
 		       (eq? void (cadr e))))
 	(flat-pp e))
-      (old-eval e))))
+      (if (syntax-case* e (quote hygiene) (lambda (a b)
+					    (eq? (syntax-e a) (syntax-e b)))
+	    [(_ __ 'hygiene . ___) #t]
+	    [_else #f])
+	  ;; Don't save the evaluated:
+	  (parameterize ([current-eval old-eval])
+	    (old-eval e))
+	  ;; Normal:
+	  (old-eval e)))))
  (lambda ()
    (load-relative flat-load))
  (lambda ()

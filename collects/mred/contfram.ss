@@ -21,7 +21,7 @@
       ; easily modifiable if necessary.
       (define WX-BORDER-SIZE
 	(case wx:window-system
-	  [(xt)  2]  ; grrrr....
+	  [(xt)  0]  ; this used to be 2; no longer!
 	  [(motif) 0]
 	  [(windows) 0]
 	  [(macintosh) 0]))

@@ -8,7 +8,6 @@
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:find-string : mred:find-string^]
-	    [mred:icon : mred:icon^]
 	    [mred:menu : mred:menu^] 
 	    [mred:finder : mred:finder^]
 	    [mred:handler : mred:handler^]

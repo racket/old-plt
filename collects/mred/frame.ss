@@ -429,8 +429,9 @@
 			(send (get-canvas) set-media e)
 			(lambda () e))])
 	  (sequence
-	    (when (send mred:icon:icon ok?)
-	      (set-icon mred:icon:icon))
+	    (let ([icon (mred:icon:get-icon)])
+	      (when (send icon ok?)
+		(set-icon icon)))
 	    (mred:debug:printf 'matthew "initial call to do-title~n")
 	    (do-title)
 	    (mred:debug:printf 'matthew "finished initial call to do-title~n")
@@ -589,8 +590,8 @@
 		       (send lock-message
 			     set-label
 			     (if locked-now?
-				 mred:icon:lock-bitmap
-				 mred:icon:unlock-bitmap))))))]
+				 (mred:icon:get-lock-bitmap)
+				 (mred:icon:get-unlock-bitmap)))))))]
 		       
 	      [edit-position-changed-offset
 	       (lambda (offset?)
@@ -648,13 +649,13 @@
 	      [anchor-message 
 	       (make-object mred:container:message%
 			    info-panel
-			    mred:icon:anchor-bitmap)]
+			    (mred:icon:get-anchor-bitmap))]
 	      [overwrite-message 
 	       (make-object mred:container:message%
 			    info-panel
 			    "Overwrite")]
 	      [lock-message (make-object mred:container:message%
-			      info-panel mred:icon:unlock-bitmap)]
+			      info-panel (mred:icon:get-unlock-bitmap))]
 	      [position-canvas (make-object mred:canvas:one-line-canvas%
 					    info-panel)]
 	      [time-canvas (make-object mred:canvas:one-line-canvas% 
@@ -665,10 +666,10 @@
 	       (lambda ()
 		 (wx:register-collecting-blit gc-canvas 
 					      0 0
-					      mred:icon:gc-width
-					      mred:icon:gc-height
-					      mred:icon:gc-on-dc
-					      mred:icon:gc-off-dc))])
+					      (mred:icon:get-gc-width)
+					      (mred:icon:get-gc-height)
+					      (mred:icon:get-gc-on-dc)
+					      (mred:icon:get-gc-off-dc)))])
 
 	    (sequence
 	      (unless (mred:preferences:get-preference 'mred:show-status-line)
@@ -678,15 +679,15 @@
 	      (register-gc-blit)
 
 	      (let ([bw (box 0)]
-		    [bh (box 0)])
+		    [bh (box 0)]
+		    [gc-width (mred:icon:get-gc-width)]
+		    [gc-height (mred:icon:get-gc-height)])
 		(send* gc-canvas
-		  (set-size 0 0 mred:icon:gc-width mred:icon:gc-height)
+		  (set-size 0 0 gc-width gc-height)
 		  (get-client-size bw bh))
 		(send* gc-canvas
-		  (user-min-width (+ mred:icon:gc-width
-				     (- mred:icon:gc-width (unbox bw))))
-		  (user-min-height (+ mred:icon:gc-height
-				      (- mred:icon:gc-height (unbox bh))))
+		  (user-min-width (+ gc-width (- gc-width (unbox bw))))
+		  (user-min-height (+ gc-height (- gc-height (unbox bh))))
 		  (stretchable-in-x #f)
 		  (stretchable-in-y #f)))
 	      (send info-panel stretchable-in-y #f)

@@ -289,18 +289,18 @@
    open-file))
 
 (define-signature mred:icon^
-  (icon
-   paren-highlight-bitmap
-   autowrap-bitmap
-   reset-console-bitmap
-   lock-bitmap
-   unlock-bitmap
-   anchor-bitmap
+  (get-icon
+   get-paren-highlight-bitmap
+   get-autowrap-bitmap
+   get-reset-console-bitmap
+   get-lock-bitmap
+   get-unlock-bitmap
+   get-anchor-bitmap
    
-   gc-on-dc
-   gc-off-dc
-   gc-width
-   gc-height))
+   get-gc-on-dc
+   get-gc-off-dc
+   get-gc-width
+   get-gc-height))
 
 (define-signature mred:keymap^
   (keyerr

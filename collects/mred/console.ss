@@ -706,7 +706,7 @@
 				 (unbox b))]
 			[height  (- reset-console-end-location
 				    reset-console-start-location)])
-		   (send brush set-stipple mred:icon:reset-console-bitmap)
+		   (send brush set-stipple (mred:icon:get-reset-console-bitmap))
 		   (send dc set-pen pen)
 		   (send dc set-brush brush)
 		   (send dc set-logical-function wx:const-xor)

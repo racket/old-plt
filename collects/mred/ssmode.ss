@@ -319,7 +319,7 @@
 				    (set! clear-old-location
 					  (send edit highlight-range left right
 						color
-						mred:icon:paren-highlight-bitmap))))))))
+						(mred:icon:get-paren-highlight-bitmap)))))))))
 			(lambda () (send edit end-edit-sequence)))))))]
 	    
 	    [get-limit

@@ -7,30 +7,47 @@
     (define (load-icon % name type)
       (let ([p (build-path mred:constants:plt-home-directory
 			   "icons"
-			   name)])
+			   name)]
+	    [bitmap #f])
 	(unless (file-exists? p)
 	  (printf "WARNING: couldn't find ~a~n" p))
-	(make-object % p type)))
+	(lambda ()
+	  (if bitmap
+	      bitmap
+	      (begin (set! bitmap (make-object % p type))
+		     bitmap)))))
 
-    (define anchor-bitmap (load-icon wx:bitmap% "anchor.gif" wx:const-bitmap-type-gif))
-    (define lock-bitmap (load-icon wx:bitmap% "lock.gif" wx:const-bitmap-type-gif))
-    (define unlock-bitmap (load-icon wx:bitmap% "unlock.gif" wx:const-bitmap-type-gif))
-    (define icon (load-icon wx:icon% "mred.xbm" wx:const-bitmap-type-xbm))
-    (define autowrap-bitmap (load-icon wx:bitmap% "return.xbm" wx:const-bitmap-type-xbm))
-    (define paren-highlight-bitmap (load-icon wx:bitmap% "paren.xbm" wx:const-bitmap-type-xbm))
-    (define reset-console-bitmap (load-icon wx:bitmap% "reset.xbm" wx:const-bitmap-type-xbm))
+    (define get-anchor-bitmap (load-icon wx:bitmap% "anchor.gif" wx:const-bitmap-type-gif))
+    (define get-lock-bitmap (load-icon wx:bitmap% "lock.gif" wx:const-bitmap-type-gif))
+    (define get-unlock-bitmap (load-icon wx:bitmap% "unlock.gif" wx:const-bitmap-type-gif))
+    (define get-icon (load-icon wx:icon% "mred.xbm" wx:const-bitmap-type-xbm))
+    (define get-autowrap-bitmap (load-icon wx:bitmap% "return.xbm" wx:const-bitmap-type-xbm))
+    (define get-paren-highlight-bitmap (load-icon wx:bitmap% "paren.xbm" wx:const-bitmap-type-xbm))
+    (define get-reset-console-bitmap (load-icon wx:bitmap% "reset.xbm" wx:const-bitmap-type-xbm))
 
-    (define-values (gc-on-dc gc-width gc-height)
-      (let ([bitmap (load-icon wx:bitmap% "recycle.gif" wx:const-bitmap-type-gif)]
-	    [mdc (make-object wx:memory-dc%)])
-	(send mdc select-object bitmap)
-	(values mdc
-		(send bitmap get-width)
-		(send bitmap get-height))))
+    (define-values (get-gc-on-dc get-gc-width get-gc-height)
+      (let* ([get-bitmap (load-icon wx:bitmap% "recycle.gif" wx:const-bitmap-type-gif)]
+	     [bitmap #f]
+	     [mdc #f]
+	     [fetch
+	      (lambda ()
+		(unless mdc
+		  (set! mdc (make-object wx:memory-dc%))
+		  (set! bitmap (get-bitmap))))])
+	(values (lambda () (fetch) mdc)
+		(lambda () (fetch) (send bitmap get-width))
+		(lambda () (fetch) (send bitmap get-height)))))
 
-    (define gc-off-dc 
-      (let ([bitmap (make-object wx:bitmap% gc-width gc-height)]
-	    [mdc (make-object wx:memory-dc%)])
-	(send mdc select-object bitmap)
-	(send mdc clear)
-	mdc)))
+    (define get-gc-off-dc 
+      (let ([mdc #f])
+	(lambda ()
+	  (if mdc
+	      mdc
+	      (begin
+		(set! mdc (make-object wx:memory-dc%))
+		(send mdc select-object
+		      (make-object wx:bitmap%
+			(get-gc-width)
+			(get-gc-height)))
+		(send mdc clear)
+		mdc))))))

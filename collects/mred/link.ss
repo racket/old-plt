@@ -102,7 +102,7 @@
 			((reference-unit/sig "edframe.ss") wx 
 			 constants
 			 preferences edit frame container
-			 canvas find-string icon menu
+			 canvas find-string menu
 			 finder handler exit autosave gui-utils
 			 (core function@) (core file@))]
 	  [project : mred:project^ 

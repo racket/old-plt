@@ -125,8 +125,7 @@
                                   (url-query url)
                                   (url-fragment url))))))
               (for-each (lambda (s)
-                          (display s client->server)
-                          (display "\r\n" client->server))
+                          (display (string-append s "\r\n") client->server))
                         (cons (format "~a ~a HTTP/1.0" (if get? "GET" "POST") access-string)
                               (cons (format "Host: ~a" (url-host url))
 				    (if post-data

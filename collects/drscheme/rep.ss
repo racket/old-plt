@@ -121,6 +121,10 @@
 	      (eval
 	       `(allow-improper-lists
 		 ,(drscheme:language:setting-allow-improper-lists?
+		   (mred:get-preference 'drscheme:settings))))
+	      (eval
+	       `(eq?-only-compares-symbols?
+		 ,(drscheme:language:setting-eq?-only-compares-symbols?
 		   (mred:get-preference 'drscheme:settings))))))
 	  p))))
 
@@ -130,6 +134,7 @@
     (lambda (super%)
       (class super% args
 	(inherit insert change-style
+		 clear-previous-expr-positions
 		 get-end-position
 		 set-clickback
 		 set-last-header-position
@@ -177,7 +182,6 @@
 		   (apply super-init-transparent-io x)
 		   (lock c-locked?)		   
 		   (end-edit-sequence)))))])
-
 	(private
 	  [escape-fn #f])
 	(public
@@ -321,12 +325,14 @@
 	       (set-delta-foreground "BLACK")
 	       (set-delta-background "YELLOW"))
 	     (lambda ()
+	       (begin-edit-sequence)
 	       (insert #\newline (last-position) (last-position))
 	       (let ([start (last-position)])
 		 (insert "WARNING: Program has changed. Click Execute."
 			 start start)
 		 (let ([end (last-position)])
-		   (change-style warning-style-delta start end)))))]
+		   (change-style warning-style-delta start end)))
+	       (end-edit-sequence)))]
 	  [do-eval
 	   (let ([count 0])
 	     (lambda (start end)
@@ -484,7 +490,6 @@
 		      (set! ask-about-kill? #t)
 		      (mred:debug:printf 'console-threading "break: posting break.1.3")
 		      (semaphore-post break-semaphore)]))])
-	
 	(public
 	  [send-scheme (opt-lambda (x [after void]) (void))]
 	  [evaluation-thread #f]
@@ -597,6 +602,7 @@
 	  [reset-console
 	   (let ([first-dir (current-directory)])
 	     (lambda ()
+	       (clear-previous-expr-positions)
 	       (custodian-shutdown-all user-custodian)
 	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed

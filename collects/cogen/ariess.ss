@@ -2,4 +2,5 @@
   (annotate
    transform
    error-box
-   signal-undefined?))
+   signal-not-boolean
+   signal-undefined))

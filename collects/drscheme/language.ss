@@ -15,17 +15,23 @@
 			    unmatched-cond/case-is-error?
 			    allow-improper-lists?
 			    sharing-printing?
-			    signal-undefined?
+			    abbreviate-cons-as-list?
+			    signal-undefined
+			    signal-not-boolean
+			    eq?-only-compares-symbols?
 			    printing))
 
     (define settings
-      (list (list 'Beginner (make-setting 'core #t #f #t #f #f #t
+      (list (list 'Beginner (make-setting 'core #t #f #t #f #f #f #t #t #t
 					  'constructor-style))
-	    (list 'Intermediate (make-setting 'structured #t #f #t #f #f #t
+	    (list 'Intermediate (make-setting 'structured
+					      #t #f #t #f #f #t #t #t #t
 					      'constructor-style))
-	    (list 'Advanced (make-setting 'side-effecting #t #f #t #f #t #t
+	    (list 'Advanced (make-setting 'side-effecting
+					  #t #f #t #f #t #t #t #f #f
 					  'constructor-style))
-	    (list 'Quasi-R4RS (make-setting 'advanced #t #t #t #t #f #t
+	    (list 'Quasi-R4RS (make-setting 'advanced
+					    #t #t #t #t #f #t #t #f #f
 					    'r4rs-style))))
 
     (define copy-setting
@@ -70,7 +76,8 @@
     (define check-syntax-level (car drscheme:basis:level-symbols)) 
     (define callback
       (lambda (pref)
-	(aries:signal-undefined? (setting-signal-undefined? pref))
+	(aries:signal-undefined (setting-signal-undefined pref))
+	(aries:signal-not-boolean (setting-signal-not-boolean pref))
 	(show-sharing (setting-sharing-printing? pref))
 	(set-printer-style/get-number (setting-printing pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
@@ -79,6 +86,7 @@
 	(compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? pref)))
 	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
 	(set! allow-improper-lists? (setting-allow-improper-lists? pref))
+	(abbreviate-cons-as-list (setting-abbreviate-cons-as-list? pref))
 	(set! check-syntax-level (setting-vocabulary-symbol pref))))
     (callback (mred:get-preference 'drscheme:settings))
     (mred:add-preference-callback 'drscheme:settings (lambda (p v) (callback v)))
@@ -196,16 +204,34 @@
 			      "Unmatched cond/case is an error?"
 			      "next interaction"
 			      dynamic-panel)]
-	     [signal-undefined?
-	      (make-check-box set-setting-signal-undefined?!
-			      setting-signal-undefined?
+	     [signal-undefined
+	      (make-check-box set-setting-signal-undefined!
+			      setting-signal-undefined
 			      "Signal undefined variables when first referenced?"
+			      "next execution"
+			      dynamic-panel)]
+	     [signal-not-boolean
+	      (make-check-box set-setting-signal-not-boolean!
+			      setting-signal-not-boolean
+			      "Cond questions must evaluate to either #t or #f"
+			      "next execution"
+			      dynamic-panel)]
+	     [eq?-only-compares-symbols?
+	      (make-check-box set-setting-eq?-only-compares-symbols?!
+			      setting-eq?-only-compares-symbols?
+			      "eq? only compares symbols"
 			      "next execution"
 			      dynamic-panel)]
 	     [sharing-printing?
 	      (make-check-box set-setting-sharing-printing?!
 			      setting-sharing-printing?
 			      "Show sharing in values?"
+			      "next interaction"
+			      output-syntax-panel)]
+	     [abbreviate-cons-as-list?
+	      (make-check-box set-setting-abbreviate-cons-as-list?!
+			      abbreviate-cons-as-list?
+			      "Abbreviate multiples cons's with list when possible?"
 			      "next interaction"
 			      output-syntax-panel)]
 	     [printer-number->symbol
@@ -257,9 +283,12 @@
 		  (and (compare-check-box case-sensitive? setting-case-sensitive?)
 		       (compare-check-box allow-set!-on-undefined? setting-allow-set!-on-undefined?)
 		       (compare-check-box unmatched-cond/case-is-error? setting-unmatched-cond/case-is-error?)
-		       (compare-check-box signal-undefined? setting-signal-undefined?)
+		       (compare-check-box signal-undefined setting-signal-undefined)
+		       (compare-check-box signal-not-boolean setting-signal-not-boolean)
+		       (compare-check-box eq?-only-compares-symbols? setting-eq?-only-compares-symbols?)
 		       (compare-check-box allow-improper-lists? setting-allow-improper-lists?)
 		       (compare-check-box sharing-printing? setting-sharing-printing?)
+		       (compare-check-box abbreviate-cons-as-list? setting-abbreviate-cons-as-list?)
 		       (eq? (printer-number->symbol (send printing get-selection))
 			    (setting-printing setting))
 		       (= (drscheme:basis:level->number (setting-vocabulary-symbol setting))
@@ -290,15 +319,21 @@
 		     (list setting-case-sensitive?
 			   setting-allow-set!-on-undefined?
 			   setting-unmatched-cond/case-is-error?
-			   setting-signal-undefined?
+			   setting-signal-undefined
+			   setting-signal-not-boolean
+			   setting-eq?-only-compares-symbols?
 			   setting-allow-improper-lists?
-			   setting-sharing-printing?)
+			   setting-sharing-printing?
+			   setting-abbreviate-cons-as-list?)
 		     (list case-sensitive? 
 			   allow-set!-on-undefined? 
 			   unmatched-cond/case-is-error?
-			   signal-undefined?
+			   signal-undefined
+			   signal-not-boolean
+			   eq?-only-compares-symbols?
 			   allow-improper-lists?
-			   sharing-printing?))
+			   sharing-printing?
+			   abbreviate-cons-as-list?))
 		(reset-choice))])
 	  (send language-choice stretchable-in-x #f)
 	  (send printing stretchable-in-x #f)
@@ -310,6 +345,7 @@
 		    (list language-panel ok-panel main))
 	  (send ok-button user-min-width (send cancel-button get-width))
 	  (mred:save-user-preferences)
+	  (send f center wx:const-both)
 	  (send f show #t)
 	  f)))
 

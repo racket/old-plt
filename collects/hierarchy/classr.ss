@@ -1,5 +1,4 @@
-(current-directory "/home/robby/plt/misc")
-(load "hierarchy.ss")
+(load-relative "hierarchy.ss")
 
 (define re:class "^@class ([^ ]*)")
 (define re:super "^@super[ ]?([^ ]*)")
@@ -23,18 +22,21 @@
 					  #f
 					  (string->symbol name)))]
 			     [class (string->symbol (second match-class))])
+			 (unless super
+			   (printf "class: ~a super: ~a~n" class super))
 			 (add-relation class super)))))))]
 	    [else (void)])
 	  (loop))))))
 
-(current-directory  "~robby/proj/doc/")
-(let loop ([files (directory-list)])
-  (cond
-   [(null? files) (void)]
-   [else (let ([file (car files)])
-	   (when (regexp-match re:cdb file)
-	     (call-with-input-file file process-cdb)))
-	 (loop (cdr files))]))
+(let ([dir "/home/robby/proj/doc/"])
+  (let loop ([files (directory-list dir)])
+    (cond
+     [(null? files) (void)]
+     [else (let ([file (car files)])
+	     (when (regexp-match re:cdb file)
+	       (call-with-input-file (build-path dir file) process-cdb)))
+	   (loop (cdr files))])))
 
-(define frame (build-canvas-frame))
-;(output-postscript "toolbox-hierarchy.ps" 1/2)
+;(define frame (build-canvas-frame))
+(current-directory  "~robby/plt/misc/")
+(output-postscript "toolbox-hierarchy.ps" "toolbox-hierarchy.map")

@@ -41,14 +41,17 @@
 		  x)))))
 
   (define current-interactions-edit%
-    (make-parameter 
-     drscheme:rep:edit%
-     (lambda (x)
-       (if (subclass? x wx:media-edit%)
-	   x
-	   (error 'current-interactions-edit% 
-		  "expected a subclass of wx:edit%, got: ~a"
-		  x)))))
+    (begin (make-parameter 
+	    drscheme:rep:edit%
+	    (lambda (x)
+	      (if (subclass? x wx:media-edit%)
+		  x
+		  (error 'current-interactions-edit% 
+			 "expected a subclass of wx:edit%, got: ~a"
+			 x))))
+	   (opt-lambda ([x #f])
+	     drscheme:rep:edit%)))
+	     
 
   (define current-definitions-edit%
     (make-parameter 

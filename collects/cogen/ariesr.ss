@@ -135,12 +135,12 @@
 	(letrec ((x x)) x))
 
       (define-struct (undefined struct:exn) (id))
-      (define signal-undefined? (make-parameter #t))
+      (define signal-undefined (make-parameter #t))
       (define undefined-error-format
 	 "Variable ~s referenced before definition or initialization")
 
       (define-struct (not-boolean struct:exn) (val))
-      (define signal-not-boolean? (make-parameter #t))
+      (define signal-not-boolean (make-parameter #f))
       (define not-boolean-error-format
 	"value ~e is neither #t nor #f")
 
@@ -148,22 +148,22 @@
 	(lambda (expr)
 	  (cond
 	    [(z:bound-varref? expr)
-	      (let ((v (z:varref-var expr))
-		     (real-v (z:binding-orig-name
-			       (z:bound-varref-binding expr))))
-		(if (signal-undefined?)
-		  (wrap expr
-		    `(#%if (#%eq? ,v ,the-undefined-value)
-		       (#%raise (,make-undefined
-				  ,(format undefined-error-format real-v)
-				  ((#%debug-info-handler))
-				  (#%quote ,v)))
-		       ,v))
-		  v))]
+	     (let ([v (z:varref-var expr)]
+		   [real-v (z:binding-orig-name
+			    (z:bound-varref-binding expr))])
+	       (if (signal-undefined)
+		   (wrap expr
+			 `(#%if (#%eq? ,v ,the-undefined-value)
+				(#%raise (,make-undefined
+					  ,(format undefined-error-format real-v)
+					  ((#%debug-info-handler))
+					  (#%quote ,v)))
+				,v))
+		   v))]
 
 	    [(z:top-level-varref? expr)
 	      (let ((v (z:varref-var expr)))
-		(if (signal-undefined?)
+		(if (signal-undefined)
 		  (wrap expr
 		    `(#%if (#%eq? ,v ,the-undefined-value)
 		       (#%raise (,make-undefined
@@ -195,21 +195,22 @@
 		 ,(map read->raw (z:struct-form-fields expr)))]
 
 	    [(z:if-form? expr)
-	      (if (z:language<=? 'structured)
-		`(#%let ((if-test-v ,(wrap (z:if-form-test expr)
-				       (annotate (z:if-form-test expr)))))
-		   (#%if (#%boolean? if-test-v)
-		     (#%if if-test-v
-		       ,(annotate (z:if-form-then expr))
-		       ,(annotate (z:if-form-else expr)))
-		     (#%raise (,make-not-boolean
-				(#%format ,not-boolean-error-format
-				  if-test-v)
-				((#%debug-info-handler))
-				if-test-v))))
-		`(#%if ,(annotate (z:if-form-test expr))
-		   ,(annotate (z:if-form-then expr))
-		   ,(annotate (z:if-form-else expr))))]
+	     (if (signal-not-boolean)
+		 (let ([if-test-v (gensym "if-test-v")])
+		   `(#%let ((,if-test-v ,(wrap (z:if-form-test expr)
+					       (annotate (z:if-form-test expr)))))
+			   (#%if (#%boolean? ,if-test-v)
+				 (#%if ,if-test-v
+				       ,(annotate (z:if-form-then expr))
+				       ,(annotate (z:if-form-else expr)))
+				 (#%raise (,make-not-boolean
+					   (#%format ,not-boolean-error-format
+						     ,if-test-v)
+					   ((#%debug-info-handler))
+					   ,if-test-v)))))
+		 `(#%if ,(annotate (z:if-form-test expr))
+			,(annotate (z:if-form-then expr))
+			,(annotate (z:if-form-else expr))))]
 
 	    [(z:quote-form? expr)
 	      `(#%quote ,(unparse-read (z:quote-form-expr expr)))]

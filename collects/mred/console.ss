@@ -186,7 +186,9 @@
 		   line-location get-admin
 		   set-position set-caret-owner
 		   clear-undos insert delete
-		   change-style styles-fixed? split-snip
+		   ;styles-fixed?
+		   set-styles-fixed
+		   change-style split-snip
 		   scroll-to-position locked? lock
 		   last-position get-start-position get-end-position
 		   get-text get-snip-position
@@ -199,6 +201,7 @@
 		  [super-on-paint on-paint]
 		  [super-after-set-size-constraint after-set-size-constraint])
 	  (public
+	    [styles-fixed? #f]
 	    [orig-stdout (current-output-port)]
 	    [orig-stderr (current-error-port)])
 	  (public
@@ -234,9 +237,12 @@
 	  (rename [super-on-insert on-insert]
 		  [super-on-delete on-delete]
 		  [super-on-change-style on-change-style]
+		  [super-on-focus on-focus]
 		  [super-after-insert after-insert]
 		  [super-after-delete after-delete]
-		  [super-after-set-position after-set-position])
+		  [super-after-set-position after-set-position]
+		  [super-after-edit-sequence after-edit-sequence]
+		  [super-on-edit-sequence on-edit-sequence])
 	  (private
 	    [find-which-previous-sexp
 	     (lambda ()
@@ -257,6 +263,7 @@
 	    [needs-to-move-left #f]
 	    [needs-to-move-right #f]
 	    [needs-to-move-original null]
+	    [edit-sequence-count 0]
 	    [after-something
 	     (lambda (super combine)
 	       (lambda (start len)
@@ -292,57 +299,62 @@
 		     (wx:message-box (format "replaced above"))
 		     (set! moving-down? #f))
 		   '(end-edit-sequence))))]
+	    [updating-highlighted-prompt #f]
 	    [on-something
-	     (opt-lambda (super [attend-to-styles-fixed? #f])
-	       (lambda (start len)
-		 (cond
-		   [(or resetting?
-			moving-down?
-			(not (number? prompt-position))
-			(>= start prompt-position)
-			(and attend-to-styles-fixed? styles-fixed?))
-		    ((super) start len)]
-		   [else 
-		    ;; remove #f at end of this clause to uncomment...
-		    '(let-values ([(left right) (find-which-previous-sexp)])
-		      (and left
-			   ((super) start len)
-			   (begin
-			     (when needs-to-move
-			       (wx:message-box "needs to move already #t!!" "Internal Error"))
-			     (set! needs-to-move #t)
-			     (fprintf mred:constants:original-output-port
-				      "left: ~a~nright: ~a~n" left right)
-			     (set! needs-to-move-left left)
-			     (set! needs-to-move-right right)
-			     (split-snip left)
-			     (split-snip right)
-			     (set! needs-to-move-original
-				   (let loop ([snip (find-snip left wx:const-snip-after)])
-				     (cond
-				       [(null? snip) null]
-				       [(< (get-snip-position snip) right)
-					(fprintf mred:constants:original-output-port
-						 "snip pos: ~a~n right: ~a~n"
-						 (get-snip-position snip)
-						 right)
-					(fprintf mred:constants:original-output-port
-						 "orig-text: ~a~n" (send snip get-text 0 10000))
-					(cons (send snip copy) (loop (send snip next)))]
-				       [else null])))
-			     '(begin-edit-sequence)
-			     #t)))
-		    #f])))])
-			     
+	     (opt-lambda (super start len [attend-to-styles-fixed? #f])
+	       (cond
+		[(or resetting?
+		     moving-down?
+		     updating-highlighted-prompt
+		     (not (number? prompt-position))
+		     (>= start prompt-position)
+		     (and attend-to-styles-fixed? styles-fixed?))
+		 ((super) start len)]
+		[else 
+		 ;; remove #f at end of this clause to uncomment...
+		 '(let-values ([(left right) (find-which-previous-sexp)])
+		    (and left
+			 ((super) start len)
+			 (begin
+			   (when needs-to-move
+			     (wx:message-box "needs to move already #t!!" "Internal Error"))
+			   (set! needs-to-move #t)
+			   (fprintf mred:constants:original-output-port
+				    "left: ~a~nright: ~a~n" left right)
+			   (set! needs-to-move-left left)
+			   (set! needs-to-move-right right)
+			   (split-snip left)
+			   (split-snip right)
+			   (set! needs-to-move-original
+				 (let loop ([snip (find-snip left wx:const-snip-after)])
+				   (cond
+				    [(null? snip) null]
+				    [(< (get-snip-position snip) right)
+				     (fprintf mred:constants:original-output-port
+					      "snip pos: ~a~n right: ~a~n"
+					      (get-snip-position snip)
+					      right)
+				     (fprintf mred:constants:original-output-port
+					      "orig-text: ~a~n" (send snip get-text 0 10000))
+				     (cons (send snip copy) (loop (send snip next)))]
+				    [else null])))
+			   '(begin-edit-sequence)
+			   #t)))
+		 #f]))])
 	  (public
 	    [resetting? #f]
 	    [set-resetting (lambda (v) (set! resetting? v))]
-	    [on-insert (on-something (lambda () super-on-insert))]
-	    [on-delete (on-something (lambda () super-on-delete))]
-	    [on-change-style (on-something (lambda () super-on-change-style) #t)]
-	    [after-insert (after-something (lambda () super-after-insert) +)]
-	    [after-delete (after-something (lambda () super-after-delete) -)]
-	    [after-set-position
+	    [on-insert
+	     (lambda (x y)
+	       (on-something (lambda () super-on-insert) x y))]
+	    [on-delete
+	     (lambda (x y)
+	       (on-something (lambda () super-on-delete) x y))]
+	    [on-change-style
+	     (lambda (x y)
+	       (on-something (lambda () super-on-change-style) x y #t))]
+	    [has-focus? #t]
+	    [update-highlighted-prompt
 	     (let ([last-start #f]
 		   [last-end #f]
 		   [plain (make-object wx:style-delta% wx:const-change-weight wx:const-normal)]
@@ -350,21 +362,69 @@
 	       (send at-prompt set-delta-foreground "FIREBRICK")
 	       (send plain set-delta-foreground "BLACK")
 	       (lambda ()
-		 (let*-values ([(left right) (find-which-previous-sexp)])
-		   (if left
-		       (let ([prompt-start (- left (string-length (get-prompt)))])
-			 (when (or (not last-start)
-				   (not (= last-start prompt-start)))
-			   (when last-start
-			     (change-style plain last-start last-end))
-			   (change-style at-prompt prompt-start left)
-			   (set! last-start prompt-start)
-			   (set! last-end left)))
-		       (when last-start
-			 (change-style plain last-start last-end)
-			   (set! last-start #f)
-			   (set! last-end #f))))
-		 (super-after-set-position)))])
+		 (when (and (not updating-highlighted-prompt)
+			    (zero? edit-sequence-count))
+		   (set! updating-highlighted-prompt #t)
+		   (begin-edit-sequence)
+		   (let ([local-styles-fixed styles-fixed?]
+			 [local-locked? locked?]
+			 [clear-out
+			  (lambda ()
+			    (when last-start
+			      (change-style plain last-start last-end)
+			      (set! last-start #f)
+			      (set! last-end #f)))])
+		     (set-styles-fixed #f)
+		     (lock #f)
+		     (if has-focus?
+			 (let*-values ([(left right) (find-which-previous-sexp)]
+				       [(start end) (values (get-start-position)
+							    (get-end-position))])
+			   (when (and prompt-mode?
+				      (<= prompt-position start)
+				      (<= prompt-position end))
+			     (set! left prompt-position))
+			   (if left
+			       (let ([prompt-start (- left (string-length (get-prompt)))])
+				 (when (or (not last-start)
+					   (not (= last-start prompt-start)))
+				   (clear-out)
+				   (change-style at-prompt prompt-start left)
+				   (set! last-start prompt-start)
+				   (set! last-end left)))
+			       (clear-out)))
+			 (clear-out))
+		     (lock local-locked?)
+		     (set-styles-fixed local-styles-fixed))
+		   (end-edit-sequence)
+		   (set! updating-highlighted-prompt #f))))]
+	    [on-focus
+	     (lambda (on?)
+	       (set! has-focus? on?)
+	       (update-highlighted-prompt)
+	       (super-on-focus on?))]
+	    [after-insert
+	     (lambda (x y)
+	       (update-highlighted-prompt)
+	       (super-after-insert x y))]
+	    [after-delete
+	     (lambda (x y)
+	       (update-highlighted-prompt)
+	       (super-after-delete x y))]
+	    [on-edit-sequence
+	     (lambda ()
+	       (and (super-on-edit-sequence)
+		    (begin (set! edit-sequence-count (add1 edit-sequence-count))
+			   #t)))]
+	    [after-edit-sequence
+	     (lambda ()
+	       (set! edit-sequence-count (sub1 edit-sequence-count))
+	       (update-highlighted-prompt)
+	       (super-after-edit-sequence))]
+	    [after-set-position
+	     (lambda ()
+	       (update-highlighted-prompt)
+	       (super-after-set-position))])
 	  
 	  (private
 	    [last-str (lambda (l)
@@ -548,6 +608,9 @@
 	    [max-save-previous-exprs console-max-save-previous-exprs]
 	    [previous-expr-pos -1]
 	    [previous-expr-positions null]
+	    [clear-previous-expr-positions
+	     (lambda ()
+	       (set! previous-expr-positions null))]
 	    [copy-previous-expr
 	     (lambda (which)
 	       (let ([snips (list-ref previous-exprs which)])
@@ -747,12 +810,12 @@
 		   (insert (get-prompt) last)
 		   (change-style normal-delta last (last-position)))
 		 (set! prompt-position (last-position))
-		 (clear-undos)
+		 ;(clear-undos)
+		 (flush-console-output)
 		 (unless (= start-selection end-selection)
 		   (set-position start-selection end-selection) 
 		   (scroll-to-position start-selection (last-position) 1))
-		 (end-edit-sequence)
-		 (flush-console-output)))])
+		 (end-edit-sequence)))])
 	  
 	  (public
 	    [reset-console-start-position 0]
@@ -836,7 +899,7 @@
 		   (begin-edit-sequence)
 		   (lock #f)
 		   (insert #\newline (last-position))
-		   (lock c-locked)		   
+		   (lock c-locked)	   
 		   (end-edit-sequence))))]
 	    
 	    [initialize-console
@@ -890,12 +953,12 @@
 						     (list this-out-write this-err-write this-result-write)))])
 				    (doit)
 				    (with-parameterization user-parameterization doit))))])
+	  (public [user-parameterization (make-parameterization)])
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-edit%")
 	    (apply super-init args)
 	    (mred:debug:printf 'super-init "after console-edit%")
 	    (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
-	  (public [user-parameterization (make-parameterization)])
 	  (sequence
 	    (takeover)
 	    (with-parameterization user-parameterization

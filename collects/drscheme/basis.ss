@@ -35,7 +35,7 @@
 	       (if (unit/sig? new-unit)
 		   (set! library-unit new-unit)
 		   (begin
-		     (mred:message-box (format "Invalid Library: ~a" v) "ERROR")
+		     (mred:message-box (format "Invalid Library: ~a" v) "Error")
 		     #f)))
 	     (set! library-unit #f)))))
     

@@ -90,7 +90,9 @@
 	    (send* e (insert s) (lock #t))
 	    (send button set-focus)
 	    (send bottom-panel stretchable-in-y #f)
-	    (send* f (set-size -1 -1 400 200) (show #t))
+	    (send f set-size -1 -1 400 200)
+	    (send f center wx:const-both)
+	    (send f show #t)
 	    f))))
 
     (define cursor-delay

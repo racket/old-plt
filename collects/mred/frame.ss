@@ -288,6 +288,11 @@
 
     (define standard-menus-frame% (make-standard-menus-frame% menu-frame%))
 
+
+    (mred:preferences:set-preference-default 'mred:print-output-mode
+					     0
+					     (lambda (x) (or (= x 0) (= x 1))))
+
     (define make-simple-frame%
       (lambda (super%)
 	(class super% ([name mred:application:app-name])
@@ -384,7 +389,12 @@
 			 (when (active-canvas)
 			   (send panel collapse (active-canvas))))))
 	       (send file-menu append-separator))]
-	    [file-menu:print (lambda () (send (get-edit) print '()) #t)])
+	    [file-menu:print (lambda ()
+			       (send (get-edit) print
+				     '() #t
+				     (mred:preferences:get-preference
+				      'mred:print-output-mode))
+			       #t)])
 	  
 	  
 	  (private
@@ -911,87 +921,93 @@
 			     (remove-pref-callback)
 			     (close-panel-callback)
 			     #t)))])
-	    
-	    (public
-	      [overwrite-status-changed
-	       (let ([last-state? #f])
-		 (lambda ()
-		   (let ([overwrite-now? (send (get-info-edit)
-					       get-overwrite-mode)])
-		     (unless (eq? overwrite-now? last-state?)
-		       (send overwrite-message
-			     show
-			     overwrite-now?)
-		       (set! last-state? overwrite-now?)))))]
-	      [anchor-status-changed
-	       (let ([last-state? #f])
-		 (lambda ()
-		   (let ([anchor-now? (send (get-info-edit)
-					    get-anchor)])
-		     (unless (eq? anchor-now? last-state?)
-		       (send anchor-message
-			     show
-			     anchor-now?)
-		       (set! last-state? anchor-now?)))))]
-	      [lock-status-changed
-	       (let ([icon-currently-locked? #f])
-		 (lambda ()
-		   (let ([locked-now? (ivar (get-info-edit) locked?)])
-		     (unless (eq? locked-now? icon-currently-locked?)
-		       (mred:debug:printf 'lock-icon 
-					  "lock-icon: setting to: ~a"
-					  locked-now?)
-		       (set! icon-currently-locked? locked-now?)
-		       (let ([label
-			      (if locked-now?
-				  (cons (mred:icon:get-lock-mdc)
-					(mred:icon:get-lock-bitmap))
-				  (cons (mred:icon:get-unlock-mdc)
-					(mred:icon:get-unlock-bitmap)))])
-			 (send lock-message
-			       set-label
-			       (if (send (car label) ok?)
-				   label
-				   (if locked-now? "Locked" "Unlocked"))))))))]
-	      
-	      [edit-position-changed-offset
-	       (lambda (offset?)
-		 (let ([edit (get-info-edit)])
-		   (let ([start (send edit get-start-position)]
-			 [end (send edit get-end-position)]
-			 [make-one
-			  (lambda (pos)
-			    (let* ([line (send edit position-line pos)]
-				   [line-start (send edit line-start-position line)]
-				   [char (- pos line-start)])
-			      (format "~a:~a"
-				      (if offset?
-					  (add1 line)
-					  line)
-				      (if offset?
-					  (add1 char)
-					  char))))])
-		     (when (object? position-edit)
-		       (send* position-edit
-			      (lock #f)
-			      (erase)
-			      (insert 
-			       (if (= start end)
-				   (make-one start)
-				   (string-append (make-one start)
-						  "-"
-						  (make-one end))))
- 			      (lock #t))))))]
-	      [edit-position-changed
-	       (lambda ()
-		 (edit-position-changed-offset
-		  (mred:preferences:get-preference 'mred:line-offsets)))])
 
 	    (inherit get-edit)
 	    (public
 	      [get-info-edit
 	       (lambda ()
-		 (get-edit))])
+		 (and (procedure? get-edit)
+		      (get-edit)))])
+
+	    (public
+	      [overwrite-status-changed
+	       (let ([last-state? #f])
+		 (lambda ()
+		   (let ([info-edit (get-info-edit)])
+		     (when info-edit
+		       (let ([overwrite-now? (send info-edit get-overwrite-mode)])
+			 (unless (eq? overwrite-now? last-state?)
+			   (send overwrite-message
+				 show
+				 overwrite-now?)
+			   (set! last-state? overwrite-now?)))))))]
+	      [anchor-status-changed
+	       (let ([last-state? #f])
+		 (lambda ()
+		   (let ([info-edit (get-info-edit)])
+		     (when info-edit
+		       (let ([anchor-now? (send info-edit get-anchor)])
+			 (unless (eq? anchor-now? last-state?)
+			   (send anchor-message
+				 show
+				 anchor-now?)
+			   (set! last-state? anchor-now?)))))))]
+	      [lock-status-changed
+	       (let ([icon-currently-locked? #f])
+		 (lambda ()
+		   (let ([info-edit (get-info-edit)])
+		     (when info-edit
+		       (let ([locked-now? (ivar info-edit locked?)])
+			 (unless (eq? locked-now? icon-currently-locked?)
+			   (mred:debug:printf 'lock-icon 
+					      "lock-icon: setting to: ~a"
+					      locked-now?)
+			   (set! icon-currently-locked? locked-now?)
+			   (let ([label
+				  (if locked-now?
+				      (cons (mred:icon:get-lock-mdc)
+					    (mred:icon:get-lock-bitmap))
+				      (cons (mred:icon:get-unlock-mdc)
+					    (mred:icon:get-unlock-bitmap)))])
+			     (send lock-message
+				   set-label
+				   (if (send (car label) ok?)
+				       label
+				       (if locked-now? "Locked" "Unlocked"))))))))))]
+	      
+	      [edit-position-changed-offset
+	       (lambda (offset?)
+		 (let ([edit (get-info-edit)])
+		   (when edit
+		     (let ([start (send edit get-start-position)]
+			   [end (send edit get-end-position)]
+			   [make-one
+			    (lambda (pos)
+			      (let* ([line (send edit position-line pos)]
+				     [line-start (send edit line-start-position line)]
+				     [char (- pos line-start)])
+				(format "~a:~a"
+					(if offset?
+					    (add1 line)
+					    line)
+					(if offset?
+					    (add1 char)
+					    char))))])
+		       (when (object? position-edit)
+			 (send* position-edit
+				(lock #f)
+				(erase)
+				(insert 
+				 (if (= start end)
+				     (make-one start)
+				     (string-append (make-one start)
+						    "-"
+						    (make-one end))))
+				(lock #t)))))))]
+	      [edit-position-changed
+	       (lambda ()
+		 (edit-position-changed-offset
+		  (mred:preferences:get-preference 'mred:line-offsets)))])
 	    (public
 	      [update-info
 	       (lambda ()

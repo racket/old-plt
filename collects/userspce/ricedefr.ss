@@ -4,6 +4,24 @@
     (import)
     
     (define allow-improper-lists (make-parameter #t))
+    (define eq?-only-compares-symbols? (make-parameter #f))
+
+    (define boolean=?
+      (lambda (x y)
+	(unless (boolean? x)
+	  (error 'boolean=? "expected boolean arguments, received ~a ~a"
+		 x y))
+	(if x
+	    y
+	    (not y))))
+
+    (define eq?
+      (lambda (x y)
+	(when (and (eq?-only-compares-symbols?)
+		   (not (and (symbol? x)
+			     (symbol? y))))
+	  (error 'eq? "expected symbols as arguments, received ~a ~a" x y))
+	(#%eq? x y)))
 
     (define last
       (lambda (l)

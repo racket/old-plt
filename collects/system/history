@@ -2,6 +2,10 @@ SYSTEM HISTORY
 --------------
 Version 50:
 
+- added mred:get-single-choice, which takes the same arguments as
+  wx:get-single-choice. It works the same, unless the dialog is
+  resized, in which case the mred: version resizes gracefully.
+
 - All of the icons in mred are now loaded lazily (but only once),
   and their names are prefixed with "get-". They are now:
 

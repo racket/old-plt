@@ -22,7 +22,7 @@ OBJECTS = $(OBJDIR)/wx_style.o $(CLIPOBJ) $(OBJDIR)/wx_keym.o $(OBJDIR)/wx_mbuf.
 
 ALLHEADERS = wx_ptreq.h wx_mtype.h
 HEADERS = wx_media.h wx_medad.h wx_cgrec.h wx_medio.h wx_style.h \
-          $(ALLHEADERS)
+          $(ALLHEADERS) $(WXDIR)/src/Windows/Window.h
 
 # Used only when bundling a distribution
 HIDEDIR = /home/mflatt/mredhide

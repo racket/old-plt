@@ -51,10 +51,8 @@ Linux), some of the variables may need to be changed:
      configuration.
 
 Once all of the setup files are ready, go to plt/src/mred and run
-`gnumake wx'. (Did you get a "no targets" make error? In that case,
-are you using GNU's make, which reads "GNUmakefile"?) `gnumake wx'
-compiles everything in plt/src/wxwindow or plt/src/wxxt. When that
-completes, run `gnumake' to compile MrEd.
+`gnumake'. (Did you get a "no targets" make error? In that case, are
+you using GNU's make, which reads "GNUmakefile"?)
 
 After MrEd is built, run `gnumake install' to install the binary
 into the plt/ hierarchy.

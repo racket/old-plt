@@ -36,6 +36,8 @@ MRSTATIC_STUB =
 
 MRCHECK =
 
+WXINCDEP = $(WXDIR)/src/Windows/Window.h
+
 # For SGIs and gcc 2.7.2, I needed a hack
 # (not needed with CC)
 SGILINKHACK =
@@ -49,6 +51,7 @@ FTPDIR = /home/scheme/FTP/plt/staging
 
 all:  objects $(OBJDIR)
 	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib++
+	$(MAKE) wx
 	if [ -f wrap/wrap.ss ] ; then $(MAKE) mred-wrap ; fi
 	cd wxs; $(MAKE) WXDIR='$(WXDIR)'
 	cd wxme; $(MAKE) WXDIR='$(WXDIR)'
@@ -92,7 +95,7 @@ wx:
 	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
-                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h
+                   ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP)
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
 
 $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o

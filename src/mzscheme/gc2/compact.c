@@ -3536,6 +3536,23 @@ void *GC_resolve(void *p)
   return p;
 }
 
+void *malloc_pages_try_hard(size_t len, size_t alignment)
+{
+  int i = 5;
+  while(i--) {
+    m = malloc_pages(len, alignment);
+    if (m)
+      return m;
+    gcollect(1);
+  }
+
+  if (GC_out_of_memory)
+    GC_out_of_memory();
+
+  printf("Out of memory\n");
+  abort();
+}
+
 /**********************************************************************/
 
 static MPage *get_page_rec(void *p, mtype_t mtype)

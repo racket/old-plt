@@ -1663,7 +1663,7 @@
 						      (format " ~a bytes" sz)
 						      ""))
 					  (lambda (t s e)
-					    (send t set-clickback s e
+					    (send t set-clickback s (sub1 e)
 						  (let ([s #f])
 						    (lambda (a b c)
 						      (let ([fn (put-file "Save Attachement As"
@@ -1678,7 +1678,7 @@
 							      (display s))
 							    'truncate/replace)))))
 						  #f #f)
-					    (send t change-style url-delta s e)))))])
+					    (send t change-style url-delta s (sub1 e))))))])
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
                             (cond

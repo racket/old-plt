@@ -653,7 +653,10 @@
       (public
 	[do-many-buffer-evals
 	 (lambda (edit start end)
-	   (unless in-evaluation?
+	   (semaphore-wait in-evaluation-semaphore)
+	   (cond
+	    [in-evaluation?
+	     (semaphore-post in-evaluation-semaphore)
 	     (send (get-top-level-window) disable-evaluation)
 	     (reset-break-state)
 	     (cleanup-transparent-io)
@@ -688,7 +691,10 @@
 					  (recur))]))
 				    start
 				    end
-				    #t)))))))))])
+				    #t)))))))]
+	    [else
+	     (semaphore-post in-evaluation-semaphore)
+	     (mred:bell)]))])
       (private
 	[shutdown-user-custodian
 	 (lambda ()
@@ -737,8 +743,6 @@
 	[thread-grace 'not-yet-thread-grace]
 	[thread-kill 'not-yet-thread-kill]
 	
-	[already-protecting? #f]
-
 	[killed-callback void]
 	[thread-killed 'not-yet-thread-killed]
 	[initialize-killed-thread
@@ -837,6 +841,8 @@
 	  [start-callback? #f]
 
 	  [evaluation-running #f]
+	  [evaluation-running-semaphore (make-semaphore 1)]
+
 	  [event-started (make-semaphore 0)]
 	  [running-callback-start
 	   (lambda ()
@@ -848,20 +854,31 @@
 	       (break-thread running-thread)
 	       (semaphore-post event-started)
 	       (set! ok-to-break #f))
-	     (when evaluation-running
-	       (update-running #f))
+	     (conditionally-turn-running-off)
 	     (semaphore-post ok-to-break-semaphore))]
 	  [update-running
-	   (lambda (flag)
-	     ;; need to handle nestings!
+	   (case-lambda
+	    [(flag) (update-running flag #f)]
+	    [(flag got-semaphore?)
+	     (unless got-semaphore?
+	       (semaphore-wait evaluation-running-semaphore))
 	     (when (eq? flag evaluation-running)
+	       (semaphore-post evaluation-running-semaphore)
 	       (error 'update-running "flags are already the same (~a)!" flag))
 	     (set! evaluation-running flag)
 	     (system
 	      (lambda ()
 		(if evaluation-running
 		    (mred:queue-callback (lambda () (send (get-top-level-window) running)))
-		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running)))))))]
+		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running))))))
+	     (unless got-semaphore?
+	       (semaphore-post evaluation-running-semaphore))])]
+	  [conditionally-turn-running-off
+	   (lambda ()
+	     (semaphore-wait evaluation-running-semaphore)
+	     (when evaluation-running
+	       (update-running #f #t))
+	     (semaphore-post evaluation-running-semaphore))]
 	  [running-thread
 	   (thread
 	    (rec loop
@@ -1020,20 +1037,22 @@
 
 			    (set! depth (+ depth 1))
 
-			    (when (and (= depth 1)
-				       (not in-evaluation?))
+			    (cond
+			     [(and (= depth 1)
+				   (not in-evaluation?))
 			      (reset-break-state)
 			      (running-callback-start)
 			      
 			      (protect-user-evaluation
 			       (lambda ()
-				 (running-callback-stop))
+				 (running-callback-stop)
+				 (set! depth (- depth 1)))
 			       (lambda ()
 				 (mzlib:thread:dynamic-enable-break
 				  (lambda ()
-				    (primitive-dispatch-handler eventspace))))))
-
-			    (set! depth (- depth 1))]
+				    (primitive-dispatch-handler eventspace)))))]
+			     [else
+			      (set! depth (- depth 1))])]
 			   [else (primitive-dispatch-handler eventspace)])))))))))])
 	
       (override
@@ -1047,6 +1066,7 @@
 	   ;; in case the last evaluation thread was killed, clean up some state.
 	   (lock #f)
 	   (set! in-evaluation? #f)
+	   (conditionally-turn-running-off)
 
 	   (begin-edit-sequence)
 	   (set-resetting #t)

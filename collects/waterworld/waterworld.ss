@@ -6,7 +6,7 @@
   (require (lib "mred.ss" "mred"))
   (require (lib "browser.ss" "net"))
   
-  (define *frame-label* "WaterWorld")
+  (define *progname* "WaterWorld")
 
   (define *prefs-file* 
 	(let*-values 
@@ -524,7 +524,7 @@
 	(lambda (assignment loc safe?)
 	  (let ([mbox-result
 		 (message-box/custom 
-		  "WaterWorld"
+		  *progname*
 		  (fold-string
 		   "There is a counterexample to your claim"
 		   (if teaching-mode?
@@ -886,6 +886,8 @@
 			  (send rand-loc make-unsafe!)
 			  (loop (add1 i)))
 			(loop i)))))
+	  (send frame set-default-label!)
+	  (calc-neighbors!)
 	  (reset-pirate-counts!)
 	  (clear-counterexample!)
 	  (reset-ww-message!)
@@ -895,6 +897,11 @@
 	  (set! pirates-left unsafe-count)
 	  (set! num-concealed (* rows columns))
 	  (calc-pirates-ratio!))]
+       [calc-neighbors!
+	(lambda ()
+	  (board-for-each
+	   (lambda (loc)
+	     (get-neighbors loc))))]
        [calc-frontier!
 	(lambda ()
 	  (reset-frontier!)
@@ -966,7 +973,7 @@
        [load-from-file 
 	(lambda (filename)
 	  (if (not (file-exists? filename))
-	      (message-box *frame-label*
+	      (message-box *progname*
 			   (format "WaterWorld game file \"~a\" does not exist" filename)
 			   frame)
 	      (with-input-from-file filename
@@ -981,6 +988,8 @@
 		      [(concealed-tally) 0])
 		     (set! rows (cadr row-info))
 		     (set! columns (cadr col-info))
+		     (send canvas set-board-size! rows columns)
+		     (send canvas update-teaching-mode!)
 		     (set! board-vector
 			   (build-vector
 			    rows
@@ -1017,6 +1026,8 @@
 							(* rows columns)))))
 		     (set! pirates-left pirates-left-tally)
 		     (set! num-concealed concealed-tally)
+		     (clear-counterexample!)
+		     (set-unsafe-count!)
 		     (set-unsafe-count!)
 		     (calc-frontier!)
 		     (calc-unsafe!)
@@ -1046,6 +1057,10 @@
 	   (init-field board)
 	   (inherit set-label show get-label get-x get-y)
 	   (field
+	    [frame-label *progname*]
+	    [game-over-frame-label 
+	     (string-append frame-label
+			    " [game over]")]
 	    [current-filename #f]
 	    [canvas #f]
 	    [new-game-panel #f]
@@ -1061,6 +1076,10 @@
 	     (lambda (loc) 
 	       (send canvas paint-tile loc))])
 	   (public*
+	    [set-default-label!
+	     (lambda () (set-label frame-label))]
+	    [set-game-over-label!
+	     (lambda () (set-label game-over-frame-label))]
 	    [set-ce-button-state!
 	     (lambda (v)
 	       (send clear-counterexample-button enable v)
@@ -1692,7 +1711,7 @@
 				      (send e get-control-down))
 				(send frame update-status!)
 				(when (zero? (send board get-num-concealed))
-				      (ww-message "Game over!"))))
+				      (send frame set-game-over-label!))))
 			 (semaphore-post *click-sem*))))]
 	      [on-paint
 	       (lambda () 
@@ -1717,7 +1736,7 @@
       (instantiate ww-frame%
 		   ()
 		   (board (instantiate board% ()))
-		   (label *frame-label*)
+		   (label *progname*)
 		   (style '(no-resize-border))))
     
     (send frame new-game)

@@ -1676,7 +1676,7 @@
                                  state->equiv-class
                                  (vector-ref (vector-ref argss row) col))))))]
                  [(eq? 'cons (car b))
-                  (let ([pos (cdr b)])
+                  (let ([pos (cadr b)])
                     (and (cons-state? q0)
                          (get-equiv-class-of-state
                           state->equiv-class

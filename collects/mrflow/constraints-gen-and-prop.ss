@@ -75,11 +75,19 @@
                             hashcons-tbl
                             ))
   
+  ; label -> boolean
+  ; is the term associated with a label registerable (i.e. does it have
+  ; an actual term associated with it in the user's code)?
+  (define (gui-registerable? label)
+    (let ([term (label-term label)])
+      (or (syntax-original? term)
+          (syntax-property term 'origin))))
+  
   (set! make-sba-state
         (let ([real-make-sba-state make-sba-state])
           (lambda (register-label-with-gui)
             (real-make-sba-state (lambda (label)
-                                   (when (syntax-original? (label-term label))
+                                   (when (gui-registerable? label)
                                      (register-label-with-gui label)))
                                  (err:error-table-make)
                                  (make-hash-table)
@@ -4694,7 +4702,7 @@
                         [direct-or-indirect-original-parents
                          (list:foldr
                           (lambda (direct-parent original-parents-so-far)
-                            (if (syntax-original? (label-term direct-parent))
+                            (if (gui-registerable? direct-parent)
                                 (cons direct-parent original-parents-so-far)
                                 (merge-lists (get-parents-from-label direct-parent (cons label trace))
                                              original-parents-so-far)))
@@ -4729,7 +4737,7 @@
                         [direct-or-indirect-original-children
                          (list:foldr
                           (lambda (direct-child original-children-so-far)
-                            (if (syntax-original? (label-term direct-child))
+                            (if (gui-registerable? direct-child)
                                 (cons direct-child original-children-so-far)
                                 (merge-lists (get-children-from-label direct-child (cons label trace))
                                              original-children-so-far)))

@@ -435,14 +435,25 @@
   (compiler:option:verbose (compiler-verbose))
   (compiler:option:compile-subcollections #f))
 
+(define errors null)
+(define (record-error cc desc go)
+  (with-handlers ([void (lambda (x)
+			  (fprintf (current-error-port) "~a~n" (exn-message x))
+			  (set! errors (cons (cons cc desc) errors)))])
+    (go)))
+
 (define (make-it desc compile-collection)
   (for-each (lambda (cc)
-	      (unless
-	       (control-io-apply 
-		(lambda (p) (fprintf p "Making ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc)))
-		compile-collection 
-		(cc-collection cc))
-	       (printf "No need to make ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc))))
+	      (record-error
+	       cc
+	       (format "Making ~a" desc)
+	       (lambda ()
+		 (unless
+		     (control-io-apply 
+		      (lambda (p) (fprintf p "Making ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc)))
+		      compile-collection 
+		      (cc-collection cc))
+		   (printf "No need to make ~a for ~a at ~a~n" desc (cc-name cc) (cc-path cc))))))
 	    collections-to-compile))
 
 (when (make-zo)
@@ -461,50 +472,68 @@
        (error "result is not a list of relative path strings:" l)))
   (require-library "launcher.ss" "launcher")
   (for-each (lambda (cc)
-	      (when (= 1 (length (cc-collection cc)))
-		  (let ([info (cc-info cc)])
-		    (map
-		     (lambda (kind
-			      mzscheme-launcher-libraries
-			      mzscheme-launcher-names
-			      mzscheme-program-launcher-path
-			      install-mzscheme-program-launcher)
-		       (let ([mzlls (call-info info mzscheme-launcher-libraries null
-					       name-list)]
-			     [mzlns (call-info info mzscheme-launcher-names null
-					       name-list)])
-			 (if (= (length mzlls) (length mzlns))
-			     (map
-			      (lambda (mzll mzln)
-				(let ([p (mzscheme-program-launcher-path mzln)])
-			       (unless (file-exists? p)
-				 (printf "Installing ~a launcher ~a~n" kind p)
-				 (install-mzscheme-program-launcher 
-				  mzll
-				  (car (cc-collection cc))
-				  mzln))))
-			      mzlls mzlns)
-			     (printf "Warning: ~a launcher library list ~s doesn't match name list ~s~n"
-				     kind mzlls mzlns))))
-		     '("MzScheme" "MrEd")
-		     '(mzscheme-launcher-libraries mred-launcher-libraries)
-		     '(mzscheme-launcher-names mred-launcher-names)
-		     (list mzscheme-program-launcher-path mred-program-launcher-path)
-		     (list install-mzscheme-program-launcher install-mred-program-launcher)))))
+	      (record-error
+	       cc
+	       "Launcher Setup"
+	       (lambda ()
+		 (when (= 1 (length (cc-collection cc)))
+		   (let ([info (cc-info cc)])
+		     (map
+		      (lambda (kind
+			       mzscheme-launcher-libraries
+			       mzscheme-launcher-names
+			       mzscheme-program-launcher-path
+			       install-mzscheme-program-launcher)
+			(let ([mzlls (call-info info mzscheme-launcher-libraries null
+						name-list)]
+			      [mzlns (call-info info mzscheme-launcher-names null
+						name-list)])
+			  (if (= (length mzlls) (length mzlns))
+			      (map
+			       (lambda (mzll mzln)
+				 (let ([p (mzscheme-program-launcher-path mzln)])
+				   (unless (file-exists? p)
+				     (printf "Installing ~a launcher ~a~n" kind p)
+				     (install-mzscheme-program-launcher 
+				      mzll
+				      (car (cc-collection cc))
+				      mzln))))
+			       mzlls mzlns)
+			      (printf "Warning: ~a launcher library list ~s doesn't match name list ~s~n"
+				      kind mzlls mzlns))))
+		      '("MzScheme" "MrEd")
+		      '(mzscheme-launcher-libraries mred-launcher-libraries)
+		      '(mzscheme-launcher-names mred-launcher-names)
+		      (list mzscheme-program-launcher-path mred-program-launcher-path)
+		      (list install-mzscheme-program-launcher install-mred-program-launcher)))))))
 	    collections-to-compile))
 
 (when (call-install)
   (let ()
     (for-each (lambda (cc)
-		(let ([t (call-info (cc-info cc) 'install-collection void
-				    (lambda (p)
-				      (unless (and (procedure? p)
-						   (procedure-arity-includes? p 1))
-					      (error "result is not a procedure of arity 1"))))])
-		  (with-handlers ([void (lambda (x)
-					  (warning "Warning: error running installer: ~a~n"
-						   x))])
-		     (t plthome))))
+		(record-error
+		 cc
+		 "General Install"
+		 (lambda ()
+		   (let ([t (call-info (cc-info cc) 'install-collection void
+				       (lambda (p)
+					 (unless (and (procedure? p)
+						      (procedure-arity-includes? p 1))
+					   (error "result is not a procedure of arity 1"))))])
+		     (with-handlers ([void (lambda (x)
+					     (warning "Warning: error running installer: ~a~n"
+						      x))])
+		       (t plthome))))))
 	      collections-to-compile)))
 
 (printf "Done setting up~n")
+
+(unless (null? errors)
+  (for-each
+   (lambda (e)
+     (let ([cc (car e)]
+	   [desc (cdr e)])
+       (fprintf (current-error-port) " Error during ~a for ~a (~a)~n"
+		desc (cc-name cc) (cc-path cc))))
+   errors)
+  (exit -1))

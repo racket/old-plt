@@ -27,7 +27,7 @@
               (drscheme:teachpack : drscheme:teachpack^)
               [drscheme:module-language : drscheme:module-language^])
       
-      (finder:default-extension "scm")
+      (finder:default-filters (cons '("Scheme (.scm)" "*.scm") (finder:default-filters)))
       (application:current-app-name (string-constant drscheme))
       ;(version:add-spec 'd 7)
       

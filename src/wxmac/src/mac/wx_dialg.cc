@@ -275,6 +275,13 @@ int log_base_10(int i)
 # define PATH_SEPARATOR ""
 #endif
 
+static void ExtensionCallback(NavEventCallbackMessage callBackSelector, 
+			      NavCBRecPtr callBackParms, 
+			      void *callBackUD)
+{
+  /* action here */
+}
+
 static char *GetNthPath(NavReplyRecord *reply, int index)
 {
   AEKeyword   theKeyword;
@@ -302,12 +309,20 @@ static char *GetNthPath(NavReplyRecord *reply, int index)
   return wxFSRefToPath(fsref);
 }
 
+static CFStringRef clientName = CFSTR("MrEd");
+static NavEventUPP extProc = NewNavEventUPP(ExtensionCallback);
+
 char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,
                      char *wildcard, int flags,
                      wxWindow *parent, int x, int y)
 {
   if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
+    NavDialogRef outDialog;
+    NavTypeListHandle openListH = NULL;
+    OSErr derr;
+    NavDialogCreationOptions dialogOptions;
+
     if (!navinited) {
       if (!NavLoad()) {
 	navinited = 1;
@@ -319,38 +334,40 @@ char *wxFileSelector(char *message, char *default_path,
       } 
     }
 
-    static CFStringRef clientName = CFSTR("MrEd");
-
-    NavDialogCreationOptions dialogOptions;
     NavGetDefaultDialogCreationOptions(&dialogOptions);
     if (default_filename) 
       dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
     if (message)
       dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
     dialogOptions.modality = kWindowModalityAppModal;
-    NavDialogRef outDialog;
-    
-    NavTypeListHandle openListH = NULL;
 
-    // looks like there's no way to specify a default directory to start in...
-    
+    dialogOptions.optionFlags |= (kNavSupportPackages | kNavAllowOpenPackages);
+    if (!(flags & wxMULTIOPEN))
+      dialogOptions.optionFlags -= (dialogOptions.optionFlags & kNavAllowMultipleFiles);
+
+    // No way to set the starting directory? (There was in the old nav interface, but
+    // apparently not anymore.)
+
     // create the dialog:
-    if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
-      if (NavCreateGetFileDialog(&dialogOptions, NULL, NULL, NULL, NULL, NULL, &outDialog) != noErr) {
-        if (default_filename) 
-          CFRelease(dialogOptions.saveFileName);
-        if (message)
-          CFRelease(dialogOptions.message);
-        return NULL;
-      }
+    if (flags & wxGETDIR) {
+      derr = NavCreateChooseFolderDialog(&dialogOptions, extProc, NULL, NULL, &outDialog);
+    } else if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
+      derr = NavCreateGetFileDialog(&dialogOptions, NULL, extProc, NULL, NULL, NULL, &outDialog);
     } else {
-      if (NavCreatePutFileDialog(&dialogOptions,'TEXT','MrEd',NULL,NULL,&outDialog) != noErr) {
-        if (default_filename)
-          CFRelease(dialogOptions.saveFileName);
-        if (message)
-          CFRelease(dialogOptions.message);
-      }
+      derr = NavCreatePutFileDialog(&dialogOptions, 'TEXT', 'MrEd', 
+				    extProc,
+				    default_extension, &outDialog);
     }
+
+    if (derr != noErr) {
+      if (default_filename) 
+	CFRelease(dialogOptions.saveFileName);
+      if (message)
+	CFRelease(dialogOptions.message);
+      return NULL;
+    }
+
+    wxSetCursor(wxSTANDARD_CURSOR);
     
     // run the dialog (ApplicationModal doesn't return until user closes dialog):
     if (NavDialogRun(outDialog) != noErr) {
@@ -359,8 +376,11 @@ char *wxFileSelector(char *message, char *default_path,
       if (message)
         CFRelease(dialogOptions.message);
       NavDialogDispose(outDialog);
+      wxTheApp->AdjustCursor();
       return NULL;
     }
+
+    wxTheApp->AdjustCursor();
     
     // dump those strings:
     if (default_filename)
@@ -415,7 +435,7 @@ char *wxFileSelector(char *message, char *default_path,
       NavDisposeReply(reply);
       
       return aggregate;
-    } else if (flags & wxOPEN) {
+    } else if ((flags & wxOPEN) || (flags & wxGETDIR)) {
       char *path;
 
       path = GetNthPath(reply, 1);

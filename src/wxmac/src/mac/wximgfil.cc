@@ -27,7 +27,7 @@
 #endif
 
 //void MacFixupPixelData(unsigned char *, int );
-void CreateOffScreenPixMap (CGrafPtr *,wxGIF *gif);
+void CreateOffScreenPixMap (CGrafPtr *,CGrafPtr*,wxGIF *gif);
 CTabHandle XlateColorMap(wxGIF *);
 
 // #pragma pack(1) Yes
@@ -124,7 +124,7 @@ wxColourMap *wxGIF::getColorMap()
 BOOL wxGIF::ReadHeader(FILE *fp)
 {
   unsigned char tstA[256];
-  unsigned char *rgbTable, single;
+  unsigned char *rgbTable, single, eid;
   ushort widlow, widhigh, hgtlow, hgthi, i;
   
   fread((char*)&tstA[0],13,1,fp);
@@ -649,7 +649,7 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
   wxGIF *gifImage  = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
     if (!withMask)
-      gifImage->transparent_color = -1;
+      gifImage->transparent_index = -1;
 
     CreateOffScreenPixMap(&colorPort, &maskPort, gifImage);
 
@@ -663,7 +663,7 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
       if (maskPort) {
 	wxBitmap *mask;
 	mask = new wxBitmap();
-	mask->x_pixmap = colorPort;
+	mask->x_pixmap = maskPort;
 	mask->SetWidth(gifImage->GetWidth());
 	mask->SetHeight(gifImage->GetHeight());
 	mask->SetDepth(gifImage->GetDeep());

@@ -554,8 +554,9 @@
   /* assembly file. Nevertheless, the old flags and       */
   /* instructions have been preserved.                    */
 
-#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN32__)) \
-    && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32) || defined(__CYGWIN32__))
+#if (defined(__CYGWIN32__) \
+     || (defined(_MSC_VER) \
+         && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "win32\\i386"
 

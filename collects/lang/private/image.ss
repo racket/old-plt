@@ -66,7 +66,7 @@
 
   (define (snip->mask b)
     (let-values ([(w h) (snip-size b)])
-      (let ([s (make-string (* 4 w h))]
+      (let ([s (make-bytes (* 4 w h))]
 	    [dc (image-snip->dc+bitmap b)])
 	(send dc get-argb-pixels 0 0 w h s)
 	(let loop ([i (* 4 w h)])
@@ -74,12 +74,12 @@
 	    (let ([r (- i 3)]
 		  [g (- i 2)]
 		  [b (- i 1)])
-	      (unless (and (eq? #\377 (string-ref s r))
-			   (eq? #\377 (string-ref s g))
-			   (eq? #\377 (string-ref s b)))
-		(string-set! s r #\000)
-		(string-set! s g #\000)
-		(string-set! s b #\000))
+	      (unless (and (eq? #o377 (bytes-ref s r))
+			   (eq? #o377 (bytes-ref s g))
+			   (eq? #o377 (bytes-ref s b)))
+		(bytes-set! s r #o000)
+		(bytes-set! s g #o000)
+		(bytes-set! s b #o000))
 	      (loop (- i 4)))))
 	(send dc set-argb-pixels 0 0 w h s)
 	(begin0
@@ -101,11 +101,11 @@
 	   (= ah bh)
 	   (let ([a-dc (image-snip->dc+bitmap a)]
 		 [b-dc (image-snip->dc+bitmap b)])
-	     (let* ([s1 (make-string (* aw ah 4))]
-		    [s2 (make-string (* bw bh 4))])
+	     (let* ([s1 (make-bytes (* aw ah 4))]
+		    [s2 (make-bytes (* bw bh 4))])
 	       (send a-dc get-argb-pixels 0 0 aw ah s1)
 	       (send b-dc get-argb-pixels 0 0 bw bh s2)
-	       (string=? s1 s2))))))
+	       (bytes=? s1 s2))))))
 
   (define (image-width a)
     (check 'image-width image? a "image")
@@ -247,20 +247,20 @@
   ;; Checks whether the non-white part of a appears in b
   ;;  at offset bd
   (define (first-in-second? a x xd)
-    (let loop ([i (string-length a)])
+    (let loop ([i (bytes-length a)])
       (or (zero? i)
 	  (let ([r (- i 3)]
 		[g (- i 2)]
 		[b (- i 1)])
-	    (let ([rv (string-ref a r)]
-		  [gv (string-ref a g)]
-		  [bv (string-ref a b)])
-	      (and (or (and (eq? #\377 rv)
-			    (eq? #\377 gv)
-			    (eq? #\377 bv))
-		       (and (eq? (string-ref x (+ xd r)) rv)
-			    (eq? (string-ref x (+ xd g)) gv)
-			    (eq? (string-ref x (+ xd b)) bv)))
+	    (let ([rv (bytes-ref a r)]
+		  [gv (bytes-ref a g)]
+		  [bv (bytes-ref a b)])
+	      (and (or (and (eq? #o377 rv)
+			    (eq? #o377 gv)
+			    (eq? #o377 bv))
+		       (and (eq? (bytes-ref x (+ xd r)) rv)
+			    (eq? (bytes-ref x (+ xd g)) gv)
+			    (eq? (bytes-ref x (+ xd b)) bv)))
 		   (loop (- i 4))))))))
 		 
   (define (locate-image who i a)
@@ -276,14 +276,14 @@
 	    [ah (send a get-height)])
 	(and (iw . >= . aw)
 	     (ih . >= . ah)
-	     (let ([is (make-string (* 4 iw ih))]
-		   [as (make-string (* 4 aw ah))])
+	     (let ([is (make-bytes (* 4 iw ih))]
+		   [as (make-bytes (* 4 aw ah))])
 	       (send i-dc get-argb-pixels 0 0 iw ih is)
 	       (send a-dc get-argb-pixels 0 0 aw ah as)
 	       (let* ([al (let loop ([offset 0])
 			    (cond
 			     [(= offset (* ah aw 4)) null]
-			     [else (cons (substring as offset (+ offset (* 4 aw)))
+			     [else (cons (subbytes as offset (+ offset (* 4 aw)))
 					 (loop (+ offset (* 4 aw))))]))])
 		 (let yloop ([dy 0])
 		   (and (dy . <= . (- ih ah))
@@ -316,7 +316,7 @@
 	   [i (send i-dc get-bitmap)])
       (let ([iw (send i get-width)]
 	    [ih (send i get-height)])
-	(let ([is (make-string (* 4 iw ih))]
+	(let ([is (make-bytes (* 4 iw ih))]
 	      [cols (make-vector (* iw ih))])
 	  (send i-dc get-argb-pixels 0 0 iw ih is)
 	  (let yloop ([y 0][pos 0])
@@ -326,9 +326,9 @@
 		    (yloop (add1 y) pos)
 		    (begin
 		      (vector-set! cols (+ x (* y iw))
-				   (make-color (char->integer (string-ref is (+ 1 pos)))
-					       (char->integer (string-ref is (+ 2 pos)))
-					       (char->integer (string-ref is (+ 3 pos)))))
+				   (make-color (bytes-ref is (+ 1 pos))
+					       (bytes-ref is (+ 2 pos))
+					       (bytes-ref is (+ 3 pos))))
 		      (xloop (add1 x) (+ pos 4)))))))
 	  (vector->list cols)))))
 
@@ -351,7 +351,7 @@
 	   [dc (make-object bitmap-dc% bm)])
       (unless (send bm ok?)
 	(error (format "cannot make ~a x ~a image" w h)))
-      (let ([is (make-string (* 4 w h) #\000)]
+      (let ([is (make-bytes (* 4 w h) #\000)]
 	    [cols (list->vector cl)])
 	(let yloop ([y 0][pos 0])
 	  (unless (= y h)
@@ -359,9 +359,9 @@
 	      (if (= x w)
 		  (yloop (add1 y) pos)
 		  (let ([col (vector-ref cols (+ x (* y w)))])
-		    (string-set! is (+ 1 pos) (integer->char (min 255 (max 0 (color-red col)))))
-		    (string-set! is (+ 2 pos) (integer->char (min 255 (max 0 (color-green col)))))
-		    (string-set! is (+ 3 pos) (integer->char (min 255 (max 0 (color-blue col)))))
+		    (bytes-set! is (+ 1 pos) (min 255 (max 0 (color-red col))))
+		    (bytes-set! is (+ 2 pos) (min 255 (max 0 (color-green col))))
+		    (bytes-set! is (+ 3 pos) (min 255 (max 0 (color-blue col))))
 		    (xloop (add1 x) (+ pos 4)))))))
 	(send dc set-argb-pixels 0 0 w h is))
       (send dc set-bitmap #f)

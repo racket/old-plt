@@ -9,7 +9,7 @@
    (lib "fit.ss" "plot")
    (lib "class.ss"))
   
-  ; plot : [asslist] plottable*
+  ; plot : plottable (option value)*
   (define-syntax plot  
     (syntax-rules ()
       [(_ ren )

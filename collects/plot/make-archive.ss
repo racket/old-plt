@@ -1,10 +1,8 @@
 
 ;; This module creates plot-<version>.<platform>.plt.
 ;;
-;; For Windows, Sparc and Mac OS X, it creates an archive
-;; with a "precompiled" subdirectory containing
-;; the compiled extension.
-;; 
+;; will create a precompiled binary for whatever system
+;; is run on unless "src" is specified 
 
 (module make-archive mzscheme
   (require 
@@ -13,13 +11,15 @@
    (lib "cmdline.ss"))
   
   (define target-sys-type (system-type))
+  
+  (define plot-src-collection-name "plot-tmp")
 
   (command-line
    "make-archive"
    (current-command-line-arguments)
    (once-each
     [("-s" "--src") "Make source bundle"
-     (set! target-sys-type 'unix)]))
+     (set! target-sys-type 'bin)]))
 
   (define tmp-dir (find-system-path 'temp-dir))
   (define work-dir (build-path tmp-dir "mk-plot-plt"))
@@ -47,11 +47,13 @@
            (not (regexp-match #rx"^[.]#" f)))
           (copy-file (build-path from f) (build-path to f))))
      (directory-list from)))
- 
-  (define inplace-structure
+  
+  (define base-structure
     '(()
-      ("tests")
-      ("src")
+      ("tests")))
+ 
+  (define src-structure
+    '(("src")
       ("src" "plplot")
       ("src" "fit")
       ("src" "gd")))
@@ -74,32 +76,31 @@
           #rx"[.]")))
      directories))
   
-  (copy-all inplace-structure (collection-path "plot") plot-target-dir )
-  (copy-all copied-structure 
-            (simplify-path 
-             (build-path 
-              (collection-path "mzlib" )
-              'up
-              'up
-              "src"
-              "wxcommon"))
-            (build-path plot-target-dir "src"))
- 
-  (unless (eq? target-sys-type 'unix)
-    (let ()
-      (define pre-dir (build-path plot-target-dir "precompiled" "native" (system-library-subpath)))
-
-      (make-directory* pre-dir)
+  (copy-all base-structure (collection-path plot-src-collection-name) plot-target-dir)
+  
+  (if (eq? target-sys-type 'src)  ; this is for a src distro
       
-      (copy-files (build-path (collection-path "plot")
-			      "compiled"
-			      "native"
-			      (system-library-subpath))
-		  pre-dir
-		  (if (eq? target-sys-type 'windows)
-		      #rx"[.]dll$"
-		      #rx"[.]so$"))      
-      'done))
+      (begin        
+       (copy-all src-structure (collection-path plot-src-collection-name) plot-target-dir )
+       (copy-all copied-structure 
+                 (simplify-path 
+                  (build-path 
+                   (collection-path "mzlib" )
+                   'up
+                   'up
+                   "src"
+                   "wxcommon"))
+                 (build-path plot-target-dir "src")))
+      
+      (let 
+        ((pre-dir (build-path plot-target-dir "precompiled" )))        
+        (make-directory* pre-dir)        
+        (copy-directory/files
+         (build-path (collection-path plot-src-collection-name)
+                     "compiled"
+                     "native"
+                     )
+         (build-path pre-dir "native"))))       
 
   (parameterize ([current-directory work-dir])
     (pack "plot.plt"
@@ -117,10 +118,9 @@
 
   (define dest  (format "plot-~a.~a.plt" 
 			(version)
-			(case target-sys-type
-			  [(windows) "i386-win32"]
-			  [(macosx) "ppc-macosx"]
-			  [else "src"])))
+			(case target-sys-type  
+                          [(src) "src"]		
+			  [else "bin"])))
   
   (when (file-exists? dest)
     (delete-file dest))

@@ -4,7 +4,23 @@
    (lib "process.ss")
    (lib "etc.ss")
    (lib "file.ss"))
-
+ 
+  (define (copy-files-in-dir from to re)
+    (for-each 
+     (lambda (f)
+       (when
+         (and 
+           (file-exists? (build-path from f))
+           (regexp-match re f)
+           (not (regexp-match #rx"[.]o$" f))
+	   (not (regexp-match #rx"[.]a$" f))
+           (not (regexp-match #rx"~$" f))
+           (not (regexp-match #rx"[.]plt$" f))
+           (not (regexp-match #rx"^#.*#$" f))
+           (not (regexp-match #rx"^[.]#" f)))
+          (copy-file (build-path from f) (build-path to f))))
+     (directory-list from)))
+  
   (define (pre-installer plthome)      
     (let ([dir (build-path (collection-path "plot")
                            "precompiled"
@@ -12,19 +28,17 @@
                            (system-library-subpath #f))])
 	(if (directory-exists? dir) ; just copy things over
             (let ((compiled-dir (build-path
-                                 (collection-path "plot"
-                                                  "compiled"
-                                                  "native"
-                                                  (system-library-subpath)))))
-              (when (directory-exists? compiled-dir)
-                (delete-directory/files compiled-dir))
-              (make-directory* compiled-dir)
-              (copy-directory/files dir compiled-dir))
-
+                                 (collection-path "plot")
+                                 "compiled"
+                                 "native"
+                                 (system-library-subpath #f))))
+              (unless (directory-exists? compiled-dir)
+                (make-directory* compiled-dir))
+              (copy-files-in-dir dir compiled-dir #rx"."))
             (build))))
   
   
-  (provide build)
+  ;(provide build)
   
   ; should where the file is
   (define here (this-expression-source-directory) )

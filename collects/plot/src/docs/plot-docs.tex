@@ -48,23 +48,20 @@ The display area and appearance of the plot can be changed by adding
 The appearance of each individual plot item can be altered by passing an associative list 
       of parameters to the plot item.
 \begin{schemedisplay}
-
 (plot 
  (line 
   (lambda (x) x) 
   '((color green) (width 3))))
-      
 \end{schemedisplay}
-
-
 
 Besides plotting lines from functions in 2d, the plotter
       can also render a variety of other datums
-      in several ways:\begin{itemize}
+      in several ways:
+\begin{itemize}
 \item 
-Discreet data, such as
-\begin{schemedisplay}
-
+  Discreet data, such as
+  \begin{schemedisplay}
+    
 (define data 
  (list 
   (vector 1 1 2) 
@@ -275,18 +272,59 @@ Data:
 
  (points (list-of (vector number number)) point-options?)
  (line [(number -> number) | (number -> number number)] line-options?)
- (error-bars (list-of (vector number number number)) error-bar-options)
- (field r2->r2 field-options)
- (contour (number number -> number) countour-options)
- (shade (number number -> number) shade-options)
+ (error-bars (list-of (vector number number number)) error-bar-options?)
+ (field r2->r2 field-options?)
+ (contour (number number -> number) countour-options?)
+ (shade (number number -> number) shade-options?)
  (mix* 2d-plot-item 2d-plot-item+)
  (make-custom (2d-view-snip% -> void))
      
 3d-plot-item is one of:
- (surface (number number -> number) surface-options)
+ (surface (number number -> number) surface-options?)
  ;(para-3d (number number -> (list number number number)) para-3d-options) ; not yet
  (mix* 3d-plot-item 3d-plot-item+)
  (make-custom (3d-view-snip% -> void))
+
+note: ? is a 0 or 1 relationship, all options appear inside assosiation lists.
+the -> means `default'
+
+point-options are:
+ sym : symbol -> 'square
+ color : symbol -> 'black
+
+line-options are:
+ samples : number -> 150
+ width : number -> 1
+ color : symbol -> 'red
+ mode : symbol -> 'standard
+ mapping : symbol -> 'cartesian
+ t-min : number -> -5
+ t-max : number -> 5
+ 
+error-bar-options are:
+ color : symbol -> 'red
+
+field-options are:
+ color : symbol -> 'red
+ wudth : number -> 1
+ style : symbol -> 'scaled
+
+contour-options are:
+ samples : number -> 50
+ color : symbol -> black
+ width : number -> 1
+ levels : number U (list-of number) -> 10
+
+shade-options are:
+ samples : number -> 50
+ levels : number -> 10
+
+surface-options are:
+ samples : number -> 50
+ color : symbol -> black
+ width : number -> 1
+ 
+
      
 \end{schemedisplay}
 
@@ -295,19 +333,21 @@ Data:
 The 2d and 3d plot-items can be created in several ways. The first is by using the built-in renderers with your own data. 
 
 
-\scheme{points} will draw points on a graph given a list. of vectors specifying their location. 
+\scheme{points} will draw points on a graph given a list. of vectors specifying their location. Sym changes the appearence of the points (either 'circle or 'square).
 
 
-\scheme{line} will draw a line specified in either functional, ie. y=f(x), or  parametric mode, x,y = f(t) . If the function is parametric, the line-option \scheme{mode} must be set to \scheme{parametric}.
+\scheme{line} will draw a line specified in either functional, ie. y=f(x), or  parametric mode, x,y = f(t) . If the function is parametric, the line-option \scheme{mode} must be set to \scheme{parametric}. \scheme{t-min} and \scheme{t-max} set the parameter when in parametric mode. \scheme{mapping} can be set to \scheme{'radial}.
 
 
 \scheme{error-bars} will draw error bars given a list of vectors. The vector specifies the  center of the error bar (x,y) as the first two elements, and it's magnitude as the third
 
 
-\scheme{field} will draw a vector field from a vector valued function.
+\scheme{field} will draw a vector field from a vector valued function. Styles are either \scheme{real}, \scheme{scaled}, or \scheme{normalized}. 
 
 
-Both \scheme{shade} and \scheme{contour} will render 3d functions on a 2d graph using colored shades and contours (respectively) to represent the value of the funciton at that position.
+Both \scheme{shade} and \scheme{contour} will render 3d functions on a 2d graph using colored shades and contours (respectively) to represent the value of the funciton at that position. \scheme{contour} will let you choose the levels explicitly if desired, by setting the \scheme{levels} option to a list of contour levels to be plotted.
+
+\scheme{surface} plots a 3d surface in a 3d box, showing only the \emp{top} of the surface
 
 \subsection{Fitting}
 
@@ -452,8 +492,12 @@ Provides an interface to drawing 3d plots.
 \item 
 \scheme{plot-surface : (listof (lisftof number)) (listof number) (listof number) ->void }
 
-
 plots a grid representing a 3d function in a 3D box, showing only the top of the surface
+
+\item 
+\scheme{plot-line : (listof number) (listof number) (listof number) -> void}
+
+Plots a line in 3d space. The arguments are lists of x,y and z coordinates respectively.
 
 
 \item 
@@ -513,10 +557,6 @@ Macro used to create new renderers. It is easiest to explain with  an example, s
          provide an associative list with the desired values. Ex: \scheme{(line (lambda (x) x) '((color blue)))}
 \end{itemize}
 
-
-\pagebreak
-
-\pagebreak
 
 \section{Index}
 

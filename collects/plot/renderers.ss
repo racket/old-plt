@@ -93,17 +93,28 @@
         (send* 2dplotview 
           (plot-shades grid x-vals y-vals c-levels)))))
            
-  ; points : (listof vector) [number] -> (2dplotview -> nothing)
+  ; points : (listof vector) [symbol] -> (2dplotview -> nothing)
   ; plots a set of points using a specific character
   (define points
-    (r-lambda lop 2dplotview ((char 9))
-      (send 2dplotview plot-points lop char)))
+    (r-lambda lop 2dplotview ((sym 'square) (color 'black))
+      (send* 2dplotview 
+       (set-line-color color)
+       (plot-points lop 
+		    (cond [(assq sym point-syms) => cadr]
+			  [else (error "Symbol not found in table!")])))))
+  
+  ; the symbol-> char table
+  (define point-syms
+    '((square 16) (circle 9)))
+
+
+	
        
        
   ;; 3D PLOTTERS
   ; plot a surface
   (define surface 
-    (r-lambda fun3d 3dplotview (x-min x-max y-min y-max) ((samples 50) (color 'black) (width '0))
+    (r-lambda fun3d 3dplotview (x-min x-max y-min y-max) ((samples 50) (color 'black) (width '1))
       (let* ((x-vals (x-values samples x-min x-max))
              (y-vals (x-values samples y-min y-max))
              (grid (zgrid fun3d x-vals y-vals samples)))

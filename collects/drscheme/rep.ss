@@ -808,7 +808,7 @@
 	       (wait-for-io-to-complete)
                (reset-highlighting)
                (if color?
-                   (let ([reset (send file highlight-range start finish error-color #f)])
+                   (let ([reset (send file highlight-range start finish error-color #f #f 'high)])
                      (set! reset-highlighting
                            (lambda ()
                              (unless inserting-prompt

@@ -458,8 +458,8 @@
  (previous-window "Previous Window")
 
  (show-menu-label "&Show")
- (show-overview "Show Contour") 
- (hide-overview "Hide Contour")
+ (show-overview "Show Program Contour") 
+ (hide-overview "Hide Program Contour")
 
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")

@@ -41,6 +41,9 @@
   (reference (begin-elaboration-time
 	       (build-path plt-home-directory "lib" "sparamu.ss"))))
 
+(define zodiac:system@
+  (reference-unit/sig "link.ss"))
+
 (define zodiac:invoke-system
   (lambda ()
     (invoke-open-unit/sig
@@ -54,8 +57,7 @@
 	  (PRETTY : mzlib:pretty-print^
 	    (mzlib:pretty-print@))
 	  (SYSTEM : zodiac:system^
-	    ((reference-unit/sig "link.ss")
-	      INTERFACE PARAMETERS PRETTY)))
+	    (zodiac:system@ INTERFACE PARAMETERS PRETTY)))
 	(export (open SYSTEM) (open INTERFACE)))
       zodiac)))
 

@@ -570,28 +570,19 @@
 		     (wx:bell))
 		 #t))]
 	    [forward-sexp
-	     (opt-lambda (edit start-pos (move? #t))
-	       (let ([end-pos (get-forward-sexp edit start-pos)])
-		 (if end-pos 
-		     (if move?
-			 (send edit set-position end-pos)
-			 (send edit flash-on end-pos (add1 end-pos)))
-		     (wx:bell)) 
-		 #t))]
-	    [select-forward-sexp
 	     (lambda (edit start-pos)
 	       (let ([end-pos (get-forward-sexp edit start-pos)])
 		 (if end-pos 
-		     (send edit set-position start-pos end-pos)
-		     (wx:bell)) 
+		     (send edit set-position end-pos)
+		     (wx:bell))
 		 #t))]
-	    [select-backward-sexp
-	     (lambda (edit end-pos)
-	       (let ([start-pos (get-backward-sexp edit end-pos)])
-		 (if start-pos 
-		     (send edit set-position start-pos end-pos)
+	    [flash-forward-sexp
+	     (lambda (edit start-pos)
+	       (let ([end-pos (get-forward-sexp edit start-pos)])
+		 (if end-pos 
+		     (send edit flash-on end-pos (add1 end-pos))
 		     (wx:bell)) 
-		 #t))]
+		 #t))]	    
 	    [get-backward-sexp
 	     (lambda (edit start-pos)
 	       (let ([end-pos 
@@ -609,16 +600,22 @@
 			      (>= end-pos min-pos)))
 		     end-pos
 		     #f)))]
+	    [flash-backward-sexp
+	     (lambda (edit start-pos)
+	       (lambda (edit start-pos move?)
+		 (let ([end-pos (get-backward-sexp edit start-pos)])
+		   (if end-pos
+		       (send edit flash-on end-pos (add1 end-pos))
+		       (wx:bell))
+		   #t)))]
 	    [backward-sexp
-	     (lambda (edit start-pos move?)
+	     (lambda (edit start-pos)
 	       (let ([end-pos (get-backward-sexp edit start-pos)])
 		 (if end-pos
-		     (if move? 
-			 (send edit set-position end-pos) 
-			 (send edit flash-on end-pos (add1 end-pos)))
+		     (send edit set-position end-pos)
 		     (wx:bell))
-		 #t))] 
-	    [up-sexp
+		 #t))]
+	    [find-up-sexp
 	     (lambda (edit start-pos)
 	       (let ([exp-pos
 		      (mred:scheme-paren:scheme-backward-containing-sexp 
@@ -626,10 +623,16 @@
 		       (get-limit edit start-pos) 
 		       backward-cache)])
 		 (if (and exp-pos (> exp-pos 0))
-		     (send edit set-position (sub1 exp-pos))
+		     (sub1 exp-pos)
+		     #f)))]
+	    [up-sexp
+	     (lambda (edit start-pos)
+	       (let ([exp-pos (find-up-sexp edit start-pos)])
+		 (if exp-pos
+		     (send edit set-position exp-pos)
 		     (wx:bell))
 		 #t))]
-	    [down-sexp
+	    [find-down-sexp
 	     (lambda (edit start-pos)
 	       (let ([last (send edit last-position)])
 		 (let loop ([pos start-pos])
@@ -642,11 +645,16 @@
 				 edit (sub1 next-pos) pos backward-cache)])
 			   (if (and back-pos
 				    (> back-pos pos))
-			       (send edit set-position back-pos)
+			       back-pos
 			       (loop next-pos)))
-			 (wx:bell)))))
-	       #t)]
-	    
+			 #f)))))]
+	    [down-sexp
+	     (lambda (edit start-pos)
+	       (let ([pos (find-down-sexp edit start-pos)])
+		 (if pos
+		     (send edit set-position pos)
+		     (wx:bell))
+		 #t))]
 	    [remove-parens-forward
 	     (lambda (edit start-pos)
 	       (let* ([pos (mred:paren:skip-whitespace edit start-pos 1)]
@@ -684,6 +692,25 @@
 	       (mred:application:eval-string (send edit get-text start end))
 	       #t)]
 	    
+
+	    [select-text
+	     (lambda (f forward?)
+	       (lambda (edit)
+		 (let* ([start-pos (send edit get-start-position)]
+			[end-pos (send edit get-end-position)])
+		   (let-values ([(new-start new-end)
+				 (if forward?
+				     (values start-pos (f edit end-pos))
+				     (values (f edit start-pos) end-pos))])
+		     (if (and new-start new-end) 
+			 (send edit set-position new-start new-end)
+			 (wx:bell))
+		     #t))))]
+	    [select-forward-sexp (select-text get-forward-sexp #t)]
+	    [select-backward-sexp (select-text get-backward-sexp #f)]
+	    [select-up-sexp (select-text find-up-sexp #f)]
+	    [select-down-sexp (select-text find-down-sexp #t)]
+
 	    [transpose-sexp
 	     (lambda (edit pos)
 	       (let ([start-1 (get-backward-sexp edit pos)])
@@ -721,95 +748,46 @@
 	(let ([get-mode
 	       (lambda (edit)
 		 (ivar edit mode))])
-	  
 	  (mred:keymap:set-keymap-error-handler keymap)
 	  (mred:keymap:set-keymap-implied-shifts keymap)
 
-	  (send keymap add-key-function "tabify-at-caret"
-		(lambda (edit event)
-		  (send (get-mode edit) tabify-selection edit)))
+	  (let ([add-pos-function 
+		 (lambda (name ivar-sym)
+		   (send keymap add-key-function name
+			 (lambda (edit event)
+			   ((uq-ivar (get-mode edit) ivar-sym)
+			    edit
+			    (send edit get-start-position)))))])
+	    (add-pos-function "remove-sexp" 'remove-sexp)
+	    (add-pos-function "forward-sexp" 'forward-sexp)
+	    (add-pos-function "backward-sexp" 'backward-sexp)
+	    (add-pos-function "up-sexp" 'up-sexp)
+	    (add-pos-function "down-sexp" 'down-sexp)
+	    (add-pos-function "flash-backward-sexp" 'flash-backward-sexp)
+	    (add-pos-function "flash-forward-sexp" 'flash-forward-sexp)
+	    (add-pos-function "remove-parens-forward" 'remove-parens-forward)
+	    (add-pos-function "transpose-sexp" 'transpose-sexp))
 	  
-	  (send keymap add-key-function "do-return"
-		(lambda (edit event)
-		  (send (get-mode edit) insert-return edit)))
+	  (let ([add-edit-function
+		 (lambda (name ivar-sym)
+		   (send keymap add-key-function name
+			 (lambda (edit event)
+			   ((uq-ivar (get-mode edit) ivar-sym)
+			    edit))))])
+	    (add-edit-function "select-forward-sexp" 'select-forward-sexp)
+	    (add-edit-function "select-backward-sexp" 'select-backward-sexp)
+	    (add-edit-function "select-down-sexp" 'select-down-sexp)
+	    (add-edit-function "select-up-sexp" 'select-up-sexp)
+	    (add-edit-function "tabify-at-caret" 'tabify-selection)
+	    (add-edit-function "do-return" 'insert-return)
+	    (add-edit-function "comment-out" 'comment-out-selection)
+	    (add-edit-function "uncomment" 'uncomment-selection))
 
 	  (send keymap add-key-function "balance-parens"
 		(lambda (edit event)
-		  (send (get-mode edit) balance-parens edit event)))
-
-	  (send keymap add-key-function "comment-out"
-		(lambda (edit event)
-		  (send (get-mode edit) comment-out-selection edit)))
-	  
-	  (send keymap add-key-function "uncomment"
-		(lambda (edit event)
-		  (send (get-mode edit) uncomment-selection edit)))
-
-	  (send keymap add-key-function "remove-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) remove-sexp 
+		  (send (get-mode edit) balance-parens
 			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "forward-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) forward-sexp 
-			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "backward-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) backward-sexp 
-			edit 
-			(send edit get-start-position) #t)))
-
-	  (send keymap add-key-function "up-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) up-sexp 
-			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "down-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) down-sexp 
-			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "flash-backward-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) backward-sexp 
-			edit 
-			(send edit get-start-position) #f)))
-	  
-	  (send keymap add-key-function "flash-forward-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) forward-sexp 
-			edit 
-			(send edit get-start-position) #f)))
-
-	  (send keymap add-key-function "remove-parens-forward"
-		(lambda (edit event)
-		  (send (get-mode edit) remove-parens-forward 
-			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "select-forward-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) select-forward-sexp 
-			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "select-backward-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) select-backward-sexp 
-			edit 
-			(send edit get-start-position))))
-
-	  (send keymap add-key-function "transpose-sexp"
-		(lambda (edit event)
-		  (send (get-mode edit) transpose-sexp 
-			edit 
-			(send edit get-start-position))))
+			event)))
 
 	  (send keymap add-key-function "evaluate-buffer"
 		(lambda (edit event)
@@ -927,4 +905,3 @@
 
     (define global-scheme-interaction-mode-keymap (make-object wx:keymap%))
     (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)))
-

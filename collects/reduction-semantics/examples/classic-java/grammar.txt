@@ -1,6 +1,9 @@
+This implementation of ClassicJava is not case-sensitive.
+
 program     ::= defn* e
 
-defn        ::= (CLASS cname cname (field*) method*)
+defn        ::= (CLASS cname1 cname2 (field*) method*)
+                    ;; class cname1 extends cname2 { field* method* }
 
 field       ::= (type fname)
 
@@ -12,26 +15,55 @@ expr        ::= NULL
               | integer literal
               | TRUE
               | FALSE
-              | argname
+              | argname                       ;; local binding reference
               | THIS
-              | (NEW cname)
-              | (REF expr fname)
-              | (SET expr fname expr)
-              | (SEND expr mdname expr*)
-              | (CAST cname expr)
-              | (LET argname expr expr)
-              | (bprim expr expr)
-              | (uprim expr)
-              | (IF expr expr expr)
+              | (NEW cname)                   ;; new cname()
+              | (REF expr fname)              ;; expr.fname
+              | (SET expr1 fname expr2)       ;; expr1.fname = expr2
+              | (SEND expr1 mdname expr*)     ;; expr1.mdname(expr*)
+              | (CAST cname expr)             ;; (cname) expr
+              | (LET argname expr expr)       ;; local variable declaration
+              | (bprim expr expr)             ;; binary primitive operators
+              | (uprim expr)                  ;; unary primitive operators
+              | (IF expr1 expr2 expr3)        ;; conditional operator:
+                                              ;;    expr1 ? expr2 : expr3
 
 bprim       ::= + | - | * | == | AND | OR
 uprim       ::= ZERO? | NULL? | NOT
 
 type        ::= INT | BOOL | cname
-cname       ::= id
-fname       ::= id
-mdname      ::= id
-argname     ::= id
+cname       ::= id                            ;; class name
+fname       ::= id                            ;; field name
+mdname      ::= id                            ;; method name
+argname     ::= id                            ;; method arg/local var name
 
 id          ::= any symbol except reserved words (those which appear in
                 capitals above)
+
+
+Equivalence of ClassicJava and real Java forms:
+===============================================
+
+  class Foo extends Bar {
+      int x;
+      bool y;
+      int method(bool arg) { ... }
+  }
+    is equivalent to
+  (class Foo Bar 
+    ((int x) 
+     (bool y))
+    (int method ((bool arg)) ...))
+
+Expressions
+----------------------------------------------------------------------
+  -  new Foo()                          (new Foo)
+  -  obj.field                          (ref obj field)
+  -  obj.field = rhs                    (set obj field rhs)
+  -  obj.method(arg1, arg2)             (send obj method arg1 arg2)
+  -  (Foo) obj                          (cast Foo obj)
+  -  { int local_var = 3; body; }       (let local_var 3 body)
+  -  text_exp ? then_exp : else_exp     (if test_exp then_exp else_exp)
+
+And built-in binary and unary operators as listed above are expressed in
+prefix notation (+ 3 (* 4 5))

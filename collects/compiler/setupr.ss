@@ -436,7 +436,7 @@
 
   (when (make-launchers)
     (let ([name-list 
-	   (define (l)
+	   (lambda (l)
 	     (unless (and (list? l)
 			  (andmap (lambda (x)
 				    (and (string? x)

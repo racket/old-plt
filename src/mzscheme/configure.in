@@ -399,7 +399,8 @@ case $OS in
       COMPFLAGS="$COMPFLAGS -fPIC"
     else
       CFLAGS="$CFLAGS -Wp,-H,64000"
-      COMPFLAGS="$COMPFLAGS -Aa -D_HPUX_SOURCE +Z"
+      PREFLAGS="$PREFLAGS -D_HPUX_SOURCE"
+      COMPFLAGS="$COMPFLAGS -Aa +Z"
       CGCOPTIONS="$CGCOPTIONS +ESdbgasm"
       MZOPTIONS="$MZOPTIONS +e"
     fi
@@ -427,7 +428,7 @@ case $OS in
     ;;
   Darwin)
 
-    COMPFLAGS="$COMPFLAGS -DOS_X"
+    PREFLAGS="$PREFLAGS -DOS_X"
 
     # zlib comes with the OS
     ZLIB_A=""
@@ -474,7 +475,7 @@ case $OS in
         FRAMEWORK_INSTALL_DIR=~/Library/Frameworks
       fi
     else
-      COMPFLAGS="$COMPFLAGS -DXONX "
+      PREFLAGS="$PREFLAGS -DXONX "
       X_EXTRA_LIBS="$X_EXTRA_LIBS -lz"
     fi
     ;;

@@ -10,8 +10,7 @@ available at
   http://www.plt-scheme.org/software/mred/
 
 The MzScheme and MrEd source code should compile and execute on
-Windows, Mac OS X, or any Unix/X platform (including Linux). It
-may also work udner Mac OS 9.
+Windows, Mac OS X, or any Unix/X platform (including Linux).
 
 Per-platform instructions are below.
 
@@ -43,80 +42,33 @@ or Cygwin, cd to plt\src\mzscheme\dynsrc and run mkbordyn.bat. (The
 mkbordyn.bat script requires bcc23.exe.)
 
 ========================================================================
- Compiling for Mac OS
+ Compiling for Mac OS X
 ========================================================================
 
-Mac OS X:
+First, install the Mac OS X Developer Tools from Apple. Then, follow
+the Unix instructions below, but note the following:
 
- First, install the Mac OS X Developer Tools from Apple. After
- installing, run `fixPrecomps' to speed up compilations. (You can
- safely run `fixPrecomps' multiple times. You may need to run it as
- root or with `sudo'.)
+ * The MzScheme build creates a framework, PLT_MzScheme.framework,
+   which is installed into ~/Library/Frameworks. This framework is
+   used by the executable `mzscheme' that goes into plt/bin.
 
- Then, follow the Unix instructions below, but note the following:
+ * The MrEd build creates a framework, PLT_MrEd.framework, which is
+   installed into ~/Library/Frameworks. This framework is used by the
+   executable bundle MrEd.app that goes into the `plt' directory.
+   Installation creates a script, plt/bin/mred, that runs the bundle.
 
-   * The MzScheme build creates a framework, PLT_MzScheme.framework,
-     which is installed into ~/Library/Frameworks. This framework is
-     used by the executable `mzscheme' that goes into plt/bin.
+ * If you build frequently from the CVS-based sources, beware that you
+   may accumlate many old, unused versions of the framework in
+   ~/Library/Frameworks.
 
-   * The MrEd build creates a framework, PLT_MrEd.framework, which is
-     installed into ~/Library/Frameworks. This framework is used by the
-     executable bundle MrEd.app that goes into the `plt' directory.
-     Installation creates a script, plt/bin/mred, that runs the bundle.
+ * The --enable-shared flag for `configure' is redundant (i.e., builds
+   create and use frameworks by default), and --disable-shared is not
+   supported.
 
-   * If you build frequently from the CVS-based sources, beware that
-     you may accumlate many old, unused versions of the framework in
-     ~/Library/Frameworks.
-
-   * The --enable-shared flag for `configure' is redundant (i.e.,
-     builds create and use frameworks by default), and
-     --disable-shared is not supported.
-
-   * To build an X11-based MrEd, run `configure' with the
-     --enable-xonx flag. Frameworks are not used for such builds. The
-     --enable-xonx flag also affects the MzScheme build so that
-     `system-type' reports 'unix.
-
-Mac OS Classic (PowerPC only):
-
- Mac OS Classic is no longer supported, but it might work anyway.
-
- MrEd compiles for Mac OS Classic using MPW.  Stand-alone MzScheme is
- not suported for Classic (use MrEd instead), but MzSchemeLib is
- available for embedding into other executables.
-
- To compile MrEd with MPW, set the working directory to the ":mac:mpw"
- subdirectory of this one, then execute
-
-    set -e makefile makefile
-    buildprogram all
-
- [MPW hints: Use the "Set Directory..." menu item to set the working
-  directory.  Evaluate a command by first typing it in the worksheet,
-  then hit Cmd-Return with the caret on the line containing the
-  command.
-
-  Depending on how you obtained the source, you may need to force the
-  source code files to have the type TEXT. The "textify.ss" program in
-  ":mac:mpw" will do this for you, but it requires a Mac OS X MrEd.]
-
- `buildprogram all' generates three files:
-
-   plt:MrEd - the main application
-   plt:netglue - used by MrEd when TCP is started
-   plt:collects:launcher:GoMr - used to create "launchers"
-
- After `buildprogram all' completes, double-click the MrEd application
- with the command key pressed. In the dialog that appears, type
-
-      -mvqM- setup
-
- and hit Return. The setup program will then run; it compiles Scheme
- source to .zo format, and also creates launchers, such as "DrScheme".
-
- To build plt:MzSchemeLib, run `buildprogram mz'. The resulting
- plt:MzSchemeLib needs plt:netglue if and only if TCP support is
- needed.
+ * To build an X11-based MrEd, run `configure' with the --enable-xonx
+   flag. Frameworks are not used for such builds. The --enable-xonx
+   flag also affects the MzScheme build so that `system-type' reports
+   'unix.
 
 ========================================================================
  Compiling for supported Unix variants (including Linux)
@@ -286,7 +238,7 @@ information. As dsitributed, mzscheme/sconfig.h contains
 configurations for the following platforms:
 
               Windows
-              Mac OS (PPC Classic and OS X)
+              Mac OS X
               Linux (x86, PPC, 68k, Alpha)
               Cygwin
               Solaris (x86, Sparc)
@@ -352,14 +304,9 @@ for "moving memory manager".
 Configuration Options
 ---------------------
 
-By default, MzScheme is compiled:
-
- * without image dumps (since the application will probably be linked
-   dynamically); and
-
- * without support for single-precision floating point numbers.
-
-These options can be modified by setting flags in mzscheme/sconfig.h.
+By default, MzScheme is compiled without support for single-precision
+floating point numbers. This and other options can be modified by
+setting flags in mzscheme/sconfig.h.
 
 Modifying MzScheme
 ------------------

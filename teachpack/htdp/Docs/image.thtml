@@ -55,6 +55,14 @@ two functions.
 <menu>
 <li><code>{(idx image-inside?)}</code> : image image -> boolean <br>
  to determine whether the pixels of the second image appear in the first
+
+<p> Be careful when using this function with jpeg images. If
+you use an image-editing program to crop a jpeg image and
+then save it, <code>image-inside?</code> will not recognize
+the cropped image, due to jpeg's compression. </p>
+
+<p> Use png images instead. </p>
+
 <li><code>{(idx find-image)}</code> : image image -> posn <br>
  to determine where the pixels of the second image appear in the first, with
  respect to the pinhole of the first image.

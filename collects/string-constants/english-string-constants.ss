@@ -353,6 +353,7 @@ please adhere to these guidelines:
  (scheme-prefs-panel-label "Scheme")
  (warnings-prefs-panel-label "Warnings")
  (editor-prefs-panel-label "Editing")
+ (general-prefs-panel-label "General")
  (highlight-parens "Highlight between matching parens")
  (fixup-parens "Correct parens")
  (flash-paren-match "Flash paren match")

@@ -437,23 +437,24 @@ static HBRUSH btnface_brush;
 
 BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
 {
-  RECT rect;
-  wxCanvas *canvas;
-  int mode;
-  HBRUSH brsh;
   long wstyle;
 
   wstyle = wx_window->GetWindowStyleFlag();
 
   if (!(wstyle & wxNO_AUTOCLEAR)) {
+    RECT rect;
+    wxCanvas *canvas;
+    int mode, rop;
+    HBRUSH brsh;
     int free_brush = 0;
-	wxColor *bgcol;
+    wxColor *bgcol;
 	
-	canvas = (wxCanvas *)wx_window;
-	bgcol = canvas->GetCanvasBackground();
+    canvas = (wxCanvas *)wx_window;
+    bgcol = canvas->GetCanvasBackground();
     
     GetClientRect(handle, &rect);
     mode = SetMapMode(pDC, MM_TEXT);
+    rop = SetROP2(pDC, R2_COPYPEN);
     if (wstyle & wxTRANSPARENT_WIN) {
       if (!btnface_brush) {
 	btnface_brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
@@ -468,6 +469,7 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
     }
     FillRect(pDC, &rect, brsh);
     SetMapMode(pDC, mode);
+    SetROP2(pDC, rop);
 
     if (free_brush)
       DeleteObject(brsh);

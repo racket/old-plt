@@ -404,6 +404,7 @@ void wxDC::Clear(void)
   {
     HBRUSH brush;
     brush = CreateSolidBrush(GetBkColor(dc));
+    SetRop(dc, wxSOLID);
     FillRect(dc, &rect, brush);
     DeleteObject(brush);
   }
@@ -1219,8 +1220,13 @@ void wxDC::SetRop(HDC dc, int style)
   case wxXOR_LONG_DASH:
   case wxXOR_DOT_DASH:
   case wxXOR: 
-  case wxCOLOR: 
     c_rop = R2_NOTXORPEN;
+    break;
+  case wxCOLOR: 
+    if (Colour)
+      c_rop = R2_MERGEPENNOT;
+    else
+      c_rop = R2_NOTXORPEN;
     break;
   default:
     c_rop = R2_COPYPEN;
@@ -1242,7 +1248,7 @@ int wxDC::StartBrush(HDC dc, Bool no_stipple)
 	RegisterGDIObject(hilite_brush);
       }
       SelectObject(dc, hilite_brush);
-      SetROP2(dc, R2_MERGEPENNOT);
+      SetRop(dc, wxCOLOR);
     } else {
       if (no_stipple) {
 	wxBitmap *bm;
@@ -1251,7 +1257,7 @@ int wxDC::StartBrush(HDC dc, Bool no_stipple)
 	  return FALSE;
       }
       current_brush->SelectBrush(dc);
-      SetRop(dc, current_brush->GetStyle());
+      SetRop(dc, ps);
     }
     return TRUE;
   } else
@@ -1280,10 +1286,10 @@ int wxDC::StartPen(HDC dc)
 	RegisterGDIObject(p);
       }
       SelectObject(dc, hilite_pens[size]);
-      SetROP2(dc, R2_MERGEPENNOT);
+      SetRop(dc, wxCOLOR);
     } else {
       current_pen->SelectPen(dc);
-      SetRop(dc, current_pen->GetStyle());
+      SetRop(dc, ps);
     }
     return TRUE;
   } else

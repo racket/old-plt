@@ -86,3 +86,24 @@ The button labelled "<" at the bottom of the window rewinds the game
 by one turn. The button labelled ">" re-plays one turn in a rewound
 game. An alternate move can be made at any point in a rewound game,
 replacing the old game from that point on.
+
+Auto-Play
+---------
+
+Turn on a computer player at any time by checking the "Auto-Play Red"
+or "Auto-Play Yellow" checkbox. If you rewind the game, you can choose
+an alternate move for yourself or for the auto-player to find out what
+would have happened. The auto-player is not always deterministic, so
+replying the same move might lead to a different result. You can
+disable an auto-player at any point by unchecking the corresponding
+"Auto-Play" checkbox.
+
+Important: In the 3x3 game with the default configuration, you CANNOT
+win as yellow against the auto-player (if the auto-player is allowed
+to play red from the start of the game). In other words, red has a
+forced win in the 3x3 game, and the smart auto-player knows the path
+to victory. You might have a chance to beat the red player if you
+change the mode to "Ok" instead of "Smart" in the "Auto-Play Options"
+dialog.
+
+Configure the auto-player by clicking the "Auto-Play Options" button.

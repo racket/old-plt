@@ -100,7 +100,7 @@ void wxDialogBox::OnSize(int x, int y)
   int noChildren = 0;
   for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
   {
-    wxWindow *win = (wxWindow *)node->Data();
+    wxWindow *win = dynamic_cast<wxWindow *>(node->Data());
     WXTYPE winType = win->__type;
 
     if (wxSubType(winType, wxTYPE_PANEL) ||

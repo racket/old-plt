@@ -158,40 +158,56 @@ OSErr InstallAEventHandler()
     return InstallEventHandler(target,NewEventHandlerUPP(myAEventHandler),1,&typeSpec,NULL,NULL);
 }
 
-
-/* EventFinder: If only C featured closures, this typdef wouldn't be necessary.  EventFinder is
- * the procedure which is applied to each of the events in the queue, looking for a match.  Since
- * C doesn't have closures, the search invoker accepts a void * which is passed along to EventFinder.
- */
- 
-typedef struct {
-	MrEdContext *c;
-	UInt32 eventClass;
-	UInt32 eventKind;
-}  EventFinderClosure;
+enum {
+	kActionRemove = 0,
+	kActionAccept
+};
 
 Bool EventFinder(EventRef inEvent, EventFinderClosure *closure)
 {
-  return ((GetEventClass(inEvent) == closure->eventClass) &&
-          (GetEventKind(inEvent) == closure->eventKind));
-}          
-
-
-//**********
-        wxWindow *win = (wxWindow *)q->event.message;
-
-        if ((win->__type != -1) && win->IsShown()) {
-          fr = (wxFrame *)win->GetRootFrame();
-	      fc = fr ? (MrEdContext *)fr->context : NULL;
-	      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	        if (which)
-	          *which = fc;
+  MrEdContext *fc, *c;
+  wxFrame *fr;
+  
+  c = closure.c;
+  
+  switch (GetEventClass(inEvent)) {
+  case kEventClassMrEd:
+    switch(GetEventKind(inEvent)) {
+    case kEventMrEdLeave:
+      wxWindow *win;
+      
+      // result ignored:
+      GetEventParameter(inEvent,kEventParamDirectObject,typeWxWindowPtr,
+      					NULL, sizeof(wxWindow *), NULL, &win);
+      					
+      if ((win->__type == -1) || !(win->IsShown())) {
+        closure.action_to_take = kActionRemove;
+      	return TRUE;
+      } else {
+		fr = dynamic_cast<wxFrame *>(win->GetRootFrame());
+		fc = fr ? dynamic_cast<MrEdContext *>(fr->context) : (MrEdContext *)NULL;
+	    if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	      closure.which = fc;
 
 #ifdef RECORD_HISTORY
-	        fprintf(history, "leave\n");
-	        fflush(history);
+	      fprintf(history, "leave\n");
+	      fflush(history);
 #endif
-
+		  closure.action_to_take = kActionAccept;
+		  return TRUE;
+	    } else {
+	      return FALSE; // wrong context
+	    }
+	  }
+	default:
+	  return FALSE; // unknown event
+	}
+  case kEventClassMouse:
+  case kEventClassKeyboard:
+    switch (GetEventKind(inEvent)) {
+    case kEventMouseDown:
+      
+	
 	        if (check_only)
 	          return TRUE;
 	
@@ -203,7 +219,9 @@ Bool EventFinder(EventRef inEvent, EventFinderClosure *closure)
           MrDequeue(q);
         }
 
-//************
+}          
+
+
 EventComparatorUPP EventFinderUPP = NewEventComparatorUPP(EventFinder);
  
 #else
@@ -333,7 +351,14 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
-#ifndef OS_X
+#ifdef OS_X
+  // just to give the event manager a little time:
+  EventRecord ignored;
+  WaitNextEvent(0, // no events
+  				&ignored, // will never get filled in
+  				0, // don't wait at all
+  				NULL); // empty mouse region
+#else
   if (!TransferQueue(0))
     kill_context = 0;
 #endif
@@ -397,6 +422,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
   eventFinderClosure.eventClass = kEventClassMrEd;
   eventFinderClosure.eventKind = kEventMrEdLeave;
+
   eRef = FindSpecificEventInQueue(mainQueue,eventFinderUPP,&eventFinderClosure);
 
   

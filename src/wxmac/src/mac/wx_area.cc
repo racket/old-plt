@@ -45,7 +45,7 @@ wxArea::~wxArea(void)
 	wxChildNode *node, *next;
 	for (node = cWindows.First(); node; node = next) {
 		next = node->Next();
-		wxWindow *win = (wxWindow *)node->Data();
+		wxWindow *win = dynamic_cast<wxWindow *>(node->Data());
 		if (win)
 		  delete win;
 	}

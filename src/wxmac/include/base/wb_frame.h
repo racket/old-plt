@@ -106,7 +106,7 @@ class wxbFrame: public wxWindow
   virtual void ProcessCommand(int id);
 
   // Toolbar (currently, for use by Windows MDI parent frames ONLY)
-  virtual inline void SetToolBar(wxToolBar *toolbar) { frameToolBar = (wxWindow *)toolbar; }
+  virtual inline void SetToolBar(wxToolBar *toolbar) { frameToolBar = (wxWindow *)(toolbar); }
   virtual inline wxToolBar *GetToolBar(void) { return (wxToolBar *)frameToolBar; }
 };
 

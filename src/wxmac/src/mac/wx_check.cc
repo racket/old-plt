@@ -389,7 +389,7 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 	if (event->LeftDown())
 	{
                 this->Enable(true);
-                ((wxWindow *)this)->Enable(true);
+                wxWindow::Enable(true);
                 
 		SetCurrentDC();
 	

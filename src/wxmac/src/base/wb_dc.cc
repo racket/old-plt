@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cc,v 1.6 1999/11/30 01:20:44 mflatt Exp $
+ * RCS_ID:      $Id: wb_dc.cc,v 1.7 1999/12/10 00:05:26 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -55,7 +55,7 @@ void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle
 
   int i = 0;
   for(wxNode *node = list->First(); node; node = node->Next()) {
-    wxPoint *point = (wxPoint *)node->Data();
+    wxPoint *point = dynamic_cast<wxPoint *>(node->Data());
     points[i].x = point->x;
     points[i++].y = point->y;
   }
@@ -70,7 +70,7 @@ void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
 
   int i = 0;
   for(wxNode *node = list->First(); node; node = node->Next()) {
-    wxPoint *point = (wxPoint *)node->Data();
+    wxPoint *point = dynamic_cast<wxPoint *>(node->Data());
     points[i].x = point->x;
     points[i++].y = point->y;
   }

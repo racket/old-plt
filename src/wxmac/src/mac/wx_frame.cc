@@ -597,7 +597,7 @@ void wxFrame::ShowAsActive(Bool flag)
  	if (!cFocusWindow && children) {
 		wxChildNode *node = children->First();
 		while (node) {
-			wxWindow *win = (wxWindow *)node->Data();
+			wxWindow *win = dynamic_cast<wxWindow *>(node->Data());
 			if (win->WantsFocus() && win->CanAcceptEvent()) {
 				cFocusWindow = win;
 				break;

@@ -22,6 +22,7 @@ private:
   int readerNdx,writerNdx;
   int queueLength;
   IEvent *theQueue[MAXQUEUELENGTH];
+  void * xxxscheme_extension_table;
 
 public:
   CEventQueue(void);
@@ -41,7 +42,8 @@ public:
 	  STDMETHOD(get_EventAvailable)(VARIANT_BOOL *pVal);
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
-	  STDMETHOD(GetReaderSemaphore)(HANDLE *);
+	  STDMETHOD(GetReaderSemaphore)(int);
+	  STDMETHOD(set_extension_table)(int);
 };
 
 #endif //__EVENTQUEUE_H_

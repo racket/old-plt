@@ -33,7 +33,6 @@
                 close))
       
       (define/public (add-token type start length)
-        (printf "add ~a ~a ~a~n" type start length)
         (cond
           ((not tree)
            (set! tree (make-node length (cons type length) 0 #f #f)))
@@ -56,11 +55,9 @@
                                                            #f))))))))
           (else
            (set! tree (search! tree (if (> start 0) (sub1 start) start)))
-           (set-node-token-length! tree (+ (node-token-length tree) length))))
-        (print))
+           (set-node-token-length! tree (+ (node-token-length tree) length)))))
       
       (define/public (remove-token start len)
-        (printf "del ~a ~a~n" start len)
         (set! tree (search! tree start))
         (cond
           ((= start 0)
@@ -78,8 +75,7 @@
              (set! tree (search! (remove-root! tree) (sub1 start)))
              (set-node-token-length! tree (+ (node-token-length tree) len))))
           (else
-           (set-node-token-length! tree (- (node-token-length tree) len))))
-        (print))
+           (set-node-token-length! tree (- (node-token-length tree) len)))))
       
       (define/public (match-forward pos)
         (set! tree (search! tree pos))

@@ -162,10 +162,7 @@
                            (split tokens (- edit-start-pos start-pos))))
                (set! tokens valid-tree)
                (set! invalid-tokens-start (+ change-length invalid-tokens-start))
-               (set! current-pos (+ start-pos tok-start)))))
-          (unless (local-edit-sequence?)
-            (when (has-focus?)
-              (match-parens)))))
+               (set! current-pos (+ start-pos tok-start)))))))
 
 
       (define (colorer-callback)
@@ -241,6 +238,7 @@
           (set! remove-prefs-callback-thunk #f))
         (change-style (send (get-style-list) find-named-style "Standard")
                       start-pos end-pos #f)
+        (match-parens #t)
         (reset-tokens)
         (set! prefix #f)
         (set! get-token #f))
@@ -302,7 +300,7 @@
         (super-on-change)
         (modify))
 
-      (rename [super-after-edit-sequence after-edit-sequence])
+      (rename (super-after-edit-sequence after-edit-sequence))
       (define/override (after-edit-sequence)
         (super-after-edit-sequence)
         (when (has-focus?)
@@ -311,6 +309,9 @@
       (rename (super-after-set-position after-set-position))
       (define/override (after-set-position)
         (super-after-set-position)
+        (unless (local-edit-sequence?)
+          (when (has-focus?)
+            (match-parens)))
         (modify))
 
       (rename (super-after-change-style after-change-style))
@@ -325,11 +326,17 @@
       (rename (super-on-set-size-constraint on-set-size-constraint))
       (define/override (on-set-size-constraint)
         (super-on-set-size-constraint)
+        (unless (local-edit-sequence?)
+          (when (has-focus?)
+            (match-parens)))
         (modify))
 
       (rename (super-after-insert after-insert))
       (define/override (after-insert edit-start-pos change-length)
         (super-after-insert edit-start-pos change-length)
+        ;(unless (local-edit-sequence?)
+        ;  (when (has-focus?)
+        ;    (match-parens)))
         (do-insert/delete edit-start-pos change-length))
       
       (rename (super-after-delete after-delete))

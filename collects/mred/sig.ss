@@ -1,5 +1,5 @@
 ;;
-;; $Id: sig.ss,v 1.81 1998/01/27 21:54:15 robby Exp $
+;; $Id: sig.ss,v 1.82 1998/03/06 04:14:36 robby Exp $
 ;;
 
 (require-library "refer.ss")
@@ -157,6 +157,7 @@
 
 (define-signature mred:finder^
   (filter-match?
+   dialog-parent-parameter
    common-put-file 
    common-get-file 
    std-put-file 

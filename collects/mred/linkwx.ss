@@ -1,5 +1,5 @@
 ;;
-;; $Id: linkwx.ss,v 1.4 1998/01/27 21:54:14 robby Exp $
+;; $Id: linkwx.ss,v 1.5 1998/02/27 00:22:06 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^]
@@ -38,11 +38,13 @@
 		  (minimal constants) gui-utils 
 		  editor-frame finder group hyper-frame
 		  canvas (minimal container) edit preferences
+		  (minimal testable)
 		  (core file@))] 
 	[keymap : mred:keymap^
 		((reference-unit/sig "keys.ss") wx 
 		 (minimal constants) preferences exit finder handler
-		 find-string scheme-paren gui-utils)]
+		 find-string scheme-paren gui-utils
+		 (minimal testable))]
 	[match-cache : mred:match-cache^ 
 		     ((reference-unit/sig "mcache.ss") wx (minimal constants))]
 	[scheme-paren : mred:scheme-paren^
@@ -61,8 +63,10 @@
 	       (core function@))]
 	[gui-utils : mred:gui-utils^
 		   ((reference-unit/sig "guiutils.ss") wx 
-		    (minimal constants) frame (minimal container) canvas edit
-		    (core function@))]
+		    (minimal constants) frame (minimal container) 
+		    canvas edit
+		    (core function@)
+		    (minimal testable))]
 	[graph : mred:graph^ ((reference-unit/sig "graph.ss") wx
 			      (minimal constants) edit gui-utils
 			      (core string@)

@@ -1379,7 +1379,9 @@
 	   (lambda (file-menu)
 	     (send file-menu append-item "&Load Scheme File..."
 		   (lambda ()
-		     (let ((file (mred:finder:get-file)))
+		     (let ([file (parameterize ([mred:finder:dialog-parent-parameter
+						 this])
+				   (mred:finder:get-file))])
 		       (when file
 			 (load-file file)))))
 	     (send file-menu append-item "Show Console History" show-interactions-history)

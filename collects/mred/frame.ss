@@ -387,7 +387,9 @@
 	(public
 	  [save-as
 	   (opt-lambda ([format wx:const-media-ff-same])
-	     (let ([file (mred:finder:put-file)])
+	     (let ([file (parameterize ([mred:finder:dialog-parent-parameter
+					 this])
+			   (mred:finder:put-file))])
 	       (when file
 		 (send (get-edit) save-file file format))))]
 	  [file-menu:revert 

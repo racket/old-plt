@@ -1,4 +1,3 @@
-
   (unit/sig mred:editor-frame^
     (import [wx : wx^]
 	    [mred:constants : mred:constants^]
@@ -88,7 +87,9 @@
 	       (if (check-saved)
 		   (let* ([filename
 			   (if (null? orig-filename)
-			       (mred:finder:get-file)
+			       (parameterize ([mred:finder:dialog-parent-parameter
+					       this])
+				 (mred:finder:get-file))
 			       orig-filename)]
 			  ; at this point, name is either a string, buffer, or #f
 			  ; Is the buffer going to be untitled?

@@ -1,0 +1,12 @@
+2003/04/16
+  * Added a ChangeLog
+  * Added a seperator to the language menu
+  * Removed model and window directories from private
+  * Added an open button which opens the program being tested in drscheme. If
+    the file is already open in a drscheme window, it uses the existing one.
+  * Fixed tabbing so that snips that are off screen are scrolled to when
+    they are tabbed to.
+  * Made the save button appear when the program to test box gets modified.
+  * Made the save button not appear when the test-suite is just loaded.
+  * Documented aligned-snip-mixin and click-forwarding-mixin in the doc.txt
+    of the mrlib collection.

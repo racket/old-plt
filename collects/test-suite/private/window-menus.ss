@@ -18,10 +18,11 @@
          (class* super:window% (test-suite:window<%>)
            (inherit get-menu-bar)
            (inherit-field new delete execute break save-as save show-tests)
+           (inherit-field model)
       
           ;; file-menu:between-new-and-open ((is-a?/c file-menu%) . -> . void?)
           ;; called when contructing the menu between new and open
-           ;; status: this code is duplicated in the test-suite-tool
+           ;; status: this code is duplicated in test-suite-tool.ss
           (rename [super-file-menu:between-new-and-open
                    file-menu:between-new-and-open])
           (define/override (file-menu:between-new-and-open file-menu)
@@ -62,13 +63,11 @@
            
            ;; file-menu:create-save? (-> boolean?)
            ;; called to check whether the save menu should be created
-           (define/override (file-menu:create-save?)
-             true)
+           (define/override (file-menu:create-save?) true)
            
            ;; file-menu:create-save-as? (-> boolean?)
            ;; called to check wether the save-as menu should be created
-           (define/override (file-menu:create-save-as?)
-             true)
+           (define/override (file-menu:create-save-as?) true)
            
            ;; file-menu:save-callback ((is-a?/c menu-item%) (is-a?/c event%) . -> . void?)
            ;; called when the save menu item is clicked
@@ -80,11 +79,14 @@
            (define/override (file-menu:save-as-callback item event)
              (save-as))
            
-           (inherit-field model)
            (define/override (file-menu:print-callback item event)
              (send model print))
            
-           (define/override (file-menu:create-print?) #t)
+           (define/override (file-menu:create-print?) true)
+           
+           ;; get-edit-target-object (-> (union (is-a?/c editor<%>) (is-a?/c window<%>)))
+           ;; overriden to give the undo and redo methods a target for undo and redo operations.
+           (define/override (get-edit-target-object) model)
            
            ;; update-executing (boolean? . -> . void?)
            ;; called by the model when it is executing

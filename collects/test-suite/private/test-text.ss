@@ -1,3 +1,6 @@
+;; status: I think I should keep a flag in here to tell the snips wether or not highlighting exists... that
+;; way the will not have to call clear highlighting when it does not.
+
 (module test-text mzscheme
   
   (require

@@ -144,19 +144,22 @@
                        (let ([filename (get-file)])
                          (when filename
                            (send model set-program filename))))))]
-                 ;[open-button
-                 ; (instantiate button% ()
-                 ;   (label
-                 ;    ((drscheme:unit:make-bitmap
-                 ;      "Open..." *empty-icon*)
-                 ;     (get-area-container)))
-                 ;    (parent program-panel)
-                 ;    (callback
-                 ;     (lambda (button event)
-                 ;       (let ([filename (send (send model get-program) get-text)])
-                 ;         (unless (string=? filename "")
-                 ;       (send (handler:edit-file filename) focus))))))]
-                 )
+                 [open-button
+                  (instantiate button% ()
+                    (label
+                     ((drscheme:unit:make-bitmap
+                       "Open..." *empty-icon*)
+                      (get-area-container)))
+                     (parent program-panel)
+                     (callback
+                      (lambda (button event)
+                        (let ([filename (send (send model get-program) get-text)])
+                          (unless (string=? filename "")
+                            (if (file-exists? filename)
+                                (send (handler:edit-file filename) focus)
+                                (message-box "Test-suite Error"
+                                             (format "No such file ~a" filename))))))))])
+            
             (send program-canvas set-line-count 1))
           
           ;;;;;;;;;;;;;;;;;

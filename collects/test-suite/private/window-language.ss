@@ -17,7 +17,7 @@
     (unit/sig window^
       (import drscheme:tool^ (super : window^))
       (define window%
-        (class* super:window% (test-suite:window<%>)
+        (class super:window%
           (inherit get-menu-bar)
           (inherit-field model)
           
@@ -29,6 +29,7 @@
                (send item delete))
              (send menu get-items))
             (send choose-language restore)
+            (send seperator restore)
             (send add-teachpack restore)
             (send clear-teachpacks restore)
             (let ([teachpacks (send model get-teachpacks)])
@@ -61,6 +62,8 @@
                              (drscheme:language-configuration:language-dialog
                               false (send model get-language) this))))
                     (shortcut #\l))]
+                 [seperator (instantiate separator-menu-item% ()
+                              (parent language-menu))]
                  [add-teachpack
                   (instantiate menu-item% ()
                     (label "Add Teachpack...")

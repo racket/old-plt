@@ -9,10 +9,6 @@ fill in the places in the snip that don't have children snips on it.
 not-focus of the test-cases. do something clever to avoid the blinking of
 the delete button between off-focus and on-focus.
 --------------
-document aligned-snip-mixin in doc.txt
---------------
-document click-forwarding-mixin in doc.txt
---------------
 make GUI-monkey test-suite for test-suite
 --------------
 make a better test-suite window using editor-mixin
@@ -22,11 +18,6 @@ make a better test-suite window using editor-mixin
 figure out the problem with resized overloading
   and a clean way to fix it.
 --------------
-have the 'special' menu in the test-suite tool so that
-  one might add xml boxes to test-suites for instance.
---------------
-make undo/redo work
--------------------
 override on-default-event of the pasteboard if it's not needed
 so that all the funny selection and movement doesn't happen.
 -------------------
@@ -38,22 +29,8 @@ On Mon, Nov 18, 2002 at 03:03:49PM -0600, Robert Bruce Findler wrote:
 > lines between the test case items (or even not, if you can figure out
 > the background colors)
 -------------------
-Make the save button come up when the program to test is changed.
-Make the save button not come up when a test-suite is just loaded.
--------------------
 Give a better error message with highlighting when there are too many
 expressions in a test box.
--------------------
-Scroll to off screen test cases when tabbing
-  fix this so that it if a snip ever gets focus it gets scrolled to
-  i.e. when I mouse select a snip that is partially visible it does
-  not come into view.
--------------------
-- add a button next to browse that opens the tested file in DrScheme
-  (handler:open-file or finder:open-file in the framework does
-  everying for you)
-
-Robby
 -------------------
  * There's a problem with handling mouse-button releases. They seem to
    be handled like clicks. For example, drag a selection in "Expected",
@@ -61,10 +38,6 @@ Robby
 
 Matthew
 -------------------
-give the language menu a separtor so it looks just like the drscheme
-window menu -mike
-"refactoring for robby to do" - matthia
-------------------
    - add an extra paren at the end of some expression and cry about the error
      message
    - after xcuting and receiving checks for all tests, edit an expected value
@@ -74,6 +47,18 @@ window menu -mike
 ######################################################################
                           Nonimmediate TODO:
 ######################################################################
+-------------------
+make undo/redo work
+-------------------
+have the 'special' menu in the test-suite tool so that
+  one might add xml boxes to test-suites for instance.
+-------------------
+Disable the open button when there is nothing in the program to test box
+-------------------
+Refactor languaged frame unit so that it does not depend on the model but
+instread stores the language and teachpacks in it's own fields and may be
+used by DrScheme as a general mixin to add language support to windows.
+-------------------
 add support for the test definitions boxes.
 -------------------
 One thing I noticed about your tester: it doesn't seem to use Robby's

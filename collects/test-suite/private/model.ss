@@ -29,11 +29,23 @@
           
           (init-field window)
           
+          (define program-text%
+            (class text%
+              (rename [super-after-insert after-insert])
+              (define/override (after-insert start len)
+                (super-after-insert start len)
+                (set-modified true))
+              (rename [super-after-delete after-delete])
+              (define/override (after-delete start len)
+                (super-after-delete start len)
+                (set-modified true))
+              (super-instantiate ())))
+          
           (field
            [ignore-modified? false]
            [expander false]
            [tests-showing? false]
-           [program (instantiate text% ())]
+           [program (instantiate program-text% ())]
            [language (preferences:get
                       (drscheme:language-configuration:get-settings-preferences-symbol))]
            [teachpacks empty]
@@ -234,7 +246,7 @@
                (find-first-snip))
               (set! has-highlighting? false)))
           
-          ;; load-file (boolean? . -> . void?)
+          ;; after-load-file (boolean? . -> . void?)
           ;; called after a file is loaded into the editor
           (rename [super-after-load-file after-load-file])
           (define/override (after-load-file success?)

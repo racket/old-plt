@@ -2,6 +2,8 @@
   (unit/sig mred:url^
     (import)
 
+    (define-struct url (method path search fragment))
+
     (define character-set-size 256)
 
     (define marker-list
@@ -52,7 +54,7 @@
 		  (search-finish (and search-start
 				   (if first-hash first-hash
 				     total-length))))
-		(values
+		(make-url
 		  (and scheme-start
 		    (cons scheme-start scheme-finish))
 		  (cons path-start path-finish)
@@ -120,18 +122,20 @@
 
     (define get-url-i/o-ports
       (lambda (url)
-	(let-values
-	  (((scheme path search fragment)
-	     (parse-url url)))
-	  (let-values
-	    (((hostname port-number access-path)
-	       (path->host/port/path path url)))
+	(let ((url (parse-url url)))
+	  (let ((scheme (url-scheme url))
+		 (path (url-path url))
+		 (search (url-search url))
+		 (fragment (url-fragment url)))
 	    (let-values
-	      (((input-port output-port)
-		 (let ((port-number (or port-number default-port-number/http)))
-		   (tcp-connect hostname port-number))))
-	      (fprintf output-port "GET ~a HTTP/1.0~n" access-path)
-	      (values input-port output-port))))))
+	      (((hostname port-number access-path)
+		 (path->host/port/path path url)))
+	      (let-values
+		(((input-port output-port)
+		   (let ((port-number (or port-number default-port-number/http)))
+		     (tcp-connect hostname port-number))))
+		(fprintf output-port "GET ~a HTTP/1.0~n" access-path)
+		(values input-port output-port)))))))
 
     (define get-port-for-url
       (lambda (url)

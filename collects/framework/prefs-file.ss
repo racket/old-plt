@@ -1,9 +1,8 @@
-(unit/sig framework:prefs-file^
-  (import)
-  
-  (define (get-preferences-filename)
-    (build-path (find-system-path 'pref-dir)
-		(case (system-type)
-		  [(macos) "MrEd Preferences"]
-		  [(windows) "mred.pre"]
-		  [else ".mred.prefs"]))))
+(module prefs-file mzscheme
+  (require "prefs-file-unit.ss"
+	   "prefs-file-sig.ss"
+	   (lib "unitsig.ss"))
+
+  (define-values/invoke-unit/sig
+    framework:prefs-file^
+    framework:prefs-file@))

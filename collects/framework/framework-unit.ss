@@ -1,11 +1,17 @@
 (module framework-unit mzscheme
+  (require (lib "unitsig.ss"))
+
   (require "gui-utils-sig.ss"
 	   "gui-utils-unit.ss"
 
            "test-sig.ss"
            "test-unit.ss"
+
+	   "prefs-file-unit.ss"
+	   "prefs-file-sig.ss"
            
            "sig.ss"
+
            "private/application.ss"
 	   "private/version.ss"
 	   "private/color-model.ss"
@@ -41,27 +47,25 @@
     (compound-unit/sig
       (import)
       (link
-       [pref-file : framework:prefs-file^ (prefs-file@)]
-       [f : framework^ (framework-prefs@ pref-file)])
+       [prefs-file : framework:prefs-file^ (framework:prefs-file@)]
+       [f : framework^ (framework-prefs@ prefs-file)])
       (export
+       (unit prefs-file)
        (open f))))
 
 
   (define framework-prefs@
     (compound-unit/sig
       (import [pref-file : framework:prefs-file^])
-      (link [keys : framework:keys^ (keys@)]
-	    [test : framework:test^ (test@ keys)]
-	    [f : frameworkc^ (framework-???@ keys test pref-file)])
+      (link [test : framework:test^ (framework:test@)]
+	    [f : frameworkc^ (framework-small-part@ test pref-file)])
       (export
-       (unit keys)
        (unit test)
        (open f))))
 
   (define framework-small-part@
     (compound-unit/sig
-      (import [keys : framework:keys^]
-	      [test : framework:test^]
+      (import [test : framework:test^]
 	      [pref-file : framework:prefs-file^])
       (link [application : framework:application^ (app@)]
 	    [version : framework:version^ (version@)]
@@ -74,7 +78,7 @@
 	    [handler : framework:handler^
 		     (handler@ gui-utils finder group  text preferences frame)] 
 	    [keymap : framework:keymap^
-		    (keymap@ keys preferences finder handler scheme-paren frame)]
+		    (keymap@ preferences finder handler scheme-paren frame)]
 	    [match-cache : framework:match-cache^ (mcache@)]
 	    [paren : framework:paren^ (paren@)]
 	    [scheme-paren : framework:scheme-paren^ (sparen@ paren)]

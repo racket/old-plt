@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-unit.ss,v 1.1 2001/02/25 21:13:26 robby Exp $
+;; $Id: test-unit.ss,v 1.2 2001/02/27 01:46:49 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -23,9 +23,9 @@
 	   (lib "etc.ss")
 	   "test-sig.ss")
 
-  (provide test@)
+  (provide framework:test@)
 
-  (define test@
+  (define framework:test@
 (unit/sig framework:test^
   (import [mred : mred^])
 

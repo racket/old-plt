@@ -122,8 +122,10 @@ static int unhilite_before_change = FALSE;
 
 void wxPrepareMenuDraw(void)
 {
-  if (unhilite_before_change)
+  if (unhilite_before_change) {
     HiliteMenu(0);
+    unhilite_before_change = FALSE;
+  }
 }
 
 void wxDoneMenuDraw(Bool menu_hilited)

@@ -341,7 +341,7 @@ void wxApp::doMacMouseDown(void)
 	wxTracking();
 	wxPrepareMenuDraw();
 	menuResult = MenuSelect(cCurrentEvent.where);
-	wxDoneMenuDraw(TRUE);
+	wxDoneMenuDraw(!!menuResult);
 	doMacInMenuBar(menuResult, FALSE);
       }
       break;
@@ -598,13 +598,13 @@ void wxApp::doMacKeyUpDown(Bool down)
 	  long menuResult;
 	  wxPrepareMenuDraw();
 	  menuResult = MenuEvent(&cCurrentEvent);
-	  wxDoneMenuDraw(TRUE);
+	  wxDoneMenuDraw(!!menuResult);
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE)) {
 	      return;
 	    } else {
 	      wxPrepareMenuDraw();
-	      HiliteMenu(0);
+	      // HiliteMenu(0); // calling wxPrepareMenuDraw unhlites the menu
 	      wxDoneMenuDraw();
 	    }
 	  }
@@ -878,7 +878,7 @@ void wxApp::doMacMouseMovedMessage(void)
 static void UnhiliteMenu()
 {
   wxPrepareMenuDraw();
-  HiliteMenu(0);
+  // HiliteMenu(0); // calling wxPrepareMenuDraw unhlites the menu
   wxDoneMenuDraw();
 }
 

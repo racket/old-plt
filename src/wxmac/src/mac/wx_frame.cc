@@ -715,7 +715,7 @@ void wxFrame::ProcessCommand(int id)
 {
   OnMenuCommand(id);
   wxPrepareMenuDraw();
-  HiliteMenu(0); // unhilite the hilited menu
+  // HiliteMenu(0); // calling wxPrepareMenuDraw unhlites the menu
   wxDoneMenuDraw();
 }
 

@@ -47,7 +47,11 @@
    (qid (: (@ (letter) (* (: (letter-or-digit) "_" "'")))
            (+ (: (misc-idents) "^"))))
    (aqid (: (@ (letter) (* (: (letter-or-digit) "_" "'")))
-            (+ (misc-idents)))))
+            (+ (misc-idents))))
+   (string-contents (: (^ "\\" "\"") 
+                       (@ "\\" (+ (: " " "\t" "\n" "\r")) "\\")
+                       "\\^\\"
+                       (@ "\\" (- #\000 #\377)))))
   
   (define keyword-table
     (let ((kt (make-hash-table)))
@@ -108,7 +112,7 @@
       kt))
   
   (define (get-keyword k)
-    (hash-table-get keyword-table k (lambda () (token-ID k))))
+    (hash-table-get keyword-table (string->symbol k) (lambda () (token-ID k))))
   
   (define (get-qualified-id l)
     (let* ((len (string-length l))
@@ -134,6 +138,9 @@
                       (position-offset sp)
                       (- (position-offset ep) (position-offset sp))))
   
+  (define (process-sml-string s)
+    ())
+  
   (define (make-get-token quotation)
     (let ((lexing-mode 'normal)
           (comment-depth 0)
@@ -153,8 +160,8 @@
                     (comment input-port)
                     (return-without-pos (token-n input-port))))
                  ("*)" (raise-error "*) not in comment" start-pos end-pos))
-                 ((@ "'" (+ (: (letter-or-digit) "_" "'"))) (token-TYVAR (string->symbol lexeme)))
-                 ("0" (token-ZDIGIT 0))
+                 ((@ "'" (+ (: (letter-or-digit) "_" "'"))) (token-TYVAR lexeme))
+                 ("0" (token-ZDIGIT "0"))
                  ((- "1" "9") (token-NZDIGIT lexeme))
                  ((@ "0" (+ (digit))) (token-ZPOSINT2 lexeme))
                  ((@ (- "1" "9") (+ (digit))) (token-NZPOSINT2 lexeme))
@@ -166,11 +173,11 @@
                      (? (@ "." (+ (digit))))
                      (? (@  (: "e" "E") (? "~") (+ (digit)))))
                   (token-REAL lexeme))
-                 ((@ (? "#") "\"" (* (: (^ "\"") "\\\"")) "\"")
+                 ((@ (? "#") "\"" (* (string-contents)) "\"")
                   (if (char=? #\# (string-ref lexeme 0))
                       (token-CHAR lexeme)
                       (token-STRING lexeme)))
-                 ((@ (: "#\"" "\"") (* (: (^ "\"") "\\\"")) (eof))
+                 ((@ (? "#") "\"" (* (string-contents)) (eof))
                   (raise-error "File ended inside of quotation" start-pos end-pos))
                  ("_" 'UNDERBAR)
                  ("," 'COMMA)
@@ -201,7 +208,7 @@
                             'RPAREN)))))))
                  (";" 'SEMICOLON)
                  ((eof) 'EOF)
-                 ((id) (get-keyword (string->symbol lexeme)))
+                 ((id) (get-keyword lexeme))
                  ((@ (+ (@ (id) ".")) (id)) (get-qualified-id lexeme))))
                (token-nq
                 (lexer-src-pos
@@ -213,8 +220,8 @@
                     (comment input-port)
                     (return-without-pos (token-nq input-port))))
                  ("*)" (raise-error "*) not in comment" start-pos end-pos))
-                 ((@ "'" (+ (: (letter-or-digit) "_" "'"))) (token-TYVAR (string->symbol lexeme)))
-                 ("0" (token-ZDIGIT 0))
+                 ((@ "'" (+ (: (letter-or-digit) "_" "'"))) (token-TYVAR lexeme))
+                 ("0" (token-ZDIGIT "0"))
                  ((- "1" "9") (token-NZDIGIT lexeme))
                  ((@ "0" (+ (digit))) (token-ZPOSINT2 lexeme))
                  ((@ (- "1" "9") (+ (digit))) (token-NZPOSINT2 lexeme))
@@ -226,11 +233,11 @@
                      (? (@ "." (+ (digit))))
                      (? (@  (: "e" "E") (? "~") (+ (digit)))))
                   (token-REAL lexeme))
-                 ((@ (? "#") "\"" (* (: (^ "\"") "\\\"")) "\"")
+                 ((@ (? "#") "\"" (* (string-contents)) "\"")
                   (if (char=? #\# (string-ref lexeme 0))
                       (token-CHAR lexeme)
                       (token-STRING lexeme)))
-                 ((@ (: "#\"" "\"") (* (: (^ "\"") "\\\"")) (eof))
+                 ((@ (? "#") "\"" (* (string-contents)) (eof))
                   (raise-error "File ended inside of quotation" start-pos end-pos))
                  ("_" 'UNDERBAR)
                  ("," 'COMMA)
@@ -261,7 +268,7 @@
                             'RPAREN)))))))
                  (";" 'SEMICOLON)
                  ((eof) 'EOF)
-                 ((qid) (get-keyword (string->symbol lexeme)))
+                 ((qid) (get-keyword lexeme))
                  ((@ (+ (@ (qid) ".")) (qid)) (get-qualified-id lexeme))
                  ("`"
                   (begin
@@ -419,7 +426,7 @@
       (TopDecFile
        ;;((KWDec_seq EOF) #f))
        ((KWDec_seq) #f))
-       (StructFile
+      (StructFile
        ((STRUCTURE ModId EQUALS ModExp SemiEof) #f)
        ((STRUCTURE ModId COLONGT SigId EQUALS ModExp SemiEof) #f)
        ;;((KWCoreDec_seq EOF) #f))
@@ -823,4 +830,363 @@
        ((AND WhereType) #f)
        (() #f)))))
   
-        )
+  (define files
+    `("/home/sowens/mosml/examples/calc/calc.sml"
+      "/home/sowens/mosml/examples/cgi/cgiex1.sml"
+      "/home/sowens/mosml/examples/cgi/cgiex2.sml"
+      "/home/sowens/mosml/examples/cgi/cgitest.sml"
+      "/home/sowens/mosml/examples/lexyacc/Data.sml"
+      "/home/sowens/mosml/examples/lexyacc/Main.sml"
+      "/home/sowens/mosml/examples/manual/Evaluate.sml"
+      "/home/sowens/mosml/examples/manual/Expr.sml"
+      "/home/sowens/mosml/examples/manual/Reduce.sml"
+      "/home/sowens/mosml/examples/mls/mls.sml"
+      "/home/sowens/mosml/examples/modules/array.sml"
+      "/home/sowens/mosml/examples/modules/bootstrap.sml"
+      "/home/sowens/mosml/examples/modules/choice.sml"
+      "/home/sowens/mosml/examples/modules/collect.sml"
+      "/home/sowens/mosml/examples/modules/matrix.sml"
+      "/home/sowens/mosml/examples/modules/poly.sml"
+      "/home/sowens/mosml/examples/modules/recursion.sml"
+      "/home/sowens/mosml/examples/modules/sieve.sml"
+      "/home/sowens/mosml/examples/parsercomb/Parsercomb.sml"
+      "/home/sowens/mosml/examples/paulson/sample.sml"
+      "/home/sowens/mosml/examples/paulson/sample10.sml"
+      "/home/sowens/mosml/examples/paulson/sample2.sml"
+      "/home/sowens/mosml/examples/paulson/sample3.sml"
+      "/home/sowens/mosml/examples/paulson/sample4.sml"
+      "/home/sowens/mosml/examples/paulson/sample5.sml"
+      "/home/sowens/mosml/examples/paulson/sample7.sml"
+      "/home/sowens/mosml/examples/paulson/sample8.sml"
+      "/home/sowens/mosml/examples/paulson/sample9.sml"
+      "/home/sowens/mosml/examples/paulson/test10.sml"
+      "/home/sowens/mosml/examples/pretty/ppexpr.sml"
+      "/home/sowens/mosml/examples/pretty/pproman.sml"
+      "/home/sowens/mosml/examples/small/perms.sml"
+      "/home/sowens/mosml/examples/small/countperms.sml"
+      "/home/sowens/mosml/examples/small/countqueens.sml"
+      "/home/sowens/mosml/examples/small/queens.sml"
+      "/home/sowens/mosml/examples/small/roman.sml"
+      "/home/sowens/mosml/examples/small/subsets.sml"
+      "/home/sowens/mosml/examples/small/subsum.sml"
+      "/home/sowens/mosml/examples/units/Evaluate.sml"
+      "/home/sowens/mosml/examples/units/Expr.sml"
+      "/home/sowens/mosml/examples/units/Reduce.sml"
+      "/home/sowens/mosml/examples/units/Test.sml"
+      "/home/sowens/mosml/examples/weak/hashcons.sml"
+      "/home/sowens/mosml/examples/webserver/echoserver.sml"
+      "/home/sowens/mosml/examples/webserver/minimalserver.sml"
+      "/home/sowens/mosml/examples/webserver/mosmlserver.sml"
+      "/home/sowens/mosml/examples/webserver/useit.sml"
+      "/home/sowens/mosml/src/compiler/Asynt.sml"
+      "/home/sowens/mosml/src/compiler/Arg.sml"
+      "/home/sowens/mosml/src/compiler/test/A.sml"
+      "/home/sowens/mosml/src/compiler/test/B.sml"
+      "/home/sowens/mosml/src/compiler/test/C.sml"
+      "/home/sowens/mosml/src/compiler/test/applic.sml"
+      "/home/sowens/mosml/src/compiler/test/array.sml"
+      "/home/sowens/mosml/src/compiler/test/array2.sml"
+      "/home/sowens/mosml/src/compiler/test/church-functors-mosml.sml"
+      "/home/sowens/mosml/src/compiler/test/coerce.sml"
+      "/home/sowens/mosml/src/compiler/test/eq.sml"
+      "/home/sowens/mosml/src/compiler/test/evalorder.sml"
+      "/home/sowens/mosml/src/compiler/test/gnvsap.sml"
+      "/home/sowens/mosml/src/compiler/test/greederr.sml"
+      "/home/sowens/mosml/src/compiler/test/hiorder.sml"
+      "/home/sowens/mosml/src/compiler/test/inf.sml"
+      "/home/sowens/mosml/src/compiler/test/link.sml"
+      "/home/sowens/mosml/src/compiler/test/matcherr.sml"
+      "/home/sowens/mosml/src/compiler/test/matchsuc.sml"
+      "/home/sowens/mosml/src/compiler/test/modres.sml"
+      "/home/sowens/mosml/src/compiler/test/okasaki.sml"
+      "/home/sowens/mosml/src/compiler/test/opnlcl.sml"
+      "/home/sowens/mosml/src/compiler/test/opntop.sml"
+      "/home/sowens/mosml/src/compiler/test/poly.sml"
+      "/home/sowens/mosml/src/compiler/test/recmod.sml"
+      "/home/sowens/mosml/src/compiler/test/refeq.sml"
+      "/home/sowens/mosml/src/compiler/test/sample10.sml"
+      "/home/sowens/mosml/src/compiler/test/sample2.sml"
+      "/home/sowens/mosml/src/compiler/test/sample3.sml"
+      "/home/sowens/mosml/src/compiler/test/sample4.sml"
+      "/home/sowens/mosml/src/compiler/test/sample5.sml"
+      "/home/sowens/mosml/src/compiler/test/sample7.sml"
+      "/home/sowens/mosml/src/compiler/test/sample8.sml"
+      "/home/sowens/mosml/src/compiler/test/sample9.sml"
+      "/home/sowens/mosml/src/compiler/test/scope.sml"
+      "/home/sowens/mosml/src/compiler/test/sharing.sml"
+      "/home/sowens/mosml/src/compiler/test/sieve.sml"
+      "/home/sowens/mosml/src/compiler/test/sigcon.sml"
+      "/home/sowens/mosml/src/compiler/test/test.sml"
+      "/home/sowens/mosml/src/compiler/test/test10.sml"
+      "/home/sowens/mosml/src/compiler/test/where.sml"
+      "/home/sowens/mosml/src/compiler/test/wheretyp.sml"
+      "/home/sowens/mosml/src/compiler/Asyntfn.sml"
+      "/home/sowens/mosml/src/compiler/Back.sml"
+      "/home/sowens/mosml/src/compiler/Buffcode.sml"
+      "/home/sowens/mosml/src/compiler/Code_dec.sml"
+      "/home/sowens/mosml/src/compiler/Compiler.sml"
+      "/home/sowens/mosml/src/compiler/Const.sml"
+      "/home/sowens/mosml/src/compiler/Elab.sml"
+      "/home/sowens/mosml/src/compiler/Emit_phr.sml"
+      "/home/sowens/mosml/src/compiler/Emitcode.sml"
+      "/home/sowens/mosml/src/compiler/Exec_phr.sml"
+      "/home/sowens/mosml/src/compiler/Fnlib.sml"
+      "/home/sowens/mosml/src/compiler/Front.sml"
+      "/home/sowens/mosml/src/compiler/Globals.sml"
+      "/home/sowens/mosml/src/compiler/Hasht.sml"
+      "/home/sowens/mosml/src/compiler/Infixres.sml"
+      "/home/sowens/mosml/src/compiler/Infixst.sml"
+      "/home/sowens/mosml/src/compiler/Instruct.sml"
+      "/home/sowens/mosml/src/compiler/Labels.sml"
+      "/home/sowens/mosml/src/compiler/Lambda.sml"
+      "/home/sowens/mosml/src/compiler/Link.sml"
+      "/home/sowens/mosml/src/compiler/Load_phr.sml"
+      "/home/sowens/mosml/src/compiler/Location.sml"
+      "/home/sowens/mosml/src/compiler/Mainc.sml"
+      "/home/sowens/mosml/src/compiler/Mainl.sml"
+      "/home/sowens/mosml/src/compiler/Maint.sml"
+      "/home/sowens/mosml/src/compiler/Match.sml"
+      "/home/sowens/mosml/src/compiler/Memory.sml"
+      "/home/sowens/mosml/src/compiler/Miscsys.sml"
+      "/home/sowens/mosml/src/compiler/Mixture.sml"
+      "/home/sowens/mosml/src/compiler/Ovlres.sml"
+      "/home/sowens/mosml/src/compiler/Patch.sml"
+      "/home/sowens/mosml/src/compiler/Pr_lam.sml"
+      "/home/sowens/mosml/src/compiler/Pr_zam.sml"
+      "/home/sowens/mosml/src/compiler/Prim.sml"
+      "/home/sowens/mosml/src/compiler/Prim_opc.sml"
+      "/home/sowens/mosml/src/compiler/Primdec.sml"
+      "/home/sowens/mosml/src/compiler/Printexc.sml"
+      "/home/sowens/mosml/src/compiler/Readword.sml"
+      "/home/sowens/mosml/src/compiler/Reloc.sml"
+      "/home/sowens/mosml/src/compiler/Rtvals.sml"
+      "/home/sowens/mosml/src/compiler/Sigmtch.sml"
+      "/home/sowens/mosml/src/compiler/Smlexc.sml"
+      "/home/sowens/mosml/src/compiler/Smlperv.sml"
+      "/home/sowens/mosml/src/compiler/Smlprim.sml"
+      "/home/sowens/mosml/src/compiler/Smltop.sml"
+      "/home/sowens/mosml/src/compiler/Sort.sml"
+      "/home/sowens/mosml/src/compiler/Stack.sml"
+      "/home/sowens/mosml/src/compiler/Symtable.sml"
+      "/home/sowens/mosml/src/compiler/Synchk.sml"
+      "/home/sowens/mosml/src/compiler/Tr_const.sml"
+      "/home/sowens/mosml/src/compiler/Tr_env.sml"
+      "/home/sowens/mosml/src/compiler/Types.sml"
+      "/home/sowens/mosml/src/compiler/Units.sml"
+      "/home/sowens/mosml/src/compiler/Filename.sml"
+      "/home/sowens/mosml/src/compiler/Config.sml"
+      "/home/sowens/mosml/src/compiler/Parser.sml"
+      "/home/sowens/mosml/src/compiler/Lexer.sml"
+      "/home/sowens/mosml/src/compiler/Opcodes.sml"
+      "/home/sowens/mosml/src/compiler/Predef.sml"
+      "/home/sowens/mosml/src/compiler/Prim_c.sml"
+      "/home/sowens/mosml/src/convert/Convert.sml"
+      "/home/sowens/mosml/src/convert/GenPm.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Asynt.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Database.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Hasht.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Htmlsigs.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Parsspec.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Printbase.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Stack.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/Texsigs.sml"
+      "/home/sowens/mosml/src/doc/helpsigs/makebase.sml"
+      "/home/sowens/mosml/src/dynlibs/crypt/crypt.sml"
+      "/home/sowens/mosml/src/dynlibs/interface/smlside.sml"
+      "/home/sowens/mosml/src/dynlibs/interface/smlside_mac.sml"
+      "/home/sowens/mosml/src/dynlibs/intinf/IntInf.sml"
+      "/home/sowens/mosml/src/dynlibs/intinf/fac.sml"
+      "/home/sowens/mosml/src/dynlibs/intinf/testintinf.sml"
+      "/home/sowens/mosml/src/dynlibs/intinf/testintinf_mac.sml"
+      "/home/sowens/mosml/src/dynlibs/mgd/Graphs.sml"
+      "/home/sowens/mosml/src/dynlibs/mgd/testgdimage.sml"
+      "/home/sowens/mosml/src/dynlibs/mgdbm/example1.sml"
+      "/home/sowens/mosml/src/dynlibs/mgdbm/example2.sml"
+      "/home/sowens/mosml/src/dynlibs/mgdbm/testgdbm.sml"
+      "/home/sowens/mosml/src/dynlibs/mmysql/testmysql.sml"
+      "/home/sowens/mosml/src/dynlibs/mpq/testpsql.sml"
+      "/home/sowens/mosml/src/dynlibs/mregex/testregex.sml"
+      "/home/sowens/mosml/src/dynlibs/mregex/testregex_mac.sml"
+      "/home/sowens/mosml/src/dynlibs/msocket/testclient.sml"
+      "/home/sowens/mosml/src/dynlibs/msocket/testserver.sml"
+      "/home/sowens/mosml/src/dynlibs/msocket/testsocket.sml"
+      "/home/sowens/mosml/src/dynlibs/munix/testunix.sml"
+      "/home/sowens/mosml/src/launch/testprog.sml"
+      "/home/sowens/mosml/src/lex/Gram_aux.sml"
+      "/home/sowens/mosml/src/lex/Lexgen.sml"
+      "/home/sowens/mosml/src/lex/Mainlex.sml"
+      "/home/sowens/mosml/src/lex/Output.sml"
+      "/home/sowens/mosml/src/lex/Scan_aux.sml"
+      "/home/sowens/mosml/src/lex/Syntax.sml"
+      "/home/sowens/mosml/src/lex/Grammar.sml"
+      "/home/sowens/mosml/src/lex/Scanner.sml"
+      "/home/sowens/mosml/src/mosmllib/test/callback/testcallback.sml"
+      "/home/sowens/mosml/src/mosmllib/test/callback/testcallbackmac.sml"
+      "/home/sowens/mosml/src/mosmllib/test/array.sml"
+      "/home/sowens/mosml/src/mosmllib/test/array2.sml"
+      "/home/sowens/mosml/src/mosmllib/test/arraysort.sml"
+      "/home/sowens/mosml/src/mosmllib/test/auxil.sml"
+      "/home/sowens/mosml/src/mosmllib/test/bytechar.sml"
+      "/home/sowens/mosml/src/mosmllib/test/bytecmac.sml"
+      "/home/sowens/mosml/src/mosmllib/test/callback.sml"
+      "/home/sowens/mosml/src/mosmllib/test/cmdline.sml"
+      "/home/sowens/mosml/src/mosmllib/test/date.sml"
+      "/home/sowens/mosml/src/mosmllib/test/dospath.sml"
+      "/home/sowens/mosml/src/mosmllib/test/filesmac.sml"
+      "/home/sowens/mosml/src/mosmllib/test/filesys.sml"
+      "/home/sowens/mosml/src/mosmllib/test/general.sml"
+      "/home/sowens/mosml/src/mosmllib/test/generalmac.sml"
+      "/home/sowens/mosml/src/mosmllib/test/int.sml"
+      "/home/sowens/mosml/src/mosmllib/test/list.sml"
+      "/home/sowens/mosml/src/mosmllib/test/listpair.sml"
+      "/home/sowens/mosml/src/mosmllib/test/listsort.sml"
+      "/home/sowens/mosml/src/mosmllib/test/macpath.sml"
+      "/home/sowens/mosml/src/mosmllib/test/math.sml"
+      "/home/sowens/mosml/src/mosmllib/test/mosml.sml"
+      "/home/sowens/mosml/src/mosmllib/test/polyhash.sml"
+      "/home/sowens/mosml/src/mosmllib/test/real.sml"
+      "/home/sowens/mosml/src/mosmllib/test/string.sml"
+      "/home/sowens/mosml/src/mosmllib/test/stringcvt.sml"
+      "/home/sowens/mosml/src/mosmllib/test/stringmac.sml"
+      "/home/sowens/mosml/src/mosmllib/test/substring.sml"
+      "/home/sowens/mosml/src/mosmllib/test/susp.sml"
+      "/home/sowens/mosml/src/mosmllib/test/test.sml"
+      "/home/sowens/mosml/src/mosmllib/test/testmac.sml"
+      "/home/sowens/mosml/src/mosmllib/test/testrun.sml"
+      "/home/sowens/mosml/src/mosmllib/test/textio.sml"
+      "/home/sowens/mosml/src/mosmllib/test/time.sml"
+      "/home/sowens/mosml/src/mosmllib/test/timer.sml"
+      "/home/sowens/mosml/src/mosmllib/test/unixpath.sml"
+      "/home/sowens/mosml/src/mosmllib/test/vector.sml"
+      "/home/sowens/mosml/src/mosmllib/test/weak.sml"
+      "/home/sowens/mosml/src/mosmllib/test/word.sml"
+      "/home/sowens/mosml/src/mosmllib/test/word8.sml"
+      "/home/sowens/mosml/src/mosmllib/test/word8array.sml"
+      "/home/sowens/mosml/src/mosmllib/test/word8vector.sml"
+      "/home/sowens/mosml/src/mosmllib/AppleScript.sml"
+      "/home/sowens/mosml/src/mosmllib/Array2.sml"
+      "/home/sowens/mosml/src/mosmllib/Arraysort.sml"
+      "/home/sowens/mosml/src/mosmllib/BasicIO.sml"
+      "/home/sowens/mosml/src/mosmllib/BinIO.sml"
+      "/home/sowens/mosml/src/mosmllib/Binarymap.sml"
+      "/home/sowens/mosml/src/mosmllib/Binaryset.sml"
+      "/home/sowens/mosml/src/mosmllib/Bool.sml"
+      "/home/sowens/mosml/src/mosmllib/Byte.sml"
+      "/home/sowens/mosml/src/mosmllib/Callback.sml"
+      "/home/sowens/mosml/src/mosmllib/Char.sml"
+      "/home/sowens/mosml/src/mosmllib/CharArray.sml"
+      "/home/sowens/mosml/src/mosmllib/CharVector.sml"
+      "/home/sowens/mosml/src/mosmllib/CommandLine.sml"
+      "/home/sowens/mosml/src/mosmllib/Date.sml"
+      "/home/sowens/mosml/src/mosmllib/Dynarray.sml"
+      "/home/sowens/mosml/src/mosmllib/Dynlib.sml"
+      "/home/sowens/mosml/src/mosmllib/Gdbm.sml"
+      "/home/sowens/mosml/src/mosmllib/Gdimage.sml"
+      "/home/sowens/mosml/src/mosmllib/IO.sml"
+      "/home/sowens/mosml/src/mosmllib/Intmap.sml"
+      "/home/sowens/mosml/src/mosmllib/Intset.sml"
+      "/home/sowens/mosml/src/mosmllib/Lexing.sml"
+      "/home/sowens/mosml/src/mosmllib/List.sml"
+      "/home/sowens/mosml/src/mosmllib/ListPair.sml"
+      "/home/sowens/mosml/src/mosmllib/Listsort.sml"
+      "/home/sowens/mosml/src/mosmllib/Location.sml"
+      "/home/sowens/mosml/src/mosmllib/Math.sml"
+      "/home/sowens/mosml/src/mosmllib/Misc.sml"
+      "/home/sowens/mosml/src/mosmllib/Mosmlcgi.sml"
+      "/home/sowens/mosml/src/mosmllib/Mosmlcookie.sml"
+      "/home/sowens/mosml/src/mosmllib/Msp.sml"
+      "/home/sowens/mosml/src/mosmllib/Mysql.sml"
+      "/home/sowens/mosml/src/mosmllib/NJ93.sml"
+      "/home/sowens/mosml/src/mosmllib/Nonstdio.sml"
+      "/home/sowens/mosml/src/mosmllib/OS.sml"
+      "/home/sowens/mosml/src/mosmllib/Obj.sml"
+      "/home/sowens/mosml/src/mosmllib/Option.sml"
+      "/home/sowens/mosml/src/mosmllib/PP.sml"
+      "/home/sowens/mosml/src/mosmllib/Parsing.sml"
+      "/home/sowens/mosml/src/mosmllib/Polygdbm.sml"
+      "/home/sowens/mosml/src/mosmllib/Polyhash.sml"
+      "/home/sowens/mosml/src/mosmllib/Postgres.sml"
+      "/home/sowens/mosml/src/mosmllib/Random.sml"
+      "/home/sowens/mosml/src/mosmllib/Real.sml"
+      "/home/sowens/mosml/src/mosmllib/Regex.sml"
+      "/home/sowens/mosml/src/mosmllib/SML90.sml"
+      "/home/sowens/mosml/src/mosmllib/Signal.sml"
+      "/home/sowens/mosml/src/mosmllib/Socket.sml"
+      "/home/sowens/mosml/src/mosmllib/Splaymap.sml"
+      "/home/sowens/mosml/src/mosmllib/Splayset.sml"
+      "/home/sowens/mosml/src/mosmllib/Splaytree.sml"
+      "/home/sowens/mosml/src/mosmllib/String.sml"
+      "/home/sowens/mosml/src/mosmllib/StringCvt.sml"
+      "/home/sowens/mosml/src/mosmllib/Substring.sml"
+      "/home/sowens/mosml/src/mosmllib/Susp.sml"
+      "/home/sowens/mosml/src/mosmllib/TextIO.sml"
+      "/home/sowens/mosml/src/mosmllib/Time.sml"
+      "/home/sowens/mosml/src/mosmllib/Timer.sml"
+      "/home/sowens/mosml/src/mosmllib/Unix.sml"
+      "/home/sowens/mosml/src/mosmllib/Word8.sml"
+      "/home/sowens/mosml/src/mosmllib/Array.sml"
+      "/home/sowens/mosml/src/mosmllib/FileSys.sml"
+      "/home/sowens/mosml/src/mosmllib/Help.sml"
+      "/home/sowens/mosml/src/mosmllib/Int.sml"
+      "/home/sowens/mosml/src/mosmllib/Mosml.sml"
+      "/home/sowens/mosml/src/mosmllib/Path.sml"
+      "/home/sowens/mosml/src/mosmllib/Process.sml"
+      "/home/sowens/mosml/src/mosmllib/Strbase.sml"
+      "/home/sowens/mosml/src/mosmllib/Vector.sml"
+      "/home/sowens/mosml/src/mosmllib/Weak.sml"
+      "/home/sowens/mosml/src/mosmllib/Word.sml"
+      "/home/sowens/mosml/src/mosmllib/Word8Array.sml"
+      "/home/sowens/mosml/src/mosmllib/Word8Vector.sml"
+      "/home/sowens/mosml/src/mosmlpm/test/B-sig.sml"
+      "/home/sowens/mosml/src/mosmlpm/test/A.sml"
+      "/home/sowens/mosml/src/mosmlpm/test/B.sml"
+      "/home/sowens/mosml/src/mosmlpm/test/C.sml"
+      "/home/sowens/mosml/src/mosmlpm/test/D.sml"
+      "/home/sowens/mosml/src/mosmlpm/ArgParse.sml"
+      "/home/sowens/mosml/src/mosmlpm/Compilerinterface.sml"
+      "/home/sowens/mosml/src/mosmlpm/PMBasic.sml"
+      "/home/sowens/mosml/src/mosmlpm/PMCompile.sml"
+      "/home/sowens/mosml/src/mosmlpm/Parsercomb.sml"
+      "/home/sowens/mosml/src/mosmlpm/Systemcompile.sml"
+      "/home/sowens/mosml/src/mosmlpm/mosmlpm.sml"
+      "/home/sowens/mosml/src/test/mosmlyac/test3aux.sml"
+      "/home/sowens/mosml/src/test/mosmlyac/test3main.sml"
+      "/home/sowens/mosml/src/test/constfai.sml"
+      "/home/sowens/mosml/src/test/constsuc.sml"
+      "/home/sowens/mosml/src/test/maxconst.sml"
+      "/home/sowens/mosml/src/test/ovlfail.sml"
+      "/home/sowens/mosml/src/test/ovlsucc.sml"
+      "/home/sowens/mosml/src/test/recfail.sml"
+      "/home/sowens/mosml/src/test/recsucc.sml"
+      "/home/sowens/mosml/src/test/test.sml"
+      "/home/sowens/mosml/src/test/test1.sml"
+      "/home/sowens/mosml/src/test/test2.sml"
+      "/home/sowens/mosml/src/test/test3.sml"
+      "/home/sowens/mosml/src/test/test4.sml"
+      "/home/sowens/mosml/src/test/test5.sml"
+      "/home/sowens/mosml/src/test/test6.sml"
+      "/home/sowens/mosml/src/test/test7.sml"
+      "/home/sowens/mosml/src/test/test8.sml"
+      "/home/sowens/mosml/src/test/test9.sml"
+      "/home/sowens/mosml/src/test/testa.sml"
+      "/home/sowens/mosml/src/test/testb.sml"
+      "/home/sowens/mosml/src/test/testc.sml"
+      "/home/sowens/mosml/src/test/testcon.sml"
+      "/home/sowens/mosml/src/test/testd.sml"
+      "/home/sowens/mosml/src/test/teste.sml"
+      "/home/sowens/mosml/src/test/testint.sml"
+      "/home/sowens/mosml/src/test/testmatc.sml"
+      "/home/sowens/mosml/src/test/testpp.sml"
+      "/home/sowens/mosml/src/test/testprs.sml"
+      "/home/sowens/mosml/src/test/testsyn.sml"
+      "/home/sowens/mosml/src/test/testty.sml"
+      "/home/sowens/mosml/src/test/typerr.sml"
+      "/home/sowens/mosml/src/toolssrc/Maine.sml"
+      "/home/sowens/mosml/src/toolssrc/Smltope.sml"
+      "/home/sowens/mosml/src/toolssrc/cutdeps.sml"
+      "/home/sowens/mosml/src/toolssrc/Deppars.sml"
+      "/home/sowens/mosml/src/toolssrc/Deplex.sml"
+      "/home/sowens/mosml/src/toolssrc/Mosmldep.sml"))
+    
+    
+    )

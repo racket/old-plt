@@ -7157,5 +7157,5 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return scheme_void;
+  return scheme_initialize(env);
 }

@@ -1045,6 +1045,7 @@ void scheme_swap_process(Scheme_Process *new_process)
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
+    MZ_CONT_MARK_CHAIN = scheme_current_process->cont_mark_chain;
 #endif
     RESETJMP(scheme_current_process);
   } else {
@@ -1052,6 +1053,7 @@ void scheme_swap_process(Scheme_Process *new_process)
 #ifdef RUNSTACK_IS_GLOBAL
     scheme_current_process->runstack = MZ_RUNSTACK;
     scheme_current_process->runstack_start = MZ_RUNSTACK_START;
+    scheme_current_process->cont_mark_chain = MZ_CONT_MARK_CHAIN;
 #endif
     scheme_current_process = new_process;
     LONGJMP(scheme_current_process);
@@ -1085,6 +1087,7 @@ static void remove_process(Scheme_Process *r)
   if (r == scheme_current_process) {
     r->runstack = MZ_RUNSTACK;
     r->runstack_start = MZ_RUNSTACK_START;
+    r->cont_mark_chain = MZ_CONT_MARK_CHAIN;
   }
 #endif
 
@@ -1118,6 +1121,7 @@ static void start_child(Scheme_Process *child,
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
+    MZ_CONT_MARK_CHAIN = scheme_current_process->cont_mark_chain;
 #endif
 
     RESETJMP(child);
@@ -1648,6 +1652,7 @@ static void get_ready_for_GC()
 #ifdef RUNSTACK_IS_GLOBAL
   scheme_current_process->runstack = MZ_RUNSTACK;
   scheme_current_process->runstack_start = MZ_RUNSTACK_START;
+  scheme_current_process->cont_mark_chain = MZ_CONT_MARK_CHAIN;
 #endif
 
 #ifndef MZ_REAL_THREADS

@@ -265,6 +265,13 @@
 (test #t ivar-in-class? 'f-1-a c2)
 (test #f ivar-in-class? 'f-2-a c1)
 (test #t ivar-in-class? 'f-2-a c2)
+(test #t ivar-in-interface? 'x i0.1)
+(test #t ivar-in-interface? 'x i1)
+(test #f ivar-in-interface? 'x i0.2)
+(test #f ivar-in-interface? 'c i0.1)
+(test #t ivar-in-interface? 'c i0.2)
+(test #t ivar-in-interface? 'c i1)
+(test #f ivar-in-interface? 'zzz i1)
 
 (error-test '(is-a? o1 o1))
 (error-test '(subclass? o1 o1))
@@ -274,6 +281,8 @@
 (error-test '(ivar-in-class? 0 c1))
 (error-test '(ivar-in-class? 'a i1))
 (error-test '(ivar-in-class? 'a o1))
+(error-test '(ivar-in-interface? 'a c1))
+(error-test '(ivar-in-interface? 'a o1))
 
 (arity-test object? 1 1)
 (arity-test class? 1 1)
@@ -282,6 +291,7 @@
 (arity-test subclass? 2 2)
 (arity-test interface-extension? 2 2)
 (arity-test ivar-in-class? 2 2)
+(arity-test ivar-in-interface? 2 2)
 
 (arity-test ivar/proc 2 2)
 (arity-test make-generic/proc 2 2)

@@ -1830,22 +1830,19 @@ cc_marks(int argc, Scheme_Object *argv[])
   Scheme_Process *p = scheme_current_process;
 #endif
   Scheme_Object *first = scheme_null, *last = NULL, *key;
-  Scheme_Object *frame_key = NULL;
   Scheme_Object **s;
 
   key = argv[0];
   s = MZ_CONT_MARK_CHAIN;
 
   while(s) {
-    if (SAME_OBJ(key, s[1]) && !SAME_OBJ(frame_key, s[3])) {
+    if (SAME_OBJ(key, s[1])) {
       Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
       if (last)
 	SCHEME_CDR(last) = pr;
       else
 	first = pr;
       last = pr;
-      /* No more for this frame */
-      frame_key = s[3];
     }
     
     s = (Scheme_Object **)s[0];

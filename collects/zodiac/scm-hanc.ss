@@ -96,6 +96,31 @@
       (hash-table-put! sig-space (z:read-object name)
 	(create-signature elements (z:read-object name))))))
 
+(define push-signature
+  (lambda (name attributes elements)
+    (let ((sig-space (get-attribute attributes 'sig-space
+		       (lambda ()
+			 (let ((ss (make-hash-table)))
+			   (put-attribute attributes 'sig-space ss)
+			   ss)))))
+      (begin0
+	(hash-table-get sig-space (z:read-object name)
+	  (lambda () #f))
+	(hash-table-put! sig-space (z:read-object name)
+	  (create-signature elements (z:read-object name)))))))
+
+(define pop-signature
+  (lambda (name attributes old-value)
+    (let ((sig-space (get-attribute attributes 'sig-space
+		       (lambda ()
+			 (let ((ss (make-hash-table)))
+			   (put-attribute attributes 'sig-space ss)
+			   ss)))))
+      (hash-table-remove! sig-space (z:read-object name))
+      (when old-value
+	(hash-table-put! sig-space (z:read-object name)
+	  old-value)))))
+
 (define lookup-signature
   (lambda (name attributes)
     (let ((sig-space (get-attribute attributes 'sig-space)))
@@ -492,6 +517,31 @@
 		env attributes vocab))))
 	(else
 	  (static-error expr "Malformed define-signature"))))))
+
+(add-primitivized-micro-form 'let-signature scheme-vocabulary
+  (let* ((kwd '())
+	  (in-pattern '(_ name sig b0 b1 ...))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((name (pat:pexpand 'name p-env kwd))
+		   (sig (pat:pexpand 'sig p-env kwd))
+		   (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
+	      (valid-syntactic-id? name)
+	      (let* ((elements
+		       (signature-elements
+			 (expand-expr sig env attributes sig-vocab)))
+		      (old-value (push-signature name attributes elements))
+		      (output (expand-expr
+				(structurize-syntax body expr)
+				env attributes vocab)))
+		(pop-signature name attributes old-value)
+		output))))
+	(else
+	  (static-error expr "Malformed let-signature"))))))
 
 (define u/s-expand-includes-vocab (create-vocabulary 'u/s-expand-includes-vocab))
 

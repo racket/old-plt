@@ -162,12 +162,13 @@
 	      (hash-table-put! id-table id-name
 		(make-import-id id)))
 	    ((import-id? entry)
-	      (static-error id "Duplicate import identifier"))
+	      (static-error id "Duplicate import identifier ~a" id-name))
 	    ((export-id? entry)
-	      (static-error id "Exported identifier being imported"))
+	      (static-error id "Exported identifier ~a being imported"
+		id-name))
 	    ((internal-id? entry)
 	      (static-error id
-		"Defined identifier being imported"))
+		"Defined identifier ~a being imported" id-name))
 	    (else
 	      (internal-error entry
 		"Invalid in register-import/export")))))))
@@ -185,11 +186,12 @@
 		  (hash-table-put! id-table id-name
 		    (make-internal-id id)))
 		((import-id? entry)
-		  (static-error id "Redefined imported identifier"))
+		  (static-error id "Redefined imported identifier ~a" id-name))
 		((export-id? entry)
 		  'do-nothing)
 		((internal-id? entry)
-		  (static-error id "Duplicate internal definition"))
+		  (static-error id "Duplicate internal definition for ~a"
+		    id-name))
 		(else
 		  (internal-error entry
 		    "Invalid entry in register-definition"))))))
@@ -203,11 +205,13 @@
 		       (lambda () #f))))
 	  (cond
 	    ((not entry)
-	      (static-error id "Exported identifier not defined"))
+	      (static-error id "Exported identifier ~a not defined"
+		id-name))
 	    ((import-id? entry)
-	      (static-error id "Imported identifier being exported"))
+	      (static-error id "Imported identifier ~a being exported"
+		id-name))
 	    ((export-id? entry)
-	      (static-error id "Duplicate export identifier"))
+	      (static-error id "Duplicate export identifier ~a" id-name))
 	    ((internal-id? entry)
 	      (hash-table-put! id-table id-name
 		(make-export-id id)))

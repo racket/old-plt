@@ -5,9 +5,10 @@
 (require #%foreign)
 (require-for-syntax (lib "stx.ss" "syntax"))
 
-(provide ffi-lib ffi-malloc ffi-sizeof ffi-alignof
+(provide ffi-lib ctype-sizeof ctype-alignof
+         malloc end-stubborn-change
          cpointer? ptr-ref ptr-set! ptr-equal?
-         make-ffi-type make-ffi-struct-type ffi-register-finalizer
+         ctype? make-ctype make-cstruct-type register-finalizer
          make-sized-byte-string)
 (provide _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
          _byte _word _int _uint _fixint _ufixint _long _ulong _fixnum _ufixnum
@@ -28,12 +29,12 @@
 (define (ffi-fun itypes otype . wrapper)
   (let ([wrapper (and (pair? wrapper) (car wrapper))])
     (if wrapper
-      (make-ffi-type _fmark
+      (make-ctype _fmark
         (lambda (x)
           ;; (ffi-callback (wrapper x) itypes otype)
           (error 'ffi-fun "cannot use wrappers for callback functions (yet)"))
         (lambda (x) (wrapper (ffi-call x itypes otype))))
-      (make-ffi-type _fmark
+      (make-ctype _fmark
         (lambda (x) (ffi-callback x itypes otype))
         (lambda (x) (ffi-call x itypes otype))))))
 
@@ -218,20 +219,20 @@
 ;; 8-bit string encodings (#f is NULL)
 (define (false-or-op op) (lambda (x) (and x (op x))))
 (define* _string/utf-8
-  (make-ffi-type _bytes
+  (make-ctype _bytes
     (false-or-op string->bytes/utf-8) (false-or-op bytes->string/utf-8)))
 (define* _string/locale
-  (make-ffi-type _bytes
+  (make-ctype _bytes
     (false-or-op string->bytes/locale) (false-or-op bytes->string/locale)))
 (define* _string/latin-1
-  (make-ffi-type _bytes
+  (make-ctype _bytes
     (false-or-op string->bytes/latin-1) (false-or-op bytes->string/latin-1)))
 
 ;; A generic _string type that usually does the right thing via a parameter
 (define* default-_string-type
   (make-parameter _string/utf-8
     (lambda (x)
-      (if (ffi-type? x)
+      (if (ctype? x)
         x (error 'default-_string-type "expecting a C type, got ~e" x)))))
 ;; The type looks like an identifier, but it's actually using the parameter
 (provide _string)
@@ -244,11 +245,11 @@
 
 ;; `file' type: path-expands a path string, provide _path too.
 (provide _path)
-(define* _file (make-ffi-type _path expand-path #f))
+(define* _file (make-ctype _path expand-path #f))
 
 ;; `string/eof' type: converts an output #f (NULL) to an eof-object.
 (define* _string/eof
-  (make-ffi-type _string #f (lambda (x) (or x eof))))
+  (make-ctype _string #f (lambda (x) (or x eof))))
 
 ;; Call this with a name (symbol) and a list of symbols, where a symbol can be
 ;; followed by a '= and an integer to have a similar effect of C's enum.
@@ -266,7 +267,7 @@
       (set! sym->int (cons (cons (car symbols) i) sym->int))
       (set! int->sym (cons (cons i (car symbols)) int->sym))
       (loop (add1 i) (cdr symbols))))
-  (make-ffi-type _int
+  (make-ctype _int
     (lambda (x)
       (let ([a (assq x sym->int)])
         (if a
@@ -294,9 +295,9 @@
         (set-cdr! s->i (cdddr s->i)))
       (unless (and (pair? (car s->i)) (pair? (cdar s->i)) (null? (cddar s->i))
                    (symbol? (caar s->i)) (integer? (cadar s->i)))
-        (error 'ffi-make-bitmask-type "bad spec in ~e" symbols->integers))
+        (error '_bitmask "bad spec in ~e" symbols->integers))
       (loop (cdr s->i))))
-  (make-ffi-type _int
+  (make-ctype _int
     (lambda (symbols)
       (if (null? symbols) ; probably common
         0
@@ -356,13 +357,13 @@
 (define-syntax _ptr
   (syntax-rules (i o io)
     [(_ i  t) (type: _pointer
-               pre:  (x => (let ([p (ffi-malloc t)])
+               pre:  (x => (let ([p (malloc t)])
                              (ptr-set! p t x) p)))]
     [(_ o  t) (type: _pointer
-               pre:  (ffi-malloc t)
+               pre:  (malloc t)
                post: (x => (ptr-ref x t)))]
     [(_ io t) (type: _pointer
-               pre:  (x => (let ([p (ffi-malloc t)])
+               pre:  (x => (let ([p (malloc t)])
                              (ptr-set! p t x) p))
                post: (x => (ptr-ref x t)))]))
 
@@ -378,7 +379,7 @@
     [(_ i  t  ) (type: _pointer
                  pre:  (x => (list->cblock x t)))]
     [(_ o  t n) (type: _pointer
-                 pre:  (ffi-malloc n t)
+                 pre:  (malloc n t)
                  post: (x => (cblock->list x t n)))]
     [(_ io t n) (type: _pointer
                  pre:  (x => (list->cblock x t))
@@ -392,7 +393,7 @@
     [(_ i  t  ) (type: _pointer
                  pre:  (x => (vector->cblock x t)))]
     [(_ o  t n) (type: _pointer
-                 pre:  (ffi-malloc n t)
+                 pre:  (malloc n t)
                  post: (x => (cblock->vector x t n)))]
     [(_ io t n) (type: _pointer
                  pre:  (x => (vector->cblock x t))
@@ -408,7 +409,7 @@
   (syntax-id-rules (_bytes* o)
     [_bytes*  (type: _bytes)]
     [(_ o n) (type: _bytes
-              pre:  (make-sized-byte-string (ffi-malloc n) n)
+              pre:  (make-sized-byte-string (malloc n) n)
               ;; post is needed when this is used as a function output type
               post: (x => (make-sized-byte-string x n)))]))
 
@@ -424,7 +425,7 @@
 (define* (list->cblock l type)
   (if (null? l)
     #f ; null => NULL
-    (let ([cblock (ffi-malloc (length l) type)])
+    (let ([cblock (malloc (length l) type)])
       (let loop ([l l] [i 0])
         (unless (null? l)
           (ptr-set! cblock type i (car l))
@@ -445,7 +446,7 @@
   (let ([len (vector-length v)])
     (if (zero? len)
       #f ; #() => NULL
-      (let ([cblock (ffi-malloc len type)])
+      (let ([cblock (malloc len type)])
         (let loop ([i (sub1 len)])
           (unless (< i 0)
             (ptr-set! cblock type i (vector-ref v i))
@@ -487,14 +488,14 @@
          (rename make-cvector make-cvector*))
 
 (define* _cvector
-  (make-ffi-type _pointer cvector-ptr
+  (make-ctype _pointer cvector-ptr
     (lambda (x)
       (error '_vector
              "cannot automatically convert a C pointer to a cvector"))))
 
 (provide (rename allocate-cvector make-cvector))
 (define (allocate-cvector type len)
-  (let ([cblock (ffi-malloc len type)])
+  (let ([cblock (malloc len type)])
     (make-cvector cblock type len)))
 
 (define* (cvector-ref v i)
@@ -542,7 +543,7 @@
              (provide TAG?)
              (provide TAG-length (rename allocate-TAG make-TAG))
              (define (allocate-TAG n . init)
-               (let* ([p (ffi-malloc n type)]
+               (let* ([p (malloc n type)]
                       [v (make-TAG p n)])
                  (when (pair? init)
                    (let ([init (car init)])
@@ -586,26 +587,71 @@
 (make-srfi-4 f32 _float)
 (make-srfi-4 f64 _double)
 
+;; Tagged pointers
+
+;; This is a kind of a pointer that gets a specific tag when converted to
+;; Scheme, and accepts only such tagged pointers when going to C.  An optional
+;; `ptr-type' can be given to be used as the base pointer type, instead of
+;; _pointer.
+(define* (make-cpointer-type tag . ptr-type)
+  (let ([tagged->C (string->symbol (format "~a->C" tag))]
+        [error-string (format "expecting a \"~a\" pointer, got ~~e" tag)])
+    (make-ctype (if (pair? ptr-type) (car ptr-type) _pointer)
+      (lambda (p)
+        (if (cpointer? p)
+          (unless (eq? tag (cpointer-type p))
+            (error tagged->C error-string p))
+          (error tagged->C error-string p))
+        p)
+      (lambda (p) (set-cpointer-type! p tag) p))))
+
+;; A macro version of the above, using the defined name for a tag string, and
+;; defining a predicate too.  The name should look like `_foo', the predicate
+;; will be `foo?', and the tag will be "foo".  In addition, `foo-tag' is bound
+;; to the tag.  The optional `ptr-type' argument is the same as that of
+;; `make-cpointer-type'.
+(provide define-cpointer-type)
+(define-syntax (define-cpointer-type stx)
+  (syntax-case stx ()
+    [(_ _TYPE ptr-type)
+     (and (identifier? #'_TYPE)
+          (regexp-match #rx"^_.+" (symbol->string (syntax-e #'_TYPE))))
+     (let ([name (cadr (regexp-match #rx"^_(.+)$"
+                                     (symbol->string (syntax-e #'_TYPE))))])
+       (define (id . strings)
+         (datum->syntax-object
+          #'_TYPE (string->symbol (apply string-append strings)) #'_TYPE))
+       (with-syntax ([name-string name]
+                     [TYPE?       (id name "?")]
+                     [TYPE-tag    (id name "-tag")])
+         #'(define-values (_TYPE TYPE? TYPE-tag)
+             (let ([TYPE-tag name-string])
+               (values (make-cpointer-type TYPE-tag ptr-type)
+                       (lambda (x)
+                         (and (cpointer? x) (eq? TYPE-tag (cpointer-type x))))
+                       TYPE-tag)))))]
+    [(_ _TYPE) #'(_ _TYPE _pointer)]))
+
 ;; Struct wrappers
 
 (define (compute-offsets types)
   (let loop ([ts types] [cur 0] [r '()])
     (if (null? ts)
       (reverse! r)
-      (let* ([algn (ffi-alignof (car ts))]
+      (let* ([algn (ctype-alignof (car ts))]
              [pos  (+ cur (modulo (- (modulo cur algn)) algn))])
         (loop (cdr ts)
-              (+ pos (ffi-sizeof (car ts)))
+              (+ pos (ctype-sizeof (car ts)))
               (cons pos r))))))
 
-;; Call this with a list of types, and get a type that marshals C structs
-;; to/from Scheme lists.
+;; Simple structs: call this with a list of types, and get a type that marshals
+;; C structs to/from Scheme lists.
 (define* (_list-struct types)
-  (let ([stype (make-ffi-struct-type types)]
+  (let ([stype (make-cstruct-type types)]
         [offsets (compute-offsets types)])
-    (make-ffi-type stype
+    (make-ctype stype
       (lambda (vals)
-        (let ([block (ffi-malloc stype)])
+        (let ([block (malloc stype)])
           (for-each (lambda (type ofs val) (ptr-set! block type 'abs ofs val))
                     types offsets vals)
           block))
@@ -614,15 +660,17 @@
              types offsets)))))
 
 ;; (define-cstruct _foo ((slot type) ...)) defines a type called _foo for a C
-;; struct, with user-procedues: foo-slot ... and set-foo-slot! ....  The `_'
-;; prefix is required.  A normal Scheme struct called `foo' is defined as a
-;; simple wrapper around the pointer object, with a slot called `pointer'.
-;; This struct only serves for not confusing these pointers with others.  Note
-;; that foo? is useful for detecting these instances, foo-pointer and
-;; set-foo-pointer! are not exposed, and the wrapper's make-foo is not exposed
-;; too (make-foo is the one that generates the pointer and wraps it).
+;; struct, with user-procedues: make-foo, foo? foo-slot ... and set-foo-slot!
+;; ....  The `_' prefix is required.  Objects of this new type are actually
+;; cpointers, with a type tag that is "foo", provided as foo-tag, and tags of
+;; pointers are checked before attempting to use them (see define-cpointer-type
+;; above).  Note that since structs are implemented as pointers, they can be
+;; used for a _pointer input to a foreign function: their address will be used,
+;; to make this a little safer, the corresponding cpointer type is defined as
+;; _foo-pointer.
 (provide define-cstruct)
 (define-syntax (define-cstruct stx)
+  ;; It would be nice to extend this to handle inheritance...
   (syntax-case stx ()
     [(_ _TYPE ((slot slot-type) ...))
      (and (identifier? #'_TYPE)
@@ -632,54 +680,54 @@
                                      (symbol->string (syntax-e #'_TYPE))))]
            [slot-names (map (lambda (x) (symbol->string (syntax-e x)))
                             (syntax->list #'(slot ...)))])
-       (define (make-id . strings)
+       (define (id . strings)
          (datum->syntax-object
           #'_TYPE (string->symbol (apply string-append strings)) #'_TYPE))
-       (define (make-slot-ids name-func)
+       (define (ids name-func)
          (map (lambda (s stx)
                 (datum->syntax-object
                  stx (string->symbol (apply string-append (name-func s))) stx))
               slot-names (syntax->list #'(slot ...))))
-       (define (make-temps t)
-         (generate-temporaries
-          (map (lambda (_) t) (syntax->list #'(slot ...)))))
        (with-syntax
-           ([TYPE         (make-id name)]
-            [TYPE?        (make-id name "?")]
-            [make-TYPE    (make-id "make-" name)]
-            [TYPE-pointer (make-id name "-pointer")]
-            [(slot-type* ...)
-             (make-slot-ids (lambda (s) (list name "-type" s)))]
-            [(TYPE-slot ...)
-             (make-slot-ids (lambda (s) (list name "-" s)))]
-            [(set-TYPE-slot! ...)
-             (make-slot-ids (lambda (s) (list "set-" name "-" s "!")))]
-            [(offset ...) (make-temps 'offset)])
-         #'(define-values (_TYPE TYPE? make-TYPE TYPE-pointer
-                           TYPE-slot ... set-TYPE-slot! ...)
-             (let*-values ([(slot-type* ...) (values slot-type ...)]
-                           [(types) (list slot-type* ...)]
-                           [(stype) (make-ffi-struct-type types)]
-                           [(offset ...)
-                            (apply values (compute-offsets types))])
-               (define-struct TYPE (pointer))
-               (define _TYPE
-                 (make-ffi-type stype TYPE-pointer make-TYPE))
-               (values _TYPE
-                       TYPE?
+           ([name-string          name]
+            [struct-string        (format "struct:~a" name)]
+            [_TYPE-pointer        (id "_"name"-pointer")]
+            [_TYPE*               (id "_"name"*")]
+            [TYPE?                (id name"?")]
+            [make-TYPE            (id "make-"name)]
+            [TYPE->C              (id name"->C")]
+            [TYPE-tag             (id name"-tag")]
+            [(stype ...)          (ids (lambda (s) `(,name"-",s"-type")))]
+            [(TYPE-SLOT ...)      (ids (lambda (s) `(,name"-",s)))]
+            [(set-TYPE-SLOT! ...) (ids (lambda (s) `("set-",name"-",s"!")))]
+            [(offset ...) (generate-temporaries
+                                  (ids (lambda (s) `(,s"-offset"))))])
+         #'(define-values (_TYPE _TYPE-pointer TYPE? TYPE-tag make-TYPE
+                           TYPE-SLOT ... set-TYPE-SLOT! ...)
+             (let*-values ([(stype ...) (values slot-type ...)]
+                           [(types) (list stype ...)]
+                           [(offset ...) (apply values
+                                                (compute-offsets types))])
+               (define _TYPE*
+                 (make-cpointer-type TYPE-tag (make-cstruct-type types)))
+               (define-cpointer-type _TYPE)
+               (values _TYPE* _TYPE TYPE? TYPE-tag
                        (lambda (slot ...)
-                         (let ([block (ffi-malloc stype)])
-                           (ptr-set! block slot-type* 'abs offset slot)
+                         (let ([block (malloc _TYPE*)])
+                           (set-cpointer-type! block TYPE-tag)
+                           (ptr-set! block stype 'abs offset slot)
                            ...
-                           (make-TYPE block)))
-                       TYPE-pointer
+                           block))
                        (lambda (x)
-                         (let ([block (TYPE-pointer x)])
-                           (ptr-ref block slot-type* 'abs offset)))
+                         (unless (TYPE? x)
+                           (raise-type-error 'TYPE-SLOT struct-string x))
+                         (ptr-ref x stype 'abs offset))
                        ...
                        (lambda (x slot)
-                         (let ([block (TYPE-pointer x)])
-                           (ptr-set! block slot-type* 'abs offset slot)))
+                         (unless (TYPE? x)
+                           (raise-type-error 'set-TYPE-SLOT! struct-string
+                                             0 x slot))
+                         (ptr-set! x stype 'abs offset slot))
                        ...)))))]))
 
 )

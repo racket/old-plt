@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.1.1.1 1997/12/22 17:29:00 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.2 1998/04/07 21:24:59 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -311,10 +311,18 @@ static Boolean MenuSetValues(gcurrent, grequest, gnew)
 	(gcurrent, grequest, gnew, NULL, 0);
 
     /* To be sure */
-    ComputeMenuSize(new, new->menu.state);
-    new->menu.state->w = new->core.width;
-    new->menu.state->h = new->core.height;
-    redisplay = TRUE;
+    {
+      int ow, oh;
+      ow = new->menu.state->w;
+      oh = new->menu.state->h;
+      ComputeMenuSize(new, new->menu.state);
+      new->menu.state->w = new->core.width;
+      new->menu.state->h = new->core.height;
+      if ((ow != new->menu.state->w)
+	  || (oh != new->menu.state->h)) {
+	redisplay = TRUE;
+      }
+    }
 
     if (CHANGED_bg_
 	|| CHANGED(be_nice_to_cmap)

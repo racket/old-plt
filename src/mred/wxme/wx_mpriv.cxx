@@ -2469,7 +2469,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
   if ((width <= 0) || (height <= 0))
     return;
 
-  if (graphicMaybeInvalid) {
+  if (graphicMaybeInvalid || flowLocked) {
     /* This Refresh command was not requested by us and we're busy. 
        (Probably in the middle of a begin-/end-edit-sequnce.)
        Add the given region to our own invalid-region tracking and

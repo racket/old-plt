@@ -1708,7 +1708,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
       clr = dc->GetTextBackground();
       bg = new wxColour(clr);
     }
-
+    
 #ifndef NO_GET_CLIPPING_REGION
     rgn = dc->GetClippingRegion();
     dc->SetClippingRect(localx - dx, localy - dy, w, h);

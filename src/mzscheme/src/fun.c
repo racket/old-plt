@@ -2031,7 +2031,6 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       return scheme_make_struct_instance(scheme_date, 9, p);
     }
   }
-    scheme_wrong_type("seconds->date", "date-integer", 0, argc, argv);
 
   scheme_raise_exn(MZEXN_APPLICATION_INTEGER,
 		   secs,

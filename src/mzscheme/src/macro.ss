@@ -959,8 +959,8 @@
 					 (#%for-each (#%lambda (c) (check c "sub-collection")) (#%cdr collection-path))))
 				  `(,req-lib/proc ,name ,@collection-path))])])
 	         rl)))
-  (#%define-macro #%require-relative-library (tmp-rl #%require-relative-library/proc #t))
-  (#%define-macro #%require-library (tmp-rl #%require-library/proc #f))
+  (#%define-macro #%require-relative-library (tmp-rl '#%require-relative-library/proc #t))
+  (#%define-macro #%require-library (tmp-rl '#%require-library/proc #f))
   (#%undefine 'tmp-rl))
 
 > kstop require-library require-relative-library <

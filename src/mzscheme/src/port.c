@@ -3211,6 +3211,12 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "load", 
 				    NULL);
+
+  if (scheme_directory_exists(filename)) {
+    filename_exn("default-load-handler", "cannot open directory as a file", filename, errno);
+    return scheme_void;
+  }
+
   fp = fopen(filename, "rb");
   if (!fp) {
     filename_exn("default-load-handler", "cannot open file for input", filename, errno);

@@ -185,6 +185,7 @@
 
   (define slatex::do-token
     (let ((token-delims (list #\( #\) #\[ #\] #\space *return*
+                              #\" #\' #\`
 			      #\newline #\, #\;)))
       (lambda (line i)
 	(let loop ((buf '()) (i i))

@@ -2,12 +2,12 @@
 ;Configures SLaTeX for Common Lisp on your system
 ;(c) Dorai Sitaram, Rice U., 1991, 1994
 
-(set-dispatch-macro-character #\# #\t
+(set-dispatch-macro-character #\# #\T
   #'(lambda (p ig ig2)
       (declare (ignore ig ig2))
       t))
 
-(set-dispatch-macro-character #\# #\f
+(set-dispatch-macro-character #\# #\F
   #'(lambda (p ig ig2)
       (declare (ignore ig ig2))
       nil))			

@@ -189,7 +189,7 @@
 (format t "~&Finished configuring command script.~%")
 
 (when (eq *op-sys* 'unix)
-  #+clisp
+  #+(or allegro clisp)
   (run-shell-command "chmod +x slatex")
   #+gcl
   (system "chmod +x slatex")

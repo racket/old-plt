@@ -14,8 +14,11 @@ config.dat
 
 ;documentation
 slatxdoc.tex
+slatxdoc.bbl
 slatxdoc.dvi
 index.tex
+tex2html.css
+margins.tex
 
 ;misc TeX macros
 8pt.tex

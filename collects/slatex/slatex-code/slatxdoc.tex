@@ -40,11 +40,11 @@
 
 \font\sf cmss10
 
-\newcheapcount\bibitemnumber
+% \newcheapcount\bibitemnumber
 
-\def\bibitem{\par\globaladvancecheapcount\bibitemnumber 1%
-\edef\recentlabel{\bibitemnumber}%
-[\bibitemnumber]\label}
+% \def\bibitem{\par\globaladvancecheapcount\bibitemnumber 1%
+% \edef\recentlabel{\bibitemnumber}%
+% [\bibitemnumber]\label}
 
 %
 \overfullrule 0pt
@@ -117,7 +117,8 @@ through basic default fonting to various
 other reasons.
 
 Popular packages for typesetting Scheme code, e.g.,
-Queinnec's LiSP2TeX and Ramsdell's SchemeWeb, use
+Queinnec's LiSP2TeX~\cite{lisp2tex}
+and Ramsdell's SchemeWeb~\cite{schemeweb}, use
 a {\tt verbatim}-like environment
 where all the characters are in a {\tt monospace typewriter}
 font.  While the {\tt monospace} ensures that the indentation
@@ -145,18 +146,21 @@ TeX files as well as these temporaries.
 \slatexdisable{enableslatex}
 
 The rest of this manual has the following outline:
-section~\ref{intro-example}  introduces a small example that covers the SLaTeX
-control sequences you will need the most.  Both LaTeX and
-plain TeX versions are shown. Section~\ref{slatex-sty-files}
-describes the SLaTeX style files {\tt slatex.sty} and
-{\tt cltl.sty}.  Section~\ref{glossary} provides a complete description of all
-the SLaTeX control sequences.  These include commands for
-manipulating output positioning, enhancing the database,
-changing the fonting defaults, adding special symbols, and
-selective disabling of SLaTeX. Section~\ref{preamble} offers guidelines for
+section~\ref{intro-example} introduces a small example
+that covers the SLaTeX control sequences you will need
+the most.  Both LaTeX~\cite{latex} and plain
+TeX~\cite{tex} versions are
+shown. Section~\ref{slatex-sty-files} describes the
+SLaTeX style files {\tt slatex.sty} and {\tt cltl.sty}.
+Section~\ref{glossary} provides a complete description
+of all the SLaTeX control sequences.  These include
+commands for manipulating output positioning, enhancing
+the database, changing the fonting defaults, adding
+special symbols, and selective disabling of
+SLaTeX. Section~\ref{preamble} offers guidelines for
 setting up a preamble that reflects your typesetting
-taste. Section~\ref{ftp} contains information on obtaining and installing
-SLaTeX.
+taste. Section~\ref{ftp} contains information on
+obtaining and installing SLaTeX.
 
 \section{Introductory example}
 \label{intro-example}
@@ -1030,8 +1034,8 @@ within the Scheme block, suppose instead you'd set
 \n This will get you a {\it centered\/} display style.
 This is of course because the skip on each side of the
 code produces a ``spring''\f{Springs, or rather
-``glue'', are discussed in detail on pp.\ 70ff.\ of {\it The
-TeXbook\/} (Knuth).}  that
+``glue'', are discussed in detail in {\em The
+TeXbook}~\cite[pp.\ 70ff.]{tex}.}  that 
 pushes the code to the center.  But for this spring
 action to work nicely, the code must have been
 collected into an unbreakable box --- which is
@@ -1078,13 +1082,13 @@ redefine \p{\constantfont} itself to not rely on
 \let\datafont\constantfont
 }
 
-\n This is close to the ``Little Schemer''
-(Friedman \& Felleisen) style.  Redefine these control
+\n This is close to the {\em Little
+Schemer}~\cite{tls,tss} style.
+Redefine these control 
 sequences for font changes.  As an extreme case, defining
 all of them to
 \p|{{\tt#1}}| typesets everything in monospace
-typewriter font, as, for instance, in SICP (Abelson \&
-Sussman).
+typewriter font, as, for instance, in SICP~\cite{sicp}.
 
 Note that ``constants'' and ``data'' {\it can\/} be
 distinguished, although by default SLaTeX does not do
@@ -1712,7 +1716,7 @@ the first call.
 \index{dialects SLaTeX runs on}
 SLaTeX is implemented
 \enableslatex
-in R5RS-compliant  Scheme (macros are not
+in R5RS-compliant~\cite{r5rs} Scheme (macros are not
 needed).  The code uses the non-standard procedures
 \scheme{delete-file},
 \scheme{file-exists?} and \scheme{force-output}, but
@@ -1758,34 +1762,11 @@ Bug reports are most welcome --- send to
 
 \section{References}
 
-\bibitem{sicp} H. Abelson and G. J. Sussman with J. Sussman,
-{\it Structure and Interpretation of Computer Programs}, (``SICP''), MIT
-Press, 1985.
+\bibliographystyle{plain}
 
-\bibitem{little-schemer} D. P. Friedman and M. Felleisen,
-{\it The Little Schemer}, 4th ed., MIT Press, 1996.
-
-\bibitem{seasoned-schemer} D. P. Friedman and M. Felleisen,
-{\it The Seasoned Schemer}, MIT Press, 1996.
-
-\bibitem{texbook} D. E. Knuth, {\it The TeXbook},
-Addison-Wesley, 1984.
-
-\bibitem{latex-manual} L. Lamport, {\it LaTeX: A Document
-Preparation System}, Addison-Wesley, 1986.
-
-\bibitem{lisp2tex} C. Queinnec, {\it LiSP2TeX}, available from the
-Scheme Repository at {\tt ftp://iuvax.cs.\allowbreak
-indiana.edu/\allowbreak pub/\allowbreak
-scheme-repository/\allowbreak utl/}.
-
-\bibitem{schemeweb} J. Ramsdell, {\it SchemeWeb}, available
-from the Scheme Repository.
-
-\bibitem{r5rs} {\it Revised$^5$ Report on the Algorithmic
-Language Scheme}, (``R5RS''), eds.\ R. Kelsey,  W. Clinger,
-and J. Rees, 1998.
-
+\iffileexists{slatxdoc.bib}
+{\bibliography{slatxdoc}}
+{\bibliography{bigbib}}
 
 \section{Index}
 

@@ -41,7 +41,8 @@
           (else (error "config.dat has too many answers")))))
 
 (case dialect
-  ((bigloo chez guile mzscheme scm stk) (set! system-procedure 'system)))
+  ((bigloo chez cscheme guile mzscheme scm stk)
+   (set! system-procedure 'system)))
 
 (define bat-file 'forward)
 

@@ -1,7 +1,7 @@
 % tex2html.tex
 % Dorai Sitaram, Apr 1997
 
-\message{version 3i}
+\message{version 3p}
 
 % TeX files using these macros
 % can be converted by the program
@@ -11,6 +11,8 @@
 \let\endtexonly\relax
 
 \texonly
+
+\ifx\slatexignorecurrentfile\UNDEFINED\relax\fi
 
 \def\defcsactive#1{\defnumactive{`#1}}
 
@@ -51,7 +53,7 @@
 \def\verbfont{\tt}
 %\hyphenchar\tentt-1
 
-\def\verbsetup{%\frenchspacing
+\def\verbsetup{\frenchspacing
   \def\do##1{\catcode`##1=12 }\dospecials
   \catcode`\|=12 % needed?
   \verbfont}
@@ -149,9 +151,12 @@
 % can break across lines at `.' and `/'.
 
 \def\path{\begingroup\verbsetup
+  \pathfont
   \defcsactive\.{\discretionary{\char`\.}{}{\char`\.}}%
   \defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
   \verbI}
+
+\let\pathfont\relax
 
 % \url{URL} becomes
 % <a href="URL">URL</a> in HTML, and
@@ -166,7 +171,7 @@
 
 \def\url{\bgroup\urlsetup\let\dummy=}
 
-\def\urlsetup{\verbsetup\verbavoidligs
+\def\urlsetup{\verbsetup\urlfont\verbavoidligs
   \catcode`\{1 \catcode`\}2
   \defcsactive\%{\urlpacifybibtex}%
   \defcsactive\ {\relax}%
@@ -174,6 +179,8 @@
   \defcsactive\.{\discretionary{\char`\.}{}{\char`\.}}%
   \defcsactive\/{\discretionary{\char`\/}{}{\char`\/}}%
   \defcsactive\`{\relax\lq}}
+
+\let\urlfont\relax
 
 \def\urlpacifybibtex{\futurelet\urlpacifybibtexnext\urlpacifybibtexI}
 
@@ -341,6 +348,11 @@
 
 \let\htmlpagebreak\relax
 
+\let\htmlpagelabel\gobblegroup
+
+\def\htmlpageref{\errmessage{Can't occur except inside
+  \string\htmlonly}}
+
 % Miscellaneous stuff
 
 \def\hr{$$\hbox{---}$$}
@@ -353,6 +365,13 @@
 
 \def\mathg{$\bgroup\aftergroup\closemathg\let\dummy=}
 \def\closemathg{$}
+
+\def\mathdg{$$\bgroup\aftergroup\closemathdg\let\dummy=}
+\def\closemathdg{$$}
+
+\def\frac#1/#2{{#1\over#2}}
+
+%
 
 % Backward compatible stuff
 
@@ -416,7 +435,6 @@
 
 % Vanilla section-header look -- change this macro for new look
 
-
 \def\sectionstar#1*#2{\vskip-\lastskip
   % #1=depth #2=heading-text
   \tocactivate
@@ -424,7 +442,7 @@
    \edef\temp{\write\tocout{\string\tocentry{#1}{}{#2}{\folio}}}%
    \temp}%
   \goodbreak
-  \vksip1.5\bigskipamount
+  \vskip1.5\bigskipamount
   \noindent
   \hbox{\bf\vtop{\hsize=.7\hsize
     \pretolerance 10000
@@ -527,7 +545,7 @@
 \let\tocactive0
 
 \def\tocoutensure{\ifx\tocout\UNDEFINED
-  \csname newwrite\endcsname\tocout\relax}
+  \csname newwrite\endcsname\tocout\fi}
 
 \def\tocactivate{\ifx\tocactive0%
   \tocoutensure
@@ -539,7 +557,7 @@
 
 \def\tocsave{\openin0=\jobname.toc
   \ifeof0 \closein0 \else
-    \openout\tocout toc.save
+    \openout\tocout Z-T-\jobname.tex
     \let\tocsaved 0%
     \loop
       \ifeof0 \closeout\tocout
@@ -574,7 +592,7 @@
     \openout\tocout \jobname.toc
     \global\let\tocactive1%
   \else
-    \input toc.save
+    \input Z-T-\jobname.tex
   \fi}
 
 % Cross-references
@@ -645,6 +663,13 @@
       \let\dummy=}
 
 %
+
+\def\iffileexists#1#2#3{%
+  \openin0 #1
+  \ifeof0 \closein0
+    #3%
+  \else \closein0
+    #2\fi}
 
 % \ifx\bibitem\UNDEFINED
 % \newcheapcount\bibitemnumber

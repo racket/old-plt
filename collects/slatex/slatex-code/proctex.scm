@@ -18,7 +18,7 @@
 
 (eval-within slatex
 	
-  (defvar slatex::version-number "2.4v")
+  (defvar slatex::version-number "2.4w")
 
   (define slatex::disable-slatex-temply
     (lambda (in)
@@ -191,7 +191,7 @@ Unknown command ~s." which))))))
 	      (lambda (out)
 		(display "\\def\\filehider{x}" out)
 		(newline out))
-	      'text)))
+          'text)))
       (display "typesetting code")
       (set! *tex-calling-directory* (directory-namestring filename))
       (set! subjobname (basename filename))

@@ -1,3 +1,16 @@
+2.4w
+
+9 Oct 1999
+
+Read cr before lf when reading files on Windows (Shriram report) 
+
+Token delimitation strengthened (John Clements bug
+report).
+
+CL set-dispatch-macro-character arg should be uppercase
+character because CLISP doesn't automatically upcase
+it as standard suggests
+
 2.4v
 
 8 Mar 1999

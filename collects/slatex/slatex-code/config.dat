@@ -2,11 +2,11 @@
 ;sample config.dat for MzScheme on Unix
 
 mzscheme
-mac-os
-#f
-#f
-#f
-#f
-#f
-#f
+unix
+"mzscheme"
+"/home/dorai/tex/slatex/slatex.scm"
+"/home/dorai/tex/0tex"
+()
+#t
+"-f"
 #f

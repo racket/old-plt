@@ -130,26 +130,11 @@
    ;(display "Finished compilation (executable is named SLaTeX)")
    ;(newline)
    )
-  ((chez)
+  ((chez mzscheme)
    (newline)
    (display "Getting compiled version...")
    (newline)
    (compile-file "slatexsrc.scm" "slatex.scm")
-   ;;(delete-file "slatexsrc.scm")
-   (display "Finished compilation"))
-  ((mzscheme)
-   (newline)
-   (display "Getting compiled version...")
-   (newline)
-   
-   ;; code added by JBC 2/99 in order to place compiled file in setup-plt-friendly 
-   ;; place.
-   
-   (let ([compiled-file-directory (build-path (current-load-relative-directory) 'up "compiled")])
-     (unless (directory-exists? compiled-file-directory)
-       (make-directory compiled-file-directory))
-     (compile-file "slatexsrc.scm" (build-path compiled-file-directory "slatexsrc.zo")))
-   
    ;;(delete-file "slatexsrc.scm")
    (display "Finished compilation")))
 

@@ -858,73 +858,77 @@
 					     [name class-name]
 					     [(stx-def ...) (map cdr stx-defines)])
 				 
-				 (syntax
-				  (let ([superclass super-expression]
-					[interfaces (list interface-expr ...)])
-				    (compose-class 
-				     'name superclass interfaces
-				     ;; Field count:
-				     num-fields
-				     ;; Field names:
-				     `field-names
-				     `inherit-field-names
-				     ;; Method names:
-				     `rename-names
-				     `public-final-names
-				     `public-names
-				     `override-final-names
-				     `override-names
-				     `inherit-names
-				     ;; Init arg names (in order)
-				     `init-names
-				     (quote init-mode)
-				     ;; Methods (when given needed super-methods, etc.):
-				     (lambda (local-accessor
-					      local-mutator
-					      inherit-field-accessor ...  ; inherit
-					      inherit-field-mutator ...
-					      rename-temp ...
-					      method-accessor ...) ; public, override, inherit
-				       (letrec-syntaxes+values mappings ()
-					 stx-def ...
-					 (letrec ([private-temp private-method]
-						  ...
-						  [public-final-temp public-final-method]
-						  ...
-						  [override-final-temp override-final-method]
-						  ...)
-					   (values
-					    (list public-final-temp ... . public-methods)
-					    (list override-final-temp ... . override-methods)
-					    ;; Initialization
-					    (lambda (the-obj super-id si_c si_inited? si_leftovers init-args)
-					      (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
-						(letrec-syntax ([super-instantiate-id
-								 (lambda (stx)
-								   (syntax-case stx () 
-								     [(_ (arg (... ...)) (kw kwarg) (... ...))
-								      (with-syntax ([stx stx])
-									(syntax (-instantiate super-id stx (the-obj si_c si_inited? si_leftovers)
-											      (list arg (... ...)) 
-											      (kw kwarg) (... ...))))]))]
-								[super-make-object-id
-								 (lambda (stx)
-								   (let ([code 
-									  (quote-syntax
-									   (lambda args
-									     (super-id the-obj si_c si_inited? si_leftovers args null)))])
-								     (if (identifier? stx)
-									 code
-									 (datum->syntax-object
-									  code
-									  (cons code
-										(cdr (syntax-e stx)))))))])
-						  (let ([plain-init-name undefined]
-							...)
-						    (void) ; in case the body is empty
-						    . exprs))))))))
-				     ;; Not primitive:
-				     #f)))))))))))))))])))
+				 (quasisyntax/loc stx
+                                   (let ([superclass super-expression]
+                                         [interfaces (list interface-expr ...)])
+                                     (compose-class 
+                                      'name superclass interfaces
+                                      ;; Field count:
+                                      num-fields
+                                      ;; Field names:
+                                      `field-names
+                                      `inherit-field-names
+                                      ;; Method names:
+                                      `rename-names
+                                      `public-final-names
+                                      `public-names
+                                      `override-final-names
+                                      `override-names
+                                      `inherit-names
+                                      ;; Init arg names (in order)
+                                      `init-names
+                                      (quote init-mode)
+                                      ;; Methods (when given needed super-methods, etc.):
+                                      #, ;; Attach srcloc (useful for profiling)
+                                      (quasisyntax/loc stx
+                                        (lambda (local-accessor
+                                                 local-mutator
+                                                 inherit-field-accessor ...  ; inherit
+                                                 inherit-field-mutator ...
+                                                 rename-temp ...
+                                                 method-accessor ...) ; public, override, inherit
+                                          (letrec-syntaxes+values mappings ()
+                                            stx-def ...
+                                            (letrec ([private-temp private-method]
+                                                     ...
+                                                     [public-final-temp public-final-method]
+                                                     ...
+                                                     [override-final-temp override-final-method]
+                                                     ...)
+                                              (values
+                                               (list public-final-temp ... . public-methods)
+                                               (list override-final-temp ... . override-methods)
+                                               ;; Initialization
+                                               #, ;; Attach srcloc (useful for profiling)
+                                               (quasisyntax/loc stx
+                                                 (lambda (the-obj super-id si_c si_inited? si_leftovers init-args)
+                                                   (fluid-let-syntax ([the-finder (quote-syntax the-obj)])
+                                                     (letrec-syntax ([super-instantiate-id
+                                                                      (lambda (stx)
+                                                                        (syntax-case stx () 
+                                                                          [(_ (arg (... ...)) (kw kwarg) (... ...))
+                                                                           (with-syntax ([stx stx])
+                                                                             (syntax (-instantiate super-id stx (the-obj si_c si_inited? si_leftovers)
+                                                                                                   (list arg (... ...)) 
+                                                                                                   (kw kwarg) (... ...))))]))]
+                                                                     [super-make-object-id
+                                                                      (lambda (stx)
+                                                                        (let ([code 
+                                                                               (quote-syntax
+                                                                                (lambda args
+                                                                                  (super-id the-obj si_c si_inited? si_leftovers args null)))])
+                                                                          (if (identifier? stx)
+                                                                              code
+                                                                              (datum->syntax-object
+                                                                               code
+                                                                               (cons code
+                                                                                     (cdr (syntax-e stx)))))))])
+                                                       (let ([plain-init-name undefined]
+                                                             ...)
+                                                         (void) ; in case the body is empty
+                                                         . exprs))))))))))
+                                      ;; Not primitive:
+                                      #f)))))))))))))))])))
 
   (define-syntax class*
     (lambda (stx)

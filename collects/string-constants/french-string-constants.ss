@@ -1,3 +1,4 @@
+
 (module french-string-constants "string-constant-lang.ss"
  ; Note: http://www.linux-france.org/prj/jargonf/ peut etre utile... Les dictionnaires online
  ; anglais->francais sont tres pauvres en ce qui concerne le jargon technique, et l'academie
@@ -167,7 +168,10 @@
  ; Help Desk configuration
 			     
  (hd-configuration "Configuration de l'Aide")
- (hd-search-frame-options "Options pour le cadre de recherche")
+ (hd-no-frames "Pas de cadres")
+ (hd-use-frames "Utiliser des cadres")
+ (hd-use-html-frames "Utiliser des cadres HTML")
+ (hd-search-pane-options "Options pour le cadre de recherche")
  (hd-height "Hauteur")
  (hd-bg-color "Couleur de fond")
  (hd-pixels "pixels")
@@ -267,7 +271,7 @@
  (ask-before-changing-format "Confirmation avant de changer le format de sauvegarde.")
  (wrap-words-in-editor-buffers "Continuer une longue ligne sur la ligne suivante, dans les éditeurs.")
  (show-status-line "Montrer la barre de status.")
- (count-from-one "Compter les lignes et colonnes à partir de un.") 
+ (count-columns-from-one "Compter les lignes et colonnes à partir de un.") 
  (display-line-numbers "Montrer le numéro de ligne et de colonne, pas la distance depuis le début d'éditeur.")
  (enable-keybindings-in-menus "Raccourcis clavier dans les menus.")
  (automatically-to-ps "Imprimer automatiquement dans un fichier postscript.")
@@ -519,6 +523,18 @@
  ;;; autosaving
  (error-autosaving "Erreur durant l'auto-sauvegarde de \"~a\".")
  (autosaving-turned-off "L'auto-sauvegarde est suspendue\njusqu'à ce que le fichier soit sauvegardé.")
+ (recover-autosave-files-frame-title "Recouvrer des fichiers auto-sauvegardés")
+ (autosave-details "Détails")
+ (autosave-recover "Recouvrer")
+ (autosave-unknown-filename "<<inconnu>>")
+ (autosave-autosave-label: "Fichier auto-sauvegardé:")
+ (autosave-original-label: "Fichier original:")
+ (autosave-autosave-label "Fichier auto-sauvegardé")
+ (autosave-original-label "Fichier original")
+ (autosave-compare-files "Comparer les fichiers auto-sauvegardés")
+ (autosave-show-autosave "Auto-sauvegarder un fichier")
+ (autosave-explanation "DrScheme a trouvé des fichiers auto-sauvegardés, qui peuvent contenir votre travail non-sauvegardé.")
+ (autosave-recovered! "Recouvré !")
  
  ;;; file modified warning
  (file-has-been-modified
@@ -537,6 +553,8 @@
   "`tool-names' et `tools' ne sont pas des listes de la même longueur, dans le fichier info.ss pour ~s. Trouvé ~e et ~e")
  (tool-tool-icons-same-length
   "`tool-icons' et `tools' ne sont pas des listes de la même longueur, dans le fichier info.ss pour ~s. Trouvé ~e et ~e")
+ (tool-tool-urls-same-length
+  "`tool-urls' et `tools' ne sont pas des listes de la même longueur, dans le fichier info.ss pour ~s. Trouvé ~e et ~e")
  (error-getting-info-tool
   "erreur durant le chargement du fichier info.ss pour ~s")
  (tool-error-phase1 "Erreur durant la phase 1 pour l'outil ~s; ~s")

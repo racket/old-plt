@@ -45,10 +45,8 @@
 	(lambda (item evt)
 	  (drscheme:unit:open-drscheme-window))]
        [file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
-       [file-menu:open-string ""]
-       [file-menu:between-open-and-save
-        (lambda (item evt)
-          '(help:open-url))]
+       [file-menu:open-string (lambda () "")]
+       ;[file-menu:between-open-and-save (lambda (item evt) '(help:open-url))]
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")])
       

@@ -1,5 +1,5 @@
 (unit/sig drscheme:init^
-  (import [mred : mred^])
+  (import mred:wx^ [mred : mred^])
   
   (define primitive-eval (current-eval))
   (define primitive-load (current-load))

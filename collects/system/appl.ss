@@ -92,7 +92,7 @@
 	     (process-command-line-arguments table argv mred:edit-file))]
 	  [user-init@
 	   (unit/sig ()
-	     (import user-setup^)
+	     (import (wx : wx^) user-setup^)
 	     
 	     (when user-setup?
 	       (let* ([init-file (wx:find-path 'init-file)])
@@ -110,7 +110,8 @@
 			     [mred : mred^ ((reference-library-unit/sig "link.ss" "mred") core)]
 			     [cmd-line : user-setup^ (cmd-line@ mred I)]
 			     [console : (console) (console@ mred I)]
-			     [user-init : () (user-init@ cmd-line)])
+			     [wx : wx^ (wx@)]
+			     [user-init : () (user-init@ wx cmd-line)])
 		       (export (open mred)
 			       (open console)))
 		     I)])

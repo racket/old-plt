@@ -1372,9 +1372,8 @@
 			  (apply real-handler
 			    (let ((in (cdr (sexp->raw m-expr cache-table))))
 			      in))
-			  m-expr)))
-		    (expand-expr (structurize-syntax '(#%void) expr
-				   '() cache-table)
+			  m-expr '() cache-table)))
+		    (expand-expr (structurize-syntax '(#%void) expr)
 		      env attributes vocab)))))
 	    (else
 	      (static-error expr "Malformed define-macro"))))))

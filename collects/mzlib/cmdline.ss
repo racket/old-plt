@@ -50,7 +50,7 @@
 						  '(help-labels s ...)))))]
 				[(tag . rest)
 				 (ormap (lambda (x) (module-identifier=? (syntax tag) x))
-					(syntax->list (syntax (once-each once-any multi))))
+					(syntax->list (syntax (once-each once-any multi final))))
 				 (with-syntax 
 				     ([sublines
 				       (let slloop ([sublines (syntax->list (syntax rest))])
@@ -88,7 +88,7 @@
 									 (cond
 									  [(null? rest) (values a null)]
 									  [(identifier? (car rest)) 
-									   (values 
+									   (loop 
 									    (append a (list (car rest))) 
 									    (cdr rest))]
 									  [else (values a rest)]))]
@@ -162,7 +162,7 @@
 						'formal-names)))))]
 				[(args . _)
 				 (serror "bad args line" line)]
-				[else (serror "not a once-each, once-any, multi, args, or => line" line)])))))])
+				[else (serror "not a once-each, once-any, multi, final, args, or => line" line)])))))])
 	       (with-syntax ([clauses clauses])
 		 (syntax
 		  (parse-command-line
@@ -230,8 +230,8 @@
 		      (lambda (spec)
 			(and (or (and (list? spec) (pair? spec))
 				 (bad-table (format "spec-set must be a non-empty list: ~a" spec)))
-			     (or (memq (car spec) '(once-any once-each multi help-labels))
-				 (bad-table (format "spec-set type must be 'once-any, 'once-each, 'multi, or 'help-labels: ~a" 
+			     (or (memq (car spec) '(once-any once-each multi final help-labels))
+				 (bad-table (format "spec-set type must be 'once-any, 'once-each, 'multi, 'final, or 'help-labels: ~a" 
 						    (car spec))))
 			     (andmap 
 			      (lambda (line)
@@ -241,7 +241,7 @@
 					(bad-table (format "help-labels line must be a string: ~e" line)))
 
 				    (and (or (and (list? line) (= (length line) 3))
-					     (bad-table (format "spec-line must be a list of at three items: ~e" line)))
+					     (bad-table (format "spec-line must be a list of at three or four items: ~e" line)))
 
 					 (or (list? (car line))
 					     (bad-table (format "flags part of a spec-line must be a list: ~e" (car line))))
@@ -307,13 +307,22 @@
 	(unless (= (a-c a) l)
 	  (error 'parse-command-line "the length of the argument help string list does not match the arity of the finish procedure")))
 
-      (let* ([once-spec-set
+      (let* ([finalled? #f] ; set to true when 'once-final is seen
+             [once-spec-set
 	      (lambda (lines)
 		(let ([set (cons #f (apply append (map car lines)))])
 		  (map
 		   (lambda (line) (cons set line))
 		   lines)))]
 	     [table
+              ;; list of (list <once-set> <spec-line> ...)
+              ;; If <once-set> is #f, then flags in <spec-line> are allowed
+              ;;  any number of times.
+              ;; If <once-set> is 'final, then its like #f, and `finalled?' should
+              ;;  be set.
+              ;; Otherwise, <once-set> is (list <bool> <string> ...) where <bool>
+              ;;  starts as #f and is mutated to #t when one of <string> is
+              ;;  matched.
 	      (apply
 	       append
 	       (list
@@ -345,7 +354,7 @@
 								    (loop (cdr l))
 								    (car l)))) "\\"]
 						   [else "|"])]
-						 [(eq? (car set) 'multi)
+						 [(memq (car set) '(multi final))
 						  "*"]
 						 [else " "]))
 				    (let loop ([flags (car line)])
@@ -360,7 +369,7 @@
 			   table) ; the original table
 			  (fprintf sp "  --help, -h : Show this help~n")
 			  (fprintf sp "  -- : Do not treat any remaining argument as a flag (at this level)~n")
-			  (when (assq 'multi table)
+			  (when (or (assq 'multi table) (assq 'final table))
 			    (fprintf sp " * Asterisks indicate flags allowed multiple times.~n"))
 			  (when (assq 'once-any table)
 			    (fprintf sp " /|\\ Brackets indicate mutually exclusive flags.~n"))
@@ -375,7 +384,7 @@
 		    (apply
 		     append
 		     (map 
-		      (lambda (line) (once-spec-set (list line))) 
+		      (lambda (line) (once-spec-set (list line)))
 		      (cdr spec)))]
 		   [(eq? (car spec) 'once-any)
 		    (once-spec-set (cdr spec))]
@@ -384,7 +393,11 @@
 		   [(eq? (car spec) 'multi)
 		    (map
 		     (lambda (line) (cons #f line))
-		     (cdr spec))]))
+		     (cdr spec))]
+                   [(eq? (car spec) 'final)
+                    (map
+                     (lambda (line) (cons 'final line))
+                     (cdr spec))]))
 		table))]
 	     [done
 	      (lambda (args r-acc)
@@ -424,8 +437,9 @@
 				remaining)])
 		  (if (< remaining needed)
 		      (error (string->symbol program)
-			     "the ~s flag needs ~a argument~a, but only ~a provided"
+			     "the ~s flag needs ~a argument~a, but ~a~a provided"
 			     flag needed (if (> needed 1) "s" "")
+                             (if (zero? remaining) "" "only ")
 			     remaining)
 		      (let ([v (apply handler 
 				      flag
@@ -445,7 +459,9 @@
 		   [(null? table)
 		    (call-handler unknown-flag flag args r-acc k)]
 		   [(member flag (cadar table))
-		    (when (caar table)
+		    (when (eq? 'final (caar table))
+                      (set! finalled? #t))
+		    (when (pair? (caar table))
 		      (let ([set (caar table)])
 			(if (car set)
 			    (let ([flags (cdr set)])
@@ -475,25 +491,27 @@
 	      (let ([arg (car args)]
 		    [rest (cdr args)])
 		(cond
-		 [(regexp-match number-regexp arg)
-		  (done args r-acc)]
-		 [(regexp-match "^--$" arg)
-		  (done (cdr args) r-acc)]
-		 [(regexp-match "^[-+][-+]" arg)
-		  (handle-flag arg rest r-acc #f loop)]
-		 [(regexp-match "^[-+]." arg)
-		  (let a-loop ([s (string->list (substring arg 1 (string-length arg)))]
-			       [rest rest]
-			       [r-acc r-acc])
-		    (if (null? s)
-			(loop rest r-acc)
-			(handle-flag (string (string-ref arg 0) (car s)) 
-				     rest r-acc
-				     arg
-				     (lambda (args r-acc)
-				       (a-loop (cdr s) args r-acc)))))]
-		 [else
-		  (done args r-acc)])))))]))
+                  [finalled?
+                   (done args r-acc)]
+                  [(regexp-match number-regexp arg)
+                   (done args r-acc)]
+                  [(regexp-match "^--$" arg)
+                   (done (cdr args) r-acc)]
+                  [(regexp-match "^[-+][-+]" arg)
+                   (handle-flag arg rest r-acc #f loop)]
+                  [(regexp-match "^[-+]." arg)
+                   (let a-loop ([s (string->list (substring arg 1 (string-length arg)))]
+                                [rest rest]
+                                [r-acc r-acc])
+                     (if (null? s)
+                         (loop rest r-acc)
+                         (handle-flag (string (string-ref arg 0) (car s)) 
+                                      rest r-acc
+                                      arg
+                                      (lambda (args r-acc)
+                                        (a-loop (cdr s) args r-acc)))))]
+                  [else
+                   (done args r-acc)])))))]))
 
   (provide command-line parse-command-line))
 

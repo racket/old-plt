@@ -11,6 +11,7 @@
 	   [no-rep? #f]
 	   [no-coll-paths? #f]
 	   [no-init-file? #f]
+           [no-define-argv? #f]
 	   [case-sensitive? #f]
 	   [allow-set!-undefined? #t]
 	   [print-error
@@ -18,6 +19,19 @@
 	      (if (exn? e)
 		  (fprintf (current-error-port) "~a~n" (exn-message e))
 		  (fprintf (current-error-port) "Exception in init file: ~e~n" e)))]
+           [beginize (lambda (l)
+                       (string-append
+                        "(begin "
+                        (apply string-append l)
+                        ")"))]
+           [script (lambda (flags proc like)
+                     `[,flags
+                       ,(lambda (f file) 
+                          (begin0
+                            (format proc file)
+                            (set! mute-banner? #t)
+                            (set! no-rep? #t)))
+                       (,(format "Same as -~amv-" like) "file")])]
 	   [table
 	    `([multi
 	       [("-e" "--eval")
@@ -33,52 +47,59 @@
 		,(lambda (f file) (format "(require (file ~s))" file))
 		("Requires <file>" "file")]
 	       [("-F" "--Load")
-		,(lambda (f . files) (map (lambda (file)
-					    (format "(load ~s)" file))
-					  files))
+		,(lambda (f . files) (beginize
+                                      (map (lambda (file)
+                                             (format "(load ~s)" file))
+                                           files)))
 		("Loads all <file>s" "file")]
 	       [("-D" "--Load-cd")
-		,(lambda (f . files) (map (lambda (file)
-					    (format "(load/cd ~s)" file))
-					  files))
+		,(lambda (f . files) (beginize
+                                      (map (lambda (file)
+                                             (format "(load/cd ~s)" file))
+                                           files)))
 		("Load/cds all <file>s" "file")]
 	       [("-T" "--Require")
-		,(lambda (f . files) (map (lambda (file)
-					    (format "(require (file ~s))" file))
-					  files))
+		,(lambda (f . files) (beginize
+                                      (map (lambda (file)
+                                             (format "(require (file ~s))" file))
+                                           files)))
 		("Requires all <file>s" "file")]
 	       [("-l" "--mzlib")
 		,(lambda (f file) (format "(require (lib ~s))" file))
 		("Imports library <file>" "file")]
 	       [("-L")
-		,(lambda (f file collection) (format "(import (lib ~s ~s))" file collection))
+		,(lambda (f file collection) (format "(require (lib ~s ~s))" file collection))
 		("Imports library <file> in <collection>" "file" "collection")]
-	       [("-r" "--script")
-		,(lambda (f file . rest) 
-		   (format "(load ~s)" file)
-		   (set! mute-banner? #t)
-		   (set! no-rep? #t)
-		   (set! args rest))
-		("Same as -fmv-" "file" "arg")]
-	       [("-t" "--script-cd")
-		,(lambda (f file . rest) 
-		   (format "(load/cd ~s)" file)
-		   (set! mute-banner? #t)
-		   (set! no-rep? #t)
-		   (set! args rest))
-		("Same as -dmv-" "file" "arg")]
+	       [("-M")
+		,(lambda (f collection) (format "(require (lib ~s ~s))"
+                                                (format "~a.ss" collection)
+                                                collection))
+		("Imports library <collection>.ss in <collection>" "collection")]]
+              [final
+               ,(script '("-r" "--script") "(load ~s)" "f")
+               ,(script '("-u" "--require-script") "(require (file ~s))"  "t")
+	       ,(script '("-i" "--script-cd") "(load/cd ~s)" "d")]
+              [multi
 	       [("-w" "--awk")
 		,(lambda (f) "(require-library \"awk.ss\")")
 		("Same as -l awk.ss")]
 	       [("-k")
 		,(lambda (f n m) (error 'mzscheme "The -k flag is not supported in this mode"))
 		("Load executable-embedded code from file offset <n> to <m>" "n" "m")]
+               [("-C" "--main")
+                ,(lambda (f) (lambda ()
+                               (when result
+                                 ((eval 'main) args))))
+                ("Calls `main' with a list of argument strings, if no prior errors")]
 	       [("-x" "--no-init-path")
 		,(lambda (f) (set! no-coll-paths? #t))
 		("Don't set current-library-collection-paths")]
 	       [("-q" "--no-init-file")
 		,(lambda (f) (set! no-init-file? #t))
 		("Don't load \"~/.mzschemerc\" or \"mzscheme.rc\"")]
+               [("-A")
+                ,(lambda (f) (set! no-define-argv? #t))
+		("Don't define `argv' or `program'")]
 	       [("-g" "--case-sens")
 		,(lambda (f) (set! case-sensitive? #t))
 		("Identifiers and symbols are initially case-sensitive")]
@@ -117,7 +138,6 @@
 	    (thread
 	     (lambda ()
 	       (current-namespace n)
-	       ;; TEMPORARY: avoids a bug in mzscheme's make-namespace:
 	       (namespace-transformer-require 'mzscheme)
 	       (let ([program (find-system-path 'exec-file)])
 		 (read-case-sensitive case-sensitive?)
@@ -125,8 +145,9 @@
 		 
 		 (unless mute-banner? (display (banner)))
 		 
-		 (eval `(define-values (argv) (quote ,(if args (list->vector args) (vector)))))
-		 (eval `(define-values (program) (quote ,program)))
+                 (unless no-define-argv?
+                   (eval `(define-values (argv) (quote ,(if args (list->vector args) (vector)))))
+                   (eval `(define-values (program) (quote ,program))))
 		 
 		 (find-library-collection-paths))
 	       
@@ -150,10 +171,11 @@
 					      (print-error e) 
 					      (set! result #f)
 					      (escape #f))])
-			(eval (read (open-input-string e)))))
-		    exprs))
+                        (if (string? e)
+                            (eval (read (open-input-string e)))
+                            (e))))
+                    exprs))
 		 (unless no-rep? 
-		   (read-eval-print-loop)
-		   (set! result #t))))))))
+		   (read-eval-print-loop))))))))
        `("arg"))
       result)))

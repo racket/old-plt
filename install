@@ -1,5 +1,5 @@
 #!/bin/sh
-#|
+#| -*- scheme -*-
 # PLT software installer
 # ----------------------
 # Normally it'll use MzScheme (will search for it at the same place this script

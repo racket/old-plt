@@ -72,6 +72,7 @@
   (define gui%
     (class object%
       
+      ;; board: string list
       (init-field board width height)
 
       (define f (instantiate frame% ("Simple Gui" #f 800 800)))
@@ -84,7 +85,7 @@
       (define log-text (instantiate text% ()))
       (send (instantiate editor-canvas% (p)) set-editor log-text)
       (send f show #t)
-
+      
       (define (display-board b money score packages-held)
         (let* ((snips (map (lambda (b) (make-object string-snip% b)) b)))
           (send map-text begin-edit-sequence)
@@ -114,6 +115,9 @@
                     packages-held)
           (send pack-text end-edit-sequence)))
 
+      (define/public (change-board x y char)
+        (string-set! (list-ref board y) x char))
+      
       (define/public (end) (send f show #t))
       
       (define/public (log text)

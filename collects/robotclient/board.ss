@@ -402,6 +402,9 @@
          (let ([px (get-player-x)]
                [py (get-player-y)])
            (begin
+             (cond 
+               ((gui)
+                (send (gui) change-board px py #\.)))
              (home-list (remove-home px py (home-list)))
              (set-spot (board) px py (set-empty spot))))))))
   

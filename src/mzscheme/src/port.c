@@ -177,8 +177,8 @@ static Scheme_Object *oskit_console_input_port_type;
 static Scheme_Object *file_input_port_type;
 Scheme_Object *scheme_string_input_port_type;
 #ifdef USE_TCP
-static Scheme_Object *scheme_tcp_input_port_type;
-static Scheme_Object *scheme_tcp_output_port_type;
+Scheme_Object *scheme_tcp_input_port_type;
+Scheme_Object *scheme_tcp_output_port_type;
 #endif
 #ifdef USE_FD_PORTS
 static Scheme_Object *fd_output_port_type;
@@ -207,7 +207,7 @@ static void flush_tested(Scheme_Output_Port *port);
 static int flush_fd(Scheme_Output_Port *op, 
 		    char * volatile bufstr, volatile int buflen, 
 		    volatile int offset, int immediate_only);
-void flush_all_output_fds(void);
+static void flush_all_output_fds(void);
 #endif
 
 static Scheme_Object *sch_process(int c, Scheme_Object *args[]);
@@ -3879,7 +3879,7 @@ static void flush_if_output_fds(Scheme_Object *o)
   }
 }
 
-void flush_all_output_fds(void)
+static void flush_all_output_fds(void)
 {
   scheme_start_atomic();
   scheme_do_close_managed(NULL, flush_if_output_fds);

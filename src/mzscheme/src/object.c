@@ -2433,7 +2433,7 @@ static Scheme_Object *ObjectInterface(int c, Scheme_Object *p[])
   return (Scheme_Object *)((Scheme_Class *)((Scheme_Class_Object *)p[0])->sclass)->equiv_intf;
 }
 
-Scheme_Object *InterfaceIvarNames(int argc, Scheme_Object **argv)
+static Scheme_Object *InterfaceIvarNames(int argc, Scheme_Object **argv)
 {
   Scheme_Interface *interface = (Scheme_Interface *)argv[0];
   Scheme_Object *p = scheme_null, **a;
@@ -2456,8 +2456,6 @@ Scheme_Object *InterfaceIvarNames(int argc, Scheme_Object **argv)
 
   return p;
 }
-
-
 
 static Scheme_Object *ClassInitArity(int n, Scheme_Object *p[])
 {

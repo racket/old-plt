@@ -3064,7 +3064,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 
 #if defined(UNIX_FILE_SYSTEM) && !defined(NO_UNIX_USERS)
 # define GROUP_CACHE_SIZE 10
-struct {
+static struct {
   gid_t gid;
   char set, in;
 } group_mem_cache[GROUP_CACHE_SIZE];

@@ -152,7 +152,7 @@ static Scheme_Object *read_special_number(const char *str, int pos)
 END_XFORM_ARITH;
 # endif
 
-double STRTOD(const char *orig_c, char **f)
+static double STRTOD(const char *orig_c, char **f)
 {
   int neg = 0;
   int found_dot = 0, is_infinity = 0, is_zero = 0;

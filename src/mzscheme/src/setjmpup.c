@@ -177,7 +177,7 @@ static void remove_cs(void *_cs, void *unused)
   --scheme_num_copied_stacks;
 }
 
-void *make_stack_copy_rec(long size)
+static void *make_stack_copy_rec(long size)
 {
   CopiedStack *cs, **lk;
 
@@ -201,7 +201,7 @@ void *make_stack_copy_rec(long size)
   return (void *)cs;
 }
 
-void set_copy(void *s_c, void *c)
+static void set_copy(void *s_c, void *c)
 {
   CopiedStack *cs = (CopiedStack *)s_c;
 

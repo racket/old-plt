@@ -1406,8 +1406,8 @@ extern Scheme_Object *scheme_user_output_port_type;
 extern Scheme_Object *scheme_pipe_read_port_type;
 extern Scheme_Object *scheme_pipe_write_port_type;
 #ifdef USE_TCP
-static Scheme_Object *scheme_tcp_input_port_type;
-static Scheme_Object *scheme_tcp_output_port_type;
+extern Scheme_Object *scheme_tcp_input_port_type;
+extern Scheme_Object *scheme_tcp_output_port_type;
 #endif
 
 void scheme_flush_orig_outputs(void);

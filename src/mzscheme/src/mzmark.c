@@ -2472,66 +2472,6 @@ int mark_pipe_FIXUP(void *p) {
 }
 
 
-#ifdef USE_TCP
-int mark_tcp_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
-}
-
-int mark_tcp_MARK(void *p) {
-  Scheme_Tcp *tcp = (Scheme_Tcp *)p;
-
-  gcMARK(tcp->buffer);
-# ifdef USE_MAC_TCP
-  gcMARK(tcp->tcp);
-  gcMARK(tcp->activeRcv);
-# endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
-}
-
-int mark_tcp_FIXUP(void *p) {
-  Scheme_Tcp *tcp = (Scheme_Tcp *)p;
-
-  gcFIXUP(tcp->buffer);
-# ifdef USE_MAC_TCP
-  gcFIXUP(tcp->tcp);
-  gcFIXUP(tcp->activeRcv);
-# endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
-}
-
-
-# ifdef USE_MAC_TCP
-int mark_write_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(WriteData));
-}
-
-int mark_write_data_MARK(void *p) {
-  WriteData *d = (WriteData *)p;
-    
-  gcMARK(d->xpb);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(WriteData));
-}
-
-int mark_write_data_FIXUP(void *p) {
-  WriteData *d = (WriteData *)p;
-    
-  gcFIXUP(d->xpb);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(WriteData));
-}
-
-# endif
-#endif
-
 #ifdef USE_FD_PORTS
 int mark_input_fd_SIZE(void *p) {
   return
@@ -2634,7 +2574,71 @@ int mark_oskit_console_input_FIXUP(void *p) {
 
 /**********************************************************************/
 
-#ifdef MARKS_FOR_PROCESS_C
+#ifdef MARKS_FOR_NETWORK_C
+
+#ifdef USE_TCP
+int mark_tcp_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
+}
+
+int mark_tcp_MARK(void *p) {
+  Scheme_Tcp *tcp = (Scheme_Tcp *)p;
+
+  gcMARK(tcp->b.buffer);
+# ifdef USE_MAC_TCP
+  gcMARK(tcp->tcp);
+  gcMARK(tcp->activeRcv);
+# endif
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
+}
+
+int mark_tcp_FIXUP(void *p) {
+  Scheme_Tcp *tcp = (Scheme_Tcp *)p;
+
+  gcFIXUP(tcp->b.buffer);
+# ifdef USE_MAC_TCP
+  gcFIXUP(tcp->tcp);
+  gcFIXUP(tcp->activeRcv);
+# endif
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
+}
+
+
+# ifdef USE_MAC_TCP
+int mark_write_data_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(WriteData));
+}
+
+int mark_write_data_MARK(void *p) {
+  WriteData *d = (WriteData *)p;
+    
+  gcMARK(d->xpb);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(WriteData));
+}
+
+int mark_write_data_FIXUP(void *p) {
+  WriteData *d = (WriteData *)p;
+    
+  gcFIXUP(d->xpb);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(WriteData));
+}
+
+# endif
+#endif
+
+/**********************************************************************/
+
+START process;
 
 int mark_config_val_SIZE(void *p) {
   return

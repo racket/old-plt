@@ -343,3 +343,21 @@ The `file-spec' is the same as for MzLib's `include': a path string, a
 
 Analogous to `include-at/relative-to', though only a source is needed
 (no context).
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+                  _bitmap-label.ss_
+
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
+
+The bitmap-label.ss provides a function to construct a bitmap
+label given a bitmap (or a bitmap file path) and a string.
+
+> (bitmap-label-maker str bitmap-or-filename) -> (container -> bitmap)
+
+The `bitmap-label-maker' function takes a string and bitmap/filename
+and returns a function that takes a container to generate a
+bitmap. The container determines the font that is used for the bitmap
+label. The result is a bitmap (with a mask) that is suitabel for use
+as a button% label.
+

@@ -23,22 +23,25 @@
 					 -re:suffix name
 					 ".zo")))))]
      [(src dest)
-      (with-input-from-file* 
-       src
-       (lambda ()
-	 (port-count-lines! (current-input-port))
-	 (with-handlers ([not-break-exn?
-			  (lambda (exn)
-			    (with-handlers ([void void])
-			      (delete-file dest))
-			    (raise exn))])
-	   (with-output-to-file*
-	    dest
-	    (lambda ()
-	      (let loop ()
-		(let ([r (read-syntax src)])
-		  (unless (eof-object? r)
-		    (write (compile r))
-		    (loop)))))
-	    'truncate/replace))))])))
+      (let ([in (open-input-file src)])
+	(dynamic-wind
+	 void
+	 (lambda ()
+	   (port-count-lines! (current-input-port))
+	   (with-handlers ([not-break-exn?
+			    (lambda (exn)
+			      (with-handlers ([void void])
+				(delete-file dest))
+			      (raise exn))])
+	     (let ([out (open-output-file dest 'truncate/replace)])
+	       (dynamic-wind
+		void
+		(lambda ()
+		  (let loop ()
+		    (let ([r (read-syntax src in)])
+		      (unless (eof-object? r)
+			(write (compile r) out)
+			(loop)))))
+		(lambda () (close-output-port out))))))
+	 (lambda () (close-input-port in))))])))
 

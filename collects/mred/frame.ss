@@ -18,7 +18,8 @@
 	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:application : mred:application^]
 	    [mzlib:function : mzlib:function^]
-	    [mzlib:file : mzlib:file^])
+	    [mzlib:file : mzlib:file^]
+	    [mzlib:date : mzlib:date^])
 	    
     (mred:debug:printf 'invoke "mred:frame@")
 
@@ -424,4 +425,138 @@
 	      (send canvas set-focus))
 	    (mred:debug:printf 'matthew "after initial call to set-focus~n")))))
 
-    (define simple-menu-frame% (make-simple-frame% standard-menus-frame%)))
+    (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))
+
+    (define make-info-frame%
+      (let* ([time-edit (make-object mred:edit:edit%)]
+	     [time-semaphore (make-semaphore 1)]
+	     [magic-space 25]
+	     [wide-time "00:00pm"]
+	     [update-time
+	      (lambda ()
+		(dynamic-wind
+		 (lambda ()
+		   (semaphore-wait time-semaphore))
+		 (lambda ()
+		   (send* time-edit 
+		     (erase)
+		     (insert 
+		      (let* ([date (seconds->date
+				    (current-seconds))]
+			     [hours (date-hour date)]
+			     [minutes (date-minute date)])
+			(format "~a:~a~a~a"
+				(if (<= hours 12) hours (- hours 12))
+				(quotient minutes 10)
+				(modulo minutes 10)
+				(if (< hours 12) "am" "pm"))))))
+		 (lambda ()
+		   (semaphore-post time-semaphore))))]
+	     [determine-width
+	      (lambda (string canvas edit)
+		(send canvas call-as-primary-owner
+		      (lambda ()
+			(let ([lb (box 0)]
+			      [rb (box 0)])
+			  (send edit erase)
+			  (send edit insert string)
+			  (send edit position-location 
+				(send edit last-position)
+				rb)
+			  (send edit position-location 0 lb)
+			  '(printf "width: ~a ~a ~a ~a~n" 
+				  (send canvas user-min-width)
+				  lb rb (send time-edit last-position))
+			  (send canvas user-min-width 
+				(+ magic-space (- (unbox rb) (unbox lb))))))))]
+	     [time-thread
+	      (thread
+	       (rec loop
+		    (lambda ()
+		      (update-time)
+		      (sleep 30)
+		      (loop))))])
+	(lambda (super-info%)
+	  (class super-info% args
+	    (rename [super-make-root-panel make-root-panel])
+	    (private
+	      [super-root 'unitiaialized-super-root])
+	    (public
+	      [make-root-panel
+	       (lambda (% parent)
+		 (let* ([s-root (super-make-root-panel
+				 mred:container:vertical-panel%
+				 parent)]
+			[root (make-object % s-root)])
+		   (set! super-root s-root)
+		   root))])
+	    
+	    (rename [super-on-close on-close])
+	    (public
+	      [on-close
+	       (lambda ()
+		 (and (super-on-close)
+		      (send time-canvas set-media null)))])		     
+	    
+	    (public
+	      [edit-position-changed
+	       (let ()
+		 (lambda ()
+		   (let ([edit (get-info-edit)])
+		     (let ([start (send edit get-start-position)]
+			   [end (send edit get-end-position)]
+			   [make-one
+			    (lambda (pos)
+			      (let* ([line (send edit position-line pos)]
+				     [line-start (send edit line-start-position line)])
+				(format "~a:~a" line (- pos line-start))))])
+		       (send* position-edit
+			 (erase)
+			 (insert 
+			  (if (= start end)
+			      (make-one start)
+			      (string-append (make-one start)
+					     "-"
+					     (make-one end)))))))))])
+
+	    (inherit get-edit)
+	    (public
+	      [get-info-edit
+	       (lambda ()
+		 (get-edit))])
+
+	    (public
+	      [update-info
+	       (lambda ()
+		 (edit-position-changed))])
+
+	    (sequence 
+	      (apply super-init args))
+	    
+	    (private
+	      [info-panel (make-object mred:container:horizontal-panel% 
+				       super-root)]
+	      [space (make-object mred:container:horizontal-panel% info-panel)]
+	      [position-canvas (make-object mred:canvas:one-line-canvas%
+					    info-panel)]
+	      [time-canvas (make-object mred:canvas:one-line-canvas% 
+					info-panel)]
+	      [position-edit (make-object mred:edit:edit%)])
+
+	    (sequence
+	      (send info-panel stretchable-in-y #f)
+	      (send* position-canvas
+		(set-media position-edit)
+		(stretchable-in-x #f))
+	      (send* time-canvas 
+		(set-media time-edit)
+		(stretchable-in-x #f))
+	      (determine-width "000:000-000:000" 
+			       position-canvas
+			       position-edit)
+	      (semaphore-wait time-semaphore)
+	      (determine-width wide-time time-canvas time-edit)
+	      (semaphore-post time-semaphore)
+	      (update-time))))))
+    
+    (define info-frame% (make-info-frame% simple-menu-frame%)))

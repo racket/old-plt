@@ -7,7 +7,6 @@
    (lib "unitsig.ss")
    (lib "class.ss")
    (lib "etc.ss")
-   (lib "mred.ss" "mred")
    (lib "framework.ss" "framework")
    (lib "tool.ss" "drscheme")
    "signatures.ss"
@@ -50,15 +49,13 @@
           ;; called by the model when it is executing
           (define/public (update-executing executing?)
             (if executing?
-                (begin
-                  (send model lock-cases true))
-                (begin
-                  (send model lock-cases false))))
+                (send model lock-cases true)
+                (send model lock-cases false)))
           
           ;; get-error-display-handler (-> (string? exn? . -> . void?))
           ;; the error handler that is used to display errors to the window
           (define/public (get-error-handler)
-            (lambda (message error)
+            (lambda (msg exn)
               (update-executing false)))
           
           ;; can-close? (-> boolean?)
@@ -85,10 +82,11 @@
           (super-instantiate ()
             (label (gui-utils:next-untitled-name)))
           
-          (when program (send model set-program program))
-          ;;why doesn't this line work? sending filename as an init
-          ;;field yields an undefined class
+          ;; why doesn't this line work? sending filename as an init
+          ;; field yields an undefined class.
           (when filename (load-file filename))
+          ;; the same goes for the program line!
+          (when program (send model set-program program))
           ))
       ))
   )

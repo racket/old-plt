@@ -162,31 +162,42 @@
             
             (send program-canvas set-line-count 1))
           
+          ;; set-program (string? . -> . void?)
+          ;; set the program to be evaluated
+          (define/public (set-program p)
+            (send model set-program p)
+            (update-modified false))
+          
           ;;;;;;;;;;;;;;;;;
           ;; error-panel ;;
           ;;;;;;;;;;;;;;;;;
           
           (field
-           [error-place-holder (instantiate vertical-panel% ()
-                                 (parent (get-area-container))
-                                 (stretchable-height false)
-                                 (stretchable-width true))]
-           [error-panel (instantiate horizontal-panel% ()
-                          (parent error-place-holder)
-                          (style '(border))
-                          (stretchable-height false))]
-           [label-panel (instantiate vertical-panel% ()
-                          (parent error-panel)
-                          (stretchable-width false)
-                          (stretchable-height false))]
-           [error-text (instantiate (text:hide-caret/selection-mixin text:basic%) ()
-                         (auto-wrap true))]
-           [ec (instantiate editor-canvas% ()
-                 (parent error-panel)
-                 (editor error-text)
-                 (style '(no-hscroll))
-                 (stretchable-height true)
-                 (stretchable-width true))])
+           [error-place-holder
+            (instantiate vertical-panel% ()
+              (parent (get-area-container))
+              (stretchable-height false)
+              (stretchable-width true))]
+           [error-panel
+            (instantiate horizontal-panel% ()
+              (parent error-place-holder)
+              (style '(border))
+              (stretchable-height false))]
+           [label-panel
+            (instantiate vertical-panel% ()
+              (parent error-panel)
+              (stretchable-width false)
+              (stretchable-height false))]
+           [error-text
+            (instantiate (text:hide-caret/selection-mixin text:basic%) ()
+              (auto-wrap true))]
+           [ec
+            (instantiate editor-canvas% ()
+              (parent error-panel)
+              (editor error-text)
+              (style '(no-hscroll))
+              (stretchable-height true)
+              (stretchable-width true))])
           
           (send error-text hide-caret true)
           

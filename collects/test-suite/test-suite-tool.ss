@@ -46,9 +46,10 @@
               (parent file-menu)
               (callback
                (lambda (menu event)
-                 (send (instantiate window% ()
-                         (program (send (get-definitions-text) get-filename)))
-                       show true))))
+                 (let ([window (instantiate window% ())]
+                       [program (send (get-definitions-text) get-filename)])
+                   (when program (send window set-program program))
+                   (send window show true)))))
             (super-file-menu:between-new-and-open file-menu))
 
           ;; file-menu:between-open-and-revert ((is-a?/c file-menu%) . -> . void?)

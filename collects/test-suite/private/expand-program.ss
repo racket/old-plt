@@ -6,7 +6,6 @@
    (lib "unitsig.ss")
    (lib "mred.ss" "mred")
    (lib "etc.ss")
-   (lib "file.ss")
    "signatures.ss")
   
   (provide expand-program@)
@@ -97,7 +96,10 @@
                           (set! value object)
                           (set! first-expr? false)
                           (continue))
-                        (error 'iter "Too many expressions in a test box"))]
+                        (error-handler
+                         "Useless argument"
+                         (make-exn:syntax "Too many expressions in a test box"
+                                          (current-continuation-marks) object false false)))]
                    [else (error 'eval-text "Error")])))
              #f))
           

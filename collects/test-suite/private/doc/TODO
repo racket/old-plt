@@ -29,17 +29,12 @@ On Mon, Nov 18, 2002 at 03:03:49PM -0600, Robert Bruce Findler wrote:
 > lines between the test case items (or even not, if you can figure out
 > the background colors)
 -------------------
-Give a better error message with highlighting when there are too many
-expressions in a test box.
--------------------
  * There's a problem with handling mouse-button releases. They seem to
    be handled like clicks. For example, drag a selection in "Expected",
    but release the mouse in "Call". The selection will move to "Call".
 
 Matthew
 -------------------
-   - add an extra paren at the end of some expression and cry about the error
-     message
    - after xcuting and receiving checks for all tests, edit an expected value
      and see whether you get a save button
 ------------------
@@ -47,6 +42,7 @@ Matthew
 ######################################################################
                           Nonimmediate TODO:
 ######################################################################
+disable the open button when there is no program to test in the text box
 -------------------
 make undo/redo work
 -------------------

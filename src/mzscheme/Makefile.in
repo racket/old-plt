@@ -130,21 +130,21 @@ mark:
 	$(MAKE) $(srcdir)/src/mzmark.c
 
 headers:
-	$(MAKE) $(srcdir)/../../collects/mzscheme/include/scheme.h
+	$(MAKE) $(srcdir)/../../include/scheme.h
 	$(MAKE) $(srcdir)/../../collects/mzscheme/lib/mzdyn.c
 
 # Needed for extension compilation when MzScheme headers change
-$(srcdir)/../../collects/mzscheme/include/scheme.h: \
+$(srcdir)/../../include/scheme.h: \
           $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
           $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/scheme.h \
           $(srcdir)/src/schvers.h
-	rm -rf $(srcdir)/../../collects/mzscheme/include/*.* # avoid CVS
+	rm -rf $(srcdir)/../../include/*.* # avoid CVS
 	cp $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h $(srcdir)/src/schvers.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
-          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/../../collects/mzscheme/include 
+          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/../../include 
 	$(PERL) -ne 's/\/\*III\*\//\#define INCLUDE_WITHOUT_PATHS/; print' \
-          < $(srcdir)/include/scheme.h > $(srcdir)/../../collects/mzscheme/include/scheme.h
+          < $(srcdir)/include/scheme.h > $(srcdir)/../../include/scheme.h
 
 # mzdyn.c, used for MacOS "library"
 $(srcdir)/../../collects/mzscheme/lib/mzdyn.c: $(srcdir)/dynsrc/mzdyn.c
@@ -194,18 +194,17 @@ install:
 	$(MAKE) @MZINSTALLTARGET@
 
 LIBIDIR=$(srcdir)/../../lib
-LIBCIDIR=$(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)
 BUILDINFO=$(LIBIDIR)/buildinfo
+ICP=@ICP@
 
 normal-install:
 	if [ ! -d $(srcdir)/../../bin ] ; then mkdir $(srcdir)/../../bin ; fi
 	rm -f $(srcdir)/../../bin/mzscheme
-	cp mzscheme $(srcdir)/../../mzscheme
-	if [ ! -d $(LIBCIDIR) ] ; then mkdir $(LIBCIDIR) ; fi
+	$(ICP) mzscheme $(srcdir)/../../bin/mzscheme
 	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
-	cp mzdyn.o $(LIBCIDIR)/mzdyn.o
-	cp libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
-	cp libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
+	cp mzdyn.o $(LIBIDIR)/mzdyn.o
+	$(ICP) libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
+	$(ICP) libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=@CC@' > $(BUILDINFO)
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	echo 'LIBS=@LIBS@' >> $(BUILDINFO)

@@ -367,12 +367,14 @@ if test "${enable_dynlib}" = "yes" ; then
   LIBSFX=la
   MREDLINKER="${LTDIR}/libtool $CXX"
   WXLIBS=WXLIBSDYN
-  WXDEPS=WXDEPSDYN
+  ICP="${LTDIR}/libtool cp"
+  MRLIBINSTALL="install-lib"
 else
   LIBSFX=a
   MREDLINKER="$CXX"
   WXLIBS=WXLIBSNORM
-  WXDEPS=WXDEPSNORM
+  ICP=cp
+  MRLIBINSTALL="install-no-lib"
 fi
 
 ############## final output ################
@@ -407,7 +409,8 @@ AC_SUBST(MZINSTALLTARGET)
 AC_SUBST(MREDLINKER)
 AC_SUBST(LIBSFX)
 AC_SUBST(WXLIBS)
-AC_SUBST(WXDEPS)
+AC_SUBST(ICP)
+AC_SUBST(MRLIBINSTALL)
 
 AC_SUBST(MAKE_MRED)
 AC_SUBST(MAKE_MRED3M)

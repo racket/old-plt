@@ -95,3 +95,24 @@ void MrEdMacSleep(float secs);
 
 typedef void *(*ForEachFrameProc)(wxObject *, void *);
 void *MrEdForEachFrame(ForEachFrameProc fp, void *data);
+
+
+/* Startup: */
+extern int wxEntry(int, char **);
+extern void wxCreateApp(void);
+extern int mred_finish_cmd_line_run(void);
+extern void wxDoMainLoop();
+extern void mred_run_from_cmd_line(int argc, char **argv, Scheme_Env *(*mk_basic_env)(void));
+
+#ifdef INCLUDE_WITHOUT_PATHS
+# include "schvers.h"
+#else
+# include "../mzscheme/src/schvers.h"
+#endif
+
+#ifdef MZ_PRECISE_GC
+# define MRED3M "3m"
+#else
+# define MRED3M ""
+#endif
+#define BANNER "MrEd" MRED3M " version " MZSCHEME_VERSION ", Copyright (c) 1995-2001 PLT\n"

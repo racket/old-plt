@@ -2357,7 +2357,7 @@ public:
 
 basePrinterDC::basePrinterDC(wxWindow *)
 {
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "%s", 
 		   METHODNAME("printer-dc%","initialization")": not supported for X Windows");
 }

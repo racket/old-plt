@@ -1781,11 +1781,11 @@ static Scheme_Object *wxSendEvent(int c, Scheme_Object *args[])
   if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
   else {
-    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, err);
+    scheme_raise_exn(MZEXN_FAIL, "send-event: failed (%s%e)", stage, err);
     return NULL;
   }
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+  scheme_raise_exn(MZEXN_FAIL_UNSUPPORTED,
 		   "send-event: not supported on this platform");
   return NULL;
 #endif
@@ -1874,9 +1874,7 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
     was_dir = 1;
 #endif
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   argv[0],
-		   scheme_false,
+  scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
 		   "file-creator-and-type: %s: \"%q\" (%E)",
 		   (was_dir 
 		    ? "path is a directory" 

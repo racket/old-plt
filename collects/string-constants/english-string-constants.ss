@@ -113,7 +113,9 @@ please adhere to these guidelines:
  (untitled-n "Untitled ~a")
  (warning "Warning")
  (error "Error")
- (close "Close") ;; as in, close an open window
+ (close "Close") ;; as in, close an open window. must match close-menu-item
+                 ;; in the sense that, when the &s have been stripped from
+                 ;; close-menu-item, it must be the same string as this.
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
  (are-you-sure-delete? "Are you sure you want to delete ~a?") ;; ~a is a filename or directory name
@@ -809,7 +811,7 @@ please adhere to these guidelines:
  (save-interactions-as-text "Save Interactions As Text...")
  (print-interactions "Print Interactions...")
  (new-tab "New Tab")
- (close-tab "Close Tab")
+ (close-tab "Close Tab") ;; must not have any &s in it.
  
  ;;; edit-menu
  (split-menu-item-label "&Split")

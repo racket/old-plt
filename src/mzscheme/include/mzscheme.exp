@@ -11,8 +11,6 @@ scheme_new_param
 scheme_param_config
 scheme_register_parameter
 scheme_get_env
-scheme_current_process
-scheme_fuel_counter
 scheme_current_process_ptr
 scheme_fuel_counter_ptr
 scheme_make_namespace
@@ -122,7 +120,6 @@ scheme_make_vector
 scheme_make_integer_value
 scheme_make_integer_value_from_unsigned
 scheme_make_double
-scheme_make_float
 scheme_make_char
 scheme_make_promise
 scheme_make_promise_from_thunk
@@ -137,8 +134,6 @@ scheme_make_bignum
 scheme_make_bignum_from_unsigned
 scheme_bignum_to_double
 scheme_bignum_from_double
-scheme_bignum_to_float
-scheme_bignum_from_float
 scheme_bignum_to_string
 scheme_read_bignum
 scheme_bignum_normalize
@@ -146,8 +141,6 @@ scheme_double_to_int
 scheme_make_rational
 scheme_rational_to_double
 scheme_rational_from_double
-scheme_rational_to_float
-scheme_rational_from_float
 scheme_rational_normalize
 scheme_rational_numerator
 scheme_rational_denominator

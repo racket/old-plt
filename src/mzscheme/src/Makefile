@@ -92,7 +92,8 @@ $(OBJDIR):
 objects:
 	mkdir objects
 
-mzheaders: schemex.h schemexm.h schemex.inc schexn.h $(OBJDIR)/schsys.h ../include/mzscheme.exp
+mzheaders: schemex.h schemexm.h schemex.inc schexn.h $(OBJDIR)/schsys.h \
+           ../include/mzscheme.exp ../include/mzwin.def ../include/gmzwin.def
 
 mzobjects: $(OBJS)
 
@@ -114,8 +115,11 @@ schemex.inc : schemef.h makex
 ../include/mzscheme.exp : schemef.h makex
 	./makex -exports < schemef.h > ../include/mzscheme.exp
 
-../include/mzexpwin.txt : schemef.h makex
-	./makex -winex < schemef.h > ../include/mzexpwin.txt
+../include/mzwin.def : schemef.h makex
+	./makex -winex < schemef.h > ../include/mzwin.def
+
+../include/gmzwin.def : schemef.h makex
+	./makex -gwinex < schemef.h > ../include/gmzwin.def
 
 schexn.h : exnsrc.ss makeexn
 	./makeexn < exnsrc.ss > schexn.h

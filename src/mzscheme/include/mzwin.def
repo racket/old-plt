@@ -11,8 +11,8 @@ EXPORTS
  scheme_param_config
  scheme_register_parameter
  scheme_get_env
- scheme_current_process DATA
- scheme_fuel_counter DATA
+ scheme_current_process_ptr DATA
+ scheme_fuel_counter_ptr DATA
  scheme_make_namespace
  scheme_thread
  scheme_thread_w_manager

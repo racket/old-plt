@@ -71,7 +71,7 @@ print "EXPORTS\n" if $winex;
 if ($list) {
     foreach $f (@exported) {
 	if (substr($f, 0, 1) eq '#') {
-	    if ($exports) {
+	    if ($exports || $winex) {
 		if ($f =~ /#ifdef MZ_REAL_THREADS/) {
 		    $suspend = 1;
 		}

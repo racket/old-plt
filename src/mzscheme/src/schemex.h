@@ -18,6 +18,16 @@
 /* The scheme_extension_table parser is touchy: don't leave a space
    between a function name and it's opening parameter parenthesis. */
 
+#ifdef WINDOWS_DYNAMIC_LOAD
+# if SCHEME_DIRECT_EMBEDDED
+#  define NONPROC /* empty */
+# else
+#  define NONPROC __declspec(dllimport)
+# endif
+#else
+# define NONPROC /* empty */
+#endif
+
 /* After this START tag, all comments should start & end on same line */
 
 typedef struct {

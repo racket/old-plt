@@ -42,7 +42,7 @@
 ; 
 ; (define (mycar2 n x)
 ;   (printf "car: ~a~n" n)
-;   (syntax-object->datum x))
+;   (label-term x))
 
  ; XXX perf analysis
  (define ast-nodes 0)
@@ -87,13 +87,13 @@
  ; another label, using the first label as the source, or transform the graph accordingly (if
  ; the inflowing label is a function pseudo-label and the label into which it flows corresponds
  ; to the operator in an application, for example).
- (define-struct label (type-var trace tunnel? prim? term set edges))
+ (define-struct label (type-var trace tunnel? prim? term set edges) (make-inspector))
  
  ; a constant...
- (define-struct (label-cst label) (value))
+ (define-struct (label-cst label) (value) (make-inspector))
  
  ; car = label, cdr = label
- (define-struct (label-cons label) (car cdr))
+ (define-struct (label-cons label) (car cdr) (make-inspector))
  
  ; rest-arg?s = (listof boolean), req-args = (listof number), argss = (listof (listof label)),
  ; exps = (listof label), top-free-varss = (listof (listof labels)),
@@ -108,7 +108,7 @@
  ; graph when a function flows into an application, until the clause around the application
  ; is itself applied.
  (define-struct (label-case-lambda label)
-                (rest-arg?s req-args argss exps top-free-varss app-thunks))
+                (rest-arg?s req-args argss exps top-free-varss app-thunks) (make-inspector))
  
  ; labels = label
  ; used to simulate multiple values. So this label is going to flow around and work pretty
@@ -117,7 +117,7 @@
  ; of applications, never through edges that correspond to arguments of applications. Hence
  ; the reason for the complication in create-simple-edge. Note that define-struct expands
  ; into a define-values, so we need all that stuff.
- (define-struct (label-values label) (labels))
+ (define-struct (label-values label) (labels) (make-inspector))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
  
@@ -126,8 +126,8 @@
  (define *hash-table-fail-empty* (lambda () '()))
  (define *hash-table-fail-false* (lambda () #f))
  
- ; (listof (list label symbol string))
- ; label is the label corresponding to the term where the error occured
+ ; (listof (list (listof term) label symbol string))
+ ; term is where the error occured
  ; symbol is a color
  ; string is the actual error message
  (define *errors* 'uninitialized)
@@ -302,7 +302,7 @@
                   (extend-edge-for-values simple-edge)))
                ; (define-values (x) (... (values a b ...) ...))
                (set! *errors*
-                     (cons (list (list inflowing-label)
+                     (cons (list (list (label-term inflowing-label))
                                  'red
                                  (format "context expected 1 value, received ~a values"
                                          (length values-labels)))
@@ -325,9 +325,10 @@
  ; of the code but used a lot in the graph derivation code, so rather than add a second
  ; argument to create-simple-label everywhere, it's easier to have this little specialized
  ; function for primitives...
- ; Note that such a label has prim? set to #t and no associated term.
- (define (create-simple-prim-label)
-   (make-label #f #f #f #t #f (make-hash-table) '()))
+ ; Note that such a label has prim? set to #t and that the associated term will, in practice,
+ ; be the term into which the primitive label will initially flow.
+ (define (create-simple-prim-label term)
+   (make-label #f #f #f #t term (make-hash-table) '()))
  
  ; syntax-object -> label
  ; create simple, basic label, with term position associated with the label.
@@ -471,7 +472,8 @@
     [(#%app op actual-args ...)
      (let*
          ([app-label (create-simple-pos-associated-label term)]
-          [op-label (create-label-from-term (syntax op) gamma enclosing-lambda-label)]
+          [op-term (syntax op)]
+          [op-label (create-label-from-term op-term gamma enclosing-lambda-label)]
           [actual-args-labels
            (map (lambda (actual-arg)
                   (create-label-from-term actual-arg gamma enclosing-lambda-label))
@@ -503,7 +505,7 @@
                          ; Note: nothing was done, so there's nothing to undo
                          (set! *errors*
                                (cons (list
-                                      (list op-label)
+                                      (list op-term)
                                       'red
                                       (format "procedure application: arity mismatch, given: ~a; arguments were: ~a"
                                               (if (label-prim? inflowing-label)
@@ -511,8 +513,7 @@
                                                   ; in a higer-order way, but they can always
                                                   ; trace the case-lambda back, so that should
                                                   ; be good enough.
-                                                  (syntax-object->datum
-                                                   (label-term op-label))
+                                                  (syntax-object->datum op-term)
                                                   (syntax-object->datum
                                                    (label-term inflowing-label)))
                                               (syntax-object->datum (syntax (actual-args ...)))))
@@ -541,13 +542,12 @@
                                               (set! *errors*
                                                     (cons
                                                      (list
-                                                      (list free-var-label op-label)
+                                                      (list (label-term free-var-label) op-term)
                                                       'red
                                                       (format "reference to undefined identifier: ~a in function ~a"
                                                               free-var-name
-                                                              (syntax-object->datum
-                                                               (label-term op-label))))
-                                                     *errors*)))
+                                                              (syntax-object->datum op-term)))
+                                                    *errors*)))
                                             binding-label))
                                         free-vars-labels)])
                                  ; we don't expect to have many free variables, so processing
@@ -648,7 +648,7 @@
                    ; trying to apply something not a function
                    ; Note: nothing was done, so there's nothing to undo
                    (set! *errors*
-                         (cons (list (list op-label)
+                         (cons (list (list op-term)
                                      'red
                                      (format "procedure application: expected procedure, given: ~a; arguments were: ~a"
                                              (syntax-object->datum (label-term inflowing-label))
@@ -762,7 +762,7 @@
                                 ; (define-values (x y) (... (values a b c) ...))
                                 (set! *errors*
                                       (cons
-                                       (list (list inflowing-label)
+                                       (list (list (label-term inflowing-label))
                                              'red
                                              (format "context expected ~a value, received ~a values"
                                                      vars-length (length values-labels)))
@@ -771,7 +771,7 @@
                           (set! *errors*
                                 (cons
                                  (list
-                                  (list define-label)
+                                  (list term)
                                   'red
                                   (format "define-values: context expected ~a values, received 1 non-multiple-values value"
                                           vars-length))
@@ -859,7 +859,7 @@
                                            (set! *errors*
                                                  (cons
                                                   (list
-                                                   (list inflowing-label)
+                                                   (list (label-term inflowing-label))
                                                    'red
                                                    (format "context expected ~a value, received ~a values"
                                                            vars-length (length values-labels)))
@@ -868,7 +868,7 @@
                                      (set! *errors*
                                            (cons
                                             (list
-                                             (list let-values-label)
+                                             (list term)
                                              'red
                                              (format "let-values: context expected ~a values, received 1 non-multiple-values value"
                                                      vars-length))
@@ -1002,7 +1002,7 @@
                          primitive-type-scheme (make-hash-table) term)
                         (create-simple-edge bound-label))
                        (set! *errors*
-                             (cons (list (list bound-label)
+                             (cons (list (list term)
                                          'red
                                          (format "reference to undefined identifier (at top level): ~a"
                                                  identifier-name))
@@ -1022,7 +1022,7 @@
            ; quasiquotes, stuff like that - don't ask me why  such primitive calls are
            ; not wrapped inside a #%top...)
            (set! *errors*
-                 (cons (list (list bound-label)
+                 (cons (list (list term)
                              'red
                              (format "unknown construct: ~a" (syntax-object->datum (syntax var))))
                        *errors*)))
@@ -1313,7 +1313,7 @@
       (let ([computed-type (get-type label)])
         (unless (subtype computed-type expected-type)
           (set! *errors*
-                (cons (list (list label)
+                (cons (list (list (label-term label))
                             'red
                             (format "computed type ~a not a subtype of expected type ~a"
                                     (pp-type computed-type)
@@ -1338,13 +1338,15 @@
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GRAPH RECONSTRUCTION FROM TYPE
 
- ; type (hash-table-of symbol label) syntax-object -> label
+ ; type (hash-table-of symbol label) term -> label
  ; analyse type scheme and creates flow var environment
+ ; term is the term into which the final result will flow into. We need that
+ ; mainly to report errors correctly.
  (define (reconstruct-graph-from-type-scheme type delta term)
    (if (type-scheme? type)
        (begin
          (for-each (lambda (flow-var type^C)
-                     (let ([label (create-simple-prim-label)])
+                     (let ([label (create-simple-prim-label term)])
                        (associate-label-with-type label type^C)
                        (add-flow-var-to-env delta flow-var label)))
                    (type-scheme-flow-vars type)
@@ -1352,8 +1354,9 @@
          (reconstruct-graph-from-type (type-scheme-type type) delta term #t))
        (reconstruct-graph-from-type type delta term #t)))
  
- ; type (hash-table-of symbol label) syntax-oject boolean -> label
- ; reconstructs a graph from type representing the primitive term, using environment delta.
+ ; type (hash-table-of symbol label) term boolean -> label
+ ; reconstructs a graph from type representing the primitive represented by term,
+ ; using environment delta.
  ; Note how we use associate-label-with-type to memorize type checking only in the contravariant
  ; case. The type to check in the covariant case is always top, since we assume internal
  ; correctness of the graph generation from a primitive type.
@@ -1378,7 +1381,7 @@
                    (type-case-lambda-exps type))]
                  [label (make-label-case-lambda
                          #f #f #f #t
-                         #f
+                         term
                          (make-hash-table)
                          '()
                          (type-case-lambda-rest-arg?s type)
@@ -1392,7 +1395,7 @@
          [(type-cons? type)
           (let ([label (make-label-cons
                         #f #f #f #t
-                        #f
+                        term
                         (make-hash-table)
                         '()
                         (reconstruct-graph-from-type (type-cons-car type) delta term #t)
@@ -1404,7 +1407,7 @@
          [(type-cst? type)
           (let ([label (make-label-cst
                         #f #f #f #t
-                        #f
+                        term
                         (make-hash-table)
                         '()
                         ; the type parser ensures that type-cst is only created for
@@ -1421,7 +1424,7 @@
                  [car-edge (create-simple-edge car-label)]
                  [cdr-label (reconstruct-graph-from-type (type-cons-cdr type) delta term #f)]
                  [cdr-edge (create-simple-edge cdr-label)]
-                 [cons-label (create-simple-prim-label)]
+                 [cons-label (create-simple-prim-label term)]
                  [cons-edge
                   (let ([edge-fake-destination (gensym)])
                     (case-lambda
@@ -1435,8 +1438,12 @@
                             (add-edge-and-propagate-set-through-edge
                              (label-cons-cdr inflowing-label)
                              cdr-edge))
+                          ; XXX should we do this here because we can, or in check-primitive-types
+                          ; because that's where it should be done... ? We don't have access to
+                          ; term anymore in check-primitive-types... See the commented call to
+                          ; associate-label-with-type below.
                           (set! *errors*
-                                (cons (list (list cons-label)
+                                (cons (list (list term)
                                             'red
                                             (format "primitive expects argument of type <pair>; given ~a"
                                                     (syntax-object->datum
@@ -1444,9 +1451,9 @@
                                       *errors*)))]
                      ; cons sink
                      [() edge-fake-destination]))])
-            (associate-label-with-type cons-label (make-type-cons
-                                                   (make-type-cst 'top)
-                                                   (make-type-cst 'top)))
+            ;(associate-label-with-type cons-label (make-type-cons
+            ;                                       (make-type-cst 'top)
+            ;                                       (make-type-cst 'top)))
             (add-edge-and-propagate-set-through-edge cons-label cons-edge)
             cons-label)]
          [(type-flow-var? type)
@@ -1455,7 +1462,7 @@
          [(type-cst? type)
           (let ([label (make-label-cst
                         #f #f #f #t
-                        #f
+                        term
                         (make-hash-table)
                         '()
                         ; the type parser ensures that type-cst is only created for
@@ -1500,12 +1507,13 @@
                (if (null? l)
                    '()
                    (let* ([current-error (car l)]
-                          [terms (map label-term (car current-error))]
+                          [terms (car current-error)]
                           ; mzscheme uses offset 1, drscheme offset 0
                           [terms-pos (map (lambda (term)
                                             ; XXX primitives used in quasiquotes don't 
                                             ; have a position ?
-                                            (sub1 (syntax-position term))) terms)])
+                                            (sub1 (syntax-position term)))
+                                          terms)])
                      ; XXX create GUI for this
                      ; XXX printed in reverse order
                      (printf (string-append (caddr current-error) "~n"))

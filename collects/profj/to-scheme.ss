@@ -121,7 +121,7 @@
             (id-string (name-id name))))
   
   ;build-var-name: string -> string
-  (define (build-var-name id) (format "~a-f" id))
+  (define (build-var-name id) (format "~a~~f" id))
   
   ;build-method-name: string (list type) -> string
   (define (build-method-name id types)
@@ -1843,11 +1843,13 @@
                   (else
                    (let ((setter (create-set-name field (var-access-class vaccess)))
                          (getter (create-get-name field (var-access-class vaccess)))
-                         (name (gensym 'my-expr)))
+                         (name (gensym 'field-obj))
+                         (new-val (gensym 'val)))
                      (make-syntax #f
-                                  `(let ((,name ,expr))
-                                     (,setter ,name ,(expression `(,getter ,name)))
-                                     (,getter ,name))
+                                  `(let* ((,name ,expr)
+                                          (,new-val ,(expression `(,getter ,name))))
+                                     (,setter ,name ,new-val)
+                                     ,new-val)
                                   src-h))))))))))))
   
   ;translate-array-mutation: array-access (syntax -> (list symbol syntax syntax)) expression src -> syntax
@@ -1855,12 +1857,14 @@
     (let ((array-name (translate-expression (array-access-name array)))
           (array-index (translate-expression (array-access-index array)))
           (name (gensym 'my-expr))
-          (index (gensym 'my-index)))
+          (index (gensym 'my-index))
+          (new-val (gensym 'val)))
       (make-syntax #f
-                   `(let ((,name ,array-name)
-                          (,index ,array-index))
-                      (send ,name set ,index ,(expression `(send ,name access ,index)))
-                      (send ,name access ,index))
+                   `(let* ((,name ,array-name)
+                           (,index ,array-index)
+                           (,new-val ,(expression `(send ,name access ,index))))
+                      (send ,name set ,index ,new-val)
+                      ,new-val)
                    (build-src src))))
   
   ;translate-id: string src -> syntax

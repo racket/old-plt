@@ -15,6 +15,5 @@
     "To call low-level system routines, you must write "
     "an extension to MzScheme using the C programming language. "
     "See " 
-    (A ((HREF "/doc/insidemz/"))
-       "Inside PLT MzScheme") " for details.")))
-
+    ,(main-manual-page "insidemz")
+    " for details.")))

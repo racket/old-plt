@@ -16,7 +16,6 @@
     "The mzc compiler can be used to produce stand-alone "
     "executables. "
     "See " 
-    (A ((HREF "/doc/mzc/")) 
-       "PLT " (TT  "mzc") ": MzScheme Compiler Manual")
+    ,(main-manual-page "mzc")
     " for more information.")))
 

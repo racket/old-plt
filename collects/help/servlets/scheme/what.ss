@@ -21,9 +21,7 @@
     (A ((NAME "r5rs") (VALUE "r5rs")))
     (A ((NAME "language levels") (VALUE "language levels")))
     "From the introduction of "
-    (A ((HREF "/doc/r5rs/"))
-       "Revised(5) Report on the Algorithmic Language Scheme")
-    " (R5RS):" 
+    ,(main-manual-page "r5rs") " (R5RS):" 
     (P)
     (DL  
      (DD  
@@ -76,10 +74,7 @@
     ,(standout-text "R5RS")
     " language is a standard dialect of Scheme that is "
     "defined by the " 
-    (A ((HREF "/doc/r5rs/"))
-       "Revised(5) Report on the Algorithmic "
-       "Language Scheme") 
-    ". "
+    ,(main-manual-page "r5rs") ". "
     (A ((NAME "full") (VALUE "PLT Scheme language")))
     "In DrScheme's "
     (A ((HREF "/servlets/scheme/what.ss#lang-sel")) "language selection menu")
@@ -94,15 +89,14 @@
       "objects, modules, components, regular expressions, "
       "TCP support, filesystem utilities, and process "
       "control operations. This language is defined in " 
-      (A ((HREF "/doc/mzscheme/"))
-	 "PLT MzScheme: Language Manual") ". ")
+      ,(main-manual-page "mzscheme")
+	". ")
      (LI
       ,(standout-text "Graphical (MrEd)")
       " includes the " (standout-text "Textual (MzScheme)") " language "
       "and adds a graphical toolbox, "
       "described in "
-      (A ((HREF "/doc/mred/"))
-	 "PLT MrEd: Graphical Toolbox Manual"))
+      ,(main-manual-page "mred"))
      (LI
       ,(standout-text "Pretty Big")
       " is a superset of the " (standout-text "Advanced Student")

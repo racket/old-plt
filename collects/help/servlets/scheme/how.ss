@@ -55,9 +55,9 @@
        (TT  ,(mred-program-launcher-path "MrEd")) "."
        (P)
        "For more information, see " 
-       (A ((HREF "/doc/mzscheme/")) "PLT MzScheme: Language Manual")
+       ,(main-manual-page "mzscheme")
        " and " 
-       (A ((HREF "/doc/mred/")) "PLT MrEd: Graphical Toolbox Manual")
+       ,(main-manual-page "mred")
        (P)
        ,(color-highlight `(H2  "mzc"))
        (A ((NAME "mzc2") (VALUE "mzc compiler")))
@@ -73,7 +73,7 @@
        (TT  ,(mzscheme-program-launcher-path "mzc")) "."
        (P)
        "For more information, see " 
-       (A ((HREF "/doc/mzc/")) "PLT " (TT  "mzc") ": MzScheme Compiler Manual") "."
+       ,(main-manual-page "mzc") ". "
        (P)
        (A ((NAME "help") (VALUE "help-desk")))
        ,(color-highlight `(H2  "Help Desk"))

@@ -6,7 +6,8 @@
 	   (lib "url.ss" "net")
  	   (lib "finddoc.ss" "help" "private")
 	   (lib "string-constant.ss" "string-constants")
- 	   (lib "path.ss" "help" "private"))
+ 	   (lib "path.ss" "help" "private")
+	   (lib "docpos.ss" "help" "private"))
 	
   (provide get-pref/default
 	   put-prefs
@@ -18,6 +19,7 @@
 	   color-highlight
 	   color-with
 	   hexify-string
+	   main-manual-page
 	   manual-entry
 	   collection-doc-link
 	   fold-into-web-path
@@ -57,6 +59,22 @@
   (define (cvs?)
     (directory-exists? 
      (build-path (collection-path "help") "CVS")))
+
+  ; manual is doc collection subdirectory, e.g. "mred"
+  (define (main-manual-page manual)
+    (let* ([entry (assoc manual known-docs)]
+	   [name (or (and entry (cdr entry))
+		      manual)]
+	   [main-page (build-path (collection-path "doc")
+				  manual
+				  "index.htm")]
+	   [href (if (file-exists? main-page)
+		     (string-append "/doc/" manual "/")
+		     (string-append "/servlets/missing-manual?"
+				    "manual=" manual "&"
+				    "name="
+				    (hexify-string name)))])
+      `(A ((HREF ,href)) ,name)))
 
   ; string string string -> xexpr
   ; man is manual name

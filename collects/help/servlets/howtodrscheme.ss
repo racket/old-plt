@@ -24,6 +24,6 @@
      (LI  (B  (A ((HREF "/servlets/scheme/what.ss")) 
 		 "Languages")) 
 	  ": Languages supported by DrScheme")
-     (LI  (B  (A ((HREF "/doc/drscheme/")) "PLT DrScheme: Programming Environment Manual")) ": The complete user manual")))))
+     (LI  (B  ,(main-manual-page "drscheme")) ": The complete user manual")))))
 
 

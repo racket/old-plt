@@ -1076,7 +1076,9 @@
           (let level-loop ([sexp sexp]
                            [high-level? #f])
             (annotate-original-keywords sexp)
-            (set! referenced-macros (append (get-referenced-macros high-level? sexp) referenced-macros))
+            (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
+            (set! varrefs (flatten-cons-tree (syntax-property sexp 'bound-in-source) varrefs))
+            (set! binders (flatten-cons-tree (syntax-property sexp 'binding-in-source) binders))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
                                    quote quote-syntax with-continuation-mark 
@@ -1229,6 +1231,7 @@
                   referenced-macros
                   has-module?)))
       
+
       ;; annotate-require-open : ((-> void) -> stx -> void)
       (define (annotate-require-open run-in-expansion-thread)
         (lambda (require-spec)
@@ -1283,19 +1286,29 @@
                         possible-suffixes)))))
 
       ;; get-referenced-macros : boolean sexp -> (listof (cons boolean syntax[original]))
-      (define (get-referenced-macros high-level? sexp)
+      (define (get-referenced-macros high-level? sexp acc)
         (let ([origin (syntax-property sexp 'origin)])
           (if origin
               (let loop ([origin origin]
-                         [stxs null])
+                         [stxs acc])
                 (cond
                   [(cons? origin) (loop (car origin) (loop (cdr origin) stxs))]
                   [(syntax? origin) (if (syntax-original? origin)
                                         (cons (cons high-level? origin) stxs)
                                         stxs)]
                   [else stxs]))
-              null)))
+              acc)))
       
+      ;; type cons-tree : (union (cons cons-tree cons-tree) syntax)
+      ;; flatten-cons-tree : cons-tree (listof syntax[original]) -> (listof syntax[original])
+      (define (flatten-cons-tree ct acc)
+        (cond
+          [(cons? ct) (flatten-cons-tree (car ct) (flatten-cons-tree (cdr ct) acc))]
+          [(syntax? ct) (if (syntax-original? ct)
+                            (cons ct acc)
+                            acc)]
+          [else acc]))
+
       ;; extract-provided-vars : syntax -> (listof syntax[identifier])
       (define (extract-provided-vars stx)
         (syntax-case stx (rename struct all-from all-from-except)

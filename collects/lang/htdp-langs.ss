@@ -319,15 +319,28 @@ to the original stdout of DrScheme.
                       allow-sharing?
                       (use-function-output-syntax? #f)
                       (accept-quasiquote? #t)
-                      (read-accept-dot #f))
+                      (read-accept-dot #f)
+                      (style-delta #f))
           (define/public (get-sharing-printing) sharing-printing)
           (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
           (define/public (get-allow-sharing?) allow-sharing?)
           (define/public (get-use-function-output-syntax?) use-function-output-syntax?)
           (define/public (get-accept-quasiquote?) accept-quasiquote?)
           (define/public (get-read-accept-dot) read-accept-dot)
+
+          ;; should re-organize, so this can be get-style-delta directly,
+          ;; and can get rid of `language-extension' mixin
+          (define/public (get-htdp-style-delta) style-delta)
+
           (super-instantiate ())))
       
+      (define (language-extension %)
+        (class %
+          (inherit get-htdp-style-delta)
+          (define/override (get-style-delta)
+            (get-htdp-style-delta))
+          (super-instantiate ())))
+
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                                                                  ;;
       ;;                     put it all together                          ;;
@@ -335,10 +348,11 @@ to the original stdout of DrScheme.
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (define htdp-language%
-        (drscheme:language:module-based-language->language-mixin
-         (module-based-language-extension
-          (drscheme:language:simple-module-based-language->module-based-language-mixin
-           simple-htdp-language%))))
+        (language-extension
+         (drscheme:language:module-based-language->language-mixin
+          (module-based-language-extension
+           (drscheme:language:simple-module-based-language->module-based-language-mixin
+            simple-htdp-language%)))))
       
       ;; add-htdp-language : (instanceof htdp-language<%>) -> void
       (define (add-htdp-language o)
@@ -373,6 +387,15 @@ to the original stdout of DrScheme.
          (language-position
           (list (string-constant how-to-design-programs)
                 (string-constant intermediate-student/lambda)))
+         (style-delta (let ([match (regexp-match-positions
+                                    "lambda"
+                                    (string-constant intermediate-student/lambda))])
+                        (if match
+                            (let ([pos (car match)])
+                              (list (list (make-object style-delta% 'change-family 'modern)
+                                          (car pos)
+                                          (cdr pos))))
+                            #f)))
          (language-numbers '(-500 4))
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)

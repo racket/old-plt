@@ -75,7 +75,7 @@
       ;;                      tag nesting depth.  However, this only should be a problem when the tag is there,
       ;;                      but far back.  That shouldn't happen often.  I'm guessing n will be about 3.
       (define (read-element start-tag context may-contain auto-insert tokens)
-	(let read-el ([start-tag start-tag] [context context] [tokens tokens])
+	(let read-el ([start-tag start-tag] [context (cons (start-tag-name start-tag) context)] [tokens tokens])
 	  (let* ([start-name (start-tag-name start-tag)]
 		 [ok-kids (may-contain start-name)])
 	    (let-values ([(content remaining)
@@ -106,7 +106,7 @@
 				    (let ([name (end-tag-name tok)])
 				      (if (eq? name start-name)
 					  (values null next-tokens)
-					  (if (or #t (memq name context)) ;; <<<< always assume end tag had some start
+					  (if (memq name context)
 					      (values null tokens)
 					      (read-content next-tokens))))]
 				   [else ;; content

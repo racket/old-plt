@@ -4370,7 +4370,10 @@ find_system_path(int argc, Scheme_Object **argv)
 	|| (which == id_pref_file)
 	|| (which == id_addon_dir)) {
 #if defined(OS_X) && !defined(XONX)
-      home = scheme_make_path(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0));
+      if (which == id_addon_dir)
+	home = scheme_make_path(scheme_expand_filename("~/Library/PLT Scheme/", -1, NULL, NULL, 0));
+      else
+	home = scheme_make_path(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0));
 #else
       home = scheme_make_path(scheme_expand_filename("~/.plt-scheme/", -1, NULL, NULL, 0));
 #endif 

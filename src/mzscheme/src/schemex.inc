@@ -201,6 +201,7 @@
   scheme_extension_table->scheme_hash_get = scheme_hash_get;
   scheme_extension_table->scheme_hash_table_equal = scheme_hash_table_equal;
   scheme_extension_table->scheme_is_hash_table_equal = scheme_is_hash_table_equal;
+  scheme_extension_table->scheme_clone_hash_table = scheme_clone_hash_table;
   scheme_extension_table->scheme_make_prim = scheme_make_prim;
   scheme_extension_table->scheme_make_noneternal_prim = scheme_make_noneternal_prim;
   scheme_extension_table->scheme_make_closed_prim = scheme_make_closed_prim;
@@ -465,6 +466,8 @@
   scheme_extension_table->scheme_struct_type_property_ref = scheme_struct_type_property_ref;
   scheme_extension_table->scheme_make_location = scheme_make_location;
   scheme_extension_table->scheme_is_location = scheme_is_location;
+  scheme_extension_table->scheme_make_inspector = scheme_make_inspector;
+  scheme_extension_table->scheme_is_subinspector = scheme_is_subinspector;
   scheme_extension_table->scheme_eq = scheme_eq;
   scheme_extension_table->scheme_eqv = scheme_eqv;
   scheme_extension_table->scheme_equal = scheme_equal;

@@ -63,6 +63,7 @@ static Scheme_Object *source_symbol; /* uninterned! */
 static Scheme_Object *share_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
 static Scheme_Object *lexical_symbol;
+static Scheme_Object *protected_symbol;
 
 static Scheme_Object *nominal_ipair_cache;
 
@@ -71,6 +72,8 @@ static Scheme_Object *mark_id = scheme_make_integer(0);
 static Scheme_Stx_Srcloc *empty_srcloc;
 
 static Scheme_Object *empty_simplified;
+
+static Scheme_Hash_Table *empty_hash_table;
 
 static Scheme_Object *last_phase_shift;
 
@@ -146,6 +149,17 @@ static Module_Renames *krn;
   The lazy_prefix field of a syntax object keeps track of how many of
   the first wraps (items and chunks in the list) need to be propagated
   to sub-syntax.  */
+
+/* The `certs' field of a Scheme_Stx can start with a Scheme_Cert that
+   really points to a hash table of marks used for protected
+   identifiers within the syntax object. In that case, the `mark'
+   field is NULL, and the `insp' field contains a hash table. This
+   hash table is just a cache that is used for certain cert
+   operations; it can be dropped at any time. */
+#define HAS_MARKS(c) ((c) && !(c)->mark)
+#define HAS_CERTS(c) ((c) && ((c)->mark || (c)->next))
+#define CERT_ONLY(c) ((c)->next)
+#define MARK_ONLY(c) ((c)->insp)
 
 /*========================================================================*/
 /*                            wrap chunks                                 */
@@ -407,6 +421,7 @@ void scheme_init_stx(Scheme_Env *env)
   share_symbol = scheme_make_symbol("share"); /* not interned! */
   origin_symbol = scheme_intern_symbol("origin");
   lexical_symbol = scheme_intern_symbol("lexical");
+  protected_symbol = scheme_intern_symbol("protected");
 
   REGISTER_SO(mark_id);
 
@@ -426,6 +441,9 @@ void scheme_init_stx(Scheme_Env *env)
   REGISTER_SO(nominal_ipair_cache);
 
   REGISTER_SO(last_phase_shift);
+
+  REGISTER_SO(empty_hash_table);
+  empty_hash_table = scheme_make_hash_table(SCHEME_hash_ptr);
 }
 
 /*========================================================================*/
@@ -1199,6 +1217,11 @@ int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, Scheme_
 {
   Scheme_Cert *certs = ((Scheme_Stx *)stx)->certs;
 
+  if (HAS_MARKS(certs)) {
+    /* Skip used-mark cache: */
+    certs = CERT_ONLY(certs);
+  }
+
   do {
     while (certs) {
       if (!scheme_module_protected_wrt(home_insp, certs->insp)) {
@@ -1236,6 +1259,11 @@ static Scheme_Object *add_certs(Scheme_Object *o, Scheme_Cert *certs, Scheme_Obj
   Scheme_Cert *orig_certs, *cl;
   Scheme_Stx *stx = (Scheme_Stx *)o, *res;
   int copy_on_write;
+
+  if (HAS_MARKS(stx->certs)) {
+    /* To keep things simple, drop the used-mark cache: */
+    stx->certs = CERT_ONLY(stx->certs);
+  }
 
   if (keep_all && !stx->certs) {
     res = (Scheme_Stx *)scheme_make_stx(stx->val, 
@@ -1285,7 +1313,11 @@ Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_ce
 {
   Scheme_Cert *result = (Scheme_Cert *)base_certs, *certs;
 
-  for (certs = ((Scheme_Stx *)o)->certs; certs; certs = certs->next) {
+  certs = ((Scheme_Stx *)o)->certs;
+  if (HAS_MARKS(certs))
+    certs = CERT_ONLY(certs);
+
+  for (; certs; certs = certs->next) {
     result = cons_cert(certs->mark, certs->insp, result);
   }
 
@@ -1297,8 +1329,13 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
 	Also copy any certifications from plus_stx. */
 {
   if (plus_stx) {
-    if (((Scheme_Stx *)plus_stx)->certs)
-      o = add_certs(o, ((Scheme_Stx *)plus_stx)->certs, NULL, 1);
+    if (HAS_CERTS(((Scheme_Stx *)plus_stx)->certs)) {
+      Scheme_Cert *certs;
+      certs = ((Scheme_Stx *)plus_stx)->certs;
+      if (HAS_MARKS(certs))
+	certs = CERT_ONLY(certs);
+      o = add_certs(o, certs, NULL, 1);
+    }
   }
 
   if (menv && !menv->module->no_cert) {
@@ -1311,7 +1348,11 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
     res->wraps = stx->wraps;
     res->u.lazy_prefix = stx->u.lazy_prefix;
 
-    cert = cons_cert(mark, menv->module->insp, stx->certs);
+    cert = stx->certs;
+    if (HAS_MARKS(cert))
+      cert = CERT_ONLY(cert);
+    
+    cert = cons_cert(mark, menv->module->insp, cert);
     res->certs = cert;
     
     o = (Scheme_Object *)res;
@@ -2864,9 +2905,11 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 
   if (with_marks > 1) {
     result = CONS(result, wraps_to_datum(stx->wraps, rns, 0));
-    if (stx->certs) {
+    if (HAS_CERTS(stx->certs)) {
       Scheme_Object *cert_marks = scheme_null;
       Scheme_Cert *certs = stx->certs;
+      if (HAS_MARKS(certs))
+	certs = CERT_ONLY(certs);
       while (certs) {
 	cert_marks = scheme_make_pair(certs->mark, cert_marks);
 	certs = certs->next;
@@ -3490,8 +3533,13 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
   if (copy_props > 0)
     ((Scheme_Stx *)v)->props = ((Scheme_Stx *)stx_src)->props;
 
-  if (copy_props && (copy_props != 1))
-    ((Scheme_Stx *)v)->certs = ((Scheme_Stx *)stx_src)->certs;
+  if (copy_props && (copy_props != 1)) {
+    Scheme_Cert *certs;
+    certs = ((Scheme_Stx *)stx_src)->certs;
+    if (HAS_MARKS(certs))
+      certs = CERT_ONLY(certs);
+    ((Scheme_Stx *)v)->certs = certs;
+  }
 
   return v;
 }
@@ -3558,7 +3606,7 @@ static void simplify_syntax_inner(Scheme_Object *o,
     stx->wraps = v;
   }
 
-  if (stx->certs && !marks)
+  if (HAS_CERTS(stx->certs) && !marks)
     marks = scheme_make_hash_table(SCHEME_hash_ptr);
 
   v = stx->val;
@@ -3584,22 +3632,53 @@ static void simplify_syntax_inner(Scheme_Object *o,
   if (marks)
     add_all_marks(stx->wraps, marks);
 
-  /* Pare certs based on marks that are actually used */
-  if (stx->certs) {
-    Scheme_Cert *cl, *all_used_after = stx->certs, *result;
-    for (cl = stx->certs; cl; cl = cl->next) {
+  /* Pare certs based on marks that are actually used,
+     and eliminate redundant certs. */
+  if (HAS_CERTS(stx->certs)) {
+    Scheme_Cert *certs, *cl, *all_used_after, *result;
+    certs = stx->certs;
+    if (HAS_MARKS(certs))
+      certs = CERT_ONLY(certs);
+    /* Is there a tail where all certs are used? */
+    all_used_after = certs;
+    for (cl = certs; cl; cl = cl->next) {
       if (!scheme_hash_get(marks, cl->mark))
 	all_used_after = cl->next;
     }
-    if (all_used_after != stx->certs) {
+    /* In the all-used tail, are any redundant? */
+    for (cl = all_used_after; cl; cl = cl->next) {
+      v = scheme_hash_get(marks, cl->mark);
+      if (SCHEME_VOIDP(v)) {
+	/* Reset marks, because we're giving up on all_used_after */
+	result = cl;
+	for (cl = all_used_after; cl != result; cl = cl->next) {
+	  scheme_hash_set(marks, cl->mark, scheme_true);
+	}
+	all_used_after = NULL;
+	break;
+      }
+      scheme_hash_set(marks, cl->mark, scheme_void);
+    }
+    /* If any marks are unused or redundant, then all_used_after will
+       have been changed. Also, every mark in all_used_after is mapped
+       to void instead of true in the marks hash table. */
+    if (all_used_after != certs) {
+      /* We can simplify... */
       result = all_used_after;
       for (cl = stx->certs; cl; cl = cl->next) {
 	if (SAME_OBJ(cl, all_used_after))
 	  break;
-	if (scheme_hash_get(marks, cl->mark))
-	  result = cons_cert(cl->mark, cl->insp, result);
+	if (scheme_hash_get(marks, cl->mark)) {
+	  v = scheme_hash_get(marks, cl->mark);
+	  if (!SCHEME_VOIDP(v))
+	    result = cons_cert(cl->mark, cl->insp, result);
+	}
       }
       stx->certs = result;
+    } 
+    /* Reset mark map from void to true: */
+    for (cl = all_used_after; cl; cl = cl->next) {
+      scheme_hash_set(marks, cl->mark, scheme_true);
     }
   }
 }
@@ -4136,8 +4215,94 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
 
 /**********************************************************************/
 
+
+
+static void accum_all_marks(Scheme_Object *naya, 
+			    Scheme_Hash_Table **htp,
+			    int *copy_on_write)
+{
+  /* FIXME: possible stack overflow due to recursion */
+  while (1) {
+    if (SCHEME_STXP(naya)) {
+      Scheme_Hash_Table *nht;
+      if (!HAS_MARKS(((Scheme_Stx *)naya)->certs)) {
+	Scheme_Cert *certs;
+	/* Is naya an identifier? */
+	if (SCHEME_SYMBOLP(naya)) {
+	  /* Identifer, so check whether it has marks for a protected symbol */
+	  Scheme_Object *v;
+	  v = scheme_stx_property(naya, protected_symbol, NULL);
+	  if (SCHEME_TRUEP(v)) {
+	    /* Protected, so gather up all of its marks */
+	    Scheme_Object *l;
+	    nht = scheme_make_hash_table(SCHEME_hash_ptr);
+	    l = scheme_stx_extract_marks((Scheme_Object *)naya);
+	    while (SCHEME_PAIRP(l)) {
+	      scheme_hash_set(nht, SCHEME_CAR(l), scheme_true);
+	      l = SCHEME_CDR(l);
+	    }
+	  } else {
+	    /* Not protected, ignore the marks. */
+	    nht = empty_hash_table;
+	  }
+	} else {
+	  /* Not an identifier; recur to accumulate marks */
+	  int cow;
+	  nht = NULL;
+	  accum_all_marks(((Scheme_Stx *)naya)->val, &nht, &cow);
+	  if (!nht)
+	    nht = empty_hash_table;
+	}
+	certs = cons_cert(NULL, (Scheme_Object *)nht, ((Scheme_Stx *)naya)->certs);
+	((Scheme_Stx *)naya)->certs = certs;
+      }
+      nht = (Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)naya)->certs);
+
+      /* If htp was supplied, need to fold nht content into htp */
+      if (htp) {
+	if (*htp) {
+	  Scheme_Hash_Table *ht = *htp;
+	  int i;
+	  for (i = nht->size; i--; ) {
+	    if (nht->vals[i]) {
+	      if (!scheme_hash_get(ht, nht->vals[i])) {
+		if (*copy_on_write) {
+		  *copy_on_write = 0;
+		  ht = scheme_clone_hash_table(ht);
+		  *htp = ht;
+		}
+		scheme_hash_set(ht, nht->vals[i], scheme_true);
+	      }
+	    }
+	  }
+	} else {
+	  *htp = nht;
+	  *copy_on_write = 1;
+	}
+      }
+
+      return;
+    } else if (SCHEME_PAIRP(naya)) {
+      accum_all_marks(SCHEME_CAR(naya), htp, copy_on_write);
+      naya = SCHEME_CDR(naya);
+    } else if (SCHEME_VECTORP(naya)) {
+      int i;
+      for (i = SCHEME_VEC_SIZE(naya); i--; ) {
+	accum_all_marks(SCHEME_VEC_ELS(naya)[i], htp, copy_on_write);
+      }
+      return;
+    } else if (SCHEME_BOXP(naya)) {
+      naya = SCHEME_BOX_VAL(naya);
+    } else
+      return;
+  }
+}
+
 static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **argv)
 {
+  Scheme_Cert *certs;
+  Scheme_Object *insp, *stx;
+
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-recertify-constrained?", "syntax", 0, argc, argv);
   if (!SCHEME_FALSEP(argv[1]) && !SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
@@ -4145,12 +4310,142 @@ static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **arg
   if (!SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
     scheme_wrong_type("syntax-recertify-constrained?", "inspector", 2, argc, argv);
 
+  stx = argv[0];
+  if (SCHEME_FALSEP(argv[1]))
+    certs = NULL;
+  else
+    certs = (Scheme_Cert *)SCHEME_PTR_VAL(argv[1]);
+  insp = argv[2];
+
+  while (certs) {
+    if (!scheme_is_subinspector(certs->insp, insp)) {
+      /* Found an opaque certification. Used anywhere? */
+      Scheme_Hash_Table *ht;
+      if (!HAS_MARKS(((Scheme_Stx *)stx)->certs))
+	accum_all_marks(stx, NULL, NULL);
+      ht = (Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)stx)->certs);      
+      if (scheme_hash_get(ht, certs->mark)) {
+	/* Mark for opaque cert is used for a protected id */
+	return scheme_true;
+      }
+    }
+    certs = certs->next;
+  }
+
   return scheme_false;
+}
+
+static char *mark_anywhere(Scheme_Object *naya, Scheme_Object *mark)
+{
+  /* Note: no danger of stack overflow, because every recursive
+     call is to a syntax object, where deeper recursion is handled
+     by accum_all_marks */
+  while (1) {
+    if (SCHEME_STXP(naya)) {
+      if (!HAS_MARKS(((Scheme_Stx *)naya)->certs))
+	accum_all_marks(naya, NULL, NULL);
+      if (scheme_hash_get((Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)naya)->certs), mark))
+	return "moved sub-expression with certified context";
+      return NULL;
+    } else if (SCHEME_PAIRP(naya)) {
+      char *s;
+      s = mark_anywhere(SCHEME_CAR(naya), mark);
+      if (s)
+	return s;
+      naya = SCHEME_CDR(naya);
+    } else if (SCHEME_VECTORP(naya)) {
+      int i;
+      char *s;
+      for (i = SCHEME_VEC_SIZE(naya); i--; ) {
+	s = mark_anywhere(SCHEME_VEC_ELS(naya)[i], mark);
+	if (s)
+	  return s;
+      }
+      return NULL;
+    } else if (SCHEME_BOXP(naya)) {
+      naya = SCHEME_BOX_VAL(naya);
+    } else
+      return NULL;
+  }
+}
+
+static char *diff_modulo_mark(Scheme_Object *orig, Scheme_Object *naya, Scheme_Object *mark)
+{
+  if (SAME_OBJ(orig, naya))
+    return NULL;
+
+  /* If same context, then continue check on shape. */
+  if (SCHEME_STXP(orig) && SCHEME_STXP(naya)) {
+    if (SAME_OBJ(((Scheme_Stx *)orig)->wraps, ((Scheme_Stx *)naya)->wraps)) {
+      return diff_modulo_mark(((Scheme_Stx *)orig)->val,
+			      ((Scheme_Stx *)naya)->val,
+			      mark);
+    }
+  }
+
+  /* Shape checks: */
+  if (SCHEME_PAIRP(orig) && SCHEME_PAIRP(naya)) {
+    char *s;
+    s = diff_modulo_mark(SCHEME_CAR(orig), SCHEME_CAR(naya), mark);
+    if (s)
+      return s;
+    return diff_modulo_mark(SCHEME_CDR(orig), SCHEME_CDR(naya), mark);
+  }
+  if (SCHEME_VECTORP(orig) && SCHEME_VECTORP(naya)
+	     && (SCHEME_VEC_SIZE(orig) == SCHEME_VEC_SIZE(naya))) {
+    int i;
+    char *s;
+    for (i = SCHEME_VEC_SIZE(orig); i--; ) {
+      s = diff_modulo_mark(SCHEME_VEC_ELS(orig)[i], SCHEME_VEC_ELS(naya)[i], mark);
+      if (s)
+	return s;
+    }
+    return NULL;
+  }
+  if (SCHEME_BOXP(orig) && SCHEME_BOXP(naya)) {
+    return diff_modulo_mark(SCHEME_BOX_VAL(orig), SCHEME_BOX_VAL(naya), mark);
+  }
+
+  /* Converting a syntax-pair/null to a pair/null is ok, as long as no
+     relevant mark is lost. */
+  if (SCHEME_STXP(orig) && (SCHEME_PAIRP(naya) || SCHEME_NULLP(naya))) {
+    /* Check wrapped shape */
+    if (!diff_modulo_mark(((Scheme_Stx *)orig)->val, naya, mark)) {
+      /* So far so good; check immediate marks */
+      if (!includes_mark(((Scheme_Stx *)orig)->wraps, mark))
+	return "lost certified context on syntax pair";
+      /* Marks ok, so no relevant diff */
+      return NULL;
+    }
+  }
+  /* Converting a pair/null to a syntax-pair/null is ok, as long as no
+     relevant mark is introduced. */
+  if (SCHEME_STXP(naya) && (SCHEME_PAIRP(orig) || SCHEME_NULLP(orig))) {
+    /* Check wrapped shape */
+    if (!diff_modulo_mark(orig, ((Scheme_Stx *)naya)->val, mark)) {
+      /* So far so good; check immediate marks */
+      if (includes_mark(((Scheme_Stx *)naya)->wraps, mark))
+	return "introduced certified context on syntax pair";
+      /* Marks ok, so no relevant diff */
+      return NULL;
+    }
+  }
+
+  /* Finally, any other change is ok as long as the mark is unused now
+     and wasn't used before. */
+  {
+    char *s;
+    s = mark_anywhere(naya, mark);
+    if (s)
+      return s;
+    return mark_anywhere(orig, mark);
+  }
 }
 
 static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 {
   Scheme_Stx *stx, *res;
+  Scheme_Object *insp;
 
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-recertify", "syntax", 0, argc, argv);
@@ -4159,7 +4454,45 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
   if (!SAME_TYPE(SCHEME_TYPE(argv[2]), scheme_inspector_type))
     scheme_wrong_type("syntax-recertify", "inspector", 2, argc, argv);
   
-  if (((Scheme_Stx *)argv[1])->certs) {
+  if (SAME_OBJ(argv[0], argv[1]))
+    return argv[0];
+
+  insp = argv[2];
+
+  if (HAS_CERTS(((Scheme_Stx *)argv[1])->certs)) {
+    Scheme_Cert *certs;
+    char *s;
+
+    certs = ((Scheme_Stx *)argv[1])->certs;
+    if (HAS_MARKS(certs))
+      certs = CERT_ONLY(certs);
+   
+    while (certs) {
+      if (0 && !scheme_is_subinspector(certs->insp, insp)) {
+	/* Found an opaque certification.
+	   
+	   We assume that opaquely certified macros do not refer
+	   directly to transparently certified macros. Also, an
+	   opaquely certified macro doesn't pass along bits of
+	   certified syntax to a macro-bound identifier (with
+	   transparent certification) that is supplied to the opaquely
+	   certified macro.
+
+	   Thus, the new stx can be re-certified as long as the only
+	   changes compared to the old stx involve parts where the
+	   certificate in question can't apply --- i.e., they aren't
+	   marked by certs->mark. */
+	s = diff_modulo_mark(argv[1], argv[0], certs->mark);
+	if (s) {
+	  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+			   "syntax-recertify: cannot verify certification of syntax object (%s): %V", 
+			   s, argv[0]);
+	  return NULL;
+	}
+      }
+      certs = certs->next;
+    }
+
     stx = (Scheme_Stx *)argv[0];
     
     res = (Scheme_Stx *)scheme_make_stx(stx->val, 
@@ -4176,17 +4509,23 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 
 static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *o;
+  Scheme_Object *o, *cert;
 
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-extend-certificate-context", "syntax", 0, argc, argv);
   if (!SCHEME_FALSEP(argv[1]) && !SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
     scheme_wrong_type("syntax-extend-certificate-context", "certificate context or #f", 1, argc, argv);
 
+  if (SCHEME_FALSEP(argv[1]))
+    cert = NULL;
+  else
+    cert = SCHEME_PTR_VAL(argv[1]);
+
+  cert = scheme_stx_extract_certs(argv[0], cert);
+
   o = scheme_alloc_small_object();
   o->type = scheme_cert_context_type;
-
-  SCHEME_PTR_VAL(o) = NULL;
+  SCHEME_PTR_VAL(o) = cert;
 
   return o;
 }

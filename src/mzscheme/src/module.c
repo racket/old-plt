@@ -1779,7 +1779,7 @@ static void check_certified(Scheme_Object *stx, Scheme_Object *certs, Scheme_Obj
 Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp,
 						 Scheme_Object *symbol, Scheme_Object *stx,
 						 Scheme_Object *certs, Scheme_Object *unexp_insp,
-						 int position, int want_pos)
+						 int position, int want_pos, int *_protected)
      /* Returns the actual name when !want_pos, needed in case of
 	uninterned names.  Otherwise, returns a position value on success.
 	If position < -1, then merely checks for protected syntax.
@@ -1819,6 +1819,8 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
       if (ipos < env->module->num_indirect_provides) {
 	isym = env->module->indirect_provides[ipos];
 	need_cert = 1;
+	if (_protected)
+	  *_protected = 1;
       } else
 	isym = NULL;
     }
@@ -1832,6 +1834,8 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
 	    && scheme_module_protected_wrt(env->insp, prot_insp)
 	    && env->module->provide_protects
 	    && env->module->provide_protects[position]) {
+	  if (_protected)
+	    *_protected = 1;
 	  check_certified(stx, certs, prot_insp, env, symbol, 1, 1);
 	}
 
@@ -1866,12 +1870,16 @@ Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object 
       if ((SCHEME_INT_VAL(pos) < env->module->num_var_provides)
 	  && env->module->provide_protects
 	  && env->module->provide_protects[SCHEME_INT_VAL(pos)]) {
+	if (_protected)
+	  *_protected = 1;
 	check_certified(stx, certs, prot_insp, env, symbol, 1, 1);
       }
 
       if ((position >= -1) 
 	  && (SCHEME_INT_VAL(pos) >= env->module->num_var_provides)) {
 	/* unexported var -- need cert */
+	if (_protected)
+	  *_protected = 1;
 	check_certified(stx, certs, unexp_insp, env, symbol, 1, 0);
       }
 

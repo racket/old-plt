@@ -192,6 +192,8 @@ static Scheme_Object *module_symbol;
 static Scheme_Object *expression_symbol;
 static Scheme_Object *top_level_symbol;
 
+static Scheme_Object *protected_symbol;
+
 static Scheme_Object *zero_rands_ptr; /* &zero_rands_ptr is dummy rands pointer */
 
 int scheme_overflow_count;
@@ -283,6 +285,9 @@ scheme_init_eval (Scheme_Env *env)
   internal_define_symbol = scheme_intern_symbol("internal-define");
   expression_symbol = scheme_intern_symbol("expression");
   top_level_symbol = scheme_intern_symbol("top-level");
+
+  REGISTER_SO(protected_symbol);
+  protected_symbol = scheme_intern_symbol("protected");
 
   scheme_install_type_writer(scheme_application_type, write_application);
   scheme_install_type_reader(scheme_application_type, read_application);
@@ -1265,7 +1270,7 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
     }
 
     if (!SAME_OBJ(menv, env)) {
-      varname = scheme_check_accessible_in_module(menv, insp, varname, NULL, NULL, insp, pos, 0);
+      varname = scheme_check_accessible_in_module(menv, insp, varname, NULL, NULL, insp, pos, 0, NULL);
     }
   }
 
@@ -1764,7 +1769,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 				+ ((rec[drec].comp && rec[drec].resolve_module_ids)
 				   ? SCHEME_RESOLVE_MODIDS
 				   : 0),
-				certs, NULL);
+				certs, NULL, NULL);
     
     if (SCHEME_STX_PAIRP(first))
       *current_val = val;
@@ -1905,6 +1910,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   } else if (!SCHEME_STX_PAIRP(form)) {
     if (SCHEME_STX_SYMBOLP(form)) {
       Scheme_Object *find_name = form;
+      int protected = 0;
 
       while (1) {
 	var = scheme_lookup_binding(find_name, env, 
@@ -1922,7 +1928,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				    + ((rec[drec].comp && rec[drec].resolve_module_ids)
 				       ? SCHEME_RESOLVE_MODIDS
 				       : 0),
-				    rec[drec].certs, &menv);
+				    rec[drec].certs, &menv, &protected);
 	
 	if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
@@ -1936,6 +1942,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  find_name = new_name;
 	  SCHEME_USE_FUEL(1);
 	  menv = NULL;
+	  protected = 0;
 	} else
 	  break;
       }
@@ -1966,8 +1973,13 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    return scheme_register_toplevel_in_prefix(var, env, rec, drec);
 	  else
 	    return var;
-	} else
+	} else {
+	  if (protected) {
+	    /* Add a property to indicate that the name is protected */
+	    find_name = scheme_stx_property(find_name, protected_symbol, scheme_true);
+	  }
 	  return find_name; /* which is usually == form */
+	}
       }
     } else {
       stx = datum_symbol;
@@ -1999,7 +2011,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				    + ((rec[drec].comp && rec[drec].resolve_module_ids)
 				       ? SCHEME_RESOLVE_MODIDS
 				       : 0),
-				    erec1.certs, &menv);
+				    erec1.certs, &menv, NULL);
 
 	if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
@@ -2071,7 +2083,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				  SCHEME_NULL_FOR_UNBOUND
 				  + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 				  + SCHEME_DONT_MARK_USE,
-				  rec[drec].certs, &menv);
+				  rec[drec].certs, &menv, NULL);
 
       if (var && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	  && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {

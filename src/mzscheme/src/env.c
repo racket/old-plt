@@ -1916,7 +1916,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 
 Scheme_Object *
 scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
-		      Scheme_Object *certs, Scheme_Env **_menv)
+		      Scheme_Object *certs, Scheme_Env **_menv, int *_protected)
 {
   Scheme_Comp_Env *frame;
   int j = 0, p = 0, modpos, skip_stops = 0, mod_defn_phase;
@@ -2061,7 +2061,8 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
   if (modname) {
     val = scheme_module_syntax(modname, env->genv, find_id);
     if (val)
-      scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -2, 0);
+      scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -2, 0, 
+					NULL);
   } else {
     /* Only try syntax table if there's not an explicit (later)
        variable mapping: */
@@ -2080,7 +2081,8 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 
   if (modname) {
     Scheme_Object *pos;
-    pos = scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -1, 1);
+    pos = scheme_check_accessible_in_module(genv, env->insp, find_id, src_find_id, certs, NULL, -1, 1,
+					    _protected);
     modpos = SCHEME_INT_VAL(pos);
   } else
     modpos = -1;
@@ -2600,7 +2602,7 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
     init_compile_data((Scheme_Comp_Env *)&inlined_e);
     inlined_e.base.prefix = NULL;
 
-    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS, NULL, NULL);
+    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS, NULL, NULL, NULL);
     if (v) {
       if (!SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)) {
 	use_map = -1;
@@ -2774,7 +2776,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 			       + SCHEME_RESOLVE_MODIDS
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST),
-			      NULL, NULL);
+			      NULL, NULL, NULL);
     
     /* Deref globals */
     if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))

@@ -237,6 +237,8 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 #ifndef DONT_PARSE_COMMAND_LINE
   {
     volatile int i;
+    mz_jmp_buf * volatile save, newbuf;
+
     for (i = 0; i < fa->num_enl; i++) {
       if (fa->eval_kind[i] == mzcmd_LOAD) {
 	if (!scheme_load(fa->evals_and_loads[i])) {
@@ -244,14 +246,20 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 	  break;
 	}
       } else if (fa->eval_kind[i] == mzcmd_EVAL) {
-	if (!scheme_setjmp(scheme_error_buf))
+	save = scheme_current_thread->error_buf;
+	scheme_current_thread->error_buf = &newbuf;
+	if (!scheme_setjmp(newbuf))
 	  scheme_eval_string_all(fa->evals_and_loads[i], fa->global_env, 0);
 	else {
 	  exit_val = 1;
+	  scheme_current_thread->error_buf = save;
 	  break;
 	}
+	scheme_current_thread->error_buf = save;
       } else if (fa->eval_kind[i] == mzcmd_MAIN) {
-	if (!scheme_setjmp(scheme_error_buf)) {
+	save = scheme_current_thread->error_buf;
+	scheme_current_thread->error_buf = &newbuf;
+	if (!scheme_setjmp(newbuf)) {
 	  Scheme_Object *a[1], *m, *fn;
 	  
 	  m = scheme_eval_string("main", fa->global_env);
@@ -261,8 +269,10 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 	  (void)scheme_apply(m, 1, a);
 	} else {
 	  exit_val = 1;
+	  scheme_current_thread->error_buf = save;
 	  break;
 	}
+	scheme_current_thread->error_buf = save;
       }
     }
   }
@@ -271,7 +281,10 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 #ifdef STANDALONE_WITH_EMBEDDED_EXTENSION
   {
     Scheme_Object *f, *a[1];
-    if (!scheme_setjmp(scheme_error_buf)) {
+    mz_jmp_buf * volatile save, newbuf;
+    save = scheme_current_thread->error_buf;
+    scheme_current_thread->error_buf = &newbuf;
+    if (!scheme_setjmp(newbuf)) {
       f = scheme_initialize(fa->global_env);
       a[0] = scheme_true;
       f = _scheme_apply_multi(f, 1, a);
@@ -283,6 +296,7 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
     } else {
       exit_val = 1;
     }
+    scheme_current_thread->error_buf = save;
   }
 #endif
 
@@ -306,7 +320,10 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 #ifndef NO_FILE_SYSTEM_UTILS
 static void init_collection_paths(Scheme_Env *global_env)
 {		
-  if (!scheme_setjmp(scheme_error_buf)) {
+  mz_jmp_buf * volatile save, newbuf;
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+  if (!scheme_setjmp(newbuf)) {
     Scheme_Object *clcp, *flcp, *a[1];
 
     clcp = scheme_builtin_value("current-library-collection-paths");
@@ -317,13 +334,17 @@ static void init_collection_paths(Scheme_Env *global_env)
       _scheme_apply(clcp, 1, a);
     }
   }
+  scheme_current_thread->error_buf = save;
 }
 #endif
 
 #ifndef MZSCHEME_CMD_LINE  
 static void init_mred(Scheme_Env *global_env)
 {
-  if (!scheme_setjmp(scheme_error_buf)) {
+  mz_jmp_buf * volatile save, newbuf;
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+  if (!scheme_setjmp(newbuf)) {
     scheme_eval_string("(require (lib \"class.ss\"))", 
 		       global_env);
     scheme_eval_string("(require (lib \"mred.ss\" \"mred\"))", 
@@ -331,6 +352,7 @@ static void init_mred(Scheme_Env *global_env)
     scheme_eval_string("(current-load text-editor-load-handler)", 
 		       global_env);
   }
+  scheme_current_thread->error_buf = save;
 }
 #endif
 

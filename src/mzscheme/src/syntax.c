@@ -1212,7 +1212,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 				+ (rec[drec].resolve_module_ids
 				   ? SCHEME_RESOLVE_MODIDS
 				   : 0),
-				rec[drec].certs, &menv);
+				rec[drec].certs, &menv, NULL);
     
     if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
       /* Redirect to a macro? */
@@ -1292,7 +1292,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, 
 
   while (1) {
     /* Make sure it's mutable, and check for redirects: */
-    var = scheme_lookup_binding(find_name, env, SCHEME_SETTING, erec[drec].certs, &menv);
+    var = scheme_lookup_binding(find_name, env, SCHEME_SETTING, erec[drec].certs, &menv, NULL);
     
     if ((erec[drec].depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
       /* Redirect to a macro? */
@@ -2310,7 +2310,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, Scheme_Expand_Info 
 			      SCHEME_NULL_FOR_UNBOUND
 			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_DONT_MARK_USE,
-			      erec[drec].certs, NULL);
+			      erec[drec].certs, NULL, NULL);
     first = scheme_get_stop_expander();
     partial = SAME_OBJ(first, v);
   } else
@@ -2992,9 +2992,11 @@ quote_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_In
 
   stx = SCHEME_STX_CDR(form);
   stx = SCHEME_STX_CAR(stx);
+
+  /* Push all certificates down to the syntax object. */
+  stx = scheme_stx_add_certs(stx, rec[drec].certs);
   
   if (rec[drec].comp) {
-    stx = scheme_stx_add_certs(stx, rec[drec].certs);
     return scheme_register_stx_in_prefix(stx, env, rec, drec);
   } else {
     Scheme_Object *fn;

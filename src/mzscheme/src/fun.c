@@ -3064,7 +3064,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 				   Scheme_Object *(*jmp_handler)(void *),
 				   void * volatile data)
 {
-  mz_jmp_buf newbuf, newbuf2;
+  mz_jmp_buf newbuf;
   Scheme_Object * volatile v, ** volatile save_values;
   volatile int err;
   Scheme_Dynamic_Wind * volatile dw;
@@ -3153,8 +3153,8 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
     post = NULL;
 
   if (post) {
-    p->error_buf = &newbuf2;
-    if (scheme_setjmp(newbuf2)) {
+    p->error_buf = &newbuf;
+    if (scheme_setjmp(newbuf)) {
       p = scheme_current_thread;
       scheme_restore_env_stack_w_thread(dw->envss, p);
       p->current_local_env = dw->current_local_env;

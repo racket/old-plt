@@ -300,6 +300,7 @@ void (*scheme_hash_set)(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Obj
 Scheme_Object *(*scheme_hash_get)(Scheme_Hash_Table *table, Scheme_Object *key);
 int (*scheme_hash_table_equal)(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2);
 int (*scheme_is_hash_table_equal)(Scheme_Object *o);
+Scheme_Hash_Table *(*scheme_clone_hash_table)(Scheme_Hash_Table *bt);
 /*========================================================================*/
 /*                   basic Scheme value constructors                      */
 /*========================================================================*/
@@ -701,6 +702,8 @@ Scheme_Object *(*scheme_make_location)(Scheme_Object *src,
 					      Scheme_Object *pos,
 					      Scheme_Object *span);
 int (*scheme_is_location)(Scheme_Object *o);
+Scheme_Object *(*scheme_make_inspector)(Scheme_Object *superior);
+int (*scheme_is_subinspector)(Scheme_Object *i, Scheme_Object *sup);
 /*========================================================================*/
 /*                              utilities                                 */
 /*========================================================================*/

@@ -4111,7 +4111,7 @@ current_load_directory(int argc, Scheme_Object *argv[])
 Scheme_Object *scheme_load(const char *file)
 {
   Scheme_Object *p[1];
-  mz_jmp_buf newbuf, *savebuf;
+  mz_jmp_buf newbuf, * volatile savebuf;
   Scheme_Object * volatile val;
 
   p[0] = scheme_make_path(file);

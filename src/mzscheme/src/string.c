@@ -3962,17 +3962,23 @@ static char *uname_locations[] = { "/bin/uname",
 static int try_subproc(Scheme_Object *subprocess_proc, char *prog)
 {
   Scheme_Object *a[5];
+  mz_jmp_buf * volatile savebuf, newbuf;
 
-  if (!scheme_setjmp(scheme_error_buf)) {
+  savebuf = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+
+  if (!scheme_setjmp(newbuf)) {
     a[0] = scheme_false;
     a[1] = scheme_false;
     a[2] = scheme_false;
     a[3] = scheme_make_locale_string(prog);
     a[4] = scheme_make_locale_string("-a");
     _scheme_apply_multi(subprocess_proc, 5, a);
+    scheme_current_thread->error_buf = savebuf;
     return 1;
   } else {
     scheme_clear_escape();
+    scheme_current_thread->error_buf = savebuf;
     return 0;
   }
 }
@@ -3981,9 +3987,6 @@ void machine_details(char *buff)
 {
   Scheme_Object *subprocess_proc;
   int i;
-  mz_jmp_buf savebuf;
-
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   subprocess_proc = scheme_builtin_value("subprocess");
 
@@ -4001,8 +4004,6 @@ void machine_details(char *buff)
 	scheme_close_output_port(sin);
 	scheme_close_input_port(serr);
 
-	memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-
 	/* Read result: */
 	strcpy(buff, "<unknown machine>");
 	c = scheme_get_bytes(sout, 1023, buff, 0);
@@ -4019,8 +4020,6 @@ void machine_details(char *buff)
       }
     }
   }
-
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   strcpy(buff, "<unknown machine>");
 }

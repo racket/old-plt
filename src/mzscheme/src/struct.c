@@ -496,8 +496,8 @@ int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup)
   ins = (Scheme_Inspector *)i;
   superior = (Scheme_Inspector *)sup;
 
-  while (ins->depth >= superior->depth) {
-    if (ins == superior)
+  while (ins->depth > superior->depth) {
+    if (ins->superior == superior)
       return 1;
     ins = ins->superior;
   }
@@ -2114,7 +2114,6 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
       inspector = parent_type->inspector;
     else {
       inspector = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
-      inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
     }
   }
   struct_type->inspector = inspector;
@@ -2460,9 +2459,6 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 
   if (!inspector)
     inspector = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
-
-  /* To make it opaque: */
-  inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
 
   type = (Scheme_Struct_Type *)_make_struct_type(argv[0], NULL, 0, 
 						 SCHEME_FALSEP(argv[1]) ? NULL : argv[1],

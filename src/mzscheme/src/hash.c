@@ -300,6 +300,30 @@ int scheme_hash_table_equal(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2)
   return 1;
 }
 
+Scheme_Hash_Table *scheme_clone_hash_table(Scheme_Hash_Table *ht)
+{
+  Scheme_Hash_Table *table;
+  Scheme_Object **ba;
+
+  table = MALLOC_ONE_TAGGED(Scheme_Hash_Table);
+  memcpy(table, ht, sizeof(Scheme_Hash_Table));
+
+  ba = MALLOC_N(Scheme_Object *, table->size);
+  memcpy(ba, table->vals, sizeof(Scheme_Object *) * table->size);
+  table->vals = ba;
+  ba = MALLOC_N(Scheme_Object *, table->size);
+  memcpy(ba, table->keys, sizeof(Scheme_Object *) * table->size);
+  table->keys = ba;
+
+  if (table->mutex) {
+    Scheme_Object *sema;
+    sema = scheme_make_sema(1);
+    table->mutex = sema;
+  }
+
+  return table;
+}
+
 /*========================================================================*/
 /*                  old-style hash table, with buckets                    */
 /*========================================================================*/

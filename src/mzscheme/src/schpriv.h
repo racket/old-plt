@@ -419,9 +419,7 @@ typedef struct Scheme_Struct_Property {
   Scheme_Object *guard; /* NULL or a procedure */
 } Scheme_Struct_Property;
 
-int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos);
-Scheme_Object *scheme_make_inspector(Scheme_Object *superior);
 
 typedef struct Scheme_Struct_Type {
   Scheme_Object so; /* scheme_structure_type or scheme_proc_struct_type */
@@ -1498,7 +1496,7 @@ Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals,
 Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags, 
-				     Scheme_Object *certs, Scheme_Env **menv);
+				     Scheme_Object *certs, Scheme_Env **_menv, int *_protected);
 
 Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 				      Scheme_Comp_Env *upto);
@@ -1877,7 +1875,8 @@ int scheme_module_export_position(Scheme_Object *modname, Scheme_Env *env, Schem
 Scheme_Object *scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *prot_insp,
 						 Scheme_Object *symbol, Scheme_Object *stx, 
 						 Scheme_Object *certs, Scheme_Object *unexp_insp,
-						 int position, int want_pos);
+						 int position, int want_pos,
+						 int *_protected);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);
 
 Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,

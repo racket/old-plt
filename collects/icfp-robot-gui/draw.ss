@@ -33,7 +33,7 @@
   (define pack-colors (make-package-colors num-pack-icons))
   (define unknown-pack-color (make-unknown-package-color))
   
-  (define-struct thing (x y))
+  (define-struct thing (x y copy))
 
   (define-struct (pack thing) (icon pen id dest-x dest-y weight owner home?))
   (define-struct (robot thing) (icon dead-icon id packages money max-lift motion drop grab dead? moving? 
@@ -98,6 +98,11 @@
       
       (define/public (get-dead-robot-scores)
         (send canvas get-dead-robot-scores))
+      
+      (define/public (get-internal-state)
+        (send canvas get-internal-state))
+      (define/public (set-internal-state state)
+        (send canvas set-internal-state state))
 
       (super-instantiate (frame))
       (define canvas (make-object board-canvas% this width height board
@@ -182,6 +187,7 @@
                                       (bot-packages orig))])
                        (let ([r (make-robot (sub1 (bot-x orig)) ; sub1 for 0-indexed
                                             (sub1 (bot-y orig))
+                                            #f ; copy
                                             (car icons)
                                             (cdr icons)
                                             (bot-id orig)
@@ -267,6 +273,7 @@
                                    [dest-y (pkg-dest-y pkg)])
                                (make-pack (sub1 (pkg-x pkg)) ; sub1 for 0-indexed
                                           (sub1 (pkg-y pkg))
+                                          #f ; copy
                                           (if weight
                                               (vector-ref pack-icons rel-weight)
                                               unknown-pack-icon)
@@ -554,6 +561,71 @@
                              (add1 (pack-dest-y p))
                              (pack-weight p)))
                      (filter (lambda (p) (not (pack-home? p))) packages))))
+      
+      (define/private (copy-robots&packages&actions robots packages actions)
+        ;; Copy records, since we mutate them:
+        (for-each (lambda (r)
+                    (set-thing-copy!
+                     r
+                     (make-robot
+                      (thing-x r) (thing-y r) #f
+                      (robot-icon r) (robot-dead-icon r) (robot-id r) (robot-packages r) 
+                      (robot-money r) (robot-max-lift r) (robot-motion r) (robot-drop r)
+                      (robot-grab r) (robot-dead? r) (robot-moving? r) (robot-bid r) 
+                      (robot-bid-index r) (robot-score r) (robot-pos r) (robot-activity r))))
+                  robots)
+        (for-each (lambda (p)
+                    (set-thing-copy!
+                     p
+                     (make-pack
+                      (thing-x p) (thing-y p) #f
+                      (pack-icon p) (pack-pen p) (pack-id p) 
+                      (pack-dest-x p) (pack-dest-y p) (pack-weight p) 
+                      (pack-owner p) (pack-home? p))))
+                  packages)
+        (let ([new-robots (map thing-copy robots)]
+              [new-packages (map thing-copy packages)])
+          ;; Fixup graph:
+          (for-each (lambda (r)
+                      (when (robot-drop r)
+                        (set-robot-drop! r (map thing-copy (robot-drop r))))
+                      (when (robot-grab r)
+                        (set-robot-grab! r (map thing-copy (robot-grab r))))
+                      (set-robot-packages! r (map thing-copy (robot-packages r))))
+                    new-robots)
+          (for-each (lambda (p)
+                      (when (pack-owner p)
+                        (set-pack-owner! p (thing-copy (pack-owner p)))))
+                    new-packages)
+          
+          (values new-robots new-packages (map thing-copy actions))))
+        
+      
+      (define/public (get-internal-state)
+        (let-values ([(new-robots new-packages new-actions)
+                      (copy-robots&packages&actions robots packages actions)])
+          (let-values ([(robot-list pack-list) (apply values (get-status-lists))])
+            (list new-robots new-packages (map thing-copy actions)
+                  (map (lambda (i) (thing-copy (send i user-data)))
+                       (send robot-list get-items))
+                  (map (lambda (i) (thing-copy (send i user-data)))
+                       (send pack-list get-items))))))
+                  
+      
+      (define/public (set-internal-state state)
+        (let-values ([(new-robots new-packages new-actions)
+                      (copy-robots&packages&actions (car state) (cadr state) (caddr state))])
+          (set! robots new-robots)
+          (set! packages new-packages)
+          (set! actions new-actions)
+          (let-values ([(robot-list pack-list) (apply values (get-status-lists))])
+            (for-each (lambda (i r) (send i user-data r))
+                      (send robot-list get-items)
+                      (list-ref state 3))
+            (for-each (lambda (i r) (send i user-data r))
+                      (send pack-list get-items)
+                      (list-ref state 4)))
+          (update)))
       
       (define/public (get-dead-robot-scores)
         (map (lambda (r) (list (robot-id r) (robot-score r)))

@@ -17,6 +17,19 @@
    (let-values ([(session board me robots0 packages0) (connect server port)])
      (let ([width (vector-length (vector-ref board 0))]
            [height (vector-length board)])
+  
+       ;; thresholds are integers in [1,10]:
+       (define drop-threshold 2)
+       (define pickup-threshold 2)
+       (define bully-threshold 10)
+       (define drown-bully-threshold 8)
+       
+       (define (decide threshold)
+         (>= (random 10) (sub1 threshold)))
+       
+       (define (trace s)
+         ; (printf "~a: ~a~n" me s)
+         (void))
        
        (define (get-cell/wall i j)
          (if (and (< -1 i width)
@@ -34,7 +47,7 @@
          (let ([safe-dests (filter
                             (lambda (dest)
                               (let ([x (car dest)]
-                                    [y (car dest)])
+                                    [y (cdr dest)])
                                 (let ([e (get-cell/wall (+ x 1) y)]
                                       [w (get-cell/wall (- x 1) y)]
                                       [s (get-cell/wall x (- y 1))]
@@ -137,31 +150,44 @@
                            (cons (cons x y) d))
                      (loop (cdr try) m d))))))
                          
-       (let run-loop ([robots robots0][packages packages0])
-         (let* ([r (assoc me robots)]
-                [rx (sub1 (bot-x r))]
-                [ry (sub1 (bot-y r))]
-                [packages-here (filter (lambda (p)
-                                         (and (= rx (sub1 (pkg-x p))) (= ry (sub1 (pkg-y p)))
-                                              (not (member (pkg-id p) (bot-packages r)))))
-                                       packages)]
-                [packages-can-lift (if (null? packages-here)
-                                       null
-                                       (let loop ([current-weight
-                                                   (apply + (map (lambda (p) (pkg-weight (assoc p packages)))
-                                                                 (bot-packages r)))]
-                                                  [packages packages-here])
-                                         (if (null? packages)
-                                             null
-                                             (let ([new-weight (+ current-weight (pkg-weight (car packages)))])
-                                               (if (<= new-weight (bot-max-lift r))
-                                                   (cons (car packages) (loop new-weight (cdr packages)))
-                                                   (loop current-weight (cdr packages)))))))]
-                [packages-should-drop (filter (lambda (pid)
-                                                (let ([p (assoc pid packages)])
-                                                  (and (= rx (sub1 (pkg-dest-x p)))
-                                                       (= ry (sub1 (pkg-dest-y p))))))
-                                              (bot-packages r))])
+       (let run-loop ([robots robots0][packages packages0][iteration 1])
+         (let*-values ([(r) (assoc me robots)]
+                       [(rx) (sub1 (bot-x r))]
+                       [(ry) (sub1 (bot-y r))]
+                       [(packages-here)
+                        (filter (lambda (p)
+                                  (and (= rx (sub1 (pkg-x p))) (= ry (sub1 (pkg-y p)))
+                                       (not (member (pkg-id p) (bot-packages r)))))
+                                packages)]
+                       [(packages-can-lift)
+                        (if (null? packages-here)
+                            null
+                            (let loop ([current-weight
+                                        (apply + (map (lambda (p) (pkg-weight (assoc p packages)))
+                                                      (bot-packages r)))]
+                                       [packages packages-here])
+                              (if (null? packages)
+                                  null
+                                  (let ([new-weight (+ current-weight (pkg-weight (car packages)))])
+                                    (if (<= new-weight (bot-max-lift r))
+                                        (cons (car packages) (loop new-weight (cdr packages)))
+                                        (loop current-weight (cdr packages)))))))]
+                       [(packages-should-drop)
+                        (filter (lambda (pid)
+                                  (let ([p (assoc pid packages)])
+                                    (and (= rx (sub1 (pkg-dest-x p)))
+                                         (= ry (sub1 (pkg-dest-y p))))))
+                                (bot-packages r))]
+                       [(possible-moves possible-dests) (get-possible-moves rx ry)]
+                       [(bullyable-robots) (filter (lambda (r)
+                                                     (member (cons (sub1 (bot-x r)) (sub1 (bot-y r)))
+                                                             possible-dests))
+                                                   robots)]
+                       [(drownable-robots) (filter (lambda (r)
+                                                     (let ([x (sub1 (bot-x r))]
+                                                           [y (sub1 (bot-y r))])
+                                                       (eq? 'water (get-cell/wall (+ x (- x rx)) (+ y (- y ry))))))
+                                                   bullyable-robots)])
                       
            ;; ----------------------------------------
            ;; Base management
@@ -186,28 +212,47 @@
            ;; ----------------------------------------
            ;; Move decision
            (let ([m (cond
-                      [(pair? packages-should-drop)
+                      [(and (pair? drownable-robots)
+                            (decide drown-bully-threshold))
+                       ;; Try to push a bot into the water
+                       (trace 'drown)
+                       (match-up (map (lambda (r)
+                                        (cons (sub1 (bot-x r)) (sub1 (bot-y r))))
+                                      drownable-robots)
+                                 possible-moves possible-dests)]
+                      [(and (pair? drownable-robots)
+                            (decide drown-bully-threshold))
+                       ;; Try to push a bot
+                       (trace 'push)
+                       (match-up (map (lambda (r)
+                                        (cons (sub1 (bot-x r)) (sub1 (bot-y r))))
+                                      bullyable-robots)
+                                 possible-moves possible-dests)]
+                      [(and (pair? packages-should-drop)
+                            (decide drop-threshold))
                        ;; Drop delivered packages:
+                       (trace 'deliver)
                        `(drop ,@packages-should-drop)]
-                      [(pair? packages-can-lift)
+                      [(and (pair? packages-can-lift)
+                            (decide pickup-threshold))
                        ;; Pick up as many packages as possible:
+                       (trace 'pickup)
                        `(pick ,@(map pkg-id packages-can-lift))]
                       [(pair? (bot-packages r))
                        ;; Move towards a package dest, if any
-                       (let-values ([(possible-moves possible-dests) (get-possible-moves rx ry)])
-                         (let ([steps (find-steps-toward-targets possible-dests 
-                                                                 (map (lambda (pid)
-                                                                        (let ([p (assoc pid packages)])
-                                                                          (cons (sub1 (pkg-dest-x p))
-                                                                                (sub1 (pkg-dest-y p)))))
-                                                                      (bot-packages r)))])
-                           (match-up steps possible-moves possible-dests)))]
+                       (trace 'dispatch)
+                       (let ([steps (find-steps-toward-targets possible-dests 
+                                                               (map (lambda (pid)
+                                                                      (let ([p (assoc pid packages)])
+                                                                        (cons (sub1 (pkg-dest-x p))
+                                                                              (sub1 (pkg-dest-y p)))))
+                                                                    (bot-packages r)))])
+                         (match-up steps possible-moves possible-dests))]
                       [else
-                       ;; Move toward a base?
-                       (let-values ([(possible-moves possible-dests) (get-possible-moves rx ry)])
-                         ;; Walk towards bases
-                         (let ([steps (find-steps-toward-targets possible-dests bases)])
-                           ;; Map first step back to move
-                           (match-up steps possible-moves possible-dests)))])])
+                       ;; Walk towards bases
+                       (trace 'base)
+                       (let ([steps (find-steps-toward-targets possible-dests bases)])
+                         ;; Map first step back to move
+                         (match-up steps possible-moves possible-dests))])])
              (let-values ([(new-robots new-packages) (move 1 session m me robots packages)])
-               (run-loop new-robots new-packages)))))))))
+               (run-loop new-robots new-packages (add1 iteration))))))))))

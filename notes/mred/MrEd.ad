@@ -2,9 +2,10 @@
 
 !  Font names
 mred.ScreenDefaultBase: *-lucida
-mred.ScreenModernBase: misc-fixed
+mred.ScreenSystemBase: *-lucida
+mred.ScreenModernBase: *-courier
 mred.ScreenDecorativeBase: *-helvetica
-mred.ScreenScriptBase: *-charter
+mred.ScreenScriptBase: *-zapfchancery
 mred.ScreenSwissBase: *-lucida
 mred.ScreenRomanBase: *-times
 

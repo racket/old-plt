@@ -1,4 +1,4 @@
-Version 100, ??, 1999
+Version 100, August 9, 1999
  + indicates a change since 100alpha4
  * indicates a change since 100alpha3
 Changed class syntax, splitting public clause use into:
@@ -111,8 +111,8 @@ pretty-print: default display string handler is now the default
  port display handler instead of the display procedure
 Ported to BeOS
 Ported to OSKit
-Ported to LinuxThreads, sortof; semaphore- or channel-waiting
- threads cannot be broken or killed
+Ported to LinuxThreads, sortof; semaphore-waiting threads cannot
+ be broken or killed
 Inside MzScheme: new built-in type: scheme_complex_izi_type
 Inside MzScheme: changed scheme_eval_string to raise an exception
  if the expression returns multiple values, and added

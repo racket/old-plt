@@ -35,7 +35,20 @@
 			  (zodiac:interface:dynamic-error
 			   (unbox report) "~a" (exn-message exn)))))
 		    (mred:message-box (format "~a" exn) "Uncaught Exception")
-		    ((error-escape-handler))))
+		    ((error-escape-handler))))  
+
+		'(current-load
+		 (let ([old-handler (current-load)])
+		   (lambda (f) 
+		     (call-with-input-file f 
+		       (lambda (p) 
+			 (let ([read (zodiac:read p (zodiac:make-location 1 1 0 f))]) 
+			   (let loop ([v (read)] 
+				      [last (void)]) 
+			     (if (zodiac:eof? v) 
+				 last 
+				 (loop (read) (mzrice-eval v)))))))))) 
+ 
 		(error-value->string-handler
 		 (lambda (x n)
 		   (let ([long-string 
@@ -255,7 +268,7 @@
 		     (insert-delta (format ", version ~a.~nLanguage: " (mred:version))
 				   delta)
 		     (insert-delta 
-		      (format "~a Scheme."
+		      (format "~a Scheme"
 			      (list-ref
 			       drscheme:basis:level-strings
 			       (drscheme:basis:level->number

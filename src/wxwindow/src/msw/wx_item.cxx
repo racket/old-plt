@@ -227,7 +227,7 @@ void wxFindMaxSize(HWND wnd, RECT *rect)
 
 static int skip_next_return;
 
-extern void wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
+extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp);
 
 int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
@@ -240,8 +240,11 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
   // If not in edit mode (or has been removed from parent), call the default proc.
   wxPanel *panel = (wxPanel *)item->GetParent();
 
-  wx_start_win_event("item", hWnd, message, tramp);
-  
+  if (!wx_start_win_event("item", hWnd, message, tramp)) {
+    /* Something has gone wrong. Give up. */
+    return retval;
+  }
+
   if (panel && !item->isBeingDeleted) {
     /* Check PreOnChar or PreOnEvent */
     switch (message) {

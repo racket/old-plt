@@ -707,7 +707,7 @@ wxWindow *wxWindow::FindFocusWindow()
   return NULL;
 }
 
-extern void wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
+extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramps);
 
 // Main window proc
@@ -745,7 +745,10 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     return retval;
   }
 
-  wx_start_win_event(dialog ? "dialog" : "window", hWnd, message, tramp);
+  if (!wx_start_win_event(dialog ? "dialog" : "window", hWnd, message, tramp)) {
+    /* Something has gone wrong. Give up. */
+    return retval;
+  }
 
   wnd->last_msg = message;
   wnd->last_wparam = wParam;

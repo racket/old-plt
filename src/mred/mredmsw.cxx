@@ -308,6 +308,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   case WM_LBUTTONDBLCLK:
   case WM_MOUSEMOVE:
   case WM_MOUSEWHEEL:
+  case WM_SYSKEYUP:
   case WM_SYSKEYDOWN:
   case WM_KEYUP:
   case WM_KEYDOWN:
@@ -339,7 +340,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 FILE *log;
 #endif
 
-void wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
+int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 {
 #if wxLOG_EVENTS
   if (!log)
@@ -348,13 +349,49 @@ void wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
   fflush(log);
 #endif
 
+  if (!tramp) {
+    switch (message) {
+    case WM_QUERYENDSESSION:
+    case WM_CLOSE:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+    case WM_RBUTTONDBLCLK:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+    case WM_MBUTTONDBLCLK:
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_LBUTTONDBLCLK:
+    case WM_MOUSEMOVE:
+    case WM_MOUSEWHEEL:
+    case WM_SYSKEYUP:
+    case WM_SYSKEYDOWN:
+    case WM_KEYUP:
+    case WM_KEYDOWN:
+    case WM_SYSCHAR:
+    case WM_CHAR:
+    case WM_INITMENU:
+#if wxLOG_EVENTS
+      fprintf(log, "BAD!)\n");
+      fflush(log);
+#endif
+      return 0;
+      break;
+    default:
+      /* non-tramp ok */
+      break;
+    }
+  }
+  
   if (!tramp)
     scheme_start_atomic();
+
+  return 1;
 }
 
 void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 {
-#if wsLOG_EVENTS
+#if wxLOG_EVENTS
   fprintf(log, " %lx %lx %lx %s %d)\n", scheme_current_thread, hWnd, message, who, tramp);
   fflush(log);
 #endif

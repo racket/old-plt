@@ -229,7 +229,7 @@ X__(string_append) (int argc, Scheme_Object *argv[])
   for (i = 0; i < argc; i++) {
     s = argv[i];
     if (!SCHEME_X_STRINGP(s))
-      scheme_wrong_type(XSTRINGSTR "-append", "string", i, argc, argv);
+      scheme_wrong_type(XSTRINGSTR "-append", XSTR "string", i, argc, argv);
     len += SCHEME_X_STRTAG_VAL(s);
   }
 

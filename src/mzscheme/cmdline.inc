@@ -358,7 +358,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 #endif
 #if defined(_IBMR2)
 	case 'p':
-	  sigset(SIGDANGER, dangerdanger);
+	  signal(SIGDANGER, dangerdanger);
 	  break;
 #endif
 	case 'R':

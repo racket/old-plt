@@ -167,7 +167,7 @@
       `(alloc ,(rep->sexp (vm:alloc-type ast)))]
      
      [(vm:build-constant? ast)
-      `(build-constant ,(zodiac:read-object (vm:build-constant-text ast)))]
+      `(build-constant ,(zodiac:zread-object (vm:build-constant-text ast)))]
      [(vm:make-procedure-closure? ast)
       `(make-procedure-closure ,(vm:vm->sexp (vm:make-closure-closure ast))
 			       ,(vm:make-closure-min-arity ast)
@@ -199,8 +199,8 @@
       (let ([text (vm:immediate-text ast)])
 	`(immediate ,(cond [(number? text)
 			    `(label ,text)]
-			   [(zodiac:read? text)
-			    (zodiac:read-object text)]
+			   [(zodiac:zread? text)
+			    (zodiac:zread-object text)]
 			   [else (error 'vm:vm->sexp "~a bad immediate text" text)])))]
      [else
       (error 'vm:vm->sexp "~a not supported" ast)])))

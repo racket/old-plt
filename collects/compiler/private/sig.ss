@@ -112,10 +112,10 @@
      (struct c-lambda (function-name scheme-name body arity))
 
      (struct compiler:message (ast message))
-     (struct compiler:error ())
-     (struct compiler:fatal-error ())
-     (struct compiler:internal-error ())
-     (struct compiler:warning ())))
+     (struct compiler:error-msg ())
+     (struct compiler:fatal-error-msg ())
+     (struct compiler:internal-error-msg ())
+     (struct compiler:warning-msg ())))
 
   (provide compiler:zlayer^)
   (define-signature compiler:zlayer^

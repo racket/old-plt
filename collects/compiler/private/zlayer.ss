@@ -121,7 +121,7 @@
 		       [else (compiler:internal-error 'make-special-constant "bad type")])])
 	    (zodiac:make-quote-form 
 	     stx (make-empty-box)
-	     (zodiac:make-read stx)))))
+	     (zodiac:make-zread stx)))))
       
       ;;-----------------------------------------------------------------------------
       ;; BINDING->LEXICAL-VARREF

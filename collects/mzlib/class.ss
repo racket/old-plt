@@ -867,7 +867,7 @@
 			  defn-or-expr
 			  ...)))])))
 
-  (define-syntax class
+  (define-syntax :class
     (lambda (stx)
       (syntax-case stx ()
 	[(form super-expression
@@ -1333,7 +1333,7 @@
   
   ;; >> Simplistic implementation for now <<
 
-  (define-syntax interface
+  (define-syntax :interface
     (lambda (stx)
       (syntax-case stx ()
 	[(_ (interface-expr ...) var ...)
@@ -1994,8 +1994,9 @@
     (if name (format " for interface: ~a" name) ""))
 
 
-  (provide class class* class*/names class?
-	   interface interface?	   
+  (provide (rename :class class)
+	   class* class*/names class?
+	   (rename :interface interface) interface?	   
 	   object% object?
 	   make-object instantiate
 	   send send* make-class-field-accessor make-class-field-mutator with-method

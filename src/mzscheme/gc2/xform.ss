@@ -85,15 +85,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-struct tok (n line file) (make-inspector))
-(define-struct (seq struct:tok) (close in))
-(define-struct (parens struct:seq) ())
-(define-struct (brackets struct:seq) ())
-(define-struct (braces struct:seq) ())
-(define-struct (callstage-parens struct:parens) ())
-(define-struct (creation-parens struct:parens) ())
-(define-struct (call struct:tok) (func args live tag))
-(define-struct (block-push struct:tok) (vars tag super-tag))
-(define-struct (note struct:tok) (s))
+(define-struct (seq tok) (close in))
+(define-struct (parens seq) ())
+(define-struct (brackets seq) ())
+(define-struct (braces seq) ())
+(define-struct (callstage-parens parens) ())
+(define-struct (creation-parens parens) ())
+(define-struct (call tok) (func args live tag))
+(define-struct (block-push tok) (vars tag super-tag))
+(define-struct (note tok) (s))
 
 ;; For very long lists, it's worth the effort to use a vector instead
 ;;   of a list to save space:
@@ -279,12 +279,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-struct vtype ())
-(define-struct (pointer-type struct:vtype) (base stars))
-(define-struct (array-type struct:vtype) (count))
-(define-struct (struct-type struct:vtype) (struct))
-(define-struct (struct-array-type struct:struct-type) (count))
-(define-struct (union-type struct:vtype) ())
-(define-struct (non-pointer-type struct:vtype) (base))
+(define-struct (pointer-type vtype) (base stars))
+(define-struct (array-type vtype) (count))
+(define-struct (struct-type vtype) (struct))
+(define-struct (struct-array-type struct-type) (count))
+(define-struct (union-type vtype) ())
+(define-struct (non-pointer-type vtype) (base))
 
 (define-struct live-var-info (tag maxlive maxpush vars new-vars pushed-vars 
 				  num-calls num-noreturn-calls))

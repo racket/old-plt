@@ -13,9 +13,9 @@
 			    src       ; sym
 			    elems     ; list of syms and signatures
 			    structs)) ; list of struct-infos
-  (define-struct parse-unit (imports renames vars stxes body stx-checks))
+  (define-struct parsed-unit (imports renames vars stxes body stx-checks))
 
-  (define-struct struct-info (name super-name names))
+  (define-struct struct-def (name super-name names))
 
   (define-struct sigdef (content interned))
   (define (make-sig x) (make-sigdef x #f))
@@ -73,7 +73,7 @@
 	(vector->list (car desc)))
        (map
 	(lambda (elem)
-	  (make-struct-info (vector-ref elem 0)
+	  (make-struct-def (vector-ref elem 0)
 			    (vector-ref elem 1)
 			    (cddr (vector->list elem))))
 	(vector->list (cdr desc))))))
@@ -136,7 +136,7 @@
 
   (define parse-signature
     (lambda (who expr name body)
-      (let-values ([(elems struct-infos)
+      (let-values ([(elems struct-defs)
 		    (let loop ([body body][accum null][struct-accum null])
 		      (syntax-case body ()
 			[() (values (reverse! accum) (reverse! struct-accum))]
@@ -222,7 +222,7 @@
 					     names 
 					     (filter names))
 					 accum)
-					(cons (make-struct-info (syntax-e name) 
+					(cons (make-struct-def (syntax-e name) 
 								(and super-name (syntax-e super-name))
 								names)
 					      struct-accum)))))]
@@ -278,7 +278,7 @@
 				    (syntax-e id)
 				    id))
 			      elems))
-			struct-infos))))
+			struct-defs))))
 
   (define (intern-vector intern-box v)
     (if (and intern-box
@@ -312,9 +312,9 @@
 	(list->vector
 	 (map
 	  (lambda (v)
-	    (list->vector (list* (struct-info-name v)
-				 (struct-info-super-name v)
-				 (struct-info-names v))))
+	    (list->vector (list* (struct-def-name v)
+				 (struct-def-super-name v)
+				 (struct-def-names v))))
 	  (signature-structs sig)))))))
 
   (define explode-named-sig
@@ -399,10 +399,10 @@
 	 [else (loop (cdr renames))]))))
 
   (define (make-struct-stx-decls sig prefix init-prefix? src-stx check?)
-    ;; If check? is #f, generates a syntax definition for <name>%# for
+    ;; If check? is #f, generates a syntax definition for <name> for
     ;; each <name> struct form in `sig'. Used for imports.
     ;; If check? is #t, generates an empty syntax "definition" that has
-    ;; the side-effect of checking <name>%# against its expected shape.
+    ;; the side-effect of checking <name> against its expected shape.
     ;; CURRENTLY, check? is always #f.
     (let ([signame (and init-prefix?
 			(signature-name sig))])
@@ -421,7 +421,7 @@
 				      check?))
 	     (filter signature? (signature-elems sig))))
        (map (lambda (si)
-	      (let ([names (struct-info-names si)]
+	      (let ([names (struct-def-names si)]
 		    [pfx (lambda (s)
 			   `(quote-syntax
 			     ,(let ([id (string->symbol 
@@ -434,8 +434,7 @@
 						     (syntax-e s)
 						     s)))])
 				(datum->syntax-object src-stx id))))])
-		(let* ([name (pfx
-			      (format "~a%#" (struct-info-name si)))]
+		(let* ([name (pfx (struct-def-name si))]
 		       [check (if check?
 				  (lambda (l)
 				    `(verify-struct-shape ,name ,l))
@@ -515,7 +514,7 @@
       
   (define check-signature-unit-body
     (lambda (sig a-unit renames who expr)
-      (let ([vars (map syntax-e (parse-unit-vars a-unit))])
+      (let ([vars (map syntax-e (parsed-unit-vars a-unit))])
 	(for-each
 	 (lambda (var)
 	   (let ([renamed (do-rename var renames)])
@@ -628,15 +627,15 @@
 	      (let loop ([pre-lines null][lines body][port #f][port-name #f][body null][vars null])
 		(cond
 		 [(and (null? pre-lines) (not port) (null? lines))
-		  (make-parse-unit imports 
-				   renames 
-				   vars 
-				   (lambda (src-stx) (apply append (map (lambda (i) (make-struct-stx-decls i #f #t src-stx #f)) imports)))
-				   body
-				   (lambda (src-stx) 
-				     ;; Disabled until we have a mechanism for declaring precise information in signatures:
-				     ; (make-struct-stx-decls sig #f #f src-stx #t)
-				     null))]
+		  (make-parsed-unit imports 
+				    renames 
+				    vars 
+				    (lambda (src-stx) (apply append (map (lambda (i) (make-struct-stx-decls i #f #t src-stx #f)) imports)))
+				    body
+				    (lambda (src-stx) 
+				      ;; Disabled until we have a mechanism for declaring precise information in signatures:
+				      ;; (make-struct-stx-decls sig #f #f src-stx #t)
+				      null))]
 		 [(and (null? pre-lines) (not port) (not (pair? lines)))
 		  (syntax-error 'unit/sig expr "improper body list form")]
 		 [else
@@ -1129,11 +1128,11 @@
 	   parse-compound-unit
 	   parse-invoke-vars
 
-	   parse-unit-renames
-	   parse-unit-imports
-	   parse-unit-stxes
-	   parse-unit-body
-	   parse-unit-stx-checks
+	   parsed-unit-renames
+	   parsed-unit-imports
+	   parsed-unit-stxes
+	   parsed-unit-body
+	   parsed-unit-stx-checks
 
 	   make-struct-stx-decls
 	   verify-struct-shape

@@ -201,7 +201,7 @@
 			    (zodiac:make-quote-form
 			     (zodiac:zodiac-stx ast)
 			     (zodiac:parsed-back ast)
-			     (zodiac:make-read
+			     (zodiac:make-zread
 			      (datum->syntax-object
 			       #f
 			       (make-c-lambda fname sname body arity)
@@ -493,7 +493,7 @@
 			    ;; return a void
 			    (zodiac:make-quote-form (zodiac:zodiac-stx ast)
 						    (make-empty-box)
-						    (zodiac:make-read
+						    (zodiac:make-zread
 						     (datum->syntax-object #f (void) #f))))
 			  
 			  (let ([process-normally
@@ -602,7 +602,7 @@
 				    (list (zodiac:make-quote-form
 					   (zodiac:zodiac-stx ast)
 					   (make-empty-box)
-					   (zodiac:make-read
+					   (zodiac:make-zread
 					    elem)))))
 				 elems))
 			   in-mod? need-val? name)))]

@@ -214,8 +214,8 @@
       (define (get-hash-id elem)
 	(cond
 	 [(zodiac:quote-form? elem) (let ([o (zodiac:quote-form-expr elem)])
-				      (if (number? (zodiac:read-object o))
-					  (zodiac:read-object o)
+				      (if (number? (zodiac:zread-object o))
+					  (zodiac:zread-object o)
 					  o))]
 	 [else elem]))
 
@@ -242,7 +242,7 @@
       (define (construct-vector-constant ast constructor known-immutable?)
 	(let* ([elems (map (lambda (x)
 			     (compiler:construct-const-code! 
-			      (zodiac:make-read x)
+			      (zodiac:make-zread x)
 			      known-immutable?))
 			   (let ([p (zodiac:zodiac-stx ast)])
 			     (or (syntax->list p)
@@ -279,7 +279,7 @@
 	   ;; c-lambda (kindof a hack)
 	   [(c-lambda? ast)
 	    (compiler:add-const! (compiler:re-quote 
-				  (zodiac:make-read
+				  (zodiac:make-zread
 				   (datum->syntax-object
 				    #f
 				    ast ;; See vm2c.ss
@@ -288,25 +288,25 @@
 	   
 	   ;; a box has a constant inside it to mess with, yet it's
 	   ;; still a scalar
-	   [(box? (zodiac:read-object ast))
+	   [(box? (zodiac:zread-object ast))
 	    (compiler:add-const! (compiler:make-const-constructor
 				  ast
 				  'box
 				  (list (compiler:construct-const-code!
-					 (zodiac:make-read (unbox (zodiac:read-object ast)))
+					 (zodiac:make-zread (unbox (zodiac:zread-object ast)))
 					 known-immutable?)))
 				 (if known-immutable?
 				     varref:static
 				     varref:per-load-static))]
 
 	   ;; Do symbols at most once:
-	   [(symbol? (zodiac:read-object ast))
-	    (let ([sym (zodiac:read-object ast)])
+	   [(symbol? (zodiac:zread-object ast))
+	    (let ([sym (zodiac:zread-object ast)])
 	      (compiler:get-symbol-const! ast sym))]
 	   
 	   ;; Numbers that must be built
-	   [(number? (zodiac:read-object ast))
-	    (let ([n (zodiac:read-object ast)])
+	   [(number? (zodiac:zread-object ast))
+	    (let ([n (zodiac:zread-object ast)])
 	      (if (and (inexact? n) (eqv? 0 (imag-part n))
 		       (not (member n '(+inf.0 -inf.0 +nan.0))))
 		  (compiler:get-inexact-real-const! n ast)
@@ -325,22 +325,22 @@
 	    (construct-vector-constant ast 'list known-immutable?)]
 	   
 	   ;; improper lists
-	   [(pair? (zodiac:read-object ast))
+	   [(pair? (zodiac:zread-object ast))
 	    (construct-vector-constant ast 'list* known-immutable?)]
 
 	   ;; vectors
-	   [(vector? (zodiac:read-object ast))
+	   [(vector? (zodiac:zread-object ast))
 	    (construct-vector-constant ast 'vector known-immutable?)]
 
-	   [(void? (zodiac:read-object ast))
+	   [(void? (zodiac:zread-object ast))
 	    (zodiac:make-special-constant 'void)]
 
 	   ;; comes from module paths in analyze:
-	   [(module-path-index? (zodiac:read-object ast))
-	    (let-values ([(path base) (module-path-index-split (zodiac:read-object ast))])
+	   [(module-path-index? (zodiac:zread-object ast))
+	    (let-values ([(path base) (module-path-index-split (zodiac:zread-object ast))])
 	      (if (or path base)
 		  (let ([wrap (lambda (v)
-				(zodiac:make-read 
+				(zodiac:make-zread 
 				 (datum->syntax-object
 				  #f
 				  v
@@ -362,8 +362,8 @@
 
 	   ;; other atomic constants that must be built
 	   [else
-	    (when (string? (zodiac:read-object ast))
-	      (const:intern-string (zodiac:read-object ast)))
+	    (when (string? (zodiac:zread-object ast))
+	      (const:intern-string (zodiac:zread-object ast)))
 	    (compiler:add-const! (compiler:re-quote ast) 
 				 varref:static)])))
 
@@ -422,7 +422,7 @@
 	    (let ([syntax-string (get-output-string s)])
 	      (const:intern-string syntax-string)
 	      (let* ([strvar (compiler:add-const! (compiler:re-quote 
-						   (zodiac:make-read
+						   (zodiac:make-zread
 						    (datum->syntax-object
 						     #f
 						     syntax-string
@@ -455,7 +455,7 @@
 			 #f
 			 (make-empty-box) (list sv)
 			 (compiler:re-quote 
-			  (zodiac:make-read
+			  (zodiac:make-zread
 			   (datum->syntax-object
 			    #f
 			    strvar ;; <------ HACK! See "HACK!" in vm2c.ss
@@ -483,7 +483,7 @@
 				(list
 				 sv
 				 (compiler:re-quote
-				  (zodiac:make-read
+				  (zodiac:make-zread
 				   (datum->syntax-object
 				    #f
 				    pos

@@ -1512,46 +1512,46 @@
 		   [(number? tast)
 		    (emit-expr "~a" tast)]
 		   
-		   [(boolean? (zodiac:read-object tast))
-		    (if (zodiac:read-object tast)
+		   [(boolean? (zodiac:zread-object tast))
+		    (if (zodiac:zread-object tast)
 			(emit-expr "scheme_true")
 			(emit-expr "scheme_false"))]
 		   
-		   [(number? (zodiac:read-object tast))
-		    (emit-expr "scheme_make_integer(~a)" (zodiac:read-object tast))]
+		   [(number? (zodiac:zread-object tast))
+		    (emit-expr "scheme_make_integer(~a)" (zodiac:zread-object tast))]
 		   
-		   [(char? (zodiac:read-object tast))
+		   [(char? (zodiac:zread-object tast))
 		    (emit-expr "scheme_make_character('~a')"
 			       (vm->c:convert-char
-				(zodiac:read-object tast)))]
+				(zodiac:zread-object tast)))]
 		   
-		   [(null? (zodiac:read-object tast))
+		   [(null? (zodiac:zread-object tast))
 		    (emit-expr "scheme_null")]
 		   
-		   [(eq? (zodiac:read-object tast) self_modidx)
+		   [(eq? (zodiac:zread-object tast) self_modidx)
 		    (emit-expr "self_modidx")]
 		   
-		   [(or (void? (zodiac:read-object tast))
-			(undefined? (zodiac:read-object tast)))
+		   [(or (void? (zodiac:zread-object tast))
+			(undefined? (zodiac:zread-object tast)))
 		    (emit-expr (vm->c:convert-special-constant tast))]
 		   
 		   [else (compiler:internal-error
 			  ast
 			  (format "vm->c-expression: ~a not an immediate: ~e" 
-				  tast (zodiac:read-object tast)))]))]
+				  tast (zodiac:zread-object tast)))]))]
 	       
 	       [(vm:build-constant? ast)
 		(let ([ast (vm:build-constant-text ast)])
 		  (cond
-		   [(string? (zodiac:read-object ast))
+		   [(string? (zodiac:zread-object ast))
 		    (fprintf port "scheme_make_immutable_sized_string((char *)STRING_~a, ~a, 0)" 
-			     (const:intern-string (zodiac:read-object ast))
-			     (string-length (zodiac:read-object ast)))]
-		   [(symbol? (zodiac:read-object ast))
-		    (let ([s (symbol->string (zodiac:read-object ast))])
+			     (const:intern-string (zodiac:zread-object ast))
+			     (string-length (zodiac:zread-object ast)))]
+		   [(symbol? (zodiac:zread-object ast))
+		    (let ([s (symbol->string (zodiac:zread-object ast))])
 		      (emit-expr "scheme_intern_exact_symbol(~s, ~a)" s (string-length s)))]
-		   [(number? (zodiac:read-object ast))
-		    (let process ([num (zodiac:read-object ast)])
+		   [(number? (zodiac:zread-object ast))
+		    (let process ([num (zodiac:zread-object ast)])
 		      (cond
 					; NaN, inf
 		       [(member num  (list +NaN.0 +inf.0 -inf.0)) 
@@ -1579,16 +1579,16 @@
 			(process (denominator num))
 			(emit ")")]))]
 
-		   [(void? (zodiac:read-object ast))
+		   [(void? (zodiac:zread-object ast))
 		    (emit "scheme_void")]
 
-		   [(eq? (zodiac:read-object ast) self_modidx)
+		   [(eq? (zodiac:zread-object ast) self_modidx)
 		    (emit-expr "self_modidx")]
 		   
 		   ;; HACK! - abused constants to communicate
 		   ;;  a direct call to scheme_make_prim_w_arity
-		   [(c-lambda? (zodiac:read-object ast))
-		    (let ([cl (zodiac:read-object ast)])
+		   [(c-lambda? (zodiac:zread-object ast))
+		    (let ([cl (zodiac:zread-object ast)])
 		      (emit-expr "scheme_make_prim_w_arity(~a, ~s, ~a, ~a)"
 				 (c-lambda-function-name cl)
 				 (symbol->string (c-lambda-scheme-name cl))
@@ -1597,11 +1597,11 @@
 		   
 		   ;; HACK! - abused constants to communicate
 		   ;;  a direct call to scheme_read_compiled_stx_string():
-		   [(zodiac:varref? (zodiac:read-object ast))
-		    (let ([for-mod? (varref:has-attribute? (zodiac:read-object ast)
+		   [(zodiac:varref? (zodiac:zread-object ast))
+		    (let ([for-mod? (varref:has-attribute? (zodiac:zread-object ast)
 							   varref:module-stx-string)])
 		      (emit-expr "scheme_eval_compiled_stx_string(S.~a, SCHEME_CURRENT_ENV(pr), ~a, ~a)"
-				 (vm->c:convert-symbol (zodiac:varref-var (zodiac:read-object ast)))
+				 (vm->c:convert-symbol (zodiac:varref-var (zodiac:zread-object ast)))
 				 (if for-mod? "phase_shift" "0")
 				 (if for-mod? "self_modidx" "NULL")))]
 		   

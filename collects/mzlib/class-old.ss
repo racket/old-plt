@@ -931,7 +931,7 @@
 			  init-vars
 			  clauses ...)))])))
 
-  (define-syntax class
+  (define-syntax :class
     (lambda (stx)
       (syntax-case stx ()
 	[(_ super-expr
@@ -954,7 +954,7 @@
 	 (syntax/loc stx (class* super () args
 			   body ...))])))
   
-  (define-syntax interface
+  (define-syntax :interface
     (lambda (stx)
       (syntax-case stx ()
 	[(_ (interface-expr ...) var ...)
@@ -982,17 +982,17 @@
 	       (list interface-expr ...)
 	       '(var ...)))))])))
 
-  (provide class class* class*/names
-	  class-asi class*-asi
-	  interface
-	  make-object object? is-a? subclass? class? interface?
-	  class->interface object-interface
-	  implementation? interface-extension?
-	  ivar-in-interface? interface->ivar-names
-	  class-initialization-arity
-	  ivar send send* make-generic
-	  ivar/proc make-generic/proc
-	  object% ;; object<%>
-	  exn:object? struct:exn:object make-exn:object
+  (provide (rename :class class) class* class*/names
+	   class-asi class*-asi
+	   (rename :interface interface)
+	   make-object object? is-a? subclass? class? interface?
+	   class->interface object-interface
+	   implementation? interface-extension?
+	   ivar-in-interface? interface->ivar-names
+	   class-initialization-arity
+	   ivar send send* make-generic
+	   ivar/proc make-generic/proc
+	   object% ;; object<%>
+	   exn:object? struct:exn:object make-exn:object
 
-	  prop:object make-prim-class))
+	   prop:object make-prim-class))

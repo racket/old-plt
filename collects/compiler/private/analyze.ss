@@ -95,7 +95,7 @@
 						       (let-values ([(name base) (module-path-index-split modname)])
 							 (if name
 							     (compiler:construct-const-code!
-							      (zodiac:make-read
+							      (zodiac:make-zread
 							       (datum->syntax-object
 								#f
 								modname

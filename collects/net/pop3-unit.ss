@@ -72,9 +72,6 @@
       (define-struct (+ok server-responses) ())
       (define-struct (-err server-responses) ())
 
-      (define +ok (make-+ok))
-      (define -err (make--err))
-
       ;; connect-to-server :
       ;; string [x number] -> communicator
 
@@ -314,10 +311,10 @@
 	      (let ((status-line (get-one-line-from-server receiver)))
 		(let ((r (regexp-match +ok-regexp status-line)))
 		  (if r
-		      (values +ok (cadr r))
+		      (values make-+ok (cadr r))
 		      (let ((r (regexp-match -err-regexp status-line)))
 			(if r
-			    (values -err (cadr r))
+			    (values make--err (cadr r))
 			    (signal-malformed-response-error communicator))))))))))
 
       ;; get-status-response/basic :

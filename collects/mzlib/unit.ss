@@ -35,7 +35,7 @@
   ;; ----------------------------------------------------------------------
   ;; The `unit' syntactic form
 
-  (define-syntax unit
+  (define-syntax :unit
     (lambda (stx)
       (syntax-case stx (import export)
 	[(_ (import ivar ...)
@@ -794,7 +794,7 @@
 						   s))
 						(syntax->list (syntax exports))))
 					 (syntax exports))]
-				    [extract-unit (syntax (unit
+				    [extract-unit (syntax (:unit
 							    (import . exports)
 							    (export)
 							    (values . exports)))])
@@ -818,7 +818,7 @@
 			      (syntax (define-values (tagged-export ...) invoke-unit)))))))])))])
       (values (mk #f) (mk #t))))
   
-  (provide unit compound-unit invoke-unit unit?
+  (provide (rename :unit unit) compound-unit invoke-unit unit?
 	  exn:unit? struct:exn:unit make-exn:unit
 
 	  define-values/invoke-unit

@@ -498,12 +498,6 @@
 (module #%ds-helper #%kernel
   (require #%stx #%qq-and-or #%cond #%struct-info)
   
-  (define-values (->%#)
-    (lambda (name) 
-      (datum->syntax-object name 
-			    (string->symbol (format "~a%#" (syntax-e name))) 
-			    name)))
-
   (define-values (list->immutable-list)
     (lambda (l)
       (if (null? l) null (cons-immutable (car l) (list->immutable-list (cdr l))))))
@@ -523,7 +517,7 @@
 			      [(null? (cdr l)) (cons (car l) r)]
 			      [else (loop (cddr l) (cons (car l) r))])))]
 	    [super-info (and super-id 
-			     (syntax-local-value (->%# super-id) (lambda () #f)))])
+			     (syntax-local-value super-id (lambda () #f)))])
 	(if super-id 
 	    ;; Did we get valid super-info ?
 	    (if (or (not (struct-info? super-info))
@@ -534,7 +528,7 @@
 		     "parent struct information does not include a type for subtyping"
 		     (format "parent struct type not defined~a"
 			     (if super-info
-				 (format " (~a%# does not name struct type information)"
+				 (format " (~a does not name struct type information)"
 					 (syntax-e super-id))
 				 "")))
 		 orig-stx
@@ -567,7 +561,7 @@
 					  initial-sets))))))
 	     #f)))))
 
-  (provide ->%# get-stx-info))
+  (provide get-stx-info))
 
 ;;----------------------------------------------------------------------
 ;; define, when, unless, let/ec, define-struct
@@ -776,7 +770,6 @@
 	       (let ([defined-names (map 
 				     (lambda (n) (datum->syntax-object name n name)) 
 				     (build-struct-names name field-names))]
-		     [name%# (->%# name)]
 		     [delay? (and (eq? (syntax-local-context) 'internal-define) super-id)])
 		 (let-values ([(super-id/struct: stx-info) (if delay?
 							       (values #f #f)
@@ -796,15 +789,15 @@
 				       (raise-type-error 'define-struct "inspector" inspector))
 				   ,core)
 				core)))
-		       (define-syntaxes (,name%#) ,(if delay?
-						       `(let-values ([(super-id/struct: stx-info) 
-								      (get-stx-info (quote-syntax ,stx)
-										    (quote-syntax ,super-id)
-										    (list ,@(map (lambda (x) `(quote-syntax ,x))
-												 defined-names))
-										    #f)])
-							  stx-info)
-						       stx-info)))
+		       (define-syntaxes (,name) ,(if delay?
+						     `(let-values ([(super-id/struct: stx-info) 
+								    (get-stx-info (quote-syntax ,stx)
+										  (quote-syntax ,super-id)
+										  (list ,@(map (lambda (x) `(quote-syntax ,x))
+											       defined-names))
+										  #f)])
+							stx-info)
+						     stx-info)))
 		    stx)))))))
        ;; generate-struct-vals
        (lambda (stx)

@@ -230,7 +230,7 @@
 		   (make-quote-form
 		    stx
 		    (mk-back)
-		    (make-read
+		    (make-zread
 		     val)))]
 
 		[(define-values names rhs)
@@ -344,7 +344,7 @@
 		 (make-quote-form
 		  stx
 		  (mk-back)
-		  (make-read (syntax expr)))]
+		  (make-zread (syntax expr)))]
 
 		[(quote-syntax expr)
 		 (make-quote-syntax-form
@@ -438,7 +438,7 @@
 		 (make-quote-form
 		  (syntax/loc stx ())
 		  (mk-back)
-		  (make-read (quote-syntax ())))]
+		  (make-zread (quote-syntax ())))]
 		[(#%app func arg ...)
 		 (make-app
 		  stx
@@ -458,7 +458,7 @@
       (define (zodiac->syntax x)
 	(let loop ([x x])
 	  (cond
-	   [(read? x)
+	   [(zread? x)
 	    (zodiac-stx x)]
 
 	   [(top-level-varref? x)
@@ -574,18 +574,18 @@
       (define (location-file z)
 	(and (zodiac-stx z) (syntax-source (zodiac-stx z))))
 
-      (define (read-object z)
+      (define (zread-object z)
 	(syntax-e (zodiac-stx z)))
 
       (define (structurize-syntax sexp)
-	(make-read (datum->syntax-object #f sexp #f)))
+	(make-zread (datum->syntax-object #f sexp #f)))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       (define eof? eof-object?)
 
       (define-struct zodiac (stx))
-      (define-struct (read zodiac) ())
+      (define-struct (zread zodiac) ())
 
       (define-struct (parsed zodiac) (back))
 

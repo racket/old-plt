@@ -15,7 +15,7 @@
      zodiac->syntax
 
      structurize-syntax
-     read-object ; = (compose syntax-e zodiac-stx)
+     zread-object ; = (compose syntax-e zodiac-stx)
 
      ;; origin struct:
      origin-who  ; 'source or 'macro
@@ -41,10 +41,10 @@
 
      ;; reader structs:
      ;;  zodiac (stx)
-     ;;    read ; used to have (object)
+     ;;    zread ; used to have (object)
      ;; The sub-tree has been cut off; inspect
      ;;  the stx object, instead.
-     (struct read ())
+     (struct zread ())
 
      ;; elaborator structs:
      (struct parsed (back))

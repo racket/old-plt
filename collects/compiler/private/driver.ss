@@ -272,7 +272,7 @@
 		    (let ([q (zodiac:make-quote-form
 			      (zodiac:zodiac-stx m)
 			      (make-empty-box)
-			      (zodiac:make-read
+			      (zodiac:make-zread
 			       (datum->syntax-object
 				#f
 				(list (zodiac:module-form-name m)
@@ -452,19 +452,19 @@
 	  (lambda (ast message)
 	    (set! compiler:messages (cons (constructor ast message)
 					  compiler:messages)))))
-      (define compiler:error (compiler:make-message make-compiler:fatal-error))
+      (define compiler:error (compiler:make-message make-compiler:fatal-error-msg))
       (define compiler:fatal-error compiler:error)
       (define compiler:internal-error
 	(case-lambda
 	 [(ast message)
 	  (set! compiler:messages 
-		(reverse! (cons (make-compiler:internal-error ast message)
+		(reverse! (cons (make-compiler:internal-error-msg ast message)
 				compiler:messages)))
 	  (compiler:report-messages! #t)]
 	 [(ast fmt . args)
 	  (compiler:internal-error ast (apply format fmt args))]))
       
-      (define compiler:warning (compiler:make-message make-compiler:warning))
+      (define compiler:warning (compiler:make-message make-compiler:warning-msg))
 
       (define compiler:report-messages!
 	(lambda (stop-on-errors?)
@@ -473,10 +473,10 @@
 		[msgs (reverse! compiler:messages)])
 	    (set! compiler:messages null)
 	    (for-each (lambda (message)
-			(when (compiler:error? message) 
+			(when (compiler:error-msg? message) 
 			  (set! error-count (add1 error-count)))
-			(when (or (compiler:fatal-error? message) 
-				  (compiler:internal-error? message))
+			(when (or (compiler:fatal-error-msg? message) 
+				  (compiler:internal-error-msg? message))
 			  (set! fatal-error-count (add1 fatal-error-count)))
 
 			(let* ([ast (compiler:message-ast message)]
@@ -485,13 +485,13 @@
 			  (printf 
 			   "~a: ~a~n"
 			   (cond
-			    [(compiler:error? message) "Error"]
-			    [(compiler:warning? message) "Warning"]
-			    [(compiler:fatal-error? message) "Error"]
-			    [(compiler:internal-error? message) "INTERNAL ERROR"]
+			    [(compiler:error-msg? message) "Error"]
+			    [(compiler:warning-msg? message) "Warning"]
+			    [(compiler:fatal-error-msg? message) "Error"]
+			    [(compiler:internal-error-msg? message) "INTERNAL ERROR"]
 			    [else (error 'report-messages "internal error")])
 			   string)
-			  (when (compiler:internal-error? message)
+			  (when (compiler:internal-error-msg? message)
 			    (printf 
 			     (string-append
 			      " please report the bug at http://www.cs.rice.edu/CS/PLT/Bugs/~n"

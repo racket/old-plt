@@ -258,7 +258,7 @@
       ;; error/warning structures
       ;;
       (define-struct compiler:message (ast message))
-      (define-struct (compiler:error compiler:message) ())
-      (define-struct (compiler:fatal-error compiler:message) ())
-      (define-struct (compiler:internal-error compiler:message) ())
-      (define-struct (compiler:warning compiler:message) ()))))
+      (define-struct (compiler:error-msg compiler:message) ())
+      (define-struct (compiler:fatal-error-msg compiler:message) ())
+      (define-struct (compiler:internal-error-msg compiler:message) ())
+      (define-struct (compiler:warning-msg compiler:message) ()))))

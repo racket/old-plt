@@ -36,7 +36,7 @@
 	     (syntax (letrec-syntax ([name (make-sig (quote content))])
 		       . body))))])))
   
-  (define-syntax unit/sig
+  (define-syntax :unit/sig
     (lambda (expr)
       (syntax-case expr ()
 	[(_ sig . rest)
@@ -45,24 +45,24 @@
 				    (kernel-form-identifier-list (quote-syntax here))
 				    (quote-syntax define-values)
 				    (quote-syntax begin))])
-	    (check-signature-unit-body sig a-unit (parse-unit-renames a-unit) 'unit/sig expr)
+	    (check-signature-unit-body sig a-unit (parsed-unit-renames a-unit) 'unit/sig expr)
 	    (with-syntax ([imports (datum->syntax-object
 				    expr
-				    (flatten-signatures (parse-unit-imports a-unit))
+				    (flatten-signatures (parsed-unit-imports a-unit))
 				    expr)]
 			  [exports (datum->syntax-object
 				    expr
 				    (map
 				     (lambda (name)
-				       (list (do-rename name (parse-unit-renames a-unit))
+				       (list (do-rename name (parsed-unit-renames a-unit))
 					     name))
 				     (signature-vars sig))
 				    expr)]
 			  [body (append
-				 ((parse-unit-stxes a-unit) expr)
-				 (reverse! (parse-unit-body a-unit))
-				 ((parse-unit-stx-checks a-unit) expr))]
-			  [import-sigs (explode-named-sigs (parse-unit-imports a-unit) #f)]
+				 ((parsed-unit-stxes a-unit) expr)
+				 (reverse! (parsed-unit-body a-unit))
+				 ((parsed-unit-stx-checks a-unit) expr))]
+			  [import-sigs (explode-named-sigs (parsed-unit-imports a-unit) #f)]
 			  [export-sig (explode-sig sig #f)])
 	      (syntax/loc expr
 		(make-unit/sig
@@ -320,7 +320,7 @@
   
   (provide define-signature
 	   let-signature
-	   unit/sig
+	   (rename :unit/sig unit/sig)
 	   compound-unit/sig
 	   invoke-unit/sig
 	   unit->unit/sig

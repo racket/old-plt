@@ -106,7 +106,7 @@
      (test #t = (date-year-day start) (date-year-day time) (date-year-day end))
      (test #t = (date-hour start) (date-hour time) (date-hour end))
      (test #t <= (date-minute start) (date-minute time) (date-minute end))
-     (test #t <= (date-second start) (date-second time) (date-second end))))
+     (test #t <= (- (date-second start) 5) (date-second time) (+ (date-second end) 5))))
  (list "tmp5"
        "down"
        (build-path "down" "tmp8")

@@ -557,6 +557,10 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
   menv2->phase = menv->phase;
   menv2->link_midx = menv->link_midx;
   menv2->running = menv->running;
+  menv2->et_running = menv->et_running;
+
+  menv2->require_names = menv->require_names;
+  menv2->et_require_names = menv->et_require_names;
 
   menv2->toplevel = menv->toplevel;
   

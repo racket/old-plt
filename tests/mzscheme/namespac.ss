@@ -17,6 +17,12 @@
 
 (test `,void eval `',void)
 
+(test car eval 'car (scheme-report-environment 5))
+(err/rt-test (eval 'car (null-environment 5)) exn:variable?)
+(err/rt-test (eval 'lambda (null-environment 5)) exn:syntax?)
+(err/rt-test (eval 'lambda (scheme-report-environment 5)) exn:syntax?)
+(err/rt-test (eval 'lambda (null-environment 5)) exn:syntax?)
+
 ; FIXME: this is a useful test, but we have no make-global-value-list...
 ; Test primitive-name
 '(let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]

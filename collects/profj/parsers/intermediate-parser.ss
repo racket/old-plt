@@ -202,12 +202,12 @@
                                                    (build-src 2))])
 
       (MethodHeader
-       [(Type MethodDeclarator) (construct-method-header (list (make-modifier 'public #f)) null $1 $2 null)]
-       [(void MethodDeclarator)
-	(construct-method-header (list (make-modifier 'public #f))
+       [(Modifiers Type MethodDeclarator) (construct-method-header (cons (make-modifier 'public #f) $1) null $2 $3 null)]
+       [(Modifiers void MethodDeclarator)
+	(construct-method-header (cons (make-modifier 'public #f) $1)
 				 null 
 				 (make-type-spec 'void 0 (build-src 2 2))
-				 $2 
+				 $3
 				 null)])
       
       (MethodDeclarator
@@ -223,7 +223,7 @@
       
       (MethodBody
        [(Block) $1]
-       [(SEMI_COLON) (make-block null (build-src 1))])
+       [(SEMI_COLON) #f])
       
       ;; 19.8.5
       

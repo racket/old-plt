@@ -128,7 +128,8 @@
                      (check-interactions-types p level loc type-recs)) prog))
         ((var-init? prog) 
          (check-var-init (var-init-init prog)
-                         (lambda (e) (check-expr e env level type-recs c-class #f #t))
+                         (lambda (e) 
+                           (check-expr e env level type-recs c-class #f #t))
                          (field-type prog)
                          (string->symbol (id-string (field-name prog)))
                          type-recs))
@@ -138,17 +139,9 @@
         ((expr? prog)
          (check-expr prog env level type-recs c-class #f #t))
         (else
-         (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))
+         (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))  
   
-  ;check-interface: interface-def env type-records
-  (define check-interface
-    (lambda (iface p-name type-recs)
-      (send type-recs set-location! (interface-def-file iface))
-      (send type-recs set-class-reqs (interface-def-uses iface))
-      ((check-static-members empty-env type-recs) (interface-def-members iface))
-      (set-interface-def-uses! iface (send type-recs get-class-reqs))))
-  
-  ;check-class: class-def (list string) symbol type-records
+  ;check-class: class-def (list string) symbol type-records -> void
   (define (check-class class package-name level type-recs)
     (send type-recs set-location! (class-def-file class))
     (send type-recs set-class-reqs (class-def-uses class))
@@ -160,12 +153,14 @@
                      type-recs 
                      (list (id-string (header-id (class-def-info class))))))
     (set-class-def-uses! class (send type-recs get-class-reqs)))
-  
-  ;check-static-members -> env type-records -> (member -> void)
-  (define check-static-members
-    (lambda (env type-recs)
-      (lambda (members)
-        void)))  
+
+  ;check-interface: interface-def (list string) symbol type-recs -> void
+  (define (check-interface iface p-name level type-recs)
+    (send type-recs set-location! (interface-def-file iface))
+    (send type-recs set-class-reqs (interface-def-uses iface))
+    (check-members (interface-def-members iface) empty-env level type-recs 
+                   (list (id-string (header-id (interface-def-info iface)))))
+    (set-interface-def-uses! iface (send type-recs get-class-reqs)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
@@ -189,16 +184,28 @@
                          (check-statement (initialize-block member) 'void field-env level
                                           type-recs c-class #f #f #f #f)))
                     ((var-init? member)
-                     (check-var-init (var-init-init member)
-                                     (lambda (e) 
-                                       (check-expr e field-env level type-recs c-class #f 
-                                                   (memq 'static (map modifier-kind (field-modifiers member)))))
-                                     (field-type member)
-                                     (string->symbol (id-string (field-name member)))
-                                     type-recs))
+                     (let ((static? (memq 'static (map modifier-kind (field-modifiers member)))))
+                       (check-var-init (var-init-init member)
+                                       (lambda (e) 
+                                         (check-expr e 
+                                                     (if static? 
+                                                         (get-static-fields-env field-env)
+                                                         field-env)
+                                                     level type-recs c-class #f 
+                                                     static?))
+                                       (field-type member)
+                                       (string->symbol (id-string (field-name member)))
+                                       type-recs)))
                     (else void)))
                 members)))
+  
+  ;check-static-members -> env type-records -> (member -> void)
+  (define check-static-members
+    (lambda (env type-recs)
+      (lambda (members)
+        void)))  
 
+  
   ;create-field-env: (list field-record) env -> env
   (define (create-field-env fields env)
     (cond
@@ -222,24 +229,33 @@
   ;check-method: method env type-records (list string) boolean-> void
   (define (check-method method env level type-recs c-class static?)
     (let* ((ctor? (eq? 'ctor (type-spec-name (method-type method))))
+           (name (method-name method))
+           (sym-name (string->symbol (id-string name)))
+           (body (method-body method))
+           (mods (map modifier-kind (method-modifiers method)))
            (return (if ctor? 
                        'void
                        (type-spec-to-type (method-type method) type-recs))))
-      (when (and (not (eq? return 'void))
-                 (not (reachable-return? (method-body method))))
-        (raise-member-error (id-src (method-name method)) 
-                            (string->symbol (id-string (method-name method)))
-                            no-reachable-return))
-      (check-statement (method-body method)
-                       return
-                       (build-method-env (method-parms method) env type-recs)
-                       level
-                       type-recs
-                       c-class
-                       ctor?
-                       static?
-                       #f
-                       #f)))
+      (if (or (memq 'abstract mods) (memq 'native mods))
+          (when body
+            (raise-member-error (id-src name)
+                                (list sym-name (memq 'abstract mods))
+                                impl-for-abs))                                
+          (begin
+            (when (and (not (eq? return 'void))
+                       (not (reachable-return? body)))
+              (raise-member-error (id-src name) sym-name no-reachable-return)) 
+            (check-statement body
+                             return
+                             (build-method-env (method-parms method) env type-recs)
+                             level
+                             type-recs
+                             c-class
+                             ctor?
+                             static?
+                             #f
+                             #f)))))
+  
   
   ;build-method-env: (list field) env type-records-> env
   (define (build-method-env parms env type-recs)
@@ -290,11 +306,17 @@
   
   (define (no-reachable-return method)
     (format "method ~a does not have a reachable return" method))
+
+  (define (impl-for-abs name abs?)
+    (format "~a method ~a must not have an implementation. A ';' should appear after the header"
+            (if abs? 'abstract 'native) name))
   
   (define (raise-member-error src code msg)
     (match code
       ((? symbol? code)
        (raise-syntax-error code (msg code) (make-so code src)))
+      (((? symbol? name) (? boolean? cond))
+       (raise-syntax-error name (msg name cond) (make-so name src)))
       (_
        (error 'raise-member-error "Given ~a" code))))
   

@@ -1,6 +1,6 @@
 (module build-info mzscheme
   
-  (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
+  (require (lib "class.ss") (lib "file.ss") (lib "list.ss") (lib "match.ss")
            "ast.ss" "types.ss" "parameters.ss" "parser.ss")
 
   (provide build-info build-interactions-info find-implicit-import load-lang)
@@ -218,11 +218,8 @@
       (send type-recs set-location! 'interactions)
       (for-each (lambda (class) (send type-recs add-class-req (cons class lang) #f 'interactions)) class-list)
       (send type-recs add-class-req (list 'array) #f 'interactions)
-
-      
       ))
-      
-  
+        
   ;------------------------------------------------------------------------------------
   ;Functions for processing classes and interfaces
   
@@ -231,7 +228,6 @@
     (cond
       ((interface-def? ci) (process-interface ci package-name type-recs look-in-table level))
       ((class-def? ci) (process-class ci package-name type-recs look-in-table level))))
-       
   
   ;;get-parent-record: (list string) name (list string) type-records (list string) -> record
   (define (get-parent-record name name-src child-name level type-recs)
@@ -802,74 +798,66 @@
                            parms))
                    0 (sub1 (length parms)))))
   
-  ;raise-error ast procedure -> void
-  ;raises syntax error to indicate erroneous types
-  (define (raise-error wrong-code type)
-    (if (procedure? type)
-        (cond
-          ((memq type (list duplicate-mods one-of-access interface-incorrect-modifiers class-incorrect-modifiers 
-                            invalid-field-mod invalid-method-mod abstract-restrict final-and-abstract
-                            final-and-volatile native-and-fp))
-           (let ((kind (modifier-kind wrong-code)))
-             ;wrong-code : modifier
-             (raise-syntax-error kind (type kind) (make-so kind (modifier-src wrong-code)))))
-          
-          ((memq type (list extends-self cyclic-depends repeating-inherited-iface final-extend iface-extend-class
-                            class-extend-iface class-implement-class repeating-implement thrown-not-throwable))
-           ;wrong-code : name
-           (let ((name (string->symbol (id-string (name-id wrong-code)))))
-             (raise-syntax-error name (type name) (make-so name (name-src wrong-code)))))
-
-          ((eq? type repeated-field-name)
-           ;wrong-code : field
-           (let ((field (string->symbol (id-string (field-name wrong-code)))))
-             (raise-syntax-error field (type field) (make-so field (id-src (field-name wrong-code))))))
-          
-          ((memq type (list repeated-method abstract-in-concrete))
-           ;wrong-code : method
-           (let* ((m-name (string->symbol (id-string (method-name wrong-code))))
-                  (parms-string (make-parm-string (method-parms wrong-code))))                                                      
-             (raise-syntax-error m-name 
-                                 (type (format "~a(~a)" m-name parms-string)) 
-                                 (make-so m-name (method-src wrong-code)))))
-
-          ((eq? type conflicting-method)
-           ;wrong-code : (list class-record method)
-           (let ((m-name (string->symbol (id-string (method-name (cadr wrong-code)))))
-                 (parms (make-parm-string (method-parms (cadr wrong-code)))))
-             (raise-syntax-error m-name
-                                 (type (format "~a(~a)" m-name parms) 
-                                       (car (class-record-name (car wrong-code))))
-                                 (make-so m-name (method-src (cadr wrong-code))))))
-
-          ((memq type (list inherited-method-conflict method-not-implemented))
-           ;wrong-code : (list name method-record)
-           (let ((name (string->symbol (id-string (name-id (car wrong-code)))))
-                 (method (cadr wrong-code)))
-             (raise-syntax-error name
-                                 (type name (method-record-name method))
-                                 (make-so name (name-src (car wrong-code))))))
-
-          ((eq? type import-not-found)
-           ;wrong-code : import
-           (let ((name (import-name wrong-code)))
-             (raise-syntax-error (string->symbol (id-string (name-id name)))
-                                 (type (apply string-append (append (map 
-                                                                     (lambda (a)
-                                                                       (string-append (id-string a) "."))
-                                                                     (name-path name))
-                                                                    (list (id-string (name-id name))))))
-                                 (make-so (string->symbol (id-string (name-id name)))
-                                          (import-src wrong-code)))))
-          ((memq type (list file-not-found dir-not-found))
-           ;wrong-code : (list string)
-           (raise-syntax-error #f
-                               (type (apply string-append (append (map (lambda (a)
+  (define (raise-error code make-msg)
+    (match code
+      ;Covers duplicate-mods one-of-access *-incorrect-modifiers invalid-*-mod abstract-restrict final-and-abstract
+      ;       final-and-volatile native-and-fp
+      ((? modifier? mod)
+       (let ((kind ((modifier-kind mod))))
+         (raise-syntax-error kind (make-msg kind) (make-so kind (modifier-src mod)))))
+      ;Covers extends-self cyclic-depends repeating-inherited-iface final-extend iface-extend-class class-extend-iface
+      ;       class-implement-class repeating-implement thrown-not-throwable
+      ((? name? n)
+       (let ((name (string->symbol (id-string (name-id n)))))
+             (raise-syntax-error name (make-msg name) (make-so name (name-src n)))))
+      ;Covers repeated-field-name
+      ((? field? f)
+       (let ((field (string->symbol (id-string (field-name f)))))
+         (raise-syntax-error field (make-msg field) (make-so field (id-src (field-name f))))))
+      ;Covers repeated-method abstract-in-concrete
+      ((? method? m)
+       (let* ((m-name (string->symbol (id-string (method-name m))))
+              (parms-string (make-parm-string (method-parms m))))                                                      
+         (raise-syntax-error m-name 
+                             (make-msg (format "~a(~a)" m-name parms-string)) 
+                             (make-so m-name (method-src m)))))
+      ;Covers conflicting-method
+      (((? class-record? cr) (? method? m))
+       (let ((m-name (string->symbol (id-string (method-name m))))
+             (parms (make-parm-string (method-parms m))))
+         (raise-syntax-error m-name
+                             (make-msg (format "~a(~a)" m-name parms) 
+                                       (car (class-record-name cr)))
+                             (make-so m-name (method-src m)))))
+      ;Covers inherited-method-conflict method-not-implemented
+      (((? name? n) (? method-record? mr))
+       (let ((name (string->symbol (id-string (name-id n)))))
+         (raise-syntax-error name
+                             (make-msg name (method-record-name mr))
+                             (make-so name (name-src n)))))
+      ;Covers import-not-found
+      ((? import? imp)
+       (let ((name (import-name imp)))
+         (raise-syntax-error (string->symbol (id-string (name-id name)))
+                             (make-msg (apply string-append (append (map 
+                                                                 (lambda (a)
+                                                                   (string-append (id-string a) "."))
+                                                                 (name-path name))
+                                                                (list (id-string (name-id name))))))
+                             (make-so (string->symbol (id-string (name-id name)))
+                                      (import-src imp)))))
+      ;Covers file-not-found dir-not-found
+      ((? list? path)
+       (raise-syntax-error #f
+                           (make-msg (apply string-append (append (map (lambda (a)
                                                                          (string-append a "."))
-                                                                       (cdr wrong-code))
-                                                                  (list (car wrong-code)))))
-                               #f)))
-        (error 'internal-error "raise-error given ~a and ~a" wrong-code type)))
+                                                                       (cdr path))
+                                                                  (list (car path)))))
+                           #f))
+      (_
+       (error 'internal-error "raise-error given ~a and ~a" code))))
+      
+
         
   (define build-info-location (make-parameter #f))
   

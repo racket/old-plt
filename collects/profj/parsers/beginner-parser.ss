@@ -101,6 +101,14 @@
        [(ClassDeclaration) $1]
        [(SEMI_COLON) #f])
       
+      ;; 19.7
+      (Modifiers
+       [(Modifier) (list $1)]
+       [(Modifiers Modifier) (cons $2 $1)])
+      
+      (Modifier
+       [(abstract) (make-modifier 'abstract (build-src 1))])
+      
       ;; 19.8.1
       (ClassDeclaration
        [(class IDENTIFIER Super ClassBody)
@@ -169,7 +177,7 @@
                                                (build-src 2))])
       
       (MethodHeader
-       [(Type MethodDeclarator) (construct-method-header (list (make-modifier 'public #f)) null $1 $2 null)])
+       [(Modifiers Type MethodDeclarator) (construct-method-header (cons (make-modifier 'public #f) $1) null $2 $3 null)])
       
       (MethodDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3) 0)]
@@ -184,7 +192,7 @@
       
       (MethodBody
        [(Block) $1]
-       [(SEMI_COLON) (make-block null (build-src 1))])
+       [(SEMI_COLON) #f])
       
       ;; 19.8.5      
       (ConstructorDeclaration

@@ -281,7 +281,7 @@
             
       (MethodBody
        [(Block) $1]
-       [(SEMI_COLON) (make-block null (build-src 1))])
+       [(SEMI_COLON) #f])
       
       ;; 19.8.4
       

@@ -375,12 +375,12 @@ if test "${enable_mred}" = "yes" ; then
   mk_needed_dir wxxt/contrib/xpm
 
   makefiles="$makefiles
-             mred/GNUmakefile mred/Make.env
-               mred/wxs/GNUmakefile mred/wxme/GNUmakefile
-               mred/gc2/GNUmakefile mred/wrap/Makefile
-             wxxt/src/GNUmakefile wxxt/src/x/GNUmakefile
-               wxxt/utils/image/src/GNUmakefile
-               wxxt/contrib/xpm/lib/GNUmakefile"
+             mred/Makefile
+               mred/wxs/Makefile mred/wxme/Makefile
+               mred/gc2/Makefile mred/wrap/Makefile
+             wxxt/src/Makefile wxxt/src/x/Makefile
+               wxxt/utils/image/src/Makefile
+               wxxt/contrib/xpm/lib/Makefile"
 fi
 
 if test "${enable_wbuild}" = "yes" ; then

@@ -277,7 +277,7 @@ vector.o: $(XSRCDIR)/vector.c
 main.o: $(XSRCDIR)/main.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/main.c -o main.o
 
-gc2.o: $(srcdir)/gc2.c $(srcdir)/copy.c $(srcdir)/compact.c $(srcdir)/noncopy.c $(srcdir)/gc2.h
+gc2.o: $(srcdir)/gc2.c $(srcdir)/copy.c $(srcdir)/compact.c $(srcdir)/gc2.h
 	$(CC) $(CFLAGS) -c $(srcdir)/gc2.c -o gc2.o
 
 ../mzscheme2k: ctok $(OBJS)

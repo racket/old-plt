@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.63 2000/06/08 22:35:31 mflatt Exp $
+; $Id: scm-core.ss,v 1.64 2000/06/09 02:13:51 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -186,7 +186,7 @@
 		 (static-error 
 		  "keyword" 'term:keyword-out-of-context
 		  expr
-		  "Invalid use of keyword ~s" (z:symbol-orig-name expr)))])
+		  "invalid use of keyword ~s" (z:symbol-orig-name expr)))])
 	  (cond
 	   [(mzscheme-keyword-name? (z:read-object expr)) (bad)]
 	   [else (let ((r (resolve expr env vocab)))
@@ -203,7 +203,7 @@
 	  (static-error 
 	   "keyword" 'term:keyword-out-of-context
 	   expr
-	   "Invalid use of keyword ~s" name)))))
+	   "invalid use of keyword ~s" name)))))
 
   (define ensure-not-mzscheme-syntax-keyword
     (lambda (expr)
@@ -214,7 +214,7 @@
 	  (static-error 
 	   "keyword" 'term:keyword-out-of-context
 	   expr
-	   "Invalid use of keyword ~s" name)))))
+	   "invalid use of keyword ~s" name)))))
 
   (define (ensure-shadowable expr env vocab allow-shadow-syntax?)
     (if allow-shadow-syntax?
@@ -225,7 +225,7 @@
 	      (static-error 
 	       "keyword" 'term:keyword-out-of-context
 	       expr
-	       "Invalid use of keyword ~s" name)
+	       "invalid use of keyword ~s" name)
 	      expr))
 
 	(begin

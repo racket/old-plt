@@ -4524,6 +4524,44 @@ static char *cmdline_protect(char *s)
 
   return s;
 }
+
+static long mz_spawnv(int type, char *command, const char * const *argv, int *pid)
+{
+  int i, l, len = 0;
+  char *cmdline;
+  STARTUPINFO startup;
+  PROCESS_INFORMATION info;
+
+  for (i = 0; argv[i]; i++) {
+    len += strlen(argv[i]) + 1;
+  }
+
+  cmdline = (char *)scheme_malloc_atomic(len);
+
+  len = 0;
+  for (i = 0; argv[i]; i++) {
+    l = strlen(argv[i]);
+    memcpy(cmdline + len, argv[i], l);
+    cmdline[len + l] = ' ';
+    len += l + 1;
+  }
+  --len;
+  cmdline[len] = 0;
+
+  memset(&startup, 0, sizeof(startup));
+  startup.cb = sizeof(startup);
+  startup.dwFlags = STARTF_USESTDHANDLES;
+  startup.hStdInput = _get_osfhandle(0);
+  startup.hStdOutput = _get_osfhandle(1);
+  startup.hStdError = _get_osfhandle(2);
+
+  if (CreateProcess(command, cmdline, NULL, NULL, 0, 0, NULL, NULL, &startup, &info)) {
+    *pid = info.dwProcessId;
+    return (long)info.hProcess;
+  } else
+    return -1;
+}
+
 #endif /* WINDOWS_PROCESSES */
 
 /*********** BeOS: emulate Windows interface, roughly *************/
@@ -4557,7 +4595,7 @@ static void delete_done_sem(void *_p)
     delete_sem(p->done_sem);
 }
 
-static long spawnv(int type, char *command, const char *  const *argv)
+static long mz_spawnv(int type, char *command, const char *  const *argv, int *pid)
 {
   BeOSProcess *p = MALLOC_ONE_RT(BeOSProcess);
   sigset_t sigs;
@@ -4594,6 +4632,8 @@ static long spawnv(int type, char *command, const char *  const *argv)
   WAIT_SEMAPHORE(got_started);
     
   sigprocmask(SIG_UNBLOCK, &sigs, NULL);
+
+  *pid = (int)p;
 
   return (long)p;
 }
@@ -4798,21 +4838,19 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       MSC_IZE(dup2)(err_subprocess[1], 2);
     }
 
-#ifdef WINDOWS_PROCESSES
-    /* spawnv is too stupid to protect spaces, etc. in the arguments: */
+    /* protect spaces, etc. in the arguments: */
     for (i = 0; i < (c - offset); i++) {
       char *cla;
       cla = cmdline_protect(argv[i]);
       argv[i] = cla;
     }
-#endif
 
     /* Set real CWD - and hope no other thread changes it! */
     scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
 						     MZCONFIG_CURRENT_DIRECTORY)),
 		     0);
 
-    spawn_status = MSC_IZE(spawnv)(type, command, (const char * const *)argv);
+    spawn_status = mz_spawnv(type, command, (const char * const *)argv, &pid);
 
     if (!synchonous) {
       /* Restore stdin and stdout */
@@ -4820,10 +4858,8 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       MSC_IZE(dup2)(save1, 1);
       MSC_IZE(dup2)(save2, 2);
 
-      pid = spawn_status;
-      
       if (spawn_status != -1)
-        sc = (void *)pid;
+        sc = (void *)spawn_status;
     } else if ((spawn_status != -1) && as_child) {
       sc = (void *)spawn_status;
 

@@ -34,8 +34,13 @@
                 (let ((fp (build-path path "compiled" file)))
                   (when (file-exists? fp)
                     (when (< (file-or-directory-modify-seconds fp) 
-                             (file-or-directory-modify-seconds (build-path path "compiled" "Object.jinfo")))                  
-                      (delete-file (build-path path "compiled" file))))))
+                             (file-or-directory-modify-seconds (build-path path "compiled" "Object.jinfo")))
+                      (with-handlers
+                          ((exn:i/o:filesystem? 
+                            (lambda (exn)
+                              (printf "Warning: ProfessorJ needs to be able to modify files in ~a in order to run correctly"
+                                      (build-path path "compiled")))))
+                        (delete-file (build-path path "compiled" file)))))))
               (filter (lambda (file)
                         (and
                          (equal? "jinfo" (filename-extension file))

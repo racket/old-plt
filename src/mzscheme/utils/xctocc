@@ -1428,7 +1428,7 @@ sub PrintUnbundleObject
 sub PrintUnbundleVar
 {
     local($var, $paramtype, $unbundle, $outgoing, $mname) = @_;
-    local($stop);
+    local($stop, $pos);
 
     if (($mname eq "") || ($mname eq undef)) {
 	$stop = &GetMethod(1);
@@ -1437,7 +1437,10 @@ sub PrintUnbundleVar
     }
 
     if (($unbundle ne undef) && ($unbundle ne '')) {
-	print &ApplyMacros($unbundle, $var);
+	if ($var =~ /([0-9]+)/) {
+	    $pos = $1;
+	}
+	print &ApplyMacros($unbundle, $var, $pos);
     } elsif (substr($paramtype, 0, 7) eq 'unknown') {
 	print "(";
 	print substr($paramtype, 8);

@@ -1351,7 +1351,12 @@ WindowPtr MrEdMouseWindow(Point where)
 
 WindowPtr MrEdKeyWindow()
 {
-  return FrontWindow();
+  wxFrame *f;
+  f = wxGetFocusFrame();
+  if (f)
+    return f->macWindow();
+  else
+    return FrontWindow();
 }
 
 /***************************************************************************/

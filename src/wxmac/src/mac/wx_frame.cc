@@ -824,8 +824,11 @@ void wxFrame::ShowAsActive(Bool flag)
   /* Notify child with focus: */
   if (cFocusWindow) {
     if (flag) {
-      TakeoverFocus();
-      cFocusWindow->OnSetFocus();
+      if (!(cStyle & wxFLOAT_FRAME)
+	  || !(cStyle & wxNO_CAPTION)) {
+	TakeoverFocus();
+	cFocusWindow->OnSetFocus();
+      }
     } else {
       ReleaseFocus();
       cFocusWindow->OnKillFocus();

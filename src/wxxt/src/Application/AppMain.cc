@@ -193,6 +193,17 @@ int wxEntry(int argc, char *argv[])
 				NULL, 0,
 				&xargc, argv); // command line arguments
 
+  if (!wxAPP_DISPLAY) {
+    if (!x_display_str)
+      x_display_str = getenv("DISPLAY");
+    if (!x_display_str) {
+      printf("DISPLAY environment variable not set and no -display argument\n");
+    } else {
+      printf("Cannot open display: %s\n", x_display_str);
+    }
+    exit(1);
+  }
+
   if (xargc != 1) {
     printf("%s: standard X Window System flag \"%s\" was rejected\n",
 	   argv[0], argv[1]);

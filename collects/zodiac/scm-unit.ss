@@ -1,4 +1,4 @@
-; $Id$
+; $Id: scm-unit.ss,v 1.43 1997/07/21 15:51:43 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -466,7 +466,7 @@
 	  (else
 	    (static-error expr "Invalid export clause"))))))
 
-  (add-primitivized-micro-form 'compound-unit scheme-vocabulary
+  '(add-primitivized-micro-form 'compound-unit scheme-vocabulary
     (let* ((kwd `(import link export))
 	    (in-pattern `(_
 			   (import imports ...)

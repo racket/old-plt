@@ -26,7 +26,7 @@ AC_CONFIG_HEADERS([mzscheme/mzconfig.h])
 
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
-AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (often enabled by default)])
+AC_ARG_ENABLE(gl, [  --enable-gl             use OpenGL when available (enabled by default)])
 AC_ARG_ENABLE(xrender, [  --enable-xrender        use Xrender when available (enabled by default)])
 AC_ARG_ENABLE(xft, [  --enable-xft            use Xft when available (enabled by default)])
 AC_ARG_ENABLE(cairo, [  --enable-cairo          use Cairo when available (enabled by default)])
@@ -47,11 +47,13 @@ AC_ARG_ENABLE(backtrace, [  --enable-backtrace      3m: compact plus backtrace i
 AC_ARG_ENABLE(float, [  --enable-float          include support for single-precision floats])
 AC_ARG_ENABLE(floatinstead, [  --enable-floatinstead   compile to use single-precision by default])
 
+AC_ARG_ENABLE(pthread, [  --enable-pthread        link MrEd with pthreads (sometimes needed for GL)])
+
 AC_ARG_ENABLE(oskit, [  --enable-oskit          compile OSKit-based MzScheme kernel])
 AC_ARG_ENABLE(smalloskit, [  --enable-smalloskit     compile small OSKit-based MzScheme kernel])
 
 AC_ARG_ENABLE(wbuild, [  --enable-wbuild         compile and use wbuild for .w sources])
-AC_ARG_ENABLE(perl, [  --enable-perl           use perl to regenerate sources])
+AC_ARG_ENABLE(perl, [  --enable-perl           use perl to regenerate certain sources])
 
 AC_ARG_ENABLE(gprof, [  --enable-gprof          compile for profiling with gprof (gcc only)])
 AC_ARG_ENABLE(gcov, [  --enable-gcov           compile to gather gcov statistics (gcc3 only)])
@@ -104,6 +106,8 @@ if test "${enable_mred}" = "no" ; then
   enable_cairo=no
   enable_libpng=no
   enable_libjpeg=no
+  enable_gl=no
+  enable_pthread=no
 fi
 
 enable_quartz=no
@@ -146,18 +150,6 @@ else
     MAKE_COPYTREE=copytree
     MAKE_FINISH=copy-finish
   fi
-fi
-
-# Enable OpenGL by default (assuming the headers and libs
-#  are available) on certain platforms:
-if test "${enable_gl}" = "" ; then
-  case $OS in
-    Linux | Darwin | SunOS)
-      enable_gl=maybe
-      ;;
-    *)
-      ;;
-  esac
 fi
 
 if test "${enable_iconv}" = "" ; then
@@ -373,7 +365,6 @@ case $OS in
     ;;
   FreeBSD)
     LIBS="$LIBS -rdynamic"
-    GL_NEEDS_PTHREAD="yes"
     ;;
   OpenBSD)
     ;;
@@ -483,6 +474,7 @@ case $OS in
       enable_cairo=no
       enable_shared=no
       enable_gl=no
+      enable_pthread=no
       if test "${enable_libfw}" = "yes" ; then
         FRAMEWORK_INSTALL_DIR=/Library/Frameworks
       else
@@ -707,47 +699,54 @@ fi
 
 ################ X OpenGL ##################
 
-if test "${enable_gl}" = "maybe" ; then  
-  if test "${enable_mred}" = "yes" ; then  
-    # Check for header
-    AC_CHECK_HEADER(GL/glx.h, enable_gl=yes, enable_gl=no)
-    if test "${enable_gl}" = "no" ; then  
-     echo "could not find GL/glx.h header; disabling GL support"
-    fi
-  fi
+if test "${enable_gl}" = "" ; then
+  enable_gl=yes
+fi
+
+if test "${enable_pthread}" = "" ; then
+  enable_pthread=no
 fi
 
 if test "${enable_gl}" = "yes" ; then  
-  if test "${enable_mred}" = "yes" ; then  
-    if test "${GL_NEEDS_PTHREAD}" = "yes" ; then
-      AC_CHECK_LIB(GL, glXChooseVisual, GL_PTHREAD="yes", GL_PTHREAD="no", $X_LIBS -lX11 -lXext -pthread)
-      if test "${GL_PTHREAD}" = "yes" ; then
-        PREFLAGS="$PREFLAGS -D_THREAD_SAFE"
-        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU -pthread"
-        MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
-        GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
-        MROPTIONS="$MROPTIONS -DUSE_GL"
-      fi
-    else
-      AC_CHECK_LIB(GL, glXCreateContext, GL_NO_PTHREAD="yes", GL_NO_PTHREAD="no", $X_LIBS -lX11 -lXext)
-      if test "${GL_NO_PTHREAD}" = "yes" ; then
-        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU"
-        MROPTIONS="$MROPTIONS -DUSE_GL"
-      else
-        AC_CHECK_LIB(GL, glXChooseVisual, GL_PTHREAD="yes", GL_PTHREAD="no", $X_LIBS -lX11 -lXext -pthread)
-        if test "${GL_PTHREAD}" = "yes" ; then
-          X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU -pthread"
-          MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576"
-          GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
-          MROPTIONS="$MROPTIONS -DUSE_GL"
-        else
-          echo "could not link to GL libraries; disabling GL support"
-          enable_gl=no
-        fi
-      fi
-    fi
+  # Check for header
+  AC_CHECK_HEADER(GL/glx.h, GLX_HEADER=yes, GLX_HEADER=no)
+  if test "${GLX_HEADER}" = "no" ; then  
+    echo "could not find GL/glx.h header; disabling GL support"
+    enable_gl=no
   fi
 fi
+
+if test "${enable_gl}" = "yes" ; then 
+  AC_CHECK_LIB(GL, glXChooseVisual, GLX_LINK=yes, GLX_LINK=no, $X_LIBS -lX11 -lXext)
+  if test "${GL_LINK}" = "no" ; then
+    AC_CHECK_LIB(GL, glXChooseVisual, GLX_LINK=pthread, GLX_LINK=no, $X_LIBS -lX11 -lXext -pthread)
+  fi
+  if test "${GLX_LINK}" = "no" ; then
+    echo "could not link to the GLX library; disabling GL support"
+    enable_gl=no
+  fi
+  if test "${GLX_LINK}" = "pthread" ; then
+    if test "${enable_pthread}" = "no" ; then
+      echo "could not link to GLX without pthreads; use --enable-pthread to enable GL"
+      enable_gl=no
+    fi
+  fi 
+fi
+
+if test "${enable_gl}" = "yes" ; then
+  X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL"
+  MROPTIONS="$MROPTIONS -DUSE_GL"
+fi
+
+############### pthread ###################
+
+if test "${enable_pthread}" = "yes" ; then
+  PREFLAGS="$PREFLAGS -D_THREAD_SAFE"
+  X_EXTRA_LIBS="$X_EXTRA_LIBS -pthread"
+  MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
+  GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
+fi
+
 
 ################ Xrender ##################
 
@@ -1119,3 +1118,4 @@ if test "${enable_wbuild}" = "yes" ; then
 fi
 
 AC_OUTPUT($makefiles)
+

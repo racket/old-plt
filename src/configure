@@ -862,7 +862,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-mred           compile MrEd as well as MzScheme (enabled by default)
-  --enable-gl             include OpenGL in MrEd (often enabled by default)
+  --enable-gl             use OpenGL when available (enabled by default)
   --enable-xrender        use Xrender when available (enabled by default)
   --enable-xft            use Xft when available (enabled by default)
   --enable-cairo          use Cairo when available (enabled by default)
@@ -878,10 +878,11 @@ Optional Features:
   --enable-backtrace      3m: compact plus backtrace info
   --enable-float          include support for single-precision floats
   --enable-floatinstead   compile to use single-precision by default
+  --enable-pthread        link MrEd with pthreads (sometimes needed for GL)
   --enable-oskit          compile OSKit-based MzScheme kernel
   --enable-smalloskit     compile small OSKit-based MzScheme kernel
   --enable-wbuild         compile and use wbuild for .w sources
-  --enable-perl           use perl to regenerate sources
+  --enable-perl           use perl to regenerate certain sources
   --enable-gprof          compile for profiling with gprof (gcc only)
   --enable-gcov           compile to gather gcov statistics (gcc3 only)
   --enable-noopt          drop -O C flags
@@ -1441,6 +1442,12 @@ fi;
 # Check whether --enable-floatinstead or --disable-floatinstead was given.
 if test "${enable_floatinstead+set}" = set; then
   enableval="$enable_floatinstead"
+
+fi;
+
+# Check whether --enable-pthread or --disable-pthread was given.
+if test "${enable_pthread+set}" = set; then
+  enableval="$enable_pthread"
 
 fi;
 
@@ -5021,6 +5028,8 @@ if test "${enable_mred}" = "no" ; then
   enable_cairo=no
   enable_libpng=no
   enable_libjpeg=no
+  enable_gl=no
+  enable_pthread=no
 fi
 
 enable_quartz=no
@@ -5063,18 +5072,6 @@ else
     MAKE_COPYTREE=copytree
     MAKE_FINISH=copy-finish
   fi
-fi
-
-# Enable OpenGL by default (assuming the headers and libs
-#  are available) on certain platforms:
-if test "${enable_gl}" = "" ; then
-  case $OS in
-    Linux | Darwin | SunOS)
-      enable_gl=maybe
-      ;;
-    *)
-      ;;
-  esac
 fi
 
 if test "${enable_iconv}" = "" ; then
@@ -8488,7 +8485,6 @@ case $OS in
     ;;
   FreeBSD)
     LIBS="$LIBS -rdynamic"
-    GL_NEEDS_PTHREAD="yes"
     ;;
   OpenBSD)
     ;;
@@ -8598,6 +8594,7 @@ case $OS in
       enable_cairo=no
       enable_shared=no
       enable_gl=no
+      enable_pthread=no
       if test "${enable_libfw}" = "yes" ; then
         FRAMEWORK_INSTALL_DIR=/Library/Frameworks
       else
@@ -9285,9 +9282,16 @@ fi
 
 ################ X OpenGL ##################
 
-if test "${enable_gl}" = "maybe" ; then
-  if test "${enable_mred}" = "yes" ; then
-    # Check for header
+if test "${enable_gl}" = "" ; then
+  enable_gl=yes
+fi
+
+if test "${enable_pthread}" = "" ; then
+  enable_pthread=no
+fi
+
+if test "${enable_gl}" = "yes" ; then
+  # Check for header
 
 if test "${ac_cv_header_GL_glx_h+set}" = set; then
   echo "$as_me:$LINENO: checking for GL/glx.h" >&5
@@ -9427,102 +9431,22 @@ echo "${ECHO_T}$ac_cv_header_GL_glx_h" >&6
 
 fi
 if test $ac_cv_header_GL_glx_h = yes; then
-  enable_gl=yes
+  GLX_HEADER=yes
 else
-  enable_gl=no
+  GLX_HEADER=no
 fi
 
 
-    if test "${enable_gl}" = "no" ; then
-     echo "could not find GL/glx.h header; disabling GL support"
-    fi
+  if test "${GLX_HEADER}" = "no" ; then
+    echo "could not find GL/glx.h header; disabling GL support"
+    enable_gl=no
   fi
 fi
 
 if test "${enable_gl}" = "yes" ; then
-  if test "${enable_mred}" = "yes" ; then
-    if test "${GL_NEEDS_PTHREAD}" = "yes" ; then
-      echo "$as_me:$LINENO: checking for glXChooseVisual in -lGL" >&5
+  echo "$as_me:$LINENO: checking for glXChooseVisual in -lGL" >&5
 echo $ECHO_N "checking for glXChooseVisual in -lGL... $ECHO_C" >&6
 if test "${ac_cv_lib_GL_glXChooseVisual+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGL $X_LIBS -lX11 -lXext -pthread $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char glXChooseVisual ();
-int
-main ()
-{
-glXChooseVisual ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_GL_glXChooseVisual=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_lib_GL_glXChooseVisual=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_GL_glXChooseVisual" >&5
-echo "${ECHO_T}$ac_cv_lib_GL_glXChooseVisual" >&6
-if test $ac_cv_lib_GL_glXChooseVisual = yes; then
-  GL_PTHREAD="yes"
-else
-  GL_PTHREAD="no"
-fi
-
-      if test "${GL_PTHREAD}" = "yes" ; then
-        PREFLAGS="$PREFLAGS -D_THREAD_SAFE"
-        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU -pthread"
-        MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
-        GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
-        MROPTIONS="$MROPTIONS -DUSE_GL"
-      fi
-    else
-      echo "$as_me:$LINENO: checking for glXCreateContext in -lGL" >&5
-echo $ECHO_N "checking for glXCreateContext in -lGL... $ECHO_C" >&6
-if test "${ac_cv_lib_GL_glXCreateContext+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -9540,11 +9464,11 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char glXCreateContext ();
+char glXChooseVisual ();
 int
 main ()
 {
-glXCreateContext ();
+glXChooseVisual ();
   ;
   return 0;
 }
@@ -9571,30 +9495,27 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_GL_glXCreateContext=yes
+  ac_cv_lib_GL_glXChooseVisual=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_lib_GL_glXCreateContext=no
+ac_cv_lib_GL_glXChooseVisual=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_GL_glXCreateContext" >&5
-echo "${ECHO_T}$ac_cv_lib_GL_glXCreateContext" >&6
-if test $ac_cv_lib_GL_glXCreateContext = yes; then
-  GL_NO_PTHREAD="yes"
+echo "$as_me:$LINENO: result: $ac_cv_lib_GL_glXChooseVisual" >&5
+echo "${ECHO_T}$ac_cv_lib_GL_glXChooseVisual" >&6
+if test $ac_cv_lib_GL_glXChooseVisual = yes; then
+  GLX_LINK=yes
 else
-  GL_NO_PTHREAD="no"
+  GLX_LINK=no
 fi
 
-      if test "${GL_NO_PTHREAD}" = "yes" ; then
-        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU"
-        MROPTIONS="$MROPTIONS -DUSE_GL"
-      else
-        echo "$as_me:$LINENO: checking for glXChooseVisual in -lGL" >&5
+  if test "${GL_LINK}" = "no" ; then
+    echo "$as_me:$LINENO: checking for glXChooseVisual in -lGL" >&5
 echo $ECHO_N "checking for glXChooseVisual in -lGL... $ECHO_C" >&6
 if test "${ac_cv_lib_GL_glXChooseVisual+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -9659,24 +9580,38 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_GL_glXChooseVisual" >&5
 echo "${ECHO_T}$ac_cv_lib_GL_glXChooseVisual" >&6
 if test $ac_cv_lib_GL_glXChooseVisual = yes; then
-  GL_PTHREAD="yes"
+  GLX_LINK=pthread
 else
-  GL_PTHREAD="no"
+  GLX_LINK=no
 fi
 
-        if test "${GL_PTHREAD}" = "yes" ; then
-          X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU -pthread"
-          MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576"
-          GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
-          MROPTIONS="$MROPTIONS -DUSE_GL"
-        else
-          echo "could not link to GL libraries; disabling GL support"
-          enable_gl=no
-        fi
-      fi
+  fi
+  if test "${GLX_LINK}" = "no" ; then
+    echo "could not link to the GLX library; disabling GL support"
+    enable_gl=no
+  fi
+  if test "${GLX_LINK}" = "pthread" ; then
+    if test "${enable_pthread}" = "no" ; then
+      echo "could not link to GLX without pthreads; use --enable-pthread to enable GL"
+      enable_gl=no
     fi
   fi
 fi
+
+if test "${enable_gl}" = "yes" ; then
+  X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL"
+  MROPTIONS="$MROPTIONS -DUSE_GL"
+fi
+
+############### pthread ###################
+
+if test "${enable_pthread}" = "yes" ; then
+  PREFLAGS="$PREFLAGS -D_THREAD_SAFE"
+  X_EXTRA_LIBS="$X_EXTRA_LIBS -pthread"
+  MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
+  GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
+fi
+
 
 ################ Xrender ##################
 
@@ -12400,4 +12335,5 @@ echo "$as_me: error: $ac_sub_configure failed for $ac_dir" >&2;}
     cd $ac_popdir
   done
 fi
+
 

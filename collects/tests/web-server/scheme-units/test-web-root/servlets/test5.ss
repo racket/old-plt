@@ -2,7 +2,6 @@
 ;; path.
 (module test5 mzscheme
   (require (lib "servlet.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server")
            )
 
   (provide start timeout interface-version)
@@ -19,7 +18,7 @@
            (h1 "Title")
            ,@(map
                (lambda (binding)
-                 (list 'p (car binding) (cdr binding)))
+                 (list 'p (symbol->string (car binding)) (cdr binding)))
                (request-bindings req))
            (p "Current path: " ,(path->string (current-directory)))))))
   )

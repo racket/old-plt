@@ -2,7 +2,6 @@
 ;; path.
 (module test2-incremental mzscheme
   (require (lib "servlet.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server")
            )
 
   (provide start timeout interface-version)

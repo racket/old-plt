@@ -2,7 +2,6 @@
 ;; path.
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-         (lib "servlet-helpers.ss" "web-server")
          )
 (unit/sig ()
   (import servlet^)

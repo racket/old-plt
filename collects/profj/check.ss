@@ -352,7 +352,11 @@
   ;get-b-assigns-expr: Expression string -> assignment
   (define (get-b-assigns-expr body class)
     (cond
-      ((assignment? body) (list body))
+      ((assignment? body) 
+;       (if (and (access? (assignment-left body))
+;                (field-access? (access-name (assignment-left body))))
+;           (if (and (access? (
+       (list body))
       ((call? body) 
        (if (expr-src body)
            (beginner-ctor-error class body (expr-src body))
@@ -1208,6 +1212,12 @@
                                                                                     (car name)
                                                                                     name) null)
                                                                  src)))))))
+
+           (when (and (eq? level 'beginner)
+                      (eq? (car c-class) (car (field-record-class record))))
+             (when (or (not obj) (and (special-name? obj) (not (expr-src obj))))
+               (beginner-field-access-error (string->symbol fname) src)))
+           
            (set-field-access-access! acc (make-var-access 
                                           (memq 'static (field-record-modifiers record))
                                           (memq 'final (field-record-modifiers record))
@@ -1222,7 +1232,7 @@
                          type-recs)
            (unless (eq? level 'full)
              (when (is-field-restricted? fname (field-record-class record))
-               (restricted-field-access (field-access-field acc) 
+               (restricted-field-access-err (field-access-field acc) 
                                         (field-record-class record) src)))
            (field-record-type record)))
         ((local-access? acc) 
@@ -1274,8 +1284,7 @@
                                                   (cdr acc))
                             (build-field-accesses
                              (make-access #f (expr-src exp)
-                                          (make-field-access (make-special-name #f (expr-src exp)
-                                                                                "this")
+                                          (make-field-access (make-special-name #f #f "this")
                                                              (car acc)
                                                              #f))
                              (cdr acc)))))
@@ -1460,9 +1469,12 @@
                                             type-recs)))
                       (else (prim-call-error call-exp name src level)))))
                  (else 
-                  (let ((rec (if static? (send type-recs get-class-record c-class) this)))
-                    (if (null? rec) null
-                        (get-method-records (id-string name) rec)))))))))
+                  (if (eq? level 'beginner)
+                      (beginner-method-access-error name (id-src name))
+                      (let ((rec (if static? (send type-recs get-class-record c-class) this)))
+                        (if (null? rec) null
+                            (get-method-records (id-string name) rec))))))))))
+
       
       (when (null? methods)
         (let* ((rec (if exp-type 
@@ -1873,8 +1885,15 @@
      (format "field ~a cannot be used in this class, as two or more parents contain a field with this name" name)
      name src))
   
+  ;beginner-field-access-error: symbol src -> void
+  (define (beginner-field-access-error name src)
+    (raise-error
+     name
+     (format "field ~a from the current class accessed as a variable. fields should be accessed with 'this'" name)
+     name src))
+  
   ;restricted-field-access: id (list string) src -> void
-  (define (restricted-field-access field class src)
+  (define (restricted-field-access-err field class src)
     (let ((n (id->ext-name field)))
       (raise-error n (format "field ~a from ~a may not be used" n (car class))
                    n src)))
@@ -1943,6 +1962,14 @@
                         (format "this unknown variable, ~a, is similar to a reserved word.~n" n)
                         "Perhaps it is miscaptialzed or misspelled")))
                    n src)))
+
+  ;beginner-method-access-error: id src -> void
+  (define (beginner-method-access-error name src)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (format "method ~a from the current class must be call on 'this'" n)
+                   n src)))
+
   
   ;restricted-method-call id (list string) src -> void
   (define (restricted-method-call name class src)

@@ -4,3 +4,4 @@
 (define-signature html^ (read-xhtml read-html (open html-structs^)))
 
 (require-library "sgmls.ss" "html")
+(require-library "files.ss")

@@ -1,6 +1,6 @@
 ;; copyright by Paul Graunke June 2000 AD
 (unit/sig html^
-  (import xml^ (sgml : sgml-reader^) mzlib:function^)
+  (import xml^ (sgml : sgml-reader^) mzlib:function^ mzlib:file^)
   
   ;; Html-content = Html-element | Pc-data | Entity   
   
@@ -49,4 +49,4 @@
   
   ;; read-html : [Input-port] -> Html
   (define read-html
-    (compose repackage-html xml-contents->html (sgml:gen-read-sgml (sgml:gen-may-contain (call-with-input-file "html-spec" read))))))
+    (compose repackage-html xml-contents->html (sgml:gen-read-sgml (sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read))))))

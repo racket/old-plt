@@ -414,8 +414,11 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
               use for the executable's desktop icon
 
       _'ico_ (Windows) - an icon file path (suffix ".ico") to
-              use for the executable's desktop icon, with 16-color
-              32x32, 16-color 16x16, and mono 32x32 variants
+              use for the executable's desktop icon; the executable
+              will have 16x16, 32x32, and 48x48 icons at 4-bit,
+              8-bit, and 32-bit (RBBA) depths; the icons are
+              copied and generated from any 16x16, 32x32, and 48x48
+              icons in the ".ico" file
 
       _'creator_ (Mac OS X) - provides a 4-character string to use as
               the application signature.

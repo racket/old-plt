@@ -27,12 +27,13 @@
 
 @ "append" : void Append(int,string,wxMenu!,nstring=NULL); : : /CHECKNEGVOID[0] <> submenu
 @ "append" : void Append(int,string,nstring=NULL,bool=FALSE); : : /CHECKNEGVOID[0] <> string item
-@ "delete" : void Delete(int); : : /CHECKNEGVOID[0]
-@ "delete-by-position" : void DeleteByPosition(int); : : /CHECKNEGVOID[0]
+@ "delete" : bool Delete(int); : : /CHECKNEGFALSE[0]
+@ "delete-by-position" : bool DeleteByPosition(int); : : /CHECKNEGFALSE[0]
 @ "append-separator" : void AppendSeparator();
 @ "checked?" : bool Checked(int); : : /CHECKNEGFALSE[0]
 @ "check" : void Check(int,bool); : : /CHECKNEGVOID[0]
 @ "enable" : void Enable(int,bool); : : /CHECKNEGVOID[0]
+@ "number" : int Number()
 
 @ "find-item" : int FindItem(string);
 // @ "find-item-for-id" : wxMenuItem^ FindItemForId(int);
@@ -68,11 +69,12 @@
 @CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0."wx:menu-bar%::initialization"] | glueListSet[string.1.2.0."wx:menu-bar%::initialization"]// <> wx:menu% list
 
 @ "append" : void Append(wxMenu!,string);
-@ "delete" : void Delete(wxMenu!,int=0);
+@ "delete" : bool Delete(wxMenu!,int=0);
 @ "check" : void Check(int,bool); : : /CHECKNEGVOID[0]
 @ "checked?" : bool Checked(int); : : /CHECKNEGFALSE[0]
 @ "enable" : void Enable(int,bool); : : /CHECKNEGVOID[0]
 @ "enable-top" : void EnableTop(int,bool); : : /CHECKNEGVOID[0]
+@ "number" : int Number()
 
 @ "find-menu-item" : int FindMenuItem(string,string);
 // @ "find-item-for-id" : wxMenuItem^ FindItemForId(int);

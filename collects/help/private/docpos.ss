@@ -1,23 +1,23 @@
 (module docpos mzscheme
   (provide standard-html-doc-position known-docs)
   
-  ; Define an order on the standard docs:
+  ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)
     (case (string->symbol d)
-      [(help) -10]
-      
-      [(beginning) -6]
-      [(beginning-abbr) -5]
-      [(intermediate) -4]
-      [(advanced) -3]
-      
-      [(drscheme) -1]
-      [(r5rs) 0]
-      [(mzscheme) 1]
+  
+    [(beginning) -20]
+      [(beginning-abbr) -19]
+      [(intermediate) -17]
+      [(advanced) -15]
+
+      [(r5rs) -10]
+      [(mzscheme) -5]
+      [(mred) -4]
+
+      [(help) 0]
+      [(drscheme) 1]
       [(mzlib) 2]
-      [(mred) 3]
       [(framework) 4]
-      [(mrspidey) 5]
       [(misclib) 6]
       [(teach) 8]
       [(mzc) 10]
@@ -37,7 +37,6 @@
       ("mzlib" . "PLT MzLib: Libraries Manual")
       ("mred" . "PLT MrEd: Graphical Toolbox Manual")
       ("framework" . "PLT Framework: GUI Application Framework")
-      ("mrspidey" . "PLT MrSpidey: Static Debugger Manual")
       ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
       ("mzc" . "PLT mzc: MzScheme Compiler Manual")
       ("insidemz" . "Inside PLT MzScheme")

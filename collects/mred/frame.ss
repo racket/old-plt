@@ -71,7 +71,7 @@
 		(let* ([date (seconds->date (current-seconds))]
 		       [minute (date-minute date)])
 		  (send* time-edit (lock #f) (begin-edit-sequence) (erase)
-			 (insert (if (< 10 minute)
+			 (insert (if (<= 10 minute)
 				     (format "~a:~a" (date-hour date) minute)
 				     (format "~a:0~a" (date-hour date) minute)))
 			 (end-edit-sequence)

@@ -872,9 +872,5 @@
 	(mred:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
 
     (define global-scheme-interaction-mode-keymap (make-object wx:keymap%))
-    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)
-    
-    (mred:handler:insert-mode-handler "Scheme Interpreter" ()
-				       (lambda args
-					 (make-object scheme-interaction-mode%)))))
+    (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap)))
 

@@ -609,6 +609,26 @@ static long hash_general(Scheme_Object *o)
   return *(long *)o;
 }
 
+static long hash_symbol(Scheme_Object *o)
+{
+  if (!(((short *)o)[1] & 0xFFFC)) {
+    Scheme_Symbol *s = (Scheme_Symbol *)o;
+    if (!(s->keyex & 0x1)) {
+      /* Interned. Make key depend only on the content. */
+      if (!s->keyex & 0xFFFC) {
+	int i, h = 0;
+	for (i = s->len; i--; ) {
+	  h += (h << 5) + h + s->s[i];
+	}
+	s->keyex |= (((short)h) & 0xFFFC);
+      }
+    } else
+      return hash_general(o);
+  }
+
+  return *(long *)o;
+}
+
 static long hash_prim(Scheme_Object *o)
 {
   return (long)((Scheme_Primitive_Proc *)o)->prim_val;
@@ -654,7 +674,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_complex_izi_type, hash_general);
   PROC(scheme_complex_type, hash_general);
   PROC(scheme_string_type, hash_general);
-  PROC(scheme_symbol_type, hash_general);
+  PROC(scheme_symbol_type, hash_symbol);
   PROC(scheme_null_type, hash_addr);
   PROC(scheme_pair_type, hash_general);
   PROC(scheme_vector_type, hash_general);
@@ -766,138 +786,191 @@ long scheme_equal_hash_key(Scheme_Object *o)
  top:
   t = SCHEME_TYPE(o);
   k += t;
-
-  if (t == scheme_integer_type) {
+  
+  switch(t) {
+  case scheme_integer_type:
     return k + SCHEME_INT_VAL(o);
 #ifdef MZ_USE_SINGLE_FLOATS
-  } else if (t == scheme_float_type) {
-    double d;
-    int e;
-    d = frexp(SCHEME_DBL_VAL(o), &e);
-    return k + ((long)(d * (1 << 30))) + e;
+  case scheme_float_type:
+    {
+      double d;
+      int e;
+      d = frexp(SCHEME_DBL_VAL(o), &e);
+      return k + ((long)(d * (1 << 30))) + e;
+    }
 #endif
-  } else if (t == scheme_double_type) {
-    double d;
-    int e;
-    d = frexp(SCHEME_DBL_VAL(o), &e);
-    return k + ((long)(d * (1 << 30))) + e;
-  } else if (t == scheme_bignum_type) {
-    int i = SCHEME_BIGLEN(o);
-    bigdig *d = SCHEME_BIGDIG(o), k2;
-    
-    k2 = k;
-    while (i--) {
-      k2 = (k2 << 3) + d[i];
+  case scheme_double_type:
+    {
+      double d;
+      int e;
+      d = frexp(SCHEME_DBL_VAL(o), &e);
+      return k + ((long)(d * (1 << 30))) + e;
     }
+  case scheme_bignum_type:
+    {
+      int i = SCHEME_BIGLEN(o);
+      bigdig *d = SCHEME_BIGDIG(o), k2;
+      
+      k2 = k;
+      while (i--) {
+	k2 = (k2 << 3) + d[i];
+      }
     
-    return (long)k2;
-  } else if (t == scheme_rational_type) {
-    k += scheme_equal_hash_key(scheme_rational_numerator(o));
-    o = scheme_rational_denominator(o);
-  } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
-    Scheme_Complex *c = (Scheme_Complex *)o;
-    k += scheme_equal_hash_key(c->r);
-    o = c->i;
-  } else if (t == scheme_pair_type) {
-#   include "mzhashchk.inc"
-    k += scheme_equal_hash_key(SCHEME_CAR(o));
-    o = SCHEME_CDR(o);
-  } else if (t == scheme_vector_type) {
-    int len = SCHEME_VEC_SIZE(o), i;
-#   include "mzhashchk.inc"
+      return (long)k2;
+    }
+    break;
+  case scheme_rational_type:
+    {
+      k += scheme_equal_hash_key(scheme_rational_numerator(o));
+      o = scheme_rational_denominator(o);
+      break;
+    }
+  case scheme_complex_type:
+  case scheme_complex_izi_type:
+    {
+      Scheme_Complex *c = (Scheme_Complex *)o;
+      k += scheme_equal_hash_key(c->r);
+      o = c->i;
+      break;
+    }
+  case scheme_pair_type:
+    {
+#     include "mzhashchk.inc"
+      k += scheme_equal_hash_key(SCHEME_CAR(o));
+      o = SCHEME_CDR(o);
+      break;
+    }
+  case scheme_vector_type:
+    {
+      int len = SCHEME_VEC_SIZE(o), i;
+#     include "mzhashchk.inc"
 
-    if (!len)
-      return k + 1;
-    
-    --len;
-    for (i = 0; i < len; i++) {
+      if (!len)
+	return k + 1;
+      
+      --len;
+      for (i = 0; i < len; i++) {
+	SCHEME_USE_FUEL(1);
+	k += scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
+	k = (k << 1) + k;
+      }
+      
+      o = SCHEME_VEC_ELS(o)[len];
+      break;
+    }
+  case scheme_string_type:
+    {
+      int i = SCHEME_STRLEN_VAL(o);
+      char *s = SCHEME_STR_VAL(o);
+      
+      while (i--) {
+	k = (k << 5) + s[i];
+      }
+      
+      return k;
+    }
+  case scheme_structure_type:
+  case scheme_proc_struct_type:
+    {
+      Scheme_Object *insp;
+      insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      if (scheme_inspector_sees_part(o, insp, -2)) {
+	int i;
+	Scheme_Structure *s1 = (Scheme_Structure *)o;
+	
+#       include "mzhashchk.inc"
+	
+	for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
+	  k += scheme_equal_hash_key(s1->slots[i]);
+	k = (k << 1) + k;
+	}
+	
+	return k;
+      } else
+	return k + (PTR_TO_LONG(o) >> 4);
+      break;
+    }
+  case scheme_box_type:
+    {
       SCHEME_USE_FUEL(1);
-      k += scheme_equal_hash_key(SCHEME_VEC_ELS(o)[i]);
-      k = (k << 1) + k;
+      k += 1;
+      o = SCHEME_BOX_VAL(o);
+      break;
     }
-    
-    o = SCHEME_VEC_ELS(o)[len];
-  } else if (t == scheme_string_type) {
-    int i = SCHEME_STRLEN_VAL(o);
-    char *s = SCHEME_STR_VAL(o);
-    
-    while (i--) {
-      k = (k << 5) + s[i];
-    }
-    
-    return k;
-  } else if ((t == scheme_structure_type)
-	     || (t == scheme_proc_struct_type)) {
-    Scheme_Object *insp;
-    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-    if (scheme_inspector_sees_part(o, insp, -2)) {
+  case scheme_hash_table_type:
+    {
+      Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
+      Scheme_Object **vals, **keys;
       int i;
-      Scheme_Structure *s1 = (Scheme_Structure *)o;
 
 #     include "mzhashchk.inc"
 
-      for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
-	k += scheme_equal_hash_key(s1->slots[i]);
-	k = (k << 1) + k;
+      k = (k << 1) + 3;
+      
+      keys = t->keys;
+      vals = t->vals;
+      for (i = t->size; i--; ) {
+	if (vals[i]) {
+	  k += scheme_equal_hash_key(keys[i]);
+	  k += (scheme_equal_hash_key(vals[i]) << 1);
+	}
       }
-
+      
       return k;
-    } else
-      return k + (PTR_TO_LONG(o) >> 4);
-  } else if (SCHEME_BOXP(o)) {
-    SCHEME_USE_FUEL(1);
-    k += 1;
-    o = SCHEME_BOX_VAL(o);
-  } else if (SCHEME_HASHTP(o)) {
-    Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
-    Scheme_Object **vals, **keys;
-    int i;
-
-#   include "mzhashchk.inc"
-
-    k = (k << 1) + 3;
-    
-    keys = t->keys;
-    vals = t->vals;
-    for (i = t->size; i--; ) {
-      if (vals[i]) {
-	k += scheme_equal_hash_key(keys[i]);
-	k += (scheme_equal_hash_key(vals[i]) << 1);
-      }
     }
-
-    return k;
-  } else if (SCHEME_BUCKTP(o)) {
-    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)o;
-    Scheme_Bucket **buckets, *bucket;
-    const char *key;
-    int i, weak;
+  case scheme_bucket_table_type:
+    {
+      Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)o;
+      Scheme_Bucket **buckets, *bucket;
+      const char *key;
+      int i, weak;
   
-#   include "mzhashchk.inc"
+#    include "mzhashchk.inc"
 
-    buckets = t->buckets;
-    weak = t->weak;
-
-    k = (k << 1) + 7;
-
-    for (i = t->size; i--; ) {
-      bucket = buckets[i];
-      if (bucket) {
-	if (weak) {
-	  key = (const char *)HT_EXTRACT_WEAK(bucket->key);
-	} else {
-	  key = bucket->key;
-	}
-	if (key) {
-	  k += (scheme_equal_hash_key((Scheme_Object *)bucket->val) << 1);
-	  k += scheme_equal_hash_key((Scheme_Object *)key);
+      buckets = t->buckets;
+      weak = t->weak;
+      
+      k = (k << 1) + 7;
+      
+      for (i = t->size; i--; ) {
+	bucket = buckets[i];
+	if (bucket) {
+	  if (weak) {
+	    key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+	  } else {
+	    key = bucket->key;
+	  }
+	  if (key) {
+	    k += (scheme_equal_hash_key((Scheme_Object *)bucket->val) << 1);
+	    k += scheme_equal_hash_key((Scheme_Object *)key);
+	  }
 	}
       }
+      
+      return k;
     }
-    
-    return k;
-  } else
+# ifndef MZ_PRECISE_GC
+  case scheme_symbol_type:
+    {
+      Scheme_Symbol *s = (Scheme_Symbol *)o;
+      if (!(s->keyex & 0x1)) {
+	/* Interned. Make key depend only on the content. */
+	if (!s->keyex & 0xFFFC) {
+	  int i, h = 0;
+	  for (i = s->len; i--; ) {
+	    h += (h << 5) + h + s->s[i];
+	  }
+	  s->keyex |= (((short)h) & 0xFFFC);
+	}
+	
+	return k + (s->keyex & 0xFFFC);
+      } else
+	return k + (PTR_TO_LONG(o) >> 4);
+    }
+# endif
+  default:
     return k + (PTR_TO_LONG(o) >> 4);
+  }
 
   k = (k << 1) + k;
   goto top;
@@ -911,137 +984,140 @@ long scheme_equal_hash_key2(Scheme_Object *o)
  top:
   t = SCHEME_TYPE(o);
 
-  if (t == scheme_integer_type) {
+  switch(t) {
+  case scheme_integer_type:
     return t;
 #ifdef MZ_USE_SINGLE_FLOATS
-  } else if (t == scheme_float_type) {
+  case scheme_float_type:
     return t;
 #endif
-  } else if (t == scheme_double_type) {
-    double d;
-    int e;
-    d = frexp(SCHEME_DBL_VAL(o), &e);
-    return e;
-  } else if (t == scheme_bignum_type) {
+  case scheme_double_type:
+    {
+      double d;
+      int e;
+      d = frexp(SCHEME_DBL_VAL(o), &e);
+      return e;
+    }
+  case scheme_bignum_type:
     return SCHEME_BIGDIG(o)[0];
-  } else if (t == scheme_rational_type) {
+  case scheme_rational_type:
     return scheme_equal_hash_key2(scheme_rational_numerator(o));
-  } else if ((t == scheme_complex_type) || (t == scheme_complex_izi_type)) {
-    long v1, v2;
-    Scheme_Complex *c = (Scheme_Complex *)o;
-    v1 = scheme_equal_hash_key2(c->r);
-    v2 = scheme_equal_hash_key2(c->i);
-    return v1 + v2;
-  } else if (t == scheme_pair_type) {
-    long v1, v2;
-#   include "mzhashchk.inc"
-    v1 = scheme_equal_hash_key2(SCHEME_CAR(o));
-    v2 = scheme_equal_hash_key2(SCHEME_CDR(o));
-    return v1 + v2;
-  } else if (t == scheme_vector_type) {
-    int len = SCHEME_VEC_SIZE(o), i;
-    long k = 0;
-
-#   include "mzhashchk.inc"
-
-    for (i = 0; i < len; i++) {
-      SCHEME_USE_FUEL(1);
-      k += scheme_equal_hash_key2(SCHEME_VEC_ELS(o)[i]);
+  case scheme_complex_type:
+  case scheme_complex_izi_type:
+    {
+      long v1, v2;
+      Scheme_Complex *c = (Scheme_Complex *)o;
+      v1 = scheme_equal_hash_key2(c->r);
+      v2 = scheme_equal_hash_key2(c->i);
+      return v1 + v2;
     }
-    
-    return k;
-  } else if (t == scheme_string_type) {
-    int k = 0, i = SCHEME_STRLEN_VAL(o);
-    char *s = SCHEME_STR_VAL(o);
-    
-    while (i--) {
-      k += s[i];
+  case scheme_pair_type:
+    {
+      long v1, v2;
+#     include "mzhashchk.inc"
+      v1 = scheme_equal_hash_key2(SCHEME_CAR(o));
+      v2 = scheme_equal_hash_key2(SCHEME_CDR(o));
+      return v1 + v2;
     }
-    
-    return k;
-  } else if ((t == scheme_structure_type)
-	     || (t == scheme_proc_struct_type)) {
-    Scheme_Object *insp;
-    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-    if (scheme_inspector_sees_part(o, insp, -2)) {
-      int i;
+  case scheme_vector_type:
+    {
+      int len = SCHEME_VEC_SIZE(o), i;
       long k = 0;
-      Scheme_Structure *s1 = (Scheme_Structure *)o;
 
 #     include "mzhashchk.inc"
 
-      for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
-	k += scheme_equal_hash_key2(s1->slots[i]);
+      for (i = 0; i < len; i++) {
+	SCHEME_USE_FUEL(1);
+	k += scheme_equal_hash_key2(SCHEME_VEC_ELS(o)[i]);
       }
-
+      
       return k;
-    } else
-      return t;
-  } else if (SCHEME_BOXP(o)) {
+    }
+  case scheme_string_type:
+    {
+      int k = 0, i = SCHEME_STRLEN_VAL(o);
+      char *s = SCHEME_STR_VAL(o);
+    
+      while (i--) {
+	k += s[i];
+      }
+    
+      return k;
+    }
+  case scheme_structure_type:
+  case scheme_proc_struct_type:
+    {
+      Scheme_Object *insp;
+      insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+      if (scheme_inspector_sees_part(o, insp, -2)) {
+	int i;
+	long k = 0;
+	Scheme_Structure *s1 = (Scheme_Structure *)o;
+	
+#       include "mzhashchk.inc"
+	
+	for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
+	  k += scheme_equal_hash_key2(s1->slots[i]);
+	}
+	
+	return k;
+      } else
+	return t;
+    }
+  case scheme_box_type:
     o = SCHEME_BOX_VAL(o);
     goto top;
-  } else if (SCHEME_HASHTP(o)) {
-    Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
-    Scheme_Object **vals, **keys;
-    int i;
-    long k = 0;
+  case scheme_hash_table_type:
+    {
+      Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
+      Scheme_Object **vals, **keys;
+      int i;
+      long k = 0;
+      
+#     include "mzhashchk.inc"
 
-    keys = t->keys;
-    vals = t->vals;
-    for (i = t->size; i--; ) {
-      if (vals[i]) {
-	k += scheme_equal_hash_key2(keys[i]);
-	k += scheme_equal_hash_key2(vals[i]);
+      keys = t->keys;
+      vals = t->vals;
+      for (i = t->size; i--; ) {
+	if (vals[i]) {
+	  k += scheme_equal_hash_key2(keys[i]);
+	  k += scheme_equal_hash_key2(vals[i]);
+	}
       }
+      
+      return k;
     }
+  case scheme_bucket_table_type:
+    {
+      Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)o;
+      Scheme_Bucket **buckets, *bucket;
+      const char *key;
+      int i, weak;
+      long k = 0;
 
-    return k;
-  } else if (SCHEME_HASHTP(o)) {
-    Scheme_Hash_Table *t = (Scheme_Hash_Table *)o;
-    Scheme_Object **vals, **keys;
-    int i;
-    long k = 0;
-
-#   include "mzhashchk.inc"
-
-    keys = t->keys;
-    vals = t->vals;
-    for (i = t->size; i--; ) {
-      if (vals[i]) {
-	k += scheme_equal_hash_key2(keys[i]);
-	k += scheme_equal_hash_key2(vals[i]);
-      }
-    }
-
-    return k;
-  } else if (SCHEME_BUCKTP(o)) {
-    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)o;
-    Scheme_Bucket **buckets, *bucket;
-    const char *key;
-    int i, weak;
-    long k = 0;
-
-#   include "mzhashchk.inc"
+#     include "mzhashchk.inc"
   
-    buckets = t->buckets;
-    weak = t->weak;
-
-    for (i = t->size; i--; ) {
-      bucket = buckets[i];
-      if (bucket) {
-	if (weak) {
-	  key = (const char *)HT_EXTRACT_WEAK(bucket->key);
-	} else {
-	  key = bucket->key;
-	}
-	if (key) {
-	  k += scheme_equal_hash_key((Scheme_Object *)bucket->val);
-	  k += scheme_equal_hash_key((Scheme_Object *)key);
+      buckets = t->buckets;
+      weak = t->weak;
+      
+      for (i = t->size; i--; ) {
+	bucket = buckets[i];
+	if (bucket) {
+	  if (weak) {
+	    key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+	  } else {
+	    key = bucket->key;
+	  }
+	  if (key) {
+	    k += scheme_equal_hash_key((Scheme_Object *)bucket->val);
+	    k += scheme_equal_hash_key((Scheme_Object *)key);
+	  }
 	}
       }
-    }
     
-    return k;
- } else
+      return k;
+    }
+  default:
     return t;
+  }
 }

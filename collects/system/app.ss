@@ -16,7 +16,7 @@
 						       (send ce eval-and-display s)
 						       (send ce insert-prompt)
 						       #t)))
-			       (for-each mred:edit-file (vector->list argv)))
+			       (for-each mred:edit-file (reverse (vector->list argv))))
 			     mred
 			     I)])
 		 (export (open mred)

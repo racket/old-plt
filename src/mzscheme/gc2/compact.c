@@ -17,6 +17,11 @@
 
 #define GENERATIONS 1
 
+#ifdef NO_GC_SIGNALS
+# undef GENERATIONS
+#define GENERATIONS 0
+#endif
+
 #define USE_FREELIST 0
 
 /* When USE_FREELIST is on: */
@@ -288,7 +293,9 @@ static long on_free_list;
 # define FREE_LIST_DELTA 0
 #endif
 
+#if GENERATIONS
 static long num_seg_faults;
+#endif
 
 static int cycle_count = 0, compact_count = 0;
 static int skipped_pages, scanned_pages, young_pages, inited_pages;
@@ -1335,7 +1342,9 @@ static void init_all_mpages(int young)
 
   for (page = first; page; page = page->next) {
     int is_old = (page->age > young);
+#if GENERATIONS
     void *p = page->block_start;
+#endif
 	
     if (!is_old && !(page->flags & MFLAG_MODIFIED)) {
 #if GENERATIONS
@@ -2968,9 +2977,9 @@ void promote_all_ages()
 
 void protect_old_mpages()
 {
+#if GENERATIONS
   MPage *page;
 
-#if GENERATIONS
   for (page = first; page; page = page->next) {
     if (page->age && (page->type != MTYPE_ATOMIC)) {
       void *p;

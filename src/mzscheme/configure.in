@@ -321,6 +321,7 @@ fi
 ############## C flags ################
 
 MZOPTIONS=
+GC2OPTIONS=
 
 AC_LANG_C
 
@@ -450,6 +451,7 @@ if test "${enable_gl}" = "yes" ; then
       if test "${GL_PTHREAD}" = "yes" ; then
         X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
         MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576"
+        GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
         MROPTIONS="$MROPTIONS -DUSE_GL"
       fi
     fi
@@ -480,6 +482,7 @@ AC_SUBST(X_EXTRA_LIBS)
 
 AC_SUBST(OPTIONS)
 AC_SUBST(MZOPTIONS)
+AC_SUBST(GC2OPTIONS)
 AC_SUBST(MROPTIONS)
 AC_SUBST(GCDIR)
 AC_SUBST(MZBINTARGET)

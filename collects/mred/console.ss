@@ -425,14 +425,14 @@
 		
 		[takeover-output
 		 (lambda ()
-		   (if (void? old-stdout)
-		       (begin
-			 (set! old-stdout (current-output-port))
-			 (set! old-stderr (current-error-port))
-			 (set! old-stdin (current-input-port))
-			 (current-output-port this-out)
-			 (current-error-port this-err)
-			 (current-input-port this-in))))]
+		   (when (and (void? old-stdout)
+			      (not (eq? 'no-takeover mred:debug:on?)))
+		     (set! old-stdout (current-output-port))
+		     (set! old-stderr (current-error-port))
+		     (set! old-stdin (current-input-port))
+		     (current-output-port this-out)
+		     (current-error-port this-err)
+		     (current-input-port this-in)))]
 		[release-output
 		 (lambda ()
 		   (if (not (void? old-stdout))

@@ -47,7 +47,7 @@
   (set-language-level! "Advanced" drs-frame)
   (check-check-syntax "'(a . b)" "improper lists are not allowed")
 
-  (set-language-level! "Quasi-R4RS" drs-frame)
+  (set-language-level! "R4RS+" drs-frame)
   (check-check-syntax "'(a . b)" "")
 
   (printf "Finished tests~n"))

@@ -33,7 +33,7 @@
    (post-pure-port (opt-> (url? string?) ((listof string?)) input-port?))
    (post-impure-port (opt-> (url? string?) ((listof string?)) input-port?))
    (display-pure-port (input-port? . -> . void?))
-   (purify-port (input-port? . -> . (listof string?)))
+   (purify-port (input-port? . -> . string?))
    (netscape/string->url (string? . -> . url?))
    (call/input-url (opt->* (url? 
                             (url? . -> . input-port?)

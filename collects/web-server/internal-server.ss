@@ -18,20 +18,22 @@
            (lib "web-server-unit.ss" "web-server")
            (lib "configuration.ss" "web-server")
            (lib "min-servlet.ss" "web-server")
+           "sig.ss"
            )
   
   (provide/contract 
-   (internal-serve (opt->*
-	   (unit/sig?
-	    (and/c number? integer? exact? positive?)
-            (union string? false?))
-           ((make-mixin-contract frame%))
-           ((-> void?)
-            (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
-            (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
-            (any? . -> . string?)                 ;; any? should be url? but that comes into unit
-            (-> (union false? (is-a?/c frame%)))
-            (-> (is-a?/c frame%))))))
+   (internal-serve
+    (opt->*
+     (unit/sig?
+      (and/c number? integer? exact? positive?)
+      (union string? false?))
+     ((make-mixin-contract frame%))
+     ((-> void?)
+      (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
+      (any? . -> . (listof string?))        ;; any? should be url? but that comes into unit
+      (any? . -> . string?)                 ;; any? should be url? but that comes into unit
+      (-> (union false? (is-a?/c frame%)))
+      (-> (is-a?/c frame%))))))
   
   ;; to serve web connections on a port without TCP/IP.
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions

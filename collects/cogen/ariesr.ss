@@ -348,6 +348,7 @@
 		  (let* ([expanded (z:scheme-expand expr)]
 			  [_ '(printf "expanded: ~s~n" expanded)]
 			  [annotated (annotate expanded)])
+		    (pp annotated) (newline)
 		    '(begin ((global-defined-value 'pretty-print) annotated)
 		       (newline))
 		    (read-loop (cons annotated exprs))))))))))))

@@ -42,6 +42,7 @@
     (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
 			'(define defmacro define-macro
+			   define-values
 			   define-signature define-syntax define-schema))
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'begin))
 			'(cond begin begin0 delay
@@ -231,7 +232,7 @@
 	  (public
 	    [highlight-parens
 	     (let* ([clear-old-location (lambda () (void))]
-		    [color (make-object wx:colour% 191 191 191)])
+		    [color (make-object wx:colour% 192 192 192)])
 	       (opt-lambda (edit [just-clear? #f])
 		 (if (or (not highlight-parens?)
 			 suspend-highlight?)

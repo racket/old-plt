@@ -96,4 +96,5 @@
 	      (open match-cache) (open menu) (open mode) 
 	      (open panel) (open paren) (open project)
 	      (open scheme-paren) (open scheme-mode) 
-	      (open hyper-edit) (open hyper-dialog) (open hyper-frame)))))
+	      (open hyper-edit) (open hyper-dialog) (open hyper-frame)
+	      (open url)))))

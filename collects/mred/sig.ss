@@ -182,7 +182,10 @@
   (make-editor-canvas%
    make-simple-frame-canvas%
    editor-canvas%
-   simple-frame-canvas%))
+   simple-frame-canvas%
+   
+   make-one-line-canvas%
+   one-line-canvas%))
 
 (define-signature mred:frame^
   (frame-name
@@ -335,4 +338,5 @@
    (open mred:match-cache^) (open mred:menu^) (open mred:mode^) 
    (open mred:panel^) (open mred:paren^) (open mred:project^)
    (open mred:scheme-paren^) (open mred:scheme-mode^) 
-   (open mred:hyper-edit^) (open mred:hyper-dialog^) (open mred:hyper-frame^)))
+   (open mred:hyper-edit^) (open mred:hyper-dialog^) (open mred:hyper-frame^)
+   (open mred:url^)))

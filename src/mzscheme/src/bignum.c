@@ -1455,12 +1455,14 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
   r = bignum_copy(n, 1);
   log++;
   while (log--) {
-    bignum_double_inplace(q, qsize);
+    if (qp)
+      bignum_double_inplace(q, qsize);
     if (!scheme_bignum_lt(r, m)) {
       bignum_negate_inplace(m);
       r = bignum_add(r, &rbuffer, &rsize, r, m, 0);
       bignum_negate_inplace(m);
-      q = bignum_add(q, &qbuffer, &qsize, q, one, 0);
+      if (qp) 
+	q = bignum_add(q, &qbuffer, &qsize, q, one, 0);
     }
     bignum_half_inplace(m);
   }

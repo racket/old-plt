@@ -137,3 +137,9 @@ To retireve all profiling information accumulated so far, call
 Depending of the source program, profiling induces a factor of 2 to 4
 slowdown (in addition to any slowdown from the exception information
 instrumentation).
+
+> (output-profile-results paths? sort-time?)
+
+Gets the current profile results and displays them. It optionally
+shows paths information (if it is recorded) and sorts by either time
+or call counts.

@@ -825,8 +825,8 @@
 	      ;;    where multi = #f, #t, 'possible
 	      (lambda (ast env inlined tail? wcm-tail?)
 		(when (compiler:option:debug)
-		  (zodiac:print-start! debug:port ast)
-		  (newline debug:port))
+		  (zodiac:print-start! (debug:get-port) ast)
+		  (newline (debug:get-port)))
 		
 		'(let* ([sdltype (mrspidey:SDL-type ast)])
 		   (when sdltype

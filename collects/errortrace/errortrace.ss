@@ -4,6 +4,7 @@
 
 (module errortrace mzscheme
   (import (lib "kerncase.ss" "syntax"))
+  (import (lib "list.ss"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Profiling run-time support
@@ -418,11 +419,43 @@
      errortrace-exception-handler))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Porfile printer
+
+  (define (output-profile-results paths? sort-time?)
+    (profiling-enabled #f)
+    (error-print-width 50)
+    (printf "Sorting profile data...~n")
+    (let* ([sel (if sort-time? cadr car)]
+	   [counts (quicksort (filter (lambda (c) (positive? (car c))) (get-profile-results))
+			      (lambda (a b) (< (sel a) (sel b))))]
+	   [total 0])
+      (for-each
+       (lambda (c)
+	 (set! total (+ total (sel c)))
+	 (printf "====================================================================~n")
+	 (printf "time = ~a : no. = ~a : ~e in ~s~n" (cadr c) (car c) (caddr c) (cadddr c))
+	 ;; print call paths
+	 (when paths?
+	   (for-each
+	    (lambda (cms)
+	      (unless (null? cms)
+		(printf "  VIA ~e" (caar cms))
+		(for-each
+		 (lambda (cm)
+		   (printf " <- ~e" (car cm)))
+		 (cdr cms))
+		(printf "~n")))
+	    (cadddr (cdr c)))))
+       counts)
+      (printf "Total samples: ~a~n" total)))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   (export print-error-trace 
 	  error-context-display-depth 
 	  instrumenting-enabled 
 	  profiling-enabled
 	  profile-paths-enabled 
-	  get-profile-results))
+	  get-profile-results
+	  output-profile-results))
  

@@ -425,8 +425,8 @@
    (letrec ([prephase!
 	     (lambda (ast in-unit? need-val? name)
 	       (when (compiler:option:debug)
-		 (zodiac:print-start! debug:port ast)
-		 (newline debug:port))
+		 (zodiac:print-start! (debug:get-port) ast)
+		 (newline (debug:get-port)))
 	       (cond
 		;;----------------------------------------------------------
 		;; CONSTANTS

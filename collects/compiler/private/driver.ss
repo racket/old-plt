@@ -64,19 +64,25 @@
 (module driver mzscheme
   (import (lib "unitsig.ss")
 	  (lib "list.ss")
+	  (lib "etc.ss")
 	  (lib "pretty.ss"))
   
+  (import (lib "zodiac-sig.ss" "syntax")
+	  (lib "compile-sig.ss" "dynext")
+	  (lib "link-sig.ss" "dynext")
+	  (lib "file-sig.ss" "dynext"))
+
   (import "../sig.ss")
   (import "sig.ss")
 
   (export driver@)
 
-  (define driver
+  (define driver@
     (unit/sig compiler:driver^
       (import (compiler:option : compiler:option^)
 	      compiler:library^
 	      compiler:cstructs^
-	      (zodiac : zodiac:system^)
+	      (zodiac : zodiac^)
 	      compiler:zlayer^
 	      compiler:prephase^
 	      compiler:anorm^
@@ -101,6 +107,7 @@
       
       (define debug:file "dump.txt")
       (define debug:port #f)
+      (define (debug:get-port) debug:port)
       (define debug
 	(lambda x
 	  (when (and (compiler:option:debug) debug:port)
@@ -178,7 +185,7 @@
 	  (exit 1)))
   
       (define s:expand-top-level-expressions!
-	(lambda (input-directory reader verbose? r-eval)
+	(lambda (input-directory reader verbose?)
 	  (when verbose? (printf "~n Reading... ") (flush-output))
 	  ;; During reads, errors are truly fatal
 	  (let ([exprs (begin ; time
@@ -189,7 +196,7 @@
 					 ; it encounters an error
 					 (with-handlers ([void (lambda (x) (loop))])
 					   (reader)))])
-			     (if (zodiac:eof? sexp)
+			     (if (eof-object? sexp)
 				 null
 				 (begin 
 				   (when (compiler:option:debug)
@@ -204,7 +211,7 @@
 	    (compiler:report-messages! #t)
 	    (when verbose? (printf " expanding...~n"))
 	    (parameterize ([current-load-relative-directory input-directory])
-	      (map (lambda (expr) (zodiac:scheme-expand expr 'previous vocab))
+	      (map (lambda (expr) (zodiac:syntax->zodiac (expand expr)))
 		   exprs)))))
 
       (define elaborate-namespace (make-namespace))
@@ -279,8 +286,8 @@
 		    (set-block-source! 
 		     s:file-block
 		     (append (reverse l-acc)
-			     compiler:lifted-lambdas 
-			     compiler:once-closures-list 
+			     (compiler:get-lifted-lambdas)
+			     (compiler:get-once-closures-list)
 			     (map car l)))
 		    (set-block-codes!
 		     s:file-block 
@@ -296,7 +303,7 @@
 					   (list 
 					    (get-annotation 
 					     (zodiac:define-values-form-val ll)))))
-			      compiler:lifted-lambdas)
+			      (compiler:get-lifted-lambdas))
 			     (map (lambda (ll globs) 
 				    (make-code empty-set
 					       empty-set
@@ -307,15 +314,15 @@
 					       (list
 						(get-annotation 
 						 (zodiac:define-values-form-val ll)))))
-				  compiler:once-closures-list
-				  compiler:once-closures-globals-list)
+				  (compiler:get-once-closures-list)
+				  (compiler:get-once-closures-globals-list))
 			     (map reset-globals c (map cdr l)))))
 		  (loop (sub1 n) (cdr l) (cdr c) 
 			(cons (caar l) l-acc) (cons (reset-globals (car c) (cdar l)) c-acc)))))
 	  
 	  ;; Lifted lambdas are true constants:
 	  (set! number-of-true-constants (+ number-of-true-constants
-					    (length compiler:lifted-lambdas)))))
+					    (length (compiler:get-lifted-lambdas))))))
 
       (define s:append-block-sources!
 	(lambda (file-block l)
@@ -422,6 +429,9 @@
       
       (define compiler:setup-suffix "")
 
+      (define (get-s:file-block) s:file-block)
+      (define (compiler:get-setup-suffix) compiler:setup-suffix)
+
       ;;-----------------------------------------------------------------------------
       ;; THE MAIN DRIVING ROUTINE
 
@@ -439,7 +449,7 @@
       (define (compile-c-extension-part input-name dest-directory)
 	(s:compile #f #t #t input-name dest-directory))
 
-      (define compiler:multi-o-constant-pool? #f)
+      (define compiler:multi-o-constant-pool (make-parameter #f))
 
       (define s:compile
 	(lambda (c-only? multi-o? from-c? input-name dest-directory)
@@ -447,7 +457,7 @@
 	    (let-values ([(base file dir?)
 			  (split-path (path->complete-path input-name))])
 	      base))
-	  (set! compiler:multi-o-constant-pool? multi-o?)
+	  (compiler:multi-o-constant-pool multi-o?)
 	  (set! s:file-block (make-empty-block))
 	  (set! s:max-arity 0)
 	  (set! total-cpu-time 0)
@@ -503,7 +513,7 @@
 				  (s:expand-top-level-expressions! 
 				   input-directory
 				   (lambda ()
-				     (zodiac:syntax->struct (read-syntax sourcepath input-port)))
+				     (read-syntax input-path input-port))
 				   (compiler:option:verbose)
 				   identity))))))])
 		    (verbose-time read-thunk)
@@ -634,11 +644,11 @@
 		       
 		       ; take constant construction code and place it in front of the 
 		       ; previously generated code. True constants first.
-		       (set! number-of-true-constants (length compiler:define-list))
+		       (set! number-of-true-constants (length (compiler:get-define-list)))
 		       (s:append-block-sources! s:file-block 
 						(append
-						 compiler:define-list
-						 compiler:per-load-define-list)))])
+						 (compiler:get-define-list)
+						 (compiler:get-per-load-define-list))))])
 		(verbose-time bnorm-thunk))
 	      (compiler:report-messages! #t)
 	      
@@ -716,7 +726,7 @@
 		     (map (lambda (body)
 			    (relate-lambdas! L body))
 			  (zodiac:case-lambda-form-bodies L))))
-		 compiler:closure-list))
+		 (compiler:get-closure-list)))
 	      
 	      (when (eq? (compiler:option:vehicles) 'vehicles:units)
 		(compiler:fatal-error 
@@ -759,7 +769,7 @@
 					  [captured (code-captured-vars code)])
 				     (choose-binding-representations! locals globals used captured)
 				     (choose-closure-representation! code)))
-				 compiler:closure-list))])
+				 (compiler:get-closure-list)))])
 		(verbose-time rep-thunk))
 
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
@@ -789,15 +799,11 @@
 						   (if (null? (cdr s)) 
 						       (lambda (ast)
 							 (make-vm:return 
-							  (zodiac:zodiac-origin ast)
-							  (zodiac:zodiac-start ast)
-							  (zodiac:zodiac-finish ast)
+							  (zodiac:zodiac-stx ast)
 							  ast))
 						       (lambda (ast)
 							 (make-vm:void
-							  (zodiac:zodiac-origin ast)
-							  (zodiac:zodiac-start ast)
-							  (zodiac:zodiac-finish ast)
+							  (zodiac:zodiac-stx ast)
 							  ast)))
 						   (null? (cdr s)))])
 			     (set-car! s vm)
@@ -809,9 +815,7 @@
 			  (let* ([code (get-annotation L)]
 				 [tail-pos (lambda (ast)
 					     (make-vm:return 
-					      (zodiac:zodiac-origin ast)
-					      (zodiac:zodiac-start ast)
-					      (zodiac:zodiac-finish ast)
+					      (zodiac:zodiac-stx ast)
 					      ast))]
 				 [new-locals
 				  (cond
@@ -835,46 +839,11 @@
 								(cons vm vms)))))])
 				      (zodiac:set-case-lambda-form-bodies! L vms)
 				      new-locals)]
-				   [(zodiac:unit-form? L)
-				    (let-values ([(vm new-locals)
-						  (vm-phase (car (zodiac:unit-form-clauses L)) 
-							    #t #f tail-pos #t)])
-				      (zodiac:set-unit-form-clauses! L (list vm))
-				      new-locals)]
-				   [(zodiac:class*/names-form? L)
-				    (let ([new-locals empty-set])
-				      (let ([s (zodiac:sequence-clause-exprs
-						(car (zodiac:class*/names-form-inst-clauses L)))])
-					(let-values ([(vm new-locs) (vm-phase (car s) #t #f #f #f)])
-					  (set-car! s vm)
-					  (set! new-locals (set-union new-locs new-locals))))
-				      (class-init-defaults-map! 
-				       L
-				       (lambda (var ast)
-					 (let-values ([(vm new-locs)
-						       (vm-phase ast
-								 #f
-								 (lambda (ast)
-								   (list
-								    (make-vm:set! 
-								     #f #f #f
-								     (list
-								      (cons 
-								       target-type:lexical
-								       (vm:convert-bound-varref 
-									(zodiac:binding->lexical-varref
-									 var))))
-								     ast
-								     #f)))
-								 identity #f)])
-					   (set! new-locals (set-union new-locs new-locals))
-					   vm)))
-				      new-locals)]
 				   [else (compiler:internal-error
 					  L
 					  "vmphase: unknown closure type")])])
 			    (add-code-local+used-vars! code new-locals)))
-			compiler:closure-list))])
+			(compiler:get-closure-list)))])
 		(verbose-time vmphase-thunk))
 
 	      (compiler:report-messages! #t)
@@ -916,27 +885,10 @@
 					     (loop (cdr bodies)
 						   (cdr case-codes)
 						   (add1 i)))))]
-				      [(zodiac:unit-form? L)
-				       (let-values ([(new-clauses new-locs)
-						     ((vm-optimize! L 0) (car (zodiac:unit-form-clauses L)))])
-					 (set-car! (zodiac:unit-form-clauses L) new-clauses)
-					 (add-code-local+used-vars! code new-locs))]
-				      [(zodiac:class*/names-form? L)
-				       (let ([s (zodiac:sequence-clause-exprs
-						 (car (zodiac:class*/names-form-inst-clauses L)))])
-					 (let-values ([(new-clauses new-locs) ((vm-optimize! L 0) (car s))])
-					   (set-car! s new-clauses)
-					   (add-code-local+used-vars! code new-locs)))
-				       (class-init-defaults-map!
-					L
-					(lambda (var ast)
-					  (let-values ([(new-expr new-locs) ((vm-optimize! L 0) ast)])
-					    (add-code-local+used-vars! code new-locs)
-					    new-expr)))]
 				      [else (compiler:internal-error
 					     L
 					     "vmopt: unknown closure type")])))
-				 compiler:closure-list))])
+				 (compiler:get-closure-list)))])
 		(verbose-time vmopt-thunk))
 		 
 	      (compiler:report-messages! #t)
@@ -952,7 +904,7 @@
 	      (let ([vm2c-thunk
 		     (lambda ()
 		       ;; set up bucket names - adds new symbols
-		       (vm->c:make-bucket-names! (hash-table-map compiler:global-symbols
+		       (vm->c:make-bucket-names! (hash-table-map (compiler:get-global-symbols)
 								 (lambda (x y) x)))
 		       
 		       (let ([c-port #f])
@@ -984,7 +936,7 @@
 				(loop (+ n 1))))
 			    (newline c-port)
 			    
-			    (unless compiler:multi-o-constant-pool?
+			    (unless (compiler:multi-o-constant-pool)
 			      (fprintf c-port "~nstatic void make_symbols()~n{~n")
 			      (vm->c:emit-symbol-definitions! c-port)
 			      (fprintf c-port "}~n"))
@@ -1009,23 +961,6 @@
 			    (unless (null? compiler:case-lambdas)
 			      (fprintf c-port "~nstatic void init_cases_arities()~n{~n")
 			      (vm->c:emit-case-arities-definitions! c-port)
-			      (fprintf c-port "}~n"))
-			    (newline c-port)
-
-			    (unless (null? compiler:compounds)
-			      (fprintf c-port "~nstatic void init_compounds(Scheme_Env * env)~n{~n")
-			      (vm->c:emit-compound-definitions! c-port)
-			      (fprintf c-port "}~n"))
-			    
-			    (unless (null? compiler:classes)
-			      (fprintf c-port "~nstatic void init_classes(Scheme_Env * env)~n{~n")
-			      (vm->c:emit-class-definitions! c-port)
-			      (fprintf c-port "}~n"))
-			    (newline c-port)
-
-			    (unless (null? compiler:interfaces)
-			      (fprintf c-port "~nstatic void init_interfaces()~n{~n")
-			      (vm->c:emit-interface-definitions! c-port)
 			      (fprintf c-port "}~n"))
 			    (newline c-port)
 
@@ -1074,7 +1009,7 @@
 				       s:max-arity)
 			      (fprintf c-port "~agc_registration();~n"
 				       vm->c:indent-spaces)
-			      (unless compiler:multi-o-constant-pool?
+			      (unless (compiler:multi-o-constant-pool)
 				(fprintf c-port "~amake_symbols();~n"
 					 vm->c:indent-spaces))
 			      (unless (zero? const:inexact-counter)
@@ -1184,27 +1119,6 @@
 						    (vm->c:emit-function-epilogue code 
 										  (if suffix? "" "}")
 										  c-port))]
-						 [(zodiac:unit-form? L)
-						  (let* ([indent (string-append vm->c:indent-spaces)] 
-							 [undefines (vm->c:emit-unit-prologue L indent c-port)])
-						    (vm->c-expression (car (zodiac:unit-form-clauses L))
-								      code
-								      c-port
-								      vm->c:indent-by
-								      #f)
-						    (vm->c:emit-unit-epilogue L undefines indent c-port))]
-						 [(zodiac:class*/names-form? L)
-						  (let* ([indent (string-append vm->c:indent-spaces)] 
-							 [undefines (vm->c:emit-class-prologue L indent c-port)])
-						    (vm->c-expression 
-						     (car (zodiac:sequence-clause-exprs
-							   (car (zodiac:class*/names-form-inst-clauses L))))
-						     code
-						     c-port
-						     vm->c:indent-by
-						     #f)
-
-						    (vm->c:emit-class-epilogue L undefines indent c-port))]
 						 [else
 						  (compiler:internal-error
 						   L
@@ -1226,7 +1140,7 @@
 	      (compiler:report-messages! #t)
 	      
 	      ;; Write out symbols for multi-o constant pool
-	      (when compiler:multi-o-constant-pool?
+	      (when (compiler:multi-o-constant-pool)
 		(call-with-output-file constant-pool-output-path
 		  (lambda (port)
 		    (fprintf port "(~s~n (symbols~n" compiler:setup-suffix)
@@ -1308,4 +1222,4 @@
 	(when (compiler:option:verbose)
 	  (printf " finished [cpu ~a, real ~a].~n"
 		  total-cpu-time
-		  total-real-time))))))
+		  total-real-time))))))))

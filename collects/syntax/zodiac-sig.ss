@@ -14,6 +14,8 @@
      ;; Zodiac compatibility -> syntax:
      zodiac->syntax
 
+     structurize-syntax
+
      ;; origin struct:
      origin-who  ; 'source or 'macro
      origin-how  ; #f or syntax object
@@ -50,7 +52,9 @@
 
      (struct binding (var orig-name))  create-binding
 
+     make-lexical-varref
      lexical-varref? create-lexical-varref      ; alias for bound-varref
+     make-lexical-binding
      lexical-binding?  create-lexical-binding   ; alias for binding
 
      (struct app (fun args))           create-app
@@ -77,4 +81,7 @@
      (struct arglist (vars))
      (struct sym-arglist ())
      (struct list-arglist ())
-     (struct ilist-arglist ()))))
+     (struct ilist-arglist ())
+
+     make-empty-back-box
+     register-client)))

@@ -148,7 +148,7 @@
        (set-annotation! v (varref:empty-attributes))
        (varref:add-attribute! v varref:primitive)
        (set-annotation! app (make-app #f #t constructor-name))
-       (block:register-max-arity! s:file-block (length args))
+       (block:register-max-arity! (get-s:file-block) (length args))
        (compiler:add-global-varref! v)
        (compiler:add-primitive-varref! v)
        app)))

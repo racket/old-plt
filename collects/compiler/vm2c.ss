@@ -39,8 +39,8 @@
 	  (compiler:internal-error #f (format "vm->c:bucket-name: no bucket for ~a" symbol))))))
 
 (define (vm->c:SYMBOLS-name)
-  (if compiler:multi-o-constant-pool?
-      (format "SYMBOLS~a" compiler:setup-suffix)
+  (if (compiler:multi-o-constant-pool)
+      (format "SYMBOLS~a" (compiler:get-setup-suffix))
       "SYMBOLS"))
 
 (define (vm->c:INEXACTS-name)
@@ -65,13 +65,13 @@
 
 (define (vm->c:emit-symbol-declarations! port)
   (unless (zero? const:symbol-counter)
-    (unless compiler:multi-o-constant-pool?
+    (unless (compiler:multi-o-constant-pool)
        (fprintf port "static const char *SYMBOL_STRS[~a] = {~n" const:symbol-counter)
        (vm->c:emit-symbol-list! port ",")
        (fprintf port "}; /* end of SYMBOL_STRS */~n~n"))
 
     (fprintf port "~aScheme_Object * ~a[~a];~n~n" 
-	     (if compiler:multi-o-constant-pool? "" "static ")
+	     (if (compiler:multi-o-constant-pool) "" "static ")
 	     (vm->c:SYMBOLS-name)
 	     const:symbol-counter)))
 
@@ -113,7 +113,7 @@
 
 (define vm->c:emit-prim-ref-declarations!
   (lambda (port)
-    (unless (set-empty? compiler:primitive-refs)
+    (unless (set-empty? (compiler:get-primitive-refs))
        (fprintf port "/* primitives referenced by the code */~n")
        (fprintf port "static struct {~n")
        (for-each (lambda (a)
@@ -121,20 +121,20 @@
 			    (vm->c:convert-symbol 
 			     (vm->c:bucket-name
 			      a))))
-		 (set->list compiler:primitive-refs))
+		 (set->list (compiler:get-primitive-refs)))
        (fprintf port "} P;~n")
        (newline port))))
 
 (define vm->c:emit-prim-ref-definitions!
   (lambda (port)
-    (unless (set-empty? compiler:primitive-refs)
+    (unless (set-empty? (compiler:get-primitive-refs))
       (fprintf port "   /* primitives referenced by the code */~n")
       (for-each (lambda (a)
 		  (fprintf port "~aP.~a = scheme_global_bucket(~a, env)->val;~n"
 			   vm->c:indent-spaces
 			   (vm->c:convert-symbol (vm->c:bucket-name a))
 			   (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f a))))
-		(set->list compiler:primitive-refs)))))
+		(set->list (compiler:get-primitive-refs))))))
 
 (define vm->c:emit-struct-definitions!
   (lambda (structs port)
@@ -159,11 +159,7 @@
 (define (compiler:any-statics?)
   (not (and (null? compiler:static-list)
 	    (null? compiler:case-lambdas)
-	    (null? compiler:total-unit-exports)
-	    (null? compiler:compounds)
-	    (null? compiler:classes)
-	    (null? compiler:interfaces)
-	    (null? compiler:lifted-lambda-vars))))
+	    (null? (compiler:get-lifted-lambda-vars)))))
 
 (define (emit-static-variable-fields! port l)
   (unless (null? l)
@@ -189,20 +185,11 @@
        (unless (null? compiler:case-lambdas)
 	       (fprintf port "  short *casesArities[~a];~n"
 			(length compiler:case-lambdas)))
-       (unless (null? compiler:compounds)
-	       (fprintf port "  Scheme_Object *compoundAssemblies[~a];~n"
-			(length compiler:compounds)))
-       (unless (null? compiler:classes)
-	       (fprintf port "  struct Scheme_Class_Assembly *classAssemblies[~a];~n"
-			(length compiler:classes)))
-       (unless (null? compiler:interfaces)
-	       (fprintf port "  struct Scheme_Interface_Assembly *interfaceAssemblies[~a];~n"
-			(length compiler:interfaces)))
        (for-each
 	(lambda (ll)
 	  (fprintf port "  Scheme_Object * ~a;~n" 
 		   (vm->c:convert-symbol (zodiac:varref-var ll))))
-	compiler:lifted-lambda-vars)
+	(compiler:get-lifted-lambda-vars))
        (fprintf port "} S;~n~n"))
 
     (fprintf port "/* compiler written per-load static variables */~n")
@@ -223,11 +210,11 @@
 	   (lambda (v)
 	     (fprintf port "~ascheme_register_extension_global(&~a, sizeof(~a));~n"
 		      vm->c:indent-spaces v v))])
-      (unless (or (zero? const:symbol-counter) compiler:multi-o-constant-pool?)
+      (unless (or (zero? const:symbol-counter) (compiler:multi-o-constant-pool))
 	  (register "SYMBOLS"))
       (unless (zero? const:inexact-counter)
 	  (register "INEXACTS"))
-      (unless (set-empty? compiler:primitive-refs)
+      (unless (set-empty? (compiler:get-primitive-refs))
 	  (register "P"))
       (unless (not (compiler:any-statics?))
 	  (register "S")))

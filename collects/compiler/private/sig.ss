@@ -2,6 +2,10 @@
 (module sig mzscheme
   (import (lib "unitsig.ss"))
 
+  (import "../sig.ss")
+  (import (lib "zodiac-sig.ss" "syntax"))
+
+  (export compiler:library^)
   (define-signature compiler:library^
     (logical-inverse
      one-of
@@ -46,7 +50,7 @@
      compiler:label-number
      compiler:reset-label-number!))
 
-
+  (export compiler:cstructs^)
   (define-signature compiler:cstructs^
     (varref:empty-attributes
      varref:add-attribute!
@@ -63,7 +67,6 @@
      
      (struct binding (rec?       ; part of a letrec recursive binding set
 		      mutable?   ; set!ed?
-		      unit-i/e?  ; is imported/exported (including uses by invoke)
 		      anchor     ; anchor binding for this binding
 		      letrec-set?; set! for a letrec definition
 		      ivar?      ; is a class ivar?
@@ -88,30 +91,6 @@
 
      (struct case-code (has-continue?))
 
-     (struct unit-code (defines   ; a list of lexical-bindings
-			 exports   ; a list of lexical-bindings
-			 import-anchors   ; a list of lexical-bindings for anchors
-			 export-anchors   ; a list of lexical-bindings for anchors
-			 export-list-offset))
-
-     (struct class-code (public-lookup-bindings
-			 public-define-bindings
-			 override-lookup-bindings
-			 override-define-bindings
-			 private-bindings
-			 inherit-bindings
-			 rename-bindings
-			 assembly))
-
-     (struct invoke-info (anchors))
-
-     (struct compound-info (assembly ; assembly number
-			    imports  ; constant reference for import spec
-			    exports  ; constant reference for export spec
-			    links))  ; constant reference for link spec
-
-     (struct interface-info (assembly name))
-
      (struct app (tail? prim? prim-name))
 
      compiler:bound-varref->binding 
@@ -122,6 +101,7 @@
      (struct compiler:internal-error ())
      (struct compiler:warning ())))
 
+  (export compiler:zlayer^)
   (define-signature compiler:zlayer^
     (static-error
      dynamic-error
@@ -143,13 +123,7 @@
      zodiac:set-begin0-form-first!
      zodiac:set-begin0-form-rest!
 
-     class-init-defaults-map!
-
-     (struct zodiac:void ())
-     (struct zodiac:undefined ())
-
-     zodiac:make-void
-     zodiac:make-undefined
+     undefined?
 
      zodiac:make-special-constant
      
@@ -160,29 +134,24 @@
 
      zodiac->sexp/annotate))
 
-
+  (export compiler:prephase^)
   (define-signature compiler:prephase^
     (prephase:init-binding-properties!
      prephase:set-mutable!
      prephase:set-binding-anchor!
-     prephase:set-unit-i/e?!
      prephase:is-mutable?
-     prephase:is-unit-i/e?
      prephase:is-ivar?
      prephase:binding-anchor
      prephase:known-val
      prephase:set-known-val!
 
-     (struct binding-properties (unit-i/e?))
-
-     prephase:set!-is-unit-definition?
-
      prephase!))
 
-
+  (export compiler:anorm^)
   (define-signature compiler:anorm^
     (a-normalize))
 
+  (export compiler:const^)
   (define-signature compiler:const^
     (const:init-tables!
      const:the-per-load-statics-table
@@ -205,13 +174,14 @@
 
      compiler:make-const-constructor))
 
+  (export compiler:rep^)
   (define-signature compiler:rep^
     ((struct rep:atomic (type))
      (struct rep:pointer (to))
      (struct rep:struct (name orig-name fields))
      (struct rep:struct-field (name orig-name rep))
 
-     compiler:structs
+     compiler:get-structs
      compiler:init-structs!
 
      rep:find-field
@@ -219,22 +189,20 @@
      choose-binding-representations!
      choose-closure-representation!))
 
+  (export compiler:known^)
   (define-signature compiler:known^
     (make-unknown-letbound-binding
      extract-varref-known-val
      extract-ast-known-value
      analyze-knowns!))
 
+  (export compiler:analyze^)
   (define-signature compiler:analyze^
-    (compiler:global-symbols
-     compiler:primitive-refs
-     compiler:compounds
-     compiler:interfaces
+    (compiler:get-global-symbols
+     compiler:get-primitive-refs
 
-     compiler:define-list
-     compiler:per-load-define-list
-     compiler:local-define-list
-     compiler:local-per-load-define-list
+     compiler:get-define-list
+     compiler:get-per-load-define-list
 
      compiler:init-define-lists!
 
@@ -248,19 +216,23 @@
 
      analyze-expression!))
 
+  (export compiler:lift^)
   (define-signature compiler:lift^
     (lift-lambdas!))
 
+  (export compiler:lightweight^)
   (define-signature compiler:lightweight^
     (lightweight-analyze-and-transform))
 
+  (export compiler:closure^)
   (define-signature compiler:closure^
-    (compiler:closure-list
+    (compiler:get-closure-list
 
-     compiler:once-closures-list
-     compiler:once-closures-globals-list
-     compiler:lifted-lambdas
-     compiler:lifted-lambda-vars
+     compiler:get-once-closures-list
+     compiler:get-once-closures-globals-list
+     compiler:get-lifted-lambdas
+     compiler:get-lifted-lambda-vars
+
      compiler:init-closure-lists!
      compiler:init-once-closure-lists!
      compiler:init-lifted-lambda-list!
@@ -269,17 +241,14 @@
 
      closure-expression!))
 
+  (export compiler:vehicle^)
   (define-signature compiler:vehicle^
     ((struct vehicle (total-labels lambdas max-arity))
      (struct procedure-vehicle (max-args))
-     (struct unit-vehicle ())
-     (struct class-vehicle ())
 
-     compiler:vehicles
-     compiler:total-vehicles
-     compiler:total-unit-exports
-     compiler:case-lambdas
-     compiler:classes
+     compiler:get-vehicles
+     compiler:get-total-vehicles
+     compiler:get-case-lambdas
 
      compiler:init-vehicles!
 
@@ -290,6 +259,7 @@
 
      choose-vehicles!))
 
+  (export compiler:vmstructs^)
   (define-signature compiler:vmstructs^
     ((struct vm:sequence (vals))
      (struct vm:if (test then else))
@@ -366,14 +336,16 @@
      
      vm:literal-constant?))
 
-
+  (export compiler:vmphase^)
   (define-signature compiler:vmphase^
     (vm:convert-bound-varref
      vm-phase))
 
+  (export compiler:vmopt^)
   (define-signature compiler:vmopt^
     (vm-optimize!))
 
+  (export compiler:driver^)
   (define-signature compiler:driver^
     ((open compiler:inner^)
 
@@ -382,15 +354,16 @@
      compiler:internal-error
      compiler:warning
 
-     s:file-block
+     get-s:file-block
      s:register-max-arity!
-     compiler:setup-suffix
+     compiler:get-setup-suffix
 
-     compiler:multi-o-constant-pool?
+     compiler:multi-o-constant-pool
 
      debug
-     debug:port))
+     debug:get-port))
 
+  (export compiler:top-level^)
   (define-signature compiler:top-level^
     ((struct block (source codes max-arity))
      make-empty-block
@@ -399,6 +372,7 @@
      add-code-local+used-vars!
      remove-code-free-vars!))
 
+  (export compiler:vm2c^)
   (define-signature compiler:vm2c^
     (vm->c:indent-by
      vm->c:indent-spaces
@@ -438,6 +412,7 @@
      vm->c:emit-class-epilogue
      vm->c-expression))
 
+  (export compiler:mrspidey^)
   (define-signature compiler:mrspidey^
     (copy-annotations!
      get-annotations
@@ -455,8 +430,9 @@
      ast->AVs
      AV->AVs))
 
+  (export compiler:basic-link^)
   (define-signature compiler:basic-link^
-    ((unit ZODIAC : zodiac:system^)
+    ((unit ZODIAC : zodiac^)
      (unit ZLAYER : compiler:zlayer^)
      (unit DRIVER : compiler:driver^)
      (unit LIBRARY : compiler:library^))))

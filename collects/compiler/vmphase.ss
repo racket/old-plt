@@ -241,8 +241,8 @@
        [convert
 	(lambda (ast multi? leaf tail-pos tail?)
 	  (when (compiler:option:debug)
-	    (zodiac:print-start! debug:port ast)
-	    (fprintf debug:port "~a~n" ast))
+	    (zodiac:print-start! (debug:get-port) ast)
+	    (fprintf (debug:get-port) "~a~n" ast))
 	  (cond
 	   
 	   ;;-----------------------------------------------------------------

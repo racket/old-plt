@@ -1149,8 +1149,8 @@ static Scheme_Object *now_do_raise(void *v)
 
   p[0] = (Scheme_Object *)v;
 
-  return _scheme_apply(scheme_get_param(scheme_config, MZCONFIG_EXN_HANDLER), 
-		       1, (Scheme_Object **)p);
+  return scheme_apply(scheme_get_param(scheme_config, MZCONFIG_EXN_HANDLER), 
+		      1, (Scheme_Object **)p);
 }
 
 static void post_raise_or_debug(void *v)

@@ -80,10 +80,7 @@
        (semaphore-post s)))
 
    (define (input-port-trigger p t)
-     (let ([s (trigger-sem t)])
-       (semaphore-wait s)
-       (let ([s2 (make-semaphore 0)])
-	 (input-port-post-semaphore p s2)
-	 (semaphore-callback s2 (lambda () (trigger-hit t))))
-       (semaphore-post s)))
+     (thread (lambda ()
+	      (peek-char p)
+              (trigger-hit t))))
    )

@@ -450,6 +450,9 @@ typedef struct Scheme_Saved_Stack {
 typedef struct Scheme_Process {
   Scheme_Type type;
 
+  struct Scheme_Process *next;
+  struct Scheme_Process *prev;
+
   mz_jmp_buf error_buf;
   Scheme_Continuation_Jump_State cjs;
 
@@ -476,8 +479,6 @@ typedef struct Scheme_Process {
   long *ec_ok;
   struct Scheme_Dynamic_Wind *dw;
 
-  struct Scheme_Process *next;
-
   int running;
 #ifdef ERROR_ON_OVERFLOW
   int stack_overflow;
@@ -497,7 +498,7 @@ typedef struct Scheme_Process {
 
   struct Scheme_Comp_Env *current_local_env;
 
-  Scheme_Object *error_escape_proc; /* Per-thread paramaterization */
+  Scheme_Object *error_escape_proc; /* Per-thread "paramater" */
 
   /* These are used to lock in values during `read': */
   char quick_can_read_compiled;
@@ -554,8 +555,8 @@ typedef struct Scheme_Process {
 #ifdef MZ_REAL_THREADS
   Scheme_Object *done_sema;
   long fuel_counter;
-#define scheme_fuel_counter (scheme_current_process->fuel_counter)
-#define scheme_stack_boundary ((unsigned long)scheme_current_process->stack_end)
+# define scheme_fuel_counter (scheme_current_process->fuel_counter)
+# define scheme_stack_boundary ((unsigned long)scheme_current_process->stack_end)
 #endif
 
   Scheme_Object *list_stack;
@@ -577,7 +578,6 @@ typedef struct Scheme_Process {
   int user_tls_size;
 
   struct Scheme_Process_Manager_Hop *mr_hop;
-
   Scheme_Manager_Reference *mref;
 } Scheme_Process;
 
@@ -605,6 +605,9 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 # endif
 #endif
 #ifdef USE_DYNAMIC_FDSET_SIZE
+# define USE_FAR_MZ_FDCALLS
+#endif
+#ifdef USE_BEOS_PORT_THREADS
 # define USE_FAR_MZ_FDCALLS
 #endif
 
@@ -918,7 +921,6 @@ extern long scheme_creator_id;
 #ifdef MACINTOSH_EVENTS
 extern void (*scheme_handle_aewait_event)(EventRecord *e);
 #endif
-extern void *(*scheme_get_sema_callback_context)(void);
 
 extern Scheme_Object *(*scheme_make_stdin)(void);
 extern Scheme_Object *(*scheme_make_stdout)(void);
@@ -928,8 +930,6 @@ extern Scheme_Object *(*scheme_make_stderr)(void);
 Scheme_Env *scheme_basic_env(void);
 
 void scheme_check_threads(void);
-void *scheme_check_sema_callbacks(int (*)(void *, void*), void *, int check_only);
-void scheme_remove_sema_callbacks(int (*)(void *, void*), void *);
 void scheme_wake_up(void);
 
 /* image dump enabling startup: */

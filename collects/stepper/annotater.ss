@@ -623,6 +623,3 @@
            (values annotated-exprs
                    struct-proc-names)))))
 	 
-    
-  
-    

@@ -1,6 +1,4 @@
-(require-library "errortrace.ss" "errortrace")
-
-(unit/sig ()
+(unit/sig (stepper-go)
   (import [c : mzlib:core^]
           [e : stepper:error^]
           [z : zodiac:system^]

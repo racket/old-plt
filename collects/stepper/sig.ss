@@ -1,9 +1,3 @@
-(define-signature stepper:zodiac-client-procs^
-  (never-undefined-getter
-   never-undefined-setter
-   read-getter
-   read-setter))
-
 (define-signature stepper:marks^
   (mark-source
    mark-bindings
@@ -13,6 +7,14 @@
    expose-mark
    display-mark
    find-var-binding))
+
+(define-signature stepper:client-procs^
+  (read-getter
+   read-setter
+   never-undefined-getter
+   never-undefined-setter
+   new-name-getter
+   new-name-setter))
 
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))

@@ -1621,6 +1621,16 @@
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed :")))))
 
+  (add-macro-form 'type: scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ type attr ...))
+	    (out-pattern '(#%void))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env)
+	(cond
+	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	    (static-error expr "Malformed type:"))))))
+
   (add-macro-form 'mrspidey:control scheme-vocabulary
     (let* ((kwd '())
 	    (in-pattern '(_ para val))

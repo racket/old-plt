@@ -94,7 +94,6 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     Show(FALSE);
 
   {
-    wxWnd *wnd = (wxWnd *)handle;
     wnd->x_scrolling_enabled = ((style & wxHSCROLL) ? 1 : 0);
     wnd->y_scrolling_enabled = ((style & wxVSCROLL) ? 1 : 0);
   }

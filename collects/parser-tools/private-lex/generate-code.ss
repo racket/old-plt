@@ -28,17 +28,19 @@
                                (position-col first-pos)
                                (position-offset first-pos)
                                (- (position-offset end-pos) (position-offset first-pos))))
-                          (,wrap
-                           (longest-match-action
-                            (lambda ()
-                              first-pos)
-                            (lambda ()
-                              end-pos)
-                            (lambda ()
-                              (if (char? (car match))
-                                  (list->string (reverse match))
-                                  (list->string (reverse (cdr match)))))
-                            lb))))))
+                          (let/ec ret
+                            (,wrap
+                             (longest-match-action
+                              (lambda ()
+                                first-pos)
+                              (lambda ()
+                                end-pos)
+                              (lambda ()
+                                (if (char? (car match))
+                                    (list->string (reverse match))
+                                    (list->string (reverse (cdr match)))))
+                              ret
+                              lb)))))))
               (lambda (lb)
                 (unless (lex-buffer? lb)
                   (raise-type-error 
@@ -127,7 +129,7 @@
                         (let ((action (cadr (syntax->list x))))
                           (datum->syntax-object
                            action
-                           `(lambda (get-start-pos get-end-pos get-lexeme lex-buf)
+                           `(lambda (get-start-pos get-end-pos get-lexeme return-without-pos lex-buf)
                               ,action)
                            action)))
                       (syntax->list rules))))

@@ -1211,12 +1211,12 @@ PROCEDURES -----------------------------------------------------------
    library.  It returns a `message' structure, having the following
    fields: version, entity, and fields.
 
-   > (message-version #<message-struct>)
+   > (message-version message-struct)
 
    the value of the MIME-version header.  It has a default 1.0 value
    when message does not contain a MIME-version header.
 
-   > (message-entity #<message-struct>)
+   > (message-entity message-struct)
 
    another structure, `entity'.  According to rfc2045, and entity
    refers to the MIME-defined header fields and contents of either a
@@ -1226,7 +1226,7 @@ PROCEDURES -----------------------------------------------------------
    MIME-headers, parts (sub-entities), and/or contents of message are
    stored into this structure.
 
-   > (message-fields #<message-struct>)
+   > (message-fields message-struct)
 
    a list of all non-MIME headers in message.  If message is an
    rfc822, for instance, this list could contain 'From', 'Subject',
@@ -1242,7 +1242,7 @@ struct entity
    type, subtype, charset, encoding, disposition, params, id,
    description, other, fields, parts, body, close.
 
-> (entity-type #<entity-struct>)
+> (entity-type entity-struct)
 
    In rfc822 BNF extension:
 
@@ -1265,7 +1265,7 @@ struct entity
    video, application, an ietf-extension, and x-token, or a local
    extension (not recommended by the way.)
 
-> (entity-subtype #<entity-struct>)
+> (entity-subtype entity-struct)
 
    subtype := extension-token / iana-token
 
@@ -1322,19 +1322,19 @@ struct entity
                  quicktime                              [Paul Lindner]
 
 
-> (entity-charset #<entity-struct>)
+> (entity-charset entity-struct)
 
    The value of the `charset' parameter of the Content-Type header.
    By default, the symbol: us-ascii.
 
-> (entity-encoding #<entity-struct>)
+> (entity-encoding entity-struct)
 
    The value of the Content-Transfer-Encoding header, one of the
    symbols: 7bit, 8bit, binary, quoted-printable, base64.  If no
    Content-Transfer-Encoding header is given, message should be 7bit,
    thus, 7bit is the default value of this field.
 
-> (entity-disposition #<entity-struct>)
+> (entity-disposition entity-struct)
 
    This one is a litter bit complex, so it is yet another structure.
    These `disposition' structures represent the value of the
@@ -1348,16 +1348,16 @@ struct entity
    creation, modification, read, size, and params.  Only type is
    required.
 
-   > (disposition-type #<disposition-struct>)
+   > (disposition-type disposition-struct)
 
    disposition-type := 'inline / 'attachment  / extension-token
 
-   > (disposition-filename #<disposition-struct>)
+   > (disposition-filename disposition-struct)
 
    string representing the `filename' parameter of the
    Content-Disposition header.
 
-   > (disposition-creation #<disposition-struct>)
+   > (disposition-creation disposition-struct)
 
    string representing the `creation-date' parameter, which must
    follow this BNF grammar:
@@ -1391,54 +1391,54 @@ struct entity
  				   ;  M:-12; N:+1; Y:+12
  	    / ( ("+" / "-") 4DIGIT )        ; Local differential
 
-   > (disposition-modification #<disposition-struct>)
+   > (disposition-modification disposition-struct)
 
    String representing the `modification-date' parameter, it has the
    same syntax as `disposition-creation'.
 
-   > (disposition-read #<disposition-struct>)
+   > (disposition-read disposition-struct)
 
    String representing the `read-date' parameter, it has the same
    syntax as `disposition-creation'.
 
-   > (disposition-size #<disposition-struct>)
+   > (disposition-size disposition-struct)
   
    Number representing the `size' parameter (the size of the file).
 
-   > (disposition-params #<disposition-struct>)
+   > (disposition-params disposition-struct)
 
    List of extra parameters (non-standard) following the
    Content-Disposition header.
 
-> (entity-params #<entity-struct>)
+> (entity-params entity-struct)
 
    List of `parameters' given with all the MIME headers above.  Each
    of these parameters is a pair of the form: (parameter-name . value)
 
-> (entity-id #<entity-struct>)
+> (entity-id entity-struct)
 
    The value of the Content-Id header.
 
-> (entity-description #<entity-struct>)
+> (entity-description entity-struct)
 
    The value of the Content-description header.
 
-> (entity-other #<entity-struct>)
+> (entity-other entity-struct)
 
    MIME extension fields (non-standard) they all start with
    "Content-".
 
-> (entity-fields #<entity-struct>)
+> (entity-fields entity-struct)
 
    A list of all non-MIME headers.
 
-> (entity-parts #<entity-struct>)
+> (entity-parts entity-struct)
 
    A list of `message'-structs see above.  Each entry represents a
    part of the current MIME entity (only multipart, or message
    entities can have parts).
 
-> (entity-body #<entity-struct>)
+> (entity-body entity-struct)
 
    A procedure that consumes an output port and writes the message
    body into the port, properly decoded (e.g. if body was

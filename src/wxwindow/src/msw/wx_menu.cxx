@@ -419,7 +419,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 		     point.x, point.y,
 		     0, hWnd, NULL);
   wxResetCurrentCursor();
-  wxYield();
+  // wxYield();
   if (wxCurrentPopupMenu == ptr)
     wxCurrentPopupMenu = NULL;
   if (*ptr) {

@@ -8,11 +8,6 @@
 ; make-item%
 ; child-info
 
-  (let-macro PRINTF
-    ; Swap commenting of the next two lines to enable/disbale debugging
-    ; (lambda args (list* 'mred:debug:printf args))
-    void
-    
     (unit/sig mred:container-panels^
       (import [mred:constants : mred:constants^]
 	      [mred:connections : mred:connections^]
@@ -36,7 +31,7 @@
       ; panel can contain other panels.
       (define panel%
 	(class (make-item% mred:connections:connections-panel% 0 0 #t #t list) args
-	  (sequence (PRINTF 'creation "creating a panel"))
+	  (sequence (mred:debug:printf 'creation "creating a panel"))
 	  (inherit
 	    object-ID
 	    get-x
@@ -125,12 +120,12 @@
 	    [change-children
 	     (lambda (f)
 	       (let ([new-children (f children)])
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-panel-change-children
 		  (string-append
 		   "container-panel-change-children: "
 		   "Inside a panel's change-children"))
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-panel-change-children
 		  (string-append
 		   "container-panel-change-children: "
@@ -145,7 +140,7 @@
 			   "children of this panel ~s~nlist: ~s")
 			  this new-children))
 		 ; show all new children, hide all deleted children.
-		 (PRINTF 
+		 (mred:debug:printf 
 		  'container-panel-change-children
 		  (string-append
 		   "container-panel-change-children: "
@@ -154,7 +149,7 @@
 		       [removed-children (list-diff children new-children)])
 		   (for-each (lambda (child) (send child show #f))
 			     removed-children)
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-panel-change-children
 		    (string-append
 		     "container-panel-change-children: "
@@ -180,14 +175,14 @@
 	    ; effects: upon exit, children-info is eq? to result.
 	    [get-children-info
 	     (lambda ()
-	       (PRINTF 
+	       (mred:debug:printf 
 		'container-panel-get-children-info
 		(string-append
 		 "container-panel-get-children-info: "
 		 "Entering get-children-info; object ~s")
 		object-ID)
 	       (unless children-info
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-panel-get-children-info
 		  (string-append
 		   "container-panel-get-children-info: "
@@ -210,7 +205,7 @@
 		 (force-redraw)))]
 	    [force-redraw
 	     (lambda ()
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-force-redraw
 		(string-append
 		 "container-panel-force-redraw: "
@@ -220,7 +215,7 @@
 	       (set! curr-width #f)
 	       (let ([parent (get-parent)])
 		 (unless (null? parent)
-		   (PRINTF 
+		   (mred:debug:printf 
 		    'container-panel-force-redraw
 		    (string-append
 		     "container-panel-force-redraw: "
@@ -281,7 +276,7 @@
 	    ; set-size:
 	    [set-size
 	     (lambda (x y width height)
-	       (PRINTF 
+	       (mred:debug:printf 
 		'container-panel-set-size
 		(string-append
 		 "container-panel-set-size: entering; "
@@ -291,11 +286,11 @@
 			(same-dimension? y (get-y))
 			(same-dimension? width (get-width))
 			(same-dimension? height (get-height)))
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-panel-set-size
 		    "container-panel-set-size: do nothing")
 		   (begin
-		     (PRINTF
+		     (mred:debug:printf
 		      'container-panel-set-size
 		      "container-panel-set-size: calling super-set-size")
 		     (super-set-size x y width height))))]
@@ -307,19 +302,19 @@
 	    ; effects: causes children to redraw themselves.
 	    [on-size
 	     (lambda (new-width new-height)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-on-size
 		"container-panel-on-size: Entering; args: ~s x ~s; object ~s"
 		new-width new-height object-ID)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-on-size
 		"container-panel-on-size: current size: ~s ~s"
 		(get-width) (get-height))
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-on-size
 		"container-panel-on-size: calling overridden method")
 	       (super-on-size new-width new-height)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-on-size
 		"container-panel-on-size: Current size: ~s ~s"
 		(get-width) (get-height))
@@ -333,13 +328,13 @@
 			  (number? curr-height)
 			  (= curr-width client-width)
 			  (= curr-height client-height))
-		     (PRINTF
+		     (mred:debug:printf
 		      'container-panel-on-resized
 		      (string-append
 		       "Container-panel-resized: "
 		       "same size so not redrawing."))
 		     (begin
-		       (PRINTF
+		       (mred:debug:printf
 			'container-panel-on-resized
 			"container-panel-on-resized: Client size: ~s x ~s"
 			client-width client-height)
@@ -380,7 +375,7 @@
 			       (place-children children-info width height))))]
 	    [panel-redraw
 	     (lambda (childs child-infos placements)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-redraw
 		"container-panel-redraw: Redrawing panel's children")
 	       (for-each
@@ -545,7 +540,7 @@
 				(get-y-info major-size minor-size))
 			       (pc-help (cdr kid-info)
 					(+ major-size major-posn spacing))))))])
-		  (PRINTF
+		  (mred:debug:printf
 		   'container-panel-redraw
 		   "container-panel-redraw: redrawing panel's children")
 		  (pc-help kid-info border)))))))
@@ -705,10 +700,10 @@
 	    [change-children
 	     (lambda (f)
 	       (let ([new-children (f children)])
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-panel-change-children
 		  "container-panel-change-children: Changing children")
-		 (PRINTF 
+		 (mred:debug:printf 
 		  'container-panel-change-children
 		  (string-append
 		   "container-panel-change-children: "
@@ -724,7 +719,7 @@
 			  this new-children))
 		 (unless (memq (active-child) new-children)
 		   (active-child null))
-		 (PRINTF 
+		 (mred:debug:printf 
 		  'container-panel-change-children
 		  (string-append
 		   "container-panel-change-children: "
@@ -761,11 +756,11 @@
 	    ; only place the active child.
 	    [place-children
 	     (lambda (children-info width height)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-place-children
 		"Entering place-children; object ~s" object-ID)
 	       (unless (null? active)
-		 (PRINTF 'container-panel-place-children
+		 (mred:debug:printf 'container-panel-place-children
 				    "Placing active child")
 		 (let* ([active-info (send active get-info)]
 			[x-stretch (child-info-x-stretch active-info)]
@@ -788,7 +783,7 @@
 	
 	    [redraw
 	     (lambda (width height)
-	       (PRINTF
+	       (mred:debug:printf
 		'container-panel-redraw
 		"container-panel-redraw: Entering redraw; object ~s"
 		object-ID)
@@ -797,9 +792,9 @@
 			       (list (send active get-info))
 			       (place-children null width height))))])
 	  (sequence
-	    (PRINTF 'container-single-panel
+	    (mred:debug:printf 'container-single-panel
 			       "About to call single-panel's super-init")
-	    (PRINTF 'container-single-panel
+	    (mred:debug:printf 'container-single-panel
 			       "Function: ~s  Args: ~s" super-init args)
-	    (apply super-init args))))))
+	    (apply super-init args)))))
   

@@ -142,10 +142,7 @@ would be written like this:
                          ((lambda ((name xs variable) ...) (name body e))
                           (name args v) ...))
                 (replace c hole 
-                 (foldl (lambda (term var arg) (lc-subst var arg term))
-                        body
-                        args
-                        xs)))
+                 (foldl lc-subst body args xs)))
 
 The first name is the lang definition from above. The second
 argument is a pattern for an evaluation context. Here's how

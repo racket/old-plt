@@ -1,6 +1,7 @@
 (define setup-fprintf
   (lambda (p s . args)
     (apply fprintf p (string-append "setup-plt: " s "~n") args)))
+
 (define setup-printf
   (lambda (s . args)
     (apply setup-fprintf (current-output-port) s args)))

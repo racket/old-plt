@@ -53,9 +53,11 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   // If label exists, create a static control for it.
   if (label) {
     int nid;
+    wchar_t *ws;
 
     nid = NewId(this);
-    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(label),
+    ws = wxWIDE_STRING(label);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, ws,
 				   STATIC_FLAGS | WS_CLIPSIBLINGS,
 				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				   wxhInstance, NULL);

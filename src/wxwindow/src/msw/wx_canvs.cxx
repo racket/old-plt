@@ -15,6 +15,7 @@
 #include <math.h>
 
 extern char wxCanvasClassName[];
+extern void RegisterGDIObject(HANDLE x);
 
 wxCanvas::wxCanvas (void)
 {
@@ -412,19 +413,25 @@ void wxWnd::DeviceToLogical (float *x, float *y)
     wxCanvas *canvas;
     canvas = (wxCanvas *) wx_window;
     if (canvas->wx_dc) {
-      *x = canvas->wx_dc->DeviceToLogicalX ((int) *x);
-      *y = canvas->wx_dc->DeviceToLogicalY ((int) *y);
+      int x2, y2;
+      x2 = canvas->wx_dc->DeviceToLogicalX ((int) *x);
+      y2 = canvas->wx_dc->DeviceToLogicalY ((int) *y);
+      *x = x2;
+      *y = y2;
     }
   }
 }
 
 wxCanvasWnd::wxCanvasWnd (wxWnd * parent, wxWindow * wx_win,
-			  int x, int y, int width, int height, DWORD style, DWORD exstyle)
-: wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style, NULL, exstyle)
+			  int x, int y, int width, int height, 
+			  DWORD style, DWORD exstyle)
+: wxSubWnd (parent, wxCanvasClassName, 
+	    wx_win, x, y, width, height, style, NULL, exstyle)
 {
   is_canvas = TRUE;
 }
 
+static HBRUSH btnface_brush;
 
 BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
 {
@@ -439,7 +446,15 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
   if (!(wstyle & wxNO_AUTOCLEAR)) {
     GetClientRect(handle, &rect);
     mode = SetMapMode(pDC, MM_TEXT);
-    brsh = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    if (wstyle & wxTRANSPARENT_WIN) {
+      if (!btnface_brush) {
+	btnface_brush = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+	RegisterGDIObject(btnface_brush);
+      }
+      brsh = btnface_brush;
+    } else {
+      brsh = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    }
     FillRect(pDC, &rect, brsh);
     SetMapMode(pDC, mode);
 
@@ -487,6 +502,7 @@ BOOL wxCanvasWnd::NCPaint(WPARAM wParam, LPARAM lParam, LONG *result)
       RECT wr;
       HDC hdc;
       HWND hWnd;
+      long r;
       static HANDLE gray;
     
       hWnd = (HWND)handle;
@@ -497,7 +513,8 @@ BOOL wxCanvasWnd::NCPaint(WPARAM wParam, LPARAM lParam, LONG *result)
 
       GetWindowRect(hWnd, &wr);
       
-      *result = DefWindowProc(WM_NCPAINT, wParam, lParam);
+      r = DefWindowProc(WM_NCPAINT, wParam, lParam);
+      *result = r;
 
       if (control_theme) {    
 	hdc = GetDCEx(hWnd, (HRGN)wParam, DCX_WINDOW|DCX_INTERSECTRGN);

@@ -121,8 +121,8 @@ static char* ExtractMultipleFileNames(OPENFILENAME* of, char* fileBuffer)
 
     /* Copy the concatentation of the directory and file */
     while (fileBuffer[currentFile]) {
-      currentFileLength = strlen(fileBuffer + currentFile);
-      sprintf(result + currentTotal, "%5d ",
+      currentFileLength = strlen(fileBuffer XFORM_OK_PLUS currentFile);
+      sprintf(result XFORM_OK_PLUS currentTotal, "%5d ",
 	      currentFileLength + directoryLength);
       memcpy(result + currentTotal + 6, directory, directoryLength);
       memcpy(result + currentTotal + 6 + directoryLength,

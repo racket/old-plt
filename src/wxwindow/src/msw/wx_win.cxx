@@ -34,8 +34,6 @@ extern long last_msg_time; /* timeStamp implementation */
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
 
-extern char wxCanvasClassName[];
-
 void wxWindowInit(void)
 {
   wxREGGLOB(current_mouse_wnd);
@@ -1441,8 +1439,12 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
     }
   } else {
     /* Creating a non-dialog */
-    handle = CreateWindowExW(extendedStyle, wxWIDE_STRING_COPY(wclass),
-			     wxWIDE_STRING(title),
+    wchar_t *ws, *ws2;
+    ws = wxWIDE_STRING_COPY(wclass);
+    ws2 = wxWIDE_STRING(title);
+    handle = CreateWindowExW(extendedStyle, 
+			     ws,
+			     ws2,
 			     style,
 			     x1, y1,
 			     w2, h2,

@@ -202,8 +202,15 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
       int hsize;
       char *s;
       LPSTR lpGlobalMemory;
-
-      hGlobalMemory = GetClipboardData(dataFormat);
+      
+      if (dataFormat == wxCF_TEXT) {
+	hGlobalMemory = GetClipboardData(CF_UNICODETEXT);
+	if (hGlobalMemory)
+	  dataFormat = CF_UNICODETEXT;
+      } else
+	hGlobalMemory = NULL;
+      if (!hGlobalMemory)
+	hGlobalMemory = GetClipboardData(dataFormat);
       if (!hGlobalMemory)
         return NULL;
 
@@ -211,14 +218,21 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
       if (len)
         *len = hsize;
 
-      s = new char[hsize];
+      s = new char[hsize + 2];
       if (!s)
         return NULL;
 
       lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
       memcpy(s, lpGlobalMemory, GlobalSize(hGlobalMemory));
+      s[hsize] = 0;
+      s[hsize + 1] = 0; /* In case it's Unicode */
 
       GlobalUnlock(hGlobalMemory);
+
+      if ((dataFormat == CF_UNICODETEXT)
+	  && !(hsize & 0x1)) {
+	s = wxNARROW_STRING((wchar_t *)s);
+      }
 
       return (wxObject *)s;
       break;

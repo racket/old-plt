@@ -19,6 +19,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   int x = 0, y = 0, width, height, nid;
   wxWnd *cparent;
   char *the_label;
+  wchar_t *ws;
   HWND the_handle;
 
   __type = wxTYPE_GROUP_BOX;
@@ -36,7 +37,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
 
   nid = NewId(this);
 
-  ms_handle = CreateWindowExW(0, GROUP_CLASS, wxWIDE_STRING(the_label),
+  ws = wxWIDE_STRING(the_label);
+  ms_handle = CreateWindowExW(0, GROUP_CLASS, ws,
 			      GROUP_FLAGS
 			      | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 			      0, 0, 0, 0,

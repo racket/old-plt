@@ -774,7 +774,9 @@ static Scheme_Object *wxSchemeGetFontFromUser(int argc, Scheme_Object **argv)
     } else
       lf->lfItalic = FALSE;
     if (f) {
-      lf->lfUnderline = f->GetUnderlined();
+      int ul;
+      ul = f->GetUnderlined();
+      lf->lfUnderline = ul;
     } else
       lf->lfUnderline = FALSE;
     lf->lfStrikeOut = FALSE;
@@ -812,7 +814,9 @@ static Scheme_Object *wxSchemeGetFontFromUser(int argc, Scheme_Object **argv)
     c->hwndOwner = NULL; /* (parent ? parent->GetHWND() : (HWND)NULL) */
     c->lpLogFont = lf;
     if (f) {
-      c->iPointSize = 10 * f->GetPointSize();
+      int ps;
+      ps = f->GetPointSize();
+      c->iPointSize = 10 * ps;
     } else
       c->iPointSize = 100;
     c->Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;

@@ -26,7 +26,7 @@ char *copystring (const char *s, long offset)
   size_t len;
 
   if (s == NULL) s = "";
-  len = strlen(s + offset) + 1;
+  len = strlen(s XFORM_OK_PLUS offset) + 1;
 
   news = new char[len];
   memcpy(news, s + offset, len);

@@ -2320,9 +2320,9 @@ static void MrEdSchemeMessages(char *msg, ...)
     char *s;
     long d, l;
 
-    s = va_arg(args, char*);
-    d = va_arg(args, long);
-    l = va_arg(args, long);
+    s = HIDE_FROM_XFORM(va_arg(args, char*));
+    d = HIDE_FROM_XFORM(va_arg(args, long));
+    l = HIDE_FROM_XFORM(va_arg(args, long));
 
     if (!ioFrame->beginEditSeq) {
       ioFrame->media->BeginEditSequence();

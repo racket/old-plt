@@ -182,8 +182,10 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
   {
     int nid;
+    wchar_t *ws;
     nid = NewId(this);
-    ms_handle = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+    ws = wxWIDE_STRING(the_label);
+    ms_handle = CreateWindowExW(0, LSTATIC_CLASS, ws,
 				STATIC_FLAGS | WS_CLIPSIBLINGS
 				| ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				0, 0, 0, 0, cparent->handle, (HMENU)nid,

@@ -59,8 +59,10 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   // If label exists, create a static control for it.
   if (label) {
     int nid;
+    wchar_t *ws;
     nid = NewId(this);
-    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+    ws = wxWIDE_STRING(the_label);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, ws,
 				   STATIC_FLAGS | WS_CLIPSIBLINGS
 				   | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				   0, 0, 0, 0, cparent->handle, (HMENU)nid,

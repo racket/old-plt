@@ -88,9 +88,11 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   if (Title) {
     HMENU nid;
+    wchar_t *ws;
 
     nid = (HMENU)NewId(this);
-    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+    ws = wxWIDE_STRING(the_label);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, ws,
 				   STATIC_FLAGS | WS_CLIPSIBLINGS
 				   | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				   0, 0, 0, 0, cparent->handle, nid,
@@ -116,8 +118,10 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   {
     int i;
+    wchar_t *ws;
     for (i = 0; i < N; i++) {
-      SendMessageW(wx_combo, CB_INSERTSTRING, i, (LONG)wxWIDE_STRING(Choices[i]));
+      ws = wxWIDE_STRING(Choices[i]);
+      SendMessageW(wx_combo, CB_INSERTSTRING, i, (LONG)ws);
     }
     SendMessage(wx_combo, CB_SETCURSEL, i, 0);
   }
@@ -149,7 +153,9 @@ wxChoice::~wxChoice(void)
 
 void wxChoice::Append(char *Item)
 {
-  SendMessageW((HWND)ms_handle, CB_ADDSTRING, 0, (LONG)wxWIDE_STRING(Item));
+  wchar_t *ws;
+  ws = wxWIDE_STRING(Item);
+  SendMessageW((HWND)ms_handle, CB_ADDSTRING, 0, (LONG)ws);
   no_strings++;
   if (no_strings == 1)
     SetSelection(0);

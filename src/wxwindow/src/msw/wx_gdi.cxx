@@ -1055,9 +1055,12 @@ void wxDisplaySize(int *width, int *height, int flags)
     *height = (r.bottom - r.top);
   } else {
     HDC dc;
+    int dw, dh;
     dc = ::GetDC(NULL);
-    *width = GetDeviceCaps(dc, HORZRES);
-    *height = GetDeviceCaps(dc, VERTRES);
+    dw = GetDeviceCaps(dc, HORZRES);
+    *width = dw;
+    dh = GetDeviceCaps(dc, VERTRES);
+    *height = dh;
     ReleaseDC(NULL, dc);
   }
 }
@@ -1675,7 +1678,9 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **pal)
   {
     if (pal)
     {
-      *pal = new wxColourMap;
+      wxColourMap *tp;
+      tp = new wxColourMap;
+      *pal = tp;
       (*pal)->ms_palette = hPalette;
     }
     else

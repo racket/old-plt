@@ -55,6 +55,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   DWORD wstyle;
   HWND wx_list;
   int i;
+  wchar_t *ws;
     
   panel->AddChild(this);
   multiple = Multiple & wxMULTIPLE_MASK;
@@ -80,7 +81,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (Title) {
     int nid;
     nid = NewId(this);
-    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+    ws = wxWIDE_STRING(the_label);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, ws,
 				   STATIC_FLAGS | WS_CLIPSIBLINGS,
 				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				   wxhInstance, NULL);
@@ -116,7 +118,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   }
 
   for (i = 0; i < N; i++) {
-    SendMessageW(wx_list, LB_ADDSTRING, 0, (LONG)wxWIDE_STRING(Choices[i]));
+    ws = wxWIDE_STRING(Choices[i]);
+    SendMessageW(wx_list, LB_ADDSTRING, 0, (LONG)ws);
   }
   if (!Multiple)
     SendMessage(wx_list, LB_SETCURSEL, 0, 0);
@@ -211,6 +214,7 @@ void wxListBox::Append(char *Item)
 
 void wxListBox::Append(char *Item, char *Client_data)
 {
+  wchar_t *ws;
   char **old = user_data;
   int i, index;
 
@@ -220,7 +224,8 @@ void wxListBox::Append(char *Item, char *Client_data)
   }
   user_data[no_items] = Client_data;
 
-  index = (int)SendMessageW((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)wxWIDE_STRING(Item));
+  ws = wxWIDE_STRING(Item);
+  index = (int)SendMessageW((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)ws);
   no_items++;
   SetHorizontalExtent(Item);
 }
@@ -228,6 +233,7 @@ void wxListBox::Append(char *Item, char *Client_data)
 void wxListBox::Set(int n, char *choices[])
 {
   int i;
+  wchar_t *ws;
 
   Clear();
 
@@ -235,7 +241,8 @@ void wxListBox::Set(int n, char *choices[])
 
   ShowWindow((HWND)ms_handle, SW_HIDE);
   for (i = 0; i < n; i++) {
-    SendMessageW((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)wxWIDE_STRING(choices[i]));
+    ws = wxWIDE_STRING(choices[i]);
+    SendMessageW((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)ws);
     user_data[i] = NULL;
   }
   no_items = n;
@@ -246,7 +253,9 @@ void wxListBox::Set(int n, char *choices[])
 int wxListBox::FindString(char *s)
 {
   int pos;
-  pos = (int)SendMessageW((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)wxWIDE_STRING(s));
+  wchar_t *ws;
+  ws = wxWIDE_STRING(s);
+  pos = (int)SendMessageW((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)ws);
   if (pos == LB_ERR)
     return -1;
   else
@@ -586,6 +595,7 @@ void wxListBox::SetString(int N, char *s)
 {
   int sel;
   char *oldData;
+  wchar_t *ws;
 
   if ((N < 0) || (N >= no_items))
     return;
@@ -594,7 +604,8 @@ void wxListBox::SetString(int N, char *s)
   
   oldData = (char *)wxListBox::GetClientData(N);
   
-  SendMessageW((HWND)ms_handle, LB_INSERTSTRING, N, (LPARAM)wxWIDE_STRING(s));
+  ws = wxWIDE_STRING(s);
+  SendMessageW((HWND)ms_handle, LB_INSERTSTRING, N, (LPARAM)ws);
   SendMessage((HWND)ms_handle, LB_DELETESTRING, N + 1, 0);
 
   if (oldData)

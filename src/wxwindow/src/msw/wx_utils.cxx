@@ -265,10 +265,12 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
 
     /* Get the value. Start by finding out how big it is: */
     rlen = 0;
-    if (RegQueryValueEx(key, entry + sep_pos, NULL, NULL, NULL, &rlen) == ERROR_SUCCESS) {
+    if (RegQueryValueEx(key, entry XFORM_OK_PLUS sep_pos, NULL, NULL, NULL, 
+			&rlen) == ERROR_SUCCESS) {
       char *res;
       res = new char[rlen + 1];
-      if (RegQueryValueEx(key, entry + sep_pos, NULL, NULL, (unsigned char *)res, &rlen) == ERROR_SUCCESS) {
+      if (RegQueryValueEx(key, entry XFORM_OK_PLUS sep_pos, NULL, NULL, 
+			  (unsigned char *)res, &rlen) == ERROR_SUCCESS) {
 	res[rlen + 1] = 0;
 	*value = res;
 	success = 1;
@@ -282,6 +284,7 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
   } else {
     static const char defunkt[] = "$$default";
     int no_file = !file;
+    char *v;
     
     if (!file)
       file = wxUserResourceFile;
@@ -296,7 +299,8 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
 	return FALSE;
     }
     
-    *value = copystring(wxBuffer);
+    v = copystring(wxBuffer);
+    *value = v;
     return TRUE;
   }
 }
@@ -308,7 +312,9 @@ Bool wxGetResource(const char *section, const char *entry, float *value, const c
   succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
-    *value = (float)strtod(s, NULL);
+    float v;
+    v = (float)strtod(s, NULL);
+    *value = v;
     return TRUE;
   }
   else return FALSE;
@@ -321,7 +327,9 @@ Bool wxGetResource(const char *section, const char *entry, long *value, const ch
   succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
-    *value = strtol(s, NULL, 10);
+    long v;
+    v = strtol(s, NULL, 10);
+    *value = v;
     return TRUE;
   }
   else return FALSE;
@@ -334,7 +342,9 @@ Bool wxGetResource(const char *section, const char *entry, int *value, const cha
   succ = wxGetResource(section, entry, (char **)&s, file);
   if (succ)
   {
-    *value = (int)strtol(s, NULL, 10);
+    int v;
+    v = (int)strtol(s, NULL, 10);
+    *value = v;
     return TRUE;
   }
   else return FALSE;

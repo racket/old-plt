@@ -2109,9 +2109,9 @@ HDC wxGetPrinterDC(void)
     }
 
     lpDevNames = (LPDEVNAMES)GlobalLock(pd->hDevNames);
-    lpszDriverName = (LPSTR)lpDevNames + lpDevNames->wDriverOffset;
-    lpszDeviceName = (LPSTR)lpDevNames + lpDevNames->wDeviceOffset;
-    lpszPortName   = (LPSTR)lpDevNames + lpDevNames->wOutputOffset;
+    lpszDriverName = (LPSTR)lpDevNames XFORM_OK_PLUS lpDevNames->wDriverOffset;
+    lpszDeviceName = (LPSTR)lpDevNames XFORM_OK_PLUS lpDevNames->wDeviceOffset;
+    lpszPortName   = (LPSTR)lpDevNames XFORM_OK_PLUS lpDevNames->wOutputOffset;
     GlobalUnlock(pd->hDevNames);
 
     if (pd->hDevMode)
@@ -2297,13 +2297,17 @@ wxBitmap* wxMemoryDC::GetObject(void)
 
 void wxMemoryDC::GetSize(float *width, float *height)
 {
+  float bw, bh;
+
   if (!selected_bitmap)
   {
     *width = 0.0; *height = 0.0;
     return;
   }
-  *width = selected_bitmap->GetWidth();
-  *height = selected_bitmap->GetHeight();
+  bw = selected_bitmap->GetWidth();
+  *width = bw;
+  bh = selected_bitmap->GetHeight();
+  *height = bh;
 }
 
 wxGL *wxMemoryDC::GetGL()

@@ -169,8 +169,8 @@ void wxFrame::GetClientSize(int *x, int *y)
        size for the window as shown. */
     GetSize(x, y);
     rect.top = rect.left = 0;
-    rect.right = *x - client_dw;
-    rect.bottom = *y - client_dh;
+    rect.right = (*x) - client_dw;
+    rect.bottom = (*y) - client_dh;
   } else {
     GetClientRect(GetHWND(), &rect);
   }

@@ -86,7 +86,8 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
   _data->data = data;
   _data->usedir = strict;
   _data->done = 0;
-  _data->main_thread_id = GetCurrentThreadId();
+  id = GetCurrentThreadId();
+  _data->main_thread_id = id;
 
   /* Make window child of frontmost if it exists in the
      same context, and disable all others in the context. */

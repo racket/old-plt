@@ -45,10 +45,9 @@
 
 	 (let ([ensure-interface-has?
 		(lambda (x)
-		  (printf "checking ~a in ~a~n" x ,from-g)
 		  (unless (ormap (lambda (i) (ivar-in-interface? x i)) ,from-g)
 		    (error 'mixin
-			   "ivar ~a not in any of ~a interfaces but was referenced in definition"
+			   "ivar `~a' not in any of ~a, but was referenced in definition"
 			   x ,from-g)))])
 	   ,@(map (lambda (clause)
 		    (let ([names

@@ -8,6 +8,10 @@
 
   (provide main-pane)
 
+  (define troubleshooting-link
+    `(A ((HREF "/servlets/hd-trouble.ss"))
+	"Troubleshooting"))
+
   (define (main-pane)
     `(TABLE ((CELLSPACING "0")
 	     (CELLPADDING "0"))
@@ -27,6 +31,7 @@
 			(A ((HREF "/servlets/hd-config.ss")
 			    (TARGET "_top"))
 			   ,(string-constant plt:hd:configure))
+			"," ,troubleshooting-link 
 			,@(if (use-plt-browser?)
 			      `()
 			      `(","

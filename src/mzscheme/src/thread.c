@@ -1162,6 +1162,8 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
   start = m;
   m = c;
   while (1) {
+    /* It matters that this loop starts at the top. See
+       the m->count = i assignment below. */
     for (i = m->count; i--; ) {
       if (m->boxes[i]) {
 
@@ -1182,6 +1184,11 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
 	CUSTODIAN_FAM(m->boxes[i]) = NULL;
 	CUSTODIAN_FAM(m->mrefs[i]) = NULL;
 	
+	/* Set m->count to i in case a GC happens while
+	   the closer is running. If there's a GC, then
+	   for_each_managed will be called. */
+	m->count = i;
+
 	if (cf) {
 	  cf(o, f, data);
 	} else {

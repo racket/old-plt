@@ -148,6 +148,13 @@
   scheme_extension_table->scheme_dont_gc_ptr = scheme_dont_gc_ptr;
   scheme_extension_table->scheme_gc_ptr_ok = scheme_gc_ptr_ok;
   scheme_extension_table->scheme_collect_garbage = scheme_collect_garbage;
+#ifdef MZ_PRECISE_GC
+  scheme_extension_table->GC_variable_stack = GC_variable_stack;
+  scheme_extension_table->GC_register_traversers = GC_register_traversers;
+  scheme_extension_table->GC_resolve = GC_resolve;
+  scheme_extension_table->GC_mark = GC_mark;
+  scheme_extension_table->GC_fixup = GC_fixup;
+#endif
   scheme_extension_table->scheme_make_bucket_table = scheme_make_bucket_table;
   scheme_extension_table->scheme_add_to_table = scheme_add_to_table;
   scheme_extension_table->scheme_change_in_table = scheme_change_in_table;

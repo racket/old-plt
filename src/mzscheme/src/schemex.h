@@ -229,13 +229,21 @@ void (*scheme_add_finalizer_once)(void *p, void (*f)(void *p, void *data), void 
 void (*scheme_add_scheme_finalizer)(void *p, void (*f)(void *p, void *data), void *data);
 void (*scheme_add_scheme_finalizer_once)(void *p, void (*f)(void *p, void *data), void *data);
 void (*scheme_register_finalizer)(void *p, 
-			       void (*f)(void *p, void *data), void *data,
-			       void (**oldf)(void *p, void *data), 
-			       void **olddata);
+					 void (*f)(void *p, void *data), void *data,
+					 void (**oldf)(void *p, void *data), 
+					 void **olddata);
 void (*scheme_remove_all_finalization)(void *p);
 void (*scheme_dont_gc_ptr)(void *p);
 void (*scheme_gc_ptr_ok)(void *p);
 void (*scheme_collect_garbage)(void);
+#ifdef MZ_PRECISE_GC
+void **GC_variable_stack;
+void (*GC_register_traversers)(short tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup,
+				      int is_constant_size, int is_atomic);
+void *(*GC_resolve)(void *p);
+void (*GC_mark)(const void *p);
+void (*GC_fixup)(void *p);
+#endif
 /*========================================================================*/
 /*                             hash tables                                */
 /*========================================================================*/

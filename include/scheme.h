@@ -1171,7 +1171,12 @@ void *scheme_malloc(size_t size);
 
 #ifdef MZ_PRECISE_GC
 # ifdef INCLUDE_WITHOUT_PATHS
-#  include "gc2.h"
+#  if SCHEME_DIRECT_EMBEDDED
+#   include "gc2.h"
+#  else
+#   define GC2_JUST_MACROS_AND_TYPEDEFS
+#   include "schemegc2.h"
+#  endif
 # else
 #  include "../gc2/gc2.h"
 # endif

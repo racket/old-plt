@@ -155,12 +155,13 @@ headers:
 $(srcdir)/../../include/scheme.h: \
           $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
-          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/scheme.h \
-          $(srcdir)/src/schvers.h
+          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/include/scheme.h \
+          $(srcdir)/src/schvers.h $(srcdir)/gc2/gc2.h
 	rm -rf $(srcdir)/../../include/*.* # avoid CVS
 	cp $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h $(srcdir)/src/schvers.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
-          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/../../include 
+          $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/../../include 
+	cp  $(srcdir)/gc2/gc2.h $(srcdir)/../../include/schemegc2.h
 	$(PERL) -ne 's/\/\*III\*\//\#define INCLUDE_WITHOUT_PATHS/; print' \
           < $(srcdir)/include/scheme.h > $(srcdir)/../../include/scheme.h
 

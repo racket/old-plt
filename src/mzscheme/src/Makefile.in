@@ -99,7 +99,8 @@ all:
 	$(XMAKE) mzobjects
 
 mzheaders: $(srcdir)/schemex.h $(srcdir)/schemexm.h $(srcdir)/schemex.inc $(srcdir)/schexn.h schsys.h \
-           $(srcdir)/../include/mzscheme.exp $(srcdir)/../include/mzwin.def $(srcdir)/../include/gmzwin.def
+           $(srcdir)/../include/mzscheme.exp $(srcdir)/../include/mzwin.def $(srcdir)/../include/gmzwin.def \
+           $(srcdir)/../include/mzscheme3m.exp 
 
 mzobjects: $(OBJS)
 
@@ -117,6 +118,9 @@ $(srcdir)/schemex.inc : $(srcdir)/schemef.h $(srcdir)/makex
 
 $(srcdir)/../include/mzscheme.exp : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/../include/mzscheme.exp ; else $(PERL) -s -- $(srcdir)/makex -exports < $(srcdir)/schemef.h > $(srcdir)/../include/mzscheme.exp ; fi
+
+$(srcdir)/../include/mzscheme3m.exp : $(srcdir)/schemef.h $(srcdir)/makex
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/../include/mzscheme3m.exp ; else $(PERL) -s -- $(srcdir)/makex -exports -precisegc < $(srcdir)/schemef.h > $(srcdir)/../include/mzscheme3m.exp ; fi
 
 $(srcdir)/../include/mzwin.def : $(srcdir)/schemef.h $(srcdir)/makex
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/../include/mzwin.def ; else $(PERL) -s -- $(srcdir)/makex -winex < $(srcdir)/schemef.h > $(srcdir)/../include/mzwin.def ; fi

@@ -111,12 +111,11 @@
 		      (current-load
 		       (let ([old-load (current-load)])
 			 (lambda (f)
-			   (when (mred:change-splash-message (format "Loading ~a" f))
-			     (begin0
-			      (old-load f)
-			      (set! mred:splash-counter (add1 mred:splash-counter))
-			      (when (<= mred:splash-counter mred:splash-max)
-				(send gauge set-value mred:splash-counter))))))))))
+			   (when (mred:change-splash-message (format "Loading ~a..." f))
+			     (set! mred:splash-counter (add1 mred:splash-counter))
+			     (when (<= mred:splash-counter mred:splash-max)
+			       (send gauge set-value mred:splash-counter)))
+			   (old-load f)))))))
 		(printf "WARNING: bad bitmap ~s" filename)))
 	  (printf "WARNING: bitmap path ~s not found~n" filename)))))
 

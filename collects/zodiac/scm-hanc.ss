@@ -308,10 +308,13 @@
 		(z:read-object id)))))
 	(else
 	  (convert-to-prim-format
-	    (apply append
-	      (map (lambda (s)
-		     (expand-expr s env attributes sig-element-vocab))
-		(expose-list expr)))))))))
+	    (signature-elements
+	      (expand-expr expr env attributes sig-vocab))))))))
+
+;(apply append
+;	      (map (lambda (s)
+;		     (expand-expr s env attributes sig-element-vocab))
+;		(expose-list expr)))))))))
 
 (define convert-to-prim-format
   (opt-lambda (sig-elements (prefix #f))
@@ -379,10 +382,13 @@
 	(else
 	  (cons immediate-signature-name
 	    (explode-signature-elements
-	      (apply append
-		(map (lambda (s)
-		       (expand-expr s env attributes sig-element-vocab))
-		  (expose-list expr))))))))))
+	      (signature-elements
+		(expand-expr expr env attributes sig-vocab)))))))))
+
+;	      (apply append
+;		(map (lambda (s)
+;		       (expand-expr s env attributes sig-element-vocab))
+;		  (expose-list expr))))))))))
 
 ; --------------------------------------------------------------------
 

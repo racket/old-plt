@@ -236,6 +236,6 @@
 	 (thread
 	  (rec f
 	       (lambda ()
-		 (time (update-counters))
+		 (update-counters)
 		 (sleep 1/2)
 		 (f))))]))))

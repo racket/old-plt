@@ -71,11 +71,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 	cUserHidden = TRUE;
 
-#ifdef OS_X
-	CWindowPtr theMacWindow;
-#else
 	WindowPtr theMacWindow;
-#endif
 
 	/* Make sure we have the right device: */
     CGrafPtr wPort;
@@ -213,7 +209,12 @@ wxFrame::~wxFrame(void)
 		cDialogPanel = NULL;
 	DestroyChildren();
 
-	CWindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
+#ifdef OS_X
+	CWindowPtr theMacWindow;
+#else
+	WindowPtr theMacWindow;
+#endif
+	theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	::DisposeWindow(theMacWindow);
 	delete cMacDC;
 	if (wx_menu_bar)
@@ -393,9 +394,9 @@ void wxFrame::Maximize(Bool maximize)
 		int oldWindowHeight = cWindowHeight;
 
 		SetCurrentDC();
-                GrafPtr theMacGrafPort = cMacDC->macGrafPort();
-                WindowPtr theMacWindow = GetWindowFromPort(theMacGrafPort);
-                Rect portBounds;
+        GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+        WindowPtr theMacWindow = GetWindowFromPort(theMacGrafPort);
+        Rect portBounds;
 		::EraseRect(GetPortBounds(theMacGrafPort,&portBounds));
 		::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
 		InvalWindowRect(theMacWindow,&portBounds);

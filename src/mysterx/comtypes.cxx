@@ -35,6 +35,7 @@ Scheme_Type mx_com_hresult_type;
 Scheme_Type mx_com_iunknown_type;
 Scheme_Type mx_com_pointer_type;
 Scheme_Type mx_com_array_type;
+Scheme_Type mx_com_omit_type;
 
 Scheme_Object *mx_document_pred(int argc,Scheme_Object **argv) {
   return MX_DOCUMENTP(argv[0]) ? scheme_true : scheme_false;
@@ -49,7 +50,6 @@ Scheme_Object *mx_make_cy(CY *pCy) {
   retval->cy = *pCy;
 
   return (Scheme_Object *)retval;
-
 }
 
 Scheme_Object *mx_make_date(DATE *pDate) {

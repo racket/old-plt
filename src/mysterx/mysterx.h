@@ -94,6 +94,10 @@ typedef struct _date_ {
   Scheme_Type type;
 } MX_Date_Object;
 
+typedef struct _mx_omit_ {
+  Scheme_Type type;
+} MX_OMIT;
+
 typedef struct _mx_type_tbl_entry_ {
   IDispatch *pIDispatch;
   char *name;
@@ -167,6 +171,7 @@ extern Scheme_Type mx_com_hresult_type;
 extern Scheme_Type mx_com_iunknown_type;
 extern Scheme_Type mx_com_pointer_type;
 extern Scheme_Type mx_com_array_type;
+extern Scheme_Type mx_com_omit_type;
 
 extern Scheme_Object *hash_table_get;
 extern Scheme_Object *hash_table_put;

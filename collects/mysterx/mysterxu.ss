@@ -24,6 +24,7 @@
   (define coclass->html mxprims:coclass->html)
   (define cocreate-instance mxprims:cocreate-instance)
   (define com-object-eq? mxprims:com-object-eq?)
+  (define com-omit mxprims:com-omit)
 
   (define html-sem (make-semaphore 1))   ; protects HTML insertions
   (define html-wait (lambda () (semaphore-wait html-sem)))

@@ -19,7 +19,8 @@
    com-all-controls
    coclass->html
    cocreate-instance
-   com-object-eq?))
+   com-object-eq?
+   com-omit))
 
 (define-signature mysterx:prims^
   (com-invoke
@@ -257,8 +258,8 @@
    event-dblclick?
    event-error?
    block-until-event
-   process-win-events))
-	
+   process-win-events
+   com-omit))
 
 
 

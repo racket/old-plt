@@ -190,8 +190,10 @@ the ITypeInfo interface.
 
 > (invoke-method a-com-object method-name ...)
 
-  `a-com-object' is a <com-object>, and `method-name' is a string.  Invokes the requested method
-  using the arguments given.
+  `a-com-object' is a <com-object>, and `method-name' is a string.  Invokes 
+  the requested method using the arguments given.  The special value 
+  `com-omit' may be used for optional arguments, useful when values 
+  are supplied for arguments to the right of the omitted argument(s).
 
 > (get-properties a-com-object)
 

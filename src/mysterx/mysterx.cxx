@@ -50,6 +50,8 @@ static HANDLE eventSinkMutex;
 
 static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
 
+static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
+
 static MX_TYPE_TBL_ENTRY *typeTable[TYPE_TBL_SIZE];
 
 static MYSSINK_TABLE myssink_table;
@@ -446,6 +448,12 @@ Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
 							   mxPrims[i].maxargs);
     anchors[i] = boxes[i];
   }
+
+  mx_omit_obj = (Scheme_Object *)scheme_malloc(sizeof(MX_OMIT));
+  mx_omit_obj->type = mx_com_omit_type;
+
+  SCHEME_ENVBOX_VAL(boxes[sizeray(mxPrims)]) = mx_omit_obj;
+  anchors[sizeray(mxPrims)] = boxes[sizeray(mxPrims)];
 
   return scheme_void;
 }
@@ -1650,6 +1658,10 @@ BOOL schemeValueFitsElemDesc(Scheme_Object *val,ELEMDESC *pElemDesc) {
 
   flags = pElemDesc->paramdesc.wParamFlags;
   if ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT))  {
+    if (val == mx_omit_obj) {
+      return TRUE;
+    }
+
     return schemeValueFitsVarType(val,pElemDesc->paramdesc.pparamdescex->varDefaultValue.vt);
   }
 
@@ -2288,9 +2300,16 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     // j = index of VARIANTARG's
 
     VariantInit(&methodArguments->rgvarg[j]);
-    methodArguments->rgvarg[j].vt = 
-      getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
-    marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+
+    if (argv[k] == mx_omit_obj) { // omitted argument
+      methodArguments->rgvarg[j].vt = VT_ERROR;
+      methodArguments->rgvarg[j].lVal = DISP_E_PARAMNOTFOUND;
+    }
+    else {
+      methodArguments->rgvarg[j].vt = 
+	getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
+      marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+    }
   }
 
   // use default values
@@ -2302,8 +2321,8 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   for (i = numParamsPassed - 1 - (argc - 2),j = 0,k = argc - 2; 
        j < numDefaultsNeeded; 
        i--,j++,k++) {
-   methodArguments->rgvarg[i] =
-     pFuncDesc->lprgelemdescParam[k].paramdesc.pparamdescex->varDefaultValue;
+    methodArguments->rgvarg[i] =
+      pFuncDesc->lprgelemdescParam[k].paramdesc.pparamdescex->varDefaultValue;
   }
 
   // omitted optional arguments
@@ -3317,6 +3336,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   mx_com_iunknown_type = scheme_make_type("<com-iunknown>");
   mx_com_pointer_type = scheme_make_type("<com-pointer>");
   mx_com_array_type = scheme_make_type("<com-array>");
+  mx_com_omit_type = scheme_make_type("<com-omit>");
 
   hr = CoInitialize(NULL);
 
@@ -3330,18 +3350,22 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   scheme_register_extension_global(typeTable,TYPE_TBL_SIZE * sizeof(MX_TYPE_TBL_ENTRY *));
 
+  // export prims + omit value
+
   mx_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
   mx_unit->type = scheme_unit_type;
   mx_unit->num_imports = 0;
-  mx_unit->num_exports = sizeray(mxPrims);
+  mx_unit->num_exports = sizeray(mxPrims) + 1;
   mx_unit->exports = (Scheme_Object **)
-    scheme_malloc(sizeray(mxPrims) * sizeof(Scheme_Object *));
+    scheme_malloc((sizeray(mxPrims) + 1) * sizeof(Scheme_Object *));
   mx_unit->export_debug_names = NULL;
   mx_unit->init_func = mx_unit_init;
 
   for (i = 0; i < sizeray(mxPrims); i++) {
     mx_unit->exports[i] = scheme_intern_symbol(mxPrims[i].name);
   }
+
+  mx_unit->exports[sizeray(mxPrims)] = scheme_intern_symbol("com-omit");
 
   initEventNames();
 
@@ -3354,7 +3378,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return scheme_initialize(env); /* reloading COM is OK */
+  return (Scheme_Object *)mx_unit;
 }
 
 BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {

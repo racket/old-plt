@@ -271,10 +271,15 @@
               so no evaluation can take place until ~
               the next execution.")))
 
+  (define busy-cursor (make-object mred:cursor% 'watch))
+  (unless (send busy-cursor ok?)
+    (printf "WARNING: could not make busy cursor~n")
+    (set! busy-cursor #f))
+
   (define (make-text% super%)
     (rec rep-text%
       (class/d super% (context)
-        ((inherit insert change-style
+        ((inherit insert change-style get-canvas
                   set-styles-sticky
                   clear-undos set-caret-owner
                   clear-previous-expr-positions
@@ -1039,10 +1044,13 @@
               (unless shutting-down?
 		(no-user-evaluation-message)))))
         (define need-interaction-cleanup? #f)
+
+        (define saved-cursor #f)
+
         (define cleanup-interaction ; =Kernel=, =Handler=
           (lambda ()
             (set! need-interaction-cleanup? #f)
-            (mred:end-busy-cursor)
+            (send (get-canvas) set-cursor saved-cursor)
             (begin-edit-sequence)
             (wait-for-io-to-complete)
             (cleanup-transparent-io)
@@ -1094,7 +1102,8 @@
             (cleanup-transparent-io)
             (reset-pretty-print-width)
             (ready-non-prompt)
-            (mred:begin-busy-cursor)
+            (set! saved-cursor (send (get-canvas) get-cursor))
+            (send (get-canvas) set-cursor busy-cursor)
             (when should-collect-garbage?
               (set! should-collect-garbage? #f)
               (collect-garbage))

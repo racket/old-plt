@@ -24,14 +24,6 @@
 		   null
 		   ;; Windows extra libs (assume always there)
 		   (list "wsock32.lib")
-		   ;; Force symbols:
-		   '("IO_ctrl" "BIO_free" "BIO_new_socket" "ERR_error_string" "ERR_get_error" "SSL_CTX_free" 
-		     "SSL_CTX_new" "SSL_CTX_use_PrivateKey_file" "SSL_CTX_use_RSAPrivateKey_file" 
-		     "SSL_CTX_use_certificate_chain_file" "SSL_accept" "SSL_connect" "SSL_free" 
-		     "SSL_get_error" "SSL_get_rbio" "SSL_get_wbio" "SSL_library_init" "SSL_load_error_strings" 
-		     "SSL_new" "SSL_read" "SSL_set_bio" "SSL_shutdown" "SSL_write" "SSLv23_client_method" 
-		     "SSLv23_server_method" "SSLv2_client_method" "SSLv2_server_method" "SSLv3_client_method" 
-		     "SSLv3_server_method")
 		   ;; Extra depends:
 		   (list "mzssl.ss")
 		   ;; Last-chance k:

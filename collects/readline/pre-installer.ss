@@ -37,8 +37,6 @@
 		      [else null]))
 		   ;; Windows extra libs (assume always there)
 		   null
-		   ;; Names to force library inclusion:
-		   (list "rl_readline_name")
 		   ;; Extra depends:
 		   (list "mzrl.ss")
 		   ;; Last-chance k:

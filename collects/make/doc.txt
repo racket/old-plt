@@ -210,7 +210,6 @@ inspecting "/usr/lib". More generally, the "last chance" argument to
                find-windows-libs
                unix-libs
                windows-libs
-	       force-symbol-strings
 	       extra-depends
                last-chance-k)
 
@@ -255,13 +254,6 @@ The arguments are as follows:
 
   * windows-libs --- like `unix-libs', but for Windows. For example,
     the "openssl" installer supplies '("wsock32").
-
-  * force-symbol-strings --- a list of strings that is used on some
-    platforms when linking to static archives (i.e., ".a" files). Each
-    element of the list should be a name declared in the archive such
-    that forcing the name to be included in the extension ensures
-    proper linking. For example, the "openssl" installer supplies
-    '("BIO_new" "SSL_new" "ERR_load_strings").
 
   * extra-depends --- a list of relative paths to treat as
     dependencies for compiling `file.c'. Often this list will include

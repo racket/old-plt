@@ -3995,7 +3995,6 @@ static void scan_tagged_mpage(void **p, MPage *page)
 
 #if ALIGN_DOUBLES
     if (tag == SKIP) {
-      offset++;
       p++;
     } else {
 #endif

@@ -90,7 +90,7 @@
 
 	     ;; Don't report error; don't raise an exception
 	     [html-error
-	      (if mred:debug:on?
+	      (if (eq? mred:debug:on? 'html)
 		  (lambda args
 		    (begin
 		      (apply fprintf (current-error-port) args)

@@ -73,17 +73,6 @@
       (define timeout-value 60)
 
       (define the-port #f)
-      (define port-closed? #f)
-      (define port-sem (make-semaphore 1))
-
-      (define (close-the-port) 
-	; > 1 thread may try this
-	(semaphore-wait port-sem)
-	(when (and the-port
-		   (not port-closed?))
-	      (close-input-port the-port)
-	      (set! port-closed? #t))
-	(semaphore-post port-sem))
 	
       (define (get-collect-version-info collect)
 	(let ([info-proc 
@@ -157,13 +146,13 @@
 			(begin
 			  (when wait-dialog
 				(hide-wait-dialog wait-dialog))
-			  (close-the-port)
+			  (close-input-port the-port)
 			  (run-thunk
 			   (lambda () (show-ok (string-constant 'network-timeout)
 					       (string-constant 'cannot-connect)
 					       #f)))
 			  ; will force exception on pending read
-			  (close-the-port))
+			  (close-input-port the-port))
 			(begin
 			  (sleep 1)
 			  (loop (add1 n))))))]
@@ -180,7 +169,7 @@
 		      (with-handlers 
 		       ([void void]) ; thread, port might already be dead
 		       (kill-thread timeout-thread)
-		       (close-the-port)))))
+		       (close-input-port the-port)))))
 	     (show-wait-dialog wait-dialog)
 	     (semaphore-post dialog-sem)))
 
@@ -198,7 +187,7 @@
 		[curr-version (version)]
 		[needs-update #f])
 	    
-	    (close-the-port)
+	    (close-input-port the-port)
 		  
 	    ; responses are a list of lists of symbol/string pairs: 
 	    ;  (((package name)	

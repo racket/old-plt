@@ -2,13 +2,11 @@
   (case request
     [(name) "MrSpidey Sba"]
     [(compile-prefix) '(begin
-			 (read-case-sensitive #t)
 			 (require-library "sbasig.ss" "mrspidey"))]
     [(compile-omit-files)
      (list "sigs.ss" "exn-hierarchy.ss")]
     [(compile-elaboration-zos) (list "sigs.ss")]
     [(compile-elaboration-zos-prefix) '(begin
-					 (read-case-sensitive #t)
 					 (require-library "refer.ss")
 					 (require-library "cores.ss")
 					 (require-library "corem.ss")

@@ -2031,8 +2031,8 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd);
 # define WIDE_PATH_COPY(s) scheme_convert_to_wchar(s, 1)
 # define NARROW_PATH(s) scheme_convert_from_wchar(s)
 # define MSC_W_IZE(n) _w ## n
-extern wchar_t *scheme_convert_to_wchar(char *s, int do_copy);
-extern char *scheme_convert_from_wchar(wchar_t *ws);
+extern wchar_t *scheme_convert_to_wchar(const char *s, int do_copy);
+extern char *scheme_convert_from_wchar(const wchar_t *ws);
 #else
 # define WIDE_PATH(s) s
 # define WIDE_PATH_COPY(s) s

@@ -141,6 +141,7 @@ void wxInitialize(HINSTANCE hInstance)
     info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&info);
     no_uni = (info.dwPlatformId != VER_PLATFORM_WIN32_NT);
+    no_uni = 0;
 
     RegisterMyClass(hInstance, no_uni,
 		    CS_HREDRAW | CS_VREDRAW,

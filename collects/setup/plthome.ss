@@ -33,7 +33,8 @@
     (if (eq? 'windows (system-type))
 	(lambda (str) (regexp-replace* #rx#"\\\\" 
 				       (path->bytes
-					(simplify-path (bytes->path str)))
+					(normal-case-path
+					 (simplify-path (bytes->path str))))
 				       #"/"))
 	(lambda (str) (path->bytes (simplify-path (bytes->path str))))))
 

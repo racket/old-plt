@@ -413,9 +413,10 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 
   switch (message) {
   case WM_QUERYENDSESSION:
+  case WM_ENDSESSION:
   case WM_CLOSE:
     tramp = 1;
-    *res = (message == WM_CLOSE);
+    *res = 1;
     break;
   case WM_RBUTTONDOWN:
   case WM_RBUTTONUP:

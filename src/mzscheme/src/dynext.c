@@ -291,7 +291,7 @@ static Scheme_Object *do_load_extension(const char *filename,
     Setup_Procedure f;
     char *vers;
   
-    dl = LoadLibrary(filename);
+    dl = LoadLibraryW(WIDE_PATH(filename));
     if (!dl) {
       long err;
       err = GetLastError();

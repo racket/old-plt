@@ -249,6 +249,7 @@ int main(int argc, char *argv[])
   int rval;
   void *stack_start;
 
+
   stack_start = (void *)&stack_start;
 
 #if defined(MZ_PRECISE_GC)
@@ -594,7 +595,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
   LPWSTR m_lpCmdLine;
   long argc, j, l;
   char *a, **argv, *b, *normalized_path = NULL;
-  
+
   /* Get command line: */
   m_lpCmdLine = GetCommandLineW();
   for (j = 0; m_lpCmdLine[j]; j++) {
@@ -613,14 +614,21 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
       my_name = (wchar_t *)malloc(sizeof(wchar_t) * name_len);
       l = GetModuleFileNameW(NULL, my_name, name_len);
       if (!l) {
-		  name_len = GetLastError();
+	name_len = GetLastError();
 	free(my_name);
 	my_name = NULL;
 	break;
       } else if (l < name_len) {
 	a = wchar_to_char(my_name, l);
 	argv[0] = a;
-	CharLowerBuffW(my_name, l);
+	{
+	  /* CharLowerBuff doesn't work with unicows.dll -- strange. 
+	     So we use CharLower, instead. */
+	  int i;
+	  for (i = 0; i < l; i++) {
+	    CharLowerW(my_name + i);
+	  }
+	}
 	normalized_path = wchar_to_char(my_name, l);
 	free(my_name);
 	break;

@@ -1861,7 +1861,7 @@ static char *mzGETENV(char *s)
 
 static int mzPUTENV(char *var, char *val, char *together)
 {
-  return SetEnvironmentVariable(var, val);
+  return !SetEnvironmentVariable(var, val);
 }
 
 #else

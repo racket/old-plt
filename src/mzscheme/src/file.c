@@ -685,14 +685,14 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #define WC_BUFFER_SIZE 1024
 static wchar_t wc_buffer[WC_BUFFER_SIZE];
 
-static int wc_strlen(wchar_t *ws)
+static int wc_strlen(const wchar_t *ws)
 {
   int l;
   for (l =0; ws[l]; l++) { }
   return l;
 }
 
-wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
+wchar_t *scheme_convert_to_wchar(const char *s, int do_copy)
 {
   long len, l;
   wchar_t *ws;
@@ -713,7 +713,7 @@ wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
   return ws;
 }
 
-char *scheme_convert_from_wchar(wchar_t *ws)
+char *scheme_convert_from_wchar(const wchar_t *ws)
 {
   long len, l;
   char *s;

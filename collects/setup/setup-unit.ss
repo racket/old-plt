@@ -82,7 +82,7 @@
 	(apply 
 	 append
 	 (specific-collections)
-	 (map (lambda (x) (unpack x plthome (lambda (s) (setup-printf "~a~n" s)))) (archives))))
+	 (map (lambda (x) (unpack x plthome (lambda (s) (setup-printf "~a" s)))) (archives))))
 
       (define (done)
 	(setup-printf "Done setting up"))
@@ -128,37 +128,39 @@
 		   c)))
 
       (define collections-to-compile
-	(if (null? x-specific-collections)
-	    (let ([ht (make-hash-table)])
-	      (let loop ([collection-paths (current-library-collection-paths)])
-		(cond
-		 [(null? collection-paths) 
-		  (hash-table-map ht (lambda (k v) v))]
-		 [else (let ([cp (car collection-paths)])
-			 (let loop ([collections (if (directory-exists? cp)
-						     (directory-list cp)
-						     null)])
-			   (cond
-			    [(null? collections) (void)]
-			    [else (let* ([collection (car collections)]
-					 [coll-sym (string->symbol collection)])
-				    (hash-table-get
-				     ht
-				     coll-sym
-				     (lambda ()
-				       (let ([cc (collection->cc (list collection))])
-					 (when cc
-					   (hash-table-put! 
-					    ht
-					    coll-sym
-					    cc))))))
-				  (loop (cdr collections))])))
-		       (loop (cdr collection-paths))])))
-	    (map
-	     (lambda (c)
-	       (or (collection->cc c)
-		   (cannot-compile c)))
-	     x-specific-collections)))
+	(quicksort
+	 (if (null? x-specific-collections)
+	     (let ([ht (make-hash-table)])
+	       (let loop ([collection-paths (current-library-collection-paths)])
+		 (cond
+		  [(null? collection-paths) 
+		   (hash-table-map ht (lambda (k v) v))]
+		  [else (let ([cp (car collection-paths)])
+			  (let loop ([collections (if (directory-exists? cp)
+						      (directory-list cp)
+						      null)])
+			    (cond
+			     [(null? collections) (void)]
+			     [else (let* ([collection (car collections)]
+					  [coll-sym (string->symbol collection)])
+				     (hash-table-get
+				      ht
+				      coll-sym
+				      (lambda ()
+					(let ([cc (collection->cc (list collection))])
+					  (when cc
+					    (hash-table-put! 
+					     ht
+					     coll-sym
+					     cc))))))
+				   (loop (cdr collections))])))
+			(loop (cdr collection-paths))])))
+	     (map
+	      (lambda (c)
+		(or (collection->cc c)
+		    (cannot-compile c)))
+	      x-specific-collections))
+	 (lambda (a b) (string-ci<? (cc-name a) (cc-name b)))))
 
       (define control-io-apply
 	(lambda (print-doing f args)
@@ -207,7 +209,6 @@
 		  (let* ([cc (car l)]
 			 [info (cc-info cc)])
 		    (append
-		     (list cc)
 		     (map
 		      (lambda (subcol)
 			(or
@@ -237,6 +238,7 @@
 							 x)))
 						 x))
 				     (error "result is not a list of relative path string lists:" x)))))
+		     (list cc)
 		     (loop (cdr l)))))))
 
       (define (delete-files-in-directory path printout)
@@ -255,13 +257,6 @@
 			   "encountered ~a, neither a file nor a directory"
 			   path)])))
 	 (directory-list path)))
-
-      (define (is-subcollection? collection sub-coll)
-	(cond
-	 [(null? collection) #t]
-	 [(null? sub-coll) #f]
-	 [else (and (string=? (car collection) (car sub-coll))
-		    (is-subcollection? (cdr collection) (cdr sub-coll)))]))
 
       (define (clean-collection cc)
 	(let* ([info (cc-info cc)]
@@ -327,6 +322,8 @@
 		 (setup-fprintf port "  ~s" x))))
 	 errors))
 
+      (use-compiled-file-kinds 'all)
+
       (define (make-it desc compile-collection)
 	(for-each (lambda (cc)
 		    (record-error
@@ -340,7 +337,8 @@
 				compile-collection
 				(cc-collection cc))
 			 (setup-printf "No need to make ~a for ~a at ~a" 
-				       desc (cc-name cc) (cc-path cc))))))
+				       desc (cc-name cc) (cc-path cc)))
+		       (collect-garbage))))
 		  collections-to-compile))
 
       (when (make-zo) (make-it ".zos" compile-collection-zos))

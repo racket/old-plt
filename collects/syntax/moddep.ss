@@ -5,10 +5,7 @@
     (cond
      [(compiled-module-expression? (syntax-e exp))
       (if (eq? (module-compiled-name (syntax-e exp))
-	       (string->symbol
-		(format "~a~a"
-			(or (current-module-name-prefix) "")
-			expected-module)))
+	       expected-module)
 	  ;; It's fine:
 	  exp
 	  ;; Wrong name:

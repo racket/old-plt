@@ -1,14 +1,14 @@
 
 (module collection-unit mzscheme
-  (require (lib "unitsig.ss"))
-  (require (lib "list.ss")
-	  (lib "file.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "list.ss")
+	   (lib "file.ss"))
 
   (require "collection-sig.ss")
   (require "make-sig.ss")
 
   (require (lib "sig.ss" "compiler")
-	  (lib "file-sig.ss" "dynext"))
+	   (lib "file-sig.ss" "dynext"))
 
   (provide make:collection@)
 
@@ -30,7 +30,7 @@
 	       [ext-compiler #f]
 	       [dest-dir (build-path "compiled" "native" (system-library-subpath))]
 	       [src-dir (current-directory)]
-	       [sses (quicksort collection-files string<?)]
+	       [sses (quicksort collection-files string-ci<?)]
 	       [bases (map (lambda (src)
 			     (extract-base-filename/ss src 'make-collection-extension))
 			   sses)]

@@ -2632,7 +2632,7 @@ long scheme_get_process_milliseconds(void)
 END_XFORM_SKIP;
 #endif
 
-static long get_seconds(void)
+long scheme_get_seconds(void)
 {
 #ifdef USE_MACTIME
   unsigned long secs;
@@ -2929,7 +2929,7 @@ static Scheme_Object *current_gc_milliseconds(int argc, Scheme_Object **argv)
 static Scheme_Object *current_seconds(int argc, Scheme_Object **argv)
 {
   long secs;
-  secs = get_seconds();
+  secs = scheme_get_seconds();
   return scheme_make_integer_value_from_time(secs);
 }
 

@@ -278,7 +278,7 @@ char *wxFileSelector(char *message,
       ws = wxWIDE_STRING_COPY(message);
       len = wx_wstrlen(ws);
       msg = (wchar_t *)malloc(sizeof(wchar_t) * (len + 1));
-      memcpy(msg, ws, sizeof((wchar_t *) * (len + 1)));
+      memcpy(msg, ws, sizeof(wchar_t) * (len + 1));
       b->lpszTitle = msg;
     }
     b->ulFlags = (BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS);
@@ -420,7 +420,7 @@ char *wxFileSelector(char *message,
     ws = wxWIDE_STRING_COPY(message);
     len = wx_wstrlen(ws);
     msg = (wchar_t *)malloc(sizeof(wchar_t) * (len + 1));
-    memcpy(msg, ws, sizeof((wchar_t *) * (len + 1)));
+    memcpy(msg, ws, sizeof(wchar_t) * (len + 1));
     of->lpstrTitle = msg;
   }
   of->nFileOffset = 0;

@@ -7,14 +7,14 @@
       zodiac:expander^ zodiac:interface^)
 
     (define-struct (class*-form struct:parsed)
-      (super-names super-exprs init-vars inst-clauses))
+      (this super-names super-exprs init-vars inst-clauses))
 
     (define create-class*-form
-      (lambda (super-names super-exprs init-vars inst-clauses source)
+      (lambda (this super-names super-exprs init-vars inst-clauses source)
 	(make-class*-form (z:zodiac-origin source)
 	  (z:zodiac-start source) (z:zodiac-finish source)
 	  (make-empty-back-box)
-	  super-names super-exprs init-vars inst-clauses)))
+	  this super-names super-exprs init-vars inst-clauses)))
 
     (define-struct (supervar-binding struct:binding) ())
     (define-struct (superinit-binding struct:binding) ())
@@ -554,7 +554,7 @@
 
     (add-micro-form 'class* scheme-vocabulary
       (let* ((kwd '())
-	      (in-pattern `(class* ((super-name super-expr) ...)
+	      (in-pattern `(class* this ((super-name super-expr) ...)
 			     ,optarglist-pattern
 			     inst-vars ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
@@ -564,11 +564,13 @@
 	      =>
 	      (lambda (p-env)
 		(let ((kwd-pos (pat:pexpand 'class* p-env kwd))
+		       (in:this (pat:pexpand 'this p-env kwd))
 		       (in:supervars (pat:pexpand '(super-name ...) p-env kwd))
 		       (in:supervals (pat:pexpand '(super-expr ...) p-env kwd))
 		       (in:initvars (pat:pexpand `,optarglist-pattern
 				      p-env kwd))
 		       (in:ivars (pat:pexpand '(inst-vars ...) p-env kwd)))
+		  (valid-syntactic-id? in:this)
 		  (distinct-valid-syntactic-id/s? in:supervars)
 		  (let* ((proc:supervars (map create-supervar-binding+marks
 					   in:supervars))
@@ -586,9 +588,7 @@
 					      (expand-expr e env
 						attributes vocab))
 					    in:supervals))
-			  (proc:this (create-lexical-binding+marks
-				       (introduce-fresh-identifier
-					 'this kwd-pos)))
+			  (proc:this (create-lexical-binding+marks in:this))
 			  (proc:initvar-info
 			    (expand-expr in:initvars env attributes
 			      optarglist-decls-vocab))
@@ -624,6 +624,7 @@
 			  (let
 			    ((result
 			       (create-class*-form
+				 (car proc:this)
 				 (map car proc:supervars)
 				 parsed-supervals
 				 parsed-initvars
@@ -722,7 +723,8 @@
 	      (in-pattern `(class super-expr
 			     ,optarglist-pattern
 			     inst-vars ...))
-	      (out-pattern `(class* ((super super-expr))
+	      (out-pattern `(class* this
+			      ((super super-expr))
 			      ,optarglist-pattern
 			      inst-vars ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
@@ -732,9 +734,13 @@
 	      =>
 	      (lambda (p-env)
 		(let* ((kwd-pos (pat:pexpand 'class p-env kwd))
+			(captured-this (introduce-identifier 'this kwd-pos))
 			(captured-super (introduce-identifier 'super kwd-pos))
-			(new-p-env (pat:extend-penv 'super
-				     captured-super p-env)))
+			(new-p-env (pat:extend-penv
+				     'this captured-this
+				     (pat:extend-penv
+				       'super captured-super
+				       p-env))))
 		  (expand-expr
 		    (structurize-syntax
 		      (pat:pexpand out-pattern new-p-env kwd)
@@ -837,7 +843,8 @@
 
     (extend-parsed->raw class*-form?
       (lambda (expr p->r)
-	`(class* ,(map (lambda (super-var super-val)
+	`(class* ,(p->r (class*-form-this expr))
+	   ,(map (lambda (super-var super-val)
 			 (list (p->r super-var) (p->r super-val)))
 		    (class*-form-super-names expr)
 		    (class*-form-super-exprs expr))

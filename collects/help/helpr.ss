@@ -9,7 +9,7 @@
 	  (mixin : (frame-mixin))
 	  [doc-position : help:doc-position^])
   (link [browser : browser^ ((require-library "browserr.ss" "browser")
-			     function string file url mred)]
+			     function string file url mred framework)]
 	[search : help:search^ ((require-relative-library "search.ss")
 				doc-position function)]
 	[info : setup:info^ ((require-library "get-infor.ss" "setup"))]

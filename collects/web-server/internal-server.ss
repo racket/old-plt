@@ -52,10 +52,7 @@
 			(define browser-frame #f)
                         
                         (parameterize ([current-custodian browser-and-server-cust])
-                          (serve configuration
-                               (let ([listener (tcp-listen port)])
-                                 (lambda ()
-                                   (tcp-accept listener)))))
+                          (serve configuration port))
                         (values
 			 (lambda () 
 			   (when browser-frame

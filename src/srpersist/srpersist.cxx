@@ -6872,7 +6872,7 @@ Scheme_Object *scheme_module_name(void) {
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   int i,j;
-  Scheme_Object *srp_name,*srp_val;
+  Scheme_Object *srp_val;
 
   initTypes();
 

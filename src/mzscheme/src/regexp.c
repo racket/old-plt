@@ -52,7 +52,7 @@ typedef long rxpos;
 /* The INDIRECT_TO_PROGRAM mode can be useful for debugging
    in 3m to ensure that a regexp "program" is not misinterpreted
    as a pointer by the conservative collector. (This was a problem
-   once, anyway.)
+   once, anyway.) */
 /* #define INDIRECT_TO_PROGRAM */
 
 typedef struct regexp {

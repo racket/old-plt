@@ -596,10 +596,10 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
   's->c (lambda (x aux) x)
   'c->s (lambda (x) x))
 
-(~ "/* Special type, not actually used for anything except to mark points" \\
+(~ "/* Special type, not actually used for anything except to mark values" \\
    " * that are treated like pointers but not referenced.  Used for" \\
    " * creating function types. */")
-(defctype 'fmark 'ftype "pointer" 'ctype #f)
+(defctype 'fpointer 'ftype "pointer" 'ctype #f)
 
 :}
 typedef union _ForeignAny {
@@ -818,7 +818,7 @@ static Scheme_Object *c_to_scheme(Scheme_Object *type, void *src)
       return res;
     else
       return _scheme_apply(CTYPE_USER_C2S(type), 1, (Scheme_Object**)(&res));
-  } else if (CTYPE_PRIMLABEL(type) == FOREIGN_fmark) {
+  } else if (CTYPE_PRIMLABEL(type) == FOREIGN_fpointer) {
     return (Scheme_Object*)src;
   } else switch (CTYPE_PRIMLABEL(type)) {
     {:(for-each-type
@@ -847,7 +847,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       val = _scheme_apply(CTYPE_USER_S2C(type), 1, (Scheme_Object**)(&val));
     type = CTYPE_BASETYPE(type);
   }
-  if (CTYPE_PRIMLABEL(type) == FOREIGN_fmark) {
+  if (CTYPE_PRIMLABEL(type) == FOREIGN_fpointer) {
     if (SCHEME_FFICALLBACKP(val))
       ((void**)dst)[0] = ((ffi_callback_struct*)val)->callback;
     else if (SCHEME_CPTRP(val))
@@ -855,7 +855,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
     else if (SCHEME_FFIOBJP(val))
       ((void**)dst)[0] = ((ffi_obj_struct*)val)->obj;
     else /* ((void**)dst)[0] = val; */
-         scheme_wrong_type("Scheme->C", "C-function-value", 0, 1, &val);
+         scheme_wrong_type("Scheme->C", "cpointer", 0, 1, &val);
   } else switch (CTYPE_PRIMLABEL(type)) {
     {:(for-each-type
         (define (wrong-type obj type)
@@ -1043,7 +1043,7 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   if (NULL == (base = get_ctype_base(argv[1])))
     scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
   else size = ctype_sizeof(base);
-  if (CTYPE_PRIMLABEL(base) == FOREIGN_fmark) {
+  if (CTYPE_PRIMLABEL(base) == FOREIGN_fpointer) {
     if (argc > 2)
       scheme_signal_error
         (MYNAME": referencing a special value with extra arguments");
@@ -1085,10 +1085,10 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
   if (NULL == (base = get_ctype_base(argv[1])))
     scheme_wrong_type(MYNAME, "C-type", 1, argc, argv);
   else size = ctype_sizeof(base);
-  if (CTYPE_PRIMLABEL(base) == FOREIGN_fmark) {
+  if (CTYPE_PRIMLABEL(base) == FOREIGN_fpointer) {
     if (argc > 3) {
       scheme_signal_error
-        (MYNAME": referencing a special value with extra arguments");
+        (MYNAME": setting a special value with extra arguments");
     } else if (SCHEME_CPTRP(argv[0])) {
       ptr = SCHEME_CPTR_VAL(argv[0]);
     } else if SCHEME_FFIOBJP(argv[0]) {
@@ -1282,7 +1282,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   for (i=0; i<nargs; i++) { avalues[i] = NULL; } /* no need for these refs */
   avalues = NULL;
   switch (CTYPE_PRIMLABEL(base)) {
-  case FOREIGN_fmark: /* need to allocate a pointer */
+  case FOREIGN_fpointer: /* need to allocate a pointer */
     p = scheme_make_foreign_cpointer(oval.x_pointer);
     break;
   case FOREIGN_struct:

@@ -20,8 +20,8 @@
            (lib "min-servlet.ss" "web-server")
            "sig.ss"
            )
-  
-  (provide/contract 
+
+  (provide/contract
    (internal-serve
     (opt->*
      (unit/sig?
@@ -34,7 +34,7 @@
       (any? . -> . string?)                 ;; any? should be url? but that comes into unit
       (-> (union false? (is-a?/c frame%)))
       (-> (is-a?/c frame%))))))
-  
+
   ;; to serve web connections on a port without TCP/IP.
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions
   ;; that simulate their behavior without using the network.
@@ -49,24 +49,24 @@
           [tcp : net:tcp^ ((tcp-redirect (list port)))]
           [url : net:url^ (url@ tcp)]
           [browser : browser^ (browser@ plt-installer mred tcp url)]
-	  [config : web-config^ ((update-configuration
-				  configuration@
-				  `((port . ,port)
-				    (ip-address . ,listen-ip)
-				    (namespace . , (lambda ()
-						     (current-namespace))))))]
+          [config : web-config^ ((update-configuration
+                                  configuration@
+                                  `((port . ,port)
+                                    (ip-address . ,listen-ip)
+                                    (namespace . , (lambda ()
+                                                     (current-namespace))))))]
           [web-server : web-server^ (web-server@ tcp config)]
           [main : () ((unit/sig ()
                         (import net:tcp^
                                 browser^
                                 web-server^
                                 net:url^)
-                        
+
                         (define browser-and-server-cust (make-custodian))
-                        
+
                         ;; (listof frame%)
-			(define browser-frames null)
-                        
+                        (define browser-frames null)
+
                         (define (shutdown-server)
                           (let ([bfs browser-frames])
                             (set! browser-frames null)
@@ -76,7 +76,7 @@
                                           (send browser-frame show #f)))
                                       bfs)
                             (custodian-shutdown-all browser-and-server-cust)))
-                        
+
                         (define (url-on-server-test url)
                           (cond
                             [(url? url)
@@ -90,38 +90,37 @@
                                 #f]
                                [else (url->string url)])]
                             [else #f]))
-                        
+
                         (define (extract-url-path url)
                           (cond
                             [(url? url) (url-path url)]
                             [else #f]))
-                        
+
                         (define (remove-from-list-mixin %)
                           (class %
-                            (define/override (on-close)
-                              (set! browser-frames (remq this browser-frames))
-                              (super on-close))
+                            (define (on-close)
+                              (set! browser-frames (remq this browser-frames)))
                             (super-new)
                             (set! browser-frames (cons this browser-frames))))
-                        
-                        (define browser-frame% 
+
+                        (define browser-frame%
                           (remove-from-list-mixin
-                           (hyper-frame-extension 
+                           (hyper-frame-extension
                             hyper-no-show-frame%)))
-                        
+
                         (define (new-browser) (make-object browser-frame%))
-                        
+
                         (define (find-browser)
                           (if (null? browser-frames)
                               #f
                               (car browser-frames)))
-                          
+
                         (parameterize ([current-custodian browser-and-server-cust])
                           (serve))
-                        
+
                         (values
-			 shutdown-server
-			 url-on-server-test
+                         shutdown-server
+                         url-on-server-test
                          extract-url-path
                          url->string
                          find-browser

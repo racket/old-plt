@@ -998,7 +998,9 @@
        (check-parameter-procedure (forall (a) (a -> a)))
 
        ;; ---- custodians
-       (make-custodian         (custodian -> custodian))
+       (make-custodian         (case->
+				(custodian -> custodian)
+				(-> custodian)))
        (custodian-shutdown-all (custodian -> void))
        (custodian?             (_ -> bool) (predicate custodian))
        (current-custodian      (case->

@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r9a")
+(define *tex2page-version* "4r11")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2076,6 +2076,7 @@
           (emit "</h")
           (emit htmlnum)
           (emit ">")
+          (emit-newline)
           (do-para)
           (let ((tocdepth (get-gcount "\\tocdepth")))
             (when (and
@@ -2163,6 +2164,12 @@
       (emit *display-justification*)
       (emit ">"))))
 
+(define pop-tabular-stack
+  (lambda (type)
+    (if (null? *tabular-stack*)
+      (terror 'pop-tabular-stack "Bad environment closer: " type)
+      (set! *tabular-stack* (cdr *tabular-stack*)))))
+
 (define do-end-table/figure
   (lambda (type)
     (when (and (eqv? type 'figure) (char=? (snoop-actual-char) #\*))
@@ -2171,7 +2178,7 @@
     (emit "</td></tr>")
     (emit "</table>")
     (emit "</div>")
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack type)
     (egroup)
     (do-para)))
 
@@ -2244,7 +2251,7 @@
 
 (define do-endminipage
   (lambda ()
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'minipage)
     (let ((in-table?
             (and (not (null? *tabular-stack*))
                  (memv (car *tabular-stack*) '(block figure table)))))
@@ -2254,8 +2261,7 @@
 (define do-tabbing
   (lambda () (set! *tabular-stack* (cons 'tabbing *tabular-stack*)) (do-para)))
 
-(define do-end-tabbing
-  (lambda () (set! *tabular-stack* (cdr *tabular-stack*)) (do-para)))
+(define do-end-tabbing (lambda () (pop-tabular-stack 'tabbing) (do-para)))
 
 (define do-equation
   (lambda (type)
@@ -2291,7 +2297,8 @@
     (do-end-para)
     (emit "</td>")
     (unless (or
-             (eqv? (car *tabular-stack*) 'eqnarray*)
+             (and (not (null? *tabular-stack*))
+                  (eqv? (car *tabular-stack*) 'eqnarray*))
              (not *equation-numbered?*))
       (emit "<td>(")
       (emit *equation-number*)
@@ -2299,7 +2306,7 @@
     (emit "</tr>")
     (emit-newline)
     (emit "</table></div>")
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'equation)
     (set! *math-mode?* #f)
     (set! *in-display-math?* #f)
     (egroup)
@@ -2699,7 +2706,7 @@
     (do-end-para)
     (egroup)
     (emit "</td></tr></table></div>")
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'block)
     (emit-newline)))
 
 (define do-function
@@ -3557,7 +3564,7 @@
 (define do-item
   (lambda ()
     (let ((a #f))
-      (when (pair? *tabular-stack*) (set! a (car *tabular-stack*)))
+      (unless (null? *tabular-stack*) (set! a (car *tabular-stack*)))
       (case a
         ((description) (do-description-item))
         ((itemize enumerate) (do-regular-item))
@@ -3775,7 +3782,9 @@
     (emit "<!--")
     (emit-newline)
     (emit-newline)
-    (emit "Generated from TeX source by tex2page, ")
+    (emit "Generated from ")
+    (emit *main-tex-file*)
+    (emit " by tex2page, ")
     (emit "v ")
     (emit *tex2page-version*)
     (emit-newline)
@@ -5038,7 +5047,7 @@
           (emit "</table>")
           (emit-newline)
           (when *in-display-math?* (emit "</td><td>"))
-          (set! *tabular-stack* (cdr *tabular-stack*))
+          (pop-tabular-stack type)
           (set! *equation-position* 0)))
       (when *in-display-math?* (emit "</td><td>"))
       (emit-newline)
@@ -5046,7 +5055,7 @@
 
 (define do-noalign
   (lambda ()
-    (let* ((type (car *tabular-stack*))
+    (let* ((type (and (not (null? *tabular-stack*)) (car *tabular-stack*)))
            (split? (memv type '(eqalignno displaylines))))
       (when split?
         (egroup)
@@ -5076,7 +5085,7 @@
           (emit "</td></tr></table>")
           (when *in-display-math?* (emit "</td><td>"))
           (emit-newline)
-          (set! *tabular-stack* (cdr *tabular-stack*))))
+          (pop-tabular-stack 'pmatrix)))
       (when *in-display-math?* (emit "</td><td>"))
       (emit "<table border=1><tr><td>")
       (emit-newline))))
@@ -6570,7 +6579,7 @@
   (lambda (z)
     (ignorespaces)
     (let ((top-tabular
-            (if (pair? *tabular-stack*) (car *tabular-stack*) 'nothing)))
+            (if (not (null? *tabular-stack*)) (car *tabular-stack*) 'nothing)))
       (case top-tabular
         ((tabular)
          (get-bracketed-text-if-any)
@@ -6630,7 +6639,7 @@
     (emit-newline)
     (emit "</td></tr></table>")
     (emit-newline)
-    (set! *tabular-stack* (cdr *tabular-stack*))))
+    (pop-tabular-stack 'ruled-table)))
 
 (define do-tabular
   (lambda ()
@@ -6657,7 +6666,7 @@
     (egroup)
     (do-end-para)
     (emit "</td></tr></table>")
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'tabular)
     (egroup)))
 
 (define do-tabular-colsep
@@ -6764,7 +6773,7 @@
      ((or (char=? c #\<) (char=? c #\>) (char=? c #\")) (emit-html-char c))
      ((char=? c #\&)
       (cond
-       ((pair? *tabular-stack*)
+       ((not (null? *tabular-stack*))
         (do-end-para)
         (case (car *tabular-stack*)
           ((pmatrix eqalign displaylines) (emit "</td><td>"))
@@ -6782,7 +6791,7 @@
           ((ruled-table) (do-ruledtable-colsep))))
        (else (emit-html-char c))))
      ((char=? c #\|)
-      (if (and (pair? *tabular-stack*)
+      (if (and (not (null? *tabular-stack*))
                (eqv? (car *tabular-stack*) 'ruled-table))
         (do-ruledtable-colsep)
         (emit c)))
@@ -7801,7 +7810,7 @@
 (tex-def-prim
   "\\enddescription"
   (lambda ()
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'description)
     (do-end-para)
     (emit "</dd></dl>")
     (do-para)))
@@ -7813,7 +7822,7 @@
 (tex-def-prim
   "\\endenumerate"
   (lambda ()
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'enumerate)
     (do-end-para)
     (emit "</ol>")
     (do-para)))
@@ -7835,7 +7844,7 @@
 (tex-def-prim
   "\\enditemize"
   (lambda ()
-    (set! *tabular-stack* (cdr *tabular-stack*))
+    (pop-tabular-stack 'itemize)
     (do-end-para)
     (emit "</ul>")
     (do-para)))
@@ -8464,13 +8473,16 @@
 (tex-def-prim
   "\\="
   (lambda ()
-    (unless (and (pair? *tabular-stack*) (eqv? (car *tabular-stack*) 'tabbing))
+    (unless (and
+             (not (null? *tabular-stack*))
+             (eqv? (car *tabular-stack*) 'tabbing))
       (do-diacritic 'circumflex))))
 
 (tex-def-prim
   "\\>"
   (lambda ()
-    (if (and (pair? *tabular-stack*) (eqv? (car *tabular-stack*) 'tabbing))
+    (if (and (not (null? *tabular-stack*))
+             (eqv? (car *tabular-stack*) 'tabbing))
       (emit-nbsp 3))))
 
 (tex-def-prim "\\^" (lambda () (do-diacritic 'circumflex)))

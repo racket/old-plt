@@ -1,10 +1,12 @@
-; $Id: sigs.ss,v 1.68 1999/05/27 15:48:13 mflatt Exp $
+; $Id: sigs.ss,v 1.69 1999/07/09 18:44:34 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "prettys.ss"))
 (begin-elaboration-time (require-library "files.ss"))
 (begin-elaboration-time (require-library "refer.ss"))
 (require-library "refer.ss")
+
+(require-library "zsigs.ss" "zodiac")
 
 (define-signature zodiac:misc^
   (pretty-print debug-level symbol-append flush-printf print-and-return 

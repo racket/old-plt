@@ -1,3 +1,12 @@
+#|
+
+Since the web server is set up to have a separate namespace for each
+servlet, this servlet must be able to both use and flush the documentation
+index cache. Flushing the cache elsewhere will not dump it, since the cache
+is stored in a module top-level and that's namespace-specific.
+
+|#
+
 (module results mzscheme
   (require (lib "file.ss")
            (lib "list.ss")
@@ -311,25 +320,32 @@
                           (with-handlers ([exn:fail? 
                                            (lambda (_) #f)])
                             (extract-binding/single sym bindings)))]
-             [search-string (maybe-get 'search-string)]
-             [search-type (maybe-get 'search-type)]
-             [match-type (maybe-get 'match-type)]
-             [manuals (maybe-get 'manuals)]
-             [doc.txt (maybe-get 'doctxt)]
-             [lang-name (maybe-get 'langname)])
+             [flush (maybe-get 'flush)])
         (cond
-          [(or (not search-string) (= (string-length search-string) 0))
-           empty-search-page]
+          [flush 
+           (doc-collections-changed)
+           `(html (head (title "Flush"))
+                  (body (h2 "Flushed documentation cache")))]
           [else
-           (search-results
-            (lucky-search? bindings)
-            search-string
-            (or search-type "keyword-index")
-            (or match-type "containing-match")
-            (convert-manuals manuals)
-            (cond
-              [(not doc.txt) #t]
-              [(equal? doc.txt "false") #f]
-              [else #t])
-            lang-name)])))))
+           (let ([search-string (maybe-get 'search-string)]
+                 [search-type (maybe-get 'search-type)]
+                 [match-type (maybe-get 'match-type)]
+                 [manuals (maybe-get 'manuals)]
+                 [doc.txt (maybe-get 'doctxt)]
+                 [lang-name (maybe-get 'langname)])
+             (cond
+               [(or (not search-string) (= (string-length search-string) 0))
+                empty-search-page]
+               [else
+                (search-results
+                 (lucky-search? bindings)
+                 search-string
+                 (or search-type "keyword-index")
+                 (or match-type "containing-match")
+                 (convert-manuals manuals)
+                 (cond
+                   [(not doc.txt) #t]
+                   [(equal? doc.txt "false") #f]
+                   [else #t])
+                 lang-name)]))])))))
 

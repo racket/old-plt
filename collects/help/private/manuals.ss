@@ -230,6 +230,9 @@
             ,@hd-links
             (TITLE "PLT Manuals")))
          "<body>"
+         (if (cvs-or-nightly-build?)
+             
+             "")
          (append 
           
           (list "<H1>Installed Manuals</H1>")
@@ -240,7 +243,8 @@
                 `((dynamic-require '(lib "refresh-manuals.ss" "help") 'refresh-manuals)))
                "\">"
                (string-constant plt:hd:refresh-all-manuals)
-               "</a>")
+               "</a> &nbsp; &nbsp;"
+               (format "<a href=\"~a\">flush index and keyword cache</a><br>" flush-manuals-url))
               '())
 
           (build-known-manuals names+paths)

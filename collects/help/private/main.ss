@@ -12,7 +12,7 @@
   
   (define main@
     (unit/sig ()
-      (import gui^)
+      (import)
       
       ;; where should the pref stuff really go?
       (preferences:set-default 'drscheme:help-desk:last-url-string "" string?)

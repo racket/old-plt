@@ -29,6 +29,8 @@
                       (union false/c string?)
                       . -> .
                       string?))
+   (flush-manuals-url string?)
+   (flush-manuals-path string?)
    (make-missing-manual-url (string? string? string? string? . -> . string?))
    (get-hd-location ((lambda (sym) (memq sym hd-location-syms))
                      . -> . 
@@ -54,6 +56,9 @@
     (format "http://~a:~a~a" internal-host internal-port suffix))
   
   (define results-url-prefix (format "http://~a:~a/servlets/results.ss?" internal-host internal-port))
+  (define flush-manuals-path "/servlets/results.ss?flush=yes")
+  (define flush-manuals-url (format "http://~a:~a~a" internal-host internal-port flush-manuals-path))
+  
   
   (define relative-results-url-prefix "/servlets/results.ss?")
 

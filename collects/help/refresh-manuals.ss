@@ -3,6 +3,7 @@
            "private/search.ss"
            "private/manuals.ss"
            "private/standard-urls.ss"
+           "private/link.ss"
            (lib "plt-installer.ss" "setup")
            (lib "url.ss" "net")
            (lib "mred.ss" "mred")
@@ -44,13 +45,31 @@
             (delete-local-plt-files tmp-directory)
             (display sc-clearing-cached-indicies)
             (newline)
+            
+            ;; tell the web-server to visit the url for flushing the cache
+            ;; this is necc. because the server creates a new namespace for
+            ;; each servlet, so we have to get the webserver to visit the servlet
+            ;; in order to flush the cache. We don't, however, want to actually
+            ;; visit the page, so we just do this for its effect.
+            (let-values ([(in1 out1) (make-pipe)]
+                         [(in2 out2) (make-pipe)])
+              (thread (lambda () 
+                        (fprintf out1 "GET ~a HTTP/1.0\r\n" flush-manuals-path)
+                        (close-output-port out1)))
+              (serve-ports in1 out2) ;; spawns its own thread
+              (let loop ()
+                (let ([b (with-handlers ([exn? (lambda (x) eof)])
+                           (read-byte in2))])
+                  (unless (eof-object? b)
+                    (loop))))
+              (close-input-port in2))
+            
             (display sc-finished-installation)
             (newline)
             (set! success? #t))
           (lambda ()
             (unless success?
               (delete-local-plt-files tmp-directory))
-            (doc-collections-changed)
             (kill-thread thd))))]))
       
   (define (make-local-doc-filename tmp-dir stub)

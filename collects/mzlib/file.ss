@@ -273,6 +273,7 @@
 								 "plt-prefs.ss")))])
 				(with-input-from-file pref-file
 				  read)))])
+		     ;; Make sure file content had the right shape:
 		     (if (and (list? v) 
 			      (andmap (lambda (x) 
 					(and (pair? x) 
@@ -346,30 +347,33 @@
 			   (set! f (cons (list name val) f)))))
 		   names vals)
 		  (set! pref-box (make-weak-box f))
-		  (let* ([pref-file (find-system-path 'pref-file) ]
+		  ;; To write the file, copy the old one to a temporary name
+		  ;; (preserves permissions, etc), write to the temp file,
+		  ;; then move (atomically) the temp file to the normal name.
+		  (let* ([pref-file (find-system-path 'pref-file)]
 			 [tmp-file (make-temporary-file
 				    (build-path (find-system-path 'pref-dir) "TMPPREF~a")
-				    pref-file)])
+				    (and (file-exists? pref-file) pref-file))])
 		    (with-output-to-file tmp-file
 		      (lambda ()
 			(parameterize ([read-case-sensitive #f]
 				       [print-struct #f])
+			  ;; Poor man's pretty-print: one line per entry
 			  (printf "(~n")
 			  (for-each (lambda (a) (printf " ~s~n" a)) f)
 			  (printf ")~n")))
 		      'truncate/replace)
-		    (delete-file pref-file)
 		    (rename-file-or-directory tmp-file pref-file #t))))
 	      (lambda ()
 		;; Release lock:
 		(delete-file lock-file)))))]
-     [(names vals) (put-preferences
-		    names vals 
-		    (lambda (lock-file) 
-		      (error 'put-preferences
-			     "some other process has the preference-file lock, as indicated by the existence of the lock file: ~e"
-			     lock-file)))]))
-						     
+     [(names vals) 
+      (put-preferences
+       names vals 
+       (lambda (lock-file) 
+	 (error 'put-preferences
+		"some other process has the preference-file lock, as indicated by the existence of the lock file: ~e"
+		lock-file)))]))
 
   (define call-with-input-file*
     (lambda (file thunk . flags)

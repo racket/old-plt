@@ -23,7 +23,7 @@
 				  (if (file-exists? cmd)
 				      cmd
 				      ;; One last try: up a dir
-				      (build-path d '.. "command.com"))))))])
+				      (build-path d 'up "command.com"))))))])
 		   (list cmd
 			 'exact
 			 (format "~a /c ~a" cmd argstr))))

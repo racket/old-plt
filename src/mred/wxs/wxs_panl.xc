@@ -65,4 +65,6 @@
 @SETMARK p = d
 @INCLUDE wxs_panl.xci
 
+@ "set-title" : void SetTitle(string);
+
 @END

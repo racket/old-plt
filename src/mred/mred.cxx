@@ -1540,6 +1540,15 @@ static Scheme_Object *MrEdMakeStdErr(void)
 }
 #endif
 
+void wxmeError(const char *e)
+{
+  if (scheme_console_printf) {
+    scheme_console_printf("%s\n", (char *)e);
+  } else {
+    wxMessageBox((char *)e, "Error");
+  }
+}
+
 /****************************************************************************/
 /*                               Debugging                                  */
 /****************************************************************************/
@@ -1897,6 +1906,21 @@ static char *get_init_filename(Scheme_Env *env)
 #define PROGRAM_LC "mred"
 #define BANNER "MrEd version " VERSION ", Copyright (c) 1995-98 PLT (Matthew Flatt and Robby Findler)\n"
 
+#ifdef wx_mac
+#define GET_PLTCOLLECTS_VIA_RESOURCES
+#endif
+
+#ifdef GET_PLTCOLLECTS_VIA_RESOURCES
+extern char *scheme_getenv_hack;
+extern char *scheme_getenv_hack_value;
+static char *pltcollects_from_resource;
+#define SETUP_GETENV_HACK (scheme_getenv_hack = "PLTCOLLECTS", scheme_getenv_hack_value = pltcollects_from_resource);
+#define TAKEDOWN_GETENV_HACK (scheme_getenv_hack = NULL, scheme_getenv_hack_value = NULL);
+#else
+#define SETUP_GETENV_HACK /* empty */
+#define TAKEDOWN_GETENV_HACK /* empty */
+#endif
+
 #ifdef INCLUDE_WITHOUT_PATHS
 # include "cmdline.inc"
 #else
@@ -2015,6 +2039,12 @@ wxFrame *MrEdApp::OnInit(void)
 #endif
 
   wxInitMedia();
+
+#ifdef GET_PLTCOLLECTS_VIA_RESOURCES
+  pltcollects_from_resource = NULL;
+  if (!wxGetResource(wxTheApp->wx_class, "PLTCOLLECTS", &pltcollects_from_resource))
+    pltcollects_from_resource = "";
+#endif
 
   run_from_cmd_line(argc, argv, setup_basic_env, do_main_loop);
 

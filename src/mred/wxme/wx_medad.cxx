@@ -846,13 +846,15 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	}
       }
 
-      if (vnumScrolls) {
+      if (vnumScrolls > 0) {
 	int numLines = media->NumScrollLines() - 1;
 	vspp = (long)(((float)h * numLines) / totalHeight) - 1;
 	if (vspp < 1)
 	  vspp = 1;
-      } else
+      } else {
+	vnumScrolls = 0;
 	vspp = 1;
+      }
 
       if (totalWidth >= w) {
 	tw = (long)(totalWidth - w);

@@ -10,11 +10,11 @@
       (if (void? (apply p args))
 	  #t
 	  'not-void))))
-(define delete-file/tf (lambda (x) ((make-/tf delete-file exn:i/o:filesystem:file?) x)))
-(define delete-directory/tf (lambda (x) ((make-/tf delete-directory exn:i/o:filesystem:directory?) x)))
-(define rename-file-or-directory/tf (lambda (x y) ((make-/tf rename-file-or-directory exn:i/o:filesystem:rename?) x y)))
-(define make-directory/tf (lambda (x) ((make-/tf make-directory exn:i/o:filesystem:directory?) x)))
-(define copy-file/tf (lambda (x y) ((make-/tf copy-file exn:i/o:filesystem:rename?) x y)))
+(define delete-file/tf (lambda (x) ((make-/tf delete-file exn:i/o:filesystem?) x)))
+(define delete-directory/tf (lambda (x) ((make-/tf delete-directory exn:i/o:filesystem?) x)))
+(define rename-file-or-directory/tf (lambda (x y) ((make-/tf rename-file-or-directory exn:i/o:filesystem?) x y)))
+(define make-directory/tf (lambda (x) ((make-/tf make-directory exn:i/o:filesystem?) x)))
+(define copy-file/tf (lambda (x y) ((make-/tf copy-file exn:i/o:filesystem?) x y)))
 
 (test #f relative-path? (current-directory))
 (test #t relative-path? "down")
@@ -82,9 +82,9 @@
 (test #f file-exists? (build-path 'same deepdir 'same 'up 'same 'up "badfile"))
 
 (error-test '(open-output-file (build-path "wrong" "down" "tmp8"))
-	    exn:i/o:filesystem:file?)
+	    exn:i/o:filesystem?)
 (error-test '(open-output-file (build-path deepdir "wrong" "tmp7"))
-	    exn:i/o:filesystem:file?)
+	    exn:i/o:filesystem?)
 
 (define start-time (current-seconds))
 (let ([p (open-output-file "tmp5" 'replace)])
@@ -293,7 +293,7 @@
       (lambda (rel)
 	(test-path (build-path cabsol rel) path->complete-path rel cabsol)
 	(test-path (build-path cabsol rel rel) path->complete-path rel (build-path cabsol rel))
-	(error-test `(path->complete-path ,rel ,rel) exn:i/o:filesystem:path?))
+	(error-test `(path->complete-path ,rel ,rel) exn:i/o:filesystem?))
       rels)))
  absols)
 
@@ -323,7 +323,7 @@
   (lambda (abs1)
     (for-each
      (lambda (abs2)
-       (error-test `(build-path ,abs1 ,abs2) exn:i/o:filesystem:path?))
+       (error-test `(build-path ,abs1 ,abs2) exn:i/o:filesystem?))
      absols))
   nondrive-roots))
 
@@ -379,7 +379,7 @@
 
 (map
  (lambda (f)
-   (error-test `(,f (string #\a #\nul #\b)) exn:i/o:filesystem:path?))
+   (error-test `(,f (string #\a #\nul #\b)) exn:i/o:filesystem?))
  '(build-path split-path file-exists? directory-exists?
 	      delete-file directory-list make-directory delete-directory
 	      file-or-directory-modify-seconds file-or-directory-permissions 
@@ -387,8 +387,8 @@
 	      open-input-file open-output-file))
 (map 
  (lambda (f)
-   (error-test `(,f (string #\a #\nul #\b) "a") exn:i/o:filesystem:path?)
-   (error-test `(,f "a" (string #\a #\nul #\b)) exn:i/o:filesystem:path?))
+   (error-test `(,f (string #\a #\nul #\b) "a") exn:i/o:filesystem?)
+   (error-test `(,f "a" (string #\a #\nul #\b)) exn:i/o:filesystem?))
  '(rename-file-or-directory path->complete-path))
 
 ; normal-case-path doesn't check for pathness:

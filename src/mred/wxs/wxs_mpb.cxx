@@ -420,7 +420,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, float x2, float x3, Bool x4);
+  void Refresh(float x0, float x1, float x2, float x3, int x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -2645,7 +2645,7 @@ wxMediaPasteboard::OwnCaret(x0);
   }
 }
 
-void os_wxMediaPasteboard::Refresh(float x0, float x1, float x2, float x3, Bool x4)
+void os_wxMediaPasteboard::Refresh(float x0, float x1, float x2, float x3, int x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -2671,7 +2671,7 @@ wxMediaPasteboard::Refresh(x0, x1, x2, x3, x4);
   p[1] = scheme_make_double(x1);
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
-  p[4] = (x4 ? scheme_true : scheme_false);
+  p[4] = bundle_symset_caret(x4);
   
 
   v = scheme_apply(method, 5, p);
@@ -5112,14 +5112,14 @@ static Scheme_Object *os_wxMediaPasteboardRefresh(Scheme_Object *obj, int n,  Sc
   float x1;
   float x2;
   float x3;
-  Bool x4;
+  int x4;
 
   
   x0 = objscheme_unbundle_float(p[0], "refresh in pasteboard%");
   x1 = objscheme_unbundle_float(p[1], "refresh in pasteboard%");
   x2 = objscheme_unbundle_float(p[2], "refresh in pasteboard%");
   x3 = objscheme_unbundle_float(p[3], "refresh in pasteboard%");
-  x4 = objscheme_unbundle_bool(p[4], "refresh in pasteboard%");
+  x4 = unbundle_symset_caret(p[4], "refresh in pasteboard%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)

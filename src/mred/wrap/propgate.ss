@@ -16,7 +16,7 @@
  clipboard<%>
  clipboard-client%
  color%
- color-database%
+ color-database<%>
  control-event%
  current-eventspace
  current-ps-setup

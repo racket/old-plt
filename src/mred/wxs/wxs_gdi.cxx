@@ -1030,6 +1030,8 @@ class os_wxColourDatabase : public wxColourDatabase {
 
 Scheme_Object *os_wxColourDatabase_class;
 
+Scheme_Object *os_wxColourDatabase_interface;
+
 os_wxColourDatabase::~os_wxColourDatabase()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -1044,8 +1046,8 @@ static Scheme_Object *os_wxColourDatabaseAppend(Scheme_Object *obj, int n,  Sche
   class wxColour* x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "append in color-database%");
-  x1 = objscheme_unbundle_wxColour(p[1], "append in color-database%", 0);
+  x0 = (string)objscheme_unbundle_string(p[0], "append in color-database<%>");
+  x1 = objscheme_unbundle_wxColour(p[1], "append in color-database<%>", 0);
 
   
   ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1);
@@ -1064,7 +1066,7 @@ static Scheme_Object *os_wxColourDatabaseFindName(Scheme_Object *obj, int n,  Sc
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "find-name in color-database%", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "find-name in color-database<%>", 0);
 
   
   r = ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->FindName(*x0);
@@ -1083,7 +1085,7 @@ static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "find-color in color-database%");
+  x0 = (string)objscheme_unbundle_string(p[0], "find-color in color-database<%>");
 
   
   r = ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->FindColour(x0);
@@ -1097,6 +1099,7 @@ void objscheme_setup_wxColourDatabase(void *env)
 {
 if (os_wxColourDatabase_class) {
     objscheme_add_global_class(os_wxColourDatabase_class, "color-database%", env);
+    objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env);
 } else {
   os_wxColourDatabase_class = objscheme_def_prim_class(env, "color-database%", "object%", NULL, 3);
 
@@ -1107,6 +1110,9 @@ if (os_wxColourDatabase_class) {
 
   scheme_made_class(os_wxColourDatabase_class);
 
+  os_wxColourDatabase_interface = scheme_class_to_interface(os_wxColourDatabase_class, "color-database" "<%>");
+
+  objscheme_add_global_interface(os_wxColourDatabase_interface, "color-database" "<%>", env);
 
 }
   scheme_install_xc_global("the-color-database", objscheme_bundle_wxColourDatabase(wxTheColourDatabase), env);
@@ -2999,7 +3005,7 @@ static Scheme_Object *os_wxFontNameDirectoryInitialize(Scheme_Object *obj, int n
 
   
   x0 = objscheme_unbundle_integer(p[0], "initialize in font-name-directory<%>");
-  x1 = objscheme_unbundle_integer(p[1], "initialize in font-name-directory<%>");
+  x1 = unbundle_symset_family(p[1], "initialize in font-name-directory<%>");
   x2 = (string)objscheme_unbundle_string(p[2], "initialize in font-name-directory<%>");
 
   
@@ -3039,8 +3045,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
 
   
   x0 = objscheme_unbundle_integer(p[0], "get-afm-name in font-name-directory<%>");
-  x1 = unbundle_symset_style(p[1], "get-afm-name in font-name-directory<%>");
-  x2 = unbundle_symset_weight(p[2], "get-afm-name in font-name-directory<%>");
+  x1 = unbundle_symset_weight(p[1], "get-afm-name in font-name-directory<%>");
+  x2 = unbundle_symset_style(p[2], "get-afm-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetAFMName(x0, x1, x2);
@@ -3062,8 +3068,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
 
   
   x0 = objscheme_unbundle_integer(p[0], "get-post-script-name in font-name-directory<%>");
-  x1 = unbundle_symset_style(p[1], "get-post-script-name in font-name-directory<%>");
-  x2 = unbundle_symset_weight(p[2], "get-post-script-name in font-name-directory<%>");
+  x1 = unbundle_symset_weight(p[1], "get-post-script-name in font-name-directory<%>");
+  x2 = unbundle_symset_style(p[2], "get-post-script-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetPostScriptName(x0, x1, x2);
@@ -3085,8 +3091,8 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
 
   
   x0 = objscheme_unbundle_integer(p[0], "get-screen-name in font-name-directory<%>");
-  x1 = unbundle_symset_style(p[1], "get-screen-name in font-name-directory<%>");
-  x2 = unbundle_symset_weight(p[2], "get-screen-name in font-name-directory<%>");
+  x1 = unbundle_symset_weight(p[1], "get-screen-name in font-name-directory<%>");
+  x2 = unbundle_symset_style(p[2], "get-screen-name in font-name-directory<%>");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetScreenName(x0, x1, x2);

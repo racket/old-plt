@@ -1130,6 +1130,7 @@ static Scheme_Object *bundle_symset_dialogStyle(int v) {
 // @ p "on-left-click" : void OnLeftClick(int,int,int); ## INTERACT_METHODS
 // @ p "on-right-click" : void OnRightClick(int,int,int); ## INTERACT_METHODS
 
+
 class os_wxDialogBox : public wxDialogBox {
  public:
 
@@ -1563,6 +1564,24 @@ wxDialogBox::OnActivate(x0);
 }
 
 #pragma argsused
+static Scheme_Object *os_wxDialogBoxSetTitle(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  string x0;
+
+  
+  x0 = (string)objscheme_unbundle_string(p[0], "set-title in dialog%");
+
+  
+  ((wxDialogBox *)((Scheme_Class_Object *)obj)->primdata)->SetTitle(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxDialogBoxOnDefaultAction(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1878,8 +1897,9 @@ void objscheme_setup_wxDialogBox(void *env)
 if (os_wxDialogBox_class) {
     objscheme_add_global_class(os_wxDialogBox_class, "dialog%", env);
 } else {
-  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog%", "panel%", os_wxDialogBox_ConstructScheme, 12);
+  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog%", "panel%", os_wxDialogBox_ConstructScheme, 13);
 
+ scheme_add_method_w_arity(os_wxDialogBox_class, "set-title", os_wxDialogBoxSetTitle, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-default-action", os_wxDialogBoxOnDefaultAction, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-char", os_wxDialogBoxOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-event", os_wxDialogBoxOnEvent, 1, 1);

@@ -7,6 +7,8 @@
 
 @HEADER
 
+@INCLUDE wxs_fcs.xci
+
 @BEGINSYMBOLS flags
 @SYM "can-append" : wxSNIP_CAN_APPEND
 @SYM "newline" : wxSNIP_NEWLINE
@@ -163,6 +165,19 @@
 
 @END
 
+static void SetNextNoCycle(wxBufferData *dest, wxBufferData *naya)
+{
+  wxBufferData *d;
+  for (d = naya; d; d = d->next) {
+    if (d == dest) {
+      /* Don't allow it because it would create a cycle. */
+      return;
+    }
+  }
+
+  dest->next = naya;
+}
+
 @CLASSBASE wxBufferData "editor-data" : "object"
 
 @CREATOR ()
@@ -170,9 +185,10 @@
 @CLASSID wxTYPE_BUFFER_DATA
 
 @IVAR "dataclass" : wxBufferDataClass^ dataclass
-@IVAR "next" : wxBufferData^ next
+@IVAR r "next" : wxBufferData^ next
 
 @ V "write" : bool Write(wxMediaStreamOut%); : : : : rZERO
+@ m "set-next" : void SetNextNoCycle(wxBufferData^)
 
 @END
 

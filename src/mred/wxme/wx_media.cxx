@@ -1047,9 +1047,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
 
     if (!isnip->snipclass)
-      wxMessageBox("Inserting a snip without a class."
-		   " Data will be lost if you try to save the file.", 
-		   "Warning");
+      wxmeError("Inserting a snip without a class."
+		" Data will be lost if you try to save the file.");
 
     if ((isnip->flags & wxSNIP_NEWLINE)&&!(isnip->flags & wxSNIP_HARD_NEWLINE))
       isnip->flags -= wxSNIP_NEWLINE;
@@ -2450,7 +2449,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 
   if (scheme_directory_exists(file)) {
     if (showErrors)
-      wxMessageBox("Can't load a directory.", "Error");
+      wxmeError("Can't load a directory.");
     return FALSE;
   }
 
@@ -2458,7 +2457,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   
   if (!f) {
     if (showErrors)
-      wxMessageBox("Couldn't open the file.", "Error");
+      wxmeError("Couldn't open the file.");
     return FALSE;
   }
 
@@ -2526,12 +2525,12 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
   if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
     if (fclose(f)) {
       if (showErrors)
-	wxMessageBox("There was an error closing the file.", "Warning");
+	wxmeError("There was an error closing the file.");
     }
     f = fopen(wxmeExpandFilename(file), "r");
     if (!f) {
       if (showErrors)
-	wxMessageBox("Couldn't open the file.", "Error");
+	wxmeError("Couldn't open the file.");
       return FALSE;
     }
   }
@@ -2546,7 +2545,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
     buffer[MRED_START_STR_LEN] = 0;
     if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
       if (showErrors)
-	wxMessageBox("This is not a MrEd file.", "Error");
+	wxmeError("This is not a MrEd file.");
       fseek(f, 0, 0);
       format = wxMEDIA_FF_TEXT;
     } else {
@@ -2607,10 +2606,10 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int& format, Bool cl
   fileerr = fileerr || ferror(f);
 
   if (fclose(f) && showErrors)
-    wxMessageBox("There was an error closing the file.", "Warning");
+    wxmeError("There was an error closing the file.");
 
   if (fileerr && showErrors)
-    wxMessageBox("There was an error loading the file.", "Error");
+    wxmeError("There was an error loading the file.");
 
   EndEditSequence();
 
@@ -2672,7 +2671,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
   if (!f) {
     if (showErrors)
-      wxMessageBox("Couldn't write the file.", "Error");
+      wxmeError("Couldn't write the file.");
     AfterSaveFile(FALSE);
     return FALSE;
   }
@@ -2691,7 +2690,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
     fileerr = ferror(f);
     if (fclose(f)) {
       if (showErrors)
-	wxMessageBox("There was an error closing the file.", "Error");
+	wxmeError("There was an error closing the file.");
       fileerr = TRUE;
     }
     delete[] s;
@@ -2712,13 +2711,13 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
     if (fclose(f)) {
       if (showErrors)
-	wxMessageBox("There was an error closing the file.", "Error");
+	wxmeError("There was an error closing the file.");
       fileerr = TRUE;
     }
   }
 
   if (fileerr && showErrors)
-    wxMessageBox("There was an error writing the file.", "Error");
+    wxmeError("There was an error writing the file.");
 
   if (!no_set_filename && PTRNE(file, filename))
     SetFilename(file, FALSE);
@@ -2740,7 +2739,7 @@ Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn &f, long start, Bool overwritesty
     return FALSE;
 
   if (wxMediaFileIOReady != (void *)&f) {
-    wxMessageBox("File reading has not been initialized for this stream.", "Error");
+    wxmeError("File reading has not been initialized for this stream.");
     return FALSE;
   }
 
@@ -2776,7 +2775,7 @@ Bool wxMediaEdit::WriteToFile(wxMediaStreamOut &f, long start, long end)
     return FALSE;
 
   if (wxMediaFileIOReady != (void *)&f) {
-    wxMessageBox("File writing has not been initialized for this stream.", "Error");
+    wxmeError("File writing has not been initialized for this stream.");
     return FALSE;
   }
 

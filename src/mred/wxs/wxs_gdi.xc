@@ -109,6 +109,7 @@
 #endif
 
 @CLASSBASE wxColourDatabase "color-database" : "object"
+@INTERFACE "color-database"
 
 @VAR CDB_FIX
 
@@ -281,12 +282,12 @@ static inline int Identity(wxFontNameDirectory *, int v)
 @CLASSBASE wxFontNameDirectory "font-name-directory":"object"
 @INTERFACE "font-name-directory"
 
-@ "get-screen-name" : nstring GetScreenName(int,SYM[style],SYM[weight]);
-@ "get-post-script-name" : nstring GetPostScriptName(int,SYM[style],SYM[weight]);
-@ "get-afm-name" : nstring GetAFMName(int,SYM[style],SYM[weight]);
+@ "get-screen-name" : nstring GetScreenName(int,SYM[weight],SYM[style]);
+@ "get-post-script-name" : nstring GetPostScriptName(int,SYM[weight],SYM[style]);
+@ "get-afm-name" : nstring GetAFMName(int,SYM[weight],SYM[style]);
 
 @ "get-new-font-id" :   int GetNewFontId()
-@ "initialize" : void Initialize(int,int,string);
+@ "initialize" : void Initialize(int,SYM[family],string);
 
 @ "get-font-id" : int GetFontId(string);
 @ "get-face-name" : nstring GetFontName(int);

@@ -20,6 +20,8 @@
 
 #define TYPESAFE 0
 
+extern void wxmeError(const char *e);
+
 enum {
   st_STRING,
   st_NUMBER,
@@ -267,15 +269,15 @@ void wxMediaStreamIn::Typecheck(char v)
 
   if (boundcount && (f->Tell() >= boundaries[boundcount - 1])) {
     bad = TRUE;
-    wxMessageBox("Overread caused by file corruption"
-		 " or unknown internal error.", "Error");
+    wxmeError("Overread caused by file corruption"
+	      " or unknown internal error.");
     return;
   }
 
   bad = f->Bad();
 
   if (bad) {
-    wxMessageBox("Unknown stream error.", "Error");
+    wxmeError("Unknown stream error.");
     return;
   }
 
@@ -285,14 +287,14 @@ void wxMediaStreamIn::Typecheck(char v)
   f->Read(&t, 1);
 
   if (bad = f->Bad()) {
-    wxMessageBox("Unknown stream error.", "Error");
+    wxmeError("Unknown stream error.");
     return;
   }
 
   bad = (t != v);
 
   if (bad)
-    wxMessageBox("Type safety error.", "Error");
+    wxmeError("Type safety error.");
 #endif
 }
 
@@ -541,7 +543,7 @@ void wxMediaStreamOut::Typeset(char v)
   bad = f->Bad();
 
   if (bad) {
-    wxMessageBox("Unknown stream error.", "Error");
+    wxmeError("Unknown stream error.");
     return;
   }
 

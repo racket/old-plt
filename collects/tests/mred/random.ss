@@ -264,7 +264,7 @@
   font-list%
   pen-list%
   brush-list%
-  color-database%
+  color-database<%>
   font-name-directory<%>
 
   cursor%
@@ -681,7 +681,7 @@
 (send font-list%-example-list add the-font-list)
 (send pen-list%-example-list add the-pen-list)
 (send brush-list%-example-list add the-brush-list)
-(send color-database%-example-list add the-color-database)
+(send color-database<%>-example-list add the-color-database)
 (send font-name-directory<%>-example-list add the-font-name-directory)
 
 (send cursor%-example-list add (make-object cursor% 'watch))

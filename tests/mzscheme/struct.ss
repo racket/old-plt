@@ -48,7 +48,7 @@
 (error-test `(a-b ,ai))
 (error-test `(set-a-b! ai 5))
 (error-test `(set-a-c! ai 5))
-(error-test `(begin (define-struct (a 9) (b c)) (void)) exn:struct:struct-type?)
+(error-test `(begin (define-struct (a 9) (b c)) (void)) exn:struct?)
 
 (arity-test struct-type? 1 1)
 

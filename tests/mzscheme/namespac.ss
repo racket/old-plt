@@ -13,7 +13,7 @@
 	(list 'call/cc=call/ec
 	      'call/cc!=call/ec
 	      '((call/cc (#%lambda (x) x)) void)
-	      exn:misc:continuation?
+	      exn:application:continuation?
 	      #f)
 	(list 'hash-percent-syntax
 	      'all-syntax
@@ -62,7 +62,7 @@
 ; Test primitive-name
 (let ([gvl (parameterize ([current-namespace (make-namespace)]) (make-global-value-list))]
       [aliases (list (cons "call/cc" "call-with-current-continuation")
-		     (cons "call/ec" "call-with-escaping-continuation")
+		     (cons "call/ec" "call-with-escape-continuation")
 		     (cons "interaction-environment" "current-namespace")
 		     (cons "unit/sig?" "unit-with-signature?")
 		     (cons "unit/sig->unit" "unit-with-signature-unit")

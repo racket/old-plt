@@ -1743,7 +1743,7 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
     /* Show error and then remove it from the list so it isn't shown again. */
     char buffer2[256];
     sprintf(buffer2, "Unknown snip class \"%.100s\".", (char *)node->Data());
-    wxMessageBox(buffer2, "Warning");
+    wxmeError(buffer2);
 
     delete[] (char *)node->Data();
     delete node;
@@ -1924,7 +1924,7 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn &f)
     if (!sclass) {
       char buffer2[256];
       sprintf(buffer2, "Unknown snip data class \"%.100s\".", buffer);
-      wxMessageBox(buffer2, "Warning");
+      wxmeError(buffer2);
     } else
       sclass->mapPosition = FindPosition(sclass);
   }

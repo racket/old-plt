@@ -77,7 +77,7 @@
   (test #f 'kept-going-after-shutdown? kept-going?))
 
 (error-test `(parameterize ([current-custodian cm]) (kill-thread (current-thread)))
-	    exn:misc:thread:kill?)
+	    exn:misc?)
 
 (test #t custodian? cm)
 (test #f custodian? 1)
@@ -106,7 +106,7 @@
 (error-test '(make-semaphore "a") type?)
 (error-test '(make-semaphore -1) type?)
 (error-test '(make-semaphore 1.0) type?)
-(error-test '(make-semaphore (expt 2 64)) exn:misc:semaphore?)
+(error-test '(make-semaphore (expt 2 64)) exn:application:mismatch?)
 (arity-test semaphore? 1 1)
 
 (define test-block

@@ -53,8 +53,6 @@
 (define exn-table
   (list (cons exn? (cons exn-message string?))
 	(cons exn:variable? (cons exn:variable-id symbol?))
-	(cons exn:application:non-procedure? (cons exn:application-value 
-						   (lambda (x) (not (procedure? x)))))
 	(cons exn:application:arity? (cons exn:application-value integer?))
 	(cons exn:application:arity? (cons exn:application:arity-expected
 					   (lambda (a)
@@ -70,92 +68,12 @@
 								   (arity-at-least-value a)))))
 						       a))))))
 	(cons exn:application:type? (cons exn:application:type-expected symbol?))
-	(cons exn:application:range? (cons exn:application-value integer?))
-	(cons exn:application:range:bounds? (cons exn:application:range:bounds-min integer?))
-	(cons exn:application:range:bounds? (cons exn:application:range:bounds-max integer?))
-	(cons exn:application:math:zero? (cons exn:application-value zero?))
-	(cons exn:application:math:radix? (cons exn:application-value integer?))
-	(cons exn:application:list-sizes? (cons exn:application-value list?))
-	(cons exn:application:map-arity? (cons exn:application-value procedure?))
-	(cons exn:application:map-arity? (cons exn:application:map-arity-provided 
-					       (lambda (x) (and (integer? x) (positive? x)))))
-	(cons exn:application:mode-conflict? 
-	      (cons exn:application-value symbol?))
-	(cons exn:application:mode-conflict? 
-	      (cons exn:application:mode-conflict-filename
-		    string?))
-	(cons exn:application:file-position?
-	      (cons exn:application-value (lambda (x) (or (input-port? x)
-							  (output-port? x)))))
-	(cons exn:application:fprintf:extra-arguments?
-	      (cons exn:application-value string?))
-	(cons exn:application:fprintf:extra-arguments?
-	      (cons exn:application:fprintf:extra-arguments-extras list?))
-	(cons exn:application:fprintf:no-argument?
-	      (cons exn:application-value string?))
-	(cons exn:application:fprintf:argument-type?
-	      (cons exn:application:fprintf:argument-type-expected symbol?))
-
-	(cons exn:struct:struct-type? 
-	      (cons exn:struct:struct-type-value (lambda (x) (not (struct-type? x)))))
-
-	(cons exn:read? (cons exn:read-port input-port?))
-	(cons exn:read:number? (cons exn:read:number-input string?))
-	(cons exn:read:char? (cons exn:read:char-input string?))
-	(cons exn:read:eof? (cons exn:read:eof-expected string?))
-	(cons exn:read:unsupported? (cons exn:read:unsupported-input string?))
-	(cons exn:read:vector-length? (cons exn:read:vector-length-input string?))
-
-	(cons exn:object:class-type? (cons exn:object:class-type-value
-					   (lambda (x) (not (class? x)))))
-	(cons exn:object:interface-type? (cons exn:object:interface-type-value
-					       (lambda (x) (not (interface? x)))))
-	(cons exn:object:generic? (cons exn:object:generic-object object?))
-	(cons exn:object:inherit? (cons exn:object:inherit-ivar symbol?))
-	(cons exn:object:implement? (cons exn:object:implement-ivar symbol?))
-	(cons exn:object:class-ivar? (cons exn:object:class-ivar-class class?))
-	(cons exn:object:class-ivar? (cons exn:object:class-ivar-ivar symbol?))
-	(cons exn:object:interface-ivar? (cons exn:object:interface-ivar-interface interface?))
-	(cons exn:object:interface-ivar? (cons exn:object:interface-ivar-ivar symbol?))
-	(cons exn:object:ivar? (cons exn:object:ivar-object object?))
-	(cons exn:object:ivar? (cons exn:object:ivar-ivar symbol?))
-	(cons exn:object:private-class? (cons exn:object:private-class-class class?))
-	(cons exn:object:init? (cons exn:object:init-object object?))
-	(cons exn:object:init? (cons exn:object:init-class class?))
-
-	(cons exn:unit:non-unit? (cons exn:unit:non-unit-value (lambda (x) (not (unit? x)))))
-	(cons exn:unit:arity? (cons exn:unit:arity-unit unit?))
-	(cons exn:unit:import? (cons exn:unit:import-in-unit unit?))
-	(cons exn:unit:import? (cons exn:unit:import-out-unit unit?))
-	(cons exn:unit:import? (cons exn:unit:import-in-tag symbol?))
-	(cons exn:unit:import? (cons exn:unit:import-out-tag symbol?))
-	(cons exn:unit:import? (cons exn:unit:import-name symbol?))
-	(cons exn:unit:export? (cons exn:unit:export-unit unit?))
-	(cons exn:unit:export? (cons exn:unit:export-tag symbol?))
-	(cons exn:unit:export? (cons exn:unit:export-name symbol?))
-	(cons exn:unit:invoke:variable? (cons exn:unit:invoke:variable-name symbol?))
-	(cons exn:unit:signature:non-signed-unit? 
-	      (cons exn:unit:signature:non-signed-unit-value (lambda (x) (not (unit/sig? x)))))
-	(cons exn:unit:signature:arity?
-	      (cons exn:unit:signature:arity-unit unit/sig?))
-	(cons exn:unit:signature:match? (cons exn:unit:signature:match-dest-context string?))
-	(cons exn:unit:signature:match? (cons exn:unit:signature:match-src-context string?))
-	(cons exn:unit:signature:match? (cons exn:unit:signature:match-variable string?))
-
-	(cons exn:i/o:read? (cons exn:i/o:read-port input-port?))
-	(cons exn:i/o:write? (cons exn:i/o:write-port output-port?))
-	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))
-	(cons exn:i/o:port-closed? (cons exn:i/o:port-closed-port 
-				    (lambda (x) (or (input-port? x) (output-port? x)))))
-	(cons exn:i/o:user-port? (cons exn:i/o:user-port-port input-port?))
-
-	(cons exn:i/o:tcp:connect? (cons exn:i/o:tcp:connect-address string?))
-	(cons exn:i/o:tcp:connect? (cons exn:i/o:tcp:connect-port-id integer?))
-	(cons exn:i/o:tcp:listen? (cons exn:i/o:tcp:listen-port-id integer?))
-	(cons exn:i/o:tcp:accept? (cons exn:i/o:tcp:accept-listener tcp-listener?))
-	(cons exn:i/o:tcp:listener-closed? (cons exn:i/o:tcp:listener-closed-listener tcp-listener?))
 	
-	(cons exn:misc:constant? (cons exn:misc:constant-id symbol?))))
+	(cons exn:i/o:port? (cons exn:i/o:port-port (lambda (x) (or (input-port? x) (output-port? x)))))
+	(cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
+	(cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))
+	(cons exn:i/o:port:user? (cons exn:i/o:port-port input-port?))
+	(cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))))
 
 (define mz-test-syntax-errors-allowed? #t)
 

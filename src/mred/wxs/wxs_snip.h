@@ -272,11 +272,11 @@ int objscheme_istype_wxBufferDataClassList(Scheme_Object *obj, const char *stop,
 Scheme_Object *objscheme_bundle_wxBufferDataClassList(class wxBufferDataClassList *realobj);
 class wxBufferDataClassList *objscheme_unbundle_wxBufferDataClassList(Scheme_Object *obj, const char *where, int nullOK);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *);
+extern class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *, const char *, int);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBufferDataClass(class wxBufferDataClass *);
 extern class wxBufferDataClass *objscheme_unbundle_wxBufferDataClass(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxBufferData(class wxBufferData *);
-extern class wxBufferData *objscheme_unbundle_wxBufferData(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxBufferData(void *env);
 #ifndef WXS_SETUP_ONLY

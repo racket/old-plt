@@ -13,6 +13,7 @@
 @SYM "bmp" : wxBITMAP_TYPE_BMP
 @SYM "xbm" : wxBITMAP_TYPE_XBM
 @SYM "xpm" : wxBITMAP_TYPE_XPM
+@SYM "pict" : wxBITMAP_TYPE_PICT
 @ENDSYMBOLS
 
 

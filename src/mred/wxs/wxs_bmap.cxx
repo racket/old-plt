@@ -83,39 +83,44 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
 static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
 static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
+static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
 
 static void init_symset_saveBitmapType(void) {
   saveBitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bmp");
   saveBitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("xbm");
   saveBitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("xpm");
+  saveBitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("pict");
 }
 
 static int unbundle_symset_saveBitmapType(Scheme_Object *v, const char *where) {
-  if (!saveBitmapType_wxBITMAP_TYPE_XPM_sym) init_symset_saveBitmapType();
+  if (!saveBitmapType_wxBITMAP_TYPE_PICT_sym) init_symset_saveBitmapType();
   if (0) { }
   else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   if (where) scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_saveBitmapType(Scheme_Object *v, const char *where) {
-  if (!saveBitmapType_wxBITMAP_TYPE_XPM_sym) init_symset_saveBitmapType();
+  if (!saveBitmapType_wxBITMAP_TYPE_PICT_sym) init_symset_saveBitmapType();
   if (0) { }
   else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
   else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
   if (where) scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_saveBitmapType(int v) {
-  if (!saveBitmapType_wxBITMAP_TYPE_XPM_sym) init_symset_saveBitmapType();
+  if (!saveBitmapType_wxBITMAP_TYPE_PICT_sym) init_symset_saveBitmapType();
   switch (v) {
   case wxBITMAP_TYPE_BMP: return saveBitmapType_wxBITMAP_TYPE_BMP_sym;
   case wxBITMAP_TYPE_XBM: return saveBitmapType_wxBITMAP_TYPE_XBM_sym;
   case wxBITMAP_TYPE_XPM: return saveBitmapType_wxBITMAP_TYPE_XPM_sym;
+  case wxBITMAP_TYPE_PICT: return saveBitmapType_wxBITMAP_TYPE_PICT_sym;
   default: return NULL;
   }
 }

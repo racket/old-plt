@@ -49,6 +49,8 @@ static int defaultSize = 12;
 # define FONT_DIRECTORY (*wxTheFontNameDirectory)
 #endif
 
+extern void wxmeError(const char *e);
+
 wxStyleList *wxTheStyleList;
 
 static wxColour *whiteColour, *blackColour;
@@ -1465,7 +1467,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
     f >> baseIndex;
 
     if (baseIndex >= i) {
-      wxMessageBox("Bad style index.", "Error");
+      wxmeError("Bad style index.");
       return FALSE;
     }
 

@@ -98,12 +98,12 @@
 		(list read-accept-box
 		      (list #t #f)
 		      '(read (open-input-string "#&5"))
-		      exn:read:unsupported?
+		      exn:read?
 		      #f)
 		(list read-accept-graph
 		      (list #t #f)
 		      '(read (open-input-string "#0=(1 . #0#)"))
-		      exn:read:unsupported?
+		      exn:read?
 		      #f)
 		(list read-accept-compiled
 		      (list #t #f)
@@ -112,14 +112,14 @@
 			  void
 			  (lambda () (read p))
 			  (lambda () (close-input-port p))))
-		      exn:read:unsupported?
+		      exn:read?
 		      #f)
 		(list read-accept-bar-quote
 		      (list #t #f)
 		      '(let ([p (open-input-string "|hello #$ there| x")])
 			 (read p)
 			 (read p))
-		      exn:read:unsupported?
+		      exn:read?
 		      #f)
 		(list print-graph
 		      (list #t #f)
@@ -141,7 +141,7 @@
 		      (list (make-input-port (lambda () #\x) (lambda () #t) void)
 			    (make-input-port (lambda () 5) (lambda () #t) void))
 		      '(read-char)
-		      exn:i/o:user-port?
+		      exn:i/o:port:user?
 		      '("bad string"))
 		(list current-output-port
 		      (list (current-output-port)
@@ -201,20 +201,9 @@
 			    (lambda () 'boo!))
 		      `(with-handlers ([(lambda (x) (not (eq? (exn-debug-info x) 'boo!))) void])
 			   (/ 0))
-		      exn:application:math:zero?
+		      exn:application:divide-by-zero?
 		      (list "bad setting" one-arg-proc two-arg-proc))
 
-		(list user-break-poll-handler
-		      (list (user-break-poll-handler)
-			    (lambda () (set! called-break? #t) #f))
-		      `(begin
-			 (set! called-break? #f)
-			 ((user-break-poll-handler))
-			 (if called-break?
-			     (error 'break))
-			 (set! called-break? #f))
-		      exn:user?
-		      (list "bad setting" one-arg-proc two-arg-proc))
 		(list break-enabled
 		      (list #t #f)
 		      '(let ([cont? #f])
@@ -284,11 +273,11 @@
 		      (list (current-load-relative-directory) 
 			    (build-path (current-load-relative-directory) 'up))
 		      '(load-relative "loadable.ss")
-		      exn:i/o:filesystem:file?
+		      exn:i/o:filesystem?
 		      (append (list 0)
 			      (map
 			       (lambda (t)
-				 (make-bad-test t exn:i/o:filesystem:path?))
+				 (make-bad-test t exn:i/o:filesystem?))
 			       (list
 				"definitely a bad path"
 				(string #\a #\nul #\b)
@@ -310,7 +299,7 @@
 		      '(let ([th (parameterize ([current-custodian main-cust])
 				    (thread (lambda () (sleep 1))))])
 			 (kill-thread th))
-		      exn:misc:thread:kill?
+		      exn:misc?
 		      (list "bad setting"))
 
 		(list current-will-executor
@@ -534,7 +523,7 @@
 (error-test '(make-parameterization-with-sharing (current-parameterization) #f (list read-case-sensitive read-case-sensitive) void))
 (error-test '(make-parameterization-with-sharing (current-parameterization) #f (list read-case-sensitive) (lambda () 0)))
 (error-test '(make-parameterization-with-sharing (current-parameterization) #f (list read-case-sensitive) (lambda (x) 0))
-	    exn:misc:parameterization?)
+	    exn:misc?)
 
 (arity-test with-new-parameterization 1 1)
 (arity-test with-parameterization 2 2)
@@ -543,8 +532,8 @@
 (error-test '(parameterization-branch-handler 0))
 (error-test '(parameterization-branch-handler (lambda (x) x)))
 (error-test '(parameterize ([parameterization-branch-handler void])
-			   (thread void))
-	    exn:misc:parameterization?)
+	       (thread void))
+	    exn:misc?)
 
 (test #t parameter-procedure=? read-accept-compiled read-accept-compiled)
 (test #f parameter-procedure=? read-accept-compiled read-case-sensitive)

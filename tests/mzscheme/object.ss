@@ -63,10 +63,10 @@
       (syntax-test  `(,cl* ,@renames () () () (,cl (x y z)))))
     
     (map try-ref-kind '(inherit rename share)))
-  (error-test `(,cl* ,@renames () () () (inherit x)) exn:object:inherit?)
-  (error-test `(,cl* ,@renames () () () (inherit (x y))) exn:object:inherit?)
-  (error-test `(,cl* ,@renames () () () (override [x void])) exn:object:inherit?)
-  (error-test `(,cl* ,@renames () () () (override [(x y) void])) exn:object:inherit?)
+  (error-test `(,cl* ,@renames () () () (inherit x)) exn:object?)
+  (error-test `(,cl* ,@renames () () () (inherit (x y))) exn:object?)
+  (error-test `(,cl* ,@renames () () () (override [x void])) exn:object?)
+  (error-test `(,cl* ,@renames () () () (override [(x y) void])) exn:object?)
   (syntax-test  `(,cl* ,@renames () () () (inherit (x y z))))
   (syntax-test  `(,cl* ,@renames () () () (inherit (x 5))))
   (syntax-test  `(,cl* ,@renames () () () (inherit (x))))
@@ -110,9 +110,9 @@
 (test #t class? (class*/names (this super-init) () () () (public)))
 
 (define c (class null () (public x)))
-(error-test `(class c () (public x)) exn:object:inherit?)
-(error-test `(class c () (public ([y x] 5))) exn:object:inherit?)
-(error-test `(class c () (override ([x y] 5))) exn:object:inherit?)
+(error-test `(class c () (public x)) exn:object?)
+(error-test `(class c () (public ([y x] 5))) exn:object?)
+(error-test `(class c () (override ([x y] 5))) exn:object?)
 
 (syntax-test  `(interface))
 (syntax-test  `(interface . x))
@@ -121,7 +121,7 @@
 (syntax-test  `(interface () x . y))
 (syntax-test  `(interface () x 8))
 (syntax-test  `(interface () x x))
-(error-test `(interface (8) x) exn:object:interface-type?)
+(error-test `(interface (8) x) exn:object?)
 
 (test #t interface? (interface ()))
 (test #t interface? (interface () x))
@@ -139,12 +139,12 @@
 (test #f interface-extension? i0.2 i0.1)
 (test #f interface-extension? i0.1 i0.2)
 
-(error-test '(let [(bad (class* () (i0.1) ()))] bad) exn:object:implement?)
+(error-test '(let [(bad (class* () (i0.1) ()))] bad) exn:object?)
 (test #t class? (class* () (i0.1) () (public x y)))
-(error-test '(let ([cl (class* () (i0.1 i0.2) () (public x y c))]) cl) exn:object:implement?)
-(error-test '(class* () (i1) () (public x y c)) exn:object:implement?)
+(error-test '(let ([cl (class* () (i0.1 i0.2) () (public x y c))]) cl) exn:object?)
+(error-test '(class* () (i1) () (public x y c)) exn:object?)
 (test #t class? (class* () (i0.1 i0.1) () (public x y c d)))
-(error-test '(class* () (i1) () (public x y c d)) exn:object:implement?)
+(error-test '(class* () (i1) () (public x y c d)) exn:object?)
 (test #t class? (class* () (i1) () (public x y c d e)))
 
 (define c1 
@@ -241,7 +241,7 @@
 		    ""
 		    "ERROR"))))
 
-(define ivar? exn:object:ivar?)
+(define ivar? exn:object?)
 
 (test #t is-a? o1 c1)
 (test #t is-a? o1 i1)
@@ -359,7 +359,7 @@
 (test 1 g1 o2)
 (arity-test g1 1 1)
 
-(error-test '(make-generic c1 www)  exn:object:class-ivar?)
+(error-test '(make-generic c1 www)  exn:object?)
 
 (define g2 (make-generic c2 x))
 (test 1 g2 o2)
@@ -370,29 +370,29 @@
 (arity-test g0 1 1)
 (test 'hi g0 (make-object (class* () (i0.1) () (public [x 'hi][y 'bye]))))
 
-(error-test '(make-generic i0.1 www) exn:object:interface-ivar?)
+(error-test '(make-generic i0.1 www) exn:object?)
 
-(error-test '(g2 o1) exn:object:generic?)
-(error-test '(g0 o3) exn:object:generic?)
+(error-test '(g2 o1) exn:object?)
+(error-test '(g0 o3) exn:object?)
 
-(error-test '(class* 7 () ()) exn:object:class-type?)
-(error-test '(let ([c (class* 7 () ())]) c) exn:object:class-type?)
-(error-test '(class* () (i1 7) ()) exn:object:interface-type?)
-(error-test '(let ([c (class* () (i1 7) ())]) c) exn:object:interface-type?)
-(error-test '(interface (8) x) exn:object:interface-type?)
-(error-test '(let ([i (interface (8) x)]) i) exn:object:interface-type?)
-(error-test '(interface (i1 8) x) exn:object:interface-type?)
-(error-test '(make-generic c2 not-there) exn:object:class-ivar?)
+(error-test '(class* 7 () ()) exn:object?)
+(error-test '(let ([c (class* 7 () ())]) c) exn:object?)
+(error-test '(class* () (i1 7) ()) exn:object?)
+(error-test '(let ([c (class* () (i1 7) ())]) c) exn:object?)
+(error-test '(interface (8) x) exn:object?)
+(error-test '(let ([i (interface (8) x)]) i) exn:object?)
+(error-test '(interface (i1 8) x) exn:object?)
+(error-test '(make-generic c2 not-there) exn:object?)
 
-(error-test '(make-object (class* c1 () ())) exn:object:init:never?)
-(error-test '(make-object (let ([c (class* c1 () ())]) c)) exn:object:init:never?)
+(error-test '(make-object (class* c1 () ())) exn:object?)
+(error-test '(make-object (let ([c (class* c1 () ())]) c)) exn:object?)
 
 (error-test '(make-object 
 	      (class* c2 () () (sequence (super-init) (super-init)))) 
-	    exn:object:init:multiple?)
+	    exn:object?)
 (error-test '(make-object 
 	      (let ([c (class* c2 () () (sequence (super-init) (super-init)))]) c))
-	    exn:object:init:multiple?)
+	    exn:object?)
 
 (error-test '(make-object (class null (x))) exn:application:arity?)
 (error-test '(make-object (let ([c (class null (x))]) c)) exn:application:arity?)

@@ -986,7 +986,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, float x2, float x3, Bool x4);
+  void Refresh(float x0, float x1, float x2, float x3, int x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -2949,7 +2949,7 @@ wxMediaEdit::OwnCaret(x0);
   }
 }
 
-void os_wxMediaEdit::Refresh(float x0, float x1, float x2, float x3, Bool x4)
+void os_wxMediaEdit::Refresh(float x0, float x1, float x2, float x3, int x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -2975,7 +2975,7 @@ wxMediaEdit::Refresh(x0, x1, x2, x3, x4);
   p[1] = scheme_make_double(x1);
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
-  p[4] = (x4 ? scheme_true : scheme_false);
+  p[4] = bundle_symset_caret(x4);
   
 
   v = scheme_apply(method, 5, p);
@@ -3882,16 +3882,16 @@ static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Sche
   objscheme_check_valid(obj);
   if ((n >= 2) && objscheme_istype_wxMediaStreamOut(p[0], NULL, 0) && objscheme_istype_number(p[1], NULL)) {
     class wxMediaStreamOut* x0;
-    long x1;
+    nnlong x1;
     long x2;
 
     
     if ((n < 2) ||(n > 3)) 
       scheme_wrong_count("write-to-file in text% (with position case)", 2, 3, n, p);
     x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-to-file in text% (with position case)", 0);
-    x1 = objscheme_unbundle_integer(p[1], "write-to-file in text% (with position case)");
+    x1 = objscheme_unbundle_nonnegative_integer(p[1], "write-to-file in text% (with position case)");
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "write-to-file in text% (with position case)");
+      x2 = objscheme_unbundle_nonnegative_symbol_integer(p[2], "eof", "write-to-file in text% (with position case)");
     } else
       x2 = -1;
 
@@ -3924,16 +3924,16 @@ static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Sch
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   Bool r;
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_wxMediaStreamIn(p[0], NULL, 0) && objscheme_istype_number(p[1], NULL)) {
+  if ((n >= 2) && objscheme_istype_wxMediaStreamIn(p[0], NULL, 0) && objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL)) {
     class wxMediaStreamIn* x0;
-    nnlong x1;
+    long x1;
     Bool x2;
 
     
     if ((n < 2) ||(n > 3)) 
       scheme_wrong_count("read-from-file in text% (with position case)", 2, 3, n, p);
     x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-from-file in text% (with position case)", 0);
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "read-from-file in text% (with position case)");
+    x1 = objscheme_unbundle_nonnegative_symbol_integer(p[1], "start", "read-from-file in text% (with position case)");
     if (n > 2) {
       x2 = objscheme_unbundle_bool(p[2], "read-from-file in text% (with position case)");
     } else
@@ -4761,7 +4761,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_wxStyleDelta(p[0], NULL, 1) && objscheme_istype_nonnegative_symbol_integer(p[1], "", NULL)) {
+  if ((n >= 2) && objscheme_istype_wxStyleDelta(p[0], NULL, 1) && objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL)) {
     class wxStyleDelta* x0;
     long x1;
     long x2;
@@ -4936,7 +4936,7 @@ static Scheme_Object *os_wxMediaEditPaste(Scheme_Object *obj, int n,  Scheme_Obj
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_nonnegative_symbol_integer(p[1], "", NULL)) {
+  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_nonnegative_symbol_integer(p[1], "end", NULL)) {
     long x0;
     long x1;
     long x2;
@@ -4982,7 +4982,7 @@ static Scheme_Object *os_wxMediaEditCopy(Scheme_Object *obj, int n,  Scheme_Obje
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 3) && objscheme_istype_bool(p[0], NULL) && objscheme_istype_number(p[1], NULL) && objscheme_istype_nonnegative_symbol_integer(p[2], "", NULL)) {
+  if ((n >= 3) && objscheme_istype_bool(p[0], NULL) && objscheme_istype_number(p[1], NULL) && objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL)) {
     Bool x0;
     long x1;
     long x2;
@@ -5035,7 +5035,7 @@ static Scheme_Object *os_wxMediaEditCut(Scheme_Object *obj, int n,  Scheme_Objec
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 3) && objscheme_istype_bool(p[0], NULL) && objscheme_istype_number(p[1], NULL) && objscheme_istype_nonnegative_symbol_integer(p[2], "", NULL)) {
+  if ((n >= 3) && objscheme_istype_bool(p[0], NULL) && objscheme_istype_number(p[1], NULL) && objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL)) {
     Bool x0;
     long x1;
     long x2;
@@ -5104,7 +5104,7 @@ static Scheme_Object *os_wxMediaEditDelete(Scheme_Object *obj, int n,  Scheme_Ob
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_nonnegative_symbol_integer(p[0], "", NULL)) {
+  if ((n >= 1) && objscheme_istype_nonnegative_symbol_integer(p[0], "start", NULL)) {
     long x0;
     long x1;
     Bool x2;
@@ -6565,14 +6565,14 @@ static Scheme_Object *os_wxMediaEditRefresh(Scheme_Object *obj, int n,  Scheme_O
   float x1;
   float x2;
   float x3;
-  Bool x4;
+  int x4;
 
   
   x0 = objscheme_unbundle_float(p[0], "refresh in text%");
   x1 = objscheme_unbundle_float(p[1], "refresh in text%");
   x2 = objscheme_unbundle_float(p[2], "refresh in text%");
   x3 = objscheme_unbundle_float(p[3], "refresh in text%");
-  x4 = objscheme_unbundle_bool(p[4], "refresh in text%");
+  x4 = unbundle_symset_caret(p[4], "refresh in text%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)

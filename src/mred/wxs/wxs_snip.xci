@@ -3,7 +3,7 @@
 
 @ s "get-extent" : void GetExtent(wxDC!,float,float,float?=NULL,float?=NULL,float?=NULL,float?=NULL,float?=NULL,float?=NULL); : : /CHECKDCOK[0.METHODNAME("snip%","get-extent")]
 @ s "partial-offset" : float PartialOffset(wxDC!,float,float,long); : : /CHECKDCOK[0.METHODNAME("snip%","partial-offset")]
-@ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,int); : : /CHECKDCOK[0.METHODNAME("snip%","draw")]
+@ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,SYM[caret]); : : /CHECKDCOK[0.METHODNAME("snip%","draw")]
 @ s "split" : void Split(long,wxSnip!*,wxSnip!*);
 @ s "merge-with" : wxSnip^ MergeWith(wxSnip!);
 @ s "get-text" : string/makeNoCopyString[_x3] GetText(long,nnlong,bool=FALSE,-long*=NULL);

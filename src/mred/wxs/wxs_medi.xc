@@ -168,8 +168,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @ "get-focus-snip" : wxSnip^ GetFocusSnip();
 
-@ "get-inactive-caret-threshold" : int GetInactiveCaretThreshold();
-@ "set-inactive-caret-threshold" : void SetInactiveCaretThreshold(int);
+@ "get-inactive-caret-threshold" : SYM[caret] GetInactiveCaretThreshold();
+@ "set-inactive-caret-threshold" : void SetInactiveCaretThreshold(SYM[caret]);
 
 @MACRO bundleAny = ((Scheme_Object *){x})
  

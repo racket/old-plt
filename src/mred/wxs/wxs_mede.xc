@@ -174,8 +174,8 @@
 @ "get-text" : string/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
 @ "get-character" : uchar GetCharacter(nnlong);
 
-@ "read-from-file" : bool ReadFromFile(wxMediaStreamIn%,nnlong,bool=FALSE); <> with position
-@ "write-to-file" : bool WriteToFile(wxMediaStreamOut%,long,long=-1); <> with position
+@ "read-from-file" : bool ReadFromFile(wxMediaStreamIn%,nnls[start],bool=FALSE); <> with position
+@ "write-to-file" : bool WriteToFile(wxMediaStreamOut%,nnlong,nnls[eof]=-1); <> with position
 
 @ "get-file-format" : SYM[fileType] GetFileFormat();
 @ "set-file-format" : void SetFileFormat(SYM[fileType]);

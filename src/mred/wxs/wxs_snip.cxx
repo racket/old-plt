@@ -17,6 +17,225 @@
 #include "wxscomon.h"
 
 
+
+static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
+static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
+
+static void init_symset_bufferType(void) {
+  bufferType_wxEDIT_BUFFER_sym = scheme_intern_symbol("text");
+  bufferType_wxPASTEBOARD_BUFFER_sym = scheme_intern_symbol("pasteboard");
+}
+
+static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  if (0) { }
+  else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
+  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
+  if (where) scheme_wrong_type(where, "bufferType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bufferType(Scheme_Object *v, const char *where) {
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  if (0) { }
+  else if (v == bufferType_wxEDIT_BUFFER_sym) { return 1; }
+  else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bufferType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bufferType(int v) {
+  if (!bufferType_wxPASTEBOARD_BUFFER_sym) init_symset_bufferType();
+  switch (v) {
+  case wxEDIT_BUFFER: return bufferType_wxEDIT_BUFFER_sym;
+  case wxPASTEBOARD_BUFFER: return bufferType_wxPASTEBOARD_BUFFER_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *fileType_wxMEDIA_FF_GUESS_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_STD_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_TEXT_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_SAME_sym = NULL;
+static Scheme_Object *fileType_wxMEDIA_FF_COPY_sym = NULL;
+
+static void init_symset_fileType(void) {
+  fileType_wxMEDIA_FF_GUESS_sym = scheme_intern_symbol("guess");
+  fileType_wxMEDIA_FF_STD_sym = scheme_intern_symbol("standard");
+  fileType_wxMEDIA_FF_TEXT_sym = scheme_intern_symbol("text");
+  fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym = scheme_intern_symbol("text-force-cr");
+  fileType_wxMEDIA_FF_SAME_sym = scheme_intern_symbol("same");
+  fileType_wxMEDIA_FF_COPY_sym = scheme_intern_symbol("copy");
+}
+
+static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
+  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  if (0) { }
+  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return wxMEDIA_FF_GUESS; }
+  else if (v == fileType_wxMEDIA_FF_STD_sym) { return wxMEDIA_FF_STD; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return wxMEDIA_FF_TEXT; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
+  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
+  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
+  if (where) scheme_wrong_type(where, "fileType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_fileType(Scheme_Object *v, const char *where) {
+  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  if (0) { }
+  else if (v == fileType_wxMEDIA_FF_GUESS_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_STD_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_SAME_sym) { return 1; }
+  else if (v == fileType_wxMEDIA_FF_COPY_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "fileType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_fileType(int v) {
+  if (!fileType_wxMEDIA_FF_COPY_sym) init_symset_fileType();
+  switch (v) {
+  case wxMEDIA_FF_GUESS: return fileType_wxMEDIA_FF_GUESS_sym;
+  case wxMEDIA_FF_STD: return fileType_wxMEDIA_FF_STD_sym;
+  case wxMEDIA_FF_TEXT: return fileType_wxMEDIA_FF_TEXT_sym;
+  case wxMEDIA_FF_TEXT_FORCE_CR: return fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym;
+  case wxMEDIA_FF_SAME: return fileType_wxMEDIA_FF_SAME_sym;
+  case wxMEDIA_FF_COPY: return fileType_wxMEDIA_FF_COPY_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *focus_wxFOCUS_IMMEDIATE_sym = NULL;
+static Scheme_Object *focus_wxFOCUS_DISPLAY_sym = NULL;
+static Scheme_Object *focus_wxFOCUS_GLOBAL_sym = NULL;
+
+static void init_symset_focus(void) {
+  focus_wxFOCUS_IMMEDIATE_sym = scheme_intern_symbol("immediate");
+  focus_wxFOCUS_DISPLAY_sym = scheme_intern_symbol("display");
+  focus_wxFOCUS_GLOBAL_sym = scheme_intern_symbol("global");
+}
+
+static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
+  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  if (0) { }
+  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
+  else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
+  else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
+  if (where) scheme_wrong_type(where, "focus symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_focus(Scheme_Object *v, const char *where) {
+  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  if (0) { }
+  else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return 1; }
+  else if (v == focus_wxFOCUS_DISPLAY_sym) { return 1; }
+  else if (v == focus_wxFOCUS_GLOBAL_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "focus symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_focus(int v) {
+  if (!focus_wxFOCUS_GLOBAL_sym) init_symset_focus();
+  switch (v) {
+  case wxFOCUS_IMMEDIATE: return focus_wxFOCUS_IMMEDIATE_sym;
+  case wxFOCUS_DISPLAY: return focus_wxFOCUS_DISPLAY_sym;
+  case wxFOCUS_GLOBAL: return focus_wxFOCUS_GLOBAL_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *caret_wxSNIP_DRAW_NO_CARET_sym = NULL;
+static Scheme_Object *caret_wxSNIP_DRAW_SHOW_CARET_sym = NULL;
+static Scheme_Object *caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym = NULL;
+
+static void init_symset_caret(void) {
+  caret_wxSNIP_DRAW_NO_CARET_sym = scheme_intern_symbol("no-caret");
+  caret_wxSNIP_DRAW_SHOW_CARET_sym = scheme_intern_symbol("show-caret");
+  caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym = scheme_intern_symbol("show-inactive-caret");
+}
+
+static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  if (0) { }
+  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
+  if (where) scheme_wrong_type(where, "caret symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_caret(Scheme_Object *v, const char *where) {
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  if (0) { }
+  else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return 1; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return 1; }
+  else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "caret symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_caret(int v) {
+  if (!caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) init_symset_caret();
+  switch (v) {
+  case wxSNIP_DRAW_NO_CARET: return caret_wxSNIP_DRAW_NO_CARET_sym;
+  case wxSNIP_DRAW_SHOW_CARET: return caret_wxSNIP_DRAW_SHOW_CARET_sym;
+  case wxSNIP_DRAW_SHOW_INACTIVE_CARET: return caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym;
+  default: return NULL;
+  }
+}
+
+
+# define Sym_END 1
+# define Sym_START -1
+# define Sym_NONE 0
+static Scheme_Object *bias_Sym_START_sym = NULL;
+static Scheme_Object *bias_Sym_NONE_sym = NULL;
+static Scheme_Object *bias_Sym_END_sym = NULL;
+
+static void init_symset_bias(void) {
+  bias_Sym_START_sym = scheme_intern_symbol("start");
+  bias_Sym_NONE_sym = scheme_intern_symbol("none");
+  bias_Sym_END_sym = scheme_intern_symbol("end");
+}
+
+static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return Sym_START; }
+  else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
+  else if (v == bias_Sym_END_sym) { return Sym_END; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bias(Scheme_Object *v, const char *where) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  if (0) { }
+  else if (v == bias_Sym_START_sym) { return 1; }
+  else if (v == bias_Sym_NONE_sym) { return 1; }
+  else if (v == bias_Sym_END_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bias symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bias(int v) {
+  if (!bias_Sym_END_sym) init_symset_bias();
+  switch (v) {
+  case Sym_START: return bias_Sym_START_sym;
+  case Sym_NONE: return bias_Sym_NONE_sym;
+  case Sym_END: return bias_Sym_END_sym;
+  default: return NULL;
+  }
+}
+
+
 static Scheme_Object *flags_wxSNIP_CAN_APPEND_sym = NULL;
 static Scheme_Object *flags_wxSNIP_NEWLINE_sym = NULL;
 static Scheme_Object *flags_wxSNIP_HARD_NEWLINE_sym = NULL;
@@ -836,7 +1055,7 @@ wxSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   p[6] = scheme_make_double(x6);
   p[7] = scheme_make_double(x7);
   p[8] = scheme_make_double(x8);
-  p[9] = scheme_make_integer(x9);
+  p[9] = bundle_symset_caret(x9);
   
 
   v = scheme_apply(method, 10, p);
@@ -1437,7 +1656,7 @@ static Scheme_Object *os_wxSnipDraw(Scheme_Object *obj, int n,  Scheme_Object *p
   x6 = objscheme_unbundle_float(p[6], "draw in snip%");
   x7 = objscheme_unbundle_float(p[7], "draw in snip%");
   x8 = objscheme_unbundle_float(p[8], "draw in snip%");
-  x9 = objscheme_unbundle_integer(p[9], "draw in snip%");
+  x9 = unbundle_symset_caret(p[9], "draw in snip%");
 
   if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2585,7 +2804,7 @@ wxTextSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   p[6] = scheme_make_double(x6);
   p[7] = scheme_make_double(x7);
   p[8] = scheme_make_double(x8);
-  p[9] = scheme_make_integer(x9);
+  p[9] = bundle_symset_caret(x9);
   
 
   v = scheme_apply(method, 10, p);
@@ -3197,7 +3416,7 @@ static Scheme_Object *os_wxTextSnipDraw(Scheme_Object *obj, int n,  Scheme_Objec
   x6 = objscheme_unbundle_float(p[6], "draw in text-snip%");
   x7 = objscheme_unbundle_float(p[7], "draw in text-snip%");
   x8 = objscheme_unbundle_float(p[8], "draw in text-snip%");
-  x9 = objscheme_unbundle_integer(p[9], "draw in text-snip%");
+  x9 = unbundle_symset_caret(p[9], "draw in text-snip%");
 
   if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4155,7 +4374,7 @@ wxTabSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   p[6] = scheme_make_double(x6);
   p[7] = scheme_make_double(x7);
   p[8] = scheme_make_double(x8);
-  p[9] = scheme_make_integer(x9);
+  p[9] = bundle_symset_caret(x9);
   
 
   v = scheme_apply(method, 10, p);
@@ -4722,7 +4941,7 @@ static Scheme_Object *os_wxTabSnipDraw(Scheme_Object *obj, int n,  Scheme_Object
   x6 = objscheme_unbundle_float(p[6], "draw in tab-snip%");
   x7 = objscheme_unbundle_float(p[7], "draw in tab-snip%");
   x8 = objscheme_unbundle_float(p[8], "draw in tab-snip%");
-  x9 = objscheme_unbundle_integer(p[9], "draw in tab-snip%");
+  x9 = unbundle_symset_caret(p[9], "draw in tab-snip%");
 
   if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -5741,7 +5960,7 @@ wxImageSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   p[6] = scheme_make_double(x6);
   p[7] = scheme_make_double(x7);
   p[8] = scheme_make_double(x8);
-  p[9] = scheme_make_integer(x9);
+  p[9] = bundle_symset_caret(x9);
   
 
   v = scheme_apply(method, 10, p);
@@ -6424,7 +6643,7 @@ static Scheme_Object *os_wxImageSnipDraw(Scheme_Object *obj, int n,  Scheme_Obje
   x6 = objscheme_unbundle_float(p[6], "draw in image-snip%");
   x7 = objscheme_unbundle_float(p[7], "draw in image-snip%");
   x8 = objscheme_unbundle_float(p[8], "draw in image-snip%");
-  x9 = objscheme_unbundle_integer(p[9], "draw in image-snip%");
+  x9 = unbundle_symset_caret(p[9], "draw in image-snip%");
 
   if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -7404,7 +7623,7 @@ wxMediaSnip::Draw(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9);
   p[6] = scheme_make_double(x6);
   p[7] = scheme_make_double(x7);
   p[8] = scheme_make_double(x8);
-  p[9] = scheme_make_integer(x9);
+  p[9] = bundle_symset_caret(x9);
   
 
   v = scheme_apply(method, 10, p);
@@ -8266,7 +8485,7 @@ static Scheme_Object *os_wxMediaSnipDraw(Scheme_Object *obj, int n,  Scheme_Obje
   x6 = objscheme_unbundle_float(p[6], "draw in editor-snip%");
   x7 = objscheme_unbundle_float(p[7], "draw in editor-snip%");
   x8 = objscheme_unbundle_float(p[8], "draw in editor-snip%");
-  x9 = objscheme_unbundle_integer(p[9], "draw in editor-snip%");
+  x9 = unbundle_symset_caret(p[9], "draw in editor-snip%");
 
   if (x0 && !x0->Ok()) scheme_signal_error("%s: bad device context", METHODNAME("snip%","draw"));
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -9036,6 +9255,19 @@ class wxBufferDataClassList *objscheme_unbundle_wxBufferDataClassList(Scheme_Obj
 }
 
 
+static void SetNextNoCycle(wxBufferData *dest, wxBufferData *naya)
+{
+  wxBufferData *d;
+  for (d = naya; d; d = d->next) {
+    if (d == dest) {
+      /* Don't allow it because it would create a cycle. */
+      return;
+    }
+  }
+
+  dest->next = naya;
+}
+
 
 
 
@@ -9096,6 +9328,24 @@ return 0;
 
   return objscheme_unbundle_bool(v, "write in editor-data%"", extracting return value");
   }
+}
+
+#pragma argsused
+static Scheme_Object *os_wxBufferDataSetNextNoCycle(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxBufferData* x0;
+
+  
+  x0 = objscheme_unbundle_wxBufferData(p[0], "set-next in editor-data%", 1);
+
+  
+  SetNextNoCycle(((wxBufferData *)((Scheme_Class_Object *)obj)->primdata), x0);
+
+  
+  
+  return scheme_void;
 }
 
 #pragma argsused
@@ -9166,20 +9416,6 @@ static Scheme_Object *objscheme_wxBufferData_Getnext(Scheme_Object *obj, int n, 
   return objscheme_bundle_wxBufferData(v);
 }
 
-static Scheme_Object *objscheme_wxBufferData_Setnext(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  objscheme_check_valid(obj);
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  class wxBufferData* v;
-
-  if (n != 1) scheme_wrong_count("set-next in editor-data%", 1, 1, n, p);
-
-  v = objscheme_unbundle_wxBufferData(p[0], "set-next in editor-data%", 1);
-  ((wxBufferData *)cobj->primdata)->next = v;
-
-  return scheme_void;
-}
-
 #pragma argsused
 static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
@@ -9206,12 +9442,12 @@ if (os_wxBufferData_class) {
 } else {
   os_wxBufferData_class = objscheme_def_prim_class(env, "editor-data%", "object%", os_wxBufferData_ConstructScheme, 5);
 
+ scheme_add_method_w_arity(os_wxBufferData_class, "set-next", os_wxBufferDataSetNextNoCycle, 1, 1);
  scheme_add_method_w_arity(os_wxBufferData_class, "write", os_wxBufferDataWrite, 1, 1);
 
   scheme_add_method_w_arity(os_wxBufferData_class,"get-dataclass", objscheme_wxBufferData_Getdataclass, 0, 0);
   scheme_add_method_w_arity(os_wxBufferData_class,"set-dataclass", objscheme_wxBufferData_Setdataclass, 1, 1);
   scheme_add_method_w_arity(os_wxBufferData_class,"get-next", objscheme_wxBufferData_Getnext, 0, 0);
-  scheme_add_method_w_arity(os_wxBufferData_class,"set-next", objscheme_wxBufferData_Setnext, 1, 1);
 
   scheme_made_class(os_wxBufferData_class);
 

@@ -598,5 +598,7 @@ void wxAddMediaPasteboardFunctions(wxKeymap *tab);
 
 extern const char *(*wxmeExpandFilename)(const char *);
 
+extern void wxmeError(const char *e);
+
 #endif /* __WX_MEDIA__ */
 

@@ -614,7 +614,7 @@ void *wxMediaFileIOReady = NULL;
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn &f)
 {
   if (wxMediaFileIOReady) {
-    wxMessageBox("File I/O already in progress for some stream.", "Error");
+    wxmeError("File I/O already in progress for some stream.");
     return FALSE;
   }
 
@@ -632,7 +632,7 @@ Bool wxReadMediaGlobalHeader(wxMediaStreamIn &f)
 Bool wxReadMediaGlobalFooter(wxMediaStreamIn &f)
 {
   if (wxMediaFileIOReady != (void *)&f) {
-    wxMessageBox("File reading not in progress for this stream.", "Error");
+    wxmeError("File reading not in progress for this stream.");
     return FALSE;
   }
 
@@ -647,7 +647,7 @@ Bool wxReadMediaGlobalFooter(wxMediaStreamIn &f)
 Bool wxWriteMediaGlobalHeader(wxMediaStreamOut &f)
 {
   if (wxMediaFileIOReady) {
-    wxMessageBox("File I/O already in progress for some stream.", "Error");
+    wxmeError("File I/O already in progress for some stream.");
     return FALSE;
   }
 
@@ -665,7 +665,7 @@ Bool wxWriteMediaGlobalHeader(wxMediaStreamOut &f)
 Bool wxWriteMediaGlobalFooter(wxMediaStreamOut &f)
 {
   if (wxMediaFileIOReady != (void *)&f) {
-    wxMessageBox("File writing not in progress for this stream.", "Error");
+    wxmeError("File writing not in progress for this stream.");
     return FALSE;
   }
 
@@ -685,13 +685,13 @@ char wxme_current_read_version[MRED_VERSION_STR_LEN + 1];
 int wxmeCheckFormatAndVersion(void)
 {
   if (strcmp(wxme_current_read_format, MRED_FORMAT_STR)) {
-    wxMessageBox("Unknown format number.", "Error");
+    wxmeError("Unknown format number.");
     return 0;
   }
   if (strcmp(wxme_current_read_version, MRED_VERSION_STR)
       && strcmp(wxme_current_read_version, "01")
       && strcmp(wxme_current_read_version, "02")) {
-    wxMessageBox("Unknown version number.", "Error");
+    wxmeError("Unknown version number.");
     return 0;
   }
 
@@ -705,7 +705,7 @@ Bool wxMediaBuffer::ReadHeaderFromFile(wxMediaStreamIn &, char *headerName)
   sprintf(buffer, "Unknown header data: \"%.100s\"."
 	  " The file will be loaded anyway.", headerName);
 
-  wxMessageBox(buffer, "Warning");
+  wxmeError(buffer);
 
   return TRUE;
 }
@@ -717,7 +717,7 @@ Bool wxMediaBuffer::ReadFooterFromFile(wxMediaStreamIn &, char *headerName)
   sprintf(buffer, "Unknown header data: \"%.100s\"."
 	  " The file will be loaded anyway.", headerName);
 
-  wxMessageBox(buffer, "Warning");
+  wxmeError(buffer);
 
   return TRUE;
 }
@@ -863,9 +863,8 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn &f)
 	if (datalen >= 0) {
 	  long rcount = f.Tell() - start;
 	  if (rcount < datalen) {
-	    wxMessageBox("Warning: underread caused by file "
-			 "corruption or unknown internal error.", 
-			 "Warning");
+	    wxmeError("Warning: underread caused by file "
+		      "corruption or unknown internal error.");
 	    f.Skip(datalen - rcount);
 	  }
 	  f.RemoveBoundary();
@@ -929,9 +928,8 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn &f, Bool overwritestylenam
 
 	long rcount = f.Tell() - start;
 	if (rcount < len) {
-	  wxMessageBox("Warning: underread caused by file "
-		       "corruption or unknown internal error.", 
-		       "Warning");
+	  wxmeError("Warning: underread caused by file "
+		    "corruption or unknown internal error.");
 	  f.Skip(len - rcount);
 	}
 	
@@ -966,7 +964,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn &f, Bool overwritestylenam
 	  f.SetBoundary(len);
 	f >> styleIndex;
 	if (styleIndex < 0 || styleIndex >= styleList->numMappedStyles) {
-	  wxMessageBox("Bad style index for snip.", "Error");
+	  wxmeError("Bad style index for snip.");
 	  return FALSE;
 	}
 	if ((snip = sclass->Read(f))) {
@@ -990,9 +988,8 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn &f, Bool overwritestylenam
 	if (len >= 0) {
 	  long rcount = f.Tell() - start;
 	  if (rcount < len) {
-	    wxMessageBox("Warning: underread caused by file "
-			 "corruption or unknown internal error.", 
-			 "Warning");
+	    wxmeError("Warning: underread caused by file "
+		      "corruption or unknown internal error.");
 	    f.Skip(len - rcount);
 	  }
 	  f.RemoveBoundary();
@@ -1077,8 +1074,8 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut &f,
   for (snip = startSnip; PTRNE(snip, endSnip); snipCount++) {
     sclass = snip->snipclass;
     if (!sclass) {
-      wxMessageBox("There's a snip without a class."
-		   " Data will be lost.", "Warning");
+      wxmeError("There's a snip without a class."
+		" Data will be lost.");
     } else if (!sclass->headerFlag) {
       f << (short)sclass->mapPosition;
       headerStart = f.Tell();
@@ -1138,7 +1135,7 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut &f,
 
     styleIndex = styleList->StyleToIndex(snip->style);
     if (styleIndex < 0) {
-      wxMessageBox("Bad style discovered.", "Warning");
+      wxmeError("Bad style discovered.");
       styleIndex = 0;
     }
     f << styleIndex;

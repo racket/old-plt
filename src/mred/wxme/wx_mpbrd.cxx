@@ -39,6 +39,8 @@ extern "C" int scheme_directory_exists(char *dirname);
 #define HALF_DOT_WIDTH 2
 
 static wxCursor *arrow = NULL;
+
+int wxmeGetDoubleClickThreshold();
   
 static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
 {
@@ -360,7 +362,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	  interval = event.timeStamp - lastTime;
 	  if (interval < 0)
 	    interval = -interval;
-	  if (event.ButtonDown() && (interval < map->GetDoubleClickInterval()))
+	  if (event.ButtonDown() && (interval < (map ? map->GetDoubleClickInterval() : wxmeGetDoubleClickThreshold())))
 	    OnDoubleClick(snip, event);
 	  else {
 	    if (FindDot(loc, x, y, &sizedxm, &sizedym))
@@ -716,9 +718,8 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
     return;
 
   if (!snip->snipclass)
-    wxMessageBox("Inserting a snip without a class."
-		 " Data will be lost if you try to save the file.", 
-		 "Warning");
+    wxmeError("Inserting a snip without a class."
+	      " Data will be lost if you try to save the file.");
 
   BeginEditSequence();
   if (!CanInsert(snip, before, x, y)) {
@@ -2384,7 +2385,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 
   if (::scheme_directory_exists(file)) {
     if (showErrors)
-      wxMessageBox("Can't load a directory.", "Error");
+      wxmeError("Can't load a directory.");
     AfterLoadFile(FALSE);
     return FALSE;
   }
@@ -2395,7 +2396,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   
   if (!f) {
     if (showErrors)
-      wxMessageBox("Couldn't open the file.", "Error");
+      wxmeError("Couldn't open the file.");
     AfterLoadFile(FALSE);
     return FALSE;
   }
@@ -2441,7 +2442,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
   buffer[MRED_START_STR_LEN] = 0;
   if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
     if (showErrors)
-      wxMessageBox("This is not a MrEd file.", "Error");
+      wxmeError("This is not a MrEd file.");
     fileerr = TRUE;
   } else {
     fread((char *)wxme_current_read_format, 1, MRED_FORMAT_STR_LEN, f);
@@ -2472,7 +2473,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
   fclose(f);
 
   if (fileerr && showErrors)
-    wxMessageBox("There was an error loading the file.", "Error");
+    wxmeError("There was an error loading the file.");
 
   return !fileerr;
 }
@@ -2520,7 +2521,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 
   if (!f) {
     if (showErrors)
-      wxMessageBox("Couldn't write the file.", "Error");
+      wxmeError("Couldn't write the file.");
     AfterSaveFile(FALSE);
     return FALSE;
   }
@@ -2550,7 +2551,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   fclose(f);
 
   if (fileerr && showErrors)
-    wxMessageBox("There was an error writing the file.", "Error");
+    wxmeError("There was an error writing the file.");
 
   if (!no_set_filename)
     SetFilename(file, FALSE);
@@ -2568,7 +2569,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut &f)
 {
   if (wxMediaFileIOReady != (void *)&f) {
-    wxMessageBox("File writing has not been initialized for this stream.", "Error");
+    wxmeError("File writing has not been initialized for this stream.");
     return FALSE;
   }
 
@@ -2587,7 +2588,7 @@ Bool wxMediaPasteboard::WriteToFile(wxMediaStreamOut &f)
 Bool wxMediaPasteboard::ReadFromFile(wxMediaStreamIn &f, Bool overwritestyle)
 {
   if (wxMediaFileIOReady != (void *)&f) {
-    wxMessageBox("File reading has not been initialized for this stream.", "Error");
+    wxmeError("File reading has not been initialized for this stream.");
     return FALSE;
   }
 

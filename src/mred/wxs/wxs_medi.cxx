@@ -565,7 +565,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void SizeCacheInvalid();
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, float x2, float x3, Bool x4);
+  void Refresh(float x0, float x1, float x2, float x3, int x4);
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
@@ -1914,7 +1914,7 @@ return;
   }
 }
 
-void os_wxMediaBuffer::Refresh(float x0, float x1, float x2, float x3, Bool x4)
+void os_wxMediaBuffer::Refresh(float x0, float x1, float x2, float x3, int x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
@@ -1940,7 +1940,7 @@ return;
   p[1] = scheme_make_double(x1);
   p[2] = scheme_make_double(x2);
   p[3] = scheme_make_double(x3);
-  p[4] = (x4 ? scheme_true : scheme_false);
+  p[4] = bundle_symset_caret(x4);
   
 
   v = scheme_apply(method, 5, p);
@@ -2167,7 +2167,7 @@ static Scheme_Object *os_wxMediaBufferSetInactiveCaretThreshold(Scheme_Object *o
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-inactive-caret-threshold in editor<%>");
+  x0 = unbundle_symset_caret(p[0], "set-inactive-caret-threshold in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetInactiveCaretThreshold(x0);
@@ -2191,7 +2191,7 @@ static Scheme_Object *os_wxMediaBufferGetInactiveCaretThreshold(Scheme_Object *o
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_caret(r);
 }
 
 #pragma argsused
@@ -4272,14 +4272,14 @@ static Scheme_Object *os_wxMediaBufferRefresh(Scheme_Object *obj, int n,  Scheme
   float x1;
   float x2;
   float x3;
-  Bool x4;
+  int x4;
 
   
   x0 = objscheme_unbundle_float(p[0], "refresh in editor<%>");
   x1 = objscheme_unbundle_float(p[1], "refresh in editor<%>");
   x2 = objscheme_unbundle_float(p[2], "refresh in editor<%>");
   x3 = objscheme_unbundle_float(p[3], "refresh in editor<%>");
-  x4 = objscheme_unbundle_bool(p[4], "refresh in editor<%>");
+  x4 = unbundle_symset_caret(p[4], "refresh in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)

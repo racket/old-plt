@@ -85,6 +85,19 @@ class wxKeycode FUNC_REC_INHERITANCE
 
 static int doubleClickThreshold = -1;
 
+int wxmeGetDoubleClickThreshold()
+{
+  if (doubleClickThreshold < 0) {
+#if USE_RESOURCES
+    if (!wxGetResource(wxTheApp->wx_class, "doubleClickTime", 
+		       &doubleClickThreshold))
+#endif
+      doubleClickThreshold = DOUBLE_CLICK_THRESHOLD;
+  }
+
+  return doubleClickThreshold;
+}
+
 wxKeymap::wxKeymap()
 {
 #if USE_OLD_TYPE_SYSTEM
@@ -119,15 +132,7 @@ wxKeymap::wxKeymap()
 
   lastButton = 0;
 
-  if (doubleClickThreshold < 0) {
-#if USE_RESOURCES
-    if (!wxGetResource(wxTheApp->wx_class, "doubleClickTime", 
-		       &doubleClickThreshold))
-#endif
-      doubleClickThreshold = DOUBLE_CLICK_THRESHOLD;
-  }
-
-  doubleInterval = doubleClickThreshold;
+  doubleInterval = wxmeGetDoubleClickThreshold();
 }
 
 wxKeymap::~wxKeymap()

@@ -17,7 +17,6 @@
 			 (vector error-value->string-handler (lambda x x))
 			 (vector break-enabled (box #f))
 			 (vector exception-break-enabled (box #f))
-			 (vector user-break-poll-handler (lambda x x))
 			 (vector current-input-port (make-input-port void void void))
 			 (vector current-output-port (make-output-port void void))
 			 (vector current-error-port (make-output-port void void))

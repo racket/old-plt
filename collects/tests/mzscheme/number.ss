@@ -528,11 +528,11 @@
 
 (test 1.0 exact->inexact (/ big-num (add1 big-num)))
 
-(error-test '(/ 0) exn:application:math:zero?)
-(error-test '(/ 1 0) exn:application:math:zero?)
-(error-test '(/ 1/2 0) exn:application:math:zero?)
-(error-test '(/ 1+2i 0) exn:application:math:zero?)
-(error-test '(/ 1.0 0) exn:application:math:zero?)
+(error-test '(/ 0) exn:application:divide-by-zero?)
+(error-test '(/ 1 0) exn:application:divide-by-zero?)
+(error-test '(/ 1/2 0) exn:application:divide-by-zero?)
+(error-test '(/ 1+2i 0) exn:application:divide-by-zero?)
+(error-test '(/ 1.0 0) exn:application:divide-by-zero?)
 
 (test -1 - 3 4)
 (test -3 - 3)
@@ -1247,7 +1247,7 @@
 (error-test '(number->string 'a))
 (error-test '(number->string 1 'a))
 (error-test '(number->string 'a 10))
-(error-test '(number->string 1.8 8) exn:application:math:radix?)
+(error-test '(number->string 1.8 8) exn:application:mismatch?)
 (error-test '(number->string 1 -1))
 
 (error-test '(string->number 'a))

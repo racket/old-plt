@@ -22,7 +22,7 @@
 		  (/ 0))))
 (error-test '(with-handlers ()
 	         (/ 0))
-	    exn:application:math:zero?)
+	    exn:application:divide-by-zero?)
 (error-test '(with-handlers ((zero? (lambda (x) 'zero)))
 		 (/ 0))
 	    exn:application:type?)
@@ -46,9 +46,9 @@
 (syntax-test '(with-handlers ((zero? zero?)) 1 . 2))
 
 (error-test '(with-handlers ((0 void)) (/ 0)) 
-	    exn:application:non-procedure?)
+	    exn:application:type?)
 (error-test '(with-handlers ((void 0)) (/ 0))
-	    exn:application:non-procedure?)
+	    exn:application:type?)
 (error-test '(with-handlers ((unbound-variable void)) 0)
 	    exn:variable?)
 (error-test '(with-handlers ((void unbound-variable)) 0)
@@ -896,7 +896,7 @@
 			     (f 11)))])
 		  (g)))
 ; Known local non-function
-(error-test '(apply (lambda () (let ([f 12]) (f))) null) exn:application:non-procedure?)
+(error-test '(apply (lambda () (let ([f 12]) (f))) null) exn:application:type?)
 ; Known local with revsed arguments:
 (test 10 (letrec ([f (lambda (a b) (if (zero? a) b (f b a)))]) f) 10 0)
 

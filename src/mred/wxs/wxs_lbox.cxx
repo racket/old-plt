@@ -753,7 +753,7 @@ static Scheme_Object *os_wxListBoxSelected(Scheme_Object *obj, int n,  Scheme_Ob
   
   x0 = objscheme_unbundle_integer(p[0], "selected? in list-box%");
 
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_false;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Selected(x0);
 
   

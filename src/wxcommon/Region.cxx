@@ -373,8 +373,8 @@ void wxRegion::SetArc(float x, float y, float w, float h, float start, float end
   if (!pi)
     pi = 2 * asin((double)1.0);
 
-  start = fmod(start, 2*pi);
-  end = fmod(end, 2*pi);
+  start = fmod((double)start, 2*pi);
+  end = fmod((double)end, 2*pi);
   if (start < 0)
     start += 2*pi;
   if (end < 0)

@@ -115,8 +115,8 @@ TILDES=*~ ../collects/mrdemo/*~ demo/turtles/*~ demo/morph/*~ system/*~ collects
 clean-mred:
 	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx clean
 	rm -rf objects/*/*.o $(TILDES) core
-	cd wxme; $(MAKE) clean
-	cd wxs; $(MAKE) clean
+	cd wxme; $(MAKE) WXDIR='$(WXDIR)' clean
+	cd wxs; $(MAKE) WXDIR='$(WXDIR)' clean
 
 clean:
 	$(MAKE) clean-mred

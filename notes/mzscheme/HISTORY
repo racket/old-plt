@@ -1,4 +1,8 @@
 
+Version 204.4
+Mac OS Classic: `file-size' result no longer includes
+ the resource-fork size
+
 Version 204.2
 Added a `super-new' local form to (lib "class.ss")
 

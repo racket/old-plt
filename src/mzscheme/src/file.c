@@ -784,8 +784,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
 	    if (flags)
 	      *flags = pbrec.hFileInfo.ioFlAttrib;
 	    if (size)
-	      *size = (pbrec.hFileInfo.ioFlLgLen
-		       + pbrec.hFileInfo.ioFlRLgLen);
+	      *size = pbrec.hFileInfo.ioFlLgLen;
 	    if (finfo)
 	      memcpy(finfo, &pbrec.hFileInfo.ioFlFndrInfo, sizeof(FInfo));
 	  } else {

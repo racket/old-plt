@@ -275,19 +275,35 @@ int log_base_10(int i)
 # define PATH_SEPARATOR ""
 #endif
 
+class wxCallbackInfo {
+public:
+  char *initial_directory;
+  char *force_extension;
+} ;
+
 static void ExtensionCallback(NavEventCallbackMessage callBackSelector, 
 			      NavCBRecPtr callBackParms, 
 			      void *callBackUD)
 {
+  wxCallbackInfo *cbi = (wxCallbackInfo *)callBackUD;
+
   switch (callBackSelector) {
   case kNavCBStart:
+    if (cbi->initial_directory) {
+      FSSpec spec;
+      if (scheme_mac_path_to_spec(cbi->initial_directory, &spec)) {
+	AEDesc desc;
+	AECreateDesc (typeFSS, &spec, sizeof(FSSpec), &desc);
+	NavCustomControl(callBackParms->context, kNavCtlSetLocation, &desc);
+	AEDisposeDesc(&desc);
+      }
+    }
     break;
   case kNavCBAccept:
-#if 0
-    {
+    if (cbi->force_extension) {
       Str255 sv;
       StringPtr s;
-      char *c, *suffix = ".app";
+      char *c, *suffix = cbi->force_extension;
       int i, sl;
 
       s = sv;
@@ -303,7 +319,7 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
       if (strcmp(c + i, suffix)) {
 	unsigned char *s2;
 	sl = strlen(suffix);
-	s2 = new WXGC_ATOMIC char[s[0] + sl + 1];
+	s2 = (unsigned char *)(new WXGC_ATOMIC char[s[0] + sl + 1]);
 	memcpy(s2 + 1, s + 1, s[0]);
 	memcpy(s2 + 1 + s[0], suffix, sl);
 	s2[0] = s[0] + sl;
@@ -362,7 +378,6 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 	}
       }
     }
-#endif
   case kNavCBCancel: /* ^^^^^^^^^^ FALLTHROUGH ^^^^^^^^^^^^ */
     QuitAppModalLoopForWindow(callBackParms->window);
     break;
@@ -408,6 +423,7 @@ char *wxFileSelector(char *message, char *default_path,
     NavDialogRef outDialog;
     OSErr derr;
     NavDialogCreationOptions dialogOptions;
+    wxCallbackInfo *cbi;
 
     if (!navinited) {
       if (!NavLoad()) {
@@ -419,6 +435,10 @@ char *wxFileSelector(char *message, char *default_path,
 			      parent, x, y);
       } 
     }
+
+    cbi = new wxCallbackInfo();
+    cbi->initial_directory = default_path;
+    cbi->force_extension = NULL;
 
     NavGetDefaultDialogCreationOptions(&dialogOptions);
     if (default_filename) 
@@ -434,9 +454,8 @@ char *wxFileSelector(char *message, char *default_path,
     if (!(flags & wxMULTIOPEN))
       dialogOptions.optionFlags -= (dialogOptions.optionFlags & kNavAllowMultipleFiles);
 
-#if 0
-    dialogOptions.optionFlags |= kNavDontConfirmReplacement;
-#endif
+    if (cbi->force_extension)
+      dialogOptions.optionFlags |= kNavDontConfirmReplacement;
 
 #ifdef OS_X
     if (parent) {
@@ -457,13 +476,17 @@ char *wxFileSelector(char *message, char *default_path,
 
     // create the dialog:
     if (flags & wxGETDIR) {
-      derr = NavCreateChooseFolderDialog(&dialogOptions, extProc, NULL, NULL, &outDialog);
+      derr = NavCreateChooseFolderDialog(&dialogOptions,
+					 extProc, NULL, cbi, 
+					 &outDialog);
     } else if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
-      derr = NavCreateGetFileDialog(&dialogOptions, NULL, extProc, NULL, NULL, NULL, &outDialog);
+      derr = NavCreateGetFileDialog(&dialogOptions, NULL,
+				    extProc, NULL, NULL, cbi, 
+				    &outDialog);
     } else {
       derr = NavCreatePutFileDialog(&dialogOptions, 'TEXT', 'MrEd', 
-				    extProc,
-				    default_extension, &outDialog);
+				    extProc, cbi,
+				    &outDialog);
     }
 
     if (derr != noErr) {

@@ -1,14 +1,14 @@
-(require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
-(require (prefix kernel: (lib "kerncase.ss" "syntax")))
-(require (prefix reconstruct: (lib "reconstruct.ss" "stepper" "private")))
-(require (lib "shared.ss" "stepper" "private"))
-(require (lib "highlight-placeholder.ss" "stepper" "private"))
-(require (lib "my-macros.ss" "stepper" "private"))
-(require (lib "model-settings.ss" "stepper" "private"))
-(require (lib "marks.ss" "stepper" "private"))
-(require (lib "class.ss"))
-(require (lib "etc.ss"))
-(require "tests-common.ss")
+(require (prefix annotate: (lib "annotate.ss" "stepper" "private"))
+         (prefix kernel: (lib "kerncase.ss" "syntax"))
+         (prefix reconstruct: (lib "reconstruct.ss" "stepper" "private"))
+         (lib "shared.ss" "stepper" "private")
+         (lib "highlight-placeholder.ss" "stepper" "private")
+         (lib "my-macros.ss" "stepper" "private")
+         (lib "model-settings.ss" "stepper" "private")
+         (lib "marks.ss" "stepper" "private")
+         (lib "class.ss")
+         (lib "etc.ss")
+         "tests-common.ss")
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
@@ -85,7 +85,7 @@
                (collector #f (list (unbox expr-box) mark-list break-kind returned-value-list)))
               (else (error 'break "unexpected break-kind: ~a" break-kind))))))))
 
-  
+
 (define (test-sequence stx expected-queue expected-completed namespace)
   (let/ec k
     (let* ([expr-box (box #f)]
@@ -94,7 +94,7 @@
                        (when expected-completed
                          (fprintf (current-error-port) "got an extra pair:\nbefore: ~e\nafter: ~e\n"
                                   before after)
-                       (test #f (lambda (x) x) expected-completed))
+                         (test #f (lambda (x) x) expected-completed))
                        (k (void)))
                      (test (car expected-queue) (lambda () before))
                      (test (cadr expected-queue) (lambda () after))
@@ -120,17 +120,23 @@
   (reconstruct:set-render-settings! mz-render-settings)
   (test-sequence source-list result-list #f mz-namespace))
 
-(define (test-beginner-sequence source-list result-list completed-list)
-  (reconstruct:set-render-settings! fake-beginner-render-settings)
-  (test-sequence source-list result-list completed-list beginner-namespace))
+(define (make-language-level-tester settings namespace)
+  (lambda (source-list result-list completed-list)
+    (reconstruct:set-render-settings! settings)
+    (test-sequence source-list result-list completed-list namespace)))
 
-(define (test-beginner-wla-sequence source-list result-list completed-list)
-  (reconstruct:set-render-settings! fake-beginner-wla-render-settings)
-  (test-sequence source-list result-list completed-list beginner-wla-namespace))
+(define test-beginner-sequence 
+  (make-language-level-tester fake-beginner-render-settings beginner-namespace))
+
+(define test-beginner-wla-sequence 
+  (make-language-level-tester fake-beginner-wla-render-settings beginner-wla-namespace))
+
+(define test-intermediate-sequence
+  (make-language-level-tester fake-intermediate-render-settings intermediate-namespace))
 
 (map syntax-object->datum
- (parameterize ([current-namespace beginner-namespace])
-   (map expand (string->stx-list "(list a 3 4)"))))
+     (parameterize ([current-namespace beginner-namespace])
+       (map expand (string->stx-list "(list a 3 4)"))))
 
 ;;;;;;;;;;;;;
 ;;
@@ -147,7 +153,7 @@
                     (((... ,highlight-placeholder ...)) (3))
                     ((...) ())
                     ((,highlight-placeholder) ((void)))))
-                    
+
 (test-mz-sequence "(+ 3 4)"
                   `(((,highlight-placeholder) ((+ 3 4)))
                     ((,highlight-placeholder) (7))))
@@ -240,7 +246,7 @@
                         `(((,highlight-placeholder) ((+ 4 129)))
                           ((,highlight-placeholder) (133)))
                         `(133))
-                        
+
 (test-beginner-sequence "(if true 3 4)"
                         `(((,highlight-placeholder) ((if true 3 4)))
                           ((,highlight-placeholder) (3)))
@@ -265,27 +271,27 @@
        (printf "outer thing has wrong shape: ~a\n" (syntax-object->datum (syntax stx)))])))
 
 (test-beginner-sequence "(cond [false 4] [false 5] [true 3])"
-               `(((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
-                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
-                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
-                 ((,highlight-placeholder) ((cond (true 3))))
-                 ((,highlight-placeholder) ((cond (true 3))))
-                 ((,highlight-placeholder) (3)))
-               `(3))
+                        `(((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
+                          ((,highlight-placeholder) ((cond (false 5) (true 3))))
+                          ((,highlight-placeholder) ((cond (false 5) (true 3))))
+                          ((,highlight-placeholder) ((cond (true 3))))
+                          ((,highlight-placeholder) ((cond (true 3))))
+                          ((,highlight-placeholder) (3)))
+                        `(3))
 
 (test-beginner-sequence "(cond [false 4] [else 9])"
-               `(((,highlight-placeholder) ((cond [false 4] [else 9])))
-                 ((,highlight-placeholder) ((cond [else 9])))
-                 ((,highlight-placeholder) ((cond [else 9])))
-                 ((,highlight-placeholder) (9)))
-               `(9))
+                        `(((,highlight-placeholder) ((cond [false 4] [else 9])))
+                          ((,highlight-placeholder) ((cond [else 9])))
+                          ((,highlight-placeholder) ((cond [else 9])))
+                          ((,highlight-placeholder) (9)))
+                        `(9))
 
 (test-beginner-sequence "(cond [true 3] [else (and true true)])"
-                         `(((,highlight-placeholder) ((cond (true 3) (else (and true true)))))
-                           ((,highlight-placeholder) (3)))
-                         `(3))
+                        `(((,highlight-placeholder) ((cond (true 3) (else (and true true)))))
+                          ((,highlight-placeholder) (3)))
+                        `(3))
 
-          
+
 ; syntactic error: (test-beginner-sequence "(cond)")
 
 (test-beginner-sequence "(cond [else 3])"
@@ -347,9 +353,9 @@
 (parameterize ([current-namespace beginner-namespace])
   (map syntax-object->datum
        ;(map expand
-            (annotate-exprs (map expand (list '(define (a19 x) x) '(a19 4))) (lambda (x y z) 3))
-            ;)
-            ))
+       (annotate-exprs (map expand (list '(define (a19 x) x) '(a19 4))) (lambda (x y z) 3))
+       ;)
+       ))
 
 (parameterize ([current-namespace beginner-namespace])
   (map syntax-object->datum
@@ -386,16 +392,14 @@
                         `((define a1 true) (define (b1 x) (and a1 true x)) false))
 
 
-; no longer legal in beginner:
-;
-;(test-beginner-sequence "(define a4 +) a4"
-;                        `(((,highlight-placeholder) (a4))
-;                          ((,highlight-placeholder) (+)))
-;                        `((define a4 +) +))
-;
-;(test-beginner-sequence "(define (f123 x) (+ x 13)) f123"
-;                        `()
-;                        `((define (f123 x) (+ x 13)) f123))
+(test-intermediate-sequence "(define a4 +) a4"
+                            `(((,highlight-placeholder) (a4))
+                              ((,highlight-placeholder) (+)))
+                            `((define a4 +) +))
+
+(test-intermediate-sequence "(define (f123 x) (+ x 13)) f123"
+                            `()
+                            `((define (f123 x) (+ x 13)) f123))
 
 (test-beginner-sequence "(define (b x) (+ x 13)) (b 9)"
                         `(((,highlight-placeholder) ((b 9)))
@@ -429,7 +433,7 @@
 
 (test-beginner-sequence "(define (silly-choice str)
                            (string-append str (if false str str) str))
-                         (silly-choice \"family\")"
+(silly-choice \"family\")"
                         `(((,highlight-placeholder) ((silly-choice "family")))
                           ((,highlight-placeholder) ((string-append "family" (if false "family" "family") "family")))
                           (((string-append "family" ,highlight-placeholder "family")) ((if false "family" "family")))
@@ -475,7 +479,7 @@
                     (((... ,highlight-placeholder ...)) (5))
                     ((...) ())
                     ((,highlight-placeholder) (`(3 4 5)))))
-    
+
 (test-beginner-wla-sequence "'(3 4 5)"
                             `()
                             `((list 3 4 5)))
@@ -504,6 +508,19 @@
                               ((,highlight-placeholder) ((list 3 7 5 6))))
                             `((list 3 7 5 6)))
 
+(test-intermediate-sequence "(local () (+ 3 4))"
+                            `(((,highlight-placeholder) ((local () (+ 3 4))))
+                              ((,highlight-placeholder) ((+ 3 4)))
+                              ((,highlight-placeholder) ((+ 3 4)))
+                              ((,highlight-placeholder) (7)))
+                            `(7))
+
+(test-intermediate-sequence "(local ((define (a x) (+ x 9))) (a 6))"
+                            `((())))
+
+(test-intermediate-sequence "(local ((define (a x) (+ x 9)) (define b a)) (b 1))")
+
+
 ;;;;;;;;;;;;;
 ;;
 ;;  TEACHPACK TESTS
@@ -529,7 +546,7 @@
                  ((,highlight-placeholder) (true)))
                `((define (check-guess guess target) 'toosmall) true)
                tp-namespace)
-  
+
 
 
 (report-errs)

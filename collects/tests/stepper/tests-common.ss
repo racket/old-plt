@@ -1,7 +1,7 @@
 (module tests-common mzscheme
   
   (require (lib "private/annotate.ss" "stepper")
-           (lib "specs.ss" "framework")
+           (lib "contracts.ss")
            (lib "shared.ss" "stepper" "private"))
   
   (provide/contract (reset-namespaces (-> void?))
@@ -10,7 +10,9 @@
   
   (provide mz-namespace
            beginner-namespace
-           beginner-wla-namespace)
+           beginner-wla-namespace
+           intermediate-namespace
+           intermediate/lambda-namespace)
   
   ; : ((listof syntax?) (recon-result recon-result -> (void)) -> (listof syntax)
   (define (annotate-exprs stx-list break)
@@ -34,6 +36,8 @@
   (define mz-namespace #f)
   (define beginner-namespace #f)
   (define beginner-wla-namespace #f)
+  (define intermediate-namespace #f)
+  (define intermediate/lambda-namespace #f)
   
   (define (new-namespace-from-spec spec)
     (let ([new-namespace (make-namespace 'empty)])
@@ -45,4 +49,6 @@
   (define (reset-namespaces)
     (set! mz-namespace (new-namespace-from-spec '(lib "plt-mzscheme.ss" "lang")))
     (set! beginner-namespace (new-namespace-from-spec '(lib "htdp-beginner.ss" "lang")))
-    (set! beginner-wla-namespace (new-namespace-from-spec '(lib "htdp-beginner-abbr.ss" "lang")))))
+    (set! beginner-wla-namespace (new-namespace-from-spec '(lib "htdp-beginner-abbr.ss" "lang")))
+    (set! intermediate-namespace (new-namespace-from-spec '(lib "htdp-intermediate.ss" "lang")))
+    (set! intermediate/lambda-namespace (new-namespace-from-spec '(lib "htdp-intermediate-lambda.ss" "lang")))))

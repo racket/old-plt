@@ -54,6 +54,8 @@
 @ "enable" : void Enable(int,bool); : : /RANGE[0] <> single-button
 @ "enable" : void Enable(bool); <> all-buttons
 
+@ "button-focus" : int ButtonFocus(int);
+
 @END
 
 @INCLUDE cb_end.xci

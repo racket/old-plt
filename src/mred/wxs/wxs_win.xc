@@ -70,6 +70,8 @@ static int wxSchemeWindowGetY(wxWindow *w)
 
 @ "centre" : void Centre(SYM[direction]=wxBOTH);
 
+@ "gets-focus?" : bool GetsFocus();
+
 @ "set-focus" : void SetFocus();
 @ "set-size" : void SetSize(int,int,int,int,SYM[sizeMode]=wxSIZE_AUTO); : : /NOZERO[2]|NOZERO[3]
 @ "move" : void Move(int,int); 

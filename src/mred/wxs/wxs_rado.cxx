@@ -286,6 +286,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 class os_wxRadioBox : public wxRadioBox {
  public:
   Scheme_Object *callback_closure;
@@ -523,6 +524,25 @@ wxRadioBox::OnKillFocus();
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   }
+}
+
+#pragma argsused
+static Scheme_Object *os_wxRadioBoxButtonFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+  int x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "button-focus in radio-box%");
+
+  
+  r = ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->ButtonFocus(x0);
+
+  
+  
+  return scheme_make_integer(r);
 }
 
 #pragma argsused
@@ -934,8 +954,9 @@ void objscheme_setup_wxRadioBox(void *env)
 if (os_wxRadioBox_class) {
     objscheme_add_global_class(os_wxRadioBox_class, "radio-box%", env);
 } else {
-  os_wxRadioBox_class = objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 14);
+  os_wxRadioBox_class = objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 15);
 
+ scheme_add_method_w_arity(os_wxRadioBox_class, "button-focus", os_wxRadioBoxButtonFocus, 1, 1);
  scheme_add_method_w_arity(os_wxRadioBox_class, "enable", os_wxRadioBoxEnable, 1, 2);
  scheme_add_method_w_arity(os_wxRadioBox_class, "get-string", os_wxRadioBoxGetString, 1, 1);
  scheme_add_method_w_arity(os_wxRadioBox_class, "set-selection", os_wxRadioBoxSetSelection, 1, 1);

@@ -148,6 +148,7 @@ static Scheme_Object *bundle_symset_direction(int v) {
 
 
 
+
 // @ "get-char-height" : float GetCharHeight();
 // @ "get-char-width" : float GetCharWidth();
 
@@ -991,6 +992,23 @@ static Scheme_Object *os_wxWindowSetFocus(Scheme_Object *obj, int n,  Scheme_Obj
 }
 
 #pragma argsused
+static Scheme_Object *os_wxWindowGetsFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetsFocus();
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1016,7 +1034,7 @@ void objscheme_setup_wxWindow(void *env)
 if (os_wxWindow_class) {
     objscheme_add_global_class(os_wxWindow_class, "window%", env);
 } else {
-  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 29);
+  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 30);
 
  scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file", os_wxWindowOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event", os_wxWindowPreOnEvent, 2, 2);
@@ -1046,6 +1064,7 @@ if (os_wxWindow_class) {
  scheme_add_method_w_arity(os_wxWindow_class, "move", os_wxWindowMove, 2, 2);
  scheme_add_method_w_arity(os_wxWindow_class, "set-size", os_wxWindowSetSize, 4, 5);
  scheme_add_method_w_arity(os_wxWindow_class, "set-focus", os_wxWindowSetFocus, 0, 0);
+ scheme_add_method_w_arity(os_wxWindow_class, "gets-focus?", os_wxWindowGetsFocus, 0, 0);
  scheme_add_method_w_arity(os_wxWindow_class, "centre", os_wxWindowCentre, 0, 1);
 
 

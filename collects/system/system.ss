@@ -87,8 +87,6 @@
 (require-library "corec.ss")
 (require-library "triggerc.ss")
 
-(write make-trigger)
-
 (current-library-path (normalize-path (current-library-path)))
 
 (define mred:plt-home-directory

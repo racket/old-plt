@@ -7,7 +7,7 @@
           (mred : mred^)
           (drscheme : drscheme:export^)
           (zodiac : zodiac:system^))
-  (link [ERROR : stepper:error^ ((unit/sig stepper:error^
+  (link [error : stepper:error^ ((unit/sig stepper:error^
                                    (import)
                                    (define default-error-handler
                                      (lambda (keyword)
@@ -24,6 +24,10 @@
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error)]
+        [beginner-checker : stepper:beginner-checker^ ((require-library-unit/sig "beginner-checker.ss" "stepper")
+                                                       zodiac
+                                                       (core function)
+                                                       error)]
         [annotate : stepper:annotate^
                   ((require-library-unit/sig "annotater.ss" "stepper")
                    zodiac
@@ -48,6 +52,7 @@
                   drscheme
                   print-convert
                   error
+                  beginner-checker
                   annotate
                   reconstruct
                   framework

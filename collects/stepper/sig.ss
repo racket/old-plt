@@ -13,6 +13,9 @@
    get-vocabulary
    image?))
 
+(define-signature stepper:beginner-checker^
+  (check-variable-duplication))
+
 (define-signature stepper:shared^
   (list-take
    read->raw 

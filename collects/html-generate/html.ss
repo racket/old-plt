@@ -426,6 +426,10 @@
    (colspan number?)))
 (define-html-container (TABLE-ROW "TR")
   ((ALIGN (member-of? '(LEFT CENTER RIGHT)))))
+(define-html-container TEXTAREA
+                       ((NAME string?)
+                        (ROWS integer?)
+                        (COLS integer?)))
 (define-html-container TITLE ())
 (define-html-container SPAN
   ((STYLE string?)))
@@ -435,9 +439,10 @@
 (define-html-container UL ())
 (define-html-container OL ())
 (define-html-container LI ())
-(define-html-container (HRULE "HR") ())
+(define-html-element (HRULE "HR") ())
 (define-html-container SELECT
-  ((NAME string?)))
+  ((NAME string?)
+   (SIZE integer?)))
 
 ;;; Special cases.
 

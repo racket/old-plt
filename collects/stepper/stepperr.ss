@@ -5,6 +5,7 @@
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [e : stepper:error^]
+          [bc : stepper:beginner-checker^]
           [a : stepper:annotate^]
           [r : stepper:reconstruct^]
           [f : framework^]
@@ -307,6 +308,9 @@
                           (set! par-vocabulary (d:basis:current-vocabulary))
                           (let*-values ([(red-exprs parsed-exprs)
                                          (read-n-parse text (d:basis:current-vocabulary) exn-handler)]
+                                        [(_) (with-handlers
+                                                 ((exn:user? exn-handler))
+                                               (bc:check-variable-duplication parsed-exprs par-global-defined-vars))]
                                         [(annotated exprs)
                                          (a:annotate red-exprs parsed-exprs break)])
                             (set! expr-list exprs)

@@ -40,7 +40,7 @@
       
       (private [d-value 'bad-value]
                [has-value?  #f]
-               [print-converted (pc:print-convert value)]
+               [print-converted (pc:print-convert d-value)]
                [pretty-printed-width #f]               
                [reset-style
                 (lambda ()

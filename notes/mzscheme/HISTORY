@@ -76,6 +76,7 @@ MacOS: Fixed problems with inexact arithmetic: inexact->exact
 Windows: CYGWIN32 gcc compiler now supported
 Inside MzScheme: scheme_setjmp and scheme_longjmp now
  work on values of type mz_jmp_buf instead of jmp_buf
+Upgraded to gc 4.12
 
 Version 50, August 26, 1997
 Added compile-time inferrence of names for closures, classes,
@@ -207,7 +208,7 @@ begin-expansion-time returns the value of the last expression
 set-thread-weight! replaced with 2-argument thread-weight
 Inside MzScheme: changed class/object toolbox, added custodian
   toolbox
-Upgraded to gc 11
+Upgraded to gc 4.11
 
 Version 48: Skipped to avoid confusion with Scheme48
 

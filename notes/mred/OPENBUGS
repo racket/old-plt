@@ -1,15 +1,7 @@
 
 MrEd Engine:
 
-* motif: needs dialog box [non-]iconfication fix and force-focus
-
-* motif: needs x-flag restrictions
-
-* motif: needs activate fix
-
-* motif: list-box enhancements
-
-* macos: needs weak-holding pen, brush,and font lists
+* macos: needs weak-holding pen, brush, and font lists
 
 * macos: crash on printing definitions
 
@@ -17,7 +9,7 @@ MrEd Engine:
 
 * macos: list-box enhancements
 
-* Mac and Motif check: drag outisde view => should keep going even 
+* macos check: drag outisde view => should keep going even
    if mouse is still
 
   -------------------- ^- fix for 51   v- leave for later

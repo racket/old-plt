@@ -2,6 +2,8 @@
     (import (s : mzlib:string^)
 	    (f : mzlib:function^))
 
+    (define undefined-val (letrec ([x x]) x))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; the value stored in the hash table.  Contains the name
     ;; <which is a number unless we are in donkey and it already has a name>
@@ -80,14 +82,16 @@
 		     [(or (number? expr)
 			  (symbol? expr)
 			  (boolean? expr)
-			  (char? expr) (void? expr) (regexp? expr) 
+			  (char? expr) (void? expr)
 			  (null? expr)
-			  (eq? expr (letrec ([x x]) x)) ; #<undefined> test - yuck
-			  (port? expr)
-			  (promise? expr)
-			  (object? expr) (class? expr) (interface? exp)
-			  (unit? expr)
-			  (procedure? expr))
+			  (eq? expr undefined-val) ; #<undefined> test - yuck
+			  ; (regexp? expr) 
+			  ; (port? expr)
+			  ; (promise? expr)
+			  ; (object? expr) (class? expr) (interface? exp)
+			  ; (unit? expr)
+			  ; (procedure? expr)
+			  )
 		      'atomic]
 		     [(inferred-name expr) 'atomic]
 		     [(box? expr) (unless (build-sub expr)

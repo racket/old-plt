@@ -918,7 +918,9 @@ mark_load_handler_data {
   gcMARK(d->p);
   gcMARK(d->stxsrc);
   gcMARK(d->expected_module);
-
+  /* reader_params has only #ts and #fs, which don't
+     have to be marked, because they don't move. */
+  
  size:
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
 }

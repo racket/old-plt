@@ -24,6 +24,9 @@
 #include "schpriv.h"
 #include <string.h>
 #include <ctype.h>
+#ifndef DONT_USE_LOCALE
+# include <locale.h>
+#endif
 
 #ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 # include "schsys.h"
@@ -65,6 +68,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
+static Scheme_Object *locale_enabled(int argc, Scheme_Object *argv[]);
 
 static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2);
 static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2);
@@ -77,6 +81,8 @@ static Scheme_Hash_Table *putenv_str_table;
 
 static char *embedding_banner;
 static Scheme_Object *vers_str, *banner_str;
+
+static int current_locale_on;
 
 void
 scheme_init_string (Scheme_Env *env)
@@ -285,6 +291,11 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_CMDLINE_ARGS), 
 			     env);
 
+  scheme_add_global_constant("locale-enabled", 
+			     scheme_register_parameter(locale_enabled, 
+						       "locale-enabled",
+						       MZCONFIG_LOCALE), 
+			     env);
 }
 
 void
@@ -830,8 +841,8 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
 
 static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2)
 {
-#ifdef USE_LOCALE
-  /* USE_LOCALE contributed by Boris Tobotras, tobotras@jet.msk.su. */
+#ifdef USE_LOCALE_STRCMP
+  /* USE_LOCALE_STRCMP contributed by Boris Tobotras, tobotras@jet.msk.su. */
   /* Caveat emptor. */
   /* The problem with using strcoll is that MzScheme strings may
      contain a null character. In that case, if the strings match up
@@ -881,7 +892,7 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
       endres = 0;
   }
 
-#ifdef USE_LOCALE
+#ifdef USE_LOCALE_STRCMP
 
   {
 # define USE_ALLOCA 1
@@ -908,7 +919,7 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
       return retCode;
   }
 
-#else /* not USE_LOCALE */
+#else /* not USE_LOCALE_STRCMP */
 
   while (l1--) {
     unsigned int a, b;
@@ -923,7 +934,7 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
       return a;
   }
 
-#endif /* USE_LOCALE */
+#endif /* USE_LOCALE_STRCMP */
 
   return endres;
 }
@@ -1231,8 +1242,8 @@ char *scheme_version(void)
 #ifdef USE_SENORA_GC
 # define VERSION_SUFFIX " (sgc)"
 #else
-# ifdef USE_LOCALE
-#  define VERSION_SUFFIX " (using locale)"
+# ifdef USE_LOCALE_STRCMP
+#  define VERSION_SUFFIX " (using locale strcmp)"
 # else
 #  define VERSION_SUFFIX /* empty */
 # endif
@@ -1423,6 +1434,36 @@ static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_CMDLINE_ARGS),
 			     argc, argv,
 			     -1, ok_cmdline, "vector of strings", 1);
+}
+
+static Scheme_Object *locale_enabled(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *v;
+
+  v = scheme_param_config("locale-enabled", 
+			  scheme_make_integer(MZCONFIG_LOCALE), 
+			  argc, argv, 
+			  -1, NULL, NULL, 1);
+
+  scheme_reset_locale();
+
+  return v;
+}
+
+void scheme_reset_locale(void)
+{
+  Scheme_Object *v;
+  int on;
+
+  v = scheme_get_param(scheme_config, MZCONFIG_LOCALE);
+  on = SCHEME_TRUEP(v);
+
+  if (on != current_locale_on) {
+#ifndef DONT_USE_LOCALE
+    setlocale(LC_CTYPE, on ? "" : "C");
+#endif
+    current_locale_on = on;
+  }
 }
 
 /**********************************************************************/

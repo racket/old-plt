@@ -1279,6 +1279,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
 #if WATCH_FOR_NESTED_SWAPS
     swapping = 0;
 #endif
+    scheme_reset_locale();
   } else {
     swap_no_setjmp = 0;
 
@@ -2344,6 +2345,9 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
   r->running |= MZTHREAD_SUSPENDED;
 
   if (r == scheme_current_thread) {
+    /* NOTE: swap_to might not be a good choice, because it
+       might be blocked. If it's a bad choice, we waste
+       time swapping in swap_to. */
     select_thread(swap_to);
 
     /* Killed while suspended? */
@@ -2880,6 +2884,8 @@ static Scheme_Config *make_initial_config(void)
   scheme_set_param(config, MZCONFIG_PRINT_STRUCT, scheme_false);
   scheme_set_param(config, MZCONFIG_PRINT_BOX, scheme_true);
   scheme_set_param(config, MZCONFIG_PRINT_VEC_SHORTHAND, scheme_true);
+
+  scheme_set_param(config, MZCONFIG_LOCALE, scheme_false);
 
   scheme_set_param(config, MZCONFIG_CASE_SENS, (scheme_case_sensitive ? scheme_true : scheme_false));
   scheme_set_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, (scheme_square_brackets_are_parens

@@ -2113,7 +2113,9 @@ int mark_load_handler_data_MARK(void *p) {
   gcMARK(d->p);
   gcMARK(d->stxsrc);
   gcMARK(d->expected_module);
-
+  /* reader_params has only #ts and #fs, which don't
+     have to be marked, because they don't move. */
+  
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
 }
@@ -2126,7 +2128,9 @@ int mark_load_handler_data_FIXUP(void *p) {
   gcFIXUP(d->p);
   gcFIXUP(d->stxsrc);
   gcFIXUP(d->expected_module);
-
+  /* reader_params has only #ts and #fs, which don't
+     have to be marked, because they don't move. */
+  
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
 }

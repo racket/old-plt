@@ -1893,6 +1893,8 @@ Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 
+void scheme_reset_locale(void);
+
 #define SCHEME_SYM_UNINTERNED(o) (((Scheme_Symbol *)o)->keyex & 0x1)
 
 #endif /* __mzscheme_private__ */

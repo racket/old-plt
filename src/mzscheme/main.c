@@ -61,9 +61,6 @@
 #ifdef UNISTD_INCLUDE
 # include <unistd.h>
 #endif
-#ifdef USE_LOCALE
-# include <locale.h>
-#endif
 #ifdef MACINTOSH_EVENTS
 # ifndef OS_X
 #  include <Events.h>
@@ -304,11 +301,6 @@ int actual_main(int argc, char *argv[])
   
   SIOUXSettings.autocloseonquit = 0;
   SIOUXSettings.asktosaveonclose = 0;
-#endif
-
-#ifdef USE_LOCALE
-  /* See note in string.c */
-  setlocale( LC_ALL, "" );
 #endif
 
 #ifndef NO_USER_BREAK_HANDLER

@@ -28,6 +28,7 @@
            "__head_~a_lib\0"
            "__~a_lib_iname\0")))
 
+  (provide version-string) ; can be used in other places to know what this is
   (define version-string
     (cond [(regexp-match "^([0-9]+(?:p[0-9])?)(?:[.]([0-9]+))?$" (version)) =>
            (lambda (m)

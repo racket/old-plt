@@ -2172,8 +2172,10 @@ static void select_thread()
     while (new_thread 
 	   && (new_thread->nestee
 	       || (new_thread->running & MZTHREAD_SUSPENDED)
-	       /* USER_SUSPENDED should only happen if new_thread is the main thread */
-	       || (new_thread->running & MZTHREAD_USER_SUSPENDED))) {
+	       /* USER_SUSPENDED should only happen if new_thread is the main thread
+		  or if the thread has MZTHREAD_NEED_SUSPEND_CLEANUP */
+	       || ((new_thread->running & MZTHREAD_USER_SUSPENDED)
+		   && !(new_thread->running & MZTHREAD_NEED_SUSPEND_CLEANUP)))) {
       new_thread = new_thread->next;
     }
 
@@ -2186,7 +2188,8 @@ static void select_thread()
       while (new_thread->nestee) {
 	new_thread = new_thread->nestee;
       }
-      if (new_thread->running & MZTHREAD_USER_SUSPENDED) {
+      if ((new_thread->running & MZTHREAD_USER_SUSPENDED)
+	  && !(new_thread->running & MZTHREAD_NEED_SUSPEND_CLEANUP)) {
 	scheme_console_printf("unbreakable deadlock\n");
 	if (scheme_exit)
 	  scheme_exit(1);
@@ -3263,7 +3266,7 @@ static void exit_or_escape(Scheme_Thread *p)
     scheme_longjmp(*p->error_buf, 1);
   }
 
-  if (!p->next) {
+  if (SAME_OBJ(p, scheme_main_thread)) {
     /* Hard exit: */
     if (scheme_exit)
       scheme_exit(0);
@@ -3302,7 +3305,7 @@ void scheme_break_thread(Scheme_Thread *p)
   }
   scheme_weak_resume_thread(p);
 # if defined(WINDOWS_PROCESSES) || defined(WINDOWS_FILE_HANDLES)
-  if (!p->next)
+  if (SAME_OBJ(p, scheme_main_thread))
     ReleaseSemaphore(scheme_break_semaphore, 1, NULL);
 # endif
 }
@@ -3324,7 +3327,8 @@ void scheme_thread_block(float sleep_time)
       exit_or_escape(p);
   }
 
-  if (p->running & MZTHREAD_USER_SUSPENDED) {
+  if ((p->running & MZTHREAD_USER_SUSPENDED)
+      && !(p->running & MZTHREAD_NEED_SUSPEND_CLEANUP)) {
     /* This thread was suspended. */
     wait_until_suspend_ok();
     if (!p->next) {
@@ -3407,7 +3411,7 @@ void scheme_thread_block(float sleep_time)
       if (next->nestee) {
 	/* Blocked on nestee */
       } else if (next->running & MZTHREAD_USER_SUSPENDED) {
-	if (next->next) {
+	if (next->next || (next->running & MZTHREAD_NEED_SUSPEND_CLEANUP)) {
 	  /* If a non-main thread is still in the queue, 
 	     it needs to be swapped in so it can clean up
 	     and suspend itself. */
@@ -3560,7 +3564,8 @@ void scheme_thread_block(float sleep_time)
   }
 
   /* Suspended while I was asleep? */
-  if (p->running & MZTHREAD_USER_SUSPENDED) {
+  if ((p->running & MZTHREAD_USER_SUSPENDED)
+      && !(p->running & MZTHREAD_NEED_SUSPEND_CLEANUP)) {
     wait_until_suspend_ok();
     if (!p->next)
       scheme_thread_block(0.0); /* main thread handled at top of this function */
@@ -4033,11 +4038,18 @@ static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
 
 static void suspend_thread(Scheme_Thread *p)
 {
+  int running;
+
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return;
   
   if (p->running & MZTHREAD_USER_SUSPENDED)
     return;
+
+  /* Get running now, just in case the thread is
+     waiting on its own suspend event (in which
+     case posting to the sema will unsuspend the thread */
+  running = p->running;
 
   p->resumed_box = NULL;
   if (p->suspended_box) {
@@ -4045,7 +4057,7 @@ static void suspend_thread(Scheme_Thread *p)
     scheme_post_sema_all(SCHEME_PTR1_VAL(p->suspended_box));
   }
 
-  if (!p->next) {
+  if (SAME_OBJ(p, scheme_main_thread)) {
     /* p is the main thread, which we're not allowed to
        suspend in the normal way. */
     p->running |= MZTHREAD_USER_SUSPENDED;
@@ -4054,8 +4066,9 @@ static void suspend_thread(Scheme_Thread *p)
       scheme_thread_block(0.0);
       p->ran_some = 1;
     }
-  } else if ((p->running & MZTHREAD_NEED_KILL_CLEANUP)
-	     && (p->running & MZTHREAD_SUSPENDED)) {
+  } else if ((running & (MZTHREAD_NEED_KILL_CLEANUP
+			 | MZTHREAD_NEED_SUSPEND_CLEANUP))
+	     && (running & MZTHREAD_SUSPENDED)) {
     /* p probably needs to get out of semaphore-wait lines, etc. */
     scheme_weak_resume_thread(p);
     p->running |= MZTHREAD_USER_SUSPENDED;
@@ -4409,6 +4422,11 @@ static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *argv[])
 
   p = (Scheme_Thread *)argv[0];
 
+  return scheme_get_thread_suspend(p);
+}
+
+Scheme_Object *scheme_get_thread_suspend(Scheme_Thread *p)
+{
   if (!p->suspended_box) {
     Scheme_Object *b;
     b = scheme_alloc_object();

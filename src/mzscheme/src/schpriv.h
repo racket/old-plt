@@ -268,6 +268,7 @@ extern Scheme_Thread *scheme_main_thread;
 #define MZTHREAD_KILLED 0x4
 #define MZTHREAD_NEED_KILL_CLEANUP 0x8
 #define MZTHREAD_USER_SUSPENDED 0x10
+#define MZTHREAD_NEED_SUSPEND_CLEANUP 0x20
 #define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
 
 #ifdef WINDOWS_PROCESSES
@@ -294,6 +295,7 @@ void *scheme_win32_get_break_semaphore(void *th);
 #endif
 
 Scheme_Object *scheme_get_thread_dead(Scheme_Thread *p);
+Scheme_Object *scheme_get_thread_suspend(Scheme_Thread *p);
 
 void scheme_zero_unneeded_rands(Scheme_Thread *p);
 

@@ -34,7 +34,8 @@
       (test #f values r))
     (test "anana" read-string 5 in)
     ;; Set up two commits, pick one to succeed:
-    (let ([go (lambda (which peek?)
+    (let ([go (lambda (which peek? suspend?)
+		(printf "~a ~a ~a~n" which peek? suspend?)
 		(display "donut" out)
 		(test #"don" peek-bytes 3 0 in)
 		(let* ([r1 '?]
@@ -44,14 +45,17 @@
 		       [unless-evt (port-progress-evt in)]
 		       [th1 (thread
 			     (lambda ()
-			       (set! r1 (port-commit-peeked 1 unless-evt (wrap-evt s1 void) in))))]
+			       (set! r1 (port-commit-peeked 1 unless-evt s1 in))))]
 		       [_ (sleep 0.01)]
 		       [th2 (thread
 			     (lambda ()
 			       (set! r2 (port-commit-peeked 2 unless-evt (semaphore-peek-evt s2) in))))])
 		  (sleep 0.01)
-		  (test #t thread-running? th1)
-		  (test #t thread-running? th2)
+		  (when suspend?
+		    (thread-suspend th1)
+		    (sleep 0.01))
+		  (test #f thread-dead? th1)
+		  (test #f thread-dead? th2)
 		  (when peek?
 		    (test #"do" peek-bytes 2 0 in)
 		    (sleep 0.01))
@@ -61,18 +65,21 @@
 		    (test #"do" read-bytes 2 in))
 		  (sleep 0.01)
 		  (test unless-evt sync/timeout 0 unless-evt)
-		  (test #f thread-running? th1)
+		  (test (not suspend?) thread-dead? th1)
 		  (sleep 0.01)
-		  (test #f thread-running? th2)
-		  (test (= which 1) values r1)
+		  (test #t thread-dead? th2)
+		  (test (if (= which 1) #t (if suspend? '? #f)) values r1)
 		  (test (= which 2) values r2)
 		  (test (if (= which 1) #\o #\n) read-char in)
 		  (test (if (= which 1) #"nut" #"ut") read-bytes (if (= which 1) 3 2) in)))])
-      (go 1 #f)
-      (go 2 #f)
-      (go 1 #t)
-      (go 2 #t)
-      (go 3 #f))))
+      (go 1 #f #f)
+      (go 2 #f #f)
+      (go 1 #t #f)
+      (go 2 #t #f)
+      (go 3 #f #f)
+      (go 2 #f #t)
+      (go 2 #t #t)
+      (go 3 #f #t))))
 (test-pipe-commit make-pipe)
 (test-pipe-commit make-pipe-with-specials)
 

@@ -626,9 +626,12 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *synci
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
 	     if the thread is killed. */
-	  scheme_current_thread->running += MZTHREAD_NEED_KILL_CLEANUP;
+	  int old_nkc;
+	  old_nkc = (scheme_current_thread->running & MZTHREAD_NEED_KILL_CLEANUP);
+	  if (!old_nkc)
+	    scheme_current_thread->running += MZTHREAD_NEED_KILL_CLEANUP;
 	  scheme_weak_suspend_thread(scheme_current_thread);
-	  if (scheme_current_thread->running & MZTHREAD_NEED_KILL_CLEANUP)
+	  if (!old_nkc && (scheme_current_thread->running & MZTHREAD_NEED_KILL_CLEANUP))
 	    scheme_current_thread->running -= MZTHREAD_NEED_KILL_CLEANUP;
 	}
 
@@ -681,7 +684,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *synci
 	} else {
 
 	  if ((scheme_current_thread->running & MZTHREAD_KILLED)
-	      || (scheme_current_thread->running & MZTHREAD_USER_SUSPENDED)) {
+	      || ((scheme_current_thread->running & MZTHREAD_USER_SUSPENDED)
+		  && !(scheme_current_thread->running & MZTHREAD_NEED_SUSPEND_CLEANUP))) {
 	    /* We've been killed or suspended! */
 	    i = -1;
 	  }

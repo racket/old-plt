@@ -3120,8 +3120,18 @@ peeked_read(int argc, Scheme_Object *argv[])
   target_evt = argv[2];
   if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type))
     scheme_wrong_type("port-commit-peeked", "progress evt", 1, argc, argv);
-  if (!scheme_is_evt(target_evt))
-    scheme_wrong_type("port-commit-peeked", "evt", 2, argc, argv);
+  {
+    Scheme_Type t;
+    t = SCHEME_TYPE(target_evt);
+    if (!SAME_TYPE(t, scheme_sema_type)
+	&& !SAME_TYPE(t, scheme_channel_type)
+	&& !SAME_TYPE(t, scheme_channel_put_type)
+	&& !SAME_TYPE(t, scheme_always_evt_type)
+	&& !SAME_TYPE(t, scheme_never_evt_type)
+	&& !SAME_TYPE(t, scheme_semaphore_repost_type))
+      scheme_wrong_type("port-commit-peeked", "channel-put evt, channel, semaphore, semephore-peek evt, always evt, or never evt", 
+			2, argc, argv);
+  }
 
   if (argc > 3) {
     port = argv[3];

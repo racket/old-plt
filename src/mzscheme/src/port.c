@@ -1691,6 +1691,9 @@ static void release_input_lock(Scheme_Input_Port *ip)
   scheme_post_sema_all(ip->input_lock);
   ip->input_lock = NULL;
   ip->input_giveup = NULL;
+
+  if (scheme_current_thread->running & MZTHREAD_NEED_SUSPEND_CLEANUP)
+    scheme_current_thread->running -= MZTHREAD_NEED_SUSPEND_CLEANUP;
 }
 
 static void elect_new_main(Scheme_Input_Port *ip)
@@ -1708,6 +1711,12 @@ static void release_input_lock_and_elect_new_main(void *_ip)
 
   release_input_lock(ip);
   elect_new_main(ip);
+}
+
+static void check_suspended()
+{
+  if (scheme_current_thread->running & MZTHREAD_USER_SUSPENDED)
+    scheme_thread_block(0.0);
 }
 
 static void remove_extra(void *ip_v)
@@ -1801,13 +1810,18 @@ int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
 			       Scheme_Object *unless_evt,
 			       Scheme_Object *target_evt)
 {
-  Scheme_Object *v, *sema, *a[2], **aa, *l;
+  Scheme_Object *v, *sema, *a[3], **aa, *l;
   volatile long size = _size;
   int n, current_leader = 0;
+  Scheme_Type t;
 
-  if (!SCHEME_SEMAP(target_evt) 
-      && !SAME_TYPE(SCHEME_TYPE(target_evt), scheme_channel_put_type)
-      && !SAME_TYPE(SCHEME_TYPE(target_evt), scheme_semaphore_repost_type)) {
+  /* Check whether t's even t value is known to be always itself: */
+  t = SCHEME_TYPE(target_evt);
+  if (!SAME_TYPE(t, scheme_sema_type)
+      && !SAME_TYPE(t, scheme_channel_put_type)
+      && !SAME_TYPE(t, scheme_always_evt_type)
+      && !SAME_TYPE(t, scheme_never_evt_type)
+      && !SAME_TYPE(t, scheme_semaphore_repost_type)) {
     /* Make an event whose value is itself */
     a[0] = target_evt;
     v = scheme_make_closed_prim(return_data, target_evt);
@@ -1829,6 +1843,7 @@ int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
       v = scheme_make_pair(scheme_make_integer(_size), target_evt);
       l = scheme_make_pair(v, ip->input_extras);
       ip->input_extras = l;
+
       scheme_post_sema_all(ip->input_giveup);
 
       if (!ip->input_extras_ready) {
@@ -1862,38 +1877,47 @@ int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
       if (ip->input_extras) {
 	/* There are other threads trying to commit, and
 	   as main thread, we'll help them out. */
-	n = 2;
+	n = 3;
 	for (l = ip->input_extras; l ; l = SCHEME_CDR(l)) {
 	  n++;
 	}
-	n += 2;
 	aa = MALLOC_N(Scheme_Object *, n);
-	n = 2;
+	n = 3;
 	for (l = ip->input_extras; l ; l = SCHEME_CDR(l)) {
 	  aa[n++] = SCHEME_CDR(SCHEME_CAR(l));
 	}
       } else {
 	/* This is the only thread trying to commit */
-	n = 2;
+	n = 3;
 	aa = a;
       }
 
+      /* Suspend here is a problem if another thread
+	 tries to commit, because this thread will be
+	 responsible for multiplexing the commits. That's
+	 why the thread waits on its own suspend event. */
+      
       aa[0] = target_evt;
       aa[1] = ip->input_giveup;
+      v = scheme_get_thread_suspend(scheme_current_thread);
+      aa[2] = v;
 
-      /* FIXME: suspend here is a problem */
+      scheme_current_thread->running |= MZTHREAD_NEED_SUSPEND_CLEANUP;
       BEGIN_ESCAPEABLE(release_input_lock_and_elect_new_main, ip);
       v = scheme_sync(n, aa);
       END_ESCAPEABLE();
-      
-      release_input_lock((void *)ip);
+
+      release_input_lock(ip);
       
       if (SAME_OBJ(v, target_evt)) {
+	int r;
 	elect_new_main(ip);
-	return complete_peeked_read_via_get(ip, size);
+	r = complete_peeked_read_via_get(ip, size);
+	check_suspended();
+	return r;
       }
 
-      if (n > 2) {
+      if (n > 3) {
 	/* Check whether one of the others was selected: */
 	for (l = ip->input_extras; l; l = SCHEME_CDR(l)) {
 	  if (SAME_OBJ(v, SCHEME_CDR(SCHEME_CAR(l)))) {
@@ -1907,21 +1931,28 @@ int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
 	      SCHEME_CAR(v) = scheme_true;
 	    else
 	      SCHEME_CAR(v) = scheme_false;
+	    check_suspended();
 	    return 0;
 	  }
 	}
       }
 
-      current_leader = 1;
-
-      /* Technically redundant, but avoid a thread swap
-	 if we know the commit isn't going to work: */
-      if (scheme_wait_sema(unless_evt, 1)) {
+      if (scheme_current_thread->running & MZTHREAD_USER_SUSPENDED) {
 	elect_new_main(ip);
-	return 0;
-      }
+	current_leader = 0;
+	check_suspended();
+      } else {
+	current_leader = 1;
+	
+	/* Technically redundant, but avoid a thread swap
+	   if we know the commit isn't going to work: */
+	if (scheme_wait_sema(unless_evt, 1)) {
+	  elect_new_main(ip);
+	  return 0;
+	}
       
-      scheme_thread_block(0.0);
+	scheme_thread_block(0.0);
+      }
     }
   }
 }

@@ -100,7 +100,7 @@
       ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
       ;	(printf "Expanding~n") (pretty-print expr) (newline)
       ;	(printf "Expanding~n") (display expr)
-      ;	(printf "in ~s~n" (get-vocabulary-name vocab))
+      ; (printf "in ~s~n" (get-vocabulary-name vocab))
       ;	(printf "in vocabulary~n") (print-env vocab)
       ;	(printf "in attributes~n") (hash-table-map attributes cons)
       ;	(printf "in~n") (print-env env) (newline)

@@ -213,7 +213,7 @@
 		       "Invalid in check-unresolved-vars")))))
 	  unresolveds))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define c/imports-vocab
     (create-vocabulary 'c/imports-vocab))
@@ -223,7 +223,7 @@
       (register-import expr attributes)
       (create-lexical-binding+marks expr)))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define unit-exports-vocab
     (create-vocabulary 'unit-exports-vocab))

@@ -232,6 +232,10 @@
   (define internal-define-vocab
     (create-vocabulary 'internal-define-vocab scheme-vocabulary))
 
+  (add-sym-micro internal-define-vocab
+    (lambda (expr env attributes vocab)
+      expr))
+
   (add-primitivized-micro-form 'define-values internal-define-vocab
     (let* ((kwd '())
 	    (in-pattern `(_ (var ...) val))

@@ -360,24 +360,24 @@ label.
     h = max(0, h);
     t = 1 /*$highlightThickness */;
 
-    rect[0].x = x;
+    rect[0].x = x+1;
     rect[0].y = y;
-    rect[0].width = w;
+    rect[0].width = w-1;
     rect[0].height = t;
 
     rect[1].x = x;
-    rect[1].y = y;
+    rect[1].y = y+1;
     rect[1].width = t;
-    rect[1].height = h;
+    rect[1].height = h-2;
 
     rect[2].x = $width - t;
-    rect[2].y = y;
+    rect[2].y = y+1;
     rect[2].width = t;
-    rect[2].height = h;
+    rect[2].height = h-2;
 
-    rect[3].x = x;
+    rect[3].x = x+1;
     rect[3].y = $height - t;
-    rect[3].width = w;
+    rect[3].width = w-2;
     rect[3].height = t;
 
     if (!$bordergc) create_bordergc($);

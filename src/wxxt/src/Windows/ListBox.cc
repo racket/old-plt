@@ -109,6 +109,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNalignment,   vert ? XfwfTop : XfwfTopLeft,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
+	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
+	 XtNhighlightThickness, 2,
 	 XtNfont,        label_font->GetInternalFont(),
 #ifdef WX_USE_XFT
 	 XtNxfont,       label_font->GetInternalAAFont(),
@@ -123,15 +125,17 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNhideHScrollbar, TRUE,
 	 XtNbackground, wxGREY_PIXEL,
 	 XtNdoScroll, FALSE,
-	 XtNhighlightThickness, 2,
+	 XtNhighlightThickness, 0,
+	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
+	 XtNtraversalOn, FALSE,
 	 NULL);
     X->scroll = wgt;
     // create multi list
     wgt = XtVaCreateManagedWidget
 	("list", xfwfMultiListWidgetClass, X->scroll,
-	 XtNbackground,     wxGREY_PIXEL,
+	 XtNbackground,     wxWHITE_PIXEL,
 	 XtNforeground,     wxBLACK_PIXEL,
-	 XtNhighlightBackground,  wxBLACK_PIXEL,
+	 XtNhighlightBackground,  wxCTL_HIGHLIGHT_PIXEL,
 	 XtNhighlightForeground,  wxGREY_PIXEL,
 	 XtNfont,           font->GetInternalFont(),
 #ifdef WX_USE_XFT

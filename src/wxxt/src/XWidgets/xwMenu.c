@@ -42,6 +42,7 @@ SOFTWARE.
 #include <wxtimeout.h>
 
 #include "wx_visual.h"
+#include "wxAllocColor.h"
 
 #define XtNtopShadowPixmap       "topShadowPixmap"
 #define XtCTopShadowPixmap       "TopShadowPixmap"
@@ -100,6 +101,12 @@ static XtResource MenuResources[] =
          offset(menu.indicator_contrast), XtRImmediate, (XtPointer)85},
     {XtNindicatorSize, XtCIndicatorSize, XtRDimension, sizeof(Dimension),
         offset(menu.indicator_size), XtRImmediate, (XtPointer)0},
+
+    {XtNhighlightPixel, XtCHighlightPixel, XtRPixel, sizeof(Pixel),
+         offset(menu.highlight_pixel), XtRImmediate, (XtPointer)-1},
+
+    {XtNhighlightShadowPixel, XtCHighlightShadowPixel, XtRPixel, sizeof(Pixel),
+         offset(menu.highlight_top_pixel), XtRImmediate, (XtPointer)-1},
 
     /* margins around the menu items */
     {XtNhMargin, XtCHMargin, XtRDimension, sizeof(Dimension),
@@ -678,10 +685,29 @@ static void CreateGCs(MenuWidget mw)
 	  mw->menu.indicator_pixel = res;
 	  mw->menu.indicator_pxmap = (Pixmap)0;
 	}
+	if (mw->menu.highlight_pixel == -1) {
+	  XColor color;
+	  color.red = 0;
+	  color.green = 0;
+	  color.blue = 180 << 8;
+	  wxAllocColor(XtDisplay(mw), wx_default_colormap, &color);
+	  mw->menu.highlight_pixel = color.pixel;
+	}
+	if (mw->menu.highlight_top_pixel == -1) {
+	  Pixel res;
+	  get_scaled_color((Widget)mw, 1.35, mw->menu.highlight_pixel, &res);
+	  mw->menu.highlight_top_pixel = res;
+	}
     }
     mw->menu.indicator_GC = Xaw3dGetGC((Widget)mw, mw->menu.be_nice_to_cmap,
 				       mw->menu.indicator_pxmap,
 				       mw->menu.indicator_pixel);
+    mw->menu.highlight_GC = Xaw3dGetGC((Widget)mw, mw->menu.be_nice_to_cmap,
+				       0,
+				       mw->menu.highlight_pixel);
+    mw->menu.highlight_top_GC = Xaw3dGetGC((Widget)mw, mw->menu.be_nice_to_cmap,
+					   0,
+					   mw->menu.highlight_top_pixel);
 }
 
 static void CreateShadowGCs(MenuWidget mw)
@@ -720,6 +746,7 @@ static void ReleaseGCs(MenuWidget mw)
     XFreePixmap(XtDisplay(mw), mw->menu.stipple_pxmap);
     Xaw3dReleaseGC(mw, mw->menu.indicator_GC);
     Xaw3dFreePixmap(mw, mw->menu.indicator_pxmap);
+    Xaw3dReleaseGC(mw, mw->menu.highlight_GC);
 }
 
 static void ReleaseShadowGCs(MenuWidget mw)
@@ -728,6 +755,7 @@ static void ReleaseShadowGCs(MenuWidget mw)
     Xaw3dReleaseGC(mw, mw->menu.bot_shadow_GC);
     Xaw3dFreePixmap(mw, mw->menu.top_shadow_pxmap);
     Xaw3dFreePixmap(mw, mw->menu.bot_shadow_pxmap);
+    Xaw3dReleaseGC(mw, mw->menu.highlight_top_GC);
 }
 
 
@@ -965,14 +993,14 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
     height = (in_menubar? ms->h-2*mw->menu.shadow_width : item->end-item->start);
 
     XFillRectangle(XtDisplay(mw), ms->win, 
-		   (on ? mw->menu.indicator_GC : mw->menu.erase_GC), 
+		   (on ? mw->menu.highlight_GC : mw->menu.erase_GC), 
 		   x, y, width, height);
 
     if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL))) {
       XfwfDrawString(XtDisplay(mw), ms->win,
 		     (wxEXT_FONT(mw->menu.xft_font)
 		      ? (on
-			 ? mw->menu.indicator_GC
+			 ? mw->menu.highlight_GC
 			 : mw->menu.erase_GC)
 		      : ((item->enabled || item->type==MENU_TEXT) 
 			 ? mw->menu.normal_GC 
@@ -989,11 +1017,11 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	Xaw3dDrawRectangle(
 	    XtDisplay((Widget)mw), ms->win,
 	    (on
-	     ? mw->menu.erase_GC
+	     ? mw->menu.highlight_top_GC
 	     : mw->menu.top_shadow_GC),
 	    mw->menu.bot_shadow_GC,
 	    (on
-	     ? mw->menu.indicator_GC
+	     ? mw->menu.highlight_GC
 	     : mw->menu.erase_GC),
 	    mw->menu.indicator_GC,
 	    x,
@@ -1015,7 +1043,7 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
       XfwfDrawString(XtDisplay(mw), ms->win,
 		     (wxEXT_FONT(mw->menu.xft_font)
 		      ? ((ms->selected==item)
-			 ? mw->menu.indicator_GC 
+			 ? mw->menu.highlight_GC 
 			 : mw->menu.erase_GC)
 		      : (item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC)),
 		     x+ms->wLeft+ms->wMiddle+(3 * ISPACING),
@@ -1213,7 +1241,7 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 	mw->menu.top_shadow_GC,
 	mw->menu.bot_shadow_GC,
 	mw->menu.erase_GC,
-	mw->menu.normal_GC,
+	mw->menu.indicator_GC,
 	0, 0, ms->w, ms->h, 
 	in_menubar ? 1 : mw->menu.shadow_width,
 	in_menubar ? XAW3D_OUT : XAW3D_OUT_HARD);

@@ -399,7 +399,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 	  grayed = ((!((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) && wx_enough_colors(XtScreen(self)));\
 	  XfwfDrawImageString(dpy, win, \
 			      (((XfwfLabelWidget)self)->xfwfLabel.xfont\
-			       ? NULL\
+			       ? ((XfwfLabelWidget)self)->xfwfLabel.gc\
 			       : (grayed\
 				  ? ((XfwfLabelWidget)self)->xfwfLabel.graygc \
 				  : ((XfwfLabelWidget)self)->xfwfLabel.gc)), \

@@ -98,6 +98,7 @@ Bool wxMenuBar::Create(wxPanel *panel)
 	("menubar", menuWidgetClass, X->frame,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
+	 XtNhighlightPixel,  wxCTL_HIGHLIGHT_PIXEL,
 	 XtNhMargin,     4,
 	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
@@ -516,9 +517,9 @@ void wxMenuBar::SelectAMenu()
   XtVaGetValues(X->handle, XtNx, &x, XtNy, &y, NULL);
   XtTranslateCoords(X->handle, x, y, &new_root_x, &new_root_y);
   
-  xevent.xmotion.x_root = new_root_x + 4;
+  xevent.xmotion.x_root = new_root_x + 5;
   xevent.xmotion.x = 5;
-  xevent.xmotion.y_root = new_root_y + 4;
+  xevent.xmotion.y_root = new_root_y + 5;
   xevent.xmotion.y = 5;
   
   XtCallActionProc(X->handle, "start", &xevent, NULL, 0);

@@ -1384,18 +1384,22 @@ void wxWindowDC::SetBrush(wxBrush *brush)
   mask = GCFillStyle | GCForeground | GCFunction;
 
   values.fill_style = FillSolid;
-  // wxXOR shall work the correct way
-  {
+  bstyle = brush->GetStyle();
+  if (bstyle == wxCOLOR) {
+    pixel = wxCTL_HIGHLIGHT_PIXEL;
+  } else {
     wxColour *bcol;
     bcol = brush->GetColour();
     pixel = bcol->GetPixel(current_cmap, IS_COLOR, 1);
   }
-  bstyle = brush->GetStyle();
-  if ((bstyle == wxXOR) || (bstyle == wxCOLOR)) {
+  if (bstyle == wxXOR) {
     XGCValues values_req;
     XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
     values.foreground = pixel ^ values_req.background;
     values.function = GXxor;
+  } else if (bstyle == wxCOLOR) {
+    values.foreground = pixel;
+    values.function = GXorReverse;
   } else {
     values.foreground = pixel;
     values.function = GXcopy;
@@ -1497,17 +1501,18 @@ void wxWindowDC::SetPen(wxPen *pen)
     pw = pen->GetWidth();
     scale = XLOG2DEVREL(pw);
     values.line_width = scale;
-    {
+    style = pen->GetStyle();
+    if (style == wxCOLOR) {
+      pixel = wxCTL_HIGHLIGHT_PIXEL;
+    } else {
       wxColour *pcol;
       pcol = pen->GetColour();
       pixel = pcol->GetPixel(current_cmap, IS_COLOR, 1);
     }
-    style = pen->GetStyle();
     doXor = 0;
 
     switch (style) {
     case wxXOR:
-    case wxCOLOR:
       doXor = 1;
       break;
     case wxXOR_DOT:
@@ -1520,13 +1525,16 @@ void wxWindowDC::SetPen(wxPen *pen)
     }
 
     if (doXor) {
-	XGCValues values_req;
-	XGetGCValues(DPY, PEN_GC, GCBackground, &values_req);
-	values.foreground = pixel ^ values_req.background;
-	values.function = GXxor;
+      XGCValues values_req;
+      XGetGCValues(DPY, PEN_GC, GCBackground, &values_req);
+      values.foreground = pixel ^ values_req.background;
+      values.function = GXxor;
+    } else if (style == wxCOLOR) {
+      values.foreground = pixel;
+      values.function = GXorReverse;
     } else {
-	values.foreground = pixel;
-	values.function = GXcopy;
+      values.foreground = pixel;
+      values.function = GXcopy;
     }
 
     bm = pen->GetStipple();

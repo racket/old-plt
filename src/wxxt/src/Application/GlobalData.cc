@@ -127,6 +127,7 @@ unsigned long wxWHITE_PIXEL;
 unsigned long wxBLACK_PIXEL;
 unsigned long wxGREY_PIXEL;
 unsigned long wxDARK_GREY_PIXEL;
+unsigned long wxCTL_HIGHLIGHT_PIXEL;
 
 //-- Types --------------------------------------------------------------------
 

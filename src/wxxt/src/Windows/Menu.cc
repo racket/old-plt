@@ -181,6 +181,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 #endif
 	 XtNforeground, wxBLACK_PIXEL,
 	 XtNbackground, wxGREY_PIXEL,
+	 XtNhighlightPixel,  wxCTL_HIGHLIGHT_PIXEL,
 	 XtNforChoice,  forChoice,
 	 NULL);
     X->menu = wgt;

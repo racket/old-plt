@@ -278,6 +278,7 @@ int wxEntry(int argc, char *argv[])
 //-----------------------------------------------------------------------------
 
 extern int wxGetPreference(const char *name, int *len);
+extern int wxGetPreference(const char *name, char *res, long len);
 
 void wxCommonInit(void)
 {
@@ -424,6 +425,37 @@ void wxCommonInit(void)
 		       (int)(g * 0.85),
 		       (int)(b * 0.85));
       wxDARK_GREY_PIXEL = c->GetPixel(wxAPP_COLOURMAP);
+    }
+    {
+      wxColour *col;
+      int r, g, b, i, c;
+
+      r = 0;
+      g = 0;
+      b = 180;
+      if (wxGetPreference("hiliteColor", wxBuffer, 50)) {
+	wxBuffer[50]= 0;
+	if (strlen(wxBuffer) == 6) {
+	  for (i = 0; wxBuffer[i]; i++) {
+	    c = wxBuffer[i];
+	    if ((c >= '0') && (c <= '9'))
+	      wxBuffer[i] = c - '0';
+	    else if ((c >= 'a') && (c <= 'f'))
+	      wxBuffer[i] = c - 'a' + 10;
+	    else if ((c >= 'A') && (c <= 'F'))
+	      wxBuffer[i] = c - 'A' + 10;
+	    else
+	      break;
+	  }
+	  if (i == 6) {
+	    r = (wxBuffer[0] << 4) + wxBuffer[1];
+	    g = (wxBuffer[2] << 4) + wxBuffer[3];
+	    b = (wxBuffer[4] << 4) + wxBuffer[5];
+	  }
+	}
+      }
+      col = new wxColour(r, g, b);
+      wxCTL_HIGHLIGHT_PIXEL = col->GetPixel(wxAPP_COLOURMAP);
     }
 
     wxREGGLOB(wxSTANDARD_CURSOR);

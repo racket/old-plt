@@ -392,12 +392,10 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame = XtVaCreateManagedWidget
 	("_frame", xfwfEnforcerWidgetClass, self,
 	 XtNframeType, XfwfSunken, XtNframeWidth, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.shadowWidth,
-	 XtNborderWidth, 0, XtNhighlightThickness, ((XfwfScrolledWindowWidget)self)->xfwfCommon.highlightThickness,
-	 XtNtraversalOn, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.traverseToChild, 
+	 XtNborderWidth, 0, XtNhighlightThickness, 0,
 	 XtNbackground, bg,
          XtNtraversalTranslationDone, ((XfwfScrolledWindowWidget)self)->xfwfCommon.traversalTranslationDone, 
 	 NULL);
-    ((XfwfScrolledWindowWidget)self)->xfwfCommon.highlightThickness = 0;
     ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.board = XtVaCreateManagedWidget
 	("_board", xfwfBoardWidgetClass, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame, XtNframeWidth, 0,
 	 XtNborderWidth, 0, XtNhighlightThickness, 0,

@@ -290,7 +290,7 @@ responsible for drawing the frame.
 	  grayed = ((!$sensitive || $drawgray) && wx_enough_colors(XtScreen($)));
 	  XfwfDrawImageString(dpy, win, 
 			      ($xfont
-			       ? NULL
+			       ? $gc
 			       : (grayed
 				  ? $graygc 
 				  : $gc)), 

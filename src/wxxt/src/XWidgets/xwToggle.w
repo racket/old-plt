@@ -231,7 +231,7 @@ button and then possibly adds a tick mark.
 
     if ($ex_gc != NULL) XtReleaseGC($, $ex_gc);
     mask = GCForeground;
-    values.foreground = BlackPixelOfScreen(XtScreen($));
+    values.foreground = $highlightColor;
     $ex_gc = XtGetGC($, mask, &values);
 }
 

@@ -92,7 +92,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNframeType, XfwfPlain,
 	 XtNshadowWidth, 0,
 	 XtNshadowScheme, XfwfBlack,
-	 XtNhighlightThickness, ((style & wxNO_CAPTION) ? 2 : 0),
+	 XtNhighlightThickness, 0, /* ((style & wxNO_CAPTION) ? 2 : 0), */
 	 XtNspacing, 0,
 	 XtNbackground,  wxGREY_PIXEL,
 	 NULL);

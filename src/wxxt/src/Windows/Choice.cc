@@ -86,6 +86,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
+	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
 	 XtNfont,        label_font->GetInternalFont(),
 #ifdef WX_USE_XFT
 	 XtNxfont,       label_font->GetInternalAAFont(),

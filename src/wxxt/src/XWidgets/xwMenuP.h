@@ -69,6 +69,8 @@ typedef struct _MenuPart {
     Pixel           indicator_pixel;
     Pixmap          indicator_pxmap;
     int             indicator_contrast;
+    Pixel           highlight_pixel;
+    Pixel           highlight_top_pixel;
     menu_item       *contents;	    /* menu structure */
     XtCallbackList  on_new_item;    /* callback procedures */
     XtCallbackList  on_select;
@@ -83,6 +85,8 @@ typedef struct _MenuPart {
     GC              top_shadow_GC;
     GC              bot_shadow_GC;
     GC              indicator_GC;
+    GC              highlight_GC;
+    GC              highlight_top_GC;
     Pixmap          stipple_pxmap;
     Boolean         popped_up;
     /* menu state */

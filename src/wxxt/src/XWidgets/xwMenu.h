@@ -91,6 +91,12 @@ SOFTWARE.
 #define XtNindicatorSize        "indicatorSize"
 #define XtCIndicatorSize        "IndicatorSize"
 
+#define XtNhighlightPixel       "highlightPixel"
+#define XtCHighlightPixel       "HighlightPixel"
+
+#define XtNhighlightShadowPixel "highlightShadowPixel"
+#define XtCHighlightShadowPixel "HighlightShadowPixel"
+
 #define XtNcursor               "cursor"
 
 #define XtNshadowWidth          "shadowWidth"

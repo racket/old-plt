@@ -177,12 +177,10 @@ by the frame widget.
     $frame = XtVaCreateManagedWidget
 	("_frame", xfwfEnforcerWidgetClass, $,
 	 XtNframeType, XfwfSunken, XtNframeWidth, $shadowWidth,
-	 XtNborderWidth, 0, XtNhighlightThickness, $highlightThickness,
-	 XtNtraversalOn, $traverseToChild, 
+	 XtNborderWidth, 0, XtNhighlightThickness, 0,
 	 XtNbackground, bg,
          XtNtraversalTranslationDone, $traversalTranslationDone, 
 	 NULL);
-    $highlightThickness = 0;
     $board = XtVaCreateManagedWidget
 	("_board", xfwfBoardWidgetClass, $frame, XtNframeWidth, 0,
 	 XtNborderWidth, 0, XtNhighlightThickness, 0,

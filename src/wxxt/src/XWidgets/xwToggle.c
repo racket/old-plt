@@ -94,7 +94,7 @@ static void create_ex_gc(self)Widget self;
 
     if (((XfwfToggleWidget)self)->xfwfToggle.ex_gc != NULL) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.ex_gc);
     mask = GCForeground;
-    values.foreground = BlackPixelOfScreen(XtScreen(self));
+    values.foreground = ((XfwfToggleWidget)self)->xfwfCommon.highlightColor;
     ((XfwfToggleWidget)self)->xfwfToggle.ex_gc = XtGetGC(self, mask, &values);
 }
 /*ARGSUSED*/

@@ -847,24 +847,24 @@ static void highlight_border(self)Widget self;
 
     t = 1 /* $highlightThickness */; 
 
-    rect[0].x = 0;
+    rect[0].x = 1;
     rect[0].y = 0;
-    rect[0].width = ((XfwfCommonWidget)self)->core.width;
+    rect[0].width = ((XfwfCommonWidget)self)->core.width - 2;
     rect[0].height = t;
 
     rect[1].x = 0;
-    rect[1].y = 0;
+    rect[1].y = 1;
     rect[1].width = t;
-    rect[1].height = ((XfwfCommonWidget)self)->core.height;
+    rect[1].height = ((XfwfCommonWidget)self)->core.height - 2;
 
     rect[2].x = ((XfwfCommonWidget)self)->core.width - t;
-    rect[2].y = 0;
+    rect[2].y = 1;
     rect[2].width = t;
-    rect[2].height = ((XfwfCommonWidget)self)->core.height;
+    rect[2].height = ((XfwfCommonWidget)self)->core.height - 2;
 
-    rect[3].x = 0;
+    rect[3].x = 1;
     rect[3].y = ((XfwfCommonWidget)self)->core.height - t;
-    rect[3].width = ((XfwfCommonWidget)self)->core.width;
+    rect[3].width = ((XfwfCommonWidget)self)->core.width - 2;
     rect[3].height = t;
 
     if (!((XfwfCommonWidget)self)->xfwfCommon.bordergc) create_bordergc(self);
@@ -1130,9 +1130,11 @@ void create_bordergc(self)Widget self;
         values.fill_style = FillTiled;
         values.tile = ((XfwfCommonWidget)self)->xfwfCommon.highlightPixmap;
     } else {
+	Pixel res;
         mask = GCFillStyle | GCForeground;
         values.fill_style = FillSolid;
-        values.foreground = ((XfwfCommonWidget)self)->xfwfCommon.highlightColor;
+	lighter_color(self, ((XfwfCommonWidget)self)->xfwfCommon.highlightColor, &res);
+        values.foreground = res;
     }
     ((XfwfCommonWidget)self)->xfwfCommon.bordergc = XtGetGC(self, mask, &values);
 }

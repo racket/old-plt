@@ -458,24 +458,24 @@ called by |expose|.
 
     t = 1 /* $highlightThickness */; 
 
-    rect[0].x = 0;
+    rect[0].x = 1;
     rect[0].y = 0;
-    rect[0].width = $width;
+    rect[0].width = $width - 2;
     rect[0].height = t;
 
     rect[1].x = 0;
-    rect[1].y = 0;
+    rect[1].y = 1;
     rect[1].width = t;
-    rect[1].height = $height;
+    rect[1].height = $height - 2;
 
     rect[2].x = $width - t;
-    rect[2].y = 0;
+    rect[2].y = 1;
     rect[2].width = t;
-    rect[2].height = $height;
+    rect[2].height = $height - 2;
 
-    rect[3].x = 0;
+    rect[3].x = 1;
     rect[3].y = $height - t;
-    rect[3].width = $width;
+    rect[3].width = $width - 2;
     rect[3].height = t;
 
     if (!$bordergc) create_bordergc($);
@@ -1151,9 +1151,11 @@ highlight border with.
         values.fill_style = FillTiled;
         values.tile = $highlightPixmap;
     } else {
+	Pixel res;
         mask = GCFillStyle | GCForeground;
         values.fill_style = FillSolid;
-        values.foreground = $highlightColor;
+	lighter_color($, $highlightColor, &res);
+        values.foreground = res;
     }
     $bordergc = XtGetGC($, mask, &values);
 }    

@@ -133,7 +133,8 @@
 	 (let loop ([c (- len (string-length str))])
 	   (unless (zero? c)
 		   (write-char #\space p)
-		   (loop (sub1 c))))))))
+		   (loop (sub1 c))))
+	 (close-output-port p)))))
 
  (define (make-macos-launcher kind flags dest)
    (install-template dest kind "MzStarter" "MrStarter")

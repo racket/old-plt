@@ -150,8 +150,8 @@
 	[data #f])
       (public
 	[get-editor (lambda () (send snip get-item-buffer))]
-	[is-selected? (lambda () (send snip is-selected?))]
-	[select (lambda (on?) (send snip select on?))]
+	[is-selected? (lambda () (send (send snip get-editor) is-selected?))]
+	[select (lambda (on?) (send (send snip get-editor) select on?))]
 	[scroll-to (lambda () (let* ([admin (send snip get-admin)]
 				     [dc (send admin get-dc)]
 				     [h-box (box 0.0)])
@@ -317,16 +317,22 @@
 							   (send b get-item))))])
 		  (begin-edit-sequence)
 		  (erase)
-		  (for-each
-		   (lambda (s)
-		     (unless (is-a? s hierarchical-list-snip%)
-		       (insert (make-whitespace)))
-		     (insert s)
-		     (insert #\newline))
-		   l)
-		  (unless (null? l)
-		    (delete)) ; delete last #\newline
-		  (set! children l)
+		  (let ([to-scroll-to #f])
+		    (for-each
+		     (lambda (s)
+		       (unless to-scroll-to
+		         (when (send (send s get-item) is-selected?)
+			   (set! to-scroll-to s)))
+		       (unless (is-a? s hierarchical-list-snip%)
+			       (insert (make-whitespace)))
+		       (insert s)
+		       (insert #\newline))
+		     l)
+		    (unless (null? l)
+		      (delete)) ; delete last #\newline
+		    (set! children l)
+		    (when to-scroll-to
+		      (send (send to-scroll-to get-item) scroll-to)))
 		  (end-edit-sequence)))]
 	[reflow-items
 	 (lambda ()

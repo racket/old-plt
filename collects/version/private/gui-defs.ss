@@ -2,6 +2,7 @@
   (require (lib "unitsig.ss"))
   (require (lib "class.ss"))
   (require (lib "mred.ss" "mred"))
+  (require (lib "string-constant.ss" "string-constants"))
 
   (require "checksigs.ss")
 
@@ -19,14 +20,15 @@
       (define (show-ok title caption details)
 	(message-box title 
 		     (if details			
-			 (format "~a~nDetails:~n~a"
+			 (format (string-constant vc-details-format)
 				 caption details)
 			 caption)
 		     #f
 		     '(ok)))
    
      (define (show-error-ok title caption)
-       (show-ok title (format "Error: ~a" caption) #f))
+       (show-ok title (format (string-constant vc-error-format)
+			      caption) #f))
 
      (define (make-wait-dialog parent title caption close-fun)
        (let ([dialog 
@@ -44,7 +46,7 @@
 	  (parent dialog))
 	 (instantiate 
 	  button% () 
-	  (label "Cancel") 
+	  (label (string-constant vc-cancel))
 	  (parent dialog)
 	  (callback (lambda (button ce)
 		      (close-fun)

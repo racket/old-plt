@@ -1,5 +1,6 @@
 (module text-defs mzscheme
   (require (lib "unitsig.ss"))
+  (require (lib "string-constant.ss" "string-constants"))
 
   (require "checksigs.ss")
 
@@ -15,11 +16,13 @@
       (define (show-ok title caption details)
 	(printf "~a~n" caption)
 	(when details
-	      (printf "Details:~n")
+	      (printf (string-constant vc-details-text))
 	      (printf "~a~n" details)))
       
-      (define (show-error-ok parent title caption)
-	(show-ok title (format "Error: ~a" caption parent)))
+      (define (show-error-ok title caption)
+	(show-ok #f
+		 (format (string-constant vc-error-format) caption)
+		 #f))
 
       (define (make-wait-dialog parent title caption close-fun)
 	(list title caption))

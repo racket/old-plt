@@ -498,7 +498,7 @@
                              [closure-storing-proc
                               (lambda (closure debug-info . extra)
                                 (closure-table-put! closure (make-closure-record 
-                                                             procedure-name
+                                                             #f
                                                              debug-info
                                                              #f
                                                              (if (not (null? extra))
@@ -710,7 +710,7 @@
                  (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-varrefs)]
                                 [foot-wrap?
                                  (wcm-wrap debug-info annotated)])
-                         free-bindings))]
+                         free-varrefs))]
                
                [(let-values . _)
                 (let*-2vals ([collapsed (collapse-let-values expr)])
@@ -736,19 +736,20 @@
                [(set! var val)
                 (let*-2vals
                     ([(annotated-val val-free-varrefs)
-                      (set!-rhs-recur (syntax val) (if (z:top-level-varref? var)
-                                                                 (z:varref-var var)
-                                                                 (z:binding-orig-name (z:bound-varref-binding var))))]
-                     [(free-bindings) (varref-set-union (list (if (z:top-level-varref? var)
-                                                                  null
-                                                                  (list (z:bound-varref-binding var)))
-                                                              rhs-free-bindings))]
-                     [(debug-info) (make-debug-info-normal free-bindings)]
-                     [(annotated) `(#%set! ,v ,annotated-body)])
-                  (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
-                                 [foot-wrap?
-                                  (wcm-wrap (make-debug-info-normal free-bindings) annotated)])
-                          free-bindings))]
+                      (set!-rhs-recur (syntax val) (syntax-case (syntax var) (#%top)
+                                                     [(#%top . real-var) (syntax->symbol (syntax real-var))]
+                                                     [else (syntax var)]))]
+                     [free-varrefs (varref-set-union (list (syntax-case (syntax var) (#%top)
+                                                             [(#%top . real-var) null]
+                                                             [else (list (syntax var))])
+                                                           val-free-varrefs))]
+                     [debug-info (make-debug-info-normal free-varrefs)]
+                     [annotated (d->so expr `(set! ,(syntax var) ,annotated-body))])
+                  (2vals (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
+                                [foot-wrap?
+                                 (wcm-wrap (make-debug-info-normal free-bindings) annotated)])
+                         free-varrefs))]
+               
 	       ; the variable forms 
 	       
                [(z:varref? expr)

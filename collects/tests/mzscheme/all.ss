@@ -26,6 +26,7 @@
   (load-relative "optimize.ss"))
 (unless building-flat-tests?
   (load-relative "name.ss"))
+(load-relative "match-test.ss")
 
 ;; Ok, so this isn't really all of them. Here are more:
 ; thrport.ss

@@ -1257,15 +1257,15 @@ void wxDoEvents()
 
     c = (MrEdContext *)MrEdMakeEventspace(NULL);
 
-#if WINDOW_STDIO
-    scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)oldm);
-#endif
-
     {
       Scheme_Object *cp;
       cp = scheme_make_closed_prim(handle_events, c);
       scheme_thread(cp, c->main_config);
     }
+
+#if WINDOW_STDIO
+    scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)oldm);
+#endif
 
     /* Block until initialized: */
     scheme_current_process->block_descriptor = -1;
@@ -2642,11 +2642,9 @@ static void do_graph_repl(void)
   scheme_eval_string("(graphical-read-eval-print-loop)", global_env);
 }
 
-static void on_main_killed(Scheme_Process *p)
-{
-  on_handler_killed(p);
-  
 #if WINDOW_STDIO
+static void MrEdExit(int v)
+{
   if (have_stdio) {
     stdio_kills_prog = 1;
     if (ioFrame)
@@ -2654,11 +2652,19 @@ static void on_main_killed(Scheme_Process *p)
     scheme_close_managed(main_manager);
     return;
   }
+
+  exit(v);
+}
 #endif
 
+static void on_main_killed(Scheme_Process *p)
+{
+  on_handler_killed(p);
+  
   if (scheme_exit)
     scheme_exit(exit_val);
-  exit(exit_val);
+  else
+    exit(exit_val);
 }
 
 void MrEdApp::RealInit(void)
@@ -2668,7 +2674,10 @@ void MrEdApp::RealInit(void)
   wxMediaIOCheckLSB(/* scheme_console_printf */);
 
   scheme_current_process->on_kill = on_main_killed;
-  
+#if WINDOW_STDIO
+  scheme_exit = MrEdExit;
+#endif
+
   exit_val = finish_cmd_line_run(xfa, do_graph_repl);
 
   scheme_kill_thread(scheme_current_process);

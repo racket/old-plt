@@ -1,5 +1,5 @@
 ;;
-;; $Id$
+;; $Id: strun.ss,v 1.5 1997/08/08 20:36:37 krentel Exp krentel $
 ;;
 ;; Run fake actions in the real handler thread.
 ;;
@@ -27,19 +27,17 @@
   ;; The time between initiating actions from the run queue.
   ;; This is just the interval between their start times.
   ;; You can't control how long the first action takes.
+  ;; make-parameter doesn't do what we need across threads.
   ;;
   
-  (define current-run-interval initial-run-interval)
-  
   (define run-interval
-    (case-lambda
-      [()  current-run-interval]
-      [(msec)
-       (if (and (integer? msec) (<= 0 msec))
-	   (set! current-run-interval msec)
-	   (error 'mred:test:run-interval 
-		  "expects non-negative integer, given: ~s"
-		  msec))]))
+    (let ([tag     'mred:test:run-interval]
+	  [current  initial-run-interval])
+      (case-lambda
+        [()   current]
+	[(x)  (if (and (integer? x) (<= 0 x))
+		  (set! current x)
+		  (error tag "expects non-negative integer, given: ~s" x))])))
   
   ;;
   ;; This is how we get into the handler thread,
@@ -84,20 +82,19 @@
 	     
 	     ;; Catch errors in thunk and pass them to main thread.
 	     ;; This only catches the first error (then run returns).
-	     ;; This even handles (raise #f).
-	     ;; THIS CAN'T CATCH ERRORS IN THUNK AFTER A WX:YIELD
-	     ;; UNTIL MATTHEW GIVES ME A NEW PRIMITIVE. 
+	     ;; This even handles (raise #f). 
 	     
 	     [pass-errors-out
 	      (lambda (thunk)
-		(with-handlers
-		    (((lambda (x) #t)
+		(parameterize
+		    ((current-exception-handler
 		      (lambda (exn)
 			(unless is-error
 			  (set! queue null)
 			  (set! is-error #t)
 			  (set! the-error exn)
-			  (semaphore-post main-sem)))))
+			  (semaphore-post main-sem))
+			((error-escape-handler)))))
 		  (thunk)))]
 	     
 	     ;; Start running the next event from the queue.
@@ -118,7 +115,7 @@
 			(let ([thunk  (mred:test:event-thunk event)]
 			      [msec   (if (mred:test:sleep? event)
 					  (mred:test:sleep-msec event)
-					  current-run-interval)])
+					  (run-interval))])
 			  (install-timer msec process-queue)
 			  (pass-errors-out thunk))]
 		       [else 
@@ -131,7 +128,7 @@
 		      (run-error tag "input is not proper list")))]))]
 	     )
 	  
-	  (install-timer current-run-interval process-queue)
+	  (install-timer 0 process-queue)
 	  (semaphore-wait main-sem)
 	  (if is-error (raise the-error) (void))))))
     

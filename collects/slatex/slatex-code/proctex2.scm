@@ -69,6 +69,9 @@
                                          ((member cs *box-triggerers*)
                                           (trigger-scheme2tex 'envbox
                                                               in cs))
+                                         ((member cs *top-box-triggerers*)
+                                          (trigger-scheme2tex 'envtopbox
+                                                              in cs))
                                          ((member cs *region-triggerers*)
                                           (slatex::trigger-region
                                            'envregion in cs))))))
@@ -263,7 +266,7 @@
 	(call-with-output-file aux.scm
 	  (lambda (out)
 	    (cond ((memq typ '(intext resultintext)) (dump-intext in out))
-		  ((memq typ '(envdisplay envresponse envrespbox envbox))
+		  ((memq typ '(envdisplay envresponse envrespbox envbox envtopbox))
 		   (dump-display in out (string-append "\\end{" env "}")))
 		  ((memq typ '(plaindisplay plainresponse
 					    plainrespbox plainbox))
@@ -289,6 +292,8 @@ Unknown triggerer ~s." typ))))
 			     "ZZZZschemeresponsebox")
 			    ((memq typ '(envbox plainbox))
 			     "ZZZZschemebox")
+                            ((memq typ '(envtopbox))
+                             "ZZZZschemetopbox")
 			    (else (error "trigger-scheme2tex: ~
 Unknown triggerer ~s." typ)))))
 		  (scheme2tex in out)))
@@ -296,7 +301,7 @@ Unknown triggerer ~s." typ)))))
 	  'text)
 	(if *slatex-in-protected-region?*
 	    (set! *protected-files* (cons aux.tex *protected-files*)))
-	(if (memq typ '(envdisplay plaindisplay envbox plainbox))
+	(if (memq typ '(envdisplay plaindisplay envbox plainbox envtopbox))
 	    (process-tex-file aux.tex))
 	(delete-file aux.scm)
 	)))
@@ -367,6 +372,8 @@ Unknown triggerer ~s." typ))))
                                        'envrespbox in out cs))
                                      ((member cs *box-triggerers*)
                                       (inline-protected 'envbox in out cs))
+                                     ((member cs *top-box-triggerers*)
+                                      (inline-protected 'envtopbox in out cs))
                                      ((member cs *region-triggerers*)
                                       (inline-protected
                                        'envregion in out cs))
@@ -423,7 +430,7 @@ Unknown triggerer ~s." typ))))
 		  (cond ((memq typ '(intext resultintext))
 			 (display "{}" out)
 			 (dump-intext in #f))
-			((memq typ '(envrespbox envbox))
+			((memq typ '(envrespbox envbox envtopbox))
 			 (if (not *latex?*)
 			     (display "{}" out))
 			 (dump-display in #f

@@ -236,6 +236,18 @@
   \ZZZZschemebox}
 \let\endZZZZschemeresponsebox\endZZZZschemebox
 
+% schemetopbox : added by robby/jbc 2000
+
+\def\ZZZZschemetopbox{%
+  \leavevmode\hbox\bgroup\vtop\bgroup
+  \schemecodehook\ZZZZschemecodehook
+  \frenchspacing
+  \let\sy=\keywordfont \let\cn=\constantfont
+  \let\va=\variablefont \let\dt=\datafont
+  \lat@xtabbing}
+\def\endZZZZschemetopbox{\endlat@xtabbing
+\egroup\egroup\ignorespaces}
+
 %in-text
 
 \def\ZZZZschemecodeintext{\begingroup

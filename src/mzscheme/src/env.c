@@ -2859,8 +2859,10 @@ local_get_shadower(int argc, Scheme_Object *argv[])
       break;
   }
 
-  if (!uid)
-    return sym;
+  if (!uid) {
+    /* No lexical shadower, but strip module context in sym, if any. */
+    return scheme_stx_strip_module_context(sym);
+  }
 
   {
     Scheme_Object *rn, *result;

@@ -1156,6 +1156,54 @@ Scheme_Object *scheme_stx_extract_marks(Scheme_Object *stx)
   }
 }
 
+Scheme_Object *scheme_stx_strip_module_context(Scheme_Object *_stx)
+{
+  Scheme_Stx *stx = (Scheme_Stx *)_stx;
+  WRAP_POS awl;
+  int mod_ctx_count = 0, skipped = 0;
+  Scheme_Object *v;
+  Wrap_Chunk *chunk;
+
+  /* Check for module context, first: */
+  WRAP_POS_INIT(awl, stx->wraps);
+  while (!WRAP_POS_END_P(awl)) {
+    v = WRAP_POS_FIRST(awl);
+    if (SCHEME_RENAMESP(v) || SCHEME_BOXP(v)) {
+      mod_ctx_count++;
+    }
+    WRAP_POS_INC(awl);
+    skipped++;
+  }
+  
+  if (!mod_ctx_count)
+    return _stx;
+
+  if (mod_ctx_count == skipped) {
+    /* Everything was a module context? An unlikely but easy case. */
+    return scheme_make_stx(stx->val, stx->srcloc, stx->props);
+  } else {
+    /* Copy everything else into a new chunk. */
+    chunk = MALLOC_WRAP_CHUNK((skipped - mod_ctx_count));
+    chunk->type = scheme_wrap_chunk_type;
+    chunk->len = skipped - mod_ctx_count;
+    skipped = 0;
+    WRAP_POS_INIT(awl, stx->wraps);
+    while (!WRAP_POS_END_P(awl)) {
+      v = WRAP_POS_FIRST(awl);
+      if (!SCHEME_RENAMESP(v) && !SCHEME_BOXP(v)) {
+	chunk->a[skipped] = v;
+	skipped++;
+      }
+      WRAP_POS_INC(awl);
+    }
+
+    stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
+    v = scheme_make_pair((Scheme_Object *)chunk, scheme_null);
+    stx->wraps = v;
+    return (Scheme_Object *)stx;
+  }
+}
+
 /*========================================================================*/
 /*                           stx comparison                               */
 /*========================================================================*/

@@ -545,6 +545,8 @@ Scheme_Object *scheme_stx_extract_marks(Scheme_Object *stx);
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx);
 Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 
+Scheme_Object *scheme_stx_strip_module_context(Scheme_Object *stx);
+
 #define SCHEME_STX_VAL(s) ((Scheme_Stx *)s)->val
 
 #define SCHEME_STX_PAIRP(o) (SCHEME_PAIRP(o) || (SCHEME_STXP(o) && SCHEME_PAIRP(SCHEME_STX_VAL(o))))

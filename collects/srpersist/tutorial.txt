@@ -1,8 +1,5 @@
-_SrPersist Tutorial_
-====================
-
-_ODBC_
-======
+SrPersist Tutorial
+==================
 
 If you look at the doc.txt file in the SrPersist collection,
 you soon realize that the ODBC standard is quite complex.

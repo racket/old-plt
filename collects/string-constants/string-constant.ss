@@ -2,8 +2,7 @@
 (module string-constant mzscheme
   (require-for-syntax (lib "etc.ss")
 		      (lib "list.ss"))
-  (require (lib "mred.ss" "mred")
-           (lib "file.ss"))
+  (require (lib "file.ss"))
 
   (provide string-constant string-constants this-language all-languages set-language-pref)
   

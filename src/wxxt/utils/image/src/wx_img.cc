@@ -231,11 +231,14 @@ void wxImage::SortColormap()
   for (i=0; i<numcols; i++) {
     trans[ c1[i].oldindex ] = i;
   }
-  
+
   /* modify 'pic' to reflect the new colormap */
   for (i=pWIDE*pHIGH, p=pic; i; i--, p++) {
     *p = trans[*p];
   }
+  
+  if (transparent_index >= 0)
+    transparent_index = trans[transparent_index];
   
   /* and copy the new colormap into *the* colormap */
   for (i=0; i<numcols; i++) {
@@ -847,6 +850,20 @@ void wxImage::CreateXImage()
     return;
   }
 
+  if (transparent_index >= 0) {
+    byte *pp = epic;
+    int i, j;
+
+    theMask = wxiAllocMask(eWIDE, eHIGH);
+    for (j = 0; j < (int)eHIGH; j++) {
+      for (i = 0; i < (int)eWIDE; i++, pp++) {
+	if (*pp == transparent_index)
+	  wxiSetMask(theMask, i, j, 0);
+	else
+	  wxiSetMask(theMask, i, j, 1);
+      }
+    }
+  }  
 
   if (numcols)
   switch (dispDEEP) 

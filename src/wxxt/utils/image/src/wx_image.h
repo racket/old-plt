@@ -48,7 +48,7 @@ class wxBitmap;
 class wxCanvas;
 
 wxBitmap *wxLoadBitmap(char *filename, wxColourMap **cmap = NULL);
-Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap = NULL);
+Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap = NULL, int getMask = 0);
 
 class wxImage: public wxObject
 {
@@ -105,10 +105,12 @@ class wxImage: public wxObject
 
   byte           rorg[256],gorg[256],borg[256];  /* ORIGINAL colormap */
 
-  int            transparent, tred, tgreen, tblue;
+  int            transparent_index;
 
 
   XImage        *theImage;     /* X version of epic */
+
+  void          *theMask; /* actually a wxMemoryDC */
 
   unsigned long freecols[256]; /* list of pixel values to free */
   int           nfcols;        /* number of colors to free */
@@ -223,5 +225,9 @@ class wxImage: public wxObject
   int  rd_flag(char *);
 #endif
 };
+
+
+void *wxiAllocMask(int w, int h);
+void wxiSetMask(void *mask, int w, int h, int on);
 
 #endif // wx_imageh

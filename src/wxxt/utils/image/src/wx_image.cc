@@ -41,6 +41,7 @@
 #include "wx_image.h"
 #include "wx_canvs.h"
 #include "wx_gdi.h"
+#include "wx_dcmem.h"
 #include "wx_utils.h"
 
 #ifndef wx_x
@@ -106,6 +107,7 @@ wxImage::wxImage(void)
   fgstr = bgstr = rootfgstr = rootbgstr = NULL;
   pic = epic = cpic = NULL;
   theImage = NULL;
+  theMask = NULL;
   LocalCmap = 0;
   InitFSDTables(); // Only need in xvpbm.c and xvpm.c. Defined in xv24to8.c
 
@@ -132,7 +134,7 @@ wxImage::wxImage(void)
 
   imap = ctrlmap = gmap = 0;
 
-  transparent = 0;
+  transparent_index = -2;
 
   /*****************************************************/
   /*** X Resource Initialization                     ***/
@@ -323,47 +325,6 @@ void wxImage::SetWindow(wxCanvas *can)
 }
 
 */
-
-#if 0
-
-void wxImage::Draw(wxCanvas *canvas, int x, int y, int width, int height)
-{
-  if (width == -1)
-    width = eWIDE;
-
-  if (height == -1)
-    height = eHIGH;
-
-  if (!canvas)
-    return;
-
-  wxFlushEvents();
-
-  if (!theImage)
-  {
-    CreateXImage();
-
-    if (!theImage)
-      return;
-  }
-
-  wxCanvasDC *dc = canvas->GetDC();
-  XPutImage(theDisp,canvas->xwindow,dc->gc,theImage,
-              dc->LogicalToDeviceX(x),dc->LogicalToDeviceY(y),
-              dc->LogicalToDeviceX(x),dc->LogicalToDeviceY(y),
-              dc->LogicalToDeviceXRel(width),dc->LogicalToDeviceYRel(height));
-#ifdef wx_motif
-  if (canvas->is_retained)
-    XPutImage(theDisp,canvas->backingPixmap,canvas->GetDC()->gcBacking,theImage,
-      // All Rel(ative) since we don't want to shift the image on the bitmap
-      // with scrolling
-              dc->LogicalToDeviceXRel(x),dc->LogicalToDeviceYRel(y),
-              dc->LogicalToDeviceXRel(x),dc->LogicalToDeviceYRel(y),
-              dc->LogicalToDeviceXRel(width),dc->LogicalToDeviceYRel(height));
-#endif
-}
-
-#endif
 
 int wxImage::openPic(char *fullname)
 {
@@ -652,10 +613,12 @@ int wxImage::rd_flag(char *name)
 /*
  * Get a wxBitmap and wxColourMap
  */
-Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
+Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap, int getMask)
 {
   wxImage *tempImage;
   tempImage = new wxImage;
+  if (getMask)
+    tempImage->transparent_index = -1;
   if (FileExists(filename) && tempImage->Load(filename))
   {
     Pixmap pm;
@@ -711,12 +674,17 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
 
     // bitmap->SetOk(TRUE);
 
-    delete tempImage;
+    if (tempImage->theMask) {
+      wxMemoryDC *mdc = (wxMemoryDC *)tempImage->theMask;
 
-    if (tempImage->transparent)
-      bitmap->SetTransparent(tempImage->tred,
-			     tempImage->tgreen,
-			     tempImage->tblue);
+      if (mdc->Ok()) {
+	bitmap->SetMask(mdc->GetObject());
+	mdc->SelectObject(NULL);
+      }
+      tempImage->theMask = NULL;
+    }
+
+    delete tempImage;
 
     if (cmap)
       *cmap = tempColourMap;
@@ -737,6 +705,35 @@ wxBitmap *wxLoadBitmap(char *s, wxColourMap **cmap)
   else {
     delete bitmap;
     return NULL;
+  }
+}
+
+void *wxiAllocMask(int w, int h)
+{
+  wxMemoryDC *mdc;
+  wxBitmap *bm;
+
+  mdc = new wxMemoryDC();
+  bm = new wxBitmap(w, h, 1);
+  mdc->SelectObject(bm);
+
+  if (mdc->Ok())
+    return mdc;
+  else
+    return NULL;
+}
+
+void wxiSetMask(void *mask, int w, int h, int on)
+{
+  wxMemoryDC *mdc = (wxMemoryDC *)mask;
+
+  if (mask) {
+    wxColour c;
+    if (on)
+      c.Set(0, 0, 0);
+    else
+      c.Set(255, 255, 255);
+    mdc->SetPixel(w, h, &c);
   }
 }
  

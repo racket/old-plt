@@ -1370,7 +1370,7 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 {
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)p_XfwfScrollInfo;
   wxScrollEvent *wxevent;
-  int dir;
+  int dir = 0;
 
   wxWindow *win = (wxWindow *)GET_SAFEREF(winp);
   if (!win) {

@@ -107,14 +107,12 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
 }
 
 // create bitmap from file
-wxBitmap::wxBitmap(char *bitmap_file, long flags, wxColour *trans)
+wxBitmap::wxBitmap(char *bitmap_file, long flags)
 {
     __type = wxTYPE_BITMAP;
 
     Xbitmap = NULL;
     cmap    = wxAPP_COLOURMAP;
-
-    SetTransparent(trans);
 
     // use load method
     (void)LoadFile(bitmap_file, flags);
@@ -299,12 +297,16 @@ extern int wxsGetImageType(char *);
 // load bitmaps
 Bool wxBitmap::LoadFile(char *fname, long flags)
 {
+  Bool getMask;
+
     if (selectedIntoDC)
       return FALSE;
 
     Destroy(); // destroy old pixmap if any
 
-    if (!flags)
+    getMask = !!(flags & wxBITMAP_TYPE_MASK);
+
+    if (!flags || (flags == wxBITMAP_TYPE_MASK))
       flags = wxsGetImageType(fname);
 
     /* MATTHEW: move "Xbitmap = new wxBitmap_Xintern" into
@@ -372,7 +374,6 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
     }
 #endif
 #if USE_IMAGE_LOADING_IN_X
-  /* MATTHEW */
   else if ((flags & wxBITMAP_TYPE_ANY) || (flags & wxBITMAP_TYPE_BMP) ||
            (flags & wxBITMAP_TYPE_GIF))
   {
@@ -380,10 +381,10 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
     Bool success = FALSE;
 
     if (flags & wxBITMAP_DISCARD_COLOURMAP)
-      success = wxLoadIntoBitmap(fname, this);
+      success = wxLoadIntoBitmap(fname, this, NULL, getMask);
     else {
       wxColourMap *cm;
-      success = wxLoadIntoBitmap(fname, this, &cm);
+      success = wxLoadIntoBitmap(fname, this, &cm, getMask);
       cmap = cm;
     }
 
@@ -504,19 +505,6 @@ void  wxBitmap::GetHotSpot(int *x, int *y)
 }
 void* wxBitmap::GetHandle(void) { return (Xbitmap ? &(Xbitmap->x_pixmap) : NULL); }
 
-
-void wxBitmap::SetTransparent(int r, int g, int b)
-{
-  wxColour *t;
-  t = new wxColour(r, g, b);
-  t->Lock(1);
-  transparent = t;
-}
-
-void wxBitmap::SetTransparent(wxColour *c)
-{
-  SetTransparent(c->Red(), c->Green(), c->Blue());
-}
 
 //-----------------------------------------------------------------------------
 // wxCursor

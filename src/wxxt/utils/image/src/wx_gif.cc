@@ -108,7 +108,6 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
   register byte *ptr, *ptr1, *picptr;
   register int   i;
   int            npixels, maxpixels;
-  int            transparent_index;
 
   /* initialize variables */
   BitOffset = XC = YC = Pass = OutCount = npixels = maxpixels = 0;
@@ -197,8 +196,6 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
     }
   }
 
-  transparent_index = -1;
-
   while ( (i=NEXTBYTE) == EXTENSION) {  /* parse extension blocks */
     int i, fn, blocksize, aspnum, aspden;
 
@@ -225,7 +222,8 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
 	  ti = NEXTBYTE;
 	  i += 4;
 	  if (flags & 0x1) {
-	    transparent_index = ti;
+	    if (transparent_index == -1)
+	      transparent_index = ti;
 	  }
 	} else { (void)NEXTBYTE;  i++; }
       }
@@ -267,13 +265,6 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
     fprintf(stderr, "No colormap in this GIF file.  Assuming EGA colors.");
   }
     
-  if (transparent_index > 0) {
-    transparent = 1;
-    tred = r[transparent_index];
-    tgreen = g[transparent_index];
-    tblue = b[transparent_index];
-  }
-  
   /* Start reading the raster data. First we get the intial code size
    * and compute decompressor constant values, based on this code size.
    */

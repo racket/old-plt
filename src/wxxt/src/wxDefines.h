@@ -148,6 +148,7 @@ typedef short int WXTYPE;
 #define wxBITMAP_TYPE_ANY		0x02000
 #define wxBITMAP_TYPE_JPEG		0x04000
 #define wxBITMAP_TYPE_RESOURCE		wxBITMAP_TYPE_BMP_RESOURCE
+#define wxBITMAP_TYPE_MASK		0x10000
 #define wxBITMAP_DEFAULT		(wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_XBM)
 
 // defines for wxBrush / wxPen

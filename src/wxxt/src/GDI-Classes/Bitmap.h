@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.h,v 1.6 2001/09/16 22:59:41 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -50,7 +49,7 @@ public:
 #if USE_XPM
     wxBitmap(char **data, wxItem *anItem = NULL);
 #endif
-    wxBitmap(char *name, long flags = wxBITMAP_DEFAULT, wxColour *trans = NULL);
+    wxBitmap(char *name, long flags = wxBITMAP_DEFAULT);
     ~wxBitmap(void);
     // create and destroy
     Bool Create(int width, int height, int depth = -1);
@@ -72,15 +71,13 @@ public:
     virtual Bool  Ok(void) { return (Xbitmap != NULL); }
     virtual void* GetHandle(void); // return type Pixmap*
 
-  void SetTransparent(int r, int g, int b);
-  void SetTransparent(wxColour *c);
-
-  wxColour *GetTransparent(void) { return transparent; }
+  void SetMask(wxBitmap *bm) { loaded_mask = bm; }
+  wxBitmap *GetMask() { return loaded_mask; }
 
 public:
     wxBitmap_Xintern *Xbitmap;
     wxColourMap      *cmap;
-    wxColour         *transparent;
+    wxBitmap         *loaded_mask;
 
 public:
     int selectedIntoDC;

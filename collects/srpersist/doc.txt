@@ -1524,27 +1524,23 @@
    'sql-attr-noscan                   'sql-noscan-off, or
                                       'sql-noscan-on
    'sql-attr-param-bind-offset-ptr    sql-boxed-uint 
-                                       (see read-boxed-uint, below)
    'sql-attr-param-bind-type          'sql-param-bind-by-column, or
                                       unsigned integer
    'sql-attr-param-operation-ptr      sql-op-parms (see read-op-parms, below)
    'sql-attr-param-status-ptr         row-status (see below)
    'sql-attr-params-processed-ptr     sql-boxed-uint
-                                       (see read-boxed-uint, below)
    'sql-attr-paramset-size            unsigned integer
    'sql-attr-query-timeout            unsigned integer  
    'sql-attr-retrieve-data            'sql-rd-on, or
                                       'sql-rd-off
    'sql-attr-row-array-size           unsigned integer
    'sql-attr-row-bind-offset-ptr      sql-boxed-uint 
-                                       (see read-boxed-uint, below)
    'sql-attr-row-bind-type            'sql-bind-by-column, or
                                       unsigned integer
    'sql-attr-row-number               unsigned integer
    'sql-attr-row-operation-ptr        op-parms (see read-op-parms, below)
    'sql-attr-row-status-ptr           row-status (see read-row-status, below)
    'sql-attr-rows-fetched-ptr         sql-boxed-uint
-                                       (see read-boxed-uint, below)
    'sql-attr-simulate-cursor          'sql-sc-non-unique, or
                                       'sql-sc-try-unique, or
                                       'sql-sc-unique
@@ -1554,7 +1550,7 @@
 
  See an ODBC reference for information about the significance of
  these attributes.  The type `sql-boxed-uint' is a Scheme representation
- of a pointer value.  See `read-boxed-uint', below.
+ of a pointer value.  See `make-boxed-uint' and `read-boxed-uint', below.
  An instance of the type `sql-op-parms' is a value that encapsulates an 
  array whose elements are either 'sql-param-proceed or
  'sql-param-ignore.  See `read-op-parms', below.  An instance

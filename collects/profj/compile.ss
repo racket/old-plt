@@ -117,7 +117,7 @@
       (remember-main ast)
       (load-lang type-recs)
       (set-importer! type-recs find-implicit-import)
-      (build-info ast type-recs #f)
+      (build-info ast level type-recs #f)
       (check-defs (car (check-list)) type-recs)
       (remove-from-packages ast type-recs)
       (order-compilation-units (translate-program ast type-recs) type-recs)))
@@ -126,7 +126,7 @@
   (define (compile-interactions port location type-recs level)
     (to-file #f)
     (let ((ast (parse-interactions port location level)))
-      (build-interactions-info ast type-recs)
+      (build-interactions-info ast level location type-recs)
       (check-interactions-types ast type-recs)
       (translate-interactions ast type-recs)))
       

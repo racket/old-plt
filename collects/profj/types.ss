@@ -145,7 +145,7 @@
     (get-record (send type-recs get-class-record (cons name path)
                       (lambda () 
                         (send type-recs lookup-path name
-                              ((get-importer type-recs) (cons name path) type-recs))))
+                              ((get-importer type-recs) (cons name path) type-recs 'full))))
                 type-recs))
   
   
@@ -337,19 +337,19 @@
   ;; is-interface?: (U type (list string) 'string) type-records-> boolean
   (define (is-interface? t type-recs)
     (not (class-record-class? 
-          (get-record (send type-recs get-class-record t ((get-importer type-recs) t type-recs))
+          (get-record (send type-recs get-class-record t ((get-importer type-recs) t type-recs 'full))
                       type-recs))))
   
   ;; is-subclass?: (U type (list string) 'string) ref-type type-records -> boolean
   (define (is-subclass? c1 c2 type-recs)
-    (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs))
+    (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs 'full))
                           type-recs)))
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-parents cr))))
 
   ;; subclass?: (U type (list string) 'string) ref-type type-records -> boolean
   (define (implements? c1 c2 type-recs)
-    (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs))
+    (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs 'full))
                           type-recs)))
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-ifaces cr))))

@@ -173,7 +173,7 @@
         (get-field-record fname 
                           (get-record 
                            (send type-recs get-class-record obj-type 
-                                                            ((get-importer type-recs) obj-type type-recs))
+                                                            ((get-importer type-recs) obj-type type-recs 'full))
                            type-recs)
                           (lambda () (raise-error)))))
       ((array-type? obj-type)
@@ -198,7 +198,7 @@
       (let ((path (send type-recs lookup-path (id-string (car accs)) (lambda () #f))))
         (if path
             (list (let* ((name (cons (id-string (car accs)) path))
-                         (record (get-record (send type-recs get-class-record name ((get-importer type-recs) name type-recs))
+                         (record (get-record (send type-recs get-class-record name ((get-importer type-recs) name type-recs 'full))
                                              type-recs)))
                     (if field? 
                         (get-field-record (id-string (cadr accs)) record (lambda () (raise-error)))
@@ -242,7 +242,7 @@
                                    (make-field-record "length" `() `(array) 'int)
                                    (get-field-record 
                                     (id-string (field-access-field acc))
-                                    (get-record (send type-recs get-class-record expr-type ((get-importer type-recs) expr-type type-recs))
+                                    (get-record (send type-recs get-class-record expr-type ((get-importer type-recs) expr-type type-recs 'full))
                                                 type-recs)
                                     (lambda () (raise-error))))))
                   (unless (equal? (car current-class) (car (field-record-class record)))
@@ -256,7 +256,7 @@
                 (let ((record (get-field-record (id-string (field-access-field acc))
                                                 (let ((name (var-access-class (field-access-access acc))))
                                                   (get-record (send type-recs get-class-record name
-                                                                    ((get-importer type-recs) name type-recs))
+                                                                    ((get-importer type-recs) name type-recs 'full))
                                                               type-recs))
                                                 (lambda () (raise-error)))))
                   (unless (equal? (car current-class) (car (field-record-class record)))
@@ -365,7 +365,7 @@
                                               (send type-recs get-class-record object-type (lambda () (raise-error)))))
                          (else (get-method-records (id-string (call-method-name exp))
                                                    (get-record 
-                                                    (send type-recs get-class-record call-exp ((get-importer type-recs) call-exp type-recs))
+                                                    (send type-recs get-class-record call-exp ((get-importer type-recs) call-exp type-recs 'full))
                                                     type-recs))))))
                     (else 
                      (get-method-records (id-string (call-method-name exp))

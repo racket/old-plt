@@ -1,16 +1,12 @@
 (module build-info mzscheme
   
   (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
-           "ast.ss" "types.ss"
-           "parameters.ss" "parser.ss")
+           "ast.ss" "types.ss" "parameters.ss" "parser.ss")
 
-  (provide build-info find-implicit-import load-lang build-interactions-info)
+  (provide build-info build-interactions-info find-implicit-import load-lang)
   
   ;-------------------------------------------------------------------------------
   ;General helper functions for building information
-  
-  
-    
   
   ;; name->list: name -> (list string)
   (define (name->list n)
@@ -39,136 +35,139 @@
                                              ,(syn (access (make-name))))
                                     #f)
               (syn (access (make-name)))))))
-                    
-  
+
   ;-------------------------------------------------------------------------------
   ;Main functions
 
-  ;; build-info: package type-records (opt symbol)-> void
-  (define (build-info prog type-recs . args)
+  ;; build-info: package symbol type-records (opt symbol)-> void
+  (define (build-info prog level type-recs . args)
     (let* ((pname (if (package-name prog)
                       (append (map id-string (name-path (package-name prog)))
                               (list (id-string (name-id (package-name prog)))))
                       null))
-           (lang (send type-recs get-package-contents `("java" "lang") 
-                                                       (lambda () (error 'type-recs 
-                                                                         "Internal error: Type record not set with lang")))))
+           (lang-pack `("java" "lang"))
+           (lang (send type-recs get-package-contents lang-pack 
+                       (lambda () (error 'type-recs "Internal error: Type record not set with lang"))))
+           (current-loc (unless (null? (package-defs prog)) (def-file (car (package-defs prog))))))
       
-      (for-each (lambda (class) (send type-recs add-to-env class  `("java" "lang") (get-location prog))) lang)
-      (for-each (lambda (class) (send type-recs add-class-req (cons class (list "java" "lang")) #f (get-location prog))) lang)
-      (send type-recs add-class-req (list 'array) #f (get-location prog))
-
+      ;Add lang to local environment
+      (for-each (lambda (class) (send type-recs add-to-env class lang-pack current-loc)) lang)
+      (for-each (lambda (class) (send type-recs add-class-req (cons class lang-pack) #f current-loc)) lang)
+      (send type-recs add-class-req (list 'array) #f current-loc)
       
-      (build-info-location (get-location prog))
+      ;Set location for type error messages
+      (build-info-location current-loc)
       
-      (for-each (lambda (class)
-                  (send type-recs add-to-env (id-string (def-name class))
-                        pname (get-location prog)))
-                (package-defs prog))
-      
-      (add-my-package type-recs pname (package-defs prog) (get-location prog))
-      
-      (for-each (lambda (imp) (process-import type-recs imp))
-                (package-imports prog))
-      
+      ;Add all defs in this file to environment
       (for-each (lambda (def)
-                  (let ((def-name (cons (id-string (header-id (def-header def))) pname)))
-                    (send type-recs add-class-req def-name #f (get-location prog))
-                    (send type-recs add-require-syntax def-name
-                          (build-require-syntax (car def-name) 
-                                                pname 
-                                                (find-directory pname (lambda () (raise-error)))
+                  (let ((defname (cons (id-string (def-name def)) pname)))
+                    (send type-recs add-to-env (car defname) pname current-loc)
+                    (send type-recs add-class-req defname #f current-loc)
+                    (send type-recs add-require-syntax defname
+                          (build-require-syntax (car defname) pname 
+                                                (find-directory pname 
+                                                                (lambda () 
+                                                                  (error 'build-info 
+                                                                         "Internal error: find-directory cannot find directory of given package")))
                                                 #t))
                     (send type-recs add-to-records def-name
-                          (lambda () (process-class/iface def pname type-recs (null? args) 'full)))))
+                          (lambda () (process-class/iface def pname type-recs (null? args) level)))))
                   (package-defs prog))
-                        
-      (for-each (lambda (def) (process-class/iface def pname type-recs (null? args) 'full))
-                (package-defs prog))
       
+      ;Add package information to environment
+      (add-my-package type-recs pname (package-defs prog) current-loc level)
+      
+      ;Add import information
+      (for-each (lambda (imp) (process-import type-recs imp level)) (package-imports prog))
+
+      ;Build jinfo information for each def in this file
+      (for-each (lambda (def) (process-class/iface def pname type-recs (null? args) level))
+                (package-defs prog))
+
+      ;Add these to the list for type checking
       (add-to-queue (package-defs prog))))
 
-  (define (get-location p)
-    (def-file (car (package-defs p))))
-  
-  (define (add-to-queue defs)
-    (check-list (append defs (check-list))))
-
-  (define (build-interactions-info prog type-recs)
+  ;build-interactions-info: ast symbol location type-records -> void
+  (define (build-interactions-info prog level loc type-recs)
+    (build-info-location loc)
     (when (field? prog)
       (send type-recs add-interaction-field 
-            (process-field prog '("scheme-interactions") null type-recs 'full))))
-
+            (process-field prog '("scheme-interactions") type-recs level))))
+  
+  ;add-to-queue: (list definition) -> void
+  (define (add-to-queue defs)
+    (check-list (append defs (check-list))))  
   
   ;-----------------------------------------------------------------------------------
-  ;Import processing
+  ;Import processing/General loading
 
-  ;;process-import: type-records import -> void
-  (define (process-import type-recs imp) 
+  ;;process-import: type-records import symbol -> void
+  (define (process-import type-recs imp level) 
     (let* ((star? (import-star imp))
-           (path (if star? 
-                     (append (map id-string (name-path (import-name imp)))
-                             (list (id-string (name-id (import-name imp)))))
-                     (map id-string (name-path (import-name imp))))))
+           (file (import-file imp))
+           (name (id-string (name-id (import-name imp))))
+           (name-path (map id-string (name-path (import-name imp))))
+           (path (if star? (append name-path (list name)) name-path))
+           (err (lambda ()
+                  (raise-error imp 'import-not-found))))
       (if star?
           (let ((classes (send type-recs get-package-contents path (lambda () #f))))
             (if classes
-                (for-each (lambda (class) (send type-recs add-to-env class path (import-file imp))) classes)
-                (let* ((dir (find-directory path (lambda () (raise-error #f #f))))
+                (for-each (lambda (class) (send type-recs add-to-env class path file))
+                          classes)
+                (let* ((dir (find-directory path err))
                        (classes (get-class-list dir)))
-                  (for-each (lambda (class) (import-class class path dir (import-file imp) type-recs #t)) classes)
+                  (for-each (lambda (class) (import-class class path dir file type-recs level #t))
+                            classes)
                   (send type-recs add-package-contents path classes))))
-          (import-class (id-string (name-id (import-name imp)))
-                        path
-                        (find-directory path (lambda () (raise-error #f #f)))
-                        (import-file imp)
-                        type-recs
-                        #t))))
+          (import-class name path (find-directory path err) file type-recs level #t))))
   
-  ;import-class: string (list string) (list string) location type-records bool-> void
-  (define (import-class class path dir loc type-recs add-to-env)
-    (cond
-      ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
-      ((file-exists? (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
-       (send type-recs add-class-record (read-record (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo")))
-       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #f)))
-      ((file-exists? (string-append (build-path (apply build-path dir) class) ".java"))
-       (send type-recs add-to-records 
-             (cons class path)
-             (lambda () 
-               (let* ((location (string-append class ".java"))
-                      (ast (call-with-input-file (string-append (build-path (apply build-path dir) class) ".java")
-                             (lambda (p) (parse p location 'full)))))
-                 (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
-                 (build-info ast type-recs 'not_look_up)
-                 (send type-recs get-class-record (cons class path) (lambda () 'internal-error "Failed to add record")))))
-       (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
-      (else (raise-error)))
-    (when add-to-env (send type-recs add-to-env class path loc))
-    (send type-recs add-class-req (cons class path) (not add-to-env) loc))
+  ;import-class: string (list string) (list string) location type-records symbol bool-> void
+  (define (import-class class path dir loc type-recs level add-to-env)
+    (let* ((path (apply build-path dir))
+           (jinfo (string-append (build-path path "compiled" class ".jinfo")))
+           (java (string-append (build-path path class) ".java")))
+      (cond
+        ((send type-recs get-class-record (cons class path) (lambda () #f)) void)
+        ((file-exists? jinfo)
+         (send type-recs add-class-record (read-record jinfo))
+         (send type-recs add-require-syntax (cons class path) 
+               (build-require-syntax class path dir #f)))
+        ((file-exists? java)
+         (send type-recs add-to-records 
+               (cons class path)
+               (lambda () 
+                 (let* ((location (string-append class ".java"))
+                        (ast (call-with-input-file java (lambda (p) (parse p location level)))))
+                   (send type-recs set-compilation-location location (build-path path "compiled"))
+                   (build-info ast level type-recs 'not_look_up))))
+         (send type-recs add-require-syntax (cons class path) (build-require-syntax class path dir #t)))
+        (else (raise-error (cons class path) 'file-not-found)))
+      (when add-to-env (send type-recs add-to-env class path loc))
+      (send type-recs add-class-req (cons class path) (not add-to-env) loc)))
   
-  (define (add-my-package type-recs package defs loc)
-    (let* ((dir (find-directory package (lambda () (raise-error))))
-           (classes (get-class-list dir)))
-      (for-each (lambda (c) (import-class c package dir loc type-recs #t)) 
+  ;add-my-package: type-records (list string) (list defs) loc symbol-> void
+  (define (add-my-package type-recs package defs loc level)
+    (let* ((dir (find-directory package (lambda () #f)))
+           (classes (if dir (get-class-list dir) null)))
+      (for-each (lambda (c) (import-class c package dir loc type-recs level #t)) 
                 (filter (lambda (c) (not (contained-in? defs c))) classes))
       (send type-recs add-package-contents package classes)))
       
+  ;contained-in? (list definition) definition -> bool
   (define (contained-in? defs class)
     (and (not (null? defs))
          (or (equal? class (id-string (def-name (car defs))))
              (contained-in? (cdr defs) class))))
   
-  ;find-implicit-import: name type-records -> ( -> record )
-  (define (find-implicit-import name type-recs)
+  ;find-implicit-import: (list string) type-records symbol-> ( -> record )
+  (define (find-implicit-import name type-recs level)
     (lambda ()
       (let ((original-loc (send type-recs get-location))
-            (dir (find-directory (cdr name) (lambda () (raise-error #f #f)))))
-        (import-class (car name) (cdr name) dir original-loc type-recs #f)
+            (dir (find-directory (cdr name) (lambda () (raise-error name 'dir-not-found)))))
+        (import-class (car name) (cdr name) dir original-loc type-recs level #f)
         (begin0
-          (get-record (send type-recs get-class-record name 
-                            (lambda () (error 'internal-error (format "find-implicit-import: addition of ~a failed" name))))
-                      type-recs)
+          (get-record (send type-recs get-class-record name (lambda () #f) type-recs))
           (send type-recs set-location! original-loc)))))
   
   ;find-directory: (list string) ( -> void) -> (list string)
@@ -190,21 +189,24 @@
                (cons (car paths) path))
               (else (loop (cdr paths))))))))
 
+  ;get-class-list: (list string) -> (list string)
   (define (get-class-list dir)
     (filter (lambda (c-name) (not (equal? c-name "")))
-            (map (lambda (fn) (substring fn 0 (- (string-length fn) (string-length ".java"))))
+            (map (lambda (fn) (substring fn 0 (- (string-length fn) 5)))
                  (filter (lambda (f) (equal? (filename-extension f) "java"))
                          (directory-list (apply build-path dir))))))
   
+  ;load-lang: type-records -> void (adds lang to type-recs)
   (define (load-lang type-recs)
-    (let* ((dir (find-directory `("java" "lang") (lambda () 'load-lang "Internal-error: Lang not accessible")))
-           (class-list (map (lambda (fn) (substring fn 0 (- (string-length fn) (string-length ".jinfo"))))
+    (let* ((lang `("java" "lang"))
+           (dir (find-directory lang (lambda () (error 'load-lang "Internal-error: Lang not accessible"))))
+           (class-list (map (lambda (fn) (substring fn 0 (- (string-length fn) 6)))
                             (filter (lambda (f) (equal? (filename-extension f) "jinfo"))
-                                    (directory-list (build-path (apply build-path dir) "compiled"))))))
-      (send type-recs add-package-contents `("java" "lang") class-list)
-      (for-each (lambda (c) (import-class c `("java" "lang") dir #f type-recs #f)) class-list)
-      (send type-recs add-require-syntax (list 'array) (list (datum->syntax-object #f `(lib "array.ss" "drj" "libs" "java" "lang") #f)
-                                                             (datum->syntax-object #f `(lib "array.ss" "drj" "libs" "java" "lang") #f)))))
+                                    (directory-list (build-path (apply build-path dir) "compiled")))))
+           (array (datum->syntax-object #f `(lib "array.ss" "drj" "libs" "java" "lang") #f)))
+      (send type-recs add-package-contents lang class-list)
+      (for-each (lambda (c) (import-class c lang dir #f type-recs 'full #f)) class-list)
+      (send type-recs add-require-syntax (list 'array) (list array array))))
       
   
   ;------------------------------------------------------------------------------------
@@ -218,7 +220,7 @@
        
   
   ;;get-parent-record: (list string) name (list string) type-records (list string) -> record
-  (define (get-parent-record name name-src child-name type-recs)
+  (define (get-parent-record name name-src child-name level type-recs)
     (when (equal? name child-name)
       (raise-error name-src 'extends-self))
     (let ((record (send type-recs get-class-record name (lambda () #f))))
@@ -227,7 +229,7 @@
         ((procedure? record) (get-record record type-recs))
         ((eq? record 'in-progress)
          (raise-error name-src 'cyclic-depends))
-        (else (get-record (find-implicit-import name type-recs) type-recs)))))
+        (else (get-record (find-implicit-import name type-recs level) type-recs)))))
   
   (define (class-specific-field? field)
     (not (memq 'private 
@@ -271,22 +273,21 @@
                       (super-record (get-parent-record super-name (if (null? (header-extends info))
                                                                       null
                                                                       (car (header-extends info)))
-                                                       cname type-recs))
+                                                       cname level type-recs))
                       (iface-records (map (lambda (i)
-                                            (get-parent-record (name->list i) i #f type-recs))
+                                            (get-parent-record (name->list i) i #f level type-recs))
                                           (header-implements info)))
                       (members (class-def-members class))
                       (reqs (map (lambda (name-list) 
                                    (if (= (length name-list) 1)
-                                       (make-req (car name-list) (send type-recs lookup-path (car name-list) 
-                                                                       (lambda () (raise-error #f #f))))
+                                       (make-req (car name-list) (send type-recs lookup-path (car name-list) (lambda () null)))
                                        (make-req (car name-list) (cdr name-list))))
                                  (cons super-name (map name->list (header-implements info))))))
                  (send type-recs set-location! (class-def-file class))
                  (set-class-def-uses! class reqs)
                  (unless (andmap (lambda (req) (type-exists? (req-class req) (req-path req) type-recs))
                                  reqs)
-                   (raise-error #f #f))
+                   (error 'process-class "Internal error: not all of imports and classes exist"))
                  
                  (when (memq 'final (class-record-modifiers super-record))
                    (raise-error (car (header-extends info)) 'extend-final))
@@ -363,7 +364,7 @@
              (lambda ()
                (send type-recs add-to-records iname 'in-progress)
                (let* ((super-names (map name->list (header-extends info)))
-                      (super-records (map (lambda (n sc) (get-parent-record n sc iname type-recs))
+                      (super-records (map (lambda (n sc) (get-parent-record n sc iname level type-recs))
                                           super-names
                                           (header-extends info)))
                       (members (interface-def-members iface))
@@ -373,7 +374,7 @@
                  (set-interface-def-uses! iface reqs)                 
                  (unless (andmap (lambda (req) (type-exists? (req-class req) (req-path req) type-recs))
                                  reqs)
-                   (raise-error #f #f))
+                   (error 'process-interface "Internal error: Not all of extends exist"))
                  
                  (when (ormap class-record-class? super-records)
                    (letrec ((find-class

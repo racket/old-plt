@@ -477,14 +477,16 @@
    (private-field
      (file-menu:new-item
        (and (file-menu:create-new?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (file-menu:new-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:new-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:new-string)) (base "&New") (suffix ""))
                (if (string=? special "")
@@ -501,14 +503,16 @@
    (private-field
      (file-menu:open-item
        (and (file-menu:create-open?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (file-menu:open-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:open-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:open-string))
                 (base "&Open")
@@ -527,16 +531,16 @@
    (private-field
      (file-menu:revert-item
        (and (file-menu:create-revert?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (file-menu:revert-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:revert-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:revert-string))
                 (base "&Revert")
@@ -555,14 +559,16 @@
    (private-field
      (file-menu:save-item
        (and (file-menu:create-save?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (file-menu:save-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:save-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:save-string)) (base "&Save") (suffix ""))
                (if (string=? special "")
@@ -578,16 +584,16 @@
    (private-field
      (file-menu:save-as-item
        (and (file-menu:create-save-as?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (file-menu:save-as-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:save-as-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:save-as-string))
                 (base "Save")
@@ -606,16 +612,16 @@
    (private-field
      (file-menu:print-item
        (and (file-menu:create-print?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (file-menu:print-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:print-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:print-string))
                 (base "&Print")
@@ -634,16 +640,16 @@
    (private-field
      (file-menu:close-item
        (and (file-menu:create-close?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (file-menu:close-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:close-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:close-string)) (base "&Close") (suffix ""))
                (if (string=? special "")
@@ -660,14 +666,16 @@
    (private-field
      (file-menu:quit-item
        (and (file-menu:create-quit?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (file-menu:quit-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:quit-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (file-menu:quit-string))
                 (base (if (eq? (system-type) 'windows) "E&xit" "Quit"))
@@ -686,14 +694,16 @@
    (private-field
      (edit-menu:undo-item
        (and (edit-menu:create-undo?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (edit-menu:undo-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:undo-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:undo-string)) (base "&Undo") (suffix ""))
                (if (string=? special "")
@@ -709,14 +719,16 @@
    (private-field
      (edit-menu:redo-item
        (and (edit-menu:create-redo?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (edit-menu:redo-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:redo-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:redo-string)) (base "&Redo") (suffix ""))
                (if (string=? special "")
@@ -733,14 +745,16 @@
    (private-field
      (edit-menu:cut-item
        (and (edit-menu:create-cut?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (edit-menu:cut-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:cut-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:cut-string)) (base "Cu&t") (suffix ""))
                (if (string=? special "")
@@ -757,14 +771,16 @@
    (private-field
      (edit-menu:copy-item
        (and (edit-menu:create-copy?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (edit-menu:copy-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:copy-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:copy-string)) (base "&Copy") (suffix ""))
                (if (string=? special "")
@@ -781,16 +797,16 @@
    (private-field
      (edit-menu:paste-item
        (and (edit-menu:create-paste?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (edit-menu:paste-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:paste-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:paste-string)) (base "&Paste") (suffix ""))
                (if (string=? special "")
@@ -807,16 +823,16 @@
    (private-field
      (edit-menu:clear-item
        (and (edit-menu:create-clear?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (edit-menu:clear-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:clear-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:clear-string))
                 (base (if (eq? (system-type) 'macos) "Clear" "&Delete"))
@@ -835,16 +851,16 @@
    (private-field
      (edit-menu:select-all-item
        (and (edit-menu:create-select-all?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (edit-menu:select-all-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:select-all-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:select-all-string))
                 (base "Select A&ll")
@@ -864,14 +880,16 @@
    (private-field
      (edit-menu:find-item
        (and (edit-menu:create-find?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda () (edit-menu:find-on-demand this) (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:find-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:find-string)) (base "Find") (suffix "..."))
                (if (string=? special "")
@@ -887,16 +905,16 @@
    (private-field
      (edit-menu:find-again-item
        (and (edit-menu:create-find-again?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (edit-menu:find-again-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:find-again-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:find-again-string))
                 (base "Find Again")
@@ -915,16 +933,16 @@
    (private-field
      (edit-menu:replace-and-find-again-item
        (and (edit-menu:create-replace-and-find-again?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (edit-menu:replace-and-find-again-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:replace-and-find-again-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:replace-and-find-again-string))
                 (base "Replace && Find Again")
@@ -944,16 +962,16 @@
    (private-field
      (edit-menu:preferences-item
        (and (edit-menu:create-preferences?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (edit-menu:preferences-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:preferences-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (edit-menu:preferences-string))
                 (base "Preferences...")
@@ -974,16 +992,16 @@
    (private-field
      (help-menu:about-item
        (and (help-menu:create-about?)
-            (make-object (class
+            (make-object (class100
                (get-menu-item%)
                args
                (rename (super-on-demand on-demand))
-               (override on-demand)
-               (define (on-demand)
-                 (lambda ()
-                   (help-menu:about-on-demand this)
-                   (super-on-demand)))
-               (apply super-init args))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (help-menu:about-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
               (let
                ((special (help-menu:about-string))
                 (base "About ")

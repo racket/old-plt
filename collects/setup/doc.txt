@@ -254,12 +254,12 @@ on-installer-run thunk is run after a .plt file is installed.
 > (on-installer-run) - returns the on-installer-run thunk to thunk. The
 on-installer-run thunk is run after a .plt file is installed.
 
- The _plt-installerr.ss_ library in the setup collection returns a unit/sig
+ The _plt-installer-unit.ss_ library in the setup collection returns a unit/sig
  that imports mred^ and exports setup:plt-installer^. The signature
  setup:plt-installer^ has two names: run-installer and on-installer-run, as
  above.
 
- The _plt-installers.ss_ library defines the setup:plt-installer^
+ The _plt-installer-sig.ss_ library defines the setup:plt-installer^
  signature, which has two names: run-installer and on-installer-run.
 
  Setup PLT as a Unit
@@ -348,7 +348,7 @@ compilation.
    bound to the symbol from the info-table, or returns the result of the
    thunk if the symbol isn't bound in the info-table.ss file.
 
-   get-info will print an error message if the info-table.ss has an error
+   get-info will raise an error if the info-table.ss has an error
    during loading.
 
  The file _get-infos.ss_ defines the setup:plt-info^

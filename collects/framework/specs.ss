@@ -85,5 +85,3 @@
 		  (wrap type (wrap-defn orig-name) #f module-name)
 		  (error 'require/type "expected types to match, but they don't: ~s ~s"
 			 (quote type) (wrap-type orig-name))))))]))))
-
-(require "c.ss")

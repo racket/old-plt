@@ -2,7 +2,7 @@
 The `help' collection provides tools for working with _Help Desk_.
 
 _Running or Embedding Help Desk_
-==============================
+================================
 
 Loading the _help.ss_ library directly executes the Help Desk
 program. 
@@ -40,15 +40,10 @@ Opens a new help desk window and opens `url' in it.
 
 -------------------------------------------------------------
 
-The _helpr.ss_ library provides the Help Desk as a unit with
+The _help-unit.ss_ library provides the Help Desk as a unit with
 the following imports:
 
-  mzlib:function^
-  mzlib:string^
-  mzlib:file^
-  mzlib:url^ - not really in MzLib; it's in the "net" collection
   setup:plt-installer^ - see the `plt-installer' docs
-  setup:info^          - see the `get-info' docs
   mred^
   framework^
   (frame-mixin) - a mixin to be applied to Help Desk's frame, which
@@ -61,7 +56,7 @@ the following imports:
 
 It exports
 
-> help:help^
+> help^
 
 which contains three items:
 
@@ -323,3 +318,30 @@ _Help Desk Entry Points_
  
   Found at (build-path (collection-path "doc" "help" "release") "notes.html")
 
+_Supplemental Help Desk documentation libraries_
+================================================
+
+These libraries are used to build dynamic portions of the documentation.
+
+> Installed Components
+
+  The _installed-components.ss_ library is a module that defines one procedure:
+> (help-desk:installed-components)
+  It returns a string of xhtml with documentation extracted from the 
+  _'blurb_ fields of the info.ss files in each collection.
+
+
+  
+> Design Recipe Window
+
+  the _recipewin.ss_ library contains a module that defines one procedure:
+> (help-desk:recipewin)
+  This procedures opens up a design recipe browser to help programmers
+  follow the design recipes from _How to Design Programs_.
+
+  
+> Bug Report
+
+  The _bug-report.ss_ library contains a module that defines one procedure:
+> (help-desk:report-bug)
+  This opens a window for a user to submit a bug report about DrScheme.

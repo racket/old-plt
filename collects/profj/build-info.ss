@@ -454,7 +454,9 @@
                    (when (and ctor? (eq? level 'beginner) (memq 'abstract test-mods))
                      (beginner-ctor-error 'abstract (header-id info) (id-src (header-id info))))
 
-                   (valid-field-names? f members m level type-recs)
+                   (valid-field-names? (if (memq level '(beginner intermediate advanced)) 
+                                           (append f (class-record-fields super-record)) f)
+                                       members m level type-recs)
                    (valid-method-sigs? m members level type-recs)
 
                    (when (not (memq 'abstract test-mods))
@@ -710,8 +712,7 @@
                              (car class)
                              (method-src m)
                              (eq? (method-record-rtype (car methods)) 'ctor))))
-        (and (printf "~a~n" (method-record-class (car methods)))
-             (equal? (method-record-name (car methods)) 
+        (and (equal? (method-record-name (car methods)) 
                      (method-record-class (car methods)))
              (not (eq? (method-record-rtype (car methods)) 'ctor))
              (let ((m (find-member (car methods) members level type-recs))

@@ -330,9 +330,6 @@
                               assigns))
                     inherited-fields))
         (for-each (lambda (field)
-                    (printf "~a~n" field)
-                    (printf "~a~n" (andmap (lambda (assign)
-                                             (field-set? field assign (car c-class) level #f)) assigns))
                     (if (memq 'static (map modifier-kind (field-modifiers field)))
                         (andmap
                          (lambda (assign)

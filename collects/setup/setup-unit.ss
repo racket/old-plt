@@ -44,6 +44,7 @@
 		  (setup-printf "  ~a" (path->string p)))
 		(current-library-collection-paths))
 
+      #;
       (exit-handler
        (let ([oh (exit-handler)])
 	 (lambda (num)

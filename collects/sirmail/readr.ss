@@ -996,6 +996,10 @@
 	      (when (send header-list selected-hit?)
 		(let ([e (send message get-editor)])
 		  (send e move-position 'up #f 'page)))))
+      (send global-keymap add-function "rewind-msg"
+	    (lambda (w e) (send header-list rewind-selected)))
+      (send global-keymap add-function "forward-msg"
+	    (lambda (w e) (send header-list forward-selected)))      
       (send global-keymap add-function "purge"
 	    (lambda (w e) 
 	      (purge-marked/update-headers)))
@@ -1018,6 +1022,10 @@
       (send global-keymap map-function "#" "purge")
       (send global-keymap map-function "!" "gc")
       (send global-keymap map-function ":z" "show-memory-graph")
+      (send global-keymap map-function ":m:left" "rewind-msg")
+      (send global-keymap map-function ":d:left" "rewind-msg")
+      (send global-keymap map-function ":m:right" "forward-msg")
+      (send global-keymap map-function ":d:right" "forward-msg")
       
       (define icon (make-object bitmap% (build-path (collection-path "sirmail")
 						    "postmark.bmp")))
@@ -1295,7 +1303,7 @@
       (define header-list%
 	(class hierarchical-list%
 
-          (inherit get-items show-focus set-cursor)
+          (inherit get-items show-focus set-cursor select)
           (field [selected #f])
           
           (define/public (mark marked?)
@@ -1347,7 +1355,56 @@
 
           ;; -------------------- Message selection --------------------
           
+	  (define past-selected null)
+	  (define future-selected null)
+
+	  (define/private (push-selected uid)
+	    (unless (and (pair? past-selected)
+			 (equal? uid (car past-selected)))
+	      (when (and (pair? future-selected)
+			 (equal? uid (car future-selected)))
+		(set! future-selected (cdr future-selected)))
+	      (set! past-selected (cons uid past-selected))))
+
+	  (define/public (rewind-selected)
+	    (when (pair? past-selected)
+	      (set! future-selected (cons (car past-selected)
+					  future-selected))
+	      (set! past-selected (cdr past-selected)))
+	    (unless (pair? past-selected)
+	      (set! past-selected (reverse future-selected))
+	      (set! future-selected null))
+	    (set! past-selected (select-from-stack past-selected)))
+
+	  (define/public (forward-selected)
+	    (unless (pair? future-selected)
+	      (set! future-selected (reverse past-selected))
+	      (set! past-selected null))
+	    (set! future-selected (select-from-stack future-selected))
+	    (when (pair? future-selected)
+	      (set! past-selected (cons (car future-selected)
+					past-selected))
+	      (set! future-selected (cdr future-selected))))
+
+	  (define (select-from-stack selected)
+	    (if (pair? selected)
+		(let* ([uid (car selected)]
+		       [i (ormap (lambda (i)
+				   (and (equal? uid (send i user-data))
+					i))
+				 (send header-list get-items))])
+		  (if i
+		      (begin
+			(select i)
+			(do-double-select i #f)
+			selected)
+		      (select-from-stack (cdr selected))))
+		null))
+
           (define/override (on-double-select i)
+	    (do-double-select i #t))
+	  
+	  (define/private (do-double-select i push?)
             (let ([e (send message get-editor)]
                   [uid (send i user-data)])
               (dynamic-wind
@@ -1376,6 +1433,8 @@
 					   start 'same #f)
 				     (let ([end (send e last-position)])
 				       (delta e start end))))])
+		     (when push?
+		       (push-selected uid))
 		     (parse-and-insert-body h body e insert 78 img-mode?)))
                  (send e set-position 0)
                  (set-current-selected i))
@@ -1954,7 +2013,6 @@
       (define (redisplay-current)
 	(when current-selected
 	  (send header-list on-double-select current-selected)))
-
       
       (define (sort-by-date) 
         (sort-by-fields (list (list "date" date-cmp)))

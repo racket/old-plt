@@ -833,17 +833,19 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
       scheme_signal_error("Error enumerating subkeys in Windows registry");
     }
     
-    if (strlen(clsIdBuffer) != 38) { // not a CLSID -- bogus entry
+    if (strlen(clsIdBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
       continue;
     }
 
     count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-				clsIdBuffer,strlen(clsIdBuffer) + 1,
+				clsIdBuffer,strlen(clsIdBuffer),
 				oleClsIdBuffer,sizeray(oleClsIdBuffer));
 	    
     if (count == 0) {
       scheme_signal_error("Error translating CLSID to Unicode");
     }
+
+    oleClsIdBuffer[CLSIDLEN] = '\0';
 	    
     hr = CLSIDFromString(oleClsIdBuffer,&registryClsId);
 
@@ -914,9 +916,11 @@ Scheme_Object *mx_coclass_as_progid(int argc,Scheme_Object **argv) {
   buff = (char *)scheme_malloc(len + 1);
 
   WideCharToMultiByte(CP_ACP,(DWORD)0,
-		      wideProgId,len + 1,
-		      buff,len,
+		      wideProgId,len,
+		      buff,len + 1,
 		      NULL,NULL);
+
+  buff[len] = '\0';
 
   return scheme_make_string(buff);
 }
@@ -1076,11 +1080,13 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
     scheme_signal_error("No help available"); 
   }
   
-  WideCharToMultiByte(CP_ACP,(DWORD)0,helpFileName,SysStringLen(helpFileName) + 1,
+  WideCharToMultiByte(CP_ACP,(DWORD)0,helpFileName,SysStringLen(helpFileName),
 		      buff,sizeof(buff) - 1,
 		      NULL,NULL);
   
   SysFreeString(helpFileName);
+
+  buff[sizeof(buff)-1] = '\0';
   
   len = strlen(buff);
   
@@ -1509,6 +1515,7 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   VARDESC *pVarDesc;
   Scheme_Object *retval;
   char buff[256];
+  unsigned int len;
   unsigned int count;
   int i;
   
@@ -1538,9 +1545,11 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
     pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
     if (pFuncDesc->invkind == invKind) {
       pITypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&count);
-      WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,SysStringLen(bstr) + 1,
+      len = SysStringLen(bstr);
+      WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
 			  buff,sizeof(buff) - 1,
 			  NULL,NULL);
+      buff[len] = '\0';
       retval = scheme_make_pair(scheme_make_string(buff),retval);
       SysFreeString(bstr);
     }
@@ -1554,9 +1563,11 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   for (i = 0; i < pTypeAttr->cVars; i++) {
     pITypeInfo->GetVarDesc(i,&pVarDesc);		
     pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&count);
-    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,SysStringLen(bstr) + 1,
+    len = SysStringLen(bstr);
+    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
 			buff,sizeof(buff) - 1,
 			NULL,NULL);
+    buff[len] = '\0';
     retval = scheme_make_pair(scheme_make_string(buff),retval);
     SysFreeString(bstr);
     pITypeInfo->ReleaseVarDesc(pVarDesc);
@@ -1857,6 +1868,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   char buff[256];
   UINT nameCount;
   BSTR bstr;
+  unsigned int len;
   UINT i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
@@ -1891,9 +1903,11 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   for (i = 0; i < pEventTypeAttr->cFuncs; i++) {
     pEventTypeInfo->GetFuncDesc(i,&pFuncDesc);		
     pEventTypeInfo->GetNames(pFuncDesc->memid,&bstr,1,&nameCount);
-    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,SysStringLen(bstr) + 1,
+    len = SysStringLen(bstr);
+    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
 			buff,sizeof(buff) - 1,
 			NULL,NULL);
+    buff[len] = '\0';
     retval = scheme_make_pair(scheme_make_string(buff),retval);
     SysFreeString(bstr);
   }
@@ -2729,7 +2743,6 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     break;
     
   case VT_BSTR :
-    
     pVariantArg->bstrVal = schemeStringToBSTR(val);
     break;
     
@@ -3015,7 +3028,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   BOOL lastParamIsRetval;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
-  
+
   numParamsPassed = pFuncDesc->cParams;
   
   if (pFuncDesc->cParams > 0 && 
@@ -3029,7 +3042,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   else {
     lastParamIsRetval = FALSE;
   }
-  
+
   if (pFuncDesc->cParamsOpt == -1) {  // last args get packaged into SAFEARRAY
     
     // this branch is untested
@@ -3037,7 +3050,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     // optional parameters with default values not counted in pFuncDesc->cParamsOpt
     
     numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
-    
+
     if (argc < numParamsPassed + 2 - 1) {
       sprintf(errBuff,"%s (%s \"%s\")",
 	      mx_fun_string(invKind),
@@ -3077,7 +3090,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 			k,argc,argv);
     }
   }
-  
+
   switch(invKind) {
     
   case INVOKE_PROPERTYPUT :
@@ -3158,7 +3171,7 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
   short int numParamsPassed;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
-  
+
   if (invKind == INVOKE_PROPERTYGET) {
     numParamsPassed = 0;
   }
@@ -3264,7 +3277,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   // check arity, types of method arguments
   
   pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
-  
+
   numParamsPassed = buildMethodArguments(pTypeDesc,
 					 invKind,
 					 argc,argv,
@@ -3293,11 +3306,14 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     hasDescription = (exnInfo.bstrDescription != NULL);
     
     if (hasDescription) {
+      unsigned int len;
+
+      len = SysStringLen(exnInfo.bstrDescription);
       WideCharToMultiByte(CP_ACP,(DWORD)0,
-			  exnInfo.bstrSource,
-			  SysStringLen(exnInfo.bstrDescription)+1,
+			  exnInfo.bstrSource,len,
 			  description,sizeof(description)-1,
 			  NULL,NULL);
+      description[len] = '\0';
     }
     
     if (hasErrorCode) {
@@ -3406,7 +3422,7 @@ Scheme_Object *mx_all_clsid(int argc,Scheme_Object **argv,char **attributes) {
       break;
     }		
     
-    if (strlen(clsidBuffer) != 38) { // not a CLSID -- bogus entry
+    if (strlen(clsidBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
       continue;
     }
     
@@ -3643,6 +3659,7 @@ CLSID getCLSIDFromCoClass(const char *name) {
   CLSID clsId;
   BOOL loopFlag;
   int count;
+  unsigned int len;
   char **p;
   
   // dummy entry
@@ -3688,7 +3705,7 @@ CLSID getCLSIDFromCoClass(const char *name) {
       scheme_signal_error("Error enumerating subkeys in Windows registry");
     }
     
-    if (strlen(clsIdBuffer) != 38) { // not a CLSID -- bogus entry
+    if (strlen(clsIdBuffer) != CLSIDLEN) { // not a CLSID -- bogus entry
       continue;
     }
     
@@ -3739,9 +3756,12 @@ CLSID getCLSIDFromCoClass(const char *name) {
 	
 	while (*p) {
 	  if (stricmp(subkeyBuffer,*p) == 0) {
+	    len = strlen(clsIdBuffer);
 	    count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-					clsIdBuffer,strlen(clsIdBuffer) + 1,
-					oleClsIdBuffer,sizeray(oleClsIdBuffer));
+					clsIdBuffer,len,
+					oleClsIdBuffer,
+					sizeray(oleClsIdBuffer) - 1);
+	    oleClsIdBuffer[len] = '\0';  
 	    
 	    if (count == 0) {
 	      scheme_signal_error("Error translating CLSID to Unicode",name);

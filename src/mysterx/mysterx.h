@@ -16,6 +16,8 @@
 
 #define MAXARRAYDIMS 32
 
+#define CLSIDLEN 38
+
 #define NORETVALINDEX (-1)
 #define UNICODE_BUFFER_SIZE 256
 #define TYPE_TBL_SIZE 1019

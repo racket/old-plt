@@ -14,9 +14,11 @@ Scheme_Object *BSTRToSchemeString(BSTR bstr) {
 
   buff = (char *)scheme_malloc(len + 1);
 
-  WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len + 1,
+  WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len,
 		      buff,len,
 		      NULL,NULL);
+
+  buff[len] = '\0';
 
   return scheme_make_string(buff);
 }
@@ -31,7 +33,7 @@ void updateSchemeStringFromBSTR(Scheme_Object *val,BSTR bstr) {
   }
 
   WideCharToMultiByte(CP_ACP,(DWORD)0,
-		      bstr,len + 1,
+		      bstr,len,
 		      SCHEME_STR_VAL(val),SCHEME_STRLEN_VAL(val),
 		      NULL,NULL);
 
@@ -47,12 +49,14 @@ BSTR stringToBSTR(char *s,size_t len) {
   unicodeString = (WCHAR *)scheme_malloc((len + 1) * sizeof(WCHAR));
   scheme_dont_gc_ptr(unicodeString);
 
-  hr = MultiByteToWideChar(CP_ACP,(DWORD)0,s,len + 1,
+  hr = MultiByteToWideChar(CP_ACP,(DWORD)0,s,len,
 			   unicodeString,len + 1);
 
-  if (hr == 0) {
+  if (hr == 0 && len > 0) {
     scheme_signal_error("Error translating string parameter to Unicode");
   }
+
+  unicodeString[len] = '\0';
 
   bstr = SysAllocString(unicodeString);
 
@@ -68,4 +72,5 @@ BSTR stringToBSTR(char *s,size_t len) {
 BSTR schemeStringToBSTR(Scheme_Object *o) {
   return stringToBSTR(SCHEME_STR_VAL(o),SCHEME_STRLEN_VAL(o));
 }
+
 

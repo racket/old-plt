@@ -236,7 +236,6 @@
 		      (if (and (url-scheme base)
 			    (string=? (url-scheme base) "file"))
 
-			;; ROBBY: Code needs to get fixed here.
 			;; Important that:
 			;; 1. You set-url-path! the new path into
 			;;    `relative'.
@@ -252,9 +251,8 @@
 				[val base-dir (if must-be-dir? base-path base)]
 				[val ind-rel-path (unixpath->path rel-path)]
 				[val merged (build-path base-dir
-					      ind-rel-path)]
-				[val norm (file:normalize-path merged)])
-			  (set-url-path! relative norm)
+					      ind-rel-path)])
+			  (set-url-path! relative merged)
 			  relative)
 			(merge-and-normalize
 			  (url-path base) relative))))))))))))

@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.59 2000/06/09 00:38:16 mflatt Exp $
+; $Id: x.ss,v 1.60 2000/06/10 14:24:18 mflatt Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -17,13 +17,13 @@
   ; ----------------------------------------------------------------------
 
   (define reference-namespace (make-namespace))
-  (define primitive-eval (current-eval))
+  (define-struct z:syntax (name))
 
   (define (make-mz-binding s)
     (parameterize ([current-namespace reference-namespace])
-      (primitive-eval
-       `(#%define-macro ,s (#%lambda args (error 'macro "dummy ~s macro got ~a" ',s args))))
-      (global-defined-value s)))
+      (let ([v (make-z:syntax s)])
+	(global-defined-value s v)
+	v)))
   
   (define (syntax-symbol->id s)
     (with-handlers ([void (lambda (x) (make-mz-binding s))])

@@ -2228,11 +2228,13 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
     break;
 
   case VT_UI4 :
+  case VT_UINT :
 
     s = "unsigned-int";
     break;
 
   case VT_UI4 | VT_BYREF :
+  case VT_UINT | VT_BYREF :
 
     s = "unsigned-int";
     isBox = TRUE;
@@ -2686,6 +2688,7 @@ Scheme_Object *mx_com_event_type(int argc,Scheme_Object **argv) {
 
 BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
   long int longInt;
+  unsigned long uLongInt;
 
   switch (vt) {
 
@@ -2693,6 +2696,7 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
     return SCHEME_VOIDP(val);
 
+  case VT_I1 :
   case VT_UI1 :
 
     return SCHEME_CHARP(val);
@@ -2703,11 +2707,23 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
       scheme_get_int_val(val,&longInt) &&
       longInt <= SHRT_MAX && longInt >= SHRT_MIN;
 
+  case VT_UI2 :
+
+    return SCHEME_INTP(val) &&
+      scheme_get_unsigned_int_val(val,&uLongInt) &&
+      uLongInt <= USHRT_MAX;
+
   case VT_I4 :
   case VT_INT :
 
     return SCHEME_EXACT_INTEGERP(val) &&
       scheme_get_int_val(val,&longInt);
+
+  case VT_UI4 :
+  case VT_UINT :
+
+    return SCHEME_EXACT_INTEGERP(val) &&
+      scheme_get_unsigned_int_val(val,&uLongInt);
 
   case VT_R4 :
 
@@ -3006,6 +3022,18 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
     break;
 
+  case VT_I1 :
+
+    pVariantArg->cVal = SCHEME_CHAR_VAL(val);
+    break;
+
+  case VT_I1 | VT_BYREF :
+
+    pVariantArg->pcVal = 
+      (char *)allocParamMemory(sizeof(char));
+    *pVariantArg->pcVal = SCHEME_CHAR_VAL(SCHEME_BOX_VAL(val));
+    break;
+
   case VT_UI1 :
 
     pVariantArg->bVal = SCHEME_CHAR_VAL(val);
@@ -3029,6 +3057,17 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
     break;
 
+  case VT_UI2 :
+
+    pVariantArg->uiVal = (unsigned short)SCHEME_INT_VAL(val);
+    break;
+
+  case VT_UI2 | VT_BYREF :
+
+    pVariantArg->puiVal = (unsigned short *)allocParamMemory(sizeof(unsigned short));
+    *pVariantArg->puiVal = (unsigned short)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    break;
+
   case VT_I4 :
 
     pVariantArg->lVal = SCHEME_INT_VAL(val);
@@ -3040,6 +3079,17 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     *pVariantArg->plVal = (long)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
     break;
 
+  case VT_UI4 :
+
+    pVariantArg->ulVal = SCHEME_INT_VAL(val);
+    break;
+
+  case VT_UI4 | VT_BYREF :
+
+    pVariantArg->pulVal = (unsigned long *)allocParamMemory(sizeof(unsigned long));
+    *pVariantArg->pulVal = (unsigned long)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    break;
+
   case VT_INT :
 
     pVariantArg->intVal = SCHEME_INT_VAL(val);
@@ -3048,6 +3098,16 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
   case VT_INT | VT_BYREF :
     pVariantArg->pintVal = (int *)allocParamMemory(sizeof(long));
     *pVariantArg->pintVal = (int)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
+    break;
+
+  case VT_UINT :
+
+    pVariantArg->uintVal = SCHEME_INT_VAL(val);
+    break;
+
+  case VT_UINT | VT_BYREF :
+    pVariantArg->puintVal = (unsigned int *)allocParamMemory(sizeof(long));
+    *pVariantArg->puintVal = (unsigned int)SCHEME_INT_VAL(SCHEME_BOX_VAL(val));
     break;
 
     // VT_USERDEFINED in the typeDesc indicates an ENUM,
@@ -3193,9 +3253,9 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     marshalSchemeValueToVariant(val,pVariantArg);
     break;
 
-    case VT_PTR:
-        scheme_signal_error ("unable to marshal VT_PTR");
-        break;
+  case VT_PTR:
+    scheme_signal_error ("unable to marshal VT_PTR");
+    break;
 
   default :
     sprintf(errBuff,"Unable to marshal Scheme value into VARIANT: 0x%X",
@@ -3221,7 +3281,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_I1 :
 
-    return scheme_make_integer (pVariantArg->bVal);
+    return scheme_make_character(pVariantArg->cVal);
 
   case VT_I2 :
 
@@ -3258,6 +3318,10 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_INT :
 
     return scheme_make_integer(pVariantArg->intVal);
+
+  case VT_UINT :
+
+    return scheme_make_integer_value_from_unsigned(pVariantArg->uintVal);
 
   case VT_R4 :
 
@@ -3311,7 +3375,14 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 }
 
 void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
+
   switch(pVariantArg->vt) {
+
+  case VT_I1 | VT_BYREF :
+
+    SCHEME_BOX_VAL(val) = scheme_make_character(*pVariantArg->pcVal);
+    scheme_gc_ptr_ok(pVariantArg->pcVal);
+    break;
 
   case VT_UI1 | VT_BYREF :
 
@@ -3325,16 +3396,37 @@ void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     scheme_gc_ptr_ok(pVariantArg->piVal);
     break;
 
+  case VT_UI2 | VT_BYREF :
+
+    SCHEME_BOX_VAL(val) = 
+      scheme_make_integer_value_from_unsigned(*pVariantArg->puiVal);
+    scheme_gc_ptr_ok(pVariantArg->puiVal);
+    break;
+
   case VT_I4 | VT_BYREF :
 
-    SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->plVal);
+    SCHEME_BOX_VAL(val) = scheme_make_integer_value(*pVariantArg->plVal);
     scheme_gc_ptr_ok(pVariantArg->plVal);
+    break;
+
+  case VT_UI4 | VT_BYREF :
+
+    SCHEME_BOX_VAL(val) = 
+      scheme_make_integer_value_from_unsigned(*pVariantArg->pulVal);
+    scheme_gc_ptr_ok(pVariantArg->pulVal);
     break;
 
   case VT_INT | VT_BYREF :
 
-    SCHEME_BOX_VAL(val) = scheme_make_integer(*pVariantArg->pintVal);
+    SCHEME_BOX_VAL(val) = scheme_make_integer_value(*pVariantArg->pintVal);
     scheme_gc_ptr_ok(pVariantArg->pintVal);
+    break;
+
+  case VT_UINT | VT_BYREF :
+
+    SCHEME_BOX_VAL(val) = 
+      scheme_make_integer_value_from_unsigned(*pVariantArg->puintVal);
+    scheme_gc_ptr_ok(pVariantArg->puintVal);
     break;
 
   case VT_R4 | VT_BYREF :

@@ -153,7 +153,6 @@ STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
 // *here* we're coercing VARIANTARG's to be arguments to
 // Scheme procedures; *there*, we're coercing a VARIANT
 // return value to be the value of a method call, and 
-
 // VARIANT's, unlike VARIANTARG's, cannot have VT_BYREF bit
 
 Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
@@ -165,11 +164,27 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
     return scheme_void;
 
+  case VT_I1 :
+
+    return scheme_make_character(pVariantArg->cVal);
+
+  case VT_I1 | VT_BYREF :
+
+    return scheme_box(scheme_make_character(*pVariantArg->pcVal));
+
   case VT_UI1 :
 
     return scheme_make_character((char)(pVariantArg->bVal));
 
   case VT_UI1 | VT_BYREF :
+
+    return scheme_box(scheme_make_character((char)(*pVariantArg->pbVal)));
+
+  case VT_UI2 :
+
+    return scheme_make_character((char)(pVariantArg->bVal));
+
+  case VT_UI2 | VT_BYREF :
 
     return scheme_box(scheme_make_character((char)(*pVariantArg->pbVal)));
 
@@ -183,19 +198,35 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_I4 :
   
-    return scheme_make_integer(pVariantArg->lVal);
+    return scheme_make_integer_value(pVariantArg->lVal);
 
   case VT_I4 | VT_BYREF :
   
-    return scheme_box(scheme_make_integer(*pVariantArg->plVal));
+    return scheme_box(scheme_make_integer_value(*pVariantArg->plVal));
+
+  case VT_UI4 :
+  
+    return scheme_make_integer_value_from_unsigned(pVariantArg->ulVal);
+
+  case VT_UI4 | VT_BYREF :
+  
+    return scheme_box(scheme_make_integer_value_from_unsigned(*pVariantArg->pulVal));
 
   case VT_INT :
 
-    return scheme_make_integer(pVariantArg->intVal);
+    return scheme_make_integer_value(pVariantArg->intVal);
 
   case VT_INT | VT_BYREF :
 
-    return scheme_box(scheme_make_integer(*pVariantArg->pintVal));
+    return scheme_box(scheme_make_integer_value(*pVariantArg->pintVal));
+
+  case VT_UINT :
+
+    return scheme_make_integer_value_from_unsigned(pVariantArg->uintVal);
+
+  case VT_UINT | VT_BYREF :
+
+    return scheme_box(scheme_make_integer_value_from_unsigned(*pVariantArg->puintVal));
 
   case VT_R4 :
 

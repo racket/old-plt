@@ -1871,10 +1871,20 @@ void wxPath::Arc(double x, double y, double w, double h, double start, double en
   double delta, angle, rotate;
   double x0, y0, x1, y1, x2, y2, x3, y3;
   double xx, xy, yy, yx, xtmp1, ytmp1, xtmp2, ytmp2;
-  int did_one = 0, start_cmd = cmd_size;
+  int did_one = 0, start_cmd = cmd_size, start_open;
 
-  if (!ccw) {
-    /* We'll reverse at the end: */
+  start_open = IsOpen();
+
+  /* The arc below is backwards from the MrEd API.... */
+  {
+    double s;
+    s = start;
+    start = end;
+    end = s;
+    ccw = !ccw;
+  }
+
+  if (ccw) {
     double s;
     s = start;
     start = end;
@@ -1958,8 +1968,8 @@ void wxPath::Arc(double x, double y, double w, double h, double start, double en
     did_one = 1;
   } while (delta > 0);
 
-  if (ccw) {
-    Reverse(start_cmd);
+  if (!ccw) {
+    Reverse(start_cmd, start_open);
   }
 }
 
@@ -2048,7 +2058,7 @@ void wxPath::Rotate(double a)
   }
 }
 
-void wxPath::Reverse(int start_cmd)
+void wxPath::Reverse(int start_cmd, Bool start_with_line)
 {
   int e, i, j, pos, n, *cs, controls;
   double *a;
@@ -2101,7 +2111,7 @@ void wxPath::Reverse(int start_cmd)
     pos = 0;
     for (j = n; j--; ) {
       i = cs[j];
-      if (j == n - 1) {
+      if (!start_with_line && (j == n - 1)) {
 	a[pos++] = CMD_MOVE;
       } else if (controls >= 0) {
 	a[pos++] = CMD_CURVE;

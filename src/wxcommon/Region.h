@@ -243,7 +243,7 @@ class wxPath : public wxObject
   void Scale(double x, double y);
   void Rotate(double a);
 
-  void Reverse(int start_cmd = 0);
+  void Reverse(int start_cmd = 0, Bool start_with_line = 0);
 
   void AddPath(wxPath *p);
   

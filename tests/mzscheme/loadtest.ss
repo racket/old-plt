@@ -1,5 +1,3 @@
 
-(unless (with-handlers ([not-break-exn? (lambda (x) #f)])
-	  (namespace-variable-binding 'SECTION)
-	  #t)
+(unless (namespace-variable-value 'SECTION #f (lambda () #f))
   (load-relative "testing.ss"))

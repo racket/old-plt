@@ -1,18 +1,16 @@
 
 (load-relative "loadtest.ss")
 
-(with-handlers ([not-break-exn?
-		 (lambda (exn)
-		   (namespace-variable-binding
-		    'building-flat-tests?
-		    #f))])
-  (namespace-variable-binding'building-flat-tests?))
-(with-handlers ([not-break-exn?
-		 (lambda (exn)
-		   (namespace-variable-binding
-		    'in-drscheme?
-		    #f))])
-  (namespace-variable-binding 'in-drscheme?))
+(namespace-variable-value 
+ 'building-flat-tests?
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'building-flat-tests? #f)))
+(namespace-variable-value 
+ 'in-drscheme?
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'in-drscheme? #f)))
 
 (load-relative "basic.ss")
 (load-relative "read.ss")

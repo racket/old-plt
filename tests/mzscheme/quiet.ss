@@ -1,10 +1,9 @@
 
-(with-handlers ([not-break-exn?
-		 (lambda (exn)
-		   (namespace-variable-binding
-		    'quiet-load
-		    "all.ss"))])
-  (namespace-variable-binding 'quiet-load))
+(namespace-variable-value 
+ 'quiet-load
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'quiet-load "all.ss")))
 
 (let ([p (make-output-port void void)])
   (parameterize ([current-output-port p])

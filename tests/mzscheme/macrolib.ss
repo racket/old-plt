@@ -63,7 +63,7 @@
 (test 120 'local (local [(define (f y) 'ignore-me (add1 y))] (f 119)))
 (test 17 'local (local [(define-values (apple b) (values 12 17))] b))
 (test 4 'local (local [(define-struct cons (car cdr))] (cons-car (make-cons 4 5))))
-(test 40 'local (local [(define-struct (cons struct:exn) (car cdr))] (cons-car (make-cons "" (void) 40 50))))
+(test 40 'local (local [(define-struct (cons exn) (car cdr))] (cons-car (make-cons "" (void) 40 50))))
 (syntax-test #'(local))
 (syntax-test #'(local . 1))
 (syntax-test #'(local ()))

@@ -4,12 +4,11 @@
 
 (load-relative "loadtest.ss")
 
-(with-handlers ([not-break-exn?
-		 (lambda (exn)
-		   (namespace-variable-binding
-		    'expand-load
-		    "quiet.ss"))])
-  (namespace-variable-binding 'expand-load))
+(namespace-variable-value 
+ 'expand-load
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'expand-load "quiet.ss")))
 
 (let ([orig (current-eval)])
   (dynamic-wind

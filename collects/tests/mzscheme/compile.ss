@@ -4,12 +4,11 @@
 
 (load-relative "loadtest.ss")
 
-(with-handlers ([not-break-exn?
-		 (lambda (exn)
-		   (namespace-variable-binding
-		    'compile-load
-		    "quiet.ss"))])
-  (namespace-variable-binding 'compile-load))
+(namespace-variable-value 
+ 'compile-load
+ #f
+ (lambda ()
+   (namespace-set-variable-value! 'compile-load "quiet.ss")))
 
 (define file
   (if #f

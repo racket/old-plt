@@ -158,14 +158,16 @@
 		    (current-exception-handler old-handler)
 		    (error-escape-handler old-esc-handler))))))]))
 
-(unless (with-handlers ([void (lambda (x) #f)])
-	  (namespace-variable-binding 'error-test))
-  (namespace-variable-binding
+(namespace-variable-value
+ 'error-test 
+ #f
+ (lambda ()
+  (namespace-set-variable-value!
    'error-test
    (case-lambda 
     [(expr) (error-test expr exn:application:type?)]
     [(expr exn?)
-     (thunk-error-test (lambda () (eval expr)) expr exn?)])))
+     (thunk-error-test (lambda () (eval expr)) expr exn?)]))))
 
 (require (rename mzscheme err:mz:lambda lambda)) ; so err/rt-test works with beginner.ss
 (define-syntax err/rt-test

@@ -162,7 +162,7 @@
 
 (syntax-test #'(command-line))
 (syntax-test #'(command-line "hello"))
-(syntax-test #'(command-line 'hello #("ok")))
+(err/rt-test (command-line 'hello #("ok")))
 (syntax-test #'(command-line "hello" #("ok") (bad)))
 (syntax-test #'(command-line "hello" #("ok") (once-any ())))
 (syntax-test #'(command-line "hello" #("ok") (once-any ("-ok"))))

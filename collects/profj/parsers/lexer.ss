@@ -18,9 +18,7 @@
   (define-syntax define-open-tokens
     (syntax-rules ()
       ((_ dt group-name list-name (token-symbols ...))
-       (begin 
-         (define list-name '(token-symbols ...))
-         (dt group-name (token-symbols ...))))))
+       (dt group-name (token-symbols ...)))))
   
   ;(provide Operators Separators EmptyLiterals Keywords java-vals special-toks get-token get-syntax-token)
   

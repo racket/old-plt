@@ -3,17 +3,16 @@
   (provide installer)
 
   (define (installer plthome)
-    (let ([java.lang (build-path
-		      (collection-path "profj" "libs" "java" "lang"))])
+    (let ([java.util (build-path
+		      (collection-path "profj" "libs" "java" "util"))])
       (let ([javac
 	     (lambda (file)
 	       (parameterize ([current-load-relative-directory
-			       java.lang])
+			       java.util])
 		 (compile-java 'file
 			       'file
 			       'full
-			       (build-path java.lang file)
+			       (build-path java.util file)
 			       #f
 			       #f)))])
-	(javac "Math.java")
-        (javac "System.java")))))
+	(javac "Random.java")))))

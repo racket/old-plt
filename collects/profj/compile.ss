@@ -139,8 +139,7 @@
           (begin 
             (build-interactions-info ast level location type-recs)
             (check-interactions-types ast level location type-recs)
-            (let ((t (translate-interactions ast location type-recs)))
-              (printf "~a~n" t) t)))))
+            (translate-interactions ast location type-recs)))))
       
   (define-struct elt (prev val next))
   

@@ -1520,7 +1520,7 @@
                  (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-float (build-src key)) ,left ,right) source)))
         ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:mod (build-src key)) ,left ,right) source))
         ;Shift operations
-        ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) ,op ,left ,right) source))
+        ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) (quote ,op) ,left ,right) source))
         ;comparisons
         ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
         ((==) 
@@ -1529,7 +1529,7 @@
              (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source)))
         ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
         ;logicals
-        ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) ,op ,left ,right) source))
+        ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) (quote ,op) ,left ,right) source))
         ;boolean
         ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and (build-src key)) ,left ,right) source))
         ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
@@ -1799,8 +1799,11 @@
                                        ((/=) `(/ ,name ,expr))
                                        ((+=) `(+ ,name ,expr))
                                        ((-=) `(- ,name ,expr))
-                                       ((%= <<= >>= >>>= &= ^= or=) 
-                                        (error 'translate-assignment "Only supports =, +=, -=, *=, & /= at this time"))))))
+                                       ((>>=) `(javaRuntime:shift '>> ,name ,expr))
+                                       ((<<=) `(javaRuntime:shift '<< ,name ,expr))
+                                       ((>>>=) `(javaRuntime:shift '>>> ,name ,expr))
+                                       ((%= &= ^= or=) 
+                                        (error 'translate-assignment "Only supports =, +=, -=, *=, & /= >>= <<= >>>= at this time"))))))
       (cond 
         ((array-access? name)
          (translate-array-mutation name expression assign-to src))

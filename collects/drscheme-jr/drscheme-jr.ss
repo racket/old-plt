@@ -419,6 +419,8 @@
       (eval `(#%define argv ,user-argv))
       (eval `(#%define read/zodiac ,read/zodiac))
       (invoke-open-unit u@)
+      (eval `(allow-improper-lists ,(eq? syntax-level 'advanced)))
+      (eval `(eq?-only-compares-symbols? ,(and (member syntax-level '(core structured)) #t)))
       (read-case-sensitive params:case-sensitive?)
       (current-prompt-read prompt-read)
       (debug-info-handler debug-info)

@@ -108,6 +108,7 @@ please adhere to these guidelines:
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Cancel")
+ (abort "Abort")
  (untitled "Untitled")
  (untitled-n "Untitled ~a")
  (warning "Warning")

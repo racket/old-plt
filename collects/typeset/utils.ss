@@ -15,42 +15,76 @@
 ;;;                                                     ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define ps-figure-editor-admin%
-  (class/d editor-admin% (filename)
-    ((override get-dc
-	       get-max-view
-	       get-view
-	       grab-caret
-	       needs-update
-	       refresh-delayed?
-	       resized
-	       scroll-to
-	       update-cursor))
+  (define ps-figure-editor-admin%
+    (class/d editor-admin% (filename editor)
+      ((override get-dc
+                 get-max-view
+                 get-view
+                 grab-caret
+                 needs-update
+                 refresh-delayed?
+                 resized
+                 scroll-to
+                 update-cursor))
 
-    
-    (define dc
-      (let ([ps-setup (make-object ps-setup%)])
-	(send ps-setup copy-from current-ps-setup)
-	(send ps-setup set-file filename)
-	(parameterize ([current-ps-setup ps-setup])
-	  (make-object postscript-dc% #f))))
-
-    (define (get-dc) dc)
-    (define (get-max-view ) (void))
-    (define (get-view xb yb wb hb full?) (void))))
+      (define dc
+        (let ([ps-setup (make-object ps-setup%)])
+          (send ps-setup copy-from (current-ps-setup))
+          (send ps-setup set-file filename)
+          (send ps-setup set-mode 'file)
+          (parameterize ([current-ps-setup ps-setup])
+            (make-object post-script-dc% #f))))
+      
+      (define (get-dc xb yb)
+        (set-box/f! xb 0)
+        (set-box/f! yb 0)
+        dc)
+      (define (get-max-view xb yb wb hb full?) (get-view xb yb wb hb full?))
+      (define (get-view xb yb wb hb full?) 
+        (let-values ([(w h) (send dc get-size)])
+          (set-box/f! wb w)
+          (set-box/f! hb h))
+        (set-box/f! xb 0)
+        (set-box/f! yb 0))
+      (define (grab-caret domain) (void))
+      (define (needs-update localx localy x y) 
+        (send editor refresh localx localy x y 'no-caret))
+      (define (refresh-delayed?) #f)
+      (define (resized refresh?) 
+        (when refresh?
+          (let-values ([(w h) (send dc get-size)])
+            (send editor refresh 0 0 w h 'no-caret))))
+      
+      (define (scroll-to localx localy w h refresh? bias)
+        (when refresh?
+          (let-values ([(w h) (send dc get-size)])
+            (send editor refresh 0 0 w h 'no-caret))))
+      (define (update-cursor) (void))
+      
+      (super-init)
+      (send editor set-admin this)
+      (send dc start-doc (format "Creating ~a" filename))
+      (send dc start-page)
+      (let-values ([(w h) (send dc get-size)])
+        (send editor refresh 0 0 w h 'no-caret))
+      (send dc end-page)
+      (send dc end-doc)))
       
 
-(define (postscript snip filename)
-  (unless (is-a? snip editor-snip%)
-    (error 'postscript
-	   "expected first argument to be an editor-snip%, got: ~e, other args: ~e"
-	   snip filename))
-  (unless (string? filename)
-    (error 'postscript
-	   "expected second argument to be a string, got: ~e, other args: ~e"
-	   filename
-	   snip))
-  (void))
+  (define (postscript snip filename)
+    (unless (is-a? snip editor-snip%)
+      (error 'postscript
+             "expected first argument to be an editor-snip%, got: ~e, other args: ~e"
+             snip filename))
+    (unless (string? filename)
+      (error 'postscript
+             "expected second argument to be a string, got: ~e, other args: ~e"
+             filename
+             snip))
+    (let* ([editor (send snip get-editor)]
+           [editor-admin (send editor get-admin)])
+      (make-object ps-figure-editor-admin% filename editor)
+      (send editor set-admin editor-admin)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                     ;;;
@@ -817,6 +851,8 @@
 	    (-position position)
 	    (-sup sup) (-sub sub)
 
+            (-postscript postscript)
+            
 	    (-arrow arrow) (-b-arrow b-arrow)
 	    (-g-arrow g-arrow) (-bg-arrow bg-arrow)
 	    (-checked-arrow checked-arrow))
@@ -833,6 +869,8 @@
     (define -sup sup)
     (define -sub sub)
 
+    (define -postscript postscript)
+    
     (define -arrow arrow)
     (define -b-arrow b-arrow)
     (define -g-arrow g-arrow)

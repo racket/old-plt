@@ -4,11 +4,16 @@
 
   (if (defined? 'odbc-version)
 
-      (let ([the-unit (load-relative-extension 
-		       (string-append 
-			"compiled/native/"
-			(system-library-subpath)
-			"/srpersist.so"))])
+      (let ([the-unit 
+	     (load-relative-extension 
+	      (string-append
+	       (build-path 
+		"compiled" "native" 
+		(system-library-subpath)
+		(case (system-type)
+		  [(unix) "srpmain.so"]
+		  [(windows) "srpmain.dll"]
+		  [else (error "Only UNIX and Windows supported")]))))])
     
 	(cond
 	 

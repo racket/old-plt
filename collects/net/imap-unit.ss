@@ -272,7 +272,16 @@
 			     expunges fetches new?))
       (define (imap-connection? v) (imap? v))
       
-      (define imap-port-number (make-parameter 143))
+      (define imap-port-number (make-parameter 143
+					       (lambda (v)
+						 (unless (and (number? v)
+							      (exact? v)
+							      (integer? v)
+							      (<= 1 v 65535))
+						   (raise-type-error 'imap-port-number
+								     "exact integer in [1,65535]"
+								     v))
+						 v)))
 
       (define (imap-connect* r w username password inbox)
 	(with-handlers ([void

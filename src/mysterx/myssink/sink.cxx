@@ -302,7 +302,7 @@ void CSink::handlerUpdateError(char *s) {
 		      "expected type: %s",s);
 }
 
-void CSink::unmarshallSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
+void CSink::unmarshalSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
   Scheme_Object *val;
 
   if (pVariantArg->vt & VT_BYREF) {
@@ -601,13 +601,13 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
 
   for (i = 0; i < positionalParams; i++) {
     pCurrArg = &pDispParams->rgvarg[numParams - 1 - i];
-    unmarshallSchemeObject(argv[i],pCurrArg);
+    unmarshalSchemeObject(argv[i],pCurrArg);
   }
 
   for (i = 0; i < namedParams; i++) {
     pCurrArg = namedArgs[i].pVariantArg;
     j = namedArgs[i].index;
-    unmarshallSchemeObject(argv[j],pCurrArg);
+    unmarshalSchemeObject(argv[j],pCurrArg);
   }
 
   memcpy(&scheme_error_buf, &jmpSave, sizeof(mz_jmp_buf));

@@ -28,7 +28,7 @@ private:
   MYSSINK_TABLE *myssink_table;
 
   Scheme_Object *variantToSchemeObject(VARIANTARG *);
-  void unmarshallSchemeObject(Scheme_Object *,VARIANTARG *);
+  void unmarshalSchemeObject(Scheme_Object *,VARIANTARG *);
   void handlerUpdateError(char *);
 
   int getHashValue(DISPID);

@@ -1350,6 +1350,17 @@ Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 							 scheme_null)));
 }
 
+BOOL isDefaultParam(FUNCDESC *pFuncDesc,short int i) {
+  unsigned short flags;
+
+  if (pFuncDesc->lprgelemdescParam == NULL) {
+    return FALSE;
+  }
+
+  flags = pFuncDesc->lprgelemdescParam[i].paramdesc.wParamFlags;
+  return ((flags & PARAMFLAG_FOPT) && (flags & PARAMFLAG_FHASDEFAULT));
+}
+
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 				     INVOKEKIND invKind) {
   MX_TYPEDESC *pTypeDesc;
@@ -1416,6 +1427,18 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
       }
       else {
 	hiBound = numActualParams - 1;
+      }
+
+      // parameters that are optional with a default value in IDL are not
+      // counted in pFuncDesc->cParamsOpt, so look for default bit flag
+
+      for (i = hiBound - numOptParams; i >= 0; i--) { 
+	if (isDefaultParam(pFuncDesc,i)) {
+	  numOptParams++;
+	}
+	else {
+	  break;
+	}
       }
 
       firstOptArg = hiBound - numOptParams + 1;
@@ -2137,6 +2160,8 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   char errBuff[256];
   short int numParamsPassed;
   short int numOptParams;
+  short int numDefaultParams;
+  BOOL lastParamIsRetval;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
@@ -2149,11 +2174,29 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 	 & PARAMFLAG_FRETVAL))) {
     // last parameter is retval
     numParamsPassed--;
+    lastParamIsRetval = TRUE;
   }
+  else {
+    lastParamIsRetval = FALSE;
+  }
+
+  numDefaultParams = 0;
 
   if (numOptParams == -1) {  // last args get packaged into SAFEARRAY
 
     // this branch is untested
+
+    // optional parameters with default values not counted in pFuncDesc->cParamsOpt
+
+    for (i = numParamsPassed - numOptParams - 1; i >= 0; i--) { 
+      if (isDefaultParam(pFuncDesc,i)) {
+	numOptParams++;
+	numDefaultParams++;
+      }
+      else {
+	break;
+      }
+    }
 
     if (argc < numParamsPassed + 2 - 1) {
       sprintf(errBuff,"%s (%s \"%s\")",
@@ -2163,13 +2206,28 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
       scheme_wrong_count(errBuff,numParamsPassed+1,-1,argc,argv);
     }
   }
-  else if (argc < numParamsPassed - numOptParams + 2 ||  // too few
-	   argc > numParamsPassed + 2) {  // too many
-    sprintf(errBuff,"%s (%s \"%s\")",
-	    mx_fun_string(invKind),
-	    inv_kind_string(invKind),
-	    SCHEME_STR_VAL(argv[1]));
-    scheme_wrong_count(errBuff,numParamsPassed-numOptParams+2,numParamsPassed+2,argc,argv);
+  else {
+
+    // optional parameters with default values not counted in pFuncDesc->cParamsOpt
+
+    for (i = numParamsPassed - numOptParams - 1; i >= 0; i--) { 
+      if (isDefaultParam(pFuncDesc,i)) {
+	numOptParams++;
+	numDefaultParams++;
+      }
+      else {
+	break;
+      }
+    }
+
+    if (argc < numParamsPassed - numOptParams + 2 ||  // too few
+	argc > numParamsPassed + 2) {  // too many
+      sprintf(errBuff,"%s (%s \"%s\")",
+	      mx_fun_string(invKind),
+	      inv_kind_string(invKind),
+	      SCHEME_STR_VAL(argv[1]));
+      scheme_wrong_count(errBuff,numParamsPassed-numOptParams+2,numParamsPassed+2,argc,argv);
+    }
   }
 
   // compare types of actual arguments to prescribed types
@@ -2187,7 +2245,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 			k,argc,argv);
     }
   }
-  
+
   switch(invKind) {
 
   case INVOKE_PROPERTYPUT :
@@ -2234,8 +2292,16 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
+  // use default values
+
+  for (i = numParamsPassed - 1 - (argc - 2),j = 0,k = argc - 2; j < numDefaultParams; i--,j++,k++) {
+    methodArguments->rgvarg[i] = pFuncDesc->lprgelemdescParam[k].paramdesc.pparamdescex->varDefaultValue;
+  }
+
+  // omitted optional arguments
+
   if (numOptParams > 0) {
-    for (i = numParamsPassed - 1 - (argc - 2); i >= 0; i--) {
+    for (i = numParamsPassed - 1 - (argc - 2) - numDefaultParams; i >= 0; i--) {
       VariantInit(&methodArguments->rgvarg[i]);
       methodArguments->rgvarg[i].vt = VT_ERROR;
       methodArguments->rgvarg[i].lVal = DISP_E_PARAMNOTFOUND;
@@ -2420,7 +2486,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (numParamsPassed > 0) {
     scheme_gc_ptr_ok(methodArguments.rgvarg);
   }  
-  
+
   if (invKind == INVOKE_PROPERTYPUT) {
     return scheme_void;
   }

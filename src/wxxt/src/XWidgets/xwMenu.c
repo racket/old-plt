@@ -120,8 +120,8 @@ static XtResource MenuResources[] =
 
 #define VMARGIN 2
 #define ISPACING 4
-#define CHOICE_LEFT 12
-#define CHOICE_RIGHT 2
+#define CHOICE_LEFT 13
+#define CHOICE_RIGHT 1
 
 static void    MenuClassInitialize();
 static void    MenuDestroy();

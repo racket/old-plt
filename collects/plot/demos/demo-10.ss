@@ -1,12 +1,10 @@
 (require (lib "plot.ss" "plot"))
 
-(require (lib "syntax.ss" "plot")
-         (lib "class.ss")
-         (lib "renderer-helpers.ss" "plot"))
+(require (lib "class.ss")
+         (lib "plot-extend.ss" "plot"))
 ; (number -> number) mumbo-jumbo -> 2d-renderer
-(define dashed-line
-  (make-your-own
-  (r-lambda fun 2dview (x-min x-max) ((samples 100) (segments 20) (color 'red) (width 1))    
+(define-plot-type dashed-line
+  fun 2dview (x-min x-max) ((samples 100) (segments 20) (color 'red) (width 1))    
     (let* ((dash-size (/ (- x-max x-min) segments))
            (x-lists (build-list (/ segments 2) 
                                 (lambda (index)                                    
@@ -20,8 +18,8 @@
       (for-each (lambda (dash)
                   (send 2dview plot-line 
                         (map (lambda (x) (vector x (fun x))) dash))) 
-                x-lists)))))
+                x-lists)))
                      ;                                  
 
-(plot (dashed-line (lambda (x) x) '((color red))))
+(plot (dashed-line (lambda (x) x) (color 'red)))
 (plot3d (surface (lambda (x y) (* (sin x) (sin y)))))

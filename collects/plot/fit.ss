@@ -16,9 +16,8 @@
   
   
   
-  ; fit : (number* -> number) (list-of num) (list-of num) [(listof num)] (listof num) (listof-num) -> fit-result
-  ; fit : (number* -> number) (list-of (symbol number)) (list-of (vector number [number] number number)) -> fit-result
-  (define (fit function guesses data) 
+  ; fit-int : (number* -> number) (list-of (symbol number)) (list-of (vector number [number] number number)) -> fit-result
+  (define (fit-int function guesses data) 
     (let* ((independant-vars (- (procedure-arity function) (length guesses)))            
            (f-of-x-y (cond 
                        [(= 1 independant-vars)
@@ -54,7 +53,7 @@
              (lambda args (apply function(append args (car result)))))))))
              
     
-   (provide fit (struct fit-result (rms
+   (provide fit-int (struct fit-result (rms
                              variance
                              names
                              final-params                             

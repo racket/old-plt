@@ -55,7 +55,7 @@
 
 (require (lib "plot.ss" "plot"))
 
-(plot (mix (points experemental-data '((char 16)))
+(plot (mix (points experemental-data (symbol 'circle))
            (error-bars experemental-data))
       (x-min 0) (x-max 40)
       (y-min -40) (y-max 50)
@@ -72,12 +72,12 @@
 (define result
   (fit 
    theta
-   '((a 40) (tau 15) (phi -0.5) (T 15) (theta0 10))
+   ((a 40) (tau 15) (phi -0.5) (T 15) (theta0 10))
    experemental-data))
               
   
-(plot (mix* 
-       (points (map vector times vals) '((char 16) (color red)))
+(plot (mix
+       (points (map vector times vals) (symobol 'square) (color 'black))
        (error-bars experemental-data)
        (line (fit-result-function result)))
       (x-min -5) (x-max 40)

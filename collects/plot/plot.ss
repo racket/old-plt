@@ -24,29 +24,42 @@
       [(_ ren (option value) ...)
        (instantiate 3d-view% () (renderer ren) (option value) ...)]))
  
-  ; mix : renderer renderer -> renderer
+  ; mix-int : renderer renderer -> renderer
   ; creates a renderer that will renderer both of the inputs
-  (define (mix renderer1 renderer2)
+  (define (mix-int renderer1 renderer2)
     (lambda (view)
       (send view reset-to-default)
       (renderer1 view)
       (send view reset-to-default)
       (renderer2 view)))
+
   
-  ; mix* : renderer+ -> renderer
+  ; mix : renderer+ -> renderer
   ; combine any number of renderers
-  (define (mix* r1 . the-rest)
+  (define (mix r1 . the-rest)
     (if (empty? the-rest) 
         r1
-        (mix r1 (apply mix* the-rest))))
+        (mix-int r1 (apply mix the-rest))))
     
   ; make-2d-renderer : (2d-view% -> void)
   ; provides a user with the ability to create their own renderers
   ; without providing the implimentation
-  (define make-2d-renderer identity)
+  (define custom identity)
+  
+  ;;
+  (define-syntax fit
+    (syntax-rules ()
+      [(_ func ((param guess) ...) data)
+       (fit-int func 
+                '((param guess) ...)
+                data)]))
+        
     
 
   (provide
+   
+   ;fitting
+   fit
    
    ; to make plots
    plot
@@ -54,8 +67,7 @@
 
    ; to combine/create renderers
    mix
-   mix*
-   make-2d-renderer
+   custom
    
    ; 2d-renderers
    error-bars

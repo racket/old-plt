@@ -1065,9 +1065,7 @@
 			  "no matching clause"
 			  ((debug-info-handler)))))
 	    (out-pattern-3-no-error
-	      (if (language<=? 'structured)
-		out-pattern-3-signal-error
-		'(#%void)))
+	      '(#%void))
 	    (in-pattern-4 (if (language<=? 'side-effecting)
 			    '()		; will never match
 			    '(_ (item) rest ...)))

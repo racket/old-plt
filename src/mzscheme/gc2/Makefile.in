@@ -12,7 +12,9 @@ RANLIB = @RANLIB@
 CFLAGS = @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @GC2OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
 LIBS = @LIBS@
 
-XFORM = ../mzscheme -rq $(srcdir)/xform.ss "$(CPP) $(CFLAGS)"
+PRE_MZ@OSX@ = env DYLD_FRAMEWORK_PATH="`pwd`/.."
+PRE_MZ@NOT_OSX@ = 
+XFORM = $(PRE_MZ) ../mzscheme -rq $(srcdir)/xform.ss "$(CPP) $(CFLAGS)"
 XSRCDIR = xsrc
 SRCDIR = $(srcdir)/../src
 

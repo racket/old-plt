@@ -1,13 +1,16 @@
 
 Version 204.4
-Mac OS Classic: `file-size' result no longer includes
+Added custodian-managed-list
+Changed vector-set-performance-stats! to accept an optional
+ thread argument for thread-specific stats
+Mac OS Classic: file-size result no longer includes
  the resource-fork size
 
 Version 204.2
-Added a `super-new' local form to (lib "class.ss")
+Added a super-new local form to (lib "class.ss")
 
 Version 204.1
-Added a `new' form to (lib "class.ss")
+Added a new form to (lib "class.ss")
 Changed the expansion-time information associated with a
  struct type to include an identifier for the super-type
 Added an optional argument to system-library-subath

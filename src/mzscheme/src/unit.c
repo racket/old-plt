@@ -2063,21 +2063,23 @@ Scheme_Object *scheme_invoke_unit(Scheme_Object *unit, int num_ins,
 				  int open, const char *prefix,
 				  int tail, int multi)
 {
-  InvokeUnitData data;
+  InvokeUnitData *data;
   Scheme_Object *v;
 
-  data.expr = unit;
+  data = MALLOC_ONE(InvokeUnitData);
 
-  data.num_exports = num_ins;
-  data.exports = ins;
-  data.anchors = anchors;
+  data->expr = unit;
 
-  data.path = (open ? scheme_null : NULL);
-  data.const_prefix = (prefix 
-		       ? scheme_intern_symbol(prefix) 
-		       : scheme_false);
+  data->num_exports = num_ins;
+  data->exports = ins;
+  data->anchors = anchors;
+
+  data->path = (open ? scheme_null : NULL);
+  data->const_prefix = (prefix 
+			? scheme_intern_symbol(prefix) 
+			: scheme_false);
   
-  v = InvokeUnit((Scheme_Object *)&data);
+  v = InvokeUnit((Scheme_Object *)data);
 
   if (tail)
     return v;
@@ -2098,6 +2100,7 @@ Scheme_Object *scheme_invoke_unit(Scheme_Object *unit, int num_ins,
 static void *do_unit_k()
 {
   Scheme_Process *p = scheme_current_process;
+  Scheme_Object *v;
   Scheme_Object **boxes;
   Scheme_Object **anchors;
   Scheme_Unit *m;
@@ -2113,7 +2116,9 @@ static void *do_unit_k()
   p->ku.k.p3 = NULL;
   p->ku.k.p4 = NULL;
 
-  return (void *)do_unit(boxes, anchors, m, debug_request);
+  v = do_unit(boxes, anchors, m, debug_request);
+
+  return scheme_force_value(v);
 }
 
 static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
@@ -2222,9 +2227,11 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
     }
   }
 
-  if (result_expr)
+  if (result_expr) {
+    /* We'd like to have something like tail_eval here. */
+    /* return _scheme_eval_compiled_expr_multi(result_expr); */
     return _scheme_tail_eval(result_expr);
-  else
+  } else
     return scheme_void;
 }
 

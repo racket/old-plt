@@ -2382,9 +2382,6 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   SCHEME_USE_FUEL(25);
 
-  /* In case nested thread starts a child thread: */
-  scheme_ensure_stack_start(scheme_current_process, &failure);
-  
   np = MALLOC_ONE(Scheme_Process);
   np->type = scheme_process_type;
   np->running = MZTHREAD_RUNNING;
@@ -2415,6 +2412,9 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->overflow_set = p->overflow_set;
   memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
 
+  /* In case it's not yet set in the main thread... */
+  scheme_ensure_stack_start(np, &failure);
+  
   np->list_stack = p->list_stack;
   np->list_stack_pos = p->list_stack_pos;
 

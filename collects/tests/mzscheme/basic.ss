@@ -1807,6 +1807,8 @@
 			  [() x]
 			  [(a) (set! x (cons a x)) a]))])
 
+	     (test 0 hash-table-count h1)
+
 	     ;; Fill in table. Use `puts1' and `puts2' so we can
 	     ;; vary the order of additions.
 	     (let ([puts1 (lambda ()
@@ -1824,9 +1826,16 @@
 			    (hash-table-put! h1 (save an-ax) 'structx)
 			    (hash-table-put! h1 (save b) 'box))])
 	       (if reorder?
-		   (begin (puts2) (puts1))
-		   (begin (puts1) (puts2))))
+		   (begin 
+		     (puts2) 
+		     (test 6 hash-table-count h1)
+		     (puts1))
+		   (begin 
+		     (puts1) 
+		     (test 6 hash-table-count h1)
+		     (puts2))))
 
+	     (test 12 hash-table-count h1)
 	     (test 'list hash-table-get h1 l)
 	     (test 'list hash-table-get h1 (list 1 2 3))
 	     (test 'another-list hash-table-get h1 (list 5 7))
@@ -1863,6 +1872,7 @@
 		     (,an-ax . structx)
 		     (#&(1 2 3) . box)))
 	     (hash-table-remove! h1 (list 1 2 3))
+	     (test 11 hash-table-count h1)
 	     (test 'not-there hash-table-get h1 l (lambda () 'not-there))
 	     (let ([c 0])
 	       (hash-table-for-each h1 (lambda (k v) (set! c (add1 c))))
@@ -1919,6 +1929,7 @@
   (test-del-eq '(equal))
   (test-del-eq '(weak)))
 
+(err/rt-test (hash-table-count 0))
 (err/rt-test (hash-table-put! 1 2 3))
 (err/rt-test (hash-table-get 1 2))
 (err/rt-test (hash-table-remove! 1 2))
@@ -1954,6 +1965,7 @@
 
 (arity-test make-hash-table 0 2)
 (arity-test make-immutable-hash-table 1 2)
+(arity-test hash-table-count 1 1)
 (arity-test hash-table-get 2 3)
 (arity-test hash-table-put! 3 3)
 (arity-test hash-table-remove! 2 2)

@@ -364,11 +364,11 @@
 ;; identifier-binding
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(test '(#%kernel lambda mzscheme lambda)  identifier-binding #'lambda)
-(test '(#%more-scheme delay mzscheme delay)  identifier-binding #'delay)
-(test '(#%kernel #%module-begin mzscheme #%plain-module-begin)  identifier-binding #'#%plain-module-begin)
+(test '(#%kernel lambda mzscheme lambda #f)  identifier-binding #'lambda)
+(test '(#%more-scheme delay mzscheme delay #f)  identifier-binding #'delay)
+(test '(#%kernel #%module-begin mzscheme #%plain-module-begin #f)  identifier-binding #'#%plain-module-begin)
 (require (rename mzscheme #%pmb #%plain-module-begin))
-(test '(#%kernel #%module-begin mzscheme #%plain-module-begin)  identifier-binding #'#%pmb)
+(test '(#%kernel #%module-begin mzscheme #%plain-module-begin #f)  identifier-binding #'#%pmb)
 
 (let ([b (identifier-binding (syntax-case (expand #'(module m mzscheme
 						      (require (rename (lib "htdp-intermediate.ss" "lang") bcons cons))

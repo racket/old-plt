@@ -97,7 +97,7 @@ typedef short Type_Tag;
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 #define RECORD_MARK_SRC 0
-#define KEEP_BACKPOINTERS 0
+#define KEEP_BACKPOINTERS 1
 
 #if TIME
 # include <sys/time.h>
@@ -116,6 +116,8 @@ static long mark_stack_pos = 0;
 #if KEEP_BACKPOINTERS
 # undef RECORD_MARK_SRC
 # define RECORD_MARK_SRC 1
+# undef GENERATIONS
+# define GENERATIONS 0
 #endif
 
 #if RECORD_MARK_SRC
@@ -4356,7 +4358,7 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 
 #if KEEP_BACKPOINTERS
 # define MAX_FOUND_OBJECTS 50
-int GC_trace_for_tag = 57;
+int GC_trace_for_tag = 47;
 static int found_object_count;
 static void *found_objects[MAX_FOUND_OBJECTS];
 #endif
@@ -4459,14 +4461,18 @@ void *print_out_pointer(const char *prefix, void *p)
     } else {
       GCPRINT(GCOUTF, "%s<#%d> %p\n", prefix, tag, p);
     }
-  } else if (page->type == MTYPE_TAGGED_ARRAY) {
+  } else if (page->type == MTYPE_ARRAY) {
     GCPRINT(GCOUTF, "%sARRAY %p\n", prefix, p);
   } else if (page->type == MTYPE_TAGGED_ARRAY) {
+    GCPRINT(GCOUTF, "%sTARRAY %p\n", prefix, p);
+  } else if (page->type == MTYPE_ATOMIC) {
     GCPRINT(GCOUTF, "%sATOMIC!? %p\n", prefix, p);
   } else if (page->type == MTYPE_XTAGGED) {
     GCPRINT(GCOUTF, "%sXTAGGED %p\n", prefix, p);
-  } else
+  } else {
+    GCPRINT(GCOUTF, "%s?!? %p\n", prefix, p);
     return NULL;
+  }
 
   if (page->flags & MFLAG_BIGBLOCK)
     return (void *)page->backpointer_page;
@@ -4713,6 +4719,6 @@ void GC_dump(void)
     }
   }
   GCPRINT(GCOUTF, "End Trace\n");
-  GC_trace_for_tag = 57;
+  GC_trace_for_tag = 47;
 #endif
 }

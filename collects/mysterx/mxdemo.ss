@@ -146,3 +146,5 @@
 
 (send ctrldoc handle-events)
 
+(let ([melt (send ctrldoc find-element "BUTTON" "Tomorrow")])
+  (send melt set-filter! "Blur(1,30,15)"))

@@ -18,6 +18,9 @@
 	  [append-html
 	   (lambda (s)
 	     (element-append-html elt s))]
+	  [replace-html
+	   (lambda (s)
+	     (element-replace-html elt s))]
 	  [insert-text 
 	   (lambda (s)
 	     (element-insert-text elt s))]

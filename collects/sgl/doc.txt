@@ -1,195 +1,271 @@
 _GL_/_OpenGL_ bindings for PLT Scheme
 
-Sgl provides access to the system's GL library, version 1.3 and
-earlier.  The GL library and hence the sgl binding do not address the
-attachment of GL rendering contexts to displays or other system level
-concerns; they only include drawing commands.  Thus sgl should work
-with any PLT Scheme extension that provides GL with access to the
-system (such as a binding for glx) but does not itself provide
-functionality for managing screen resources.  mred (and hence
-DrScheme) supports sending GL commands to a window on (at least)
-Windows, Linux and OS X systems (see mred's gl-context<%> interface).
+Sgl provides access to the system's GL library, version 1.5, and GLU library,
+version 1.3.  The GL API and hence the sgl library do not address system level
+concerns, such as the attachment of GL rendering contexts to displays.  The
+sgl library should work with any PLT Scheme extension that provides GL with
+access to the system (such as a binding for glx).  DrScheme and mred
+automatically attach a GL rendering context to each canvas% object on (at
+least) Windows, Linux and OS X systems.  Refer to the gears.ss example
+(${PLTHOME}/collects/sgl/examples/gears.ss) and the with-gl-context method on
+canvas% objects for more information on using the built-in GL rendering
+context support.
 
-The invocation of a function from version x raises an exception
-(exn:fail) on a system with a GL version prior to x.  All GLenum
-constants from version x have values of -1 on systems with previous
-versions.
+Sgl has two layers, gl.ss and sgl.ss.  The gl.ss library provides access to
+the C-language-style GL API, whereas the sgl.ss library provides a more
+Scheme-like interface.  The gl.ss library provides a binding for each #defined
+constant and for most functions in GL 1.5 and GLU 1.3.  The functions perform
+comparable checking to their C-language counterparts; they check the types of
+their arguments, but do not check the length of array arguments.  The sgl.ss
+library provides wrappers around many of the functions in the gl.ss library to
+present a more Scheme-friendly interface, including function names that follow
+Scheme conventions, and checked, symbolic enumeration arguments, and
+array-length checks.
 
-The sgl binding has two layers.  The gl and gl-unsafe libraries
-provide access to the C-language style GL API.  The sgl library
-provides access to the GL API through a more Scheme-like interface.
-Sgl also includes a homogeneous vector extension to support GL
-functions that have array arguments.
-
-Many thanks to Robert Kooima who wrote the GL binding that the gl and
-gl-unsafe modules are based on.  Thanks also to Brendan Burns for the
-GLU addition, bug fixes and the gl-frame.ss and alpha.ss files in the
-examples subdirectory.
-
-
-_gl-vectors.ss_
-
-The gl-vectors module provides homogeneous vectors of the different
-kinds of numbers.  12 functions are provided for each of 9 kinds of
-vectors: gl-double-vector, gl-float-vector, gl-int-vector,
-gl-short-vector, gl-byte-vector, gl-uint-vector, gl-ushort-vector,
-gl-ubyte-vector, and gl-boolean-vector.
-
-The functions follow (replace [type] with double, float, etc.):
-
-(gl-[type]-vector n ...) returns a gl-[type]-vector containing the
-given numbers n.
-
-(make-gl-[type]-vector i n) returns a gl-[type]-vector of length i,
-with n at every index.  The n argument is optional.
-
-(vector->gl-[type]-vector v) takes a Scheme vector and converts it to
-a gl-[type]-vector.  It fails if v is not a vector containing only
-Scheme real numbers.
-
-(gl-[type]-vector->vector v) takes a gl-[type]-vector and returns a
-Scheme vector with the same numbers.
-
-(gl-[type]-vector-ref v i) returns the ith element of v.  It fails if
-i is greater than or equal to the length of v.
-
-(gl-[type]-vector-set! v i n) sets the ith element of the
-gl-[type]-vector v to n.  It fails if (i >= length of v) or if n is
-not a Scheme real number.
-
-(gl-[type]-vector-length v) returns the number of elements in the
-gl-[type]-vector v.
-
-(gl-[type]-vector? v) returns #t if v is a gl-[type]-vector and #f
-otherwise.
-
-(gl-[type]-vector+ v1 v2) returns a new gl-[type]-vector that is the
-element-by-element sum of gl-[type]-vectors v1 and v2.
-
-(gl-[type]-vector- v1 v2) returns a new gl-[type]-vector that is the
-element-by-element difference of gl-[type]-vectors v1 and v2.
-
-(gl-[type]-vector* r v) returns a new gl-[type]-vector with element i
-equal to r times the ith element of gl-[type]-vector v.
-
-(gl-[type]-vector-norm v) returns the square root of the sum of the
-squares of the elements of gl-[type]-vector v.
+Safety:
+GL programming is inherently unsafe, even when using only the sgl.ss library.
+Although sgl.ss checks the arguments to each function call, violation of
+higher-level assumptions of the system's GL library can cause it to crash,
+bringing the entire Scheme system down.  For example, sending a large number
+of vertices in a single glBegin causes at least some GL implementations to
+crash.
 
 _gl.ss_
 
-Use the gl module by adding (require (lib "gl.ss" "sgl")) to your
-program.  The gl module provides a direct interface to the system's
-underlying interface closely following the conventions of the
-C-language GL API.  However, the functions provided by the gl module
-check their arguments and raise an exception when given the wrong kind
-of value or an array of the wrong length.  The gl.ss module provides a
-binding for each GLenum constant to its integer value and also a
-binding for each function listed at the end of this document.
+Use the gl.ss module by adding (require (lib "gl.ss" "sgl")) to your program.
+The gl.ss module provides a direct interface to the system's GL library
+closely following the conventions of the C-language GL API.  It provides a
+binding for each #defined constant (these start with GL_) and for the
+functions in the GL 1.5 and GLU 1.3 specifications, except for the following.  
+Vertex arrays		(GL 1.5, Section 2.8)
+Buffer objects		(GL 1.5, Section 2.9)
+glGetPointerv		(GL 1.5, Section 6.1.11)
+Buffer object queries	(GL 1.5, Section 6.1.13)
+Polygon tessalation	(GLU 1.3, Section 5)
+gluQuadricCallback	(GLU 1.3, Section 6.2)
+NURBS			(GLU 1.3, Section 7)
+
+If one of the provided functions is not present on your system (e.g. if your
+system supports GL 1.3), the function will raise a run-time exception when
+invoked.  Similarly, missing #define constants are defined as -1.
+
+Types:
+The functions provided by gl.ss perform comparable checking to their
+C-language counterparts; they check the types of their arguments, but do not
+check the length of array arguments.  The following chart details what Scheme
+values can be passed in for each primitive GL type.
+GLtype				Scheme value
+------------------------------------------------------------------------------
+GLbyte, GLshort, GLint		exact integer in the proper range
+GLubyte, GLushort, GLuint	non-negative exact integer in the proper range
+GLsizei, GLenum, GLbitfield	non-negative exact integer in the proper range
+GLfloat, GLdouble		real number
+GLclampf, GLclampd		real number
+GLboolean			Any value, interpreted such that
+                                   #f is GL_FALSE and anything else is GL_TRUE
+				   (This means that you should not usually
+				    GL_FALSE or GL_TRUE as arguments, since
+				    they are bound to integers, both will end
+				    up being converted to GL_TRUE.)
+				    
+GL functions that take vector arguments accept cvector values.  Section 2.4 of
+the PLT Foreign Interface Manual describes the functions for creating and
+manipulating cvectors (make-cvector, cvector, cvector?, cvector-length,
+cvector-type, cvector-ref, cvector-set!, cvector->list, and list->cvector).
+The type of the cvector is checked: for example, glVertex3fv expects a vector
+of GLfloats, and will only accept a cvector containing GLfloats.  The
+gl-vector.ss module provides cvector operations that account for the GL type
+information.  Functions that accept arrays of type void* will accept any
+cvector, you must ensure that you supply the proper kind of vector, as in the
+C-language GL API.
+
+The following functions have interfaces that differ from their C-language
+counterparts.  The function index at the end of this document refers back
+to these notes for each function.
+
+1: glPixelMap
+   glDeleteTextures
+   glDeleteQueries
+These functions do not take a size argument, it is derived from the length of
+the argument vector.
+
+2: glGenTextures
+   glGenQueries
+These functions do not take vector arguments.  Instead, they allocate a vector
+of the requested size and return it.
+
+3: glAreTexturesResident
+This function takes in a single uint vector, textures, and returns 2 values:
+the specified boolean and a boolean vector residences.
+
+4: glGetBooleanv
+   glGetIntegerv
+   glGetFloatv
+   glGetDoublev
+   glGetLight
+   glGetMaterial
+   glGetTexEnv
+   glGetTexGen
+   glGetTexParameter
+   glGetTexLevelParameter
+   glGetPixelMap
+   glGetMap
+   glGetBufferParameter
+   glGetConvolutionParameter
+   glGetHistogramParameter
+   glGetMinmaxParameter
+   glGetQuery
+   glGetQueryObject
+Instead of taking a vector argument, these function take an integer argument
+that specifies the size of the vector which is returned.
+
+5: glGetClipPlane
+This function does not take a vector argument and returns a double vector of
+length 4.
+
+6: glGetString
+   gluCheckExtension
+   gluErrorString
+   gluGetString
+These functions deal with strings instead of ubyte vectors.
+
+7: gluProject
+   gluUnProject
+   gluUnProject4
+Instead of taking pointers to doubles for return values, these function
+directly return double vectors.
+
+8: glSelectBuffer
+   glFeedbackBuffer
+These functions do not take vectors, instead they return a
+selection-buffer-object or feedback-buffer-object.  The gl.ss library provides
+the functions select-buffer->gl-uint-vector and
+feedback-buffer->gl-float-vector to copy the contents of the buffer into a
+vector.  Because the GL library writes to the buffer-object on GL function
+calls after glSelectBuffer or glFeedbackBuffer has returned, if the buffer is
+garbage collected before GL is finished writing to it, the entire Scheme
+system can crash.  The process-selection function in sgl helps interpret the
+results of glSelectBuffer in a Scheme-friendly format.
+
 
 Notational Example:
 (require (lib "gl.ss" "sgl")
          (lib "gl-vectors.ss" "sgl"))
 (glBegin GL_TRIANGLES)
 (glVertex3i 1 2 3)
-(glVertex4fv (vector->gl-float-vector (vector 1 2 3 4)))
+(glVertex4fv (gl-float-vector 1 2 3 4))
 (glEnd)
 
 See alpha.ss in the examples subdirectory of the sgl collection
-(${PLT-HOME}/collects/sgl/examples/alpha.ss) for a working example.
-Try choosing the sk.jpg file in the icons when this example asks you
-for a file.  You may have to press "t" a few times if the spinning
-cube is blank.
+(${PLTHOME}/collects/sgl/examples/alpha.ss) for a working example.  Try
+choosing the sk.jpg file in the icons when this example asks you for a file.
+You may have to press "t" a few times if the spinning cube is blank.
 
-_gl-unsafe.ss_
 
-Use the gl-unsafe module by adding (require (lib "gl-unsafe.ss" "sgl"))
-to your program.  The gl-unsafe module follows the conventions of the
-gl module except that function arguments are not necessarily checked,
-so an incorrect call to a gl-unsafe function could crash the entire
-Scheme system.  gl-unsafe includes GL functions that are not in gl
-because appropriate checks have not been added to them or appropriate
-checks cannot be added to them.
+_gl-vectors.ss_
+
+The gl-vectors module supports GL programming with cvectors.  In this
+document, and in the error messages, a gl-vector is just a cvector, from (lib
+"foreign.ss"), and a gl-<type>-vector is a cvector with an appropriate type.
+Use this module by adding (require (lib "gl-vectors.ss" "sgl")) to your
+program.  I suggest using this module instead of using the cvector function
+directly because these functions are specialized to handling the GL typedefs
+correctly.
+
+The gl-vectors.ss module provides the following functions, which are synonyms
+for the corresponding cvector functions:
+gl-vector->vector
+gl-vector->list
+gl-vector-length
+gl-vector-ref
+gl-vector-set!
+gl-vector?
+
+Furthermore, for each <type> in byte, ubyte, short, ushort, int, uint, float,
+double, boolean gl-vectors.ss provides the following functions:
+gl-<type>-vector?: any -> boolean
+  True when the argument is a gl-<type>-vector
+make-gl-<type>-vector: non-negative-integer -> gl-<type>-vector
+  Makes a gl-<type>-vector of the given length
+gl-<type>-vector: X ... -> gl-<type>-vector
+  Makes a gl-<type>-vector from the given arguments
+vector->gl-<type>-vector: vector -> gl-<type>-vector
+  Converts a Scheme vector into the specified gl-<type>-vector
+list->gl-<type>-vector: vector -> gl-<type>-vector
+  Converts a Scheme list into the specified gl-<type>-vector
+gl-<type>-vector+: gl-vector ... -> gl-type-vector
+  Computes the element-by-element sum of the given gl-vectors and places the
+  result into a gl-<type>-vector
+gl-<type>-vector-: gl-vector ... -> gl-type-vector
+  Computes the element-by-element difference of the given gl-vectors and
+  places the result into a gl-<type>-vector
+gl-<type>-vector*: real-number gl-vector -> gl-type-vector
+  Multiplies each element of the given gl-vector by the given number and
+  places the result into a gl-<type>-vector
+
+Finally, the following functions are also provided.
+gl-vector-norm: gl-vector -> real-number
+  Returns the square root of the sum of the squares of the elements of the
+  given gl-vector 
 
 _sgl.ss_
 
-Use the sgl module by adding (require (lib "sgl.ss" "sgl)) to your
-program.  To prefix the function names with "gl-" use the form
-(require (prefix gl- (lib "sgl.ss" "sgl"))) instead.  The sgl module
-provides a more Scheme-like interface to the GL functions in gl (sgl
-does not provide an interface to the functions of gl-unsafe).
+Use the sgl.ss module by adding (require (lib "sgl.ss" "sgl)) to your program.
+To prefix the function names with "gl-" use the form (require (prefix gl- (lib
+"sgl.ss" "sgl"))) instead.  The sgl.ss module provides a more Scheme-like
+interface to the GL functions in gl.ss.
 
-Functions in sgl take symbols instead of integers for GLenum
-arguments.  Each function checks that the given symbol is an
-acceptable argument and raises an exception if it is not.  Given the
-name of a C-language "#define" constant, determine the corresponding
-symbolic argument by removing the leading "GL_", converting the
-letters to lower-case and replacing all underscores with dashes.  For
-example, GL_TRIANGLES becomes 'triangles and GL_TRIANGLE_STRIP becomes
-'triangle-strip.
+Functions in sgl.ss take symbols instead of integers for GLenum arguments.
+Each function checks that the given symbol is an acceptable argument and
+raises an exception if it is not.  Given the name of a C-language #define
+constant, determine the corresponding symbolic argument by removing the
+leading "GL_", converting the letters to lower-case and replacing all
+underscores with dashes.  For example, GL_TRIANGLES becomes 'triangles and
+GL_TRIANGLE_STRIP becomes 'triangle-strip.  Additionally, the functions check
+the length of any array arguments to ensure that GL does not attempt to write
+or read after the array.
 
-The functions in sgl use Scheme style names instead of C style names.
-To convert a C GL name to a Scheme GL name, drop the leading "gl" (use
-the require form to choose whatever prefix you desire, as above),
-separate adjacent words with hyphens, and convert to all lower case.
-Functions that have several variants to accommodate different numbers
-and types of arguments are collapsed into one or two functions in sgl.
-For example, sgl provides two vertex functions, vertex and vertex-v.
-The vertex function accepts 2, 3 or 4 numerical arguments, and the
-vertex-v function accepts gl-vectors of length 2, 3 or 4.  The C
-language GL interface has 24 vertex functions glVertex3i, glVertex4fv,
-etc.
+The functions in sgl.ss use Scheme style names instead of C style names.  To
+convert a C GL name to a Scheme GL name, drop the leading "gl" (use the
+require form to choose whatever prefix you desire, as above), separate
+adjacent words with hyphens, and convert to all lower case.  Functions that
+have several variants to accommodate different numbers and types of arguments
+are collapsed into one or two functions in sgl.ss.  For example, sgl.ss
+provides two vertex functions, vertex and vertex-v.  The vertex function
+accepts 2, 3 or 4 numerical arguments, and the vertex-v function accepts
+gl-vectors of length 2, 3 or 4.  The C language GL interface has 24 vertex
+functions glVertex3i, glVertex4fv, etc.
 
-The sgl module is not yet complete and many functions from the gl
-module do not yet have counterparts in the sgl module.  See the list
-of functions below.
+
+The sgl.ss module is not yet complete and many functions from the gl module do
+not yet have counterparts in the sgl.ss module.  See the list of functions
+below.
 
 Notational Example:
 (require (prefix gl- (lib "sgl.ss" "sgl"))
          (lib "gl-vectors.ss" "sgl"))
 (gl-begin 'triangles)
 (gl-vertex 1 2 3)
-(gl-vertex-v (vector->gl-float-vector (vector 1 2 3 4)))
+(gl-vertex-v (gl-float-vector 1 2 3 4))
 (gl-end)
 
 See gears.ss in the examples subdirectory of the sgl collection
-(${PLT-HOME}/collects/sgl/examples/gears.ss) for a working example.
+(${PLTHOME}/collects/sgl/examples/gears.ss) for a working example.  Also see
+the checkers game in ${PLTHOME}/collects/games/checkers/checkers.ss.
 
-sgl provides the following utility functions that have no OpenGL
-counterpart:
+sgl provides the following utility functions that have no OpenGL counterpart:
 
 process-selection: gl-uint-vector int -> (listof selection-record)
 where a selection-record is defined by this exported struct: 
 (define-struct selection-record (min-z max-z stack)).
-process-selection parses the contents of a gl-vector from the format 
-used by glSelectBuffer.  The second argument should be the number
-of hits as returned by glRenderMode.
+process-selection parses the contents of a gl-vector from the format used by
+glSelectBuffer.  The second argument should be the number of hits as returned
+by glRenderMode.
 
 
 
 Function indexes:
 
-
-Notes: (Functions marked below with * have notes here)
-
-In the C language GL API values are often returned by reference parameters.
-The gl and sgl modules instead directly return a value in the following 
-cases:
-
-gluUnProject: GLdouble GLdouble GLdouble GLdouble[16] GLdouble[16] GLint[4] ->
-              #f or GLdouble[3]
-
-gluUnProject4: GLdouble GLdouble GLdouble GLdouble GLdouble[16] GLdouble[16]
-               GLint[4] GLdouble GLdouble -> #f or GLdouble[4]
-
-
-glSelectBuffer accepts an integer and returns a gl-memory-block that
-  encapsulates a block of memory the specified number of GLuints in 
-  size.  The GL library writes to the block on later GL function calls.
-  The values in the block can be extracted with a call to
-  gl-mem-blk->gl-uint-vector.  If the block is garbage collected before GL 
-  is finished writing to it, the entire Scheme system can crash.
-  The process-selection function in sgl helps interpret the results of
-  glSelectBuffer in a Scheme-friendly format.
 
 ----------------------------  sgl.ss: ----------------------------
 (struct selection-record (min-z max-z stack))
@@ -326,49 +402,6 @@ window-pos
 window-pos-v
 
 -----------------------------  gl.ss:  -----------------------------
-1: glPixelMap
-   glDeleteTextures
-   glDeleteQueries
-
-2: glGenTextures
-   glGenQueries
-
-3: glAreTexturesResident
-
-4: glGetBooleanv
-   glGetIntegerv
-   glGetFloatv
-   glGetDoublev
-   glGetLight
-   glGetMaterial
-   glGetTexEnv
-   glGetTexGen
-   glGetTexParameter
-   glGetTexLevelParameter
-   glGetPixelMap
-   glGetMap
-   glGetBufferParameter
-   glGetConvolutionParameter
-   glGetHistogramParameter
-   glGetMinmaxParameter
-   glGetQuery
-   glGetQueryObject
-
-5: glGetClipPlane
-   gluPickMatrix
-
-6: glGetString
-   gluCheckExtension
-   gluErrorString
-   gluGetString
-
-7: gluProject
-   gluUnProject
-   gluUnProject4
-
-8: glSelectBuffer
-   glFeedbackBuffer
-
 glAccum
 glActiveTexture
 glAlphaFunc
@@ -838,7 +871,7 @@ gluNewQuadric
 gluOrtho2D
 gluPartialDisk
 gluPerspective
-gluPickMatrix			*5
+gluPickMatrix
 gluProject			*7
 gluQuadricDrawStyle
 gluQuadricNormals

@@ -4,6 +4,14 @@
   
   (provide (all-defined-except get-unsigned-type get-signed-type make-gl-vector-type))
 
+  (define _float*
+    (make-ctype _float 
+                (lambda (n)
+                  (if (exact? n)
+                      (exact->inexact n)
+                      n))
+                #f))
+  
   (define (get-unsigned-type size)
     (case size
       ((1) _uint8)
@@ -43,9 +51,9 @@
   (define _gl-sizei (get-unsigned-type gl-sizei-size))
   (define _gl-enum (get-unsigned-type gl-enum-size))
   (define _gl-bitfield (get-unsigned-type gl-bitfield-size))
-  (define _gl-float _float)
+  (define _gl-float _float*)
   (define _gl-double _double*)
-  (define _gl-clampf _float)
+  (define _gl-clampf _float*)
   (define _gl-clampd _double*)
 
   (define _gl-bytev (make-gl-vector-type _gl-byte))

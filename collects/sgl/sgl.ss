@@ -237,12 +237,12 @@
 
   ;; 2.7
   (_provide vertex vertex-v
-           tex-coord tex-coord-v
-           multi-tex-coord multi-tex-coord-v
-           (rename glNormal3d normal) normal-v
-           color color-v
-           (rename glSecondaryColor3d secondary-color) secondary-color-v
-           (rename glIndexd index) index-v)
+            tex-coord tex-coord-v
+            multi-tex-coord multi-tex-coord-v
+            (rename glNormal3d normal) normal-v
+            color color-v
+            (rename glSecondaryColor3d secondary-color) secondary-color-v
+            (rename glIndexd index) index-v)
 
   (multi-arg vertex glVertex () (2 3 4))
   (multi-type-v vertex-v glVertex () (2 3 4) (dv iv fv sv) #t)
@@ -282,16 +282,16 @@
   
   ;; 2.11.2
   (_provide matrix-mode load-matrix mult-matrix
-           load-transpose-matrix mult-transpose-matrix
-           (rename glLoadIdentity load-identity)
-           (rename glRotated rotate)
-           (rename glTranslated translate)
-           (rename glScaled scale)
-           (rename glFrustum frustum)
-           (rename glOrtho ortho)
-           active-texture
-           (rename glPushMatrix push-matrix)
-           (rename glPopMatrix pop-matrix))
+            load-transpose-matrix mult-transpose-matrix
+            (rename glLoadIdentity load-identity)
+            (rename glRotated rotate)
+            (rename glTranslated translate)
+            (rename glScaled scale)
+            (rename glFrustum frustum)
+            (rename glOrtho ortho)
+            active-texture
+            (rename glPushMatrix push-matrix)
+            (rename glPopMatrix pop-matrix))
   
   (make-enum-table matrix-mode-table
                    GL_MODELVIEW GL_PROJECTION GL_TEXTURE GL_COLOR)
@@ -399,7 +399,7 @@
   
   ;; 2.13
   (_provide raster-pos raster-pos-v
-           window-pos window-pos-v)
+            window-pos window-pos-v)
   (multi-arg raster-pos glRasterPos () (2 3 4))
   (multi-type-v raster-pos-v glRasterPos () (2 3 4) (dv iv fv sv) #t)
   (multi-arg window-pos glWindowPos () (2 3))
@@ -432,8 +432,6 @@
     (cond
       ((and (exact? n) (integer? n))
        (i v0 v1 n))
-      ((exact? n)
-       (f v0 v1 (exact->inexact n)))
       (else
        (f v0 v1 n))))
   
@@ -503,8 +501,6 @@
       (cond
         ((and (exact? param) (integer? param))
          (glLightModeliv v param))
-        ((exact? param)
-         (glLightModelfv v (exact->inexact param)))
         (else
          (glLightModelfv v param)))))
       
@@ -541,9 +537,9 @@
 
   ;; 3.3 
   (_provide (rename glPointSize point-size)
-           ;; point-parameter
-           ;; point-parameter-v
-           )
+            ;; point-parameter
+            ;; point-parameter-v
+            )
   
   ;; 3.4
   (_provide (rename glLineWidth line-width))
@@ -585,8 +581,6 @@
       (cond
         ((and (exact? param) (integer? param))
          (glPixelStorei v param))
-        ((exact? param)
-         (glPixelStoref v (exact->inexact param)))
         (else
          (glPixelStoref v param)))))
   
@@ -626,8 +620,8 @@
 
   ;; 4.1.7
   (_provide begin-query end-query
-           (rename glGenQueries gen-queries)
-           (rename glDeleteQueries delete-queries))
+            (rename glGenQueries gen-queries)
+            (rename glDeleteQueries delete-queries))
   (make-enum-table query-table GL_SAMPLES_PASSED)
   (define (begin-query target id)
     (glBeginQuery (query-table target 'begin-query) id))
@@ -638,17 +632,17 @@
 
   ;; 4.2.2
   (_provide (rename glIndexMask index-mask)
-           (rename glColorMask color-mask)
-           (rename glDepthMask depth-mask)
-           (rename glStencilMask stencil-mask))
+            (rename glColorMask color-mask)
+            (rename glDepthMask depth-mask)
+            (rename glStencilMask stencil-mask))
   
   ;; 4.2.3
   (_provide clear
-           (rename glClearColor clear-color)
-           (rename glClearIndex clear-index)
-           (rename glClearDepth clear-depth)
-           (rename glClearStencil clear-stencil)
-           (rename glClearAccum clear-accum))
+            (rename glClearColor clear-color)
+            (rename glClearIndex clear-index)
+            (rename glClearDepth clear-depth)
+            (rename glClearStencil clear-stencil)
+            (rename glClearAccum clear-accum))
   (make-enum-table clear-table
                    GL_ACCUM_BUFFER_BIT GL_COLOR_BUFFER_BIT
                    GL_DEPTH_BUFFER_BIT GL_STENCIL_BUFFER_BIT)
@@ -676,7 +670,7 @@
 
   ;; 5.1
   (_provide ;map1 map2
-           eval-coord eval-coord-v map-grid eval-mesh eval-point)
+            eval-coord eval-coord-v map-grid eval-mesh eval-point)
   (multi-arg eval-coord glEvalCoord () (1 2))
   (multi-type-v eval-coord-v glEvalCoord () (1 2) (dv fv) #t)
   (define map-grid
@@ -695,35 +689,35 @@
 
   ;; 5.2
   (_provide (rename glInitNames init-names)
-           (rename glPopName pop-name)
-           (rename glPushName push-name)
-           (rename glLoadName load-name)
-           render-mode
-           select-buffer->gl-uint-vector)
+            (rename glPopName pop-name)
+            (rename glPushName push-name)
+            (rename glLoadName load-name)
+            render-mode
+            select-buffer->gl-uint-vector)
   (make-enum-table render-mode-table GL_RENDER GL_SELECT GL_FEEDBACK)
   (define (render-mode x)
     (glRenderMode (render-mode-table x 'render-mode)))
 
   ;; 5.3
   (_provide feedback-buffer->gl-float-vector
-           (rename glPassThrough pass-through))
+            (rename glPassThrough pass-through))
   
   ;; 5.4
   (_provide new-list
-           (rename glEndList end-list)
-           (rename glCallList call-list)
-           ;call-lists
-           (rename glListBase list-base)
-           (rename glGenLists gen-lists)
-           (rename glIsList is-list)
-           (rename glDeleteLists delete-lists))
+            (rename glEndList end-list)
+            (rename glCallList call-list)
+            ;call-lists
+            (rename glListBase list-base)
+            (rename glGenLists gen-lists)
+            (rename glIsList is-list)
+            (rename glDeleteLists delete-lists))
   (make-enum-table new-list-table GL_COMPILE GL_COMPILE_AND_EXECUTE)
   (define (new-list n mode)
     (glNewList n (new-list-table mode 'new-list)))
 
   ;; 5.5
   (_provide (rename glFlush flush)
-           (rename glFinish finish))
+            (rename glFinish finish))
   
   ;; 5.6
   (_provide hint)
@@ -738,7 +732,7 @@
 
   ;; 6.1.1
   (_provide ;glGetBooleanv glGetIntegerv glGetFloatv glGetDoublev
-           is-enabled)
+            is-enabled)
   (define (is-enabled e)
     (glIsEnabled (enable-table e 'is-enabled)))
 
@@ -746,7 +740,7 @@
 
   ;; 6.1.11
   (_provide ;get-pointer-v
-           get-string)
+            get-string)
   
   (make-enum-table get-string-table
                    GL_VENDOR GL_RENDERER GL_VERSION GL_EXTENSIONS)
@@ -755,23 +749,23 @@
 
   ;; 6.1.12
   (_provide (rename glIsQuery is-query)
-           ;get-query get-query-object
-           )
+            ;get-query get-query-object
+            )
   
   ;; 6.1.13
   (_provide (rename glIsBuffer is-buffer)
-           ; get-buffer-sub-data get-buffer-pointer-v
-           )
+            ; get-buffer-sub-data get-buffer-pointer-v
+            )
   
   ;; 6.1.14
   (_provide ;push-attrib push-client-attrib
-           (rename glPopAttrib pop-attrib)
-           (rename glPopClientAttrib pop-client-attrib))
+   (rename glPopAttrib pop-attrib)
+   (rename glPopClientAttrib pop-client-attrib))
   
-
+  
   ;; 2
   (_provide u-get-string
-           (rename gluCheckExtension check-extension))
+            (rename gluCheckExtension check-extension))
   (make-enum-table u-get-string-table GLU_VERSION GLU_EXTENSIONS)
   (define (u-get-string x)
     (gluGetString (u-get-string-table x 'u-get-string)))
@@ -780,9 +774,9 @@
 
   ;; 4.1
   (_provide (rename gluOrtho2D ortho-2d)
-           (rename gluPerspective perspective)
-           (rename gluLookAt look-at)
-           pick-matrix)
+            (rename gluPerspective perspective)
+            (rename gluLookAt look-at)
+            pick-matrix)
   (define (pick-matrix a b c d v)
     (unless (gl-int-vector? v)
       (raise-type-error 'pick-matrix
@@ -856,8 +850,8 @@
   
   ;; 6.3
   (_provide quadric-normals 
-           (rename gluQuadricTexture quadric-texture)
-           quadric-orientation quadric-draw-style)
+            (rename gluQuadricTexture quadric-texture)
+            quadric-orientation quadric-draw-style)
   
   (make-enum-table quadric-normals-table GLU_NONE GLU_FLAT GLU_SMOOTH)
   (define (quadric-normals q e)
@@ -874,15 +868,15 @@
   
   ;; 6.4
   (_provide (rename gluCylinder cylinder)
-           (rename gluDisk disk)
-           (rename gluSphere sphere)
-           (rename gluPartialDisk partial-disk))
-
+            (rename gluDisk disk)
+            (rename gluSphere sphere)
+            (rename gluPartialDisk partial-disk))
+  
   ;; 7 not implemented
   
   ;; 8
   (_provide ;error-string
-           )
+            )
   
   ;; Utils
   

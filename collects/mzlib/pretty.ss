@@ -4,64 +4,10 @@
 
 ; Pretty-printer for MzScheme
 ;  Handles structures, cycles, and graphs
-;
-; Procedures:
-;
-;  (pretty-print v) - pretty-prints v (like `write')
-;  (pretty-print v port) - pretty-prints v to port
-;
-;  (pretty-display ...) - like pretty-print, but prints like `display'
-;                         instead of like `write'
-;
-;  pretty-print-columns - parameter for the default number of columns
-;    or 'infinity; initial setting: 79
-;
-;  pretty-print-print-line - parameter of a procedure that prints
-;   to separate each line; 0 indicate before the first line, #f after the
-;   last line
-;
-;  pretty-print-depth - parameter for the default print depth
-;    initial setting: #f (= infinity)
-;
-;  pretty-print-size-hook - parameter for the print size hook; returns #f to
-;                           let pretty-printer handle it, number otherwise
-;    initial setting: (lambda (x display? port) #f)
-;
-;  pretty-print-print-hook - parameter for the print hook, called when the
-;                              size-hook returns a non-#f value
-;    initial setting: (lambda (x display? port) (void))
-;
-;  pretty-print-display-string-handler - parameter for the string display
-;                              procedure, called to finally write text
-;                              to the port
-;
-;  pretty-print-pre-print-hook - parameter for a procedure that is called
-;                                just before each object is printed
-;    initial setting: (lambda (x port) (void))
-;
-;  pretty-print-post-print-hook - parameter for a procedure that is called
-;                                 just after each object is printed
-;    initial setting: (lambda (x port) (void))
-;
-;  pretty-print-show-inexactness - parameter for printing #i before an
-;                                  inexact number
-;    initial setting: #f
-;
-;  pretty-print-exact-as-decimal - parameter for printing exact numbers
-;                                  with decimal representations in decimal
-;                                  notation instead of fractions
-;    initial setting: #f
-;
-;  (pretty-print-handler v) - pretty-prints v if v is not #<void>
-;
-;  (pretty-print-style symbol like-symbol) - informs pretty-print to use 
-;                                            for symbol the same style as
-;                                            currently used for like-symbol
-;
+
 ; TO INSTALL this pretty-printer into a MzScheme's read-eval-print loop,
 ;  load this file and evaluate:
 ;      (current-print pretty-print-handler)
-
 
 ;; Matthew's changes:
 ;; Modified original for MrEd Spring/95
@@ -92,32 +38,53 @@
 	   pretty-print-show-inexactness
 	   pretty-print-exact-as-decimal
 	   pretty-print-.-symbol-without-bars
-           pretty-print-style
 
 	   pretty-print-style-table?
-	   pretty-print-make-style-table
-	   pretty-print-current-style-table)
+	   pretty-print-current-style-table
+           pretty-print-extend-style-table)
 
    (define-struct pretty-print-style-table (hash))
-   (define pretty-print-make-style-table
-     (lambda (old-table)
-       (when old-table
-	 (unless (pretty-print-style-table? old-table)
-	   (raise-type-error
-	    'pretty-print-make-style-table 
-	    "pretty-print style table"
-	    old-table)))
-       (let ([ht (make-hash-table)])
-	 (when old-table
-	   (hash-table-for-each
-	    (pretty-print-style-table-hash old-table)
-	    (lambda (k v)
-	      (hash-table-put! ht k v))))
-	 (make-pretty-print-style-table ht))))
+
+   (define pretty-print-extend-style-table
+     (lambda (table symbols like-symbols)
+       (let ([terr (lambda (kind which)
+                     (raise-type-error
+                      'pretty-print-extend-style-table
+                      kind
+                      which
+                      table symbols like-symbols))])
+         (unless (or (not table) (pretty-print-style-table? table))
+           (terr "pretty-print style table or #f" 0))
+         (unless (and (list? symbols)
+                      (andmap symbol? symbols))
+           (terr "list of symbols" 1))
+         (unless (and (list? like-symbols)
+                      (andmap symbol? like-symbols))
+           (terr "list of symbols" 1))
+         (unless (= (length symbols) (length like-symbols))
+           (raise-mismatch-error
+            'pretty-print-extend-style-table
+            (format "length of first list (~a) doesn't match the length of the second list (~a): "
+                    (length symbols) (length like-symbols))
+            like-symbols)))
+       (let ([ht (if table (pretty-print-style-table-hash table) (make-hash-table))]
+             [new-ht (make-hash-table)])
+         (hash-table-for-each
+          ht
+          (lambda (key val)
+            (hash-table-put! new-ht key val)))
+         (for-each
+          (lambda (symbol like-symbol)
+            (let ((s (hash-table-get ht
+                                     like-symbol
+                                     (lambda () #f))))
+              (hash-table-put! new-ht symbol (or s like-symbol))))
+          symbols like-symbols)
+         (make-pretty-print-style-table new-ht))))
 
    (define pretty-print-current-style-table 
      (make-parameter 
-      (pretty-print-make-style-table #f)
+      (pretty-print-extend-style-table #f null null)
       (lambda (s)
 	(unless (pretty-print-style-table? s)
 	  (raise-type-error
@@ -125,15 +92,6 @@
 	   "pretty-print style table"
 	   s))
 	s)))
-
-   (define pretty-print-style
-     (lambda (symbol like-symbol)
-       (let ([ht (pretty-print-style-table-hash 
-		  (pretty-print-current-style-table))])
-	 (let ((s (hash-table-get ht
-				  like-symbol
-				  (lambda () #f))))
-	   (hash-table-put! ht symbol (or s like-symbol))))))
 
    (define pretty-print-.-symbol-without-bars
      (make-parameter #f (lambda (x) (and x #t))))

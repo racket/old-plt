@@ -25,22 +25,20 @@
 (test "#'a" pp-string '#'a)
 
 (test #t pretty-print-style-table? (pretty-print-current-style-table))
-(test #t pretty-print-style-table? (pretty-print-make-style-table #f))
-(test #t pretty-print-style-table? (pretty-print-make-style-table (pretty-print-current-style-table)))
+(test #t pretty-print-style-table? (pretty-print-extend-style-table #f null null))
+(test #t pretty-print-style-table? (pretty-print-extend-style-table (pretty-print-current-style-table) null null))
 
 (parameterize ([pretty-print-columns 20])
   (test "(1234567890 1 2 3 4)" pp-string '(1234567890 1 2 3 4))
   (test "(1234567890xx\n  1\n  2\n  3\n  4)" pp-string '(1234567890xx 1 2 3 4))
   (test "(lambda 1234567890\n  1\n  2\n  3\n  4)" pp-string '(lambda 1234567890 1 2 3 4))
-  (let ([table (pretty-print-make-style-table #f)])
-    (parameterize ([pretty-print-current-style-table table])
-      (pretty-print-style 'lambda 'list)
+  (let ([table (pretty-print-extend-style-table #f null null)])
+    (parameterize ([pretty-print-current-style-table 
+                    (pretty-print-extend-style-table table '(lambda) '(list))])
       (test "(lambda\n  1234567890\n  1\n  2\n  3\n  4)" pp-string '(lambda 1234567890 1 2 3 4)))
     (test "(lambda 1234567890\n  1\n  2\n  3\n  4)" pp-string '(lambda 1234567890 1 2 3 4))
     (parameterize ([pretty-print-current-style-table table])
-      (test "(lambda\n  1234567890\n  1\n  2\n  3\n  4)" pp-string '(lambda 1234567890 1 2 3 4)))
-    (parameterize ([pretty-print-current-style-table (pretty-print-make-style-table table)])
-      (test "(lambda\n  1234567890\n  1\n  2\n  3\n  4)" pp-string '(lambda 1234567890 1 2 3 4)))))
+      (test "(lambda 1234567890\n  1\n  2\n  3\n  4)" pp-string '(lambda 1234567890 1 2 3 4)))))
 
 (parameterize ([pretty-print-exact-as-decimal #t])
   (test "10" pp-string 10)
@@ -60,6 +58,13 @@
   (test "1/9+3/17i" pp-string 1/9+3/17i)
   (test "0.333" pp-string #i0.333)
   (test "2.0+1.0i" pp-string #i2+1i))
+
+(err/rt-test (pretty-print-extend-style-table 'ack '(a) '(b)))
+(err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) 'a '(b)))
+(err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) '(1) '(b)))
+(err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) '(a) 'b))
+(err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) '(a) '(1)))
+(err/rt-test (pretty-print-extend-style-table (pretty-print-current-style-table) '(a) '(b c)) exn:application:mismatch?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Manual part

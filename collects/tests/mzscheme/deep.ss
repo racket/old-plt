@@ -23,7 +23,7 @@
     (if (zero? t)
 	(find-loop (* 2 d) (time-it (lambda () (go (* 2 d)))))
 	(begin
-	  ; (printf "~a in ~a~n" d t)
+	  (printf "~a in ~a~n" d t)
 	  (let* ([d2 (* 2 d)]
 		 [t2 (time-it (lambda () (go d2)))])
 	    (if (> (/ t2 d2) (* 2.2 (/ t d)))

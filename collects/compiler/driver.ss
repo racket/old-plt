@@ -1,8 +1,6 @@
 ;; Compiler driver routines 
 ;; (c) 1996-7 Sebastian Good
 
-(require-library "compiles.ss" "compiler.ss")
-
 (unit/sig
  compiler:driver^
   (import (compiler:option : compiler:option^)

@@ -155,3 +155,7 @@ void scheme_ensure_stack_start(Scheme_Process *p, void *d)
       || (STK_COMP((unsigned long)p->stack_start, (unsigned long)d)))
     p->stack_start = d;
 }
+
+# if defined(__CYGWIN32__)
+/* Need mzscheme_setjmp & mzscheme_longjmp */
+#endif

@@ -409,10 +409,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define DO_STACK_CHECK
 # define WINDOWS_FIND_STACK_BOUNDS
 
-# if defined(_MSC_VER)
-#  define USE_MZ_SETJMP
-# endif
-# define STACK_SAFETY_MARGIN 20000
+# define USE_MZ_SETJMP
 
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE

@@ -4942,21 +4942,30 @@ static const struct scm_prim scm_prim[] = {
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
   Scheme_Env *mod_env;
-  double ver = 
+  long glver = 
 #ifdef GL_VERSION_1_3
-  1.3
+  13
 #else
 #ifdef GL_VERSION_1_2
-  1.2
+  12
 #else
-  1.1
+  11
 #endif
 #endif
 ;
+  long gluver =
+#ifdef GLU_VERSION_1_3
+  13
+#else
+  12
+#endif
+;
+
   mod_env = scheme_primitive_module(scheme_intern_symbol("gl-prims"), env);
   scheme_load_enum(mod_env);
   scheme_load_prim(mod_env, scm_prim, sizeof(scm_prim));
-  scheme_add_global("gl-version", scheme_make_double(ver), mod_env);
+  scheme_add_global("gl-version", scheme_make_integer_value(glver), mod_env);
+  scheme_add_global("glu-version", scheme_make_integer_value(gluver), mod_env);
   scheme_finish_primitive_module(mod_env);
 
   return scheme_void;

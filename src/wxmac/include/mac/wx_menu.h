@@ -193,5 +193,7 @@ private:
 	friend class wxFrame;
 };
 
+extern void wxPrepareMenuDraw(void);
+
 #endif // IN_CPROTO
 #endif // wx_menuh

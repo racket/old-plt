@@ -76,6 +76,22 @@ New methods:
 >  sort :: (send a-list sort less-than-proc) - sorts items in the list
      by calling `less-than-proc' on pairs of items.
 
+>  can-do-edit-operation? :: (send a-list can-do-edit-operation? sym bool)
+     - like the method on editor<%>s; returns #f always
+
+>  do-edit-operation :: (send a-list do-edit-operation sym bool)
+     - like the method on editor<%>s; does nothing
+
+>  select-prev :: (send a-list select-prev)
+>  select-next :: (send a-list select-next)
+>  select-first :: (send a-list select-first)
+>  select-last :: (send a-list select-last)
+>  select-in :: (send a-list select-in)
+>  select-out :: (send a-list select-out)
+>  page-up :: (send a-list page-up)
+>  page-down :: (send a-list page-down)
+     - Move the selection and scroll
+
 --------------------------------------------------
 
 > hierarchical-list-item<%>, instantiate via new-item

@@ -218,7 +218,7 @@
 			  (if zos?
 			      ;; Verbose compilation manager:
 			      (parameterize ([manager-trace-handler (lambda (s) (printf "~a~n" s))])
-			        (map managed-compile-zo filtered-sses))
+			        (map (make-caching-managed-compile-zo) filtered-sses))
 			      ;; Old collection compiler:
 			      (make-collection
 			       ((or info (lambda (a f) (f)))

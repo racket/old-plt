@@ -687,31 +687,17 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
 
 void wxListBox::SetFirstItem(int N)
 {
-  Point Nc;
   LongPt desired = {N,0}; // cell = {row, col}
-  Point dest = {0,0};
+  Point dest;
 
   SetCurrentDC();
-  
-  Nc.v = N;
-  Nc.h = 0;
-  
+
+  dest.v = VIEW_RECT_OFFSET + 1 + SetOriginY;
+  dest.h = VIEW_RECT_OFFSET + SetOriginX;
+
   ALAutoScroll(dest,&desired,cListReference);
 
   ReleaseCurrentDC();
-
-  /*   LRect(&rect, Nc, cListHandle);
-       if (rect.top != 0) {
-       int amt = rect.top / (**cListHandle).cellSize.v;
-       if (rect.top % (**cListHandle).cellSize.v) {
-       if (rect.top < 0)
-       --amt;
-       else
-       amt++;
-       }
-       LScroll(0, amt, cListHandle);
-       }
-       */
 }
 
 void wxListBox::SetFirstItem(char *s) 

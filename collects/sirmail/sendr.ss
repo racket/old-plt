@@ -194,22 +194,21 @@
                            "base64")]
               [d (instantiate dialog% ("Enclosure" mailer-frame)
                    [alignment '(left center)])])
-          (send d set-label-position 'vertical)
-          (make-object message% "File:" d)
           (make-object message% (string-append 
-                                 "  "
+                                 "File: "
                                  (let ([l (string-length filename)])
-                                   (if (l . < . 198)
+                                   (if (l . < . 58)
                                        filename
                                        (string-append
                                         (substring filename 0 5)
                                         "..."
-                                        (substring filename (- l 190) l)))))
+                                        (substring filename (- l 50) l)))))
             d)
-          (let ([type-list (make-object list-box% "Type:" types d void)]
-                [encoding-list (make-object list-box% "Encoding:" encodings d void)]
+          (let ([type-list (make-object choice% "Type:" types d void)]
+                [encoding-list (make-object choice% "Encoding:" encodings d void)]
                 [button-panel (instantiate horizontal-pane% (d)
-                                [alignment '(right center)])]
+                                [alignment '(right center)]
+                                [stretchable-height #f])]
                 [ok? #f])
             (let-values ([(ok cancel) (gui-utils:ok/cancel-buttons
                                        button-panel
@@ -218,18 +217,13 @@
                                          (send d show #f))
                                        (lambda (b e)
                                          (send d show #f)))])
-              (send d reflow-container)
               (let ([default (lambda (t e)
                                (letrec ([findpos (lambda (l s)
                                                    (if (string=? (car l) s)
                                                        0
                                                        (add1 (findpos (cdr l) s))))])
-                                 (let ([p (findpos types t)])
-                                   (send type-list set-selection p)
-                                   (send type-list set-first-visible-item p))
-                                 (let ([p (findpos encodings e)])
-                                   (send encoding-list set-selection p)
-                                   (send encoding-list set-first-visible-item p))))]
+				 (send type-list set-selection (findpos types t))
+				 (send encoding-list set-selection (findpos encodings e))))]
                     [suffix (let ([m (regexp-match "[.](.?.?.?)$" filename)])
                               (and m (cadr m)))])
                 (case (if suffix (string->symbol suffix) '???)
@@ -425,7 +419,7 @@
 	(make-object separator-menu-item% file-menu)
 	(make-object menu-item% "Add Enclosure..." file-menu
 		     (lambda (i env)
-		       (let ([file (get-file)])
+		       (let ([file (get-file "Get Enclosure" mailer-frame)])
 			 (when file
                            (let-values ([(type encoding) (get-enclosure-type-and-encoding file mailer-frame)])
                              (when (and type encoding)

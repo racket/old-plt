@@ -100,6 +100,7 @@ wxMenuBar::~wxMenuBar(void)
   wxMenu *menu;
 
   if (last_installed_bar == this) {
+    wxPrepareMenuDraw();
     ::ClearMenuBar();
     last_installed_bar = NULL;
   }
@@ -114,10 +115,14 @@ wxMenuBar::~wxMenuBar(void)
   }
 }
 
+void wxPrepareMenuDraw(void)
+{
+  SetPort(wxGetGrafPtr());
+}
 
 static void wxInvalMenuBar(void)
 {
-  SetPort(wxGetGrafPtr());
+  wxPrepareMenuDraw();
   ::DrawMenuBar();
 }
 

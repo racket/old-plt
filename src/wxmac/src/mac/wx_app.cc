@@ -182,7 +182,7 @@ void wxApp::doMacPreEvent()
   wxCheckFinishedSounds();
 
   if (!w && !noWinMode) {
-    ::SetPort(wxGetGrafPtr());
+    wxPrepareMenuDraw();
     ::ClearMenuBar();
     wxSetUpAppleMenu(NULL);
     {
@@ -283,7 +283,7 @@ void wxApp::doMacMouseDown(void)
 	    theMacWxFrame->OnMenuClick();
 	}
 
-	SetPort(wxGetGrafPtr());
+	wxPrepareMenuDraw();
 	menuResult = MenuSelect(cCurrentEvent.where);
 	doMacInMenuBar(menuResult, FALSE);
       }
@@ -519,13 +519,13 @@ void wxApp::doMacKeyUpDown(Bool down)
       if (cCurrentEvent.modifiers & cmdKey) { // is menu command key equivalent ?
 	if (cCurrentEvent.what == keyDown) { // ignore autoKey
 	  long menuResult;
-	  SetPort(wxGetGrafPtr());
+	  wxPrepareMenuDraw();
 	  menuResult = MenuEvent(&cCurrentEvent);
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE))
 	      return;
 	    else {
-	      SetPort(wxGetGrafPtr());
+	      wxPrepareMenuDraw();
 	      HiliteMenu(0);
 	    }
 	  }
@@ -797,7 +797,7 @@ void wxApp::doMacMouseMovedMessage(void)
 
 static void UnhiliteMenu()
 {
-  SetPort(wxGetGrafPtr());
+  wxPrepareMenuDraw();
   HiliteMenu(0);
 }
 

@@ -584,6 +584,7 @@ wxCursor::wxCursor(wxBitmap *mask, wxBitmap *bm, int hotSpotX, int hotSpotY)
 # define hackWATCH_CURSOR 0x3
 # define hackIBEAM_CURSOR 0x5
 # define hackCROSS_CURSOR 0x7
+# define hackHAND_CURSOR 0x9
 
 wxCursor::wxCursor(int cursor_type)
 {
@@ -610,6 +611,7 @@ wxCursor::wxCursor(int cursor_type)
       }
     case wxCURSOR_HAND:
       {
+	cMacCursor = (Cursor **)hackHAND_CURSOR;
 	break;
       }
     case wxCURSOR_BULLSEYE:
@@ -740,6 +742,8 @@ void wxSetCursor(wxCursor *cursor)
 	  SetThemeCursor(kThemeIBeamCursor);
 	else if (cursor->cMacCursor == (Cursor **)hackCROSS_CURSOR)
 	  SetThemeCursor(kThemeCrossCursor);
+	else if (cursor->cMacCursor == (Cursor **)hackHAND_CURSOR)
+	  SetThemeCursor(kThemeOpenHandCursor);
 	else if (cursor->cMacCursor) {
 	  ::SetCursor(*(cursor->cMacCursor));
 	} else

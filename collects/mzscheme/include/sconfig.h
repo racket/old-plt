@@ -211,6 +211,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define POW_HANDLES_INF_CORRECTLY
 
+# define USE_FCNTL_O_NONBLOCK
+
 # define USE_TIMEZONE_VAR_W_DLS
 
 # define FLAGS_ALREADY_SET
@@ -354,6 +356,7 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # undef HAS_STANDARD_IOB
 # undef FILES_HAVE_FDS
+# undef USE_FD_PORTS
 # define USE_BEOS_PORT_THREADS
 
 # undef UNIX_PROCESSES
@@ -619,7 +622,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 #if defined(_MSC_VER)
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
-# define DOUBLE_CHECK_NEG_ZERO_UNDERFLOW
 #endif
 #ifdef __CYGWIN__
 # define USE_DIVIDE_MAKE_INFINITY
@@ -765,6 +767,7 @@ int scheme_win32_semaphore_try_down(void *);
 # define DONT_IGNORE_PIPE_SIGNAL
 
 # define POW_HANDLES_INF_CORRECTLY
+# define TRIG_ZERO_NEEDS_SIGN_CHECK
 
 # define USE_MAC_TCP
 
@@ -850,6 +853,7 @@ int scheme_win32_semaphore_try_down(void *);
 # define DONT_IGNORE_FPE_SIGNAL
 
 # define POW_HANDLES_INF_CORRECTLY
+# define USE_PALM_INF_TESTS
 
 # define FLAGS_ALREADY_SET
 
@@ -1201,8 +1205,8 @@ int scheme_pthread_semaphore_try_down(void *);
     negative inexact number x by computing the result for -x and negating
     it. Use this if (inexact->exact -0.1) is wrong. */
 
- /* DOUBLE_CHECK_NEG_ZERO_UNDERFLOW watches for stdtod parsing underflow on
-    negative numbers as 0.0 */
+ /* TRIG_ZERO_NEEDS_SIGN_CHECK defines versions of tan, sin, atan, and
+    asin that preserve the sign of a zero argument. */
 
   /***********************/
  /* Stack Maniuplations */

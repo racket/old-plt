@@ -70,7 +70,9 @@
 #endif
 
 #ifdef PALMOS_STUFF
-#include <PalmOS.h>
+# include <PalmOS.h>
+typedef long FILE;
+# define _LINUX_TYPES_H  /* Blocks types.h */
 #endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED
@@ -93,6 +95,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+
+#ifdef PALMOS_STUFF
+typedef jmpbuf jmp_buf[1];
+#endif
 
 #ifdef __cplusplus
 extern "C" 
@@ -1194,6 +1200,11 @@ void scheme_register_static(void *ptr, long size);
 #else
 # define MZ_REGISTER_STATIC(x) /* empty */
 #endif
+
+void scheme_setup_forced_exit(void);
+
+void scheme_start_atomic(void);
+void scheme_end_atomic(void);
 
 #endif /* SCHEME_DIRECT_EMBEDDED */
 

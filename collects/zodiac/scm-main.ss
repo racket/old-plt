@@ -1515,7 +1515,7 @@
 			(z:string? (quote-form-expr f)))
 		    (expand-expr
 		      (structurize-syntax
-			`(#%load/use-compiled ,(quote-form-expr f))
+			`(#%load-relative ,(quote-form-expr f))
 			expr)
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))

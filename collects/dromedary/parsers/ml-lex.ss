@@ -82,28 +82,30 @@
 
      (define-syntax (token stx)
        (syntax-case stx ()
-         [(_ name val)
-          (identifier? (syntax name))
-          (let ([name (syntax name)])
-            (with-syntax ([token-name (datum->syntax-object
-                                       name
-                                       (string->symbol
-                                        (format "token-~a" (syntax-e name))))]
-                          [source-name (datum->syntax-object name 'source-name)]
-                          [start-pos (datum->syntax-object name 'start-pos)]
-                          [end-pos (datum->syntax-object name 'end-pos)])
-              (syntax (let ([start start-pos]
-                            [end end-pos])
-                        (token-name 
-			 (datum->syntax-object #f val
-					       (list
-						source-name
-						(position-line start)
-						(position-col start)
-						(position-offset start)
-						(- (position-offset end)
-						   (position-offset start)))
-					       stx-for-original-property))))))]))
+	[(_ name val)
+	 (identifier? (syntax name))
+	 (let ([name (syntax name)])
+	   (with-syntax ([token-name (datum->syntax-object
+				      name
+				      (string->symbol
+				       (format "token-~a" (syntax-e name))))]
+			 [source-name (datum->syntax-object name 'source-name)]
+			 [start-pos (datum->syntax-object name 'start-pos)]
+			 [end-pos (datum->syntax-object name 'end-pos)])
+			(syntax (let ([start start-pos]
+				      [end end-pos])
+				  (token-name 
+				   (datum->syntax-object #f val
+							 (list
+							  source-name
+							  (position-line start)
+							  (position-col start)
+							  (position-offset start)
+							  (- (position-offset end)
+							     (position-offset start)))
+							 stx-for-original-property))))))]))
+
+
 
      (define-syntax (delay-token stx)
        (syntax-case stx ()
@@ -232,7 +234,21 @@
 	[(: decimal_literal hex_literal oct_literal bin_literal) 
 								   (token INT (string->number lexeme))]
 	[float_literal (token FLOAT (string->number lexeme))]
-	[#\" (token STRING (list->string (get-string input-port)))]
+	[#\" (let* ([string-got (get-string input-port)]
+;		   [goo (printf "~a , ~a" (position-offset start-pos) (position-offset (cdr string-got)))]
+		   )
+	       (token-STRING 
+		(datum->syntax-object #f
+				      (list->string (car string-got))
+				      (list
+				       source-name
+				       (position-line start-pos)
+				       (position-col start-pos)
+				       (position-offset start-pos)
+				       (- (position-offset (cdr string-got))
+					  (position-offset start-pos)))
+				      stx-for-original-property)))]
+
 	[(@ #\' (: #\^ #\\ #\') #\') 
 	 (token CHAR (string-ref lexeme 1))]
 	[(@ #\' #\\ (: #\\ #\' #\n #\t #\b #\r) #\')
@@ -315,12 +331,20 @@
 
 (define get-string
   (lexer
-   (#\" null)
-   (escape_sequence (cons (escape_sequence->char lexeme)
-			   (get-string input-port)))
-   ((@ #\\ newln (* blank)) (get-string input-port))
-   ((- #\000 #\377) (cons (string-ref lexeme 0)
-			   (get-string input-port)))))
+   (#\" (cons null end-pos))
+   (escape_sequence 
+    (let ([rest-sequence (get-string input-port)])
+      (cons (cons (escape_sequence->char lexeme)
+		  (car rest-sequence))
+	    (cdr rest-sequence))))
+   ((@ #\\ newln (* blank)) 
+    (get-string input-port))
+   ((- #\000 #\377) 
+    (let ([rest-sequence (get-string input-port)])
+      (cons (cons (string-ref lexeme 0)
+		  (car rest-sequence))
+	    (cdr rest-sequence))))))
+
 
 (define (escape_sequence->char es)
   (cond

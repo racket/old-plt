@@ -161,7 +161,9 @@
 		   [(<user-type>? value)
 		    (let*-values ([(sinfo skipped) (struct-info value)]
 				  [(name-sym init-fnum auto-fnum acc-proc mut-proc immut-list sst skipped) (struct-type-info sinfo)]
-				  [(ftype) (acc-proc value 0)])
+				  [(ftype) (if (not (= 0 init-fnum))
+					       (acc-proc value 0)
+					       #f)])
 				 (string-append (format "~a" name-sym)
 						(cond
 ;				       [(<tuple>? ftype) (format " (~a)" (ml-style ftype))]

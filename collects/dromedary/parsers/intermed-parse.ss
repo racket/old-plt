@@ -231,7 +231,15 @@
      [(<val_longident>)
       (ast:make-expression (ast:make-pexp_ident $1) (build-src 1))]
      [(<constant>)
-      (ast:make-expression (ast:make-pexp_constant $1) (build-src 1))]
+      (let ([const $1])
+	(ast:make-expression (ast:make-pexp_constant const) 
+			     (if (string? (syntax-object->datum $1))
+				 (ast:make-src
+				  (syntax-line const)
+				  (syntax-column const)
+				  (+ (syntax-position const) (parse-offset))
+				  (syntax-span const))
+				 (build-src 1))))]
      [(<constr_longident>)
       (ast:make-expression (ast:make-pexp_construct $1 null #f) (build-src 1))]
      [(<name_tag>)

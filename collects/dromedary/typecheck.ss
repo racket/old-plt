@@ -166,7 +166,7 @@
 
 			   
 		    [($ ast:pexp_ifthenelse test ifexp elseexp isrc tsrc esrc)
-;		     (pretty-print (format "test: ~a, ifexp: ~a, elseexp: ~a" test ifexp elseexp))
+;		     (pretty-print (format "context for ifthenelse: ~a" context))
 		     (let* ([testt (typecheck-ml test context)]
 			   [ifexpt (typecheck-ml ifexp context)]
 			   [elseexpt (if (null? elseexp)
@@ -175,10 +175,12 @@
 			   [elseexpsrc (if (null? elseexp)
 					   (ast:expression-pexp_src ifexp)
 					   (ast:expression-pexp_src elseexp))])
+		       (begin
+;			 (pretty-print (format "testt: ~a, ifexpt: ~a, elseexpt: ~a" testt ifexpt elseexpt))
 		       (when (unify "bool" testt (ast:expression-pexp_src test))
 			   (when (unify ifexpt elseexpt elseexpsrc)
 			       ifexpt)
-			   
+			   )
 			   ))]
 		    
 		    [($ ast:pexp_match expr pelist)
@@ -432,8 +434,6 @@
 		 type))
 
 	   (define (typecheck-bindings rec bindings context)
-	     
-	     
 	     (if rec
 ;; get all variables and bind them to a function type
 		 (letrec ([bind-vars (lambda (bindings)
@@ -454,7 +454,10 @@
 						   [tf (if constraint
 							   (typecheck-type (car (convert-ttypes (ast:ppat_constraint-type (ast:pattern-ppat_desc (car cur-bind))))) null #f)
 							   (make-arrow (list (fresh-type-var)) (fresh-type-var)))])
-					      (update (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) (cons tf null) (bind-vars (cdr bindings))))))])
+					      (update 
+					       (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) 
+					       (cons tf null) 
+					       (bind-vars (cdr bindings))))))])
 			  (let ([cprime (bind-vars bindings)])
 			    (foldl (lambda (next init)
 				     (update (car next) (cdr next) init))
@@ -463,6 +466,7 @@
 					  (cons (car mapping) (schema (cdr mapping) context)))
 					(map typecheck-binding bindings (repeat rec (length bindings)) (repeat cprime (length bindings)))))))
 
+;; for let
 		 (let ([ncontexts (map typecheck-binding bindings (repeat rec (length bindings)) (repeat context (length bindings)))])
 		   
 		   (let ([res (foldl union-envs (car ncontexts) (cdr ncontexts))])
@@ -504,6 +508,7 @@
 ;; Note, I should be checking for no duplicate binding
 ;; I'm also not doing anything with contraints here
 	   (define (typecheck-let rec bindings finalexpr context)
+;	     (pretty-print (format "context for typecheck-let: ~a" context))
 	     (typecheck-ml finalexpr (typecheck-bindings rec bindings context)))
 
 	   (define (typecheck-lelist lelist context)
@@ -760,7 +765,7 @@
 	   (define (funvarcheck context pat)
 ;	     (pretty-print (format "funvarcheck: ~a" pat))
 	     (if (unique-var pat null)
-		 (let ([varenv (funenv pat)])
+		 (let ([varenv (funenv pat context)])
 		   (begin ;(pretty-print (format "var-env from funvarcheck: ~a" varenv))
 			  (cons (car varenv) (union-envs (cdr varenv) context))))))
 
@@ -800,7 +805,7 @@
 		 curvars
 		 (unique-var-list (cdr plist) (unique-var (car plist) curvars))))
 
-	   (define (funenv pat)
+	   (define (funenv pat context)
 ;	     (if (and (eq? (typechoice) 'fullcheck)
 ;		      (not (ast:ppat_constraint?  (ast:pattern-ppat_desc pat))))
 ;		 (raise-error #f
@@ -822,7 +827,7 @@
 			 
 			 ]
 			[($ ast:ppat_tuple plist)
-			 (let ([varenvs (map funenv plist)])
+			 (let ([varenvs (map funenv plist (repeat context (length plist)))])
 			   (begin ;(pretty-print (format "varenvs from funenv: ~a" varenvs))
 			     (cons (make-<tuple> (map car varenvs)) (foldl union-envs (car (map cdr varenvs)) (cdr (map cdr varenvs))))))]
 			[($ ast:ppat_construct longident cpat bool)
@@ -848,7 +853,7 @@
 				       (if (null? (tconstructor-argtype cpat-type))
 					   (raise-error #f 
 							(loc)
-							(let* ([ftype (car (funenv cpat))]
+							(let* ([ftype (car (funenv cpat context))]
 							       [nargs (if (<tuple>? ftype)
 									  (length (<tuple>-list ftype))
 									  1)])
@@ -860,14 +865,14 @@
 								      "s")))
 							(string->symbol (unlongident longident))
 							(ast:pattern-ppat_src pat))
-					   (cons (tconstructor-result cpat-type) (let ([fenvpat (funenv cpat)])
+					   (cons (tconstructor-result cpat-type) (let ([fenvpat (funenv cpat context)])
 										   (when (unify (tconstructor-argtype cpat-type) (car fenvpat) (ast:pattern-ppat_src cpat))
 											 (cdr fenvpat))))))
 				   (if (null? cpat)
 				       (cons cpat-type (empty-context))
 				       (raise-error #f 
 						    (loc)
-						    (let* ([ftype (car (funenv cpat))]
+						    (let* ([ftype (car (funenv cpat context))]
 							   [nargs (if (<tuple>? ftype)
 								      (length (<tuple>-list ftype))
 								      1)])
@@ -899,11 +904,13 @@
 ;)
 		     
 	   (define (patenv pat type context)
+;	     (pretty-print (format "patenv type: ~a , context: ~a" type context))
 	     (let ([patsyn (ast:pattern-ppat_src pat)])
 	     (match (ast:pattern-ppat_desc pat)
 		    [($ ast:ppat_any dummy)
 		     (empty-context)]
 		    [($ ast:ppat_var name)
+;		     (pretty-print (format "var: ~a schema: ~a" (syntax-object->datum name) (schema type context)))
 		     (update (syntax-object->datum name) (schema type context) (empty-context))]
 		    [($ ast:ppat_constant const)
 		     (let ([t2 (constant-check const)])
@@ -1026,7 +1033,12 @@
 		    tvl1 tvl2))
 
 	   (define (diff l1 l2)
-	     (filter (lambda (r) (null? (filter (lambda (rprime) (equal? r rprime)) l2))) l1))
+	     (filter (lambda (r) 
+		       (null? 
+			(filter (lambda (rprime) 
+				  (eq? r rprime)) 
+				l2))) 
+		     l1))
 
 
 	   (define (unsolved type)
@@ -1095,7 +1107,11 @@
 	   (define (schema type env)
 	     (let* ([uv (unsolved type)]
 		    [ev (env-unsolved env)]
-		    [uvprime (diff uv ev)])
+;		    [foo (pretty-print (format "uv: ~a , ev: ~a" uv ev))]
+		    [uvprime (diff uv ev)]
+;		    [goo (pretty-print (format "uvprime: ~a" uvprime))]
+;		    [noo (pretty-print (
+		    )
 	       (cons type uvprime)))
 
 

@@ -117,7 +117,9 @@
 				     (values
 				      (with-syntax ([(lhs ...) vars]
 						    [(rhs ...) exps])
-						   #`(define-values #,(map datum->syntax-object (repeat (current-compile-context) (length vars)) vars) (match-letrec ((lhs rhs) ...) (values #,@vars))))
+						   #`(define-values #,(map translate-id (map syntax-object->datum vars) vars)
+;(map datum->syntax-object (repeat (current-compile-context) (length vars)) vars)
+ (match-letrec ((lhs rhs) ...) (values #,@vars))))
 				      exps))
 				   
 				   

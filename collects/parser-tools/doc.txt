@@ -8,7 +8,7 @@ CHANGE: added support for custom input-ports that return non-character data (via
 CHANGE: token-name, token-value and token? functions are now exported from lex.ss.
 
 CHANGE: Regular expression of the form (symbol) are no longer valid and symbol
-regular expressions alway refer to abbreviations and do not match the string of
+regular expressions always refer to abbreviations and do not match the string of
 characters in the symbol anymore.
 
 CHANGE: Parsers can now specify multiple start symbols.  A parser with

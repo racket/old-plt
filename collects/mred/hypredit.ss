@@ -122,8 +122,7 @@
 						      (+ next-start amt)))
 				(set-hyperlink-anchor-end!
 				 (car links-left) (+ next-end amt))
-				(cons (car links-left)(links-loop (cdr links-left)))]
-			       ))))))]
+				(cons (car links-left)(links-loop (cdr links-left)))]))))))]
 	    [map-shift-style 
 	     (lambda (start end shift-style)
 	       (let loop ([pos start])
@@ -586,24 +585,27 @@
 		 (if (if (and (string? filename)
 			      (regexp-match re:html filename)
 			      (file-exists? filename))
-			 (let ([p (open-input-file filename)])
-			   (set! htmling? #t)
-			   (erase)
-			   (clear-undos)
-			   (set-filename filename)
-			   (dynamic-wind
-			    (lambda ()
-			      (begin-edit-sequence #f))
-			    (lambda ()
-			      (mred:html:html-convert p this))
-			    (lambda ()
-			      (end-edit-sequence)
-			      (set! htmling? #f)
-			      (close-input-port p)))
-			   (reverse-links)
-			   (set-modified #f)
-			   (lock #t)
-			   #t)
+			 (begin
+			   (let ([p (open-input-file filename)])
+			     (set! htmling? #t)
+			     (erase)
+			     (clear-undos)
+			     (set-filename filename)
+			     (dynamic-wind
+			      (lambda ()
+				(wx:begin-busy-cursor)
+				(begin-edit-sequence #f))
+			      (lambda ()
+				(mred:html:html-convert p this))
+			      (lambda ()
+				(end-edit-sequence)
+				(wx:end-busy-cursor)
+				(set! htmling? #f)
+				(close-input-port p)))
+			     (reverse-links)
+			     (set-modified #f)
+			     (lock #t)
+			     #t))
 			 (super-load-file filename format))
 		     (begin 
 		       (when keep-locked 

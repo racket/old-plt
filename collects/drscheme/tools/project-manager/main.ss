@@ -100,7 +100,7 @@
 	(when project-menu-item
 	  (send project-menu-item set-label 
 		(if p
-		    (format "Bring project ~a to the front" (ivar p project-name))
+		    (format "Bring ~a to the front" (ivar p project-name))
 		    "Bring project to the front"))
 	  (send project-menu-item enable p))
 	(if p
@@ -125,7 +125,8 @@
 		file-menu
 		(lambda xxx
 		  (when project-window
-		    (send project-window show #t)))))
+		    (send project-window show #t)))
+                #\j))
       (send project-menu-item enable #f))
 
       (define project-menu-item #f)

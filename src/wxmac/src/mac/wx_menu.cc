@@ -117,12 +117,7 @@ wxMenuBar::~wxMenuBar(void)
 
 static void wxInvalMenuBar(void)
 {
-  CGrafPtr savep;
-  GDHandle savegd;
-  ::GetGWorld(&savep, &savegd);  
-  ::SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
   ::DrawMenuBar();
-  ::SetGWorld(savep, savegd);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

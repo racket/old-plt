@@ -136,26 +136,6 @@ void wxCanvasDC::EndDrawing(void)
 static GDHandle def_dev_handle = 0;
 static CGrafPtr def_grafptr = NULL;
 
-GDHandle wxGetGDHandle(void)
-{
-  if (!def_dev_handle) {
-    GetGWorld(&def_grafptr, &def_dev_handle);
-  }
-  
-  return def_dev_handle;
-}
-
-CGrafPtr wxGetGrafPtr(void)
-{
-  return def_grafptr;
-}
-
-extern "C" {
-  GDHandle alist_GetGDHandle(void) {
-    return wxGetGDHandle();
-  }
-}
-
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
   //-----------------------------------------------------------------------------
@@ -166,11 +146,19 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
   
   dc_set_depth++;
 
+  if ((dc_set_depth != 1)
+      || def_grafptr)
+    printf("ACK!\n");
+
   theMacGrafPort = cMacDC->macGrafPort();
+
+  if (!canvas)
+    GetGWorld(&def_grafptr, &def_dev_handle);
+
   if (IsPortOffscreen(theMacGrafPort)) {
     ::SetGWorld(theMacGrafPort, NULL);
   } else {
-    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+    ::SetPort(theMacGrafPort);
   }
   
   SetOriginX = SetOriginY = 0;
@@ -191,12 +179,17 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 void wxCanvasDC::ReleaseCurrentDC(void)
 {
   if (!--dc_set_depth) {
-    if (canvas && (cMacCurrentTool != kNoTool)) {
-      /* We have to go back to the canvas's drawings settings --- at
-	 least the bg color --- otherwise controls might get drawn
-	 wrong. That's because the DC GrafPtr is the same as the Window GrafPtr. */
-      cMacCurrentTool = kNoTool;
-      canvas->MacSetBackground();
+    if (canvas) {
+      if (cMacCurrentTool != kNoTool) {
+	/* We have to go back to the canvas's drawings settings --- at
+	   least the bg color --- otherwise controls might get drawn
+	   wrong. That's because the DC GrafPtr is the same as the Window GrafPtr. */
+	cMacCurrentTool = kNoTool;
+	canvas->MacSetBackground();
+      }
+    } else {
+      ::SetGWorld(def_grafptr, def_dev_handle);
+      def_grafptr = NULL;
     }
   }
 }
@@ -241,7 +234,7 @@ void wxCanvasDC::SetCanvasClipping(void)
     if (IsPortOffscreen(theMacGrafPort)) {
       ::SetGWorld(theMacGrafPort, NULL);
     } else {
-      ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+      ::SetPort(theMacGrafPort);
     }
     
     oox = SetOriginX;

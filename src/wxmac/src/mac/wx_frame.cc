@@ -74,9 +74,6 @@ wxFrame::wxFrame // Constructor (for frame window)
     if (wxSubType(parentFrame->__type, wxTYPE_DIALOG_BOX))
       parentFrame = (wxFrame *)parentFrame->GetParent();
   
-  /* Make sure we have the right device: */
-  SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
-  
   if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
 #ifdef OS_X
     if (parentFrame) {

@@ -94,6 +94,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       InstallColor(current_background_color, FALSE);
       PenMode(patCopy);
       ToolChanged(kNoTool);
+      ReleaseCurrentDC();
     }
   }
 }

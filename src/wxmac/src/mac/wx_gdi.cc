@@ -251,7 +251,7 @@ long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str,
     GDHandle savegd;
     
     ::GetGWorld(&savep, &savegd);  
-    ::SetGWorld(gMacFontGrafPort, wxGetGDHandle());
+    ::SetGWorld(gMacFontGrafPort, GetMainDevice());
 
     if (isdiff) {
       ::TextFont(fn = font);
@@ -795,20 +795,8 @@ void wxDisplaySize(int *width, int *height)
   *height = screenBits.bounds.bottom - screenBits.bounds.top - mbh;
 }
 
-/* NOTE: we rely on no garbage collection between GetGWorld()... SetGWorld()
-   pairs. Otherwise, the temporarily unset GWorldPtr could be freed before
-   the restoring SetGWorld(). */
-
 static void FreeGWorld(GWorldPtr x_pixmap)
 {
-  /* Is this GWorld the current context? */
-  GDHandle savegd;
-  CGrafPtr saveport;
-  GetGWorld(&saveport, &savegd);
-  if (saveport == x_pixmap) {
-    SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
-  }
-
   DisposeGWorld(x_pixmap);
 }
 
@@ -1111,8 +1099,10 @@ void wxBitmap::DrawMac(int x, int y, int mode)
     GDHandle deviceNow;
     const BitMap *srcbm;
     const BitMap *dstbm;
-    Rect sbounds = {0, 0, height, width};
-    Rect dbounds = {y, x, height+y, width+x};
+    Rect sbounds, dbounds;
+
+    ::SetRect(&sbounds, 0, 0, width, height);
+    ::SetRect(&dbounds, x, y, width+x, height+y);
 
     OffsetRect(&dbounds,SetOriginX,SetOriginY);
     ::GetGWorld(&portNow,&deviceNow);

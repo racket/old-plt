@@ -191,14 +191,7 @@ void wxApp::doMacPreEvent()
 	::InsertMenu(m129, 0);
       }
     }
-    {
-      CGrafPtr savep;
-      GDHandle savegd;
-      ::GetGWorld(&savep, &savegd);  
-      ::SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
-      ::InvalMenuBar();
-      ::SetGWorld(savep, savegd);
-    }
+    ::InvalMenuBar();
     wxSetCursor(wxSTANDARD_CURSOR);
     noWinMode = TRUE;
   } else if (w && noWinMode)

@@ -66,7 +66,6 @@ int wxEntry(int argc, char* argv[])
 
   RegisterAppearanceClient();
   
-  wxGetGDHandle(); /* save original grafptr and device */
   wxCommonInit();
   wxInitializePrintSetupData(1);
 

@@ -383,7 +383,8 @@ void wxButton::Paint(void)
   if (cHidden) return;
   if (SetCurrentDC()) {
     if (buttonBitmap) {
-      Rect r = { 0, 0, cWindowHeight, cWindowWidth };
+      Rect r;
+      ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
       OffsetRect(&r,SetOriginX,SetOriginY);
       PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
     } else if (cMacControl) {
@@ -415,7 +416,8 @@ void wxButton::Highlight(Bool flag) // mac platform only
 {
   if (buttonBitmap) {
     if (SetCurrentDC()) {
-      Rect bounds = {0, 0, cWindowHeight, cWindowWidth};
+      Rect bounds;
+      ::SetRect(&bounds, 0, 0, cWindowWidth, cWindowHeight);
       PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
     }
   } else if (cMacControl) {

@@ -305,8 +305,9 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 
   if (!Ok() || !cMacDC) return;
   
-  SetCurrentDC();
   if (n <= 0) return;
+
+  SetCurrentDC();
 
   if ((rgn = BrushStipple())) {
     rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
@@ -702,7 +703,7 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   if (IsPortOffscreen(theMacGrafPort)) {
     ::SetGWorld(theMacGrafPort, NULL);
   } else {
-    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+    ::SetGWorld(theMacGrafPort, GetMainDevice());
   }
 
   ox = SetOriginX;
@@ -734,7 +735,7 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   SetOriginY = oy;
 
   ::SetGWorld(savep, savegd);
-  
+
   if (canvas)
     canvas->FlushDisplay();
 

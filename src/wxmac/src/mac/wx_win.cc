@@ -335,7 +335,9 @@ wxWindow::~wxWindow(void) // Destructor
 
   if (refcon) {
     DequeueMrEdEvents(leaveEvt, (long)refcon);
+#ifdef MZ_PRECISE_GC
     FREE_SAFEREF(refcon);
+#endif
     refcon = NULL;
   }
 
@@ -541,7 +543,8 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
   heightIsChanged = (height != cWindowHeight);
 
   if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged)) {
-    Rect oldWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
+    Rect oldWindowRect;
+    ::SetRect(&oldWindowRect, -1, -1, cWindowWidth, cWindowHeight);
     if (SetCurrentMacDCNoMargin()) {
       MacSetBackground();
       OffsetRect(&oldWindowRect,SetOriginX,SetOriginY);
@@ -557,7 +560,8 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
   if (heightIsChanged) cWindowHeight = height;
 
   if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged)) {
-    Rect newWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
+    Rect newWindowRect;
+    ::SetRect(&newWindowRect, -1, -1, cWindowWidth, cWindowHeight);
     cMacDC->setCurrentUser(NULL); // macDC no longer valid
     if (SetCurrentMacDCNoMargin()) { // put newClientRect at (SetOriginX,SetOriginY)
       OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
@@ -737,7 +741,7 @@ int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
   
   vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
   
-  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+  ::SetPort(theMacGrafPort);
 
   cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
   if (cParentArea && !wxSubType(__type, wxTYPE_FRAME)) {
@@ -761,7 +765,7 @@ int wxWindow::SetCurrentMacDC(void) // mac platform only
 
   vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
 
-  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+  ::SetPort(theMacGrafPort);
 
   cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
@@ -782,7 +786,7 @@ int wxWindow::SetCurrentDC(void) // mac platform only
 
   vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
 
-  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+  ::SetPort(theMacGrafPort);
 
   cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
   
@@ -810,23 +814,6 @@ int wxWindow::SetCurrentDC(void) // mac platform only
 
 void wxWindow::ReleaseCurrentDC(int really)
 {
-#if 1
-  {
-    if (cMacDC->currentUser() == this) {
-      GDHandle dh;
-      CGrafPtr g;
-      CGrafPtr theMacGrafPort;
-      theMacGrafPort = cMacDC->macGrafPort();
-      ::GetGWorld(&g, &dh);
-      if (g != theMacGrafPort)
-	printf("ReleaseDC: not grafport!\n");	
-      if (dh != wxGetGDHandle())
-	printf("ReleaseDC: not device!\n");	
-    } else
-      printf("ReleaseDC: not current!\n");
-  }
-#endif
-
   /* This method is here for windows that use a white background, so
      that the background color can be reset.  Currently, that means
      wxListBox only. */
@@ -834,7 +821,7 @@ void wxWindow::ReleaseCurrentDC(int really)
     if (cMacDC->currentUser() == this) {
       CGrafPtr theMacGrafPort;
       theMacGrafPort = cMacDC->macGrafPort();
-      ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+      ::SetPort(theMacGrafPort);
       cMacDC->setCurrentUser(NULL);
 
       RestoreNormalBackground(wxWHITE_BRUSH);
@@ -1630,7 +1617,9 @@ void wxWindow::Highlight(Bool on)
 int wxWindow::Track(Point p)
 {
   int on = FALSE;
-  Rect r = {0, 0, cWindowHeight, cWindowWidth};
+  Rect r;
+
+  ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
   OffsetRect(&r,SetOriginX,SetOriginY);
   
   while (::StillDown()) {
@@ -1741,7 +1730,9 @@ void wxWindow::DoShow(Bool v)
 
   if (SetCurrentMacDCNoMargin()) {
     // put newClientRect at (SetOriginX, SetOriginY)
-    Rect r = { -1, -1, cWindowHeight, cWindowWidth };
+    Rect r;
+
+    ::SetRect(&r, -1, -1, cWindowWidth, cWindowHeight );
     OffsetRect(&r,SetOriginX,SetOriginY);
     
     if (v) {
@@ -2040,5 +2031,7 @@ wxWindow *wxWindow::EnterLeaveTarget()
 
 void wxFlushMacDisplay(void)
 {
-  QDFlushPortBuffer(wxGetGrafPtr(), NULL);  
+  CGrafPtr g;
+  ::GetPort(&g);
+  ::QDFlushPortBuffer(g, NULL);  
 }

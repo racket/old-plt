@@ -256,7 +256,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	xbmImage = new wxImage();
 	if (xbmImage->LoadXBM(fileName, 1) == 0) {
 		// CreateOffScreenPixMap(&colorPort, gifImage);
-		Rect bounds = {0, 0, xbmImage->pHIGH, xbmImage->pWIDE};
+		Rect bounds;
 		GDHandle savegw;
 		CGrafPtr saveport;
 		QDErr err;
@@ -265,6 +265,8 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		int i, j;
 		unsigned char *buf;
 		long bufp;
+
+		::SetRect(&bounds, 0, 0, xbmImage->pWIDE, xbmImage->pHIGH);
 
 		GetGWorld(&saveport, &savegw);
 		

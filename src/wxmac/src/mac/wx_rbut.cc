@@ -247,7 +247,9 @@ void wxRadioButton::Paint(void)
   if (cHidden) return;
   SetCurrentDC();
   { 
-    Rect r = { 0, 0, cWindowHeight, cWindowWidth};
+    Rect r;
+
+    SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
 
     OffsetRect(&r,SetOriginX,SetOriginY);
     ::EraseRect(&r);

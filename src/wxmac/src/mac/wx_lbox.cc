@@ -576,10 +576,12 @@ ALSearchUPP strcmpUPP = NewALSearchProc(MyStringCompare);
 
 int wxListBox::FindString(char *s)
 {
-  LongPt cell = {0, 0};
+  LongPt cell;
   StringPtr pstr;
   char *ss;
   int result;
+
+  cell.h = cell.v = 0;
 
   ss = new char[strlen(s) + 1];
   pstr = (StringPtr)ss;

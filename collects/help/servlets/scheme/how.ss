@@ -1,9 +1,8 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-         (lib "finddoc.ss" "help")
+         (lib "help-desk.ss" "help")
          (lib "xml.ss" "xml")
-	 (lib "launcher.ss" "launcher")
-         (lib "installed-components.ss" "help"))
+	 (lib "launcher.ss" "launcher"))
 
 (require "../private/util.ss")
 (require "../private/read-doc.ss")

@@ -1,6 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-         (lib "finddoc.ss" "help"))
+         (lib "help-desk.ss" "help"))
 
 (require "../private/hd-css.ss")
 
@@ -37,7 +37,7 @@
     "provides an interface designed specially for instructors: " 
     ,(manual-entry "drscheme" "DrScheme Teachpacks" "Teachpacks") ". "
     "A Teachpack is a " 
-    ,(manual-entry "mzscheme" "units" "unit")
+    ,(manual-entry "mzlib" "units" "unit")
     " that is implemented in Full Scheme; it imports the functions "
     "from the teaching languages and the graphics run-time library. "
     "The exported values are automatically imported to the run-time "

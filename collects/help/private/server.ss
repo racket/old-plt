@@ -33,7 +33,7 @@
 
   (define (start-help-server)
     (let* ([configuration
-	   (load-configuration
+	   (load-developer-configuration
 	    (extract-flag 
 	     'config '() 
 	     (build-path (collection-path "help")

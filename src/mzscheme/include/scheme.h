@@ -1201,6 +1201,11 @@ void scheme_register_static(void *ptr, long size);
 # define MZ_REGISTER_STATIC(x) /* empty */
 #endif
 
+void scheme_setup_forced_exit(void);
+
+void scheme_start_atomic(void);
+void scheme_end_atomic(void);
+
 #endif /* SCHEME_DIRECT_EMBEDDED */
 
 /*========================================================================*/

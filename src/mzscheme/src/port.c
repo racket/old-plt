@@ -200,9 +200,6 @@ static int force_port_closed;
 System_Child *scheme_system_children;
 #endif
 
-#ifdef USING_TESTED_OUTPUT_FILE
-static void flush_tested(Scheme_Output_Port *port);
-#endif
 #ifdef USE_FD_PORTS
 static int flush_fd(Scheme_Output_Port *op, 
 		    char * volatile bufstr, volatile int buflen, 
@@ -233,6 +230,8 @@ static void register_traversers(void);
 static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int tested);
 static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested);
 OS_SEMAPHORE_TYPE scheme_break_semaphore;
+# define USING_TESTED_OUTPUT_FILE
+static void flush_tested(Scheme_Output_Port *port);
 #else
 # define make_tested_file_input_port(fp, name, t) scheme_make_named_file_input_port(fp, name)
 # define make_tested_file_output_port(fp, t) scheme_make_file_output_port(fp)
@@ -1797,7 +1796,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     filename_exn(name, "cannot open input file", filename, errno);
   scheme_file_open_count++;
 
-  return _scheme_make_named_file_input_port(fp, filename, regfile);
+  return make_tested_file_input_port(fp, filename, !regfile);
 #endif
 }
 
@@ -2014,6 +2013,16 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
 #ifdef MAC_FILE_SYSTEM
   if (creating)
     scheme_file_create_hook(filename);
+#endif
+
+#ifdef USING_TESTED_OUTPUT_FILE
+  {
+    int regfile;
+    
+    regfile = scheme_is_regular_file(filename);
+    if (!regfile)
+      return make_tested_file_output_port(fp, 1);
+  }
 #endif
 
   return scheme_make_file_output_port(fp);
@@ -3161,7 +3170,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
   Tested_Input_File *tip;
 
   if (!tested)
-    return scheme_make_named_file_input_port(fp, name);
+    return _scheme_make_named_file_input_port(fp, name, 1);
     
   tip = MALLOC_ONE_RT(Tested_Input_File);
 #ifdef MZTAG_REQUIRED
@@ -3261,9 +3270,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 
 /* See note above about input ports.  */
 
-#if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
-
-# define USING_TESTED_OUTPUT_FILE
+#ifdef USING_TESTED_OUTPUT_FILE
 
 typedef struct {
   MZTAG_IF_REQUIRED
@@ -3281,8 +3288,6 @@ typedef struct {
   struct Scheme_Thread_Memory *thread_memory;
 #endif
 } Tested_Output_File;
-
-static void flush_tested(Scheme_Output_Port *port);
 
 static void release_inuse_lock(Scheme_Process *p)
 {
@@ -3331,7 +3336,8 @@ static void tested_file_close_output(Scheme_Output_Port *p)
 
   top = (Tested_Output_File *)p->port_data;
 
-  wait_until_file_unused(p);
+  if (!force_port_closed)
+    wait_until_file_unused(p);
   /* Might get closed while we were waiting: */
   if (p->closed)
     return;
@@ -3340,7 +3346,11 @@ static void tested_file_close_output(Scheme_Output_Port *p)
 
   top->done = 1;
 
+#ifdef WIN32_FD_HANDLES
+  /*  The other thread may have an operation in progress. */
+#else
   fclose(top->fp);
+#endif
 
   --scheme_file_open_count;
 
@@ -3357,6 +3367,13 @@ static void tested_file_close_output(Scheme_Output_Port *p)
   }
   scheme_forget_thread(top->thread_memory);
   CloseHandle(top->th);
+
+  if (!top->working)
+    fclose(top->fp);
+  else {
+    top->working = 0;
+    /* BUG: fclose() would probably hang. We give up. */
+  }
 #else
   WAIT_THREAD(top->th);
 #endif
@@ -3564,7 +3581,35 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
   return (Scheme_Object *)op;  
 }
 
+static void flush_each_output_file(Scheme_Object *o)
+{
+  if (SCHEME_OUTPORTP(o)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)o;
+    if (SAME_OBJ(op->sub_type, file_output_port_type)) {
+      scheme_close_output_port(o);
+    }
+  }
+}
+
+void force_exit(void)
+{
+  scheme_start_atomic();
+  scheme_do_close_managed(NULL, flush_each_output_file);
+
+  _exit(scheme_exiting_result);
+}
+
 #endif
+
+void scheme_setup_forced_exit(void)
+{
+#ifdef USING_TESTED_OUTPUT_FILE
+  /* Arrange to skip the flushing of FILEs, because we don't want an
+     exit to get tied up by blocking input (only blocked output). */
+
+  atexit(force_exit);
+#endif
+}
 
 /*========================================================================*/
 /*                           FILE output ports                            */
@@ -3868,8 +3913,6 @@ make_fd_output_port(int fd, int regfile)
 						  fd_close_output,
 						  1);
 }
-
-extern void scheme_start_atomic(void);
 
 static void flush_if_output_fds(Scheme_Object *o)
 {

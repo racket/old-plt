@@ -965,6 +965,101 @@ char *scheme_getdrive()
 #endif
 }
 
+#ifdef DOS_FILE_SYSTEM
+
+char *strip_trailing_spaces(const char *s, int len)
+{
+  if (len < 0)
+    len = strlen(s);
+
+  if (len && (s[len - 1] == ' ')) {
+    char *t;
+
+    while (len && (s[len - 1] == ' ')) {
+      len--;
+    }
+
+    t = (char *)scheme_malloc_atomic(len + 1);
+    memcpy(t, s, len);
+    t[len] = 0;
+
+    return t;
+  }
+
+  return (char *)s;
+}
+
+/* Watch out for special device names: */
+static unsigned char *special_filenames[] = { "NUL", "CON", "PRN", "AUX", "CLOCK$",
+					      "COM1", "COM2", "COM3", "COM4", "COM5", 
+					      "COM6", "COM7", "COM8", "COM9",
+					      "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", 
+					      "LPT6", "LPT7", "LPT8", "LPT9", NULL };
+
+#define IS_SPEC_CHAR(x) (IS_A_SEP(x) || ((x) == '"') || ((x) == '|') || ((x) == ':') || ((x) == '<') || ((x) == '>'))
+
+static int is_special_filename(const char *_f, int not_nul)
+{
+  int i, j, delta;
+  const unsigned char *f = (const unsigned char *)_f;
+
+  /* Skip over path: */
+  delta = strlen(_f);
+  if (!delta) return 0;
+  delta -= 1;
+  while (delta && !IS_A_SEP(f[delta])) {
+    --delta;
+  }
+  if (!delta && isalpha(f[0]) && f[1] == ':') {
+    delta = 2;
+  } else if (IS_A_SEP(f[delta]))
+    delta++;
+  
+  for (i = not_nul; special_filenames[i]; i++) {
+    unsigned char *sf = special_filenames[i];
+    for (j = 0; sf[j] && f[delta + j]; j++) {
+      if (toupper(f[delta + j]) != sf[j])
+	break;
+    }
+    if (!sf[j]) {
+      j += delta;
+      f = strip_trailing_spaces(f, -1);
+
+      if (!f[j])
+	return 1;
+      if ((f[j] == ':') && !(f[j+1]))
+	return 1;
+      /* Look for extension: */
+      if (f[j] == '.') {
+	j++;
+	if (!f[j])
+	  return 1;
+	else {
+	  if ((f[j] == '.') || IS_SPEC_CHAR(f[j]) || !isprint(f[j]))
+	    return 0;
+	  j++;
+	  if (f[j]) {
+	    if ((f[j] == '.') || IS_SPEC_CHAR(f[j]) || !isprint(f[j]))
+	      return 0;
+	    j++;
+	    if (f[j]) {
+	      if ((f[j] == '.') || IS_SPEC_CHAR(f[j]) || !isprint(f[j]))
+		return 0;
+	      if (!f[j+1])
+		return 1;
+	    }
+	  }
+	}
+      }
+
+      return 0;
+    }
+  }
+
+  return 0;
+}
+#endif
+
 static char *do_expand_filename(char* filename, int ilen, char *errorin, 
 				int *expanded,
 				int report_bad_user, int fullpath)
@@ -1193,6 +1288,12 @@ int scheme_file_exists(char *filename)
 #else
   struct MSC_IZE(stat) buf;
 
+#  ifdef DOS_FILE_SYSTEM
+  /* Claim that all special files exist: */
+  if (is_special_filename(filename, 0))
+    return 1;
+#  endif
+
   return !MSC_IZE(stat)(filename, &buf) && !S_ISDIR(buf.st_mode);
 #endif
 #endif
@@ -1334,6 +1435,11 @@ int scheme_is_regular_file(char *filename)
 # else
   struct MSC_IZE(stat) buf;
 
+#  ifdef DOS_FILE_SYSTEM
+  if (is_special_filename(filename, 1))
+    return 0;
+#  endif
+
   return !MSC_IZE(stat)(filename, &buf) && S_ISREG(buf.st_mode);
 # endif  
 #endif
@@ -1438,6 +1544,10 @@ char *scheme_normal_path_case(char *si, int len)
       s[i] = '\\';
 #  endif
   }
+
+#  ifdef DOS_FILE_SYSTEM
+  s = strip_trailing_spaces(s, len);
+#  endif
 
   return s;
 # else
@@ -1558,7 +1668,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 #ifdef DOS_FILE_SYSTEM
       {
 	int is_drive;
-
+	
 	if (IS_A_SEP(next[0])) {
 	  rel = 0;
 	  is_drive = check_dos_slashslash_drive(next, len, NULL, 1);
@@ -2694,8 +2804,9 @@ static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
 #else
   {
     int len = SCHEME_STRTAG_VAL(argv[0]);
-    return scheme_make_sized_string(scheme_normal_path_case(SCHEME_STR_VAL(argv[0]), 
-							    len), len, 0);
+    char *nc;
+    nc = scheme_normal_path_case(SCHEME_STR_VAL(argv[0]), len);
+    return scheme_make_sized_string(nc, -1, 0);
   }
 #endif
 }

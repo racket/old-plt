@@ -1354,6 +1354,8 @@ exit_handler(int argc, Scheme_Object *argv[])
 			     1, NULL, NULL, 0);
 }
 
+int scheme_exiting_result; /* used by hack in port.c */
+
 static Scheme_Object *
 def_exit_handler_proc(int argc, Scheme_Object *argv[])
 {
@@ -1365,6 +1367,8 @@ def_exit_handler_proc(int argc, Scheme_Object *argv[])
       status = 0;
   } else
     status = 0;
+
+  scheme_exiting_result = status;
 
   if (scheme_exit)
     scheme_exit(status);

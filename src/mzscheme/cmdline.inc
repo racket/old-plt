@@ -201,6 +201,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 # endif
 #endif
 
+  /* Avoid exiting problems under Windows: */
+  scheme_setup_forced_exit();
+
   prog = argv[0];
   argv++;
   --argc;
@@ -249,7 +252,7 @@ static int run_from_cmd_line(int argc, char *argv[],
   if (argc && (!strcmp(argv[0], "--restore")
 	       || ((argv[0][0] == '-') && (argv[0][1] == 'R')))) {
     PRINTF("Image loading (with --restore or -R<file>) is not supported.\n");
-    exit(1);
+    return 1;
   }
 
   evals_and_loads = (char **)malloc(sizeof(char *) * argc);

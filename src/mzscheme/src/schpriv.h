@@ -1325,6 +1325,8 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 			     Scheme_Object *symbol, char *what, 
 			     Scheme_Object *form, int inverted);
 
+extern int scheme_exiting_result;
+
 /*========================================================================*/
 /*                         filesystem utilities                           */
 /*========================================================================*/

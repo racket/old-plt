@@ -1,9 +1,8 @@
 (plt:require-library "ricedefs.ss")
-(plt:require-library "sparams.ss")
 
 (define ricedefs@
   (unit/sig ricedefs^
-    (import [params : plt:parameters^])
+    (import)
     
       ; return random lower case character
     (define random-char
@@ -130,13 +129,11 @@
 	  [(null? (cdr l)) (car l)]
 	  [else (last (cdr l))])))
 
-    (define list? (if params:allow-improper-lists?
-		      #%list?
-		      (lambda (l) (or (cons? l) (null? l)))))
+    (define allow-improper-lists (make-parameter #t))
 
     (define make-last-checked
       (lambda (prim prim-name)
-	(if params:allow-improper-lists?
+	(if (allow-improper-lists)
 	    prim
 	    (case-lambda
 	     [() (prim)]
@@ -150,7 +147,7 @@
 
     (define make-second-checked 
       (lambda (prim prim-name)
-	(if params:allow-improper-lists?
+	(if (allow-improper-lists)
 	    prim
 	    (lambda (a b)
 	      (if (list? b)

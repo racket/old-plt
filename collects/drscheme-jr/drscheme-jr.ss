@@ -65,7 +65,7 @@
 			    (zodiac:location-column loc)))]
 		 [build
 		  (lambda (left right)
-		    (format "~a[~a-~a]:~a-~a ~a"
+		    (format "~a[~a-~a]:~a-~a~n   ~a"
 			    (zodiac:location-file left)
 			    (zodiac:location-offset left)
 			    (zodiac:location-offset right)
@@ -204,7 +204,11 @@
 	    (lambda (p)
 	      (let ([read (let ([t (with-parameterization system-parameterization
 				     (lambda ()
-				       (zodiac:read p (zodiac:make-location 1 1 0 f))))])
+				       (zodiac:read
+					p
+					(zodiac:make-location
+					 1 1 0
+					 (build-path (current-directory) f)))))])
 			    (lambda ()
 			      (with-parameterization system-parameterization
 				t)))])

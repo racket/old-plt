@@ -77,7 +77,7 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   SetCurrentMacDC();
   theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  theMacLabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingUTF8);
+  theMacLabel = wxCFString(label);
   
   err = CreateRadioButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel,
 				 0, FALSE, &cMacControl);
@@ -189,7 +189,7 @@ void wxRadioButton::SetLabel(char* label)
       SetCurrentDC();
       {
 	CFStringRef llabel;
-	llabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingUTF8);
+	llabel = wxCFString(label);
 	SetControlTitleWithCFString(cMacControl, llabel);
 	CFRelease(llabel);
       }
@@ -253,7 +253,7 @@ void wxRadioButton::Paint(void)
 		   SetOriginY + cWindowHeight, SetOriginX + cWindowWidth };
 	CFStringRef str;
 
-	str = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingUTF8);
+	str = wxCFString(labelString);
 	
 	DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 			 0, &r, teJustLeft, NULL);

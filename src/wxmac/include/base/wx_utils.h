@@ -172,4 +172,6 @@ Bool wxGetResource(const char *section, const char *entry, int *value, const cha
 // converting an FSRef to a UNIX path:
 char *wxFSRefToPath(FSRef fsref);
 
+CFStringRef wxCFString(const char *s);
+
 #endif // wxb_utilsh

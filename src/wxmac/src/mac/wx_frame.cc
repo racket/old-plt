@@ -150,7 +150,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 
   if (windowTitle) {
     CFStringRef wtitle;
-    wtitle = CFStringCreateWithCString(NULL, windowTitle,kCFStringEncodingUTF8);
+    wtitle = wxCFString(windowTitle);
     SetWindowTitleWithCFString(theMacWindow, wtitle);
     CFRelease(wtitle);
   }
@@ -891,7 +891,7 @@ void wxFrame::SetTitle(char* title)
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   {
     CFStringRef wtitle;
-    wtitle = CFStringCreateWithCString(NULL, title, kCFStringEncodingUTF8);
+    wtitle = wxCFString(title);
     SetWindowTitleWithCFString(theMacWindow, wtitle);
     CFRelease(wtitle);
   }

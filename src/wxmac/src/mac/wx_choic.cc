@@ -129,13 +129,14 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   hDynMenu = NewMenu(PopUpID, "\p");
   CheckMemOK(hDynMenu);
   for (n = 0; n < N; n++) {
-    // attempt to size control by width of largest string
+    // add a dummy label (to prevent interpretation of control characters)
     ::AppendMenu(hDynMenu, "\ptemp");
+    // Now set the real label:
     {
       CFStringRef ct;
       char *s;
       s = protect_leading_hyphen(Choices[n]);
-      ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
+      ct = wxCFString(s);
       ::SetMenuItemTextWithCFString(hDynMenu, n + 1, ct);
       CFRelease(ct);
     }
@@ -304,7 +305,7 @@ void wxChoice::Append (char *Item)
     CFStringRef ct;
     char *s;
     s = protect_leading_hyphen(Item);
-    ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
+    ct = wxCFString(s);
     ::SetMenuItemTextWithCFString(hDynMenu, no_strings + 1, ct);
     CFRelease(ct);
   }

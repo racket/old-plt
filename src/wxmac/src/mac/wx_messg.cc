@@ -330,7 +330,7 @@ void wxMessage::Paint(void)
       CFStringRef str;
 
 
-      str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingUTF8);
+      str = wxCFString(cMessage);
 
       DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		       0, &r, teJustLeft, NULL);

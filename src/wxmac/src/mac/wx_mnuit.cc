@@ -154,7 +154,7 @@ void wxMenuItem::SetLabel(char* label)
     ::InsertMenuItem(nmh, tempString, macMenuItem - 1);
 
     /* Install the real label */
-    ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
+    ct = wxCFString(s);
     ::SetMenuItemTextWithCFString(nmh, macMenuItem, ct);
     CFRelease(ct);
 

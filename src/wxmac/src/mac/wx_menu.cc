@@ -299,7 +299,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     CheckMemOK(nmh);
     {
       CFStringRef ct;
-      ct = CFStringCreateWithCString(NULL, title, kCFStringEncodingUTF8);
+      ct = wxCFString(title);
       SetMenuTitleWithCFString(nmh, ct);
       CFRelease(ct);
     }
@@ -346,7 +346,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     ::AppendMenu(nmh, tempString);
     {
       CFStringRef ct;
-      ct = CFStringCreateWithCString(NULL, title, kCFStringEncodingUTF8);
+      ct = wxCFString(title);
       ::SetMenuItemTextWithCFString(nmh, i + offset, ct);
       CFRelease(ct);
     }
@@ -859,7 +859,7 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   ::AppendMenu(cMacMenu, menusetup);
   {
     CFStringRef ct;
-    ct = CFStringCreateWithCString(NULL, Label, kCFStringEncodingUTF8);
+    ct = wxCFString(Label);
     ::SetMenuItemTextWithCFString(cMacMenu, no_items, ct);
     CFRelease(ct);
   }
@@ -901,7 +901,7 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   ::AppendMenu(cMacMenu, menusetup);
   {
     CFStringRef ct;
-    ct = CFStringCreateWithCString(NULL, Label, kCFStringEncodingUTF8);
+    ct = wxCFString(Label);
     ::SetMenuItemTextWithCFString(cMacMenu, no_items, ct);
     CFRelease(ct);
   }

@@ -242,7 +242,7 @@ void wxSlider::Paint(void)
       sprintf(t,"%d",val);
     }
 
-    str = CFStringCreateWithCString(NULL, t, kCFStringEncodingUTF8);
+    str = wxCFString(t);
     DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		     0, &r, teJustCenter, NULL);
     CFRelease(str);

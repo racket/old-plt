@@ -80,7 +80,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect,SetOriginX + padLeft,SetOriginY + padTop);
 
-  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingUTF8);
+  title = wxCFString(label);
   cMacControl = NULL;
   CreateCheckBoxControl(GetWindowFromPort(theMacGrafPort), &boundsRect, 
 			title, 0, FALSE, &cMacControl);
@@ -202,7 +202,7 @@ void wxCheckBox::SetLabel(char* label)
 
   if (label && cMacControl) {
     CFStringRef llabel;
-    llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingUTF8);
+    llabel = wxCFString(labelString);
     SetControlTitleWithCFString(cMacControl, llabel);
     CFRelease(llabel);
     RefreshIfUpdating();

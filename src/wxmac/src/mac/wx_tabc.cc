@@ -46,7 +46,7 @@ static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Re
   for (i = 0; i < N; i++) {
     CFStringRef cfstr;
     array[i].icon = NULL;
-    cfstr = CFStringCreateWithCString(NULL, wxItemStripLabel(Choices[i]), kCFStringEncodingUTF8);
+    cfstr = wxCFString(wxItemStripLabel(Choices[i]));
     array[i].name = cfstr;
     array[i].enabled = TRUE;
   }

@@ -148,8 +148,7 @@
           [(eq? device 'png)
            (pl-finish-plot)
            (load-file bitmap)
-           ;(delete-file bitmap)
-           ]
+           (delete-file bitmap)]
 ;          [(eq? device 'mem)
 ;           (pl-finish-plot)
 ;           (set-bitmap (bits->bitmap-dc% bitmap))]

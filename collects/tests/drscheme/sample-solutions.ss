@@ -1,3 +1,6 @@
+;; memory debugging
+(global-defined-value 'top-level-frames null)
+
 (define sample-solutions-dir
   (build-path (collection-path "mzlib")
 	      'up
@@ -63,9 +66,13 @@
       (set! frame-to-close drs-frame)
 
       ;; memory debugging
+      (global-defined-value 'top-level-frames
+			    (cons
+			     (make-weak-box drs-frame)
+			     (global-defined-value 'top-level-frames)))
       (collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)
-      (dump-memory-stats)
-
+      (send drs-frame update-memory-text) 
+      ;(dump-memory-stats)
 
       (set-language-level! language)
       (fw:test:menu-select "Language" "Clear All Teachpacks")

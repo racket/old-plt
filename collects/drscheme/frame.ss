@@ -12,6 +12,37 @@
 
   (define basics<%> (interface (fw:frame:standard-menus<%>)))
 
+  (define (show-keybindings-to-user bindings)
+    (letrec ([f (make-object mred:dialog% "Keybindings")]
+	     [bp (make-object mred:horizontal-panel% f)]
+	     [b-name (make-object mred:button% "Sort by Name" bp (lambda x (update-bindings #f)))]
+	     [b-key (make-object mred:button% "Sort by Key" bp (lambda x (update-bindings #t)))]
+	     [lb
+	      (make-object mred:list-box% #f null f void)]
+	     [bp2 (make-object mred:horizontal-panel% f)]
+	     [cancel (make-object mred:button% "OK" bp2 (lambda x (send f show #f)))]
+	     [update-bindings
+	      (lambda (by-key?)
+		(let ([format-binding/name
+		       (lambda (b) (format "~a (~a)" (cadr b) (car b)))]
+		      [format-binding/key
+		       (lambda (b) (format "~a (~a)" (car b) (cadr b)))]
+		      [predicate/key
+		       (lambda (a b) (string-ci<=? (format "~a" (car a))
+						   (format "~a" (car b))))]
+		      [predicate/name
+		       (lambda (a b) (string-ci<=? (cadr a) (cadr b)))])
+		  (send lb set
+			(if by-key?
+			    (map format-binding/key (mzlib:function:quicksort bindings predicate/key))
+			    (map format-binding/name (mzlib:function:quicksort bindings predicate/name))))))])
+      (send bp stretchable-height #f)
+      (send bp set-alignment 'center 'center)
+      (send bp2 stretchable-height #f)
+      (send bp2 set-alignment 'right 'center)
+      (update-bindings #f)
+      (send f show #t)))
+
   (define basics-mixin
     (mixin (fw:frame:standard-menus<%>) (basics<%>) args
       (inherit get-edit-target-object get-menu-bar)
@@ -72,29 +103,8 @@
 			      [structured-list
 			       (mzlib:function:quicksort
 				(hash-table-map table list)
-				(lambda (x y) (string-ci<=? (cadr x) (cadr y))))]
-			      [choice
-			       (mred:get-choices-from-user
-				"Key Bindings" "Choose binding"
-				(map
-				 (lambda (x) (format "~a (~a)" (cadr x) (car x)))
-				 structured-list))])
-			 (when choice
-			   (let* ([choice-item (list-ref structured-list (car choice))]
-				  [choice-key (car choice-item)]
-				  [choice-name (cadr choice-item)])
-			     (cond
-			      [(hash-table-get menu-funs choice-key (lambda () #f))
-			       =>
-			       (lambda (f) (f))]
-			      [else
-			       (let ([ke (make-object mred:key-event%)])
-				 ;; should set all of ke here, but that is a pain!
-				 ;; to do this properly, need to change split out the
-				 ;; parser from the normalizer in
-				 ;; collects/framework/keymap.ss.
-				 (send keymap call-function choice-name edit-object ke #t))])))))))
-				     
+				(lambda (x y) (string-ci<=? (cadr x) (cadr y))))])
+			 (show-keybindings-to-user structured-list)))))
                  (mred:bell))))])
       
       (override

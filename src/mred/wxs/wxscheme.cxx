@@ -1111,7 +1111,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   Scheme_Object *home;
 
   switch (which) {
-  case id_pref_file:
   case id_init_file:
   case id_setup_file:
     t = 'pref';

@@ -1204,7 +1204,7 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   else if (wxmac_startup_directory) {
     home = scheme_make_string(wxmac_startup_directory);
   } else {
-    home = scheme_make_string(scheme_getcwd(NULL, 0, NULL, 1));
+    home = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
   }
   
   if ((which == id_pref_dir) || (which == id_tmp_dir) || (which == id_init_dir))

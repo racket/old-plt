@@ -39,7 +39,7 @@ void wxCleanUp(void);
 void CreateApp(void);
 
 extern "C" {
-  extern char *scheme_getcwd(char *buf, int buflen, int *actlen, int noexn);
+  extern char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
   extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
 };
 
@@ -64,7 +64,7 @@ int wxEntry(int argc, char* argv[])
 
 //	if (!wxTheApp->wx_class) wxTheApp->wx_class = macCopyString(argv[0]);
 
-	wxmac_startup_directory = scheme_getcwd(NULL, 0, NULL, 1);
+	wxmac_startup_directory = scheme_os_getcwd(NULL, 0, NULL, 1);
 	
 	FSSpec spec;
 	if (!FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &spec.vRefNum, &spec.parID)) {

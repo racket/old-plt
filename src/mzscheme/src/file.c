@@ -527,7 +527,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
     find_vref = -1;
     find_dir_id = 0;
     if (!filename || !scheme_is_complete_path(filename, len))
-      filename = do_path_to_complete_path(filename, len, NULL, 0);
+      filename = do_path_to_complete_path((char *)filename, len, NULL, 0);
   }
   
   /* filename is empty => Local directory */

@@ -43,7 +43,7 @@ static char *ThisAppName(void)
   
   err = GetProcessInformation(&curPSN, &info);
   
-  dir = scheme_getcwd(NULL, 0, NULL, 1);
+  dir = scheme_os_getcwd(NULL, 0, NULL, 1);
   dlen = strlen(dir);
   
   result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 1);

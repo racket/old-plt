@@ -104,6 +104,8 @@ PROCEDURES -----------------------------------------------------------
   - Otherwise base and relative are combined as per the standard
     specification of merging and normalization.
 
+  On combining "file" schemes:
+
   If the base has scheme "file", relative is treated as a
   slash-separated path.  These path fragments are combined using
   build-path, starting with the base's path.  Three path segments are
@@ -111,7 +113,17 @@ PROCEDURES -----------------------------------------------------------
   "." and "" correspond to 'same.  As a consequence, if relative
   begins with "/", this does not make it an absolute URL: the leading
   slash is treated as if the initial segment is "", so this has no
-  effect, and base's path remains the base path of the result.
+  effect, and base's path remains the base path of the result.  If
+  base refers to a directory, relative is indexed from that directory; 
+  if base refers to a file, relative is indexed from the directory
+  containing the file.  Note that if base does not refer to an actual
+  directory that exists on the filesystem, then it must syntactically
+  be a directory as understood by split-path.
+
+  The above algorithm tests for the presence of a directory to
+  correctly combine paths.  As a result, it can raise any exception
+  raised by directory-exists?.  None of these exceptions is trapped by
+  the procedure; consumers must be prepared for them.
 
 > (netscape/string->url string) -> url
 

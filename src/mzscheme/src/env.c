@@ -2345,7 +2345,8 @@ namespace_mapped_symbols(int argc, Scheme_Object *argv[])
     }
   }
 
-  scheme_list_module_rename(env->rename, mapped);
+  if (env->rename)
+    scheme_list_module_rename(env->rename, mapped);
 
   l = scheme_null;
   for (i = mapped->size; i--; ) {

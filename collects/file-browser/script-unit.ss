@@ -26,12 +26,7 @@
               (raise-type-error name-symbol "file or string" bad-k v ...))))))
  
       ;; get-current-dir: -> file
-      (define get-current-dir fs:get-current-dir)
-      
-      ;; set-current-dir!: (file U string) ->
-      (define (set-current-dir! file)
-        (file-arg! file 'set-current-dir! 0 file)
-        (fs:set-current-dir! file))
+      (define (get-current-dir) (gui:get-current-directory))
       
       ;; make-file: (file U string) -> file
       (define (make-file file)

@@ -19,9 +19,6 @@
           (public get-file select unselect is-selected?)
           (inherit get-admin)
           (init-field file)        
-          (let ((str (string-append (script:file-name file) 
-                                    (if (script:is-directory? file) "/" ""))))
-            (super-instantiate (str)))
           (define (get-file) file)
           (define selected #f)
           (define (is-selected?) selected)
@@ -42,35 +39,21 @@
                (send (send (get-admin) get-editor)
                      change-style
                      sub-bold this)
-               (set! selected #f))))))
+               (set! selected #f))))
+          (let ((str (string-append (script:file-name file) 
+                                    (if (script:is-directory? file) "/" ""))))
+            (super-instantiate (str)))))
+      
       
       
       (define file-board%
         (class pasteboard%
           (public selection-updated select unselect)
-          (inherit find-snip find-first-snip insert set-selection-visible get-canvas
-                   dc-location-to-editor-location remove-selected)
-          (super-instantiate ())
+          (inherit find-snip find-first-snip insert set-selection-visible
+                   dc-location-to-editor-location remove-selected get-keymap)
           (init files selection)
           
-          (set-selection-visible #f)
-          
           (define snip-table (make-hash-table 'equal))
-          (let ((snips (map (lambda (file) (make-object string-file-snip% file)) files)))
-            (for-each (lambda (s)
-                        (hash-table-put! snip-table 
-                                         (script:file-name (send s get-file))
-                                         s))
-                      snips)
-            (let add-snips ((snips snips)
-                            (next-x 0)
-                            (next-y 0))
-              (cond
-                ((not (null? snips))
-                 (insert (car snips) next-x next-y)
-                 (add-snips (cdr snips)
-                            (+ 0 next-x)
-                            (+ 12 next-y))))))
           
           (define (selection-updated selection)
             (unselect-all)
@@ -89,72 +72,100 @@
                  (send snip unselect)
                  (unselect (send snip next))))))
           
+          (define last-click-time -inf.0)
+          
           (define/override (after-select snip on?) 
-            (cond
-              ((and on? (not (script:is-directory? (send snip get-file))))
-               (if (send snip is-selected?)
-                   (script:remove-selection (send snip get-file))
-                   (script:cons-selection (send snip get-file)))
-               (remove-selected snip))))
-
-          
-          (rename (super.on-event on-event))
-          (define/override (on-event event)
-            (let-values (((x y) (dc-location-to-editor-location (send event get-x)
-                                                                (send event get-y))))
-              (let ((snip (find-snip x y #f)))
-                (cond
-                  (snip
-                   (cond
-                     ((eq? (send event get-event-type) 'left-down)
-                      (snip-select-toggle snip))))
-                  (else
-                   (super.on-event event))))))
-          
-          (define (dir-clicked file)
-            (send (send (get-canvas) get-parent) dir-clicked file))
-          
-          (define (snip-select-toggle snip)
             (let ((file (send snip get-file)))
               (cond
-                ((script:is-directory? file)
-                 (dir-clicked file))
+                ((and on? (script:is-directory? file))
+                 ((get-user-value 'box-select-dir) file))
+                (on?
+                 ((get-user-value 'box-select-file) file)))
+              (remove-selected snip)))
+          
+          (rename (super-on-event on-event))
+          (define/override (on-event event)
+            (let ((event-type (send event get-event-type)))
+              (cond
+                ((memq event-type '(middle-down right-down left-down))
+                 (let-values (((x y) (dc-location-to-editor-location (send event get-x)
+                                                                     (send event get-y))))
+                   (let ((snip (find-snip x y #f)))
+                     (if snip
+                         (let ((file (send snip get-file)))
+                           (cond 
+                             ((eq? event-type 'left-down)
+                              (let ((click-interval (send (get-keymap) get-double-click-interval))
+                                    (click-time (send event get-time-stamp)))
+                                (cond
+                                  ((< (- click-time last-click-time) click-interval)
+                                   (set! last-click-time -inf.0)
+                                   (cond
+                                     ((script:is-directory? file)
+                                      ((get-user-value 'double-mouse-dir) file))
+                                     (else
+                                      ((get-user-value 'double-mouse-file) file))))
+                                  (else
+                                   (set! last-click-time click-time)
+                                   (cond
+                                     ((script:is-directory? file)
+                                      ((get-user-value 'left-mouse-dir) file))
+                                     (else
+                                      ((get-user-value 'left-mouse-file) file)))))))
+                             (else
+                              (cond
+                                ((script:is-directory? file)
+                                 (case event-type
+                                   ((middle-down) ((get-user-value 'middle-mouse-dir) file))
+                                   ((right-down) ((get-user-value 'right-mouse-dir) file))))
+                                (else
+                                 (case event-type
+                                   ((middle-down) ((get-user-value 'middle-mouse-file) file))
+                                   ((right-down)
+                                    ((get-user-value 'right-mouse-file) file))))))))))))
                 (else
-                 (cond
-                   ((send snip is-selected?)
-                    (script:remove-selection file))
-                   (else 
-                    (script:cons-selection file)))))))
-          (for-each (lambda (x) (send this select x)) selection)))
+                 (super-on-event event)))))
+          
+          (super-instantiate ())
+          (let ((snips (map (lambda (file) (make-object string-file-snip% file)) files)))
+            (for-each (lambda (s)
+                        (hash-table-put! snip-table 
+                                         (script:file-name (send s get-file))
+                                         s))
+                      snips)
+            (let add-snips ((snips snips)
+                            (next-x 0)
+                            (next-y 0))
+              (cond
+                ((not (null? snips))
+                 (insert (car snips) next-x next-y)
+                 (add-snips (cdr snips)
+                            (+ 0 next-x)
+                            (+ 12 next-y))))))
+          (for-each (lambda (x) (select x)) selection)          
+          (set-selection-visible #f)))
+      
+      
+      
       
       (define file-window%
         (class vertical-panel%
           (public selection-updated select unselect files-changed file-added file-deleted
-                  dir-clicked activate)
-
+                  get-dir)
+          
           ;; dir: file
           (init-field dir)
-
-          (super-instantiate () (style '(border)))
-                    
-          (inherit set-label)
-          (set-label (script:file-full-path dir))
-          (send window-pane set-button-label this (script:file-full-path dir))
+          (define (get-dir) dir)
           
           (define file-filter (get-user-value 'all-files))
           (define file-sort (get-user-value 'dirs-first))
-
-          (define (activate)
-            (script:set-current-dir! dir))
           
-          (define (change-dir new-dir)
+          (define (change-directory new-dir)
             (send path-text set-value (script:file-full-path new-dir))
             (history-add dir)
             (send window-pane set-button-label this (script:file-full-path new-dir))
             (set! dir new-dir)
             (refresh))
-          (define (dir-clicked file)
-            (change-dir file))
           
           (define history null)
           (define (history-add dir)
@@ -162,11 +173,12 @@
           (define (history-back)
             (if (not (null? history))
                 (begin
-                  (dir-clicked (car history))
+                  (change-directory (car history))
                   (set! history (cddr history)))))
           
           (define (get-restricted-selection)
-            (filter (lambda (f) (script:file=? (script:file-dir f) dir)) (script:map-selection (lambda (x) x))))
+            (filter (lambda (f) (script:file=? (script:file-dir f) dir)) 
+                    (script:map-selection (lambda (x) x))))
           
           (define (selection-updated)
             (send file-pasteboard selection-updated (get-restricted-selection)))
@@ -190,9 +202,8 @@
           ;(send file-pasteboard file-deleted file)))
           
           (define (refresh)
-            (let ((files
-                   (quicksort (filter file-filter (script:directory-list dir))
-                              file-sort)))
+            (let ((files 
+                   (quicksort (filter file-filter (script:directory-list dir)) file-sort)))
               (set! file-pasteboard (make-object file-board% 
                                       files (get-restricted-selection)))
               (send file-canvas set-editor file-pasteboard)))
@@ -204,7 +215,12 @@
                  ((eq? widget back-button)
                   (history-back))
                  ((eq? widget up-button)
-                  (dir-clicked (script:file-dir dir)))))))
+                  (change-directory (script:file-dir dir)))))))
+          
+          (super-instantiate () (style '(border)))
+          (inherit set-label)
+          (set-label (script:file-full-path dir))
+          (send window-pane set-button-label this (script:file-full-path dir))
           
           (define toolbar (instantiate horizontal-panel% (this) (stretchable-height #f)))
           (define back-button (make-object button% "back" toolbar callback))
@@ -224,7 +240,7 @@
                      #f))))
               "path"
               this
-              (lambda (path) (change-dir path))
+              (lambda (path) (change-directory path))
               (script:file-full-path dir)))
           
           
@@ -254,8 +270,12 @@
       
       (define window-pane (make-object tabbed-panel% frame))
       
-      (add-window (script:get-current-dir))
+      (define (get-current-directory)
+        (let ((c (send window-pane get-current)))
+          (if c
+              (send c get-dir)
+              (script:make-file (find-system-path 'home-dir)))))
+      
+      (add-window (get-current-directory))
       
       (send frame show #t))))
-
-

@@ -2,9 +2,7 @@
   (require (lib "unitsig.ss"))
   (provide gui^ script^ file-system^ code-engine^)
   (define-signature file-system^ 
-    (set-current-dir!
-     get-current-dir
-     file-inspector
+    (file-inspector
      make-file-from-path
      file-name
      file-dir
@@ -21,6 +19,7 @@
     (selection-updated
      selection-added
      selection-removed
+     get-current-directory
      add-window
      close-window))
   (define-signature script^ 
@@ -31,7 +30,6 @@
      file?
      file=?
      
-     set-current-dir!
      get-current-dir
      
      print-selection

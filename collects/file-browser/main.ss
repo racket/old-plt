@@ -59,7 +59,7 @@
                  (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
                    (script-unit-param unit)
                    (namespace-require `(lib "script.ss" "file-browser"))
-                   ;(load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
+                   (load (build-path (find-system-path 'pref-dir) ".file-browser.ss"))
                    (trace "no exception in setup-namespace user-thread"))
                  (semaphore-post s)
                  (trace "semaphore posted")))
@@ -89,10 +89,24 @@
                
                (trace "code-engine through")
                
+               (define (wrap v)
+                 (cond
+                   ((not (procedure? v)) v)
+                   (else
+                    (lambda args
+                      (letrec ((s (make-semaphore))
+                               (res res))
+                        (send (get-interactions-text) run-in-evaluation-thread
+                              (lambda ()
+                                (set! res (apply v args))
+                                (semaphore-post s)))
+                        (semaphore-wait s)
+                        res)))))
+               
                (define (get-user-value sym)
                  (parameterize ((current-namespace
                                  (send (get-interactions-text) get-user-namespace)))
-                   (namespace-variable-value sym)))
+                   (wrap (namespace-variable-value sym))))
                
                (define (user-thread-eval code-string callback)
                  (send (get-interactions-text) run-in-evaluation-thread
@@ -131,12 +145,12 @@
            
 	   (cond
              (active?
-              (set! active? #f)
+              ;(set! active? #f)
               (send container begin-container-sequence)
               (invoke-unit/sig 
                (compound-unit/sig
                  (import)
-                 (link (FS : file-system^ ((make-file-system@ state)))
+                 (link (FS : file-system^ ((make-file-system@ state) GUI))
                        (SCRIPT : script^ (script@ GUI FS))
                        (CODE : code-engine^ (code-engine@ SCRIPT))
                        (GUI : gui^ ((make-gui@ state container)

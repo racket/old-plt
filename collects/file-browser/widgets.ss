@@ -56,26 +56,18 @@
   
   (define tabbed-panel%
     (class vertical-panel%
-      (super-instantiate ())
+      (public close-current get-current set-button-label)
       
-      (public close-current set-button-label)
+      (inherit add-child delete-child change-children get-children)
       
-      (inherit add-child delete-child change-children)
-      
-      (define lock #t)
-      (define tab-bar (instantiate horizontal-panel% (this)
-                        (stretchable-height #f)))
-      (delete-child tab-bar)
       (define current-child #f)
       (define current-button #f)
       (define num-children 0)
       (define button-table (make-hash-table 'weak))
-      (set! lock #f)
       
       (define (set-current-child! child)
         (if current-child (delete-child current-child))
-        (set! current-child child)
-        (send child activate))
+        (set! current-child child))
       
       (define (set-current-button! b)
         (if current-button (send current-button enable #t))
@@ -122,7 +114,6 @@
                       ((eq? (car buttons) new-b) (loop (cdr buttons)))
                       (else (cons (car buttons) (loop (cdr buttons))))))))))
               
-      
       (define (close-current)
         (cond
           ((> num-children 0)
@@ -140,7 +131,15 @@
                     (make-object control-event% 'button (current-milliseconds)))))
            (set! num-children (sub1 num-children)))))
         
-      
+      (define (get-current)
+        current-child)
+
+      (define lock #t)
+      (super-instantiate ())
+      (define tab-bar (instantiate horizontal-panel% (this)
+                        (stretchable-height #f)))
+      (delete-child tab-bar)
+      (set! lock #f)
       
       ))
       

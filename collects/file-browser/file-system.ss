@@ -26,7 +26,7 @@
   
   (define (make-file-system@ state)
     (unit/sig file-system^
-      (import)
+      (import (gui : gui^))
       
       ;; (make-file string string string)
       ;; A file will always represent an absolute path
@@ -38,7 +38,8 @@
         (let ((full-path
                (mz:simplify-path
                 (cond
-                  ((mz:relative-path? dir) (mz:build-path (file-full-path current-directory)
+                  ((mz:relative-path? dir) (mz:build-path (file-full-path 
+                                                           (gui:get-current-directory))
                                                           dir name))
                   (else (mz:build-path dir name))))))
           (make-file (string->immutable-string name)
@@ -50,7 +51,8 @@
         (let ((full-path
                (mz:simplify-path
                 (cond
-                  ((mz:relative-path? path) (mz:build-path (file-full-path current-directory)
+                  ((mz:relative-path? path) (mz:build-path (file-full-path 
+                                                            (gui:get-current-directory))
                                                            path))
                   (else (mz:build-path path))))))
           (let-values (((base name _) (mz:split-path full-path)))
@@ -61,17 +63,6 @@
                           (string->immutable-string full-path)))
               (else
                (make-file "" "/" "/"))))))
-      
-      ;; current-directory: string
-      (define current-directory (make-file-from-path (mz:find-system-path 'home-dir)))
-
-      ;; set-current-directory: file ->
-      (define (set-current-dir! x)
-        (set! current-directory x))
-      
-      ;; get-current-dir: -> file
-      (define (get-current-dir)
-        current-directory)
       
       ;; path=?: string * string -> bool
       (define (path=? p1 p2)

@@ -1104,6 +1104,10 @@ please adhere to these guidelines:
  (program-is-still-running "The program in the definitions window is still running. Close anyway?")
   (program-has-open-windows "The program in the definitions window has open windows. Close this window anyway?")
  
+  ;; ml-command-line-arguments is for the command line arguments
+  ;; label in the module language details in the language dialog.
+  (ml-command-line-arguments "Command-line arguments as a vector of strings, in read syntax")
+
   ;; ml-cp names are all for the module language collection path
   ;; configuration. See the details portion of the language dialog
   ;; for the module language (at the bottom).

@@ -48,6 +48,13 @@ static int wxSchemeWindowGetY(wxWindow *w)
   return y;
 }
 
+static void wxSetPhantomSize(wxWindow *w, int wd, int ht)
+{
+#ifdef wx_mac
+   w->SetPhantomSize(wd, ht);
+#endif
+}
+
 @BEGINSYMBOLS sizeMode > ONE > PRED BUNDLE
 @SYM "auto" : wxSIZE_AUTO
 @SYM "use-exsiting" : wxSIZE_USE_EXISTING
@@ -97,6 +104,8 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ m "get-width" : int wxSchemeWindowGetWidth();
 @ m "get-x" : int wxSchemeWindowGetX();
 @ m "get-y" : int wxSchemeWindowGetY();
+
+@ m "set-phantom-size" : void wxSetPhantomSize(int, int);
 
 @SETMARK w = V
 @INCLUDE wxs_win.xci

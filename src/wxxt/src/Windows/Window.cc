@@ -1305,7 +1305,7 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
     // call refresh method
     win->X->expose_region = einfo->region;
     win->X->expose_event  = einfo->event;
-    win->OnPaint();
+    win->Paint();
 
     if (win->dc) {
       // reset clipping region
@@ -1976,7 +1976,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	      win->dc->ok = TRUE;
 	    }
 	    // call refresh method
-	    win->OnPaint();
+	    win->Paint();
 	}
         break;
     }

@@ -102,7 +102,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
       ("canvas", xfwfCanvasWidgetClass, X->scroll,
        XtNbackingStore, (style & wxBACKINGSTORE) ? Always : NotUseful,
        XtNborderWidth,  0,
-       XtNbackground,  wxWHITE_PIXEL,
+       XtNbackground,  ((style & wxTRANSPARENT_WIN) ? wxGREY_PIXEL : wxWHITE_PIXEL),
        XtNhighlightThickness, 0,
        XtNframeWidth, 0,
        XtNtraversalOn, FALSE,
@@ -159,6 +159,20 @@ void wxCanvas::SetBackgroundToGray(void)
 {
   XtVaSetValues(X->handle, XtNbackground,  wxGREY_PIXEL, NULL);
 
+}
+
+void wxCanvas::Paint(void)
+{
+  if (style & wxTRANSPARENT_WIN) {
+    /* Need to erase, first */
+    wxColor *c;
+    c = dc->GetBackground();
+    dc->SetBackground(wxGREY);
+    dc->Clear();
+    dc->SetBackground(c);
+  }
+
+  OnPaint();
 }
 
 //-----------------------------------------------------------------------------

@@ -64,6 +64,7 @@ public:
     void WarpPointer(int x, int y);
     // overriden callback methods
     virtual void OnChar(wxKeyEvent *event);
+    virtual void Paint(void);
 
 private:
     int	h_size, h_units, h_units_per_page,

@@ -437,6 +437,8 @@ static void *WithContext(wxGL *gl, void *thunk, void *alt_waitable, int eb)
 {
 #ifdef USE_GL
   return wxWithGLContext(gl, thunk, alt_waitable, eb);
+#else
+  return (void *)scheme_false;
 #endif
 }
 

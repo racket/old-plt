@@ -710,6 +710,8 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
     if (mbar && mbar->wxHelpHackMenu)
       mbar->wxHelpHackMenu->CreateCopy(NULL, FALSE, wxHelpMenu);
   }
+#else
+  wxNumHelpItems = 0;
 #endif        
 
  {
@@ -899,7 +901,7 @@ Bool wxMenu::Delete(wxMenu *menu, int Id, int delpos)
 	item->subMenu->window_parent = NULL;
       ::DeleteMenuItem(cMacMenu, pos + 1);
       menuItems->DeleteNode(node);
-      delete item;
+      DELETE_OBJ item;
       --no_items;
       CheckHelpHack();
       return TRUE;

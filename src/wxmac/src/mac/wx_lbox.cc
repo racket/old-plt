@@ -586,8 +586,6 @@ int wxListBox::FindString(char *s)
   
   result = (ALSearch(pstr, strcmpUPP, &cell, cListReference) ? cell.v : -1);
 
-  DisposePtr((Ptr)pstr);	
-  
   return result;
 }
 

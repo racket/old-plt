@@ -1048,7 +1048,7 @@ void wxWindow::DestroyChildren(void)
       while (node)
 	{
 	  child = (wxWindow*)node->Data();
-	  delete child; // this will also delete current node
+	  DELETE_OBJ child; // this will also delete current node
 	  node = children->First(); // must do since current node was deleted
 	}
     }

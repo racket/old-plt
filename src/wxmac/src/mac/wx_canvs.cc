@@ -87,7 +87,7 @@ wxCanvas::wxCanvas // Constructor (given parentWindow)
 //-----------------------------------------------------------------------------
 wxCanvas::~wxCanvas(void)
 {
-  if (wx_dc) delete wx_dc;
+  if (wx_dc) DELETE_OBJ wx_dc;
 }
 
 //=============================================================================

@@ -116,7 +116,6 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 // ------------ Destructor ----------------------------------------
 wxGauge::~wxGauge(void)
 {
-  delete cTitle;	// Special care needed to delete Areas
 }
 
 

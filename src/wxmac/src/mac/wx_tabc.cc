@@ -20,10 +20,6 @@
 #define TAB_CONTENT_MARGIN 2
 #define TAB_TITLE_SPACE 20
 
-#ifdef MZ_PRECISE_GC
-extern "C" void *scheme_malloc_atomic(size_t);
-#endif
-
 static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Rect *boundsRect)
 {
   ControlTabEntry *array;
@@ -31,7 +27,7 @@ static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Re
   int i;
 
 #ifdef MZ_PRECISE_GC
-  array = (ControlTabEntry *)scheme_malloc_atomic(sizeof(ControlTabEntry) * N);
+  array = (ControlTabEntry *)GC_malloc_atomic(sizeof(ControlTabEntry) * N);
 #else
   array = new ControlTabEntry[N];
 #endif

@@ -92,7 +92,6 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
  char* label
  )
 {
-  const Bool drawNow = TRUE;
   const short offValue = 0;
   const short minValue = 0;
   const short maxValue = 0;
@@ -125,7 +124,11 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
       
   CheckMemOK(cMacControl);
 
-  refcon = WRAP_SAFEREF(this);
+  {
+    void *rc;
+    rc = WRAP_SAFEREF(this);
+    refcon = rc;
+  }
   SetControlReference(cMacControl, (long)refcon); /* for TrackControl */
   
   ::EmbedControl(cMacControl, GetRootControl());

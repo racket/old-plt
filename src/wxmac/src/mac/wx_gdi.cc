@@ -837,6 +837,9 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   depth = 1;
   width = the_width;
   height = the_height;
+  selectedInto = NULL;
+  WXGC_IGNORE(this, selectedInto);
+
   Create(the_width, the_height, 1);
   if (ok) {
     int i, j, p = 0;

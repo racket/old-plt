@@ -216,8 +216,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 // ------------ Destructor ----------------------------------------
 wxSlider::~wxSlider(void)
 {
-  if (cTitle)
-    delete cTitle;	// Special care needed to delete Areas
   ::DisposeControl(cMacControl);
 }
 

@@ -151,7 +151,7 @@ void wxScroll::AddChildScrollWindow(wxWindow* childScrollWindow)
 
   if (childScroll->cScrollData)
     {
-      delete childScroll->cScrollData;
+      DELETE_OBJ childScroll->cScrollData;
       childScroll->cScrollData = NULL;
     }
 

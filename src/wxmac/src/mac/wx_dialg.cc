@@ -25,10 +25,6 @@
 
 extern wxApp* wxTheApp;
 
-#ifdef MZ_PRECISE_GC
-extern "C" void *scheme_malloc_atomic(size_t);
-#endif
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Other methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -553,7 +549,7 @@ char *wxFileSelector(char *message, char *default_path,
     
     // get the user's reply:
 #ifdef MZ_PRECISE_GC
-    reply = (NavReplyRecord *)scheme_malloc_atomic(sizeof(NavReplyRecord));
+    reply = (NavReplyRecord *)GC_malloc_atomic(sizeof(NavReplyRecord));
 #else
     reply = new NavReplyRecord;
 #endif

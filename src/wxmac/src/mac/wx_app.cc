@@ -1092,9 +1092,14 @@ void wxApp::doMacInZoom(WindowPtr window, short windowPart)
 //-----------------------------------------------------------------------------
 wxFrame* wxApp::findMacWxFrame(WindowPtr theMacWindow)
 {
-  if (theMacWindow)
-    return (wxFrame *)GetWRefCon(theMacWindow);
-  else
+  if (theMacWindow) {
+    void *rc;
+    rc = (void *)GetWRefCon(theMacWindow);
+    if (rc)
+      return (wxFrame *)GET_SAFEREF(rc);
+    else
+      return NULL;
+  } else
     return NULL;
 }
 

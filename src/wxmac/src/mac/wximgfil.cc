@@ -77,7 +77,7 @@ Ptr wxGIF::GetRawImage()
 
 wxGIF::~wxGIF()
 {
-  delete ColourMap;
+  DELETE_OBJ ColourMap;
 }
 
 wxGIF::wxGIF( char * path)
@@ -701,7 +701,7 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
 	bm->SetMask(mask);
       }
 
-      delete gifImage;
+      DELETE_OBJ gifImage;
       return TRUE;
     } 
   }

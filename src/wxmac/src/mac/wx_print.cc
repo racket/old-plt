@@ -307,7 +307,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     goAhead = dialog->UseIt();
     if (goAhead == FALSE) 
       return FALSE;
-    delete dialog;
+    DELETE_OBJ dialog;
   }
 
   // sanity check  
@@ -320,7 +320,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   dc = new wxPrinterDC(printData); 
 
   if (!dc->Ok()) {
-    if (dc) delete dc; // PrSetError
+    if (dc) DELETE_OBJ dc; // PrSetError
     return FALSE;
   }
 
@@ -382,7 +382,7 @@ Bool wxPrinter::PrintDialog(wxWindow *parent)
   wxPrintDialog *dialog;
   dialog = new wxPrintDialog(parent, printData);
   dialog->Show(TRUE);
-  delete dialog;
+  DELETE_OBJ dialog;
   return 0;
 }
 
@@ -392,7 +392,7 @@ Bool wxPrinter::Setup(wxWindow *parent)
   dialog = new wxPrintDialog(parent, printData);
   dialog->ShowSetupDialog(TRUE);
   dialog->Show(TRUE);
-  delete dialog;
+  DELETE_OBJ dialog;
   return 0;
 }
 

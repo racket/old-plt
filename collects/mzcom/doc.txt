@@ -6,7 +6,7 @@ class wrapper for MzScheme.
 
 The code is in the file mzcom.exe.  During normal
 installation of MzCOM from the file mzcom.plt, the
-mzcom.dll is registered automatically.  You can 
+executable is registered automatically.  You can 
 move the .exe to whatever location you like, but
 you'll need to re-register it.  From the command
 line, run

@@ -56,13 +56,13 @@ This gives you the following syntactic forms:
    that the variables start-pos, end-pos, lexeme,
    return-without-pos and input-port are also bound in the action
    (hiding any outside binding).
-   > start-pos - a position struct for the first character matched
-   > end-pos - a position struct for the character after the last
+>   start-pos - a position struct for the first character matched
+>   end-pos - a position struct for the character after the last
       character in the match
-   > lexeme - the matched string
-   > input-port - the input-port being processed (this is useful for
+>   lexeme - the matched string
+>   input-port - the input-port being processed (this is useful for
       matching input with multiple lexers, see example below)
-   > (return-without-pos x) is a function (continuation) that
+>   (return-without-pos x) is a function (continuation) that
      immediately returns the value of x from the lexer.  This useful
      in a src-pos lexer to prevent the lexer from adding source
      information.  For example:

@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.62 2000/06/23 00:48:44 shriram Exp $
+; $Id: x.ss,v 1.63 2000/07/10 23:42:03 mflatt Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -112,7 +112,9 @@
 	  (map (lambda (n id)
 		 (hash-table-put! v id r))
 	       names ids)
-	  (unless stdname?
+;	  (unless stdname? -- see PR 1622
+	  (when (and (not stdname?)
+		  (vocabulary-record-namespace-based? vocab))
 	    (for-each
 	     (lambda (name id)
 	       (global-defined-value name id))

@@ -772,9 +772,18 @@
  (mrflow-language-primitives-error "Wrong filename for language primitives types table: ~a")
 
  (xml-tool-menu "XML")
- (xml-tool-xml-box "Insert XML Box")
- (xml-tool-scheme-box "Insert Scheme Box")
- (xml-tool-scheme-splice-box "Insert Scheme Splice Box")
+ (xml-tool-insert-xml-box "Insert XML Box")
+ (xml-tool-insert-scheme-box "Insert Scheme Box")
+ (xml-tool-insert-scheme-splice-box "Insert Scheme Splice Box")
+ (xml-tool-xml-box "XML Box")
+ (xml-tool-scheme-box "Scheme Box")
+ (xml-tool-scheme-splice-box "Scheme Splice Box")
+ (xml-tool-switch-to-scheme "Switch to Scheme box")
+ (xml-tool-switch-to-scheme-splice "Switch to Scheme splice box")
+ (xml-tool-eliminate-whitespace-in-empty-tags
+  "Eliminiate whitespace in empty tags")
+ (xml-tool-leave-whitespace-alone
+  "Leave whitespace alone")
  
  (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
  (show-recent-items-window-label "Recently Opened Files")

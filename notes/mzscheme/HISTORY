@@ -1,4 +1,8 @@
 
+Version 102/6:
+
+ [No change]
+
 Version 102/5:
 
  * `with-input-from-file' and `with-output-to-file' close the port

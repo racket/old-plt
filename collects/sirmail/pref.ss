@@ -23,8 +23,12 @@
 
   (define (un/marshall-path pref)
     (preferences:set-un/marshall pref
-				 (lambda (x) (and x (path->bytes x)))
-				 (lambda (x) (and x (bytes->path x)))))
+				 (lambda (x) (if (path? x)
+						 (path->bytes x)
+						 x)))
+				 (lambda (x) (if (bytes? x)
+						 (bytes->path x) 
+						 x)))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Preference Definitions                                 ;;

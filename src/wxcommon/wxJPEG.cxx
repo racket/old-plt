@@ -16,8 +16,16 @@
 
 #include <stdio.h>
 extern "C" {
-# include "jpeglib.h"
-# include "libpng/png.h"
+# ifdef WX_USE_LIBJPEG
+#  include <jpeglib.h>
+# else
+#  include "jpeg/jpeglib.h"
+# endif
+# ifdef WX_USE_LIBPNG
+#  include <png.h>
+# else
+#  include "libpng/png.h"
+# endif
 }
 #include <setjmp.h>
 

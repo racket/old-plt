@@ -1,6 +1,7 @@
 
 @MACRO ZeroReturn[p] = if (x<p> <= 0) return scheme_void;
 @MACRO ZeroBoundary[p] = if (x<p> < 0) x<p> = 0;
+@MACRO CheckRadius[name.r.w.h] = { if (x<r> < -0.5)  WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius must be no less than -0.5: ", p[POFFSET+<r>])); if (x<r> > 0) { if (2 * x<r> > x<w>) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius is more than half the width: ", p[POFFSET+<r>])); if (2 * x<r> > x<h>) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius is more than half the height: ", p[POFFSET+<r>])); } }
 
 @MACRO CheckRgn[p] = if (x<p> && (x<p>->GetDC() != ((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[POFFSET+<p>]));
 
@@ -9,7 +10,7 @@
 @ Q "draw-line" : void DrawLine(float,float,float,float); : : /CheckOk[METHODNAME("dc<%>","draw-line")]
 @ Q "draw-point" : void DrawPoint(float,float); : : /CheckOk[METHODNAME("dc<%>","draw-point")]
 @ Q "draw-rectangle" : void DrawRectangle(float,float,nnfloat,nnfloat); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk[METHODNAME("dc<%>","draw-rectangle")]
-@ Q "draw-rounded-rectangle" : void DrawRoundedRectangle(float,float,nnfloat,nnfloat,float=20); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk[METHODNAME("dc<%>","draw-rounded-rectangle")]
+@ Q "draw-rounded-rectangle" : void DrawRoundedRectangle(float,float,nnfloat,nnfloat,float=-0.25); : : /ZeroReturn[2]|ZeroReturn[3]|CheckRadius[METHODNAME("dc<%>","draw-rounded-rectangle").4.2.3]|CheckOk[METHODNAME("dc<%>","draw-rounded-rectangle")]
 @ q "draw-spline" : void DrawSpline(float,float,float,float,float,float); : : /CheckOk[METHODNAME("dc<%>","draw-spline")]
 @ Q "draw-text" : void DrawText(string,float,float,bool=FALSE,nnint=0,float=0.0); : : /CheckStringIndex["draw-text".0.4]|CheckOk[METHODNAME("dc<%>","draw-text")]
 

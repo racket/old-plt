@@ -1607,9 +1607,9 @@ static Scheme_Object *os_wxDCDrawRoundedRectangle(int n,  Scheme_Object *p[])
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "draw-rounded-rectangle in dc<%>"));
   } else
-    x4 = 20;
+    x4 = -0.25;
 
-  if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(METHODNAME("dc<%>","draw-rounded-rectangle"))
+  if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;{ if (x4 < -0.5)  WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-rounded-rectangle"), "radius must be no less than -0.5: ", p[POFFSET+4])); if (x4 > 0) { if (2 * x4 > x2) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-rounded-rectangle"), "radius is more than half the width: ", p[POFFSET+4])); if (2 * x4 > x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-rounded-rectangle"), "radius is more than half the height: ", p[POFFSET+4])); } }DO_OK_CHECK(METHODNAME("dc<%>","draw-rounded-rectangle"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawRoundedRectangle(x0, x1, x2, x3, x4));
 
   

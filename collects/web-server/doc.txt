@@ -166,10 +166,11 @@ The following functions expose more of the Web server for use by the
 development environment.  They are not intended for general use.
 They may change at anytime or disappear entirely.
 
-> server-loop : custodian tcp-listener config -> void
+> server-loop : custodian tcp-listener config initial-timeout -> void
   where custodian is the parent custodian for servlets.
 	tcp-listener is where requests arrive.
 	config encapsulates most of the state of the server.
+        initial-timeout is the number of seconds before timing out connections
 
 > make-config : host-table script-table instance-table access-table -> config
   where

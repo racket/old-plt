@@ -1404,7 +1404,7 @@ scheme_inner_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
 
     name = rec[drec].value_name;
     scheme_compile_rec_done_local(rec, drec);
-    
+
     if (len <= 5)
       recs = quick;
     else
@@ -2206,6 +2206,19 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    "bad syntax (" IMPROPER_LIST_FORM ")");
 
       forms = SCHEME_STX_CDR(forms);
+
+      if (SCHEME_STX_NULLP(forms)) {
+	/* A `begin' that ends the block.  An `inferred-name' property
+	   attached to this begin should apply to the ultimate last
+	   thing in the block. */
+	if (rec) {
+	  Scheme_Object *v;
+	  v = scheme_check_name_property(first, rec[drec].value_name);
+	  rec[drec].value_name = v;
+	} else
+	  boundname = scheme_check_name_property(first, boundname);
+      }
+
       forms = scheme_append(scheme_flatten_syntax_list(content, NULL),
 			    forms);
 

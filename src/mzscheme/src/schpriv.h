@@ -1585,6 +1585,9 @@ void scheme_ill_formed(Mz_CPort *port);
 # define scheme_ill_formed_code(port) scheme_ill_formed(port) 
 #endif
 
+extern Scheme_Object *scheme_inferred_name_symbol;
+Scheme_Object *scheme_check_name_property(Scheme_Object *stx, Scheme_Object *current_name);
+
 /*========================================================================*/
 /*                         namespaces and modules                         */
 /*========================================================================*/

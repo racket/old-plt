@@ -69,6 +69,8 @@ Scheme_Object *scheme_values_func; /* the function bound to `values' */
 
 Scheme_Object *scheme_tail_call_waiting;
 
+Scheme_Object *scheme_inferred_name_symbol;
+
 /* locals */
 static Scheme_Object *procedure_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *apply (int argc, Scheme_Object *argv[]);
@@ -115,7 +117,6 @@ static Scheme_Object *top_next_mark;
 static Scheme_Object *top_next_name;
 
 static Scheme_Object *is_method_symbol;
-static Scheme_Object *inferred_name_symbol;
 
 typedef void (*DW_PrePost_Proc)(void *);
 
@@ -339,9 +340,9 @@ scheme_init_fun (Scheme_Env *env)
 			     read_compiled_closure);
 
   REGISTER_SO(is_method_symbol);
-  REGISTER_SO(inferred_name_symbol);
+  REGISTER_SO(scheme_inferred_name_symbol);
   is_method_symbol = scheme_intern_symbol("method-arity-error");
-  inferred_name_symbol = scheme_intern_symbol("inferred-name");
+  scheme_inferred_name_symbol = scheme_intern_symbol("inferred-name");
 }
 
 /*========================================================================*/
@@ -748,7 +749,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   forms = scheme_datum_to_syntax(forms, code, code, 0, 0);
   forms = scheme_add_env_renames(forms, frame, env);
   
-  name = scheme_stx_property(code, inferred_name_symbol, NULL);
+  name = scheme_stx_property(code, scheme_inferred_name_symbol, NULL);
   if (name && SCHEME_SYMBOLP(name)) {
     data->name = name;
   } else {

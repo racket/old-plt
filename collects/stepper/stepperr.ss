@@ -55,18 +55,19 @@
                  (let ([editor (get-editor)])
                    (when editor
                      (let-values ([(client-width client-height) (get-client-size)])
-                       (send editor reset-pretty-print-width client-width (lambda (x) (show x)))))))))
+                       (send editor reset-pretty-print-width client-width)))))))
       (sequence (super-init parent editor style scrolls-per-page))))
   
   (define stepper-text%
     (class f:text:basic% (sexp redex error-msg (line-spacing 1.0) (tabstops null))
-      (inherit get-dc find-snip insert change-style highlight-range last-position lock erase)
+      (inherit get-dc find-snip insert change-style highlight-range last-position lock erase
+               begin-edit-sequence end-edit-sequence)
       (public (pretty-printed-width -1)
               (clear-highlight-thunk (lambda () #f))
               (reset-pretty-print-width 
-               (lambda (width show-proc)
+               (lambda (width)
+                 (begin-edit-sequence)
                  (when (= (last-position) 0)
-                   (show-proc #f)
                    (insert "a")
                    (change-style result-delta 0 1))
                  (let* ([style (send (find-snip 0 'before) get-style)]
@@ -75,17 +76,17 @@
                         [new-columns (max min-columns 
                                           (- (floor (/ width char-width)) 3))])
                    (pretty-print-columns new-columns)
-                   (reformat-sexp show-proc))))
+                   (reformat-sexp)
+                   (end-edit-sequence))))
               (reformat-sexp
-               (lambda (show-proc)
+               (lambda ()
                  (when (not (= pretty-printed-width (pretty-print-columns)))
                    (set! pretty-printed-width (pretty-print-columns))
-                   (show-proc #f)
-                   (format-sexp)
-                   (show-proc #t))))
+                   (format-sexp))))
               (format-sexp
                (lambda ()
                  (lock #f)
+                 (begin-edit-sequence)
                  (clear-highlight-thunk)
                  (erase)
                  (when (not (eq? sexp no-sexp))
@@ -121,6 +122,7 @@
                    (let ([error-begin (last-position)])
                      (insert error-msg)
                      (change-style error-delta error-begin (last-position))))
+                 (end-edit-sequence)
                  (lock #t))))
       (sequence (super-init line-spacing tabstops))))
 
@@ -179,8 +181,10 @@
              [update-view
               (lambda (new-view)
                 (set! view new-view)
+                (send canvas lazy-refresh #t)
                 (send canvas set-editor (list-ref history view))
                 (send canvas reset-pretty-print-width)
+                (send canvas lazy-refresh #f)
                 (send previous-button enable (not (zero? view)))
                 (send home-button enable (not (zero? view)))
                 (send next-button enable (not (eq? final-view view))))]

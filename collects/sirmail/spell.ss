@@ -141,9 +141,6 @@
       (if dict
           (or (word-ok word)
               (word-ok (string-lowercase! (string-copy word))) ;; check beginning of sentence-ness?
-              ;(subword-ok #rx"(.*)ing$")
-              ;(subword-ok #rx"(.*)ed$")
-              ;(subword-ok #rx"(.*)s$")
               (let ([ispell-ok (ispell-word word)])
                 (when ispell-ok 
                   (hash-table-put! dict word #t))

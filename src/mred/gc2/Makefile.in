@@ -755,18 +755,15 @@ MZOBJS = ../../mzscheme/gc2/salloc.o \
 	../../mzscheme/gc2/hash.o \
 	../../mzscheme/gc2/image.o \
 	../../mzscheme/gc2/list.o \
+	../../mzscheme/gc2/module.o \
 	../../mzscheme/gc2/network.o \
 	../../mzscheme/gc2/numarith.o \
 	../../mzscheme/gc2/number.o \
 	../../mzscheme/gc2/numcomp.o \
 	../../mzscheme/gc2/numstr.o \
-        ../../mzscheme/gc2/objclass.o \
-        ../../mzscheme/gc2/object.o \
 	../../mzscheme/gc2/port.o \
 	../../mzscheme/gc2/portfun.o \
 	../../mzscheme/gc2/print.o \
-	../../mzscheme/gc2/process.o \
-	../../mzscheme/gc2/promise.o \
         ../../mzscheme/gc2/rational.o \
 	../../mzscheme/gc2/read.o \
 	../../mzscheme/gc2/regexp.o \
@@ -777,9 +774,8 @@ MZOBJS = ../../mzscheme/gc2/salloc.o \
 	../../mzscheme/gc2/stxobj.o \
 	../../mzscheme/gc2/symbol.o \
 	../../mzscheme/gc2/syntax.o \
+	../../mzscheme/gc2/thread.o \
 	../../mzscheme/gc2/type.o \
-        ../../mzscheme/gc2/unit.o \
-        ../../mzscheme/gc2/unitsig.o \
 	../../mzscheme/gc2/vector.o \
 	../../mzscheme/gc2/gc2.o
 

@@ -419,9 +419,8 @@ static Scheme_Object *os_wxDCEndPage(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "end-page in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -439,9 +438,8 @@ static Scheme_Object *os_wxDCEndDoc(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "end-doc in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -459,9 +457,8 @@ static Scheme_Object *os_wxDCStartPage(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "start-page in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -481,10 +478,9 @@ static Scheme_Object *os_wxDCStartDoc(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "start-doc in dc<%>", n, p);
   string x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "start-doc in dc<%>"));
@@ -504,9 +500,8 @@ static Scheme_Object *os_wxDCOk(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxDC_class, "ok? in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -525,9 +520,8 @@ static Scheme_Object *os_wxDCMyGetSize(int n,  Scheme_Object *p[])
   void* r;
   objscheme_check_valid(os_wxDC_class, "get-size in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -546,9 +540,8 @@ static Scheme_Object *os_wxDCdcGetTextForeground(int n,  Scheme_Object *p[])
   class wxColour* r;
   objscheme_check_valid(os_wxDC_class, "get-text-foreground in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -567,9 +560,8 @@ static Scheme_Object *os_wxDCdcGetTextBackground(int n,  Scheme_Object *p[])
   class wxColour* r;
   objscheme_check_valid(os_wxDC_class, "get-text-background in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -588,9 +580,8 @@ static Scheme_Object *os_wxDCGetPen(int n,  Scheme_Object *p[])
   class wxPen* r;
   objscheme_check_valid(os_wxDC_class, "get-pen in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -609,9 +600,8 @@ static Scheme_Object *os_wxDCGetFont(int n,  Scheme_Object *p[])
   class wxFont* r;
   objscheme_check_valid(os_wxDC_class, "get-font in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -630,9 +620,8 @@ static Scheme_Object *os_wxDCGetBrush(int n,  Scheme_Object *p[])
   class wxBrush* r;
   objscheme_check_valid(os_wxDC_class, "get-brush in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -651,9 +640,8 @@ static Scheme_Object *os_wxDCGetBackgroundMode(int n,  Scheme_Object *p[])
   int r;
   objscheme_check_valid(os_wxDC_class, "get-text-mode in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -672,9 +660,8 @@ static Scheme_Object *os_wxDCGetBackground(int n,  Scheme_Object *p[])
   class wxColour* r;
   objscheme_check_valid(os_wxDC_class, "get-background in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -693,9 +680,8 @@ static Scheme_Object *os_wxDCMyGetOrigin(int n,  Scheme_Object *p[])
   void* r;
   objscheme_check_valid(os_wxDC_class, "get-origin in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -714,9 +700,8 @@ static Scheme_Object *os_wxDCMyGetScale(int n,  Scheme_Object *p[])
   void* r;
   objscheme_check_valid(os_wxDC_class, "get-scale in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -736,9 +721,8 @@ static Scheme_Object *os_wxDCSetDeviceOrigin(int n,  Scheme_Object *p[])
   float x0;
   float x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-origin in dc<%>"));
@@ -760,9 +744,8 @@ static Scheme_Object *os_wxDCSetUserScale(int n,  Scheme_Object *p[])
   nnfloat x0;
   nnfloat x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+0], "set-scale in dc<%>"));
@@ -783,9 +766,8 @@ static Scheme_Object *os_wxDCSetBackgroundMode(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-text-mode in dc<%>", n, p);
   int x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(unbundle_symset_textMode(p[POFFSET+0], "set-text-mode in dc<%>"));
@@ -806,11 +788,10 @@ static Scheme_Object *os_wxDCTryColour(int n,  Scheme_Object *p[])
   class wxColour* x0 INIT_NULLED_OUT;
   class wxColour* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "try-color in dc<%>", 0));
@@ -836,11 +817,10 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
   int x3;
   class wxColour* x4 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x4);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x4);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "draw-bitmap in dc<%>", 0));
@@ -879,11 +859,10 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
   int x7;
   class wxColour* x8 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x8);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x8);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "draw-bitmap-section in dc<%>", 0));
@@ -917,9 +896,8 @@ static Scheme_Object *os_wxDCGetCharWidth(int n,  Scheme_Object *p[])
   float r;
   objscheme_check_valid(os_wxDC_class, "get-char-width in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -938,9 +916,8 @@ static Scheme_Object *os_wxDCGetCharHeight(int n,  Scheme_Object *p[])
   float r;
   objscheme_check_valid(os_wxDC_class, "get-char-height in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -963,11 +940,10 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   Bool x2;
   nnint x3;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "get-text-extent in dc<%>"));
@@ -999,10 +975,9 @@ static Scheme_Object *os_wxDCSetTextForeground(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-text-foreground in dc<%>", n, p);
   class wxColour* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-text-foreground in dc<%>", 0));
@@ -1022,10 +997,9 @@ static Scheme_Object *os_wxDCSetTextBackground(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-text-background in dc<%>", n, p);
   class wxColour* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-text-background in dc<%>", 0));
@@ -1045,10 +1019,9 @@ static Scheme_Object *os_wxDCSetPen(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-pen in dc<%>", n, p);
   class wxPen* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPen(p[POFFSET+0], "set-pen in dc<%>", 0));
@@ -1068,10 +1041,9 @@ static Scheme_Object *os_wxDCSetFont(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-font in dc<%>", n, p);
   class wxFont* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+0], "set-font in dc<%>", 0));
@@ -1091,10 +1063,9 @@ static Scheme_Object *os_wxDCSetBrush(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-brush in dc<%>", n, p);
   class wxBrush* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBrush(p[POFFSET+0], "set-brush in dc<%>", 0));
@@ -1114,10 +1085,9 @@ static Scheme_Object *os_wxDCSetBackground(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-background in dc<%>", n, p);
   class wxColour* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-background in dc<%>", 0));
@@ -1137,9 +1107,8 @@ static Scheme_Object *os_wxDCGetClippingRegion(int n,  Scheme_Object *p[])
   class wxRegion* r;
   objscheme_check_valid(os_wxDC_class, "get-clipping-region in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1158,10 +1127,9 @@ static Scheme_Object *os_wxDCSetClippingRegion(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxDC_class, "set-clipping-region in dc<%>", n, p);
   class wxRegion* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[POFFSET+0], "set-clipping-region in dc<%>", 1));
@@ -1184,9 +1152,8 @@ static Scheme_Object *os_wxDCSetClippingRect(int n,  Scheme_Object *p[])
   nnfloat x2;
   nnfloat x3;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-clipping-rect in dc<%>"));
@@ -1213,10 +1180,9 @@ static Scheme_Object *os_wxDCDrawPolygon(int n,  Scheme_Object *p[])
   float x3;
   int x4;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x1);
+  VAR_STACK_PUSH(1, x1);
 
   
   x1 = NULL;
@@ -1251,10 +1217,9 @@ static Scheme_Object *os_wxDCDrawLines(int n,  Scheme_Object *p[])
   float x2;
   float x3;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x1);
+  VAR_STACK_PUSH(1, x1);
 
   
   x1 = NULL;
@@ -1285,9 +1250,8 @@ static Scheme_Object *os_wxDCDrawEllipse(int n,  Scheme_Object *p[])
   nnfloat x2;
   nnfloat x3;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-ellipse in dc<%>"));
@@ -1315,9 +1279,8 @@ static Scheme_Object *os_wxDCDrawArc(int n,  Scheme_Object *p[])
   float x4;
   float x5;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-arc in dc<%>"));
@@ -1346,10 +1309,9 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   Bool x3;
   nnint x4;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "draw-text in dc<%>"));
@@ -1384,9 +1346,8 @@ static Scheme_Object *os_wxDCDrawSpline(int n,  Scheme_Object *p[])
   float x4;
   float x5;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-spline in dc<%>"));
@@ -1415,9 +1376,8 @@ static Scheme_Object *os_wxDCDrawRoundedRectangle(int n,  Scheme_Object *p[])
   nnfloat x3;
   float x4;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-rounded-rectangle in dc<%>"));
@@ -1447,9 +1407,8 @@ static Scheme_Object *os_wxDCDrawRectangle(int n,  Scheme_Object *p[])
   nnfloat x2;
   nnfloat x3;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-rectangle in dc<%>"));
@@ -1473,9 +1432,8 @@ static Scheme_Object *os_wxDCDrawPoint(int n,  Scheme_Object *p[])
   float x0;
   float x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-point in dc<%>"));
@@ -1499,9 +1457,8 @@ static Scheme_Object *os_wxDCDrawLine(int n,  Scheme_Object *p[])
   float x2;
   float x3;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "draw-line in dc<%>"));
@@ -1523,9 +1480,8 @@ static Scheme_Object *os_wxDCClear(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "clear in dc<%>", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1703,9 +1659,8 @@ static Scheme_Object *os_wxMemoryDCGetObject(int n,  Scheme_Object *p[])
   class wxBitmap* r;
   objscheme_check_valid(os_wxMemoryDC_class, "get-bitmap in bitmap-dc%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1724,10 +1679,9 @@ static Scheme_Object *os_wxMemoryDCSelectObject(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxMemoryDC_class, "set-bitmap in bitmap-dc%", n, p);
   class wxBitmap* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-bitmap in bitmap-dc%", 1));
@@ -1749,10 +1703,9 @@ static Scheme_Object *os_wxMemoryDCSetPixel(int n,  Scheme_Object *p[])
   float x1;
   class wxColour* x2 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x2);
+  VAR_STACK_PUSH(1, x2);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "set-pixel in bitmap-dc%"));
@@ -1777,10 +1730,9 @@ static Scheme_Object *os_wxMemoryDCGetPixel(int n,  Scheme_Object *p[])
   float x1;
   class wxColour* x2 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x2);
+  VAR_STACK_PUSH(1, x2);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "get-pixel in bitmap-dc%"));
@@ -1802,10 +1754,9 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(int n,  Scheme_Object *p[])
   os_wxMemoryDC *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+0)) 
@@ -1949,11 +1900,10 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
   Bool x0;
   class wxWindow* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(4);
+  SETUP_VAR_STACK_PRE_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, realobj);
+  VAR_STACK_PUSH(2, x1);
 
   
   if ((n > (POFFSET+2))) 
@@ -2136,11 +2086,10 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(int n,  Scheme_Object *p[
   REMEMBER_VAR_STACK();
   class wxWindow* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(4);
+  SETUP_VAR_STACK_PRE_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
-  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(1, realobj);
+  VAR_STACK_PUSH(2, x0);
 
   
   if ((n > (POFFSET+1))) 

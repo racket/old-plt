@@ -105,10 +105,9 @@ static Scheme_Object *os_wxEvent_ConstructScheme(int n,  Scheme_Object *p[])
   os_wxEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+0)) 
@@ -359,10 +358,9 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(int n,  Scheme_Object *p
   REMEMBER_VAR_STACK();
   int x0;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+1)) 
@@ -533,10 +531,9 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(int n,  Scheme_Object *p[]
   os_wxPopupEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+0)) 
@@ -861,10 +858,9 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(int n,  Scheme_Object *p[
   os_wxScrollEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+0)) 
@@ -1590,10 +1586,9 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   int x0;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+0)) 
@@ -1840,9 +1835,8 @@ static Scheme_Object *os_wxMouseEventMoving(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxMouseEvent_class, "moving? in mouse-event%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1861,9 +1855,8 @@ static Scheme_Object *os_wxMouseEventLeaving(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxMouseEvent_class, "leaving? in mouse-event%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1882,9 +1875,8 @@ static Scheme_Object *os_wxMouseEventEntering(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxMouseEvent_class, "entering? in mouse-event%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1903,9 +1895,8 @@ static Scheme_Object *os_wxMouseEventDragging(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxMouseEvent_class, "dragging? in mouse-event%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -1925,9 +1916,8 @@ static Scheme_Object *os_wxMouseEventButtonUp(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxMouseEvent_class, "button-up? in mouse-event%", n, p);
   int x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   if (n > (POFFSET+0)) {
@@ -1951,9 +1941,8 @@ static Scheme_Object *os_wxMouseEventButtonDown(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxMouseEvent_class, "button-down? in mouse-event%", n, p);
   int x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   if (n > (POFFSET+0)) {
@@ -1977,9 +1966,8 @@ static Scheme_Object *os_wxMouseEventButton(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxMouseEvent_class, "button-changed? in mouse-event%", n, p);
   int x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   if (n > (POFFSET+0)) {
@@ -2333,10 +2321,9 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[]
   REMEMBER_VAR_STACK();
   int x0;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(3);
+  SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(1, realobj);
 
   
   if (n != (POFFSET+1)) 

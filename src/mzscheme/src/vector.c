@@ -253,10 +253,9 @@ scheme_vector_to_list (Scheme_Object *vec)
 {
   int i;
   Scheme_Object *pair = scheme_null;
-  Scheme_Object **v = SCHEME_VEC_ELS(vec);
 
   for (i = SCHEME_VEC_SIZE(vec); i--; ) {
-    pair = scheme_make_pair(v[i], pair);
+    pair = scheme_make_pair(SCHEME_VEC_ELS(vec)[i], pair);
   }
 
   return pair;

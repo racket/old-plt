@@ -76,6 +76,7 @@
 
 typedef struct Scheme_Class {
   Scheme_Type type;
+  short hash; /* for Precise GC */
   const char *name;
   Scheme_Object *sup;
   Scheme_Object *initf;
@@ -87,6 +88,97 @@ typedef struct Scheme_Class {
 
 Scheme_Type objscheme_class_type;
 Scheme_Type objscheme_object_type;
+
+#ifdef MZ_PRECISE_GC
+# include "../gc2/gc2.h"
+
+START_XFORM_SKIP;
+
+int gc_class_size(void *_c)
+{
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
+}
+
+int gc_class_mark(void *_c)
+{
+  Scheme_Class *c = (Scheme_Class *)_c;
+
+  gcMARK(c->name);
+  gcMARK(c->sup);
+  gcMARK(c->initf);
+  gcMARK(c->names);
+  gcMARK(c->methods);
+  gcMARK(c->cache_nl);
+  gcMARK(c->cache_mv);
+  
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
+}
+
+int gc_class_fixup(void *_c)
+{
+  Scheme_Class *c = (Scheme_Class *)_c;
+
+  gcFIXUP(c->name);
+  gcFIXUP(c->sup);
+  gcFIXUP(c->initf);
+  gcFIXUP(c->names);
+  gcFIXUP(c->methods);
+  gcFIXUP(c->cache_nl);
+  gcFIXUP(c->cache_mv);
+  
+  return gcBYTES_TO_WORDS(sizeof(Scheme_Class));
+}
+
+int gc_obj_size(void *_o)
+{
+  Scheme_Class_Object *o = (Scheme_Class_Object *)_o;
+  int s;
+
+  s = (sizeof(Scheme_Class_Object) 
+       + (o->num_extra - 1) * sizeof(Scheme_Object*));
+  
+  return gcBYTES_TO_WORDS(s);
+}
+
+int gc_obj_mark(void *_o)
+{
+  Scheme_Class_Object *o = (Scheme_Class_Object *)_o;
+  int s, i;
+
+  for (i = o->num_extra; i--; )
+    gcMARK(o->extra[i]);
+
+  gcMARK(o->dispatcher);
+  gcMARK(o->sclass);
+  gcMARK(o->primdata);
+
+  s = (sizeof(Scheme_Class_Object) 
+       + (o->num_extra - 1) * sizeof(Scheme_Object*));
+  
+  return gcBYTES_TO_WORDS(s);
+}
+
+int gc_obj_fixup(void *_o)
+{
+  Scheme_Class_Object *o = (Scheme_Class_Object *)_o;
+  int s, i;
+
+  for (i = o->num_extra; i--; )
+    gcFIXUP(o->extra[i]);
+
+  gcFIXUP(o->dispatcher);
+  gcFIXUP(o->sclass);
+  gcFIXUP(o->primdata);
+
+  s = (sizeof(Scheme_Class_Object) 
+       + (o->num_extra - 1) * sizeof(Scheme_Object*));
+  
+  return gcBYTES_TO_WORDS(s);
+}
+
+END_XFORM_SKIP;
+
+#endif
 
 /***************************************************************************/
 
@@ -423,6 +515,11 @@ void objscheme_init(Scheme_Env *env)
 
   objscheme_class_type = scheme_make_type("<primitive-class>");
   objscheme_object_type = scheme_make_type("<primitive-object>");
+
+#ifdef MZ_PRECISE_GC
+  GC_register_traversers(objscheme_class_type, gc_class_size, gc_class_mark, gc_class_fixup);
+  GC_register_traversers(objscheme_object_type, gc_obj_size, gc_obj_mark, gc_obj_fixup);
+#endif
 
   scheme_install_xc_global("make-primitive-object",
 			   scheme_make_prim_w_arity(make_prim_obj,

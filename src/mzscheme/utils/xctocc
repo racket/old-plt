@@ -1882,9 +1882,9 @@ sub PrintSpecificFunction
 	$pointercount = 1;
     } else {
 	if ($iscreator) {
-	    $pointercount = 3;
-	} else {
 	    $pointercount = 2;
+	} else {
+	    $pointercount = 1;
 	}
     }
     if ($returnptr) {
@@ -1907,13 +1907,12 @@ sub PrintSpecificFunction
     print "\n$prefix  SETUP_VAR_STACK_${pre_var_stack}REMEMBERED($pointercount);\n";
     print "$prefix  VAR_STACK_PUSH(0, p);\n";
     if (!$global) {
-	print "$prefix  VAR_STACK_PUSH(1, obj);\n";
 	if ($iscreator) {
-	    print "$prefix  VAR_STACK_PUSH(2, realobj);\n";
+	    print "$prefix  VAR_STACK_PUSH(1, realobj);\n";
 	}
     }
     if ($returnptr) {
-	print "$prefix  VAR_STACK_PUSH(2, r);\n";
+	print "$prefix  VAR_STACK_PUSH(1, r);\n";
     }
     # Push each pounter:
     $paramnum = 0;
@@ -1921,9 +1920,9 @@ sub PrintSpecificFunction
 	$pointercount = 1;
     } else {
 	if ($iscreator) {
-	    $pointercount = 3;
-	} else {
 	    $pointercount = 2;
+	} else {
+	    $pointercount = 1;
 	}
     }
     if ($returnptr) {

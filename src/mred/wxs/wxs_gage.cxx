@@ -368,9 +368,8 @@ static Scheme_Object *os_wxsGaugeGetValue(int n,  Scheme_Object *p[])
   int r;
   objscheme_check_valid(os_wxsGauge_class, "get-value in gauge%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -389,9 +388,8 @@ static Scheme_Object *os_wxsGaugeSetValue(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxsGauge_class, "set-value in gauge%", n, p);
   int x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "set-value in gauge%"));
@@ -411,9 +409,8 @@ static Scheme_Object *os_wxsGaugeGetRange(int n,  Scheme_Object *p[])
   int r;
   objscheme_check_valid(os_wxsGauge_class, "get-range in gauge%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -432,9 +429,8 @@ static Scheme_Object *os_wxsGaugeSetRange(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxsGauge_class, "set-range in gauge%", n, p);
   int x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "set-range in gauge%"));
@@ -454,10 +450,9 @@ static Scheme_Object *os_wxsGaugeOnDropFile(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxsGauge_class, "on-drop-file in gauge%", n, p);
   pathname x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in gauge%"));
@@ -482,11 +477,10 @@ static Scheme_Object *os_wxsGaugePreOnEvent(int n,  Scheme_Object *p[])
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxMouseEvent* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-event in gauge%", 0));
@@ -512,11 +506,10 @@ static Scheme_Object *os_wxsGaugePreOnChar(int n,  Scheme_Object *p[])
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxKeyEvent* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-char in gauge%", 0));
@@ -541,9 +534,8 @@ static Scheme_Object *os_wxsGaugeOnSize(int n,  Scheme_Object *p[])
   int x0;
   int x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "on-size in gauge%"));
@@ -566,9 +558,8 @@ static Scheme_Object *os_wxsGaugeOnSetFocus(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxsGauge_class, "on-set-focus in gauge%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -589,9 +580,8 @@ static Scheme_Object *os_wxsGaugeOnKillFocus(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxsGauge_class, "on-kill-focus in gauge%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -622,13 +612,12 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(int n,  Scheme_Object *p[])
   int x7;
   string x8 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(6);
+  SETUP_VAR_STACK_PRE_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, realobj);
-  VAR_STACK_PUSH(3, x0);
-  VAR_STACK_PUSH(4, x1);
-  VAR_STACK_PUSH(5, x8);
+  VAR_STACK_PUSH(1, realobj);
+  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(4, x8);
 
   
   if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 

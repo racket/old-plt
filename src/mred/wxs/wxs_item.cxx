@@ -74,10 +74,9 @@ static Scheme_Object *os_wxItemSetLabel(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxItem_class, "set-label in item%", n, p);
   string x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-label in item%"));
@@ -97,9 +96,8 @@ static Scheme_Object *os_wxItemGetLabel(int n,  Scheme_Object *p[])
   nstring r;
   objscheme_check_valid(os_wxItem_class, "get-label in item%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -118,10 +116,9 @@ static Scheme_Object *os_wxItemCommand(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxItem_class, "command in item%", n, p);
   class wxCommandEvent* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxCommandEvent(p[POFFSET+0], "command in item%", 0));
@@ -489,10 +486,9 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+0], NULL, 0))) {
     class wxBitmap* x0 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(1, x0);
 
     
     if (n != (POFFSET+1)) 
@@ -507,10 +503,9 @@ static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
   } else  {
     string x0 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(1, x0);
 
     
     if (n != (POFFSET+1)) 
@@ -534,10 +529,9 @@ static Scheme_Object *os_wxMessageOnDropFile(int n,  Scheme_Object *p[])
   objscheme_check_valid(os_wxMessage_class, "on-drop-file in message%", n, p);
   pathname x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in message%"));
@@ -562,11 +556,10 @@ static Scheme_Object *os_wxMessagePreOnEvent(int n,  Scheme_Object *p[])
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxMouseEvent* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-event in message%", 0));
@@ -592,11 +585,10 @@ static Scheme_Object *os_wxMessagePreOnChar(int n,  Scheme_Object *p[])
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxKeyEvent* x1 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(1, x0);
+  VAR_STACK_PUSH(2, x1);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-char in message%", 0));
@@ -621,9 +613,8 @@ static Scheme_Object *os_wxMessageOnSize(int n,  Scheme_Object *p[])
   int x0;
   int x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "on-size in message%"));
@@ -646,9 +637,8 @@ static Scheme_Object *os_wxMessageOnSetFocus(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMessage_class, "on-set-focus in message%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -669,9 +659,8 @@ static Scheme_Object *os_wxMessageOnKillFocus(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMessage_class, "on-kill-focus in message%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -700,13 +689,12 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     int x4;
     string x5 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(6);
+    SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
-    VAR_STACK_PUSH(3, x0);
-    VAR_STACK_PUSH(4, x1);
-    VAR_STACK_PUSH(5, x5);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+    VAR_STACK_PUSH(4, x5);
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
@@ -746,13 +734,12 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     int x4;
     string x5 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(6);
+    SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
-    VAR_STACK_PUSH(3, x0);
-    VAR_STACK_PUSH(4, x1);
-    VAR_STACK_PUSH(5, x5);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(3, x1);
+    VAR_STACK_PUSH(4, x5);
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 

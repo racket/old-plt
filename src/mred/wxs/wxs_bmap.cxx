@@ -199,10 +199,9 @@ static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
   pathname x0 INIT_NULLED_OUT;
   int x1;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "save-file in bitmap%"));
@@ -225,10 +224,9 @@ static Scheme_Object *os_wxBitmapLoadFile(int n,  Scheme_Object *p[])
   pathname x0 INIT_NULLED_OUT;
   int x1;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(1, x0);
 
   
   x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "load-file in bitmap%"));
@@ -252,9 +250,8 @@ static Scheme_Object *os_wxBitmapIsColor(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxBitmap_class, "is-color? in bitmap%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -273,9 +270,8 @@ static Scheme_Object *os_wxBitmapOk(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxBitmap_class, "ok? in bitmap%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -294,9 +290,8 @@ static Scheme_Object *os_wxBitmapGetWidth(int n,  Scheme_Object *p[])
   int r;
   objscheme_check_valid(os_wxBitmap_class, "get-width in bitmap%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -315,9 +310,8 @@ static Scheme_Object *os_wxBitmapGetHeight(int n,  Scheme_Object *p[])
   int r;
   objscheme_check_valid(os_wxBitmap_class, "get-height in bitmap%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -336,9 +330,8 @@ static Scheme_Object *os_wxBitmapGetDepth(int n,  Scheme_Object *p[])
   int r;
   objscheme_check_valid(os_wxBitmap_class, "get-depth in bitmap%", n, p);
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
 
   
 
@@ -361,10 +354,9 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
     int x1;
     Bool x2;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(1, realobj);
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
@@ -389,11 +381,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
     int x1;
     int x2;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
-    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
 
     
     if (n != (POFFSET+3)) 
@@ -414,11 +405,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
     pathname x0 INIT_NULLED_OUT;
     int x1;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, realobj);
-    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 

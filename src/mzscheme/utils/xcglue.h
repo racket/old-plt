@@ -22,7 +22,7 @@ void objscheme_init(Scheme_Env *);
 
 typedef struct Scheme_Class_Object {
   Scheme_Type type;
-  /* MZ_HASH_KEY */
+  short hash; /* for Precise GC */
   short primflag;
   short num_extra;
   void *primdata;
@@ -191,7 +191,7 @@ typedef float nnfloat;
 # define VAR_STACK_PUSH(p, var)          __gc_var_stack__[p+2] = &(var)
 # define VAR_STACK_PUSH_ARRAY(p, var, n) __gc_var_stack__[p+2] = 0; \
                                          __gc_var_stack__[p+3] = &(var); \
-                                         __gc_var_stack__[p+4] = (void *)n
+                                         __gc_var_stack__[p+4] = (void *)(n)
 # define PRE_VAR_STACK_PUSH(p, var)      __gc_pre_var_stack__[p+2] = &(var)
 # define SET_VAR_STACK()                 GC_variable_stack = __gc_var_stack__
 # define WITH_VAR_STACK(x)               (SET_VAR_STACK(), x)

@@ -525,6 +525,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_config_type, hash_general);
   PROC(scheme_will_executor_type, hash_general);
   PROC(scheme_stx_type, hash_general);
+  PROC(scheme_module_index_type, hash_general);
   PROC(scheme_custodian_type, hash_general);
   PROC(scheme_random_state_type, hash_general);
   PROC(scheme_regexp_type, hash_general);
@@ -542,12 +543,18 @@ long scheme_hash_key(Scheme_Object *o)
 
   t = SCHEME_TYPE(o);
 
-  if (!hash_key_procs[t]) {
-    printf("Can't hash %d\n", t);
-    abort();
+  if (t >= _scheme_last_normal_type_) {
+    return hash_general(o);
+  } else {
+#if 0
+    if (!hash_key_procs[t]) {
+      printf("Can't hash %d\n", t);
+      abort();
+    }
+#endif
+    
+    return hash_key_procs[t](o);
   }
-
-  return hash_key_procs[t](o);
 }
 
 END_XFORM_SKIP;

@@ -1604,8 +1604,10 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 
 	  return scheme_values(2, v);
 	} else {
+	  errid = errno;
 	  closesocket(s);
 	  --scheme_file_open_count;
+	  errno = errid;
 	  errpart = 4;
 	}
       } else
@@ -1729,6 +1731,12 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #else
       fcntl(s, F_SETFL, MZ_NONBLOCKING);
 #endif
+      /* Allow address to be reused, even if an old listener somewhere is in TIME_WAIT */
+      {
+	int on = 1;
+	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(int));
+      }
+
       if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(tcp_listen_addr)))
 	if (!listen(s, backlog)) {
 	  listener_t *l;

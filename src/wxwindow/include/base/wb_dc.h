@@ -126,7 +126,8 @@ class wxbDC: public wxObject
   virtual void DrawSpline(wxList *points);
 #endif
   virtual void DrawText(const char *text, float x, float y,
-                        Bool use16bit = FALSE, int d = 0, float angle = 0.0) = 0;
+                        Bool combine = FALSE, Bool use16bit = FALSE, 
+			int d = 0, float angle = 0.0) = 0;
   virtual void Clear(void) = 0;
 
   virtual Bool StartDoc(char *message) = 0;
@@ -154,7 +155,7 @@ class wxbDC: public wxObject
                              float *descent = NULL, 
                              float *externalLeading = NULL, 
                              wxFont *theFont = NULL,
-                             Bool use16bit = FALSE,
+                             Bool combine = FALSE, Bool use16bit = FALSE,
 			     int d = 0) = 0;
 
   inline virtual Bool Ok(void) {return ok;};

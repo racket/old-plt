@@ -1006,7 +1006,7 @@ static int wstrlen(const char *c)
   return i / 2;
 }
 
-void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d, float angle)
+void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool use16bit, int d, float angle)
 {
   int xx1, yy1;
   HDC dc;
@@ -1059,7 +1059,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d, fl
   
   CalcBoundingBox((float)x, (float)y);
 
-  GetTextExtent(text, &w, &h, NULL, NULL, NULL, use16bit, d);
+  GetTextExtent(text, &w, &h, NULL, NULL, NULL, combine, use16bit, d);
   CalcBoundingBox((float)(x + w), (float)(y + h));
 }
 
@@ -1282,7 +1282,7 @@ float wxDC::GetCharWidth(void)
 
 void wxDC::GetTextExtent(const char *string, float *x, float *y,
                          float *descent, float *topSpace, 
-			 wxFont *theFont, Bool use16bit, int d)
+			 wxFont *theFont, Bool combine, Bool use16bit, int d)
 {
   wxFont *oldFont = NULL;
   HDC dc;

@@ -45,10 +45,10 @@
     ;; apply the function to every frame in the group
     (send group for-each-frame to-each-frame)
 
-    (for-each (lambda (x)
-		(printf "checking: ~a against ~a" x (eval x)))
-	      (list 'mred:make-child-info
-		    'zodiac:make-parsed))
+    (for-each (lambda (x y)
+		(printf "checking: ~a against ~a~n" x y))
+	      (list 'mred:make-child-info mred:make-child-info
+		    'zodiac:make-parsed zodiac:make-parsed))
 
     (printf "invoked toy@~n")))
 

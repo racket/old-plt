@@ -50,11 +50,14 @@ make with cmd-m.
 
 *** OPTION 2: Installing downloaded binaries:
 
+As of 2001-12-10, the download site for these binaries is 
+<http://www.ccs.neu.edu/~clements/download/>
+
 1) download mzscheme.sit, and unstuff it in the plt/bin directory
 
-2) download mred.sit, and unstuff it in the the plt/bin directory
+2) download MrEd.app.sit, and unstuff it in the the plt/bin directory
 
-3) download Starter.sit, and unstuff it in the plt/collects/launcher
+3) download Starter.app.sit, and unstuff it in the plt/collects/launcher
 directory
 
 4) to compile .zo's and create launchers, cd to plt/bin and type:

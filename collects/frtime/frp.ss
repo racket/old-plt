@@ -299,7 +299,7 @@
   (define (fix-depths inf sup)
     (let help ([inf inf] [sup sup] [mem empty])
       (if (memq sup mem)
-          (send-event exceptions (list (make-exn:user "delay-less cycle in dataflow graph" (signal-continuation-marks sup))
+          (send-event exceptions (list (make-exn:fail "delay-less cycle in dataflow graph" (signal-continuation-marks sup))
                                        sup))
           (when (<= (safe-signal-depth inf)
                     (safe-signal-depth sup))
@@ -361,10 +361,10 @@
       [(_ expr ...)
        (with-continuation-mark
         'frtime 'safe-eval
-        (with-handlers ([exn?
+        (with-handlers ([exn:fail?
                          (lambda (exn)
                            (cond
-                             [(and (exn:application:type? exn)
+                             #;[(and (exn:fail? exn)
                                    (undefined? (exn:application-value exn)))]
                              [(man?) (iq-enqueue (list exceptions (list exn 'unknown)))]
                              [else (thread (lambda () (fprintf (current-error-port) "exception caught outside frtime engine~n") (raise exn)))])
@@ -815,12 +815,12 @@
      (let ([named-providers (make-hash-table)]
            [cur-beh #f])
        (let outer ()
-         (with-handlers ([not-break-exn?
+         (with-handlers ([exn:fail?
                           (lambda (exn)
-                            (fprintf (current-error-port) "*~n~a~n" (exn-message exn))
+                            ;(fprintf (current-error-port) "*~n~a~n" (exn-message exn))
                             (when cur-beh
-                              ;(when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
-                                ;(set-exn-continuation-marks! exn (signal-continuation-marks cur-beh))
+                              #;(when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
+                                (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh)))
                               (iq-enqueue (list exceptions (list exn cur-beh)))
                               (when (behavior? cur-beh)
                                 (undef cur-beh)))
@@ -1200,7 +1200,6 @@
              [loc-bhvr (proc->signal (lambda () (update)) bhvr)]
              [current (make-snip bhvr)])
       
-      (rename [std-copy copy])
       (define/override (copy)
         (let ([ret (make-object value-snip-copy% current this)])
           (set! copies (cons ret copies))

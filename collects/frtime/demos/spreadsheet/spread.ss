@@ -238,9 +238,6 @@
     (class canvas%
       (super-instantiate ())
       
-      (rename [super-set-scroll-pos
-               set-scroll-pos])
-      
       (inherit
         refresh
         get-dc
@@ -431,7 +428,7 @@
       (send trans-pen set-style 'transparent)
       
       (define (set-scroll-pos which pos)
-        (super-set-scroll-pos which pos)
+        (super set-scroll-pos which pos)
         (send-event
          (case which
            [(horizontal) h-scroll-rcvr]
@@ -630,7 +627,7 @@
       (send offscreen-dc set-brush highlight-brush)))
   
   (define canvas
-    (instantiate ss-canvas% (frame) (style (list 'hscroll 'vscroll))))
+    (instantiate ss-canvas% (frame) (style (list 'hscroll 'vscroll 'no-autoclear))))
   
   (send frame show #t)
   (send canvas focus))

@@ -113,7 +113,7 @@
 
  (define match:version "Version 1.10mz, Feb 5, 1996")
 
- (define-struct (exn:misc:match exn:misc) (value))
+ (define-struct (exn:misc:match exn) (value))
 
   (define match-fail (gensym 'match-fail))
   

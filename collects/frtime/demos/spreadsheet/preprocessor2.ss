@@ -10,7 +10,7 @@
         (drop (cdr l) (sub1 n))))
   
   (define (caddddr lst)
-    (Car (cdr (cdr (cdr (cdr lst))))))
+    (car (cdr (cdr (cdr (cdr lst))))))
   
   (define (first lst)
     (car lst))

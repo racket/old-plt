@@ -337,6 +337,8 @@ Scheme_Object *mx_date_to_scheme_date(int argc,Scheme_Object **argv) {
 
   yearDay = offsets[sysTime.wMonth - 1] + sysTime.wDay;
 
+  yearDay--; /* because 0-based */
+
   if (sysTime.wMonth > 2 && isLeapYear(sysTime.wYear)) {
     yearDay++;
   }

@@ -841,7 +841,7 @@ typedef struct Scheme_Input_Port
   unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
   Scheme_Object *special, *ungotten_special;
-  long position, lineNumber, charsSinceNewline;
+  long position, readpos, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
   struct Scheme_Output_Port *output_half;

@@ -869,6 +869,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->ungotten_count = 0;
   ip->ungotten_allocated = 0;
   ip->position = 0;
+  ip->readpos = 0; /* like position, but collapses CRLF */
   ip->lineNumber = 1;
   ip->column = 0;
   ip->oldColumn = 0;
@@ -1004,6 +1005,7 @@ scheme_getc(Scheme_Object *port)
 	ip->charsSinceNewline = 1;
 	ip->column = 0;
 	ip->lineNumber++;
+	ip->readpos++;
 	ip->was_cr = 1;
       } else if (c == '\n') {
 	if (!ip->was_cr) {
@@ -1011,16 +1013,19 @@ scheme_getc(Scheme_Object *port)
 	  ip->charsSinceNewline = 1;
 	  ip->column = 0;
 	  ip->lineNumber++;
+	  ip->readpos++;
 	}
 	ip->was_cr = 0;
       } else if (c == '\t') {
 	ip->oldColumn = ip->column;
 	ip->column = ip->column - (ip->column & 0x7) + 8;
 	ip->charsSinceNewline++;
+	ip->readpos++;
 	ip->was_cr = 0;
       } else {
 	ip->charsSinceNewline++;
 	ip->column++;
+	ip->readpos++;
 	ip->was_cr = 0;
       }
     }
@@ -1294,6 +1299,8 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
   if (ip->position >= 0)
     ip->position += got;
   if (ip->count_lines) {
+    ip->readpos += got; /* add for CR LF below */
+
     for (i = got, c = 0; i--; c++) {
       if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
 	break;
@@ -1306,8 +1313,10 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       while (i--) {
 	if (buffer[offset + i] == '\n') {
 	  if (!(i &&( buffer[offset + i - 1] == '\r'))
-	      && !(!i && ip->was_cr))
+	      && !(!i && ip->was_cr)) {
 	    n++;
+	  } else
+	    ip->readpos -= 1; /* adjust initial readpos increment */
 	} else if (buffer[offset + i] == '\r')
 	  n++;
       }
@@ -1461,6 +1470,7 @@ scheme_ungetc (int ch, Scheme_Object *port)
   if (ip->position > 0)
     --ip->position;
   --ip->column;
+  --ip->readpos;
   if (!(--ip->charsSinceNewline)) {
     --ip->lineNumber;
     ip->column = ip->oldColumn;
@@ -1595,6 +1605,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
 
   if (ip->position >= 0)
     ip->position += pos_delta;
+  ip->readpos += pos_delta;
   ip->column += pos_delta;
   ip->charsSinceNewline += pos_delta;
 
@@ -1629,7 +1640,10 @@ scheme_tell (Scheme_Object *port)
 
   CHECK_PORT_CLOSED("#<primitive:get-file-position>", "input", port, ip->closed);
 
-  pos = ip->position;
+  if (!ip->count_lines || (ip->position < 0))
+    pos = ip->position;
+  else
+    pos = ip->readpos;
 
   return pos;
 }
@@ -2377,7 +2391,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       is = (Scheme_Indexed_String *)ip->port_data;
     else if (argc < 2) {
       long pos;
-      pos = scheme_tell(argv[0]);
+      pos = ((Scheme_Input_Port *)argv[0])->position;
       if (pos < 0) {
 	scheme_raise_exn(MZEXN_I_O_PORT,
 			 ip,

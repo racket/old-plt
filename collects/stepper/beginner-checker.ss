@@ -6,8 +6,10 @@
           [e : stepper:error]
           stepper:shared^)
   
+  (define (signal-arity-error fun-name args-passed)
+    (e:static-error "wrong number of arguments (~s) passed to value constructor ~s." args-passed fun-name))
     
-  (define (check-expression-list exp-list struct-creator-records)
+  (define (check-expression-list exp-list user-procedure-records)
     (cond
       
       ; the variable forms 
@@ -21,21 +23,19 @@
               [num-args (length (z:app-args expr))])
          (if (z:top-level-varref? fun)
              (let ([fun-name (z:varref-var fun)])
+               (cond 
+                 [(and (eq? fun-name 'cons) (not (
                (if (memq fun-name (s:get-global-defined-vars))
                    (let ([fun-val (parameterize ([current-namespace (get-namespace)])
                                     (global-defined-value fun-name))])
-                     (if (and (structure-constructor-procedure? fun-val)
+                     (if (and (struct-constructor-procedure? fun-val)
                               (not (procedure-arity-includes? num-args)))
-                         (e:static-error "wrong number of arguments (~s) passed to value constructor ~s."
-                                         num-args
-                                         fun-name)
+                         (signal-arity-error fun-name num-args)
                          'ok))
                    (let ([creator-record (assq fun-name struct-creator-records)])
                      (if (and creator-record
                               (not (= num-args (cadr creator-record))))
-                         (e:static-error "wrong number of arguments (~s) passed to value constructor ~s."
-                                         num-args
-                                         fun-name)
+                         (signal-arity-error fun-name num-args)
                          'ok))))
              'ok))]
 

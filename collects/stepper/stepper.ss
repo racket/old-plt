@@ -4,7 +4,7 @@
   (import (core : mzlib:core^)
           (framework : framework^)
           (print-convert : mzlib:print-convert^)
-          (mred : mred^)
+          (mred : mred-interfaces^)
           (drscheme : drscheme:export^)
           (zodiac : drscheme:zodiac^))
   (link [ERROR : stepper:error^ ((unit/sig stepper:error^
@@ -42,6 +42,7 @@
                       shared)]
         [stepper : stepper:settings^
                  ((require-library-unit/sig "stepperr.ss" "stepper")
+                  zodiac
                   pretty
                   mred
                   drscheme

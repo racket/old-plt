@@ -10,11 +10,11 @@
    get-show-sharing
    get-cons
    get-vector
-   get-vocabulary))
+   get-vocabulary
+   image?))
 
 (define-signature stepper:shared^
   (list-take
-   read-exprs
    read->raw 
    arglist->ilist 
    (struct closure-record (name mark constructor?))

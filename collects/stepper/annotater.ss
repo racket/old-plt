@@ -192,7 +192,7 @@
   
   ; the zodiac-error-handler is an ugly hack and will hopefully disappear soon-ish.
   
-  (define (annotate text break zodiac-exception-handler)
+  (define (annotate red-exprs parsed-exprs break)
     (local
 	(  
 
@@ -222,13 +222,10 @@
          (define (simple-wcm-break-wrap debug-info expr)
            (simple-wcm-wrap debug-info (break-wrap expr)))
          
-         (define exprs-read
-           (parameterize ([current-exception-handler zodiac-exception-handler])
-             (read-exprs text)))
-         
+        
          (define (find-read-expr expr)
            (let ([offset (z:location-offset (z:zodiac-start expr))])
-             (let search-exprs ([exprs exprs-read])
+             (let search-exprs ([exprs red-exprs])
                (let* ([later-exprs (filter 
                                     (lambda (expr) 
                                       (<= offset (z:location-offset (z:zodiac-finish expr))))
@@ -249,10 +246,6 @@
                              (search-exprs (search-exprs object))) ; can source exprs be here?
                             (else (e:static-error "unknown expression type in sequence" expr)))))
                        (else (e:static-error "unknown read type" expr))))))))
-  
-         (define parsed-exprs
-           (parameterize ([current-exception-handler zodiac-exception-handler])
-             (z:scheme-expand-program exprs-read 'previous (s:get-vocabulary))))  
   
          ; find-defined-vars extracts a list of what variables an expression
          ; defines.  In the case of a top-level expression which does not

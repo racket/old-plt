@@ -1,6 +1,7 @@
 (unit/sig stepper:settings^
-  (import mzlib:pretty-print^
-          mred^
+  (import [z : zodiac:system^]
+          mzlib:pretty-print^
+          mred-interfaces^
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [a : stepper:annotate^]
@@ -38,6 +39,9 @@
   (define par-vocabulary #f)
   (define (get-vocabulary) par-vocabulary)
   
+  (define (image? val)
+   (is-a? val original:image-snip%))
+  
   (define stepper-frame%
     (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)))
 
@@ -57,8 +61,9 @@
   (define stepper-text%
     (class f:text:basic% (sexp redex break-kind error-msg (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase
-               begin-edit-sequence end-edit-sequence)
+               begin-edit-sequence end-edit-sequence get-start-position)
       (public (pretty-printed-width -1)
+              (char-width 0)
               (clear-highlight-thunk (lambda () #f))
               (reset-pretty-print-width 
                (lambda (canvas)
@@ -67,7 +72,7 @@
                    (insert "a")
                    (change-style result-delta 0 1))
                  (let* ([style (send (find-snip 0 'before) get-style)]
-                        [char-width (send style get-text-width (send canvas get-dc))]
+                        [_ (set! char-width (send style get-text-width (send canvas get-dc)))]
                         [canvas-width (let-values ([(client-width client-height)
                                                     (send canvas get-client-size)])
                                         (- client-width 18))] ; 12 border pixels + 6 for wrap char
@@ -95,21 +100,35 @@
                          [redex-begin #f]
                          [redex-end #f])
                      (parameterize ([current-output-port output]
+                                    [pretty-print-size-hook
+                                     (lambda (value display? port)
+                                       (if (image? value)
+                                           1   ; if there was a good way to calculate a image widths ...
+                                           #f))]
+                                    [pretty-print-print-hook
+                                     (lambda (value display? port)
+                                       (insert (send value copy)))]
+                                    [pretty-print-display-string-handler
+                                     (lambda (string port)
+                                       (insert string))]
+                                    [pretty-print-print-line
+                                     (lambda (number port old-length dest-columns)
+                                       (when (not (eq? number 0))
+                                         (insert #\newline))
+                                       0)]
                                     [pretty-print-pre-print-hook
                                      (lambda (value p)
                                        (when (eq? value redex)
-                                         (set! redex-begin (file-position result))))]
+                                         (set! redex-begin (get-start-position))))]
                                     [pretty-print-post-print-hook
                                      (lambda (value p)
                                        (when (eq? value redex)
-                                         (set! redex-end (file-position result))))])
+                                         (set! redex-end (get-start-position))))])
                        (for-each
                         (lambda (expr)
                           (pretty-print expr result)
-                          (fprintf result "~n"))
+                          (insert #\newline))
                         sexp))
-                     (insert (get-output-string result))
-                     (insert #\newline)
                      (let ([between (last-position)]
                            [highlight-color (if (eq? break-kind 'pre-break)
                                                 result-highlight-color
@@ -127,6 +146,20 @@
                  (end-edit-sequence)
                  (lock #t))))
       (sequence (super-init line-spacing tabstops))))
+  
+  (define (read-zodiac-exprs text handler)
+    (with-handlers ((exn:user? handler))
+      (let ([reader (z:read (f:gui-utils:read-snips/chars-from-buffer text)
+                            (z:make-location 1 1 0 "stepper-text"))])
+        (let read-loop ([new-expr (reader)])
+          (if (z:eof? new-expr)
+              ()
+              (cons new-expr (read-loop (reader))))))))
+  
+  (define (parse-zodiac-exprs read-exprs vocabulary handler)
+    (with-handlers
+        ((exn:user? handler))
+      (z:scheme-expand-program read-exprs 'previous vocabulary)))
 
   (define output-delta (make-object style-delta% 'change-family 'modern))
   (define result-delta (make-object style-delta% 'change-family 'modern))
@@ -139,8 +172,7 @@
   (define no-sexp (gensym "no-sexp-"))
   
   (define (stepper-go frame settings)
-    (letrec ([edit (ivar frame definitions-text)]
-             [text (send edit get-text)]
+    (letrec ([text (ivar frame definitions-text)]
              [stepper-semaphore (make-semaphore)]
              [expr-list #f]
              
@@ -227,7 +259,8 @@
                      (call-with-current-continuation
                       (lambda (k)
                         (let ([primitive-eval (current-eval)]
-                              [primitive-vector vector])
+                              [primitive-vector vector]
+                              [exn-handler (make-exception-handler k)])
                           (d:basis:initialize-parameters (make-custodian) null settings)
                           (d:rep:invoke-library)
                           (set! par-namespace (current-namespace))
@@ -239,21 +272,13 @@
                           (set! par-cons (global-defined-value 'cons))
                           (set! par-vector (global-defined-value 'vector))
                           (set! par-vocabulary (d:basis:current-vocabulary))
-                          (let-values ([(annotated exprs)
-                                        (a:annotate text break (make-exception-handler k))])
-;                            (let ([output-port (open-output-file "annotated.ss")])
-;                              (parameterize ([current-output-port output-port])
-;                                (pretty-print annotated))
-;                              (close-output-port output-port))
-                            (set! expr-list exprs)
-                            (current-exception-handler
-                             (make-exception-handler k))
-;                            (for-each (lambda (expr)
-;                                        (queue-callback
-;                                         (lambda ()
-;                                           (eval expr))))
-;                                      annotated)
-                            (for-each primitive-eval annotated)))))))))]
+                          (let* ([red-exprs (read-zodiac-exprs text exn-handler)]
+                                 [parsed-exprs (parse-zodiac-exprs red-exprs (d:basis:current-vocabulary) exn-handler)])
+                            (let-values ([(annotated exprs)
+                                          (a:annotate red-exprs parsed-exprs break)])
+                              (set! expr-list exprs)
+                              (current-exception-handler exn-handler)
+                              (for-each primitive-eval annotated))))))))))]
              
              [update-view/next-step
               (lambda (new-view)

@@ -583,7 +583,7 @@
 
   /************** Mac OS X  ****************/
 
-# if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
+# if (defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)) || defined(OS_X)
 
 #ifdef XONX 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-darwin"
@@ -616,7 +616,9 @@
 
 # define USE_TM_GMTOFF_FIELD
 
+#ifndef XONX
 # define MACOS_UNICODE_SUPPORT
+#endif
 
 # ifndef OS_X
 #  define OS_X 1

@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.65 1999/05/06 14:01:22 mflatt Exp $
+; $Id: sigs.ss,v 1.66 1999/05/19 21:57:30 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "mzlibs.ss"))
@@ -34,7 +34,7 @@
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro
     get-list-micro get-ilist-micro get-lit-micro get-sym-micro
     make-attributes get-attribute put-attribute
-    extend-env copy-env retract-env print-env
+    extend-env copy-env retract-env print-env make-empty-environment
     resolve resolve-in-env
     macro-resolution? micro-resolution?
     (struct top-level-resolution ())

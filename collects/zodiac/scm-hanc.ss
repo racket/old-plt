@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.62 1999/05/19 21:57:28 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.63 1999/05/21 12:53:26 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -9,6 +9,11 @@
 (define cu/s-this-link-attr 'cu/s-this-link-name)
 
 (define-struct signature (name elements exploded))
+
+; Cheap trick: instead of fixing the vocabs to ignore the
+;   environment (if possible) , we just drop the environment.
+(define (sig-env e)
+  (make-empty-environment))
 
 (define check-unique-cu/s-exports
   (lambda (in:exports sign:exports)
@@ -775,22 +780,23 @@
 	      (let* ((in:signature (pat:pexpand 'signature p-env kwd-1))
 		      (in:imports (pat:pexpand '(imports ...) p-env kwd-1))
 		      (in:renames (pat:pexpand '(renames ...) p-env kwd-1))
-		      (in:clauses (pat:pexpand '(clauses ...) p-env kwd-1)))
+		      (in:clauses (pat:pexpand '(clauses ...) p-env kwd-1))
+		      (sigenv (sig-env env)))
 		(let* ((prim-unit:imports (apply append
 					    (map (lambda (import)
-						   (expand-expr import env
-						     attributes
-						     u/s-prim-imports-vocab))
+						   (expand-expr import sigenv
+								attributes
+								u/s-prim-imports-vocab))
 					      in:imports)))
 			(prim-unit:exports (create-prim-exports in:signature
 					     in:renames expr env attributes))
 			(prim-unit:clauses in:clauses)
 			(sign-unit:imports (map (lambda (import)
-						  (expand-expr import env
+						  (expand-expr import sigenv
 						    attributes
 						    u/s-sign-imports-vocab))
 					     in:imports))
-			(sign-unit:exports (expand-expr in:signature env
+			(sign-unit:exports (expand-expr in:signature sigenv
 					     attributes u/s-sign-exports-vocab)))
 		  (expand-expr
 		    ;; We don't use '(-1) as the third argument to
@@ -1785,50 +1791,51 @@
 		    (lambda () '()))))
 	      (let* ((in:imports (pat:pexpand '(imports ...) p-env kwd))
 		      (in:links (pat:pexpand '(links ...) p-env kwd))
-		      (in:exports (pat:pexpand '(exports ...) p-env kwd)))
-		(record-tag-signatures in:imports in:links env attributes)
+		      (in:exports (pat:pexpand '(exports ...) p-env kwd))
+		      (sigenv (sig-env env)))
+		(record-tag-signatures in:imports in:links sigenv attributes)
 		;; linkage = given to verify-linkage-signature-match
 		;; prim = goes into underlying compound-unit
 		;; sign = given to make-unit-with-signature
 		(let* ((linkage:tags (map (lambda (l)
-					    (expand-expr l env attributes
+					    (expand-expr l sigenv attributes
 					      cu/s-link-tags-vocab))
 				       in:links))
 			(linkage:unit-vars linkage:tags)
 			(linkage:unit-exprs (map (lambda (l)
-						   (expand-expr l env attributes
+						   (expand-expr l sigenv attributes
 						     cu/s-link-exprs-vocab))
 					      in:links))
 			(linkage:link-exports
 			  (map (lambda (l)
-				 (expand-expr l env attributes
+				 (expand-expr l sigenv attributes
 				   cu/s-link-exports-vocab))
 			    in:links))
 			(linkage:link-imports
 			  (map (lambda (l)
-				 (expand-expr l env attributes
+				 (expand-expr l sigenv attributes
 				   cu/s-link-linking-sigs-vocab))
 			    in:links))
 			(prim:imports (apply append
 					(map (lambda (l)
-					       (expand-expr l env attributes
+					       (expand-expr l sigenv attributes
 						 cu/s-link-imports-vocab))
 					  in:imports)))
 			(prim:links (map (lambda (l)
-					   (expand-expr l env attributes
+					   (expand-expr l sigenv attributes
 					     cu/s-link-prim-unit-names-vocab))
 				      in:links))
 			(prim:exports (map (lambda (e)
-					     (expand-expr e env attributes
+					     (expand-expr e sigenv attributes
 					       cu/s-prim-export-vocab))
 					in:exports))
 			(sign:imports (map (lambda (i)
-					     (expand-expr i env attributes
+					     (expand-expr i sigenv attributes
 					       cu/s-sign-imports-vocab))
 					in:imports))
 			(sign:exports (apply append
 					(map (lambda (e)
-					       (expand-expr e env attributes
+					       (expand-expr e sigenv attributes
 						 cu/s-export-sign-vocab))
 					  in:exports))))
 		  (check-unique-cu/s-exports in:exports sign:exports)
@@ -1945,15 +1952,16 @@
 
 (define do-invoke-unit/sig-micro
   (lambda (in:expr in:linkage expr env attributes vocab)
-    (let ((proc:linkage (map (lambda (l)
-			       (expand-expr l env attributes
-					    iu/s-linkage-vocab))
-			     in:linkage))
-	  (proc:imports (apply append
-			       (map (lambda (l)
-				      (expand-expr l env attributes
-						   iu/s-imports-vocab))
-				    in:linkage))))
+    (let* ((sigenv (sig-env env))
+	   (proc:linkage (map (lambda (l)
+				(expand-expr l sigenv attributes
+					     iu/s-linkage-vocab))
+			      in:linkage))
+	   (proc:imports (apply append
+				(map (lambda (l)
+				       (expand-expr l sigenv attributes
+						    iu/s-imports-vocab))
+				     in:linkage))))
       (expand-expr
        (structurize-syntax
 	`(let ((unit ,in:expr))
@@ -2003,8 +2011,9 @@
 	    =>
 	    (lambda (p-env)
 	      (let ((in-expr (pat:pexpand 'expr p-env kwd))
-		     (in-sigs (pat:pexpand '(in-sig ...) p-env kwd))
-		     (out-sig (pat:pexpand 'out-sig p-env kwd)))
+		    (in-sigs (pat:pexpand '(in-sig ...) p-env kwd))
+		    (out-sig (pat:pexpand 'out-sig p-env kwd))
+		    (sigenv (sig-env env)))
 		(expand-expr
 		  (structurize-syntax
 		    `(#%make-unit-with-signature
@@ -2013,14 +2022,14 @@
 			  named-sig-list->named-sig-vector
 			  (map (lambda (s)
 				(let ((proc:s
-					(expand-expr s env attributes
+					(expand-expr s sigenv attributes
 					  sig-vocab)))
 				  (cons (signature-name proc:s)
 				    (signature-exploded proc:s))))
 			   in-sigs))
 		       ',(sig-list->sig-vector
 			  (let ((proc:s
-				 (expand-expr out-sig env attributes sig-vocab)))
+				 (expand-expr out-sig sigenv attributes sig-vocab)))
 			   (signature-exploded proc:s))))
 		    expr '(-1)
 		    #f
@@ -2034,31 +2043,33 @@
 
 (define do-define-invoke-micro
   (lambda (global? in:expr in:export in:imports prefix expr env attributes vocab)
-    (let ((proc:linkage (map (lambda (l)
-			       (expand-expr l env attributes
-					    iu/s-linkage-vocab))
-			     in:imports))
-	  (proc:ex-linkage (expand-expr in:export env attributes
-					iu/s-linkage-vocab))
-	  (proc:imports (apply append
-			       (map (lambda (l)
-				      (expand-expr l env attributes
-						   iu/s-imports-vocab))
-				    in:imports)))
-	  (proc:exports (expand-expr in:export env attributes
-				     iu/s-imports-vocab)))
+    (let* ((sigenv (sig-env env))
+	   (proc:linkage (map (lambda (l)
+				(expand-expr l sigenv attributes
+					     iu/s-linkage-vocab))
+			      in:imports))
+	   (proc:ex-linkage (expand-expr in:export sigenv attributes
+					 u/s-sign-exports-vocab))
+	   (proc:imports (apply append
+				(map (lambda (l)
+				       (expand-expr l sigenv attributes
+						    iu/s-imports-vocab))
+				     in:imports)))
+	   (proc:exports (expand-expr in:export sigenv attributes
+				      iu/s-imports-vocab)))
       (expand-expr
        (structurize-syntax
 	`(,(if global?
 	       'global-define-values/invoke-unit
 	       'define-values/invoke-unit)
-	   ,proc:exports
+	   ,(map (lambda (x) (structurize-syntax x expr '()))
+		 proc:exports)
 	   (let ((unit ,in:expr))
 	     (#%verify-linkage-signature-match
 	      'invoke-unit/sig
 	      '(invoke)
 	      (#%list unit)
-	      '(#())
+	      '(,(sig-list->sig-vector proc:ex-linkage))
 	      '(,(map named-sig-list->named-sig-vector proc:linkage)))
 	     (#%unit/sig->unit unit))
 	   ,prefix

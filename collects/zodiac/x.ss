@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.49 1999/05/20 22:36:53 mflatt Exp $
+; $Id: x.ss,v 1.50 1999/05/21 12:53:31 mflatt Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -299,6 +299,8 @@
   ; ----------------------------------------------------------------------
 
   (define make-new-environment make-hash-table)
+
+  (define make-empty-environment make-new-environment)
 
   (define resolve
     (lambda (id env vocab)

@@ -565,6 +565,9 @@
 	(error-print-width 250)
 	(current-print drscheme-print)
 
+	(current-load-relative-directory #f)
+	(current-require-relative-collection #f)
+
 	(when (zodiac-vocabulary? setting)
 	  (current-vocabulary
 	   (zodiac:create-vocabulary

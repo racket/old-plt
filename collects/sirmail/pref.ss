@@ -164,7 +164,7 @@
 			   (if optional? #f label) (or p0 panel)
 			   (lambda (t e)
 			     (let* ([s (send t get-value)])
-			       (if (check-value #f s)
+			       (if (check-value #f #f s)
 				   (preferences:set pref s)
 				   (begin
 				     (set! needs-check (cons (list t label check-value) needs-check))
@@ -186,7 +186,7 @@
 
   (define (check-unsaved-pref?)
     (and (andmap (lambda (a)
-		   ((caddr a) (cadr a) (send (car a) get-value)))
+		   ((caddr a) (cadr a) (send (car a) get-top-level-window) (send (car a) get-value)))
 		 needs-check)
 	 (begin
 	   (set! needs-check null)
@@ -208,23 +208,7 @@
       (define p (instantiate horizontal-panel% ((or p0 parent))
 			     [stretchable-height #f]))
       (define (set-it v)
-	(if (and (absolute-path? v)
-		 (or (and dir? (directory-exists? v))
-		     (and (not dir?) (file-exists? v))))
-	    (preferences:set pref v)
-	    (message-box (if dir? "Directory" "File")
-			 (format "The path ~s ~a"
-				 v
-				 (if (absolute-path? v)
-				     (if dir? 
-					 (if (file-exists? v)
-					     "is not a directory"
-					     "does not exist")
-					 (if (directory-exists? v)
-					     "is not a file"
-					     "does not exist"))
-				     "is ill-formed"))
-			 '(ok stop))))
+	(preferences:set pref v))
       (define field (make-object text-field% button-label p
 				 ;; For now, just counteract edits:
 				 (lambda (t e)
@@ -261,7 +245,7 @@
     (let ([l (regexp-split ", *" s)])
       (andmap is-host-address+port? l)))
 
-  (define (check-address ok? who s port-ok? multi?)
+  (define (check-address ok? who tl s port-ok? multi?)
     (or (ok? s)
 	(begin
 	  (when who
@@ -285,18 +269,18 @@
 			  "colon (:) followed by a number between 1 and 65535.\n")
 			 "")
 		     s)
-	     #f
+	     tl
 	     '(ok stop)))
 	  #f)))
 			
-  (define (check-host-address who s)
-    (check-address is-host-address? who s #f #f))
-  (define (check-host-address/port who s)
-    (check-address is-host-address+port? who s #t #f))
-  (define (check-host-address/port/multi who s)
-    (check-address is-host-address+port-list? who s #t #t))
+  (define (check-host-address who tl s)
+    (check-address is-host-address? who tl s #f #f))
+  (define (check-host-address/port who tl s)
+    (check-address is-host-address+port? who tl s #t #f))
+  (define (check-host-address/port/multi who tl s)
+    (check-address is-host-address+port-list? who tl s #t #t))
 
-  (define (check-user-address who s)
+  (define (check-user-address who tl s)
     (with-handlers ([not-break-exn? 
 		     (lambda (x)
 		       (when who
@@ -304,17 +288,17 @@
 			  "Preference Error"
 			  (format "The ~a value you provided is not a legal mail address: ~a"
 				  who s)
-			  #f
+			  tl
 			  '(ok stop)))
 		       #f)])
       (unless (= 1 (length (extract-addresses s 'all)))
 	(error "multiple addresses"))
       #t))
 
-  (define (check-id who s) #t)
+  (define (check-id who tl s) #t)
       
   (define (make-text-list label parent pref)
-    (let ([p (make-object vertical-panel% parent)])
+    (let ([p (make-object vertical-panel% parent '(border))])
       (define l (make-object list-box% label (or (preferences:get pref) null) p
 			     (lambda (l e)
 			       (send delete enable (pair? (send l get-selections))))

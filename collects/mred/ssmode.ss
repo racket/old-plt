@@ -120,7 +120,7 @@
 			   let-enumerate
 			   class class* class-asi class-asi* define-some
 			   do opt-lambda
-			   local
+			   local catch
 			   unit unit/sig compound-unit/sig 
 			   with-handlers
 			   call-with-input-file with-input-from-file

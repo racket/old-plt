@@ -278,7 +278,7 @@
 		 (edit-menu:between-select-all-and-preferences edit-menu)
 		 (when edit-menu:preferences
 		   (set! edit-menu:preferences-id
-			 (send edit-menu append-item "&Preferences..." edit-menu:preferences
+			 (send edit-menu append-item "Prefere&nces..." edit-menu:preferences
 			       edit-menu:preferences-help-string)))
 		 (edit-menu:after-standard-items edit-menu)
 		 mb))]))))

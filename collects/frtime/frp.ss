@@ -3,9 +3,10 @@
 ;  tag impure and imperative signals (pure vs. stateful vs. effectful)
 ;
 ; To do:
+; make switchable events
+; split delay into consumer and producer
 ; deal with multiple values (?)
 ; handle structs, vectors (done?)
-; flip arguments in event-handling combinators (done)
 ; localized exception-handling mechanism
 ; precise depths even when switching, proper treatment of cycles
 ;
@@ -75,6 +76,7 @@
 ;   primitives, redefine higher-order procedures
 ;   macro to automate definition of lifted primitives
 ;   make signals directly applicable
+; flip arguments in event-handling combinators (done)
 ;
 
 (module frp mzscheme
@@ -86,13 +88,15 @@
            (lib "string.ss")
            "erl.ss"
            (lib "match.ss")
-           "heap.ss"
-           "treap.scm")
+           "heap.ss")
   
   (require-for-syntax (lib "list.ss"))
   
+
+  (define frtime-version "0.2b -- Mon Jul 12 12:30:45 2004")
   (define frtime-inspector (make-inspector))
-  
+  (print-struct #t)
+
   ; also models events, where 'value' is all the events that
   ; haven't yet occurred (more specifically, an event-cons cell whose
   ; tail is *undefined*)
@@ -151,6 +155,10 @@
          (if (undefined? (signal-value v))
              undefined
              (event-cons? (signal-value v)))))
+
+  (define (event-receiver? v)
+    (and (event? v)
+         (procedure-arity-includes? (signal-thunk v) 1)))
   
   (define (behavior? v)
     (and (signal? v) (not (event-cons? (signal-value v)))))
@@ -467,7 +475,7 @@
   ; event-receiver : () -> event
   (define (event-receiver)
     (event-producer
-     (when (not (empty? the-args))
+     (when (cons? the-args)
        (emit (first the-args)))))
   
   ; when-e : behavior[bool] -> event
@@ -582,7 +590,7 @@
             (lambda (msg)
               (if (signal? msg) 
                   (signal-depth msg)
-                  0))]
+                  (signal-depth (first msg))))]
            [heap (make-heap
                  (lambda (b1 b2) (< (depth b1) (depth b2)))
                  eq?)])
@@ -666,15 +674,21 @@
                         ret))))
   
   (define-values (alarms-enqueue alarms-dequeue-beh alarms-peak-ms alarms-empty?)
-    (let ([heap (make-heap (lambda (a b) (< (first a) (first  b))) eq?)])
-      (values (lambda (ms beh) (heap-insert heap (list ms beh)))
-              (lambda () (match (heap-pop heap) [(ms beh) beh]))
-              (lambda () (match (heap-peak heap) [(ms beh) ms]))
+    (let ([heap (make-heap (lambda (a b) (< (first a) (first b))) eq?)])
+      (values (lambda (ms beh) (heap-insert heap (list ms (make-weak-box beh))))
+              (lambda () (match (heap-pop heap) [(_ beh) (weak-box-value beh)]))
+              (lambda () (match (heap-peak heap) [(ms _) ms]))
               (lambda () (heap-empty? heap)))))
   
   (define exceptions
     (event-receiver))
   
+  (define notifier
+    (event-producer
+     (when (cons? the-args)
+       (! (first the-args) man))))
+  (set-signal-depth! notifier +inf.0)
+
   ;; the manager of all signals and event streams
   (define man
     (spawn/name
@@ -684,116 +698,84 @@
        (let outer ()
          (with-handlers ([exn?
                           (lambda (exn)
-                            (! (self) (make-external-event (list (list exceptions (list exn cur-beh))) #f))
+                            (iq-enqueue (list exceptions (list exn cur-beh)))
                             (when (behavior? cur-beh)
                               (undef cur-beh))
                             (outer))])
            (let inner ()
-             (define do-update
-               (case-lambda 
-                 [(b) 
-                  (set! cur-beh b)
-                  (update0 b)
-                  (set! cur-beh #f)]
-                 [(b v)
-                  (set! cur-beh b)
-                  (update1 b v)
-                  (set! cur-beh #f)]))
              
-             (define (process-update-msg msg)
-               ; (printf "processing update msg: ~a~n" (value-now msg))
-               (cond
-                [(signal? msg) (do-update msg)]
-                [(list? msg) (do-update (first msg) (second msg))]))
-
-             (define (engine-msg? msg)
-               (match msg
-                      [($ alarm ms beh) #t]
-                      [($ reg inf sup ret) #t]
-                      [($ unreg inf sup) #t]
-                      [('bind sym evt) #t]
-                      [('remote-reg tid sym) #t]
-                      [('remote-evt sym val) #t]))
-
-             (define (process-engine-msg msg)
-               (match msg
-                      [($ alarm ms beh)
-                       (when (> ms 1073741824)
-                         (set! ms (- ms 2147483647)))
-                       (alarms-enqueue ms (make-weak-box beh))]
-                      [($ reg inf sup ret)
-                       (register inf sup)
-                       (! ret man)]
-                      [($ unreg inf sup)
-                       (unregister inf sup)]
-                      [('bind sym evt)
-                       (let ([forwarder+listeners (cons #f empty)])
-                         (set-car! forwarder+listeners
-                                   (event-forwarder sym evt forwarder+listeners))
-                         (hash-table-put! named-providers sym forwarder+listeners))]
-                      [('remote-reg tid sym)
-                       (let ([f+l (hash-table-get named-providers sym)])
-                         (when (not (member tid (rest f+l)))
-                           (set-rest! f+l (cons tid (rest f+l)))))]
-                      [('remote-evt sym val) ; should probably set cur-beh here too (?)
-                       (do-update (hash-table-get named-dependents sym (lambda () dummy)) val)]))
+             ;; process external messages until there is an internal update
+             ;; or an expired alarm
+             (let loop ()
+               (receive [after (cond
+                                 [(not (iq-empty?)) 0]
+                                 [(not (alarms-empty?)) (- (alarms-peak-ms)
+                                                           (current-milliseconds))]
+                                 [else #f])
+                               (void)]
+                 [(? signal? b)
+                  (iq-enqueue b)
+                  (loop)]
+                 [($ external-event recip-val-pairs ret)
+                  (for-each iq-enqueue recip-val-pairs)
+                  (when ret
+                    (iq-enqueue (list notifier ret)))
+                  (loop)]
+                 [($ alarm ms beh)
+                  (schedule-alarm ms beh)
+                  (loop)]
+                 [($ reg inf sup ret)
+                  (register inf sup)
+                  (! ret man)
+                  (loop)]
+                 [($ unreg inf sup)
+                  (unregister inf sup)
+                  (loop)]
+                 [('bind sym evt)
+                  (let ([forwarder+listeners (cons #f empty)])
+                    (set-car! forwarder+listeners
+                              (event-forwarder sym evt forwarder+listeners))
+                    (hash-table-put! named-providers sym forwarder+listeners))
+                  (loop)]
+                 [('remote-reg tid sym)
+                  (let ([f+l (hash-table-get named-providers sym)])
+                    (when (not (member tid (rest f+l)))
+                      (set-rest! f+l (cons tid (rest f+l)))))
+                  (loop)]
+                 [('remote-evt sym val)
+                  (iq-enqueue (hash-table-get named-dependents sym (lambda () dummy)) val)
+                  (loop)]
+                 [msg
+                  (fprintf (current-error-port)
+                           "msg not understood: ~a~n"
+                           msg)
+                  (loop)]))
              
-             (define (harvest-external-events)
-               (let loop ([to-notify empty])
-                 (receive [after (cond
-                                  [(not (iq-empty?)) 0]
-                                  [(not (alarms-empty?)) (- (alarms-peak-ms)
-                                                            (current-milliseconds))]
-                                  [else #f])
-                                 to-notify]
-                   [(? signal? b) 
-                    (iq-enqueue b)
-                    (loop to-notify)]
-                   [($ external-event recip-val-pairs ret)
-                    (for-each iq-enqueue recip-val-pairs)
-                    (if ret
-                        (loop (cons ret to-notify))
-                        (loop to-notify))]
-                   [(? engine-msg? msg) 
-                    (process-engine-msg msg)
-                    (loop to-notify)]
-                   [msg 
-                    (fprintf (current-error-port)
-                             "msg not understood: ~a~n"
-                             msg)
-                    (loop to-notify)])))
-             
-             (define (is-timer-ready?)
-               (and (not (alarms-empty?))
-                    (>= (current-milliseconds) 
-                        (alarms-peak-ms))))
-             
-             (define (process-timers)
-               (let loop ()
-                 (when (is-timer-ready?)
-                   (let ([beh (weak-box-value (alarms-dequeue-beh))])
-                     (when (and beh (not (signal-stale? beh)))
-                       ; (printf "enqueueing alarm~n")
-                       (set-signal-stale?! beh #t)
-                       (iq-enqueue beh)))
-                   (loop))))
+             ;; enqueue expired timers for execution
+             (let loop ()
+               (unless (or (alarms-empty?)
+                           (< (current-milliseconds)
+                              (alarms-peak-ms)))
+                 (let ([beh (alarms-dequeue-beh)])
+                   (when (and beh (not (signal-stale? beh)))
+                     (set-signal-stale?! beh #t)
+                     (iq-enqueue beh)))
+                 (loop)))
 
-             (define (process-internal-events)
-               (let loop ()
-                 (unless (iq-empty?)
-                   (process-update-msg (iq-dequeue))
-                   (loop))))
-
-             (define (notify-of-idle to-notify)
-               (for-each
-                (lambda (threadid) (! threadid man))
-                to-notify))
+             ;; process internal updates
+             (let loop ()
+               (unless (iq-empty?)
+                 (match (iq-dequeue)
+                   [(? signal? b)
+                    (set! cur-beh b)
+                    (update0 b)
+                    (set! cur-beh #f)]
+                   [(b val)
+                    (set! cur-beh b)
+                    (update1 b val)
+                    (set! cur-beh #f)])
+                 (loop)))
              
-             (let ([to-notify (harvest-external-events)])
-               (process-timers)
-               (process-internal-events)
-               (notify-of-idle to-notify))
-
              (inner)))))))
 
   (define dummy
@@ -821,26 +803,33 @@
       (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
+  (define (schedule-alarm ms beh)
+    (when (> ms 1073741824)
+      (set! ms (- ms 2147483647)))
+    (if (eq? (self) man)
+        (alarms-enqueue ms beh)
+        (! man (make-alarm ms beh))))
+  
   (define (make-time-b ms)
     (let ([ret (proc->signal void)])
       (set-signal-thunk! ret
-                           (lambda ()
-                             (let ([t (current-milliseconds)])
-                               (! man (make-alarm (+ ms t) ret))
-                               t)))
+                         (lambda ()
+                           (let ([t (current-milliseconds)])
+                             (schedule-alarm (+ ms t) ret)
+                             t)))
       (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
   (define milliseconds (make-time-b 10))
   (define time-b milliseconds)
-  
+
   (define seconds
     (let ([ret (proc->signal void)])
       (set-signal-thunk! ret
                            (lambda ()
                              (let ([s (current-seconds)]
                                    [t (current-milliseconds)])
-                               (! man (make-alarm (* 1000 (add1 (floor (/ t 1000)))) ret))
+                               (schedule-alarm (* 1000 (add1 (floor (/ t 1000)))) ret)
                                s)))
       (set-signal-value! ret ((signal-thunk ret)))
       ret))

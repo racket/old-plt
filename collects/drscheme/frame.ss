@@ -10,12 +10,10 @@
     
     (mred:debug:printf 'invoke "drscheme:frame@")
 
-    (define group (make-object mred:frame-group%))
-    (send group set-empty-callback (lambda () (mred:exit) #f))
-    (mred:current-frames group)
+    (send mred:the-frame-group set-empty-callback (lambda () (mred:exit) #f))
 
     (define frame%
-      (class mred:simple-menu-frame% (name snip arg-group)
+      (class mred:simple-menu-frame% (name snip)
 	(rename [super-make-root-panel make-root-panel]
 		[super-on-close on-close]
 		[super-make-menu-bar make-menu-bar])
@@ -34,10 +32,8 @@
 						       #t)
 			     [(continue) #t]
 			     [(save) (send edit save-file)]
-			     [else #f])))]
-		    [super (and user-allowed-or-not-modified (super-on-close))]
-		    [grp (and super (send group remove-frame this))])
-	       grp))])
+			     [else #f])))])
+	       (and user-allowed-or-not-modified (super-on-close))))])
 
 	(public
 	  [root-panel #f]
@@ -85,20 +81,13 @@
 	       (append-separator)))]
 	  [file-menu:new
 	   (lambda ()
-	     (make-object drscheme:unit:frame% #f #f group))]
+	     (make-object drscheme:unit:frame% #f #f))]
 	  [file-menu:between-new-and-open
 	   (lambda (file-menu)
-	     '(send file-menu append-item "Get Program Text"
-		   (lambda ()
-		     (mred:message-box
-		      (format "~s" (zodiac:parsed->raw
-				    (send group get-whole-program))))))
 	     '(send file-menu append-item "New Compound Unit"
 		   (lambda ()
-		     (make-object drscheme:compound-unit:frame% #f #f group))))]
-
-	  [group arg-group]
-	  [file-menu:open (lambda () (mred:open-file group))])
+		     (make-object drscheme:compound-unit:frame% #f #f))))]
+	  [file-menu:open (lambda () (mred:open-file))])
 
 	(sequence 
 	  (mred:debug:printf 'super-init "before drscheme:frame%")

@@ -198,7 +198,8 @@
                            (send i new-item)
                            (send i new-item)
                            (set-robot-info r i)))
-             robots))
+             robots)
+        (update))
       
       (define packages null)
       
@@ -214,20 +215,26 @@
                     (let ([min (cadddr (cddar pkgs))]
                           [max (cadddr (cddar (last-pair pkgs)))])
                       (map (lambda (pkg)
-                             (let ([rel-weight (if (= max min)
-                                                   (sub1 num-pack-icons)
-                                                   (inexact->exact
-                                                    (floor (* (/ (- (cadddr (cddr pkg))
-                                                                    min)
-                                                                 (- max min))
-                                                              (sub1 num-pack-icons)))))])
+                             (let ([rel-weight (let ([weight (cadddr (cddr pkg))])
+                                                 (cond
+                                                   [(not weight) 0]
+                                                   [(= max min)
+                                                    (sub1 num-pack-icons)]
+                                                   [else
+                                                    (inexact->exact
+                                                     (floor (* (/ (- weight
+                                                                     min)
+                                                                  (- max min))
+                                                               (sub1 num-pack-icons))))]))]
+                                   [dest-x (cadr (cddr pkg))]
+                                   [dest-y (caddr (cddr pkg))])
                                (make-pack (sub1 (cadr pkg)) ; sub1 for 0-indexed
                                           (sub1 (caddr pkg))
                                           (vector-ref pack-icons rel-weight)
                                           (vector-ref pack-arrow-pens rel-weight)
                                           (car pkg)
-                                          (sub1 (cadr (cddr pkg)))
-                                          (sub1 (caddr (cddr pkg)))
+                                          (and dest-x (sub1 dest-x))
+                                          (and dest-y (sub1 dest-y))
                                           (cadddr (cddr pkg))
                                           #f
                                           #f)))
@@ -384,7 +391,9 @@
                                                    (when (or (robot-drop r) random-drop drop-by-death)
                                                      (for-each (lambda (pkg)
                                                                  (when (eq? r (pack-owner pkg))
-                                                                   (when (and (= (pack-x pkg) (pack-dest-x pkg))
+                                                                   (when (and (pack-dest-x pkg)
+                                                                              (= (pack-x pkg) (pack-dest-x pkg))
+                                                                              (pack-dest-y pkg)
                                                                               (= (pack-y pkg) (pack-dest-y pkg)))
                                                                      (set-pack-home?! pkg #t)
                                                                      (set-robot-score! r (+ (robot-score r)
@@ -589,12 +598,15 @@
           (send dc draw-bitmap icon (+ dx x) (+ y dy)
                 'solid black 
                 (cdr (pack-icon pack)))
-          (let-values ([(dest-x dest-y) (pos->location (pack-dest-x pack) (pack-dest-y pack))]
+          (let-values ([(dest-x dest-y) (if (pack-dest-x pack)
+                                            (pos->location (pack-dest-x pack) (pack-dest-y pack))
+                                                           (values #f #f))]
                        [(ddx) (/ (send icon get-width) 2)]
                        [(ddy) (/ (send icon get-height) 2)])
-            (send dc set-pen (pack-pen pack))
-            (send dc draw-line (+ x ddx dx) (+ y ddy dy) (+ dest-x dx ddx) (+ dest-y dy ddy))
-            (send dc set-pen transparent-pen))))
+            (when dest-x
+              (send dc set-pen (pack-pen pack))
+              (send dc draw-line (+ x ddx dx) (+ y ddy dy) (+ dest-x dx ddx) (+ dest-y dy ddy))
+              (send dc set-pen transparent-pen)))))
       
       (define/private (draw-robot dc robot)
         (let-values ([(x y) (pos->location (robot-x robot) (robot-y robot))])

@@ -31,6 +31,7 @@
   
   (define object-type (make-ref-type "Object" `("java" "lang")))
   (define string-type (make-ref-type "String" `("java" "lang")))
+  (define throw-type (make-ref-type "Throwable" `("java" "lang")))
   (define serializable-type (make-ref-type "Serializable" `("java" "io")))
   (define comparable-type (make-ref-type "Comparable" `("java" "lang")))
   (define cloneable-type (make-ref-type "Cloneable" `("java" "lang")))

@@ -8,8 +8,11 @@
        (case (syntax-local-context)
          [(module top-level)
           (syntax-property
-           #'(define-values ()
-               (let ([to-test-values (call-with-values (lambda () to-test-stx) list)]
+           #`(define-values ()
+               (let ([to-test-values (call-with-values (lambda () #,(syntax-property #`to-test-stx
+                                                                                     'stepper-test-suite-hint
+                                                                                     #t)) 
+                                                       list)]
                      [exp-values (call-with-values (lambda () exp-stx) list)])
                  (record (and (= (length to-test-values) (length exp-values))
                               (andmap test to-test-values exp-values)))

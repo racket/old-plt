@@ -1,3 +1,4 @@
+
   (unit/sig mred:gui-utils^
     (import [wx : wx^]
 	    [mred:constants : mred:constants^]
@@ -5,8 +6,7 @@
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]
-	    [mzlib:function : mzlib:function^]
-	    [mred:test : mred:testable-window^])
+	    [mzlib:function : mzlib:function^])
 
     (mred:debug:printf 'invoke "mred:gui-utils@")
 
@@ -25,8 +25,7 @@
     (define get-text-from-user
       (opt-lambda (message [caption "Input text"]
 			   [default-value ""]
-			   [parent (or (mred:test:test:get-active-frame)
-				       null)]
+			   [parent null]
 			   [x -1]
 			   [y -1]
 			   [center? #t])
@@ -74,9 +73,7 @@
 		    [auto-set-wrap #t]
 		    [autowrap-bitmap null]))])
 	(opt-lambda (s [title "Message Box"] [modal? #t])
-	  (let* ([f (make-object mred:container:dialog-box% 
-				 (or (mred:test:test:get-active-frame) null)
-				 title modal?)]
+	  (let* ([f (make-object mred:container:dialog-box% '() title modal?)]
 		 [p (make-object mred:container:vertical-panel% f)]
 		 [c (make-object mred:canvas:wrapping-canvas% p)]
 		 [e (make-object mred:edit:media-edit%)]
@@ -164,9 +161,7 @@
 		       (set! result #f)
 		       (show #f))])
 		  (sequence
-		    (super-init
-		     (or (mred:test:test:get-active-frame) null)
-		     title #t x y)
+		    (super-init () title #t x y)
 		    (let* ([messages
 			    (let loop ([m message])
 			      (let ([match (regexp-match (format "([^~n]*)~n(.*)")
@@ -220,9 +215,7 @@
 		       (set! result 'cancel)
 		       (show #f))])
 		  (sequence
-		    (super-init
-		     (or (mred:test:test:get-active-frame) null)
-		     "Warning" #t)
+		    (super-init () "Warning" #t)
 		    (let* ([panel (make-object mred:container:vertical-panel% this)]
 			   [msg
 			    (make-object mred:container:message% panel
@@ -291,8 +284,7 @@
     
     (define get-single-choice
       (opt-lambda (message caption choices 
-			   [parent (or (mred:test:test:get-active-frame)
-				       null)]
+			   [parent null]
 			   [x -1] 
 			   [y -1]
 			   [centre #t]

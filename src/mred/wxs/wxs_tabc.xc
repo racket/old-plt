@@ -23,6 +23,7 @@ public:
     void  Enable(Bool enable);
     void  Append(char *);
     void  Delete(int);
+    void  SetLabel(int, char *);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -36,6 +37,7 @@ void wxTabChoice::SetSelection(int n) { }
 void wxTabChoice::Enable(Bool enable) { }
 void wxTabChoice::Append(char *name) { }
 void wxTabChoice::Delete(int which) { }
+void wxTabChoice::SetLabel(int which, char *lbl) { }
 
 class wxGroupBox : public wxItem {
 public:
@@ -82,6 +84,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 
 @ "append" : void Append(string);
 @ "delete" : void Delete(int);
+
+@ "set-label" : void SetLabel(int,string); : : /RANGE[0]
 
 @END
 

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-01")
+(define *tex2page-version* "2005-03-04")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -205,6 +205,8 @@
 (define *tab* (integer->char 9))
 
 (define *afterpar* '())
+
+(define *afterbye* '())
 
 (define *aux-dir* #f)
 
@@ -3970,6 +3972,7 @@
     (do-end-page)
     (when *last-modification-time*
       (write-aux `(!last-modification-time ,*last-modification-time*)))
+    (for-each (lambda (th) (th)) *afterbye*)
     (close-all-open-ports)
     (call-external-programs-if-necessary)
     (show-unresolved-xrefs-and-missing-pieces)))
@@ -8839,6 +8842,10 @@
 
 (tex-def-prim "\\thispagestyle" get-group)
 
+(tex-def-prim "\\manpagesection" get-group)
+
+(tex-def-prim "\\manpagedescription" get-group)
+
 (tex-def-prim "\\externallabels" (lambda () (get-group) (get-group)))
 
 (tex-let-prim "\\markboth" "\\externallabels")
@@ -8912,8 +8919,6 @@
 (tex-let-prim "\\settowidth" "\\addtolength")
 
 (tex-let-prim "\\hookaction" "\\addtolength")
-
-(tex-let-prim "\\manpage" "\\addtolength")
 
 (tex-def-prim "\\enlargethispage" (lambda () (eat-star) (get-group)))
 
@@ -9136,6 +9141,7 @@
     (unless (= *write-log-index* 0) (newline))
     (fluid-let
       ((*afterpar* '())
+       (*afterbye* '())
        (*aux-dir* #f)
        (*aux-dir/* "")
        (*aux-port* #f)

@@ -92,7 +92,8 @@
 	(define src (build-path (collection-path "launcher")
 				(if (eq? kind 'mzscheme) mz mr)))
 	(when (or (file-exists? dest)
-		  (directory-exists? dest))
+		  (directory-exists? dest)
+		  (link-exists? dest))
 	  (delete-directory/files dest))
 	(copy-file src dest))
 

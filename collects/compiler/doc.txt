@@ -346,15 +346,15 @@ The _embedr-unit.ss_ library provides a signed unit, _compiler:embed@_
 that imports nothing and exports the functions below. The
 _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
 
-> (make-embedding-executable dest-file mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher? variant])
+> (make-embedding-executable dest mred? verbose? mod-list literal-file-list literal-sexpr cmdline-list [aux launcher? variant])
   - Copies the MzScheme (if `mred?' is #f) or MrEd (otherwise) binary,
   embedding code into the copied executable to be loaded on startup.
 
   See the mzc documentation for a simpler interface that is
   well-suited to programs defined with `module'.
 
-  The embeddeding executable is written to `dest-file', which is
-  overwritten if it exists already.
+  The embeddeding executable is written to `dest', which is
+  overwritten if it exists already (as a file or directory).
 
   The embedded code consists of module declaratons followed by
   additional (arbitrary) code. When a module is embedded, every module

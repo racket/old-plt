@@ -466,8 +466,10 @@
 			    (if (and mred? (eq? 'macosx (system-type)))
 				(values (prepare-macosx-mred exe dest aux variant) #t)
 				(begin
-				  (when (file-exists? dest)
-				    (delete-file dest))
+				  (when (or (file-exists? dest)
+					    (directory-exists? dest)
+					    (link-exists? dest))
+				    (delete-directory/files dest))
 				  (copy-file exe dest)
 				  (values dest #f)))])
 		(with-handlers ([void (lambda (x)

@@ -12,7 +12,7 @@ executables.
    the list `args'. Extra arguments passed to the launcher at run-time
    will be appended (modulo special X flag handling, as described
    below) to this list and passed on to MrEd. If `dest' exists
-   already 9as a file or directory), it is replaced.
+   already (as a file or directory), it is replaced.
 
    `make-mred-launcher' transforms `args' as necessary to avoid
    mutations caused by passing the strings through the

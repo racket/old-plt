@@ -1812,7 +1812,6 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
 {
   int count, i;
   long _n;
-  wxSnipClass *sclass;
   char buffer[256];
   int version;
   Bool required;
@@ -1836,20 +1835,13 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
     if (!f->Ok())
       return FALSE;
 
-    sclass = Find(buffer);
-
     sl = new wxSnipClassLink;
-    sl->c = sclass;
+    sl->c = NULL;
     sl->mapPosition = i;
     sl->next = f->sl;
     f->sl = sl;
-
-    if (!sclass || (sclass->version < version)) {
-      /* unknown class/version; remember name in case it's used */
-      sl->name = copystring(buffer);
-    } else {
-      sl->readingVersion = version;
-    }
+    sl->name = copystring(buffer);
+    sl->readingVersion = version;
   }
 
   return TRUE;
@@ -1858,6 +1850,7 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn *f)
 wxSnipClass *wxStandardSnipClassList::FindByMapPosition(wxMediaStream *f, short n)
 {
   wxSnipClassLink *sl;
+  wxSnipClass *sclass;
   
   if (n < 0)
     return NULL;
@@ -1865,13 +1858,19 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(wxMediaStream *f, short 
   for (sl = f->sl; sl; sl = sl->next) {
     if (sl->mapPosition == n) {
       if (sl->name) {
-	/* Show error and then remove name so it isn't shown again. */
-	char buffer2[256];
-	sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", sl->name);
-	wxmeError(buffer2);
-
+	sclass = Find(sl->name);
+	if (!sclass || (sclass->version < sl->readingVersion)) {
+	  /* unknown class/version */
+	  /* since we zero out sl->name, error is only shown once */
+	  char buffer2[256];
+	  sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", sl->name);
+	  wxmeError(buffer2);
+	} else {
+	  sl->c = sclass;
+	}
 	sl->name = NULL;
       }
+
       return sl->c;
     }
   }
@@ -2053,7 +2052,6 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
 {
   int _count, i;
   long _n;
-  wxBufferDataClass *sclass;
   wxDataClassLink *dl;
   char buffer[256];
   
@@ -2067,17 +2065,12 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
     if (!f->Ok())
       return FALSE;
 
-    sclass = Find(buffer);
-
     dl = new wxDataClassLink;
-    dl->d = sclass;
+    dl->d = null;
     dl->mapPosition = i + 1;
     dl->next = f->dl;
     f->dl = dl;
-
-    if (!sclass) {
-      dl->name = copystring(buffer);
-    }
+    dl->name = copystring(buffer);
   }
 
   return TRUE;
@@ -2086,6 +2079,7 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
 wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(wxMediaStream *f, short n)
 {
   wxDataClassLink *dl;
+  wxBufferDataClass *sclass;
   
   if (n <= 0)
     return NULL;
@@ -2093,11 +2087,16 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(wxMediaStream *f, sh
   for (dl = f->dl; dl; dl = dl->next) {
     if (dl->mapPosition == n) {
       if (dl->name) {
-	char buffer2[256];
-	sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", dl->name);
-	wxmeError(buffer2);
+	sclass = Find(dl->name);
+	if (!sclass) {
+	  char buffer2[256];
+	  sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", dl->name);
+	  wxmeError(buffer2);
+	} elese
+	    dl->d = sclass;
 	dl->name = NULL;
       }
+
       return dl->d;
     }
   }

@@ -2419,9 +2419,7 @@ void wxMediaSetFileCreatorType(char *file, Bool is_binary)
   FInfo info;
   Str255 filename;
 
-  memcpy(filename, file, 255);
-  filename[255] = 0;
-  CtoPstr((char *)filename);
+  CopyCStringToPascal(file,filename);
 
   FSMakeFSSpec(0, 0, filename, &spec);
 

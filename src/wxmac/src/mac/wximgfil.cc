@@ -106,7 +106,7 @@ void wxGIF::Create(ushort width, ushort height, ushort deep)
     {
       lpbi = 0; // for debug purposes
     }
-  RawImage = (char HUGE *) (lpbi);
+  RawImage = (char *) lpbi;
   EfeWidth = (long)(((long)Width*Deep + 31) / 32) * 4;
 }
 

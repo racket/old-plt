@@ -19,7 +19,6 @@ static const char sccsid[] = "%W% %G%";
   #include <QDOffscreen.h>
 #endif
 #if USE_XPM_IN_MAC
-#error "USE_XPM_IN_MAC defined"
 #define FOR_MAC
 #include "xpm34.h"
 #endif
@@ -600,8 +599,9 @@ int wxDisplayDepth(void)
 //-----------------------------------------------------------------------------
 void wxDisplaySize(int *width, int *height)
 {
-	*width = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
-	*height = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - GetMBarHeight();
+        BitMap *screenBits = GetQDGlobalsScreenBits(NULL);
+	*width = screenBits->bounds.right - screenBits->bounds.left;
+	*height = screenBits->bounds.bottom - screenBits->bounds.top - GetMBarHeight();
 }
 
 //------------------ BitMaps ------------------------------------------
@@ -638,7 +638,6 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   	SetGWorld(x_pixmap, 0);
   	int i, j, p = 0;
   	char byte;
-  	int bit1;
 	RGBColor	cpix;
 	// look in contrib/wxwxpm/simx.c for a clue on finishing this 
   	
@@ -670,7 +669,6 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 		// look for a 'PICT' resource with the given name
 		Str255 resname;
 		PicHandle	h;
-		ResType	thetype;
                 CopyCStringToPascal(bitmap_file,resname);
 		h = (PicHandle)::GetNamedResource('PICT', resname);
 		if (h) {
@@ -717,8 +715,8 @@ wxBitmap::~wxBitmap(void)
 
 	if (x_pixmap)
 		// Louis Birk Suggests:
-#error "REVIEW this code"
 #ifdef LkB
+#error "REVIEW this code"
                 BitMap pixMap = GetPortPixMap(*x_pixmap);
 		::DisposeCTable(pixMap->pmTable);
 		pixMap->pmTable = 0;
@@ -935,10 +933,11 @@ void wxBitmap::DrawMac(int x, int y, int mode)
 		Rect sbounds = {0, 0, height, width};
 		Rect dbounds = {y, x, height+y, width+x};
 		PixMapHandle  srcpixh = ::GetGWorldPixMap(x_pixmap);
-		CGrafPtr here;
-		::GetPort( (GrafPtr *)&here);
-		PixMapHandle destpixh = here->portPixMap;
-		::CopyBits( (BitMap *) (*srcpixh), (BitMap *) (*destpixh),
+		CGrafPtr portNow;
+                GDHandle deviceNow;
+		::GetGWorld(&portNow,&deviceNow);
+		PixMapHandle destpixh = GetPortPixMap(portNow);
+		::CopyBits( (BitMap *) *srcpixh, (BitMap *) *destpixh,
 			&sbounds, &dbounds, mode, NULL);
 	}
 }

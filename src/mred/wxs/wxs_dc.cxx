@@ -2030,7 +2030,7 @@ public:
 };
 
 basePrinterDC::basePrinterDC(wxWindow *w) 
-: wxPrinterDC( )
+: wxPrinterDC(new wxPrintData())
 {
 }
 

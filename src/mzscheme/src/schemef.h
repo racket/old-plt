@@ -496,6 +496,11 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
 #endif
 
+#ifdef USE_MAC_CARBON_FILE_TOOLBOX
+char *scheme_carbon_spec_to_path(const FSSpec *spec);
+int *scheme_carbon_path_to_spec(const char *filename, FSSpec *spec);
+#endif
+
 void *scheme_alloc_fdset_array(int count, int permanent);
 void *scheme_init_fdset_array(void *fdarray, int count);
 void *scheme_get_fdset(void *fdarray, int pos);

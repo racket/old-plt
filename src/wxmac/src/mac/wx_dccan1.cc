@@ -179,7 +179,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 	if (!Ok()) return;
 	 
         CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-        if ((GrafPtr)theMacGrafPort != GetQDGlobalsThePort())
+        if (theMacGrafPort != GetQDGlobalsThePort())
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)

@@ -38,7 +38,9 @@ static int QueueTransferredEvent(EventRecord *e);
 
 void MrEdInitFirstContext(MrEdContext *)
 {
+#ifdef MACINTOSH_EVENTS
   scheme_handle_aewait_event = (void (*)(EventRecord*))QueueTransferredEvent;
+#endif
 }
 
 void MrEdInitNewContext(MrEdContext *)
@@ -139,7 +141,7 @@ static int QueueTransferredEvent(EventRecord *e)
 
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
-      GetWindowRegion(w,kWindowUpdateRegion,updateRegion);
+      GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
       CopyRgn(updateRegion,q->rgn);
       BeginUpdate(w);
       EndUpdate(w);

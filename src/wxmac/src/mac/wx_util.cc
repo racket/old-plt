@@ -11,7 +11,6 @@
 #include "wx_utils.h"
 #include "wxstring.h"
 #include "wx_list.h"
-#include <Strings.h>
 #include "wx_main.h"
 #include <stdarg.h>
 #include <ctype.h>
@@ -19,11 +18,13 @@
 #include <unistd.h>
 #if 1
 #ifndef OS_X
+  #include <Strings.h>
   #include <Files.h>
   #include <PPCToolbox.h>
-#endif
 extern "C" long atol(char *);
 extern "C" int atoi(char *);
+#endif
+
 #else
 #if defined(PYLIB)
 extern "C" {
@@ -50,7 +51,11 @@ extern "C" {
 #endif
 
 extern "C" {
+#ifdef OS_X
+        #include <sys/stat.h>
+#else
 	#include <stat.h>
+#endif        
 }
 
 #if 0
@@ -59,9 +64,21 @@ static DIR *wxDirStream = NULL;
 static char *wxFileSpec = NULL;
 static int wxFindFileFlags = 0;
 
+#ifdef OS_X
+char *wxFSSpecToPath(const FSSpec *spec)
+{
+  // hopefully, OS X will give us a nice way to do this.
+}
+
+FSSpec *wxPathToFSSpec(const char *path)
+{
+  // hopefully, OS X will give us a nice way to do this.
+}
+#else
 extern "C" {
   extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
 };
+#endif
 
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName (const char *prefix, char *dest)
@@ -75,7 +92,11 @@ char *wxGetTempFileName (const char *prefix, char *dest)
   if (!temp_folder) {
     FSSpec spec;
     if (!FindFolder(kOnSystemDisk, 'temp', kCreateFolder, &spec.vRefNum, &spec.parID))
+#ifdef OS_X
+          temp_folder = wxFSSpecToPath(&spec);
+#else          
 	  temp_folder = scheme_build_mac_filename(&spec, 1);
+#endif          
 	else
 	  temp_folder = "";
 	temp_len = strlen(temp_folder);
@@ -544,10 +565,9 @@ Bool wxGetUserId(char *buf, int maxSize)
 #ifdef OS_X
 {
     CFStringRef username;
-    Boolean result;
     
     username = CSCopyUserName(true);
-    result = CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
+    return CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
 }
 #else
 {	return wxGetUserName(buf,maxSize); }
@@ -558,10 +578,9 @@ Bool wxGetUserName(char *buf, int maxSize)
 #ifdef OS_X
 {
     CFStringRef username;
-    Boolean result;
     
     username = CSCopyUserName(false);
-    result = CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
+    return CFStringGetCString(username, buf,maxSize,kCFStringEncodingISOLatin1);
 }
 #else    
 {	Bool good = FALSE;

@@ -27,7 +27,7 @@ pascal void	TrackActionProc(ControlHandle theControl,short partCode);
 //	DocWindow methods. These really could be moved t
 
 static ControlActionUPP
-TrackActionProcUPP = NewControlActionProc(TrackActionProc);
+TrackActionProcUPP = NewControlActionUPP(TrackActionProc);
 
 
 //=============================================================================
@@ -216,7 +216,7 @@ void wxScrollBar::Paint(void)
  	else
  	{
  		// Draw outline of hidden scrollbar (since we're clipping DrawGrowIcon)
- 		Rect controlRect = (**cMacControl).contrlRect;
+ 		Rect controlRect = *GetControlBounds(cMacControl,NULL);
  		PenState oldPenState;
  		::GetPenState(&oldPenState);
  		::PenNormal();
@@ -260,7 +260,7 @@ void wxScrollBar::ShowAsActive(Bool flag) // mac platform only
 	pascal void TrackActionProc(ControlHandle theControl, short thePart);
 	pascal void TrackActionProc(ControlHandle theControl, short thePart)
 	{
-		wxScrollBar* scrollBar = (wxScrollBar*) (**theControl).contrlRfCon;
+		wxScrollBar* scrollBar = (wxScrollBar*) GetControlReference(theControl);
 		if (scrollBar) scrollBar->TrackAction(thePart);
 	}
 
@@ -273,8 +273,8 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 	
 		float fStartH, fStartV;
 		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = fStartH;
-		int startV = fStartV;
+		int startH = (int)fStartH;
+		int startV = (int)fStartV;
 
 		Point startPt = {startV, startH}; // client c.s.
 		int thePart = ::TestControl(cMacControl, startPt);

@@ -50,6 +50,10 @@
 
 #include <stdlib.h>
 
+#ifdef OS_X
+  #include <Quicktime/Movies.h>
+#endif
+
 class GCBitmap {
 public:
 #ifdef MZ_PRECISE_GC
@@ -645,6 +649,7 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
 #ifdef wx_mac
   MenuHandle fmenu;
   Str255 buffer;
+  char temp[256];
   int count, i = 0;
   
   fmenu = NewMenu(42, "\p");
@@ -721,8 +726,9 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
       break;
     else {
       GetMenuItemText(fmenu, ++i, buffer);
-      l = buffer[0];
-      s = PtoCstr(buffer);
+      CopyPascalStringToC(buffer,temp);
+      l = strlen(temp);
+      s = temp;
     }
 #endif
 #ifdef wx_msw
@@ -858,7 +864,7 @@ void MyCloseMovie(Movie movie, short resRefNum)
 
 int movieInitialized = FALSE;
 
-int MovieInitialize(void)
+void MovieInitialize(void)
 {
   short osErr;
   long result;
@@ -939,7 +945,11 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
     MovieInitialize();
   }
   
+#ifdef OS_X
+  osErr = wxPathToFSSpec(f,&spec);
+#else    
   osErr = scheme_mac_path_to_spec(f,&spec,FALSE);
+#endif  
   if (! osErr) 
     scheme_signal_error("cannot find file: \"%s\"", SCHEME_STR_VAL(argv[0]));
   
@@ -1368,9 +1378,11 @@ static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)
 }
 
 #ifdef wx_mac
+#ifndef OS_X
 extern "C" {
  extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
 };
+#endif
 extern char *wxmac_startup_directory;
 #endif
 
@@ -1477,7 +1489,11 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   }
 
   if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &spec.vRefNum, &spec.parID))
+#ifdef OS_X  
+    home = scheme_make_string(wxFSSpecToPath(&spec));
+#else    
     home = scheme_make_string(scheme_build_mac_filename(&spec, 1));
+#endif    
   else if (wxmac_startup_directory) {
     home = scheme_make_string(wxmac_startup_directory);
   } else {

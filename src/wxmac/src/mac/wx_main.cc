@@ -41,9 +41,10 @@ void CreateApp(void);
 
 extern "C" {
   extern char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
+#ifndef OS_X
   extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
+#endif
 };
-
 
 char *wxmac_startup_directory;
 
@@ -68,7 +69,11 @@ int wxEntry(int argc, char* argv[])
 	
 	FSSpec spec;
 	if (!FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &spec.vRefNum, &spec.parID)) {
+#ifdef OS_X
+          char *home = wxFSSpecToPath(&spec);
+#else          
 	  char *home = scheme_build_mac_filename(&spec, 1);
+#endif          
 	  int l = strlen(home);
 	  char *s = new char[l + 15];
 	  memcpy(s, home, l);

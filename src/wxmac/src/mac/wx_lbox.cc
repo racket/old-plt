@@ -150,10 +150,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	GetTextExtent("X", &tWidth, &tHeight, &tDescent, NULL, font);
 	
 	if (width < 0) {
-	  cWindowWidth = (labelPosition == wxVERTICAL ? 0 : lblWidth) + DefItemWidth + KSBWidth + 2 * VIEW_RECT_OFFSET ;
+	  cWindowWidth = (int)((labelPosition == wxVERTICAL ? 0 : lblWidth) + DefItemWidth + KSBWidth + 2 * VIEW_RECT_OFFSET);
 	}
 	if (height < 0) {
-	  cWindowHeight = (labelPosition == wxVERTICAL ? lblHeight : 0) + 3 * tHeight + 2 * VIEW_RECT_OFFSET ;
+	  cWindowHeight = (int)((labelPosition == wxVERTICAL ? lblHeight : 0) + 3 * tHeight + 2 * VIEW_RECT_OFFSET) ;
 	}
 	
 	int boxHeight = cWindowHeight ;
@@ -184,7 +184,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 		flags = flags | alDoSelOnlyOne;
 	}
 					
-	result = ::ALNew((GrafPort *)theMacGrafPort, &viewRect, &dataRect, cellsize,
+	result = ::ALNew(GetWindowFromPort(theMacGrafPort), &viewRect, &dataRect, cellsize,
 				flags, &cListReference);
 	
 	if (result != noErr) {
@@ -253,8 +253,7 @@ void wxListBox::Paint(void)
 	if (cHidden) return;
 
 	SetCurrentDC();
-	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
-	::ALUpdate(theMacWindow->visRgn, cListReference);
+	::ALUpdate(GetPortVisibleRegion(cMacDC->macGrafPort(),NULL), cListReference);
 	
 	/* White out any empty space in the list: */
 /*	Point last, dlast;
@@ -349,7 +348,7 @@ static pascal void TrackActionProc(ControlHandle theControl, short part)
 }
 
 static ControlActionUPP
-TrackActionProcUPP = NewControlActionProc(TrackActionProc);
+TrackActionProcUPP = NewControlActionUPP(TrackActionProc);
 
 static void ManualScroll(ListHandle list, ControlHandle scroll, Point startPt, int part)
 {
@@ -373,8 +372,8 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 	if (event->leftDown || event->rightDown) {
 		float fStartH, fStartV;
 		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = fStartH;
-		int startV = fStartV;
+		int startH = (int)fStartH;
+		int startV = (int)fStartV;
 		
 		Point startPt = {startV, startH}; 	// client c.s.
 		int modifiers = 0;
@@ -577,13 +576,14 @@ void wxListBox::Delete(int N)
 // Append an item to the list box
 void wxListBox::Append(char *Item, char *Client_data)
 {
-  Handle stringHandle = NewHandle(strlen(Item)+1);
+  Str255 temp;
+  CopyCStringToPascal(Item,temp);
+  StringHandle stringHandle = NewString(temp);
   
   SetCurrentDC();
   //LSetDrawingMode(FALSE, cListHandle);
   LongPt cell = {no_items, 0};		// Point = {v, h} so Cell = {row, col}
   ALAddRow(1,no_items, cListReference);
-  CopyCStringToPascal(Item,*stringHandle);
   ALSetCell((void *)stringHandle, &cell, cListReference);
   // LDraw(cell, cListHandle); // mflatt: can't get this to work; co-ordinate problems?
   // LSetDrawingMode(TRUE, cListHandle);
@@ -605,12 +605,13 @@ void wxListBox::Set(int n, char *choices[])
   if (no_items > 0) {
 	this->Clear();
   }
+  Str255 temp;
   // LSetDrawingMode(FALSE, cListHandle);
   ALAddRow(n,0,cListReference); // add all the rows up front.
   LongPt cell = {0, 0};		// Point = {v, h} so Cell = {row, col}
   for (cell.v = 0; cell.v < n; cell.v++) {
-  	  Handle stringHandle = NewHandle(strlen(choices[cell.v])+1);
-          CopyCStringToPascal(choices[cell.v],*stringHandle);
+          CopyCStringToPascal(choices[cell.v],temp);
+          StringHandle stringHandle = NewString(temp);
 	  cDataList->Append(cell.v, (wxObject *)NULL);
 	  ALSetCell(stringHandle ,&cell, cListReference);
   }
@@ -660,7 +661,7 @@ char *wxListBox::GetString(int N)
 		return NULL;
 
 	LongPt cell = {N, 0};
-	Handle stringHandle;
+	StringHandle stringHandle;
 	OSErr result;
 	
 	result = ALGetCell((void **)&stringHandle, &cell, cListReference);
@@ -675,12 +676,13 @@ void wxListBox::SetString(int N, char *s)
 {
 	LongPt cell = {N, 0};
     SetCurrentDC();
-    Handle oldHandle; 
+    StringHandle oldHandle; 
+    Str255 temp;
     ALGetCell((void **)&oldHandle,&cell,cListReference);
-    Handle newHandle = NewHandle(strlen(s)+1);
-    CopyCStringToPascal(s,*newHandle);
+    CopyCStringToPascal(s,temp);
+    StringHandle newHandle = NewString(temp);
     ALSetCell(newHandle, &cell, cListReference);
-    DisposeHandle(oldHandle);
+    DisposeHandle((Handle)oldHandle);
 }
 
 char *wxListBox::GetClientData(int N)
@@ -705,12 +707,13 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
   //LSetDrawingMode(FALSE, cListHandle);
   LongPt cell = {pos, 0};		// Point = {v, h} so Cell = {row, col}
   int n;
-  Handle stringHandle;
+  StringHandle stringHandle;
+  Str255 temp;
   ALAddRow(nItems,cell.v,cListReference);
   for (n = 0;  n < nItems; cell.v++, n++) {
 	  cDataList->Append(cell.v, (wxObject *)NULL);
-	  stringHandle = NewHandle(strlen(Items[n]) + 1);
-          CopyCStringToPascal(Items[n],*stringHandle);
+          CopyCStringToPascal(Items[n],temp);
+          stringHandle = NewString(temp);
 	  ALSetCell(stringHandle, &cell, cListReference);
   }
   no_items = no_items + nItems;

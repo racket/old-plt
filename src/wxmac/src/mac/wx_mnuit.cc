@@ -23,10 +23,10 @@ wxMenuItem::wxMenuItem
 (
 	void
 ) :
-	parentMenu (NULL),
 	checkable (FALSE),
 	cIsChecked (FALSE),
-	cIsEnabled (TRUE)
+	cIsEnabled (TRUE),
+	parentMenu (NULL)
 {
 	WXGC_IGNORE(this, parentMenu);
 }
@@ -36,10 +36,10 @@ wxMenuItem::wxMenuItem
 	wxMenu* theParentMenu,
 	Bool	isCheckable
 ) :
-	parentMenu (theParentMenu),
 	checkable (isCheckable),
 	cIsChecked (FALSE),
-	cIsEnabled (TRUE)
+	cIsEnabled (TRUE),
+	parentMenu (theParentMenu)
 {
 	if (!theParentMenu) wxFatalError("No parent menu for constructing menu item.");
 	WXGC_IGNORE(this, parentMenu);

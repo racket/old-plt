@@ -1,12 +1,16 @@
 
 #define INCLUDE_WITHOUT_PATHS
 
-#ifdef __MWERKS__
-#if defined(__powerc)
-#include <MacHeadersPPC>
+#ifdef OS_X
+  #include <Carbon/Carbon.h>
 #else
-#include <MacHeaders68K>
-#endif
+  #ifdef __MWERKS__
+  #if defined(__powerc)
+  #include <MacHeadersPPC>
+  #else
+  #include <MacHeaders68K>
+  #endif
+  #endif
 #endif
 
 #define WXUNUSED(x)
@@ -16,8 +20,10 @@
 /* code added by JBC because compiler no longer handles keyword 
    'far' for PPC */
    
-#if defined(__powerc)
-#  define WX_FAR /**/
-# else
-#  define WX_FAR far
-# endif
+#ifdef __MWERKS__
+# if defined(__powerc)
+#   define WX_FAR /**/
+#  else
+#   define WX_FAR far
+#  endif
+#endif

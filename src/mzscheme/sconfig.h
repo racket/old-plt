@@ -404,7 +404,11 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_TM_GMTOFF_FIELD
 
-# define MACINTOSH_EVENTS
+// events cause build problems in a framework world.  Deal with it later.
+//# define MACINTOSH_EVENTS
+
+// this is used if FSSpec <-> pathname fns are in OS X MzScheme. Not really needed
+//# define USE_CARBON_FILE_TOOLBOX
 
 # define FLAGS_ALREADY_SET
 

@@ -124,6 +124,8 @@ class wxPrintDialog: public wxDialogBox
   wxPrintDialog(wxWindow *parent, wxPrintData *data);
   ~wxPrintDialog(void);
 
+  virtual Bool UseIt();
+  
   virtual void Show(Bool flag);
   
   virtual void ShowSetupDialog(Bool flag);
@@ -147,7 +149,7 @@ class wxPrinter: public wxObject
   static wxWindow *abortWindow;
   static Bool abortIt;
 
-  wxPrinter(wxPrintData *data);
+  wxPrinter();
   ~wxPrinter(void);
 
   virtual Bool Print(wxWindow *parent, wxPrintout *printout, Bool prompt = TRUE);

@@ -659,7 +659,7 @@ wxMacDC* wxWindow::MacDC(void) { return cMacDC; } // mac platform only
 void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if ((GrafPtr)theMacGrafPort != qd.thePort)
+	if (theMacGrafPort != GetQDGlobalsThePort())
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
@@ -677,7 +677,7 @@ void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 void wxWindow::SetCurrentMacDC(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if ((GrafPtr)theMacGrafPort != qd.thePort)
+	if (theMacGrafPort != GetQDGlobalsThePort())
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
@@ -693,7 +693,7 @@ void wxWindow::SetCurrentMacDC(void) // mac platform only
 void wxWindow::SetCurrentDC(void) // mac platform only
 {
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if ((GrafPtr)theMacGrafPort != qd.thePort)
+	if (theMacGrafPort != GetQDGlobalsThePort())
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
@@ -759,7 +759,7 @@ void wxWindow::MacSetBackground(void) // mac platform only
 	if (!cEraser)
 	{
 		BackColor(whiteColor);
-		BackPat(&qd.white);
+		BackPat(GetQDGlobalsWhite(NULL));
 		return;
 	}
 
@@ -780,9 +780,9 @@ void wxWindow::MacSetBackground(void) // mac platform only
 
 	int theBrushStyle = cEraser->GetStyle();
 	if (theBrushStyle == wxSOLID)
-		BackPat(&qd.white);
+		BackPat(GetQDGlobalsWhite(NULL));
 	else if (theBrushStyle == wxTRANSPARENT)
-		BackPat(&qd.white); // WCH: does this work??
+		BackPat(GetQDGlobalsWhite(NULL)); // WCH: does this work??
 	else if (IS_HATCH(theBrushStyle))
 	{
 		macGetHatchPattern(theBrushStyle, &cMacPattern);
@@ -790,7 +790,7 @@ void wxWindow::MacSetBackground(void) // mac platform only
 	}
 	else
 	{
-		BackPat(&qd.white); // WCH: must use BackPixPat for stipple
+		BackPat(GetQDGlobalsWhite(NULL)); // WCH: must use BackPixPat for stipple
 	}
 }
 
@@ -806,16 +806,16 @@ void wxWindow::SetForeground(void) // mac platform only
 
 	if (!cBrush)
 	{
-		PenPat(&qd.black);
+		PenPat(GetQDGlobalsBlack(NULL));
 		ForeColor(blackColor);
 		return;
 	}
 
 	int theBrushStyle = cBrush->GetStyle();
 	if (theBrushStyle == wxSOLID)
-		PenPat(&qd.black);
+		PenPat(GetQDGlobalsBlack(NULL));
 	else if (theBrushStyle == wxTRANSPARENT)
-		PenPat(&qd.white); // WCH: does this work??
+		PenPat(GetQDGlobalsWhite(NULL)); // WCH: does this work??
 	else if (IS_HATCH(theBrushStyle))
 	{
 		macGetHatchPattern(theBrushStyle, &cMacPattern);
@@ -823,7 +823,7 @@ void wxWindow::SetForeground(void) // mac platform only
 	}
 	else
 	{
-		PenPat(&qd.black); // WCH: must use PenPixPat for stipple
+		PenPat(GetQDGlobalsBlack(NULL)); // WCH: must use PenPixPat for stipple
 	}
 
 	RGBColor pixel = cBrush->GetColour()->pixel;

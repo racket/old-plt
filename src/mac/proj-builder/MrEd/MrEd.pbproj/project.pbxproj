@@ -44,7 +44,7 @@
 			buildSettings = {
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
-				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxmac/utils/image/src /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc/include /Users/clements/plt/src/a-list/c-headers /Users/clements/plt/src/wxcommon /Developer/Headers/FlatCarbon";
+				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxmac/utils/image/src /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc/include /Users/clements/plt/src/a-list/c-headers /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib /Developer/Headers/FlatCarbon";
 				LIBRARY_STYLE = STATIC;
 				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "-DOS_X -include /Users/clements/plt/src/mac/mred/wxGWin.pch";
@@ -747,6 +747,7 @@
 		};
 		03172A8F00BAB02E7F000001 = {
 			children = (
+				1D95027100FA93997F000001,
 				0366420A00EBD2D97F000001,
 			);
 			isa = PBXGroup;
@@ -2184,6 +2185,7 @@
 			children = (
 				0E7DA8C300ED24437F000001,
 				00F450F200EC676F7F000001,
+				1D95027000FA93997F000001,
 			);
 			isa = PBXGroup;
 			name = wxWindows;
@@ -2245,6 +2247,54 @@
 			name = Products;
 			refType = 4;
 		};
+		1D95026D00F6259E7F000001 = {
+			isa = PBXFrameworkReference;
+			name = QuickTime.framework;
+			path = /System/Library/Frameworks/QuickTime.framework;
+			refType = 0;
+		};
+		1D95026E00F6259E7F000001 = {
+			fileRef = 1D95026D00F6259E7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		1D95027000FA93997F000001 = {
+			isa = PBXFileReference;
+			name = WXMAC;
+			path = build/WXMAC;
+			refType = 4;
+		};
+		1D95027100FA93997F000001 = {
+			isa = PBXFileReference;
+			name = WXS;
+			path = build/WXS;
+			refType = 4;
+		};
+		1D95027200FA93997F000001 = {
+			fileRef = 1D95027000FA93997F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		1D95027300FA93997F000001 = {
+			fileRef = 1D95027100FA93997F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		1D95027400FAEDBD7F000001 = {
+			isa = PBXFileReference;
+			name = wxmac.a;
+			path = /Users/clements/wxmac.a;
+			refType = 0;
+		};
+		1D95027500FAEDBD7F000001 = {
+			fileRef = 1D95027400FAEDBD7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		20286C28FDCF999611CA2CEA = {
 			buildStyles = (
 				05952DFCFFF02D1B11CA0E50,
@@ -2269,7 +2319,6 @@
 				20286C32FDCF999611CA2CEA,
 				195DF8C9FE9D4F0611CA2CBB,
 				00E9FFD100B278517F000001,
-				00F4511300EC74C17F000001,
 			);
 			isa = PBXGroup;
 			name = MrEd;
@@ -2285,6 +2334,8 @@
 				0E7DA8C000ED23787F000001,
 				03172A9800BAB1697F000001,
 				03172A8F00BAB02E7F000001,
+				00F4511300EC74C17F000001,
+				1D95027400FAEDBD7F000001,
 			);
 			isa = PBXGroup;
 			name = Sources;
@@ -2312,6 +2363,7 @@
 				0249A669FF388E3911CA2CEA,
 				0640BAA4FFF0323A11CA0E50,
 				0640BAA5FFF0323A11CA0E50,
+				1D95026D00F6259E7F000001,
 			);
 			isa = PBXGroup;
 			name = "External Frameworks and Libraries";
@@ -2333,12 +2385,10 @@
 				04313892FE3035C9C02AAC07,
 			);
 			buildSettings = {
-				DEPLOYMENT_OPTIMIZATION_CFLAGS = "-O4";
 				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Developer/Headers/FlatCarbon";
+				HEADER_SEARCH_PATHS = "/Users/clements/plt/src/wxmac/include/base /Users/clements/plt/src/wxmac/include/mac /Users/clements/plt/src/wxcommon /Users/clements/plt/src/wxcommon/jpeg /Users/clements/plt/src/mzscheme/include /Users/clements/plt/src/mzscheme/gc /Users/clements/plt/src/mzscheme/src /Users/clements/plt/src/mzscheme/utils /Users/clements/plt/src/mzscheme /Users/clements/plt/src/mred/wxme /Users/clements/plt/src/mred/wxs /Users/clements/plt/src/mac/mzscheme /Users/clements/plt/src/mac/mred /Developer/Headers/FlatCarbon";
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg";
-				OPTIMIZATION_CFLAGS = "-O4";
+				LIBRARY_SEARCH_PATHS = "/Users/clements/plt/src/mzscheme /Users/clements/plt/src/wxcommon/jpeg /Users/clements";
 				OTHER_CFLAGS = "-include /Users/clements/plt/src/mac/mred/MrEdSetupOSX.h";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -2396,6 +2446,8 @@
 			files = (
 				0867D6ACFE840B52C02AAC07,
 				00F4511400EC74C17F000001,
+				1D95027200FA93997F000001,
+				1D95027300FA93997F000001,
 			);
 			isa = PBXResourcesBuildPhase;
 			name = "Bundle Resources";
@@ -2441,6 +2493,8 @@
 				00E9FFD200B278517F000001,
 				00E9FFD300B278517F000001,
 				00F450F300EC676F7F000001,
+				1D95026E00F6259E7F000001,
+				1D95027500FAEDBD7F000001,
 			);
 			isa = PBXFrameworksBuildPhase;
 			name = "Frameworks & Libraries";

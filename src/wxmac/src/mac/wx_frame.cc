@@ -78,7 +78,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 	
     OSErr result;
 
-#if (__powerc)
+#if (__powerc) || defined(__ppc__)
 
 	if (wxTheApp->MacOS85WindowManagerPresent) {
 			
@@ -105,8 +105,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 			}
 		}
 
-		result = ::CreateNewWindow(windowClass, windowAttributes,
-									&theBoundsRect, (WindowPtr *)&theMacWindow);
+		result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);
 							
 									
 		if (result != noErr) {
@@ -118,7 +117,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 
 		::SetWTitle(theMacWindow, theWindowTitle);
 		
-		SetWRefCon(GetWindowPort(theMacWindow), (long)this);
+		SetWRefCon(theMacWindow, (long)this);
 		
 	} else {
 #endif
@@ -139,7 +138,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 		theMacWindow = ::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
 						!WindowIsVisible, theProcID, MoveToFront, HasGoAwayBox, theRefCon);
 
-#if (__powerc)
+#if (__powerc) || defined(__ppc__)
 
 	}
 #endif
@@ -760,7 +759,7 @@ void wxFrame::MacUpdateWindow(void)
  //-----------------------------------------------------------------------------
  void wxFrame::MacDrawGrowIcon(void)
  {
-#if (__powerc)
+#if (__powerc) || defined(__ppc__)
  	if (! wxTheApp->MacOS85WindowManagerPresent) {
 #endif
 	 	SetCurrentMacDCNoMargin();
@@ -788,7 +787,7 @@ void wxFrame::MacUpdateWindow(void)
 	 	::DisposeRgn(saveClip);
 	 	::RGBForeColor(&fore);
 	 	::RGBBackColor(&back);
-#if (__powerc)
+#if (__powerc) || defined(__ppc__)
 	 }
 #endif
  }

@@ -1,6 +1,8 @@
 
 #include <Files.h>
-#include <EPPC.h>
+#ifndef OS_X
+  #include <EPPC.h>
+#endif
 
 #ifndef FOR_STARTER
 # include "scheme.h"
@@ -22,6 +24,8 @@ static void strcpy(char *s, char *d)
 #endif
 
 #include "simpledrop.h"
+
+extern char *wxFSSpecToPath(const FSSpec *);
 
 int scheme_mac_ready, scheme_mac_argc = 0;
 char **scheme_mac_argv;
@@ -204,6 +208,7 @@ static void Startup(char **argv, int argc)
 
 static int gone = 0;
 
+#ifndef OS_X
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -211,13 +216,14 @@ extern "C" {
 #ifdef __cplusplus
 };
 #endif
+#endif // OS_X
 
-static pascal short DoNothing(AppleEvent *, AppleEvent *, long)
+static pascal short DoNothing(const AppleEvent *a, AppleEvent *b, long c)
 {
   return 0;
 }
 
-static pascal OSErr OpenApplicationStuff(AppleEvent *, AppleEvent *, long)
+static pascal OSErr OpenApplicationStuff(const AppleEvent *a, AppleEvent *b, long c)
 {
   if (!gone) {
     gone = 1;
@@ -227,7 +233,7 @@ static pascal OSErr OpenApplicationStuff(AppleEvent *, AppleEvent *, long)
   return 0;
 }
 
-static pascal OSErr OpenFinderDoc(AppleEvent *evt, AppleEvent *, long )
+static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
 {
   AEDescList	docList;
   long		count, size;
@@ -243,7 +249,11 @@ static pascal OSErr OpenFinderDoc(AppleEvent *evt, AppleEvent *, long )
   j = 0;
   for (i = 0; i < count; i++){
     AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
+#ifdef OS_X
+    files[i + j] = wxFSSpecToPath(&fss);
+#else        
     files[i + j] = scheme_build_mac_filename(&fss, 0);
+#endif    
     if (!files[i + j])
      --j;
   }
@@ -259,7 +269,7 @@ static pascal OSErr OpenFinderDoc(AppleEvent *evt, AppleEvent *, long )
   return 0;
 }
 
-static pascal OSErr SetUpQuitMessage(AppleEvent *, AppleEvent *, long)
+static pascal OSErr SetUpQuitMessage(const AppleEvent *a, AppleEvent *b, long c)
 {
   Drop_Quit();
   
@@ -269,11 +279,10 @@ static pascal OSErr SetUpQuitMessage(AppleEvent *, AppleEvent *, long)
 static void Install(void)
 {
   short err=0;
-
-  err = AEInstallEventHandler(kCoreEventClass, kAEOpenApplication, NewAEEventHandlerProc(OpenApplicationStuff), 0, 0);
-  err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, NewAEEventHandlerProc(OpenFinderDoc), 0, 0);
-  err = AEInstallEventHandler(kCoreEventClass, kAEPrintDocuments, NewAEEventHandlerProc(DoNothing), 0, 0);
-  err = AEInstallEventHandler(kCoreEventClass, kAEQuitApplication, NewAEEventHandlerProc(SetUpQuitMessage), 0, 0);
+  err = AEInstallEventHandler(kCoreEventClass, kAEOpenApplication, NewAEEventHandlerUPP(OpenApplicationStuff), 0, 0);
+  err = AEInstallEventHandler(kCoreEventClass, kAEOpenDocuments, NewAEEventHandlerUPP(OpenFinderDoc), 0, 0);
+  err = AEInstallEventHandler(kCoreEventClass, kAEPrintDocuments, NewAEEventHandlerUPP(DoNothing), 0, 0);
+  err = AEInstallEventHandler(kCoreEventClass, kAEQuitApplication, NewAEEventHandlerUPP(SetUpQuitMessage), 0, 0);
 }
 
 void Drop_GetArgs(int *argc, char ***argv)
@@ -301,8 +310,8 @@ void Drop_GetArgs(int *argc, char ***argv)
         parse_commandline(data, NULL, 0);
       } else
         AEProcessAppleEvent(&event);
-    }
 #endif
+    }
   }
   *argc = scheme_mac_argc;
   *argv = scheme_mac_argv;

@@ -27,7 +27,7 @@ wxMacDC::~wxMacDC(void)	// destructor
 //-----------------------------------------------------------------------------
 Bool wxMacDC::isCurrentPort(void)
 {
-	return (GrafPtr)cMacGrafPort == qd.thePort;
+	return cMacGrafPort == GetQDGlobalsThePort();
 }
 
 //-----------------------------------------------------------------------------

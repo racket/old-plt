@@ -90,6 +90,12 @@ void wxDos2UnixFilename(char *s);
 void wxUnix2DosFilename(char *s);
 #define Unix2DosFilename wxUnix2DosFilename
 
+#ifdef OS_X
+// convert between paths and FSSpecs. OS X only, for the moment
+char *wxFSSpecToPath(const FSSpec *spec);
+OSErr wxPathToFSSpec(const char *path, FSSpec *spec);
+#endif
+
 // Get a temporary filename, opening and closing the file.
 char *wxGetTempFileName(const char *prefix, char *buf = NULL);
 

@@ -92,6 +92,9 @@ if ($list) {
 		if ($f =~ /#ifdef USE_MAC_FILE_TOOLBOX/) {
 		    $suspend = 1;
 		}
+		if ($f =~ /#ifdef USE_CARBON_FILE_TOOLBOX/) {
+		    $suspend = 1;
+		}
 		if ($f =~ /#ifdef MZ_USE_SINGLE_FLOATS/) {
 		    $suspend = 1;
 		}

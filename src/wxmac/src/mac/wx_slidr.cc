@@ -85,8 +85,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	int lblw=0;
 	if (label) {
 		GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
-		lblh = fHeight;
-		lblw = fWidth;
+		lblh = (int)fHeight;
+		lblw = (int)fWidth;
 	}
 	int vwid, vhgt, hsp, vsp;
 	if (style & (wxHORIZONTAL << 2)) {
@@ -138,7 +138,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	  valueRect.bottom = valueRect.top + vhgt;
 	  valueRect.right = valueRect.left + vwid + adjust;
 	}
-	valuebase = fDescent;
+	valuebase = (int)fDescent;
 	
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
 			TRUE, value, min_value, max_value, scrollBarProc, (long)this);
@@ -223,7 +223,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	{	
 		int clientWidth = ClientArea()->Width();
 		int clientHeight= ClientArea()->Height();
-		Rect viewRect = (**cMacControl).contrlRect;
+		Rect viewRect = *GetControlBounds(cMacControl,NULL);
 
 		int vwid = valueRect.right - valueRect.left;
 		int vhgt = valueRect.bottom - valueRect.top;
@@ -255,7 +255,7 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 }
 
 static pascal void SCTrackActionProc(ControlHandle theControl, short thePart);
-static ControlActionUPP SCTrackActionProcUPP = NewControlActionProc(SCTrackActionProc);
+static ControlActionUPP SCTrackActionProcUPP = NewControlActionUPP(SCTrackActionProc);
 
 #define max(x, y) ((x > y) ? x : y)
 #define min(x, y) ((x > y) ? y : x)
@@ -265,8 +265,8 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 	if (event->leftDown) {
 		float fStartH, fStartV;
 		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = fStartH;
-		int startV = fStartV;
+		int startH = (int)fStartH;
+		int startV = (int)fStartV;
 		Point pt = {startV, startH};
 		SetCurrentDC();
 		int part;
@@ -321,7 +321,7 @@ void wxSlider::TrackPart(int part)
 static pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
 {
 	wxSlider*	slider;
-	slider = (wxSlider*)(**theControl).contrlRfCon;
+	slider = (wxSlider*) GetControlReference(theControl);
 	slider->TrackPart(thePart);
 }
 

@@ -2853,7 +2853,7 @@ void MrEdApp::DoDefaultAboutItem()
  
   dial = GetNewDialog(129, NULL, (WindowRef)-1);
   GetPort(&port);
-  SetPort(dial);
+  SetPort(GetDialogPort(dial));
   TextFont(kFontIDGeneva);
   TextSize(10);
   SetPort(port);
@@ -3007,10 +3007,12 @@ int main(int argc, char *argv[])
 #ifdef wx_mac
   wxMacDisableMods = 4096;
 
+#ifndef OS_X
   scheme_creator_id = 'MrEd';
   wxMediaCreatorId = 'MrEd';
+#endif
 
-# if !defined(__powerc)
+# if !defined(__powerc) && !defined(__ppc__)
   long calcLimit, size;
   THz zone;
 	
@@ -3052,6 +3054,7 @@ int main(int argc, char *argv[])
       Rect box;
       Handle hand;
       Str255 str;
+      char temp[256];
       int argc2;
       char **argv2;
   
@@ -3062,7 +3065,8 @@ int main(int argc, char *argv[])
       if (hit == 1) {
         GetDialogItem(dial, 3, &type, &hand, &box);
         GetDialogItemText(hand, str);
-        ParseLine(PtoCstr(str), &argc2, &argv2);
+        CopyPascalStringToC(str,temp);
+        ParseLine(temp, &argc2, &argv2);
       } else {
         argc2 = 0;
         argv2 = NULL;

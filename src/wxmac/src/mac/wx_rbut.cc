@@ -77,8 +77,8 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 		if (fLabelHeight < 12) fLabelHeight = 12; // height of radio button icon is 12
 	}
 
-	if (width < 0) cWindowWidth = fLabelWidth;
-	if (height < 0) cWindowHeight = fLabelHeight;
+	if (width < 0) cWindowWidth = (int)fLabelWidth;
+	if (height < 0) cWindowHeight = (int)fLabelHeight;
 
 #if 0
 	SetCurrentMacDC();
@@ -128,7 +128,6 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
 	cMacControl = NULL;
 	
 	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
 	cWindowHeight = bounds.bottom;
 	cWindowWidth = bounds.right + IR_CIRCLE_SIZE + IR_X_SPACE;
@@ -247,8 +246,8 @@ void wxRadioButton::Paint(void)
 		float fDescent = 0.0;
 		float fLeading = 0.0;
 		GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
-		int stop = (cWindowHeight + fHeight) / 2;
-		::MoveTo(IR_CIRCLE_SIZE + IR_X_SPACE, stop - fDescent - fLeading);
+		int stop = (int)((cWindowHeight + fHeight) / 2);
+		::MoveTo(IR_CIRCLE_SIZE + IR_X_SPACE, (short)(stop - fDescent - fLeading));
 	  	::DrawText(labelString, 0, strlen(labelString));
 	  }
 	  int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
@@ -318,8 +317,8 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 		
 			float fStartH, fStartV;
 			event->Position(&fStartH, &fStartV); // client c.s.
-			int startH = fStartH;
-			int startV = fStartV;
+			int startH = (int)fStartH;
+			int startV = (int)fStartV;
 		
 			Point startPt = {startH, startV}; // client c.s.
 			int trackResult;

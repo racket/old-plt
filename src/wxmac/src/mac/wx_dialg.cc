@@ -252,10 +252,12 @@ int wxMessageBox(char* message, char* caption, long style,
   return wxsMessageBox(message, caption, style, parent);
 }
 
+#ifndef OS_X
 extern "C" {
  extern char *scheme_build_mac_filename(FSSpec *f, int);
  extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
 };
+#endif
 
 //= T.P. ==============================================================================
 
@@ -344,7 +346,11 @@ char *wxFileSelector(char *message, char *default_path,
         s[len++] = ':';
       s[len] = 0;
       
+#ifdef OS_X
+      if (wxPathToFSSpec(s,&fsspec) == noErr) {
+#else      
       if (scheme_mac_path_to_spec(s, &fsspec, &type)) {
+#endif      
         startp = new AEDesc;
         if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp)) {
           startp = NULL;
@@ -396,8 +402,12 @@ char *wxFileSelector(char *message, char *default_path,
     	    		    &actualType, &fsspec,
     	    		    sizeof(fsspec),
     	    		    &actualSize);
-    	    		    
+    	    	
+#ifdef OS_X
+                temp = wxFSSpecToPath(&fsspec);
+#else                
 		temp = scheme_build_mac_filename(&fsspec, 0);
+#endif                
 		newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
 						       strlen(temp) +
 						       log_base_10(strlen(temp)) + 3];
@@ -416,8 +426,11 @@ char *wxFileSelector(char *message, char *default_path,
                         &actualSize);
        
 	    NavDisposeReply(reply);
-        
+#ifdef OS_X
+            return wxFSSpecToPath(&fsspec);
+#else            
 	    return scheme_build_mac_filename(&fsspec, 0);
+#endif            
 	}
      } else 
        return NULL;

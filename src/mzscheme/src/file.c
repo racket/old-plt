@@ -84,7 +84,7 @@
 # define S_ISREG(m) ((m) & _S_IFREG)
 #endif
 
-#ifdef MAC_FILE_SYSTEM
+#if defined(MAC_FILE_SYSTEM) || defined(CARBON_FILE_SYSTEM)
 long scheme_creator_id = 'MzSc';
 #endif
 
@@ -514,6 +514,16 @@ Scheme_Object *scheme_get_file_directory(const char *filename)
   
   return base;
 }
+
+#ifdef USE_CARBON_FILE_TOOLBOX
+char *scheme_carbon_spec_to_path(const FSSpec *spec)
+{
+}
+
+FSSpec *scheme_carbon_path_to_spec(const char *path)
+{
+}
+#endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
 static int find_mac_file(const char *filename, int use_real_cwd,
@@ -1639,7 +1649,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
   str = buffer;
   pos = 0;
 
-  no_sep = 0; /* This is acutally initialized after we know whether
+  no_sep = 0; /* This is actually initialized after we know whether
 		 it's relative or not. */
   
   for (i = 0 ; i < argc; i++) {

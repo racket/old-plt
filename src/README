@@ -230,9 +230,16 @@ including Linux, FreeBSD, and Solaris. The experimental forms are
 called MzScheme3m and MrEd3m, repsectively, where the "3m" stands for
 "moving memory manager".
 
-To build MzScheme3m and MrEd3m, run `make 3m'. Building MzScheme3m and
-MrEd3m first builds the normal MzScheme and MrEd executables, then
-uses them to build the 3m versions.
+To build MzScheme3m and MrEd3m in Unix, run `make 3m'. Building
+MzScheme3m and MrEd3m first builds the normal MzScheme and MrEd
+executables, then uses them to build the 3m versions.
+
+To build MzScheme3m for Windows with Microsoft Visual C, first build
+and install the normal MzScheme executable, and make sure that cl.exe
+is in your shell path. Then, in a shell, change directories to
+plt\src\mzscheme\gc2 and run
+  mzscheme -r winmake.ss
+Move the resulting mzscheme3m.exe binary to your PLT directory.
 
 Configuration Options
 ---------------------

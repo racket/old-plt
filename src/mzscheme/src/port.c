@@ -3650,6 +3650,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 #ifdef MZ_PRECISE_GC
   /* FIXME! */
   /* Use malloc because the testing thread needs to access it. */
+  tip->type = scheme_rt_tested_input_file;
   tip = (Tested_Input_File *)malloc(sizeof(Tested_Input_File));
 #endif
 #ifdef MZTAG_REQUIRED
@@ -4018,6 +4019,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
   top = MALLOC_ONE_RT(Tested_Output_File);
 #ifdef MZ_PRECISE_GC
   /* FIXME! */
+  top->type = scheme_rt_tested_output_file;
   /* Use malloc because the testing thread needs to access it. */
   top = (Tested_Output_File *)malloc(sizeof(Tested_Output_File));
 #endif

@@ -1,5 +1,6 @@
 
-(require-library "restart.ss")
+(require (lib "restart.ss")
+	 (lib "process.ss"))
 
 (define (system- s)
   (fprintf (current-error-port) "~a~n" s)
@@ -21,18 +22,15 @@
     "hash"
     "image"
     "list"
+    "module"
     "network"
     "numarith"
     "number"
     "numcomp"
     "numstr"
-    "objclass"
-    "object"
     "port"
     "portfun"
     "print"
-    "process"
-    "promise"
     "rational"
     "read"
     "regexp"
@@ -42,9 +40,9 @@
     "struct"
     "symbol"
     "syntax"
+    "stxobj"
+    "thread"
     "type"
-    "unit"
-    "unitsig"
     "vector"))
 
 (define (try src deps dest objdest includes)
@@ -58,7 +56,7 @@
 			      (vector "-r"
 				      "xform.ss"
 				      "ctok.ss"
-				      (format "cl.exe /MT /E ~a" includes)
+				      (format "cl.exe /MT /DSCHEME_EMBEDDED_NO_DLL /E ~a" includes)
 				      src
 				      dest)
 			      void)
@@ -84,7 +82,7 @@
 (for-each
  (lambda (x)
    (try (format "../src/~a.c" x)
-	(list* (find-obj x "mzsrc")
+	(list* (find-obj x "libmzsch")
 	       (format "../src/~a.c" x)
 	       common-deps)
 	(format "xsrc/~a.c" x)
@@ -103,7 +101,7 @@
 (compile "gc2.c" "xsrc/gc2.obj" '("compact.c") "")
 (compile "../src/mzsj86.c" "xsrc/mzsj86.obj" '() "/I ../include")
 
-(define exe "mzpgc.exe")
+(define exe "mzscheme3m.exe")
 
 (define libs "kernel32.lib user32.lib wsock32.lib")
 
@@ -111,6 +109,7 @@
 	     "xsrc/main.obj"
 	     "xsrc/gc2.obj"
 	     "xsrc/mzsj86.obj"
+	     (find-obj "gmp" "libmzsch")
 	     (map
 	      (lambda (n)
 		(format "xsrc/~a.obj" n))

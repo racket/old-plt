@@ -281,21 +281,20 @@
        (let ([ast (car l)])
 	 (let* ([code (get-annotation ast)]
 		[public-lookup-bindings (class-code-public-lookup-bindings code)]
+		[override-lookup-bindings (class-code-override-lookup-bindings code)]
 		[inherit-bindings (class-code-inherit-bindings code)]
-		[rename-bindings (class-code-rename-bindings code)])
+		[rename-bindings (class-code-rename-bindings code)]
+		[declare (lambda (name bindings)
+			   (unless (null? bindings)
+			     (fprintf port "~a  Scheme_Object * ~a[~a];~n"
+				      vm->c:indent-spaces
+				      name
+				      (length bindings))))])
 	   (fprintf port "~a{~n" vm->c:indent-spaces)
-	   (unless (null? public-lookup-bindings)
-		   (fprintf port "~a  Scheme_Object * pubs[~a];~n"
-			    vm->c:indent-spaces
-			    (length public-lookup-bindings)))
-	   (unless (null? inherit-bindings)
-		   (fprintf port "~a  Scheme_Object * inherits[~a];~n"
-			    vm->c:indent-spaces
-			    (length inherit-bindings)))
-	   (unless (null? rename-bindings)
-		   (fprintf port "~a  Scheme_Object * renames[~a];~n"
-			    vm->c:indent-spaces
-			    (length rename-bindings)))
+	   (declare "pubs" public-lookup-bindings)
+	   (declare "overs" override-lookup-bindings)
+	   (declare "inherits" inherit-bindings)
+	   (declare "renames" rename-bindings)
 	   (let ([get-symbols
 		  (lambda (var list)
 		    (let loop ([l list][n 0])
@@ -306,16 +305,19 @@
 					(compiler:get-symbol-const! #f (zodiac:binding-orig-name (car l)))))
 			      (loop (cdr l) (add1 n)))))])
 	     (get-symbols "pubs" public-lookup-bindings)
+	     (get-symbols "overs" override-lookup-bindings)
 	     (get-symbols "inherits" inherit-bindings)
 	     (get-symbols "renames" rename-bindings)
 	     (let*-values ([(mina maxa)
 			    (compiler:paroptformals->arity (zodiac:class*/names-form-init-vars ast))])
-	     (fprintf port "~a  S.classAssemblies[~a] = scheme_make_class_assembly(~s, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, vehicle_~a);~n~a}~n"
+	     (fprintf port "~a  S.classAssemblies[~a] = scheme_make_class_assembly(~s, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, vehicle_~a);~n~a}~n"
 		      vm->c:indent-spaces pos
 		      (vm->c:extract-inferred-name (closure-code-name code))
 		      (length (zodiac:class*/names-form-interfaces ast))
 		      (length public-lookup-bindings)
 		      (if (null? public-lookup-bindings) "NULL" "pubs")
+		      (length override-lookup-bindings)
+		      (if (null? override-lookup-bindings) "NULL" "overs")
 		      (length inherit-bindings)
 		      (if (null? inherit-bindings) "NULL" "inherits")
 		      (length rename-bindings)
@@ -956,6 +958,8 @@
     (let* ([code (get-annotation L)]
 	   [public-define-bindings (class-code-public-define-bindings code)]
 	   [public-lookup-bindings (class-code-public-lookup-bindings code)]
+	   [override-define-bindings (class-code-override-define-bindings code)]
+	   [override-lookup-bindings (class-code-override-lookup-bindings code)]
 	   [inherit-bindings (class-code-inherit-bindings code)]
 	   [rename-bindings (class-code-rename-bindings code)]
 	   [private-bindings (class-code-private-bindings code)]
@@ -984,14 +988,14 @@
 		   indent (vm->c:convert-type-definition r))))
       
       ; Map set-public, get-public, and inherits to boxes
-      (let loop ([l public-define-bindings][pos 0])
+      (let loop ([l (append public-define-bindings override-define-bindings)][pos 0])
 	(unless (null? l)
 	   (fprintf port "~a~a = (Scheme_Object * *)init_boxes[~a];~n"
 		    indent
 		    (vm->c:convert-symbol (zodiac:binding-var (car l)))
 		    pos)
 	   (loop (cdr l) (add1 pos))))
-      (let loop ([l (append public-lookup-bindings inherit-bindings rename-bindings)][pos 0])
+      (let loop ([l (append public-lookup-bindings override-lookup-bindings inherit-bindings rename-bindings)][pos 0])
 	(unless (null? l)
 	   (fprintf port "~a~a = (Scheme_Object * *)extract_boxes[~a];~n"
 		    indent

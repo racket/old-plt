@@ -228,6 +228,8 @@
  ;  bindings).
  ; Returns (values public-lookup-bindings
  ;                 public-define-bindings
+ ;                 override-lookup-bindings
+ ;                 override-define-bindings
  ;                 private-bindings
  ;                 inherit-bindings
  ;                 rename-bindings
@@ -235,6 +237,8 @@
  (define (prephase:class-clauses->begin ast)
    (let* ([plb-acc null] 
 	  [pdb-acc null]
+	  [olb-acc null] 
+	  [odb-acc null]
 	  [pri-acc null] 
 	  [inh-acc null]
 	  [ren-acc null]
@@ -253,27 +257,43 @@
      (for-each
       (lambda (clause)
 	(cond
-	 [(zodiac:public-clause? clause)
-	  ; For each, make a new binding for setting the public ivar
-	  ; Set the orig-name of the lookup binding to the ivar external name
-	  (for-each
-	   (lambda (ext lookup-binding expr)
-	     (let* ([ext-name (zodiac:read-object ext)]
-		    [define-binding (zodiac:make-lexical-binding
-				     (zodiac:zodiac-origin lookup-binding)
-				     (zodiac:zodiac-start lookup-binding)
-				     (zodiac:zodiac-finish lookup-binding)
-				     (make-empty-box)
-				     (symbol-append (zodiac:binding-var lookup-binding) 'def)
-				     ext-name)]
-		    [define-varref (new-varref define-binding)])
-	       (zodiac:set-binding-orig-name! lookup-binding ext-name)
-	       (set! plb-acc (cons lookup-binding plb-acc))
-	       (set! pdb-acc (cons define-binding pdb-acc))
-	       (add-set! define-varref expr)))
-	   (zodiac:public-clause-exports clause)
-	   (zodiac:public-clause-internals clause)
-	   (zodiac:public-clause-exprs clause))]
+	 [(or (zodiac:public-clause? clause)
+	      (zodiac:override-clause? clause))
+	  (let* ([override? (zodiac:override-clause? clause)]
+		 [zodiac:clause-exports (if override?
+					    zodiac:override-clause-exports
+					    zodiac:public-clause-exports)]
+		 [zodiac:clause-internals (if override?
+					      zodiac:override-clause-internals
+					      zodiac:public-clause-internals)]
+		 [zodiac:clause-exprs (if override?
+					  zodiac:override-clause-exprs
+					  zodiac:public-clause-exprs)])
+	    ; For each, make a new binding for setting the public ivar
+	    ; Set the orig-name of the lookup binding to the ivar external name
+	    (for-each
+	     (lambda (ext lookup-binding expr)
+	       (let* ([ext-name (zodiac:read-object ext)]
+		      [define-binding (zodiac:make-lexical-binding
+				       (zodiac:zodiac-origin lookup-binding)
+				       (zodiac:zodiac-start lookup-binding)
+				       (zodiac:zodiac-finish lookup-binding)
+				       (make-empty-box)
+				       (symbol-append (zodiac:binding-var lookup-binding) 'def)
+				       ext-name)]
+		      [define-varref (new-varref define-binding)])
+		 (zodiac:set-binding-orig-name! lookup-binding ext-name)
+		 (if override?
+		     (begin
+		       (set! olb-acc (cons lookup-binding olb-acc))
+		       (set! odb-acc (cons define-binding odb-acc)))
+		     (begin
+		       (set! plb-acc (cons lookup-binding plb-acc))
+		       (set! pdb-acc (cons define-binding pdb-acc))))
+		 (add-set! define-varref expr)))
+	     (zodiac:clause-exports clause)
+	     (zodiac:clause-internals clause)
+	     (zodiac:clause-exprs clause)))]
 	 [(zodiac:private-clause? clause)
 	  (for-each
 	   (lambda (binding expr)
@@ -308,6 +328,8 @@
 
      (values plb-acc
 	     pdb-acc
+	     olb-acc
+	     odb-acc
 	     pri-acc
 	     inh-acc
 	     ren-acc
@@ -893,9 +915,9 @@
 		;;-----------------------------------------------------------
 		;; CLASS
 		;;
-		;; Change public definitions to set!s in the usual way,
+		;; Change public/override definitions to set!s in the usual way,
 		;; distinguishing between bindings for getting the values
-		;; of public variables and bindings for setting the values.
+		;; of public/override variables and bindings for setting the values.
 		;; The result is a class with only one sequence clause, and
 		;; that clause contains only a begin expression.
 		;; 
@@ -937,6 +959,8 @@
 		 ; Transform the clauses
 		 (let-values ([(public-lookup-bindings
 				public-define-bindings
+				override-lookup-bindings
+				override-define-bindings
 				private-bindings
 				inherit-bindings
 				rename-bindings
@@ -948,6 +972,8 @@
 			       (prephase:init-binding-properties! b #f #f #t))
 			     (append public-lookup-bindings
 				     public-define-bindings
+				     override-lookup-bindings
+				     override-define-bindings
 				     inherit-bindings
 				     rename-bindings))
 		   ; Init privates
@@ -970,6 +996,8 @@
 				     0 'possible name
 				     public-lookup-bindings
 				     public-define-bindings
+				     override-lookup-bindings
+				     override-define-bindings
 				     private-bindings
 				     inherit-bindings
 				     rename-bindings

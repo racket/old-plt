@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.51 1998/05/09 17:14:40 shriram Exp $
+; $Id: sigs.ss,v 1.52 1998/07/14 20:25:04 shriram Exp $
 
 (begin-elaboration-time
  (require-relative-library "namedarg.ss"))
@@ -158,12 +158,14 @@
     (struct supervar-varref ())  create-supervar-varref
     (struct superinit-varref ()) create-superinit-varref
     (struct public-varref ())    create-public-varref
+    (struct override-varref ())  create-override-varref
     (struct private-varref ())   create-private-varref
     (struct inherit-varref ())   create-inherit-varref
     (struct rename-varref ())    create-rename-varref
     (struct supervar-binding ())  create-supervar-binding+marks
     (struct superinit-binding ()) create-superinit-binding+marks
     (struct public-binding ())    create-public-binding+marks
+    (struct override-binding ())  create-override-binding+marks
     (struct private-binding ())   create-private-binding+marks
     (struct inherit-binding ())   create-inherit-binding+marks
     (struct rename-binding ())    create-rename-binding+marks
@@ -171,6 +173,7 @@
       (this super-init super-expr interfaces init-vars inst-clauses))
     (struct interface-form (super-exprs variables))
     (struct public-clause (exports internals exprs))
+    (struct override-clause (exports internals exprs))
     (struct private-clause (internals exprs))
     (struct inherit-clause (internals imports))
     (struct rename-clause (internals imports))

@@ -181,6 +181,7 @@
 		    [(zodiac:class*/names-form? L)
 		     ; create symbols for all the ivars:
 		     (let* ([public-lookup-bindings (class-code-public-lookup-bindings code)]
+			    [override-lookup-bindings (class-code-override-lookup-bindings code)]
 			    [inherit-bindings (class-code-inherit-bindings code)]
 			    [rename-bindings (class-code-rename-bindings code)]
 			    [mk-syms
@@ -189,6 +190,7 @@
 				(lambda (s) (compiler:get-symbol-const! s (zodiac:binding-orig-name s)))
 				l))])
 		       (mk-syms public-lookup-bindings)
+		       (mk-syms override-lookup-bindings)
 		       (mk-syms inherit-bindings)
 		       (mk-syms rename-bindings))
 		     

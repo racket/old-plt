@@ -316,6 +316,14 @@
 			       (zodiac:public-clause-internals clause)
 			       (zodiac:public-clause-exports clause)
 			       (zodiac:public-clause-exprs clause))))
+		    ((zodiac:override-clause? clause)
+		     `(override
+			,@(map (lambda (internal export expr)
+				 `((,(zodiac->sexp internal) ,(zodiac->sexp export))
+				   ,(zodiac->sexp/annotate expr)))
+			       (zodiac:override-clause-internals clause)
+			       (zodiac:override-clause-exports clause)
+			       (zodiac:override-clause-exprs clause))))
 		    ((zodiac:private-clause? clause)
 		     `(private
 			,@(map (lambda (internal expr)

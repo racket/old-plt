@@ -102,6 +102,8 @@
 
    (struct class-code (public-lookup-bindings
 		       public-define-bindings
+		       override-lookup-bindings
+		       override-define-bindings
 		       private-bindings
 		       inherit-bindings
 		       rename-bindings

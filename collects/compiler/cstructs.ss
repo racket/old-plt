@@ -168,17 +168,21 @@
 
   (define-struct (class-code struct:closure-code)
     (public-lookup-bindings
-     ; a list of zodiac:lexical-bindings
+     ; ^- a list of zodiac:lexical-bindings
      ; corresponding to possibly overridden
      ; public ivars; these are the bindings
      ; used to extract ivar values within
      ; the class
      public-define-bindings
-     ; a list of zodiac:lexical-bindings
+     ; ^- a list of zodiac:lexical-bindings
      ; corresponding to unoverridden
      ; public ivars; these are the bindings
      ; used only for installing the locally-
      ; defined values for ivars
+     override-lookup-bindings
+     ; a list of zodiac:lexical-bindings
+     override-define-bindings
+     ; a list of zodiac:lexical-bindings
      private-bindings
      ; a list of zodiac:lexical-bindings
      inherit-bindings

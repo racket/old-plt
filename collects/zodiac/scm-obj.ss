@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.35 1998/05/08 22:15:23 mflatt Exp $
+; $Id: scm-obj.ss,v 1.36 1998/05/15 04:17:32 shriram Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -30,6 +30,7 @@
   (define-struct (supervar-binding struct:binding) ())
   (define-struct (superinit-binding struct:binding) ())
   (define-struct (public-binding struct:binding) ())
+  (define-struct (override-binding struct:binding) ())
   (define-struct (private-binding struct:binding) ())
   (define-struct (inherit-binding struct:binding) ())
   (define-struct (rename-binding struct:binding) ())
@@ -40,6 +41,8 @@
     (create-binding+marks make-superinit-binding))
   (define create-public-binding+marks
     (create-binding+marks make-public-binding))
+  (define create-override-binding+marks
+    (create-binding+marks make-override-binding))
   (define create-private-binding+marks
     (create-binding+marks make-private-binding))
   (define create-inherit-binding+marks
@@ -50,6 +53,7 @@
   (define-struct (supervar-varref struct:bound-varref) ())
   (define-struct (superinit-varref struct:bound-varref) ())
   (define-struct (public-varref struct:bound-varref) ())
+  (define-struct (override-varref struct:bound-varref) ())
   (define-struct (private-varref struct:bound-varref) ())
   (define-struct (inherit-varref struct:bound-varref) ())
   (define-struct (rename-varref struct:bound-varref) ())
@@ -60,6 +64,8 @@
     (create-bound-varref make-superinit-varref))
   (define create-public-varref
     (create-bound-varref make-public-varref))
+  (define create-override-varref
+    (create-bound-varref make-override-varref))
   (define create-private-varref
     (create-bound-varref make-private-varref))
   (define create-inherit-varref
@@ -68,6 +74,7 @@
     (create-bound-varref make-rename-varref))
 
   (define-struct public-clause (exports internals exprs))
+  (define-struct override-clause (exports internals exprs))
   (define-struct private-clause (internals exprs))
   (define-struct inherit-clause (internals imports))
   (define-struct rename-clause (internals imports))
@@ -136,6 +143,8 @@
 		  (create-top-level-varref id expr)))))
 	  ((public-binding? r)
 	    (create-public-varref r expr))
+	  ((override-binding? r)
+	    (create-override-varref r expr))
 	  ((private-binding? r)
 	    (create-private-varref r expr))
 	  ((inherit-binding? r)
@@ -156,6 +165,7 @@
 
   (define-struct ivar-entry (bindings))
   (define-struct (public-entry struct:ivar-entry) (exports exprs))
+  (define-struct (override-entry struct:ivar-entry) (exports exprs))
   (define-struct (private-entry struct:ivar-entry) (exprs))
   (define-struct (inherit-entry struct:ivar-entry) (imports))
   (define-struct (rename-entry struct:ivar-entry) (imports))
@@ -184,6 +194,13 @@
       "Invalid public declaration"
       "Invalid public declaration"))
 
+  (define override-ivar-decl-entry-parser-vocab
+    (create-vocabulary 'override-ivar-decl-entry-parser-vocab #f
+      "Invalid override declaration"
+      "Invalid override declaration"
+      "Invalid override declaration"
+      "Invalid override declaration"))
+
   (add-sym-micro public-ivar-decl-entry-parser-vocab
     (lambda (expr env attributes vocab)
       (list
@@ -191,17 +208,21 @@
 	expr
 	(make-void-init-expr expr))))
 
-  (add-list-micro public-ivar-decl-entry-parser-vocab
-    (let* ((kwd '())
-	    (in-pattern-1 '((internal-var var) expr))
-	    (in-pattern-2 '(var expr))
-	    (in-pattern-3 '(var))
-	    (m&e-1 (pat:make-match&env in-pattern-1 '()))
-	    (m&e-2 (pat:make-match&env in-pattern-2 '()))
-	    (m&e-3 (pat:make-match&env in-pattern-3 '())))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e-1 expr env)
+  (define (mk-public/override-micro kind-sym kind-str 
+				    ivar-decl-entry-parser-vocab
+				    create-binding+marks
+				    make-entry)
+    (add-list-micro ivar-decl-entry-parser-vocab
+      (let* ((kwd '())
+	     (in-pattern-1 '((internal-var var) expr))
+	     (in-pattern-2 '(var expr))
+	     (in-pattern-3 '(var))
+	     (m&e-1 (pat:make-match&env in-pattern-1 '()))
+	     (m&e-2 (pat:make-match&env in-pattern-2 '()))
+	     (m&e-3 (pat:make-match&env in-pattern-3 '())))
+	(lambda (expr env attributes vocab)
+	  (cond
+	   ((pat:match-against m&e-1 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((internal-var (pat:pexpand 'internal-var p-env kwd))
@@ -209,46 +230,56 @@
 		     (expr (pat:pexpand 'expr p-env kwd)))
 		(valid-syntactic-id? internal-var)
 		(valid-syntactic-id? var)
-		(list (create-public-binding+marks internal-var) var expr))))
+		(list (create-binding+marks internal-var) var expr))))
 	  ((pat:match-against m&e-2 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((var (pat:pexpand 'var p-env kwd))
 		     (expr (pat:pexpand 'expr p-env kwd)))
 		(valid-syntactic-id? var)
-		(list (create-public-binding+marks var) var expr))))
+		(list (create-binding+marks var) var expr))))
 	  ((pat:match-against m&e-3 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((var (pat:pexpand 'var p-env kwd)))
 		(valid-syntactic-id? var)
 		(list
-		  (create-public-binding+marks var)
+		  (create-binding+marks var)
 		  var
 		  (make-void-init-expr expr)))))
 	  (else
-	    (static-error expr "Invalid ivar declaration"))))))
+	    (static-error expr (format "Invalid ~a ivar declaration" kind-str)))))))
 
-  (let* ((kwd '(public))
-	  (in-pattern '(public ivar-decl ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (add-micro-form 'public ivar-decls-vocab
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
+    (let* ((kwd `(,kind-sym))
+	   (in-pattern `(,kind-sym ivar-decl ...))
+	   (m&e (pat:make-match&env in-pattern kwd)))
+      (add-micro-form kind-sym ivar-decls-vocab
+	(lambda (expr env attributes vocab)
+	  (cond
+	   ((pat:match-against m&e expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((decls
 		      (map (lambda (decl)
 			     (expand-expr decl env attributes
-			       public-ivar-decl-entry-parser-vocab))
+			       ivar-decl-entry-parser-vocab))
 			(pat:pexpand '(ivar-decl ...) p-env kwd))))
-		(make-public-entry
+		(make-entry
 		  (map car decls)
 		  (map cadr decls)
 		  (map caddr decls)))))
-	  (else
-	    (static-error expr "Invalid public clause"))))))
+	   (else
+	    (static-error expr (format "Invalid ~a clause" kind-str))))))))
+
+  (mk-public/override-micro 'public "public"
+			    public-ivar-decl-entry-parser-vocab
+			    create-public-binding+marks
+			    make-public-entry)
+
+  (mk-public/override-micro 'override "override"
+			    override-ivar-decl-entry-parser-vocab
+			    create-override-binding+marks
+			    make-override-entry)
 
 					; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -577,6 +608,8 @@
 					(cond
 					  ((public-entry? e)
 					    (public-entry-exports e))
+					  ((override-entry? e)
+					    (override-entry-exports e))
 					  (else null)))
 				      proc:ivar-info))))
 			    (distinct-valid-syntactic-id/s? external-ivars)
@@ -605,6 +638,12 @@
 					     (map car (ivar-entry-bindings e))
 					     (expand-exprs
 					       (public-entry-exprs e))))
+					 ((override-entry? e)
+					   (make-override-clause
+					     (override-entry-exports e)
+					     (map car (ivar-entry-bindings e))
+					     (expand-exprs
+					       (override-entry-exprs e))))
 					 ((private-entry? e)
 					   (make-private-clause
 					     (map car (ivar-entry-bindings e))
@@ -739,6 +778,14 @@
 			     (public-clause-internals clause)
 			     (public-clause-exports clause)
 			     (public-clause-exprs clause))))
+		    ((override-clause? clause)
+		      `(override
+			 ,@(map (lambda (internal export expr)
+				  `((,(p->r internal) ,(sexp->raw export))
+				     ,(p->r expr)))
+			     (override-clause-internals clause)
+			     (override-clause-exports clause)
+			     (override-clause-exprs clause))))
 		    ((private-clause? clause)
 		      `(private
 			 ,@(map (lambda (internal expr)

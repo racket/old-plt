@@ -491,6 +491,8 @@
 		  (let* ([code (get-annotation ast)]
 			 [public-lookup-bindings (class-code-public-lookup-bindings code)]
 			 [public-define-bindings (class-code-public-define-bindings code)]
+			 [override-lookup-bindings (class-code-override-lookup-bindings code)]
+			 [override-define-bindings (class-code-override-define-bindings code)]
 			 [private-bindings (class-code-private-bindings code)]
 			 [inherit-bindings (class-code-inherit-bindings code)]
 			 [rename-bindings (class-code-rename-bindings code)]
@@ -502,6 +504,8 @@
 					     (zodiac:class*/names-form-init-vars ast)))
 					   public-lookup-bindings
 					   public-define-bindings
+					   override-lookup-bindings
+					   override-define-bindings
 					   private-bindings
 					   inherit-bindings
 					   rename-bindings)])

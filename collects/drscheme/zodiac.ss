@@ -104,6 +104,7 @@
 	   struct:sym-optarglist
 	   struct:sym-paroptarglist
 	   struct:symbol
+	   struct:top-level-resolution
 	   struct:top-level-varref
 	   struct:top-level-varref/bind
 	   struct:type-symbol

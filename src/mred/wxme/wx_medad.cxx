@@ -440,7 +440,7 @@ void *wxMediaCanvas::CallAsPrimaryOwner(void *(*f)(void *), void *data)
 extern struct MrEdContext *MrEdGetContext(wxObject *w);
 extern void MrEdQueueInEventspace(void *context, Scheme_Object *thunk);
 
-Scheme_Object *on_set_focus_cb(Scheme_Object *b_cnvs, int, Scheme_Object **)
+static Scheme_Object *on_set_focus_cb(Scheme_Object *b_cnvs, int, Scheme_Object **)
 {
   wxMediaCanvas *c;
   int on;
@@ -1233,11 +1233,38 @@ void wxMediaCanvas::GetScroll(int *x, int *y)
 #endif
 }
 
+#ifdef wx_msw
+static Scheme_Object *repaint_cb(Scheme_Object *_cnvs, int, Scheme_Object **)
+{
+  wxMediaCanvas *c;
+  c = (wxMediaCanvas *)_cnvs;
+  c->Repaint();
+  return scheme_void;
+}
+#endif
+
 void wxMediaCanvas::OnScroll(wxScrollEvent *)
 {
   if (noloop)
     return;
+
+#ifdef wx_msw
+  // Need trampoline
+  {
+    Scheme_Object *thunk;
+    wxWindow *tl;
+    void *context;
+
+    thunk = scheme_make_closed_prim((Scheme_Closed_Prim *)repaint_cb, (Scheme_Object *)this);
+
+    tl = GetTopLevel();
+    context = MrEdGetContext(tl);
+    
+    MrEdQueueInEventspace(context, thunk);
+  }
+#else
   Repaint();
+#endif
 }
 
 wxMediaBuffer *wxMediaCanvas::GetMedia(void)

@@ -111,7 +111,7 @@
 			 (send frame set-size 0 0 frame-width frame-height))
 		       (send frame center wx:const-both)
 		       (send frame show #t)
-		       (wx:flush-display) (wx:yield)
+		       (wx:flush-display) (wx:yield) (sleep)
 		       (set! mred:splash-message text-message)
 		       (set! mred:splash-frame frame)
 		       (current-load

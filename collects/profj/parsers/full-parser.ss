@@ -104,13 +104,13 @@
       ;; 19.6
       (CompilationUnit
        [(PackageDeclaration ImportDeclarations TypeDeclarations) 
-        (make-package $1 $2 $3)]
-       [(ImportDeclarations TypeDeclarations) (make-package #f $1 $2)]
-       [(PackageDeclaration TypeDeclarations) (make-package $1 null $2)]
-       [(PackageDeclaration ImportDeclarations) (make-package $1 $2 null)]
+        (make-package $1 (reverse $2) (reverse $3))]
+       [(ImportDeclarations TypeDeclarations) (make-package #f (reverse $1) (reverse $2))]
+       [(PackageDeclaration TypeDeclarations) (make-package $1 null (reverse $2))]
+       [(PackageDeclaration ImportDeclarations) (make-package $1 (reverse $2) null)]
        [(PackageDeclaration) (make-package $1 null null)]
-       [(ImportDeclarations) (make-package #f $1 null)]
-       [(TypeDeclarations) (make-package #f null $1)]
+       [(ImportDeclarations) (make-package #f (reverse $1) null)]
+       [(TypeDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
 
       (Interactions

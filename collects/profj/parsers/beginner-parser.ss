@@ -92,16 +92,12 @@
                    (build-src 3))])
       ;; 19.6
       (CompilationUnit
-       [(TypeDeclarations) (make-package #f null $1)]
+       [(TypeDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
       
       (TypeDeclarations
-       [(TypeDeclaration) (if $1
-                              (list $1)
-                              null)]
-       [(TypeDeclarations TypeDeclaration) (if $2
-                                               (cons $2 $1)
-                                               $1)])
+       [(TypeDeclaration) (if $1 (list $1) null)]
+       [(TypeDeclarations TypeDeclaration) (if $2 (cons $2 $1) $1)])
       
       (TypeDeclaration
        [(ClassDeclaration) $1]

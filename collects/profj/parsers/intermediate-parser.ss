@@ -99,7 +99,7 @@
 		       (build-src 3))])
       ;; 19.6
       (CompilationUnit
-       [(TypeDeclarations) (make-package #f null $1)]
+       [(TypeDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
       
       (IntermediateInteractions

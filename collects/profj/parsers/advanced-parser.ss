@@ -74,15 +74,8 @@
        [(double) (make-type-spec 'double 0 (build-src 1))])
       
       (ReferenceType
-       ;; GJ - To fix the problem mentioned below
-       ;; [(ClassOrInterfaceType) #t]
-       ;; GJ - Some type variables will come out as names, so a post-pass needs
-       ;;      to convert them to type-vars
        [(Name) (make-type-spec $1 0 (build-src 1))]
        [(ArrayType) $1]
-       ;; GJ - Creates ambiguity since ClassOrInterfaceType can simply be a
-       ;; IDENTIFIER.  
-       ;; [(TypeVariable) #t]
        )
             
       (ClassOrInterfaceType
@@ -95,10 +88,6 @@
        [(ClassOrInterfaceType) $1])
       
       (ArrayType
-       ;;[(PrimitiveType O_BRACKET C_BRACKET) #t]
-       ;;[(Name O_BRACKET C_BRACKET) #t]
-       ;;[(ArrayType O_BRACKET C_BRACKET) #t])
-       ;; Changed for ast-building convenience
        [(PrimitiveType Dims) (make-type-spec (type-spec-name $1) $2 (build-src 2))]
        [(Name Dims) (make-type-spec $1 $2 (build-src 2))])
 
@@ -112,13 +101,13 @@
       ;; 19.6
       (CompilationUnit
        [(PackageDeclaration ImportDeclarations TypeDeclarations) 
-        (make-package $1 $2 $3)]
-       [(ImportDeclarations TypeDeclarations) (make-package #f $1 $2)]
-       [(PackageDeclaration TypeDeclarations) (make-package $1 null $2)]
-       [(PackageDeclaration ImportDeclarations) (make-package $1 $2 null)]
+        (make-package $1 (reverse $2) (reverse $3))]
+       [(ImportDeclarations TypeDeclarations) (make-package #f (reverse $1) (reverse $2))]
+       [(PackageDeclaration TypeDeclarations) (make-package $1 null (reverse $2))]
+       [(PackageDeclaration ImportDeclarations) (make-package $1 (reverse $2) null)]
        [(PackageDeclaration) (make-package $1 null null)]
-       [(ImportDeclarations) (make-package #f $1 null)]
-       [(TypeDeclarations) (make-package #f null $1)]
+       [(ImportDeclarations) (make-package #f (reverse $1) null)]
+       [(TypeDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
       
       (AdvancedInteractions

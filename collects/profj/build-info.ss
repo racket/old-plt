@@ -648,6 +648,7 @@
     (and (not (null? methods))
          (or (and (equal? (method-record-name method)
                           (method-record-name (car methods)))
+                  (type=? (method-record-rtype method) (method-record-rtype (car methods)))
                   (or (or (eq? level 'beginner) (eq? level 'intermediate))
                       (and (= (length (method-record-atypes method))
                               (length (method-record-atypes (car methods))))
@@ -702,7 +703,7 @@
                                 level)
              (let ((method (find-member (car methods) members level type-recs))
                    (class (class-record-name record)))
-               (method-error 'conflicts 
+               (method-error 'conflict
                              (method-name method)
                              (map (lambda (t)
                                     (type-spec-to-type (field-type t) class level type-recs))

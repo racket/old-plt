@@ -1305,7 +1305,7 @@
                   (parse-statement cur-tok 
                                    (parse-expression null next 'start getter) 'assign-end getter id-ok? ctor? super-seen?))))
            ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter)
-                                       'exn-end getter id-ok? ctor? super-seen?))
+                                       'end-exp getter id-ok? ctor? super-seen?))
            (else (parse-error (format "Expected assignment or method call, found ~a, which is not valid for a statement" out)
                               start end))))
         ;Intermediate - from Assignment, error messages changed
@@ -1327,7 +1327,7 @@
                               ps (get-end next))))))
            ((SEMI_COLON) (getter))
            (else 
-            (parse-error (format "Expected ';' or rest of statement, found ~a" out) start end))))
+            (parse-error (format "Expected ';' or rest of statement, found ~a" out) ps end))))
         ;Intermediate
         ((c-brace)
          (case kind

@@ -14,6 +14,8 @@
   (define player-capacity (make-parameter 0))
   (define packages-held (make-parameter null))
   
+  (define gui (make-parameter #f))
+  
   (define (init-parameters)
     (score 0)
     (board-height 0)
@@ -23,4 +25,5 @@
     (player-money 0)
     (player-initial-money 0)
     (packages-held null)
+    (gui #f)
     ))

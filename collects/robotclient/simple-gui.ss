@@ -3,6 +3,8 @@
   (require (lib "mred.ss" "mred")
            (lib "class.ss"))
 
+  (provide gui%)
+  
   (define (get-new-player line)
     (let ((strnum (substring line 23 (string-length line))))
       (string->number strnum)))

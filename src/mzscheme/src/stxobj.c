@@ -1942,8 +1942,8 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	      stack = CONS(a, stack);
 	    }
 	  }
+	  stack_size++;
 	}
-	stack_size++;
       }
       /* else empty simplified vector, which we drop */
     } else if (SCHEME_RENAMESP(a)) {

@@ -3812,6 +3812,7 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
   rs_save = rs = MZ_RUNSTACK;
 
   rs -= rp->num_stxes;
+  MZ_RUNSTACK = rs;
   for (i = 0; i < rp->num_stxes; i++) {
     v = scheme_stx_phase_shift(rp->stxes[i], now_phase - src_phase, src_modidx, now_modidx);
     rs[i] = v;
@@ -3820,6 +3821,7 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
   if (rp->num_toplevels) {
     a = MALLOC_N(Scheme_Object *, rp->num_toplevels);
     --rs;
+    MZ_RUNSTACK = rs;
     rs[0] = (Scheme_Object *)a;
    
     for (i = 0; i < rp->num_toplevels; i++) {

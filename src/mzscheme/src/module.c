@@ -3955,6 +3955,8 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   l = cons((Scheme_Object *)m->prefix, l);
   l = cons(m->dummy, l);
 
+  l = cons(scheme_make_integer(m->max_let_depth), l);
+
   l = cons(m->self_modidx, l);
   l = cons(m->modname, l);
 
@@ -3982,6 +3984,9 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->self_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   ((Scheme_Modidx *)m->self_modidx)->resolved = m->modname;
+
+  m->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  obj = SCHEME_CDR(obj);
 
   m->dummy = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);

@@ -16,10 +16,10 @@ OBJS =  sgc.o
 
 SRCS =  $(srcdir)/sgc.c
 
-gc.a: $(OBJS)
+../libmzgc.a: $(OBJS)
 	$(MAKE) gcobjects
-	$(AR) $(ARFLAGS) gc.a $(OBJS)
-	$(RANLIB) gc.a
+	$(AR) $(ARFLAGS) ../libmzgc.a $(OBJS)
+	$(RANLIB) ../libmzgc.a
 
 test: $(OBJS) test.o
 	$(CC) -o test $(OBJS) test.o

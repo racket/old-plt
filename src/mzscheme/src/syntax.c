@@ -3224,7 +3224,7 @@ static Scheme_Object *write_top(Scheme_Object *obj)
   Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)obj;
 
   return cons(scheme_make_integer(top->max_let_depth),
-	      cons(top->prefix,
+	      cons((Scheme_Object *)top->prefix,
 		   scheme_protect_quote(top->code)));
 }
 

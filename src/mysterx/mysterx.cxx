@@ -3795,8 +3795,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 	  scheme_signal_error ("com-invoke:  unknown LCID");
 	  break;
 	default :
-	  scheme_signal_error ("com-invoke:  unknown error");
-	  break;
+	  codedComError("com-invoke: ",hr);
 	}
       }
   }

@@ -21,52 +21,11 @@ Scheme_Object *hash_table_put;
 Scheme_Object *hash_table_remove;
 Scheme_Object *make_hash_table;
 
-/* DWORD WINAPI doHandleEvents(LPVOID doc) {
-  while (1) {
-    MX_Event *eventObj;
-    IEvent *pEvent;
-    BSTR id;
-
-    eventObj = (MX_Event *)mx_get_event(1,(Scheme_Object **)doc);
-    pEvent = eventObj->pEvent;
-    pEvent->get_srcId(&id);
-    wprintf(L"tag: %s\n",id);
-  }
-
-  return 0;
-}
-
-Scheme_Object *mx_event_handle(int argc,Scheme_Object **argv) {
-  DWORD threadId;
-
-   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("event-handle","hash-table",0,argc,argv) ;
-  }
-
-  if (SCHEME_HASHTP(argv[1]) == FALSE) {
-    scheme_wrong_type("event-handle","hash-table",0,argc,argv) ;
-  }
-
-  CreateThread(NULL,0,doHandleEvents,argv,0,&threadId);
-
-  return scheme_void;
-}
-*/
-
-/* BOOL eventAvailable(Scheme_Object *pDocument) {
-  VARIANT_BOOL val;
-  
-  ((MX_Document_Object *)pDocument)->pIEventQueue->get_EventAvailable(&val);
-
-  return (BOOL)val;
-}
-*/
-
 Scheme_Object *mx_event_available(int argc,Scheme_Object **argv) {
   VARIANT_BOOL val;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("block-until-event","mx-document",0,argc,argv) ;
+    scheme_wrong_type("mx_event_available","mx-document",0,argc,argv) ;
   }
 
   ((MX_Document_Object *)argv[0])->pIEventQueue->get_EventAvailable(&val);
@@ -200,6 +159,13 @@ Scheme_Object *mx_event_type_pred(int argc,Scheme_Object **argv,WCHAR *evType) {
   return scheme_false;
 }
   
+Scheme_Object *mx_event_pred(int argc,Scheme_Object **argv) {
+  if (MX_EVENTP(argv[0])) {
+    return scheme_true;
+  }
+  return scheme_false;
+}
+
 Scheme_Object *mx_event_keypress_pred(int argc,Scheme_Object **argv) {
   return mx_event_type_pred(argc,argv,L"keypress");
 }

@@ -58,10 +58,12 @@ static MX_PRIM mxPrims[] = {
   { mx_com_set_property_type,"set-property-type",2,2 },
   { mx_all_com_classes,"all-com-classes",0,0 },
   { mx_document_objects,"document-objects",1,1 },
-  { mx_object_to_html,"object->html",1,3 },
+  { mx_coclass_to_html,"coclass->html",1,3 },
   { mx_insert_html,"document-insert-html",2,2 },
-  { mx_append_html,"document-append-HTML",2,2 },
+  { mx_append_html,"document-append-html",2,2 },
+  { mx_replace_html,"document-replace-html",2,2 },
   { mx_document_pred,"document?",1,1 },
+  { mx_event_pred,"event?",1,1 },
   { mx_get_event,"get-event",1,1 },
   { mx_event_tag,"event-tag",1,1},
   { mx_event_id,"event-id",1,1},
@@ -2032,7 +2034,7 @@ CLSID getCLSIDFromString(char const *name) {  // linear search through Registry
   return clsid;
 }
 
-Scheme_Object *mx_object_to_html(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   char *controlName;
   LPOLESTR clsidString;
   char buff[512];
@@ -2041,12 +2043,12 @@ Scheme_Object *mx_object_to_html(int argc,Scheme_Object **argv) {
   int width,height;
 
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("object->html","string",0,argc,argv) ;
+    scheme_wrong_type("coclass->html","string",0,argc,argv) ;
   }
 
   if (argc == 2 || argc == 3) {
     if (SCHEME_INTP(argv[1]) == FALSE) {
-      scheme_wrong_type("object->html","int",1,argc,argv) ;
+      scheme_wrong_type("coclass->html","int",1,argc,argv) ;
     }
     width = SCHEME_INT_VAL(argv[1]);
   }
@@ -2056,7 +2058,7 @@ Scheme_Object *mx_object_to_html(int argc,Scheme_Object **argv) {
 
   if (argc == 3) {
     if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type("object->html","int",2,argc,argv) ;
+      scheme_wrong_type("coclass->html","int",2,argc,argv) ;
     }
     height = SCHEME_INT_VAL(argv[2]);
   }
@@ -2081,9 +2083,7 @@ Scheme_Object *mx_object_to_html(int argc,Scheme_Object **argv) {
   }
 
   sprintf(buff,
-	  "<OBJECT ID=\"%s\" CLASSID=\"clsid:%S\"\n"
-	  "WIDTH = %d\n"
-	  "HEIGHT = %d>\n"
+	  "<OBJECT ID=\"%s\" CLASSID=\"clsid:%S\">\n"
 	  "</OBJECT>",
 	  controlName,              
 	  clsidString + 1,
@@ -2132,6 +2132,35 @@ Scheme_Object *mx_insert_html(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_append_html(int argc,Scheme_Object **argv) {
   return mx_stuff_html(argc,argv,L"BeforeEnd","doc-append-html");
+}
+
+Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
+  IHTMLDocument2 *pDocument; 
+  IHTMLElement *pBody;
+  BSTR html;
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("replace-html","mx-document",0,argc,argv) ;
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("replace-html","string",1,argc,argv) ;
+  }
+
+  pDocument = MX_DOCUMENT_VAL(argv[0]);
+  html = schemeStringToBSTR(argv[1]);
+
+  pDocument->get_body(&pBody);
+
+  if (pBody == NULL) {
+    scheme_signal_error("Can't find document body");
+  }
+
+  pBody->put_innerHTML(html);
+
+  SysFreeString(html);			    
+
+  return scheme_void;
 }
 
 DWORD WINAPI docHwndMsgLoop(LPVOID p) {
@@ -2197,7 +2226,7 @@ int cmpDwso(char *key,DOCUMENT_WINDOW_STYLE_OPTION *dwso) {
 }
 
 void assignIntOrDefault(int *pVal,Scheme_Object **argv,int argc,int ndx) {
-  if (SCHEME_SYMBOLP(argv[1])) {
+  if (SCHEME_SYMBOLP(argv[ndx])) {
     *pVal = CW_USEDEFAULT;
     if (strcmpi(SCHEME_SYM_VAL(argv[ndx]),"default") == 0) {
       *pVal = CW_USEDEFAULT;
@@ -2206,7 +2235,7 @@ void assignIntOrDefault(int *pVal,Scheme_Object **argv,int argc,int ndx) {
       scheme_wrong_type("make-document","int",ndx+1,argc,argv);
     }
   }
-  else if (SCHEME_INTP(argv[1]) == FALSE) {
+  else if (SCHEME_INTP(argv[ndx]) == FALSE) {
     scheme_wrong_type("make-document","int",ndx+1,argc,argv);
   }
   else {
@@ -2251,7 +2280,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   }
 
   pSyms = argv[5];
-  docWindowInit.docWindow.style |= WS_OVERLAPPEDWINDOW;
+  docWindowInit.docWindow.style = WS_OVERLAPPEDWINDOW;
 
   while (pSyms != scheme_null) {
 

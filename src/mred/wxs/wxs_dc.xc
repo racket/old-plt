@@ -213,7 +213,54 @@ inline static wxGL *_GetGL(wxDC *dc)
 #endif
 }
 
-static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s)
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+static wxMemoryDC *make_memdc(void)
+{
+  return new wxMemoryDC(1);
+}
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+static wxMemoryDC *temp_mdc;
+
+static wxMemoryDC *MakeDC(wxBitmap *src)
+{
+  wxMemoryDC *srcdc = NULL;
+  SETUP_VAR_STACK(2);
+  VAR_STACK_PUSH(0, src);
+  VAR_STACK_PUSH(1, srcdc);
+
+#ifdef wx_msw
+  srcdc = (wxMemoryDC *)src->selectedInto;
+  if (!srcdc) {
+#endif
+    if (!temp_mdc) {
+      wxREGGLOB(temp_mdc);
+      temp_mdc = WITH_VAR_STACK(make_memdc());
+    }
+    WITH_VAR_STACK(temp_mdc->SelectObject(src));
+    srcdc = temp_mdc;
+#ifdef wx_msw
+  }
+#endif
+
+  READY_TO_RETURN;
+
+  return srcdc;
+}
+
+static void UnmakeDC(wxMemoryDC *srcdc)
+{
+#ifdef wx_msw
+  if (srcdc == temp_mdc)
+#endif
+    WITH_VAR_STACK(temp_mdc->SelectObject(NULL));
+}
+
+static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s, Bool get_alpha)
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
@@ -233,27 +280,46 @@ static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
     int xi = (int)x;
     int yi = (int)y;
     int r, g, b;
-    for (j = 0; j < h; j++) {
-      for (i = 0; i < w; i++) {
-	WITH_VAR_STACK(dc->GetPixelFast(xi + i, yi + j,
-					&r, &g, &b));
-	ss[p++] = 255; /* alpha */
-        ss[p++] = r;
-	ss[p++] = g;
-	ss[p++] = b;
+    if (!get_alpha) {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(dc->GetPixelFast(xi + i, yi + j, &r, &g, &b));
+	  ss[p++] = 255; /* alpha */
+	  ss[p++] = r;
+	  ss[p++] = g;
+	  ss[p++] = b;
+	}
+      }
+    } else {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(dc->GetPixelFast(xi + i, yi + j, &r, &g, &b));
+	  ss[p] = 255 - ((r + g + b) / 3);
+	  p += 4;
+	}
       }
     }
     WITH_VAR_STACK(dc->EndGetPixelFast());
   } else {
     c = new wxColour();
 
-    for (j = 0; j < h; j++) {
-      for (i = 0; i < w; i++) {
-	WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
-	ss[p++] = 255; /* alpha */
-	ss[p++] = c->Red();
-	ss[p++] = c->Green();
-	ss[p++] = c->Blue();
+    if (!get_alpha) {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
+	  ss[p++] = 255; /* alpha */
+	  ss[p++] = c->Red();
+	  ss[p++] = c->Green();
+	  ss[p++] = c->Blue();
+	}
+      }
+    } else {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(dc->GetPixel(x + i, y + j, c));
+	  ss[p] = 255 - ((c->Red() + c->Green() + c->Blue()) / 3);
+	  p += 4;
+	}
       }
     }
   }
@@ -261,7 +327,7 @@ static void dcGetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
   READY_TO_RETURN;
 }
 
-static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s)
+static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, char *s, Bool set_alpha)
 {
   int i, j, p;
   unsigned char *ss = (unsigned char *)s;
@@ -280,22 +346,40 @@ static void dcSetARGBPixels(wxMemoryDC *dc, double x, double y, int w, int h, ch
       && WITH_VAR_STACK(dc->BeginSetPixelFast((int)x, (int)y, w, h))) {
     int xi = (int)x;
     int yi = (int)y;
-    for (j = 0; j < h; j++) {
-      for (i = 0; i < w; i++) {
-	WITH_VAR_STACK(dc->SetPixelFast(xi + i, yi + j, 
-					ss[p+1], ss[p+2], ss[p+3]));
-	p += 4;
+    if (!set_alpha) {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(dc->SetPixelFast(xi + i, yi + j, ss[p+1], ss[p+2], ss[p+3]));
+	  p += 4;
+	}
+      }
+    } else {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(dc->SetPixelFast(xi + i, yi + j, ss[p], ss[p], ss[p]));
+	  p += 4;
+	}
       }
     }
     WITH_VAR_STACK(dc->EndSetPixelFast());
   } else {
     c = new wxColour();
   
-    for (j = 0; j < h; j++) {
-      for (i = 0; i < w; i++) {
-	WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
-	WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
-	p += 4;
+    if (!set_alpha) {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(c->Set(ss[p+1], ss[p+2], ss[p+3]));
+	  WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
+	  p += 4;
+	}
+      }
+    } else {
+      for (j = 0; j < h; j++) {
+	for (i = 0; i < w; i++) {
+	  WITH_VAR_STACK(c->Set(ss[p], ss[p], ss[p]));
+	  WITH_VAR_STACK(dc->SetPixel(x + i, y + j, c));
+	  p += 4;
+	}
       }
     }
   }
@@ -316,25 +400,12 @@ static wxBitmap *dc_target(Scheme_Object *obj)
   return (wxBitmap *)0x1; /* dont't return NULL because that matches unspecified mask */
 }
 
-static wxMemoryDC *temp_mdc;
-
 static inline double approx_dist(double x, double y) 
 {
   x = fabs(x);
   y = fabs(y);
   return ((x < y) ? y : x);
 }
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
-static wxMemoryDC *make_memdc(void)
-{
-  return new wxMemoryDC(1);
-}
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
 
 static void ScaleSection(wxMemoryDC *dest, wxBitmap *src, 
 			 double tx, double ty, double ww2, double hh2,
@@ -344,16 +415,15 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   double xs, ys, r, g, b, t, dx, dy, wt, si, sj, a, span;
   int i, j, starti, endi, startj, endj, p, xi, xj, sji, sii;
   int sbmw, sbmh, w, h, w2, h2, ispan, jspan;
-  unsigned char *s = NULL, *s2 = NULL, *mask_s = NULL;
+  unsigned char *s = NULL, *s2 = NULL;
   wxMemoryDC *srcdc = NULL;
-  SETUP_VAR_STACK(7);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, s);
   VAR_STACK_PUSH(1, s2);
   VAR_STACK_PUSH(2, dest);
   VAR_STACK_PUSH(3, src);
   VAR_STACK_PUSH(4, srcdc);
   VAR_STACK_PUSH(5, mask);
-  VAR_STACK_PUSH(6, mask_s);
 
   if (!dest->Ok())
     WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","draw-bitmap-section-smooth"), 
@@ -406,43 +476,17 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
   s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
   s2 = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w2 * h2 * 4));
-  if (mask)
-    mask_s = (unsigned char *)WITH_VAR_STACK(scheme_malloc_atomic(w * h * 4));
-  else
-    mask_s = s;
 
-#ifdef wx_msw
-  srcdc = (wxMemoryDC *)src->selectedInto;
-#endif
-  if (!srcdc) {
-    if (!temp_mdc) {
-      wxREGGLOB(temp_mdc);
-      temp_mdc = WITH_VAR_STACK(make_memdc());
-    }
-    WITH_VAR_STACK(temp_mdc->SelectObject(src));
-    srcdc = temp_mdc;
-  }
-
-  WITH_VAR_STACK(dcGetARGBPixels(srcdc, fx, fy, w, h, (char *)s));
-
-  if (srcdc == temp_mdc)
-    WITH_VAR_STACK(temp_mdc->SelectObject(NULL));
+  srcdc = WITH_VAR_STACK(MakeDC(src));
+  WITH_VAR_STACK(dcGetARGBPixels(srcdc, fx, fy, w, h, (char *)s, 0));
+  WITH_VAR_STACK(UnmakeDC(srcdc));
 
   if (mask) {
-#ifdef wx_msw
-    srcdc = (wxMemoryDC *)mask->selectedInto;
-#else
-    srcdc = NULL;
-#endif
-    if (!srcdc) {
-      WITH_VAR_STACK(temp_mdc->SelectObject(mask));
-      srcdc = temp_mdc;
-    }
-    WITH_VAR_STACK(dcGetARGBPixels(srcdc, fx, fy, w, h, (char *)mask_s));
-    if (srcdc == temp_mdc)
-      WITH_VAR_STACK(temp_mdc->SelectObject(NULL));
+    srcdc = WITH_VAR_STACK(MakeDC(mask));
+    WITH_VAR_STACK(dcGetARGBPixels(srcdc, fx, fy, w, h, (char *)s, 1));
+    WITH_VAR_STACK(UnmakeDC(srcdc));
 
-    WITH_VAR_STACK(dcGetARGBPixels(dest, tx, ty, w2, h2, (char *)s2));
+    WITH_VAR_STACK(dcGetARGBPixels(dest, tx, ty, w2, h2, (char *)s2, 0));
   }
 
   if (w <= w2)
@@ -478,16 +522,16 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
       r = g = b = t = a = 0.0;
 
       for (xj = startj; xj <= endj; xj++) {
+	dy = ((xj * ys) - j);
 	for (xi = starti; xi <= endi; xi++) {
 	  dx = ((xi * xs) - i);
-	  dy = ((xj * ys) - j);
 	  wt = 1 / (span + approx_dist(dx, dy));
 	  p = ((xj * w) + xi) * 4;
+	  a += (wt * s[p]);
 	  r += (wt * s[p+1]);
 	  g += (wt * s[p+2]);
 	  b += (wt * s[p+3]);
 	  t += wt;
-	  a += wt * (mask_s[p+1] + mask_s[p+2] + mask_s[p+3]);
 	}
       }
 
@@ -510,13 +554,11 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
     }
   }
 
-  WITH_VAR_STACK(dcSetARGBPixels(dest, tx, ty, w2, h2, (char *)s2));
+  WITH_VAR_STACK(dcSetARGBPixels(dest, tx, ty, w2, h2, (char *)s2, 0));
 
 #ifndef SENORA_GC_NO_FREE
   GC_free(s);
   GC_free(s2);
-  if (mask_s && (mask_s != s))
-    GC_free(mask_s);
 #endif
 
   READY_TO_RETURN;
@@ -608,8 +650,8 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 @ "get-pixel" : bool GetPixel(double,double,wxColour!) : : /CheckOk[METHODNAME("bitmap-dc%","get-pixel")]
 @ "set-pixel" : void SetPixel(double,double,wxColour!) : : /CheckOk[METHODNAME("bitmap-dc%","set-pixel")]
 
-@ m "get-argb-pixels" : void dcGetARGBPixels(double,double,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
-@ m "set-argb-pixels" : void dcSetARGBPixels(double,double,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
+@ m "get-argb-pixels" : void dcGetARGBPixels(double,double,rint[0|10000],rint[0|10000],wbstring,bool=FALSE) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
+@ m "set-argb-pixels" : void dcSetARGBPixels(double,double,rint[0|10000],rint[0|10000],bstring,bool=FALSE) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
 @ m "draw-bitmap-section-smooth" : void ScaleSection(wxBitmap!,double,double,nndouble,nndouble,double,double,nndouble,nndouble,wxBitmap^=NULL)
 

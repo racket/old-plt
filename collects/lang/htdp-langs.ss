@@ -375,9 +375,17 @@ to the original stdout of DrScheme.
       (define (register-profile-start . x) #f)
       (define (register-profile-done . x) (void))
       
-      (define (test-coverage-enabled) #f)
-      (define (test-covered . x) (void))
-      (define (initialize-test-coverage-point . x) (void))
+      (define test-coverage-enabled (make-parameter #t))
+      (define current-test-coverage-info (make-parameter #f))
+      (define (initialize-test-coverage-point key expr)
+        (unless (current-test-coverage-info)
+	  (let ([ht (make-hash-table)])
+	    (current-test-coverage-info ht)
+	    (send (drscheme:rep:current-rep) set-test-coverage-info ht)))
+        (hash-table-put! (current-test-coverage-info) key (list #f expr)))
+      (define (test-covered key)
+        (let ([v (hash-table-get (current-test-coverage-info) key)])
+          (set-car! v #t)))
       
       (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
       

@@ -1508,10 +1508,10 @@ void wxWindow::WindowEventHandler(Widget w,
 	    status = DEFAULT_XMB_STATUS;
 	  }
 
-	if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
-	  win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
-	else if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+	else if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
+	  win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
 
 	if (XMB_KC_STATUS(status))
 	  kc = CharCodeXToWX(keysym);

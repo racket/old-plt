@@ -119,15 +119,15 @@
 	     "</html>")))))
    
   ;; read-until-char :
-  ;; char -> list (char) x bool
+  ;; iport x char -> list (char) x bool
   ;; -- operates on the default input port; the second value indicates
   ;; whether reading stopped because an EOF was hit (as opposed to the
   ;; delimiter being seen); the delimiter is not part of the result
    
   (define read-until-char
-    (lambda (delimiter)
+    (lambda (ip delimiter)
       (let loop ((chars '()))
-	(let ((c (read-char)))
+	(let ((c (read-char ip)))
 	  (cond
 	    ((eof-object? c)
 	      (values (reverse chars) #t))
@@ -137,7 +137,7 @@
 	      (loop (cons c chars))))))))
 
   ;; read-name+value :
-  ;; () -> (string + bool) x (string + bool) x bool
+  ;; iport -> (string + bool) x (string + bool) x bool
 
   ;; -- If the first value is false, so is the second, and the third is
   ;; true, indicating EOF was reached without any input seen.  Otherwise,
@@ -151,10 +151,10 @@
   ;; It would also introduce needless modality and reduce flexibility.
 
   (define read-name+value
-    (lambda ()
+    (lambda (ip)
       (let-values 
 	(((name eof?)
-	   (read-until-char #\=)))
+	   (read-until-char ip #\=)))
 	(cond
 	  ((and eof? (null? name))
 	    (values #f #f #t))
@@ -165,7 +165,7 @@
 		  "No binding for `" (list->string name) "' field."))))
 	  (else
 	    (let-values (((value eof?)
-			   (read-until-char #\&)))
+			   (read-until-char ip #\&)))
 	      (values (query-chars->string name)
 		(query-chars->string value)
 		eof?)))))))
@@ -176,7 +176,8 @@
   (define get-bindings/post
     (lambda ()
       (let-values (((name value eof?)
-		     (read-name+value)))
+		     (read-name+value
+		       (current-input-port))))
 	(cond
 	  ((and eof? (not name))
 	    null)
@@ -185,6 +186,34 @@
 	  (else
 	    (cons (cons name value)
 	      (get-bindings/post)))))))
+
+  ;; get-bindings/get :
+  ;; () -> list ((string . string))
+
+  (define get-bindings/get
+    (lambda ()
+      (let ((p (open-input-string
+		 (getenv "QUERY_STRING"))))
+	(let loop ()
+	  (let-values (((name value eof?)
+			 (read-name+value p)))
+	    (cond
+	      ((and eof? (not name))
+		null)
+	      ((and eof? name)
+		(list (cons name value)))
+	      (else
+		(cons (cons name value)
+		  (loop)))))))))
+
+  ;; get-bindings :
+  ;; () -> list ((string . string))
+
+  (define get-bindings
+    (lambda ()
+      (if (string=? (get-cgi-method) "POST")
+	(get-bindings/post)
+	(get-bindings/get))))
 
   ;; generate-error-output :
   ;; list (html-string) -> <exit>

@@ -179,7 +179,11 @@
                      level
                      type-recs 
                      (list (id-string (header-id (class-def-info class)))) 
-                     #f (memq 'abstract (map modifier-kind (header-modifiers (class-def-info class))))))
+                     #f 
+                     (memq 'abstract (map modifier-kind (header-modifiers (class-def-info class))))
+                     (if (null? (header-extends (class-def-info class))) #f
+                         (name-src (car (header-extends (class-def-info class)))))
+                     ))
     (set-class-def-uses! class (send type-recs get-class-reqs)))
 
   ;check-interface: interface-def (list string) symbol type-recs -> void
@@ -187,14 +191,14 @@
     (send type-recs set-location! (interface-def-file iface))
     (send type-recs set-class-reqs (interface-def-uses iface))
     (check-members (interface-def-members iface) empty-env level type-recs 
-                   (list (id-string (header-id (interface-def-info iface)))) #t #f)
+                   (list (id-string (header-id (interface-def-info iface)))) #t #f #f)
     (set-interface-def-uses! iface (send type-recs get-class-reqs)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
   
   ;check-members: (list member) env symbol type-records (list string) bool bool src-> void
-  (define (check-members members env level type-recs c-class iface? abst-class?); extend-src)
+  (define (check-members members env level type-recs c-class iface? abst-class? extend-src)
     (let* ((class-record (lookup-this type-recs env))
            (fields (class-record-fields class-record))
            (field-env (create-field-env fields env (car c-class)))
@@ -204,10 +208,11 @@
            (static-env (get-static-fields-env field-env))
            (setting-fields null)
            (inherited-fields null))
-;      (when (eq? level 'beginner)
-;        (let ((parent (send type-recs get-class-record (car (class-record-parent class-record)))))
-;          (when (memq 'abstract (class-record-modifiers parent))
-;            (
+      (when (eq? level 'beginner)
+        (let ((parent (send type-recs get-class-record (car (class-record-parents class-record)))))
+          (when (memq 'abstract (class-record-modifiers parent))
+            (set! inherited-fields (filter (lambda (f) (not (field-record-init? f)))
+                                           (get-field-records parent))))))
       (let loop ((rest members) (statics empty-env) (fields env))
         (unless (null? rest)
           (let ((member (car rest)))
@@ -248,6 +253,12 @@
                            (add-var-to-env name type obj-field fields)))))))))
       (let ((assigns (get-assigns members level (car c-class)))
             (static-assigns (get-static-assigns members level)))
+        (when (eq? level 'beginner)
+          (for-each (lambda (f)
+                      (andmap (lambda (assign)
+                                (inherited-field-set? f assign extend-src))
+                              assigns))
+                    inherited-fields))
         (for-each (lambda (field)
                     (if (memq 'static (map modifier-kind (field-modifiers field)))
                         (andmap
@@ -453,6 +464,27 @@
                                     (cdr assigns))
                               (cdr assigns))
                           class level static?)))))
+  
+  ;inherited-field-set? field-record (list assignment) src -> bool
+  (define (inherited-field-set? field assigns src)
+    (if (null? assigns)
+        (inherited-field-not-set-error (field-record-name field) src)
+        (let* ((assign (car assigns))
+               (left (assignment-left assign)))
+          (or (cond
+                ((local-access? left)
+                 (equal? (id-string (local-access-name left))
+                         (field-record-name field)))
+                ((field-access? left)
+                 (and (special-name? (field-access-object left))
+                      (equal? "this" (special-name-name (field-access-object left)))
+                      (equal? (id-string (field-access-field left)) (field-record-name field)))))
+              (inherited-field-set? field (cdr assigns) src)))))
+  
+  (define (inherited-field-not-set-error name src)
+    (raise-error (string->symbol name)
+                 (format "Inherited field ~a must be set in the constructor for the current class" name)
+                 (string->symbol name) src))
   
   ;check-method: method env type-records (list string) boolean boolean-> void
   (define (check-method method env level type-recs c-class static? iface?)

@@ -3,6 +3,7 @@
   (require (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
+           (lib "stacktrace.ss" "errortrace")
            (lib "unitsig.ss")
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
@@ -380,6 +381,8 @@
                   (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                  (current-eval 
                   (drscheme:debug:make-debug-eval-handler (current-eval)))
+                 (when (memq level '(beginner intermediate advanced))
+                   (error-print-source-location #f))
                  (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
                    (namespace-attach-module n path)
                    (namespace-require 'mzscheme)
@@ -468,8 +471,11 @@
                          (list "ProfessorJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
       (define beginner-lang% (java-lang-mixin 'beginner "ProfessorJ: Beginner Java" (list "ProfessorJ" "Beginner")
                                               (list 1000 10 1) "Java Beginner teaching language"))
-      ))
       
+      
+      
+      ))
+  
   
   (define (get-module-name stx)
     (syntax-case stx (module #%plain-module-begin)
@@ -499,6 +505,10 @@
       [else
        (raise-syntax-error 'Java
                            "Internal Syntax error in compiling Java Program"
-                           stx)])))
+                           stx)]))
+  
+
+  
+  )
 
       

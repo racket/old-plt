@@ -299,8 +299,11 @@ static Scheme_Object *dump_image(char *filename)
   if (!scheme_setjmpup(buf, buf, (void *)stack_base)) {
     unsigned long current_brk = (unsigned long)sbrk(0);
     int fd;
+    
+    do {
+      fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    } while ((fd == -1) && (errno == EINTR));
 
-    fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd == -1) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
@@ -378,7 +381,12 @@ static void do_restore_image(char *file, int argc, char **argv,
   unsigned char len;
   char **save_environ;
 
-  if ((fd = open(file, O_RDONLY)) == -1) die("open", file);
+  do {
+    fd = open(file, O_RDONLY);
+  } while ((fd == -1) && (errno == EINTR));
+
+  if (fd == -1)
+    die("open", file);
 
   if (read(fd, (char *)&len, sizeof(char)) != sizeof(char)) {
     close(fd);

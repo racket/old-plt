@@ -3,7 +3,6 @@
 	 (case what
 	   [(name) "Graphics"]
 	   [(compile-prefix) '(begin
-				;(require-library "sig.ss" "mred")
 				(require-library "graphicss.ss" "graphics")
 				(require-library "turtles.ss" "graphics")
 				(require-library "value-turtles.ss" "graphics")

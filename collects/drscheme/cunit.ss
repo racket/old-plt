@@ -8,8 +8,6 @@
 
     (mred:debug:printf 'invoke "drscheme:compound-unit@")
 
-    (mred:set-preference-default 'drscheme:project-visible? #f)
-
     (define project-pasteboard%
       (class-asi mred:pasteboard%
 	(inherit find-first-snip get-snip-location get-frame get-canvas

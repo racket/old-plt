@@ -127,7 +127,7 @@
 			  (insert (send x copy) (last-position)))]
 	    [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))])
 	  (public
-	    [get-prompt (lambda () "|-")]
+	    [get-prompt (lambda () "|- ")]
 	    [takeover void]
 	    [get-escape (lambda () escape-fn)]
 	    [set-escape (lambda (x) (set! escape-fn x))]

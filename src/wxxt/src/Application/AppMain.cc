@@ -432,7 +432,7 @@ void wxCommonInit(void)
 
       r = 0;
       g = 0;
-      b = 180;
+      b = 160;
       if (wxGetPreference("hiliteColor", wxBuffer, 50)) {
 	wxBuffer[50]= 0;
 	if (strlen(wxBuffer) == 6) {

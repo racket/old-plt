@@ -541,8 +541,7 @@
       
       (cond
         [zo-file?
-         (parameterize ([current-eval primitive-eval])
-           (primitive-load filename))]
+	 (primitive-load filename)]
         [(use-zodiac?)
          (let* ([process-sexps
                  (let ([last (list (void))])
@@ -574,7 +573,8 @@
   
   ;; drscheme-eval : sexp ->* TST
   (define (drscheme-eval-handler sexp)
-    (if (use-zodiac?)
+    (if (and (use-zodiac?)
+	     (not (compiled-expression? sexp)))
         (let* ([z (let ([continuation-stack (continuation-mark-set->list
                                              (current-continuation-marks)
                                              aries:w-c-m-key)])

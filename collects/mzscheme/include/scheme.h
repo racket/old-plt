@@ -1135,6 +1135,7 @@ extern int scheme_allow_cond_auto_else; /* Defaults to 1 */
 extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
 extern int scheme_curly_braces_are_parens; /* Defaults to 1 */
 extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
+extern int scheme_hash_percent_globals_only; /* Defaults to 0 */
 #ifdef GC_MIGHT_USE_REGISTERED_STATICS
 extern int GC_use_registered_statics; /* Defaults to 0 */
 #endif

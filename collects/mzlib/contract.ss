@@ -391,7 +391,7 @@
          ;; the name isn't fresh, so `id' combined with `ids' must already be unique.
          (define (mangle-id prefix id . ids)
            (datum->syntax-object
-            #f
+            (syntax-local-introduce provide-stx)
             (string->symbol
              (string-append
               prefix

@@ -280,10 +280,14 @@
 			      signal-not-boolean)))
 	    (send printing set-selection
 		  (get-printer-style-number (basis:setting-printing v)))
-	    (for-each (lambda (x) (send x enable (not (eq? 'r4rs-style (basis:setting-printing v)))))
-		      (list abbreviate-cons-as-list?
-			    print-tagged-inexact-numbers
-			    whole/fractional-exact-numbers))
+	    (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])
+	      (send abbreviate-cons-as-list? show (not r4rs-style?))
+	      (send print-tagged-inexact-numbers enable (not r4rs-style?))
+	      (send whole/fractional-exact-numbers enable (not r4rs-style?))
+	      (when r4rs-style?
+		(basis:set-setting-whole/fractional-exact-numbers! v #f)
+		(basis:set-setting-print-tagged-inexact-numbers! v #f)))
+
 	    (map (lambda (get check-box) (send check-box set-value (get v)))
 		 (list basis:setting-case-sensitive?
 		       basis:setting-allow-set!-on-undefined?

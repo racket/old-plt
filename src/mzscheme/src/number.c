@@ -2434,6 +2434,21 @@ scheme_expt(int argc, Scheme_Object *argv[])
   if (argv[1] == scheme_make_integer(1))
     return n;
 
+  if (argv[0] == scheme_make_integer(0)) {
+    if (SCHEME_FLOATP(e) && MZ_IS_NAN(SCHEME_FLOAT_VAL(e))) {
+#ifdef MZ_USE_SINGLE_FLOATS
+      if (SCHEME_FLTP(e))
+	return single_nan_object;
+#endif
+      return nan_object;
+    } else if (SCHEME_TRUEP(negative_p(1, &e))) {
+      scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, argv[0],
+		       "expt: undefined for 0 and %s",
+		       scheme_make_provided_string(e, 0, NULL));
+      return NULL;
+    }
+  }
+
   if (!SCHEME_FLOATP(n)) {
     if (SCHEME_INTP(e) || SCHEME_BIGNUMP(e)) {
       if (SCHEME_FALSEP(positive_p(1, &e))) {

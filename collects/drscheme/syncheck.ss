@@ -24,7 +24,8 @@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
-      (define (phase1) (void))
+      (define (phase1) 
+        (drscheme:unit:add-to-program-editor-mixin clearing-text-mixin))
       (define (phase2) (void))
 
       (define (printf . args) (apply fprintf o args))
@@ -302,6 +303,26 @@
           syncheck:add-menu
           syncheck:add-arrow))
 
+      ;; clearing-text-mixin : (mixin text%)
+      ;; overrides methods that make sure the arrow go away appropriately.
+      (define clearing-text-mixin
+        (fw:mixin ((class->interface text%)) ()
+          (rename [super-after-insert after-insert]
+                  [super-after-delete after-delete])
+          (define/override (after-delete start len)
+            (super-after-delete start len)
+            (let ([st (find-syncheck-text this)])
+              (when st
+                (send st syncheck:clear-arrows))))
+          
+          (define/override (after-insert start len)
+            (super-after-insert start len)
+            (let ([st (find-syncheck-text this)])
+              (when st
+                (send st syncheck:clear-arrows))))
+
+	  (super-instantiate ())))
+      
       (define make-graphics-text%
         (lambda (super%)
           (let* ([cursor-arrow (make-object cursor% 'arrow)])
@@ -311,11 +332,8 @@
                        get-canvas last-position dc-location-to-editor-location
                        find-position begin-edit-sequence end-edit-sequence)
               
-              (rename
-               [super-after-insert after-insert]
-               [super-after-delete after-delete]
-               [super-on-paint on-paint]
-               [super-on-event on-event])
+              (rename [super-on-paint on-paint]
+                      [super-on-event on-event])
               
               ;; arrow-vectors : 
               ;; (union 
@@ -415,15 +433,7 @@
                       (loop (add1 p))))))
 
               (inherit get-top-level-window)
-              (override after-delete)
-              (define (after-delete start len)
-                (super-after-delete start len)
-                (syncheck:clear-arrows))
-              
-              (override after-insert)
-              (define (after-insert start len)
-                (super-after-insert start len)
-                (syncheck:clear-arrows))
+
               
               ;; flush-arrow-coordinates-cache : -> void
               ;; pre-condition: arrow-vector is not #f.

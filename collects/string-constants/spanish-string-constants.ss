@@ -163,7 +163,6 @@
  
  ;;; preferences
  (preferences "Preferencias")
- (preferences-category "Categoría")
  (saving-preferences "Salvar preferencias")
  (error-unmarshalling "Error mientras desempacaba la preferencia ~a")
  (error-saving-preferences "Error al salvar preferencias: ~a")
@@ -509,8 +508,6 @@
  (full-language "Completo")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "Similar a R5RS")
- (mred-lang-name "Gráfico sin depuración (MrEd)")
- (mzscheme-lang-name "Texto sin depuración (MzScheme)")
  (r5rs-lang-name "R5RS sin depuración (MzScheme)")
  (unknown-debug-frame "[desconocido]")
  
@@ -572,7 +569,6 @@
    (home "Hogar")
    (how-to-use-scheme "Cómo Usar Scheme")
    (http-proxy "Proxy de HTTP")
-   (inline-saved-program-in-executable? "¿Deseas insertar el programa salvado en el ejecutable? Si sí, puede copiar el ejecutable ~a a otra computadora, pero el ejecutable será muy grande.  Si no, no puede copiar el ejecutable a otra computadora, pero será mucho más pequeño.  Adicionalmente, si seleeciona no, el ejecutable cargará la última versión del programa")
    (insert-large-letters... "Insertar Letras Grandes...")
    (install? "¿Instalar?")
    (intermediate-one-line-summary "Principiante más alcance léxico")

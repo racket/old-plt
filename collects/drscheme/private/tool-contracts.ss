@@ -394,7 +394,15 @@
                             
                             
 
-
+(drscheme:unit:add-to-program-editor-mixin
+ (((subclass?/c text%) . -> . (subclass?/c text%)) . -> . void?)
+ (mixin)
+ "\\phase{1}."
+ ""
+ "Adds \\var{mixin} to the result of"
+ "@flink drscheme:unit:get-program-editor-mixin %"
+ ".")
+  
 (drscheme:unit:open-drscheme-window
  (case->
   (-> (is-a?/c drscheme:unit:frame%))
@@ -641,8 +649,8 @@
 
 (drscheme:get/extend:extend-interactions-text
  (case->
-  ((make-mixin-contract drscheme:get/extend:base-interactions-text%) . -> . void?)
-  ((make-mixin-contract drscheme:get/extend:base-interactions-text%) boolean? . -> . void?))
+  ((make-mixin-contract drscheme:rep:text<%>) . -> . void?)
+  ((make-mixin-contract drscheme:rep:text<%>) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
 "This text is used in the bottom window of drscheme frames."
@@ -652,7 +660,7 @@
 "If unsupplied, this is the same as supplying \\rawscm{\\#t}.")
 
 (drscheme:get/extend:get-interactions-text
- (-> (subclass?/c drscheme:rep:text%))
+ (-> (implementation?/c drscheme:rep:text<%>))
  ()
 
 "Once this function is called, "
@@ -661,8 +669,8 @@
 
 (drscheme:get/extend:extend-definitions-text
  (case->
-  ((make-mixin-contract drscheme:get/extend:base-definitions-text%) . -> . void?)
-  ((make-mixin-contract drscheme:get/extend:base-definitions-text%) boolean? . -> . void?))
+  ((make-mixin-contract drscheme:unit:definitions-text<%>) . -> . void?)
+  ((make-mixin-contract drscheme:unit:definitions-text<%>) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
 "This text is used in the top window of drscheme frames."
@@ -672,7 +680,7 @@
 "If unsupplied, this is the same as supplying \\rawscm{\\#f}.")
 
 (drscheme:get/extend:get-definitions-text
- (-> (subclass?/c text:backup-autosave%))
+ (-> (implementation?/c drscheme:unit:definitions-text<%>))
  ()
 
 "Once this function is called, "
@@ -681,8 +689,8 @@
 
 (drscheme:get/extend:extend-interactions-canvas
  (case->
-  ((make-mixin-contract drscheme:get/extend:base-interactions-canvas%) . -> . void?)
-  ((make-mixin-contract drscheme:get/extend:base-interactions-canvas%) boolean? . -> . void?))
+  ((make-mixin-contract drscheme:unit:interactions-canvas%) . -> . void?)
+  ((make-mixin-contract drscheme:unit:interactions-canvas%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
 "This canvas is used in the bottom window of drscheme frames."
@@ -692,7 +700,7 @@
 "If unsupplied, this is the same as supplying \\rawscm{\\#f}.")
 
 (drscheme:get/extend:get-interactions-canvas
- (-> (subclass?/c canvas:wide-snip%))
+ (-> (subclass?/c drscheme:unit:interactions-canvas%))
  ()
 
 "Once this function is called, "
@@ -701,8 +709,8 @@
 
 (drscheme:get/extend:extend-definitions-canvas
  (case->
-  ((make-mixin-contract drscheme:get/extend:base-definitions-canvas%) . -> . void?)
-  ((make-mixin-contract drscheme:get/extend:base-definitions-canvas%) boolean? . -> . void?))
+  ((make-mixin-contract drscheme:unit:definitions-canvas%) . -> . void?)
+  ((make-mixin-contract drscheme:unit:definitions-canvas%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
 "This canvas is used in the top window of drscheme frames."
@@ -721,8 +729,8 @@
 
 (drscheme:get/extend:extend-unit-frame
  (case->
-  ((make-mixin-contract drscheme:get/extend:base-unit-frame%) . -> . void?)
-  ((make-mixin-contract drscheme:get/extend:base-unit-frame%) boolean? . -> . void?))
+  ((make-mixin-contract drscheme:unit:frame%) . -> . void?)
+  ((make-mixin-contract drscheme:unit:frame%) boolean? . -> . void?))
  ((mixin) (mixin before?))
 
 "This is the frame that implements the main drscheme window."

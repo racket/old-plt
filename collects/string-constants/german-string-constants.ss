@@ -189,13 +189,11 @@
  
  ;;; preferences
  (preferences "Voreinstellungen")
- (preferences-category "Kategorie")
  (saving-preferences "Voreinstellungen werden gesichert")
  (error-unmarshalling "Fehler beim Lesen der ~a Voreinstellung")	;islwtm, pbliE! :
  (error-saving-preferences "Fehler beim Abspeichern der Voreinstellungen: ~a")
  (error-reading-preferences "Fehler beim Lesen der Voreinstellungen")
  (expected-list-of-length2 "Eine Liste der Länge 2 erwartet")
- (general-prefs-panel-label "Allgemein")
  (highlight-parens "zwischen entsprechenden Klammern Text hervorheben")
  (fixup-parens "Korrigiere Klammern")	; verb correct or adjective? smiley
  (flash-paren-match "bei abschliessender Klammer die Anfangsklammer ausleuchten")
@@ -231,7 +229,6 @@
  (set-font "Set Font...")	; islwtm
  (select-font-name "Schriftartnamen auswählen")
  (example-text "Beispieltext:")
- (general-ii "General II")	; islwtm
  (only-warn-once "Nur einmal warnen falls Ausführungs- und Interaktionsfenster nicht synchron sind")
  
  ;;; indenting preferences panel
@@ -533,19 +530,12 @@
  (advanced-student "Fortgeschrittene/r")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")          ; islwtm
- (mred-lang-name "Grafische Oberfläche ohne Debugger (MrEd)")
- (mzscheme-lang-name "Textoberfläche ohne Debugger (MzScheme)")
  (r5rs-lang-name "R5RS ohne Debugger")  ; islwtm
  (unknown-debug-frame "[unbekannt]")
  
- (bad-module-language-specs
-  "The drscheme-language-position and drscheme-language-modules specifications aren't correct. Expected (listof (cons string (listof string))) and (listof (listof string)) respectively, where the lengths drscheme-language-position and drscheme-language-module lists are the same. Got ~e and ~e")
-
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
  (files-interactions "~a's Interaktionen") ;; filled with a filename
- (stack-frame-in-current-interactions "Interaktionen")
- (stack-frame-in-current-definitions "Definitionen")
  (mzscheme-w/debug "Text (MzScheme)")
  (mred-w/debug "Graphisch (MrEd)")
  
@@ -616,7 +606,7 @@
    (full-language "Vollversion")
    (help-menu-check-for-updates "Prüfe Updates...")
    (how-to-use-scheme "How to Use Scheme")
-   (htdp-full-one-line-summary "Fortgeschritten, plus PLT Erweiterungen und GUI Bibliothek")
+
    (http-proxy "HTTP Proxy")
    (intermediate-one-line-summary "Anfänger plus lexikalischer Umgebung")
    (intermediate-student/lambda "Intermediate Student mit lambda")
@@ -667,6 +657,5 @@
    (vc-error-format "Fehler: ~a")
    (inline-saved-program-in-executable? "Dürfen wir Ihr Programm in die ausführbare Datei einbauen?\n\nFalls ja, können Sie die ausführbare Datei auf einen anderen ~a Computer kopieren, aber die Datei wird sehr gross sein.\n\nFalls nein, dann können Sie die ausführbare Datei nicht auf einen anderen Computer kopieren und es wird relative klein sein. Darüber hinaus wird die ausführbare Datei immer die neueste Version des Programms benutzen.")
 
-   (inline-saved-program-in-executable/windows
-    "ACHTUNG, ACHTUNG!! Deutsches Gesetz strengstens verbietet die Benutzung von Windows. Bitte tauschen Sie sofort Ihren Computer gegen einen Macintosh oder Linux Computer um.\n\n  ~a")
+
  )

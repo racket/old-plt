@@ -1,13 +1,13 @@
 (require-library "macro.ss")
 
+; Need to return the HTTPd version, status code, etc.
+
+; ----------------------------------------------------------------------
+
 ; Input ports have three statuses:
 ;   "raw" = they've just been opened
 ;   "impure" = they have text waiting
 ;   "pure" = the MIME headers have been read
-
-; Things we still need:
-; combine-url/relative : url x str -> url
-; lookup-mime-header : list mime-header -> str + #f
 
 (define-signature mred:url^
   (http/get-impure-port    ; url [x list (str)] -> in-port
@@ -15,54 +15,56 @@
     string->url            ; str -> url
     call/input-url         ; url x (in-port -> ()) [x list (str)] -> ()
     purify-port            ; in-port -> ()
+    combine-url/relative   ; url x str -> url
 ))
 
 (define mred:url@
   (unit/sig mred:url^
     (import)
 
-    ; method : str + #f    path : str
-    ; search : str + #f    fragment : str + #f
-    (define-struct url (method path search fragment))
+    ; scheme : str + #f
+    ; host : str + #f
+    ; port : str + #f
+    ; path : str
+    ; params : str + #f
+    ; query : str + #f
+    ; fragment : str + #f
+    (define-struct url (scheme host port path params query fragment))
 
     ; name : str (all lowercase; not including the colon)
     ; value : str (doesn't have the eol delimiter)
     (define-struct mime-header (name value))
 
-    ; host : str + #f    port : num + #f    path : str
-    (define-struct accessor (host port path))
-
     ; url->default-port : url -> num
     (define url->default-port
       (lambda (url)
-	(let ((method (url-method url)))
+	(let ((scheme (url-scheme url)))
 	  (cond
-	    ((string=? method "http") 80)
-	    ((not method) 80)
+	    ((string=? scheme "http") 80)
+	    ((not scheme) 80)
 	    (else
-	      (error 'url->default-port "Method ~s not supported"
-		(url-method url)))))))
+	      (error 'url->default-port "Scheme ~s not supported"
+		(url-scheme url)))))))
 
-    ; make-ports : url x accessor -> in-port x out-port
+    ; make-ports : url -> in-port x out-port
     (define make-ports
-      (lambda (url accessor)
-	(let ((port-number (or (accessor-port accessor)
+      (lambda (url)
+	(let ((port-number (or (url-port url)
 			     (url->default-port url))))
-	  (tcp-connect (accessor-host accessor) port-number))))
+	  (tcp-connect (url-host url) port-number))))
 
     ; http/get-impure-port : url [x list (str)] -> in-port
     (define http/get-impure-port
       (opt-lambda (url (strings '()))
-	(let ((accessor (url->accessor url)))
-	  (let-values (((server->client client->server)
-			 (make-ports url accessor)))
-	    (for-each (lambda (s)
-			(display s client->server))
-	      (cons (format "GET ~a HTTP/1.0~n" (accessor-path accessor))
-		strings))
-	    (newline client->server)
-	    (close-output-port client->server)
-	    server->client))))
+	(let-values (((server->client client->server)
+		       (make-ports url)))
+	  (for-each (lambda (s)
+		      (display s client->server))
+	    (cons (format "GET ~a HTTP/1.0~n" (url-path url))
+	      strings))
+	  (newline client->server)
+	  (close-output-port client->server)
+	  server->client)))
 
     ; display-pure-port : in-port -> ()
     (define display-pure-port
@@ -73,6 +75,113 @@
 	      (display c)
 	      (loop))))
 	(close-input-port server->client)))
+
+    (define empty-url?
+      (lambda (url)
+	(and (not (url-scheme url)) (not (url-params url))
+	  (not (url-query url)) (not (url-fragment url))
+	  (andmap (lambda (c) (char=? c #\space))
+	    (string->list (url-path url))))))
+
+    ; combine-url/relative : url x str -> url
+    (define combine-url/relative
+      (lambda (base string)
+	(let ((relative (string->url string)))
+	  (cond
+	    ((empty-url? base)		; Step 1
+	      relative)
+	    ((empty-url? relative)	; Step 2a
+	      base)
+	    ((url-scheme relative)	; Step 2b
+	      relative)
+	    (else			; Step 2c
+	      (set-url-scheme! relative (url-scheme base))
+	      (cond
+		((url-host relative)	; Step 3
+		  relative)
+		(else
+		  (set-url-host! relative (url-host base))
+		  (set-url-port! relative (url-port base)) ; Unspecified!
+		  (let ((rel-path (url-path relative)))
+		    (cond
+		      ((and rel-path	; Step 4
+			 (not (string=? "" rel-path))
+			 (char=? #\/ (string-ref rel-path 0)))
+			relative)
+		      ((not rel-path)	; Step 5
+			(set-url-path! relative (url-path base))
+			(or (url-params relative)
+			  (set-url-params! relative (url-params base)))
+			(or (url-query relative)
+			  (set-url-query! relative (url-query base)))
+			relative)
+		      (else		; Step 6
+			(merge-and-normalize
+			  (url-path base) relative)))))))))))
+
+    (define merge-and-normalize
+      (lambda (base-path relative-url)
+	(let ((rel-path (url-path relative-url)))
+	  (let ((base-list (string->list base-path))
+		 (rel-list (string->list rel-path)))
+	    (let*
+	      ((joined-list
+		 (let loop ((base (reverse base-list)))
+		   (if (null? base)
+		     rel-list
+		     (if (char=? #\/ (car base))
+		       (append (reverse base) rel-list)
+		       (loop (cdr base))))))
+		(grouped
+		  (let loop ((joined joined-list) (current '()))
+		    (if (null? joined)
+		      (list (list->string (reverse current)))
+		      (if (char=? #\/ (car joined))
+			(cons (list->string
+				(reverse (cons #\/ current)))
+			  (loop (cdr joined) '()))
+			(loop (cdr joined)
+			  (cons (car joined) current))))))
+		(grouped
+		  (let loop ((grouped grouped))
+		    (if (null? grouped) '()
+		      (if (string=? "./" (car grouped))
+			(loop (cdr grouped))
+			(cons (car grouped) (loop (cdr grouped)))))))
+		(grouped
+		  (let loop ((grouped grouped))
+		    (if (null? grouped) '()
+		      (if (null? (cdr grouped))
+			(if (string=? "." (car grouped)) '()
+			  grouped)
+			(cons (car grouped) (loop (cdr grouped)))))))
+		(grouped
+		  (let remove-loop ((grouped grouped))
+		    (let walk-loop ((r-pre '()) (post grouped))
+		      (if (null? post)
+			(reverse r-pre)
+			(let ((first (car post))
+			       (rest (cdr post)))
+			  (if (null? rest)
+			    (walk-loop (cons first r-pre) rest)
+			    (let ((second (car rest)))
+			      (if (and (not (string=? first "../"))
+				    (string=? second "../"))
+				(remove-loop
+				  (append (reverse r-pre) (cddr post)))
+				(walk-loop (cons first r-pre) rest)))))))))
+		(grouped
+		  (let loop ((grouped grouped))
+		    (if (null? grouped) '()
+		      (if (null? (cdr grouped)) grouped
+			(if (and (null? (cddr grouped))
+			      (not (string=? (car grouped) "../"))
+			      (string=? (cadr grouped) ".."))
+			  '()
+			  (cons (car grouped) (loop (cdr grouped)))))))))
+	      (set-url-path! relative-url
+		(apply string-append grouped))
+	      relative-url)))))
 
     ; call/input-url : url x (in-port -> ()) [x list (str)] -> ()
     (define call/input-url
@@ -125,7 +234,7 @@
     (define character-set-size 256)
 
     (define marker-list
-      '(#\: #\? #\#))
+      '(#\: #\; #\? #\#))
 
     (define ascii-marker-list
       (map char->integer marker-list))
@@ -154,70 +263,95 @@
 	    (loop (cdr chars) (add1 index))))
 	(let
 	  ((first-colon (first-position-of-marker #\:))
+	    (first-semicolon (first-position-of-marker #\;))
 	    (first-question (first-position-of-marker #\?))
 	    (first-hash (first-position-of-marker #\#)))
 	  (let
 	    ((scheme-start (and first-colon 0))
 	      (path-start (if first-colon (add1 first-colon) 0))
-	      (search-start (and first-question (add1 first-question)))
+	      (params-start (and first-semicolon (add1 first-semicolon)))
+	      (query-start (and first-question (add1 first-question)))
 	      (fragment-start (and first-hash (add1 first-hash))))
 	    (let ((total-length (string-length string)))
 	      (let*
 		((scheme-finish (and scheme-start first-colon))
-		  (path-finish (if first-question first-question
-				 (if first-hash first-hash
-				   total-length)))
-		  (fragment-finish (and fragment-start total-length))
-		  (search-finish (and search-start
+		  (path-finish (if first-semicolon first-semicolon
+				 (if first-question first-question
 				   (if first-hash first-hash
 				     total-length))))
-		(make-url
-		  (and scheme-start
-		    (substring string scheme-start scheme-finish))
-		  (substring string path-start path-finish)
-		  (and search-start
-		    (substring string search-start search-finish))
-		  (and fragment-start
-		    (substring string fragment-start fragment-finish)))))))))
+		  (fragment-finish (and fragment-start total-length))
+		  (query-finish (and query-start
+				   (if first-hash first-hash
+				     total-length)))
+		  (params-finish (and params-start
+				   (if first-question first-question
+				     (if first-hash first-hash
+				       total-length)))))
+		(let-values (((host port path)
+			       (parse-host/port/path
+				 string path-start path-finish)))
+		  (make-url
+		    (and scheme-start
+		      (substring string scheme-start scheme-finish))
+		    host
+		    port
+		    path
+		    (and params-start
+		      (substring string params-start params-finish))
+		    (and query-start
+		      (substring string query-start query-finish))
+		    (and fragment-start
+		      (substring string fragment-start
+			fragment-finish))))))))))
 
-    ; url->accessor : url -> accessor
-    (define url->accessor
-      (lambda (url)
-	(let* ((path (url-path url))
-		(begin-point 2)		; skip over leading "//"
-		(end-point (string-length path)))
-	  (let loop ((index begin-point)
-		      (first-colon #f)
-		      (first-slash #f))
-	    (cond
-	      ((>= index end-point)
-		(make-accessor #f #f (substring path begin-point end-point)))
-	      ((char=? #\: (string-ref path index))
-		(loop (add1 index) (or first-colon index) first-slash))
-	      ((char=? #\/ (string-ref path index))
-		(if first-colon
-		  (make-accessor
-		    (substring path begin-point first-colon)
-		    (string->number (substring path (add1 first-colon) index))
-		    (substring path index end-point))
-		  (make-accessor
-		    (substring path begin-point index)
-		    #f
-		    (substring path index end-point))))
-	      (else
-		(loop (add1 index) first-colon first-slash)))))))
+    ; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
+    (define parse-host/port/path
+      (lambda (path begin-point end-point)
+	(let ((has-host? (and (>= (- end-point begin-point) 2)
+				 (char=? (string-ref path begin-point) #\/)
+				 (char=? (string-ref path (add1 begin-point))
+				   #\/))))
+	  (let ((begin-point (if has-host?
+			       (+ begin-point 2)
+			       begin-point)))
+	    (let loop ((index begin-point) ; skip over leading "//"
+			(first-colon #f)
+			(first-slash #f))
+	      (cond
+		((>= index end-point)
+		  (values #f #f (substring path begin-point end-point)))
+		((char=? #\: (string-ref path index))
+		  (loop (add1 index) (or first-colon index) first-slash))
+		((char=? #\/ (string-ref path index))
+		  (if first-colon
+		    (values
+		      (substring path begin-point first-colon)
+		      (string->number (substring path (add1 first-colon)
+					index))
+		      (substring path index end-point))
+		    (if has-host?
+		      (values
+			(substring path begin-point index)
+			#f
+			(substring path index end-point))
+		      (values
+			#f
+			#f
+			path))))
+		(else
+		  (loop (add1 index) first-colon first-slash))))))))
 
-      ))
+    ))
 
 ; This is commented out; it's here for debugging.
 (quote
   (begin
     (invoke-open-unit/sig mred:url@ #f)
-    (define url:cs "http://www.cs.rice.edu/")
-    (define url:me "http://www.cs.rice.edu/~shriram/")
-    (define (test str)
-      (call/input-url
-	(string->url str)
+    (define url:cs (string->url "http://www.cs.rice.edu/"))
+    (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
+    (define comb combine-url/relative)
+    (define (test url)
+      (call/input-url url
 	(lambda (p)
 	  (purify-port p)
 	  (display-pure-port p))))))

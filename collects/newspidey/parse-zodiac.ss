@@ -1,6 +1,6 @@
-(require-library "core.ss");;XXX
-(require-library "cores.ss")                      ;; for mzlib:core^
-(require-library "invoke.ss" "zodiac")              ;; for zodiac:interface^ and z
+;;(require-library "core.ss")
+;;(require-library "cores.ss")                      ;; for mzlib:core^
+;;(require-library "invoke.ss" "zodiac")              ;; for zodiac:interface^ and z
 
 (define counter 0)
 (define (gensym)
@@ -922,7 +922,7 @@
 ;         los-other)))
     ))
 
-(load-relative "type-reconstruct.ss");;XXX
+;;(load-relative "type-reconstruct.ss")
 
 (define (get-prims) '())
 
@@ -1021,4 +1021,5 @@
         [(symbol=? sym 'procedure)
          (Type-Arrow? type)])))
 
-;;(parse-zodiac thnk)XXX
+(parse-zodiac thnk)
+

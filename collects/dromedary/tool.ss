@@ -98,7 +98,7 @@
 	(cond
 	 [(<user-type>? value)
 	  (let*-values ([(sinfo skipped) (struct-info value)]
-			[(name-sym fnum acc-proc mut-proc sst skipped) (struct-type-info sinfo)]
+			[(name-sym init-fnum auto-fnum acc-proc mut-proc immut-list sst skipped) (struct-type-info sinfo)]
 			[(ftype) (acc-proc value 0)])
 		       (string-append (format "~a" name-sym)
 				      (cond

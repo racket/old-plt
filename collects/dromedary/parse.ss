@@ -246,12 +246,25 @@
 	[(@ #\' (^ (: #\^ #\\ #\' #\\ )) #\')
 	 (token CHAR (string-ref lexeme 1))]
 	;; Comment
-	[(@ (@ #\( "*") 
-	    (* (@ (* (: (^ "*"))) (+ "*") (: (^ "*" #\)))))
-	    (* (: (^ "*")))
-	    (+ "*")
-	    #\))
-	 (return-without-pos ((lex source-name) input-port))]
+	[(@ #\( "*")
+	 (begin
+	   ;; Skip comment, handling nested comments:
+	   (let nested-loop ()
+	     (let loop ()
+	       (let ([m (regexp-match #rx"([(][*])|([*][)])" input-port)])
+		 (cond
+		  [(not m) (raise-read-error "unexpected EOF while parsng comment" 
+					     source-name 
+					     (position-line start-pos)
+					     (position-col start-pos)
+					     (position-offset start-pos)
+					     (- (position-offset end-pos)
+						(position-offset start-pos)))]
+		  [(string=? (car m) "(*") 
+		   (nested-loop)
+		   (loop)]
+		  [else (void)]))))
+	   (return-without-pos ((lex source-name) input-port)))]
 	;; Character sequence keywords
 	[#\# (ttoken SHARP)]
 	["&" (ttoken AMPERSAND)]

@@ -403,7 +403,7 @@ abstract out the `hole and `(hole name) patterns.
   ;; memoize2 : (x y -> w) -> x y -> w
   ;; memoizes a function of two arguments
   (define (memoize2 f)
-    (let ([ht (make-hash-table 'equal 'weak)])
+    (let ([ht (make-hash-table 'equal)])
       (lambda (x y)
         (let* ([key (cons x y)]
                [compute/cache

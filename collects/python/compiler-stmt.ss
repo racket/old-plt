@@ -18,6 +18,12 @@
       ;; Return the list of all variables in "global" statements in the 
       ;; current scope.
       (define/public (collect-globals) null)
+      
+      ;;daniel
+      (inherit stx-err)
+      (define/override (to-scheme)
+        (stx-err "Invalid usage of to-scheme on a statement% (I'm purely virtual)"))
+        
       (super-instantiate ())))
 
   ;; 6.1
@@ -28,6 +34,10 @@
       
       (define/override (set-bindings! enclosing-scope)
         (send expression set-bindings! enclosing-scope))
+      
+      ;;daniel
+      (define/override (to-scheme)
+        (send expression to-scheme))
       
       (super-instantiate ())))
       

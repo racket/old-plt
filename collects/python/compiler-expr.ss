@@ -1,13 +1,14 @@
 (module compiler-expr mzscheme
   (require (lib "class.ss")
+           (lib "list.ss")
 	   "compiler.ss"
 	   "compiler-target.ss")
-
+  
   (provide (all-defined))
-
+  
   (define parameters%
     (class ast-node%
-
+      
       ;; parm-list: (listof (or/f (list/p (symbols 'dict) (is-a?/c identifier%))
       ;;                          (list/p (symbols 'seq) (is-a?/c identifier%))
       ;;                          (list/p (symbols 'key) parm-tup? (is-a?/c expression%))
@@ -17,7 +18,7 @@
       ;;    (is-a? x identifier%)
       ;;    (and (list? x) (andmap (lambda (x) (parm-tup? x)) x))))
       (init parm-list)
-
+      
       ;; pos: (listof parm-tup?)
       (define pos null)
       ;; key: (cons/p parm-tup? (is-a?/c expression%))
@@ -63,25 +64,30 @@
                       (else
                        (hash-table-put! ht (send id get-symbol) (lambda () #f)))))
                   parm-bindings))
-          
+      
       (define (get-parm-list) parm-bindings)
       
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (e) (send (cdr e) set-bindings! enclosing-scope)) key))
       
       (super-instantiate ())))
-
+  
   (define expression%
     (class ast-node%
       (inherit stx-err)
-
+      
       ;; to-target: -> (is-a?/c target%)
       ;; Raises an exception if the expression is not a valid
       ;; assignment target, otherwise returns a target%
       (define/public (to-target)
         (stx-err "Invalid target"))
+      
+      ;;daniel
+      (define/override (to-scheme)
+        (stx-err "Invalid usage of to-scheme on an expression% (I'm purely virtual)"))
+      
       (super-instantiate ())))
-
+  
   ;; 5.2.1
   (define identifier%
     (class expression%
@@ -89,41 +95,60 @@
       (init name-string)
       ;; name: symbol?
       (define name (string->symbol name-string))
-
+      
       (define/public (get-symbol) name)
       
       (inherit-field start-pos end-pos)
       (define/override (to-target)
         (make-object tidentifier% name start-pos end-pos))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (get-symbol)))
+      
       (super-instantiate ())))
-
+  
   ;; 5.2.2
   (define literal%
     (class expression%
-
+      
       ;; value: (or/f string? number?)
       (init-field value)
-
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so value))
+      
       (super-instantiate ())))
-
+  
   ;; 5.2.3
   (define tuple%
     (class expression%
-
+      
       ;; expressions: (listof (is-a?/c expression%))
       (init-field expressions)
-
+      
       (inherit-field start-pos end-pos)
       (define/override (to-target)
         (make-object ttuple%
           (map (lambda (e) (send e to-target)) expressions) start-pos end-pos))
-        
+      
       (define (set-bindings! enclosing-scope)
         (for-each (lambda (e) (send e set-bindings! enclosing-scope)) expressions))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (if (= (length expressions) 1)
+                       (send (car expressions) to-scheme)
+                       `(make-tuple (list ,@(map (lambda (e)
+                                                   (send e to-scheme))
+                                                 expressions))))))
+      
       (super-instantiate ())))
-                  
+  
   ;; 5.2.4
   (define list-display%
     (class expression%
@@ -134,24 +159,57 @@
       (define/override (to-target)
         (make-object tlist-display%
           (map (lambda (e) (send e to-target)) expressions) start-pos end-pos))
-
+      
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (e) (send e set-bindings! enclosing-scope)) expressions))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(list ,@(map (lambda (e) (send e to-scheme))
+                                 expressions))))
+      
       (super-instantiate ())))
-
+  
+  ;;daniel
+  ;;;;;; [2*s for s in a]  .... expr = 2*s, for = for s in a .... for.targ = s, for.vals = a, for.iter = #f
+  ;;;;;; [x+y for x,y in a] .... expr = x+y, for = for x,y in a .... for.targ = (x,y), for.vals = a, for.iter = #f
+  
   (define list-comprehension%
     (class expression%
       ;; expr: (is-a?/c expression%)
       ;; for: (is-a?/c list-for%)
       (init-field expr for)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send expr set-bindings! enclosing-scope)
         (send for set-bindings! enclosing-scope))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so
+         (let* ([targ (send for get-targ)]
+                [scheme-targ (send targ to-scheme)]
+                [scheme-vals (send (send for get-vals) to-scheme)]
+                [scheme-expr (send expr to-scheme)])
+           (cond
+             [(is-a? targ tidentifier%)
+              `(map (lambda (,scheme-targ)
+                      ,scheme-expr)
+                    ,scheme-vals)]
+             [(is-a? targ ttuple%)
+              (let ([tuple-name (gensym)])
+                `(map (lambda (,tuple-name) 
+                        ;; the cdr eats the "list" part of "`(list x y)"
+                        (apply (lambda (,(cdr (syntax-e scheme-targ))
+                                        ,scheme-expr))
+                               ,tuple-name))
+                      ,scheme-vals))]
+             [else (raise "not implemented yet")]))))
+      
       (super-instantiate ())))
-
+  
   (define list-for%
     (class ast-node%
       ;; targ-exp: (is-a?/c expression%)
@@ -162,20 +220,37 @@
       
       ;; targ: (is-a?/c target%)
       (define targ (send targ-exp to-target))
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send vals set-bindings! enclosing-scope)
         (when iter (send iter set-bindings! enclosing-scope))
         (send targ set-bindings! enclosing-scope))
       
+      ;;daniel
+      ;; -> target%
+      (define/public (get-targ) targ)
+      
+      ;;daniel
+      ;; -> expression%
+      (define/public (get-vals) vals)
+      
+      ;;daniel
+      ;      (inherit ->orig-so)
+      ;      (define/override (to-scheme)
+      ;        (->orig-so (let ([targ (send targ-exp to-scheme)])
+      ;                     `(map (lambda (,targ)
+      ;                             (f ,targ))
+      ;                           ,(send vals to-scheme)))))
+      
+      
       (super-instantiate ())))
-
+  
   (define list-if%
     (class ast-node%
       ;; test: (is-a?/c expression%)
       ;; iter: (or/f (is-a?/c list-for%) (is-a?/c list-if%))
       (init-field test iter)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send test set-bindings! enclosing-scope)
         (when iter (send iter set-bindings! enclosing-scope)))
@@ -187,12 +262,22 @@
     (class expression%
       ;; key-values: (listof (list/p (is-a?/c expression%) (is-a?/c expression%)))
       (init-field key-values)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (x)
                     (send (car x) set-bindings! enclosing-scope)
                     (send (cadr x) set-bindings! enclosing-scope))
                   key-values))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(make-dictionary (list ,@(map (lambda (key-value-pair)
+                                                    (apply (lambda (key value)
+                                                             `(list ,(send key to-scheme)
+                                                                    ,(send value to-scheme)))
+                                                           key-value-pair))
+                                                  key-values)))))
       
       (super-instantiate ())))
   
@@ -201,39 +286,44 @@
     (class expression%
       ;; expression: (is-a?/c expression%)
       (init-field expression)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send expression set-bindings! enclosing-scope))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(repr ,(send expression to-scheme))))
+      
       (super-instantiate ())))
-
+  
   ;; 5.3.1
   (define attribute-ref%
     (class expression%
       ;; expression: (is-a?/c expression%)
       ;; identifier: (is-a?/c identifier%)
       (init-field expression identifier)
-
+      
       (inherit-field start-pos end-pos)
       (define/override (to-target)
         (make-object tattribute-ref% expression identifier start-pos end-pos))
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send expression set-bindings! enclosing-scope))
       
       (super-instantiate ())))
- 
+  
   ;; 5.3.2
   (define subscription%
     (class expression%
       ;; expression: (is-a?/c expression%)
       ;; subs: (is-a?/c expression%)
       (init-field expression sub)
-
+      
       (inherit-field start-pos end-pos)
       (define/override (to-target)
         (make-object tsubscription% expression sub start-pos end-pos))
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send expression set-bindings! enclosing-scope)
         (send sub set-bindings! enclosing-scope))
@@ -247,11 +337,11 @@
       ;; lower: (or/f false? (is-a?/c expression%))
       ;; upper: (or/f false? (is-a?/c expression%))
       (init-field expression lower upper)
-
+      
       (inherit-field start-pos end-pos)
       (define/override (to-target)
         (make-object tsimple-slicing% expression lower upper start-pos end-pos))
-           
+      
       (define/override (set-bindings! enclosing-scope)
         (when lower (send lower set-bindings! enclosing-scope))
         (when upper (send upper set-bindings! enclosing-scope))
@@ -263,7 +353,7 @@
   (define call%
     (class expression%
       (inherit stx-err)
-
+      
       ;; expression: (is-a?/c expression%)
       (init-field expression)
       
@@ -297,7 +387,7 @@
                     (else
                      (set! dict (cadr arg)))))
                 arg-list)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send expression set-bindings! enclosing-scope)
         (when seq (send seq set-bindings! enclosing-scope))
@@ -306,7 +396,7 @@
         (for-each (lambda (x) (send (cdr x) set-bindings! enclosing-scope)) key))
       
       (super-instantiate ())))
-                
+  
   
   ;; 5.4, 5.6, 5.7, 5.8, 5.10
   (define binary%
@@ -315,25 +405,35 @@
       ;; op: (symbols 'or 'and '\| '^ '& '<< '>> '+ '- '* '/ '% '// '**)
       ;; rhs: (is-a?/c expression%)
       (init-field lhs op rhs)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send lhs set-bindings! enclosing-scope)
         (send rhs set-bindings! enclosing-scope))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (list op (send lhs to-scheme) (send rhs to-scheme))))
+      
       (super-instantiate ())))
-
+  
   ;; 5.5, 5.10
   (define unary%
     (class expression%
       ;; op: (symbols 'not '+ '- '~)
       ;; rhs: (is-a?/c expression%)
       (init-field op rhs)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (send rhs set-bindings! enclosing-scope))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (list op (send rhs to-scheme))))
+      
       (super-instantiate ())))
-
+  
   ;; 5.9
   (define comparison%
     (class expression%
@@ -342,11 +442,25 @@
       ;;                      (symbols '< '> '== '>= '<= '<> '!= 'in 'notin 'is 'isnot)))
       ;; expression% oper expression% oper ... expression%
       (init-field comps)
-
+      
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (x)
                     (unless (symbol? x) (send x set-bindings! enclosing-scope)))
                   comps))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so
+         (letrec ([f (lambda (cmps)
+                       (let* ([first-lhs (send (first cmps) to-scheme)]
+                              [first-rhs (send (third cmps) to-scheme)]
+                              [first-comp `(,(second cmps) ,first-lhs ,first-rhs)]
+                              [what-else (rest (rest cmps))])
+                         (if (> (length what-else) 2)
+                             `(and ,first-comp ,(f what-else))
+                             first-comp)))])
+           (f comps))))
       
       (super-instantiate ())))
   
@@ -364,12 +478,12 @@
       (define/override (set-bindings! enclosing-scope)
         (send parms set-bindings! enclosing-scope)
         (send body set-bindings! this))
-  
+      
       (define/public (add-binding id)
         (set! bindings (cons id bindings)))
-  
+      
       (define/public (is-global? b) #f)
       
       (super-instantiate ())))
   
-)
+  )

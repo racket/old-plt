@@ -49,6 +49,12 @@
       (define/public (compile)
         (stx-err "The compiler does not understand this expression"))
       
+      
+      ;;daniel
+      ;; to-scheme: -> syntax-object?
+      (define/public (to-scheme)
+        (stx-err "Invalid usage of to-scheme on an ast-node% (I'm purely virtual)"))
+      
       (super-instantiate ())))
 
   )

@@ -22,7 +22,12 @@
         (when enclosing-scope 
           (send enclosing-scope add-binding this)
           (set! scope enclosing-scope)))
-          
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (get-symbol)))
+      
       (super-instantiate ())))
 
   (define ttuple%
@@ -32,6 +37,12 @@
       
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (x) (send x set-bindings! enclosing-scope)) sub-targets))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(list ,@(map (lambda (t) (send t to-scheme))
+                                 sub-targets))))
       
       (super-instantiate ())))
   

@@ -612,7 +612,8 @@
 				(parsed-initvars
 				  (make-optargument-list proc:initvar-info
 				    env attributes vocab)))
-			  (distinct-valid-id/s? new-names)
+			  (distinct-valid-id/s? (append new-names
+						  (map car proc:initvars)))
 			  (extend-env extensions env)
 			  (let
 			    ((result

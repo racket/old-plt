@@ -1,0 +1,3 @@
+
+To convert the .dia files to .eps, first export from Dia to PNG (not EPS, Dia's export makes them too big), then use ImageMagick display to convert from PNG to EPS.
+

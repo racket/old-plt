@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.54 1998/11/03 23:55:48 mflatt Exp $
+; $Id: sigs.ss,v 1.55 1998/11/04 19:52:55 mflatt Exp $
 
 (begin-construction-time (require-library "macro.ss"))
 (begin-construction-time (require-library "mzlibs.ss"))
@@ -112,6 +112,7 @@
     (struct define-values-form (vars val))          create-define-values-form
     (struct set!-form (var val))                    create-set!-form
     (struct case-lambda-form (args bodies))         create-case-lambda-form
+    (struct with-continuation-mark-form (key val body)) create-with-continuation-mark-form
     generate-struct-names
     ))
 

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.161 1998/11/04 21:10:47 mflatt Exp $
+; $Id: scm-main.ss,v 1.162 1998/11/06 01:35:11 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -20,6 +20,7 @@
   (define-struct (begin0-form struct:form) (bodies))
   (define-struct (case-lambda-form struct:form) (args bodies))
   (define-struct (struct-form struct:form) (type super fields))
+  (define-struct (with-continuation-mark-form struct:form) (key val body))
 
   ; ----------------------------------------------------------------------
 
@@ -95,6 +96,12 @@
 	(zodiac-start source) (zodiac-finish source)
 	(make-empty-back-box) type super fields)))
 
+  (define create-with-continuation-mark-form
+    (lambda (key val body source)
+      (make-with-continuation-mark-form (zodiac-origin source)
+	(zodiac-start source) (zodiac-finish source)
+	(make-empty-back-box) key val body)))
+
   ; ----------------------------------------------------------------------
 
   (extend-parsed->raw if-form?
@@ -157,6 +164,13 @@
 	      (p->r (struct-form-super expr)))
 	    (sexp->raw (struct-form-type expr)))
 	 ,(map sexp->raw (struct-form-fields expr)))))
+
+  (extend-parsed->raw with-continuation-mark-form?
+    (lambda (expr p->r)
+      `(with-continuation-mark
+	   ,(p->r (with-continuation-mark-form-key expr))
+	   ,(p->r (with-continuation-mark-form-val expr))
+	 ,(p->r (with-continuation-mark-form-body expr)))))
 
   ; ----------------------------------------------------------------------
 
@@ -524,6 +538,33 @@
   (add-primitivized-micro-form 'if beginner-vocabulary (make-if-micro #f))
   (add-primitivized-micro-form 'if advanced-vocabulary (make-if-micro #t))
   (add-primitivized-micro-form 'if scheme-vocabulary (make-if-micro #t))
+
+  (define with-continuation-mark-micro
+    (let* ((kwd '())
+	   (in-pattern `(_ key val body))
+	   (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	 ((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (as-nested
+	     attributes
+	     (lambda ()
+	       (let* ((key-exp (expand-expr
+				(pat:pexpand 'key p-env kwd)
+				env attributes vocab))
+		      (val-exp (expand-expr
+				(pat:pexpand 'val p-env kwd)
+				env attributes vocab))
+		      (body-exp (expand-expr
+				 (pat:pexpand 'body p-env kwd)
+				 env attributes vocab)))
+		 (create-with-continuation-mark-form key-exp val-exp body-exp expr))))))
+	 (else
+	  (static-error expr "Malformed with-continuation-mark"))))))
+  
+  (add-primitivized-micro-form 'with-continuation-mark scheme-vocabulary with-continuation-mark-micro)
 
   ; Don't "simplify" this.  If replaced with a pattern match, it will
   ; die when passed a quote form whose underlying object is an actual
@@ -1354,7 +1395,7 @@
   (define debug-info-handler-expression
     '(#%apply (#%debug-info-handler) (#%list)))
 
-  (define (make-cond-micro cond-clause-vocab)
+  (define (make-cond-micro cond-clause-vocab allow-empty?)
     (let* ((kwd '())
 	    (in-pattern '(_ bodies ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -1381,10 +1422,10 @@
 			      '(#%void)
 			      `(#%raise
 				 (#%make-exn:else
-				   ,(if had-no-clauses?
-				      "cond must contain at least one clause"
-				      "no matching cond clause")
-				   ,debug-info-handler-expression)))
+				  ,(if (and had-no-clauses? (not allow-empty?))
+				       "cond must contain at leat one clause"
+				       "no matching cond clause")
+				  ,debug-info-handler-expression)))
 			    (let ((first (car exps))
 				   (rest (cdr exps)))
 			      (cond
@@ -1410,9 +1451,9 @@
 	  (else
 	    (static-error expr "Malformed cond"))))))
 
-  (add-primitivized-micro-form 'cond beginner-vocabulary (make-cond-micro nobegin-cond-clause-vocab))
-  (add-primitivized-micro-form 'cond advanced-vocabulary (make-cond-micro answered-cond-clause-vocab))
-  (add-primitivized-micro-form 'cond scheme-vocabulary (make-cond-micro full-cond-clause-vocab))
+  (add-primitivized-micro-form 'cond beginner-vocabulary (make-cond-micro nobegin-cond-clause-vocab #f))
+  (add-primitivized-micro-form 'cond advanced-vocabulary (make-cond-micro answered-cond-clause-vocab #f))
+  (add-primitivized-micro-form 'cond scheme-vocabulary (make-cond-micro full-cond-clause-vocab #t))
 
   (define case-macro
       (let* ((kwd-1 '(else))
@@ -1703,9 +1744,10 @@
   (add-primitivized-macro-form 'with-handlers scheme-vocabulary (make-with-handlers-macro #t))
 
   (define (norm-path p) ; normalizes ending slash or not
-    (let-values ([(base name dir?) (split-path p)])
-      (build-path base name)))
-  (define mzlib-directory (with-handlers ([void void])
+    (and p
+	 (let-values ([(base name dir?) (split-path p)])
+	   (build-path base name))))
+    (define mzlib-directory (with-handlers ([void void])
 			    (norm-path (collection-path "mzlib"))))
   (define (get-on-demand-form name vocab)
     (let ([dir (norm-path (current-load-relative-directory))])

@@ -1,5 +1,5 @@
 /*
- * $Id: Tools3d.c,v 1.1 1996/01/10 14:57:53 markus Exp $
+ * $Id: xwTools3d.c,v 1.1.1.1 1997/12/22 17:29:00 mflatt Exp $
  */
 
 /***********************************************************
@@ -191,6 +191,7 @@ Window     win,			/* Window for drawing */
 GC         lightGC,		/* GC for light color */
 GC         shadowGC,		/* GC for shadow color */
 GC         backgroundGC,	/* GC for background color */
+GC         fgGC,
 int        x, int y,		/* upper left corner of rectangle */
 unsigned   width, unsigned height,	/* width and height of rectangle */
 int        thickness,		/* thickness of shadow */
@@ -198,7 +199,7 @@ ShadowType shadow_type		/* type of shadow */
 )
 {
     GC       topGC, botGC, tempGC;
-    unsigned inner_thickness = 0;
+    unsigned inner_thickness = 0, orig_thickness;
     XPoint   pt[6];
 
     switch (shadow_type) {
@@ -209,6 +210,7 @@ ShadowType shadow_type		/* type of shadow */
 	inner_thickness = thickness/2;
 	thickness      -= inner_thickness;
     case XAW3D_IN:
+    case XAW3D_XED:
 	topGC = shadowGC;
 	botGC = lightGC;
 	break;
@@ -220,6 +222,9 @@ ShadowType shadow_type		/* type of shadow */
 	topGC = lightGC;
 	botGC = shadowGC;
     }
+
+    orig_thickness = thickness;
+
     /*
      * 1 shadow:  thickness == thickness,
      *            inner_thickness == 0
@@ -265,6 +270,14 @@ ShadowType shadow_type		/* type of shadow */
 	    /* terminate loop, no further shadow to draw */
 	    thickness = 0;
 	}
+    }
+
+    if (shadow_type == XAW3D_XED) {
+      thickness = orig_thickness;
+      XDrawLine(dpy, win, fgGC, x+thickness, y+thickness, 
+		x+width-thickness-1, y+height-thickness-1);
+      XDrawLine(dpy, win, fgGC, x+thickness, y+height-thickness-1,
+		x+width-thickness-1, y+thickness);
     }
 }
 
@@ -348,18 +361,19 @@ GC         lightGC,		/* GC for light color */
 GC         shadowGC,		/* GC for shadow color */
 GC         inGC,		/* GC for pushed/set toggle */
 GC         outGC,		/* GC for released/unset toggle */
+GC         fgGC,                /* GC for checkmark */
 int        x, int y,		/* upper left corner */
 unsigned   width,		/* width of toggle button */
 int        thickness,		/* thickness of shadow */
 Boolean    pushed		/* is toggle pushed(in) or released(out) */
 )
 {
-    XFillRectangle(dpy, win, pushed ? inGC : outGC,
-		   x+thickness, y+thickness,
-		   width-(2*thickness), width-(2*thickness));
-    Xaw3dDrawRectangle(dpy, win, lightGC, shadowGC, (GC)0, 
-		       x, y, width, width, thickness,
-		       pushed ? XAW3D_IN : XAW3D_OUT);
+  XFillRectangle(dpy, win, /* pushed ? inGC : */ outGC,
+		 x+thickness, y+thickness,
+		 width-(2*thickness), width-(2*thickness));
+  Xaw3dDrawRectangle(dpy, win, lightGC, shadowGC, (GC)0, fgGC,
+		     x, y, width, width, thickness,
+		     pushed ? XAW3D_XED : XAW3D_OUT);
 }
 
 void Xaw3dDrawRadio(
@@ -369,6 +383,7 @@ GC         lightGC,		/* GC for light color */
 GC         shadowGC,		/* GC for shadow color */
 GC         inGC,		/* GC for pushed/set radio */
 GC         outGC,		/* GC for released/unset radio */
+GC         fgGC,                /* GC for dont */
 int        x, int y,		/* upper left corner */
 unsigned   width,		/* width of radio button */
 int        thickness,		/* thickness of shadow */
@@ -420,6 +435,17 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
     /* inner plain of radio button */
     pt[2].x = x+half;               pt[2].y = y+width-thickness;
     XFillPolygon(dpy, win, plainGC, pt+2, 4, Convex, CoordModeOrigin);
+
+#if 0
+    if (pushed) {
+      int i;
+      pt[2].y -= 2;
+      pt[3].x -= 2;
+      pt[4].y += 2;
+      pt[5].x += 2;
+      XFillPolygon(dpy, win, fgGC, pt+2, 4, Convex, CoordModeOrigin);
+    }
+#endif
 }
 
 void Xaw3dDrawArrow(

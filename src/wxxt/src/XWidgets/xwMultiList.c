@@ -1842,7 +1842,7 @@ XfwfMultiListSetNewData(mlw,list,nitems,longest,resize,sensitivity_array)
 XfwfMultiListWidget mlw;
 String *list;
 int nitems,longest;
-int resize,
+int resize;
 Boolean *sensitivity_array;
 #endif
 {

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.6 1998/10/10 15:27:57 mflatt Exp $
+ * $Id: Choice.cc,v 1.7 1998/10/16 15:55:55 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -91,7 +91,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  bg->GetPixel(cmap),
 	 XtNforeground,  fg->GetPixel(cmap),
 	 XtNfont,        font->GetInternalFont(),
-	 XtNframeWidth,  0,
+	 XtNframeWidth,  2,
 	 XtNalignment,   XfwfLeft,
 	 XtNleftMargin,  16,
 	 XtNshrinkToFit, (width < 0 || height < 0),
@@ -255,6 +255,12 @@ void wxChoice::EventCallback(Widget WXUNUSED(w),
     XtVaGetValues(choice->X->handle, XtNheight, &hh, NULL);
 
     choice->PopupMenu(choice->choice_menu, 0, (int)hh);
+}
+
+void wxChoice::OnEvent(wxMouseEvent &e)
+{
+  if (e.ButtonDown())
+    EventCallback(0, (XtPointer)this, 0);
 }
 
 void wxChoice::MenuEventCallback(wxObject& obj, wxCommandEvent& ev)

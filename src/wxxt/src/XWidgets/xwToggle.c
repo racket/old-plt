@@ -293,8 +293,8 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 {
     ((XfwfToggleWidget)self)->xfwfToggle.saveLeftMargin = ((XfwfToggleWidget)self)->xfwfLabel.leftMargin;
 
-    if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((XfwfToggleWidget)self)->xfwfLabel.font->ascent)
-	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = ((XfwfToggleWidget)self)->xfwfLabel.font->ascent;
+    if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((XfwfToggleWidget)self)->xfwfLabel.font->ascent + 2)
+	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = ((XfwfToggleWidget)self)->xfwfLabel.font->ascent + 2;
 
     ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = NULL;
 
@@ -388,12 +388,12 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	XtWarning("XfwfToggle has wrong indicatorType, using square!");
     case XfwfSquareIndicator:
 	Xaw3dDrawToggle(XtDisplay(self), XtWindow(self),
-	   	        ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfLabel.rv_gc,
+	   	        ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfLabel.rv_gc, ((XfwfToggleWidget)self)->xfwfLabel.gc,
 		        x, y, ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, 2, ((XfwfToggleWidget)self)->xfwfToggle.on);
 	break;
     case XfwfDiamondIndicator:
 	Xaw3dDrawRadio(XtDisplay(self), XtWindow(self),
-	   	       ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfLabel.rv_gc,
+	   	       ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfLabel.rv_gc, ((XfwfToggleWidget)self)->xfwfLabel.gc,
 		       x, y, ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, 2, ((XfwfToggleWidget)self)->xfwfToggle.on);
 	break;
     }

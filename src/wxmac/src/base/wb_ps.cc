@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_ps.cc,v 1.12 1998/09/24 18:00:16 robby Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.18 1998/11/12 18:14:44 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -501,6 +501,22 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
 void wxPostScriptDC::Clear(void)
 {
+  unsigned char red = current_background_color.Red();
+  unsigned char blue = current_background_color.Blue();
+  unsigned char green = current_background_color.Green();
+  float redPS = (float) (((int) red) / 255.0);
+  float bluePS = (float) (((int) blue) / 255.0);
+  float greenPS = (float) (((int) green) / 255.0);
+  
+  /* Fill with current background */
+  *pstream << "gsave newpath\n";
+  *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+  *pstream << 0 << " " << 0 << " moveto\n";
+  *pstream << 0 << " " << paper_h << " lineto\n";
+  *pstream << paper_w << " " << paper_h << " lineto\n";
+  *pstream << paper_w << " " << 0 << " lineto\n";
+  *pstream << "closepath\n";
+  *pstream << "fill grestore\n";
 }
 
 void wxPostScriptDC::FloodFill(float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col), int WXUNUSED(style))
@@ -914,7 +930,7 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   *pstream << YSCALEREL(current_font->GetPointSize()) << " scalefont setfont\n";
 }
 
-static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm)
+static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int rop, wxColour *col)
 {
   int width, height;
 
@@ -932,7 +948,7 @@ static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm)
    << " /XStep " << width << " def\n"
    << " /YStep " << height << " def\n");
 
-  dc->Blit(0, 0, width, height, bm, 0, 0, -1);
+  dc->Blit(0, 0, width, height, bm, 0, 0, -rop - 1, col);
 
   (*pstream << "end\n"
    << " matrix makepattern setpattern\n");
@@ -952,6 +968,15 @@ void wxPostScriptDC::SetPen (wxPen * pen)
 
   // Line width
   *pstream << pen->GetWidth () << " setlinewidth\n";
+
+  if (level2ok) {
+    wxBitmap *stipple = pen->GetStipple();
+    if (stipple && stipple->Ok()) {
+      set_pattern(this, pstream, stipple, pen->GetStyle(), &pen->GetColour());
+      resetFont |= RESET_COLOR;
+      return;
+    }
+  }
 
   // Line style - WRONG: 2nd arg is OFFSET
   /*
@@ -992,15 +1017,6 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   if (oldPen != pen)
     *pstream << psdash << " setdash\n";
 
-  if (level2ok) {
-    if ((pen->GetStyle() == wxSTIPPLE)
-	|| (pen->GetStyle() == wxOPAQUE_STIPPLE)
-	&& pen->GetStipple()->Ok()) {
-      set_pattern(this, pstream, pen->GetStipple());
-      return;
-    }
-  }
-
   // Line colour
   unsigned char red = pen->GetColour ().Red ();
   unsigned char blue = pen->GetColour ().Blue ();
@@ -1019,8 +1035,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     }
 
   if (!(red == currentRed && green == currentGreen && blue == currentBlue)
-      || (resetFont & RESET_COLOR))
-  {
+      || (resetFont & RESET_COLOR)) {
     float redPS = (float) (((int) red) / 255.0);
     float bluePS = (float) (((int) blue) / 255.0);
     float greenPS = (float) (((int) green) / 255.0);
@@ -1034,6 +1049,13 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   }
 }
 
+static char *ps_brush_hatch[] = { " 0 0 moveto 8 8",
+				  " 0 0 moveto 8 8 lineto closepath stroke 8 0 moveto 0 8",
+				  " 8 0 moveto 0 8",
+				  " 0 4 moveto 8 4 lineto closepath stroke 4 0 moveto 4 8",
+				  " 0 4 moveto 8 4",
+				  " 4 0 moveto 4 8" };
+
 void wxPostScriptDC::SetBrush(wxBrush * brush)
 {
   if (!pstream)
@@ -1046,18 +1068,18 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     return; 
 
   if (level2ok) {
-    if ((brush->GetStyle() == wxSTIPPLE)
-	|| (brush->GetStyle() == wxOPAQUE_STIPPLE)
-	&& brush->GetStipple()->Ok()) {
-      set_pattern(this, pstream, brush->GetStipple());
+    wxBitmap *stipple = brush->GetStipple();
+    if (stipple && stipple->Ok()) {
+      set_pattern(this, pstream, stipple, brush->GetStyle(), &brush->GetColour());
+      resetFont |= RESET_COLOR;
       return;
     }
   }
 
   // Brush colour
-  unsigned char red = brush->GetColour ().Red ();
-  unsigned char blue = brush->GetColour ().Blue ();
-  unsigned char green = brush->GetColour ().Green ();
+  unsigned char red = brush->GetColour().Red();
+  unsigned char blue = brush->GetColour().Blue();
+  unsigned char green = brush->GetColour().Green();
 
   if (!Colour) {
     // Anything not black is white
@@ -1069,11 +1091,62 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
     }
   }
 
+  int hatch_id = -1;
+  switch (brush->GetStyle()) {
+  case wxBDIAGONAL_HATCH:
+    hatch_id = 0;
+    break;
+  case wxCROSSDIAG_HATCH:
+    hatch_id = 1;
+    break;
+  case wxFDIAGONAL_HATCH:
+    hatch_id = 2;
+    break;
+  case wxCROSS_HATCH:
+    hatch_id = 3;
+    break;
+  case wxHORIZONTAL_HATCH:
+    hatch_id = 4;
+    break;
+  case wxVERTICAL_HATCH:
+    hatch_id = 5;
+    break;
+  }
+
+  float redPS = (float) (((int) red) / 255.0);
+  float bluePS = (float) (((int) blue) / 255.0);
+  float greenPS = (float) (((int) green) / 255.0);
+
+  if (hatch_id > -1) {
+    (*pstream 
+     << "7 dict\n"
+     << "dup\n"
+     << "begin\n"
+     << " /PatternType 1 def\n"
+     << " /PaintType 1 def\n"
+     << " /TilingType 1 def\n"
+     << " /BBox [ 0 0 8 8 ] def\n"
+     << " /XStep 8 def\n"
+     << " /YStep 8 def\n"
+     << " /PaintProc { begin gsave \n");
+
+    *pstream << " 0 setlinewidth\n";
+    *pstream << " [] 0 setdash\n";
+    *pstream << " " << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+
+    *pstream << " " << ps_brush_hatch[hatch_id] << " lineto closepath stroke \n";
+    
+    *pstream << "grestore\n } def \n";
+    
+    *pstream << "end\n" << " matrix makepattern setpattern\n";
+
+    resetFont |= RESET_COLOR;
+
+    return;
+  }
+
   if (!(red == currentRed && green == currentGreen && blue == currentBlue)
       || (resetFont & RESET_COLOR)) {
-    float redPS = (float) (((int) red) / 255.0);
-    float bluePS = (float) (((int) blue) / 255.0);
-    float greenPS = (float) (((int) green) / 255.0);
     *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
     currentRed = red;
     currentBlue = blue;
@@ -1090,45 +1163,62 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     SetFont (current_font);
 
-  if (current_text_foreground.Ok ())
-    {
-      unsigned char red = current_text_foreground.Red ();
-      unsigned char blue = current_text_foreground.Blue ();
-      unsigned char green = current_text_foreground.Green ();
+  float tw, th;
+  GetTextExtent(text, &tw, &th);
 
-      if (!Colour)
+  if (current_bk_mode == wxSOLID) {
+    unsigned char red = current_text_background.Red();
+    unsigned char blue = current_text_background.Blue();
+    unsigned char green = current_text_background.Green();
+    float redPS = (float) (((int) red) / 255.0);
+    float bluePS = (float) (((int) blue) / 255.0);
+    float greenPS = (float) (((int) green) / 255.0);
+
+    *pstream << "gsave newpath\n";
+    *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+    *pstream << XSCALE(x) << " " << YSCALE (y) << " moveto\n";
+    *pstream << XSCALE(x + tw) << " " << YSCALE (y) << " lineto\n";
+    *pstream << XSCALE(x + tw) << " " << YSCALE (y + th) << " lineto\n";
+    *pstream << XSCALE(x) << " " << YSCALE (y + th) << " lineto\n";
+    *pstream << "closepath\n";
+    *pstream << "fill grestore\n";
+  }
+
+  if (current_text_foreground.Ok ()) {
+    unsigned char red = current_text_foreground.Red ();
+    unsigned char blue = current_text_foreground.Blue ();
+    unsigned char green = current_text_foreground.Green ();
+    
+    if (!Colour) {
+      // Anything not white is black
+      if (!(red == (unsigned char) 255 && blue == (unsigned char) 255
+	    && green == (unsigned char) 255))
 	{
-	  // Anything not white is black
-	  if (!(red == (unsigned char) 255 && blue == (unsigned char) 255
-		&& green == (unsigned char) 255))
-	    {
-	      red = (unsigned char) 0;
-	      green = (unsigned char) 0;
-	      blue = (unsigned char) 0;
-	    }
+	  red = (unsigned char) 0;
+	  green = (unsigned char) 0;
+	  blue = (unsigned char) 0;
 	}
-      if (!(red == currentRed && green == currentGreen && blue == currentBlue)
-	  || (resetFont & RESET_COLOR))
-      {
-        float redPS = (float) (((int) red) / 255.0);
-        float bluePS = (float) (((int) blue) / 255.0);
-        float greenPS = (float) (((int) green) / 255.0);
-        *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
-
-        currentRed = red;
-        currentBlue = blue;
-        currentGreen = green;
-	resetFont -= (resetFont & RESET_COLOR);
-      }
     }
-
+    if (!(red == currentRed && green == currentGreen && blue == currentBlue)
+	|| (resetFont & RESET_COLOR)) {
+      float redPS = (float) (((int) red) / 255.0);
+      float bluePS = (float) (((int) blue) / 255.0);
+      float greenPS = (float) (((int) green) / 255.0);
+      *pstream << redPS << " " << greenPS << " " << bluePS << " setrgbcolor\n";
+      
+      currentRed = red;
+      currentBlue = blue;
+      currentGreen = green;
+      resetFont -= (resetFont & RESET_COLOR);
+    }
+  }
+  
   int size = 10;
   if (current_font)
-    size = current_font->GetPointSize ();
+    size = current_font->GetPointSize();
 
   *pstream << XSCALE(x) << " " << YSCALE (y + size) << " moveto\n";
 
-//  *pstream << "(" << text << ")" << " show\n";
   *pstream << "(";
   int len = strlen (text);
   int i;
@@ -1143,11 +1233,7 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
   *pstream << ")" << " show\n";
 
   CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-  {
-    float w, h;
-    GetTextExtent(text, &w, &h);
-    CalcBoundingBox(XSCALEBND(x + w), YSCALEBND(y + h));
-  }
+  CalcBoundingBox(XSCALEBND(x + tw), YSCALEBND(y + th));
 }
 
 
@@ -1198,7 +1284,7 @@ ellipsedict /mtrx matrix put\n\
   /savematrix mtrx currentmatrix def\n\
   x y translate\n\
   xrad yrad scale\n\
-  0 0 1 startangle endangle arc\n\
+  0 0 1 endangle startangle arcn\n\
   savematrix setmatrix\n\
   end\n\
   } def\n\
@@ -1400,8 +1486,6 @@ static void printhex(PSStream *pstream, int v)
 }
 
 
-/* MATTHEW: Implement Blit: */
-/* MATTHEW: [4] Re-wrote to use colormap */
 Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
       wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor)
@@ -1483,6 +1567,12 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 	red = pr;
 	green = pg;
 	blue = pb;
+      } else if (mono) {
+	if ((rop != wxSOLID) && (rop != (-wxSOLID - 1))) {
+	  red = current_background_color.Red();
+	  green = current_background_color.Green();
+	  blue = current_background_color.Blue();
+	}
       }
 
       if (asColour) {
@@ -1780,42 +1870,43 @@ void wxPostScriptDC::SetUserScale (float x, float y)
   user_scale_y = y;
 }
 
-float wxPostScriptDC::DeviceToLogicalX (int x)
+float wxPostScriptDC::DeviceToLogicalX(int x)
 {
-  return (float) x;
+  return (x - device_origin_x) / user_scale_x;
 }
 
-float wxPostScriptDC::DeviceToLogicalXRel (int x)
+float wxPostScriptDC::DeviceToLogicalXRel(int x)
 {
-  return (float) x;
+  return x / user_scale_x;
 }
 
-float wxPostScriptDC::DeviceToLogicalY (int y)
+float wxPostScriptDC::DeviceToLogicalY(int y)
 {
-  return (float) y;
+  float y2 = -(y - paper_h);
+  return (y2 - device_origin_y) / user_scale_y;
 }
 
-float wxPostScriptDC::DeviceToLogicalYRel (int y)
+float wxPostScriptDC::DeviceToLogicalYRel(int y)
 {
-  return (float) y;
+  return y / user_scale_y;
 }
 
-int wxPostScriptDC::LogicalToDeviceX (float x)
+int wxPostScriptDC::LogicalToDeviceX(float x)
 {
   return (int)floor(XSCALE(x));
 }
 
-int wxPostScriptDC::LogicalToDeviceXRel (float x)
+int wxPostScriptDC::LogicalToDeviceXRel(float x)
 {
   return (int)floor(XSCALEREL(x));
 }
 
-int wxPostScriptDC::LogicalToDeviceY (float y)
+int wxPostScriptDC::LogicalToDeviceY(float y)
 {
   return (int)floor(YSCALE(y));
 }
 
-int wxPostScriptDC::LogicalToDeviceYRel (float y)
+int wxPostScriptDC::LogicalToDeviceYRel(float y)
 {
   return (int)floor(YSCALEREL(y));
 }

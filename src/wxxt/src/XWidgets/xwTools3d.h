@@ -1,5 +1,5 @@
 /*
- * $Id: Tools3d.h,v 1.1 1996/01/10 14:57:54 markus Exp $
+ * $Id: xwTools3d.h,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
  */
 
 /***********************************************************
@@ -109,7 +109,8 @@ typedef enum _e_ShadowType {
     XAW3D_DOUBLE_LINE = 9,	/*  DASH:   line is dashed                */
     XAW3D_SINGLE_LINE_DASH = 10,/*  SINGLE: single line 2d                */
     XAW3D_DOUBLE_LINE_DASH = 11,/*  DOUBLE: double line 2d                */
-    XAW3D_NO_LINE = 12		/*  NO:     do not draw the line          */
+    XAW3D_NO_LINE = 12,		/*  NO:     do not draw the line          */
+    XAW3D_XED = 13
 } ShadowType;
 
 /*
@@ -126,6 +127,7 @@ void Xaw3dDrawRectangle(
     GC         lightGC,		/* GC for light color */
     GC         shadowGC,	/* GC for shadow color */
     GC         backgroundGC,	/* GC for background color */
+    GC         fgGC,
     int        x,
     int        y,		/* upper left corner of rectangle */
     unsigned   width,
@@ -167,6 +169,7 @@ void Xaw3dDrawToggle(
     GC         shadowGC,	/* GC for shadow color */
     GC         inGC,		/* GC for pushed/set toggle */
     GC         outGC,		/* GC for released/unset toggle */
+    GC         fgGC,            /* GC for checkmark */
     int        x,
     int        y,		/* upper left corner */
     unsigned   width,		/* width of toggle square */
@@ -185,6 +188,7 @@ void Xaw3dDrawRadio(
     GC         shadowGC,	/* GC for shadow color */
     GC         inGC,		/* GC for pushed/set radio */
     GC         outGC,		/* GC for released/unset readio */
+    GC         fgGC,            /* GC for dot */
     int        x,
     int        y,		/* upper left corner */
     unsigned   width,		/* width of radio button */

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.16 1998/10/11 21:00:18 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.17 1998/10/30 00:01:39 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1486,8 +1486,6 @@ static void printhex(PSStream *pstream, int v)
 }
 
 
-/* MATTHEW: Implement Blit: */
-/* MATTHEW: [4] Re-wrote to use colormap */
 Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
       wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor)

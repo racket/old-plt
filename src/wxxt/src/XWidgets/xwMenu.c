@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.6 1998/05/05 00:07:08 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.7 1998/08/18 20:03:41 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -824,6 +824,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	    mw->menu.top_shadow_GC,
 	    mw->menu.bot_shadow_GC,
 	    mw->menu.erase_GC,
+	    mw->menu.normal_GC,
 	    x,
 	    y,
 	    (in_menubar? item->end-item->start: ms->w-2*mw->menu.shadow_width),
@@ -858,6 +859,7 @@ static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	mw->menu.bot_shadow_GC,
 	mw->menu.indicator_GC,
 	mw->menu.erase_GC,
+	item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
 	x+mw->menu.shadow_width+mw->menu.hmargin,
 	y+mw->menu.shadow_width+mw->menu.vmargin
 	+(mw->menu.font->ascent
@@ -876,6 +878,7 @@ static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	mw->menu.bot_shadow_GC,
 	mw->menu.indicator_GC,
 	mw->menu.erase_GC,
+	item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
 	x+mw->menu.shadow_width+mw->menu.hmargin,
 	y+mw->menu.shadow_width+mw->menu.vmargin
 	+(mw->menu.font->ascent
@@ -965,6 +968,7 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 	mw->menu.top_shadow_GC,
 	mw->menu.bot_shadow_GC,
 	mw->menu.erase_GC,
+	mw->menu.normal_GC,
 	0, 0, ms->w, ms->h, mw->menu.shadow_width,
 	XAW3D_OUT);
 }

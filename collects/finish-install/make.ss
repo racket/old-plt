@@ -6,13 +6,13 @@ exec mzscheme -mvt "$0" "$@"
 (module make mzscheme
   (require (lib "launcher.ss" "launcher"))
 
+  (define tiny-program
+    '(begin (use-compiled-file-kinds 'none)
+            (current-directory (build-path (collection-path "mzlib") 'up 'up))
+            (load "install")
+            (main '("install" "-i"))))
   (make-mred-launcher
-   '("-mvq"
-     "-e" "(use-compiled-file-kinds 'none)"
-     "-e" "(current-directory(build-path(collection-path\"mzlib\") 'up 'up))"
-     "-e" "(current-command-line-arguments '(\"-i\"))"
-     "-e" "(load \"install\")"
-     "-mv")
+   `("-mvq" "-e" (format "~s" tiny-program))
    (mred-program-launcher-path "Finish Install")
    (cons
     '(forget-exe? . #t)

@@ -261,8 +261,10 @@ scheme_intern_exact_symbol(const char *name, int len)
   SCHEME_LOCK_MUTEX(scheme_symbol_table->mutex);
 #endif
 
-  if (len > scheme_max_found_symbol_name)
+  if (len > scheme_max_found_symbol_name) {
     scheme_max_found_symbol_name = len;
+    scheme_reset_prepared_error_buffer();
+  }
 
   sym = symbol_bucket(scheme_symbol_table, name, len, NULL);
 

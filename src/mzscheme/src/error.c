@@ -54,6 +54,9 @@ static Scheme_Object *def_err_val_proc;
 static Scheme_Object *def_error_esc_proc;
 Scheme_Object *scheme_def_exit_proc;
 
+static char *init_buf(long *len);
+static char *prepared_buf;
+
 typedef struct {
   int args;
   Scheme_Object *type;
@@ -172,6 +175,9 @@ void scheme_init_error(Scheme_Env *env)
 						2, 2);
     scheme_set_param(config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
 		     def_err_val_proc);
+
+    REGISTER_SO(prepared_buf);
+    prepared_buf = init_buf(NULL);
   }
 }
 
@@ -255,17 +261,25 @@ static char *init_buf(long *len)
   return (char *)scheme_malloc_atomic(size);
 }
 
+void scheme_reset_prepared_error_buffer(void)
+{
+  prepared_buf = init_buf(NULL);
+}
+
 void
 scheme_signal_error (char *msg, ...)
 {
   va_list args;
   char *buffer;
 
-  buffer = init_buf(NULL);
+  /* Precise GC: Don't allocate before getting hidden args off stack */
+  buffer = prepared_buf;
 
   va_start(args, msg);
   vsprintf(buffer, msg, args);
   va_end(args);
+
+  prepared_buf = init_buf(NULL);
 
   if (scheme_current_process->current_local_env)
     strcat(buffer, " [during expansion]");
@@ -287,11 +301,14 @@ void scheme_warning(char *msg, ...)
   va_list args;
   char *buffer;
 
-  buffer = init_buf(NULL);
+  /* Precise GC: Don't allocate before getting hidden args off stack */
+  buffer = prepared_buf;
 
   va_start(args, msg);
   vsprintf(buffer, msg, args);
   va_end(args);
+
+  prepared_buf = init_buf(NULL);
 
   strcat(buffer, "\n");
   scheme_write_string(buffer, strlen(buffer),
@@ -594,8 +611,22 @@ void scheme_wrong_syntax(const char *where,
   char *s, *buffer;
   char *v, *dv;
 
+  if (!detail) {
+    s = "bad syntax";
+  } else {
+    va_list args;
+
+    /* Precise GC: Don't allocate before getting hidden args off stack */
+    s = prepared_buf;
+
+    va_start(args, detail);
+    vsprintf(s, detail, args);
+    va_end(args);
+
+    prepared_buf = init_buf(NULL);
+  }
+  
   buffer = init_buf(&len);
-  s = init_buf(&len);
 
   if (form) 
     /* don't use error_write_to_string_w_max since this is code */
@@ -611,16 +642,6 @@ void scheme_wrong_syntax(const char *where,
   else
     dv = NULL;
 
-  if (!detail) {
-    s = "bad syntax";
-  } else {
-    va_list args;
-
-    va_start(args, detail);
-    vsprintf(s, detail, args);
-    va_end(args);
-  }
-  
   if (v) {
     if (dv)
       sprintf(buffer, "%s: %s at: %s in: %s", where, s, dv, v);
@@ -679,11 +700,14 @@ void scheme_wrong_return_arity(const char *where,
   } else {
     va_list args;
 
-    s = init_buf(NULL);
+    /* Precise GC: Don't allocate before getting hidden args off stack */
+    s = prepared_buf;
 
     va_start(args, detail);
     vsprintf(s, detail, args);
     va_end(args);
+
+    prepared_buf = init_buf(NULL);
   }
 
   if (!got || !argv) {
@@ -748,11 +772,14 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
   } else {
     va_list args;
 
-    s = init_buf(NULL);
+    /* Precise GC: Don't allocate before getting hidden args off stack */
+    s = prepared_buf;
 
     va_start(args, msg);
     vsprintf(s, msg, args);
     va_end(args);
+
+    prepared_buf = init_buf(NULL);
   }
 
   scheme_raise_exn(MZEXN_MISC_OUT_OF_MEMORY,
@@ -940,7 +967,8 @@ static Scheme_Object *good_print_width(int c, Scheme_Object **argv)
 
 static Scheme_Object *error_print_width(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("error-print-width", MZCONFIG_ERROR_PRINT_WIDTH,
+  return scheme_param_config("error-print-width", 
+			     scheme_make_integer(MZCONFIG_ERROR_PRINT_WIDTH),
 			     argc, argv,
 			     -1, good_print_width, "integer greater than three", 0);
 }
@@ -995,7 +1023,8 @@ def_error_escape_proc(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 error_display_handler(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("error-display-handler", MZCONFIG_ERROR_DISPLAY_HANDLER,
+  return scheme_param_config("error-display-handler", 
+			     scheme_make_integer(MZCONFIG_ERROR_DISPLAY_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -1004,7 +1033,7 @@ static Scheme_Object *
 error_value_string_handler(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("error-value->string-handler", 
-			     MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
+			     scheme_make_integer(MZCONFIG_ERROR_PRINT_VALUE_HANDLER),
 			     argc, argv,
 			     2, NULL, NULL, 0);
 }
@@ -1012,7 +1041,8 @@ error_value_string_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 error_escape_handler(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("error-escape-handler", MZCONFIG_ERROR_ESCAPE_HANDLER,
+  return scheme_param_config("error-escape-handler",
+			     scheme_make_integer(MZCONFIG_ERROR_ESCAPE_HANDLER),
 			     argc, argv,
 			     0, NULL, NULL, 0);
 }
@@ -1020,7 +1050,8 @@ error_escape_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 exit_handler(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("exit-handler", MZCONFIG_EXIT_HANDLER,
+  return scheme_param_config("exit-handler", 
+			     scheme_make_integer(MZCONFIG_EXIT_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -1083,7 +1114,8 @@ scheme_raise_exn(int id, ...)
   Scheme_Object *eargs[MZEXN_MAXARGS];
   char *buffer;
 
-  buffer = init_buf(NULL);
+  /* Precise GC: Don't allocate before getting hidden args off stack */
+  buffer = prepared_buf;
 
   va_start(args, id);
 
@@ -1100,6 +1132,8 @@ scheme_raise_exn(int id, ...)
 
   vsprintf(buffer, msg, args);
   va_end(args);
+
+  prepared_buf = init_buf(NULL);
 
 #ifndef NO_SCHEME_EXNS
   eargs[0] = scheme_make_string(buffer);
@@ -1147,7 +1181,8 @@ def_exn_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 exn_handler(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-exception-handler", MZCONFIG_EXN_HANDLER,
+  return scheme_param_config("current-exception-handler", 
+			     scheme_make_integer(MZCONFIG_EXN_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -1155,7 +1190,8 @@ exn_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 init_exn_handler(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("initial-exception-handler", MZCONFIG_INIT_EXN_HANDLER,
+  return scheme_param_config("initial-exception-handler", 
+			     scheme_make_integer(MZCONFIG_INIT_EXN_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }

@@ -148,7 +148,8 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
 static Scheme_Object *
 current_load_extension(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-load-extension", MZCONFIG_LOAD_EXTENSION_HANDLER,
+  return scheme_param_config("current-load-extension", 
+			     scheme_make_integer(MZCONFIG_LOAD_EXTENSION_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }

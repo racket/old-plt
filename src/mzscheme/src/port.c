@@ -1196,6 +1196,10 @@ void scheme_forget_subthread(struct Scheme_Thread_Memory *tm)
   tm->subhandle = NULL;
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 void scheme_suspend_remembered_threads(void)
 {
   Scheme_Thread_Memory *tm;
@@ -1217,6 +1221,10 @@ void scheme_resume_remembered_threads(void)
     ResumeThread((HANDLE)tm->handle);
   }
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 #endif
 
@@ -3145,21 +3153,21 @@ output_port_p (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *current_input_port(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-input-port", MZCONFIG_INPUT_PORT,
+  return scheme_param_config("current-input-port", scheme_make_integer(MZCONFIG_INPUT_PORT),
 			     argc, argv,
 			     -1, input_port_p, "input-port", 0);
 }
 
 static Scheme_Object *current_output_port(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-output-port", MZCONFIG_OUTPUT_PORT,
+  return scheme_param_config("current-output-port", scheme_make_integer(MZCONFIG_OUTPUT_PORT),
 			     argc, argv,
 			     -1, output_port_p, "output-port", 0);
 }
 
 static Scheme_Object *current_error_port(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-error-port", MZCONFIG_ERROR_PORT,
+  return scheme_param_config("current-error-port", scheme_make_integer(MZCONFIG_ERROR_PORT),
 			     argc, argv,
 			     -1, output_port_p, "error port", 0);
 }
@@ -4162,7 +4170,8 @@ static Scheme_Object *port_print_handler(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *global_port_print_handler(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("global-port-print-handler", MZCONFIG_PORT_PRINT_HANDLER,
+  return scheme_param_config("global-port-print-handler",
+			     scheme_make_integer(MZCONFIG_PORT_PRINT_HANDLER),
 			     argc, argv,
 			     2, NULL, NULL, 0);
 }
@@ -4361,7 +4370,8 @@ static Scheme_Object *load(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 current_load(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-load", MZCONFIG_LOAD_HANDLER,
+  return scheme_param_config("current-load",
+			     scheme_make_integer(MZCONFIG_LOAD_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -4406,7 +4416,8 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
 static Scheme_Object *
 current_load_directory(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-load-relative-directory", MZCONFIG_LOAD_DIRECTORY,
+  return scheme_param_config("current-load-relative-directory", 
+			     scheme_make_integer(MZCONFIG_LOAD_DIRECTORY),
 			     argc, argv,
 			     -1, abs_directory_p, "string or #f", 1);
 }
@@ -4447,7 +4458,7 @@ static Scheme_Object *compiled_kind_p(int argc, Scheme_Object **argv)
 static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("use-compiled-file-kinds",
-			     MZCONFIG_USE_COMPILED_KIND,
+			     scheme_make_integer(MZCONFIG_USE_COMPILED_KIND),
 			     argc, argv,
 			     -1, compiled_kind_p, "compiled file kind symbol", 1);
 }
@@ -4478,7 +4489,7 @@ static Scheme_Object *collection_path_p(int argc, Scheme_Object **argv)
 static Scheme_Object *current_require_relative_collection(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("current-require-relative-collection",
-			     MZCONFIG_REQUIRE_COLLECTION,
+			     scheme_make_integer(MZCONFIG_REQUIRE_COLLECTION),
 			     argc, argv,
 			     -1, collection_path_p, "non-empty list of relative path strings or #f", 1);
 }

@@ -216,7 +216,7 @@ void scheme_alloc_list_stack(Scheme_Process *process)
 }
 
 #define DO_CHAR_PARAM(name, pos) \
-  return scheme_param_config(name, pos, argc, argv, -1, NULL, NULL, 1)
+  return scheme_param_config(name, scheme_make_integer(pos), argc, argv, -1, NULL, NULL, 1)
 
 static Scheme_Object *
 read_case_sensitive(int argc, Scheme_Object *argv[])

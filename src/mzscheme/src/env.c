@@ -224,7 +224,6 @@ Scheme_Env *scheme_basic_env ()
 #endif
 
   process = scheme_make_process();
-  process->stack_start = NULL;
 
 #ifdef TIME_STARTUP_PROCESS
   printf("process @ %ld\n", scheme_get_process_milliseconds());

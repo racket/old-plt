@@ -3211,7 +3211,7 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
 static Scheme_Object *current_directory(int argc, Scheme_Object **argv)
 {
   return scheme_param_config("current-directory",
-			     MZCONFIG_CURRENT_DIRECTORY,
+			     scheme_make_integer(MZCONFIG_CURRENT_DIRECTORY),
 			     argc, argv,
 			     -1, cwd_check, 
 			     "complete path string", 1);
@@ -3239,7 +3239,8 @@ static Scheme_Object *collpaths_p(int argc, Scheme_Object **argv)
 
 static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-library-collection-paths", MZCONFIG_COLLECTION_PATHS,
+  return scheme_param_config("current-library-collection-paths", 
+			     scheme_make_integer(MZCONFIG_COLLECTION_PATHS),
 			     argc, argv,
 			     -1, collpaths_p, "list of strings", 0);
 }

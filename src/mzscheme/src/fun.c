@@ -794,7 +794,11 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   set_overflow = !p->overflow_set;
   if (set_overflow) {
     p->overflow_set = 1;
+#ifdef MZ_PRECISE_GC
+    p->cc_start = (void *)&__gc_var_stack__;
+#else
     p->cc_start = &v;
+#endif
     memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
@@ -1984,9 +1988,13 @@ Scheme_Object *scheme_current_continuation_marks(void)
   findpos = (long)MZ_CONT_MARK_STACK;
 
   while (findpos--) {
-    Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
-    long pos = findpos & SCHEME_MARK_SEGMENT_MASK;
-    Scheme_Cont_Mark *find = seg + pos;
+    Scheme_Cont_Mark *seg;
+    long pos;
+    Scheme_Cont_Mark *find;
+
+    seg = p->cont_mark_stack_segments[findpos >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+    pos = findpos & SCHEME_MARK_SEGMENT_MASK;
+    find = seg + pos;
 
     if (find->cached_chain) {
       if (last)
@@ -2239,6 +2247,10 @@ is_void_func (int argc, Scheme_Object *argv[])
 #define CLOCKS_PER_SEC 1000000
 #endif
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 long scheme_get_milliseconds(void)
 {
 #ifdef CLOCK_IS_USER_TIME
@@ -2286,6 +2298,10 @@ long scheme_get_process_milliseconds(void)
 # endif
 #endif
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 static long get_seconds(void)
 {
@@ -2519,7 +2535,8 @@ static Scheme_Object *current_seconds(int argc, Scheme_Object **argv)
 static Scheme_Object *
 current_print(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("current-print", MZCONFIG_PRINT_HANDLER,
+  return scheme_param_config("current-print", 
+			     scheme_make_integer(MZCONFIG_PRINT_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -2527,7 +2544,8 @@ current_print(int argc, Scheme_Object **argv)
 static Scheme_Object *
 current_prompt_read(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("current-prompt-read", MZCONFIG_PROMPT_READ_HANDLER,
+  return scheme_param_config("current-prompt-read", 
+			     scheme_make_integer(MZCONFIG_PROMPT_READ_HANDLER),
 			     argc, argv,
 			     0, NULL, NULL, 0);
 }

@@ -3086,7 +3086,8 @@ default_eval_handler(int argc, Scheme_Object **argv)
 static Scheme_Object *
 current_eval(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("eval-handler", MZCONFIG_EVAL_HANDLER,
+  return scheme_param_config("eval-handler", 
+			     scheme_make_integer(MZCONFIG_EVAL_HANDLER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -3231,14 +3232,16 @@ Scheme_Object *scheme_eval_string_multi(const char *str, Scheme_Env *env)
 
 static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("compile-auto-cond-else", MZCONFIG_COND_AUTO_ELSE,
+  return scheme_param_config("compile-auto-cond-else", 
+			     scheme_make_integer(MZCONFIG_COND_AUTO_ELSE),
 			     argc, argv,
 			     -1, NULL, NULL, 1);
 }
 
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("compile-allow-set!-undefined", MZCONFIG_ALLOW_SET_UNDEFINED,
+  return scheme_param_config("compile-allow-set!-undefined", 
+			     scheme_make_integer(MZCONFIG_ALLOW_SET_UNDEFINED),
 			     argc, argv,
 			     -1, NULL, NULL, 1);
 }
@@ -3249,7 +3252,8 @@ enable_break(int argc, Scheme_Object *argv[])
   Scheme_Object *v;
   Scheme_Process *p = scheme_current_process;
 
-  v = scheme_param_config("break-enabled", MZCONFIG_ENABLE_BREAK,
+  v = scheme_param_config("break-enabled", 
+			  scheme_make_integer(MZCONFIG_ENABLE_BREAK),
 			  argc, argv,
 			  -1, NULL, NULL, 1);
 

@@ -546,6 +546,13 @@ static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
   return scheme_make_integer(GC_get_memory_use());
 }
 
+#ifdef MZ_PRECISE_GC
+static unsigned long get_current_stack_start(void)
+{
+  return (unsigned long)scheme_current_process->stack_start;
+}
+#endif
+
 #define ATSTEP(x) /* printf(x "\n") */
 
 static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config, 
@@ -591,6 +598,11 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
 #ifdef MZ_REAL_THREADS
     scheme_init_stack_check();
+#endif
+
+#ifdef MZ_PRECISE_GC
+    process->stack_start = (void *)GC_get_stack_base();
+    GC_get_thread_stack_base = get_current_stack_start;
 #endif
   } else {
     prefix = 1;
@@ -1416,7 +1428,9 @@ static Scheme_Object *thread_k()
   Scheme_Object *thunk;
   Scheme_Config *config;
   Scheme_Manager *mgr;
+#ifndef MZ_PRECISE_GC
   long dummy;
+#endif
   
   thunk = (Scheme_Object *)p->ku.k.p1;
   config = (Scheme_Config *)p->ku.k.p2;
@@ -1426,7 +1440,13 @@ static Scheme_Object *thread_k()
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
   
-  return make_subprocess(thunk, (void *)&dummy, config, mgr);
+  return make_subprocess(thunk,
+#ifdef MZ_PRECISE_GC
+			 (void *)&__gc_var_stack__,
+#else
+			 (void *)&dummy, 
+#endif
+			 config, mgr);
 }
 # endif
 #endif
@@ -1434,7 +1454,9 @@ static Scheme_Object *thread_k()
 Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, 
 				       Scheme_Manager *mgr)
 {
+#ifndef MZ_PRECISE_GC
   long dummy;
+#endif
 
 #ifndef MZ_REAL_THREADS
 # ifdef DO_STACK_CHECK
@@ -1452,7 +1474,13 @@ Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *conf
 # endif
 #endif
 
-  return make_subprocess(thunk, (void *)&dummy, config, mgr);
+  return make_subprocess(thunk, 
+#ifdef MZ_PRECISE_GC
+			 (void *)&__gc_var_stack__,
+#else
+			 (void *)&dummy, 
+#endif
+			 config, mgr);
 }
 
 void scheme_break_thread(Scheme_Process *p)
@@ -1721,6 +1749,10 @@ void scheme_out_of_fuel(void)
 #endif
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 void scheme_zero_unneeded_rands(Scheme_Process *p)
 {
   /* Call this procedure before GC or before copying out
@@ -1831,6 +1863,10 @@ static void done_with_GC()
 
   scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 int scheme_can_break(Scheme_Process *p, Scheme_Config *config)
 {
@@ -2481,7 +2517,8 @@ static Scheme_Object *manager_close_all(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *current_manager(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-custodian", MZCONFIG_MANAGER,
+  return scheme_param_config("current-custodian", 
+			     scheme_make_integer(MZCONFIG_MANAGER),
 			     argc, argv,
 			     -1, manager_p, "custodian", 0);
 }
@@ -2697,8 +2734,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
 			((ParamData *)data)->defval);
   
   return scheme_param_config("parameter-procedure", 
-			     /* FIXME! */
-			     (long)kv,
+			     kv,
 			     argc, argv2,
 			     -2, NULL, NULL, 0);
 }
@@ -2789,7 +2825,8 @@ static Scheme_Object *namespace_p(int argc, Scheme_Object **argv)
 
 static Scheme_Object *current_namespace(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-namespace", MZCONFIG_ENV,
+  return scheme_param_config("current-namespace", 
+			     scheme_make_integer(MZCONFIG_ENV),
 			     argc, argv,
 			     -1, namespace_p, "namespace", 0);
 }
@@ -2888,7 +2925,8 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
     config->extensions = ht;
     
     while (i--) {
-      Scheme_Bucket *b = bs[i];
+      Scheme_Bucket *b;
+      b = bs[i];
       if (b && b->val && b->key && *(void **)b->key)
 	scheme_add_to_table(config->extensions, *(const char **)b->key, b->val, 0);
     }
@@ -2919,7 +2957,7 @@ Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int 
 
 typedef Scheme_Object *(*PCheck_Proc)(int, Scheme_Object **, Scheme_Config *);
 
-Scheme_Object *scheme_param_config(char *name, long pos,
+Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 				   int argc, Scheme_Object **argv,
 				   int arity,
 				   /* -3 => like -1, plus use check to unmarshall the value
@@ -2937,9 +2975,9 @@ Scheme_Object *scheme_param_config(char *name, long pos,
 
   if (!set) {
     if (arity == -2) {
-      Scheme_Object *defval = SCHEME_CDR((Scheme_Object *)pos);
+      Scheme_Object *defval = SCHEME_CDR(pos);
       if (config->extensions) {
-	const char *key = (const char *)SCHEME_CAR((Scheme_Object *)pos);
+	const char *key = (const char *)SCHEME_CAR(pos);
 	Scheme_Bucket *b;
 
 	b = scheme_bucket_or_null_from_table(config->extensions, key, 0);
@@ -2950,7 +2988,7 @@ Scheme_Object *scheme_param_config(char *name, long pos,
       }
       return defval;
     } else {
-      Scheme_Object *s = scheme_get_param(config, pos);
+      Scheme_Object *s = scheme_get_param(config, SCHEME_INT_VAL(pos));
       if (arity == -3) {
 	Scheme_Object *a[1];
 	a[0] = s;
@@ -2981,11 +3019,11 @@ Scheme_Object *scheme_param_config(char *name, long pos,
 	scheme_check_proc_arity(name, arity, 0, argc, argv);
 
       if (isboolorfilter && !check)
-	scheme_set_param(config, pos, ((SCHEME_TRUEP(naya)) ? scheme_true : scheme_false));
+	scheme_set_param(config, SCHEME_INT_VAL(pos), ((SCHEME_TRUEP(naya)) ? scheme_true : scheme_false));
       else
-	scheme_set_param(config, pos, naya);
+	scheme_set_param(config, SCHEME_INT_VAL(pos), naya);
     } else {
-      const char *key = (const char *)SCHEME_CAR((Scheme_Object *)pos);
+      const char *key = (const char *)SCHEME_CAR(pos);
       Scheme_Bucket *b;
 
       if (!config->extensions) {
@@ -4104,6 +4142,7 @@ static int mark_param_data(void *p, Mark_Proc mark)
   if (mark) {
     ParamData *d = (ParamData *)p;
 
+    gcMARK(d->key);
     gcMARK(d->guard);
     gcMARK(d->defval);
   }

@@ -14,6 +14,7 @@ extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
 extern void (*GC_custom_finalize)(void);
 extern void (*GC_out_of_memory)(void);
+extern unsigned long (*GC_get_thread_stack_base)(void);
 
 /* Needed for stack-overflow checks: */
 void GC_set_stack_base(void *base);
@@ -76,8 +77,7 @@ void *GC_resolve(void *p);
 void GC_mark_variable_stack(void **var_stack,
 			    int var_count,
 			    long delta,
-			    void *low_limit,
-			    void *high_limit);
+			    void *limit);
 
 #define gcMARK(x) x = mark(x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)

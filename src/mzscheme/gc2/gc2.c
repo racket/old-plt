@@ -19,6 +19,7 @@ void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
 void (*GC_custom_finalize)(void);
 void (*GC_out_of_memory)(void);
+unsigned long (*GC_get_thread_stack_base)(void);
 
 void **GC_variable_stack;
 int GC_variable_count;
@@ -147,89 +148,9 @@ void stop()
 
 static void *mark(void *p)
 {
-  if ((p >= alloc_space)
-      && (p < (alloc_space + alloc_size))) {
-
-#if 1
-      long diff = ((char *)p - (char *)alloc_space);
-      if (!(alloc_bitmap[diff >> 5] & (1 << ((diff >> 2) & 0x7)))) {
-	printf("Failed sanity check\n");
-	*(int *)0x0 = 1;
-      }
-#endif
-
-    if (p < (void *)tagged_high) {
-      Scheme_Type tag = *(Scheme_Type *)p;
-      size_t size;
-      void *naya;
-
-      if (tag == MOVED)
-	return ((void **)p)[1];
-
-      if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
-	*(int *)0x0 = 1;
-      }
-
-      prev_tag = tag;
-
-      size = tag_table[tag](p, NULL);
-      if (!(size & 0x4)) {
-	if ((long)new_tagged_high & 0x4) {
-	  ((Scheme_Type *)new_tagged_high)[0] = SKIP;
-	  new_tagged_high += 1;
-	}
-      }
-
-      memcpy(new_tagged_high, p, size << 2);
-
-      naya = new_tagged_high;
-      ((Scheme_Type *)p)[0] = MOVED;
-      ((void **)p)[1] = naya;
-
-      new_tagged_high += size;
-      if (naya == search_for) {
-	stop();
-      }
-      return naya;
-    } else {
-      long size;
-      
-      p -= 4;
-      size = ((*(long *)p) & 0x3FFFFFFF);
-      
-      if (!size)
-	return ((void **)p)[1];
-
-      if (!(size & 1)) {
-	if ((long)new_untagged_low & 0x40) {
-	  new_untagged_low--;
-	  *(long *)new_untagged_low = 0;
-	}
-      }
-      size++;
-
-      new_untagged_low -= size;
-      memcpy(new_untagged_low, p, size << 2);
-      ((void **)p)[1] = new_untagged_low + 1;
-      ((long *)p)[0] = 0;
-
-      if ((new_untagged_low + 1) == search_for) {
-	stop();
-      }
-
-      return new_untagged_low + 1;
-    }
-  } else
-    return p;
-}
-
-static void *cautious_mark(void *p)
-{
-  if ((p >= alloc_space)
-      && (p <= (alloc_space + alloc_size))) {
-    
-    if ((p < (void *)tagged_high) || (p >= (void *)untagged_low)) {
-      long diff = ((char *)p - (char *)alloc_space);
+  if ((p >= alloc_space) && (p <= (alloc_space + alloc_size))) {
+    long diff = ((char *)p - (char *)alloc_space);
+    if (!(alloc_bitmap[diff >> 5] & (1 << ((diff >> 2) & 0x7)))) {
       long diff1 = diff;
       
       diff &= 0xFFFFFFFC;
@@ -239,19 +160,82 @@ static void *cautious_mark(void *p)
       }
       
       return (void *)((char *)mark(diff + (char *)alloc_space) + (diff1 - diff));
-    } else
-      return p;
+    } else {
+      if (p < (void *)tagged_high) {
+	Scheme_Type tag = *(Scheme_Type *)p;
+	size_t size;
+	void *naya;
+	
+	if (tag == MOVED)
+	  return ((void **)p)[1];
+	
+	if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
+	  *(int *)0x0 = 1;
+	}
+	
+	prev_tag = tag;
+	
+	size = tag_table[tag](p, NULL);
+	if (!(size & 0x4)) {
+	  if ((long)new_tagged_high & 0x4) {
+	    ((Scheme_Type *)new_tagged_high)[0] = SKIP;
+	    new_tagged_high += 1;
+	  }
+	}
+	
+	memcpy(new_tagged_high, p, size << 2);
+	
+	naya = new_tagged_high;
+	((Scheme_Type *)p)[0] = MOVED;
+	((void **)p)[1] = naya;
+	
+	new_tagged_high += size;
+	if (naya == search_for) {
+	  stop();
+	}
+	return naya;
+      } else {
+	long size;
+	
+	p -= 4;
+	size = ((*(long *)p) & 0x3FFFFFFF);
+	
+	if (!size)
+	  return ((void **)p)[1];
+
+	if (!(size & 1)) {
+	  if ((long)new_untagged_low & 0x40) {
+	    new_untagged_low--;
+	    *(long *)new_untagged_low = 0;
+	  }
+	}
+	size++;
+	
+	new_untagged_low -= size;
+	memcpy(new_untagged_low, p, size << 2);
+	((void **)p)[1] = new_untagged_low + 1;
+	((long *)p)[0] = 0;
+	
+	if ((new_untagged_low + 1) == search_for) {
+	  stop();
+	}
+	
+	return new_untagged_low + 1;
+      }
+    }
   } else
     return p;
 }
 
+void **o_var_stack;
+int o_var_count;
+
 void GC_mark_variable_stack(void **var_stack,
 			    int var_count,
 			    long delta,
-			    void *low_limit,
-			    void *high_limit)
+			    void *limit)
 {
-  int i, stack_depth;
+  int stack_depth;
 
   stack_depth = 0;
   while (var_stack) {
@@ -259,10 +243,12 @@ void GC_mark_variable_stack(void **var_stack,
     void ***p;
 
     var_stack = (void **)((char *)var_stack + delta);
-    if (low_limit
-	&& (((unsigned long)var_stack < (unsigned long)low_limit)
-	    || ((unsigned long)var_stack > (unsigned long)high_limit)))
+    if (var_stack == limit)
       return;
+
+    o_var_stack = var_stack;
+    o_var_count = var_count;
+    /* printf("%lx (%lx) %d\n", (long)var_stack, (long)((char *)var_stack - delta), var_count); */
 
     p = (void ***)(var_stack + 2);
     
@@ -275,13 +261,13 @@ void GC_mark_variable_stack(void **var_stack,
 	size -= 2;
 	a = (void **)((char *)a + delta);
 	while (count--) {
-	  *a = cautious_mark(*a);
+	  *a = mark(*a);
 	  a++;
 	}
       } else {
 	void **a = *p;
 	a = (void **)((char *)a + delta);
-	*a = cautious_mark(*a);
+	*a = mark(*a);
       }
       p++;
     }
@@ -310,6 +296,9 @@ void gcollect(int needsize)
   int i;
 
   printf("gc\n");
+
+  if (GC_collect_start_callback)
+    GC_collect_start_callback();
 
   sort_and_merge_roots();
 
@@ -371,14 +360,16 @@ void gcollect(int needsize)
   GC_mark_variable_stack(GC_variable_stack,
 			 GC_variable_count,
 			 0,
-			 NULL, NULL);
+			 (void *)(GC_get_thread_stack_base
+				  ? GC_get_thread_stack_base()
+				  : stack_base));
 
   for (i = 0; i < roots_count; i += 2) {
     void **s = (void **)roots[i];
     void **e = (void **)roots[i + 1];
     
     while (s < e) {
-      *s = cautious_mark(*s);
+      *s = mark(*s);
       s++;
     }
   }
@@ -399,7 +390,7 @@ void gcollect(int needsize)
 	if ((tag < 0) || (tag >= _scheme_last_type_) || !tag_table[tag]) {
 	  *(int *)0x0 = 1;
 	}
-	size = tag_table[tag](tagged_mark, cautious_mark);
+	size = tag_table[tag](tagged_mark, mark);
 	if (size <= 1) {
 	  *(int *)0x0 = 1;
 	}
@@ -425,7 +416,7 @@ void gcollect(int needsize)
 	    int i;
 	    /* printf("parray: %d %lx\n", size, (long)mp); */
 	    for (i = size; i--; mp++)
-	      *mp = cautious_mark(*mp);
+	      *mp = mark(*mp);
 	  } else {
 	    /* Array of tagged */
 	    int i, elem_size;
@@ -433,10 +424,10 @@ void gcollect(int needsize)
 	    
 	    /* printf("tarray: %d %d\n", size, tag); */
 
-	    elem_size = tag_table[tag](mp, cautious_mark);
+	    elem_size = tag_table[tag](mp, mark);
 	    mp += elem_size;
 	    for (i = elem_size; i < size; i += elem_size, mp += elem_size)
-	      tag_table[tag](mp, cautious_mark);
+	      tag_table[tag](mp, mark);
 	  }
 	} else
 	  mp += v + 1;
@@ -460,6 +451,9 @@ void gcollect(int needsize)
   heap_size = new_size - ((untagged_low - tagged_high) << 2);
   
   memset(tagged_high, 0, ((untagged_low - tagged_high) << 2));
+
+  if (GC_collect_start_callback)
+    GC_collect_end_callback();
 }
 
 void *GC_resolve(void *p)

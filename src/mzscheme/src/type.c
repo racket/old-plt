@@ -540,7 +540,7 @@ static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
     GC_mark_variable_stack(buf->gc_var_stack,
 			   buf->gc_var_count,
 			   (long)buf->stack_copy - (long)buf->stack_from,
-			   buf->stack_copy,
+			   /* FIXME: stack direction */
 			   buf->stack_copy + buf->stack_size);
 }
 
@@ -551,10 +551,13 @@ static int cont_proc(void *p, Mark_Proc mark)
     Scheme_Cont *c = (Scheme_Cont *)p;
 
     gcMARK(c->dw);
+    gcMARK(c->common);
     gcMARK(c->ok);
     gcMARK(c->home);
     gcMARK(c->current_local_env);
     gcMARK(c->save_overflow);
+    gcMARK(c->runstack_copied);
+    gcMARK(c->cont_mark_stack_copied);
     
     mark_jmpup(&c->buf, mark);
     mark_cjs(&c->cjs, mark);
@@ -793,6 +796,8 @@ static int process_val(void *_p, Mark_Proc mark)
     }
 
     gcMARK(p->cont_mark_stack_segments);
+
+    mark_jmpup(&p->jmpup_buf, mark);
     
     gcMARK(p->cc_ok);
     gcMARK(p->ec_ok);

@@ -605,17 +605,20 @@ oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if
 
 int main(int argc, char **argv)
 {
-#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
+#if defined(USE_SENORA_GC)
   void *mzscheme_stack_start;
 #endif
-#if defined(MZ_STACK_START_HACK) || defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
+#if defined(MZ_STACK_START_HACK) || defined(USE_SENORA_GC)
   long start2;
 
   mzscheme_stack_start = (void *)&start2;
 #endif
 
-#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
+#if defined(USE_SENORA_GC)
   GC_set_stack_base(mzscheme_stack_start);
+#endif
+#if defined(MZ_PRECISE_GC)
+  GC_set_stack_base(&__gc_var_stack__);
 #endif
 
 #ifdef USE_MSVC_MD_LIBRARY

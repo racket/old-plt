@@ -3816,7 +3816,8 @@ sch_random(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("current-pseudo-random-generator", MZCONFIG_RANDOM_STATE,
+  return scheme_param_config("current-pseudo-random-generator", 
+			     scheme_make_integer(MZCONFIG_RANDOM_STATE),
 			     argc, argv,
 			     -1, pseudo_random_generator_p, "pseudo-random-generator", 0);
 }

@@ -7,7 +7,7 @@
     (define tools 
       (list (make-tool "Stepper" (build-path "donkey" "donkey.ss"))
 	    (make-tool "Syntax Checker" (build-path "drscheme" "mrslatex.ss"))
-	    (make-tool "Analyzer" (build-path "mrspidey" "mrspidey.ss"))
+	    (make-tool "Analyzer" (build-path "drscheme" "spidstub.ss"))
 
 ;;          this is the example tool.
 ;	    (make-tool "Toy" (build-path "drscheme" "toy.ss"))

@@ -4,6 +4,29 @@
 
 ;; be sure to update the mzlib shell script if this changes
 ;; can I add flags to mzscheme?
+
+(when (getenv "MREDDEBUG")
+  (letrec* ([old-handler (current-load)]
+	    [offset-string "  "]
+	    [indent-string ""])
+    (current-load (lambda (f)
+		    (let ([file (if (relative-path? f)
+				    (build-path (current-directory) f)
+				    f)])
+		      (printf "~aLoading ~a...~n" indent-string file)
+		      (dynamic-wind
+		       (lambda ()
+			 (set! indent-string
+			       (string-append offset-string indent-string)))
+		       (lambda () (old-handler file))
+		       (lambda ()
+			 (set! indent-string
+			       (substring indent-string
+					  0
+					  (max (- (string-length indent-string)
+						  (string-length offset-string))
+					       0))))))))))
+
 (define use-print-convert?
   (or (and (defined? 'mzrice:print-convert)
 	   mzrice:print-convert)

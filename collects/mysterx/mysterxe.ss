@@ -1670,14 +1670,16 @@
 		 html-post)))])
 	   (public
 	    [find-element
-	     (lambda (tag id)
+	     (lambda (tag id . n)
 	       (make-object mx-element% doc 
-			    (mxprims:document-find-element doc tag id)))]
+			    (apply mxprims:document-find-element 
+				   doc tag id n)))]
 	    [find-element-by-id-or-name
-	     (lambda (id)
+	     (lambda (id . n)
 	       (make-object 
 		mx-element% doc 
-		(mxprims:document-find-element-by-id-or-name doc id)))]
+		(apply mxprims:document-find-element-by-id-or-name 
+		       doc id n)))]
 	    [elements-with-tag
 	     (lambda (tag)
 	       (map

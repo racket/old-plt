@@ -229,20 +229,26 @@ _MysterX_
   window size.  An instance of <com-object> is
   returned.
 
-> find-element :: (send an-mx-document find-element tag id)
+> find-element :: (send an-mx-document find-element tag id [index])
 
   Returns an instance of mx-element%, an object
   that encapsulates an HTML element.  `tag' is a
   string naming an HTML tag, and `id' is a string
   naming the id attribute of the HTML element.
+  `index' is a nonnegative integer indicating the 
+  zero-based index of the element among all elements 
+  with the same tag and id.  By default, index is 0.
+  The ordering of elements is defined by Internet Explorer.
 
-> find-element-by-id-or-name :: (send an-mx-document find-element-by-id-or-name id)
+> find-element-by-id-or-name :: (send an-mx-document find-element-by-id-or-name id [index])
 
   Returns an instance of mx-element%, an object
-  that encapsulates an HTML element.  `id' is a string
-  naming either the id or name attribute of the HTML element.
-  If more than one element has the given id or name, the results
-  are unspecified.
+  that encapsulates an HTML element.  `id' is a 
+  string naming either the id or name attribute of the 
+  HTML element.  `index' is a nonnegative integer indicating 
+  the zero-based index of the element among all elements 
+  with the same id or name.  By default, index is 0.
+  The ordering of elements is defined by Internet Explorer.
 
 > elements-with-tag :: (send an-mx-document elements-with-tag tag)
 

@@ -107,12 +107,28 @@
                                   start
                                   (get-end next)))))))
            (else 
-            (if (close-to-keyword? tok 'class)
-                (parse-error (format "expected 'class' to start next definition, found ~a which is incorrectly spelled or capitalized"
+            (cond
+              ((close-to-keyword? tok 'class)
+                (parse-error (format "expected 'class', found ~a which is incorrectly spelled or capitalized"
                                      (token-value tok))
-                             start stop)
-                (parse-error (format "expected 'class' to start next definition, not ~a" (output-format tok))
-                             start stop)))))
+                             start stop))
+              ((close-to-keyword? tok 'abstract)
+               (parse-error (format "Expected 'abstract class' or 'class', found ~a which is incorrectly spelled or capitalized"
+                                    (token-value tok))
+                            start stop))
+              ((or (if-token? tok) (return-token? tok))
+               (parse-error (format "Expected class definition, found ~a. Statements must be in a method or interactions window"
+                                    (output-format tok))
+                            start stop))
+              ((prim-type? tok) 
+               (parse-error (format "Expected class definition, found ~a. Fields and methods must be in a class body"
+                                    (output-format tok)) start stop))
+              ((id-token? tok)
+               (parse-error (format "Expected class definition, found ~a. Fields, methods, and expressions may not be written here"
+                                    (output-format tok)) start stop))
+              (else
+               (parse-error (format "Expected class definition, found ~a which may not be written here" (output-format tok))
+                            start stop))))))
         ((class-id)
          (case tok-kind
            ((EOF) (parse-error "'class' should be followed by a class name and body" (get-start pre) (get-end pre)))
@@ -121,8 +137,8 @@
                    (next-tok (get-tok next)))
               (cond
                 ((eof? next-tok) (parse-error (format "expected class body after ~a" (token-value tok)) start stop))
-                ((extends? next-tok) (parse-definition cur-tok next-tok 'extends getter))
-                ((o-brace? next-tok) (parse-definition cur-tok next-tok 'body getter))
+                ((extends? next-tok) (parse-definition cur-tok next 'extends getter))
+                ((o-brace? next-tok) (parse-definition cur-tok next 'body getter))
                 (else 
                  (cond
                    ((close-to-keyword? next-tok 'extends) 
@@ -143,26 +159,40 @@
                 (parse-error (format "expected a name for this class, given ~a" (output-format tok))
                              start stop)))))
         ((extends) 
-         (let ((next-tok (getter)))
+         (let* ((next (getter))
+                (next-tok (get-tok next)))
            (cond
-             ((eof? (car next-tok)) (raise-error 'eof-after-extend cur-tok next-tok))
-             ((id-token? (car next-tok)) (parse-definition next-tok (getter) 'body getter))
-             ((o-brace? (car next-tok)) (raise-error 'got-o-brace-after-extend-not-name cur-tok next-tok))
-             (else (raise-error 'extends-identifier-not-found cur-tok next-tok)))))
+             ((eof? next-tok) (parse-error "Expected parent class after extends" (get-start pre) (get-end pre)))
+             ((id-token? next-tok) (parse-definition next (getter) 'body getter))
+             ((o-brace? next-tok) (parse-error "Expected a parent name after extends and before the class body starts"
+                                               start (get-end next)))
+             ((keyword? next-tok)
+              (parse-error (format "parent may not be named after reserved word ~a" (get-token-name next-tok))
+                           (get-start next) (get-end next)))
+             (else (parse-error (format "extends must be followed by parent name, found ~a" (output-format next-tok))
+                                start (get-end next))))))
         ((body)
          (case tok-kind
-           ((EOF) (raise-error 'eof-instead-of-classbody cur-tok null))
+           ((EOF) (parse-error (format "Expected class body to begin after ~a" (output-format (get-tok pre)))
+                               (get-start pre) (get-end pre)))
            ((O_BRACE) (parse-definition cur-tok (parse-members (getter) 'start getter) 'body-end getter))
-           (else (raise-error 'body-not-started-with-o-brace cur-tok null))))
+           (else 
+            (cond
+              ((open-separator? tok)
+               (parse-error (format "expected { to begin class body, but found ~a" (output-format tok))
+                            start stop))
+              ((close-separator? tok)
+               (parse-error (format "Class body must be opened with { before being closed, found ~a" 
+                                    (output-format tok)) start stop))
+              (else
+               (parse-error (format "Expected { to start class body, found ~a"
+                                    (output-format tok) start stop)))))))
         ((body-end)
          (case tok-kind
-           ((C_BRACE) 
-            (let ((next-tok (getter)))
-              (cond
-                ((or (eof? (car next-tok)) (class? (car next-tok)) (abstract? (car next-tok)))
-                 (parse-definition cur-tok next-tok 'start getter))
-                (else (raise-error 'expected-new-class-or-nothing-after-body cur-tok next-tok)))))
-           (else (raise-error 'expected-a-c-brace-to-end-closest-class cur-tok null)))))))
+           ((EOF) (parse-error "Expected a } to close this body" (get-start pre) (get-end pre)))
+           ((C_BRACE) (parse-definition cur-tok (getter) 'start getter))
+           (else (parse-error (format "Expected a } to close class body, found ~a" (output-format tok))
+                              (get-start pre) stop)))))))
               
   ;parse-members: token symbol (->token) -> token
   (define (parse-members cur-tok state getter) 

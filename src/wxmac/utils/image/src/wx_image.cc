@@ -60,7 +60,7 @@ Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
     fseek(fp, 512, SEEK_SET);	// 0 didn't work
     PicHandle ph = (PicHandle)NewHandle(fsize);
     CheckMemOK(ph);
-    int rsize = fread((char *)*ph, 1, fsize, fp);
+    fread((char *)*ph, 1, fsize, fp);
     fclose(fp);
     // width = (*ph)->picFrame.right;
     bm->SetWidth((*ph)->picFrame.right);

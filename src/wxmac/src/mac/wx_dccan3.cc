@@ -43,7 +43,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
   start.v = YLOG2DEV(y) + fontInfo.ascent; /* ascent is already scaled */
   MoveTo(start.h + SetOriginX, start.v + SetOriginY); // move pen to start drawing text
 
-  DrawLatin1Text(text, d, -1, use16);
+  DrawLatin1Text(text, d, -1, use16, TRUE);
 
   // look at pen, use distance travelled instead of calculating 
   // the length of the string (again)
@@ -110,24 +110,56 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 
 //----------------------------------------------------------------------
 
-void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16)
+void DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd_spacing)
 {
   int i;
+  int is_sym = 0;
 
   if (theStrlen < 0)
     theStrlen = strlen(text+d);
   
-  /* Check whether we need to go into Unicode mode to get Latin-1 output: */
-  for (i = 0; i < theStrlen; i++) {
-    if (((unsigned char *)text)[i + d] > 127)
-      break;
+  {
+      GrafPtr iGrafPtr;
+      GetPort( &iGrafPtr );
+      if (GetPortTextFont(iGrafPtr) == 23)
+	  is_sym = 1;
   }
 
-  if (i >= theStrlen) {
-    /* it's all ASCII, where MacRoman == Latin-1 */
-    ::DrawText(text+d, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
-  } else {
-    (void)DrawMeasLatin1Text(text, d, theStrlen, bit16, 0, 0, 0, 0, 0);
+  while (theStrlen) {
+      /* Check whether we need to go into Unicode mode to get Latin-1 output: */
+      if (is_sym)
+	  /* Symbol font hack: don't convert */
+	  i = theStrlen;
+      else {
+	  for (i = 0; i < theStrlen; i++) {
+	      if (((unsigned char *)text)[i + d] > 127)
+		  break;
+	  }
+      }
+
+      if (i) {
+	  /* Up to i, it's all ASCII, where MacRoman == Latin-1 */
+	  ::DrawText(text+d, 0, i); // WCH: kludge, mac procedure same name as wxWindows method
+
+	  d += i;
+	  theStrlen -= i;
+      }
+
+      if (theStrlen) {
+	  int amt;
+
+	  if (qd_spacing) {
+	      /* Draw just one character, to avoid kerning and other adjustments */
+	      amt = 1;
+	  } else {
+	      amt = theStrlen;
+	  }
+
+	  (void)DrawMeasLatin1Text(text, d, amt, bit16, 0, 0, 0, 0, 0);
+	  
+	  d += amt;
+	  theStrlen -= amt;
+      }
   }
 }
 
@@ -135,9 +167,11 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 			short txFont, short txSize, short txFace,
 			int bit16, float scale,
 			float* x, float* y,
-			float* descent, float* externalLeading)
+			float* descent, float* externalLeading,
+			Bool qd_spacing)
 {
   FontInfo fontInfo;
+  int fsize;
   const char *meas = NULL;
   int i;
 
@@ -145,11 +179,15 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
     if (theStrlen < 0)
       theStrlen = strlen(text+d);
     
-    /* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
-    for (i = 0; i < theStrlen; i++) {
-      if (((unsigned char *)text)[i + d] > 127)
-	break;
-    }
+    if (txFont != 23) {
+	/* Check whether we need to go into Unicode mode to get Latin-1 *x output: */
+	for (i = 0; i < theStrlen; i++) {
+	    if (((unsigned char *)text)[i + d] > 127)
+		break;
+	}
+    } else
+	/* Symbol font hack: don't convert */
+	i = theStrlen;
 
     if (i >= theStrlen) {
       meas = text;
@@ -157,18 +195,48 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
   } else
     theStrlen = 0;
   
-  *x = wxTextFontInfo(txFont,
-		      (int)floor(txSize * scale),
-		      txFace,
-		      &fontInfo, (char *)meas);
+  fsize = (int)floor(txSize * scale);
+
+  *x = wxTextFontInfo(txFont, fsize, txFace,
+		      &fontInfo, (char *)meas, 
+		      d, theStrlen);
 
   if (meas) {
     /* it's all ASCII, where MacRoman == Latin-1 */
     /* so *x is right */
   } else if (text) {
-    *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
-			    1, 1, 
-			    txFont, (int)floor(txSize * scale), txFace);
+      if (qd_spacing) {
+	  /* Need to split the string into parts */
+	  *x = 0;
+	  while (theStrlen) {
+	      for (i = 0; i < theStrlen; i++) {
+		  if (((unsigned char *)text)[i + d] > 127)
+		      break;
+	      }
+
+	      /* Measure the leasing ASCII part, if any: */
+	      if (i) {
+		  *x += wxTextFontInfo(txFont, fsize, txFace,
+				       &fontInfo, 
+				       (char *)text, d, i);
+		  d += i;
+		  theStrlen -= i;
+	      }
+
+	      /* Measure one Latin-1 part: */
+	      if (theStrlen) {
+		  *x += DrawMeasLatin1Text(text, d, 1, bit16,
+					   1, 1, 
+					   txFont, fsize, txFace);
+		  d++;
+		  --theStrlen;
+	      }
+	  }
+      } else {
+	  *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
+				  1, 1, 
+				  txFont, fsize, txFace);
+      }
   }
 
   *y = fontInfo.ascent + fontInfo.descent; // height
@@ -183,7 +251,6 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   ATSUTextLayout layout;
   ByteCount ubytes, converted, usize;
   UniCharCount ulen;
-  ATSUStyle style;
   char *unicode;
   double result = 0;
 
@@ -207,15 +274,13 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
   else
     atsuSetStyleFromGrafPtr(theATSUstyle);
 
-  style = theATSUstyle;
-
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
 				  kATSUFromTextBeginning,
 				  kATSUToTextEnd,
 				  theStrlen,
 				  1,
 				  &ulen,
-				  &style,
+				  &theATSUstyle,
 				  &layout);
 
   if (!just_meas) {
@@ -237,7 +302,9 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 		       &bounds,
 		       &actual);
     
-    result = Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x);
+    result = (Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x) - 1);
+    if (result < 0)
+	result = 0;
   }
 
   ATSUDisposeTextLayout(layout);
@@ -268,7 +335,7 @@ atsuFONDtoFontID( short    iFONDNumber,
       ATSUFontID *  oFontID,
        StyleParameter * oIntrinsicStyle )
 {
- return FMGetFontFromFontFamilyInstance( iFONDNumber, iFONDStyle, oFontID, oIntrinsicStyle );
+  return FMGetFontFromFontFamilyInstance( iFONDNumber, iFONDStyle, oFontID, oIntrinsicStyle );
 }
 
 #define apple_require(x, y) if (!(x)) return status;
@@ -332,9 +399,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[7] = &textColor;
  
  status = ATSUSetAttributes( iStyle, sizeof(theTags) / sizeof(ATSUAttributeTag), theTags, theSizes, theValues );
-
- if (status)
-   printf("%d\n", status);
 
  return status;
 }

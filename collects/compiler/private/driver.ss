@@ -1197,10 +1197,12 @@
 				   (when (string=? "" compiler:setup-suffix)
 				     (fprintf c-port
 					      "~nScheme_Object * scheme_initialize(Scheme_Env * env)~n{~n")
-				     (fprintf c-port "~ascheme_setup(env);~n"
-					      vm->c:indent-spaces)
-				     (fprintf c-port "~areturn scheme_reload(env);~n"
-					      vm->c:indent-spaces)
+				     (fprintf c-port "~ascheme_setup~a(env);~n"
+					      vm->c:indent-spaces
+					      compiler:setup-suffix)
+				     (fprintf c-port "~areturn scheme_reload~a(env);~n"
+					      vm->c:indent-spaces
+					      compiler:setup-suffix)
 				     (fprintf c-port 
 					      "}~n~n"))
 

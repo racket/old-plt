@@ -20,7 +20,7 @@
 
 (define (software-type)
   (case (system-type)
-    [(unix beos) 'UNIX]
+    [(unix macosx) 'UNIX]
     [(windows) 'MS-DOS]
     [(macos) 'MACOS]
     [else (system-type)]))
@@ -55,7 +55,7 @@
 			       [(base name dir?) (split-path base)])
 		   (and (string? base) base))))
 	     (case (system-type)
-	       ((unix) "/usr/local/lib/plt")
+	       ((unix macosx) "/usr/local/lib/plt")
 	       ((windows) "C:\\Program Files\\PLT")
 	       ((macos) "My Disk:plt:")))])
     (lambda () path)))
@@ -151,9 +151,9 @@
 
 (define current-time
   ;; Gives time since 1/1/1970 ...
-  ;;   ... GMT for Unix, Windows, and BeOS.
-  ;;   ... local time for MacOS.
-  (if (memq (system-type) '(unix beos windows))
+  ;;   ... GMT for Unix, Windows, and Mac OS X.
+  ;;   ... local time for Mac OS.
+  (if (memq (system-type) '(unix macosx windows))
       current-seconds
       (let ([zero (find-seconds 0 0 0 1 1 1970)])
 	(lambda ()

@@ -136,13 +136,14 @@ class wxCanvasDC: public wxbCanvasDC
   void PaintStipple(wxRegion *);
 };
 
-long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str);
-void DrawLatin1Text(const char *text, int d, int len = -1, int bit16 = FALSE);
+long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);
+void DrawLatin1Text(const char *text, int d, int len = -1, int bit16 = FALSE, Bool qd_spacing = FALSE);
 void GetLatin1TextWidth(const char *text, int d, int theStrlen, 
 			short txFont, short txSize, short txFace,
 			int bit16, float scale,
 			float* x, float* y,
-			float* descent, float* externalLeading);
+			float* descent, float* externalLeading,
+			Bool qd_spacing);
 
 extern Pattern wx_white_pat, wx_black_pat, wx_light_gray_pat, wx_dark_gray_pat;
 #define GetWhitePattern() &wx_white_pat

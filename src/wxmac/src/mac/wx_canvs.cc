@@ -116,7 +116,7 @@ void wxCanvas::InitDefaults(void)
     if (cStyle & wxHSCROLL)
       direction -= Direction::wxBottom;
 
-    wxBorderArea *border = new wxBorderArea(this, 1, direction);
+    new wxBorderArea(this, 1, direction);
   }
 
   if (cStyle & wxVSCROLL || cStyle & wxHSCROLL)

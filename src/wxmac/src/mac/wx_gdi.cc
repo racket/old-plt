@@ -235,7 +235,8 @@ wxFont::~wxFont()
 #endif
 }
 
-long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str)
+long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str,
+		    int d, int len)
 {
   static int fn, sz = -1, fc;
   static FontInfo fontInfo;
@@ -259,8 +260,12 @@ long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str)
     
     ::GetFontInfo(&fontInfo);
     
-    if (str)
-      result = TextWidth(str, 0, strlen(str));
+    if (str) {
+	if (len < 0)
+	    strlen(str + d);
+
+      result = TextWidth(str + d, 0, len);
+    }
     
     ::SetGWorld(savep, savegd);
   }
@@ -300,7 +305,8 @@ void wxFont::GetTextExtent(char* string, float* x, float* y,
   GetLatin1TextWidth(string, 0, -1,
 		     GetMacFontNum(), point_size, GetMacFontStyle(),
 		     use16, scale,
-		     x, y, descent, externalLeading);
+		     x, y, descent, externalLeading,
+		     TRUE);
 }
 
 //-----------------------------------------------------------------------------

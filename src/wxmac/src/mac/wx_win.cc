@@ -78,13 +78,13 @@ wxWindow::wxWindow // Constructor (for screen window)
  long		style
  ) :
  wxbWindow (windowName),
+ cStyle (style),
+ children (new wxChildList()),
+ cScroll (NULL),
  cWindowX (x != -1 ? x : 0),
  cWindowY (y != -1 ? y : 0),
- cWindowWidth (width >= 0 ? width : 0),
  cWindowHeight (height >= 0 ? height : 0),
- cStyle (style),
- cScroll (NULL),
- children (new wxChildList())
+ cWindowWidth (width >= 0 ? width : 0)
 {
   cAreas = new wxList(wxList::kDestroyData);
   cActive = FALSE;

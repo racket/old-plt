@@ -301,6 +301,13 @@
      (EscapeSequence (get-syn-string input-port))
      ((^ CR LF) (get-syn-string input-port))))
     
+  (define (colorize-string my-start-pos)
+    (lexer
+     (#\" (syn-val "" 'string #f my-start-pos end-pos))
+     ((: (eof) CR LF) (syn-val "" 'error #f my-start-pos end-pos))
+     (EscapeSequence ((colorize-string my-start-pos) input-port))
+     ((^ CR LF) ((colorize-string my-start-pos) input-port))))
+  
   (define get-syntax-token
     (lexer
   ;; 3.12
@@ -332,9 +339,15 @@
          (@ OctalNumeral IntegerTypeSuffix))
       (syn-val lexeme 'literal #f start-pos end-pos))
       
+     ((@ #\' (^ CR LF)) (syn-val lexeme 'literal #f start-pos end-pos))
+     ((@ #\' (^ CR LF) (^ #\')) (syn-val lexeme 'error #f start-pos end-pos))
+     
+     ((@ #\' EscapeSequence) (syn-val lexeme 'literal #f start-pos end-pos))
+     ((@ #\' EscapeSequence (^ #\')) (syn-val lexeme 'error #f start-pos end-pos))
+     ((@ #\' #\\) (syn-val lexeme 'error #f start-pos end-pos))
+     
      ;; 3.10.5
-     (#\" (values lexeme 'string #f (position-offset start-pos) (get-syn-string input-port)))
-
+     (#\" ((colorize-string start-pos) input-port))
      ;; 3.9
      (Keyword (syn-val lexeme 'keyword #f start-pos end-pos))
 

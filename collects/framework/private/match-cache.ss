@@ -1,6 +1,7 @@
 (module match-cache mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
+	   (lib "class100.ss")
 	   "sig.ss"
 	   (lib "mred-sig.ss" "mred"))
 
@@ -16,14 +17,14 @@
       (define-struct node (left right pos jump-to))
       
       (define %
-	(class object% ()
-	  (private
+	(class100 object% ()
+	  (private-field
 	    [tree #f]
-	    [offset 0])
-	  (public
+	    [offset 0]
 	    [max-count 0]
 	    [times 0]
-	    [sum 0]
+	    [sum 0])
+	  (public
 	    [splay
 	     (lambda (pos)
 	       (let* ([count 0]

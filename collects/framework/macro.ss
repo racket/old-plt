@@ -1,6 +1,8 @@
 (module macro mzscheme
-  (require (lib "class.ss"))
-  (require-for-syntax (lib "class.ss")
+  (require (lib "class100.ss")
+	   (lib "class.ss"))
+  (require-for-syntax (lib "class100.ss")
+		      (lib "class.ss")
 		      (lib "stx.ss" "syntax"))
   
   (provide mixin)
@@ -24,7 +26,7 @@
 			      (syntax->list (syntax (clauses ...)))))]
 
 		       ;; new syntax system mumbo jumbo to bind super-init and this
-		       [class* (datum->syntax-object (stx-car stx) 'class* stx)])
+		       [class100* (datum->syntax-object (stx-car stx) 'class100* stx)])
 	   (syntax
 	    (let ([from-ids from] ...)
 	      (let ([to-ids to] ...)
@@ -45,9 +47,9 @@
 
 		(let ([ensure-interface-has?
 		       (lambda (x)
-			 (unless (or (ivar-in-interface? x from-ids) ...)
+			 (unless (or (method-in-interface? x from-ids) ...)
 			   (error 'mixin
-				  "ivar `~a' not in any of ~a, but was referenced in definition"
+				  "method `~a' not in any of ~a, but was referenced in definition"
 				  x (list from-ids ...))))])
 		  (void)
 		  (ensure-interface-has? (quote super-vars)) ...)
@@ -61,5 +63,5 @@
 		      (error 'mixin "argument ~s does not implement ~s" super% from-ids))
 		    ...)
 
-		  (class* super% (to-ids ...) args
+		  (class100* super% (to-ids ...) args
 		    clauses ...))))))]))))

@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-unit.ss,v 1.3 2001/03/06 02:27:31 robby Exp $
+;; $Id: test-unit.ss,v 1.4 2001/03/11 00:02:02 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -19,6 +19,7 @@
 (module test-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
+	   (lib "class100.ss")
 	   (lib "mred-sig.ss" "mred")
 	   (lib "etc.ss")
 	   "test-sig.ss")
@@ -55,8 +56,9 @@
   ;;
   
   (define timer-callback%
-    (class mred:timer% (thunk)
-      (override [notify thunk])
+    (class100 mred:timer% (_thunk)
+      (private-field [thunk _thunk])
+      (override [notify (lambda () (thunk))])
       (sequence (super-init))))
   
   (define install-timer
@@ -461,7 +463,7 @@
     (let loop ([l (ancestor-list window #t)])
       (cond [(null? l)
 	     (cond
-	      [(ivar-in-interface? 'on-char (object-interface window))
+	      [(method-in-interface? 'on-char (object-interface window))
 	       (send window on-char event)]
 	      [(is-a? window mred:text-field%)
 	       (send (send window get-editor) on-char event)]
@@ -546,7 +548,7 @@
       (cond
 	[(not frame)
 	 (error menu-tag "no active frame")]
-	[(not (ivar-in-interface? 'get-menu-bar (object-interface frame)))
+	[(not (method-in-interface? 'get-menu-bar (object-interface frame)))
 	 (error menu-tag "active frame does not have menu bar")]
 	[else
 	 (let ([menu-bar  (send frame get-menu-bar)])
@@ -647,7 +649,7 @@
       (let loop ([l  (ancestor-list window #t)])
 	(cond
 	  [(null? l)
-	   (if (ivar-in-interface? 'on-event (object-interface window))
+	   (if (method-in-interface? 'on-event (object-interface window))
 	       (send window on-event event)
 	       (error mouse-tag "focused window does not have on-event"))]
 	  [(send (car l) on-subwindow-event window event)  #f]
@@ -751,10 +753,10 @@
 		
 		;; SOME KLUDGES HERE TO WORK AROUND TEXT% PROBLEMS.
 		
-		(when (and old-window (ivar-in-interface? 'on-event (object-interface old-window)))
+		(when (and old-window (method-in-interface? 'on-event (object-interface old-window)))
 		  (send-mouse-event old-window leave))
 		(send root show #t)
-		(when (ivar-in-interface? 'on-event (object-interface new-window))
+		(when (method-in-interface? 'on-event (object-interface new-window))
 		  (send-mouse-event new-window enter))
 		(send new-window focus)
 		(void))))]))))

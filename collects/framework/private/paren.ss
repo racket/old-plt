@@ -5,6 +5,7 @@
 (module paren mzscheme 
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
+	   (lib "class100.ss")
 	   "sig"
 	   (lib "mred-sig.ss" "mred"))
 
@@ -66,9 +67,8 @@
 	     [buffer-end (if forward?
 			     (min end-pos (send edit last-position))
 			     (max end-pos 0))]
-	     [get-character (ivar edit get-character)]
 	     [get-char (if forward?
-			   get-character
+			   (lambda (edit) (send edit get-character))
 			   ;; DEVIOUS TRICK: we're going to virtually swap
 			   ;; each escaping \ with the character it escapes. Now,
 			   ;; in a backward read of the buffer, a backslash appears
@@ -76,21 +76,21 @@
 			   (letrec ([is-escaping?
 				     (lambda (pos)
                                        (and (not (= pos 0))
-                                            (let ([c (get-character (sub1 pos))])
+                                            (let ([c (send edit get-character (sub1 pos))])
                                               (not (and (char=? c #\\) 
                                                         (is-escaping? (sub1 pos)))))))])
 			     (lambda (x) 
 			       (cond
-				 [(= x 1) (let ([c (get-character 0)])
+				 [(= x 1) (let ([c (send edit get-character 0)])
 					    (if (char=? c #\\)
-						(get-character 1)
+						(send edit get-character 1)
 						c))]
-				 [(> x 1) (let ([c-1 (get-character (- x 2))]
-						[c (get-character (sub1 x))])
+				 [(> x 1) (let ([c-1 (send edit get-character (- x 2))]
+						[c (send edit get-character (sub1 x))])
 					    (cond
 					      [(char=? c #\\)
 					       (if (is-escaping? (sub1 x))
-						   (get-character x)
+						   (send edit get-character x)
 						   c)]
 					      [(char=? c-1 #\\)
 					       (if (is-escaping? (- x 2))
@@ -98,11 +98,8 @@
 						   c)]
 					      [else c]))]
 				 [else #\nul]))))]
-	     [paragraph-start-position (ivar edit paragraph-start-position)]
-	     [position-paragraph (ivar edit position-paragraph)]
-	     [find-string (ivar edit find-string)]
 	     [get-cached (if paren-cache
-			     (ivar paren-cache get)
+			     (lambda (p) (send paren-cache get p))
 			     (lambda (p) #f))]
 	     [past-end? (let ([past? (if forward? >= <=)])
 			  (lambda (pos) (past? pos buffer-end)))]
@@ -153,13 +150,18 @@
 		    ;;  by a forward search. We propogate the assumption that we
 		    ;;  started outside of quotes by assuming that the *beginning* of
 		    ;;  the current line is outside of quotes (until proven otherwise).
-		    (let ([linestart (paragraph-start-position (position-paragraph pos))])
-		      (if (ormap (lambda (s) (find-string s 'forward linestart pos)) eol-comment-list)
-			  (let ([forward-match-string (match-string-at-pos* add1 get-character string-ref)])
+		    (let ([linestart (send edit paragraph-start-position 
+					   (send edit position-paragraph pos))])
+		      (if (ormap (lambda (s) (send edit find-string s 'forward linestart pos))
+				 eol-comment-list)
+			  (let ([forward-match-string (match-string-at-pos* 
+						       add1 
+						       (lambda (edit) (send edit get-character))
+						       string-ref)])
 			    (let loop ([p linestart])
 			      (if (>= p pos) 
 				  (skip-comment-k pos)
-				  (let ([c (get-character p)])
+				  (let ([c (send edit get-character p)])
 				    (cond
 				      [(char=? c #\\) (loop (+ p 2))]
 				      [(forward-match-string p c look-for-comment-starters)

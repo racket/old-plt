@@ -1,6 +1,7 @@
 (module gui-utils-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
+	   (lib "class100.ss")
 	   (lib "mred-sig.ss" "mred")
 	   "gui-utils-sig.ss")
 
@@ -87,9 +88,9 @@
      [(filename action can-save-now? parent)
       (let* ([result (void)]
 	     [unsaved-dialog%
-	      (class dialog% ()
+	      (class100 dialog% ()
 		(inherit show center)
-		(private
+		(private-field
 		  [on-dont-save
 		   (lambda args
 		     (set! result 'continue)
@@ -153,7 +154,7 @@
      [(message true-choice false-choice title default-result parent)
       (letrec ([result default-result]
 	       [dialog (make-object 
-                        (class dialog% ()
+                        (class100 dialog% ()
                           (rename [super-on-close on-close]
                                   [super-can-close? can-close?])
                           (override

@@ -3,11 +3,8 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 481 "XWidgets/xwBoard.w"
 #include <stdio.h>
-#line 482 "XWidgets/xwBoard.w"
 #include <X11/Shell.h>
-#line 483 "XWidgets/xwBoard.w"
 #include <ctype.h>
 #include <./xwBoardP.h>
 static void _resolve_inheritance(
@@ -15,75 +12,62 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 144 "XWidgets/xwBoard.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 194 "XWidgets/xwBoard.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 217 "XWidgets/xwBoard.w"
 static void set_abs_location(
 #if NeedFunctionPrototypes
 Widget,unsigned  int ,int ,int ,int ,int 
 #endif
 );
-#line 236 "XWidgets/xwBoard.w"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 261 "XWidgets/xwBoard.w"
 static XtGeometryResult  query_geometry(
 #if NeedFunctionPrototypes
 Widget,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 272 "XWidgets/xwBoard.w"
 static XtGeometryResult  geometry_manager(
 #if NeedFunctionPrototypes
 Widget ,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 295 "XWidgets/xwBoard.w"
 static void change_managed(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 309 "XWidgets/xwBoard.w"
 #define ceil(r) (-(int )(-(r )))
 
 
-#line 314 "XWidgets/xwBoard.w"
 static void generate_location(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 335 "XWidgets/xwBoard.w"
 static void get_core_geometry(
 #if NeedFunctionPrototypes
 Widget,Position *,Position *,Dimension *,Dimension *
 #endif
 );
-#line 367 "XWidgets/xwBoard.w"
 static void set_location(
 #if NeedFunctionPrototypes
 Widget,unsigned  int 
 #endif
 );
-#line 410 "XWidgets/xwBoard.w"
 #define skip_blanks(s) while (isspace (*s ))s ++
 
 
-#line 416 "XWidgets/xwBoard.w"
 #define strtonum(t, n) do {\
         while ((*(t)) && !isdigit(*(t)) && *(t) != '.') (t)++;\
         for ((n) = 0; isdigit(*t); (t)++)\
@@ -91,32 +75,25 @@ Widget,unsigned  int
     }while (0 )
 
 
-#line 428 "XWidgets/xwBoard.w"
 #define strtofrac(t, n, factor) for ((factor )=1.0 ,(n )=0 ,(t )++;isdigit (*(t ));(t )++,(factor )/=10.0 )(n )=10 *(n )+*(t )-'0'
 
 
-#line 432 "XWidgets/xwBoard.w"
 static String  scan(
 #if NeedFunctionPrototypes
 String ,Position *,float *
 #endif
 );
-#line 466 "XWidgets/xwBoard.w"
 static void interpret_location(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 314 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 314 "XWidgets/xwBoard.w"
 static void generate_location(Widget self)
 #else
-#line 314 "XWidgets/xwBoard.w"
 static void generate_location(self)Widget self;
 #endif
-#line 315 "XWidgets/xwBoard.w"
 {
     char tmp[100];
 
@@ -126,16 +103,12 @@ static void generate_location(self)Widget self;
     XtFree(((XfwfBoardWidget)self)->xfwfBoard.location);
     ((XfwfBoardWidget)self)->xfwfBoard.location = XtNewString(tmp);
 }
-#line 335 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 335 "XWidgets/xwBoard.w"
 static void get_core_geometry(Widget self,Position * x,Position * y,Dimension * width,Dimension * height)
 #else
-#line 335 "XWidgets/xwBoard.w"
 static void get_core_geometry(self,x,y,width,height)Widget self;Position * x;Position * y;Dimension * width;Dimension * height;
 #endif
-#line 336 "XWidgets/xwBoard.w"
 {
     Widget parent;
     Position px, py;
@@ -163,16 +136,12 @@ static void get_core_geometry(self,x,y,width,height)Widget self;Position * x;Pos
     h = ceil(((XfwfBoardWidget)self)->xfwfBoard.rel_height * ph + ((XfwfBoardWidget)self)->xfwfBoard.abs_height * ((XfwfBoardWidget)self)->xfwfBoard.vunit);
     *height = h < minsize ? minsize : h;
 }
-#line 367 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 367 "XWidgets/xwBoard.w"
 static void set_location(Widget self,unsigned  int  flags)
 #else
-#line 367 "XWidgets/xwBoard.w"
 static void set_location(self,flags)Widget self;unsigned  int  flags;
 #endif
-#line 368 "XWidgets/xwBoard.w"
 {
     Widget parent;
     Position px, py;
@@ -206,16 +175,12 @@ static void set_location(self,flags)Widget self;unsigned  int  flags;
         ((XfwfBoardWidget)self)->xfwfBoard.abs_height = ceil(((XfwfBoardWidget)self)->core.height/((XfwfBoardWidget)self)->xfwfBoard.vunit);
     }
 }
-#line 432 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 432 "XWidgets/xwBoard.w"
 static String  scan(String  s,Position * absval,float * relval)
 #else
-#line 432 "XWidgets/xwBoard.w"
 static String  scan(s,absval,relval)String  s;Position * absval;float * relval;
 #endif
-#line 433 "XWidgets/xwBoard.w"
 {
     String p;
     char c;
@@ -248,16 +213,12 @@ static String  scan(s,absval,relval)String  s;Position * absval;float * relval;
         return p;
     }
 }
-#line 466 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 466 "XWidgets/xwBoard.w"
 static void interpret_location(Widget self)
 #else
-#line 466 "XWidgets/xwBoard.w"
 static void interpret_location(self)Widget self;
 #endif
-#line 467 "XWidgets/xwBoard.w"
 {
     char *s;
 
@@ -269,35 +230,20 @@ static void interpret_location(self)Widget self;
 }
 
 static XtResource resources[] = {
-#line 59 "XWidgets/xwBoard.w"
 {XtNabs_x,XtCAbs_x,XtRPosition,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.abs_x),XtOffsetOf(XfwfBoardRec,xfwfBoard.abs_x),XtRImmediate,(XtPointer)0 },
-#line 60 "XWidgets/xwBoard.w"
 {XtNrel_x,XtCRel_x,XtRFloat,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.rel_x),XtOffsetOf(XfwfBoardRec,xfwfBoard.rel_x),XtRString,(XtPointer)"0.0"},
-#line 61 "XWidgets/xwBoard.w"
 {XtNabs_y,XtCAbs_y,XtRPosition,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.abs_y),XtOffsetOf(XfwfBoardRec,xfwfBoard.abs_y),XtRImmediate,(XtPointer)0 },
-#line 62 "XWidgets/xwBoard.w"
 {XtNrel_y,XtCRel_y,XtRFloat,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.rel_y),XtOffsetOf(XfwfBoardRec,xfwfBoard.rel_y),XtRString,(XtPointer)"0.0"},
-#line 70 "XWidgets/xwBoard.w"
 {XtNx,XtCX,XtRPosition,sizeof(((XfwfBoardRec*)NULL)->core.x),XtOffsetOf(XfwfBoardRec,core.x),XtRImmediate,(XtPointer)MAGICNUM },
-#line 71 "XWidgets/xwBoard.w"
 {XtNy,XtCY,XtRPosition,sizeof(((XfwfBoardRec*)NULL)->core.y),XtOffsetOf(XfwfBoardRec,core.y),XtRImmediate,(XtPointer)MAGICNUM },
-#line 79 "XWidgets/xwBoard.w"
 {XtNabs_width,XtCAbs_width,XtRPosition,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.abs_width),XtOffsetOf(XfwfBoardRec,xfwfBoard.abs_width),XtRImmediate,(XtPointer)0 },
-#line 80 "XWidgets/xwBoard.w"
 {XtNrel_width,XtCRel_width,XtRFloat,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.rel_width),XtOffsetOf(XfwfBoardRec,xfwfBoard.rel_width),XtRString,(XtPointer)"1.0"},
-#line 81 "XWidgets/xwBoard.w"
 {XtNabs_height,XtCAbs_height,XtRPosition,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.abs_height),XtOffsetOf(XfwfBoardRec,xfwfBoard.abs_height),XtRImmediate,(XtPointer)0 },
-#line 82 "XWidgets/xwBoard.w"
 {XtNrel_height,XtCRel_height,XtRFloat,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.rel_height),XtOffsetOf(XfwfBoardRec,xfwfBoard.rel_height),XtRString,(XtPointer)"1.0"},
-#line 87 "XWidgets/xwBoard.w"
 {XtNwidth,XtCWidth,XtRDimension,sizeof(((XfwfBoardRec*)NULL)->core.width),XtOffsetOf(XfwfBoardRec,core.width),XtRImmediate,(XtPointer)MAGICNUM },
-#line 88 "XWidgets/xwBoard.w"
 {XtNheight,XtCHeight,XtRDimension,sizeof(((XfwfBoardRec*)NULL)->core.height),XtOffsetOf(XfwfBoardRec,core.height),XtRImmediate,(XtPointer)MAGICNUM },
-#line 94 "XWidgets/xwBoard.w"
 {XtNhunit,XtCHunit,XtRFloat,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.hunit),XtOffsetOf(XfwfBoardRec,xfwfBoard.hunit),XtRString,(XtPointer)"1.0"},
-#line 95 "XWidgets/xwBoard.w"
 {XtNvunit,XtCVunit,XtRFloat,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.vunit),XtOffsetOf(XfwfBoardRec,xfwfBoard.vunit),XtRString,(XtPointer)"1.0"},
-#line 118 "XWidgets/xwBoard.w"
 {XtNlocation,XtCLocation,XtRString,sizeof(((XfwfBoardRec*)NULL)->xfwfBoard.location),XtOffsetOf(XfwfBoardRec,xfwfBoard.location),XtRImmediate,(XtPointer)NULL },
 };
 
@@ -385,16 +331,12 @@ WidgetClass class;
   if (c->xfwfBoard_class.set_abs_location == XtInherit_set_abs_location)
     c->xfwfBoard_class.set_abs_location = super->xfwfBoard_class.set_abs_location;
 }
-#line 144 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 144 "XWidgets/xwBoard.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 144 "XWidgets/xwBoard.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 145 "XWidgets/xwBoard.w"
 {
     XtWidgetGeometry reply;
     int i;
@@ -433,16 +375,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     }
     return False;
 }
-#line 194 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 194 "XWidgets/xwBoard.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 194 "XWidgets/xwBoard.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 195 "XWidgets/xwBoard.w"
 {
     if (((XfwfBoardWidget)self)->xfwfBoard.location != NULL) {
         ((XfwfBoardWidget)self)->xfwfBoard.location = XtNewString(((XfwfBoardWidget)self)->xfwfBoard.location);
@@ -457,16 +395,12 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
         get_core_geometry(self, &((XfwfBoardWidget)self)->core.x, &((XfwfBoardWidget)self)->core.y, &((XfwfBoardWidget)self)->core.width, &((XfwfBoardWidget)self)->core.height);
     }
 }
-#line 217 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 217 "XWidgets/xwBoard.w"
 static void set_abs_location(Widget self,unsigned  int  flags,int  x,int  y,int  w,int  h)
 #else
-#line 217 "XWidgets/xwBoard.w"
 static void set_abs_location(self,flags,x,y,w,h)Widget self;unsigned  int  flags;int  x;int  y;int  w;int  h;
 #endif
-#line 218 "XWidgets/xwBoard.w"
 {
     if ((flags & (CWX | CWY | CWWidth | CWHeight)) == 0) return;
     if (flags & CWX) ((XfwfBoardWidget)self)->core.x = x;
@@ -476,16 +410,12 @@ static void set_abs_location(self,flags,x,y,w,h)Widget self;unsigned  int  flags
     set_location(self, flags);
     generate_location(self);
 }
-#line 236 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 236 "XWidgets/xwBoard.w"
 static void resize(Widget self)
 #else
-#line 236 "XWidgets/xwBoard.w"
 static void resize(self)Widget self;
 #endif
-#line 237 "XWidgets/xwBoard.w"
 {
     int i;
     XtWidgetGeometry reply;
@@ -498,29 +428,22 @@ static void resize(self)Widget self;
                           reply.height, reply.border_width);
     }
 }
-#line 261 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 261 "XWidgets/xwBoard.w"
 static XtGeometryResult  query_geometry(Widget self,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 261 "XWidgets/xwBoard.w"
 static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
-#line 262 "XWidgets/xwBoard.w"
 {
     reply->request_mode = CWX | CWY | CWWidth | CWHeight;
     get_core_geometry(self, &reply->x, &reply->y,
                       &reply->width, &reply->height);
     return XtGeometryAlmost;
 }
-#line 272 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 167 "XWidgets/xwBoard.w"
 static XtGeometryResult  geometry_manager(Widget  child,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 167 "XWidgets/xwBoard.w"
 static XtGeometryResult  geometry_manager(child,request,reply)Widget  child;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
 { Widget self = XtParent(child); {
@@ -541,16 +464,12 @@ static XtGeometryResult  geometry_manager(child,request,reply)Widget  child;XtWi
     return XtGeometryDone;
 }
 }
-#line 295 "XWidgets/xwBoard.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 295 "XWidgets/xwBoard.w"
 static void change_managed(Widget self)
 #else
-#line 295 "XWidgets/xwBoard.w"
 static void change_managed(self)Widget self;
 #endif
-#line 296 "XWidgets/xwBoard.w"
 {
 #if 1
     Widget top = self, w;

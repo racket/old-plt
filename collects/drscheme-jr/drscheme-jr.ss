@@ -385,7 +385,7 @@
 			  (lambda ()
 			    (call-with-values
 			     (lambda () (primitive-eval sexp))
-			     (current-print))))
+			     (lambda args (for-each (current-print) args)))))
 			 (display-prompt)
 			 (loop)))
 		     #t))

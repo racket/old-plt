@@ -759,66 +759,18 @@
       (eval '(require contract-test-suite6))
       (eval '(define-struct (t s) ()))))
 
-  #|
-  (test/spec-passed/result
-   'class-contract1
-   '(send
-     (make-object (contract (class-contract (public m (integer? . -> . integer?)))
-                            (class object% (define/public (m x) x) (super-instantiate ()))
-                            'pos
-                            'neg))
-     m
-     1)
-   1)
-  
-  (test/spec-failed
-   'class-contract2
-   '(contract (class-contract (public m (integer? . -> . integer?)))
-              object%
+  (test/spec-passed
+   'object-contract0
+   '(contract (object-contract)
+              (new object%)
               'pos
-              'neg)
-   "pos")
-  
-  (test/spec-failed
-   'class-contract3
-   '(send
-     (make-object (contract (class-contract (public m (integer? . -> . integer?)))
-                            (class object% (define/public (m x) x) (super-instantiate ()))
-                            'pos
-                            'neg))
-     m
-     'x)
-   "neg")
-  
-  (test/spec-failed
-   'class-contract4
-   '(send
-     (make-object (contract (class-contract (public m (integer? . -> . integer?)))
-                            (class object% (define/public (m x) 'x) (super-instantiate ()))
-                            'pos
-                            'neg))
-     m
-     1)
-   "pos")
-  
-  (test/spec-passed 
-   'class-contract/prim
-   '(make-object 
-        (class (contract (class-contract/prim)
-                         (class object% (init x) (init y) (init z) (super-make-object))
-                         'pos-c
-                         'neg-c)
-          (init-rest x)
-          (apply super-make-object x))
-      1 2 3))
-  
-  |#
+              'neg))
   
   (test/spec-passed/result
    'object-contract1
    '(send
      (contract (object-contract (m (integer? . -> . integer?)))
-               (make-object (class object% (define/public (m x) x) (super-instantiate ())))
+               (new (class object% (define/public (m x) x) (super-new)))
                'pos
                'neg)
      m
@@ -854,76 +806,14 @@
      m
      1)
    "pos")
-
-  |#
-  
-  (test/spec-passed/result
-   'object-contract=>1
-   '(let* ([c% (class object% (super-instantiate ()))]
-           [c (make-object c%)]
-           [wc (contract (object-contract) c 'pos-c 'neg-c)]
-           [d% (class c% (super-instantiate ()))]
-           [d (make-object d%)]
-           [wd (contract (object-contract) d 'pos-d 'neg-d)])
-      (list (is-a? c c%)
-            (is-a? wc c%)
-            (is-a? d c%)
-            (is-a? wd c%)
-            (interface-extension? (object-interface d) (object-interface c))))
-   (list #t #t #t #t #t))
-  
-  (test/spec-passed
-   'recursive-object1
-   '(letrec ([cc (object-contract (m (-> dd dd)))]
-             [dd (object-contract (m (-> cc cc)))]
-             [% (class object% (define/public (m x) x) (super-instantiate ()))]
-             [c (contract cc (make-object %) 'c-pos 'c-neg)]
-             [d (contract dd (make-object %) 'd-pos 'd-neg)])
-      (send c m d)
-      (send d m c)))
   
   (test/spec-failed
-   'recursive-object2
-   '(letrec ([cc (object-contract (m (-> dd dd)))]
-             [dd (object-contract (n (-> cc cc)))]
-             [% (class object% (define/public (m x) x) (define/public (n x) x) (super-instantiate ()))]
-             [c (contract cc (make-object %) 'c-pos 'c-neg)]
-             [d (contract dd (make-object %) 'd-pos 'd-neg)])
-      (send c m c))
-   "c-neg")
-
-  (test/spec-passed/result
-   'class-contract=>3
-   '(let* ([c% (class object% (super-instantiate ()))]
-           [wc% (contract (class-contract) c% 'pos-c 'neg-c)]
-           [d% (class c% (super-instantiate ()))]
-           [wd% (contract (class-contract) d% 'pos-d 'neg-d)])
-      (list (subclass? wd% wc%)
-            (implementation? wd% (class->interface wc%))
-            (is-a? (make-object wd%) wc%)
-            (is-a? (make-object wd%) (class->interface wc%))
-            (is-a? (instantiate wd% ()) wc%)
-            (is-a? (instantiate wd% ()) (class->interface wc%))))
-   (list #t #t #t #t #t #t))
-   
-  (test/spec-passed
-   'recursive-class1
-   '(letrec ([cc (class-contract (public m (-> dd dd)))]
-             [dd (class-contract (public n (-> cc cc)))]
-             [c% (contract cc (class object% (define/public (m x) x) (super-instantiate ())) 'c-pos 'c-neg)]
-             [d% (contract dd (class object% (define/public (n x) x) (super-instantiate ())) 'd-pos 'd-neg)])
-      (send (make-object c%) m d%)
-      (send (make-object d%) n c%)))
-  
-  (test/spec-failed
-   'recursive-class1
-   '(letrec ([cc (class-contract (public m (-> dd dd)))]
-             [dd (class-contract (public n (-> cc cc)))]
-             [c% (contract cc (class object% (define/public (m x) x) (super-instantiate ())) 'c-pos 'c-neg)]
-             [d% (contract dd (class object% (define/public (n x) x) (super-instantiate ())) 'd-pos 'd-neg)])
-      (send (make-object c%) m c%))
-   "c-neg")  
-|#
+   'object-contract5
+   '(contract (object-contract (m (integer? integer? . -> . integer?)))
+              (make-object (class object% (define/public (m x) 'x) (super-instantiate ())))
+              'pos
+              'neg)
+   "pos")
 
   (test/spec-failed
    'immutable1
@@ -1425,6 +1315,8 @@
   (test-name "(box/p boolean?)" (box/p boolean?))
   (test-name "(box/p boolean?)" (box/p (flat-contract boolean?)))
   (test-name "the-name" (flat-rec-contract the-name))
+
+  (test-name "(object-contract (m (-> integer? integer?)))" (object-contract (m (-> integer? integer?))))
   
   ))
 (report-errs)

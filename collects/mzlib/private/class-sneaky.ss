@@ -2393,13 +2393,14 @@ substitutability is checked properly.
   (define-struct wrapper-field (name ctc-stx))
   (define-struct wrapper-method (name mth-stx))
 
-  (define-values (wrapper-object-wrapped struct:wrapper-object)
+  (define-values (wrapper-object-wrapped set-wrapper-object-wrapped! struct:wrapper-object)
     (let-values ([(struct:wrapper-object wrapper-object? make-wrapper-object ref set!)
                   (make-struct-type 'raw-wrapper-object
                                     #f
                                     0
                                     1)])
       (values (lambda (v) (ref v 0))
+              (lambda (o v) (set! o 0 v))
               struct:wrapper-object)))
   
   ;; the wrapper class should have all method bodies just look up the 
@@ -2485,7 +2486,8 @@ substitutability is checked properly.
                  ;; all of the contract-ized versions of the methods,
                  ;; and all of the contract-ized versions of the fields
                  ;; just fill them into `o'.
-                 (let loop ([leftover-args leftover-args]
+                 (set-wrapper-object-wrapped! o (car leftover-args))
+                 (let loop ([leftover-args (cdr leftover-args)]
                             [i 0])
                    (unless (null? leftover-args)
                      (field-set! o i (car leftover-args))
@@ -2499,7 +2501,8 @@ substitutability is checked properly.
                    [methods methods])
           (when (< i method-count)
             (vector-set! methods-vec i ((car methods) field-ref))
-            (loop (- i 1))))
+            (loop (+ i 1)
+                  (cdr methods))))
         
         ;; fill in the methods-ht
         (let loop ([i 0]
@@ -2524,7 +2527,10 @@ substitutability is checked properly.
   
   ; extract-vtable : object -> (vectorof method-proc[this args ... -> res])
   (define (extract-vtable o) (class-methods (object-ref o)))
-  
+
+  ; extract-method-ht : object -> hash-table[sym -> number]
+  (define (extract-method-ht o) (class-method-ht (object-ref o)))
+
   ;;--------------------------------------------------------------------
   ;;  misc utils
   ;;--------------------------------------------------------------------
@@ -2551,6 +2557,11 @@ substitutability is checked properly.
   (provide class*/names-sneaky
            set-sneaky-class-contract-table! sneaky-class-contract-table sneaky-class?
            class-super-class
+           
+           make-wrapper-class
+           wrapper-object-wrapped
+           extract-vtable
+           extract-method-ht
            
            (rename :class class)
 	   class* class*/names

@@ -1,3 +1,9 @@
+#|
+
+improve method arity mismatch contract violation error messages?
+  (abstract out -> and friends even more?)
+
+|#
 
 (module contract mzscheme
   (provide (rename -contract contract)
@@ -10,7 +16,7 @@
            opt->*
            ;class-contract
            ;class-contract/prim
-           ;object-contract ;; not yet good enough
+           object-contract ;; not yet good enough
            provide/contract
            define/contract
 	   contract?
@@ -833,7 +839,7 @@
                                   (super-init ())))])
                (syntax/loc stx
                  (make-contract
-                  "class contract"
+                  "(object-contract ...)"
                   (lambda outer-args
                     (let ([super-contracts-ht 
                            (let loop ([cls val])
@@ -854,8 +860,7 @@
                                                 orig-str
                                                 "expected class to have method ~a, got: ~e"
                                                 'meth-name
-                                                val))
-                        ...)
+                                                val)) ...)
                       (let ([c (class*/names-sneaky
                                 (this super-init super-make) val ()
                                 
@@ -888,17 +893,18 @@
       ;; mtd-arg-stx : syntax[list of arg-specs] (ie, for use in a case-lambda)
       (define-struct mtd (name ctc-stx mtd-arg-stx))
       
+      ;; name : syntax
+      ;; ctc-stx : syntax[evals to a contract]
+      (define-struct fld (name ctc-stx))
+      
       ;; expand-field/mtd-spec : stx -> (union mtd fld)
       (define (expand-field/mtd-spec f/m-stx)
-        (printf "expand-field/mtd-spec: ~s\n" f/m-stx)
         (syntax-case f/m-stx (field)
-          #|
           [(field field-name ctc)
            (identifier? (syntax field-name))
-           (make-field (syntax field-name) (syntax ctc))]
+           (make-fld (syntax field-name) (syntax ctc))]
           [(field field-name ctc)
            (raise-syntax-error 'object-contract "expected name of field" stx (syntax field-name))]
-          |#
           [(mtd-name ctc)
            (identifier? (syntax mtd-name))
            (let-values ([(ctc-stx proc-stx) (expand-mtd-contract (syntax ctc))])
@@ -906,11 +912,11 @@
                        ctc-stx
                        proc-stx))]
           [(mtd-name ctc)
-           (raise-syntax-error 'object-contract "expected name of method" stx (syntax mtd-name))]))
+           (raise-syntax-error 'object-contract "expected name of method" stx (syntax mtd-name))]
+          [_ (raise-syntax-error 'object-contract "expected field or method clause" stx f/m-stx)]))
       
       ;; expand-mtd-contract : syntax -> (values ctc-stx mtd-arg-stx)
       (define (expand-mtd-contract mtd-stx)
-        (printf "mtd-stx: ~s\n" mtd-stx)
         (syntax-case stx (case-> opt->)
           #|
           [(case-> cases ...) 
@@ -922,12 +928,11 @@
       
       ;; expand-mtd-arrow : stx -> (values ctc-stx mtd-arg-stx)
       (define (expand-mtd-arrow mtd-stx)
-        (printf "mtd-stx: ~s\n" mtd-stx)
         (syntax-case mtd-stx (-> ->* ->d ->d*)
           [(->) (raise-syntax-error 'object-contract "-> must have arguments" stx mtd-stx)]
           [(-> args ...)
            (with-syntax ([(arg-vars ...) (generate-temporaries (syntax (args ...)))])
-             (values (->/proc (syntax (-> this-ctc args ...)))
+             (values (->/proc (syntax (-> any? args ...)))
                      (syntax ((arg-vars ...)))))]
           #|
           [(->* (doms ...) (rngs ...))
@@ -991,6 +996,7 @@
           [else (raise-syntax-error 'object-contract "unknown method contract syntax" stx mtd-stx)]))
       
       
+      ;; build-methods-stx : syntax[list of lambda arg specs] -> syntax[method realized as proc]
       (define (build-methods-stx arg-spec-stxss)
         (let loop ([arg-spec-stxss arg-spec-stxss]
                    [i 0])
@@ -1000,71 +1006,79 @@
                     (with-syntax ([(cases ...)
                                    (map (lambda (arg-spec-stx)
                                           (with-syntax ([(this rest-ids ...) arg-spec-stx]
-                                                        [mi (+ i 1)])
-                                            (syntax ((field-ref this mi) (field-ref this 0) rest-ids ...))))
-                                        arg-spec-stxs)])
+                                                        [i i])
+                                            (syntax ((this rest-ids ...) 
+                                                     ((field-ref this i) (wrapper-object-wrapped this) rest-ids ...)))))
+                                        (syntax->list arg-spec-stxs))])
                       (cons (syntax (lambda (field-ref) (case-lambda cases ...)))
                             (loop (cdr arg-spec-stxss)
                                   (+ i 1)))))])))
       
       (syntax-case stx ()
-        [(_ (name mtd) ...)
-         (andmap identifier? (syntax->list (syntax (name ...))))
-         (let* ([_ (printf "1\n")]
-                [mtd/flds (map expand-field/mtd-spec (syntax->list (syntax (mtd ...))))]
+        [(_ field/mtd-specs ...)
+         (let* ([mtd/flds (map expand-field/mtd-spec (syntax->list (syntax (field/mtd-specs ...))))]
 		[mtds (filter mtd? mtd/flds)]
-		;[flds (filter fld? mtd/flds)]
-		)
-           (printf "2\n")
-           (with-syntax ([(method-var ...) (generate-temporaries mtds)]
-                         [(method/app-var ...) (generate-temporaries mtds)]
-                         [(method-ctc-stx ...) (map mtd-ctc-stx mtds)]
+		[flds (filter fld? mtd/flds)])
+           (with-syntax ([(method-ctc-stx ...) (map mtd-ctc-stx mtds)]
                          [(method-name ...) (map mtd-name mtds)]
-                         [(methods ...) (build-methods-stx mtds)])
+                         [(method-var ...) (generate-temporaries mtds)]
+                         [(method/app-var ...) (generate-temporaries mtds)]
+                         [(methods ...) (build-methods-stx (map mtd-mtd-arg-stx mtds))]
+                         
+                         [(field-ctc-stx ...) (map mtd-ctc-stx flds)]
+                         [(field-name ...) (map fld-name flds)]
+                         [(field-var ...) (generate-temporaries flds)]
+                         [(field/app-var ...) (generate-temporaries flds)])
              (syntax
               (make-contract
                "class contract"
-               (let ([method-var (contract-proc method-ctc-stx)] ...)
-                 (let ([mtd-names '(method-name ...)])
-                 (lambda (pos neg src-info orig-str)
-                   (let ([method/app-var (method-var pos neg src-info orig-str)] ...)
-                     (let ([cls (make-wrapper-class 'wrapper-class 
-                                                    '(method-name ...)
-                                                    (list methods ...)
-                                                    '();; fields
-                                                    )])
-                       (lambda (val)
-                         (let ([val-mtd-names
-                                (interface->method-names
-                                 (class->interface
-                                  (object-class
-                                   val)))])
-                           (for-each (lambda (val-mtd-name)
-                                       (unless (memq val-mtd-name mtd-names)
-                                         (raise-contract-error src-info
-                                                               pos-blame
-                                                               neg-blame
-                                                               orig-str
-                                                               "expected an object with method ~s"
-                                                               val-mtd-name)))
-                                     val-mtd-names))
-                         (create-proxy cls
-                                       val
-                                       (list method/app-var ...))))))))))))]
-        [(_ (name mtd) ...)
-         (for-each (lambda (name)
-                     (unless (identifier? name)
-                       (raise-syntax-error 'object-contract "expected method name" stx name)))
-                   (syntax->list (syntax (name ...))))]
-        [(_ x ...)
-         (for-each (lambda (pr)
-                     (syntax-case pr ()
-                       [(a b) (void)]
-                       [else (raise-syntax-error 'object-contract 
-                                                 "expected method name and method contract" 
-                                                 stx
-                                                 pr)]))
-                   (syntax->list (syntax (x ...))))]))
+               (let ([method-var (contract-proc method-ctc-stx)] ...
+                     [field-ctc-var field-ctc-stx] ...)
+                 (begin
+                   (void)
+                   (unless (contract? field-ctc-var)
+                     (error 'object-contract
+                            "expected contract for field ~a, got ~e"
+                            'field-name
+                            field-ctc-var)) ...)
+                 (let ([field-var (contract-proc field-ctc-var)] ...)
+                   (lambda (pos-blame neg-blame src-info orig-str)
+                     (let ([method/app-var (method-var pos-blame neg-blame src-info orig-str)] ...
+                           [field/app-var (field-var pos-blame neg-blame src-info orig-str)]...)
+                       (let ([cls (make-wrapper-class 'wrapper-class 
+                                                      '(method-name ...)
+                                                      (list methods ...)
+                                                      '() ; '(field-name ...)
+                                                      )])
+                         (lambda (val)
+                           (unless (object? val)
+                             (raise-contract-error src-info
+                                                   pos-blame
+                                                   neg-blame
+                                                   orig-str
+                                                   "expected an object, got ~e"
+                                                   val))
+                           (let ([val-mtd-names
+                                  (interface->method-names
+                                   (object-interface
+                                    val))])
+                             (void)
+                             (unless (memq 'method-name val-mtd-names)
+                               (raise-contract-error src-info
+                                                     pos-blame
+                                                     neg-blame
+                                                     orig-str
+                                                     "expected an object with method ~s"
+                                                     'method-name))
+                             ...)
+                           
+                           (let ([vtable (extract-vtable val)]
+                                 [method-ht (extract-method-ht val)])
+                             (make-object cls
+                               val
+                               (method/app-var (vector-ref vtable (hash-table-get method-ht 'method-name))) ...
+                               ;(field/app-var (field-res val 'field-name))
+                               ))))))))))))]))
     
     (define (object-contract/proc2 stx)
       (syntax-case stx ()

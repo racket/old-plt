@@ -17,6 +17,7 @@
 # define NOT_WINSOCK(x) (x)
 # define INVALID_SOCKET (-1)
 # define WAS_EINPROGRESS(e) ((e == EINPROGRESS))
+# define mz_h_errno() h_errno
 # define mz_hstrerror(x) dup_errstr(hstrerror(x))
 #endif
 
@@ -24,8 +25,9 @@
 # include <winsock.h>
 # define SOCK_ERRNO() WSAGetLastError()
 # define NOT_WINSOCK(x) 0
-# define WAS_EINPROGRESS(e) ((e == WSAEINPROGRESS))
-# define mz_hstrerror(x) "Unknown error"
+# define WAS_EINPROGRESS(e) ((e == WSAEWOULDBLOCK))
+# define mz_h_errno() WSAGetLastError()
+# define mz_hstrerror(x) NULL
 #endif
 
 /* stolen from $(PLTHOME}/src/mzscheme/src/schpriv.h */
@@ -70,6 +72,7 @@ struct sslplt *create_register_sslplt(SSL *ssl)
   sslplt->ssl = ssl;
   sslplt->ib_used = 0; sslplt->ob_used = 0; 
   sslplt->close_in = 0; sslplt->close_out = 0;
+  sslplt->write_blocked_reason = 0;
   return sslplt;
 }
 
@@ -322,7 +325,7 @@ long ssl_do_get_string(Scheme_Input_Port *port, char *buffer, long offset,
       /* see if we've hit the end of file */
       if ((err == SSL_ERROR_ZERO_RETURN)
 	  || ((err == SSL_ERROR_SYSCALL) && !status)) {
-	if(bytes_read == 0) 
+	if(bytes_read == 0)
 	  return EOF;
 	else
 	  return bytes_read;
@@ -376,6 +379,7 @@ static int sslin_do_char_ready(Scheme_Input_Port *port, int *stuck_why)
 {
   struct sslplt *ssl = SCHEME_INPORT_VAL(port);
   char buf[1];
+  int r;
   
   *stuck_why = 0;
 
@@ -385,9 +389,12 @@ static int sslin_do_char_ready(Scheme_Input_Port *port, int *stuck_why)
   if(ssl->ib_used) return 1;
 
   /* otherwise, try to read a character in */
-  if (ssl_do_get_string(port, buf, 0, 1, 1, stuck_why, 0)) {
-    ssl->ib_used = 1;
-    ssl->ibuffer = ((unsigned char *)buf)[0];
+  r = ssl_do_get_string(port, buf, 0, 1, 1, stuck_why, 0);
+  if (r) {
+    if (r != EOF) {
+      ssl->ib_used = 1;
+      ssl->ibuffer = ((unsigned char *)buf)[0];
+    }
     return 1;
   }
 
@@ -552,7 +559,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
   }
 
  write_error:
-   scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-read: error writing (%Z)",
+   scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, "ssl-write: error writing (%Z)",
 		   err, errstr);
   return 0; /* needless, but it makes GCC happy */
 }
@@ -692,7 +699,7 @@ unsigned short check_port_and_convert(int argc, Scheme_Object *argv[])
     if(SCHEME_INT_VAL(argv[1]) >= 1)
       if(SCHEME_INT_VAL(argv[1]) <= 65535)
 	return htons(SCHEME_INT_VAL(argv[1]));
-  scheme_wrong_type("ssl_connect", "exact integer in [1, 65535]", 1,argc,argv);
+  scheme_wrong_type("ssl-connect", "exact integer in [1, 65535]", 1,argc,argv);
   return 0; /* unnessary and wrong, but it makes GCC happy */
 }
 
@@ -896,6 +903,30 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   return NULL;
 }
 
+#ifdef USE_WINSOCK_TCP
+static int started;
+static void TCP_INIT(char *name)
+{
+  static int started = 0;
+  
+  if (!started) {
+    WSADATA data;
+    if (!WSAStartup(MAKEWORD(1, 1), &data)) {
+      started = 1;
+      return;
+    }
+  } else
+    return;
+  
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "%s: not supported on this machine"
+		   " (no winsock driver)",
+		   name);
+}
+#else
+# define TCP_INIT(n) /* empty */
+#endif
+
 /*****************************************************************************
  * SCHEME EXTERNAL FUNCTION IMPLEMENTATIONS: These are the implemenations of *
  * the functions which are actually going to be exported to MzScheme userland*
@@ -920,6 +951,8 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   /* check we have the security clearance to actually do this */
   scheme_security_check_network("ssl-connect", address, port, 1);
 
+  TCP_INIT("ssl-connect");
+
   /* try to create the socket */
 #ifndef PROTOENT_IS_INT
   proto = getprotobyname("tcp");
@@ -928,7 +961,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   }
 #endif
   sock = socket(PF_INET, SOCK_STREAM, PROTO_P_PROTO);
-  if (sock == INVALID_SOCKET)  { errstr = NULL; err = errno; goto clean_up_and_die; }
+  if (sock == INVALID_SOCKET)  { errstr = NULL; err = SOCK_ERRNO(); goto clean_up_and_die; }
 #ifdef USE_WINSOCK_TCP
   {
     unsigned long ioarg = 1;
@@ -941,7 +974,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   /* lookup hostname and get a reasonable structure */
   host = get_host_by_number(address);
   if(!host) host = gethostbyname(address);
-  if(!host) { err = h_errno; errstr = mz_hstrerror(err); goto clean_up_and_die; }
+  if(!host) { err = mz_h_errno(); errstr = mz_hstrerror(err); goto clean_up_and_die; }
     
   /* make the network connection */
   addr.sin_family = AF_INET;
@@ -952,8 +985,10 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
   /* here's the complicated bit */
   if(status == -1) {
-    if(!WAS_EINPROGRESS(errno)) { 
-      errstr = NULL; err= errno; goto clean_up_and_die; 
+    int errid;
+    errid = SOCK_ERRNO();
+    if(!WAS_EINPROGRESS(errid)) { 
+      errstr = NULL; err = errid; goto clean_up_and_die; 
     }
     
     {

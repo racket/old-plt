@@ -20,7 +20,7 @@
     (parser
      (start CompilationUnit Interactions VariableInitializer Type)
      ;;(debug "parser.output")
-     (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
+     (tokens java-vals special-toks Keywords ExtraKeywords Separators EmptyLiterals Operators)
      (error (lambda (tok-ok name val start-pos end-pos)
               (raise-read-error (format "Parse error near <~a:~a>" name val)
                                 (file-path)
@@ -59,7 +59,8 @@
       ;; 19.4
       (Type
        [(PrimitiveType) $1]
-       [(ReferenceType) $1])
+       [(ReferenceType) $1]
+       [(dynamic) (make-type-spec 'dynamic 0 (build-src 1))])
       
       (PrimitiveType
        [(NumericType) $1]

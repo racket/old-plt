@@ -31,6 +31,9 @@
   ;Stores a function which when called will produce (->token) of lexed tokens
   (define lex-stream (make-parameter (lambda () null)))
   
+  ;Stores whether dynamic typing is allowed
+  (define dynamic? (make-parameter #f))
+  
   ;Stores whether it is permitted to use Scheme functions and other values
   (define scheme-ok? (make-parameter #f))
   

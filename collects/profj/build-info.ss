@@ -1000,7 +1000,7 @@
   ;; process-field: field (string list) type-records symbol -> field-record
   (define (process-field field cname type-recs level)
     (make-field-record (id-string (field-name field)) 
-                       (check-field-modifiers level (field-modifiers field)) 
+                       (check-field-modifiers level (field-modifiers field))
                        (var-init? field)
                        cname 
                        (type-spec-to-type (field-type field) cname level type-recs)))

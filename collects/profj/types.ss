@@ -11,13 +11,13 @@
                                variable-member? generate-require-spec))
       
   ;; symbol-type = 'null | 'string | 'boolean | 'char | 'byte | 'short | 'int
-  ;;             | 'long | 'float | 'double | 'void
+  ;;             | 'long | 'float | 'double | 'void | 'dynamic
   ;; reference-type = 'null | 'string | (make-ref-type string (list string))
   ;; array-type = (make-array-type type int)
   ;; type = symbol-type
   ;;      | reference-type
   ;;      | array-type
-  ;;      | scheme-val
+  ;;      | dynamic-val
   ;;      | unknown-ref
 
   (define-struct ref-type (class/iface path) (make-inspector))
@@ -52,17 +52,17 @@
   
   ;; reference-type: 'a -> boolean
   (define (reference-type? x)
-    (if (and (scheme-val? x) (scheme-val-type x))
-        (reference-type? (scheme-val-type x))
-        (or (scheme-val? x) 
+    (if (and (dynamic-val? x) (dynamic-val-type x))
+        (reference-type? (dynamic-val-type x))
+        (or (dynamic-val? x) 
             (unknown-ref? x)
             (ref-type? x) 
             (memq x `(null string)))))
 
   ;;is-string?: 'a -> boolean
   (define (is-string-type? s)
-    (if (scheme-val? s)
-        (is-string-type? (scheme-val-type s))
+    (if (dynamic-val? s)
+        (is-string-type? (dynamic-val-type s))
         (and (reference-type? s)
              (or (eq? 'string s) (type=? s string-type)))))
   
@@ -70,16 +70,16 @@
   ;; prim-integral-type?: 'a -> boolean
   (define (prim-integral-type? t)
     (cond
-      ((and (scheme-val? t) (scheme-val-type t)) 
-       (prim-integral-type? (scheme-val-type t)))
-      ((scheme-val? t) #t)
+      ((and (dynamic-val? t) (dynamic-val-type t)) 
+       (prim-integral-type? (dynamic-val-type t)))
+      ((dynamic-val? t) #t)
       (else (memq t `(byte short int long char)))))
   ;; prim-numeric-type?: 'a -> boolean
   (define (prim-numeric-type? t)
     (cond 
-      ((and (scheme-val? t) (scheme-val-type t))
-       (prim-numeric-type? (scheme-val-type t)))
-      ((scheme-val? t) #t)
+      ((and (dynamic-val? t) (dynamic-val-type t))
+       (prim-numeric-type? (dynamic-val-type t)))
+      ((dynamic-val? t) #t)
       (else (or (prim-integral-type? t) (memq t `(float double))))))
   
   ;; type=?: type type -> boolean
@@ -148,14 +148,15 @@
   ;; assignment-conversion: type type type-records -> boolean
   (define (assignment-conversion to from type-recs)
     (cond
-      ((scheme-val? to) 
+      ((dynamic-val? to) 
        (cond
-         ((scheme-val-type to) => (lambda (t) (assignment-conversion t from type-recs)))
-         (else (set-scheme-val-type! to from) #t)))
-      ((scheme-val? from)
+         ((dynamic-val-type to) => (lambda (t) (assignment-conversion t from type-recs)))
+         (else (set-dynamic-val-type! to from) #t)))
+      ((dynamic-val? from)
        (cond
-         ((scheme-val-type from) => (lambda (t) (assignment-conversion to t type-recs)))
-         (else (set-scheme-val-type! from to) #t)))
+         ((dynamic-val-type from) => (lambda (t) (assignment-conversion to t type-recs)))
+         (else (set-dynamic-val-type! from to) #t)))
+      ((eq? to 'dynamic) #t)
       ((type=? to from) #t)
       ((and (prim-numeric-type? to) (prim-numeric-type? from))
        (widening-prim-conversion to from))
@@ -166,7 +167,7 @@
   (define (type-spec-to-type ts container-class level type-recs)
     (let* ((ts-name (type-spec-name ts))
            (t (cond
-                ((memq ts-name `(null string boolean char byte short int long float double void ctor)) ts-name)
+                ((memq ts-name `(null string boolean char byte short int long float double void ctor dynamic)) ts-name)
                 ((name? ts-name) (name->type ts-name container-class (type-spec-src ts) level type-recs)))))
       (if (> (type-spec-dim ts) 0)
           (make-array-type t (type-spec-dim ts))
@@ -244,17 +245,20 @@
   ;;(make-inner-record string (list symbol) bool)
   (define-struct inner-record (name modifiers class?) (make-inspector))
 
-  ;;(make-scheme-record string (list string) path (list scheme-val))
+  ;;(make-scheme-record string (list string) path (list dynamic-val))
   (define-struct scheme-record (name path dir provides))
   
-  ;;(make-scheme-val symbol bool bool (U #f type unknown-ref))
-  (define-struct scheme-val (name dynamic? instance? type))
+  ;;(make-dynamic-val (U type method-contract unknown-ref))
+  (define-struct dynamic-val (type))
   
-  ;;(make-unknown-ref (list method-contract) (list scheme-val))
-  (define-struct unknown-ref (methods fields))
+  ;;(make-unknown-ref (U method-contract field-contract))
+  (define-struct unknown-ref (access))
   
-  ;;(make-method-contract symbol (U type #f) (list (U type #f)))
-  (define-struct method-contract (name return args))  
+  ;;(make-method-contract string type (list type))
+  (define-struct method-contract (name return args))
+  
+  ;;(make-field-contract string type)
+  (define-struct field-contract (name type))
   
 ;                                                                                      
 ;                                                                            ;;        
@@ -577,7 +581,7 @@
             (car (cadr assignable-count))) (method-conflict-fail))
         (else (car assignable)))))
 
-  ;lookup-scheme: scheme-record string ( -> void) -> scheme-val
+  ;lookup-scheme: scheme-record string ( -> void) -> dynamic-val
   ;lookup-scheme may raise an exception if variable is not defined in mod-ref
   (define (lookup-scheme mod-ref variable fail)
     (let ((var (string->symbol (java-name->scheme variable))))
@@ -593,7 +597,7 @@
                (namespace-variable-value var #t  (lambda () 
                                                    (current-namespace old-namespace)
                                                    (fail)))
-               (let ((val (make-scheme-val var #t #f #f)))
+               (let ((val (make-dynamic-val var #t #f #f)))
                  (set-scheme-record-provides! mod-ref (cons val (scheme-record-provides mod-ref)))
                  val))
              (current-namespace old-namespace)))))))
@@ -630,23 +634,23 @@
                                               (string-append remainder "-" (string (char-downcase char))))))))
       (else name)))
 
-  ;variable-member? (list scheme-val) symbol -> scheme-val
+  ;variable-member? (list dynamic-val) symbol -> dynamic-val
   (define (variable-member? known-vars lookup)
     (and (not (null? known-vars))
-         (or (and (eq? (scheme-val-name (car known-vars)) lookup)
+         (or (and (eq? (car (car known-vars)) lookup)
                   (car known-vars))
              (variable-member? (cdr known-vars) lookup))))
 
-  ;field-contract-lookup string (list scheme-val) -> (U #f scheme-val)
+  ;field-contract-lookup string (list dynamic-val) -> (U #f dynamic-val)
   (define (field-contract-lookup name fields)
     (and (not (null? fields))
-         (or (and (equal? (scheme-val-name (car fields)) name) 
+         (or (and (equal? (car (car fields)) name) 
                   (car fields))
              (field-contract-lookup name (cdr fields)))))
 
   ;get-method-contracts: string unknown-ref -> (list method-contract)
   (define (get-method-contracts name ref)
-    (letrec ((methods (unknown-ref-methods ref))
+    (letrec ((methods (list (unknown-ref-access ref)))
              (lookup
               (lambda (ms)
                 (and (not (null? ms))
@@ -656,8 +660,8 @@
       (cond
         ((lookup methods) => (lambda (x) x))
         (else 
-         (let ((mc (make-method-contract name (make-scheme-val 'method-return #t #f #f) #f)))
-           (set-unknown-ref-methods! ref (cons mc (unknown-ref-methods ref)))
+         (let ((mc (make-method-contract name (make-dynamic-val 'method-return #t #f #f) #f)))
+           (set-unknown-ref-access! ref (cons mc (unknown-ref-access ref)))
            (list mc))))))
          
                   

@@ -1623,13 +1623,13 @@
        `(c:object-contract ,@(map (lambda (m) 
                                     `(,(string->symbol (java-name->scheme (method-contract-name m)))
                                        ,(type->contract m)))
-                                  (unknown-ref-methods type))
-                           ,@(map (lambda (f) `(field ,(string->symbol (java-name->scheme (scheme-val-name f)))
-                                                      ,(type->contract (scheme-val-type f))))
-                                  (unknown-ref-fields type))))
+                                  (unknown-ref-access type))
+                           ,@(map (lambda (f) `(field ,(string->symbol (java-name->scheme (dynamic-val-type f)))
+                                                      ,(type->contract (dynamic-val-type f))))
+                                  (unknown-ref-access type))))
       ((method-contract? type)
-       `(c:-> ,@(map type->contract (map scheme-val-type (method-contract-args type)))
-              ,(type->contract (scheme-val-type (method-contract-return type)))))
+       `(c:-> ,@(map type->contract (map dynamic-val-type (method-contract-args type)))
+              ,(type->contract (dynamic-val-type (method-contract-return type)))))
       ((not type) 'c:any/c)
       ))
   
@@ -1740,8 +1740,8 @@
   ;;make-is-test sym -> (type -> bool)
   (define (make-is-test kind)
     (lambda (type)
-      (if (scheme-val? type)
-        (eq? (scheme-val-type type) kind)
+      (if (dynamic-val? type)
+        (eq? (dynamic-val-type type) kind)
         (eq? type kind))))
   
   ;;is-string? type -> bool
@@ -1800,8 +1800,8 @@
               ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
               (else
                (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
-      (if (scheme-val? type)
-          (make-syntax #f `(contract ,(type->contract (scheme-val-type type)) ,result 'scheme 'java) source)
+      (if (dynamic-val? type)
+          (make-syntax #f `(contract ,(type->contract (dynamic-val-type type)) ,result 'scheme 'java) source)
           result)))
 
   ;translate-access: (U field-access local-access) type src -> syntax
@@ -1819,9 +1819,9 @@
               (expr (if obj (translate-expression obj))))
          (cond
            ((var-access-static? access)
-            (if (scheme-val? type)
+            (if (dynamic-val? type)
                 (make-syntax #f
-                             `(c:contract ,(type->contract (scheme-val-type type))
+                             `(c:contract ,(type->contract (dynamic-val-type type))
                                           ,(translate-id (build-static-name field-string (var-access-class access)) field-src)
                                           'scheme 'java)
                              (build-src field-src))

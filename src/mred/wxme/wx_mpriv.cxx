@@ -1319,15 +1319,40 @@ void wxMediaEdit::AdjustClickbacks(long start, long end,
   }
 }
 
-wxClickback *wxMediaEdit::FindClickback(long start)
+wxClickback *wxMediaEdit::FindClickback(long start, float y)
 {
   wxNode *node;
   wxClickback *click;
 
   for (node = clickbacks->First(); node; node = node->Next()) {
     click = (wxClickback *)node->Data();
-    if (click->start <= start && click->end > start)
-      return click;
+    if (click->start <= start && click->end > start) {
+      /* We're in the right horizontal region, but maybe the mouse
+	 is above or below the clickback. */
+      wxSnip *start, *end;
+      float top, bottom, dummy;
+
+      start = FindSnip(click->start, 1);
+      end = FindSnip(click->end, -1);
+
+      if (start && end) {
+	GetSnipLocation(start, &dummy, &top, FALSE);
+	GetSnipLocation(start, &dummy, &bottom, TRUE);
+	while (start != end) {
+	  float ntop, nbottom;
+	  start = start->Next();
+	  GetSnipLocation(start, &dummy, &ntop, FALSE);
+	  GetSnipLocation(start, &dummy, &nbottom, TRUE);
+	  if (ntop < top)
+	    top = ntop;
+	  if (nbottom > bottom)
+	    bottom = nbottom;
+	}
+      
+	if ((y >= top) && (y <= bottom))
+	  return click;
+      }
+    }
   }
 
   return NULL;

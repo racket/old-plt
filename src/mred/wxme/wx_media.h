@@ -542,7 +542,7 @@ class wxMediaEdit : public wxMediaBuffer
   void CheckMergeSnips(long start);
 
   void AdjustClickbacks(long start, long end, long d, wxDeleteRecord *rec);
-  wxClickback *FindClickback(long start);
+  wxClickback *FindClickback(long start, float y);
   void SetClickbackHilited(wxClickback *, Bool);
 
   Bool ScrollToPosition(long start, Bool ateol, Bool refresh, long end,

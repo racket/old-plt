@@ -346,7 +346,7 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent &event)
     return customCursor;
 
   pos = FindPosition(x, y, NULL);
-  return FindClickback(pos) ? arrow : iBeam;
+  return FindClickback(pos, y) ? arrow : iBeam;
 }
 
 void wxMediaEdit::OnEvent(wxMouseEvent &event)
@@ -439,7 +439,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
 
   if (event.ButtonDown()) {
     tracking = FALSE;
-    if ((click = FindClickback(now))) {
+    if ((click = FindClickback(now, y))) {
       if (click->callOnDown) {
 	click->f(this, click->start, click->end, click->data);
       } else {
@@ -474,8 +474,7 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent& event)
 	  SetPositionBiasScroll(2, dragstart, now, ateol);
       }
     } else if (tracking) {
-      SetClickbackHilited(trackClickback, now >= trackClickback->start
-			  && now <= trackClickback->end);
+      SetClickbackHilited(trackClickback, !!FindClickback(now, y));
     }
   } else if (event.ButtonUp()) {
     if (dragging)
@@ -2226,7 +2225,7 @@ void wxMediaEdit::SetClickback(long start, long end,
 
   click->delta = new wxStyleDelta;
   if (delta)
-    memcpy(click->delta, delta, sizeof(wxStyleDelta));
+    click->delta->Copy(delta);
 
   SetClickback(click);
 } 

@@ -2060,10 +2060,10 @@ static void direct_cons_putchar(int c) { }
 #  include "pc_keys.inc"
 # endif
 
-typedef struct {
+typedef struct osk_console_input {
   int count, size, ready;
   unsigned char *buffer;
-  osk_console_input *next; /* typeahead */
+  struct osk_console_input *next; /* typeahead */
 } osk_console_input;
 
 static int

@@ -185,15 +185,19 @@ void scheme_init_file(Scheme_Env *env)
     REGISTER_SO(init_file_symbol);
     REGISTER_SO(sys_dir_symbol);
     REGISTER_SO(exec_file_symbol);
+#endif
 
     REGISTER_SO(fail_err_symbol);
     REGISTER_SO(path_err_symbol);
     REGISTER_SO(exists_err_symbol);
-#endif
     
     up_symbol = scheme_intern_symbol("up");
     relative_symbol = scheme_intern_symbol("relative");
     same_symbol = scheme_intern_symbol("same");
+
+    fail_err_symbol = scheme_false;
+    path_err_symbol = scheme_intern_symbol("ill-formed-path");
+    exists_err_symbol = scheme_intern_symbol("already-exists");
 
 #ifndef NO_FILE_SYSTEM_UTILS
 
@@ -208,10 +212,6 @@ void scheme_init_file(Scheme_Env *env)
     init_file_symbol = scheme_intern_symbol("init-file");
     sys_dir_symbol = scheme_intern_symbol("sys-dir");
     exec_file_symbol = scheme_intern_symbol("exec-file");
-
-    fail_err_symbol = scheme_false;
-    path_err_symbol = scheme_intern_symbol("ill-formed-path");
-    exists_err_symbol = scheme_intern_symbol("already-exists");
 
 # ifdef MACINTOSH_EVENTS
 	record_symbol = scheme_intern_symbol("record");

@@ -1731,15 +1731,7 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
   if (!size)
     return scheme_make_integer(0);
 
-  if (SAME_OBJ(op->sub_type, tcp_output_port_type)) {
-    /* TCP ports */
-    putten = tcp_write_nb_string(SCHEME_STR_VAL(str), size, start, 1, op);
-#ifdef USE_FD_PORTS
-  } else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
-    /* fd ports */
-    putten = flush_fd(op, SCHEME_STR_VAL(str), size + start, start, 1);
-#endif
-  } else if (SAME_OBJ(op->sub_type, file_output_port_type)
+  if (SAME_OBJ(op->sub_type, file_output_port_type)
 	     || SAME_OBJ(op->sub_type, scheme_user_output_port_type)) {
     /* FILE or user port: put just one, because we don't know how
        to guarantee the right behavior on errors. */
@@ -1748,6 +1740,16 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
     scheme_write_offset_string(str2, 0, 1, port);
     scheme_flush_output(port);
     putten = 1;
+#ifdef USE_TCP
+  } else if (SAME_OBJ(op->sub_type, tcp_output_port_type)) {
+    /* TCP ports */
+    putten = tcp_write_nb_string(SCHEME_STR_VAL(str), size, start, 1, op);
+#endif
+#ifdef USE_FD_PORTS
+  } else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+    /* fd ports */
+    putten = flush_fd(op, SCHEME_STR_VAL(str), size + start, start, 1);
+#endif
   } else {
     /* Ports without flushing or errors; use scheme_write_string
        and write it all. */
@@ -2059,7 +2061,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
 
   if (mode[0] == 'a')
     flags |= O_APPEND;
-  else if (existsok == -1)
+  else if (existsok < 0)
     flags |= O_TRUNC;
 
   if (existsok > 1)

@@ -34,7 +34,7 @@ TYPES ----------------------------------------------------------------
   user : string or #f
   host : string or #f
   port : number or #f
-  path : (listof (union string path/params))
+  path : (listof (union string path/param))
   query : string or #f
   fragment : string or #f
 
@@ -53,7 +53,7 @@ TYPES ----------------------------------------------------------------
   schemes, the path is a URL path as defined in the standard.
 
   If a path segment has a parameter, it is represented with
-  an instance of the path/params struct. Otherwise, it is
+  an instance of the path/param struct. Otherwise, it is
   just represented as a string.
 
   The strings inside the fields user, path, query, and
@@ -68,11 +68,11 @@ TYPES ----------------------------------------------------------------
   '("a" "") and this url: http://www.drscheme.org/a
   has a path field '("a").
 
-> path/params
+> path/param
 
-  A pair of strings, accessible with _path/params-path_ and
-  path/params-params_ that joins a path segment with its
-  params in a url. The function _path/params?_ recognizes
+  A pair of strings, accessible with _path/param-path_ and
+  path/param-params_ that joins a path segment with its
+  params in a url. The function _path/param?_ recognizes
   such pairs.
 
 > pure-port

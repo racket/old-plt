@@ -1,7 +1,7 @@
 ;; This program reads MzScheme/MrEd C/C++ source and transforms it
 ;; to work with precise garbage collection or(!) PalmOS. The source
-;; is C-pre-processed first, then run though a `lex'-based lexer that
-;; produces S-expressions.
+;; is C-pre-processed first, then run though a `lex'-like lexer,
+;; ctok.ss.
 ;;
 ;; It probably won't work for other C/C++ code, because it
 ;; doesn't bother *parsing* the source. Instead, it relies on
@@ -89,6 +89,8 @@
 ;; A cheap way of getting rid of unneeded prototypes:
 (define used-symbols (make-hash-table))
 (hash-table-put! used-symbols (string->symbol "GC_variable_stack") 1)
+(hash-table-put! used-symbols (string->symbol "GC_cpp_delete") 1)
+(hash-table-put! used-symbols (string->symbol "memset") 1)
 
 (define (make-triple v src line)
   (when (symbol? v)
@@ -97,7 +99,7 @@
 			    used-symbols
 			    v
 			    (lambda () 0)))))
-  (make-tok v (sub1 line) src))
+  (make-tok v line src))
 
 (define (make-seq opener src line body)
   ((case opener
@@ -108,7 +110,7 @@
      [(#\() "("]
      [(#\[) "["]
      [(#\{) "{"])
-   (sub1 line)
+   line
    src
    (case opener
      [(#\() ")"]
@@ -829,7 +831,7 @@
 (define lazy-struct-defs '())
 
 (define (lookup-non-pointer-type t)
-  (memq t pointer-types))
+  (memq t non-pointer-types))
 (define (lookup-pointer-type t)
   (assq t pointer-types))
 #|

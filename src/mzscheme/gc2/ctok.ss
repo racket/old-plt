@@ -1,3 +1,19 @@
+
+;; Reads pre-processed C input from the current input port, and
+;; tokenizes it, with paren/bracket/brace matching. The result is a
+;; list of "elements", where the client defines the representation of
+;; elements.
+
+;; The `make-triple' imported function must take 3 arguments: a single
+;; token (symbol, number, or string), a filename, and a line number.
+;; It produces an element (which can be any kind of value, as far as
+;; the tokenizer is concerned).
+
+;; The `make-seq' imported function must take 4 arguments: a character
+;; (#\(, #\[, or #\{), a file, a line number, and a list of elements
+;; (for the syntax between the parens/brackets/braces). It produces an
+;; element (again, the tokenizer doesn't care).
+
 (unit
   (import make-triple make-seq)
   (export)

@@ -48,12 +48,6 @@
                                     [(override-final names ...) (extract-renamed-names (syntax (names ...)))]
                                     [else null]))
                                 (syntax->list (syntax (clauses ...)))))]
-
-		         ;; syntax system stuff for super-instantiate, super-make-object, and this
-                         [this (datum->syntax-object (stx-car stx) 'this stx)]
-                         [super-instantiate (datum->syntax-object (stx-car stx) 'super-instantiate stx)]
-                         [super-make-object (datum->syntax-object (stx-car stx) 'super-make-object stx)]
-			 [super-new (datum->syntax-object (stx-car stx) 'super-new stx)]
                          [mixin-name (or (with-syntax ([tmp (syntax-local-name)])
                                            (syntax (quote tmp)))
                                          (syntax (quote mixin)))])
@@ -61,8 +55,7 @@
 	     ;; Build the class expression first, to give it a good src location:
 	     (with-syntax ([class-expr
 			    (syntax/loc stx
-                               (class*/names
-				 (this super-instantiate super-make-object super-new) super% (to-ids ...)
+                               (class* super% (to-ids ...)
 				 clauses ...))])
 
 	       ;; Now build mixin proc, again to give it a good src location:

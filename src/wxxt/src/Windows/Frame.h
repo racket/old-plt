@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.h,v 1.3 1998/09/18 22:08:58 mflatt Exp $
+ * $Id: Frame.h,v 1.4 1999/01/06 15:03:56 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -68,7 +68,7 @@ public:
     void  Maximize(Bool maximize);
     // associated GDI objects
     wxMenuBar *GetMenuBar(void);
-    void      SetIcon(wxBitmap *icon);
+    void      SetIcon(wxBitmap *icon, wxBitmap *bg = NULL);
     void      SetMenuBar(wxMenuBar *menubar);
     // miscellaneous
     void  Command(int id);

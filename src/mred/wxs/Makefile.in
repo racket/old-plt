@@ -42,9 +42,9 @@ CXXDEPFLAGS_wx_xt =
 CXXDEPFLAGS_wx_mac = -MMD
 CXXDEPFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
-# For some reason, gcc 3.1 for Mac OS X doesn't like -MMD; we use -MM
+# For some reason, gcc 3.1 for Mac OS X doesn't like -MMD; we use -MD
 CDEPFLAGS_wx_xt =
-CDEPFLAGS_wx_mac = -MM
+CDEPFLAGS_wx_mac = -MD
 CDEPFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 WXSCFLAGS = $(CFLAGS)

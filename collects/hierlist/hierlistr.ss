@@ -181,7 +181,8 @@
     (class text% (top top-select item snip depth)
       (inherit set-max-undo-history hide-caret
 	       last-position set-position set-keymap
-	       invalidate-bitmap-cache set-max-width get-view-size)
+	       invalidate-bitmap-cache set-max-width
+	       get-view-size)
       (rename [super-auto-wrap auto-wrap])
       (private
 	[selected? #f])
@@ -209,6 +210,15 @@
 		   [p (send dc get-pen)]
 		   [filled? (or (not (send top show-focus))
 				(send top has-focus?))])
+	       (unless filled?
+		 ; To draw the right outline, we need the display area
+		 (set! left 0)
+		 (set! top_ 0)
+		 (let ([wbox (box 0)]
+		       [hbox (box 0)])
+		   (get-view-size wbox hbox)
+		   (set! right (unbox wbox))
+		   (set! bottom (unbox hbox))))
 	       (send dc set-brush (if filled? black-xor transparent))
 	       (send dc set-pen (if filled? transparent-pen black-xor-pen))
 	       (send dc draw-rectangle (+ dx left) (+ dy top_) (- right left) (- bottom top_))

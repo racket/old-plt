@@ -46,9 +46,14 @@
 		mred mzlib mzlib:date framework
 		unit app
 		help-desk zodiac)]
+        [launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher")
+                                     (mzlib file))]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   mred mzlib mzlib:date framework app frame text rep
+	   mred mzlib mzlib:date 
+           framework
+           launcher basis
+           app frame text rep
 	   language get/extend graph)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^

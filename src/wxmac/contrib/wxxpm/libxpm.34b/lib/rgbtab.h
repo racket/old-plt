@@ -40,7 +40,7 @@
 #ifdef FOR_MAC
 typedef unsigned long COLORREF;
 #ifndef WX_FAR
-# define WXFAR /**/
+# define WX_FAR /**/
 #endif
 #endif
 

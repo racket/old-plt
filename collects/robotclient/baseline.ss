@@ -114,7 +114,7 @@
 	 ((> count MAX_BFS)
 	  (guess-path (map reverse (queue-head q)) goal?))
 	 ((queue-empty? q)
-          'nowhere-to-go)
+          (raise 'nowhere-to-go))
          (else
 	  (let ((path (dequeue! q)))
 	    (cond

@@ -100,14 +100,13 @@
 	(path-loc (cadr (path)))
         (compute-move-ff packages robots out))
        (else
-        (let ((c (compute-baseline-move packages robots)))
-          (cond
-            ((symbol? c)
-	     (path-loc (cons (get-player-x) (get-player-y)))
-             (compute-move-ff packages robots out))
-            (else
-             (printf "baseline~n")
-             (send-command c out))))))
+	(with-handlers (((lambda (x)
+			   (eq? 'nowhere-to-go x))
+			 (lambda (x)
+			   (path-loc (cons (get-player-x) (get-player-y)))
+			   (compute-move-ff packages robots out))))
+	  (send-command (compute-baseline-move packages robots) out)
+	  (printf "baseline~n"))))
 
       (let ((robots (read-response! update-score
 				    packages

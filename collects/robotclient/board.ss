@@ -347,8 +347,8 @@
 		      (printf "Robot at (~a,~a) not on board~n" 
                               (robot-x robot) (robot-y robot))
                       (printf "~a~n"
-                              (= 1 (get-robot (get-spot (board) 
-                                                     (robot-x robot) (robot-y robot))))))))
+                              (get-robot (get-spot (board) 
+						   (robot-x robot) (robot-y robot)))))))
 		  robots)
         robots)))
   

@@ -1739,7 +1739,7 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   wxDeleteRecord *rec;
   wxMediaLine *line;
   Bool deletedLine = FALSE, setCaretStyle = FALSE;
-  Bool updateCursor = FALSE;
+  Bool updateCursor = FALSE, movedToNext;
 
   if (writeLocked || userLocked)
     return;
@@ -1846,11 +1846,14 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   firstLine = lineRoot->First();
   lastLine = lineRoot->Last();
 
+  movedToNext = FALSE;
+
   if (startSnip) {
     if (startSnip->flags & wxSNIP_NEWLINE) {
-      if (startSnip->line->next)
+      if (startSnip->line->next) {
 	line = startSnip->line->next;
-      else {
+	movedToNext = TRUE;
+      } else {
 	startSnip->line->MarkCheckFlow();
 	line = NULL;
       }
@@ -1871,8 +1874,16 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
 
     if (maxWidth >= 0) {
       line->MarkCheckFlow();
-      if (line->prev && !(line->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE))
+      if (line->prev && !(line->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE)) {
 	line->prev->MarkCheckFlow();
+	if (movedToNext && deletedLine && line->prev->prev 
+	    && !(line->prev->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE)) {
+	  /* Maybe the deleted object was in the middle of a long word,
+	     and maybe now the long word can be folded into the previous
+	     line */
+	  line->prev->prev->MarkCheckFlow();
+	}
+      }
     }
   }
 

@@ -1040,8 +1040,9 @@ word bytes;
 	initialized = TRUE;
     }
     if (bytes & (GC_page_size -1)) ABORT("Bad GET_MEM arg");
+    /* MATTHEW: commented out MAP_FIXED: let the OS decide */
     result = mmap(last_addr, bytes, PROT_READ | PROT_WRITE | OPT_PROT_EXEC,
-		  MAP_PRIVATE | MAP_FIXED, fd, 0/* offset */);
+		  MAP_PRIVATE /* | MAP_FIXED */, fd, 0/* offset */);
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));

@@ -16,7 +16,7 @@
 	  (public
 	    [get-edit% (lambda () mred:edit:edit%)]
 	    [style-flags 0])
-	  (inherit get-media get-parent shown)
+	  (inherit get-media get-parent force-redraw)
 	  (public
 	    [get-style-flags (lambda () style-flags)]
 	    [make-edit (lambda () (make-object (get-edit%)))]
@@ -28,41 +28,22 @@
 	       (let ([edit (get-media)])
 		 (unless (null? edit)
 		   (mred:debug:printf 'rewrap "canvas:rewrap")
-		   (send edit rewrap))))]
-	    [must-resize-edit #f]
-	    [needs-rewrapping #f])
+		   (send edit rewrap))))])
 	  (public
 	    [resize-edit
 	     (lambda ()
-	       (mred:debug:printf 'rewrap "resize-edit: ~a" shown)
-	       (if shown
-		   (rewrap)
-		   (set! needs-rewrapping #t)))])
+	       (force-redraw))]
+	    [on-container-resize
+	     (lambda ()
+	       (rewrap))])
+
 	  (rename
-	    [super-show show]
-	    [super-force-redraw force-redraw]
-	    [super-on-size on-size]
 	    [super-set-media set-media])
 
 	  (public [edit-modified void]
 		  [edit-renamed void])
 
 	  (public
-	    [show 
-	     (lambda (t)
-	       (super-show t)
-	       (when (and t
-			  needs-rewrapping)
-		 (set! needs-rewrapping #f)
-		 (rewrap)))]
-	    [force-redraw 
-	     (lambda ()
-	       (set! must-resize-edit #t)
-	       (super-force-redraw))]
-	    [on-size
-	     (lambda (width height)
-	       (super-on-size width height)
-	       (resize-edit))]
 	    [set-media
 	     (opt-lambda (media [redraw? #t])
 	       (super-set-media media redraw?)

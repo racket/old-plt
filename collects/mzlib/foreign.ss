@@ -509,7 +509,7 @@
     [(_ t) (type: _pointer
             bind: tmp ; need to save the box so we can get back to it
             pre:  (x => (let ([p (malloc t)]) (ptr-set! p t (unbox x)) p))
-            post: (x => (begin (box-set! tmp (ptr-ref x t)) tmp)))]))
+            post: (x => (begin (set-box! tmp (ptr-ref x t)) tmp)))]))
 
 ;; (_list <mode> <type> [<len>])
 ;; Similar to _ptr, except that it is used for converting lists to/from C

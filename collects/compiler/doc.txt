@@ -417,6 +417,19 @@ _embedr-sig.ss_ library provides the signature, _compiler:embed^_.
               use for the executable's desktop icon, with 16-color
               32x32, 16-color 16x16, and mono 32x32 variants
 
+      _'creator_ (Mac OS X) - provides a 4-character string to use as
+              the application signature.
+
+      _'file-types_ (Mac OS X) - provides a list of association lists,
+              one for each type of file handled by the application;
+              each association is a 2-element list, where the first (key)
+              element is a string recognized by Finder, and the second
+              element is a plist value (see doc.tx in the "xml" collection);
+              see plt/collects/drscheme/drscheme.filetypes for an example.
+
+      -'resource-files_ (Mac OS X) - extra files to copy into the
+              "Resources" directory of the generated executable
+
    See also `build-aux-from-path' in the "launcher" collection. The
    default `aux' is `null'.
 

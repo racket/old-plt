@@ -28,6 +28,7 @@
 
 #include "schpriv.h"
 #include "schmach.h"
+#include "schminc.h"
 #include "schcpt.h"
 #include <stdlib.h>
 #include <ctype.h>
@@ -1798,9 +1799,14 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 /*                               .zo reader                               */
 /*========================================================================*/
 
+#define ZO_CHECK(x) /* empty */
+#define RANGE_CHECK(x, y) /* empty */
+#define RANGE_CHECK_GETS(x) /* empty */
+
 typedef struct CPort {
-  long pos;
+  long pos, size;
   unsigned char *start;
+  long symtab_size;
   long base;
   Scheme_Object *orig_port;
 } CPort;
@@ -1821,21 +1827,32 @@ static Scheme_Object *read_compact_quote(CPort *port,
 
 static long read_compact_number(CPort *port)
 {
+  /* >>> See also read_compact_number_from_port(), below. <<< */
+  
   long flag, v, a, b, c, d;
+
+  ZO_CHECK(port->pos < port->size);
 
   flag = CP_GETC(port);
 
   if (flag < 252)
     return flag;
   else if (flag == 252) {
+    ZO_CHECK(port->pos + 1 < port->size);
+
     a = CP_GETC(port);
     b = CP_GETC(port);
     
     v = a
       + (b << 8);
     return v;
-  } else if (flag == 254)
+  } else if (flag == 254) {
+    ZO_CHECK(port->pos < port->size);
+
     return -CP_GETC(port);
+  }
+
+  ZO_CHECK(port->pos + 3 < port->size);
   
   a = CP_GETC(port);
   b = CP_GETC(port);
@@ -1857,6 +1874,7 @@ static char *read_compact_chars(CPort *port,
 				char *buffer, 
 				int bsize, int l)
 {
+  /* Range check is performed before the function is called. */
   char *s;
   char *src;
   int i;
@@ -1910,21 +1928,24 @@ static Scheme_Object *read_compact(CPort *port,
 {
 #define BLK_BUF_SIZE 32
   int ch;
-  int l;
+  unsigned int l;
   char *s, buffer[BLK_BUF_SIZE];
   int need_car = 0, proper = 0;
   Scheme_Object *v, *first = NULL, *last = NULL;
 
   while (1) {
+    ZO_CHECK(port->pos < port->size);
     ch = CP_GETC(port);
     switch(cpt_branch[ch]) {
     case CPT_ESCAPE:
       {
-	int len;
+	unsigned int len;
 	Scheme_Object *ep;
 	char *s;
 
 	len = read_compact_number(port);
+
+	RANGE_CHECK_GETS(len);
 
 #if defined(MZ_PRECISE_GC)
 	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, len);
@@ -1940,22 +1961,27 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_SYMBOL:
       l = read_compact_number(port);
+      RANGE_CHECK_GETS(l);
       s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
       v = scheme_intern_exact_symbol(s, l);
 
       l = read_compact_number(port);
+      RANGE_CHECK(l, < port->symtab_size);
       symtab[l] = v;
       break;
     case CPT_SYMREF:
       l = read_compact_number(port);
+      RANGE_CHECK(l, < port->symtab_size);
       v = symtab[l];
       break;
     case CPT_UNINTERNED_SYMBOL:
       l = read_compact_number(port);
+      RANGE_CHECK_GETS(l);
       s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
       v = scheme_make_exact_symbol(s, l);
 
       l = read_compact_number(port);
+      RANGE_CHECK(l, < port->symtab_size);
       symtab[l] = v;
       /* The fact that other uses of the symbol go through the table
 	 means that uninterned symbols are consistently re-created for
@@ -1963,10 +1989,12 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_STRING:
       l = read_compact_number(port);
+      RANGE_CHECK_GETS(l);
       s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
       v = scheme_make_immutable_sized_string(s, l, l < BLK_BUF_SIZE);
       break;
     case CPT_CHAR:
+      ZO_CHECK(port->pos < port->size);
       v = scheme_make_character(CP_GETC(port));
       break;
     case CPT_INT:
@@ -2052,6 +2080,7 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     case CPT_REFERENCE:
       l = read_compact_number(port);
+      RANGE_CHECK(l, < EXPECTED_PRIM_COUNT);
       v = variable_references[l];
       break;
     case CPT_LOCAL:
@@ -2128,6 +2157,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	  v = scheme_make_modidx(path, base, scheme_false);
 
+	  RANGE_CHECK(l, < p->symtab_size);
 	  symtab[l] = v;
 	}
 	break;
@@ -2150,6 +2180,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	v = (Scheme_Object *)mv;
 	
+	RANGE_CHECK(l, < p->symtab_size);
 	symtab[l] = v;
       }
       break;
@@ -2183,10 +2214,12 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_SMALL_SYMBOL_START:
       {
 	l = ch - CPT_SMALL_SYMBOL_START;
+	RANGE_CHECK_GETS(l);
 	s = read_compact_chars(port, buffer, BLK_BUF_SIZE, l);
 	v = scheme_intern_exact_symbol(s, l);
 
 	l = read_compact_number(port);
+	RANGE_CHECK(l, < p->symtab_size);
 	symtab[l] = v;
       }
       break;
@@ -2384,6 +2417,8 @@ static Scheme_Object *read_marshalled(int type,
 
 static long read_compact_number_from_port(Scheme_Object *port)
 {
+  /* >>> See also read_compact_number_port(), above. <<< */
+
   long flag, v, a, b, c, d;
 
   flag = scheme_getc(port);
@@ -2480,6 +2515,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   cp.pos = 0;
   cp.base = scheme_tell(port);
   cp.orig_port = port;
+  cp.size = size;
   if ((got = scheme_get_chars(port, size, (char *)cp.start, 0)) != size)
     scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
 		    "read (compiled): bad count: %ld != %ld (started at %ld)",
@@ -2489,6 +2525,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   local_rename_memory = NULL;
 
   symtab = MALLOC_N(Scheme_Object *, symtabsize);
+  cp.symtab_size = symtabsize;
 
   result = read_marshalled(scheme_compilation_top_type, rp, ht, symtab);
 

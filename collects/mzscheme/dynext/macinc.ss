@@ -16,6 +16,9 @@
     (define ext-out (build-path proj-dir (format "extension.~a" tmp-suffix)))
     (define debug-out (string-append ext-out ".xSYM"))
     
+    (when (string=? (system-library-subpath) "68k-mac")
+      (error name "not supported for 68k-mac"))
+    
     (delete-file dest-file)
     (delete-file tmp-proj)
     (unless (copy-file (build-path proj-dir base-project) 

@@ -302,15 +302,6 @@
 					  ,(annotate expr)))
 				  (z:private-clause-internals clause)
 				  (z:private-clause-exprs clause))))
-			 ((z:local-clause? clause)
-			   `(local
-			      ,@(map (lambda (internal export expr)
-				       `((,(z:binding-var internal)
-					   ,(read->raw export))
-					  ,(annotate expr)))
-				  (z:local-clause-internals clause)
-				  (z:local-clause-exports clause)
-				  (z:local-clause-exprs clause))))
 			 ((z:inherit-from-clause? clause)
 			   `(inherit-from
 			      ,(z:varref-var
@@ -339,26 +330,6 @@
 					  ,(read->raw import)))
 				  (z:rename-clause-internals clause)
 				  (z:rename-clause-imports clause))))
-			 ((z:share-from-clause? clause)
-			   `(share-from
-			      ,(z:varref-var
-				 (z:share-from-clause-super clause))
-			      ,@(map (lambda (internal export import)
-				       `((,(z:binding-var internal)
-					   ,(read->raw export))
-					  ,(read->raw import)))
-				  (z:share-clause-internals clause)
-				  (z:share-clause-exports clause)
-				  (z:share-clause-imports clause))))
-			 ((z:share-clause? clause)
-			   `(share
-			      ,@(map (lambda (internal export import)
-				       `((,(z:binding-var internal)
-					   ,(read->raw export))
-					  ,(read->raw import)))
-				  (z:share-clause-internals clause)
-				  (z:share-clause-exports clause)
-				  (z:share-clause-imports clause))))
 			 ((z:sequence-clause? clause)
 			   `(sequence
 			      ,@(map annotate

@@ -11,6 +11,9 @@
 
   (provide teachpack@)
 
+  (define o (current-output-port))
+  (define (oprintf . args) (apply fprintf o args))
+  
   (define teachpack@
     (unit/sig drscheme:teachpack^
       (import)
@@ -56,8 +59,51 @@
                            (lambda (exn)
                              (set-cache-entry-filename! cache-entry #f)
                              (show-teachpack-error filename exn))])
+            (verify-no-new-exports filename)
             (namespace-require `(file ,filename)))))
 
+      ;; verify-no-new-exports : string -> void
+      ;; ensures that the teachpack wouldn't override any thing in the user's namespace
+      (define (verify-no-new-exports filename)
+        (let ([exports (extract-provided-variables-from-module filename)]
+              [ns-contents (namespace-mapped-symbols)]
+              [ht (make-hash-table)])
+          (for-each (lambda (ns-sym) (hash-table-put! ht ns-sym #t)) ns-contents)
+          (for-each (lambda (expt)
+                      (when (hash-table-get ht expt (lambda () #f))
+                        (error 'teachpack "export of ~a from ~s conflicts with already existing definitions"
+                               expt filename)))
+                    exports)))
+      
+      ;; extract-provided-variables-from-module : string -> ()listof symbol)
+      (define (extract-provided-variables-from-module filename)
+        (let* ([module-stx 
+                (expand (parameterize [(read-case-sensitive #f)
+                                       (read-square-bracket-as-paren #t)
+                                       (read-curly-brace-as-paren #t)
+                                       (read-accept-box #t)
+                                       (read-accept-compiled #t)
+                                       (read-accept-bar-quote #t)
+                                       (read-accept-graph #t)
+                                       (read-decimal-as-inexact #t)
+                                       (read-accept-dot #t)
+                                       (read-accept-quasiquote #t)]
+                          (call-with-input-file filename (lambda (port) (read-syntax filename port)))))]
+               [var-prop (get-exported-names (syntax-property module-stx 'module-variable-provides))]
+               [mac-prop (get-exported-names (syntax-property module-stx 'module-syntax-provides))])
+          (append var-prop mac-prop)))
+      
+      ;; get-exported-names : module-variable-provides / module-syntax-provides info (see mz manual) -> (listof symbol)
+      (define (get-exported-names names)
+        (if names
+            (map (lambda (x)
+                   (cond
+                     [(symbol? x) x]
+                     [(symbol? (cdr x)) (car x)]
+                     [else (cadr x)]))
+                 names)
+            '()))
+        
       ;; marshall-teachpack-cache : teachpack-cache -> writable
       (define (marshall-teachpack-cache cache)
         (map cache-entry-filename (teachpack-cache-tps cache)))

@@ -420,6 +420,7 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
   if ((rgn = BrushStipple())) {
     rgn->SetArc(x, y, w, h, start, end);
     PaintStipple(rgn);
+    DELETE_OBJ rgn;
   }
 
   SetCurrentDC();
@@ -550,6 +551,7 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   if ((rgn = BrushStipple())) {
     rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
     PaintStipple(rgn);
+    DELETE_OBJ rgn;
   }
 
   SetCurrentDC();
@@ -587,6 +589,165 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   }
 
   KillPoly(thePolygon);
+
+  ReleaseCurrentDC();
+}
+
+//-----------------------------------------------------------------------------
+void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillStyle)
+{
+  wxRegion *rgn;
+  double **ptss;
+  int *lens, cnt, i, total_cnt, j, k, m;
+  Point *pts;
+  PolyHandle thePolygon = 0;
+
+  if (!Ok() || !cMacDC) return;
+  
+  if (n <= 0) return;
+
+  if (anti_alias) {
+    CGContextRef cg;
+    CGMutablePathRef path;
+    double pw;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    pw = current_pen->GetWidthF();
+
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)
+	&& (pw <= 1.0)) {
+      xoffset += 0.5;
+      yoffset += 0.5;
+    }
+    
+    path = CGPathCreateMutable();
+    p->Install((long)path);
+
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kBrushTool);
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, path);
+      if (fillStyle == wxODDEVEN_RULE)
+	CGContextEOFillPath(cg);
+      else
+	CGContextFillPath(cg);
+    }
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kPenTool);
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, path);
+      CGContextStrokePath(cg);
+    }
+    wxMacSetCurrentTool(kNoTool);
+
+    CGPathRelease(path);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
+
+  if ((rgn = BrushStipple())) {
+    rgn->SetPath(p, xoffset, yoffset, fillStyle);
+    PaintStipple(rgn);
+    DELETE_OBJ rgn;
+  }
+
+  SetCurrentDC();
+
+
+  cnt = p->ToPolygons(&lens, &ptss, user_scale_x, user_scale_y);
+
+  if (!cnt)
+    return;
+
+  total_cnt = 0;
+  for (i = 0; i < cnt; i++) {
+    total_cnt += (lens[i] / 2);
+    if ((i + 1 < cnt) || !p->IsOpen())
+      total_cnt++;
+  }
+  
+  pts = new WXGC_ATOMIC XPoint[total_cnt];
+
+  for (i = 0, k = 0; i < cnt; i++) {
+    for (j = 0; j < lens[i]; j += 2) {
+      pts[k].x = XLOG2DEV(ptss[i][j]+xoff);
+      pts[k].y = YLOG2DEV(ptss[i][j+1]+yoff);
+      k++;
+    }
+    if ((i + 1 < cnt) || !p->IsOpen()) {
+      pts[k].x = XLOG2DEV(ptss[i][0]+xoff);
+      pts[k].y = YLOG2DEV(ptss[i][1]+yoff);
+      k++;
+    }
+  }
+
+  if (cnt == 1) {
+    thePolygon = OpenPoly();
+    MoveTo(xpoints1[0].h + SetOriginX, xpoints1[0].v + SetOriginY);
+    for (j = 1; j <= total_cnt; j++) {
+      LineTo(xpoints1[j].h + SetOriginX, xpoints1[j].v + SetOriginY);
+    }
+    ClosePoly();
+  }
+
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    if (cnt == 1) {
+      wxMacSetCurrentTool(kBrushTool);
+      if (paint_brush_with_erase)
+	ErasePoly(thePolygon);
+      else
+	PaintPoly(thePolygon);
+    } else {
+      wxRegion *r;
+
+      r = new wxRegion(this);
+      r->SetPath(p);
+      
+      if (paint_brush_with_erase)
+	EraseRgn(r->rgn);
+      else
+	PaintRgn(r->rgn);
+
+      DELETE_OBJ r;
+    }
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    wxMacSetCurrentTool(kPenTool);
+    if (cnt == 1) {
+      FramePoly(thePolygon);
+    } else {
+      for (i = 0, k = 0; i < cnt; i++) {
+	j = (lens[i] / 2);
+	if ((i < cnt - 1) || !p->IsOpen())
+	  j++;
+	
+	thePolygon = OpenPoly();
+	MoveTo(xpoints1[k].h + SetOriginX, xpoints1[k].v + SetOriginY);
+	k++;
+	for (m = 0; m < j; m++) {
+	  LineTo(xpoints1[k].h + SetOriginX, xpoints1[k].v + SetOriginY);
+	  k++;
+	}
+	ClosePoly();
+	FramePoly(thePolygon);
+	KillPoly(thePolygon);
+	thePolygon = NULL;
+      }
+    }
+  }
+
+  if (thePolygon)
+    KillPoly(thePolygon);
 
   ReleaseCurrentDC();
 }
@@ -652,7 +813,7 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffs
 
     for (i = 0; i < n; i++) {
       xpoints[i].h = XLOG2DEV(points[i].x + xoffset);
-      xpoints[i].v = YLOG2DEV(points[i].y + yoffset); // WCH: original mistype "h" for "v"
+      xpoints[i].v = YLOG2DEV(points[i].y + yoffset);
     }
       
     thePolygon = OpenPoly();
@@ -727,6 +888,7 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
   if ((rgn = BrushStipple())) {
     rgn->SetRectangle(x, y, width, height);
     PaintStipple(rgn);
+    DELETE_OBJ rgn;
   }
 
   SetCurrentDC();
@@ -831,6 +993,7 @@ void wxCanvasDC::DrawRoundedRectangle
   if ((rgn = BrushStipple())) {
     rgn->SetRoundedRectangle(x, y, width, height, radius);
     PaintStipple(rgn);
+    DELETE_OBJ rgn;
   }
 
   SetCurrentDC();
@@ -883,6 +1046,7 @@ void wxCanvasDC::DrawEllipse(double x, double y, double width, double height)
   if ((rgn = BrushStipple())) {
     rgn->SetEllipse(x, y, width, height);
     PaintStipple(rgn);
+    DELETE_OBJ rgn;
   }
 
   SetCurrentDC();

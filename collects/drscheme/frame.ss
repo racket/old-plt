@@ -17,6 +17,8 @@
 					  "doc"
 					  "drscheme"
 					  "index.htm"))))
+
+    (define frame-group (make-object mred:frame-group%))
     
     (define frame%
       (class mred:simple-menu-frame% (name snip)
@@ -61,20 +63,24 @@
 	       mb))])
 
 	(public
-	  [file-menu:new-string "Compound Unit"]
+	  [file-menu:new-stringg "Unit"]
 	  [file-menu:new
 	   (lambda ()
-	     (make-object drscheme:compound-unit:frame% #f #f #f))]
+	     (make-object unit-frame% #f #f))]
 	  [file-menu:between-new-and-open
 	   (lambda (file-menu)
-	     (send file-menu append-item "New Unit"
+	     '(send file-menu append-item "New Compound Unit"
 		   (lambda ()
-		     (make-object unit-frame% #f #f #f))))])
+		     (make-object drscheme:compound-unit:frame% #f #f))))]
+
+	  [group frame-group]
+	  [file-menu:open (lambda () (mred:open-file group))])
 
 	(sequence 
 	  (mred:debug:printf 'super-init "before drscheme:frame%")
 	  (super-init name)
-	  (mred:debug:printf 'super-init "after drscheme:frame%"))
+	  (mred:debug:printf 'super-init "after drscheme:frame%")
+	  (send group insert-frame this))
 	(public
 	  [imports-panel (make-object mred:horizontal-panel% root-panel)]
 	  [imports-message
@@ -98,8 +104,8 @@
 	
 
     (define unit-frame%
-      (class (mred:make-searchable-frame% frame%) (filename frameset snip [show? #t])
-	(inherit canvas edit imports-panel
+      (class (mred:make-searchable-frame% frame%) (filename snip [show? #t])
+	(inherit get-canvas get-edit imports-panel
 		 set-title-prefix show-menu
 		 show menu-bar% make-menu
 		 active-edit active-canvas panel 
@@ -118,7 +124,6 @@
 
 	(public
 	  [canvas-show-mode #f]
-	  [frames frameset]
 	  [allow-split? #f]
 	  [forced-quit? #f])
 
@@ -162,17 +167,7 @@
 	       (update-shown)))])
 	
 	(public
-	  [get-edit%
-	   (lambda ()
-	     (class mred:scheme-mode-edit% args
-	       (public
-		 [auto-set-wrap? (mred:get-preference 'drscheme:wrap-program?)])
-	       (sequence
-		 (mred:debug:printf 'super-init "drscheme frame::get-edit% before.5")
-		 (apply super-init args)
-		 (mred:debug:printf 'super-init
-				    "drscheme frame::get-edit% after.5"))))]
-	  
+	  [get-edit% (lambda () mred:scheme-mode-edit%)]
 	  [change-to-file
 	   (lambda (name)
 	     (cond
@@ -184,7 +179,7 @@
 	     (send definitions-canvas set-focus))])
 	
 	(public
-	  [file-menu:print-string " Definitions"]
+	  [file-menu:print-string "Definitions"]
 	  [file-menu:print-transcript-id #f]
 	  [file-menu:between-print-and-close
 	   (lambda (file-menu)
@@ -370,7 +365,7 @@
 		       (send interactions-edit insert-prompt)))))])
 	
 	(sequence
-	  (mred:debug:printf 'super-init "before drscheme:unit-frame%: frameset:~a" frameset)
+	  (mred:debug:printf 'super-init "before drscheme:unit-frame%")
 	  (super-init (cond 
 			[snip (ivar snip name)]
 			[filename filename]
@@ -382,8 +377,8 @@
 	  [top-panel (make-object mred:horizontal-panel% panel)])
 	
 	(public
-	  [definitions-canvas canvas]
-	  [definitions-edit edit]
+	  [definitions-canvas (get-canvas)]
+	  [definitions-edit (get-edit)]
 	  [interactions-canvas (make-object mred:console-canvas% panel)]
 	  [interactions-edit (make-object drscheme:rep:edit%)])
 	
@@ -508,5 +503,5 @@
 
   (mred:insert-format-handler "Units"
                               (list "ss")
-				(opt-lambda ([name null] [group #f])
+				(opt-lambda ([name null] [group frame-group])
 				  (make-object unit-frame% name group #f)))))

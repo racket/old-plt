@@ -68,7 +68,7 @@
 				       #f)))
 			    #f))))))))
     
-    (mred:add-version-spec 'd 3)
+    (mred:add-version-spec 'd 4)
     
     (define do-setup
       (lambda (type-str)

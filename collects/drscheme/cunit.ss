@@ -358,13 +358,13 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 		(loop (find-next-selected-snip s)))))])))
 
     (define frame%
-      (class drscheme:frame:frame% (fn frameset [snip #f] [show? #t])
-	(inherit show canvas edit show-menu panel)
+      (class drscheme:frame:frame% (fn [snip #f] [show? #t])
+	(inherit show get-edit show-menu panel)
 	(public
 	  [on-close
 	   (lambda ()
 	     (when snip
-	       (send snip on-close-frame (send edit get-filename))))]
+	       (send snip on-close-frame (send (get-edit) get-filename))))]
 	  [filename (if fn
 			fn
 			"Untitled")])
@@ -400,14 +400,14 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 		     (lambda ()
 		       (let ([name (wx:get-text-from-user "Name of unit" "New Unit")])
 			 (unless (null? name)
-			   (send edit insert 
+			   (send (get-edit) insert 
 				 (make-object drscheme:unit:snip% name #f))))))
 	       (send add-menu append-item "Compound Unit..."
 		     (lambda ()
 		       (let ([name (wx:get-text-from-user "Name of compound unit"
 							  "New Compound Unit")])
 			 (unless (null? name)
-			   (send edit insert 
+			   (send (get-edit) insert 
 				 (make-object snip% name #f))))))
 	       mb))])
 	(public
@@ -425,9 +425,9 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	  (update-shown)
 	  (send eval-list stretchable-in-x #f)
 	  (send eval-panel stretchable-in-x #f)
-	  (send edit set-filename filename)
+	  (send (get-edit) set-filename filename)
 	  (when (file-exists? filename)
-	    (send edit load-file filename))
+	    (send (get-edit) load-file filename))
 	  (when show?
 	    (show #t)))))
 

@@ -130,7 +130,7 @@
 				  setup compound-unit tool frame)]
 	     [compound-unit : drscheme:compound-unit^
 		    (drscheme:compound-unit@ mred mzlib unit frame)]
-	     [app : drscheme:app^ (drscheme:application@ mred mzlib)])
+	     [app : drscheme:app^ (drscheme:application@ frame mred mzlib)])
        (export (unit mred)
 	       (unit app mred)
 	       (open mzlib)

@@ -34,7 +34,7 @@
 				   (unbox report))
 			  (zodiac:interface:dynamic-error
 			   (unbox report) "~a" (exn-message exn)))))
-		    (wx:message-box (format "~a" exn) "Uncaught Exception")
+		    (mred:message-box (format "~a" exn) "Uncaught Exception")
 		    ((error-escape-handler))))
 		(error-value->string-handler
 		 (lambda (x n)
@@ -70,8 +70,8 @@
 		  (lambda (msg)
 		    (display msg)
 		    (newline)
-		    (wx:message-box (format "Internal Error: ~a" msg)
-				    "Internal Error!")))
+		    (mred:message-box (format "Internal Error: ~a" msg)
+				      "Internal Error!")))
 		(print-struct #t)
 		(error-print-width 250)))
 	    (drscheme:basis:add-basis n)
@@ -116,8 +116,11 @@
 	    [load-success? #f])
 	  
 	  (private
-	    [escape-fn #f])
+	    [escape-fn #f]
+	    [print-hook (lambda (x _) (insert (send x copy) (last-position)))]
+	    [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))])
 	  (public
+	    [takeover void]
 	    [get-escape (lambda () escape-fn)]
 	    [set-escape (lambda (x) (set! escape-fn x))]
 	    
@@ -126,25 +129,25 @@
 	    [break (lambda () 
 		     (when current-thread-desc
 		       (break-thread current-thread-desc)))]
+	    [user-eval
+	     (lambda (expr)
+	       (with-parameterization param
+		 (lambda ()
+		   (parameterize ([current-output-port this-out]
+				  [current-error-port this-err]
+				  [current-input-port this-in]
+				  [mzlib:pretty-print@:pretty-print-size-hook size-hook]
+				  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
+				 (eval expr)))))]
 	    [send-scheme
-	     (let ([s (make-semaphore 1)]
-		   [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))]
-		   [print-hook (lambda (x _) (insert (send x copy) (last-position)))])
+	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (expr [callback (lambda (error?) (void))])
 		 (let* ([user-code
 			 (lambda ()
 			   '(begin (printf "sending scheme:~n")
 				   (pretty-print expr))
 			   (call-with-values
-			    (lambda ()
-			      (with-parameterization param
-				(lambda ()
-				  (parameterize ([current-output-port this-out]
-						 [current-error-port this-err]
-						 [current-input-port this-in]
-						 [mzlib:pretty-print@:pretty-print-size-hook size-hook]
-						 [mzlib:pretty-print@:pretty-print-print-hook print-hook])
-						(eval expr)))))
+			    (lambda () (user-eval expr))
 			    (lambda anss
 			      (for-each
 			       (lambda (ans)

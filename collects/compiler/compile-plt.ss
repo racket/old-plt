@@ -16,7 +16,7 @@
    "compile-plt"
    argv
    `((once-each
-      [("--clean")
+      [("-c" "--clean")
        ,(lambda (flag) (clean #t))
        ("Delete existing compiled files")]
       [("-n" "--no-zo")

@@ -231,7 +231,6 @@ int scheme_solaris_semaphore_try_down(void *);
 # define STACK_GROWS_DOWN
 
 # define USE_IEEE_FP_PREDS
-# define LINUX_CONTROL_387
 # define USE_EXPLICT_FP_FORM_CHECK
 
 # define SIGSET_IS_SIGNAL
@@ -1079,7 +1078,10 @@ int scheme_pthread_semaphore_try_down(void *);
     FreeBSD */
 
  /* LINUX_CONTROL_387 controls the floating-point processor under i386
-    Linux */
+    Linux using __setfpucw(). libc 6.1 doesn't export __setfpucw() and
+    it doesn't matter; for Linux 2.0 and up, the default FP behavior
+    is the one we want. This flag might be needed for older versions
+    of Linux. */
 
  /* APLHA_CONTROL_FP controls the floating-point processor for Alpha
     OSF1 */

@@ -1273,7 +1273,8 @@ Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *conf
 void scheme_break_thread(Scheme_Process *p)
 {
   if (!p) {
-    p = scheme_current_process;
+    p = scheme_main_process;
+    if (!p) return;
     if (p->external_break) /* needed for real threads */
       return;
   }

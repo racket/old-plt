@@ -5101,7 +5101,7 @@ Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *in
 
 void scheme_install_config(Scheme_Config *config)
 {
-  
+  scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
 }
 
 #ifdef MZTAG_REQUIRED

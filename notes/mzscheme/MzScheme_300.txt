@@ -472,7 +472,7 @@ A complete list of keywords:
 The new exception hierarchy distinguishes between breaks and failures
 at nearly the top level of the hierarchy. In particular, most
 `with-handlers' expressions should use the `exn:fail?' predicate,
-insteda of the old (and now removed) `not-exn-break?' predicate.
+insteda of the old (and now removed) `not-break-exn?' predicate.
 
 The "type" and "mismatch" exceptions have been merged into
 `exn:fail:contract'. Similarly, `exn:i/o:tcp' and `exn:i/o:udp'

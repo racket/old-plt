@@ -117,6 +117,9 @@ MZ_EXTERN Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *ar
 
 MZ_EXTERN void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data);
 
+MZ_EXTERN Scheme_Object *scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
+MZ_EXTERN int scheme_close_should_force_port_closed();
+
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
@@ -294,10 +297,12 @@ MZ_EXTERN void scheme_add_to_table(Scheme_Bucket_Table *table, const char *key, 
 MZ_EXTERN void scheme_change_in_table(Scheme_Bucket_Table *table, const char *key, void *new_val);
 MZ_EXTERN void *scheme_lookup_in_table(Scheme_Bucket_Table *table, const char *key);
 MZ_EXTERN Scheme_Bucket *scheme_bucket_from_table(Scheme_Bucket_Table *table, const char *key);
+MZ_EXTERN int scheme_bucket_table_equal(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2);
 
 MZ_EXTERN Scheme_Hash_Table *scheme_make_hash_table(int type);
 MZ_EXTERN void scheme_hash_set(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val);
 MZ_EXTERN Scheme_Object *scheme_hash_get(Scheme_Hash_Table *table, Scheme_Object *key);
+MZ_EXTERN int scheme_hash_table_equal(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2);
 
 /*========================================================================*/
 /*                   basic Scheme value constructors                      */

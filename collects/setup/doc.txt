@@ -8,13 +8,15 @@ services:
  * Compiling and setting up all collections: When Setup PLT is run
    without any arguments, it finds all of the current collections (see
    the MzScheme manual for information on collections) and compiles
-   all collections with an info.ss library that indicates how the
-   collection is compiled (see the mzc manual).
+   module libraries in each collection with an "info.ss" library. The
+   "info.ss" can indicate specifically how the collection's modules
+   are compiled (see below). In this mode, Setup PLT also compiles any
+   module that is referenced by a compiled module.
 
-   The --clean (or -c) flag to Setup PLT causes it to delete all
-   existing .zo and extension files, thus ensuring a clean build from
-   the source files. The exact set of deleted files can be controlled
-   by the info.ss file; see below for more info.
+   The --clean (or -c) flag to Setup PLT causes it to delete existing
+   .zo and extension files, thus ensuring a clean build from the
+   source files. The exact set of deleted files can be controlled by
+   "info.ss" libraries; see below for more info.
 
    The -l flag takes one or more collection names and restricts Setup
    PLT's action to those collections.
@@ -35,21 +37,24 @@ services:
 
 Setup PLT attempts to compile and set up any collection that:
 
- * has an info.ss library (see the mzc manual for a description of
+ * has an _info.ss_ library (see the mzc manual for a description of
    info.ss);
  
- * has the 'name' field in info.ss;
+ * has the 'name' field in "info.ss";
 
  * is either a top-level collection or a sub-collection of a compilable
    collection.
 
 Collections meeting this criteria are compiled using the
 `compile-collection-zos' procedure described in the "compiler"
-collection. If the -e or --extension flag is specified, then the
+collection (which means that even if a collection has no "info.ss"
+file, its modules will get compiled if they are used by other compiled
+modules). If the -e or --extension flag is specified, then the
 collections are also compiled using the `compile-collection-extension'
-procedure from "compiler".
+procedure from "compiler" (which does not compile a module merely
+because it is used by another).
 
-Additional info.ss fields trigger additional setup actions:
+Additional "info.ss" fields trigger additional setup actions:
 
 >  mzscheme-launcher-names - a list of executable names to be
    installed in "plt" (or "plt/bin") to run MzScheme programs
@@ -98,10 +103,22 @@ Additional info.ss fields trigger additional setup actions:
    collection.  If any path names a directory, each of the files
    in the directory are deleted, but none of the subdirectories of the
    directory are checked. If the path names a file, the file is
-   deleted.  The default, if this flag is not specified, is to delete
+   deleted. The default, if this flag is not specified, is to delete
    all files in the "compiled" subdirectory, and all of the files in
-   the platform-specific subdirectory of the compiled directory
-   for the current platform.
+   the platform-specific subdirectory of the compiled directory for
+   the current platform.
+
+   Just as compiling .zo files will compile each module used by a
+   compiled module, deleting a module's compiled image will delete the
+   .zo of each module that is used by the module. More specifically,
+   used modules are determined when deleting a ".dep" file, which
+   would have been created to accompany a .zo file when the .zo was
+   built by Setup PLT. If the .dep file indicates another module, that
+   module's .zo is deleted only if it also has an accompanying .dep
+   file. In that case, the .dep file is deleted, and additional used
+   modules are deleted based on the used module's .dep file, etc.
+   Supplying a specific list of collections to Setup PLT disables this
+   dependency-based deletion of compiled files.
 
  Running Setup PLT from Scheme on a Single .plt file
  ---------------------------------------------------

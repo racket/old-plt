@@ -40,6 +40,8 @@ scheme_wait_on_waitable
 scheme_waitable_needs_wakeup
 scheme_object_wait_multiple
 scheme_add_swap_callback
+scheme_call_enable_break
+scheme_close_should_force_port_closed
 scheme_signal_error
 scheme_raise_exn
 scheme_warning
@@ -126,9 +128,11 @@ scheme_add_to_table
 scheme_change_in_table
 scheme_lookup_in_table
 scheme_bucket_from_table
+scheme_bucket_table_equal
 scheme_make_hash_table
 scheme_hash_set
 scheme_hash_get
+scheme_hash_table_equal
 scheme_make_prim
 scheme_make_noneternal_prim
 scheme_make_closed_prim

@@ -16,9 +16,11 @@
      "setup-plt"
      (current-command-line-arguments)
      (once-each
-      [("-c" "--clean") "Delete existing compiled files; implies -n"
+      [("-c" "--clean") "Delete existing compiled files; implies -nxi"
 			(clean #t)
-                        (make-zo #f)]
+                        (make-zo #f)
+			(call-install #f)
+			(make-launchers #f)]
       [("-n" "--no-zo") "Do not produce .zo files"
 			(make-zo #f)]
       [("-x" "--no-launcher") "Do not produce launcher programs"

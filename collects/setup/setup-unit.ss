@@ -45,7 +45,12 @@
 
       (setup-printf "Setup version is ~a" (version))
       (setup-printf "PLT home directory is ~a" plthome)
-      (setup-printf "Collection Paths are: ~a" (current-library-collection-paths))
+      (setup-printf "Collection paths are ~a" (if (null? (current-library-collection-paths))
+						  "empty!"
+						  ""))
+      (for-each (lambda (p)
+		  (setup-printf "  ~a" p))
+		(current-library-collection-paths))
 
       (exit-handler
        (let ([oh (exit-handler)])
@@ -178,6 +183,9 @@
 	      x-specific-collections))
 	 (lambda (a b) (string-ci<? (cc-name a) (cc-name b)))))
 
+      (define re:making (regexp "making (.*) because "))
+      (define re:compiling (regexp "compiling: (.*)"))
+
       (define control-io-apply
 	(lambda (print-doing f args)
 	  (if (make-verbose)
@@ -187,6 +195,7 @@
 	      (let* ([oop (current-output-port)]
 		     [printed? #f]
 		     [on? #f]
+		     [dir-table (make-hash-table 'equal)]
 		     [op (make-custom-output-port 
 			  #f
 			  (lambda (s start end flush?)
@@ -203,13 +212,18 @@
 					(when (verbose)
 					  (display s oop)
 					  (flush-output oop))))
-				  (let ([m (or (regexp-match-positions "making" s)
-					       (regexp-match-positions "compiling" s))])
+				  (let ([m (or (regexp-match-positions re:making s)
+					       (regexp-match-positions re:compiling s))])
 				    (when m
 				      (unless printed?
 					(set! printed? #t)
 					(print-doing oop))
 				      (set! on? #t)
+				      (unless (verbose)
+					(let ([path (path-only (substring s (caadr m) (cdadr m)))])
+					  (unless (hash-table-get dir-table path (lambda () #f))
+					    (hash-table-put! dir-table path #t)
+					    (print-doing oop path))))
 				      (when (verbose)
 					(display "  " oop)) ; indentation 
 				      (loop (substring s (caar m) (string-length s)))))))
@@ -260,7 +274,16 @@
 		     (list cc)
 		     (loop (cdr l)))))))
 
-      (define (delete-files-in-directory path printout)
+      (define re:dep (regexp "[.]dep$"))
+
+      (define (delete-file/record-dependency path dependencies)
+	(when (regexp-match-positions re:dep path)
+	  (let ([deps (with-input-from-file path read)])
+	    (for-each (lambda (s) (hash-table-put! dependencies s #t))
+		      (cdr deps))))
+	(delete-file path))
+
+      (define (delete-files-in-directory path printout dependencies)
 	(for-each
 	 (lambda (end-path)
 	   (let ([path (build-path path end-path)])
@@ -269,15 +292,13 @@
 	       (void)]
 	      [(file-exists? path)
 	       (printout)
-	       (unless (delete-file path)
-		 (error 'delete-files-in-directory
-			"unable to delete file: ~a" path))]
+	       (delete-file/record-dependency path dependencies)]
 	      [else (error 'delete-files-in-directory
 			   "encountered ~a, neither a file nor a directory"
 			   path)])))
 	 (directory-list path)))
 
-      (define (clean-collection cc)
+      (define (clean-collection cc dependencies)
 	(let* ([info (cc-info cc)]
 	       [default (box 'default)]
 	       [paths (call-info
@@ -305,15 +326,45 @@
 			 [(directory-exists? full-path)
 			  (delete-files-in-directory
 			   full-path
-			   print-message)]
+			   print-message
+			   dependencies)]
 			 [(file-exists? full-path)
-			  (delete-file full-path)
+			  (delete-file/record-dependency full-path dependencies)
 			  (print-message)]
 			 [else (void)])))
 		    paths)))
 
+      (define re:suffix (regexp "[.].?.?.?$"))
+
       (when (clean)
-	(for-each clean-collection collections-to-compile))
+	(let ([dependencies (make-hash-table 'equal)])
+	  ;; Main deletion:
+	  (for-each (lambda (cc)
+		      (clean-collection cc dependencies))
+		    collections-to-compile)
+	  ;; Unless specific collections were named, also
+	  ;;  delete .zos for referenced modules:
+	  (when (null? x-specific-collections)
+	    (setup-printf "Checking dependencies")
+	    (let loop ([old-dependencies dependencies])
+	      (let ([dependencies (make-hash-table 'equal)]
+		    [did-something? #f])
+		(hash-table-for-each
+		 old-dependencies
+		 (lambda (file _)
+		   (let-values ([(dir name dir?) (split-path file)])
+		     (let ([base-name (regexp-replace re:suffix name "")])
+		       (let ([zo (build-path dir "compiled" (format "~a.zo" base-name))]
+			     [dep (build-path dir "compiled" (format "~a.dep" base-name))])
+			 (when (and (file-exists? dep)
+				    (file-exists? zo))
+			   (set! did-something? #t)
+			   (setup-printf "  deleting ~a" zo)
+			   (delete-file/record-dependency zo dependencies)
+			   (delete-file/record-dependency dep dependencies)))))))
+		(when did-something?
+		  (loop dependencies)))))))
+
 
       (when (or (make-zo) (make-so))
 	(compiler:option:verbose (compiler-verbose))
@@ -350,13 +401,18 @@
 		     (format "Compiling ~a" desc)
 		     (lambda ()
 		       (unless (control-io-apply 
-				(lambda (p) 
-				  (setup-fprintf p "Compiling ~a for ~a at ~a" 
-						 desc (cc-name cc) (cc-path cc)))
+				(case-lambda 
+				 [(p) 
+				  ;; Main "doing something" message
+				  (setup-fprintf p "Compiling ~a used by ~a" 
+						 desc (cc-name cc))]
+				 [(p where)
+				  ;; Doing something specifically in "where"
+				  (setup-fprintf p "  compiling in ~a" where)])
 				compile-collection
 				(cc-collection cc))
-			 (setup-printf "No more ~a for ~a at ~a" 
-				       desc (cc-name cc) (cc-path cc)))
+			 (setup-printf "No more ~a to compile for ~a" 
+				       desc (cc-name cc)))
 		       (collect-garbage))))
 		  collections-to-compile))
 

@@ -96,6 +96,8 @@ int (*scheme_wait_on_waitable)(Scheme_Object *o, int just_try);
 void (*scheme_waitable_needs_wakeup)(Scheme_Object *o, void *fds);
 Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
+Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
+int (*scheme_close_should_force_port_closed)();
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
@@ -237,9 +239,11 @@ void (*scheme_add_to_table)(Scheme_Bucket_Table *table, const char *key, void *v
 void (*scheme_change_in_table)(Scheme_Bucket_Table *table, const char *key, void *new_val);
 void *(*scheme_lookup_in_table)(Scheme_Bucket_Table *table, const char *key);
 Scheme_Bucket *(*scheme_bucket_from_table)(Scheme_Bucket_Table *table, const char *key);
+int (*scheme_bucket_table_equal)(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2);
 Scheme_Hash_Table *(*scheme_make_hash_table)(int type);
 void (*scheme_hash_set)(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val);
 Scheme_Object *(*scheme_hash_get)(Scheme_Hash_Table *table, Scheme_Object *key);
+int (*scheme_hash_table_equal)(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2);
 /*========================================================================*/
 /*                   basic Scheme value constructors                      */
 /*========================================================================*/

@@ -179,9 +179,8 @@ next section.
 >      compile-zo-omit-files - a list of filenames to extend the
          list returned for 'compile-omit-files.
 
-      The main compilation process is driven by the `make-collection'
-      function in the "collection.ss" library of the "make"
-      collection.
+      The compilation process is driven by the `managed-compile-zo'
+      function in the "cm.ss" library of the "mzlib" collection.
 
 ---------------------------------------------------------------------------
 

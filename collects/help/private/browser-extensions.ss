@@ -161,32 +161,35 @@
     (define sk-bday-editor-mixin
       (mixin (editor<%>) ()
         (rename [super-on-paint on-paint])
-        (inherit get-admin editor-location-to-dc-location)
+        (inherit dc-location-to-editor-location get-admin)
         (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
+          (super-on-paint before? dc left top right bottom dx dy draw-caret)
           (when before?
             (when (sk-bday?)
               (unless sk-bitmap
                 (set! sk-bitmap (make-object bitmap% (build-path (collection-path "icons") "sk.jpg"))))
+              
               (let ([admin (get-admin)])
                 (when admin
-                  (let ([wb (box 0)]
-                        [hb (box 0)]
-                        [xb (box 0)]
-                        [yb (box 0)])
-                    (send admin get-view xb yb wb hb)
-                    (let-values ([(x-center y-bot)
-                                  (editor-location-to-dc-location 
-                                   (+ (unbox xb) (/ (unbox wb) 2))
-                                   (+ (unbox yb) (unbox hb)))]
-                                 [(x-zero y-zero) 
-                                  (editor-location-to-dc-location
-                                   (unbox xb)
-                                   (unbox yb))])
-                      (send dc draw-bitmap sk-bitmap
-                            (floor (- x-center (/ (send sk-bitmap get-width) 2)))
-                            (max x-zero (- y-bot (send sk-bitmap get-height))))))))))
-          (super-on-paint before? dc left top right bottom dx dy draw-caret))
-        
+                  (let*-values ([(view-w view-h) (get-view-w/h admin)]
+                                [(view-x view-y)
+                                 (values (- (/ view-w 2) (/ (send sk-bitmap get-width) 2))
+                                         (- view-h (send sk-bitmap get-height)))]
+                                ;; note: view coordinates are not exactly canvas dc coordinates
+                                ;; but they are off by a fixed amount (same on all platforms)
+                                ;; (note: dc-location in this method means canvas dc, which is
+                                ;;  different from the dc coming in here (offscreen bitmaps))
+                                [(editor-x editor-y) (dc-location-to-editor-location view-x view-y)]
+                                [(dc-x dc-y) (values (+ editor-x dx)
+                                                     (+ editor-y dy))])
+                    (send dc draw-bitmap sk-bitmap dc-x dc-y)))))))
+        (define/private (get-view-w/h admin)
+          (let ([wb (box 0)]
+                [hb (box 0)])
+            (send admin get-view #f #f wb hb)
+            (values (unbox wb)
+                    (unbox hb))))
+
         (super-instantiate ())))
     
     (lambda (%)

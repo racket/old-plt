@@ -2322,7 +2322,7 @@ static char *locale_recase(int to_up,
   int i;
 
   /* First, copy "in" to "out" */
-  if (iilen + 1 >= (unsigned int)iolen) {
+  if (iilen + 1 >= iolen) {
     out = (char *)scheme_malloc_atomic(iilen + 1);
     od = 0;
   }

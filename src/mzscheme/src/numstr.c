@@ -600,14 +600,14 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
 #define isAdigit(ch) ((ch >= '0') && (ch <= '9'))
 
 
-#define isbaseNdigit(N, ch) (((ch >= 'a') && (ch <= ('a' + N - 11))) \
-                             || ((ch >= 'A') && (ch <= ('A' + N - 11))))
+#define isbaseNdigit(N, ch) (((ch >= 'a') && (ch <= (mzchar)('a' + N - 11))) \
+                             || ((ch >= 'A') && (ch <= (mzchar)('A' + N - 11))))
 
   has_i = 0;
   has_at = 0;
   has_sign = delta-1;
   for (i = delta; i < len; i++) {
-    int ch = str[i];
+    mzchar ch = str[i];
     if (!ch) {
       if (report)
 	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
@@ -851,7 +851,7 @@ Scheme_Object *scheme_read_number(const mzchar *str, long len,
   has_decimal = has_slash = has_hash = has_hash_since_slash = has_expt = 0;
   saw_digit = saw_digit_since_slash = saw_nonzero_digit = 0;
   for (i = delta; i < len; i++) {
-    int ch = str[i];
+    mzchar ch = str[i];
     if (ch == '.') {
       if (has_decimal) {
 	if (report)

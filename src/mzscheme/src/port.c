@@ -2883,7 +2883,14 @@ Scheme_Object *scheme_terminal_port_p(int argc, Scheme_Object *argv[])
   if (!fd_ok)
     return scheme_false;
 
+#if defined(WIN32_FD_HANDLES)
+  if (GetFileType((HANDLE)fd) == FILE_TYPE_CHAR)
+    return scheme_true;
+  else
+    return scheme_false;
+#else
   return isatty(fd) ? scheme_true : scheme_false;
+#endif
 }
 
 static void filename_exn(char *name, char *msg, char *filename, int err)
@@ -6021,7 +6028,7 @@ static long mz_spawnv(char *command, const char * const *argv,
   int i, l, len = 0;
   long cr_flag;
   char *cmdline;
-  STARTUPINFO startup;
+  STARTUPINFOW startup;
   PROCESS_INFORMATION info;
 
   if (exact_cmdline) {
@@ -6670,7 +6677,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
 
 	subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
 
-	subproc->type = scheme_subprocess_type;
+	subproc->so.type = scheme_subprocess_type;
 	subproc->handle = (void *)se.hProcess;
 	subproc->pid = 0;
 	scheme_add_finalizer(subproc, close_subprocess_handle, NULL);

@@ -2104,7 +2104,8 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
 static unsigned char *add_range(unsigned char *r, int *_j, RoomState *rs,
 				unsigned int start, unsigned int end, int did_alt)
 {
-  int  top, count;
+  unsigned int top;
+  int count;
   unsigned char lo[6], hi[6];
 
   /* If this range spans different-sized encodings, split it up
@@ -2297,7 +2298,7 @@ static int translate(unsigned char *s, int len, char **result)
 	if (not_mode) {
 	  /* "Not" mode. We produce something in regular mode */
 	  /* Start with "(?:[...]|" for simples. */
-	  long last_end;
+	  unsigned int last_end;
 	  int did_alt;
 	  r = make_room(r, j, 6 + (128 - on_count), &rs);
 	  r[j++] = '(';

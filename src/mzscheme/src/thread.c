@@ -3652,10 +3652,10 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
       scheme_current_thread->ran_some = 1;
     } else {
       if (sleep_end) {
-	delay = sleep_end - scheme_get_inexact_milliseconds();
+	delay = (float)(sleep_end - scheme_get_inexact_milliseconds());
 	delay /= 1000.0;
 	if (delay < 0)
-	  delay = 0.00001;
+	  delay = (float)0.00001;
       } else
 	delay = 0.0;
 
@@ -3713,7 +3713,7 @@ static void needs_wakeup_unless(Scheme_Object *o, void *fds)
   data = (Scheme_Object *)((void **)o)[0];
   fdf = (Scheme_Needs_Wakeup_Fun)((void **)o)[3];
 
-  return fdf(data, fds);
+  fdf(data, fds);
 }
 
 

@@ -1094,7 +1094,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
        SCHEME_CDR(unless) must be NULL. */
     uip->peeked = NULL;
     if (SCHEME_INTP(val)) {
-      buffer[offset] = SCHEME_INT_VAL(val);
+      buffer[offset] = (char)SCHEME_INT_VAL(val);
       return 1;
     } else if (SCHEME_VOIDP(val)) {
       return SCHEME_SPECIAL;

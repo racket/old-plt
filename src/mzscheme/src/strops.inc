@@ -111,7 +111,7 @@ X_(make, string) (int argc, Scheme_Object *argv[])
   if (argc == 2) {
     if (!CHARP(argv[1]))
       scheme_wrong_type("make-" XSTRINGSTR, CHAR_STR, 1, argc, argv);
-    fill = CHAR_VAL(argv[1]);
+    fill = (Xchar)CHAR_VAL(argv[1]);
   } else
     fill = 0;
 
@@ -130,7 +130,7 @@ X__(string) (int argc, Scheme_Object *argv[])
   for ( i=0 ; i<argc ; ++i ) {
     if (!CHARP(argv[i]))
       scheme_wrong_type(XSTRINGSTR, CHAR_STR, i, argc, argv);
-    SCHEME_X_STR_VAL(str)[i] = CHAR_VAL(argv[i]);
+    SCHEME_X_STR_VAL(str)[i] = (Xchar)CHAR_VAL(argv[i]);
   }
 
   return str;
@@ -191,7 +191,7 @@ X__(string_set) (int argc, Scheme_Object *argv[])
     return NULL;
   }
 
-  str[i] = CHAR_VAL(argv[2]);
+  str[i] = (Xchar)CHAR_VAL(argv[2]);
 
   return scheme_void;
 }
@@ -317,7 +317,7 @@ X_(list_to, string) (int argc, Scheme_Object *argv[])
       scheme_wrong_type("list->" XSTRINGSTR, "list of " CHAR_STR, 0, 
 			argc, argv);
     
-    SCHEME_X_STR_VAL(str)[i] = CHAR_VAL(ch);
+    SCHEME_X_STR_VAL(str)[i] = (Xchar)CHAR_VAL(ch);
     i++;
     list = SCHEME_CDR(list);
   }  
@@ -384,7 +384,7 @@ X__(string_fill) (int argc, Scheme_Object *argv[])
     scheme_wrong_type(XSTRINGSTR "-fill!", CHAR_STR, 1, argc, argv);
   
   chars = SCHEME_X_STR_VAL(argv[0]);
-  ch = CHAR_VAL(argv[1]);
+  ch = (Xchar)CHAR_VAL(argv[1]);
   len = SCHEME_X_STRTAG_VAL(argv[0]);
   for (i = 0; i < len; i++) {
     chars[i] = ch;

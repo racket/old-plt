@@ -1,142 +1,1 @@
-(module sig mzscheme
-  (provide ccond
-	   stepper:cogen-utils^
-	   plt:aries-no-break^
-	   plt:aries^
-	   stepper:marks^
-	   stepper:client-procs^
-	   stepper:model-input^
-	   stepper:model^
-	   stepper:shared^
-	   stepper:annotate^
-	   stepper:reconstruct^
-	   stepper:mred-extensions^)
-
-  (require (lib "unitsig.ss"))
-
-  (define-syntax (ccond stx)
-    (syntax-case stx ()
-      [(_ (question answer) ...)
-       (syntax
-	(cond
-	 (question answer) ...
-	 (else (error 'ccond "fell off end of cond expression"))))]))
-
-(define-signature stepper:cogen-utils^
-  (check-for-keyword
-   check-for-syntax-or-macro-keyword
-   
-   the-undefined-value
-   (struct undefined (id))
-   signal-undefined
-   undefined-error-format
-   
-   (struct not-boolean (val))
-   signal-not-boolean
-   not-boolean-error-format
-   
-   is-unit-bound?
-   read->raw
-   arglist->ilist
-   
-   improper-map
-   improper-foreach))
-
-(define-signature plt:aries-no-break^
-  (annotate
-   w-c-m-key
-   extract-zodiac-locations
-   extract-mark-list
-   make-zodiac-mark
-   signal-not-boolean
-   signal-undefined
-   ankle-wrap-enabled))
-  
-(define-signature plt:aries^
-  ((open plt:aries-no-break^)
-   break))
-
-(define-signature stepper:marks^
-  (cheap-mark?
-   make-cheap-mark
-   cheap-mark-source
-   make-full-mark
-   mark-source
-   mark-bindings
-   mark-label
-   mark-binding-value
-   mark-binding-binding
-   expose-mark
-   display-mark
-   lookup-binding
-   lookup-binding-list
-   debug-key
-   extract-zodiac-locations
-   extract-mark-list
-   ankle-wrap-enabled))
-
-(define-signature stepper:client-procs^
-  (read-getter
-   read-setter
-   never-undefined-getter
-   never-undefined-setter))
-
-(define-signature stepper:model-input^
-  (text-stream settings image? receive-result))
-
-(define-signature stepper:model^
-  (check-pre-defined-var
-   check-global-defined
-   global-lookup
-   true-false-printed?
-   constructor-style-printing?
-   abbreviate-cons-as-list?
-   special-function?
-   image?
-   print-convert))
-
-(define-signature stepper:shared^
-  ((struct before-after-result (finished-exprs exp redex post-exp reduct after-exprs))
-   (struct before-error-result (finished-exprs exp redex err-msg after-exprs))
-   (struct error-result (finished-exprs err-msg))
-   (struct finished-result (finished-exprs))
-   get-binding-name
-   list-take
-   list-partition
-   (struct closure-record (name mark constructor? lifted-name))
-   bogus-binding?
-   *unevaluated* 
-   no-sexp
-   multiple-highlight
-   if-temp
-   struct-flag
-   highlight-placeholder
-   get-arg-binding
-   get-lifted-gensym
-   expr-read
-   set-expr-read!
-   flatten-take
-   closure-table-put!
-   closure-table-lookup
-   insert-highlighted-value
-   binding-indexer 
-   binding-index-reset))
-
-(define-signature stepper:annotate^
-  (initial-env-package
-   annotate))
-
-(define-signature stepper:reconstruct^
-  (reconstruct-completed
-   reconstruct-current
-   final-mark-list?
-   skip-result-step?
-   skip-redex-step?))
-
-(define-signature stepper:mred-extensions^
-  (stepper-canvas%
-   stepper-text%
-   image?
-   separator-snip% ;; these last two aren't required, but are useful 
-   vertical-separator-snip%)) ;; for debugging purposes
-)
+(module sig mzscheme  (provide ccond	   stepper:cogen-utils^	   plt:aries-no-break^	   plt:aries^	   stepper:marks^	   stepper:client-procs^	   stepper:model-input^	   stepper:model^	   stepper:shared^	   stepper:annotate^	   stepper:reconstruct^	   stepper:mred-extensions^)  (define-signature plt:aries^  ((open plt:aries-no-break^)   break))(define-signature stepper:model-input^  (text-stream settings image? receive-result))(define-signature stepper:shared^  ((struct before-after-result (finished-exprs exp redex post-exp reduct after-exprs))   (struct before-error-result (finished-exprs exp redex err-msg after-exprs))   (struct error-result (finished-exprs err-msg))   (struct finished-result (finished-exprs))   get-binding-name   list-take   list-partition   (struct closure-record (name mark constructor? lifted-name))   bogus-binding?   *unevaluated*    no-sexp   multiple-highlight   if-temp   struct-flag   highlight-placeholder   get-arg-binding   get-lifted-gensym   expr-read   set-expr-read!   flatten-take   closure-table-put!   closure-table-lookup   insert-highlighted-value   binding-indexer    binding-index-reset))(define-signature stepper:annotate^  (initial-env-package   annotate))(define-signature stepper:reconstruct^  (reconstruct-completed   reconstruct-current   final-mark-list?   skip-result-step?   skip-redex-step?))(define-signature stepper:mred-extensions^  (stepper-canvas%   stepper-text%   image?   separator-snip% ;; these last two aren't required, but are useful    vertical-separator-snip%)) ;; for debugging purposes)

@@ -52,10 +52,9 @@ static char *ThisAppName(void)
   dir = scheme_os_getcwd(NULL, 0, NULL, 1);
   dlen = strlen(dir);
   
-  result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 1);
-  memcpy(result, dir, dlen);
-  memcpy(result + dlen, buffer + 1, buffer[0]);
-  result[buffer[0] + dlen] = 0;
+  result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 2);
+  sprintf(result,"%s:",dir);
+  CopyPascalStringToC(buffer,result + dlen + 1);
   
   return result;
 #else

@@ -1571,8 +1571,8 @@
   (define (check-assignment op lexpr ltype rtype src c-tor? static-init? c-class level type-recs env)
     (when (and (eq? level 'beginner) (not c-tor?))
       (illegal-assignment src))
-    (when (access? lexpr)
-      (check-final lexpr c-tor? static-init? c-class env))
+    ;(when (access? lexpr)
+    ;  (check-final lexpr c-tor? static-init? c-class env))
     (case op
       ((=)
        (if (assignment-conversion ltype rtype type-recs)
@@ -1585,7 +1585,30 @@
   ;check-final: expression bool bool string -> void
   (define (check-final expr ctor? static-init? c-class env)
     (let ((access (access-name expr)))
-      (void)))
+      (cond
+        ((local-access? access)
+         (let ((properties (var-type-properties (lookup-var-in-env (id-string (local-access-name access))))))
+           (when (properties-final? properties)
+             (when (properties-local? properties)
+               (error))
+             (cond
+               ((and ctor? (properties-settable? properties) (not (properties-static? properties))) 'fine)
+               ((and ctor? (properties-settable? properties) (properties-static? properties)) (error 'static-set-in-ctor))
+               ((and ctor? (not (properties-settable? properties))) (error 'cannot-set-in-ctor))
+               ((and static-init? (properties-settable? properties)) 'fine)
+               ((and static-init? (not (properties-settable? properties))) (error 'cannot-set-in-static-init))
+               (else (error 'cannot-set))))))
+        ((field-access? access)
+         (when (var-access-final? (field-access-access access))
+           (if (and obj-is-this field-is-current not-var-access-init)
+               (cond
+                 ((and ctor? (not is-var-access-static)) 'fine)
+                 ((and ctor? (is-var-access-static)) (error 'static-set-in-ctor))
+                 ((and static-init? (is-var-access-static)) 'fine)
+                 (else (error 'cannot-set)))
+               (error 'cannot-set)))))))
+  
+  (define-values (obj-is-this field-is-current not-var-access-init is-var-access-static) (null null null null))
       
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Expression Errors

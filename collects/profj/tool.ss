@@ -113,8 +113,8 @@
       (define (phase1) (void))
       ;Add all the ProfessorJ languages into DrScheme
       (define (phase2) 
-        (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) full-lang%)))
+        #;(drscheme:language-configuration:add-language
+           (make-object ((drscheme:language:get-default-mixin) full-lang%)))
         (drscheme:language-configuration:add-language
          (make-object ((drscheme:language:get-default-mixin) advanced-lang%)))
         (drscheme:language-configuration:add-language

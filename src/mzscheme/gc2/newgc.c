@@ -410,7 +410,7 @@ inline static void resize_gen0(unsigned long new_size)
 {
   struct mpage *work = gen0_pages, *prev = NULL;
   unsigned long alloced_size = 0;
-  
+
   /* fist make sure the big pages pointer is clean */
   gen0_big_pages = NULL; 
 
@@ -440,7 +440,7 @@ inline static void resize_gen0(unsigned long new_size)
       void **end = PPTR(NUM(work) + work->size);
 
       alloced_size += GEN0_PAGE_SIZE;
-      while(start < end) *start++ = NULL;
+      while (start < end) *start++ = NULL;
       work->size = HEADER_SIZEB;
       prev = work;
       work = work->next;

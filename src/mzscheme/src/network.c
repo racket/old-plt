@@ -2143,8 +2143,10 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       }
     }
 #ifndef PROTOENT_IS_INT
-    else
-      (errid = 1, errpart = 2);
+    else {
+      errpart = 2;
+      errid = SOCK_ERRNO();
+    }
 #endif
   } else {
     errpart = 1;

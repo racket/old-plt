@@ -1558,6 +1558,8 @@ ZLIB_INC='$(ZLIB_INC)'
 
 PNG_A='$(PNG_A)'
 
+PREFLAGS="$CPPFLAGS"
+
 ###### OSKit stuff #######
 
 if test "${enable_oskit}" = "yes" ; then
@@ -4765,7 +4767,8 @@ fi
 PROFFLAGS=""
 
 if test "${enable_gprof}" = "yes" ; then
-  PROFFLAGS="$PROFFLAGS -pg -DDONT_ITIMER"
+  PREFLAGS="$PREFLAGS -DDONT_ITIMER"
+  PROFFLAGS="$PROFFLAGS -pg"
   LIBS="$LIBS -pg"
 fi
 
@@ -5090,8 +5093,6 @@ echo "${ECHO_T}$linker_dash_e" >&6
 fi
 
 ############## C++ grunge ################
-
-PREFLAGS="$CPPFLAGS"
 
 if test "${enable_mred}" = "yes" ; then
   CPPFLAGS="$CPPFLAGS $X_CFLAGS"

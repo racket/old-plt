@@ -214,6 +214,8 @@
             0))
       
       (define/public (add-to-root-length inc)
+        (unless root
+          (error 'add-to-root-length "Attempted to increase root length of empty token-tree%"))
         (set-node-token-length! root (+ (node-token-length root) inc)))
       
       ;; search!: NAT ->

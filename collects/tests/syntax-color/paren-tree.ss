@@ -88,6 +88,9 @@
                  (2 2 (|(| . 2))
                  (4 6 (|(| . 2)))))
 
+(set! t (new paren-tree% (matches '((|(| |)|) (|[| |]|)))))
+(split-test 0 '(()()))
+
 (SECTION 'merge-tree)
 (build-tree)
 (send t split-tree 6)

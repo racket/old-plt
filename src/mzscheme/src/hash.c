@@ -720,6 +720,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_true_type, hash_addr);
   PROC(scheme_false_type, hash_addr);
   PROC(scheme_void_type, hash_addr);
+  PROC(scheme_undefined_type, hash_addr);
   PROC(scheme_syntax_compiler_type, hash_general);
   PROC(scheme_macro_type, hash_general);
   PROC(scheme_box_type, hash_general);

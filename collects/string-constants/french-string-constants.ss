@@ -172,7 +172,7 @@
  (hd-bg-color "Couleur de fond")
  (hd-pixels "pixels")
  (hd-text-color "Couleur du texte")
- (hd-link-color "couleur des liends")
+ (hd-link-color "Couleur des liens")
  (hd-text-sample "Le texte dans le cadre de recherche apparaît dans cette couleur")
  (hd-link-sample "Les liens dans le cadre de recherche apparaîssent dans cette couleur")
  (hd-save-changes "Sauvegarder les modifications")

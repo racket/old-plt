@@ -10,6 +10,7 @@
 	  compiler:zlayer^
 	  compiler:prephase^
 	  compiler:anorm^
+	  compiler:known^
 	  compiler:analyze^
 	  compiler:const^
 	  compiler:closure^
@@ -330,8 +331,9 @@
 		      (when (compiler:internal-error? message)
 			(printf 
 			 (string-append
-			  " please report to four@rice.edu "
-			  "along with a transcript in verbose mode~n")))))
+			  " please report the bug at http://www.cs.rice.edu/CS/PLT/Bugs/~n"
+			  "  (or, as a last resort, send mail to plt-bugs@cs.rice.edu)~n"
+			  "  and include a transcript in verbose mode~n")))))
 		  
 		  msgs)
 	(when (and stop-on-errors?
@@ -540,6 +542,31 @@
 		(verbose-time anorm-thunk))
 	      (driver:debug-when 
 	       'a-norm
+	       (lambda () (pretty-print (block-source s:file-block))))
+	      
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+
+	      ;;-----------------------------------------------------------------------
+	      ;; known-value analysis
+	      ;;
+
+	      (when (compiler:option:verbose) 
+		(printf " determining known bindings~n"))
+	      (when (compiler:option:debug)
+		(debug " = KNOWN =~n"))
+
+	      ; analyze top level expressions
+	      (let ([known-thunk
+		     (lambda ()
+		       (set-block-source! 
+			s:file-block 
+			(map (lambda (s) (analyze-knowns! s)) 
+			     (block-source s:file-block))))])
+		(verbose-time known-thunk))
+
+	      (compiler:report-messages! #t)
+	      (driver:debug-when 
+	       'known
 	       (lambda () (pretty-print (block-source s:file-block))))
 	      
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))

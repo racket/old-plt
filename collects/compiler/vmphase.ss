@@ -326,9 +326,12 @@
 				(binding-rep
 				 (get-annotation bound)))
 			      (car (zodiac:let-values-form-vars ast)))]
-		   [temps-needed? (ormap (lambda (b) 
-					   (or (binding-mutable? (get-annotation b))
-					       (binding-unit-i/e? (get-annotation b))))
+		   [temps-needed? (ormap (lambda (zb)
+					   (let ([b (get-annotation zb)])
+					     (or (binding-mutable? b)
+						 (binding-letrec-set? b)
+						 (binding-letrec-set? b)
+						 (binding-unit-i/e? b))))
 					 (car (zodiac:let-values-form-vars ast)))]
 		   [body (convert (zodiac:let-values-form-body ast) multi? leaf tail-pos tail?)])
 	      
@@ -348,7 +351,7 @@
 						   (make-empty-box)
 						   name name)])
 					   (set-annotation! b
-							    (make-binding #f #t #f #f #f #f #f #f
+							    (make-binding #f #t #f #f #f #f #f #f #f
 									  (if (rep:pointer? rep)
 									      (rep:pointer-to rep)
 									      rep)))
@@ -431,6 +434,7 @@
 							    #t ;mutable?
 							    #f ;unit-i/e?
 							    #f ;anchor
+							    #f ;letrec-set?
 							    #f ;ivar?
 							    #f ;known?
 							    #f ;val
@@ -553,6 +557,7 @@
 							   #t ;mutable?
 							   #f ;unit-i/e?
 							   #f ;anchor
+							   #f ;letrec-set?
 							   #f ;ivar?
 							   #f ;known?
 							   #f ;val
@@ -868,7 +873,7 @@
 						      (make-empty-box)
 						      name name)])
 					     (set-annotation! b
-							      (make-binding #f #t #f #f #f #f #f #f
+							      (make-binding #f #t #f #f #f #f #f #f #f
 									    (make-rep:atomic 'scheme-object)))
 					     b))
 					 args)])
@@ -947,14 +952,14 @@
 		   (cond
 		    [(varref:has-attribute? ast varref:per-load-static)
 		     make-vm:per-load-static-varref]
-		    [(varref:has-attribute? ast varref:static)
-		     make-vm:static-varref]
 		    [(varref:has-attribute? ast varref:primitive)
 		     make-vm:primitive-varref]
 		    [(varref:has-attribute? ast varref:symbol)
 		     make-vm:symbol-varref]
 		    [(varref:has-attribute? ast varref:inexact)
 		     make-vm:inexact-varref]
+		    [(varref:has-attribute? ast varref:static)
+		     make-vm:static-varref]
 		    [else
 		     make-vm:global-varref])])
 	      (let ([ref (maker #f #f #f (zodiac:varref-var ast))])

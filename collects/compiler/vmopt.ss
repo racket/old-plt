@@ -374,7 +374,7 @@
 											(make-empty-box)
 											name name)])
 										(set-annotation! b
-												 (make-binding #f #t #f #f #f #f #f #f
+												 (make-binding #f #t #f #f #f #f #f #f #f
 													       (if (rep:pointer? rep)
 														   (rep:pointer-to rep)
 														   rep)))

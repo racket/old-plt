@@ -111,6 +111,7 @@
 	         (set-binding-rep! binding
 				   (if (or (binding-mutable? binding)
 					   (binding-unit-i/e? binding)
+					   (binding-letrec-set? binding)
 					   (binding-ivar? binding))
 				       (make-rep:pointer 
 					(make-rep:atomic 'scheme-object))

@@ -50,13 +50,26 @@
 ;; it may be recursive -- bound by letrec
 ;;
 (define-struct binding (rec?       ; part of a letrec recursive binding set
-			mutable?   ; set!ed?
+			mutable?   ; set!ed? (but not for unit or letrec definitions)
 			unit-i/e?  ; is imported/exported (including uses by invoke)
 			anchor     ; anchor binding for this binding
+			letrec-set?; set! to implement a letrec
 			ivar?      ; is a class ivar?
 			known? val ; has known value?
 			known-but-used? ; known value used in an improper way?
 			rep))      ; reprsentation
+
+(define (copy-binding b)
+  (make-binding (binding-rec? b)
+		(binding-mutable? b)
+		(binding-unit-i/e? b)
+		(binding-anchor b)
+		(binding-letrec-set? b)
+		(binding-ivar? b)
+		(binding-known? b)
+		(binding-val b)
+		(binding-known-but-used? b)
+		(binding-rep b)))
 
 ;; This is the annotations given to a body of code.
 (define-struct code (free-vars local-vars global-vars used-vars captured-vars 
@@ -95,7 +108,7 @@
 (define-struct interface-info (assembly name))
 
 ;; this defines annotations given to applications
-(define-struct app (tail? prim?))
+(define-struct app (tail? prim? prim-name))
 
 ;;----------------------------------------------------------------------------
 ;; ACCESSOR

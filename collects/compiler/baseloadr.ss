@@ -58,6 +58,19 @@
 			    VMSTRUCTS
 			    TOP-LEVEL
 			    DRIVER)]
+  [KNOWN : compiler:known^ ((require-relative-library-unit/sig "known.ss")
+			    OPTIONS
+			    LIBRARY
+			    CSTRUCTS
+			    ZODIAC
+			    ZLAYER
+			    PREPHASE
+			    ANORM
+			    CONST
+			    REP
+			    DRIVER
+			    FUNCTION
+			    SPIDEY)]
   [ANALYZE : compiler:analyze^ ((require-relative-library-unit/sig "analyze.ss")
 				OPTIONS
 				LIBRARY
@@ -66,6 +79,7 @@
 				ZLAYER
 				PREPHASE
 				ANORM
+				KNOWN
 				CONST
 				REP
 				DRIVER
@@ -149,6 +163,7 @@
 			      ZLAYER
 			      PREPHASE
 			      ANORM
+			      KNOWN
 			      ANALYZE
 			      CONST
 			      CLOSURE

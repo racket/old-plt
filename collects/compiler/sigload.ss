@@ -81,10 +81,12 @@
 		    mutable?   ; set!ed?
 		    unit-i/e?  ; is imported/exported (including uses by invoke)
 		    anchor     ; anchor binding for this binding
+		    letrec-set?; set! for a letrec definition
 		    ivar?      ; is a class ivar?
 		    known? val ; has known value?
 		    known-but-used? ; known value used in an improper way?
 		    rep))      ; reprsentation
+   copy-binding
 
    (struct code (free-vars local-vars global-vars used-vars captured-vars 
 			   closure-rep closure-alloc-rep label vehicle
@@ -118,7 +120,7 @@
 
    (struct interface-info (assembly name))
 
-   (struct app (tail? prim?))
+   (struct app (tail? prim? prim-name))
 
    compiler:bound-varref->binding 
 
@@ -183,8 +185,6 @@
    prephase:is-ivar?
    prephase:binding-anchor
 
-   prephase:multiple-set!->single-set!
-
    (struct binding-properties (unit-i/e?))
 
    prephase:set!-is-unit-definition?
@@ -231,6 +231,10 @@
 
    choose-binding-representations!
    choose-closure-representation!))
+
+(define-signature compiler:known^
+  (make-unknown-letbound-binding
+   analyze-knowns!))
 
 (define-signature compiler:analyze^
   (compiler:global-symbols

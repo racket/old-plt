@@ -17,6 +17,8 @@
  (define seed (make-parameter 2001))
  (define max-monoliths 32)
  
+ (define max-inline-size (make-parameter 50))
+
  (define verbose (make-parameter #f))
  (define debug (make-parameter #f))
  (define test (make-parameter #f))

@@ -207,7 +207,9 @@
 		  ;;
 		  ;; We do not make a recursive call for the test since it is in the
 		  ;; current 'context'.  We want only a-values in the test slot,
-		  ;; or an application to a-values. We specially allow applications
+		  ;; or an application of a primitive function to a-values. 
+		  ;;
+		  ;; We specially allow primitive applications
 		  ;; of a-values so the optimizer can recognize tests that cen be
 		  ;; implemented primitively, e.g., (#%zero? x)
 		  ;;
@@ -227,7 +229,11 @@
 							   identity)
 					      (a-normalize (zodiac:if-form-else ast)
 							   identity))))
-		    zodiac:app?)]
+		    (lambda (x)
+		      (and (zodiac:app? x)
+			   (let ([fun (zodiac:app-fun x)])
+			     (and (zodiac:top-level-varref? fun)
+				  (varref:has-attribute? fun varref:primitive))))))]
 		  
 		  ;;----------------------------------------------------------------
 		  ;; BEGIN EXPRESSIONS

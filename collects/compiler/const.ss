@@ -88,7 +88,8 @@
 	    
 	    (set-annotation! sv (varref:empty-attributes))
 	    (varref:add-attribute! sv attrib)
-	    
+	    (varref:add-attribute! sv varref:static)
+
 	    (hash-table-put! table sym sv)
 	    (values sv (add1 counter)))))))
 
@@ -136,7 +137,7 @@
 		  args)])
       (set-annotation! v (varref:empty-attributes))
       (varref:add-attribute! v varref:primitive)
-      (set-annotation! app (make-app #f #t))
+      (set-annotation! app (make-app #f #t constructor-name))
       (block:register-max-arity! s:file-block (length args))
       (compiler:add-global-varref! v)
       (compiler:add-primitive-varref! v)

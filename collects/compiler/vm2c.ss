@@ -384,7 +384,10 @@
 		i
 		(tls-loop (add1 i) n vml ll bl)))
 	  (begin
-	    (fprintf c-port "~a{~n" vm->c:indent-spaces)
+	    (let ([start (zodiac:zodiac-start (car vml))])
+	      (fprintf c-port "~a{ /* [~a,~a] */~n" vm->c:indent-spaces
+		       (zodiac:location-line start)
+		       (zodiac:location-column start)))
 	    (vm->c:emit-local-variable-declarations! 
 	     (car ll)
 	     (string-append vm->c:indent-spaces vm->c:indent-spaces)
@@ -1580,8 +1583,8 @@
 
 	 ;; Inlined macro-based applications
 	 [(vm:macro-apply? ast) 
+	  (emit-expr "")
 	  (when (vm:macro-apply-tail? ast)
-	    (emit-indentation)
 	    (emit "return "))
 	  (when (vm:macro-apply-bool? ast) (emit "(("))
 	  (emit-macro-application ast)

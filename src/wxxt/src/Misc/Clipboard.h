@@ -4,6 +4,8 @@
 #ifndef __WX_CLIPBOARD__
 #define __WX_CLIPBOARD__
 
+class wxFrame;
+
 /* A clipboard client holds data belonging to the clipboard.
    For plain text, a client is not necessary. */
 class wxClipboardClient : public wxObject
@@ -42,6 +44,7 @@ class wxClipboard : public wxObject
   Bool is_sel, in_progress;
   void *saferef;
   double start_time;
+  wxFrame *frame;
 
   wxClipboard();
   ~wxClipboard();

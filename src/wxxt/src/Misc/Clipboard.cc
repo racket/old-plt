@@ -27,8 +27,9 @@
 wxClipboard *wxTheSelection;
 wxClipboard *wxTheClipboard;
 
-Widget wx_clipWindow;
 static Widget getClipWindow;
+/* These two are used by mredx.cxx: */
+Widget wx_clipWindow, wx_selWindow;
 
 extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
@@ -46,7 +47,7 @@ Atom ATOM(char *atom)
 
 Atom xa_utf8, xa_text, xa_targets, xa_clipboard;
 
-static wxFrame *clipboard_frame;
+static wxFrame *clipboard_frame, *selection_frame;
 static wxFrame *get_clipboard_frame;
 
 void wxInitClipboard(void)
@@ -55,13 +56,19 @@ void wxInitClipboard(void)
     /* Hack: We need a window for clipboard stuff */
     wxWindow_Xintern *fh;
     wxREGGLOB(clipboard_frame);
+    wxREGGLOB(selection_frame);
     wxREGGLOB(get_clipboard_frame);
     clipboard_frame = new wxFrame(NULL, "clipboard", 0, 0, 10, 10);
+    selection_frame = new wxFrame(NULL, "selection", 0, 0, 10, 10);
     get_clipboard_frame = new wxFrame(NULL, "get clipboard", 0, 0, 10, 10);
 
     fh = clipboard_frame->GetHandle();
     wx_clipWindow = fh->frame;
     XtRealizeWidget(wx_clipWindow);
+
+    fh = selection_frame->GetHandle();
+    wx_selWindow = fh->frame;
+    XtRealizeWidget(wx_selWindow);
 
     fh = get_clipboard_frame->GetHandle();
     getClipWindow = fh->frame;
@@ -69,6 +76,7 @@ void wxInitClipboard(void)
 
     /* Initially not in any specific context. */
     clipboard_frame->context = NULL;
+    selection_frame->context = NULL;
     /* Not in any specific context. */
     get_clipboard_frame->context = NULL;
   }
@@ -79,6 +87,9 @@ void wxInitClipboard(void)
     wxTheClipboard = new wxClipboard;
     wxTheSelection = new wxClipboard;
     wxTheSelection->is_sel = 1;
+
+    wxTheClipboard->frame = clipboard_frame;
+    wxTheSelection->frame = selection_frame;
   }
 
   xa_utf8 = ATOM("UTF8_STRING");
@@ -87,9 +98,10 @@ void wxInitClipboard(void)
   xa_clipboard = ATOM("CLIPBOARD");
 }
 
-static void AddClipboardFrame(int on)
+static void AddClipboardFrame(wxClipboard *cb, int on)
 {
-  clipboard_frame->context = NULL;
+  if (!on)
+    cb->frame->context = NULL;
 }
 
 wxClipboardClient::wxClipboardClient()
@@ -240,7 +252,7 @@ static void doLoseClipboard(wxClipboard *cb, Widget WXUNUSED(w), Atom *WXUNUSED(
   if (cb->clipOwner) {
     MrEdQueueBeingReplaced(cb->clipOwner);
     cb->clipOwner = NULL;
-    AddClipboardFrame(0);
+    AddClipboardFrame(cb, 0);
   }
   cb->cbString = NULL;
 }
@@ -262,17 +274,21 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
   if (clipOwner) {
     MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
-    AddClipboardFrame(0);
+    AddClipboardFrame(this, 0);
   }
   cbString = NULL;
-
+  
+  /* Merely setting the context for a frame would not
+     normally redirect events to a different eventspace.
+     But there's a hack in mredx.cxx to help complete
+     the redirection. */
   clipOwner = client;
   client->context = wxGetContextForFrame();
-  clipboard_frame->context = client->context;
-  AddClipboardFrame(1);
+  frame->context = client->context;
+  AddClipboardFrame(this, 1);
 
   if (is_sel) {
-    got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
+    got_selection = XtOwnSelection(wx_selWindow, XA_PRIMARY, time,
 				   wxConvertSelection, wxLoseSelection, 
 				   wxSelectionDone);
   } else {
@@ -284,7 +300,7 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
   if (!got_selection) {
     MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
-    AddClipboardFrame(0);
+    AddClipboardFrame(this, 0);
   }
 }
 
@@ -300,13 +316,13 @@ void wxClipboard::SetClipboardString(char *str, long time)
   if (clipOwner) {
     MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
-    AddClipboardFrame(0);
+    AddClipboardFrame(this, 0);
   }
 
   cbString = str;
 
   if (is_sel) {
-    got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
+    got_selection = XtOwnSelection(wx_selWindow, XA_PRIMARY, time,
 				   wxConvertSelection, wxLoseSelection, 
 				   wxStringSelectionDone);
   } else {
@@ -324,7 +340,7 @@ void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
 {
   if (clipOwner) {
     MrEdQueueBeingReplaced(clipOwner);
-    AddClipboardFrame(0);
+    AddClipboardFrame(this, 0);
     clipOwner = NULL;
   }
 

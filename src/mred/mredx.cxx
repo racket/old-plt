@@ -33,7 +33,7 @@ static Widget *grab_stack, grabber;
 static int grab_stack_pos = 0, grab_stack_size = 0;
 #define WSTACK_INC 3
 
-extern Widget wx_clipWindow;
+extern Widget wx_clipWindow, wx_selWindow;
 
 wxWindow *wxLocationToWindow(int x, int y);
 
@@ -226,9 +226,21 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
   if (widget) {
     Widget parent = 0;
 
+    /* Special hack in cooperation with Clipboard.cc
+       to make clipboard operations happen in the right
+       eventspace. */
     if (widget == wx_clipWindow) {
       wxClipboardClient *clipOwner;
       clipOwner = wxTheClipboard->GetClipboardClient();
+      if (clipOwner) {
+	MrEdContext *cc = (MrEdContext *)clipOwner->context;
+	if (cc)
+	  parent = cc->finalized->toplevel;
+      }
+    }
+    if (widget == wx_selWindow) {
+      wxClipboardClient *clipOwner;
+      clipOwner = wxTheSelection->GetClipboardClient();
       if (clipOwner) {
 	MrEdContext *cc = (MrEdContext *)clipOwner->context;
 	if (cc)

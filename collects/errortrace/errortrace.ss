@@ -148,12 +148,16 @@
   ;; with-mark : stx stx -> stx
   (define (with-mark mark expr)
     (with-syntax ([expr expr]
-		  [mark mark]
+		  [source (if (string? (syntax-source mark))
+			      (string->symbol (syntax-source mark))
+			      (string->symbol (format "~a" (syntax-source mark))))]
+		  [line (syntax-line mark)]
+		  [col (syntax-column mark)]
 		  [key key])
       (syntax
        (with-continuation-mark
 	'key
-	(quote-syntax mark)
+	(cons (quote source) (cons line col))
 	expr))))
   
   
@@ -396,14 +400,12 @@
         [(or (zero? n) (null? l)) (void)]
         [(pair? l)
          (let ([m (car l)])
-           (fprintf p "  ~e in ~a~n" 
-                    (cleanup (syntax-object->datum m))
-                    (let ([file (syntax-source m)]
-			  [line (syntax-line m)]
-			  [col (syntax-column m)])
-		      (if (and file line col)
-			  (format "~a[~a.~a]"
-				  file line col)
+           (fprintf p "~a~n"
+                    (let ([file (car m)]
+			  [line (cadr m)]
+			  [col (cddr m)])
+		      (if (and file line)
+			  (format "~a, line ~a, char ~a." file line col)
                           "UNKNOWN"))))
          (loop (- n 1)
                (cdr l))]

@@ -2,7 +2,7 @@
 
   (require (lib "etc.ss")
 	   (lib "file.ss")
-	   (lib "web-server.ss" "web-server")
+           (lib "internal-server.ss" "web-server")
 	   (lib "util.ss" "web-server")
 	   (lib "configuration.ss" "web-server")
 	   (lib "configuration-structures.ss" "web-server"))

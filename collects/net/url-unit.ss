@@ -13,12 +13,13 @@
   (require (lib "file.ss")
            (lib "unitsig.ss")
 	   (lib "thread.ss")
-           "url-sig.ss")
+           "url-sig.ss"
+           "tcp-sig.ss")
   (provide url@)
   
   (define url@
     (unit/sig net:url^
-      (import)
+      (import net:tcp^)
       
       (define-struct (url-exception exn) ())
       

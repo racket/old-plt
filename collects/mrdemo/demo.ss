@@ -24,7 +24,8 @@
 			  name))]
 	  [canvas (send f get-canvas)]
 	  [edit (send f get-edit)]
-	  [console #f])
+	  [console (with-handlers ([void (lambda (exn) #f)])
+		      (global-defined-value 'mred:console))])
   (send (send f get-top-panel) change-children reverse)
   (send p2 stretchable-in-y #f)
   (send p1 stretchable-in-y #f)

@@ -47,10 +47,6 @@
 ;; each taking the appropriate combination of the described interface
 ;; and operations units.
 
-;;;;; The Implementation ;;;;;
-
-(require-library "trigger.ss")
-
 ;;;;; Signature Definitions ;;;;;
 
 (define-signature prover-core^

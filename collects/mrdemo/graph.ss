@@ -330,14 +330,14 @@
 		   (let ([n-box (box 0.0)])
 		     (send stream >> n-box)
 		     (unbox n-box)))])
-	    (let* ([functions (read-string (get-string))]
+	    (let* ([functions (read-from-string (get-string))]
 		   [x-start (get-float)]
 		   [x-end (get-float)]
 		   [w (get-integer)]
 		   [h (get-integer)]
 		   [y-start (get-float)]
 		   [y-end (get-float)]
-		   [shades (read-string (get-string))])
+		   [shades (read-from-string (get-string))])
 	      (make-object graph-snip%
 			   functions
 			   (cons x-start x-end)

@@ -13,3 +13,6 @@
 @SYM "pict" : wxBITMAP_TYPE_PICT
 @SYM "unknown" : wxBITMAP_TYPE_UNKNOWN
 @ENDSYMBOLS
+
+@MACRO USEALLFUEL[ok] = if (<ok>) scheme_process_block(0.0);
+

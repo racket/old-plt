@@ -4568,6 +4568,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
+
 // This isn't `pathname' because it expands internally
 
 
@@ -5239,7 +5241,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(Scheme_Object *obj, int n,  Scheme_
   
   ((wxImageSnip *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1, x2, x3);
 
-  
+  if (x0) scheme_process_block(0.0);
   
   return scheme_void;
 }
@@ -5879,7 +5881,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
 
   
   realobj = new os_wxImageSnip(obj, x0, x1, x2, x3);
-  
+  if (x0) scheme_process_block(0.0);
   
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);

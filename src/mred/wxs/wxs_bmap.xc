@@ -25,9 +25,11 @@ static Bool IsColor(wxBitmap *bm)
 
 @MACRO STRINGENOUGH = if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]);
 
+@MACRO USEALLFUEL[ok] = if (<ok>) scheme_process_block(0.0);
+
 @CREATOR (string////string,rint[1|10000],rint[1|10000]); : : /STRINGENOUGH// <> datastring
 @CREATOR (rint[1|10000],rint[1|10000],bool=0); : : <> width/height
-@CREATOR (pathname////string,SYM[bitmapType]=0); <> pathname
+@CREATOR (pathname////string,SYM[bitmapType]=0); : : //USEALLFUEL[realobj->Ok()] <> pathname
 
 @ "get-depth" : int GetDepth();
 @ "get-height" : int GetHeight();
@@ -35,7 +37,7 @@ static Bool IsColor(wxBitmap *bm)
 @ "ok?" : bool Ok();
 @ m "is-color?" : bool IsColor();
 
-@ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);
-@ "save-file" : bool SaveFile(pathname,SYM[saveBitmapType]);
+@ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);  : : //USEALLFUEL[r]
+@ "save-file" : bool SaveFile(pathname,SYM[saveBitmapType]);  : : //USEALLFUEL[1]
 
 @END

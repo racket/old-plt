@@ -79,6 +79,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 }
 
 
+
+
 static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
 static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
 static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
@@ -129,6 +131,7 @@ static Bool IsColor(wxBitmap *bm)
 {
   return (bm->GetDepth() == 1);
 }
+
 
 
 
@@ -191,7 +194,7 @@ static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Obj
   
   r = ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->SaveFile(x0, x1);
 
-  
+  if (1) scheme_process_block(0.0);
   
   return (r ? scheme_true : scheme_false);
 }
@@ -215,7 +218,7 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
   
   r = ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1);
 
-  
+  if (r) scheme_process_block(0.0);
   
   return (r ? scheme_true : scheme_false);
 }
@@ -359,7 +362,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     realobj = new os_wxBitmap(obj, x0, x1);
-    
+    if (realobj->Ok()) scheme_process_block(0.0);
     
   }
 

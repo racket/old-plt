@@ -582,6 +582,7 @@ static void DoTimer(wxTimer *timer)
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
   if (!scheme_setjmp(scheme_error_buf))
     timer->Notify();
+  scheme_clear_escape();
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   if (!once && (timer->one_shot == -1) && (timer->interval != -1))
@@ -624,6 +625,7 @@ static void GoAhead(MrEdContext *c)
     memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (!scheme_setjmp(scheme_error_buf))
       MrEdDispatchEvent(&e);
+    scheme_clear_escape();
     memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
   }
 }
@@ -662,6 +664,7 @@ static void DoTheEvent(MrEdContext *c)
     memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (!scheme_setjmp(scheme_error_buf))
       scheme_apply_multi(p, 1, a);
+    scheme_clear_escape();
     memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
 #if 0
@@ -1263,6 +1266,7 @@ static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdCon
       memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
       if (!scheme_setjmp(scheme_error_buf))
 	scheme_apply_multi(cb->callback, 0, NULL);
+      scheme_clear_escape();
       memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
       
       return cb->context;
@@ -2259,6 +2263,7 @@ void Drop_Runtime(char **argv, int argc)
 
   if (scheme_setjmp(scheme_error_buf)) {
     /* give up on rest */
+    scheme_clear_escape();
   } else {
     for (i = 0; i < argc; i++) {
       Scheme_Object *p[1];
@@ -2277,7 +2282,7 @@ void Drop_Quit()
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf)) {
-    /* give up on rest */
+    scheme_clear_escape();
   } else {
     scheme_apply(wxs_app_quit_proc, 0, NULL);
   }

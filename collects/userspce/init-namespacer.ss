@@ -45,7 +45,7 @@
 	     names))))
 
   (define (add-extra-macros)
-    (when (init-params:setting-teaching-syntax? (init-params:current-setting))
+    (when (init-params:setting-teaching-primitives-and-syntax? (init-params:current-setting))
       (for-each (lambda (x) (apply global-defined-value x)) extra-macros)))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -193,7 +193,8 @@
 			  [(,init-params:intermediate-language? (,init-params:current-setting))
 			   ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
 			  [(or (,init-params:advanced-language? (,init-params:current-setting))
-			       (,init-params:setting-teaching-primitives? (,init-params:current-setting)))
+			       (,init-params:setting-teaching-primitives-and-syntax?
+				(,init-params:current-setting)))
 			   ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
 			  [else (void)]))
 		       userspace)]

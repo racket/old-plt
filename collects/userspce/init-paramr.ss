@@ -54,8 +54,7 @@
 				read-decimal-as-exact?
 				define-argv?
 				use-pretty-printer?
-				teaching-primitives?
-				teaching-syntax?))
+				teaching-primitives-and-syntax?))
   
   ;; settings : (list-of setting)
   (define settings
@@ -86,8 +85,7 @@
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)
-	     (teaching-primitives? #t)
-	     (teaching-syntax? #t)))
+	     (teaching-primitives-and-syntax? #t)))
 	  (make-setting/parse
 	   `((key intermediate)
 	     (name "Intermediate Student")
@@ -115,8 +113,7 @@
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)
-	     (teaching-primitives? #t)
-	     (teaching-syntax? #t)))
+	     (teaching-primitives-and-syntax? #t)))
 	  (make-setting/parse
 	   `((key advanced)
 	     (name "Advanced Student")
@@ -144,8 +141,7 @@
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)
-	     (teaching-primitives? #t)
-	     (teaching-syntax? #t)))
+	     (teaching-primitives-and-syntax? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme (MzScheme)")
@@ -173,8 +169,7 @@
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)
-	     (teaching-primitives? #f)
-	     (teaching-syntax? #f)))
+	     (teaching-primitives-and-syntax? #f)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme without Debugging (MzScheme)")
@@ -202,8 +197,7 @@
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)
-	     (teaching-primitives? #f)
-	     (teaching-syntax? #f)))))
+	     (teaching-primitives-and-syntax? #f)))))
   
   (define (snoc x y) (append y (list x)))
   

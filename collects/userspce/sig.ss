@@ -141,8 +141,7 @@
                     print-booleans-as-true/false
 		    printing
 		    use-pretty-printer?
-		    teaching-primitives?
-		    teaching-syntax?))
+		    teaching-primitives-and-syntax?))
    make-setting/parse
 
    teaching-level?

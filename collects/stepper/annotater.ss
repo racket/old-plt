@@ -104,7 +104,7 @@
   
   
   (define-values (never-undefined? mark-never-undefined)
-    (let-values ([(getter setter) (z:register-client 'aries:never-undefined (lambda () #f))])
+    (let-values ([(getter setter) (z:register-client 'stepper:never-undefined (lambda () #f))])
       (values
        (lambda (parsed) (getter (z:parsed-back parsed)))
        (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
@@ -437,6 +437,7 @@
                                      [args (arglist->ilist arglist)]
                                      [new-annotated (list (improper-map z:binding-var args) annotated)])
                                 (improper-foreach check-for-keyword args)
+                                (improper-foreach mark-never-undefined args)
 				(list new-annotated new-free-vars)))))]
 		       [pile-of-results (map annotate-case 
 					     (z:case-lambda-form-args expr)

@@ -44,11 +44,14 @@ export PLTEXTENSION
 
 echo "setting PLTHOME to $installplthome in scripts:"
 
-if [ `uname -s` = 'FreeBSD' ] ; then
-  chmod='chmod -RH'
-else
-  chmod='chmod'
-fi
+case `uname -s` in
+  *BSD) # FreeBSD and OpenBSD, at least
+    chmod='chmod -RH'
+    ;;
+  *)
+    chmod='chmod'
+    ;;
+esac
 
 if [ "$installplthome" != '' ] ; then
   # Change the scripts in bin/, replacing

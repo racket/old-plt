@@ -59,6 +59,9 @@ case $OS in
   FreeBSD)
     SYS=i386${SEP}freebsd
     ;;
+  OpenBSD)
+    SYS=i386${SEP}openbsd
+    ;;
   IRIX*)
     SYS=mips${SEP}irix
     ;;

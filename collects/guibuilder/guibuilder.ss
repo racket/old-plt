@@ -59,7 +59,7 @@
 				  (lambda (s)
 				    (send s gb-open-dialog)))))
 	     (make-object mred:separator-menu-item% emenu)
-	     (add-tools toolbar emenu (lambda (i) (insert-element i)))
+	     (add-tools toolbar emenu (lambda (c%) (insert-element c%)))
 
 	     (make-object mred:menu-item% "Configure Output"  vmenu
 			  (lambda (i e) (send (get-gb-editor) open-dialog)))

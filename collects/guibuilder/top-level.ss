@@ -53,6 +53,7 @@
 	      [super-after-insert after-insert]
 	      [super-do-paste do-paste]
 	      [super-do-copy do-copy]
+	      [super-copy-self-to copy-self-to]
 	      [super-write-footers-to-file write-footers-to-file]
 	      [super-read-footer-from-file read-footer-from-file])
       (private 
@@ -363,13 +364,14 @@
        [frame-label "Frame"]
        [frame-label-w #f]
        [frame-label-h #f]
+       [top-name "top"]
        [last-frame-paint-w 0]
        [last-frame-paint-h 0]
        [main-panel-x 0]
        [main-panel-y 0]
        [margin 2]
        [top-level-type FRAME-MODE]
-       [auto-show? #f]
+       [auto-show? #t]
        [configure-frame #f])
       (public*
         [get-top-level-type
@@ -408,6 +410,12 @@
 					  (send frame-stuff enable (< mode PANEL-MODE))
 					  (update-frame))))]
 			[frame-stuff (make-object mred:vertical-panel% p)]
+			[name-text (make-one-line/callback-edit 
+				    frame-stuff
+				    "Scheme Name:"
+				    (lambda (txt)
+				      (set! top-name txt))
+				    top-name)]
 			[title-text (make-one-line/callback-edit 
 				     frame-stuff
 				     "Frame Title:"
@@ -420,7 +428,7 @@
 						 (update-frame))))
 				     frame-label)]
 			[auto-show-check (make-object mred:check-box%
-						      "Show Frame Automatically" frame-stuff
+						      "Show Automatically" frame-stuff
 						      (lambda (c e)
 							(set! auto-show? (send c get-value))))])
 		 (send frame-stuff set-alignment 'left 'center)
@@ -502,7 +510,15 @@
 	      (set! frame-label (send stream get-string))]
 	     [(string=? kind "gb:show") 
 	      (set! auto-show? (positive? (send stream get-exact)))]
-	     [else (super-read-footer-from-file stream kind)]))])
+	     [else (super-read-footer-from-file stream kind)]))]
+	[copy-self-to (lambda (e)
+			(send e on-load-file #f #f)
+			(super-copy-self-to e)
+			(send e after-load-file #t))]
+	[copy-self (lambda ()
+		     (let ([e (new gb:edit%)])
+		       (copy-self-to e)
+		       e))])
       (private
 	[main-panel #f])
       (public*
@@ -554,7 +570,8 @@
 		  [frame-label (if (and (= type PANEL-MODE) force-frame?)
 				   "Panel Tester"
 				   (get-frame-label))]
-		  [mode (make-output-mode as-class? force-frame?)])
+		  [mode (make-output-mode as-class? force-frame?)]
+		  [top (string->symbol top-name)])
 	     `(,@(cond
 		  [as-class? '(class object%)]
 		  [(and (= type PANEL-MODE)
@@ -571,14 +588,14 @@
 			(and (= type PANEL-MODE) force-frame?))
 		    (if as-class?
 			`((public* [get-top% (lambda () frame%)])
-			  (field [top (make-object (get-top%) ,frame-label)]))
-			`((define top (make-object frame% ,frame-label))))]
+			  (field [,top (make-object (get-top%) ,frame-label)]))
+			`((define ,top (make-object frame% ,frame-label))))]
 		   [(= type PANEL-MODE) null]
 		   [else
 		    (if as-class?
 			`((public* [get-top% (lambda () dialog%)])
-			  (field [top (make-object (get-top%) ,frame-label)]))
-			`((define top (make-object dialog% ,frame-label))))])
+			  (field [,top (make-object (get-top%) ,frame-label)]))
+			`((define ,top (make-object dialog% ,frame-label))))])
 		,@(send main gb-instantiate 'top mode)
 		,@(if as-class?
 		      '((super-new))
@@ -586,7 +603,7 @@
 		,@(if (and (not force-frame?)
 			   (or (= type PANEL-MODE) (not (get-auto-show))))
 		      null
-		      '((send top show #t))))))])
+		      `((send ,top show #t))))))])
 
       (super-new)))
 

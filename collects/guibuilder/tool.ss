@@ -21,20 +21,46 @@
 	   (class drs:frame%
 	     (inherit get-special-menu get-edit-target-object)
 	     (rename [super-get-definitions/interactions-panel-parent
-		      get-definitions/interactions-panel-parent])
+		      get-definitions/interactions-panel-parent]
+		     [super-add-show-menu-items
+		      add-show-menu-items])
 
-	     (define popup (new popup-menu%))
 	     (define toolbar #f)
+	     (define toolbar-shown? #f)
 
 	     (define/override (get-definitions/interactions-panel-parent)
 	       (let ([p (super-get-definitions/interactions-panel-parent)])
-		 (set! toolbar (new toolbar% [parent p]))
-		 (add-tools toolbar popup 
+		 (set! toolbar (new toolbar% [parent p][style '(deleted)]))
+		 (add-tools toolbar #f
 			    (lambda (c%) 
 			      (let ([e (get-edit-target-object)])
-				(when (e . is-a? . gb:edit%)
-				  (send e insert-element c%)))))
+				(if (e . is-a? . gb:edit%)
+				    (send e insert-element c%)
+				    (message-box 
+				     "GUI Tool"
+				     (string-append "Before clicking a tool icon, "
+						    "use \"Insert GUI\" from the \"Special\" menu "
+						    "to insert a root GUI item, or select an already "
+						    "inserted GUI.")
+				     this
+				     '(ok stop))))))
 		 (new vertical-panel% (parent p))))
+
+	     (define/override (add-show-menu-items menu)
+	       (super-add-show-menu-items menu)
+	       (make-object menu-item% 
+			    "Show GUI Toolbar"
+			    menu
+			    (lambda (i e)
+			      (let ([p (send toolbar get-parent)])
+				(if toolbar-shown?
+				    (send p delete-child toolbar)
+				    (send p change-children (lambda (l)
+							      (cons toolbar l))))
+				(set! toolbar-shown? (not toolbar-shown?))
+				(send i set-label (if toolbar-shown?
+						      "Hide GUI Toolbar"
+						      "Show GUI Toolbar"))))))
 
 	     (super-new)
 
@@ -42,6 +68,8 @@
 			  (lambda (b e)
 			    (let ([e (get-edit-target-object)])
 			      (when e
-				(let ([gb (make-object gb:edit%)])
+				(let* ([gb (make-object gb:edit%)]
+				       [s (make-object gui-code-snip% gb)])
+				  (send e insert s)
 				  (send gb create-main-panel)
-				  (send e insert (make-object gui-code-snip% gb))))))))))))))
+				  (send gb set-caret-owner #f 'display)))))))))))))

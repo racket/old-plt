@@ -353,14 +353,14 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
     mt = ((t > top) ? ((t < bottom) ? t : bottom) : top);
     mb = ((b > top) ? ((b < bottom) ? b : bottom) : top);
 
-    if (l >= left && l < right  && mt <= mb + GC_LINE_EXTEND)
+    if (l >= left && l < right  && mt < mb + GC_LINE_EXTEND)
       dc->DrawLine(l, mt, l, mb + GC_LINE_EXTEND);
-    if (r >= left && r < right && mt <= mb + GC_LINE_EXTEND)
+    if (r >= left && r < right && mt < mb + GC_LINE_EXTEND)
       dc->DrawLine(r, mt, r, mb + GC_LINE_EXTEND);
 
-    if (t >= top && t < bottom && ml <= mr + GC_LINE_EXTEND)
+    if (t >= top && t < bottom && ml < mr + GC_LINE_EXTEND)
       dc->DrawLine(ml, t, mr + GC_LINE_EXTEND, t);
-    if (b >= top && b < bottom && ml <= mr + GC_LINE_EXTEND)
+    if (b >= top && b < bottom && ml < mr + GC_LINE_EXTEND)
       dc->DrawLine(ml, b, mr + GC_LINE_EXTEND, b);
   }
 

@@ -60,14 +60,14 @@
   ;; Old-style functions: ----------------------------------------
 
   (define (process*/ports cout cin cerr exe . args)
-    (let-values ([(subp out in err pid) (apply subprocess 
-					       (if-stream-out cout)
-					       (if-stream-in cin)
-					       (if-stream-out cerr)
-					       exe args)])      
+    (let-values ([(subp out in err) (apply subprocess 
+					   (if-stream-out cout)
+					   (if-stream-in cin)
+					   (if-stream-out cerr)
+					   exe args)])      
       (list (streamify-out cout out)
 	    (streamify-in cin in)
-	    pid
+	    (subprocess-pid subp)
 	    (streamify-out cerr err)
 	    (letrec ((control
 		      (lambda (m)
@@ -100,7 +100,7 @@
 	(let ([cout (current-output-port)]
 	      [cin (current-input-port)]
 	      [cerr (current-error-port)])
-	  (let-values ([(subp out in err pid)
+	  (let-values ([(subp out in err)
 			(apply
 			 subprocess
 			 (if-stream-out cout)

@@ -145,6 +145,7 @@ typedef struct Scheme_Subprocess {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   void *handle;
+  int pid;
 } Scheme_Subprocess;
 
 #ifdef USE_FD_PORTS
@@ -230,6 +231,7 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 static Scheme_Object *subprocess(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_status(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess_pid(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
 
 Scheme_Object *
@@ -478,6 +480,11 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("subprocess-wait", 
 			     scheme_make_prim_w_arity(subprocess_wait, 
 						      "subprocess-wait", 
+						      1, 1),
+			     env);
+  scheme_add_global_constant("subprocess-pid", 
+			     scheme_make_prim_w_arity(subprocess_pid, 
+						      "subprocess-pid", 
 						      1, 1),
 			     env);
 
@@ -4473,6 +4480,14 @@ static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
 #endif
 }
 
+static Scheme_Object *subprocess_pid(int argc, Scheme_Object **argv)
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
+    scheme_wrong_type("subprocess-pid", "subprocess", 0, argc, argv);
+
+  return scheme_make_integer_value(((Scheme_Subprocess *)argv[0])->pid);
+}
+
 /*********** Windows: command-line construction *************/
 
 #ifdef WINDOWS_PROCESSES
@@ -4655,7 +4670,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   int to_subprocess[2], from_subprocess[2], err_subprocess[2];
   int i, pid;
   char **argv;
-  Scheme_Object *in, *out, *subpid, *err;
+  Scheme_Object *in, *out, *err;
 #if defined(UNIX_PROCESSES)
   System_Child *sc;
 #else
@@ -4664,7 +4679,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   Scheme_Object *inport;
   Scheme_Object *outport;
   Scheme_Object *errport;
-  Scheme_Object *a[5];
+  Scheme_Object *a[4];
   Scheme_Subprocess *subproc;
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
   int spawn_status;
@@ -5040,10 +5055,10 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*          Return result info          */
   /*--------------------------------------*/
 
-  subpid = scheme_make_integer_value(pid);
   subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
   subproc->type = scheme_subprocess_type;
   subproc->handle = (void *)sc;
+  subproc->pid = pid;
 
 #define cons scheme_make_pair
 
@@ -5051,9 +5066,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   a[1] = in;
   a[2] = out;
   a[3] = err;
-  a[4] = subpid;
 
-  return scheme_values(5, a);
+  return scheme_values(4, a);
 
 #else
 # ifdef MACINTOSH_EVENTS
@@ -5064,7 +5078,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
   {
     int i;
-    Scheme_Object *a[5];
+    Scheme_Object *a[4];
     Scheme_Subprocess *subproc;
 
     for (i = 0; i < 3; i++) {
@@ -5099,7 +5113,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     a[1] = scheme_false;
     a[2] = scheme_false;
     a[3] = scheme_false;
-    a[4] = scheme_make_integer_value(0);
+
+    return scheme_values(4, a);
   }
 
 # else

@@ -123,26 +123,35 @@
 
       (define signal-undefined? (make-parameter #t))
 
-      (signal-undefined? #t)
-
       (define annotate
 	(lambda (expr)
 	  (cond
 	    [(z:bound-varref? expr)
+	      (let ((v (z:varref-var expr))
+		     (real-v (z:binding-orig-name
+			       (z:bound-varref-binding expr))))
+		(if (signal-undefined?)
+		  (wrap expr
+		    `(#%if (#%eq? ,v ,the-undefined-value)
+		       (#%raise (,make-undefined
+				  ,(format "Undefined value in ~s" real-v)
+				  ((#%debug-info-handler))
+				  (#%quote ,v)))
+		       ,v))
+		  v))]
+
+	    [(z:top-level-varref? expr)
 	      (let ((v (z:varref-var expr)))
 		(if (signal-undefined?)
 		  (wrap expr
 		    `(#%if (#%eq? ,v ,the-undefined-value)
 		       (#%raise (,make-undefined
 				  ,(format "Undefined value in ~s" v)
-				  (#%void)
-				  ,v))
+				  ((#%debug-info-handler))
+				  (#%quote ,v)))
 		       ,v))
-		  v))]
+		  (wrap expr (z:varref-var expr))))]
 
-	    [(z:top-level-varref? expr)
-	      (wrap expr (z:varref-var expr))]
-	 
 	    [(z:app? expr)
 	      (let* ([aries:app-arg (gensym 'aries:app-arg)]
 		      [aries:app-break (gensym 'aries:app-break)]

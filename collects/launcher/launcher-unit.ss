@@ -9,8 +9,6 @@
 	   (lib "link-sig.ss" "dynext")
 	   (lib "embed.ss" "compiler")
 
-	   (lib "plist.ss" "xml")
-
 	   "launcher-sig.ss")
 
   (provide launcher@)
@@ -267,7 +265,9 @@
 	    ;; Normal launcher: 
 	    (make-embedding-executable dest (eq? kind 'mred) #f
 				       null null null
-				       flags)
+				       flags
+				       aux-root
+				       #t)
 	    ;; Self-replacable launcher (needed for Setup PLT):
 	    (begin
 	      (install-template dest kind "mzstart.exe" "mrstart.exe")
@@ -326,86 +326,14 @@
       ; make-macosx-launcher : symbol (listof str) pathname ->  
       (define (make-macosx-launcher kind variant flags dest aux-root)
 	(if (eq? kind 'mzscheme) 
+	    ;; MzScheme launcher is the same as for Unix
 	    (make-unix-launcher kind variant flags dest aux-root)
-	    (begin
-	      (unless plthome
-		      (error 'make-unix-launcher 
-			     "unable to locate PLTHOME"))
-	      ;; have to roll my own install-template, because Apps are
-	      ;; really directories.
-	      (let* ([name (let-values ([(base name dir?) (split-path dest)])
-			     (regexp-replace "[.]app$" name ""))]
-		     [src (build-path (collection-path "launcher")
-				      "Starter.app")]
-		     [exec-name (build-path plthome 
-					    "MrEd.app"
-					    "Contents"
-					    "MacOS"
-					    "MrEd")])
-		(when (directory-exists? dest)
-		  (delete-directory/files dest))
-		(make-directory* (build-path dest "Contents" "Resources"))
-		(make-directory* (build-path dest "Contents" "MacOS"))
-		(copy-file exec-name (build-path dest "Contents" "MacOS" name))
-		(copy-file (build-path src "Contents" "PkgInfo")
-			   (build-path dest "Contents" "PkgInfo"))
-		(let ([icon (or (and aux-root
-				     (let ([icon (string-append aux-root ".icns")])
-				       (and (file-exists? icon)
-					    icon)))
-				(build-path src "Contents" "Resources" "Starter.icns"))])
-		  (copy-file icon
-			     (build-path dest "Contents" "Resources" "Starter.icns")))
-		(let ([orig-plist (call-with-input-file (build-path src
-								    "Contents"
-								    "Info.plist")
-				    read-plist)]
-		      [plist-replace (lambda (plist . l)
-				       (let loop ([plist plist][l l])
-					 (if (null? l)
-					     plist
-					     (let ([key (car l)]
-						   [val (cadr l)])
-					       (loop `(dict
-						       ,@(let loop ([c (cdr plist)])
-							   (cond
-							    [(null? c) (list (list 'assoc-pair key val))]
-							    [(string=? (cadar c) key)
-							     (cons (list 'assoc-pair key val)
-								   (cdr c))]
-							    [else
-							     (cons (car c)
-								   (loop (cdr c)))])))
-						     (cddr l))))))])
-		  (let ([new-plist (plist-replace
-				    orig-plist
-
-				    "CFBundleExecutable" 
-				    name
-
-				    ;; "CFBundleIconFile"
-				    ;; name
-				    
-				    "CFBundleIdentifier" 
-				    (format "org.plt-scheme.~a" name))])
-		    (call-with-output-file (build-path dest 
-						       "Contents" 
-						       "Info.plist")
-		      (lambda (port)
-			(write-plist new-plist port))
-		      'truncate)))
-		(call-with-output-file (build-path dest 
-						   "Contents" 
-						   "Resources" 
-						   "starter-info")
-		  (lambda (port)
-		    (write-plist 
-		     `(dict (assoc-pair "executable name"
-					,exec-name)
-			    (assoc-pair "stored arguments"
-					(array ,@flags)))
-		     port))
-		  'truncate)))))
+	    ;; MrEd "launcher" is a stand-alone executable
+	    (make-embedding-executable dest (eq? kind 'mred) #f
+				       null null null
+				       flags
+				       aux-root
+				       #t)))
         
       
       ;; lazy install-aliases code for mac added by jbc 2000-6:

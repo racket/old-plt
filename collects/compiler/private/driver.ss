@@ -232,6 +232,7 @@
 			     (lambda () (pretty-print (syntax-object->datum p)))
 			     'replace)
 			  (let ([opt-expanded (expand p)])
+			    (pretty-print (syntax-object->datum opt-expanded))
 			    opt-expanded)))))
 		   exprs)))))
 
@@ -646,8 +647,8 @@
 		  (unless (compiler:option:verbose) (newline))
 		  (let ([read-thunk
 			 (lambda ()
-			   (with-handlers ([void top-level-exn-handler])
-			     (with-handlers ([void elaboration-exn-handler])
+			   (with-handlers (); [void top-level-exn-handler])
+			     (with-handlers (); [void elaboration-exn-handler])
 			       (parameterize ([current-namespace elaborate-namespace]
 					      [compiler:escape-on-error #t])
 				 (set-block-source! 

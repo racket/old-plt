@@ -3,8 +3,10 @@
   (require (lib "unitsig.ss")
 	   (lib "file.ss")
 	   (lib "list.ss")
+	   (lib "etc.ss")
 	   (lib "thread.ss")
-	   (lib "moddep.ss" "syntax"))
+	   (lib "moddep.ss" "syntax")
+	   (lib "plist.ss" "xml"))
 
   (provide compiler:embed@)
 
@@ -13,7 +15,10 @@
       (import)
 
       ;; Find executable via (find-system-path 'exec-file), then
-      ;;  fixup name to be MrEd or MzScheme
+      ;;  fixup name to be MrEd or MzScheme because we may
+      ;;  be running in MzScheme when we want MrEd.
+      ;;  The fixup process is a bit tricky in OS X, since
+      ;;  the MzScheme and MrEd binaries have very different locations.
       (define (find-exe mred?)
 	(let* ([sp (find-system-path 'exec-file)]
 	       [exe (find-executable-path sp #f)]
@@ -32,16 +37,28 @@
 			name)]
 		   [r (or mr mz)])
 	      (unless r (fail))
-	      (let ([exe
-		     (build-path base
-				 (string-append (cadr r)
-						(if mred?
-						    "mred"
-						    "mzscheme")
-						(cadddr r)))])
-		(unless (file-exists? exe)
-		  (fail))
-		exe)))))
+	      (if (eq? 'macosx (system-type))
+		  (cond
+		   [(and mr (not mred?))
+		    ;; Found MrEd, need MzScheme:
+		    (build-path base 'up 'up 'up "bin" "mzscheme")]
+		   [(and mz mred?)
+		    ;; Found MzScheme, need MrEd:
+		    (build-path base 'up "MrEd.app" "Contents" "MacOS" "MrEd")]
+		   [else 
+		    ;; Found the one we need:
+		    exe])
+		  ;; Not OS X --- simply splice in the right name:
+		  (let ([exe
+			 (build-path base
+				     (string-append (cadr r)
+						    (if mred?
+							"mred"
+							"mzscheme")
+						    (cadddr r)))])
+		    (unless (file-exists? exe)
+		      (fail))
+		    exe))))))
 
       ;; Find the magic point in the binary:
       (define (find-cmdline)
@@ -66,6 +83,83 @@
 		    (loop))))
 	    ;; File has only a "data fork":
 	    (file-size dest)))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define (prepare-macosx-mred exec-name dest aux-root)
+	(let* ([name (let-values ([(base name dir?) (split-path dest)])
+		       (regexp-replace "[.]app$" name ""))]
+	       [src (build-path (collection-path "launcher")
+				"Starter.app")])
+	  (when (directory-exists? dest)
+	    (delete-directory/files dest))
+	  (make-directory* (build-path dest "Contents" "Resources"))
+	  (make-directory* (build-path dest "Contents" "MacOS"))
+	  (copy-file exec-name (build-path dest "Contents" "MacOS" name))
+	  (copy-file (build-path src "Contents" "PkgInfo")
+		     (build-path dest "Contents" "PkgInfo"))
+	  (let ([icon (or (and aux-root
+			       (let ([icon (string-append aux-root ".icns")])
+				 (and (file-exists? icon)
+				      icon)))
+			  (build-path src "Contents" "Resources" "Starter.icns"))])
+	    (copy-file icon
+		       (build-path dest "Contents" "Resources" "Starter.icns")))
+	  (let ([orig-plist (call-with-input-file (build-path src
+							      "Contents"
+							      "Info.plist")
+			      read-plist)]
+		[plist-replace (lambda (plist . l)
+				 (let loop ([plist plist][l l])
+				   (if (null? l)
+				       plist
+				       (let ([key (car l)]
+					     [val (cadr l)])
+					 (loop `(dict
+						 ,@(let loop ([c (cdr plist)])
+						     (cond
+						      [(null? c) (list (list 'assoc-pair key val))]
+						      [(string=? (cadar c) key)
+						       (cons (list 'assoc-pair key val)
+							     (cdr c))]
+						      [else
+						       (cons (car c)
+							     (loop (cdr c)))])))
+					       (cddr l))))))])
+	    (let ([new-plist (plist-replace
+			      orig-plist
+
+			      "CFBundleExecutable" 
+			      name
+
+			      ;; "CFBundleIconFile"
+			      ;; name
+			      
+			      "CFBundleIdentifier" 
+			      (format "org.plt-scheme.~a" name))])
+	      (call-with-output-file (build-path dest 
+						 "Contents" 
+						 "Info.plist")
+		(lambda (port)
+		  (write-plist new-plist port))
+		'truncate)))
+	  (build-path dest "Contents" "MacOS" name)))
+
+      (define (finish-osx-mred dest flags exec-name launcher?)
+	(call-with-output-file (build-path dest 
+					   "Contents" 
+					   "Resources" 
+					   "starter-info")
+	  (lambda (port)
+	    (write-plist 
+	     `(dict ,@(if launcher?
+			  `((assoc-pair "executable name"
+					,exec-name))
+			  null)
+		    (assoc-pair "stored arguments"
+				(array ,@flags)))
+	     port))
+	  'truncate))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -228,114 +322,131 @@
 			      (orig name rel-to stx))))))))))
 
       ;; The main function (see doc.txt).
-      (define (make-embedding-executable dest mred? verbose? 
-					 modules 
-					 literal-files literal-expression
-					 cmdline)
-	(unless (or (eq? (system-type) 'windows)
-		    ((apply + (length cmdline) (map string-length cmdline)) . < . 50))
-	  (error 'make-embedding-executable "command line too long"))
-	(let* ([module-paths (map cadr modules)]
-	       [files (map
-		       (lambda (mp)
-			 (let ([f (resolve-module-path mp #f)])
-			   (unless f
-			     (error 'make-embedding-executable "bad module path: ~e" mp))
-			   (normalize f)))
-		       module-paths)]
-	       [collapsed-mps (map
-			       (lambda (mp)
-				 (collapse-module-path mp "."))
-			       module-paths)]
-	       [prefix-mapping (map (lambda (f m)
-				      (cons f (let ([p (car m)])
-						(cond
-						 [(symbol? p) (symbol->string p)]
-						 [(eq? p #t) (generate-prefix)]
-						 [(not p) ""]
-						 [else (error
-							'make-embedding-executable
-							"bad prefix: ~e"
-							p)]))))
-				    files modules)]
-	       ;; Each element is created with `make-mod'.
-	       ;; As we descend the module tree, we append to the front after
-	       ;; loasing imports, so the list in the right order.
-	       [codes (box null)])
-	  (for-each (lambda (f mp) (get-code f mp codes prefix-mapping verbose?)) 
-		    files
-		    collapsed-mps)
-	  (let ([exe (find-exe mred?)])
-	    (when verbose?
-	      (fprintf (current-error-port) "Copying to ~s~n" dest))
-	    (when (file-exists? dest)
-	      (delete-file dest))
-	    (copy-file exe dest)
-	    (with-handlers ([void (lambda (x)
-				    (when (file-exists? dest)
-				      (delete-file dest))
-				    (raise x))])
-	      (let ([start (data-fork-size dest)])
-		(call-with-output-file* 
-		 dest
-		 (lambda (o)
-		   ;; Install a module name resolver that redirects
-		   ;; to the embedded modules
-		   (write (make-module-name-resolver (unbox codes)) o)
-		   (let ([l (unbox codes)])
-		     (for-each
-		      (lambda (nc)
-			(when verbose?
-			  (fprintf (current-error-port) "Writing module from ~s~n" (mod-file nc)))
-			(write `(current-module-name-prefix ',(string->symbol (mod-prefix nc))) o)
-			(write (mod-code nc) o))
-		      l))
-		   (write '(current-module-name-prefix #f) o)
-		   (newline o)
-		   (for-each (lambda (f)
-			       (when verbose?
-				 (fprintf (current-error-port) "Copying from ~s~n" f))
-			       (call-with-input-file*
-				f
-				(lambda (i)
-				  (copy-port i o))))
-			     literal-files)
-		   (when literal-expression
-		     (write literal-expression o)))
-		 'append)
-		(let ([end (data-fork-size dest)]
-		      [cmdpos (with-input-from-file dest find-cmdline)])
-		  (when verbose?
-		    (fprintf (current-error-port) "Setting command line~n"))
-		  (let ([out (open-output-file dest 'update)]
-			[start-s (number->string start)]
-			[end-s (number->string end)]
-			[long-cmdline? (eq? (system-type) 'windows)])
-		    (dynamic-wind
-		     void
-		     (lambda ()
-		       (if long-cmdline?
-			   ;; write cmdline at end:
-			   (file-position out end)
-			   (begin
-			     ;; write (short) cmdline in the normal position:
-			     (file-position out cmdpos)
-			     (display "!" out)))
-		       (for-each
-			(lambda (s)
-			  (fprintf out "~a~a~c"
-				   (integer->integer-byte-string (add1 (string-length s)) 4 #t #f)
-				   s
-				   #\000))
-			(list* "-k" start-s end-s cmdline))
-		       (display "\0\0\0\0" out)
-		       (when long-cmdline?
-			 ;; cmdline written at the end;
-			 ;; now put forwarding information at the normal cmdline pos
-			 (let ([new-end (file-position out)])
-			   (file-position out cmdpos)
-			   (fprintf out "?...~a~a"
-				    (integer->integer-byte-string end 4 #t #f)
-				    (integer->integer-byte-string (- new-end end) 4 #t #f)))))
-		     (lambda ()
-		       (close-output-port out)))))))))))))
+      (define make-embedding-executable
+	(opt-lambda (dest mred? verbose? 
+			  modules 
+			  literal-files literal-expression
+			  cmdline
+			  [aux-root #f]
+			  [launcher? #f])
+	  (define long-cmdline? (or (eq? (system-type) 'windows)
+				    (and mred? (eq? 'macosx (system-type)))))
+	  (unless (or long-cmdline?
+		      ((apply + (length cmdline) (map string-length cmdline)) . < . 50))
+	    (error 'make-embedding-executable "command line too long"))
+	  (let* ([module-paths (map cadr modules)]
+		 [files (map
+			 (lambda (mp)
+			   (let ([f (resolve-module-path mp #f)])
+			     (unless f
+			       (error 'make-embedding-executable "bad module path: ~e" mp))
+			     (normalize f)))
+			 module-paths)]
+		 [collapsed-mps (map
+				 (lambda (mp)
+				   (collapse-module-path mp "."))
+				 module-paths)]
+		 [prefix-mapping (map (lambda (f m)
+					(cons f (let ([p (car m)])
+						  (cond
+						   [(symbol? p) (symbol->string p)]
+						   [(eq? p #t) (generate-prefix)]
+						   [(not p) ""]
+						   [else (error
+							  'make-embedding-executable
+							  "bad prefix: ~e"
+							  p)]))))
+				      files modules)]
+		 ;; Each element is created with `make-mod'.
+		 ;; As we descend the module tree, we append to the front after
+		 ;; loasing imports, so the list in the right order.
+		 [codes (box null)])
+	    (for-each (lambda (f mp) (get-code f mp codes prefix-mapping verbose?)) 
+		      files
+		      collapsed-mps)
+	    (let ([exe (find-exe mred?)])
+	      (when verbose?
+		(fprintf (current-error-port) "Copying to ~s~n" dest))
+	      (let-values ([(dest-exe osx?)
+			    (if (and mred? (eq? 'macosx (system-type)))
+				(values (prepare-macosx-mred exe dest aux-root) #t)
+				(begin
+				  (when (file-exists? dest)
+				    (delete-file dest))
+				  (copy-file exe dest)
+				  (values dest #f)))])
+		(with-handlers ([void (lambda (x)
+					(if osx?
+					    (when (directory-exists? dest)
+					      (delete-directory/files dest))
+					    (when (file-exists? dest)
+					      (delete-file dest)))
+					(raise x))])
+		  (let ([start (data-fork-size dest-exe)])
+		    (call-with-output-file* 
+		     dest-exe
+		     (lambda (o)
+		       ;; Install a module name resolver that redirects
+		       ;; to the embedded modules
+		       (write (make-module-name-resolver (unbox codes)) o)
+		       (let ([l (unbox codes)])
+			 (for-each
+			  (lambda (nc)
+			    (when verbose?
+			      (fprintf (current-error-port) "Writing module from ~s~n" (mod-file nc)))
+			    (write `(current-module-name-prefix ',(string->symbol (mod-prefix nc))) o)
+			    (write (mod-code nc) o))
+			  l))
+		       (write '(current-module-name-prefix #f) o)
+		       (newline o)
+		       (for-each (lambda (f)
+				   (when verbose?
+				     (fprintf (current-error-port) "Copying from ~s~n" f))
+				   (call-with-input-file*
+				    f
+				    (lambda (i)
+				      (copy-port i o))))
+				 literal-files)
+		       (when literal-expression
+			 (write literal-expression o)))
+		     'append)
+		    (let ([end (data-fork-size dest-exe)])
+		      (when verbose?
+			(fprintf (current-error-port) "Setting command line~n"))
+		      (let ([start-s (number->string start)]
+			    [end-s (number->string end)])
+			(let ([full-cmdline (if launcher?
+						cmdline
+						(list* "-k" start-s end-s cmdline))])
+			  (if osx?
+			      (finish-osx-mred dest full-cmdline exe launcher?)
+			      (let ([cmdpos (with-input-from-file dest-exe find-cmdline)]
+				    [out (open-output-file dest-exe 'update)])
+				(dynamic-wind
+				    void
+				    (lambda ()
+				      (if long-cmdline?
+					  ;; write cmdline at end:
+					  (file-position out end)
+					  (begin
+					    ;; write (short) cmdline in the normal position:
+					    (file-position out cmdpos)
+					    (display "!" out)))
+				      (for-each
+				       (lambda (s)
+					 (fprintf out "~a~a~c"
+						  (integer->integer-byte-string (add1 (string-length s)) 4 #t #f)
+						  s
+						  #\000))
+				       full-cmdline)
+				      (display "\0\0\0\0" out)
+				      (when long-cmdline?
+					;; cmdline written at the end;
+					;; now put forwarding information at the normal cmdline pos
+					(let ([new-end (file-position out)])
+					  (file-position out cmdpos)
+					  (fprintf out "?...~a~a"
+						   (integer->integer-byte-string end 4 #t #f)
+						   (integer->integer-byte-string (- new-end end) 4 #t #f)))))
+				    (lambda ()
+				      (close-output-port out))))))))))))))))))

@@ -356,6 +356,7 @@
   scheme_extension_table->scheme_need_wakeup = scheme_need_wakeup;
   scheme_extension_table->scheme_get_byte_string = scheme_get_byte_string;
   scheme_extension_table->scheme_get_byte_string_unless = scheme_get_byte_string_unless;
+  scheme_extension_table->scheme_get_byte_string_special_ok_unless = scheme_get_byte_string_special_ok_unless;
   scheme_extension_table->scheme_progress_evt = scheme_progress_evt;
   scheme_extension_table->scheme_peeked_read = scheme_peeked_read;
   scheme_extension_table->scheme_get_char_string = scheme_get_char_string;

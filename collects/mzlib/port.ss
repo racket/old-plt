@@ -4,6 +4,7 @@
 	   (lib "contract.ss"))
 
   (provide open-output-nowhere
+	   make-pipe-with-specials
 	   make-input-port/read-to-peek
 	   merge-input
 	   copy-port
@@ -74,11 +75,12 @@
        (unless (output-port? dest)
 	 (raise-type-error 'copy-port "output-port" dest)))
      (cons dest dests))
-    (let ([dests (cons dest dests)]
-	  [s (make-bytes 4096)])
+    (let ([s (make-bytes 4096)]
+	  [dests (cons dest dests)])
       (let loop ()
 	(let ([c (read-bytes-avail! s src)])
-	  (unless (eof-object? c)
+	  (cond
+	   [(number? c)
 	    (for-each
 	     (lambda (dest)
 	       (let loop ([start 0])
@@ -86,7 +88,17 @@
 		   (let ([c2 (write-bytes-avail s dest start c)])
 		     (loop (+ start c2))))))
 	     dests)
-	    (loop))))))
+	    (loop)]
+	   [(procedure? c)
+	    (let ([v (let-values ([(l col p) (port-next-location src)])
+		       (c (object-name src) l col p))])
+	      (for-each
+	       (lambda (dest) (write-special v dest))
+	       dests))
+	    (loop)]
+	   [else
+	    ;; Must be EOF
+	    (void)])))))
   
   (define merge-input
     (case-lambda
@@ -182,12 +194,13 @@
 	      #f]
 	     [(null? special-peeked)
 	      ;; Empty special queue, so read through the original proc
-	      (let ([r (read s)])
+	      (let* ([t (make-bytes (min 4096 (+ skip (bytes-length s))))]
+		     [r (read t)])
 		(cond
 		 [(number? r)
 		  ;; The nice case --- reading gave us more bytes
 		  (set! peeked-end (+ r peeked-end))
-		  (write-bytes s peeked-w 0 r)
+		  (write-bytes t peeked-w 0 r)
 		  ;; Now try again
 		  (peek-bytes-avail!* s skip #f peeked-r)]
 		 [(evt? r)
@@ -195,7 +208,7 @@
 		      ;; Technically, there's a race condition here.
 		      ;; We might choose r (and return 0) even when
 		      ;; unless-evt becomes available first. However,
-		      ;; this race is not detectable only by the inside
+		      ;; this race is detectable only by the inside
 		      ;; of `read'.
 		      (choice-evt r (wrap-evt unless-evt (lambda (x) #f)))
 		      r)]
@@ -230,7 +243,9 @@
 		       [else (let ([v (if (number? r)
 					  (subbytes t 0 r)
 					  r)])
-			       (set-cdr! special-peeked-tail (cons v null))
+			       (let ([pr (cons v null)])
+				 (set-cdr! special-peeked-tail pr)
+				 (set! special-peeked-tail pr))
 			       ;; Got something; now try again
 			       (do-peek-it s skip unless-evt))]))]
 		   [(eof-object? (car l)) 
@@ -319,10 +334,14 @@
 		   [(more) null]
 		   [(more-last) #f]
 		   [(more-sema) #f]
+		   [(close-w?) #f]
 		   [(sema-semaphore) (make-semaphore 1)])
 	(define (flush-more)
 	  (if (null? more)
-	      (set! more-last #f)
+	      (begin
+		(set! more-last #f)
+		(when close-w?
+		  (close-output-port w)))
 	      (when (bytes? (car more))
 		(write-bytes (car more) w)
 		(set! more (cdr more))
@@ -331,7 +350,7 @@
 	 (make-input-port/read-to-peek 
 	  in-name
 	  (lambda (s)
-	    (let ([v (read-bytes-avail! r)])
+	    (let ([v (read-bytes-avail!* s r)])
 	      (if (eq? v 0)
 		  (if more-last
 		      ;; Return a special
@@ -347,7 +366,8 @@
 			 (unless more-sema
 			   (set! more-sema (make-semaphore)))
 			 (wrap-evt (semaphore-peek-evt more-sema)
-				   (lambda (x) 0))))))))
+				   (lambda (x) 0)))))
+		  v)))
 	  #f
 	  void)
 	 (make-output-port
@@ -358,22 +378,24 @@
 	    (call-with-semaphore
 	     sema-semaphore
 	     (lambda ()
-	       (if more-last
-		   (let ([p (cons (subbytes str start end) null)])
-		     (set-cdr! more-last p)
-		     (set! more-last p))
-		   (write-bytes str w start end))
-	       (when more-sema
-		 (semaphore-post more-sema)
-		 (set! more-sema #f)))))
+	       (begin0
+		(if more-last
+		    (let ([p (cons (subbytes str start end) null)])
+		      (set-cdr! more-last p)
+		      (set! more-last p)
+		      (- end start))
+		    (write-bytes str w start end))
+		(when more-sema
+		  (semaphore-post more-sema)
+		  (set! more-sema #f))))))
 	  ;; close
 	  (lambda ()
 	    (call-with-semaphore
 	     sema-semaphore
 	     (lambda ()
-	       (close-output-port w)
-	       (set! more null)
-	       (set! more-last #f)
+	       (if more-last
+		   (set! close-w? #t)
+		   (close-output-port w))
 	       (when more-sema
 		 (semaphore-post more-sema)))))
 	  ;; write-special
@@ -439,26 +461,31 @@
 	  (lambda ()
 	    (let loop ([got 0])
 	      (let ([n (read-bytes-avail! in from-port got)])
-		(let ([got (+ got (if (eof-object? n)
-				      0
-				      n))])
+		(let ([got (+ got (if (number? n)
+				      n
+				      0))])
 		  (let-values ([(wrote used status) (bytes-convert c in 0 got out)])
 		    (when (eq? status 'error)
 		      (error 'convert-stream "conversion error"))
 		    (unless (zero? wrote)
 		      (write-bytes out to-port 0 wrote))
 		    (bytes-copy! in 0 in used got)
-		    (if (eof-object? n)
+		    (if (not (number? n))
 			(begin
 			  (unless (= got used)
-			    (error 'convert-stream "input stream ended with a partial conversion"))
+			    (error 'convert-stream "input stream ~a with a partial conversion"
+				   (if (eof-object? n) "ended" "hit a special value")))
 			  (let-values ([(wrote status) (bytes-convert-end c out)])
 			    (when (eq? status 'error)
 			      (error 'convert-stream "conversion-end error"))
 			    (unless (zero? wrote)
 			      (write-bytes out to-port 0 wrote))
-			    ;; Success
-			    (void)))
+			    (if (eof-object? n)
+				;; Success
+				(void)
+				(begin
+				  (write-special n to-port)
+				  (loop 0)))))
 			(loop (- got used))))))))
 	  (lambda () (bytes-close-converter c)))))
 
@@ -490,6 +517,7 @@
 		   (cond
 		    [(eq? n 0) (wrap-evt port (lambda (x) 0))]
 		    [(number? n) (set! got (+ got n)) n]
+		    [(procedure? n) (set! got (add1 got)) n]
 		    [else n])))))
 	 (lambda (str skip progress-evt)
 	   (let ([count (max 0 (min (- limit got skip) (bytes-length str)))])

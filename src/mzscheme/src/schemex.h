@@ -526,6 +526,12 @@ long (*scheme_get_byte_string_unless)(const char *who,
 					     int only_avail,
 					     int peek, Scheme_Object *peek_skip,
 					     Scheme_Object *unless_evt);
+long (*scheme_get_byte_string_special_ok_unless)(const char *who,
+							Scheme_Object *port,
+							char *buffer, long offset, long size,
+							int only_avail,
+							int peek, Scheme_Object *peek_skip,
+							Scheme_Object *unless_evt);
 Scheme_Object *(*scheme_progress_evt)(Scheme_Object *port);
 int (*scheme_peeked_read)(Scheme_Object *port,
 				 long size,

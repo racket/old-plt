@@ -2873,8 +2873,8 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
 	if (cr)
 	  break;
       }
-    } else {
-      if ((ch == '\n') && lf)
+    } else if (ch == '\n') {
+      if (lf)
 	break;
     }
 
@@ -2966,7 +2966,7 @@ do_general_read_bytes(int as_bytes,
       if (SCHEME_TRUEP(argv[2])) {
 	unless_evt = argv[2];
 	if (!SAME_TYPE(SCHEME_TYPE(unless_evt), scheme_progress_evt_type)) {
-	  scheme_wrong_type(who, "progress evt", 2, argc, argv);
+	  scheme_wrong_type(who, "progress evt or #f", 2, argc, argv);
 	  return NULL;
 	}
       }
@@ -3032,11 +3032,14 @@ do_general_read_bytes(int as_bytes,
   }
 
   if (as_bytes) {
-    got = scheme_get_byte_string_unless(who, port, 
-					SCHEME_BYTE_STR_VAL(str), start, size, 
-					only_avail,
-					peek, peek_skip,
-					unless_evt);
+    got = scheme_get_byte_string_special_ok_unless(who, port, 
+						   SCHEME_BYTE_STR_VAL(str), start, size, 
+						   only_avail,
+						   peek, peek_skip,
+						   unless_evt);
+    if (got == SCHEME_SPECIAL) {
+      return scheme_get_special_proc(port);
+    }
   } else {
     got = scheme_get_char_string(who, port, 
 				 SCHEME_CHAR_STR_VAL(str), start, size, 

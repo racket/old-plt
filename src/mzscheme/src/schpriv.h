@@ -2123,6 +2123,7 @@ long scheme_get_byte_string_or_ch_put(const char *who,
 				      Scheme_Object *target_ch);
 
 Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, int peek);
+Scheme_Object *scheme_get_special_proc(Scheme_Object *inport);
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 

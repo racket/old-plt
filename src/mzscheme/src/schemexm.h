@@ -356,6 +356,7 @@
 #define scheme_need_wakeup (scheme_extension_table->scheme_need_wakeup)
 #define scheme_get_byte_string (scheme_extension_table->scheme_get_byte_string)
 #define scheme_get_byte_string_unless (scheme_extension_table->scheme_get_byte_string_unless)
+#define scheme_get_byte_string_special_ok_unless (scheme_extension_table->scheme_get_byte_string_special_ok_unless)
 #define scheme_progress_evt (scheme_extension_table->scheme_progress_evt)
 #define scheme_peeked_read (scheme_extension_table->scheme_peeked_read)
 #define scheme_get_char_string (scheme_extension_table->scheme_get_char_string)

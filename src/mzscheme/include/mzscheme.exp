@@ -311,6 +311,7 @@ scheme_peekc_is_ungetc
 scheme_need_wakeup
 scheme_get_byte_string
 scheme_get_byte_string_unless
+scheme_get_byte_string_special_ok_unless
 scheme_progress_evt
 scheme_peeked_read
 scheme_get_char_string

@@ -33,14 +33,16 @@
 ;;     that hide definitions.
 
 (module package mzscheme
-  (require (lib "etc.ss"))
+  (require (lib "etc.ss")
+	   (lib "stxparam.ss"))
   (require-for-syntax "private/package-helper.ss"
                       (lib "kerncase.ss" "syntax")
                       (lib "stx.ss" "syntax")
 		      (lib "boundmap.ss" "syntax")
 		      (lib "context.ss" "syntax")
 		      (lib "define.ss" "syntax")
-                      (lib "list.ss"))
+                      (lib "list.ss")
+		      (lib "stxparam.ss"))
 
   (provide package package*
 	   open define-dot
@@ -52,13 +54,13 @@
 	   define-dot/derived define*-dot/derived
 	   rename-potential-package rename*-potential-package)
 
-  ;; Used with `fluid-let-syntax' to communicate to `open'
+  ;; Used to communicate to `open'
   ;; when an expression is within the body of a `package' declaration.
   ;; This matters for choosing the right shadower of an id.
   ;; The value of current-pack is a list of (cons id num),
   ;;  where num is the size of the applicable tail of the rename list
   ;;  for the package named id.
-  (define-syntax current-package null)
+  (define-syntax-parameter current-package null)
 
   ;; The *ed define forms are the same as the usual
   ;; forms, except inside a package, where the
@@ -203,13 +205,13 @@
        orig
        `(,kw ,ids ,(if compile-time?
 		       body
-		       #`(fluid-let-syntax ([#,(syntax-local-introduce #'current-package)
-					     (cons
-					      (cons
-					       (quote-syntax #,package-name)
-					       #,rename-length)
-					      (syntax-local-value
-					       (quote-syntax #,(syntax-local-introduce #'current-package))))])
+		       #`(syntax-parameterize ([current-package
+						(cons
+						 (cons
+						  (quote-syntax #,package-name)
+						  #,rename-length)
+						 (syntax-parameter-value
+						  (quote-syntax current-package)))])
 			   #,body)))
        orig
        orig))
@@ -447,7 +449,7 @@
 	     ;;   env is an (id-stx . id-stx) mapping - names exported by the package
 	     ;;   rns is an (id-stx . id-stx) mapping - names defined in the package
 	     ;;   subs is a table mapping defined id-stx to sub-package mappings
-	     [cps (syntax-local-value #'current-package (lambda () #f))]
+	     [cps (syntax-parameter-value #'current-package (lambda () #f))]
 	     [cp-env+rns+subs+ispre/s (map (lambda (cp) (open (car cp) (car cp) stx))
 					   cps)]
 	     ;; Reverse-map renaming due to being in a package body. In other words,

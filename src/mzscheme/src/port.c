@@ -1638,6 +1638,18 @@ long scheme_get_byte_string_unless(const char *who,
   return total_got;
 }
 
+long scheme_get_byte_string_special_ok_unless(const char *who,
+					      Scheme_Object *port,
+					      char *buffer, long offset, long size,
+					      int only_avail,
+					      int peek, Scheme_Object *peek_skip,
+					      Scheme_Object *unless_evt)
+{
+  special_is_ok = 1;
+  return scheme_get_byte_string_unless(who, port, buffer, offset, size, 
+				       only_avail, peek, peek_skip, unless_evt);
+}
+
 long scheme_get_byte_string(const char *who,
 			    Scheme_Object *port,
 			    char *buffer, long offset, long size,
@@ -1869,13 +1881,13 @@ long scheme_get_char_string(const char *who,
 	/* This is the complex case. Need to peek a byte to see
 	   whether it continues the leftover sequence or ends it an in
 	   an error. */
+	if (!peek_skip)
+	  peek_skip = scheme_make_integer(0);
 	special_is_ok = 1;
 	got = scheme_get_byte_string_unless(who, port,
 					    s, leftover, 1,
 					    0, 1, 
-					    (peek_skip 
-					     ? scheme_bin_plus(peek_skip, scheme_make_integer(ahead_skip))
-					     : scheme_make_integer(ahead_skip)),
+					    scheme_bin_plus(peek_skip, scheme_make_integer(ahead_skip)),
 					    NULL);
 	if (got > 0) {
 	  long ulen, glen;
@@ -2394,9 +2406,9 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 
   ip = (Scheme_Input_Port *)port;
 
-  /* Only `read' and similar internals should call this function. It
-     should ensure that there are no ungotten characters, and at least
-     two characters have been read since the last tab or newline. */
+  /* Only `read' and similar internals should call this function. A
+     caller must should ensure that there are no ungotten
+     characters. */
 
   if (ip->ungotten_count) {
     scheme_signal_error("ungotten characters at get-special");
@@ -2467,6 +2479,45 @@ Scheme_Object *scheme_get_ready_special(Scheme_Object *port,
 void scheme_bad_time_for_special(const char *who, Scheme_Object *port)
 {
   scheme_arg_mismatch(who, "non-character in an unsupported context, from port: ", port);
+}
+
+static Scheme_Object *check_special_args(void *sbox, int argc, Scheme_Object **argv)
+{
+  Scheme_Object *special;
+
+  if (SCHEME_TRUEP(argv[1]))
+    if (!scheme_nonneg_exact_p(argv[1]) || (SAME_OBJ(argv[1], scheme_make_integer(0))))
+      scheme_wrong_type("read-special", "positive exact integer or #f", 1, argc, argv);
+  if (SCHEME_TRUEP(argv[2]))
+    if (!scheme_nonneg_exact_p(argv[2]))
+      scheme_wrong_type("read-special", "non-negative exact integer or #f", 2, argc, argv);
+  if (SCHEME_TRUEP(argv[3]))
+    if (!scheme_nonneg_exact_p(argv[3]) || (SAME_OBJ(argv[3], scheme_make_integer(0))))
+      scheme_wrong_type("read-special", "positive exact integer or #f", 3, argc, argv);
+
+  special = *(Scheme_Object **)sbox;
+  if (!special)
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+		     "read-special: cannot be called a second time");
+  *(Scheme_Object **)sbox = NULL;
+  
+  return _scheme_apply(special, 4, argv);
+}
+
+Scheme_Object *scheme_get_special_proc(Scheme_Object *inport)
+{
+  Scheme_Object *special, **sbox;
+  Scheme_Input_Port *ip;
+
+  ip = (Scheme_Input_Port *)inport;
+  special = ip->special;
+  ip->special = NULL;
+  
+  sbox = MALLOC_ONE(Scheme_Object *);
+  *sbox = special;
+  return scheme_make_closed_prim_w_arity(check_special_args, 
+					 sbox, "read-special",
+					 4, 4);
 }
 
 void

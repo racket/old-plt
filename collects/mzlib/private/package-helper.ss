@@ -46,9 +46,14 @@
      ((bound-identifier=? id (caar renames)) (car renames))
      (else (stx-assoc id (cdr renames)))))
   
+  (define insp (current-code-inspector))
+
   (define (rebuild ctxt val)
     (if (syntax? ctxt)
-	(datum->syntax-object ctxt val ctxt ctxt)
+	(syntax-recertify (datum->syntax-object ctxt val ctxt ctxt)
+			  ctxt
+			  insp
+			  #f)
 	val))
   
   (define (rebuild-cons car cdr stx)

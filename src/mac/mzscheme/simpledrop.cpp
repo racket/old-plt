@@ -350,6 +350,19 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
     }
 
     GetStarterInfo();
+
+    /* Open the PLT_MrEd framework resources: */
+    {
+      CFBundleRef fwBundle;
+
+      fwBundle = CFBundleGetBundleWithIdentifier(CFSTR("org.plt-scheme.PLT_MrEd"));
+      if (fwBundle) {
+	SInt16 refNum;
+	SInt16 localizedRefNum;
+	CFBundleOpenBundleResourceFiles(fwBundle, &refNum, &lRefNum);
+      }
+    }
+
   }
 #endif  
 

@@ -99,55 +99,80 @@
   
   (define name-message%
     (class/d mred:canvas% (parent)
-      ((inherit get-dc get-size get-client-size min-width min-height stretchable-width stretchable-height)
-       (public set-message) ;; set-message : (union #f string) string -> void
+      ((inherit popup-menu get-dc get-size get-client-size min-width min-height stretchable-width stretchable-height)
+       (public set-message) ;; set-message : boolean (union #f string) -> void
        (override on-event on-paint))
       
-      (define label #f)
-      (define short-label "Untitled")
-      (define (set-message name short-name)
-	(set! label name)
-	(set! short-label short-name)
+      (define paths #f)
+      (define label "Untitled")
+      (define (set-message file-name? path-name)
+	(set! paths (if (and file-name? (file-exists? path-name))
+                        (mzlib:file:explode-path (mzlib:file:normalize-path path-name))
+                        #f))
+        (set! label (if (and paths (not (null? paths)))
+                        (car (mzlib:function:last-pair paths))
+                        path-name))
 	(update-min-sizes))
       
       (define full-name-window #f)
       
-      (define (show-full-name-window)
-	(if label
-	    (mred:message-box "Full Name" label)
-	    (mred:message-box
-	     "Full Name"
-	     "The file does not have a full name because it has not yet been saved.")))
-      
       (define mouse-grabbed? #f)
       (define (on-event evt)
 	(cond
-          [(send evt moving?)
-           (when mouse-grabbed?
-             (let-values ([(max-x max-y) (get-size)])
-               (let ([inside? (and (<= 0 (send evt get-x) max-x)
-                                   (<= 0 (send evt get-y) max-y))])
-                 (unless (eq? inside? inverted?)
-                   (set! inverted? inside?)
-                   (on-paint)))))]
-          [(send evt button-up? 'left)
-           (set! mouse-grabbed? #f)
+          [paths
            (cond
-             [inverted?
-              (set! inverted? #f)
-              (on-paint)
-              (show-full-name-window)]
-             [else
-              (void)])]
-          [(send evt button-down? 'left)
-           (set! mouse-grabbed? #t)
-           (set! inverted? #t)
-           (on-paint)]
-          [else (void)]))
+             [(send evt button-down?)
+              (let-values ([(width height) (get-client-size)])
+                
+                (set! inverted? #t)
+                (on-paint)
+                (let ([menu (make-object mred:popup-menu% #f
+                              (lambda x
+                                (set! inverted? #f)
+                                (on-paint)))])
+                  (let loop ([paths paths])
+                    (cond
+                      [(null? paths) (void)]
+                      [else 
+                       (loop (cdr paths))
+                       (make-object mred:menu-item% (car paths) menu
+                         (lambda (evt item)
+                           (parameterize ([finder:dialog-parent-parameter
+                                           (get-top-level-focus-window)])
+                             (finder:get-file
+                              (apply build-path paths)))))]))
+                  (popup-menu menu
+                              0
+                              height)))]
+             [else (void)])]
+          [else
+           (cond
+             [(send evt moving?)
+              (when mouse-grabbed?
+                (let-values ([(max-x max-y) (get-size)])
+                  (let ([inside? (and (<= 0 (send evt get-x) max-x)
+                                      (<= 0 (send evt get-y) max-y))])
+                    (unless (eq? inside? inverted?)
+                      (set! inverted? inside?)
+                      (on-paint)))))]
+             [(send evt button-up? 'left)
+              (set! mouse-grabbed? #f)
+              (cond
+                [inverted?
+                 (set! inverted? #f)
+                 (on-paint)
+                 (mred:message-box "DrScheme" "The file does not have a full name because it has not yet been saved.")]
+                [else
+                 (void)])]
+             [(send evt button-down? 'left)
+              (set! mouse-grabbed? #t)
+              (set! inverted? #t)
+              (on-paint)]
+             [else (void)])]))
       
       (define (update-min-sizes)
-	(let-values ([(w h) (calc-button-min-sizes (get-dc) short-label)])
-	  (min-width w)
+	(let-values ([(w h) (calc-button-min-sizes (get-dc) label)])
+          (min-width w)
 	  (min-height h))
 	(send parent reflow-container))
       
@@ -156,13 +181,11 @@
       (define (on-paint)
 	(let ([dc (get-dc)])
 	  (let-values ([(w h) (get-client-size)])
-	    (draw-button-label dc short-label w h inverted?))))
+	    (draw-button-label dc label w h inverted?))))
       
       (super-init parent)
       (stretchable-width #f)
       (stretchable-height #f)))
-  
-  
   
   (define basics<%> (interface (fw:frame:standard-menus<%>)))
 

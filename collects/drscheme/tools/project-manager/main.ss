@@ -281,9 +281,8 @@
       
       (define (update-name-message)
         (if filename
-            (let-values ([(base name dir?) (split-path filename)])
-              (send name-message set-message filename name))
-            (send name-message set-message #f "Untitled")))
+            (send name-message set-message #t filename)
+            (send name-message set-message #f project-name)))
 
       (define (can-close?)
 	(and (super-can-close?)
@@ -1084,8 +1083,11 @@
                    needs-execution?
                    enable-evaluation disable-evaluation
                    running not-running
+                   clear-annotations
                    get-directory))
 
+          (define (clear-annotations) (void))
+          
 	  (define (ensure-defs-shown) (void))
           (define (ensure-rep-shown)
 	    (show/hide-rep #t))

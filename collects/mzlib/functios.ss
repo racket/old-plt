@@ -6,6 +6,7 @@
   (true
    false
    
+   set-first!
    first
    second
    third
@@ -15,6 +16,7 @@
    seventh
    eighth
 
+   set-rest!
    rest
 
    cons?

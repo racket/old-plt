@@ -228,6 +228,8 @@
       running            ;; (-> void)
       not-running        ;; (-> void)
 
+      clear-annotations  ;; (-> void)
+      
       get-directory))    ;; (-> directory-exists)
   
   (define file-icon
@@ -744,6 +746,7 @@
                 
                 (send transparent-text auto-wrap #t)
                 (send transparent-text balance-required #f)
+                (send transparent-text set-styles-fixed #f)
                 
                 ;; ensure that there is a newline before the snip is inserted
                 (unless (member 'hard-newline
@@ -925,6 +928,8 @@
                    [c-locked? (send text locked?)])
               (send text begin-edit-sequence)
               (send text lock #f)
+              (when (is-a? text transparent-io-text<%>)
+                (send text set-program-output #t))
               (send text insert
                     (cond
                       [(is-a? s mred:snip%) (send s copy)]
@@ -938,7 +943,10 @@
               (let ([end (send text last-position)])
                 (style-func start end)
                 (send text set-prompt-position end))
-
+              
+              (when (is-a? text transparent-io-text<%>)
+                (send text set-program-output #f))
+              
 	      (set-prompt-mode #f)
 
               (send text lock c-locked?)
@@ -1767,7 +1775,7 @@
             (when (thread? thread-killed)
               (kill-thread thread-killed))
 	    (let ([fr (send (get-canvas) get-top-level-window)])
-	      (send (ivar fr definitions-text) clear-annotations))
+	      (send context clear-annotations))
             (shutdown-user-custodian)
             (cleanup-transparent-io)
             (clear-previous-expr-positions)
@@ -2224,11 +2232,15 @@
               #t))
           (apply super-init args)))))
   
+  (define input-delta (make-object mred:style-delta%))
+  (send input-delta set-delta-foreground (make-object mred:color% 0 150 0))
+  (define transparent-io-text<%> (interface ()))
   (define make-transparent-io-text%
     (lambda (super%)
       (rec transparent-io-text%
-        (class super% args
-          (inherit change-style prompt-position set-prompt-position
+        (class* super% (transparent-io-text<%>) args
+          (inherit change-style
+                   prompt-position set-prompt-position
                    resetting? set-resetting lock get-text
                    set-position last-position get-character
                    clear-undos set-cursor
@@ -2236,20 +2248,13 @@
           (rename [super-after-insert after-insert]
                   [super-on-local-char on-local-char])
           (private
-            [input-delta (make-object mred:style-delta%)]
             [data null]
             [stream-start 0]
             [stream-end 0])
-          (sequence
-            (let ([mult (send input-delta get-foreground-mult)]
-                  [add (send input-delta get-foreground-add)])
-              (send mult set 0 0 0)
-              (send add set 0 150 0)))
           (private [shutdown? #f])
           
           (public
-            [potential-sexps-protect (make-semaphore 1)]
-            [potential-sexps null]
+            [stream-start/end-protect (make-semaphore 1)]
             [wait-for-sexp (make-semaphore 0)]
             
             [auto-set-wrap #t]
@@ -2269,13 +2274,12 @@
             [ibeam-cursor (make-object mred:cursor% 'ibeam)]
             [check-char-ready? ; =Reentrant=
              (lambda ()
-               (semaphore-wait potential-sexps-protect)
+               (semaphore-wait stream-start/end-protect)
                (begin0
                  (cond
-                   [(not (null? potential-sexps)) #t]
                    [(< stream-start stream-end) #t]
                    [else #f])
-                 (semaphore-post potential-sexps-protect)))]
+                 (semaphore-post stream-start/end-protect)))]
             [fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
              (lambda ()
                (let ([found-char
@@ -2284,69 +2288,45 @@
                           (mark-consumed s (add1 s))
                           (set! stream-start (add1 s))
                           (get-character s)))])
-                 (let loop ()
-                   (let ([ready-char #f])
-                     (dynamic-wind
-                      (lambda ()
-                        (set! ready-char #f)
-                        (semaphore-wait potential-sexps-protect))
-                      (lambda ()
-                        (cond
-                          [(not (null? potential-sexps))
-                           (let ([first-sexp (car potential-sexps)])
-                             (set! potential-sexps null)
-                             (set! stream-start (car first-sexp))
-                             (set! stream-end (cdr first-sexp))
-                             (set-prompt-position (max prompt-position stream-end))
-                             (set! ready-char (found-char)))]
-                          [(< stream-start stream-end)
-                           (set! ready-char (found-char))]
-                          [else (void)]))
-                      (lambda ()
-                        (semaphore-post potential-sexps-protect)))
+                 (let ([ready-char #f])
+                   (let loop ()
+                     (semaphore-wait stream-start/end-protect)
+                     (cond
+                       [(< stream-start stream-end)
+                        (set! ready-char (found-char))]
+                       [else (void)])
+                     (semaphore-post stream-start/end-protect)
                      (or ready-char
                          (begin
                            (mred:yield wait-for-sexp)
                            (if shutdown? 
                                eof
                                (loop))))))))])
-          
           (override
             [get-prompt (lambda () "")])
+          (private 
+            [program-output? #f])
+          (public
+            [set-program-output
+             (lambda (_program-output?)
+               (set! program-output? _program-output?))])
           (override
             [after-insert
              (lambda (start len)
-               ;; We assume that the insert comes from the user. If it's printer output,
-               ;;  the style will be changed again (so we wasted effort).
-               ;; Since output is more common than input, there's certainly room for
-               ;;  a significant optimization here.
                (super-after-insert start len)
-               (let ([old-r resetting?])
-                 (set-resetting #t)
-                 (change-style input-delta start (+ start len))
-                 (set-resetting old-r)))])
+               (unless program-output?
+                 (let ([old-r resetting?])
+                   (set-resetting #t)
+                   (change-style input-delta start (+ start len))
+                   (set-resetting old-r))))])
           (override
             [do-eval
              (lambda (start end)
                (do-pre-eval)
                (unless (balance-required)
-                 (set! end (add1 end)))
-               (let ([new-sexps
-                      (let loop ([pos start])
-                        (cond
-                          [(< pos end) 
-                           (let ([next-sexp
-                                  (if (balance-required)
-                                      (fw:scheme-paren:forward-match this pos end)
-                                      end)])
-                             (cons (cons pos next-sexp)
-                                   (loop next-sexp)))]
-                          [else null]))])
-                 (semaphore-wait potential-sexps-protect)
-                 (set! potential-sexps (append potential-sexps new-sexps))
-                 (semaphore-post potential-sexps-protect)
-                 (semaphore-post wait-for-sexp)
-                 (do-post-eval)))])
+                 (set! stream-end (+ end 1)))
+               (semaphore-post wait-for-sexp)
+               (do-post-eval))])
           (inherit insert-prompt)
           (sequence
             (apply super-init args)

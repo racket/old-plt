@@ -24,6 +24,7 @@
 					  prims
                                           params
                                           zodiac
+                                          zodiac:interface
 					  (mzlib function))])
   (export
    (open init-params)

@@ -4,6 +4,7 @@
 	  [prims : plt:prims^]
           [params : plt:userspace:params^]
           [zodiac : zodiac:system^]
+          [zodiac:interface : drscheme:interface^]
 	  mzlib:function^)
   
   (define (init-namespace)
@@ -106,7 +107,7 @@
                    [signature 
                     (exploded->flattened (unit-with-signature-exports new-unit))])
               (cons
-               (lambda ()
+               (lambda (vocab)
                  (when macros-unit 
                    '...))
                (eval
@@ -128,8 +129,8 @@
                       plt:userspace^))))))
             (begin
               (invalid-teachpack 
-               (format "loading Teachpack file does not result in a unit/sig, got: ~e"
-                       new-unit))
+               (format "loading Teachpack file does not result in a either a unit/sig or a pair of unit/sigs, got: ~e"
+                       both-unit))
               #f)))))
   
     ;; pp:arity : procedure -> string
@@ -175,15 +176,19 @@
             (let ([expander (lambda (pattern-env)
                               (let ([elements (zodiac:pexpand '(elements ...) pattern-env kwd)])
                                 (unless (procedure-arity-includes? func (length elements))
-                                  (zodiac:static-error (symbol->string symbol) symbol
-                                                       (zodiac:sexp->raw expr)
-                                                       (format "expected ~a, got ~a" (pp-arity func) (length elements))))
+                                  (zodiac:interface:static-error
+                                   (symbol->string symbol) symbol
+                                   (zodiac:sexp->raw expr)
+                                   (format "expected ~a, got ~a" (pp-arity func) (length elements))))
                                 (zodiac:structurize-syntax 
                                  (apply func (map zodiac:sexp->raw elements))
                                  expr)))])
               expander)]
-           [else (zodiac:static-error "vector" 'typeparser-malformed-vector
-                                      (zodiac-strip expr) "malformed vector")])))))
+           [else 
+            (zodiac:interface:static-error
+             (symbol->string symbol) symbol
+             (zodiac:sexp->raw expr)
+             (format "Malformed ~a" symbol))])))))
   
   ;; build-teachpack-thunk : (listof string)
   ;;                      -> (values (union #f (-> void))
@@ -218,7 +223,7 @@
                                 (set! bad-teachpacks (cons (car teachpack-strings) bad-teachpacks))
                                 (loop (cdr teachpack-strings)
                                       link-clauses))))]))]
-                  [cu
+                  [(cu)
                    (eval
                     `(compound-unit/sig
                        (import)
@@ -273,7 +278,7 @@
        (lambda ()
          (invoke-unit/sig
           cu))
-       (lambda () (for-each (lambda (x) (x)) macro-thunks))
+       (lambda (vocab) (for-each (lambda (x) (x vocab)) macro-thunks))
        bad-teachpacks)))
   
   (define (teachpack-ok? x)
@@ -286,7 +291,7 @@
     (set!-values (teachpack-thunk macros-thunk bad-teachpacks) (build-teachpack-thunk v))
     bad-teachpacks)
   
-  (define (add-teachpack-macros) (macros-thunk))
+  (define (add-teachpack-macros vocab) (macros-thunk vocab))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;

@@ -1393,7 +1393,7 @@
 		  (set-top-level-status attributes top-level?)
 		  (unless (procedure? real-handler)
 		    (static-error expr "Expander is not a procedure"))
-		  (add-macro-form real-name vocab
+		  (add-user-macro-form real-name vocab
 		    (lambda (m-expr m-env)
 		      (structurize-syntax
 			(apply real-handler

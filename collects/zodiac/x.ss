@@ -8,7 +8,7 @@
 
   ; ----------------------------------------------------------------------
 
-  (define-struct resolutions ())
+  (define-struct resolutions (user?))
   (define-struct (micro-resolution struct:resolutions) (rewriter))
   (define-struct (macro-resolution struct:resolutions) (rewriter))
 
@@ -44,16 +44,35 @@
 		 (hash-table-put! v n r))
 	    names)))))
 
+  (define remove-user-macros
+    (lambda (vocab)
+      (let vocab-loop ((vocab vocab))
+	(when vocab
+	  (let ((this (vocabulary-record-this vocab)))
+	    (hash-table-for-each this
+	      (lambda (key value)
+		(when (resolutions-user? value)
+		  (hash-table-remove! this key)))))
+	  (vocab-loop (vocabulary-record-rest vocab))))))
+
   (define vocab->list
     (lambda (vocab)
       (cons (vocabulary-record-name vocab)
 	(hash-table-map cons (vocabulary-record-this vocab)))))
 
   (define add-micro-form
-    (add-micro/macro-form make-micro-resolution))
+    (add-micro/macro-form (lambda (r)
+			    (make-micro-resolution #f r))))
 
-  (define add-macro-form
-    (add-micro/macro-form make-macro-resolution))
+  (define add-system-macro-form
+    (add-micro/macro-form (lambda (r)
+			    (make-macro-resolution #f r))))
+
+  (define add-user-macro-form
+    (add-micro/macro-form (lambda (r)
+			    (make-macro-resolution #t r))))
+
+  (define add-macro-form add-system-macro-form)
 
   (define list-micro-kwd
     (string->uninterned-symbol "list-expander"))
@@ -69,7 +88,7 @@
       (lambda (vocab rewriter)
 	(hash-table-put! (vocabulary-record-this vocab)
 	  kwd
-	  (make-micro-resolution rewriter)))))
+	  (make-micro-resolution #f rewriter)))))
 
   (define add-list-micro (add-list/sym/lit-micro list-micro-kwd))
   (define add-ilist-micro (add-list/sym/lit-micro ilist-micro-kwd))
@@ -98,7 +117,7 @@
   (define expand-expr
     (lambda (expr env attributes vocab)
       ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
-      ;	(printf "Expanding~n") (pretty-print expr) (newline)
+      ; (printf "Expanding~n") (pretty-print expr) (newline))
       ;	(printf "Expanding~n") (display expr)
       ; (printf "in ~s~n" (get-vocabulary-name vocab))
       ;	(printf "in vocabulary~n") (print-env vocab)
@@ -232,7 +251,7 @@
 
   (define-struct (top-level-resolution struct:resolutions) ())
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define make-new-environment make-hash-table)
 
@@ -250,7 +269,7 @@
 	    (and w (cdr w)))))))
 
   (define resolve-in-global
-    (let ((top-level-resolution (make-top-level-resolution))) ; name-eq?
+    (let ((top-level-resolution (make-top-level-resolution #f))) ; name-eq?
       (lambda (name vocab)
 	(let loop ((vocab vocab))
 	  (hash-table-get (vocabulary-record-this vocab)
@@ -267,7 +286,7 @@
 			    (printf "~s ->~n" key)
 			    (pretty-print value)))))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define extend-env
     (lambda (new-vars+marks env)

@@ -437,6 +437,13 @@ static int MergeArray(int ac, Scheme_Object **ak, Scheme_Object **a, short *as,
   while ((ai < ac) || (bi < bc)) {
     if ((ai < ac) && (bi < bc)) {
       if (SEQUALS(ak[ai], bk[bi])) {
+	if (nodup == 2) {
+	  /* Error: interface adds names that are already in the superinterfaces. */
+	  scheme_raise_exn(MZEXN_OBJECT,
+			   "interface: superinterface already contains name: %s",
+			   scheme_symbol_name(ak[ai]));
+	  return 0;
+	}
 	if (d)
 	  d[di] = a[ai];
 	if (ds)
@@ -939,15 +946,15 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
       mode = !mode;
     }
 
-    /* Final merge: */
     if (!mode) {
       nbanka = nbankb;
       mbanka = mbankb;
     }
 
+    /* Final merge: */
     total = MergeArray(data->num_names, data->names, NULL, NULL,
 		       num_names, nbanka, NULL, NULL,
-		       NULL, NULL, 1);
+		       NULL, NULL, 2); /* 2 => must be disjoint */
     newcount = total - num_names;
     
     mbankb = MALLOC_N(short, data->num_names);

@@ -1598,12 +1598,14 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Process *p;
   int i;
   Scheme_Object **a;
 
   if (argc == 1)
     return argv[0];
+
+  p = scheme_current_process;
   p->ku.multiple.count = argc;
   if (argc)
     a = (Scheme_Object **)scheme_malloc(argc * sizeof(Scheme_Object *));

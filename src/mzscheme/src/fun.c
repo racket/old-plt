@@ -136,7 +136,6 @@ scheme_init_fun (Scheme_Env *env)
     register_traversers();
 #endif
 
-    REGISTER_SO(scheme_void);
     REGISTER_SO(scheme_void_func);
     REGISTER_SO(scheme_tail_call_waiting);
 

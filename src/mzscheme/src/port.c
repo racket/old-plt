@@ -441,7 +441,6 @@ scheme_init_port (Scheme_Env *env)
     init_thread_memory();
 #endif
     
-    REGISTER_SO(scheme_eof);
     REGISTER_SO(scheme_orig_stdout_port);
     REGISTER_SO(scheme_orig_stderr_port);
     REGISTER_SO(scheme_orig_stdin_port);

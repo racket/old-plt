@@ -108,8 +108,6 @@ void
 scheme_init_list (Scheme_Env *env)
 {
   if (scheme_starting_up) {
-    REGISTER_SO(scheme_null);
-
     scheme_null->type = scheme_null_type;
   }
 

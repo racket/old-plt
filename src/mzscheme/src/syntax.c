@@ -167,7 +167,6 @@ scheme_init_syntax (Scheme_Env *env)
     REGISTER_SO(scheme_def_exp_time_syntax);
     REGISTER_SO(scheme_lambda_syntax);
     REGISTER_SO(scheme_begin_syntax);
-    REGISTER_SO(scheme_undefined);
     REGISTER_SO(linker_names);
     REGISTER_SO(scheme_compiled_void_code);
 

@@ -47,9 +47,6 @@ static int vector_equal (Scheme_Object *vec1, Scheme_Object *vec2);
 
 void scheme_init_true_false(void)
 {
-  REGISTER_SO(scheme_true);
-  REGISTER_SO(scheme_false);
-  
   scheme_true->type = scheme_true_type;
 
   scheme_false->type = scheme_false_type;

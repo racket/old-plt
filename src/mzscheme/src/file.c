@@ -159,7 +159,7 @@ static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
 
 static Scheme_Object *temp_dir_symbol, *home_dir_symbol, *pref_dir_symbol;
 static Scheme_Object *init_dir_symbol, *init_file_symbol, *sys_dir_symbol;
-static Scheme_Object *exec_file_symbol, *pref_file_symbol;
+static Scheme_Object *exec_file_symbol, *pref_file_symbol, *addon_dir_symbol;
 
 static Scheme_Object *exec_cmd;
 #endif
@@ -184,6 +184,7 @@ void scheme_init_file(Scheme_Env *env)
   REGISTER_SO(sys_dir_symbol);
   REGISTER_SO(pref_file_symbol);
   REGISTER_SO(exec_file_symbol);
+  REGISTER_SO(addon_dir_symbol);
 #endif
 
   REGISTER_SO(fail_err_symbol);
@@ -212,6 +213,7 @@ void scheme_init_file(Scheme_Env *env)
   sys_dir_symbol = scheme_intern_symbol("sys-dir");
   pref_file_symbol = scheme_intern_symbol("pref-file");
   exec_file_symbol = scheme_intern_symbol("exec-file");
+  addon_dir_symbol = scheme_intern_symbol("addon-dir");
 #endif
 
   scheme_add_global_constant("file-exists?", 
@@ -3986,7 +3988,8 @@ enum {
   id_pref_file,
   id_init_dir,
   id_init_file,
-  id_sys_dir
+  id_sys_dir,
+  id_addon_dir
 };
 
 static Scheme_Object *
@@ -4014,6 +4017,8 @@ find_system_path(int argc, Scheme_Object **argv)
       exec_cmd = scheme_make_string("mzscheme");
     }
     return exec_cmd;
+  } else if (argv[0] == addon_dir_symbol) {
+    which = id_addon_dir;
   } else {
     scheme_wrong_type("find-system-path", "system-path-symbol",
 		      0, argc, argv);
@@ -4054,6 +4059,8 @@ find_system_path(int argc, Scheme_Object **argv)
     if ((which == id_pref_dir) 
 	|| (which == id_pref_file)) {
       home = scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0));
+    } else if (which == id_addon_dir) {
+      return scheme_make_string(scheme_expand_filename("~/Library/PLT Scheme/", -1, NULL, NULL, 0));
     } else
 #endif 
       home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL, 0));
@@ -4067,6 +4074,8 @@ find_system_path(int argc, Scheme_Object **argv)
       return scheme_append_string(home, scheme_make_string("/.mzschemerc" + ends_in_slash));
     if (which == id_pref_file)
       return scheme_append_string(home, scheme_make_string("/.plt-prefs.ss" + ends_in_slash));
+    if (which == id_addon_dir)
+      return scheme_append_string(home, scheme_make_string("/.plt-scheme/" + ends_in_slash));
   }
 #endif
 
@@ -4145,6 +4154,8 @@ find_system_path(int argc, Scheme_Object **argv)
       return scheme_append_string(home, scheme_make_string("\\mzschemerc.ss" + ends_in_slash));
     if (which == id_pref_file)
       return scheme_append_string(home, scheme_make_string("\\plt-prefs.ss" + ends_in_slash));
+    if (which == id_addon_dir)
+      return scheme_append_string(home, scheme_make_string("\\PLT Scheme AddOns" + ends_in_slash));
   }
 #endif
 
@@ -4206,6 +4217,8 @@ find_system_path(int argc, Scheme_Object **argv)
       return scheme_append_string(home, scheme_make_string(":mzschemerc.ss" + ends_in_colon));
     if (which == id_pref_file)
       return scheme_append_string(home, scheme_make_string(":plt-prefs.ss" + ends_in_colon));
+    if (which == id_pref_file)
+      return scheme_append_string(home, scheme_make_string(":PLT Scheme AddOns" + ends_in_colon));
   }
 #endif
 

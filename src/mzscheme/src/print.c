@@ -998,12 +998,13 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else if (notdisplay) {
 	const char *s;
 	
-	s = scheme_symbol_name_and_size(obj, &l, ((p->quick_can_read_pipe_quote 
-						   ? SCHEME_SNF_PIPE_QUOTE
-						   : SCHEME_SNF_NO_PIPE_QUOTE)
-						  | (p->quick_case_sens
-						     ? 0
-						     : SCHEME_SNF_NEED_CASE)));
+	s = scheme_symbol_name_and_size(obj, (unsigned int *)&l, 
+					((p->quick_can_read_pipe_quote 
+					  ? SCHEME_SNF_PIPE_QUOTE
+					  : SCHEME_SNF_NO_PIPE_QUOTE)
+					 | (p->quick_case_sens
+					    ? 0
+					    : SCHEME_SNF_NEED_CASE)));
 	print_this_string(p, s, 0, l);
       } else {
 	print_this_string(p, (char *)obj, ((char *)(SCHEME_SYM_VAL(obj))) - ((char *)obj), 
@@ -1176,7 +1177,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	      const char *s;
 	      Scheme_Object *name = SCHEME_STRUCT_NAME_SYM(obj);
 	      
-	      s = scheme_symbol_name_and_size(name, &l, 
+	      s = scheme_symbol_name_and_size(name, (unsigned int *)&l, 
 					      (p->quick_print_struct
 					       ? SCHEME_SNF_FOR_TS
 					       : (p->quick_can_read_pipe_quote 

@@ -331,7 +331,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	  {
 	    Scheme_Object *sym;
 	    sym = (Scheme_Object *)ptrs[pp++];
-	    t = scheme_symbol_name_and_size(sym, &tlen, 0);
+	    t = scheme_symbol_name_and_size(sym, (unsigned int *)&tlen, 0);
 	  }
 	  break;
 	case 'V':

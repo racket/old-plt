@@ -133,7 +133,7 @@ void wxItem::ChangeColour(void)
 //-----------------------------------------------------------------------------
 void wxItem::ChangeToGray(Bool gray)
 {
-  if (cMacControl) {
+  if (cMacControl && cActive) {
     SetCurrentDC();
     if (gray) {
         DeactivateControl(cMacControl);
@@ -144,6 +144,21 @@ void wxItem::ChangeToGray(Bool gray)
     
   wxWindow::ChangeToGray(gray);
 }
+
+void wxItem::Activate(Bool on)
+{
+  if (cMacControl && OS_Active()) {
+    SetCurrentDC();
+    if (!on) {
+        DeactivateControl(cMacControl);
+    } else {
+        ActivateControl(cMacControl);
+    }
+  }
+
+  wxWindow::Activate(on);
+}
+
 
 
 //-----------------------------------------------------------------------------

@@ -693,7 +693,7 @@ int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
     SetOriginX = SetOriginY = 0;
   }
   
-  return vis || 1;
+  return vis;
 }
 
 //-----------------------------------------------------------------------------
@@ -712,7 +712,7 @@ int wxWindow::SetCurrentMacDC(void) // mac platform only
     cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
   }
 
-  return vis || 1;
+  return vis;
 }
 
 //-----------------------------------------------------------------------------
@@ -766,7 +766,7 @@ int wxWindow::SetCurrentDC(void) // mac platform only
     SetTextInfo();
   }
 
-  return vis || 1;
+  return vis;
 }
 
 RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
@@ -976,11 +976,10 @@ wxFrame* wxWindow::GetRootFrame(void) // mac platform only
       theWindow = theWindow->window_parent;
     }
   
-  if	( !( wxSubType(theWindow->__type, wxTYPE_FRAME) ||
-	    wxSubType(theWindow->__type, wxTYPE_DIALOG_BOX) ) )
-    {
-      wxFatalError("No frame found for GetRootFrame.");
-    }
+  if (!( wxSubType(theWindow->__type, wxTYPE_FRAME) ||
+	wxSubType(theWindow->__type, wxTYPE_DIALOG_BOX))) {
+    wxFatalError("No frame found for GetRootFrame.");
+  }
 #endif
   return (wxFrame*)theWindow;
 }
@@ -1461,7 +1460,7 @@ void wxWindow::Paint(void)
 
 Bool wxWindow::OS_Active()
 {
-  return ((internal_gray == 0) && cEnable && cActive);
+  return ((internal_gray == 0) && cEnable);
 }
 
 void wxWindow::Enable(Bool Flag) 
@@ -1501,7 +1500,7 @@ void wxWindow::InternalGray(Bool gray)
 
 void wxWindow::ChangeToGray(Bool gray)
 {
-  Refresh();
+  // Refresh();
   
   if (cMacDC->currentUser() == this)
     /* fg pen needs reset: */

@@ -24,8 +24,8 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_main.h"
 #include "wx_utils.h"
 #ifndef OS_X
-  #include <Scrap.h>
-  #include <TextEdit.h>
+# include <Scrap.h>
+# include <TextEdit.h>
 #endif
 
 static wxList *ClipboardFormats = NULL;
@@ -55,13 +55,13 @@ static void InitFormats()
 
 Bool wxOpenClipboard(void)
 {
-  TEToScrap();
+  //TEToScrap();
   return TRUE;
 }
 
 Bool wxCloseClipboard(void)
 {
-  TEFromScrap();
+  //TEFromScrap();
   return TRUE;
 }
 
@@ -123,7 +123,7 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   	return FALSE;
   }
   err = PutScrapFlavor(scrap,format,kScrapFlavorMaskNone,length,(const void *)obj);
-  return (err != noErr);
+  return (err == noErr);
 #else
   return !PutScrap(length, format, (Ptr)obj);
 #endif

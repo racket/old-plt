@@ -52,6 +52,8 @@ public:
 
     virtual void MaybeMoveControls();
 
+    virtual void Activate(Bool gray);
+
 protected:
     virtual void ChangeToGray(Bool gray);
     

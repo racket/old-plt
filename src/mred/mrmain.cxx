@@ -41,6 +41,7 @@ class wxBufferDataClassList;
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
 # include "simpledrop.h"
+int wx_in_terminal;
 #endif
 
 
@@ -304,8 +305,8 @@ int main(int argc, char *argv[])
   }
 #endif
   
-  Drop_GetArgs(&argc, &argv);
-  
+  Drop_GetArgs(&argc, &argv, &wx_in_terminal);
+
   { 
     KeyMap keys;
     GetKeys(keys);

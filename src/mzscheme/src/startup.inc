@@ -2546,7 +2546,7 @@
 " (lambda () (find-executable-path (find-system-path 'exec-file) \"collects\"))"
 " (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up \"collects\")))"
 " (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up \"collects\")))"
-" (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up 'up \"collects\")))))"
+" (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up \"collects\")))))"
 " null)))"
 "(define(port? x)(or(input-port? x)(output-port? x)))"
 "(define(not-break-exn? x)(not(exn:break? x)))"

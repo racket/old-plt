@@ -2920,7 +2920,7 @@
 	   ;; When binary is in .bin/<platform> subdir:
 	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up "collects")))
 	   ;; When binary is in bin/<appname>.app/Contents/Macos subdir:
-	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up 'up "collects")))))
+	   (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up "collects")))))
 	 null)))
 
   ;; -------------------------------------------------------------------------

@@ -324,14 +324,14 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	    r.bottom = h;
 	    r.left = max(0, w - dw);
 	    r.right = w;
-	    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
+	    ::InvalWindowRect(theMacWindow, &r);
 	  }
 	  if (dh) {
 	    r.top = max(0, h - dh);
 	    r.bottom = h;
 	    r.left = 0;
 	    r.right = w;
-	    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
+	    ::InvalWindowRect(theMacWindow, &r);
 	  }
 	}
       }
@@ -456,7 +456,7 @@ void wxFrame::CreateStatusLine(int number, char* name)
   int statusLineHeight = (int)(cStatusText->GetCharHeight() * nb_status);
   int clientWidth, clientHeight;
   GetClientSize(&clientWidth, &clientHeight);
-  cStatusText->SetWidthHeight(clientWidth - 18, statusLineHeight);
+  cStatusText->SetWidthHeight(clientWidth, statusLineHeight);
   cStatusPanel->Fit();
 #if 1
   // it is a hack to put the line down..
@@ -753,23 +753,15 @@ void wxFrame::MacUpdateWindow(void)
   WindowPtr theMacWindow = macWindow();
   if (theMacWindow && SetCurrentDC()) {
     ::BeginUpdate(theMacWindow);
-    RgnHandle visibleRgn = NewRgn();
-    if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),visibleRgn)))
-      {
-	// Erase update region
-	// ::EraseRect(&theMacWindow->portRect);
 
-	// Can't use UpdateControls since each control has it's own coordinate system
-	//		::UpdateControls(theMacWindow, theMacWindow->visRgn);
+    Paint();
 
-	Paint();
-
-	// Draw the grow box
 #ifndef OS_X 			
-	if (!(cStyle & wxNO_RESIZE_BORDER))
-	  MacDrawGrowIcon();
+    // Draw the grow box
+    if (!(cStyle & wxNO_RESIZE_BORDER))
+      MacDrawGrowIcon();
 #endif 				
-      }
+
     ::EndUpdate(theMacWindow);
   }
 }
@@ -850,11 +842,6 @@ void wxFrame::Show(Bool show)
   if (cParentArea)
     cParentArea->Windows()->Show(this, show);
 
-#if 0
-  if (!show && IsModal())
-    MakeModal(FALSE);
-#endif
-
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #if __WXGARBAGE_COLLECTION_ON
@@ -880,6 +867,8 @@ void wxFrame::Show(Bool show)
     }
     ::HideWindow(theMacWindow);
   }
+
+  Paint();
 }
 
 //-----------------------------------------------------------------------------
@@ -927,12 +916,8 @@ void wxFrame::Paint(void)
 #endif
     if ((rgn = NewRgn())) {
       if ((subrgn = NewRgn())) {
-	if ((cStyle & wxNO_RESIZE_BORDER) 
 #ifndef OS_X
-	    || (borderRgn = NewRgn())
-#endif
-	    ) {
-#ifndef OS_X
+	if ((cStyle & wxNO_RESIZE_BORDER) || (borderRgn = NewRgn())) {
 	  if (borderRgn) {
 	    int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	    int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
@@ -955,13 +940,13 @@ void wxFrame::Paint(void)
 	  if (borderRgn)
 	    DiffRgn(subrgn, borderRgn, subrgn);
 #endif
-	  PaintRgn(subrgn);
+	  // PaintRgn(subrgn);
 	  RGBForeColor(&save);
 #ifndef OS_X
 	  if (borderRgn)
 	    DisposeRgn(borderRgn);
-#endif
 	}
+#endif
 	DisposeRgn(subrgn);
       }
       DisposeRgn(rgn);

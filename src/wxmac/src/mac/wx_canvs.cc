@@ -136,7 +136,6 @@ void wxCanvas::AddWhiteRgn(RgnHandle rgn)
 {
   if (wxSubType(__type, wxTYPE_PANEL))
     wxWindow::AddWhiteRgn(rgn);
-#if 0
   else {
     int theRootX, theRootY, w, h;
     RgnHandle wrgn;
@@ -148,7 +147,6 @@ void wxCanvas::AddWhiteRgn(RgnHandle rgn)
       DisposeRgn(wrgn);
     }
   }
-#endif
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -6,7 +6,9 @@
  * Copyright:   (c) 1996, Matthew Flatt
  */
 
-#define SELF_SUSPEND_RESUME
+#ifndef OS_X
+# define SELF_SUSPEND_RESUME
+#endif
 
 #ifdef SELF_SUSPEND_RESUME
 /* Note on handling Suspend/Resume events:
@@ -219,18 +221,16 @@ static int QueueTransferredEvent(EventRecord *e)
       int we_are_front = e->message & resumeFlag;
       WindowPtr front = FrontWindow();
 
+# ifndef OS_X
       if (we_are_front) {     
 	TEFromScrap();
 	resume_ticks = TickCount();
       } else {
-#ifdef OS_X            
-        ClearCurrentScrap();
-#else
 	ZeroScrap();
-#endif
 	TEToScrap();
       }
-      
+#endif
+    
       /* This code generates activate events; under classic MacOS, returning an 
        * application to the foreground does not generate (de)activate events.
        */
@@ -710,17 +710,15 @@ int MrEdGetNextEvent(int check_only, int current_only,
   if (we_are_front != last_was_front) {
     last_was_front = we_are_front;
 
+# ifndef OS_X
     if (we_are_front) {     
       TEFromScrap();
       resume_ticks = TickCount();
     } else {
-# ifdef OS_X
-      ClearCurrentScrap();
-# else
       ZeroScrap();
-# endif
       TEToScrap();
     }
+# endif
 
     /* for OS_X, activate events are automatically generated for the frontmost
      * window in an application when that application comes to the front.

@@ -73,6 +73,9 @@
 # ifndef OS_X
 #  include <Events.h>
 # endif
+extern int wx_in_terminal;
+#else
+#define wx_in_terminal 0
 #endif
 
 #if defined(wx_x) || defined(wx_msw)
@@ -1264,12 +1267,13 @@ void wxDoEvents()
     MrEdContext *c;
 #if WINDOW_STDIO
     Scheme_Custodian *m, *oldm;
-
-    oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
-    m = scheme_make_custodian(oldm);    
-    scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)m);
-    wxREGGLOB(main_custodian);
-    main_custodian = m;
+    if (!wx_in_terminal) {
+      oldm = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+      m = scheme_make_custodian(oldm);    
+      scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)m);
+      wxREGGLOB(main_custodian);
+      main_custodian = m;
+    }
 #endif
 
     c = (MrEdContext *)MrEdMakeEventspace(NULL);
@@ -1281,7 +1285,8 @@ void wxDoEvents()
     }
 
 #if WINDOW_STDIO
-    scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)oldm);
+    if (!wx_in_terminal)
+      scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)oldm);
 #endif
 
     /* Block until initialized: */
@@ -1758,7 +1763,7 @@ public:
     {
        PreOnEvent(NULL, NULL);
 
-#ifdef wx_mac__
+#if defined(wx_mac) && WINDOW_STDIO
        if (e->metaDown && e->KeyCode() == (stdio_kills_prog ? 'q' : 'w')) {
           OnMenuCommand(77);
 	  return TRUE;
@@ -1842,26 +1847,28 @@ static void MrEdSchemeMessages(char *msg, ...)
   va_list args;
 
 #if WINDOW_STDIO
-  static int opening = 0;
-  if (opening)
-	return;
-  opening = 1;
-  if (!ioFrame) {
-    wxREGGLOB(ioFrame);
-    if (mred_only_context)
-      ioFrame = new IOFrame;
-    else {
-      /* Set eventspace ... */
-      mred_only_context = mred_main_context;
-      ioFrame = new IOFrame;
-      mred_only_context = NULL;
+  if (!wx_in_terminal) {
+    static int opening = 0;
+    if (opening)
+      return;
+    opening = 1;
+    if (!ioFrame) {
+      wxREGGLOB(ioFrame);
+      if (mred_only_context)
+	ioFrame = new IOFrame;
+      else {
+	/* Set eventspace ... */
+	mred_only_context = mred_main_context;
+	ioFrame = new IOFrame;
+	mred_only_context = NULL;
+      }
     }
-  }
-  opening = 0;
-  if (ioFrame->hidden) {
-    ioFrame->hidden = FALSE;
-    have_stdio = 1;
-    ioFrame->Show(TRUE);
+    opening = 0;
+    if (ioFrame->hidden) {
+      ioFrame->hidden = FALSE;
+      have_stdio = 1;
+      ioFrame->Show(TRUE);
+    }
   }
 #endif
 #if WCONSOLE_STDIO
@@ -1879,7 +1886,9 @@ static void MrEdSchemeMessages(char *msg, ...)
 
   va_start(args, msg);
 #if WINDOW_STDIO
-  if (!msg) {
+  if (wx_in_terminal) {
+    vfprintf(stderr, msg, args);
+  } else if (!msg) {
     char *s;
     long d, l;
     
@@ -2574,9 +2583,11 @@ wxFrame *MrEdApp::OnInit(void)
 #endif
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
-  scheme_make_stdin = MrEdMakeStdIn;
-  scheme_make_stdout = MrEdMakeStdOut;
-  scheme_make_stderr = MrEdMakeStdErr;
+  if (!wx_in_terminal) {
+    scheme_make_stdin = MrEdMakeStdIn;
+    scheme_make_stdout = MrEdMakeStdOut;
+    scheme_make_stderr = MrEdMakeStdErr;
+  }
 #endif
 
 #if !defined(USE_SENORA_GC) && !defined(MZ_PRECISE_GC)
@@ -2594,7 +2605,9 @@ wxFrame *MrEdApp::OnInit(void)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
   scheme_console_printf = MrEdSchemeMessages;
-  scheme_console_output = MrEdSchemeMessagesOutput;
+  if (!wx_in_terminal) {
+    scheme_console_output = MrEdSchemeMessagesOutput;
+  }
 #endif
 
   mred_eventspace_param = scheme_new_param();
@@ -2667,15 +2680,17 @@ wxFrame *MrEdApp::OnInit(void)
   mred_run_from_cmd_line(argc, argv, setup_basic_env);
 
 #if WINDOW_STDIO
-  /* The only reason we get here is that a command-line error or
-     -h occured. In either case, stick around for the sake of the
-     console. */
-  setup_basic_env();
-  TheMrEdApp->initialized = 1;
-  stdio_kills_prog = 1;
-  if (ioFrame)
-    ioFrame->CloseIsQuit();
-  wxTheApp->MainLoop();
+  if (!wx_in_terminal) {
+    /* The only reason we get here is that a command-line error or
+       -h occured. In either case, stick around for the sake of the
+       console. */
+    setup_basic_env();
+    TheMrEdApp->initialized = 1;
+    stdio_kills_prog = 1;
+    if (ioFrame)
+      ioFrame->CloseIsQuit();
+    wxTheApp->MainLoop();
+  }
 #endif
 
   return NULL;
@@ -2721,7 +2736,8 @@ void MrEdApp::RealInit(void)
 
   scheme_current_thread->on_kill = on_main_killed;
 #if WINDOW_STDIO
-  scheme_exit = MrEdExit;
+  if (!wx_in_terminal)
+    scheme_exit = MrEdExit;
 #endif
 
   exit_val = mred_finish_cmd_line_run();

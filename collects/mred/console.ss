@@ -143,8 +143,6 @@
 
     (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit:backup-autosave-edit%))
 
-    (define console-max-save-previous-exprs 30)
-		    
     (define make-single-threader
       (lambda ()
 	(let ([sema (make-semaphore 1)])
@@ -153,6 +151,40 @@
 	     (lambda () (semaphore-wait sema))
 	     thunk
 	     (lambda () (semaphore-post sema)))))))
+		    
+    (define console-max-save-previous-exprs 30)
+    (let* ([list-of? (lambda (p?)
+		       (lambda (l)
+			 (and (list? l)
+			      (andmap p? l))))]
+	   [snip/string? (lambda (s) (or (is-a? s wx:snip%) (string? s)))]
+	   [list-of-snip/strings? (list-of? snip/string?)]
+	   [list-of-lists-of-snip/strings? (list-of? list-of-snip/strings?)])
+      (mred:preferences:set-preference-default
+       'mred:console-previous-exprs
+       null
+       list-of-lists-of-snip/strings?))
+    (let ([only-text-snips?
+	   (lambda (ls)
+	     (and (list? ls)
+		  (andmap (lambda (s)
+			    (is-a? s wx:text-snip%))
+			  ls)))]
+	  [marshall 
+	   (lambda (lls)
+	     (map (lambda (ls)
+		    (map (lambda (s)
+			   (cond
+			     [(is-a? s wx:text-snip%)
+			      (send s get-text 0 (send s get-count))]
+			     [(string? s) s]
+			     [else "'non-text-snip"]))
+			 ls))
+		  lls))]
+	  [unmarshall (lambda (x) x)])
+    (mred:preferences:set-preference-un/marshall
+     'mred:console-previous-exprs
+     marshall unmarshall))
 
     (define make-console-edit%
       (lambda (super%)
@@ -611,8 +643,6 @@
 	     (lambda (delta)
 	       (set! output-delta delta))]
 	    
-	    [previous-exprs null]
-	    [max-save-previous-exprs console-max-save-previous-exprs]
 	    [previous-expr-pos -1]
 	    [previous-expr-positions null]
 	    [clear-previous-expr-positions
@@ -620,32 +650,39 @@
 	       (set! previous-expr-positions null))]
 	    [copy-previous-expr
 	     (lambda (which)
-	       (let ([snips (list-ref previous-exprs which)])
+	       (let ([snip/strings (list-ref (mred:preferences:get-preference
+					      'mred:console-previous-exprs) 
+					     which)])
 		 (begin-edit-sequence)
 		 (when (and autoprompting? (not prompt-mode?))
 		   (insert-prompt))
 		 (delete prompt-position (last-position) #f)
-		 (for-each (lambda (snip)
-			     (insert (send snip copy) prompt-position))
-			   snips)
+		 (for-each (lambda (snip/string)
+			     (insert (if (is-a? snip/string wx:snip%)
+					 (send snip/string copy)
+					 snip/string)
+				     prompt-position))
+			   snip/strings)
 		 (set-position (last-position))
 		 (end-edit-sequence)))]
 	    [copy-next-previous-expr
 	     (lambda ()
-	       (unless (null? previous-exprs)
-		 (set! previous-expr-pos
-		       (if (< (add1 previous-expr-pos) (length previous-exprs))
-			   (add1 previous-expr-pos)
-			   0))
-		 (copy-previous-expr previous-expr-pos)))]
+	       (let ([previous-exprs (mred:preferences:get-preference 'mred:console-previous-exprs)])
+		 (unless (null? previous-exprs)
+		   (set! previous-expr-pos
+			 (if (< (add1 previous-expr-pos) (length previous-exprs))
+			     (add1 previous-expr-pos)
+			     0))
+		   (copy-previous-expr previous-expr-pos))))]
 	    [copy-prev-previous-expr
 	     (lambda ()
-	       (unless (null? previous-exprs)
-		 (set! previous-expr-pos
-		       (if (<= previous-expr-pos 0)
-			   (sub1 (length previous-exprs))
-			   (sub1 previous-expr-pos)))
-		 (copy-previous-expr previous-expr-pos)))]
+	       (let ([previous-exprs (mred:preferences:get-preference 'mred:console-previous-exprs)])
+		 (unless (null? previous-exprs)
+		   (set! previous-expr-pos
+			 (if (<= previous-expr-pos 0)
+			     (sub1 (length previous-exprs))
+			     (sub1 previous-expr-pos)))
+		   (copy-previous-expr previous-expr-pos))))]
 	    
 	    [do-save-and-eval
 	     (lambda (start end)
@@ -664,15 +701,17 @@
 			  [else snips]))])
 		 (set! previous-expr-positions (cons (cons start end) previous-expr-positions))
 		 (set! previous-expr-pos -1)
-		 (if (null? previous-exprs)
-		     (set! previous-exprs (list snips))
-		     (begin
-		       (if (>= (length previous-exprs) max-save-previous-exprs)
-			   (set! previous-exprs (cdr previous-exprs)))
-		       (let loop ([l previous-exprs])
-			 (if (null? (cdr l))
-			     (set-cdr! l (list snips))
-			     (loop (cdr l))))))
+		 (let* ([previous-exprs (mred:preferences:get-preference 'mred:console-previous-exprs)]
+			[new-previous-exprs 
+			 (let* ([trimmed-previous-exprs
+				 (if (>= (length previous-exprs) console-max-save-previous-exprs)
+				     (cdr previous-exprs)
+				     previous-exprs)])
+			   (let loop ([l trimmed-previous-exprs])
+			     (if (null? l)
+				 (list snips)
+				 (cons (car l) (loop (cdr l))))))])
+		   (mred:preferences:set-preference 'mred:console-previous-exprs new-previous-exprs))
 		 (do-eval start end)))]
 	    [do-eval
 	     (lambda (start end)

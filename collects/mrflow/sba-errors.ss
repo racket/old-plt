@@ -1,8 +1,6 @@
 
-(module sba-errors mzscheme
+(module sba-errors (lib "mrflow.ss" "mrflow")
   (require
-   (lib "contract.ss")
-   
    (prefix cst: "constants.ss")
    (prefix lab: "labels.ss")
    ;"assoc-set-list.ss"
@@ -22,7 +20,7 @@
    (sba-error-gravity (sba-error? . -> . (symbols 'red 'orange 'green)))
    (sba-error-message (sba-error? . -> . string?))
    (error-table-make  (-> error-table?))
-   (error-table? (any? . -> . boolean?))
+   (error-table? (any/c . -> . boolean?))
    (error-table-set (error-table? (listof lab:label?) (symbols 'red 'orange 'green) string? . -> . void?))
    (error-table-get (error-table? lab:label? . -> . (listof sba-error?)))
    )

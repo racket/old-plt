@@ -1,23 +1,22 @@
-(module dfa mzscheme
+(module dfa (lib "mrflow.ss" "mrflow")
   (require (lib "match.ss")
            (lib "pretty.ss")
            (lib "etc.ss")
            (prefix list: (lib "list.ss"))
            (prefix cst: "constants.ss")
-
+           
            "set-hash.ss"
            "types.ss"
            "util.ss"
            "env.ss"
-           "dbg.ss"
-
+           
            (lib "class.ss"))
-
+  
   (provide
    (struct dfa (stnum->state))
-
+   
    (struct state (number))
-  
+   
    ;; All base types i.e. type-cst, type-empty, struct-type-states are always handle states
    (struct handle-state (handle))
    (struct cons-state (car cdr))
@@ -37,19 +36,19 @@
    get-state-numbers
    get-states
    get-dfa-size
-
+   
    create-dfa-from-type
    minimize-dfa
-
+   
    ;; debug
    all-handles-referenced?
    )
-
+  
   ;; 
   ;; States
   ;;
   (define state-number? natural?)
-
+  
   (define-struct state (number) (make-inspector))
   
   ;; All base types i.e. type-cst, type-empty, struct-type-states are always handle states
@@ -58,17 +57,17 @@
   ; case-lambda-states has vectors for all fields, in contrast union-states and 
   ;   struct-value-states both use lists.
   (define-struct (case-lambda-state state)
-                 (rest-arg?s   ; (vectorof boolean)
-                  req-args     ; (vectorof natural)
-                  argss        ; (vectorof (vectorof any))
-                  exps)        ; (vectorof any)
-                 (make-inspector))
+    (rest-arg?s   ; (vectorof boolean)
+     req-args     ; (vectorof natural)
+     argss        ; (vectorof (vectorof any))
+     exps)        ; (vectorof any)
+    (make-inspector))
   (define-struct (promise-state state) (value) (make-inspector))
   (define-struct (struct-value-state state) (label types) (make-inspector))
   (define-struct (union-state state) (elements) (make-inspector))
   (define-struct (values-state state) (type) (make-inspector))
   (define-struct (vector-state state) (element) (make-inspector))
-
+  
   ;;
   ;; DFAs
   ;;
@@ -76,8 +75,8 @@
   (set! make-dfa
         (let ([old-make-dfa make-dfa])
           (opt-lambda ([ordering #f]) (old-make-dfa (make-hash-table) ordering))))
-
-  (dbg-define/contract make-ordered-dfa ((listof state?) . -> . dfa?)
+  
+  (define/contract make-ordered-dfa ((listof state?) . -> . dfa?)
     (lambda (states)
       (let* ([dfa (make-dfa)]
              [stnum->state (dfa-stnum->state dfa)]
@@ -88,49 +87,49 @@
                                   states)])
         (set-dfa-canonical-ordering! dfa ordered-stnums)
         dfa)))
-
-  (dbg-define/contract get-dfa-size (dfa? . -> . natural?)
+  
+  (define/contract get-dfa-size (dfa? . -> . natural?)
     (lambda (dfa)
       (let ([size 0])
         (hash-table-for-each (dfa-stnum->state dfa) (lambda (stnum state) (set! size (add1 size))))
         size)))
-
-  (dbg-define/contract has-state-number? (dfa? state-number? . -> . boolean?)
+  
+  (define/contract has-state-number? (dfa? state-number? . -> . boolean?)
     (lambda (dfa state-number)
       (if (hash-table-get (dfa-stnum->state dfa) state-number cst:thunk-false) #t #f)))
   
-  (dbg-define/contract maybe-add-state! (dfa? state? . -> . void?)
+  (define/contract maybe-add-state! (dfa? state? . -> . void?)
     (lambda (dfa state)
       (let ([stnum->state (dfa-stnum->state dfa)]
             [stnum (state-number state)])
         (unless (hash-table-has-key? stnum->state stnum)
           (hash-table-put! stnum->state stnum state)))))
-
-  (dbg-define/contract lookup (dfa? state-number? . -> . state?)
+  
+  (define/contract lookup (dfa? state-number? . -> . state?)
     (lambda (dfa state-number)
       (hash-table-get (dfa-stnum->state dfa) state-number)))
   
-  (dbg-define/contract greatest-handle (dfa? . -> . (union false? handle?))
+  (define/contract greatest-handle (dfa? . -> . (union false/c handle?))
     (lambda (dfa)
       (let ([greatest-handle -1])
         (hash-table-for-each (dfa-stnum->state dfa)
-          (lambda (stnum state)
-            (when (and (handle-state? state) (> (handle-state-handle state) greatest-handle))
-              (set! greatest-handle (handle-state-handle state)))))
+                             (lambda (stnum state)
+                               (when (and (handle-state? state) (> (handle-state-handle state) greatest-handle))
+                                 (set! greatest-handle (handle-state-handle state)))))
         (if (= greatest-handle -1) #f greatest-handle))))
-
-  (dbg-define/contract get-ordered-states (dfa? . -> . (listof state?))
+  
+  (define/contract get-ordered-states (dfa? . -> . (listof state?))
     (lambda (dfa)
       (map (lambda (stnum) (lookup dfa stnum)) (dfa-canonical-ordering dfa))))
-
-  (dbg-define/contract get-states (dfa? . -> . (listof state?))
+  
+  (define/contract get-states (dfa? . -> . (listof state?))
     (lambda (dfa)
       (hash-table-map (dfa-stnum->state dfa) (lambda (stnum state) state))))
-
-  (dbg-define/contract get-state-numbers (dfa? . -> . (listof state-number?))
+  
+  (define/contract get-state-numbers (dfa? . -> . (listof state-number?))
     (lambda (dfa)
       (hash-table-map (dfa-stnum->state dfa) (lambda (stnum state) stnum))))
-
+  
   ;; When this function is called all of the label types in present
   ;; must belong to a strongly connected graph.  This works by first
   ;; annotating all label types with a state number, variables and
@@ -143,7 +142,7 @@
   ;;
   ;; tenv : tvar -> handle ... if have a handle it may not have a state in the dfa
   ;; senv : tvar -> state
-  (dbg-define/contract create-dfa-from-type
+  (define/contract create-dfa-from-type
     ((type-rec? tenv?) . ->d* .
                        (lambda (type tenv)
                          (unless (type-var? (type-rec-body type))
@@ -214,134 +213,134 @@
                  [create-dfa
                   (lambda (type var->state)
                     (cond
-                     [(handle? type)
-                      (add-state! (make-handle-state (get-annotation type) type))]
-                     [(type-cons? type)
-                      (let* ([hd (create-dfa (type-cons-car type) var->state)]
-                             [tl (create-dfa (type-cons-cdr type) var->state)]
-                             [state (make-cons-state (get-annotation type) hd tl)])
-                        (add-state! state))]
-                     [(type-case-lambda? type) ; rest-arg?s req-args argss exps)
-                      (let* ([argss (map-vector-of-vector (lambda (type) (create-dfa type var->state)) (type-case-lambda-argss type))]
-                             [exps (map-vector (lambda (type) (create-dfa type var->state)) (type-case-lambda-exps type))]
-                             [state-number (get-annotation type)]
-                             [state (make-case-lambda-state state-number
-                                                            (type-case-lambda-rest-arg?s type)
-                                                            (type-case-lambda-req-args type)
-                                                            argss exps)])
-                        (add-state! state)
-                        state-number)]
-                     [(type-promise? type)
-                      (let* ([value (create-dfa (type-promise-value type) var->state)]
-                             [state-number (get-annotation type)])
-                        (add-state! (make-promise-state state-number value)))]
-                     [(type-rec? type) ; vars types body)
-                      (let* ([vars (type-rec-vars type)]
-                             [types (type-rec-types type)]
-                             [body (type-rec-body type)]
-                             [binder-states (map (lambda (v ty)
-                                                   (or (maybe-get-annotation v)
-                                                       (get-annotation ty)))
-                                                 vars types)]
-                             [new-env (extend-tenv var->state (map type-var-name vars) binder-states)])
-                        (for-each (lambda (var type)
-                                    (if (maybe-get-annotation var)
-                                        (create-dfa var new-env)
-                                        (create-dfa type new-env)))
-                                  vars types)
-                        binder-states)]
-                     [(type-struct-value? type) 
-                      (let ([types (map (lambda (ty) (create-dfa ty var->state)) (type-struct-value-types type))]
-                            [label (type-struct-value-type-label type)])
-                        (add-state! (make-struct-value-state (get-annotation type) label types)))]
-                     [(type-union? type)
+                      [(handle? type)
+                       (add-state! (make-handle-state (get-annotation type) type))]
+                      [(type-cons? type)
+                       (let* ([hd (create-dfa (type-cons-car type) var->state)]
+                              [tl (create-dfa (type-cons-cdr type) var->state)]
+                              [state (make-cons-state (get-annotation type) hd tl)])
+                         (add-state! state))]
+                      [(type-case-lambda? type) ; rest-arg?s req-args argss exps)
+                       (let* ([argss (map-vector-of-vector (lambda (type) (create-dfa type var->state)) (type-case-lambda-argss type))]
+                              [exps (map-vector (lambda (type) (create-dfa type var->state)) (type-case-lambda-exps type))]
+                              [state-number (get-annotation type)]
+                              [state (make-case-lambda-state state-number
+                                                             (type-case-lambda-rest-arg?s type)
+                                                             (type-case-lambda-req-args type)
+                                                             argss exps)])
+                         (add-state! state)
+                         state-number)]
+                      [(type-promise? type)
+                       (let* ([value (create-dfa (type-promise-value type) var->state)]
+                              [state-number (get-annotation type)])
+                         (add-state! (make-promise-state state-number value)))]
+                      [(type-rec? type) ; vars types body)
+                       (let* ([vars (type-rec-vars type)]
+                              [types (type-rec-types type)]
+                              [body (type-rec-body type)]
+                              [binder-states (map (lambda (v ty)
+                                                    (or (maybe-get-annotation v)
+                                                        (get-annotation ty)))
+                                                  vars types)]
+                              [new-env (extend-tenv var->state (map type-var-name vars) binder-states)])
+                         (for-each (lambda (var type)
+                                     (if (maybe-get-annotation var)
+                                         (create-dfa var new-env)
+                                         (create-dfa type new-env)))
+                                   vars types)
+                         binder-states)]
+                      [(type-struct-value? type) 
+                       (let ([types (map (lambda (ty) (create-dfa ty var->state)) (type-struct-value-types type))]
+                             [label (type-struct-value-type-label type)])
+                         (add-state! (make-struct-value-state (get-annotation type) label types)))]
+                      [(type-union? type)
                        (let* ([elements (map (lambda (ty) (create-dfa ty var->state)) (type-union-elements type))])
                          (add-state! (make-union-state (get-annotation type) (min-list-numbers elements))))]
-                     [(type-vector? type)
-                      (let ([element (create-dfa (type-vector-element type) var->state)])
-                        (add-state! (make-vector-state (get-annotation type) element)))]
-                     [(type-var? type)
-                      (let ([state-number (maybe-get-annotation type)]
-                            [name (type-var-name type)])
-                        (if state-number
-                            (add-state! (make-handle-state state-number (lookup-symbol var->state name)))
-                            (lookup-symbol var->state name)))]
-                     [(type-values? type)
+                      [(type-vector? type)
+                       (let ([element (create-dfa (type-vector-element type) var->state)])
+                         (add-state! (make-vector-state (get-annotation type) element)))]
+                      [(type-var? type)
+                       (let ([state-number (maybe-get-annotation type)]
+                             [name (type-var-name type)])
+                         (if state-number
+                             (add-state! (make-handle-state state-number (lookup-symbol var->state name)))
+                             (lookup-symbol var->state name)))]
+                      [(type-values? type)
                        (let ([ty (create-dfa (type-values-type type) var->state)])
                          (add-state! (make-values-state (get-annotation type) ty)))]
-                     [else
-                      (error 'create-dfa-from-type "Type ~a should already have been hashconsed" type)]))])
+                      [else
+                       (error 'create-dfa-from-type "Type ~a should already have been hashconsed" type)]))])
           (annotate type)
           (values dfa (create-dfa type (create-tenv)))))))
   
   ;;
   ;; Printing functions
   ;;
-
-  (dbg-define/contract dfa-state-number->list (opt-> (state-number?) (dfa?) list?)
+  
+  (define/contract dfa-state-number->list (opt-> (state-number?) (dfa?) list?)
     (opt-lambda (stnum [dfa #f])
       (dfa-state->list (lookup dfa stnum) dfa)))
-
-  (dbg-define/contract dfa-state->list (opt-> (state?) (dfa?) list?)
+  
+  (define/contract dfa-state->list (opt-> (state?) (dfa?) list?)
     (opt-lambda (dfa-state [dfa #f])
       (letrec
-        ([state->var (make-hash-table)]
-         [state->binding (make-hash-table)]
-         [get-next-var! (let ([i 0]) (lambda (state)
-                                      (let ([str (string->symbol (format "a~a" i))])
-                                         (set! i (add1 i))
-                                         (hash-table-put! state->var state str)
-                                         str)))]
-         [statify
-          (lambda/contract (sym state) ((union symbol? list?) state-number? . -> . (union symbol? list?))
-            (let* ([first (if (list? sym) (car sym) sym)]
-                   [first (string->symbol
-                           (string-append (symbol->string first) ":" (number->string state)))])
-              (if (list? sym) (cons-immutable first (cdr sym)) first)))]
-         [to-list
-          (lambda/contract (dfa-state ancest) (state? (listof state-number?) . -> . list?)
-            (letrec ([expand
-                      (if dfa
-                          (lambda (x) (loop x ancest))
-                          (lambda (x) x))])
-              (match dfa-state
-                [($ handle-state state handle)
-                 (list 'handle handle)]
-                [($ cons-state state car cdr)
-                 (list 'cons (expand car) (expand cdr))]
-                [($ case-lambda-state state rest-arg?s req-args argss exps)
-                 (list 'case-lambda
-                       (foldr-case-lambda-vector
-                        (lambda (rest-arg? req-arg args exp acc)
-                          (cons (list (map expand (vector->list args))
-                                      (if rest-arg? '*-> '->)
-                                      (expand exp))
-                                acc))
-                        null
-                        rest-arg?s req-args argss exps))]
-                [($ promise-state state value) 
-                 (list 'promise (expand value))]
-                [($ struct-value-state state label types)
-                 (list 'struct (map expand types))]
-                [($ union-state state elements)
-                 (cons 'union (map expand elements))]
-                [($ values-state state type)
-                 (list 'values (expand type))]
-                [($ vector-state state type)
-                 (list 'vector (expand type))]
-                [x (error 'dfa-state->string "Unmatched type ~a\n" x)])))]
-         [loop (lambda (stnum ancest)
-                 (if (memq stnum ancest)
-                     (if (hash-table-has-key? state->var stnum)
-                         (hash-table-get state->var stnum)
-                         (get-next-var! stnum))
-                     (let* ([state (lookup dfa stnum)]
-                            [l (to-list state (cons stnum ancest))])
+          ([state->var (make-hash-table)]
+           [state->binding (make-hash-table)]
+           [get-next-var! (let ([i 0]) (lambda (state)
+                                         (let ([str (string->symbol (format "a~a" i))])
+                                           (set! i (add1 i))
+                                           (hash-table-put! state->var state str)
+                                           str)))]
+           [statify
+            (lambda (sym state) ;((union symbol? list?) state-number? . -> . (union symbol? list?))
+              (let* ([first (if (list? sym) (car sym) sym)]
+                     [first (string->symbol
+                             (string-append (symbol->string first) ":" (number->string state)))])
+                (if (list? sym) (cons-immutable first (cdr sym)) first)))]
+           [to-list
+            (lambda (dfa-state ancest) ;(state? (listof state-number?) . -> . list?)
+              (letrec ([expand
+                        (if dfa
+                            (lambda (x) (loop x ancest))
+                            (lambda (x) x))])
+                (match dfa-state
+                  [($ handle-state state handle)
+                   (list 'handle handle)]
+                  [($ cons-state state car cdr)
+                   (list 'cons (expand car) (expand cdr))]
+                  [($ case-lambda-state state rest-arg?s req-args argss exps)
+                   (list 'case-lambda
+                         (foldr-case-lambda-vector
+                          (lambda (rest-arg? req-arg args exp acc)
+                            (cons (list (map expand (vector->list args))
+                                        (if rest-arg? '*-> '->)
+                                        (expand exp))
+                                  acc))
+                          null
+                          rest-arg?s req-args argss exps))]
+                  [($ promise-state state value) 
+                   (list 'promise (expand value))]
+                  [($ struct-value-state state label types)
+                   (list 'struct (map expand types))]
+                  [($ union-state state elements)
+                   (cons 'union (map expand elements))]
+                  [($ values-state state type)
+                   (list 'values (expand type))]
+                  [($ vector-state state type)
+                   (list 'vector (expand type))]
+                  [x (error 'dfa-state->string "Unmatched type ~a\n" x)])))]
+           [loop (lambda (stnum ancest)
+                   (if (memq stnum ancest)
                        (if (hash-table-has-key? state->var stnum)
-                           (begin
-                             (hash-table-put! state->binding stnum (statify l stnum))
-                             (hash-table-get state->var stnum))
-                           (statify l stnum)))))])
+                           (hash-table-get state->var stnum)
+                           (get-next-var! stnum))
+                       (let* ([state (lookup dfa stnum)]
+                              [l (to-list state (cons stnum ancest))])
+                         (if (hash-table-has-key? state->var stnum)
+                             (begin
+                               (hash-table-put! state->binding stnum (statify l stnum))
+                               (hash-table-get state->var stnum))
+                             (statify l stnum)))))])
         (if dfa (let ([rec-body (loop (state-number dfa-state) null)]
                       [var-bindings
                        (hash-table-map state->var (lambda (s v)
@@ -351,16 +350,16 @@
                             var-bindings
                             rec-body)))
             (statify (to-list dfa-state null) (state-number dfa-state))))))
-
   
-  (dbg-define/contract dfa->list (dfa? . -> . any?)
+  
+  (define/contract dfa->list (dfa? . -> . any)
     (lambda (dfa)
       (list
        (list:mergesort (hash-table-map (dfa-stnum->state dfa) (lambda (k v) (list k '-> (dfa-state->list v dfa))))
                        (lambda (x y) (> (car x) (car y))))
        (dfa-canonical-ordering dfa)
        )))
-
+  
   (define print-dfa
     (lambda (dfa)
       (pretty-display (dfa->list dfa))))
@@ -368,59 +367,59 @@
   ;;
   ;; Minimization
   ;;
-
+  
   ;; Should equiv-class and block should be merged
   (define-struct equiv-class (type number length classes) (make-inspector))
-
+  
   ;; A non-empty list of dfa-states, representing an equivalence class
   (define block? (listof state?))
-
+  
   ;; A list of disjoint blocks
   (define partition? (listof block?))
-
+  
   (define make-state->equiv-class
     (lambda (num-states)
       (make-vector num-states #f)))
-
+  
   ;; Used only for debugging, make each handle state in the dfa is
   ;; referenced by a label state
   (define all-handles-referenced?
     (lambda (dfa)
       (letrec
-        ([tbl (make-hash-table)]
-         [seen (make-hash-table)]
-         [loop
-          (lambda (stnum)
-            (unless (hash-table-get seen stnum cst:thunk-false)
-              (hash-table-put! seen stnum #t)
-              (match (lookup dfa stnum)
-                [($ handle-state state handle)
-                 (hash-table-put! tbl handle #t)]
-                [($ cons-state state car cdr)
-                 (loop car) (loop cdr)]
-                [($ case-lambda-state state rest-arg?s req-args argss exps)
-                 (for-each-vov loop argss)
-                 (for-each-vector loop exps)]
-                [($ promise-state state value) 
-                 (loop value)]
-                [($ struct-value-state state label types)
-                 (for-each loop types)]
-                [($ union-state state elements)
-                 (for-each loop elements)]
-                [($ values-state state type)
-                 (loop type)]
-                [($ vector-state state type)
-                 (loop type)])))]
-         [state (car (list:filter (lambda (x) (not (handle-state? x))) (get-ordered-states dfa)))]
-         [handle-states (list:filter handle-state? (get-ordered-states dfa))])
+          ([tbl (make-hash-table)]
+           [seen (make-hash-table)]
+           [loop
+            (lambda (stnum)
+              (unless (hash-table-get seen stnum cst:thunk-false)
+                (hash-table-put! seen stnum #t)
+                (match (lookup dfa stnum)
+                  [($ handle-state state handle)
+                   (hash-table-put! tbl handle #t)]
+                  [($ cons-state state car cdr)
+                   (loop car) (loop cdr)]
+                  [($ case-lambda-state state rest-arg?s req-args argss exps)
+                   (for-each-vov loop argss)
+                   (for-each-vector loop exps)]
+                  [($ promise-state state value) 
+                   (loop value)]
+                  [($ struct-value-state state label types)
+                   (for-each loop types)]
+                  [($ union-state state elements)
+                   (for-each loop elements)]
+                  [($ values-state state type)
+                   (loop type)]
+                  [($ vector-state state type)
+                   (loop type)])))]
+           [state (car (list:filter (lambda (x) (not (handle-state? x))) (get-ordered-states dfa)))]
+           [handle-states (list:filter handle-state? (get-ordered-states dfa))])
         (loop (state-number state))
         (andmap (lambda (hs) (hash-table-get tbl (handle-state-handle hs) cst:thunk-false)) handle-states))))
-
+  
   ; Minimize DFA sets up the partition table and the gross equivalence
   ; classes for hopcrofts algorithm, as well as replacing the states
   ; numbers with their equivalence classes after minimization.
-  (dbg-define/contract minimize-dfa ((dfa? (listof state-number?)) . ->* .
-                                     (dfa? (listof state-number?)))
+  (define/contract minimize-dfa ((dfa? (listof state-number?)) . ->* .
+                                                               (dfa? (listof state-number?)))
     (lambda (dfa original-states)
       (let* ([highest-equiv-class (new counter%)]
              [get-matching-states
@@ -430,14 +429,14 @@
              [state-numbers (get-state-numbers dfa)]
              [stnum->ecnum (make-stnum->ecnum% (apply max state-numbers))]
              [partitions (make-partitions% (get-dfa-size dfa))]
-
+             
              [add-minimum-dfa-state!
               (let ([min '()])
                 (lambda (state)
                   (when (member state min)
                     (error 'add-minimum-dfa-state! "Should never add the same state ~a to minimal DFA" state))
                   (set! min (cons-immutable state min))))]
-
+             
              [make-minimized-state
               (match-lambda
                 [($ handle-state state handle)
@@ -493,7 +492,7 @@
              [cl-partition-numbers (map (setup-equiv-class 'case-lambda) case-lambda-partition)]
              [struct-value-numbers (map (setup-equiv-class 'struct-value) struct-value-partition)]
              [union-numbers (map (setup-equiv-class 'union) union-partition)]
-
+             
 	     [cons-number ((setup-equiv-class 'cons) (get-matching-states cons-state?))]
              [promise-number ((setup-equiv-class 'promise) (get-matching-states promise-state?))]
              [values-number ((setup-equiv-class 'values) (get-matching-states values-state?))]
@@ -517,56 +516,50 @@
                   partitions stnum->ecnum highest-equiv-class)
 	(let* ([_  ; (void)
                 ;; ensure unions with only one state when minimized are not added to the dfa
-                   (send partitions for-each
-                     (lambda (partition)
-                       (when (and partition (eq? (equiv-class-type partition) 'union))
-                         (let* ([block (equiv-class-classes partition)]
-                                [representative (car block)]
-                                [elements (union-state-elements representative)]
-                                [min-stnums (min-list-numbers (map (lambda (stnum)
-                                                                     (send stnum->ecnum lookup stnum))
-                                                                   elements))])
-                           (when (length-one? min-stnums)
-                             (for-each (lambda (state)
-                                         (send stnum->ecnum set!
-                                               (send partitions get-equiv-class (car min-stnums))
-                                               state))
-                                       block))))))]
-
+                (send partitions for-each
+                      (lambda (partition)
+                        (when (and partition (eq? (equiv-class-type partition) 'union))
+                          (let* ([block (equiv-class-classes partition)]
+                                 [representative (car block)]
+                                 [elements (union-state-elements representative)]
+                                 [min-stnums (min-list-numbers (map (lambda (stnum)
+                                                                      (send stnum->ecnum lookup stnum))
+                                                                    elements))])
+                            (when (length-one? min-stnums)
+                              (for-each (lambda (state)
+                                          (send stnum->ecnum set!
+                                                (send partitions get-equiv-class (car min-stnums))
+                                                state))
+                                        block))))))]
+               
                [states (send partitions fold
-			       (lambda (p acc)
-                                 (let ([min-state (make-minimized-state (car (equiv-class-classes p)))])
-                                   (if (and (union-state? min-state) (length-one? (union-state-elements min-state)))
-                                       acc
-                                       (cons-immutable min-state acc))))
-			       null)]
+                             (lambda (p acc)
+                               (let ([min-state (make-minimized-state (car (equiv-class-classes p)))])
+                                 (if (and (union-state? min-state) (length-one? (union-state-elements min-state)))
+                                     acc
+                                     (cons-immutable min-state acc))))
+                             null)]
                [min-binder-states
                 (map (lambda (stnum) (send stnum->ecnum lookup stnum)) original-states)]
                [min-dfa (make-ordered-dfa states)]
                [has-useless-union (ormap (lambda (state) (and (union-state? state)
                                                               (length-one? (union-state-elements state))))
                                          states)])
-          (debug 'trace
-                 (list (list 'partitions partitions)
-                       (list 'original-states original-states)
-                       (list 'original->new-state original->new-states)
-                       (list 'states states)))
           (if has-useless-union
-              (begin (debug 'trace (list "has useless union, reminimizing" (dfa->list min-dfa)))
-                     (minimize-dfa min-dfa min-binder-states))
+              (minimize-dfa min-dfa min-binder-states)
               (values min-dfa min-binder-states)))
         )))
-
+  
   (define stnum->ecnum%
     (class object%
       (init-field highest-state)
-
+      
       (define stnum->ecnum (make-vector (add1 highest-state) #f))
-                    
+      
       (define/public lookup
         (lambda (stnum)
           (vector-ref stnum->ecnum stnum)))
-
+      
       (define/public set!
         (lambda (equiv-class state)
           (vector-set! stnum->ecnum
@@ -581,9 +574,9 @@
                                    (state-number state)
                                    (equiv-class-number equiv-class)))
                     states)))
-
+      
       (super-new)))
-
+  
   (define make-stnum->ecnum%
     (lambda (k)
       (let ()
@@ -593,11 +586,11 @@
                            (set-states! (equiv-class? (listof state?) . -> . void?)))
           (new stnum->ecnum% (highest-state k)))
         stnum->ecnum)))
-
+  
   (define partitions%
     (class object%
       (init-field number-states)
-
+      
       ; Each element of the partitions table contains either an equivalence class,
       ; or false if it has not been used or the equivalence class it contains has
       ; been split. 
@@ -605,31 +598,31 @@
       ; We split at most num-states - 1 times, but we never reuse the
       ; states in an old partition so allocate twice the number of states.
       (define partitions (make-vector (* 2 number-states) #f))
-
+      
       (define/public place-new-equiv-class
         (lambda (eq-class)
           (vector-set! partitions (equiv-class-number eq-class) eq-class)))
-
+      
       (define/public split
         (lambda (k)
           (vector-set! partitions k #f)))
-  
+      
       (define/public get-equiv-class
         (lambda (i) (vector-ref partitions i)))
-
+      
       (define/public fold
         (lambda (f init)
           (foldr-vector (lambda (x acc)
                           (if x (f x acc) acc))
                         init partitions)))
-
+      
       (define/public for-each
         (lambda (f)
           (send this fold (lambda (x acc) (f x)) (void))))
       
       (super-new)
       ))
-
+  
   (define make-partitions%
     (lambda (k)
       (let ()
@@ -637,13 +630,13 @@
           (object-contract (place-new-equiv-class (equiv-class? . -> . any))
                            (split (natural? . -> . void?))
                            (get-equiv-class (natural? . -> . equiv-class?))
-                           (fold ((equiv-class? any? . -> . any) any? . -> . any))
+                           (fold ((equiv-class? any/c . -> . any) any/c . -> . any))
                            (for-each ((equiv-class? . -> . any) . -> . any)))
           (new partitions% (number-states k)))
         p)))
-
-
-
+  
+  
+  
   ; Hopcrofts DFA minimization algorithm. First generate letters for each
   ; partition individually as the have different types and shapes. Next while
   ; there are still letters which may split an equivalence class, try to split
@@ -651,7 +644,7 @@
   ; it succeeds then replace the old equivalence class with the new split
   ; equivalence classes.  The letter/equiv class pairs will need to be changed
   ; to point to the new equivalence classes
-  (dbg-define/contract hopcroft
+  (define/contract hopcroft
     ((listof natural?) (listof natural?) (is-a?/c partitions%) (is-a?/c stnum->ecnum%) (is-a?/c counter%) . -> . any)
     (lambda (states 
              partition-nums 
@@ -665,26 +658,26 @@
                  [largest-number-union-elements -1]
                  [largest-number-struct-value-types -1]
                  [_ (send partitions for-each
-                     (lambda (ec)
-                       (cond [(eq? 'case-lambda (equiv-class-type ec))
-                              (let* ([cl (car (equiv-class-classes ec))]
-                                     [argss (case-lambda-state-argss cl)]
-                                     [exps (case-lambda-state-exps cl)])
-                                (when (> (vector-length exps) largest-number-cl-exps)
-                                  (set! largest-number-cl-exps (vector-length exps)))
-                                (when (> (foldr-vector (lambda (c acc) (max (vector-length c) acc)) -1 argss)
-                                         largest-number-cl-args)
-                                  (set! largest-number-cl-args (vector-length exps))))]
-                             [(eq? 'union (equiv-class-type ec))
-                              (let* ([union (car (equiv-class-classes ec))]
-                                     [len (length (union-state-elements union))])
-                                (when (> len largest-number-union-elements)
-                                  (set! largest-number-union-elements len)))]
-                             [(eq? 'struct-value (equiv-class-type ec))
-                              (let* ([struct-value (car (equiv-class-classes ec))]
-                                     [len (length (struct-value-state-types struct-value))])
-                                (when (> len largest-number-struct-value-types)
-                                  (set! largest-number-struct-value-types len)))])))]
+                          (lambda (ec)
+                            (cond [(eq? 'case-lambda (equiv-class-type ec))
+                                   (let* ([cl (car (equiv-class-classes ec))]
+                                          [argss (case-lambda-state-argss cl)]
+                                          [exps (case-lambda-state-exps cl)])
+                                     (when (> (vector-length exps) largest-number-cl-exps)
+                                       (set! largest-number-cl-exps (vector-length exps)))
+                                     (when (> (foldr-vector (lambda (c acc) (max (vector-length c) acc)) -1 argss)
+                                              largest-number-cl-args)
+                                       (set! largest-number-cl-args (vector-length exps))))]
+                                  [(eq? 'union (equiv-class-type ec))
+                                   (let* ([union (car (equiv-class-classes ec))]
+                                          [len (length (union-state-elements union))])
+                                     (when (> len largest-number-union-elements)
+                                       (set! largest-number-union-elements len)))]
+                                  [(eq? 'struct-value (equiv-class-type ec))
+                                   (let* ([struct-value (car (equiv-class-classes ec))]
+                                          [len (length (struct-value-state-types struct-value))])
+                                     (when (> len largest-number-struct-value-types)
+                                       (set! largest-number-struct-value-types len)))])))]
                  [letters
                   (let* ([letters
                           (list:foldr
@@ -763,7 +756,6 @@
                                    (split q0 q1 a partitions state->equiv-class get-next-equiv-class)])
                        (if equiv-class-a ;; when the split is successful
                            (begin
-                             (debug 'split (printf "(split q0=~a q1=~a a=~a)~n" q0 q1 a))
                              (add-equiv-class equiv-class-b)
                              (add-equiv-class equiv-class-a)
                              (for-each (lambda (b)
@@ -780,17 +772,15 @@
                                                     equiv-class-b)
                                                 b))))
                                        letters))
-                           (begin
-                             (debug 'split (printf "(did not split q0=~a q1=~a a=~a)~n" q0 q1 a))
-                             (add-equiv-class q0)))))
+                           (add-equiv-class q0))))
                    partition-nums)
                   (when (< number-partitions number-states)
                     (while-letters (get-next!) new-partition-nums)))))))))
-
+  
   ;;
   ;; Utility functions
   ;;
-
+  
   (define cross2
     (lambda (xs ys)
       (list:foldl (lambda (x xacc)
@@ -806,23 +796,23 @@
         (if (null? xs) '()
             (list:foldl reverse-onto (car xs) (cdr xs))))))
   
-
+  
   ;;
   ;; Equivalence class utilities
   ;;
-
-  (dbg-define/contract set-equiv-class-of-state-number! 
-    ((vectorof (union false? natural?)) equiv-class? state-number? . -> . void?)
+  
+  (define/contract set-equiv-class-of-state-number! 
+    ((vectorof (union false/c natural?)) equiv-class? state-number? . -> . void?)
     (lambda (classes equiv-class stnum)
       (vector-set! classes stnum (equiv-class-number equiv-class))))
-
+  
   ;; A function extracting some value from a dfa-state. Discriminators
   ;; are used when comparing two states
   (define discriminator? (state? . -> . (union integer? boolean?)))
   
-  (dbg-define/contract block->partition (block? . -> . partition?)
-     list-immutable)
-
+  (define/contract block->partition (block? . -> . partition?)
+    list-immutable)
+  
   ; split q0 into 2 equivalence classes, those which transitions to q1 from
   ; letter b and those which don't transition to q1
   ;
@@ -830,7 +820,7 @@
   ; consists of a place within the type E.g. A type-cons letter has a 'position'
   ; indicator of 'car or 'cdr to distinguish which position in a partition of
   ; type-cons we're going to split by.
-  (dbg-define/contract split
+  (define/contract split
     (natural? natural? list? (is-a?/c partitions%) (is-a?/c stnum->ecnum%) (is-a?/c counter%) . -> . any)
     (lambda (q0-num q1-num b partitions stnum->ecnum highest-equiv-class)
       (let* ([q0 (send partitions get-equiv-class q0-num)]
@@ -838,47 +828,46 @@
              [transition-on-letter
               (lambda (q0 b)
                 (cond
-                 [(eq? b 'handle) #f]
-                 [(and (eq? (car b) 'case-lambda)
-                       (eq? (cadr b) 'exps))
-                  (let ([row (caddr b)])
-                    (and (case-lambda-state? q0)
-                         (< row (vector-length (case-lambda-state-exps q0)))
-                         (send stnum->ecnum lookup
-                          (vector-ref (case-lambda-state-exps q0) row))))]
-                 [(and (eq? (car b) 'case-lambda) (eq? (cadr b) 'argss))
-                  (let ([row (caddr b)]
-                        [col (cadddr b)])
-                    (and (case-lambda-state? q0)
-                         (let ([argss (case-lambda-state-argss q0)])
-                           (and (< row (vector-length argss))
-                                (< col (vector-length (vector-ref argss row)))
-                                (send stnum->ecnum lookup
-                                 (vector-ref (vector-ref argss row) col))))))]
-                 [(eq? 'cons (car b))
-                  (let ([pos (cadr b)])
-                    (and (cons-state? q0)
-                         (send stnum->ecnum lookup
-                          ((if (eq? pos 'car) cons-state-car cons-state-cdr) q0))))]
-                 [(eq? 'promise (car b))
-                  (and (promise-state? q0)
-                       (send stnum->ecnum lookup (promise-state-value q0)))]
-                 [(eq? 'struct-value (car b))
-                  (let ([pos (cadr b)])
-                    (and (struct-value-state? q0)
-                         (< (length (struct-value-state-types q0)) pos)
-                         (send stnum->ecnum lookup (list-ref (struct-value-state-types q0) pos))))]
-                 [(eq? 'union (car b))
-                  (error 'transition-on-letter "Should have already handled union case")]
-                 [(eq? 'values (car b))
-                  (and (type-values? q0)
-                       (send stnum->ecnum lookup (type-values-type q0)))]
-                 [(eq? 'vector (car b))
-                  (and (type-vector? q0)
-                       (send stnum->ecnum lookup (type-vector-element q0)))]))]
+                  [(eq? b 'handle) #f]
+                  [(and (eq? (car b) 'case-lambda)
+                        (eq? (cadr b) 'exps))
+                   (let ([row (caddr b)])
+                     (and (case-lambda-state? q0)
+                          (< row (vector-length (case-lambda-state-exps q0)))
+                          (send stnum->ecnum lookup
+                                (vector-ref (case-lambda-state-exps q0) row))))]
+                  [(and (eq? (car b) 'case-lambda) (eq? (cadr b) 'argss))
+                   (let ([row (caddr b)]
+                         [col (cadddr b)])
+                     (and (case-lambda-state? q0)
+                          (let ([argss (case-lambda-state-argss q0)])
+                            (and (< row (vector-length argss))
+                                 (< col (vector-length (vector-ref argss row)))
+                                 (send stnum->ecnum lookup
+                                       (vector-ref (vector-ref argss row) col))))))]
+                  [(eq? 'cons (car b))
+                   (let ([pos (cadr b)])
+                     (and (cons-state? q0)
+                          (send stnum->ecnum lookup
+                                ((if (eq? pos 'car) cons-state-car cons-state-cdr) q0))))]
+                  [(eq? 'promise (car b))
+                   (and (promise-state? q0)
+                        (send stnum->ecnum lookup (promise-state-value q0)))]
+                  [(eq? 'struct-value (car b))
+                   (let ([pos (cadr b)])
+                     (and (struct-value-state? q0)
+                          (< (length (struct-value-state-types q0)) pos)
+                          (send stnum->ecnum lookup (list-ref (struct-value-state-types q0) pos))))]
+                  [(eq? 'union (car b))
+                   (error 'transition-on-letter "Should have already handled union case")]
+                  [(eq? 'values (car b))
+                   (and (type-values? q0)
+                        (send stnum->ecnum lookup (type-values-type q0)))]
+                  [(eq? 'vector (car b))
+                   (and (type-vector? q0)
+                        (send stnum->ecnum lookup (type-vector-element q0)))]))]
              [any-union-element-transitions-to
               (lambda (q0 q1-num)
-                (debug 'trace (list 'any-elements-transition-to q0 q1-num state->equiv-class))
                 (and (union-state? q0)
                      (ormap (lambda (x)
                               (= (send stnum->ecnum lookup x) q1-num))
@@ -913,11 +902,11 @@
                     [else
                      (loop (cdr q0) to-q1 to-q1-length (cons (car q0) not-to-q1) (add1 not-to-q1-length))]))
             (values #f #f)))))
-
+  
   ;; To split a block of dfa-states, use the value projected from a
   ;; dfa-state as a hashtable-key which is associated with the list of
   ;; dfa-states with identical values
-  (dbg-define/contract split-set (discriminator? block? . -> . partition?)
+  (define/contract split-set (discriminator? block? . -> . partition?)
     (lambda (f xs)
       (if (length-one? xs) (block->partition xs)
           (let ([accs (make-hash-table)])
@@ -938,18 +927,18 @@
         (if (null? xsss) acc (loop (cdr xsss) (append acc (car xsss)))))))
   
   ; Split each a partition by a block splitter
-  (dbg-define/contract split-partition-by
+  (define/contract split-partition-by
     ((block? . -> . partition?) partition? . -> . partition?)
     (lambda (partition-block partition)
       (unnest (map (lambda (block) (partition-block block)) partition))))
   
   ; Split each a partition by a discriminator
-  (dbg-define/contract split-partition (discriminator? partition? . -> . partition?)
+  (define/contract split-partition (discriminator? partition? . -> . partition?)
     (lambda (f xss)
       (unnest (map (lambda (xs) (split-set f xs)) xss))))
   
   ; Split a block by the values  
-  (dbg-define/contract split-by-vector-values
+  (define/contract split-by-vector-values
     ((state? . -> . vector?) (integer? . -> . discriminator?) . -> . (block? . -> . partition?))
     (lambda (list-accessor discriminator)
       (lambda (block)
@@ -957,7 +946,7 @@
                     (block->partition block)                          ; initial partition
                     (iota (vector-length (list-accessor (car block))))))))   ; split for each member in the list
   
-  (dbg-define/contract split-by-vector-vector-values
+  (define/contract split-by-vector-vector-values
     ((state? . -> . (vectorof vector?))
      (state? . -> . vector?)
      (integer? integer? . -> . discriminator?)
@@ -974,7 +963,7 @@
   
   ;; Split a block of unions into a paritions with each union in a
   ;; block has the same number of elements.
-  (dbg-define/contract split-union-states ((listof union-state?) . -> . (listof (listof union-state?)))
+  (define/contract split-union-states ((listof union-state?) . -> . (listof (listof union-state?)))
     (lambda (unions)
       (let* ([number-elements-discriminator
               (lambda (union) (length (type-union-elements union)))])
@@ -982,7 +971,7 @@
         ;(split-set number-elements-discriminator unions))))
         (list unions))))
   
-  (dbg-define/contract split-struct-value-states ((listof struct-value-state?) . -> . (listof (listof struct-value-state?)))
+  (define/contract split-struct-value-states ((listof struct-value-state?) . -> . (listof (listof struct-value-state?)))
     (lambda (structs)
       (let ([number-elements-discriminator
              (lambda (struct) (length (type-struct-value-types struct)))])
@@ -994,7 +983,7 @@
   ;; block having the same number of expressions, each parameter list
   ;; having the same length, each rest and req arg lists have the same
   ;; length and values.
-  (dbg-define/contract split-case-lambda-states
+  (define/contract split-case-lambda-states
     ((listof case-lambda-state?) . -> . (listof (listof case-lambda-state?)))
     (lambda (cls)
       (letrec
@@ -1027,9 +1016,9 @@
           (split-by-vector-values case-lambda-state-rest-arg?s get-rest-arg)
           (split-partition-by
            (split-by-vector-values         ; block -> partition
-            case-lambda-state-argss        ; (any? . -> . list?)  ;  case-lambda -> args
-            get-number-args)               ; (integer? . -> . (any? . -> . any?))
+            case-lambda-state-argss        ; (any/c . -> . list?)  ;  case-lambda -> args
+            get-number-args)               ; (integer? . -> . (any/c . -> . any))
            (split-set get-number-exps cls)))) )))
-
+  
   )
 

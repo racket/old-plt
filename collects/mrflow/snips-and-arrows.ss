@@ -1,5 +1,5 @@
 
-(module snips-and-arrows mzscheme
+(module snips-and-arrows (lib "mrflow.ss" "mrflow")
   
   (require
    (lib "etc.ss")
@@ -9,13 +9,37 @@
    
    (prefix cst: "constants.ss")
    (prefix saav: "snips-and-arrows-view.ss")
+   "labels.ss"
    )
   
-  (provide
-   extend-all-editors-mixin
-   extend-top-editor-mixin
-   init-snips-and-arrows-gui
-   init-snips-and-arrows-gui-for-syntax-objects
+  (provide/contract
+   (extend-all-editors-mixin mixin-contract)
+   (extend-top-editor-mixin mixin-contract)
+   (init-snips-and-arrows-gui (text%?
+                               (label? . -> . text%?)
+                               (label? . -> . non-negative-exact-integer?)
+                               (label? . -> . non-negative-exact-integer?)
+                               ((listof label?) . -> . (listof (list/c label? label? string?)))
+                               (label? . -> . style-delta%?)
+                               ((is-a?/c popup-menu%) (listof label?) . -> . void?)
+                               (symbol? symbol? . -> . string?)
+                               (symbol? label? . -> . (listof string?))
+                               (listof (cons/c symbol? string?))
+                               boolean?
+                               . -> .
+                               (values ((listof (cons/c label? string?)) . -> . void?)
+                                       (label? . -> . void?))))
+   (init-snips-and-arrows-gui-for-syntax-objects (text%?
+                                                  ((listof syntax?) . -> . (listof (list/c syntax? syntax? string?)))
+                                                  (syntax? . -> . style-delta%?)
+                                                  ((is-a?/c popup-menu%) (listof syntax?) . -> . void?)
+                                                  (symbol? symbol? . -> . string?)
+                                                  (symbol? syntax? . -> . (listof string?))
+                                                  (listof (cons/c symbol? string?))
+                                                  boolean?
+                                                  . -> .
+                                                  (values ((listof (cons/c syntax? string?)) . -> . void?)
+                                                          (syntax? . -> . void?))))
    )
   
   (define-struct gui-state (; gui-view-state
@@ -39,7 +63,7 @@
                             ))
   
   ; MENUS
-  ; gui-state menu% (listof labels) symbol text% -> menu-item%
+  ; gui-state menu% (listof labels) symbol text% -> void
   ; creates a menu entry for a given snip type
   ; all labels correspond to the same term (because of macros)
   (define (create-snips-menu-item-by-type gui-state menu labels type editor)
@@ -70,7 +94,8 @@
               (lambda (item event)
                 (for-each (lambda (label)
                             (saav:add-snips gui-view-state label type editor))
-                          labels)))))))
+                          labels))))))
+    cst:void)
   
   ; gui-state menu% (listof label) -> menu-item%
   ; create menu entries for arrows
@@ -221,37 +246,33 @@
           (set! gui-state 'reinitialized-gui-state-in-extend-all-editors-mixin)
           (set! gui-view-state 'reinitialized-gui-view-state-in-extend-all-editors-mixin))
         
-        (rename [super-can-insert? can-insert?])
         ; exact-non-negative-integer exact-non-negative-integer -> boolean
-        (define/override (can-insert? start len)
+        (define/augment (can-insert? start len)
           (and (or (symbol? gui-state)
                    (and (gui-state-term-analysis-done? gui-state)
                         (is-action-allowed? gui-view-state this)))
-               (super-can-insert? start len)))
+               (inner #t can-insert? start len)))
         
-        (rename [super-can-delete? can-delete?])
         ; exact-non-negative-integer exact-non-negative-integer -> boolean
-        (define/override (can-delete? start len)
+        (define/augment (can-delete? start len)
           (and (or (symbol? gui-state)
                    (and (gui-state-term-analysis-done? gui-state)
                         (is-action-allowed? gui-view-state this)))
-               (super-can-delete? start len)))
+               (inner #t can-delete? start len)))
         
-        (rename [super-after-insert after-insert])
         ; exact-non-negative-integer exact-non-negative-integer -> void
-        (define/override (after-insert start len)
-          (super-after-insert start len)
+        (define/augment (after-insert start len)
           (unless (or (symbol? gui-state)
                       (saav:analysis-currently-modifying? gui-view-state))
-            (saav:after-user-action gui-view-state)))
+            (saav:after-user-action gui-view-state))
+          (inner cst:void after-insert start len))
         
-        (rename [super-after-delete after-delete])
         ; exact-non-negative-integer exact-non-negative-integer -> void
-        (define/override (after-delete start len)
-          (super-after-delete start len)
+        (define/augment (after-delete start len)
           (unless (or (symbol? gui-state)
                       (saav:analysis-currently-modifying? gui-view-state))
-            (saav:after-user-action gui-view-state)))
+            (saav:after-user-action gui-view-state))
+          (inner cst:void after-delete start len))
         
         (super-instantiate ()))))
   
@@ -275,37 +296,33 @@
         ; and call this method (if necessary) to initialize the editor's state, thereby
         ; allowing all the editors for a single analysis to share the same state (see
         ; the same method above too).
-        (rename [super-initialize-snips-and-arrows-gui-state initialize-snips-and-arrows-gui-state])
         (define/override (initialize-snips-and-arrows-gui-state new-gui-state)
-          (super-initialize-snips-and-arrows-gui-state new-gui-state)
+          (super initialize-snips-and-arrows-gui-state new-gui-state)
           (set! gui-state new-gui-state)
           (set! gui-view-state (gui-state-gui-view-state new-gui-state)))
         
         ; -> void
-        (rename [super-reset-snips-and-arrows-state reset-snips-and-arrows-state])
         (define/override (reset-snips-and-arrows-state)
-          (super-reset-snips-and-arrows-state)
+          (super reset-snips-and-arrows-state)
           (set! gui-state 'reinitialized-gui-state-in-extend-top-editor-mixin)
           (set! gui-view-state 'reinitialized-gui-view-state-in-extend-top-editor-mixin))
         
-        (rename [super-can-save-file? can-save-file?])
         ; string symbol -> boolean
         ; We forbid saving if the analysis is in the middle of running or in the middle
         ; of modifying the content of the editor
-        (define/override (can-save-file? filename format)
+        (define/augment (can-save-file? filename format)
           (if (symbol? gui-state)
-              (super-can-save-file? filename format)
+              (inner #t can-save-file? filename format)
               (if (and (gui-state-term-analysis-done? gui-state)
                        (not (saav:analysis-currently-modifying? gui-view-state)))
-                  (super-can-save-file? filename format)
+                  (inner #t can-save-file? filename format)
                   #f)))
         
-        (rename [super-save-file save-file])
         (define/override (save-file . args)
           (if (symbol? gui-state)
-              (super-save-file . args)
+              (super save-file . args)
               (saav:run-thunk-without-snips gui-view-state
-               (lambda () (super-save-file . args)))))
+               (lambda () (super save-file . args)))))
                   
         ; -> void
         ; colors all registered labels
@@ -324,10 +341,9 @@
               (saav:remove-all-colors known-editors)
               (saav:remove-all-snips-and-arrows-and-colors gui-view-state)))
         
-        (rename [super-on-paint on-paint])
         ; boolean dc% real real real real real real symbol -> void
         (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
-          (super-on-paint before? dc left top right bottom dx dy draw-caret)
+          (super on-paint before? dc left top right bottom dx dy draw-caret)
           (when (and (not (symbol? gui-state))
                      (not before?)
                      (gui-state-term-analysis-done? gui-state))
@@ -358,13 +374,12 @@
                             (values pos editor)))))))))
 
         (inherit get-admin)
-        (rename [super-on-event on-event])
         ; mouse-event% -> void
         (define/override (on-event event)
           (cond
             [(or (symbol? gui-state)
                  (not (gui-state-term-analysis-done? gui-state)))
-             (super-on-event event)]
+             (super on-event event)]
             [(and (send event button-down? 'right)
                   (let-values ([(pos editor) (get-drscheme-pos-and-editor event)])
                     (if pos
@@ -456,7 +471,7 @@
              (if (or (send event get-left-down)
                      (send event get-middle-down)
                      (send event get-right-down))
-                 (super-on-event event)
+                 (super on-event event)
                  (let*-values ([(pos editor) (get-drscheme-pos-and-editor event)]
                                [(labels)
                                 (if pos
@@ -480,7 +495,7 @@
                        ; added some (or both), so we redraw
                        (saav:invalidate-bitmap-cache gui-view-state))
                      (set-gui-state-previous-labels! gui-state labels))))]
-            [else (super-on-event event)]))
+            [else (super on-event event)]))
         
         (super-instantiate ()))))
   
@@ -533,7 +548,10 @@
       ; we need this to force the registration of the top editor, to make sure
       ; on-paint and on-event work correctly even when no label has been registered for
       ; the top editor itself.
-      (saav:register-editor-with-gui gui-view-state top-editor gui-state)
+      (saav:register-editor-with-gui
+       gui-view-state top-editor
+       (lambda (editor)
+         (send editor initialize-snips-and-arrows-gui-state gui-state)))
       
       (values
        ; (listof (cons label string)) -> void
@@ -543,7 +561,11 @@
        ; label -> void
        ; to register a label with the gui
        (lambda (label)
-         (saav:register-label-with-gui gui-view-state label gui-state)))))
+         (saav:register-label-with-gui
+          gui-view-state label
+          (lambda (editor)
+            (send editor initialize-snips-and-arrows-gui-state gui-state))))
+       )))
   
   ; SIMPLIFIED INTERFACE
   ; symbol -> void

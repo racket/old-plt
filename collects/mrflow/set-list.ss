@@ -10,12 +10,11 @@
 ;
 ; Note: lots of set! and tail-recursive loops in this code, for speed
 
-(module set-list mzscheme
+(module set-list (lib "mrflow.ss" "mrflow")
   (require
    (lib "list.ss") ; for foldr
    (lib "etc.ss") ; for opt-lambda
    "set-exn.ss" ; no prefix so we can re-provide
-   "dbg.ss"
    )
   
   ; table = (listof (cons value value))
@@ -31,7 +30,7 @@
    (set-set ((set? any/c) (boolean?) . opt-> . set?))
    (set-in? (set? any/c . -> . boolean?))
    (set-remove ((set? any/c) (boolean?) . opt-> . set?))
-   (set-cardinality (set? . -> . (and/c integer? (>=/c 0))))
+   (set-cardinality (set? . -> . non-negative-exact-integer?))
    (set-empty? (set? . -> . boolean?))
    (set-copy (set? . -> . set?))
    (set-map (set? (any/c . -> . any) . -> . (listof any/c)))

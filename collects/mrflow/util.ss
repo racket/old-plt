@@ -1,19 +1,18 @@
-(module util mzscheme 
+
+(module util  (lib "mrflow.ss" "mrflow")
   (require (prefix list: (lib "list.ss"))
            (lib "pretty.ss")
-           (lib "contract.ss")
            (lib "class.ss")
-           "dbg.ss"
            (prefix cst: "constants.ss"))
-
+  
   (provide (all-defined))
-
+  
   ;;
   ;; Number functions
   ;;
   (define natural? (lambda (n) (and (integer? n) (>= n 0))))
-
-
+  
+  
   ;;
   ;; List functions
   ;;
@@ -22,12 +21,12 @@
   
   (define nonempty-list-of?
     (lambda (p) (lambda (xs) (and (pair? xs) (andmap p xs)))))
-
+  
   (define unfold-onto
     (lambda (p f g seed onto)
       (if (p seed) onto
           (cons (f seed) (unfold-onto p f g (g seed) onto)))))
-
+  
   (define unfold
     (lambda (p f g seed)
       (unfold-onto p f g seed '())))
@@ -49,13 +48,13 @@
       (lambda (nums)
         (remove-duplicates (list:mergesort nums >)))))
   
-  (dbg-define/contract lol->vov ((listof (listof any?)) . -> . vector?)
+  (define/contract lol->vov ((listof (listof any/c)) . -> . vector?)
     (lambda (xss) (list->vector (map list->vector xss))))
   
   (define map2deep
     (lambda (f xss)
       (map (lambda (xs) (map f xs)) xss)))
-
+  
   (define no-duplicates?/c
     (flat-named-contract "List without duplicates"
                          (lambda (xs)
@@ -67,7 +66,7 @@
                                            (hash-table-put! tbl x #t))
                                          xs)
                                #t)))))
-
+  
   ;;
   ;; Vector functions
   ;;
@@ -76,18 +75,18 @@
       (let loop ([i 0])
         (if (= i (vector-length v)) init
             (f (vector-ref v i) (loop (add1 i)))))))
-
+  
   (define interval->list
     (lambda (v lo hi)
       (let loop ([i lo])
         (if (= i hi) '()
             (cons (vector-ref v i) (loop (add1 i)))))))
-
+  
   (define list->immutable-vector
     (lambda xs
       (apply vector-immutable xs)))
-
-  (dbg-define/contract map-vector ((any? . -> . any) vector? . -> . vector?)
+  
+  (define/contract map-vector ((any/c . -> . any) vector? . -> . vector?)
     (lambda (f v)
       (let* ([len (vector-length v)]
              [new-v (make-vector len #f)])
@@ -97,11 +96,11 @@
             (loop (add1 i))))
         new-v)))
   
-  (dbg-define/contract map-vector-of-vector ((any? . -> . any) (vectorof vector?) . -> . (vectorof vector?))
+  (define/contract map-vector-of-vector ((any/c . -> . any) (vectorof vector?) . -> . (vectorof vector?))
     (lambda (f vov)
       (map-vector (lambda (v) (map-vector f v)) vov)))
   
-  (dbg-define/contract for-each-vector ((any? . -> . any) vector? . -> . void?)
+  (define/contract for-each-vector ((any/c . -> . any) vector? . -> . void?)
     (lambda (f v)
       (let ([len (vector-length v)])
         (let loop ([i 0])
@@ -111,7 +110,7 @@
       cst:void))
   
   ; Replace each element e in a vector with (f e)
-  (dbg-define/contract for-each-vector! ((any? . -> . any) vector? . -> . vector?)
+  (define/contract for-each-vector! ((any/c . -> . any) vector? . -> . vector?)
     (lambda (f v)
       (let ([len (vector-length v)])
         (let loop ([i 0])
@@ -120,12 +119,12 @@
             (loop (add1 i)))))
       v))
   
-  (dbg-define/contract for-each-vov ((any? . -> . any) (vectorof (vectorof any?)) . -> . void?)
+  (define/contract for-each-vov ((any/c . -> . any) (vectorof (vectorof any/c)) . -> . void?)
     (lambda (f vov)
       (for-each-vector (lambda (v) (for-each-vector f v) v) vov)))
   
   ; Replace each element in a vector of vectors with (f e)
-  (dbg-define/contract for-each-vov! ((any? . -> . any) (vectorof (vectorof any?)) . -> . any)
+  (define/contract for-each-vov! ((any/c . -> . any) (vectorof (vectorof any/c)) . -> . any)
     (lambda (f vov)
       (for-each-vector! (lambda (v) (for-each-vector! f v) v) vov)
       vov))
@@ -156,66 +155,66 @@
     (lambda (pred vov)
       (vector-has? (lambda (v) (vector-has? pred v)) vov)))
   
-
+  
   ;;
   ;; Hash functions
   ;;
-
+  
   (define hash-table-size
     (lambda (h)
       (let ([size 0])
         (hash-table-for-each h (lambda (_ _2) (set! size (add1 size))))
         size)))
-
+  
   (define hash-table-empty?
     (lambda (h)
       (let/ec escape
         (hash-table-for-each h (lambda (k v) (escape #f)))
         #t)))
-
-  (dbg-define/contract hash-table-has-key? (hash-table? any? . -> . boolean?)
+  
+  (define/contract hash-table-has-key? (hash-table? any/c . -> . boolean?)
     (lambda (hash-table key)
       (if (hash-table-get hash-table key cst:thunk-false) #t #f)))
   
   ;; (hash-table key (list value)) key value -> (hash-table key (list value))
-  (dbg-define/contract hash-table-prepend! (hash-table? any? any? . -> . any)
+  (define/contract hash-table-prepend! (hash-table? any/c any/c . -> . any)
     (lambda (hash-table key value)
       (hash-table-put! hash-table key
                        (if (hash-table-has-key? hash-table key)
                            (cons value (hash-table-get hash-table key
-                                         (lambda () (error 'hash-table-prepend! "Could not prepend"))))
+                                                       (lambda () (error 'hash-table-prepend! "Could not prepend"))))
                            (list value)))))
-
+  
   ;;
   ;; Function functions
   ;; 
   (define (curry f)
     (lambda (x) (f x)))
-
+  
   ;;
   ;; Boolean functions
   ;;
   (define true?
     (lambda (x) (eq? x #t)))
-
+  
   ;;
   ;; Random functions
   ;; 
-
-  (dbg-define/contract numberify-symbol (symbol? integer? . -> . symbol?)
+  
+  (define/contract numberify-symbol (symbol? integer? . -> . symbol?)
     (lambda (sym x)
       (string->symbol (string-append (symbol->string sym) ":" (number->string x)))))
-
-  (dbg-define/contract numberify-list ((cons/p symbol? (listof any?)) integer? . -> . (cons/p symbol? (listof any?)))
+  
+  (define/contract numberify-list ((cons/c symbol? (listof any/c)) integer? . -> . (cons/c symbol? (listof any/c)))
     (lambda (syms x)
       (cons (numberify-symbol (car syms)) (cdr syms))))
   
-  (dbg-define/contract pretty-error (symbol? any? . -> . any)
+  (define/contract pretty-error (symbol? any/c . -> . any)
     (lambda (sym v)
       (let ([out (open-output-string)])
         (pretty-print v out)
         (error sym (get-output-string out)))))
-
+  
   (define andmap4-vector
     (lambda (f v0 v1 v2 v3)
       (let loop ([i 0])
@@ -252,18 +251,18 @@
         (if (= i (vector-length v0)) #f
             (or (f (vector-ref v0 i) (vector-ref v1 i) (vector-ref v2 i) (vector-ref v3 i))
                 (loop (add1 i)))))))
-    
-
+  
+  
   ;; Classes
-
+  
   (define counter%
     (class object%
       (init-field [start 0])
       (define count start)
-
+      
       (define/public get
         (lambda () count))
-
+      
       (define/public next!
         (lambda () (set! count (add1 count)) count))
       (super-new)))

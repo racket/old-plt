@@ -12,7 +12,7 @@
 ; This whole module can only deal with snips that are on the left of the label (see
 ; new-pos->old-pos and old-pos->new-pos for example).
 
-(module snips-and-arrows-model mzscheme
+(module snips-and-arrows-model (lib "mrflow.ss" "mrflow")
   (require
    (prefix lst: (lib "list.ss"))
    
@@ -21,36 +21,7 @@
    "set-hash.ss"
    ;"assoc-set-list.ss"
    "assoc-set-hash.ss"
-   )
-  
-  (provide
-   make-gui-model-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (listof symbol) (label label -> string) -> gui-model-state
-   
-   (rename get-related-labels-from-drscheme-new-pos-and-source
-           get-related-labels-from-drscheme-pos-and-source) ; gui-model-state non-negative-exact-integer top -> (listof label)
-   (rename gui-model-state-get-span-from-label
-           make-get-span-from-label-from-model-state) ; gui-model-state -> (label -> non-negative-exact-integer)
-   
-   for-each-source ; gui-model-state (top -> void) -> void
-   register-source-with-gui ; gui-model-state top -> top
-   is-source-registered? ; gui-model-state top -> boolean
-   
-   register-label-with-gui ; gui-model-state label -> (union top #f)
-   get-position-from-label ; gui-model-state label -> exact-non-negative-integer
-   user-change-terms ; gui-model-state (listof label) text% exact-integer -> (values non-negative-exact-integer non-negative-exact-integer)
-   for-each-label-in-source ; gui-model-state top (label -> void) -> void
-   
-   add-arrow ; gui-model-state (list label label string) boolean -> void
-   remove-arrows ; gui-model-state label (union symbol boolean) boolean -> void
-   remove-all-arrows ; gui-model-state -> void
-   for-each-arrow  ; gui-model-state (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean string -> void) -> void
-   get-tacked-arrows-from-label ; gui-model-state label -> non-negative-exact-integer
-   
-   for-each-snip-type ; gui-model-state (symbol -> void) -> void
-   label-has-snips-of-this-type? ; gui-model-state label symbol -> boolean
-   snips-currently-displayed-in-source? ; gui-model-state top -> boolean
-   add-snips ; gui-model-state label symbol top non-negative-exact-integer -> non-negative-exact-integer
-   remove-inserted-snips ; gui-model-state label symbol top -> (value non-negative-exact-integer non-negative-exact-integer)
+   "labels.ss"
    )
   
   ; DATA STRUCTURES
@@ -115,6 +86,45 @@
                                   ; (listof symbol)
                                   snip-type-list
                                   ))
+  
+  (provide/contract
+   (make-gui-model-state ((label? . -> . any)
+                          (label? . -> . non-negative-exact-integer?)
+                          (label? . -> . non-negative-exact-integer?)
+                          (listof symbol?)
+                          . -> . gui-model-state?))
+   (rename get-related-labels-from-drscheme-new-pos-and-source
+           get-related-labels-from-drscheme-pos-and-source
+           (gui-model-state? non-negative-exact-integer? any/c . -> . (listof label?)))
+   (rename gui-model-state-get-span-from-label
+           make-get-span-from-label-from-model-state
+           (gui-model-state? . -> . (label? . -> . non-negative-exact-integer?)))
+   
+   (for-each-source (gui-model-state? (any/c . -> . void?) . -> .void?))
+   (register-source-with-gui (gui-model-state? any/c . -> . any))
+   (is-source-registered? (gui-model-state? any/c . -> . boolean?))
+   
+   (register-label-with-gui (gui-model-state? label? . -> . any))
+   (get-position-from-label (gui-model-state? label? . -> . non-negative-exact-integer?))
+   (user-change-terms (gui-model-state?
+                       (listof label?)
+                       any/c
+                       non-negative-exact-integer?
+                       . -> . (values non-negative-exact-integer? non-negative-exact-integer?)))
+   (for-each-label-in-source (gui-model-state? any/c (label? . -> . void?) . -> . void?))
+   
+   (add-arrow (gui-model-state? (list/c label? label? string?) boolean? . -> . void?))
+   (remove-arrows (gui-model-state? label? (union symbol? boolean?) boolean? . -> . void?))
+   (remove-all-arrows (gui-model-state? . -> . void?))
+   (for-each-arrow (gui-model-state? (non-negative-exact-integer? non-negative-exact-integer? non-negative-exact-integer? non-negative-exact-integer? any/c any/c boolean? string? . -> . void?) . -> . void?))
+   (get-tacked-arrows-from-label (gui-model-state? label? . -> . non-negative-exact-integer?))
+   
+   (for-each-snip-type (gui-model-state? (symbol? . -> . void?) . -> . void?))
+   (label-has-snips-of-this-type? (gui-model-state? label? symbol? . -> . boolean?))
+   (snips-currently-displayed-in-source? (gui-model-state? any/c . -> . boolean?))
+   (add-snips (gui-model-state? label? symbol? any/c non-negative-exact-integer? . -> . non-negative-exact-integer?))
+   (remove-inserted-snips (gui-model-state? label? symbol? any/c . -> . (values non-negative-exact-integer? non-negative-exact-integer?)))
+   )
   
   ; (label -> top)
   ; (label -> non-negative-exact-integer)
@@ -303,7 +313,8 @@
         (assoc-set-for-each
          (source-gui-data-labels-by-mzscheme-position source-gui-data)
          (lambda (mzscheme-pos labels)
-           (for-each f labels))))))
+           (for-each f labels)))))
+    cst:void)
   
   
   ; POS AND SOURCE TO LABEL CONVERSIONS
@@ -542,7 +553,8 @@
                                               0
                                               (assoc-set-make)
                                               (make-starting-arrow-set)
-                                              (make-ending-arrow-set))))))
+                                              (make-ending-arrow-set)))))
+    cst:void)
   
   ; gui-model-state label (union symbol boolean) boolean -> void
   ; remove arrows starting at given label AND arrows ending at same given label
@@ -641,7 +653,8 @@
           (source-gui-data-label-gui-data-by-label source-gui-data)
           (lambda (label label-gui-data)
             (set-reset (label-gui-data-starting-arrows label-gui-data))
-            (set-reset (label-gui-data-ending-arrows label-gui-data))))))))
+            (set-reset (label-gui-data-ending-arrows label-gui-data)))))))
+    cst:void)
   
   ; gui-model-state
   ; (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean string -> void)
@@ -677,7 +690,8 @@
                                    start-source
                                    end-source
                                    (arrow-tacked? arrow)
-                                   (arrow-color arrow))))))))))))
+                                   (arrow-color arrow)))))))))))
+    cst:void)
   
   ; (gui-model-state label -> non-negative-exact-integer)
   ; counts how many arrows starting or ending at a given label are tacked

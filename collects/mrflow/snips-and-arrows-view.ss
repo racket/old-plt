@@ -1,5 +1,5 @@
 
-(module snips-and-arrows-view mzscheme
+(module snips-and-arrows-view (lib "mrflow.ss" "mrflow")
   (require
    (lib "class.ss")
    (lib "mred.ss" "mred")
@@ -13,38 +13,7 @@
    "set-hash.ss"
    ;"assoc-set-list.ss"
    "assoc-set-hash.ss"
-   )
-  
-  (provide
-   make-gui-view-state  ; text% (label -> text%) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (symbol label -> (listof string)) (label -> style-delta%) (listof (cons symbol style-delta%)) boolean -> gui-view-state
-   
-   (rename gui-view-state-analysis-currently-modifying? analysis-currently-modifying?) ; gui-view-state -> boolean
-   color-registered-labels ; gui-view-state (box (listof text%)) -> void
-   after-user-action ; gui-view-state -> void
-   
-   register-label-with-gui ; gui-view-state label gui-state -> void
-   register-editor-with-gui ; gui-view-state text% gui-state -> void
-   is-editor-registered? ; gui-view-state text% -> boolean
-   get-related-labels-from-drscheme-pos-and-editor ; gui-view-state non-negative-exact-integer text% -> (listof label)
-   user-change-terms ; gui-view-state (listof (cons label string)) -> void
-   
-   add-arrow ; gui-view-state (list label label string) boolean -> void
-   get-tacked-arrows-from-label ; gui-view-state label -> non-negative-exact-integer
-   remove-arrows ; gui-view-state label (union symbol boolean) boolean -> void
-   redraw-arrows ; gui-view-state dc% real real -> void
-   
-   invalidate-bitmap-cache ; gui-view-state -> void
-   
-   label-has-snips-of-this-type? ; gui-view-state label symbol -> boolean
-   snips-currently-displayed-in-editor? ; gui-view-state text% -> boolean
-   for-each-snip-type ; gui-view-state (symbol -> void) -> void
-   run-thunk-without-snips ; gui-view-state (-> top) -> top
-   add-snips ; gui-view-state label symbol text% -> void
-   remove-inserted-snips ; gui-view-state label symbol text% -> void
-   remove-all-snips-in-editor ; gui-view-state text% -> void
-   remove-all-snips-in-all-editors ; gui-view-state -> void
-   remove-all-colors ; (box (listof text%)) -> void
-   remove-all-snips-and-arrows-and-colors ; gui-view-state -> void
+   "labels.ss"
    )
   
   (define-struct gui-view-state (; gui-model-state
@@ -69,6 +38,48 @@
                                  ; boolean
                                  clear-colors-immediately?
                                  ))
+  
+  (provide/contract
+   (make-gui-view-state (text%?
+                         (label? . -> . text%?)
+                         (label? . -> . non-negative-exact-integer?)
+                         (label? . -> . non-negative-exact-integer?)
+                         (symbol? label? . -> . (listof string?))
+                         (label? . -> . style-delta%?)
+                         (listof (cons/c symbol? string?))
+                         boolean?
+                         . -> . gui-view-state?))
+   
+   (rename gui-view-state-analysis-currently-modifying?
+           analysis-currently-modifying?
+           (gui-view-state? . -> . boolean?))
+   (color-registered-labels (gui-view-state? (box/c (listof text%?)) . -> . void?))
+   (after-user-action (gui-view-state? . -> . void?))
+   
+   (register-label-with-gui (gui-view-state? label? (text%? . -> . void?) . -> . void?))
+   (register-editor-with-gui (gui-view-state? text%? (text%? . -> . void?) . -> . void?))
+   (is-editor-registered? (gui-view-state? text%? . -> . boolean?))
+   (get-related-labels-from-drscheme-pos-and-editor (gui-view-state? non-negative-exact-integer? text%? . -> . (listof label?)))
+   (user-change-terms (gui-view-state? (listof (cons/c label? string?)) . -> . void?))
+   
+   (add-arrow (gui-view-state? (list/c label? label? string?) boolean? . -> . void?))
+   (get-tacked-arrows-from-label (gui-view-state? label? . -> . non-negative-exact-integer?))
+   (remove-arrows (gui-view-state? label? (union symbol? boolean?) boolean? . -> . void?))
+   (redraw-arrows (gui-view-state? (is-a?/c dc<%>) real? real? . -> . void?))
+   
+   (invalidate-bitmap-cache (gui-view-state? . -> . void?))
+   
+   (label-has-snips-of-this-type? (gui-view-state? label? symbol? . -> . boolean?))
+   (snips-currently-displayed-in-editor? (gui-view-state? text%? . -> . boolean?))
+   (for-each-snip-type (gui-view-state? (symbol? . -> . void?) . -> . void?))
+   (run-thunk-without-snips (gui-view-state? (-> any) . -> . any))
+   (add-snips (gui-view-state? label? symbol? text%? . -> . void?))
+   (remove-inserted-snips (gui-view-state? label? symbol? text%? . -> . void?))
+   (remove-all-snips-in-editor (gui-view-state? text%? . -> . void?))
+   (remove-all-snips-in-all-editors (gui-view-state? . -> . void?))
+   (remove-all-colors ((box/c (listof text%?)) . -> . void?))
+   (remove-all-snips-and-arrows-and-colors (gui-view-state? . -> . void?))
+   )
   
   ; text%
   ; (label -> text%)
@@ -110,32 +121,26 @@
     (saam:get-related-labels-from-drscheme-pos-and-source
      (gui-view-state-gui-model-state gui-view-state) pos editor))
   
-  ; gui-view-state label gui-state -> void
-  ; registers a label with the gui. We need to pass the whole gui-state as an argument because
-  ; we'll need to initialize the editor's state the first time we see that editor, to make
-  ; sure all editor are sharing the same state.  Note that we can't give just gui-state as
-  ; an argument and extract gui-view-state from it, because we need the gui-state-gui-view-state
-  ; function to do that which means this module would depend on the snips-and-arrows one, thereby
-  ; creating a loop in the module dependencies...
+  ; gui-view-state label (text% -> void) -> void
+  ; registers a label with the gui. We also need to initialize the editor's state the first time
+  ; we see that editor, to make sure all editors are sharing the same state.
   ; Note that we could color the label as we go, thereby having incremental coloring as we
   ; analyze terms, but that turns out to be *very* slow, because the editor has to be unlocked
   ; (because of disable-evalution), the style changed, the editor re-lock and the bitmap cache
   ; invalidated for each label in turn.  It would also possibly not show all the arrows for a
   ; given label while the analysis is still going on.
-  (define (register-label-with-gui gui-view-state label gui-state)
+  (define (register-label-with-gui gui-view-state label init-editor)
     (let ([editor (saam:register-label-with-gui (gui-view-state-gui-model-state gui-view-state) label)])
-      (when editor
-        (send editor initialize-snips-and-arrows-gui-state gui-state)))
+      (when editor (init-editor editor)))
     cst:void)
   
-  ; gui-view-state text% gui-state -> void
-  ; Same as above, except that we register a editor instead of a label.  We use this to always
+  ; gui-view-state text% (text% -> void) -> void
+  ; Same as above, except that we register an editor instead of a label.  We use this to always
   ; register the top editor (see comment in make-register-label-with-gui in
   ; snips-and-arrows.ss).
-  (define (register-editor-with-gui gui-view-state editor gui-state)
+  (define (register-editor-with-gui gui-view-state editor init-editor)
     (let ([editor (saam:register-source-with-gui (gui-view-state-gui-model-state gui-view-state) editor)])
-      (when editor
-        (send editor initialize-snips-and-arrows-gui-state gui-state)))
+      (when editor (init-editor editor)))
     cst:void)
   
   ; gui-view-state text% -> boolean

@@ -8,11 +8,10 @@
 ;   or assoc-set-difference with two sets that don't use the same comparaison
 ;   function: you might end up with duplicate keys in some sets.
 
-(module assoc-set-hash mzscheme
+(module assoc-set-hash (lib "mrflow.ss" "mrflow")
   (require
    (lib "etc.ss") ; for opt-lambda
    "assoc-set-exn.ss" ; no prefix so we can re-provide
-   "dbg.ss"
    (prefix cst: "constants.ss")
    )
   
@@ -30,7 +29,7 @@
    (assoc-set-get ((assoc-set? any/c) ((-> any)) . opt-> . any))
    (assoc-set-in? (assoc-set? any/c . -> . boolean?))
    (assoc-set-remove ((assoc-set? any/c) (boolean?) . opt-> . assoc-set?))
-   (assoc-set-cardinality (assoc-set? . -> . (and/c integer? (>=/c 0))))
+   (assoc-set-cardinality (assoc-set? . -> . non-negative-exact-integer?))
    (assoc-set-empty? (assoc-set? . -> . boolean?))
    (assoc-set-copy (assoc-set? . -> . assoc-set?))
    (assoc-set-map (assoc-set? (any/c any/c . -> . any) . -> . (listof any/c)))

@@ -8,11 +8,10 @@
 ;   or set-difference with two sets that don't use the same comparaison
 ;   function: you might end up with duplicate values in some sets.
 
-(module set-hash mzscheme
+(module set-hash (lib "mrflow.ss" "mrflow")
   (require
    (lib "etc.ss") ; for opt-lambda
    "set-exn.ss" ; no prefix so we can re-provide
-   "dbg.ss"
    )
   
   ; table = (hashtableof value value)
@@ -28,7 +27,7 @@
    (set-set ((set? any/c) (boolean?) . opt-> . set?))
    (set-in? (set? any/c . -> . boolean?))
    (set-remove ((set? any/c) (boolean?) . opt-> . set?))
-   (set-cardinality (set? . -> . (and/c integer? (>=/c 0))))
+   (set-cardinality (set? . -> . non-negative-exact-integer?))
    (set-empty? (set? . -> . boolean?))
    (set-copy (set? . -> . set?))
    (set-map (set? (any/c . -> . any) . -> . (listof any/c)))

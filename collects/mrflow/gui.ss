@@ -9,6 +9,7 @@
    (lib "mred.ss" "mred")
    (prefix fw: (lib "framework.ss" "framework"))
    (prefix strcst: (lib "string-constant.ss" "string-constants"))
+   (prefix bit: (lib "bitmap-label.ss" "mrlib"))
    
    (prefix cst: "constants.ss")
    (prefix sba: "constraints-gen-and-prop.ss")
@@ -59,7 +60,7 @@
       
       
       (define mrflow-bitmap
-        (drscheme:unit:make-bitmap
+        (bit:bitmap-label-maker
          (strcst:string-constant mrflow-button-title)
          (build-path (collection-path "icons") "mrflow-small.bmp")))
       
@@ -161,22 +162,19 @@
        (lambda (super%)
          (class super%
            (inherit get-definitions-text)
-           (rename [super-clear-annotations clear-annotations])
            ; -> void
            (define/override (clear-annotations)
-             (super-clear-annotations)
+             (super clear-annotations)
              (send (get-definitions-text) remove-all-snips-and-arrows-and-colors))
            
-           (rename [super-enable-evaluation enable-evaluation])
            ; -> void
-           (define/override (enable-evaluation)
-             (super-enable-evaluation)
+           (define/augment (enable-evaluation)
+             (inner cst:void enable-evaluation)
              (send analyze-button enable #t))
            
-           (rename [super-disable-evaluation disable-evaluation])
            ; -> void
-           (define/override (disable-evaluation)
-             (super-disable-evaluation)
+           (define/augment (disable-evaluation)
+             (inner cst:void disable-evaluation)
              (send analyze-button enable #f))
            
            (super-instantiate ())
@@ -255,7 +253,7 @@
                       ; is not called here, but is called internally inside
                       ; init-snips-and-arrows-gui
                       (disable-evaluation)
-                      (super-clear-annotations)
+                      (super clear-annotations)
                       
                       ; note: we have to do this each time, because the user might have changed
                       ; the language between analyses.

@@ -1,12 +1,12 @@
-(module trie mzscheme
+
+(module trie (lib "mrflow.ss" "mrflow")
   (require (prefix list: (lib "list.ss"))
            (prefix cst: "constants.ss")
-
+           
            "dfa.ss"
            "types.ss"
-           "util.ss"
-           "dbg.ss")
-
+           "util.ss")
+  
   ;; DFA Tries - Allows for testing of a DFA being previously hashconsed
   ;;             in Theta(|DFA|) time. 
   (provide (struct trie ())
@@ -29,12 +29,12 @@
 	    (old-make-trie '() (make-hash-table 'equal)))))
   
   ; Get the trie on the edge labeled by the DFA state
-  (dbg-define/contract get-trie-child (trie? state? . -> . (union trie? false?))
+  (define/contract get-trie-child (trie? state? . -> . (union trie? false/c))
     (lambda (trie letter)
       (hash-table-get (trie-dfa-state->trie trie) letter cst:thunk-false)))
   
   ; Each DFA state added to the trie must map to a unique handle. 
-  (dbg-define/contract add-trie-state-handle!
+  (define/contract add-trie-state-handle!
     (trie? handle? handle? . ->d .
            (lambda (trie representative-handle state-handle)
              (let ([dfa->handle (trie-dfa-representative->handle trie)])
@@ -49,12 +49,12 @@
         (set-trie-dfa-representative->handle! trie (cons (cons representative-handle state-handle) dfa->handle))
         trie)))
   
-  (dbg-define/contract get-state-handle (trie? handle? . -> . handle?)
+  (define/contract get-state-handle (trie? handle? . -> . handle?)
     (lambda (trie representative-handle)
       (let ([dfa-representative->handle (trie-dfa-representative->handle trie)])
         (cdr (assq representative-handle dfa-representative->handle)))))
   
-  (dbg-define/contract get-handle-from-representative
+  (define/contract get-handle-from-representative
     (trie? . ->d .
            (lambda (trie)
              (let ([dfa->handle (trie-dfa-representative->handle trie)])
@@ -74,8 +74,8 @@
   ; representative).  As we are descending we note which of the tries
   ; contains the start state.  Getting the representative handle, we
   ; can lookup the handle of the start state in this noted trie.
-  (dbg-define/contract dfa-present?
-    (trie? (nonempty-list-of? state?) . -> . (union false? (listof handle?)))
+  (define/contract dfa-present?
+    (trie? (nonempty-list-of? state?) . -> . (union false/c (listof handle?)))
     (lambda (trie nstates) 
       (let/ec return-with
         (let* ([rev-tries (list:foldl (lambda (state tries)
@@ -91,7 +91,7 @@
                       '() (cdr (reverse rev-tries)))))))
   
   ; Add a list of DFA states and their corresponding handles to the trie
-  (dbg-define/contract add-dfa-states
+  (define/contract add-dfa-states
     (trie? (nonempty-list-of? state?) (listof handle?) . ->d .
            (lambda (trie states handles)
              (unless (= (length states) (length handles))
@@ -120,5 +120,5 @@
             (loop (add-child trie (car states) representative-handle (car handles))
                   (cdr states)
                   (cdr handles)))))))
-
+  
   ) ;; end module trie

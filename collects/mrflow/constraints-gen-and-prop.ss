@@ -3,7 +3,7 @@
 ; label is used for tunneling (see create-simple-edge below).
 ; (define-type edge (label label label -> boolean))
 
-(module constraints-gen-and-prop mzscheme
+(module constraints-gen-and-prop (lib "mrflow.ss" "mrflow")
   (require (prefix kern: (lib "kerncase.ss" "syntax"))
            (prefix list: (lib "list.ss"))
            (prefix etc: (lib "etc.ss"))
@@ -13,7 +13,6 @@
            "labels.ss"
            "types.ss"
            "set-hash.ss"
-           "dbg.ss"
            (prefix util: "util.ss")
            (prefix hc: "hashcons.ss")
            (prefix cst: "constants.ss")
@@ -35,23 +34,6 @@
    get-source-from-label
    get-arrows-from-labels
    )
-  
-;  (define-syntax debug1
-;    (let ([counter 1])
-;      (lambda (stx)
-;        (syntax-case stx ()
-;          [(_ args ...)
-;           (begin
-;             (printf "debug counter: ~a~n" counter)
-;             (let* ([stx-args (syntax (args ...))]
-;                    [stx-args-list (syntax-e stx-args)]
-;                    [stx-out (datum->syntax-object
-;                              stx-args
-;                              `(begin
-;                                 (printf "debug: ~a~n" ,counter)
-;                                 ,stx-args))])
-;               (set! counter (add1 counter))
-;               stx-out))]))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
@@ -4172,8 +4154,8 @@
             (hash-table-put! table type-name new-type-entry)
             (car new-type-entry)))))
   
-  (dbg-define/contract subt
-    (sba-state? hc:hashcons-table? handle? handle? any? set? ;(listof (cons/p handle? handle?))
+  (define/contract subt
+    (sba-state? hc:hashcons-table? handle? handle? any/c set? ;(listof (cons/p handle? handle?))
                 . -> . boolean?)
     (let ([subtyping-table
            (let ([table (make-hash-table)])
@@ -4360,15 +4342,15 @@
                 subtype-value))))))
   
   ; called when t2 is a (flow var free) type instead of a handle
-  (dbg-define/contract subtype-type
-    (sba-state? handle? hc:hashcons-type? any? boolean? (union false? label?) . -> . boolean?)
+  (define/contract subtype-type
+    (sba-state? handle? hc:hashcons-type? any/c boolean? (union false/c label?) . -> . boolean?)
     (lambda (sba-state t1-handle t2 delta-flow error? label)
       (subtype sba-state t1-handle
                (hc:hashcons-type (sba-state-hashcons-tbl sba-state) t2)
                delta-flow error? label)))
   
-  (dbg-define/contract subtype
-    (sba-state? handle? handle? any? boolean? (union false? label?) . -> . boolean?)
+  (define/contract subtype
+    (sba-state? handle? handle? any/c boolean? (union false/c label?) . -> . boolean?)
     (lambda (sba-state t1-handle t2-handle delta-flow error? label)
       (if (subt sba-state (sba-state-hashcons-tbl sba-state) t1-handle t2-handle delta-flow (set-make 'equal))
           #t
@@ -4907,7 +4889,7 @@
   ;                )
   ;              files))
   
-  (dbg-define/contract subst-vals/flow-vars (type? any? . -> . type?)
+  (define/contract subst-vals/flow-vars (type? any/c . -> . type?)
     (lambda (type delta-flow)
       (let subst ([type type])
         (match type

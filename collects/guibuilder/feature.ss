@@ -271,7 +271,7 @@
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (define frame this)
+	     (define this-snip this)
 	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (override*
@@ -286,10 +286,10 @@
 				 label controls
 				 (lambda (c e)
 				   (set-tagged-value tag (send c get-value))
-				   (change-cb frame this)
+				   (change-cb this this-snip)
 				   (gb-need-recalc-size)))])
 	       (send c set-value (get-tagged-value tag))
-	       (init-cb frame this)))]
+	       (init-cb this this-snip)))]
 	  [write
 	   (lambda (stream)
 	     (super write stream)
@@ -322,7 +322,6 @@
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (define frame this)
 	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)

@@ -30,6 +30,11 @@ contrib/pgcrypto must be installed. For example, append to data/pg_hba.conf:
 The username `csu211' must be able to connect to the database `homework' with 
 no password.
 
+********************
+NOTE: To make more secure change `csu211' in backend.ss and reconfigure database
+appropriately.
+
+
 To create the tables, use the file etc/tables.sql as follows:
 
  psql -h $DB_HOSTNAME -p $PORT -U csu211 homework < tables.sql

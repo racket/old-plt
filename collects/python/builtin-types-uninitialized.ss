@@ -42,6 +42,9 @@
   (define py-exception% (immutable-type #cs'Exception))
   (define py-type-error% (immutable-type #cs'TypeError py-exception%))
   (define py-assert-error% (immutable-type #cs'AssertError py-exception%))
+  (define py-index-error% (immutable-type #cs'IndexError py-exception%))
+  (define py-system-error% (immutable-type #cs'SystemError py-exception%))
+  (define py-future-warning% (immutable-type #cs'FutureWarning py-exception%))
   
   ;; files
   (define py-file% (immutable-type 'file))

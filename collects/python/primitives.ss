@@ -2,32 +2,34 @@
   (require (lib "list.ss")
            (lib "etc.ss")
            "python-node.ss"
-           "builtin-types-uninitialized.ss")
+           "builtin-types-uninitialized.ss"
+           "python-import.ss"
+           )
   (provide (all-defined)
            (all-from "python-node.ss")
            (all-from "builtin-types-uninitialized.ss"))
-  
+
   (define python-runtime-debugging? false)
-  
+
   (define dprintf
     (if python-runtime-debugging?
         (lambda (format . args)
           (apply printf
                  (cons format args)))
         (lambda (f . a) (if #f #f))))
-  
+
   (dprintf "1~n")
 
-  
+
   (define-struct (exn:not-found exn) () (make-inspector))
   (define-struct (exn:python exn) (type value) (make-inspector))
-  
+
   (define python-current-exception
     (let ([current-exception (make-exn:python "" (current-continuation-marks) #f #f)])
       (case-lambda
         [() current-exception]
         [(exn) (set! current-exception exn)])))
-  
+
   ; py-raise: (union #f py-type%) (union #f python-node) (union #f py-traceback%) ->
   (define (py-raise type obj traceback)
     (unless type
@@ -70,7 +72,7 @@
                                  exn-value)])
       (python-current-exception exn)
       (raise exn)))
-  
+
   ;; there are four special cases in this function.
   (define python-get-member
     (opt-lambda (obj member-name [wrap? #t] [orig-call? #t])
@@ -123,11 +125,11 @@
                           (python-wrap-member member obj py-none)
                           (python-wrap-member member (python-node-type obj) obj))
                       member))))])))
-  
-  
+
+
   (define (py-function%->procedure f)
     (python-get-member f scheme-procedure-key #f))
-  
+
   (define procedure->py-function%
     (opt-lambda (proc [name #f] [pos '()] [key '()] [seq #f] [dict #f])
       (let ([fn (python-new-object py-function%)])
@@ -142,42 +144,42 @@
 
   (define (py-string%-init this value)
     (python-set-member! this scheme-string-key value))
-  
+
   (define (string->py-string% s)
     (let ([ps (python-new-object py-string%)])
       (py-string%-init ps s)
       ps))
-  
+
   (define (py-string%->string ps)
     (python-get-member ps scheme-string-key #f))
-  
+
   (define (py-string%->symbol ps)
     (string->symbol (py-string%->string ps)))
-  
+
   (define (symbol->py-string% s)
     (string->py-string% (symbol->string s)))
-  
+
   (define (list->py-tuple% l)
     (py-create py-tuple% l))
-  
+
   (define (py-tuple%->list pt)
     (python-get-member pt scheme-list-key #f))
-  
+
   (define (py-list%->list pl)
     (python-get-member pl scheme-list-key #f))
-  
+
   (define (list->py-list% l)
     (py-create py-list% l))
-  
+
   (define (py-number%->number pn)
     (python-get-member pn scheme-number-key #f))
-  
+
   (define (hash-table->py-dict% ht)
     (py-create py-dict% ht))
-  
+
   (define (py-dict%->hash-table pd)
     (python-get-member pd scheme-hash-table-key #f))
-  
+
   (define (assoc-list->py-dict% al)
     (hash-table->py-dict% (assoc-list->hash-table al)))
 
@@ -187,37 +189,37 @@
       [(py-is? x py-none) #f]
       [else (with-handlers ([exn:not-found? (lambda (exn) #t)])
               (py-object%->bool (python-method-call x '__len__)))]))
-  
-  
+
+
   (define (bool->py-number% x)
     (number->py-number% (if x 1 0)))
-  
+
 
   (define (py-sequence%->list s)
     (cond
       [(py-is-a? s py-list%) (py-list%->list s)]
       [(py-is-a? s py-tuple%) (py-tuple%->list s)]
       [else (error (format "~a is not a sequence" (py-object%->string s)))]))
-  
+
   ;; python-set-name!: py-object% symbol ->
   (define (python-set-name! obj name)
     (python-set-member! obj '__name__ (if (symbol? name)
                                           (symbol->py-string% name)
                                           name)))
-  
+
   (define (py-function%-init this)
     (void))
-  
+
 
   (define (py-file%->port pf)
     (python-get-member pf scheme-port-key #f))
-  
-  
+
+
   ;; py-is?: python-object python-object -> bool
   ;; determine whether two objects are the same exact thing
   (define py-is? eq?)
-  
-  
+
+
   ;; python-new-static-method: py-type% -> py-static-method%
   ;; "allocate" a new static-method object
   (define (python-new-static-method class)
@@ -231,8 +233,8 @@
 
   (define (py-type? node)
     (py-is? (python-node-type node) py-type%))
-  
-  
+
+
   ;; python-get-bases: py-object% -> (listof py-type)
   (define (python-get-bases obj)
     (if (py-type? obj)
@@ -242,16 +244,16 @@
                                                   (python-get-type-name obj)
                                                   "has no bases!"))))
         (list (python-node-type obj))))
-    
+
   ;; python-get-bases*: py-object% -> (listof py-type%)
   (define (python-get-bases* obj)
     (let ([bases (python-get-bases obj)])
       (if (null? bases)
           bases
           (apply append bases (map python-get-bases* bases)))))
-  
-  
-  
+
+
+
   ;; py-is-a? python-object py-type% -> bool
   (define (py-is-a? obj class)
     (unless (py-type? class)
@@ -265,20 +267,20 @@
                      ;;(py-is-a? base class))
                      bases))
           #t #f)))
-  
-  
+
+
   (define (py-static-method%-init this function-to-wrap)
 ;    (unless (py-is-a? function-to-wrap py-function%)
 ;      (error (format "staticmethod.__init__: ~a is not a function"
 ;                     (py-object%->string function-to-wrap))))
     (python-set-member! this 'static-method-function
                         function-to-wrap))
-  
+
   (define (py-function%->py-static-method% fn)
     (let ([sm (python-new-static-method py-static-method%)])
       (py-static-method%-init sm fn)
       sm))
-  
+
   (define (py-classmethod%-new class)
     (unless (or (py-is? class py-classmethod%)
                 (py-is-a? class py-classmethod%))
@@ -287,23 +289,23 @@
     (let ([cm (python-new-object class)])
       (python-set-member! cm 'classmethod-function #f)
       cm))
-  
+
   (define (py-classmethod%-init this function-to-wrap)
     (python-set-member! this 'classmethod-function
                         function-to-wrap))
-  
+
   (define (py-function%->py-classmethod% fn)
     (let ([cm (py-classmethod%-new py-classmethod%)])
       (py-classmethod%-init cm fn)
       cm))
-  
+
   (define py-bad-new (py-function%->py-static-method%
                       (procedure->py-function%
                        (lambda (which-class)
                          (error "Cannot create instances of "
                                 (py-object%->string which-class)))
                        '|bad\__new__/bad|)))
-  
+
   (dprintf "2~n")
   (python-add-members py-function%
                       `((__new__ ,py-bad-new)
@@ -315,17 +317,17 @@
   (python-set-member! py-object% '__new__ (py-function%->py-static-method%
                                            (procedure->py-function% python-new-object
                                                                     '__new__)))
-  
+
   (dprintf "3~n")
-  
+
   (define (number->py-number% num)
     (py-create (cond
                  [(integer? num) py-int%]
                  [(real? num) py-float%]
                  [else (error "The runtime system does not support the number" num)])
                num))
-  
-  
+
+
   ;; py-call: py-object%(X ... -> Y) arg-list -> ?
   (define py-call
     (opt-lambda (functor arg-list [kw-args '()])
@@ -408,7 +410,7 @@
                (cons obj init-args))
       (dprintf "DEBUG: python-create-object initialized~n")
       obj))
-  
+
   ;; create a new type
   (define (python-create-type name base-types member-dict)
     (let ([type (py-call (python-get-member py-type% '__new__)
@@ -416,8 +418,8 @@
       (py-call (python-get-member py-type% '__init__ #f)
                (list type name base-types member-dict))
       type))
-  
-  
+
+
   ;; py-create: py-type X ... -> py-object%
   ;; create a new instance of a type
   #|  (define (py-create class . init-args)
@@ -427,17 +429,17 @@
           obj))
   |#
   (define py-create python-create-object)
-  
-  
 
-  
+
+
+
   ;; python-get-name: py-object% -> py-string%
   (define (python-get-name obj)
     (cond
       [(py-is-a? obj py-method%) (python-get-name (python-get-member obj 'im_func false))]
       [else (python-get-member obj '__name__ false)]))
-  
-  
+
+
   ;; py-object%->string: py-object% -> string
   (define (py-object%->string x)
     (cond
@@ -511,33 +513,33 @@
                                        (py-string%->string (python-get-name x))
                                        (py-string%->string (python-get-member x '__file__ #f)))]
       [else (format "<~a object>" (py-string%->string (python-get-type-name (python-node-type x))))]))
-  
+
   (define (python-get-attribute obj attr-sym)
    ; (printf "python-get-attribute is looking for ~a~n" attr-sym)
     (python-method-call obj
                         (python-get-member (python-node-type obj) '__getattribute__)
                         (list (symbol->py-string% attr-sym))))
-  
+
   (define (python-set-attribute! obj attr-sym value)
     (python-method-call obj
                         (python-get-member (python-node-type obj) '__setattr__)
                         (list (symbol->py-string% attr-sym)
                               value)))
-  
+
   ;; python-get-type-name: py-type% -> py-string%
   (define (python-get-type-name type)
     (unless (py-type? type)
       (error "Not a type:" (py-object%->string type)))
     (python-get-member type '__name__))
-  
+
   (define (assoc-list->hash-table al)
     (let ([hash-table (make-hash-table)])
       (for-each (lambda (assoc)
                   (hash-table-put! hash-table (car assoc) (cadr assoc)))
                 al)
       hash-table))
-  
-  
+
+
   ;; python-index: (union py-list% py-tuple% py-dict%) number -> py-object%
   (define (python-index indexable index)
 ;    (python-method-call indexable '__getitem__ (list index)))
@@ -551,15 +553,15 @@
                                           index)))]))
        ;(error (format "python-index: cannot index into this: ~a"
        ;                    (py-object%->string indexable)))]))
-  
-  
+
+
   (define (has-member? class member-name)
     (with-handlers ([exn? (lambda (exn) #f)])
       (python-get-member class member-name #f)
       #t))
-  
 
-  
+
+
   ;; py-compatible-exn? py-object% exn:python -> bool
   ;; determine whether obj (from a try/except clause) matches the thrown exception
   (define (py-compatible-exn? obj exn)
@@ -572,8 +574,8 @@
                       (py-compatible-exn? item exn))
                     (py-tuple%->list obj)))))
 
-  
-  
+
+
   ;;(union procedure py-function% py-classmethod% py-static-method%) class instance
   ;;  ->
   ;;    (union py-method% py-function%)
@@ -606,7 +608,7 @@
   ;; py-repr: python-node -> py-string%
   (define py-repr (lambda (x)
                     (string->py-string% (py-object%->string x))))
-  
+
   ;; python-method-call: python-object (U symbol py-method%) (listof X) (listof (cons Symbol X) -> ?
   (define python-method-call
     (opt-lambda (obj method [pos-args '()] [key-args '()])
@@ -623,12 +625,12 @@
                      pos-args
                      (cons obj pos-args)) ; add the object to the arg-list for unbound methods or scheme procs
                  key-args))))
-  
-  
+
+
   (dprintf "4~n")
-  
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; new forms for introducing procedures ;;;;;;;;;;;;;;;;;;;;;
-  
+
   (define-syntax py-lambda
     (lambda (stx)
       (syntax-case stx ()
@@ -643,8 +645,8 @@
                       (lambda (#,@(syntax (arg ...)) . (syntax rest-args))
                         #,(syntax (expr ...)))
                       #,(syntax name))])))
-  
-  
+
+
   (define-syntax py-opt-lambda
     (lambda (stx)
       (syntax-case stx ()
@@ -654,27 +656,27 @@
                         (opt-lambda #,(syntax (arg ...))
                           #,@expr-stx)
                         #,(syntax name)))])))
-  
-  
+
+
   (dprintf "5~n")
-  
+
   ;;;;;;;;;;;;;;; complete the basic types now ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  
+
   (python-add-members py-static-method%
                       `((__new__ ,(py-function%->py-static-method%
                                    (procedure->py-function% python-new-static-method
                                                             'python-new-static-method)))
                         (__init__ ,py-static-method%-init)))
-  
+
   (python-add-members py-classmethod%
                       `((__new__ ,(py-function%->py-static-method%
                                    (procedure->py-function% py-classmethod%-new
                                                             'py-classmethod%-new)))
                         (__init__ ,py-classmethod%-init)))
-  
+
   (dprintf "6~n")
-  
+
   (python-add-members py-object%
                       `((__init__ ,(procedure->py-function% (lambda (this) (void))
                                                             '__init__))
@@ -688,12 +690,12 @@
 ;                      `((__getattribute__ ,python-get-member)
 ;                        (__setattr__ ,python-set-member!)))
   (dprintf "7~n")
-  
+
   (define (py-bin-op op)
     (lambda (lhs rhs)
       (number->py-number% (apply-bin-op op lhs rhs))))
-  
-  
+
+
   (define (apply-bin-op op lhs rhs)
     (let ([check (lambda (obj)
                    (unless (py-is-a? obj py-number%)
@@ -704,7 +706,7 @@
       (check rhs))
     (op (py-number%->number lhs)
         (py-number%->number rhs)))
-  
+
   (define (py-mult-num lhs rhs)
     (cond
       [(and (py-is-a? lhs py-number%)
@@ -720,12 +722,12 @@
                       (format "cannot multiply ~a and ~a"
                               (py-object%->string lhs)
                               (py-object%->string rhs)))]))
-  
+
   (define (repeat-string s n)
     (if (zero? n)
         ""
         (string-append s (repeat-string s (sub1 n)))))
-  
+
   (python-add-members py-number%
                       `((__init__ ,(lambda (this v)
                                      (python-set-member! this scheme-number-key v)))
@@ -736,28 +738,28 @@
                         (__mod__ ,(py-bin-op modulo))
                         (__neg__ ,(lambda (this)
                                     (number->py-number% (- (py-number%->number this)))))))
-  
-  
+
+
   (python-add-members py-string%
                       `((__init__ ,(procedure->py-function% py-string%-init))
                         (__add__ ,(py-lambda '+ (this s)
                                           (string->py-string% (string-append (py-string%->string this)
                                                                                (py-string%->string s)))))
                         (__mul__ ,py-mult-num)))
-  
+
   (python-add-members py-none%
                       `((__init__ ,(lambda (this)
                                      (error "Cannot create"
                                             (python-get-type-name py-none%)
                                             "instances")))))
-  
+
   (python-add-members py-slice%
                       `((__init__ ,(opt-lambda (this lower upper [step py-none])
                                      (python-set-member! this 'start lower)
                                      (python-set-member! this 'stop upper)
                                      (python-set-member! this 'step step)))))
-  
-  
+
+
   (python-add-members py-exception%
                       `((__init__ ,(lambda (this . args)
                                      (python-set-member! this 'args
@@ -766,17 +768,17 @@
                                                  (python-method-call (python-get-member this 'args #f)
                                                                      '__getitem__
                                                                      (list key))))))
-  
+
   (define py-none (make-python-node py-none% (make-hash-table) #f))
-  
+
   (define (py-none? obj) (py-is? obj py-none))
-  
+
   (define (python-method-bound? method)
     (not (py-is? (python-get-member method 'im_self)
                  py-none)))
-  
+
   (dprintf "8~n")
-  
+
   (python-add-members py-method%
                       `((__init__ ,(opt-lambda (this fun class [self py-none])
                                      (python-set-member! this 'im_class class)
@@ -809,7 +811,7 @@
                         (im_func ,py-none) ; py-procedure%
                         (im_self ,py-none))) ; py-object%
   (dprintf "9~n")
-  
+
   (python-add-members py-tuple%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (cond
@@ -837,7 +839,7 @@
                                                  (simple-set-item this key value py-tuple%->list)))
                         (__len__ ,(py-lambda '__len__ (this)
                                              (number->py-number% (length (py-tuple%->list this)))))))
-  
+
   (python-add-members py-list%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
@@ -849,7 +851,7 @@
                                                  (simple-set-item this key value py-list%->list)))
                         (__len__ ,(py-lambda '__len__ (this)
                                              (number->py-number% (length (py-list%->list this)))))))
-                                                                          
+
 
   (define (simple-set-item this key value sequence-to-list)
     ;(printf "SIMPLE-SET-ITEM~n")
@@ -871,7 +873,7 @@
          (error "I refuse to assign to slices right now, try again later"))]
       [else (error "Invalid key for __setitem__")])
     (printf "SIMPLE-SET-ITEM finished, sequence is now: ~a~n" (py-object%->string this)))
-  
+
   (define (simple-get-item this key list-to-sequence sequence-to-list)
     (cond
       [(py-is-a? key py-number%)
@@ -896,7 +898,7 @@
                (build-list (floor (/ (- stop start) step))
                            (lambda (i) (* (+ i start) step))))))]
       [else (error "Invalid key for __getitem__")]))
-  
+
   (python-add-members py-dict%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
@@ -909,8 +911,8 @@
                                                                                     scheme-hash-table-key
                                                                                     false)
                                                                   (->scheme key))))))
-  
-  
+
+
   (python-add-members py-module%
                       `((__getattribute__ ,(py-lambda '__getattribute__ (this key)
                                            (parameterize ([current-namespace
@@ -926,21 +928,21 @@
                                                            (py-module%->namespace this)])
                                              (namespace-set-variable-value! (py-string%->symbol key)
                                                                             value))))))
-  
+
   ; turn a scheme namespace into a python module
   (define namespace->py-module%
     (opt-lambda (namespace [name ""] [path ""])
       (let ([module (python-create-object py-module%)])
-        (python-set-member! module '__name__ (symbol->py-string% name))
+        (python-set-member! module '__name__ (string->py-string% name))
         (python-set-member! module '__file__ (string->py-string% path))
         (python-set-member! module scheme-namespace-key namespace)
         module)))
-  
+
   (define (py-module%->namespace module)
     (python-get-member module scheme-namespace-key #f))
-                                                 
-  
-  
+
+
+
   ;; more setup for PY-TYPE
 ;  (python-set-member! py-type% '__new__ python-new-object)
   (python-set-member! py-type% '__init__
@@ -965,13 +967,13 @@
                         [(this obj) (python-node-type obj)]
                         [(this name base-types member-dict)
                          (python-create-type name base-types member-dict)]))
-                         
-  
-  
+
+
+
   (define py-true (py-create py-int% 1))
   (define py-false (py-create py-int% 0))
-  
- 
+
+
   ;;; convert python objects to scheme objects through dynamic dispatch
   (define python-to-scheme-method (gensym 'python-to-scheme-method))
   (for-each (lambda (t&fn)
@@ -987,11 +989,11 @@
               (,py-function% ,py-function%->procedure)
               (,py-module% ,py-module%->namespace)
               (,py-none% ,void)))
-  
+
   (define (->scheme py-obj)
     (py-call (python-get-member py-obj python-to-scheme-method)
              null))
-  
+
   (define (->python sxp)
     (cond
       [(number? sxp) (number->py-number% sxp)]
@@ -1003,7 +1005,7 @@
       [(void? sxp) py-none]
       [else (error (format "Don't know how to make this a python object: ~a"
                            sxp))]))
-  
+
   (define-syntax (define-pfn stx)
     (syntax-case stx ()
       [(_ pfn (arg ...) sfn) (let ([args (syntax->list (syntax (arg ...)))])
@@ -1012,8 +1014,8 @@
                                    (->python (apply sfn
                                                     (map ->scheme
                                                          (list #,@args)))))))]))
-                                                         
-  
+
+
   (define (python-add-extension-method method-name)
     (printf "python-add-extension-method: adding ~a~n" method-name)
     (namespace-set-variable-value! (string->symbol method-name)
@@ -1023,5 +1025,17 @@
                                             (cons method-name
                                                   arg-list))))
     (printf "python-add-extension-method: added ~a~n" method-name))
-  
+
+  ;; py-ext-init-module: string -> py-module%
+  ;; create a new python module, put it in the current namespace, and return it
+  (define (py-ext-init-module name)
+    (let ([mod (namespace->py-module% (make-python-namespace) name)])
+      (namespace-set-variable-value! #cs(string->symbol name)
+                                     mod)
+      mod))
+
+  (define (py-ext-module-add-object pymod name obj)
+    (parameterize ([current-namespace (py-module%->namespace pymod)])
+      (namespace-set-variable-value! #cs(string->symbol name) obj)))
+
   )

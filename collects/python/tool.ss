@@ -110,7 +110,8 @@
                (error-display-handler 
                 (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
                (current-eval 
-                (add-annotation (drscheme:debug:make-debug-eval-handler (current-eval))))
+                ;(add-annotation (drscheme:debug:make-debug-eval-handler (current-eval))))
+                (drscheme:debug:make-debug-eval-handler (current-eval)))
                ;(drscheme:debug:test-coverage-enabled #t)
                (init-python-namespace (current-namespace)))))
 ;            (dynamic-require '(lib "base.ss" "python") #f)

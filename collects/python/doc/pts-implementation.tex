@@ -75,7 +75,7 @@ Language: Python.
 {'test': 4} 
 \end{verbatim}
 
-The right behavior is emulated by converting the function definition into the following Scheme code, where \verb|procedure->py-function%| takes a procedure, its name, and its argument names to produce an object representing the Python function:
+This behavior is emulated by converting the function definition into the following Scheme code, where \verb|procedure->py-function%| takes a procedure, its name, and its argument names to produce an object representing the Python function:
 
 \begin{verbatim}
 (define f
@@ -166,7 +166,7 @@ Notice the \scm{let-values} form wrapping the member field value.  In Python, at
 30         'm (list 'this 'x) null #f #f))))))))
 \end{verbatim}
 
-Though a class definition is compiled as though it were the result of a function call being bound to a variable (the class name), it is not compiled as though it were a Python assignment statement.  We turn now to the process of generating Scheme code for those.
+Though a class definition is compiled as though it were the result of a function call being bound to a variable (the class name), it is not compiled as though it were any Python assignment statement such as \verb|classname = type(classname, parents, members)|.  It is currently treated as a simple special case of assignments (one target and no tuples), but in the future the class emitter might be removed in favor of translating class statements into assignment ASTs.  We turn now to the process of generating Scheme code for those.
 
 \subsubsection{Variable Assignments}
 
@@ -232,8 +232,30 @@ A function is applied through \scm{py-call} (Section~\ref{pycall}).  The functio
 \subsubsection{Importing Modules}
 \label{import}
 
-In order to import a Python module at runtime---and, in fact, to initialize the environment at startup---the runtime system creates a new MzScheme namespace and populates it with the built-in Python library.  The runtime system then compiles the requested file and evaluates it in this new namespace.  Finally, new bindings are introduced in the original namespace for the necessary values.  For example, when evaluating the statement \verb{import popen from os}, only the binding for \verb{popen} is copied into the original namespace from the new one.  In Figure~\ref{simpleimportfig}, squares represent both Python modules and Scheme namespaces, and the arrow reprents the values to be copied from one namespace to another.
+In order to import a Python module at runtime---and, in fact, to initialize the environment at startup---the runtime system creates a new MzScheme namespace and populates it with the built-in Python library.  The runtime system then compiles the requested file and evaluates it in this new namespace.  Finally, new bindings are introduced in the original namespace for the necessary values.  For example, when evaluating the statement \verb{import popen from os}, only the binding for \verb{popen} is copied into the original namespace from the new one.  In Figure~\ref{simpleimportfig}, squares represent both Python modules and Scheme namespaces, and the arrow represents the values to be copied from one namespace to another.
 
+Since \verb|import m| only copies over a reference to module m and its namespace, references to values in module m, such as \verb|m.x|, are shared between modules importing m.  However, a statement of the form \verb|from m import x| copies the value of x into the current module namespace.  There is no sharing in this case, as shown by the following listings:
+
+\begin{verbatim}
+### module  b.py
+x = 3
+
+### module  a.py
+from b import x
+import b
+
+print "b.x:", b.x
+print "x:", x
+x = 13
+print "b.x", b.x
+print "x", x
+
+### output of running a.py
+b.x: 3
+x: 3
+b.x 3
+x 13
+\end{verbatim}
 
 \begin{figure}
 	\caption{import popen from os}
@@ -258,7 +280,7 @@ There are two special attributes not stored in the object dictionary:
 \item \verb{__class__} refers to the object's type.
 \end{enumerate} 
 
-Though an object's type is its \verb{__class__} attribute, a type's type is always the built-in \verb{type} object, and its parent classes are found in its \verb{__bases__} attribute.  Base types inherit from the built-in type \verb{object} (Figure~\ref{simpleclassfig}).  This is what the Python programmer envisions when writing Python code.
+Though an object's type is its \verb{__class__} attribute, a class's type is always the built-in \verb{type} object, and its parent classes are found in its \verb{__bases__} attribute.  Base types inherit from the built-in type \verb{object} (Figure~\ref{simpleclassfig}).  This is the hierarchy in the Python programmer's mind when writing Python code.
 
 Internally, all Python objects, types and instances alike, are represented by the \scm{python-node} data structure (Figure~\ref{simpleinternalrepresentationfig}).  This is the Scheme encoding of Python objects, and the hierarchy from Figure~\ref{simpleclassfig} is emulated by storing an object's type (in the Python sense) in a field (called \scm{parent}) of the Scheme structure.  The convention adopted by the runtime system has been to name each Python type \verb{py-}\emph{name}\%{}, where \emph{name} is the Python type (e.g., the Python \verb{object} type is named \verb{py-object%} in the runtime system).
 
@@ -296,12 +318,14 @@ This function converts a Scheme string into a Python string.
 
 This function accepts a Scheme procedure, a function name symbol, a list of positional argument names, a list of optional argument names, a rest-argument name (or false), and a dictionary argument name (or false).  It returns a Python function object, which is internally a \scm{python-node} with its parent field set to \scm{py-function%} (another \scm{python-node} object, this one representing the Python \verb{function} type object).
 
+This function is used by the runtime system to wrap internal functions (such as the built-in \emph{repr}) as Python functions and by the compiler in the generated Scheme code for function definitions.
+
 \subsubsection{python-get-member}
 \label{pythongetmember}
 
-This function takes a Python object, an attribute name (as a symbol), and an optional flag.  It extracts and returns the value associated with the given attribute name in the object's dictionary.  If no such attribute is found, the object's parent classes are searched in the same manner.  Once there are no more parent classes to search, the Python \verb{AttributeError} is raised.
+This function takes a Python object, an attribute name (as a symbol), and an optional flag.  It extracts and returns the value associated with the given attribute name in the object's dictionary.  If no such attribute is found, the object's parent classes are searched in the same manner.  Once there are no more parent classes to search, the Python \verb{AttributeError} exception is raised.
 
-When the optional flag is set to \scm{true}, \scm{py-function%} objects are wrapped inside \scm{py-method%} objects, which, as per the Python language specification, contain attributes referring to the wrapped function, owner class, and possibly owner object.  The flag's default value is \scm{true}.
+When the optional flag is set to \scm{true}, \scm{py-function%} objects are wrapped inside \scm{py-method%} objects, which, as per the Python language specification, contain attributes referring to the wrapped function, owner class, and possibly owner object.  This allows the Python programmer to assign \verb|some_object.some_method| to a variable \verb|m|, which, when applied, will invoke \verb|some_method| with \verb|some_object| as its first argument.  The flag's default value is \scm{true}.
 
 \subsubsection{python-get-attribute}
 
@@ -315,9 +339,9 @@ Sets a specified attribute in the object's dictionary to the given value.
 
 \subsubsection{python-method-call}
 
-This function accepts a Python object, an attribute name, and a list of arguments.  It fetches the method named by the attribute argument and applies it, passing the object argument as the first argument before the supplied argument list.
+This function accepts a Python object, an attribute name, and a list of arguments.  It fetches the method named by the attribute argument and applies it, passing the object argument as the first argument before the supplied argument list.  It is a shorthand for calling \verb|py-call| without explicitly fetching a method from an object.
 
 \subsubsection{py-call}
 \label{pycall}
 
-This function accepts a callable object and list of arguments to return the result of its application.  A callable object is either a Python \verb{function} object, a Python object implementing a \verb{__call__} method, or a Scheme procedure.  When the input is an object implementing a \verb{__call__} method, that method is extracted and passed to a recursive call to \scm{py-call}.  When the input is a Python function object, it is converted to a Scheme procedure and passed to a recursive call to \scm{py-call}.  When the input is a Scheme procedure, it is applied.
+This function accepts two arguments: a callable object and list of Python values.  The callable object is applied with those values as its arguments, and this application's result is returned as the result of \verb|py-call|.  A callable object is either a Python \verb{function} object, a Python object implementing a \verb{__call__} method, or a Scheme procedure.  When the input is an object implementing a \verb{__call__} method, that method is extracted as a Python function object and passed to a recursive call to \scm{py-call}.  When the input is a Python function object, it is converted to a Scheme procedure and passed to a recursive call to \scm{py-call}.  When the input is a Scheme procedure, it is applied.

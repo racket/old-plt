@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.34 1997/07/21 15:51:43 shriram Exp $
+; $Id: x.ss,v 1.35 1997/08/23 23:22:04 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -219,8 +219,8 @@
 		(static-error expr
 		  (vocabulary-record-ilist-error vocab))))))
 	(else
-	  (static-error expr
-	    "Invalid body")))))
+	  (internal-error expr
+	    "Invalid body: ~s" expr)))))
 
   (define zodiac-user-parameterization (current-parameterization))
 

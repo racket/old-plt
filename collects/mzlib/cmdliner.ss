@@ -147,11 +147,24 @@
 				      ""
 				      " [ <flag> ... ]"))
 			 (print-args sp finish-help finish)
-			 (fprintf sp "~n where <flag> is one of~n ")
+			 (fprintf sp "~n where <flag> is one of~n")
 			 (for-each
 			  (lambda (set)
 			    (for-each
 			     (lambda (line)
+			       (fprintf sp (cond
+					    [(and (eq? (car set) 'once-any) 
+						  (pair? (cddr set)))
+					     (cond
+					      [(eq? line (cadr set)) "/"]
+					      [(eq? line (let loop ([l set])
+							   (if (pair? (cdr l))
+							       (loop (cdr l))
+							       (car l)))) "\\"]
+					      [else "|"])]
+					    [(eq? (car set) 'multi)
+					     "*"]
+					    [else " "]))
 			       (let loop ([flags (car line)])
 				 (let ([flag (car flags)])
 				   (fprintf sp " ~a" flag)
@@ -159,11 +172,15 @@
 				 (unless (null? (cdr flags))
 					 (fprintf sp ",")
 					 (loop (cdr flags))))
-			       (fprintf sp " : ~a~n " (caaddr line)))
+			       (fprintf sp " : ~a~n" (caaddr line)))
 			     (cdr set)))
 			  table) ; the original table
-			 (fprintf sp " --help, -h : Show this help~n")
+			 (fprintf sp "  --help, -h : Show this help~n")
 			 (fprintf sp "  -- : Do not treat any remaining argument as a flag (at this level)~n")
+			 (when (assq 'multi table)
+			   (fprintf sp " Asterisks on the left mark flags allowed multiple times.~n"))
+			 (when (assq 'once-any table)
+			   (fprintf sp " Brackets on the left show mutually exclusive flags.~n"))
 			 (fprintf sp " Multiple single-letter flags can be combined after one `-'.~n E.g.: `-h-' is the same as `-h --'~n")
 			 (help (get-output-string sp))))
 		     (list "Help")))

@@ -34,7 +34,7 @@
 
 /* globals */
 int scheme_locale_on;
-static const char *current_locale_name = "";
+static const char *current_locale_name = "C";
 
 /* locals */
 static Scheme_Object *make_string (int argc, Scheme_Object *argv[]);
@@ -1542,7 +1542,7 @@ void scheme_reset_locale(void)
   if (scheme_locale_on) {
     name = SCHEME_STR_VAL(v);
 
-    if ((current_locale_name != name) && !strcmp(current_locale_name, name)) {
+    if ((current_locale_name != name) && strcmp(current_locale_name, name)) {
 #ifndef DONT_USE_LOCALE
       /* We only need CTYPE and COLLATE; two calls seem to be much
 	 faster than one call with ALL */

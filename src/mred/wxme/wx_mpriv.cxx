@@ -2330,7 +2330,8 @@ void wxMediaEdit::Redraw()
       refreshAll = FALSE;
       height = bottom - top;
       width = right - left;
-      admin->NeedsUpdate(left, top, width, height);
+      if ((width > 0) && (height > 0))
+	admin->NeedsUpdate(left, top, width, height);
     }
   }
 
@@ -2438,7 +2439,7 @@ void wxMediaEdit::Redraw()
     flowLocked = fl;
   }
 
-  if (needs_update)
+  if (needs_update && (width > 0) && (height > 0))
     admin->NeedsUpdate(left, top, width, height);
 }
 

@@ -1876,11 +1876,13 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
   }
 
   if (updateTop != updateBottom || updateLeft != updateRight) {
-    /* Bizarre MSVC bug: if we inline w & h, h is wrong */
+    /* Bizarre MSVC bug: if we inline w & h and skip the > 0 test, 
+       h is wrong */
     float w = updateRight - updateLeft + 1;
     float h = updateBottom - updateTop + 1;
 
-    admin->NeedsUpdate(updateLeft, updateTop, w, h);
+    if ((w > 0) && (h > 0))
+      admin->NeedsUpdate(updateLeft, updateTop, w, h);
   }
 }
 

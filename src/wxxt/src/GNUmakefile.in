@@ -211,37 +211,37 @@ clean::
 # dependencies
 #------------------------------------------------------------------------------
 
-$(srcdir)/XWidgets/xwArrow.c $(srcdir)/XWidgets/xwArrow.h: $(xwArrow.w.dep)
+$(srcdir)/XWidgets/xwArrow.c $(srcdir)/XWidgets/xwArrow.h: $(srcdir)/XWidgets/xwArrow.w
 	$(WBUILD) $(xwArrow.w.dep)
-$(srcdir)/XWidgets/xwBoard.c $(srcdir)/XWidgets/xwBoard.h: $(xwBoard.w.dep)
+$(srcdir)/XWidgets/xwBoard.c $(srcdir)/XWidgets/xwBoard.h: $(srcdir)/XWidgets/xwBoard.w
 	$(WBUILD) $(xwBoard.w.dep)
-$(srcdir)/XWidgets/xwButton.c $(srcdir)/XWidgets/xwButton.h: $(xwButton.w.dep)
+$(srcdir)/XWidgets/xwButton.c $(srcdir)/XWidgets/xwButton.h: $(srcdir)/XWidgets/xwButton.w
 	$(WBUILD) $(xwButton.w.dep)
-$(srcdir)/XWidgets/xwCanvas.c $(srcdir)/XWidgets/xwCanvas.h: $(xwCanvas.w.dep)
+$(srcdir)/XWidgets/xwCanvas.c $(srcdir)/XWidgets/xwCanvas.h: $(srcdir)/XWidgets/xwCanvas.w
 	$(WBUILD) $(xwCanvas.w.dep)
-$(srcdir)/XWidgets/xwCommon.c $(srcdir)/XWidgets/xwCommon.h: $(xwCommon.w.dep)
+$(srcdir)/XWidgets/xwCommon.c $(srcdir)/XWidgets/xwCommon.h: $(srcdir)/XWidgets/xwCommon.w
 	$(WBUILD) $(xwCommon.w.dep)
-$(srcdir)/XWidgets/xwEnforcer.c $(srcdir)/XWidgets/xwEnforcer.h: $(xwEnforcer.w.dep)
+$(srcdir)/XWidgets/xwEnforcer.c $(srcdir)/XWidgets/xwEnforcer.h: $(srcdir)/XWidgets/xwEnforcer.w
 	$(WBUILD) $(xwEnforcer.w.dep)
-$(srcdir)/XWidgets/xwFrame.c $(srcdir)/XWidgets/xwFrame.h: $(xwFrame.w.dep)
+$(srcdir)/XWidgets/xwFrame.c $(srcdir)/XWidgets/xwFrame.h: $(srcdir)/XWidgets/xwFrame.w
 	$(WBUILD) $(xwFrame.w.dep)
-$(srcdir)/XWidgets/xwGroup.c $(srcdir)/XWidgets/xwGroup.h: $(xwGroup.w.dep)
+$(srcdir)/XWidgets/xwGroup.c $(srcdir)/XWidgets/xwGroup.h: $(srcdir)/XWidgets/xwGroup.w
 	$(WBUILD) $(xwGroup.w.dep)
-$(srcdir)/XWidgets/xwHScrollb.c $(srcdir)/XWidgets/xwHScrollb.h: $(xwHScrollb.w.dep)
+$(srcdir)/XWidgets/xwHScrollb.c $(srcdir)/XWidgets/xwHScrollb.h: $(srcdir)/XWidgets/xwHScrollb.w
 	$(WBUILD) $(xwHScrollb.w.dep)
-$(srcdir)/XWidgets/xwLabel.c $(srcdir)/XWidgets/xwLabel.h: $(xwLabel.w.dep)
+$(srcdir)/XWidgets/xwLabel.c $(srcdir)/XWidgets/xwLabel.h: $(srcdir)/XWidgets/xwLabel.w
 	$(WBUILD) $(xwLabel.w.dep)
-$(srcdir)/XWidgets/xwRowCol.c $(srcdir)/XWidgets/xwRowCol.h: $(xwRowCol.w.dep)
+$(srcdir)/XWidgets/xwRowCol.c $(srcdir)/XWidgets/xwRowCol.h: $(srcdir)/XWidgets/xwRowCol.w
 	$(WBUILD) $(xwRowCol.w.dep)
-$(srcdir)/XWidgets/xwScrollWin.c $(srcdir)/XWidgets/xwScrollWin.h: $(xwScrollWin.w.dep)
+$(srcdir)/XWidgets/xwScrollWin.c $(srcdir)/XWidgets/xwScrollWin.h: $(srcdir)/XWidgets/xwScrollWin.w
 	$(WBUILD) $(xwScrollWin.w.dep)
-$(srcdir)/XWidgets/xwScrollbar.c $(srcdir)/XWidgets/xwScrollbar.h: $(xwScrollbar.w.dep)
+$(srcdir)/XWidgets/xwScrollbar.c $(srcdir)/XWidgets/xwScrollbar.h: $(srcdir)/XWidgets/xwScrollbar.w
 	$(WBUILD) $(xwScrollbar.w.dep)
-$(srcdir)/XWidgets/xwSlider2.c $(srcdir)/XWidgets/xwSlider2.h: $(xwSlider2.w.dep)
+$(srcdir)/XWidgets/xwSlider2.c $(srcdir)/XWidgets/xwSlider2.h: $(srcdir)/XWidgets/xwSlider2.w
 	$(WBUILD) $(xwSlider2.w.dep)
-$(srcdir)/XWidgets/xwToggle.c $(srcdir)/XWidgets/xwToggle.h: $(xwToggle.w.dep)
+$(srcdir)/XWidgets/xwToggle.c $(srcdir)/XWidgets/xwToggle.h: $(srcdir)/XWidgets/xwToggle.w
 	$(WBUILD) $(xwToggle.w.dep)
-$(srcdir)/XWidgets/xwVScrollb.c $(srcdir)/XWidgets/xwVScrollb.h: $(xwVScrollb.w.dep)
+$(srcdir)/XWidgets/xwVScrollb.c $(srcdir)/XWidgets/xwVScrollb.h: $(srcdir)/XWidgets/xwVScrollb.w
 	$(WBUILD) $(xwVScrollb.w.dep)
  
 Application/AppMain.o:\

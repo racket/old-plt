@@ -319,7 +319,7 @@
           ;;execute-types: type-record 
           (define execute-types (create-type-record))
           
-          (define/public (front-end/complete-program input settings)
+          (define/public (front-end/complete-program input settings teachpack-cache)
             (set! execute-types (create-type-record))
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
@@ -369,7 +369,7 @@
                                  (set! modules (cdr mods))
                                  syn))))))))))))
           
-          (define/public (front-end/interaction input settings)
+          (define/public (front-end/interaction input settings teachpack-cache)
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
                             (parse-error-port (lambda ()

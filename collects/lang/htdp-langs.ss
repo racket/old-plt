@@ -244,7 +244,7 @@ not to forget: teachpakcs
             (get-htdp-style-delta))
           
           (inherit get-reader set-printing-parameters)
-          (define/override (front-end/complete-program input settings)
+          (define/override (front-end/complete-program input settings teachpacks)
             (let-values ([(port source offset line col) (drscheme:language:open-program-for-reading input)])
               (let ([state 'init]
                     [reader (get-reader)])
@@ -259,11 +259,7 @@ not to forget: teachpakcs
                                             (cons result (loop)))))]
                                    [language-module (get-module)]
                                    [(require-specs ...) 
-                                    (let ([rep (drscheme:rep:current-rep)])
-                                      (if rep
-                                          (drscheme:teachpack:teachpack-cache-require-specs 
-                                           (send rep get-user-teachpack-cache))
-                                          '()))])
+                                    (drscheme:teachpack:teachpack-cache-require-specs teachpacks)])
                        (set! state 'require)
                        (let ([mod (expand (syntax (module #%htdp language-module 
                                                     (require require-specs ...)

@@ -185,7 +185,6 @@ please adhere to these guidelines:
  (cs-status-coloring-program "Check Syntax: coloring expression")
  (cs-status-eval-compile-time "Check Syntax: eval compile time")
  (cs-status-expanding-expression "Check Syntax: expanding expression")
- (cs-status-teachpacks "Check Syntax: installing teachpacks")
  (cs-mouse-over-variable-import "variable ~s imported from ~s")
  (cs-mouse-over-syntax-import "syntax ~s imported from ~s")
 

@@ -26,7 +26,6 @@
   (define status-coloring-program (string-constant cs-status-coloring-program))
   (define status-eval-compile-time (string-constant cs-status-eval-compile-time))
   (define status-expanding-expression (string-constant cs-status-expanding-expression))
-  (define status-teachpacks (string-constant cs-status-teachpacks))
   
   (define mouse-over-variable-import (string-constant cs-mouse-over-variable-import))
   (define mouse-over-syntax-import (string-constant cs-mouse-over-syntax-import))
@@ -1046,7 +1045,6 @@
                              (syncheck:clear-highlighting)
                              (cleanup)
                              (custodian-shutdown-all user-custodian)))))]
-                     [teachpacks (fw:preferences:get 'drscheme:teachpacks)]
                      [init-proc
                       (lambda () ; =user=
                         (set-breakables (current-thread) (current-custodian))
@@ -1064,8 +1062,6 @@
                            (lambda (exn)
                              (uncaught-exception-raised)
                              (oh exn))))
-                        (update-status-line 'drscheme:check-syntax status-teachpacks)
-                        (drscheme:teachpack:install-teachpacks teachpacks)
                         (update-status-line 'drscheme:check-syntax status-expanding-expression)
                         (set! user-custodian (current-custodian))
 			(set! user-directory (current-directory)) ;; set by set-directory above

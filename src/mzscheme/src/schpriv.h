@@ -322,7 +322,7 @@ scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env,
 void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b);
 Scheme_Bucket *scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add);
 
-void scheme_copy_from_original_env(Scheme_Env *env);
+void scheme_import_from_original_env(Scheme_Env *env);
 
 /*========================================================================*/
 /*                              structs                                   */
@@ -400,11 +400,13 @@ Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
 Scheme_Object *scheme_make_module_rename();
-void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
-				 Scheme_Object *locname, Scheme_Object *exname);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
+
+void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
+				 Scheme_Object *locname, Scheme_Object *exname);
+void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b);

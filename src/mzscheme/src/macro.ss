@@ -80,7 +80,7 @@
 			  '(cdr (syntax->datum mexpr)))
 			 'mexpr
 			 '(quote-syntax here)))))
-       expr #f))))
+       expr (quote-syntax here)))))
 
 > kstop define-macro <
 

@@ -48,10 +48,9 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
    - A pair (cons (vector <sym> <stx> <sym-or-#f>) v) is a lexical rename
                           env   var   var-resolved
                                       #f => not yet computed
-   - A pair (cons (box (list mrename ...)) v) is a module rename
-       where an mrename is (vector <sym> <sym-or-#f> <sym-or-#f>)
-                                   mod   var         ex
-                                         #f => self  #f => self
+   - A pair (cons <hash-table> v) is a module rename set
+         the hash table maps renamed syms to modname-srcname pairs,
+         and maps #f to a default module name mapping
 
    For object with sub-syntax:
 
@@ -225,7 +224,7 @@ Scheme_Object *scheme_make_rename(Scheme_Object *name, Scheme_Object *newname)
 
 Scheme_Object *scheme_make_module_rename()
 {
-  return scheme_box(scheme_null);
+  return (Scheme_Object *)scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
 }
 
 void scheme_extend_module_rename(Scheme_Object *mrn,
@@ -233,16 +232,28 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname, 
 				 Scheme_Object *exname)
 {
-  Scheme_Object *v, *l;
+  scheme_add_to_table((Scheme_Hash_Table *)mrn, (const char *)localname,
+		      scheme_make_pair(modname, exname), 0);
+}
 
-  v = scheme_make_vector(3, NULL);
-  SCHEME_VEC_ELS(v)[0] = modname;
-  SCHEME_VEC_ELS(v)[1] = localname;
-  SCHEME_VEC_ELS(v)[2] = exname;
+void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
+{
+  Scheme_Hash_Table *ht, *hts;
+  Scheme_Bucket **bs, *b;
+  int i;
 
-  l = SCHEME_PTR_VAL(mrn);
-  l = scheme_make_pair(v, l);
-  SCHEME_PTR_VAL(mrn) = l;
+  ht = (Scheme_Hash_Table *)dest;
+  hts = (Scheme_Hash_Table *)src;
+  
+  /* Mappings in src overwrite mappings in dest: */
+
+  bs = hts->buckets;
+  for (i = hts->size; i--; ) {
+    b = bs[i];
+    if (b && b->val) {
+      scheme_add_to_table(ht, b->key, b->val, 0);
+    }
+  }
 }
 
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
@@ -365,11 +376,11 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
     /* Skip over renames: */
     while (!SCHEME_NULLP(awl)
 	   && (SCHEME_VECTORP(SCHEME_CAR(awl))
-	       || SCHEME_BOXP(SCHEME_CAR(awl))))
+	       || SCHEME_HASHTP(SCHEME_CAR(awl))))
       awl = SCHEME_CDR(awl);
     while (!SCHEME_NULLP(bwl)
 	   && (SCHEME_VECTORP(SCHEME_CAR(bwl))
-	       || SCHEME_BOXP(SCHEME_CAR(bwl))))
+	       || SCHEME_HASHTP(SCHEME_CAR(bwl))))
       bwl = SCHEME_CDR(bwl);
 
     /* Either at end? Then the same only if both at end. */
@@ -400,21 +411,21 @@ static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
 	rename_stack = SCHEME_CDR(rename_stack);
       }
       return result;
-    } else if (SCHEME_BOXP(SCHEME_CAR(wraps)) && !lexonly) {
+    } else if (SCHEME_HASHTP(SCHEME_CAR(wraps)) && !lexonly) {
       /* Module rename: */
-      Scheme_Object *l = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+      Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
+      Scheme_Object *rename;
 
-      while (!SCHEME_NULLP(l)) {
-	Scheme_Object *rename, *renamed;
-	
-	rename = SCHEME_CAR(l);
-	renamed = SCHEME_VEC_ELS(rename)[1];
-	if ((SCHEME_FALSEP(renamed) || SAME_OBJ(renamed, SCHEME_STX_VAL(a)))) {
-	  /* Match: set result for the case of no lexical capture: */
-	  result = SCHEME_VEC_ELS(rename)[0];
-	  break;
+      rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
+      if (rename) {
+	/* Match: set result for the case of no lexical capture: */
+	result = SCHEME_CAR(rename);
+      } else {
+	rename = scheme_lookup_in_table(ht, (const char *)scheme_false);
+	if (rename) {
+	  /* Match on default: */
+	  result = SCHEME_CAR(rename);
 	}
-	l = SCHEME_CDR(l);
       }
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
@@ -449,26 +460,27 @@ static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
 static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
+  Scheme_Object *result;
+
+  result = always ? SCHEME_STX_VAL(a) : NULL;
 
   while (1) {
     if (SCHEME_NULLP(wraps))
-      return always ? SCHEME_STX_VAL(a) : NULL; /* top-level */
-    else if (SCHEME_BOXP(SCHEME_CAR(wraps))) {
-      /* Rename: */
-      Scheme_Object *l = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+      return result; /* top-level */
+    else if (SCHEME_HASHTP(SCHEME_CAR(wraps))) {
+      /* Module rename: */
+      Scheme_Hash_Table *ht = (Scheme_Hash_Table *)SCHEME_CAR(wraps);
+      Scheme_Object *rename;
 
-      while (!SCHEME_NULLP(l)) {
-	Scheme_Object *rename = SCHEME_CAR(l);
-	Scheme_Object *renamed = SCHEME_VEC_ELS(rename)[1];
-	
-	if (SCHEME_FALSEP(renamed) || SAME_OBJ(SCHEME_STX_VAL(a), renamed)) {
-	  if (SCHEME_FALSEP(renamed)) 
-	    return always ? SCHEME_STX_VAL(a) : NULL;
-	  else
-	    return SCHEME_VEC_ELS(rename)[2];
+      rename = scheme_lookup_in_table(ht, (const char *)SCHEME_STX_VAL(a));
+      if (rename) {
+	/* Match: set result: */
+	result = SCHEME_CDR(rename);
+      } else if (always) {
+	if (scheme_lookup_in_table(ht, (const char *)scheme_false)) {
+	  /* There's a default module mapping: */
+	  result = SCHEME_STX_VAL(a);
 	}
-
-	l = SCHEME_CDR(l);
       }
     }
     

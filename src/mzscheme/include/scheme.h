@@ -494,6 +494,7 @@ typedef struct Scheme_Env
   Scheme_Hash_Table *modules;
 
   Scheme_Object **exports;
+  Scheme_Object **export_srcs;
   Scheme_Object **export_src_names;
   int num_exports;
   int num_var_exports; /* non-syntax listed first in exports */

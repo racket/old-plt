@@ -139,7 +139,7 @@ Scheme_Env *scheme_basic_env()
     scheme_init_error_escape_proc(scheme_current_process);
 
     env = scheme_make_empty_env();
-    scheme_copy_from_original_env(env);
+    scheme_import_from_original_env(env);
 
     scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
     scheme_init_port_config();
@@ -246,7 +246,7 @@ Scheme_Env *scheme_basic_env()
   make_init_env();
 
   env = scheme_make_empty_env();
-  scheme_copy_from_original_env(env);
+  scheme_import_from_original_env(env);
 
   scheme_add_embedded_builtins(env);
 
@@ -563,72 +563,6 @@ scheme_remove_global(const char *name, Scheme_Env *env)
   sym = scheme_intern_symbol(name);
 
   scheme_remove_global_symbol(sym, env);
-}
-
-void scheme_copy_from_original_env(Scheme_Env *env)
-{
-  Scheme_Hash_Table *ht, *ht2;
-  Scheme_Bucket **bs;
-  Scheme_Object *call_ec;
-  int i, j;
-  
-  for (j = 0; j < 2; j++) {
-    if (!j) {
-      ht = initial_env->toplevel;
-      ht2 = env->toplevel;
-    } else {
-      ht = initial_env->syntax;
-      ht2 = env->syntax;
-    }
-
-    bs = ht->buckets;
-
-    if (!j && scheme_escape_continuations_only)
-      call_ec = scheme_lookup_global(scheme_intern_symbol("call/ec"), initial_env);
-    else
-      call_ec = NULL;
-  
-    for (i = ht->size; i--; ) {
-      Scheme_Bucket *b = bs[i];
-      if (b && b->val) {
-	Scheme_Object *name = (Scheme_Object *)b->key;
-	Scheme_Object *val = (Scheme_Object *)b->val;
-	int cst = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_CONST;
-	int refid = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_HAS_REF_ID;
-      
-	if (call_ec) {
-	  char *s = SCHEME_SYM_VAL(name);
-	  /* WARNING: s is GC-misaligned... */
-	  
-	  if (s[0] == '#')
-	    s += 2;
-	  
-	  if ((s[0] == 'c') && (!strcmp(s, "call/cc") || !strcmp(s, "call-with-current-continuation")))
-	    val = call_ec;
-	}
-	
-	if (refid)
-	  ht2->has_constants = 2;
-
-	scheme_add_to_table(ht2, (char *)name, val, 0);
-	
-	if (refid)
-	  ht2->has_constants = 1;
-	
-	if (cst || refid) {
-	  Scheme_Bucket *b2;
-	  
-	  b2 = scheme_bucket_from_table(ht2, (char *)name);
-	  if (cst)
-	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_IS_CONST;
-	  if (refid) {
-	    ((Scheme_Bucket_With_Const_Flag *)b2)->flags |= GLOB_HAS_REF_ID;
-	    ((Scheme_Bucket_With_Ref_Id *)b2)->id = ((Scheme_Bucket_With_Ref_Id *)b)->id;
-	  }
-	}
-      }
-    }
-  }
 }
 
 Scheme_Object **scheme_make_builtin_references_table(void)

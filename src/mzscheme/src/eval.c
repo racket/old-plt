@@ -1154,6 +1154,10 @@ static void *compile_k(void)
   if (!SCHEME_STXP(form))
     form = scheme_datum_to_syntax(form, scheme_false, scheme_sys_wraps);
 
+  /* Renamings for imports: */
+  if (env->genv->rename)
+    form = scheme_add_rename(form, env->genv->rename);
+
   o = scheme_link_expr(scheme_compile_expr(form, env, &rec, 0),
 		       scheme_link_info_create());
 
@@ -3168,6 +3172,10 @@ static void *expand_k(void)
 
   if (!SCHEME_STXP(obj))
     obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false);
+
+  /* Renamings for imports: */
+  if (env->genv->rename)
+    obj = scheme_add_rename(obj, env->genv->rename);
 
   return scheme_expand_expr(obj, env, p->ku.k.i1, scheme_false);
 }

@@ -71,7 +71,7 @@
 " '(cdr(syntax->datum mexpr)))"
 " 'mexpr"
 " '(quote-syntax here)))))"
-" expr #f))))"
+" expr(quote-syntax here)))))"
 );
   JUST_DEFINED_KEY(define-macro);
   EVAL_ONE_STR(

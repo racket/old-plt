@@ -1,7 +1,4 @@
 
-; Contributed by Shriram
-; This code steals heavily from Dorai Sitaram's implementation.
-
 (require-library "refer.ss")
 
 (begin-elaboration-time
@@ -16,4 +13,3 @@
 (keyword-name '-:sr:matches-pattern?)
 (keyword-name '-:sr:get-bindings)
 (keyword-name '-:sr:expand-pattern)
-

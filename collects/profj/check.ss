@@ -699,6 +699,7 @@
                                         (check-expr (assignment-left exp) env type-recs current-class)
                                         (check-expr (assignment-right exp) env type-recs current-class)
                                         (expr-src exp)
+                                        #t
                                         'full
                                         type-recs)))))
 
@@ -766,13 +767,16 @@
 
   ;; 15.26
   ;; SKIP - worrying about final - doing the check for compound assignment
-  ;check-assignment: symbol type type src symbol type-records -> type
-  (define (check-assignment op ltype rtype src level type-recs)
+  ;check-assignment: symbol type type src bool symbol type-records -> type
+  (define (check-assignment op ltype rtype src constructor? level type-recs)
+    (when (eq? level 'beginner)
+      (unless constructor?
+        (raise-error (list op src) illegal-beginner-assignment)))
     (case op
       ((=)
        (if (assignment-conversion ltype rtype type-recs)
            ltype
-           (raise-error #f #f)))
+           (raise-error (list src 'dummy ltype rtype op) assignment-convert-fail)))
       ((+= *= /= %= -= <<= >>= >>>= &= ^= or=)
        (check-bin-op op ltype rtype src level type-recs)
        ltype)))
@@ -800,29 +804,43 @@
   (define (bin-op-eq-both op dummy left right)
     (format "~a expects arguments to be assignable to each other, ~a and ~a cannot" op left right))
   
+  ;;Assignment errors
+  (define (illegal-beginner-assignment)
+    "Assignment expressions are only allowed in constructors")
+  (define (assignment-convert-fail op d ltype rtype)
+    (format "~a requires that the right hand type be equivalent to or a subtype of ~a: given ~a" 
+            op ltype rtype))
+  
   (define (raise-error wrong-code type)
     (cond
       ((memq type (list bin-op-prim-right bin-op-prim-left bin-op-prim-both bin-op-eq-left
-                        bin-op-eq-right bin-op-eq-prim bin-op-eq-both))
-       ;wrong-code = (list src symbol type type)
-       (raise-syntax-error #f (type (caddr (cdr wrong-code))
-                                    (case (cadr wrong-code)
+                        bin-op-eq-right bin-op-eq-prim bin-op-eq-both assignment-convert-fail))
+       ;wrong-code = (list src symbol type type symbol)
+       (let ((src (car wrong-code))
+             (expected (cadr wrong-code))
+             (ltype (caddr wrong-code))
+             (rtype (cadddr wrong-code))
+             (op (cadddr (cdr wrong-code))))
+       (raise-syntax-error #f (type op 
+                                    (case expected
                                       ((bool) 'boolean)
                                       ((int) "int, short, byte or char")
                                       ((num) "double, float, long, int, short, byte or char")
-                                      (else "dummy"))                                 
-                                    (if (or (prim-numeric-type? (caddr wrong-code))
-                                            (eq? 'boolean (caddr wrong-code))
-                                            (symbol? (caddr wrong-code)))
-                                        (caddr wrong-code)
-                                        (ref-type-class/iface (caddr wrong-code)))
-                                    (if (or (prim-numeric-type? (cadddr wrong-code))
-                                            (eq? 'boolean (cadddr wrong-code))
-                                            (symbol? (cadddr wrong-code)))
-                                        (cadddr wrong-code)
-                                        (ref-type-class/iface (cadddr wrong-code))))
-                           (make-so (cadddr (cdr wrong-code)) (car wrong-code))))
-      
+                                      (else "dummy"))
+                                    (if (or (prim-numeric-type? ltype)
+                                            (eq? 'boolean ltype)
+                                            (symbol? ltype))
+                                        ltype
+                                        (ref-type-class/iface ltype))
+                                    (if (or (prim-numeric-type? rtype)
+                                            (eq? 'boolean rtype)
+                                            (symbol? rtype))
+                                        rtype
+                                        (ref-type-class/iface rtype)))
+                           (make-so op src))))
+      ((eq? type illegal-beginner-assignment)
+       ;wrong-code (list op src)
+       (raise-syntax-error #f (type) (make-so (car wrong-code) (cadr wrong-code))))      
       (else
        (error 'type-error "This file has a type error in the statements but more likely expressions"))))
   

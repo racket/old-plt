@@ -58,6 +58,7 @@
       (lambda (pref)
 	(set-printer-style/get-number (setting-printing pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
+	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? pref))
 	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))
 	(compile-auto-cond-else (setting-unmatched-cond/case-is-error? pref))
 	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
@@ -151,7 +152,7 @@
 		(make-check-box set-setting-unmatched-cond/case-is-error?!
 				setting-unmatched-cond/case-is-error?
 				"Unmatched cond/case is an error?"
-				"next interaction"
+				"on restart"
 				dynamic-panel)]
 	       [sharing-printing?
 		(make-check-box set-setting-sharing-printing?!

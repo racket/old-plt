@@ -11,8 +11,8 @@ complete responsibility of the PLaneT client. This library provides
 both a client and a server; most users will only ever need to use the
 client.
 
-The PLaneT client receives user requests (i.e., the "(require (planet
-...))" forms) and loads the appropriate modules in response. In the
+The PLaneT client receives user requests (i.e., the (require (planet
+...)) forms) and loads the appropriate modules in response. In the
 course of handling these requests it may download new code packages
 from the PLaneT server.
 

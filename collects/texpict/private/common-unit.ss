@@ -400,7 +400,8 @@
 			(if (and (= ah (+ a oa))
 				 (= bh (+ b ob)))
 			    (- h (max oa ob))
-			    (min a b)))])
+			    (min (+ a (- h (max oa ob) (- ah oa a)))
+				 (+ b (- h (max oa ob) (- bh ob b))))))])
 	  (values
 	   (make-append-boxes 2max 3+ 
 			      zero (lambda (fw fh rw rh sep . a) (+ sep rh))

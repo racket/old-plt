@@ -48,5 +48,4 @@
          (virtual-host-table
           (,addon-host 
            ,(make-host-config
-             (build-path (find-system-path 'addon-dir) 
-                         (version))))))))))
+             (build-path (find-system-path 'addon-dir))))))))))

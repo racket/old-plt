@@ -196,13 +196,19 @@
 		=>
 		(lambda (p-env)
 		  (let ((file (pat:pexpand 'file p-env kwd)))
-		    (create-reference-unit-form
-		      file
-		      ((if library? current-library-path current-directory))
-		      'exp
-		      signed?
-		      library?
-		      expr))))
+		    (let ((f (expand-expr file env attributes vocab)))
+		      (if (and (quote-form? f)
+			    (z:string? (quote-form-expr f)))
+			(create-reference-unit-form
+			  (quote-form-expr f)
+			  ((if library?
+			     current-library-path
+			     current-directory))
+			  'exp
+			  signed?
+			  library?
+			  expr)
+			(static-error file "Does not yield a filename"))))))
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 

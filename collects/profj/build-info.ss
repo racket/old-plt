@@ -347,8 +347,7 @@
                                     (process-members members old-methods cname type-recs level))))
                    
                    (unless (has-ctor? m)
-                     (when (and (eq? level 'beginner)
-                                (not (null? f)))
+                     (when (eq? level 'beginner)
                        (beginner-ctor-error (header-id info) (id-src (header-id info))))
                      (add-ctor class (lambda (rec) (set! m (cons rec m))) old-methods (header-id info) level))
                    
@@ -1041,7 +1040,7 @@
   (define (beginner-ctor-error class src) 
     (let ((n (id->ext-name class)))
       (raise-error n
-                   (format "Class ~a has fields, and therefore must have a constructor to set them"
+                   (format "Class ~a must have a constructor"
                            n)
                    n src)))
 

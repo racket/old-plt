@@ -119,6 +119,7 @@
                         (build-src 1)
                         (build-src 4)
                         (file-path)
+                        'beginner
                         null)]
        [(abstract class IDENTIFIER Super ClassBody)
         (make-class-def (make-header (make-id $3 (build-src 3 3))
@@ -129,6 +130,7 @@
                         (build-src 2 2)
                         (build-src 5)
                         (file-path)
+                        'beginner
                         null)])
       
       (Super

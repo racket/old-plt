@@ -18,33 +18,43 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Environment functions
 
+  ;env =>
   ;(make-environment (list var-type) (list type) (list string))
-  (define-struct environment (type-env exn-env label-env))
+  (define-struct environment (types exns labels))
+  
   
   ;Constant empty environment
   (define empty-env (make-environment null null null))
 
-  ;; env => (list (list type-bound) (list var-type))
-  ;; var-type => (make-var-type string type boolean boolean boolean)
-  (define-struct var-type (var type local? static? field? final?))
+  ;; var-type => (make-var-type string type properties)
+  (define-struct var-type (var type properties))
   
-  ;; add-var-to-env: string type boolean boolean boolean boolean env -> env
-  (define (add-var-to-env name type local? static? field? final? oldEnv)
-    (make-environment (cons (make-var-type name type local? static? field? final?)
-                            (environment-type-env oldEnv))
-                      (environment-exn-env oldEnv)
-                      (environment-label-env oldEnv)))
+  ;;Environment variable properties
+  ;;(make-properties bool bool bool bool bool bool)
+  (define-struct properties (local? local-field? other-field? static? final? usable?))
+  (define parameter (make-properties #t #f #f #f #f #t))
+  (define final-parameter (make-properties #t #f #f #f #t #t))
+  (define obj-field (make-properties #f #t #f #f #f #t))
+  (define final-obj-field (make-properties #f #t #f #f #t #t))
+  (define class-field (make-properties #f #t #f #t #f #t))
+  (define final-class-field (make-properties #f #t #f #t #t #t))
+  (define inherited-conflict (make-properties #f #t #f #f #f #f))
+  
+  ;; add-var-to-env: string type properties env -> env
+  (define (add-var-to-env name type properties oldEnv)
+    (make-environment (cons (make-var-type name type properties) (environment-types oldEnv))
+                      (environment-exns oldEnv)
+                      (environment-labels oldEnv)))
   
   ;; lookup-var-in-env: string env -> (U var-type boolean)
   (define (lookup-var-in-env name env)
     (letrec ((lookup
               (lambda (env)
-                (if (null? env)
-                    #f
-                    (if (string=? name (var-type-var (car env)))
-                        (car env)
-                        (lookup (cdr env)))))))
-      (lookup (environment-type-env env))))
+                (and (not (null? env))
+                     (if (string=? name (var-type-var (car env)))
+                         (car env)
+                         (lookup (cdr env)))))))
+      (lookup (environment-types env))))
   
   ;remove-var-from-env string env -> env
   (define (remove-var-from-env name env)
@@ -55,15 +65,15 @@
                   ((equal? name (var-type-var (car env)))
                    (remove-from-env (cdr env)))
                   (else (cons (car env) (remove-from-env (cdr env))))))))
-      (make-environment (remove-from-env (environment-type-env env))
-                        (environment-exn-env env)
-                        (environment-label-env env))))
+      (make-environment (remove-from-env (environment-types env))
+                        (environment-exns env)
+                        (environment-labels env))))
   
   ;;add-exn-to-env: type env -> env
   (define (add-exn-to-env exn env)
-    (make-environment (environment-type-env env)
-                      (cons exn (environment-exn-env env))
-                      (environment-label-env env)))
+    (make-environment (environment-types env)
+                      (cons exn (environment-exns env))
+                      (environment-labels env)))
   
   ;;add-exns-to-env: (list type) env -> env
   (define (add-exns-to-env exns env)
@@ -76,17 +86,17 @@
   (define (lookup-exn type env type-recs)
     (ormap (lambda (lookup)
              (assignment-conversion lookup type type-recs))
-           (environment-exn-env env)))
+           (environment-exns env)))
   
   ;;add-label-to-env: string env -> env
   (define (add-label-to-env label env)
-    (make-environment (environment-type-env env)
-                      (environment-exn-env env)
-                      (cons label (environment-label-env env))))
+    (make-environment (environment-types env)
+                      (environment-exns env)
+                      (cons label (environment-labels env))))
   
   ;;lookup-label: string env -> bool
   (define (lookup-label label env)
-    (member label (environment-label-env env)))
+    (member label (environment-labels env)))
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Generic helper functions
@@ -121,8 +131,8 @@
                    (error 'check-defs 
                           "Internal error: Current def does not have a record entry")))))
       (if (interface-def? def)
-          (check-interface def package-name level type-recs)
-          (check-class def package-name level type-recs)))
+          (check-interface def package-name (def-level def) type-recs)
+          (check-class def package-name (def-level def) type-recs)))
     (packages (cons def (packages)))
     (when (not (null? (check-list)))
       (check-defs (car (check-list)) level type-recs)))
@@ -132,9 +142,9 @@
     (check-location loc)
     (send type-recs set-location! 'interactions)
     (send type-recs set-class-reqs null)
-    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f #f #f
-                               (create-field-env (send type-recs get-interactions-fields)
-                                                 empty-env)))
+    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) parameter
+                               (create-field-env (send type-recs get-interactions-fields) empty-env 
+                                                 "scheme-interactions")))
           (c-class (list "scheme-interactions")))
       (cond
         ((pair? prog)
@@ -163,7 +173,7 @@
     (let ((this-ref (make-ref-type (id-string (header-id (class-def-info class)))
                                    package-name)))
       (check-members (class-def-members class)
-                     (add-var-to-env "this" this-ref #t #f #f #f empty-env)
+                     (add-var-to-env "this" this-ref parameter empty-env)
                      level
                      type-recs 
                      (list (id-string (header-id (class-def-info class))))))
@@ -182,9 +192,9 @@
   
   ;check-members: (list member) env symbol type-records (list string) -> void
   (define (check-members members env level type-recs c-class)
-    (let* ((class-record (send type-recs get-class-record (var-type-type (lookup-var-in-env "this" env))))
+    (let* ((class-record (lookup-this type-recs env))
            (fields (class-record-fields class-record))
-           (field-env (create-field-env fields env))
+           (field-env (create-field-env fields env (car c-class)))
            (ctor-throw-env (consolidate-throws 
                             (get-constructors (class-record-methods class-record)) field-env))
            (static-env (get-static-fields-env field-env))
@@ -223,10 +233,10 @@
                        (set! setting-fields (cons member setting-fields))))
                  (if static?
                      (loop (cdr rest) 
-                           (add-var-to-env name type #f #t #t #f statics) 
-                           (add-var-to-env name type #f #t #t #f fields))
+                           (add-var-to-env name type class-field statics) 
+                           (add-var-to-env name type class-field fields))
                      (loop (cdr rest) statics 
-                           (add-var-to-env name type #t #f #t #f fields)))))))))
+                           (add-var-to-env name type obj-field fields)))))))))
       (let ((assigns (get-assigns members level (car c-class)))
             (static-assigns (get-static-assigns members level)))
         (for-each (lambda (field)
@@ -239,21 +249,26 @@
                            (field-set? field assigns (car c-class) level #f)) assigns)))
                   setting-fields))))
     
-  ;create-field-env: (list field-record) env -> env
-  (define (create-field-env fields env)
+  ;create-field-env: (list field-record) env string -> env
+  (define (create-field-env fields env class)
     (cond
       ((null? fields) env)
       (else
        (let* ((field (car fields))
-              (static? (memq 'static (field-record-modifiers field))))
-         (create-field-env (cdr fields)
-                           (add-var-to-env (field-record-name field)
-                                           (field-record-type field)
-                                           (not static?)
-                                           static?
-                                           #t
-                                           #f
-                                           env))))))
+              (name (field-record-name field))
+              (in-env? (lookup-var-in-env name env))
+              (static? (memq 'static (field-record-modifiers field)))
+              (final? (memq 'final (field-record-modifiers field)))
+              (current? (equal? class (car (field-record-class field)))))
+         (add-var-to-env name
+                         (field-record-type field)
+                         (cond
+                           ((and in-env? (not current?)) inherited-conflict)
+                           ((and (not static?) (not final?)) obj-field)
+                           ((and (not static?) final?) final-obj-field)
+                           ((and static? (not final?)) class-field)
+                           ((and static? final?) final-class-field))
+                         (create-field-env (cdr fields) env class))))))
   
   ;get-constrcutors: (list method-record) -> (list method-record)
   (define (get-constructors methods)
@@ -272,9 +287,10 @@
   
   ;get-static-fields-env: env -> env
   (define (get-static-fields-env env)
-    (make-environment (filter var-type-static? (environment-type-env env))
-                      (environment-exn-env env)
-                      (environment-label-env env)))
+    (make-environment (filter (lambda (t) (properties-static? (var-type-properties t)))
+                              (environment-types env))
+                      (environment-exns env)
+                      (environment-labels env)))
 
   ;field-needs-set?: field symbol -> bool
   (define (field-needs-set? field level)
@@ -464,10 +480,9 @@
        (build-method-env (cdr parms)
                          (add-var-to-env (id-string (field-name (car parms)))
                                          (type-spec-to-type (field-type (car parms)) type-recs)
-                                         #t
-                                         #f
-                                         #f
-                                         #f
+                                         (if (memq 'final (map modifier-kind (field-modifiers (car parms))))
+                                             final-parameter
+                                             parameter)
                                          env)
                          type-recs))))
 
@@ -728,7 +743,6 @@
         (check-for-vars (cdr vars) 
                         (check-local-var (car vars) env check-e types) check-e types)))
   
-  ;Need to allow shadowing of field names
   ;check-local-var: field env (expression -> type) type-records -> env
   (define (check-local-var local env check-e type-recs)
     (let* ((is-var-init? (var-init? local))
@@ -736,13 +750,13 @@
            (in-env? (lookup-var-in-env name env))
            (sym-name (string->symbol name))
            (type (type-spec-to-type (field-type local) type-recs)))
-      (when (and in-env? (not (var-type-field? in-env?)))
+      (when (and in-env? (not (properties-local-field? (var-type-properties in-env?))))
         (illegal-redefinition (field-name local) (field-src local)))
       (when is-var-init?
         (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
           (unless (assignment-conversion type new-type type-recs)
             (variable-type-error (field-name local) new-type type (var-init-src local)))))
-      (add-var-to-env name type #t #f #f #f env)))
+      (add-var-to-env name type parameter env)))
 
   ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
   (define (check-try body catches finally env check-s type-recs)
@@ -761,10 +775,10 @@
                   (let* ((field (catch-cond catch))
                          (name (id-string (field-name field)))
                          (in-env? (lookup-var-in-env name env)))
-                    (if (and in-env? (not (var-type-field? in-env?)))
+                    (if (and in-env? (not (properties-local-field? (var-type-properties in-env?))))
                         (illegal-redefinition (field-name field) (field-src field))
                         (check-s (catch-body catch)
-                                 (add-var-to-env name (field-type field) #t #f #f #f env)))))
+                                 (add-var-to-env name (field-type field) parameter env)))))
                 catches)
       (when finally (check-s finally env))))
 
@@ -1094,6 +1108,7 @@
                  (set! record (field-lookup fname (check-sub-expr obj) obj type-recs))
                  (set-field-access-access! acc (make-var-access 
                                                 (memq 'static (field-record-modifiers record))
+                                                (memq 'final (field-record-modifiers record))
                                                 (field-record-class record))))
                (set! record 
                      (let ((name (var-access-class (field-access-access acc))))
@@ -1112,7 +1127,10 @@
            (field-record-type record)))
         
         ((local-access? acc) 
-         (var-type-type (lookup-var-in-env (id-string (local-access-name acc)) env)))
+         (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
+           (if (properties-usable? (var-type-properties var))
+               (var-type-type var)
+               (unusable-var-error (string->symbol (var-type-var var) (id-src (local-access-name acc)))))))
         
         (else
          (let* ((first-acc (id-string (car acc)))
@@ -1128,19 +1146,19 @@
                                     (make-field-access 
                                      #f
                                      (car accs)
-                                     (make-var-access #t (class-record-name (car static-class)))))
+                                     (make-var-access #t null (class-record-name (car static-class)))))
                        (cdr accs))))
-                   ((and first-binding (var-type-local? first-binding))
+                   ((and first-binding (properties-local? (var-type-properties first-binding)))
                     (build-field-accesses
                      (make-access #f (expr-src exp) (make-local-access (car acc)))
                      (cdr acc)))
                    (first-binding
-                    (if (var-type-static? first-binding)
+                    (if (properties-static? (var-type-properties first-binding))
                         (build-field-accesses
                          (make-access #f (expr-src exp)
                                       (make-field-access #f
                                                          (car acc)
-                                                         (make-var-access #t c-class)))
+                                                         (make-var-access #t null c-class)))
                          (cdr acc))
                         (build-field-accesses
                          (make-access #f (expr-src exp)
@@ -1593,6 +1611,13 @@
          ((primitive)     
           (format "attempted to access field ~a on ~a, this type does not have fields" field t)))
        field src)))
+
+  ;unusable-var-error: symbol src -> void
+  (define (unusable-var-error name src)
+    (raise-error name
+                 (format "field ~a cannot be used in this class, as two or more parents contain a field with this name"
+                         name)
+                 name src))
   
   ;;special-name errors
   ;special-error: src bool -> void

@@ -1323,8 +1323,10 @@
               (make-syntax #f `(send ,expr ,(translate-id field-string field-src)) (build-src src)))
              (else
               ;Come Back : loses src
-              (let ((id (create-get-name field-string (car (var-access-class access)))))
-                (make-syntax #f `(,id ,expr) (build-src src))))))))))
+              (if (and obj (special-name? obj))
+                  (translate-id field-string field-src)              
+                  (let ((id (create-get-name field-string (car (var-access-class access)))))
+                    (make-syntax #f `(,id ,expr) (build-src src)))))))))))
   
   ;Converted
   ;translate-special-name: string src -> syntax

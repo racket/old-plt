@@ -33,7 +33,7 @@
   ;;(make-import name bool src src string)
   (p-define-struct import (name star key-src src file))
   
-  (provide def-header def-file def-uses def-name)
+  (provide def-header def-file def-uses def-name def-level)
   (define (def-header d)
     (if (class-def? d)
         (class-def-info d)
@@ -46,15 +46,19 @@
     (if (class-def? d)
         (class-def-uses d)
         (interface-def-uses d)))
+  (define (def-level d)
+    (if (class-def? d)
+        (class-def-level d)
+        (interface-def-level d)))
   (define (def-name d)
     (header-id (def-header d)))
   
-  ;;(make-class-def header (list member) src src string (list req))
+  ;;(make-class-def header (list member) src src string symbol (list req))
   ;; members in file order
-  (p-define-struct class-def (info members key-src src file uses))
+  (p-define-struct class-def (info members key-src src file level uses))
 
-  ;;(make-interface-def header (list member) src src string (list req))
-  (p-define-struct interface-def (info members key-src src file uses))
+  ;;(make-interface-def header (list member) src src string symbol (list req))
+  (p-define-struct interface-def (info members key-src src file level uses))
   
   ;;(make-require string (list string))
   (p-define-struct req (class path))
@@ -228,6 +232,9 @@
   ;(make-field-access (U Expression #f) id var-access)
   (p-define-struct field-access (object field access))
   
+  ;;(make-var-access bool bool string)
+  (p-define-struct var-access (static? final? class))
+  
   ;(make-local-access id)
   (p-define-struct local-access (name))
   
@@ -277,7 +284,6 @@
   
   ;Op -> = *= /= %= += -= <<= >>= >>>= &= ^= or=  
  
-  ;;(make-var-access bool string)
-  (p-define-struct var-access (static? class))
+  
   
 )

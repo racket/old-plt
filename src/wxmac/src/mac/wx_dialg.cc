@@ -310,7 +310,7 @@ static char *GetNthPath(NavReplyRecord *reply, int index)
 }
 
 static CFStringRef clientName = CFSTR("MrEd");
-static NavEventUPP extProc = NewNavEventUPP(ExtensionCallback);
+static NavEventUPP extProc = NewNavEventUPP((NavEventProcPtr)ExtensionCallback);
 
 char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,

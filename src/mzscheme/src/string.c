@@ -1580,11 +1580,20 @@ static void machine_details(char *s)
      sprintf(sysvers, "%X.%X",
 	     (lng >> 8) & 0xff,
 	     lng & 0xff);
-     /* remove trailing zeros: */
+     /* remove trailing zeros, put dot before something else */
      i = strlen(sysvers);
-     while ((i > 1) && (sysvers[i-1] == '0') && (sysvers[i-2] != '.')) {
-       sysvers[i-1] = 0;
-       i--;
+     if (i > 1) {
+       if (sysvers[i-1] != '.') {
+	 if (sysvers[i-1] == '0') {
+	   sysvers[i-1] = 0;
+	   i--;
+	 } else {
+	   sysvers[i] = sysvers[i-1];
+	   sysvers[i-1] = '.';
+	   i++;
+	   sysvers[i] = 0;
+	 }
+       }
      }
    }
 

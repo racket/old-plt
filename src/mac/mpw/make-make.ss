@@ -47,7 +47,7 @@
       (list
        obj
        f
-       (format "~a \304~a ~a\r\t~a ~a ~a -w off ~a -includes unix -make ~a.dep -curdir~a -o ~a.o"
+       (format "~a \304~a ~a\r\t~a ~a ~a -w off -noMapCR ~a -includes unix -make ~a.dep -curdir~a -o ~a.o"
 	       obj
 	       (if is-c? "" " carbon.dump")
 	       f

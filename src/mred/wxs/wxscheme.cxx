@@ -929,6 +929,22 @@ typedef struct AsyncSoundRec {
 
 static AsyncSoundRec *playing = NULL;
 
+int IsFinished(void *movie)
+{
+  MoviesTask((Movie)movie,0);
+  return IsMovieDone((Movie)movie);
+}
+
+void MyCloseMovie(Movie movie, short resRefNum) 
+{
+  short osErr;
+  DisposeMovie(movie);
+
+  osErr = CloseMovieFile(resRefNum);
+  if (osErr != noErr)
+    scheme_signal_error("cannot close movie file (errno = %d)", osErr);
+}
+  
 void wxCheckFinishedSounds(void)
 {
   AsyncSoundRec *playptr = playing;
@@ -948,22 +964,6 @@ void wxCheckFinishedSounds(void)
   }      
 }      
       
-void MyCloseMovie(Movie movie, short resRefNum) 
-{
-  short osErr;
-  DisposeMovie(movie);
-
-  osErr = CloseMovieFile(resRefNum);
-  if (osErr != noErr)
-    my_signal_error("cannot close movie file", SCHEME_STR_VAL(argv[0]), osErr);
-}
-  
-int IsFinished(void *movie)
-{
-  MoviesTask((Movie)movie,0);
-  return IsMovieDone((Movie)movie);
-}
-
 void my_signal_error(char *msg, char *filename, int err)
 {
   scheme_signal_error("%s: \"%s\" (errno = %d)", msg, filename, err);

@@ -213,8 +213,9 @@
 					       "w" "&Close" "")
 				 (make-between 'file-menu 'between-close-and-quit #f)
 				 (make-an-item 'file-menu:quit "" '(lambda () (mred:exit:exit))
-					       (if (eq? wx:platform 'windows) "x" "q")
-					       (if (eq? wx:platform 'windows) "E&xit" "Quit") "")
+					       "q"
+					       '(if (eq? wx:platform 'windows) "E&xit" "Quit")
+					       "")
 				 (make-between 'file-menu 'after-quit #f)
 				 
 				 (make-an-item 'edit-menu:undo "" #f "z" "&Undo" "")
@@ -227,7 +228,7 @@
 				 (make-an-item 'edit-menu:paste "" #f "v" "&Paste" "")
 				 (make-between 'edit-menu 'between-paste-and-clear #f)
 				 (make-an-item 'edit-menu:clear "" #f #f
-					       (if (eq? wx:platform 'macintosh)
+					       '(if (eq? wx:platform 'macintosh)
 						   "Clear"
 						   "&Delete")
 					       "")

@@ -52,7 +52,6 @@
 				  [mode (handler (active-edit))])
 			     (send (active-edit) set-mode mode))))))
 	       (send file-menu append-separator))]
-	    [auto-save? #t]
 	    [check-saved
 	     (opt-lambda (edit [reason "Close"])
 	       (let* ([name (send edit get-filename)]
@@ -145,14 +144,8 @@
 	    
 	    [on-close
 	     (lambda ()
-	       (if (super-on-close)
-		   (if (check-all-saved)
-		       (begin
-			 (mred:exit:remove-exit-callback exit-callback-tag)
-			 (set! auto-save? #f)
-			 #t)
-		       #f)
-		   #f))])
+	       (and (check-all-saved)
+		    (super-on-close)))])
 
 
 	  (public
@@ -172,10 +165,6 @@
 	    (mred:debug:printf 'super-init "before mred:editor-frame%")
 	    (super-init)
 	    (mred:debug:printf 'super-init "after mred:editor-frame%"))
-	  
-	  (public
-	    [exit-callback-tag
-	     (mred:exit:insert-exit-callback check-all-saved-for-quit)])
 	  
 	  (sequence
 	    (let ([filename (if (and (string? filename) (file-exists? filename))

@@ -48,11 +48,11 @@
 	    [insert-frame
 	     (lambda (f)
 	       (set! frame-counter (add1 frame-counter))
-	       (let ([new-frames (append frames 
-					 (list 
-					  (make-frame f frame-counter)))])
+	       (let ([new-frames (cons (make-frame f frame-counter)
+				       frames)])
 		 (set! frames new-frames))
 	       (todo-to-new-frames f))]
+
 	    [remove-frame
 	     (opt-lambda (f [reason "Close"])
 	       (when (eq? f active-frame)
@@ -77,15 +77,14 @@
 			   #t)))]
 	    [close-all
               (lambda ()
-                (call/ec 
-                  (lambda (escape)
-                    (for-each (lambda (f)
-                                (let ([frame (frame-frame f)])
-                                  (if (send frame on-close)
+                (let/ec escape
+		  (for-each (lambda (f)
+			      (let ([frame (frame-frame f)])
+				(if (send frame on-close)
                                     (send frame show #f)
                                     (escape #f))))
-                      frames))
-                  #t))]
+			    frames)
+		  #t))]
 	    [new-frame
 	     (lambda (filename)
 	       (if (string? filename)
@@ -120,4 +119,39 @@
 			    frame
 			    (loop (cdr frames))))]))))]))))
 
-    (define the-frame-group (make-object frame-group%)))
+    (define the-frame-group (make-object frame-group%))
+    
+
+    (define at-most-one-maker
+      (lambda ()
+	(let ([s (make-semaphore 1)]
+	      [test #f])
+	  (lambda (return thunk)
+	    (semaphore-wait s)
+	    (if test
+		(begin (semaphore-post s)
+		       return)
+		(begin
+		  (set! test #t)
+		  (semaphore-post s)
+		  (begin0 (thunk)
+			  (semaphore-wait s)
+			  (set! test #f)
+			  (semaphore-post s))))))))
+
+    (define at-most-one (at-most-one-maker))
+
+    (send the-frame-group set-empty-callback
+	  (lambda ()
+	    (at-most-one
+	     #t
+	     (lambda ()
+	       (mred:exit:exit)
+	       #f))))
+
+    (mred:exit:insert-exit-callback
+     (lambda ()
+       (at-most-one
+	#t
+	(lambda ()
+	  (send the-frame-group close-all))))))

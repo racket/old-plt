@@ -958,8 +958,8 @@
 		   mb)))]
 	    [on-close 
 	     (lambda ()
-	       (super-on-close)
-	       (mred:exit:exit))]
+	       (and (super-on-close)
+		    (mred:exit:exit)))]
 	    [next-menu-id (lambda () other-offset)]
 	    [load-file
 	     (lambda (file)

@@ -19,6 +19,7 @@
 #include "wx_timer.h"
 #include "wx_dialg.h"
 #include "wx_cmdlg.h"
+#include "wx_dccan.h"
 #include "wxTimeScale.h"
 #include "wx_print.h"
 #if (defined(powerc) || defined(__powerc)) && defined(MPW)
@@ -103,6 +104,8 @@ wxApp::wxApp():wxbApp()
   work_proc = NULL;
   wx_class = NULL;
   cLastMousePos.v = cLastMousePos.h = -1;  
+  
+  wxInitGL();
 }
 
 //-----------------------------------------------------------------------------

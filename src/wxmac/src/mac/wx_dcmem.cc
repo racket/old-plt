@@ -34,6 +34,11 @@ wxMemoryDC::wxMemoryDC(Bool ro)
 
 wxMemoryDC::~wxMemoryDC(void)
 {
+  if (gl) {
+    gl->Reset(NULL, 1, 0, 0);
+    gl = NULL;
+  }
+
   if (selected_pixmap) {
     if (!read_only) {
       selected_pixmap->selectedInto = NULL;
@@ -74,7 +79,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   ok = FALSE;
   selected_pixmap = bitmap;
   if (gl)
-    gl->Reset(NULL, 1);
+    gl->Reset(NULL, 1, 0, 0);
   if (bitmap == NULL) {	// deselect a bitmap
     pixmapWidth = 0;
     pixmapHeight = 0;
@@ -100,8 +105,8 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       ToolChanged(kNoTool);
       ReleaseCurrentDC();
 
-      if (gl)
-	gl->Reset((CGrafPtr)bitmap->x_pixmap, 1);
+      if (gl && Colour)
+	gl->Reset((CGrafPtr)bitmap->x_pixmap, 1, pixmapWidth, pixmapHeight);
     }
   }
 }
@@ -114,11 +119,12 @@ wxBitmap* wxMemoryDC::GetObject()
 wxGL *wxMemoryDC::GetGL()
 {
   if (!gl) {
-    CGrafPtr cp = NULL;
     gl = new wxGL();
-    if (cMacDC)
+    if (Colour && cMacDC) {
+      CGrafPtr cp;
       cp = cMacDC->macGrafPort();
-    gl->Reset(cp, 1);
+      gl->Reset(cp, 1, pixmapWidth, pixmapHeight);
+    }
   }
 
   return gl;

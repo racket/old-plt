@@ -86,11 +86,6 @@ wxCanvas::wxCanvas // Constructor (given parentWindow)
 //-----------------------------------------------------------------------------
 wxCanvas::~wxCanvas(void)
 {
-  if (gl_ctx) {
-    gl_ctx->Reset(0, 0);
-    gl_ctx = NULL;
-  }
-
   if (wx_dc) DELETE_OBJ wx_dc;
 }
 

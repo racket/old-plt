@@ -112,6 +112,11 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 //-----------------------------------------------------------------------------
 wxCanvasDC::~wxCanvasDC(void)
 {
+  if (gl) {
+    gl->Reset(NULL, 0, 0, 0);
+    gl = NULL;
+  }
+
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
   if (clipping) --clipping->locked;
@@ -725,7 +730,7 @@ wxGL *wxCanvasDC::GetGL()
     CGrafPtr cp;
     gl = new wxGL();
     cp = cMacDC->macGrafPort();
-    gl->Reset(cp, 0);
+    gl->Reset(cp, 0, 0, 0);
     canvas->ResetGLView();
   }
 
@@ -733,45 +738,76 @@ wxGL *wxCanvasDC::GetGL()
 }
 
 static wxGL *current_gl_context = NULL;
-static int gl_registered;
 static AGLPixelFormat fmt;
 static AGLPixelFormat sb_fmt;
+static AGLContext dummy;
+
+void wxInitGL()
+{
+  GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_NONE };
+  GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_OFFSCREEN, AGL_PIXEL_SIZE, 32, AGL_NONE };
+  
+  wxREGGLOB(current_gl_context); 
+  
+  fmt = aglChoosePixelFormat(NULL, 0, attrib);
+  sb_fmt = aglChoosePixelFormat(NULL, 0, sb_attrib);
+
+  if (fmt) {
+    dummy = aglCreateContext(fmt, NULL);
+    aglSetCurrentContext(dummy);
+  }
+}
 
 wxGL::wxGL()
   : wxObject(WXGC_NO_CLEANUP)
 {
-  if (!gl_registered) {
-    GC_CAN_IGNORE GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_DEPTH_SIZE, 16, AGL_NONE };
-    GC_CAN_IGNORE GLint sb_attrib[] = { AGL_RGBA, AGL_DEPTH_SIZE, 16, AGL_NONE };
-
-    wxREGGLOB(current_gl_context); 
-    gl_registered = 1;
-
-    fmt = aglChoosePixelFormat(NULL, 0, attrib);
-    sb_fmt = aglChoosePixelFormat(NULL, 0, sb_attrib);
-  }
 }
 
-wxGL::Reset(CGrafPtr gp, int offscreen)
+void wxGL::Reset(CGrafPtr gp, int offscreen, int w, int h)
 {
   AGLContext ctx; 
 
-  ctx = (AGLContext)gl_ctx;
+  if (gl_ctx) {
+    ctx = (AGLContext)gl_ctx;
+    
+    if (this == current_gl_context) {
+      aglSetCurrentContext(dummy);
+    }
+    
+    aglSetDrawable(ctx, NULL);
+    aglDestroyContext(ctx); 
 
-  if (this == current_gl_context) {
-    aglSetCurrentContext(NULL);
+    gl_ctx = NULL;
   }
-
-  aglSetDrawable(ctx, NULL);
-  aglDestroyContext(ctx); 
 
   if (gp) {
-    ctx = aglCreateContext(offscreen ? sb_fmt : fmt, NULL);
-    
-    aglSetDrawable(ctx, gp);
+    if (offscreen) {
+      if (sb_fmt) {
+	/* Note: gp has been locked by LockPixels already */
+	PixMapHandle pm;
+	pm = GetGWorldPixMap(gp);
+	ctx = aglCreateContext(sb_fmt, NULL);	
+	if (ctx)
+	  aglSetOffScreen(ctx, w, h, GetPixRowBytes(pm), GetPixBaseAddr(pm));
+      }
+    } else {
+      if (fmt) {
+	ctx = aglCreateContext(fmt, NULL);	
+	if (ctx)
+	  aglSetDrawable(ctx, gp);
+      }
+    }
 
     gl_ctx = (long)ctx;
+    if (ctx && (current_gl_context == this)) {
+      aglSetCurrentContext(ctx);
+    }
   }
+}
+
+int wxGL::Ok()
+{
+  return !!gl_ctx;
 }
 
 void wxGL::SwapBuffers(void)
@@ -783,9 +819,11 @@ void wxGL::SwapBuffers(void)
 
 void wxGL::ThisContextCurrent(void)
 {
-  if (gl_ctx) {
-    aglSetCurrentContext((AGLContext)gl_ctx);
+  if (current_gl_context != this) {
     current_gl_context = this;
+    if (gl_ctx) {
+      aglSetCurrentContext((AGLContext)gl_ctx);
+    }
   }
 }
 
@@ -810,7 +848,13 @@ void wxGL::ResetGLView(int x, int y, int w, int h)
     if (current_gl_context) {
       aglSetCurrentContext((AGLContext)current_gl_context->gl_ctx);
     } else {
-      aglSetCurrentContext(NULL);
+      aglSetCurrentContext(dummy);
     }
   }
+}
+
+void wxGLNoContext()
+{
+  current_gl_context = NULL;
+  aglSetCurrentContext(dummy);
 }

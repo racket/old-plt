@@ -164,13 +164,15 @@ public:
 
   int Ok();
   
-  void Reset(CGrafPtr gp, int offscreen) = 0;
+  void Reset(CGrafPtr gp, int offscreen, int w, int h);
   
-  void SwapBuffers(void) = 0;
-  void ThisContextCurrent(void) = 0;
+  void SwapBuffers(void);
+  void ThisContextCurrent(void);
   
   void ResetGLView(int x, int y, int w, int h);
 };
+
+void wxInitGL();
 
 #endif // IN_CPROTO
 #endif // wx_dccanh

@@ -1,4 +1,4 @@
-; $Id: quasi.ss,v 1.3 1997/08/22 23:25:16 shriram Exp $
+; $Id: quasi.ss,v 1.4 1997/08/23 00:58:04 shriram Exp $
 
 ; Fix the null? in qq-normalize.
 
@@ -75,7 +75,6 @@
 			    ((pat:match-against qq-m&e-5 x env)
 			      =>
 			      (lambda (p-env)
-				(printf "Got here~n")
 				(let* ((body (pat:pexpand 'body p-env kwd))
 					(rest (pat:pexpand 'rest p-env kwd))
 					(q-rest (qq rest level)))

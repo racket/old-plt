@@ -9,7 +9,7 @@
 ;;; Snips
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define GB:SNIP-VERSION 2)
+  (define GB:SNIP-VERSION 3)
   
   (define make-one-line/callback-edit
     (let ([edit%
@@ -481,7 +481,8 @@
 	     (send dc draw-line x y x yh))))
 	
 	(base-setup
-	 (lambda (xs? ys? nw nh hca vca wb? id children-ids)
+	 (lambda (nm xs? ys? nw nh hca vca wb? id children-ids)
+	   (set! name nm)
 	   (set! x-stretch? xs?)
 	   (set! y-stretch? ys?)
 	   (set! w nw)
@@ -494,7 +495,9 @@
 	(copy
 	 (lambda ()
 	   (let ([o (make-object (object-class this) lm tm rm bm)])
-	     (send o base-setup x-stretch? y-stretch? w h 
+	     (send o base-setup 
+		   name
+		   x-stretch? y-stretch? w h 
 		   horizontal-child-alignment
 		   vertical-child-alignment
 		   with-border?
@@ -505,6 +508,7 @@
 	     o)))
 	(write
 	 (lambda (stream)
+	   (send stream << name)
 	   (send stream << (if x-stretch? 1 0))
 	   (send stream << (if y-stretch? 1 0))
 	   (send stream << (inexact->exact w))
@@ -517,6 +521,7 @@
 	(read
 	 (lambda (stream version)
 	   (base-setup
+	    (if (>= version 3) (send stream get-string) name) ; name
 	    (positive? (send stream get-exact))
 	    (positive? (send stream get-exact))
 	    (send stream get-exact) ; w

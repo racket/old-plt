@@ -787,19 +787,21 @@
 				     (lambda ()
 				       (let loop ()
 					 (block-until-event)
-					    (with-handlers
-					     ([void (lambda (e) 
+				         (let* ([prim-event
+						 (with-handlers
+						  ([void 
+						    (lambda (e) 
 						      (printf "~a~n" (exn-message e))
 						      (loop))])
-					     (let* ([event (make-object mx-event% 
-									(mxprims:get-event doc))]
-						    [tag (send event tag)]
-						    [id (send event id)]
-						    [key (make-event-key tag id)]
-						    [handler (hash-table-get handler-table key void)])
-					       (unless (void? handler)
-						       (handler event))
-					       (loop)))))])
+						    (mxprims:get-event doc))]
+						[event (make-object mx-event% prim-event)]
+						[tag (send event tag)]
+						[id (send event id)]
+						[key (make-event-key tag id)]
+						[handler (hash-table-get handler-table key void)])
+					   (unless (void? handler)
+						   (handler event))
+					   (loop))))])
 			       (set! handler-thread (thread handler-thunk))))
 			   handler-post)))
 		thread-post))]

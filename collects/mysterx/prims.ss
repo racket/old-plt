@@ -3,6 +3,6 @@
 (unit->unit/sig 
  (load-extension 
   (build-path (collection-path "mysterx") 
-	      "compiled" "native" "win32" "i386" "mysterx.dll"))
+	      "compiled" "native" "win32" "i386" "mxmain.dll"))
  ()
  mysterx:prims^)

@@ -20,7 +20,18 @@
 			  [(motif) 0]
 			  [(windows) 0]
 			  [(macintosh) 0])]
-	[clear-state void])
+	[clear-state void]
+	[splitup-path
+	 (lambda (f)
+	   (let*-values ([(absf) (if (relative-path? f)
+				     (build-path (current-directory) f)
+				     f)]
+			 [(base name _1) (split-path absf)])
+
+	     (if base
+		 (let-values ([(base2 name2 _2) (split-path base)])
+		   (build-path name2 name))
+		 name)))])
     (values 
      (lambda ()
        (set! mred:splash-message #f)
@@ -117,15 +128,7 @@
 		       (current-load
 			(let ([old-load (current-load)])
 			  (lambda (f)
-			    (let*-values ([(absf) (if (relative-path? f)
-						      (build-path (current-directory) f)
-						      f)]
-					  [(base name _1) (split-path absf)]
-					  [(finalf)
-					   (if base
-					       (let-values ([(base2 name2 _2) (split-path base)])
-						 (build-path name2 name))
-					       name)])
+			    (let ([finalf (splitup-path f)])
 			      (when (and (mred:change-splash-message (format "Loading ~a..." finalf))
 					 (<= mred:splash-counter mred:splash-max))
 				(set! mred:splash-counter (add1 mred:splash-counter))

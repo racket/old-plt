@@ -60,7 +60,7 @@ Follows the protocol listed in the PLaneT client file
            (close-ports)])))
     
     (define (nat-or-false? n) (or (not n) (nat? n)))
-    (define (legal-language? lstr)
+    #;(define (legal-language? lstr)
       (and (not (string=? lstr ".."))
            (not (string=? lstr "."))
            (member lstr (directory-list (PLANET-SERVER-REPOSITORY)))))

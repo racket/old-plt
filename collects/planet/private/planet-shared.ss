@@ -71,12 +71,16 @@ THINGS TO DO FOR PLANET IN GENERAL
   ; Handles checking the cache for an appropriate module
   ; ==========================================================================================
 
-  ; language-version->repository : string -> string
+  ; language-version->repository : string -> string | #f
   ; finds the appropriate language version for the given repository
   (define (language-version->repository ver)
     (cond
       [(regexp-match #rx"20.+" ver) "207.1"]
-      [(regexp-match #rx"3.+|29.|" ver) "300"]))  
+      [(regexp-match #rx"3.+|29.|" ver) "300"]
+      [else #f]))
+  
+  (define (legal-language? l)
+    (and (language-version->repository l) #t))
   
   ; lookup-package : FULL-PKG-SPEC string[dirname] -> PKG | #f
   ; returns the directory pointing to the appropriate package in the cache, or #f if the given package

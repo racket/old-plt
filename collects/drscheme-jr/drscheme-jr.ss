@@ -52,7 +52,7 @@
   (unit/sig drscheme-jr:settings^
     (import [mz : prims^]
 	    [cmd-line : mzlib:command-line^]
-	    [basis : userspace:basis^]
+	    [basis : plt:basis^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
 	    [mzlib:function : mzlib:function^])
 
@@ -71,6 +71,8 @@
       (case-lambda
        [() (s setting)]
        [(x) (s! setting x)]))
+
+    (define teachpack #f)
 
     (define flags
       (list
@@ -205,7 +207,8 @@
 	  (with-input-from-file argv-file
 	    (lambda ()
 	      (let ([l (read)]
-		    [s (read)])
+		    [s (read)]
+		    [tp (read)])
 		(when (memq l (map (lambda (l) (cadr l)) language-levels))
 		  (basis:set-setting-vocabulary-symbol! setting l))
 		(for-each
@@ -215,7 +218,10 @@
 		     (let ([a (assoc tag flags)])
 		       (when a
 			 ((cadr a) value)))))
-		 s)))))))
+		 s)
+		(when (string? tp)
+		  (set! teachpack tp)
+		  (basis:teachpack-changed (list tp)))))))))
 
     (define (bad-arguments s . args)
       (printf "DrScheme Jr error: ~a~n" (apply format s args))
@@ -294,6 +300,16 @@
        "DrScheme Jr"
        mz:argv
        `([once-each
+	  [("-t" "--teachpack")
+	   ,(lambda (_ tp)
+	      (if (file-exists? tp)
+		  (begin
+		    (set! teachpack tp)
+		    (basis:teachpack-changed (list tp)))
+		  (begin
+		    (printf "teachpack: \"~a\" does not exist.~n" tp)
+		    (exit -1))))
+	   ("Set the teachpack to <file>" "file")]
 	  [("-l" "--language")
 	   ,(lambda (_ level)
 	      (set-level level))
@@ -321,10 +337,11 @@
 		(lambda ()
 		  (write (basis:setting-vocabulary-symbol setting))
 		  (newline)
-		  (mzlib:pretty-print:pretty-print (map (lambda (s)
-							  (cons (car s)
-								((cadr s))))
-							flags))
+		  (mzlib:pretty-print:pretty-print
+		   (map (lambda (s) (cons (car s) ((cadr s))))
+			flags))
+		  (newline)
+		  (write teachpack)
 		  (newline))
 		'truncate/replace)
 	      (printf "Settings saved.~n"))
@@ -353,7 +370,7 @@
   (make-go
    (compound-unit/sig
      (import [mz : prims^]
-             [basis : userspace:basis^]
+             [basis : plt:basis^]
              [mzlib : mzlib:core^])
      (link
       [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
@@ -365,59 +382,3 @@
                                 (mzlib function))])
      (export (open settings)))))
 
-#|
-
-  (invoke-unit/sig
-   (compound-unit/sig (import)
-     (link [mz : prims^ ((let ([_argv argv]
-			       [_program program])
-			   (unit/sig prims^
-			     (import)
-			     (define argv _argv)
-			     (define program _program))))]
-	   [mzlib : mzlib:core^ ((require-library "corer.ss"))]
-	   [print-convert : mzlib:print-convert^ ((require-library "pconverr.ss")
-						  (mzlib string)
-						  (mzlib function))]
-	   [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
-	   [interface : drscheme:interface^
-		      ((require-library-unit/sig "interface.ss" "userspce") aries drzodiac)]
-	   [drzodiac : zodiac:system^
-		     ((require-library-unit/sig "link.ss" "zodiac")
-		      (interface : zodiac:interface^)
-		      (mzlib pretty-print)
-		      (mzlib file))]
-	   [aries : plt:aries^ ((require-library-unit/sig "link-jr.ss" "stepper")
-                                mzlib
-				(drzodiac : zodiac:system^)
-                                (interface : zodiac:interface^))]
-	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
-						      (import)
-						      (define in-mzscheme? #t)))]
-	   [params : plt:userspace:params^ ((require-library-unit/sig "paramr.ss" "userspce"))]
-	   [basis : userspace:basis^
-		  ((require-library-unit/sig "basis.ss" "userspce")
-		   basis-import
-		   params
-		   drzodiac
-		   interface
-		   aries
-		   print-convert
-		   (mzlib pretty-print)
-		   (mzlib function))]
-	   [settings : drscheme-jr:settings^
-		     (build-settingU mz
-				     cmd-line
-				     basis
-				     (mzlib pretty-print)
-				     (mzlib function))]
-	   [dr-jr : () (dr-jrU
-			(drzodiac : zodiac:system^)
-			print-convert
-			basis
-			(mzlib pretty-print)
-			(mzlib function)
-			(mzlib thread)
-			settings)])
-     (export))))
-|#

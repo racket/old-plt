@@ -15,7 +15,7 @@
   (unit/sig ()
     (import [zodiac : zodiac:system^]
 	    [print-convert : mzlib:print-convert^]
-	    [basis : userspace:basis^]
+	    [basis : plt:basis^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:thread : mzlib:thread^]
@@ -169,11 +169,13 @@
                                 mzlib
 				(drzodiac : zodiac:system^)
                                 (interface : zodiac:interface^))]
-	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
-						      (import)
-						      (define in-mzscheme? #t)))]
+	   [basis-import : plt:basis-import^ ((unit/sig plt:basis-import^
+						(import)
+						(define (invalid-teachpack s)
+						  (printf "Invalid teachpack: ~a~n" s))
+						(define in-mzscheme? #t)))]
 	   [params : plt:userspace:params^ ((require-library-unit/sig "paramr.ss" "userspce"))]
-	   [basis : userspace:basis^
+	   [basis : plt:basis^
 
 		  ((require-library-unit/sig "basis.ss" "userspce")
 		   basis-import

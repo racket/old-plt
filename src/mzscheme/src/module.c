@@ -230,6 +230,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(import_stx);
   REGISTER_SO(import_for_syntax_stx);
   REGISTER_SO(export_stx);
+  REGISTER_SO(export_indirect_stx);
   REGISTER_SO(set_stx);
   REGISTER_SO(app_stx);
   REGISTER_SO(unbound_stx);

@@ -432,11 +432,13 @@
    [(struct-type? vtype)
     (let ([size (let ([m (lookup-struct-def (struct-type-struct vtype))])
 		  (apply + (map get-variable-size
-				(cdr m))))])
+				(map cdr (cdr m)))))])
       (if (struct-array-type? vtype)
 	  (* size (struct-array-type-count vtype))
 	  size))]
-   [else 1]))
+   [(vtype? vtype) 1]
+   [else (error 'get-variable-size "not a vtype: ~e"
+		vtype)]))
 
 (define (replace-live-vars live-vars new-live-vars)
   (make-live-var-info (live-var-info-tag live-vars)

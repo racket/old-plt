@@ -6,10 +6,12 @@
   (do-execute
    test-util-error
    poll-until
+   wait-for-computation
    wait-for-drscheme-frame
    wait-for-new-frame
    clear-definitions
    type-in-definitions
+   type-in-interactions
    wait
    wait-pending
    get-sub-panel

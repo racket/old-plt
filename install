@@ -55,6 +55,7 @@ exit 1
 (define fake-plthome plthome)
 
 (define zos?         'ask)
+(define installers?  #t)
 (define scripts?     #t)
 (define deps?        #f)
 (define updates?     'ask)
@@ -77,6 +78,12 @@ exit 1
    (("+z")
     "compile .zo files (default: ask)."
     (set! zos? #t))
+   (("-i")
+    "skip running installers when making .zo files."
+    (set! installers? #f))
+   (("+i")
+    "run collection installers as usual (default)."
+    (set! installers? #t))
    (("-s")
     "skip modifying PLTHOME in scripts."
     (set! scripts? #f))
@@ -95,10 +102,10 @@ exit 1
    (("+u")
     "check for on-line updates (default: ask)."
     (set! updates? #t))
-   (("-i")
+   (("-I")
     "non-interactive mode."
     (set! interactive? #f))
-   (("+i")
+   (("+I")
     "interactive mode (default)."
     (set! interactive? #t))
    (("-p") explicit-home
@@ -321,7 +328,10 @@ exit 1
   ;; since cm.ss checks on that flag.
   (parameterize ([current-namespace (make-namespace)]
 		 [use-compiled-file-kinds 'all]
-                 [current-command-line-arguments #("--trust-zos")])
+                 [current-command-line-arguments
+                  (if installers?
+                    #("--trust-zos")
+                    #("--trust-zos" "--no-install"))])
     (dynamic-require '(lib "setup.ss" "setup") #f)))
 
 ;; ---------- done ----------

@@ -118,7 +118,7 @@ _MysterX_
 > insert-object :: (send an-mx-document insert-object coclass width height [size])
 
   Inserts a COM object with class `coclass' at the beginning of the 
-  document.  `width' and `height' are fixnum integers.  The optional 
+  document.  `width' and `height' are exact integers.  The optional 
   `size' argument gives an interpretation for the width and height.  
   By default, size is 'pixels, but may also be 'percent, indicating that 
   the width and height are a fixed percentage of the document window size.
@@ -127,7 +127,7 @@ _MysterX_
 > append-object :: (send an-mx-document append-object coclass)
 
   Append a COM object with class `coclass' to the end of the document.  
-  `width' and `height' are fixnum integers.  The optional 
+  `width' and `height' are exact integers.  The optional 
   `size' argument gives an interpretation for the width and height.  
   By default, size is 'pixels, but may also be 'percent, indicating that 
   the width and height are a fixed percentage of the document window size.
@@ -401,7 +401,7 @@ the ITypeInfo interface.
   Returns a string containing HTML which when inserted into a document loads
   the COM object given by `name'.  This procedure is suitable for placing
   ActiveX controls within complex HTML.  `width' and `height' are
-  fixnum integers.  The optional `size' argument gives an interpretation 
+  exact integers.  The optional `size' argument gives an interpretation 
   for the width and height.  By default, size is 'pixels, but may also 
   be 'percent, indicating that the width and height are a fixed percentage 
   of the document window size.
@@ -422,16 +422,29 @@ the ITypeInfo interface.
   only the native methods were available, though they were not labeled 
   as such.  Older MysterX code can usually be ported by simply adding 
   "-native" to the names of those mx-element% methods that have a 
-  native version.
+  native version.  For methods that return values of element properties, 
+  we assume two characteristics, which we do not mention in the 
+  methods' documentation:  1) Native methods return the empty string for 
+  properties that have not been set, and 2) non-native methods raise
+  an error for properties that have not been set.
 
   In the following method descriptions, "CSS" refers to the 
   Cascading Style Sheets specification.  A CSS length is string 
   consisting of a decimal integer number followed by one of the 
   units "px" (pixels), "em" (font height), "ex" (height of an "x"),
   "in" (inches), "cm" (centimeters), "mm" (millimeters),
-  "pi" (picas), or "pt" (points).  A CSS percentage is a string 
-  consisting of a decimal real number followed by "%".
+  "pc" (picas), or "pt" (points).  A CSS percentage is a string 
+  consisting of a decimal real number followed by "%".  When 
+  using "-native" methods, CSS lengths and percentages are given
+  as strings.  For use by non-native methods, the following structures
+  have been defined:
 
+    (define-struct css-percentage (num))
+    (define-struct css-length (num units))
+
+ where num is a number, and units is a symbol.  The valid symbols
+ for the units field are those in '(em ex cm mm in pt pc px).
+ 
 > insert-html :: (send an-mx-element insert-html html)
 
   Places the HTML given by the string `html' before the element.
@@ -457,7 +470,7 @@ the ITypeInfo interface.
 > insert-object :: (send an-mx-element insert-object coclass width height [size])
 
   Inserts a COM object with class `coclass' before the HTML element.
-  `width' and `height' are fixnum integers.  The optional `size' argument 
+  `width' and `height' are exact integers.  The optional `size' argument 
   gives an interpretation for the width and height.  By default, size 
   is 'pixels, but may also be 'percent, indicating that the width and 
   height are a fixed percentage of the document window size.
@@ -466,7 +479,7 @@ the ITypeInfo interface.
 > append-object :: (send an-mx-element append-object coclass width height [size])
 
   Places a COM object with class `coclass' after the HTML element.  
-  `width' and `height' are fixnum integers.  The optional `size' argument 
+  `width' and `height' are exact integers.  The optional `size' argument 
   gives an interpretation for the width and height.  By default, size 
   is 'pixels, but may also be 'percent, indicating that the width and 
   height are a fixed percentage of the document window size.
@@ -494,8 +507,7 @@ the ITypeInfo interface.
 > font-family :: (send an-mx-element font-family)
 
   Returns a list of strings representing a priority list of 
-  font families for the element.  Raises an error if the 
-  property is empty.
+  font families for the element.  
 
 > font-family-native :: (send an-mx-element font-family-native)
 
@@ -519,7 +531,6 @@ the ITypeInfo interface.
 
   Retrieves a symbol indicating the element's font style,
   which is one of 'normal, 'italic, and 'oblique. 
-  Raises an error if the property is empty.
 
 > font-style-native :: (send an-mx-element font-style-native)
 
@@ -534,8 +545,7 @@ the ITypeInfo interface.
 > font-variant :: (send an-mx-element font-variant)
 
   Retrieves a symbol indicating the element's font variation,
-  which is either 'normal or 'small-caps.  Raises an error if the 
-  property is empty.
+  which is either 'normal or 'small-caps.  
 
 > font-variant-native :: (send an-mx-element font-variant-native)
 
@@ -614,7 +624,6 @@ the ITypeInfo interface.
 
   Retrieves a value indicating the CSS background-image for the
   element, either 'none or a string representing a URL.
-  Raises an error if the property is empty.
 
 > background-image-native :: (send an-mx-element background-image-native)   
 
@@ -634,35 +643,86 @@ the ITypeInfo interface.
 
 > background-repeat :: (send an-mx-element background-repeat)   
 
-  Retrieves a string indicating the CSS background-repeat for the
-  element.
+  Retrieves a symbol indicating the CSS background-repeat for the 
+  element.  See set-background-repeat! for possible values of that
+  symbol.
+
+> background-repeat-native :: (send an-mx-element background-repeat-native)   
+
+  Retrieves a string indicating the CSS background-repeat for the element.
+  See set-background-repeat-native! for possible values of that
+  string.
 
 > set-background-repeat! :: (send an-mx-element set-background-repeat! br)
 
+  Set the element's CSS background-repeat using the symbol `br',
+  which must be from the list '(no-repeat repeat repeat-x repeat-y).
+
+> set-background-repeat-native! :: (send an-mx-element set-background-repeat-native! br)
+
   Set the element's CSS background-repeat using the string `br',
-  which is one of "norepeat", "repeaty", "repeat", and "repeatx".
+  which must be from the list '("no-repeat" "repeat" "repeat-x" "repeat-y").
 
 > background-position :: (send an-mx-element background-position)   
 
   Retrieves a string indicating the CSS background-position for the
   element.
 
+> background-position-native :: (send an-mx-element background-position)   
+
+  Retrieves a string indicating the CSS background-position for the
+  element.
+
 > set-background-position! :: (send an-mx-element set-background-position! bp)
 
-  Set the element's CSSbackground-position using the string `bp',
-  which is either: 1) one or two CSS percentages or lengths, 
-  or 2) one of "top", "center", or "bottom", followed by one 
-  of "left", "center", or "right".
+  Set the element's CSS background-position using `bp',
+  which either 1) a single css-length, a css-percentage, or a 
+  symbol from the list '(left center right), in which case the 
+  property applies to the horizontal position; or 2) a two-element 
+  list, where either element may be a css-length or css-percentage, 
+  the first element may be a symbol from '(left center right), and 
+  the second element may be from '(top center bottom), in which
+  case the first element applies horizontally, and the second 
+  vertically.
+
+> set-background-position-native! :: (send an-mx-element set-background-position-native! bp)
+
+  Set the element's CSS background-position using the string `bp',
+  which may be either 1) a CSS percentage, a CSS length
+  or a string from '("left" "center" "right") or 2) two substrings
+  separated by spaces, where either substring may be a CSS percentage
+  or CSS length, the first substring may be one of 
+  '("left" "center" "right"), and the second substring may be one of 
+  '("top" "center" "bottom").  When one value is specified, it 
+  applies to the horizontal position; when two are given, the
+  first applies to the horizontal position, the second applies to 
+  the vertical position.
 
 > text-decoration :: (send an-mx-element text-decoration)
 
+  Retrieves a list drawn from the symbols in 
+  '(none underline overline line-through blink), indicating the 
+  CSS text-decoration for the element.  
+
+> text-decoration-native :: (send an-mx-element text-decoration-native)
+
   Retrieves a string indicating the CSS text-decoration for the
-  element.
+  element.  The string contains substrings drawn from 
+  '("none" "underline" "overline" "line-through" "blink").
 
 > set-text-decoration! :: (send an-mx-element set-text-decoration! td)
 
+  Set the element's CSS text-decoration using the list `td',
+  which contains symbols drawn from 
+  '(none underline overline line-through blink).
+
+> set-text-decoration-native! :: (send an-mx-element set-text-decoration-native! td)
+
   Set the element's CSS text-decoration using the string `td',
-  which is one of "underline", "overline", or "line-through".
+  which contains space-separated substrings drawn from 
+  '("none" "underline" "overline" "line-through" "blink").
+
+*** start here ***
 
 > text-transform :: (send an-mx-element text-transform)
 
@@ -1138,9 +1198,25 @@ the ITypeInfo interface.
 
 > font-size :: (send an-mx-element font-size)
 
+  Retrieves the CSS font-size for the element.  See
+  `set-font-size!' for possible values.  Raises an
+  error if the property has not been set.
+
+> font-size-native :: (send an-mx-element font-size-native)
+
   Retrieves the CSS font-size for the element.
 
 > set-font-size! :: (send an-mx-element set-font-size! fs)
+
+  Sets the element's CSS font-size using `fs', which may 
+  be any of 1) an symbol in the list '(xx-small x-small small medium 
+  large x-large xx-large); 2) a symbol in the list '(larger smaller), 
+  indicating a size relative to a parent element; 3) an instance
+  of the css-length structure, or 4) an instance of the css-percentage
+  structure, where the perecentage is relative to the parent element's
+  font-size.
+
+> set-font-size-native! :: (send an-mx-element set-font-size-native! fs)
 
   Sets the element's CSS font-size using `fs', which may 
   be any of 1) a string indicating an absolute size, one

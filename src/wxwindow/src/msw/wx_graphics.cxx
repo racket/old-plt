@@ -1,6 +1,7 @@
 
-#define WX_GRAPHICS_EXPORT __declspec(dllexport)
+#define WX_GRAPHICS_EXPORT extern "C" __declspec(dllexport)
 #define WX_GPROC(x) x
+#include <windows.h>
 #include "wx_graphics.h"
 
 /* This file effectively converts the GDI+ API from C++ to C, to make
@@ -45,39 +46,39 @@ void wxGScale(Graphics *g, double x, double y)
 
 void wxGDrawLine(Graphics *g, Pen *p, double x1, double y1, double x2, double y2)
 {
-  g->DrawLine(p, x1, y1, x2, y2);
+  g->DrawLine(p, (REAL)x1, (REAL)y1, (REAL)x2, (REAL)y2);
 }
 
 void wxGDrawLines(Graphics *g, Pen *p, PointF *pts, int n)
 {
-  g->DrawLines(g, p, pts, n);
+  g->DrawLines(p, pts, n);
 }
 
 void wxGFillRectangleColor(Graphics *g, COLORREF c, double x, double y, double w, double h)
 {
   Color col(c);
-  Brush b(col);
-  g->FillRectangle(b, x, y, w, h);
+  SolidBrush b(col);
+  g->FillRectangle(&b, (REAL)x, (REAL)y, (REAL)w, (REAL)h);
 }
 
 void wxGFillRectangle(Graphics *g, Brush *b, double x, double y, double w, double h)
 {
-  g->FillRectangle(b, x, y, w, h);
+  g->FillRectangle(b, (REAL)x, (REAL)y, (REAL)w, (REAL)h);
 }
 
 void wxGDrawRectangle(Graphics *g, Pen *p, double x, double y, double w, double h)
 {
-  g->DrawRectangle(p, x, y, w, h);
+  g->DrawRectangle(p, (REAL)x, (REAL)y, (REAL)w, (REAL)h);
 }
 
 void wxGFillPie(Graphics *g, Brush *b, double x, double y, double w, double h, double start, double span)
 {
-  g->FillPie(b, x, y, w, h, start, span);
+  g->FillPie(b, (REAL)x, (REAL)y, (REAL)w, (REAL)h, start, span);
 }
 
 void wxGDrawArc(Graphics *g, Pen *p, double x, double y, double w, double h, double start, double span)
 {
-  g->DrawArc(b, x, y, w, h, start, span);
+  g->DrawArc(p, x, y, (REAL)w, (REAL)h, (REAL)start, (REAL)span);
 }
 
 void wxGFillPolygon(Graphics *g, Brush *b, PointF *pts, int n, FillMode m)
@@ -112,12 +113,12 @@ void wxGPathRelease(GraphicsPath *gp)
 
 void wxGPathAddArc(GraphicsPath *gp, double x, double y, double w, double h, double start, double span)
 {
-  gp->AddArc(x, y, w, h, start, span);
+  gp->AddArc((REAL)x, (REAL)y, (REAL)w, (REAL)h, start, span);
 }
 
 void wxGPathAddLine(GraphicsPath *gp, double x1, double y1, double x2, double y2)
 {
-  gp->AddLine(x, y, w, h, start, span);
+  gp->AddLine((REAL)x1, (REAL)y1, (REAL)x2, (REAL)y2);
 }
 
 void wxGPathCloseFigure(GraphicsPath *gp)
@@ -129,7 +130,7 @@ void wxGPathCloseFigure(GraphicsPath *gp)
 Brush *wxGBrushNew(COLORREF c)
 {
   Color col(c);
-  return new Brush(col);
+  return new SolidBrush(col);
 }
 
 void wxGBrushRelease(Brush *b)
@@ -155,11 +156,11 @@ void wxGPenRelease(Pen *p)
 
 /* ********************************************************************** */
 
-static GdiplusStartupInput gdiplusStartupInput;
 static ULONG_PTR           gdiplusToken;
 
-void wxGStarup()
+void wxGStartup()
 {
+  GdiplusStartupInput gdiplusStartupInput;
   GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 }
 

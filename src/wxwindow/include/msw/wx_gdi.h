@@ -14,6 +14,7 @@
 #define wx_gdih
 
 #include "wb_gdi.h"
+#include <gdiplus.h>
 
 // Font
 class wxFont: public wxbFont
@@ -60,7 +61,7 @@ class wxPen: public wxbPen
   wxDash *old_dash;
   wxBitmap *old_stipple;
   COLORREF old_color;
-  Pen *g_p;
+  Gdiplus::Pen *g_p;
 
   HPEN cpen;
   HPEN my_old_cpen;
@@ -73,7 +74,7 @@ class wxPen: public wxbPen
   void ChangePen();
   HPEN SelectPen(HDC dc);
 
-  Pen *GraphicsPen();
+  Gdiplus::Pen *GraphicsPen();
   void ReleaseGraphics();
 };
 
@@ -88,7 +89,7 @@ class wxBrush: public wxbBrush
   int old_style;
   wxBitmap *old_stipple;
   COLORREF old_color;
-  Brush *g_b;
+  Gdiplus::Brush *g_b;
 
   wxBrush(void);
   wxBrush(wxColour *col, int style);
@@ -98,7 +99,7 @@ class wxBrush: public wxbBrush
   void ChangeBrush();
   HBRUSH SelectBrush(HDC dc);
 
-  Brush *GraphicsBrush();
+  Gdiplus::Brush *GraphicsBrush();
   void ReleaseGraphics();
 };
 

@@ -8,8 +8,9 @@
 # define WX_GPROC(x) (*x)
 #endif
 
+using namespace Gdiplus;
 
-WX_GRAPHICS_EXPORT void WX_GPROC(wxGStarup)();
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGStartup)();
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGShutdown)();
 
 WX_GRAPHICS_EXPORT Graphics *WX_GPROC(wxGMake)(HDC dc);

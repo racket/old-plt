@@ -16,6 +16,7 @@
 
 #include "wx_gdi.h"
 #include "wb_dc.h"
+#include <gdiplus.h>
 
 #ifdef IN_CPROTO
 typedef       void    *wxDC;
@@ -49,7 +50,7 @@ class wxDC: public wxbDC
   COLORREF cur_bk;
   int cur_rop;
 
-  Graphics *g;
+  Gdiplus::Graphics *g;
 
   // Store all old GDI objects when do a SelectObject,
   // so we can select them back in (thus unselecting user
@@ -170,7 +171,7 @@ class wxDC: public wxbDC
 
   virtual wxGL *GetGL();
 
-  void InitGraphics();
+  void InitGraphics(HDC dc);
   void ReleaseGraphics();
 };
 

@@ -20,7 +20,6 @@
 wxbDC::wxbDC(void)
 {
   __type = wxTYPE_DC;
-  min_x = 0; min_y = 0; max_x = 0; max_y = 0;
   title = NULL;
   clipping = NULL;
   autoSetting = TRUE;
@@ -94,14 +93,8 @@ int wxbDC::GetBackgroundMode(void)
 
 void wxbDC::GetSize(double *width, double *height)
 {
-  if (!(min_x == 1000.0 && min_y == 1000.0 && max_x == -1000.0 && max_y == -1000.0))
-  {
-    *width = (double)(max_x - min_x);
-    *height = (double)(max_y - min_y);
-  } else {
-    *width = 0.0;
-    *height = 0.0;
-  }
+  *width = 0.0;
+  *height = 0.0;
 }
 
 #if USE_SPLINES

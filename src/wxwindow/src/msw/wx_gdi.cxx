@@ -520,8 +520,8 @@ Pen *wxPen::GraphicsPen()
 {
   if (!g_p) {
     Pen *p;
-    p = wxGPenNew(c->pixel, width, 
-		  graphics_caps[cap - wxCAP_ROUND]
+    p = wxGPenNew(colour->pixel, width, 
+		  graphics_caps[cap - wxCAP_ROUND],
 		  graphics_joins[cap - wxJOIN_BEVEL]);
     g_p = p;
   }
@@ -530,9 +530,9 @@ Pen *wxPen::GraphicsPen()
 
 void wxPen::ReleaseGraphics()
 {
-  if (p) {
-    wxGPenRelease(p);
-    p = NULL;
+  if (g_p) {
+    wxGPenRelease(g_p);
+    g_p = NULL;
   }
 }
 
@@ -777,12 +777,12 @@ wxBrush::wxBrush(wxColour *col, int Style)
   ChangeBrush();
 }
 
-Pen *wxPen::GraphicsPen()
+Brush *wxBrush::GraphicsBrush()
 {
   if (!g_b) {
     Brush *b;
-    b = wxGBrushNew(c->pixel);
-    g_g = b;
+    b = wxGBrushNew(colour->pixel);
+    g_b = b;
   }
   return g_b;
 }
@@ -791,7 +791,7 @@ void wxBrush::ReleaseGraphics()
 {
   if (g_b) {
     wxGBrushRelease(g_b);
-    b_b = NULL;
+    g_b = NULL;
   }
 }
 

@@ -203,6 +203,8 @@ int wxWinMain(int wm_is_mred,
 
   wxCreateApp();
 
+  wxGDIStartup();
+
   // Get application name
   {
     char *name;

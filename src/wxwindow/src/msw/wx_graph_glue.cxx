@@ -1,5 +1,6 @@
 
 #include "wx.h"
+#include "wx_graphics.h"
 #include <gdiplus.h>
 
 #include "../../../mzscheme/src/schvers.h"
@@ -10,7 +11,7 @@ Bool wx_gdi_plus = FALSE;
 
 /* Declare types to mask cast easier: */
 
-typedef void (*p_wxGStarup)();
+typedef void (*p_wxGStartup)();
 typedef void (*p_wxGShutdown)();
 
 typedef Graphics *(*p_wxGMake)(HDC dc);
@@ -56,7 +57,7 @@ typedef void (*p_wxGPenRelease)(Pen *b);
 
 /* Declare procedure pointers: */
 
-p_wxGStarup wxGStarup;
+p_wxGStartup wxGStartup;
 p_wxGShutdown wxGShutdown;
 
 p_wxGMake wxGMake;
@@ -104,7 +105,7 @@ p_wxGPenRelease wxGPenRelease;
 
 static void GetProcs(HMODULE m)
 {
-  wxGStartup = (p_wxGStartup)GetProcAddress(m, "wxGSstartup");
+  wxGStartup = (p_wxGStartup)GetProcAddress(m, "wxGStartup");
   wxGShutdown = (p_wxGShutdown)GetProcAddress(m, "wxGShutdown");
 
   wxGMake = (p_wxGMake)GetProcAddress(m, "wxGMake");

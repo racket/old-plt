@@ -25,6 +25,8 @@
 
 static wxMemoryDC *blit_dc, *blit_mdc;
 
+#define wxPI 3.141592653589793
+
 #define YSCALE(y) (yorigin - (y))
 
 static HANDLE null_brush;
@@ -100,7 +102,6 @@ wxDC::wxDC(void)
   old_font = 0;
   old_palette = 0;
   cur_rop = -1;
-  min_x = 0; min_y = 0; max_x = 0; max_y = 0;
   font = wxNORMAL_FONT;
   logical_origin_x = 0;
   logical_origin_y = 0;
@@ -375,7 +376,7 @@ void wxDC::SetColourMap(wxColourMap *cmap)
   DoneDC(dc);
 }
 
-void wxDC::InitGraphics()
+void wxDC::InitGraphics(HDC dc)
 {
   if (!g) {
     int x, y;
@@ -430,13 +431,14 @@ void wxDC::Clear(void)
   if (anti_alias) {
     GraphicsState s;
 
-    InitGraphics();
+    InitGraphics(dc);
 
     s = wxGSave(g);
     wxGResetTransform(g);
-    wxGFillRectangleColor(g, current_background_colour->pixel, 0, 0, rect.right, rect.bottom);
+    wxGFillRectangleColor(g, current_background_color->pixel, 0, 0, rect.right, rect.bottom);
     wxGRestore(g, s);
 
+	DoneDC(dc);
     return;
   }
   
@@ -545,10 +547,11 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
 
   if (anti_alias) {
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-      InitGraphics();
+      InitGraphics(dc);
       
       wxGDrawLine(g, current_pen->GraphicsPen(), x1, y1, x2, y2);
     }
+	DoneDC(dc);
     return;
   }
 
@@ -676,7 +679,7 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
   if (anti_alias) {
     double span, init;
 
-    InitGraphics();
+    InitGraphics(dc);
 
     init = start * 180 / wxPI;
     init = fmod(init, 360.0);
@@ -689,13 +692,14 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
       span += 360.0;
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
-      wxGFillPie(g, current_pen->GraphicsBrush(), x, y, w, h, init, span);
+      wxGFillPie(g, current_brush->GraphicsBrush(), x, y, w, h, init, span);
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
       wxGDrawArc(g, current_pen->GraphicsPen(), x, y, w, h, init, span);
     }
 
+	DoneDC(dc);
     return;
   }
 
@@ -828,12 +832,12 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
   if (anti_alias) {
     PointF *pts;
     
-    InitGraphics();
+    InitGraphics(dc);
 
     pts = new PointF[n];
     for (i = 0; i < n; i++) {
-      pts[i].x = points[i].x + xoffset;
-      pts[i].y = points[i].y + yoffset;
+      pts[i].X = points[i].x + xoffset;
+      pts[i].Y = points[i].y + yoffset;
     }
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
@@ -845,6 +849,7 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
       wxGDrawPolygon(g, current_pen->GraphicsPen(), pts, n);
     }
 
+	DoneDC(dc);
     return;
   }
 
@@ -889,19 +894,21 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
   if (anti_alias) {
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
       PointF *pts;
+	  int i;
       
-      InitGraphics();
+      InitGraphics(dc);
       
       pts = new PointF[n];
       for (i = 0; i < n; i++) {
-	pts[i].x = points[i].x + xoffset;
-	pts[i].y = points[i].y + yoffset;
+	pts[i].X = points[i].x + xoffset;
+	pts[i].Y = points[i].y + yoffset;
       }
 
       
       wxGDrawLines(g, current_pen->GraphicsPen(), pts, n);
     }
 
+	DoneDC(dc);
     return;
   }
 
@@ -937,7 +944,7 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
   if (!dc) return;
 
   if (anti_alias) {
-    InitGraphics();
+    InitGraphics(dc);
 
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
       wxGFillRectangle(g, current_brush->GraphicsBrush(), x, y, width, height);
@@ -947,6 +954,7 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
       wxGDrawRectangle(g, current_pen->GraphicsPen(), x, y, width, height);
     }
     
+	DoneDC(dc);
     return;
   }
   
@@ -1003,7 +1011,7 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
   if (anti_alias) {
     GraphicsPath *gp;
 
-    InitGraphics();
+    InitGraphics(dc);
 
     gp = wxGPathNew(FillModeWinding);
     wxGPathAddArc(gp, x + radius, y + radius, radius, radius, 180, -90);
@@ -1016,15 +1024,16 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
     wxGPathCloseFigure(gp);
     
     if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
-      wxGFillPath(g, current_brush->GraphicsBrush(), path);
+      wxGFillPath(g, current_brush->GraphicsBrush(), gp);
     }
 
     if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-      wxGDrawPath(g, current_pen->GraphicsPen(), path);
+      wxGDrawPath(g, current_pen->GraphicsPen(), gp);
     }
 
     wxGPathRelease(gp);
-    
+
+    DoneDC(dc);
     return;
   }
   

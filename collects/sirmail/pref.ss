@@ -64,6 +64,7 @@
   (preferences:set-default 'sirmail:use-extenal-composer? #f boolean?)
   (preferences:set-default 'sirmail:show-urls? #t boolean?)
   (preferences:set-default 'sirmail:show-gc-icon #f boolean?)
+  (preferences:set-default 'sirmail:always-happy #f boolean?)
   (preferences:set-default 'sirmail:wrap-lines #f boolean?)
 
   (preferences:set-default 'sirmail:aliases-file (build-path (find-system-path 'home-dir) ".sirmail.aliases")
@@ -478,7 +479,8 @@
 				  "Auto-File Table File")
       
       (make-boolean "Show GC Icon" p 'sirmail:show-gc-icon)
-
+      (make-boolean "Always Happy to Get Email" p 'sirmail:always-happy)
+      
       (make-text-list "Shown Header Fields" p 'sirmail:fields-to-show void)
 
       p))

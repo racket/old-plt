@@ -1496,6 +1496,7 @@
           (define/public (set-message n)
             (set! message 
                   (cond
+                    [(preferences:get 'sirmail:always-happy) "New Mail!"]
                     [(n . <= . 50) "New Mail!"]
                     [(n . <= . 200) "New Mail"]
                     [else "New Mail!@#$%"]))

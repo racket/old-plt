@@ -597,7 +597,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 				      int len, Scheme_Object **_wl,
 				      Scheme_Object *owner_wraps)
 {
-  int i;
+  int i, mutable;
   Scheme_Object *wl, *a;
 
   /* Would adding the wraps generate a list equivalent to owner_wraps? */
@@ -629,15 +629,33 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     *_wl = wl;
   }
 
+  mutable = 0;
+
   for (i = len; i--; ) {
     a = SCHEME_VEC_ELS(wl)[i];
     if (SCHEME_NUMBERP(a)) {
-      if (!i || !SAME_OBJ(a, SCHEME_VEC_ELS(wl)[i - 1]))
-	o = scheme_add_remove_mark(o, a);
-      else
+      if (!i || !SAME_OBJ(a, SCHEME_VEC_ELS(wl)[i - 1])) {
+	if (mutable) {
+	  long lp = ((Scheme_Stx *)o)->lazy_prefix;
+	  a = add_remove_mark(((Scheme_Stx *)o)->wraps, a, &lp);
+	  ((Scheme_Stx *)o)->wraps = a;
+	  ((Scheme_Stx *)o)->lazy_prefix = lp;
+	} else {
+	  o = scheme_add_remove_mark(o, a);
+	  mutable = 1;
+	}
+      } else
 	i--;
-    } else
-      o = scheme_add_rename(o, a);
+    } else {
+      if (mutable) {
+	a = scheme_make_pair(a, ((Scheme_Stx *)o)->wraps);
+	((Scheme_Stx *)o)->wraps = a;
+	((Scheme_Stx *)o)->lazy_prefix += 1;
+      } else {
+	o = scheme_add_rename(o, a);
+	mutable = 1;
+      }
+    }
   }
 
   return o;
@@ -772,7 +790,9 @@ static Scheme_Object *get_marks(Scheme_Object *awl)
 
   while (1) {
     /* Skip over renames: */
-    while (!SCHEME_NULLP(awl) && !SCHEME_NUMBERP(SCHEME_CAR(awl))) {
+    while (!SCHEME_NULLP(awl) 
+	   && !SCHEME_NUMBERP(SCHEME_CAR(awl))
+	   && !SCHEME_SYMBOLP(SCHEME_CAR(awl))) {
       awl = SCHEME_CDR(awl);
     }
 

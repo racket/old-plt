@@ -156,8 +156,9 @@
   
   (define (annotate red-exprs parsed-exprs input-struct-proc-names break wrap-style)
     (local
-	((define (cheap-wrap?) (eq? wrap-style 'cheap-wrap))
-         (define (ankle-wrap?) (eq? wrap-style 'ankle-wrap))
+	((define cheap-wrap? (eq? wrap-style 'cheap-wrap))
+         (define ankle-wrap? (eq? wrap-style 'ankle-wrap))
+         (define foot-wrap? (eq? wrap-style 'foot-wrap))
          
          (define (make-break kind)
            `(#%lambda returned-value-list
@@ -298,7 +299,7 @@
 	     
              ; find the source expression and associate it with the parsed expression
              
-             (when (and red-exprs (not cheap-wrap?))
+             (when (and red-exprs foot-wrap?)
                (set-expr-read! expr (find-read-expr expr))) 
 	     
 	     (cond

@@ -49,20 +49,26 @@
                 mred
                 marks
                 annotate)]
+        [mred-extensions : stepper:mred-extensions^
+                 ((require-library-unit/sig "mred-extensions.ss" "stepper-graphical")
+                  mred
+                  framework
+                  pretty
+                  (shared : (highlight-placeholder)))]
         [stepper-view-controller : (stepper-go)
                  ((require-library-unit/sig "view-controller.ss" "stepper-graphical")
                   core
                   error
                   zodiac
                   client-procs
-                  pretty
                   mred
                   drscheme
                   print-convert
                   framework
                   shared
                   utils
-                  marks)]
+                  marks
+                  mred-extensions)]
         [stepper-startup : ()
                          ((require-library-unit/sig "startup.ss" "stepper-graphical")
                           core

@@ -102,3 +102,8 @@
    final-mark-list?
    skip-result-step?
    skip-redex-step?))
+
+(define-signature stepper:mred-extensions^
+  (stepper-canvas%
+   stepper-text%
+   image?))

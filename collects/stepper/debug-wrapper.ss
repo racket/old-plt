@@ -15,7 +15,7 @@
                              (list sexp) 
                              current-environments 
                              #f
-                             #t)])
+                             'cheap-wrap)])
       (set! current-environments new-envs)
       (car annotateds)))
   

@@ -181,7 +181,8 @@
                                           (with-handlers
                                               ((exn:syntax? exception-handler))
                                             (z:scheme-expand new-expr 'previous user-vocabulary))))])
-                   (let*-values ([(annotated-list envs) (a:annotate (list new-expr) (list new-parsed) packaged-envs break #f)]
+                   (let*-values ([(annotated-list envs) (a:annotate (list new-expr) (list new-parsed) packaged-envs break 
+                                                                    'foot)]
                                  [(annotated) (car annotated-list)])
                      (set! packaged-envs envs)
                      (set! current-expr new-parsed)

@@ -1005,7 +1005,7 @@ struct Scheme_Input_Port
   unsigned char ungotten[4];
   int ungotten_count;
   Scheme_Object *special, *ungotten_special;
-  long position, readpos, lineNumber, charsSinceNewline;
+  long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
   struct Scheme_Output_Port *output_half;

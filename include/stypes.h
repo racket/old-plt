@@ -126,8 +126,8 @@ enum {
   scheme_nack_waitable_type,
   scheme_module_registry_type,
   scheme_thread_set_type,   /* 110 */
+  scheme_string_converter_type,
 
-  scheme_reserved1_type,
   scheme_reserved2_type,
   scheme_reserved3_type,
 

@@ -471,6 +471,7 @@
 
 # define SYSTEM_TYPE_NAME "windows"
 # define DOS_FILE_SYSTEM
+# define FILENAME_MUST_BE_UTF8
 # if defined(_MSC_VER)
 #  define NO_READDIR
 #  define USE_FINDFIRST
@@ -575,7 +576,7 @@
 
 # define REGISTER_POOR_MACHINE
 
-# define WINLATIN_CHAR_SET
+# define WINDOWS_UNICODE_SUPPORT
 
 # define FLAGS_ALREADY_SET
 
@@ -583,7 +584,7 @@
 
   /************** Mac OS X  ****************/
 
-# if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
+# if (defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)) || defined(OS_X)
 
 #ifdef XONX 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-darwin"
@@ -615,6 +616,10 @@
 # define SIGSET_IS_SIGNAL
 
 # define USE_TM_GMTOFF_FIELD
+
+#ifndef XONX
+# define MACOS_UNICODE_SUPPORT
+#endif
 
 # ifndef OS_X
 #  define OS_X 1
@@ -705,6 +710,8 @@
 # define POW_HANDLES_INF_CORRECTLY
 # define TRIG_ZERO_NEEDS_SIGN_CHECK
 
+# define MACOS_UNICODE_SUPPORT
+
 # define USE_MAC_TCP
 
 # define SIGSET_IS_SIGNAL
@@ -730,6 +737,7 @@
 
 # define SYSTEM_TYPE_NAME "dos"
 # define DOS_FILE_SYSTEM
+# define FILENAME_MUST_BE_UTF8
 # define USE_GETDISK
 # define DIRENT_NO_NAMLEN
 # define NO_READLINK
@@ -889,6 +897,10 @@
 
  /* EXPAND_FILENAME_TILDE expands ~ in a filename with a user's home
      directory. */
+
+ /* FILENAME_MUST_BE_UTF8 inidicates that filenames must be valid 
+    UTF-8 encodings, because they will be converted before the
+    filesystem is accessed. */
 
  /* NO_STAT_PROC means that there is no stat() function. */
 
@@ -1260,12 +1272,9 @@
  /* USE_LONG_LONG_FOR_BIGDIG indicates that `long long' is available
     and 64 bits wide (don't mix with SIXTY_FOUR_BIT_INTEGERS). */
 
- /* MACROMAN_CHAR_SET indicates that latin1-integer->char should convert
-    Latin-1 values to MacRoman characters. */
-
- /* WINLATIN_CHAR_SET indicates that latin1-integer->char should return
-    #f for values in #x80 to #x9F, and char->latin-1-integer should
-    return #f for characters in that range. */
+ /* MACOS_UNICODE_SUPPORT and WINDOWS_UNICODE_SUPPORT indicate that
+    platform-native functions should be used for string comparisons
+    in the default locale. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

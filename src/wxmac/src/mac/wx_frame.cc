@@ -32,6 +32,8 @@ extern int wxMenuBarHeight;
 
 extern void MrEdQueuePaint(wxWindow *wx_window);
 
+static int showed_something = 0;
+
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -842,6 +844,13 @@ void wxFrame::Show(Bool show)
 {
   WindowPtr theMacWindow;
   wxChildList *tlw;
+
+  if (!showed_something) {
+    ProcessSerialNumber psn;
+    GetCurrentProcess(&psn);    
+    SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
+    showed_something = 1;
+  }
 
   if (!show == cUserHidden) {
     if (show) {

@@ -332,6 +332,18 @@ double (*scheme_real_to_double)(Scheme_Object *r);
 Scheme_Object *(*scheme_make_cptr)(void *cptr, const char *typestr);
 const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
 /*========================================================================*/
+/*                               strings                                  */
+/*========================================================================*/
+int (*scheme_utf8_decode)(const unsigned char *s, int start, int len, 
+				 unsigned int *us, int dstart, int dlen,
+				 long *ipos, char utf16, int permissive);
+int (*scheme_utf8_decode_all)(const unsigned char *s, int len, unsigned int *us, 
+				     int permissive);
+int (*scheme_utf8_encode)(const unsigned int *us, int start, int len, 
+				 unsigned char *s, int dstart,
+				 char utf16);
+int (*scheme_utf8_encode_all)(const unsigned int *us, int len, unsigned char *s);
+/*========================================================================*/
 /*                               bignums                                  */
 /*========================================================================*/
 Scheme_Object *(*scheme_make_bignum)(long v);

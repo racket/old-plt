@@ -631,8 +631,9 @@
 					      wx:const-stipple)]
 			  [x dx]
 			  [y (+ dy reset-console-start-location)]
-			  [width (begin (get-extent #1=#&0 null)
-					(unbox #1#))]
+			  [width (let ([b (box 0)])
+                                   (get-extent b null)
+                                   (unbox b))]
 			  [height  (- reset-console-end-location
 				      reset-console-start-location)])
 		     (send brush set-stipple mred:icon:reset-console-bitmap)

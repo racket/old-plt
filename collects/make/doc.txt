@@ -2,18 +2,22 @@
 make.ss
 -------
 
-make.ss provides a `make' macro and a `make/proc' procedure.
- (make
-   ((target (depend ...) command ...) ...)
-   argv)
-expands to
-  (make/proc
-     (list (list target (list depend ...) (lambda () command ...)) ...)
-      argv)
+>INDEX: "make"
 
-(make/proc spec argv) performs a make according to `spec' and using `argv'
-as command-line arguments selecting one or more targets.  `argv' can
-either be a string or a vector of strings.
+The "make.ss" library in the "make" collection provides a `make' macro
+and a `make/proc' procedure.
+
+> (make ((target (depend ...) command ...) ...) argv)
+
+expands to
+
+  (make/proc
+    (list (list target (list depend ...) (lambda () command ...)) ...)
+    argv)
+
+> (make/proc spec argv) performs a make according to `spec' and using
+`argv' as command-line arguments selecting one or more targets.
+`argv' can either be a string or a vector of strings.
 
 `spec' is a MAKE-SPEC:
 
@@ -43,36 +47,36 @@ and the `orig-exn' field is the original exception.
 The maker.ss library is a signed unit that requires no imports
 and provdes `make/proc'.
 
-make.ss also provides `make-print-checking', a parameter that controls it's
-printouts. If the parameter's value is #f, it only prints when it is making
-a target. Otherwise, it prints when it is checking the dependancies of a
-target. Defaultly #t.
+make.ss also provides the following parameters:
 
-make.ss also provides `make-print-dep-no-line', a parameter that controls it's
-printouts. If the parameter's value is #f make will only print
-"checking..." lines for dependancies that have a corresponding make line. 
-Defaultly #f.
+> (make-print-checking [on?]) - If #f, make only prints when it is
+making a target. Otherwise, it prints when it is checking the
+dependancies of a target. Defaultly #t.
 
-make.ss also provides `make-print-reasons', a parameter that controls it's
-printouts. If the parameter's value is #t make will only print
-the reason for each dependancy that fires.
-Defaultly #t.
+> (make-print-dep-no-line [on?]) - If #f, make only prints "checking..."
+lines for dependancies that have a corresponding make line.  Defaultly
+#f.
+
+> (make-print-reasons [on?]) If #t, make prints the reason for each
+dependancy that fires. Defaultly #t.
 
 collection.ss
 -------------
 
-collection.ss provides a `make-collection' procedure.
+>INDEX: "collections, compiling"
 
-(make-collection collection-name et-expr collection-files argv)
+The "collection.ss" library in the "make" collection provides a
+`make-collection' procedure.
+
+> (make-collection collection-name et-expr collection-files argv)
 constructs and performs a make to compile a collection of Scheme files
 into a multi-file extension. `collection-name' is used as a name that
 is embedded into publicly visible names in the extension (choosing a
 unique `collection-name' for each extension helps avoid conflicts
 among different extensions for certain operating systems). The
 `et-expr' expression is used as an ealboration-time initialization
-expression for the compiler. `collection-files' is a list
-of Scheme source files to be compiled. `argv' is passed on
-to `make'.
+expression for the compiler. `collection-files' is a list of Scheme
+source files to be compiled. `argv' is passed on to `make'.
 
 The resulting extension "_loader" is compiled to the current
 directory's "compiled/native/PLATFORM" subdirectory, where `PLATFORM'

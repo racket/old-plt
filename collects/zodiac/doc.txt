@@ -2,6 +2,8 @@
 Using Zodiac
 ------------
 
+>INDEX: "zodiac"
+
 The top-level way:
 
    (require-library "invoke.ss" "zodiac")
@@ -23,39 +25,39 @@ The unit/sig way:
       mzlib:pretty-print^
       mzlib:file^
    Exports:
-      zodiac:system^
+      zodiac:system^ ; no `zodiac:' prefix
 
 Reader Procedures
 -----------------
 
-(read p (make-location 1 1 0 filename)) - reads from the port `p',
-  which represents the file indicated by the `filename' string.
+> (zodiac:read p (make-location 1 1 0 filename)) - reads from the port
+  `p', which represents the file indicated by the `filename' string.
   Returns a PROCEDURE that gets each expression as a zodiac AST.
 
 Expander Procedures
 -------------------
 
-(scheme-expand expr [attr 'previous] [vocab #f]) - expands one
-  expression, reprsented as a zodiac AST, returning a zodiac AST.
+> (zodiac:scheme-expand expr [attr 'previous] [vocab #f]) - expands
+  one expression, reprsented as a zodiac AST, returning a zodiac AST.
 
-(scheme-expand-program exprs [attr 'previous] [vocab #f]) - expands
-  several expressions, reprsented as a list of zodiac ASTs, returning
-  a list of zodiac ASTs.
+> (zodiac:scheme-expand-program exprs [attr 'previous] [vocab #f]) -
+  expands several expressions, reprsented as a list of zodiac ASTs,
+  returning a list of zodiac ASTs.
 
 Zodiac AST -> S-Expression
 --------------------------
 
- (parsed->raw expr) - converts a zodiac AST to an S-expression (losing
-   location information, obviously).
+> (zodiac:parsed->raw expr) - converts a zodiac AST to an S-expression
+   (losing location information, obviously).
 
 Vocabularies
 ------------
 
- beginner-vocabulary
- intermediate-vocabulary
- advanced-vocabulary
- full-vocabulary - advanced + units and objects
- scheme-vocabulary - MzScheme (unlike full-vocabulary, local, send*,
+> beginner-vocabulary
+> intermediate-vocabulary
+> advanced-vocabulary
+> full-vocabulary - advanced + units and objects
+> scheme-vocabulary - MzScheme (unlike full-vocabulary, local, send*,
                      etc. are not present until the correcponding
                      `define-macro' expression in MzLib is evaluated
                      at elaboration time)
@@ -63,20 +65,23 @@ Vocabularies
 Handler Parameters
 ------------------
 
-elaboration-evaluator - parameter for the evaluatotr used to evaluate
- begin-elaboration-time bodies and the RHS of a macro definition.
+> (elaboration-evaluator [proc]) - parameter for the evaluatotr used
+  to evaluate begin-elaboration-time bodies and the RHS of a macro
+  definition.
 
  default: (lambda (expr parsed->raw phase)
             (eval (parsed->raw expr)))
 
-user-macro-body-evaluator - parameter for the evaluator used to
- evaluate macro applications.
+> (user-macro-body-evaluator [proc]) - parameter for the evaluator
+  used to evaluate macro applications.
 
  default: (lambda (x . args)
             (eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))
 
 Error Handlers
 --------------
+
+>INDEX: "zodiac:interface^" "zodiac:static-error" "zodiac:internal-error"
 
 Zodiac relies on two error handles that are provided by the
  zodiac:interface^ import: internal-error (for when things go wrong in
@@ -93,9 +98,9 @@ A zodiac error handler takes a zodiac AST followed by format-style
 Example
 -------
 
-> (require-library "invoke.ss" "zodiac")
-> (zodiac:invoke-system)
-> (let ([r ((zodiac:read (open-input-string "(cons 1 null)")
-                         (zodiac:make-location 1 1 0 "string")))])
-    (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))
+ > (require-library "invoke.ss" "zodiac")
+ > (zodiac:invoke-system)
+ > (let ([r ((zodiac:read (open-input-string "(cons 1 null)")
+                          (zodiac:make-location 1 1 0 "string")))])
+     (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))
   = (list 1)

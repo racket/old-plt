@@ -1,7 +1,14 @@
+
+>INDEX: "dynext"
+
+The dynext collection provides three libraries: compile.ss, link.ss,
+and file.ss.
+
+>INDEX: "compile.ss"
 compile.ss
 ----------
 
-`compile-extension' takes
+> (compile-extension quiet? input-file output-file includes)
    quiet? - Boolean indicating whether command should be echoed to stdout
    input-file - A C source filename
    output-file - A compiled object filename
@@ -11,40 +18,40 @@ compile.ss
 Compilation is controlled by a number of parameters for Windows
 and Unix:
 
-   current-extension-compiler - compiler executable pathname or
+>  current-extension-compiler - compiler executable pathname or
      #f. The default is set by searching for an executable using
      the PATH environment variable. Under windows, the search
      looks for cl.exe and then gcc.exe. Under Unix, it looks for 
      gcc and then cc. #f indicates that no compiler could be
      found.
 
-   current-extension-compiler-flags - list of strings passed to the
+>  current-extension-compiler-flags - list of strings passed to the
     compiler as flags. Under Windows, the default is (list "/c"
     "/O2") for cl.exe or (list "-c" "-O2") for gcc.exe; under Unix,
     (list "-c" "-O2").
 
-   current-make-compile-include-strings - procedure that takes an
+>  current-make-compile-include-strings - procedure that takes an
     include directory path and returns a list of strings for the
     command line.  Windows: "dir" -> (list "/Idir") for cl.exe
     or (list "-Idir") for gcc.exe ; Unix: "dir" -> (list "-Idir")
 
-   current-make-compile-input-strings - procedure that takes an
+>  current-make-compile-input-strings - procedure that takes an
     input file and returns a list of strings for the command line.
     The default is `list'.
 
-   current-make-compile-output-strings - procedure that takes an
+>  current-make-compile-output-strings - procedure that takes an
     output file and returns a list of strings for the command line.
     Windows: "file" -> (list "/Fofile") for cl.exe or (list "-o" 
     "file") for gcc.exe; Unix: "file" -> (list "-o" "file")
 
- (use-standard-compiler name) sets the above parameters for a
+> (use-standard-compiler name) sets the above parameters for a
     particular known compiler. The acceptable names are 
     platforms-specific:
       Unix: 'cc or 'gcc
       Windows: 'gcc or 'msvc
       MacOS: 'cw
 
- (get-standard-compilers) returns a list of standard compiler
+> (get-standard-compilers) returns a list of standard compiler
     names for the current platform.
 
 Under MacOS, none of these options are used. The compiler always
@@ -53,43 +60,44 @@ cannot be changed.
 
 The unit/sig form defined by "compiler.ss" requires no imports.
 
+>INDEX: "link.ss"
 link.ss
 -------
 
-`link-extension' takes:
+> (link-extension quiet? input-files output-file)
    quiet? - Boolean indicating whether command should be echoed to stdout
    input-files - A list of compiled object filenames
    output-file - An extension filename
 
 Linking parameters:
 
-   current-extension-linker - linker executable pathname or #f. 
+>  current-extension-linker - linker executable pathname or #f. 
      The default is set by searching for an executable using
      the PATH environment variable. Under Windows, it looks for 
      cl.exe and then ld.exe. Under Unix except AIX, it looks for 
      ld. Under AIX, it looks for cc. #f indicates that no linker
      could be found.
 
-   current-extension-linker-flags - list of strings. Under Windows,
+>  current-extension-linker-flags - list of strings. Under Windows,
      default is (list "/LD") fo cl.exe and (list "--dll") for ld.exe. 
      Under Unix, the default varies greatly among platforms.
 
-   current-make-link-input-strings - procedure that takes an
+>  current-make-link-input-strings - procedure that takes an
      input file and returns a list of strings for the command line.
      The default is `list'.
 
-   current-make-link-output-strings - procedure that takes an output
+>  current-make-link-output-strings - procedure that takes an output
     file and returns a list of strings for the command line.  Windows:
     "file" -> (list "/Fefile") for cl.exe or (list "-e" "_dll_entry@12"
      "-o" "file") for ld.exe; Unix: "file" -> (list "-o" "file")
 
-   current-standard-link-libraries - list of file paths; For
+>  current-standard-link-libraries - list of file paths; For
     most platforms, the default is 
      (list (build-path (collection-path "mzscheme" "lib") 
                        (system-library-subpath)
                        "mzdyn.o"))
 
- (use-standard-linker name) sets the above parameters for a
+> (use-standard-linker name) sets the above parameters for a
     particular known linker. The acceptable names are 
     platforms-specific, the same as for use-standard-compiler.
 
@@ -99,42 +107,40 @@ changed.
 
 The unit/sig form defined by "linkr.ss" requires no imports.
 
+>INDEX: "file.ss"
 file.ss
 -------
 
- (make-directory* dir) - makes dir, creating intermediate directoies
-   if necessary. If there is an error, and exception is raised.
+> (append-zo-suffix s) - appends the .zo file suffix to s.
 
- (append-zo-suffix s) - appends the .zo file suffix to s.
-
- (append-object-suffix s) - appends the platform-standard compiled
+> (append-object-suffix s) - appends the platform-standard compiled
    object file suffix to s.
 
- (append-c-suffix s) - appends the platform-standard C source
+> (append-c-suffix s) - appends the platform-standard C source
    file suffix to s.
 
- (append-constant-pool-suffix s) - appends the constant pool file
+> (append-constant-pool-suffix s) - appends the constant pool file
    suffix (.kp) to s.
 
- (append-extension-suffix s) - appends the platform-standard dynamic
+> (append-extension-suffix s) - appends the platform-standard dynamic
    extension file suffix to s.
 
- (extract-base-filename/ss s program) - strips the Scheme file suffix
+> (extract-base-filename/ss s program) - strips the Scheme file suffix
    from the path s and returns the stripped pathname. If s is not a
    Scheme file name and `program' is a symbol, and error is signalled.
    If s is not a Scheme file and `program' is #f, #f is returned. The
    `program' argument is optional and defaults to #f.
 
- (extract-base-filename/c s program) - same as
+> (extract-base-filename/c s program) - same as
    extract-base-filename/ss, but for C source files.
 
- (extract-base-filename/kp s program) - same as
+> (extract-base-filename/kp s program) - same as
    extract-base-filename/ss, but for constant pool files.
 
- (extract-base-filename/o s program) - same as
+> (extract-base-filename/o s program) - same as
    extract-base-filename/ss, but for compiled object files.
 
- (extract-base-filename/ext s program) - same as
+> (extract-base-filename/ext s program) - same as
    extract-base-filename/ss, but for extension files.
 
 The unit/sig form defined by "filer.ss" requires no imports.

@@ -2,6 +2,7 @@
 The Compiler
 ============
 
+>INDEX: "compile.ss"
 To use the compiler, require "compile.ss".  It defines the following
 functions (plus a few signatures).  Options that control the compiler
 are documented in the next section.
@@ -362,7 +363,7 @@ Setup PLT attempts to compile and set up any collection that:
    set up with the `compile-subcollections' info.ss field);
    and
 
- * has the `name' info.ss fields.
+ * has the `name' info.ss field.
 
 Collections meeting this criteria are compiled using the
 `compile-collection-zos' procedure described above. If the -e or
@@ -521,3 +522,56 @@ make .plt archives, especially under Unix:
 > (mztar dir output filter) - called by `pack' to write one directory
   `dir' to the output port `output; using the filter procedure
   `filter'.
+
+ Setup PLT as a Unit
+ -------------------
+
+The "setupr.ss" library in the "compiler" collection contains a signed
+unit that imports
+
+  compiler:setup-option^ - described below
+  mzlib:file^
+  compiler^ - from "sig.ss" in "compiler", described above
+  compiler:option^  - from "sig.ss" in "compiler", described above
+  launcher-maker^ - "launchers.ss" in "launcher"
+
+Invoking this unit starts the setup process. The "setupsig.ss" library
+defines the compiler:setup-option^ signature, which is implemented by
+the unit in "setup-optionr.ss". It defines the following parameters
+that control the setup process:
+
+ verbose - #t => prints message from `make' to stderr [default: #f]
+ make-verbose - #t => verbose `make' [default: #f]
+ compiler-verbose - #t => verbose `compiler' [default: #f]
+ clean - #t => delete .zo and .so/.dll files in the specified collections
+         [default: #f]
+ make-zo - #t => compile .zo files [default #t]
+ make-so - #t => compile .so/.dll files [default: #f]
+ make-launchers - #t => make collection info.ss-specified launchers
+                   [default: #t]
+ call-install - #t => call collection info.ss-specified setup code
+                 [default: #t]
+ specific-collections - a list of collections to set up; the empty
+           list means set-up all collections if  the archives
+           list is also empty [default: null]
+ archives - a list of .plt archives to unpack; any collections specified
+            by the archives are set-up in addition to the collections
+            listed in specific-collections  [default: null]
+
+Thus, to unpack a single .plt archive "x.plt", set the `archives'
+parameter to (list "x.plt") and leave `specific-collections' as null.
+
+Link the options and setup units so that your option-setting code is
+initialized between them, e.g.:
+
+    (compound-unit/sig
+      ...
+      (link ...
+            [OPTIONS : compiler:setup-option^ 
+                       ((require-library "setup-optionr.ss" "compiler"))]
+            [MY-CODE : ()
+                       ((require-library "init-options.ss") OPTIONS)]
+            [SETUP : ()
+                     ((require-library "setupr.ss" "compiler")
+                      OPTIONS ...)])
+      ...)

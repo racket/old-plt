@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r9")
+(define *tex2page-version* "4r9a")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -397,6 +397,7 @@
     "quasiquote"
     "quote"
     "set!"
+    "syntax-case"
     "syntax-rules"
     "unless"
     "unquote"

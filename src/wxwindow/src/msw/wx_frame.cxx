@@ -455,13 +455,47 @@ Bool wxFrame::Iconized(void)
 
 void wxFrame::SetTitle(char *title)
 {
+  if (is_mod) {
+    int len;
+    len = strlen(title);
+    memcpy(wxBuffer, title, len);
+    wxBuffer[len] = '*';
+    wxBuffer[len+1] = 0;
+    title = wxBuffer;
+  }
   SetWindowText(GetHWND(), title);
 }
 
 char *wxFrame::GetTitle(void)
 {
   GetWindowText(GetHWND(), wxBuffer, 1000);
+  if (is_mod) {
+    int len;
+    len = strlen(wxBuffer);
+    wxBuffer[len - 1] = 0;
+  }
   return wxBuffer;
+}
+
+void wxFrame::SetFrameModified(Bool mod)
+{
+  if (is_mod != !!mod) {
+    int len;
+
+    GetTitle();
+    is_mod = !!mod;
+
+    if (mod) {
+      len = strlen(wxBuffer);
+      wxBuffer[len] = '*';
+      wxBuffer[len+1] = 0;
+    }
+    SetWindowText(GetHWND(), wxBuffer);
+  }
+}
+ 
+void wxFrame::OnToolbarButton(void)
+{
 }
 
 static wxBitmap *black_bg = NULL;

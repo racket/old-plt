@@ -19,6 +19,7 @@ class wxFrame: public wxbFrame
  public:
   wxStatusWnd *status_window;
   short hiddenmax, client_dw, client_dh;
+  Bool is_mod;
 
   wxFrame(wxFrame *parent, char *title,
           int x=-1, int y=-1, int width=-1, int height=-1,
@@ -66,6 +67,9 @@ class wxFrame: public wxbFrame
 
   void PositionStatusWindow(void);
   HMENU GetWinMenu(void);
+
+  void SetFrameModified(Bool mod);
+  virtual void OnToolbarButton(void);
 
   void DrawMenuBar(void);
   void SystemMenu(void);

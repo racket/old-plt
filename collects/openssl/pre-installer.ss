@@ -44,27 +44,27 @@
       (parameterize ([current-directory (collection-path "openssl")])
 	(when (and (memq (system-type) '(unix macosx windows))
 		   (memq '3m (available-mzscheme-variants))
-		   (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2"))
-		   (or (not (file-exists? (build-path 3m-dir mzssl.so)))
-		       ((file-or-directory-modify-seconds (build-path 3m-dir 'up mzssl.so))
-			. > .
-			(file-or-directory-modify-seconds (build-path 3m-dir mzssl.so)))))
-	  (make-directory* 3m-dir)
-	  (restart-mzscheme #() 
-			    (lambda (x) x)
-			    (list->vector 
-			     (list
-			      "-qr"
-			      (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
-			      (let ([inc (build-path 'up 'up "include")])
-				(if (eq? 'windows (system-type))
-				    (format "cl.exe /MT /E /I~s /I~s" 
-					    inc
-					    (build-path (collection-path "openssl") "openssl" "include"))
-				    (format "gcc -E -DOS_X -I~s" inc)))
-			      "mzssl.c"
-			      (build-path 3m-dir "mzssl.c")))
-			    void)
+		   (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2")))
+	  (when (or (not (file-exists? (build-path 3m-dir mzssl.so)))
+		    ((file-or-directory-modify-seconds (build-path 3m-dir 'up mzssl.so))
+		     . > .
+		     (file-or-directory-modify-seconds (build-path 3m-dir mzssl.so))))
+	    (make-directory* 3m-dir)
+	    (restart-mzscheme #() 
+			      (lambda (x) x)
+			      (list->vector 
+			       (list
+				"-qr"
+				(build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
+				(let ([inc (build-path 'up 'up "include")])
+				  (if (eq? 'windows (system-type))
+				      (format "cl.exe /MT /E /I~s /I~s" 
+					      inc
+					      (build-path (collection-path "openssl") "openssl" "include"))
+				      (format "gcc -E -DOS_X -I~s" inc)))
+				"mzssl.c"
+				(build-path 3m-dir "mzssl.c")))
+			      void))
 	  (parameterize ([link-variant '3m])
 	    (go (build-path 3m-dir "mzssl.c"))))))
 

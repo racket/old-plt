@@ -1614,8 +1614,19 @@ static void compact_tagged_mpage(void **p, MPage *page)
 
     if (offsets[offset] & COLOR_MASK) {
       long i;
+
+#if ALIGN_DOUBLES
+#define PLUS_ALIGNMENT + alignment
+      long alignment;
+      if (!(size & 0x1) && (dest_offset & 0x1))
+	alignment = 1;
+      else
+	alignment = 0;
+#else
+# define PLUS_ALIGNMENT /**/      
+#endif
       
-      if (dest_offset + size > MPAGE_WORDS) {
+      if (dest_offset + size PLUS_ALIGNMENT > MPAGE_WORDS) {
 	/* Set end of allocation area in previous page: */
 	if (dest_offset < MPAGE_WORDS)
 	  *(Type_Tag *)(dest + dest_offset) = TAGGED_EOM;
@@ -1636,8 +1647,15 @@ static void compact_tagged_mpage(void **p, MPage *page)
 	} else
 	  /* Haven't moved anything; set boundary to 0 to indicate this */
 	  page->compact_boundary = 0;
-      } else
+      } else {
 	set_age = 1;
+#if ALIGN_DOUBLES
+	if (alignment) {
+	  *(Type_Tag *)(dest + dest_offset) = SKIP;
+	  dest_offset++;
+	}
+#endif
+      }
       
       if (!to_near || (dest_offset != offset)) {
 	if (to_near)
@@ -1713,8 +1731,16 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
     if (offsets[offset] & COLOR_MASK) {
       long i;
+
+#if ALIGN_DOUBLES
+      long alignment;
+      if (!(size & 0x1) && !(dest_offset & 0x1))
+	alignment = 1;
+      else
+	alignment = 0;
+#endif
 	
-      if ((long)dest_offset + size > MPAGE_WORDS) {
+      if ((long)dest_offset + size PLUS_ALIGNMENT > MPAGE_WORDS) {
 	/* Set end of allocation area in previous page: */
 	if (dest_offset < MPAGE_WORDS)
 	  *(long *)(dest + dest_offset) = UNTAGGED_EOM - 1;
@@ -1726,6 +1752,12 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	dest_offset = 0;
 	dest = startp;
 	to_near = 1;
+#if ALIGN_DOUBLES
+	if (alignment) {
+	  dest[0] = 0;
+	  dest_offset++;
+	}
+#endif
 
 	if (set_age) {
 	  page->compact_boundary = offset;
@@ -1742,8 +1774,15 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	} else
 	  /* Haven't moved anything; set boundary to 0 to indicate this */
 	  page->compact_boundary = 0;
-      } else
+      } else {
 	set_age = 1;
+#if ALIGN_DOUBLES
+	if (alignment) {
+	  dest[dest_offset] = 0;
+	  dest_offset++;
+	}
+#endif
+      }
 
       if (!to_near || (dest_offset != offset)) {
 	if (to_near)

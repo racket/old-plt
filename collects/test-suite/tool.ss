@@ -102,7 +102,7 @@
           (rename [super-set-modified set-modified])
           (define/override (set-modified b)
             (super-set-modified b)
-            (reset-test-case-boxes))
+            (when b (reset-test-case-boxes)))
           
           ;; set all of the test-case-boxes in the definitions text to an unevaluated state
           (define/public (reset-test-case-boxes)

@@ -164,10 +164,6 @@ MrEdApp _TheMrEdApp;
 # define TheMrEdApp (&_TheMrEdApp)
 #endif
 
-#ifdef wx_mac
-DialogPtr startup_dial;
-#endif
-
 #ifdef LIBGPP_REGEX_HACK
 /* Fixes weirdness with libg++ and the compiler: it tries to
    destroy global regexp objects that were never created. Calling
@@ -2057,6 +2053,46 @@ int main(int argc, char *argv[])
   MoreMasters();
   
   Drop_GetArgs(&argc, &argv);
+  
+  { 
+    KeyMap keys;
+    GetKeys(keys);
+    if (keys[1] & 32768L) { /* Cmd key down */
+      DialogPtr dial;
+      short hit, type;
+      Rect box;
+      Handle hand;
+      Str255 str;
+      int argc2;
+      char **argv2;
+  
+      dial = GetNewDialog(128, NULL, (WindowRef)-1);
+      do {
+        ModalDialog(NULL, &hit);
+      } while (hit > 2);
+      if (hit == 1) {
+        GetDialogItem(dial, 3, &type, &hand, &box);
+        GetDialogItemText(hand, str);
+        ParseLine(PtoCstr(str), &argc2, &argv2);
+      } else {
+        argc2 = 0;
+        argv2 = NULL;
+      }
+      DisposeDialog(dial);
+      
+      if (argc2) {
+        int i, j;
+        char **both = (char **)malloc(sizeof(char *) * (argc + argc2 - 1));
+        for (i = 0; i < argc; i++)
+          both[i] = argv[i];
+        for (j = 1; j < argc2; j++, i++)
+          both[i] = argv2[j];
+        
+        argv = both;
+        argc += argc2 - 1;
+      }
+    }
+  }
 #endif
   
   scheme_actual_main = actual_main;

@@ -103,6 +103,8 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	cBorderArea = new wxArea(this);
 	new wxButtonBorder(cBorderArea);
 
+    if (style & 1) OnSetDefault(TRUE);
+
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};

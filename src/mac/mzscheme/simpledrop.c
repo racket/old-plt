@@ -128,6 +128,13 @@ static void parse_commandline(char *s, char *src, int addon)
     scheme_mac_argv[count + 1] = src;
 }
 
+extern void ParseLine(char *s, int *argc, char ***argv)
+{
+  parse_commandline(s, NULL, 0);
+  *argc = scheme_mac_argc;
+  *argv = scheme_mac_argv;
+}
+
 static void Startup(char **argv, int argc)
 {
   int i;

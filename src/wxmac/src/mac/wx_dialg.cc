@@ -72,11 +72,14 @@ void wxDialogBox::SetSize(int x, int y, int width, int height, int flags)
     if (!(flags & 0x70)) {
       int w, h, cw, ch;
       
-      cFrame->GetSize(&w, &h);
-      cFrame->GetClientSize(&cw, &ch);
+      if ((width > -1) && (height > -1)) {
+        cFrame->GetSize(&w, &h);
+        cFrame->GetClientSize(&cw, &ch);
+      } else
+         w = h = cw = ch = 0;
       
-	  cFrame->SetSize(x, y, width + (w - cw), height + (h - ch), flags);
-	} else
+      cFrame->SetSize(x, y, width + (w - cw), height + (h - ch), flags);
+     } else
 	  wxWindow::SetSize(x, y, width, height, flags);
 }
 
@@ -188,7 +191,7 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 	) :
 		wxPanel (new wxFrame(NULL, windowTitle, 
 				  x, y,
-				  width, height, style | wxMDI_CHILD, windowName, objectType),
+				  width, height, style | wxMDI_CHILD | wxNO_RESIZE_BORDER, windowName, objectType),
 	              0, 0, width, height),
 		cButtonPressed (0)
 {

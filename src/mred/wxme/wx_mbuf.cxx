@@ -565,7 +565,7 @@ int wxMediaBuffer::AppendFontItems(wxMenu *font, int idOffset)
 
 void wxMediaBuffer::DoFont(int op, Bool recursive)
 {
-  return 0;
+  return;
 }
 
 void wxMediaBuffer::InsertBox(int type)

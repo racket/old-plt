@@ -1,7 +1,7 @@
 ;; This installer module just adds a bin/mred script
 ;;  under OS X
 (module script-installer mzscheme
-  (provide installer)
+  (provide post-installer)
   (require (lib "launcher.ss" "launcher"))
 
   (define post-installer

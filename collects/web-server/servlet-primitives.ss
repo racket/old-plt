@@ -66,7 +66,7 @@
     ;(unless *page-channel*
     ;  (init-channel))
     (init-channel)
-    (channel-put *page-channel* page))
+    (async-channel-put *page-channel* page))
   
   ; : instance -> doesn't
   (define resume-next-request
@@ -143,4 +143,4 @@
                            ; probably a more principled way to do this.
                            (printf "Restarting STOPPED browser...~n")
                            (init-channel)
-                           (channel-put *page-channel* *last-page-sent*))))))
+                           (async-channel-put *page-channel* *last-page-sent*))))))

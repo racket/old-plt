@@ -13,7 +13,7 @@
       (when inst
         (clear! inst)
         (let loop ()
-          (channel-get-available
+          (async-channel-get-available
            (servlet-instance-channel inst)
            (lambda (x)
              (timeout-error method uri (car x))
@@ -38,7 +38,7 @@
   ; :  (-> void) (channel -> void) -> instance -> doesn't
   (define (gen-resume-next-request update-time! update-channel!)
     (lambda (inst)
-      (let ([resume (channel-get (servlet-instance-channel inst))])
+      (let ([resume (async-channel-get (servlet-instance-channel inst))])
         ; set! - modeling things that change over time
         (update-time!)
         ; set! justified - communicating between threads
@@ -48,7 +48,7 @@
   ; add-new-instance : sym instance-table -> void
   (define (add-new-instance invoke-id instances)
     (hash-table-put! instances invoke-id
-                     (make-servlet-instance 0 (create-channel) (make-hash-table))))
+                     (make-servlet-instance 0 (make-async-channel) (make-hash-table))))
   
   (define TEXT/HTML-MIME-TYPE "text/html")
   
@@ -64,7 +64,7 @@
   ; "Internal Error, please see Microsoft's search engine" for 500 responses
   ; instead of displaying the server's error message.
   (define (timeout-error method uri channel)
-    (channel-put
+    (async-channel-put
      channel
      (make-response/full
       TIME-OUT-CODE "Timeout" (current-seconds) TEXT/HTML-MIME-TYPE TIME-OUT-HEADERS

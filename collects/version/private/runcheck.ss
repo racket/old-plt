@@ -2,7 +2,7 @@
   (require (lib "unitsig.ss") (lib "list.ss") (lib "url.ss" "net")
            (lib "getinfo.ss" "setup")
            (lib "string-constant.ss" "string-constants")
-           "checksigs.ss")
+           "checksigs.ss" (lib "patchlevel.ss" "version"))
   (provide runcheck@)
   (define runcheck@
     (unit/sig empty^ (import extra-params^ defs^)
@@ -25,7 +25,9 @@
                         "package=" (car cv) "*" (cadr cv) "*" (caddr cv) "&"))
                      vcs))
          "binary-version="
-         (version)))
+         (if (> patchlevel 0)
+           (format "~ap~a" (version) patchlevel)
+           (version))))
 
       (define timeout-value 60)
 
@@ -132,7 +134,6 @@
                               (hide-wait-dialog wait-dialog)
                               '())
                        (cons r (loop)))))]
-                [curr-version (version)]
                 [needs-update #f])
 
             (close-input-port the-port)

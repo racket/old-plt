@@ -524,13 +524,10 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE
 
-# if defined(__CYGWIN32__)
-#  define MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION
+#if defined(_MSC_VER)
+# define NAN_EQUALS_ANYTHING
+# define POW_HANDLES_INF_CORRECTLY
 #endif
-# if defined(_MSC_VER)
-#  define NAN_EQUALS_ANYTHING
-#  define POW_HANDLES_INF_CORRECTLY
-# endif
 
 # define IO_INCLUDE
 # define NO_SLEEP
@@ -1016,13 +1013,6 @@ int scheme_pthread_semaphore_try_down(void *);
  /* COMPUTE_NEG_INEXACT_TO_EXACT_AS_POS computes inexact->exact of some
     negative inexact number x by computing the result for -x and negating
     it. Use this if (inexact->exact -0.1) is wrong. */
-
- /* MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION defeats a compiler optimization
-    that would place `double' or `float' values in a loop with a kind of
-	higher-precision floating point number register. This only matters in
-	one place, so this flag should be set rather than turning on a compiler
-	flag for the whole program. (Note for MSVC: a #pragma already handles
-	this.) */
 
   /***********************/
  /* Stack Maniuplations */

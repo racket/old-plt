@@ -399,7 +399,7 @@
        (exact->inexact (num -> num)                                         )
        (inexact->exact (num -> num)                                         )
        (number->string (num optional num -> str)         )
-       (string->number (str optional num -> num)         )
+       (string->number (str optional num -> (union false num))              )
 
        ;; characters
        (char=?         (char char -> bool)                                  )
@@ -856,7 +856,7 @@
        (compile-file           ((union str iport) (union str oport) _ -> void))
 
        ;; Dynamic extensions
-       (load-extension         (str -> void))
+       (load-extension         (str -> top))
 
        ;; continuation marks
 
@@ -883,8 +883,8 @@
        ;; Misc
        (banner                 (-> str))
        (gensym                 (optional (union str sym) -> sym))
-       (load/cd                (str -> void))
-       (load-with-cd           (str -> void))
+       (load/cd                (str -> top))
+       (load-with-cd           (str -> top))
        (promise?               (_ -> bool) (predicate promise))
        (read-eval-print-loop   (-> void))
        (read-line              (case-> 
@@ -1143,7 +1143,7 @@
 
     (add-default-primitives!
      '(
-       (require-library (str -> void))
+       (require-library (str -> top))
        (=?             ((arg num (arg num (arglistof num))) *-> bool)         )
        (<?             ((arg num (arg num (arglistof num))) *-> bool)         )
        (>?             ((arg num (arg num (arglistof num))) *-> bool)         )

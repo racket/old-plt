@@ -49,14 +49,28 @@ plus a structure:
      called with no arguments when the user clicks the region (instead
      of dragging cards to the region).
 
-  In addition, the region-interactive-callback and
-  set-region-callback! procedures get and set a callback procedure
-  that is invoked when a region is [un]hilited as the user drags a set
-  of cards to the region. The callback is provided two arguments: a
-  boolean indicating whether the region is hilited, and the list of
-  cards being dragged. Like region-callback, the default is #f, which
-  indicates that the region has no interactive callback (but does not
-  affect whether the region is hilited as cards are dragged).
+>  (make-background-region x y w h paint-callback) - returns a region that
+     does not respond to mouse clicks, but which has a general paint
+     callback. The `paint-callback' function is called with five
+     arguments: a drawing context, x and y offsets, and the width and
+     height (which are always `w' and `h'). The x and y offsets can be
+     different than the supplied `x' and `y' when part of the table is
+     drawn offscreen. Regions are painted in the order that they are
+     added to a table, and all regions are painted before any card.
+     The `paint-callback' procedure should not assume a particular
+     state for the drawing context (i.e.,current brush or pen), and it
+     should restore any modified drawing context state before
+     returning.
+
+  In additionto the above function, the _region-interactive-callback_
+  and _set-region-interactive-callback!_ procedures get and set a
+  callback procedure that is invoked when a region is [un]hilited as
+  the user drags a set of cards to the region. The callback is
+  provided two arguments: a boolean indicating whether the region is
+  hilited, and the list of cards being dragged. Like region-callback,
+  the default is #f, which indicates that the region has no
+  interactive callback (but does not affect whether the region is
+  hilited as cards are dragged).
 
 
 Table methods: [in addition to standard frame% methods]

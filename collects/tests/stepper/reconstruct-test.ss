@@ -3,18 +3,50 @@
 (require (prefix reconstruct: (lib "reconstruct.ss" "stepper" "private")))
 (require (lib "shared.ss" "stepper" "private"))
 (require (lib "highlight-placeholder.ss" "stepper" "private"))
+(require (lib "my-macros.ss" "stepper" "private"))
 (require (lib "etc.ss"))
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
 (SECTION 'stepper-reconstruct)
 
+; collect-in-pairs-maker : ((vector 'a 'a) -> 'b) -> (boolean 'a -> (union 'b void)) 
+(define (collect-in-pairs-maker action)
+  (let ([stored-first #f]
+        [have-first? #f])
+    (lambda (first-kind? value)
+      (if first-kind?
+          (begin 
+            (set! stored-first value)
+            (set! have-first? #t))
+          (let ([temp-stored stored-first]
+                [temp-have? have-first?])
+            (set! stored-first #f)
+            (set! have-first? #f)
+            (if temp-have?
+                (action (vector temp-stored value))
+                (void)))))))
+
+(define t (collect-in-pairs-maker (lx _)))
+(test (void) t #f 'ahe)
+(test (void) t #t 13)
+(test (void) t #t 'apple)
+(test (vector 'apple 'banana) t #f 'banana)
+(test (void) t #f 'oetu)
 
 (define (make-break num-steps expr action)
-  (let ([counter num-steps])
+  (let* ([counter num-steps]
+         [recon-call (lx (apply reconstruct:reconstruct-current _))]
+         [pair-action (lambda (2-list)
+                        (if (> counter 0)
+                            (set! counter (- counter 1))
+                            (action (map recon-call 2-list))))]
+         [collector (collect-in-pairs-maker pair-action)])
     (lambda (mark-set key break-kind returned-value-list)
       (let ([mark-list (continuation-mark-set->list mark-set key)])
         (unless (reconstruct:skip-step? break-kind mark-list)
+          (let 
+          (collector 
           (if (> counter 0)
               (set! counter (- counter 1))
               (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list))))))))

@@ -4094,7 +4094,7 @@ find_system_path(int argc, Scheme_Object **argv)
     Scheme_Object *home;
     int ends_in_slash;
 
-#ifdef OS_X
+#if defined(OS_X) && !defined(XONX)
     if ((which == id_pref_dir) 
 	|| (which == id_pref_file)) {
       home = scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0));

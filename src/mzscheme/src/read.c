@@ -27,13 +27,13 @@
    parser. The really messy part is number parsing, which is in a
    different file, numstr.c. */
 
-/* Rule on using scheme_ungetc(): the reader is allowed to use
-   scheme_ungetc() only when it will definitely re-read the character
-   as it continues. If the character will not be re-read (e.g.,
-   because an exception will be raised), then the reader must peek,
-   instead. Also, by the usual constraints of ungetc, it must not
-   unget an UTF-8 continuing char. (This last constraint is epsecially
-   unlikely to be a problem.) */
+/* Rule on using scheme_ungetc(): the reader is generally allowed to
+   use scheme_ungetc() only when it will definitely re-read the
+   character as it continues. If the character will not be re-read
+   (e.g., because an exception will be raised), then the reader must
+   peek, instead. However, read-symbol uses ungetc() if the port does
+   not have a specific peek handler, and in that case, read-symbol
+   only ungetc()s a single character (that had been read by itself). */
 
 #include "schpriv.h"
 #include "schmach.h"

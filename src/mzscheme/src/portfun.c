@@ -2862,18 +2862,20 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
     if (ch == '\r') {
       if (crlf) {
 	int ch2;
-	ch2 = scheme_getc(port);
-	if (ch2 == '\n')
+	
+	ch2 = scheme_peek_byte_skip(port, scheme_make_integer(0), NULL);
+	if (ch2 == '\n') {
+	  scheme_get_byte(port);
 	  break;
-	else {
-	  scheme_ungetc(ch2, port);
-	  if (cr)
-	    break;
-	}
-      } else if (cr)
+	} else if (cr)
+	  break;
+      } else {
+	if (cr)
+	  break;
+      }
+    } else {
+      if ((ch == '\n') && lf)
 	break;
-    } else if (ch == '\n') {
-      if (lf) break;
     }
 
     if (i >= size) {
@@ -3962,9 +3964,11 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   }
 
   /* Skip over #! at beginning of file */
-  if ((ch = scheme_getc(port)) == '#') {
-    if ((ch = scheme_getc(port)) == '!') {
+  if ((ch = scheme_peek_byte(port)) == '#') {
+    if ((ch = scheme_peek_byte_skip(port, scheme_make_integer(1), NULL)) == '!') {
       int oldch;
+      scheme_get_byte(port);
+      scheme_get_byte(port);
     eol_loop:
       oldch = 0;
       while (1) {
@@ -3975,12 +3979,8 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
       }
       if (oldch == '\\')
 	goto eol_loop;
-    } else {
-      scheme_ungetc(ch, port);
-      scheme_ungetc('#', port);
     }
-  } else
-    scheme_ungetc(ch, port);
+  }
 
   config = scheme_current_config();
   config = scheme_extend_config(config, MZCONFIG_CASE_SENS, scheme_true);

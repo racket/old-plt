@@ -992,8 +992,8 @@ scheme_make_input_port(Scheme_Object *subtype,
   ip->position = 0;
   ip->readpos = 0; /* like position, but collapses CRLF */
   ip->lineNumber = 1;
-  ip->column = 0;
   ip->oldColumn = 0;
+  ip->column = 0;
   ip->charsSinceNewline = 1;
   ip->closed = 0;
   ip->read_handler = NULL;
@@ -1516,11 +1516,12 @@ long scheme_get_byte_string_unless(const char *who,
 	ip->position += got;
       if (ip->count_lines) {
 	int c, degot = 0;
-	char init_state = ip->utf8state;
 
 	mzAssert(ip->lineNumber >= 0);
 	mzAssert(ip->column >= 0);
 	mzAssert(ip->position >= 0);
+
+	ip->oldColumn = ip->column; /* works for a single-char read, like `read' */
 
 	ip->readpos += got; /* add for CR LF below */
 
@@ -1531,29 +1532,28 @@ long scheme_get_byte_string_unless(const char *who,
 	  }
 	}
 
-	/* Count UTF-8-decoded chars: */
-	{
-	  char state = init_state;
+	/* Count UTF-8-decoded chars, up to last line: */
+	if (i > 0) {
+	  char state = ip->utf8state;
 	  int n;
-	  n = scheme_utf8_decode_count(buffer, offset, offset + got, &state, 1, '?');
-	  ip->utf8state = state;
+	  n = scheme_utf8_decode_count(buffer, offset, offset + got, &state, 0, '?');
 	  degot += (got - n);
-	  ip->utf8state = state;	  
+	  ip->utf8state = 0;
 	}
 	
 	if (i >= 0) {
 	  int n = 0;
-	  ip->charsSinceNewline = (c - degot) + 1;
+	  ip->charsSinceNewline = c + 1;
 	  i++;
 	  /* Continue walking, back over the previous lines, to find
 	     out how many there were: */
 	  while (i--) {
 	    if (buffer[offset + i] == '\n') {
-	      if (!(i &&( buffer[offset + i - 1] == '\r'))
+	      if (!(i && (buffer[offset + i - 1] == '\r'))
 		  && !(!i && ip->was_cr)) {
 		n++;
 	      } else
-		degot += 1; /* adjust initial readpos increment */
+		degot++; /* adjust positions for CRLF -> LF conversion */
 	    } else if (buffer[offset + i] == '\r') {
 	      n++;
 	    }
@@ -1562,73 +1562,37 @@ long scheme_get_byte_string_unless(const char *who,
 	  mzAssert(n > 0);
 	  ip->lineNumber += n;
 	  ip->was_cr = (buffer[offset + got - 1] == '\r');
-	  ip->readpos -= degot;
-
-	  /* Need to fix up column, counting before the found newline,
-             to compute oldColumn: */
-	  if (c) {
-	    int cc;
-
-	    /* Skip a CR that is really part of a found LF: */
-	    cc = c - 1;
-	    if ((cc > 0)
-		&& (buffer[offset + c] == '\n')
-		&& (buffer[offset + cc] == '\r'))
-	      --cc;
-
-	    /* Go back, looking for another LF or CR: */
-	    for (i = cc; i--; ) {
-	      if (buffer[offset + i] == '\n' || buffer[offset + i] == '\r') {
-		break;
-	      }
-	    }
-	    i++;
-
-	    /* Found the previous line; adjust the column: */
-	    {
-	      int col = (i ? 0 : ip->column);
-	      int prev_i = i;
-	      char state = (i ? 0 : init_state);
-	      for (; i < cc; i++) {
-		if (buffer[offset + i] == '\t') {
-		  col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
-		  col = col - (col & 0x7) + 8;
-		  prev_i = i + 1;
-		  state = 0;
-		}
-	      }
-	      if (prev_i < i)
-		col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
-	      ip->column = col;
-	    }
-	    /* Done. Now we can remember this column value as oldColumn. */
-	  }
-	  ip->oldColumn = ip->column;
-
 	  /* Now reset column to 0: */
 	  ip->column = 0;
 	} else {
-	  ip->charsSinceNewline += (c - degot);
-	  ip->readpos -= degot;
+	  ip->charsSinceNewline += c;
 	}
 
-	/* Do the line again to get the column count right: */
+	/* Do the last line to get the column count right and to
+	   further adjust positions for UTF-8 decoding: */
 	{
-	  int col = ip->column;
+	  int col = ip->column, n;
 	  int prev_i = got - c;
+	  char state = ip->utf8state;
 	  for (i = prev_i; i < got; i++) {
 	    if (buffer[offset + i] == '\t') {
-	      col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, NULL, 0, '?');
+	      n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 0, '?');
+	      degot += ((i - prev_i) - n);
+	      col += n;
 	      col = col - (col & 0x7) + 8;
 	      prev_i = i + 1;
 	    }
 	  }
 	  if (prev_i < i) {
-	    char state = 0;
-	    col += scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 1, '?');
+	    n = scheme_utf8_decode_count(buffer, offset + prev_i, offset + i, &state, 1, '?');
+	    col += n;
+	    degot += ((i - prev_i) - n);
 	  }
 	  ip->column = col;
+	  ip->utf8state = state;
 	}
+
+	ip->readpos -= degot;
 
 	if (!size)
 	  /* Like an EOF: count incomplete encoding as complete */
@@ -2379,7 +2343,6 @@ scheme_ungetc (int ch, Scheme_Object *port)
       mzAssert(ip->lineNumber > 0);
       --ip->lineNumber;
       ip->column = ip->oldColumn;
-      /* If you back up over two lines, then lineNumber and column will be wrong. */
     } else if (ch == '\t')
       ip->column = ip->oldColumn;
   }

@@ -3696,13 +3696,23 @@ mzchar *scheme_utf8_decode_to_buffer(const unsigned char *s, int len,
 int scheme_utf8_decode_count(const unsigned char *s, int start, int end, 
 			     char *_state, int might_continue, int permissive)
 {
+  if (!_state || !*_state) {
+    /* Try fast path (all ASCII): */
+    int i;
+    for (i = start; i < end; i++) {
+      if (s[i] > 127)
+	break;
+    }
+    if (i == end)
+      return end - start;
+  }
+
   return utf8_decode_x(s, start, end,
 		       NULL, 0, -1,
 		       NULL, NULL,
 		       0, 0, _state,
 		       might_continue, permissive);
 }
-
 
 int scheme_utf8_encode(const unsigned int *us, int start, int end, 
 		       unsigned char *s, int dstart,

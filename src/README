@@ -87,8 +87,10 @@ see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
     without -O under Solaris 2.7 apparently solves the problem.]
 
  2. Run `make' or `gnumake' or `gmake'. If you are building MrEd, you
-    must use GNU's version make. (Under Linux, `make' is GNU's
-    make. For most other platforms, use `gnumake' or `gmake'.)
+    must use GNU's version make. 
+
+    Under Linux, `make' is GNU's make. For most other platforms, use
+    `gnumake' or `gmake'.  For Cygwin, use `make --unix'.
 
     Did you get a "no targets" make error when building MrEd? In that
     case, are you using GNU's make, which reads "GNUmakefile"?

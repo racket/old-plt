@@ -94,60 +94,66 @@
       (send gui update-status (format "+++SPREADSHEET PREPROCESSING END+++~n"))
       
       ;; When bad formatted units are present, don't do unit checking
-      (cond
-        [(not (empty? bad-format-units)) 
-         (send gui set-bad-format-cells
-               (map (lambda (u) (car u)) bad-format-units))]
-        [else      
-         ;; Place all non-formulas units in the computed units(hashed-units)
-         (init-hash hashed-units
-                    (filter (lambda (u) (not (assq (car u) all-formulas)))
-                            all-units))
-         
-         (send gui update-status (format "+++UNIT CHECKING BEGIN+++~n"))
-         
-         ;; Compute non-circular formula units
-         (send gui update-status "Checking non-circular formulas.... ")
-         (for-each (lambda (f)
-                     (compute-cell-unit f hashed-units 
-                                        all-formulas all-formula-texts parser))
-                   all-non-circular-formulas)
-         
-         ;; Compute circular formula units. Start by assigning unit variables.
-         (send gui next-update-status "Assigning dimension variables for circular formulas");
-         (assign-variables hashed-vars hashed-units all-circular-formulas)
-         
-         ;; Generate constraints
-         (send gui next-update-status "Creating constraints")
-         (let* ([constraints (create-constraints 
-                              hashed-units hashed-vars 
-                              all-formulas all-circular-formulas all-formula-texts parser)]
-                [eq-app-cs (split-list constraints (lambda (c) (eq? (first c) '=)))]
-                [equality-constraints (first eq-app-cs)]
-                [append-constraints (second eq-app-cs)])
-           ;; Create equivalence classes from the equality constraints
-           (send gui next-update-status "Creating equivalence classes")
-           (prune-constraints equality-constraints hashed-constraints-vars)
-           
-           ;; Replace variables in append-constraints with their equivalence class
-           ;; representative variable or unit (unit only for operands where possible)
-           (let ([append-constraints (replace-equiv-in-constraints hashed-constraints-vars
-                                                                   append-constraints)])
-             ;; Flatten the append constraints
-             (send gui next-update-status "Flattening constraints")
-             (let ([append-constraints (flatten-constraints append-constraints)])
-               ;; Solve the constraints
-               (solve-constraints append-constraints
-                                  hashed-constraints-vars hashed-vars hashed-units)
-               (send gui update-status (format "done~n"))
-               (send gui update-status (format "+++UNIT CHECKING END+++~n"))
-               
-               ;; Report any error back to the gui
-               (send gui set-computation-errors 
-                     (computation-errors hashed-units all-formula-texts all-formulas))
-               (send gui set-mismatch-errors 
-                     (mismatch-errors hashed-units all-units all-formula-texts all-formulas))
-               )))])))
+      (time
+       (cond
+         [(not (empty? bad-format-units)) 
+          (send gui set-bad-format-cells
+                (map (lambda (u) (car u)) bad-format-units))]
+         [else      
+          ;; Place all non-formulas units in the computed units(hashed-units)
+          (init-hash hashed-units
+                     (filter (lambda (u) (not (assq (car u) all-formulas)))
+                             all-units))
+          
+          (send gui update-status (format "+++UNIT CHECKING BEGIN+++~n"))
+          
+          ;; Compute non-circular formula units
+          (send gui update-status "Checking non-circular formulas.... ")
+          ;;(printf "ALL NON CIRCULAR CELLS:~n~a~n" 
+          ;;        (map (lambda (f) (car f))
+          ;;             (reverse all-non-circular-formulas)))
+          (for-each (lambda (f)
+                      (compute-cell-unit f hashed-units 
+                                         all-formulas all-formula-texts parser))
+                    (reverse all-non-circular-formulas))
+          
+          ;; Compute circular formula units. Start by assigning unit variables.
+          (send gui next-update-status "Assigning dimension variables for circular formulas");
+          (assign-variables hashed-vars hashed-units all-circular-formulas)
+          
+          ;; Generate constraints
+          (send gui next-update-status "Creating constraints")
+          (let* ([constraints (create-constraints 
+                               hashed-units hashed-vars 
+                               all-formulas all-circular-formulas all-formula-texts parser)]
+                 [eq-app-cs (split-list constraints (lambda (c) (eq? (first c) '=)))]
+                 [equality-constraints (first eq-app-cs)]
+                 [append-constraints (second eq-app-cs)])
+            ;; Create equivalence classes from the equality constraints
+            (send gui next-update-status "Creating equivalence classes")
+            ;;(printf "EQUALITY CONSTRAINTS:~n")
+            ;;(show-constraints equality-constraints)
+            ;;(printf "APPEND CONSTRAINTS:~n")
+            ;;(show-constraints append-constraints)
+            (prune-constraints equality-constraints hashed-constraints-vars)
+            
+            ;; Replace variables in append-constraints with their equivalence class
+            ;; representative variable or unit (unit only for operands where possible)
+            (let ([append-constraints (replace-equiv-in-constraints hashed-constraints-vars
+                                                                    append-constraints)])
+              ;; Flatten the append constraints
+              (send gui next-update-status "Solving constraints")
+              ;;(printf "APPEND CONSTRAINTS: ~a~n" append-constraints)
+              (solve-constraints (gaussian-elimination append-constraints)
+                                 hashed-constraints-vars hashed-vars hashed-units)
+              (send gui update-status (format "done~n"))
+              (send gui update-status (format "+++UNIT CHECKING END+++~n"))
+              
+              ;; Report any error back to the gui
+              (send gui set-computation-errors 
+                    (computation-errors hashed-units all-formula-texts all-formulas))
+              (send gui set-mismatch-errors 
+                    (mismatch-errors hashed-units all-units all-formula-texts all-formulas))))]))))
   
   (define (compute-cell-unit _formula hashed-units all-formulas all-formula-texts parser)
     (let ([cell-name (car _formula)]
@@ -453,7 +459,7 @@
                      (replace-in-formula a orig new)) args)])
          (make-application name deps fun replaced-args))]
       [else formula]))
-    
+  
   (define (remove-duplicates lst)
     (cond
       [(null? lst) null]
@@ -484,7 +490,7 @@
                          [y (cadr xy)])
                     (get-formula-loc-left (numbers->cellref (list x y))
                                           parser all-formula-texts))))))
-
+  
   (define (assign-variables hashed-vars hashed-units all-circular-formulas)
     (for-each (lambda (f)
                 (let ([a_s (gen-alpha-var)])
@@ -523,12 +529,12 @@
                                        (= 2 (length u_))
                                        (symbol? (car u_))
                                        (integer? (cadr u_)))) u)))
-   
+  
   (define (constraint-var c) (second c))
   (define (constraint-operator c) (first c))
   (define (constraint-left-side c) (third c))
   (define (constraint-right-side c) (fourth c))
- 
+  
   (define (create-constraints hashed-units hashed-vars 
                               all-formulas all-circular-formulas all-formula-texts parser)
     (foldl (lambda (f constraints)
@@ -617,7 +623,7 @@
                 formula-cell formula-constraints hashed-units hashed-vars
                 all-formulas all-formula-texts parser)))]
       [($ application name deps fun args)
-       (let* ([arg-syms (map (lambda (a) (gen-beta-var)))]
+       (let* ([arg-syms (map (lambda (a) (gen-beta-var)) args)]
               [arg-constraints
                (letrec ([gen-arg-constraints
                          (lambda (as as-syms)
@@ -758,115 +764,27 @@
                  (first (find-rep (first (hash-table-get hashed-constraints-vars var))))]
                 [else var]))]
            [replace-operands
-            (lambda (operands) 
-              (map 
-               (lambda (op)
-                 (if (dim-var? op)
-                     (cond
-                       [(in-hash? hashed-constraints-vars op)
-                        (let* ([rep (first 
-                                     (find-rep 
-                                      (first (hash-table-get hashed-constraints-vars op))))]
-                               [rep-u (second (hash-table-get hashed-constraints-vars rep))])
-                          (if (empty? rep-u)
-                              rep
-                              rep-u))]
-                       [else op])
-                     op))
-               operands))]
+            (lambda (operands)
+              (let ([replace-op
+                     (lambda (op)
+                       (if (dim-var? op)
+                           (cond
+                             [(in-hash? hashed-constraints-vars op)
+                              (let* ([rep (first 
+                                           (find-rep 
+                                            (first (hash-table-get hashed-constraints-vars op))))]
+                                     [rep-u (second (hash-table-get hashed-constraints-vars rep))])
+                                (if (empty? rep-u)
+                                    (list (list rep 1))
+                                    rep-u))]
+                             [else (list (list op 1))])
+                           op))])
+                (append (replace-op (first operands)) (replace-op (second operands)))))]
            [map-replace 
             (lambda (c)
-              (cons (constraint-operator c)
-                    (cons (replace-head (second c))
-                          (replace-operands (rest (rest c))))))])
+              (cons (replace-head (second c))
+                    (cons '= (replace-operands (rest (rest c))))))])
       (remove-duplicates (map map-replace append-constraints))))
-  
-  (define (flatten-constraints append-constraints)
-    (normalize-constraints 
-     (map (lambda (c)
-            (cons (constraint-var c) (cons '= (flatten-constraint empty c append-constraints))))
-          append-constraints)))
-  
-  (define (flatten-constraint deps constraint constraints)
-    (let ([left-side (constraint-left-side constraint)]
-          [right-side (constraint-right-side constraint)]
-          [operator (constraint-operator constraint)]
-          [var (constraint-var constraint)])
-      (cond
-        [(and (dim-var? left-side) (dim-var? right-side))
-         (append (expand-var left-side (cons var deps) constraints)
-                 (cons operator 
-                       (expand-var right-side (cons var deps) constraints)))]
-        [(dim-var? left-side)
-         (append (expand-var left-side (cons var deps) constraints)
-                 (list operator right-side))]
-        [(dim-var? right-side)
-         (append (list left-side operator)
-                 (expand-var right-side (cons var deps) constraints))]
-        [else (list left-side operator right-side)])))
-  
-  (define (normalize-constraints constraints)
-    (letrec ([to-dims 
-              (lambda (l)
-                (cond [(empty? l) empty]
-                      [(eq? '@ (first l))
-                       (cond [(dim-var? (second l))
-                              (cons (list (list (second l) 1))
-                                    (to-dims (rest (rest l))))]
-                             [else (cons (second l)
-                                         (to-dims (rest (rest l))))])]
-                      [(eq? '@/ (first l))
-                       (cond [(dim-var? (second l))
-                              (cons (list (list (second l) -1))
-                                    (to-dims (rest (rest l))))]
-                             [else (cons (list (list (first (first (second l)))
-                                                     (- 0 (second (first (second l))))))
-                                         (to-dims (rest (rest l))))])]
-                      [else
-                       (cond [(dim-var? (second l))
-                              (cons (list (list (second l) 1))
-                                    (to-dims (rest (rest l))))]
-                             [else (cons (second l) (to-dims (rest (rest l))))])]))]
-             [simplify (lambda (l)
-                         (cond [(= 1 (length l)) (first l)]
-                               [else (gen-mult-units (first l)
-                                                     (simplify (rest l)) 'a0)]))])
-      (filter 
-       (lambda (c)
-         (not (and (= 3 (length c))
-                   (eq? (first c) (third c)))))
-       (map 
-        (lambda (c)
-          (if (= 3 (length c))
-              (if (eq? (first (third c)) 'empty_unit)
-                  (cons (first c) (cons (second c) (empty-unit)))
-                  c)
-              (cons 
-               (first c)
-               (cons
-                (second c)
-                (filter
-                 (lambda (u)
-                   (not (eq? (first u) 'empty_unit))) (rest (rest c)))))))
-        (map 
-         (lambda (c)
-           (cons (first c) (cons (second c) (simplify (rest (rest c))))))
-         (map 
-          (lambda (c)
-            (cons (first c) (cons (second c) (to-dims (cons '@ (rest (rest c)))))))
-          constraints))))))
-  
-  (define (expand-var var deps constraints)
-    (if (and (in-constraints? var constraints)
-             (not (in-list? var deps)))
-        (flatten-constraint deps (get-constraint var constraints) constraints)
-        (list var)))
-  
-  (define (in-constraints? var constraints)
-    (ormap (lambda (c) (eq? var (second c))) constraints))
-  
-  (define (get-constraint var constraints)
-    (first (filter (lambda (c) (eq? var (second c))) constraints)))
   
   (define (resolve-var-dim var u hashed-constraints-vars)
     (if (not (in-hash? hashed-constraints-vars var))
@@ -926,144 +844,264 @@
         (hash-table-put! hashed-constraints-vars rep
                          (list (first rep-tbl-entry) new-u)))))
   
-  (define (solve-constraints append-constraints
+  (define (filter-out-bad-constraints cs)
+    (let* ([bad-vars (make-hash-table)]
+           [new-cs
+            (filter
+             (lambda (c)
+               (let ([right-side (rest (rest c))]
+                     [left-side (first c)])
+                 (cond [(or (not (assq left-side right-side))
+                            (andmap (lambda (u) (dim-var? (first u))) right-side)) #t]
+                       [else
+                        (cond [(dim-var? (first (first right-side)))
+                               (hash-table-put! bad-vars (first (first right-side))
+                                                '((error/circular 1)))]
+                              [else
+                               (hash-table-put! bad-vars (first (second right-side))
+                                                '((error/circular 1)))])
+                        #f])))
+             cs)])
+      new-cs))
+  
+  (define (rearrange-constraints cs)
+    (map (lambda (c)
+           (let ([right-side (rest (rest c))]
+                 [left-side (first c)])
+             (cond [(not (assq left-side right-side))
+                    (cons (list left-side -1) right-side)]
+                   [else
+                    (filter
+                     (lambda (u) (not (= 0 (second u))))
+                     (map (lambda (u)
+                            (cond [(eq? left-side (first u))
+                                   (list (first u) (sub1 (second u)))]
+                                  [else u]))
+                          right-side))])))
+         cs))
+  
+  (define (ordered-variables eqs)
+    (remove-duplicates
+     (quicksort
+      (foldl (lambda (eq vars)
+               (append
+                (foldl (lambda (u eq-vars)
+                         (cond [(dim-var? (first u)) (cons (first u) eq-vars)]
+                               [else eq-vars]))
+                       empty eq)
+                vars))
+             empty eqs)
+      (lambda (var1 var2) (string<? (symbol->string var1) (symbol->string var2))))))
+  
+  (define (reorder-eqs eqs)
+    (let ([ordered-vars (ordered-variables eqs)])
+      (list 
+       ordered-vars
+       (map
+        (lambda (eq)
+          (let* ([vars-dims (split-list eq (lambda (u) (dim-var? (first u))))]
+                 [vars (first vars-dims)])
+            (list
+             (map
+              (lambda (var)
+                (let ([var-exp (assq var vars)])
+                  (cond [var-exp (second var-exp)]
+                        [else 0])))
+              ordered-vars)
+             (second vars-dims))))
+        eqs))))
+  
+  (define (reduce eq)
+    (foldr
+     (lambda (u new-eq)
+       (cond [(= 0 (second u)) new-eq]
+             [(assq (first u) new-eq)
+              (filter
+               (lambda (u) (not (= 0 (second u))))
+               (map (lambda (u_new)
+                      (cond [(eq? (first u) (first u_new))
+                             (list (first u) (+ (second u) (second u_new)))]
+                            [else u_new]))
+                    new-eq))]
+             [else (cons u new-eq)]))
+     empty eq))
+  
+  (define (first-n l n)
+    (cond [(> n (length l)) l]
+          [else
+           (letrec ([loop (lambda (l n)
+                            (cond [(>= 0 n) empty]
+                                  [else (cons (first l) (loop (rest l) (sub1 n)))]))])
+             (loop l n))]))
+  
+  (define (normalize-unit us)
+    (let* ([sorted-us (quicksort us (lambda (u1 u2)
+                                      (string<=?
+                                       (symbol->string (car u1))
+                                       (symbol->string (car u2)))))]
+           [new-u (filter
+                   (lambda (u)
+                     (not (= 0 (second u))))
+                   (foldr (lambda (u new-us)
+                            (cond
+                              [(eq? 'empty_unit (first u)) new-us]
+                              [(assq (first u) new-us)
+                               (map (lambda (new_u)
+                                      (cond [(eq? (first new_u) (first u))
+                                             (list (first u) (+ (second u) (second new_u)))]
+                                            [new_u]))
+                                    new-us)]
+                              [else (cons u new-us)]))
+                          empty sorted-us))])
+      (cond [(empty? new-u) (empty-unit)]
+            [else new-u])))
+  
+  (define (select-nth eqs eqn n)
+    (letrec ([split
+              (lambda (eqs i)
+                (cond [(>= i (length eqs)) (list empty eqs)]
+                      [else
+                       (let* ([eq-i (list-ref eqs i)]
+                              [row (first eq-i)]
+                              [nth-val (list-ref row n)])
+                         (cond [(not (= 0 nth-val))
+                                (list
+                                 (list
+                                  (map (lambda (val) (/ val nth-val)) row)
+                                  (normalize-unit
+                                   (map (lambda (u) (list (first u) (/ (second u) nth-val)))
+                                        (second eq-i))))
+                                 (append (first-n eqs i) (list-tail eqs (add1 i))))]
+                               [else (split eqs (add1 i))]))]))])
+      (let* ([nth-rest (split eqs 0)]
+             [nth-eq (first nth-rest)]
+             [nth-eq-u (cond [(empty? nth-eq) (empty-unit)]
+                             [else (second nth-eq)])]
+             [transform
+              (lambda (eqs kth-eq)
+                (map
+                 (lambda (eq)
+                   (let* ([row (first eq)]
+                          [kth-row (first kth-eq)]
+                          [nth-eq (list-ref row n)]
+                          [nth-kth-eq (list-ref kth-row n)]
+                          [ratio (/ nth-eq nth-kth-eq)])
+                     (letrec ([simplify
+                               (lambda (i)
+                                 (cond [(>= i (length row)) empty]
+                                       [else (cons (- (list-ref row i)
+                                                      (* ratio (list-ref kth-row i)))
+                                                   (simplify (add1 i)))]))])
+                       (cond [(= 0 ratio) eq]
+                             [else (list (simplify 0)
+                                         (normalize-unit
+                                          (append (second eq)
+                                                  (map (lambda (u) (list (first u) (* (- 0 ratio) (second u))))
+                                                       nth-eq-u))))]))))
+                 eqs))])
+              ;;(printf "NTH-EQ: ~a || n = ~a~n" nth-eq n)
+              ;;(printf "TRANSFORMED REST: ~a~n" (transform (second nth-rest) nth-eq))
+        (cond [(empty? (first nth-rest)) (list eqs eqn)]
+              [else
+               (let ([transformed-eq (transform (second nth-rest) nth-eq)])
+                 (cond [(ormap (lambda (eq) (and (andmap (lambda (v) (= 0 v)) (first eq))
+                                                 (not (or (empty? (second eq))
+                                                          (eq? (first (first (second eq))) 'empty_unit)))))
+                               transformed-eq)
+                        (list
+                         (cons (list (first nth-eq) '((error/circular 1))) transformed-eq)
+                         (add1 eqn))]
+                       [else
+                        (list
+                         (cons nth-eq transformed-eq)
+                         (add1 eqn))]))]))))
+  
+  (define (modify-eqs eqs)
+    (let* ([order-eqs (reorder-eqs eqs)]
+           [ordered-vars (first order-eqs)]
+           [eqs (second order-eqs)]
+           [select-eq-for-n-var
+            (lambda (eqs eqn n)
+              ;;(printf "EQS:~a~n" eqs)
+              (let* ([good-eqs (first-n eqs eqn)]
+                     [mod-eqs (list-tail eqs eqn)]
+                     [meqs-eqn (select-nth mod-eqs eqn n)])
+                ;;(printf "SELECT-NTH MEQS-EQN: ~a~n" meqs-eqn)
+                (list (append good-eqs (first meqs-eqn)) (second meqs-eqn))))])
+      (letrec ([modify
+                (lambda (eqs n eqn)
+                  (cond [(>= n (length ordered-vars))
+                         (list ordered-vars (first-n eqs eqn))]
+                        [else
+                         (let ([neweqs-eqn (select-eq-for-n-var eqs eqn n)])
+                           ;;(printf "NEW-EQS-EQN: ~a~n" neweqs-eqn)
+                           (modify (first neweqs-eqn) (+ n 1) (second neweqs-eqn)))]))])
+        (modify eqs 0 0))))
+  
+  (define (gaussian-elimination append-constraints)
+    (let* ([eqs (rearrange-constraints
+                 (filter-out-bad-constraints append-constraints))]
+           [order-triang-eqs (modify-eqs eqs)]
+           [ordered-vars (first order-triang-eqs)])
+      ;;(printf "EQS: ~a~n" eqs)
+      ;;(printf "ORDERED TRIANG EQS: ~a~n" order-triang-eqs)
+      (letrec ([nth-var (lambda (row n) (cond [(= 0 (length row)) -1]
+                                              [(= 1 (first row)) n]
+                                              [else (nth-var (rest row) (add1 n))]))])
+        (map
+         (lambda (var-sol)
+           (list (first var-sol)
+                 (cond [(ormap (lambda (u) (not (integer? (second u)))) (second var-sol))
+                        '((error/circular 1))]
+                       [else (second var-sol)])))
+         (foldr
+          (lambda (eq sols)
+            (let* ([n (nth-var (first eq) 0)]
+                   [var (list-ref ordered-vars n)])
+              ;;(printf "eq: ~a || n = ~a || nth-var = ~a~n" (first eq) n var)
+              (cons
+               (list
+                var
+                (letrec [(computed-u (lambda (n)
+                                       (cond [(>= n (length (first eq))) empty]
+                                             [else
+                                              (let* ([n-var (list-ref ordered-vars n)]
+                                                     [var-exp (assq n-var sols)])
+                                                ;;(printf "n-var = ~a || var-exp = ~a~n" n-var var-exp)
+                                                (cond
+                                                  [var-exp 
+                                                   (let ([factor (- 0 (list-ref (first eq) n))])
+                                                     (append (map (lambda (u) (list (first u) (* factor (second u))))
+                                                                  (second var-exp))
+                                                             (computed-u (add1 n))))]
+                                                  [else '((error/circular 1))]))])))]
+                  (let ([c-u (computed-u (add1 n))])
+                    ;;(printf "VAR = ~a | c-u = ~a | second eq = ~a~n" var c-u (second eq))
+                    (cond [(ormap (lambda (u) (or (eq? (first u) 'error/circular)
+                                                  (not (integer? (second u)))))
+                                  c-u)
+                           '((error/circular 1))]
+                          [else (normalize-unit
+                                 (append c-u (map (lambda (u) (list (first u) (- 0 (second u)))) (second eq))))]))))
+               sols)))
+          empty
+          (second order-triang-eqs))))))
+  
+  (define (solve-constraints solved-constraints
                              hashed-constraints-vars hashed-vars hashed-units)
-    (second-pass-solving-constraints 
-     (first-pass-solving-constraints append-constraints hashed-constraints-vars)
-     hashed-constraints-vars)
+    ;;(printf "HASHED VARS:~n")
+    ;;(all-hashed-values hashed-vars)
+    ;;(printf "HASHED CONSTRAINTS:~n")
+    ;;(all-hashed-values hashed-constraints-vars)
+    ;;(printf "SOLVED CONSTRAINTS: ~a~n" solved-constraints)
+    (for-each (lambda (c) (resolve-var-dim (first c) (second c) hashed-constraints-vars))
+              solved-constraints)
+    ;;(printf "HASHED CONSTRAINTS AFTER GAUSSIAN:~n")
+    ;;(all-hashed-values hashed-constraints-vars)
     (resolve-constraints-vars hashed-constraints-vars)
+    ;;(printf "HASHED CONSTRAINTS AFTER RESOLVE:~n")
+    ;;(all-hashed-values hashed-constraints-vars)
     (replace-constraints-vars hashed-constraints-vars hashed-vars hashed-units))
-  
-  (define (first-pass-solving-constraints cs hashed-constraints-vars)
-    (let ([1st-pass-values (make-hash-table)])
-      (let ([unsolved-cs
-             (filter
-              (lambda (c)
-                (let ([var (first c)]
-                      [right-side (rest (rest c))])
-                  (cond [(not (not (assq var right-side)))
-                         (let ([var_exp (- (second (assq var right-side)) 1)]
-                               [filtered-right-side (filter 
-                                                     (lambda (u) (not (eq? (first u) var)))
-                                                     right-side)])
-                           (cond [(= 0 var_exp)
-                                  (let* ([vars-dims (split-list 
-                                                     filtered-right-side
-                                                     (lambda (u) (dim-var? (first u))))]
-                                         [vars (first vars-dims)]
-                                         [dims (second vars-dims)])
-                                    (cond 
-                                      [(= 1 (length vars))
-                                       (let ([new-var (first (first vars))]
-                                             [exp (- 0 (second (first vars)))])
-                                         (hash-table-put! 1st-pass-values 
-                                                          new-var 
-                                                          'assigned-value)
-                                         (if (andmap (lambda (u) 
-                                                       (integer? (/ (second u) exp))) dims)
-                                             (let ([u (map
-                                                       (lambda (u)
-                                                         (list (first u) 
-                                                               (/ (second u) (- 0 exp))))
-                                                       dims)])
-                                               (resolve-var-dim var u hashed-constraints-vars))
-                                             (resolve-var-dim 
-                                              var (list (list 'error/non-integer-exp var))
-                                              hashed-constraints-vars)))
-                                       #f]
-                                      [else #t]))]
-                                 [(andmap (lambda (u) (dim-var? (first u))) right-side)
-                                  (for-each 
-                                   (lambda (u)
-                                     (hash-table-put! 1st-pass-values (first u) 'assigned-values)
-                                     (resolve-var-dim (first u) (empty-unit)
-                                                      hashed-constraints-vars))
-                                   right-side)
-                                  #f]
-                                 [(and (andmap (lambda (u) (not (dim-var? (first u))))
-                                               filtered-right-side))
-                                  (hash-table-put! 1st-pass-values var 'assigned-value)
-                                  (if (andmap (lambda (u) (integer? (/ (second u) var_exp)))
-                                              filtered-right-side)
-                                      (let ([u (map
-                                                (lambda (u)
-                                                  (list (first u) (/ (second u) (- 0 var_exp))))
-                                                filtered-right-side)])
-                                        (resolve-var-dim var u hashed-constraints-vars))
-                                      (resolve-var-dim 
-                                       var (list (list 'error/non-integer-exp var))
-                                       hashed-constraints-vars))
-                                  #f]
-                                 [else #t]))]
-                        [else #t])))
-              cs)])
-        (replace-1st-pass-values unsolved-cs 1st-pass-values hashed-constraints-vars))))
-  
-  (define (replace-1st-pass-values cs ht hashed-constraints-vars)
-    (map 
-     (lambda (c)
-       (cons (first c)
-             (cons (second c)
-                   (reverse
-                    (foldl (lambda (operand operands)
-                             (cond [(in-hash? ht (first operand))
-                                    (let ([op-exp (second operand)]
-                                          [op-u (second (hash-table-get 
-                                                         hashed-constraints-vars (first operand)))])
-                                      (append
-                                       (map (lambda (_u)
-                                              (list (first _u) (* (second _u) op-exp)))
-                                            op-u)
-                                       operands))]
-                                   [else (cons operand operands)]))
-                           empty (rest (rest c)))))))
-     cs))
-  
-  (define (second-pass-solving-constraints cs hashed-constraints-vars)
-    (for-each
-     (lambda (c)
-       (let ([right-side (rest (rest c))])
-         (cond [(andmap (lambda (u) (not (dim-var? (first u)))) right-side)
-                (resolve-var-dim (first c) (simplify right-side) hashed-constraints-vars)]
-               [else
-                (let* ([vars-dims (split-list right-side
-                                              (lambda (u) (dim-var? (first u))))]
-                       [vars (first vars-dims)]
-                       [dims (second vars-dims)])
-                  (when (and (= 1 (length vars))
-                             (in-hash? hashed-constraints-vars (first c)))
-                    (let ([left-side-u (second (hash-table-get hashed-constraints-vars
-                                                               (first c)))])
-                      (when (not (or (empty? left-side-u)
-                                     (is-error-unit? left-side-u)))
-                        (let ([new-dims 
-                               (cond [(empty? dims) left-side-u]
-                                     [else (gen-div-units left-side-u dims (first c))])]
-                              [new-var (first (first vars))]
-                              [new-exp (second (first vars))])
-                          (if (andmap (lambda (u) (integer? (/ (second u) new-exp)))
-                                      new-dims)
-                              (let ([u (map
-                                        (lambda (u)
-                                          (list (first u) (/ (second u) new-exp)))
-                                        new-dims)])
-                                (when (not (in-hash? hashed-constraints-vars new-var))
-                                  (hash-table-put! 
-                                   hashed-constraints-vars new-var (list (list new-var) u)))
-                                (resolve-var-dim new-var u hashed-constraints-vars))
-                              (resolve-var-dim 
-                               new-var
-                               (list (list 'error/non-integer-exp new-var))
-                               hashed-constraints-vars)))))))])))
-     cs))
-  
-  (define (simplify l)
-    (let ([u_l (map (lambda (u) (list u)) l)])
-      (letrec ([mu_l
-                (lambda (mu l_u)
-                  (cond [(empty? l_u) mu]
-                        [else (mu_l (gen-mult-units mu (first l_u) 'a0) (rest l_u))]))])
-        (mu_l (first u_l) (rest u_l)))))
   
   (define (resolve-constraints-vars hashed-constraints-vars)
     (hash-table-for-each
@@ -1107,7 +1145,7 @@
        (let ([cell-loc (first val)]
              [u (second val)])
          (hash-table-put! hashed-units cell-loc u)))))
-    
+  
   (define (lookup-formula-text cell-sym all-formula-texts)
     (let ([entry (assq cell-sym all-formula-texts)])
       (and entry (cadr entry))))
@@ -1142,7 +1180,7 @@
                                             (cons (list '= sym u) constraints))]))]
                        [else (list (cons sym syms)
                                    (cons (list '= sym (empty-unit)) constraints))])))
-           row-cells)))
+             row-cells)))
   
   (define (first-cell-in-row M row)
     (let ([xy (cellref->numbers (car M))])
@@ -1176,8 +1214,8 @@
                                             (cons (list '= sym u) constraints))]))]
                        [else (list (cons sym syms)
                                    (cons (list '= sym (empty-unit)) constraints))])))
-           col-cells)))
- 
+             col-cells)))
+  
   (define (first-cell-in-col M col)
     (let ([xy (cellref->numbers (car M))])
       (numbers->cellref (list (+ (sub1 (car xy)) col) (cadr xy)))))
@@ -1186,11 +1224,11 @@
     (let ([xy-upper (cellref->numbers (car M))]
           [xy-lower (cellref->numbers (cadr M))])
       (numbers->cellref (list (+ (sub1 (car xy-upper)) col) (cadr xy-lower)))))
-
+  
   (define (split-large-args l)
     (let ([reversed-l (reverse l)])
       (list (list (first reversed-l)) (reverse (rest reversed-l)))))
-
+  
   (define (split-circular-non-circular all-formulas)
     (let ([visited (make-hash-table)])
       (letrec ([is-circular?
@@ -1221,20 +1259,20 @@
      (hash-table-map
       hashed-units
       (lambda (cell unit)
-       (if (is-error-unit? unit)
-           (let ([o (open-output-string)])
-             (cond [(equal? 'error/propagated (first (first unit)))
-                    (fprintf o "ERROR propagated from cell: ~a"
-                             (second (first unit)))]
-                   [else
-                    (fprintf o "ERROR computed: ~n~a " (car (first unit)))
-                    (fprintf o ", cell formula: ~a~n" 
-                             (lookup-formula-text cell all-formula-texts))])
-             (list cell 
-                   unit 
-                   (get-output-string o) 
-                   (formula-dependencies (cadr (assq cell all-formulas)))))
-           empty)))))
+        (if (is-error-unit? unit)
+            (let ([o (open-output-string)])
+              (cond [(equal? 'error/propagated (first (first unit)))
+                     (fprintf o "ERROR propagated from cell: ~a"
+                              (second (first unit)))]
+                    [else
+                     (fprintf o "ERROR computed: ~n~a " (car (first unit)))
+                     (fprintf o ", cell formula: ~a~n" 
+                              (lookup-formula-text cell all-formula-texts))])
+              (list cell 
+                    unit 
+                    (get-output-string o) 
+                    (formula-dependencies (cadr (assq cell all-formulas)))))
+            empty)))))
   
   (define (mismatch-errors hashed-units all-units all-formula-texts all-formulas)
     (foldl 
@@ -1255,7 +1293,7 @@
                [else mismatches])))
      empty
      all-units))
-   
+  
   (define (unit-pp unit)
     (cond [(empty-unit? unit) "()"]
           [else

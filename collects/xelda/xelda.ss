@@ -66,13 +66,13 @@
                    [str (third cell-unit-str-dependencies)]
                    [dependencies (fourth cell-unit-str-dependencies)])
                (cond [(equal? 'error/propagated (first (first unit)))
-                      (set-cell-color! cell (rgb 250 100 180))
+                      (set-cell-color! cell (rgb 209 35 238))
                       (update-status
                        (format "Cell ~a error propagation from cell~a~n"
                                cell
                                (second (first unit))))]
                      [else
-                      (set-cell-color! cell (rgb 0 250 0))
+                      (set-cell-color! cell (rgb 255 255 51))
                       (update-status (format "Cell ~a error in computed units!~n" cell))])
                (append-cell-comment! cell str)
                (hash-table-put! error-cells cell (list 'on dependencies))))
@@ -85,7 +85,7 @@
                    [actual (second cell-actual-str-dependencies)]
                    [str (third cell-actual-str-dependencies)]
                    [dependencies (fourth cell-actual-str-dependencies)])
-               (set-cell-color! cell (rgb 0 200 190))
+               (set-cell-color! cell (rgb 255 153 51))
                (append-cell-comment! cell str)
                (hash-table-put! error-cells cell (list 'on dependencies))
                (update-status 
@@ -109,6 +109,27 @@
           (when (not (empty? l))
             (set-cell-color! (first l) (get-dependent-color (first l) action))
             (color-dependents (rest l) action)))]
+       [unmark-errors
+        (lambda ()
+          (when (hash-table? error-cells)
+            (let ([orig-col (get-cell-color 'a1)])
+              (hash-table-for-each 
+               error-cells
+               (lambda (k v)
+                 (let ([state (first v)]
+                       [dependencies (second v)])
+                   (when (eq? state 'off)
+                     (color-dependents dependencies 'off)
+                     (clear-cell-precedents k))
+                   (let ([orig (original-comment (get-cell-comment k))])
+                     (cond 
+                       ((and (>= (string-length orig) 2)
+                             (string=? "()" (substring orig 0 2)))
+                        (delete-cell-comment! k))
+                       (else (set-cell-comment! k orig))))
+                   (set-cell-color! k orig-col))))
+              (set! error-cells #f)
+              (set! colored-dependents #f))))]
        [reset-frame!
         (lambda()
           (for-each (lambda (panel)
@@ -293,27 +314,6 @@
                  (hash-table-put! bad-format-cells-colors bad-cell orig-col)
                  (set-cell-color! bad-cell (rgb 120 170 120))))
              bad-format-cells)))]
-       [unmark-errors
-        (lambda ()
-          (when (hash-table? error-cells)
-            (let ([orig-col (get-cell-color 'a1)])
-              (hash-table-for-each 
-               error-cells
-               (lambda (k v)
-                 (let ([state (first v)]
-                       [dependencies (second v)])
-                   (when (eq? state 'off)
-                     (color-dependents dependencies 'off)
-                     (clear-cell-precedents k))
-                   (let ([orig (original-comment (get-cell-comment k))])
-                     (cond 
-                       ((and (>= (string-length orig) 2)
-                             (string=? "()" (substring orig 0 2)))
-                        (delete-cell-comment! k))
-                       (else (set-cell-comment! k orig))))
-                   (set-cell-color! k orig-col))))
-              (set! error-cells #f)
-              (set! colored-dependents #f))))]
        [clear-all-precedents
         (lambda ()
           (when (hash-table? error-cells)

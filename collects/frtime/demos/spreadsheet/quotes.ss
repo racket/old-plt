@@ -45,8 +45,7 @@
                     (cadr (find (car LN)))
                     (raise (make-no-quote company 'find)))])
       (cond
-        [(string->number QT)
-         => (lambda (x) x)]
+        [(string->number QT)]
         [else (raise (make-no-quote company 'no-number))])))
   
   

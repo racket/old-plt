@@ -1,6 +1,9 @@
 ; Ideas:
 ;  make smart 'if'
 ;  tag impure and imperative signals (pure vs. stateful vs. effectful)
+;  use weak boxes in internal queue
+;  have manager initialize signals
+;  
 ;
 ; To do:
 ; QUESTION: should cond change to skip undefined conditions?
@@ -136,6 +139,7 @@
                                        (register ret cur-app))
                                      (value-now cur-app))])
                        (set-signal-thunk! ret thunk)
+                       ; may need to change for multiple values
                        (set-signal-value! ret (thunk))
                        ret)))]
                  [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth 'continuation-marks)])
@@ -148,6 +152,8 @@
                           (lambda (i) (make-struct-field-accessor acc i (list-ref field-name-symbols i))))
               (build-list (length field-name-symbols)
                           (lambda (i) (make-struct-field-mutator mut i (list-ref field-name-symbols i))))))))
+  
+  (define-struct multiple (values))
   
   (define-struct event-cons (head tail))
   (define econs make-event-cons)
@@ -242,6 +248,7 @@
         (signal-value val)
         val))
   
+  ; no multiple value support
   (define (value-now/copy val)
     (if (behavior? val)
         (let ([v1 (signal-value val)])
@@ -272,6 +279,18 @@
   ; If there is a cycle, then 'inf' has (and retains) a lower depth than 'sup' (?), which
   ; indicates the cycle.  Importantly, 'propagate' uses the external message queue whenever
   ; a dependency crosses an inversion of depth.
+  (define (fix-depths inf sup)
+    (let help ([inf inf] [sup sup] [mem empty])
+      (if (memq sup mem)
+          (send-event exceptions (list (make-exn:user "delay-less cycle in dataflow graph" (signal-continuation-marks sup))
+                                       sup))
+          (when (<= (signal-depth inf)
+                    (signal-depth sup))
+            (set-signal-depth! inf (add1 (signal-depth sup)))
+            (for-each
+             (lambda (dep) (help dep inf (cons sup mem)))
+             (map weak-box-value (filter weak-box-value (signal-dependents inf))))))))
+  
   (define (register inf sup)
     (if (eq? (self) man)
         (match sup
@@ -279,7 +298,8 @@
                 (= signal-dependents dependents))
            (set-signal-dependents!
             sup
-            (cons (make-weak-box inf) dependents))]
+            (cons (make-weak-box inf) dependents))
+           (fix-depths inf sup)]
           [(? list?) (for-each (lambda (sup1) (register inf sup1)) sup)]
           [_ (void)])
         (begin
@@ -522,11 +542,11 @@
   ; while-e : behavior[bool] behavior[number] -> event
   (define (while-e b interval)
     (rec ret (event-producer
-	(cond
-          [(value-now b) =>
-	   (lambda (v)
-                (emit v)
-                (schedule-alarm (+ (value-now interval) (current-milliseconds)) ret))])
+              (cond
+                [(value-now b) =>
+                               (lambda (v)
+                                 (emit v)
+                                 (schedule-alarm (+ (value-now interval) (current-milliseconds)) ret))])
               b)))
   
   ; ==> : event[a] (a -> b) -> event[b]
@@ -770,11 +790,12 @@
      (let ([named-providers (make-hash-table)]
            [cur-beh #f])
        (let outer ()
-         (with-handlers ([exn?
+         (with-handlers ([not-break-exn?
                           (lambda (exn)
+                            (fprintf (current-error-port) "*~n")
                             (when cur-beh
-                              (when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
-                                (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh)))
+                              ;(when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
+                                (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh))
                               (iq-enqueue (list exceptions (list exn cur-beh)))
                               (when (behavior? cur-beh)
                                 (undef cur-beh)))
@@ -841,13 +862,13 @@
              (let loop ()
                (unless (iq-empty?)
                  (match (iq-dequeue)
-                   [(? signal? b)
-                    (set! cur-beh b)
-                    (update0 b)
-                    (set! cur-beh #f)]
                    [(b val)
                     (set! cur-beh b)
                     (update1 b val)
+                    (set! cur-beh #f)]
+                   [b
+                    (set! cur-beh b)
+                    (update0 b)
                     (set! cur-beh #f)])
                  (loop)))
              
@@ -959,67 +980,77 @@
   ; general efficiency fix for delay
   ; signal[a] signal[num] -> signal[a]
   (define (delay-by beh ms-b)
-    (if (and (number? ms-b) (<= ms-b 0))
-        beh
-        (let* ([last (cons (cons undefined
-                                 (current-milliseconds))
-                           empty)]
-               [head last]
-               [ret (proc->signal void)]
-               [thunk (lambda () (let* ([now (current-milliseconds)]
-                                        [new (value-now/copy beh)]
-                                        [ms (value-now ms-b)])
-                                   (when (not (equal? new (caar last)))
-                                     (set-rest! last (cons (cons new now)
-                                                           empty))
-                                     (set! last (rest last))
-                                     (! man (make-alarm
-                                             (+ now ms) ret)))
-                                   (let loop ()
-                                     (if (or (empty? (rest head))
-                                             (< now (+ ms (cdadr head))))
-                                         (caar head)
-                                         (begin
-                                           (set! head (rest head))
-                                           (loop))))))])
-          (set-signal-thunk! ret thunk)
-          (set-signal-value! ret (thunk))
-          (register ret (list beh ms-b)))))
+    (letrec ([last (cons (cons (if (zero? (value-now ms-b))
+                                   (value-now beh)
+                                   undefined)
+                               (current-milliseconds))
+                         empty)]
+             [head last]
+             [producer (proc->signal
+                        (lambda ()
+                          (let* ([now (current-milliseconds)]
+                                 [ms (value-now ms-b)])
+                            (let loop ()
+                              (if (or (empty? (rest head))
+                                      (< now (+ ms (cdadr head))))
+                                  (caar head)
+                                  (begin
+                                    consumer ;; just to prevent GC
+                                    (set! head (rest head))
+                                    (loop)))))))]
+             [consumer (proc->signal
+                        (lambda ()
+                          (let* ([now (current-milliseconds)]
+                                 [new (value-now/copy beh)]
+                                 [ms (value-now ms-b)])
+                            (when (not (equal? new (caar last)))
+                              (set-rest! last (cons (cons new now)
+                                                    empty))
+                              (set! last (rest last))
+                            (schedule-alarm (+ now ms) producer))))
+                        beh ms-b)])
+      producer))
+  
+  (define (inf-delay beh)
+    (delay-by beh 0))
   
   ; fix to take arbitrary monotonically increasing number
   ; (instead of milliseconds)
   ; integral : signal[num] signal[num] -> signal[num]
   (define integral
     (opt-lambda (b [ms-b 10])
-      (let* ([accum 0]
-             [last-time (current-milliseconds)]
-             [last-val (value-now b)]
-             [ret (proc->signal void)]
-             [last-alarm 0]
-             [thunk (lambda ()
-                      (let ([now (current-milliseconds)])
-                        (if (> now (+ last-time 10))
-                            (begin
-                              (when (not (number? last-val))
-                                (set! last-val 0))
-                              (set! accum (+ accum
-                                             (* last-val
-                                                (- now last-time))))
-                              (set! last-time now)
-                              (set! last-val (value-now b))
-                              (when (value-now ms-b)
-                                (! man (make-alarm
-                                        (+ last-time (value-now ms-b))
-                                        ret))))
-                            (when (or (>= now last-alarm)
-                                      (and (< now 0)
-                                           (>= last-alarm 0)))
-                              (set! last-alarm (+ now 20))
-                              (! man (make-alarm last-alarm ret))))
-                        accum))])
-        (set-signal-thunk! ret thunk)
-        (set-signal-value! ret (thunk))
-        (register ret (list b ms-b)))))
+      (letrec ([accum 0]
+               [last-time (current-milliseconds)]
+               [last-val (value-now b)]
+               [last-alarm 0]
+               [producer (proc->signal (lambda ()
+                                         consumer ;; just to prevent GC
+                                         accum))]
+               [consumer (proc->signal void b ms-b)])
+        (set-signal-thunk!
+         consumer
+         (lambda ()
+           (let ([now (current-milliseconds)])
+             (if (> now (+ last-time 10))
+                 (begin
+                   (when (not (number? last-val))
+                     (set! last-val 0))
+                   (set! accum (+ accum
+                                  (* last-val
+                                     (- now last-time))))
+                   (set! last-time now)
+                   (set! last-val (value-now b))
+                   (when (value-now ms-b)
+                     (schedule-alarm (+ last-time (value-now ms-b))
+                                     consumer)))
+                 (when (or (>= now last-alarm)
+                           (and (< now 0)
+                                (>= last-alarm 0)))
+                   (set! last-alarm (+ now 20))
+                   (schedule-alarm last-alarm consumer)))
+             (schedule-alarm now producer))))
+        ((signal-thunk consumer))
+        producer)))
   
   ; fix for accuracy
   ; derivative : signal[num] -> signal[num]

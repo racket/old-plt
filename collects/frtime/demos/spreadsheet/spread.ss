@@ -9,6 +9,7 @@
            (lib "framework.ss" "framework")
            (as-is:unchecked (lib "string.ss") expr->string)
            (as-is:unchecked (lib "etc.ss") build-vector)
+           (lifted mzscheme regexp-match)
            (as-is:unchecked mzscheme make-hash-table hash-table-put! hash-table-get
                             hash-table-remove! let*-values vector-set! make-string
                             exn? eof-object?

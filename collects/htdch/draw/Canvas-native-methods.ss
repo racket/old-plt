@@ -68,4 +68,8 @@
 
   (define/provide (sleepForAWhile-int-native this s)
      (sleep-for-a-while s))
+
+  (define/provide (onTick-native this)
+    (printf "done~n")
+    #t)
 )

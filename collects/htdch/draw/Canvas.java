@@ -37,4 +37,5 @@ public class Canvas implements ICanvas {
      // wait for s seconds (roughly)
      public native boolean sleepForAWhile(int s);
 
+    public native ICanvas onTick();
 }

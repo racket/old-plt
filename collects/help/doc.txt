@@ -32,6 +32,12 @@ this procedure starts a Help Desk browser with the appropriate
 manual page shown in the lower frame, if the requested entry 
 exists.  Otherwise, an error occurs.
 
+> goto-hd-location hd-cookie sym -> void
+
+The `hd-cookie' argument is returned by `start-help-server', below.
+The argument `sym' is a symbol in '(hd-tour release-notes plt-license).
+Starts a Help Desk browser on the page suggested by `sym'.
+
 > help-desk-browser : hd-cookie -> void
 
 Starts the Help Desk browser on the Help Desk home page.  The 

@@ -5,6 +5,14 @@
 	   (lib "contracts.ss")
 	   (lib "util.ss" "help" "servlets" "private"))
 
+  ; sym, string assoc list
+  (define hd-locations
+    '((hd-tour "/doc/tour/")
+      (release-notes "/servlets/release/notes.ss")
+      (plt-license "/servlets/release/license.ss")))
+  (define hd-location-syms
+    (map car hd-locations))
+
   (provide/contract 
    (search-for-docs
     (hd-cookie? string? 
@@ -17,7 +25,11 @@
 		any?
 		. -> . any?))
    (goto-manual-link
-    (hd-cookie? string? string? . -> . any?)))
+    (hd-cookie? string? string? . -> . any?))
+   (goto-hd-location
+    (hd-cookie? (lambda (sym)
+		  (memq sym hd-location-syms))
+		. -> . any?)))
 
   (define search-url-prefix
     "http://127.0.0.1:~a/servlets/external-search.ss?")
@@ -36,15 +48,27 @@
 		 (if lucky? "true" "false"))])
       (help-desk-navigate url)))
 
+  ; cookie is an hd-cookie struct
+  ; hd-url is /doc/<manual>/... or /servlet/...
+  (define (make-external-search-url cookie hd-url) 
+    (format
+     (string-append search-url-prefix "hd-url=~a")
+     (hd-cookie->port cookie)
+     (hexify-string hd-url)))
+
   (define (goto-manual-link cookie manual index-key)
     (let* ([port (hd-cookie->port cookie)]
 	   [hd-url (finddoc-page-anchor manual index-key)]
-           ; hd-url is /doc/<manual>/... or /servlet/...
-	   [url (format
-		 (string-append search-url-prefix "hd-url=~a")
-		 (hd-cookie->port cookie)
-		 (hexify-string hd-url))])
-      (help-desk-navigate url))))
+	   [url (make-external-search-url cookie hd-url)])
+      (help-desk-navigate url)))
+
+  (define (goto-hd-location cookie sym)
+    ; the assq is guarded by the contract
+    (let ([entry (assq sym hd-locations)])
+      (help-desk-navigate 
+       (make-external-search-url 
+	cookie
+	(cadr entry))))))
 
 
 	   

@@ -536,8 +536,31 @@ void wxPostScriptDC::DrawLine (double x1, double y1, double x2, double y2)
   pstream->Out(XSCALE(x1)); pstream->Out(" "); pstream->Out(YSCALE (y1)); pstream->Out(" moveto\n");
   pstream->Out(XSCALE(x2)); pstream->Out(" "); pstream->Out(YSCALE (y2)); pstream->Out(" lineto\n");
   pstream->Out("stroke\n");
-  CalcBoundingBoxClip(XSCALEBND(x1), YSCALEBND(y1));
-  CalcBoundingBoxClip(XSCALEBND(x2), YSCALEBND(y2));
+  
+  {
+    /* Need to make bounding box wide enough to show the pen.
+       (Part of the reason for this is to avoid zero-sized boounding boxes.) */
+    double width;
+
+    if (current_pen) {
+      width = current_pen->GetWidthF();
+      width /= 2;
+    } else
+      width = 0;
+
+    if (!width) width = 0.01;
+
+    if (x1 == x2) {
+      CalcBoundingBoxClip(XSCALEBND(x1 - width), YSCALEBND(y1));
+      CalcBoundingBoxClip(XSCALEBND(x2 + width), YSCALEBND(y2));
+    } else if (y1 == y2) {
+      CalcBoundingBoxClip(XSCALEBND(x1), YSCALEBND(y1 - width));
+      CalcBoundingBoxClip(XSCALEBND(x2), YSCALEBND(y2 + width));
+    } else {
+      CalcBoundingBoxClip(XSCALEBND(x1 - width), YSCALEBND(y1 - width));
+      CalcBoundingBoxClip(XSCALEBND(x2 + width), YSCALEBND(y2 + width));
+    }
+  }
 }
 
 void wxPostScriptDC::DrawArc (double x, double y, double w, double h, double start, double end)
@@ -618,6 +641,9 @@ void wxPostScriptDC::DrawSpline(double x1, double y1, double x2, double y2, doub
 
   if (!pstream)
     return;
+
+  if (current_pen)
+    SetPen (current_pen);
 
   pstream->Out("newpath\n");
 

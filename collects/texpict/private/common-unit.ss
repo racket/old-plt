@@ -21,7 +21,7 @@
 			   children ; list of child records
 			   panbox)) ; panorama box
       (define-struct child (pict dx dy sx sy))
-      (define-struct bbox (x1 y1 x2 y2))
+      (define-struct bbox (x1 y1 x2 y2 ay dy))
 
       (define (quotient* a b)
 	(if (integer? a)
@@ -33,7 +33,8 @@
 	 [() (blank 0 0 0)]
 	 [(s) (blank s s)]
 	 [(w h) (blank w h 0)]
-	 [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null #f)]))
+	 [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null #f)]
+	 [(w h a d) (make-pict `(picture ,w ,h) w h a d null #f)]))
 
       (define (extend-pict box dx dy dw da dd draw)
 	(let ([w (pict-width box)]
@@ -190,24 +191,31 @@
       (define (panorama-box! p)
 	(let ([bb (pict-panbox p)])
 	  (if bb
-	      (values (bbox-x1 bb) (bbox-y1 bb) (bbox-x2 bb) (bbox-y2 bb))
+	      (values (bbox-x1 bb) (bbox-y1 bb) (bbox-x2 bb) (bbox-y2 bb)
+		      (bbox-ay bb) (bbox-dy bb))
 	      (let loop ([x1 0][y1 0][x2 (pict-width p)][y2 (pict-height p)]
+			 [ay (- (pict-height p) (pict-ascent p))][dy (pict-descent p)]
 			 [l (pict-children p)])
 		(if (null? l)
 		    (begin
-		      (set-pict-panbox! p (make-bbox x1 y1 x2 y2))
-		      (values x1 y1 x2 y2))
+		      (set-pict-panbox! p (make-bbox x1 y1 x2 y2 ay dy))
+		      (values x1 y1 x2 y2 ay dy))
 		    (let ([c (car l)])
-		      (let-values ([(cx1 cy1 cx2 cy2) (panorama-box! (child-pict c))])
+		      (let-values ([(cx1 cy1 cx2 cy2 cay cdy) (panorama-box! (child-pict c))])
 			(loop (min x1 (* (+ cx1 (child-dx c)) (child-sx c)))
 			      (min y1 (* (+ cy1 (child-dy c)) (child-sy c)))
 			      (max x2 (* (+ cx2 (child-dx c)) (child-sx c)))
 			      (max y2 (* (+ cy2 (child-dy c)) (child-sy c)))
+			      (max ay (* (+ cay (child-dy c)) (child-sy c)))
+			      (min dy (* (+ cdy (child-dy c)) (child-sy c)))
 			      (cdr l)))))))))
 
       (define (panorama p)
-	(let-values ([(x1 y1 x2 y2) (panorama-box! p)])
-	  (inset p (- x1) (- y2 (pict-height p)) (- x2 (pict-width p)) (- y1))))
+	(let-values ([(x1 y1 x2 y2 ay dy) (panorama-box! p)])
+	  (let ([h (- y2 y1)])
+	    (place-over (blank (- x2 x1) h (- h ay) dy)
+			(- x1) (- y2 (pict-height p))
+			p))))
 
       (define (clip-descent b)
 	(let* ([w (pict-width b)]

@@ -87,7 +87,6 @@ Check Syntax separates four classes of identifiers:
       
             
       ;; all strings naming styles
-<<<<<<< syncheck.ss
       (define unbound-variable-style-str (prefix-style/check 'unbound-variable))
       (define constant-style-str (prefix-style/check 'constant))
 

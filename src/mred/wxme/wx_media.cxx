@@ -2008,12 +2008,14 @@ void wxMediaEdit::Kill(long time, long start, long end)
 
   BeginEditSequence();
   if (start < 0) {
-    MovePosition(WXK_RIGHT, TRUE, wxMOVE_LINE);
-    if (startpos == endpos)
+    int newend = ParagraphEndPosition(PositionParagraph(endpos, posateol));
+
+    if (startpos == newend)
       SetPosition(startpos, startpos + 1);
     else {
       long i;
       
+      SetPosition(startpos, newend);
       text = GetText(startpos, endpos);
       for (i = endpos - startpos; i--; )
 	if (!isspace(text[i]))

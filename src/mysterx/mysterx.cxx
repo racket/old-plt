@@ -552,6 +552,7 @@ void scheme_release_browser(void *wb,void *hwndDestroy) {
 
   if (hwndDestroy) {
     b->destroy = TRUE;
+    PostMessage(b->hwnd,WM_TIMER,0,0);
   }
 
   MX_MANAGED_OBJ_RELEASED(wb) = TRUE;
@@ -4565,11 +4566,10 @@ void browserHwndMsgLoop(LPVOID p) {
     while (GetMessage(&msg,NULL,0,0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
-    }
-
-    if (*destroy) {
-      *destroy = FALSE;
-      DestroyWindow(hwnd);
+      if (*destroy) {
+	*destroy = FALSE;
+	DestroyWindow(hwnd);
+      }
     }
   }
 }

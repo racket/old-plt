@@ -5,7 +5,7 @@
 @ w "on-set-focus" : void OnSetFocus(); : JMPDECL/SETJMP/RESETJMP
 @ w "on-size" : void OnSize(int,int);
 
-@ w "pre-on-char" : bool PreOnChar(wxWindow!,wxKeyEvent!);  : JMPDECL/SETJMPV[0]/RESETJMP : : returnFALSE : returnFALSE : wxWindow
-@ w "pre-on-event" : bool PreOnEvent(wxWindow!,wxMouseEvent!);  : JMPDECL/SETJMPV[0]/RESETJMP : : returnFALSE : returnFALSE : wxWindow
+@ w "pre-on-char" : bool PreOnChar(wxWindow!,wxKeyEvent!);  : JMPDECL/SETJMPV[1]/RESETJMP : : returnFALSE : returnFALSE : wxWindow
+@ w "pre-on-event" : bool PreOnEvent(wxWindow!,wxMouseEvent!);  : JMPDECL/SETJMPV[1]/RESETJMP : : returnFALSE : returnFALSE : wxWindow
 
 @ w "on-drop-file" : void OnDropFile(pathname) : JMPDECL/SETJMP/RESETJMP

@@ -1047,6 +1047,8 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, float x, float y)
     EndEditSequence();
     --writeLocked;
 
+    changed = TRUE;
+
     if (!sequence)
       UpdateNeeded();
   }
@@ -1127,9 +1129,6 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
     rv = TRUE;
   }
 
-  if (rv)
-    changed = TRUE;
-
   if (rv && !dragging && !modified)
     SetModified(TRUE);
 
@@ -1138,6 +1137,8 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, float w, float h)
   writeLocked++;
   EndEditSequence();
   --writeLocked;
+
+  changed = TRUE;
 
   if (!sequence)
     UpdateNeeded();
@@ -1858,19 +1859,21 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
       updateRight = realWidth;
   }
 
+  updateNonemtpy = FALSE;
+
+  if (changed) {
+    changed = FALSE;
+    writeLocked++;
+    OnChange();
+    --writeLocked;
+  }
+
   if (updateTop != updateBottom || updateLeft != updateRight) {
     /* Bizarre MSVC bug: if we inline w & h, h is wrong */
     float w = updateRight - updateLeft + 1;
     float h = updateBottom - updateTop + 1;
 
     admin->NeedsUpdate(updateLeft, updateTop, w, h);
-  }
-
-  updateNonemtpy = FALSE;
-
-  if (changed) {
-    changed = FALSE;
-    OnChange();
   }
 }
 
@@ -2002,6 +2005,8 @@ void wxMediaPasteboard::Resized(wxSnip *snip, Bool redraw_now)
 
   if (loc->needResize)
     return;
+
+  changed = TRUE;
 
   if (!redraw_now)
     sequence++;
@@ -2743,6 +2748,7 @@ void wxMediaPasteboard::SetFilename(char *name, Bool temp)
 void wxMediaPasteboard::StyleHasChanged(wxStyle *style)
 {
   if (!style) {
+    changed = TRUE;
     UpdateAll();
     return;
   }

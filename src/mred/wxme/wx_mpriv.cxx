@@ -2254,6 +2254,7 @@ void wxMediaEdit::Redraw()
   float fy, fx;
   Bool oneline;
   wxDC *dc;
+  Bool needs_update = FALSE;
 
   if (flowLocked || !admin)
     return;
@@ -2368,8 +2369,10 @@ void wxMediaEdit::Redraw()
       if (refreshB < bottom)
 	bottom = refreshB;
     }
-  } else if (!refreshAll)
-    return; /* Nothing needs to be updated! */
+  } else if (!refreshAll) {
+    /* Nothing needs to be updated! */
+    needs_update = FALSE;
+  }
 
   refreshUnset = refreshBoxUnset = TRUE;
   refreshAll = FALSE;
@@ -2377,7 +2380,20 @@ void wxMediaEdit::Redraw()
   height = bottom - top;
   width = right - left;
 
-  admin->NeedsUpdate(left, top, width, height);
+  if (changed) {
+    Bool wl, fl;
+
+    changed = FALSE;
+    wl = writeLocked;
+    fl = flowLocked;
+    writeLocked = flowLocked = TRUE;
+    OnChange();
+    writeLocked = wl;
+    flowLocked = fl;
+  }
+
+  if (needs_update)
+    admin->NeedsUpdate(left, top, width, height);
 }
 
 /* This one is called by the administrator: */
@@ -2521,11 +2537,6 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 
     if (ps)
       skipBox = savesb;
-  }
-
-  if (changed) {
-    changed = FALSE;
-    OnChange();
   }
 }
 

@@ -2529,6 +2529,7 @@ void wxMediaEdit::SetLineSpacing(float s)
   if (s != lineSpacing) {
     lineSpacing = s;
     SizeCacheInvalid();
+    changed = TRUE;
     NeedRefresh(-1, -1);
   }
 }
@@ -2570,6 +2571,7 @@ void wxMediaEdit::SetMaxWidth(float w)
   flowInvalid = TRUE;
   if (!graphicMaybeInvalid)
     graphicMaybeInvalid = TRUE;
+  changed = TRUE;
   NeedRefresh(-1, -1);
 
   AfterSetSizeConstraint();
@@ -2590,6 +2592,7 @@ void wxMediaEdit::SetMinWidth(float w)
   graphicMaybeInvalid = TRUE;
   graphicMaybeInvalidForce = TRUE;
   minWidth = w;
+  changed = TRUE;
   NeedRefresh(-1,-1);
 
   AfterSetSizeConstraint();
@@ -2610,6 +2613,7 @@ void wxMediaEdit::SetMinHeight(float h)
   graphicMaybeInvalid = TRUE;
   graphicMaybeInvalidForce = TRUE;
   minHeight = h;
+  changed = TRUE;
   NeedRefresh(-1,-1);
 
   AfterSetSizeConstraint();
@@ -2630,6 +2634,7 @@ void wxMediaEdit::SetMaxHeight(float h)
   graphicMaybeInvalid = TRUE;
   graphicMaybeInvalidForce = TRUE;
   maxHeight = h;
+  changed = TRUE;
   NeedRefresh(-1,-1);
 
   AfterSetSizeConstraint();
@@ -3147,6 +3152,7 @@ void wxMediaEdit::SetTabs(float *newtabs, int count,
   tabSpaceInUnits = inUnits;
 
   SizeCacheInvalid();
+  changed = TRUE;
   NeedRefresh(-1, -1);
 }
 
@@ -3934,6 +3940,7 @@ void wxMediaEdit::SetStyleList(wxStyleList *newList)
   wxMediaBuffer::SetStyleList(newList);
 
   SizeCacheInvalid();
+  changed = TRUE;
   NeedRefresh(-1, -1);
 }
 
@@ -3946,7 +3953,9 @@ void wxMediaEdit::StyleHasChanged(wxStyle *style)
     return;
 
   if (!style) {
-    NeedRefresh(-1, -1); /* Our queue to repaint */
+    /* Our queue to repaint */
+    changed = TRUE;
+    NeedRefresh(-1, -1);
     return;
   }
   
@@ -4022,6 +4031,8 @@ void wxMediaEdit::Resized(wxSnip *snip, Bool redraw_now)
 
   if (flowLocked)
     redraw_now = FALSE;
+
+  changed = TRUE;
 
   if (!redraw_now)
     delayRefresh++;

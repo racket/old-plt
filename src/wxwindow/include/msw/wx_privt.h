@@ -95,10 +95,9 @@ public:
     virtual BOOL OnKillFocus(HWND wnd);
     virtual void OnDropFiles(WPARAM wParam);
 
-    // Canvas-type events
-    virtual void OnButton(int x, int y, UINT flags, int evttype);
+    virtual int OnButton(int x, int y, UINT flags, int evttype, int for_nc = 0);
+    virtual int OnMouseMove(int x, int y, UINT flags, int for_nc = 0);
 
-    virtual void OnMouseMove(int x, int y, UINT flags);
     virtual void OnMouseEnter(int x, int y, UINT flags);
     virtual void OnMouseLeave(int x, int y, UINT flags);
 

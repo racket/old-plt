@@ -800,6 +800,18 @@ static void FreeGWorld(GWorldPtr x_pixmap)
   DisposeGWorld(x_pixmap);
 }
 
+//------------------ Original GrafPtr ------------------------------------------
+
+static CGrafPtr original_grafptr;
+
+CGrafPtr wxGetGrafPtr(void)
+{
+  if (!original_grafptr)
+    GetPort(&original_grafptr);
+  
+  return original_grafptr;
+}
+
 //------------------ BitMaps ------------------------------------------
 /*
    Internally, its an offscreen GWorld (and its pixmap).

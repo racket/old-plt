@@ -219,6 +219,9 @@ Scheme_Type mred_eventspace_type;
 static Scheme_Type mred_eventspace_hop_type;
 static Scheme_Object *def_dispatch;
 int mred_ps_setup_param;
+#ifdef wx_msw
+int mred_het_param;
+#endif
 
 typedef struct Context_Custodian_Hop {
   Scheme_Type type;
@@ -657,6 +660,9 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   if (!config) {
     config = (Scheme_Config *)scheme_branch_config();
     scheme_set_param(config, mred_eventspace_param, (Scheme_Object *)c);
+#ifdef wx_msw
+    scheme_set_param(config, mred_het_param, NULL);
+#endif
   }
 
   c->main_config = config;
@@ -1014,9 +1020,16 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
   wxTimer *timer;
   Scheme_Config *save_config;
   MrEdEvent evt;
+  int restricted = 0;
 
   save_config = scheme_config;
   scheme_config = c->main_config;
+
+#ifdef wx_msw
+  /* see mredmsw.cxx for info on mred_het_param: */
+  if (scheme_get_param(scheme_config, mred_het_param))
+    restricted = 1;
+#endif
 
   if (check_q_callbacks(2, MrEdSameContext, c, 1)) {
     c->q_callback = 3;
@@ -1028,10 +1041,10 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
   } else if (check_q_callbacks(1, MrEdSameContext, c, 1)) {
     c->q_callback = 2;
     DoTheEvent(c);
-  } else if (MrEdGetNextEvent(0, 1, &evt, NULL)) {
+  } else if (!restricted && MrEdGetNextEvent(0, 1, &evt, NULL)) {
     memcpy(&c->event, &evt, sizeof(MrEdEvent));
     DoTheEvent(c);
-  } else if (check_q_callbacks(0, MrEdSameContext, c, 1)) {
+  } else if (!restricted && check_q_callbacks(0, MrEdSameContext, c, 1)) {
     c->q_callback = 1;
     DoTheEvent(c);
   } else if (c != mred_main_context) {
@@ -1083,8 +1096,16 @@ void wxDoNextEvent()
 
 int MrEdEventReady(MrEdContext *c)
 {
-  return (TimerReady(c) || MrEdGetNextEvent(1, 1, NULL, NULL)
-	  || check_q_callbacks(2, MrEdSameContext, c, 1)
+  int restricted = 0;
+
+#ifdef wx_msw
+  /* see mredmsw.cxx for info on mred_het_param: */
+  if (scheme_get_param(scheme_config, mred_het_param))
+    restricted = 1;
+#endif
+
+  return (TimerReady(c) || (!restricted && MrEdGetNextEvent(1, 1, NULL, NULL))
+	  || (! restricted && check_q_callbacks(2, MrEdSameContext, c, 1))
 	  || check_q_callbacks(1, MrEdSameContext, c, 1)
 	  || check_q_callbacks(0, MrEdSameContext, c, 1));
 }
@@ -2785,6 +2806,9 @@ wxFrame *MrEdApp::OnInit(void)
   mred_eventspace_param = scheme_new_param();
   mred_event_dispatch_param = scheme_new_param();
   mred_ps_setup_param = scheme_new_param();
+#ifdef wx_msw
+  mred_het_param = scheme_new_param();
+#endif
 
   wxInitSnips(); /* and snip classes */
 

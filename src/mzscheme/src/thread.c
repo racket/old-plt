@@ -181,6 +181,7 @@ void (*scheme_sleep)(float seconds, void *fds);
 void (*scheme_notify_multithread)(int on);
 void (*scheme_wakeup_on_input)(void *fds);
 int (*scheme_check_for_break)(void);
+void (*scheme_on_atomic_timeout)(void);
 
 static int do_atomic = 0;
 static int missed_context_switch = 0;
@@ -2360,6 +2361,8 @@ void scheme_thread_block(float sleep_time)
     }
     
     scheme_swap_thread(next);
+  } else if (do_atomic && scheme_on_atomic_timeout) {
+    scheme_on_atomic_timeout();
   } else {
     /* If all processes are blocked, check for total process sleeping: */
     if (p->block_descriptor != NOT_BLOCKED)

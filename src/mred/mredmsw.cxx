@@ -35,12 +35,31 @@ extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
 extern int wxCheckMousePosition();
 extern void wxDoLeaveEvent(wxWindow *w, int x, int y, int flags);
+extern LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+extern struct MrEdContext *MrEdGetContext(wxObject *w);
+extern void MrEdQueueInEventspace(void *context, Scheme_Object *thunk);
 
 typedef struct LeaveEvent {
   wxWindow *wnd;
   int x, y, flags;
   struct LeaveEvent *next;
 } LeaveEvent;
+
+class HiEventTramp {
+public:
+  int (*f)(void *);
+  void *data;
+  int val;
+  int in_progress;
+  int progress_is_resumed;
+  Scheme_Object *old_param;
+  void *progress_base_addr;
+  mz_jmp_buf progress_base;
+  Scheme_Jumpup_Buf progress_cont;
+};
+static void het_run_some(void);
+
+static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv);
 
 # define WM_MRED_LEAVE (WM_USER + 0x111)
 
@@ -96,52 +115,6 @@ static MrEdContext *GetContext(HWND hwnd)
 }
 
 /**********************************************************************/
-/* The LetOtherThreadsRun callback is installed whenever MrEd is *not*
-   checking for events. In that case, if some Windows call contains
-   its own event loop (e.g., menu selection or scrollbar handling),
-   then LetOtherThreadsRun is called every X milliseconds to give
-   other MrEd threads a chance to run. */
-
-static int sleep_thread_enabled = 1;
-static UINT sleep_thread_timer_id;
-static void StartSleepThreadTimer(void);
-
-void CALLBACK LetOtherThreadsRun(HWND, UINT, UINT, DWORD)
-{
-  scheme_current_thread->suspend_break++;
-  scheme_thread_block(0.0);
-  --scheme_current_thread->suspend_break;
-}
-
-void StopSleepThreadTimer(void)
-{
-  if (sleep_thread_timer_id) {
-    KillTimer(NULL, sleep_thread_timer_id);
-    sleep_thread_timer_id = 0;
-  }
-}
-
-static void StartSleepThreadTimer(void)
-{
-  StopSleepThreadTimer();
-#if 0
-  if (sleep_thread_enabled)
-    sleep_thread_timer_id = SetTimer(0, NULL, 100, LetOtherThreadsRun);
-#endif
-}
-
-void MrEdEnableSleepCallback(Bool on)
-{
-  sleep_thread_enabled = on;
-
-  if (!on)
-    StopSleepThreadTimer();
-  else
-    StartSleepThreadTimer();
-}
-
-/* End of LetOtherThreadsRun callback */
-/**********************************************************************/
 
 typedef struct {
   MrEdContext *c, *c_return;
@@ -194,15 +167,11 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
   info.msg = msg;
   info.remove = remove;
 
-  StopSleepThreadTimer();
-
   if (!EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)&info)) {
     if (c_return)
       *c_return = info.c_return;
     result = 1;
   }
-
-  StartSleepThreadTimer();
 
   return result;
 }
@@ -328,11 +297,34 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     tramp = 1;
     *res = 1;
     break;
-    /* These three are for pre-emptive WM_INITMENU */
+    /* These three are for pre-emptive WM_INITMENU 
+       and for on-pre-event over scrollbars plus interactive scrolling */
   case WM_NCLBUTTONDOWN:
   case WM_NCRBUTTONDOWN:
   case WM_NCMBUTTONDOWN:
-    if (wParam == HTMENU) {
+  case WM_NCLBUTTONDBLCLK:
+  case WM_NCRBUTTONDBLCLK:
+  case WM_NCMBUTTONDBLCLK:
+    if ((wParam == HTMENU) || (wParam == HTVSCROLL) || (wParam == HTHSCROLL)) {
+      tramp = 1;
+      *res = 1;
+    } else
+      tramp = 0;
+    break;
+    /* These are for on-pre-event over scrollbars plus interactive scrolling */
+  case WM_NCMOUSEMOVE:
+  case WM_NCLBUTTONUP:
+  case WM_NCRBUTTONUP:
+  case WM_NCMBUTTONUP:
+    if ((wParam == HTVSCROLL) || (wParam == HTHSCROLL)) {
+      tramp = 1;
+      *res = 1;
+    } else
+      tramp = 0;
+    break;
+    /* This is for interactive scrolling: */
+  case WM_SYSCOMMAND:
+    if (((wParam & 0xFFF0) == SC_HSCROLL) || ((wParam & 0xFFF0) == SC_VSCROLL)) {
       tramp = 1;
       *res = 1;
     } else
@@ -355,20 +347,76 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     return 0;
 }
 
-int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
+int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp)
 {
   /* See wxEventTrampoline notes above. */
 
 #if wxLOG_EVENTS
   if (!log)
     log = fopen("evtlog", "w");
-  fprintf(log, "(%lx %lx %lx %s %d\n", scheme_current_thread, hWnd, message, who, tramp);
+  fprintf(log, "(%lx %lx %lx[%d] %s %d\n", scheme_current_thread, hWnd, message, wParam, who, tramp);
   fflush(log);
 #endif
 
+  if (!tramp && scheme_current_thread) {
+    HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+
+    if (het && het->in_progress) {
+      /* we're in restricted mode; general calls into Scheme are bad */
+      switch (message) {
+	/* These shouldn't happen; reject them if they do! */
+      case WM_ACTIVATE:
+      case WM_SETFOCUS:
+      case WM_KILLFOCUS:
+      case WM_SIZE:
+      case WM_MOVE:
+      case WM_COMMAND:
+      case WM_MDIACTIVATE:
+      case WM_QUERYENDSESSION:
+      case WM_CLOSE:
+#if wxLOG_EVENTS
+	fprintf(log, " RESTRICTED)\n");
+	fflush(log);
+#endif
+	return 0;
+      case WM_VSCROLL:
+      case WM_HSCROLL:
+	/* need to re-queue the scroll event (in the MrEd middle queue) */
+	{
+	  MSG *msg;
+	  Scheme_Object *thunk;
+	  msg = (MSG *)scheme_malloc_atomic(sizeof(MSG));
+	  msg->hwnd = hWnd;
+	  msg->message = message;
+	  msg->wParam = wParam;
+	  msg->lParam = lParam;
+	  thunk = scheme_make_closed_prim(call_wnd_proc, (Scheme_Object *)msg);
+	  MrEdQueueInEventspace(MrEdGetContext(NULL), thunk);
+	}
+	het_run_some();
+	return 0;
+      default:
+	/* anything else is ok, because it doesn't call Scheme */
+	break;
+      }
+    }
+  }
+
   if (!tramp) {
     switch (message) {
-    case WM_QUERYENDSESSION:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCRBUTTONDBLCLK:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCMBUTTONDBLCLK:
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCLBUTTONDBLCLK:
+    case WM_NCMOUSEMOVE:
+      if ((wParam != HTVSCROLL) && (wParam != HTHSCROLL))
+	break;
+    case WM_QUERYENDSESSION: /* ^^^^ falltrhrough &&&& */
     case WM_CLOSE:
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
@@ -418,7 +466,164 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 
   if (!tramp)
     scheme_end_atomic_no_swap();
+
+
+  if (!tramp && ((message == WM_VSCROLL) || (message == WM_HSCROLL))) {
+    het_run_some();
+  }
 }
+
+static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv)
+{
+  MSG *msg = (MSG *)data;
+
+  wx_trampolining = 1;
+  wxWndProc(msg->hwnd, msg->message, msg->wParam, msg->lParam);
+
+  return scheme_void;
+}
+
+/***************************************************************************/
+
+static unsigned long get_deeper_base();
+
+static void pre_het(void *d)
+{
+  HiEventTramp *het = (HiEventTramp *)d;
+
+  het->old_param = scheme_get_param(scheme_config, mred_het_param);
+  scheme_set_param(scheme_config, mred_het_param, (Scheme_Object *)het);
+}
+
+static Scheme_Object *act_het(void *d)
+{
+  HiEventTramp * het = (HiEventTramp *)d;
+
+  het->val = het->f(het->data);
+
+  return scheme_void;
+}
+
+static void post_het(void *d)
+{
+  HiEventTramp *het = (HiEventTramp *)d;
+
+  scheme_set_param(scheme_config, mred_het_param, het->old_param);
+}
+
+int wxHiEventTrampoline(int (*f)(void *), void *data)
+{
+  HiEventTramp *het;
+
+  het = new HiEventTramp;
+  het->f = f;
+  het->data = data;
+  het->val = 0;
+
+  scheme_init_jmpup_buf(&het->progress_cont);
+
+  scheme_dynamic_wind(pre_het, act_het, post_het, NULL, het);
+
+  if (het->in_progress) {
+    /* we have leftover work; jump and finish it (non-atomically) */
+    het->in_progress = 0;
+    het->progress_is_resumed = 1;
+    if (!scheme_setjmp(het->progress_base)) {
+      scheme_longjmpup(&het->progress_cont);    
+    }
+  }
+
+  return het->val;
+}
+
+static void suspend_het_progress(void)
+{
+  HiEventTramp * volatile het;
+
+  het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  
+  scheme_on_atomic_timeout = NULL;
+
+  het->in_progress = 1;
+  if (scheme_setjmpup(&het->progress_cont, (void *)&het, het->progress_base_addr)) {
+    /* we're back */
+    scheme_reset_jmpup_buf(&het->progress_cont);
+  } else {
+    /* we're leaving */
+    scheme_longjmp(het->progress_base, 1);
+  }
+}
+
+static void het_run_new(HiEventTramp * volatile het)
+{
+  /* We're willing to start new work that is specific to this thread */
+  het->progress_is_resumed = 0;
+
+  if (!scheme_setjmp(het->progress_base)) {
+    scheme_start_atomic();
+    scheme_on_atomic_timeout = suspend_het_progress;
+    wxYield(); /* due to het param, work will be restricted */
+  }
+
+  if (het->progress_is_resumed) {
+    /* we've already returned once; jump out to new progress base */
+    scheme_longjmp(het->progress_base, 1);
+  } else {
+    scheme_on_atomic_timeout = NULL;
+    scheme_end_atomic_no_swap();
+  }
+}
+
+static void het_do_run_new(HiEventTramp * volatile het, int *iteration)
+{
+  int new_iter[32];
+
+  if (iteration[0] == 3) {
+    het->progress_base_addr = (void *)new_iter;
+    het_run_new(het);
+  } else {
+    new_iter[0] = iteration[0] + 1;
+    het_do_run_new(het, new_iter);
+  }
+}
+
+static void het_run_some()
+{
+  HiEventTramp * volatile het;
+  volatile int baseaddr;
+
+  het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
+  if (het) {
+    if (het->in_progress) {
+      /* We have work in progress. */
+      if ((unsigned long)het->progress_base_addr < get_deeper_base()) {
+	/* We have stack space to resume the old work: */
+	het->in_progress = 0;
+	het->progress_is_resumed = 1;
+	scheme_start_atomic();
+	scheme_on_atomic_timeout = suspend_het_progress;
+	if (!scheme_setjmp(het->progress_base)) {
+	  scheme_longjmpup(&het->progress_cont);
+	} else {
+	  scheme_on_atomic_timeout = NULL;
+	  scheme_end_atomic_no_swap();
+	}
+      }
+    } else {
+      int iter[1];
+      iter[0] = 0;
+      het_do_run_new(het, iter);
+    }
+  }
+}
+
+static unsigned long get_deeper_base()
+{
+  long here;
+  return (unsigned long)&here;
+}
+
+/***************************************************************************/
 
 int MrEdCheckForBreak(void)
 {
@@ -477,8 +682,6 @@ void MrEdMSWSleep(float secs, void *fds)
     }
   }
  
-  StopSleepThreadTimer();
-
   if (secs > 0) {
     if (secs > 100000)
       msecs = 100000000;
@@ -521,7 +724,7 @@ void MrEdMSWSleep(float secs, void *fds)
       fake = socket(PF_INET, SOCK_STREAM, 0);
       FD_SET(fake, e);
 
-      th2 = CreateThread(NULL, 5000, 
+      th2 = CreateThread(NULL, 4096, 
 	              (LPTHREAD_START_ROUTINE)signal_fddone,
 		      fds, 0, &id);
       /* Not actually necessary, since GC can't occur during the
@@ -555,8 +758,6 @@ void MrEdMSWSleep(float secs, void *fds)
 			      secs ? msecs : INFINITE,
 			      QS_ALLINPUT);
   }
-
-  StartSleepThreadTimer();
 }
 
 void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)

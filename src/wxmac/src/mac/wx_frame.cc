@@ -592,6 +592,7 @@ void wxFrame::Command(int id)
       wxMenu* theParentMenu;
       theParentMenu = item->ParentMenu();
       if (theParentMenu) {
+	SetPort(wxGetGrafPtr());
 	HiliteMenu(theParentMenu->cMacMenuId); // hilite the menu
 	ProcessCommand(id);
       }
@@ -609,6 +610,7 @@ void wxFrame::OnMenuClick()
 void wxFrame::ProcessCommand(int id)
 {
   OnMenuCommand(id);
+  SetPort(wxGetGrafPtr());
   HiliteMenu(0); // unhilite the hilited menu
 }
 

@@ -112,6 +112,10 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep);
 void wxmac_reg_globs(void);
 #endif
 
+#ifdef wx_msw
+extern int mred_het_param;
+#endif
+
 typedef void *(*ForEachFrameProc)(wxObject *, void *);
 void *MrEdForEachFrame(ForEachFrameProc fp, void *data);
 

@@ -209,8 +209,6 @@ wxPrinter::~wxPrinter(void)
   FreeProcInstance(lpAbortProc);
 }
 
-extern void MrEdEnableSleepCallback(Bool on);
-
 Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 {
   abortIt = FALSE;
@@ -287,8 +285,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   abortWindow->Show(TRUE);
   wxYield();
 
-  MrEdEnableSleepCallback(FALSE);
-
   printout->OnBeginPrinting();
   
   Bool keepGoing = TRUE;
@@ -327,8 +323,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   }
   
   printout->OnEndPrinting();
-
-  MrEdEnableSleepCallback(TRUE);
 
   if (abortWindow) {
     abortWindow->Show(FALSE);

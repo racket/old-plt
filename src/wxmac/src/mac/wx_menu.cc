@@ -117,6 +117,7 @@ wxMenuBar::~wxMenuBar(void)
 
 static void wxInvalMenuBar(void)
 {
+  SetPort(wxGetGrafPtr());
   ::DrawMenuBar();
 }
 

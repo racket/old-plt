@@ -496,7 +496,7 @@ static wxWnd *wxCurrentWindow(int in_content)
       hwnd = GetParent(hwnd);
   }
 
-  if (in_content && wnd) {
+  if (wnd && in_content) {
     /* Check content vs. non-content area: */
     POINT pos;
     GetCursorPos(&pos);
@@ -514,7 +514,7 @@ static wxWnd *wxCurrentWindow(int in_content)
 
 void wxResetCurrentCursor(void)
 {
-  wxWnd *wnd = wxCurrentWindow(0);
+  wxWnd *wnd = wxCurrentWindow(1);
   if (!wnd) return;
 
   if (wxCurrentPopupMenu)
@@ -707,7 +707,27 @@ wxWindow *wxWindow::FindFocusWindow()
   return NULL;
 }
 
-extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
+class wxDWP_Closure {
+public:
+  wxWnd *wnd;
+  UINT message;
+  WPARAM wParam;
+  LPARAM lParam;
+};
+
+static int call_dwp(void *_c) {
+  wxDWP_Closure *c;
+  wxWnd *wnd;
+
+  c = (wxDWP_Closure *)_c;
+  wnd = c->wnd;
+
+  return wnd->DefWindowProc(c->message, c->wParam, c->lParam);  
+}
+
+extern int wxHiEventTrampoline(int (*f)(void *), void *data);
+
+extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramps);
 
 // Main window proc
@@ -745,7 +765,7 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     return retval;
   }
 
-  if (!wx_start_win_event(dialog ? "dialog" : "window", hWnd, message, tramp)) {
+  if (!wx_start_win_event(dialog ? "dialog" : "window", hWnd, message, wParam, lParam, tramp)) {
     /* Something has gone wrong. Give up. */
     return retval;
   }
@@ -756,7 +776,12 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     case WM_NCLBUTTONDOWN:
     case WM_NCRBUTTONDOWN:
     case WM_NCMBUTTONDOWN:
-    case WM_SYSKEYUP:
+    case WM_NCLBUTTONDBLCLK:
+    case WM_NCRBUTTONDBLCLK:
+    case WM_NCMBUTTONDBLCLK:
+      if (wParam != HTMENU)
+	break;
+    case WM_SYSKEYUP: /* ^^^ fallthrough ^^^ */
       /* Guess that this could trigger a menu pop-up. */
       /* Pre-emptively simulate WM_INITMENU message. */
       wnd->OnMenuClick();
@@ -872,11 +897,93 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       wnd->OnButton(x, y, wParam, et);
       break;
     }
+  case WM_NCLBUTTONDOWN:
+  case WM_NCRBUTTONDOWN:
+  case WM_NCMBUTTONDOWN:
+  case WM_NCLBUTTONDBLCLK:
+  case WM_NCRBUTTONDBLCLK:
+  case WM_NCMBUTTONDBLCLK:
+  case WM_NCLBUTTONUP:
+  case WM_NCRBUTTONUP:
+  case WM_NCMBUTTONUP:
+    if ((wParam == HTVSCROLL) || (wParam == HTHSCROLL)) {
+	/* Fall through below */
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      int et;
+
+      switch(message) {
+      case WM_NCRBUTTONDOWN:
+      case WM_NCRBUTTONDBLCLK:
+	et = wxEVENT_TYPE_RIGHT_DOWN;
+	break;
+      case WM_NCRBUTTONUP:
+	et = wxEVENT_TYPE_RIGHT_UP;
+	break;
+      case WM_NCMBUTTONDOWN:
+      case WM_NCMBUTTONDBLCLK:
+	et = wxEVENT_TYPE_MIDDLE_DOWN;
+	break;
+      case WM_NCMBUTTONUP:
+	et = wxEVENT_TYPE_MIDDLE_UP;
+	break;
+      case WM_NCLBUTTONDOWN:
+      case WM_NCLBUTTONDBLCLK:
+	et = wxEVENT_TYPE_LEFT_DOWN;
+	break;
+      case WM_NCLBUTTONUP:
+	et = wxEVENT_TYPE_LEFT_UP;
+	break;
+      }
+
+      if (!wnd->OnButton(x, y, 0, et, 1)) {
+	retval = 1;
+	break;
+      }
+    }
+     
+    if (dialog)
+      retval = 0;
+    else {
+      if (tramp 
+	  && ((wParam == HTVSCROLL) || (wParam == HTHSCROLL))
+	  && wnd->wx_window
+	  && wxSubType(wnd->wx_window->__type, wxTYPE_CANVAS)) {
+	/* To support interactive scrolling in canvases, we let
+	   windows run its handler for the click in a new
+	   thread. Messages get redirected to this thread. */
+	wxDWP_Closure *c;
+	c = new wxDWP_Closure;
+	c->wnd = wnd;
+	c->message = message;
+	c->wParam = wParam;
+	c->lParam = lParam;
+	retval = wxHiEventTrampoline(call_dwp, (void *)c);
+      } else {
+	retval = wnd->DefWindowProc(message, wParam, lParam);
+      }
+    }
+    break;
   case WM_MOUSEMOVE:
     {
       int x = (short)LOWORD(lParam);
       int y = (short)HIWORD(lParam);
       wnd->OnMouseMove(x, y, wParam);
+      break;
+    }
+  case WM_NCMOUSEMOVE:
+    {
+      int x = (short)LOWORD(lParam);
+      int y = (short)HIWORD(lParam);
+      if (!wnd->OnMouseMove(x, y, wParam, 1)) {
+	retval = 1;
+	break;
+      }
+      
+      if (dialog)
+	retval = 0;
+      else
+	retval = wnd->DefWindowProc(message, wParam, lParam);
       break;
     }
 #ifndef WM_MOUSEWHEEL
@@ -1019,7 +1126,7 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       retval = (message == WM_CLOSE);
       break;
     }
-  default:
+  default: /* ^^^ fallthrough ^^^ */
     {
       if (dialog)
 	retval = 0;
@@ -1486,7 +1593,7 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
     return FALSE;
 }
 
-void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
+int wxWnd::OnButton(int x, int y, UINT flags, int evttype, int for_nc)
 {
   wxMouseEvent *event = new wxMouseEvent(evttype);
 
@@ -1500,7 +1607,7 @@ void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
   event->rightDown = (flags & MK_RBUTTON);
   event->SetTimestamp(last_msg_time);
 
-  if (wx_window && (is_canvas || is_panel)) {
+  if (!for_nc && wx_window && (is_canvas || is_panel)) {
     if ((evttype == wxEVENT_TYPE_LEFT_DOWN)
 	|| (evttype == wxEVENT_TYPE_MIDDLE_DOWN)
 	|| (evttype == wxEVENT_TYPE_RIGHT_DOWN))
@@ -1513,9 +1620,15 @@ void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
 
   last_x_pos = event->x; last_y_pos = event->y; last_event = evttype;
   if (wx_window)
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
+    if (!wx_window->CallPreOnEvent(wx_window, event)) {
+      if (for_nc)
+	return 1;
+      else if (!wx_window->IsGray())
 	wx_window->OnEvent(event);
+    } else
+      return 0;
+
+  return 1;
 }
 
 static wxWindow *el_PARENT(wxWindow *w)
@@ -1530,7 +1643,7 @@ static wxWindow *el_PARENT(wxWindow *w)
 
 int wxCheckMousePosition()
 {
-  if (current_mouse_wnd && !wxCurrentWindow(1)) {
+  if (current_mouse_wnd && !wxCurrentWindow(0)) {
     wxWindow *imw;
 
     for (imw = current_mouse_wnd; imw; imw = el_PARENT(imw))
@@ -1550,7 +1663,7 @@ void wxDoLeaveEvent(wxWindow *w, int x, int y, int flags)
   wxDoOnMouseLeave(w, x, y, flags);
 }
 
-extern void wxEntered(wxWindow *mw, int x, int y, int flags)
+void wxEntered(wxWindow *mw, int x, int y, int flags)
 {
   wxWindow *imw, *join, *nextw;
   void *curr_context = wxGetContextForFrame();
@@ -1605,7 +1718,7 @@ extern void wxEntered(wxWindow *mw, int x, int y, int flags)
   }
 }
 
-void wxWnd::OnMouseMove(int x, int y, UINT flags)
+int wxWnd::OnMouseMove(int x, int y, UINT flags, int for_nc)
 {
   if (wxIsBusy())
     wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
@@ -1640,15 +1753,21 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
       (last_x_pos == event->x && last_y_pos == event->y)) {
     last_x_pos = event->x; last_y_pos = event->y;
     last_event = wxEVENT_TYPE_MOTION;
-    return;
+    return 1;
   }
 
   last_event = wxEVENT_TYPE_MOTION;
   last_x_pos = event->x; last_y_pos = event->y;
   if (wx_window) 
-    if (!wx_window->CallPreOnEvent(wx_window, event))
-      if (!wx_window->IsGray())
+    if (!wx_window->CallPreOnEvent(wx_window, event)) {
+      if (for_nc)
+	return 1;
+      else if (!wx_window->IsGray())
 	wx_window->OnEvent(event);
+    } else
+      return 0;
+
+  return 1;
 }
 
 void wxWnd::OnMouseEnter(int x, int y, UINT flags)

@@ -227,20 +227,21 @@ void wxFindMaxSize(HWND wnd, RECT *rect)
 
 static int skip_next_return;
 
-extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp);
+extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp);
 
 int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 		 long *result, int tramp)
 {
   int retval = 1;
+  int nc = 0;
 
   *result = 0;
   
   // If not in edit mode (or has been removed from parent), call the default proc.
   wxPanel *panel = (wxPanel *)item->GetParent();
 
-  if (!wx_start_win_event("item", hWnd, message, tramp)) {
+  if (!wx_start_win_event("item", hWnd, message, wParam, lParam, tramp)) {
     /* Something has gone wrong. Give up. */
     return retval;
   }
@@ -268,19 +269,34 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     case WM_KILLFOCUS:
       item->OnKillFocus();
       break;
-    case WM_MOUSEMOVE:
-      if (!wxIsBusy()) {
-	/* Set local cursor */
-	wxWindow *w = item;
-	while (w) {
-	  if (w->wx_cursor) {
-	    wxMSWSetCursor(w->wx_cursor->ms_cursor);
-	    break;
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCRBUTTONDBLCLK:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCMBUTTONDBLCLK:
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCLBUTTONDBLCLK:
+    case WM_NCMOUSEMOVE:
+      if ((wParam != HTVSCROLL) && (wParam != HTHSCROLL))
+	break;
+    case WM_MOUSEMOVE: /** ^^ nc falls though ^^ */
+      if (message == WM_MOUSEMOVE) {
+	if (!wxIsBusy()) {
+	  /* Set local cursor */
+	  wxWindow *w = item;
+	  while (w) {
+	    if (w->wx_cursor) {
+	      wxMSWSetCursor(w->wx_cursor->ms_cursor);
+	      break;
+	    }
+	    w = w->GetParent();
 	  }
-	  w = w->GetParent();
 	}
-      }
-    case WM_RBUTTONDOWN: /** ^^ move falls though ^^ */
+      } else
+	nc = 1;
+    case WM_RBUTTONDOWN: /** ^^ move and nc fall though ^^ */
     case WM_RBUTTONUP:
     case WM_RBUTTONDBLCLK:
     case WM_MBUTTONDOWN:
@@ -288,35 +304,42 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     case WM_MBUTTONDBLCLK:
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
-    case WM_LBUTTONDBLCLK:
-      {
+    case WM_LBUTTONDBLCLK:  
+    {
 	int et;
 	switch(message) {
         case WM_RBUTTONDOWN:
+        case WM_RBUTTONDBLCLK:
+        case WM_NCRBUTTONDOWN:
+        case WM_NCRBUTTONDBLCLK:
 	  et = wxEVENT_TYPE_RIGHT_DOWN; break;
         case WM_RBUTTONUP:
+        case WM_NCRBUTTONUP:
 	  et = wxEVENT_TYPE_RIGHT_UP; break;
-        case WM_RBUTTONDBLCLK:
-	  et = wxEVENT_TYPE_RIGHT_DCLICK; break;    
+        case WM_MBUTTONDBLCLK:
         case WM_MBUTTONDOWN:
+        case WM_NCMBUTTONDBLCLK:
+        case WM_NCMBUTTONDOWN:
 	  et = wxEVENT_TYPE_MIDDLE_DOWN; break;
         case WM_MBUTTONUP:
+        case WM_NCMBUTTONUP:
 	  et = wxEVENT_TYPE_MIDDLE_UP; break;
-        case WM_MBUTTONDBLCLK:
-	  et = wxEVENT_TYPE_MIDDLE_DCLICK; break;
+        case WM_LBUTTONDBLCLK:
         case WM_LBUTTONDOWN:
+        case WM_NCLBUTTONDBLCLK:
+        case WM_NCLBUTTONDOWN:
 	  et = wxEVENT_TYPE_LEFT_DOWN; break;
         case WM_LBUTTONUP:
+        case WM_NCLBUTTONUP:
 	  et = wxEVENT_TYPE_LEFT_UP; break;
-        case WM_LBUTTONDBLCLK:
-	  et = wxEVENT_TYPE_LEFT_DCLICK; break;
 	case WM_MOUSEMOVE:
+	case WM_NCMOUSEMOVE:
 	  et = wxEVENT_TYPE_MOTION; break;
 	}
 	
 	int x = (int)LOWORD(lParam);
 	int y = (int)HIWORD(lParam);
-	int flags = wParam;
+	int flags = (nc ? 0 : wParam);
 	
 	wxMouseEvent *_event = new wxMouseEvent(et);
 	wxMouseEvent &event = *_event;
@@ -439,7 +462,7 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     }
   }
 
- wx_end_win_event("item", hWnd, message, tramp);
+  wx_end_win_event("item", hWnd, message, tramp);
 
   return retval;
 }

@@ -329,6 +329,7 @@ int WNE(EventRecord *e, double sleep_secs)
 
     if (!ok) {
       if (need_click) {
+	/* fake a click to make the menu bar acitve */
 	e->what = mouseMenuDown;
 	e->message = 0;
 	e->modifiers = 0;

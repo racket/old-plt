@@ -182,6 +182,7 @@ void wxApp::doMacPreEvent()
   wxCheckFinishedSounds();
 
   if (!w && !noWinMode) {
+    ::SetPort(wxGetGrafPtr());
     ::ClearMenuBar();
     wxSetUpAppleMenu(NULL);
     {
@@ -282,6 +283,7 @@ void wxApp::doMacMouseDown(void)
 	    theMacWxFrame->OnMenuClick();
 	}
 
+	SetPort(wxGetGrafPtr());
 	menuResult = MenuSelect(cCurrentEvent.where);
 	doMacInMenuBar(menuResult, FALSE);
       }
@@ -517,12 +519,15 @@ void wxApp::doMacKeyUpDown(Bool down)
       if (cCurrentEvent.modifiers & cmdKey) { // is menu command key equivalent ?
 	if (cCurrentEvent.what == keyDown) { // ignore autoKey
 	  long menuResult;
+	  SetPort(wxGetGrafPtr());
 	  menuResult = MenuEvent(&cCurrentEvent);
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE))
 	      return;
-	    else
+	    else {
+	      SetPort(wxGetGrafPtr());
 	      HiliteMenu(0);
+	    }
 	  }
 	}
       }
@@ -789,6 +794,13 @@ void wxApp::doMacMouseMovedMessage(void)
 }
 
 //-----------------------------------------------------------------------------
+
+static void UnhiliteMenu()
+{
+  SetPort(wxGetGrafPtr());
+  HiliteMenu(0);
+}
+
 Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 {
   int macMenuId = HiWord(menuResult);
@@ -811,14 +823,14 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     if (macMenuId == 128) {
       // Must be "About..."
       wxDo_About();
-      HiliteMenu(0); // unhilite the hilited menu
+      UnhiliteMenu();
       return TRUE;
     }
 
     if (!GetIndMenuItemWithCommandID(NULL, 'quit', 1, &mnu, &idx)) {
       if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
 	Drop_Quit();
-	HiliteMenu(0); // unhilite the hilited menu
+	UnhiliteMenu();
 	return TRUE;
       }
     }
@@ -826,7 +838,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     if (!GetIndMenuItemWithCommandID(NULL, 'pref', 1, &mnu, &idx)) {
       if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
 	wxDo_Pref();
-	HiliteMenu(0); // unhilite the hilited menu
+	UnhiliteMenu();
 	return TRUE;
       }
     }
@@ -835,7 +847,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
       if ((macMenuId == GetMenuID(mnu)) && (macMenuItemNum == idx)) {
 	/* Hide application */
 	
-	HiliteMenu(0); // unhilite the hilited menu
+	UnhiliteMenu();
 	return TRUE;
       }
     }
@@ -872,7 +884,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
       if (theMacWxFrame->OnClose())
 	theMacWxFrame->Show(FALSE);
     }
-    HiliteMenu(0); // unhilite the hilited menu
+    UnhiliteMenu();
     return TRUE;
   }
   
@@ -896,7 +908,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 	macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
       } else {
 	wxDo_About();
-	HiliteMenu(0); // unhilite the hilited menu
+	UnhiliteMenu();
 	return TRUE;
       }
     }

@@ -8,43 +8,61 @@ string=? ; exec mzscheme -qr $0
 (require-library "pretty.ss")
 (require-library "function.ss")
 (require-library "errortrace.ss" "errortrace")
+(require-library "string.ss")
 
-(define raw-kajitani (call-with-input-file (build-path (collection-path "games" "paint-by-numbers") "raw-kajitani")
+(define raw-kajitani (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
+                                                       "raw-kajitani")
 		       read))
+
+(define allowed-emails (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
+                                                         "allowed-email")
+                        read))
 
 (define counters (make-hash-table))
 
-(define (get-name kaj)
-  (let ([prefix (format "~ax~a" (car (car kaj)) (cadr (car kaj)))]
-	[tag (string->symbol prefix)]
-	[num (hash-table-get
-	      counters
-	      tag
-	      (lambda ()
-		(hash-table-put! counters tag 0)
-		0))])
-    (hash-table-put! counter tag (+ num 1))
-    (format "~a ~a" prefix (+ num 1))))
+(define email-ht (make-hash-table))
+(for-each (lambda (email) (hash-table-put! email-ht (string->symbol email) null))
+          allowed-emails)
 
 (define kajitani-sets
   (let ([ht (make-hash-table)])
     (for-each
      (lambda (kaj-set)
-       (let ([tag (string->symbol (format "~ax~a" (car (car kaj-set)) (cadr (car kaj-set))))]
-	     [rows/cols (list (caddr (car kaj-set)) (cdr kaj-set))])
-	 (hash-table-put!
-	  ht
-	  tag
-	  (cons
-	   rows/cols
-	   (hash-table-get
-	    ht
-	    tag
-	    (lambda ()
-	      null))))))
+       (let ([email (cadddr kaj-set)])
+         (when (string? email)
+           (string-lowercase! email))
+         (when (member email allowed-emails)
+           (let ([email-sym (string->symbol email)])
+             (hash-table-put! email-ht email-sym
+                              (cons
+                               (car kaj-set)
+                               (hash-table-get email-ht email-sym))))
+           
+           (let ([tag (string->symbol (format "~ax~a" (car (car kaj-set)) (cadr (car kaj-set))))]
+                 [rows/cols (list (caddr (car kaj-set)) (cdr kaj-set))])
+             (hash-table-put!
+              ht
+              tag
+              (cons
+               rows/cols
+               (hash-table-get
+                ht
+                tag
+                (lambda ()
+                  null))))))))
      raw-kajitani)
     (hash-table-map ht (lambda (x l) (list x (reverse l))))))
      
+(printf "stats by email~n")
+(let ([total 0])
+  (hash-table-for-each 
+   email-ht
+   (lambda (k v)
+     (let ([len (length v)])
+       (set! total (+ len total))
+       (printf "~s ~s~n" k len))))
+  (printf "total: ~s~n" total))
+
 (define (build-solutionless-kajitani kaj-set)
   (list
    (format "Kajitani ~a" (car kaj-set))

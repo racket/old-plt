@@ -1,3 +1,6 @@
+(when (current-load-relative-directory)
+  (current-directory (current-load-relative-directory)))
+
 (define all-emails (map cadddr (call-with-input-file "raw-kajitani" read)))
 
 (define ht (make-hash-table))

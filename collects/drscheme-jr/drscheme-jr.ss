@@ -159,11 +159,12 @@
     (call-with-input-file f
       (lambda (p)
 	(let ([read (zodiac:read p (zodiac:make-location 1 1 0 f))])
-	  (let loop ([v (read)]
-		     [last (void)])
-	    (if (zodiac:eof? v)
-		last
-		(loop (read) (mzrice-expand-eval v)))))))))
+	  (let loop ([this (read)]
+		     [next (read)])
+	    (cond
+	     [(zodiac:eof? this) (void)]
+	     [(zodiac:eof? next) (mzrice-expand-eval this)]
+	     [else (loop next (read))])))))))
 
 (define parameterization (make-parameterization))
 

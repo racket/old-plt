@@ -34,7 +34,28 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
   pDocument->get_body(&pBody);
 
   if (pBody == NULL) {
-    scheme_signal_error("Can't find document body");
+    scheme_signal_error("Can't find document BODY");
+  }
+
+  retval = NULL;
+
+  // special-handling if body element requested
+
+  if (stricmp(tag,"BODY") == 0) {
+    idAttribute = SysAllocString(L"id");
+    idBSTR = stringToBSTR(id,strlen(id));
+
+    pBody->getAttribute(idAttribute,FALSE,&variant);
+    
+    if (variant.vt == VT_BSTR && variant.bstrVal &&
+        _wcsicmp(idBSTR,variant.bstrVal) == 0) {
+      retval = pBody;
+    }
+
+    SysFreeString(idAttribute);
+    SysFreeString(idBSTR);
+
+    return retval;
   }
 
   pTagCollection = getBodyElementsWithTag(pBody,tag);
@@ -49,7 +70,6 @@ IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
   idBSTR = stringToBSTR(id,strlen(id));
 
   count = 0;
-  retval = NULL;
 
   for (i = 0; i < numElts; i++) {
 

@@ -229,6 +229,12 @@ _MysterX_
   window size.  An instance of <com-object> is
   returned.
 
+> title :: (send an-mx-document title)
+
+  Returns a string indicating the document's title, that is,
+  the text that appears within HTML TITLE tags.  If the document 
+  has no title, the empty string is returned.
+
 > find-element :: (send an-mx-document find-element tag id [index])
 
   Returns an instance of mx-element%, an object
@@ -239,6 +245,8 @@ _MysterX_
   zero-based index of the element among all elements 
   with the same tag and id.  By default, index is 0.
   The ordering of elements is defined by Internet Explorer.
+  The requested element must be within the document's BODY
+  tags, or the BODY element itself.
 
 > find-element-by-id-or-name :: (send an-mx-document find-element-by-id-or-name id [index])
 
@@ -249,11 +257,15 @@ _MysterX_
   the zero-based index of the element among all elements 
   with the same id or name.  By default, index is 0.
   The ordering of elements is defined by Internet Explorer.
+  The requested element must be within the document's BODY
+  tags, or the BODY element itself.
 
 > elements-with-tag :: (send an-mx-document elements-with-tag tag)
 
   Returns a list of mx-element% instances with the HTML tag given by
-  `tag', a string.
+  `tag', a string.  The requested elements must be within the document's BODY
+  tags, or the BODY element itself.
+
 
   HTML events
   -----------

@@ -146,6 +146,7 @@ static MX_PRIM mxPrims[] = {
   // documents 
   
   { mx_document_pred,"document?",1,1 },
+  { mx_document_title,"document-title",1,1 },
   { mx_insert_html,"document-insert-html",2,2 },
   { mx_append_html,"document-append-html",2,2 },
   { mx_replace_html,"document-replace-html",2,2 },
@@ -3704,6 +3705,31 @@ Scheme_Object *mx_com_object_eq(int argc,Scheme_Object **argv) {
   return retval;
 }
 
+Scheme_Object *mx_document_title(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IHTMLDocument2 *pDocument;
+  BSTR bstr;
+  Scheme_Object *retval;
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("document-title","mx-document",0,argc,argv);
+  }
+
+  pDocument = MX_DOCUMENT_VAL(argv[0]); 
+
+  hr = pDocument->get_title(&bstr);
+  
+  if (hr != S_OK) {
+    scheme_signal_error("document-title: Can't get title");
+  }
+
+  retval = BSTRToSchemeString(bstr);
+
+  SysFreeString(bstr);
+
+  return retval;
+}
+
 Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   HRESULT hr;  
   IHTMLDocument2 *pDocument;
@@ -3716,7 +3742,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   MX_COM_Object *com_object;
   
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("document_objects","mx-document",0,argc,argv);
+    scheme_wrong_type("document-objects","mx-document",0,argc,argv);
   }
   
   pDocument = MX_DOCUMENT_VAL(argv[0]); 
@@ -3761,6 +3787,21 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   return retval;
 }
 
+MX_Element *make_mx_element(IHTMLElement *pIHTMLElement) {
+  MX_Element *elt;
+
+  elt = (MX_Element *)scheme_malloc(sizeof(MX_Element));
+  
+  elt->type = mx_element_type;
+  elt->released = FALSE;
+  elt->valid = TRUE;
+  elt->pIHTMLElement = pIHTMLElement;
+
+  mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
+
+  return elt;
+}
+
 Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
   HRESULT hr;
   IHTMLDocument2 *pDocument;
@@ -3785,9 +3826,14 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
   pDocument->get_body(&pBody);
   
   if (pBody == NULL) {
-    scheme_signal_error("Can't find document BODY");
+    scheme_signal_error("elements-with-tag: Can't find document BODY");
   }
   
+  if (stricmp(SCHEME_STR_VAL(argv[1]),"BODY") == 0) {
+    return scheme_make_pair((Scheme_Object *)(make_mx_element(pBody)),
+			    scheme_null);
+  }
+
   pCollection = getBodyElementsWithTag(pBody,SCHEME_STR_VAL(argv[1]));
   
   pBody->Release();
@@ -3806,12 +3852,7 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
       codedComError("elements-with-tag: Can't get IHTMLElement interface",hr);
     }
 
-    elt = (MX_Element *)scheme_malloc(sizeof(MX_Element));
-  
-    elt->type = mx_element_type;
-    elt->released = FALSE;
-    elt->valid = TRUE;
-    elt->pIHTMLElement = pIHTMLElement;
+    elt = make_mx_element(pIHTMLElement);
 
     mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
 
@@ -4005,15 +4046,8 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
 			SCHEME_STR_VAL(argv[1]),SCHEME_STR_VAL(argv[2]));
   }
   
-  retval = (MX_Element *)scheme_malloc(sizeof(MX_Element));
-  
-  retval->type = mx_element_type;
-  retval->released = FALSE;
-  retval->valid = TRUE;
-  retval->pIHTMLElement = pIHTMLElement;
+  retval = make_mx_element(pIHTMLElement);
 
-  mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
-  
   return (Scheme_Object *)retval;
 }
 
@@ -4025,7 +4059,6 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   VARIANT name,index;
   BSTR bstr;
   IDispatch *pEltDispatch;
-  MX_Element *retval;
   
   if (MX_DOCUMENTP(argv[0]) == FALSE) { 
     scheme_wrong_type("find-element-by-id-or-name","mx-document",0,argc,argv);
@@ -4083,16 +4116,7 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 			"for element with id = %s",SCHEME_STR_VAL(argv[1]));
   }
 
-  retval = (MX_Element *)scheme_malloc(sizeof(MX_Element));
-  
-  retval->type = mx_element_type;
-  retval->released = FALSE;
-  retval->valid = TRUE;
-  retval->pIHTMLElement = pIHTMLElement;
-
-  mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
-  
-  return (Scheme_Object *)retval;
+  return (Scheme_Object *)(make_mx_element(pIHTMLElement));
 }
 
 // for coclass->html, progid->html

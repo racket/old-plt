@@ -103,6 +103,7 @@
    current-url
    current-document	
    document?
+   document-title
    document-insert-html
    document-append-html
    document-replace-html

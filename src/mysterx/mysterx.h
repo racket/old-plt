@@ -259,6 +259,7 @@ MX_PRIM_DECL(mx_current_document);
 
 // documents
 
+MX_PRIM_DECL(mx_document_title);
 MX_PRIM_DECL(mx_find_element);
 MX_PRIM_DECL(mx_find_element_by_id_or_name);
 MX_PRIM_DECL(mx_elements_with_tag);

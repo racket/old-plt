@@ -1673,6 +1673,9 @@
 		     (lambda () (f doc s))
 		     html-post)))])
 	   (public
+	    [title
+	     (lambda ()
+	       (mxprims:document-title doc))]
 	    [find-element
 	     (lambda (tag id . n)
 	       (make-object mx-element% doc 

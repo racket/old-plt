@@ -1,6 +1,10 @@
 SrPersist 
 =========
 
+Version 202
+
+No changes.
+
 Version 201
 
 Added support for SQL_C_SBIGINT, SQL_C_UBIGINT with the 

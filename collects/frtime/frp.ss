@@ -198,17 +198,19 @@
   (define-struct alarm (time signal))
   
   (define (frp:if-helper test then-thunk else-thunk)
-    (let ([if-fun (lambda (b)
-                    (cond
-                      [(undefined? b) undefined]
-                      [b (then-thunk)]
-                      [else (else-thunk)]))])
+    (let* ([cached-then-thunk (weakly-cache then-thunk)]
+           [cached-else-thunk (weakly-cache else-thunk)]
+           [if-fun (lambda (b)
+                     (cond
+                       [(undefined? b) undefined]
+                       [b (cached-then-thunk)]
+                       [else (cached-else-thunk)]))])
       (if (behavior? test)
           (switch
            ((changes test) . ==> .
                            if-fun)
            (if-fun (value-now test)))
-          (if-fun test))))
+          (if test (then-thunk) (else-thunk)))))
   
   (define (weakly-cache thunk)
     (let ([cache (make-weak-box #f)])
@@ -222,9 +224,9 @@
   (define-syntax frp:if
     (syntax-rules ()
       [(_ test then)
-       (frp:if-helper test (weakly-cache (lambda () then)) void)]
+       (frp:if-helper test (lambda () then) void)]
       [(_ test then else)
-       (frp:if-helper test (weakly-cache (lambda () then)) (weakly-cache (lambda () else)))]))
+       (frp:if-helper test (lambda () then) (lambda () else))]))
   
   ; value-now : signal[a] -> a
   (define (value-now val)
@@ -1132,7 +1134,8 @@
       [as-snip? (watch beh)]
       [(undefined? (value-now beh)) "<undefined>"]
       [(behavior? beh) (format "#<behavior (~a)>" (value-now beh))]
-      [(event? beh) (format "#<event (last: ~a)>" (efirst (signal-value beh)))]))
+      [(event? beh) (format "#<event (last: ~a)>" (efirst (signal-value beh)))]
+      [else beh]))
     
   (define (watch beh)
     (cond

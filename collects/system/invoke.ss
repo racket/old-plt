@@ -24,7 +24,10 @@
 	  
 	  (pretty-print `(reference-library "cores.ss") port)
 	  (pretty-print `(reference-library "triggers.ss") port)
-	  (pretty-print `(reference ,(build-path mred:system-source-directory
+	  (pretty-print `(reference ,(build-path mred:plt-home-directory
+						 "mred"
+						 "collects"
+						 "mred"
 						 "sig.ss"))
 			port)
 	  (when mred:app-sig-location

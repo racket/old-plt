@@ -155,6 +155,14 @@ static Scheme_Object *bundle_symset_iconKind(int v) {
 }
 
 
+static void frameMenu(wxFrame *f)
+{
+#ifdef wx_msw
+  f->SystemMenu();
+#endif
+}
+
+
 
 
 
@@ -584,6 +592,22 @@ static Scheme_Object *os_wxFrameOnActivate(Scheme_Object *obj, int n,  Scheme_Ob
 }
 
 #pragma argsused
+static Scheme_Object *os_wxFrameframeMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  frameMenu(((wxFrame *)((Scheme_Class_Object *)obj)->primdata));
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxFrameCreateStatusLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -860,7 +884,7 @@ void objscheme_setup_wxFrame(void *env)
 if (os_wxFrame_class) {
     objscheme_add_global_class(os_wxFrame_class, "frame%", env);
 } else {
-  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 20);
+  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21);
 
  scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2);
@@ -871,6 +895,7 @@ if (os_wxFrame_class) {
  scheme_add_method_w_arity(os_wxFrame_class, "on-menu-command", os_wxFrameOnMenuCommand, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "on-close", os_wxFrameOnClose, 0, 0);
  scheme_add_method_w_arity(os_wxFrame_class, "on-activate", os_wxFrameOnActivate, 1, 1);
+ scheme_add_method_w_arity(os_wxFrame_class, "system-menu", os_wxFrameframeMenu, 0, 0);
  scheme_add_method_w_arity(os_wxFrame_class, "create-status-line", os_wxFrameCreateStatusLine, 0, 2);
  scheme_add_method_w_arity(os_wxFrame_class, "maximize", os_wxFrameMaximize, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "status-line-exists?", os_wxFrameStatusLineExists, 0, 0);

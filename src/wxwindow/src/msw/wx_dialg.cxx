@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.10 1999/05/20 19:58:14 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.11 1999/05/24 11:58:35 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -443,4 +443,11 @@ char *wxDialogBox::GetTitle(void)
   wxWnd *wnd = (wxWnd *)handle;
   GetWindowText(wnd->handle, wxBuffer, 1000);
   return wxBuffer;
+}
+
+void wxDialogBox::SystemMenu(void)
+{
+  wxWnd *wnd = (wxWnd *)handle;
+  wnd->DefWindowProc(WM_SYSKEYDOWN, ' ', 1 << 29);
+  wnd->DefWindowProc(WM_SYSCHAR, ' ', 1 << 29);
 }

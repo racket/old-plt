@@ -881,6 +881,12 @@ class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *obj, const char *where,
 
 
 
+static void dialogMenu(wxDialogBox *d)
+{
+#ifdef wx_msw
+  d->SystemMenu();
+#endif
+}
 
 static Scheme_Object *dialogStyle_wxNO_CAPTION_sym = NULL;
 
@@ -956,6 +962,7 @@ extern void *wxsCheckEventspace(char *);
 // @ p "on-item-size" : void OnItemSize(wxItem!,int,int); ## INTERACT_METHODS
 // @ p "on-left-click" : void OnLeftClick(int,int,int); ## INTERACT_METHODS
 // @ p "on-right-click" : void OnRightClick(int,int,int); ## INTERACT_METHODS
+
 
 
 class os_wxDialogBox : public wxDialogBox {
@@ -1157,6 +1164,22 @@ void os_wxDialogBox::OnActivate(Bool x0)
   
   
   }
+}
+
+#pragma argsused
+static Scheme_Object *os_wxDialogBoxdialogMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  dialogMenu(((wxDialogBox *)((Scheme_Class_Object *)obj)->primdata));
+
+  
+  
+  return scheme_void;
 }
 
 #pragma argsused
@@ -1411,8 +1434,9 @@ void objscheme_setup_wxDialogBox(void *env)
 if (os_wxDialogBox_class) {
     objscheme_add_global_class(os_wxDialogBox_class, "dialog%", env);
 } else {
-  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog%", "window%", os_wxDialogBox_ConstructScheme, 9);
+  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog%", "window%", os_wxDialogBox_ConstructScheme, 10);
 
+ scheme_add_method_w_arity(os_wxDialogBox_class, "system-menu", os_wxDialogBoxdialogMenu, 0, 0);
  scheme_add_method_w_arity(os_wxDialogBox_class, "set-title", os_wxDialogBoxSetTitle, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-drop-file", os_wxDialogBoxOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-event", os_wxDialogBoxPreOnEvent, 2, 2);

@@ -50,11 +50,13 @@ class wxDialogBox: public wxbDialogBox
   void Fit(void);
 
   void SetTitle(char *title);
-  char *GetTitle(void);
-
+  char *GetTitle(void);
+
   virtual void ChangeToGray(Bool gray);
 
   Bool OnCharHook(wxKeyEvent& event);
+
+  void SystemMenu(void);
 };
 
 #endif // IN_CPROTO

@@ -42,6 +42,13 @@
 @SYM "large" : 2
 @ENDSYMBOLS
 
+static void frameMenu(wxFrame *f)
+{
+#ifdef wx_msw
+  f->SystemMenu();
+#endif
+}
+
 @CLASSBASE wxFrame "frame":"window"
 
 @CLASSID wxTYPE_FRAME
@@ -62,6 +69,8 @@
 @ "status-line-exists?" : bool StatusLineExists();
 @ "maximize" : void Maximize(bool)
 @ "create-status-line" : void CreateStatusLine(int = 1, string = "status_line")
+
+@ m "system-menu" : void frameMenu();
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci

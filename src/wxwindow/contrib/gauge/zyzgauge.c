@@ -371,7 +371,12 @@ static void NEAR PASCAL gaugePaint(HWND hwnd, HDC hdc)
     hFont = SelectObject(hdc, pgauge->hFont);
 
     /* build up a string to blit out--ie the meaning of life: "42%" */
+#ifdef SHOW_GAUGE_PRECENT
     wsprintf(ach, "%3d%%", (WORD)((DWORD)iPos * 100 / iRange));
+#else
+    ach[0] = 0;
+#endif
+
 /* Win32s has no GetTextExtent(); let's try GetTextExtentPoint() instead */
 #if defined(WIN32)
     GetTextExtentPoint(hdc, ach, wGomerX = lstrlen(ach), &size);
@@ -408,9 +413,9 @@ static void NEAR PASCAL gaugePaint(HWND hwnd, HDC hdc)
 
     SetBkColor(hdc, pgauge->rgbBkColor);
 
-
     /* unselect the font */
     SelectObject(hdc, hFont);
+
 } /* gaugePaint() */
   
 

@@ -76,6 +76,7 @@ class wxFrame: public wxbFrame
   HMENU GetWinMenu(void);
 
   void DrawMenuBar(void);
+  void SystemMenu(void);
 };
 
 #endif // IN_CPROTO

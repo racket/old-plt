@@ -48,6 +48,12 @@
 @END
 
 
+static void dialogMenu(wxDialogBox *d)
+{
+#ifdef wx_msw
+  d->SystemMenu();
+#endif
+}
 
 @BEGINSYMBOLS dialogStyle
 @SYM "no-caption" : wxNO_CAPTION
@@ -70,5 +76,7 @@
 @INCLUDE wxs_panl.xci
 
 @ "set-title" : void SetTitle(string);
+
+@ m "system-menu" : void dialogMenu();
 
 @END

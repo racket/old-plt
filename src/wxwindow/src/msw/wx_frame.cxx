@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.17 1999/07/08 15:53:29 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.18 1999/07/09 17:34:25 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -674,6 +674,13 @@ void wxFrame::LoadAccelerators(char *table)
   cframe->accelerator_table = ::LoadAccelerators(wxhInstance, table);
 }
 
+void wxFrame::SystemMenu(void)
+{
+  wxWnd *wnd = (wxWnd *)handle;
+  wnd->DefWindowProc(WM_SYSKEYDOWN, ' ', 1 << 29);
+  wnd->DefWindowProc(WM_SYSCHAR, ' ', 1 << 29);
+}
+
 void wxFrame::Fit(void)
 {
   // Work out max. size
@@ -1260,10 +1267,10 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
   else mcs.y = CW_USEDEFAULT;
 
   if (width > -1) mcs.cx = width;
-  else mcs.cx = CW_USEDEFAULT;
+  else mcs.cx = 1;
 
   if (height > -1) mcs.cy = height;
-  else mcs.cy = CW_USEDEFAULT;
+  else mcs.cy = 1;
 
   DWORD msflags = WS_OVERLAPPED;
   if (!(style & wxNO_RESIZE_BORDER)) {
@@ -1449,6 +1456,3 @@ void wxMDIChild::DestroyWindow(void)
     hMenu = 0;
   }
 }
-
-
-

@@ -2219,7 +2219,11 @@
 				       (loop (car l) depth
 					     same-k
 					     (lambda (a a-bindings)
-					       (convert-k (cons a (cdr l))
+					       (convert-k (cons (datum->syntax-object
+								 (car l)
+								 a 
+								 (car l))
+								(cdr l))
 							  a-bindings))))
 				     (lambda (rest rest-bindings)
 				       (loop (car l) depth
@@ -2227,7 +2231,11 @@
 					       (convert-k (cons (car l) rest)
 							  rest-bindings))
 					     (lambda (a a-bindings)
-					       (convert-k (cons a rest)
+					       (convert-k (cons (datum->syntax-object
+								 (car l)
+								 a
+								 (car l))
+								rest)
 							  (append a-bindings
 								  rest-bindings)))))))]
 			 [(null? l) (same-k)]

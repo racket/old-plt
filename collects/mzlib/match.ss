@@ -1053,7 +1053,7 @@ eta)))
 ,fail-sym
 ,@(map val
 bv))))
-`(call-with-current-continuation
+`(call/ec
 (lambda (,fail-sym)
 (let ((,fail-sym (lambda ()
 ;; Changed CF 9.24.96 for multiple value returns

@@ -152,7 +152,7 @@
   (define no-nested-pushable (make-nested-setup 'no-nested #f #f))
   (define undefine-nested-pushable (make-nested-setup 'undefine #f #f))
 
-  (define-struct pragma (s))
+  (define-struct pragma (s file line))
 
   ;; For very long lists, it's worth the effort to use a vector instead
   ;;   of a list to save space:
@@ -255,7 +255,7 @@
 	(set! source-file (caddr m))))
     (let ([pragma (regexp-match re:pragma s p)])
       (if pragma
-	  (values (make-pragma (cadr pragma)) (line-comment s p))
+	  (values (make-pragma (cadr pragma) source-file source-line) (line-comment s p))
 	  (values #f (line-comment s p)))))
 
   (define (result s)
@@ -3632,26 +3632,31 @@
 		(values (reverse! decls) el))))))
 
   (define (get-one e comma-sep?)
-    (let loop ([e e][result null][first #f])
+    (let loop ([e e][result null][first #f][second #f])
       (cond
        [(null? e) (values (reverse! result) null)]
        [(pragma? (car e)) 
 	(unless (null? result)
-	  (error 'pragma "unexpected pragma: ~a" (pragma-s (car e))))
+	  (error 'pragma "unexpected pragma: ~a at: ~a:~a" 
+		 (pragma-s (car e))
+		 (pragma-file (car e)) (pragma-line (car e))))
 	(values (list (car e)) (cdr e))]
        [(eq? semi (tok-n (car e)))
 	(values (reverse! (cons (car e) result)) (cdr e))]
        [(and (eq? '|,| (tok-n (car e))) comma-sep?)
 	(values (reverse! (cons (car e) result)) (cdr e))]
        [(and (braces? (car e))
-	     (not (memq first '(typedef struct union enum extern __extension__))))
+	     (not (memq first '(typedef struct union enum __extension__)))
+	     (not (memq second '(typedef struct union enum __extension__))))
 	(let ([rest (cdr e)])
 	  (if (or (null? rest)
 		  (pragma? (car rest))
 		  (not (eq? semi (tok-n (car rest)))))
 	      (values (reverse! (cons (car e) result)) rest)
 	      (values (reverse! (list* (car rest) (car e) result)) (cdr rest))))]
-       [else (loop (cdr e) (cons (car e) result) (or first (tok-n (car e))))])))
+       [else (loop (cdr e) (cons (car e) result) 
+		   (or first (tok-n (car e)))
+		   (or second (and first (tok-n (car e)))))])))
 
   (define (foldl-statement e comma-sep? f a-init)
     (let loop ([e e][a a-init])

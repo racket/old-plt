@@ -121,7 +121,8 @@
  (save "Sauvegarder")
  (please-choose-either "Choisissez \"~a\" ou \"~a\".")
  (close-anyway "Fermer quand même")
- 
+ (clear-anyway "Effacer quand même")
+
  (url "URL")
  (url: "URL :")
  (open-url... "Ouvrir l'URL...")
@@ -377,6 +378,7 @@
  
  (new-info  "Ouvrir un nouveau fichier.")
  (new-menu-item "&Nouvelle fenêtre")
+ (new-...-menu-item "&Nouvelle...")
  
  (open-info "Ouvrir un fichier à partir du disque dur.")
  (open-menu-item "&Ouvrir")
@@ -469,6 +471,12 @@
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")
  
+ ;; open here's new menu item
+ (create-new-window-or-clear-current
+  "Voulez-vous créer une nouvelle fenêtre ou effacer celle-ci ?")
+ (clear-current "Effacer celle-ci")
+ (new-window "Nouvelle fenêtre")
+
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
  (exit "Quitter")

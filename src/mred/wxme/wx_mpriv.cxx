@@ -2913,7 +2913,6 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   float H, W, FH, FW, y, h, next_h;
   long vm, hm;
   int i, this_page = 1;
-  int too_big_ok;
   wxMediaLine *line;
   wxPrintSetupData *psd;
 
@@ -2948,7 +2947,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   y = 0;
   next_h = 0;
   line = firstLine;
-  for (i = 0; i < numValidLines; this_page++) {
+  for (i = 0; (i < numValidLines) || next_h; this_page++) {
     /* line is the line that we haven't finished printing.
        H is the total page height.
        y is the starting location to print for this page.
@@ -2959,13 +2958,9 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
 
     while (!h || ((i < numValidLines) && (line->h < H - h))) {
       h += line->h;
-      if (h < H) {
-	i++;
-	line = line->next;
-      }
+      i++;
+      line = line->next;
     }
-
-    too_big_ok = 0;
 
     if ((h < H) && (i < numValidLines) && (line->h > H)) {
       /* We'll have to break it up anyway. Start now? */
@@ -2974,19 +2969,14 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       pos = FindScrollLine(y + H);
       py = ScrollLineLocation(pos);
       if (py > y + h) {
-	/* Can't even fit one scroll line of the too-big line on this page. */
-	if (!h) {
-	  /* But the page is otherwise empty, so try anyway. */
-	  h = py - y;
-	  next_h = line->h - h;
-	  too_big_ok = 1;
-	} else {
-	  /* Wait until the next page. */
-	}
+	/* Yes, at least one line will fit */
+	h += line->h;
+	i++;
+	line = line->next;
       }
     }
 
-    if ((h > H) && !too_big_ok) {
+    if (h > H) {
       /* Only happens if we have something that's too big to fit on a page. */
       /* Look for internal scroll positions */
       int pos;

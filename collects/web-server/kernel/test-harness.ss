@@ -45,6 +45,7 @@
         (set! the-results (cons result the-results)))))
 
 
+  ;; import-modules is a list of symbols, each symbol is a module name
   (define import-modules
     (map
      (lambda (m-spec)

@@ -20,7 +20,6 @@
     (let* ([vp (url->virtual-path url)]
            [dir-part (virtual-path-directory-part vp)]
            [f-part (virtual-path-file-part vp)])
-               dir-part f-part)
       (cond
        [(and (not (null? dir-part))
              (string=? (car dir-part) ".."))
@@ -36,8 +35,18 @@
   (define (serve-file conn path)
     (cond
      [(file-exists? path)
-      (output-file path (file-size path) 'get conn)]
+      (output-file path (file-size path) 'get
+                   (get-mime-type path) conn)]
      [else (do-404-error conn 'get)]))
+
+
+  ;; **************************************************
+  ;; get-mime-type
+
+  ;; get-mime-type: path -> string
+  ;; this is not fully implemented and will be configurable
+  (define (get-mime-type ignored)
+    "text/html")
 
   ;; do-404-error: connection symbol -> void
   ;; report that the file was not found
@@ -63,18 +72,14 @@
       (define initial-time-to-live 300)
 
       ;; serve-connection: connection -> boolean
-      ;; respond to the next request and return #t if the connection should be kept open
+      ;; respond to the next request and return #t if the conneciton should be
+      ;; closed
       (define (serve-connection conn)
-        (let ([ip (connection-i-port conn)])
-          (let-values ([(method url major-version minor-version)
-                        (read-request-line ip)])
-            (let ([headers (read-headers ip)])
-              (let-values ([(host-ip client-ip) (tcp-addresses ip)])
-                (let ([close? (close-connection? headers major-version minor-version
-                                                 client-ip host-ip)])
-                  (set-connection-close?! conn close?)
-                  (serve/url conn url)
-                  close?))))))))
+        (let ([req (read-request (connection-i-port conn))])
+          (serve/url conn (request-uri req))
+          (request-close? req)))
+      ))
+
 
   (define-values/invoke-unit/sig
     server^

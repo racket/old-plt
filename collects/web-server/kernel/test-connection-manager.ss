@@ -24,7 +24,7 @@
           (thread
            (lambda ()
              (channel-put result-channel
-                          (new-connection 300 i-port o-port cust #f))))))
+                          (new-connection 300 i-port o-port cust))))))
       (thread
        (lambda ()
          (sleep 3)
@@ -40,7 +40,7 @@
               [o-port (open-output-string)])
           (thread
            (lambda ()
-             (let ([conn (new-connection 300 i-port o-port cust #f)])
+             (let ([conn (new-connection 300 i-port o-port cust)])
                (kill-connection! conn))))))))
 
   (define conn1 (create-connection))

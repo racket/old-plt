@@ -3,14 +3,34 @@
            (lib "url.ss" "net")
            "util.ss")
 
+  (provide (struct request (method uri major-version minor-version headers
+                                   close?)))
+
+  (define-struct request (method uri major-version minor-version headers
+                                 close?) (make-inspector))
+
   (provide/contract
-   [close-connection? (list? number? number? string? string? . -> . boolean?)]
-   [read-request-line ((input-port?) . ->* . (symbol? url? number? number?))]
-   [read-headers (input-port? . -> . list?)])
-  
+   ;[close-connection? (list? number? number? string? string? . -> . boolean?)]
+   ;[read-request-line ((input-port?) . ->* . (symbol? url? number? number?))]
+   ;[read-headers (input-port? . -> . list?)]
+   [read-request (input-port? . -> . request?)])
+
+  ;; **************************************************
+  ;; read-request: input-port -> request
+  ;; read the request line, and the headers, determine if the connection should
+  ;; be closed after servicing the request and build a request structure
+  (define (read-request ip)
+    (let-values ([(method url major-version minor-version)
+                  (read-request-line ip)])
+      (let ([headers (read-headers ip)])
+        (let-values ([(host-ip client-ip) (tcp-addresses ip)])
+          (make-request method url major-version minor-version headers
+                        (close-connection? headers major-version minor-version
+                                           client-ip host-ip))))))
+
   ;; **************************************************
   ;; close-connection?
-  
+
   ; close-connection? : (listof (cons symbol bytes)) number number string string -> boolean
   ; determine if this connection should be closed after serving the response
   (define (close-connection? headers major minor client-ip host-ip)
@@ -21,7 +41,7 @@
            => (lambda (x) (string-ci=? "close" (bytes->string/utf-8 (cdr x))))]
           [else #f])
         (msie-from-local-machine? headers client-ip host-ip)))
-  
+
   ; : table str str -> bool
   ; to work around a bug in MSIE for documents < 265 bytes when connecting from the local
   ; machine.  The server could pad the response as MSIIS does, but closing the connection works, too.
@@ -33,21 +53,21 @@
                 (assq 'user-agent headers))
             => (lambda (client) (regexp-match MSIE-regexp (cdr client)))]
            [else #f])))
-  
+
   (define MSIE-regexp (regexp "MSIE"))
-  
+
   ;; **************************************************
   ;; read-request-line
-  
+
   ; Method = (U 'get 'post 'head 'put 'delete 'trace)
   (define METHOD:REGEXP
     (byte-regexp #"^(GET|HEAD|POST|PUT|DELETE|TRACE) (.+) HTTP/([0-9]+)\\.([0-9]+)$"))
-  
+
   (define (match-method x)
     (regexp-match METHOD:REGEXP x))
   ;:(define match-method (type: (str -> (union false (list str str str str str)))))
-  
-  
+
+
   ; read-request-line : iport -> symbol url number number
   ; to read in the first line of an http request, AKA the "request line"
   ; effect: in case of errors, complain [MF: where] and close the ports
@@ -64,20 +84,20 @@
                    (string->number (bytes->string/utf-8 (list-ref x 3)))
                    (string->number (bytes->string/utf-8 (list-ref x 4)))))]
             [else (error 'read-request "malformed request ~a" line)]))))
-  
-  
-  
+
+
+
   ;; **************************************************
   ;; read-headers
-  
+
   ;(define COLON:REGEXP (regexp (format "^([^:]*):[ ~a]*(.*)" #\tab)))
   (define COLON:REGEXP (byte-regexp (bytes-append #"^([^:]*):[ " (bytes 9) #"]*(.*)")))
-  
+
   (define (match-colon s)
     (regexp-match COLON:REGEXP s))
-  ;:(define match-colon (type: (str -> (union false (list str str str)))))  
-  
-  
+  ;:(define match-colon (type: (str -> (union false (list str str str)))))
+
+
   ; read-headers : iport -> (listof (cons symbol bytes))
   (define (read-headers in)
     (let read-header ()
@@ -93,14 +113,14 @@
                                          (read-one-head in (caddr match)))
                                    (read-header)))]
           [else (error 'read-headers "malformed header")]))))
-  
-  
+
+
   ; read-one-head : iport bytes -> bytes
   (define (read-one-head in rhs)
     (let ([c (peek-byte in)])
       (cond
         [(or (= c 32) (= c 9)) ;(or (eq? c #\space) (eq? c #\tab))
-         
+
          ; (read-line in 'any) can't return eof
          ; because we just checked with peek-char
          ; Spidey: FLOW

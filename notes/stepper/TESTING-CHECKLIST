@@ -3,3 +3,4 @@
 - images
 - changing editor text while stepping
 - closing editor text while stepping
+- test-suite tool.  Try with enabled and disabled.

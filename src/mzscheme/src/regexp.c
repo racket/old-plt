@@ -29,6 +29,7 @@
  */
 
 #include "schpriv.h"
+#include "schmach.h"
 
 #ifndef NO_REGEXP_UTILS
 
@@ -337,6 +338,20 @@ regcomp(char *expstr, rxpos exp, int explen)
   return(r);
 }
 
+#ifdef DO_STACK_CHECK
+
+static Scheme_Object *reg_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  int *flagp = (int *)p->ku.k.p1;
+
+  p->ku.k.p1 = NULL;
+
+  return (Scheme_Object *)reg(p->ku.k.i1, flagp);
+}
+
+#endif
+
 /*
    - reg - regular expression, i.e. main body or parenthesized thing
    *
@@ -354,6 +369,18 @@ reg(int paren, int *flagp)
   rxpos ender;
   int parno = 0;
   int flags;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      Scheme_Process *p = scheme_current_process;
+      p->ku.k.i1 = paren;
+      p->ku.k.p1 = (void *)flagp;
+      return (rxpos)scheme_handle_stack_overflow(reg_k);
+    }
+  }
+#endif
 
   *flagp = HASWIDTH;		/* Tentatively. */
 
@@ -935,6 +962,17 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
     return 0;
 }
 
+#ifdef DO_STACK_CHECK
+
+static Scheme_Object *regmatch_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  return (Scheme_Object *)regmatch(p->ku.k.i1);
+}
+
+#endif
+
 /*
    - regmatch - main matching routine
    *
@@ -950,6 +988,17 @@ regmatch(rxpos prog)
 {
   rxpos scan;		/* Current node. */
   rxpos next;			/* Next node. */
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      Scheme_Process *p = scheme_current_process;
+      p->ku.k.i1 = prog;
+      return (int)scheme_handle_stack_overflow(regmatch_k);
+    }
+  }
+#endif
 
   scan = prog;
   while (scan != 0) {

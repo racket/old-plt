@@ -2179,6 +2179,11 @@ static void protect_older_pages(void)
 	    protect_pages(work, work->size, 0);
 }
 
+static void gc_overmem_abort()
+{
+  GCERR((GCOUTF, "ERROR: Ran out of memory during collection!\n"))
+}
+
 static void garbage_collect(int force_full)
 {
   static unsigned long number = 0;
@@ -2192,6 +2197,8 @@ static void garbage_collect(int force_full)
   if(GC_collect_start_callback)
     GC_collect_start_callback();
 
+  in_unsafe_allocation_mode = 1;
+  unsafe_allocation_abort = gc_overmem_abort;
   prepare_pages_for_collection();
   mark_finalizers();
   mark_weak_finalizers();
@@ -2222,6 +2229,7 @@ static void garbage_collect(int force_full)
   DO_BTC_ACCOUNTING();
   repair_heap();
   protect_older_pages();
+  in_unsafe_allocation_mode = 0;
 
   if(GC_collect_start_callback)
     GC_collect_end_callback();

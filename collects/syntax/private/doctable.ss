@@ -7,7 +7,9 @@
   (define (register-documentation src-stx label v)
     (let ([mod (let ([s (syntax-source-module src-stx)])
 		 (if (module-path-index? s)
-		     (collapse-module-path-index s `(lib "docprovide.ss" "syntax"))
+		      ((current-module-name-resolver)
+		       (collapse-module-path-index s `(lib "docprovide.ss" "syntax"))
+		       #f #f)
 		     s))])
       (let ([mht (hash-table-get ht mod
 				 (lambda ()

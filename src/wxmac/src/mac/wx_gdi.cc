@@ -232,9 +232,12 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
       CopyCStringToPascal(name,buffer);
       macFontId = ::FMGetFontFamilyFromName((ConstStr255Param)buffer);
 
-      if (macFontId || tried_once)
+      if (macFontId != kInvalidFontFamily) 
 	break;
-      else {
+      else if (tried_once) {
+	macFontId = GetSysFont();
+	break;
+      } else {
 	/* Try again with family... */
 	Font = Family;
 	tried_once = 1;

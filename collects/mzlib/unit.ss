@@ -71,36 +71,31 @@
 			 (let ([expanded
 				(map
 				 (lambda (defn-or-expr)
-				   (let ([le
-					  (local-expand
-					   defn-or-expr
-					   (list*
-					    ;; Need all kernel syntax
-					    (quote-syntax begin)
-					    (quote-syntax define-values)
-					    (quote-syntax define-syntax)
-					    (quote-syntax set!)
-					    (quote-syntax let)
-					    (quote-syntax let-values)
-					    (quote-syntax let*)
-					    (quote-syntax let*-values)
-					    (quote-syntax letrec)
-					    (quote-syntax letrec-values)
-					    (quote-syntax lambda)
-					    (quote-syntax case-lambda)
-					    (quote-syntax if)
-					    (quote-syntax struct)
-					    (quote-syntax quote)
-					    (quote-syntax letrec-syntax)
-					    (quote-syntax with-continuation-mark)
-					    (quote-syntax #%app)
-					    (quote-syntax #%unbound)
-					    (quote-syntax #%datum)
-					    declared-names))])
-				     ;; If the result is #%unbound...
-				     (syntax-case le (#%unbound)
-				       [(#%unbound . x) (syntax x)]
-				       [else le])))
+				   (local-expand
+				    defn-or-expr
+				    (list*
+				     ;; Need all kernel syntax
+				     (quote-syntax begin)
+				     (quote-syntax define-values)
+				     (quote-syntax define-syntax)
+				     (quote-syntax set!)
+				     (quote-syntax let)
+				     (quote-syntax let-values)
+				     (quote-syntax let*)
+				     (quote-syntax let*-values)
+				     (quote-syntax letrec)
+				     (quote-syntax letrec-values)
+				     (quote-syntax lambda)
+				     (quote-syntax case-lambda)
+				     (quote-syntax if)
+				     (quote-syntax struct)
+				     (quote-syntax quote)
+				     (quote-syntax letrec-syntax)
+				     (quote-syntax with-continuation-mark)
+				     (quote-syntax #%app)
+				     (quote-syntax #%unbound)
+				     (quote-syntax #%datum)
+				     declared-names)))
 				 defns&exprs)])
 			   (apply
 			    append

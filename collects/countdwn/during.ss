@@ -72,33 +72,33 @@
 	    [raised-exception #f]
 	    [wakeup (make-semaphore 0)])
 	(parameterize ([current-custodian custodian])
-	  (parameterize ([current-load
-			  (let ([ol (current-load)])
-			    (lambda (f)
-			      (set! files-loaded (cons f files-loaded))
-			      (ol f)))]
-			 [error-print-width 500]
-			 [current-namespace (make-namespace)]
-			 [current-eventspace (make-eventspace)])
+	  (parameterize ([current-eventspace (make-eventspace)])
 	    (queue-callback
 	     (lambda ()
-	       (global-define-values/invoke-unit/sig ((open mzlib:core^) (open mred^)) cu)
-	       (global-defined-value 'remember remember)
-	       (global-defined-value 'remember-around remember-around)
 	       (let/ec escape
-		 (parameterize ([current-exception-handler
+		 (parameterize ([current-load
+				 (let ([ol (current-load)])
+				   (lambda (f)
+				     (set! files-loaded (cons f files-loaded))
+				     (ol f)))]
+				[error-print-width 500]
+				[current-namespace (make-namespace)]
+				[current-exception-handler
 				 (lambda (exn)
 				   (set! raised-exception? #t)
 				   (set! raised-exception exn)
 				   (escape (void)))])
+		   (global-define-values/invoke-unit/sig ((open mzlib:core^) (open mred^)) cu)
+		   (global-defined-value 'remember remember)
+		   (global-defined-value 'remember-around remember-around)
 		   (load/cd user-config-file)))
-	       (semaphore-post wakeup)))
-	    (semaphore-wait wakeup)
-	    (custodian-shutdown-all custodian)
-	    (when raised-exception?
-	      (show-error (if (exn? raised-exception)
-			      (exn-message raised-exception)
-			      (format "uncaught exception: ~e" raised-exception)))))))
+	       (semaphore-post wakeup)))))
+	(semaphore-wait wakeup)
+	(custodian-shutdown-all custodian)
+	(when raised-exception?
+	  (show-error (if (exn? raised-exception)
+			  (exn-message raised-exception)
+			  (format "uncaught exception: ~e" raised-exception)))))
       (send edit sync)))
 
   (define files-loaded null)
@@ -116,6 +116,5 @@
 				      #f)))
 			      files-loaded)
 		   (load-user-config))
-		 (sleep 4)
+		 (sleep 5)
 		 (check-user-config)))))
-		       

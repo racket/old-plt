@@ -6,7 +6,7 @@
     [(splash-max) 84]
     [(splash-depth) 6]
     [(compile-prefix) '(begin (require-library "sig.ss" "mred") (require-library "sig.ss" "countdwn"))]
-    [(compile-omit-files) null]
+    [(compile-omit-files) (list "sig.ss")]
     [(compile-elaboration-zos) (list "sig.ss")]
 
     [(install-collection)

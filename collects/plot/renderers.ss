@@ -51,7 +51,7 @@
   ; scaled -> vector field with scaled vectors
   ; normalized -> all vectors same size, indicates direction 
   ; real -> all vectors drawn to scale
-  (define-plot-type field
+  (define-plot-type vector-field
      vfun 2dplotview 
       (x-min x-max y-min y-max)
       ([samples 20] [color 'black] [width 1] [style 'scaled])

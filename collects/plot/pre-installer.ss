@@ -17,12 +17,11 @@
   (define mz-inc-dir (build-path plthome* "include"))
   (define headers
     (map (lambda (name)
-           (build-path mz-inc-dir name))
+           (path->string (build-path mz-inc-dir name)))
          '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))
 
-  
   (define PLOT-SCHEME-FILE-NAME "plplot-low-level")
-  
+
   (define here (this-expression-source-directory))
 
   (define dir (build-path here "compiled" "native" (system-library-subpath)))
@@ -52,35 +51,38 @@
   ;; (verbose #t)
 
   (define (make-ext scheme-file c-file-names src-dir)
-    (let* ([c-files  (map (lambda (f) (build-path src-dir f))c-file-names)]
+    (let* ([scheme-file (if (path? scheme-file)
+                          (path->string scheme-file)
+                          scheme-file)]
+           [c-files  (map (lambda (f) (build-path src-dir f)) c-file-names)]
            [final-so (final-so-file scheme-file)]
            [objects  (map append-object-suffix c-files)]
            [scheme-file-with-ext (string-append scheme-file ".ss")])
       (make/proc
-       (apply list  ; make lines
-              (list final-so   ; target
-                    objects    ; depends
-                    (lambda () ; link them together
-                      (link-extension #f objects final-so)))
-              (list (append-c-suffix
-                     (build-path src-dir (file-name-from-path scheme-file)))
-                    (list scheme-file-with-ext)
-                    (lambda ()
-                      ((compile-extensions-to-c #f)
-                       (list scheme-file-with-ext)
-                       src-dir)))
-              (list (append-object-suffix scheme-file)
-                    (append headers (list append-c-suffix scheme-file)))
-              (map (lambda (file)
-                     (list (append-object-suffix file)
-                           ;(append headers
-                           ;        (list (append-c-suffix file)))
-                           (list (append-c-suffix file))
-                           (lambda ()
-                             (compile-c-extension-parts
-                              (list (append-c-suffix file))
-                              src-dir))))
-                   c-files))
+       (list*  ; make lines
+        (list final-so   ; target
+              objects    ; depends
+              (lambda () ; link them together
+                (link-extension #f objects final-so)))
+        (list (append-c-suffix
+               (build-path src-dir (file-name-from-path scheme-file)))
+              (list scheme-file-with-ext)
+              (lambda ()
+                ((compile-extensions-to-c #f)
+                 (list scheme-file-with-ext)
+                 src-dir)))
+        (list (append-object-suffix scheme-file)
+              (append headers (list append-c-suffix scheme-file)))
+        (map (lambda (file)
+               (list (append-object-suffix file)
+                     ;(append headers
+                     ;        (list (append-c-suffix file)))
+                     (list (append-c-suffix file))
+                     (lambda ()
+                       (compile-c-extension-parts
+                        (list (append-c-suffix file))
+                        src-dir))))
+             c-files))
        final-so)))
 
   (provide pre-installer)
@@ -94,15 +96,20 @@
     (let* ([plot-scheme-file (build-path here PLOT-SCHEME-FILE-NAME)]
            [plot-src-dir (build-path here "src" "all")]
            [plot-c-files
-            (map (lambda (f) (regexp-replace #rx".c$" f ""))
+            (map (lambda (f)
+                   (regexp-replace #rx".c$" (if (path? f) (path->string f) f)
+                                   ""))
                  (cons (file-name-from-path plot-scheme-file)
                        (filter (lambda (f)
-                                 (and (regexp-match #rx".c$" f)
-                                      (not (regexp-match
-                                            (file-name-from-path
-                                             plot-scheme-file)
-                                            f))))
-                               (directory-list plot-src-dir))))])
+                                 (let* ([f (if (path? f) (path->string f) f)]
+                                        [name (file-name-from-path
+                                               plot-scheme-file)]
+                                        [name (if (path? name)
+                                                (path->string name) name)])
+                                   (and (regexp-match #rx".c$" f)
+                                        (not (regexp-match name f)))))
+                               (map path->string
+                                    (directory-list plot-src-dir)))))])
       (unless (do-copy (final-so-file plot-scheme-file))
         (parameterize ([current-extension-compiler-flags
                         (append (current-extension-compiler-flags)
@@ -128,5 +135,5 @@
           (or (regexp-match #rx"hdindex$" file)
               (and (not (regexp-match #rx".tex" file))
                    (regexp-match #rx"plot-docs" file))))
-        (build-path (collection-path "plot") "src" "docs"))))
+        (path->string (build-path (collection-path "plot") "src" "docs")))))
     ))

@@ -80,7 +80,7 @@
    error-bars
    points
    line
-   field
+   (rename vector-field field)
    contour
    shade
    

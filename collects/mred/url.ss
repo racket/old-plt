@@ -137,6 +137,16 @@
 		(fprintf output-port "GET ~a HTTP/1.0~n" access-path)
 		(values input-port output-port)))))))
 
+    (define print-text-at-url
+      (lambda (url)
+	(let ((server->client (get-port-for-url url)))
+	  (let loop ()
+	    (let ((c (read-char server->client)))
+	      (unless (eof-object? c)
+		(display c)
+		(loop))))
+	  (close-input-port server->client))))
+
     (define get-port-for-url
       (lambda (url)
 	(let-values
@@ -153,14 +163,12 @@
 	    (close-input-port server->client)
 	    server->client))))
 
-    (define print-text-at-url
-      (lambda (url)
-	(let ((server->client (get-port-for-url url)))
-	  (let loop ()
-	    (let ((c (read-char server->client)))
-	      (unless (eof-object? c)
-		(display c)
-		(loop))))
-	  (close-input-port server->client))))
+    (define call-with-input-url
+      (lambda (url handler)
+	(let ((p (get-port-for-url url)))
+	  (dynamic-wind
+	    (lambda () 'do-nothing)
+	    (lambda () (handler p))
+	    (lambda () (close-input-port p))))))
 
       ))

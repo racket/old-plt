@@ -105,7 +105,9 @@ static void StartSleepThreadTimer(void);
 
 void CALLBACK LetOtherThreadsRun(HWND, UINT, UINT, DWORD)
 {
+  scheme_current_process->suspend_break++;
   scheme_process_block(0.0);
+  --scheme_current_process->suspend_break;
 }
 
 void StopSleepThreadTimer(void)

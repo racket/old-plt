@@ -906,7 +906,7 @@ wxMediaWordbreakMap::wxMediaWordbreakMap()
   for (i = 0; i < 256; i++) {
     if (isalnum(i))
       map[i] = wxBREAK_FOR_CARET | wxBREAK_FOR_LINE | wxBREAK_FOR_SELECTION;
-    else if (!isspace(i))
+    else if ((i >= 128) || !isspace(i))
       map[i] = wxBREAK_FOR_LINE;
   }
 

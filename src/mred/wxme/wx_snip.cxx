@@ -495,6 +495,12 @@ wxSnip *TextSnipClass::Read(wxTextSnip *snip, wxMediaStreamIn &f)
 
 /***************************************************************/
 
+#ifdef wx_mac
+# define NON_BREAKING_SPACE 0xCA
+#else
+# define NON_BREAKING_SPACE 0xA0
+#endif
+
 wxTextSnip::wxTextSnip(long allocsize) 
 {
 #if USE_OLD_TYPE_SYSTEM
@@ -536,9 +542,11 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
   text[count] = 0;
 
   int i;
-  for (i = count; i--; )
-    if (!text[i])
+  for (i = count; i--; ) {
+    unsigned char c = ((unsigned char *)text)[i]; 
+    if (!c || (c == NON_BREAKING_SPACE))
       break;
+  }
   
   wxFont *font = style->GetFont();
 #ifdef BROKEN_GET_TEXT_EXTENT 
@@ -555,14 +563,17 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 #ifndef BROKEN_GET_TEXT_EXTENT 
     dc->SetFont(font);
 #endif
-    dc->GetTextExtent("X", &ex_w, &h, NULL, NULL, font);
+    dc->GetTextExtent(" ", &ex_w, &h, NULL, NULL, font);
     
     w = 0;
     for (i = 0; i <= count; i++)
-      if (!text[i] || (i == count)) {
+      if (!text[i] || (((unsigned char *)text)[i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
 	  float piece_w, h;
+	  char save = text[i];
+	  text[i] = 0;
 	  dc->GetTextExtent(text + start, &piece_w, &h, NULL, NULL);
+	  text[i] = save;
 	  w += piece_w;
 	}
 	if (i < count) {
@@ -637,9 +648,11 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
   text[count] = 0;
 
   int i;
-  for (i = count; i--; )
-    if (!text[i])
+  for (i = count; i--; ) {
+    unsigned char c = ((unsigned char *)text)[i]; 
+    if (!c || (c == NON_BREAKING_SPACE))
       break;
+  }
   
   if (i < 0)
     dc->DrawText(text, x, y);
@@ -648,20 +661,24 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
     float px, h, ex_w;
     int start = 0, i;
 
-    dc->GetTextExtent("X", &ex_w, &h, NULL, NULL);
+    dc->GetTextExtent(" ", &ex_w, &h, NULL, NULL);
     
     px = x;
     for (i = 0; i <= count; i++)
-      if (!text[i] || (i == count)) {
+      if (!text[i] || (((unsigned char *)text)[i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
 	  float piece_w, h;
+	  char save = text[i];
+	  text[i] = 0;
 	  dc->GetTextExtent(text + start, &piece_w, &h, NULL, NULL);
 	  dc->DrawText(text + start, px, y);
+	  text[i] = save;
 	  px += piece_w;
 	}
 	if (i < count) {
-	  if (h > 2 && ex_w > 2)
-	    dc->DrawRectangle(px + 1, y + 1, ex_w - 2, h - 2);
+	  if (!text[i])
+	    if (h > 2 && ex_w > 2)
+	      dc->DrawRectangle(px + 1, y + 1, ex_w - 2, h - 2);
 	  start = i + 1;
 	  px += ex_w;
 	}

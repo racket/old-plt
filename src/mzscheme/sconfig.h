@@ -388,6 +388,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define BEOS_FIND_STACK_BOUNDS
 # define STACK_GROWS_DOWN
 
+# define USE_TM_GMTOFF_FIELD
+
 # ifdef __INTEL__
 #  define REGISTER_POOR_MACHINE
 # endif

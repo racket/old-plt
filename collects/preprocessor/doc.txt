@@ -410,8 +410,8 @@ The complete behavior of the command dispatcher follows:
 
   * Strings are pushed back on the input stream,
 
-  * Symbols and integers are converted to strings and pushed back on the
-    input,
+  * Symbols, integers, and characters are converted to strings and
+    pushed back on the input,
 
   * An input port will be perpended to the input, both processed as a
     single input,

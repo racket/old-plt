@@ -155,7 +155,7 @@
                 [(pair? v) (value->cont (car v) (value->cont (cdr v) cont))]
                 [(promise? v) (value->cont (force v) cont)]
                 [(not (procedure? v))
-                 (when (or (string? v) (symbol? v) (integer? v)
+                 (when (or (string? v) (symbol? v) (integer? v) (char? v)
                            (input-port? v))
                    (add-to-input v))
                  cont]

@@ -5091,11 +5091,55 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
+  echo "$as_me:$LINENO: checking whether C++ compiler works" >&5
+echo $ECHO_N "checking whether C++ compiler works... $ECHO_C" >&6
+
+if test "$cross_compiling" = yes; then
+  cplusplusworks=yes
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+int main() { return 0; }
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  cplusplusworks=yes
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+cplusplusworks=no
+fi
+rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+  echo "$as_me:$LINENO: result: $cplusplusworks" >&5
+echo "${ECHO_T}$cplusplusworks" >&6
+  if test "$cplusplusworks" = "no" ; then
+    MROPTIONS="$MROPTIONS -DOPERATOR_NEW_ARRAY"
+    echo configure: C++ compiler/linker ${CXX} does not work
+    exit 1
+  fi
+
  msg="whether new and new[] are different"
   echo "$as_me:$LINENO: checking $msg" >&5
 echo $ECHO_N "checking $msg... $ECHO_C" >&6
-
-if test "$cross_compiling" = yes; then
+  if test "$cross_compiling" = yes; then
   different=yes
 else
   cat >conftest.$ac_ext <<_ACEOF

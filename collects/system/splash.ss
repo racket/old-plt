@@ -117,7 +117,6 @@
 		       (current-load
 			(let ([old-load (current-load)])
 			  (lambda (f)
-			    (set! mred:splash-counter (add1 mred:splash-counter))
 			    (let*-values ([(absf) (if (relative-path? f)
 						      (build-path (current-directory) f)
 						      f)]
@@ -129,6 +128,7 @@
 					       name)])
 			      (when (and (mred:change-splash-message (format "Loading ~a..." finalf))
 					 (<= mred:splash-counter mred:splash-max))
+				(set! mred:splash-counter (add1 mred:splash-counter))
 				(send gauge set-value mred:splash-counter))
 			      (begin0
 			       (old-load f)

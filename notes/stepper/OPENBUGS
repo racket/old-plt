@@ -1,0 +1,7 @@
+The stepper no longer works with the "Intermediate" language.  More
+accurately, perhaps, the Intermediate language is no longer compatible
+with the stepper.
+
+For a more complete listing of known bugs, see our
+<a href="http://bugs.plt-scheme.org/query/">
+online bug report database</a>

@@ -24,7 +24,7 @@
 
   ;; send-mail-message/port :
   ;; string x string x list (string) x list (string) x list (string) 
-  ;;   [x list (string)] -> iport
+  ;;   [x list (string)] -> oport
 
   ;; -- sender can be anything, though spoofing is not recommended.
   ;; The recipients must all be pure email addresses.  Note that
@@ -48,8 +48,8 @@
 	       (writer (cadr return))
 	       (pid (caddr return))
 	       (error-reader (cadddr return)))
-	  (close-output-port reader)
-	  (close-output-port error-reader)
+	  (close-input-port reader)
+	  (close-input-port error-reader)
 	  (fprintf writer "From: ~a~n" sender)
 	  (letrec ((write-recipient-header
 		     (lambda (header-string recipients)

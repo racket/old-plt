@@ -2066,7 +2066,7 @@ Scheme_Object *srp_SQLDescribeCol(int argc,Scheme_Object **argv) {
   }
 
   if (isUnsignedSmallInt(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-describe-col","unsigned-small-int",0,argc,argv);
+    scheme_wrong_type("sql-describe-col","unsigned-small-int",1,argc,argv);
   }
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);

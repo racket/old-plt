@@ -29,6 +29,7 @@ LINK32_OBJS= \
 
 srpersist.dll : $(DEF_FILE) $(LINK32_OBJS)
 	$(LINK32) $(LINK32_FLAGS) --ld srpersist.dll $(LINK32_OBJS) $(LINK32_LIBS)
+	copy srpersist.dll ..\..\collects\srpersist\compiled\native
 
 srpersist.obj : srpersist.cxx srpersist.h srptypes.h srpprims.tbl srpconsts.tbl srpinfo.tbl srpstructs.tbl
 

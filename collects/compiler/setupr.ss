@@ -344,7 +344,8 @@
 				    (when (verbose)
 				      (display s oop)
 				      (flush-output oop))))
-			      (let ([m (regexp-match-positions "making" s)])
+			      (let ([m (or (regexp-match-positions "making" s)
+					   (regexp-match-positions "compiling" s))])
 				(when m
 				  (unless printed?
 				    (set! printed? #t)

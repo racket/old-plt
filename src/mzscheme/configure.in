@@ -106,6 +106,9 @@ MZINSTALLTARGET=normal-install
 
 LIBS=
 
+MROPTIONS=
+INCLUDEDEP="#"
+
 ###### OSKit stuff #######
 
 if test "${enable_oskit}" = "yes" ; then
@@ -336,7 +339,6 @@ case $OS in
     fi
 
     if test "${enable_quartz}" = "yes" ; then
-      WXVARIANT="wx_mac"
       INCLUDEDEP="-include"
       CFLAGS="$CFLAGS -fno-common"
       OSX=""
@@ -408,9 +410,11 @@ fi
 
 ############## C++ grunge ################
 
-MROPTIONS=
 WXVARIANT="wx_xt"
-INCLUDEDEP="#"
+
+if test "${enable_quartz}" = "yes" ; then
+  WXVARIANT="wx_mac"
+fi
 
 if test "${enable_mred}" = "yes" ; then
   CXXFLAGS="$CXXFLAGS $X_CFLAGS"

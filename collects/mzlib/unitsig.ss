@@ -247,12 +247,9 @@
 	     (let ([ex-exploded (explode-sig ex-sig)]
 		   [ex-flattened (flatten-signature #f ex-sig)])
 	       (let ([im-sigs
-		      (map
-		       (lambda (s)
-			 (get-sig formname (syntax orig) #f s))
-		       (syntax->list (syntax imports)))])
+		      (parse-invoke-vars formname (syntax imports) (syntax orig))])
 		 (let ([im-explodeds (explode-named-sigs im-sigs)]
-		       [im-flattened (apply append (map (lambda (x) (flatten-signature #f x)) im-sigs))]
+		       [im-flattened (flatten-signatures im-sigs)]
 		       [d->s (lambda (x) (datum->syntax-object (syntax orig) x (syntax orig)))])
 		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))
 					    (quote-syntax global-define-values/invoke-unit)

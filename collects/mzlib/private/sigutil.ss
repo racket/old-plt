@@ -229,7 +229,8 @@
 		      (syntax-error who expr "improper signature clause type"
 				    (syntax something))])
 		   (loop (syntax rest)))]
-		 [_else (syntax-error who expr "illegal use of `.'")]))])
+		 [_else (syntax-error who expr "ill-formed signature"
+				      body)]))])
 	(check-unique (map
 		       (lambda (elem)
 			 (cond
@@ -388,7 +389,7 @@
 		(rename-signature (get-sig who expr #f item) #f)]
 	       [(id : sig)
 		(and (identifier? (syntax id))
-		     (eq? (syntax-e (syntax :)) ':))
+		     (literal? :))
 		(get-sig who expr (syntax id) (syntax sig))]
 	       [any
 		untagged-legal?

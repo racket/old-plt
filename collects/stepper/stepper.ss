@@ -8,7 +8,8 @@
           (drscheme : drscheme:export^)
           (zodiac : zodiac:system^)
           (zcp : stepper:zodiac-client-procs^))
-  (link [error : stepper:error^ ((unit/sig stepper:error^
+  (link [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
+        [error : stepper:error^ ((unit/sig stepper:error^
                                    (import)
                                    (define default-error-handler
                                      (lambda (keyword)
@@ -21,42 +22,20 @@
                                      (default-error-handler 'syntax-error))
                                    (define dynamic-error
                                      (default-error-handler 'runtime-syntax-error))))]
-        [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
-        [utils : cogen-utils^ ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
-                               zodiac
-                               (error : (internal-error static-error)))]
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error
                                    zcp)]
-        [annotate : stepper:annotate^
-                  ((require-library-unit/sig "annotater.ss" "stepper")
-                   zodiac
-                   (core function)
-                   error
-                   utils
-                   stepper
-                   shared
-                   zcp)]
-        [reconstruct : stepper:reconstruct^ 
-                     ((require-library-unit/sig "reconstructr.ss" "stepper")
-                      zodiac
-                      (core function)
-                      error
-                      utils
-                      (drscheme basis)
-                      stepper
-                      shared)]
-        [stepper : stepper:settings^
-                 ((require-library-unit/sig "stepperr.ss" "stepper")
+        [stepper-view-controller : ()
+                 ((require-library-unit/sig "stepper-view-controller.ss" "stepper")
+                  core
+                  error
                   zodiac
+                  zcp
                   pretty
                   mred
                   drscheme
                   print-convert
-                  error
-                  annotate
-                  reconstruct
                   framework
                   shared)])       
       (export))

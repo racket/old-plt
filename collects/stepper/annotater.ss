@@ -3,7 +3,7 @@
 	  mzlib:function^
 	  [e : stepper:error^]
           [utils : cogen-utils^]
-          [s : stepper:settings^]
+          [s : stepper:model^]
 	  stepper:shared^
           stepper:zodiac-client-procs^)
   

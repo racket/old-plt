@@ -1,5 +1,14 @@
-(unit/sig stepper:view-controller^
-  (import ...)
+(unit/sig ()
+  (import [c : mzlib:core^]
+          [e : stepper:error^]
+          [z : zodiac:system^]
+          [zcp : stepper:zodiac-client-procs^]
+          mzlib:pretty-print^
+          mred^
+          [d : drscheme:export^]
+          [p : mzlib:print-convert^]
+          [f : framework^]
+          stepper:shared^)
 
   ;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
@@ -98,9 +107,28 @@
                (send editor reset-pretty-print-width this))))])
       (sequence (super-init parent editor style scrolls-per-page))))
   
+  (define (image? val)
+   (is-a? val snip%))
+  
+  (define (confusable-value? val)
+    (or (number? val)
+        (boolean? val)
+        (string? val)
+        (symbol? val)))
+  
+  (define (maybe-insert-highlighted-value exp inserted)
+    (let ([recur (lambda (exp) (maybe-insert-highlighted-value exp inserted))])
+      (cond [(or (list? exp)
+                 (vector? exp))
+             (map recur exp)]
+            [(eq? exp highlight-placeholder)
+             (if (confusable-value? inserted)
+                 highlight-placeholder
+                 inserted)]
+            [else exp])))
+  
   (define stepper-text%
-    (class f:text:basic% (finished-exprs pre-sexp pre-redex post-sexp post-redex 
-                                         break-kind error-msg (line-spacing 1.0) (tabstops null))
+    (class f:text:basic% (finished-exprs exp redex reduct error-msg (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase
                begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
       (public (pretty-printed-width -1)
@@ -189,16 +217,18 @@
                     (insert #\newline))
                   now-finished-exprs)
                  (insert (make-object separator-snip%))
-                 (when (not (eq? pre-sexp no-sexp))
+                 (when (not (eq? redex no-sexp))
                    (insert #\newline)
                    (reset-style)
-                   (format-sexp pre-sexp pre-redex redex-highlight-color)
+                   (format-sexp (maybe-insert-highlighted-value exp redex)
+                                redex redex-highlight-color)
                    (insert #\newline)
                    (insert (make-object separator-snip%))
                    (insert #\newline))
-                 (cond [(not (eq? post-sexp no-sexp))
+                 (cond [(not (eq? reduct no-sexp))
                         (reset-style)
-                        (format-sexp post-sexp post-redex result-highlight-color)]
+                        (format-sexp (maybe-insert-highlighted-value exp reduct)
+                                     reduct result-highlight-color)]
                        [error-msg
                         (let ([before-error-msg (last-position)])
                           (reset-style)
@@ -208,11 +238,7 @@
                  (lock #t))])
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list)))))
-  
-  
-  (define (gui-init ;;; hmmm, how do we pass all this stuff in?)
-  ;; gui initialization code
-  
+   
   (define error-delta (make-object style-delta% 'change-style 'italic))
   (send error-delta set-delta-foreground "RED")
 
@@ -221,52 +247,130 @@
   (define redex-highlight-color (make-object color% 255 255 255))
   (send test-dc try-color (make-object color% 212 159 245) result-highlight-color)
   (send test-dc try-color (make-object color% 193 251 181) redex-highlight-color)
-             
-  (define no-sexp (gensym "no-sexp-"))
 
-  ;;; stuff schlepped over from what used to be stepperr.ss
-  
-    (define history null)
-         
-
-  ; PUT THIS WHERE IT BELONGS: (define text (ivar drscheme-frame definitions-text))
+  (define (stepper-go drscheme-frame settings)
     
-             (define view-currently-updating #f)
-         (define final-view #f)
-         
-         (define view 0)
-             
-         (define (home)
-           (update-view 0))
-         
-         (define (next)
-           (gui:prev-enable #f)
-           (gui:next-enable #f)
-           (gui:home-enable #f)
-           (if (= view (- (length history) 1))
-               (update-view/next-step (+ view 1))
-               (update-view (+ view 1))))
-         
-         (define (previous)
-           (update-view (- view 1)))
-             
-         (define s-frame (make-object stepper-frame% drscheme-frame))
-             
-         (define button-panel (make-object horizontal-panel% (send s-frame get-area-container)))
-         (define home-button (make-object button% "Home" button-panel
-                                          (lambda (_1 _2) (home))))
-         (define previous-button (make-object button% "<< Previous" button-panel
-                                              (lambda (_1 _2) (previous))))
-         (define next-button (make-object button% "Next >>" button-panel (lambda
-                                                                             (_1 _2) (next))))
-         (define canvas (make-object stepper-canvas% (send s-frame get-area-container)))
-
-         (define (update-view new-view)
-           (set! view new-view)
-           (let ([e (list-ref history view)])
-             (send e reset-pretty-print-width canvas)
-             (send canvas set-editor e))
-           (send previous-button enable (not (zero? view)))
-           (send home-button enable (not (zero? view)))
-           (send next-button enable (not (eq? final-view view))))
-)
+    (local ((define view-history null)
+            (define view-currently-updating #f)
+            (define final-view #f)
+            (define view 0)
+            
+            ; build gui object:
+            
+            (define (home)
+              (update-view 0))
+            
+            (define (next)
+              (send next-button enable #f)
+              (send next-button enable #f)
+              (send home-button enable #f)
+              (if (= view (- (length view-history) 1))
+                  (update-view/next-step (+ view 1))
+                  (update-view (+ view 1))))
+            
+            (define (previous)
+              (update-view (- view 1)))
+            
+            (define s-frame (make-object stepper-frame% drscheme-frame))
+            
+            (define button-panel (make-object horizontal-panel% (send s-frame get-area-container)))
+            (define home-button (make-object button% "Home" button-panel
+                                             (lambda (_1 _2) (home))))
+            (define previous-button (make-object button% "<< Previous" button-panel
+                                                 (lambda (_1 _2) (previous))))
+            (define next-button (make-object button% "Next >>" button-panel (lambda
+                                                                                (_1 _2) (next))))
+            
+            (define canvas (make-object stepper-canvas% (send s-frame get-area-container)))
+            
+            (define (update-view/next-step new-view)
+              (set! view-currently-updating new-view)
+              (step receive-result))
+            
+            (define (update-view new-view)
+              (set! view new-view)
+              (let ([e (list-ref view-history view)])
+                (send e reset-pretty-print-width canvas)
+                (send canvas set-editor e))
+              (send previous-button enable (not (zero? view)))
+              (send home-button enable (not (zero? view)))
+              (send next-button enable (not (eq? final-view view))))
+            
+            (define (receive-result result)
+              (let ([step-text
+                     (cond [(before-after-result? result) 
+                            (make-object stepper-text% 
+                                         (before-after-result-finished-exprs result)
+                                         (before-after-result-exp result)
+                                         (before-after-result-redex result)
+                                         (before-after-result-reduct result)
+                                         #f)]
+                           [(before-error-result? result)
+                            (set! final-view view-currently-updating)
+                            (make-object stepper-text%
+                                         (before-error-result-finished-exprs result)
+                                         (before-error-result-exp result)
+                                         (before-error-result-redex result)
+                                         no-sexp
+                                         (before-error-result-err-msg result))]
+                           [(error-result? result)  
+                            (set! final-view view-currently-updating)
+                            (make-object stepper-text%
+                                         (error-result-finished-exprs result)
+                                         no-sexp
+                                         no-sexp
+                                         no-sexp
+                                         (error-result-err-msg result))]
+                           [(finished-result? result) 
+                            (make-object stepper-text%
+                                         (finished-result-finished-exprs result)
+                                         no-sexp
+                                         no-sexp
+                                         no-sexp
+                                         #f)])])
+                (set! view-history (append view-history (list step-text))) 
+                (update-view view-currently-updating)))
+            
+            (define text-stream
+              (f:gui-utils:read-snips/chars-from-buffer (ivar drscheme-frame definitions-text)))
+            
+            (define step 
+              (invoke-unit/sig (require-library-unit/sig "stepper-instance.ss" "stepper")
+                               stepper:model-input^
+                               (c : mzlib:core^)
+                               (e : stepper:error^)
+                               (p : mzlib:print-convert^)
+                               (d : drscheme:export^)
+                               (z : zodiac:system^)
+                               (zcp : stepper:zodiac-client-procs^)
+                               stepper:shared^
+                               mred^)))
+      
+      (send drscheme-frame stepper-frame s-frame)
+      (set! view-currently-updating 0)
+      (send button-panel stretchable-width #f)
+      (send button-panel stretchable-height #f)
+      (send canvas stretchable-height #t)
+      (send canvas min-width 500)
+      (send canvas min-height 500)
+      (send previous-button enable #f)
+      (send home-button enable #f)
+      (send next-button enable #f)
+      (send (send s-frame edit-menu:get-undo-item) enable #f)
+      (send (send s-frame edit-menu:get-redo-item) enable #f)
+      (step receive-result)
+      (send s-frame show #t)))
+  
+  (define beginner-level-name "Beginning Student")
+      
+  (lambda (frame)
+    (let ([settings (f:preferences:get 'drscheme:settings)])
+      (if (not (string=? (d:basis:setting-name settings) beginner-level-name))
+          (message-box "Stepper" 
+                       (format (string-append "Language level is set to \"~a\".~n"
+                                              "The Foot only works for the \"~a\" language level.~n")
+                               (d:basis:setting-name settings)
+                               beginner-level-name)
+                       #f 
+                       '(ok))
+          (stepper-go frame settings)))))

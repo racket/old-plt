@@ -7,7 +7,10 @@
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))
 
-(define-signature stepper:settings^
+(define-signature stepper:model-input^
+  (text-stream settings image?))
+
+(define-signature stepper:model^
   (check-pre-defined-var
    check-global-defined
    global-lookup
@@ -19,11 +22,16 @@
    print-convert))
 
 (define-signature stepper:shared^
-  (list-take
+  ((struct before-after-result (finished-exprs exp redex reduct))
+   (struct before-error-result (finished-exprs exp redex err-msg))
+   (struct error-result (finished-exprs err-msg))
+   (struct finished-result (finished-exprs))
+   list-take
    (struct closure-record (name mark constructor?))
    create-bogus-bound-varref
    create-bogus-top-level-varref
    *unevaluated* 
+   no-sexp
    if-temp
    struct-flag
    highlight-placeholder

@@ -19,6 +19,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
 ;; (must be initialized by commandline parsing)
 (define dest-plt-home #f)
 
+
 (let ([trh (lambda (x) (set! to-remote-host x))]
       [frh (lambda (x) (set! from-remote-host x))])
   (command-line
@@ -34,6 +35,25 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
    (args (src-plt-home-directory dest-plt-home-directory)
          (set! src-plt-home src-plt-home-directory)
          (set! dest-plt-home dest-plt-home-directory))))
+
+(define (get-remote-version)
+  (let ([cmd
+         (format
+          "ssh ~a 'setenv PLTHOME ~a ; $PLTHOME/bin/mzscheme -qmve \"(write (version))\"'"
+          from-remote-host
+          src-plt-home)])
+    (let-values ([(out in pid err status-proc) (apply values (process cmd))])
+      (begin0
+        (read out)
+        (close-output-port in)
+        (close-input-port out)
+        (close-input-port err)))))
+
+;; vers : string
+(define vers
+  (if from-remote-host
+      (get-remote-version)
+      (version)))
 
 (define-struct pr (from to))
 
@@ -67,7 +87,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"
-					 (version))
+					 vers)
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
@@ -76,7 +96,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"
-                                         (string-append (version) "_3m"))
+                                         (string-append vers "_3m"))
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
@@ -85,7 +105,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"
-                                         (version))
+                                         vers)
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
@@ -94,7 +114,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"
-                                         (string-append (version) "_3m"))
+                                         (string-append vers "_3m"))
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"

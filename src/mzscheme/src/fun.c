@@ -1964,7 +1964,11 @@ apply(int argc, Scheme_Object *argv[])
   }
   num_rands += (argc - 2);
 
-  rand_vec = MALLOC_N(Scheme_Object *, num_rands);
+  if (num_rands > p->tail_buffer_size) {
+    rand_vec = MALLOC_N(Scheme_Object *, num_rands);
+    /* num_rands might be very big, so don't install it as the tail buffer */
+  } else
+    rand_vec = p->tail_buffer;
 
   for (i = argc - 2; i--; ) {
     rand_vec[i] = argv[i + 1];
@@ -2161,11 +2165,15 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
   v = _scheme_apply_multi(argv[0], 0, NULL);
   p = scheme_current_thread;
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
+    int n;
+    Scheme_Object **a;
     if (SAME_OBJ(p->ku.multiple.array, p->values_buffer))
       p->values_buffer = NULL;
-    /* Careful - get the ordering right, because the fields overlap! */
-    p->ku.apply.tail_num_rands = p->ku.multiple.count;
-    p->ku.apply.tail_rands = p->ku.multiple.array;
+    /* Beware: the fields overlap! */
+    n = p->ku.multiple.count;
+    a = p->ku.multiple.array;
+    p->ku.apply.tail_num_rands = n;
+    p->ku.apply.tail_rands = a;
   } else {
     p->ku.apply.tail_num_rands = 1;
     p->ku.apply.tail_rands = p->tail_buffer;

@@ -258,6 +258,9 @@ void scheme_forget_subthread(struct Scheme_Thread_Memory *);
 void scheme_suspend_remembered_threads(void);
 void scheme_resume_remembered_threads(void);
 #endif
+#ifdef USE_WIN32_THREAD_TIMER
+void scheme_start_itimer_thread(long usec);
+#endif
 
 #ifdef UNIX_PROCESSES
 void scheme_block_child_signals(int block);

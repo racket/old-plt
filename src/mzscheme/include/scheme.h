@@ -62,9 +62,10 @@
 
 #ifdef MZ_REAL_THREADS
 # undef USE_ITIMER
+# undef USE_WIN32_THREAD_TIMER
 #endif
 
-#ifdef USE_ITIMER
+#if defined(USE_ITIMER) || defined(USE_WIN32_THREAD_TIMER)
 # define FUEL_AUTODECEREMENTS
 #endif
 

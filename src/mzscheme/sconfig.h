@@ -648,6 +648,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define NO_SLEEP
 # define WINDOWS_PROCESSES
 # define DETECT_WIN32_CONSOLE_STDIN
+# define USE_WIN32_THREAD_TIMER
 #endif
 
 # define SIGSET_IS_SIGNAL

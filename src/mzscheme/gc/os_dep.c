@@ -1659,7 +1659,12 @@ void GC_dirty_init()
       	sigaction(SIGSEGV, &act, &oldact);
 #     endif
       if (oldact.sa_flags & SA_SIGINFO) {
+	/* MATTHEW: IRIX5 */
+#   ifdef IRIX5
+          GC_old_segv_handler = (SIG_PF)(oldact.sa_handler);
+#   else
           GC_old_segv_handler = (SIG_PF)(oldact.sa_sigaction);
+#   endif
       } else {
           GC_old_segv_handler = oldact.sa_handler;
       }

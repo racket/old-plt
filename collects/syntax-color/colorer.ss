@@ -44,12 +44,11 @@
       ;; ---------------------- Multi-threading -------------------------------
       ;; A list of thunks that color the buffer
       (define colors null)
-      ;; A channel for communication between the background tokenizer and the foreground
-      ;; thread.
+      ;; The thread handle to the background colorer
       (define background-thread #f)
-      ;; When the background thread need to be broken because the text% has changed
-      (define need-break? #f)
-      
+      ;; Prevent the background thread from being put to sleep while modifying
+      ;; global state
+      (define lock (make-semaphore 1))
       
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
@@ -61,11 +60,11 @@
         (set! invalid-tokens-start +inf.0)
         (set! up-to-date? #t)
         (set! current-pos start-pos)
-        (set! colors null)
-        (set! need-break? #f))
+        (set! colors null))
       
       (define/public (modify)
-        (set! need-break? #t))
+        (when background-thread
+          (break-thread background-thread)))
       
       
       (define (color)
@@ -108,37 +107,37 @@
                                           (node-token-length min-tree)))
             (sync-invalid))))
       
+      ;; re-tokenize should be called with breaks enabled and exit with breaks disabled
+      ;; re-tokenize should be called when lock is not held.  When it exits, the lock
+      ;;   will be held.
       (define (re-tokenize in in-start-pos)
         (let-values (((type data new-token-start new-token-end) (get-token in)))
-          (let ((old-breaks (break-enabled)))
-            (break-enabled #f)
-            (cond
-              ((not (eq? 'eof type))
-               (let ((len (- new-token-end new-token-start)))
-                 (set! current-pos (+ len current-pos))
-                 (sync-invalid)
-                 (set! colors (cons
-                               (lambda ()
-                                 (change-style
-                                  (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
-                                                                           prefix
-                                                                           type)))
-                                  (sub1 (+ in-start-pos new-token-start))
-                                  (sub1 (+ in-start-pos new-token-end))
-                                  #f))
-                               colors))
-                 (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
-                 (cond
-                   ((and invalid-tokens (= invalid-tokens-start current-pos))
-                    (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
-                    (set! invalid-tokens #f)
-                    (set! invalid-tokens-start +inf.0)
-                    (break-enabled old-breaks))
-                  (else
-                   (break-enabled old-breaks)
-                   (re-tokenize in in-start-pos)))))
-              (else
-               (break-enabled old-breaks))))))
+          (break-enabled #f)
+          (semaphore-wait lock)
+          (unless (eq? 'eof type)
+            (let ((len (- new-token-end new-token-start)))
+              (set! current-pos (+ len current-pos))
+              (sync-invalid)
+              (set! colors (cons
+                            (lambda ()
+                              (change-style
+                               (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
+                                                                        prefix
+                                                                        type)))
+                               (sub1 (+ in-start-pos new-token-start))
+                               (sub1 (+ in-start-pos new-token-end))
+                               #f))
+                            colors))
+              (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
+              (cond
+                ((and invalid-tokens (= invalid-tokens-start current-pos))
+                 (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
+                 (set! invalid-tokens #f)
+                 (set! invalid-tokens-start +inf.0))
+                (else
+                 (semaphore-post lock)
+                 (break-enabled #t)
+                 (re-tokenize in in-start-pos)))))))
       
       (define/public (do-insert/delete edit-start-pos change-length)
         (when should-color?
@@ -202,35 +201,41 @@
         (set! get-token #f))
       
       (define (colorer-callback)
-        (when need-break?
-          (break-thread background-thread))
         (thread-resume background-thread)
         (sleep .01)    ;; This is when the background thread is working.
+        (semaphore-wait lock)
         (thread-suspend background-thread)
+        (semaphore-post lock)
         (begin-edit-sequence #f)
         (color)
         (end-edit-sequence)
         (unless up-to-date?
           (queue-callback colorer-callback #f)))
       
+      
+      ;; Breaks should be disabled on entry
       (define (background-colorer-entry)
         (thread-suspend (current-thread))
         (background-colorer))
       
+      ;; Breaks should be disabled on entry
       (define (background-colorer)
         (let/ec restart
           (parameterize ((current-exception-handler
                           (lambda (exn)
+                            ;; Lock is not held here because breaks are disabled
+                            ;; whenever lock is held
                             (break-enabled #f)
                             (restart))))
+            (break-enabled #t)
             (with-handlers ((not-break-exn? void))
-              (break-enabled #t)
               (re-tokenize (open-input-text-editor this current-pos end-pos)
                            current-pos))
-            (set! need-break? #f)
+            ;; Breaks should be disabled from exit of re-tokenize
+            ;; lock will be held
             (set! up-to-date? #t)
-            (thread-suspend (current-thread))
-            (break-enabled #f)))
+            (semaphore-post lock)
+            (thread-suspend (current-thread))))
         (background-colorer))
       
       (super-instantiate ())))

@@ -527,6 +527,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define STACK_GROWS_UP
 
 # define SOME_FDS_ARE_NOT_SELECTABLE
+# define USE_FCNTL_O_NONBLOCK
 
 # define USE_SYSCALL_GETRUSAGE
 

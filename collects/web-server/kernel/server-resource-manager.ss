@@ -4,8 +4,7 @@
            (lib "async-channel.ss")
            "splay-tree.ss")
 
-  (provide (struct server-resource (id expiration-time))
-           (struct exn:server-resource-manager:dead ())
+  (provide (struct exn:server-resource-manager:dead ())
 
            ;; for testing
            get-pool
@@ -17,6 +16,7 @@
   (define-struct server-resource (id expiration-time) (make-inspector))
 
   (provide/contract
+   [struct server-resource ([id number?] [expiration-time number?])]
    [start-server-resource-manager (procedure? procedure? custodian? . -> . server-resource-manager?)]
    [new-server-resource ((server-resource-manager? number?) any? . ->* . (server-resource?))]
    [adjust-server-resource-timeout! (server-resource-manager? server-resource? number? . -> . void)]

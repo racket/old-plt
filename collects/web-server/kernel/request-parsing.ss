@@ -3,30 +3,40 @@
            (lib "url.ss" "net")
            "util.ss")
 
-  (provide (struct request (method uri major-version minor-version headers
-                                   close?)))
+  ;; the request struct as currently doc'd
+  (define-struct request (method uri headers bindings host-ip client-ip))
 
-  (define-struct request (method uri major-version minor-version headers
-                                 close?) (make-inspector))
+  ;; header?: any? -> boolean
+  ;; is this a header?
+  (define (header? x)
+    (and (pair? x)
+         (symbol? (car x))
+         (bytes? (cdr x))))
+
+  ;; bindings? any? -> boolean
+  ;; is this a binding
+  (define (binding? x)
+    (and (pair? x) #t))
 
   (provide/contract
-   ;[close-connection? (list? number? number? string? string? . -> . boolean?)]
-   ;[read-request-line ((input-port?) . ->* . (symbol? url? number? number?))]
-   ;[read-headers (input-port? . -> . list?)]
-   [read-request (input-port? . -> . request?)])
+   [struct request ([method symbol?] [uri url?] [headers (listof header?)]
+                    [bindings (listof binding?)] [host-ip string?]
+                    [client-ip string?])]
+   [read-request ((input-port?) . ->* . (request? boolean?))])
 
   ;; **************************************************
-  ;; read-request: input-port -> request
+  ;; read-request: input-port -> request boolean?
   ;; read the request line, and the headers, determine if the connection should
   ;; be closed after servicing the request and build a request structure
   (define (read-request ip)
-    (let-values ([(method url major-version minor-version)
+    (let-values ([(method uri major-version minor-version)
                   (read-request-line ip)])
       (let ([headers (read-headers ip)])
         (let-values ([(host-ip client-ip) (tcp-addresses ip)])
-          (make-request method url major-version minor-version headers
-                        (close-connection? headers major-version minor-version
-                                           client-ip host-ip))))))
+          (values
+           (make-request method uri headers '() host-ip client-ip)
+           (close-connection?
+            headers major-version minor-version client-ip host-ip))))))
 
   ;; **************************************************
   ;; close-connection?
@@ -51,7 +61,9 @@
          (cond
            [(or (assq 'HTTP_USER_AGENT headers)
                 (assq 'user-agent headers))
-            => (lambda (client) (regexp-match MSIE-regexp (cdr client)))]
+            => (lambda (client)
+                 (and (regexp-match MSIE-regexp (cdr client))
+                      #t))]
            [else #f])))
 
   (define MSIE-regexp (regexp "MSIE"))

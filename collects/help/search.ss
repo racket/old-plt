@@ -3,7 +3,11 @@
 	  mzlib:function^)
   
   ; Define an order for the documentation:
-  (define standard-html-doc-position (car (require-library "docpos.ss" "help")))
+  ; and the names of the standard documentation
+  (define-values (standard-html-doc-position known-manuals)
+    (let ([pr (require-library "docpos.ss" "help")])
+      (values (car pr) (cdr pr))))
+  
   (define (html-doc-position x)
     (or (user-defined-doc-position x)
 	(standard-html-doc-position x)))
@@ -22,29 +26,62 @@
 
   (define colldocs (require-library "colldocs.ss" "help"))
 
+  (define re:title (regexp "<[tT][iI][tT][lL][eE]>(.*)</[tT][iI][tT][lL][eE]>"))
+
+  ;; get-std-doc-title : string -> string
+  ;; gets the standard title of the documentation, from the
+  ;; known docs list.
+  (define (get-std-doc-title path doc)
+    (let ([a (assoc doc known-manuals)])
+      (if a
+	  (cdr a)
+	  (let ([index-file (build-path path doc "index.htm")])
+	    (if (file-exists? index-file)
+		(call-with-input-file index-file
+		  (lambda (port)
+		    (let loop ()
+		      (let ([l (read-line port)])
+			(cond
+			 [(eof-object? l)
+			  doc]
+			 [(regexp-match re:title l)
+			  =>
+			  (lambda (m)
+			    (apply
+			     string
+			     (map (lambda (x) (if (char-whitespace? x) #\space x))
+				  (string->list (cadr m)))))]
+			 [else (loop)])))))
+		doc)))))
+		
+
   (define (reset-doc-lists)
     ; Locate standard HTML documentation
     (define-values (std-docs std-doc-names)
       (let* ([path (with-handlers ([void (lambda (x) #f)])
-		     (collection-path "doc"))]
-	     [doc-names (if path
-			    (directory-list path)
-			    null)]
-	     [docs (map (lambda (x) (build-path path x)) doc-names)])
-	; Order the standard docs:
-	(let ([ordered (quicksort
-			(map cons docs doc-names)
-			(lambda (a b)
-			  (< (html-doc-position (cdr a))
-			     (html-doc-position (cdr b)))))])
-	  (values (map car ordered) (map cdr ordered)))))
+		     (collection-path "doc"))])
+	(if path
+	    (let* ([doc-collections (directory-list path)]
+		   [docs (map (lambda (x) (build-path path x)) doc-collections)]
+		   [doc-names (map (lambda (x) (get-std-doc-title path x)) doc-collections)])
+	      ;; Order the standard docs:
+	      (let ([ordered (quicksort
+			      (map cons docs doc-names)
+			      (lambda (a b)
+				(< (html-doc-position (cdr a))
+				   (html-doc-position (cdr b)))))])
+		(values (map car ordered) (map cdr ordered))))
+	    (values null null))))
     
     ; Check collections for doc.txt files:
     (define-values (txt-docs txt-doc-names)
       (colldocs quicksort))
     
     (set! docs (append std-docs txt-docs))
-    (set! doc-names (append std-doc-names (map (lambda (s) (format "~a collection" s)) txt-doc-names)))
+    (set! doc-names (append
+		     std-doc-names
+		     (map (lambda (s) (format "the ~a collection" s))
+			  txt-doc-names)))
     (set! doc-kinds (append (map (lambda (x) 'html) std-docs) (map (lambda (x) 'text) txt-docs)))
 
     (with-handlers ([void (lambda (x)

@@ -1,3 +1,13 @@
+(define drscheme:tools
+  (list (list "Stepper" (build-path "donkey" "donkey"))
+	(list "Syntax Checker" (build-path "drscheme" "mrslatex"))
+	(list "Analyzer" (build-path "drscheme" "spidstub"))
+
+;;          this is the example tool.
+;	    (list "Toy" (build-path "drscheme" "toy.ss"))
+
+	))
+
 (define drscheme:tool@
   (unit/sig drscheme:tool^
     (import mred^ mzlib:core^ mzlib:print-convert^ 
@@ -5,22 +15,14 @@
 
     (define-struct tool (name file))
 
-    (define tools 
-      (list (make-tool "Stepper" (build-path "donkey" "donkey.ss"))
-	    (make-tool "Syntax Checker" (build-path "drscheme" "mrslatex.ss"))
-	    (make-tool "Analyzer" (build-path "drscheme" "spidstub.ss"))
-
-;;          this is the example tool.
-;	    (make-tool "Toy" (build-path "drscheme" "toy.ss"))
-
-	    ))
-
+    (define tools (map (lambda (x) (apply make-tool x))
+		       (global-defined-value 'drscheme:tools)))
 
     (define unit-with-signature->unit (global-defined-value 'unit-with-signature->unit))
 
     (define load/invoke-tool
       (lambda (tool)
-	(load/cd (build-path plt-home-directory (tool-file tool)))
+	(file@:load-recent (build-path plt-home-directory (tool-file tool)))
 	(invoke-unit/sig (global-defined-value 'tool@) 
 			 mred^
 			 mzlib:core^

@@ -59,9 +59,8 @@
 				  "Language"
 				  -1 -1 -1 -1
 				  (list "Functional Scheme"
-					"Function Scheme Plus Structures"
-					"Imperative Scheme"
-					"Scheme"))])
+					"Functional Scheme Plus Structures"
+					"R4RS Scheme Plus Structures"))])
 	 (send choice set-selection 
 	       (case (mred:get-preference 'drscheme:scheme-level)
 		 [(core) 0]

@@ -260,11 +260,6 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
 
 
 //-----------------------------------------------------------------------------
-void wxMessage::ChangeColour(void)
-{
-}
-
-//-----------------------------------------------------------------------------
 char* wxMessage::GetLabel(void)
 {
   if (cMessage) {

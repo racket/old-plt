@@ -211,11 +211,6 @@ wxRadioBox::~wxRadioBox(void)
 
 
 //-----------------------------------------------------------------------------
-void wxRadioBox::ChangeColour(void)
-{
-}
-
-//-----------------------------------------------------------------------------
 char* wxRadioBox::GetLabel(void)
 {
   return (cRadioTitle ? cRadioTitle->GetLabel() : NULL);

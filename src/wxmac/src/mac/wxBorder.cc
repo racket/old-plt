@@ -65,11 +65,6 @@ wxBorder::~wxBorder(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxBorder::ChangeColour(void)
-{
-}
-
-//-----------------------------------------------------------------------------
 void wxBorder::DoShow(Bool show)
 {
   wxWindow::DoShow(show);

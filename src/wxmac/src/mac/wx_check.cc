@@ -282,11 +282,6 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //-----------------------------------------------------------------------------
-void wxCheckBox::ChangeColour(void)
-{
-}
-
-//-----------------------------------------------------------------------------
 void wxCheckBox::Paint(void)
 {
   if (cHidden) return;

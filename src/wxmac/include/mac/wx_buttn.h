@@ -105,8 +105,6 @@ class wxButton: public wxbButton
   void SetLabel(wxBitmap* bitmap);
   char* GetLabel(void);
 
-  void ChangeColour(void);
-
   virtual void Paint(void);
   virtual void DoShow(Bool show);
 

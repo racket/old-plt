@@ -139,9 +139,6 @@ public:
 	// Other methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	void SetBackgroundColour(wxColour*col);
-	void SetLabelColour(wxColour*col);
-	void SetButtonColour(wxColour*col);
-	void ChangeColour(void);
 	void DoShow(Bool show);
 	void Paint(void);
 	virtual void OnChar(wxKeyEvent *event);

@@ -382,18 +382,6 @@ void wxChoice::SetSelection (int n)
     cTitle->cLabelText->Refresh();
 }
 
-void wxChoice::SetBackgroundColour(wxColour*col)
-{
-} 
-
-void wxChoice::SetLabelColour(wxColour*col)
-{
-}
-
-void wxChoice::SetButtonColour(wxColour*col) 
-{
-}
-
 char* wxChoice::GetLabel(void)
 {
   return (cTitle ? cTitle->GetLabel() : NULL);

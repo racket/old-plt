@@ -96,8 +96,6 @@ class wxRadioBox: public wxbRadioBox
   void SetLabel(int item, wxBitmap* bitmap);
   char* GetLabel(int item);
 
-  void ChangeColour(void);
-  
   int ButtonFocus(int);
 
   virtual void OnSetFocus();

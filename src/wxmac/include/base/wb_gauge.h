@@ -31,8 +31,6 @@ class wxbGauge: public wxItem
   virtual void SetBezelFace(int w) = 0;
   virtual void SetRange(int r) = 0;
   virtual void SetValue(int pos) = 0;
-//  void SetButtonColour(int w) = 0;
-//  void SetBackgroundColour(int w) = 0;
 };
 
 #endif // IN_CPROTO

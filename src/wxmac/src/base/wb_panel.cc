@@ -60,30 +60,9 @@ void wxbPanel::OnDefaultAction(wxItem *initiatingItem)
 {
 }
 
-void wxbPanel::SetLabelFont(wxFont *fnt)
-{
-  labelFont = fnt;
-  this->font=labelFont; 
-}
-
-void wxbPanel::SetButtonFont(wxFont *font)
-{
-  buttonFont = font;
-}
-
 void wxbPanel::SetBackgroundColour(wxColour *col)
 {
   backColour = col;
-}
-
-void wxbPanel::SetLabelColour(wxColour *col)
-{
-  labelColour = col;
-}
-
-void wxbPanel::SetButtonColour(wxColour *col)
-{
-  buttonColour = col;
 }
 
 //=============================================================================

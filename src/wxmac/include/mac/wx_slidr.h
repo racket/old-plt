@@ -50,9 +50,6 @@ public:
   void SetSize(int x, int y, int width, int height);
   void GetPosition(int *x, int *y);
 #endif
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
   // For the mac:
   virtual void Paint(void);
   virtual void OnEvent(wxMouseEvent *event);

@@ -34,11 +34,6 @@ class wxItem: public wxbItem
 
   void SetLabel(char *label) {};	// This should be overridden in all subclasses
   
-  virtual void SetBackgroundColour(wxColour* col);
-  virtual void SetLabelColour(wxColour* col);
-  virtual void SetButtonColour(wxColour* col);
-  virtual void ChangeColour(void);
-  
   virtual void OnChar(wxKeyEvent *event); // mac platform only
   
   virtual void MaybeMoveControls();

@@ -132,7 +132,6 @@ class wxMessage: public wxbMessage
 
   virtual Bool AcceptsExplicitFocus(void);
 
-  void ChangeColour(void) ;
  protected:
   void ChangeToGray(Bool Gray);
 

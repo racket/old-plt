@@ -95,8 +95,6 @@ class wxRadioButton: public wxItem
   void SetLabel(wxBitmap* bitmap);
   char* GetLabel(void) ;
 
-  void ChangeColour(void) ;
-
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
   virtual void Paint(void);
   virtual void DoShow(Bool show);

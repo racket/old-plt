@@ -168,12 +168,6 @@ wxRadioButton::~wxRadioButton(void)
     --buttonBitmap->selectedIntoDC;
 }
 
-
-//-----------------------------------------------------------------------------
-void wxRadioButton::ChangeColour(void)
-{
-}
-
 //-----------------------------------------------------------------------------
 char* wxRadioButton::GetLabel()
 {

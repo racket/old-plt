@@ -359,26 +359,6 @@ void wxPanel::AddChild(wxObject* child) // WCH: why isn't the type wxWindow*?
 void wxPanel::SetBackgroundColour(wxColour*col)
 {
   backColour = col;
-  ChangeColour();
-}
-
-//-----------------------------------------------------------------------------
-void wxPanel::SetLabelColour(wxColour*col)
-{
-  labelColour = col;
-  ChangeColour();
-}
-
-//-----------------------------------------------------------------------------
-void wxPanel::SetButtonColour(wxColour*col)
-{
-  buttonColour = col;
-  ChangeColour();
-}
-
-//-----------------------------------------------------------------------------
-void wxPanel::ChangeColour(void)
-{
 }
 
 //-----------------------------------------------------------------------------

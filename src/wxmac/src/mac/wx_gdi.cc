@@ -394,6 +394,11 @@ Bool wxFont::ScreenGlyphAvailable(int c, Bool)
 				    family);
 }
 
+int wxGetControlFontSize()
+{
+  return wxNORMAL_FONT->GetPointSize();
+}
+
 /*
  * Colour map
  *
@@ -1282,3 +1287,4 @@ wxGLConfig *wxBitmap::GetGLConfig(void)
   else
     return NULL;
 }
+

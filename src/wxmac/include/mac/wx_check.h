@@ -106,7 +106,6 @@ class wxCheckBox: public wxbCheckBox
   // Other methods
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   virtual void DoShow(Bool show);
-  void ChangeColour(void) ;
 
   virtual void Highlight(Bool flag);
 

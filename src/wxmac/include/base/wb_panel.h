@@ -62,10 +62,6 @@ class wxbPanel: public wxCanvas
   void SetLabelPosition(int pos);  // wxHORIZONTAL or wxVERTICAL
   int GetLabelPosition(void);
 
-  virtual void SetButtonFont(wxFont *font);
-  virtual void SetLabelFont(wxFont *font);
-  virtual void SetButtonColour(wxColour *col);
-  virtual void SetLabelColour(wxColour *col);
   virtual void SetBackgroundColour(wxColour *col);
 
   inline virtual wxFont  *GetLabelFont(void)        { return labelFont ; }

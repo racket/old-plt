@@ -49,8 +49,6 @@ public:
 //=============================================================================
 public:
 
-	void ChangeColour(void) ;
-
 	virtual void DoShow(Bool show);
 	virtual void ShowAsActive(Bool flag); // mac platform only
 };

@@ -89,8 +89,6 @@ public:
 	void SetLabel(char*);
 	char* GetLabel(void) ;
 
-	void ChangeColour(void) ;
-
 	virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY); // mac platform only
 	virtual void Enable(Bool enable);
 	virtual void ChangeToGray(Bool enable);

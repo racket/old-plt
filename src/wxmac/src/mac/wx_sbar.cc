@@ -153,11 +153,6 @@ void wxScrollBar::InitDefaults(wxFunction function)
 }
 
 //-----------------------------------------------------------------------------
-void wxScrollBar::ChangeColour(void)
-{
-}
-
-//-----------------------------------------------------------------------------
 char* wxScrollBar::GetLabel()
 {
   Str255	pLabel;

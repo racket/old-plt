@@ -466,18 +466,6 @@ void wxSlider::SetValue(int value)
   }
 }
 
-void wxSlider::SetBackgroundColour(wxColour*col)
-{
-} 
-
-void wxSlider::SetLabelColour(wxColour*col)
-{
-}
-
-void wxSlider::SetButtonColour(wxColour*col) 
-{
-}
-
 char* wxSlider::GetLabel(void)
 {
   return (cTitle ? cTitle->GetLabel() : NULL);

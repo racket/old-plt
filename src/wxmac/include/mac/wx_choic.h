@@ -56,11 +56,6 @@ class wxChoice: public wxbChoice
   char *GetLabel(void);
   void SetLabel(char *label);
 
-
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
-
   void SetColumns(int n = 1 ) { /* no effect */ } ;
   int GetColumns(void) { return 1 ; };
   

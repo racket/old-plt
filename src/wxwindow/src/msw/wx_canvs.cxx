@@ -362,7 +362,7 @@ void wxCanvas::EnableScrolling (Bool x_scroll, Bool y_scroll)
   }
   if (y_scroll != wnd->x_scrolling_enabled) {
     wnd->y_scrolling_enabled = y_scroll;
-    ShowScrollBar(wnd->handle, SB_VERT, x_scroll);
+    ShowScrollBar(wnd->handle, SB_VERT, y_scroll);
   }
 }
 

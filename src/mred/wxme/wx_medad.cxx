@@ -1166,7 +1166,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	|| vspp != vscrollsPerPage
 	|| hspp != hscrollsPerPage
 	|| x != sx || y != sy) {
-      Bool goAgain;
+      Bool goAgain = FALSE;
       int savenoloop;
       int saveHSPP;
       int xon, yon;
@@ -1194,6 +1194,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	  yscroll_on = yon;
 	EnableScrolling(xscroll_on, yscroll_on);
 	OnScrollOnChange();
+	goAgain = TRUE;
       }
       
       if (!fakeXScroll) {
@@ -1226,7 +1227,8 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	  SetScrollPage(wxVERTICAL, vspp);
       }
 
-      goAgain = (givenHScrollsPerPage < -1);
+      if (givenHScrollsPerPage < -1)
+	goAgain = TRUE;
       givenHScrollsPerPage = saveHSPP;
       
       noloop = savenoloop;

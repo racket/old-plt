@@ -512,7 +512,8 @@
 		 (send edit-menu append-item "Insert Graphic Box"
 		       (edit-menu:do wx:const-edit-insert-graphic-box))
 		 (send edit-menu append-item "Insert Image..."
-		       (edit-menu:do wx:const-edit-insert-image))))]
+		       (edit-menu:do wx:const-edit-insert-image))
+		 (send edit-menu append-separator)))]
 
 	    [frame-title "MrEdConsole"])
 	  

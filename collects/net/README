@@ -1,4 +1,17 @@
-The libraries in this directory are documented on-line at
+This directory contains libraries that provide access to the following
+Internet (quasi-)protocols:
 
-  http://www.cs.rice.edu/~shriram/Scheme/Libraries/
+  CGI back-ends
+  sendmail
+  NNTP
+  POP-3
+  URL parsing
 
+The libraries in this directory are documented in the directory
+
+  (build-path PLTHOME "collects" "net" docs")
+
+ie, the sub-directory docs/ of this directory.
+
+Shriram Krishnamurthi
+shriram@cs.rice.edu

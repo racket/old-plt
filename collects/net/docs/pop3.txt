@@ -1,4 +1,4 @@
-Time-stamp: <98/03/17 20:22:37 shriram>
+Time-stamp: <98/10/09 19:25:52 shriram>
 
 Package: pop3
 Collection: net
@@ -7,6 +7,7 @@ Files: pop3.ss, pop3r.ss, pop3s.ss, pop3u.ss
 ABSTRACT -------------------------------------------------------------
 
 Implements RFC 1939, Post Office Protocol - Version 3, Myers & Rose.
+http://www.cis.ohio-state.edu/htbin/rfc/rfc1939.html
 
 TYPES ----------------------------------------------------------------
 
@@ -56,12 +57,11 @@ message : number
   When the server does not respond with headers for a message as
   requested.
 
-struct (not-given-message pop3) (communicator message)
+struct (illegal-message-number pop3) (communicator message)
 communicator : communicator
 message : number
 
-  When the server does not respond with the contents of a message as
-  requested.
+  When the user specifies an illegal message number.
 
 struct (cannot-delete-message exn) (communicator message)
 communicator : communicator
@@ -125,6 +125,17 @@ communicator x number -> ()
 
   Deletes the specified message.
 
+get-unique-id/single :
+communicator x number -> string
+
+  Gets the server's unique id for a particular message.
+
+get-unique-id/all :
+communicator -> list (number x string)
+
+  Gets a list of unique id's from the server for all the messages in
+  the mailbox.
+
 make-desired-header :
 string -> desired
 
@@ -138,12 +149,12 @@ list (string) x list (desired) -> list (string)
 
 EXAMPLE --------------------------------------------------------------
 
-> (reference-library "pop3.ss" "net")
+> (require-library "pop3.ss" "net")
 > (define c (pop3:connect-to-server "cs.rice.edu"))
 > (pop3:authenticate/plain-text "scheme" "********" c)
 > (pop3:get-mailbox-status c)
-100
-177824
+196
+816400
 > (pop3:get-message/headers c 100)
 ("Date: Thu, 6 Nov 1997 12:34:18 -0600 (CST)"
  "Message-Id: <199711061834.MAA11961@new-world.cs.rice.edu>"
@@ -157,4 +168,10 @@ EXAMPLE --------------------------------------------------------------
  ...
  "Status: RO")
 ("some body" "text" "goes" "." "here" "." "")
+> (pop3:get-unique-id/single c 205)
+no message numbered 205 available for unique id
+> (list-tail (pop3:get-unique-id/all c) 194)
+((195 . "e24d13c7ef050000") (196 . "3ad2767070050000"))
+> (pop3:get-unique-id/single c 196)
+"3ad2767070050000"
 > (pop3:disconnect-from-server c)

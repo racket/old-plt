@@ -5,6 +5,7 @@
     get-mailbox-status
     get-message/complete get-message/headers get-message/body
     delete-message
+    get-unique-id/single get-unique-id/all
     
     make-desired-header extract-desired-headers
 
@@ -14,7 +15,7 @@
     (struct password-rejected ())
     (struct not-ready-for-transaction (communicator))
     (struct not-given-headers (communicator message))
-    (struct not-given-message (communicator message))
+    (struct illegal-message-number (communicator message))
     (struct cannot-delete-message (communicator message))
     (struct disconnect-not-quiet (communicator))
     (struct malformed-server-response (communicator))

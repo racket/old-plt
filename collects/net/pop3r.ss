@@ -1,4 +1,4 @@
-; Time-stamp: <98/07/14 14:45:59 shriram>
+; Time-stamp: <98/10/09 19:19:06 shriram>
 
 (unit/sig mzlib:pop3^
   (import)
@@ -19,7 +19,7 @@
   (define-struct (password-rejected struct:pop3) ())
   (define-struct (not-ready-for-transaction struct:pop3) (communicator))
   (define-struct (not-given-headers struct:pop3) (communicator message))
-  (define-struct (not-given-message struct:pop3) (communicator message))
+  (define-struct (illegal-message-number struct:pop3) (communicator message))
   (define-struct (cannot-delete-message struct:exn) (communicator message))
   (define-struct (disconnect-not-quiet struct:pop3) (communicator))
   (define-struct (malformed-server-response struct:pop3) (communicator))
@@ -112,7 +112,7 @@
 		 "username was rejected"))))))))
 
   ;; get-mailbox-status :
-  ;; communicator -> num x num
+  ;; communicator -> number x number
 
   ;; -- returns number of messages and number of octets.
 
@@ -124,10 +124,13 @@
 	(send-to-server communicator "STAT")
 	(apply values
 	  (map string->number
-	    (get-status-response/match communicator stat-regexp #f))))))
+	    (let-values (((status result)
+			   (get-status-response/match communicator
+			     stat-regexp #f)))
+	      result))))))
 
   ;; get-message/complete :
-  ;; communicator x num -> list (string) x list (string)
+  ;; communicator x number -> list (string) x list (string)
 
   (define get-message/complete
     (lambda (communicator message)
@@ -139,12 +142,12 @@
 	  ((+ok? status)
 	    (split-header/body (get-multi-line-response communicator)))
 	  ((-err? status)
-	    ((signal-error make-not-given-message
+	    ((signal-error make-illegal-message-number
 	       "not given message ~a" message)
 	      communicator message))))))
 
   ;; get-message/headers :
-  ;; communicator x num -> list (string)
+  ;; communicator x number -> list (string)
 
   (define get-message/headers
     (lambda (communicator message)
@@ -164,7 +167,7 @@
 	      communicator message))))))
 
   ;; get-message/body :
-  ;; communicator x num -> list (string)
+  ;; communicator x number -> list (string)
 
   (define get-message/body
     (lambda (communicator message)
@@ -189,7 +192,7 @@
 	      (loop rest (cons first header))))))))
 
   ;; delete-message :
-  ;; communicator x num -> ()
+  ;; communicator x number -> ()
 
   (define delete-message
     (lambda (communicator message)
@@ -204,6 +207,49 @@
 	      communicator message))
 	  ((+ok? status)
 	    'deleted)))))
+
+  ;; regexp for UIDL responses
+
+  (define uidl-regexp (regexp "([0-9]+) (.*)"))
+
+  ;; get-unique-id/single :
+  ;; communicator x number -> string
+
+  (define (get-unique-id/single communicator message)
+    (confirm-transaction-mode communicator
+      "cannot get unique message id unless in transaction state")
+    (send-to-server communicator "UIDL ~a" message)
+    (let-values (((status result)
+		   (get-status-response/match communicator
+		     uidl-regexp
+		     ".*")))
+      ;; The server response is of the form
+      ;; +OK 2 QhdPYR:00WBw1Ph7x7
+      (cond
+	((-err? status)
+	  ((signal-error make-illegal-message-number
+	     "no message numbered ~a available for unique id" message)
+	    communicator message))
+	((+ok? status)
+	  (cadr result)))))
+
+  ;; get-unique-id/all :
+  ;; communicator -> list(number x string)
+
+  (define (get-unique-id/all communicator)
+    (confirm-transaction-mode communicator
+      "cannot get unique message ids unless in transaction state")
+    (send-to-server communicator "UIDL")
+    (let ((status (get-status-response/basic communicator)))
+      ;; The server response is of the form
+      ;; +OK
+      ;; 1 whqtswO00WBw418f9t5JxYwZ
+      ;; 2 QhdPYR:00WBw1Ph7x7
+      ;; .
+      (map (lambda (l)
+	     (let ((m (regexp-match uidl-regexp l)))
+	       (cons (string->number (cadr m)) (caddr m))))
+	(get-multi-line-response communicator))))
 
   ;; close-communicator :
   ;; communicator -> ()
@@ -280,7 +326,7 @@
 	response)))
 
   ;; get-status-response/match :
-  ;; communicator x regexp x regexp -> list (string)
+  ;; communicator x regexp x regexp -> (status x list (string))
 
   ;; -- when further parsing of the status response is necessary.
   ;; Strips off the car of response from regexp-match.
@@ -291,11 +337,11 @@
 		     (get-server-status-response communicator)))
 	(if (and +regexp (+ok? response))
 	  (let ((r (regexp-match +regexp rest)))
-	    (if r (cdr r)
+	    (if r (values response (cdr r))
 	      (signal-malformed-response-error communicator)))
 	  (if (and -regexp (-err? response))
 	    (let ((r (regexp-match -regexp rest)))
-	      (if r (cdr r)
+	      (if r (values response (cdr r))
 		(signal-malformed-response-error communicator)))
 	    (signal-malformed-response-error communicator))))))
 

@@ -408,7 +408,7 @@
 			(static-error collection "Does not yield a string"))
 		      (create-reference-unit-form
 			(path->complete-path
-			  (find-library (quote-form-expr f)
+			  (mzlib:find-library (quote-form-expr f)
 			    (quote-form-expr c))
 			  (current-load-relative-directory))
 			'exp

@@ -1498,7 +1498,7 @@ int stx_val_SIZE(void *p) {
 int stx_val_MARK(void *p) {
   Scheme_Stx *stx = (Scheme_Stx *)p;
   gcMARK(stx->val);
-  gcMARK(stx->src);
+  gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
   gcMARK(stx->props);
   return
@@ -1508,7 +1508,7 @@ int stx_val_MARK(void *p) {
 int stx_val_FIXUP(void *p) {
   Scheme_Stx *stx = (Scheme_Stx *)p;
   gcFIXUP(stx->val);
-  gcFIXUP(stx->src);
+  gcFIXUP(stx->srcloc);
   gcFIXUP(stx->wraps);
   gcFIXUP(stx->props);
   return
@@ -3053,6 +3053,26 @@ int mark_rename_table_FIXUP(void *p) {
   gcFIXUP(rn->ht);
   return
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
+}
+
+
+int mark_srcloc_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Srcloc));
+}
+
+int mark_srcloc_MARK(void *p) {
+  Scheme_Stx_Srcloc *s = (Scheme_Stx_Srcloc *)p;
+  gcMARK(s->src);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Srcloc));
+}
+
+int mark_srcloc_FIXUP(void *p) {
+  Scheme_Stx_Srcloc *s = (Scheme_Stx_Srcloc *)p;
+  gcFIXUP(s->src);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Srcloc));
 }
 
 

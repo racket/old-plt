@@ -973,15 +973,15 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
 {
   long line, col;
 
-  line = ((Scheme_Stx *)form)->line;
-  col = ((Scheme_Stx *)form)->col;
+  line = ((Scheme_Stx *)form)->srcloc->line;
+  col = ((Scheme_Stx *)form)->srcloc->col;
 
   if (col >= 0) {
     Scheme_Object *src;
     char *srcstr, *result;
     long srclen, rlen;
     
-    src = ((Scheme_Stx *)form)->src;
+    src = ((Scheme_Stx *)form)->srcloc->src;
     if (src && SCHEME_STRINGP(src)) {
       /* Truncate from the front, to get the interesting part of paths: */
       srclen = SCHEME_STRLEN_VAL(src);
@@ -1153,7 +1153,7 @@ void scheme_wrong_syntax(const char *where,
   if (detail_form) {
     Scheme_Object *pform;
     if (SCHEME_STXP(detail_form)) {
-      if (((Scheme_Stx *)detail_form)->line >= 0)
+      if (((Scheme_Stx *)detail_form)->srcloc->line >= 0)
 	p = make_srcloc_string(detail_form, &plen);
       pform = scheme_syntax_to_datum(detail_form, 0, NULL);
     } else {

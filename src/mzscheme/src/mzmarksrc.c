@@ -633,7 +633,7 @@ stx_val {
  mark:
   Scheme_Stx *stx = (Scheme_Stx *)p;
   gcMARK(stx->val);
-  gcMARK(stx->src);
+  gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
   gcMARK(stx->props);
  size:
@@ -1353,6 +1353,14 @@ mark_rename_table {
   gcMARK(rn->ht);
  size:
   gcBYTES_TO_WORDS(sizeof(Module_Renames));
+}
+
+mark_srcloc {
+ mark:
+  Scheme_Stx_Srcloc *s = (Scheme_Stx_Srcloc *)p;
+  gcMARK(s->src);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Srcloc));
 }
 
 END stxobj;

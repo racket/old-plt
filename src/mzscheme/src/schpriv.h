@@ -406,14 +406,19 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 /*                         syntax objects                                 */
 /*========================================================================*/
 
+typedef struct Scheme_Stx_Srcloc {
+  MZTAG_IF_REQUIRED
+  long line, col;
+  Scheme_Object *src;
+} Scheme_Stx_Srcloc;
+
 typedef struct Scheme_Stx {
   Scheme_Type type;
   short hash_code; /* Precise GC */
   Scheme_Object *val;
-  long line, col;
-  Scheme_Object *src;
+  Scheme_Stx_Srcloc *srcloc;
   Scheme_Object *wraps;
-  long lazy_prefix; /* # if initial items in wraps to propagate */
+  long lazy_prefix; /* # of initial items in wraps to propagate */
   Scheme_Object *props;
 } Scheme_Stx;
 
@@ -424,8 +429,7 @@ typedef struct Scheme_Stx_Offset {
 } Scheme_Stx_Offset;
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
-			       long line, long col, 
-			       Scheme_Object *src,
+			       Scheme_Stx_Srcloc *srcloc,
 			       Scheme_Object *props);
 Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
 					long line, long col, 

@@ -87,7 +87,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 
 (define (clean-help-desk-type type)
   (regexp-replace* 
-   "or {\\\\scmfalse}"
+   "or-{\\\\scmfalse}"
    (regexp-replace* " " type "-")
    "or-#f"))
 

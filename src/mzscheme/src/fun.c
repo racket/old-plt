@@ -626,28 +626,28 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 Scheme_Object *scheme_source_to_name(Scheme_Object *code)
 {
   Scheme_Stx *cstx = (Scheme_Stx *)code;
-  if (cstx->col >= 0) {
+  if (cstx->srcloc->col >= 0) {
     char buf[50], src[20];
     Scheme_Object *name;
 
     src[0] = 0;
-    if (cstx->src && SCHEME_STRINGP(cstx->src)) {
-      if (SCHEME_STRLEN_VAL(cstx->src) < 20)
-	memcpy(src, SCHEME_STR_VAL(cstx->src), SCHEME_STRLEN_VAL(cstx->src) + 1);
+    if (cstx->srcloc->src && SCHEME_STRINGP(cstx->srcloc->src)) {
+      if (SCHEME_STRLEN_VAL(cstx->srcloc->src) < 20)
+	memcpy(src, SCHEME_STR_VAL(cstx->srcloc->src), SCHEME_STRLEN_VAL(cstx->srcloc->src) + 1);
       else {
-	memcpy(src, SCHEME_STR_VAL(cstx->src) + SCHEME_STRLEN_VAL(cstx->src) - 19, 20);
+	memcpy(src, SCHEME_STR_VAL(cstx->srcloc->src) + SCHEME_STRLEN_VAL(cstx->srcloc->src) - 19, 20);
 	src[0] = '.';
 	src[1] = '.';
 	src[2] = '.';
       }
     }
 
-    if (cstx->line >= 0) {
+    if (cstx->srcloc->line >= 0) {
       sprintf(buf, "%s%s%ld.%ld", 
-	      src, (src[0] ? ":" : ""), cstx->line, cstx->col);
+	      src, (src[0] ? ":" : ""), cstx->srcloc->line, cstx->srcloc->col);
     } else {
       sprintf(buf, "%s%s%ld", 
-	      src, (src[0] ? ":" : ""), cstx->col);
+	      src, (src[0] ? ":" : ""), cstx->srcloc->col);
     }
 
     name = scheme_intern_symbol(buf);

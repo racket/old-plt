@@ -58,6 +58,8 @@ static Scheme_Object *lexical_symbol;
 
 static Scheme_Object *mark_id = scheme_make_integer(0);
 
+static Scheme_Stx_Srcloc *empty_srcloc;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -221,6 +223,15 @@ void scheme_init_stx(Scheme_Env *env)
   lexical_symbol = scheme_intern_symbol("lexical");
 
   REGISTER_SO(mark_id);
+
+  REGISTER_SO(empty_srcloc);
+  empty_srcloc = MALLOC_ONE_RT(Scheme_Stx_Srcloc);
+#ifdef MZTAG_REQUIRED
+  empty_srcloc->type = scheme_rt_srcloc;
+#endif
+  empty_srcloc->src = scheme_false;
+  empty_srcloc->line = -1;
+  empty_srcloc->col = -1;
 }
 
 /*========================================================================*/
@@ -228,8 +239,7 @@ void scheme_init_stx(Scheme_Env *env)
 /*========================================================================*/
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
-			       long line, long col, 
-			       Scheme_Object *src,
+			       Scheme_Stx_Srcloc *srcloc,
 			       Scheme_Object *props)
 {
   Scheme_Stx *stx;
@@ -237,9 +247,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   stx = MALLOC_ONE_TAGGED(Scheme_Stx);
   stx->type = scheme_stx_type;
   stx->val = val;
-  stx->line = line;
-  stx->col = col;
-  stx->src = src;
+  stx->srcloc = srcloc;
   stx->wraps = scheme_null;
   stx->props = props;
 
@@ -251,6 +259,8 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 					Scheme_Object *src,
 					Scheme_Object *props)
 {
+  Scheme_Stx_Srcloc *srcloc;
+
   if (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type)) {
     Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
 
@@ -266,8 +276,16 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 
     src = o->src;
   }
+
+  srcloc = MALLOC_ONE_RT(Scheme_Stx_Srcloc);
+#ifdef MZTAG_REQUIRED
+  srcloc->type = scheme_rt_srcloc;
+#endif
+  srcloc->src = src;
+  srcloc->line = line;
+  srcloc->col = col;
    
-  return scheme_make_stx(val, line, col, src, props);
+  return scheme_make_stx(val, srcloc, props);
 }
 
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
@@ -430,7 +448,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   wraps = nstx->wraps;
   lazy_prefix = nstx->lazy_prefix;
 
-  nstx = (Scheme_Stx *)scheme_make_stx(nstx->val, nstx->line, nstx->col, nstx->src, ne);
+  nstx = (Scheme_Stx *)scheme_make_stx(nstx->val, nstx->srcloc, ne);
 
   nstx->wraps = wraps;
   nstx->lazy_prefix = lazy_prefix;
@@ -468,7 +486,7 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   lp = stx->lazy_prefix;
   wraps = add_remove_mark(stx->wraps, m, &lp);
 
-  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->props);
+  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
   stx->lazy_prefix = lp;
 
@@ -506,7 +524,7 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
   if (!SCHEME_FALSEP(SCHEME_VEC_ELS(rnm)[1])) {
     Scheme_Hash_Table *ht;
     ht = (Scheme_Hash_Table *)SCHEME_VEC_ELS(rnm)[1];
-    if (scheme_hash_get(ht, oldname))
+    if (scheme_hash_get(ht, SCHEME_STX_VAL(oldname)))
       pos = -1; /* -1 means multiple entries matching a name */
     scheme_hash_set(ht, SCHEME_STX_VAL(oldname), scheme_make_integer(pos));
   }
@@ -595,7 +613,7 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   wraps = scheme_make_pair(rename, stx->wraps);
   lp = stx->lazy_prefix + 1;
 
-  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->props);
+  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
   stx->lazy_prefix = lp;
 
@@ -642,7 +660,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     
     if (SAME_OBJ(stx->wraps, p1)) {
       long lp = stx->lazy_prefix + len;
-      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->props);
+      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
       stx->wraps = owner_wraps;
       stx->lazy_prefix = lp;
       return (Scheme_Object *)stx;
@@ -1142,9 +1160,6 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   /* Same name? */
   if (!SAME_OBJ(asym, bsym))
     return 0;
-
-  if ((a == asym) || (b == bsym))
-    return 1;
 
   if (!uid)
     if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps, 0))
@@ -2111,9 +2126,9 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   }
 
   if (SCHEME_FALSEP((Scheme_Object *)stx_src))
-    result = scheme_make_stx(result, -1, -1, scheme_false, NULL);
+    result = scheme_make_stx(result, empty_srcloc, NULL);
   else
-    result = scheme_make_stx(result, stx_src->line, stx_src->col, stx_src->src, NULL);
+    result = scheme_make_stx(result, stx_src->srcloc, NULL);
 
   if (wraps) {
     wraps = datum_to_wraps(wraps, (Scheme_Hash_Table *)stx_wraps);
@@ -2236,11 +2251,11 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
       if (SCHEME_BIGNUMP(col))
 	col = scheme_make_integer(0);
 
-      src = scheme_make_stx(scheme_false,
-			    SCHEME_INT_VAL(line),
-			    SCHEME_INT_VAL(col),
-			    src,
-			    NULL);
+      src = scheme_make_stx_w_offset(scheme_false,
+				     SCHEME_INT_VAL(line),
+				     SCHEME_INT_VAL(col),
+				     src,
+				     NULL);
     } else if (ll == 2) {
       /* position format */
       Scheme_Object *pos;
@@ -2251,11 +2266,11 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
       if (SCHEME_BIGNUMP(pos))
 	pos = scheme_make_integer(0);
 
-      src = scheme_make_stx(scheme_false,
-			    -1,
-			    SCHEME_INT_VAL(pos),
-			    src,
-			    NULL);
+      src = scheme_make_stx_w_offset(scheme_false,
+				     -1,
+				     SCHEME_INT_VAL(pos),
+				     src,
+				     NULL);
     }
   }
   
@@ -2278,10 +2293,10 @@ static Scheme_Object *syntax_line(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-line", "syntax", 0, argc, argv);
     
-  if (stx->line < 0)
+  if (stx->srcloc->line < 0)
     return scheme_false;
   else
-    return scheme_make_integer(stx->line);
+    return scheme_make_integer(stx->srcloc->line);
 }
 
 static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
@@ -2291,10 +2306,10 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-column", "syntax", 0, argc, argv);
     
-  if (stx->line < 0) /* => col, if present, is really position */
+  if (stx->srcloc->line < 0) /* => col, if present, is really position */
     return scheme_false;
   else
-    return scheme_make_integer(stx->col);
+    return scheme_make_integer(stx->srcloc->col);
 }
 
 static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)
@@ -2306,10 +2321,10 @@ static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)
     
   /* line < 0  => col, if present, is really position */
 
-  if ((stx->line >= 0) || (stx->col < 0))
+  if ((stx->srcloc->line >= 0) || (stx->srcloc->col < 0))
     return scheme_false;
   else
-    return scheme_make_integer(stx->col);
+    return scheme_make_integer(stx->srcloc->col);
 }
 
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
@@ -2317,9 +2332,9 @@ static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
   Scheme_Stx *stx = (Scheme_Stx *)argv[0];
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-src", "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-source", "syntax", 0, argc, argv);
 
-  return stx->src;
+  return stx->srcloc->src;
 }
 
 static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
@@ -2443,7 +2458,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
     wraps = stx->wraps;
     lazy_prefix = stx->lazy_prefix;
 
-    stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, l);
+    stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, l);
 
     stx->wraps = wraps;
     stx->lazy_prefix = lazy_prefix;
@@ -2585,6 +2600,7 @@ START_XFORM_SKIP;
 static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_rename_table_type, mark_rename_table);
+  GC_REG_TRAV(scheme_rt_srcloc, mark_srcloc);
 }
 
 END_XFORM_SKIP;

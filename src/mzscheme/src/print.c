@@ -1171,13 +1171,13 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 		       notdisplay, 1, ht, symtab, rnht, p);
       } else {
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
-	if (stx->line >= 0) {
+	if (stx->srcloc->line >= 0) {
 	  print_this_string(p, "#<syntax:", 0, 9);
-	  if (stx->src && SCHEME_STRINGP(stx->src)) {
-	    print_this_string(p, SCHEME_STR_VAL(stx->src), 0, SCHEME_STRLEN_VAL(stx->src));
+	  if (stx->srcloc->src && SCHEME_STRINGP(stx->srcloc->src)) {
+	    print_this_string(p, SCHEME_STR_VAL(stx->srcloc->src), 0, SCHEME_STRLEN_VAL(stx->srcloc->src));
 	    print_this_string(p, ":", 0, 1);
 	  }
-	  sprintf(quick_buffer, "%ld.%ld", stx->line, stx->col);
+	  sprintf(quick_buffer, "%ld.%ld", stx->srcloc->line, stx->srcloc->col);
 	  print_this_string(p, quick_buffer, 0, -1);
 	  print_this_string(p, ">", 0, 1);
 	} else

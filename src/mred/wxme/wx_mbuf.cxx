@@ -1883,7 +1883,12 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
       } else {
 	str = wxTheClipboard->GetClipboardString(time);
 	/* no data => empty string */
-	InsertPasteString(str);
+	{
+	  wxchar *us;
+	  long ulen;
+	  wxme_utf8_decode(str, strlen(str), &us,  &ulen);
+	  InsertPasteString(us);
+	}
       }
     }
   }
@@ -2010,19 +2015,35 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   m->EndEditSequence();
 }
 
+char *wxMediaBuffer::GetFlattenedTextUTF8(long *_got)
+{
+  wxchar *s;
+  char *r = NULL;
+  long got, len;
+
+  s = GetFlattenedText(&got);
+  wxme_utf8_encode(s, got, &r, &len);
+  
+  if (_got)
+    *_got = len;
+
+  return r;
+}
+
 char *wxMediaClipboardClient::GetData(char *format, long *size)
 {
   wxNode *node;
   wxSnip *snip;
   long l, length = 0, sz = 0;
-  char *str, *total = NULL, *old;
+  wxchar *wxstr;
+  char *total = NULL, *old, *str;
 
   if (!strcmp(format, "TEXT")) {
     for (node = wxmb_commonCopyBuffer->First(); node; node = node->Next()) {
       snip = (wxSnip *)node->Data();
 
-      str = snip->GetText(0, snip->count, TRUE);
-      l = strlen(str);
+      wxstr = snip->GetText(0, snip->count, TRUE);      
+      wxme_utf8_encode(wxstr, wxstrlen(wxstr), &str, &l);
 
       if (total) {
 	if (length + l + 1 >= sz) {

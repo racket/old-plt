@@ -8,8 +8,8 @@
 @ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,SYM[caret]); : : /CHECKDCOK[0.METHODNAME("snip%","draw")]
 @ s "split" : void Split(nnlong,wxSnip!*,wxSnip!*);
 @ s "merge-with" : wxSnip^ MergeWith(wxSnip!);
-@ s "get-text" : string/makeNoCopyString[_x3] GetText(nnlong,nnlong,bool=FALSE,-long*=NULL);
-@ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
+@ s "get-text" : string/makeNoCopyString[_x3] GetTextUTF8(nnlong,nnlong,bool=FALSE,-long*=NULL);
+// @ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 @ s "copy" : wxSnip! Copy();
 @ s "size-cache-invalid" : void SizeCacheInvalid();
 

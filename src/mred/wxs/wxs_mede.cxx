@@ -4367,7 +4367,7 @@ static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  unsigned char r;
+  int r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-character in text%", n, p);
   nnlong x0;
 
@@ -4383,10 +4383,10 @@ static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return scheme_make_char((char)r);
+  return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxMediaEditGetText(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditGetTextUTF8(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -4421,7 +4421,7 @@ static Scheme_Object *os_wxMediaEditGetText(int n,  Scheme_Object *p[])
     x3 = FALSE;
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3, x4));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3, x4));
 
   
   
@@ -4546,7 +4546,7 @@ static Scheme_Object *os_wxMediaEditFindSnip(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxMediaEditFindStringAll(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditFindStringAllUTF8(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -4589,7 +4589,7 @@ static Scheme_Object *os_wxMediaEditFindStringAll(int n,  Scheme_Object *p[])
     x6 = TRUE;
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindStringAll(x0, x1, x2, x3, x4, x5, x6));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindStringAllUTF8(x0, x1, x2, x3, x4, x5, x6));
 
   
   
@@ -4597,7 +4597,7 @@ static Scheme_Object *os_wxMediaEditFindStringAll(int n,  Scheme_Object *p[])
   return WITH_VAR_STACK(__MakelongList(r, *x1));;
 }
 
-static Scheme_Object *os_wxMediaEditFindString(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditFindStringUTF8(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -4638,7 +4638,7 @@ static Scheme_Object *os_wxMediaEditFindString(int n,  Scheme_Object *p[])
     x5 = TRUE;
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindString(x0, x1, x2, x3, x4, x5));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindStringUTF8(x0, x1, x2, x3, x4, x5));
 
   
   
@@ -6544,7 +6544,7 @@ static Scheme_Object *os_wxMediaEditGetPosition(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMediaEditGetFlattenedText(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditGetFlattenedTextUTF8(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -6559,7 +6559,7 @@ static Scheme_Object *os_wxMediaEditGetFlattenedText(int n,  Scheme_Object *p[])
   
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedText(x0));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedTextUTF8(x0));
 
   
   
@@ -7909,12 +7909,12 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-to-file" " method", (Scheme_Method_Prim *)os_wxMediaEditWriteToFile, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file" " method", (Scheme_Method_Prim *)os_wxMediaEditReadFromFile, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character" " method", (Scheme_Method_Prim *)os_wxMediaEditGetCharacter, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetText, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetTextUTF8, 0, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPosition, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPositionAndLocation, 2, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditFindSnip, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all" " method", (Scheme_Method_Prim *)os_wxMediaEditFindStringAll, 1, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string" " method", (Scheme_Method_Prim *)os_wxMediaEditFindString, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all" " method", (Scheme_Method_Prim *)os_wxMediaEditFindStringAllUTF8, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string" " method", (Scheme_Method_Prim *)os_wxMediaEditFindStringUTF8, 1, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-styles-sticky" " method", (Scheme_Method_Prim *)os_wxMediaEditSetStickyStyles, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-styles-sticky" " method", (Scheme_Method_Prim *)os_wxMediaEditGetStickyStyles, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-line-spacing" " method", (Scheme_Method_Prim *)os_wxMediaEditSetLineSpacing, 1, 1));
@@ -7967,7 +7967,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-end-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetEndPosition, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-start-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetStartPosition, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetPosition, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFlattenedText, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFlattenedTextUTF8, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "put-file" " method", (Scheme_Method_Prim *)os_wxMediaEditPutFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaEditAfterEditSequence, 0, 0));

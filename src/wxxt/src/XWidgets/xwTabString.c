@@ -12,56 +12,112 @@
 #include "xwTabString.h"
 #include "wxAllocColor.h"
 
+extern int scheme_utf8_decode_all(unsigned char *, int, unsigned int *, int);
+
+static int xdoDraw(measure, font,
+		   display, drawable, gc, x, y, string, length, image
 #ifdef WX_USE_XFT
-int wxXftTextWidth(Display *dpy, XftFont *fontinfo, char *p, int len)
-{
-  XGlyphInfo overall;
-
-  XftTextExtents8(dpy, fontinfo, p, len, &overall);
-
-  return overall.xOff;
-}
+		   , xfont, draw, col
 #endif
-
-static void xdoDraw(display, drawable, gc, x, y, string, length, image
+		   )
+ int measure;
+ XFontStruct *font;
+ Display *display;
+ Drawable drawable;
+ GC gc;
+ int x;
+ int y;
+ String string;
+ int length;
 #ifdef WX_USE_XFT
-		    , xfont, draw, col
-#endif
-		    )
-     Display *display;
-     Drawable drawable;
-     GC gc;
-     int x;
-     int y;
-     String string;
-     int length;
-#ifdef WX_USE_XFT
-     wxExtFont xfont;
-     XftDraw *draw;
-     XftColor *col;
+ wxExtFont xfont;
+ XftDraw *draw;
+ XftColor *col;
 #endif
 {
+# define WXTAB_BUF_SIZE 64
+  unsigned int *us, usbuf[WXTAB_BUF_SIZE];
+  long ulen;
+  int width = 0;
+
+  ulen = scheme_utf8_decode_all(string, length, NULL, '?');
+  if (ulen <= WXTAB_BUF_SIZE)
+    us = usbuf;
+  else
+    us = (unsigned int *)XtMalloc(ulen * sizeof(unsigned int));
+  ulen = scheme_utf8_decode_all(string, length, us, '?');
+
 #ifdef WX_USE_XFT
-  if (xfont) {
-    if (gc) {
-      XFillRectangle(display, drawable, gc, x, y - xfont->ascent,
-		     wxXftTextWidth(display, xfont, string, length),
-		     xfont->ascent + xfont->descent);
-    }
-    XftDrawString8(draw, col, xfont, x, y, string, length);
-  } else 
+  if (!xfont)
 #endif
     {
-      if (image)
-	XDrawImageString(display, drawable, gc, x, y, string, length);
-      else
-	XDrawString(display, drawable, gc, x, y, string, length);
+      /* Squash 32-bit encoding into 16-bit encoding.
+	 Since we overwrite te array, it's important
+	 to start at position 0 and go up: */
+      int i, v;
+      for (i = 0; i < ulen; i++) {
+	if (us[i] > 0xFFFF)
+	  v = '?';
+	else
+	  v = us[i];
+	((XChar2b *)us)[i].byte1 = v & 0xff;
+	((XChar2b *)us)[i].byte2 = v >> 8;
+      }
     }
-}
+
+  if (measure
 #ifdef WX_USE_XFT
-# define doDraw xdoDraw
+      || gc
+#endif
+      ) {
+#ifdef WX_USE_XFT
+    if (xfont) {
+      XGlyphInfo overall;
+      
+      XftTextExtents32(display, xfont, us, ulen, &overall);
+      
+      width = overall.xOff;
+    } else
+#endif
+      {
+	width = XTextWidth16(font, (XChar2b *)us, ulen);
+      }
+  }
+
+  if (!measure) {
+#ifdef WX_USE_XFT
+    if (xfont) {
+      if (gc) {
+	XFillRectangle(display, drawable, gc, x, y - xfont->ascent,
+		       width, xfont->ascent + xfont->descent);
+      }
+      XftDrawString32(draw, col, xfont, x, y, us, ulen);
+    } else 
+#endif
+      {
+	if (image)
+	  XDrawImageString16(display, drawable, gc, x, y, (XChar2b*)us, ulen);
+	else
+	  XDrawString16(display, drawable, gc, x, y, (XChar2b*)us, ulen);
+      }
+  }
+
+  if (us != usbuf)
+    XtFree((char *)us);
+
+  return width;
+}
+
+#ifdef WX_USE_XFT
+# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(0, 0, dpy, d, gc, x, y, s, len, i, xf, dw, c)
 #else
-# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(dpy, d, gc, x, y, s, len, i)
+# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(0, 0, dpy, d, gc, x, y, s, len, i)
+#endif
+
+#ifdef WX_USE_XFT
+# define wxXftTextWidth(dpy, font, s, len, xfont) xdoDraw(1, font, dpy, 0, 0, 0, 0, s, len, 0, xfont, 0, 0)
+#else
+# define wxXftTextWidth(dpy, font, s, len, xfont) xdoDraw(1, font, dpy, 0, 0, 0, 0, s, len, 0) 
 #endif
 
 /*
@@ -157,23 +213,13 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, xfont
 	p = ep + 1;
       } else if (ap) {
 	doDraw(display, drawable, gc, x+tx, y, p, ap - p, image, xfont, draw, &col);
-#ifdef WX_USE_XFT	
-	if (xfont) 
-	  tx += wxXftTextWidth(display, xfont, p, ap - p);
-	else
-#endif
-	  tx += XTextWidth(font, p, ap - p);
+	tx += wxXftTextWidth(display, font, p, ap - p, xfont);
 	length -= ap - p + 1;
 	p = ap + 1;
 	if (length) {
 	  /* Underline next */
 	  int ww;
-#ifdef WX_USE_XFT	
-	  if (xfont) 
-	    ww = wxXftTextWidth(display, xfont, p, 1);
-	  else
-#endif
-	    ww = XTextWidth(font, p, 1);
+	  ww = wxXftTextWidth(display, font, p, 1, xfont);
 	  doDraw(display, drawable, gc, x+tx, y, p, 1, image, xfont, draw, &col);
 	  if (line && (*p != '&')) {
 #ifdef WX_USE_XFT	
@@ -327,12 +373,7 @@ XfwfTextWidth(display, font, xfont, str, length, tabs)
       length -= ep - p + 1;
       p = ep + 1;
     } else {
-#ifdef WX_USE_XFT
-      if (xfont)
-	rc = wxXftTextWidth(display, xfont, p, length);
-      else
-#endif
-	rc = XTextWidth(font, p, length);
+      rc = wxXftTextWidth(display, font, p, length, xfont);
       if (c)
 	XtFree(c);
       if (rc < 0) return rc; else return rc + tx;

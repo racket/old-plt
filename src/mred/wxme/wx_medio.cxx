@@ -167,6 +167,22 @@ long wxMediaStreamInFileBase::Read(char *data, long len)
 
 /****************************************************************/
 
+void wxMediaStreamOutBase::Write(char *data, long len, int delta)
+{
+#ifdef MZ_PRECISE_GC
+  if (delta) {
+    char *d;
+    d = new WXGC_ATOMIC char[len];
+    memcpy(d, data + delta);
+    delta = 0;
+    data = d;
+  }
+#endif
+  Write(data + delta, len);
+}
+
+/****************************************************************/
+
 wxMediaStreamOutFileBase::wxMediaStreamOutFileBase(Scheme_Object *s)
 {
   f = s;
@@ -193,10 +209,15 @@ Bool wxMediaStreamOutFileBase::Bad(void)
 
 void wxMediaStreamOutFileBase::Write(char *data, long len)
 {
+  Write(data, len, 0);
+}
+
+void wxMediaStreamOutFileBase::Write(char *data, long len, int delta)
+{
   if (len <= 0)
     return;
 
-  scheme_put_string("write in editor-stream-out%", f, data, 0, len, 0);
+  scheme_put_string("write in editor-stream-out%", f, data, delta, len, 0);
 }
 
 /****************************************************************/
@@ -295,7 +316,7 @@ Bool wxMediaStreamOutStringBase::Bad(void)
   return bad;
 }
 
-void wxMediaStreamOutStringBase::Write(char *data, long l)
+void wxMediaStreamOutStringBase::Write(char *data, long l, int delta)
 {
   if (l + pos > alloc) {
     char *old = a_string;
@@ -305,10 +326,15 @@ void wxMediaStreamOutStringBase::Write(char *data, long l)
     memcpy(a_string, old, len);
   }
 
-  memcpy(a_string + pos, data, l);
+  memcpy(a_string + pos, data + delta, l);
   pos += l;
   if (len < pos)
     len = pos;
+}
+
+void wxMediaStreamOutStringBase::Write(char *data, long l)
+{
+  Write(data, l, 0);
 }
 
 /****************************************************************/
@@ -693,13 +719,13 @@ wxMediaStreamOut *wxMediaStreamOut::PutFixed(long v)
   return this;
 }
 
-wxMediaStreamOut* wxMediaStreamOut::Put(long n, char *str)
+wxMediaStreamOut* wxMediaStreamOut::Put(long n, char *str, int ds)
 {
   Put(n);
 
   Typeset(st_STRING);
 
-  f->Write(str, n);
+  f->Write(str, n, ds);
 
   return this;
 }

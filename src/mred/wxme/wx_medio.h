@@ -22,6 +22,7 @@ class wxMediaStreamOutBase : public wxObject
   virtual void Seek(long) = 0;
   virtual Bool Bad(void) = 0;
   virtual void Write(char *data, long len) = 0;
+  void Write(char *data, long len, int delta);
 };
 
 /*******************************************************************/
@@ -51,6 +52,7 @@ class wxMediaStreamOutFileBase : public wxMediaStreamOutBase
   void Seek(long);
   Bool Bad(void);
   void Write(char *data, long len);
+  void Write(char *data, long len, int delta);
 };
 
 /*******************************************************************/
@@ -88,6 +90,7 @@ class wxMediaStreamOutStringBase : public wxMediaStreamOutBase
   void Seek(long);
   Bool Bad(void);
   void Write(char *data, long len);
+  void Write(char *data, long len, int delta);
 };
 
 /*******************************************************************/
@@ -216,7 +219,7 @@ class wxMediaStreamOut : public wxMediaStream
  public:
   wxMediaStreamOut(wxMediaStreamOutBase *s);
   
-  wxMediaStreamOut* Put(long n, char *str);
+  wxMediaStreamOut* Put(long n, char *str, int ds = 0);
   wxMediaStreamOut* Put(char *);
   wxMediaStreamOut* Put(long);
   wxMediaStreamOut* Put(short);

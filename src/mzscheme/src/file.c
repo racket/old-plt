@@ -951,7 +951,7 @@ static int has_null(const char *s, long l)
 
 static int bad_utf8(const char *s, long l)
 {
-  return (scheme_utf8_decode((const unsigned char *)s, NULL, 0, l, 0, 0, 0) < 0);
+  return (scheme_utf8_decode_all((const unsigned char *)s, l, NULL, 0) < 0);
 }
 
 static void raise_null_error(const char *name, Scheme_Object *path, const char *mod)

@@ -120,7 +120,7 @@ class wxMediaBuffer : public wxObject
   void InstallCopyBuffer(long time, wxStyleList *sl);
   void DoBufferPaste(long time, Bool local = FALSE);
   virtual void InsertPasteSnip(wxSnip *snip, wxBufferData *) = 0;
-  virtual void InsertPasteString(char *str) = 0;
+  virtual void InsertPasteString(wxchar *str) = 0;
 
   void PerformUndos(wxChangeRecord **, Bool redos);
   void PerformUndoList(wxList *);
@@ -180,7 +180,8 @@ class wxMediaBuffer : public wxObject
   virtual void CopySelfTo(wxMediaBuffer *b);
   virtual float GetDescent(void) = 0;
   virtual float GetSpace(void) = 0;
-  virtual char *GetFlattenedText(long *got = NULL) = 0;
+  virtual wxchar *GetFlattenedText(long *got = NULL) = 0;
+  virtual char *GetFlattenedTextUTF8(long *got = NULL);
 
   void GlobalToLocal(float *x, float *y);
   void LocalToGlobal(float *x, float *y);

@@ -256,16 +256,16 @@ void wxMediaSnip::SizeCacheInvalid(void)
     me->SizeCacheInvalid();
 }
 
-char *wxMediaSnip::GetText(long offset, long num, Bool flat, long *got)
+wxchar *wxMediaSnip::GetText(long offset, long num, Bool flat, long *got)
 {
   if (offset >= 1 || !num) {
     if (got) *got = 0;
-    return "";
+    return wx_empty_wxstr;
   }
 
   if (!flat) {
-    char *s;
-    s = new char[2];
+    wxchar *s;
+    s = new wxchar[2];
     s[0] = '.';
     s[1] = 0;
     if (got) *got = 1;
@@ -273,7 +273,7 @@ char *wxMediaSnip::GetText(long offset, long num, Bool flat, long *got)
   } else if (me)
     return me->GetFlattenedText(got);
   else
-    return "";
+    return wx_empty_wxstr;
 }
 
 

@@ -497,18 +497,22 @@ public:
   XtTimerCallbackProc callback;
   XtPointer data;
   int ok;
+  Widget wgt;
 
-  wxXtTimer(XtTimerCallbackProc c, XtPointer d);
+  wxXtTimer(Widget w, XtTimerCallbackProc c, XtPointer d);
+
+  Bool Start(int millisec = -1, Bool one_shot = FALSE);
 
   void Stopped() { ok = 0; }
 
   void Notify(void);
 };
 
-wxXtTimer::wxXtTimer(XtTimerCallbackProc c, XtPointer d)
+wxXtTimer::wxXtTimer(Widget w, XtTimerCallbackProc c, XtPointer d)
 : wxTimer()
 {
   callback = c;
+  wgt = w;
   data = d;
   ok = 1;
 }
@@ -524,6 +528,24 @@ void wxXtTimer::Notify(void) {
     callback(data, NULL);
 }
 
+Bool wxXtTimer::Start(int millisec, Bool one_shot)
+{
+  Widget parent;
+
+  /* Only start the timer if the context is consistnt with
+     the original widget, the context is still running,
+     etc. */
+  for (parent = wgt; XtParent(parent); parent = XtParent(parent)) {
+  }
+
+  if (context
+      && !((MrEdContext *)context)->killed
+      && ((MrEdContext *)context)->finalized
+      && (((MrEdContext *)context)->finalized->toplevel == parent)) {
+    return wxTimer::Start(millisec, one_shot);
+  }
+  return FALSE;
+}
 
 extern "C" {
 
@@ -545,13 +567,14 @@ extern "C" {
 #endif
     }
   
-  long wxAppAddTimeOut(XtAppContext, unsigned long interval, 
-		       XtTimerCallbackProc callback, XtPointer data)
+  long wxAppAddTimeOut(XtAppContext app_ctx, unsigned long interval, 
+		       XtTimerCallbackProc callback, XtPointer data,
+		       Widget w)
     {
       wxTimer *t;
       long result;
 
-      t = new wxXtTimer(callback, data);
+      t = new wxXtTimer(w, callback, data);
       t->Start(interval, TRUE);
 #ifdef MZ_PRECISE_GC
       result = (long)GC_malloc_immobile_box(t);

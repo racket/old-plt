@@ -42,7 +42,7 @@ Atom ATOM(char *atom)
 #endif
 #define VALUE_TYPE void*
 
-Atom xa_text, xa_targets;
+Atom xa_utf8, xa_text, xa_targets;
 
 static wxFrame *clipboard_frame;
 static wxFrame *get_clipboard_frame;
@@ -76,6 +76,7 @@ void wxInitClipboard(void)
     wxTheClipboard = new wxClipboard;
   }
 
+  xa_utf8 = ATOM("UTF-8");
   xa_text = ATOM("TEXT");
   xa_targets = ATOM("TARGETS");
 }
@@ -129,7 +130,7 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
       count = 2;
       cb->receivedTargets = new Atom[2];
       ((Atom *)cb->receivedTargets)[0] = XA_STRING;
-      ((Atom *)cb->receivedTargets)[1] = xa_text;
+      ((Atom *)cb->receivedTargets)[1] = xa_utf8;
       extra = 0;
     }
 
@@ -153,10 +154,12 @@ static Boolean wxConvertClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection),
 	break;
       if (xa == xa_text && *target == XA_STRING)
 	break;
+      if (xa == xa_utf8 && *target == XA_STRING)
+	break;
     }
     if (i < 0)
       return FALSE;
-  } else if (*target != xa_text && *target != XA_STRING)
+  } else if (*target != xa_text && *target != xa_utf8 && *target != XA_STRING)
     return FALSE;
 
   *type_return = XA_STRING;
@@ -373,7 +376,8 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
       if (((Atom *)receivedTargets)[i] == xa)
 	break;
       else if (((Atom *)receivedTargets)[i] == XA_STRING
-	       && xa == xa_text) {
+	       && (xa == xa_text
+		   || xa == xa_utf8)) {
 	xa = XA_STRING;
 	break;
       }

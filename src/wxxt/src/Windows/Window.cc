@@ -48,10 +48,13 @@
 #define  Uses_ScrollbarWidget
 #include "widgets.h"
 
+#include <X11/Xatom.h>
 #include <X11/keysym.h> // needed for IsFunctionKey, etc.
 #ifdef WX_USE_XFT
 # include <X11/Xft/Xft.h>
 #endif
+
+static Atom utf8_atom = 0;
 
 extern void wxSetSensitive(Widget, Bool enabled);
 
@@ -239,7 +242,15 @@ void wxWindow::SetTitle(char *title)
     if (!X->frame) // forbid, if no widget associated
 	return;
 
-    XtVaSetValues(X->frame, XtNtitle, title, XtNiconName, title, NULL);
+    if (!utf8_atom) {
+      utf8_atom = XInternAtom(XtDisplay(wxAPP_TOPLEVEL), "UTF-8", FALSE);
+    }
+
+    XtVaSetValues(X->frame, 
+		  XtNtitle, title, 
+		  XtNiconName, title, 
+		  XtNtitleEncoding, utf8_atom,
+		  NULL);
 }
 
 //-----------------------------------------------------------------------------

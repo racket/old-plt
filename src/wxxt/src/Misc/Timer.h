@@ -32,8 +32,10 @@
 
 class wxTimer : public wxObject {
 public:
-    wxTimer(void);
+    wxTimer(void *ctx = NULL);
     ~wxTimer(void);
+
+    void SetContext(void *ctx);
 
     int   Interval(void) { return interval; };
     Bool  Start(int millisec = -1, Bool one_shot = FALSE);

@@ -1416,7 +1416,7 @@ static int HandleMotionEvent(MenuWidget mw, XMotionEvent *ev)
 	  DisplayMenu(mw, mw->menu.state);
 
 	  ms->timer = wxAppAddTimeOut(XtWidgetToApplicationContext((Widget)mw),
-				      100, timer_callback, mw);
+				      100, timer_callback, mw, (Widget)mw);
 	}
       }
       return 0;

@@ -3966,7 +3966,7 @@ static Scheme_Object *os_wxMediaBufferSaveFile(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMediaBufferGetFlattenedText(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaBufferGetFlattenedTextUTF8(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -3981,7 +3981,7 @@ static Scheme_Object *os_wxMediaBufferGetFlattenedText(int n,  Scheme_Object *p[
   
 
   
-  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedText(x0));
+  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedTextUTF8(x0));
 
   
   
@@ -5481,7 +5481,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "load-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferNoLoadFile, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-port" " method", (Scheme_Method_Prim *)os_wxMediaBufferInsertPort, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "save-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferSaveFile, 0, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFlattenedText, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFlattenedTextUTF8, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "put-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferPutFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "after-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaBufferAfterEditSequence, 0, 0));

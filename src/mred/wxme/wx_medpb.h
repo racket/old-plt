@@ -6,7 +6,7 @@ class wxMediaPasteboard : public wxMediaBuffer
  protected:
   Bool ReadInsert(wxSnip *snip);
   void InsertPasteSnip(wxSnip *snip, wxBufferData *);
-  void InsertPasteString(char *str);
+  void InsertPasteString(wxchar *str);
  public:
   wxMediaPasteboard();
   ~wxMediaPasteboard();
@@ -44,7 +44,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   void CopySelfTo(wxMediaBuffer *b);
   float GetDescent(void);
   float GetSpace(void);
-  char *GetFlattenedText(long *got=NULL);
+  wxchar *GetFlattenedText(long *got=NULL);
   void GetCenter(float *x, float *y);
 
   void Clear();

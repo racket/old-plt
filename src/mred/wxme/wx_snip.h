@@ -174,8 +174,9 @@ class wxSnip : public wxObject
 		    int show_caret);
   virtual void Split(long position, wxSnip **first, wxSnip **second);
   virtual wxSnip *MergeWith(wxSnip *pred);
-  virtual void GetTextBang(char *s, long offset, long num, long dt);
-  virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
+  virtual void GetTextBang(wxchar *s, long offset, long num, long dt);
+  virtual wxchar *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
+  virtual char *GetTextUTF8(long offset, long num, Bool flattened = FALSE, long *got=NULL);
   virtual wxSnip *Copy();
   virtual void Write(wxMediaStreamOut *f);
 
@@ -212,11 +213,12 @@ class wxTextSnip : public wxInternalSnip
 
  public:
   long dtext;
-  char *buffer;
+  wxchar *buffer;
 
   long allocated;
 
   wxTextSnip(long allocsize = 0); 
+  wxTextSnip(wxchar *initstring, long len); 
   wxTextSnip(char *initstring, long len); 
   ~wxTextSnip(); 
 
@@ -234,10 +236,11 @@ class wxTextSnip : public wxInternalSnip
   virtual void Split(long position, wxSnip **first, wxSnip **second);
   virtual wxSnip *MergeWith(wxSnip *pred);
 
-  virtual void Insert(char *str, long len, long pos = 0);
+  virtual void Insert(wxchar *str, long len, long pos = 0);
+  virtual void InsertUTF8(char *str, long len, long pos = 0);
   virtual void Read(long len, wxMediaStreamIn *f);
-  virtual void GetTextBang(char *s, long offset, long num, long dt);
-  virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
+  virtual void GetTextBang(wxchar *s, long offset, long num, long dt);
+  virtual wxchar *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
   virtual wxSnip *Copy(void);
   virtual void Write(wxMediaStreamOut *f);
 
@@ -409,7 +412,7 @@ class wxMediaSnip : public wxInternalSnip
 
   virtual void SizeCacheInvalid(void);
 
-  virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got = NULL);
+  virtual wxchar *GetText(long offset, long num, Bool flattened = FALSE, long *got = NULL);
 
   virtual void GetExtent(wxDC *dc, 
 			 float x, float y,

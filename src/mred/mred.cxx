@@ -35,9 +35,7 @@
 #include "wx_menu.h"
 #include "wx_dcps.h"
 #include "wx_clipb.h"
-#ifdef USE_SENORA_GC
-# include "wx_types.h"
-#endif
+#include "wx_types.h"
 #ifdef wx_mac
 # include "simpledrop.h"
 #endif
@@ -414,6 +412,20 @@ MrEdContext *MrEdGetContext(wxObject *w)
     return mred_only_context;
   else
     return (MrEdContext *)scheme_get_param(scheme_config, mred_eventspace_param);
+}
+
+void *MrEdGetWindowContext(wxWindow *w)
+{
+  while (1) {
+    if (wxSubType(w->__type, wxTYPE_FRAME))
+      return MrEdGetContext(w);
+#if !defined(wx_xt) && !defined(wx_mac)
+    if (wxSubType(w->__type, wxTYPE_DIALOG))
+      return MrEdGetContext(w);
+#endif
+
+    w = w->GetParent();
+  }
 }
 
 void *wxGetContextForFrame()
@@ -1663,23 +1675,28 @@ static void user_break_hit(int ignore)
 /*                                wxTimer                                   */
 /****************************************************************************/
 
-wxTimer::wxTimer(void)
+wxTimer::wxTimer(void *ctx)
 #ifdef wx_xt
  : wxObject(WXGC_NO_CLEANUP)
 #endif
 {
-  void *ctx;
-
   __type = wxTYPE_TIMER;
 
   next = prev = NULL;
 
-  ctx = (void *)MrEdGetContext();
+  if (!ctx)
+    ctx = (void *)MrEdGetContext();
+
   context = ctx;
 }
 
 wxTimer::~wxTimer(void)
 {
+}
+
+void wxTimer::SetContext(void *ctx)
+{
+  context = ctx;
 }
 
 Bool wxTimer::Start(int millisec, Bool _one_shot)

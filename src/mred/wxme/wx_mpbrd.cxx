@@ -2269,14 +2269,14 @@ void wxMediaPasteboard::GetCenter(float *fx, float *fy)
 
 }
 
-char *wxMediaPasteboard::GetFlattenedText(long *got)
+wxchar *wxMediaPasteboard::GetFlattenedText(long *got)
 {
   wxSnip *snip;
-  char *t, *s, *old;
+  wxchar *t, *s, *old;
   long p, alloc, offset;
 
   alloc = 100;
-  s = new char[alloc];
+  s = new WXGC_ATOMIC wxchar[alloc];
 
   snip = snips;
 
@@ -2285,14 +2285,14 @@ char *wxMediaPasteboard::GetFlattenedText(long *got)
   while (snip) {
     t = snip->GetText(0, snip->count, TRUE);
 
-    offset = strlen(t);
+    offset = wxstrlen(t);
     if (p + offset >= alloc) {
       alloc = 2 * (p + offset);
       old = s;
-      s = new char[alloc];
-      memcpy(s, old, p);
+      s = new WXGC_ATOMIC wxchar[alloc];
+      memcpy(s, old, p * sizeof(wxchar));
     }
-    memcpy(s + p, t, offset);
+    memcpy(s + p, t, offset * sizeof(wxchar));
     p += offset;
 
     snip = snip->next;
@@ -2433,7 +2433,7 @@ void wxMediaPasteboard::InsertPasteSnip(wxSnip *snip, wxBufferData *data)
   SetSnipData(snip, data);
 }
 
-void wxMediaPasteboard::InsertPasteString(char *str)
+void wxMediaPasteboard::InsertPasteString(wxchar *str)
 {
   wxTextSnip *snip;
 
@@ -2442,7 +2442,7 @@ void wxMediaPasteboard::InsertPasteString(char *str)
   if (!snip->style) {
     snip->style = styleList->BasicStyle();
   }
-  snip->Insert(str, strlen(str));
+  snip->Insert(str, wxstrlen(str));
   
   InsertPasteSnip(snip, NULL);
 }

@@ -1653,18 +1653,6 @@ void wxWindowDC::FillPrivateColor(wxColour *c)
 // text and font methods
 //-----------------------------------------------------------------------------
 
-static int str16len(const char *s)
-{
-  int count = 0;
-
-  while (s[0] && s[1]) {
-    count++;
-    s += 2;
-  }
-
-  return count;
-}
-
 #ifdef WX_USE_XFT
 
 static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1700,28 +1688,96 @@ static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 			    8364, 9002, 8747, 8992, 9134, 8993, 9118, 9119,
 			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
 
-static char *XlateSym(const char *text, int dt, int textlen, int use16bit)
+static void XlateSym(unsigned int *text, int dt, int textlen)
 {
-  short *naya;
   int i, v;
-  naya = new short[textlen + 1];
   for (i = 0; i < textlen; i++) {
-    if (use16bit) {
-      v = *(short *)&(((XChar2b *)text)[dt + i]);
-    } else
-      v = ((unsigned char *)text)[dt + i];
+    v = text[dt + i];
     if ((v < 256) && symbol_map[v])
       v = symbol_map[v];
-    naya[i] = v;
+    text[dt + i] = v;
   }
-  naya[textlen] = 0;
-  
-  return (char *)naya;
 }
 
 #endif
 
-void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
+extern "C" {
+  int scheme_utf8_decode(const unsigned char *s, int start, int len, 
+			 unsigned int *us, int dstart, int dlen,
+			 long *ipos, char utf16, int permissive);
+  int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, 
+			     int permissive);
+};
+
+static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ulen, unsigned int *buf, int bufsize, 
+						int isUnicode, int non_xft)
+{
+  unsigned int *us;
+  long ulen;
+
+  if (isUnicode) {
+    us = (unsigned int *)s;
+    for (ulen = ds; us[ulen]; ulen++) {
+    }
+    ulen -= ds;
+    if (ds) {
+      if (ulen <= bufsize)
+	us = buf;
+      else
+	us = new WXGC_ATOMIC unsigned int[ulen];
+      memcpy(us, s + ds, ulen * sizeof(unsigned int));
+    }
+  } else {
+    int length;
+
+    length = strlen(s + ds);
+    
+    ulen = scheme_utf8_decode((const unsigned char *)s, ds, ds + length, NULL, 0, -1, NULL, 0, '?');
+    if (ulen <= bufsize)
+      us = buf;
+    else
+      us = new WXGC_ATOMIC unsigned int[ulen];
+    ulen = scheme_utf8_decode((const unsigned char *)s, ds, ds + length, us, 0, -1, NULL, 0, '?');
+  }
+
+  if (non_xft) {
+    /* Squash 32-bit encoding into 16-bit encoding.
+       Since we overwrite the array, it's important
+       to start at position 0 and go up: */
+    int i, v;
+    XChar2b *dest;
+    
+    if (isUnicode) {
+      if (2 * ulen <= bufsize)
+	dest = (XChar2b *)buf;
+      else
+	dest = new WXGC_ATOMIC XChar2b[ulen];
+    } else
+      dest = (XChar2b *)us;
+
+    for (i = 0; i < ulen; i++) {
+      if (us[i] > 0xFFFF)
+	v = '?';
+      else
+	v = us[i];
+      dest[i].byte1 = v & 0xff;
+      dest[i].byte2 = v >> 8;
+    }
+  }
+
+  *_ulen = ulen;
+  
+  return us;
+}
+
+#define WX_CVT_BUF_SIZE 64
+#ifdef WX_USE_XFT
+# define WX_XFT_ONLY(x) x
+#else
+# define WX_XFT_ONLY(x) 1
+#endif
+
+void wxWindowDC::DrawText(char *orig_text, float x, float y, Bool isUnicode, int dt,
 			  float angle)
 {
   XFontStruct *fontinfo;
@@ -1732,9 +1788,11 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
   int         ascent;
   int         dev_x;
   int         dev_y;
-  int         textlen;
+  long        textlen;
   float       e_scale_x, e_scale_y;
   float       ca, sa;
+  unsigned int cvt_buf[WX_CVT_BUF_SIZE], *text;
+  
 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
@@ -1780,22 +1838,23 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 
   dev_x = XLOG2DEV(x);
   dev_y = YLOG2DEV(y);
-  textlen = use16bit ? str16len((char *)((XChar2b *)text + dt)) : strlen(text + dt);
 
   {
     float tw, th, td, ts;
-    GetTextExtent(text, &tw, &th, &td, &ts, current_font, use16bit, dt);
+    GetTextExtent(orig_text, &tw, &th, &td, &ts, current_font, isUnicode, dt);
     cx = (tw * e_scale_x);
     cy = (th * e_scale_y);
     ascent = (int)((th - td) * e_scale_y);
   }
 
+  text = convert_to_drawable_format(orig_text, dt, &textlen, cvt_buf, WX_CVT_BUF_SIZE, 
+				    isUnicode, WX_XFT_ONLY(!xfontinfo));
+  dt = 0;
+
 # ifdef WX_USE_XFT
   if (xfontinfo) {
     if ((current_font->GetFamily() == wxSYMBOL)) {
-      text = XlateSym(text, dt, textlen, use16bit);
-      dt = 0;
-      use16bit = 1;
+      XlateSym(text, dt, textlen);
     }
   }
 #endif
@@ -1865,10 +1924,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	  this_time = xfontinfo;
 	  this_time_no_rotate = no_rotate;
 	  while (1) {
-	    if (use16bit)
-	      cval = ((XftChar16 *)text)[dt];
-	    else
-	      cval = text[dt];
+	    cval = text[dt];
 	    if (!wxXftCharExists(DPY, this_time, cval)) {
 	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, scale_y, angle);
 	      if (!this_time) {
@@ -1889,18 +1945,12 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	  this_time_no_rotate = no_rotate;
 	}
 
-	if (use16bit)
-	  XftDrawString16(XFTDRAW, &col, this_time, dev_x+xasc, dev_y+ascent, ((XftChar16 *)text) + dt, partlen);
-	else
-	  XftDrawString8(XFTDRAW, &col, this_time, dev_x+xasc, dev_y+ascent, (XftChar8 *)(text + dt), partlen);
+	XftDrawString32(XFTDRAW, &col, this_time, dev_x+xasc, dev_y+ascent, ((XftChar32 *)text) + dt, partlen);
 
 	if (partlen < textlen) {
 	  XGlyphInfo overall;
 	  double w;
-	  if (use16bit)
-	    XftTextExtents16(DPY, this_time_no_rotate, ((XftChar16 *)text) + dt, partlen, &overall);
-	  else
-	    XftTextExtents8(DPY, this_time_no_rotate, (XftChar8 *)(text + dt), partlen, &overall);
+	  XftTextExtents32(DPY, this_time_no_rotate, ((XftChar32 *)text) + dt, partlen, &overall);
 	  w = overall.xOff;
 	  if (angle != 0.0) {
 	    xasc += (int)((double)w * ca);
@@ -1920,10 +1970,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 #endif
     {
       if ((angle == 0.0) && (current_text_bgmode == wxSOLID)) {
-	if (use16bit)
-	  XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
-	else
-	  XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+	XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
       } else {
 	if (angle != 0.0) {
 	  double offset;
@@ -1945,16 +1992,13 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	  /* FIXME: this isn't right for wide characters. */
 	  offset = 0.0;
 	  for (i = 0; i < textlen; i++) {
-	    int charno = (unsigned char)text[dt];
+	    int charno = text[dt];
 	    int char_metric_offset = charno - fontinfo->min_char_or_byte2;
 	  
 	    the_x = (int)((double)dev_x + offset * ca);
 	    the_y = (int)((double)dev_y - offset * sa);
 	    
-	    if (use16bit)
-	      XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, (XChar2b *)text + dt, 1);
-	    else
-	      XDrawString(DPY, DRAWABLE, TEXT_GC, the_x, the_y, text + dt, 1);
+	    XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, (XChar2b *)text + dt, 1);
 	    dt++;
 	  	    
 	    offset += (double)(zfontinfo->per_char ?
@@ -1964,10 +2008,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 
 	  XSetFont(DPY, TEXT_GC, zfontinfo->fid);
 	} else {
-	  if (use16bit)
-	    XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
-	  else
-	    XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
+	  XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
 	}
       }
     }
@@ -2004,17 +2045,19 @@ float wxWindowDC::GetCharWidth(void)
   return w;
 }
 
-void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_descent,
+void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *_descent,
 			       float *_topspace, wxFont *_font,
-			       Bool use16bit, int dt)
+			       Bool isUnicode, int dt)
 {
   wxFont *font_to_use;
-  int         ascent, descent, textlen;
+  int         ascent, descent;
+  long        textlen;
   XFontStruct *fontinfo;
 #ifdef WX_USE_XFT
   wxFontStruct *xfontinfo;
 #endif
   float w, h;
+  unsigned int cvt_buf[WX_CVT_BUF_SIZE], *s;
 
   font_to_use = _font ? _font : current_font;
   if (!font_to_use) {
@@ -2022,11 +2065,6 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
     *_w = *_h = -1.0;
     return;
   }
-
-  if (use16bit)
-    textlen = str16len(s + dt);
-  else
-    textlen = strlen(s + dt);
 
 #ifdef WX_USE_XFT
   xfontinfo = (wxFontStruct*)font_to_use->GetInternalAAFont(scale_x, scale_y);
@@ -2036,6 +2074,10 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 #endif
     fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x, scale_y);
 
+  s = convert_to_drawable_format(orig_s, dt, &textlen, cvt_buf, WX_CVT_BUF_SIZE, 
+				 isUnicode, WX_XFT_ONLY(!xfontinfo));
+  dt = 0;
+
 # ifdef WX_USE_XFT
   if (xfontinfo) {
     XGlyphInfo overall;
@@ -2043,9 +2085,7 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
     int partlen, try_sub;
     
     if ((font_to_use->GetFamily() == wxSYMBOL)) {
-      s = XlateSym(s, dt, textlen, use16bit);
-      dt = 0;
-      use16bit = 1;
+      XlateSym(s, dt, textlen);
     }
     try_sub = font_to_use->HasAASubstitutions();
 
@@ -2057,10 +2097,7 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 	partlen = 1;
 	this_time = xfontinfo;
 	while (1) {
-	  if (use16bit)
-	    cval = ((XftChar16 *)s)[dt];
-	  else
-	    cval = s[dt];
+	  cval = s[dt];
 	  if (!wxXftCharExists(DPY, this_time, cval)) {
 	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, scale_x, scale_y, 0.0);
 	    if (!this_time) {
@@ -2075,10 +2112,7 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 	this_time = xfontinfo;
       }
       
-      if (use16bit)
-	XftTextExtents16(DPY, this_time, ((XftChar16 *)s) + dt, partlen, &overall);
-      else
-	XftTextExtents8(DPY, this_time, (XftChar8 *)(s + dt), partlen, &overall);
+      XftTextExtents32(DPY, this_time, ((XftChar32 *)s) + dt, partlen, &overall);
       w += XDEV2LOGREL(overall.xOff);
 
       textlen -= partlen;
@@ -2093,11 +2127,7 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
       int direction;
       XCharStruct overall;
 
-      if (use16bit)
-	XTextExtents16(fontinfo, (XChar2b *)s + dt, textlen,
-		       &direction, &ascent, &descent, &overall);
-      else
-	XTextExtents(fontinfo, s + dt, textlen,
+      XTextExtents16(fontinfo, (XChar2b *)s + dt, textlen,
 		     &direction, &ascent, &descent, &overall);
       w = XDEV2LOGREL(overall.width);
     }

@@ -17,6 +17,13 @@
 class wxMediaEdit;
 class wxClickback;
 
+typedef unsigned int wxchar;
+extern int wxstrlen(wxchar *s);
+extern wxchar wx_empty_wxstr[1];
+
+void wxme_utf8_decode(char *str, long len, wxchar **us, long *ulen);
+void wxme_utf8_encode(wxchar *us, long ulen, char **s, long *len);
+
 #define wxFOCUS_IMMEDIATE 0
 #define wxFOCUS_DISPLAY 1
 #define wxFOCUS_GLOBAL 2
@@ -200,12 +207,16 @@ class wxMediaEdit : public wxMediaBuffer
   void Insert(char *str);
   void Insert(long len, char *str, long start, long end = -1, Bool scrollOk=TRUE);
   void Insert(long len, char *str);
+  void Insert(wxchar *str, long start, long end = -1, Bool scrollOk = TRUE);
+  void Insert(wxchar *str);
+  void Insert(long len, wxchar *str, long start, long end = -1, Bool scrollOk=TRUE);
+  void Insert(long len, wxchar *str);
   void Insert(wxSnip *snip, long start, long end = -1, Bool scrollOk=TRUE);
   void Insert(wxSnip *snip);
   void Insert(wxList *snips);
   void Insert(wxList *snips, long start, long end = -1);
-  void Insert(unsigned char ascii);
-  void Insert(unsigned char ascii, long start, long end = -1);
+  void Insert(wxchar code_point);
+  void Insert(wxchar code_point, long start, long end = -1);
   void Delete(long start, long end = -1, Bool scrollOk = TRUE);
   void Delete();
   void Erase();
@@ -289,9 +300,14 @@ class wxMediaEdit : public wxMediaBuffer
   long FindScrollLine(float y);
 
   /* Searching */
-  long FindString(char *str, int direction = 1, long start =-1, long end =-1,
+  long FindString(wxchar *str, int direction = 1, long start =-1, long end =-1,
 		  Bool bos = TRUE, Bool caseSens = TRUE);
-  long *FindStringAll(char *str, long *cnt, int direction = 1,
+  long *FindStringAll(wxchar *str, long *cnt, int direction = 1,
+		      long start =-1, long end =-1, Bool bos = TRUE,
+		      Bool caseSens = TRUE);
+  long FindStringUTF8(char *str, int direction = 1, long start =-1, long end =-1,
+		  Bool bos = TRUE, Bool caseSens = TRUE);
+  long *FindStringAllUTF8(char *str, long *cnt, int direction = 1,
 		      long start =-1, long end =-1, Bool bos = TRUE,
 		      Bool caseSens = TRUE);
   long FindNewline(int direction = 1, long start =-1, long end =-1);
@@ -312,11 +328,14 @@ class wxMediaEdit : public wxMediaBuffer
 		       Bool bottomRight=FALSE);
   long GetSnipPosition(wxSnip *thesnip);
 
-  char *GetFlattenedText(long *len = NULL);
-  char *GetText(long start = -1, long end = -1, 
-		Bool flattened = FALSE, Bool forceCR = FALSE,
-		long *got = NULL);
-  unsigned char GetCharacter(long start);
+  wxchar *GetFlattenedText(long *len = NULL);
+  wxchar *GetText(long start = -1, long end = -1, 
+		  Bool flattened = FALSE, Bool forceCR = FALSE,
+		  long *got = NULL);
+  char *GetTextUTF8(long start = -1, long end = -1, 
+		    Bool flattened = FALSE, Bool forceCR = FALSE,
+		    long *got = NULL);
+  wxchar GetCharacter(long start);
 
   Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_SAME, Bool showErrors = TRUE);
   int InsertPort(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool replaceStyles = TRUE);
@@ -551,7 +570,7 @@ class wxMediaEdit : public wxMediaBuffer
 
   wxMediaWordbreakMap *wordBreakMap;
 
-  void _Insert(wxSnip *snip, long len, char *str, wxList *snips,
+  void _Insert(wxSnip *snip, long len, wxchar *str, wxList *snips,
 	       long start, long end = -1, 
 	       Bool scrollOk = TRUE);
   void _Delete(long start, long end, Bool undo, Bool scrollOk);
@@ -597,7 +616,7 @@ class wxMediaEdit : public wxMediaBuffer
   void OneLineInvalid(long);
   void SnipChangedAt(long);
 
-  long _FindStringAll(char *str, int direction,
+  long _FindStringAll(wxchar *str, int direction,
 		      long start, long end, long **positions, 
 		      Bool, Bool, Bool);
   
@@ -629,7 +648,7 @@ class wxMediaEdit : public wxMediaBuffer
  protected:
   Bool ReadInsert(wxSnip *snip);
   void InsertPasteSnip(wxSnip *snip, wxBufferData *);
-  void InsertPasteString(char *str);
+  void InsertPasteString(wxchar *str);
 };
 
 #include "wx_medpb.h"

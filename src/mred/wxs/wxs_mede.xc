@@ -177,13 +177,13 @@
 
 @MACRO bNegAsFalse = (({x} < 0) ? scheme_false : scheme_make_integer({x}))
 
-@ "find-string" : long/bNegAsFalse FindString(string,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
+@ "find-string" : long/bNegAsFalse FindStringUTF8(string,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
 @SET TYPE = long
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(string,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
+@ "find-string-all" : long[]/bReturnList[long.1] FindStringAllUTF8(string,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
 @ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],nnlong?=NULL)
 @ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,float?=NULL,float?=NULL);
@@ -191,8 +191,8 @@
 
 @MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_string(r, <len>, 0))
 
-@ "get-text" : string/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
-@ "get-character" : uchar GetCharacter(nnlong);
+@ "get-text" : string/makeNoCopyString[_x4] GetTextUTF8(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
+@ "get-character" : int GetCharacter(nnlong);
 
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,nnls[start],bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut!,nnlong,nnls[eof]=-1); <> with position

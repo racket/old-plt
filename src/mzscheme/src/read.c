@@ -1273,7 +1273,7 @@ read_list(Scheme_Object *port,
 	  Scheme_Object *indentation)
 {
   Scheme_Object *list = NULL, *last = NULL, *car, *cdr, *pair, *infixed = NULL;
-  int ch, next, got_ch_already = 0;
+  int ch = 0, next, got_ch_already = 0;
   int brackets = local_square_brackets_are_parens;
   int braces = local_curly_braces_are_parens;
   long start, startcol, startline, dotpos, dotcol, dotline;

@@ -99,7 +99,7 @@ static void timer_callback(client_data,timer)XtPointer  client_data;XtIntervalId
       if (((XfwfArrowWidget)self)->xfwfArrow.timer != 0x1)
         wxRemoveTimeOut(((XfwfArrowWidget)self)->xfwfArrow.timer);
       ((XfwfArrowWidget)self)->xfwfArrow.timer = wxAppAddTimeOut(XtWidgetToApplicationContext(self),
-				     ((XfwfArrowWidget)self)->xfwfArrow.repeatDelay, timer_callback, self);
+				     ((XfwfArrowWidget)self)->xfwfArrow.repeatDelay, timer_callback, self, self);
     }
 }
 /*ARGSUSED*/
@@ -297,7 +297,7 @@ static void activate_and_start_timer(self,event,params,num_params)Widget self;XE
       if (((XfwfArrowWidget)self)->xfwfArrow.timer) {
         stop_timer(self, event, params, num_params);
 	((XfwfArrowWidget)self)->xfwfArrow.timer = wxAppAddTimeOut(XtWidgetToApplicationContext(self),
-				 ((XfwfArrowWidget)self)->xfwfArrow.initialDelay, timer_callback, self);
+				 ((XfwfArrowWidget)self)->xfwfArrow.initialDelay, timer_callback, self, self);
       }
     } else
 	push_up(self, event, params, num_params);

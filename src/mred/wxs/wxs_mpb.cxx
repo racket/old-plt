@@ -4921,7 +4921,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMediaPasteboardGetFlattenedText(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaPasteboardGetFlattenedTextUTF8(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -4936,7 +4936,7 @@ static Scheme_Object *os_wxMediaPasteboardGetFlattenedText(int n,  Scheme_Object
   
 
   
-  r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedText(x0));
+  r = WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedTextUTF8(x0));
 
   
   
@@ -6457,7 +6457,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "do-copy" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardDoCopy, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "delete" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardDelete, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "insert" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardInsert, 1, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetFlattenedText, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetFlattenedTextUTF8, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "put-file" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardPutFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-file" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardAfterEditSequence, 0, 0));

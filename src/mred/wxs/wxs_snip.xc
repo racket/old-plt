@@ -66,7 +66,7 @@
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 
-@ "insert" : void Insert(string,nnlong,nnlong=0);
+@ "insert" : void InsertUTF8(string,nnlong,nnlong=0);
 @ "read" : void Read(nnlong,wxMediaStreamIn!);
 
 @END

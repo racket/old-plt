@@ -50,6 +50,38 @@ static wxCursor *iBeam = NULL, *arrow = NULL;
 
 /************************************************************************/
 
+extern "C" {
+  int scheme_utf8_decode_all(const unsigned char *s, int len, unsigned int *us, 
+			     int permissive);
+  int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s);
+};
+
+void wxme_utf8_decode(char *str, long len, wxchar **us, long *ulen)
+{
+  *ulen = scheme_utf8_decode_all((unsigned char *)str, len, NULL, '?');
+  *us = new WXGC_ATOMIC wxchar[*ulen+1];
+  *ulen = scheme_utf8_decode_all((unsigned char *)str, len, *us, '?');
+  (*us)[*ulen] = 0;
+}
+
+void wxme_utf8_encode(wxchar *us, long ulen, char **s, long *len)
+{
+  *len = scheme_utf8_encode_all(us, ulen, NULL);
+  *s = new WXGC_ATOMIC char[*len + 1];
+  *len = scheme_utf8_encode_all(us, ulen, (unsigned char *)*s);
+  (*s)[*len] = 0;
+}
+
+int wxstrlen(wxchar *s)
+{
+  int i;
+  for (i = 0; s[i]; i++) {
+  }
+  return i;
+}
+
+/************************************************************************/
+
 extern void wxMediaIOCheckLSB(void);
 
 const char *(*wxmeExpandFilename)(const char *, const char *, int) = NULL;
@@ -1276,7 +1308,7 @@ Bool wxMediaEdit::GetAnchor(void)
   return anchorStreak;
 }
 
-void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str, wxList *snipsl,
+void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, wxchar *str, wxList *snipsl,
 			  long start, long end, Bool scrollOk)
 {
   long addlen, i, sPos, s, snipStartPos;
@@ -1647,7 +1679,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str, wxList *snipsl,
 	  }
 	  
 	  tabsnip->flags |= wxSNIP_CAN_SPLIT;
-	  tabsnip->Insert("\t", 1, 0);
+	  tabsnip->InsertUTF8("\t", 1, 0);
 	  if (tabsnip->flags & wxSNIP_CAN_SPLIT)
 	    tabsnip->flags -= wxSNIP_CAN_SPLIT;
 
@@ -1753,9 +1785,21 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str, wxList *snipsl,
   return;
 }
 
+void wxMediaEdit::Insert(wxchar *str, long start, long end, Bool scrollOk)
+{
+  _Insert(NULL, wxstrlen(str), str, NULL, start, end, scrollOk);
+}
+
+void wxMediaEdit::Insert(wxchar *str)
+{
+  Insert(str, startpos, endpos);
+}
+
 void wxMediaEdit::Insert(char *str, long start, long end, Bool scrollOk)
 {
-  _Insert(NULL, strlen(str), str, NULL, start, end, scrollOk);
+  int len;
+  len = strlen(str);
+  Insert(len, str, start, end, scrollOk);
 }
 
 void wxMediaEdit::Insert(char *str)
@@ -1763,22 +1807,35 @@ void wxMediaEdit::Insert(char *str)
   Insert(str, startpos, endpos);
 }
 
-void wxMediaEdit::Insert(long len, char *str, long start, long end, Bool scrollOk)
+void wxMediaEdit::Insert(long len, wxchar *str, long start, long end, Bool scrollOk)
 {
   _Insert(NULL, len, str, NULL, start, end, scrollOk);
 }
 
-void wxMediaEdit::Insert(long len, char *str)
+void wxMediaEdit::Insert(long len, wxchar *str)
 {
   _Insert(NULL, len, str, NULL, startpos, endpos);
 }
 
-void wxMediaEdit::Insert(unsigned char ascii, long start, long end)
+void wxMediaEdit::Insert(long len, char *str, long start, long end, Bool scrollOk)
+{
+  long ulen;
+  wxchar *us = NULL;
+  wxme_utf8_decode(str, len, &us, &ulen);
+  _Insert(NULL, ulen, us, NULL, start, end, scrollOk);
+}
+
+void wxMediaEdit::Insert(long len, char *str)
+{
+  Insert(len, str, startpos, endpos);
+}
+
+void wxMediaEdit::Insert(wxchar a_char, long start, long end)
 {
   Bool streak, ifs;
-  unsigned char buffer[2];
+  wxchar buffer[2];
 
-  buffer[0] = ascii;
+  buffer[0] = a_char;
   buffer[1] = 0;
   
   streak = typingStreak;
@@ -1787,15 +1844,15 @@ void wxMediaEdit::Insert(unsigned char ascii, long start, long end)
   EndStreaks();
 
   insertForceStreak = streak;
-  Insert((char *)buffer, start, end);
+  Insert(buffer, start, end);
 
   insertForceStreak = ifs;
   typingStreak = TRUE;
 }
 
-void wxMediaEdit::Insert(unsigned char ascii)
+void wxMediaEdit::Insert(wxchar a_char)
 {
-  Insert(ascii, startpos, endpos);
+  Insert(a_char, startpos, endpos);
 }
 
 void wxMediaEdit::Insert(wxSnip *snip, long start, long end, Bool scrollOk)
@@ -2226,7 +2283,7 @@ void wxMediaEdit::PasteRegionData(wxBufferData *data)
   SetRegionData(readInsertStart, readInsert, data);
 }
 
-void wxMediaEdit::InsertPasteString(char *str)
+void wxMediaEdit::InsertPasteString(wxchar *str)
 {
 #ifdef wx_msw
   /* Change cr/lf to just lf: */
@@ -2246,13 +2303,13 @@ void wxMediaEdit::InsertPasteString(char *str)
   {
     int i;
     for (i = 0; str[i]; i++) {
-      if (((unsigned char *)str)[i] == 160)
+      if (str[i] == 160)
 	str[i] = 32;
     }
   }
 
   Insert(str, readInsert);
-  readInsert += strlen(str);
+  readInsert += wxstrlen(str);
 }
 
 void wxMediaEdit::Paste(long time)
@@ -2293,7 +2350,7 @@ void wxMediaEdit::PasteNext(void)
 void wxMediaEdit::Kill(long time, long start, long end)
 {
   int streak;
-  char *text;
+  wxchar *text;
 
   if ((start < 0) != (end < 0))
     return;
@@ -2396,23 +2453,23 @@ Bool wxMediaEdit::ReallyCanEdit(int op)
 
 /****************************************************************/
 
-char *wxMediaEdit::GetFlattenedText(long *got)
+wxchar *wxMediaEdit::GetFlattenedText(long *got)
 {
   return GetText(-1, -1, TRUE, FALSE, got);
 }
 
-char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long *got)
+wxchar *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long *got)
 {
   wxSnip *snip;
   long count, sPos, p, num, offset, total;
   long alloc;
-  char *s, *t, *old;
+  wxchar *s, *t, *old;
   Bool wl, fl;
 
   if (readLocked) {
     if (got)
       *got = 0;
-    return "";
+    return wx_empty_wxstr;
   }
 
   if (start < 0)
@@ -2428,14 +2485,14 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
   count = end - start;
 
   if (!flatt) {
-    s = new char[count + 1];
+    s = new wxchar[count + 1];
     s[count] = 0;
     alloc = count + 1;
   } else {
     alloc = 2 * count;
     if (!alloc)
       alloc = 2;
-    s = new char[alloc];
+    s = new wxchar[alloc];
     s[0] = 0;
   }
 
@@ -2460,7 +2517,7 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
     int add_newline;
 
     t = snip->GetText(offset, num, TRUE);
-    p = strlen(t);
+    p = wxstrlen(t);
     if (forceCR && (snip->flags & wxSNIP_NEWLINE) 
 	  && !(snip->flags & wxSNIP_HARD_NEWLINE)) {
       p++;
@@ -2469,9 +2526,9 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
       add_newline = 0;
     if (p >= alloc) {
       alloc = 2 * p;
-      s = new char[alloc];
+      s = new wxchar[alloc];
     }
-    memcpy(s, t, p - add_newline);
+    memcpy(s, t, (p - add_newline) * sizeof(wxchar));
     if (add_newline)
       s[p - 1] = '\n';
   }
@@ -2483,21 +2540,21 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
       /* Precise GC: can't write directly to s + p. (And we don't
 	 want to chage the interface to take a string offset.) */
       if (num < 256) {
-	char buffer[256];
+	wxchar buffer[256];
 	snip->GetTextBang(buffer, 0, num, 0);
-	memcpy(s + p, buffer, num);
+	memcpy(s + p, buffer, num * sizeof(wxchar));
       } else {
-	char *ss;
-	ss = new char[num];
+	wxchar *ss;
+	ss = new wxchar[num];
 	snip->GetTextBang(ss, 0, num, 0);
-	memcpy(s + p, ss, num);
+	memcpy(s + p, ss, num * sizeof(wxchar));
       }
       p += num;
     } else {
       int add_newline;
 
       t = snip->GetText(0, num, TRUE);
-      offset = strlen(t);
+      offset = wxstrlen(t);
 
       if (forceCR && (snip->flags & wxSNIP_NEWLINE) 
 	  && !(snip->flags & wxSNIP_HARD_NEWLINE)) {
@@ -2509,11 +2566,11 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
       if (p + offset >= alloc) {
 	alloc = 2 * (p + offset);
 	old = s;
-	s = new char[alloc];
-	memcpy(s, old, p);
+	s = new wxchar[alloc];
+	memcpy(s, old, p * sizeof(wxchar));
       }
 
-      memcpy(s + p, t, offset);
+      memcpy(s + p, t, offset * sizeof(wxchar));
       if (add_newline)
 	s[p + offset - 1] = '\n';
       p += offset;
@@ -2534,11 +2591,26 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
   return s;
 }
 
-unsigned char wxMediaEdit::GetCharacter(long start)
+char *wxMediaEdit::GetTextUTF8(long start, long end, Bool flatt, Bool forceCR, long *_got)
+{
+  wxchar *s;
+  long got, len;
+  char *r = NULL;
+
+  s = GetText(start, end, flatt, forceCR, &got);
+  wxme_utf8_encode(s, got, &r, &len);
+
+  if (_got)
+    *_got = len;
+
+  return r;
+}
+
+wxchar wxMediaEdit::GetCharacter(long start)
 {
   wxSnip *snip;
   long sPos;
-  unsigned char buffer[2];
+  wxchar buffer[2];
 
   if (readLocked)
     return 0;
@@ -2549,7 +2621,7 @@ unsigned char wxMediaEdit::GetCharacter(long start)
     return 0;
 
   snip = FindSnip(start, +1, &sPos);
-  snip->GetTextBang((char *)buffer, start - sPos, 1, 0);
+  snip->GetTextBang(buffer, start - sPos, 1, 0);
 
   return buffer[0];
 }
@@ -2658,12 +2730,12 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
 		       int reason, void *)
 {
   long pstart, start, lstart, tstart, end, lend, tend;
-  unsigned char *text;
+  wxchar *text;
   wxMediaWordbreakMap *wordBreakMap;
 
   wordBreakMap = win->GetWordbreakMap();
 
-#define nonbreak(x) ((wordBreakMap ? wordBreakMap->map : wxTheMediaWordbreakMap->map)[x] & reason)
+#define nonbreak(x) (((x > 255) ? 1 : (wordBreakMap ? wordBreakMap->map : wxTheMediaWordbreakMap->map)[x] & reason))
   /* Try looking at only MAX_DIST_TRY chars. If that fails, then
      look until a newline. */
 #define MAX_DIST_TRY 30
@@ -2688,7 +2760,7 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     else
       tstart = lstart;
 
-    text = (unsigned char *)win->GetText(tstart, lend);
+    text = win->GetText(tstart, lend);
     
     start -= tstart;
     pstart -= tstart;
@@ -2719,7 +2791,7 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     if (!start && (tstart != lstart)) {
       start += (tstart - lstart);
       pstart += (tstart - lstart);
-      text = (unsigned char *)win->GetText(lstart, lend);
+      text = win->GetText(lstart, lend);
       tstart = lstart;
       goto try_start_again;
     }
@@ -2747,7 +2819,7 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     else
       tend = lend;
 
-    text = (unsigned char *)win->GetText(lstart, tend);
+    text = win->GetText(lstart, tend);
     
     end -= lstart;
     lend -= lstart;
@@ -2767,7 +2839,7 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     }
 
     if ((end == tend) && (tend != lend)) {
-      text = (unsigned char *)win->GetText(lstart, lstart + lend);
+      text = win->GetText(lstart, lstart + lend);
       tend = lend;
       goto try_end_again;
     }
@@ -3038,7 +3110,7 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
 	  int i;
 	  for (i = 0; i < n - 1; i++) {
 	    if ((buffer[i] == '\r') && (buffer[i + 1] == '\n')) {
-	      memcpy(buffer + i + 1, buffer + i + 2, n - i - 2);
+	      memcpy(buffer + i + 1, buffer + i + 2, (n - i - 2) * sizeof(wxchar));
 	      --n;
 	    }
 	  }
@@ -3131,9 +3203,12 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   fileerr = FALSE;
 
   if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
-    char *s;
-    s = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
-    scheme_put_string("save-file", f, s, 0, strlen(s), 0);
+    wxchar *us;
+    char *s = 0;
+    long len;
+    us = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
+    wxme_utf8_encode(us, wxstrlen(us), &s, &len);
+    scheme_put_string("save-file", f, s, 0, len, 0);
     scheme_close_output_port(f);
   } else {
     wxMediaStreamOutFileBase *b;
@@ -3994,7 +4069,7 @@ long wxMediaEdit::FindScrollLine(float p)
 
 /****************************************************************/
 
-long wxMediaEdit::FindString(char *str, int direction, long start, long end,
+long wxMediaEdit::FindString(wxchar *str, int direction, long start, long end,
 			     Bool bos, Bool caseSens)
 {
   if (!CheckRecalc(FALSE, FALSE))
@@ -4003,8 +4078,18 @@ long wxMediaEdit::FindString(char *str, int direction, long start, long end,
   return _FindStringAll(str, direction, start, end, NULL, TRUE, bos, caseSens);
 }
 
-long *wxMediaEdit::FindStringAll(char *str, long *cnt, int direction,
-				long start, long end, Bool bos, Bool caseSens)
+long wxMediaEdit::FindStringUTF8(char *str, int direction, long start, long end,
+				 Bool bos, Bool caseSens)
+{
+  long ulen;
+  wxchar *us = NULL;
+  wxme_utf8_decode(str, strlen(str), &us, &ulen);
+
+  return FindString(us, direction, start, end, bos, caseSens);
+}
+
+long *wxMediaEdit::FindStringAll(wxchar *str, long *cnt, int direction,
+				 long start, long end, Bool bos, Bool caseSens)
 {
   long *positions, cntv;
 
@@ -4022,6 +4107,16 @@ long *wxMediaEdit::FindStringAll(char *str, long *cnt, int direction,
     positions = NULL;
   }
   return positions;
+}
+
+long *wxMediaEdit::FindStringAllUTF8(char *str, long *cnt, int direction,
+				     long start, long end, Bool bos, Bool caseSens)
+{
+  long ulen;
+  wxchar *us = NULL;
+  wxme_utf8_decode(str, strlen(str), &us, &ulen);
+
+  return FindStringAll(us, cnt, direction, start, end, bos, caseSens);
 }
 
 long wxMediaEdit::FindNewline(int direction, long start, long end)

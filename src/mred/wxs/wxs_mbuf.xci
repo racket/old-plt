@@ -85,4 +85,4 @@
 
 @MACRO makeNoCopyFlatString[len] = WITH_VAR_STACK(scheme_make_sized_string(r, <len>, 0))
 
-@ X "get-flattened-text" : string/makeNoCopyFlatString[_x0] GetFlattenedText(-long*);
+@ X "get-flattened-text" : string/makeNoCopyFlatString[_x0] GetFlattenedTextUTF8(-long*);

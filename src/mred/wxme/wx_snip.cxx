@@ -77,9 +77,11 @@ static void memmove(char *dest, char *src, long size)
 
 extern void *wxMallocAtomicIfPossible(size_t s);
 
-#define STRALLOC(n) new WXGC_ATOMIC char[n]
-#define TRY_STRALLOC(n) (char *)wxMallocAtomicIfPossible(n)
+#define STRALLOC(n) new WXGC_ATOMIC wxchar[n]
+#define TRY_STRALLOC(n) (wxchar *)wxMallocAtomicIfPossible(n * sizeof(wxchar))
 #define STRFREE(s) /* empty */
+
+wxchar wx_empty_wxstr[1] = {0};
 
 /***************************************************************/
 
@@ -341,9 +343,9 @@ wxSnip *wxSnip::MergeWith(wxSnip *)
   return NULL;
 }
 
-void wxSnip::GetTextBang(char *s, long offset, long num, long dt)
+void wxSnip::GetTextBang(wxchar *s, long offset, long num, long dt)
 {
-  char *str;
+  wxchar *str;
 
   if (num <= 0)
     return;
@@ -351,31 +353,46 @@ void wxSnip::GetTextBang(char *s, long offset, long num, long dt)
   if (!str)
     memset(s, '.', num);
   else
-    memcpy(s, str, num);
+    memcpy(s, str, num * sizeof(wxchar));
 }
 
-char *wxSnip::GetText(long offset, long num, 
-		      Bool WXUNUSED(flattened), long *got)
+wxchar *wxSnip::GetText(long offset, long num, 
+			Bool WXUNUSED(flattened), long *got)
 {
-  char *s;
+  wxchar *s;
 
   if (num <= 0)
-    return "";
+    return wx_empty_wxstr;
   if (offset < 0)
     offset = 0;
   if (offset > count)
-    return "";
+    return wx_empty_wxstr;
   if (num > count - offset)
     num = count - offset;
 
-  s = new WXGC_ATOMIC char[num + 1];
-  memset(s, '.', num);
+  s = new WXGC_ATOMIC wxchar[num + 1];
+  memset(s, '.', num * sizeof(wxchar));
   s[num] = 0;
 
   if (got)
     *got = num;
 
   return s;
+}
+
+char *wxSnip::GetTextUTF8(long offset, long num, Bool flattened, long *_got)
+{
+  wxchar *s;
+  long got, len;
+  char *r = NULL;
+
+  s = GetText(offset, num, flattened, &got);
+  wxme_utf8_encode(s, got, &r, &len);
+
+  if (_got)
+    *_got = len;
+
+  return r;
 }
 
 wxSnip *wxSnip::Copy()
@@ -521,10 +538,16 @@ wxTextSnip::wxTextSnip(long allocsize)
   Init(allocsize);
 }
 
-wxTextSnip::wxTextSnip(char *initstring, long len) 
+wxTextSnip::wxTextSnip(wxchar *initstring, long len) 
 {
   Init(len + 2);
   Insert(initstring, len, 0);
+}
+
+wxTextSnip::wxTextSnip(char *initstring, long len) 
+{
+  Init(len + 2);
+  InsertUTF8(initstring, len, 0);
 }
 
 void wxTextSnip::Init(long allocsize) 
@@ -563,7 +586,7 @@ void wxTextSnip::SizeCacheInvalid(void)
 
 void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 {
-  char save;
+  wxchar save;
   float _w, h;
   wxFont *font;
   int i;
@@ -572,7 +595,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
   buffer[dtext + count] = 0;
 
   for (i = count; i--; ) {
-    unsigned char c = ((unsigned char *)buffer)[dtext + i]; 
+    wxchar c = buffer[dtext + i]; 
     if (!c || (c == NON_BREAKING_SPACE))
       break;
   }
@@ -583,7 +606,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 #endif
 
   if (i < 0) {
-    dc->GetTextExtent(buffer, &_w, &h, NULL, NULL, font, FALSE, dtext);
+    dc->GetTextExtent((char *)buffer, &_w, &h, NULL, NULL, font, TRUE, dtext);
   } else {
     /* text includes null chars */
     float ex_w;
@@ -596,12 +619,12 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
     
     _w = 0;
     for (i = 0; i <= count; i++) {
-      if (!buffer[dtext + i] || (((unsigned char *)buffer)[dtext + i] == NON_BREAKING_SPACE) || (i == count)) {
+      if (!buffer[dtext + i] || (buffer[dtext + i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
 	  float piece_w, h;
-	  char save = buffer[dtext + i];
+	  wxchar save = buffer[dtext + i];
 	  buffer[dtext + i] = 0;
-	  dc->GetTextExtent(buffer, &piece_w, &h, NULL, NULL, NULL, FALSE, dtext + start);
+	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, TRUE, dtext + start);
 	  buffer[dtext + i] = save;
 	  _w += piece_w;
 	}
@@ -681,7 +704,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 		      float WXUNUSED(dx), float WXUNUSED(dy), 
 		      int)
 {
-  char save;
+  wxchar save;
   int i;
 
   if (flags & wxSNIP_INVISIBLE)
@@ -691,13 +714,13 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
   buffer[dtext + count] = 0;
 
   for (i = count; i--; ) {
-    unsigned char c = ((unsigned char *)buffer)[dtext + i]; 
+    wxchar c = buffer[dtext + i]; 
     if (!c || (c == NON_BREAKING_SPACE))
       break;
   }
   
   if (i < 0)
-    dc->DrawText(buffer, x, y, FALSE, dtext);
+    dc->DrawText((char *)buffer, x, y, TRUE, dtext);
   else {
     /* text includes null chars */
     float px, h, ex_w;
@@ -707,13 +730,13 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
     
     px = x;
     for (i = 0; i <= count; i++) {
-      if (!buffer[dtext + i] || (((unsigned char *)buffer)[dtext + i] == NON_BREAKING_SPACE) || (i == count)) {
+      if (!buffer[dtext + i] || (buffer[dtext + i] == NON_BREAKING_SPACE) || (i == count)) {
 	if (i > start) {
 	  float piece_w, h;
-	  char save = buffer[dtext + i];
+	  wxchar save = buffer[dtext + i];
 	  buffer[dtext + i] = 0;
-	  dc->GetTextExtent(buffer, &piece_w, &h, NULL, NULL, NULL, FALSE, dtext + start);
-	  dc->DrawText(buffer, px, y, FALSE, dtext + start);
+	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, TRUE, dtext + start);
+	  dc->DrawText((char *)buffer, px, y, TRUE, dtext + start);
 	  buffer[dtext + i] = save;
 	  px += piece_w;
 	}
@@ -764,17 +787,17 @@ void wxTextSnip::Split(long position, wxSnip **first, wxSnip **second)
 
   w = -1.0;
 
-  memcpy(snip->buffer + snip->dtext, buffer + dtext, position);
+  memcpy(snip->buffer + snip->dtext, buffer + dtext, position * sizeof(wxchar));
   dtext += position;
 
   snip->count = position;
   count -= position;
 
   if (count && ((allocated / count) > MAX_WASTE)) {
-    char *naya;
+    wxchar *naya;
     allocated = count;
     naya = STRALLOC(allocated + 1);
-    memcpy(naya, buffer + dtext, count + 1);
+    memcpy(naya, buffer + dtext, (count + 1) * sizeof(wxchar));
     buffer = naya;
     dtext = 0;
   }
@@ -807,7 +830,7 @@ wxSnip *wxTextSnip::MergeWith(wxSnip *pred)
   return this;
 }
 
-void wxTextSnip::Insert(char *str, long len, long pos)
+void wxTextSnip::Insert(wxchar *str, long len, long pos)
 {
   if (len <= 0)
     return;
@@ -815,23 +838,23 @@ void wxTextSnip::Insert(char *str, long len, long pos)
     pos = 0;
 
   if (allocated < count + len) {
-    char *naya;
+    wxchar *naya;
 
     allocated = 2 * (count + len);
     naya = STRALLOC(allocated + 1);
     
-    memcpy(naya, buffer + dtext, count);
+    memcpy(naya, buffer + dtext, count * sizeof(wxchar));
 
     buffer = naya;
     dtext = 0;
   } else if (dtext && (dtext + count + len > allocated)) {
-    memmove(buffer, buffer + dtext, count);
+    memmove(buffer, buffer + dtext, count * sizeof(wxchar));
     dtext = 0;
   }
    
   if (pos < count)
     memmove(buffer + dtext + pos + len, buffer + dtext + pos, count - pos);
-  memcpy(buffer + dtext + pos, str, len);
+  memcpy(buffer + dtext + pos, str, len * sizeof(wxchar));
   
   count += len;
 
@@ -844,27 +867,35 @@ void wxTextSnip::Insert(char *str, long len, long pos)
 #endif
 }
 
-void wxTextSnip::GetTextBang(char *s, long offset, long num, long dt)
+void wxTextSnip::InsertUTF8(char *str, long len, long pos)
+{
+  long ulen;
+  wxchar *us = NULL;
+  wxme_utf8_decode(str, len, &us, &ulen);
+  Insert(us, ulen, pos);
+}
+
+void wxTextSnip::GetTextBang(wxchar *s, long offset, long num, long dt)
 {
   if (num <= 0)
     return;
 
-  memcpy(s + dt, buffer + dtext + offset, num);
+  memcpy(s + dt, buffer + dtext + offset, num * sizeof(wxchar));
 }
 
-char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
+wxchar *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
 {
   if (offset < 0) offset = 0;
   if ((num <= 0) || (offset >= count)) {
     if (got)
       *got = 0;
-    return "";
+    return wx_empty_wxstr;
   }
   if (num + offset > count)
     num = count - offset;
 
   if (flat && (flags & wxSNIP_HARD_NEWLINE)) {
-    char *s;
+    wxchar *s;
 
 #ifdef wx_msw
 #define NWL_RC 2
@@ -875,7 +906,7 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
     if (got)
       *got = NWL_RC;
     
-    s = new WXGC_ATOMIC char[NWL_RC + 1];
+    s = new WXGC_ATOMIC wxchar[NWL_RC + 1];
 #ifdef wx_x
     s[0] = '\n';
 #else
@@ -894,9 +925,9 @@ char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
     s[NWL_RC] = 0;
     return s;
   } else {
-    char *s;
-    s = new WXGC_ATOMIC char[num + 1];
-    memcpy(s, buffer + dtext + offset, num);
+    wxchar *s;
+    s = new WXGC_ATOMIC wxchar[num + 1];
+    memcpy(s, buffer + dtext + offset, num * sizeof(wxchar));
     s[num] = 0;
     if (got)
       *got = num;
@@ -917,7 +948,7 @@ void wxTextSnip::Copy(wxTextSnip *snip)
 {
   wxSnip::Copy(snip);
   
-  memcpy(snip->buffer + snip->dtext, buffer + dtext, count);
+  memcpy(snip->buffer + snip->dtext, buffer + dtext, count * sizeof(wxchar));
   snip->count = count;
 
   snip->w = -1.0;
@@ -936,7 +967,7 @@ void wxTextSnip::Write(wxMediaStreamOut *f)
     writeFlags -= wxSNIP_CAN_SPLIT;
 
   f->Put(writeFlags);
-  f->Put(count, buffer + dtext);
+  f->Put(count * sizeof(wxchar), (char *)buffer, dtext * sizeof(wxchar));
 }
 
 void wxTextSnip::Read(long len, wxMediaStreamIn *f)
@@ -952,7 +983,7 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
     }
     STRFREE(buffer);
     if (l > 500) {
-      char *ts;
+      wxchar *ts;
       ts = TRY_STRALLOC(l + 1);
       buffer = ts;
       if (!buffer) {
@@ -970,8 +1001,9 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
   }
 
   dtext = 0;
-  f->Get((long *)&len, buffer);
-  count = len;
+  len *= sizeof(wxchar);
+  f->Get((long *)&len, (char *)buffer);
+  count = len / sizeof(wxchar);
   w = -1.0;
 }
 

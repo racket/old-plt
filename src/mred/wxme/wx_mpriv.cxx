@@ -605,13 +605,13 @@ void wxMediaEdit::FindLastVisiblePosition(wxMediaLine *line, long *p,
 
 /****************************************************************/
 
-long wxMediaEdit::_FindStringAll(char *str, int direction, 
+long wxMediaEdit::_FindStringAll(wxchar *str, int direction, 
 				 long start, long end,
 				 long **positions, Bool justOne,
 				 Bool bos, Bool caseSens)
 {
   wxSnip *snip;
-  char text[256], *oldStr, c;
+  wxchar text[256], *oldStr, c;
   long *smap;
   long sPos, p, n, thistime, thisoffset, need, checked, offset, shorten, i;
   long slen, s, sbase, beyond, sgoal, totalCount, allocFound, foundCount;
@@ -643,15 +643,19 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
   if (totalCount < 0)
     return -1;
 
-  slen = strlen(str);
+  slen = wxstrlen(str);
   if (!slen)
     return -1;
 
   if (!caseSens) {
+    /* FIXME: use locale... */
     oldStr = str;
-    str = new char[slen + 1];
+    str = new wxchar[slen + 1];
     for (i = 0; i < slen; i++) {
-      str[i] = tolower(oldStr[i]);
+      if (str[i] < 128)
+	str[i] = tolower(oldStr[i]);
+      else
+	str[i] = oldStr[i];
     }
     str[i] = 0;
   }
@@ -724,7 +728,7 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
       writeLocked = TRUE;
       flowLocked = TRUE;
       
-      snip->GetTextBang((char *)text, thisoffset, thistime, 0);
+      snip->GetTextBang(text, thisoffset, thistime, 0);
 
       writeLocked = wl;
       flowLocked = fl;

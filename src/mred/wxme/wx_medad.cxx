@@ -31,6 +31,8 @@
 
 static wxMemoryDC *wx_canvasless_offscreen;
 
+extern void *MrEdGetWindowContext(wxWindow *w);
+
 class SimpleScroll
 {
   Bool horizontal;
@@ -116,6 +118,7 @@ class wxBlinkTimer : public wxTimer
 
 wxBlinkTimer::wxBlinkTimer(wxMediaCanvas *c) {
   canvas = c;
+  SetContext(MrEdGetWindowContext(c));
 }
 
 void wxBlinkTimer::Notify(void) {
@@ -148,6 +151,7 @@ class wxAutoDragTimer : public wxTimer
 
 wxAutoDragTimer::wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
   canvas = c;
+  SetContext(MrEdGetWindowContext(c));
   event = new wxMouseEvent(0);
   memcpy(event, e, sizeof(wxMouseEvent));
   Start(AUTO_DRAG_DELAY, TRUE);

@@ -55,21 +55,23 @@ static Scheme_Object *string_length (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_set (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_eq (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_eq (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_ci_eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_ci_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_lt (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_lt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_lt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_gt (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_gt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_gt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_lt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_gt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_lt (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_ci_lt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_ci_lt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_gt (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_ci_gt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_ci_gt (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_lt_eq (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_ci_gt_eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_upcase (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *substring (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_append (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_list (int argc, Scheme_Object *argv[]);
@@ -80,8 +82,6 @@ static Scheme_Object *vector_to_string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_unicode_index (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_unicode_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_unicode_length (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_upcase (int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_downcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_copy (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_fill (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[]);
@@ -182,9 +182,9 @@ scheme_init_string (Scheme_Env *env)
 						      "string=?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("string-unicode=?", 
-			     scheme_make_prim_w_arity(string_unicode_eq,
-						      "string-unicode=?",
+  scheme_add_global_constant("string-locale=?", 
+			     scheme_make_prim_w_arity(string_locale_eq,
+						      "string-locale=?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci=?", 
@@ -192,9 +192,9 @@ scheme_init_string (Scheme_Env *env)
 						      "string-ci=?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("string-unicode-ci=?", 
-			     scheme_make_prim_w_arity(string_unicode_ci_eq,
-						      "string-unicode-ci=?",
+  scheme_add_global_constant("string-locale-ci=?", 
+			     scheme_make_prim_w_arity(string_locale_ci_eq,
+						      "string-locale-ci=?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string<?", 
@@ -202,9 +202,9 @@ scheme_init_string (Scheme_Env *env)
 						      "string<?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("string-unicode<?", 
-			     scheme_make_prim_w_arity(string_unicode_lt,
-						      "string-unicode<?",
+  scheme_add_global_constant("string-locale<?", 
+			     scheme_make_prim_w_arity(string_locale_lt,
+						      "string-locale<?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string>?", 
@@ -212,9 +212,9 @@ scheme_init_string (Scheme_Env *env)
 						      "string>?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("string-unicode>?", 
-			     scheme_make_prim_w_arity(string_unicode_gt,
-						      "string-unicode>?",
+  scheme_add_global_constant("string-locale>?", 
+			     scheme_make_prim_w_arity(string_locale_gt,
+						      "string-locale>?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string<=?", 
@@ -232,9 +232,9 @@ scheme_init_string (Scheme_Env *env)
 						      "string-ci<?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("string-unicode-ci<?", 
-			     scheme_make_prim_w_arity(string_unicode_ci_lt,
-						      "string-unicode-ci<?",
+  scheme_add_global_constant("string-locale-ci<?", 
+			     scheme_make_prim_w_arity(string_locale_ci_lt,
+						      "string-locale-ci<?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci>?", 
@@ -242,9 +242,9 @@ scheme_init_string (Scheme_Env *env)
 						      "string-ci>?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("string-unicode-ci>?", 
-			     scheme_make_prim_w_arity(string_unicode_ci_gt,
-						      "string-unicode-ci>?",
+  scheme_add_global_constant("string-locale-ci>?", 
+			     scheme_make_prim_w_arity(string_locale_ci_gt,
+						      "string-locale-ci>?",
 						      2, -1),
 			     env);
   scheme_add_global_constant("string-ci<=?", 
@@ -324,14 +324,14 @@ scheme_init_string (Scheme_Env *env)
 						      "string-unicode-ref",
 						      2, 3),
 			     env);
-  scheme_add_global_constant("string-unicode-upcase", 
-			     scheme_make_prim_w_arity(string_unicode_upcase,
-						      "string-unicode-upcase",
+  scheme_add_global_constant("string-locale-upcase", 
+			     scheme_make_prim_w_arity(string_locale_upcase,
+						      "string-locale-upcase",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("string-unicode-downcase", 
-			     scheme_make_prim_w_arity(string_unicode_downcase,
-						      "string-unicode-downcase",
+  scheme_add_global_constant("string-locale-downcase", 
+			     scheme_make_prim_w_arity(string_locale_downcase,
+						      "string-locale-downcase",
 						      1, 1),
 			     env);
 
@@ -341,15 +341,15 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_LOCALE), 
 			     env);
 
-  scheme_add_global_constant("string-locale->unicode", 
+  scheme_add_global_constant("string-encode-locale->utf8", 
 			     scheme_make_prim_w_arity2(string_locale_to_unicode,
-						       "string-locale->unicode",
+						       "string-encode-locale->utf8",
 						       1, 6,
 						       3, 3),
 			     env);
-  scheme_add_global_constant("string-unicode->locale", 
+  scheme_add_global_constant("string-encode-utf8->locale", 
 			     scheme_make_prim_w_arity2(string_unicode_to_locale,
-						       "string-unicode->locale",
+						       "string-encode-utf8->locale",
 						       1, 6,
 						       3, 3),
 			     env);
@@ -726,12 +726,12 @@ GEN_STRING_COMP(string_ci_gt, "string-ci>?", mz_strcmp_ci, >, 0)
 GEN_STRING_COMP(string_ci_lt_eq, "string-ci<=?", mz_strcmp_ci, <=, 0)
 GEN_STRING_COMP(string_ci_gt_eq, "string-ci>=?", mz_strcmp_ci, >=, 0)
 
-GEN_STRING_COMP(string_unicode_eq, "string-unicode=?", mz_strcmp, ==, 1)
-GEN_STRING_COMP(string_unicode_lt, "string-unicode<?", mz_strcmp, <, 1)
-GEN_STRING_COMP(string_unicode_gt, "string-unicode>?", mz_strcmp, >, 1)
-GEN_STRING_COMP(string_unicode_ci_eq, "string-unicode-ci=?", mz_strcmp_ci, ==, 1)
-GEN_STRING_COMP(string_unicode_ci_lt, "string-unicode-ci<?", mz_strcmp_ci, <, 1)
-GEN_STRING_COMP(string_unicode_ci_gt, "string-unicode-ci>?", mz_strcmp_ci, >, 1)
+GEN_STRING_COMP(string_locale_eq, "string-locale=?", mz_strcmp, ==, 1)
+GEN_STRING_COMP(string_locale_lt, "string-locale<?", mz_strcmp, <, 1)
+GEN_STRING_COMP(string_locale_gt, "string-locale>?", mz_strcmp, >, 1)
+GEN_STRING_COMP(string_locale_ci_eq, "string-locale-ci=?", mz_strcmp_ci, ==, 1)
+GEN_STRING_COMP(string_locale_ci_lt, "string-locale-ci<?", mz_strcmp_ci, <, 1)
+GEN_STRING_COMP(string_locale_ci_gt, "string-locale-ci>?", mz_strcmp_ci, >, 1)
 
 
 void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
@@ -1076,7 +1076,8 @@ string_unicode_index(int argc, Scheme_Object *argv[])
   } else if (SCHEME_BIGNUMP(argv[1])) {
     if (SCHEME_BIGPOS(argv[1]))
       pos = 0x7FFFFFFF;
-  }
+  } else
+    pos = -1;
 
   if (pos < 0) {
     scheme_wrong_type("string-unicode-index", "non-negative exact integer", 1, argc, argv);
@@ -1113,7 +1114,8 @@ string_unicode_ref(int argc, Scheme_Object *argv[])
   } else if (SCHEME_BIGNUMP(argv[1])) {
     if (SCHEME_BIGPOS(argv[1]))
       pos = 0x7FFFFFFF;
-  }
+  } else
+    pos = -1;
 
   if (pos < 0) {
     scheme_wrong_type("string-unicode-ref", "non-negative exact integer", 1, argc, argv);
@@ -1278,6 +1280,8 @@ static char *locale_convert(const char *from_e, const char *to_e,
 	  iolen += iolen;
 	  out = naya;
 	  od = 0;
+	  /* reset the converter */
+	  iconv(cd, NULL, NULL, NULL, NULL);
 	} else {
 	  *status = 1;
 	  iconv_close(cd);
@@ -1305,6 +1309,7 @@ static char *locale_convert(const char *from_e, const char *to_e,
     }
   }
 }
+
 
 static char *locale_recase(int to_up,
 			   /* in must be null-terminated, iilen doesn't include it */ 
@@ -1726,6 +1731,10 @@ Scheme_Object *mz_recase(const char *who, int to_up, unsigned char *str1, int l1
 #endif
 
   ulen = scheme_utf8_decode(str1, 0, l1, NULL, 0, -1, NULL, utf16, 0);
+  if (ulen < 0) {
+    scheme_arg_mismatch(who, STRING_IS_NOT_UTF_8, scheme_make_sized_string(str1, l1, 1));
+  }
+
   us = (unsigned int *)scheme_malloc_atomic(csize * (ulen + 1));  
   ulen = scheme_utf8_decode(str1, 0, l1, (unsigned int *)us, 0, -1, NULL, utf16, 0);
   us[ulen] = 0;
@@ -1736,7 +1745,7 @@ Scheme_Object *mz_recase(const char *who, int to_up, unsigned char *str1, int l1
   while (1) {
     for (; i < ulen; i++) {
       if (utf16) {
-	if (!((short *)us1)[i])
+	if (!((short *)us)[i])
 	  break;
       } else if (!us[i])
 	break;
@@ -2425,12 +2434,12 @@ static Scheme_Object *convert_unicode_locale(const char *who, int argc, Scheme_O
 
 static Scheme_Object *string_locale_to_unicode(int argc, Scheme_Object *argv[])
 {
-  return convert_unicode_locale("string-locale->unicode", argc, argv, NULL, "UTF-8");
+  return convert_unicode_locale("string-encode-locale->utf8", argc, argv, NULL, "UTF-8");
 }
 
 static Scheme_Object *string_unicode_to_locale(int argc, Scheme_Object *argv[])
 {
-  return convert_unicode_locale("string-unicode->locale", argc, argv, "UTF-8", NULL);
+  return convert_unicode_locale("string-encode-utf8->locale", argc, argv, "UTF-8", NULL);
 }
 
 static Scheme_Object *
@@ -2440,7 +2449,7 @@ unicode_recase(const char *who, int to_up, int argc, Scheme_Object *argv[])
   char *chars;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-unicode-ref", "string", 0, argc, argv);
+    scheme_wrong_type(who, "string", 0, argc, argv);
   
   chars = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -2449,15 +2458,15 @@ unicode_recase(const char *who, int to_up, int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-string_unicode_upcase(int argc, Scheme_Object *argv[])
+string_locale_upcase(int argc, Scheme_Object *argv[])
 {
-  return unicode_recase("string-unicode-upcase", 1, argc, argv);
+  return unicode_recase("string-locale-upcase", 1, argc, argv);
 }
 
 static Scheme_Object *
-string_unicode_downcase(int argc, Scheme_Object *argv[])
+string_locale_downcase(int argc, Scheme_Object *argv[])
 {
-  return unicode_recase("string-unicode-downcase", 0, argc, argv);
+  return unicode_recase("string-locale-downcase", 0, argc, argv);
 }
 
 void scheme_reset_locale(void)

@@ -326,7 +326,7 @@ a timeout routine.
       if ($timer) {
         stop_timer($, event, params, num_params);
 	$timer = wxAppAddTimeOut(XtWidgetToApplicationContext($),
-				 $initialDelay, timer_callback, $);
+				 $initialDelay, timer_callback, $, $);
       }
     } else
 	push_up($, event, params, num_params);
@@ -480,7 +480,7 @@ other). The delay is now |repeatDelay| instead of |initialDelay|.
       if ($timer != 0x1)
         wxRemoveTimeOut($timer);
       $timer = wxAppAddTimeOut(XtWidgetToApplicationContext($),
-				     $repeatDelay, timer_callback, $);
+				     $repeatDelay, timer_callback, $, $);
     }
 }
 

@@ -105,6 +105,14 @@
 	       [unmatched-cond/case-is-error? (make-check-box set-setting-unmatched-cond/case-is-error?! setting-unmatched-cond/case-is-error? "Unmatched cond/case is an error?")]
 	       [allow-improper-lists? (make-check-box set-setting-allow-improper-lists?! setting-allow-improper-lists? "Allow improper lists?")]
 	       [sharing-printing? (make-check-box set-setting-sharing-printing?! setting-sharing-printing? "Show sharing in values?")]
+	       [printer-number->symbol
+		(lambda (which)
+		  (case which
+		    [(0) 'constructor-style]
+		    [(1) 'quasi-style]
+		    [(2) 'quasi-read-style]
+		    [(3) 'r4rs-style]
+		    [else (error 'printing-callback "got: ~a~n" which)]))]
 	       [printing
 		(right-align
 		 (lambda (main)
@@ -113,13 +121,7 @@
 				  (let ([which (send evt get-command-int)]
 					[settings (mred:get-preference 'drscheme:settings)])
 				    (set-setting-printing!
-				     settings 
-				     (case which
-				       [(0) 'constructor-style]
-				       [(1) 'quasi-style]
-				       [(2) 'quasi-read-style]
-				       [(3) 'r4rs-style]
-				       [else (error 'printing-callback "got: ~a~n" which)]))
+				     settings (printer-number->symbol which))
 				    (mred:set-preference 'drscheme:settings settings)))
 				"Printing"
 				-1 -1 -1 -1
@@ -150,6 +152,8 @@
 				  (compare-check-box unmatched-cond/case-is-error? setting-unmatched-cond/case-is-error?)
 				  (compare-check-box allow-improper-lists? setting-allow-improper-lists?)
 				  (compare-check-box sharing-printing? setting-sharing-printing?)
+				  (eq? (printer-number->symbol (send printing get-selection))
+				       (setting-printing setting))
 				  (= (drscheme:basis:level->number (setting-vocabulary-symbol setting))
 				     (send vocab get-selection)))))])
 		    (when (andmap (lambda (setting-name)

@@ -131,11 +131,17 @@
     (define make-one-line-canvas%
       (lambda (super%)
 	(class super% (parent [x -1] [y -1] [w -1] [h -1] 
-			      [name ""] [style 0] [spp 100] [m ()])
+			      [name ""] [style 0] [spp 100] [m ()]
+			      [lnes 1])
 	  
 	  (inherit get-media call-as-primary-owner user-min-height
 		   get-size set-min-height)
 	  (rename [super-set-media set-media])
+	  (public 
+	    [lines lnes]
+	    [set-lines (lambda (x) 
+			 (set! lines x)
+			 (update-size))])
 	  (private
 	    [update-size
 	     (lambda (media)
@@ -150,7 +156,8 @@
 			(send (send media get-admin) 
 			      get-view null null null ch)))
 		     (get-size (box 0) h)
-		     (let ([new-min-height (+ height (- (unbox h) (unbox ch)))])
+		     (let ([new-min-height (+ (* lines height) 
+					      (- (unbox h) (unbox ch)))])
 		       (set-min-height new-min-height)
 		       (user-min-height new-min-height))))))])
 	  (public

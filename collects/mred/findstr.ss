@@ -298,7 +298,13 @@
 		    (opt-lambda ([reset-anchor? #t] [beep? #t])
 		      (when searching-frame
 			(let* ([string (get-text)]
-			       [searching-edit (send searching-frame get-edit-to-search)]
+			       [searching-edit 
+				(let loop ([edit (send searching-frame get-edit-to-search)])
+				  (let ([snip (send edit get-focus-snip)])
+				    (if (or (null? snip)
+					    (not (is-a? snip wx:media-snip%)))
+					edit
+					(loop (send snip get-this-media)))))]
 			       [not-found
 				(lambda ()
 				  (when beep?
@@ -309,7 +315,7 @@
 				  (let ([last-pos (+ first-pos (* searching-direction 
 								  (string-length string)))])
 				    (send* edit 
-				      (set-caret-owner null)
+				      (set-caret-owner null wx:focus-display)
 				      (set-position
 					  (min first-pos last-pos)
 					  (max first-pos last-pos)))
@@ -324,7 +330,8 @@
 					      find-string-embedded
 					      string 
 					      searching-direction
-					      anchor)])
+					      anchor
+					      -1 #t #t #t)])
 			    (cond
 			      [(= -1 first-pos)
 			       (let-values ([(found-edit pos)
@@ -354,9 +361,8 @@
 		(inherit get-parent frame)
 		(rename [super-on-set-focus on-set-focus])
 		(public
-		  [style-flags
-		   (bitwise-ior wx:const-mcanvas-hide-h-scroll
-				wx:const-mcanvas-hide-v-scroll)]
+		  [lines 2]
+		  [style-flags wx:const-mcanvas-hide-h-scroll]
 		  [on-set-focus
 		   (lambda ()
 		     (send find-edit set-searching-frame frame)

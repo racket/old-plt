@@ -92,9 +92,6 @@
     (define add-basis
       (lambda (n)
 	(let* ([plt:userspace@ (global-defined-value 'plt:userspace@)]
-	       [mred@ (global-defined-value 'mred@)]
-	       [mzlib:core@ (global-defined-value 'mzlib:core@)]
-	       [mzlib:trigger@ (global-defined-value 'mzlib:trigger@)]
 	       [l@
 		(unit/sig ()
 		  (import plt:userspace^)

@@ -1,5 +1,13 @@
 SYSTEM HISTORY
 --------------
+Version 47:
+- find-string-embedded of mred:edit% is just like find-string except it
+  searches in embedded buffers as well.
+- mred:frame-name is gone, use app-name in the application unit instead,
+  which is documented under the `Starting Up' section of the toolbox
+  manual.
+- the signature mred:application^ now contains the variable app-name.
+
 Version 46:
 - pretty-print-out is gone, use display-result instead, if you want to
   display results

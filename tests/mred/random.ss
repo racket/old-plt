@@ -126,7 +126,7 @@
      [add void]
      [choose-example
       (opt-lambda ([which #f])
-	(void))])))
+	(format "[dummy for ~a]" name))])))
 
 (define discrete-example-list%
   (class () (vals)
@@ -172,22 +172,27 @@
 					(symbol->string s)
 					"-example-list"))
 				      #f))])
-		  (cons
-		   `(define ,(el-name name)
-		      (make-object example-list% 
-				   ',name
-				   (list ,@(map el-name bases))
-				   (lambda (v) (when (null? v)
-						 (set! null-results (cons (list trying-class trying-method ',name)
-									  null-results))
-						 (error ',name "got null")))))
+		  (append
+		   `((define ,(el-name name)
+		       (make-object example-list% 
+				    ',name
+				    (list ,@(map el-name bases))
+				    (lambda (v) (when (null? v)
+						  (set! null-results (cons (list trying-class trying-method ',name)
+									   null-results))
+						  (error ',name "got null"))))))
+		   (if (or (regexp-match "%$" strname) (regexp-match "<%>$" strname))
+		       `((send ,(el-name name) set-filter (lambda (x) (is-a? x ,name))))
+		       null)
 		   rest)))))))
 
 (define-main
   void
+  (value char real string-list subarea<%>)
   char
   ubyte
   integer
+  integer-list
   nonnegative-integer
   symbol
   real
@@ -195,7 +200,6 @@
   string-list
   boolean
   procedure
-  value
   eventspace
   0-to-255
   0-to-10000
@@ -343,12 +347,14 @@
 
 (send bitmap%-example-list set-filter (lambda (bm) (send bm ok?)))
 
+(send boolean-example-list set-filter boolean?)
 (send char-example-list set-filter char?)
 (send string-example-list set-filter string?)
 (send symbol-example-list set-filter symbol?)
 (send real-example-list set-filter number?)
 (send integer-example-list set-filter (lambda (x) (and (number? x) (integer? x))))
 (send nonnegative-integer-example-list set-filter (lambda (x) (and (number? x) (integer? x) (not (negative? x)))))
+(send integer-list-example-list set-filter (lambda (x) (and (list? x) (andmap (lambda (x) (and (number? x) (integer? x))) x))))
 
 (define false-example-list (make-object example-list% 'false '()))
 (send false-example-list add #f)
@@ -369,6 +375,31 @@
        (add -2)
        (add -3)
        (add -1000)
+       (add 1)
+       (add 2)
+       (add 3)
+       (add 4)
+       (add 5)
+       (add 6)
+       (add 7)
+       (add 8)
+       (add 9)
+       (add 10)
+       (add 16)
+       (add 32)
+       (add 64)
+       (add 128)
+       (add 256)
+       (add 255)
+       (add 1023)
+       (add 1000)
+       (add 5.0))
+
+(send* nonnegative-integer-example-list
+       (add 0) (add 0) (add 0) (add 0)
+       (add 0) (add 0) (add 0) (add 0)
+       (add 0) (add 0) (add 0) (add 0)
+       (add 0) (add 0) (add 0) (add 0)
        (add 1)
        (add 2)
        (add 3)
@@ -418,6 +449,11 @@
 (send* -10000-to-10000-example-list
        (add 0) (add 100) (add 1000) (add 10000)
        (add -100) (add -1000) (add -10000))
+
+(send* integer-list-example-list
+       (add '(0))
+       (add '(1 2 3))
+       (add '(0 100 1000)))
 
 (send* symbol-example-list
        (add 'ok) (add 'change-family))
@@ -567,24 +603,25 @@
 	(fprintf (thread-output-port) "~s: no examples~n" name)
 	(let loop ([l methods])
 	  (unless (null? l)
-		  (let* ([method (car l)]
-			 [iv (car method)]
-			 [resulttype (caddr method)]
-			 [argtypes (cdddr method)])
-		    (set! trying-class (and source (ivar source name)))
-		    (set! trying-method iv)
-		    (try argtypes resulttype (list name iv use)
-			 (lambda (args)
-			   (if use
-			       (apply (ivar/proc use iv) args)
-			       (apply (global-defined-value iv) args)))))
-		  (loop (cdr l)))))))
+	    (unless (symbol? (car l))
+	      (let* ([method (car l)]
+		     [iv (car method)]
+		     [resulttype (caddr method)]
+		     [argtypes (cdddr method)])
+		(set! trying-class (and source (ivar source name)))
+		(set! trying-method iv)
+		(try argtypes resulttype (list name iv use)
+		     (lambda (args)
+		       (if use
+			   (apply (ivar/proc use iv) args)
+			   (apply (global-defined-value iv) args))))))
+	    (loop (cdr l)))))))
 
 (define (call-random except)
   (fprintf (thread-output-port) "calling all except ~a randomly...~n" except)
   (hash-table-for-each classinfo (lambda (k v)
 				   (unless (member k except)
-					   (try-methods k try-args)))))
+				     (try-methods k try-args)))))
 
 (define (call-all-random)
   (call-random null))
@@ -804,3 +841,7 @@
      (unless (memq i expect-n)
        (printf "Undocumented global: ~a~n" i)))
    actual-n))
+
+(random-seed 79)
+(create-all-random)
+(call-all-random)

@@ -2401,7 +2401,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
     lhd->reader_params[2] = scheme_true;  /* MZCONFIG_CURLY_BRACES_ARE_PARENS */
     lhd->reader_params[3] = scheme_true;  /* MZCONFIG_CAN_READ_GRAPH */
     lhd->reader_params[4] = scheme_true;  /* MZCONFIG_CAN_READ_COMPILED */
-    lhd->reader_params[5] = scheme_false; /* MZCONFIG_CAN_READ_BOX */
+    lhd->reader_params[5] = scheme_true;  /* MZCONFIG_CAN_READ_BOX */
     lhd->reader_params[6] = scheme_true;  /* MZCONFIG_CAN_READ_PIPE_QUOTE */
     lhd->reader_params[7] = scheme_false; /* MZCONFIG_CAN_READ_DOT */
     lhd->reader_params[8] = scheme_true;  /* MZCONFIG_CAN_READ_QUASI */

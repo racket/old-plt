@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-06-04")
+(define *tex2page-version* "2003-06-19")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -34,7 +34,8 @@
     ((windows)
      (or (ormap
           (lambda (f) (and (file-exists? f) f))
-          '("c:\\aladdin\\gs6.01\\bin\\gswin32c.exe"
+          '("g:\\cygwin\\bin\\gs.exe"
+            "c:\\aladdin\\gs6.01\\bin\\gswin32c.exe"
             "d:\\aladdin\\gs6.01\\bin\\gswin32c.exe"
             "d:\\gs\\gs8.00\\bin\\gswin32.exe"
             "g:\\gs\\gs8.00\\bin\\gswin32.exe"))
@@ -816,7 +817,57 @@
     (display-error-context-lines)
     (close-all-open-ports)
     (output-stats)
-    (error "*** TeX2page fatal error! ***")))
+    (display "Type e to edit file at point of error; x to quit.")
+    (newline)
+    (display "? ")
+    (flush-output)
+    (let ((c (read-char)))
+      (when (and (not (eof-object? c)) (char-ci=? c #\e))
+        (edit-offending-file)))
+    (error "TeX2page fatal error")))
+
+(define edit-offending-file
+  (lambda ()
+    (let ((bad-texedit? #f) (cmd #f))
+      (cond
+       ((getenv "TEXEDIT")
+        =>
+        (lambda (s)
+          (cond
+           ((substring? "%d" s)
+            =>
+            (lambda (i)
+              (set! s
+                (string-append
+                  (substring s 0 i)
+                  (number->string *input-line-no*)
+                  (substring s (+ i 2) (string-length s))))))
+           (else (set! bad-texedit? #t)))
+          (cond
+           ((and (not bad-texedit?) (substring? "%s" s))
+            =>
+            (lambda (i)
+              (set! s
+                (string-append
+                  (substring s 0 i)
+                  *current-tex-file*
+                  (substring s (+ i 2) (string-length s))))))
+           (else (set! bad-texedit? #t)))
+          (cond
+           (bad-texedit? (display "Bad TEXEDIT; using EDITOR.") (newline))
+           (else (set! cmd s))))))
+      (cond
+       ((and (not cmd) (or (getenv "EDITOR") "vi"))
+        =>
+        (lambda (s)
+          (set! cmd
+            (string-append
+              s
+              " +"
+              (number->string *input-line-no*)
+              " "
+              *current-tex-file*)))))
+      (when cmd (system cmd)))))
 
 (define trace-if
   (lambda (write? . args)
@@ -6934,9 +6985,13 @@
                     "tex2page.tex")))
             #f)
            ((ormap (lambda (z) (string=? f z)) '("texinfo" "texinfo.tex"))
-            (tex2page-file (actual-tex-filename "texinfo.t2p" #f))
-            (tex2page-file *current-tex-file*)
-            ':encountered-endinput)
+            (let ((txi-t2p (actual-tex-filename "texinfo.t2p" #f)))
+              (if txi-t2p
+                (begin
+                  (tex2page-file txi-t2p)
+                  (tex2page-file *current-tex-file*)
+                  ':encountered-endinput)
+                (terror 'do-input "File texinfo.t2p not found"))))
            ((actual-tex-filename f (check-input-file-timestamp? f))
             =>
             tex2page-file)

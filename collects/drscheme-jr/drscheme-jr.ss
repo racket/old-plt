@@ -44,63 +44,20 @@
 (when use-print-convert?
   (reference-library "pconver.ss"))
 
-(reference
-  (begin-elaboration-time
-    (build-path plt-dir "zodiac" "zsigs.ss")))
-(reference
-  (begin-elaboration-time
-    (build-path plt-dir "zodiac" "sigs.ss")))
+(begin-elaboration-time
+ (define lib-dir (build-path plt-dir "lib"))
+ (define zodiac-dir (build-path plt-dir "zodiac")))
 
-(reference-library (begin-elaboration-time
-		     (build-path plt-dir "lib" "require.ss")))
-(plt:require-library "ariesu.ss")
-(plt:require-library "sparamu.ss")
-(plt:require-library "userspcu.ss")
+(reference (begin-elaboration-time (build-path zodiac-dir "zsigs.ss")))
+(reference (begin-elaboration-time (build-path zodiac-dir "sigs.ss")))
+(reference (begin-elaboration-time (build-path lib-dir "sparams.ss")))
+(reference (begin-elaboration-time (build-path lib-dir "ariess.ss")))
+(reference (begin-elaboration-time (build-path lib-dir "userspcs.ss")))
 
-(define zodiac:system@
-  (reference-unit/sig
-    (begin-elaboration-time
-      (build-path plt-dir "zodiac" "link.ss"))))
-
-(invoke-open-unit/sig plt:mzscheme-parameters@ params)
-
-(define interface@
-  (unit/sig zodiac:interface^
-    (import (zodiac : zodiac:system^))
-    (define report-error
-      (lambda (type)
-	(lambda (z s . args)
-	  (let* ([msg (apply format s args)]
-		 [trans-loc
-		  (lambda (loc)
-		    (format "~a.~a"
-			    (zodiac:location-line loc)
-			    (zodiac:location-column loc)))]
-		 [build
-		  (lambda (left right)
-		    (format "~a[~a-~a]:~a-~a~n   ~a"
-			    (zodiac:location-file left)
-			    (zodiac:location-offset left)
-			    (zodiac:location-offset right)
-			    (trans-loc left)
-			    (trans-loc right)
-			    msg))]
-		 [escape (error-escape-handler)]
-		 [pos-msg
-		  (cond
-		   [(zodiac:zodiac? z) (build (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
-		   [(zodiac:eof? z) (build (zodiac:eof-location z) (zodiac:eof-location z))]
-		   [(zodiac:period? z) (build (zodiac:period-location z) (zodiac:period-location z))]
-		   [else (format "~a: ~a" z msg)])])
-	    (if type
-		(printf "~a: ~a~n" type pos-msg)
-		(printf "~a~n" pos-msg))
-	    (escape)))))
-    
-    (define static-error (report-error #f))
-    (define dynamic-error (report-error #f))
-    (define internal-error (report-error "internal error"))))
-
+;; this unit needs to be invoked twice
+;; once to build zodiac (syntax for the user)
+;; and once to build the userspace unit (primitives for the user)
+;; this unit should be obsoleted soon...
 (define parameters@
   (let ([args (vector->list argv)])
     (unit/sig plt:parameters^
@@ -120,25 +77,64 @@
       (define allow-improper-lists? (eq? 'advanced check-syntax-level)))))
 
 (define z@
-  (compound-unit/sig
-      (import)
+  (compound-unit/sig (import)
     (link [params : plt:parameters^ (parameters@)]
-          [pretty : mzlib:pretty-print^ (mzlib:pretty-print@)]
-          [zodiac : zodiac:system^ (zodiac:system@ zodiac:interface
-				     params pretty)]
-	  [zodiac:interface : zodiac:interface^ (interface@ zodiac)]
-	  [aries : plt:aries^ (plt:aries@ zodiac zodiac:interface)])
+          [pretty : mzlib:pretty-print^ ((reference-library-unit/sig "prettyr.ss"))]
+          [zodiac:interface : zodiac:interface^
+			    ((unit/sig zodiac:interface^
+			       (import (zodiac : zodiac:system^))
+			       (define report-error
+				 (lambda (type)
+				   (lambda (z s . args)
+				     (let* ([msg (apply format s args)]
+					    [trans-loc
+					     (lambda (loc)
+					       (format "~a.~a"
+						       (zodiac:location-line loc)
+						       (zodiac:location-column loc)))]
+					    [build
+					     (lambda (left right)
+					       (format "~a[~a-~a]:~a-~a~n   ~a"
+						       (zodiac:location-file left)
+						       (zodiac:location-offset left)
+						       (zodiac:location-offset right)
+						       (trans-loc left)
+						       (trans-loc right)
+						       msg))]
+					    [escape (error-escape-handler)]
+					    [pos-msg
+					     (cond
+					      [(zodiac:zodiac? z) (build (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
+					      [(zodiac:eof? z) (build (zodiac:eof-location z) (zodiac:eof-location z))]
+					      [(zodiac:period? z) (build (zodiac:period-location z) (zodiac:period-location z))]
+					      [else (format "~a: ~a" z msg)])])
+				       (if type
+					   (printf "~a: ~a~n" type pos-msg)
+					   (printf "~a~n" pos-msg))
+				       (escape)))))
+			       
+			       (define static-error (report-error #f))
+			       (define dynamic-error (report-error #f))
+			       (define internal-error (report-error "internal error")))
+			     zodiac)]
+	  [zodiac : zodiac:system^ ((reference-unit/sig
+				     (begin-elaboration-time
+				      (build-path plt-dir "zodiac" "link.ss")))
+				    zodiac:interface
+				    params pretty)]
+	  [aries : plt:aries^ ((reference-unit/sig
+				(begin-elaboration-time (build-path lib-dir "ariesu.ss")))
+			       zodiac zodiac:interface)])
     (export (unit params)
 	    (unit zodiac)
 	    (unit zodiac:interface)
 	    (unit aries))))
 
-
-
 (invoke-open-unit/sig z@ #f)
 
 (printf "Language: ~a~nImproper lists: ~a~n"
-	params:check-syntax-level params:allow-improper-lists?)
+	params:check-syntax-level
+	params:allow-improper-lists?)
 
 (define system-parameterization (current-parameterization))
 
@@ -276,7 +272,11 @@
 	       (import)
 	       (link
 		[params : plt:parameters^ (parameters@)]
-		[userspace : plt:userspace^ (plt:userspace@ params)])
+		[userspace : plt:userspace^
+			   ((reference-unit/sig
+			     (begin-elaboration-time
+			      (build-path lib-dir "userspcu.ss")))
+			     params)])
 	       (export (open userspace))))])
     (lambda ()
       (current-namespace namespace)

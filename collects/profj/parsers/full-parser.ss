@@ -705,10 +705,12 @@
 	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN)
-	(unimplemented-1.1 (build-src 1))]
+        (make-inner-alloc #f (build-src 7) $1 $4 (reverse $6) #f)]
+;	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN C_PAREN)
-	(unimplemented-1.1 (build-src 1))]
+        (make-inner-alloc #f (build-src 6) $1 $4 null #f)]
+;	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Name PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN ClassBody)
 	(unimplemented-1.1 (build-src 1))]

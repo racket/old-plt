@@ -3,6 +3,8 @@
 ;  tag impure and imperative signals (pure vs. stateful vs. effectful)
 ;
 ; To do:
+; deal with multiple values
+; handle structs, vectors
 ; exception-handling mechanism
 ; generalize and improve notion of time
 ;  (e.g., combine seconds & milliseconds,
@@ -304,7 +306,7 @@
   
   ;(define-struct *undefined* ())
   (define undefined ;(make-*undefined*))
-    (string->uninterned-symbol "*undefined*"))
+    (string->uninterned-symbol "<undefined>"))
   (define (undefined? x)
     (eq? x undefined))
   
@@ -994,7 +996,7 @@
                      bhvr)])
         (cond
           [(econs? tmp) (format "#<event (last: ~a)>" (efirst tmp))]
-          [(undefined? tmp) "#<undefined>"]
+          [(undefined? tmp) "<undefined>"]
           [else (expr->string tmp)]))))
   
   (define value-snip%
@@ -1019,7 +1021,7 @@
   (define (watch beh)
     (cond
       [(undefined? beh)
-       (make-object string-snip% "#<undefined>")]
+       (make-object string-snip% "<undefined>")]
       [(signal? beh) (make-object value-snip% beh)]
       [else beh]))
   

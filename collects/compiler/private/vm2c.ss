@@ -283,7 +283,7 @@
 	    (fprintf port "static struct {~n")
 	    (emit-static-variable-fields! port (compiler:get-static-list))
 	    (unless (null? (compiler:get-case-lambdas))
-	      (fprintf port "  short *casesArities[~a];~n"
+	      (fprintf port "  mzshort *casesArities[~a];~n"
 		       (length (compiler:get-case-lambdas))))
 	    (for-each
 	     (lambda (ll)
@@ -369,9 +369,9 @@
 		  (fprintf port "~aS.casesArities[~a] = NULL;~n"
 			   vm->c:indent-spaces pos)
 		  (begin
-		    (fprintf port "~a{~n~a  short * arities;~n" 
+		    (fprintf port "~a{~n~a  mzshort * arities;~n" 
 			     vm->c:indent-spaces vm->c:indent-spaces)
-		    (fprintf port "~a  arities = (short *)scheme_malloc_atomic(~a * sizeof(short));~n"
+		    (fprintf port "~a  arities = (mzshort *)scheme_malloc_atomic(~a * sizeof(mzshort));~n"
 			     vm->c:indent-spaces
 			     (* 2 (length args)))
 		    (let cailoop ([l args][n 0])

@@ -2720,12 +2720,7 @@
            [(then-label else-label)
             (if (symbol? (syntax-e test))
                 (let* ([test-name (syntax-e test)]
-                       [binding-label (or (lookup-env test gamma)
-                                          (lookup-top-level-name sba-state test-name)
-                                          (let ([primitive-data (lookup-primitive-data sba-state test-name)])
-                                            (if primitive-data
-                                                (prim-data-label primitive-data)
-                                                #f)))]
+                       [binding-label (lookup-env test gamma)]
                        [new-then-binding-label (create-simple-prim-label term)]
                        [new-else-binding-label (create-simple-prim-label term)]
                        [new-then-gamma (extend-env gamma (list test) (list new-then-binding-label))]
@@ -2781,12 +2776,7 @@
              [then-label
               (if (symbol? (syntax-e test))
                   (let* ([test-name (syntax-e test)]
-                         [binding-label (or (lookup-env test gamma)
-                                            (lookup-top-level-name sba-state test-name)
-                                            (let ([primitive-data (lookup-primitive-data sba-state test-name)])
-                                              (if primitive-data
-                                                  (prim-data-label primitive-data)
-                                                  #f)))]
+                         [binding-label (lookup-env test gamma)]
                          [new-then-binding-label (create-simple-prim-label term)]
                          [new-then-gamma (extend-env gamma (list test) (list new-then-binding-label))]
                          [then-normal-edge (create-simple-edge new-then-binding-label)]
@@ -4428,7 +4418,11 @@
   (define (get-handle-or-type-var label)
     (let* ([type-var (label-type-var label)]
            [handle (type-var-handle type-var)])
-      (if handle (begin (printf ".") handle) type-var)))
+      (if handle
+          ;(begin (printf ".")
+          handle
+          ;)
+          type-var)))
   
   ; label (listof labels) -> type-rec
   (define (typeL label reachable-labels)
@@ -4474,19 +4468,20 @@
     (let ([handle (type-var-handle (label-type-var label))])
       (if handle
           handle
-          (let* ([_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
-                                                    (syntax-position (label-term label))
-                                                    (syntax-object->datum (label-term label))))]
-                 [start (current-milliseconds)]
+          (let* (;[_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
+                 ;                                   (syntax-position (label-term label))
+                 ;                                   (syntax-object->datum (label-term label))))]
+                 ;[start (current-milliseconds)]
                  [reachable-labels (set-map (reachable-labels-from-label label)
                                             (lambda (l) (add-type-var-to-label l sba-state) l))]
-                 [_ (printf "~a " (- (current-milliseconds) start))]
-                 [start (current-milliseconds)]
-                 [foo (typeL label reachable-labels)]
-                 [_ (printf " ~a~n" (- (current-milliseconds) start))]
-                 [start (current-milliseconds)]
-                 [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) foo)]
-                 [_ (printf " ~a~n" (- (current-milliseconds) start))])
+                 ;[_ (printf "~a " (- (current-milliseconds) start))]
+                 ;[start (current-milliseconds)]
+                 [reconstructed-type (typeL label reachable-labels)]
+                 ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
+                 ;[start (current-milliseconds)]
+                 [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) reconstructed-type)]
+                 ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
+                 )
             (set-type-var-handle! (label-type-var label) handle)
             handle))))
   

@@ -293,7 +293,7 @@
           (hashcons-table-from-label tbl) type
           (lambda () (hash-table-get (hashcons-table-from-dfa tbl) type
                                      (lambda ()
-				       (print-hashcons-table tbl)
+				       ;(print-hashcons-table tbl)
 				       (error 'get-type-handle "Type ~a not in hashcons table" type)))))))))
   
   (dbg-define/contract get-type (hashcons-table? handle? . -> . hashcons-type?)
@@ -572,7 +572,7 @@
                                                          [(dfa binder-states)
                                                           (create-dfa-from-type ty env)]
                                                          ;[(_) (printf "rec-type original-dfa=")]
-                                                         [(_) (print-dfa dfa)]
+                                                         ;[(_) (print-dfa dfa)]
                                                          [(min-dfa min-binder-states)
                                                           (minimize-dfa dfa binder-states)]
                                                          ;[(_) (printf "rec-type min-dfa=~a binder-states=~a~n" min-dfa binder-states)]
@@ -606,7 +606,7 @@
                                                          [(dfa binder-states)
                                                           (create-dfa-from-type ty env)]
                                                          ;[(_) (printf "original-dfa=")]
-                                                         [(_) (print-dfa dfa)]
+                                                         ;[(_) (print-dfa dfa)]
                                                          [(min-dfa min-binder-states)
                                                           (minimize-dfa dfa binder-states)]
                                                          ;[(_) (printf "min-dfa=~a~n" min-dfa)]
@@ -1371,32 +1371,32 @@
         [x (error 'dfa-state->string "Unmatched type ~a\n" x)]
         )))
   
-  (define print-dfa
-    (lambda (dfa)
-      (printf "(")
-      (hash-table-for-each dfa (lambda (k v) (printf "~a " (dfa-state->string v))))
-      (printf ")")
-      (newline)))
-  
-  (define print-hashcons-table
-    (lambda (tbl)
-      (printf "Hashcons table has ~a elements~%" (hashcons-table-number-handles tbl))
-      (hash-table-for-each (hashcons-table-from-handle tbl)
-                           (lambda (h type)
-			     (printf "Handle: ~a --> " h) (pretty-print type)))
-      (printf "------------------------------\n")
-      (hash-table-for-each (hashcons-table-from-label tbl)
-                           (lambda (label h)
-                             (printf "Label: ") (pretty-print label) (printf " --> Handle: ~a~%"  h)))
-      (printf "------------------------------\n")
-      (hash-table-for-each (hashcons-table-from-base-type tbl)
-                           (lambda (base-type h)
-                             (printf "Base Type: ") (pretty-print base-type) (printf " --> Handle: ~a~%" h)))
-      (printf "------------------------------\n")
-      (hash-table-for-each (hashcons-table-from-dfa tbl)
-                           (lambda (dfa h)
-                             (printf "DFA: ") (pretty-print dfa) (printf " --> Handle: ~a~%" h)))
-      (printf "------------------------------\n")))
+;  (define print-dfa
+;    (lambda (dfa)
+;      (printf "(")
+;      (hash-table-for-each dfa (lambda (k v) (printf "~a " (dfa-state->string v))))
+;      (printf ")")
+;      (newline)))
+;  
+;  (define print-hashcons-table
+;    (lambda (tbl)
+;      (printf "Hashcons table has ~a elements~%" (hashcons-table-number-handles tbl))
+;      (hash-table-for-each (hashcons-table-from-handle tbl)
+;                           (lambda (h type)
+;			     (printf "Handle: ~a --> " h) (pretty-print type)))
+;      (printf "------------------------------\n")
+;      (hash-table-for-each (hashcons-table-from-label tbl)
+;                           (lambda (label h)
+;                             (printf "Label: ") (pretty-print label) (printf " --> Handle: ~a~%"  h)))
+;      (printf "------------------------------\n")
+;      (hash-table-for-each (hashcons-table-from-base-type tbl)
+;                           (lambda (base-type h)
+;                             (printf "Base Type: ") (pretty-print base-type) (printf " --> Handle: ~a~%" h)))
+;      (printf "------------------------------\n")
+;      (hash-table-for-each (hashcons-table-from-dfa tbl)
+;                           (lambda (dfa h)
+;                             (printf "DFA: ") (pretty-print dfa) (printf " --> Handle: ~a~%" h)))
+;      (printf "------------------------------\n")))
   
   (dbg-define/contract handle->string (hashcons-table? handle? . -> . string?)
     (lambda (tbl handle)
@@ -1788,9 +1788,9 @@
                  [add-to-L!
                   (lambda (eq letter)
                     (set-set l (cons eq letter)))]
-                 [print-L
-                  (lambda ()
-                    (printf "(L=") (set-for-each l display)(printf ")"))]
+                 ;[print-L
+                 ; (lambda ()
+                 ;   (printf "(L=") (set-for-each l display)(printf ")"))]
                  [remove! (lambda (eq-class-num letter)
                             (set-remove l (cons eq-class-num letter)))]
                  [eq&letter-present? (lambda (eq-class-num letter)

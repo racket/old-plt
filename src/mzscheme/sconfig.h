@@ -518,6 +518,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_DIVIDE_MAKE_INFINITY
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
+# define ZERO_MINUS_ZERO_IS_POS_ZERO
 
 # define NO_INLINE_KEYWORD
 
@@ -1101,6 +1102,12 @@ int scheme_pthread_semaphore_try_down(void *);
     equality comparisons with +nan.0 always return #t. Currently
     used for MSVC++ */
     
+ /* ZERO_MINUS_ZERO_IS_POS_ZERO indicates that something (compiler?
+    machine? fp flags?) is broken so that 0.0 - 0.0 = 0.0 instead of
+    -0.0. This flag doesn't fix MzScheme completely, since (- 0.0) is
+    still 0.0, but at least it lets MzScheme read and print 0.0 and
+    -0.0 accurately. Currently used for HP/UX. */
+
  /* NAN_LT_COMPARISON_WRONG indicates that +nan.0 is not handled correctly
     by < or <=. Probably the compiler implements < as !>. */
 

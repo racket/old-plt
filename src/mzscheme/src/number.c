@@ -207,7 +207,11 @@ scheme_init_number (Scheme_Env *env)
 #endif
 #endif
 
+#ifdef ZERO_MINUS_ZERO_IS_POS_ZERO
+    scheme_floating_point_nzero = -1.0 / scheme_infinity_val;
+#else
     scheme_floating_point_nzero = - scheme_floating_point_nzero;
+#endif
 
     scheme_minus_infinity_val = -scheme_infinity_val;
     not_a_number_val = scheme_infinity_val + scheme_minus_infinity_val;

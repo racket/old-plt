@@ -1,4 +1,4 @@
-_lex.ss_ _lex_
+_lex.ss_
 A regular expression is one of the following
 character                          match the given character
 '_                                 match any character
@@ -20,7 +20,7 @@ string                             match its sequence of characters
 (the null concatenation `(@) means epsilon)
 Support for more usual re's should come soon.
 
-To use the lexer generator you must (require (lib "lex.ss" "parser-tools")).
+To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntatic forms:
 
 > (define-lex-abbrev name re) which associates a regular expression with name
@@ -60,9 +60,9 @@ overhead place the lexer generator into a module and compile the module to a
 subdirectory named 'compiled'
 
 
-_yacc.ss_ _yacc_
+_yacc.ss_
 
-To use the parser generator (require (lib "yacc.ss" "parser-tools")).
+To use the _parser generator_ (require (lib "yacc.ss" "parser-tools")).
 This module provides the following syntactic forms:
 
 > (define-tokens group-name (token-name ...)) which binds group-name
@@ -138,15 +138,15 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
 
 #cs
 (module simple-read mzscheme
-
+  
   (require (lib "lex.ss" "parser-tools")
 	   (lib "yacc.ss" "parser-tools"))
-
+  
   (provide simple-read)
-
+  
   (define-tokens value-tokens (BOOL CHARACTER SYM STRNG))
   (define-empty-tokens grouping-tokens (OPEN CLOSE HASHOPEN IMPROPER EOF))
-
+  
   (define read-lexer
     (lex
      [(: #\newline #\space #\tab (comment)) 
@@ -175,7 +175,7 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
       'IMPROPER]
      [eof 
       'EOF]))
-
+  
   (define get-string-token
     (lex
      [(^ #\" #\\) (cons (car (string->list (get-lexeme)))
@@ -183,32 +183,33 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
      [(@ #\\ #\\) (cons #\\ (get-string-token lex-buf))]
      [(@ #\\ #\") (cons #\" (get-string-token lex-buf))]
      [#\" null]))
-
-
+  
+  
   (define-lex-abbrevs
-    [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ #\_ ~)]
-    [subsequent (: (initial) (digit) + - #\. @)]
-    [digit (- #\0 #\9)]
-    [comment (@ #\; (^ #\newline) #\newline)])
-
-
+   [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ #\_ ~)]
+   [subsequent (: (initial) (digit) + - #\. @)]
+   [digit (- #\0 #\9)]
+   [comment (@ #\; (^ #\newline) #\newline)])
+  
+  
   (define read-parser
     (parser 
-      (start sexp-list)
-      (error (lambda () (error 'read-error)))
-      (tokens value-tokens grouping-tokens)
-      (end EOF)
-      (grammar
-        (sexp [(SYM) 3]
-	      [(OPEN sexp-list CLOSE) 5])
-        (sexp-list [() 6]
-	[(sexp sexp-list) 7]))))
-
+     (start sexp-list)
+     (debug "read-table")
+     (error (lambda () (error 'read-error)))
+     (tokens value-tokens grouping-tokens)
+     (end EOF)
+     (grammar
+      (sexp [(SYM) 3]
+            [(OPEN sexp-list CLOSE) 5])
+      (sexp-list [() 6]
+                 [(sexp sexp-list) 7]))))
+  
   (define (simple-read input-port)
     (let ((ip (make-lex-buf input-port)))
       (read-parser (lambda () (read-lexer ip)))))
-
-)
+  
+  )
 
 
 
@@ -219,6 +220,10 @@ POSIX style regular expressions
 parser:
 Fisher-Burke error recovery
 Possibly change the $1 style to something like SML/NJ YACC uses
+Optimizations, possible LALR table compression
+Error checking for useless productions
+Error check for use of an end token in a production
 
 both:
 More automatic line number handling
+Code decumentation

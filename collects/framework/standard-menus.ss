@@ -554,7 +554,7 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix)))
-             "Find"
+             "Find..."
              (edit-menu:find-string)
              "")
             (get-edit-menu)

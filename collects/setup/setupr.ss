@@ -403,18 +403,21 @@
 	     (loop (cdr l)))))))
 
   (define (delete-files-in-directory path printout)
-    (let loop ([path path])
-      (cond
-       [(directory-exists? path)
-	(void)]
-       [(file-exists? path)
-	(printout)
-	(unless (delete-file path)
-	  (error 'delete-files-in-directory
-		 "unable to delete file: ~a" path))]
-       [else (error 'delete-files-in-directory
-		    "encountered ~a, neither a file nor a directory"
-		    path)])))
+    (for-each
+     (lambda (end-path)
+       (let ([path (build-path path end-path)])
+	 (cond
+	  [(directory-exists? path)
+	   (void)]
+	  [(file-exists? path)
+	   (printout)
+	   (unless (delete-file path)
+	     (error 'delete-files-in-directory
+		    "unable to delete file: ~a" path))]
+	  [else (error 'delete-files-in-directory
+		       "encountered ~a, neither a file nor a directory"
+		       path)])))
+     (directory-list path)))
 
   (define (is-subcollection? collection sub-coll)
     (cond
@@ -431,12 +434,11 @@
 		   'clean
 		   (list "compiled" (build-path "compiled" "native" (system-library-subpath)))
 		   (lambda (x)
-		     (unless
-			 (or (eq? x default)
-			     (and (list? x)
-				  (andmap string? x))
+		     (unless (or (eq? x default)
+				 (and (list? x)
+				      (andmap string? x)))
 		       (error 'setup-plt "expected a list of strings for 'clean, got: ~s"
-			      x)))))]
+			      x))))]
 	   [printed? #f]
 	   [print-message
 	    (lambda ()
@@ -447,7 +449,7 @@
 		  (let ([full-path (build-path (cc-path cc) path)])
 		    (cond
 		     [(directory-exists? full-path)
-		      (delete-files-in-directory 
+		      (delete-files-in-directory
 		       full-path
 		       print-message)]
 		     [(file-exists? full-path)

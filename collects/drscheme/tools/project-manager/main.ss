@@ -641,7 +641,7 @@
 
       (define (add-files)
 
-	(define new-files (finder:common-get-file-list))
+	(define new-files (get-file-list))
 
 	(define (prompt-user-collection? filename collection collection-dir)
 	  (define answer #t)

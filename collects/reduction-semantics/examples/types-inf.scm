@@ -8,6 +8,7 @@
   #|
   
   The simplification rules in here aren't right yet.
+  They don't detect loops.
   
   |#
   
@@ -16,6 +17,7 @@
      (p ((a t) ... e))
      (e (e e)
         x
+        a
         number
         (lambda (x) e)
         (-> e e)
@@ -28,12 +30,7 @@
      (x (side-condition (name x (variable-except lambda -> if =)) (not (ty-var? x))))
      (a (side-condition (name a variable) (ty-var? a)))
      (t num (-> t t) a)
-     (st num 
-         (-> a a)
-         (-> num num)
-         (-> a num)
-         (-> num a)
-         a)))
+     (st num (-> a a))))
   
   (define (ty-var? x)
     (let ([s (symbol->string x)])
@@ -47,7 +44,7 @@
   (define reductions
     (list
 
-     ;; move to all st.
+     ;; move to all st (eliminate left nested arrow)
      (p--> ((name before (a st)) ...
             ((name a1 a) (name t (-> (-> (name t1 t) (name t2 t)) (name t3 t))))
             (name after (a t)) ...
@@ -59,7 +56,7 @@
                ,@after
                ,a2)))
      
-     ;; move to all st
+     ;; move to all st (eliminate right nested arrow)
      (p--> ((name before (a st)) ...
             ((name a1 a) (name t (-> (name t1 t) (-> (name t2 t) (name t3 t)))))
             (name after (a t)) ...
@@ -71,51 +68,93 @@
                ,@after
                ,a2)))
      
-     ;; eliminate var = var
+     ;; move to all st (eliminate var = var)
      (p--> (name p ((name before (a st)) ...
                     ((name a1 a) (name a2 a))
-                    (name after (a st)) ...
+                    (name after (a t)) ...
                     (name a a)))
            `(,@(put-in a1 a2 before)
              ,@(put-in a1 a2 after)
              ,(put-in a1 a2 a)))
      
-     ;; eliminate var = num
+     ;; next 4: propogate nested constraints
+     
+     (p--> (side-condition
+            ((name before (a st)) ...
+             ((name a1 a) (-> (name a2 a) (name a3 a)))
+             (name during (a st)) ...
+             ((name a1 a) (-> (name a4 a) (name a5 a)))
+             (name after (a st)) ...
+             (name a6 a))
+            (and (not (eq? a2 a4))
+                 (not (eq? a3 a5))))
+           `(,@before
+             (,a1 (-> ,a2 ,a3))
+             ,@during
+             (,a1 (-> ,a4 ,a5))
+             ,@after
+             (,a2 ,a4)
+             (,a3 ,a5)
+             ,a6))
+     
+     (p--> (side-condition
+            ((name before (a st)) ...
+             ((name a1 a) (-> (name a2 a) (name a3 a)))
+             (name during (a st)) ...
+             ((name a1 a) (-> (name a4 a) (name a5 a)))
+             (name after (a st)) ...
+             (name a6 a))
+            (and (eq? a2 a4)
+                 (not (eq? a3 a5))))
+           `(,@before
+             (,a1 (-> ,a2 ,a3))
+             ,@during
+             (,a1 (-> ,a4 ,a5))
+             ,@after
+             (,a3 ,a5)
+             ,a6))
+     
+     (p--> (side-condition
+            ((name before (a st)) ...
+             ((name a1 a) (-> (name a2 a) (name a3 a)))
+             (name during (a st)) ...
+             ((name a1 a) (-> (name a4 a) (name a5 a)))
+             (name after (a st)) ...
+             (name a6 a))
+            (and (not (eq? a2 a4))
+                 (eq? a3 a5)))
+           `(,@before
+             (,a1 (-> ,a2 ,a3))
+             ,@during
+             (,a1 (-> ,a4 ,a5))
+             ,@after
+             (,a2 ,a4)
+             ,a6))
+     
+     (p--> (side-condition
+            ((name before (a st)) ...
+             ((name a1 a) (-> (name a2 a) (name a3 a)))
+             (name during (a st)) ...
+             ((name a1 a) (-> (name a4 a) (name a5 a)))
+             (name after (a st)) ...
+             (name a6 a))
+            (and (eq? a2 a4)
+                 (eq? a3 a5)))
+           `(,@before
+             (,a1 (-> ,a2 ,a3))
+             ,@during
+             ,@after
+             ,a6))
+     
+     ;; detect type errors
      (p--> ((name before (a st)) ...
+            ((name a1 a) (-> a a))
+            (name during (a st)) ...
             ((name a1 a) num)
             (name after (a st)) ...
-            (name a a))
-           `(,@(put-in a1 'num before)
-             ,@(put-in a1 'num after)
-             ,(put-in a1 'num a)))
-     
-     (p--> (name p ((name before (a st)) ...
-                    ((name a1 a) (-> (name a2 a) (name a3 a)))
-                    (name during (a st)) ...
-                    ((name a1 a) (-> (name a4 a) (name a5 a)))
-                    (name after (a st)) ...
-                    (name a6 a)))
-           (put-in a2 a4 p))
-     
-     (p--> (name p ((name before (a st)) ...
-                    ((name a1 a) (-> (name a2 a) (name a3 a)))
-                    (name during (a st)) ...
-                    ((name a1 a) (-> (name a4 a) (name a5 a)))
-                    (name after (a st)) ...
-                    (name a6 a)))
-           (put-in a3 a5 p))
-            
-     (p--> ((name before (a st)) ...
-            (name same (a st))
-            (name during (a st)) ...
-            (name same (a st))
-            (name after (a st)) ...
-            (name a a))
-           `(,@before
-             ,same
-             ,@after
-             ,a))
-     
+            (name a2 a))
+           "type mismatch")
+ 
      (p--> ((name bindings (a t)) ... (in-hole (name c c) number))
            (let ([nt (variable-not-in (list c bindings) ':t)])
              `(,@bindings (,nt num) ,(replace c hole nt))))
@@ -136,9 +175,9 @@
     (subst
      [(? symbol?) (variable)]
      [(? number?) (constant)]
-     [`(lambda (,x ,t) ,b)
+     [`(lambda (,x) ,b)
       (all-vars (list x))
-      (build (lambda (vars body) `(lambda (,(car vars) ,t) ,body)))
+      (build (lambda (vars body) `(lambda (,(car vars)) ,body)))
       (subterm (list x) b)]
      [`(,f ,@(xs ...))
       (all-vars '())
@@ -154,6 +193,10 @@
         [else sexp])))
   
   ;(define term '(((lambda (x) (x x)) (lambda (x) (x x)))))
-  (define term '((((lambda (x) x) (lambda (x) x)) 1)))
-  (gui lang reductions term)
-  )
+  ;(define term '((((lambda (x) x) (lambda (x) x)) 1)))
+  
+  ;; big one: goes to type mistmatch
+  (define term '(((lambda (x) ((x (lambda (x) x)) (x 1)))
+                  (lambda (x) x))))
+  
+  (gui lang reductions term))

@@ -5,11 +5,11 @@
  (are-you-sure-you-want-to-switch-languages
   "Dette ændrer sproget i den grafiske brugerflade. Er du sikker?")
 
- ;; these two should probably be the same in all languages excepet English.
+ ;; these two should probably be the same in all languages except English.
  ;; they are the button labels (under macos and windows, respectively)
  ;; that go the with the string above.
- (accept-and-quit "Accept and Quit")
- (accept-and-exit "Accept and Exit")
+ (accept-and-quit "Accepter og afslut")
+ (accept-and-exit "Accepter og afslut")
  
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (plt "PLT")
@@ -524,7 +524,7 @@
  (kill-menu-item-label "Slå ihjel")
  (kill-menu-item-help-string "Slå den nuværende evaluering ihjel")
  (reindent-menu-item-label "&Indryk igen")
- (reindent-all-menu-item-label "Indryk &Alt igen")
+ (reindent-all-menu-item-label "Indryk &alt igen")
  (comment-out-menu-item-label "&Udkommentér")
  (uncomment-menu-item-label "&Fjen kommentar")
  
@@ -672,11 +672,4 @@
  (insert-large-letters... "Indsæt store bogstaver...")
  (large-semicolon-letters "Store semikolon-bogstaver")
  (text-to-insert "Tekst til indsættelse")
-
- (add-teachpack-menu-item-label "Tilføj undervisningspakke...")
- (vc-current-format "~a v.~a (iteration ~a) er up-to-date")
- (vc-details-format "~a~nDetaljer:~n~a")
- (vc-details-text "Detaljer:~n")
- (vc-error-format "Fejl: ~a")
- 
  )

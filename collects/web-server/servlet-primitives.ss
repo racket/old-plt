@@ -12,7 +12,6 @@
            (lib "external.ss" "browser")
            ; more here - use contracts when they support suitable error messages
            ;(lib "contracts.ss" "framework")
-           (lib "error.ss" "htdp")
            (lib "unitsig.ss")
 	   (lib "tcp-sig.ss" "net")
            )
@@ -39,7 +38,9 @@
   
   ; send/finish : response -> doesn't
   (define (the-send/finish page)
-    (check-arg 'send/finish (response? page) "response" "1st" page)
+    (unless (response? page)
+      (error 'send/finish "expected <response> as 1st argument, given: ~e"
+             page))
     (output-page page)
     (kill-thread (current-thread))
     (set! *page-channel* #f))
@@ -92,8 +93,8 @@
         (s/s (lambda (k-url)
                (let ([page (k->page k-url)])
                  (unless (response? page)
-                   (error 'send/suspend "expected <~a> as ~a argument, given a function that produced: ~e"
-                          "a function that produces a response" "1st"
+                   (error 'send/suspend "expected <~a> as 1st argument, given a function that produced: ~e"
+                          "a function that produces a response"
                           page))
                  page))))))
 

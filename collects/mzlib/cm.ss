@@ -10,8 +10,6 @@
   (define indent (make-parameter ""))
   (define trust-existing-zos (make-parameter #f))
   
-  (define up-to-date (make-parameter (make-hash-table 'equal)))
-  
   (define my-max
     (case-lambda
       (() 0)
@@ -90,10 +88,10 @@
                                                                           ".fail"))))))
       (file-or-directory-modify-seconds (string-append (get-compilation-path path) ".zo"))))
   
-  (define (compile-root path use-table?)
+  (define (compile-root path up-to-date)
     (let ([path (normal-case-path (simplify-path (expand-path path)))])
-      (let ((stamp (and use-table?
-			(hash-table-get (up-to-date) path (lambda () #f)))))
+      (let ((stamp (and up-to-date
+			(hash-table-get up-to-date path (lambda () #f)))))
 	(cond
 	 (stamp stamp)
 	 (else
@@ -110,20 +108,21 @@
 		 ((or (not (pair? deps))
 		      (not (equal? (version) (car deps))))
 		  (compile-zo path))
-		 ((> (apply my-max (map (lambda (d) (compile-root d #t)) (cdr deps))) path-zo-time)
+		 ((> (apply my-max (map (lambda (d) (compile-root d up-to-date)) (cdr deps))) path-zo-time)
 		  (compile-zo path)))))))
 	  (let ((stamp (get-compiled-time path)))
-	    (hash-table-put! (up-to-date) path stamp)
+	    (hash-table-put! up-to-date path stamp)
 	    stamp))))))
   
   (define (managed-compile-zo zo)
     (parameterize ([current-load/use-compiled (make-compilation-manager-load/use-compiled-handler)])
-       (compile-root (path->complete-path zo) #f)))
+       (compile-root (path->complete-path zo) (make-hash-table 'equal))))
   
   (define (make-compilation-manager-load/use-compiled-handler)
     (let ([orig-eval (current-eval)]
 	  [orig-load (current-load)]
 	  [orig-namespace (current-namespace)]
+	  [cache (make-hash-table 'equal)]
 	  [default-handler (current-load/use-compiled)])
       (let ([compilation-manager-load-handler
 	     (lambda (path mod-name)
@@ -135,6 +134,6 @@
 			     (not (and (eq? orig-eval (current-eval))
 				       (eq? orig-load (current-load))
 				       (eq? orig-namespace (current-namespace)))))
-	            (compile-root path #f))
+	            (compile-root path cache))
 		 (default-handler path mod-name))))])
 	compilation-manager-load-handler))))

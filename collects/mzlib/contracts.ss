@@ -432,7 +432,6 @@
   ;;                            -> 
   ;;                            alpha)
   ;;                            (contract alpha sym src-info -> alpha)
-  ;;                            (??? -> ???)
   ;; generic contract container; 
   ;; the first argument to wrap is the value to test the contract.
   ;; the second to wrap is a symbol representing the name of the positive blame
@@ -441,7 +440,11 @@
   ;;
   ;; impl-builder and impl-info are two pieces used to build
   ;; implication contracts.
-  (define-struct contract (wrap impl-builder impl-info))
+  (define-struct contract (wrap impl-builder))
+  
+  ;; proc-contract = (make-proc-contract ... <as above>
+  ;;                                     (number boolean boolean -> (union false (vectorof contract)))
+  (define-struct (proc-contract contract) (info))
 
   ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
   ;; this holds flat contracts that have names for error reporting
@@ -721,7 +724,7 @@
     (define (case->/proc stx)
       (syntax-case stx ()
         [(_ case ...)
-         (let-values ([(add-outer-check make-inner-check make-bodies _1 _2)
+         (let-values ([(add-outer-check make-inner-check make-bodies _1 _2 _3)
                        (case->/h stx (syntax->list (syntax (case ...))))])
            (let ([outer-args (syntax (val pos-blame neg-blame src-info))])
              (with-syntax ([outer-args outer-args]
@@ -733,7 +736,7 @@
                                (syntax/loc stx (case-lambda body ...)))])
                  (add-outer-check
                   (syntax/loc stx
-                    (make-contract
+                    (make-proc-contract
                      (lambda outer-args
                        inner-check ...
                        inner-lambda)
@@ -747,7 +750,7 @@
          (match-let ([(`(,make-outer-checks ,xxx ,build-pieces) ...)
                       (map (lambda (meth-contract-stx)
                              (let ([/h (select/h meth-contract-stx 'class-contract stx)])
-                               (let-values ([(make-outer-check xxx build-pieces impl-builder impl-info)
+                               (let-values ([(make-outer-check xxx build-pieces impl-wrap impl-builder impl-info)
                                              (/h meth-contract-stx)])
                                  (list make-outer-check xxx build-pieces))))
                            (syntax->list (syntax (meth-contract ...))))])
@@ -781,7 +784,6 @@
                       (rename [super-meth-name meth-name] ...)
                       method ...
                       (super-instantiate ())))
-                  (lambda x (error 'impl-contract "unimplemented"))
                   (lambda x (error 'impl-contract "unimplemented"))))
                 make-outer-checks))))]
         [(_ (meth-name meth-contract) ...)
@@ -875,6 +877,7 @@
                  (let-values ([(->*add-outer-check 
                                 ->*make-inner-check 
                                 ->*make-body
+                                impl-wrap
                                 impl-builder
                                 impl-info)
                                (->*/h ->body)])
@@ -891,6 +894,7 @@
                                ...)))))
                         (lambda (stx)
                           (->*make-body stx)))
+                    impl-wrap
                     impl-builder 
                     impl-info))))))]))
     
@@ -906,8 +910,7 @@
                        [(rng-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(rng-length rng-index ...) (generate-indicies (syntax (rng ...)))]
                        [(rng-ant-x ...) (generate-temporaries (syntax (rng ...)))]
-                       [(res-x ...) (generate-temporaries (syntax (rng ...)))]
-                       [arity (length (syntax->list (syntax (dom ...))))])
+                       [(res-x ...) (generate-temporaries (syntax (rng ...)))])
            (values
             (lambda (body)
               (with-syntax ([body body])
@@ -923,13 +926,13 @@
               (with-syntax ([(val pos-blame neg-blame src-info) stx])
                 (syntax
                  (unless (and (procedure? val)
-                              (procedure-arity-includes? val arity))
+                              (procedure-arity-includes? val dom-length))
                    (raise-contract-error
                     src-info
                     pos-blame
                     neg-blame
                     "expected a procedure that accepts ~a arguments, given: ~e"
-                    arity
+                    dom-length
                     val)))))
             (lambda (stx)
               (with-syntax ([(val pos-blame neg-blame src-info) stx])
@@ -946,23 +949,27 @@
                              neg-blame
                              src-info)
                             ...))))))
+            (lambda (body)
+              (with-syntax ([body body])
+                (syntax
+                 (lambda (ant conq val tbb src-info)
+                   (if (and (procedure? val)
+                            (procedure-arity-includes? val dom-length))
+                       (let* ([ant-info (proc-contract-info ant)]
+                              [dom-ant-info (ant-info dom-length #t #f)]
+                              [rng-ant-info (ant-info rng-length #f #f)])
+                         (if (and rng-ant-info dom-ant-info)
+                             (let ([dom-ant-x (vector-ref dom-ant-info dom-index)] ...
+                                   [rng-ant-x (vector-ref rng-ant-info rng-index)] ...)
+                               body)
+                             (raise-contract-implication-error ant conq val tbb src-info)))
+                       (raise-contract-implication-error ant conq val tbb src-info))))))
             (syntax
-             (lambda (ant conq val tbb src-info)
-               (if (and (procedure? val)
-                        (procedure-arity-includes? val dom-length))
-                   (let* ([ant-info (contract-impl-info ant)]
-                          [dom-ant-info (ant-info dom-length #t #f)]
-                          [rng-ant-info (ant-info rng-length #f #f)])
-                     (if (and rng-ant-info dom-ant-info)
-                         (let ([dom-ant-x (vector-ref dom-ant-info dom-index)] ...
-                               [rng-ant-x (vector-ref rng-ant-info rng-index)] ...)
-                           (lambda (arg-x ...)
-                             (let-values ([(res-x ...)
-                                           (val (check-implication dom-x dom-ant-x arg-x tbb src-info) ...)])
-                               (values 
-                                (check-implication rng-ant-x rng-x res-x tbb src-info) ...))))
-                         (raise-contract-implication-error ant conq val tbb src-info)))
-                   (raise-contract-implication-error ant conq val tbb src-info))))
+             ((arg-x ...)
+              (let-values ([(res-x ...)
+                            (val (check-implication dom-x dom-ant-x arg-x tbb src-info) ...)])
+                (values 
+                 (check-implication rng-ant-x rng-x res-x tbb src-info) ...))))
             (syntax 
              (lambda (len dom? and-more?)
                (if and-more?
@@ -977,7 +984,14 @@
         [(_ (dom ...) rest (rng ...))
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(arg-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [(dom-length dom-index ...) (generate-indicies (syntax (dom ...)))]
+                       [(dom-ant-x ...) (generate-temporaries (syntax (dom ...)))]
+                       [dom-rest-x (car (generate-temporaries (list (syntax rest))))]
+                       [arg-rest-x (car (generate-temporaries (list (syntax rest))))]
+                       
                        [(rng-x ...) (generate-temporaries (syntax (rng ...)))]
+                       [(rng-length rng-index ...) (generate-indicies (syntax (rng ...)))]
+                       [(rng-ant-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(res-x ...) (generate-temporaries (syntax (rng ...)))]
                        [arity (length (syntax->list (syntax (dom ...))))])
            (values
@@ -1003,18 +1017,18 @@
                     pos-blame
                     neg-blame
                     "expected a procedure that accepts ~a arguments, given: ~e"
-                    arity
+                    dom-length
                     val)))))
             (lambda (stx)
               (with-syntax ([(val pos-blame neg-blame src-info) stx])
                 (syntax
-                 ((arg-x ... . rest-arg-x)
+                 ((arg-x ... . arg-rest-x)
                   (let-values ([(res-x ...)
                                 (apply
                                  val
                                  (check-contract dom-x arg-x neg-blame pos-blame src-info)
                                  ...
-                                 (check-contract dom-rest-x rest-arg-x neg-blame pos-blame src-info))])
+                                 (check-contract dom-rest-x arg-rest-x neg-blame pos-blame src-info))])
                     (values (check-contract
                              rng-x 
                              res-x
@@ -1022,8 +1036,42 @@
                              neg-blame
                              src-info)
                             ...))))))
-            (syntax (lambda x (error 'impl-contract "unimplemented")))
-            (syntax (lambda x (error 'impl-contract "unimplemented")))))]))
+            (lambda (body)
+              (with-syntax ([body body])
+                (syntax
+                 (lambda (ant conq val tbb src-info)
+                   (if (and (procedure? val)
+                            (procedure-arity-includes? val dom-length))
+                       (let* ([ant-info (proc-contract-info ant)]
+                              [dom-ant-info (ant-info dom-length #t #t)]
+                              [rng-ant-info (ant-info rng-length #f #t)])
+                         (if (and rng-ant-info dom-ant-info)
+                             (let ([dom-ant-rest-x (vector-ref dom-ant-info 0)]
+                                   [dom-ant-x (vector-ref dom-ant-info (+ dom-index 1))] ...
+                                   [rng-ant-x (vector-ref rng-ant-info rng-index)] ...)
+                               body)
+                             (raise-contract-implication-error ant conq val tbb src-info)))
+                       (raise-contract-implication-error ant conq val tbb src-info))))))
+            (syntax
+             ((arg-x ... . arg-rest-x)
+              (let-values ([(res-x ...)
+                            (apply
+                             val 
+                             (check-implication dom-x dom-ant-x arg-x tbb src-info) ...
+                             (check-implication dom-rest-x dom-ant-rest-x arg-rest-x tbb src-info))])
+                (values 
+                 (check-implication rng-ant-x rng-x res-x tbb src-info) ...))))
+            (syntax 
+             (lambda (len dom? and-more?)
+               (if and-more?
+                   (if dom?
+                       (cond
+                         [(= len dom-length) (vector dom-rest-x dom-x ...)]
+                         [else #f])
+                       (cond
+                         [(= len rng-length) (vector rng-x ...)]
+                         [else #f]))
+                   #f)))))]))
     
     ;; ->d/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     (define (->d/h stx)
@@ -1075,7 +1123,8 @@
                        pos-blame
                        neg-blame
                        src-info))))))
-              (syntax (lambda x (error 'impl-contract "unimplemented")))
+              (lambda (body) (syntax (lambda x (error 'impl-contract "unimplemented"))))
+              (syntax (x (error 'impl-contract "unimplemented")))
               (syntax (lambda x (error 'impl-contract "unimplemented"))))))]))
     
     ;; ->d*/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
@@ -1139,7 +1188,8 @@
                                  src-info))
                               rng-contracts
                               results))))))))))
-            (syntax (lambda x (error 'impl-contract "unimplemented")))
+            (lambda (body) (syntax (lambda x (error 'impl-contract "unimplemented"))))
+            (syntax (x (error 'impl-contract "unimplemented")))
             (syntax (lambda x (error 'impl-contract "unimplemented")))))]
         [(_ (dom ...) rest rng-mk)
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
@@ -1202,21 +1252,23 @@
                                  src-info ))
                               rng-contracts
                               results))))))))))
-            (syntax (lambda x (error 'impl-contract "unimplemented")))
+            (lambda (body) (syntax (lambda x (error 'impl-contract "unimplemented"))))
+            (syntax (x (error 'impl-contract "unimplemented")))
             (syntax (lambda x (error 'impl-contract "unimplemented")))))]))
     
     ;; make-/proc : (syntax -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))) 
     ;;              syntax
     ;;           -> (syntax -> syntax)
     (define (make-/proc /h stx)
-      (let-values ([(add-outer-check make-inner-check make-main impl-first impl-second) (/h stx)])
+      (let-values ([(add-outer-check make-inner-check make-main impl-wrap impl-first impl-second) (/h stx)])
         (let ([outer-args (syntax (val pos-blame neg-blame src-info))])
           (with-syntax ([outer-args outer-args]
                         [inner-check (make-inner-check outer-args)]
                         [(inner-args body) (make-main outer-args)]
-                        [impl-first impl-first]
+                        [(impl-first-params impl-first-body) impl-first]
                         [impl-second impl-second])
-            (with-syntax ([inner-lambda 
+            (with-syntax ([impl-first (impl-wrap (syntax (lambda impl-first-params impl-first-body)))]
+                          [inner-lambda
                            (set-inferred-name-from
                             stx
                             (syntax/loc stx (lambda inner-args body)))])
@@ -1224,7 +1276,7 @@
                (set-inferred-name-from
                 stx
                 (syntax/loc stx
-                  (make-contract
+                  (make-proc-contract
                    (lambda outer-args
                      inner-check
                      inner-lambda)
@@ -1240,12 +1292,13 @@
           [(null? cases) (values (lambda (x) x)
                                  (lambda (args) (syntax ()))
                                  (lambda (args) (syntax ()))
-                                 (syntax (lambda x (error 'impl-contract "unimplemented")))
+                                 (lambda (body) (syntax (lambda x (error 'impl-contract "unimplemented"))))
+                                 (syntax (x (error 'impl-contract "unimplemented")))
                                  (syntax (lambda x (error 'impl-contract "unimplemented"))))]
           [else
            (let ([/h (select/h (car cases) 'case-> orig-stx)])
-             (let-values ([(add-outer-checks make-inner-checks make-bodies _a _b) (loop (cdr cases))]
-                          [(add-outer-check make-inner-check make-body _1 _2) (/h (car cases))])
+             (let-values ([(add-outer-checks make-inner-checks make-bodies _a _b _c) (loop (cdr cases))]
+                          [(add-outer-check make-inner-check make-body _1 _2 _3) (/h (car cases))])
                (values
                 (lambda (x) (add-outer-check (add-outer-checks x)))
                 (lambda (args)
@@ -1256,7 +1309,8 @@
                   (with-syntax ([case (make-body args)]
                                 [cases (make-bodies args)])
                     (syntax (case . cases))))
-                (syntax (lambda x (error 'impl-contract "unimplemented")))
+                (lambda (body) (syntax (lambda x (error 'impl-contract "unimplemented"))))
+                (syntax (x (error 'impl-contract "unimplemented")))
                 (syntax (lambda x (error 'impl-contract "unimplemented"))))))])))
     
     ;; select/h : syntax -> /h-function
@@ -1390,7 +1444,6 @@
                (raise-contract-error src-info pos neg "union failed, given: ~e" val)]
               [(null? (cdr contracts))
                ((contract-wrap (car contracts)) val pos neg src-info)]))
-          (lambda x (error 'impl-contract "unimplemented"))
           (lambda x (error 'impl-contract "unimplemented")))])))
 
   (provide and/f or/f 

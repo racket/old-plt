@@ -692,6 +692,61 @@
                  'badguy)
    "badguy")
 
+  (test/spec-passed/result
+   'contract-=>->*10
+   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
+                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
+                  (lambda (x . y) 1)
+                  'badguy)
+     100
+     200
+     300)
+   1)
+  
+  (test/spec-failed
+   'contract-=>->*11
+   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
+                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
+                  (lambda (x . y) 1)
+                  'badguy)
+     7
+     200
+     300)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->*12
+   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
+                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
+                  (lambda (x . y) 1)
+                  'badguy)
+     100
+     10
+     300)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->*13
+   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
+                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
+                  (lambda (x . y) 1)
+                  'badguy)
+     100
+     200
+     10)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->*14
+   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
+                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
+                  (lambda (x . y) 5)
+                  'badguy)
+     100
+     200
+     300)
+   "badguy")
+  
   ))
 
 (report-errs)

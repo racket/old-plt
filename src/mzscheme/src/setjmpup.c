@@ -354,6 +354,7 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 
   FLUSH_REGISTER_WINDOWS;
 
+  START_XFORM_SKIP;
   c = b;
   while (c) {
     memcpy(c->stack_from,
@@ -361,6 +362,7 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 	   c->stack_size);
     c = c->cont;
   }
+  END_XFORM_SKIP;
 
 #ifdef MZ_PRECISE_GC
   GC_variable_stack = b->gc_var_stack;

@@ -12,7 +12,7 @@ RANLIB = @RANLIB@
 CFLAGS = @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @GC2OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
 LIBS = @LIBS@
 
-XFORM = ../mzscheme -rq $(srcdir)/xform.ss $(srcdir)/ctok.ss "$(CPP) $(CFLAGS)"
+XFORM = ../mzscheme -rq $(srcdir)/xform.ss "$(CPP) $(CFLAGS)"
 XSRCDIR = xsrc
 SRCDIR = $(srcdir)/../src
 
@@ -104,7 +104,7 @@ xsrc:
 
 xobjects: $(OBJS) main.o
 
-XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss $(srcdir)/ctok.ss
+XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss
 
 $(XSRCDIR)/salloc.c: ../src/salloc.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c

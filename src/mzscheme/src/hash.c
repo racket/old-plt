@@ -907,10 +907,6 @@ long scheme_equal_hash_key2(Scheme_Object *o)
 {
   Scheme_Type t;
   static int hash_counter = HASH_COUNT_START;
-#ifdef MZ_PRECISE_GC
-  if ((unsigned long)*__gc_var_stack__ <= (unsigned long)__gc_var_stack__)
-    abort();
-#endif
 
  top:
   t = SCHEME_TYPE(o);

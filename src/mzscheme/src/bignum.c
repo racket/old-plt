@@ -1293,18 +1293,22 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
   }
 }
 
-/* Used by GMP library: */
+/* Used by GMP library (which is not xformed for precise GC): */
 void scheme_bignum_use_fuel(long n)
 {
 #ifdef MZ_PRECISE_GC
+# ifndef GC_STACK_CALLEE_RESTORE
   char *stupid; /* forces __gc_var_stack__ */
+# endif
 #endif
 
   SCHEME_USE_FUEL(n);
 
 #ifdef MZ_PRECISE_GC
+# ifndef GC_STACK_CALLEE_RESTORE
   /* Restore variable stack. */
   if (!stupid)
     GC_variable_stack = (void **)__gc_var_stack__[0];
+# endif
 #endif
 }

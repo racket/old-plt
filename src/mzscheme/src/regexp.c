@@ -372,10 +372,10 @@ reg(int paren, int *flagp)
 
   /* Check for proper termination. */
   if (paren && *regparse++ != ')') {
-    FAIL("unmatched ()");
+    FAIL("unclosed (");
   } else if (!paren && *regparse != '\0') {
     if (*regparse == ')') {
-      FAIL("unmatched ()");
+      FAIL("extra )");
     } else
       FAIL("junk on end");	/* "Can't happen". */
     /* NOTREACHED */

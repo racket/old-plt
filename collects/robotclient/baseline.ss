@@ -109,11 +109,11 @@
 	(set! count (add1 count))
 	(cond
 	 ((> count MAX_BFS)
-	  (guess-path (map reverse! (queue-head q)) goal?))
+	  (guess-path (map reverse (queue-head q)) goal?))
 	 (else
 	  (let ((path (dequeue! q)))
 	    (cond
-	     ((goal? (car path)) (printf "~a~n" count) (reverse! path))
+	     ((goal? (car path)) (reverse path))
 	     (else
 	      (for-each (lambda (spot)
 			  (cond
@@ -151,8 +151,6 @@
 		     (null? (cdr (path)))
 		     (not (= (get-player-x) (caar (path))))
 		     (not (= (get-player-y) (cdar (path)))))
-                 (printf "~a~n" (path))
-                 (printf "~a,~a~n" (get-player-x) (get-player-y))
                  (path
                   (compute-path (get-player-x)
                                 (get-player-y)

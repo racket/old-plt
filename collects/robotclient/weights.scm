@@ -5,6 +5,7 @@
 	   "client-parameters.ss"
            "heuristics.ss")
   (provide calc-weight
+	   is-robot-within?
            update-robots
            (struct search-player (x y id money capacity packages)))
 ;(define wall-threat-value (make-parameter 1))
@@ -298,6 +299,7 @@
                               (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
   (define (is-robot-within? x y n)
+    (player-cur (make-search-player x y #f #f #f #f))
     (let ([max-y (+ y n)]
           [max-x (+ x n)])
       (let loop ([cur-y (- y n)])

@@ -2,11 +2,12 @@
   (require "board.ss"
            (lib "class.ss")
            "baseline.ss"
+	   "weights.scm"
 	   "client-parameters.ss"
            "search.ss")
   (provide start-client)
   
-  (define (start-client baseline? gui? host-name port)
+  (define (start-client gui? host-name port)
     (let ((client-custodian (make-custodian)))
       (parameterize ((current-custodian client-custodian))
         (with-handlers ((exn? (lambda (ex)
@@ -32,7 +33,7 @@
 	      (newline output)
 	      (read-board! input gui?)
 	      (do-turn (lambda (x) (score (+ (score) x))) 
-		       baseline? input output)))))))
+		       input output)))))))
 
   (define (read-packages in)
     (let* ((x (read-line in))
@@ -70,7 +71,7 @@
        
   
   
-  (define (do-turn update-score baseline? in out)
+  (define (do-turn update-score in out)
     (let loop ((packages (read-packages in))
                (robots null))
       (cond
@@ -82,16 +83,25 @@
 				   (get-player-y)
 				   (package->string p))))
 	 packages)))
+
       (cond
        ((null? packages) (fix-home!)))
+
       (cond
-       ((or baseline? ); (= 1 (num-robots)))
-	(send-command (compute-baseline-move packages robots) out))
-       (else
+       ((is-robot-within? (get-player-x) (get-player-y) 3)
+	(cond
+	 ((or (null? (path)) (null? (cdr (path))))
+	  (compute-baseline-move packages robots)))
+	(path-loc (cadr (path)))
         (let ((command (compute-move packages robots)))
-	  (printf "Sending command: ~a (bid ~a)~n" (command-command command)
-		  (command-bid command))
-          (send-command command out))))
+	  ;;(printf "Sending command: ~a (bid ~a)~n" (command-command command)
+	  ;;	  (command-bid command))
+	  (printf "fight or flight~n")
+          (send-command command out)))
+       (else
+	(printf "baseline~n")
+	(send-command (compute-baseline-move packages robots) out)))
+
       (let ((robots (read-response! update-score
 				    packages
 				    in)))

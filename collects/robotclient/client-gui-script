@@ -2,4 +2,4 @@
 
 (require "client.ss")
 
-(start-client #f #t (vector-ref argv 0) (string->number (vector-ref argv 1)))
+(start-client #t (vector-ref argv 0) (string->number (vector-ref argv 1)))

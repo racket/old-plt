@@ -342,6 +342,39 @@ int scheme_solaris_semaphore_try_down(void *);
 
 #endif
 
+  /************** Mac OS X with cc (MzScheme only?) ****************/
+
+# if defined(__APPLE__) && defined(__ppc__) && !defined(__MWERKS__)
+  /* hard to believe we can't do better */
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
+
+# include "uconfig.h"
+# undef HAS_STANDARD_IOB
+
+# define HAS_BSD_IOB
+
+# define STACK_GROWS_DOWN
+
+/* can't figure out how (or even whether) dynamic loading works */
+# undef UNIX_DYNAMIC_LOAD
+/*# ifdef FREEBSD_VERSION_2x
+#  define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
+# endif*/
+
+# define USE_IEEE_FP_PREDS
+# define POW_HANDLES_INF_CORRECTLY
+
+# define USE_DYNAMIC_FDSET_SIZE
+
+# define SIGSET_IS_SIGNAL
+
+# define USE_TM_GMTOFF_FIELD
+
+# define FLAGS_ALREADY_SET
+
+#endif
+
   /************** BeOS with egcs (and CodeWarrior?) ****************/
 
 #if defined(__BEOS__)

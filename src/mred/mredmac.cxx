@@ -469,7 +469,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
     osq = next;
   }
   
-  if (cont_event_context && !saw_mup) {
+  if (!found && cont_event_context && !saw_mup) {
     if (!StillDown())
       cont_event_context = NULL;
   }

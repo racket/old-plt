@@ -1,6 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-	 (lib "help-desk.ss" "help"))
+	 (lib "help-desk-mz.ss" "help"))
 
 (require "private/hd-css.ss")
 (require "private/util.ss")
@@ -14,8 +14,11 @@
          ; remove quotes
 	 [section (substring raw-section 
 			     1 (sub1 (string-length raw-section)))]
-	 [url (format "/doc/~a/~a" 
-		      manual
-		      (finddoc-page-anchor manual section))])
+	 [page-anchor (finddoc-page-anchor manual section)]
+	 [url (if (hd-servlet? page-anchor)
+		  page-anchor
+		  (format "/doc/~a/~a" 
+			  manual
+			  page-anchor))])
     (send/finish
      (redirect-to url))))

@@ -1343,8 +1343,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
     full_s[endset] = 0;
   s = full_s + offset;
 
-  startp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
-  endp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
+  startp = MALLOC_N_ATOMIC(char *, r->nsubexp);
+  endp = MALLOC_N_ATOMIC(char *, r->nsubexp);
 
   srcbase = (unsigned long)s; /* precise gc: srcbase isn't moved */
   /* No GCs during regexc... */
@@ -1417,8 +1417,8 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 
   source = SCHEME_STR_VAL(argv[1]);
 
-  startp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
-  endp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
+  startp = MALLOC_N_ATOMIC(char *, r->nsubexp);
+  endp = MALLOC_N_ATOMIC(char *, r->nsubexp);
 
   while (1) {
     srcbase = (unsigned long)source; /* precise gc: srcbase isn't moved */

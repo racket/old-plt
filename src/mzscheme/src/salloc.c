@@ -1437,11 +1437,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     }
     break;
-  case scheme_defaulting_config_type:
-#if FORCE_SUBPARTS
-    e += COUNT(SCHEME_LPTR_VAL(root));
-#endif
-    break;
 #ifndef NO_UNIT_SYSTEM
   case scheme_unit_type:
   case scheme_compiled_unit_type:
@@ -1555,8 +1550,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_random_state_type:
     s = 130; /* wild guess */
     break;
-  case scheme_reserved_2_type:
+  case scheme_reserved_1_type:
   case scheme_reserved_3_type:
+  case scheme_reserved_5_type:
     s = 0; /* Not yet used */
     break;
   case scheme_eval_waiting_type:

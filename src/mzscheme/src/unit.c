@@ -1833,10 +1833,15 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 
     boxes = MALLOC_N_ATOMIC(BoxMap, (sm->num_imports + sm->num_exports));
     boxesList[i] = boxes;
+    for (j = sm->num_imports; j--;) {
+      boxes[j].source = 0;
+      boxes[j].pos = 0;
+    }
 
     k = sm->num_imports;
     for (j = sm->num_exports; j--;) {
       boxes[j + k].source = -1;
+      boxes[j + k].pos = 0;
     }
   }
 
@@ -3214,7 +3219,7 @@ void scheme_count_unit(Scheme_Type type, Scheme_Object *o, long *s, long *e,
       for (ex = b->body; ex; ex = ex->next) {
 	*s += sizeof(BodyExpr);
 
-	switch (ex->type) {
+	switch (ex->btype) {
 	case mm_body_def:
 	  {
 #if 0

@@ -32,6 +32,7 @@
 #define  Uses_wxPrintSetup
 #define  Uses_wxTypeTree
 #define  Uses_wxMenu
+#define  Uses_wxWindowDC
 #include "wx.h"
 #include "widgets.h" // for X11/StringDefs.h
 
@@ -195,10 +196,6 @@ int wxEntry(int argc, char *argv[])
   wxTheApp->argc = argc;
   wxTheApp->argv = argv;
 
-#ifdef WX_USE_XFT
-  XftInitFtLibrary();
-#endif
-  
   // initialize global data
   wxCommonInit();
   
@@ -220,6 +217,11 @@ void wxCommonInit(void)
     wxAPP_SCREEN    = XtScreen(wxAPP_TOPLEVEL);
     wxAPP_ROOT	    = RootWindow(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
 
+#ifdef WX_USE_XFT
+    if (wxXRenderHere())
+      XftInitFtLibrary();
+#endif
+  
     wxREGGLOB(wxAPP_COLOURMAP);
     wxAPP_COLOURMAP = DEBUG_NEW wxColourMap(FALSE); // default colourmap
 
@@ -255,7 +257,10 @@ void wxCommonInit(void)
     wxTheFontList = DEBUG_NEW wxFontList();
 
 #ifdef WX_USE_XFT
-    fsize = 10;
+    if (wxXRenderHere())
+      fsize = 10;
+    else
+      fsize = 12;
 #else
     fsize = 12;
 #endif    

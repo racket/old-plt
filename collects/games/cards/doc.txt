@@ -98,9 +98,8 @@ Table methods:
    (send t remove-region r) - removes the region r from the table.
 
    (send t set-button-action which action) - sets the way that a mouse
-        click is handled. The which argument must be 1, 2, or 3 indicating
-        the left, middle, or right button, respectively. The action argument
-        must be one of:
+        click is handled. The which argument must be 'left, 'middle,
+        or 'right. The action argument must be one of:
            'drag/one - drag only the clicked-on card
            'drag-raise/one - like drag/one, but raise the card to the
                   top on a click
@@ -113,9 +112,9 @@ Table methods:
                   the card). The underneath relation is closed transitively.
            'drag-raise/below
         The initial settings are:
-           1 - 'drag-raise/above
-           2 - 'drag/one
-           3 - 'drag/below
+           'left - 'drag-raise/above
+           'middle - 'drag/one
+           'right - 'drag/below
 
    (send t set-double-click-action) - sets the procedure to be called when
         a card is double-clicked. The procedure is called with the 

@@ -5,6 +5,7 @@
 
    Please see full copyright in the documentation
    Search for "FIXME" for possible improvement points
+
 */
 #include <stdlib.h> /* for malloc and friends*/
 #include <stdio.h> /* for printf, fprintf, stdout and friends*/
@@ -317,11 +318,18 @@ void protect_pages(void *p, size_t len, int writeable)
 #define PAGES_IN_HEAP		(MAX_HEAP_SIZE / MPAGE_SIZE)
 #define MAX_USED_PAGES		(PAGES_IN_HEAP / 2)
 
-static MPage *dead_pages = NULL;
 static UWORD used_pages = 0;
 
-static void *malloc_mempages(UWORD size) {
+/* 
+   You might think keeping pages around for reallocation would be
+   a nice little win here. I thought so too, but timing trials don't
+   show any difference.
+*/
+
+inline void *malloc_mempages(UWORD size) {
   UWORD numpages = (size / MPAGE_SIZE) + (((size % MPAGE_SIZE) == 0) ? 0 : 1);
+  void *m;
+  int i = 5;
   
   if((used_pages + numpages) > MAX_USED_PAGES) {
     garbage_collect(0);
@@ -337,50 +345,33 @@ static void *malloc_mempages(UWORD size) {
     }
   }
 
-  used_pages += numpages;
-  if((size == MPAGE_SIZE) && dead_pages) {
-    MPage *retval = dead_pages;
-    dead_pages = retval->next;
-    bzero(retval, MPAGE_SIZE);
-    return retval;
-  } else {
-    void *m;
-    int i = 5;
-
-    while (i--) {
-      m = malloc_pages(size, MPAGE_SIZE);
-      if (m) {
-	bzero(m, size);
-	return m;
-      } else garbage_collect(1);
-    }
-
-    if (GC_out_of_memory)
-      GC_out_of_memory();
-    
-    printf("Out of memory\n");
-    abort();
+  while (i--) {
+    m = malloc_pages(size, MPAGE_SIZE);
+    if (m) {
+      bzero(m, size);
+      used_pages += numpages;
+      return m;
+    } else garbage_collect(1);
   }
-  printf("Extremely bad state in malloc_mempages!\n");
+
+  if (GC_out_of_memory)
+    GC_out_of_memory();
+  
+  printf("Out of memory\n");
   abort();
   return NULL;
 }
 
-static void free_mempages(MPage *page) {
-  if(page->flags.bigpage) {
-    UWORD numpages = (page->size/MPAGE_SIZE)+(((page->size%MPAGE_SIZE)==0)?0:1);
-    free_pages(page, page->size);
-    used_pages -= numpages;
-  } else {
-    page->next = dead_pages;
-    dead_pages = page;
-    used_pages -= 1;
-  }
+inline void free_mempages(MPage *page) {
+  UWORD numpages = (page->size/MPAGE_SIZE)+(((page->size%MPAGE_SIZE)==0)?0:1);
+  free_pages(page, page->size);
+  used_pages -= numpages;
 }
 
-static UWORD midlevel_room_left(void) {
-  return (MAX_USED_PAGES - used_pages) * MPAGE_SIZE;
-}
+#define midlevel_room_left()	((MAX_USED_PAGES - used_pages) * MPAGE_SIZE)
+/* static UWORD midlevel_room_left(void) { */
+/*   return (MAX_USED_PAGES - used_pages) * MPAGE_SIZE; */
+/* } */
 
 /*
   The MPage routines, including the two main allocators
@@ -1234,7 +1225,6 @@ void GC_mark(const void *p) {
       case MARK_WHITE: {
 	MPage *temp = collect_pages;
 
-	fflush(stdout);
 #ifndef ACCNT_OFF
 # ifdef ACCNT_INPLACE
 	temp->owner = mark_owner;

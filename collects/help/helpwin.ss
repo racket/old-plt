@@ -281,7 +281,7 @@
                 [edit-menu:find
                  (lambda (i e)
                    (send results force-display-focus #t)
-                   (letrec ([d (make-object dialog% "Find" f 300)]
+                   (letrec ([d (make-object dialog% "Find" help-desk-frame 300)]
                             [enable-find
                              (lambda ()
                                (send find enable 
@@ -343,16 +343,16 @@
                 (framework:frame:standard-menus-mixin
                  framework:frame:basic%))))))
 
-	  (define f
+	  (define help-desk-frame
             (make-object help-window-frame%
               (get-unique-title) #f
               (framework:preferences:get 'drscheme:help-desk:width)
               (framework:preferences:get 'drscheme:help-desk:height)))
 
 	  (when icon16
-	    (send f set-icon icon16 mask16 'small))
+	    (send help-desk-frame set-icon icon16 mask16 'small))
 	  (when icon32
-	    (send f set-icon icon32 mask32 'large))
+	    (send help-desk-frame set-icon icon32 mask32 'large))
 
 	  (define html-panel
 	    (make-object
@@ -475,13 +475,13 @@
 					       ""))
 					 "")))))))]
 		    [on-navigate stop-search])
-		  (sequence (super-init #t (send f get-area-container))))))
+		  (sequence (super-init #t (send help-desk-frame get-area-container))))))
           
           (send html-panel set-init-page startup-url)
           
 	  (define results (send html-panel get-canvas))
 
-	  (define top (make-object vertical-pane% (send f get-area-container)))
+	  (define top (make-object vertical-pane% (send help-desk-frame get-area-container)))
 	  (define search-text
 	    (framework:keymap:call/text-keymap-initializer
 	     (lambda ()
@@ -560,17 +560,17 @@
 				(bell))))))
 		  (bell))]))
 
-	  (define menubar (send f get-menu-bar))
+	  (define menubar (send help-desk-frame get-menu-bar))
 	  (define search-menu (make-object menu% "Search" menubar))
 	  (send search-menu enable #f)
 	  (define regular-search-item (make-object menu-item% "Search" search-menu (lambda (m e) (search-callback)) #\e))
 	  (define lucky-search-item (make-object menu-item% "Feeling Lucky" search-menu (lambda (m e) (lucky-search-callback)) #\l))
 
-	  (framework:frame:reorder-menus f)
+	  (framework:frame:reorder-menus help-desk-frame)
 
 	  (set-font-size (framework:preferences:get 'drscheme:font-size))
 
-	  (send f show #t)
+	  (send help-desk-frame show #t)
 
           (cond
             [(equal? initial-url startup-url)
@@ -701,7 +701,7 @@
 	      (unless found-something?
 		(message-box "Help Desk"
 			     (format "Nothing found for \"~a\"." given-find)
-			     f))))
+			     help-desk-frame))))
 
 	  (define (start-search given-find search-level exactness)
 	    (let* ([editor (let ([e (send results get-editor)])
@@ -782,7 +782,7 @@
 		 #f))))
 
 	  ; Return the frame as the result
-	  f))
+	  help-desk-frame))
 
   (define (new-help-frame initial-url)
     (invoke-unit go-unit initial-url))

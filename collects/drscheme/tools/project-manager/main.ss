@@ -199,7 +199,11 @@
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
 	       execute-project ;; : (-> void)
-               ))
+	       get-to-load-files
+	       get-elaboration-files
+	       get-project-directory
+	       get-language-setting
+	       ))
 
       (define (get-text-to-search)
 	rep)
@@ -226,7 +230,7 @@
                                                       p))]
 				  [(require-library)
 				   (build-path (apply collection-path (cddr file)) (cadr file))]))
-                              files)
+                              (append elaboration-files to-load-files))
                          loaded-files))))
       
       (define-values (is-changed? is-changed is-not-changed)
@@ -258,6 +262,7 @@
 	     (file-exists? filename)
 	     (let-values ([(base name dir?) (split-path (file:normalize-path filename))])
 	       base)))
+      (define (get-project-directory) project-dir)
 
       (define get-filename
         (case-lambda
@@ -319,17 +324,19 @@
 	      top)
 	    (gui-utils:next-untitled-name)))
 
-      ;; files : (union (cons 'require-library (listof string))
-      ;;                (cons 'build-path (listof string)))
-      (define files null)
-      (define (set-files _files) (set! files _files))
+      ;; to-load-files : (union (cons 'require-library (listof string))
+      ;;                        (cons 'build-path (listof string)))
+      (define to-load-files null)
+      (define (get-to-load-files) to-load-files)
+      (define (set-to-load-files _files) (set! to-load-files _files))
 
       ;; elaboration-files : (union (cons 'require-library (listof string))
       ;;                            (cons 'build-path (listof string)))
       (define elaboration-files null)
+      (define (get-elaboration-files) elaboration-files)
       (define (set-elaboration-files _files) (set! elaboration-files _files))
 
-      (define language-settings 
+      (define language-setting
         (let ([re:mred (regexp "MrEd")])
           (let loop ([settings drscheme:basis:settings])
             (cond
@@ -337,9 +344,11 @@
               [else (let ([setting (car settings)])
                       (cond
                         [(regexp-match re:mred (drscheme:basis:setting-name setting))
-                         setting]
+                         (drscheme:basis:copy-setting setting)]
                         [else
                          (loop (cdr settings))]))]))))
+      (define (get-language-setting) language-setting)
+      
       (define collection-paths #f)
 
       (define project-custodian (make-custodian))
@@ -562,7 +571,7 @@
 			     (eval `(require-library ,@(cdr file)))]))
 			 (lambda x
 			   (send rep display-results x))))))
-		   files)))
+		   (append elaboration-files to-load-files))))
 	  (send rep clear-undos)))
       
       (define (configure-collection-paths)
@@ -600,9 +609,9 @@
 	    (is-changed))))
 
       (define (configure-language)
-	(let ([new-settings (drscheme:language:language-dialog language-settings this)])
+	(let ([new-settings (drscheme:language:language-dialog language-setting this)])
 	  (when new-settings
-	    (set! language-settings new-settings)
+	    (set! language-setting new-settings)
 	    (is-changed))))
 
       (define (get-file-list-box-string file)
@@ -611,21 +620,6 @@
                          [pretty-print:pretty-print-columns 'infinity])
             (pretty-print:pretty-print (cons (car file) (map print-convert (cdr file)))))
           (get-output-string sp)))
-
-      (define (refresh-files-list-box)
-	(send files-list-box clear)
-	(for-each
-	 (lambda (file)
-           (send files-list-box append (get-file-list-box-string file)))
-	 files))
-      
-      (define (refresh-elaboration-files-list-box)
-	(send elaboration-files-list-box clear)
-	(for-each
-	 (lambda (file)
-           (send elaboration-files-list-box append (get-file-list-box-string file)))
-	 elaboration-files))
-
 
       (define (nth-cdr n l)
 	(cond
@@ -751,7 +745,9 @@
 		    [(null? exploded-collection-paths)
 		     (add-as-raw-file new-file)]
 		    [else
-		     (if (sublist-equal? (car exploded-collection-paths) exploded)
+		     (if (sublist-equal? (map normal-case-path
+					      (car exploded-collection-paths))
+					 (map normal-case-path exploded))
 			 (let* ([filename #f]
 				[collections
 				 (let loop ([pieces
@@ -778,12 +774,7 @@
                                     (apply build-path
                                            (car exploded-collection-paths))))
                               (add-single-file
-                               (append
-                                files
-                                (list
-                                 (list* 'require-library
-                                        filename
-                                        collections))))]
+			       `(require-library ,filename ,@collections))]
 			    [else (add-as-raw-file new-file)]))
 			 (loop (cdr exploded-collection-paths)))]))))
 	     new-files))
@@ -810,28 +801,29 @@
 					  (symbol? (car x))))
 				   all))
 		(error 'bad-format))
-	      (let ([loaded-files (assoc 'files all)]
-                    [elaboration-files (assoc 'elaboration-files all)]
-		    [loaded-language-settings (assoc 'settings all)]
+	      (let ([loaded-to-load-files (assoc 'files all)]
+                    [loaded-elaboration-files (assoc 'elaboration-files all)]
+		    [loaded-language-setting (assoc 'settings all)]
 		    [loaded-open-table (assoc 'open-table all)]
 		    [loaded-collection-paths (assoc 'collection-paths all)]
 		    [loaded-to-load-files-shown? (assoc 'to-load-files-shown? all)]
 		    [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)]
-		    [loaded-elaboration-files-shown? (assoc 'loaded-files-shown? all)]
+		    [loaded-elaboration-files-shown? (assoc 'elaboration-files-shown? all)]
                     [loaded-rep-shown? (assoc 'rep-shown? all)])
 
-		(if (and loaded-language-settings
+		(if (and loaded-language-setting
 			 (= (arity drscheme:basis:make-setting)
-			    (length (function:second loaded-language-settings))))
-		    (set! language-settings
-			  (apply drscheme:basis:make-setting (function:second loaded-language-settings)))
+			    (length (function:second loaded-language-setting))))
+		    (set! language-setting
+			  (apply drscheme:basis:make-setting (function:second loaded-language-setting)))
 		    (message-box 
 		     "Loading Project"
 		     (format "Resetting language settings to default; saved language settings are from old version")))
 
 		;; need to update the gui at this point...
                 (when loaded-elaboration-files-shown? 
-                  (set-elaboration-files-shown? (function:second loaded-elaboration-files-shown?)))
+                  (set-elaboration-files-shown?
+		   (function:second loaded-elaboration-files-shown?)))
                 (update-elaboration-files-shown)
 		(when loaded-loaded-files-shown?
 		  (set! loaded-files-shown? (function:second loaded-loaded-files-shown?)))
@@ -852,10 +844,12 @@
                            [(and (pair? x) (andmap string? x))
                             `(require-library ,@x)]
                            [else x]))])
-                  (when loaded-files
-                    (set! files (map translate-file (function:second loaded-files))))
-                  (when elaboration-files
-                    (set! elaboration-files (map translate-file (function:second elaboration-files)))))
+                  (when loaded-to-load-files
+                    (set-to-load-files
+		     (map translate-file (function:second loaded-to-load-files))))
+                  (when loaded-elaboration-files
+                    (set-elaboration-files
+		     (map translate-file (function:second loaded-elaboration-files)))))
 
 		(when loaded-open-table
 		  (set! open-table (make-hash-table))
@@ -867,7 +861,8 @@
 		(when loaded-collection-paths
 		  (set! collection-paths (function:second loaded-collection-paths)))
 
-		(refresh-files-list-box)
+		(refresh-to-load-files-list-box)
+		(refresh-elaboration-files-list-box)
 		(is-not-changed void))))))
 
       (define (save-file filename)
@@ -879,267 +874,35 @@
 	       (newline port)
 	       (fprintf port "; save data~n")
 	       (write `'((loaded-files-shown? ,loaded-files-shown?)
-                         (elaboration-files-shown? ,elaboration-files-shown?)
+                         (elaboration-files-shown? ,(get-elaboration-files-shown?))
 			 (to-load-files-shown? ,(get-to-load-files-shown?))
                          (rep-shown? ,rep-shown?)
 			 (collection-paths ,collection-paths)
 			 (open-table ,(hash-table-map open-table (lambda (x v) (list x (open-info-open? v)))))
-			 (files ,files)
-			 (settings ,(cdr (vector->list (struct->vector language-settings)))))
+			 (files ,to-load-files)
+			 (elaboration-files ,elaboration-files)
+			 (settings ,(cdr (vector->list (struct->vector language-setting)))))
 		      port)
 	       (newline port)
 	       (newline port)
-	       (fprintf port "; load commands~n")
-	       (for-each (lambda (file)
-			   (write
-			    (cond
-                              [(eq? (car file) 'build-path)
-                               `(load-relative (build-path ,@(map print-convert (cdr file))))]
-			     [else 
-                              file])
-			    port)
-			   (newline port))
-			 files))
+
+	       (let ([dump-files
+		      (lambda (x-commands files)
+			(fprintf port "; ~a~n" x-commands)
+			(for-each (lambda (file)
+				    (write
+				     (cond
+				      [(eq? (car file) 'build-path)
+				       `(load-relative (build-path ,@(map print-convert (cdr file))))]
+				      [else 
+				       file])
+				     port)
+				    (newline port))
+				  files))])
+		 (dump-files "load elaboration files" elaboration-files)
+		 (dump-files "load main files" to-load-files)))
+
 	     'truncate 'text))))
-
-      (define (make-files-gui get-files set-files label-str
-			      show-str hide-str)
-	(define files-menu-item
-	  (make-object menu-item% show-str show-menu 
-		       (lambda xxx (show/hide-files))))
-	
-	(define files-outer-panel (make-object vertical-panel% top-horizontal-panel))
-	
-	(define files-panel (make-object horizontal-panel% files-outer-panel
-					 '(border)))
-	(define vp (make-object vertical-panel% files-panel))
-	(define message (make-object message% label-str vp))
-	(define files-list-box (make-object list-box% #f null vp
-					    (lambda (lb evt)
-					      (files-list-box-callback
-					       (send evt get-event-type)))
-					    '(single)))
-
-	(define button-panel (make-object vertical-panel% files-panel))
-	(define up-button (make-object button% "Up" button-panel
-				       (lambda x (move-file-up))))
-	(define down-button (make-object button% "Down" button-panel
-					 (lambda x (move-file-down))))
-	
-	(define spacer (make-object horizontal-panel% button-panel))
-
-	(define open-button (make-object button% "Open" button-panel
-					 (lambda x (open-file))
-					 '(border)))
-	(define remove-button (make-object button% "Remove" button-panel
-					   (lambda x (remove-file))))
-	(define pathize-button (make-object button% "Make Abs" button-panel
-					    (lambda x (swap-abs/rel-file))))
-	
-	(define (get-file-list-box-string file)
-	  (let ([sp (open-output-string)])
-	    (parameterize ([current-output-port sp]
-			   [pretty-print:pretty-print-columns 'infinity])
-	      (pretty-print:pretty-print (cons (car file) (map print-convert (cdr file)))))
-	    (get-output-string sp)))
-	
-	(define (refresh-files-list-box)
-	  (send files-list-box clear)
-	  (for-each
-	   (lambda (file)
-	     (send files-list-box append (get-file-list-box-string file)))
-	   (get-files)))
-	
-	
-	(define (swap index)
-	  (is-changed)
-	  (let loop ([n index]
-		     [files (get-files)]
-		     [previous-pair #f])
-	    (cond
-	     [(zero? n)
-	      (let ([tmp (car previous-pair)])
-		(set-car! previous-pair (car files))
-		(set-car! files tmp))
-	      (let ([tmp (send files-list-box get-string index)])
-		(send files-list-box set-string index (send files-list-box get-string (- index 1)))
-		(send files-list-box set-string (- index 1) tmp))]
-	     [else
-	      (loop (- n 1)
-		    (cdr files)
-		    files)])))
-
-	(define (move-file-down)
-	  (let ([selection (car (send files-list-box get-selections))])
-	    (swap (+ selection 1))
-	    (send files-list-box select (+ selection 1))
-	    (update-buttons)))
-
-	(define (move-file-up)
-	  (let ([selection (car (send files-list-box get-selections))])
-	    (swap selection)
-	    (send files-list-box select (- selection 1))
-	    (update-buttons)))
-
-	(define (open-file)
-	  (let* ([file (list-ref
-			(get-files)
-			(car (send files-list-box get-selections)))]
-		 [filename (case (car file)
-			     [(build-path)
-			      (let ([p (apply build-path (cdr file))])
-				(if (relative-path? p)
-				    (file:normalize-path (build-path project-dir p))
-				    p))]
-			     [(require-library)
-			      (build-path (apply collection-path (cddr file))
-					  (cadr file))])]
-		 [frame (handler:edit-file filename)])
-	    (when (is-a? frame project-aware-frame<%>)
-	      (send frame project:set-project-window this))))
-	
-	(define (remove-file)
-	  (let* ([index (car (send files-list-box get-selections))])
-	    (set-files
-	     (let loop ([n index]
-			[files (get-files)])
-	       (cond
-		[(null? files) null]
-		[(zero? n) (cdr files)]
-		[else (cons (car files) (loop (- n 1) (cdr files)))])))
-	    (send files-list-box delete index)
-	    (let ([max (send files-list-box get-number)])
-	      (cond
-	       [(= 0 max) (void)]
-	       [(<= 0 index (- max 1))
-		(send files-list-box select index)]
-	       [else
-		(send files-list-box select (- max 1))]))
-	    (update-buttons)
-	    (is-changed)))
-	
-	(define (swap-abs/rel-file)
-	  (let* ([index (send files-list-box get-selection)]
-		 [file (list-ref (get-files) index)]
-		 [path (apply build-path (cdr file))]
-		 [new-path
-		  (cond
-		   [(relative-path? path)
-		    (file:normalize-path (build-path project-dir path))]
-		   [(absolute-path? path)
-		    (if project-dir
-			(file:find-relative-path project-dir path)
-			(begin (bell)
-			       path))])])
-	    (set-cdr! file (my-explode-path new-path))
-	    (send files-list-box set-string index (get-file-list-box-string file))
-	    (send files-list-box set-selection index)
-	    (is-changed)
-	    (update-buttons)))
-
-	(define (update-buttons)
-	  (let ([selection-list (send files-list-box get-selections)])
-	    (if (null? selection-list)
-		(begin
-		  (send pathize-button set-label "Make ...")
-		  (send pathize-button enable #f)
-		  (send down-button enable #f)
-		  (send up-button enable #f)
-		  (send remove-button enable #f)
-		  (send open-button enable #f))
-		(let ([selection (car selection-list)])
-		  (send open-button enable #t)
-		  (send remove-button enable #t)
-
-		  (let ([file (list-ref (get-files) (car selection-list))])
-		    (case (car file)
-		      [(build-path)
-		       (send pathize-button enable #t)
-		       (if (absolute-path? (apply build-path (cdr file)))
-			   (send pathize-button set-label "Make Rel")
-			   (send pathize-button set-label "Make Abs"))]
-		      [(require-library)
-		       (send pathize-button enable #f)]))
-
-		  (cond
-		   [(= 1 (send files-list-box get-number))
-		    (send down-button enable #f)
-		    (send up-button enable #f)]
-		   [(= 0 selection)
-		    (send down-button enable #t)
-		    (send up-button enable #f)]
-		   [(= selection (- (send files-list-box get-number) 1))
-		    (send down-button enable #f)
-		    (send up-button enable #t)]
-		   [else
-		    (send down-button enable #t)
-		    (send up-button enable #t)])))))
-
-	(define (files-list-box-callback selection)
-	  (case selection
-	    [(list-box-dclick) (open-file)]
-	    [(list-box)
-	     (update-buttons)]))
-
-	(define files-shown? #t)
-	(define (get-files-shown?) files-shown?)
-	(define (set-files-shown? _nv) (set! files-shown? _nv))
-	(define (update-files-shown)
-	  (send files-menu-item set-label
-		(if files-shown?
-		    hide-project-str
-		    show-project-str))
-	  (send files-outer-panel change-children
-		(lambda (l)
-		  (if files-shown?
-		      (list files-panel)
-		      null)))
-	  (send files-outer-panel stretchable-height files-shown?)
-	  (send files-outer-panel stretchable-width files-shown?)
-	  (send top-horizontal-panel stretchable-width (anything-shown-in-top-half?))
-	  (send top-horizontal-panel stretchable-height (anything-shown-in-top-half?)))
-
-	(define (show/hide-files)
-	  (set! files-shown? (not files-shown?))
-	  (is-changed)
-	  (update-files-shown)
-	  (unless (anything-shown?)
-	    (show/hide-rep)))
-
-	(send spacer stretchable-height #f)
-	(send spacer min-height 16)
-	(send button-panel stretchable-width #f)
-	(send button-panel set-alignment 'center 'center)
-	(values get-files-shown? set-files-shown? update-files-shown show/hide-files))
-
-      (define-values (get-elaboration-files-shown?
-		      set-elaboration-files-shown?
-		      update-elaboration-files-shown
-		      show/hide-elaboration-files)
-	(make-files-gui
-	 (lambda () files)
-	 (lambda (x) (set! files x))
-	 "Elaboration Files"
-	 "Show Elaboration Files"
-	 "Hide Elaboration Files"))
-
-      (define-values (get-to-load-files-shown?
-		      set-to-load-files-shown?
-		      update-elaboration-files-shown
-		      show/hide-to-load-files)
-	(make-files-gui
-	 (lambda () files)
-	 (lambda (x) (set! files x))
-	 "Main Files"
-	 "Show Project Files"
-	 "Hide Project Files"))
-
-      (define (anything-shown-in-top-half?)
-	(or (get-elaboration-files-shown?)
-	    (get-to-load-files-shown?)
-	    loaded-files-shown?))
-
-      (define (anything-shown?) (or (anything-shown-in-top-half?) rep-shown?))
 
       (define loaded-files-shown? #f)
       (define (update-loaded-files-shown)
@@ -1185,7 +948,7 @@
 	    (is-changed)
 	    (update-rep-shown)
 	    (unless (anything-shown?)
-	      (show/hide-loaded-files)))]))
+	      (show/hide-to-load-files)))]))
       
       (define (hierlist-item-mixin class%)
 	(class/d class% args
@@ -1345,7 +1108,7 @@
           (override
             [get-user-setting
              (lambda ()
-               language-settings)])
+               language-setting)])
           (sequence
             (super-init (make-object context%)))))
 
@@ -1377,14 +1140,6 @@
       (define mb (get-menu-bar))
 
       (define show-menu (make-object menu% "&Show" mb))
-      (define to-load-files-menu-item
-        (make-object menu-item% "Hide Project Files" show-menu (lambda xxx (show/hide-to-load-files))))
-      (define loaded-files-menu-item
-        (make-object menu-item% "Show Loaded Files" show-menu (lambda xxx (show/hide-loaded-files))))
-      (define elaboration-files-menu-item
-        (make-object menu-item% "Show Elaboration Files" show-menu (lambda xxx (show/hide-elaboration-files))))
-      (define rep-menu-item
-        (make-object menu-item% "Show Interactions" show-menu (lambda xxx (show/hide-rep))))
       
       (define project-menu (make-object menu% "&Project" mb))
       (define execute-menu-item (make-object menu-item%
@@ -1406,11 +1161,11 @@
        (preferences:get 'drscheme:project-manager:add-files-as-relative?))
       (make-object separator-menu-item% project-menu)
       (make-object menu-item% "Add Files..." project-menu
-        (lambda x (add-files (lambda (f) (set! files (append files (list f))))
-                             (lambda () (refresh-files-list-box)))))
+		   (lambda x (add-files (lambda (f) (set! to-load-files (append to-load-files (list f))))
+					(lambda () (refresh-to-load-files-list-box)))))
       (make-object menu-item% "Add Elaborated Files..." project-menu
-        (lambda x (add-files (lambda (f) (set! elaboration-files (append elaboration-files (list f))))
-                             (lambda () (refresh-elaboration-files-list-box)))))
+		   (lambda x (add-files (lambda (f) (set! elaboration-files (append elaboration-files (list f))))
+					(lambda () (refresh-elaboration-files-list-box)))))
       (make-object menu-item% "Choose Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
@@ -1438,26 +1193,261 @@
 
       (define top-horizontal-panel (make-object horizontal-panel% top-panel))
 
-      (define elaboration-files-outer-panel (make-object vertical-pane% top-horizontal-panel))
-      (define elaboration-files-panel (make-object horizontal-panel% elaboration-files-outer-panel '(border)))
-      (define elaboration-files-vp (make-object vertical-panel% elaboration-files-panel))
-      (define elaboration-files-message (make-object message% "Elaboration Files" elaboration-files-vp))
-      (define elaboration-files-list-box (make-object list-box% #f null elaboration-files-vp
-                                           (lambda (lb evt)
-                                             '(-list-box-callback (send evt get-event-type)))
-                                           '(single)))
-      (define elaboration-files-button-panel (make-object vertical-panel% elaboration-files-panel))
-      (define elaboration-files-up-button (make-object button% "Up" elaboration-files-button-panel (lambda x (move-file-up))))
-      (define elaboration-files-down-button (make-object button% "Down" elaboration-files-button-panel (lambda x (move-file-down))))
-      (let ([spacer (make-object horizontal-panel% elaboration-files-button-panel)])
-        (send spacer stretchable-height #f)
-        (send spacer min-height 16))
-      (define elaboration-files-open-button (make-object button% "Open" elaboration-files-button-panel (lambda x (open-file))))
-      (define elaboration-files-remove-button (make-object button% "Remove" elaboration-files-button-panel (lambda x (remove-file))))
-      (define elaboration-files-pathize-button (make-object button% "Make Abs" elaboration-files-button-panel (lambda x (swap-abs/rel-file))))
-      (send elaboration-files-button-panel stretchable-width #f)
-      (send elaboration-files-button-panel set-alignment 'center 'center)
-      
+      (define (make-files-gui get-files set-files label-str
+			      show-str hide-str)
+	(define files-menu-item
+	  (make-object menu-item% show-str show-menu 
+		       (lambda xxx (show/hide-files))))
+	
+	(define files-outer-panel (make-object vertical-panel% top-horizontal-panel))
+	
+	(define files-panel (make-object horizontal-panel% files-outer-panel
+					 '(border)))
+	(define vp (make-object vertical-panel% files-panel))
+	(define message (make-object message% label-str vp))
+	(define files-list-box (make-object list-box% #f null vp
+					    (lambda (lb evt)
+					      (files-list-box-callback
+					       (send evt get-event-type)))
+					    '(single)))
+
+	(define button-panel (make-object vertical-panel% files-panel))
+	(define up-button (make-object button% "Up" button-panel
+				       (lambda x (move-file-up))))
+	(define down-button (make-object button% "Down" button-panel
+					 (lambda x (move-file-down))))
+	
+	(define spacer (make-object horizontal-panel% button-panel))
+
+	(define open-button (make-object button% "Open" button-panel
+					 (lambda x (open-file))
+					 '(border)))
+	(define remove-button (make-object button% "Remove" button-panel
+					   (lambda x (remove-file))))
+	(define add-button
+	  (make-object button% "Add" button-panel
+		       (lambda x
+			 (add-files (lambda (f) (set-files (append (get-files) (list f))))
+				    (lambda () (refresh-files-list-box))))))
+	(define pathize-button (make-object button% "Make Abs" button-panel
+					    (lambda x (swap-abs/rel-file))))
+	
+	(define (get-file-list-box-string file)
+	  (let ([sp (open-output-string)])
+	    (parameterize ([current-output-port sp]
+			   [pretty-print:pretty-print-columns 'infinity])
+	      (pretty-print:pretty-print (cons (car file) (map print-convert (cdr file)))))
+	    (get-output-string sp)))
+	
+	(define (refresh-files-list-box)
+	  (send files-list-box clear)
+	  (for-each
+	   (lambda (file)
+	     (send files-list-box append (get-file-list-box-string file)))
+	   (get-files)))
+
+	(define (swap index)
+	  (is-changed)
+	  (let loop ([n index]
+		     [files (get-files)]
+		     [previous-pair #f])
+	    (cond
+	     [(zero? n)
+	      (let ([tmp (car previous-pair)])
+		(set-car! previous-pair (car files))
+		(set-car! files tmp))
+	      (let ([tmp (send files-list-box get-string index)])
+		(send files-list-box set-string index (send files-list-box get-string (- index 1)))
+		(send files-list-box set-string (- index 1) tmp))]
+	     [else
+	      (loop (- n 1)
+		    (cdr files)
+		    files)])))
+
+	(define (move-file-down)
+	  (let ([selection (car (send files-list-box get-selections))])
+	    (swap (+ selection 1))
+	    (send files-list-box select (+ selection 1))
+	    (update-buttons)))
+
+	(define (move-file-up)
+	  (let ([selection (car (send files-list-box get-selections))])
+	    (swap selection)
+	    (send files-list-box select (- selection 1))
+	    (update-buttons)))
+
+	(define (open-file)
+	  (let* ([file (list-ref
+			(get-files)
+			(car (send files-list-box get-selections)))]
+		 [filename (case (car file)
+			     [(build-path)
+			      (let ([p (apply build-path (cdr file))])
+				(if (relative-path? p)
+				    (file:normalize-path (build-path project-dir p))
+				    p))]
+			     [(require-library)
+			      (build-path (apply collection-path (cddr file))
+					  (cadr file))])]
+		 [frame (handler:edit-file filename)])
+	    (when (is-a? frame project-aware-frame<%>)
+	      (send frame project:set-project-window this))))
+	
+	(define (remove-file)
+	  (let* ([index (car (send files-list-box get-selections))])
+	    (set-files
+	     (let loop ([n index]
+			[files (get-files)])
+	       (cond
+		[(null? files) null]
+		[(zero? n) (cdr files)]
+		[else (cons (car files) (loop (- n 1) (cdr files)))])))
+	    (send files-list-box delete index)
+	    (let ([max (send files-list-box get-number)])
+	      (cond
+	       [(= 0 max) (void)]
+	       [(<= 0 index (- max 1))
+		(send files-list-box select index)]
+	       [else
+		(send files-list-box select (- max 1))]))
+	    (update-buttons)
+	    (is-changed)))
+	
+	(define (swap-abs/rel-file)
+	  (let* ([index (send files-list-box get-selection)]
+		 [file (list-ref (get-files) index)]
+		 [path (apply build-path (cdr file))]
+		 [new-path
+		  (cond
+		   [(relative-path? path)
+		    (file:normalize-path (build-path project-dir path))]
+		   [(absolute-path? path)
+		    (if project-dir
+			(file:find-relative-path project-dir path)
+			(begin (message-box "DrScheme Project Manager"
+					    "You must save the project before using project-relative paths")
+			       path))])])
+	    (set-cdr! file (my-explode-path new-path))
+	    (send files-list-box set-string index (get-file-list-box-string file))
+	    (send files-list-box set-selection index)
+	    (is-changed)
+	    (update-buttons)))
+
+	(define (update-buttons)
+	  (let ([selection-list (send files-list-box get-selections)])
+	    (if (null? selection-list)
+		(begin
+		  (send pathize-button set-label "Make ...")
+		  (send pathize-button enable #f)
+		  (send down-button enable #f)
+		  (send up-button enable #f)
+		  (send remove-button enable #f)
+		  (send open-button enable #f))
+		(let ([selection (car selection-list)])
+		  (send open-button enable #t)
+		  (send remove-button enable #t)
+
+		  (let ([file (list-ref (get-files) (car selection-list))])
+		    (case (car file)
+		      [(build-path)
+		       (send pathize-button enable #t)
+		       (if (absolute-path? (apply build-path (cdr file)))
+			   (send pathize-button set-label "Make Rel")
+			   (send pathize-button set-label "Make Abs"))]
+		      [(require-library)
+		       (send pathize-button enable #f)]))
+
+		  (cond
+		   [(= 1 (send files-list-box get-number))
+		    (send down-button enable #f)
+		    (send up-button enable #f)]
+		   [(= 0 selection)
+		    (send down-button enable #t)
+		    (send up-button enable #f)]
+		   [(= selection (- (send files-list-box get-number) 1))
+		    (send down-button enable #f)
+		    (send up-button enable #t)]
+		   [else
+		    (send down-button enable #t)
+		    (send up-button enable #t)])))))
+
+	(define (files-list-box-callback selection)
+	  (case selection
+	    [(list-box-dclick) (open-file)]
+	    [(list-box)
+	     (update-buttons)]))
+
+	(define files-shown? #t)
+	(define (get-files-shown?) files-shown?)
+	(define (set-files-shown? _nv) (set! files-shown? _nv))
+	(define (update-files-shown)
+	  (send files-menu-item set-label
+		(if files-shown? hide-str show-str))
+	  (send files-outer-panel change-children
+		(lambda (l)
+		  (if files-shown?
+		      (list files-panel)
+		      null)))
+	  (send files-outer-panel stretchable-height files-shown?)
+	  (send files-outer-panel stretchable-width files-shown?)
+	  (send top-horizontal-panel stretchable-width (anything-shown-in-top-half?))
+	  (send top-horizontal-panel stretchable-height (anything-shown-in-top-half?)))
+
+	(define (show/hide-files)
+	  (set! files-shown? (not files-shown?))
+	  (is-changed)
+	  (update-files-shown)
+	  (unless (anything-shown?)
+	    (show/hide-rep)))
+
+	(send spacer stretchable-height #f)
+	(send spacer min-height 16)
+	(send button-panel stretchable-width #f)
+	(send button-panel set-alignment 'center 'center)
+	(values get-files-shown? set-files-shown? update-files-shown
+		show/hide-files refresh-files-list-box button-panel
+		update-buttons))
+
+
+      (define-values (get-elaboration-files-shown?
+		      set-elaboration-files-shown?
+		      update-elaboration-files-shown
+		      show/hide-elaboration-files
+		      refresh-elaboration-files-list-box
+		      elaboration-files-button-panel
+		      update-elaboration-files-buttons)
+	(make-files-gui
+	 (lambda () elaboration-files)
+	 (lambda (x) (set-elaboration-files x))
+	 "Elaboration Files"
+	 "Show Elaboration Files"
+	 "Hide Elaboration Files"))
+
+      (define-values (get-to-load-files-shown?
+		      set-to-load-files-shown?
+		      update-to-load-files-shown
+		      show/hide-to-load-files
+		      refresh-to-load-files-list-box
+		      to-load-files-button-panel
+		      update-to-load-files-buttons)
+	(make-files-gui
+	 (lambda () to-load-files)
+	 (lambda (x) (set-to-load-files x))
+	 "Main Files"
+	 "Show Project Files"
+	 "Hide Project Files"))
+
+      (define (anything-shown-in-top-half?)
+	(or (get-elaboration-files-shown?)
+	    (get-to-load-files-shown?)
+	    loaded-files-shown?))
+
+      (define (anything-shown?) (or (anything-shown-in-top-half?) rep-shown?))
+
+      (define loaded-files-menu-item
+        (make-object menu-item% "Show Loaded Files" show-menu (lambda xxx (show/hide-loaded-files))))
+      (define rep-menu-item
+        (make-object menu-item% "Show Interactions" show-menu (lambda xxx (show/hide-rep))))
 
       (define loaded-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
       (define loaded-files-panel (make-object horizontal-panel% loaded-files-outer-panel '(border)))
@@ -1473,9 +1463,13 @@
       (send loaded-files-outer-panel stretchable-height #f)
 
       (let* ([buttons (append
-                       (send to-load-button-panel get-children)
+		       (function:filter
+			(lambda (x) (is-a? x button%))
+			(send to-load-files-button-panel get-children))
                        (list open-loaded-file-button)
-                       (send elaboration-files-button-panel get-children))]
+		       (function:filter
+			(lambda (x) (is-a? x button%))
+			(send elaboration-files-button-panel get-children)))]
 	     [max-width (apply max (map (lambda (x) (send x get-width)) buttons))])
 	(for-each (lambda (button) (send button min-width max-width))
 		  buttons))
@@ -1487,7 +1481,8 @@
       (update-to-load-files-shown)
       (update-elaboration-files-shown)
       (update-rep-shown)
-      (update-buttons)
+      (update-to-load-files-buttons)
+      (update-elaboration-files-buttons)
       (update-name-message)
 
       (send top-panel change-children (lambda (l) (list button-panel top-horizontal-panel rep-outer-panel)))

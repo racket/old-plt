@@ -518,7 +518,8 @@
   
   (define (make-new-unit-frame% super%)
     (class super% args
-      (inherit button-panel definitions-canvas definitions-text interactions-text)
+      (inherit button-panel definitions-canvas definitions-text interactions-text
+	       get-directory)
       
       (rename [super-disable-evaluation disable-evaluation]
               [super-enable-evaluation enable-evaluation])
@@ -637,7 +638,14 @@
                        (zodiac:origin-how (zodiac:zodiac-origin zodiac-ast)))))))]
         [syncheck:button-callback
          (lambda ()
-           (let ([setting (fw:preferences:get drscheme:language:settings-preferences-symbol)])
+           (let* ([project-window
+		   (and
+		    (ivar-in-interface? 'project:get-project-window (object-interface this))
+		    (send this project:get-project-window))]
+		  [setting
+		   (if project-window
+		       (send project-window get-language-setting)
+		       (fw:preferences:get drscheme:language:settings-preferences-symbol))])
              (if (drscheme:basis:zodiac-vocabulary? setting)
                  (letrec ([run-in-user-thread
                            (let* ([custodian (make-custodian)]
@@ -650,7 +658,11 @@
                                   (lambda ()
                                     (set! user-thread (current-thread))
                                     (semaphore-post s)
-                                    (drscheme:basis:initialize-parameters custodian setting)))
+                                    (drscheme:basis:initialize-parameters custodian setting)
+				    (let ([dir (get-directory)])
+				      (when dir
+					(current-directory dir)
+					(current-load-relative-directory dir)))))
                                  (semaphore-wait s)))
                              (lambda (thnk)
                                (letrec ([done-sema (make-semaphore 0)]
@@ -677,29 +689,15 @@
                                       (semaphore-post done-sema))))
                                  (semaphore-wait continue-sema))))]
                           [built-in?
-                           (let* ([producer-sem (make-semaphore 0)]
-                                  [consumer-sem (make-semaphore 0)]
-                                  [shutdown? #f]
-                                  [input 'uninit]
-                                  [output 'uninit]
-                                  [thr (thread (lambda ()
-                                                 (drscheme:basis:initialize-parameters
-                                                  (current-custodian)
-                                                  setting)
-                                                 (let loop ()
-                                                   (semaphore-wait producer-sem)
-                                                   (unless shutdown?
-                                                     (set! output (defined? input))
-                                                     (semaphore-post consumer-sem)
-                                                     (loop)))))])
-                             (case-lambda
-                              [(s)
-                               (set! input s)
-                               (semaphore-post producer-sem)
-                               (semaphore-wait consumer-sem)
-                               output]
-                              [() (set! shutdown? #t)
-                               (semaphore-post producer-sem)]))]
+                           (let* ([syms null])
+			     (let ([s (make-semaphore 0)])
+			       (run-in-user-thread
+				(lambda ()
+				  (set! syms (map car (make-global-value-list)))
+				  (semaphore-post s)))
+			       (semaphore-wait s))
+                             (lambda (s)
+			       (member s syms)))]
                           [add-arrow (ivar definitions-text syncheck:add-arrow)]
                           [find-string (ivar definitions-text find-string)]
                           [change-style (lambda (s x y)
@@ -990,6 +988,24 @@
                                                  (set! error x)
                                                  (set! error-raised? #t))]
                                               [error-escape-handler k])
+
+				 (when project-window
+				   (for-each
+				    (lambda (file)
+				      (eval
+				       (case (car file)
+					 [(build-path)
+					  (load-relative
+					   (let ([p (apply build-path (cdr file))])
+					     (if (relative-path? p)
+						 (build-path
+						  (send project-window get-project-directory)
+						  p)
+						 p)))]
+					 [(require-library)
+					  (apply require-library/proc (cdr file))])))
+				    (send project-window get-elaboration-files)))
+
                                  (drscheme:load-handler:process-text/zodiac
                                   definitions-text
                                   (lambda (expr recur)
@@ -1024,7 +1040,7 @@
                                   [is-built-in? (built-in? id)]
                                   [start (zodiac:location-offset (zodiac:zodiac-start var))]
                                   [finish (add1 (zodiac:location-offset (zodiac:zodiac-finish var)))])
-                             (when is-built-in?
+                             (when (and is-built-in? (is-a? text mred:text%))
                                (send text syncheck:add-menu start finish 
                                      (lambda ()
                                        (prims:initialize-tables)
@@ -1098,7 +1114,6 @@
                         (unless mod-flag
                           (send definitions-text set-modified #f))
                         (send definitions-text set-styles-fixed #t)
-                        (built-in?) ;; kills the thread created for built-in?
                         (send definitions-canvas focus)
                         (mred:end-busy-cursor)))))
                  (mred:message-box "DrScheme Check Syntax"

@@ -1695,7 +1695,7 @@
 			     (and canvas
 				  (send canvas get-top-level-window)))))))))
 	    
-	    (let ([dir (or (send context get-directory) 
+	    (let ([dir (or (send context get-directory)
 			   drscheme:init:first-dir)])
 	      (current-directory dir)
 	      (current-load-relative-directory dir))

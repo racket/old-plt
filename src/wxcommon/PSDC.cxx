@@ -739,35 +739,6 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, doubl
     }
 }
 
-void wxPostScriptDC::DrawLines (int n, wxIntPoint points[], int xoffset, int yoffset)
-{
-  if (!pstream)
-    return;
-  if (n > 0) {
-    int i;
-    double xx, yy;
-
-      if (current_pen)
-	SetPen (current_pen);
-
-      pstream->Out("newpath\n");
-
-      xx = (double) (points[0].x + xoffset);
-      yy = (double) (points[0].y + yoffset);
-      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
-      CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
-
-      for (i = 1; i < n; i++)
-	{
-	  xx = (double) (points[i].x + xoffset);
-	  yy = (double) (points[i].y + yoffset);
-	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
-	  CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
-	}
-      pstream->Out("stroke\n");
-    }
-}
-
 void wxPostScriptDC::DrawLines (int n, wxPoint points[], double xoffset, double yoffset)
 {
   if (!pstream)
@@ -796,56 +767,6 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], double xoffset, double 
       pstream->Out("stroke\n");
     }
 }
-
-#ifdef wx_xt
-
-void wxPostScriptDC::DrawLines(wxList *list, double xoffset, double yoffset)
-{
-  int n, i;
-  wxPoint *points;
-  wxNode *node;
-
-  n = list->Number();
-#ifdef MZ_PRECISE_GC
-  points = (wxPoint *)GC_malloc_atomic(sizeof(wxPoint) * n);
-#else
-  points = new wxPoint[n];
-#endif
-
-  i = 0;
-  for (node = list->First(); node; node = node->Next()) {
-    wxPoint *point;
-    point = (wxPoint *)node->Data();
-    points[i].x = point->x;
-    points[i++].y = point->y;
-  }
-  DrawLines(n, points, xoffset, yoffset);
-}
-
-void wxPostScriptDC::DrawPolygon(wxList *list, double xoffset, double yoffset,int fillStyle)
-{
-  int n, i;
-  wxPoint *points;
-  wxNode *node;
-
-  n = list->Number();
-#ifdef MZ_PRECISE_GC
-  points = (wxPoint *)GC_malloc_atomic(sizeof(wxPoint) * n);
-#else
-  points = new wxPoint[n];
-#endif
-
-  i = 0;
-  for(node = list->First(); node; node = node->Next()) {
-    wxPoint *point;
-    point = (wxPoint *)node->Data();
-    points[i].x = point->x;
-    points[i++].y = point->y;
-  }
-  DrawPolygon(n, points, xoffset, yoffset, fillStyle);
-}
-
-#endif
 
 void wxPostScriptDC::DrawRectangle (double x, double y, double width, double height)
 {

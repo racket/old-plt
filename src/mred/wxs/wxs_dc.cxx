@@ -789,6 +789,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 // Also in wxWindow:
 
 
@@ -1484,6 +1485,49 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   return (Scheme_Object*)r;
 }
 
+static Scheme_Object *os_wxDCGetAntiAlias(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxDC_class, "get-anti-alias in dc<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->GetAntiAlias());
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
+}
+
+static Scheme_Object *os_wxDCSetAntiAlias(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxDC_class, "set-anti-alias in dc<%>", n, p);
+  Bool x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "set-anti-alias in dc<%>"));
+
+  
+  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetAntiAlias(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxDCSetTextForeground(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -2043,7 +2087,7 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   wxREGGLOB(os_wxDC_class);
   wxREGGLOB(os_wxDC_interface);
 
-  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 46));
+  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 48));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "glyph-exists?" " method", (Scheme_Method_Prim *)os_wxDCGlyphAvailable, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page" " method", (Scheme_Method_Prim *)os_wxDCEndPage, 0, 0));
@@ -2071,6 +2115,8 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-width" " method", (Scheme_Method_Prim *)os_wxDCGetCharWidth, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-height" " method", (Scheme_Method_Prim *)os_wxDCGetCharHeight, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-extent" " method", (Scheme_Method_Prim *)os_wxDCMyTextExtent, 1, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-anti-alias" " method", (Scheme_Method_Prim *)os_wxDCGetAntiAlias, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-anti-alias" " method", (Scheme_Method_Prim *)os_wxDCSetAntiAlias, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-foreground" " method", (Scheme_Method_Prim *)os_wxDCSetTextForeground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-background" " method", (Scheme_Method_Prim *)os_wxDCSetTextBackground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-pen" " method", (Scheme_Method_Prim *)os_wxDCSetPen, 1, 1));

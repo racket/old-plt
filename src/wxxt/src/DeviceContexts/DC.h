@@ -60,28 +60,6 @@ inline wxPoint::wxPoint(double a, double b)
   y = b;
 }
 
-// wxIntPoint
-class wxIntPoint : public wxObject {
-public:
-  inline wxIntPoint(void);
-  inline wxIntPoint(int a, int b);
-  int x, y;
-};
-
-inline wxIntPoint::wxIntPoint(void) 
-: wxObject(WXGC_NO_CLEANUP)
-{
-  x = y = 0;
-}
-
-inline wxIntPoint::wxIntPoint(int a, int b)
-: wxObject(WXGC_NO_CLEANUP)
-{
-  x = a;
-  y = b;
-}
-
-
 class wxBitmap;
 class wxBrush;
 class wxCanvas;
@@ -108,14 +86,13 @@ public:
     virtual void  DrawLine(double x1, double y1, double x2, double y2) = 0;
     virtual void  DrawLines(int n, wxPoint pts[],
 			    double xoff=0, double yoff=0) = 0;
-    virtual void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0)=0;
-    virtual void  DrawLines(wxList *pts, double xoff=0, double yoff=0) = 0;
+    virtual void  DrawLines(wxList *pts, double xoff=0, double yoff=0);
     virtual void  DrawPoint(double x, double y) = 0;
             void  DrawPoint(wxPoint *pt)  { DrawPoint(pt->x, pt->y); }
     virtual void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0,
 			      int fill=wxODDEVEN_RULE) = 0;
     virtual void  DrawPolygon(wxList *pts, double xoff=0, double yoff=0,
-			      int fill=wxODDEVEN_RULE) = 0;
+			      int fill=wxODDEVEN_RULE);
     virtual void  DrawRectangle(double x, double y, double w, double h) = 0;
     virtual void  DrawRoundedRectangle(double x, double y, double w, double h,
 				       double radius=20) = 0;
@@ -131,8 +108,6 @@ public:
 				wxFont *font=NULL, 
 				Bool combine=FALSE, Bool use16bit=FALSE, int dt=0) = 0;
     virtual void  IntDrawLine(int x1, int y1, int x2, int y2) = 0;
-    virtual void  IntDrawLines(int n, wxIntPoint pts[],
-			       int xoff=0, int yoff=0) = 0;
     virtual void  SetBackground(wxColour *c) = 0;
     virtual void  SetBrush(wxBrush *brush) = 0;
     virtual void  SetClippingRect(double x, double y, double w, double h) = 0;
@@ -247,6 +222,9 @@ public:
 #ifdef USE_GL
     virtual wxGL *GetGL();
 #endif
+
+    Bool GetAntiAlias();
+    virtual void SetAntiAlias(Bool v);
   
     // public data members
     Bool  Colour;
@@ -271,6 +249,7 @@ protected:
     int		 current_text_bgmode;
     wxColour*    current_text_fg;
     wxRegion     *clipping;
+    Bool         anti_alias;
     // utilities for internal use
     void  CalcBoundingBox(double x, double y);
     void  ComputeScaleAndOrigin(void);

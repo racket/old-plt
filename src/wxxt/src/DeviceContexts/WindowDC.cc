@@ -83,7 +83,6 @@ static int fill_rule[]  = { EvenOddRule, WindingRule };
 #include <DeviceContexts/cross.xbm>
 #define  num_hatches 6
 
-/* MATTHEW: */
 // This normalizes the graphics code to behave inm a standard way when
 // WX_STANDARD_GRAPHICS is 1.
 #if WX_STANDARD_GRAPHICS
@@ -520,6 +519,17 @@ void wxWindowDC::InitPicture() {
     unsigned long p;
     p = wxMakePicture(DRAWABLE, Colour);
     X->picture = p;
+# ifdef WX_USE_XFT
+    if (CURRENT_REG)
+      XftDrawSetClip(XFTDRAW, CURRENT_REG);
+#  ifndef WX_OLD_XFT
+    {
+      XRenderPictureAttributes attrs;
+      attrs.poly_edge = PolyEdgeSmooth;
+      XRenderChangePicture(DPY, PICTURE, CPPolyEdge, &attrs);
+    }
+#  endif
+# endif
   }
 }
 
@@ -707,10 +717,12 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
       } else
 	maskp = 0;
 
+# ifdef WX_XR_PICTURE
       /* Need to install clipping region, if any: */
       if (CURRENT_REG) {
 	XRenderSetPictureClipRegion(wxAPP_DISPLAY, destp, CURRENT_REG);
       }
+# endif
 
 # if WX_RENDER_CAN_SCALE
       if ((scaled_width != (int)w) || (scaled_height != (int)h)) {
@@ -759,11 +771,13 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 	maskp = 0;
       }
 # else
+#  ifdef WX_XR_PICTURE
       if (CURRENT_REG) {
 	XRenderPictureAttributes attribs;
 	attribs.clip_mask = None;
 	XRenderChangePicture(wxAPP_DISPLAY, destp, CPClipMask, &attribs);
       }
+#  endif
 # endif
 
       /* Free temporary data (all modes) */
@@ -1142,6 +1156,62 @@ void wxWindowDC::CrossHair(double x, double y)
   XDrawLine(DPY, DRAWABLE, PEN_GC, xx, 0, xx, (int)h);
 }
 
+void wxWindowDC::RenderAAPoints(void *pts, int npoints, int mode, Bool outline)
+{
+#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+  long v;
+  wxColor *c;
+  Picture pic, srcpic;
+  XftColor col;
+
+  if (outline)
+    c = current_pen->GetColour();
+  else
+    c = current_brush->GetColour();
+  col.pixel = c->GetPixel();
+  v = c->Red();
+  col.color.red = (v << 8) | v;
+  v = c->Green();
+  col.color.green = (v << 8) | v;
+  v = c->Blue();
+  col.color.blue = (v << 8) | v;
+  col.color.alpha = 0xFFFF;
+  
+  InitPicture();
+  pic = PICTURE;
+  srcpic = XftDrawSrcPicture(XFTDRAW, &col);
+
+  if (mode == 0) {
+    XRenderCompositeTriStrip(DPY,
+			     PictOpOver,
+			     srcpic,
+			     pic,
+			     NULL,
+			     0, 0,
+			     (XPointFixed *)pts,
+			     npoints);
+  } else if (mode == 1) {
+    XRenderCompositeTriFan(DPY,
+			   PictOpOver,
+			   srcpic,
+			   pic,
+			   NULL,
+			   0, 0,
+			   (XPointFixed *)pts,
+			   npoints);
+  } else {
+    XRenderCompositeDoublePoly(DPY,
+			       PictOpOver,
+			       srcpic,
+			       pic,
+			       NULL,
+			       0, 0, 0, 0,
+			       (XPointDouble *)pts,
+			       npoints, EvenOddRule);
+  } 
+#endif
+}
+
 void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, double end)
 {
   int xx, yy, ww, hh;
@@ -1153,12 +1223,12 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     return;
   
   FreeGetPixelCache();
-  
+
   xw = x + w, yh = y + h;
   
   xx = XLOG2DEV(x); yy = YLOG2DEV(y);
   ww = XLOG2DEV(xw) - xx; hh = YLOG2DEV(yh) - yy;
-    
+  
   degrees1 = start * RAD2DEG;
   degrees2 = end * RAD2DEG;
   alpha1 = int(degrees1 * 64.0);
@@ -1174,8 +1244,57 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     XFillArc(DPY,DRAWABLE,BRUSH_GC,xx,yy,ww,hh,alpha1,alpha2);
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
     XDrawArc(DPY,DRAWABLE,PEN_GC,xx,yy,ww,hh,alpha1,alpha2);
+
   CalcBoundingBox(x, y);
   CalcBoundingBox(x + w, y + h);
+}
+
+static XPointFixed *xftEllipseToPolygon(double width, double height, double x, double y, int *_npoints)
+     /* Makes a polygon with the resolution determined by width */
+{
+  int iwidth = (int)width + 2;
+  int is_odd = iwidth & 0x1;
+  int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
+  int pos;
+  double w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
+  XPointFixed *p;
+  int npoints;
+
+  npoints = ((4 * x_extent) - (2 * is_odd)) + 1;
+
+#ifdef MZ_PRECISE_GC
+  p = (XPointFixed *)GC_malloc_atomic(sizeof(XPointFixed) * npoints);
+#else
+  p = new XPointFixed[npoints];
+#endif
+
+  dx = x + width / 2;
+  dy = y + height / 2;
+
+  p[0].x = XDoubleToFixed(dx);
+  p[0].y = XDoubleToFixed(dy);
+  
+  for (i = 0; i < x_extent; i++) {
+    double y = (height / width) * sqrt(w2 - (i * i));
+    pos = i + 1;
+    p[pos].x = XDoubleToFixed(i + dx);
+    p[pos].y = XDoubleToFixed(y + dy);
+    pos = (2 * x_extent - i - 1 + 1);
+    p[pos].x = XDoubleToFixed(i + dx);
+    p[pos].y = XDoubleToFixed(-y + dy);
+    pos = (2 * x_extent + i - is_odd + 1);
+    p[pos].x = XDoubleToFixed(-i + dx);
+    p[pos].y = XDoubleToFixed(-y + dy);
+    if (i || !is_odd) {
+      pos = (4 * x_extent - i - 1 - 2 * is_odd + 1); 
+      p[pos].x = XDoubleToFixed(-i + dx);
+      p[pos].y = XDoubleToFixed(y + dy);
+    }
+  }
+
+  *_npoints = npoints;
+
+  return p;
 }
 
 void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
@@ -1187,6 +1306,24 @@ void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
     return;
   
   FreeGetPixelCache();
+
+#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+  if (anti_alias) {
+    int npoints;
+    XPointFixed *poly;
+
+    x = (x * scale_x) + device_origin_x;
+    y = (y * scale_y) + device_origin_y;
+    w *= scale_x;
+    h *= scale_y;
+
+    poly = xftEllipseToPolygon(w, h, x, y, &npoints);
+
+    RenderAAPoints(poly, npoints, 1, 0);
+
+    return;
+  }
+#endif
 
   xw = x + w, yh = y + h;
   
@@ -1211,10 +1348,50 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 	return;
 
     FreeGetPixelCache();
-    
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+      if (anti_alias) {
+	double dx1, dy1, dx2, dy2, a, pw;
+	XPointFixed tris[4];
+	
+	x1 = (x1 * scale_x) + device_origin_x;
+	x2 = (x2 * scale_x) + device_origin_x;
+	y1 = (y1 * scale_y) + device_origin_y;
+	y2 = (y2 * scale_y) + device_origin_y;
+
+	pw = current_pen->GetWidthF();
+	if (!pw)
+	  pw = 1;
+
+	a = atan2(y2 - y1, x2 - x1);
+	dx2 = (sin(a) * pw) * scale_x;
+	dy2 = -(cos(a) * pw) * scale_y;
+	if (pw == 1.0) {
+	  dx1 = dy1 = 0;
+	} else {
+	  dx2 /= 2.0;
+	  dy2 /= 2.0;
+	  dx1 = dx2;
+	  dy1 = dy2;
+	}
+
+	tris[0].x = XDoubleToFixed(x1 + dx2);
+	tris[0].y = XDoubleToFixed(y1 + dy2);
+	tris[1].x = XDoubleToFixed(x1 - dx1);
+	tris[1].y = XDoubleToFixed(y1 - dy1);
+	tris[2].x = XDoubleToFixed(x2 + dx2);
+	tris[2].y = XDoubleToFixed(y2 + dy2);
+	tris[3].x = XDoubleToFixed(x2 - dx1);
+	tris[3].y = XDoubleToFixed(y2 - dy1);
+
+	RenderAAPoints(tris, 4, 0, 1);
+      } else
+#endif
 	XDrawLine(DPY, DRAWABLE, PEN_GC,
 		  XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
+    }
+
     CalcBoundingBox(x1, y1);
     CalcBoundingBox(x2, y2);
 }
@@ -1241,58 +1418,6 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
     XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
-void wxWindowDC::DrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
-{
-  XPoint *xpts;
-  
-  if (!DRAWABLE) // ensure that a drawable has been associated
-    return;
-  
-  FreeGetPixelCache();
-  
-  xpts = new XPoint[n];
-  for (int i=0; i<n; ++i) {
-    short x, y;
-    x = XLOG2DEV(pts[i].x + xoff);
-    xpts[i].x = x;
-    y = YLOG2DEV(pts[i].y + yoff);
-    xpts[i].y = y;
-    CalcBoundingBox(xpts[i].x, xpts[i].y);
-  }
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
-}
-
-void wxWindowDC::DrawLines(wxList *pts, double xoff, double yoff)
-{
-  int n;
-  XPoint *xpts;
-  int i;
-  wxNode *node;
-
-  if (!DRAWABLE) // ensure that a drawable has been associated
-    return;
-  
-  FreeGetPixelCache();
-  
-  n = pts->Number();
-  xpts = new XPoint[n];
-  i = 0;
-  for (node = pts->First(); node; node = node->Next()) {
-    wxPoint *point;
-    short x, y;
-    point = (wxPoint*)node->Data();
-    x = XLOG2DEV(point->x + xoff);
-    xpts[i].x = x;
-    y = YLOG2DEV(point->y + yoff);
-    xpts[i].y = y;
-    CalcBoundingBox(xpts[i].x, xpts[i].y);
-    ++i;
-  }
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
-}
-
 void wxWindowDC::DrawPoint(double x, double y)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
@@ -1310,60 +1435,24 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
 {
   XPoint *xpts;
 
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    FreeGetPixelCache();
-    
-    xpts = new XPoint[n+1];
-    for (int i=0; i<n; ++i) {
-      short x, y;
-      x = XLOG2DEV(pts[i].x + xoff);
-      xpts[i].x = x;
-      y = YLOG2DEV(pts[i].y + yoff);
-      xpts[i].y = y;
-      CalcBoundingBox(xpts[i].x, xpts[i].y);
-    }
-    xpts[n].x = xpts[0].x; // close figure
-    xpts[n].y = xpts[0].y;
-    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
-	XSetFillRule(DPY, BRUSH_GC, fill_rule[fill]);
-	XFillPolygon(DPY, DRAWABLE, BRUSH_GC, xpts, n, Complex, 0);
-    }
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n+1, 0);
-}
-
-void wxWindowDC::DrawPolygon(wxList *pts, double xoff, double yoff, int fill)
-{
-  int n;
-  XPoint *xpts;
-  int i;
-  wxNode *node;
-
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
 
   FreeGetPixelCache();
-    
-  n = pts->Number();
+  
   xpts = new XPoint[n+1];
-  i = 0;
-  for (node = pts->First(); node; node = node->Next()) {
-    wxPoint *point;
+  for (int i=0; i<n; ++i) {
     short x, y;
-    point = (wxPoint*)node->Data();
-    x = XLOG2DEV(point->x + xoff);
+    x = XLOG2DEV(pts[i].x + xoff);
     xpts[i].x = x;
-    y = YLOG2DEV(point->y + yoff);
+    y = YLOG2DEV(pts[i].y + yoff);
     xpts[i].y = y;
     CalcBoundingBox(xpts[i].x, xpts[i].y);
-    ++i;
   }
   xpts[n].x = xpts[0].x; // close figure
   xpts[n].y = xpts[0].y;
   if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
-    XSetFillRule(DPY, PEN_GC, fill_rule[fill]);
+    XSetFillRule(DPY, BRUSH_GC, fill_rule[fill]);
     XFillPolygon(DPY, DRAWABLE, BRUSH_GC, xpts, n, Complex, 0);
   }
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
@@ -1466,28 +1555,6 @@ void wxWindowDC::IntDrawLine(int x1, int y1, int x2, int y2)
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawLine(DPY, DRAWABLE, PEN_GC,
 		  XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
-}
-
-void wxWindowDC::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
-{
-  XPoint *xpts;
-
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    FreeGetPixelCache();
-    
-    xpts = new XPoint[n];
-    for (int i=0; i<n; ++i) {
-      short x, y;
-      x = XLOG2DEV(pts[i].x + xoff);
-      xpts[i].x = x;
-      y = YLOG2DEV(pts[i].y + yoff);
-      xpts[i].y = y;
-      CalcBoundingBox(xpts[i].x, xpts[i].y);
-    }
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -2064,9 +2131,6 @@ void wxWindowDC::DrawText(char *orig_text, double x, double y,
     col.color.blue = (v << 8) | v;
     col.color.alpha = 0xFFFF;
 
-    if (CURRENT_REG)
-      XftDrawSetClip(XFTDRAW, CURRENT_REG);
-
     if ((angle == 0.0) && (current_text_bgmode == wxSOLID)) {
       /* For B & W target, XftDrawRect doesn't seem to work right. */
       int rw;
@@ -2167,9 +2231,6 @@ void wxWindowDC::DrawText(char *orig_text, double x, double y,
 	dt += partlen;
       }
     }
-
-    if (CURRENT_REG)
-      XftDrawSetClip(XFTDRAW, None);
   } else
 #endif
     {
@@ -2612,12 +2673,20 @@ void wxWindowDC::SetCanvasClipping(void)
 	XSetRegion(DPY, BRUSH_GC, CURRENT_REG);
 	XSetRegion(DPY, BG_GC, CURRENT_REG);
 	XSetRegion(DPY, TEXT_GC, CURRENT_REG);
+#ifdef WX_USE_XFT
+	if (XFTDRAW)
+	  XftDrawSetClip(XFTDRAW, CURRENT_REG);
+#endif
     } else {
 	CURRENT_REG = NULL;
 	XSetClipMask(DPY, PEN_GC, None);
 	XSetClipMask(DPY, BRUSH_GC, None);
 	XSetClipMask(DPY, BG_GC, None);
 	XSetClipMask(DPY, TEXT_GC, None);
+#ifdef WX_USE_XFT
+	if (XFTDRAW)
+	  XftDrawSetClip(XFTDRAW, None);
+#endif
     }
 }
 
@@ -2848,8 +2917,8 @@ void wxWindowDC::SetPixelFast(int i, int j, int red, int green, int blue)
   } else {
     if (wx_alloc_color_is_fast == 2) {
       pixel = ((red << wx_simple_r_start) 
-	       || (green << wx_simple_g_start)
-	       || (blue << wx_simple_b_start));
+	       | (green << wx_simple_g_start)
+	       | (blue << wx_simple_b_start));
     } else {
       XColor xcol;
 

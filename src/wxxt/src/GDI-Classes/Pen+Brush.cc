@@ -33,6 +33,8 @@
 #define  Uses_wxBitmap
 #include "wx.h"
 
+#include <math.h>
+
 //-----------------------------------------------------------------------------
 // wxPen create and destroy
 //-----------------------------------------------------------------------------
@@ -294,6 +296,53 @@ wxBrush *wxBrushList::FindOrCreateBrush(char *colour, int style)
     return FindOrCreateBrush(the_colour, style);
   return NULL;
 }
+
+//-----------------------------------------------------------------------------
+// wxEllipseToPolygon
+//-----------------------------------------------------------------------------
+
+static XPoint *wxEllipseToPolygon(double width, double height, double x, double y, int *_npoints)
+     /* Makes a polygon with the resolution determined by width */
+{
+  int iwidth = (int)width + 2;
+  int is_odd = iwidth & 0x1;
+  int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
+  double w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
+  XPoint *p;
+  int npoints;
+
+  npoints = (4 * x_extent) - (2 * is_odd);
+  *_npoints = npoints;
+
+#ifdef MZ_PRECISE_GC
+  p = (XPoint *)GC_malloc_atomic(sizeof(XPoint) * npoints);
+#else
+  p = new XPoint[npoints];
+#endif
+
+  dx = x + width / 2;
+  dy = y + height / 2;
+  
+  for (i = 0; i < x_extent; i++) {
+    double y = (height / width) * sqrt(w2 - (i * i));
+    p[i].x = (int)floor(i + dx);
+    p[i].y = (int)floor(y + dy);
+    p[2 * x_extent - i - 1].x = (int)floor(i + dx);
+    p[2 * x_extent - i - 1].y = (int)floor(-y + dy);
+    p[2 * x_extent + i - is_odd].x = (int)floor(-i + dx);
+    p[2 * x_extent + i - is_odd].y = (int)floor(-y + dy);
+    if (i || !is_odd) {
+      p[4 * x_extent - i - 1 - 2 * is_odd].x = (int)floor(-i + dx);
+      p[4 * x_extent - i - 1 - 2 * is_odd].y = (int)floor(y + dy);
+    }
+  }
+
+  return p;
+}
+
+//-----------------------------------------------------------------------------
+// wxRegion
+//-----------------------------------------------------------------------------
 
 #define UseXtRegions
 #include "../../../wxcommon/Region.h"

@@ -256,35 +256,10 @@ void wxRegion::SetEllipse(double x, double y, double width, double height)
 
 #ifdef wx_x
   {
-    int iwidth = (int)width + 2;
-    int is_odd = iwidth & 0x1;
-    int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
-    double w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
+    int npoints;
     XPoint *p;
-
-#ifdef MZ_PRECISE_GC
-    p = (XPoint *)GC_malloc_atomic(sizeof(XPoint) * ((4 * x_extent) - (2 * is_odd)));
-#else
-    p = new XPoint[(4 * x_extent) - (2 * is_odd)];
-#endif
-
-    dx = x + width / 2;
-    dy = y + height / 2;
-    
-    for (i = 0; i < x_extent; i++) {
-      double y = (height / width) * sqrt(w2 - (i * i));
-      p[i].x = (int)floor(i + dx);
-      p[i].y = (int)floor(y + dy);
-      p[2 * x_extent - i - 1].x = (int)floor(i + dx);
-      p[2 * x_extent - i - 1].y = (int)floor(-y + dy);
-      p[2 * x_extent + i - is_odd].x = (int)floor(-i + dx);
-      p[2 * x_extent + i - is_odd].y = (int)floor(-y + dy);
-      if (i || !is_odd) {
-	p[4 * x_extent - i - 1 - 2 * is_odd].x = (int)floor(-i + dx);
-	p[4 * x_extent - i - 1 - 2 * is_odd].y = (int)floor(y + dy);
-      }
-    }
-    rgn = XPolygonRegion(p, (4 * x_extent) - (2 * is_odd) - 1, WindingRule);
+    p = wxEllipseToPolygon(width, height, x, y, &npoints);
+    rgn = XPolygonRegion(p, npoints - 1, WindingRule);
   }
 #endif
 }

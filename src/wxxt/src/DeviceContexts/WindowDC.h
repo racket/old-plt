@@ -126,16 +126,10 @@ public:
     void  DrawEllipse(double x, double y, double w, double h);
     void  DrawLine(double x1, double y1, double x2, double y2);
     void  DrawLines(int n, wxPoint pts[], double xoff=0, double yoff=0);
-    void  DrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
-    void  DrawLines(wxList *pts, double xoff=0, double yoff=0);
     void  DrawPoint(double x, double y);
-    void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0,
-			      int fill=wxODDEVEN_RULE);
-    void  DrawPolygon(wxList *pts, double xoff=0, double yoff=0,
-			      int fill=wxODDEVEN_RULE);
+    void  DrawPolygon(int n, wxPoint pts[], double xoff=0, double yoff=0, int fill=wxODDEVEN_RULE);
     void  DrawRectangle(double x, double y, double w, double h);
-    void  DrawRoundedRectangle(double x, double y, double w, double h,
-				       double radius=20);
+    void  DrawRoundedRectangle(double x, double y, double w, double h, double radius=20);
 
     void  DrawText(char *text, double x, double y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, double angle = 0.0);
     void  FloodFill(double x, double y, wxColour *col,int style=wxFLOOD_SURFACE);
@@ -145,7 +139,6 @@ public:
 			double *ext_leading = 0,	wxFont *font=NULL,
 			Bool combine=FALSE, Bool use16bit=FALSE, int dt=0);
     void  IntDrawLine(int x1, int y1, int x2, int y2);
-    void  IntDrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
     void  SetBackground(wxColour *c);
     void  SetBrush(wxBrush *brush);
     void  SetClippingRect(double x, double y, double w, double h);
@@ -182,6 +175,8 @@ public:
     virtual Bool GlyphAvailable(int c, wxFont *f = NULL);
 
     virtual Bool Ok(void);
+
+    void RenderAAPoints(void *pts, int npoints, int mode, Bool outline);
 
 #ifdef WX_USE_XRENDER
     virtual void InitPicture();

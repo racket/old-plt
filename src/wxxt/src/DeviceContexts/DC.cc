@@ -68,6 +68,7 @@ wxDC::wxDC(void)
     current_text_bgmode = wxTRANSPARENT;
     c = new wxColour(wxBLACK);
     current_text_fg = c;
+    anti_alias = 0;
 }
 
 wxColour *wxDC::GetBackground(void){
@@ -153,6 +154,50 @@ void wxDC::CalcBoundingBox(double x, double y)
 }
 
 //-----------------------------------------------------------------------------
+// lines via list
+//-----------------------------------------------------------------------------
+
+static wxPoint *PointListToArray(wxList *list, int n)
+{
+  int i = 0;
+  wxPoint *points;
+  wxPoint *point;
+  wxNode *node;
+
+  points = new WXGC_ATOMIC wxPoint[n];
+
+  for (node = list->First(); node; node = node->Next()) {
+    point = (wxPoint *)(node->Data());
+    points[i].x = point->x;
+    points[i++].y = point->y;
+  }
+
+  return points;
+}
+
+void wxDC::DrawLines(wxList *list, double xoffset, double yoffset)
+{
+  int n;
+  wxPoint *points;
+
+  n = list->Number();
+  points = PointListToArray(list, n);
+
+  DrawLines(n, points, xoffset, yoffset);
+}
+
+void wxDC::DrawPolygon(wxList *list, double xoffset, double yoffset,int fillStyle)
+{
+  int n;
+  wxPoint *points;
+
+  n = list->Number();
+  points = PointListToArray(list, n);
+
+  DrawPolygon(n, points, xoffset, yoffset, fillStyle);
+}
+
+//-----------------------------------------------------------------------------
 // spline code, uses protected virtual method DrawOpenSpline, from XFIG
 //-----------------------------------------------------------------------------
 
@@ -200,6 +245,18 @@ void wxDC::DrawSpline(double x1, double y1, double x2, double y2,
     DrawSpline(list);
 
     DELETE_OBJ list;
+}
+
+//-----------------------------------------------------------------------------
+
+Bool wxDC::GetAntiAlias()
+{
+  return anti_alias;
+}
+
+void wxDC::SetAntiAlias(Bool v)
+{
+  anti_alias = v;
 }
 
 //-----------------------------------------------------------------------------

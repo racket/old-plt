@@ -31,3 +31,6 @@
 @ Q "set-pen" : void SetPen(wxPen!); : : /CheckOk[METHODNAME("dc<%>","set-pen")]
 @ q "set-text-background" : void SetTextBackground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-text-background")]
 @ q "set-text-foreground" : void SetTextForeground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-text-foreground")]
+
+@ Q "set-anti-alias" : void SetAntiAlias(bool)
+@ q "get-anti-alias" : bool GetAntiAlias()

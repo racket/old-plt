@@ -371,7 +371,7 @@
 	     (let ([first-dir (current-directory)])
 	       (lambda ()
 		 (when param
-		   (wx:kill-eventspace (with-parameterization param
+		   '(wx:kill-eventspace (with-parameterization param
 					 wx:current-eventspace)))
 		 (set! param (let ([p (build-parameterization user-parameterization)])
 			       (with-parameterization p

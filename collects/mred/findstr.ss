@@ -1,6 +1,7 @@
 (define mred:find-string@
   (unit/sig mred:find-string^
     (import [mred:debug : mred:debug^]
+	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^])
@@ -80,10 +81,10 @@
 	       (if on?
 		   (begin
 		     (send find-button show #f)
-		     (set-size WIDTH long-height))
+		     (set-size -1 -1 WIDTH long-height))
 		   (begin
 		     (send find-button show #t)
-		     (set-size WIDTH short-height))))]
+		     (set-size -1 -1 WIDTH short-height))))]
 	    
 	    [on-replace-check
 	     (lambda (button event)
@@ -186,8 +187,6 @@
 	       (send middle-panel2 set-size -1 -1 w -1)
 	       (send replace-canvas set-size -1 -1 w HEIGHT)
 	       (send bottom-panel set-size -1 -1 w -1))])
-	  
-	  
 	  (sequence
 	    (super-init () "Find String" x y))
 	  
@@ -320,103 +319,95 @@
 
     (define find-frame% (make-find-frame% mred:frame:empty-frame%))
 
-    ;; minibuffer searching
-    ;; wx:media-edit cannot go inside a panel?
-    ;; need a new kind of selection to display the found text.
-
-    (define minibuffer-search-panel%
-      (class wx:panel% (parent . args)
-	(rename [super-set-size set-size])
-	(sequence
-	  (apply super-init (cons parent args)))
-	(private
-	  [search-callback (lambda (obj evt) (search))]
-	  [close-callback (lambda (obj evt) (send parent clear-mini-panel%))]
-	  [search-edit
-	   (make-object
-	    (class-asi mred:edit:edit%
-	      (rename [super-after-insert after-insert]
-		      [super-after-delete after-delete]
-		      [super-on-focus on-focus])
-	      (public
-		[on-focus
-		 (lambda (on?)
-		   (when on?
-		     (set! anchor (send (send parent active-edit) get-end-position)))
-		   (super-on-focus on?))]
-		[after-insert
-		 (lambda args
-		   (apply super-after-insert args)
-		   (search #f))]
-		[after-delete
-		 (lambda args
-		   (apply super-after-delete args)
-		   (search #f))])))]
-	  [media-canvas (make-object mred:canvas:editor-canvas% this 10 10 100 100
-				     "" (bitwise-ior wx:const-mcanvas-hide-h-scroll
-						     wx:const-mcanvas-hide-v-scroll)
-				     100 search-edit)]
-	  [search-button (make-object wx:button% this search-callback "Search")]
-	  [close-button (make-object wx:button% this close-callback "Close")]
-	  
-	  [anchor 0]
-	  
-	  [button-height 26]
-	  [spacing 4]
-	  [vertical-offset 3])
-	(public
-	  
-	  ;; need the +40 for the media-buffer's extra crap.
-	  [desired-height (lambda () (+ (max (+ (send search-edit line-location 0 #t) 40)
-					     button-height)
-					(* 2 vertical-offset)))]
-	  
-	  [search
-	   (opt-lambda ([reset-anchor? #t])
-	     (let* ([edit (send parent active-edit)]
-		    [string (send search-edit get-text)])
-	       (when reset-anchor?
-		 (set! anchor (send edit get-end-position)))
-	       (let ([first-pos (send edit find-string string 1 anchor)])
-		 (cond
-		   [(= -1 first-pos)
-		    (let ([pos (send edit find-string string 1 0)])
-		      (if (= -1 pos)
-			  (begin (send edit set-position anchor)
-				 (wx:bell))
-			  (send edit set-position pos (+ pos (string-length string)))))]
-		   [else 
-		    (send edit set-position first-pos
-			  (+ first-pos (string-length string)))]))))]
-	  [on-set-focus
-	   (lambda () (send media-canvas set-focus))]
-	  [set-size
-	   (lambda (x y width height)
-	     (let* ([search-width 60]
-		    [close-width 50]
-		    [search-x (- width search-width)]
-		    [close-x (- search-x close-width spacing)])
-	       (send search-button set-size
-		     search-x vertical-offset search-width button-height 0)
-	       (send close-button set-size
-		     close-x vertical-offset close-width button-height 0)
-	       (send media-canvas set-size 0 0 (- close-x spacing) height))
-	     (super-set-size x y width height))])))
-
-    (define use-minibuffer? #t)
+    (define make-searchable-frame%
+      (lambda (super%)
+	(class super% args
+	  (inherit panel active-edit)
+	  (private
+	    [search-edit
+	     (make-object
+	      (class-asi mred:edit:edit%
+		(rename [super-after-insert after-insert]
+			[super-after-delete after-delete]
+			[super-on-focus on-focus])
+		(public
+		  [on-focus
+		   (lambda (on?)
+		     (when on?
+		       (set! anchor (send (active-edit) get-end-position)))
+		     (super-on-focus on?))]
+		  [after-insert
+		   (lambda args
+		     (apply super-after-insert args)
+		     (search #f))]
+		  [after-delete
+		   (lambda args
+		     (apply super-after-delete args)
+		     (search #f))])))])
+	  (sequence
+	    (apply super-init args))
+	  (private
+	    [search-panel (make-object (class-asi mred:container:horizontal-panel%
+					 (rename [super-on-set-focus on-set-focus]) 
+					 (public
+					   [on-set-focus
+					    (lambda ()
+					      (or (send media-canvas set-focus)
+						  (super-on-set-focus)))]))
+				       panel)])
+	  (public
+	    [hide-search
+	     (lambda ()
+	       (send panel delete-child search-panel)
+	       (set! hidden? #t))])
+	  (private
+	    [media-canvas (make-object mred:canvas:editor-canvas% search-panel
+				       -1 -1 -1 -1 "" 
+				       (bitwise-ior wx:const-mcanvas-hide-h-scroll
+						    wx:const-mcanvas-hide-v-scroll))]
+	    [search-button (make-object mred:container:button% search-panel 
+					(lambda args (search)) "Search")]
+	    [close-button (make-object mred:container:button% search-panel 
+				       (lambda args (hide-search)) "Close")]
+	    [hidden? #f]
+	    [anchor 0])
+	  (sequence
+	    (send search-panel stretchable-in-y? #f)
+	    (send search-panel border 1)
+	    (send media-canvas set-media search-edit)
+	    (send search-edit add-canvas media-canvas)
+	    (send media-canvas user-min-height 40)
+	    (hide-search))
+	  (public
+	    [search
+	     (opt-lambda ([reset-anchor? #t])
+	       (if hidden?
+		   (begin (set! hidden? #f)
+			  (send panel add-child search-panel)
+			  (send search-panel set-focus))
+		   (let* ([edit (active-edit)]
+			  [string (send search-edit get-text)])
+		     (when reset-anchor?
+		       (set! anchor (send edit get-end-position)))
+		     (let ([first-pos (send edit find-string string 1 anchor)])
+		       (cond
+			 [(= -1 first-pos)
+			  (let ([pos (send edit find-string string 1 0)])
+			    (if (= -1 pos)
+				(begin (send edit set-position anchor)
+				       (wx:bell))
+				(send edit set-position pos (+ pos (string-length string)))))]
+			 [else 
+			  (send edit set-position first-pos
+				(+ first-pos (string-length string)))])))))]))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)
 	(cond
-	 [(and use-minibuffer?
-	       (not (member 'replace flags)))
-	  (let* ([frame (let loop ([p canvas])
-			  (let ([parent (send p get-parent)])
-			    (if (null? parent)
-				p
-				(loop parent))))]
-		 [mini-panel (send frame get-mini-panel)])
-	    (if mini-panel
-		(send mini-panel search)
-		(send frame set-mini-panel% minibuffer-search-panel%)))]
-	 [else (make-object find-frame% canvas in-edit x y flags)])))))
+	  [(not (member 'replace flags)) 
+	   (send (let loop ([p canvas]) 
+		   (if (is-a? p wx:frame%)
+		       p
+		       (loop (send p get-parent))))
+	    search)]
+	  [else (make-object find-frame% canvas in-edit x y flags)])))))

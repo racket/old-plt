@@ -4,6 +4,7 @@
 	    [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:frame : mred:frame^]
+	    [mred:find-string : mred:find-string^]
 	    [mred:exit : mred:exit^]
 	    [mred:finder : mred:finder^]
 	    [mred:handler : mred:handler^]
@@ -468,7 +469,8 @@
 
     (define make-console-frame%
       (lambda (super%)
-	(class super% ([close-item? #f][mssg welcome-message])
+	(class super% ([close-item? #f]
+		       [mssg welcome-message])
 	  (inherit active-edit edit canvas show make-menu on-close)
 	  (private 
 	    edit-offset 
@@ -552,9 +554,6 @@
 		   (send edit insert #\newline)
 		   (send edit change-style delta 0 last)
 		   
-		   (show #t)
-		   
-		   ; Visible initialization
 		   (let ([dd (ivar edit display-delta)])
 		     (dynamic-wind
 		      (lambda ()
@@ -567,6 +566,9 @@
 	      (send edit enable-autoprompt)
 	      (send edit takeover-output)
 	      (send edit insert-prompt)
-	      (send edit clear-undos))))))
+	      (send edit clear-undos)
+	      (show #t))))))
 
-    (define console-frame% (make-console-frame% mred:frame:standard-menus-frame%))))
+    (define console-frame% (make-console-frame%
+			    (mred:find-string:make-searchable-frame%
+			     mred:frame:simple-menu-frame%)))))

@@ -13,8 +13,7 @@
 
 (define-signature mred:preferences^
   (get-preference
-   get-preference-box
-   
+   add-preference-callback
    set-preference
    set-preference-default
    set-preference-un/marshall
@@ -89,7 +88,7 @@
 
 (define-signature mred:path-utils^
   (generate-autosave-name 
-   generate-backup-name)  )
+   generate-backup-name))
 
 (define-signature mred:finder^
   (filter-match?
@@ -105,8 +104,8 @@
 (define-signature mred:find-string^
   (make-find-frame%
    find-frame%
-   use-minibuffer?
-   find-string))
+   find-string
+   make-searchable-frame%))
 
 (define-signature mred:edit^
   (make-std-buffer%
@@ -125,19 +124,22 @@
   (frame-name
    frame-width
    frame-height
+
    make-simple-frame%
    make-menu-frame%
    make-standard-menus-frame%
-   make-pasteboard-frame%
-   make-editor-frame%
-   make-status-frame%
+
    empty-frame%
-   simple-frame%
    menu-frame%
-   simple-menu-frame%
    standard-menus-frame%
+   simple-menu-frame%))
+
+(define-signature mred:editor-frame^
+  (make-editor-frame%
    editor-frame%
-   pasteboard-frame%))
+   make-pasteboard-frame%
+   pasteboard-frame%
+   make-status-frame%))
 
 (define-signature mred:group^
   (buffer-group%

@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 250)
 
-(define mred:debug:turned-on (box (list 'startup 'invoke)))
+(define mred:debug:turned-on (box (list 'container-change-children 'startup 'invoke)))
 
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")]
@@ -11,6 +11,9 @@
     (unit (import)
       (export (dprintf printf) turn-on turn-off
 	      exit? new-console new-eval make-new-console)
+
+      (when debug-on?
+	(print-struct #t))
 
       (define turn-on (lambda (s) (set-box! 
 				   (global-defined-value 'mred:debug:turned-on)
@@ -122,16 +125,13 @@
 			   [else ss-file])])
 	      (mred:debug:printf 'startup "Loading ~a..." file)
 	      (load/cd file)))
-	  (list "sig" "macros" "prefs" 
-		"exn" "containr"
-		"autoload" "autosave" "canvas" "console" "edit" "exit" 
-		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
+	  (list "sig" "macros"  
+		"autoload" "autosave" "canvas" "console" "containr" "edframe"
+		"edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
+		"group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
-		"paren" "project" "sparen" "ssmode"
-		(build-relative-path "hyper" "hypersig")
-		(build-relative-path "hyper" "hypredit")
-		(build-relative-path "hyper" "hyprfram")
-		(build-relative-path "hyper" "hyprdial")))
+		"paren" "prefs" "project" "sparen" "ssmode"
+		"hypersig" "hypredit" "hyprfram" "hyprdial"))
 
 (mred:debug:printf 'startup "Loaded.")
 
@@ -141,6 +141,7 @@
    (open mred:exit^) (open mred:gui-utils^) (open mred:console^)
    (open mred:path-utils^) (open mred:finder^) (open mred:find-string^)
    (open mred:edit^) (open mred:canvas^) (open mred:frame^)
+   (open mred:editor-frame^)
    (open mred:group^) (open mred:handler^) (open mred:icon^)
    (open mred:keymap^) (open mred:match-cache^) (open mred:menu^)
    (open mred:mode^) (open mred:project^) (open mred:scheme-paren^)
@@ -164,51 +165,34 @@
 		  [autoload : mred:autoload^ (mred:autoload@ debug preferences (core file@))]
 		  [autosave : mred:autosave^ (mred:autosave@ debug preferences)]
 		  [mode : mred:mode^ (mred:mode@ debug keymap)]
-		  [handler : mred:handler^ (mred:handler@ debug group frame finder (core file@))] 
+		  [handler : mred:handler^ (mred:handler@ debug group editor-frame finder (core file@))] 
 		  [keymap : mred:keymap^ (mred:keymap@ debug preferences exit finder handler find-string scheme-paren gui-utils)]
 		  [match-cache : mred:match-cache^ (mred:match-cache@ debug)]
 		  [scheme-paren : mred:scheme-paren^ (mred:scheme-paren@ debug paren)]
 		  [paren : mred:paren^ (mred:paren@ debug)]
 		  [path-utils : mred:path-utils^ (mred:path-utils@ debug)]
 		  [gui-utils : mred:gui-utils^ (mred:gui-utils@ debug (core function@) trigger)]
-		  [finder : mred:finder^ (mred:finder@ debug (core string@)
-						     (core function@) (core file@))]
+		  [finder : mred:finder^ (mred:finder@ debug (core string@) (core function@) (core file@))]
 		  [icon : mred:icon^ (mred:icon@ debug)]
 		  [menu : mred:menu^ (mred:menu@ debug (core function@))]
-		  [edit : mred:edit^ (mred:edit@ debug finder path-utils mode
-					     scheme-paren keymap (core function@))]
-		  [group : mred:group^ (mred:group@ debug preferences frame gui-utils exit
-						    autosave handler (core function@))]
-		  [frame : mred:frame^ (mred:frame@ debug preferences edit canvas icon menu
-						group finder handler exit
-						autosave gui-utils
-						(core function@) (core file@))]
-		  [find-string : mred:find-string^ (mred:find-string@ debug canvas
-								  edit frame)]
-		  [canvas : mred:canvas^ (mred:canvas@ debug edit (core file@))]
-		  [project : mred:project^ (mred:project@ debug group gui-utils exit finder frame handler
-						      (core file@) (core function@))]
-		  [console : mred:console^
-			   (mred:console@ debug preferences edit frame exit finder handler
-					gui-utils scheme-mode scheme-paren (core function@) (core string@)
-					(core pretty-print@) trigger)]
-		  [scheme-mode : mred:scheme-mode^
-			       (mred:scheme-mode@ debug preferences application container
-						mode match-cache paren scheme-paren icon
-						handler keymap (core string@))]
-		  [hyper-dialog : mred:hyper-dialog^
-				(mred:hyper-dialog@ debug hyper-edit (core file@))]
-		  [hyper-edit : mred:hyper-edit^
-			      (mred:hyper-edit@ debug edit hyper-dialog
-					      (core file@) (core string@))]
-		  [hyper-frame : mred:hyper-frame^
-			       (mred:hyper-frame@ debug hyper-edit hyper-dialog
-						frame canvas group handler)])
+		  [edit : mred:edit^ (mred:edit@ debug finder path-utils mode scheme-paren keymap (core function@))]
+		  [group : mred:group^ (mred:group@ debug preferences editor-frame gui-utils exit autosave handler (core function@))]
+		  [frame : mred:frame^ (mred:frame@ debug preferences edit container canvas icon menu group finder handler exit autosave gui-utils (core function@) (core file@))]
+		  [canvas : mred:canvas^ (mred:canvas@ debug container edit (core file@))]
+		  [find-string : mred:find-string^ (mred:find-string@ debug container canvas edit frame)]
+		  [editor-frame : mred:editor-frame^ (mred:editor-frame@ debug preferences edit frame container canvas find-string icon menu group finder handler exit autosave gui-utils (core function@) (core file@))]
+		  [project : mred:project^ (mred:project@ debug group container gui-utils exit finder frame handler (core file@) (core function@))]
+		  [console : mred:console^ (mred:console@ debug preferences edit frame find-string exit finder handler gui-utils scheme-mode scheme-paren (core function@) (core string@) (core pretty-print@) trigger)]
+		  [scheme-mode : mred:scheme-mode^ (mred:scheme-mode@ debug preferences application container mode match-cache paren scheme-paren icon handler keymap (core string@))]
+		  [hyper-dialog : mred:hyper-dialog^ (mred:hyper-dialog@ debug hyper-edit (core file@))]
+		  [hyper-edit : mred:hyper-edit^ (mred:hyper-edit@ debug edit hyper-dialog (core file@) (core string@))]
+		  [hyper-frame : mred:hyper-frame^ (mred:hyper-frame@ debug hyper-edit hyper-dialog container editor-frame canvas group handler)])
 	    (export (open (exn : mred:exn-external^))
 		    (open container) (open preferences)
 		    (open autoload) (open autosave) (open exit)
 		    (open gui-utils) (open console) (open path-utils) (open finder)
 		    (open find-string) (open edit) (open canvas) (open frame)
+		    (open editor-frame)
 		    (open group) (open handler) (open icon) (open keymap)
 		    (open match-cache) (open menu) (open mode) (open project)
 		    (open scheme-paren) (open scheme-mode) (open paren)
@@ -259,12 +243,12 @@
   (lambda ()
     (make-object mred:console-frame%)))
 
-;; called with the initialization arguments
+;; called with the arguments on the command line
 (define mred:initialize
   (let ([files-to-open null])
     (lambda args
       (cond
-	[(null? args) 
+	[(null? args)
 	 (unless mred:non-unit-startup?
 	   (invoke-open-unit (mred:make-invokable-unit) mred)
 	   (when mred:load-user-setup?

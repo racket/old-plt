@@ -36,7 +36,7 @@
 		 (apply super-append id args)
 		 id))]
 	    [append-item
-	     (opt-lambda (label callback [help ()] [checkable? #f])
+	     (opt-lambda (label callback [help ()] [checkable? #f] [key #f])
 	       (let ([id (append -1 label help checkable?)])
 		 (set! callbacks (cons (cons id callback)
 				       callbacks))

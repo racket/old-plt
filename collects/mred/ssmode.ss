@@ -99,16 +99,7 @@
 					  (button (add-callback "Lambda" 'lambda box) "Add")
 					  (button (delete-callback box) "Delete")))))))))
 
-    (define make-scheme-mode% 
-      (lambda (super%)
-	(class-asi super%
-	  (inherit keymap)
-	  (rename [super-on-char on-char]
-		  [super-install install])
-	  (public
-	    [indents (void)])
-	  (sequence
-	    (let ([hash-table (make-hash-table)])
+    (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
 			'(define defmacro define-macro
 			   define-signature define-syntax define-schema))
@@ -135,15 +126,33 @@
 			   call-with-input-file with-input-from-file
 			   with-input-from-port call-with-output-file
 			   with-output-to-file with-output-to-port))
-	      (mred:preferences:set-preference-default 'mred:tabify hash-table)
 	      (mred:preferences:set-preference-un/marshall
 		'mred:tabify 
 	       (lambda (t) (hash-table-map t list))
 	       (lambda (l) (let ([h (make-hash-table)])
-			     (for-each (lambda (x) (apply hash-table-put! h x))
-				       l)
+			     (for-each (lambda (x) (apply hash-table-put! h x)) l)
 			     h)))
-	      (set! indents (mred:preferences:get-preference-box 'mred:tabify))))
+	      (mred:preferences:set-preference-default 'mred:tabify hash-table))
+
+    (define make-scheme-mode% 
+      (lambda (super%)
+	(class-asi super%
+	  (inherit keymap)
+	  (rename [super-on-char on-char]
+		  [super-deinstall deinstall]
+		  [super-install install])
+	  (private
+	    [remove-indents-callback
+	     (mred:preferences:add-preference-callback
+	      'mred:tabify
+	      (lambda (p value)
+		(set! indents value)))])
+	  (public
+	    [deinstall (lambda args
+			 (remove-indents-callback)
+			 (remove-paren-callback)
+			 (apply super-deinstall args))]
+	    [indents (mred:preferences:get-preference 'mred:tabify)])
 	  (public
 	    [name "Scheme"]
 	    [backward-cache (make-object mred:match-cache:match-cache%)]
@@ -206,16 +215,19 @@
 	     (lambda (edit)
 	       (highlight-parens edit))]
 	    
-	    [highlight-parens?-box (mred:preferences:get-preference-box 'mred:highlight-parens)]
-	    
+	    [highlight-parens? (mred:preferences:get-preference 'mred:highlight-parens)])
+
+	  (private
+	    [remove-paren-callback (mred:preferences:add-preference-callback
+				    'mred:highlight-parens 
+				    (lambda (p value)
+				      (set! highlight-parens? value)))])
+	  (public
 	    [highlight-parens
 	     (let ([clear-old-location (lambda () (void))]
-		   [color (apply make-object wx:colour% 
-				 (map (lambda (x) (* (/ x 65535) 255))
-				      (begin (list 65535 21437 18932)
-					     (list 48896 48896 48896))))])
+		   [color (make-object wx:colour% 191 191 191)])
 	       (opt-lambda (edit [just-clear? #f])
-		 (if (or (not (unbox highlight-parens?-box))
+		 (if (or (not highlight-parens?)
 			 suspend-highlight?)
 		     (set! just-once #t)
 		     (begin 
@@ -385,7 +397,7 @@
 		      [procedure-indent
 		       (lambda ()
 			 (let* ([proc-name (get-proc)])
-			   (case (hash-table-get (unbox indents)
+			   (case (hash-table-get indents
 						 (string->symbol proc-name)
 						 (lambda () 'other))
 			     [(define) 1]
@@ -395,7 +407,7 @@
 		      [special-check
 		       (lambda ()
 			 (let* ([proc-name (get-proc)]
-				[which (hash-table-get (unbox indents)
+				[which (hash-table-get indents
 						       (string->symbol proc-name)
 						       (lambda () 'other))])
 			   (or (eq? which 'define)
@@ -792,6 +804,12 @@
 	  (send keymap map-function "]" "balance-parens")
 	  (send keymap map-function "}" "balance-parens")
 	  (send keymap map-function "\"" "balance-parens")
+
+	  (send keymap map-function "c:up" "up-sexp")
+	  (send keymap map-function "c:down" "down-sexp")
+	  (send keymap map-function "c:left" "forward-sexp")
+	  (send keymap map-function "c:right" "backward-sexp")
+
 	  (let ([map-meta
 		 (lambda (key func)
 		   (mred:keymap:send-map-function-meta keymap key func))])

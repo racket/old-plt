@@ -7,7 +7,8 @@
     (import [mred:debug : mred:debug^]
 	    [mred:hyper-edit : mred:hyper-edit^]
 	    [mred:hyper-dialog : mred:hyper-dialog^]
-	    [mred:frame : mred:frame^]
+	    [mred:container : mred:container^]
+	    [mred:editor-frame : mred:editor-frame^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:group : mred:group^]
 	    [mred:handler : mred:handler^])
@@ -92,86 +93,77 @@
     (define make-hyper-basic-frame%
       (lambda (super%)
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
-				      [tag "top"] [relative? #f])
-	       (inherit 
-		active-canvas edit active-edit 
-		TOP-MARGIN LEFT-MARGIN
-		make-menu menu-bar%
-		on-size)
-	       (rename [super-open-file open-file])
-	       (public
-		[edit% mred:hyper-edit:hyper-edit%]
-		[canvas% hyper-canvas%]
-		[button% wx:button%]
-		[panel% wx:panel%])
-	       (private
-		[do-backward
-		 (lambda (button event)
-		   (let* ([canvas (active-canvas)]
-			  [backs (ivar canvas history-stack)]
-			  [fors (ivar canvas forward-stack)])
-		     (when (not (or (null? backs)(null? (cdr backs))))
-		       (send canvas set-the-tag (cdadr backs))
-		       (send canvas set-media (caadr backs))
-		       (send canvas set-history (cdr backs))
-		       (send canvas set-forward (cons (car backs) fors)))
-		     (send canvas set-focus )))]
-		[do-forward
-		 (lambda (button event)
-		   (let* ([canvas (active-canvas)]
-			  [backs (ivar canvas history-stack)]
-			  [fors (ivar canvas forward-stack)])
-		     (when (not (null? fors))
-		       (send* canvas
-			      (set-the-tag (cdar fors))
-			      (set-media (caar fors))
-			      (set-history (cons (car fors) backs))
-			      (set-forward (cdr fors))))
-		     (send canvas set-focus)))]
-		[do-home
-		 (lambda (button event)
-		   (let* ([canvas (active-canvas)]
-			  [backs (ivar canvas history-stack)]
-			  [home (ivar canvas home)])
-		     (when home
-		       (send* canvas
-			      (set-the-tag (cdr home))
-			      (set-media (car home))
-			      (set-history (cons home backs))
-			      (set-forward ())))
-		     (send canvas set-focus)))])
-	       (public
-		[open-file 
-		 (opt-lambda (filename [tag #f])
-		   (send (active-canvas) set-the-tag tag)
-		   (super-open-file filename))])
-	       (sequence
-		 (super-init file-name #t (if group group hyper-frame-group)))
-
-	       (private
-		(button-panel (make-object panel% this))
-		(backward-button
-		 (make-object button% 
-		   button-panel do-backward "Back"))
-		(forward-button
-		 (make-object button%
-		   button-panel do-forward "Forward"))
-		(home-button
-		 (make-object button%
-		   button-panel do-home "Home")))
-	       (sequence
-		 (send button-panel new-line)
-		 (send button-panel fit)
-		 (let ([w (box 0)][h (box 0)])
-		   (send button-panel get-size w h)
-		   (send button-panel set-size LEFT-MARGIN TOP-MARGIN 1000 (unbox h))
-		   (set! TOP-MARGIN (+ TOP-MARGIN (unbox h))))
-		 (on-size 0 0)
-		 (send (active-canvas) set-focus)
-		 (send (active-canvas) set-home tag)
-		 (send (active-canvas) set-history ())
-		 (send (active-canvas) adjust-stacks-on-follow tag)))))
-    (define hyper-basic-frame% (make-hyper-basic-frame% mred:frame:editor-frame%))
+		       [tag "top"] [relative? #f])
+	  (inherit active-canvas edit active-edit panel
+		   make-menu menu-bar%
+		   on-size)
+	  (rename [super-open-file open-file])
+	  (public
+	    [edit% mred:hyper-edit:hyper-edit%]
+	    [canvas% hyper-canvas%]
+	    [button% mred:container:button%])
+	  (private
+	    [do-backward
+	     (lambda (button event)
+	       (let* ([canvas (active-canvas)]
+		      [backs (ivar canvas history-stack)]
+		      [fors (ivar canvas forward-stack)])
+		 (when (not (or (null? backs)(null? (cdr backs))))
+		   (send canvas set-the-tag (cdadr backs))
+		   (send canvas set-media (caadr backs))
+		   (send canvas set-history (cdr backs))
+		   (send canvas set-forward (cons (car backs) fors)))
+		 (send canvas set-focus )))]
+	    [do-forward
+	     (lambda (button event)
+	       (let* ([canvas (active-canvas)]
+		      [backs (ivar canvas history-stack)]
+		      [fors (ivar canvas forward-stack)])
+		 (when (not (null? fors))
+		   (send* canvas
+			  (set-the-tag (cdar fors))
+			  (set-media (caar fors))
+			  (set-history (cons (car fors) backs))
+			  (set-forward (cdr fors))))
+		 (send canvas set-focus)))]
+	    [do-home
+	     (lambda (button event)
+	       (let* ([canvas (active-canvas)]
+		      [backs (ivar canvas history-stack)]
+		      [home (ivar canvas home)])
+		 (when home
+		   (send* canvas
+			  (set-the-tag (cdr home))
+			  (set-media (car home))
+			  (set-history (cons home backs))
+			  (set-forward ())))
+		 (send canvas set-focus)))])
+	  (public
+	    [open-file 
+	     (opt-lambda (filename [tag #f])
+	       (send (active-canvas) set-the-tag tag)
+	       (super-open-file filename))])
+	  (sequence
+	    (super-init file-name #t (if group group hyper-frame-group)))
+	  
+	  (private
+	    (button-panel (make-object mred:container:horizontal-panel% panel))
+	    (backward-button
+	     (make-object button% 
+			  button-panel do-backward "Back"))
+	    (forward-button
+	     (make-object button%
+			  button-panel do-forward "Forward"))
+	    (home-button
+	     (make-object button%
+			  button-panel do-home "Home")))
+	  (sequence
+	    (send button-panel stretchable-in-y? #f)
+	    (send (active-canvas) set-focus)
+	    (send (active-canvas) set-home tag)
+	    (send (active-canvas) set-history ())
+	    (send (active-canvas) adjust-stacks-on-follow tag)))))
+    (define hyper-basic-frame% (make-hyper-basic-frame% mred:editor-frame:editor-frame%))
 
     (define make-hyper-view-frame%
       (lambda (super%)

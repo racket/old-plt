@@ -1,0 +1,49 @@
+On Mon, Nov 18, 2002 at 03:03:49PM -0600, Robert Bruce Findler wrote:
+> Make deletion actually set the focus to another one of the snips, so I
+> can keep deleting.
+
+> Add keyboard shortcuts to the menu items?
+
+> Did we talk about teachpacks? I think that the teachpack prims exported
+> to the tools interface should be enough, but you'd have to be unititzed
+> first.
+-------------------
+I think that there is too much whitespace around the boxes, too. It'd           
+be nicer to use color to separate the lines and get back some screen
+"real estate".                                 
+                                          
+Robby                                             
+-------------------
+give menu items keyboard shortcuts
+-------------------
+> Also, it may look better to remove the outer box entirely and just have
+> lines between the test case items (or even not, if you can figure out
+> the background colors)
+-------------------
+First use experience report: Pls:                                          
+                                                            
+1. automatically associate the test suite with the current file name
+   (from where you launched "new test suite").                      
+                                                                    
+2. enable tab to move from "slot" to slot                           
+                                                                                
+3. make "actual" visibly different so that people know you can't fill
+   it in ... :-)                                                     
+                                                                     
+4. the teachpacks need to be included in the execution               
+                                                                     
+5. when you detect an error during execution, also hi-lite the source  
+   of the error in the DrScheme window.                                         
+                                                                     
+-- Matthias                                
+-------------------
+One thing I noticed about your tester: it doesn't seem to use Robby's
+string-constants system.  So all the menus and buttons and stuff you
+have will always be in English, which will look weird to people who
+use DrScheme with another language.
+
+Philippe
+-------------------
+Make the save button come up when the program to test is changed.
+Make the save button not come up when a test-suite is just loaded.
+-------------------

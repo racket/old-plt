@@ -627,6 +627,7 @@ please adhere to these guidelines:
  (insert-image-item "Insert Image...")
  (insert-comment-box-menu-item-label "Insert Comment Box")
  (insert-lambda "Insert &Lambda")
+ (insert-delta "Insert &Delta (define)")
 
  (wrap-text-item "Wrap Text")
 

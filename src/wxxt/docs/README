@@ -1,50 +1,12 @@
 
-This version of wxWindows has been modified beyond Markus Holzem's
-modification of the wxWindows from AIAI. The changes include
-the following:
+This version of wxWindows has been substatially modified from Markus
+Holzem's release.
 
+Other READMEs provide copyright and licensing information about parts
+of this library. Although README.MARKUS states that the library is
+released under GNU GPL, Markus later released this version of
+wxWindows under the GNU LGPL (which is the license used by all PLT
+software).
 
-  * Changed (fixed) keyboard focus. I got rid of all XSetInputFocus
-    calls and added a callback in the Common widget class to trigger
-    wxWindow::SetFocus() and wxWindow::KillFocus().
-
-  * Fixed the classic callback-after-object-deletion bug; when
-    a wxWindows object is destroyed, the widget destruction is
-    merely cued. Callbacks to the widget before it is actually
-    destroyed attept to reference an invalid wxWindow pointer.
-    I added an indirection in the clientData pointer.
-
-  * Explcitly called XtReleaseGC in all widgets that use XtGetGC.
-    This seems to have been purposefully left out, since it was
-    left out everywhere. However, without the explcit release, my
-    test program that creates hundreds of widgets gets gradually
-    larger and slower (and it seems to be XtGetGC that takes more and
-    more time).
-
-  * Fixed the menu tracking and then made menus work like
-    Windows/Motif menus.
-
-  * Fixed drawing of canvas border and scroll bars on B&W screen.
-
-  * Implemented fully dynamic menus as in Motif, Windows, and Mac
-    wxWindows.
-
-  * Normalized graphics (very little work).
-  
-  * Fixed the use of XtAppNextEvent in wxApp::Dispatch().
-
-  * Added fonts-by-name as in Motif, Windows, and Mac wxWindows.
-
-  * Integrated wxImage.
-
-  * Added SafeSock stuff to IPC classes.
-
-  * Changed a bunch of things for garbage collection.
-
-See README.MARKUS for copyright information and more history.
-
-----------------------------------------------------------------------
-
- -Matthew
-  mflatt@rice.edu
-
+- Matthew
+  mflatt@cs.rice.edu

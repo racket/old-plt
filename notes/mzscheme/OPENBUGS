@@ -3,7 +3,8 @@ Inexact (i.e., floating-point) numbers are not write/read invariant
 
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
-"synrule.ss" is missing `let-syntax' and `letrec-syntax'
+"synrule.ss" is missing `let-syntax' and `letrec-syntax' and doesn't
+ handle macro-in-macro interactions properly
 
 Under MacOS, in the standalone MzScheme application, a blocking read 
  from stdin blocks all MzScheme threads

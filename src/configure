@@ -2642,11 +2642,12 @@ else
 fi
 
 ################ X OpenGL ##################
+
 if test "${enable_gl}" = "yes" ; then  
   if test "${enable_mred}" = "yes" ; then  
     if test "${GL_NEEDS_PTHREAD}" = "yes" ; then
       echo $ac_n "checking for glXChooseVisual in -lGL""... $ac_c" 1>&6
-echo "configure:2649: checking for glXChooseVisual in -lGL" >&5
+echo "configure:2650: checking for glXChooseVisual in -lGL" >&5
 ac_lib_var=`echo GL'_'glXChooseVisual | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2654,7 +2655,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lGL $X_LIBS -lX11 -lXext -pthread $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2657 "configure"
+#line 2658 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -2668,7 +2669,7 @@ int main() {
 glXChooseVisual()
 ; return 0; }
 EOF
-if { (eval echo configure:2671: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2672: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2691,13 +2692,13 @@ fi
 
       if test "${GL_PTHREAD}" = "yes" ; then
         X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
-        MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576"
+        MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
         GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
         MROPTIONS="$MROPTIONS -DUSE_GL"
       fi
     else
       echo $ac_n "checking for glXCreateContext in -lGL""... $ac_c" 1>&6
-echo "configure:2700: checking for glXCreateContext in -lGL" >&5
+echo "configure:2701: checking for glXCreateContext in -lGL" >&5
 ac_lib_var=`echo GL'_'glXCreateContext | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2705,7 +2706,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lGL $X_LIBS -lX11 -lXext $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2708 "configure"
+#line 2709 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -2719,7 +2720,7 @@ int main() {
 glXCreateContext()
 ; return 0; }
 EOF
-if { (eval echo configure:2722: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2723: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2745,7 +2746,7 @@ fi
         MROPTIONS="$MROPTIONS -DUSE_GL"
       else
         echo $ac_n "checking for glXChooseVisual in -lGL""... $ac_c" 1>&6
-echo "configure:2748: checking for glXChooseVisual in -lGL" >&5
+echo "configure:2749: checking for glXChooseVisual in -lGL" >&5
 ac_lib_var=`echo GL'_'glXChooseVisual | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2753,7 +2754,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lGL $X_LIBS -lX11 -lXext -pthread $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2756 "configure"
+#line 2757 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -2767,7 +2768,7 @@ int main() {
 glXChooseVisual()
 ; return 0; }
 EOF
-if { (eval echo configure:2770: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:2771: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else

@@ -3,9 +3,9 @@ The _Virtual Playing Cards Library_
 -----------------------------------
 
 Load the virtual card library with
-   (require-library "cards.ss" "games" "cards")
+   (require (lib "cards.ss" "games" "cards"))
 
-The _cards.ss_ library defines the following procedures:
+The _cards.ss_ module defines the following procedures:
 
 > (make-table [title-string] [w] [h]) returns a table named by
       `title-string' that is `w' cards wide and `h' cards high. A
@@ -251,15 +251,3 @@ Card methods:
 
 > copy :: (send c copy) - makes a new card with the same suit and
        value.
-
-
-Signed Unit and Signature
--------------------------
-
-_sig.ss_ defines the
->        cards^
-signature, and _cardr.ss_ contains a signed unit that exports cards^
-and imports the following:
-   mred^
-   mzlib:function^
-

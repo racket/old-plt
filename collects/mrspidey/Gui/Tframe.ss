@@ -47,6 +47,9 @@
 
     (override
 
+      [get-text-to-search
+        (lambda () program-edit)]
+
       [on-close
         (lambda ignored
 	  (send main on-frame-close filename)

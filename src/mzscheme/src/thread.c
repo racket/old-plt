@@ -4240,6 +4240,10 @@ static void get_ready_for_GC()
     for_each_managed(scheme_thread_type, main_custodian, prepare_thread_for_GC);
   }
 
+#ifdef MZ_PRECISE_GC
+  scheme_flush_stack_copy_cache();
+#endif
+
   scheme_fuel_counter = 0;
 
 #ifdef WINDOWS_PROCESSES

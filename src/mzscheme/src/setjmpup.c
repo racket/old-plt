@@ -219,6 +219,25 @@ static void set_copy(void *s_c, void *c)
 # define get_copy(s_c) (s_c)
 # define set_copy(s_c, c) s_c = c
 
+#define STACK_COPY_CACHE_SIZE 10
+static void *stack_copy_cache[STACK_COPY_CACHE_SIZE];
+static long stack_copy_size_cache[STACK_COPY_CACHE_SIZE];
+static int scc_pos;
+#define SCC_OK_EXTRA_AMT 100
+
+START_XFORM_SKIP;
+
+void scheme_flush_stack_copy_cache(void)
+{
+  int i;
+  for (i = 0; i < STACK_COPY_CACHE_SIZE; i++) {
+    stack_copy_cache[i] = NULL;
+    stack_copy_size_cache[i] = 0;
+  }
+}
+
+END_XFORM_SKIP;
+
 #endif
 
 /**********************************************************************/
@@ -238,7 +257,7 @@ static void set_copy(void *s_c, void *c)
 
 static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STACK_ARG_DECL)
 {
-  long size;
+  long size, msize;
   void *here;
 
   here = &size;
@@ -254,6 +273,8 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STAC
   if (size < 0)
     size = 0;
 
+  msize = size;
+
   if (b->stack_max_size < size) {
     /* printf("Stack size: %d\n", size); */
     void *copy;
@@ -267,14 +288,33 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STAC
     diff = (unsigned long)b - (unsigned long)base;
     b = NULL;
 
-    copy = MALLOC_STACK(size);
+    copy = NULL;
+    /* Look for a reusable freed block: */
+    {
+      int i;
+      for (i = 0; i < STACK_COPY_CACHE_SIZE; i++) {
+	if ((stack_copy_size_cache[i] >= size)
+	    && (stack_copy_size_cache[i] < (size + SCC_OK_EXTRA_AMT))) {
+	  /* Found one */
+	  copy = stack_copy_cache[i];
+	  msize = stack_copy_size_cache[i];
+	  stack_copy_cache[i] = NULL;
+	  stack_copy_size_cache[i] = 0;
+	  break;
+	}
+      }
+    }
+    if (!copy) {
+      /* No reusable block found */
+      copy = MALLOC_STACK(size);
+    }
 
     /* Restore b: */
     b = (Scheme_Jumpup_Buf *)(((char *)base) + diff);
 
     set_copy(b->stack_copy, copy);
 #endif
-    b->stack_max_size = size;
+    b->stack_max_size = msize;
   }
   b->stack_size = size;
 
@@ -389,7 +429,15 @@ void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)
 void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   if (b->stack_copy) {
-#ifndef MZ_PRECISE_GC
+#ifdef MZ_PRECISE_GC
+    /* "Free" the stack copy by putting it into a cache.
+       (We clear the cache before a GC.) */
+    stack_copy_cache[scc_pos] = b->stack_copy;
+    stack_copy_size_cache[scc_pos] = b->stack_max_size;
+    scc_pos++;
+    if (scc_pos == STACK_COPY_CACHE_SIZE)
+      scc_pos = 0;
+#else
     /* Drop the copy of the stack, */
     /* remove the finalizer, */
     /* and explicitly call the finalization proc */

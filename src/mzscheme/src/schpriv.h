@@ -698,6 +698,10 @@ void *scheme_enlarge_runstack(long size, void *(*k)());
 int scheme_check_runstack(long size);
 void scheme_init_setjumpup(void);
 
+#ifdef MZ_PRECISE_GC
+void scheme_flush_stack_copy_cache(void);
+#endif
+
 void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_thread(k, eb, p) scheme_top_level_do(k, eb)
 

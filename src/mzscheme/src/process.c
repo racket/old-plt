@@ -2093,8 +2093,11 @@ static int do_kill_thread(Scheme_Process *p)
   p->running |= MZTHREAD_KILLED;
   if (p == scheme_current_process)
     kill_self = 1;
-  else
-    scheme_break_thread(p);
+  else {
+    p->fuel_counter = 0;
+    /* in case it's blocked on a semaphore: */
+    SCHEME_BREAK_THREAD(p->thread);
+  }
   SCHEME_RELEASE_LOCK();
 #else
   if (p->running) {

@@ -464,7 +464,15 @@ static int run_from_cmd_line(int argc, char *argv[],
 
 #ifndef DONT_PARSE_COMMAND_LINE
  show_help:
-  PRINTF("%s Startup file and expression switches:\n"
+  PRINTF("%s"
+# ifndef MZSCHEME_CMD_LINE
+	 " X switches (must precede all other flags):\n"
+	 "  -display <display>, -geometry <geometry>, -fn <font>, -font <font>,\n"
+         "  -bg <color>, -background <color>, -fg <color>, -foreground <color>,\n"
+	 "  -iconic, -name <name>, -rv, -reverse, +rv, -selectionTimeout <timeout>,\n"
+	 "  -synchronous, -title <title>, -xnllanguage <language>, -xrm <file>\n"
+# endif
+	 " Startup file and expression switches:\n"
 	 "  -e <expr> : Evaluates <expr> after " PROGRAM " starts.\n"
 	 "  -f <file> : Loads <file> after " PROGRAM " starts.\n"
 	 "  -d <file> : Load/cds <file> after " PROGRAM " starts.\n"
@@ -493,9 +501,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 # if defined(_IBMR2)
 	 "  -p, --persistent : Catches SIGDANGER (low page space) signal.\n"
 # endif
-	 "  -m, --mute-banner : Suppresses the "
+	 "  -m, --mute-banner : Suppresses "
 # ifdef MZSCHEME_CMD_LINE  
-	 "startup banner"
+	 "the startup banner"
 # else
 	 "-v/--version"
 # endif
@@ -506,7 +514,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 # else
 	 ", prints version.\n"
 # endif
-	 "  -h, --help : Shows this information and exits; ignores other switches.\n"
+	 "  -h, --help : Shows this information and exits, ignoring other switches.\n"
 #ifdef UNIX_IMAGE_DUMPS
 	 "  -R<file>, --restore <file> : restores an image.\n"
 #endif
@@ -516,9 +524,11 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 "Extra arguments following the last switch are put into the Scheme global\n"
 	 " variable `argv' as a vector of strings. The name used to start " PROGRAM "\n"
 	 " is put into the global variable `program' as a string.\n"
+#ifdef UNIX_IMAGE_DUMPS
 	 "Extra arguments after a `--restore' file are returned as a vector of\n"
 	 " strings to the continuation of the `write-image-to-file' call that created\n"
 	 " the image. Images are not supported on all platforms.\n"
+#endif
          "Expressions/files are evaluated/loaded in order as provided.\n"
 	 "The current-library-collection-paths is automatically set before any\n"
 	 "  expressions/files are evaluated/loaded, unless the -x or --no-lib-path\n"

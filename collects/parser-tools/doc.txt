@@ -3,120 +3,129 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
-
-CHANGE: The lexer now provides several abbreviations to make Unicode
-processing easier.  See documentation below.
-
-
-CHANGE: The lexer generator uses a new back-end based on derivatives
-(``Derivatives of Regular Expressions'',
- Janusz A. Brzozowski, JACM, Vol 11, No. 4 (October 1964))
-and can now support intersection and negation of arbitrary regular
-expressions.  For example, (@ "/*" (~ (@ (&) "*/" (&))) "*/") matches a 
-Java comment.
-
-I was expecting the Brzozowski algorithm to generate tables more slowly
-than the previous algorithm from the Dragon book (direct re to dfa
-translation) and was pleasantly surprised to find it both faster and
-more flexible.  Generating the lex table for the Scheme lexer in
-collects/syntax-color/scheme-lexer.ss yielded the following comparison
-(this particular lexer doesn't use negation or intersection yet) on an
-800MHZ Pentium 3:
-Dragon book algorithm: 1191 states, 13.86 seconds, .0116 seconds per state
-Brzozowski algorithm: 464 states, 5.695 seconds, .0122 seconds per state
-
-For the Java lexer (get-token) in collects/profj/parsers/lexer.ss:
-Dragon book algorithm: 268 states, 1.28 seconds, .0048 seconds per state
-Brzozowski algorithm: 220 states, 1.34 seconds, .0061 seconds per state
-
-Furthermore, the Brzozowski algorithm is more suited to functional
-programming, so the dfa generation code is much more pleasant.
-
-
-CHANGE: (eof) is no longer treated as a character, but as a 
- special.  This means that (eof) cannot appear except as the
- whole regular expression in a lex rule.
-
 _lex.ss_
 A regular expression is one of the following:
- symbol                    expands the lex abbreviation whose name 
-                             is symbol
- character                 matches the given character
- string                    matches its sequence of characters
- (epsilon)                 matches the empty string
- (* re)                    matches the sub-expession 0 or more times
- (+ re)                    matches the sub-expression 1 or more times
- (? re)                    matches the sub-expression 0 or 1 times
- (: re ...)                matches one of the sub-expressions
- (& re ...)                matches all of the sub-expressions
- (~ re)                    matches any string that the sub-expression does not match
- (@ re ...)                matches each sub-expression in succession
- (- char char)             matches any character between the two (inclusive)
+
+ identifier                expands to the named lex abbreviation
+ string                    matches the sequence of characters
+ character                 matches the character
+ (repetition lo hi re)     matches re repeated between lo and hi times,
+                             inclusive.  hi = +inf.0 for unbounded repetitions
+ (union re ...)            matches if any of the sub-expressions match
+ (intersection re ...)     matches if all of the sub-expressions match
+ (complement re)           matches anything that the sub-expressions does not
+ (concatenation re ...)    matches each sub-expression in succession
+ (char-range char char)    matches any character between the two (inclusive)
                              (A single character string can be used here)
- (^ char_or_range ...)     matches any character not listed                               
+ (char-complement re ...)  matches any character not listed
+                             Each sub-expression must be a 1-char re.
+ (char-set string)         matches any character in the string
+ (op form ...)             expands the re macro named op
 
- (The empty concatenation, `(@), and "" both match the empty string.
-  The empty or, `(:), matches nothing.
-  The empty carat, `(^), matches any single character.
-  The empty and, `(&), matches any string.)
+ (Both (concatenation) and "" match the empty string.
+  (union) matches nothing.
+  (intersection) matches any string.
+  (char-complement) matches any single character.)
 
- To denote all strings, use (&) instead of something like (* (^)).  The
- dfa conversion understands the former idiom and will often create smaller
- dfas in the first case.
-  
-Since negation is not a common operator on regular expressions, here are a 
-few examples:
+This regular expression language is not designed to be used directly,
+but rather as a basis for a user-friendly notation written with
+regular expression macros.  For example, _lex-sre.ss_ supplies
+operators from Olin Shivers's SREs and _lex-plt-v200.ss_ supplies
+operators from the previous version of this library.  The old plt
+syntax is deprecated.  To use one of these syntaxes, use one of the
+following commands:
 
-(~ "1") matches all strings except the string "1".
-          This includes "11", "111", "0", "01", "" and so on.
+(require (prefix : (lib "lex-sre.ss" "parser-tools")))
+(require (prefix : (lib "lex-plt-v200.ss" "parser-tools")))
 
-(~ (* "1")) matches all strings that are not sequences of "1".
-              "0", "00", "11110", "0111", "11001010" and so on.
+The regular expression operators occupy the same namespace as other
+Scheme identifiers, so common operator names, such as * and +,
+conflict with built-in identifiers.  The suggested prefix form of
+require prefixes each imported operator with :, :* and :+, for
+example.  Of course, a prefix other than : (such as re-) will work
+too.  Unfortunately, this causes the regexps in v20x lexers to need
+some translation, even with the lex-plt-v200 operators.  The exports
+of each of these libraries is explained in their sections below.
 
-From Brzozowski's paper: (& (@ (&) "111" (&)) 
-                            (~ (: (@ (&) "01") (+ "1"))))
-  matches all strings that have 3 consecutive ones, but not those that end in 
-  "01" and not those that are ones only.  These include:
-  "1110", "0001000111" and "0111" but not "", "11", "11101", "111" and "11111".
+Since negation is not a common operator on regular expressions, here
+are a few examples, using : prefixed SRE syntax:
 
-(@ "/*" (~ (@ (&) "*/" (&))) "*/") matches Java/C block comments.
- "/**/", "/******/", "/*////*/", "/*asg4*/" and so on.  It does not
- match "/**/*/", "/*  */   */" and so on.
- (@ (&) "*/" (&)) matches any string that has a "*/" in is, so (~ (@ (&)
- "*/" (&))) matches any string without a "*/" in it.
+(complement "1") matches all strings except the string "1",
+  including "11", "111", "0", "01", "", and so on.
 
-(@ "/*" (* (~ "*/")) "*/") : matches any string that starts with "/*"
- and and ends with "*/", including "/* */ */ */".  (~ "*/") matches any
- string that except "*/".  This includes "*" and "/" separately.  Thus
- (* (~ "*/")) matches "*/" by first matching "*" and then matching "/".
- Any other string is matched directly by (~ "*/").  In other words,
- (* (~ "xx")) = (&).  It is usually not correct to place a * around a ~.
+(complement (:* "1")) matches all strings that are not
+  sequences of "1", including "0", "00", "11110", "0111", "11001010"
+  and so on.
+
+(:& (:: any-string "111" any-string)
+    (complement (:or (:: any-string "01") (:+ "1"))))
+  matches all strings that have 3 consecutive ones, but not those that
+  end in "01" and not those that are ones only.  These include "1110",
+  "0001000111" and "0111" but not "", "11", "11101", "111" and
+  "11111".
+
+(:: "/*" (complement (:: any-string "*/" any-string)) "*/") 
+  matches Java/C block comments.  "/**/", "/******/", "/*////*/",
+  "/*asg4*/" and so on.  It does not match "/**/*/", "/* */ */" and so
+  on.  (:: any-string "*/" any-string) matches any string that has a
+  "*/" in is, so (complement (:: any-string "*/" any-string)) matches
+  any string without a "*/" in it.
+
+(:: "/*" (:* (complement "*/")) "*/")
+  matches any string that starts with "/*" and and ends with "*/",
+  including "/* */ */ */".  (complement "*/") matches any string
+  except "*/".  This includes "*" and "/" separately.  Thus (:*
+  (complement "*/")) matches "*/" by first matching "*" and then
+  matching "/".  Any other string is matched directly by (complement
+  "*/").  In other words, (:* (complement "xx")) = any-string.  It is
+  usually not correct to place a :* around a complement.
 
 
-To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
-This gives you the following syntactic forms:
+The following require imports the _lexer generator_.
+
+(require (lib "lex.ss" "parser-tools"))
+
+
+"lex.ss" exports the following named regular expressions:
+
+any-char: matches any character
+any-string: matches any string
+nothing: matches no string
+alphabetic lower-case upper-case title-case numeric symbolic
+punctuation graphic whitespace blank iso-control: See the mzscheme
+manual section 3.4
+
+
+"lex.ss" exports the following syntactic forms:
 
 > (define-lex-abbrev name re) which associates a regular expression
    with a name to be used in other regular expressions with the
-   (symbol) form.  The definition of name has the same scoping
-   properties as a normal mzscheme macro definition.  In particular a
-   (define-syntax name ...) could interfere.
+   identifier form.  The definition of name has the same scoping
+   properties as a normal mzscheme macro definition.
 
-> (define-lex-abbrevs [name re] ...) defines several lex-abbrevs
+> (define-lex-abbrevs (name re) ...) defines several lex-abbrevs
+
+> (define-lex-trans name trans) define a regular expression macro.
+   When the name appears as an operator in a regular expression, the
+   expression is replaced with the result of the transformer.  The
+   definition of name has the same scoping properties as a normal
+   mzscheme macro definition.  For examples, see the file
+   ${PLTHOME}/collects/parser-tools/lex-sre.ss which contains simple,
+   but useful, regular expression macro definitions.
 
 > (lexer (re action) ...) expands into a function that takes an
-   input-port, matches the re's against the buffer and returns the
+   input-port, matches the re's against the buffer, and returns the
    result of executing the corresponding action.  Each action is
    scheme code that has the same scope as its lexer definition, except
-   that the variables start-pos, end-pos, lexeme,
-   return-without-pos and input-port are also bound in the action
-   (hiding any outside binding).
+   that the variables start-pos, end-pos, lexeme, return-without-pos
+   and input-port are also bound in the action (hiding any outside
+   binding).
 >   start-pos - a position struct for the first character matched
 >   end-pos - a position struct for the character after the last
       character in the match
 >   lexeme - the matched string
 >   input-port - the input-port being processed (this is useful for
-      matching input with multiple lexers, see example below)
+      matching input with multiple lexers)
 >   (return-without-pos x) is a function (continuation) that
      immediately returns the value of x from the lexer.  This useful
      in a src-pos lexer to prevent the lexer from adding source
@@ -132,9 +141,9 @@ This gives you the following syntactic forms:
      will cause the value of the recursive call to be returned without
      wrapping position around it.
 
-   The lexer will raise an exception (exn:read) if none of the regular
+   The lexer raises an exception (exn:read) if none of the regular
    expressions match the input.
-   Hint: If ((- #\000 #\377) custom-error-behavior) is the last rule,
+   Hint: If (any-char custom-error-behavior) is the last rule,
    then there will always be a match and custom-error-behavior will be
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
@@ -144,7 +153,7 @@ This gives you the following syntactic forms:
    In addition to returning characters, input ports can return
    eof-objects and custom input ports can return arbitrary values
    (specials), raise an exception to indicate a non-textual comment
-   (special-comments) or raise an exception to indicate a malformed
+   (special-comments), or raise an exception to indicate a malformed
    special (special-error).  Eofs, specials, special-comments and
    special-errors can never be part of a lexeme with surrounding
    characters.
@@ -170,57 +179,56 @@ This gives you the following syntactic forms:
    value is internally malformed (such as an embedded XML editor with
    malformed syntax).  The identifier "exception" is bound to the
    raised exception in the action.  If no special-error rule is
-   present, the exception is raised by the lexer itself.
+   present, the the lexer itself will raise the exception.
 
 
-> (lexer-src-pos (re action) ...) like a lexer, but the return of each
-   match is (list action-result start-pos end-pos) instead of simply
-   action-result.
+> (lexer-src-pos (re action) ...) is a lexer that returns
+   (make-position-token action-result start-pos end-pos) instead of
+   simply action-result.
    
-> (define-tokens group-name (token-name ...)) which binds group-name
-   to the group of tokens being defined.  For each token-name, t, a
-   function (token-t expr) is created, which constructs a token with
+> (define-tokens group-name (token-name ...)) binds group-name to the
+   group of tokens being defined.  For each token-name, t, a function
+   (token-t expr) is created.  It constructs a token structure with
    name t and stores the value of expr in it.  The definition of
    group-name has the same scoping properties as a normal mzscheme
-   macro definition.  In particular a (define-syntax group-name ...)
-   could interfere.  error cannot be defined as a token since it has
+   macro definition.  A token cannot be named error since it has
    special use in the parser.
 
-> (define-empty-tokens group-name (token-name ...)) like
-   define-tokens, except the resulting token constructors take no
-   arguments and store the value #f into the token.
+> (define-empty-tokens group-name (token-name ...)) is like
+   define-tokens, except a resulting token constructor take no
+   arguments and returns the name as a symbol.  (token-t) returns 't.
 
-> (token-name token) returns the token's name.
-> (token-value token) returns the token's value.
-> (token? val) returns #t if val is a token and #f otherwise.
 
-HINT: Token definitions are usually necessary for interoperating with
+HINT: Token definitions are usually necessary for inter-operating with
 a generated parser, but may not be the right choice when using the
 lexer in other situations.
 
+"lex.ss" exports the following token helper functions:
 
-Several values are also provided for manipulating the position
-structures tracked by start-pos and end-pos:
+> (token-name token) returns the name of a token that is represented either
+   by a symbol or a token structure.
 
-> (position-offset position) - the offset of the character in the stream.
-> (position-line position) - the line number of the character.
-> (position-col position) - the offset of the character in the current line.
-> (position? x) - the question associated with a position struct
+> (token-value token) returns the value of a token that is represented either
+   by a symbol or a token structure.  It returns #f for a symbol token.
+> (token? val) returns #t if val is a token structure and #f otherwise.
 
-and a parameter for tracking the source file:
+
+"lex.ss" exports the following structures:
+
+> (struct position (offset line col))
+   These structures are bound to start-pos and end-pos.
+   Offset is the offset of the character in the input.
+   Line in the line number of the character.
+   Col is the offset in the current line.
+
+> (struct position-token (token start-pos end-pos))
+   src-pos-lexers return these.
+
+"lex.ss" exports the following parameter for tracking the source file:
 
 > (file-path string) - sets the parameter file-path, which the lexer
    will use as the source location if it raises a read error.  This
    allows DrScheme to open the file containing the error.
-
-
-The following lex abbreviations are also provided (see 3.4 in the
-mzscheme manual):
-any-string	  any-char	    nothing
-alphabetic	  upper-case	    lower-case
-title-case	  numeric	    symbolic
-punctuation	  graphic	    whitespace
-blank		  hexadecimal	    iso-control
 
 
 Each time the scheme code for a lexer is compiled (e.g. when a .ss
@@ -240,7 +248,10 @@ NOTE: Since the lexer gets its source information from the port, use
 port-count-lines! to enable the tracking of line and column information.
 Otherwise the line and column information will return #f.
 
-See the combined lexer/parser example below.
+The file ${PLTHOME}/collects/syntax-color/scheme-lexer.ss contains a
+lexer for Scheme, as extended by mzscheme.  The files in
+${PLTHOME}/collects/parser-tools/examples contain simpler example
+lexers.
 
 
 _yacc.ss_
@@ -271,9 +282,9 @@ This module provides the following syntactic form:
      shift/reduce or reduce/reduce conflicts.
 
   > (src-pos) OPTIONAL causes the generated parser to expect input in
-     the form (list token position position) instead of simply token.
-     Include this option when using the parser with a lexer generated
-     with lexer-src-pos.
+     the form (make-position-token token position position) instead of
+     simply token.  Include this option when using the parser with a
+     lexer generated with lexer-src-pos.
 
   > (error expression) expression should evaluate to a function which
      will be executed for its side-effect whenever the parser
@@ -374,16 +385,16 @@ and the code to setup tables is rather slow, so in situations where the
 parser is invoked many times it is by far faster to evaluate the
 code to setup tables exactly once, by putting the parser in an
 appropriate context, such as the right hand part of a define: 
-(define parse (parser ...)).  Doing something like 
+(define parse (parser ...)).
+
+Doing something like 
 (define parse
   (lambda (y)
      (parser ...)))
 can be very useful if the parser actions need to refer to a y that
 might be different on each execution of the parser, but will lead to
 multiple executions of the table setup code.  Consider using a global
-parameter for y instead if efficiency is a concern.  The same concerns
-hold for a lexer to a lesser extend since the setup code is much
-smaller
+parameter for y instead if efficiency is a concern.
 
 
 _yacc-to-scheme.ss_
@@ -397,8 +408,6 @@ tool.  It is not entirely robust.  For example, if the C actions in
 the original grammar have nested blocks the tool will fail.
 
 
-
-
 Annotated examples are in the examples subdirectory of the parser-tools
 collection directory.
 
@@ -408,28 +417,3 @@ Potential future additions:
 If you need any of these features, or if you have a different handy
 feature in mind, let me know.
 
-lexer generator:
-1) POSIX style regular expressions.  This would take the form of an
-   include-like operation to get a file of lex-abbrevs in POSIX syntax
-   instead of the s-expression syntax.
-2) DFA minimization/compaction.  Should reduce the runtime footprint
-   of a lexer.
-
-parser:
-1) Increase speed of parser generator.  I doubt much can be done short
-   of making mzscheme faster.
-2) Fisher-Burke error recovery.  Automatically figure out a "good"
-   token to insert when an error is encountered.
-3) Possibly change the $1 style to something like SML/NJ YACC uses.
-   The SML/NJ YACC refers to the Nth occurrence of grammar symbol name
-   in a production RHS as nameN.
-4) LALR table compression.  Would reduce the runtime memory
-   requirements of parsers.
-5) Error checking for useless productions.  Right now productions
-   which cannot be used in a parse tree are silently accepted.
-6) Allow different end-terminals for different start symbols.
-
-both:
-1) Increase runtime speed.  I doubt much can be done short of making
-   mzscheme faster.
-2) Add more information for check syntax to draw arrows to more things

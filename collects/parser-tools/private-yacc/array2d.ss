@@ -1,4 +1,3 @@
-#cs
 (module array2d mzscheme
   
   ;; Macros to treat a vector as a 2 dimensional array

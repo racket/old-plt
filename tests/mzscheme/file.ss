@@ -108,11 +108,12 @@
 (err/rt-test (read (open-input-string "\"\\8\"")) exn:read?)
 
 ;; Test escape printing:
-(test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\5A\\17P\\17P\\335D\\3777\\0011\""
-      'output-escapes
-      (let ([p (open-output-string)])
-	(write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011" p)
-	(get-output-string p)))
+(parameterize ([locale-enabled #f])
+  (test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\5A\\17P\\17P\\335D\\3777\\0011\""
+	'output-escapes
+	(let ([p (open-output-string)])
+	  (write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011" p)
+	  (get-output-string p))))
 
 ;; Test return, linefeed, and return--linefeed escapes:
 (test "12" values "1\

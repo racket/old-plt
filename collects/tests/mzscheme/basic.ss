@@ -367,6 +367,7 @@
 (arity-test symbol? 1 1)
 
 (SECTION 6 6)
+(locale-enabled #f)
 (test #t eqv? '#\  #\Space)
 (test #t eqv? #\space '#\Space)
 (test #t char? #\a)
@@ -906,6 +907,8 @@
 	   string-ci<? 
 	   string-ci>=? 
 	   string-ci<=?))
+
+(locale-enabled #t)
 
 (define r (regexp "(-[0-9]*)+"))
 (test '("-12--345" "-345") regexp-match r "a-12--345b")

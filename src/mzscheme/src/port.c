@@ -248,8 +248,6 @@ Scheme_Object *(*scheme_make_stderr)(void) = NULL;
 
 int scheme_file_open_count;
 
-int scheme_internal_checking_char;
-
 MZ_DLLSPEC int scheme_binary_mode_stdio;
 
 static int special_is_ok;
@@ -1566,10 +1564,6 @@ scheme_char_ready (Scheme_Object *port)
 
   ip = (Scheme_Input_Port *)port;
 
-  if (scheme_internal_checking_char && ip->closed) {
-    return 1;
-  }
-   
   CHECK_PORT_CLOSED("char-ready?", "input", port, ip->closed);
 
   if (ip->ungotten_count || ip->ungotten_special

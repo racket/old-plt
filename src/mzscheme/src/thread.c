@@ -1485,7 +1485,10 @@ static void select_thread(Scheme_Thread *start_thread)
       new_thread = scheme_first_thread;
     
     /* Can't swap in processes with a nestee: */
-    while (new_thread && new_thread->nestee) {
+    while (new_thread 
+	   && (new_thread->nestee
+	       /* USER_SUSPENDED should only happen if new_thread is  the main thread */
+	       || (new_thread->running & MZTHREAD_USER_SUSPENDED))) {
       new_thread = new_thread->next;
     }
 
@@ -1500,7 +1503,10 @@ static void select_thread(Scheme_Thread *start_thread)
       }
       if (new_thread->running & MZTHREAD_USER_SUSPENDED) {
 	scheme_console_printf("unbreakable deadlock\n");
-	exit(-1);
+	if (scheme_exit)
+	  scheme_exit(1);
+	/* We really have to exit: */
+	exit(1);
       } else {
 	scheme_weak_resume_thread(new_thread);
       }
@@ -1551,8 +1557,7 @@ static void remove_thread(Scheme_Thread *r)
     r->prev->next = r->next;
     r->next->prev = r->prev;
   } else if (r->next) {
-    if (r->next)
-      r->next->prev = NULL;
+    r->next->prev = NULL;
     scheme_first_thread = r->next;
   }
   r->next = r->prev = NULL;
@@ -1641,8 +1646,13 @@ static void start_child(Scheme_Thread * volatile child,
       exit_or_escape(scheme_current_thread);
     }
 
-    if (!scheme_setjmp(scheme_error_buf)) 
+    if (!scheme_setjmp(scheme_error_buf)) {
+      /* check for initial break before we do anything */
+      scheme_check_break_now();
+
+      /* run the main thunk: */
       scheme_apply_multi(child_eval, 0, NULL);
+    }
     
     remove_thread(scheme_current_thread);
 
@@ -2010,7 +2020,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_current_thread = np;
 
-  if (0 && p->next) /* not main thread... */
+  if (p->next) /* not main thread... */
     scheme_weak_suspend_thread(p);
 
   /* Call thunk, catch escape: */
@@ -2035,9 +2045,10 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   if (np->prev)
     np->prev->next = np->next;
-  else
+  else if (np->next) {
     scheme_first_thread = np->next;
-  np->next->prev = np->prev;
+    np->next->prev = np->prev;
+  }
 
   np->next = NULL;
   np->prev = NULL;
@@ -2052,7 +2063,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_current_thread = p;
 
-  if (0 && p->next) /* not main thread... */
+  if (p->next) /* not main thread... */
     scheme_weak_resume_thread(p);
 
 #ifdef RUNSTACK_IS_GLOBAL
@@ -2072,11 +2083,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   }
 
   /* May have just moved a break to a breakable thread: */
-    /* Check for external break again after swap or sleep */
-  if (p->external_break && !p->suspend_break && scheme_can_break(p, p->config)) {
-    scheme_thread_block(0.0);
-    p->ran_some = 1;
-  }
+  /* Check for external break again after swap or sleep */
+  scheme_check_break_now();
 
   return v;
 }
@@ -2260,6 +2268,16 @@ int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
 	  && SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK))
 	  && !p->exn_raised);
 }
+
+void scheme_check_break_now(void) {
+  Scheme_Thread *p = scheme_current_thread;
+
+  if (p->external_break && scheme_can_break(p, p->config)) {
+    scheme_thread_block_w_thread(0.0, p);
+    p->ran_some = 1;
+  }
+}
+
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
 {
@@ -2919,8 +2937,11 @@ static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
     /* p is the main thread, which we're not allowed to
        suspend in the normal way. */
     p->running |= MZTHREAD_USER_SUSPENDED;
-    if (p == scheme_current_thread)
+    scheme_main_was_once_suspended = 1;
+    if (p == scheme_current_thread) {
       scheme_thread_block(0.0);
+      p->ran_some = 1;
+    }
   } else if ((p->running & MZTHREAD_NEED_KILL_CLEANUP)
 	     && (p->running & MZTHREAD_SUSPENDED)) {
     /* p probably needs to get out of semaphore-wait lines, etc. */
@@ -2929,6 +2950,10 @@ static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
   } else {
     p->running |= MZTHREAD_USER_SUSPENDED;
     scheme_weak_suspend_thread(p); /* ok if p is scheme_current_thread */
+    if (p == scheme_current_thread) {
+      /* Need to check for breaks */
+      scheme_check_break_now();
+    }
   }
 
   return scheme_void;
@@ -3258,6 +3283,11 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       /* Not in scheduler --- we're allowed to block via suspend,
 	 which makes the thread GCable. */
       scheme_wait_semas_chs(waiting->set->argc, waiting->set->argv, 0, waiting);
+
+      /* In case a break appeared after we chose something,
+	 check for a break, because scheme_wait_semas_chs() won't: */
+      scheme_check_break_now();
+
       return 1;
     }
   }
@@ -3431,6 +3461,11 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
     if (i < 0) {
       /* Hit the special case. */
       i = scheme_wait_semas_chs(waitable_set->argc, waitable_set->argv, 0, NULL);
+
+      /* In case a break appeared after we received a post,
+	 check for a break, because scheme_wait_semas_chs() won't: */
+      scheme_check_break_now();
+
       if (i)
 	return waitable_set->argv[i - 1];
       else

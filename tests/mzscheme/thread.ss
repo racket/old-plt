@@ -6,6 +6,8 @@
 
 (define SLEEP-TIME 0.1)
 
+;; ----------------------------------------
+
 (define t (thread (lambda () 8)))
 (test #t thread? t)
 
@@ -158,7 +160,7 @@
 (test 26 'thread-loop result)
 
 ; Make sure you can break a semaphore-wait:
-(test 'ok
+'(test 'ok
       'break-semaphore-wait
       (let* ([s1 (make-semaphore 0)]
 	     [s2 (make-semaphore 0)]
@@ -552,5 +554,155 @@
   (display (make-string 5000 #\x) w)
   (test r object-wait-multiple 0 r w)
   (test #f object-wait-multiple 0 w))
+
+;; ----------------------------------------
+;; Suspend and resume
+
+;; Suspend main thread:
+(let ([v 17]
+      [s (make-semaphore)]
+      [t (current-thread)])
+  (let ([t2 (thread (lambda () 
+		      (thread-suspend t)
+		      (test #t thread-running? t)
+		      (semaphore-post s)
+		      (sleep SLEEP-TIME)
+		      (test 17 values v)
+		      (thread-resume t)))])
+    (semaphore-wait s)
+    (set! v 99)
+    (thread-wait t2)))
+
+;; Self-suspend main thread:
+(let ([v 19]
+      [t (current-thread)])
+  (let ([t2 (thread (lambda () 
+		      (sleep SLEEP-TIME)
+		      (test 19 values v)
+		      (thread-resume t)))])
+    (thread-suspend t)
+    (set! v 99)
+    (thread-wait t2)))
+
+;; Self-suspend child thread:
+(let ([v 20])
+  (let ([t2 (thread (lambda () 
+		      (thread-suspend (current-thread))
+		      (set! v 99)))])
+    (sleep SLEEP-TIME)
+    (test #t thread-running? t2)
+    (thread-resume t2)
+    (test #t thread-running? t2)
+    (test 20 values v)
+    (thread-wait t2)
+    (test #f thread-running? t2)
+    (test 99 values v)))
+
+;; Suspend child thread:
+(let ([v 17]
+      [s (make-semaphore)]
+      [t (current-thread)])
+  (let ([t2 (thread (lambda () 
+		      (semaphore-wait s)
+		      (set! v 99)))])
+    (thread-suspend t2)
+    (test #t thread-running? t2)
+    (semaphore-post s)
+    (sleep SLEEP-TIME)
+    (test 17 values v)
+    (thread-resume t2)
+    (thread-wait t2)
+    (test #f thread-running? t2)
+    (test 99 values v)))
+
+;; Breaking/killing:
+(for-each
+ (lambda (sleep0)
+   (test (list 'start-sleep0 sleep0) values (list 'start-sleep0 sleep0))
+   (let ([goes
+	  (lambda (sleep1 sleep2 break-thread)
+	    (test 'external-suspend values 'external-suspend)
+	    (let ([v 10])
+	      (let ([t2 (thread (lambda () 
+				  (let loop () (when (= v 10) (sleep) (loop)))
+				  (sleep0)
+				  (set! v 99)))])
+		(sleep1)
+		(thread-suspend t2)
+		(set! v 20)
+		(test (void) break-thread t2)
+		(sleep2)
+		(test (void) thread-resume t2)
+		(test (void) thread-wait t2)
+		(test 20 values v)))
+	    (test 'self-suspend values 'self-suspend)
+	    (let ([v 20])
+	      (let ([t2 (thread (lambda () 
+				  (thread-suspend (current-thread))
+				  (sleep0)
+				  (set! v 99)))])
+		(sleep1)
+		(test (void) break-thread t2)
+		(sleep2)
+		;; keep trying to resume until the thread stops:
+		(let loop ()
+		  (unless (object-wait-multiple 0 t2)
+		    (test (void) thread-resume t2)
+		    (loop)))
+		(test (void) thread-wait t2)
+		(test 20 values v)))
+	    (let ([w-block
+		   (lambda (post wait)
+		     (let ([v 20])
+		       (let ([t2 (thread (lambda () 
+					   (wait)
+					   (sleep0)
+					   (set! v 99)))])
+			 (sleep1)
+			 (test (void) thread-suspend t2)
+			 (post)
+			 (sleep2)
+			 (test (void) break-thread t2)
+			 (sleep2)
+			 (test (void) thread-resume t2)
+			 (test (void) thread-wait t2)
+			 (test 20 values v))))])
+	      (test 'sema-block values 'sema-block)
+	      (let ([s (make-semaphore)])
+		(w-block (lambda () (semaphore-post s))
+			 (lambda () (semaphore-wait s))))
+	      (for-each
+	       (lambda (init)
+		 (test (list 'sema-block/enable-break init) values (list 'sema-block/enable-break init))
+		 (let ([s (make-semaphore)])
+		   (parameterize ([break-enabled init])
+		     (w-block (lambda () (semaphore-post s))
+			      (lambda () (semaphore-wait/enable-break s))))))
+	       '(#t #f))
+	      (test 'ch-block values 'ch-block)
+	      (let ([ch (make-channel)])
+		(w-block (lambda () (thread (lambda () (channel-put ch 10))))
+			 (lambda () (object-wait-multiple #f (make-semaphore) ch))))
+	      (for-each
+	       (lambda (init)
+		 (test (list 'ch-block/enable-break init) values (list 'ch-block/enable-break init))
+		 (let ([ch (make-channel)])
+		   (parameterize ([break-enabled #f])
+		     (w-block (lambda () (thread (lambda () (channel-put ch 10))))
+			      (lambda () (object-wait-multiple/enable-break #f (make-semaphore) ch))))))
+	       '(#t #f))))])
+     (goes void void break-thread)
+     (goes void void kill-thread)
+     (goes sleep void break-thread)
+     (goes sleep void kill-thread)
+     (goes void sleep break-thread)
+     (goes void sleep kill-thread)
+     (goes (lambda () (sleep SLEEP-TIME)) void break-thread)
+     (goes (lambda () (sleep SLEEP-TIME)) void kill-thread)
+     (goes void (lambda () (sleep SLEEP-TIME)) break-thread)
+     (goes void (lambda () (sleep SLEEP-TIME)) kill-thread)))
+ (list sleep void))
+
+;; ----------------------------------------
 
 (report-errs)

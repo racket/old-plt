@@ -323,6 +323,10 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 
 typedef int (*Scheme_Ready_Fun_FPC)(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
+void scheme_check_break_now(void);
+
+extern int scheme_main_was_once_suspended;
+
 /*========================================================================*/
 /*                       hash tables and globals                          */
 /*========================================================================*/
@@ -1922,7 +1926,6 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd);
 #endif
 
 extern int scheme_active_but_sleeping;
-extern int scheme_internal_checking_char;
 extern int scheme_file_open_count;
 
 typedef struct Scheme_Indexed_String {

@@ -2248,10 +2248,7 @@ call_cc (int argc, Scheme_Object *argv[])
     }
 
     /* We may have just re-activated breaking: */
-    if (p->external_break && scheme_can_break(p, p->config)) {
-      scheme_thread_block_w_thread(0.0, p);
-      p->ran_some = 1;
-    }
+    scheme_check_break_now();
 
     return result;
   } else {

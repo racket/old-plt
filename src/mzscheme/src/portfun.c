@@ -2425,14 +2425,7 @@ static Scheme_Object *do_breakable(void *data)
   Scheme_Prim *k;
 
   /* Need to check for a break, in case one was queued and we just enabled it: */
-  {
-    Scheme_Thread *p = scheme_current_thread;
-    if (p->external_break)
-      if (scheme_can_break(p, p->config)) {
-	scheme_thread_block_w_thread(0.0, p);
-	p->ran_some = 1;
-      }
-  }
+  scheme_check_break_now();
 
   k = b->k;
   return k(b->argc, b->argv);

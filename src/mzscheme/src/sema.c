@@ -38,6 +38,8 @@ static int channel_put_ready(Scheme_Object *ch);
 
 static int pending_break(Scheme_Thread *p);
 
+int scheme_main_was_once_suspended;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -264,15 +266,7 @@ static Scheme_Object *do_breakable_wait(void *data)
   BreakableWait *bw = (BreakableWait *)data;
 
   /* Need to check for a break, in case one was queued and we just enabled it: */
-  {
-    Scheme_Thread *p = scheme_current_thread;
-    if (p->external_break) {
-      if (scheme_can_break(p, p->config)) {
-	scheme_thread_block_w_thread(0.0, p);
-	p->ran_some = 1;
-      }
-    }
-  }
+  scheme_check_break_now();
 
   scheme_wait_sema(bw->sema, 0);
 
@@ -311,7 +305,8 @@ static int out_of_line(Scheme_Object *a)
   }
 
   /* Suspended by user? */
-  if (p->running & MZTHREAD_USER_SUSPENDED)
+  if ((p->running & MZTHREAD_USER_SUSPENDED)
+      || scheme_main_was_once_suspended)
     return 1;
 
   return 0;
@@ -557,7 +552,10 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	  a[1] = ws;
 	  a[2] = scheme_current_thread;
 	  
+	  scheme_main_was_once_suspended = 0;
+
 	  scheme_block_until(out_of_line, NULL, (Scheme_Object *)a, (float)0.0);
+	  
 	  --scheme_current_thread->suspend_break;
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
@@ -571,7 +569,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	out_of_a_line = 0;
 	
 	/* If we get the post, we must return WITHOUT BLOCKING. 
-	   MrEd, for example, depends on this special property, which insures
+	   MrEd, for example, depends on this special property, which ensures
 	   that the thread can't be broken or killed between
 	   receiving the post and returning. */
 
@@ -654,7 +652,21 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	    break;
 	}
 
-	/* Otherwise: someone stole the post! Loop to get back in line an try again. */
+	/* Otherwise: !waiting and someone stole the post, or we were
+	   suspended and we have to start over. Either way, poll then
+	   loop to get back in line an try again. */
+	for (i = 0; i < n; i++) {
+	  if (semas[i]->type == scheme_sema_type) {
+	    if (semas[i]->value) {
+	      if (semas[i]->value > 0)
+		--semas[i]->value;
+	      break;
+	    }
+	  } else if (try_channel(semas[i], waiting, i, NULL))
+	    break;
+	}
+	if (i < n)
+	  break;
       }
     }
     v = i + 1;
@@ -687,6 +699,10 @@ static Scheme_Object *block_sema(int n, Scheme_Object **p)
 
   scheme_wait_sema(p[0], 0);
 
+  /* In case a break appeared after wwe received the post,
+     check for a break, because scheme_wait_sema() won't: */
+  scheme_check_break_now();
+
   return scheme_void;
 }
 
@@ -702,7 +718,7 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 
 static int pending_break(Scheme_Thread *p)
 {
-  if (scheme_current_thread->running & (MZTHREAD_KILLED | MZTHREAD_USER_SUSPENDED))
+  if (p->running & (MZTHREAD_KILLED | MZTHREAD_USER_SUSPENDED))
     return 1;
 
   if (p->external_break) {

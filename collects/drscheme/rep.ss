@@ -602,7 +602,7 @@
                   erase prompt-mode?
                   ready-non-prompt
                   set-prompt-mode
-                  delete lock locked?
+                  delete lock is-locked?
                   paragraph-start-position
                   last-position
                   set-resetting
@@ -776,7 +776,7 @@
         (define (show-eof-icon) 
           (unless eof-snip
             (set! eof-snip (make-object eof-icon-snip% this))
-            (let ([c-locked? (locked?)])
+            (let ([c-locked? (is-locked?)])
               (begin-edit-sequence)
               (lock #f)
               (insert eof-snip
@@ -788,7 +788,7 @@
               (end-edit-sequence))))
         (define (hide-eof-icon) 
           (when eof-snip
-            (let ([c-locked? (locked?)])
+            (let ([c-locked? (is-locked?)])
               (begin-edit-sequence)
               (lock #f)
               (release-snip eof-snip)
@@ -804,7 +804,7 @@
 
         (define init-transparent-io-do-work  ; =Kernel=, =Handler=
           (lambda (grab-focus?)
-            (let ([c-locked? (locked?)])
+            (let ([c-locked? (is-locked?)])
               (begin-edit-sequence)
               (lock #f)
               (let ([starting-at-prompt-mode? prompt-mode?])
@@ -999,7 +999,7 @@
             (let* ([start (if (is-a? text transparent-io-text<%>)
                               (send text get-insertion-point)
                               (send text last-position))]
-                   [c-locked? (send text locked?)])
+                   [c-locked? (send text is-locked?)])
               (send text begin-edit-sequence)
               (send text lock #f)
               (when (is-a? text transparent-io-text<%>)
@@ -1233,7 +1233,7 @@
                 (let* ([start (zodiac:zodiac-start (car dis))]
                        [finish (zodiac:zodiac-finish (car dis))]
 		       [error-filename (zodiac:location-file start)]
-                       [old-locked? (locked?)]
+                       [old-locked? (is-locked?)]
                        [show-bug? 
                         (and (not (= 1 (length dis)))
                              (or (basis:full-language? user-setting)
@@ -1279,7 +1279,7 @@
         (define report-unlocated-error ; =Kernel=
           (lambda (message exn)
             (send context ensure-rep-shown)
-            (let ([old-locked? (locked?)])
+            (let ([old-locked? (is-locked?)])
               (begin-edit-sequence)
               (lock #f)
               (this-err-write/exn (string-append message (string #\newline))
@@ -1435,7 +1435,7 @@
             (cleanup-transparent-io)
             (set-caret-owner #f 'display)
             (when (and user-thread (thread-running? user-thread))
-              (let ([c-locked? (locked?)])
+              (let ([c-locked? (is-locked?)])
                 (lock #f)
                 (insert-prompt)
                 (lock c-locked?)))
@@ -1939,7 +1939,7 @@
                     end-edit-sequence
                     run-after-edit-sequence
                     change-style split-snip
-                    scroll-to-position locked? lock
+                    scroll-to-position is-locked? lock
                     last-position get-start-position get-end-position
                     get-text get-snip-position
                     get-character find-snip find-string
@@ -2287,7 +2287,7 @@
 	    (fluid-let ([inserting-prompt #t])
 	      (begin-edit-sequence)
 	      (let* ([last (last-position)]
-		     [c-locked? (locked?)]
+		     [c-locked? (is-locked?)]
 		     [start-selection (get-start-position)]
 		     [end-selection (get-end-position)]
 		     [last-str (if (= last 0)
@@ -2312,7 +2312,7 @@
             (lambda ()
               (when prompt-mode?
                 (set! prompt-mode? #f)
-                (let ([c-locked (locked?)])
+                (let ([c-locked (is-locked?)])
                   (begin-edit-sequence)
                   (lock #f)
                   (insert #\newline (last-position))

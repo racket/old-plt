@@ -119,7 +119,6 @@ static Scheme_Object *with_continuation_mark_symbol;
 static Scheme_Object *lexical_syntax_symbol;
 static Scheme_Object *define_macro_symbol;
 static Scheme_Object *let_macro_symbol;
-static Scheme_Object *define_expansion_time_symbol;
 
 typedef struct {
   MZTAG_IF_REQUIRED
@@ -2192,7 +2191,6 @@ unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   return unquote_syntax(form, env, NULL, 0);
 }
 
-
 static Scheme_Object *
 lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
@@ -2214,9 +2212,14 @@ lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   if (!SCHEME_STX_SYMBOLP(id))
     scheme_wrong_syntax("lexical-syntax", id, form, "expected an identifier");
   
-  if (rec)
+  if (rec) {
+    /* Clone id (in case it's shared), and mark with the current 
+       compile-time envrionment. */
+    Scheme_Stx *stx = (Scheme_Stx *)id;
+    id = scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
+    scheme_add_remove_mark(id, scheme_static_distance(stx->val, env, SCHEME_GET_FRAME_ID));
     return id;
-  else
+  } else
     return scheme_datum_to_syntax(cons(lexical_syntax_symbol,
 				       cons(id, scheme_null)),
 				  form);

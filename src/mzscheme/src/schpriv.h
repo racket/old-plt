@@ -385,7 +385,7 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 
 Scheme_Object *scheme_new_mark();
-Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
+void scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
@@ -1093,6 +1093,7 @@ typedef struct Scheme_Comp_Env
   MZTAG_IF_REQUIRED
   short num_bindings;
   short flags; /* used for expanding/compiling */
+  Scheme_Object *uid; /* used for `lexical-syntax' */
   Scheme_Env *genv;
   struct Scheme_Comp_Env *next;
   struct Scheme_Object **values;
@@ -1313,6 +1314,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_MUST_INDRECT 32
 #define SCHEME_LINKING_REF 64
 #define SCHEME_DONT_MARK_USE 128
+#define SCHEME_GET_FRAME_ID 256
 
 Scheme_Env *scheme_min_env(Scheme_Comp_Env *);
 Scheme_Hash_Table *scheme_map_constants_to_globals(void);

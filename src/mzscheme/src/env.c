@@ -1085,6 +1085,19 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
 }
 
 
+static int env_uid_counter;
+
+static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
+{
+  if (!env->uid) {
+    char name[20];
+    env_uid_counter++;
+    sprintf(name, "env%d", env_uid_counter);
+    env->uid = scheme_make_symbol(name); /* uninterned! */
+  }
+  return env->uid;
+}
+
 static Scheme_Object *alloc_local(short type, int pos)
 {
   Scheme_Object *v;
@@ -1173,6 +1186,8 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       while (c && (c->before > i)) {
 	if (scheme_stx_bound_eq(symbol, c->name)) {
 	  val = c->val;
+	  if (flags & SCHEME_GET_FRAME_ID)
+	    return env_frame_uid(frame);
 	  goto found_const;
 	}
 	c = c->next;
@@ -1183,7 +1198,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	  scheme_wrong_syntax("set!", NULL, symbol,
 			      "imported/inherited variable cannot be mutated");
 
-	if (flags & SCHEME_DONT_MARK_USE)
+	if (flags & SCHEME_GET_FRAME_ID)
+	  return env_frame_uid(frame);
+	else if (flags & SCHEME_DONT_MARK_USE)
 	  return scheme_make_local(scheme_local_type, 0);
 	else
 	  return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
@@ -1193,10 +1210,8 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     while (c) {
       if (scheme_stx_bound_eq(symbol, c->name)) {
 	val = c->val;
-	if (!val) {
-	  scheme_wrong_syntax("identifier", NULL, symbol,
-			      "variable used out of context");
-	}
+	if (flags & SCHEME_GET_FRAME_ID)
+	  return env_frame_uid(frame);
 	goto found_const;
       }
       c = c->next;
@@ -1204,6 +1219,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     p += frame->num_bindings;
   }
+
+  if (flags & SCHEME_GET_FRAME_ID)
+    return scheme_false;
 
   globals = get_globals(scheme_min_env(env));
   b = scheme_bucket_from_table(globals, (char *)SCHEME_STX_SYM(symbol));
@@ -1224,6 +1242,11 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   return (Scheme_Object *)b;
 
  found_const:
+  if (!val) {
+    scheme_wrong_syntax("identifier", NULL, symbol,
+			"variable used out of context");
+    return NULL;
+  }
   if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
     scheme_wrong_syntax("set!", NULL, symbol,
 			"local syntax identifier cannot be mutated");

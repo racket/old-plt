@@ -118,7 +118,7 @@ Scheme_Object *scheme_new_mark()
   return mark_id;
 }
 
-Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
+void scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *marks, *prev;
@@ -137,8 +137,6 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 
   marks = scheme_make_pair(m, stx->marks);
   stx->marks = marks;
-
-  return scheme_void;
 }
 
 static void add_remove_marks(Scheme_Object *o, Scheme_Object *ml)
@@ -518,7 +516,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   else
     result = scheme_make_stx(result, stx->line, stx->col, stx->src);
 
-  ((Scheme_Stx *)result)->marks = stx->marks;
+  ((Scheme_Stx *)result)->marks = scheme_null;
   if (ph) {
     ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
     SCHEME_PTR_VAL(ph) = result;
@@ -542,6 +540,12 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx)
   if (ht)
     v = scheme_resolve_placeholders(v, 1);
 
+  if (!SCHEME_FALSEP(stx)) {
+    /* Make a copy of the mark list: */
+    Scheme_Object *marks = ((Scheme_Stx *)stx)->marks;
+    ((Scheme_Stx *)v)->marks = scheme_vector_to_list(scheme_list_to_vector(marks));
+  }
+  
   return v;
 }
 

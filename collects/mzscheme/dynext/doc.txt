@@ -8,20 +8,25 @@ compile.ss
    includes - A list of include directories; MzScheme's include is
               added automatically.
 
-Compilation is controlled by a number of parameters:
+Compilation is controlled by a number of parameters for Windows
+and Unix:
 
    current-extension-compiler - compiler executable pathname or
-     #f.  Under Windows, #f looks for cl.exe using the PATH
-     env. variable.  Under Unix, #f looks for gcc and then cc.
+     #f. The default is set by searching for an executable using
+     the PATH environment variable. Under windows, the search
+     looks for cl.exe and then gcc.exe. Under Unix, it looks for 
+     gcc and then cc. #f indicates that no compiler could be
+     found.
 
    current-extension-compiler-flags - list of strings passed to the
     compiler as flags. Under Windows, the default is (list "/c"
-    "/O2"); (list "-c" "-O2") for Unix
+    "/O2") for cl.exe or (list "-c" "-O2") for gcc.exe; under Unix,
+    (list "-c" "-O2").
 
    current-make-compile-include-strings - procedure that takes an
     include directory path and returns a list of strings for the
-    command line.  Windows: "dir" -> (list "\Idir"); Unix: "dir" ->
-    (list "-Idir")
+    command line.  Windows: "dir" -> (list "/Idir") for cl.exe
+    or (list "-Idir") for gcc.exe ; Unix: "dir" -> (list "-Idir")
 
    current-make-compile-input-strings - procedure that takes an
     input file and returns a list of strings for the command line.
@@ -29,7 +34,12 @@ Compilation is controlled by a number of parameters:
 
    current-make-compile-output-strings - procedure that takes an
     output file and returns a list of strings for the command line.
-    Windows: "file"->(list "\Fofile"); Unix: "file"->(list "-o" "file")
+    Windows: "file" -> (list "/Fofile") for cl.exe or (list "-o" 
+    "file") for gcc.exe; Unix: "file" -> (list "-o" "file")
+
+Under MacOS, none of these options are used. The compiler always
+uses CodeWarrior if it can be found and the compilation options
+cannot be changed.
 
 The unit/sig form defined by "compiler.ss" requires no imports.
 
@@ -43,13 +53,16 @@ link.ss
 
 Linking parameters:
 
-   current-extension-linker - linker executable pathname or #f. Under 
-     Windows, #f looks for cl.exe using the PATH env. variable.
-     Under Unix except AIX, #f looks for ld. Under AIX, #f looks
-     for cc.
+   current-extension-linker - linker executable pathname or #f. 
+     The default is set by searching for an executable using
+     the PATH environment variable. Under Windows, it looks for 
+     cl.exe and then ld.exe. Under Unix except AIX, it looks for 
+     ld. Under AIX, it looks for cc. #f indicates that no linker
+     could be found.
 
    current-extension-linker-flags - list of strings. Under Windows,
-     default is (list "/LD"). Unix default varies greatly per-platform.
+     default is (list "/LD") fo cl.exe and (list "--dll") for ld.exe. 
+     Under Unix, the default varies greatly among platforms.
 
    current-make-link-input-strings - procedure that takes an
      input file and returns a list of strings for the command line.
@@ -57,13 +70,18 @@ Linking parameters:
 
    current-make-link-output-strings - procedure that takes an output
     file and returns a list of strings for the command line.  Windows:
-    "file" -> (list "\Fefile"); Unix: "file" -> (list "-o" "file")
+    "file" -> (list "/Fefile") for cl.exe or (list "-e" "_dll_entry@12"
+     "-o" "file") for ld.exe; Unix: "file" -> (list "-o" "file")
 
    current-standard-link-libraries - list of file paths; For
     most platforms, the default is 
      (list (build-path (collection-path "mzscheme" "lib") 
                        (system-library-subpath)
                        "mzdyn.o"))
+
+Under MacOS, none of these options are used. The linker always uses
+CodeWarrior if it can be found and the linking options cannot be
+changed.
 
 The unit/sig form defined by "linkr.ss" requires no imports.
 

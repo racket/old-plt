@@ -2,9 +2,22 @@
   
   (define include-dir (collection-path "mzscheme" "include"))
   
+  (define (get-windows-linker)
+    (or (find-executable-path "cl.exe" "cl.exe")
+	(find-executable-path "ld.exe" "ld.exe")))
+
+  (define (get-unix-linker)
+    (let ([s (case (string->symbol (system-library-subpath))
+	       [(rs6k-aix) "cc"]
+	       [else "ld"])])
+      (find-executable-path s s)))
+  
   (define current-extension-linker 
     (make-parameter 
-     #f 
+     (case (system-type) 
+       [(unix) (get-unix-linker)]
+       [(windows) (get-windows-linker)]
+       [else #f])
      (lambda (v)
        (when v 
 	 (if (and (string? v) (or (relative-path? v) (absolute-path? v)))
@@ -15,21 +28,9 @@
 	     (raise-type-error 'current-extension-linker "pathname string or #f" v)))
        v)))
   
-  (define (get-windows-linker)
-    (or (find-executable-path "cl.exe" "cl.exe")
-	(find-executable-path "ld.exe" "ld.exe")))
-  
   (define win-gcc?
-    (if (eq? (system-type) 'windows)
-	(let ([c (get-windows-linker)])
-	  (and c (regexp-match "ld.exe$" c)))
-	#f))
-  
-  (define (get-unix-linker)
-    (let ([s (case (string->symbol (system-library-subpath))
-	       [(rs6k-aix) "cc"]
-	       [else "ld"])])
-      (find-executable-path s s)))
+    (let ([c (current-extension-linker)])
+      (and c (regexp-match "ld.exe$" c))))
   
   (define (get-unix-link-flags)
     (case (string->symbol (system-library-subpath))
@@ -81,7 +82,7 @@
      (case (system-type)
        [(unix) (lambda (s) (list "-o" s))]
        [(windows) (lambda (s) (if win-gcc?
-				  (list "-o" s)
+				  (list "-e" "_dll_entry@12" "-o" s)
 				  (list (string-append "/Fe" s))))]
        [(macos) (lambda (s) (list "-o" s))])
      (lambda (p)
@@ -100,13 +101,12 @@
 						"msvc")
 					    f))])
 		    (if win-gcc?
-			(append 
-			 (map file (list "mzdyn.exp"
-					 "mzdyn.o"
-					 "init.o"
-					 "fixup.o"))
-			 (list "-e" "_dll_entry@12"))
-			(map file (list "mzdyn.exp" "mzdyn.obj"))))])
+			(map file (list "mzdyn.exp"
+					"mzdyn.o"
+					"init.o"
+					"fixup.o"))
+			(map file (list "mzdyn.exp"
+					"mzdyn.obj"))))])
      (lambda (l)
        (unless (and (list? l) (andmap string? l))
 	 (raise-type-error 'current-standard-link-libraries "list of strings" l))
@@ -114,10 +114,7 @@
   
   (define unix/windows-link
     (lambda (quiet? in out)
-      (let ([c (or (current-extension-linker) 
-		   (if (eq? (system-type) 'unix) 
-		       (get-unix-linker) 
-		       (get-windows-linker)))])
+      (let ([c (current-extension-linker)])
 	(if c
 	    (stdio-link (lambda (quiet?) 
 			  (let ([command (append (list c)

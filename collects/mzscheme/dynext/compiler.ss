@@ -11,15 +11,12 @@
     (or (find-executable-path "cl.exe" "cl.exe")
 	(find-executable-path "gcc.exe" "gcc.exe")))
   
-  (define win-gcc?
-    (if (eq? (system-type) 'windows)
-	(let ([c (get-windows-compile)])
-	  (and c (regexp-match "gcc.exe$" c)))
-	#f))
-  
   (define current-extension-compiler 
     (make-parameter 
-     #f 
+     (case (system-type) 
+       [(unix) (get-unix-compile)]
+       [(windows) (get-windows-compile)]
+       [else #f])
      (lambda (v)
        (when v 
 	 (if (and (string? v) (or (relative-path? v) (absolute-path? v)))
@@ -29,6 +26,10 @@
 		      "compiler not found or not executable: ~s" v))
 	     (raise-type-error 'current-extension-compiler "pathname string or #f" v)))
        v)))
+
+  (define win-gcc?
+    (let ([c (current-extension-compiler)])
+      (and c (regexp-match "gcc.exe$" c))))
   
   (define current-extension-compiler-flags
     (make-parameter
@@ -88,10 +89,7 @@
   
   (define unix/windows-compile
     (lambda (quiet? in out includes)
-      (let ([c (or (current-extension-compiler) 
-		   (if (eq? (system-type) 'unix) 
-		       (get-unix-compile) 
-		       (get-windows-compile)))])
+      (let ([c (current-extension-compiler)])
 	(if c
 	    (stdio-compile (lambda (quiet?) 
 			     (let ([command (append 

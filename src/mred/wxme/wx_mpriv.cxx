@@ -2905,10 +2905,10 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       
       savesb = skipBox;
       skipBox = this;
-      Redraw(dc, y + (i ? 1 : 0), y + h, 0, W, -y + vm, hm, 
+      Redraw(dc, y + (i ? 1 : 0), y + h - 1, 0, W, -y + vm, hm, 
 	     wxSNIP_DRAW_NO_CARET, 0);
       skipBox = savesb;
-      
+
       if (page < 0)
 	dc->EndPage();
 

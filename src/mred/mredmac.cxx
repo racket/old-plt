@@ -784,7 +784,7 @@ int MrEdCheckForBreak(void)
 
 void MrEdMacSleep(float secs)
 {
-  secs = 0;
+  secs = 0; /* <-- !!!! */
   
   EventRecord e;
   

@@ -173,7 +173,7 @@
                       match-test
                       )
 
-    (include "private/plt-match/match-inc.scm")    
+    (include (build-path "private" "plt-match" "match-inc.scm"))
 
     (define node-count 0)
 

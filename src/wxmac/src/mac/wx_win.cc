@@ -691,7 +691,7 @@ void wxWindow::OnWindowDSize(int dW, int dH, int dX, int dY)
     areaNode = areaNode->Next();
   }
   
-  if (dW || dH && (__type != wxTYPE_FRAME))
+  if ((dW || dH) && (__type != wxTYPE_FRAME))
     OnSize(cWindowWidth, cWindowHeight);
 }
 

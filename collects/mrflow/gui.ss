@@ -447,6 +447,7 @@
                ; XXX perf analysis
                ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n"
                ;        mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
+               ;(printf "ast-nodes: ~a~n" mrflow:ast-nodes)
                
                (send (get-definitions-text) run-analysis))))])
          ;(sequence

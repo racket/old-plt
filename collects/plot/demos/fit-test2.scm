@@ -42,6 +42,9 @@
 ; first column is time data, second is result, third is error. to parse them out...
 (require (lib "math.ss"))
 
+(define vecs
+  (map list->vector raw-data))
+
 (define times
   (map car raw-data))
 (define vals
@@ -49,10 +52,11 @@
 (define errors
   (map caddr raw-data))
 
-(require (lib "fit.ss" "plplot"))
-(require (lib "plot.ss" "plplot"))
+(require (lib "plot.ss" "plot"))
 
-(plot (points (map vector times vals))
+(plot (mix* 
+       (points (map vector times vals) '((char 16)))
+       (error-bars vecs))
       (x-min 0) (x-max 40)
       (y-min -40) (y-max 50))
 
@@ -73,7 +77,8 @@
    1))
               
   
-(plot (mix* (points (map vector times vals) '((color red)))
+(plot (mix* (points (map vector times vals) '((color red) (char 16)))
+            (error-bars vecs '((color black)))
             (line (fit-result-function result)))
       (x-min -5) (x-max 40)
       (y-min -40) (y-max 50))

@@ -1,6 +1,6 @@
 (module view mzscheme
   (require 
-   (lib "math.ss" "plplot")
+   (lib "math.ss" "plot")
    (lib "etc.ss")
    (lib "class.ss")
    (lib "file.ss")
@@ -46,7 +46,7 @@
   
   ; dynamic require is used because putenv does not change values in current module
   (my-dynamic-require 
-   '(lib "plplot-low-level.ss" "plplot")
+   '(lib "plplot-low-level.ss" "plot")
    u8vec->scheme-string
    pl-setup-memory
    pl-set-device 
@@ -193,7 +193,8 @@
   (define 2d-view% 
     (class* plot-view% ()
       (public 
-        set-labels        
+        set-labels 
+        plot-y-errors
         plot-vector
         plot-vectors      
         plot-points
@@ -252,6 +253,11 @@
                              (vector x3 y3) 
                              (vector x4 y4) 
                              (vector x2 y2))))))
+      
+      ; plot-y-errors (listof (vector x y-min y-max)) ->nothing
+      ; plots y error bars given a vector containing the x y and z (error magnitude) points
+      (define (plot-y-errors errlist)
+        (pl-y-error-bars (length errlist) (map vector-x errlist) (map vector-y errlist) (map vector-z errlist)))
 
       (super-instantiate ())))
   

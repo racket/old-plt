@@ -1,10 +1,11 @@
 (module plot mzscheme
   (require
    (lib "list.ss")
-   (lib "syntax.ss" "plplot")
-   (lib "math.ss" "plplot")
-   (lib "view.ss" "plplot")
-   (lib "renderers.ss" "plplot")   
+   (lib "syntax.ss" "plot")
+   (lib "math.ss" "plot")
+   (lib "view.ss" "plot")
+   (lib "renderers.ss" "plot")   
+   (lib "fit.ss" "plot")
    (lib "class.ss"))
   
   ; plot : [asslist] plottable*
@@ -76,6 +77,7 @@
    make-2d-renderer
    
    ; 2d-renderers
+   error-bars
    points
    line
    field
@@ -90,7 +92,12 @@
    gradient
    make-vec
    
-   ; later will have curve-fitter
+   ; curve-fitter
+   fit
+   fit-lambda
+   fit-result-function
+   fit-result-final-params
+   
    
    
    ))

@@ -1,7 +1,8 @@
 (module renderers mzscheme
   (require 
-   (lib "syntax.ss" "plplot")
-   (lib "renderer-helpers.ss" "plplot")
+   (lib "syntax.ss" "plot")
+   (lib "math.ss" "plot")
+   (lib "renderer-helpers.ss" "plot")
    (lib "class.ss"))
   
   ;line : (number -> number) [number] [symbol] [number] -> (2dplotview -> nothing)
@@ -14,6 +15,16 @@
                          samples 
                          (send 2dplotview get-x-min)
                          (send 2dplotview get-x-max)))))))
+  
+    ; error-bars : (listof (vector x y err)) [symbol] -> (2dplotview -> nothing)
+  (define error-bars
+    (r-lambda errs 2dplotview () ((color 'red))
+      (let* ((y-list (map vector-y errs))
+             (e-list (map vector-z errs))
+             (y-mins (map (lambda (y e) (- y e)) y-list e-list ))
+             (y-maxs (map (lambda (y e) (+ y e)) y-list e-list )))              
+        (send 2dplotview set-line-color color)
+        (send 2dplotview plot-y-errors (map vector (map vector-x errs) y-mins y-maxs)))))
   
 
   ; field : (vector -> vector) [number] [symbol] [number] [symbol] -> (2dplotview -> nothing)

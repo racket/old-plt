@@ -7,16 +7,7 @@
    (lib "etc.ss")
    (lib "list.ss")
    (lib "math.ss")
-   (lib "math.ss" "plplot")
-   (lib "posn.ss" "lang"))
-  
- 
-  
-  ; **** NOTE: FUNCTION COPIED ****
-  ; posn-length : posn -> number
-  ; computes distance from 0,0 to point
-  (define (posn-length point)
-    (sqrt (+ (sqr (vector-x point)) (sqr (vector-y point)))))
+   (lib "math.ss" "plot"))
   
   ; sample-size: number number number -> number
   (define (sample-size samples x-min x-max)
@@ -43,7 +34,7 @@
   
   ; normalze-vector : posn number number -> posn
   (define (normalize-vector vec x-sample-size y-sample-size)
-    (let* ((size (posn-length vec)))
+    (let* ((size (vector-magnitude vec)))
       (vector (* (/ (vector-x vec) size) x-sample-size 9/10)
                  (* (/ (vector-y vec) size) y-sample-size 9/10))))
       

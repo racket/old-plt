@@ -1,6 +1,6 @@
 
 (require (lib "plot.ss" "plplot"))
-(require (lib "fit-module.ss" "fit"))
+
 (define x-vals (build-list 15 (lambda (x) x) ))
 (define errors (build-list 15 (lambda (x) 1)))
 

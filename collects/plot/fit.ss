@@ -1,6 +1,6 @@
 (module fit mzscheme
   (require (lib "list.ss"))
-  (require (lib "fit-low-level.ss" "plplot"))
+  (require (lib "fit-low-level.ss" "plot"))
   (require (lib "etc.ss"))
   
         
@@ -23,13 +23,12 @@
   (define-struct fit-result (
                              function
                              final-params
-                             rms
-                             variance
-                             
-                             limit
-                             
-                             correlation
-                             std-err))
+                             ;rms
+                             ;variance                             
+                             ;limit                             
+                             ;correlation
+                             ;std-err
+                             ))
   
   
   
@@ -58,11 +57,7 @@
           null         
           (make-fit-result
            (lambda args (apply (fit-fun-function function) (append args result-params)))
-           (map list (fit-fun-params function) result-params)
-           0
-           
-           0
-           0))))
+           (map list (fit-fun-params function) result-params)))))
   
   ; setup-guesses : asslist (listof symbol) -> (listof num)
   ; generates a list of initial guesses given the given guesses and symbols
@@ -77,8 +72,4 @@
   
    (provide fit fit-lambda (struct fit-result (
                              function
-                             final-params
-                             limit
-                             
-                             correlation
-                             std-err) )))
+                             final-params) )))

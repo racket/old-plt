@@ -150,6 +150,7 @@
  (search-stopped-too-many-matches "[Search aborted: too many matches]")
  (nothing-found-for "Nothing found for ~a")
  (error-finding-docs "Could not find documentation.\n\n~a")
+ (and "and")
  (refresh "refresh")
  (refresh-all-manuals "refresh all manuals")
  (manual-installed-date "(installed ~a)")

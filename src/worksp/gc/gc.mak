@@ -47,32 +47,32 @@ CPP=cl.exe
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
-OUTDIR=Release
-INTDIR=Release
+OUTDIR=.\Release
+INTDIR=.\Release
 
 ALL : "$(OUTDIR)\gc.lib"
 
 CLEAN : 
-	-@erase "Release\vc40.pdb"
-	-@erase "Release\gc.lib"
-	-@erase "Release\Malloc.obj"
-	-@erase "Release\Headers.obj"
-	-@erase "Release\Reclaim.obj"
-	-@erase "Release\Allchblk.obj"
-	-@erase "Release\Mark.obj"
-	-@erase "Release\Finalize.obj"
-	-@erase "Release\Blacklst.obj"
-	-@erase "Release\Os_dep.obj"
-	-@erase "Release\winthred.obj"
-	-@erase "Release\Obj_map.obj"
-	-@erase "Release\Mach_dep.obj"
-	-@erase "Release\Stubborn.obj"
-	-@erase "Release\Alloc.obj"
-	-@erase "Release\Mark_rts.obj"
-	-@erase "Release\Dyn_load.obj"
-	-@erase "Release\Misc.obj"
-	-@erase "Release\Mallocx.obj"
-	-@erase "Release\New_hblk.obj"
+	-@erase ".\Release\vc40.pdb"
+	-@erase ".\Release\gc.lib"
+	-@erase ".\Release\Obj_map.obj"
+	-@erase ".\Release\Malloc.obj"
+	-@erase ".\Release\Mallocx.obj"
+	-@erase ".\Release\Allchblk.obj"
+	-@erase ".\Release\Misc.obj"
+	-@erase ".\Release\Mark.obj"
+	-@erase ".\Release\Finalize.obj"
+	-@erase ".\Release\Blacklst.obj"
+	-@erase ".\Release\winthred.obj"
+	-@erase ".\Release\Headers.obj"
+	-@erase ".\Release\Alloc.obj"
+	-@erase ".\Release\Mach_dep.obj"
+	-@erase ".\Release\Stubborn.obj"
+	-@erase ".\Release\Mark_rts.obj"
+	-@erase ".\Release\Reclaim.obj"
+	-@erase ".\Release\Dyn_load.obj"
+	-@erase ".\Release\New_hblk.obj"
+	-@erase ".\Release\Os_dep.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -83,7 +83,7 @@ CLEAN :
 CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "__STDC__" /D\
  "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /Fp"$(INTDIR)/gc.pch" /YX /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
-CPP_OBJS=Release/
+CPP_OBJS=.\Release/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -95,24 +95,24 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/gc.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Malloc.obj" \
-	"$(INTDIR)/Headers.obj" \
-	"$(INTDIR)/Reclaim.obj" \
-	"$(INTDIR)/Allchblk.obj" \
-	"$(INTDIR)/Mark.obj" \
-	"$(INTDIR)/Finalize.obj" \
-	"$(INTDIR)/Blacklst.obj" \
-	"$(INTDIR)/Os_dep.obj" \
-	"$(INTDIR)/winthred.obj" \
-	"$(INTDIR)/Obj_map.obj" \
-	"$(INTDIR)/Mach_dep.obj" \
-	"$(INTDIR)/Stubborn.obj" \
-	"$(INTDIR)/Alloc.obj" \
-	"$(INTDIR)/Mark_rts.obj" \
-	"$(INTDIR)/Dyn_load.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Mallocx.obj" \
-	"$(INTDIR)/New_hblk.obj"
+	".\Release\Obj_map.obj" \
+	".\Release\Malloc.obj" \
+	".\Release\Mallocx.obj" \
+	".\Release\Allchblk.obj" \
+	".\Release\Misc.obj" \
+	".\Release\Mark.obj" \
+	".\Release\Finalize.obj" \
+	".\Release\Blacklst.obj" \
+	".\Release\winthred.obj" \
+	".\Release\Headers.obj" \
+	".\Release\Alloc.obj" \
+	".\Release\Mach_dep.obj" \
+	".\Release\Stubborn.obj" \
+	".\Release\Mark_rts.obj" \
+	".\Release\Reclaim.obj" \
+	".\Release\Dyn_load.obj" \
+	".\Release\New_hblk.obj" \
+	".\Release\Os_dep.obj"
 
 "$(OUTDIR)\gc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -131,32 +131,32 @@ LIB32_OBJS= \
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
-OUTDIR=Debug
-INTDIR=Debug
+OUTDIR=.\Debug
+INTDIR=.\Debug
 
 ALL : "$(OUTDIR)\gc.lib"
 
 CLEAN : 
-	-@erase "Debug\vc40.pdb"
-	-@erase "Debug\gc.lib"
-	-@erase "Debug\Mallocx.obj"
-	-@erase "Debug\Malloc.obj"
-	-@erase "Debug\Allchblk.obj"
-	-@erase "Debug\Finalize.obj"
-	-@erase "Debug\Blacklst.obj"
-	-@erase "Debug\Headers.obj"
-	-@erase "Debug\Mach_dep.obj"
-	-@erase "Debug\Stubborn.obj"
-	-@erase "Debug\Mark_rts.obj"
-	-@erase "Debug\Reclaim.obj"
-	-@erase "Debug\Misc.obj"
-	-@erase "Debug\Dyn_load.obj"
-	-@erase "Debug\Mark.obj"
-	-@erase "Debug\New_hblk.obj"
-	-@erase "Debug\winthred.obj"
-	-@erase "Debug\Alloc.obj"
-	-@erase "Debug\Obj_map.obj"
-	-@erase "Debug\Os_dep.obj"
+	-@erase ".\Debug\vc40.pdb"
+	-@erase ".\Debug\gc.lib"
+	-@erase ".\Debug\Mallocx.obj"
+	-@erase ".\Debug\Reclaim.obj"
+	-@erase ".\Debug\Malloc.obj"
+	-@erase ".\Debug\Alloc.obj"
+	-@erase ".\Debug\Allchblk.obj"
+	-@erase ".\Debug\Blacklst.obj"
+	-@erase ".\Debug\Misc.obj"
+	-@erase ".\Debug\Mark.obj"
+	-@erase ".\Debug\Os_dep.obj"
+	-@erase ".\Debug\Stubborn.obj"
+	-@erase ".\Debug\Dyn_load.obj"
+	-@erase ".\Debug\Finalize.obj"
+	-@erase ".\Debug\New_hblk.obj"
+	-@erase ".\Debug\winthred.obj"
+	-@erase ".\Debug\Obj_map.obj"
+	-@erase ".\Debug\Headers.obj"
+	-@erase ".\Debug\Mach_dep.obj"
+	-@erase ".\Debug\Mark_rts.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -167,7 +167,7 @@ CLEAN :
 CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /D "_DEBUG" /D "__STDC__" /D\
  "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /Fp"$(INTDIR)/gc.pch" /YX /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
-CPP_OBJS=Debug/
+CPP_OBJS=.\Debug/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -179,24 +179,24 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/gc.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Mallocx.obj" \
-	"$(INTDIR)/Malloc.obj" \
-	"$(INTDIR)/Allchblk.obj" \
-	"$(INTDIR)/Finalize.obj" \
-	"$(INTDIR)/Blacklst.obj" \
-	"$(INTDIR)/Headers.obj" \
-	"$(INTDIR)/Mach_dep.obj" \
-	"$(INTDIR)/Stubborn.obj" \
-	"$(INTDIR)/Mark_rts.obj" \
-	"$(INTDIR)/Reclaim.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Dyn_load.obj" \
-	"$(INTDIR)/Mark.obj" \
-	"$(INTDIR)/New_hblk.obj" \
-	"$(INTDIR)/winthred.obj" \
-	"$(INTDIR)/Alloc.obj" \
-	"$(INTDIR)/Obj_map.obj" \
-	"$(INTDIR)/Os_dep.obj"
+	".\Debug\Mallocx.obj" \
+	".\Debug\Reclaim.obj" \
+	".\Debug\Malloc.obj" \
+	".\Debug\Alloc.obj" \
+	".\Debug\Allchblk.obj" \
+	".\Debug\Blacklst.obj" \
+	".\Debug\Misc.obj" \
+	".\Debug\Mark.obj" \
+	".\Debug\Os_dep.obj" \
+	".\Debug\Stubborn.obj" \
+	".\Debug\Dyn_load.obj" \
+	".\Debug\Finalize.obj" \
+	".\Debug\New_hblk.obj" \
+	".\Debug\winthred.obj" \
+	".\Debug\Obj_map.obj" \
+	".\Debug\Headers.obj" \
+	".\Debug\Mach_dep.obj" \
+	".\Debug\Mark_rts.obj"
 
 "$(OUTDIR)\gc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -215,32 +215,32 @@ LIB32_OBJS= \
 # PROP Output_Dir "Threads"
 # PROP Intermediate_Dir "Threads"
 # PROP Target_Dir ""
-OUTDIR=Threads
-INTDIR=Threads
+OUTDIR=.\Threads
+INTDIR=.\Threads
 
 ALL : "$(OUTDIR)\gc.lib"
 
 CLEAN : 
-	-@erase "Threads\vc40.pdb"
-	-@erase "Threads\gc.lib"
-	-@erase "Threads\New_hblk.obj"
-	-@erase "Threads\Obj_map.obj"
-	-@erase "Threads\Headers.obj"
-	-@erase "Threads\Misc.obj"
-	-@erase "Threads\Mallocx.obj"
-	-@erase "Threads\Reclaim.obj"
-	-@erase "Threads\Alloc.obj"
-	-@erase "Threads\Allchblk.obj"
-	-@erase "Threads\Finalize.obj"
-	-@erase "Threads\Blacklst.obj"
-	-@erase "Threads\winthred.obj"
-	-@erase "Threads\Mark.obj"
-	-@erase "Threads\Os_dep.obj"
-	-@erase "Threads\Mach_dep.obj"
-	-@erase "Threads\Stubborn.obj"
-	-@erase "Threads\Mark_rts.obj"
-	-@erase "Threads\Malloc.obj"
-	-@erase "Threads\Dyn_load.obj"
+	-@erase ".\Threads\vc40.pdb"
+	-@erase ".\Threads\gc.lib"
+	-@erase ".\Threads\New_hblk.obj"
+	-@erase ".\Threads\winthred.obj"
+	-@erase ".\Threads\Allchblk.obj"
+	-@erase ".\Threads\Obj_map.obj"
+	-@erase ".\Threads\Headers.obj"
+	-@erase ".\Threads\Finalize.obj"
+	-@erase ".\Threads\Blacklst.obj"
+	-@erase ".\Threads\Misc.obj"
+	-@erase ".\Threads\Mark.obj"
+	-@erase ".\Threads\Mallocx.obj"
+	-@erase ".\Threads\Reclaim.obj"
+	-@erase ".\Threads\Mach_dep.obj"
+	-@erase ".\Threads\Stubborn.obj"
+	-@erase ".\Threads\Os_dep.obj"
+	-@erase ".\Threads\Mark_rts.obj"
+	-@erase ".\Threads\Alloc.obj"
+	-@erase ".\Threads\Dyn_load.obj"
+	-@erase ".\Threads\Malloc.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -251,7 +251,7 @@ CLEAN :
 CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /D "NDEBUG" /D "WIN32_THREADS" /D\
  "__STDC__" /D "XXX_NO_AUTO_STACK_PUSH" /D "SILENT" /Fp"$(INTDIR)/gc.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
-CPP_OBJS=Threads/
+CPP_OBJS=.\Threads/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -263,24 +263,24 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/gc.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/New_hblk.obj" \
-	"$(INTDIR)/Obj_map.obj" \
-	"$(INTDIR)/Headers.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Mallocx.obj" \
-	"$(INTDIR)/Reclaim.obj" \
-	"$(INTDIR)/Alloc.obj" \
-	"$(INTDIR)/Allchblk.obj" \
-	"$(INTDIR)/Finalize.obj" \
-	"$(INTDIR)/Blacklst.obj" \
-	"$(INTDIR)/winthred.obj" \
-	"$(INTDIR)/Mark.obj" \
-	"$(INTDIR)/Os_dep.obj" \
-	"$(INTDIR)/Mach_dep.obj" \
-	"$(INTDIR)/Stubborn.obj" \
-	"$(INTDIR)/Mark_rts.obj" \
-	"$(INTDIR)/Malloc.obj" \
-	"$(INTDIR)/Dyn_load.obj"
+	".\Threads\New_hblk.obj" \
+	".\Threads\winthred.obj" \
+	".\Threads\Allchblk.obj" \
+	".\Threads\Obj_map.obj" \
+	".\Threads\Headers.obj" \
+	".\Threads\Finalize.obj" \
+	".\Threads\Blacklst.obj" \
+	".\Threads\Misc.obj" \
+	".\Threads\Mark.obj" \
+	".\Threads\Mallocx.obj" \
+	".\Threads\Reclaim.obj" \
+	".\Threads\Mach_dep.obj" \
+	".\Threads\Stubborn.obj" \
+	".\Threads\Os_dep.obj" \
+	".\Threads\Mark_rts.obj" \
+	".\Threads\Alloc.obj" \
+	".\Threads\Dyn_load.obj" \
+	".\Threads\Malloc.obj"
 
 "$(OUTDIR)\gc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<

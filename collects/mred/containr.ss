@@ -653,7 +653,7 @@
 	     (let ([new-children (f children)])
 	       (mred:debug:printf 'container-change-children
 				  "Old children ~s~nNew children ~s"
-				  children new-children)q
+				  children new-children)
 	       (unless (andmap (lambda (child)
 				 (eq? this (send child get-parent)))
 			 new-children)

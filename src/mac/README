@@ -17,7 +17,7 @@ of make and cc, so familiarity with the command line is required.
 Also, these instructions are needlessly complicated because I haven't
 yet written scripts to do everything in the right order.
 
-Compiling for Mac OS X using Codewarrior (and cc):
+*** OPTION 1: Compiling for Mac OS X using Codewarrior (and cc):
 
 0) You must have the Apple Developer Tools installed, as well
 as Codewarrior 7.0.
@@ -26,30 +26,45 @@ as Codewarrior 7.0.
 
 2) cd to plt/src/mzscheme, and execute 'make g-c'
 
-3) cd to plt/src/mac/cw and execute:
-  Rez -UseDF MzScheme.r -o MzScheme.rsrc.OSX
-  Rez -UseDF MrEd.r -o MrEd.rsrc.OSX
+3) Follow the instructions for building MzScheme-app.mcp contained in
+plt/src/mac/cw/README (basically, open the project file and compile
+it).
 
-4) Follow the instructions for building MzScheme-app.mcp contained
-in plt/src/mac/cw/README (basically, open the project file and compile it)
+4) cd to plt/src/mac and execute the pre-make script by typing 
+./pre-make
+(This step requires mzscheme, which is why we had to build it first.)
 
+5) Follow the instructions for building MrEd.mcp contained in
+plt/src/mac/cw/README
 
-3) Follow the instructions for building MzScheme-app.mcp and MrEd.mcp
-contained in plt/src/mac/cw/readme
+*** OPTION 2: Installing downloaded binaries:
 
+1) download mzscheme.sit, and unstuff it in the plt/bin directory
 
-Compiling for Mac OS X using only cc :
+2) download mred.sit, and unstuff it in the the plt/bin directory
+
+3) download Starter.sit, and unstuff it in the plt/collects/launcher
+directory
+
+*** OPTION 3: Compiling MzScheme for Mac OS X using only cc :
 
 0) You must have the Apple Developer Tools installed.
 
 1) in the files plt/src/mzscheme/sconfig.h and plt/include/sconfig.h,
-comment out the #define for MACINTOSH_EVENTS.  That is, change
+comment out the #define for MACINTOSH_EVENTS in the OS X portion of the
+file.  That is, change
 # define MACINTOSH_EVENTS
 to
 /*# define MACINTOSH_EVENTS */
+on line 647.
 
-2) cd to plt/src, and execute './configure'
+(Ed. Note.: There's a way around this, but it's currently too ugly
+to make public.)
 
-3) execute 'make mz'
+2) Now follow the Unix build instructions contained in plt/src/README
 
-4) execute 'make mzinstall'
+
+
+
+Comments, suggestions, questions?  Send them all to: clements@brinckerhoff.org
+November 29, 2001

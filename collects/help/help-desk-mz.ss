@@ -1,5 +1,6 @@
 (module help-desk-mz mzscheme
-  (require "private/server.ss"  
+  (require "private/external-server.ss"  
+           "private/server-config.ss"
 	   "private/docpos.ss"
 	   "private/finddoc.ss"
 	   "private/search.ss"
@@ -8,7 +9,7 @@
 
   (provide 
     ;; server functions
-    start-help-server
+    (rename external-start-help-server start-help-server)
     hd-cookie->port
     hd-cookie->exit-proc
     hd-cookie?

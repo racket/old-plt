@@ -1,9 +1,15 @@
 (module browser mzscheme
-  (require (lib "browser.ss" "net"))
-  (require "server.ss")
+  (require (lib "file.ss")
+	   (lib "browser.ss" "net"))
+  (require "server-config.ss")
 
   (provide help-desk-browser
-	   help-desk-navigate)
+	   help-desk-navigate
+           use-plt-browser?)
+
+  (define (use-plt-browser?)
+    (eq? (get-preference 'external-browser (lambda () #f))
+	 'plt))
 
   (define (help-desk-navigate url)
     (send-url url #t))

@@ -109,8 +109,12 @@
        (FORM ((ACTION "/servlets/update-config.ss")
 	      (METHOD "POST"))
 	     (TABLE ((ALIGN "center"))
-	      (TR (TD
-		   (TABLE ((ALIGN "center"))
+	      ,(if (use-plt-browser?)
+		""
+		`(TR 
+		  (TD
+		   (TABLE 
+		    ((ALIGN "center"))
 		    (TR
 		     (TD (INPUT ,(append 
 				  `((TYPE "checkbox")
@@ -120,7 +124,7 @@
 				  (if (use-frames?)
 				      `((CHECKED "true") (VALUE "true"))
 				      `()))))
-		     (TD (B ,(string-constant plt:hd:use-html-frames)))))))
+		     (TD (B ,(string-constant plt:hd:use-html-frames))))))))
 	      (TR (TD 'nbsp))
 	      (TR (TD
 		   (TABLE ((BGCOLOR "white")

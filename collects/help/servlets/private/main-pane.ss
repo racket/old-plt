@@ -25,12 +25,14 @@
 			(A ((HREF "/servlets/hd-config.ss")
 			    (TARGET "_top"))
 			   ,(string-constant plt:hd:configure))
-			","
-			(A ((HREF "/servlets/toggle-frames.ss")
-			    (TARGET "_top"))
-			   ,(if (use-frames?)
-				(string-constant plt:hd:no-frames)
-				(string-constant plt:hd:use-frames))))))))
+			,@(if (use-plt-browser?)
+			      `()
+			      `(","
+				(A ((HREF "/servlets/toggle-frames.ss")
+				    (TARGET "_top"))
+				   ,(if (use-frames?)
+					(string-constant plt:hd:no-frames)
+					(string-constant plt:hd:use-frames))))))))))
 	(UL
 	 (LI
 	  (B

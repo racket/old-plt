@@ -13,6 +13,7 @@
 	   get-bool-pref/default
 	   put-prefs
 	   cvs?
+	   use-plt-browser?
 	   use-frames?
 	   search-height-default
 	   search-bg-default
@@ -71,8 +72,12 @@
     (directory-exists? 
      (build-path (collection-path "help") "CVS")))
 
+  (define (use-plt-browser?)
+    (eq? (get-pref/default 'external-browser #f) 'plt))
+
   (define (use-frames?)
-    (get-bool-pref/default 'plt:hd:use-frames use-frames-default))
+    (and (not (use-plt-browser?))
+	 (get-bool-pref/default 'plt:hd:use-frames use-frames-default)))
 
   (define search-frame-servlet "/servlets/search.ss")
   

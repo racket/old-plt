@@ -9,7 +9,7 @@
 
   (require (lib "external.ss" "help" "servlets" "private"))
 
-  (provide start-help-server
+  (provide external-start-help-server
            wait-for-connection)
 
   (define (get-free-port use-port)
@@ -37,7 +37,7 @@
 	(close-output-port oport)
 	(close-input-port iport)))))
 
-  (define start-help-server
+  (define external-start-help-server
     (opt-lambda ([use-port #f][external-connections? #f]) 
       (let ([configuration
 	      (build-developer-configuration

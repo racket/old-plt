@@ -1,6 +1,6 @@
 (module external-search mzscheme
   (require "browser.ss"
-	   "server.ss"
+	   "server-config.ss"
 	   "finddoc.ss"
 	   (lib "contracts.ss")
 	   (lib "util.ss" "help" "servlets" "private")

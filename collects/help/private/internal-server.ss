@@ -10,13 +10,13 @@
 
   (require (lib "external.ss" "help" "servlets" "private"))
 
-  (provide start-help-server)
+  (provide internal-start-help-server)
 
-  (define (start-help-server)
+  (define (internal-start-help-server)
     (let ([configuration
 	   (build-developer-configuration
 	    (build-config-exp))])
-      (make-hd-cookie min-port (serve configuration)))))
+      (make-hd-cookie min-port (serve configuration min-port)))))
 
 
 

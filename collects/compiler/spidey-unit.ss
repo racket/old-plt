@@ -1,6 +1,10 @@
 
 ;; A compound unit for Scheme->C compilation using MrSpidey
-;;  analysis.
+;;  analysis. Not yet ported to v200.
+
+;; See also nospidey-unit.ss
+
+#|
 
 (compound-unit/sig
  (import (FUNCTION : mzlib:function^)
@@ -46,5 +50,4 @@
 	   (BASE LIBRARY))])
  (export (open ((BASE DRIVER) : compiler:inner^))))
 
-
-
+|#

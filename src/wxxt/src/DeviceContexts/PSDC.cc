@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.18 1998/11/12 18:14:44 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.19 1998/11/25 13:06:20 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -125,6 +125,8 @@ class wxCanvas;
 // #include <time.h>
 #include <limits.h>
 #include <assert.h>
+
+static char *default_afm_path = NULL;
 
 Bool XPrinterDialog (wxWindow *parent);
 
@@ -2004,7 +2006,7 @@ wxPrintSetupData::wxPrintSetupData(void)
 #else
     printer_mode = PS_FILE;
 #endif
-    afm_path = NULL;
+    afm_path = default_afm_path;
     paper_name = DEFAULT_PAPER;
     print_colour = TRUE;
     print_level_2 = TRUE;
@@ -2098,6 +2100,9 @@ void wxPrintSetupData::SetPrinterMode(int mode)
 
 void wxPrintSetupData::SetAFMPath(char *f)
 {
+    if (f && !default_afm_path)
+      default_afm_path = f;
+  
     if (f == afm_path)
 	return;
     if (afm_path)

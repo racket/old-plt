@@ -306,14 +306,9 @@
       
       (let* ([bindings (request-bindings initial-request)]
              [maybe-get (lambda (sym)
-                          (or (with-handlers ([exn:fail? 
-                                               (lambda (_) #f)])
-                                (extract-binding/single sym bindings))
-                              
-                              ;; temporary hack to keep working on other things.
-                              (with-handlers ([exn:fail? 
-                                               (lambda (_) #f)])
-                                (extract-binding/single (symbol->string sym) bindings))))]
+                          (with-handlers ([exn:fail? 
+                                           (lambda (_) #f)])
+                            (extract-binding/single sym bindings)))]
              [search-string (maybe-get 'search-string)]
              [search-type (maybe-get 'search-type)]
              [match-type (maybe-get 'match-type)]

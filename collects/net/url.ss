@@ -21,9 +21,7 @@
                 [host (union false? string?)]
                 [port (union false? number?)]
                 [path (listof (union string? path/param?))]
-                [query (listof (lambda (x) (and (pair? x)
-                                                (string? (car x))
-                                                (string? (cdr x)))))]
+                [query (listof (cons/p symbol? string?))]
                 [fragment (union false? string?)]))
    (struct path/param ([path string?]
                        [param string?]))

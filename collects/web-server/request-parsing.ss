@@ -21,7 +21,7 @@
   ;; bindings? any? -> boolean
   ;; is this a binding
   (define binding?
-    (cons/p string? string?))
+    (cons/p symbol? string?))
 
   (provide/contract
    [struct request ([method symbol?] [uri url?] [headers (listof header?)]
@@ -188,12 +188,12 @@
   (define FILE-FORM-REGEXP (regexp "multipart/form-data; *boundary=(.*)"))
 
   ;; GregP: this is where I would get the filename out.
-  ; get-field-name : str -> string
+  ; get-field-name : str -> symbol
   (define (get-field-name rhs)
     (let ([x (regexp-match "name=(\"([^\"]*)\"|([^ ;]*))" rhs)])
       (unless x
         (error 'get-field-name "Couldn't extract form field name for file upload from ~a" x))
-      (or (caddr x) (cadddr x))))
+      (lowercase-symbol! (or (caddr x) (cadddr x)))))
 
   ;; **************************************************
   ;; read-mime-multipart

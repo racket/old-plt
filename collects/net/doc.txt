@@ -35,7 +35,7 @@ TYPES ----------------------------------------------------------------
   host : string or #f
   port : number or #f
   path : (listof (union string path/param))
-  query : (listof (cons string string))
+  query : (listof (cons symbol string))
   fragment : string or #f
 
   The basic structure for all URLs.
@@ -2166,7 +2166,7 @@ TYPES ----------------------------------------------------------------
 
 > alist
 
-  (list-of (cons String String))  Represents decoded name/value pairs
+  (list-of (cons symbol string))  Represents decoded name/value pairs
 
 PROCEDURES -----------------------------------------------------------
 

@@ -73,6 +73,7 @@
 
   (require (lib "unitsig.ss")
            (lib "match.ss")
+           (lib "string.ss")
            "uri-codec-sig.ss")
 
   (provide uri-codec@)
@@ -199,20 +200,25 @@
       (define (form-urlencoded-decode str)
         (decode form-urlencoded-decoding-vector str))
 
-      ;; listof (cons string string) -> string
+      ;; listof (cons symbol string) -> string
       (define alist->form-urlencoded
-        (match-lambda
-         [() ""]
-         [((name . value))
-          (string-append (form-urlencoded-encode name)
-                         "="
-                         (form-urlencoded-encode value))]
-         [((name . value) . rest)
-          (string-append (form-urlencoded-encode name)
-                         "="
-                         (form-urlencoded-encode value)
-                         "&"
-                         (alist->form-urlencoded rest))]))
+        (lambda (args)
+          (let* ([format-one
+                  (lambda (arg)
+                    (let* ([name (car arg)]
+                           [value (cdr arg)])
+                      (string-append 
+                       (form-urlencoded-encode (symbol->string name))
+                       "="
+                       (form-urlencoded-encode value))))]
+                 [strs (let loop ([args args])
+                         (cond
+                           [(null? args) null]
+                           [(null? (cdr args)) (list (format-one (car args)))]
+                           [else (list* (format-one (car args))
+                                        "&"
+                                        (loop (cdr args)))]))])
+            (apply string-append strs))))
 
       ;; string -> listof (cons string string)
       (define (form-urlencoded->alist str)
@@ -223,7 +229,9 @@
               #f
               (match (regexp-match-positions key-regexp str start)
                      [((start . end))
-                      (vector (form-urlencoded-decode (substring str start end))
+                      (vector (let ([s (form-urlencoded-decode (substring str start end))])
+                                (string-lowercase! s)
+                                (string->symbol s))
                               (add1 end))]
                      [#f #f])))
         (define (next-value str start)

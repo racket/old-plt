@@ -86,9 +86,6 @@
               
               (define/override (remap-url url)
                 (cond
-                  #;
-                  [#t
-                   (string->url "http://helpdesk.plt-scheme.org:8000/gack")]
                   [(url? url)
                    (cond
                      
@@ -146,7 +143,10 @@
           (define sk-bitmap #f)
           
           (define hd-editor-mixin
-            (mixin (editor<%>) ()
+            (mixin (hyper-text<%> editor<%>) ()
+              (define/augment (url-allows-evaling? url)
+                (is-internal-url? url))
+              
               (define show-sk? #t)
               
               (define/override (on-event evt)
@@ -223,6 +223,10 @@
              (not (null? (url-path url)))
              (equal? (car (url-path url)) "^/doc")))
       
+      (define (is-internal-url? url)
+        (and (equal? internal-host (url-host url))
+             (equal? internal-port (url-port url))))
+      
       (define (ask-user-about-separate-browser)
         (define separate-default? (preferences:get 'drscheme:help-desk:separate-browser))
         (define dlg (instantiate dialog% ()
@@ -291,7 +295,6 @@
         (send dlg center 'both)
         (send dlg show #t)
         answer)
-      
       
       (define make-help-desk-framework-mixin 
         (mixin (frame:searchable<%> frame:standard-menus<%>) ()

@@ -1,5 +1,5 @@
 (unit
-  (import)
+  (import make-triple make-seq)
   (export)
 
   (define (trans pattern)
@@ -32,13 +32,6 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define (comment s p)
-    (let loop ([p (+ p 2)])
-      (if (and (eq? #\* (string-ref s p))
-	       (eq? #\/ (string-ref s (add1 p))))
-	  (+ p 2)
-	  (loop (add1 p)))))
-
   (define (line-comment s p)
     (let loop ([p (add1 p)])
       (let ([c (string-ref s p)])
@@ -47,7 +40,8 @@
 	    (add1 p)
 	    (loop (add1 p))))))
 
-  (define re:line (regexp "^#line ([0-9]*) \"([^\"]*)\""))
+  (define re:line (regexp (format "^#[^~a~a]* ([0-9]+) \"([^\"]*)\"" 
+				  #\newline #\return)))
   (define (cpp s p)
     (let ([m (regexp-match re:line s p)])
       (when m
@@ -56,9 +50,10 @@
     (line-comment s p))
 
   (define (result s)
-    (list s
-	  source-file   ; file
-	  source-line 0)) ; line col
+    (make-triple
+     s
+     source-file   ; file
+     source-line)) ; line
 
   (define (symbol s)
     (result (string->symbol s) ))
@@ -106,10 +101,7 @@
 
   (define comments
     (translations
-     "/[*]" comment
-     "//" line-comment
-     "#line" cpp
-     "#pragma" cpp))
+     "#" cpp))
 
   (define symbol-complex (trans (seq L (arbno (alt L D)))))
 
@@ -221,12 +213,8 @@
 	      (cond
 	       [(char-whitespace? char)
 		(loop (add1 p) result)]
-	       [(and (eq? char '#\#) ;; We only #-based preprocessor left
-		     (ormap (lambda (t)
-			      (and (regexp-match-positions (car t) s p)
-				   (cdr t)))
-			    comments))
-		=> (lambda (cmt) (loop (cmt s p) result))]
+	       [(eq? char '#\#) ;; We assume only #-based preprocessor left
+		(loop (cpp s p) result)]
 	       [else
 		(let ([simple (let ([sl (vector-ref simple-table (char->integer char))])
 				(and sl
@@ -268,10 +256,10 @@
 		    (let ([sf source-file]
 			  [sl source-line]
 			  [sub (loop (cdr simple) null)])
-		      (loop (cdr sub) (cons (list*
-					     (list (substring s p (add1 p)))
+		      (loop (cdr sub) (cons (make-seq
+					     (string-ref s p)
 					     sf
-					     sl 0
+					     sl
 					     (car sub))
 					    result)))]
 		   [simple

@@ -46,7 +46,7 @@
 			 l))))
 
 (define (filter-false s)
-  (if (string=? s "#f")
+  (if (string=? s "-")
       #f
       s))
 
@@ -63,6 +63,58 @@
 (require-library "function.ss")
 ;(require-library "errortrace.ss" "errortrace")
 (error-print-width 100)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; "AST" structures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-struct tok (n line file))
+(define-struct (seq struct:tok) (close in))
+(define-struct (parens struct:seq) ())
+(define-struct (brackets struct:seq) ())
+(define-struct (braces struct:seq) ())
+(define-struct (creation-parens struct:parens) ())
+(define-struct (call struct:tok) (func args live tag))
+(define-struct (block-push struct:tok) (vars tag super-tag))
+(define-struct (note struct:tok) (s))
+
+;; For very long lists, it's worth the effort to use a vector instead
+;;   of a list to save space:
+(define (seq->list s) (if (vector? s) (vector->list s) s))
+(define (list->seq s) (if (or (null? s) (null? (cdr s)) (null? (cddr s)))
+			  s
+			  (list->vector s)))
+(define seq vector)
+
+;; A cheap way of getting rid of unneeded prototypes:
+(define used-symbols (make-hash-table))
+(hash-table-put! used-symbols (string->symbol "GC_variable_stack") 1)
+
+(define (make-triple v src line)
+  (when (symbol? v)
+    (hash-table-put! used-symbols v
+		     (add1 (hash-table-get
+			    used-symbols
+			    v
+			    (lambda () 0)))))
+  (make-tok v (sub1 line) src))
+
+(define (make-seq opener src line body)
+  ((case opener
+     [(#\() make-parens]
+     [(#\[) make-brackets]
+     [(#\{) make-braces])
+   (case opener
+     [(#\() "("]
+     [(#\[) "["]
+     [(#\{) "{"])
+   (sub1 line)
+   src
+   (case opener
+     [(#\() ")"]
+     [(#\[) "]"]
+     [(#\{) "}"])
+   (list->seq body)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pre-process and S-expr-ize
@@ -87,9 +139,6 @@
 		    file-in)))
 (close-output-port (cadr cpp-process))
 
-(define ctok-process
-  (and ctok (process ctok)))
-
 (define (mk-error-thread proc)
   (thread (lambda ()
 	    (let loop ()
@@ -100,15 +149,9 @@
 	    (close-input-port (list-ref proc 3)))))
 
 (define cpp-error-thread (mk-error-thread cpp-process))
-(define ctok-error-thread (and ctok (mk-error-thread ctok-process)))
 
 (define-values (local-ctok-read local-ctok-write)
   (make-pipe 100000))
-
-(define to-ctok
-  (if ctok
-      (cadr ctok-process)
-      local-ctok-write))
 
 ;; cpp output to ctok input:
 (thread (lambda ()
@@ -117,39 +160,27 @@
 	      (let ([l (read-string-avail! s (car cpp-process))])
 		(unless (eof-object? l)
 		  (display (if (< l 4096) (substring s 0 l) s)
-			   to-ctok)
+			   local-ctok-write)
 		  (loop))))
 	    (close-input-port (car cpp-process))
-	    (close-output-port to-ctok))))
+	    (close-output-port local-ctok-write))))
 
 (define e-raw #f)
 
 (define read-thread
-  (if ctok
-      (thread
-       (lambda ()
-	 (with-handlers ([void (lambda (x)
-				 (set! e-raw x))])
-	   (parameterize ([read-case-sensitive #t])
-	     (set! e-raw (read (car ctok-process))))
-	   (close-input-port (car ctok-process)))))
-      (thread
-       (lambda ()
-	 (let ([u (load-extension "ctok.dll")])
-	   (parameterize ([current-input-port local-ctok-read])
-	     (set! e-raw (car (invoke-unit u)))))))))
+  (thread
+   (lambda ()
+     (let ([u ((if (regexp-match "[.]ss$" ctok)
+		   load
+		   load-extension)
+	       ctok)])
+       (parameterize ([current-input-port local-ctok-read])
+	 (set! e-raw (car (invoke-unit u make-triple make-seq))))))))
 
 ((list-ref cpp-process 4) 'wait)
 (thread-wait cpp-error-thread)
 (when (eq? ((list-ref cpp-process 4) 'status) 'done-error)
   (error 'xform "cpp failed"))
-
-(when ctok
-  ((list-ref ctok-process 4) 'wait)
-  (thread-wait ctok-error-thread)
-  (set! ctok-error-thread #f)
-  (when (eq? ((list-ref ctok-process 4) 'status) 'done-error)
-    (error 'xform "ctok failed")))
 
 (thread-wait read-thread)
 (set! read-thread #f)
@@ -222,16 +253,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Structures and constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define-struct tok (n line file))
-(define-struct (seq struct:tok) (close in))
-(define-struct (parens struct:seq) ())
-(define-struct (brackets struct:seq) ())
-(define-struct (braces struct:seq) ())
-(define-struct (creation-parens struct:parens) ())
-(define-struct (call struct:tok) (func args live tag))
-(define-struct (block-push struct:tok) (vars tag super-tag))
-(define-struct (note struct:tok) (s))
 
 (define-struct vtype ())
 (define-struct (pointer-type struct:vtype) (base stars))
@@ -339,14 +360,6 @@
    [(parens? v) make-parens]
    [(brackets? v) make-brackets]
    [(braces? v) make-braces]))
-
-;; For very long lists, it's worth the effort to use a vector instead
-;;   of a list to save space:
-(define (seq->list s) (if (vector? s) (vector->list s) s))
-(define (list->seq s) (if (or (null? s) (null? (cdr s)) (null? (cddr s)))
-			  s
-			  (list->vector s)))
-(define seq vector)
 
 (define (get-variable-size vtype)
   (cond
@@ -2608,38 +2621,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; A cheap way of getting rid of unneeded prototypes:
-(define used-symbols (make-hash-table))
-(hash-table-put! used-symbols (string->symbol "GC_variable_stack") 1)
-
-(let* ([e-r e-raw]
-       [_ (set! e-raw #f)] ;; to allow GC
-       [e (let ([source #f])
-	    (letrec ([translate
-		      (lambda (v)
-			(when (cadr v)
-			  (set! source (cadr v)))
-			(when (symbol? (car v))
-			  (hash-table-put! used-symbols (car v) 
-					   (add1 (hash-table-get
-						  used-symbols
-						  (car v)
-						  (lambda () 0)))))
-			(if (pair? (car v))
-			    (let ([body (map translate (cddddr v))])
-			      ((cond
-				[(string=? "(" (caar v)) make-parens]
-				[(string=? "[" (caar v)) make-brackets]
-				[(string=? "{" (caar v)) make-braces])
-			       (caar v) (sub1 (caddr v))
-			       source
-			       (cond
-				[(string=? "(" (caar v)) ")"]
-				[(string=? "[" (caar v)) "]"]
-				[(string=? "{" (caar v)) "}"])
-			       (list->seq body)))
-			    (make-tok (car v) (sub1 (caddr v)) source)))])
-	      (map translate e-r)))])
+(let* ([e e-raw])
+  (set! e-raw #f) ;; to allow GC
   (foldl-statement
    e
    #f

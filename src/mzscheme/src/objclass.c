@@ -1069,7 +1069,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (SCHEME_SYMBOLP(v)) {
 	  if (found_nonrequired)
 	    scheme_wrong_syntax("class*", v, form, 
-				"bad syntax in argument list");
+				"bad syntax in argument list (default expression required)");
 	  num_required_args++;
 	} else {
 	  if (!SCHEME_PAIRP(v) || !SCHEME_SYMBOLP(SCHEME_CAR(v)))

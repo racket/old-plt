@@ -1,5 +1,5 @@
 (module channel mzscheme
-  (provide create-channel channel-put channel-get channel-get-available)
+  (provide create-channel channel-put channel-get channel-get-available channel-try-get)
   (require (lib "thread.ss"))
   
   ; Channel = (make-channel Semaphore Semaphore (cons #f (listof TST)) (cons TST null))
@@ -30,6 +30,12 @@
   (define (channel-get-available c k)
     (when (semaphore-try-wait? (channel-available c))
       (k (dequeue c))))
+  
+  ; channel-try-get : Channel ( -> TST) -> TST
+  (define (channel-try-get c fail)
+    (if (semaphore-try-wait? (channel-available c))
+        (dequeue c)
+        (fail)))
   
   ; dequeue : Channel -> TST
   ; the "avaiable" semaphore must already have been decremented

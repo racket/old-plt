@@ -7,15 +7,34 @@
 
  (define print-args
    (lambda (port l f)
-     (let loop ([l l][a (let ([a (arity f)])
-			  (if (number? a)
-			      (sub1 a)
-			      (sub1 (arity-at-least-value a))))])
+     (let loop ([l l][a (letrec ([a (arity f)]
+				 [a-c (lambda (a)
+					(cond
+					 [(number? a) (cons (sub1 a) (sub1 a))]
+					 [(arity-at-least? a) 
+					  (let ([v (sub1 (arity-at-least-value a))])
+					    (cons v v))]
+					 [else (let ([r (map a-c a)])
+						 (cons (apply min (map car r))
+						       (apply max (map cdr r))))]))])
+			  (a-c a))])
        (unless (null? l)
-	       (fprintf port " <~a>" (car l))
-	       (unless (positive? a)
+	       (fprintf port " ~a<~a>~a" 
+			(if (positive? (car a)) "" "[")
+			(car l)
+			(if (positive? (car a)) "" "]"))
+	       (unless (positive? (cdr a))
 		       (fprintf port " ..."))
-	       (loop (cdr l) (sub1 a))))))
+	       (loop (cdr l) (cons (sub1 (car a)) (sub1 (cdr a))))))))
+
+ (define (procedure-arity-includes-at-least? p n)
+   (letrec ([a-c
+	     (lambda (a)
+	       (cond
+		[(number? a) (>= a n)]
+		[(arity-at-least? a) #t]
+		[else (ormap a-c a)]))])
+     (a-c (arity p))))
 
  (define parse-command-line
    (case-lambda
@@ -89,10 +108,8 @@
 			    table)))
 	     (raise-type-error 'parse-command-line "table of spec sets" table))
      (unless (and (procedure? finish)
-		  (let ([a (arity finish)])
-		    (or (and (number? a) (>= a 1))
-			(arity-at-least? a))))
-	     (raise-type-error 'parse-command-line "finish procedure of simple arity 1 or more" finish))
+		  (procedure-arity-includes-at-least? finish 1))
+	     (raise-type-error 'parse-command-line "finish procedure accepting at least 1 argument" finish))
      (unless (and (list? finish-help) (andmap string? finish-help))
 	     (raise-type-error 'parse-command-line "argument help list of strings" finish-help))
      (unless (and (procedure? help) (procedure-arity-includes? help 1))
@@ -102,13 +119,15 @@
 		    (or (number? a) (arity-at-least? a))))
 	     (raise-type-error 'parse-command-line "unknown-flag procedure of simple arity, accepting 1 argument (an perhaps more)" unknown-flag))
 
-     (let ([a (arity finish)]
-	   [l (length finish-help)])
-       (unless (= (or (and (number? a) (sub1 a))
-		      (and (arity-at-least? a)
-			   (max 1 (arity-at-least-value a))))
-		  l)
-	   (error 'parse-command-line "the length of the argument help string list does not match the arity of the finish procedure")))
+     (letrec ([a (arity finish)]
+	      [l (length finish-help)]
+	      [a-c (lambda (a)
+		     (or (and (number? a) (sub1 a))
+			 (and (arity-at-least? a)
+			      (max 1 (arity-at-least-value a)))
+			 (and (list? a) (apply max (map a-c a)))))])
+       (unless (= (a-c a) l)
+	  (error 'parse-command-line "the length of the argument help string list does not match the arity of the finish procedure")))
 
      (let* ([once-spec-set
 	     (lambda (lines)
@@ -168,27 +187,26 @@
 		     [c (length args)])
 		 (if (procedure-arity-includes? finish (add1 c))
 		     (apply finish options args)
-		     (let ([a (arity finish)])
-		       (error (string->symbol program)
-			      (format "expects~a on the command line, given ~a argument~a~a"
-				      (if (null? finish-help)
-					  " no arguments"
-					  (let ([s (open-output-string)])
-					    (parameterize ([current-output-port s])
-							  (print-args s finish-help finish))
-					    (let ([s (get-output-string s)])
-					      (if (equal? 2 (arity finish))
-						  (format " 1~a" s)
-						  s))))
-				      c
-				      (cond
-				       [(zero? c) "s"]
-				       [(= c 1) ": "]
-				       [else "s: "])
-				      (let loop ([args args])
-					(if (null? args)
-					    ""
-					    (string-append (car args) " " (loop (cdr args)))))))))))]
+		     (error (string->symbol program)
+			    (format "expects~a on the command line, given ~a argument~a~a"
+				    (if (null? finish-help)
+					" no arguments"
+					(let ([s (open-output-string)])
+					  (parameterize ([current-output-port s])
+							(print-args s finish-help finish))
+					  (let ([s (get-output-string s)])
+					    (if (equal? 2 (arity finish))
+						(format " 1~a" s)
+						s))))
+				    c
+				    (cond
+				     [(zero? c) "s"]
+				     [(= c 1) ": "]
+				     [else "s: "])
+				    (let loop ([args args])
+				      (if (null? args)
+					  ""
+					  (string-append (car args) " " (loop (cdr args))))))))))]
 	    [call-handler
 	     (lambda (handler flag args r-acc k)
 	       (let* ([a (arity handler)]

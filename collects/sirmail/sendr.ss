@@ -364,7 +364,7 @@
                                               (define/public (set-no-change-region start end)
                                                 (set! immutable-start start)
                                                 (set! immutable-end end)
-                                                (reset-region end 'end))
+                                                #;(reset-region end 'end))
                                               
                                               (define/augment (can-insert? start len)
                                                 (and (or (<= (+ start len) immutable-start)
@@ -375,7 +375,7 @@
                                                     (begin
                                                       (set! immutable-start (+ immutable-start len))
                                                       (set! immutable-end (+ immutable-end len))
-                                                      (reset-region immutable-end 'end)))
+                                                      #;(reset-region immutable-end 'end)))
                                                 (inner (void) on-insert start len))
                                               
                                               (define/augment (can-delete? start len)
@@ -387,7 +387,7 @@
                                                     (begin
                                                       (set! immutable-start (- immutable-start len))
                                                       (set! immutable-end (- immutable-end len))
-                                                      (reset-region immutable-end 'end)))
+                                                      #;(reset-region immutable-end 'end)))
                                                 (inner (void) on-delete start len))
                                               
                                               (super-new))))

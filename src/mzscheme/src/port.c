@@ -4357,11 +4357,38 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 #ifdef WINDOWS_PROCESSES
 # ifdef USE_CREATE_PIPE
 #  define _EXTRA_PIPE_ARGS
-static int MyPipe(int *ph) {
+static int MyPipe(int *ph, int near_index) {
   HANDLE r, w;
-  if (CreatePipe(&r, &w, NULL, 0)) {
-    ph[0] = _open_osfhandle((long)r, 0);
-    ph[1] = _open_osfhandle((long)w, 0);
+  SECURITY_ATTRIBUTES saAttr;
+ 
+  /* Set the bInheritHandle flag so pipe handles are inherited. */
+  saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+  saAttr.bInheritHandle = TRUE; 
+  saAttr.lpSecurityDescriptor = NULL; 
+ 
+  if (CreatePipe(&r, &w, &saAttr, 0)) {
+    HANDLE a[2], naya;
+
+    a[0] = r;
+    a[1] = w;
+
+    /* Change the near end to make it non-inheritable, then
+       close the inheritable one: */
+    if (!DuplicateHandle(GetCurrentProcess(), a[near_index], 
+			 GetCurrentProcess(), &naya, 0, 
+			 0, /* not inherited */
+			 DUPLICATE_SAME_ACCESS)) {
+      CloseHandle(a[0]);
+      CloseHandle(a[1]);
+      return 1;
+    } else {
+      CloseHandle(a[near_index]);
+      a[near_index] = naya;
+    }
+
+    ph[0] = _open_osfhandle((long)a[0], 0);
+    ph[1] = _open_osfhandle((long)a[1], 0);
+
     return 0;
   } else
     return 1;
@@ -4370,12 +4397,12 @@ static int MyPipe(int *ph) {
 # else
 #  include <Process.h>
 #  include <fcntl.h>
-#  define PIPE_FUNC MSC_IZE(pipe)
+# define PIPE_FUNC(pa, nearh) MSC_IZE(pipe)(pa)
 #  define _EXTRA_PIPE_ARGS , 256, _O_BINARY
 # endif
 #else
 # define _EXTRA_PIPE_ARGS
-# define PIPE_FUNC MSC_IZE(pipe)
+# define PIPE_FUNC(pa, nearh) MSC_IZE(pipe)(pa)
 #endif
 
 #endif
@@ -4730,7 +4757,7 @@ static long mz_spawnv(char *command, const char * const *argv,
   else
     cr_flag = 0;
 
-  if (CreateProcess(command, cmdline, NULL, NULL, 1,
+  if (CreateProcess(command, cmdline, NULL, NULL, 1 /*inherit*/,
 		    cr_flag, NULL, NULL,
 		    &startup, &info)) {
     CloseHandle(info.hThread);
@@ -4951,16 +4978,16 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*          Create needed pipes         */
   /*--------------------------------------*/
 
-  if (!inport && PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
+  if (!inport && PIPE_FUNC(to_subprocess, 1 _EXTRA_PIPE_ARGS))
     scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
-  if (!outport && PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
+  if (!outport && PIPE_FUNC(from_subprocess, 0 _EXTRA_PIPE_ARGS)) {
     if (!inport) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);
     }
     scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
   }
-  if (!errport && PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
+  if (!errport && PIPE_FUNC(err_subprocess, 0 _EXTRA_PIPE_ARGS)) {
     if (!inport) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);

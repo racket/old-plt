@@ -19,12 +19,4 @@
   (define debug-param
     (with-handlers ([(lambda (x) #t)
 		     (lambda (x) (current-parameterization))])
-      (global-defined-value 'mred:constants:debug-param-backup)))
-  
-  (define plt-home-directory
-    (let ([x (with-handlers ([(lambda (x) #t)
-			      (lambda (x) "/usr/local/lib/plt")])
-	       (global-defined-value 'plt:home-directory))])
-      (if (string? x)
-	  x
-	  "/usr/local/lib/plt"))))
+      (global-defined-value 'mred:constants:debug-param-backup))))

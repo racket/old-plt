@@ -1,5 +1,5 @@
 ;;
-;; $Id: sig.ss,v 1.70 1997/07/15 15:47:30 robby Exp $
+;; $Id: sig.ss,v 1.71 1997/08/09 18:25:38 robby Exp mflatt $
 ;;
 
 (begin-elaboration-time
@@ -88,7 +88,8 @@
 (define-signature mred:application^
   (console
    app-name
-   eval-string))
+   eval-string
+   startup))
 
 (define-signature mred:html-mode^
   ())
@@ -98,7 +99,6 @@
 (define-signature mred:constants^
   (debug-on
    debug-param
-   plt-home-directory
    original-input-port
    original-output-port))
 

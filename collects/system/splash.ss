@@ -30,7 +30,11 @@
      (lambda ()
        (set! mred:splash-message #f)
        (clear-state))
-     (lambda (filename title splash-max)
+     (lambda (collection)
+       (let* ([info (require-library "info.ss" collection)]
+	      [filename (info 'splash-image-path)]
+	      [title (info 'name)]
+	      [splash-max (info 'splash-max)])
        (if (file-exists? filename)
 	   (let* ([len (string-length filename)]
 		  [flag (if (<= len 4)
@@ -65,8 +69,7 @@
 			[height (box 0.)]
 			[c-x-offset 0]
 			[c-y-offset 0]
-			[_ (when splash-max
-			     (set! mred:splash-max (read (open-input-string splash-max))))]
+			[_ (set! mred:splash-max splash-max)]
 			[panel (make-object wx:panel% frame)]
 			
 			[ready-cursor
@@ -207,7 +210,7 @@
 			(mred:no-more-splash-messages))))
 	   (begin
 	     (printf "WARNING: bitmap path ~s not found~n" filename)
-	     (mred:no-more-splash-messages)))))))
+	     (mred:no-more-splash-messages))))))))
 
 (define mred:change-splash-message
   (lambda (s)

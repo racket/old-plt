@@ -443,10 +443,8 @@
 	       (lambda ()
 		 (let* ([mb (super-make-menu-bar)]
 			[help-menu (make-menu)]
-			[dir (build-path (global-defined-value 
-					  'mred:plt-home-directory)
-					 "doc")])
-		   (if (directory-exists? dir)
+			[dir (with-handlers ([void (lambda (x) #f)]) (collection-path "doc"))])
+		   (if (and dir (directory-exists? dir))
 		       (let* ([dirs (directory-list dir)]
 			      [find-title
 			       (lambda (name)

@@ -4,8 +4,9 @@
 	    
     (mred:debug:printf 'invoke "mred:icon@")
 
-    (define icon-path (build-path mred:constants:plt-home-directory
-				  "icons"))
+    (define icon-path 
+      (with-handlers ([void (lambda (x) (collection-path "system"))]) 
+	  (collection-path "icons")))
 
     (define (load-icon % name type)
       (let ([p (build-path icon-path name)]

@@ -548,13 +548,10 @@
 	    (is-changed))))
 
       (define (get-file-list-box-string file)
-        (message-box "*" "1")
         (let ([sp (open-output-string)])
           (parameterize ([current-output-port sp]
                          [pretty-print:pretty-print-columns 'infinity])
-            (message-box "*" "2")
             (pretty-print:pretty-print (cons (car file) (map print-convert (cdr file)))))
-          (message-box "*" "3")
           (get-output-string sp)))
 
       (define (refresh-files-list-box)
@@ -627,7 +624,6 @@
 	  (is-changed)))
       
       (define (swap-abs/rel-file)
-        (message-box "." "1")
         (let* ([index (send files-list-box get-selection)]
                [file (list-ref files index)]
                [fp (cadr file)]
@@ -641,19 +637,11 @@
                        (file:find-relative-path project-dir path)
                        (begin (bell)
                               path))])])
-          (message-box "." "2")
           (set-cdr! file (my-explode-path new-path))
-          (message-box "." "3")
           (send files-list-box set-string index (get-file-list-box-string file))
-<<<<<<< main.ss
-          (message-box "." "4")
-          (update-buttons)
-          (message-box "." "5")))
-=======
 	  (send files-list-box set-selection index)
 	  (is-changed)
           (update-buttons)))
->>>>>>> 1.36
 
       (define (update-buttons)
 	(let ([selection-list (send files-list-box get-selections)])

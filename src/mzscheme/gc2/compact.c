@@ -1933,6 +1933,15 @@ static void compact_tagged_mpage(void **p, MPage *page)
 
     size = OFFSET_SIZE(offsets, offset);
 
+#if CHECKS
+    if (!size) {
+      CRASH();
+    }
+    prev_prev_prev_ptr = prev_prev_ptr;
+    prev_prev_ptr = prev_ptr;
+    prev_ptr = p;
+#endif
+
     if (OFFSET_COLOR(offsets, offset)) {
 #if ALIGN_DOUBLES
 #define PLUS_ALIGNMENT + alignment

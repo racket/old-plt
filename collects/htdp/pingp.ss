@@ -3,7 +3,7 @@
                "pingp-sig.ss"
                "big-draw.ss"
                (lib "unitsig.ss")
-               (lib "teach.ss" "lang" "private"))
+	       (lib "posn.ss" "lang"))
 
      (provide pingpU)
 

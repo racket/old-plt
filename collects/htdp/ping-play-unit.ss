@@ -1,6 +1,6 @@
 #cs(module ping-play-unit mzscheme
      (require "pingp-sig.ss"
-              (lib "teach.ss" "lang" "private")
+	      (lib "posn.ss" "lang")
               (lib "unitsig.ss"))
      (provide ping-play-U)
      

@@ -3,7 +3,7 @@
      (require (lib "unitsig.ss")
               "pingp-sig.ss"
               (lib "list.ss")
-              (lib "teach.ss" "lang" "private"))
+	      (lib "posn.ss" "lang"))
 
      (define protect-play-U
        (unit/sig protectS

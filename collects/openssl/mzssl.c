@@ -61,15 +61,8 @@ struct sslplt {
   struct sslplt *next;
 };
 
-/*****************************************************************************
- * TOP-LEVEL THREAD: This is the routine and data involved with running the  *
- * top level thread (the one that helps us fake a couple guarantees).        *
- *****************************************************************************/
-Scheme_Object *daemon_lock = NULL;
-struct sslplt *ssls = NULL;
-
 /* create_ register_sslplt: called when a new sslplt structure needs to be 
-   created and registered with out flusing/closing thread. */
+   created. */
 struct sslplt *create_register_sslplt(SSL *ssl)
 {
   struct sslplt *sslplt = scheme_malloc(sizeof(struct sslplt));
@@ -79,6 +72,10 @@ struct sslplt *create_register_sslplt(SSL *ssl)
   sslplt->close_in = 0; sslplt->close_out = 0;
   return sslplt;
 }
+
+/*****************************************************************************
+ * GENERC SOCKET CHECKS: ready? and needs-wakeup.                            *
+ *****************************************************************************/
 
 int check_socket_ready(int s, int for_write)
 {
@@ -115,14 +112,31 @@ void socket_add_fds(int s, void *fds, int for_write)
   MZ_FD_SET(s, (fd_set *)fds2);
 }
 
+/*****************************************************************************
+ * TOP-LEVEL THREAD: This is the routine and data involved with running the  *
+ * top level thread (the one that helps us fake a couple guarantees).        *
+ * When output can't be written without blocking, we put one char in a       *
+ * and promise to flush in a priviledged daemon thread. If this one-char     *
+ * buffer is empty, we can promise a "non-blocking" write to the Scheme      *
+ * level. We need the one-char buffer because the SSL layer offers no way to *
+ * get a promise that at least one character can be written without          *
+ * blocking.                                                                 *
+ *****************************************************************************/
+Scheme_Object *daemon_attn = NULL;
+struct sslplt *ssls = NULL;
+
 int daemon_ready(Scheme_Object *ignored)
 {
   struct sslplt *cur;
 
   for (cur = ssls; cur; cur = cur->next) {
-    if (!cur->write_blocked_reason)
+    if (!cur->write_blocked_reason) {
+      /* Newly queued, or someone else operated on the same
+	 SSL connection, so we should try again. */
       return 1;
-    else
+    } else
+      /* The SLL layer is waiting for either input or output
+	 on the underlying socket: */
       check_socket_ready(BIO_get_fd(SSL_get_wbio(cur->ssl), NULL),
 			 (cur->write_blocked_reason == 2));
   }
@@ -152,7 +166,8 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 
   /* this thread should not terminate unless killed externally */
   while (1) {
-    scheme_wait_sema(daemon_lock, 0);
+    /* Wait until there's something to do: */
+    scheme_wait_sema(daemon_attn, 0);
 
     while (1) {
       cur = ssls; prev = NULL;
@@ -162,6 +177,7 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 	if (cur->ob_used) {
 	  cur->write_blocked_reason = 0;
 
+	  /* Try to write: */
 	  status = SSL_write(cur->ssl, &(cur->obuffer), 1);
 
 	  if (status > 1) {
@@ -210,12 +226,13 @@ Scheme_Object *write_close_thread(int argc, Scheme_Object *argv[])
 }
 
 /*****************************************************************************
- * ERROR FUNCTION: 
+ * ERROR FUNCTIONs: wrap the SSL error reporter to get a string and error    *
+ * number that fits into MzScheme's %Z convention.                           *
+ * Also, copy error strings provided libraries, in case of a thread swap     *
+ * between the time the string is obtained and the string is put into an     *
+ * error message (otherwise the string could get overwritten?).              *
  *****************************************************************************/
 
-/* Copy error strings in case a thread swap happens
-   between the time the string is obtained and
-   the string is put into an error message. */
 static const char *dup_errstr(const char *s) {
   char *t;
   long len;
@@ -406,7 +423,8 @@ void sslin_close(Scheme_Input_Port *port)
 
 /* sslin_need_wakeup: called when the input port is blocked to determine 
    what exactly it's blocked on. We have to try a read to find out
-   why it's blocked. */
+   why it's blocked: waiting for input or output on the low-level
+   socket? */
 static void sslin_need_wakeup(Scheme_Input_Port *port, void *fds)
 {
   struct sslplt *ssl = SCHEME_INPORT_VAL(port);
@@ -472,7 +490,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
   long wrote_bytes = 0;
 
   /* make sure people aren't trying to do something sneaky */
-  if(ssl->close_out) {
+  if (ssl->close_out) {
     errstr = "write to closed port!"; 
     goto write_error;
   }
@@ -487,7 +505,13 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
 		       (void *)port, (float)0.0);      
   }
 
-  /* We get here only where !ssl->ob_used. */
+  /* We get here only when !ssl->ob_used. */
+
+  /* could have been closed by another thread */
+  if (ssl->close_out) {
+    errstr = "write to closed port!"; 
+    goto write_error;
+  }
 
   /* Try to write a decent sized chunk: */
   status = SSL_write(ssl->ssl, buffer+offset+wrote_bytes, size-wrote_bytes);
@@ -504,7 +528,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     return 0;
 
   /* Can't write a decent-sized chunk. Put one char in the outgoing
-     buffer, and block asnecessary until the char is flushed */
+     buffer, and block as necessary until the char is flushed */
    {
     int was_empty;
 
@@ -519,7 +543,7 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
 
     /* Wake up the daemon thread if the list usedto be empty: */
     if (was_empty)
-      scheme_post_sema(daemon_lock);
+      scheme_post_sema(daemon_attn);
 
     /* We "wrote" one byte. The daemon will ensure that the byte
        actually goes out. */
@@ -572,18 +596,23 @@ void sslout_close(Scheme_Output_Port *port)
   int forced = 0;
 
   if (ssl->ob_used && scheme_close_should_force_port_closed()) {
-    /* Tell daemon to give up: */
+    /* Tell daemon to give up on this port, 
+       and don't bother with a shutdown: */
     ssl->ob_used = 0;
     ssl->write_blocked_reason = 0;
     ssl->close_out = 1;
   } else {
+    /* We want to shutdown. If there's still a write in
+       progress, wait. */
     if (ssl->ob_used){
       scheme_block_until((Scheme_Ready_Fun)sslout_char_ready, 
 			 (Scheme_Needs_Wakeup_Fun)sslout_need_wakeup,
 			 (void *)port, (float)0.0);
     }
     /* assert: !ssl->ob_used */
-    
+    /* it's possible that we were shut down in another
+       thread, though. */
+
     while (!ssl->close_out) {
       int status;
       int err;
@@ -982,10 +1011,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   Scheme_Custodian *newcust = scheme_make_custodian(NULL);
   
   SSL_library_init();
-  daemon_lock = scheme_make_sema(0);
+  daemon_attn = scheme_make_sema(0);
   ssl_input_port_type = scheme_make_port_type("<ssl-input-port>");
   ssl_output_port_type = scheme_make_port_type("<ssl-output-port>");
-  scheme_register_extension_global(&daemon_lock, 4);
+  scheme_register_extension_global(&daemon_attn, 4);
   scheme_register_extension_global(&ssls, 4);
   scheme_register_extension_global(&ssl_input_port_type, 4);
   scheme_register_extension_global(&ssl_output_port_type, 4);

@@ -317,34 +317,6 @@
   (define (add-kind-section name ckey)
     '(add-choice #f name #f '(change-style . slant) " " ckey))
 
-  ; Define an order for the documentation:
-  (define html-doc-position (require-library "docpos.ss" "help"))
-
-  ; Locate standard HTML documentation
-  (define-values (std-docs std-doc-names)
-    (let* ([path (with-handlers ([void (lambda (x) #f)])
-		   (collection-path "doc"))]
-	   [doc-names (if path
-			  (directory-list path)
-			  null)]
-	   [docs (map (lambda (x) (build-path path x)) doc-names)])
-      ; Order the standard docs:
-      (let ([ordered (quicksort
-		      (map cons docs doc-names)
-		      (lambda (a b)
-			(< (html-doc-position (cdr a))
-			   (html-doc-position (cdr b)))))])
-	(values (map car ordered) (map cdr ordered)))))
-
-
-  ; Check collections for doc.txt files:
-  (define-values (txt-docs txt-doc-names)
-    ((require-library "colldocs.ss" "help") quicksort))
-
-  (define docs (append std-docs txt-docs))
-  (define doc-names (append std-doc-names (map (lambda (s) (format "~a collection" s)) txt-doc-names)))
-  (define doc-kinds (append (map (lambda (x) 'html) std-docs) (map (lambda (x) 'text) txt-docs)))
-
   (define (start-search)
     (let* ([editor (let ([e (send results get-editor)])
 		     (if (is-a? e results-editor%)

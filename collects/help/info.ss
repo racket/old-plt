@@ -8,5 +8,7 @@
     [(compile-elaboration-zos) (list "sig.ss")]
     [(mred-launcher-libraries) (list "help.ss")]
     [(mred-launcher-names) (list "Help Desk")]
+    [(mzscheme-launcher-libraries) (list "help-raw.ss")]
+    [(mzscheme-launcher-names) (list "Raw Help Desk")]
     [else (failure)]))
 

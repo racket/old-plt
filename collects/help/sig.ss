@@ -6,10 +6,7 @@
   (startup-url))
 
 (define-signature help:help^
-  (docs
-   doc-names 
-   doc-kinds
-   add-doc-section
+  (add-doc-section
    add-kind-section
    add-choice))
 

@@ -9,7 +9,7 @@
  (link [BROWSER : browser^ ((require-library "browserr.ss" "browser")
 			    FUNCTION STRING FILE URL MRED)]
        [SEARCH : help:search^ ((require-relative-library "search.ss")
-			       HELP)]
+			       HELP FUNCTION)]
        [HELP : help:help^
 	     ((require-relative-library "helpwin.ss")
 	      SEARCH

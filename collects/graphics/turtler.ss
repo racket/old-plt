@@ -200,9 +200,6 @@ E ::= (move n)
 	(letrec ([walk-turtles
 		  (lambda (Turtles Cache list)
 		    (cond
-		      [(list? Turtles) 
-		       (let ([f (compose at-end (apply-cache Cache))])
-			 (foldl (lambda (T l) (cons (f T) l)) list Turtles))]
 		      [(tree? Turtles)
 		       (let ([children (tree-children Turtles)]
 			     [ac (apply-cache Cache)])
@@ -211,7 +208,10 @@ E ::= (move n)
 						(ac (cached-cache child))
 						list))
 				list
-				children))]))])
+				children))]
+		      [else
+		       (let ([f (compose at-end (apply-cache Cache))])
+			 (foldl (lambda (T l) (cons (f T) l)) list Turtles))]))])
 	  (set! Turtles (walk-turtles Turtles Cache null))
 	  (set! Cache Empty-Cache))))
 

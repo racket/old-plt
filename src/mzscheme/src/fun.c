@@ -999,6 +999,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(p->error_buf)) {
+    p = scheme_current_thread;
     scheme_restore_env_stack_w_thread(envss, p);
 #ifdef MZ_PRECISE_GC
     if (scheme_set_external_stack_val)
@@ -1022,6 +1023,8 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   }
 
   v = k();
+
+  p = scheme_current_thread;
 
   p->current_local_env = save_current_local_env;
   p->current_local_mark = save_mark;

@@ -5251,8 +5251,9 @@ static Scheme_Object *extend_parameterization(int argc, Scheme_Object *argv[])
   Scheme_Config *c;
   int i;
 
-  if (SCHEME_CONFIGP(argv[0]) && (argc & 1)) {
-    c = (Scheme_Config *)argv[0];
+  c = (Scheme_Config *)argv[0];
+
+  if (SCHEME_CONFIGP(c) && (argc & 1)) {
     for (i = 1; i < argc; i += 2) {
       if (!SCHEME_PARAMETERP(argv[i])) {
 	scheme_wrong_type("parameterize", "parameter", i, argc, argv);

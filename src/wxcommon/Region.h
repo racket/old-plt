@@ -110,9 +110,6 @@ class wxPathRgn : public wxObject
   wxPathRgn(wxDC *dc_for_scale);
   ~wxPathRgn();
   virtual Bool Install(long target, Bool reverse) = 0;
-  virtual wxPathRgn *Lift();
-  virtual Bool IsIntersect();
-  int FlattenIntersects(wxPathRgn **l, wxPathRgn *r, int i);
 
   long PrepareScale(long target, Bool oe);
   void RestoreScale(long target, long v);
@@ -191,7 +188,6 @@ class wxUnionPathRgn : public wxPathRgn
   wxUnionPathRgn(wxPathRgn *f, wxPathRgn *s);
   virtual Bool Install(long target, Bool reverse);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
-  virtual wxPathRgn *Lift();
 };
 
 class wxIntersectPathRgn : public wxPathRgn
@@ -201,8 +197,6 @@ class wxIntersectPathRgn : public wxPathRgn
   wxIntersectPathRgn(wxPathRgn *f, wxPathRgn *s);
   virtual Bool Install(long target, Bool reverse);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
-  virtual wxPathRgn *Lift();
-  virtual Bool IsIntersect();
 };
 
 class wxDiffPathRgn : public wxPathRgn
@@ -212,7 +206,6 @@ class wxDiffPathRgn : public wxPathRgn
   wxDiffPathRgn(wxPathRgn *f, wxPathRgn *s);
   virtual Bool Install(long target, Bool reverse);
   virtual Bool InstallPS(wxPostScriptDC *dc, wxPSStream *s);
-  virtual wxPathRgn *Lift();
 };
 
 /************************************************************/

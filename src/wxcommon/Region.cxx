@@ -867,7 +867,6 @@ void wxRegion::Install(long target)
 {
   if (prgn) {
     Bool oe;
-    wxPathRgn *do_p;
 
 #ifdef WX_USE_CAIRO
     cairo_init_clip(CAIRO_DEV);
@@ -927,8 +926,7 @@ void wxRegion::Install(long target)
     target = (long)t;
 #endif
 
-    do_p = prgn->Lift();
-    oe = do_p->Install(target, 0);
+    oe = prgn->Install(target, 0);
 
 #ifdef WX_USE_CAIRO
     if (oe)
@@ -1013,12 +1011,10 @@ void wxRegion::Install(long target)
 void wxRegion::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
 {
   Bool oe;
-  wxPathRgn *do_p;
 
-  do_p = prgn->Lift();
   s->Out("newpath\n");
 
-  oe = do_p->InstallPS(dc, s);
+  oe = prgn->InstallPS(dc, s);
 
   if (oe)
     s->Out("eoclip\n");
@@ -1699,136 +1695,6 @@ Bool wxDiffPathRgn::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
   s->Out("reversepath\n");
 
   return aoe || boe;
-}
-
-wxPathRgn *wxPathRgn::Lift()
-{
-  return this;
-}
-
-Bool wxPathRgn::IsIntersect()
-{
-  return FALSE;
-}
-
-int wxPathRgn::FlattenIntersects(wxPathRgn **l, wxPathRgn *r, int i)
-{
-  if (r->IsIntersect())
-    return FlattenIntersects(l, ((wxIntersectPathRgn *)r)->b, 
-			     FlattenIntersects(l, ((wxIntersectPathRgn *)r)->a, i));
-  
-  if (l)
-    l[i] = r;
-
-  return i + 1;
-}
-
-wxPathRgn *wxUnionPathRgn::Lift()
-{
-  wxPathRgn *la, *lb;
-  wxPathRgn *r = NULL, **al, **bl;
-  int na, nb, i, j;
-
-  la = a->Lift();
-  lb = b->Lift();
-
-  if (!la->IsIntersect()
-      && !lb->IsIntersect()
-      && (a == la) && (b == lb))
-    return this;
-
-  /* (A n B) U (C n D) = (A U C) n (A U D) n (B U C) n (B U D) */
-
-  /* count: */
-  na = FlattenIntersects(NULL, la, 0);
-  nb = FlattenIntersects(NULL, lb, 0);
-
-  al = new wxPathRgn*[na];
-  bl = new wxPathRgn*[nb];
-
-  /* flatten: */
-  FlattenIntersects(al, la, 0);
-  FlattenIntersects(bl, lb, 0);
-
-  for (i = 0; i < na; i++) {
-    for (j = 0; j < nb; j++) {
-      wxPathRgn *c;
-      c = new wxUnionPathRgn(al[i], bl[j]);
-      if (r)
-	r = new wxIntersectPathRgn(r, c);
-      else
-	r = c;
-    }
-  }
-
-  return r;
-}
-
-wxPathRgn *wxIntersectPathRgn::Lift()
-{
-  wxPathRgn *la, *lb;
-
-  la = a->Lift();
-  lb = b->Lift();
-
-  if ((la == a) && (lb == b))
-    return this;
-  else
-    return new wxIntersectPathRgn(la, lb);
-}
-
-Bool wxIntersectPathRgn::IsIntersect()
-{
-  return TRUE;
-}
-
-wxPathRgn *wxDiffPathRgn::Lift()
-{
-  wxPathRgn *la, *lb;
-  wxPathRgn *r = NULL, **al, **bl;
-  int na, nb, i;
-
-  la = a->Lift();
-  lb = b->Lift();
-
-  if (!la->IsIntersect()
-      && !lb->IsIntersect()
-      && (a == la) && (b == lb))
-    return this;
-
-  if (lb->IsIntersect()) {
-    /* A - (B n C) = (A - B) u (A - C) */
-    nb = FlattenIntersects(NULL, lb, 0);
-    bl = new wxPathRgn*[nb];
-    FlattenIntersects(bl, lb, 0);
-    
-    for (i = 0; i < nb; i++) {
-      wxPathRgn *s;
-      s = new wxDiffPathRgn(la, bl[i]);
-      if (r) {
-	r = new wxUnionPathRgn(r, s);
-      } else
-	r = s;
-    }
-
-    return r->Lift(); /* Handles intersections in la */
-  } else {
-    /* (A n B) - C = (A - C) n (B - C)   [note: C has no intersections] */
-    na = FlattenIntersects(NULL, la, 0);
-    al = new wxPathRgn*[na];
-    FlattenIntersects(al, la, 0);
-    
-    for (i = 0; i < na; i++) {
-      wxPathRgn *s;
-      s = new wxDiffPathRgn(al[i], lb);
-      if (r) {
-	r = new wxIntersectPathRgn(r, s);
-      } else
-	r = s;
-    }
-
-    return r;
-  }
 }
 
 /********************************************************/

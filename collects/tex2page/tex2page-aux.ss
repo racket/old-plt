@@ -14,16 +14,20 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 2003-08-24,
+;Configured for Scheme dialect plt by scmxlate, v 2004-09-08,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2004-09-06")
+(define *tex2page-version* "2004-09-08")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
 
-(define *operating-system* (if (getenv "COMSPEC") 'windows 'unix))
+(define *operating-system*
+  (if (getenv "COMSPEC")
+    (let ((term (getenv "TERM")))
+      (if (and (string? term) (string=? term "cygwin")) 'unix 'windows))
+    'unix))
 
 (define *enable-write-18?* #t)
 
@@ -49,13 +53,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *metapost*
-  (case *operating-system*
-    ((unix) "mpost")
-    ((windows)
-     (let ((term (getenv "TERM")))
-       (if (and (string? term) (string=? term "cygwin")) "mpost" "mp")))
-    (else "mpost")))
+(define *metapost* (case *operating-system* ((windows) "mp") (else "mpost")))
 
 (define *navigation-sentence-begin* "Go to ")
 

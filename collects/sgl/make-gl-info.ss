@@ -149,18 +149,15 @@ end-string
                   (define gl-clampd-size 8)))
              (else
               (build-helper compile-directory home)
-              '(module gl-info mzscheme
-                 (provide (all-defined-except x))
-                 (define-syntax x
-                   (syntax-rules ()
-                     ((_ x ...)
-                      (begin
-                        (define x (dynamic-require '(lib "make-gl-info-helper.ss" "sgl") 'x))
-                        ...))))
-                 (x gl-byte-size gl-ubyte-size gl-short-size gl-ushort-size
-                    gl-int-size gl-uint-size gl-boolean-size gl-sizei-size
-                    gl-bitfield-size gl-enum-size gl-float-size gl-double-size
-                    gl-clampf-size gl-clampd-size)))))))
+              `(module gl-info mzscheme
+                 (provide (all-defined))
+                 ,@(map 
+                    (lambda (x)
+                      `(define ,x ,(dynamic-require '(lib "make-gl-info-helper.ss" "sgl") x)))
+                    '(gl-byte-size gl-ubyte-size gl-short-size gl-ushort-size
+                      gl-int-size gl-uint-size gl-boolean-size gl-sizei-size
+                      gl-bitfield-size gl-enum-size gl-float-size gl-double-size
+                      gl-clampf-size gl-clampd-size))))))))
       (with-output-to-file zo
         (lambda () (write mod))
         'replace))))

@@ -9,6 +9,8 @@ Added title method to mx-document% class
 Methods find-element, find-element-by-id-or-name,
  and find-elements-with-tag can return the BODY
  element itself, as well as its children
+When a custodian shuts down an mx-browser% object,
+ its Win32 window is destroyed
 
 Version 103:
 

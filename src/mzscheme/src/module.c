@@ -687,7 +687,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   Scheme_Object *name, *srcname, *srcmname;
   Scheme_Module *m, *srcm;
   Scheme_Env *menv, *lookup_env = NULL;
-  int i, count, protected = 0;;
+  int i, count, protected = 0;
   const char *errname;
 
   modname = argv[0];

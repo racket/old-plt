@@ -2291,6 +2291,7 @@ static Scheme_Object *extract_syntax_locations(int argc, Scheme_Object **argv)
       else
 	first = p;
       last = p;
+      stxs = SCHEME_CDR(stxs);
     }
     return first;
   }

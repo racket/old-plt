@@ -260,6 +260,7 @@ static void force_close_input_port(Scheme_Object *port);
 static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol, *update_symbol;
 static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol;
+static Scheme_Object *count_lines_symbol;
 
 #define fail_err_symbol scheme_false
 
@@ -305,6 +306,7 @@ scheme_init_port (Scheme_Env *env)
   REGISTER_SO(truncate_symbol);
   REGISTER_SO(truncate_replace_symbol);
   REGISTER_SO(update_symbol);
+  REGISTER_SO(count_lines_symbol);
 
   text_symbol = scheme_intern_symbol("text");
   binary_symbol = scheme_intern_symbol("binary");
@@ -314,6 +316,7 @@ scheme_init_port (Scheme_Env *env)
   truncate_symbol = scheme_intern_symbol("truncate");
   truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
   update_symbol = scheme_intern_symbol("update");
+  count_lines_symbol = scheme_intern_symbol("count-lines");
 
   REGISTER_SO(scheme_orig_stdout_port);
   REGISTER_SO(scheme_orig_stderr_port);
@@ -860,6 +863,8 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->ungotten_allocated = 0;
   ip->position = 0;
   ip->lineNumber = 1;
+  ip->column = 0;
+  ip->oldColumn = 0;
   ip->charsSinceNewline = 1;
   ip->closed = 0;
   ip->read_handler = NULL;
@@ -990,10 +995,18 @@ scheme_getc (Scheme_Object *port)
   if (c != EOF) {
     ip->position++;
     if (c == '\n' || c == '\r') {
+      ip->oldColumn = ip->column;
       ip->charsSinceNewline = 1;
+      ip->column = 0;
       ip->lineNumber++;
-    } else
+    } else if (c == '\t') {
+      ip->oldColumn = ip->column;
+      ip->column = ip->column - (ip->column & 0x7) + 8;
       ip->charsSinceNewline++;
+    } else {
+      ip->charsSinceNewline++;
+      ip->column++;
+    }
   }
 
   END_LOCK_PORT(ip->sema);
@@ -1261,6 +1274,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 	break;
       }
     }
+
     if (i >= 0) {
       int n = 0;
       ip->charsSinceNewline = c + 1;
@@ -1271,6 +1285,14 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       ip->lineNumber += n;
     } else
       ip->charsSinceNewline += c;
+
+    /* Do the line again to get the column count right: */
+    for (i = got - c; i < got; i++) {
+      if (buffer[offset + i] == '\t')
+	ip->column = ip->column - (ip->column & 0x7) + 8;
+      else
+	ip->column++;
+    }
   }
 
   END_LOCK_PORT(ip->sema);
@@ -1385,12 +1407,14 @@ scheme_ungetc (int ch, Scheme_Object *port)
   }
   ip->ungotten[ip->ungotten_count++] = ch;
 
-  if (ip->position)
-    --ip->position;
+  --ip->position;
+  --ip->column;
   if (!(--ip->charsSinceNewline)) {
     --ip->lineNumber;
-    /* If you back up over two lines, then lineNumber will be wrong. */
-  }
+    ip->column = ip->oldColumn;
+    /* If you back up over two lines, then lineNumber and column will be wrong. */
+  } else if (ch == '\t')
+    ip->column = ip->oldColumn;
 
   END_LOCK_PORT(ip->sema);
 }
@@ -1493,7 +1517,7 @@ scheme_tell_column (Scheme_Object *port)
 
   CHECK_PORT_CLOSED("#<primitive:get-file-column>", "input", port, ip->closed);
 
-  col = ip->charsSinceNewline;
+  col = ip->column;
 
   END_LOCK_PORT(ip->sema);
 
@@ -1823,28 +1847,47 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 #endif
   char *mode = "rb";
   char *filename;
-  int regfile;
+  int regfile, i;
+  int m_set = 0, l_set = 0;
+  Scheme_Object *result;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type(name, "string", 0, argc, argv);
-  if (argc > 1 + offset) {
-    if (!SCHEME_SYMBOLP(argv[offset + 1]))
-      scheme_wrong_type(name, "symbol", offset + 1, argc, argv);
+
+  for (i = 1 + offset; argc > i; i++) {
+    if (!SCHEME_SYMBOLP(argv[i]))
+      scheme_wrong_type(name, "symbol", i, argc, argv);
     
-    if (SAME_OBJ(argv[offset + 1], text_symbol))
+    if (SAME_OBJ(argv[i], text_symbol)) {
       mode = "rt";
-    else if (SAME_OBJ(argv[offset + 1], binary_symbol)) {
+      m_set++;
+    } else if (SAME_OBJ(argv[i], binary_symbol)) {
       /* This is the default */
+      m_set++;
+    } else if (SAME_OBJ(argv[i], count_lines_symbol)) {
+      l_set++;
     } else {
       char *astr;
       long alen;
 
-      astr = scheme_make_args_string("other ", offset + 1, argc, argv, &alen);
+      astr = scheme_make_args_string("other ", i, argc, argv, &alen);
       scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[offset + 1],
 		       scheme_intern_symbol("input file mode"),
 		       "%s: bad mode: %s%t", name,
-		       scheme_make_provided_string(argv[offset + 1], 1, NULL),
+		       scheme_make_provided_string(argv[i], 1, NULL),
+		       astr, alen);
+    }
+
+    if (m_set > 1 || l_set > 1) {
+      char *astr;
+      long alen;
+
+      astr = scheme_make_args_string("", -1, argc, argv, &alen);
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		       argv[i],
+		       "%s: conflicting or redundant "
+		       "file modes given%t", name,
 		       astr, alen);
     }
   }
@@ -1862,6 +1905,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 
   if (fd == -1) {
     filename_exn(name, "cannot open input file", filename, errno);
+    return NULL;
   } else {
     fstat(fd, &buf);
     if (S_ISDIR(buf.st_mode)) {
@@ -1870,28 +1914,35 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 	cr = close(fd);
       } while ((cr == -1) && (errno == EINTR));
       filename_exn(name, "cannot open directory as a file", filename, 0);
+      return NULL;
     } else {
       regfile = S_ISREG(buf.st_mode);
       scheme_file_open_count++;
-      return make_fd_input_port(fd, filename, regfile);
+      result = make_fd_input_port(fd, filename, regfile);
     }
   }
-  return NULL; /* shouldn't get here */
 #else
   if (scheme_directory_exists(filename)) {
     filename_exn(name, "cannot open directory as a file", filename, 0);
-    return scheme_void;
+    return NULL;
   }
 
   regfile = scheme_is_regular_file(filename);
 
   fp = fopen(filename, mode);
-  if (!fp)
+  if (!fp) {
     filename_exn(name, "cannot open input file", filename, errno);
+    return NULL;
+  }
   scheme_file_open_count++;
 
-  return make_tested_file_input_port(fp, filename, !regfile);
+  result = make_tested_file_input_port(fp, filename, !regfile);
 #endif
+
+  if (l_set)
+    scheme_count_lines(result);
+
+  return result;
 }
 
 Scheme_Object *

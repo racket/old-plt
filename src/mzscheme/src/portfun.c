@@ -198,7 +198,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("open-input-file", 
 			     scheme_make_prim_w_arity(open_input_file, 
 						      "open-input-file", 
-						      1, 2), 
+						      1, 3), 
 			     env);
   scheme_add_global_constant("open-input-string", 
 			     scheme_make_prim_w_arity(open_input_string, 
@@ -239,7 +239,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("call-with-input-file",
 			     scheme_make_prim_w_arity2(call_with_input_file,
 						       "call-with-input-file",
-						       2, 3,
+						       2, 4,
 						       0, -1),
 			     env);
   scheme_add_global_constant("with-output-to-file",
@@ -251,7 +251,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("with-input-from-file",
 			     scheme_make_prim_w_arity2(with_input_from_file,
 						       "with-input-from-file",
-						       2, 3,
+						       2, 4,
 						       0, -1),
 			     env);
   scheme_add_global_constant("make-input-port", 

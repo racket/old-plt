@@ -804,6 +804,7 @@ typedef struct Scheme_Input_Port
   unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
   long position, lineNumber, charsSinceNewline;
+  long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines;
 #ifdef MZ_REAL_THREADS
   Scheme_Object *sema;

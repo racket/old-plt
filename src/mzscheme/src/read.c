@@ -922,12 +922,13 @@ read_list(Scheme_Object *port,
 		       startline, SCHEME_IPORT_NAME(port));
     }
 
-    if (ch == closer)
-      return (list 
-	      ? (stxsrc
-		 ? scheme_make_stx(list, line, col, stxsrc)
-		 : list)
-	      : scheme_null);
+    if (ch == closer) {
+      if (!list)
+	list = scheme_null;
+      return (stxsrc
+	      ? scheme_make_stx(list, line, col, stxsrc)
+	      : list);
+    }
 
     scheme_ungetc(ch, port);
     car = read_inner(port, stxsrc, ht CURRENTPROCARG);
@@ -984,10 +985,6 @@ read_list(Scheme_Object *port,
 			 port,
 			 "read: illegal use of \".\" at position %ld%L in %q",
 			 scheme_tell(port), scheme_tell_line(port), SCHEME_IPORT_NAME(port));
-      if (stxsrc) {
-	/* always creates a list */
-	cdr = scheme_make_pair(cdr, scheme_null);
-      }
 
       SCHEME_CDR(pair) = cdr;
       cdr = pair;

@@ -129,7 +129,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
     Scheme_Object *v = stx->val;
     Scheme_Object *ml = scheme_null;
 
-    /* Reverse the list, to preserve order: */
+    /* Reverse the list of marks, to preserve order: */
     while (!SCHEME_NULLP(marks)) {
       Scheme_Object *p = marks;
       marks = SCHEME_CDR(marks);
@@ -138,10 +138,12 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
     }
 
     if (SCHEME_PAIRP(v)) {
-      while (!SCHEME_NULLP(v)) {
+      while (SCHEME_PAIRP(v)) {
 	add_marks(SCHEME_CAR(v), ml);
 	v = SCHEME_CDR(v);
       }
+      if (!SCHEME_NULLP(v))
+	add_marks(v, ml);
     } else if (SCHEME_BOXP(v)) {
       add_marks(SCHEME_BOX_VAL(v), ml);
     } else if (SCHEME_VECTORP(v)) {

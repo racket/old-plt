@@ -781,9 +781,9 @@
 	  (public [user-parameterization (make-parameterization)])
 	  (sequence
 	    (takeover)
-	    (port-read-handler this-in (lambda (x) (transparent-read)))
 	    (with-parameterization user-parameterization
 	      (lambda ()
+		(port-read-handler this-in (lambda (x) (transparent-read)))
 		(parameterization-branch-handler 
 		 (lambda () (make-parameterization user-parameterization)))))))))
       

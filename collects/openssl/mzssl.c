@@ -1485,7 +1485,7 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   v = scheme_make_prim_w_arity(ssl_connect_break,"ssl-connect/enable-break",2,3);
   scheme_add_global("ssl-connect/enable-break", v, env);
 
-  v = scheme_make_prim_w_arity(ssl_listen,"ssl-listen",1,4);
+  v = scheme_make_prim_w_arity(ssl_listen,"ssl-listen",1,5);
   scheme_add_global("ssl-listen", v, env);
 
   v = scheme_make_prim_w_arity(ssl_close,"ssl-close",1,1);

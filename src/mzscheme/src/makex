@@ -3,6 +3,7 @@
 $list = 1 if ($assign);
 $list = 1 if ($setupassign);
 $list = 1 if ($exports);
+$list = 1 if ($winex);
 
 while (<>) {
     chop;
@@ -22,6 +23,9 @@ while (<>) {
 		if (!($_ =~ /^ *$/)) {
 		    if ($_ =~ /^extern /) {
 			$_ = substr($_, 7);
+		    }
+		    if ($_ =~ /^NONPROC /) {
+			$_ = substr($_, 8);
 		    }
 		    if ($_ =~ /^const /) {
 			$_ = substr($_, 6);
@@ -59,7 +63,10 @@ while (<>) {
 $elsesuspend = 0;
 $suspend = 0;
 
+%nonprocs = ();
+
 print "#!\n" if $exports;
+print "EXPORTS\n" if $winex;
 
 if ($list) {
     foreach $f (@exported) {
@@ -70,6 +77,12 @@ if ($list) {
 		}
 		if ($f =~ /#ifndef MZ_REAL_THREADS/) {
 		    $elsesuspend = 1;
+		}
+		if ($f =~ MZ_USE_SINGLE_FLOATS) {
+		    $suspend = 1;
+		}
+		if ($f =~ LINK_EXTENSIONS_BY_TABLE) {
+		    $suspend = 1;
 		}
 		if ($f =~ /#else/) {
 		    $suspend = 0;
@@ -89,6 +102,20 @@ if ($list) {
 		print "  $f = table->$f;\n";
 	    } elsif ($exports) {
 		print "$f\n" unless $suspend;
+	    } elsif ($winex) {
+		$data = "";
+		if (($f =~ /scheme_current_process/)
+		    || ($f =~ /scheme_fuel_counter/)
+		    || ($f =~ /scheme_eof/)
+		    || ($f =~ /scheme_null/)
+		    || ($f =~ /scheme_true/)
+		    || ($f =~ /scheme_false/)
+		    || ($f =~ /scheme_void/)
+		    || ($f =~ /scheme_undefined/)
+		    || ($f =~ /scheme_null/)) {
+		    $data = " DATA";
+		}
+		print " $f$data\n" unless $suspend;
 	    } else {
 		print "#define $f (scheme_extension_table->$f)\n";
 	    }

@@ -114,6 +114,9 @@ schemex.inc : schemef.h makex
 ../include/mzscheme.exp : schemef.h makex
 	./makex -exports < schemef.h > ../include/mzscheme.exp
 
+../include/mzexpwin.txt : schemef.h makex
+	./makex -winex < schemef.h > ../include/mzexpwin.txt
+
 schexn.h : exnsrc.ss makeexn
 	./makeexn < exnsrc.ss > schexn.h
 

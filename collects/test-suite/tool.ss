@@ -23,9 +23,15 @@
       
       ;; Adds an Insert test case item to the special menu of the drscheme frame
       ;; Updates the needs-reset? when the the program is executed
-      (define test-case-mixin
-        (mixin (drscheme:unit:frame<%> top-level-window<%>) ()
+      (define (test-case-mixin %)
+        (class %
+      ;(define test-case-mixin
+      ;  (mixin (drscheme:unit:frame<%> top-level-window<%>) ()
           (inherit get-special-menu get-edit-target-object)
+          ;(rename [super-syncheck:button-callback syncheck:button-callback])
+          ;(define/override (syncheck:button-callback)
+          ;  (namespace-require '(lib "test-case.ss" "test-suite" "private"))
+          ;  (super-syncheck:button-callback))
           (rename [super-execute-callback execute-callback])
           (define/override (execute-callback)
             (super-execute-callback)
@@ -74,7 +80,19 @@
             
           (super-new)))
       
-      (drscheme:get/extend:extend-definitions-text clear-results-mixin)))
+      (drscheme:get/extend:extend-definitions-text clear-results-mixin)
+      
+      (define require-macro-mixin
+        (mixin ((class->interface drscheme:rep:text%)) ()
+          (inherit get-user-namespace)
+          (rename [super-reset-console reset-console])
+          (define/override (reset-console)
+            (super-reset-console)
+            (parameterize ([current-namespace (get-user-namespace)])
+              (namespace-require '(lib "test-case.ss" "test-suite" "private"))))
+          (super-new)))
+      
+      (drscheme:get/extend:extend-interactions-text require-macro-mixin)))
   
   (define test-case-box-tool@
     (compound-unit/sig

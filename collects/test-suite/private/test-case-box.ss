@@ -7,12 +7,33 @@
    (lib "unitsig.ss")
    (lib "mred.ss" "mred")
    (lib "etc.ss")
+   ;(prefix a: (lib "aligned-pasteboard.ss" "mrlib"))
    (lib "aligned-pasteboard.ss" "mrlib")
    (lib "framework.ss" "framework")
    (lib "tool.ss" "drscheme")
    (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    "fixed-width-label-snip.ss"
-   "button-snip.ss")
+   "grey-editor.ss"
+   "button-snip.ss"
+   "test-case.ss")
+  
+  ;;;;;;;;;;;
+  ;;; bug fix for syntax highlighting
+  ;
+  ;;; a mixin that adds the missing pieces of the interface that cause mouse over
+  ;;; arrow drawing to raise exceptions
+  ;(define arrow-interface-mixin
+  ;  (mixin ((class->interface pasteboard%)) ()
+  ;    (define/public (find-position . a)
+  ;      1)
+  ;    (super-new)))
+  ;
+  ;(define horizontal-pasteboard% (arrow-interface-mixin a:horizontal-pasteboard%))
+  ;(define vertical-pasteboard% (arrow-interface-mixin a:vertical-pasteboard%))
+  ;(define aligned-editor-snip% a:aligned-editor-snip%)
+  ;
+  ;;; end
+  ;;;;;;;;;;;
   
   (define-signature test-case-box^ (test-case-box%))
   (define test-case-box@
@@ -26,8 +47,6 @@
           ;; read-one-special (integer? any? (union integer? false?) (union integer? false?)
           ;;                   (union integer? false?) . -> . any? integer? false?)
           ;; status: this contract is incorrectly written
-          ;; NOTES: Putting the values of the call and expected into lists with call-with-values
-          ;;        may be a missleading semantic for the those writing their own test predicates.
           (define/public read-one-special
             (opt-lambda (index source (line false) (column false) (position false))
               (values
@@ -35,10 +54,7 @@
                              [exp-stx (text->syntax-object expected)]
                              [record (lambda (bool) (update (if bool 'pass 'fail)))]
                              [set-actuals set-actuals])
-                 (syntax (let ([call-values (call-with-values (lambda () call-stx) list)]
-                               [exp-values (call-with-values (lambda () exp-stx) list)])
-                           (record (equal? call-values exp-values))
-                           (set-actuals call-values))))
+                 #'(test-case equal? call-stx exp-stx record set-actuals))
                1
                true)))
           
@@ -104,6 +120,22 @@
                (send actual erase)]
               [else (void)]))
           
+          (define/override (write f)
+            (send comment write-to-file f)
+            (send call write-to-file f)
+            (send expected write-to-file f))
+          
+          (define/public (read-from-file f)
+            (send* comment
+              (erase)
+              (read-from-file f))
+            (send* call
+              (erase)
+              (read-from-file f))
+            (send* expected
+              (erase)
+              (read-from-file f)))
+          
           ;(define/override (get-color) "red")
           ;(define/override (make-editor) (new test-case-editor%))
           
@@ -117,11 +149,12 @@
            [result (new result-snip%)]
            [call (new update-aware:scheme:text%)]
            [expected (new update-aware:scheme:text%)]
-           [actual (new scheme:text%)]
+           [actual (new actual-text%)]
            [top-line (make-top-line turn-button comment result)]
            [call-line (make-line "Call" call)]
            [exp-line (make-line "Expected" expected)]
-           [act-line (make-line "Actual" actual)])
+           [act-line (make-line "Actual" actual
+                                (grey-editor-snip-mixin editor-snip%))])
           
           (send editor insert top-line)
           (show-entries)
@@ -129,56 +162,67 @@
           (super-new
            (editor editor)
            (stretchable-height false)
-           (stretchable-width false))))
-      
-      (define update-aware:scheme:text%
-        (class scheme:text%
-          (inherit get-admin)
-          (rename [super-after-insert after-insert]
-                  [super-after-delete after-delete])
-          (define (get-frame)
-            ;; gets the top most editor in the tree of snips and editors
-            (define (editor-root ed)
-              (let ([parent (editor-parent ed)])
-                (cond
-                  [(is-a? parent area<%>) parent]
-                  [(is-a? parent snip%)
-                   (editor-root (snip-parent parent))]
-                  [else (error 'editor-root "No root ~s" parent)])))
-            
-            ;; gets the canvas or snip that the pasteboard is displayed in
-            ;; status: what if there is more than one canvas?
-            (define (editor-parent ed)
-              (let ([admin (send ed get-admin)])
-                (cond
-                  [(is-a? admin editor-snip-editor-admin<%>)
-                   (send admin get-snip)]
-                  [(is-a? admin editor-admin%)
-                   (send ed get-canvas)]
-                  [else (error 'editor-parent "No parent")])))
-            
-            (define (get-area-root area)
-              ;(cond
-              ;  [(is-a? area drscheme:unit:frame%) area]
-              ;  [else (get-area-root (send area get-parent))])
-              (send area get-top-level-window))
-            
-            (get-area-root (editor-root this)))
+           (stretchable-width false))
           
-          (define (alert-of-modify)
-            (let ([frame (get-frame)])
-              (send (send frame get-interactions-text) reset-highlighting)
-              (send* (send frame get-definitions-text)
-                (set-modified true)
-                (reset-test-case-boxes))))
-          (define/override (after-insert start len)
-            (alert-of-modify)
-            (super-after-insert start len))
-          (define/override (after-delete start len)
-            (alert-of-modify)
-            (super-after-delete start len))
+          (inherit set-snipclass)
+          (set-snipclass tcb-sc)))
+      
+      (define test-case-box-snipclass%
+        (class snip-class%
+          (define/override (read f)
+            (let ([case (new test-case-box%)])
+              (send case read-from-file f)
+              case))
           (super-new)))
-      ))
+      
+      (define tcb-sc (new test-case-box-snipclass%))
+      (send tcb-sc set-classname "test-case-box%")
+      (send tcb-sc set-version 1)
+      (send (get-the-snip-class-list) add tcb-sc)
+    ))
+  ;; Notes: This code can be replaced by drscheme:unit:program-editor-mixin when I figure out how to make
+  ;; the results of the test case boxes be reset when (and only when) highlighting is being reset.
+  (define update-aware:scheme:text%
+    (class scheme:text%
+      (inherit get-admin)
+      (rename [super-after-insert after-insert]
+              [super-after-delete after-delete])
+      (define (get-frame)
+        ;; gets the top most editor in the tree of snips and editors
+        (define (editor-root ed)
+          (let ([parent (editor-parent ed)])
+            (cond
+              [(is-a? parent area<%>) parent]
+              [(is-a? parent snip%)
+               (editor-root (snip-parent parent))]
+              [else (error 'editor-root "No root ~s" parent)])))
+        
+        ;; gets the canvas or snip that the pasteboard is displayed in
+        ;; status: what if there is more than one canvas?
+        (define (editor-parent ed)
+          (let ([admin (send ed get-admin)])
+            (cond
+              [(is-a? admin editor-snip-editor-admin<%>)
+               (send admin get-snip)]
+              [(is-a? admin editor-admin%)
+               (send ed get-canvas)]
+              [else (error 'editor-parent "No parent")])))
+        
+        (send (editor-root this) get-top-level-window))
+      
+      (define (alert-of-modify)
+        (let ([frame (get-frame)])
+          (send (send frame get-interactions-text) reset-highlighting)
+          (send* (send frame get-definitions-text)
+            (set-modified true)
+            (reset-test-case-boxes))))
+      (define/override (after-insert start len)
+        (alert-of-modify)
+        (super-after-insert start len))
+      (define/override (after-delete start len)
+        (alert-of-modify)
+        (super-after-delete start len))
+      (super-new)))
   
   ;; the top line of the test-case
   (define (make-top-line turn-snip comment result-snip)
@@ -200,16 +244,17 @@
            (editor pb))))
   
   ;; a line labeled with the given string and containing a given text
-  (define (make-line str text)
-    (let ([pb (new horizontal-pasteboard%)])
-      (send* pb
-        (insert (field-label str) false)
-        (insert (text-field text) false))
-      (new aligned-editor-snip%
-           (with-border? false)
-           (top-margin 0)
-           (bottom-margin 0)
-           (editor pb))))
+  (define make-line
+    (opt-lambda (str text (snipclass editor-snip%))
+      (let ([pb (new horizontal-pasteboard%)])
+        (send* pb
+          (insert (field-label str) false)
+          (insert (text-field text snipclass) false))
+        (new aligned-editor-snip%
+             (with-border? false)
+             (top-margin 0)
+             (bottom-margin 0)
+             (editor pb)))))
   
   ;; ((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)
   ;; a snip which acts as a toggle button for rolling a window up and down
@@ -233,10 +278,11 @@
       ;; updates the image with the icon representing one of three results
       (define/public (update value)
         (load-file
-         (test-icon (case value
-                      [(pass) "small-check-mark.jpeg"]
-                      [(fail) "small-cross.jpeg"]
-                      [(unknown) "empty.jpeg"]))))
+         (test-icon
+          (case value
+            [(pass) "small-check-mark.jpeg"]
+            [(fail) "small-cross.jpeg"]
+            [(unknown) "empty.jpeg"]))))
       (define (test-icon str)
         (build-path (collection-path "test-suite") "private" "icons" str))
       (super-new)
@@ -244,10 +290,11 @@
   
   ;; a text field fit to be in a test-case (no borders or margins etc.)
   ;;STATUS: this should really return an aligned-snip<%> not an editor-snip% of fixed size.
-  (define (text-field text)
-    (new editor-snip%
-         (editor text)
-         (min-width 500)))
+  (define text-field
+    (opt-lambda (text (snipclass editor-snip%))
+      (new snipclass
+           (editor text)
+           (min-width 500))))
   
   ;; a snip to label a text case field
   ;; STATUS: This code breaks single point of control for the names of the text fields.
@@ -269,6 +316,14 @@
      (list text 1 0 1 1)))
   
   
+  ;; a locked text hightlighted to show that it is inactive
+  (define actual-text%
+    (class (grey-editor-mixin
+            (text:hide-caret/selection-mixin scheme:text%))
+      (inherit hide-caret lock)
+      (super-new)
+      (hide-caret true)
+      (lock true)))
   
   ;;;;;;;;;;
   ;; tests

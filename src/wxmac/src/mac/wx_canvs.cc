@@ -244,7 +244,7 @@ void wxCanvas::MaybeMoveControls()
     if (cStyle & wxCONTROL_BORDER) {
       x += 3;
       y += 3;
-    } else if (cStyle & wxCONTROL_BORDER) {
+    } else if (cStyle & wxBORDER) {
       x += 1;
       y += 1;
     }

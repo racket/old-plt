@@ -562,6 +562,11 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			      (use_cgctx || just_meas) ? 1.0 : scale_y);
   }
 
+  /********************* BEGIN NO-GC RANGE **********************/
+  /* Don't GC until the text layout is destroyed, otherwise the */
+  /* unicode string could move.                                 */
+
+
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
 				  kATSUFromTextBeginning,
 				  kATSUToTextEnd,
@@ -752,6 +757,8 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   }
 
   ATSUDisposeTextLayout(layout);
+
+  /********************* END NO-GC RANGE **********************/
 
 #ifdef OS_X
   if (use_cgctx) {

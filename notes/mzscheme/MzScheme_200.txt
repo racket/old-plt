@@ -112,12 +112,17 @@ in several important ways:
 
    The `execute' and `execute*' procedures were eliminated entirely.
 
- * All #% names are gone, since they are unnecessary with the new
-   syntax system.
+ * Nearly all #% names are gone, since they are unnecessary with the
+   new syntax system. However, a few new syntactic forms, which are
+   usually implicit, use #%: `#%app', `#%datum', `#%top', etc.
 
  * `global-defined-value' has been renamed `namespace-variable-binding'
    (for consistency with other names). `defined?' is gone, but it can
    be implemented with `namespace-variable-binding'.
+
+ * In the "unitsig.ss" library, all `unit-with-signature' names were
+   either replaced by `unit/sig' names or eliminated in favor of
+   existing `unit/sig' names.
 
 MzLib changes:
 

@@ -1380,18 +1380,18 @@
       (make-object menu-item% "by Order Received" sort-menu (lambda (i e) (sort-by-order-received)))
       
       (define (sort-by-date) 
-        (sort-by (list (list "date" date-cmp)))
+        (sort-by-fields (list (list "date" date-cmp)))
         (reset-sorting-text-styles))
       (define (sort-by-sender) 
-        (sort-by (list (list "from" from-cmp)))
+        (sort-by from<?)
         (reset-sorting-text-styles)
         (identify-sorted sorting-text-from))
       (define (sort-by-subject) 
-        (sort-by (list (list "subject" subject-cmp)))
+        (sort-by subject<?)
         (reset-sorting-text-styles)
         (identify-sorted sorting-text-subject))
       (define (sort-by-order-received) 
-        (sort-by null)
+        (sort-by-uid)
         (reset-sorting-text-styles)
         (identify-sorted sorting-text-uid))
       
@@ -1455,30 +1455,87 @@
 	(pairwise-cmp
 	 (get-date a)
 	 (get-date b)))
-      
+            
       (define re:quote "[\"<>]")
-      (define (from-cmp aid bid a b)
-	(string-cmp aid bid 
-		    (regexp-replace* re:quote (car (extract-addresses a 'name)) "")
-		    (regexp-replace* re:quote (car (extract-addresses b 'name)) "")))
-
+      ;; from<? : message message -> boolean
+      ;; compares messages by from lines, defaults to uid if froms are equal.
+      (define (from<? a b)
+        (string-cmp/default-uid (get-address a)
+                                (get-address b)
+                                a
+                                b))
+      
+      ;; get-address : message -> string
+      (define (get-address msg)
+        (let ([frm (message-from msg)])
+          (if frm
+              (let ([key (string->symbol frm)])
+                (hash-table-get
+                 address-memo-table
+                 key
+                 (lambda ()
+                   (let ([res
+                          (with-handlers ([not-break-exn? (lambda (x) "")])
+                            (regexp-replace* re:quote 
+                                             (car (extract-addresses
+                                                   frm
+                                                   'name))
+                                             ""))])
+                     (hash-table-put! address-memo-table key res)
+                     res))))
+              "")))
+      
+      (define address-memo-table (make-hash-table))
+      
       (define re:re (regexp "^[rR][eE]: *(.*)"))
-      (define (subject-cmp aid bid a b)
-	(let ([simplify (lambda (s)
-			  (if s
-			      (let ([m (regexp-match re:re s)])
-				(if m
-				    (cadr m)
-				    s))
-			      ""))])
-	  (string-cmp aid bid (simplify a) (simplify b))))
+      ;; subject<? : message message -> boolean
+      ;; compares messages by subject lines, defaults to uid if subjects are equal.
+      (define (subject<? a b)
+	(let ([simplify (lambda (msg)
+			  (let ([s (message-subject msg)])
+                            (if s
+                                (let ([m (regexp-match re:re s)])
+                                  (if m
+                                      (cadr m)
+                                      s))
+                                "")))])
+          (string-cmp/default-uid (simplify a) (simplify b) a b)))
       
-      (define (string-cmp aid bid a b)
-	(if (string-locale-ci=? a b)
-	    'same
-	    (string-locale-ci<? a b)))
+      ;; string-cmp : string string message message -> boolean
+      (define (string-cmp/default-uid str-a str-b a b)
+        (if (string-locale-ci=? str-a str-b)
+            (< (message-uid a) (message-uid b))
+            (string-locale-ci<? str-a str-b)))
       
-      (define (sort-by fields)
+      (define (sort-by compare)
+        (as-background
+         enable-main-frame
+         (lambda (break-bad break-ok)
+           (status "Sorting...")
+           (send header-list sort
+                 (lambda (a b)
+                   (let* ([aid (send a user-data)]
+                          [bid (send b user-data)]
+                          [ma (assq aid mailbox)]
+                          [mb (assq bid mailbox)])
+                     (compare ma mb))))
+           (status ""))
+         void))
+      
+      (define (sort-by-uid)
+        (as-background
+         enable-main-frame
+         (lambda (break-bad break-ok)
+           (status "Sorting...")
+           (send header-list sort
+                 (lambda (a b)
+                   (let ([aid (send a user-data)]
+                         [bid (send b user-data)])
+                     (< aid bid))))
+           (status ""))
+         void))
+      
+      (define (sort-by-fields fields)
 	(let* ([ht (make-hash-table)]
 	       [get-header/cached 
 		(lambda (uid first-field)

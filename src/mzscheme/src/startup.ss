@@ -3045,8 +3045,9 @@
 	  (datum->syntax-object
 	   (quote-syntax here)
 	   (list* (quote-syntax #%plain-module-begin)
-		  (quote-syntax
-		   (require-for-syntax mzscheme))
+                  (datum->syntax-object
+		   stx
+                   (list (quote-syntax require-for-syntax) 'mzscheme))
 		  (stx-cdr stx))
 	   stx)
 	  (raise-syntax-error #f "bad syntax" stx))))

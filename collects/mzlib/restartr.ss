@@ -114,8 +114,7 @@
 	 (let ([n (make-namespace
 		   (if no-enforce-keywords? 'no-keywords 'keywords)
 		   (if esc-cont-only? 'call/cc=call/ec 'call/cc!=call/ec)
-		   (if hp-only? 'hash-percent-syntax 'all-syntax))]
-	       [p (make-parameterization)])
+		   (if hp-only? 'hash-percent-syntax 'all-syntax))])
 	   (thread-wait
 	    (thread
 	     (lambda ()

@@ -31,7 +31,7 @@
        (doc-collections-changed)
        (show "<HTML>")
        (show (xexpr->string 
-	`(HEAD ,hd-css (TITLE "PLT manual download progress")))))
+	`(HEAD ,hd-css (TITLE "PLT manual download progress"))))
        (show "<BODY><PRE>")
        (let-values ([(iport oport) (make-pipe)])
          (set-progress-input-port! iport)		   
@@ -43,4 +43,6 @@
        (delete-directory/r tmp-directory)
        (show (xexpr->string `(B "Done refreshing CVS manuals")))
        (show "</PRE></BODY></HTML>")
-       (semaphore-post refresh-semaphore))))
+       (semaphore-post refresh-semaphore)))))
+
+

@@ -1,4 +1,5 @@
 (plt:require-library "ricedefs.ss")
+(plt:require-library "sparams.ss")
 
 (define ricedefs@
   (unit/sig ricedefs^

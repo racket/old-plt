@@ -1,7 +1,7 @@
 (define mred:splash-frame #f)
 (define mred:splash-message #f)
 
-(define mred:splash-max 96)
+(define mred:splash-max 92)
 (define mred:splash-counter 0)
 
 (define mred:close-splash

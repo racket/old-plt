@@ -19,6 +19,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_area.h"
+#include "wx_rgn.h"
 
 //#include "bdiag.xbm"
 //#include "fdiag.xbm"
@@ -58,7 +59,6 @@ wxCanvasDC::wxCanvasDC(void)
   clipping = FALSE;
 
   current_reg = NULL ;
-  user_reg = NULL ;
   onpaint_reg = NULL ;
 
   device = wxDEVICE_CANVAS;
@@ -127,7 +127,6 @@ __type = wxTYPE_DC_CANVAS;
   pixmapHeight = 0;
 
   current_reg = NULL ;
-  user_reg = NULL ;
   onpaint_reg = NULL ;
 
   min_x = 0; min_y = 0; max_x = 0; max_y = 0;
@@ -244,16 +243,16 @@ void wxCanvasDC::SetCanvasClipping(void)
 //-----------------------------------------------------------------------------
 {
 	if (current_reg) ::DisposeRgn(current_reg);
-	if (user_reg || onpaint_reg) {
+	if (clipping || onpaint_reg) {
 		current_reg = ::NewRgn();
 		CheckMemOK(current_reg);
 	} else
 		current_reg = NULL;
 
-	if (onpaint_reg && user_reg)
-		::SectRgn(onpaint_reg, user_reg, current_reg) ;
-	else if (user_reg)
-		::CopyRgn(user_reg, current_reg) ;
+	if (onpaint_reg && clipping)
+		::SectRgn(onpaint_reg, clipping->rgn, current_reg) ;
+	else if (clipping)
+		::CopyRgn(clipping->rgn, current_reg) ;
 	else if (onpaint_reg)
 		::CopyRgn(onpaint_reg, current_reg) ;
 
@@ -313,42 +312,27 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetClippingRegion(float cx, float cy, float cw, float ch)
+void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
 //-----------------------------------------------------------------------------
 {
-  if (user_reg) ::DisposeRgn(user_reg);
-  user_reg = ::NewRgn();
-  CheckMemOK(user_reg);
-  int left = XLOG2DEV(cx);
-  int top = YLOG2DEV(cy);
-  int right = XLOG2DEVREL(cx + cw);
-  int bottom = YLOG2DEVREL(cy + ch);
-  ::SetRectRgn(user_reg, left, top, right, bottom);
+  clipping = new wxRegion(this);
+  clipping->SetRectangle(cx, cy, cw, ch);
   SetCanvasClipping();
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::GetClippingRegion(float *cx, float *cy, float *cw, float *ch)
+void wxCanvasDC::SetClippingRegion(wxRegion *r)
 //-----------------------------------------------------------------------------
 {
-  if (!user_reg) {
-	*cx = *cy = 0;
-	*cw = *ch = -1;
-  } else {
-	*cx = (**user_reg).rgnBBox.left;
-	*cy = (**user_reg).rgnBBox.top;
-	*cw = (**user_reg).rgnBBox.right - *cx;
-	*ch = (**user_reg).rgnBBox.bottom - *cy;
-  }
+  clipping = r;
+  SetCanvasClipping();
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DestroyClippingRegion(void)
+wxRegion* wxCanvasDC::GetClippingRegion()
 //-----------------------------------------------------------------------------
 {
-  if (user_reg) ::DisposeRgn(user_reg);
-  user_reg = NULL;
-  SetCanvasClipping();
+  return clipping;
 }
 
 //-----------------------------------------------------------------------------

@@ -31,9 +31,7 @@ class wxCanvasDC: public wxbCanvasDC
   int pixmapWidth;
   int pixmapHeight;
 
-  RgnHandle current_reg,
-			onpaint_reg,
-			user_reg;
+  RgnHandle current_reg, onpaint_reg;
 
   int current_pen_join ;
   int current_pen_cap ;
@@ -85,9 +83,9 @@ class wxCanvasDC: public wxbCanvasDC
   void SetLogicalFunction(int function);
   void SetBackground(wxColour* c);
   virtual void SetPaintRegion(Rect* paintRect); // mac platform only
-  void SetClippingRegion(float x, float y, float width, float height);
-  void GetClippingRegion(float *x, float *y, float *width, float *height);
-  void DestroyClippingRegion(void);
+  void SetClippingRect(float x, float y, float width, float height);
+  wxRegion* GetClippingRegion();
+  void SetClippingRegion(wxRegion*);
 
   float GetCharHeight(void);
   float GetCharWidth(void);

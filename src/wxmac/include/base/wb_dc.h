@@ -49,6 +49,7 @@
 typedef       void    *wxbDC ;
 #else
 
+class wxRegion;
 class wxCanvas;
 class wxCanvasDC;
 class wxDC;
@@ -57,7 +58,7 @@ class wxbDC: public wxObject
  public:
   int device;
   Bool ok;
-  Bool clipping;
+  wxRegion *clipping;
   Bool wx_interactive;
 
   // Coordinate system variables
@@ -160,10 +161,10 @@ class wxbDC: public wxObject
                                             // for drawing background colour
   inline int GetBackgroundMode(void) { return current_bk_mode; }
 
-  virtual void SetClippingRegion(float x, float y, float width, float height)= 0;
-  virtual void GetClippingRegion(float *x, float *y, float *width, float *height)= 0; // mflatt
+  virtual void SetClippingRect(float x, float y, float width, float height)= 0;
+  virtual wxRegion* GetClippingRegion()= 0;
+  virtual void SetClippingRegion(wxRegion*)= 0;
   inline virtual void SetColourMap(wxColourMap *cmap) {};
-  virtual void DestroyClippingRegion(void) = 0;
 
   virtual float GetCharHeight(void) = 0;
   virtual float GetCharWidth(void) = 0;

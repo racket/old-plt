@@ -141,39 +141,23 @@ void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
+void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 {
 	SetCurrentDC();
 
-    int xx1 = XLOG2DEV(x1); int yy1 = XLOG2DEV(y1);
-    int xx2 = XLOG2DEV(x2); int yy2 = XLOG2DEV(y2);
-    int xxc = XLOG2DEV(xc); int yyc = XLOG2DEV(yc);
-    double dx1 = xx1 - xxc; double dy1 = yy1 - yyc;
-    // double dx2 = xx1 - xxc; double dy2 = yy1 - yyc;
-    double radius1 = sqrt(dx1*dx1+dy1*dy1);
-    // double radius2 = sqrt(dx2*dx2+dy2*dy2);
-    int    r      = (int)radius1;
+    int xx = XLOG2DEV(x); int yy = XLOG2DEV(y);
+    int ww = XLOG2DEVREL(w); int hh = XLOG2DEVREL(h);
+    
     double degrees1, degrees2;
 
-    if (xx1 == xx2 && yy1 == yy2) {
-	degrees1 = 0.0;
-	degrees2 = 360.0;
-    } else if (radius1 == 0.0) {
-	degrees1 = degrees2 = 0.0;
-    } else {
-	degrees1 = (xx1 - xxc == 0) ?
-	    (yy1 - yyc < 0) ? 90.0 : -90.0 :
-	    -atan2(double(yy1-yyc), double(xx1-xxc)) * RAD2DEG;
-	degrees2 = (xx2 - xxc == 0) ?
-	    (yy2 - yyc < 0) ? 90.0 : -90.0 :
-	    -atan2(double(yy2-yyc), double(xx2-xxc)) * RAD2DEG;
-    }
+    degrees1 = start * RAD2DEG;
+    degrees2 = end * RAD2DEG;
     
     /* Convert to QD angles for clockwise arc: */
     int alpha1 = (int)(-degrees2 + 90) % 360;
     if (alpha1 < 0)
       alpha1 += 360;
-	int alpha2 = (int)(-degrees1 + 90) % 360;
+    int alpha2 = (int)(-degrees1 + 90) % 360;
     if (alpha2 < 0)
       alpha2 += 360;
     
@@ -182,14 +166,11 @@ void wxCanvasDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
     if (alpha2 < 0)
       alpha2 += 360;
 
-    int width = r;
-    int height = r;
-
 	Rect rect;
-	rect.left = xxc - width;
-	rect.top = yyc - height;
-	rect.right = rect.left + 2 * width;
-	rect.bottom = rect.top + 2 * height;
+	rect.left = xx;
+	rect.top = yy;
+	rect.right = rect.left + ww;
+	rect.bottom = rect.top + hh;
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kBrushTool);
@@ -200,8 +181,8 @@ void wxCanvasDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
       FrameArc(&rect, alpha1, alpha2);
     }
 	
-	CalcBoundingBox(x1, y1);
-    CalcBoundingBox(x2, y2);
+	CalcBoundingBox(x, y);
+    CalcBoundingBox(x + w, y + h);
 }
 
 //-----------------------------------------------------------------------------

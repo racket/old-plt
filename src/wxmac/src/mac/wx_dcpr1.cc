@@ -73,7 +73,6 @@ wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
   selected_pixmap = NULL;
 
   current_reg = NULL ;
-  user_reg = NULL ;
   onpaint_reg = NULL ;
 
   min_x = 0; min_y = 0;

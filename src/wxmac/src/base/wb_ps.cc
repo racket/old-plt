@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.13 1998/09/20 21:48:47 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.14 1998/09/23 00:11:56 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -69,6 +69,8 @@
 
 #endif
 #endif
+
+#include "wx_rgn.h"
 
 #if USE_POSTSCRIPT
 
@@ -300,7 +302,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
 #endif
   current_font = wxNORMAL_FONT;
   device = wxDEVICE_EPS;
-  clipping = FALSE;
+  clipping = NULL;
 
 #ifndef wx_xt
   logical_origin_x = 0;
@@ -332,7 +334,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
   current_pen->Lock(1);
   current_brush = wxWHITE_BRUSH;
   current_brush->Lock(1);
-  current_background_color = wxWHITE;
+  current_background_color = *wxWHITE;
 #endif
 
   title = NULL;
@@ -457,65 +459,55 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive)
   return ok;
 }
 
-void wxPostScriptDC::SetClippingRegion (float cx, float cy, float cw, float ch)
+void wxPostScriptDC::SetClippingRect(float cx, float cy, float cw, float ch)
 {
   if (!pstream)
     return;
 
-  *pstream << "gsave\n";
-  *pstream << "newpath\n";
-  *pstream << XSCALE(cx) << " " << YSCALE (cy) << " moveto\n";
-  *pstream << XSCALE(cx + cw) << " " << YSCALE (cy) << " lineto\n";
-  *pstream << XSCALE(cx + cw) << " " << YSCALE (cy + ch) << " lineto\n";
-  *pstream << XSCALE(cx) << " " << YSCALE (cy + ch) << " lineto\n";
-  *pstream << "closepath clip\n";
+  wxRegion *r = new wxRegion(this);
+  r->SetRectangle(cx, cy, cw, ch);
 
-  /* MATTHEW: [8] */
-  clipx = cx;
-  clipy = cy;
-  clipw = cw;
-  cliph = ch;
-
-  clipping = TRUE;
+  SetClippingRegion(r);
 }
 
-/* MATTHEW: [8] */
-void wxPostScriptDC::GetClippingRegion (float *cx, float *cy, float *cw, float *ch)
+wxRegion *wxPostScriptDC::GetClippingRegion()
 {
-  *cx = clipx;
-  *cy = clipy;
-  *cw = clipw;
-  *ch = cliph;
+  if (clipping)
+    return new wxRegion(this, clipping);
+  else
+    return NULL;
 }
 
-void wxPostScriptDC::DestroyClippingRegion (void)
+void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 {
   if (!pstream)
     return;
+  if (r && (r->GetDC() != this))
+    return;
+
   if (clipping) {
-    clipping = FALSE;
-    *pstream << "grestore\n";
-
-    /* Stupid grestore: now we have to be ready to reset anything that changed. */
-    resetFont = RESET_FONT | RESET_COLOR;
+    clipping = NULL;
+    *pstream << "initclip\n";
   }
 
-  /* MATTHEW: [8] */
-  clipx = 0;
-  clipy = 0;
-  clipw = -1;
-  cliph = -1;
+  if (r) {
+    *pstream << "newpath\n";
+    *pstream << r->ps->GetString();
+    *pstream << "clip\n";
+
+    clipping = r;
+  }
 }
 
-void wxPostScriptDC::Clear (void)
+void wxPostScriptDC::Clear(void)
 {
 }
 
-void wxPostScriptDC::FloodFill (float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col), int WXUNUSED(style))
+void wxPostScriptDC::FloodFill(float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col), int WXUNUSED(style))
 {
 }
 
-Bool wxPostScriptDC::GetPixel (float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col))
+Bool wxPostScriptDC::GetPixel(float WXUNUSED(x), float WXUNUSED(y), wxColour * WXUNUSED(col))
 {
   return FALSE;
 }
@@ -545,68 +537,36 @@ void wxPostScriptDC::DrawLine (float x1, float y1, float x2, float y2)
   CalcBoundingBox(XSCALEBND(x2), YSCALEBND(y2));
 }
 
-void wxPostScriptDC::DrawArc (float x1, float y1, float x2, float y2, float xc, float yc)
+void wxPostScriptDC::DrawArc (float x, float y, float w, float h, float start, float end)
 {
   if (!pstream)
     return;
 
-  if (x1 != x2 || y1 != y2) {
+  if (start != end) {
     /* Before we scale: */
-    CalcBoundingBox(XSCALEBND(x1), YSCALEBND(y1));
-    CalcBoundingBox(XSCALEBND(x2), YSCALEBND(y2));
-    CalcBoundingBox(XSCALEBND(xc), YSCALEBND(yc));
+    CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
+    CalcBoundingBox(XSCALEBND(x + w), YSCALEBND(y + h));
 
-    x1 = XSCALEREL(x1);
-    x2 = XSCALEREL(x2);
-    xc = XSCALEREL(xc);
-    y1 = YSCALEREL(y1);
-    y2 = YSCALEREL(y2);
-    yc = YSCALEREL(yc);
+    x = XSCALE(x);
+    y = XSCALE(y);
+    w = XSCALEREL(w);
+    h = YSCALEREL(h);
 
-    float radius1 = sqrt(((xc - x1) * (xc - x1)) + ((yc - y1) * (yc - y1)));
-    float radius2 = sqrt(((xc - x2) * (xc - x2)) + ((yc - y2) * (yc - y2)));
-    float radius, xscale;
-    float a1, a2;
+    float radius = (h / 2);
+    float xscale = (w / h);
 
-    a1 = asin((y1 - yc) / radius1);
-    if (x1 < xc)
-      a1 = pie - a1;
-    if (a1 < 0)
-      a1 += pie;
-    a2 = asin((y2 - yc) / radius2);
-    if (x2 < xc)
-      a2 = pie - a2;
-    if (a2 < 0)
-      a2 += pie;
-
-    a1 *= (180 / pie);
-    a2 *= (180 / pie);
-
-    if (radius1 < radius2)
-      radius = radius1;
-    else
-      radius = radius1;
-
-    {
-      /* Set x scale */
-      float a1x, a2x;
-
-      a1x = fmod(fabs(a1), pie / 2);
-      a2x = fmod(fabs(a2), pie / 2);
-
-      xscale = radius1 / radius2;
-	xscale = 1 / xscale;
-    }
+    float a1 = start * (180 / pie);
+    float a2 = end * (180 / pie);
 
     *pstream << "gsave\n";
-    *pstream << XOFFSET(xc) << " " << YOFFSET(yc) << " translate\n";
+    *pstream << (x + w/2) << " " << (paper_h - (y + h/2)) << " translate\n";
     *pstream << xscale << " " << 1 << " scale\n";
 
     if (current_brush && current_brush->GetStyle () != wxTRANSPARENT) {
       SetBrush(current_brush);
       
       *pstream << "newpath\n";
-      *pstream << (x1 - xc) << " " << -(y1 - yc) << " moveto\n";
+      *pstream << cos(start)*radius << " " << sin(start)*radius << " moveto\n";
       *pstream << "0 0 " << radius << " " << a1 << " " << a2 << " arc\n";
 
       *pstream << "0 0 lineto\n";
@@ -619,7 +579,7 @@ void wxPostScriptDC::DrawArc (float x1, float y1, float x2, float y2, float xc, 
       SetPen(current_pen);
 
       *pstream << "newpath\n";
-      *pstream << (x1 - xc) << " " << -(y1 - yc) << " moveto\n";
+      *pstream << cos(start)*radius << " " << sin(start)*radius << " moveto\n";
       *pstream << "0 0 " << radius << " "
 	<< a1 << " " << a2 << " arc\n";
       *pstream << "stroke\n";
@@ -1407,7 +1367,7 @@ void wxPostScriptDC::StartPage (void)
   resetFont = RESET_FONT | RESET_COLOR;
 
   if (clipping)
-    SetClippingRegion(clipx, clipy, clipw, cliph);
+    SetClippingRegion(clipping);
 }
 
 void wxPostScriptDC::EndPage (void)

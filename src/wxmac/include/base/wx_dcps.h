@@ -57,7 +57,6 @@ class wxPostScriptDC: public wxDC
  public:
 #ifdef wx_xt
   char *title;
-  Bool clipping;
 #endif
   int page_number;
   PSStream *pstream;    // PostScript output stream
@@ -95,7 +94,7 @@ class wxPostScriptDC: public wxDC
   void DrawLine(float x1, float y1, float x2, float y2);
   void IntDrawLine(int x1, int y1, int x2, int y2);
   void CrossHair(float x, float y) ;
-  void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc);
+  void DrawArc(float x1,float y1,float w,float h,float start,float end);
   void DrawPoint(float x, float y);
   void DrawPoint(wxPoint& point) { DrawPoint(point.x, point.y); }
   void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0);
@@ -135,9 +134,9 @@ class wxPostScriptDC: public wxDC
   void SetPen(wxPen *pen);
   void SetBrush(wxBrush *brush);
   void SetBackground(wxColour *c);
-  void SetClippingRegion(float x, float y, float width, float height);
-  /* MATTHEW: [8] */
-  void GetClippingRegion(float *x, float *y, float *width, float *height);
+  void SetClippingRect(float x, float y, float width, float height);
+  wxRegion *GetClippingRegion();
+  void SetClippingRegion(wxRegion *r);
   void DestroyClippingRegion(void);
 
   Bool StartDoc(char *message);

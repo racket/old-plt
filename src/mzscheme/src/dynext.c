@@ -243,7 +243,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     f = (Setup_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
     
     if (!f) {
-      char *err;
+      const char *err;
       err = dlerror();
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -267,7 +267,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     reload_f = (Reload_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
     
     if (!init_f || !reload_f) {
-      char *err;
+      const char *err;
       err = dlerror();
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,

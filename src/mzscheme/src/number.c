@@ -3535,7 +3535,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	memcpy(substr, str + has_expt + 1, slen);
       }
 #else
-      substr = str + has_expt + 1;
+      substr = (char *)str + has_expt + 1;
 #endif
 
       exponent = scheme_read_bignum(substr, radix);
@@ -3685,7 +3685,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	memcpy(substr, str + has_slash + 1, slen);
       }
 #else
-      substr = str + has_slash + 1;
+      substr = (char *)str + has_slash + 1;
 #endif
 
       n2 = scheme_read_number(substr, len - has_slash - 1,

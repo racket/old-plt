@@ -494,18 +494,10 @@
 	process))
 
   (define cpp-process
-    (process2 (format "~a~a~a~a ~a"
+    (process2 (format "~a~a~a ~a"
 		      cpp
 		      (if pgc? " -DMZ_PRECISE_GC" "")
 		      (if callee-restore? " -DGC_STACK_CALLEE_RESTORE" "")
-                      (cond ((getenv "PLT_EXTENSION_LIB_PATHS") =>
-                             (lambda (ext)
-                               (apply string-append
-                                      (map (lambda (p)
-                                             (string-append
-                                              " -I" (build-path p "include")))
-                                           (path-list-string->path-list ext '())))))
-                            (else ""))
 		      file-in)))
   (close-output-port (cadr cpp-process))
 

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-02-28")
+(define *tex2page-version* "2005-03-01")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -496,7 +496,7 @@
 (define strftime-like
   (lambda (ignore-format d)
     (string-append
-      (date->string d)
+      (date->string d #t)
       (let ((tz (getenv "TZ"))) (if tz (string-append " " tz) "")))))
 
 (define seconds->human-time
@@ -3683,7 +3683,6 @@
       (do-end-para)
       (emit "<div align=right class=colophon>")
       (emit-newline)
-      (emit "<i>")
       (when (and
              *colophon-mentions-last-mod-time?*
              *last-modification-time*
@@ -3694,7 +3693,7 @@
         (emit "<br>")
         (emit-newline))
       (when *colophon-mentions-tex2page?*
-        (emit "<div class=advertisement>")
+        (emit "<div align=right class=advertisement>")
         (emit-newline)
         (tex2page-string *html-conversion-by*)
         (emit " ")
@@ -3706,8 +3705,6 @@
         (when *colophon-links-to-tex2page-website?* (emit-link-stop))
         (emit "</div>")
         (emit-newline))
-      (emit "</i>")
-      (emit-newline)
       (emit "</div>")
       (emit-newline))))
 
@@ -7325,7 +7322,7 @@
       (set! *css-port* (open-output-file css-file))
       (when #t
         (display
-          "\n                 body {\n                 color: black;\n                 /*   background-color: #e5e5e5;*/\n                 background-color: #ffffff;\n                 /*background-color: beige;*/\n                 margin-top: 2em;\n                 margin-left: 8%;\n                 margin-right: 8%;\n                 }\n\n                 h1,h2,h3,h4,h5,h6 {\n                 margin-top: .5em;\n                 }\n\n                 .title {\n                 font-size: 200%;\n                 font-weight: normal;\n                 margin-top: 2.8em;\n                 text-align: center;\n                 }\n\n                 .partheading {\n                 font-size: 100%;\n                 }\n\n                 .chapterheading {\n                 font-size: 100%;\n                 }\n\n                 .beginsection {\n                 font-size: 110%;\n                 }\n\n                 .tiny {\n                 font-size: 40%;\n                 }\n\n                 .scriptsize {\n                 font-size: 60%;\n                 }\n\n                 .footnotesize {\n                 font-size: 75%;\n                 }\n\n                 .small {\n                 font-size: 90%;\n                 }\n\n                 .normalsize {\n                 font-size: 100%;\n                 }\n\n                 .large {\n                 font-size: 120%;\n                 }\n\n                 .largecap {\n                 font-size: 150%;\n                 }\n\n                 .largeup {\n                 font-size: 200%;\n                 }\n\n                 .huge {\n                 font-size: 300%;\n                 }\n\n                 .hugecap {\n                 font-size: 350%;\n                 }\n\n                 pre {\n                 margin-left: 2em;\n                 }\n\n                 blockquote {\n                 margin-left: 2em;\n                 }\n\n                 ol {\n                 list-style-type: decimal;\n                 }\n\n                 ol ol {\n                 list-style-type: lower-alpha;\n                 }\n\n                 ol ol ol {\n                 list-style-type: lower-roman;\n                 }\n\n                 ol ol ol ol {\n                 list-style-type: upper-alpha;\n                 }\n\n                 tt i {\n                 font-family: serif;\n                 }\n\n                 .verbatim em {\n                 font-family: serif;\n                 }\n\n                 /*\n                 .verbatim {\n                 color: #4d0000;\n                 }\n                 */\n\n                 .scheme em {\n                 color: black;\n                 font-family: serif;\n                 }\n\n                 .scheme {\n                 color: brown;\n                 }\n\n                 .scheme .keyword {\n                 color: #990000;\n                 font-weight: bold;\n                 }\n\n                 .scheme .builtin {\n                 color: #990000;\n                 }\n\n                 .scheme .variable {\n                 color: navy;\n                 }\n\n                 .scheme .global {\n                 color: purple;\n                 }\n\n                 .scheme .selfeval {\n                 color: green;\n                 }\n\n                 .scheme .comment {\n                 color:  teal;\n                 }\n\n                 .schemeresponse {\n                 color: green;\n                 }\n\n                 .navigation {\n                 color: red;\n                 text-align: right;\n                 font-size: medium;\n                 font-style: italic;\n                 }\n\n                 .disable {\n                 /* color: #e5e5e5; */\n                 color: gray;\n                 }\n\n                 .smallcaps {\n                 font-size: 75%;\n                 }\n\n                 .smallprint {\n                 color: gray;\n                 font-size: 75%;\n                 text-align: right;\n                 }\n\n                 /*\n                 .smallprint hr {\n                 text-align: left;\n                 width: 40%;\n                 }\n                 */\n\n                 .footnoterule {\n                 text-align: left;\n                 width: 40%;\n                 }\n\n                 .colophon {\n                 color: gray;\n                 font-size: 80%;\n                 text-align: right;\n                 }\n\n                 .colophon a {\n                 color: gray;\n                 }\n                 "
+          "\n                 body {\n                 color: black;\n                 /*   background-color: #e5e5e5;*/\n                 background-color: #ffffff;\n                 /*background-color: beige;*/\n                 margin-top: 2em;\n                 margin-left: 8%;\n                 margin-right: 8%;\n                 }\n\n                 h1,h2,h3,h4,h5,h6 {\n                 margin-top: .5em;\n                 }\n\n                 .title {\n                 font-size: 200%;\n                 font-weight: normal;\n                 margin-top: 2.8em;\n                 text-align: center;\n                 }\n\n                 .partheading {\n                 font-size: 100%;\n                 }\n\n                 .chapterheading {\n                 font-size: 100%;\n                 }\n\n                 .beginsection {\n                 font-size: 110%;\n                 }\n\n                 .tiny {\n                 font-size: 40%;\n                 }\n\n                 .scriptsize {\n                 font-size: 60%;\n                 }\n\n                 .footnotesize {\n                 font-size: 75%;\n                 }\n\n                 .small {\n                 font-size: 90%;\n                 }\n\n                 .normalsize {\n                 font-size: 100%;\n                 }\n\n                 .large {\n                 font-size: 120%;\n                 }\n\n                 .largecap {\n                 font-size: 150%;\n                 }\n\n                 .largeup {\n                 font-size: 200%;\n                 }\n\n                 .huge {\n                 font-size: 300%;\n                 }\n\n                 .hugecap {\n                 font-size: 350%;\n                 }\n\n                 pre {\n                 margin-left: 2em;\n                 }\n\n                 blockquote {\n                 margin-left: 2em;\n                 }\n\n                 ol {\n                 list-style-type: decimal;\n                 }\n\n                 ol ol {\n                 list-style-type: lower-alpha;\n                 }\n\n                 ol ol ol {\n                 list-style-type: lower-roman;\n                 }\n\n                 ol ol ol ol {\n                 list-style-type: upper-alpha;\n                 }\n\n                 tt i {\n                 font-family: serif;\n                 }\n\n                 .verbatim em {\n                 font-family: serif;\n                 }\n\n                 /*\n                 .verbatim {\n                 color: #4d0000;\n                 }\n                 */\n\n                 .scheme em {\n                 color: black;\n                 font-family: serif;\n                 }\n\n                 .scheme {\n                 color: brown;\n                 }\n\n                 .scheme .keyword {\n                 color: #990000;\n                 font-weight: bold;\n                 }\n\n                 .scheme .builtin {\n                 color: #990000;\n                 }\n\n                 .scheme .variable {\n                 color: navy;\n                 }\n\n                 .scheme .global {\n                 color: purple;\n                 }\n\n                 .scheme .selfeval {\n                 color: green;\n                 }\n\n                 .scheme .comment {\n                 color:  teal;\n                 }\n\n                 .schemeresponse {\n                 color: green;\n                 }\n\n                 .navigation {\n                 color: red;\n                 text-align: right;\n                 font-size: medium;\n                 font-style: italic;\n                 }\n\n                 .disable {\n                 /* color: #e5e5e5; */\n                 color: gray;\n                 }\n\n                 .smallcaps {\n                 font-size: 75%;\n                 }\n\n                 .smallprint {\n                 color: gray;\n                 font-size: 75%;\n                 text-align: right;\n                 }\n\n                 /*\n                 .smallprint hr {\n                 text-align: left;\n                 width: 40%;\n                 }\n                 */\n\n                 .footnoterule {\n                 text-align: left;\n                 width: 40%;\n                 }\n\n                 .colophon {\n                 color: gray;\n                 font-size: 80%;\n                 font-style: italic;\n                 text-align: right;\n                 }\n\n                 .colophon a {\n                 color: gray;\n                 }\n                 "
           *css-port*)))))
 
 (define start-js-file
@@ -7359,16 +7356,18 @@
 
 (define update-last-modification-time
   (lambda (f)
-    (when *colophon-mentions-last-mod-time?*
-      (let ((s (file-or-directory-modify-seconds f)))
+    (let ((s (file-or-directory-modify-seconds f)))
+      (when (and
+             s
+             (or (not *last-modification-time*)
+                 (> s *last-modification-time*)))
+        (set! *source-changed-since-last-run?* #t)
+        (!last-modification-time s)
         (when (and
-               s
-               (or (not *last-modification-time*)
-                   (> s *last-modification-time*)))
-          (set! *source-changed-since-last-run?* #t)
-          (!last-modification-time s)
-          (if (and *colophon-on-first-page?* (> *html-page-count* 1))
-            (flag-missing-piece 'last-modification-time)))))))
+               *colophon-mentions-last-mod-time?*
+               *colophon-on-first-page?*
+               (> *html-page-count* 1))
+          (flag-missing-piece 'last-modification-time))))))
 
 (define probably-latex
   (lambda ()

@@ -157,6 +157,22 @@
   (reconstruct:set-render-settings! fake-beginner-wla-render-settings)
   (test-sequence source-list result-list completed-list beginner-wla-namespace))
 
+;;;;;;;;;;;;;
+;;
+;;  mz tests
+;;
+;;;;;;;;;;;;;
+
+(test-mz-sequence "(for-each (lambda (x) x) '(1 2 3))"
+                  `(((,highlight-placeholder) ((for-each (lambda (x) x) `(1 2 3))))
+                    (((... ,highlight-placeholder ...)) (1))
+                    ((...) ())
+                    (((... ,highlight-placeholder ...)) (2))
+                    ((...) ())
+                    (((... ,highlight-placeholder ...)) (3))
+                    ((...) ())
+                    ((,highlight-placeholder) ((void)))))
+                    
 (test-mz-sequence "(+ 3 4)"
                   `(((,highlight-placeholder) ((+ 3 4)))
                     ((,highlight-placeholder) (7))))
@@ -329,6 +345,8 @@
                           ((,highlight-placeholder) ((and true false)))
                           ((,highlight-placeholder) (false)))
                         `((define a1 true) (define (b1 x) (and a1 true x)) false))
+
+
 
 
 (test-beginner-sequence "(define a4 +) a4"

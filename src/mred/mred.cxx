@@ -1228,7 +1228,8 @@ static void WaitForAnEvent_OrDie(MrEdContext *c)
       c->waiting_for_nested = 0;
       
       scheme_thread_block(0);
-      
+      scheme_current_thread->ran_some = 1;
+
       /* Go back to sleep: */
       c->ready = 1;
       c->waiting_for_nested = 1;

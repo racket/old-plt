@@ -244,6 +244,12 @@
                      (lambda ()
                        (send results get-editor))])
                   
+                  ;; for conformance with the hyper-frame-mixin in the browser.
+                  (public
+                    [get-hyper-panel
+                     (lambda ()
+                       html-panel)])
+
                   (sequence (apply super-init args))))
               
               (define (help-desk-window-standalone-menus-mixin super%)

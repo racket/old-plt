@@ -22,6 +22,8 @@
  (warning "Warning")
  (error "Error")
  (close "Close") ;; as in, close an open window
+ (stop "Stop")   
+ (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
 
  ;;; bug report form
  (cancel-bug-report? "Cancel Bug Report?")
@@ -131,7 +133,6 @@
  (exact-match "exact match")
  (containing-match "containing match")
  (regexp-match "regexp match")
- (stop "Stop")
  (feeling-lucky "Feeling Lucky")
  (nothing-found-for-search-key "Nothing found for \"~a\".")
  (searching "Searching...")
@@ -143,6 +144,26 @@
  (nothing-found-for-empty-search "Nothing found for the empty search")
  (nothing-found-for "Nothing found for ~a")
  (and "and")
+
+ ;; browser
+ (rewind-in-browser-history "Rewind")
+ (forward-in-browser-history "Forward")
+ (home "Home")
+ (browser "Browser")
+ (cannot-display-url "Cannot display URL ~s: ~a")
+ (install? "Install?")  ;; if a .plt file is found (title of dialog)
+ (you-have-selected-an-installable-package "You have selected an installable package.")
+ (do-you-want-to-install-it? "Do you want to install it?")
+ (paren-file-size "(The file is ~a bytes)")
+ (download-and-install "Download && Install") ;; button label
+ (download "Download") ;; button label
+ (save-downloaded-file/size "Save downloaded file (~a bytes) as") ;; label for get-file dialog
+ (save-downloaded-file "Save downloaded file as")  ;; label for get-file dialog
+ (downloading "Downloading") ;; dialog title
+ (downloading-file... "Downloading file...")
+ (package-was-installed "The package was installed.")
+ (download-was-saved "The downloaded file was saved.")
+ (getting-page "Getting Page") ;; dialog title
  
  ;; install plt file when opened in drscheme strings
  (install-plt-file "Install ~a or open for editing?")

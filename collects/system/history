@@ -1,6 +1,9 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- the show method of mred:dialog-box% only takes one argument now. Use
+  the centre method instead of the second argument
+
 - There is only one frame group now, and all frames are registered
   with it. It is called mred:the-frame-group.
   Associated changes:

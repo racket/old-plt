@@ -1,6 +1,6 @@
 ;;; mxdemo.ss -- demo program for MysterX
 
-(load "mysterx.ss")
+(require-library "mysterx.ss" "mysterx")
 
 ; the document with the calendar
 (define caldoc (make-object mx-document% "Demo or die!" 350 400 100 100 '()))

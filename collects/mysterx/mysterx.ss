@@ -3,7 +3,7 @@
 (require-library "function.ss")
 (require-library "string.ss")
 
-(load-extension "mysterx.dll")
+(load-relative-extension "compiled/native/mysterx.dll")
 
 (define mx-element%
   (class object% (dhtml-element)

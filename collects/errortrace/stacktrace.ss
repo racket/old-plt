@@ -175,7 +175,9 @@
 	    [(if test then)
 	     (certify
 	      sexpr
-	      (rebuild sexpr (list (cons #'then (insert-at-tail se (syntax then) trans?)))))]
+	      (append-rebuild
+	       (rebuild sexpr (list (cons #'then (insert-at-tail se (syntax then) trans?))))
+	       #'(begin e (void))))]
 	    [(if test then else)
 	     ;; WARNING: e inserted twice!
 	     (certify
@@ -296,6 +298,17 @@
 					       x
 					       expr)))))]
 		 [else (same-k)])))))
+
+      (define (append-rebuild expr end)
+	(cond
+	 [(syntax? expr)
+	  (datum->syntax-object expr (append-rebuild (syntax-e expr) end) expr)]
+	 [(pair? expr)
+	  (cons (car expr) (append-rebuild (cdr expr) end))]
+	 [(null? expr)
+	  (list end)]
+	 [else
+	  (error 'append-rebuild "shouldn't get here")]))
 
       (define (one-name names-stx)
 	(let ([l (syntax->list names-stx)])

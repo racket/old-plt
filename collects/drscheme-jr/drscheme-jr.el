@@ -1,5 +1,6 @@
 ; Shriram Krishnamurthi (shriram@cs.rice.edu)
 ; Fri Jan 10 22:01:02 CST 1997
+; Sun Jan 12 11:58:59 CST 1997
 
 ; Generously plagiarized from sml-proc.el and its support files, for
 ; SML, written by Lars Bo Nielsen and Matthew J. Morley.
@@ -36,7 +37,7 @@
 (defvar mzrice-stdin-filename "stdin")
 
 (defvar mzrice-error-regexp
-  "^\\(.*\\):\\([0-9]+\\)\.\\([0-9]+\\)-\\([0-9]+\\)\.\\([0-9]+\\) ")
+  "^\\(.+\\)\\[\\([0-9]+\\)-\\([0-9]+\\)\\]:[0-9]+\.[0-9]+-[0-9]+\.[0-9]+ ")
 
 (defun mzrice-error-parser (pt)
   (save-excursion
@@ -49,24 +50,16 @@
 			      mzrice-stdin-filename)
 		nil
 	      filename))		; filename
-	  (string-to-int
-	   (buffer-substring
-	    (match-beginning 2)
-	    (match-end 2)))		; start line
-	  (1-
+	  (1+
+	   (string-to-int
+	    (buffer-substring
+	     (match-beginning 2)
+	     (match-end 2))))		; start offset (Emacs indexes from 1)
+	  (1+
 	   (string-to-int
 	    (buffer-substring
 	     (match-beginning 3)
-	     (match-end 3))))		; start column
-	  (string-to-int
-	   (buffer-substring
-	    (match-beginning 4)
-	    (match-end 4)))		; finish line
-	  (1-
-	   (string-to-int
-	    (buffer-substring
-	     (match-beginning 5)
-	     (match-end 5)))))))	; finish column
+	     (match-end 3)))))))	; finish offset (Emacs indexes from 1)
 
 (defvar mzrice-error-cursor 0)
 
@@ -83,25 +76,21 @@
       (if (re-search-forward mzrice-error-regexp (point-max) t)
 	  (let* ((parse (mzrice-error-parser (match-beginning 0)))
 		 (file (nth 0 parse))
-		 (start-line (nth 1 parse))
-		 (start-column (nth 2 parse))
-		 (finish-line (nth 3 parse))
-		 (finish-column (nth 4 parse)))
+		 (start-offset (nth 1 parse))
+		 (finish-offset (nth 2 parse)))
 	    (setq mzrice-error-cursor (point))
 
 	    (set-window-start (get-buffer-window scheme-buffer)
 			      (save-excursion (beginning-of-line) (point)))
 	    (cond
 	     ((not file)
-	      (error "Can't handle errors in REP."))
+	      (switch-to-buffer-other-window scheme-buffer))
 	     ((file-readable-p file)
-	      (switch-to-buffer-other-window (find-file-noselect file))
-	      (goto-line finish-line)
-	      (forward-char finish-column)
-	      (push-mark)
-	      (goto-line start-line)
-	      (forward-char start-column))
+	      (switch-to-buffer-other-window (find-file-noselect file)))
 	     (t
-	      (error (concat "Can't read file `" file "'.")))))
+	      (error (concat "Can't read file `" file "'."))))
+	    (goto-char finish-offset)
+	    (push-mark)
+	    (goto-char start-offset))
 	(message "No error message(s) found.")
 	(goto-char saved-location)))))

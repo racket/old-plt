@@ -225,6 +225,9 @@ typedef UINT32 uint32_t;
 # define GC_CAN_IGNORE /* empty */
 #endif
 
+/* same as the macro in file.c */
+#define TO_PATH(x) (SCHEME_PATHP(x) ? (x) : scheme_char_string_to_path(x))
+
 /*****************************************************************************/
 /* Library objects */
 
@@ -238,20 +241,22 @@ static Scheme_Hash_Table *opened_libs;
 /* (ffi-lib filename) -> ffi-lib */
 {:(cdefine ffi-lib 1):}
 {
-  char *name, *fname;
+  char *name;
+  Scheme_Object *path, *hashname;
   void *handle;
   ffi_lib_struct *lib;
   if (!(SCHEME_PATH_STRINGP(argv[0]) || SCHEME_FALSEP(argv[0])))
     scheme_wrong_type(MYNAME, "string-or-false", 0, argc, argv);
   /* leave the filename as given, the system will look for it */
   /* (`#f' means open the executable) */
-  name = SCHEME_FALSEP(argv[0]) ? "" : SCHEME_PATH_VAL(argv[0]);
-  fname = SCHEME_FALSEP(argv[0]) ? NULL : SCHEME_PATH_VAL(argv[0]);
-  lib = (ffi_lib_struct*)scheme_hash_get(opened_libs, (Scheme_Object*)name);
+  path = SCHEME_FALSEP(argv[0]) ? NULL : TO_PATH(argv[0]);
+  name = (path==NULL) ? NULL : SCHEME_PATH_VAL(path);
+  hashname = (Scheme_Object*)((name==NULL) ? "" : name);
+  lib = (ffi_lib_struct*)scheme_hash_get(opened_libs, hashname);
   if (!lib) {
     Scheme_Hash_Table *ht;
 #ifdef WINDOWS_DYNAMIC_LOAD
-    handle = (fname==NULL) ? LoadLibrary(fname) : GetModuleHandle(NULL);
+    handle = (name==NULL) ? GetModuleHandle(NULL) : LoadLibrary(name);
     if (handle == NULL) {
       long err;
       err = GetLastError();
@@ -259,16 +264,16 @@ static Scheme_Hash_Table *opened_libs;
                        MYNAME": couldn't open %V (%E)", argv[0], err);
     }
 #else
-    handle = dlopen(fname, RTLD_NOW | RTLD_GLOBAL);
+    handle = dlopen(name, RTLD_NOW | RTLD_GLOBAL);
     if (handle == NULL)
       scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-                       MYNAME": couldn't open %V (%s)", argv[0], dlerror());
+                       MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
 #endif
     ht = scheme_make_hash_table(SCHEME_hash_string);
     {:(cmake-object "lib" ffi-lib
                     "handle" "argv[0]"
                     "ht"):}
-    scheme_hash_set(opened_libs, (Scheme_Object*)name, (Scheme_Object*)lib);
+    scheme_hash_set(opened_libs, hashname, (Scheme_Object*)lib);
     /* no dlclose finalizer - since the hash table always keeps a reference */
     /* maybe add some explicit unload at some point */
   }
@@ -868,10 +873,15 @@ static int ffi_sizeof(Scheme_Object *type)
     (SCHEME_FALSEP(x) ? NULL : \
       (SCHEME_FFIOBJP(x) ? (((ffi_obj_struct*)x)->obj) : \
        SCHEME_BYTE_STRINGP(x) ? SCHEME_BYTE_STR_VAL(x) : \
-        NULL)))
+         NULL)))
 
 #define scheme_make_foreign_cpointer(x) \
   ((x==NULL)?scheme_false:scheme_make_cptr(x,NULL))
+
+{:(cdefine cpointer? 1):}
+{
+  return SCHEME_FFIANYPTRP(argv[0]) ? scheme_true : scheme_false;
+}
 
 /*****************************************************************************/
 /* Callback type */

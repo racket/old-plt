@@ -210,7 +210,7 @@
 (define* _symbol (make-ffi-type _string symbol->string string->symbol))
 
 ;; `file' type: path-expands a string.
-(define* _file (make-ffi-type _string expand-path #f))
+(define* _file (make-ffi-type _path expand-path #f))
 
 ;; `string/eof' type: converts an output #f (NULL) to an eof-object.
 (define* _string/eof
@@ -369,11 +369,11 @@
 ;; string.  There is no need for other modes: i or io would be just like _bytes
 ;; since the string carries its size information (so there is no real need for
 ;; the `o', but it's there for consistency with the above macros).
-(provide _bytes)
-(define-syntax _bytes
-  (syntax-id-rules (_bytes o)
-    [_bytes  (type: _string)]
-    [(_ o n) (type: _string
+(provide (rename _bytes* _bytes))
+(define-syntax _bytes*
+  (syntax-id-rules (_bytes* o)
+    [_bytes*  (type: _bytes)]
+    [(_ o n) (type: _bytes
               pre:  (make-sized-byte-string (ffi-malloc n) n)
               ;; post is needed when this is used as a function output type
               post: (x => (make-sized-byte-string x n)))]))

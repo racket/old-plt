@@ -1592,7 +1592,11 @@
             (set! varrefs (flatten-bis-tree #t (syntax-property sexp 'bound-in-source) varrefs))
             (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
-              (kernel-syntax-case sexp
+              (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
+                                   quote quote-syntax with-continuation-mark 
+                                   #%app #%datum #%top #%plain-module-begin
+                                   define-values define-syntaxes module
+                                   require require-for-syntax provide)
                 (if high-level? module-transformer-identifier=? module-identifier=?)
                 [(lambda args bodies ...)
                  (begin

@@ -264,7 +264,9 @@
       "Configure Language..."
       language-menu
       (lambda (_1 _2) (language-dialog))
-      #\l)
+      (and
+       (fw:preferences:get 'framework:menu-bindings)
+       #\l))
     (make-object mred:separator-menu-item% language-menu)
     (make-object mred:menu-item%
       "Set Library To..."

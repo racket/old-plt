@@ -1835,18 +1835,17 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   }
 
   if (!outlinePen) {
-    outlinePen = new wxPen("BLACK", 0, wxTRANSPARENT);
+    outlinePen = wxThePenList->FindOrCreatePen("BLACK", 0, wxTRANSPARENT);
     if (!caretPen)
-      caretPen = new wxPen("BLACK", 1, wxSOLID);
-    outlineBrush = new wxBrush("BLACK", wxSOLID);
+      caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxSOLID);
+    outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxSOLID);
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
-    wxTheBrushList->RemoveBrush(outlineNonownerBrush);
     outlineNonownerBrush->SetColour("BLACK");
     outlineNonownerBrush->SetStipple(new wxBitmap(xpattern, 16, 16, 1));
     outlineNonownerBrush->SetStyle(wxSTIPPLE);
 #endif
-    clearBrush = new wxBrush("WHITE", wxSOLID);
+    clearBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
   }
   
   dc->SetBackgroundMode(wxSOLID);
@@ -2551,7 +2550,7 @@ Bool wxMediaEdit::CaretOff(void)
     B = y + h;
 
   if (!caretPen)
-    caretPen = new wxPen("BLACK", 1, wxSOLID);
+    caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxSOLID);
 
   dc->SetPen(caretPen);
   dc->SetLogicalFunction(wxXOR);

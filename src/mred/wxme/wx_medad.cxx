@@ -1271,9 +1271,9 @@ SimpleScroll::SimpleScroll(wxMediaCanvas *
   canvas = inside;
 
   if (!scrollBrush) {
-    scrollBrush = new wxBrush("BLACK", wxSOLID);
-    scrollEraseBrush = new wxBrush("WHITE", wxSOLID);
-    scrollErasePen = new wxPen("WHITE", 1, wxTRANSPARENT);
+    scrollBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxSOLID);
+    scrollEraseBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
+    scrollErasePen = wxThePenList->FindOrCreatePen("WHITE", 1, wxTRANSPARENT);
   }
 #endif
 

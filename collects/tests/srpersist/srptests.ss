@@ -100,6 +100,8 @@
 			   (cons (read-indicator ind-2 n)
 				 (loop (add1 n))))))
 
+(define bi (make-boxed-uint 42))
+
 (printf "~a~n" results-1)
 (printf "~a~n" results-2)
 (printf "~a~n" results-3)
@@ -107,6 +109,8 @@
 (printf "~a~n" ind-result-2)
 (printf "~a~n" ind-result-3)
 (printf "~a~n" ind-result-4)
+
+(printf "~a~n" (read-boxed-uint bi))
 
 
  

@@ -76,22 +76,30 @@
 	   [tool-names (map car tool-names+paths)]
 	   [tool-doc-paths (map cdr tool-names+paths)]
 	   [mk-link (lambda (doc name)
-                      (let ([index-file (build-path 
-					 (collection-path "doc")
-					 (car (last-pair (explode-path doc)))
-					 "index.htm")])
+                      (let* ([manual-dir (car (last-pair (explode-path doc)))]
+			     [index-file (build-path 
+					  (collection-path "doc")
+					  manual-dir
+					  "index.htm")])
                         (format "<LI> <A HREF=\"~a\">~a</A>~a"
 			        doc
                                 name
                                 (if (and cvs-user?
                                          (file-exists? index-file))
                                     (string-append 
-                                     "<br>"
+                                     "<BR>&nbsp;&nbsp;"
+				     "<FONT SIZE=\"-1\">"
+				     (format 
+				      "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">refresh</A>]"
+				      manual-dir
+				      (hexify-string name))
+				     "&nbsp;"
                                      (format (string-constant manual-installed-date)
                                              (date->string
                                               (seconds->date
                                                (file-or-directory-modify-seconds
-                                                index-file)))))
+                                                index-file))))
+				     "</FONT>")
                                     ""))))]
 	   [break-between (lambda (re l)
 			    (if (null? l)
@@ -108,7 +116,7 @@
         (apply
 	 string-append
 	 "<html><head>"
-	 "<TITLE>Installed Manuals</TITLE>"
+	 "<TITLE>PLT Manuals</TITLE>"
 	(xexpr->string hd-css)
 	 "</head>"
 	 "<body>"
@@ -153,7 +161,6 @@
 	      (list "<font color=\"red\">"
 		    "Please create a doc collection."
 		    "You will not be able to install any manuals until you do."
-		    "Installing help-doc.plt will create doc collection automaically."
 		    "</font>")]
 	     [else
 	      (list*

@@ -3025,7 +3025,7 @@
 		 (let*-values ([(path) (resolve path)]
 			       [(base file dir?) (split-path path)]
 			       [(base) (if (eq? base 'relative) 'same base)]
-			       [(modes) (use-compiled-file-kinds)])
+			       [(modes) (use-compiled-file-paths)])
 		   (let* ([get-so (lambda (file)
 				    (lambda (compiled-dir)
 				      (build-path base

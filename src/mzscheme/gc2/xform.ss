@@ -38,7 +38,7 @@
 ;;   -e means a reversed list of tokens
 
 ;; Simplifies build (no need to install non-3m first):
-(use-compiled-file-kinds null)
+(use-compiled-file-paths null)
 
 ;; Make sure we can find MzLib:
 (unless (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])

@@ -398,9 +398,9 @@ void scheme_init_file(Scheme_Env *env)
 						       MZCONFIG_COLLECTION_PATHS),
 			     env);
 #endif
-  scheme_add_global_constant("use-compiled-file-kinds",
+  scheme_add_global_constant("use-compiled-file-paths",
 			     scheme_register_parameter(use_compiled_kind,
-						       "use-compiled-file-kinds",
+						       "use-compiled-file-paths",
 						       MZCONFIG_USE_COMPILED_KIND),
 			     env);
 }
@@ -4248,10 +4248,10 @@ static Scheme_Object *compiled_kind_p(int argc, Scheme_Object **argv)
 
 static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
 {
-  return scheme_param_config("use-compiled-file-kinds",
+  return scheme_param_config("use-compiled-file-paths",
 			     scheme_make_integer(MZCONFIG_USE_COMPILED_KIND),
 			     argc, argv,
-			     -1, compiled_kind_p, "list of paths", 1);
+			     -1, compiled_kind_p, "list of relative paths and strings", 1);
 }
 
 /********************************************************************************/

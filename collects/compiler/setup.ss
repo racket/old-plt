@@ -445,7 +445,8 @@
 
 (define errors null)
 (define (record-error cc desc go)
-  (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+  (with-handlers ([(lambda (x) (not (or (exn:misc:user-break? x)
+					(and (exn:make? x) (exn:misc:user-break? (exn:make-orig-exn x))))))
 		   (lambda (x)
 		     (if (exn? x)
 			 (fprintf (current-error-port) "~a~n" (exn-message x))

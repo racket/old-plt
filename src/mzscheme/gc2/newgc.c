@@ -68,8 +68,8 @@
 /* The initial size of generation 0. This will grow and shrink a bit as time
    goes on */
 #define INIT_GEN0_SIZE (1 * 1024 * 1024)
-#define GEN0_GROW_FACTOR 2
-#define GEN0_GROW_ADDITION (1 * 1024 * 1024)
+#define GEN0_SIZE_FACTOR 0.5
+#define GEN0_SIZE_ADDITION (512 * 1024)
 #define MAX_GEN0_SIZE (32 * 1024 * 1024)
 #define MAX_GEN0_GROW_SHRINK (16 * 1024 * 1024)
 #define GEN0_PAGE_SIZE (1 * 1024 * 1024)
@@ -478,7 +478,8 @@ inline static void reset_nursery(void)
 {
   unsigned long new_gen0_size;
 
-  new_gen0_size = (GEN0_GROW_FACTOR * memory_in_use) + GEN0_GROW_ADDITION;
+  new_gen0_size = NUM((GEN0_SIZE_FACTOR * (float)memory_in_use) 
+		      + GEN0_SIZE_ADDITION);
   if(new_gen0_size > MAX_GEN0_SIZE)
     new_gen0_size = MAX_GEN0_SIZE;
 
@@ -2507,10 +2508,16 @@ static void garbage_collect(int force_full)
   static unsigned long number = 0;
   static unsigned int since_last_full = 0;
   static unsigned int running_finalizers = 0;
+  static unsigned long last_full_mem_use = (20 * 1024 * 1024);
   unsigned long old_mem_use = memory_in_use;
 
   /* determine if this should be a full collection or not */
-  gc_full = force_full || !generations_available || (since_last_full > 100);
+  gc_full = force_full || !generations_available 
+    || (since_last_full > 100) || (memory_in_use > (2 * last_full_mem_use));
+/*   printf("Collection #li (full = %i): %i / %i / %i / %i\n", number, */
+/* 	 gc_full, force_full, !generations_available, */
+/* 	 (since_last_full > 100), (memory_in_use > (2 * last_full_mem_use))); */
+  
 
   number++; 
   INIT_DEBUG_FILE(); DUMP_HEAP();
@@ -2588,12 +2595,14 @@ static void garbage_collect(int force_full)
   if(peak_memory_use < memory_in_use) peak_memory_use = memory_in_use;
   if(gc_full)
     since_last_full = 0;
-  else if((long)(memory_in_use - old_mem_use) < (512 * 1024))
+  else if((float)(memory_in_use - old_mem_use) < (0.1 * (float)old_mem_use))
     since_last_full += 1;
-  else if((long)(memory_in_use - old_mem_use) < (8 * 1024 * 1024))
+  else if((float)(memory_in_use - old_mem_use) < (0.4 * (float)old_mem_use))
     since_last_full += 5;
   else 
     since_last_full += 10;
+  if(gc_full)
+    last_full_mem_use = memory_in_use;
 
   /* inform the system (if it wants us to) that we're done with collection */
   if(GC_collect_start_callback)

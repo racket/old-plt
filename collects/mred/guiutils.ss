@@ -148,6 +148,37 @@
 	  (make-object dialog%)
 	  result)))
     
+    (define read-snips/chars-from-buffer
+      (opt-lambda (edit [start 0] [end (send edit last-position)])
+	(letrec* ([tmp-box (box 0)]
+
+		  [snip (send edit find-snip start wx:const-snip-before tmp-box)]
+		  [snip-start-pos (unbox tmp-box)]
+		  [snip-position (- start snip-start-pos)] ;the pos *inside* the snip
+
+		  [next-snip
+		   (lambda ()
+		     (set! snip-start-pos (+ snip-start-pos snip-position))
+		     (set! snip (send snip next))
+		     (set! snip-position 0))]
+		  [thunk
+		   (lambda ()
+		     (let ([ans 
+			    (cond
+			      [(<= end (+ snip-position snip-start-pos)) eof]
+			      [(is-a? snip wx:text-snip%)
+			       (let ([text (send snip get-text snip-position 1)])
+				 (if (string=? text "")
+				     (begin (next-snip)
+					    (thunk))
+				     (begin0 (string-ref text 0)
+					     (set! snip-position (add1 snip-position)))))]
+			      [(null? snip) eof]
+			      [else (begin0 snip
+					    (next-snip))])])
+		       ans))])
+	  thunk)))
+
     (define open-input-buffer
       (lambda (buffer)
 	(let ([pos 0])

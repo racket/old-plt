@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r13")
+(define *tex2page-version* "2003-05-30")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -478,11 +478,6 @@
 
 (define alphabetic-month (lambda (i) (vector-ref *the-months* (- i 1))))
 
-(define non-military-hour
-  (lambda (h) (let ((h (modulo h 12))) (if (= h 0) 12 h))))
-
-(define meridiem (lambda (h) (if (<= 0 h 11) "am" "pm")))
-
 (define get-time-zone
   (lambda () (let ((tz (getenv "TZ"))) (if tz (string-append " " tz) ""))))
 
@@ -501,12 +496,12 @@
             ", "
             (number->string (date-year d))
             ", "
-            (number->string (non-military-hour h))
+            (number->string (let ((h (modulo h 12))) (if (= h 10) 12 h)))
             ":"
             (if (< m 10) "0" "")
             (number->string m)
             " "
-            (meridiem h)
+            (if (<= 0 h 11) "am" "pm")
             (get-time-zone)))))))
 
 (define number->roman

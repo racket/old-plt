@@ -72,9 +72,37 @@
 			  msvc-compile-flags)]
 	   [(macos) '()])
 	 (lambda (l)
-	   (unless (and (list? l) (andmap string? l))
-	     (raise-type-error 'current-extension-compiler-flags "list of strings" l))
+	   (unless (and (list? l) (andmap (lambda (s) (or (string? s)
+							  (and (procedure? s) (procedure-arity-includes? s 0))))
+					  l))
+	     (raise-type-error 'current-extension-compiler-flags "list of strings and thunks" l))
 	   l)))
+
+      (define compile-variant (make-parameter 
+			       'normal
+			       (lambda (s)
+				 (unless (memq s '(normal 3m))
+				   (raise-type-error 'compile-variant "'normal or '3m" s))
+				 s)))
+
+      (define (add-variant-flags l)
+	(append l (list (lambda ()
+			  (if (eq? '3m (compile-variant))
+			      '("-DMZ_PRECISE_GC")
+			      null)))))
+
+      (define (expand-for-compile-variant l)
+	(apply append (map (lambda (s) (if (string? s) (list s) (s))) l)))
+
+      (define current-make-extra-extension-compiler-flags
+	(make-parameter
+	 (lambda () (case (compile-variant)
+		      [(3m) '("-DMZ_PRECISE_GC")]
+		      [else null]))
+	 (lambda (p)
+	   (unless (and (procedure? p) (procedure-arity-includes? p 0))
+	     (raise-type-error 'current-make-extra-extension-compiler-flags "procedure (arity 0)" p))
+	   p)))
       
       (define unix-compile-include-strings (lambda (s) (list (string-append "-I" s))))
       (define msvc-compile-include-strings (lambda (s) (list (string-append "/I" s))))
@@ -133,9 +161,10 @@
 			 (unless f
 			   (error 'use-standard-linker "cannot find ~a" n))
 			 (current-extension-compiler f))
-	      (current-extension-compiler-flags (if (eq? name 'gcc)
-						    gcc-compile-flags
-						    unix-compile-flags))
+	      (current-extension-compiler-flags (add-variant-flags
+						 (if (eq? name 'gcc)
+						     gcc-compile-flags
+						     unix-compile-flags)))
 	      (current-make-compile-include-strings unix-compile-include-strings)
 	      (current-make-compile-input-strings (lambda (s) (list s)))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
@@ -146,7 +175,7 @@
 		      (unless f
 			(error 'use-standard-linker "cannot find gcc.exe"))
 		      (current-extension-compiler f))
-	      (current-extension-compiler-flags gcc-compile-flags)
+	      (current-extension-compiler-flags (add-variant-flags gcc-compile-flags))
 	      (current-make-compile-include-strings unix-compile-include-strings)
 	      (current-make-compile-input-strings (lambda (s) (list s)))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
@@ -154,7 +183,7 @@
 			  (unless f
 			    (error 'use-standard-linker "cannot find bcc32.exe"))
 			  (current-extension-compiler f))
-	      (current-extension-compiler-flags gcc-compile-flags)
+	      (current-extension-compiler-flags (add-variant-flags gcc-compile-flags))
 	      (current-make-compile-include-strings unix-compile-include-strings)
 	      (current-make-compile-input-strings (lambda (s) (list s)))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
@@ -162,7 +191,7 @@
 		       (unless f
 			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
 		       (current-extension-compiler f))
-	      (current-extension-compiler-flags msvc-compile-flags)
+	      (current-extension-compiler-flags (add-variant-flags msvc-compile-flags))
 	      (current-make-compile-include-strings msvc-compile-include-strings)
 	      (current-make-compile-input-strings (lambda (s) (list s)))
 	      (current-make-compile-output-strings msvc-compile-output-strings)]
@@ -170,7 +199,7 @@
 	  [(macos) 
 	   (case name
 	     [(cw) (current-extension-compiler #f)
-	      (current-extension-compiler-flags unix-compile-flags)
+	      (current-extension-compiler-flags (add-variant-flags unix-compile-flags))
 	      (current-make-compile-include-strings unix-compile-include-strings)
 	      (current-make-compile-input-strings (lambda (s) (list s)))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
@@ -190,7 +219,8 @@
 		(stdio-compile (lambda (quiet?) 
 				 (let ([command (append 
 						 (list c)
-						 (current-extension-compiler-flags)
+						 (expand-for-compile-variant
+						  (current-extension-compiler-flags))
 						 (apply append 
 							(map 
 							 (lambda (s) 

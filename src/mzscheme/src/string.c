@@ -82,6 +82,9 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
 
 static Scheme_Object *sys_symbol;
 static Scheme_Object *platform_path;
+#ifdef MZ_PRECISE_GC
+static Scheme_Object *platform_path_no_variant;
+#endif
 static Scheme_Object *zero_length_string;
 
 static Scheme_Hash_Table *putenv_str_table;
@@ -109,6 +112,8 @@ scheme_init_string (Scheme_Env *env)
 #   define MZ3M_SUBDIR ":3m"
 #  endif
 # endif
+  REGISTER_SO(platform_path_no_variant);
+  platform_path_no_variant = scheme_make_string(SCHEME_PLATFORM_LIBRARY_SUBPATH);
 #else
 # define MZ3M_SUBDIR /* empty */
 #endif
@@ -312,7 +317,7 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("system-library-subpath",
 			     scheme_make_prim_w_arity(system_library_subpath,
 						      "system-library-subpath",
-						      0, 0),
+						      0, 1),
 			     env);
 
   scheme_add_global_constant("current-command-line-arguments", 
@@ -1436,7 +1441,12 @@ static Scheme_Object *system_type(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[])
 {
-  return platform_path;
+#ifdef MZ_PRECISE_GC
+  if ((argc > 0) && SCHEME_FALSEP(argv[0]))
+    return platform_path_no_variant;
+  else
+#endif
+    return platform_path;
 }
 
 const char *scheme_system_library_subpath()

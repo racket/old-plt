@@ -28,7 +28,7 @@
     (let* ([base-dir (build-path collection-dir
 				 "precompiled"
 				 "native"
-				 (system-library-subpath))]
+				 (system-library-subpath #f))]
 	   [variant-dir (case (link-variant)
 			  [(3m) (build-path base-dir "3m")]
 			  [else base-dir])]
@@ -39,7 +39,7 @@
 	  (let* ([base-dir (build-path collection-dir
 				       "compiled"
 				       "native"
-				       (system-library-subpath))]
+				       (system-library-subpath #f))]
 		 [variant-dir (case (link-variant)
 				[(3m) (build-path base-dir "3m")]
 				[else base-dir])]
@@ -64,7 +64,7 @@
 			      extra-depends
 			      last-chance-k)
     (parameterize ([current-directory collection-dir])
-      (define mach-id (string->symbol (system-library-subpath)))
+      (define mach-id (string->symbol (system-library-subpath #f)))
       (define is-win? (eq? mach-id 'win32\\i386))
 
       ;; We look for libraries and includes in the 
@@ -119,7 +119,7 @@
 			       (build-path mz-inc-dir name))
 			     '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))
 	
-	(define dir (let ([std (build-path "compiled" "native" (system-library-subpath))])
+	(define dir (let ([std (build-path "compiled" "native" (system-library-subpath #f))])
 		      (case (link-variant)
 			[(3m) (build-path std "3m")]
 			[else std])))
@@ -139,51 +139,49 @@
 	      (list (format "-L~a/lib" sys-path)))
 	  
 	  ;; Add libs for Windows:
-	  (parameterize ([current-make-standard-link-libraries
-			  (let ([orig (current-make-standard-link-libraries)])
-			    (if is-win?
-				(lambda ()
-				  (append (orig)
-					  (map 
-					   (lambda (l)
-					     (build-path sys-path "lib" (format "~a.lib" l)))
-					   find-windows-libs)
-					  windows-libs))
-				orig))])
-	    ;; Extra stuff:
-	    (with-new-flags
-	     current-extension-linker-flags 
-	     (case mach-id
-	       [(rs6k-aix) (list "-lc")]
-	       [else null])
-	     
-	     (define (delete/continue x)
-	       (with-handlers ([(lambda (x) #t) void])
-		 (delete-file x)))
-	     
-	     (make-directory* dir)
-	     
-	     (last-chance-k
-	      (lambda ()
-		(make/proc
-		 (list (list file.so 
-			     (list file.o)
-			     (lambda ()
-			       (link-extension #f (append (list file.o) 
-							  (if is-win?
-							      null
-							      (map (lambda (l)
-								     (string-append "-l" l))
-								   (append find-unix-libs unix-libs))))
-					       file.so)))
-		       
-		       (list file.o 
-			     (append (list file.c)
-				     (filter (lambda (x)
-					       (regexp-match #rx"mzdyn[a-z0-9]*[.]o" x))
-					     ((current-make-standard-link-libraries)))
-				     headers
-				     extra-depends)
-			     (lambda ()
-			       (compile-extension #f file.c file.o ()))))
-		 #())))))))))))
+	  (with-new-flags
+	   current-standard-link-libraries
+	   (if is-win?
+	       (map 
+		(lambda (l)
+		  (build-path sys-path "lib" (format "~a.lib" l)))
+		find-windows-libs)
+	       null)
+
+	   ;; Extra stuff:
+	   (with-new-flags
+	    current-extension-linker-flags 
+	    (case mach-id
+	      [(rs6k-aix) (list "-lc")]
+	      [else null])
+	    
+	    (define (delete/continue x)
+	      (with-handlers ([(lambda (x) #t) void])
+		(delete-file x)))
+	    
+	    (make-directory* dir)
+	    
+	    (last-chance-k
+	     (lambda ()
+	       (make/proc
+		(list (list file.so 
+			    (list file.o)
+			    (lambda ()
+			      (link-extension #f (append (list file.o) 
+							 (if is-win?
+							     null
+							     (map (lambda (l)
+								    (string-append "-l" l))
+								  (append find-unix-libs unix-libs))))
+					      file.so)))
+		      
+		      (list file.o 
+			    (append (list file.c)
+				    (filter (lambda (x)
+					      (regexp-match #rx"mzdyn[a-z0-9]*[.]o" x))
+					    (expand-for-link-variant (current-standard-link-libraries)))
+				    headers
+				    extra-depends)
+			    (lambda ()
+			      (compile-extension #f file.c file.o ()))))
+		#())))))))))))

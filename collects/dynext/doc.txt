@@ -96,8 +96,9 @@ Linking parameters:
      (list "-e" "_dll_entry@12" "-o" "file") for ld.exe, something
      complex for ilink32.exe; Unix: "file" -> (list "-o" "file")
 
->  current-make-standard-link-libraries - list of file paths; For
-     most platforms with the 'normal variant, the default is 
+>  current-make-standard-link-libraries - a thunk that produces a list
+     of file paths (possibly depending on the link variant); For most
+     platforms with the 'normal variant, the default is
      (list (build-path (collection-path "mzscheme" "lib") 
                        (system-library-subpath)
                        "mzdyn.o"))

@@ -67,7 +67,20 @@
       ;;   3) a way to wrap the output on the command line
       ;;   4) needed base libraries and objects
 
-      (define link-variant (make-parameter 'normal))
+      (define link-variant (make-parameter 
+			    'normal
+			    (lambda (s)
+			      (unless (memq s '(normal 3m))
+				(raise-type-error 'link-variant "'normal or '3m" s))
+			      s)))
+
+      (define (wrap-3m s)
+	(lambda ()
+	  (list (format s (if (eq? '3m (link-variant)) "3m" "")))))
+
+      (define (expand-for-link-variant l)
+	(apply append (map (lambda (s) (if (string? s) (list s) (s))) l)))
+
 
       (define (get-unix-link-flags)
 	(case (string->symbol (system-library-subpath))
@@ -76,7 +89,7 @@
 	  [(i386-freebsd-2.x) (list "-Bshareable")]
 	  [(rs6k-aix) (list "-bM:SRE"
 			    "-brtl"
-			    (format "-bI:~a/mzscheme.exp" include-dir)
+			    (wrap-3m (format "-bI:~a/mzscheme~~a.exp" include-dir))
 			    (format "-bE:~a/ext.exp" include-dir)
 			    "-bnoentry")]
 	  [(parisc-hpux) (list "-b")]
@@ -146,30 +159,30 @@
 				   [else "msvc"])
 				  f))])
 	  (cond
-	   [win-gcc? (map file (list "mzdyn.exp"
-				     "mzdyn.o"
+	   [win-gcc? (map file (list (wrap-3m "mzdyn~a.exp")
+				     (wrap-3m "mzdyn~a.o")
 				     "init.o"
 				     "fixup.o"))]
 	   [win-borland? (map file (list "mzdynb.obj"))]
-	   [else (map file (list "mzdyn.exp"
-				 "mzdyn.obj"))])))
+	   [else (map file (list (wrap-3m "mzdyn~a.exp")
+				 (wrap-3m "mzdyn~a.obj")))])))
       
       (define (get-unix/macos-link-libraries)
-	(list (build-path std-library-dir (format "mzdyn~a.o" (case (link-variant)
-								[(normal) ""]
-								[(3m) "3m"])))))
+	(list (wrap-3m (build-path std-library-dir "mzdyn~a.o"))))
 
       ;; See doc.txt:
-      (define current-make-standard-link-libraries
+      (define current-standard-link-libraries
 	(make-parameter
-	 (lambda ()
-	   (case (system-type)
-	     [(unix macos macosx) (get-unix/macos-link-libraries)]
-	     [(windows) (make-win-link-libraries win-gcc? win-borland?)]))
-	 (lambda (p)
-	   (unless (and (procedure? p) (procedure-arity-includes? p 0))
-	     (raise-type-error 'current-make-standard-link-libraries "procedure (arity 0)" p))
-	   p)))
+	 (case (system-type)
+	   [(unix macos macosx) (get-unix/macos-link-libraries)]
+	   [(windows) (make-win-link-libraries win-gcc? win-borland?)])
+	 (lambda (l)
+	   (unless (and (list? l) 
+			(andmap (lambda (s) (or (string? s)
+						(and (procedure? s) (procedure-arity-includes? s 0))))
+				l))
+	     (raise-type-error 'current-stand-link-libraries "list of strings and thunks" l))
+	   l)))
       
       ;; ---- Function to install standard linker parameters --------------------
 
@@ -184,7 +197,7 @@
 	      (current-extension-linker-flags (get-unix-link-flags))
 	      (current-make-link-input-strings (lambda (s) (list s)))
 	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
-	      (current-make-standard-link-libraries (lambda () (get-unix/macos-link-libraries)))]
+	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
 	     [else (bad-name name)])]
 	  [(windows)
 	   (case name
@@ -195,7 +208,7 @@
 		      (current-extension-linker-flags win-gcc-linker-flags)
 		      (current-make-link-input-strings (lambda (s) (list s)))
 		      (current-make-link-output-strings win-gcc-link-output-strings)
-		      (current-make-standard-link-libraries (lambda () (make-win-link-libraries #t #f))))]
+		      (current-standard-link-libraries (make-win-link-libraries #t #f)))]
 	     [(borland) (let ([f (find-executable-path "ilink32.exe" #f)])
 			  (unless f
 			    (error 'use-standard-linker "cannot find ilink32.exe"))
@@ -203,7 +216,7 @@
 			  (current-extension-linker-flags borland-linker-flags)
 			  (current-make-link-input-strings (lambda (s) (list s)))
 			  (current-make-link-output-strings borland-link-output-strings)
-			  (current-make-standard-link-libraries (lambda () (make-win-link-libraries #f #t))))]
+			  (current-standard-link-libraries (make-win-link-libraries #f #t)))]
 	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
 		       (unless f
 			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
@@ -211,7 +224,7 @@
 		       (current-extension-linker-flags msvc-linker-flags)
 		       (current-make-link-input-strings (lambda (s) (list s)))
 		       (current-make-link-output-strings msvc-link-output-strings)
-		       (current-make-standard-link-libraries (lambda () (make-win-link-libraries #f #f))))]
+		       (current-standard-link-libraries (make-win-link-libraries #f #f)))]
 	     [else (bad-name name)])]
 	  [(macos)
 	   (case name
@@ -219,7 +232,7 @@
 	      (current-extension-linker-flags null)
 	      (current-make-link-input-strings (lambda (s) (list s)))
 	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
-	      (current-make-standard-link-libraries (lambda () (get-unix/macos-link-libraries)))]
+	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
 	     [else (bad-name name)])]))
 
       ;; ---- The link driver for each platform --------------------
@@ -230,7 +243,7 @@
 	    (if c
 		(let* ([output-strings
 			((current-make-link-output-strings) out)]
-		       [libs ((current-make-standard-link-libraries))]
+		       [libs (expand-for-link-variant (current-standard-link-libraries))]
 		       [command 
 			(append 
 			 (list c)

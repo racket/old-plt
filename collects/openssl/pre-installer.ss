@@ -39,7 +39,7 @@
 
     ;; Build for 3m when it looks like we can/should.
     ;; This is a hack --- hopefully temporary!
-    (let ([3m-dir (build-path "compiled" "native" (system-library-subpath) "3m")])
+    (let ([3m-dir (build-path "compiled" "native" (system-library-subpath #f) "3m")])
       (parameterize ([current-directory (collection-path "openssl")])
 	(when (and (memq (system-type) '(unix macosx))
 		   (memq '3m (available-mzscheme-variants))
@@ -70,7 +70,7 @@
       (let ([dir (build-path (collection-path "openssl")
 			     "precompiled"
 			     "native"
-			     (system-library-subpath))])
+			     (system-library-subpath #f))])
 	(when (directory-exists? dir)
 	  (let ([l (directory-list dir)])
 	    (let ([libeay (ormap (lambda (f)

@@ -1,10 +1,12 @@
 
 (module pre-installer mzscheme
   (require (lib "setup-extension.ss" "make")
-	   (lib "compile.ss" "dynext"))
+	   (lib "compile.ss" "dynext")
+	   (lib "link.ss" "dynext")
+	   (lib "launcher.ss" "launcher"))
 
-  (define (pre-installer plthome)
-    (define mach-id (string->symbol (system-library-subpath)))
+  (define (do-pre-installer plthome)
+    (define mach-id (string->symbol (system-library-subpath #f)))
 
     (with-handlers ([(lambda (x)
 		       (and (not-break-exn? x)
@@ -49,5 +51,12 @@
 			 (list "-DNEEDS_SELECT_H")]
 			[else null])
 		      (k))))))
+
+  (define (pre-installer home)
+    (do-pre-installer home)
+    (when (memq '3m (available-mzscheme-variants))
+      (parameterize ([link-variant '3m]
+		     [compile-variant '3m])
+	(do-pre-installer home))))
 
   (provide pre-installer))

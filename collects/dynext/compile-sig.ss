@@ -12,5 +12,7 @@
      current-make-compile-input-strings
      current-make-compile-output-strings
      use-standard-compiler
-     get-standard-compilers)))
+     get-standard-compilers
+     compile-variant
+     expand-for-compile-variant)))
 

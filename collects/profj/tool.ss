@@ -4,6 +4,7 @@
            (lib "mred.ss" "mred")
            (lib "unitsig.ss")
            (lib "class.ss")
+           (lib "file.ss")
            (lib "list.ss")
 	   (lib "string-constant.ss" "string-constants")
            "compile.ss"
@@ -41,18 +42,201 @@
             ;; needs to be filled in!
             (super-render-value-set . x))
           (super-instantiate ())))
+
+      ;(make-profj-settings symbol boolean (list string))
+      (define-struct profj-settings (print-style print-full? classpath))
       
       (define (java-lang-mixin level name position numbers one-line)
         (class* object% (drscheme:language:language<%>)
-          
-          (define/public (config-panel parent)
-            (case-lambda
-              [() null]
-              [(x) (void)]))
-          
-          (define/public (default-settings) null)
-          (define/public (default-settings? x) #t)
 
+          ;default-settings: -> profj-settings
+          (define/public (default-settings) (make-profj-settings 'default #f null))
+          ;default-settings? any -> bool
+          (define/public (default-settings? s) (equal? s (default-settings)))
+
+          ;marshall-settings: profj-settings -> (list (list symbol) (list bool) (list string))
+          (define/public (marshall-settings s)
+            (list (list (profj-settings-print-style s))
+                  (list (profj-settings-print-full? s))
+                  (profj-settings-classpath s)))
+          
+          ;unmarshall-settings: any -> (U profj-settings #f)
+          (define/public (unmarshall-settings s)
+            (if (and (pair? s) (= (length s) 3)
+                     (pair? (car s)) (= (length (car s)) 1)
+                     (pair? (cadr s)) (= (length (cadr s)) 1)
+                     (pair? (caddr s)))
+                (make-profj-settings (caar s) (caadr s) (caddr s))
+                #f))
+          
+          (define/public (config-panel parent) (profj-config-panel parent))
+
+          (define (profj-config-panel _parent)
+            (letrec ([parent (instantiate vertical-panel% ()
+                               (parent _parent)
+                               (alignment '(center center))
+                               (stretchable-height #f)
+                               (stretchable-width #f))]
+                     
+                     [output-panel (instantiate group-box-panel% ()
+                                     (label "Display Preferences")
+                                     (parent parent)
+                                     (alignment '(left center)))]
+                     [print-full (when (memq level '(advanced full))
+                                   (make-object check-box% "Print entire contents of arrays?" output-panel void))]
+                     [print-style (make-object radio-box%
+                                    "Display style"
+                                    (list "Type" "Type+Fields" "Graphical")
+                                    output-panel
+                                    void)]
+                     
+                     [cp-panel (instantiate group-box-panel% ()
+                                            (parent parent)
+                                            (alignment '(left center))
+                                            (label "Class path"))]
+                     [lb (instantiate list-box% ()
+                                     (parent cp-panel)
+                                     (choices `("a" "b" "c"))
+                                     (label #f)
+                                     (callback (lambda (x y) (update-buttons))))]
+                     [top-button-panel (instantiate horizontal-panel% ()
+                                         (parent cp-panel)
+                                         (alignment '(center center))
+                                         (stretchable-height #f))]
+                     [bottom-button-panel (instantiate horizontal-panel% ()
+                                            (parent cp-panel)
+                                            (alignment '(center center))
+                                            (stretchable-height #f))]
+                     [add-button (make-object button% "Add" bottom-button-panel (lambda (x y) (add-callback)))]
+                     [list-button (make-object button% "Display Current" bottom-button-panel (lambda (x y) (list-callback)))]
+                     [remove-button (make-object button% "Remove" bottom-button-panel (lambda (x y) (remove-callback)))]
+                     
+                     [raise-button (make-object button% "Raise" top-button-panel (lambda (x y) (raise-callback)))]
+                     [lower-button (make-object button% "Lower" top-button-panel (lambda (x y) (lower-callback)))]
+                     
+                     [update-buttons 
+                      (lambda ()
+                        (let ([lb-selection (send lb get-selection)]
+                              [lb-tot (send lb get-number)])
+                          (send remove-button enable lb-selection)
+                          (send raise-button enable (and lb-selection (not (= lb-selection 0))))
+                          (send lower-button enable (and lb-selection (not (= lb-selection (- lb-tot 1)))))))]
+                     
+                     [add-callback
+                      (lambda ()
+                        (let ([dir (get-directory "Choose the directory to add to class path" 
+                                                  (send parent get-top-level-window))])
+                          (when dir
+                            (send lb append dir #f)
+                            (update-buttons))))]
+                      
+                     [list-callback
+                      (lambda ()
+                        (send lb clear)
+                        (let ((cpath (get-preference 'profj:classpath (lambda () null))))
+                          (let loop ((n 0) (l cpath))
+                            (cond
+                              ((> n (sub1 (length cpath))) (void))
+                              (else (send lb append (car l))
+                                    (send lb set-data n (car l))
+                                    (loop (+ n 1) (cdr l)))))
+                          (unless (null? cpath)
+                            (send lb set-selection 0))
+                          (update-buttons)))]
+                     
+                      [remove-callback
+                       (lambda ()
+                         (let ([to-delete (send lb get-selection)])
+                           (send lb delete to-delete)
+                           (unless (zero? (send lb get-number))
+                             (send lb set-selection (min to-delete (- (send lb get-number) 1))))
+                           (update-buttons)))]
+                      [lower-callback
+                       (lambda ()
+                         (let* ([sel (send lb get-selection)]
+                                [vec (get-lb-vector)]
+                                [below (vector-ref vec (+ sel 1))])
+                           (vector-set! vec (+ sel 1) (vector-ref vec sel))
+                           (vector-set! vec sel below)
+                           (set-lb-vector vec)
+                           (send lb set-selection (+ sel 1))
+                           (update-buttons)))]
+                      [raise-callback
+                       (lambda ()
+                         (let* ([sel (send lb get-selection)]
+                                [vec (get-lb-vector)]
+                                [above (vector-ref vec (- sel 1))])
+                           (vector-set! vec (- sel 1) (vector-ref vec sel))
+                           (vector-set! vec sel above)
+                           (set-lb-vector vec)
+                           (send lb set-selection (- sel 1))
+                           (update-buttons)))]
+                      
+                      [get-lb-vector
+                       (lambda ()
+                         (list->vector
+                          (let loop ([n 0])
+                            (cond
+                              [(= n (send lb get-number)) null]
+                              [else (cons (cons (send lb get-string n)
+                                                (send lb get-data n))
+                                          (loop (+ n 1)))]))))]
+                      
+                      [set-lb-vector
+                       (lambda (vec)
+                         (send lb clear)
+                         (let loop ([n 0])
+                           (cond
+                             [(= n (vector-length vec)) (void)]
+                             [else (send lb append (car (vector-ref vec n)))
+                                   (send lb set-data n (cdr (vector-ref vec n)))
+                                   (loop (+ n 1))])))]
+                      
+                      [get-classpath
+                       (lambda ()
+                         (let loop ([n 0])
+                           (cond
+                             [(= n (send lb get-number)) null]
+                             [else
+                              (let ([data (send lb get-data n)])
+                                (cons (if data
+                                          'default
+                                          (send lb get-string n))
+                                      (loop (+ n 1))))])))]
+                      [install-classpath
+                       (lambda (paths)
+                         (send lb clear)
+                         (for-each (lambda (cp)
+                                     (if (symbol? cp)
+                                         (send lb append "Default" #t)
+                                         (send lb append cp #f)))
+                                   paths))])
+              
+              (send lb set '())
+              (update-buttons)
+              
+              (case-lambda
+                [()
+                 (make-profj-settings (case (send print-style get-selection)
+                                        [(0) 'type]
+                                        [(1) 'field]
+                                        [(2) 'graphical])
+                                      (if (memq level '(advanced full))
+                                          (send print-full get-value)
+                                          #t)
+                                      (get-classpath))]
+                [(settings)
+                 (send print-style set-selection
+                       (case (profj-settings-print-style settings)
+                         ((type default) 0)
+                         ((field) 1)
+                         ((graphical) 2)))
+                 (when (memq level '(advanced full))
+                   (send print-full set-value (profj-settings-print-full? settings)))
+                 (install-classpath (profj-settings-classpath settings))])))
+                     
+          ;;Stores the types that can be used in the interactions window
+          ;;execute-types: type-record 
           (define execute-types (create-type-record))
           
           (define/public (front-end/complete-program input settings)
@@ -152,7 +336,6 @@
           (define/public (get-language-name) name)
           (define/public (get-language-url) #f)
           (define/public (get-teachpack-names) null)
-          (define/public (marshall-settings x) x)
 
           (define/public (on-execute settings run-in-user-thread)
             (run-in-user-thread
@@ -168,7 +351,6 @@
           
           (define/public (render-value value settings port port-write) (write value port))
           (define/public (render-value/format value settings port port-write width) (write value port))
-          (define/public (unmarshall-settings x) x)
 	  (define/public (create-executable fn parent . args)
 	    (message-box "Unsupported"
 			 "Sorry - executables are not supported for Java"

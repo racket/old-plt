@@ -1,25 +1,44 @@
 
 ;; Source-to-source optimizer
 
-(module opt2 mzscheme
+(module optsrc2src mzscheme
   (require (lib "class.ss")
 	   (lib "class100.ss")
 	   (lib "kerncase.ss" "syntax")
 	   (lib "list.ss"))
 
-  (define foldable '(void
-		     + - * / arithmetic-shift
-		     < <= = > >=
-		     number? positive? negative? zero?
-		     real? complex?
-		     string-ref))
+  (define foldable-prims '(void
+			   + - * / arithmetic-shift
+			   < <= = > >=
+			   number? positive? negative? zero?
+			   real? complex?
+			   string-ref))
+
+  ;; The following primitives either invoke functions, or
+  ;;  install functions that can be used later.
+  (define non-valueable-prims
+    '(apply map for-each andmap ormap make-promise
+	    dynamic-wind thread call-in-nested-thread
+	    make-object call-with-values time-apply
+	    call-with-output-file call-with-input-file
+	    with-output-to-file with-input-from-file
+	    exit-handler current-eval current-exception-handler
+	    current-prompt-read current-load
+	    call-with-escape-continuation call-with-current-continuation
+	    current-print port-display-handler port-write-handler
+	    port-print-handler global-port-print-handler
+	    error-display-handler error-escape-handler
+	    port-read-handler error-value->string-handler
+	    call/ec call/cc hash-table-get
+	    hash-table-map hash-table-for-each make-input-port make-output-port
+	    current-module-name-resolver))
 
   (define-struct context (need indef))
   ;; need = #f => don't need  the value
   ;; need = 'bool => need bool only
   ;; need = 'all => need exact result
 
-  ;; indef = list of lexical%s
+  ;; indef = list of binding%s
 
   (define (need-all ctx)
     (if (eq? 'all (context-need ctx))
@@ -62,7 +81,11 @@
 	[nonbind-sub-exprs (lambda () null)]
 	[set-nonbind-sub-exprs (lambda (x) (void))]
 
-	[valueable? (lambda () #f)]
+	;; valueable means that evaluating the expression can't access
+	;;  a variable before it is initialized or mutate a
+	;;  variable. It's used, for example, on the RHSs of a letrec
+	;;  to determine known bindings.
+	[valueable? (lambda () (andmap (lambda (x) (send x valueable?)) (nonbind-sub-exprs)))]
 
 	[set-known-value (lambda (x) (set! known-value x))]
 	[get-value (lambda () (or known-value this))])
@@ -80,9 +103,15 @@
 	[reorganize (lambda ()
 		      (subexp-map! (lambda (x)
 				     (send x reorganize))))]
+	
+	;; substitution of lexical for global  variables:
 	[global->local (lambda (env)
 			 (subexp-map! (lambda (x)
 					(send x global->local env))))]
+	;; substitution of lexical variables:
+	[substitute (lambda (env)
+		      (subexp-map! (lambda (x)
+				     (send x substitute env))))]
 	
 	[clone 
 	 ;; Creates a copy, used for inling. We don't try
@@ -103,7 +132,7 @@
   (define (get-sexpr o) (send o sexpr))
   (define (get-body-sexpr o) (send o body-sexpr))
 
-  (define-struct bucket (mutated?))
+  (define-struct bucket (mutated? inited-before-use?))
 
   (define (global-bucket table stx)
     (let ([l (hash-table-get table (syntax-e stx) (lambda () null))])
@@ -113,7 +142,7 @@
 		      l)])
 	(if s
 	    s
-	    (let ([s (make-bucket #f)])
+	    (let ([s (make-bucket #f #f)])
 	      (hash-table-put! table (syntax-e stx) (cons (cons stx s) l))
 	      s)))))
 
@@ -160,7 +189,8 @@
 
 	[get-result-arity (lambda () 1)]
 
-	[valueable? (lambda () (is-kernel?))]
+	[valueable? (lambda () (or (bucket-inited-before-use? bucket)
+				   (is-kernel?)))]
 	
 	[clone (lambda (env) (make-object global% stx trans?))]
 
@@ -171,12 +201,13 @@
 				    env)
 			     this))])
       (public
-	[set-mutated (lambda () (set-bucket-mutated?! bucket #t))])
-
+	[set-mutated (lambda () (set-bucket-mutated?! bucket #t))]
+	[set-inited (lambda () (set-bucket-inited-before-use?! bucket #t))])
+      
       (sequence
 	(super-init stx))))
 
-  (define lexical% 
+  (define binding% 
     (class100 exp% (-name -always-inited?)
       (private-field
         [name -name]
@@ -203,7 +234,7 @@
 	[set-value (lambda (v) (set! value v))]
 
 	[clone-binder (lambda (env) 
-			(make-object lexical% (datum->syntax-object
+			(make-object binding% (datum->syntax-object
 					       #f
 					       (gensym (syntax-e name))
 					       name
@@ -284,10 +315,12 @@
 			  (drop-uses)
 			  (make-object void% stx))))]
 
-	[clone (lambda (env) (lookup-clone this env))]
+	[clone (lambda (env) (lookup-clone binding this env))]
+	[substitute (lambda (env) (lookup-clone binding this env))]
 
 	[sexpr (lambda () (send binding sexpr))])
       (public
+	[get-binding (lambda () binding)]
 	[orig-name
 	 (lambda ()
 	   (send binding orig-name))])
@@ -355,7 +388,8 @@
        [stx -stx]
        [formname -formname]
        [varnames -varnames]
-       [expr -expr])
+       [expr -expr]
+       [globals #f])
       (override
 	[nonbind-sub-exprs (lambda () (list expr))]
 	[set-nonbind-sub-exprs (lambda (s) (set! expr (car s)))]
@@ -363,6 +397,7 @@
 	[get-result-arity (lambda () 1)]
 	
 	[no-side-effect? (lambda () #f)]
+	[valueable? (lambda () #f)]
 
 	[clone (lambda (env) (make-object top-def% stx varnames 
 					  (send expr clone env)))]
@@ -375,7 +410,17 @@
 	     (syntax/loc stx (formname (varname ...) rhs))))])
       (public
 	[get-vars (lambda () varnames)]
-	[get-rhs (lambda () expr)])
+	[get-rhs (lambda () expr)]
+
+	;; Like get-vars, but return global% objects, instead.
+	;; Useful because the global% object has the global variable bucket info.
+	[get-globals (lambda ()
+		       (unless globals
+			 (set! globals
+			       (map (lambda (v)
+				      (make-object global% v #f))
+				    varnames)))
+		       globals)])
       (sequence
 	(super-init stx))))
 
@@ -463,7 +508,8 @@
        [stx -stx]
        [rator -rator]
        [rands -rands])
-      (rename [super-simplify simplify])
+      (rename [super-simplify simplify]
+	      [super-valueable? valueable?])
       (override
 	[nonbind-sub-exprs (lambda () (cons rator rands))]
 	[set-nonbind-sub-exprs (lambda (s) 
@@ -471,6 +517,13 @@
 				 (set! rands (cdr s)))]
 
 	[no-side-effect? (lambda () #f)]
+
+	[valueable? (lambda ()
+		      (and (rator . is-a? . global%)
+			   (send rator is-kernel?)
+			   (not (memq (send rator orig-name)
+				      non-valueable-prims))
+			   (super-valueable?)))]
 
 	[get-result-arity (lambda () 'unknown)]
 	
@@ -495,7 +548,7 @@
 
 	    ;; constant folding
 	    [(and (is-a? rator global%)
-		  (memq (send rator orig-name) foldable)
+		  (memq (send rator orig-name) foldable-prims)
 		  (send rator is-kernel?)
 		  (andmap (lambda (x) (is-a? x constant%)) rands))
 	     (if (eq? (send rator orig-name) 'void)
@@ -534,7 +587,7 @@
 			  (list (car rands)))]
 
 	    ;; inlining
-	    [(and (is-a? rator lexical%)
+	    [(and (is-a? rator binding%)
 		  (is-a? (send rator get-value) lambda%)
 		  (or 
 		   (eq? (send rator orig-name) '*++scan)
@@ -647,15 +700,17 @@
 
 	[sexpr
 	 (lambda ()
-	   (with-syntax ([([vars body] ...)
-			  (map (lambda (vars normal? body)
-				 (with-syntax ([vars (let ([vs (map get-sexpr vars)])
-						       (if normal?
-							   vs
-							   (multarity-ize vs)))]
-					       [body (get-body-sexpr body)])
-				   (syntax [vars body])))
-			       varss normal?s bodys)])
+	   (with-syntax ([(vars ...)
+			  (map (lambda (vars normal?)
+				 (let ([vs (map get-sexpr vars)])
+				   (if normal?
+				       vs
+				       (multarity-ize vs))))
+			       varss normal?s)]
+			 [(body ...)
+			  (map (lambda (body)
+				 (get-sexpr body))
+			       bodys)])
 	     (if (multi)
 		 (syntax/loc stx
 		   (case-lambda
@@ -717,7 +772,7 @@
 		     ;;  is a pattern created by `or'
 		     [(and (is-a? body if%)
 			   (let ([t (send body get-if-test)])
-			     (and (is-a? t lexical%)
+			     (and (is-a? t binding%)
 				  (= 1 (length varss))
 				  (= 1 (length (car varss)))
 				  (eq? (caar varss) t)
@@ -729,10 +784,22 @@
 				   (send body get-if-else))]
 		     [(null? varss)
 		      (send body simplify ctx)]
+		     ;; (let-values [(x) y] ...) whether y is inited, and
+		     ;;  neither x nor y is mutated => replace x by y
+		     [(and (andmap (lambda (vars) (= 1 (length vars))) varss)
+			   (andmap (lambda (rhs) (and (or (rhs . is-a? . ref%)
+							  (rhs . is-a? . global%))
+						      (send rhs valueable?)))
+				   rhss))
+		      (send body substitute
+			    (map (lambda (vars rhs) (cons (car vars) 
+							  (if (rhs . is-a? . ref%)
+							      (send rhs get-binding)
+							      rhs)))
+				 varss rhss))]
+		     
 		     [else
 		      this]))]
-
-
 
 	[clone (lambda (env)
 		 (let* ([new-varss
@@ -818,6 +885,7 @@
 				 (set! val (cadr s)))]
 
 	[no-side-effect? (lambda () #f)]
+	[valueable? (lambda () #f)]
 	[get-result-arity (lambda () 1)]
 	
 	[set-known-values (lambda ()
@@ -871,13 +939,13 @@
 		    ;; (if xvar xvar y) when need bool
 		    ;;   => (if xvar #t y)
 		    (when (and (eq? 'bool (context-need ctx))
-			       (is-a? test lexical%)
+			       (is-a? test binding%)
 			       (eq? test then))
 		      (send then drop-uses)
 		      (set! then (make-object constant% stx #t)))
 		    (when (and (eq? 'bool (context-need ctx))
 			       (eq? test else)
-			       (is-a? test lexical%))
+			       (is-a? test binding%))
 		      (send else drop-uses)
 		      (set! else (make-object constant% stx #f)))
 		      
@@ -996,7 +1064,7 @@
 			 [val (get-sexpr val)]
 			 [body (get-sexpr body)])
 	     (syntax/loc stx
-	       (with-continuation-marks key val body))))])
+	       (with-continuation-mark key val body))))])
       (sequence
 	(super-init -stx))))
 
@@ -1025,8 +1093,8 @@
 	 (lambda ()
 	   (for-each (lambda (e) (send e drop-uses)) (nonbind-sub-exprs)))]
 	
-	[no-side-effect? (lambda () (andmap (lambda (e) (send e no-side-effect?))
-					    (nonbind-sub-exprs)))]
+	[no-side-effect? (lambda () #f)]
+	[valueable? (lambda () #f)]
 
 	[get-result-arity (lambda () 'unknown)]
 
@@ -1054,9 +1122,11 @@
 	       (cond
 		[(and (pair? l) 
 		      ((car l) . is-a? . variable-def%)
-		      (not (ormap (lambda (v) (send v mutated?))
-				  (send (car l) get-vars)))
+		      (not (ormap (lambda (v) (send v is-mutated?))
+				  (send (car l) get-globals)))
 		      (send (send (car l) get-rhs) valueable?))
+		 (for-each (lambda (g) (send g set-inited))
+			   (send (car l) get-globals))
 		 (loop (cdr l)
 		       (cons (car l) defs))]
 		[else
@@ -1069,7 +1139,7 @@
 			     (map (lambda (def) (send def get-rhs)) defs)]
 			    [lex-varss (map (lambda (vars)
 					      (map (lambda (var)
-						     (make-object lexical%
+						     (make-object binding%
 								  (datum->syntax-object
 								   #f
 								   (string->symbol (format "m_~a" (syntax-e var)))
@@ -1114,14 +1184,15 @@
 	     (syntax/loc stx
 	       (module name init-req
 		 (#%plain-module-begin
+		  req-prov ...
 		  body ...
-		  et-body ...
-		  req-prov ...)))))]
+		  et-body ...)))))]
 	[body-sexpr
 	 (lambda ()
 	   (list (sexpr)))])
       (sequence (super-init stx))))
 
+  ;; requires and provides should really be ignored:
   (define require/provide%
     (class100 exp% (stx)
        (sequence
@@ -1143,7 +1214,7 @@
 				       [id (identifier? args) (list args)]
 				       [(id . rest)
 					(cons (syntax id) (loop (syntax rest)))])))])])
-      (let ([bindings (map (lambda (id) (make-object lexical% id #t)) ids)])
+      (let ([bindings (map (lambda (id) (make-object binding% id #t)) ids)])
 	(values
 	 (append (map cons ids bindings) env)
 	 bindings
@@ -1156,7 +1227,7 @@
 	      [rhses (syntax->list (syntax (rhs ...)))]
 	      [var-objses (map (lambda (vars)
 				 (map (lambda (var)
-					(make-object lexical% var (not rec?)))
+					(make-object binding% var (not rec?)))
 				      (syntax->list vars)))
 			       varses)]
 	      [body-env (append
@@ -1184,10 +1255,14 @@
 		  p))
 	   l))
 
-  (define (lookup-clone var env)
-    (let ([s (assq var env)])
+  (define (lookup-clone binding var env)
+    (let ([s (assq binding env)])
       (if s
-	  (cdr s)
+	  (let ([b (cdr s)])
+	    (if (b . is-a? . binding%)
+		(make-object ref% (send var get-stx) b)
+		;; it's a global%:
+		b))
 	  var)))
 
   (define (make-parse top?)
@@ -1291,9 +1366,9 @@
 	[(with-continuation-mark k v body)
 	 (make-object wcm% 
 		      stx
-		      (parse (syntax k) env in-module?)
-		      (parse (syntax v) env in-module?)
-		      (parse (syntax body) env in-module?))]
+		      (parse (syntax k) env trans? in-module?)
+		      (parse (syntax v) env trans? in-module?)
+		      (parse (syntax body) env trans? in-module?))]
 	   
 	[(#%app)
 	 (make-object constant% stx null)]
@@ -1338,12 +1413,12 @@
     (let ([p (parse-top e null #f #f)])
       (send p reorganize)
       (send p set-known-values)
-      (printf "simplify~n")
       (let ([p (send p simplify (make-context 'all null))])
-
 	(get-sexpr p))))
 
   (provide optimize))
+
+#|
 
 (require opt2)
 
@@ -1357,5 +1432,7 @@
    (parameterize ([current-directory "/home/mflatt/proj/plt/collects/mzlib/"])
      (parameterize ([current-load-relative-directory (current-directory)])
        (expand 
-	(with-input-from-file "awk.ss" 
-	  (lambda () (read-syntax "awk.ss")))))))))
+	(with-input-from-file "class.ss" 
+	  (lambda () (read-syntax "class.ss")))))))))
+
+|#

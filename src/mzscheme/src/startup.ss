@@ -675,7 +675,7 @@
   ;;
   (define (make-match&env/extract-vars p k just-vars? phase-param?)
     (define top p)
-    (define (m&e p local-top use-ellipses?)
+    (define (m&e p local-top use-ellipses? id-is-rest?)
       (cond
        [(and use-ellipses? (ellipsis? p))
 	(unless (stx-null? (stx-cdr (stx-cdr p)))
@@ -688,7 +688,7 @@
 	    local-top)))
 	(let* ([p-head (stx-car p)]
 	       [nestings (get-ellipsis-nestings p-head k)]
-	       [match-head (m&e p-head p-head #t)])
+	       [match-head (m&e p-head p-head #t #f)])
 	  (if just-vars?
 	      (map list nestings)
 	      (let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
@@ -715,7 +715,7 @@
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))
 		  (let ([dp (stx-car (stx-cdr p))])
-		    (m&e dp dp #f))
+		    (m&e dp dp #f #f))
 		  (apply
 		   raise-syntax-error 
 		   'syntax-case
@@ -723,8 +723,8 @@
 		   (pick-specificity
 		    top
 		    local-top)))
-	      (let ([match-head (m&e hd hd use-ellipses?)]
-		    [match-tail (m&e (stx-cdr p) local-top use-ellipses?)])
+	      (let ([match-head (m&e hd hd use-ellipses? #f)]
+		    [match-tail (m&e (stx-cdr p) local-top use-ellipses? #t)])
 		(if just-vars?
 		    (append match-head match-tail)
 		    `(lambda (e esc)
@@ -758,8 +758,11 @@
 		  local-top))
 		(if just-vars?
 		    (list p)
-		    `(lambda (e esc)
-		       (list e)))))]
+		    (if id-is-rest?
+			`(lambda (e esc)
+			   (list (datum->syntax-object #f e)))
+			`(lambda (e esc)
+			   (list e))))))]
        [else
 	(if just-vars?
 	    null
@@ -767,7 +770,7 @@
 	       (if (equal? ,(syntax-e p) (syntax-e e))
 		   null
 		   (esc #f))))]))
-    (let ([r (m&e p p #t)])
+    (let ([r (m&e p p #t #t)])
       (if just-vars?
 	  ;; Look for duplicate uses of variable names:
 	  (let ([ht (make-hash-table)])
@@ -901,13 +904,13 @@
 							   'vals
 							   '(append shallows vals))))
 					,@(map (lambda (var)
-						 `(list-ref r ,(stx-memq*-pos var proto-r)))
+						 (apply-list-ref 'r (stx-memq*-pos var proto-r)))
 					       flat-nestings-deep))])
 				 (if (null? flat-nestings-shallow)
 				     deeps
 				     `(let ([shallows
 					     (list ,@(map (lambda (var)
-							    `(list-ref r ,(stx-memq*-pos var proto-r)))
+							    (apply-list-ref 'r (stx-memq*-pos var proto-r)))
 							  flat-nestings-shallow))])
 					,deeps)))]
 			  [post (apply-to-r rest)])
@@ -947,7 +950,7 @@
 	    (if proto-r
 		(let ((x (stx-memq p proto-r)))
 		  (if x 
-		      `(lambda (r) (list-ref r ,(stx-memq-pos p proto-r)))
+		      `(lambda (r) ,(apply-list-ref 'r (stx-memq-pos p proto-r)))
 		      (begin
 			(when (and use-ellipses?
 				   (eq? (syntax-e p) '...))
@@ -982,7 +985,14 @@
 				  (hash-table-put! ht (syntax-e r) (cons r l)))))))])
       (if proto-r
 	  `(lambda (r src)
-	     ,(let ([main `(datum->syntax-object (quote-syntax ,dest) ,(apply-to-r l) src)])
+	     ,(let ([main `(datum->syntax-object (quote-syntax ,(and dest
+								     ;; In case dest has significant structure...
+								     (datum->syntax-object
+								      dest
+								      'dest
+								      #f)))
+						 ,(apply-to-r l) 
+						 src)])
 		(if (multiple-ellipsis-vars? proto-r)
 		    `(let ([exnh #f])
 		       ((let/ec esc
@@ -1048,6 +1058,14 @@
      [else
       `(cons ,h ,t)]))
 
+  (define (apply-list-ref e p)
+    (cond
+     [(eq? p 0) `(car ,e)]
+     [(eq? p 1) `(cadr ,e)]
+     [(eq? p 2) `(caddr ,e)]
+     [(eq? p 3) `(cadddr ,e)]
+     [else `(list-ref ,e ,p)]))
+  
   ;; Returns a list that nests a pattern variable as deeply as it
   ;; is ellipsed. Escaping ellipses are detected.
   (define get-ellipsis-nestings
@@ -1241,7 +1259,13 @@
 					 (quote-syntax module-identifier=?)))])
 	    (datum->syntax-object
 	     (quote-syntax here)
-	     (list (quote-syntax let) (list (list arg expr))
+	     (list (quote-syntax let) (list (list arg (list (quote-syntax datum->syntax-object)
+							    (list
+							     (quote-syntax quote-syntax)
+							     (datum->syntax-object
+							      expr
+							      'here))
+							    expr)))
 		   (let loop ([patterns patterns]
 			      [fenders fenders]
 			      [unflat-pattern-varss pattern-varss]
@@ -1302,10 +1326,21 @@
 					   (map (lambda (pattern-var temp-var)
 						  (list
 						   temp-var
-						   (list
-						    (quote-syntax list-ref)
-						    rslt
-						    (stx-memq-pos pattern-var pattern-vars))))
+						   (let ([pos (stx-memq-pos pattern-var pattern-vars)])
+						     (let ([accessor (cond
+								      [(eq? pos 0) (quote-syntax car)]
+								      [(eq? pos 1) (quote-syntax cadr)]
+								      [(eq? pos 2) (quote-syntax caddr)]
+								      [(eq? pos 3) (quote-syntax cadddr)]
+								      [else #f])])
+						       (if accessor
+							   (list
+							    accessor
+							    rslt)
+							   (list
+							    (quote-syntax list-ref)
+							    rslt
+							    pos))))))
 						pattern-vars temp-vars)
 					   ;; Tell nested `syntax' forms about the
 					   ;;  pattern-bound variables:
@@ -1359,15 +1394,17 @@
        (quote-syntax here)
        (let ([pattern (stx-car (stx-cdr x))])
 	 (let ([unique-vars (make-pexpand pattern #f null #f)])
-	   (if (null? unique-vars)
-	       (list (quote-syntax quote-syntax) pattern)
-	       (let ([var-bindings
-		      (map
-		       (lambda (var)
-			 (and (let ([v (syntax-local-value var (lambda () #f))])
-				(and (syntax-mapping? v)
-				     v))))
-		       unique-vars)])
+	   (let ([var-bindings
+		  (map
+		   (lambda (var)
+		     (and (let ([v (syntax-local-value var (lambda () #f))])
+			    (and (syntax-mapping? v)
+				 v))))
+		   unique-vars)])
+	     (if (or (null? var-bindings)
+		     (not (ormap (lambda (x) x) var-bindings)))
+		 ;; Constant template:
+		 (list (quote-syntax quote-syntax) pattern)	     
 		 (let ([proto-r (let loop ([vars unique-vars][bindings var-bindings])
 				  (if (null? bindings)
 				      null
@@ -1388,25 +1425,31 @@
 								 (cdr bindings))])
 						 (if (car bindings)
 						     rest
-						     (cons (car vars) rest)))))]
-		       [r (let loop ([vars unique-vars][bindings var-bindings])
-			    (cond
-			     [(null? bindings) null]
-			     [(car bindings) (cons 
-					      (datum->syntax-object
-					       (car vars)
-					       (syntax-e 
-						(syntax-mapping-valvar (car bindings)))
-					       #f)
-					      (loop (cdr vars) (cdr bindings)))]
-			     [else  (loop (cdr vars) (cdr bindings))]))])
-		   (list (datum->syntax-object
-			  (quote-syntax here)
-			  (make-pexpand pattern proto-r non-pattern-vars pattern)
-			  pattern)
-			 (cons (quote-syntax list) r)
-			 (list (quote-syntax quote-syntax)
-			       (datum->syntax-object #f 'srctag x))))))))
+						     (cons (car vars) rest)))))])
+		   (let ([build-from-template
+			  (make-pexpand pattern proto-r non-pattern-vars pattern)]
+			 [r (let loop ([vars unique-vars][bindings var-bindings])
+			      (cond
+			       [(null? bindings) null]
+			       [(car bindings) (cons 
+						(datum->syntax-object
+						 (car vars)
+						 (syntax-e 
+						  (syntax-mapping-valvar (car bindings)))
+						 x)
+						(loop (cdr vars) (cdr bindings)))]
+			       [else  (loop (cdr vars) (cdr bindings))]))])
+		     (if (identifier? pattern)
+			 ;; Simple syntax-id lookup:
+			 (car r)
+			 ;; General case:
+			 (list (datum->syntax-object
+				(quote-syntax here)
+				build-from-template
+				pattern)
+			       (cons (quote-syntax list) r)
+			       (list (quote-syntax quote-syntax)
+				     (datum->syntax-object #f 'srctag x))))))))))
        x)))
 
   (provide syntax-case* syntax))

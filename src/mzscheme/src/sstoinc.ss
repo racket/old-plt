@@ -1,7 +1,11 @@
 
-(define to-zo? (equal? argv #("zo")))
+(define to-zo? (member "--zo" (vector->list argv)))
 
 (define DIGS-PER-LINE 20)
+
+(require (lib "optsrc2src.ss" "compiler"))
+
+(require mzscheme)
 
 (let loop ()
   (let ([expr (read)])

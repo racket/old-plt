@@ -822,7 +822,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 {
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *o_rename_stack = scheme_null;
-  Scheme_Object *result, *mresult = scheme_false;
+  Scheme_Object *mresult = scheme_false;
   Scheme_Object *modidx_shift_to = NULL, *modidx_shift_from = NULL;
   Scheme_Object *rename_stack[QUICK_STACK_SIZE];
   int stack_pos = 0;
@@ -831,6 +831,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
   while (1) {
     if (SCHEME_NULLP(wraps)) {
       /* See rename case for info on rename_stack: */
+      Scheme_Object *result;
+
       result = scheme_false;
       while (!SCHEME_NULLP(o_rename_stack)) {
 	if (SAME_OBJ(SCHEME_CAAR(o_rename_stack), result))
@@ -862,21 +864,32 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
 	  
 	  if (rename) {
-	    /* Match; set mresult for the case of no lexical capture: */
-	    if (SCHEME_PAIRP(rename))
-	      mresult = SCHEME_CAR(rename);
-	    else
-	      mresult = rename;
+	    /* Match */
+	    Scheme_Object *modidx;
 
-	    if (modidx_shift_from)
-	      mresult = scheme_modidx_shift(mresult,
-					    modidx_shift_from,
-					    modidx_shift_to);
-	    if (get_name) {
-	      if (SCHEME_PAIRP(rename))
-		*get_name = SCHEME_CDR(rename);
-	      else
-		*get_name = SCHEME_STX_VAL(a);
+	    if (SCHEME_PAIRP(rename))
+	      modidx = SCHEME_CAR(rename);
+	    else
+	      modidx = rename;
+
+	    /* It's possible that the modidx is not resolved, and has 
+	       no path, due to multiple expansion passes. In that case,
+	       ignore this match. */
+
+	    if (SCHEME_TRUEP(((Scheme_Modidx *)modidx)->resolved)
+		|| SCHEME_TRUEP(((Scheme_Modidx *)modidx)->path)) {
+	      /* modidx is ok; set mresult, which is used in the case of no lexical capture: */
+	      mresult = modidx;
+	      if (modidx_shift_from)
+		mresult = scheme_modidx_shift(mresult,
+					      modidx_shift_from,
+					      modidx_shift_to);
+	      if (get_name) {
+		if (SCHEME_PAIRP(rename))
+		  *get_name = SCHEME_CDR(rename);
+		else
+		  *get_name = SCHEME_STX_VAL(a);
+	      }
 	    }
 	  }
 	}
@@ -987,11 +1000,23 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
 	  
 	  if (rename) {
-	    /* Match: set result: */
+	    /* match; see the note in resolve_env() about the modidx check: */
+	    Scheme_Object *modidx;
+
 	    if (SCHEME_PAIRP(rename))
-	      result = SCHEME_CDR(rename);
+	      modidx = SCHEME_CAR(rename);
 	    else
-	      result = SCHEME_STX_VAL(a);
+	      modidx = rename;
+
+	    if (SCHEME_TRUEP(((Scheme_Modidx *)modidx)->resolved)
+		|| SCHEME_TRUEP(((Scheme_Modidx *)modidx)->path)) {
+
+	      /* Ok, set result: */
+	      if (SCHEME_PAIRP(rename))
+		result = SCHEME_CDR(rename);
+	      else
+		result = SCHEME_STX_VAL(a);
+	    }
 	  }
 	}
       }

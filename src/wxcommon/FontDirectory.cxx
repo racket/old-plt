@@ -131,12 +131,16 @@ char *font_defaults[] = {
   "ScreenDecorative__", "geneva",
 # ifdef OS_X
   "ScreenModern__", "courier new",
-#else
+# else
   "ScreenModern__", "monaco", /* "courier" is also good */
-#endif
+# endif
   "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
   "ScreenSwiss__", "helvetica",
-  "ScreenScript__", "geneva",
+# ifdef OS_X
+  "ScreenScript__", "apple chancery",
+# else
+  "ScreenScript__", "zapf chancery",
+# endif
   "ScreenSymbol__", "symbol",
 #endif
 

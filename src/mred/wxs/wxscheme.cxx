@@ -1075,6 +1075,13 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
 #endif
 }
 
+static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
+{
+  Scheme_Type type = SCHEME_TYPE(argv[0]);
+
+  if (type == mred_eventspace_type)
+}
+
 extern "C" {
   void scheme_start_atomic(void);
   void scheme_end_atomic(void);
@@ -1506,6 +1513,12 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
 						    0, 1),
 			   global_env);
 
+
+  scheme_install_xc_global("shutdown?",
+			   scheme_make_prim_w_arity(Shutdown_p,
+						    "shutdown?",
+						    1, 1),
+			   global_env);
 
   scheme_install_xc_global("in-atomic-region",
 			   scheme_make_prim_w_arity(wxInAtomicRegion,

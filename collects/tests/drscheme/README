@@ -34,11 +34,6 @@ the function, all tests will be run.
    This tests the various graphic elements that can appear
    in programs.
 
-|# stepper-test.ss #|
-
-        This tests the stepper.		
-
-
 ----------------------------------
 --------  MANUAL TESTS  ----------
 ----------------------------------

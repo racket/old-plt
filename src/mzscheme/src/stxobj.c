@@ -1978,24 +1978,6 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
    The wraps->datum tools are also used to simplify syntax object (to
    minimize the occupied space among a set of objects). */
 
-static int same_list(Scheme_Object *a, Scheme_Object *b)
-{
-  Scheme_Object *a1, *b1;
-
-  while (SCHEME_PAIRP(a) && SCHEME_PAIRP(b)) {
-    a1 = SCHEME_CAR(a);
-    b1 = SCHEME_CAR(b);
-    
-    if (!SAME_OBJ(a1, b1))
-      return 0;
-
-    a = SCHEME_CDR(a);
-    b = SCHEME_CDR(b);
-  }
-
-  return SCHEME_NULLP(a) && SCHEME_NULLP(b);
-}
-
 static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_cache)
 {
   WRAP_POS w;
@@ -2179,7 +2161,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 {
   Scheme_Object *stack, *a, *old_key, *simplifies = scheme_null;
   WRAP_POS w;
-  Scheme_Hash_Table *lex_cache;
+  Scheme_Hash_Table *lex_cache, *reverse_map;
   int stack_size = 0;
 
   a = scheme_hash_get(rns, w_in);
@@ -2403,55 +2385,27 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     } else
       stack= scheme_null;
   }
-
+  
   /* Double-check for equivalent list in table (after simplificiation): */
-  if (just_simplify) {
-    int i, j;
-
-    for (i = rns->size; i--; ) {
-      a = rns->vals[i];
-      if (a) {
-	if (SCHEME_PAIRP(a)) {
-	  a = SCHEME_CDR(a);
-	  if (!SCHEME_NULLP(a)) {
-	    a = SCHEME_CAR(a);
-	    if (((Wrap_Chunk *)a)->len == stack_size) {
-	      Wrap_Chunk *ac, *bc;
-	      ac = (Wrap_Chunk *)SCHEME_CAR(stack);
-	      bc = (Wrap_Chunk *)a;
-	      for (j = 0; j < stack_size; j++) {
-		if (!SAME_OBJ(ac->a[j], bc->a[j]))
-		  break;
-	      }
-	      if (j >= stack_size) {
-		if (just_simplify)
-		  return SCHEME_CDR(rns->vals[i]);
-		else
-		  return SCHEME_CAR(rns->vals[i]);
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  } else {
-    int i;
-    
-    for (i = rns->size; i--; ) {
-      if (rns->vals[i]) {
-	if (SCHEME_PAIRP(rns->vals[i])) {
-	  if (same_list(SCHEME_CDR(rns->vals[i]), stack)) {
-	    return SCHEME_CAR(rns->vals[i]);
-	  }
-	}
-      }
-    }
+  reverse_map = (Scheme_Hash_Table *)scheme_hash_get(rns, scheme_undefined);
+  if (!reverse_map) {
+    reverse_map = scheme_make_hash_table_equal();
+    scheme_hash_set(rns, scheme_undefined, (Scheme_Object *)reverse_map);
+  }
+  old_key = scheme_hash_get(reverse_map, stack);
+  if (old_key) {
+    a = scheme_hash_get(rns, old_key);
+    if (just_simplify)
+      return SCHEME_CDR(a);
+    else
+      return SCHEME_CAR(a);
   }
 
   /* Create a key for this wrap set: */
   a = scheme_make_integer(rns->count);
   scheme_hash_set(rns, w_in, CONS(a, stack));
-  
+  scheme_hash_set(reverse_map, stack, w_in);
+
   if (just_simplify)
     return stack;
   else

@@ -883,6 +883,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
       break;
     }
   case scheme_vector_type:
+  case scheme_wrap_chunk_type:
     {
       int len = SCHEME_VEC_SIZE(o), i;
 #     include "mzhashchk.inc"
@@ -1077,6 +1078,7 @@ long scheme_equal_hash_key2(Scheme_Object *o)
       return v1 + v2;
     }
   case scheme_vector_type:
+  case scheme_wrap_chunk_type:
     {
       int len = SCHEME_VEC_SIZE(o), i;
       long k = 0;

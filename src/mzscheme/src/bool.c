@@ -245,6 +245,8 @@ int scheme_equal (Scheme_Object *obj1, Scheme_Object *obj2)
   } else if (SCHEME_BUCKTP(obj1)) {
     SCHEME_USE_FUEL(1);
     return scheme_bucket_table_equal((Scheme_Bucket_Table *)obj1, (Scheme_Bucket_Table *)obj2);
+  } else if (SAME_TYPE(SCHEME_TYPE(obj1), scheme_wrap_chunk_type)) {
+    return vector_equal(obj1, obj2);
   } else
     return 0;
 }

@@ -89,7 +89,7 @@
                                      (lambda (x y) update-pf)))]
                      [print-style (make-object radio-box%
                                     "Display style"
-                                    (list "Type" "Type+Fields" "Graphical")
+                                    (list "Class" "Class+Fields" "Graphical")
                                     output-panel
                                     (lambda (x y) (update-ps)))]
                      

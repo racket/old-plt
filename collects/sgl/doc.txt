@@ -274,6 +274,7 @@ active-texture
 alpha-func
 begin
 begin-query
+blend-func
 call-list
 check-extension
 clear

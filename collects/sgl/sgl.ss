@@ -868,6 +868,18 @@
     (check-length 'un-project4 f 16)
     (check-length 'un-project4 g 4)
     (gluUnProject4 a b c d e f g h i))
+
+
+  ;; 4.1.8
+  (_provide blend-func)
+  (make-enum-table blend-func-table
+		   GL_ZERO GL_ONE
+		   GL_DST_COLOR GL_ONE_MINUS_DST_COLOR GL_SRC_ALPHA
+		   GL_ONE_MINUS_SRC_ALPHA GL_DST_ALPHA
+		   GL_ONE_MINUS_DST_ALPHA GL_SRC_ALPHA_SATURATE)
+  (define (blend-func src dest)
+    (glBlendFunc (blend-func-table src 'blend-func)
+		 (blend-func-table dest 'blend-func)))
   
   ;; 5 not implemented
   

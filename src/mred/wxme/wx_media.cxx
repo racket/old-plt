@@ -957,7 +957,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
       } else
 	start = end;
       
-      SetPositionBiasScroll(2, start, end);
+      SetPositionBiasScroll(2, start, end, TRUE);
     }
   } else if ((code == WXK_UP) || (code == WXK_DOWN)) {
     int cline, bias;

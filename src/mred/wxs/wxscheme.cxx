@@ -1058,7 +1058,8 @@ static Scheme_Object *Eventspace_p(int, Scheme_Object **argv)
 
 static Scheme_Object *wxSchemeCurrentEventspace(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("current-eventspace", mred_eventspace_param,
+  return scheme_param_config("current-eventspace", 
+			     scheme_make_integer(mred_eventspace_param),
 			     argc, argv,
 			     -1, Eventspace_p, "eventspace", 0);
 }
@@ -1066,7 +1067,7 @@ static Scheme_Object *wxSchemeCurrentEventspace(int argc, Scheme_Object **argv)
 static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **argv)
 {
   return scheme_param_config("event-dispatch-handler", 
-			     mred_event_dispatch_param,
+			     scheme_make_integer(mred_event_dispatch_param),
 			     argc, argv,
 			     1, NULL, NULL, 0);
 }
@@ -1097,7 +1098,8 @@ wxPrintSetupData *wxsUnbundlePSSetup(Scheme_Object *o)
 
 static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("current-ps-setup", mred_ps_setup_param,
+  return scheme_param_config("current-ps-setup", 
+			     scheme_make_integer(mred_ps_setup_param),
 			     argc, argv,
 			     -1, PS_Setup_p, "ps-setup% instance", 0);
 }

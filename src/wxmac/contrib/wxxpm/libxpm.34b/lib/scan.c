@@ -70,33 +70,9 @@ LFUNC(storePixel, int, (Pixel pixel, PixelsMap *pmap,
 LFUNC(storeMaskPixel, int, (Pixel pixel, PixelsMap *pmap,
 			    unsigned int *index_return));
 
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-LFUNC(GetImagePixels, int, (XImage *image, unsigned int width,
-			    unsigned int height, PixelsMap *pmap));
-
-LFUNC(GetImagePixels32, int, (XImage *image, unsigned int width,
-			      unsigned int height, PixelsMap *pmap));
-
-LFUNC(GetImagePixels16, int, (XImage *image, unsigned int width,
-			      unsigned int height, PixelsMap *pmap));
-
-LFUNC(GetImagePixels8, int, (XImage *image, unsigned int width,
-			     unsigned int height, PixelsMap *pmap));
-
-LFUNC(GetImagePixels1, int, (XImage *image, unsigned int width,
-			     unsigned int height, PixelsMap *pmap,
-                             int (*storeFunc) (Pixel,PixelsMap*,
-                                               unsigned int*)));
-
-/*
-			     int (*storeFunc) ()));
-*/
-
-#else  /* ndef FOR_MSW */
 LFUNC(MSWGetImagePixels, int, (Display *d, XImage *image, unsigned int width,
 			       unsigned int height, PixelsMap *pmap));
-#endif
+
 LFUNC(ScanTransparentColor, int, (XpmColor *color, unsigned int cpp,
 				  XpmAttributes *attributes));
 
@@ -230,14 +206,8 @@ XpmCreateXpmImageFromImage(Display *display, XImage *image, XImage *shapeimage,
      * scan shape mask if any
      */
     if (shapeimage) {
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-	ErrorStatus = GetImagePixels1(shapeimage, width, height, &pmap,
-				      storeMaskPixel);
-#else
 	ErrorStatus = MSWGetImagePixels(display, shapeimage, width, height,
 					&pmap);
-#endif
 	if (ErrorStatus != XpmSuccess)
 	    RETURN(ErrorStatus);
     }
@@ -251,22 +221,8 @@ XpmCreateXpmImageFromImage(Display *display, XImage *image, XImage *shapeimage,
      */
 
     if (image) {
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-	if (image->depth == 1)
-	    ErrorStatus = GetImagePixels1(image, width, height, &pmap,
-					  storePixel);
-	else if (image->bits_per_pixel == 8)
-	    ErrorStatus = GetImagePixels8(image, width, height, &pmap);
-	else if (image->bits_per_pixel == 16)
-	    ErrorStatus = GetImagePixels16(image, width, height, &pmap);
-	else if (image->bits_per_pixel == 32)
-	    ErrorStatus = GetImagePixels32(image, width, height, &pmap);
-	else
-	    ErrorStatus = GetImagePixels(image, width, height, &pmap);
-#else					/* FOR_MSW */
 	ErrorStatus = MSWGetImagePixels(display, image, width, height, &pmap);
-#endif
+
 	if (ErrorStatus != XpmSuccess)
 	    RETURN(ErrorStatus);
     }
@@ -371,17 +327,12 @@ ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
     Colormap colormap;
     char *rgb_fname;
 
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-    xpmRgbName rgbn[MAX_RGBNAMES];
-#else
     xpmRgbName *rgbn = NULL; 
-#endif    
     int rgbn_max = 0;
     unsigned int i, j, c, i2;
     XpmColor *color;
     XColor *xcolors = NULL, *xcolor;
-    char *colorname, *s;
+    char *s;
     XpmColor *colorTable, **oldColorTable = NULL;
     unsigned int ancolors = 0;
     Pixel *apixels;
@@ -423,15 +374,8 @@ ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
     XQueryColors(display, (Colormap)colormap, xcolors, ncolors);
 #endif
 
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-    /* read the rgb file if any was specified */
-    if (rgb_fname)
-	rgbn_max = xpmReadRgbNames(attributes->rgb_fname, rgbn);
-#else
     /* FOR_MSW: rgb names and values are hardcoded in rgbtab.h */
     rgbn_max = xpmReadRgbNames(NULL, NULL);
-#endif
 
     if (attributes && attributes->valuemask & XpmColorTable) {
 	colorTable = attributes->colorTable;
@@ -485,23 +429,11 @@ ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
 	}
 	if (!found) {
 	    /* if nothing found look for a color name */
-	    colorname = NULL;
-	    if (rgbn_max)
-		colorname = xpmGetRgbName(rgbn, rgbn_max, xcolor->red,
-					  xcolor->green, xcolor->blue);
-	    if (colorname)
-		color->c_color = (char *) strdup(colorname);
-	    else {
+	    {
 		/* at last store the rgb value */
 		char buf[BUFSIZ];
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-		sprintf(buf, "#%04X%04X%04X",
-			xcolor->red, xcolor->green, xcolor->blue);
-#else   
 		sprintf(buf, "#%02x%02x%02x",
 			xcolor->red, xcolor->green, xcolor->blue);
-#endif			
 		color->c_color = (char *) strdup(buf);
 	    }
 	    if (!color->c_color) {
@@ -517,280 +449,6 @@ ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
     return (XpmSuccess);
 }
 
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-/*
- * The functions below are written from X11R5 MIT's code (XImUtil.c)
- *
- * The idea is to have faster functions than the standard XGetPixel function
- * to scan the image data. Indeed we can speed up things by suppressing tests
- * performed for each pixel. We do exactly the same tests but at the image
- * level. Assuming that we use only ZPixmap images.
- */
-
-static unsigned long Const low_bits_table[] = {
-    0x00000000, 0x00000001, 0x00000003, 0x00000007,
-    0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f,
-    0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff,
-    0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff,
-    0x0000ffff, 0x0001ffff, 0x0003ffff, 0x0007ffff,
-    0x000fffff, 0x001fffff, 0x003fffff, 0x007fffff,
-    0x00ffffff, 0x01ffffff, 0x03ffffff, 0x07ffffff,
-    0x0fffffff, 0x1fffffff, 0x3fffffff, 0x7fffffff,
-    0xffffffff
-};
-
-/*
- * Default method to scan pixels of a Z image data structure.
- * The algorithm used is:
- *
- *	copy the source bitmap_unit or Zpixel into temp
- *	normalize temp if needed
- *	extract the pixel bits into return value
- *
- */
-
-static int
-GetImagePixels(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
-{
-    char *src;
-    char *dst;
-    unsigned int *iptr;
-    char *data;
-    int x, y, i;
-    int bits, depth, ibu, ibpp;
-    unsigned long lbt;
-    Pixel pixel, px;
-
-    data = image->data;
-    iptr = pmap->pixelindex;
-    depth = image->depth;
-    lbt = low_bits_table[depth];
-    ibpp = image->bits_per_pixel;
-    if (image->depth == 1) {
-	ibu = image->bitmap_unit;
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		src = &data[XYINDEX(x, y, image)];
-		dst = (char *) &pixel;
-		pixel = 0;
-		for (i = ibu >> 3; --i >= 0;)
-		    *dst++ = *src++;
-		XYNORMALIZE(&pixel, image);
-		bits = x % ibu;
-		pixel = ((((char *) &pixel)[bits >> 3]) >> (bits & 7)) & 1;
-		if (ibpp != depth)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    } else {
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		src = &data[ZINDEX(x, y, image)];
-		dst = (char *) &px;
-		px = 0;
-		for (i = (ibpp + 7) >> 3; --i >= 0;)
-		    *dst++ = *src++;
-		ZNORMALIZE(&px, image);
-		pixel = 0;
-		for (i = sizeof(unsigned long); --i >= 0;)
-		    pixel = (pixel << 8) | ((unsigned char *) &px)[i];
-		if (ibpp == 4) {
-		    if (x & 1)
-			pixel >>= 4;
-		    else
-			pixel &= 0xf;
-		}
-		if (ibpp != depth)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    }
-    return (XpmSuccess);
-}
-
-/*
- * scan pixels of a 32-bits Z image data structure
- */
-
-#ifndef WORD64
-static unsigned long byteorderpixel = MSBFirst << 24;
-
-#endif
-
-static int
-GetImagePixels32(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
-{
-    unsigned char *addr;
-    unsigned char *data;
-    unsigned int *iptr;
-    int x, y;
-    unsigned long lbt;
-    Pixel pixel;
-    int depth;
-
-    data = (unsigned char *) image->data;
-    iptr = pmap->pixelindex;
-    depth = image->depth;
-    lbt = low_bits_table[depth];
-#ifndef WORD64
-    if (*((char *) &byteorderpixel) == image->byte_order) {
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX32(x, y, image)];
-		pixel = *((unsigned long *) addr);
-		if (depth != 32)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    } else
-#endif
-    if (image->byte_order == MSBFirst)
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX32(x, y, image)];
-		pixel = ((unsigned long) addr[0] << 24 |
-			 (unsigned long) addr[1] << 16 |
-			 (unsigned long) addr[2] << 8 |
-			 addr[4]);
-		if (depth != 32)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    else
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX32(x, y, image)];
-		pixel = (addr[0] |
-			 (unsigned long) addr[1] << 8 |
-			 (unsigned long) addr[2] << 16 |
-			 (unsigned long) addr[3] << 24);
-		if (depth != 32)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    return (XpmSuccess);
-}
-
-/*
- * scan pixels of a 16-bits Z image data structure
- */
-
-static int
-GetImagePixels16(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
-{
-    unsigned char *addr;
-    unsigned char *data;
-    unsigned int *iptr;
-    int x, y;
-    unsigned long lbt;
-    Pixel pixel;
-    int depth;
-
-    data = (unsigned char *) image->data;
-    iptr = pmap->pixelindex;
-    depth = image->depth;
-    lbt = low_bits_table[depth];
-    if (image->byte_order == MSBFirst)
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX16(x, y, image)];
-		pixel = addr[0] << 8 | addr[1];
-		if (depth != 16)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    else
-	for (y = 0; y < height; y++)
-	    for (x = 0; x < width; x++, iptr++) {
-		addr = &data[ZINDEX16(x, y, image)];
-		pixel = addr[0] | addr[1] << 8;
-		if (depth != 16)
-		    pixel &= lbt;
-		if (storePixel(pixel, pmap, iptr))
-		    return (XpmNoMemory);
-	    }
-    return (XpmSuccess);
-}
-
-/*
- * scan pixels of a 8-bits Z image data structure
- */
-
-static int
-GetImagePixels8(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
-{
-    unsigned int *iptr;
-    unsigned char *data;
-    int x, y;
-    unsigned long lbt;
-    Pixel pixel;
-    int depth;
-
-    data = (unsigned char *) image->data;
-    iptr = pmap->pixelindex;
-    depth = image->depth;
-    lbt = low_bits_table[depth];
-    for (y = 0; y < height; y++)
-	for (x = 0; x < width; x++, iptr++) {
-	    pixel = data[ZINDEX8(x, y, image)];
-	    if (depth != 8)
-		pixel &= lbt;
-	    if (storePixel(pixel, pmap, iptr))
-		return (XpmNoMemory);
-	}
-    return (XpmSuccess);
-}
-
-/*
- * scan pixels of a 1-bit depth Z image data structure
- */
-
-static int
-GetImagePixels1(XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap,
-/*
-  int (*storeFunc)()
-*/
-  int (*storeFunc)(Pixel,PixelsMap*,unsigned int*)
-)
-{
-    unsigned int *iptr;
-    int x, y;
-    char *data;
-    Pixel pixel;
-
-    if (image->byte_order != image->bitmap_bit_order)
-	return (GetImagePixels(image, width, height, pmap));
-    else {
-	data = image->data;
-	iptr = pmap->pixelindex;
-	if (image->bitmap_bit_order == MSBFirst)
-	    for (y = 0; y < height; y++)
-		for (x = 0; x < width; x++, iptr++) {
-		    pixel = (data[ZINDEX1(x, y, image)] & (0x80 >> (x & 7)))
-			? 1 : 0;
-		    if ((*storeFunc) (pixel, pmap, iptr))
-			return (XpmNoMemory);
-		}
-	else
-	    for (y = 0; y < height; y++)
-		for (x = 0; x < width; x++, iptr++) {
-		    pixel = (data[ZINDEX1(x, y, image)] & (1 << (x & 7)))
-			? 1 : 0;
-		    if ((*storeFunc) (pixel, pmap, iptr))
-			return (XpmNoMemory);
-		}
-    }
-    return (XpmSuccess);
-}
-
-#else  /* ndef FOR_MSW */
 static int
 MSWGetImagePixels(Display *display, XImage *image, unsigned int width, unsigned int height, PixelsMap *pmap)
 {
@@ -802,59 +460,17 @@ MSWGetImagePixels(Display *display, XImage *image, unsigned int width, unsigned 
 
     for (y = 0; y < height; y++) {
 	for (x = 0; x < width; x++, iptr++) {
-	    /* bitmap must be selected !!! ??? */
-#ifdef FOR_MAC
+	    /* bitmap must be selected !!! */
 		RGBColor	macpixel;
+		long r, g, b;
 		GetCPixel(x, y, &macpixel);
-		pixel = (((macpixel.red >> 8) & 0xFF)<<16) | (((macpixel.green >> 8) & 0xFF) << 8) |
-			 ((macpixel.blue >> 8) & 0xFF);
-#else
-	    pixel = GetPixel(*display, x, y);
-#endif
+		r = ((macpixel.red >> 8) & 0xFF);
+		g = ((macpixel.green >> 8) & 0xFF);
+		b = ((macpixel.blue >> 8) & 0xFF);
+		pixel = (r << 16) | (g << 8) | b;
 	    if (storePixel(pixel, pmap, iptr))
 		return (XpmNoMemory);
 	}
     }
     return (XpmSuccess);
 }
-
-#endif
-
-#if !defined(FOR_MSW) && !defined(FOR_MAC)
-
-int
-XpmCreateXpmImageFromPixmap(Display *display, Pixmap pixmap, Pixmap shapemask,
-			    XpmImage *xpmimage, XpmAttributes *attributes)
-{
-    XImage *ximage = NULL;
-    XImage *shapeimage = NULL;
-    unsigned int width = 0;
-    unsigned int height = 0;
-    int ErrorStatus;
-
-    /* get geometry */
-    if (attributes && attributes->valuemask & XpmSize) {
-	width = attributes->width;
-	height = attributes->height;
-    }
-    /* get the ximages */
-    if (pixmap)
-	xpmCreateImageFromPixmap(display, pixmap, &ximage, &width, &height);
-    if (shapemask)
-	xpmCreateImageFromPixmap(display, shapemask, &shapeimage,
-				 &width, &height);
-
-    /* create the related XpmImage */
-    ErrorStatus = XpmCreateXpmImageFromImage(display, ximage, shapeimage,
-					     xpmimage, attributes);
-
-    /* destroy the ximages */
-    if (ximage)
-	XDestroyImage(ximage);
-    if (shapeimage)
-	XDestroyImage(shapeimage);
-
-    return (ErrorStatus);
-}
-
-#endif /* ndef FOR_MSW */

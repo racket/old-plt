@@ -676,7 +676,8 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 
   wxGIF *gifImage  = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
-	CreateOffScreenPixMap(&colorPort, gifImage);
+     CreateOffScreenPixMap(&colorPort, gifImage);
+     if (colorPort) {
 	bm->x_pixmap = colorPort;
 	//  bm->pixmap = colorPort->portPixMap;
 	bm->SetWidth(gifImage->GetWidth());
@@ -685,159 +686,47 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	bm->SetOk(TRUE);
 	delete gifImage;
 	return TRUE;
+    } 
   }
-  else {
-	bm->SetOk(FALSE);
-  	return FALSE;
-  }
+
+  bm->SetOk(FALSE);
+  return FALSE;
 }
 
 
 void CreateOffScreenPixMap (CGrafPtr *cport, wxGIF *gif)
 {
-	CTabHandle	thisColorTable;
-  GDHandle	gThisGDevice;
-  GDHandle	oldDevice;
-	CGrafPtr	newCGrafPtr;
-	Ptr			theseBits;
-	long		sizeOfOff, offRowBytes;
-	OSErr		theErr;
-	ushort		thisDepth;
-    Rect        theRect;
-CTabHandle		gDirClut;
-PaletteHandle dstPalette;
- 	
-	gThisGDevice = GetMainDevice();
-	oldDevice = GetGDevice();
-	SetGDevice(gThisGDevice);
-	newCGrafPtr = (CGrafPtr)NewPtrClear(sizeof(CGrafPort));
-	if (newCGrafPtr != 0L)
-	{
-		SetRect(&theRect, 0, 0,gif->GetWidth(), gif->GetHeight());
-		OpenCPort(newCGrafPtr);
-		thisDepth = (**(*newCGrafPtr).portPixMap).pixelSize;
-		//offRowBytes = ((((long)thisDepth * 
-				//(long)(theRect.right - theRect.left)) + 15L) >> 4L) << 1L;
-	    offRowBytes = gif->GetWidth();
-		sizeOfOff = (long)(theRect.bottom - theRect.top) * offRowBytes;
-		OffsetRect(&theRect, -theRect.left, -theRect.top);
-		if (gif->GetRawImage() != 0L)
-		{
-			(**(*newCGrafPtr).portPixMap).baseAddr = gif->GetRawImage();
-			(**(*newCGrafPtr).portPixMap).rowBytes = (short)offRowBytes | 0x8000; // ****0x8000 | gif->GetWidth();
-			(**(*newCGrafPtr).portPixMap).pixelSize = 8;
-			(**(*newCGrafPtr).portPixMap).cmpSize = 8;
-			(**(*newCGrafPtr).portPixMap).cmpCount = 1;
-			(**(*newCGrafPtr).portPixMap).bounds = theRect;
-			//SetRect(&(**(*newCGrafPtr).portPixMap).bounds, 0, 0,
-			//            gif->GetWidth(), gif->GetHeight()); // *theRect
-			
-			//thisColorTable = (**(**gThisGDevice).gdPMap).pmTable;
-			//theErr = HandToHand((Handle *)&thisColorTable);
-			gDirClut = XlateColorMap(gif);
-			(**(*newCGrafPtr).portPixMap).pmTable = gDirClut; 
-			//dstPalette = NewPalette(256, gDirClut, pmTolerant + pmExplicit, 0);
-			//NSetPalette((GrafPort *)newCGrafPtr, dstPalette, pmAllUpdates);
-			//ActivatePalette((GrafPort *)newCGrafPtr);
-			ClipRect(&theRect);
-			RectRgn(newCGrafPtr->visRgn, &theRect);
-			ForeColor(blackColor);
-			BackColor(whiteColor);
-			//EraseRect(&theRect);
-		}
-		else
-		{
-			CloseCPort(newCGrafPtr);		
-			DisposePtr((Ptr)newCGrafPtr);
-			newCGrafPtr = 0L;
-		}
-	}
-
-  SetGDevice(oldDevice);
-  *cport = newCGrafPtr;
-}
-#ifdef CJC
-#include <PictUtils.h>
-#include <Strings.h>
-#include <Resources.h>
-
-PixMapHandle CreatePixMapFromPict(char *, CGrafPtr *, int *, int *);
-PixMapHandle CreatePixMapFromPict(char * kPictID, CGrafPtr *cport, int *w, int *h)
-{
-  CGrafPtr	myCGrafPtr;
-  GrafPtr		myGrafPtr;
-  int theDepth;
-  long  offRowBytes,sizeOfOff;
-  PicHandle	aPict;
-  PictInfo	pictInfo;
-  OSErr		myErr;
-  Rect		bounds;
-  PicHandle	drawPict;
-  GDHandle	gThisGDevice;
-  GDHandle	oldDevice;
-  CTabHandle	thisColorTable;
-  Ptr  mypiximage0;
-  PixMapHandle  pixm;
-  StringPtr pstr;
-  
-  gThisGDevice = GetMainDevice();
-  oldDevice = GetGDevice();
-  SetGDevice(gThisGDevice);
-  pstr = c2pstr(kPictID);
-  aPict = (PicHandle) GetNamedResource('PICT', pstr);
-
-  HLock((Handle)aPict);
-  bounds = (*aPict)->picFrame;
-  HUnlock((Handle)aPict);
-  OffsetRect(&bounds, -bounds.left, -bounds.top);
-  *w = bounds.right - bounds.left;
-  *h = bounds.bottom - bounds.top;
-
-  // color graf port
-  // must draw into an offscreen, otherwise it appears on screen	
-  myCGrafPtr= (CGrafPtr)NewPtrClear(sizeof(CGrafPort));
-  CheckMemOK(myCGrafPtr);
-  OpenCPort(myCGrafPtr);
-  theDepth=(**(*myCGrafPtr).portPixMap).pixelSize;
-  offRowBytes=(((theDepth * (*w))+15)>>5)<<2;
-  sizeOfOff=(long)(*h) *offRowBytes;
-  mypiximage0=NewPtr(sizeOfOff); CheckMemOK(mypiximage0);
-  (**(*myCGrafPtr).portPixMap).rowBytes=offRowBytes+0x8000;
-  (**(*myCGrafPtr).portPixMap).bounds=bounds;	
-  (**(*myCGrafPtr).portPixMap).baseAddr=mypiximage0;
-  
-  // color map
-  thisColorTable = (**(**gThisGDevice).gdPMap).pmTable;
-  myErr = HandToHand((Handle *)&thisColorTable);
-  (**(*myCGrafPtr).portPixMap).pmTable = thisColorTable; 
-  ClipRect(&bounds);
-  RectRgn(myCGrafPtr->visRgn, &bounds);
-  ForeColor(blackColor);
-  BackColor(whiteColor);
-  HLock((Handle)aPict);
-  DrawPicture(aPict, &bounds);
-  HUnlock((Handle)aPict);
-  SetGDevice(oldDevice);
-  ReleaseResource((Handle)aPict);
-
-  *cport = myCGrafPtr;
-  return myCGrafPtr->portPixMap; // pixm;
-  
-}
-
-// not used for now
-void LoadGraphic (ushort );
-void LoadGraphic (ushort thePictID)
-{
-	Rect		bounds;
-	PicHandle	thePicture;
+  CGrafPtr  colorPort;
 	
-	thePicture = GetPicture(thePictID);			// Load graphic from resource fork.
-	HLock((Handle)thePicture);					// If we made it this far, lock handle.
-	bounds = (*thePicture)->picFrame;			// Get a copy of the picture's bounds.
-	HUnlock((Handle)thePicture);				// We can unlock the picture now.
-	OffsetRect(&bounds, -bounds.left, -bounds.top);	// Offset bounds rect to (0, 0).
-	DrawPicture(thePicture, &bounds);			// Draw picture to current port.
-	ReleaseResource((Handle)thePicture);		// Dispose of picture from heap.
+	int width = gif->GetWidth(), height = gif->GetHeight();
+	Rect bounds = { 0, 0, height, width };
+	GDHandle savegw;
+	CGrafPtr saveport;
+	GetGWorld(&saveport, &savegw);
+	QDErr err;
+	GWorldPtr	newGWorld;
+	err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
+	if (err) {
+	  *cport = 0;
+	  return;
+	}
+	SetGWorld(newGWorld, 0);
+	LockPixels(GetGWorldPixMap(newGWorld));
+
+	RGBColor	cpix;
+	int i, j, k;
+	unsigned int byte;
+	unsigned char *buf = (unsigned char *)gif->GetRawImage();
+	for (i = 0; i < height; i++) {
+	  for (j = 0; j < width; j++, buf++) {
+	    int v = *buf;
+	    cpix.red = 256 *gif->red[v];
+	    cpix.green = 256 *gif->green[v];
+	    cpix.blue = 256 *gif->blue[v];
+	    ::SetCPixel(j, i, &cpix);
+	  }
+	}
+	UnlockPixels(GetGWorldPixMap(newGWorld));
+	SetGWorld(saveport, savegw);
+	*cport = newGWorld;
 }
-#endif

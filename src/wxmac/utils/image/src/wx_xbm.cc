@@ -200,13 +200,11 @@ static int WriteXBM(FILE *fp, byte *pic, int w, int h, char *fname)
 
   int   i,j,k,bit,len,nbytes;
   byte *pix;
-  char name[256], *foo;
+  char *name;
 
   /* figure out a reasonable basename */
-  strcpy(name,fname);
-  foo = strchr(name,'.');
-  if (foo) *foo='\0';                 /* truncated name at first '.' */
-
+  name = "mred";
+  
   fprintf(fp,"#define %s_width %d\n",name,w);  
   fprintf(fp,"#define %s_height %d\n",name,h);
   fprintf(fp,"static char %s_bits[] = {\n",name);
@@ -260,12 +258,13 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
-		err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
+		err = NewGWorld(&newGWorld, 1, &bounds, NULL, NULL, 0);
 		if (err) {
 			bm->SetOk(FALSE);
 			return FALSE;
 		}
 		SetGWorld(newGWorld, 0);
+		LockPixels(GetGWorldPixMap(newGWorld));
 		bm->x_pixmap = newGWorld;
 
 		RGBColor	cpix;
@@ -281,6 +280,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 				}
 			}
 		}
+		UnlockPixels(GetGWorldPixMap(newGWorld));
 		SetGWorld(saveport, savegw);
 			
 		//  bm->pixmap = colorPort->portPixMap;
@@ -337,10 +337,10 @@ Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	if (!(f = fopen(fileName, "w")))
 	  return FALSE;
 	
-	int success = WriteXBM(f, pic, w, h, fileName);
+	int errcode = WriteXBM(f, pic, w, h, fileName);
 	
 	fclose(f);
 	
-	return success;
+	return !errcode;
 }
 #endif

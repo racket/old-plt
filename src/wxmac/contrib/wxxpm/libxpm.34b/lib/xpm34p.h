@@ -82,22 +82,14 @@ extern FILE *popen();
 #endif
 
 
-/* the following should help people wanting to use their own functions */
-#ifndef FOR_MSW
 // mflatt: hacked to use GC allocators
 extern void *XpmMalloc(size_t size);
 extern void *XpmMallocA(size_t size);
 extern void *XpmRealloc(void *ptr, size_t size);
 extern void *XpmReallocA(void *ptr, size_t size);
 #define XpmCalloc(nelem, elsize) XpmMalloc((nelem) * (elsize))
-#define XpmCallocA(nelem, elsize) XpmMallocA((nelem) * (elsize))
-#else
-/* checks for mallocs bigger than 64K */
-#define XpmMalloc(size) boundCheckingMalloc((long)(size))/* in simx.[ch] */
-#define XpmRealloc(ptr, size) boundCheckingRealloc((ptr),(long)(size))
-#define XpmCalloc(nelem, elsize) \
-		boundCheckingCalloc((long)(nelem),(long) (elsize))
-#endif
+extern void *XpmCallocA(size_t nelem, size_t elsize);
+
 
 
 typedef struct {

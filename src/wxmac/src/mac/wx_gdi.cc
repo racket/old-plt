@@ -66,6 +66,13 @@ void *XpmReallocA(void *ptr, size_t size)
   return DoXpmRealloc(XpmMallocA, ptr, size);
 }
 
+void *XpmCallocA(size_t nelem, size_t elsize)
+{
+  void *v = XpmMallocA(nelem * elsize);
+  memset(v, 0, nelem * elsize);
+  return v;
+}
+
 void XpmFree(void *)
 {
 	/* Do nothing */
@@ -800,7 +807,7 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
     // Set attributes
     width=xpmAttr.width;
     height = xpmAttr.height;
-	depth = ximage->depth;
+	depth = wxDisplayDepth();
     XpmFreeAttributes(&xpmAttr);
     ok = TRUE;
     x_pixmap = ximage->bitmap;	// Actually a GWorldPtr!
@@ -850,7 +857,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 			// Set attributes
 			width=xpmAttr.width;
 			height = xpmAttr.height;
-			depth = ximage->depth;
+			depth = wxDisplayDepth();
 			XpmFreeAttributes(&xpmAttr);
 			ok = TRUE;
 			x_pixmap = ximage->bitmap;	// Actually a GWorldPtr!
@@ -861,14 +868,16 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 
 	if (flags & wxBITMAP_TYPE_GIF) {
 		ok = wxLoadGifIntoBitmap(name, this, &colourmap);
+		if (ok) SetDepth(wxDisplayDepth());
 	} else if (flags & wxBITMAP_TYPE_PICT) {
 		ok = wxLoadPICTIntoBitmap(name, this, &colourmap);
 	} else if (flags & wxBITMAP_TYPE_XBM) {
 		ok = wxLoadXBMIntoBitmap(name, this, &colourmap);
 	} else if (flags & wxBITMAP_TYPE_BMP) {
 		ok = wxLoadBMPIntoBitmap(name, this, &colourmap);
+		if (ok) SetDepth(wxDisplayDepth());
 	} else if (flags & wxBITMAP_TYPE_ANY) {
-    	ok = wxLoadIntoBitmap(name,this, &colourmap);
+    	        ok = wxLoadIntoBitmap(name,this, &colourmap);
 	} else {
 		ok = FALSE;
 	}
@@ -893,6 +902,7 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
 	  GetGWorld(&saveport, &savegw);
 	
 	  SetGWorld(x_pixmap, 0);
+	  LockPixels(GetGWorldPixMap(x_pixmap));
 	
 	  ximage.width = GetWidth(); 
 	  ximage.height = GetHeight();
@@ -903,6 +913,7 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
                                               &ximage, (XImage *)NULL, 
                                               (XpmAttributes *)NULL);
 
+	  UnlockPixels(GetGWorldPixMap(x_pixmap));
 	  SetGWorld(saveport, savegw);
 
       ok = (errorStatus == XpmSuccess);

@@ -166,6 +166,7 @@ void *XpmMallocA(size_t size);
 void *XpmRealloc(void *p, size_t size);
 void *XpmReallocA(void *p, size_t size);
 void XpmFree(void *);
+void *XpmCallocA(size_t nelem, size_t elsize);
 
 #endif
 

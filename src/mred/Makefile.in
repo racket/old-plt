@@ -255,8 +255,6 @@ install_wx_mac:
 	ln -s Versions/$(FWVERSION)/PLT_MrEd $(MRFWDIR)/
 	ln -s Versions/$(FWVERSION)/Resources $(MRFWDIR)/
 	cd ..; $(ICP) -r mred/Starter.app $(prefix)/collects/launcher/.
-	cp $(srcdir)/../mac/mred.sh .mred.sh
-	cd ..; if [ ! -e $(prefix)/bin/mred ] ; then cp mred/.mred.sh $(prefix)/bin/mred ; chmod a+x $(prefix)/bin/mred ; fi
 
 LIBIDIR=$(prefix)/lib
 BUILDINFO=$(LIBIDIR)/buildinfo
@@ -288,8 +286,6 @@ install-3m_wx_mac:
 	$(ICP) PLT_MrEd.framework/Versions/$(FWVERSION)_3m/PLT_MrEd $(MRFWDIR)/Versions/$(FWVERSION)_3m/PLT_MrEd
 	$(ICP) -r PLT_MrEd.framework/Versions/$(FWVERSION)_3m/Resources $(MRFWDIR)/Versions/$(FWVERSION)_3m/Resources
 	cd ..; $(ICP) -r mred/Starter3m.app $(prefix)/collects/launcher/.
-	cp $(srcdir)/../mac/mred3m.sh .mred3m.sh
-	cd ..; if [ ! -e $(prefix)/bin/mred3m ] ; then cp mred/.mred3m.sh $(prefix)/bin/mred3m ; chmod a+x $(prefix)/bin/mred3m ; fi
 
 install-3m:
 	$(MAKE) install-3m_@WXVARIANT@

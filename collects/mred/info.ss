@@ -1,4 +1,5 @@
 
 (module info (lib "infotab.ss" "setup")
   (define name "MrEd")
-  (define version '(200)))
+  (define version '(200))
+  (define install-collection "script-installer.ss"))

@@ -502,7 +502,7 @@ char *wxFileSelector(char *message, char *default_path,
 				    extProc, NULL, NULL, cbi, 
 				    &outDialog);
     } else {
-      derr = NavCreatePutFileDialog(&dialogOptions, 'TEXT', 'MrEd', 
+      derr = NavCreatePutFileDialog(&dialogOptions, 'TEXT', 'mReD',
 				    extProc, cbi,
 				    &outDialog);
     }

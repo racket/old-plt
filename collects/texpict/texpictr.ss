@@ -569,7 +569,7 @@
 				 (colmap (lambda (c)
 					   (apply
 					    (vector-ref calign c)
-					    (colmap (lambda (r) (get-cell c r)))))))])
+					    (rowmap (lambda (r) (get-cell c r)))))))])
 	; No space after the last row/col
 	(vector-set! rsep (sub1 h) 0)
 	(vector-set! csep (sub1 w) 0)

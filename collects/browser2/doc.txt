@@ -1,7 +1,7 @@
 _Browser_
 
-The _browser.ss_ library defines open-url at the top-level.
+The _browser.ss_ library defines browse-url at the top-level.
 
-> (open-url url) - accepts a url and returns a frame that contains the
+> (browse-url url) - accepts a url and returns a frame that contains the
   rendered html from that url.
 

@@ -121,3 +121,24 @@
              (hex->integer (substring a-color 4 6)))]
           [(send new-color ok?) new-color]
           [else (make-object color% "black")])))
+
+; accumulated-errors is a (listof str) of error messages 
+; displayed thus far since the last reset.
+(define accumulated-errors
+  empty)
+
+; show-internal-error-once : string -> void
+; Displays error_msg to the user.
+(define (show-internal-error-once error_msg)
+  (local [(define title "error")
+          (define msg (string-append "internal browser error: " error_msg))
+          (define title-len (string-length title))]
+    (if (not (empty? (filter (lambda (accum-msg)
+                               (string-ci=? error_msg accum-msg)) accumulated-errors)))
+        (void)
+        (begin
+          (set! accumulated-errors (cons error_msg accumulated-errors))
+          (message-box title
+                       msg
+                       #f
+                       '(ok))))))

@@ -1,8 +1,3 @@
-(require-library "function.ss")
-(require-library "macro.ss")
-(require-library "xml.ss" "xml")
-(require-library "html.ss" "html")
-(load "utils.ss")
 
 ; See tables-test.ss for TEST CASES.
 
@@ -94,83 +89,68 @@
              (send (send admin get-editor) get-snip-location this r b #t)
              (local [(define w (- (unbox r) (unbox l)))
                      (define h (- (unbox b) (unbox t)))
-                     (define (draw-border-and-fill l t b r border step)
+                     (define (draw-rectangle-and-fill l t b r border)
                        (if (and (> border 0)
                                 (> (- r l) 0)
                                 (> (- b t) 0))
-                           (begin
-                             (send dc draw-rectangle l t (- r l) (- b t))
-                             (draw-border-and-fill (+ l step)
-                                                   (+ t step)
-                                                   (- b step)
-                                                   (- r step)
-                                                   (- border step)
-                                                   step))
+                           (send dc draw-rectangle l t (- r l) (- b t))
                            (void)))
-                     (define (draw-border cellspacing step last)
+                     (define (draw-border)
                        ; draws top side
-                       (draw-border-and-fill (+ border x)
+                       (draw-rectangle-and-fill (+ border x)
                                              y
                                              (+ border y)
                                              (- (+ (unbox r) dx) border)
-                                             border
-                                             1)
+                                             border)
                        ; draws left side
-                       (draw-border-and-fill x
+                       (draw-rectangle-and-fill x
                                              (+ y border)
                                              (- (+ (unbox b) dy) border)
                                              (+ x border)
-                                             border
-                                             1)
+                                             border)
                        ;draws right side
-                       (draw-border-and-fill (- (+ (unbox r) dx) border)
+                       (draw-rectangle-and-fill (- (+ (unbox r) dx) border)
                                              (+ y border)
                                              (- (+ (unbox b) dy) border)
                                              (+ (unbox r) dx)
-                                             border
-                                             1)
+                                             border)
                        ; draws bottom side
-                       (draw-border-and-fill (+ border x)
+                       (draw-rectangle-and-fill (+ border x)
                                              (- (+ (unbox b) dy) border)
                                              (+ (unbox b) dy)
                                              (- (+ (unbox r) dx) border)
-                                             border
-                                             1)
+                                             border)
                        ; draws left-top square
-                       (draw-border-and-fill x
+                       (draw-rectangle-and-fill x
                                              y
                                              (+ y border)
                                              (+ x border)
-                                             border 
-                                             1)
+                                             border)
                        ; draws right-top square
-                       (draw-border-and-fill (- (+ (unbox r) dx) border)
+                       (draw-rectangle-and-fill (- (+ (unbox r) dx) border)
                                              y
                                              (+ y border)
                                              (+ (unbox r) dx)
-                                             border 
-                                             1)
+                                             border)
                        ; draws left-bottom square
-                       (draw-border-and-fill x
+                       (draw-rectangle-and-fill x
                                              (- (+ (unbox b) dy) border)
                                              (+ (unbox b) dy)
                                              (+ x border)
-                                             border 
-                                             1)
+                                             border)
                        ; draws right-bottom square
-                       (draw-border-and-fill (- (+ (unbox r) dx) border)
+                       (draw-rectangle-and-fill (- (+ (unbox r) dx) border)
                                              (- (+ (unbox b) dy) border)
                                              (+ (unbox b) dy)
                                              (+ (unbox r) dx)
-                                             border 
-                                             1))]
-                     (when (and (< (+ cellspacing border) w)
+                                             border))]
+               (when (and (< (+ cellspacing border) w)
                           (< (+ cellspacing border) h))
                  (local [(define orig-pen (send dc get-pen))
                          (define orig-brush (send dc get-brush))]
                    (send dc set-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid))
-                   (send dc set-brush (send the-brush-list find-or-create-brush "BLACK" 'transparent))
-                   (draw-border cellspacing 0 (+ border cellspacing))
+                   (send dc set-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
+                   (draw-border)
                    (send dc set-brush orig-brush)
                    (send dc set-pen orig-pen)))))))])))
 
@@ -929,53 +909,6 @@
       (if (boolean? (cell-dim 'col-ext a-cell))
           1
           (add1 (count-links (cell-dim 'col-ext a-cell))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; create-cell-editorsnip : cell num num bool -> editor-snip%
-; Produces an editor-snip% with height and width dimensions equals to the
-; dimension of the cell plus cellpadding on each of the four sides of the
-; cell and cellspacing between consecutive cells.
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define (create-cell-editorsnip a-cell cellpadding cellspacing rules?)
-  (local [(define snip-width (get-linked-dim-of-cell 'width a-cell cellspacing))
-                             
-          (define snip-height (get-linked-dim-of-cell 'height a-cell cellspacing))
-          (define a-text (make-object text%))
-          (define snip-tbody? (cond [(cell? a-cell) (cell-tbody? a-cell)]
-                                    [else (cell-ext-tbody? a-cell)]))
-          (define (listof-G2) (cell-cell-data a-cell))
-          (define initpos (send a-text get-start-position))
-          (define startline (send a-text last-line))
-          (define startlinelen (send a-text line-length startline))
-          (define (thunk)
-            (local [(define the-editor-snip
-                      (make-object editor-snip%
-                        a-text
-                        rules?
-                        cellpadding cellpadding cellpadding cellpadding
-                        0 0 0 0
-                        snip-width
-                        snip-width
-                        snip-height
-                        snip-height))]
-              (send the-editor-snip resize snip-width snip-height)
-              the-editor-snip))]
-    (send a-text set-styles-sticky #f)
-    (cond [(cell-ext? a-cell)
-           (thunk)]
-          [snip-tbody?
-           (for-each (lambda (aG2)
-                       (render-G2 a-text aG2)) (listof-G2))
-           (thunk)]
-          [else
-           (for-each
-            (lambda (aG2)
-              (align-paragraph a-text aG2 (lambda (a-G2)
-                                        (render-G2 a-text a-G2)) "center")
-              (boldify a-text initpos (send a-text get-start-position)))
-            (listof-G2))
-           (thunk)])))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; count-cells : cell -> num

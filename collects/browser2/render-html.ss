@@ -1,12 +1,3 @@
-(require-library "macro.ss")
-(require-library "function.ss")
-(require-library "xml.ss" "xml")
-(require-library "html.ss" "html")
-(require-library "url.ss" "net")
-
-(load "render-table-2.ss")
-(load "utils.ss")
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TEST CASES inside render-html-test.ss
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,6 +22,9 @@
     (rename [super-draw draw])
     (inherit get-admin)
     (sequence (super-init #f #t 0 0 0 0 0 0 0 0 width width size size))
+    (private
+      [r (box 0)]
+      [b (box 0)])
     (override 
       [draw
        (lambda (dc x y left top right bottom dx dy draw-caret)
@@ -38,18 +32,19 @@
          (local [(define orig-pen (send dc get-pen))
                  (define orig-brush (send dc get-brush))
                  (define admin (get-admin))
-                 (define x1 (- x dx))
-                 (define y1 (- y dy))
-                 (define x2 (box x))
-                 (define y2 (box y))
-                 (define (width) (+ 5 (- (unbox x2) x1)))
-                 (define (height) (+ 5 (- (unbox y2) y1)))]
+                 (define (height) (- (+ (unbox b) dy) y))
+                 (define (draw-rectangle-and-fill l t b r border)
+                   (if (and (> border 0)
+                            (> (- r l) 0)
+                            (> (- b t) 0))
+                       (send dc draw-rectangle l t (- r l) (- b t)))
+                   (void))]
            (unless (boolean? admin)
-             (send (send admin get-editor) get-snip-location this x2 y2 #t)
+             (send (send admin get-editor) get-snip-location this r b #t)
              (send dc set-pen (send the-pen-list find-or-create-pen color 1 'solid))
              (if (not noshade)
                  (send dc set-brush (send the-brush-list find-or-create-brush color 'solid)))
-             (send dc draw-rectangle x1 y1 (width) (height))
+             (draw-rectangle-and-fill x y (+ (unbox b) dy) (+ (unbox r) dx) (height))
              (send dc set-pen orig-pen)
              (send dc set-brush orig-brush))))])))
 
@@ -61,6 +56,7 @@
 (define basefontsize 1) ;index=0
 (define base-style-delta (make-object style-delta%))
 (define local-anchors empty) ; listof anchors
+(define base-path #f) ;url for this page
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; paragraphicize : text% p-struct -> void
@@ -72,26 +68,68 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (paragraphicize a-text a-p)
   (local [(define attribs (html:html-element-attributes a-p))
-          (define G5 (first (html:html-full-content a-p)))
+          (define alo-G5 (html:html-full-content a-p))
           (define alignment (get-attribute-value attribs 'align "left"))
-          (define startline (send a-text last-line))
-          (define startlinelen (send a-text line-length startline))
-          (define (prevlinelen) (send a-text line-length (sub1 startline)))
-          (define (thunk)
-            (align-paragraph a-text G5 (lambda (G5) (render-G5 a-text G5)) alignment)
-            (when (or (not (zero? (send a-text line-length (send a-text last-line))))
-                      (not (zero? (send a-text line-length (sub1 (send a-text last-line))))))
-              (send a-text insert #\newline)))]
-    (cond [(not (zero? startlinelen))
-           (send a-text insert #\newline)
-           (send a-text insert #\newline)
-           (thunk)]
-          [(or (zero? startline)
-               (= 1 (prevlinelen)))
-           (thunk)]
-          [else
-           (send a-text insert #\newline)
-           (thunk)])))
+          (define startparagraph (send a-text last-paragraph))
+          (define startparagraph/length (- (send a-text paragraph-end-position startparagraph #f)
+                                           (send a-text paragraph-start-position startparagraph #f)))
+          (define start-paragraph-first-pos (send a-text paragraph-start-position startparagraph))
+          (define (break-text-before-insert)
+            (send a-text paragraph-end-position startparagraph #f)
+            (if (<= startparagraph/length 0)
+                (void))
+            (if (= 1 startparagraph/length)
+                ; is this paragraph the #\newline?
+                (if (char=? #\newline (send a-text get-character start-paragraph-first-pos))
+                    ; then is there a line above it?
+                    (if (not (zero? start-paragraph-first-pos))
+                        ; is there a newline character at the end of the previous line?
+                        (if (char=? #\newline (send a-text get-character (sub1 start-paragraph-first-pos)))
+                            ; no line breaks necessary
+                            (void)
+                            ; one line break necessary to create blank line
+                            (send a-text insert #\newline))
+                        ; no previous line, so no line breaks necessary
+                        (void))
+                    ; this paragraph is not the #\newline, so wait and treat it as a paragraph of greater length
+                    ))
+            (if (>= startparagraph/length 1)
+                (begin
+                  (send a-text insert #\newline)
+                  (send a-text insert #\newline))))
+          (define (break-text-after-insert)
+            (local [(define final-paragraph (send a-text last-paragraph))
+                    (define start-line (send a-text last-line))
+                    (define end-pos/prev-line (send a-text get-start-position))
+                    (define start-line-len (send a-text line-length start-line))]
+              (if (and (not (= startparagraph final-paragraph))
+                       (zero? start-line-len))
+                  ; implies there is at least one carriage return in previous lines
+                  (if (and (>= (sub1 start-line) 0)
+                           (char=? #\newline (send a-text get-character (send a-text line-end-position (sub1 start-line))))
+                           (= 1 (send a-text line-length (sub1 start-line))))
+                      ; implies that the previous line is a "blank line"
+                      (void)
+                      ; implies that the previous line is not a blank line
+                      (begin
+                        (send a-text line-length start-line)
+                        (sub1 start-line)
+                        (send a-text line-length (sub1 start-line))
+                        (send a-text insert #\newline)))
+                  ; implies there is no carriage return in previous lines
+                  (if (zero? start-line-len)
+                      ; implies nothing was rendered
+                      (void)
+                      ; implies that last line has no carriage return
+                      (begin 
+                        (send a-text insert #\newline)
+                        (send a-text insert #\newline))))))]
+    ;    (break-text-before-insert)
+    (for-each
+     (lambda (G5)
+       (align-paragraph a-text G5 (lambda (G5) (render-G5 a-text G5)) alignment))
+     alo-G5)
+    (break-text-after-insert)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; boldify : text% num num -> void
@@ -595,10 +633,18 @@
 ; PROGRAM DEFINITIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; render-html-page : text% url html -> void
+; Consumes a text object, url, and html struct.  Renders the html
+; in a-text; sets this page's base-path to url.
+(define (render-html-page a-text a-url a-html)
+  (set! base-path a-url)
+  (render-html a-text a-html))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-html : text% html -> void
-; Consumes a text object and html struct.  Renders the html-struct, 
+; Consumes a text object, and html struct.  Renders the html-struct, 
 ; (which constitutes an html page) on the text object, returning void.
+; Sets this page's base-path to url.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; EXAMPLES:
 ; (render-html (make-object text%)
@@ -613,11 +659,13 @@
   (local [(define aloContents (filter (lambda (x)
                                         (or (html:body? x)
                                             (html:head? x)))
-                                      (html:html-full-content a-html)))]
+                                      (html:html-full-content a-html)))
+          (define initpos (send a-text get-start-position))]
     (send a-text begin-edit-sequence)
     (for-each (lambda (contents-of-html) 
                 (render-Contents-of-html a-text contents-of-html))
               aloContents)
+    (send a-text scroll-to-position initpos #t (+ initpos (send a-text last-position)) 'start)
     (send a-text end-edit-sequence)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -674,54 +722,74 @@
 ; title, and calls the appropriate function.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-Contents-of-head a-text Contents)
-  (cond [(html:base? Contents) (render-base Contents)]
-        [(html:isindex? Contents) (render-isindex Contents)]
-        [(html:link? Contents) (render-link Contents)]
-        [(html:meta? Contents) (render-meta Contents)]
-        [(html:object? Contents) (render-html-object Contents)]
-        [(html:script? Contents) (render-script Contents)]
-        [(html:style? Contents) (render-style Contents)]
-        [(html:title? Contents) (render-title Contents)]))
+  (cond [(html:base? Contents) (render-base a-text Contents)]
+        [(html:isindex? Contents) (render-isindex a-text Contents)]
+        [(html:link? Contents) (render-link a-text Contents)]
+        [(html:meta? Contents) (render-meta a-text Contents)]
+        [(html:object? Contents) (render-html-object a-text Contents)]
+        [(html:script? Contents) (render-script  a-text Contents)]
+        [(html:style? Contents) (render-style a-text Contents)]
+        [(html:title? Contents) (render-title a-text Contents)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-a : text% a -> void
+; Renders an anchor on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-a a-text a-a)
   (local [(define attributes (html:html-element-attributes a-a))
           (define Contents-of-a (html:html-full-content a-a))
           (define initpos (send a-text get-start-position))
           (define (finalpos) (send a-text get-start-position))
-          (define url (string->url (get-attribute-value attributes 'href "")))
+          (define href (get-attribute-value attributes 'href ""))
+          (define a-url (if (and (string-ci=? "file" (url-scheme base-path))
+                                 (> (string-length href) 0)
+                                 (char=? #\# (string-ref href 0)))
+                            base-path
+                            (combine-url/relative base-path href)))
           (define name (get-attribute-value attributes 'name ""))
           (define (open-url a-text start end)
-            (local [(define scheme (url-scheme url))
-                    (define fragment (url-fragment url))
-                    (define target-location (get-anchor-location fragment))]
+            (local [(define scheme (url-scheme a-url))
+                    (define target-location (if (> (string-length href) 0)
+                                                (get-anchor-location (substring href 1 (string-length href)))
+                                                #f))]
               (cond [(and (boolean? scheme)
-                          (empty? target-location))
+                          (boolean? target-location))
                      (void)]
-                    [(and (boolean? scheme)
-                          (integer? target-location))
-                     (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start)]
-                    [(and (string-ci=? scheme "http")
-                          (empty? target-location))
+                    [(and (equal? base-path a-url)
+                          (char=? #\# (string-ref href 0)))
+                     (if (boolean? target-location)
+                         (void)
+                         (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start))]
+                    [(and (string-ci=? "file" (url-scheme a-url))
+                          (char=? #\# (string-ref href 0)))
                      (send a-text erase)
-                     (render-html a-text (call/input-url url get-pure-port html:read-html))]
-                    [(and (string-ci=? scheme "http")
-                          (integer? target-location))
+                     (set! base-path a-url)
+                     (set! local-anchors empty)
+                     (render-html a-text (call/input-url a-url get-pure-port html:read-html))
+                     (set! target-location (get-anchor-location (substring href 1 (string-length href))))
+                     (if (boolean? target-location)
+                         (void)
+                         (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start))]
+                    [else
                      (send a-text erase)
-                     (render-html a-text (call/input-url url get-pure-port html:read-html))
-                     (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start)]
-                    [else 
-                     (send a-text erase)
-                     (render-html a-text (call/input-url url get-pure-port html:read-html))])))
+                     (set! base-path a-url)
+                     (set! local-anchors empty)
+                     (render-html a-text (call/input-url a-url get-pure-port html:read-html))
+                     (set! target-location (get-anchor-location (url-fragment a-url)))
+                     (if (boolean? target-location)
+                         (void)
+                         (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start))])))
           (define (colorize-anchor)
-            (cond [(and (boolean? (url-scheme url))
-                        (boolean? (url-fragment url))) (void)]
+            (cond [(and (boolean? (url-scheme a-url))
+                        (boolean? (url-fragment a-url))) (void)]
                   [else            
                    (underline a-text initpos (finalpos))
                    (changefontcolor a-text "blue" initpos (finalpos))]))]
-    (cond [(empty? Contents-of-a) (void)]
+    (cond [(<= (string-length href) 0)
+           (put-anchor! name initpos)
+           (for-each (lambda (a)
+                       (render-Contents-of-a a-text a))
+                     Contents-of-a)]
           [else
            (put-anchor! name initpos)
            (for-each (lambda (a)
@@ -730,14 +798,15 @@
            (send a-text set-clickback initpos (finalpos) open-url #f #f)
            (colorize-anchor)])))
 
-; get-anchor-location : boolean | string -> integer | empty
+; get-anchor-location : [string OR boolean] -> [integer OR boolean]
 ; Returns the location field of the anchor with name in local-anchors.
+; ** case sensitive
 (define (get-anchor-location name)
   (local [(define (helper list)
-            (cond [(empty? list) empty]
+            (cond [(empty? list) #f]
                   [(string=? (anchor-name (first list)) name) (anchor-location (first list))]
                   [else (helper (rest list))]))]
-    (cond [(boolean? name) empty]
+    (cond [(boolean? name) #f]
           [else (helper local-anchors)])))
 
 ; put-anchor! : string num -> (void)
@@ -760,47 +829,48 @@
 ; render-abbr : text% abbr -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-abbr a-text a-abbr)
-  ("render-abbr not yet implemented"))
+  (show-internal-error-once "render-abbr not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-acronym : text% acronym -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-acronym a-text a-acronym)
-  ("render-acronym not yet implemented"))
+  (show-internal-error-once "render-acronym not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-address : text% address -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-address a-text a-address)
-  ("render-address not yet implemented"))
+  (show-internal-error-once "render-address not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-applet : text% applet -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-applet a-text a-applet)
-  ("render-applet not yet implemented"))
+  (show-internal-error-once "render-applet not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-area : text% area -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-area a-text a-area)
-  ("render-area not yet implemented"))
+  (show-internal-error-once "render-area not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-b : text% b -> void
 ; Consumes a text and renders the G5 bold on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-b a-text a-b)
-  (local [(define G5 (first(html:html-full-content a-b)))
+  (local [(define alo-G5 (html:html-full-content a-b))
           (define initpos (send a-text get-start-position))]
-    (render-G5 a-text G5)
+    (for-each (lambda (G5)
+                (render-G5 a-text G5)) alo-G5)
     (boldify a-text initpos (send a-text get-start-position))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-base : text% base -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-base a-text a-base)
-  ("render-base not yet implemented"))
+  (show-internal-error-once "render-base not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-basefont : text% basefont -> void
@@ -814,7 +884,7 @@
 ; render-bdo : text% bdo -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-bdo a-text a-bdo)
-  ("render-bdo not yet implemented"))
+  (show-internal-error-once "render-bdo not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-big : text% html:big -> void
@@ -822,18 +892,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-big a-text a-big)
   (local [(define howbig 1)
-          (define G5 (filter (lambda (x)
+          (define alo-G5 (filter (lambda (x)
                                (G5? x))
                              (html:html-full-content a-big)))]
-    (cond [(empty? G5) (void)]
+    (cond [(empty? alo-G5) (void)]
           [else
-           (render-G5-with-relative-size a-text (first G5) howbig)])))
+           (for-each
+            (lambda (G5)
+              (render-G5-with-relative-size a-text G5 howbig)))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-blockquote : text% blockquote -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-blockquote a-text a-blockquote)
-  ("render-blockquote not yet implemented"))
+  (show-internal-error-once "render-blockquote not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-br : text% br -> void
@@ -845,13 +917,13 @@
 ; render-button : text% button -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-button a-text a-button)
-  ("render-button not yet implemented"))
+  (show-internal-error-once "render-button not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-caption : text% caption -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-caption a-text a-caption)
-  ("render-caption not yet implemented"))
+  (show-internal-error-once "render-caption not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-center : text% center -> void
@@ -863,10 +935,10 @@
                                   (html:html-full-content a-center)))]
     (cond [(empty? a-lo-G2) (void)]
           [else 
-           (map (lambda (a-G2)
-                  (align-paragraph a-text a-G2 (lambda (G2) 
-                                                 (render-G2 a-text G2)) "center"))
-                a-lo-G2)])))
+           (for-each (lambda (a-G2)
+                       (align-paragraph a-text a-G2 (lambda (G2) 
+                                                      (render-G2 a-text G2)) "center"))
+                     a-lo-G2)])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; align-paragraph : text% G2 (G2 -> void) string -> void
@@ -902,8 +974,10 @@
                                (number->string x)
                                (number->string y))]))]
      (cond [(zero? startlinelen)
-            (render-func a-G2)
-            (align startparag (lastparag))]
+            (unless (and (pcdata? a-G2)
+                         (zero? (string-length (pcdata-string a-G2))))
+              (render-func a-G2)
+              (align startparag (lastparag)))]
            [else
             (send a-text insert #\newline)
             (render-func a-G2)
@@ -913,100 +987,102 @@
 ; render-cite : text% cite -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-cite a-text a-cite)
-  ("render-cite not yet implemented"))
+  (show-internal-error-once "render-cite not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-code : text% code -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-code a-text a-code)
-  ("render-code not yet implemented"))
+  (show-internal-error-once "render-code not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-col : text% col -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-col a-text a-col)
-  ("render-col not yet implemented"))
+  (show-internal-error-once "render-col not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-colgroup : text% colgroup -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-colgroup a-text a-colgroup)
-  ("render-colgroup not yet implemented"))
+  (show-internal-error-once "render-colgroup not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-del : text% del -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-del a-text a-del)
-  ("render-del not yet implemented"))
+  (show-internal-error-once "render-del not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-dd : text% dd -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-dd a-text a-dd)
-  ("render-dd not yet implemented"))
+  (show-internal-error-once "render-dd not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-dir : text% dir -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-dir a-text a-dir)
-  ("render-dir not yet implemented"))
+  (show-internal-error-once "render-dir not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-div : text% div -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-div a-text a-div)
-  ("render-div not yet implemented"))
+  (show-internal-error-once "render-div not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-dfn : text% dfn -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-dfn a-text a-dfn)
-  ("render-dfn not yet implemented"))
+  (show-internal-error-once "render-dfn not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-dl : text% dl -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-dl a-text a-dl)
-  ("render-dl not yet implemented"))
+  (show-internal-error-once "render-dl not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-dt : text% dt -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-dt a-text a-dt)
-  ("render-dt not yet implemented"))
+  (show-internal-error-once "render-dt not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-em : text% em -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-em a-text a-em)
-  (local [(define G5 (first (html:html-full-content a-em)))
+  (local [(define alo-G5 (html:html-full-content a-em))
           (define initpos (send a-text get-start-position))]
-    (render-G5 a-text G5)
+    (for-each (lambda (G5)
+                (render-G5 a-text G5)) alo-G5)
     (italicize a-text initpos (send a-text get-start-position))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-fieldset : text% fieldset -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-fieldset a-text a-fieldset)
-  ("render-fieldset not yet implfieldsetented"))
+  (show-internal-error-once "render-fieldset not yet implmented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-font : text% font -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-font a-text a-font)
   (local [(define attributes (html:html-element-attributes a-font))
-          (define G5 (first (html:html-full-content a-font)))
+          (define alo-G5 (html:html-full-content a-font))
           (define initpos (send a-text get-start-position))]
-    (render-G5 a-text G5)
+    (for-each (lambda (aG5)
+                (render-G5 a-text aG5)) alo-G5)
     (for-each (lambda (attrib)
                 (fontify a-text attrib initpos (send a-text get-start-position)))
-              attributes)))           
+              attributes)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-form : text% form -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-form a-text a-form)
-  ("render-form not yet implformented"))
+  (show-internal-error-once "render-form not yet implformented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-h1 : text% h1 -> void
@@ -1122,7 +1198,10 @@
           (define width (length->pixels (get-attribute-value hr-attribs 'width "100%") text-width text-width))
           (define initpos (send a-text get-start-position))
           (define hr-snip (make-object hr-snip% size width color-object noshade?))]
-    (send a-text insert hr-snip)))
+    (if (> (send a-text line-length (send a-text last-line)) 0)
+        (send a-text insert #\newline))
+    (send a-text insert hr-snip)
+    (send a-text insert #\newline)))
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-html-object : text% object -> void
@@ -1135,26 +1214,26 @@
 ; Consumes a text object and renders G5 italicized on the text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-i a-text a-i)
-  (local [(define G5 (first (html:html-full-content a-i)))
+  (local [(define aloG5 (html:html-full-content a-i))
           (define initpos (send a-text get-start-position))]
-    (render-G5 a-text G5)
+    (for-each (lambda (G5)
+                (render-G5 a-text G5)) aloG5)
     (italicize a-text initpos (send a-text get-start-position))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-iframe : text% iframe -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-iframe a-text a-iframe)
-  ("render-iframe not yet implemented"))
+  (show-internal-error-once "render-iframe not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-img : text% img -> void
+; Renders the img bitmap on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-img a-text a-img)
   (local [(define img-attribs (html:html-element-attributes a-img))
           (define src (get-attribute-value img-attribs 'src ""))
-          (define base-path (string->url "file:///home/bonfield/testcases/render-html"))
           (define combined-path:url (combine-url/relative base-path src))
-          (define filesuffix (get-file-suffix src))
           (define start (send a-text get-start-position))
           (define (reader i-p)
             (local [(define (read:listofchar)
@@ -1168,127 +1247,109 @@
               (with-output-to-file output-filename writer 'truncate)
               (send a-text insert
                     (make-object image-snip% output-filename 'unknown #f #t))
-              (delete-directory/files output-filename)))
-          (define (open-url)
-            (local [(define scheme (url-scheme url))
-                    (define fragment (url-fragment url))
-                    (define path (url-path url))
-                    (define suffix (get-file-suffix path))]
-              (cond [(and (boolean? scheme)
-                          )
-                     (void)]
-                    [(and (boolean? scheme)
-                          (integer? target-location))
-                     (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start)]
-                    [(and (string-ci=? scheme "http")
-                          (empty? target-location))
-                     (send a-text erase)
-                     (render-html a-text (call/input-url url get-pure-port html:read-html))]
-                    [(and (string-ci=? scheme "http")
-                          (integer? target-location))
-                     (send a-text erase)
-                     (render-html a-text (call/input-url url get-pure-port html:read-html))
-                     (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start)]
-                    [else 
-                     (send a-text erase)
-                     (render-html a-text (call/input-url url get-pure-port html:read-html))])))]
+              (delete-directory/files output-filename)))]
     (call/input-url combined-path:url get-pure-port reader)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-input : text% input -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-input a-text a-input)
-  ("render-input not yet implemented"))
+  (show-internal-error-once "render-input not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-ins : text% ins -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-ins a-text a-ins)
-  ("render-ins not yet implemented"))
+  (show-internal-error-once "render-ins not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-isindex : text% isindex -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-isindex a-text a-isindex)
-  ("render-isindex not yet implemented"))
+  (show-internal-error-once "render-isindex not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-kbd : text% kbd -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-kbd a-text a-kbd)
-  ("render-kbd not yet implemented"))
+  (show-internal-error-once "render-kbd not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-label : text% label -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-label a-text a-label)
-  ("render-label not yet implemented"))
+  (show-internal-error-once "render-label not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-legend : text% legend -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-legend a-text a-legend)
-  ("render-legend not yet implemented"))
+  (show-internal-error-once "render-legend not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-li : text% li -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-li a-text a-li)
-  ("render-li not yet implemented"))
+  (show-internal-error-once "render-li not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-link : text% link -> void
+; currently unsupported
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-link a-text a-link)
-  ("render-link not yet implemented"))
+  (show-internal-error-once "LINK element unsupported"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-map : text% map -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-map a-text a-map)
-  ("render-map not yet implemented"))
+  (show-internal-error-once "render-map not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-menu : text% menu -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-menu a-text a-menu)
-  ("render-menu not yet implemented"))
+  (show-internal-error-once "render-menu not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-meta : text% meta -> void
+; Meta information found inside html's HEAD section describes 
+; the contents of the page, but have nothing to do with rendering
+; on a-text.
+; ** does not support http-equiv
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-meta a-text a-meta)
-  ("render-meta not yet implemented"))
+  (show-internal-error-once "render-meta not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-noframes : text% noframes -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-noframes a-text a-noframes)
-  ("render-noframes not yet implemented"))
+  (show-internal-error-once "render-noframes not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-noscript : text% noscript -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-noscript a-text a-noscript)
-  ("render-noscript not yet implemented"))
+  (show-internal-error-once "render-noscript not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-ol : text% ol -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-ol a-text a-ol)
-  ("render-ol not yet implemented"))
+  (show-internal-error-once "render-ol not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-option : text% option -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-option a-text a-option)
-  ("render-option not yet implemented"))
+  (show-internal-error-once "render-option not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-optgroup : text% optgroup -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-optgroup a-text a-optgroup)
-  ("render-optgroup not yet implemented"))
+  (show-internal-error-once "render-optgroup not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-p : text% p -> void
@@ -1301,7 +1362,7 @@
 ; render-param : text% param -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-param a-text a-param)
-  ("render-param not yet implemented"))
+  (show-internal-error-once "render-param not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-pcdata : text% pcdata -> void
@@ -1322,89 +1383,93 @@
 ; render-pre : text% pre -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-pre a-text a-pre)
-  ("render-pre not yet implemented"))
+  (show-internal-error-once "render-pre not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-q : text% q -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-q a-text a-q)
-  ("render-q not yet implemented"))
+  (show-internal-error-once "render-q not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-s : text% s -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-s a-text a-s)
-  ("render-s not yet implemented"))
+  (show-internal-error-once "render-s not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-samp : text% samp -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-samp a-text a-samp)
-  ("render-samp not yet implemented"))
+  (show-internal-error-once "render-samp not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-script : text% script -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-script a-text a-script)
-  ("render-script not yet implemented"))
+  (show-internal-error-once "render-script not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-select : text% select-> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-select a-text a-select)
-  ("render-select not yet implemented"))
+  (show-internal-error-once "render-select not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-small : text% small -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-small a-text a-small)
   (local [(define howsmall -1)
-          (define G5 (filter (lambda (x)
+          (define alo-G5 (filter (lambda (x)
                                (G5? x))
                              (html:html-full-content a-small)))]
-    (cond [(empty? G5) (void)]
+    (cond [(empty? alo-G5) (void)]
           [else
-           (render-G5-with-relative-size a-text (first G5) howsmall)])))
+           (for-each
+            (lambda (G5)
+             (render-G5-with-relative-size a-text G5 howsmall))
+            alo-G5)])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-span : text% span -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-span a-text a-span)
-  ("render-span not yet implemented"))
+  (show-internal-error-once "render-span not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-strike : text% strike -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-strike a-text a-strike)
-  ("render-strike not yet implemented"))
+  (show-internal-error-once "render-strike not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-strong : text% strong -> void
+; Renders a strong on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-strong a-text a-strong)
-  (local ((define G5 (first (html:html-full-content a-strong)))
-          (define initpos (send a-text get-start-position)))
-    (render-G5 a-text G5)
+  (local [(define alo-G5 (html:html-full-content a-strong))
+          (define initpos (send a-text get-start-position))]
+    (for-each
+     (lambda (G5) (render-G5 a-text G5)) alo-G5)
     (boldify a-text initpos (send a-text get-start-position))))
-          
             
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-style : text% style -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-style a-text a-style)
-  ("render-style not yet implemented"))
+  (show-internal-error-once "STYLE element unsupported"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-sub : text% sub -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-sub a-text a-sub)
-  ("render-sub not yet implemented"))
+  (show-internal-error-once "render-sub not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-sup : text% sup -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-sup a-text a-sup)
-  ("render-sup not yet implemented"))
+  (show-internal-error-once "render-sup not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-table : text% table -> void
@@ -1416,72 +1481,79 @@
 ; render-tbody : text% tbody -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-tbody a-text a-tbody)
-  ("render-tbody not yet implemented"))
+  (show-internal-error-once "render-tbody not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-td : text% td -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-td a-text a-td)
-  ("render-td not yet implemented"))
+  (show-internal-error-once "render-td not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-textarea : text% textarea -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-textarea a-text a-textarea)
-  ("render-textarea not yet implemented"))
+  (show-internal-error-once "render-textarea not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-th : text% th -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-th a-text a-th)
-  ("render-th not yet implemented"))
+  (show-internal-error-once "render-th not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-thead : text% thead -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-thead a-text a-thead)
-  ("render-thead not yet implemented"))
+  (show-internal-error-once "render-thead not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-title : text% title -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-title a-text a-title)
-  ("render-title not yet implemented"))
+  (show-internal-error-once "render-title not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-tfoot : text% tfoot -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-tfoot a-text a-tfoot)
-  ("render-tfoot not yet implemented"))
+  (show-internal-error-once "render-tfoot not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-tr : text% tr -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-tr a-text a-tr)
-  ("render-tr not yet implemented"))
+  (show-internal-error-once "render-tr not yet implemented"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; render-tt : text% tr -> void
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (render-tt a-text a-tt)
+  (show-internal-error-once "render-tt not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-u : text% u -> void
 ; Consumes a text and renders G5 underlined on the text object.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-u a-text a-u)
-  (local [(define G5 (first (html:html-full-content a-u)))
+  (local [(define alo-G5 (html:html-full-content a-u))
           (define initpos (send a-text get-start-position))]
-    (render-G5 a-text G5)
+    (for-each (lambda (G5)
+                      (render-G5 a-text G5)) alo-G5)
     (underline a-text initpos (send a-text get-start-position))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-ul : text% ul -> void
+; Renders an unordered, bulleted list on a-text.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-ul a-text a-ul)
-  ("render-ul not yet implemented"))
+  (show-internal-error-once "UL element unsupported"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-var : text% var -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-var a-text a-var)
-  ("render-var not yet implemented"))
-
+  (show-internal-error-once "render-var not yet implemented"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-G2 : text% G2 -> void

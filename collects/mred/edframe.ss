@@ -145,7 +145,8 @@
 	     (lambda ()
 	       (and (check-all-saved)
 		    (super-on-close)))])
-
+	  (public
+	    [get-edit% (lambda () mred:edit:backup-autosave-edit%)])
 
 	  (public
 	    [allow-font-menu? #t]

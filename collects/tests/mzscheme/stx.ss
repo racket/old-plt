@@ -10,18 +10,19 @@
 (test 19 syntax-position (datum->syntax-object #f 10 '(aha 19)))
 (test 'aha syntax-source (datum->syntax-object #f 10 '(aha 19)))
 
-(test 7 syntax-line (datum->syntax-object #f 10 '(aha 7 88)))
-(test 88 syntax-column (datum->syntax-object #f 10 '(aha 7 88)))
-(test #f syntax-position (datum->syntax-object #f 10 '(aha 7 88)))
-(test 'aha syntax-source (datum->syntax-object #f 10 '(aha 7 88)))
+(test 7 syntax-line (datum->syntax-object #f 10 '(aha 7 88 999)))
+(test 88 syntax-column (datum->syntax-object #f 10 '(aha 7 88 999)))
+(test 999 syntax-position (datum->syntax-object #f 10 '(aha 7 88 999)))
+(test 'aha syntax-source (datum->syntax-object #f 10 '(aha 7 88 999)))
 
 (err/rt-test (datum->syntax-object #f 10 10))
 (err/rt-test (datum->syntax-object #f 10 '(10)))
 (err/rt-test (datum->syntax-object #f 10 '(a -10)))
 (err/rt-test (datum->syntax-object #f 10 '(a 10.0)))
-(err/rt-test (datum->syntax-object #f 10 '(a 10 11 12)))
-(err/rt-test (datum->syntax-object #f 10 '(a 10 11.0)))
-(err/rt-test (datum->syntax-object #f 10 '(a 10 -11)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 11)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 11 12 13)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 11.0 12)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 -11 12)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test basic expansion and property propagation

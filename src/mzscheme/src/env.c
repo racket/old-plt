@@ -21,6 +21,10 @@
   All rights reserved.
 */
 
+/* This file implements environments (both compile-time and top-level
+   envionments, a.k.a. namespaces), and also implements much of the
+   initialization sequence (filling the initial namespace). */
+
 #include "schpriv.h"
 #include "schminc.h"
 
@@ -68,12 +72,16 @@ static Scheme_Object *write_local(Scheme_Object *obj);
 static Scheme_Object *read_local(Scheme_Object *obj);
 static Scheme_Object *read_local_unbox(Scheme_Object *obj);
 
+static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data);
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
 
 static int set_reference_ids = 0;
 static int builtin_ref_counter = 0;
+
+static int env_uid_counter;
 
 #define ARBITRARY_USE 1
 #define CONSTRAINED_USE 2
@@ -102,17 +110,9 @@ void *scheme_global_lock;
 int scheme_global_lock_c;
 #endif
 
-static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
-{
-  if ((o == scheme_orig_stdin_port)
-      || (o == scheme_orig_stdout_port)
-      || (o == scheme_orig_stderr_port))
-    return;
-
-  /* f is NULL for threads */
-  if (f)
-    f(o, data);
-}
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
 
 Scheme_Env *scheme_basic_env()
 {
@@ -410,6 +410,23 @@ static void make_init_env(void)
   scheme_defining_primitives = 0;
 }
 
+/* Shutdown procedure for resetting a namespace: */
+static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
+{
+  if ((o == scheme_orig_stdin_port)
+      || (o == scheme_orig_stdout_port)
+      || (o == scheme_orig_stderr_port))
+    return;
+
+  /* f is NULL for threads */
+  if (f)
+    f(o, data);
+}
+
+/*========================================================================*/
+/*                        namespace constructors                          */
+/*========================================================================*/
+
 Scheme_Env *scheme_make_empty_env(void)
 {
   return make_env(NULL, 0);
@@ -632,6 +649,54 @@ void scheme_clean_dead_env(Scheme_Env *env)
   env->init = NULL;
 }
 
+/*========================================================================*/
+/*                           namespace bindings                           */
+/*========================================================================*/
+
+/********** Lookup **********/
+
+Scheme_Object *
+scheme_lookup_global(Scheme_Object *symbol, Scheme_Env *env)
+{
+  Scheme_Bucket *b;
+    
+  b = scheme_bucket_or_null_from_table(env->toplevel, (char *)symbol, 0);
+  if (b) {
+    if (!((Scheme_Bucket_With_Home *)b)->home)
+      ((Scheme_Bucket_With_Home *)b)->home = env;
+    return (Scheme_Object *)b->val;
+  }
+
+  return NULL;
+}
+
+Scheme_Bucket *
+scheme_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
+{
+  Scheme_Bucket *b;
+    
+  b = scheme_bucket_from_table(env->toplevel, (char *)symbol);
+  if (!((Scheme_Bucket_With_Home *)b)->home)
+    ((Scheme_Bucket_With_Home *)b)->home = env;
+    
+  return b;
+}
+
+Scheme_Bucket *
+scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env)
+{
+  return scheme_bucket_from_table(env->syntax, (char *)symbol);
+}
+
+Scheme_Bucket *
+scheme_exptime_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
+{
+  scheme_prepare_exp_env(env);
+  return scheme_global_bucket(symbol, env->exp_env);
+}
+
+/********** Set **********/
+
 void
 scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym, 
 			    Scheme_Object *obj, 
@@ -683,6 +748,29 @@ scheme_add_global_keyword(const char *name, Scheme_Object *obj,
   scheme_do_add_global_symbol(env, scheme_intern_symbol(name), obj, 0, 0);
 }
 
+void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
+{
+  if (!env->module) {
+    if (env->rename)
+      scheme_remove_module_rename(env->rename, n);
+
+    if (stxtoo) {
+      if (!env->shadowed_syntax) {
+	Scheme_Hash_Table *ht;
+	ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	env->shadowed_syntax = ht;
+      }
+	
+      scheme_hash_set(env->shadowed_syntax, n, scheme_true);
+    } else {
+      if (env->shadowed_syntax)
+	scheme_hash_set(env->shadowed_syntax, n, NULL);
+    }
+  }
+}
+
+/********** Auxilliary tables **********/
+
 Scheme_Object **scheme_make_builtin_references_table(void)
 {
   Scheme_Bucket_Table *ht;
@@ -729,18 +817,9 @@ Scheme_Hash_Table *scheme_map_constants_to_globals(void)
   return result;
 }
 
-void scheme_check_identifier(const char *formname, Scheme_Object *id, 
-			     const char *where, Scheme_Comp_Env *env,
-			     Scheme_Object *form)
-{
-  if (!where)
-    where = "";
-
-  if (!SCHEME_STX_SYMBOLP(id))
-    scheme_wrong_syntax(formname, form ? id : NULL, 
-			form ? form : id, 
-			"not an identifier%s", where);
-}
+/*========================================================================*/
+/*        compile-time env, constructors and simple queries               */
+/*========================================================================*/
 
 static void init_compile_data(Scheme_Comp_Env *env)
 {
@@ -908,6 +987,77 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
     return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
 }
 
+/*========================================================================*/
+/*                     compile-time env, lookup bindings                  */
+/*========================================================================*/
+
+static Scheme_Object *alloc_local(short type, int pos)
+{
+  Scheme_Object *v;
+
+  v = (Scheme_Object *)scheme_malloc_atomic_tagged(sizeof(Scheme_Local));
+  v->type = type;
+  SCHEME_LOCAL_POS(v) = pos;
+
+  return (Scheme_Object *)v;
+}
+
+Scheme_Object *scheme_make_local(Scheme_Type type, int pos)
+{
+  int k;
+
+  k = type - scheme_local_type;
+
+  if (pos < MAX_CONST_LOCAL_POS)
+    return scheme_local[pos][k];
+
+  return alloc_local(type, pos);
+}
+
+static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
+				   int i, int j, int p, int flags)
+{
+  COMPILE_DATA(frame)->use[i] |= (((flags & (SCHEME_APP_POS | SCHEME_SETTING))
+				   ? CONSTRAINED_USE
+				   : ARBITRARY_USE)
+				  | ((flags & (SCHEME_SETTING | SCHEME_LINKING_REF))
+				     ? WAS_SET_BANGED
+				     : 0));
+  
+  if (!COMPILE_DATA(frame)->stat_dists) {
+    int k, *ia;
+    char **ca;
+    ca = MALLOC_N(char*, frame->num_bindings);
+    COMPILE_DATA(frame)->stat_dists = ca;
+    ia = MALLOC_N_ATOMIC(int, frame->num_bindings);
+    COMPILE_DATA(frame)->sd_depths = ia;
+    for (k = frame->num_bindings; k--; ) {
+      COMPILE_DATA(frame)->sd_depths[k] = 0;
+    }
+  }
+  
+  if (COMPILE_DATA(frame)->sd_depths[i] <= j) {
+    char *naya, *a;
+    int k;
+    
+    naya = MALLOC_N_ATOMIC(char, (j + 1));
+    for (k = j + 1; k--; ) {
+      naya[k] = 0;
+    }
+    a = COMPILE_DATA(frame)->stat_dists[i];
+    for (k = COMPILE_DATA(frame)->sd_depths[i]; k--; ) {
+      naya[k] = a[k];
+    }
+    
+    COMPILE_DATA(frame)->stat_dists[i] = naya;
+    COMPILE_DATA(frame)->sd_depths[i] = j + 1;
+  }
+
+  COMPILE_DATA(frame)->stat_dists[i][j] = 1;
+
+  return (Scheme_Local *)scheme_make_local(scheme_local_type, p + i);
+}
+
 Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modidx, Scheme_Object *stxsym)
 {
   Scheme_Object *val;
@@ -941,8 +1091,6 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
 
   return val;
 }
-
-static int env_uid_counter;
 
 static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
 {
@@ -1010,73 +1158,6 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
   }
 
   return stx;
-}
-
-static Scheme_Object *alloc_local(short type, int pos)
-{
-  Scheme_Object *v;
-
-  v = (Scheme_Object *)scheme_malloc_atomic_tagged(sizeof(Scheme_Local));
-  v->type = type;
-  SCHEME_LOCAL_POS(v) = pos;
-
-  return (Scheme_Object *)v;
-}
-
-Scheme_Object *scheme_make_local(Scheme_Type type, int pos)
-{
-  int k;
-
-  k = type - scheme_local_type;
-
-  if (pos < MAX_CONST_LOCAL_POS)
-    return scheme_local[pos][k];
-
-  return alloc_local(type, pos);
-}
-
-static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
-				   int i, int j, int p, int flags)
-{
-  COMPILE_DATA(frame)->use[i] |= (((flags & (SCHEME_APP_POS | SCHEME_SETTING))
-				   ? CONSTRAINED_USE
-				   : ARBITRARY_USE)
-				  | ((flags & (SCHEME_SETTING | SCHEME_LINKING_REF))
-				     ? WAS_SET_BANGED
-				     : 0));
-  
-  if (!COMPILE_DATA(frame)->stat_dists) {
-    int k, *ia;
-    char **ca;
-    ca = MALLOC_N(char*, frame->num_bindings);
-    COMPILE_DATA(frame)->stat_dists = ca;
-    ia = MALLOC_N_ATOMIC(int, frame->num_bindings);
-    COMPILE_DATA(frame)->sd_depths = ia;
-    for (k = frame->num_bindings; k--; ) {
-      COMPILE_DATA(frame)->sd_depths[k] = 0;
-    }
-  }
-  
-  if (COMPILE_DATA(frame)->sd_depths[i] <= j) {
-    char *naya, *a;
-    int k;
-    
-    naya = MALLOC_N_ATOMIC(char, (j + 1));
-    for (k = j + 1; k--; ) {
-      naya[k] = 0;
-    }
-    a = COMPILE_DATA(frame)->stat_dists[i];
-    for (k = COMPILE_DATA(frame)->sd_depths[i]; k--; ) {
-      naya[k] = a[k];
-    }
-    
-    COMPILE_DATA(frame)->stat_dists[i] = naya;
-    COMPILE_DATA(frame)->sd_depths[i] = j + 1;
-  }
-
-  COMPILE_DATA(frame)->stat_dists[i][j] = 1;
-
-  return (Scheme_Local *)scheme_make_local(scheme_local_type, p + i);
 }
 
 Scheme_Object *
@@ -1266,29 +1347,11 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   return (Scheme_Object *)b;
 }
 
-void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
-{
-  if (!env->module) {
-    if (env->rename)
-      scheme_remove_module_rename(env->rename, n);
-
-    if (stxtoo) {
-      if (!env->shadowed_syntax) {
-	Scheme_Hash_Table *ht;
-	ht = scheme_make_hash_table(SCHEME_hash_ptr);
-	env->shadowed_syntax = ht;
-      }
-	
-      scheme_hash_set(env->shadowed_syntax, n, scheme_true);
-    } else {
-      if (env->shadowed_syntax)
-	scheme_hash_set(env->shadowed_syntax, n, NULL);
-    }
-  }
-}
-
 void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_map)
 {
+  /* A closure map lists the captured variables for a closure; the
+     indices are resolved two new indicies in the second phase of
+     compilation. */
   Compile_Data *data;
   Scheme_Comp_Env *frame;
   int i, j, pos = 0, lpos = 0;
@@ -1364,6 +1427,23 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count)
   return v;
 }
 
+/*========================================================================*/
+/*                          syntax-checking utils                         */
+/*========================================================================*/
+
+void scheme_check_identifier(const char *formname, Scheme_Object *id, 
+			     const char *where, Scheme_Comp_Env *env,
+			     Scheme_Object *form)
+{
+  if (!where)
+    where = "";
+
+  if (!SCHEME_STX_SYMBOLP(id))
+    scheme_wrong_syntax(formname, form ? id : NULL, 
+			form ? form : id, 
+			"not an identifier%s", where);
+}
+
 void scheme_begin_dup_symbol_check(DupCheckRecord *r, Scheme_Comp_Env *env)
 {
   r->phase = env->genv->phase;
@@ -1404,6 +1484,12 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
   scheme_hash_set(r->ht, symbol, scheme_true);
 }
 
+/*========================================================================*/
+/*             compile-time env for phase 2 ("resolve")                   */
+/*========================================================================*/
+
+/* See eval.c for information about the compilation phases. */
+
 Resolve_Info *scheme_resolve_info_create(Scheme_Hash_Table *simplify_rns)
 {
   Resolve_Info *naya;
@@ -1436,7 +1522,6 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
   naya->oldsize = oldsize;
   naya->count = mapc;
   naya->pos = 0;
-  naya->anchor_offset = 0;
   if (mapc) {
     int i, *ia;
     short *sa;
@@ -1473,33 +1558,14 @@ void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int
   info->pos++;
 }
 
-void scheme_resolve_info_set_anchor_offset(Resolve_Info *info, int offset)
-{
-  info->anchor_offset = offset;
-}
-
 static int resolve_info_lookup(Resolve_Info *info, int pos, int *flags)
 {
   int i, offset = 0, orig = pos;
-  int get_anchor;
-
-  if (pos < 0) {
-    get_anchor = pos;
-    pos = -(pos + 1);
-  } else
-    get_anchor = 0;
 
   while (info) {
     for (i = info->pos; i--; ) {
       int oldp = info->old_pos[i];
       if (pos == oldp) {
-	/* not yet mapped anchor */
-	if (flags)
-	  *flags = info->flags[i];
-	return info->new_pos[i] + offset + (get_anchor ? info->anchor_offset : 0);
-      }
-      if (get_anchor && (get_anchor == oldp)) {
-	/* re-mapped anchor */
 	if (flags)
 	  *flags = info->flags[i];
 	return info->new_pos[i] + offset;
@@ -1531,66 +1597,23 @@ int scheme_resolve_info_lookup(Resolve_Info *info, int pos, int *flags)
   return resolve_info_lookup(info, pos, flags);
 }
 
-int scheme_resolve_info_lookup_anchor(Resolve_Info *info, int pos)
-{
-  return resolve_info_lookup(info, -(pos + 1), NULL);
-}
-
-
-Scheme_Object *
-scheme_lookup_global(Scheme_Object *symbol, Scheme_Env *env)
-{
-  Scheme_Bucket *b;
-    
-  b = scheme_bucket_or_null_from_table(env->toplevel, (char *)symbol, 0);
-  if (b) {
-    if (!((Scheme_Bucket_With_Home *)b)->home)
-      ((Scheme_Bucket_With_Home *)b)->home = env;
-    return (Scheme_Object *)b->val;
-  }
-
-  return NULL;
-}
-
-Scheme_Bucket *
-scheme_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
-{
-  Scheme_Bucket *b;
-    
-  b = scheme_bucket_from_table(env->toplevel, (char *)symbol);
-  if (!((Scheme_Bucket_With_Home *)b)->home)
-    ((Scheme_Bucket_With_Home *)b)->home = env;
-    
-  return b;
-}
-
-Scheme_Bucket *
-scheme_global_keyword_bucket(Scheme_Object *symbol, Scheme_Env *env)
-{
-  return scheme_bucket_from_table(env->syntax, (char *)symbol);
-}
-
-Scheme_Bucket *
-scheme_exptime_global_bucket(Scheme_Object *symbol, Scheme_Env *env)
-{
-  scheme_prepare_exp_env(env);
-  return scheme_global_bucket(symbol, env->exp_env);
-}
+/*========================================================================*/
+/*                             run-time "stack"                           */
+/*========================================================================*/
 
 Scheme_Object *scheme_make_envunbox(Scheme_Object *value)
 {
   Scheme_Object *obj;
 
-#ifdef MZ_PRECISE_GC
-  obj = (Scheme_Object *)scheme_malloc_envunbox(sizeof(Scheme_Small_Object));
-  obj->type = scheme_envunbox_type;
-#else
   obj = (Scheme_Object *)scheme_malloc_envunbox(sizeof(Scheme_Object*));
-#endif
   SCHEME_ENVBOX_VAL(obj) = value;
 
   return obj;
 }
+
+/*========================================================================*/
+/*             run-time and expansion-time Scheme interface               */
+/*========================================================================*/
 
 static Scheme_Object *
 namespace_variable_binding(int argc, Scheme_Object *argv[])
@@ -1737,7 +1760,9 @@ make_set_transformer(int argc, Scheme_Object *argv[])
 }
 
 
-/*********************************************************************/
+/*========================================================================*/
+/*                    [un]marshalling variable reference                  */
+/*========================================================================*/
 
 static Scheme_Object *write_variable(Scheme_Object *obj)
 {
@@ -1805,7 +1830,9 @@ static Scheme_Object *read_local_unbox(Scheme_Object *obj)
 			   SCHEME_INT_VAL(obj));
 }
 
-/**********************************************************************/
+/*========================================================================*/
+/*                         precise GC traversers                          */
+/*========================================================================*/
 
 #ifdef MZ_PRECISE_GC
 

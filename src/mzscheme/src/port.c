@@ -1589,7 +1589,7 @@ scheme_tell_column (Scheme_Object *port)
   ip = (Scheme_Input_Port *)port;
 
   if (!ip->count_lines)
-    return scheme_tell(port);
+    return -1;
 
   BEGIN_LOCK_PORT(ip->sema);
 

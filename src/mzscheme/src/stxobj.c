@@ -85,15 +85,23 @@ static Module_Renames *krn;
    A wrap is a list of wrap-elems.
 
    - A wrap-elem <num> is a mark
+
    - A wrap-elem (vector <sym> <ht> <stx> ... <sym-or-void> ...) is a lexical rename
                          env  (sym   var      var-resolved
                               ->pos)           void => not yet computed
                               or #f  sym => mark
                                       check done, var-resolved is answer to replace #f
+   - A wrap-elem (vector <any> <ht> <sym> ... <sym> ...) is also a lexical rename
+                                    var       resolved
+         where the variables have already been resolvedand filtered (no mark
+         comparison needed with the remaining wraps)
+
    - A wrap-elem <rename-table> is a module rename set
          the hash table maps renamed syms to modname-srcname pairs
+
    - A wrap-elem (box (vector <num> <midx> <midx>)) is a phase shift
          by <num>, remapping the first <midx> to the second <midx>
+
    - A wrap-elem '* is a mark barrier, which is applied to the
          result of an expansion so that top-level marks do not
          break re-expansions
@@ -234,6 +242,7 @@ void scheme_init_stx(Scheme_Env *env)
   empty_srcloc->src = scheme_false;
   empty_srcloc->line = -1;
   empty_srcloc->col = -1;
+  empty_srcloc->pos = -1;
 
   REGISTER_SO(empty_simplified);
   empty_simplified = scheme_make_vector(2, scheme_false);
@@ -260,7 +269,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 }
 
 Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
-					long line, long col, 
+					long line, long col, long pos,
 					Scheme_Object *src,
 					Scheme_Object *props)
 {
@@ -269,15 +278,14 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
   if (SAME_TYPE(SCHEME_TYPE(src), scheme_stx_offset_type)) {
     Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)src;
 
-    if (line == -1) {
-      /* Given location is a position. */
-      col += o->pos;
-    } else {
-      /* Given location is a line and column. */
+    if (pos >= 0)
+      pos += o->pos;
+    if (col >= 0) {
       if (line == 1)
 	col += o->col;
-      line += o->line;
     }
+    if (line >= 0)
+      line += o->line;
 
     src = o->src;
   }
@@ -289,11 +297,12 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
   srcloc->src = src;
   srcloc->line = line;
   srcloc->col = col;
+  srcloc->pos = pos;
    
   return scheme_make_stx(val, srcloc, props);
 }
 
-Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
+Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, long pos)
 /* Sets the "is graph" flag */
 {
   ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
@@ -1929,7 +1938,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* Re-use rename table or env rename */
       a = scheme_hash_get(rns, a);
       if (!a) {
-	scheme_read_err(scheme_false, NULL, -1, -1, 0,
+	scheme_read_err(scheme_false, NULL, -1, -1, -1, 0,
 			"read (compiled): unknown rename table index: %d",
 			SCHEME_INT_VAL(a));
       }
@@ -2294,14 +2303,11 @@ static void simplify_syntax_inner(Scheme_Object *o,
       scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)scheme_true);
   }
 
-  if (rns) {
-    /* Propagate wraps: */
-    scheme_stx_content((Scheme_Object *)stx);
-
-    v = wraps_to_datum(stx->wraps, rns, 1);
-    stx->wraps = v;
-  }
-  stx->props = NULL;
+  /* Propagate wraps: */
+  scheme_stx_content((Scheme_Object *)stx);
+  
+  v = wraps_to_datum(stx->wraps, rns, 1);
+  stx->wraps = v;
 
   v = stx->val;
   
@@ -2326,9 +2332,11 @@ static void simplify_syntax_inner(Scheme_Object *o,
 
 void scheme_simplify_stx(Scheme_Object *stx, Scheme_Hash_Table *rns)
 {
-  Scheme_Hash_Table *ht = NULL;
-
-  simplify_syntax_inner(stx, rns, &ht);
+  if (rns) {
+    Scheme_Hash_Table *ht = NULL;
+    
+    simplify_syntax_inner(stx, rns, &ht);
+  }
 }
 
 /*========================================================================*/
@@ -2380,30 +2388,35 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 
     if (!SCHEME_FALSEP(src) 
 	&& !SCHEME_STXP(src)
-	&& !((ll == 3) 
+	&& !((ll == 4)
 	     && scheme_nonneg_exact_p(SCHEME_CADR(src))
-	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src))))
+	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src)))
+	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src)))))
 	&& !((ll == 2)
 	     && scheme_nonneg_exact_p(SCHEME_CADR(src))))
       scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
 
-    if (ll == 3) {
-      /* line/column format */
-      Scheme_Object *line, *col;
+    if (ll == 4) {
+      /* line--column--pos format */
+      Scheme_Object *line, *col, *pos;
       line = SCHEME_CADR(src);
       col = SCHEME_CADR(SCHEME_CDR(src));
+      pos = SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src)));
       src = SCHEME_CAR(src);
+      
 
       /* FIXME: what to do with too-large positions? */
       if (SCHEME_BIGNUMP(line))
 	line = scheme_make_integer(0);
-      /* FIXME: what to do with too-large positions? */
       if (SCHEME_BIGNUMP(col))
 	col = scheme_make_integer(0);
+      if (SCHEME_BIGNUMP(pos))
+	pos = scheme_make_integer(0);
 
       src = scheme_make_stx_w_offset(scheme_false,
 				     SCHEME_INT_VAL(line),
 				     SCHEME_INT_VAL(col),
+				     SCHEME_INT_VAL(pos),
 				     src,
 				     NULL);
     } else if (ll == 2) {
@@ -2417,6 +2430,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 	pos = scheme_make_integer(0);
 
       src = scheme_make_stx_w_offset(scheme_false,
+				     -1,
 				     -1,
 				     SCHEME_INT_VAL(pos),
 				     src,
@@ -2456,7 +2470,7 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-column", "syntax", 0, argc, argv);
     
-  if (stx->srcloc->line < 0) /* => col, if present, is really position */
+  if (stx->srcloc->col < 0)
     return scheme_false;
   else
     return scheme_make_integer(stx->srcloc->col);
@@ -2469,12 +2483,10 @@ static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-position", "syntax", 0, argc, argv);
     
-  /* line < 0  => col, if present, is really position */
-
-  if ((stx->srcloc->line >= 0) || (stx->srcloc->col < 0))
+  if (stx->srcloc->pos < 0)
     return scheme_false;
   else
-    return scheme_make_integer(stx->srcloc->col);
+    return scheme_make_integer(stx->srcloc->pos);
 }
 
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)

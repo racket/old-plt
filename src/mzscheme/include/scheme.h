@@ -332,11 +332,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_VEC_ELS(obj)  (((Scheme_Vector *)(obj))->els)
 #define SCHEME_VEC_BASE(obj) SCHEME_VEC_ELS(obj)
 
-#ifdef MZ_PRECISE_GC
-# define SCHEME_ENVBOX_VAL(obj)  SCHEME_PTR_VAL(obj)
-#else
-# define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
-#endif
+#define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
 #define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj) 
 
 #define SCHEME_PTR_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
@@ -1061,7 +1057,7 @@ void *scheme_malloc(size_t size);
 # define scheme_malloc_stubborn_tagged GC_malloc_one_tagged
 # define scheme_malloc_eternal_tagged GC_malloc_atomic_uncollectable
 # define scheme_malloc_uncollectable_tagged >> error <<
-# define scheme_malloc_envunbox GC_malloc_one_tagged
+# define scheme_malloc_envunbox GC_malloc
 # define scheme_malloc_weak GC_malloc_weak
 # define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
 # define scheme_malloc_allow_interior GC_malloc_allow_interior

@@ -75,7 +75,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_true_type, "<true>");
   set_name(scheme_false_type, "<false>");
   set_name(scheme_char_type, "<char>");
-  set_name(scheme_envunbox_type, "<env-auto-unbox>");
   set_name(scheme_local_type, "<local-code>");
   set_name(scheme_local_unbox_type, "<local-unbox-code>");
   set_name(scheme_variable_type, "<variable-code>");
@@ -164,6 +163,7 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_subprocess_type, "<subprocess>");
 
+  set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -397,7 +397,6 @@ void scheme_register_traversers(void)
   
   GC_REG_TRAV(scheme_compilation_top_type, compilation_top_val);
 
-  GC_REG_TRAV(scheme_envunbox_type, small_object);
   GC_REG_TRAV(scheme_eval_waiting_type, bad_trav);
   GC_REG_TRAV(scheme_tail_call_waiting_type, bad_trav);
   GC_REG_TRAV(scheme_undefined_type, char_obj); /* small */

@@ -975,6 +975,8 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
 
   line = ((Scheme_Stx *)form)->srcloc->line;
   col = ((Scheme_Stx *)form)->srcloc->col;
+  if (col < 0)
+    col = ((Scheme_Stx *)form)->srcloc->pos;
 
   if (col >= 0) {
     Scheme_Object *src;
@@ -1013,12 +1015,12 @@ static char *make_srcloc_string(Scheme_Object *form, long *len)
 
 void scheme_read_err(Scheme_Object *port, 
 		     Scheme_Object *stxsrc,
-		     long line, long column, int is_eof,
+		     long line, long col, long pos, int is_eof,
 		     const char *detail, ...)
 {
   va_list args;
   char *s, *ls, lbuf[30];
-  long slen;
+  long slen, column;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   s = prepared_buf;
@@ -1032,20 +1034,24 @@ void scheme_read_err(Scheme_Object *port,
   if (stxsrc) {
     if (SAME_TYPE(SCHEME_TYPE(stxsrc), scheme_stx_offset_type)) {
       Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)stxsrc;
-      
-      if (line == -1) {
-	/* Given location is a position. */
-	column += o->pos;
-      } else {
-	/* Given location is a line and column. */
+
+      if (pos >= 0)
+	pos += o->pos;
+      if (col >= 0) {
 	if (line == 1)
-	  column += o->col;
-	line += o->line;
+	  col += o->col;
       }
-      
+      if (line >= 0)
+	line += o->line;
+
       stxsrc = o->src;
     } 
   }
+
+  if (col < 0)
+    column = pos;
+  else
+    column = col;
 
   if (column >= 0) {
     scheme_sprintf(lbuf, 30, ":%L%ld", line, column);
@@ -1057,7 +1063,8 @@ void scheme_read_err(Scheme_Object *port,
 		   port ? port : scheme_false, 
 		   stxsrc ? stxsrc : scheme_false,
 		   (line < 0) ? scheme_false : scheme_make_integer(line),
-		   (column < 0) ? scheme_false : scheme_make_integer(column),
+		   (col < 0) ? scheme_false : scheme_make_integer(col),
+		   (pos < 0) ? scheme_false : scheme_make_integer(pos),
 		   "%t in %s%s", 
 		   s, slen, port ? SCHEME_IPORT_NAME(port) : "UNKNOWN",
 		   ls);

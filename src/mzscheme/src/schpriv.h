@@ -408,7 +408,7 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 
 typedef struct Scheme_Stx_Srcloc {
   MZTAG_IF_REQUIRED
-  long line, col;
+  long line, col, pos;
   Scheme_Object *src;
 } Scheme_Stx_Srcloc;
 
@@ -432,11 +432,11 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 			       Scheme_Stx_Srcloc *srcloc,
 			       Scheme_Object *props);
 Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val, 
-					long line, long col, 
+					long line, long col, long pos,
 					Scheme_Object *src,
 					Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
-				     long line, long col);
+				     long line, long col, long pos);
 void scheme_simplify_stx(Scheme_Object *stx, Scheme_Hash_Table *simplify_rns);
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
@@ -1078,7 +1078,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  Scheme_Object *port,
 				  int *div_by_zero,
 				  int test_only,
-				  Scheme_Object *stxsrc, long line, long col);
+				  Scheme_Object *stxsrc, long line, long col, long pos);
 
 Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
 Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
@@ -1214,7 +1214,7 @@ typedef struct Scheme_Compile_Info
 typedef struct Resolve_Info
 {
   MZTAG_IF_REQUIRED
-  int size, oldsize, count, pos, anchor_offset;
+  int size, oldsize, count, pos;
   Scheme_Hash_Table *simplify_rns;
   short *old_pos;
   short *new_pos;
@@ -1365,10 +1365,8 @@ Scheme_Object *scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info);
 Resolve_Info *scheme_resolve_info_create(Scheme_Hash_Table *simplify_rns);
 Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsize, int mapcount);
 void scheme_resolve_info_add_mapping(Resolve_Info *info, int oldp, int newp, int flags);
-void scheme_resolve_info_set_anchor_offset(Resolve_Info *info, int offset);
 int scheme_resolve_info_flags(Resolve_Info *info, int pos);
 int scheme_resolve_info_lookup(Resolve_Info *resolve, int pos, int *flags);
-int scheme_resolve_info_lookup_anchor(Resolve_Info *info, int pos);
 
 Scheme_Object *scheme_make_compiled_syntax(Scheme_Syntax *syntax,
 					   Scheme_Syntax_Expander *exp);
@@ -1415,7 +1413,6 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 
 /* flags reported by scheme_resolve_info_flags */
 #define SCHEME_INFO_BOXED 1
-#define SCHEME_INFO_ANCHORED 2
 
 /* flags used with scheme_new_frame */
 #define SCHEME_TOPLEVEL_FRAME 1
@@ -1613,8 +1610,8 @@ void scheme_clean_dead_env(Scheme_Env *env);
 
 void scheme_read_err(Scheme_Object *port, 
 		     Scheme_Object *stxsrc,
-		     long line, long column, int is_eof,
-		     const char *detail, ...);
+		     long line, long column, long pos, 
+		     int is_eof, const char *detail, ...);
 
 void scheme_wrong_syntax(const char *where, 
 			 Scheme_Object *local_form, 

@@ -33,7 +33,8 @@ strings are types/comments.
      (read [port "input-port" "port being read"
 		 source "value" "source name"
 		 line "non-negative exact integer or {\\scmfalse}" "source line"
-		 column "non-negative exact integer or {\\scmfalse}" "source column, or position if line is {\\scmfalse}"]
+		 column "non-negative exact integer or {\\scmfalse}" "source column"
+		 position "non-negative exact integer or {\\scmfalse}" "source position"]
 	   "\\scm{read} parsing error"
 	   (eof [] "unexpected end-of-file"))
      

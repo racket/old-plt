@@ -284,21 +284,21 @@
   (let ([v (read-syntax 'ok p (list 70 700 7000))])
     (test #f syntax-line v)
     (test #f syntax-column v)
-    (test  7002 syntax-position v)))
+    (test 7002 syntax-position v)))
 
 (let ([p (open-input-string " a ")])
   (port-count-lines! p)
   (let ([v (read-syntax 'ok p (list 70 700 7000))])
     (test 71 syntax-line v)
     (test 702 syntax-column v)
-    (test  #f syntax-position v)))
+    (test 7002 syntax-position v)))
 
 (let ([p (open-input-string " \n a ")])
   (port-count-lines! p)
   (let ([v (read-syntax 'ok p (list 70 700 7000))])
     (test 72 syntax-line v)
     (test 2 syntax-column v)
-    (test  #f syntax-position v)))
+    (test 7004 syntax-position v)))
 
 ;; Check exception record:
 (let ([p (open-input-string " . ")])
@@ -307,7 +307,8 @@
     (test p exn:read-port x)
     (test 'ok exn:read-source x)
     (test #f exn:read-line x)
-    (test 7002 exn:read-column x)))
+    (test #f exn:read-column x)
+    (test 7002 exn:read-position x)))
     
 (let ([p (open-input-string " . ")])
   (port-count-lines! p)
@@ -316,7 +317,8 @@
     (test p exn:read-port x)
     (test 'ok exn:read-source x)
     (test 71 exn:read-line x)
-    (test 702 exn:read-column x)))
+    (test 702 exn:read-column x)
+    (test 7002 exn:read-position x)))
     
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -22,12 +22,12 @@
 */
 
 /* This file defines MzScheme's main(), which is a jumble of
-   platform-specific initialization.  The included file "cmdline.inc"
-   defines command-line parsing.  (MrEd also uses "cmdline.inc".)
+   platform-specific initialization. The included file "cmdline.inc"
+   implements command-line parsing. (MrEd also uses "cmdline.inc".)
 
    The rest of the source code resides in the `src' subdirectory
-   (except for the garbage collector, which is in `gc' or `sgc',
-   depending on which one you're using). */
+   (except for the garbage collector, which is in `gc', `sgc', or
+   `gc2', depending on which one you're using). */
 
 #include "scheme.h"
 
@@ -357,7 +357,7 @@ static void do_scheme_rep(Scheme_Env *env)
 }
 
 /*========================================================================*/
-/*                           testing junk                                 */
+/*                         junk for testing                               */
 /*========================================================================*/
 
 #if 0

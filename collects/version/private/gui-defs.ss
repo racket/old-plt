@@ -25,8 +25,8 @@
 		     #f
 		     '(ok)))
    
-     (define (show-error-ok parent title caption)
-       (show-ok parent title (format "Error: ~a" caption) #f))
+     (define (show-error-ok title caption)
+       (show-ok title (format "Error: ~a" caption) #f))
 
      (define (make-wait-dialog parent title caption close-fun)
        (let ([dialog 

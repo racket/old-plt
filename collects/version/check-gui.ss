@@ -4,8 +4,15 @@
   (require "private/gui-defs.ss")
   (require "private/go-check.ss")
 
-  (define (check-version)
-    (go-check 
-     #f ; parent frame
-     gui-defs@)))
+  (define check-version
+    (case-lambda
+     [()
+      (go-check 
+       #f ; no parent frame
+       gui-defs@)]
+     [(parent-frame)
+      (go-check 
+       parent-frame
+       gui-defs@)])))
+
 

@@ -24,10 +24,14 @@ package is up-to-date is made on the server side.
 Two files may be used to run version checks from 
 MrEd and MzScheme:
 
-> check-gui.ss (for MrEd)
-> check-text.ss (for MrEd or MzScheme)
+> check-text.ss 
+(for MrEd or MzScheme)
 
-These files contain modules, so they can be run with
+> check-gui.ss 
+(for MrEd)
+
+These files contain modules that export a procedure 
+named check-version:
 
  (require (lib "check-gui.ss" "version"))
 
@@ -35,22 +39,13 @@ and
 
  (require (lib "check-text.ss" "version"))
 
-These files may be used to create launchers that accept one or more 
-collection arguments on the command-line, using the `-l' flag.  
-Currently, the info.ss file in the version collection does not 
-create launchers from these files.
+For check-text.ss, the procedure is called with 
 
-Another file 
+> (check-version) 
 
-> version.ss
+For check-gui.ss, the procedure is called with 
 
-works like check-gui.ss, except that it exports a thunk allowing
-version checks to be made repeatedly.  To call the checker,
-run
+> (check-version [frame]) 
 
- (require (lib "version.ss" "version"))
-
-then
-
- (check-version)
-
+where the optional argument `frame' is either 
+a frame% instance or #f, the default.

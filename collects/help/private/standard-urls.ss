@@ -2,7 +2,6 @@
 
   (require "../servlets/private/util.ss"
            "cookie.ss"
-           ;"manuals.ss"
 	   (lib "contract.ss"))
   
   (provide make-home-page-url

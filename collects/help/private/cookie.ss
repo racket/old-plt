@@ -1,7 +1,6 @@
 (module cookie mzscheme
   (require (lib "class.ss")
-           (lib "contract.ss")
-           (lib "mred.ss" "mred"))
+           (lib "contract.ss"))
   
   (define-struct hd-cookie (port 
                             shutdown-server

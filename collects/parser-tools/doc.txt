@@ -145,7 +145,13 @@ This module provides the following syntactic form:
 
   > (debug filename) OPTIONAL causes the parser generator to write the
      LALR table to the file named filename (unless the file exists).
-     filename must be a string.
+     filename must be a string.  Additionally, if a debug file is
+     specified, when a running generated parser encounters a parse
+     error on some input file, after the user specified error
+     expression returns, the complete parse stack is printed to assist
+     in debugging the grammar of that particular parser.  The numbers
+     in the stack printout correspond to the state numbers in the LALR
+     table file.
 
   > (yacc-output filename) OPTIONAL causes the parser generator to
      write a grammar file in the syntax of YACC/Bison.  The file might

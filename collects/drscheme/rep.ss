@@ -69,7 +69,8 @@
 	     (mred:message-box "Invalid Library" (exn-message x))
 	     #f)])
        (if v
-	   (let ([new-unit (load/cd v)])
+	   (let ([new-unit (parameterize ([read-case-sensitive #t])
+			     (load/cd v))])
 	     (if (unit/sig? new-unit)
 		 ; Put the unit into a procedure that invokes it into
 		 ;  the current namespace

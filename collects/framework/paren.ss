@@ -8,7 +8,8 @@
   (define skip-whitespace
     (lambda (edit pos dir)
       (let ([left (if (eq? dir 'forward) pos (sub1 pos))]
-	    [okay (if (eq? dir 'forward)(<= pos (send edit last-position))
+	    [okay (if (eq? dir 'forward)
+                      (<= pos (send edit last-position))
 		      (> pos 0))])
 	(if okay	
 	    (let ([next-char (send edit get-character left)])
@@ -65,8 +66,10 @@
 			   ;; before the character it escapes
 			   (letrec ([is-escaping?
 				     (lambda (pos)
-				       (let ([c (get-character (sub1 pos))])
-					 (not (and (char=? c #\\) (is-escaping? (sub1 pos))))))])
+                                       (and (not (= pos 0))
+                                            (let ([c (get-character (sub1 pos))])
+                                              (not (and (char=? c #\\) 
+                                                        (is-escaping? (sub1 pos)))))))])
 			     (lambda (x) 
 			       (cond
 				 [(= x 1) (let ([c (get-character 0)])

@@ -25,24 +25,6 @@
 
 (load-relative "start-drs.ss")
 
-(define (help-desk)
-  (require-library "core.ss")
-  (require-library "url.ss" "net")
-  (require-library "sig.ss" "help")
-  (eval
-   '(invoke-open-unit/sig
-     (require-library "start-help-desk.ss" "help")
-     #f
-     mzlib:function^
-     mzlib:string^
-     mzlib:file^
-     mzlib:url^
-     mred^))
-  (thread
-   (lambda ()
-     (parameterize ([current-eventspace (make-eventspace)])
-       (start-help-desk)))))
-
 (define (u)
   (when drscheme-custodian (custodian-shutdown-all drscheme-custodian))
   (set! drscheme-custodian (make-custodian))
@@ -50,6 +32,10 @@
 		 [current-namespace drscheme-namespace])
     (set! drscheme-eventspace (make-eventspace))
     (parameterize ([current-eventspace drscheme-eventspace])
+      (when (or graphical-debug? textual-debug?)
+        (queue-callback 
+         (lambda ()
+           (invoke-unit (require-library "errortracer.ss" "errortrace")))))
       (queue-callback start-drscheme))))
 
 (cond

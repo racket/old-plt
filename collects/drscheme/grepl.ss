@@ -240,8 +240,6 @@
     (send (send repl-buffer get-keymap) chain-to-keymap console-keymap #t))
 
 
-
-
   (send repl-buffer auto-wrap #t)
 
   ;; Go

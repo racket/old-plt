@@ -170,7 +170,7 @@
      [(null? (cddr path-and-value)) ; (property value)
       (let ([ppty (car path-and-value)]
 	    [val (cadr path-and-value)])
-	(if (list? ppty)
+	(if (pair? ppty)
 	    (if (string? (car ppty))
 		(apply mxprims:com-set-property! obj 
 		       (append ppty (list val)))
@@ -678,7 +678,7 @@
 	   (mxprims:element-font-family elt)))
        (define set-font-family!
 	 (lambda (ff)
-	   (unless (and (list? ff)
+	   (unless (and (pair? ff)
 			(andmap string? ff))
 		   (error "set-font-family!: Expected list of strings, got"
 			  ff))
@@ -839,7 +839,7 @@
 	(define set-background-position!
 	 (lambda (pos)
 	   (cond
-	    [(and (list? pos) (= (length pos) 2))
+	    [(and (pair? pos) (= (length pos) 2))
 	     (if (andmap symbol? pos)
 		 (let ([elt-1 (car pos)]
 		       [elt-2 (cadr pos)])
@@ -974,7 +974,7 @@
 	   (mxprims:element-padding elt)))
 	(define set-padding!
 	 (lambda (pads)
-	   (unless (and (list? pads)
+	   (unless (and (pair? pads)
 			(let ([len (length pads)])
 			  (and (>= len 1) (<= len 4))) 
 			(andmap style:percentage-or-length? pads))
@@ -1627,7 +1627,7 @@
 	 (lambda (s)
 	   (let ([str (cond
 		       [(eq? s 'auto) "auto"]
-		       [(and (list? s) 
+		       [(and (pair? s) 
 			     (= (length s) 4) 
 			     (andmap
 			      (lambda (elt)

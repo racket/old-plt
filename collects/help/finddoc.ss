@@ -1,9 +1,37 @@
 (module finddoc mzscheme
-  (provide finddoc)
+  (provide finddoc
+           findreldoc)
+  
+  ;; Creates a "file:" link into the indicated manual.
+  ;; The link doesn't go to a particular anchor,
+  ;; because "file:" does not support that.
+  (define (finddoc manual index-key label)
+    (let ([m (lookup manual index-key label)])
+      (if (string? m)
+          m
+          (format "<A href=\"file:~a\">~a</A>"
+                  (build-path (car m) (caddr m))
+                    label))))
+  
+  ;; Given a Unix-style relative path to reach the "doc"
+  ;; collection, creates a link that can go to a
+  ;; particular anchor.
+  (define (findreldoc todocs manual index-key label)
+    (let ([m (lookup manual index-key label)])
+      (if (string? m)
+          m
+          (format "<A href=\"~a/~a/~a#~a\">~a</A>"
+                  todocs
+                  manual
+                  (caddr m)
+                  (cadddr m)
+                  label))))
   
   (define ht (make-hash-table))
   
-  (define (finddoc manual index-key label)
+  ;; returns either a string (failure) or
+  ;; (list docdir index-key filename anchor title)
+  (define (lookup manual index-key label)
     (with-handlers ([(lambda (x) #t) 
                      (lambda (x) 
                        (format 
@@ -20,6 +48,6 @@
                         (hash-table-put! ht key l)
                         l))))])
           (let ([m (assoc index-key l)])
-            (format "<A href=\"file:~a\">~a</A>"
-                    (build-path docdir (cadr m))
-                    label)))))))
+            (if m 
+                (cons docdir m)
+                (raise 'not-there))))))))

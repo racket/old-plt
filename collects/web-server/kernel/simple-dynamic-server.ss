@@ -5,7 +5,7 @@
            "servlet.ss"
            "request-parsing.ss"
            "response.ss"
-           "util.ss"
+           "resolver.ss"
            "error-response.ss"
            "connection-manager.ss"
            "server.ss")
@@ -22,24 +22,24 @@
   ;; the file located relative to the current dirctory
   (define (serve/request conn req)
     (let ([url (request-uri req)])
-      (let* ([vp (url->virtual-path url)]
-             [dir-part (virtual-path-directory-part vp)]
-             [f-part (virtual-path-file-part vp)])
+      (let* ([vp (url->logical-path url)]
+             [dir-part (logical-path-directory-part vp)]
+             [f-part (logical-path-file-part vp)])
         (myprint "serve/request:~n     dir-part = ~s~n     f-part = ~s~n" dir-part f-part)
         (cond
          [(and (not (null? dir-part))
                (string=? (car dir-part) ".."))
           (report-error 404 conn (request-method req))]
-         [(build-servlet-path (current-directory) dir-part f-part)
-          => (lambda (svt-path-stuff)
-               (invoke-servlet (car svt-path-stuff) (cadr svt-path-stuff) conn req))]
+         [(build-servlet-path req (current-directory) dir-part f-part)
+          => (lambda (svt-path)
+               (invoke-servlet svt-path (request-path-suffix req) conn req))]
          [else
           (report-error 404 conn (request-method req))]))))
 
-  ;; build-servlet-path: path (listof string) string -> (union #f (list path (listof string))
+  ;; build-servlet-path: req path (listof string) string -> path
   ;; Move up until the tree until you find
   ;; a file the tail becomes the servlet args
-  (define (build-servlet-path base-path dir-part f-part)
+  (define (build-servlet-path req base-path dir-part f-part)
     (let build-it ([parts (if (string=? "" f-part)
                               dir-part
                               (append dir-part (list f-part)))]
@@ -49,7 +49,8 @@
           (let ([svt-path (apply build-path (cons base-path parts))])
             (cond
              [(file-exists? svt-path)
-              (list svt-path rest-parts)]
+              (set-request-path-suffix! req rest-parts)
+              svt-path]
              [else
               (call-with-values
                (lambda () (shuffle-lists parts rest-parts))
@@ -78,40 +79,66 @@
     (cond
      [(embedded-ids? (request-uri req))
       => (lambda (k-ref)
-           (with-handlers ([exn:servlet-instance?
-                            (lambda (the-exn)
-                              (report-error 404 conn (request-method req)))]
-                           [exn:servlet-continuation?
-                            (lambda (the-exn)
-                              (report-error 404 conn (request-method req)))])
-             (let* ([inst (hash-table-get instance-table (car k-ref)
-                                         (lambda ()
-                                           (raise
-                                            (make-exn:servlet-instance
-                                             "" (current-continuation-marks)))))]
-                    [k-table
-                     (servlet-instance-k-table inst)])
-               (let/cc suspend
-                 (thread-cell-set! current-servlet-context
-                                   (make-servlet-context
-                                    inst conn req
-                                    (lambda () (suspend #t))))
-                 (semaphore-wait (servlet-instance-mutex inst))
-                 ((hash-table-get k-table (cadr k-ref)
-                                  (lambda ()
-                                    (raise
-                                     (make-exn:servlet-continuation
-                                      "" (current-continuation-marks)))))
-                  req))
-               (semaphore-post (servlet-instance-mutex inst)))))]
+           (invoke-servlet/k-ref conn req k-ref))]
+     [(servlet-entry-id? tail-args)
+      => (lambda (entry-sym)
+           (invoke-servlet/entry servlet-path conn req entry-sym))]
+     [(serializable-closure-id? tail-args)
+      => (lambda (closure-id)
+           (invoke-serializable-closure conn req closure-id))]
      [else (load-servlet/path servlet-path conn req)]))
+
+  ;; servlet-entry-id?: (listof string) -> (union symbol #f)
+  ;; determine if there is a servlet entry encoded in the tail args
+  ;; TODO: this is quick and dirty, clean it up.
+  (define (servlet-entry-id? tail-args)
+    (and (not (null? tail-args))
+         (string=? (car tail-args) "entry")
+         (string->symbol (cadr tail-args))))
+
+  ;; serializable-closure-id?: (listof string) -> (union symbol #f)
+  ;; determine if there is a serializable-closure encoded in the tail args
+  ;; TODO: this is quick and dirty, clean it up.
+  (define (serializable-closure-id? tail-args)
+    (and (not (null? tail-args))
+         (string=? (car tail-args) "closure")
+         (cadr tail-args)))
 
   ;; **************************************************
   ;; loading servlets
 
-  ;; load-servlet/path: path connection -> void
-  ;; make a new namespace, load the servlet in and let 'r rip!
-  (define (load-servlet/path servlet-path conn req)
+  ;; invoke-servlet/k: path connection request (list number number) -> void
+  (define (invoke-servlet/k-ref servlet-path conn req k-ref)
+    (with-handlers ([exn:servlet-instance?
+                     (lambda (the-exn)
+                       (report-error 404 conn (request-method req)))]
+                    [exn:servlet-continuation?
+                     (lambda (the-exn)
+                       (report-error 404 conn (request-method req)))])
+      (let* ([inst (hash-table-get instance-table (car k-ref)
+                                   (lambda ()
+                                     (raise
+                                      (make-exn:servlet-instance
+                                       "" (current-continuation-marks)))))]
+             [k-table
+              (servlet-instance-k-table inst)])
+        (let/cc suspend
+          (thread-cell-set! current-servlet-context
+                            (make-servlet-context
+                             inst conn req
+                             (lambda () (suspend #t))))
+          (semaphore-wait (servlet-instance-mutex inst))
+          ((hash-table-get k-table (cadr k-ref)
+                           (lambda ()
+                             (raise
+                              (make-exn:servlet-continuation
+                               "" (current-continuation-marks)))))
+           req))
+        (semaphore-post (servlet-instance-mutex inst)))))
+
+  ;; invoke-servlet/entry: path connection request symbol -> void
+  ;; make a new namespace, load the servlet in, dynamic-require the entry
+  (define (invoke-servlet/entry servlet-path conn req entry-sym)
     (let/cc suspend
       (parameterize ([current-namespace (make-servlet-namespace)])
         (thread-cell-set!
@@ -121,7 +148,17 @@
                                  (lambda ()
                                    (semaphore-post (servlet-instance-mutex inst))
                                    (suspend #t)))))
-        (namespace-require `(file ,(path->string servlet-path))))))
+        ((dynamic-require `(file ,(path->string servlet-path)) entry-sym) req))))
+
+  ;; load-servlet/path: path connection request -> void
+  (define (load-servlet/path servlet-path conn req)
+    (invoke-servlet/entry servlet-path conn req 'start))
+
+  ;; invoke-serializable-closure: connection request string -> void
+  ;; make a new namespace, load the closure in, dynamic-require the apply
+  (define (invoke-serializable-closure conn req closure-str)
+    (invoke-servlet/entry (build-path (current-directory) "closures" closure-str)
+                          conn req 'apply))
 
   ;; servlet-import-modules is a (listof symbol)
   ;; use the current-module-name resolver to get the symbols for all the
@@ -201,6 +238,4 @@
        [SRV : server^ (server@ CFG TCP)])
       (export (open SRV)))
     #f net:tcp^)
-
-
   )

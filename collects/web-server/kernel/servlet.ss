@@ -2,10 +2,13 @@
   (require (lib "url.ss" "net")
            (lib "list.ss")
            "response.ss"
-           "request-parsing.ss")
+           "request-parsing.ss"
+           "persistent-eval.ss"
+           "test-harness.ss")
 
   (provide send/back send/forward send/finish send/suspend
-           current-servlet-context
+           send/stop/persistent current-servlet-context
+           (all-from "persistent-eval.ss")
 
            ;; URL manipulation
            embed-ids
@@ -126,7 +129,57 @@
         (url-fragment in-url)))))
 
   ;; **************************************************
+  ;; create-entry-point-url: request (union serializable-closure servlet-entry) -> url
+  ;; for the closure, write it to disk and then make the url
+  ;; for the entry, make the url
+  ;; NOTE: Hmm... how to avoid making duplicate closures?
+  ;;      OK, a closure is formals, expression, environment
+  ;;      We can hash on the expression to find out if it's already stored
+  ;;      Then if it is, we know we only need to store the environment
+  ;;      (If I add recursion I will need to be careful about cycles)
+  (define (create-entry-point-url req entry-point)
+    (let* ([ctxt (thread-cell-ref current-servlet-context)]
+           [req (servlet-context-request ctxt)]
+           [uri (request-uri req)]
+           [path-prefix
+            (get-prefix (url-path uri) (request-path-suffix req))])
+      (cond
+       [(serializable-closure? entry-point)
+        (store-closure! path-prefix entry-point)]
+       [(servlet-entry? entry-point)
+        (replace-path
+         (lambda (old-path)
+           (append path-prefix
+                   (list "entry" (symbol->string (servlet-entry->symbol entry-point))))))]
+       [else
+        (raise (make-exn:servlet "can't get here"
+                                 (current-continuation-marks)))])))
+
+  ;; get-prefix: (listof (union string path/param)) (listof string) -> (listof string)
+  ;; get the first bit of the path given the full path and the last bit
+  (define (get-prefix full-path suffix)
+    (let prefix ([n (- (length full-path) (length suffix))]
+                 [l full-path])
+      (if (= n 0) '()
+          (cons (car l) (prefix (sub1 n) (cdr l))))))
+
+  ;; store-closure!: request entry-point
+  (define (store-closure! . args)
+    (error "store-closure! is not implemented"))
+
+  (test "store-closure! is not implemented"
+        (lambda () #f))
+
+  ;; **************************************************
   ;; send/*
+
+  ;; send/stop/persistent: (union serializable-closure servlet-entry) (url -> void) -> doesn't
+  (define (send/stop/persistent entry-point proc)
+    (let ([new-url (create-entry-point-url entry-point)])
+      (output-response
+       (servlet-context-connection (thread-cell-ref current-servlet-context))
+       (proc new-url))
+      ((servlet-context-suspend (thread-cell-ref current-servlet-context)))))
 
   ;; send/back: response -> void
   ;; send a response and don't clear the continuation table

@@ -1,170 +1,18 @@
+;; This is a dummy version of the test-harness that turns every instance of test
+;; and tests into comments. This is the one that normally gets required.
+;; To actually run the tests, follow these steps:
+;; 1. At the scheme prompt type (require "the-real-test-harness.ss")
+;; 2. Then type (run-suites <file-name> ...)
+;;    where <file-name> is the name of a module that contains actual instances of test, and tests.
 (module test-harness mzscheme
-  (provide test
-           run-suites
-           run-suites/file
-           reset-tests!
-           report/concise
-           report/failures
-           raise/id)
-
-  ;; Notes:
-  ;; maybe want to get line information from tests?
-  ;; syntax-line
-  ;; create a syntax object at the point you want the line-number
-  ;; e.g. (syntax-line #'here)
-
-  (define next-result-id 0)
-  (define the-results '())
-  (define current-test-suite (make-parameter "test-harness.ss"))
-
-  ;; reset-tests!: -> void
-  ;; reset the results and the ids
-  (define (reset-tests!)
-    (set! next-result-id 0)
-    (set! the-results '()))
-
-  ;; two types of results, successes and failures and variants thereof
-  (define-struct result (test-name id) (make-inspector))
-  (define-struct (success result) () (make-inspector))
-  (define-struct (failure result) () (make-inspector))
-  (define-struct (failure/exn failure) (exception) (make-inspector))
-
-  ;; test: string (-> boolean) -> void
-  ;; run a test and update the globals
-  (define (test test-name run-it)
-    (let ([test-name
-           (string-append (current-test-suite) "::" test-name)])
-      (let ([result
-             (with-handlers
-                 ([exn? (lambda (the-exn)
-                          (make-failure/exn test-name next-result-id the-exn))])
-               (if (run-it)
-                   (make-success test-name next-result-id)
-                   (make-failure test-name next-result-id)))])
-        (set! next-result-id (add1 next-result-id))
-        (set! the-results (cons result the-results)))))
-
-
-  ;; import-modules is a list of symbols, each symbol is a module name
-  (define import-modules
-    (map
-     (lambda (m-spec)
-       (if (symbol? m-spec)
-           m-spec
-           ((current-module-name-resolver) m-spec #f #f)))
-     '(mzscheme "test-harness.ss")))
-
-
-  ;; make-test-suite-namespace: -> namespace
-  ;; create a namespace with the test-harness module attached
-  (define (make-test-suite-namespace)
-    (let ([test-harness-namespace (current-namespace)]
-          [test-suite-namespace (make-namespace 'initial)])
-      (parameterize ([current-namespace test-suite-namespace])
-        (for-each
-         (lambda (name)
-           (namespace-attach-module test-harness-namespace name))
-         import-modules)
-        test-suite-namespace)))
-
-
-  ;; load-test-suite/path path -> void
-  (define (load-test-suite/path suite-path)
-    (parameterize ([current-test-suite
-                    (string-append (current-test-suite) "::"
-                                   (path->string suite-path))]
-                   [current-namespace (make-test-suite-namespace)])
-      (namespace-require `(file ,(path->string suite-path)))))
-
-  (define the-suites
-    (list "test01.ss"
-          "test02.ss"))
-
-  ;; run all the test-suites identified by the-suites
-  (define (run-suites a-suite . rest-suites)
-    (for-each
-     (lambda (suite-name)
-       (load-test-suite/path (string->path suite-name)))
-     (cons a-suite rest-suites))
-    (report/concise))
-
-  ;; run-suites/file: string -> void
-  (define (run-suites/file filename)
-    (with-input-from-file filename
-      (lambda ()
-        (apply run-suites (read)))))
-
-
-  ;; report/concise: ->
-  ;; print a concise report of the current test results
-  (define (report/concise)
-    (let loop ([l the-results]
-               [n-pass 0]
-               [n-fail 0]
-               [n-exn 0])
-      (cond
-       [(null? l)
-        (printf "Test Results~a~a~a~a~n"
-                (format "~n   total tests: ~a" (+ n-pass n-fail n-exn))
-                (format "~n   number passed: ~a" n-pass)
-                (format "~n   number failed: ~a" n-fail)
-                (format "~n   number of exceptions: ~a" n-exn))]
-       [(success? (car l))
-        (loop (cdr l) (add1 n-pass) n-fail n-exn)]
-       [(failure/exn? (car l))
-        (loop (cdr l) n-pass n-fail (add1 n-exn))]
-       [else
-        (loop (cdr l) n-pass (add1 n-fail) n-exn)])))
-
-  ;; print-results: (listof result) -> void
-  ;; print a list of resuls
-  (define (print-results l-res)
-    (printf "   result-id   test-name~n")
-    (for-each
-     (lambda (res)
-       (printf "       ~a       ~a~n"
-               (result-id res)
-               (result-test-name res)))
-     l-res))
-
-  ;; report/failures: -> void
-  ;; print a verbose report of the failures in teh current test results
-  (define (report/failures)
-    (let loop ([l the-results]
-               [l-fail '()]
-               [l-exn '()])
-      (cond
-       [(null? l)
-        (printf "Test Results (failures):~n")
-        (printf "   FAILURES:~n")
-        (print-results l-fail)
-        (printf "   EXCEPTIONS:~N")
-        (print-results l-exn)]
-       [(success? (car l)) (loop (cdr l) l-fail l-exn)]
-       [(failure/exn? (car l))
-        (loop (cdr l) l-fail (cons (car l) l-exn))]
-       [else
-        (loop (cdr l) (cons (car l) l-fail) l-exn)])))
-
-  ;; my-member: number (listof alpha) (number alpha -> boolean)
-  ;;            -> (listof alpha)
-  ;; srfi 1 was a hassle to compile just now so I'll write my own member...
-  (define (my-member id l same?)
-    (cond
-     [(null? l) #f]
-     [(same? id (car l)) l]
-     [else
-      (my-member id (cdr l) same?)]))
-
-  ;; raise/id: number -> void
-  ;; raise one of the exceptions from the list of exceptions
-  (define (raise/id the-id)
-    (let* ([the-result
-            (my-member the-id the-results
-                       (lambda (id res)
-                         (= id (result-id res))))])
-      (and the-result
-           (failure/exn? (car the-result))
-           (raise (failure/exn-exception (car the-result))))))
-
-  )
+  (provide tests test)
+  
+  (define-syntax tests
+    (lambda (stx)
+      (syntax-case stx ()
+        [(_ rest ...) (syntax (void))])))
+  
+  (define-syntax test
+    (lambda (stx)
+      (syntax-case stx ()
+        [(_ rest ...) (syntax (void))]))))

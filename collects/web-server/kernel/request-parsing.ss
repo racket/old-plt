@@ -4,7 +4,7 @@
            "util.ss")
 
   ;; the request struct as currently doc'd
-  (define-struct request (method uri headers bindings host-ip client-ip))
+  (define-struct request (method uri headers bindings host-ip client-ip path-suffix))
 
   ;; header?: any? -> boolean
   ;; is this a header?
@@ -21,7 +21,7 @@
   (provide/contract
    [struct request ([method symbol?] [uri url?] [headers (listof header?)]
                     [bindings (listof binding?)] [host-ip string?]
-                    [client-ip string?])]
+                    [client-ip string?] [path-suffix (listof string?)])]
    [read-request ((input-port?) . ->* . (request? boolean?))])
 
   ;; **************************************************
@@ -34,7 +34,7 @@
       (let ([headers (read-headers ip)])
         (let-values ([(host-ip client-ip) (tcp-addresses ip)])
           (values
-           (make-request method uri headers '() host-ip client-ip)
+           (make-request method uri headers '() host-ip client-ip '())
            (close-connection?
             headers major-version minor-version client-ip host-ip))))))
 

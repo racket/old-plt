@@ -241,6 +241,8 @@ class wxMediaBuffer : public wxObject
   virtual void EndEditSequence(void) = 0;
   virtual Bool RefreshDelayed(void) = 0;
 
+  virtual wxSnip *FindFirstSnip(void) = 0;
+
   virtual void SetMaxWidth(float w) = 0;
   virtual void SetMinWidth(float w) = 0;
   virtual float GetMaxWidth() = 0;

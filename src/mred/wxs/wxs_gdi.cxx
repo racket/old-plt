@@ -1328,75 +1328,75 @@ class wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *obj, const char *where,
 
 static Scheme_Object *brushStyle_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *brushStyle_wxSOLID_sym = NULL;
+static Scheme_Object *brushStyle_wxSTIPPLE_sym = NULL;
+static Scheme_Object *brushStyle_wxXOR_sym = NULL;
 static Scheme_Object *brushStyle_wxBDIAGONAL_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxCROSSDIAG_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxFDIAGONAL_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxCROSS_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxHORIZONTAL_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxVERTICAL_HATCH_sym = NULL;
-static Scheme_Object *brushStyle_wxSTIPPLE_sym = NULL;
-static Scheme_Object *brushStyle_wxOPAQUE_STIPPLE_sym = NULL;
 
 static void init_symset_brushStyle(void) {
   brushStyle_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
   brushStyle_wxSOLID_sym = scheme_intern_symbol("solid");
+  brushStyle_wxSTIPPLE_sym = scheme_intern_symbol("opaque");
+  brushStyle_wxXOR_sym = scheme_intern_symbol("xor");
   brushStyle_wxBDIAGONAL_HATCH_sym = scheme_intern_symbol("bdiagonal-hatch");
   brushStyle_wxCROSSDIAG_HATCH_sym = scheme_intern_symbol("crossdiag-hatch");
   brushStyle_wxFDIAGONAL_HATCH_sym = scheme_intern_symbol("fdiagonal-hatch");
   brushStyle_wxCROSS_HATCH_sym = scheme_intern_symbol("cross-hatch");
   brushStyle_wxHORIZONTAL_HATCH_sym = scheme_intern_symbol("horizontal-hatch");
   brushStyle_wxVERTICAL_HATCH_sym = scheme_intern_symbol("vertical-hatch");
-  brushStyle_wxSTIPPLE_sym = scheme_intern_symbol("stipple");
-  brushStyle_wxOPAQUE_STIPPLE_sym = scheme_intern_symbol("opaque-stipple");
 }
 
 static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
-  if (!brushStyle_wxOPAQUE_STIPPLE_sym) init_symset_brushStyle();
+  if (!brushStyle_wxVERTICAL_HATCH_sym) init_symset_brushStyle();
   if (0) { }
   else if (v == brushStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == brushStyle_wxSOLID_sym) { return wxSOLID; }
+  else if (v == brushStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
+  else if (v == brushStyle_wxXOR_sym) { return wxXOR; }
   else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { return wxBDIAGONAL_HATCH; }
   else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { return wxCROSSDIAG_HATCH; }
   else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { return wxFDIAGONAL_HATCH; }
   else if (v == brushStyle_wxCROSS_HATCH_sym) { return wxCROSS_HATCH; }
   else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return wxHORIZONTAL_HATCH; }
   else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return wxVERTICAL_HATCH; }
-  else if (v == brushStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
-  else if (v == brushStyle_wxOPAQUE_STIPPLE_sym) { return wxOPAQUE_STIPPLE; }
   if (where) scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_brushStyle(Scheme_Object *v, const char *where) {
-  if (!brushStyle_wxOPAQUE_STIPPLE_sym) init_symset_brushStyle();
+  if (!brushStyle_wxVERTICAL_HATCH_sym) init_symset_brushStyle();
   if (0) { }
   else if (v == brushStyle_wxTRANSPARENT_sym) { return 1; }
   else if (v == brushStyle_wxSOLID_sym) { return 1; }
+  else if (v == brushStyle_wxSTIPPLE_sym) { return 1; }
+  else if (v == brushStyle_wxXOR_sym) { return 1; }
   else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { return 1; }
   else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { return 1; }
   else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { return 1; }
   else if (v == brushStyle_wxCROSS_HATCH_sym) { return 1; }
   else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return 1; }
   else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return 1; }
-  else if (v == brushStyle_wxSTIPPLE_sym) { return 1; }
-  else if (v == brushStyle_wxOPAQUE_STIPPLE_sym) { return 1; }
   if (where) scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_brushStyle(int v) {
-  if (!brushStyle_wxOPAQUE_STIPPLE_sym) init_symset_brushStyle();
+  if (!brushStyle_wxVERTICAL_HATCH_sym) init_symset_brushStyle();
   switch (v) {
   case wxTRANSPARENT: return brushStyle_wxTRANSPARENT_sym;
   case wxSOLID: return brushStyle_wxSOLID_sym;
+  case wxSTIPPLE: return brushStyle_wxSTIPPLE_sym;
+  case wxXOR: return brushStyle_wxXOR_sym;
   case wxBDIAGONAL_HATCH: return brushStyle_wxBDIAGONAL_HATCH_sym;
   case wxCROSSDIAG_HATCH: return brushStyle_wxCROSSDIAG_HATCH_sym;
   case wxFDIAGONAL_HATCH: return brushStyle_wxFDIAGONAL_HATCH_sym;
   case wxCROSS_HATCH: return brushStyle_wxCROSS_HATCH_sym;
   case wxHORIZONTAL_HATCH: return brushStyle_wxHORIZONTAL_HATCH_sym;
   case wxVERTICAL_HATCH: return brushStyle_wxVERTICAL_HATCH_sym;
-  case wxSTIPPLE: return brushStyle_wxSTIPPLE_sym;
-  case wxOPAQUE_STIPPLE: return brushStyle_wxOPAQUE_STIPPLE_sym;
   default: return NULL;
   }
 }
@@ -1549,9 +1549,9 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
     
     
   } else  {
-    int x0;
-    int x1;
-    int x2;
+    ubyte x0;
+    ubyte x1;
+    ubyte x2;
 
     
     if (n != 3) 
@@ -1863,6 +1863,7 @@ class wxBrushList *objscheme_unbundle_wxBrushList(Scheme_Object *obj, const char
 
 static Scheme_Object *penStyle_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *penStyle_wxSOLID_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_sym = NULL;
 static Scheme_Object *penStyle_wxDOT_sym = NULL;
 static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
 static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
@@ -1872,6 +1873,7 @@ static Scheme_Object *penStyle_wxSTIPPLE_sym = NULL;
 static void init_symset_penStyle(void) {
   penStyle_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
   penStyle_wxSOLID_sym = scheme_intern_symbol("solid");
+  penStyle_wxXOR_sym = scheme_intern_symbol("xor");
   penStyle_wxDOT_sym = scheme_intern_symbol("dot");
   penStyle_wxLONG_DASH_sym = scheme_intern_symbol("long-dash");
   penStyle_wxSHORT_DASH_sym = scheme_intern_symbol("short-dash");
@@ -1884,6 +1886,7 @@ static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == penStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == penStyle_wxSOLID_sym) { return wxSOLID; }
+  else if (v == penStyle_wxXOR_sym) { return wxXOR; }
   else if (v == penStyle_wxDOT_sym) { return wxDOT; }
   else if (v == penStyle_wxLONG_DASH_sym) { return wxLONG_DASH; }
   else if (v == penStyle_wxSHORT_DASH_sym) { return wxSHORT_DASH; }
@@ -1898,6 +1901,7 @@ static int istype_symset_penStyle(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == penStyle_wxTRANSPARENT_sym) { return 1; }
   else if (v == penStyle_wxSOLID_sym) { return 1; }
+  else if (v == penStyle_wxXOR_sym) { return 1; }
   else if (v == penStyle_wxDOT_sym) { return 1; }
   else if (v == penStyle_wxLONG_DASH_sym) { return 1; }
   else if (v == penStyle_wxSHORT_DASH_sym) { return 1; }
@@ -1912,6 +1916,7 @@ static Scheme_Object *bundle_symset_penStyle(int v) {
   switch (v) {
   case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
   case wxSOLID: return penStyle_wxSOLID_sym;
+  case wxXOR: return penStyle_wxXOR_sym;
   case wxDOT: return penStyle_wxDOT_sym;
   case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
   case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;
@@ -2152,9 +2157,9 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
     
     
   } else  {
-    int x0;
-    int x1;
-    int x2;
+    ubyte x0;
+    ubyte x1;
+    ubyte x2;
 
     
     if (n != 3) 

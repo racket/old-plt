@@ -28,6 +28,8 @@
 @ Y "blink-caret" : void BlinkCaret(); 
 @ Y "size-cache-invalid" : void SizeCacheInvalid();
 
+@ X "find-first-snip" : wxSnip^ FindFirstSnip();
+
 @ Z "on-local-event" : void OnLocalEvent(wxMouseEvent%);
 @ Z "on-local-char" : void OnLocalChar(wxKeyEvent%);
 @ Y "on-default-event" : void OnDefaultEvent(wxMouseEvent%);

@@ -338,6 +338,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
   
 
 
@@ -3609,23 +3610,6 @@ static Scheme_Object *os_wxMediaPasteboardIsSelected(Scheme_Object *obj, int n, 
 }
 
 #pragma argsused
-static Scheme_Object *os_wxMediaPasteboardFindFirstSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxSnip* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->FindFirstSnip();
-
-  
-  
-  return objscheme_bundle_wxSnip(r);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardFindSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5044,6 +5028,23 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalEvent(Scheme_Object *obj, int n
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaPasteboardFindFirstSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxSnip* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->FindFirstSnip();
+
+  
+  
+  return objscheme_bundle_wxSnip(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardSizeCacheInvalid(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5389,7 +5390,6 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "can-insert?", os_wxMediaPasteboardCanInsert, 4, 4);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-next-selected-snip", os_wxMediaPasteboardFindNextSelectedSnip, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "is-selected?", os_wxMediaPasteboardIsSelected, 1, 1);
- scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-first-snip", os_wxMediaPasteboardFindFirstSnip, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-snip", os_wxMediaPasteboardFindSnip, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-center", os_wxMediaPasteboardGetCenter, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "remove-selected", os_wxMediaPasteboardRemoveSelected, 1, 1);
@@ -5447,6 +5447,7 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-default-event", os_wxMediaPasteboardOnDefaultEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-local-char", os_wxMediaPasteboardOnLocalChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-local-event", os_wxMediaPasteboardOnLocalEvent, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-first-snip", os_wxMediaPasteboardFindFirstSnip, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "size-cache-invalid", os_wxMediaPasteboardSizeCacheInvalid, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "blink-caret", os_wxMediaPasteboardBlinkCaret, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "own-caret", os_wxMediaPasteboardOwnCaret, 1, 1);

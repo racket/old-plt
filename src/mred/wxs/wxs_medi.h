@@ -62,6 +62,7 @@ extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const ch
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
+extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);

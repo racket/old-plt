@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.1.1.1 1997/12/22 17:28:49 mflatt Exp $
+ * $Id: WindowDC.h,v 1.2 1998/09/18 22:08:57 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -98,7 +98,7 @@ public:
 
     // virtual methods, declared in wxDC
     Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *bm,
-	       float xsrc, float ysrc, int rop=wxCOPY);
+	       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL);
     Bool  CanGetTextExtent(void) { return TRUE; }
     Bool  CanDrawBitmap(void) { return TRUE; }
     void  Clear(void);
@@ -130,14 +130,13 @@ public:
 			Bool use16bit=FALSE);
     void  IntDrawLine(int x1, int y1, int x2, int y2);
     void  IntDrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
-    void  SetBackground(wxBrush *brush);
+    void  SetBackground(wxColour *c);
     void  SetBrush(wxBrush *brush);
     void  SetClippingRegion(float x, float y, float w, float h);
     /* MATTHEW: */
     void  GetClippingRegion(float *x, float *y, float *w, float *h);
     void  SetColourMap(wxColourMap *cmap);
     void  SetFont(wxFont *font);
-    void  SetLogicalFunction(int fkt);
     void  SetPen(wxPen *pen);
     void  SetTextBackground(wxColour *col);
     void  SetTextForeground(wxColour *col);

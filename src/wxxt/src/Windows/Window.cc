@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.14 1998/09/06 01:54:03 mflatt Exp $
+ * $Id: Window.cc,v 1.15 1998/09/08 15:07:58 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1110,7 +1110,7 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
 	if (win->dc) {
 	    if (!(win->dc->ok)) { // setup drawable of dc on first expose
 		win->dc->X->draw_window = win->dc->X->drawable = XtWindow(win->X->handle);
-		win->dc->SetBackground(win->dc->current_background_brush);
+		win->dc->SetBackground(win->dc->current_background_color);
 		win->dc->Clear();
 		win->dc->ok = TRUE;
 	    }
@@ -1512,7 +1512,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	    // setup drawable of dc if dc available
 	    if (!(win->dc->ok)) { // first expose call
 		win->dc->X->draw_window = win->dc->X->drawable = XtWindow(win->X->handle);
-		win->dc->SetBackground(win->dc->current_background_brush);
+		win->dc->SetBackground(win->dc->current_background_color);
 		win->dc->Clear();
 		win->dc->ok = TRUE;
 	    }
@@ -1543,12 +1543,6 @@ void wxWindow::CreateDC(void)
     dc->ok = TRUE;
     
     dc->Initialize(&init);
-#if 0
-    // adjust background colour
-    wxBrush bgbrush(*bg, wxSOLID); // I need a temporary background brush
-    dc->SetBackground(&bgbrush);   // set GCs to current background colour
-    dc->SetBackground(NULL);       // don't use a background brush
-#endif
 
     dc->X->is_window = TRUE;
 }

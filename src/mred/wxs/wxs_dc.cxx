@@ -64,116 +64,46 @@ static Scheme_Object *bundle_symset_solidity(int v) {
 }
 
 
+static Scheme_Object *bitmapDrawStyle_wxSOLID_sym = NULL;
+static Scheme_Object *bitmapDrawStyle_wxSTIPPLE_sym = NULL;
+static Scheme_Object *bitmapDrawStyle_wxXOR_sym = NULL;
 
-static Scheme_Object *logicalFunc_wxAND_sym = NULL;
-static Scheme_Object *logicalFunc_wxAND_INVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxAND_REVERSE_sym = NULL;
-static Scheme_Object *logicalFunc_wxCLEAR_sym = NULL;
-static Scheme_Object *logicalFunc_wxCOPY_sym = NULL;
-static Scheme_Object *logicalFunc_wxEQUIV_sym = NULL;
-static Scheme_Object *logicalFunc_wxINVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxNAND_sym = NULL;
-static Scheme_Object *logicalFunc_wxNOR_sym = NULL;
-static Scheme_Object *logicalFunc_wxNO_OP_sym = NULL;
-static Scheme_Object *logicalFunc_wxOR_sym = NULL;
-static Scheme_Object *logicalFunc_wxOR_INVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxOR_REVERSE_sym = NULL;
-static Scheme_Object *logicalFunc_wxSET_sym = NULL;
-static Scheme_Object *logicalFunc_wxSRC_INVERT_sym = NULL;
-static Scheme_Object *logicalFunc_wxXOR_sym = NULL;
-static Scheme_Object *logicalFunc_wxCOLOR_sym = NULL;
-
-static void init_symset_logicalFunc(void) {
-  logicalFunc_wxAND_sym = scheme_intern_symbol("and");
-  logicalFunc_wxAND_INVERT_sym = scheme_intern_symbol("and-invert");
-  logicalFunc_wxAND_REVERSE_sym = scheme_intern_symbol("and-reverse");
-  logicalFunc_wxCLEAR_sym = scheme_intern_symbol("clear");
-  logicalFunc_wxCOPY_sym = scheme_intern_symbol("copy");
-  logicalFunc_wxEQUIV_sym = scheme_intern_symbol("equiv");
-  logicalFunc_wxINVERT_sym = scheme_intern_symbol("invert");
-  logicalFunc_wxNAND_sym = scheme_intern_symbol("nand");
-  logicalFunc_wxNOR_sym = scheme_intern_symbol("nor");
-  logicalFunc_wxNO_OP_sym = scheme_intern_symbol("no-op");
-  logicalFunc_wxOR_sym = scheme_intern_symbol("or");
-  logicalFunc_wxOR_INVERT_sym = scheme_intern_symbol("or-invert");
-  logicalFunc_wxOR_REVERSE_sym = scheme_intern_symbol("or-reverse");
-  logicalFunc_wxSET_sym = scheme_intern_symbol("set");
-  logicalFunc_wxSRC_INVERT_sym = scheme_intern_symbol("src-invert");
-  logicalFunc_wxXOR_sym = scheme_intern_symbol("xor");
-  logicalFunc_wxCOLOR_sym = scheme_intern_symbol("color");
+static void init_symset_bitmapDrawStyle(void) {
+  bitmapDrawStyle_wxSOLID_sym = scheme_intern_symbol("solid");
+  bitmapDrawStyle_wxSTIPPLE_sym = scheme_intern_symbol("opaque");
+  bitmapDrawStyle_wxXOR_sym = scheme_intern_symbol("xor");
 }
 
-static int unbundle_symset_logicalFunc(Scheme_Object *v, const char *where) {
-  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
+static int unbundle_symset_bitmapDrawStyle(Scheme_Object *v, const char *where) {
+  if (!bitmapDrawStyle_wxXOR_sym) init_symset_bitmapDrawStyle();
   if (0) { }
-  else if (v == logicalFunc_wxAND_sym) { return wxAND; }
-  else if (v == logicalFunc_wxAND_INVERT_sym) { return wxAND_INVERT; }
-  else if (v == logicalFunc_wxAND_REVERSE_sym) { return wxAND_REVERSE; }
-  else if (v == logicalFunc_wxCLEAR_sym) { return wxCLEAR; }
-  else if (v == logicalFunc_wxCOPY_sym) { return wxCOPY; }
-  else if (v == logicalFunc_wxEQUIV_sym) { return wxEQUIV; }
-  else if (v == logicalFunc_wxINVERT_sym) { return wxINVERT; }
-  else if (v == logicalFunc_wxNAND_sym) { return wxNAND; }
-  else if (v == logicalFunc_wxNOR_sym) { return wxNOR; }
-  else if (v == logicalFunc_wxNO_OP_sym) { return wxNO_OP; }
-  else if (v == logicalFunc_wxOR_sym) { return wxOR; }
-  else if (v == logicalFunc_wxOR_INVERT_sym) { return wxOR_INVERT; }
-  else if (v == logicalFunc_wxOR_REVERSE_sym) { return wxOR_REVERSE; }
-  else if (v == logicalFunc_wxSET_sym) { return wxSET; }
-  else if (v == logicalFunc_wxSRC_INVERT_sym) { return wxSRC_INVERT; }
-  else if (v == logicalFunc_wxXOR_sym) { return wxXOR; }
-  else if (v == logicalFunc_wxCOLOR_sym) { return wxCOLOR; }
-  if (where) scheme_wrong_type(where, "logicalFunc symbol", -1, 0, &v);
+  else if (v == bitmapDrawStyle_wxSOLID_sym) { return wxSOLID; }
+  else if (v == bitmapDrawStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
+  else if (v == bitmapDrawStyle_wxXOR_sym) { return wxXOR; }
+  if (where) scheme_wrong_type(where, "bitmapDrawStyle symbol", -1, 0, &v);
   return 0;
 }
 
-static int istype_symset_logicalFunc(Scheme_Object *v, const char *where) {
-  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
+static int istype_symset_bitmapDrawStyle(Scheme_Object *v, const char *where) {
+  if (!bitmapDrawStyle_wxXOR_sym) init_symset_bitmapDrawStyle();
   if (0) { }
-  else if (v == logicalFunc_wxAND_sym) { return 1; }
-  else if (v == logicalFunc_wxAND_INVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxAND_REVERSE_sym) { return 1; }
-  else if (v == logicalFunc_wxCLEAR_sym) { return 1; }
-  else if (v == logicalFunc_wxCOPY_sym) { return 1; }
-  else if (v == logicalFunc_wxEQUIV_sym) { return 1; }
-  else if (v == logicalFunc_wxINVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxNAND_sym) { return 1; }
-  else if (v == logicalFunc_wxNOR_sym) { return 1; }
-  else if (v == logicalFunc_wxNO_OP_sym) { return 1; }
-  else if (v == logicalFunc_wxOR_sym) { return 1; }
-  else if (v == logicalFunc_wxOR_INVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxOR_REVERSE_sym) { return 1; }
-  else if (v == logicalFunc_wxSET_sym) { return 1; }
-  else if (v == logicalFunc_wxSRC_INVERT_sym) { return 1; }
-  else if (v == logicalFunc_wxXOR_sym) { return 1; }
-  else if (v == logicalFunc_wxCOLOR_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "logicalFunc symbol", -1, 0, &v);
+  else if (v == bitmapDrawStyle_wxSOLID_sym) { return 1; }
+  else if (v == bitmapDrawStyle_wxSTIPPLE_sym) { return 1; }
+  else if (v == bitmapDrawStyle_wxXOR_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bitmapDrawStyle symbol", -1, 0, &v);
   return 0;
 }
 
-static Scheme_Object *bundle_symset_logicalFunc(int v) {
-  if (!logicalFunc_wxCOLOR_sym) init_symset_logicalFunc();
+static Scheme_Object *bundle_symset_bitmapDrawStyle(int v) {
+  if (!bitmapDrawStyle_wxXOR_sym) init_symset_bitmapDrawStyle();
   switch (v) {
-  case wxAND: return logicalFunc_wxAND_sym;
-  case wxAND_INVERT: return logicalFunc_wxAND_INVERT_sym;
-  case wxAND_REVERSE: return logicalFunc_wxAND_REVERSE_sym;
-  case wxCLEAR: return logicalFunc_wxCLEAR_sym;
-  case wxCOPY: return logicalFunc_wxCOPY_sym;
-  case wxEQUIV: return logicalFunc_wxEQUIV_sym;
-  case wxINVERT: return logicalFunc_wxINVERT_sym;
-  case wxNAND: return logicalFunc_wxNAND_sym;
-  case wxNOR: return logicalFunc_wxNOR_sym;
-  case wxNO_OP: return logicalFunc_wxNO_OP_sym;
-  case wxOR: return logicalFunc_wxOR_sym;
-  case wxOR_INVERT: return logicalFunc_wxOR_INVERT_sym;
-  case wxOR_REVERSE: return logicalFunc_wxOR_REVERSE_sym;
-  case wxSET: return logicalFunc_wxSET_sym;
-  case wxSRC_INVERT: return logicalFunc_wxSRC_INVERT_sym;
-  case wxXOR: return logicalFunc_wxXOR_sym;
-  case wxCOLOR: return logicalFunc_wxCOLOR_sym;
+  case wxSOLID: return bitmapDrawStyle_wxSOLID_sym;
+  case wxSTIPPLE: return bitmapDrawStyle_wxSTIPPLE_sym;
+  case wxXOR: return bitmapDrawStyle_wxXOR_sym;
   default: return NULL;
   }
 }
+
 
 
 static Scheme_Object *fillKind_wxODDEVEN_RULE_sym = NULL;
@@ -227,18 +157,18 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int logicalFunc)
+static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
 {
   if (bm->Ok()) {
-    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, logicalFunc);
+    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c);
   } else
     return FALSE;
 }
 
-static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int logicalFunc)
+static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
 {
   if (bm->Ok()) {
-    return dc->Blit(x, y, dw, dh, bm, dx, dy, logicalFunc);
+    return dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c);
   } else
     return FALSE;
 }
@@ -553,23 +483,6 @@ static Scheme_Object *os_wxDCGetPen(Scheme_Object *obj, int n,  Scheme_Object *p
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCGetLogicalFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetLogicalFunction();
-
-  
-  
-  return bundle_symset_logicalFunc(r);
-}
-
-#pragma argsused
 static Scheme_Object *os_wxDCGetFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -624,7 +537,7 @@ static Scheme_Object *os_wxDCGetBackgroundMode(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *os_wxDCGetBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxBrush* r;
+  class wxColour* r;
   objscheme_check_valid(obj);
 
   
@@ -634,7 +547,7 @@ static Scheme_Object *os_wxDCGetBackground(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   
-  return objscheme_bundle_wxBrush(r);
+  return objscheme_bundle_wxColour(r);
 }
 
 #pragma argsused
@@ -725,18 +638,23 @@ static Scheme_Object *os_wxDCDrawBitmap(Scheme_Object *obj, int n,  Scheme_Objec
   float x1;
   float x2;
   int x3;
+  class wxColour* x4;
 
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "draw-bitmap in dc<%>", 0);
   x1 = objscheme_unbundle_float(p[1], "draw-bitmap in dc<%>");
   x2 = objscheme_unbundle_float(p[2], "draw-bitmap in dc<%>");
   if (n > 3) {
-    x3 = unbundle_symset_logicalFunc(p[3], "draw-bitmap in dc<%>");
+    x3 = unbundle_symset_bitmapDrawStyle(p[3], "draw-bitmap in dc<%>");
   } else
-    x3 = wxCOPY;
+    x3 = wxSOLID;
+  if (n > 4) {
+    x4 = objscheme_unbundle_wxColour(p[4], "draw-bitmap in dc<%>", 0);
+  } else
+    x4 = NULL;
 
   
-  r = DrawBitmap(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3);
+  r = DrawBitmap(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3, x4);
 
   
   
@@ -757,6 +675,7 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme
   float x5;
   float x6;
   int x7;
+  class wxColour* x8;
 
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "draw-bitmap-region in dc<%>", 0);
@@ -767,12 +686,16 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(Scheme_Object *obj, int n,  Scheme
   x5 = objscheme_unbundle_float(p[5], "draw-bitmap-region in dc<%>");
   x6 = objscheme_unbundle_float(p[6], "draw-bitmap-region in dc<%>");
   if (n > 7) {
-    x7 = unbundle_symset_logicalFunc(p[7], "draw-bitmap-region in dc<%>");
+    x7 = unbundle_symset_bitmapDrawStyle(p[7], "draw-bitmap-region in dc<%>");
   } else
-    x7 = wxCOPY;
+    x7 = wxSOLID;
+  if (n > 8) {
+    x8 = objscheme_unbundle_wxColour(p[8], "draw-bitmap-region in dc<%>", 0);
+  } else
+    x8 = NULL;
 
   DO_OK_CHECK(scheme_false)if (!x0->Ok()) return scheme_false;
-  r = DrawBitmapRegion(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3, x4, x5, x6, x7);
+  r = DrawBitmapRegion(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3, x4, x5, x6, x7, x8);
 
   
   
@@ -928,24 +851,6 @@ static Scheme_Object *os_wxDCSetPen(Scheme_Object *obj, int n,  Scheme_Object *p
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCSetLogicalFunction(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-
-  DO_OK_CHECK(scheme_void)
-  x0 = unbundle_symset_logicalFunc(p[0], "set-logical-function in dc<%>");
-
-  
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetLogicalFunction(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxDCSetFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -986,10 +891,10 @@ static Scheme_Object *os_wxDCSetBackground(Scheme_Object *obj, int n,  Scheme_Ob
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  class wxBrush* x0;
+  class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxBrush(p[0], "set-background in dc<%>", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "set-background in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetBackground(x0);
@@ -1396,7 +1301,7 @@ if (os_wxDC_class) {
     objscheme_add_global_class(os_wxDC_class, "dc%", env);
     objscheme_add_global_interface(os_wxDC_interface, "dc" "<%>", env);
 } else {
-  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 46);
+  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 44);
 
  scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0);
@@ -1407,7 +1312,6 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "get-text-foreground", os_wxDCdcGetTextForeground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-background", os_wxDCdcGetTextBackground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-pen", os_wxDCGetPen, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "get-logical-function", os_wxDCGetLogicalFunction, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-font", os_wxDCGetFont, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-brush", os_wxDCGetBrush, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-background-mode", os_wxDCGetBackgroundMode, 0, 0);
@@ -1416,15 +1320,14 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "set-user-scale", os_wxDCSetUserScale, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "set-background-mode", os_wxDCSetBackgroundMode, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "try-color", os_wxDCTryColour, 2, 2);
- scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap", os_wxDCDrawBitmap, 3, 4);
- scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-region", os_wxDCDrawBitmapRegion, 7, 8);
+ scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap", os_wxDCDrawBitmap, 3, 5);
+ scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-region", os_wxDCDrawBitmapRegion, 7, 9);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-height", os_wxDCGetCharHeight, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCGetTextExtent, 3, 7);
  scheme_add_method_w_arity(os_wxDC_class, "set-text-foreground", os_wxDCSetTextForeground, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-text-background", os_wxDCSetTextBackground, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-pen", os_wxDCSetPen, 1, 1);
- scheme_add_method_w_arity(os_wxDC_class, "set-logical-function", os_wxDCSetLogicalFunction, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-font", os_wxDCSetFont, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-brush", os_wxDCSetBrush, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-background", os_wxDCSetBackground, 1, 1);

@@ -293,6 +293,7 @@ class wxMediaEdit : public wxMediaBuffer
 
   void SetClickback(wxClickback *); /* Used by undo record only */
 
+  wxSnip *FindFirstSnip(void);
   wxSnip *FindSnip(long p, int direction, long *sPos = NULL);
   Bool GetSnipPositionAndLocation(wxSnip *thesnip, long *pos, 
 				  float *x = NULL, float *y = NULL);

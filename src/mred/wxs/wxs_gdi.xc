@@ -133,14 +133,14 @@
 @BEGINSYMBOLS brushStyle > ONE
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID
+@SYM "opaque" : wxSTIPPLE
+@SYM "xor" : wxXOR
 @SYM "bdiagonal-hatch" : wxBDIAGONAL_HATCH
 @SYM "crossdiag-hatch" : wxCROSSDIAG_HATCH
 @SYM "fdiagonal-hatch" : wxFDIAGONAL_HATCH
 @SYM "cross-hatch" : wxCROSS_HATCH
 @SYM "horizontal-hatch" : wxHORIZONTAL_HATCH
 @SYM "vertical-hatch" : wxVERTICAL_HATCH
-@SYM "stipple" : wxSTIPPLE
-@SYM "opaque-stipple" : wxOPAQUE_STIPPLE
 @ENDSYMBOLS
 
 @CLASSBASE wxBrush "brush" : "object"
@@ -152,7 +152,7 @@
 @ "get-color" : wxColour% GetColour();
 @ "set-color" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color%
 @ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color name
-@ "set-color" : void SetColour(int,int,int); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> rgb values
+@ "set-color" : void SetColour(ubyte,ubyte,ubyte); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-stipple")]
@@ -176,6 +176,7 @@
 @BEGINSYMBOLS penStyle > ONE
 @SYM "transparent" : wxTRANSPARENT
 @SYM "solid" : wxSOLID
+@SYM "xor" : wxXOR
 @SYM "dot" : wxDOT
 @SYM "long-dash" : wxLONG_DASH
 @SYM "short-dash" : wxSHORT_DASH
@@ -211,7 +212,7 @@
 @ "get-color" : wxColour% GetColour();
 @ "set-color" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
 @ "set-color" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color name
-@ "set-color" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
+@ "set-color" : void SetColour(ubyte,ubyte,ubyte);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
 @ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen".METHODNAME("pen%","set-stipple")]

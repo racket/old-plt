@@ -58,7 +58,6 @@
 @ "get-center" : void GetCenter(float*, float*);
 
 @ "find-snip" : wxSnip^ FindSnip(float,float);
-@ "find-first-snip" : wxSnip^ FindFirstSnip();
 @ "is-selected?" : bool IsSelected(wxSnip^);
 @ "find-next-selected-snip" : wxSnip^ FindNextSelectedSnip(wxSnip^);
 

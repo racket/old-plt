@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.5 1998/09/09 16:02:49 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.6 1998/09/18 22:08:56 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -51,10 +51,6 @@ extern "C" {
 static int join_style[] = { JoinBevel, JoinMiter, JoinRound };
 static int cap_style[]  = { CapRound, CapProjecting, CapButt, CapNotLast };
 static int fill_rule[]  = { EvenOddRule, WindingRule };
-static int function[]   = { GXand, GXandInverted, GXandReverse, GXclear, GXcopy,
-			    GXequiv, GXinvert, GXnand, GXnor, GXnoop, GXor,
-			    GXorInverted, GXorReverse, GXset, GXcopyInverted,
-			    GXxor, GXcopy };
 
 // hatches, used for stippling in any DC
 #include <DeviceContexts/bdiag.xbm>
@@ -123,8 +119,7 @@ wxWindowDC::wxWindowDC(void) : wxDC()
 						 verti_width, verti_height);
     }
 
-    current_background_brush = wxWHITE_BRUSH;
-    current_background_brush->Lock(1);
+    current_background_color = wxWHITE;
     current_brush = wxTRANSPARENT_BRUSH;
     current_brush->Lock(1);
     current_pen = wxBLACK_PEN;
@@ -136,7 +131,6 @@ wxWindowDC::~wxWindowDC(void)
 {
     if (current_pen) current_pen->Lock(-1);
     if (current_brush) current_brush->Lock(-1);
-    if (current_background_brush) current_background_brush->Lock(-1);
 
     Destroy();
 
@@ -148,7 +142,7 @@ wxWindowDC::~wxWindowDC(void)
 //-----------------------------------------------------------------------------
 
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
-		      float xsrc, float ysrc, int rop)
+		      float xsrc, float ysrc, int rop, wxColor *dcolor)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;
@@ -163,27 +157,17 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     ysrc = floor(ysrc);
 
     Bool retval = FALSE;
-    Bool resetPen;
     wxPen *savePen;
-    wxBrush *saveBack;
+    wxColor *saveBack;
 
-    saveBack = current_background_brush;
-    if (current_background_brush != wxWHITE_BRUSH)
-      SetBackground(wxWHITE_BRUSH);
-
-    if (rop == wxCOLOR) {
-      rop = wxCOPY;
-      if (auto_setting && current_pen)
-	SetPen(current_pen);
-      savePen = NULL;
-      resetPen = FALSE;
+    savePen = current_pen;
+    saveBack = current_background_color;
+    if (src->GetDepth() == 1) {
+      /* Pen GC used for blit: */
+      SetPen(wxThePenList->FindOrCreatePen(dcolor, 0, rop));
     } else {
-      savePen = current_pen;
-      if (current_pen != wxBLACK_PEN) {
-	SetPen(wxBLACK_PEN);
-	resetPen = TRUE;
-      } else
-	resetPen = FALSE;
+      SetBackground(wxWHITE);
+      SetPen(wxBLACK_PEN);
     }
 
     // until I know how to scale bitmaps
@@ -196,36 +180,23 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	// Check if we're copying from a mono bitmap
         retval = TRUE;
 	if (src->GetDepth() == 1) {
-	    int old_logical_fkt = current_logical_fkt;
-	    if (current_logical_fkt != rop)
-		SetLogicalFunction(rop);
 	    XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
-		       xsrc, ysrc,
+		       (long)xsrc, (long)ysrc,
 		       scaled_width, scaled_height,
 		       XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
-	    if (current_logical_fkt != old_logical_fkt)
-		SetLogicalFunction(old_logical_fkt);
-	} else if (src->GetDepth() == DEPTH) {
-	    int old_logical_fkt = current_logical_fkt;
-	    if (current_logical_fkt != rop)
-		SetLogicalFunction(rop);
+	} else if (src->GetDepth() == (int)DEPTH) {
 	    XCopyArea(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
-		      xsrc, ysrc,
+		      (long)xsrc, (long)ysrc,
 		      scaled_width, scaled_height,
 		      XLOG2DEV(xdest), YLOG2DEV(ydest));
-	    if (current_logical_fkt != old_logical_fkt)
-		SetLogicalFunction(old_logical_fkt);
 	} else
 	  retval = FALSE;
 	CalcBoundingBox(xdest, ydest);
 	CalcBoundingBox(xdest + w, ydest + h);
     }
 
-    if (current_background_brush != saveBack)
-      SetBackground(saveBack);
-
-    if (resetPen)
-      SetPen(savePen);
+    SetPen(savePen);
+    SetBackground(saveBack);
 
     return retval; // someting wrong with the drawables
 }
@@ -238,9 +209,6 @@ void wxWindowDC::Clear(void)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_background_brush)
-	SetBackground(current_background_brush);
-
     // clear means to clear the entire canvas without expose region clipping
     // EXPOSE_REG = NULL;
     // SetCanvasClipping();
@@ -266,8 +234,6 @@ void wxWindowDC::CrossHair(float x, float y)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
 	return;
     int xx = XLOG2DEV(x);
@@ -289,11 +255,6 @@ void wxWindowDC::DrawArc(float x1, float y1, float x2, float y2,
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting) {
-	if (current_brush)  SetBrush(current_brush);
-	if (current_pen)    SetPen(current_pen);
-    }
-
     int xx1 = XLOG2DEV(x1); int yy1 = XLOG2DEV(y1);
     int xx2 = XLOG2DEV(x2); int yy2 = XLOG2DEV(y2);
     int xxc = XLOG2DEV(xc); int yyc = XLOG2DEV(yc);
@@ -343,10 +304,6 @@ void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting) {
-	if (current_brush)  SetBrush(current_brush);
-	if (current_pen)    SetPen(current_pen);
-    }
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	XFillArc(DPY, DRAWABLE, BRUSH_GC, XLOG2DEV(x), YLOG2DEV(y),
 		 XLOG2DEVREL(w), YLOG2DEVREL(h), 0, 64*360);
@@ -365,8 +322,6 @@ void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawLine(DPY, DRAWABLE, PEN_GC,
 		  XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
@@ -382,8 +337,6 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], float xoff, float yoff)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     XPoint *xpts = new XPoint[n];
     for (int i=0; i<n; ++i)
 	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
@@ -401,8 +354,6 @@ void wxWindowDC::DrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     XPoint *xpts = new XPoint[n];
     for (int i=0; i<n; ++i)
 	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
@@ -420,8 +371,6 @@ void wxWindowDC::DrawLines(wxList *pts, float xoff, float yoff)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     int n = pts->Number();
     XPoint *xpts = new XPoint[n];
     int i = 0;
@@ -444,8 +393,6 @@ void wxWindowDC::DrawPoint(float x, float y)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawPoint(DPY, DRAWABLE, PEN_GC, XLOG2DEV(x), YLOG2DEV(y));
     CalcBoundingBox(x, y);
@@ -460,10 +407,6 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting) {
-	if (current_brush)  SetBrush(current_brush);
-	if (current_pen)    SetPen(current_pen);
-    }
     XPoint *xpts = new XPoint[n+1];
     for (int i=0; i<n; ++i)
 	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
@@ -487,10 +430,6 @@ void wxWindowDC::DrawPolygon(wxList *pts, float xoff, float yoff, int fill)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting) {
-	if (current_brush)  SetBrush(current_brush);
-	if (current_pen)    SetPen(current_pen);
-    }
     int n = pts->Number();
     XPoint *xpts = new XPoint[n+1];
     int i=0;
@@ -519,10 +458,6 @@ void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting) {
-	if (current_brush)  SetBrush(current_brush);
-	if (current_pen)    SetPen(current_pen);
-    }
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
 	XFillRectangle(DPY, DRAWABLE, BRUSH_GC, XLOG2DEV(x), YLOG2DEV(y),
 		       XLOG2DEVREL(w), YLOG2DEVREL(h));
@@ -542,10 +477,6 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting) {
-	if (current_brush)  SetBrush(current_brush);
-	if (current_pen)    SetPen(current_pen);
-    }
     if (radius < 0.0)
 	radius = - radius * ((w < h) ? w : h);
     int xx = XLOG2DEV(x);    int yy = YLOG2DEV(y);
@@ -599,8 +530,6 @@ void wxWindowDC::IntDrawLine(int x1, int y1, int x2, int y2)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawLine(DPY, DRAWABLE, PEN_GC,
 		  XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
@@ -614,8 +543,6 @@ void wxWindowDC::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    if (auto_setting && current_pen)
-	SetPen(current_pen);
     XPoint *xpts = new XPoint[n];
     for (int i=0; i<n; ++i)
 	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
@@ -629,19 +556,15 @@ void wxWindowDC::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
 // drawing tools
 //-----------------------------------------------------------------------------
 
-void wxWindowDC::SetBackground(wxBrush *brush)
+void wxWindowDC::SetBackground(wxColour *c)
 {
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
 
-    if (current_background_brush) current_background_brush->Lock(-1);
+    current_background_color = new wxColour;
+    *current_background_color = *c;
 
-    if (!(current_background_brush = brush)) // nothing to do without brush
-	return;
-    
-    if (current_background_brush) current_background_brush->Lock(1);
-
-    unsigned long pixel = brush->GetColour().GetPixel(current_cmap, IS_COLOR, 0);
+    unsigned long pixel = current_background_color->GetPixel(current_cmap, IS_COLOR, 0);
 
     if (DRAW_WINDOW)
 	XSetWindowBackground(DPY, DRAW_WINDOW, pixel);
@@ -650,72 +573,82 @@ void wxWindowDC::SetBackground(wxBrush *brush)
     XSetBackground(DPY, PEN_GC, pixel);
     XSetBackground(DPY, BRUSH_GC, pixel);
 
-    if (current_logical_fkt == wxXOR) { // use the correct pixel values for XOR
-	SetPen(current_pen);
-	SetBrush(current_brush);
-    }
+    // use the correct pixel values for XOR
+
+    int style = current_pen->GetStyle();
+    if ((style >= wxXOR_DOT) && (style <= wxXOR_DOT_DASH))
+      style = wxXOR;
+    if (current_pen && (style == wxXOR))
+      SetPen(current_pen);
+
+    if (current_brush && (current_brush->GetStyle() == wxXOR))
+      SetBrush(current_brush);
 }
 
 void wxWindowDC::SetBrush(wxBrush *brush)
 {
     if (!DRAWABLE) /* MATTHEW: [5] */
-	return;
+      return;
 
     if (current_brush) current_brush->Lock(-1);
 
     if (!(current_brush = brush)) // nothing to do without brush
-	return;
+      return;
 
     if (current_brush) current_brush->Lock(1);
 
     // for XChangeGC
     XGCValues     values;
-    unsigned long mask = GCFillStyle | GCForeground;
+    unsigned long mask = GCFillStyle | GCForeground | GCFunction;
 
     values.fill_style = FillSolid;
     // wxXOR shall work the correct way
     unsigned long pixel = brush->GetColour().GetPixel(current_cmap, IS_COLOR, 1);
-    if (current_logical_fkt == wxXOR) {
+    if (brush->GetStyle() == wxXOR) {
 	XGCValues values_req;
 	XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
 	values.foreground = pixel ^ values_req.background;
-    } else
+	values.function = GXxor;
+    } else {
 	values.foreground = pixel;
+	values.function = GXcopy;
+    }
 
-    int style;
-    switch (style=brush->GetStyle()) {
-    case wxSOLID: case wxTRANSPARENT:
-	break;
-    default:
-	if (wxIS_HATCH(style) || style==wxSTIPPLE || style==wxOPAQUE_STIPPLE) {
-	    Pixmap stipple = (Pixmap)0; // for FillStippled
-	    Pixmap tile    = (Pixmap)0; // for FillTiled
-	    if (style==wxSTIPPLE || style==wxOPAQUE_STIPPLE) {
-		if (brush->GetStipple() && brush->GetStipple()->Ok()) {
-		    if (brush->GetStipple()->GetDepth() == 1) {
-			stipple = GETPIXMAP(brush->GetStipple());
-			values.fill_style = ((style==wxSTIPPLE) ? FillStippled : FillOpaqueStippled);
-		    } else if (brush->GetStipple()->GetDepth() == (signed)DEPTH) {
-			tile = GETPIXMAP(brush->GetStipple());
-			values.fill_style = FillTiled;
-		    } // else wrong depth
-		}
-		if (stipple || tile) 
-		  values.foreground = IS_COLOR ? BlackPixel(DPY, DefaultScreen(DPY)) : 1;
-	    } else {
-		stipple = hatch_bitmaps[style-wxFIRST_HATCH];
-		values.fill_style = FillStippled;
-	    }
-	    if (stipple) {
-	      values.stipple = stipple;
-	      mask |= GCStipple;
-	    }
-	    if (tile) {
-	      values.tile = tile;
-	      mask |= GCTile;
-	    }
+    wxBitmap *bm = brush->GetStipple();
+    if (bm && !bm->Ok())
+      bm = NULL;
+
+    if (bm) {
+      Pixmap stipple = (Pixmap)0; // for FillStippled
+      Pixmap tile    = (Pixmap)0; // for FillTiled
+      if (bm->GetDepth() == 1) {
+	stipple = GETPIXMAP(bm);
+	values.fill_style = ((brush->GetStyle()==wxSTIPPLE) ? FillOpaqueStippled : FillStippled);
+      } else if (bm->GetDepth() == (signed)DEPTH) {
+	tile = GETPIXMAP(bm);
+	values.fill_style = FillTiled;
+      } // else wrong depth
+      if (stipple) {
+	values.stipple = stipple;
+	mask |= GCStipple;
+      }
+      if (tile) {
+	values.tile = tile;
+	mask |= GCTile;
+	values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
+	values.function = GXcopy;
+      }
+    } else {
+      int style = brush->GetStyle();
+      if (wxIS_HATCH(style)) {
+	Pixmap stipple = (Pixmap)0; // for FillStippled
+	stipple = hatch_bitmaps[style-wxFIRST_HATCH];
+	values.fill_style = FillStippled;
+	if (stipple) {
+	  values.stipple = stipple;
+	  mask |= GCStipple;
 	}
-	break;
+      }
     }
     XChangeGC(DPY, BRUSH_GC, mask, &values);
 }
@@ -728,40 +661,23 @@ void wxWindowDC::SetColourMap(wxColourMap *new_cmap)
 	XSetWindowColormap(DPY, DRAW_WINDOW, CMAP);
 }
 
-void wxWindowDC::SetLogicalFunction(int fkt)
-{
-    if (!DRAWABLE) /* MATTHEW: [5] */
-	return;
-
-    if (current_logical_fkt == fkt)
-	return;
-    Bool must_reset_tools = ((fkt==wxXOR) || (current_logical_fkt==wxXOR));
-    XSetFunction(DPY, PEN_GC, function[fkt]);
-    XSetFunction(DPY, BRUSH_GC, function[fkt]);
-    current_logical_fkt = fkt;
-    if (must_reset_tools) {
-	// function has changed from or to XOR -> use the correct pixel values
-	SetPen(current_pen);
-	SetBrush(current_brush);
-    }
-}
-
 void wxWindowDC::SetPen(wxPen *pen)
 {
     if (!DRAWABLE) /* MATTHEW: [5] */
-	return;
+      return;
 
     if (current_pen) current_pen->Lock(-1);
-      
+    
     if (!(current_pen = pen)) // nothing to do without pen
-	return;
+      return;
 
     if (current_pen) current_pen->Lock(1);
 
     // for XChangeGC
     XGCValues     values;
-    unsigned long mask = GCCapStyle  | GCFillStyle | GCForeground |
-	                 GCJoinStyle | GCLineStyle | GCLineWidth;
+    unsigned long mask = (GCCapStyle  | GCFillStyle | GCForeground |
+			  GCJoinStyle | GCLineStyle | GCLineWidth |
+			  GCFunction);
 
     values.cap_style  = cap_style[pen->GetCap()];
     values.fill_style = FillSolid;
@@ -771,68 +687,85 @@ void wxWindowDC::SetPen(wxPen *pen)
     values.line_width = XLOG2DEVREL(pen->GetWidth());
     // wxXOR shall work the correct way
     unsigned long pixel = pen->GetColour().GetPixel(current_cmap, IS_COLOR, 1);
-    if (current_logical_fkt == wxXOR) {
+    int style = pen->GetStyle();
+    int xor = 0;
+
+    switch (style) {
+    case wxXOR:
+      xor = 1;
+      break;
+    case wxXOR_DOT:
+    case wxXOR_SHORT_DASH:
+    case wxXOR_LONG_DASH:
+    case wxXOR_DOT_DASH:
+      xor = 1;
+      style -= (wxXOR_DOT - wxDOT);
+      break;
+    }
+
+    if (xor) {
 	XGCValues values_req;
 	XGetGCValues(DPY, PEN_GC, GCBackground, &values_req);
 	values.foreground = pixel ^ values_req.background;
-    } else
+	values.function = GXxor;
+    } else {
 	values.foreground = pixel;
+	values.function = GXcopy;
+    }
 
-    int style;
-    switch (style=pen->GetStyle()) {
-    case wxSOLID: case wxTRANSPARENT:
-	break;
-    default:
-	if (wxIS_DASH(style) || style==wxUSER_DASH) {
-	    static wxDash dashdefs[4][4] = {
-		{ 2, 5, 0, 0 }, // wxDOT
-		{ 4, 8, 0, 0 }, // wxLONG_DASH
-		{ 4, 4, 0, 0 }, // wxSHORT_DASH
-		{ 6, 6, 2, 6 }  // wxDOT_DASH
-	    };
-	    static int    num_dashes[] = { 2, 2, 2, 4 };
-	    int           num_dash;
-	    wxDash        *dashdef, *scaleddef;
-	    if (style==wxUSER_DASH) {
-		num_dash = pen->GetDashes(&dashdef);
-	    } else {
-		num_dash = num_dashes[style-wxFIRST_DASH];
-		dashdef  = dashdefs[style-wxFIRST_DASH];
-	    }
-	    if ((scaleddef = new wxDash[num_dash])) {
-	        int dscale = scale;
-		if (!dscale) dscale = 1;
-		for (int i=0; i<num_dash; ++i)
-		    scaleddef[i] = dscale * dashdef[i];
-		XSetDashes(DPY, PEN_GC, 0, (char*)scaleddef, num_dash);
-		delete[] scaleddef;
-	    } else { // not enough memory to scale
-		XSetDashes(DPY, PEN_GC, 0, (char*)dashdef, num_dash);
-	    }
-	    values.line_style = LineOnOffDash; // for XChangeGC
+    wxBitmap *bm = pen->GetStipple();
+    if (bm && !bm->Ok())
+      bm = NULL;
+
+    if (bm) {
+      Pixmap stipple = (Pixmap)0; // for FillStippled
+      Pixmap tile    = (Pixmap)0; // for FillTiled
+      if (bm->GetDepth() == 1) {
+	stipple = GETPIXMAP(bm);
+	values.fill_style = FillStippled;
+      } else if (bm->GetDepth() == (signed)DEPTH) {
+	tile = GETPIXMAP(bm);
+	values.fill_style = FillTiled;
+      } // else wrong depth
+      if (stipple) {
+	values.stipple = stipple;
+	mask |= GCStipple;
+      }
+      if (tile) {
+	values.tile = tile;
+	mask |= GCTile;
+	values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
+	values.function = GXcopy;
+      }
+    } else {
+      if (wxIS_DASH(style) || style==wxUSER_DASH) {
+	static wxDash dashdefs[4][4] = {
+	  { 2, 5, 0, 0 }, // wxDOT
+	  { 4, 8, 0, 0 }, // wxLONG_DASH
+	  { 4, 4, 0, 0 }, // wxSHORT_DASH
+	  { 6, 6, 2, 6 }  // wxDOT_DASH
+	};
+	static int    num_dashes[] = { 2, 2, 2, 4 };
+	int           num_dash;
+	wxDash        *dashdef, *scaleddef;
+	if (style==wxUSER_DASH) {
+	  num_dash = pen->GetDashes(&dashdef);
+	} else {
+	  num_dash = num_dashes[style-wxFIRST_DASH];
+	  dashdef  = dashdefs[style-wxFIRST_DASH];
 	}
-	if (wxIS_HATCH(style) || style==wxSTIPPLE || style==wxOPAQUE_STIPPLE) {
-	    Pixmap stipple = (Pixmap)0; // for FillStippled
-	    Pixmap tile    = (Pixmap)0; // for FillTiled
-	    if (style==wxSTIPPLE || style==wxOPAQUE_STIPPLE) {
-		if (pen->GetStipple() && pen->GetStipple()->Ok()) {
-		    if (pen->GetStipple()->GetDepth() == 1) {
-			stipple = GETPIXMAP(pen->GetStipple());
-			values.fill_style =((style==wxSTIPPLE) ? FillStippled : FillOpaqueStippled);
-		    } else if (pen->GetStipple()->GetDepth() == (signed)DEPTH) {
-			tile = GETPIXMAP(pen->GetStipple());
-			values.fill_style = FillTiled;
-		    } // else wrong depth
-		}
-		if (stipple || tile) values.foreground = BlackPixel(DPY, DefaultScreen(DPY));
-	    } else {
-		stipple = hatch_bitmaps[style-wxFIRST_HATCH];
-		values.fill_style = FillStippled;
-	    }
-	    if (stipple) XSetStipple(DPY, PEN_GC, stipple);
-	    if (tile)    XSetTile(DPY, PEN_GC, tile);
+	if ((scaleddef = new wxDash[num_dash])) {
+	  int dscale = scale;
+	  if (!dscale) dscale = 1;
+	  for (int i=0; i<num_dash; ++i)
+	    scaleddef[i] = dscale * dashdef[i];
+	  XSetDashes(DPY, PEN_GC, 0, (char*)scaleddef, num_dash);
+	  delete[] scaleddef;
+	} else { // not enough memory to scale
+	  XSetDashes(DPY, PEN_GC, 0, (char*)dashdef, num_dash);
 	}
-	break;
+	values.line_style = LineOnOffDash;
+      }
     }
     XChangeGC(DPY, PEN_GC, mask, &values);
 }
@@ -1083,7 +1016,7 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     SetTextForeground(&c);
     c = current_text_bg;
     SetTextBackground(&c);
-    SetBackground(current_background_brush); 
+    SetBackground(current_background_color); 
     SetBrush(current_brush);
     SetPen(current_pen);
 

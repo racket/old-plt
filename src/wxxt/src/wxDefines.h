@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.4 1998/08/10 22:01:31 mflatt Exp $
+ * $Id: wxDefines.h,v 1.5 1998/08/14 21:44:36 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -161,6 +161,10 @@ typedef short int WXTYPE;
 #define wxLONG_DASH        102
 #define wxSHORT_DASH       103
 #define wxDOT_DASH         104
+#define wxXOR_DOT          105
+#define wxXOR_LONG_DASH    106
+#define wxXOR_SHORT_DASH   107
+#define wxXOR_DOT_DASH     108
 #define wxFIRST_DASH       wxDOT
 #define wxIS_DASH(d)	   (wxDOT <= d && d <= wxDOT_DASH)
 #define wxNUM_DASH         (wxDOT_DASH - wxDOT + 1)

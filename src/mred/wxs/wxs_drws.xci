@@ -1,24 +1,4 @@
 
-@BEGINSYMBOLS logicalFunc > ONE
-@SYM "and" :  wxAND
-@SYM "and-invert" :  wxAND_INVERT
-@SYM "and-reverse" :  wxAND_REVERSE
-@SYM "clear" :  wxCLEAR
-@SYM "copy" :  wxCOPY
-@SYM "equiv" :  wxEQUIV
-@SYM "invert" :  wxINVERT
-@SYM "nand" :  wxNAND
-@SYM "nor" :  wxNOR
-@SYM "no-op" :  wxNO_OP
-@SYM "or" :  wxOR
-@SYM "or-invert" :  wxOR_INVERT
-@SYM "or-reverse" :  wxOR_REVERSE
-@SYM "set" :  wxSET
-@SYM "src-invert" :  wxSRC_INVERT
-@SYM "xor" :  wxXOR
-@SYM "color" :  wxCOLOR
-@ENDSYMBOLS
-
 @BEGINSYMBOLS fillKind > ONE
 @SYM "odd-even" : wxODDEVEN_RULE
 @SYM "winding" : wxWINDING_RULE

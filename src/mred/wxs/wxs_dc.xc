@@ -24,6 +24,12 @@
 @SYM "solid" : wxSOLID
 @ENDSYMBOLS
 
+@BEGINSYMBOLS bitmapDrawStyle > ONE
+@SYM "solid" : wxSOLID
+@SYM "opaque" : wxSTIPPLE
+@SYM "xor" : wxXOR
+@ENDSYMBOLS
+
 @INCLUDE wxs_drws.xci
 
 static wxColour* dcGetTextBackground(wxDC *dc)
@@ -40,18 +46,18 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int logicalFunc)
+static bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
 {
   if (bm->Ok()) {
-    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, logicalFunc);
+    return dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c);
   } else
     return FALSE;
 }
 
-static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int logicalFunc)
+static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
 {
   if (bm->Ok()) {
-    return dc->Blit(x, y, dw, dh, bm, dx, dy, logicalFunc);
+    return dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c);
   } else
     return FALSE;
 }
@@ -89,8 +95,8 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 #define CHECKTHISONE(x) 1
 #endif
 
-@ m "draw-bitmap-region" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,float,float,SYM[logicalFunc]=wxCOPY); : : /CheckOkFalse|CheckFalse[0] : : rFALSE <> with size
-@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[logicalFunc]=wxCOPY);
+@ m "draw-bitmap-region" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckOkFalse|CheckFalse[0] : : rFALSE <> with size
+@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL);
 
 @ Q "try-color" : void TryColour(wxColour!,wxColour!);
 
@@ -98,11 +104,10 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @ Q "set-user-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
 @ Q "set-device-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
 
-@ q "get-background" : wxBrush! GetBackground();
+@ q "get-background" : wxColour! GetBackground();
 @ q "get-background-mode" : SYM[solidity] GetBackgroundMode();
 @ q "get-brush" : wxBrush! GetBrush();
 @ q "get-font" : wxFont! GetFont();
-@ q "get-logical-function" : SYM[logicalFunc] GetLogicalFunction();
 @ q "get-pen" : wxPen! GetPen();
 @ m "get-text-background" : wxColour! dcGetTextBackground();
 @ m "get-text-foreground" : wxColour! dcGetTextForeground();

@@ -896,6 +896,14 @@ void wxMediaEdit::SnipSplit(wxSnip *snip, long pos, wxSnip **a_ptr, wxSnip **b_p
 
 /****************************************************************/
 
+wxSnip *wxMediaEdit::FindFirstSnip(void)
+{
+  if (!len)
+    return NULL;
+  else
+    return snips;
+}
+
 wxSnip *wxMediaEdit::FindSnip(long p, int direction, long *sPos)
 {
   wxSnip *snip;
@@ -1779,41 +1787,22 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   static wxBrush *outlineBrush = NULL;
 #if ALLOW_X_STYLE_SELECTION
   static wxBrush *outlineNonownerBrush = NULL;
-#if 1
-  static char xpattern[32] = {0x88, 0x88,
-			      0x00, 0x00,
-			      0x22, 0x22, 
-			      0x00, 0x00,
+  static char xpattern[32] = {0x77, 0x77,
+			      0xff, 0xff,
+			      0xdd, 0xdd, 
+			      0xff, 0xff,
+			      0x77, 0x77,
+			      0xff, 0xff,
+			      0xdd, 0xdd,
+			      0xff, 0xff,
 			      0x88, 0x88,
-			      0x00, 0x00,
-			      0x22, 0x22,
-			      0x00, 0x00,
+			      0xff, 0xff,
+			      0xdd, 0xdd, 
+			      0xff, 0xff,
 			      0x88, 0x88,
-			      0x00, 0x00,
-			      0x22, 0x22, 
-			      0x00, 0x00,
-			      0x88, 0x88,
-			      0x00, 0x00,
-			      0x22, 0x22,
-			      0x00, 0x00};
-#else
-  static char xpattern[32] = {0x80, 0x80,
-			      0x00, 0x00,
-			      0x08, 0x08, 
-			      0x00, 0x00,
-			      0x80, 0x80,
-			      0x00, 0x00,
-			      0x08, 0x08,
-			      0x00, 0x00,
-			      0x80, 0x80,
-			      0x00, 0x00,
-			      0x08, 0x08, 
-			      0x00, 0x00,
-			      0x80, 0x80,
-			      0x00, 0x00,
-			      0x08, 0x08,
-			      0x00, 0x00};
-#endif
+			      0xff, 0xff,
+			      0xdd, 0xdd,
+			      0xff, 0xff};
 #endif
   static wxBrush *clearBrush = NULL;
 
@@ -1838,13 +1827,13 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   if (!outlinePen) {
     outlinePen = wxThePenList->FindOrCreatePen("BLACK", 0, wxTRANSPARENT);
     if (!caretPen)
-      caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxSOLID);
+      caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
     outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxSOLID);
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
     outlineNonownerBrush->SetColour("BLACK");
     outlineNonownerBrush->SetStipple(new wxBitmap(xpattern, 16, 16));
-    outlineNonownerBrush->SetStyle(wxSTIPPLE);
+    outlineNonownerBrush->SetStyle(wxXOR);
 #endif
     clearBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
   }
@@ -2027,7 +2016,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
       if (hsxe != hsxs) {
 	if ((hsxs <= rightx) && (hsxe >= leftx)) {
 	  savePen = dc->GetPen();
-	  dc->SetLogicalFunction(wxXOR);
 	  
 	  if (hsxs < leftx)
 	    hsxs = leftx;
@@ -2067,30 +2055,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 #if ALLOW_X_STYLE_SELECTION
 	    if (show_xsel) {
 	      dc->SetBrush(outlineNonownerBrush);
-	      
-	      int log = wxAND_INVERT;
-#ifdef wx_x
-	      
-	      static Bool _black_pixel_set_ = FALSE;
-	      static unsigned long _black_pixel_;
-	      
-	      if (!_black_pixel_set_) {
-#ifdef wx_xt
-		Display *d = wxAPP_DISPLAY;
-#else
-		Display *d = wxGetDisplay();
-#endif
-		int sc = DefaultScreen(d);
-		_black_pixel_ = BlackPixel(d, sc);
-		_black_pixel_set_ = TRUE;
-	      }
-	      
-	      /* If black == 0, then reverse */
-	      if (!_black_pixel_)
-		log = wxOR;
-#endif
-	      dc->SetLogicalFunction(log);
-	      
 	      dc->DrawRectangle(hsxs + dx, hsys + dy, 
 				hsxe - hsxs + GC_RECT_BRUSH_EXTEND, 
 				hsye - hsys + GC_RECT_BRUSH_EXTEND);
@@ -2099,7 +2063,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	    
 	    dc->SetBrush(saveBrush);
 	  }
-	  dc->SetLogicalFunction(wxCOPY);
 	  dc->SetPen(savePen);
 	}
       } else {
@@ -2107,11 +2070,9 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	  if ((hsxs <= rightx) && (hsxs >= leftx)) {
 	    savePen = dc->GetPen();
 	    dc->SetPen(caretPen);
-	    dc->SetLogicalFunction(wxXOR);
 	    dc->DrawLine(hsxs + dx, hsys + dy, 
 			 hsxs + dx, 
 			 hsye + dy - 1 + GC_LINE_EXTEND);
-	    dc->SetLogicalFunction(wxCOPY);
 	    dc->SetPen(savePen);
 	  } 
 	  caretLocationX = hsxs;
@@ -2137,10 +2098,8 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
 	savePen = dc->GetPen();
 	dc->SetPen(caretPen);
-	dc->SetLogicalFunction(wxXOR);
 	dc->DrawLine(dx, y + dy, dx, 
 		     y + extraLineH + dy - 1 + GC_LINE_EXTEND);
-	dc->SetLogicalFunction(wxCOPY);
 	dc->SetPen(savePen);
 
 	caretLocationX = 0;
@@ -2399,9 +2358,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 #else
     wxColour fg, bg;
 #endif
-    int log;
 
-    log = dc->GetLogicalFunction();
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
@@ -2428,7 +2385,6 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
       dc->SetClippingRegion(cx, cy, cw, ch);
 #endif
 
-    dc->SetLogicalFunction(log);
     dc->SetBrush(brush);
     dc->SetPen(pen);
     dc->SetFont(font);
@@ -2550,12 +2506,12 @@ Bool wxMediaEdit::CaretOff(void)
     B = y + h;
 
   if (!caretPen)
-    caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxSOLID);
+    caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
 
+  wxPen *oldpen = dc->GetPen();
   dc->SetPen(caretPen);
-  dc->SetLogicalFunction(wxXOR);
   dc->DrawLine(X - dx, T - dy, X - dx, B - dy - 1 + GC_LINE_EXTEND);
-  dc->SetLogicalFunction(wxCOPY);
+  dc->SetPen(oldpen);
 
   drawCachedInBitmap = FALSE;
 

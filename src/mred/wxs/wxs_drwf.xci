@@ -24,10 +24,9 @@
 @ Q "set-clipping-region" : void SetClippingRegion(float,float,nnfloat,nnfloat); : : /CheckOk|ZeroBoundary[2]|ZeroBoundary[3]
 @ Q "get-clipping-region" : void GetClippingRegion(float*,float*,float*,float*);
 
-@ Q "set-background" : void SetBackground(wxBrush!); : : /CheckOk
+@ Q "set-background" : void SetBackground(wxColour!); : : /CheckOk
 @ Q "set-brush" : void SetBrush(wxBrush!); : : /CheckOk
 @ Q "set-font" : void SetFont(wxFont!); : : /CheckOk
-@ Q "set-logical-function" : void SetLogicalFunction(SYM[logicalFunc]); : : CheckOk
 @ Q "set-pen" : void SetPen(wxPen!); : : /CheckOk
 @ q "set-text-background" : void SetTextBackground(wxColour!); : : /CheckOk
 @ q "set-text-foreground" : void SetTextForeground(wxColour!); : : /CheckOk

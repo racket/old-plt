@@ -487,6 +487,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
 // X are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
 
@@ -4216,6 +4217,23 @@ static Scheme_Object *os_wxMediaBufferOnLocalEvent(Scheme_Object *obj, int n,  S
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaBufferFindFirstSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxSnip* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->FindFirstSnip();
+
+  
+  
+  return objscheme_bundle_wxSnip(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaBufferSizeCacheInvalid(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4544,7 +4562,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 110);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 111);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4641,6 +4659,7 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-default-event", os_wxMediaBufferOnDefaultEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-local-char", os_wxMediaBufferOnLocalChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-local-event", os_wxMediaBufferOnLocalEvent, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "find-first-snip", os_wxMediaBufferFindFirstSnip, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "size-cache-invalid", os_wxMediaBufferSizeCacheInvalid, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "blink-caret", os_wxMediaBufferBlinkCaret, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "own-caret", os_wxMediaBufferOwnCaret, 1, 1);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.2 1998/06/07 20:16:23 mflatt Exp $
+ * $Id: DC.h,v 1.3 1998/09/18 22:08:54 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -79,7 +79,7 @@ public:
 
     // pure virtual methods, must be implemented for all DCs
     virtual Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
-		       float xsrc, float ysrc, int rop=wxCOPY) = 0;
+		       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL) = 0;
     virtual Bool  CanGetTextExtent(void) = 0;
     virtual Bool  CanDrawBitmap(void) = 0;
     virtual void  Clear(void) = 0;
@@ -115,14 +115,13 @@ public:
     virtual void  IntDrawLine(int x1, int y1, int x2, int y2) = 0;
     virtual void  IntDrawLines(int n, wxIntPoint pts[],
 			       int xoff=0, int yoff=0) = 0;
-    virtual void  SetBackground(wxBrush *brush) = 0;
+    virtual void  SetBackground(wxColour *c) = 0;
     virtual void  SetBrush(wxBrush *brush) = 0;
     virtual void  SetClippingRegion(float x, float y, float w, float h) = 0;
     /* MATTHEW: */
     virtual void  GetClippingRegion(float *x, float *y, float *w, float *h) = 0;
     virtual void  SetColourMap(wxColourMap *cmap) = 0;
     virtual void  SetFont(wxFont *font) = 0;
-    virtual void  SetLogicalFunction(int fkt) = 0;
     virtual void  SetPen(wxPen *pen) = 0;
     virtual void  SetTextBackground(wxColour *col) = 0;
     virtual void  SetTextForeground(wxColour *col) = 0;
@@ -156,14 +155,14 @@ public:
 #endif
     void  EndDrawing(void)
 	{}
-    wxBrush *GetBackground(void)
-	{ return current_background_brush; }
+    wxColour *GetBackground(void)
+	{ wxColour *c = new wxColour();
+          *c = *current_background_color;
+	  return c; }
     wxBrush *GetBrush(void)
 	{ return current_brush; }
     wxFont *GetFont(void)
 	{ return current_font; }
-    int GetLogicalFunction(void)
-	{ return current_logical_fkt; }
     int GetMapMode(void)
 	{ return current_map_mode; }
     Bool GetOptimization(void)
@@ -229,11 +228,10 @@ protected:
     float logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
     float max_x, max_y, min_x, min_y;
     // Tools for drawing
-    wxBrush*     current_background_brush;
+    wxColour*     current_background_color;
     wxBrush*     current_brush;
     wxColourMap* current_cmap;
     wxFont*      current_font;
-    int          current_logical_fkt;
     int          current_map_mode;
     wxPen*       current_pen;
     int		 current_text_alignment;

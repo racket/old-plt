@@ -756,6 +756,7 @@ static Scheme_Object *bundle_symset_Bias(int v) {
 
 
 
+
 			
 
 
@@ -6499,6 +6500,23 @@ static Scheme_Object *os_wxMediaEditOnLocalEvent(Scheme_Object *obj, int n,  Sch
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditFindFirstSnip(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxSnip* r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->FindFirstSnip();
+
+  
+  
+  return objscheme_bundle_wxSnip(r);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEditSizeCacheInvalid(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6726,7 +6744,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 130);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 131);
 
  scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5);
@@ -6849,6 +6867,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-default-event", os_wxMediaEditOnDefaultEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-char", os_wxMediaEditOnLocalChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-local-event", os_wxMediaEditOnLocalEvent, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "find-first-snip", os_wxMediaEditFindFirstSnip, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "size-cache-invalid", os_wxMediaEditSizeCacheInvalid, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "blink-caret", os_wxMediaEditBlinkCaret, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "own-caret", os_wxMediaEditOwnCaret, 1, 1);

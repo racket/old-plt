@@ -108,11 +108,11 @@ wxMediaPasteboard::wxMediaPasteboard()
   dragging = rubberband = FALSE;
 
   if (!blackBrush) {
-    blackBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxSOLID);
+    blackBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxXOR);
     whiteBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
     invisiPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxTRANSPARENT);
     rbBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxTRANSPARENT);
-    rbPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxDOT);
+    rbPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR_DOT);
   }
 
   snipAdmin = new wxStandardSnipAdmin(this);
@@ -183,13 +183,11 @@ void wxMediaPasteboard::RubberBand(float x, float y, float w, float h)
   oldBrush = dc->GetBrush();
   dc->SetPen(rbPen);
   dc->SetBrush(rbBrush);
-  dc->SetLogicalFunction(wxXOR);
   
   dc->DrawRectangle(x - dx, y - dy, 
 		    r - x + GC_RECT_BRUSH_EXTEND, 
 		    b - y + GC_RECT_BRUSH_EXTEND);
   
-  dc->SetLogicalFunction(wxCOPY);
   dc->SetPen(oldPen);
   dc->SetBrush(oldBrush);;
 }
@@ -1502,10 +1500,8 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
 
 	oldbrush = dc->GetBrush();
 	oldpen = dc->GetPen();
-	lf = dc->GetLogicalFunction();
 	dc->SetBrush(blackBrush);
 	dc->SetPen(invisiPen);
-	dc->SetLogicalFunction(wxXOR);
 
 	r = loc->r + dx;
 	b = loc->b + dy;
@@ -1545,7 +1541,6 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
 			  DOT_WIDTH + GC_RECT_BRUSH_EXTEND, 
 			  DOT_WIDTH + GC_RECT_BRUSH_EXTEND);
 
-	dc->SetLogicalFunction(lf);
 	dc->SetPen(oldpen);
 	dc->SetBrush(oldbrush);
       }
@@ -1612,9 +1607,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
 #else
     wxColour fg, bg;
 #endif
-    int log;
 
-    log = dc->GetLogicalFunction();
     pen = dc->GetPen();
     brush = dc->GetBrush();
     font = dc->GetFont();
@@ -1641,7 +1634,6 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
       dc->SetClippingRegion(cx, cy, cw, ch);
 #endif
 
-    dc->SetLogicalFunction(log);
     dc->SetBrush(brush);
     dc->SetPen(pen);
     dc->SetFont(font);

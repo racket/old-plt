@@ -17,6 +17,7 @@
 		 (struct ref (type))
 		 (struct mlexn (name types))
 		 (struct value-set (name type))
+		 (struct <user-type> ())
 		 != <lt> <gt> <le> <ge> <or> <and> <>
 		 float? any?
 		 array-get
@@ -36,6 +37,7 @@
 	(define-struct ref (type))
 	(define-struct mlexn (name types))
 	(define-struct option (type))
+	(define-struct <user-type> () (make-inspector))
 
 	(define <library-names> (make-hash-table 'equal))
 
@@ -187,7 +189,7 @@
 	(define (print_string a)
 	  (begin (display a) (make-<unit> #f)))
 
-	(define (print_newline)
+	(define (print_newline a)
 	  (begin (newline) (make-<unit> #f)))
 
 	(define (boolean-to-number n)

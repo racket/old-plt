@@ -34,6 +34,8 @@
 
       (define (ml-tstyle type)
 	(cond
+	 [(mlexn? type)
+	  (format "exception ~e" (mlexn-name type))]
 	 [(value-set? type)
 	  (format "val ~e : ~e" (value-set-name type) (ml-tstyle (value-set-type type)))]
 	 [(option? type)
@@ -89,6 +91,16 @@
 
       (define (ml-style value)
 	(cond
+	 [(<user-type>? value)
+	  (let*-values ([(sinfo skipped) (struct-info value)]
+			[(name-sym fnum acc-proc mut-proc sst skipped) (struct-type-info sinfo)]
+			[(ftype) (acc-proc value 0)])
+		       (string-append (format "~e" name-sym)
+				      (cond
+;				       [(<tuple>? ftype) (ml-style ftype)]
+				       [(not ftype) ""]
+				       [else (format " (~e)" (ml-style ftype))])))]
+			
 	 [(option? value)
 	  (if (<voidstruct>? (option-type value))
 	      "None"
@@ -103,7 +115,10 @@
 					 (format "~e~e" (ml-style (car clist)) (listformat (cdr clist)))
 					 (format "~e; ~e" (ml-style (car clist)) (listformat (cdr clist))))))])
 	    (string-append "[" (listformat value)))]
-	 [(procedure? value) "<fun>"]
+	 [(procedure? value) (begin (pretty-print (format "procedure ~e" value))
+				    "<fun>"
+				    )
+				    ]
 	 [(<tuple>? value)
 	  (letrec ([<tuple>format (lambda (tlist)
 				  (if (null? (cdr tlist))

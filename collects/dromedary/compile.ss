@@ -143,7 +143,7 @@
      (define (mkdefinestructs scll)
        (if (null? scll)
 	   null
-	   (cons #`(define-struct #,(string->symbol (syntax-object->datum (caar scll))) (tlist) (make-inspector)) (mkdefinestructs (cdr scll)))))
+	   (cons #`(define-struct (#,(string->symbol (syntax-object->datum (caar scll))) <user-type>) (tlist) (make-inspector)) (mkdefinestructs (cdr scll)))))
 
      (define (mkdefine binding)
        #`(define #,(car binding) #,(cdr binding)))
@@ -244,7 +244,12 @@
 	       (let ([constr (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		 (if constr
 		     (if (null? expr)
-			 (cdr constr)
+			 (begin
+			   ;(pretty-print (format "constr found: ~a" constr))
+			 (if (symbol? (cdr constr))
+			     #`(#,(cdr constr) #f)
+			     (cdr constr))
+			 )
 			 (let ([args (compile-expr (ast:expression-pexp_desc expr) (ast:expression-pexp_src expr) context)])
 			   #`(#,(cdr constr) #,@(cond
 						[(<tuple>? args) (<tuple>-list args)]
@@ -254,7 +259,8 @@
 			   [args (if (null? expr) #f (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context))])
 		       (if args
 			   #`(#,rconstr #,@args)
-			   #`#,rconstr))))]
+			       #`(#,rconstr #f)
+			       ))))]
 ;	       (cond
 ;		[(and (null? expr) (not bool) 
 ;		      (if (hash-table-get <constructors> name (lambda () #f)) #t #f))
@@ -323,10 +329,11 @@
 	   (cons x (repeat x (- n 1)))))
 
      (define (compile-apply fun args)
+       ;(pretty-print (format "compile-apply ~a ~a" fun args))
        (cond 
 	[(null? args) fun]
-	[(null? (cdr-args))
-	 #`(#,(compile-apply fun (make-<unit> #f)) #,(car args))]
+;	[(null? (cdr-args))
+;	 #`(#,(compile-apply fun (make-<unit> #f)) #,(car args))]
 	[else
 	   #`(#,(compile-apply fun (cdr args)) #,(car args))]))
 

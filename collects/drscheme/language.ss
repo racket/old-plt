@@ -86,8 +86,10 @@
 	     [output-syntax-panel (make-sub-panel "Output Syntax")]
 	     
 	     [_1 (make-object mred:horizontal-panel% language-panel)]
+	     [specifics-shown? #f]
 	     [show-specifics
 	      (lambda (bool)
+		(set! specifics-shown? bool)
 		(send ok-panel change-children
 		      (lambda (l)
 			(cons (if bool hide-button show-button)
@@ -99,15 +101,22 @@
 			    (list language-panel customization-panel ok-panel)
 			    (list language-panel ok-panel)))))]
 	     [language-choice (make-object mred:choice% language-panel
-					   (lambda (choice evt)
-					     (let ([which (send evt get-command-int)]
-						   [len (length settings)])
-					       (when (= which len)
-						 (show-specifics #t))
-					       (when (< which len)
-						 (mred:set-preference
-						  'drscheme:settings
-						  (copy-setting (second (list-ref settings which)))))))
+					   (let ([state #t])
+					     (lambda (choice evt)
+					       (let ([which (send evt get-command-int)]
+						     [len (length settings)])
+						 (when (= which len)
+						     (show-specifics #t))
+						 (when state
+						   (set! state #f)
+						   (unless (= which len)
+						     (mred:message-box
+						      "Some language changes only effective on restart"
+						      "Warning")))
+						 (when (< which len)
+						   (mred:set-preference
+						    'drscheme:settings
+						    (copy-setting (second (list-ref settings which))))))))
 					   "Language"
 					   -1 -1 -1 -1
 					   (append language-levels (list "Custom")))]

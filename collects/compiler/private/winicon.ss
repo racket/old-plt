@@ -9,14 +9,14 @@
   (define (byte->integer p)
     (char->integer (read-char p)))
   (define (word->integer p)
-    (integer-bytes->integer (read-string 2 p) #f #f))
+    (integer-bytes->integer (read-bytes 2 p) #f #f))
   (define (dword->integer p)
-    (integer-bytes->integer (read-string 4 p) #f #f))
+    (integer-bytes->integer (read-bytes 4 p) #f #f))
   
   ;; The 0 added in the alpha position apparently means "ignore the alpha
   ;;  and use the mask, instead"
   (define (3/2word->integer p)
-    (integer-bytes->integer (string-append (read-string 3 p) "\0") #f #f))
+    (integer-bytes->integer (bytes-append (read-bytes 3 p) "\0") #f #f))
 
   (define (integer->word i p)
     (display (integer->integer-bytes i 2 #f #f) p))
@@ -63,8 +63,8 @@
 		(begin
 		  (file-position p section-pos)
 		  ;; p points to an IMAGE_SECTION_HEADER
-		  (let ([name (read-string 8 p)])
-		    (if (string=? find-name name)
+		  (let ([name (read-bytes 8 p)])
+		    (if (bytes=? find-name name)
 			(let ([_ (dword->integer p)]) ; skip
 			  (values (dword->integer p)  ; virtual address
 				  (dword->integer p)  ; length
@@ -73,7 +73,7 @@
   
   (define (find-rsrc-start p re:rsrc)
     (let-values ([(rsrc-virtual-addr rsrc-len rsrc-pos)
-		  (find-section p ".rsrc\0\0\0")])
+		  (find-section p #".rsrc\0\0\0")])
       (let loop ([dir-pos 0][path ""])
 	(file-position p (+ rsrc-pos dir-pos 12))
 	(let ([num-named (word->integer p)]
@@ -89,9 +89,11 @@
 					(file-position p (+ rsrc-pos (value name-delta)))
 					(let* ([len (word->integer p)])
 					  ;; len is in unicode chars...
-					  (let ([unistr (read-string (* 2 len) p)])
+					  (let ([unistr (read-bytes (* 2 len) p)])
 					    ;; Assume it fits into ASCII...
-					    (regexp-replace* "\0" unistr ""))))
+					    (regexp-replace* "\0" 
+							     (bytes->string/latin-1 unistr)
+							     ""))))
 				      (value name-delta))])
 			;;(printf "Name: ~a~a = ~a~n" path name (+ rsrc-pos (value data-delta)))
 			(let ([full-name (format "~a~a" path name)])
@@ -114,7 +116,7 @@
   ;; >>> Probably doesn't work <<<
   (define (find-import-names p)
     (let-values ([(seg-virtual-addr seg-len seg-pos)
-		  (find-section p ".idata\0\0")])
+		  (find-section p #".idata\0\0")])
       (let loop ([pos seg-pos])
 	;; pos points to an IMAGE_IMPORT_DESCRIPTOR;
 	;; skip first 4 fields
@@ -135,7 +137,7 @@
   ;; >>> Doesn't work <<<
   (define (find-delay-loads p)
     (let-values ([(seg-virtual-addr seg-len seg-pos)
-		  (find-section p ".text\0\0")])
+		  (find-section p #".text\0\0")])
     (let ([pos (skip-to-image-headers-after-signature p)]
 	  [image-base (get-image-base p)])
       (let ([pos (+ pos
@@ -184,8 +186,8 @@
                                          (and (= (car li) (car le))
                                               (= (cadr li) (cadr le))
                                               (= (num-colors li) (num-colors le))
-                                              (= (string-length (cdr (icon-data exe-icon)))
-                                                 (string-length (cdr (icon-data ico-icon))))
+                                              (= (bytes-length (cdr (icon-data exe-icon)))
+                                                 (bytes-length (cdr (icon-data ico-icon))))
                                               ico-icon)))
                                      ico-icons)])
                          (let ([ico-icon (or best-ico-icon
@@ -307,7 +309,7 @@
 						where)])
 			      (file-position p icon-pos)
 			      (cons icon-pos
-				    (read-string size p)))))
+				    (read-bytes size p)))))
                          ;; If colors, planes, and bitcount are all 0,
                          ;;  get the info from the DIB data
                          (let ([desc (icon-desc icon)])
@@ -322,11 +324,11 @@
 		       icons)
 	     icons)))
        (lambda ()
-	 (when (string? file)
+	 (when (path-string? file)
 	       (close-input-port p))))))
 
   (define (bitmapinfo icon)
-    (let ([p (open-input-string (cdr (icon-data icon)))])
+    (let ([p (open-input-bytes (cdr (icon-data icon)))])
       (list (dword->integer p)    ; size == 40 in practice
 	    (dword->integer p)    ; width
 	    (dword->integer p)    ; height
@@ -348,9 +350,9 @@
 	   [w (list-ref bi 1)]
 	   [h (/ (list-ref bi 2) 2)]
 	   [bits-per-pixel (list-ref bi 4)])
-      (let ([p (open-input-string (cdr (icon-data icon)))])
+      (let ([p (open-input-bytes (cdr (icon-data icon)))])
 	;; Skip header
-	(read-string header-size p)
+	(read-bytes header-size p)
 	(let* ([read-n
 		(lambda (n read-one combine)
 		  (let loop ([i n][r null])
@@ -487,10 +489,10 @@
 	   [w (list-ref bi 1)]
 	   [h (/ (list-ref bi 2) 2)]
 	   [bits-per-pixel (list-ref bi 4)])
-      (let ([orig-p (open-input-string (cdr (icon-data icon)))]
-	    [result-p (open-output-string)])
+      (let ([orig-p (open-input-bytes (cdr (icon-data icon)))]
+	    [result-p (open-output-bytes)])
 	;; Copy header:
-	(display (read-string header-size orig-p) result-p)
+	(display (read-bytes header-size orig-p) result-p)
 	(let ([get-lines (lambda (image bits-per-pixel)
 			   (map (lambda (line)
 				  ;; pad line to dword boundary
@@ -574,10 +576,10 @@
 		 [dwords (apply append (map (lambda (l) (bits->dwords l 1)) lines))])
 	    (for-each (lambda (col) (integer->dword col result-p))
 		      dwords))
-	  (let ([s (get-output-string result-p)])
-	    (unless (= (string-length s) (string-length (cdr (icon-data icon))))
+	  (let ([s (get-output-bytes result-p)])
+	    (unless (= (bytes-length s) (bytes-length (cdr (icon-data icon))))
 	      (error 'build-dib "bad result size ~a != ~a"
-                     (string-length s) (string-length (cdr (icon-data icon)))))
+                     (bytes-length s) (bytes-length (cdr (icon-data icon)))))
 	    s)))))
 
   (define (parse-icon icon)
@@ -597,7 +599,9 @@
 		     (build-dib base-icon image mask))))
 
   (define (extract-icons file)
-    (if (regexp-match #rx"[.]ico$" file)
+    (if (regexp-match #rx"[.]ico$" (if (path? file)
+				       (path->string file)
+				       file))
 	(get-icons-in-ico file)
 	(get-icons-in-exe file)))
 
@@ -625,12 +629,12 @@
     (define (bitmap%->icon bm)
       (let* ([w (send bm get-width)]
              [h (send bm get-height)]
-             [argb (make-string (* w h 4))]
+             [argb (make-bytes (* w h 4))]
              [mdc (make-object bitmap-dc% bm)])
         (send mdc get-argb-pixels 0 0 w h argb)
         (send mdc set-bitmap #f)
         ;; Get mask (inverse alpha), if any:
-        (let ([mask-argb (make-string (* w h 4) #\377)]
+        (let ([mask-argb (make-bytes (* w h 4) #o377)]
               [mbm (send bm get-loaded-mask)])
           (when mbm
             (send mdc set-bitmap mbm)
@@ -639,7 +643,7 @@
           (bitmap->icon w h argb mask-argb)))))
 
   (define (bitmap->icon w h argb mask-argb)
-    (let ([o (open-output-string)])
+    (let ([o (open-output-bytes)])
       (integer->dword 40 o) ; size
       (integer->dword w o)  ; width
       (integer->dword (* 2 h) o)  ; height
@@ -653,17 +657,17 @@
       (integer->dword 0 o)  ; important
       ;; Got ARGB, need BGRA
       (let* ([flip-pixels (lambda (s)
-                            (let ([s (string-copy s)])
+                            (let ([s (bytes-copy s)])
                               (let loop ([p 0])
-                                (unless (= p (string-length s))
-                                  (let ([a (string-ref s p)]
-                                        [r (string-ref s (+ p 1))]
-                                        [g (string-ref s (+ p 2))]
-                                        [b (string-ref s (+ p 3))])
-                                    (string-set! s p b)
-                                    (string-set! s (+ p 1) g)
-                                    (string-set! s (+ p 2) r)
-                                    (string-set! s (+ p 3) a)
+                                (unless (= p (bytes-length s))
+                                  (let ([a (bytes-ref s p)]
+                                        [r (bytes-ref s (+ p 1))]
+                                        [g (bytes-ref s (+ p 2))]
+                                        [b (bytes-ref s (+ p 3))])
+                                    (bytes-set! s p b)
+                                    (bytes-set! s (+ p 1) g)
+                                    (bytes-set! s (+ p 2) r)
+                                    (bytes-set! s (+ p 3) a)
                                     (loop (+ p 4)))))
                               s))]
              [rgba (flip-pixels argb)]
@@ -671,48 +675,44 @@
              [row-size (if (zero? (modulo w 32))
                            w
                            (+ w (- 32 (remainder w 32))))]
-             [mask (make-string (* h row-size 1/8) #\000)])
+             [mask (make-bytes (* h row-size 1/8) 0)])
         (let loop ([i (* w h 4)])
           (unless (zero? i)
-            (let ([mr (string-ref mask-rgba (- i 2))]
-                  [mg (string-ref mask-rgba (- i 3))]
-                  [mb (string-ref mask-rgba (- i 4))]
+            (let ([mr (bytes-ref mask-rgba (- i 2))]
+                  [mg (bytes-ref mask-rgba (- i 3))]
+                  [mb (bytes-ref mask-rgba (- i 4))]
                   [a (- i 1)])
               (let ([alpha (- 255
-                              (floor (/ (+ (char->integer mr)
-                                           (char->integer mg)
-                                           (char->integer mb))
+                              (floor (/ (+ mr mg mb)
                                         3)))])
                 (if (< alpha 10)
                     ;; white mask -> zero alpha; add white pixel to mask
                     (begin
-                      (string-set! rgba a #\000)
+                      (bytes-set! rgba a 0)
                       (let ([pos (+ (* (quotient (sub1 (/ i 4)) w) row-size)
                                     (remainder (sub1 (/ i 4)) w))])
-                        (string-set! mask 
-                                     (quotient pos 8)
-                                     (integer->char
-                                      (bitwise-ior
-                                       (arithmetic-shift 1 (- 7 (remainder pos 8)))
-                                       (char->integer
-                                        (string-ref mask (quotient pos 8))))))))
+                        (bytes-set! mask 
+				    (quotient pos 8)
+				    (bitwise-ior
+				     (arithmetic-shift 1 (- 7 (remainder pos 8)))
+				     (bytes-ref mask (quotient pos 8))))))
                     ;; non-white mask -> non-zero alpha
-                    (string-set! rgba a (integer->char alpha)))))
+                    (bytes-set! rgba a alpha))))
             (loop (- i 4))))
         ;; Windows icons are upside-down:
         (let ([flip (lambda (str row-width)
                       (apply
-                       string-append
+                       bytes-append
                        (reverse
                         (let loop ([pos 0])
-                          (if (= pos (string-length str))
+                          (if (= pos (bytes-length str))
                               null
-                              (cons (substring str pos (+ pos row-width))
+                              (cons (subbytes str pos (+ pos row-width))
                                     (loop (+ pos row-width))))))))])                      
           (display (flip rgba (* w 4)) o)
           (display (flip mask (/ row-size 8)) o))
         (make-icon (list w h 0 0 1 32)
-                   (cons 0 (get-output-string o))))))
+                   (cons 0 (get-output-bytes o))))))
   
   ;; ------------------------------
   ;;  Image conversion

@@ -15,19 +15,18 @@
 
   ;; header?: any? -> boolean
   ;; is this a header?
-  (define (header? x)
-    (and (pair? x)
-         (symbol? (car x))
-         (bytes? (cdr x))))
+  (define header?
+    (cons/p symbol? bytes?))
 
   ;; bindings? any? -> boolean
   ;; is this a binding
-  (define (binding? x)
-    (and (pair? x) #t))
+  (define binding?
+    (cons/p string? string?))
 
   (provide/contract
    [struct request ([method symbol?] [uri url?] [headers (listof header?)]
-                    [bindings (union (listof binding?) string?)] [host-ip string?]
+                    [bindings (union (listof binding?) string?)]
+                    [host-ip string?]
                     [client-ip string?])]
    [read-request ((input-port?) . ->* . (request? boolean?))]
    [read-bindings (connection? symbol? url? (listof header?)
@@ -160,39 +159,38 @@
       [(post)
        (let ([content-type (assq 'content-type headers)])
          (cond
-          [(and content-type (regexp-match FILE-FORM-REGEXP (cdr content-type)))
-           => (lambda (content-boundary)
-                (map (lambda (part)
-                       ;; more here - better checks, avoid string-append
-                       (cons (get-field-name (cdr (assq 'content-disposition (car part))))
-                             (apply string-append (cdr part))))
-                     (read-mime-multipart (cadr content-boundary) (connection-i-port conn))))]
-          [else
-           (let ([len-str (assq 'content-length headers)]
-                 [in (connection-i-port conn)])
-             (if len-str
+           [(and content-type (regexp-match FILE-FORM-REGEXP (cdr content-type)))
+             => (lambda (content-boundary)
+                  (map (lambda (part)
+                         ;; more here - better checks, avoid string-append
+                         (cons (get-field-name (cdr (assq 'content-disposition (car part))))
+                               (apply string-append (cdr part))))
+                       (read-mime-multipart (cadr content-boundary) (connection-i-port conn))))]
+             [else
+             (let ([len-str (assq 'content-length headers)]
+                   [in (connection-i-port conn)])
+               (if len-str
                  (cond
-                  [(string->number (bytes->string/utf-8 (cdr len-str)))
-                   => (lambda (len) (read-string len in))]
-                  [else (error "Post request contained a non-numeric content-length")])
+                   [(string->number (bytes->string/utf-8 (cdr len-str)))
+                    => (lambda (len) (read-string len in))]
+                    [else (error "Post request contained a non-numeric content-length")])
                  (apply string-append
                         (let read-to-eof ()
                           (let ([s (read-string INPUT-BUFFER-SIZE in)])
                             (if (eof-object? s)
-                                null
-                                (cons s (read-to-eof))))))))]))]
-      [else (error "unsupported method" meth)])
-    )
+                              null
+                              (cons s (read-to-eof))))))))]))]
+      [else (error "unsupported method" meth)]))
 
   (define FILE-FORM-REGEXP (regexp "multipart/form-data; *boundary=(.*)"))
 
   ;; GregP: this is where I would get the filename out.
-  ; get-field-name : str -> sym
+  ; get-field-name : str -> string
   (define (get-field-name rhs)
     (let ([x (regexp-match "name=(\"([^\"]*)\"|([^ ;]*))" rhs)])
       (unless x
         (error 'get-field-name "Couldn't extract form field name for file upload from ~a" x))
-      (string->symbol (or (caddr x) (cadddr x)))))
+      (or (caddr x) (cadddr x))))
 
   ;; **************************************************
   ;; read-mime-multipart

@@ -797,7 +797,7 @@ text-replacements
    |<b>foo</b> <u>bar</u> <u><i>baz</i></u>
    +----------
 
-(regexper str clauses...)
+(regexp-case str clauses...)
   This is a macro that has a structure which is somewhat like a `case'
   expression.  Every clause has a test part which is a regexp, a list
   made of a regexp and some symbols following it or `else'.  If the
@@ -808,15 +808,19 @@ text-replacements
   variables is used), or use the `=>' syntax which applies a given
   function on all match results.
    +----------
-   |> (regexper "foo" ("f" 1) (("(b)a(r*)" x y) (list x y)) (else '?))
+   |> (regexp-case "foo"
+   |    ["f" 1] [("(b)a(r*)" x y) (list x y)] [else '?])
    |1
-   |> (regexper "barr" ("f" 1) (("(b)a(r*)" x y) (list x y)) (else '?))
+   |> (regexp-case "barr"
+   |    ["f" 1] [("(b)a(r*)" x y) (list x y)] [else '?])
    |("b" "rr")
-   |> (regexper "bzzt" ("f" 1) (("(b)a(r*)" x y) (list x y)) (else '?))
+   |> (regexp-case "bzzt"
+   |    ["f" 1] [("(b)a(r*)" x y) (list x y)] [else '?])
    |?
-   |> (regexper "bzzt" ("f" 1) (("b(z)" x) match))
+   |> (regexp-case "bzzt" ["f" 1] [("b(z)" x) match])
    |"bz"
-   |> (regexper "zbarrz" ("f" 1) ("(b)a(r*)" => (lambda x x)) (else '?))
+   |> (regexp-case "zbarrz"
+   |    ["f" 1] ["(b)a(r*)" => (lambda x x)] [else '?])
    |("barr" "b" "rr")
    +----------
 

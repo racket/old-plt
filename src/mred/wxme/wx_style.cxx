@@ -513,6 +513,7 @@ wxStyle::wxStyle()
 
 wxStyle::~wxStyle()
 {
+  styleList = NULL;
   if (!joinStyle)
     delete u.delta;
 }
@@ -533,7 +534,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
 
   base = baseStyle;
   if (basic) {
-    if (PTREQ(base, styleList->BasicStyle())) {
+    if (!styleList || PTREQ(base, styleList->BasicStyle())) {
       base = basic;
     } else {
       base->Update(basic, target, FALSE, FALSE);
@@ -545,8 +546,9 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     target = this;
 
   if (joinStyle) {
-    if (!PTREQ(u.shiftStyle, styleList->BasicStyle()))
-      u.shiftStyle->Update(base, target, FALSE, topLevel);
+    if (styleList)
+      if (!PTREQ(u.shiftStyle, styleList->BasicStyle()))
+	u.shiftStyle->Update(base, target, FALSE, topLevel);
     return;
   }
 
@@ -640,9 +642,11 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
     for (node = children.First(); node; node = node->Next())
       ((wxStyle *)node->Data())->Update(NULL, NULL, TRUE, FALSE);
 
-  styleList->StyleWasChanged(target);
-  if (topLevel)
-    styleList->StyleWasChanged(NULL);
+  if (styleList) {
+    styleList->StyleWasChanged(target);
+    if (topLevel)
+      styleList->StyleWasChanged(NULL);
+  }
 }
 
 char *wxStyle::GetName()
@@ -728,7 +732,7 @@ void wxStyle::GetDelta(wxStyleDelta &d)
 
 void wxStyle::SetDelta(wxStyleDelta &d)
 {
-  if (joinStyle || PTREQ(this, styleList->BasicStyle()))
+  if (joinStyle || (styleList && PTREQ(this, styleList->BasicStyle())))
     return;
 
   u.delta->Copy(&d);
@@ -739,13 +743,15 @@ wxStyle *wxStyle::GetShiftStyle()
 {
   if (joinStyle)
     return u.shiftStyle;
-  else
+  else if (styleList)
     return styleList->BasicStyle();
+  else
+    return wxTheStyleList->BasicStyle();
 }
 
 void wxStyle::SetShiftStyle(wxStyle *style)
 {
-  if (!joinStyle || (styleList->StyleToIndex(style) < 0))
+  if (!joinStyle || !styleList || (styleList->StyleToIndex(style) < 0))
     return;
 
   if (styleList->CheckForLoop(this, style))
@@ -771,7 +777,7 @@ wxStyle *wxStyle::GetBaseStyle(void)
 
 void wxStyle::SetBaseStyle(wxStyle *style)
 {
-  if (PTREQ(this, styleList->BasicStyle()))
+  if (!styleList || PTREQ(this, styleList->BasicStyle()))
     return;
 
   if (!style)
@@ -1447,8 +1453,9 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 
   f >> listId;
   
-  if ((node = readStyles->Find(listId)))
-    return (wxStyleList *)node->Data();
+  if (readStyles)
+    if ((node = readStyles->Find(listId)))
+      return (wxStyleList *)node->Data();
 
   f >> styleList->numMappedStyles;
   styleList->styleMap = new wxStyle*[styleList->numMappedStyles];
@@ -1542,7 +1549,8 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
 	 : styleList->NewNamedStyle(name, styleList->styleMap[i]));
   }
 
-  readStyles->Append(listId, styleList);
+  if (readStyles)
+    readStyles->Append(listId, styleList);
 
   return styleList;
 }

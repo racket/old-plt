@@ -80,6 +80,48 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 }
 
 
+static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
+static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
+static Scheme_Object *saveBitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
+
+static void init_symset_saveBitmapType(void) {
+  saveBitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bmp");
+  saveBitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("xbm");
+  saveBitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("xpm");
+}
+
+static int unbundle_symset_saveBitmapType(Scheme_Object *v, const char *where) {
+  if (!saveBitmapType_wxBITMAP_TYPE_XPM_sym) init_symset_saveBitmapType();
+  if (0) { }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
+  if (where) scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_saveBitmapType(Scheme_Object *v, const char *where) {
+  if (!saveBitmapType_wxBITMAP_TYPE_XPM_sym) init_symset_saveBitmapType();
+  if (0) { }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
+  else if (v == saveBitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "saveBitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_saveBitmapType(int v) {
+  if (!saveBitmapType_wxBITMAP_TYPE_XPM_sym) init_symset_saveBitmapType();
+  switch (v) {
+  case wxBITMAP_TYPE_BMP: return saveBitmapType_wxBITMAP_TYPE_BMP_sym;
+  case wxBITMAP_TYPE_XBM: return saveBitmapType_wxBITMAP_TYPE_XBM_sym;
+  case wxBITMAP_TYPE_XPM: return saveBitmapType_wxBITMAP_TYPE_XPM_sym;
+  default: return NULL;
+  }
+}
+
+
+
 
 #undef l_ADDRESS
 #undef l_DEREF
@@ -213,26 +255,28 @@ os_wxBitmap::~os_wxBitmap()
 static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
   objscheme_check_valid(obj);
   pathname x0;
   int x1;
 
   
   x0 = (pathname)objscheme_unbundle_pathname(p[0], "save-file in bitmap%");
-  x1 = objscheme_unbundle_integer(p[1], "save-file in bitmap%");
+  x1 = unbundle_symset_saveBitmapType(p[1], "save-file in bitmap%");
 
   
-  ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->SaveFile(x0, x1);
+  r = ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->SaveFile(x0, x1);
 
   
   
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused
 static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
   objscheme_check_valid(obj);
   pathname x0;
   int x1;
@@ -245,11 +289,11 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
     x1 = 0;
 
   
-  ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1);
+  r = ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1);
 
   
   
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused

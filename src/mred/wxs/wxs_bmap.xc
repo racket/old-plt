@@ -9,6 +9,13 @@
 
 @INCLUDE wxs_bmt.xci
 
+@BEGINSYMBOLS saveBitmapType > ONE
+@SYM "bmp" : wxBITMAP_TYPE_BMP
+@SYM "xbm" : wxBITMAP_TYPE_XBM
+@SYM "xpm" : wxBITMAP_TYPE_XPM
+@ENDSYMBOLS
+
+
 @CLASSBASE wxBitmap "bitmap" : "object"
 
 @SET TYPE = char
@@ -29,8 +36,8 @@
 @ "get-width" : int GetWidth();
 @ "ok?" : bool Ok();
 
-@ "load-file" : void LoadFile(pathname,SYM[bitmapType]=0);
-@ "save-file" : void SaveFile(pathname,int);
+@ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);
+@ "save-file" : bool SaveFile(pathname,SYM[saveBitmapType]);
 
 @END
 

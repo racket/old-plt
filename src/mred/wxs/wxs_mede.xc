@@ -21,6 +21,15 @@
 @SYM "local" : wxLOCAL_SELECT
 @ENDSYMBOLS
 
+@BEGINSYMBOLS moveCode > ONE
+@SYM "home" : WXK_HOME
+@SYM "end" : WXK_END
+@SYM "right" : WXK_RIGHT
+@SYM "left" : WXK_LEFT
+@SYM "up" : WXK_UP
+@SYM "down" : WXK_DOWN
+@ENDSYMBOLS
+
 @BEGINSYMBOLS move > ONE
 @SYM "simple" : wxMOVE_SIMPLE
 @SYM "line" : wxMOVE_LINE
@@ -51,6 +60,7 @@
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci
+@INCLUDE wxs_bmt.xci
 
 # define Sym_END_ONLY 2
 # define Sym_START_ONLY -2
@@ -80,7 +90,7 @@
 @ "get-end-position" : long GetEndPosition();
 @ "set-position" : void SetPosition(nnlong,nnls[same]=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
 @ "set-position-bias-scroll" : void SetPositionBiasScroll(SYM[Bias],nnlong,nnls[same]=-1,bool=FALSE,bool=TRUE,SYM[selType]=wxDEFAULT_SELECT);
-@ "move-position" :  void MovePosition(long,bool=FALSE,SYM[move]=wxMOVE_SIMPLE);
+@ "move-position" :  void MovePosition(SYM[moveCode],bool=FALSE,SYM[move]=wxMOVE_SIMPLE);
 @ "scroll-to-position" : bool ScrollToPosition(nnlong,bool=FALSE,nnls[same]=-1,SYM[bias]=0);
 @ "get-visible-position-range" : void GetVisiblePositionRange(long?,long?);
 @ "get-visible-line-range" : void GetVisibleLineRange(long?,long?);
@@ -110,7 +120,7 @@
 @ "copy" : void Copy(bool,long,nnls[start],nnls[end]=-1); <> position
 @ "paste" : void Paste(long,nnls[end],nnls[same]=-1); <> position
 @ "paste-next" : void PasteNext();
-@ "kill" : void Kill(long,nnls[line],nnls[line]); <> position
+@ "kill" : void Kill(long,nnlong,nnlong); <> position
 
 @ v "do-copy" : void DoCopy(nnlong,nnlong,long,bool);
 @ v "do-paste" : void DoPaste(nnlong,long);
@@ -153,11 +163,11 @@
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(string,-long*,int=1,long=-1,long=-1,bool=TRUE,bool=TRUE);
+@ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(string,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
 @ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],long?=NULL)
-@ "get-snip-position-and-location" : void GetSnipPositionAndLocation(wxSnip!,long?,float?=NULL,float?=NULL);
-@ "get-snip-position" : long GetSnipPosition(wxSnip!);
+@ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,long?,float?=NULL,float?=NULL);
+@ "get-snip-position" : long/bNegAsFalse GetSnipPosition(wxSnip!);
 
 @MACRO makeNoCopyString[len] = scheme_make_sized_string(r, <len>, 0)
 

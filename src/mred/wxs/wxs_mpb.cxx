@@ -236,6 +236,68 @@ static Scheme_Object *bundle_symset_bias(int v) {
 }
 
 
+#ifndef wx_mac
+# define wxBITMAP_TYPE_PICT 101
+#endif
+
+#define wxBITMAP_TYPE_UNKNOWN 0
+
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = NULL;
+
+static void init_symset_bitmapType(void) {
+  bitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bmp");
+  bitmapType_wxBITMAP_TYPE_GIF_sym = scheme_intern_symbol("gif");
+  bitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("xbm");
+  bitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("xpm");
+  bitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("pict");
+  bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = scheme_intern_symbol("unknown");
+}
+
+static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bitmapType(Scheme_Object *v, const char *where) {
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bitmapType(int v) {
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  switch (v) {
+  case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
+  case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
+  case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
+  case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
+  case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
+  case wxBITMAP_TYPE_UNKNOWN: return bitmapType_wxBITMAP_TYPE_UNKNOWN_sym;
+  default: return NULL;
+  }
+}
+
+
 
 
 
@@ -332,7 +394,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnSaveFile(string x0, int x1);
   Bool CanSaveFile(string x0, int x1);
   class wxSnip* OnNewBox(int x0);
-  class wxImageSnip* OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3);
+  class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
   void OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8);
   Bool WriteFootersToFile(class wxMediaStreamOut& x0);
@@ -1691,7 +1753,7 @@ return wxMediaPasteboard::OnNewBox(x0);
   }
 }
 
-class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3)
+class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
@@ -1714,7 +1776,7 @@ return wxMediaPasteboard::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
-  p[1] = scheme_make_integer(x1);
+  p[1] = bundle_symset_bitmapType(x1);
   p[2] = (x2 ? scheme_true : scheme_false);
   p[3] = (x3 ? scheme_true : scheme_false);
   
@@ -4378,13 +4440,13 @@ static Scheme_Object *os_wxMediaPasteboardOnNewImageSnip(Scheme_Object *obj, int
   class wxImageSnip* r;
   objscheme_check_valid(obj);
   nstring x0;
-  long x1;
+  int x1;
   Bool x2;
   Bool x3;
 
   
   x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "on-new-image-snip in pasteboard%");
-  x1 = objscheme_unbundle_integer(p[1], "on-new-image-snip in pasteboard%");
+  x1 = unbundle_symset_bitmapType(p[1], "on-new-image-snip in pasteboard%");
   x2 = objscheme_unbundle_bool(p[2], "on-new-image-snip in pasteboard%");
   x3 = objscheme_unbundle_bool(p[3], "on-new-image-snip in pasteboard%");
 

@@ -1223,7 +1223,8 @@ int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent)
 	  : ((style & wxCANCEL)
 	     ? scheme_intern_symbol("ok-cancel")
 	     : scheme_intern_symbol("ok")));
-    
+
+  a[3] = scheme_make_pair(a[3], scheme_null);    
 
   r = scheme_apply(message_box, 4, a);
 

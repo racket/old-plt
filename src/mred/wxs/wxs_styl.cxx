@@ -1989,7 +1989,7 @@ static Scheme_Object *os_wxStyleSwitchTo(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   x0 = objscheme_unbundle_wxDC(p[0], "switch-to in style%", 0);
-  x1 = objscheme_unbundle_wxStyle(p[1], "switch-to in style%", 0);
+  x1 = objscheme_unbundle_wxStyle(p[1], "switch-to in style%", 1);
 
   if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("style%","switch-to"));
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SwitchTo(x0, x1);
@@ -2229,7 +2229,7 @@ static Scheme_Object *os_wxStyleGetAlignment(Scheme_Object *obj, int n,  Scheme_
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_align(r);
 }
 
 #pragma argsused
@@ -2314,7 +2314,7 @@ static Scheme_Object *os_wxStyleGetStyle(Scheme_Object *obj, int n,  Scheme_Obje
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_style(r);
 }
 
 #pragma argsused
@@ -2331,7 +2331,7 @@ static Scheme_Object *os_wxStyleGetWeight(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_weight(r);
 }
 
 #pragma argsused
@@ -2382,7 +2382,7 @@ static Scheme_Object *os_wxStyleGetFamily(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   
-  return scheme_make_integer(r);
+  return bundle_symset_family(r);
 }
 
 #pragma argsused

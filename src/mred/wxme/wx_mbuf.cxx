@@ -552,6 +552,8 @@ void wxMediaBuffer::InsertBox(int type)
 
   BeginEditSequence();
   snip->style = styleList->FindNamedStyle(STD_STYLE);
+  if (!snip->style)
+    snip->style = styleList->BasicStyle();
   Insert(snip);
   SetCaretOwner(snip);
   EndEditSequence();
@@ -971,6 +973,8 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn &f, Bool overwritestylenam
 	  if (snip->flags & wxSNIP_OWNED)
 	    snip->flags -= wxSNIP_OWNED;
 	  snip->style = styleList->MapIndexToStyle(styleIndex);
+	  if (!snip->style)
+	    snip->style = styleList->BasicStyle();
 	  if (!ReadInsert(snip))
 	    return FALSE;
 	} else

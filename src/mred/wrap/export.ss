@@ -58,4 +58,6 @@
  append-editor-operation-menu-items
  append-editor-font-menu-items
  get-top-level-focus-window
- get-top-level-edit-target-window)
+ get-top-level-edit-target-window
+ register-collecting-blit
+ unregister-collecting-blit)

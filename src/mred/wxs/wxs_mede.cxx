@@ -142,6 +142,62 @@ static Scheme_Object *bundle_symset_selType(int v) {
 }
 
 
+static Scheme_Object *moveCode_WXK_HOME_sym = NULL;
+static Scheme_Object *moveCode_WXK_END_sym = NULL;
+static Scheme_Object *moveCode_WXK_RIGHT_sym = NULL;
+static Scheme_Object *moveCode_WXK_LEFT_sym = NULL;
+static Scheme_Object *moveCode_WXK_UP_sym = NULL;
+static Scheme_Object *moveCode_WXK_DOWN_sym = NULL;
+
+static void init_symset_moveCode(void) {
+  moveCode_WXK_HOME_sym = scheme_intern_symbol("home");
+  moveCode_WXK_END_sym = scheme_intern_symbol("end");
+  moveCode_WXK_RIGHT_sym = scheme_intern_symbol("right");
+  moveCode_WXK_LEFT_sym = scheme_intern_symbol("left");
+  moveCode_WXK_UP_sym = scheme_intern_symbol("up");
+  moveCode_WXK_DOWN_sym = scheme_intern_symbol("down");
+}
+
+static int unbundle_symset_moveCode(Scheme_Object *v, const char *where) {
+  if (!moveCode_WXK_DOWN_sym) init_symset_moveCode();
+  if (0) { }
+  else if (v == moveCode_WXK_HOME_sym) { return WXK_HOME; }
+  else if (v == moveCode_WXK_END_sym) { return WXK_END; }
+  else if (v == moveCode_WXK_RIGHT_sym) { return WXK_RIGHT; }
+  else if (v == moveCode_WXK_LEFT_sym) { return WXK_LEFT; }
+  else if (v == moveCode_WXK_UP_sym) { return WXK_UP; }
+  else if (v == moveCode_WXK_DOWN_sym) { return WXK_DOWN; }
+  if (where) scheme_wrong_type(where, "moveCode symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_moveCode(Scheme_Object *v, const char *where) {
+  if (!moveCode_WXK_DOWN_sym) init_symset_moveCode();
+  if (0) { }
+  else if (v == moveCode_WXK_HOME_sym) { return 1; }
+  else if (v == moveCode_WXK_END_sym) { return 1; }
+  else if (v == moveCode_WXK_RIGHT_sym) { return 1; }
+  else if (v == moveCode_WXK_LEFT_sym) { return 1; }
+  else if (v == moveCode_WXK_UP_sym) { return 1; }
+  else if (v == moveCode_WXK_DOWN_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "moveCode symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_moveCode(int v) {
+  if (!moveCode_WXK_DOWN_sym) init_symset_moveCode();
+  switch (v) {
+  case WXK_HOME: return moveCode_WXK_HOME_sym;
+  case WXK_END: return moveCode_WXK_END_sym;
+  case WXK_RIGHT: return moveCode_WXK_RIGHT_sym;
+  case WXK_LEFT: return moveCode_WXK_LEFT_sym;
+  case WXK_UP: return moveCode_WXK_UP_sym;
+  case WXK_DOWN: return moveCode_WXK_DOWN_sym;
+  default: return NULL;
+  }
+}
+
+
 static Scheme_Object *move_wxMOVE_SIMPLE_sym = NULL;
 static Scheme_Object *move_wxMOVE_LINE_sym = NULL;
 static Scheme_Object *move_wxMOVE_PAGE_sym = NULL;
@@ -542,6 +598,68 @@ static Scheme_Object *bundle_symset_bias(int v) {
 }
 
 
+#ifndef wx_mac
+# define wxBITMAP_TYPE_PICT 101
+#endif
+
+#define wxBITMAP_TYPE_UNKNOWN 0
+
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = NULL;
+
+static void init_symset_bitmapType(void) {
+  bitmapType_wxBITMAP_TYPE_BMP_sym = scheme_intern_symbol("bmp");
+  bitmapType_wxBITMAP_TYPE_GIF_sym = scheme_intern_symbol("gif");
+  bitmapType_wxBITMAP_TYPE_XBM_sym = scheme_intern_symbol("xbm");
+  bitmapType_wxBITMAP_TYPE_XPM_sym = scheme_intern_symbol("xpm");
+  bitmapType_wxBITMAP_TYPE_PICT_sym = scheme_intern_symbol("pict");
+  bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = scheme_intern_symbol("unknown");
+}
+
+static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return wxBITMAP_TYPE_BMP; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return wxBITMAP_TYPE_GIF; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return wxBITMAP_TYPE_XBM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return wxBITMAP_TYPE_XPM; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_bitmapType(Scheme_Object *v, const char *where) {
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  if (0) { }
+  else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XBM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return 1; }
+  else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_bitmapType(int v) {
+  if (!bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) init_symset_bitmapType();
+  switch (v) {
+  case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
+  case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
+  case wxBITMAP_TYPE_XBM: return bitmapType_wxBITMAP_TYPE_XBM_sym;
+  case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
+  case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
+  case wxBITMAP_TYPE_UNKNOWN: return bitmapType_wxBITMAP_TYPE_UNKNOWN_sym;
+  default: return NULL;
+  }
+}
+
+
 # define Sym_END_ONLY 2
 # define Sym_START_ONLY -2
 static Scheme_Object *Bias_Sym_START_ONLY_sym = NULL;
@@ -842,7 +960,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void OnSaveFile(string x0, int x1);
   Bool CanSaveFile(string x0, int x1);
   class wxSnip* OnNewBox(int x0);
-  class wxImageSnip* OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3);
+  class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
   void OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8);
   Bool WriteFootersToFile(class wxMediaStreamOut& x0);
@@ -1939,7 +2057,7 @@ return wxMediaEdit::OnNewBox(x0);
   }
 }
 
-class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3)
+class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
@@ -1962,7 +2080,7 @@ return wxMediaEdit::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
-  p[1] = scheme_make_integer(x1);
+  p[1] = bundle_symset_bitmapType(x1);
   p[2] = (x2 ? scheme_true : scheme_false);
   p[3] = (x3 ? scheme_true : scheme_false);
   
@@ -3923,13 +4041,14 @@ static Scheme_Object *os_wxMediaEditGetSnipPosition(Scheme_Object *obj, int n,  
 
   
   
-  return scheme_make_integer(r);
+  return ((r < 0) ? scheme_false : scheme_make_integer(r));
 }
 
 #pragma argsused
 static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
   objscheme_check_valid(obj);
   class wxSnip* x0;
   long _x1;
@@ -3961,7 +4080,7 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
     x3 = NULL;
 
   
-  ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->GetSnipPositionAndLocation(x0, x1, x2, x3);
+  r = ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->GetSnipPositionAndLocation(x0, x1, x2, x3);
 
   
   if (n > 1 && !XC_SCHEME_NULLP(p[1]))
@@ -3971,7 +4090,7 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
   if (n > 3 && !XC_SCHEME_NULLP(p[3]))
     objscheme_set_box(p[3], scheme_make_double(_x3));
   
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused
@@ -4024,15 +4143,15 @@ static Scheme_Object *os_wxMediaEditFindStringAll(Scheme_Object *obj, int n,  Sc
   
   x0 = (string)objscheme_unbundle_string(p[0], "find-string-all in text%");
   if (n > 1) {
-    x2 = objscheme_unbundle_integer(p[1], "find-string-all in text%");
+    x2 = unbundle_symset_direction(p[1], "find-string-all in text%");
   } else
     x2 = 1;
   if (n > 2) {
-    x3 = objscheme_unbundle_integer(p[2], "find-string-all in text%");
+    x3 = objscheme_unbundle_nonnegative_symbol_integer(p[2], "start", "find-string-all in text%");
   } else
     x3 = -1;
   if (n > 3) {
-    x4 = objscheme_unbundle_integer(p[3], "find-string-all in text%");
+    x4 = objscheme_unbundle_nonnegative_symbol_integer(p[3], "eof", "find-string-all in text%");
   } else
     x4 = -1;
   if (n > 4) {
@@ -4758,17 +4877,17 @@ static Scheme_Object *os_wxMediaEditKill(Scheme_Object *obj, int n,  Scheme_Obje
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_nonnegative_symbol_integer(p[1], "", NULL)) {
+  if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_number(p[1], NULL)) {
     long x0;
-    long x1;
-    long x2;
+    nnlong x1;
+    nnlong x2;
 
     
     if (n != 3) 
       scheme_wrong_count("kill in text% (position case)", 3, 3, n, p);
     x0 = objscheme_unbundle_integer(p[0], "kill in text% (position case)");
-    x1 = objscheme_unbundle_nonnegative_symbol_integer(p[1], "line", "kill in text% (position case)");
-    x2 = objscheme_unbundle_nonnegative_symbol_integer(p[2], "line", "kill in text% (position case)");
+    x1 = objscheme_unbundle_nonnegative_integer(p[1], "kill in text% (position case)");
+    x2 = objscheme_unbundle_nonnegative_integer(p[2], "kill in text% (position case)");
 
     
     ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->Kill(x0, x1, x2);
@@ -5379,12 +5498,12 @@ static Scheme_Object *os_wxMediaEditMovePosition(Scheme_Object *obj, int n,  Sch
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  long x0;
+  int x0;
   Bool x1;
   int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "move-position in text%");
+  x0 = unbundle_symset_moveCode(p[0], "move-position in text%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "move-position in text%");
   } else
@@ -5817,13 +5936,13 @@ static Scheme_Object *os_wxMediaEditOnNewImageSnip(Scheme_Object *obj, int n,  S
   class wxImageSnip* r;
   objscheme_check_valid(obj);
   nstring x0;
-  long x1;
+  int x1;
   Bool x2;
   Bool x3;
 
   
   x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "on-new-image-snip in text%");
-  x1 = objscheme_unbundle_integer(p[1], "on-new-image-snip in text%");
+  x1 = unbundle_symset_bitmapType(p[1], "on-new-image-snip in text%");
   x2 = objscheme_unbundle_bool(p[2], "on-new-image-snip in text%");
   x3 = objscheme_unbundle_bool(p[3], "on-new-image-snip in text%");
 

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.6 1998/07/13 21:00:16 mflatt Exp $
+ * $Id: Frame.cc,v 1.7 1998/08/18 20:03:40 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -355,7 +355,7 @@ void wxFrame::SetIcon(wxIcon *icon)
 void wxFrame::SetMenuBar(wxMenuBar *new_menubar)
 {
   /* MATTHEW: Enforce safety */
-  if (new_menubar->GetParent())
+  if (new_menubar && new_menubar->GetParent())
     return;
 
   if (menubar)

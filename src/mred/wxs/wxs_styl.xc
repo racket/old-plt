@@ -153,16 +153,16 @@
 @CLASSID wxTYPE_STYLE
 
 @ "get-name" : string GetName();
-@ "get-family" : int GetFamily();
+@ "get-family" : SYM[family] GetFamily();
 @ "get-face" : nstring GetFace();
 @ "get-size" : int GetSize();
-@ "get-weight" : int GetWeight();
-@ "get-style" : int GetStyle();
+@ "get-weight" : SYM[weight] GetWeight();
+@ "get-style" : SYM[style] GetStyle();
 @ "get-underlined" : bool GetUnderlined();
 @ "get-font" : wxFont! GetFont();
 @ "get-foreground" : wxColour% GetForeground();
 @ "get-background" : wxColour% GetBackground();
-@ "get-alignment" : int GetAlignment();
+@ "get-alignment" : SYM[align] GetAlignment();
 @ "get-transparent-text-backing" : bool GetTransparentTextBacking();
 
 @ "get-text-height" : float GetTextHeight(wxDC!);
@@ -181,7 +181,7 @@
 @ "get-shift-style" :  wxStyle^ GetShiftStyle();
 @ "set-shift-style" : void SetShiftStyle(wxStyle!);
 
-@ "switch-to" : void SwitchTo(wxDC!, wxStyle!); : : /CHECKOK[0.METHODNAME("style%","switch-to")]
+@ "switch-to" : void SwitchTo(wxDC!, wxStyle^); : : /CHECKOK[0.METHODNAME("style%","switch-to")]
 
 @END
 

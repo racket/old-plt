@@ -751,8 +751,12 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
   snipLocationList->Append((long)snip, loc);
 
   snip->style = styleList->Convert(snip->style);
-  if (PTREQ(snip->style, styleList->BasicStyle()))
-    snip->style = styleList->FindNamedStyle(STD_STYLE);
+  if (PTREQ(snip->style, styleList->BasicStyle())) {
+    wxStyle *s;
+    s = styleList->FindNamedStyle(STD_STYLE);
+    if (s)
+      snip->style = s;
+  }
 
   snip->SizeCacheInvalid();
 
@@ -1097,8 +1101,11 @@ void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta,
   if (sequence)
     sequenceStreak = TRUE;
 
-  if (!style && !delta)
+  if (!style && !delta) {
     style = styleList->FindNamedStyle(STD_STYLE);
+    if (!style)
+      style = styleList->BasicStyle();
+  }
 
   BeginEditSequence();
 
@@ -2269,6 +2276,8 @@ void wxMediaPasteboard::InsertPasteString(char *str)
 
   snip = new wxTextSnip();
   snip->style = styleList->FindNamedStyle(STD_STYLE);
+  if (!snip->style)
+    snip->style = styleList->BasicStyle();
   snip->Insert(str, strlen(str));
   
   InsertPasteSnip(snip, NULL);

@@ -543,7 +543,7 @@ void XfwfSetScrollbar(self,pos,size)Widget self;double  pos;double  size;
     if (! XtIsSubclass(self, xfwfScrollbarWidgetClass))
 	XtError("XfwfSetScrollbar called with incorrect widget type");
     if (pos < 0.0 || pos > 1.0 || size < 0.0 || size > 1.0)
-	XtError("XfwfSetScrollbar called with incorrect arguments");
+	XtError("XfwfSetScrollbar called with incorrect arguments: %lf %lf", pos, size);
     if (((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical) {
 	XfwfResizeThumb(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, 1.0, size);
 	XfwfMoveThumb(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, 0.0, pos);

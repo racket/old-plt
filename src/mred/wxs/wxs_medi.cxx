@@ -539,7 +539,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void OnSaveFile(string x0, int x1);
   Bool CanSaveFile(string x0, int x1);
   class wxSnip* OnNewBox(int x0);
-  class wxImageSnip* OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3);
+  class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
   void OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8);
   Bool WriteFootersToFile(class wxMediaStreamOut& x0);
@@ -1022,7 +1022,7 @@ return wxMediaBuffer::OnNewBox(x0);
   }
 }
 
-class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, long x1, Bool x2, Bool x3)
+class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
@@ -1045,7 +1045,7 @@ return wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
-  p[1] = scheme_make_integer(x1);
+  p[1] = bundle_symset_bitmapType(x1);
   p[2] = (x2 ? scheme_true : scheme_false);
   p[3] = (x3 ? scheme_true : scheme_false);
   
@@ -2754,16 +2754,22 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(Scheme_Object *obj, int n,  
   float* x1 = &_x1;
 
   
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "local-to-global in editor<%>"), "local-to-global in editor<%>"", extracting boxed argument");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "local-to-global in editor<%>"), "local-to-global in editor<%>"", extracting boxed argument");
+  if (XC_SCHEME_NULLP(p[0]))
+    x0 = NULL;
+  else
+    *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "local-to-global in editor<%>"), "local-to-global in editor<%>"", extracting boxed argument");
+  if (XC_SCHEME_NULLP(p[1]))
+    x1 = NULL;
+  else
+    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "local-to-global in editor<%>"), "local-to-global in editor<%>"", extracting boxed argument");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->LocalToGlobal(x0, x1);
 
   
-  if (n > 0)
+  if (n > 0 && !XC_SCHEME_NULLP(p[0]))
     objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
+  if (n > 1 && !XC_SCHEME_NULLP(p[1]))
     objscheme_set_box(p[1], scheme_make_double(_x1));
   
   return scheme_void;
@@ -2780,16 +2786,22 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(Scheme_Object *obj, int n,  
   float* x1 = &_x1;
 
   
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "global-to-local in editor<%>"), "global-to-local in editor<%>"", extracting boxed argument");
-      *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "global-to-local in editor<%>"), "global-to-local in editor<%>"", extracting boxed argument");
+  if (XC_SCHEME_NULLP(p[0]))
+    x0 = NULL;
+  else
+    *x0 = objscheme_unbundle_float(objscheme_nullable_unbox(p[0], "global-to-local in editor<%>"), "global-to-local in editor<%>"", extracting boxed argument");
+  if (XC_SCHEME_NULLP(p[1]))
+    x1 = NULL;
+  else
+    *x1 = objscheme_unbundle_float(objscheme_nullable_unbox(p[1], "global-to-local in editor<%>"), "global-to-local in editor<%>"", extracting boxed argument");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GlobalToLocal(x0, x1);
 
   
-  if (n > 0)
+  if (n > 0 && !XC_SCHEME_NULLP(p[0]))
     objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
+  if (n > 1 && !XC_SCHEME_NULLP(p[1]))
     objscheme_set_box(p[1], scheme_make_double(_x1));
   
   return scheme_void;
@@ -3631,13 +3643,13 @@ static Scheme_Object *os_wxMediaBufferOnNewImageSnip(Scheme_Object *obj, int n, 
   class wxImageSnip* r;
   objscheme_check_valid(obj);
   nstring x0;
-  long x1;
+  int x1;
   Bool x2;
   Bool x3;
 
   
   x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "on-new-image-snip in editor<%>");
-  x1 = objscheme_unbundle_integer(p[1], "on-new-image-snip in editor<%>");
+  x1 = unbundle_symset_bitmapType(p[1], "on-new-image-snip in editor<%>");
   x2 = objscheme_unbundle_bool(p[2], "on-new-image-snip in editor<%>");
   x3 = objscheme_unbundle_bool(p[3], "on-new-image-snip in editor<%>");
 

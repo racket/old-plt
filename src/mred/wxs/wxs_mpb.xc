@@ -8,6 +8,7 @@
 @HEADER
 
 @INCLUDE wxs_fcs.xci
+@INCLUDE wxs_bmt.xci
 
 @CLASSBASE wxMediaPasteboard "pasteboard" : "editor"
 

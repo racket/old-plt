@@ -124,8 +124,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ X "set-admin" : void SetAdmin(wxMediaAdmin^);
 
 
-@ "global-to-local" : void GlobalToLocal(float*,float*);
-@ "local-to-global" : void LocalToGlobal(float*,float*);
+@ "global-to-local" : void GlobalToLocal(float?,float?);
+@ "local-to-global" : void LocalToGlobal(float?,float?);
 
 @ v "get-dc" : wxDC^ GetDC();
 @ v "get-view-size" : void GetViewSize(float?,float?);

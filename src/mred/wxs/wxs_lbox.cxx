@@ -553,7 +553,7 @@ static Scheme_Object *os_wxListBoxSetFirstItem(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-first-item in list-box%");
+  x0 = objscheme_unbundle_integer(p[0], "set-first-visible-item in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetFirstItem(x0);
@@ -1080,7 +1080,7 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "set-string", os_wxListBoxSetString, 2, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "get-string", os_wxListBoxGetString, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "set-string-selection", os_wxListBoxSetStringSelection, 1, 1);
- scheme_add_method_w_arity(os_wxListBox_class, "set-first-item", os_wxListBoxSetFirstItem, 1, 1);
+ scheme_add_method_w_arity(os_wxListBox_class, "set-first-visible-item", os_wxListBoxSetFirstItem, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "set", os_wxListBoxSet, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "get-selections", os_wxListBoxGetSelectionList, 0, 0);
  scheme_add_method_w_arity(os_wxListBox_class, "get-first-item", os_wxListBoxGetFirstItem, 0, 0);

@@ -69,7 +69,6 @@
  ps-setup%
  read-editor-global-footer
  read-editor-global-header
- register-collecting-blit
  scroll-event%
  set-editor-print-margin
  snip%
@@ -92,7 +91,6 @@
  the-pen-list
  the-style-list
  timer%
- unregister-collecting-blit
  write-editor-global-footer
  write-editor-global-header
  write-resource

@@ -30,4 +30,7 @@
  get-font-from-user
  middle-queue-key
  id-to-menu-item
- file-selector)
+ file-selector
+ register-collecting-blit
+ unregister-collecting-blit)
+

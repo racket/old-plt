@@ -32,11 +32,15 @@
 				 (cons (car l)
 				       (loop (cdr l))))])))))
 
+      (define param (current-parameterization))
+
       (define dprintf (if on? 
 			  (lambda (tag . args)
-			    (when (member tag (unbox turned-on))
-			      (apply printf args)
-			      (newline)))
+			    (with-parameterization param
+			      (lambda ()
+				(when (member tag (unbox turned-on))
+				  (apply printf args)
+				  (newline)))))
 			  (lambda args (void))))
 
       (define exit? #t))))

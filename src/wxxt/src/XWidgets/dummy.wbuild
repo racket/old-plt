@@ -5,7 +5,7 @@
 
 findlast()
 {
-  RESULT=${1%%.w}
+  RESULT=`echo $1 | sed -e 's/[.]w$//'`
   if [ "$2" != '' ] ; then
     shift
     findlast ${1+"$@"}

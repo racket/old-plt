@@ -1,7 +1,12 @@
-This directory contains makefiles and projects files for building
-MzScheme and MrEd with Microsoft Visual C++ (MSVC) version 6. 
-If you have downloaded MzCOM, the directory also contains an 
-MSVC makefile and project file for MzCOM. 
+This directory contains 
+
+ - makefiles and project files for building MzScheme and MrEd 
+    with Microsoft Visual C++ (MSVC) version 6, and
+ - solution files and project files for building MzScheme and 
+    MrEd with Microsoft Visual Studio .NET (VS.NET).
+
+If you have downloaded MzCOM, the directory also contains 
+MSVC and VS.NET files for MzCOM. 
 
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,
@@ -26,10 +31,11 @@ Building MzScheme, MzCOM, and MrEd
 ----------------------------------------------------------------------
 
 The source code for MzScheme, MzCOM, and MrEd is split into several
-projects. To make the project named `X', either open the file
+projects. To make the project named `X' with MSVC, either open the file
 plt\src\worksp\X\X.dsw with MSVC, or go into plt\src\worksp\X\ and
 execute `nmake -f X.mak' (assuming the MSVC programs are in your
-path).
+path). To make the `X' project with VS.NET, open the file 
+plt\src\worksp\X\X.sln.
 
  NOTE: The makefiles as distributed do not contain dependencies (which
  are kept in .dep files). Thus, if you modify a header file and
@@ -56,7 +62,7 @@ The make process for MrEd automatically builds
    libmzgc - as above
    libmzsch - as above
    libmred - makes plt\libmredxxxxxxx.dll and
-             plt\src\worksp\libmred\Release\libmredxxxxxxx.lib
+                   plt\src\worksp\libmred\Release\libmredxxxxxxx.lib
    wxutils - makes plt\src\worksp\wxutils\Release\wxutils.lib
    wxwin - makes plt\src\worksp\wxwin\Release\wxwin.lib
    wxs  - makes plt\src\worksp\wxs\Release\wxs.lib
@@ -129,8 +135,10 @@ Embedding MzScheme
 The MzScheme DLLs can be used within an embedding application.
 
 The libraries
+
     plt\src\worksp\libmzsch\Release\libmzschxxxxxxx.lib
-    plt\src\worksp\libmzgc\Release\libmzgcxxxxxxxx.lib
+    plt\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib
+
 which are created by the mzsrc and gc projects, provide linking
 information for using the libmzschxxxxxxx.dll and libmzgcxxxxxxx.dll
 DLLs. The versioning script adjusts the names and puts them in

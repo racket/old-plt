@@ -1073,7 +1073,10 @@
                        [finish (zodiac:zodiac-finish (car dis))]
 		       [error-filename (zodiac:location-file start)]
                        [old-locked? (locked?)]
-                       [show-bug? (not (= 1 (length dis)))]
+                       [show-bug? 
+                        (and (not (= 1 (length dis)))
+                             (or (basis:full-language? user-setting)
+                                 (fw:preferences:get 'drscheme:enable-backtrace-in-teaching-levels)))]
                        [show-file? (string? error-filename)])
                   (begin-edit-sequence)
                   (lock #f)

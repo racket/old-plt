@@ -29,6 +29,11 @@
 	 #f)))
 
   (framework:preferences:set-default
+   'drscheme:enable-backtrace-in-teaching-levels
+   #f
+   boolean?)
+
+  (framework:preferences:set-default
    drscheme:language:settings-preferences-symbol
    (basis:get-default-setting)
    basis:setting?)
@@ -164,13 +169,11 @@
 		 (send text erase)
 		 (send text insert
 		       (cond
-			[(string=? language "Beginning Student") beginner-program]
-			[(string=? language "Intermediate Student") intermediate-program]
-			[(string=? language "Advanced Student") advanced-program]
-			[(regexp-match "MrEd" language)
-			 mred-program]
-			[(regexp-match "MzScheme" language)
-			 mzscheme-program]
+			[(basis:beginner-language? setting) beginner-program]
+			[(basis:intermediate-language? setting) intermediate-program]
+			[(basis:advanced-language? setting) advanced-program]
+			[(regexp-match "MrEd" language) mred-program]
+			[(regexp-match "MzScheme" language) mzscheme-program]
                         [else
                          (format "unknown language: ~a" language)]))
 		 (send text set-position 0 0)
@@ -218,5 +221,7 @@
 		    (send q set-value (framework:preferences:get pref-sym))))))])
        (make-check-box 'drscheme:execute-warning-once
 		       "Only warn once when executions and interactions are not synchronized")
+       (make-check-box 'drscheme:enable-backtrace-in-teaching-levels
+		       "Enable backtrace bug icon in teaching languages")
        (make-object vertical-panel% main)
        main))))

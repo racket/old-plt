@@ -11,6 +11,7 @@
            
            "labels.ss"
            "set-hash.ss"
+           "assoc-set-hash.ss"
            (prefix cst: "constants.ss")
            ;(prefix types: "types.ss")
            (prefix err: "sba-errors.ss")
@@ -28,8 +29,11 @@
    get-span-from-label
    get-errors-from-label
    get-source-from-label
-   get-arrows-from-label
+   get-arrows-from-labels
    )
+  
+  ;(provide (all-defined))
+  
   ; debug XXX
   ;read-and-analyze label-case-lambda-exps label-set label-term)
   
@@ -78,6 +82,8 @@
   
   (define-struct arrows (in out tunnel) (make-inspector))
   
+  ; type-scheme label
+  (define-struct prim-data (type-scheme label))
   
   (define-struct sba-state (; label -> void
                             register-label-with-gui
@@ -242,13 +248,19 @@
                (let ([top-label (lookup-top-level-name sba-state free-var-name-in)])
                  (if top-label
                      top-label
-                     (let ([primitive-type-scheme (lookup-primitive-type-scheme sba-state free-var-name-in)])
-                       (if primitive-type-scheme
+                     (let ([primitive-data (lookup-primitive-data sba-state free-var-name-in)])
+                       (if primitive-data
                            ; no polyvariance for primitives here...
-                           (reconstruct-graph-from-type-scheme
-                            sba-state
-                            primitive-type-scheme (make-hash-table)
-                            free-var-label-in)
+                           ; but we need to make sure set! works for primitives by having
+                           ; a flow from a label simulating the primitive's definition
+                           (let* ([result-label (reconstruct-graph-from-type-scheme
+                                                 sba-state
+                                                 (prim-data-type-scheme primitive-data) (make-hash-table)
+                                                 free-var-label-in)]
+                                  [prim-def-label (prim-data-label primitive-data)]
+                                  [result-edge (create-simple-edge result-label)])
+                             (add-edge-and-propagate-set-through-edge prim-def-label result-edge)
+                             result-label)
                            (cond
                              [(eq? free-var-name-in 'make-struct-type)
                               (create-make-struct-type-label sba-state term)]
@@ -421,7 +433,7 @@
                ;               (number? (label-cst-value inflowing-label))
                ;               (or (= 1 (label-cst-value inflowing-label))
                ;                   (= 2 (label-cst-value inflowing-label)))))
-               ;  (printf "starting tunnel for ~a: ~a~n" inflowing-label out-label))
+               ;  (printf "starting tunnel for ~a: ~a~n" inflowing-label out-label);)
                (set! tunnel-label out-label))
              ; Note: we assume that primitives don't have internal cycles, so we
              ; don't have to keep track of in/out edges. We still have to put the
@@ -473,7 +485,7 @@
                ;               (number? (label-cst-value inflowing-label))
                ;               (or (= 1 (label-cst-value inflowing-label))
                ;                   (= 2 (label-cst-value inflowing-label)))))
-               ;  (printf "resetting tunnel for ~a: ~a~n" inflowing-label out-label))
+               ;  (printf "resetting tunnel for ~a: ~a~n" inflowing-label out-label);)
                (set! out-label tunnel-label))
              (let* ([out-set (label-set out-label)]
                     [arrows-in-set
@@ -2255,37 +2267,49 @@
   ; sba-state syntax-object (listof (cons symbol label)) label (listof label) -> label
   (define (create-label-from-quote sba-state quoted-term gamma enclosing-lambda-label)
     (let ([sexp-e (syntax-e quoted-term)])
-      (if (pair? sexp-e)
-          (let loop ([sexp-e sexp-e])
-            (if (null? sexp-e)
-                (let ([null-label
-                       (make-label-cst
-                        #f #f #t
-                        quoted-term
-                        (make-hash-table)
-                        (make-hash-table)
-                        '())])
-                  (initialize-label-set-for-value-source null-label)
-                  null-label)
-                (let ([cons-label
-                       (make-label-cons
-                        #f #f #t
-                        quoted-term
-                        (make-hash-table)
-                        (make-hash-table)
-                        (create-label-from-quote sba-state (car sexp-e) gamma enclosing-lambda-label)
-                        (loop (cdr sexp-e)))])
-                  (initialize-label-set-for-value-source cons-label)
-                  cons-label)))
-          (let ([label (make-label-cst
-                        #f #f #f
-                        quoted-term
-                        (make-hash-table)
-                        (make-hash-table)
-                        sexp-e)])
-            (initialize-label-set-for-value-source label)
-            ((sba-state-register-label-with-gui sba-state) label)
-            label))))
+      (cond
+        [(list? sexp-e)
+         (let loop ([sexp-e sexp-e])
+           (if (null? sexp-e)
+               (let ([null-label
+                      (make-label-cst
+                       #f #f #t
+                       quoted-term
+                       (make-hash-table)
+                       (make-hash-table)
+                       '())])
+                 (initialize-label-set-for-value-source null-label)
+                 null-label)
+               (let ([cons-label
+                      (make-label-cons
+                       #f #f #t
+                       quoted-term
+                       (make-hash-table)
+                       (make-hash-table)
+                       (create-label-from-quote sba-state (car sexp-e) gamma enclosing-lambda-label)
+                       (loop (cdr sexp-e)))])
+                 (initialize-label-set-for-value-source cons-label)
+                 cons-label)))]
+        [(pair? sexp-e)
+         (let ([cons-label
+                (make-label-cons
+                 #f #f #t
+                 quoted-term
+                 (make-hash-table)
+                 (make-hash-table)
+                 (create-label-from-quote sba-state (car sexp-e) gamma enclosing-lambda-label)
+                 (create-label-from-quote sba-state (cdr sexp-e) gamma enclosing-lambda-label))])
+           (initialize-label-set-for-value-source cons-label)
+           cons-label)]
+        [else (let ([label (make-label-cst
+                            #f #f #f
+                            quoted-term
+                            (make-hash-table)
+                            (make-hash-table)
+                            sexp-e)])
+                (initialize-label-set-for-value-source label)
+                ((sba-state-register-label-with-gui sba-state) label)
+                label)])))
 
   ; sba-state syntax-object (listof (cons symbol label)) label (listof label) -> label
   ; gamma is the binding-variable-name-to-label environment
@@ -2372,7 +2396,7 @@
                             term
                             (make-hash-table)
                             (make-hash-table)
-                            cst:void)])
+                            'dummy-define-values)])
         ; don't add to top level before analysing exp-label, otherwise (define x x) will work.
         (for-each (lambda (var var-label)
                     (add-top-level-name sba-state var var-label))
@@ -2462,7 +2486,7 @@
                exp-label
                distributive-unpacking-edge)))
         ;(initialize-label-set-for-value-source define-label)
-        ;(register-label-with-gui define-label)
+        ((sba-state-register-label-with-gui sba-state) define-label)
         define-label)]
      [(let-values ((vars exp) ...) body-exps ...)
       (let* ([let-values-label (create-simple-label sba-state term)]
@@ -2723,6 +2747,7 @@
              [if-label (create-simple-label sba-state term)]
              [if-edge (create-simple-edge if-label)]
              [test-edge (create-self-modifying-edge (lambda (label)
+                                                      ; XXX subtping should be used here
                                                       (or (not (label-cst? label))
                                                           (label-cst-value label)))
                                                     then-label else-label if-edge)])
@@ -2816,7 +2841,14 @@
             (let ([effect
                    (lambda ()
                      ; delay the lookup until the effect takes place
-                     (let ([binding-label (lookup-top-level-name sba-state var-name)])
+                     ; if the name we want to set! is a primitive, we set! the label that
+                     ; simulates the primitive's definition.
+                     (let ([binding-label (or (lookup-top-level-name sba-state var-name)
+                                              (let ([primitive-data
+                                                     (lookup-primitive-data sba-state var-name)])
+                                                (if primitive-data
+                                                    (prim-data-label primitive-data)
+                                                    #f)))])
                        (if (or binding-label
                                (eq? var-name 'make-struct-type)
                                (eq? var-name 'make-struct-field-accessor)
@@ -3025,8 +3057,8 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PRIMITIVE TYPE PARSER AND LOOKUP
   
-  ; sba-state symbol -> (union type-scheme #f)
-  (define (lookup-primitive-type-scheme sba-state name)
+  ; sba-state symbol -> (union prim-data #f)
+  (define (lookup-primitive-data sba-state name)
     (hash-table-get (sba-state-primitive-types-table sba-state) name cst:thunk-false))
   
   ; sba-state string -> void
@@ -3058,8 +3090,9 @@
                        (format "found duplicate for primitive ~a in file ~a"
                                primitive-name filename)))
                     (hash-table-put! primitive-types-table primitive-name
-                                     (parse&check-type-scheme
-                                      primitive-type primitive-name filename))))
+                                     (make-prim-data (parse&check-type-scheme
+                                                      primitive-type primitive-name filename)
+                                                     (create-simple-prim-label #f)))))
                 sexp)))
   
   ; sexp symbol tring -> type
@@ -4026,6 +4059,7 @@
   
   ; sba-state label type (hash-table-of type-flow-var (cons label type)) -> void
   (define (associate-label-with-type sba-state label type delta-flow)
+    ;(printf "~a ~a~n" (syntax-object->datum (label-term label)) type)
     (hash-table-put! (sba-state-label->types sba-state) label (cons type delta-flow)))
   
   ; sba-state -> void
@@ -4376,7 +4410,7 @@
                            (cdr all-rec-type-clauses)
                            non-rec-type))
           non-rec-type)))
-  
+
   ; sba-state label -> type
   ; reconstructs the type for a label
   ; a lot of things are done imperatively: the trace is used to detect cycles in the graph,
@@ -4459,6 +4493,7 @@
                                       [(label-struct-type? label)
                                        (make-type-struct-type label)]
                                       [else (error 'get-non-rec-type "unknown label: ~a" label)])))]
+                 ; XXX is this usefull? everything in a set is a flat value, not a union
                  [type-union-elements-flattened
                   (let loop ([cur-types type-union-elements])
                     (if (null? cur-types)
@@ -4498,7 +4533,7 @@
                 ; the type variable for the first cycle appear in the type for the second
                 ; cycle, without any corresponding rec-type.
                 final-type)))))
-  
+
   ; (define get-type-from-label get-non-rec-type)
   
   ; type (union (hash-table-of type-flow-var (cons label type)) symbol) -> string
@@ -4669,33 +4704,49 @@
         ">")]
       [else (error 'pp-type "unknown type: ~a" type)]))
   
-  ; ((cons (listof label) (listof label)) -> (listof label)) -> (label -> (listof label))
+  ; ((cons (listof label) (listof label)) -> (listof label)) -> (label (listof label) -> (listof label))
   ; returns list of labels from which label went in or out, depending on selector
+  ; the trace is necessary to prevent the search for original parents to loop forever when
+  ; inside recursive code generated by a macro. Despite that the search might still use
+  ; exponential time when only using the trace because it explores all possibles paths at
+  ; all possible labels when exploring the graph recursively. The running time is tremendously
+  ; helped by adding the memoization: we compute the result set for a given label only once
+  ; and always reuse that result in the future without ever searching the piece of graph
+  ; behind the label again.  Note that in practice there's two separate instances of the
+  ; memoization table, once for parents and one for children, since get-parents/children
+  ; is called twice.
   (define (get-parents/children selector)
-    (letrec ([get (lambda (label)
-                    (let ([result (set-make)])
-                      (for-each
-                       (lambda (unfiltered-parents-for-current-set-element)
-                         (let* ([direct-parents-without-primitive-labels
-                                 (list:filter (lambda (label)
-                                                (not (label-prim? label)))
-                                              unfiltered-parents-for-current-set-element)]
-                                [direct-or-indirect-original-parents
-                                 (list:foldr
-                                  (lambda (direct-parent original-parents-so-far)
-                                    (if (syntax-original? (label-term direct-parent))
-                                        (cons direct-parent original-parents-so-far)
-                                        (merge-lists (get direct-parent)
-                                                     original-parents-so-far)))
-                                  '()
-                                  direct-parents-without-primitive-labels)])
-                           (for-each (lambda (parent)
-                                       (set-set result parent #f))
-                                     direct-or-indirect-original-parents)))
-                       (hash-table-map (label-set label)
-                                       (lambda (label arrows)
-                                         (selector arrows))))
-                      (set-map result cst:id)))])
+    (letrec ([memo (assoc-set-make)]
+             [get (lambda (label trace)
+                    (if (assoc-set-in? memo label)
+                        (assoc-set-get memo label)
+                        (if (memq label trace)
+                            '()
+                            (let ([result (set-make)])
+                              (for-each
+                               (lambda (unfiltered-parents-for-current-set-element)
+                                 (let* ([direct-parents-without-primitive-labels
+                                         (list:filter (lambda (label)
+                                                        (not (label-prim? label)))
+                                                      unfiltered-parents-for-current-set-element)]
+                                        [direct-or-indirect-original-parents
+                                         (list:foldr
+                                          (lambda (direct-parent original-parents-so-far)
+                                            (if (syntax-original? (label-term direct-parent))
+                                                (cons direct-parent original-parents-so-far)
+                                                (merge-lists (get direct-parent (cons label trace))
+                                                             original-parents-so-far)))
+                                          '()
+                                          direct-parents-without-primitive-labels)])
+                                   (for-each (lambda (parent)
+                                               (set-set result parent #f))
+                                             direct-or-indirect-original-parents)))
+                               (hash-table-map (label-set label)
+                                               (lambda (label arrows)
+                                                 (selector arrows))))
+                              (let ([final-result (set-map result cst:id)])
+                                (assoc-set-set memo label final-result)
+                                final-result)))))])
       get))
   
   ; label -> (listof label)
@@ -4704,17 +4755,40 @@
   ; label -> (listof label)
   (define get-children-from-label (get-parents/children arrows-out))
   
-  ; label -> (listof (list label label string))
+  ; (listof label) -> (listof (list label label string))
   ; not really fast but good enough for now.
   ; XXX should combine this with the above get-parents/children
-  (define (get-arrows-from-label label)
-    (append (map (lambda (parent)
-                   (list parent label "blue"))
-                 (get-parents-from-label label))
-            (map (lambda (child)
-                   (list label child "blue"))
-                 (get-children-from-label label))))
+  (define (get-arrows-from-labels labels)
+    (delete-duplicates
+     (append! (apply append! (map (lambda (label)
+                                    (map (lambda (parent)
+                                           (list parent label "blue"))
+                                         (list:filter (lambda (parent)
+                                                        (not (memq parent labels)))
+                                                      (get-parents-from-label label '()))))
+                                  labels))
+              (apply append! (map (lambda (label)
+                                    (map (lambda (child)
+                                           (list label child "blue"))
+                                         (list:filter (lambda (child)
+                                                        (not (memq child labels)))
+                                                      (get-children-from-label label '()))))
+                                  labels)))))
   
+  ; (listof (cons top (cons top (listof top)))) -> (listof (cons top (cons top (listof top))))
+  (define (delete-duplicates l)
+    (if (null? l)
+        l
+        (let ([elt (car l)])
+          (cons elt
+                (delete-duplicates
+                 (let ([elt-s (car elt)]
+                       [elt-e (cadr elt)])
+                   (list:filter (lambda (other-elt)
+                                  (or (not (eq? elt-s (car other-elt)))
+                                      (not (eq? elt-e (cadr other-elt)))))
+                                (cdr l))))))))
+                 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DRIVER
   
   ;    ; port value -> void

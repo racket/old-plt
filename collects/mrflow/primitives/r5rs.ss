@@ -491,6 +491,7 @@
                  [j_apply top][k_apply top][l_apply top][m_apply top][n_apply top]
                  [o_apply top][p_apply top][q_apply top][r_apply top][s_apply top][t_apply top]
                  [u_apply top][v_apply top][w_apply top][x_apply top][y_apply top][z_apply top][aa_apply top]
+                 ;[ab_apply top][ac_apply top]
                  )
                 (case-lambda
                   [((case-lambda [(rest (listof a_apply)) b_apply])
@@ -517,9 +518,9 @@
                   ; this will not work because it doesn't allow for the first args to not
                   ; be lists
                   ;[(rest (case-lambda
-                  ;         [(rest (listof b_apply)) c_apply])
-                  ;       (listof (listof b_apply)))
-                  ; c_apply])))
+                  ;         [(rest (listof ab_apply)) ac_apply])
+                  ;       (listof (listof ab_apply)))
+                  ; ac_apply])))
                   ; and this doesn't work either because it allows for the last arg
                   ; to not be a list
                   ;[(rest (case-lambda
@@ -671,7 +672,7 @@
                                       (cons datum datum))]
                    ;[vector-datum (vector datum)]
                    )
-                  datum) env -> top)) 
+                  datum) env -> (union top #f))) 
  
  (scheme-report-environment (5 -> env))
  (null-environment (5 -> env))
@@ -709,10 +710,11 @@
  
  ; 6.6.2 Input
  
- ; eof is included in top
+ ; eof is included in top, but #f needs to be included explicitely
+ ; because of the simplistic way if-dependency is done
  (read (case-lambda
-         [() top]
-         [(input-port) top]))
+         [() (union top #f)]
+         [(input-port) (union top #f)]))
  
  (read-char (case-lambda
               [() char]
@@ -750,7 +752,7 @@
  
  ; 6.6.4 System interface
  
- (load (string -> top))
+ (load (string -> (union top #f)))
  
  (transcript-on (string -> void))
  (transcript-off (-> void))

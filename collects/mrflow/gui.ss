@@ -111,7 +111,7 @@
       ; with the wrong color.
       (define (get-span-from-label sba-state label)
         (if (or (sba:is-label-atom? label)
-                (not (null? (sba:get-errors-from-label sba-state label))))
+                );(not (null? (sba:get-errors-from-label sba-state label))))
             (sba:get-span-from-label label)
             1))
       
@@ -203,7 +203,7 @@
                            sba:get-source-from-label
                            sba:get-mzscheme-position-from-label
                            (lambda (label) (get-span-from-label sba-state label))
-                           sba:get-arrows-from-label
+                           sba:get-arrows-from-labels
                            (lambda (label) (get-style-delta-from-label sba-state label))
                            (lambda (menu labels) cst:void)
                            get-menu-text-from-snip-type
@@ -227,21 +227,16 @@
 ;                                                 (get-text-from-user
 ;                                                  "rename"
 ;                                                  "rename")))]
-;                                             [terms (apply
-;                                                     append
-;                                                     (map 
-;                                                      (lambda (label)
-;                                                        (append
-;                                                         (map
-;                                                          (lambda (arrow-info)
-;                                                            (cons (car arrow-info) "foo"))
-;                                                          (sba:get-arrows-from-label label))
-;                                                         (map
-;                                                          (lambda (arrow-info)
-;                                                            (cons (cadr arrow-info) "foo"))
-;                                                          (sba:get-arrows-from-label label))
-;                                                         ))
-;                                                      labels))])
+;                                             [terms (append
+;                                                     (map
+;                                                      (lambda (arrow-info)
+;                                                        (cons (car arrow-info) "foo"))
+;                                                      (sba:get-arrows-from-labels labels))
+;                                                     (map
+;                                                      (lambda (arrow-info)
+;                                                        (cons (cadr arrow-info) "foo"))
+;                                                      (sba:get-arrows-from-labels labels))
+;                                                     )])
 ;                                         (user-change-terms terms)))])
 ;                               (make-object menu-item%
 ;                                 (strcst:string-constant cs-rename-id)

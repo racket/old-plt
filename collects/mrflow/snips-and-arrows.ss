@@ -20,8 +20,8 @@
   
   (define-struct gui-state (; gui-view-state
                             gui-view-state
-                            ; (label -> (listof (list label label string)))
-                            get-arrows-from-label
+                            ; ((listof label) -> (listof (list label label string)))
+                            get-arrows-from-labels
                             ; (symbol symbol -> string)
                             get-menu-text-from-snip-type
                             ; (symbol label -> (listof string))
@@ -77,8 +77,8 @@
   ; all labels correspond to the same term (because of macros)
   (define (create-arrow-menu-items gui-state menu labels)
     (let* ([gui-view-state (gui-state-gui-view-state gui-state)]
-           [arrowss-info (map (gui-state-get-arrows-from-label gui-state) labels)]
-           [max-arrows (apply + (map length arrowss-info))]
+           [arrows-info ((gui-state-get-arrows-from-labels gui-state) labels)]
+           [max-arrows (length arrows-info)]
            [tacked-arrows (apply + (map (lambda (label)
                                           (saav:get-tacked-arrows-from-label gui-view-state label))
                                         labels))])
@@ -93,13 +93,10 @@
             (for-each (lambda (label)
                         (saav:remove-arrows gui-view-state label 'all #t))
                       labels)
-            (for-each ; loops over labels
-             (lambda (arrows-info)
-               (for-each ; loops over arrows for a given label
-                (lambda (arrow-info)
-                  (saav:add-arrow gui-view-state arrow-info #t))
-                arrows-info))
-             arrowss-info)
+            (for-each
+             (lambda (arrow-info)
+               (saav:add-arrow gui-view-state arrow-info #t))
+             arrows-info)
             (saav:invalidate-bitmap-cache gui-view-state))))
       (when (> tacked-arrows 0)
         (make-object menu-item%
@@ -359,7 +356,7 @@
                                   (loop pos editor sub-editor)
                                   (values pos editor)))
                             (values pos editor)))))))))
-        
+
         (inherit get-admin)
         (rename [super-on-event on-event])
         ; mouse-event% -> void
@@ -456,32 +453,33 @@
                  (saav:invalidate-bitmap-cache gui-view-state)))]
             [(or (send event moving?)
                  (send event entering?))
-             (let*-values ([(pos editor) (get-drscheme-pos-and-editor event)]
-                           [(labels)
-                            (if pos
-                                (saav:get-related-labels-from-drscheme-pos-and-editor
-                                 gui-view-state pos editor)
-                                #f)]
-                           [(previous-labels) (gui-state-previous-labels gui-state)]
-                           [(not-same-labels) (not (equal? labels previous-labels))])
-               (when (and previous-labels not-same-labels)
-                 (for-each (lambda (previous-label)
-                             (saav:remove-arrows gui-view-state previous-label #f #f))
-                           previous-labels))
-               (when (and labels not-same-labels)
-                 (let ([get-arrows-from-label (gui-state-get-arrows-from-label gui-state)])
-                   (for-each (lambda (label)
-                               (for-each (lambda (arrow-info)
-                                           (saav:add-arrow gui-view-state arrow-info #f))
-                                         (get-arrows-from-label label)))
-                             labels)))
-               (when not-same-labels
-                 (when (or (not (null? previous-labels))
-                           (not (null? labels)))
-                   ; something has changed, and we might have either removed some arrows or
-                   ; added some (or both), so we redraw
-                   (saav:invalidate-bitmap-cache gui-view-state))
-                 (set-gui-state-previous-labels! gui-state labels)))]
+             (if (or (send event get-left-down)
+                     (send event get-middle-down)
+                     (send event get-right-down))
+                 (super-on-event event)
+                 (let*-values ([(pos editor) (get-drscheme-pos-and-editor event)]
+                               [(labels)
+                                (if pos
+                                    (saav:get-related-labels-from-drscheme-pos-and-editor
+                                     gui-view-state pos editor)
+                                    #f)]
+                               [(previous-labels) (gui-state-previous-labels gui-state)]
+                               [(not-same-labels) (not (equal? labels previous-labels))])
+                   (when (and previous-labels not-same-labels)
+                     (for-each (lambda (previous-label)
+                                 (saav:remove-arrows gui-view-state previous-label #f #f))
+                               previous-labels))
+                   (when (and labels not-same-labels)
+                     (for-each (lambda (arrow-info)
+                                 (saav:add-arrow gui-view-state arrow-info #f))
+                               ((gui-state-get-arrows-from-labels gui-state) labels)))
+                   (when not-same-labels
+                     (when (or (not (null? previous-labels))
+                               (not (null? labels)))
+                       ; something has changed, and we might have either removed some arrows or
+                       ; added some (or both), so we redraw
+                       (saav:invalidate-bitmap-cache gui-view-state))
+                     (set-gui-state-previous-labels! gui-state labels))))]
             [else (super-on-event event)]))
         
         (super-instantiate ()))))
@@ -498,8 +496,8 @@
            get-mzscheme-position-from-label
            ; (label -> non-negative-exact-integer)
            get-span-from-label
-           ; (label -> (listof (list label label string)))
-           get-arrows-from-label
+           ; ((listof label) -> (listof (list label label string)))
+           get-arrows-from-labels
            ; (label -> style-delta%)
            get-style-delta-from-label
            ; (popup-menu% (listof label) -> void)
@@ -523,7 +521,7 @@
                             clear-colors-immediately?)]
            [gui-state (make-gui-state
                        gui-view-state
-                       get-arrows-from-label
+                       get-arrows-from-labels
                        get-menu-text-from-snip-type
                        get-snip-text-from-snip-type-and-label
                        extend-menu-for-labels
@@ -561,8 +559,8 @@
   (define init-snips-and-arrows-gui-for-syntax-objects
     (opt-lambda (; text%
                  top-editor
-                 ; (syntax-object -> (listof (list syntax-object syntax-object string)))
-                 get-arrows-from-syntax-object
+                 ; ((listof syntax-object) -> (listof (list syntax-object syntax-object string)))
+                 get-arrows-from-syntax-objects
                  ; (syntax-object -> style-delta%)
                  get-style-delta-from-syntax-object
                  
@@ -585,7 +583,7 @@
        syntax-source
        syntax-position
        syntax-span
-       get-arrows-from-syntax-object
+       get-arrows-from-syntax-objects
        get-style-delta-from-syntax-object
        extand-menu-for-syntax-objects
        get-menu-text-from-snip-type

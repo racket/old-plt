@@ -1,11 +1,43 @@
 #|
 
+Here is an example use of make-object/kwd:
+
+(require-library "make-object-kwd.ss")
+(define f (make-object/kwd frame% (label "frame") (width 300)))
+(define hp (make-object/kwd horizontal-panel% (parent f) (alignment 'center 'bottom)))
+(define m (make-object/kwd message% (label "hi") (parent hp)
+                           (cursor (make-object cursor% 'bullseye))))
+(define ec (make-object/kwd editor-canvas%
+                            (parent hp)
+                            ;; (focus #t) ;; should also be legal, somehow
+                            (line-count 2)
+                            (editor (make-object text%))))
+(send f show #t)
+
+Here is the same code in make-object syntax:
+
+(define f2 (make-object frame% "frame" #f 300)) ;; note extra #f
+(define hp (make-object horizontal-panel% f2))
+(send hp set-alignment 'center 'bottom)
+(define m (make-object message% "hi" hp))
+(send m set-cursor (make-object cursor% 'bullseye))
+(define ec (make-object editor-canvas% hp (make-object text%)))
+(send ec set-line-count 2)
+(send f2 show #t)
+
+(this kind of thing gets even more annoying when you are using `let' to bind
+f2, hp, m, and ec).
+
+
+(**)
+
+
 This is the abstract syntax for make-object/kwd:
 
   (make-object/kwd E (id E ...) ...)
 
 make-object/kwd expands into make-object. It searches thru the list of 
-methods and the names of the initialization arguments to find matches
+methods and the names of the initialization arguments to find matches 
 for the provided keywords. There are three types of matches:
 
   - initialization arguments:
@@ -23,6 +55,7 @@ The only drawback (not counting the hackery involved) is that the
 initialization arguments must be specified for each class, in the
 macro definition, so it knows what arguments need to be passed as
 keywords.
+
 
 |#
 

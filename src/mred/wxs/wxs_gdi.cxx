@@ -1628,6 +1628,7 @@ static Scheme_Object *brushStyle_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *brushStyle_wxSOLID_sym = NULL;
 static Scheme_Object *brushStyle_wxSTIPPLE_sym = NULL;
 static Scheme_Object *brushStyle_wxXOR_sym = NULL;
+static Scheme_Object *brushStyle_wxCOLOR_sym = NULL;
 static Scheme_Object *brushStyle_wxBDIAGONAL_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxCROSSDIAG_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxFDIAGONAL_HATCH_sym = NULL;
@@ -1646,6 +1647,8 @@ static void init_symset_brushStyle(void) {
   brushStyle_wxSTIPPLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("opaque"));
   wxREGGLOB(brushStyle_wxXOR_sym);
   brushStyle_wxXOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor"));
+  wxREGGLOB(brushStyle_wxCOLOR_sym);
+  brushStyle_wxCOLOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hilite"));
   wxREGGLOB(brushStyle_wxBDIAGONAL_HATCH_sym);
   brushStyle_wxBDIAGONAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("bdiagonal-hatch"));
   wxREGGLOB(brushStyle_wxCROSSDIAG_HATCH_sym);
@@ -1671,6 +1674,7 @@ static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
   else if (v == brushStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
   else if (v == brushStyle_wxSTIPPLE_sym) { READY_TO_RETURN; return wxSTIPPLE; }
   else if (v == brushStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == brushStyle_wxCOLOR_sym) { READY_TO_RETURN; return wxCOLOR; }
   else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { READY_TO_RETURN; return wxBDIAGONAL_HATCH; }
   else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { READY_TO_RETURN; return wxCROSSDIAG_HATCH; }
   else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { READY_TO_RETURN; return wxFDIAGONAL_HATCH; }
@@ -1690,6 +1694,7 @@ static Scheme_Object *bundle_symset_brushStyle(int v) {
   case wxSOLID: return brushStyle_wxSOLID_sym;
   case wxSTIPPLE: return brushStyle_wxSTIPPLE_sym;
   case wxXOR: return brushStyle_wxXOR_sym;
+  case wxCOLOR: return brushStyle_wxCOLOR_sym;
   case wxBDIAGONAL_HATCH: return brushStyle_wxBDIAGONAL_HATCH_sym;
   case wxCROSSDIAG_HATCH: return brushStyle_wxCROSSDIAG_HATCH_sym;
   case wxFDIAGONAL_HATCH: return brushStyle_wxFDIAGONAL_HATCH_sym;
@@ -2295,6 +2300,7 @@ class wxBrushList *objscheme_unbundle_wxBrushList(Scheme_Object *obj, const char
 static Scheme_Object *penStyle_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *penStyle_wxSOLID_sym = NULL;
 static Scheme_Object *penStyle_wxXOR_sym = NULL;
+static Scheme_Object *penStyle_wxCOLOR_sym = NULL;
 static Scheme_Object *penStyle_wxDOT_sym = NULL;
 static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
 static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
@@ -2312,6 +2318,8 @@ static void init_symset_penStyle(void) {
   penStyle_wxSOLID_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("solid"));
   wxREGGLOB(penStyle_wxXOR_sym);
   penStyle_wxXOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor"));
+  wxREGGLOB(penStyle_wxCOLOR_sym);
+  penStyle_wxCOLOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hilite"));
   wxREGGLOB(penStyle_wxDOT_sym);
   penStyle_wxDOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot"));
   wxREGGLOB(penStyle_wxLONG_DASH_sym);
@@ -2338,6 +2346,7 @@ static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
   else if (v == penStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
   else if (v == penStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
   else if (v == penStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == penStyle_wxCOLOR_sym) { READY_TO_RETURN; return wxCOLOR; }
   else if (v == penStyle_wxDOT_sym) { READY_TO_RETURN; return wxDOT; }
   else if (v == penStyle_wxLONG_DASH_sym) { READY_TO_RETURN; return wxLONG_DASH; }
   else if (v == penStyle_wxSHORT_DASH_sym) { READY_TO_RETURN; return wxSHORT_DASH; }
@@ -2357,6 +2366,7 @@ static Scheme_Object *bundle_symset_penStyle(int v) {
   case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
   case wxSOLID: return penStyle_wxSOLID_sym;
   case wxXOR: return penStyle_wxXOR_sym;
+  case wxCOLOR: return penStyle_wxCOLOR_sym;
   case wxDOT: return penStyle_wxDOT_sym;
   case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
   case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;

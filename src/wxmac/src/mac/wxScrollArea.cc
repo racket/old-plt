@@ -47,20 +47,6 @@ wxScrollArea::wxScrollArea
 				    0, 0, kVScrollBarWidth, 0, wxVSCROLL);
       parentScrollWindow->AddChildScrollWindow(cVScrollBar);
 
-#if 0
-      // Vertical scrollbar should overlap top/right edges of frame
-      cVScrollBar->GravitateJustify
-	(wxRight | wxTop,
-	 wxVertical,
-	 0, -1,
-	 Width() + 1,
-	 Height() - (bothScrolls ? kHScrollBarHeight - 1 : 0) + 1);
-      cVScrollBar->SetJustify(wxVertical);
-      cVScrollBar->SetGravitate(wxRight);
-      SetMargin(kVScrollBarWidth - 1, wxRight);
-      // Inset parent's client area
-      parentScrollWindow->ClientArea()->SetMargin(kVScrollBarWidth - 1, wxRight);
-#else
       {
 	int h;
 	h = Height();
@@ -74,7 +60,6 @@ wxScrollArea::wxScrollArea
       cVScrollBar->SetJustify(wxVertical);
       cVScrollBar->SetGravitate(wxRight);
       SetMargin(kVScrollBarWidth, wxRight);
-#endif
     }
 
   if (cStyle & wxHSCROLL)
@@ -82,20 +67,6 @@ wxScrollArea::wxScrollArea
       cHScrollBar = new wxScrollBar(this, NULL, "",
 				    0, 0, 0, kHScrollBarHeight, wxHSCROLL);
       parentScrollWindow->AddChildScrollWindow(cHScrollBar);
-#if 0 //GRW
-      // Horizontal scrollbar should overlap left/bottom edges of frame
-      cHScrollBar->GravitateJustify
-	(wxBottom | wxLeft,
-	 wxHorizontal,
-	 -1, 0,
-	 Width() - (bothScrolls ? kVScrollBarWidth - 1 : 0) + 1,
-	 Height() + 1);
-      cHScrollBar->SetJustify(wxHorizontal);
-      cHScrollBar->SetGravitate(wxBottom);
-      SetMargin(kHScrollBarHeight - 1, wxBottom);
-      // Inset parent's client area
-      parentScrollWindow->ClientArea()->SetMargin(kHScrollBarHeight - 1, wxBottom);
-#else
       {
 	int w;
 	w = Width();
@@ -109,7 +80,6 @@ wxScrollArea::wxScrollArea
       cHScrollBar->SetJustify(wxHorizontal);
       cHScrollBar->SetGravitate(wxBottom);
       SetMargin(kHScrollBarHeight, wxBottom);
-#endif
     }
 }
 

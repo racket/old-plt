@@ -19,9 +19,10 @@ class wxBorderArea: public wxArea
 {
   public:
 	wxBorderArea(wxWindow* parentWindow, int margin = 1,
-					Direction direction = wxAll,
-					int whitespace = 0); // constructor
-	~wxBorderArea(void);		// destructor
+		     Direction direction = wxAll,
+		     int whitespace = 0,
+		     Bool te_border = 0);
+	~wxBorderArea(void); 
 
 	wxRectBorder* cBorder;
 };

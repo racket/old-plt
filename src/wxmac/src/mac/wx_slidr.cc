@@ -341,6 +341,7 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
     part = ::TestControl(cMacControl, pt);
     if (StillDown()) {
       if (part) {
+	wxTracking();
 	if (part == kControlIndicatorPart) {
 	  if (::wxHETTrackControl(cMacControl, pt, SCTrackActionProcUPP))
 	    TrackPart(part);

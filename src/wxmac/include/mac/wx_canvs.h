@@ -17,6 +17,7 @@ typedef       void* wxCanvas ;
 #else
 
 class wxFrame;
+class wxBorderArea;
 
 // Canvas subwindow for drawing on
 class wxCanvas: public wxbCanvas
@@ -31,7 +32,8 @@ class wxCanvas: public wxbCanvas
 	int requested_x_step_size, requested_y_step_size;
 	Bool hScrollingEnabled;
 	Bool vScrollingEnabled;
-    Bool scrollAutomanaged;
+	Bool scrollAutomanaged;
+	wxBorderArea *canvas_border;
 
 //=============================================================================
 // Public constructors
@@ -152,8 +154,11 @@ private:
 	virtual void Paint(void);
 	virtual void OnPaint(void);
         
+	virtual void OnSetFocus(void);
+	virtual void OnKillFocus(void);
+
         // AddWhiteRgn accepts a rgn in frame-relative coordinates
-	virtual void AddWhiteRgn(RgnHandle rgn);
+	virtual void AddWhiteRgn(RgnHandle rgn, RgnHandle ergn);
 
 	Bool WantsFocus();
 

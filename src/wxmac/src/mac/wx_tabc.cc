@@ -430,6 +430,7 @@ void wxTabChoice::OnEvent(wxMouseEvent *event)
     startPt.h = startH + SetOriginX;
 
     if (::StillDown()) {
+      wxTracking();
       if (cMacControl)
 	trackResult = ::TrackControl(cMacControl, startPt, NULL);
       else

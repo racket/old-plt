@@ -88,6 +88,9 @@ typedef short int WXTYPE;
 #define wxEDITABLE         0x00000200
 #define wxREADONLY         0x00000400
 #define wxINVISIBLE        0x00000800
+#define wxGL_CONTEXT       0x00010000
+#define wxNO_AUTOCLEAR     0x00040000
+#define wxCONTROL_BORDER   0x00080000
 
 // Use native implementation, e.g. Text EDIT control for wxTextWindow
 // under MSW

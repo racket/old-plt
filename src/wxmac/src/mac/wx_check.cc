@@ -411,6 +411,7 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
       startPt.v = startV + SetOriginY;
       startPt.h = startH + SetOriginX; // port c.s.
       if (::StillDown()) {
+	wxTracking();
 	if (cMacControl)
 	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
 	else

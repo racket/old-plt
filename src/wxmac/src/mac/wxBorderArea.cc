@@ -16,10 +16,11 @@
 
 //-----------------------------------------------------------------------------
 wxBorderArea::wxBorderArea(wxWindow* parentWindow, int margin, Direction direction,
-			   int whitespace) :
+			   int whitespace,
+			   Bool te_border) :
 			   wxArea(parentWindow)
 {
-  cBorder = new wxRectBorder(this, margin, direction, whitespace);
+  cBorder = new wxRectBorder(this, margin, direction, whitespace, te_border);
 }
 
 //-----------------------------------------------------------------------------

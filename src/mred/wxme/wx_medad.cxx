@@ -518,6 +518,7 @@ void wxMediaCanvas::OnSetFocus()
   // Need trampoline
   QueueOnFocusCallback(this, TRUE);
 #else
+  wxCanvas::OnSetFocus();
   OnFocus(TRUE);
 #endif
 }
@@ -528,6 +529,7 @@ void wxMediaCanvas::OnKillFocus()
   // Need trampoline
   QueueOnFocusCallback(this, FALSE);
 #else
+  wxCanvas::OnKillFocus();
   OnFocus(FALSE);
 #endif
 }

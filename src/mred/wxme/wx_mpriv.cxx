@@ -1913,6 +1913,7 @@ static int show_outline_for_inactive = 0;
 static wxMediaEdit *skipBox = NULL;
 static wxPen *caretPen = NULL;
 static wxPen *outlinePen = NULL;
+static wxPen *outlineInactivePen = NULL;
 static wxBrush *outlineBrush = NULL;
 #if ALLOW_X_STYLE_SELECTION
 static wxBrush *outlineNonownerBrush = NULL;
@@ -1982,6 +1983,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
   if (!outlinePen) {
     wxREGGLOB(outlinePen);
+    wxREGGLOB(outlineInactivePen);
     wxREGGLOB(outlineBrush);
 #if ALLOW_X_STYLE_SELECTION
     wxREGGLOB(outlineNonownerBrush);
@@ -1993,7 +1995,8 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
       wxREGGLOB(caretPen);
       caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
     }
-    outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxXOR);
+    outlineBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxCOLOR);
+    outlineInactivePen = wxThePenList->FindOrCreatePen("BLACK", 1, wxCOLOR);
 #if ALLOW_X_STYLE_SELECTION
     outlineNonownerBrush = new wxBrush();
     outlineNonownerBrush->SetColour("BLACK");
@@ -2206,7 +2209,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	      firstHilite = (_startpos >= pcounter);
 	      lastHilite = (_endpos <= pcounter + line->len);
 	      
-	      dc->SetPen(caretPen);
+	      dc->SetPen(outlineInactivePen);
 	      
 	      if (firstHilite) {
 		dc->DrawLine(hsxs + dx, hsys + dy, hsxe + dx - 1, hsys + dy);

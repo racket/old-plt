@@ -567,14 +567,24 @@ static int GetMods(void)
   return mods;
 }
 
-/* the cont_event_context is used to keep information about mouse-downs around so
+/* the cont_mouse_context is used to keep information about mouse-downs around so
  * that later mouse-ups can be properly handled.
  */
  
-static MrEdContext *cont_event_context;
-static WindowPtr cont_event_context_window;
+static MrEdContext *cont_mouse_context;
+static WindowPtr cont_mouse_context_window;
 static Point last_mouse;
 static WindowPtr last_front_window;
+
+void wxTracking()
+{
+  /* This function is called whenever wxMac lets the toolbox process
+     events, normally to track some button click. In that case, we
+     assume that a mouse-up event won't come through the event
+     queue. */
+  cont_mouse_context = NULL;
+  cont_mouse_context_window = NULL;
+}
 
 #ifdef RECORD_HISTORY
 FILE *history;
@@ -626,7 +636,7 @@ static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only,
   return FALSE;
 }
 
-static int saw_mup = 0, saw_mdown = 0, saw_kdown = 0, kill_context = 0;
+static int saw_mdown = 0, mdown_was_ctl = 0, saw_kdown = 0;
 
 static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, 
 			      MrEdContext *c, MrEdContext *keyOk, 
@@ -653,7 +663,7 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 	MrDequeue(osq);
 	found = 1;
 	*foundc = keyOk;
-	cont_event_context = NULL;
+	cont_mouse_context = NULL;
       } else if (!WindowStillHere(window)) {
 	MrDequeue(osq);
       } else {
@@ -672,11 +682,11 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 	  /* Handle bring-window-to-front click immediately */
 	  if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
 	    SelectWindow(window);
-	    cont_event_context = NULL;
+	    cont_mouse_context = NULL;
 	  } else if (fc && fc->modal_window) {
 	    wxFrame *mfr;
 	    mfr = (wxFrame *)fc->modal_window;
-	    cont_event_context = NULL;
+	    cont_mouse_context = NULL;
 	    SelectWindow(mfr->macWindow());
 	  }
 	}
@@ -686,57 +696,47 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 	  last_mouse.h = -1;
 	  found = 1;
 	  if (!check_only && (part != inMenuBar)) {
-	    cont_event_context = *foundc;
-	    cont_event_context_window = window;
-	    kill_context = 0;
+	    cont_mouse_context = *foundc;
+	    cont_mouse_context_window = window;
+	    mdown_was_ctl = (e->modifiers & controlKey);
 	  } else
-	    cont_event_context = NULL;
+	    cont_mouse_context = NULL;
 	}
       }
     }
     break;
   case mouseUp:
-    saw_mup = 1;
-    if (!cont_event_context) {
+    if (!cont_mouse_context) {
       if (!saw_mdown) {
 	MrDequeue(osq);
       }
-    } else if (keyOk == cont_event_context) {
+    } else if (keyOk == cont_mouse_context) {
       *foundc = keyOk;
       if (*foundc) {
 	found = 1;
 	if (!check_only)
-	  cont_event_context = NULL;
+	  cont_mouse_context = NULL;
       }
     }
     break;
   case wheelEvt:
   case keyDown:
   case autoKey:
+  case keyUp:
     *foundc = keyOk;
     if (*foundc) {
       found = 1;
     }
     break;
-  case keyUp:
-    {
-      if (!cont_event_context) {
-	if (!saw_kdown) {
-	  MrDequeue(osq);
-	}
-      } else if (keyOk == cont_event_context) {
-	*foundc = keyOk;
-	if (*foundc)
-	  found = 1;
-	if (!check_only)
-	  cont_event_context = NULL;
-      }
-    }
-    break;
   }
 
-  if (found)
+  if (found) {
     memcpy(event, e, sizeof(EventRecord));
+
+    /* Preserve rightness (as opposed to leftness) of mouse clicks */
+    if ((e->what == mouseUp) && mdown_was_ctl)
+      event->modifiers |= controlKey;
+  }
 
   return found;
 }
@@ -859,8 +859,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   int we_are_front;
 #endif
 
-  saw_mup = 0; saw_mdown = 0; saw_kdown = 0;
-  kill_context = 0;
+  saw_mdown = 0; saw_kdown = 0;
 
   if (!event)
     event = &ebuf;
@@ -874,10 +873,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
   fprintf(history, "%lx %lx %lx\n",
   	  c, keyOk, cont_event_context);
 #endif
-
-  if (cont_event_context)
-    if (!StillDown())
-      kill_context = 1;
 
   /* Update events are supposed to happen after mouse events, etc.
      However, OS X refreshes window displays when WNE is called.  In
@@ -925,12 +920,11 @@ int MrEdGetNextEvent(int check_only, int current_only,
   }
 
   if (!skip_transfer)
-    if (!TransferQueue(0))
-      kill_context = 0;
+    TransferQueue(0);
     
-  if (cont_event_context)
-    if (!WindowStillHere(cont_event_context_window))
-      cont_event_context = NULL;
+  if (cont_mouse_context)
+    if (!WindowStillHere(cont_mouse_context_window))
+      cont_mouse_context = NULL;
   
 #ifdef SELF_SUSPEND_RESUME 
   /* Do fg/bg ourselves. See note at top. */
@@ -989,18 +983,17 @@ int MrEdGetNextEvent(int check_only, int current_only,
   }
   closure.which = which;
   
-  if (kill_context && !saw_mup)
-    cont_event_context = NULL;
-  
   if (found) {
     /* Remove intervening mouse/key events: */
     MrQueueElem *qq, *next;
     for (qq = first; qq && (qq != osq); qq = next) {
       next = qq->next;
       switch (qq->event.what) {
+      case mouseUp:
+	cont_mouse_context = NULL;
+	/* fallthrough... */
       case mouseMenuDown:
       case mouseDown:
-      case mouseUp:
       case wheelEvt:
       case keyDown:
       case keyUp:
@@ -1046,10 +1039,10 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (((event->where.v != last_mouse.v)
 	 || (event->where.h != last_mouse.h)
 	 || last_front_window != FrontWindow())
-	&& (!cont_event_context || (cont_event_context == keyOk))) {
+	&& (!cont_mouse_context || (cont_mouse_context == keyOk))) {
           
       if (which)
-	*which = (cont_event_context ? cont_event_context : keyOk);
+	*which = (cont_mouse_context ? cont_mouse_context : keyOk);
 	
       if (check_only) {
 #ifdef RECORD_HISTORY
@@ -1065,10 +1058,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
       event->what = nullEvent;
       event->when = TickCount();
-      if (cont_event_context) {
+      if (cont_mouse_context) {
 	/* Dragging... */
 	int mods;
 	mods = GetMods();
+	if (mdown_was_ctl)
+	  mods |= controlKey;
 	event->modifiers = mods | btnState;
 	event->message = 1;
 #ifdef RECORD_HISTORY
@@ -1430,7 +1425,7 @@ void wxmac_reg_globs(void)
 {
   wxREGGLOB(first);
   wxREGGLOB(last);
-  wxREGGLOB(cont_event_context);
+  wxREGGLOB(cont_mouse_context);
 }
 
 /***************************************************************************/

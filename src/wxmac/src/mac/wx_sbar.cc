@@ -310,6 +310,8 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
       int down;
       down = StillDown();
 	
+      wxTracking();
+
       if (thePart == kControlIndicatorPart) {
 	if (!down || wxHETTrackControl(cMacControl, startPt, TrackActionProcUPP)) {
 	  Bool horizontal = cStyle & wxHSCROLL;

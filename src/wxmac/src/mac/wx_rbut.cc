@@ -339,6 +339,7 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
       startPt.v = startV + SetOriginY; // port c.s.
       startPt.h = startH + SetOriginX;
       if (::StillDown()) {
+	wxTracking();
 	if (cMacControl)
 	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
 	else

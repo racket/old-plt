@@ -1058,21 +1058,27 @@ void wxFrame::LoadAccelerators(char* table) { } // Not Applicable for Mac platfo
 void wxFrame::Paint(void)
 {
   if (SetCurrentDC()) {
-    RgnHandle rgn, subrgn;
+    RgnHandle rgn, subrgn, noerasergn;
     rgn = NewRgn();
     if (rgn) {
       subrgn = NewRgn();
       if (subrgn) {
-	RGBColor save;
+	noerasergn = NewRgn();
+	if (noerasergn) {
+	  RGBColor save;
+	  
+	  SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
+	  AddWhiteRgn(subrgn, noerasergn);
+	  DiffRgn(rgn, subrgn, rgn);
+	  DiffRgn(rgn, noerasergn, rgn);
+	  EraseRgn(rgn);
+	  GetForeColor(&save);
+	  ForeColor(whiteColor);
+	  PaintRgn(subrgn);
+	  RGBForeColor(&save);
 
-	SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
-	AddWhiteRgn(subrgn);
-	DiffRgn(rgn, subrgn, rgn);
-	EraseRgn(rgn);
-	GetForeColor(&save);
-	ForeColor(whiteColor);
-	PaintRgn(subrgn);
-	RGBForeColor(&save);
+	  DisposeRgn(noerasergn);
+	}
 	DisposeRgn(subrgn);
       }
       DisposeRgn(rgn);

@@ -22,6 +22,7 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
  int			margin,
  Direction	direction,
  int         whitespace,
+ Bool        te_border,
  char*		windowName,
  int 		x,
  int			y,
@@ -34,6 +35,9 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
 {
   cWhitespace = whitespace;
   parentArea->SetMargin(margin, direction);
+  if (te_border) {
+    cPaintFocus = -1;
+  }
 }
 
 //=============================================================================
@@ -62,7 +66,7 @@ void wxRectBorder::Paint(void)
   if (SetCurrentDC()) {
     int clientWidth, clientHeight;
     Rect clientRect;
-    int margin;
+    int margin, disabled;
     wxArea *area;
     wxMargin m;
 
@@ -70,35 +74,56 @@ void wxRectBorder::Paint(void)
     ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
 
-    area = ParentArea();
-    m = area->Margin();
+    disabled = IsGray();
 
-    margin = m.Offset(wxTop) - cWhitespace;
-    if (margin > 0) {
-      ::PenSize(margin, margin);
-      ::MoveTo(clientRect.left, clientRect.top);
-      ::LineTo(clientRect.right - margin, clientRect.top);
-    }
+    if (cPaintFocus) {
+      InsetRect(&clientRect, 2, 2);
+      if (cPaintFocus < 0)
+	DrawThemeFocusRect (&clientRect, FALSE);
+      DrawThemeEditTextFrame(&clientRect, disabled ? kThemeStateInactive : kThemeStateActive);
+      if (cPaintFocus > 0)
+	DrawThemeFocusRect (&clientRect, TRUE);
+    } else {
+      RGBColor c;
 
-    margin = m.Offset(wxBottom) - cWhitespace;
-    if (margin > 0) {
-      ::PenSize(margin, margin);
-      ::MoveTo(clientRect.left, clientRect.bottom - margin);
-      ::LineTo(clientRect.right - margin, clientRect.bottom - margin);
-    }
+      area = ParentArea();
+      m = area->Margin();
 
-    margin = m.Offset(wxLeft) - cWhitespace;
-    if (margin > 0) {
-      ::PenSize(margin, margin);
-      ::MoveTo(clientRect.left, clientRect.top);
-      ::LineTo(clientRect.left, clientRect.bottom - margin);
-    }
+      if (!disabled) {
+	c.red = c.green = c.blue = 0x7FFF;
+      } else {
+	c.red = c.green = c.blue = 0xaFFF;
+      }
 
-    margin = m.Offset(wxRight) - cWhitespace;
-    if (margin > 0) {
-      ::PenSize(margin, margin);
-      ::MoveTo(clientRect.right - margin, clientRect.top);
-      ::LineTo(clientRect.right - margin, clientRect.bottom - margin);
+      RGBForeColor(&c);
+
+      margin = m.Offset(wxTop) - cWhitespace;
+      if (margin > 0) {
+	::PenSize(margin, margin);
+	::MoveTo(clientRect.left, clientRect.top);
+	::LineTo(clientRect.right - margin, clientRect.top);
+      }
+
+      margin = m.Offset(wxBottom) - cWhitespace;
+      if (margin > 0) {
+	::PenSize(margin, margin);
+	::MoveTo(clientRect.left, clientRect.bottom - margin);
+	::LineTo(clientRect.right - margin, clientRect.bottom - margin);
+      }
+
+      margin = m.Offset(wxLeft) - cWhitespace;
+      if (margin > 0) {
+	::PenSize(margin, margin);
+	::MoveTo(clientRect.left, clientRect.top);
+	::LineTo(clientRect.left, clientRect.bottom - margin);
+      }
+
+      margin = m.Offset(wxRight) - cWhitespace;
+      if (margin > 0) {
+	::PenSize(margin, margin);
+	::MoveTo(clientRect.right - margin, clientRect.top);
+	::LineTo(clientRect.right - margin, clientRect.bottom - margin);
+      }
     }
   }
 }
@@ -142,4 +167,14 @@ void wxRectBorder::ChangeToGray(Bool gray)
   }
 
   wxWindow::ChangeToGray(gray);
+}
+
+
+void wxRectBorder::PaintFocus(Bool on) 
+{
+  if (cPaintFocus) {
+    cPaintFocus = (on ? 1 : -1);
+    Paint();
+    RefreshIfUpdating();
+  }
 }

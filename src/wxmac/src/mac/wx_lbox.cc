@@ -327,6 +327,8 @@ void wxListBox::OnEvent(wxMouseEvent *event)
     if (event->rightDown)  // mflatt: right button is control-click
       modifiers += controlKey;
 
+    wxTracking();
+
     doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
     
     ReleaseCurrentDC();

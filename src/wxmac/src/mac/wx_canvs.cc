@@ -19,6 +19,7 @@
 #endif 
 #include "wxScrollArea.h"
 #include "wxBorderArea.h"
+#include "wxRectBorder.h"
 
 extern void MrEdQueuePaint(wxWindow *wx_window);
 
@@ -110,6 +111,12 @@ void wxCanvas::InitDefaults(void)
 
   wx_dc = new wxCanvasDC(this);
 
+  if (cStyle & wxCONTROL_BORDER) {
+    if (cStyle & wxBORDER)
+      cStyle -= wxBORDER;
+  }
+
+  /* Make wxBORDER before scroll bars, so that it's inside the scrollbar */
   if (cStyle & wxBORDER) {
     int direction = wxAll;
     if (cStyle & wxVSCROLL)
@@ -117,17 +124,23 @@ void wxCanvas::InitDefaults(void)
     if (cStyle & wxHSCROLL)
       direction -= wxBottom;
 
-    new wxBorderArea(this, 1, direction);
+    canvas_border = new wxBorderArea(this, 1, direction);
   }
 
-  if (cStyle & wxVSCROLL || cStyle & wxHSCROLL)
-    {
-      wxScrollData* scrollData;
-      scrollData = new wxScrollData;
-      cScroll = new wxScroll(this, scrollData);
-      new wxScrollArea(this, this, (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL));
-    }
-  
+  if (cStyle & wxVSCROLL || cStyle & wxHSCROLL) {
+    wxScrollData* scrollData;
+    scrollData = new wxScrollData;
+    cScroll = new wxScroll(this, scrollData);
+    new wxScrollArea(this, this, (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL));
+  }
+
+  /* Make wxCONTROL_BORDER after scroll bars, so that it's outside the scrollbar */  
+  if (cStyle & wxCONTROL_BORDER) {
+    int direction = wxAll;
+
+    canvas_border = new wxBorderArea(this, 3, direction, 0, TRUE);
+  }
+
   {
     wxWindow *p;
     p = GetParent();
@@ -139,10 +152,10 @@ void wxCanvas::InitDefaults(void)
   InitInternalGray();
 }
 
-void wxCanvas::AddWhiteRgn(RgnHandle rgn) 
+void wxCanvas::AddWhiteRgn(RgnHandle rgn, RgnHandle noerasergn) 
 {
   if (wxSubType(__type, wxTYPE_PANEL))
-    wxWindow::AddWhiteRgn(rgn);
+    wxWindow::AddWhiteRgn(rgn, noerasergn);
   else {
     int theRootX, theRootY, w, h;
     RgnHandle wrgn;
@@ -150,6 +163,8 @@ void wxCanvas::AddWhiteRgn(RgnHandle rgn)
     GetClientSize(&w, &h);
     if ((wrgn = NewRgn())) {
       SetRectRgn(wrgn, theRootX, theRootY, theRootX + w, theRootY + h);
+      if (cStyle & wxNO_AUTOCLEAR)
+	rgn = noerasergn;
       UnionRgn(rgn, wrgn, rgn);
       DisposeRgn(wrgn);
     }
@@ -628,6 +643,19 @@ Bool wxCanvas::WantsFocus(void)
   return !cHidden;
 }
 
+void wxCanvas::OnSetFocus(void)
+{
+  if (canvas_border)
+    canvas_border->cBorder->PaintFocus(TRUE);
+  wxWindow::OnSetFocus();
+}
+
+void wxCanvas::OnKillFocus(void)
+{
+  if (canvas_border)
+    canvas_border->cBorder->PaintFocus(FALSE);
+  wxWindow::OnSetFocus();
+}
 
 void wxCanvas::SetScrollPage(int dir, int val)
 {

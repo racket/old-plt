@@ -333,6 +333,7 @@ void wxApp::doMacMouseDown(void)
 	    theMacWxFrame->OnMenuClick();
 	}
 
+	wxTracking();
 	wxPrepareMenuDraw();
 	menuResult = MenuSelect(cCurrentEvent.where);
 	wxDoneMenuDraw();
@@ -353,12 +354,14 @@ void wxApp::doMacMouseDown(void)
       break;
     case inCollapseBox:
       {
+	wxTracking();
 	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inCollapseBox)))
 	  CollapseWindow(window, TRUE);
       }
 #ifdef OS_X
     case inToolbarButton:
       {
+	wxTracking();
 	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inToolbarButton))) {
 	  {
 	    wxFrame* theMacWxFrame;
@@ -737,7 +740,7 @@ void wxApp::doMacKeyUpDown(Bool down)
     theKeyEvent->keyUpCode = WXK_PRESS;
   } else {
     theKeyEvent->keyCode = WXK_RELEASE;
-    theKeyEvent->keyCode = key;
+    theKeyEvent->keyUpCode = key;
   }  
 
   {
@@ -1094,6 +1097,8 @@ void wxApp::doMacInDrag(WindowPtr window)
       oldx = theMacWxFrame->cWindowX;
       oldy = theMacWxFrame->cWindowY;
 
+      wxTracking();
+
       DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
 
       theMacWxFrame->wxMacRecalcNewSize(FALSE); // recalc new position only
@@ -1117,6 +1122,8 @@ void wxApp::doMacInGrow(WindowPtr window)
       long windSize;
 
       GetQDGlobalsScreenBits(&screenBits);
+
+      wxTracking();
       
       growSizeRect.top = 1; // minimum window height
       growSizeRect.left = 1; // minimum window width
@@ -1142,6 +1149,7 @@ void wxApp::doMacInGoAway(WindowPtr window)
   wxFrame* theMacWxFrame;
   theMacWxFrame = findMacWxFrame(window);
   if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
+    wxTracking();
     if ((!StillDown()) || (TrackGoAway(window, cCurrentEvent.where))) {
       Bool okToDelete;
       okToDelete = theMacWxFrame->OnClose();
@@ -1159,6 +1167,7 @@ void wxApp::doMacInZoom(WindowPtr window, short windowPart)
     wxFrame* theMacWxFrame;
     theMacWxFrame = findMacWxFrame(window);
     if (theMacWxFrame && theMacWxFrame->CanAcceptEvent()) {
+      wxTracking();
       if (TrackBox(window, cCurrentEvent.where, windowPart))
 	theMacWxFrame->Maximize(windowPart == inZoomOut);
     }

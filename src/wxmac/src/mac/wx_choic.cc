@@ -348,6 +348,7 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 
       if (::StillDown()) {
 	int trackResult;
+	wxTracking();
 	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
 	if (trackResult) {
 	  wxCommandEvent *commandEvent;

@@ -1692,7 +1692,7 @@ void wxWindow::FlushDisplay()
 }
 
 //-----------------------------------------------------------------------------
-void wxWindow::AddWhiteRgn(RgnHandle r)
+void wxWindow::AddWhiteRgn(RgnHandle r, RgnHandle er)
 {
   wxChildNode *node;
   wxWindow *c;
@@ -1703,7 +1703,7 @@ void wxWindow::AddWhiteRgn(RgnHandle r)
   for (node = cl->First(); node; node = node->Next()) {
     c = (wxWindow *)(node->Data());
     if (!c->cHidden)
-      c->AddWhiteRgn(r);
+      c->AddWhiteRgn(r, er);
   }
 }
 
@@ -1883,6 +1883,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   pos.v = (short)y + SetOriginY;
   pos.h = (short)x + SetOriginX;
   LocalToGlobal(&pos);
+  wxTracking();
   sel = ::PopUpMenuSelect(m, pos.v, pos.h, 0);
 
   ReleaseCurrentDC();

@@ -504,6 +504,17 @@ void wxCanvasDC::wxMacSetClip(void)
   }
 }
 
+static void HiliteMode()
+{
+  RGBColor col;
+  LMGetHiliteRGB(&col);
+  col.red = 0xFFFF - col.red;
+  col.green = 0xFFFF - col.green;
+  col.blue = 0xFFFF - col.blue;
+  PenMode(subPin);
+  RGBForeColor(&col);
+}
+
 //-----------------------------------------------------------------------------
 
 void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
@@ -533,7 +544,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	paint_brush_with_erase = 1;
       } else {
 	int log = (theBrushStyle == wxXOR ? patXor : patCopy);
-	if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
+	if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR) || (theBrushStyle == wxCOLOR))
 	  PenPat(GetBlackPattern());
 	else if (theBrushStyle == wxTRANSPARENT)
 	  PenPat(GetWhitePattern());
@@ -547,8 +558,12 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	
 	InstallColor(current_background_color, FALSE);
 	BackPat(GetWhitePattern());
-	InstallColor(current_brush->GetColour(), TRUE);
-	PenMode(log);
+	if (Colour && (theBrushStyle == wxCOLOR))
+	  HiliteMode();
+	else {
+	  InstallColor(current_brush->GetColour(), TRUE);
+	  PenMode(log);
+	}
 	paint_brush_with_erase = 0;
       }
     }
@@ -557,7 +572,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     {
       int pensize;
       int thePenWidth;
-      int thePenStyle;
+      int thePenStyle, origPenStyle;
       int log;
       wxBitmap *bm;
 
@@ -569,9 +584,11 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	PenSize(1, 1);
       
       thePenStyle = current_pen->GetStyle();
+      origPenStyle = thePenStyle;
       log = patCopy;
       switch (thePenStyle) {
       case wxXOR:
+      case wxCOLOR:
 	thePenStyle = wxSOLID;
 	log = patXor;
 	break;
@@ -613,6 +630,8 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	}
 	SetGWorld(saveport, savegd);
 	PenPat((Pattern *)p);
+	if (origPenStyle == wxCOLOR)
+	  origPenStyle = wxXOR;
       } else if (thePenStyle == wxSOLID)
 	PenPat(GetBlackPattern());
       else if (thePenStyle == wxTRANSPARENT)
@@ -632,10 +651,14 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	PenPat(GetBlackPattern());
       }
 
-      InstallColor(current_pen->GetColour(), TRUE);
       BackPat(GetWhitePattern());
       InstallColor(current_background_color, FALSE);
-      PenMode(log);
+      if (Colour && (origPenStyle == wxCOLOR))
+	HiliteMode();
+      else {
+	InstallColor(current_pen->GetColour(), TRUE);
+	PenMode(log);
+      }
     }
     break;
   case kTextTool:

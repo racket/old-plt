@@ -37,8 +37,6 @@
 				   args))))
 	(raise (make-url-exception s (current-continuation-marks))))))
 
-  ;; if the path is absolute, it just arbitrarily picks the first
-  ;; filesystem root.
   (define unixpath->path
     (letrec ([r (regexp "([^/]*)/(.*)")]
 	     [translate-dir
@@ -62,9 +60,16 @@
 	  [(string=? s "") ""]
 	  [(string=? s "/") (car (filesystem-root-list))]
 	  [(char=? #\/ (string-ref s 0))
-	    (build-path (car (filesystem-root-list))
-	      (build-relative-path
-		(substring s 1 (string-length s))))]
+	    (let* ([m (regexp-match r (substring s 1 (string-length s)))]
+		   [first-segment (cadr m)]
+		   [rest-segment (caddr m)]
+		   [root-list (filesystem-root-list)])
+	      (build-path
+		(if (member first-segment root-list)
+		  first-segment
+		  (car root-list))
+		(build-relative-path
+		  (substring s 1 (string-length s)))))]
 	  [else (build-relative-path s)]))))
 
   ;; scheme : str + #f

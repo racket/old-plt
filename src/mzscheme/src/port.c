@@ -5853,6 +5853,11 @@ file_position(int argc, Scheme_Object *argv[])
 			 "file-position: position change failed on stream (%e)",
 			 errno);
       }
+
+      if (SCHEME_INPORTP(argv[0])) {
+	/* Get rid of buffered data: */
+	((Scheme_FD *)((Scheme_Input_Port *)argv[0])->port_data)->bufcount = 0;
+      }
 #endif
     } else {
       if (wis) {
@@ -5908,6 +5913,8 @@ file_position(int argc, Scheme_Object *argv[])
       } else {
 	if (SCHEME_OUTPORTP(argv[0])) {
 	  p += ((Scheme_FD *)((Scheme_Output_Port *)argv[0])->port_data)->bufcount;
+	} else {
+	  p -= ((Scheme_FD *)((Scheme_Input_Port *)argv[0])->port_data)->bufcount;
 	}
       }
 #endif

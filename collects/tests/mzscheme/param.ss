@@ -398,6 +398,49 @@
 (arity-test parameter-procedure=? 2 2)
 (arity-test parameter? 1 1)
 
+;; ----------------------------------------
+
+(let ([ch (make-channel)]
+      [k-ch (make-channel)]
+      [p1 (make-parameter 1)]
+      [p2 (make-parameter 2)])
+  (parameterize ([p1 0])
+    (thread (lambda ()
+	      (channel-put ch (cons (p1) (p2))))))
+  (test '(0 . 2) channel-get ch)
+
+  (let ([send-k
+	 (lambda ()
+	   (parameterize ([p1 0])
+	     (thread (lambda ()
+		       (let/ec esc
+			 (channel-put ch
+				      ((let/cc k
+					 (channel-put k-ch k)
+					 (esc)))))))))])
+    (send-k)
+    (thread (lambda () ((channel-get k-ch) (let ([v (p1)]) (lambda () v)))))
+    (test 1 channel-get ch)
+    (send-k)
+    (thread (lambda () ((channel-get k-ch) p1)))
+    (test 0 channel-get ch))
+
+  (let ([send-k-param-in-thread
+	 (lambda ()
+	   (thread (lambda ()
+		     (parameterize ([p1 3])
+		       (let/ec esc
+			 (channel-put ch
+				      ((let/cc k
+					 (channel-put k-ch k)
+					 (esc)))))))))])
+    (send-k-param-in-thread)
+    (thread (lambda () ((channel-get k-ch) (let ([v (p1)]) (lambda () v)))))
+    (test 1 channel-get ch)
+    (send-k-param-in-thread)
+    (thread (lambda () ((channel-get k-ch) p1)))
+    (test 3 channel-get ch)))
+
 ; Test current-library-collection-paths?
 ; Test require-library-use-compiled?
 

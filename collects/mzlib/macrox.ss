@@ -15,3 +15,11 @@
 (define-macro recur 
   (lambda (name args . body) `(let ,name ,args ,@body)))
 
+; define a recursive value
+(define-macro rec
+  (lambda (x rest)
+    (if (symbol? x)
+	`(letrec ([,x ,rest])
+	   ,x)
+	(syntax-error 'rec "identifier must be a symbol" 
+		      (list 'rec x rest) x))))

@@ -686,7 +686,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
      whether it's ok to release a style that was provided to a
      text-layout object. */
 
-  {
+  if (qd_spacing) {
     atomic_timeout_t old;
 
     old = pre_scheme();
@@ -697,7 +697,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       style = *(ATSUStyle *)val;
     } else {
       Scheme_Object *new_key;
-      ATSUCreateAndCopyStyle((qd_spacing ? theATSUqdstyle : theATSUstyle), &style);
+      ATSUCreateAndCopyStyle(theATSUqdstyle, &style);
       atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
 				    angle, use_cgctx ? 1.0 : scale_y,
 				    qd_spacing);
@@ -708,6 +708,11 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     }
 
     post_scheme(old);
+  } else {
+    style = theATSUstyle;
+    atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
+				  angle, use_cgctx ? 1.0 : scale_y,
+				  qd_spacing);
   }
 
   END_TIME(style);

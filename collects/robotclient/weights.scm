@@ -316,19 +316,19 @@
 	
 
 
-  (define (is-robot-within? x y n)
-    (let ([max-y (+ y n)]
-          [max-x (+ x n)])
-      (let loop ([cur-y (- y n)])
-        (if (> cur-y max-y)
-            #f
-            (let loopx ([cur-x (- x n)])
-              (if (> cur-x max-x)
-                  (loop (+ 1 cur-y))
-                  (if (and (= 1 (get-robot (get-spot (board) x y)))
-                           (not (and (= x cur-x) (= y cur-y))))
-                      (begin (printf "Robot is within!~n") #t)
-                      (loopx (+ 1 cur-x)))))))))
+ ;  (define (is-robot-within? x y n)
+;     (let ([max-y (+ y n)]
+;           [max-x (+ x n)])
+;       (let loop ([cur-y (- y n)])
+;         (if (> cur-y max-y)
+;             #f
+;             (let loopx ([cur-x (- x n)])
+;               (if (> cur-x max-x)
+;                   (loop (+ 1 cur-y))
+;                   (if (and (= 1 (get-robot (get-spot (board) x y)))
+;                            (not (and (= x cur-x) (= y cur-y))))
+;                       (begin (printf "Robot is within!~n") #t)
+;                       (loopx (+ 1 cur-x)))))))))
   
 
 	(define-syntax wall?

@@ -1,11 +1,11 @@
 (unit/sig (break)
   (import mzlib:core^
-          [mred : mred^]
+          [m : mred^]
           [marks : stepper:marks^]
           [annotate : stepper:annotate^]
           [pc : mzlib:print-convert^]
           [pp : mzlib:pretty-print^]
-          [zodiac : zodiac:system^]
+          [z : zodiac:system^]
           [utils : stepper:cogen-utils^]
           [e : zodiac:interface^]
           [fw : framework^])
@@ -84,21 +84,25 @@
                  (semaphore-post debugger-available-semaphore)
                  (super-can-close?))
                (begin 
-                 (mred:message-box "oops!" (string-append "You cannot close the debugger window "
-                                                          "while a breakpoint is waiting.")
-                                   #f '(ok))
+                 (m:message-box "oops!" (string-append "You cannot close the debugger window "
+                                                       "while a breakpoint is waiting.")
+                                #f '(ok))
                  #f)))])
       (sequence (super-init "Debugger" #f
                             (fw:preferences:get 'debugger-width)
                             (fw:preferences:get 'debugger-height)))))
     
-  (define drscheme-eventspace (mred:current-eventspace))
+  (define drscheme-eventspace (m:current-eventspace))
 
+  ;this solution is clearly unacceptable for anything other than testing:
+  ;(define drscheme-frame-list null) 
+  
 ;  ; add the get-debugger-frame and set-debugger-frame! methods to the drscheme frame
 ;  (drscheme:get/extend:extend-unit-frame
 ;   (lambda (super%)
 ;     (class super% args
 ;       (sequence (apply super-init args))
+;       (sequence (set! drscheme-frame-list (cons this drscheme-frame-list))) ; see above ^
 ;       (private [debugger-frm #f])
 ;       (public
 ;         [debugger-frame
@@ -118,8 +122,8 @@
   
   (define (create-debugger-prefs-panel parent)
     (local
-        ((define cbox-panel (make-object mred:vertical-panel% parent))
-         (define debugger-checkbox (make-object mred:check-box% "Enable Lightweight Debugger" cbox-panel 
+        ((define cbox-panel (make-object m:vertical-panel% parent))
+         (define debugger-checkbox (make-object m:check-box% "Enable Lightweight Debugger" cbox-panel 
                                      ankle-pref-callback null)))
       (send debugger-checkbox set-value (fw:preferences:get 'ankle-annotation))
       cbox-panel))
@@ -164,15 +168,16 @@
   
   (define (display-bindings frame-info)
     (send binding-listbox clear)
+    (send interaction-canvas set-editor #f)
     (if (frame-info-full? frame-info)
         (let ([binding-names (map (function:compose
                                    (lambda (binding)
-                                     (ccond [(zodiac:binding? binding)
-                                             (zodiac:binding-orig-name binding)]
+                                     (ccond [(z:binding? binding)
+                                             (z:binding-orig-name binding)]
                                             [(box? binding)
                                              (if (null? (unbox binding))
                                                  (e:internal-error #f "empty slot in binding list")
-                                                 (zodiac:varref-var (car (unbox binding))))]))
+                                                 (z:varref-var (car (unbox binding))))]))
                                    marks:mark-binding-binding)
                                   (frame-info-bindings frame-info))])
           (send binding-listbox enable #t)
@@ -190,23 +195,46 @@
   
   (define debugger-frame (make-object debugger-frame%))
   (define area-container (send debugger-frame get-area-container))
-  (define button-panel (make-object mred:horizontal-panel% area-container))
+  (define button-panel (make-object m:horizontal-panel% area-container))
   (send button-panel stretchable-height #f)
-  (make-object mred:button% "continue" button-panel (lambda (a b) (continue (void))))
-  (define listbox-panel (make-object mred:horizontal-panel% area-container))
-  (define level-listbox (make-object mred:list-box% "level" () listbox-panel level-listbox-callback '(single)))
-  (define binding-listbox (make-object mred:list-box% "bindings" () listbox-panel binding-listbox-callback '(single)))
-  (define interaction-canvas (make-object mred:editor-canvas% area-container))
+  (make-object m:button% "continue" button-panel (lambda (a b) (continue (void))))
+  (define listbox-panel (make-object m:horizontal-panel% area-container))
+  (define level-listbox (make-object m:list-box% "level" () listbox-panel level-listbox-callback '(single)))
+  (define binding-listbox (make-object m:list-box% "bindings" () listbox-panel binding-listbox-callback '(single)))
+  (define interaction-canvas (make-object m:editor-canvas% area-container))
   (define debugger-displayed-value-text #f)
 
+  (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
+  (define debug-highlight-color (make-object color% 255 255 255))
+  (send test-dc try-color (make-object color% 145 211 219) debug-highlight-color)
+  (define clear-highlight-thunk #f)
+  
+  (define (find-location-text zodiac)
+    (let* ([source (z:location-file (z:zodiac-start zodiac))])
+      (if (is-a? source fw:text:basic%)
+          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
+                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
+            (set! clear-highlight-thunk (send source highlight-range start-offset finish-offset debug-color))
+            "Can't copy text yet")
+          (string-append "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac)))))
+    
+  (define (find/highlight-location-text zodiac)
+    (when clear-highlight-thunk (clear-highlight-thunk))
+    (let* ([source (z:location-file (z:zodiac-start zodiac))])
+      (if (is-a? source fw:text:basic%)
+          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
+                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
+            (set! clear-highlight-thunk (send source highlight-range start-offset finish-offset debug-color))
+            "Can't copy text yet")
+          (string-append "~a : ~a" (z:location-offset (z:zodiac-start zodiac)) (z:location-file (z:zodiac-start zodiac))))))
   
   (define (break)
     (semaphore-wait debugger-available-semaphore)
     (let ([break-info-list (continuation-mark-set->list (current-continuation-marks) 
                                                         annotate:debug-key)])
       (parameterize
-          ([mred:current-eventspace drscheme-eventspace])
-        (mred:queue-callback 
+          ([m:current-eventspace drscheme-eventspace])
+        (m:queue-callback 
          (lambda ()
            (send debugger-frame show #t)
            (enable-debugger)
@@ -216,7 +244,7 @@
                                                      (parameterize ([print-struct #t])
                                                        (write v sp))
                                                      (get-output-string sp)))
-                                       (function:compose zodiac:zodiac-start
+                                       (function:compose z:zodiac-start
                                                          frame-info-source))
                                       frame-info-list)])
              (send level-listbox clear)

@@ -658,7 +658,7 @@
 
 	(record-analyzed-file 
 	 path+file
-	 (lambda () (port-for-included-unit))
+	 (make-file-thunk-thunk file)
 	 (lambda ()
 	   (set! regenerating-ftype ftype)
 	   (ok-ftype ftype)

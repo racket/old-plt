@@ -157,6 +157,7 @@
    mrspidey:add-summary-handler
    mrspidey:progress
    mrspidey:progress-handler
+   make-file-thunk-thunk	
    record-analyzed-file
    record-analyzed-file-hook
     

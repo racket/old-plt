@@ -37,9 +37,16 @@
   (unit/sig mrspidey:interaction^
     (import 
       [mred : mred^]
+      framework^	
       [zodiac : zodiac:system^]
       mzlib:file^)
     (include "handlers.ss")
+
+    (define (make-file-thunk-thunk filename)   	
+      (lambda () 
+ 	(let ([txt (make-object mred:text%)])
+ 	  (send txt load-file filename)
+	  (gui-utils:read-snips/chars-from-buffer txt))))
 
     (mrspidey:error-handler
       (case-lambda
@@ -72,7 +79,6 @@
       mred^
       framework^
       mrspidey-gui^)
-    ; (version:add-spec 'sd 1) - removed by PAS
     (lambda (frame)
       (let* ( [edit (ivar frame definitions-text)]
               [name (send edit get-filename)])
@@ -153,7 +159,7 @@
 
 	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
-		       MRED ZODIAC
+		       MRED FRAMEWORK ZODIAC
 		       (MZLIB file))]
 	 [SBA : mrspidey:sba^
 	      (mrspidey:sba@ 
@@ -163,7 +169,6 @@
 	       (MZLIB file)
 	       (MZLIB string)
 	       MRED	
-	       FRAMEWORK
 	       ZODIAC)]
 	 [GUI : mrspidey-gui^
 	      (mrspidey-gui@ 
@@ -181,13 +186,6 @@
 	       (mrspidey-tool@ 
 		MRED FRAMEWORK GUI)])
    (export)))
-
-;; (printf "tool@ defined~n")
-
-;; ----------------------------------------------------------------------
-
-
-
 
 
 

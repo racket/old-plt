@@ -21,8 +21,6 @@
    mrspidey:CDL^
    mrspidey:interaction^
    mrspidey:languages^
-   (mred : mred^)
-   framework^
    (zodiac : zodiac:system^)
    (zodiac : mrspidey:zodiac^)
    mrspidey:mzlib:function^
@@ -40,11 +38,7 @@
 				   filename (current-directory))))
 
 	 ; return a thunk which produces thunk for zodiac:read*
-	 (let ([txt (make-object mred:text%)])
-	   (send txt load-file filename)
-	   (lambda ()
-	     (gui-utils:read-snips/chars-from-text txt)))))))
-	    
+	 (make-file-thunk-thunk filename)))))
 
   (define (zodiac:read* thunk-thunk filename)
     (let* ( [default-loc (zodiac:make-location 1 1 0 filename)]                      

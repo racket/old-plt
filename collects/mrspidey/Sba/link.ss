@@ -24,7 +24,6 @@
   (FILE : mzlib:file^)
   (STRING : mzlib:string^)
   (MRED : mred^)
-  (FRAMEWORK : framework^)
   (ZODIAC : zodiac:system^))
  (link
   [ZAUX : mrspidey:zodiac^ 
@@ -52,7 +51,7 @@
 	INTERACTION FUNCTION PRETTY-PRINT FILE STRING)]
   [LOADEXPAND : mrspidey:loadexpand^
 	      ((require-relative-library-unit/sig "ldexpand.ss")
-	       CDL INTERACTION LANGUAGES MRED FRAMEWORK ZODIAC ZAUX 
+	       CDL INTERACTION LANGUAGES MRED ZODIAC ZAUX 
 	       FUNCTION PRETTY-PRINT FILE STRING)]
   [HASH : mrspidey:hash^
 	((require-relative-library-unit/sig "hash.ss")

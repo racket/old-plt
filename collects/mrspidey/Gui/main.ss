@@ -203,15 +203,20 @@
 
       [open-analyzed-file-choice
         (lambda ()
-          (let ([choice
+          (let* ([sorted-files
+		  (quicksort (map fileinfo-filename fileinfo*) string<?)]
+		 [raw-choice
                   (get-choices-from-user
-                    "Open Unit"
-                    "Select referenced unit file to open"
-                    (quicksort (map fileinfo-filename fileinfo*) string<?)
-                    #f '() '(single))])
-            (when (string? choice)
+		   "Open Unit"
+		   "Select referenced unit file to open"
+		   sorted-files
+		   #f '() '(single))]
+		 [choice
+		  (if raw-choice ; list containing index of chosen file
+		      (list-ref sorted-files (car raw-choice))
+		      #f)])
+            (when choice
               (open-fileinfo (filename->fileinfo choice) #t))))]
-
       [open-fileinfo
        (match-lambda*
         [((and fi ($ fileinfo filename frame)) show)

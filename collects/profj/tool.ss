@@ -738,7 +738,7 @@
                     (values syntax-list 1 #t)
                     (values (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f) 1 #t)))))
           (define (remove-requires syn)
-            (syntax-case syn (begin)
+            (syntax-case* syn (begin require) (lambda (r1 r2) (eq? (syntax-e r1) (syntax-e r2)))
               ((begin (require x ...) exp1 exp ...) (syntax (begin exp1 exp ...)))
               (else syn)))
           

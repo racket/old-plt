@@ -12,6 +12,11 @@
   (define interaction-msgs (make-parameter null))
   (define execution-msgs (make-parameter null))
   (define file-msgs (make-parameter null))
+  (define expected-error-messages (make-parameter null))
+
+  (provide java-values-equal?)
+  (define (java-values-equal? v1 v2)
+    (java-equal? v1 v2 null null))
   
   ;java-equal?: 'a 'a (list 'a) (list 'a)-> bool
   (define (java-equal? v1 v2 visited-v1 visited-v2)
@@ -44,6 +49,7 @@
           ((and (not (object? v1)) (not (object? v2))) (equal? v1 v2))
           (else #f))))
   
+  ;array->list: java-array -> (list 'a)
   (define (array->list v)
     (letrec ((len (send v length))
              (build-up
@@ -54,9 +60,6 @@
                           (build-up (add1 c)))))))
       (build-up 0)))
   
-  (provide java-values-equal?)
-  (define (java-values-equal? v1 v2)
-    (java-equal? v1 v2 null null))
   
   ;already-seen?: 'a 'a (list 'a) (list 'a)-> bool
   (define (already-seen? v1 v2 visited-v1 visited-v2)
@@ -81,11 +84,14 @@
                   (with-handlers 
                       ([exn?
                         (lambda (exn)
-                          (unless (eq? val 'error)
-                            (interaction-errors (add1 (interaction-errors)))
-                            (interaction-msgs (cons
-                                               (format "Test ~a: Exception raised for ~a : ~a"
-                                                       msg ent (exn-message exn)) (interaction-msgs)))))])
+                          (cond 
+                            ((and (eq? val 'error) (report-expected-error-messages))
+                             (expected-error-messages (cons (cons msg (exn-message exn)) (expected-error-messages))))
+                            ((not (eq? val 'error))
+                             (interaction-errors (add1 (interaction-errors)))
+                             (interaction-msgs (cons
+                                                (format "Test ~a: Exception raised for ~a : ~a"
+                                                        msg ent (exn-message exn)) (interaction-msgs))))))])
                     (let ((new-val (eval `(begin
                                             (require (lib "class.ss")
                                                      (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
@@ -139,17 +145,19 @@
                                            ,(compile-interactions st st type-recs level)))))
                          val)))
           (interact-internal level in vals msg type-recs)))))
-
   
   (define (execute-test defn level error? msg)
     (let ((st (open-input-string defn)))
       (with-handlers
           ([exn?
             (lambda (exn)
-              (unless error?
-                (execution-errors (add1 (execution-errors)))
-                (execution-msgs (cons
-                                 (format "Test ~a : Exception-raised: ~a" msg (exn-message exn)) (execution-msgs)))))])
+              (cond
+                ((and error? (report-expected-error-messages))
+                 (expected-error-messages (cons (cons msg (exn-message exn)) (expected-error-messages))))
+                ((not error?)
+                 (execution-errors (add1 (execution-errors)))
+                 (execution-msgs (cons
+                                  (format "Test ~a : Exception-raised: ~a" msg (exn-message exn)) (execution-msgs))))))])
         (input-port (lambda () (open-input-string defn)))
         (eval-modules (compile-java 'port 'port level #f st st)))))
   
@@ -203,6 +211,19 @@
          (apply append
                 (map compilation-unit-code modules))))
   
+  ;prepare-for-tests: String -> void
+  (define (prepare-for-tests lang-level)
+    (printf "Running tests for ~a~n" lang-level)
+    (interaction-errors 0)
+    (interaction-msgs null)
+    (execution-errors 0)
+    (execution-msgs null)
+    (file-errors 0)
+    (file-msgs null))
+  
+  (define report-expected-error-messages (make-parameter #f))
+  
+  ;report-test-results: -> void
   (define (report-test-results)
     (when (> (interaction-errors) 0)
       (printf "~a Interaction errors occurred~n" (interaction-errors))
@@ -216,8 +237,12 @@
       (printf "~a file errors occurred~n" (file-errors))
       (for-each (lambda (m) (printf "~a~n" m)) (file-msgs))
       (newline))
+    (when (report-expected-error-messages)
+      (printf "Received these expected error messages:~n")
+      (for-each (lambda (m) (printf "Error for test ~a : ~a~n" (car m) (cdr m))) (expected-error-messages)))
     (printf "Tests completed~n"))
   
-  (provide interact-test execute-test interact-test-java-expected file-test report-test-results run-test)
+  (provide interact-test execute-test interact-test-java-expected file-test run-test 
+           report-test-results prepare-for-tests report-expected-error-messages)
   )
         

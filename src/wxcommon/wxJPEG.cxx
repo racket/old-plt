@@ -38,6 +38,7 @@ extern "C" { typedef void (*JPEG_ERROR_F_PTR)(j_common_ptr info); }
 
 static wxColor *the_color;
 extern void wxmeError(const char *e);
+extern int wxGetPreference(const char *name, char *res, long len);
 
 static void draw_scanline(JSAMPROW row, int cols, int rownum, int step, JSAMPARRAY colormap, wxMemoryDC *dc,
 			  int mono)
@@ -726,6 +727,31 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
        png_set_background(png_ptr, &my_background,
 			  PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
      }
+   }
+
+   if (bg) {
+     double gamma, screen_gamma;
+     char *gamma_str;
+     char buf[30];
+
+
+     if (wxGetPreference("gamma", buf, 30)) {
+       screen_gamma = (double)atof(buf);
+     } else if ((gamma_str = getenv("SCREEN_GAMMA"))) {
+       screen_gamma = (double)atof(gamma_str);
+     } else {
+       /* Guess */
+#ifdef wx_mac
+      screen_gamma = 1.7;  /* A good guess for Mac systems */
+#else
+      screen_gamma = 2.0; /* A good guess for a PC monitor */
+#endif
+    }
+
+     if (png_get_gAMA(png_ptr, info_ptr, &gamma))
+       png_set_gamma(png_ptr, screen_gamma, gamma);
+     else
+       png_set_gamma(png_ptr, screen_gamma, 0.45455);
    }
 
    if (w_mask && !is_mono) {

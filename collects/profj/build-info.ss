@@ -318,7 +318,7 @@
                    
                    (valid-inherited-methods? (cons super-record iface-records)
                                              (append (if (null? (header-extends info))
-                                                         (make-name (make-id "Object" #f) null #f)
+                                                         (list (make-name (make-id "Object" #f) null #f))
                                                          (header-extends info))
                                                      (header-implements info))
                                              level)

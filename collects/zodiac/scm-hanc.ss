@@ -311,11 +311,6 @@
 	    (signature-elements
 	      (expand-expr expr env attributes sig-vocab))))))))
 
-;(apply append
-;	      (map (lambda (s)
-;		     (expand-expr s env attributes sig-element-vocab))
-;		(expose-list expr)))))))))
-
 (define convert-to-prim-format
   (opt-lambda (sig-elements (prefix #f))
     (convert-to-prim-format-helper sig-elements
@@ -385,11 +380,6 @@
 	      (signature-elements
 		(expand-expr expr env attributes sig-vocab)))))))))
 
-;	      (apply append
-;		(map (lambda (s)
-;		       (expand-expr s env attributes sig-element-vocab))
-;		  (expose-list expr))))))))))
-
 ; --------------------------------------------------------------------
 
 (define create-prim-exports
@@ -443,10 +433,8 @@
 		(expand-expr sig env attributes sig-vocab)))))
 	(else
 	  (explode-signature-elements
-	    (apply append
-	      (map (lambda (s)
-		     (expand-expr s env attributes sig-element-vocab))
-		(expose-list expr)))))))))
+	    (signature-elements
+	      (expand-expr expr env attributes sig-vocab))))))))
 
 ; --------------------------------------------------------------------
 

@@ -34,6 +34,8 @@ class wxChoice: public wxbChoice
 	int			valuebase;			// ""
 	wxFont*		valueFont;
 	short		PopUpID;			// Mac Menu Mgr ID - never reused I hope
+        ControlHandle	cMacControl;
+        
  public:
 
   wxChoice (void);

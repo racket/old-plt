@@ -29,6 +29,10 @@
 #endif
 
 /* 
+   The restrictions given below are not in force for Appearance Manager
+   code.  Accordingly, I'm rewriting the carbon version to use the 
+   new routines. - JBC, 2001-09
+   
    The Mac ctl manager routine for popup menus has a problem or two
    1. It appears that you can only popup menus that are resource based.
    This makes it hard for the running program to append items.
@@ -146,7 +150,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 		maxdfltw = 60;
 	}
 
-	GetTextExtent("Test", &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
+	GetTextExtent("Test", &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
 	maxdflth = (int)fHeight;
 	valuebase = (int)(fDescent + fLeading);
 
@@ -163,7 +167,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	Str255 temp;
 	for (n = 0; n < N; n++) {
 		// attempt to size control by width of largest string
-		GetTextExtent(Choices[n], &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
+		GetTextExtent(Choices[n], &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
 		w = (int)fWidth;
 		h = (int)fHeight;
 		maxdfltw = max(w, maxdfltw);
@@ -209,7 +213,17 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	SetSelection(0);
 	//DrawChoice(TRUE);
 
-	
+#ifdef OS_X
+        OSErr err;
+        Rect r = ValueRect;
+        ::OffsetRect(&r,SetOriginX,SetOriginY);
+        err = ::CreatePopupButtonControl(GetWindowFromPort(cMacDC->macGrafPort()),&r,NULL,-12345,
+                                         FALSE,0,0,normal,&cMacControl);
+        err = ::SetControlData(cMacControl,kControlNoPart,kControlPopupButtonOwnedMenuRefTag,sizeof(MenuRef),(void *)(&hDynMenu));
+        ::SetControlMinimum(cMacControl,1);
+        ::SetControlMaximum(cMacControl,no_strings);
+#endif
+        
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
 
@@ -286,6 +300,9 @@ void wxChoice::DrawChoice(Bool active)
 		//::DrawString(sTitle);
 	}
 	
+#ifdef OS_X
+        ::Draw1Control(cMacControl);
+#else        
 	Rect r = ValueRect;
         OffsetRect(&r,SetOriginX,SetOriginY);
 	::InsetRect(&r, -1, -1);
@@ -340,6 +357,7 @@ void wxChoice::DrawChoice(Bool active)
 		s[i] = 'É';
 	::DrawText(s, 1, i);
 	//DrawString(s);
+#endif
 }
 
 
@@ -404,6 +422,13 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		SetCurrentDC(); // put new origin at (0, 0)
 	}
 
+#ifdef OS_X
+        if (dW || dH || dX || dY) {
+            Rect r = ValueRect;
+            ::OffsetRect(&r,SetOriginX,SetOriginY);
+            ::MoveControl(cMacControl,r.left,r.top);
+        }
+#endif                 
 #if 0
 	if (dW || dH || dX || dY)
 	{
@@ -441,13 +466,31 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 		SetCurrentDC();
 	
 		int	newsel;
+#ifdef OS_X
+		int startH, startV;
+		event->Position(&startH, &startV); // client c.s.
+
+		Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+
+		int trackResult;
+
+
+		if (::StillDown()) {
+                    trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
+                    if (trackResult == kControlMenuPart) {
+                        newsel = ::GetControlValue(cMacControl);
+                        wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+                        ProcessCommand(commandEvent);
+                    }
+                }
+#else                
 		Point pos = {ValueRect.top + SetOriginY, ValueRect.left + SetOriginX};
 		LocalToGlobal(&pos);
                 // Rect r = TitleRect;
                 // OffsetRect(&r,SetOriginX,SetOriginY);
 		// if (sTitle) ::InvertRect(&r);
 		::InsertMenu(hDynMenu, -1);
-		::CalcMenuSize(hDynMenu);
+		::CalcMenuSize(hDynMenu);+
 		newsel = ::PopUpMenuSelect(hDynMenu, pos.v, pos.h, selection+1);
 		// if (sTitle) ::InvertRect(&r);
 		::DeleteMenu(PopUpID);
@@ -472,6 +515,7 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 			}
 		}
 		DrawChoice(TRUE);
+#endif        
 	}
 }
 
@@ -487,6 +531,10 @@ void wxChoice::Append (char *Item)
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
   ::SetMenuItemText(hDynMenu, no_strings + 1, s);
   no_strings++;
+#if OS_X
+  ::SetControlMinimum(cMacControl,1);
+  ::SetControlMaximum(cMacControl,no_strings);
+#endif
   //ReCalcRect();
   Paint();
 }
@@ -498,6 +546,10 @@ void wxChoice::Clear (void)
 		::DeleteMenuItem(hDynMenu, 1);
 	no_strings = 0;
 	selection = 0;
+#ifdef OS_X
+  ::SetControlMinimum(cMacControl,0);
+  ::SetControlMaximum(cMacControl,0);        
+#endif
   Paint();
 }
 
@@ -511,13 +563,17 @@ void wxChoice::SetSelection (int n)
 {
 	if ((n < 0) || (n >= no_strings))
 	  return;
-	
+
+#ifndef OS_X	
 #ifdef Checkem
 	::CheckMenuItem(hDynMenu, selection+1, FALSE);
 	::CheckMenuItem(hDynMenu, n+1, TRUE);
 #endif
+#endif
 	selection = n;
+#ifndef OS_X        
 	DrawChoice(TRUE);
+#endif        
 }
 
 int wxChoice::FindString (char *s)

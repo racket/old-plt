@@ -48,7 +48,7 @@
            [tacked-arrows (+ parents-tacked-arrows children-tacked-arrows)])
       (when (< tacked-arrows max-arrows)
         (make-object menu-item%
-          (strcst:string-constant mrflow-popup-menu-tack-all-arrows)
+          (strcst:string-constant snips-and-arrows-popup-menu-tack-all-arrows)
           menu
           (lambda (item event)
             ; remove all (possibly untacked) arrows and add all arrows, tacked.
@@ -64,11 +64,40 @@
             (saav:invalidate-bitmap-caches snips-and-arrows-gui-state))))
       (when (> tacked-arrows 0)
         (make-object menu-item%
-          (strcst:string-constant mrflow-popup-menu-untack-all-arrows)
+          (strcst:string-constant snips-and-arrows-popup-menu-untack-all-arrows)
           menu
           (lambda (item event)
             (saav:remove-arrows snips-and-arrows-gui-state label 'all #t)
             (saav:invalidate-bitmap-caches snips-and-arrows-gui-state))))))
+  
+  ; gui-state -> boolean
+  ; User deletions don't mesh well with tool-inserted snips, especially when the
+  ; user tries to delete snips inserted by the tool.  We could check to see if the
+  ; user deletes any of our snips, but then keeping track of that rapidely becomes
+  ; a mess.  And then it wouln't interact well with the undo feature: undoing the
+  ; user-initiated deletion of tool-inserted snips would make tool-inserted snips
+  ; reappear even after the analysis was finished.
+  ; Even insertions cause problems: a user might insert something while our snips
+  ; are present, then remove all the snips, then undo the insertion: this would remove
+  ; stuff at the position where the inserted something initially was, not at the
+  ; position where the inserted something currently is, thereby changing "undo" into
+  ; "delete the wrong stuff".
+  ; Conclusion: we disallow user insertion and deletion while our snips are displayed
+  ; (in that editor).
+  (define (is-action-allowed? snips-and-arrows-gui-state source)
+    (if (saav:snips-and-arrows-currently-running? snips-and-arrows-gui-state)
+        (if (saav:is-user-action? snips-and-arrows-gui-state)
+            (if (saav:snips-currently-displayed-in-source? snips-and-arrows-gui-state source)
+                (begin
+                  (message-box (strcst:string-constant snips-and-arrows-user-action-disallowed-title)
+                               (strcst:string-constant snips-and-arrows-user-action-disallowed)
+                               #f '(ok))
+                  #f)
+                (begin
+                  (saav:during-user-action snips-and-arrows-gui-state)
+                  #t))
+            #t)
+        #t))
   
   ; ... see below ... -> (values (label -> void) mixin mixin)
   ; Ouch...
@@ -126,18 +155,18 @@
        ; drscheme:unit:add-to-program-editor-mixin mixin
        (lambda (super%)
          (class super%
-           (rename [super-after-insert after-insert])
+           (rename [super-can-insert? can-insert?])
            ; exact-non-negative-integer exact-non-negative-integer -> void
-           (define/override (after-insert start len)
-             (super-after-insert start len)
-             (saav:after-user-action snips-and-arrows-gui-state this start len))
+           (define/override (can-insert? start len)
+             (and (is-action-allowed? snips-and-arrows-gui-state this)
+                  (super-can-insert? start len)))
            
-           (rename [super-after-delete after-delete])
+           (rename [super-can-delete? can-delete?])
            ; exact-non-negative-integer exact-non-negative-integer -> void
-           (define/override (after-delete start len)
-             (super-after-delete start len)
-             (saav:after-user-action snips-and-arrows-gui-state this start (- len)))
-           
+           (define/override (can-delete? start len)
+             (and (is-action-allowed? snips-and-arrows-gui-state this)
+                  (super-can-delete? start len)))
+
            (super-instantiate ())
            ))
        
@@ -185,16 +214,22 @@
            ; mouse-event% -> void
            (define/override (on-event event)
              (cond
-               [(not (saav:text-modified? snips-and-arrows-gui-state)) (super-on-event event)]
+               [(not (saav:snips-and-arrows-currently-running? snips-and-arrows-gui-state))
+                (super-on-event event)]
                [(and (send event button-down? 'right)
                      (let-values ([(pos editor) (get-drscheme-pos-and-editor event this)])
                        (if pos
-                           (saav:get-related-label-from-drscheme-pos-and-source
-                            snips-and-arrows-gui-state pos editor)
+                           (let ([label (saav:get-related-label-from-drscheme-pos-and-source
+                                         snips-and-arrows-gui-state pos editor)])
+                             (if label
+                                 (cons label editor)
+                                 #f))
                            #f)))
                 =>
-                (lambda (label)
-                  (let ([menu (make-object popup-menu%)])
+                (lambda (label&editor)
+                  (let ([menu (make-object popup-menu%)]
+                        [label (car label&editor)]
+                        [editor (cdr label&editor)])
                     ; SNIPS
                     (let ([create-snips-menu-item
                            (lambda (snip-type)
@@ -231,6 +266,13 @@
                           (strcst:string-constant cs-rename-id)
                           menu
                           new-name-callback)))
+                    ; HIDE ALL SNIPS
+                    (when (saav:snips-currently-displayed-in-source? snips-and-arrows-gui-state editor)
+                      (make-object menu-item%
+                        (strcst:string-constant snips-and-arrows-hide-all-snips-in-editor)
+                        menu
+                        (lambda (item event)
+                          (saav:remove-all-snips-in-source snips-and-arrows-gui-state editor))))
                     
                     (let-values ([(x y) (dc-location-to-editor-location (send event get-x) (send event get-y))])
                       (send (get-admin) popup-menu menu x y))

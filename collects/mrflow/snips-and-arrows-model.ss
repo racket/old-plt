@@ -14,6 +14,8 @@
 
 (module snips-and-arrows-model mzscheme
   (require
+   (lib "etc.ss") ; for opt-lambda
+   
    (prefix cst: "constants.ss")
    ;"set-list.ss"
    "set-hash.ss"
@@ -36,21 +38,19 @@
    register-label-with-gui ; gui-model-state label -> void
    (rename get-new-pos-from-label get-position-from-label) ; gui-model-state label -> exact-non-negative-integer
    user-resize-label ; gui-model-state label exact-integer -> (values non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer)
-   for-each-label ; gui-model-state (label -> void) -> void
-   
-   after-user-action ; gui-model-state exact-non-negative-integer exact-non-negative-integer -> void
+   for-each-label-in-source ; gui-model-state top (label -> void) -> void
    
    add-arrow ; gui-model-state label label boolean -> void
    remove-arrows ; gui-model-state label (union symbol boolean) boolean -> void
+   remove-all-arrows ; gui-model-state -> void
    for-each-arrow ; gui-model-state (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean -> void) -> void
    get-parents-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
    get-children-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
    
    label-has-snips-of-this-type? ; gui-model-state label symbol -> boolean
+   snips-currently-displayed-in-source? ; gui-model-state top -> boolean
    add-snips ; gui-model-state label symbol non-negative-exact-integer -> non-negative-exact-integer
    remove-inserted-snips ; gui-model-state label symbol -> (value non-negative-exact-integer non-negative-exact-integer)
-   
-   remove-all-snips-and-arrows ; gui-model-state -> (assoc-setof top (listof (cons non-negative-exact-integer non-negative-exact-integer)))
    )
   
   ; DATA STRUCTURES
@@ -81,11 +81,12 @@
                                  starting-arrows
                                  ending-arrows))
   
-  ; (assoc-setof label label-gui-data) (assoc-setof non-negative-exact-integer label)
+  ; (assoc-setof label label-gui-data) (assoc-setof non-negative-exact-integer label) exact-non-negative-integer
   ; Note that, while several labels might have a given position (due to macros), only
   ; one label can be associated with that position here.
   (define-struct source-gui-data (label-gui-data-by-label
-                                  labels-by-mzscheme-position))
+                                  labels-by-mzscheme-position
+                                  total-number-of-snips))
   
   (define-struct gui-model-state (; (assoc-setof source source-gui-data)
                                   source-gui-data-by-source
@@ -163,13 +164,17 @@
   
   
   ; SOURCES
-  ; gui-model-state (top -> void) -> void
+  ; gui-model-state (top -> void) (opt boolean) -> void
   ; applies f to each source
-  (define (for-each-source gui-model-state f)
-    (assoc-set-for-each (gui-model-state-source-gui-data-by-source gui-model-state)
-                        (lambda (source source-gui-data)
-                          (f source)))
-    cst:void)
+  (define for-each-source
+    (opt-lambda (gui-model-state f (modifying? #f))
+      (let ([modified-sources-set (gui-model-state-sources-recently-modified gui-model-state)])
+        (assoc-set-for-each (gui-model-state-source-gui-data-by-source gui-model-state)
+                            (lambda (source source-gui-data)
+                              (when modifying?
+                                (set-set modified-sources-set source #f))
+                              (f source))))
+      cst:void))
   
   ; gui-model-state (top -> void) -> void
   ; applies f to each modified source, and forgets source was modified
@@ -178,6 +183,16 @@
       (set-for-each modified-sources-set f)
       (set-reset modified-sources-set)
       cst:void))
+  
+  ; gui-model-state top -> boolean
+  ; are we currently displaying some snips in the source?
+  (define (snips-currently-displayed-in-source? gui-model-state source)
+    (let ([source-gui-data
+           (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state)
+                          source cst:thunk-false)])
+      (if source-gui-data
+          (< 0 (source-gui-data-total-number-of-snips source-gui-data))
+          #f)))
   
   
   ; LABELS
@@ -218,7 +233,8 @@
             (assoc-set-set source-gui-data-by-source source
                            (make-source-gui-data (assoc-set-make)
                                                  (assoc-set-set (assoc-set-make)
-                                                                mzscheme-pos label)))
+                                                                mzscheme-pos label)
+                                                 0))
             cst:void))))
   
   ; gui-model-state label exact-integer -> (values non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer)
@@ -247,16 +263,16 @@
       (move-poss gui-model-state source left-new-pos change + >)
       (values left-new-pos (+ left-new-pos old-span) (+ left-new-pos new-span))))
   
-  ; gui-model-state (label -> void) -> void
+  ; gui-model-state top (label -> void) -> void
   ; apply f to all registered labels
-  (define (for-each-label gui-model-state f)
-    (assoc-set-for-each
-     (gui-model-state-source-gui-data-by-source gui-model-state)
-     (lambda (source source-gui-data)
-       (assoc-set-for-each
-        (source-gui-data-labels-by-mzscheme-position source-gui-data)
-        (lambda (mzscheme-pos label)
-          (f label))))))
+  (define (for-each-label-in-source gui-model-state source f)
+    (let ([source-gui-data
+           (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state) source)])
+      (when source-gui-data
+        (assoc-set-for-each
+         (source-gui-data-labels-by-mzscheme-position source-gui-data)
+         (lambda (mzscheme-pos label)
+           (f label))))))
   
   
   ; POS AND SOURCE TO LABEL CONVERSIONS
@@ -433,16 +449,6 @@
     cst:void)
   
   
-  ; EVENTS
-  ; gui-model-state exact-non-negative-integer exact-non-negative-integer -> void
-  ; simulates user's actions. Of course all the snips and arrows will be deleted as soon
-  ; a user modifies the definition window, but we still neep to update the snip
-  ; positions so deleting will occur correctly.
-  (define (after-user-action gui-model-state source start len)
-    (when (assoc-set-in? (gui-model-state-source-gui-data-by-source gui-model-state) source)
-      (move-poss gui-model-state source start len + >=)))
-  
-  
   ; ARROWS
   ; gui-model-state label label boolean -> void
   ; add one arrow going from start-label to end-label, duh.
@@ -603,6 +609,21 @@
       (set-set sources-recently-modified other-end-source #f)
       (set-remove other-end-arrow-set arrow)))
   
+  ; gui-model-state -> void
+  ; remove all arrows in all sources
+  (define (remove-all-arrows gui-model-state)
+    (let ([source-gui-data-by-source (gui-model-state-source-gui-data-by-source gui-model-state)]
+          [sources-recently-modified (gui-model-state-sources-recently-modified gui-model-state)])
+      (assoc-set-for-each
+       source-gui-data-by-source
+       (lambda (source source-gui-data)
+         (set-set sources-recently-modified source #f)
+         (assoc-set-for-each
+          (source-gui-data-label-gui-data-by-label source-gui-data)
+          (lambda (label label-gui-data)
+            (set-reset (label-gui-data-starting-arrows label-gui-data))
+            (set-reset (label-gui-data-ending-arrows label-gui-data))))))))
+         
   ; gui-model-state
   ; (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean -> void)
   ; -> void
@@ -711,6 +732,8 @@
                            source cst:thunk-false)]
            [label-gui-data-by-label (source-gui-data-label-gui-data-by-label source-gui-data)]
            [label-gui-data (assoc-set-get label-gui-data-by-label label cst:thunk-false)])
+      (set-source-gui-data-total-number-of-snips!
+       source-gui-data (+ (source-gui-data-total-number-of-snips source-gui-data) number-of-snips))
       (if label-gui-data
           ; the label might already have some snips attached to it.
           (let* ([snip-groups-by-type (label-gui-data-snip-groups-by-type label-gui-data)]
@@ -759,58 +782,46 @@
            [label-gui-data
             (assoc-set-get (source-gui-data-label-gui-data-by-label source-gui-data)
                            label cst:thunk-false)])
-      (if label-gui-data
-          (let* ([snip-groups-by-type (label-gui-data-snip-groups-by-type label-gui-data)]
-                 [snip-group (assoc-set-get snip-groups-by-type type cst:thunk-false)])
-            (if snip-group
-                (let* ([size (snip-group-size snip-group)]
-                       [label-starting-pos (label-gui-data-left-new-pos label-gui-data)]
-                       [deletion-ending-pos
-                        (- label-starting-pos
-                           (get-number-of-snips-on-right-from-type
-                            snip-groups-by-type type (gui-model-state-snip-type-list gui-model-state)))])
-                  (assoc-set-remove snip-groups-by-type type)
-                  (move-poss gui-model-state source deletion-ending-pos size - >=)
-                  (set-label-gui-data-total-number-of-snips!
-                   label-gui-data
-                   (- (label-gui-data-total-number-of-snips label-gui-data)
-                      size))
-                  (values (- deletion-ending-pos size) deletion-ending-pos))
-                (error 'remove-inserted-snips
-                       "label ~a has no snip group of type ~a"
-                       label type)))
-          (error 'remove-inserted-snips
-                 "label ~a has no snip groups at all, let alone of type ~a"
-                 label type))))
-  
-  ; gui-model-state -> (assoc-setof top (listof (cons non-negative-exact-integer non-negative-exact-integer)))
-  ; deletes all snips and arrows and returns an associative set that, for each source, tells the
-  ; starting and ending positions of all groups of snips currently displayed (so they can actually
-  ; be deleted in the GUI)
-  (define (remove-all-snips-and-arrows gui-model-state)
-    (let ([source-gui-data-by-source (gui-model-state-source-gui-data-by-source gui-model-state)]
-          [sources-recently-modified (gui-model-state-sources-recently-modified gui-model-state)]
-          [result-assoc-set (assoc-set-make)])
-      (assoc-set-for-each
-       source-gui-data-by-source
-       (lambda (source source-gui-data)
-         (set-set sources-recently-modified source #f)
-         (assoc-set-set result-assoc-set
-                        source
-                        (let* ([label-gui-data-by-label
-                                (source-gui-data-label-gui-data-by-label source-gui-data)]
-                               [result-list
-                                (assoc-set-fold
-                                 label-gui-data-by-label
-                                 (lambda (label label-gui-data acc)
-                                   (let ([label-left-new-pos (label-gui-data-left-new-pos label-gui-data)])
-                                     (cons (cons (- label-left-new-pos (label-gui-data-total-number-of-snips label-gui-data))
-                                                 label-left-new-pos)
-                                           acc)))
-                                 '())])
-                          (assoc-set-reset label-gui-data-by-label)
-                          (assoc-set-reset (source-gui-data-labels-by-mzscheme-position source-gui-data))
-                          result-list))))
-      result-assoc-set))
+      (if (eq? type 'all)
+          (if label-gui-data
+              (let ([snip-groups-by-type (label-gui-data-snip-groups-by-type label-gui-data)]
+                    [size (label-gui-data-total-number-of-snips label-gui-data)]
+                    [label-starting-pos (label-gui-data-left-new-pos label-gui-data)])
+                (assoc-set-reset snip-groups-by-type)
+                (move-poss gui-model-state source label-starting-pos size - >=)
+                (set-label-gui-data-total-number-of-snips! label-gui-data 0)
+                (set-source-gui-data-total-number-of-snips!
+                 source-gui-data
+                 (- (source-gui-data-total-number-of-snips source-gui-data)
+                    size))
+                (values (- label-starting-pos size) label-starting-pos))
+              (values #f #f))
+          (if label-gui-data
+              (let* ([snip-groups-by-type (label-gui-data-snip-groups-by-type label-gui-data)]
+                     [snip-group (assoc-set-get snip-groups-by-type type cst:thunk-false)])
+                (if snip-group
+                    (let* ([size (snip-group-size snip-group)]
+                           [label-starting-pos (label-gui-data-left-new-pos label-gui-data)]
+                           [deletion-ending-pos
+                            (- label-starting-pos
+                               (get-number-of-snips-on-right-from-type
+                                snip-groups-by-type type (gui-model-state-snip-type-list gui-model-state)))])
+                      (assoc-set-remove snip-groups-by-type type)
+                      (move-poss gui-model-state source deletion-ending-pos size - >=)
+                      (set-label-gui-data-total-number-of-snips!
+                       label-gui-data
+                       (- (label-gui-data-total-number-of-snips label-gui-data)
+                          size))
+                      (set-source-gui-data-total-number-of-snips!
+                       source-gui-data
+                       (- (source-gui-data-total-number-of-snips source-gui-data)
+                          size))
+                      (values (- deletion-ending-pos size) deletion-ending-pos))
+                    (error 'remove-inserted-snips
+                           "label ~a has no snip group of type ~a"
+                           label type)))
+              (error 'remove-inserted-snips
+                     "label ~a has no snip groups at all, let alone of type ~a"
+                     label type)))))
   
   )

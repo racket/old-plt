@@ -34,6 +34,8 @@
 	  mzlib:function^)
 
   (define lifting-allowed? #t)
+  (define mutual-lifting-allowed? #t)
+  (define per-load-lifting-only? #f)
 
   (define procedures null)
 
@@ -186,40 +188,48 @@
 	(find! ast))))
 
   ;; Recursively determines the `liftable' field in the procedure
-  ;; record; if the given procedure's `liftable' field remains
-  ;; 'unknown-liftable, it should be changed to #t because it's part
-  ;; of a cycle of liftable procedures. (Setting the flag to #t is
-  ;; not structly necessary, but it's a good optimization since we'll
-  ;; eventually check the whole set.)
+  ;; record. If a cycle is encountered, return 'cycle or 'pls-cycle
+  ;; (the latter of any part of the cycle had "globals" in its
+  ;; "closure")
   (define (get-liftable! lambda)
     (let ([code (get-annotation lambda)])
       (if (eq? (procedure-code-liftable code) 'unknown-liftable)
-	  (if lifting-allowed?
+	  (if (and lifting-allowed?
+		   (or mutual-lifting-allowed? 
+		       (set-empty? (code-free-vars code))))
 	      ;; Liftable only if there are no free (non-pls) global vars
 	      (begin
 		;; Mark this one in case we encounter a cycle:
 		(set-procedure-code-liftable! code 'cycle)
 		;; Check each free variable
 		(let ([r (let loop ([l (set->list (code-free-vars code))]
-				    [pls? (not (set-empty? (code-global-vars code)))]
+				    [pls? (or per-load-lifting-only?
+					      (not (set-empty? (code-global-vars code))))]
 				    [cycle? #f])
 			   (if (null? l)
-			       ;; It's liftable, assuming the cycle is resolved
+			       ;; It's liftable, assuming any cycles are resolved
 			       (cond
 				[(and pls? cycle?) 'pls-cycle]
 				[cycle? 'cycle]
 				[pls? 'pls]
 				[else 'static])
-				
+			       
+			       ;; Check the free variable - references a liftable proc?
 			       (let ([v (extract-varref-known-val (car l))])
 				 (if (zodiac:case-lambda-form? v)
 				     (let ([vl (let ([l (get-liftable! v)])
-						 ;; lifted in a previous phase?
-						 (if (top-level-varref/bind-from-lift? l)
-						     (if (top-level-varref/bind-from-lift-pls? l)
-							 'pls
-							 'static)
-						     l))])
+						 (cond
+						  [(top-level-varref/bind-from-lift? l)
+						   ;; lifted in a previous phase
+						   (if (top-level-varref/bind-from-lift-pls? l)
+						       'pls
+						       'static)]
+						  [(pair? l)
+						   ;; lifted already in this phase
+						   (if (top-level-varref/bind-from-lift-pls? (car l))
+						       'pls
+						       'static)]
+						  [else l]))])
 				       (if vl
 					   (loop (cdr l)
 						 (or pls? (eq? vl 'pls) (eq? vl 'pls-cycle))
@@ -361,12 +371,6 @@
 
 		 ;;--------------------------------------------------------------
 		 ;; LET EXPRESSIONS
-		 ;;    Several values may be bound at once.  In this case, 'known'
-		 ;;    analysis is not done here.
-		 ;;
-		 ;;    in let, variables are assumed to be
-		 ;;    immutable and known; we store this information
-		 ;;    in the binding structure in the compiler:bound structure..
 		 ;;
 		 [(zodiac:let-values-form? ast)
 		  (let* ([val (lift! (car (zodiac:let-values-form-vals ast)) code)])
@@ -374,9 +378,18 @@
 		    
 		    ; lift in body expressions
 		    (let ([body (lift! (zodiac:let-values-form-body ast) code)])
-		      (zodiac:set-let-values-form-body! ast body)))
-		  
-		  ast]
+
+		      (if (and (= 1 (length (car (zodiac:let-values-form-vars ast))))
+			       (top-level-varref/bind-from-lift? val))
+
+			  ;; Let binding value is a lifted procedure, drop the variable
+			  (let ([var (caar (zodiac:let-values-form-vars ast))])
+			    (remove-local-var! code var)
+			    body)
+
+			  (begin
+			    (zodiac:set-let-values-form-body! ast body)
+			    ast))))]
 
 		 ;;-----------------------------------------------------------------
 		 ;; LETREC EXPRESSIONS
@@ -394,7 +407,32 @@
 		     ast
 		     (lift! (zodiac:letrec*-values-form-body ast) code))
 		    
-		    ast)]
+		    (let loop ([varses varses][vals (zodiac:letrec*-values-form-vals ast)]
+					      [vss-accum null][vs-accum null])
+		      (if (null? varses)
+
+			  (begin
+			    (zodiac:set-letrec*-values-form-vars! ast (reverse! vss-accum))
+			    (zodiac:set-letrec*-values-form-vals! ast (reverse! vs-accum)))
+
+			  (let ([vars (car varses)]
+				[val (car vals)])
+			    (if (and (= 1 (length vars))
+				     (top-level-varref/bind-from-lift? val))
+				;; Let binding value is a lifted procedure, drop the variable
+				(begin
+				  (remove-local-var! code (car vars))
+				  (loop (cdr varses) (cdr vals) vss-accum vs-accum))
+
+				;; Normal binding
+				(loop (cdr varses) (cdr vals) (cons vars vss-accum) (cons val vs-accum))))))
+
+		    (if (null? (zodiac:letrec*-values-form-vars ast))
+
+			;; All binding values were lifted; return the body
+			(zodiac:letrec*-values-form-body ast)
+			
+			ast))]
 		 
 		 ;;-----------------------------------------------------
 		 ;; IF EXPRESSIONS
@@ -590,6 +628,14 @@
 				(if (struct? ast)
 				    (vector-ref (struct->vector ast) 0)
 				    ast)))]))]
+	     [remove-local-var! (lambda (code var)
+				  (let ([vars (make-singleton-set var)])
+				    (set-code-local-vars! code (set-minus (code-local-vars code) vars))
+				    (set-code-captured-vars! code (set-minus (code-captured-vars code) vars))
+				    ;; Is it a case code?
+				    (when (case-code? code)
+				      (let ([code (code-parent code)])
+					(remove-local-var! code var)))))]
 	     [globals empty-set]
 	     [add-global! (lambda (v) (set! globals (set-union-singleton globals v)))])
 			  	

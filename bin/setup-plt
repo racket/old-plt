@@ -6,6 +6,4 @@ if [ "$PLTHOME" = '' ] ; then
   export PLTHOME
 fi
 
-SYS=`${PLTHOME}/bin/archsys`
-
-exec ${PLTHOME}/.bin/${SYS}/mzscheme '-mqvL' 'setup.ss' 'setup' '--'   ${1+"$@"}
+exec ${PLTHOME}/bin/mzscheme '-mqvL' 'setup.ss' 'setup' '--'   ${1+"$@"}

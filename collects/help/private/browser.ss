@@ -102,8 +102,8 @@
 	  (let* ([nav-sem (make-semaphore 0)]
 		 [start-exn #f]
 		 [debug? (get-preference 'plt:help-debug (lambda () '#f))]
-		    [frame #f]
-		    [debug-msg void])
+		 [frame #f]	
+		 [debug-msg void])
 	       (when debug?
 		     (set! frame (get-debug-frame))
 		     (set! debug-msg (lambda (s) 

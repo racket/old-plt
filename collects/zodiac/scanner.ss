@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.3 1997/04/28 22:26:26 krentel Exp krentel $
+;;  $Id: scanner.ss,v 1.4 1997/05/14 21:20:14 krentel Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -59,7 +59,7 @@
        [(table  value)
 	(vector-fill!  table  value)]
        [(table  value  elts)
-	(if  (pair?  elts)
+	(if  (list?  elts)
 	     (loop  table  value  elts)
 	     (loop  table  value  (list elts)))])))
   

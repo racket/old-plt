@@ -253,7 +253,7 @@
   ;link to parameter
   (marks:ankle-wrap-enabled (fw:preferences:get 'ankle-annotation))
   (fw:preferences:add-callback 'ankle-annotation
-                               (lambda (val)
+                               (lambda (pref-name val)
                                  (marks:ankle-wrap-enabled val)
                                  #t))
   

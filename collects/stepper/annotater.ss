@@ -138,7 +138,7 @@
                  (printf "uh oh, about to fail in cheap-wrap.~n"))]
             [start (z:zodiac-start zodiac)]
 	    [finish (z:zodiac-finish zodiac)])
-	`(#%with-continuation-mark (#%quote ,debug-key)
+	`(#%with-continuation-mark ,debug-key
 	  ,(make-cheap-mark (z:make-zodiac #f start finish))
 	  ,body))))
   
@@ -201,7 +201,7 @@
          ; wrap creates the w-c-m expression.
          
          (define (simple-wcm-wrap debug-info expr)
-           `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,expr))
+           `(#%with-continuation-mark ,debug-key ,debug-info ,expr))
          
          (define (wcm-pre-break-wrap debug-info expr)
            (if break

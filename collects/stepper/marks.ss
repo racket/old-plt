@@ -5,8 +5,8 @@
           mzlib:function^)
   
   ; debug-key: this key will be used as a key for the continuation marks.
-  
-  (define debug-key (gensym "debug-key-"))
+  (define-struct debug-key ())
+  (define debug-key (make-debug-key))
   
   (define (extract-mark-list mark-set)
     (continuation-mark-set->list mark-set debug-key))
@@ -91,4 +91,4 @@
   
   ; I'm not really sure this belongs here, but it's a convenient spot.
   (define ankle-wrap-enabled 
-    (make-parameter #f boolean?)))
+    (make-parameter #f (lambda (x) x))))

@@ -14,18 +14,21 @@
     (mred:debug:printf 'invoke "drscheme:spawn@")
 
     (error-display-handler
-     (lambda (msg)
-       (display msg)
-       (newline)
-       (mred:message-box (format "Internal Error: ~a" msg)
-			 "Internal Error!")))
+     (let ([p (current-parameterization)])
+       (lambda (msg)
+	 (with-parameterization p
+	   (lambda ()
+	     (display msg)
+	     (newline)
+	     (mred:message-box (format "Internal Error: ~a" msg)
+			       "Internal Error"))))))
 
     (define build-parameterization
       (let ([orig-eventspace (wx:current-eventspace)]
 	    [bottom-eventspace (wx:make-eventspace)])
-	(lambda ()
+	(lambda (base-parameterization)
 	  (let ([system-parameterization (current-parameterization)]
-		[p (make-parameterization)]
+		[p (make-parameterization base-parameterization)]
 		[n (make-namespace 'no-constants
 				   'wx
 				   'hash-percent-syntax
@@ -47,7 +50,12 @@
 		(error-value->string-handler
 		 (lambda (x n)
 		   (let ([long-string 
-			  (format "~s" (print-convert:print-convert x))])
+			  (format "~s" 
+				  (if (eq? (drscheme:language:setting-printing
+					    (mred:get-preference 'drscheme:settings)) 
+					   'r4rs-style)
+				      x
+				      (print-convert:print-convert x)))])
 		     (if (<= (string-length long-string) n)
 			 long-string
 			 (let ([short-string (substring long-string 0 n)]
@@ -94,7 +102,7 @@
 		   this-out this-out-write
 		   this-in this-result
 		   output-delta set-output-delta
-		   do-pre-eval
+		   do-pre-eval user-parameterization
 		   do-post-eval
 		   display-result
 		   insert-prompt
@@ -120,16 +128,9 @@
 	    [load-success? #f])
 	  
 	  (private
-	    [escape-fn #f]
-	    [print-hook (lambda (x _)
-			  (when prompt-mode?
-			    (insert #\newline)
-			    (set! prompt-mode? #f))
-			  (insert (send x copy) (last-position)))]
-	    [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))])
+	    [escape-fn #f])
 	  (public
 	    [get-prompt (lambda () "|- ")]
-	    [takeover void]
 	    [get-escape (lambda () escape-fn)]
 	    [set-escape (lambda (x) (set! escape-fn x))]
 	    
@@ -183,14 +184,10 @@
 			    (lambda anss
 			      (for-each
 			       (lambda (ans)
-				 (unless (void? ans)
-				   (parameterize ([mzlib:pretty-print@:pretty-print-size-hook size-hook]
-						  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
-				     (mzlib:pretty-print@:pretty-print
-				      (if (eq? print-style 'r4rs-style)
-					  ans
-					  (print-convert:print-convert ans))
-				      this-result))))
+				 (display-result
+				  (if (eq? print-style 'r4rs-style)
+				      ans
+				      (print-convert:print-convert ans))))
 			       anss))))])
 		   (set! current-thread-desc
 			 (thread
@@ -299,16 +296,14 @@
 	  (public
 	    [reset-console
 	     (lambda ()
-	       (set! param (let ([p (build-parameterization)])
+	       (set! param (let ([p (build-parameterization user-parameterization)])
 			     (with-parameterization p
 			       (lambda ()
 				 (current-output-port this-out)
 				 (current-error-port this-err)
 				 (current-input-port this-in)
 				 (current-load do-load)
-				 (current-eval userspace-eval)
-				 (mzlib:pretty-print@:pretty-print-size-hook size-hook)
-				 (mzlib:pretty-print@:pretty-print-print-hook print-hook)))
+				 (current-eval userspace-eval)))
 			     p))
 	       (super-reset-console))]
 	    [initialize-console

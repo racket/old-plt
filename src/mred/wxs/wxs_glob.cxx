@@ -549,7 +549,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   nstring r;
   nstring x0;
   npathname x1;
-  npathname x2;
+  nstring x2;
   nstring x3;
   nstring x4;
   int x5;
@@ -573,7 +573,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   } else
     x1 = NULL;
   if (n > 2) {
-    x2 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[2], "file-selector"));
+    x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "file-selector"));
   } else
     x2 = NULL;
   if (n > 3) {

@@ -157,10 +157,33 @@
 ; hard to test 3D values like closure-capturing-proc
 
 (define test-cases
-  ; lambda : general test
-  (list (list #'(lambda (a b) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme
+  ; begin
+  (list (list #'(lambda (a b c) (begin (begin a b) (begin a c))) 'mzscheme
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (with-continuation-mark begin let*-values let-values lambda quote-syntax)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark begin)
+                  [(with-continuation-mark
+                    debug-key-1
+                    debug-mark-1
+                    (begin
+                      pre-break-1
+                      (begin
+                        (with-continuation-mark
+                         debug-key-2
+                         debug-mark-2
+                         begin-body-2)
+                        (with-continuation-mark
+                         debug-key-3
+                         debug-mark-3
+                         begin-body-3))))
+                   (begin
+                     (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
+                     (test (void) check-mark (syntax debug-mark-2) '() 'all)
+                     (test (void) check-mark (syntax debug-mark-3) '(a c) 'all))])))
+         
+  ; lambda : general test
+        (list #'(lambda (a b) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark begin lambda)
                   [(with-continuation-mark
                     debug-key
                     debug-mark-1
@@ -267,7 +290,9 @@
                            debug-mark-then
                            . then-clauses))))
                    (begin
-                     (test (void) check-mark (syntax debug-mark-1) '(a b c) '())
+                     (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
+                     (test (void) check-mark (syntax debug-mark-test) '() 'all)
+                     (test (void) check-mark (syntax debug-mark-then) '(a c ) 'all))])))
                     
         ; let 
 ;        (list #'( (let ([c 1] [d 2]) 
@@ -275,7 +300,7 @@
                     ))
 
 (andmap (lambda (test-case)
-            ((caddr test-case) (cadr (annotate-expr (car test-case) (cadr test-case)))))
-          test-cases)
+            ((caddr test-case) (car (reverse (annotate-expr (car test-case) (cadr test-case))))))
+        test-cases)
 
 (report-errs)

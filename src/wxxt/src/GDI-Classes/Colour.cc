@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Colour.cc,v 1.3 1998/09/24 18:33:30 mflatt Exp $
+ * $Id: Colour.cc,v 1.4 1998/10/10 15:27:57 mflatt Exp $
  *
  * Purpose: classes to cover colours and colourmaps
  *
@@ -361,32 +361,32 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
     APPEND_C ("CORAL", new wxColour (255, 127, 0));
     APPEND_C ("CORNFLOWER BLUE", new wxColour (66, 66, 111));
     APPEND_C ("CYAN", new wxColour (0, 255, 255));
-    APPEND_C ("DARK GREY", new wxColour (47, 47, 47));
+    APPEND_C ("DARK GRAY", new wxColour (47, 47, 47));
     APPEND_C ("DARK GREEN", new wxColour (47, 79, 47));
     APPEND_C ("DARK OLIVE GREEN", new wxColour (79, 79, 47));
     APPEND_C ("DARK ORCHID", new wxColour (153, 50, 204));
     APPEND_C ("DARK SLATE BLUE", new wxColour (107, 35, 142));
-    APPEND_C ("DARK SLATE GREY", new wxColour (47, 79, 79));
+    APPEND_C ("DARK SLATE GRAY", new wxColour (47, 79, 79));
     APPEND_C ("DARK TURQUOISE", new wxColour (112, 147, 219));
-    APPEND_C ("DIM GREY", new wxColour (84, 84, 84));
+    APPEND_C ("DIM GRAY", new wxColour (84, 84, 84));
     APPEND_C ("FIREBRICK", new wxColour (142, 35, 35));
     APPEND_C ("FOREST GREEN", new wxColour (35, 142, 35));
     APPEND_C ("GOLD", new wxColour (204, 127, 50));
     APPEND_C ("GOLDENROD", new wxColour (219, 219, 112));
-    APPEND_C ("GREY", new wxColour (192, 192, 192));
+    APPEND_C ("GRAY", new wxColour (192, 192, 192));
     APPEND_C ("GREEN", new wxColour (0, 255, 0));
     APPEND_C ("GREEN YELLOW", new wxColour (147, 219, 112));
     APPEND_C ("INDIAN RED", new wxColour (79, 47, 47));
     APPEND_C ("KHAKI", new wxColour (159, 159, 95));
     APPEND_C ("LIGHT BLUE", new wxColour (191, 216, 216));
-    APPEND_C ("LIGHT GREY", new wxColour (168, 168, 168));
+    APPEND_C ("LIGHT GRAY", new wxColour (168, 168, 168));
     APPEND_C ("LIGHT STEEL BLUE", new wxColour (143, 143, 188));
     APPEND_C ("LIME GREEN", new wxColour (50, 204, 50));
     APPEND_C ("LIGHT MAGENTA", new wxColour (255, 0, 255));
     APPEND_C ("MAGENTA", new wxColour (255, 0, 255));
     APPEND_C ("MAROON", new wxColour (142, 35, 107));
     APPEND_C ("MEDIUM AQUAMARINE", new wxColour (50, 204, 153));
-    APPEND_C ("MEDIUM GREY", new wxColour (100, 100, 100));
+    APPEND_C ("MEDIUM GRAY", new wxColour (100, 100, 100));
     APPEND_C ("MEDIUM BLUE", new wxColour (50, 50, 204));
     APPEND_C ("MEDIUM FOREST GREEN", new wxColour (107, 142, 35));
     APPEND_C ("MEDIUM GOLDENROD", new wxColour (234, 234, 173));

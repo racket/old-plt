@@ -123,6 +123,16 @@
 (syntax-test  `(interface () x x))
 (error-test `(interface (8) x) exn:object?)
 
+(error-test `(interface ((interface () x)) x) exn:object?)
+(error-test `(interface ((interface ((interface () x)) y)) x) exn:object?)
+(test #t interface? (let ([i (interface () x)]
+			  [j (interface () x)])
+		      (interface (i j) y)))
+(error-test `(let ([i (interface () x)]
+		   [j (interface () x)])
+	       (interface (i j) x))
+	    exn:object?)
+
 (test #t interface? (interface ()))
 (test #t interface? (interface () x))
 (test #f interface? (class* () () ()))

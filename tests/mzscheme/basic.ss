@@ -986,6 +986,7 @@
     (error-test `(,map) exn:application:arity?)
     (error-test `(,map (lambda (x y) (+ x y))) exn:application:arity?)
     (error-test `(,map (lambda () 10) null) exn:application:mismatch?)
+    (error-test `(,map (case-lambda [() 9] [(x y) 10]) '(1 2 3)) exn:application:mismatch?)
     (error-test `(,map (lambda (x) 10) '(1 2) '(3 4)) exn:application:mismatch?)))
 (map-tests 'map)
 (map-tests 'for-each)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.5 1998/08/13 02:13:12 mflatt Exp $
+ * $Id: AppMain.cc,v 1.6 1998/09/06 01:53:58 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -312,9 +312,9 @@ void wxCommonInit(void)
     wxWHITE_PEN = DEBUG_NEW wxPen ("WHITE", 0, wxSOLID);
     wxTRANSPARENT_PEN = DEBUG_NEW wxPen ("BLACK", 0, wxTRANSPARENT);
     wxBLACK_DASHED_PEN = DEBUG_NEW wxPen ("BLACK", 0, wxSHORT_DASH);
-    wxGREY_PEN = DEBUG_NEW wxPen ("GREY", 0, wxSOLID);
-    wxMEDIUM_GREY_PEN = DEBUG_NEW wxPen ("MEDIUM GREY", 0, wxSOLID);
-    wxLIGHT_GREY_PEN = DEBUG_NEW wxPen ("LIGHT GREY", 0, wxSOLID);
+    wxGREY_PEN = DEBUG_NEW wxPen ("GRAY", 0, wxSOLID);
+    wxMEDIUM_GREY_PEN = DEBUG_NEW wxPen ("MEDIUM GRAY", 0, wxSOLID);
+    wxLIGHT_GREY_PEN = DEBUG_NEW wxPen ("LIGHT GRAY", 0, wxSOLID);
 
     wxBLACK_PEN->Lock(1);
     wxWHITE_PEN->Lock(1);
@@ -326,21 +326,21 @@ void wxCommonInit(void)
     wxTRANSPARENT_BRUSH = DEBUG_NEW wxBrush ("BLACK", wxTRANSPARENT);
     wxCYAN_BRUSH = DEBUG_NEW wxBrush ("CYAN", wxSOLID);
     wxRED_BRUSH = DEBUG_NEW wxBrush ("RED", wxSOLID);
-    wxGREY_BRUSH = DEBUG_NEW wxBrush ("GREY", wxSOLID);
-    wxMEDIUM_GREY_BRUSH = DEBUG_NEW wxBrush ("MEDIUM GREY", wxSOLID);
-    wxLIGHT_GREY_BRUSH = DEBUG_NEW wxBrush ("LIGHT GREY", wxSOLID);
+    wxGREY_BRUSH = DEBUG_NEW wxBrush ("GRAY", wxSOLID);
+    wxMEDIUM_GREY_BRUSH = DEBUG_NEW wxBrush ("MEDIUM GRAY", wxSOLID);
+    wxLIGHT_GREY_BRUSH = DEBUG_NEW wxBrush ("LIGHT GRAY", wxSOLID);
 
     wxBLACK_BRUSH->Lock(1);
     wxWHITE_BRUSH->Lock(1);
 
     wxBLACK = DEBUG_NEW wxColour ("BLACK");
     wxWHITE = DEBUG_NEW wxColour ("WHITE");
-    wxGREY = DEBUG_NEW wxColour ("GREY");
+    wxGREY = DEBUG_NEW wxColour ("GRAY");
     wxRED = DEBUG_NEW wxColour ("RED");
     wxBLUE = DEBUG_NEW wxColour ("BLUE");
     wxGREEN = DEBUG_NEW wxColour ("GREEN");
     wxCYAN = DEBUG_NEW wxColour ("CYAN");
-    wxLIGHT_GREY = DEBUG_NEW wxColour ("LIGHT GREY");
+    wxLIGHT_GREY = DEBUG_NEW wxColour ("LIGHT GRAY");
 
     wxSTANDARD_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_ARROW);
     wxHOURGLASS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_WAIT);

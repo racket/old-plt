@@ -631,6 +631,11 @@ EXCEPTIONS -----------------------------------------------------------
 
   When the server is unable to locate the article.
 
+> authentication-rejected
+  struct (authentication-rejected nntp) ()
+
+  When the server reject an authentication attempt.
+
 PROCEDURES -----------------------------------------------------------
 
 > (connect-to-server server-string [port-number]) -> communicator
@@ -647,6 +652,12 @@ PROCEDURES -----------------------------------------------------------
   The second argument is the name of a newsgroup.  The returned values
   are the total number of articles in that group, the first available
   article, and the last available article.
+
+> (authenticate-user communicator username password) -> void
+
+  Tries to authenticate a user.  This is using the original authinfo command
+  (uses cleartext).  The password argument is ignored if the server does not
+  ask for it.
 
 > (head-of-message communicator message-index) -> list of strings
 

@@ -160,8 +160,16 @@
 		(err/rt-test (struct-type-info typex) exn:application:mismatch?)
 		(err/rt-test (struct-type-info btype) exn:application:mismatch?)
 
-		(test-values (list 'a 3 sel set #f #f) (lambda () (struct-type-info type)))
-		(test-values (list 'bx 6 bselx bsetx #f #t) (lambda () (struct-type-info btypex)))
+		(let-values ([(name size get put super skipped?) (struct-type-info type)])
+		  (test 'bone get a-b 0)
+		  (put a-b 0 'ok)
+		  (test 'ok get a-b 0)
+		  (test (list 'a 3 #f #f) list name size super skipped?))
+		(let-values ([(name size get put super skipped?) (struct-type-info btypex)])
+		  (test 'byi get a-bx 0)
+		  (put a-bx 0 'yep)
+		  (test 'yep get a-bx 0)
+		  (test (list 'bx 6 #f #t) list name size super skipped?))
 
 		'...))))))))
 

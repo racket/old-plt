@@ -14,7 +14,7 @@ exec mzpp -s "---begin" -o `echo "$0" | sed 's/ssc$/c/'` "$0"
 
 {:(load "ssc-utils.ss"):}
 
-#include "escheme.h"
+#include "schpriv.h"
 #include <lightning.h>
 #include <sys/mman.h>
 
@@ -607,7 +607,7 @@ static size_t  mzjit_code_len = 0;
 /* Initialization */
 
 /* This is called with the #%foreign module */
-void scheme_init_lightning(Scheme_Env *env)
+void scheme_init_lightning(Scheme_Env *menv)
 {
   op_alist = scheme_null;
   MZ_REGISTER_STATIC(op_alist);

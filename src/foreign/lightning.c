@@ -7,7 +7,7 @@
  ********************************************/
 
 
-#include "escheme.h"
+#include "schpriv.h"
 #include <lightning.h>
 #include <sys/mman.h>
 
@@ -1553,13 +1553,9 @@ static Scheme_Object *foreign_jit_proc(int argc, Scheme_Object *argv[])
 /*****************************************************************************/
 /* Initialization */
 
-/* Remove this when in MzScheme */
-#define MZ_REGISTER_STATIC(x) scheme_register_static((void*)&x,sizeof(x))
-
-Scheme_Object *scheme_reload(Scheme_Env *env)
+/* This is called with the #%foreign module */
+void scheme_init_lightning(Scheme_Env *menv)
 {
-  Scheme_Env *menv;
-  menv = scheme_primitive_module(scheme_intern_symbol("#%lightning"), env);
   op_alist = scheme_null;
   MZ_REGISTER_STATIC(op_alist);
   mzjit_code_len = 1024;
@@ -1959,13 +1955,6 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   MZ_REGISTER_STATIC(ret_sym);
   scheme_add_global("jit-proc",
     scheme_make_prim_w_arity(foreign_jit_proc, "jit-proc", 1, 1), menv);
-  scheme_finish_primitive_module(menv);
-  return scheme_void;
 }
-
-Scheme_Object *scheme_initialize(Scheme_Env *env)
-{ return scheme_reload(env); }
-Scheme_Object *scheme_module_name()
-{ return scheme_intern_symbol("#%lightning"); }
 
 /*****************************************************************************/

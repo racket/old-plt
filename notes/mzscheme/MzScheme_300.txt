@@ -78,15 +78,6 @@ in several significant ways:
    new "parameter" maps a continuation to a preserved thread cell,
    which in turn provides a thread-specific value.
 
-   Another difference is that the previous implementation could use
-   any 0-or-1 arity procedure as parameters, and `parameterize' would
-   call such procedures to establish the new value and restore the old
-   one later.  Using such procedures is no longer possible.
-   Furthermore, the `guard-proc' that is attached to a parameter is
-   called only once for each `parameterize' to check the new value --
-   at the end of the dynamic extent of the body, the old value is
-   restored without calling the `guard-proc' again.
-
  * The `break-enabled' procedure no longer corresponds to a parameter,
    because changing the break-enable state implies a check for a
    suspended break, and this check is incompatible with tail

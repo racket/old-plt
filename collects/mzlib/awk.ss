@@ -88,8 +88,9 @@
 			     (cond
 			      [(or (string? test) (number? test))
 			       (cons
-				`(cond (,(make-test test)
-					,@(wrap-state body)))
+				`(cond [,(make-test test)
+					,@(wrap-state body)]
+				       [else (void)])
 				rest)]
 			      [(eq? test 'else)
 			       (cons 
@@ -108,9 +109,24 @@
 			       (make-range #t #t body rest)]
 			      [(eq? test 'after)
 			       rest]
+			      [(eq? test '/)
+			       (let ([g (gensym)]
+				     [re (car body)]
+				     [vars (caddr body)]
+				     [body (cdddr body)])
+				 (set! initvars (cons `(,g (regexp ,re)) initvars))
+				 (cons
+				  `(cond
+				    [(regexp-match ,re ,first)
+				     => (lambda (,arg)
+					  (apply
+					   (lambda ,vars ,@(wrap-state body))
+					   ,arg))]
+				    [else (void)])
+				  rest))]
 			      [else
 			       (cons
-				`(cond (,test ,@(wrap-state body)))
+				`(cond (,test ,@(wrap-state body)) (else (void)))
 				rest)])))))])
 	   (let ([testing-clauses (get-testing-clauses)])
 	     `(let (,@user-state-var-decls ,@initvars)
@@ -125,27 +141,29 @@
 			      ,@testing-clauses
 			      (,loop (add1 ,counter)))))))))))))
 
+  (define-struct match (s a))
+
   (define match:start
     (case-lambda
      [(rec) (match:start rec 0)]
-     [(rec which) (car (list-ref (cdr rec) which))]))
+     [(rec which) (car (list-ref (match-a rec) which))]))
 
   (define match:end
     (case-lambda
      [(rec) (match:end rec 0)]
-     [(rec which) (cdr (list-ref (cdr rec) which))]))
+     [(rec which) (cdr (list-ref (match-a rec) which))]))
 
   (define match:substring
     (case-lambda
      [(rec) (match:substring rec 0)]
-     [(rec which) (let ([p (list-ref (cdr rec) which)])
-		    (substring (car rec) (car p) (cdr p)))]))
+     [(rec which) (let ([p (list-ref (match-a rec) which)])
+		    (substring (match-s rec) (car p) (cdr p)))]))
 
   (define regexp-exec
     (lambda (re s)
       (let ([r (regexp-match-positions re s)])
 	(if r
-	    (cons s r)
+	    (make-match s r)
 	    #f)))))))
 		    
 (define-macro awk awk)

@@ -5,4 +5,4 @@ if [ "$PLTHOME" = "" ] ; then
   export PLTHOME
 fi
 
-exec $PLTHOME/bin/mzscheme -mvqe '(require-library "go.ss" "mzrice")' -- ${1+"$@"}
+exec $PLTHOME/bin/mzscheme -mvqe '(require-library "go.ss" "drscheme-jr")' -- ${1+"$@"}

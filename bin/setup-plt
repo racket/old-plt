@@ -1,0 +1,11 @@
+#!/bin/sh
+# This script was created by make-mzscheme-launcher
+
+if [ "$PLTHOME" = '' ] ; then
+  PLTHOME=/home/scheme/plt
+  export PLTHOME
+fi
+
+SYS=`${PLTHOME}/bin/archsys`
+
+exec ${PLTHOME}/.bin/${SYS}/mzscheme '-mqvL' 'setup.ss' 'compiler' '--'   ${1+"$@"}

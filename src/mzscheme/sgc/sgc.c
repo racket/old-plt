@@ -1397,12 +1397,14 @@ static void init_size_map()
   size_index_map = (long *)malloc_sector(MAX_COMMON_SIZE, sector_kind_other, 0);
   size_map = (long *)malloc_sector(NUM_COMMON_SIZE * sizeof(long), sector_kind_other, 0);
 
-  i = 0;
-  while (i < 8) {
+  /* This is two loops instead of one to avoid a gcc 2.92.2 -O2 x86 bug: */
+  for (i = 0; i < 8; i++) {
     size_index_map[i] = i;
-    size_map[i] = (i + 1) * PTR_SIZE;
-    i++;
   }
+  for (i = 0; i < 8; i++) {
+    size_map[i] = (i + 1) * PTR_SIZE;
+  }
+  /* i's final value is used below... */
 
   k = 8;
   next = 12;

@@ -292,7 +292,9 @@ static int skipped_pages, scanned_pages, young_pages, inited_pages;
 
 static long iterations;
 
+#ifdef TIME
 static long mark_stackoflw;
+#endif
 
 static int fnl_weak_link_count;
 
@@ -1621,6 +1623,12 @@ void GC_mark(const void *p)
 #endif
 
 	  switch(type) {
+	  case MTYPE_ATOMIC:
+	    OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_BLACK);
+	    if (!(flags & MFLAG_BLACK)) {
+	      page->flags = (flags | MFLAG_BLACK);
+	    }
+	    break;
 	  case MTYPE_TAGGED:
 #if SAFETY
 	    {
@@ -1641,26 +1649,22 @@ void GC_mark(const void *p)
 	    }
 	  default: /* ^^^ fallthrough */
 	    OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_GRAY);
-
+#ifdef TIME
+	    mark_stackoflw++;
+#endif
 	    if (!(flags & MFLAG_GRAY)) {
 	      page->flags = (flags | MFLAG_GRAY);
 	      
-	      if (type != MTYPE_ATOMIC) {
-		mark_stackoflw++;
-		page->gray_next = gray_first;
-		gray_first = page;
-		
-		page->gray_start = offset;
-		page->gray_end = offset;
-	      }
+	      page->gray_next = gray_first;
+	      gray_first = page;
+	      
+	      page->gray_start = offset;
+	      page->gray_end = offset;
 	    } else {
-	      if (type != MTYPE_ATOMIC) {
-		mark_stackoflw++;
-		if (page->gray_start > offset)
-		  page->gray_start = offset;
-		if (page->gray_end < offset)
-		  page->gray_end = offset;
-	      }
+	      if (page->gray_start > offset)
+		page->gray_start = offset;
+	      if (page->gray_end < offset)
+		page->gray_end = offset;
 	    }
 	  }
 	} else {
@@ -2223,10 +2227,7 @@ static void compact_tagged_mpage(void **p, MPage *page)
       }
       
       if (!to_near || (dest_offset != offset)) {
-	if (to_near)
-	  memmove(dest + dest_offset, p, size << LOG_WORD_SIZE);
-	else
-	  memcpy(dest + dest_offset, p, size << LOG_WORD_SIZE);
+	memmove(dest + dest_offset, p, size << LOG_WORD_SIZE);
       }
       
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset);
@@ -2812,7 +2813,7 @@ static void fixup_all_mpages()
 	void *p;
 
 	scanned_pages++;
-	min_referenced_page_age = page->refs_age;
+	min_referenced_page_age = page->age;
 	p = page->block_start;
 
 #if NOISY
@@ -3052,7 +3053,9 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 #if SAFETY
 static void **o_var_stack, **oo_var_stack;
 #endif
+#ifdef TIME
 static int stack_depth;
+#endif
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
@@ -3061,7 +3064,10 @@ void GC_mark_variable_stack(void **var_stack,
   long size, count;
   void ***p, **a;
 
+#ifdef TIME
   stack_depth = 0;
+#endif
+
   while (var_stack) {
     var_stack = (void **)((char *)var_stack + delta);
     if (var_stack == limit)
@@ -3104,7 +3110,10 @@ void GC_mark_variable_stack(void **var_stack,
 #endif
 
     var_stack = *var_stack;
+
+#ifdef TIME
     stack_depth++;
+#endif
   }
 }
 
@@ -3115,7 +3124,10 @@ void GC_fixup_variable_stack(void **var_stack,
   long size, count;
   void ***p, **a;
 
+#ifdef TIME
   stack_depth = 0;
+#endif
+
   while (var_stack) {
     var_stack = (void **)((char *)var_stack + delta);
     if (var_stack == limit)
@@ -3146,7 +3158,9 @@ void GC_fixup_variable_stack(void **var_stack,
     }
 
     var_stack = *var_stack;
+#ifdef TIME
     stack_depth++;
+#endif
   }
 }
 
@@ -3398,7 +3412,9 @@ static void gcollect(int full)
   /************* Mark and Propagate *********************/
 
   inited_pages = 0;
+#ifdef TIME
   mark_stackoflw = 0;
+#endif
 
 #if MARK_STATS
   mark_calls = mark_hits = mark_recalls = mark_colors = mark_many = mark_slow = 0;

@@ -69,16 +69,20 @@ exit
   (let ([r (read-line)])
     (not (regexp-match "^[nN]" r))))
 
+(define in-rpm? (getenv "RPM_INSTALL_PREFIX"))
+
 (define check-version?
-    (begin
-      (printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
-      (get-y-n)))
+  (if in-rpm?
+      #f
+      (begin
+	(printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
+	(get-y-n))))
 
 (when check-version?
       (check-version))
 
 (define zo?
-  (or (getenv "RPM_INSTALL_PREFIX")
+  (or in-rpm?
       (begin
 	(printf "PLT software starts up much faster with .zo files, but creating .zo~n")
 	(printf "files now takes a few minutes and requires about 5MB of additional~n")

@@ -51,6 +51,15 @@
 
 (define imports (quicksort (append only-imports propagate) sym<?))
 
+(define macros (get-all "macros.ss"))
+(define (wrap-macros expr)
+  (let loop ([l macros][expr expr])
+    (if (null? l)
+	expr
+	(let ([m (car l)])
+	`(let-macro ,(cadr m) ,(caddr m)
+		    ,(loop (cdr l) expr))))))
+
 (define code (get-all "mred.ss"))
 
 (define sig (cons 'mred@ (append propagate mred-exports)))
@@ -73,10 +82,11 @@
 			    (compound-unit 
 			     (import)
 			     (link [wx (wx@)]
-				   [mred ((unit (import ,@(map prefix-wx: imports))
-						(export)
-						,@code
-						(vector ,@mred-exports))
+				   [mred (,(wrap-macros
+					    `(unit (import ,@(map prefix-wx: imports))
+						   (export)
+						   ,@code
+						   (vector ,@mred-exports)))
 					  (wx ,@imports))])
 			     (export)))])
 		(letrec ([mred@

@@ -33,5 +33,5 @@
  id-to-menu-item
  file-selector
  register-collecting-blit
- unregister-collecting-blit)
-
+ unregister-collecting-blit
+ shortcut-visible-in-label?)

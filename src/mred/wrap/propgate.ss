@@ -73,7 +73,6 @@
  snip-class-list%
  special-control-key
  label->plain-label
- shortcut-visible-in-label?
  string-snip%
  style%
  style-delta%

@@ -780,19 +780,19 @@ static Scheme_Object *os_wxCanvasGetScrollPos(Scheme_Object *obj, int n,  Scheme
 }
 
 #pragma argsused
-static Scheme_Object *os_wxCanvasScroll(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCanvasScrollPercent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  int x0;
-  int x1;
+  float x0;
+  float x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "scroll in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "scroll in canvas%");
+  x0 = objscheme_unbundle_float(p[0], "scroll in canvas%");
+  x1 = objscheme_unbundle_float(p[1], "scroll in canvas%");
 
   
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->Scroll(x0, x1);
+  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->ScrollPercent(x0, x1);
 
   
   
@@ -1103,7 +1103,7 @@ if (os_wxCanvas_class) {
  scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-page", os_wxCanvasGetScrollPage, 1, 1);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-range", os_wxCanvasGetScrollRange, 1, 1);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-pos", os_wxCanvasGetScrollPos, 1, 1);
- scheme_add_method_w_arity(os_wxCanvas_class, "scroll", os_wxCanvasScroll, 2, 2);
+ scheme_add_method_w_arity(os_wxCanvas_class, "scroll", os_wxCanvasScrollPercent, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "warp-pointer", os_wxCanvasWarpPointer, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "view-start", os_wxCanvasViewStart, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "set-scrollbars", os_wxCanvasSetScrollbars, 6, 9);

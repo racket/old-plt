@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.25 1999/04/08 16:12:10 mflatt Exp $
+ * $Id: Window.cc,v 1.26 1999/07/14 23:34:08 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1392,7 +1392,7 @@ void wxWindow::WindowEventHandler(Widget w,
 	KeySym	   keysym;
 	(void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
 
-	if (wxIsAlt(keysym))
+	if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
 	  win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
 	else if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;

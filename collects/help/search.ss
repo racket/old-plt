@@ -132,7 +132,8 @@
        (cond
 	[(regexp-match re:keyword-line r)
 	 (let* ([p (open-input-string (substring r 1 (string-length r)))]
-		[entry (read p)]
+		[entry (parameterize ([read-accept-bar-quote #f])
+			 (read p))]
 		[key (let loop ([entry entry])
 		       (cond
 			[(symbol? entry) entry]

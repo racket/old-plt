@@ -154,7 +154,9 @@ at the beginning of a line. After the ">", put an S-expression that
 contains only symbols. (Spaces between ">" and the S-expression are
 ignored.) The leftmost atom must be a symbol, and this symbol is used
 as the key for the entry, whereas the whole S-expression is displayed
-when the user searches on the key.
+when the user searches on the key. (Note: the S-expression is read
+with `read-accept-bar-quote' turned off, since | is useful for showing
+alternatives.)
 
 For example, a keyword entry for `cons' might have the following form:
 

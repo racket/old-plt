@@ -1008,7 +1008,8 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d, fl
     old_background = SetBkColor(dc, current_text_background->pixel);
   }
   
-  SetBkMode(dc, ((current_bk_mode == wxTRANSPARENT) 
+  SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
+		  || (angle != 0.0))
 		 ? TRANSPARENT
 		 : OPAQUE));
   

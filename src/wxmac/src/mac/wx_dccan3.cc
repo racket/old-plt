@@ -440,7 +440,7 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 #endif
     GetPen(&start);
     
-    if (GetPortTextMode(iGrafPtr) == srcCopy) {
+    if ((angle == 0.0) && (GetPortTextMode(iGrafPtr) == srcCopy)) {
       Rect theRect;
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);

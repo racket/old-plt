@@ -139,7 +139,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
   int pp = 0;
   void *ptrs[100];
 
-  memcpy(&args2, &args, sizeof(args));
+  memcpy(&args2, &args, sizeof(args2));
 
   memset(ptrs, 0, 100 * sizeof(void *));
   for (j = 0; msg[j]; j++) {

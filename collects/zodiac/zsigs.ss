@@ -1,3 +1,14 @@
+;;
+;; $Id: zsigs.ss,v 1.6 1997/12/03 19:20:21 robby Exp $
+;;
+;; The signatures for all scanner/reader units.
+;;
+
+;;
+;; Top-level zodiac structures (outside the hierarchy)
+;; and base of zodiac hierarchy.
+;;
+
 (define-signature  zodiac:structures^
   ((struct  origin    (who  how))
    (struct  location  (line  column  offset  file))

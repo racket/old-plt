@@ -604,7 +604,7 @@ Scheme_Bucket_Table *scheme_clone_toplevel(Scheme_Bucket_Table *ht, Scheme_Env *
   Scheme_Bucket **bs;
   int i;
 
-  r = scheme_make_bucket_table(7, SCHEME_hash_ptr);
+  r = scheme_make_bucket_table(ht->size, SCHEME_hash_ptr);
   if (home)
     r->with_home = 1;
 

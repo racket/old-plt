@@ -109,9 +109,6 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
 			device_origin_y + SetOriginY,
 			font->GetFamily());
   
-  CalcBoundingBox(x + w, y + fontInfo.ascent + fontInfo.descent);
-  CalcBoundingBox(x, y);
-
   ReleaseCurrentDC();
 }
 

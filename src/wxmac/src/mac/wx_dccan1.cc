@@ -537,10 +537,19 @@ void wxCanvasDC::SetMapMode(int mode)
 void wxCanvasDC::SetUserScale(double x, double y)
   //-----------------------------------------------------------------------------
 {
+  cMacDC->EndCG();
+
   user_scale_x = x;
   user_scale_y = y;
 
   ToolChanged(kNoTool);
+}
+
+void wxCanvasDC::SetDeviceOrigin(double x, double y)
+{
+  cMacDC->EndCG();
+
+  wxbCanvasDC::SetDeviceOrigin(x, y);
 }
 
 //-----------------------------------------------------------------------------

@@ -125,6 +125,7 @@ class wxCanvasDC: public wxbCanvasDC
   void EndPage(void);
   void SetMapMode(int mode);
   void SetUserScale(double x, double y);
+  void SetDeviceOrigin(double x, double y);
   double DeviceToLogicalX(int x);
   double DeviceToLogicalY(int y);
   double DeviceToLogicalXRel(int x);

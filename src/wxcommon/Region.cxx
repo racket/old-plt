@@ -142,7 +142,7 @@ void wxRegion::SetRectangle(double x, double y, double width, double height)
   ih = ((int)floor(y + height)) - iy;
 
 #ifdef wx_msw
-  rgn = CreateRectRgn(ix, iy, ix + iw, iy + ih); // SET-ORIGIN FLAGGED
+  rgn = CreateRectRgn(ix, iy, ix + iw, iy + ih);
 #endif
 #ifdef wx_x
   {
@@ -157,7 +157,7 @@ void wxRegion::SetRectangle(double x, double y, double width, double height)
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
-  SetRectRgn(rgn, ix, iy, ix + iw, iy + ih); // SET-ORIGIN FLAGGED
+  SetRectRgn(rgn, ix, iy, ix + iw, iy + ih);
 #endif
 }
 
@@ -252,14 +252,27 @@ void wxRegion::SetRoundedRectangle(double x, double y, double width, double heig
   rgn = CreateRoundRectRgn(ix, iy, ix + iw, iy + ih, xradius, yradius); // SET-ORIGIN FLAGGED
 #endif
 #ifdef wx_mac
-  rgn = NewRgn();
-  OpenRgn();
+  /* This code uses the current port. We don't know what the current
+     port might be, so we have to pick one to be sure that QuickDraw
+     is allowed. */
   {
-    Rect r2;
-    SetRect(&r2, ix, iy, ix + iw, iy + ih);
-    FrameRoundRect(&r2, xradius, yradius); // SET-ORIGIN FLAGGED
-    CloseRgn(rgn);
-  }
+    CGrafPtr savep;
+    GDHandle savegd;
+    
+    ::GetGWorld(&savep, &savegd);  
+    ::SetGWorld(wxGetGrafPtr(), GetMainDevice());
+
+    rgn = NewRgn();
+    OpenRgn();
+    {
+      Rect r2;
+      SetRect(&r2, ix, iy, ix + iw, iy + ih);
+      FrameRoundRect(&r2, xradius, yradius); // SET-ORIGIN FLAGGED
+      CloseRgn(rgn);
+    }
+
+    ::SetGWorld(savep, savegd);
+  }    
 #endif
 }
 
@@ -312,13 +325,26 @@ void wxRegion::SetEllipse(double x, double y, double width, double height)
   rgn = CreateEllipticRgn(ix, iy, ix + iw, iy + ih);
 #endif
 #ifdef wx_mac
-  rgn = NewRgn();
-  OpenRgn();
+  /* This code uses the current port. We don't know what the current
+     port might be, so we have to pick one to be sure that QuickDraw
+     is allowed. */
   {
-    Rect r;
-    SetRect(&r, ix, iy, ix + iw, iy + ih);
-    FrameOval(&r); // SET-ORIGIN FLAGGED
-    CloseRgn(rgn);
+    CGrafPtr savep;
+    GDHandle savegd;
+    
+    ::GetGWorld(&savep, &savegd);  
+    ::SetGWorld(wxGetGrafPtr(), GetMainDevice());
+
+    rgn = NewRgn();
+    OpenRgn();
+    {
+      Rect r;
+      SetRect(&r, ix, iy, ix + iw, iy + ih);
+      FrameOval(&r);
+      CloseRgn(rgn);
+    }
+
+    ::SetGWorld(savep, savegd);
   }
 #endif
 

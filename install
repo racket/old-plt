@@ -30,10 +30,15 @@ if [ ! \( \( -x install \) -a \( -d collects \) \) ] ; then
 fi
 
 if [ $# -eq 1 ] ; then
-  installplthome=$1
+  installplthome="$1"
 else
   installplthome=`pwd`
 fi
+
+PLTHOME="$installplthome"
+export PLTHOME
+PLTCOLLECTS=""
+export PLTCOLLECTS
 
 echo "setting PLTHOME to $installplthome in scripts:"
 

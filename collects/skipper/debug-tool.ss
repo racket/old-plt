@@ -19,6 +19,10 @@
   
   (provide tool@)
   
+  ; QUESTIONS/IDEAS
+  ; what is the right way to deal with macros?
+  ; how can the three tool classes communicate with each other safely
+  
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
@@ -99,7 +103,8 @@
                     [_ #f])
                    (begin
                      (hash-table-put! breakpoints pos #f)
-                     (hash-table-put! breakpoints (+ pos (syntax-span expr) -1) #f)
+                     (when (not is-tail?)
+                       (hash-table-put! breakpoints (+ pos (syntax-span expr) -1) #f))
                      #t))))
           
           (define (let/rec-values-annotator letrec?)
@@ -233,7 +238,8 @@
               (break-wrap
                (make-debug-info expr bound-vars bound-vars 'at-break #f)
                annotated
-               expr)
+               expr
+               is-tail?)
               annotated))
         
         (top-level-annotate stx))
@@ -242,7 +248,48 @@
         (hash-table-get bp p))
       
       (define (truncate str n)
-        (substring str 0 (min n (string-length str))))
+        (if (< (string-length str) n)
+            str
+            (if (>= n 3)
+                (string-append
+                 (substring str 0 (- n 3))
+                 "...")
+                (substring str 0 (min n (string-length str))))))
+      
+      (define (string-map! f str)
+        (let loop ([i 0])
+          (when (< i (string-length str))
+            (string-set! str i (f (string-ref str i)))
+            (loop (add1 i)))
+          str))
+      
+      (define (newlines->spaces str)
+        (string-map! (lambda (chr)
+                       (case chr
+                         [(#\newline) #\space]
+                         [else chr]))
+                     str))
+      
+      (define (index-of chr str)
+        (let loop ([i 0])
+          (if (< i (string-length str))
+              (if (char=? chr (string-ref str i))
+                  i
+                  (loop (add1 i)))
+              #f)))
+          
+      (define (trim-expr-str str)
+        (cond
+          [(index-of #\newline str) => (lambda (i)
+                                         (string-append
+                                          (substring str 0 i)
+                                          (if (char=? (string-ref str 0) #\()
+                                              " ...)"
+                                              " ...")))]
+          [str]))
+      
+      (define (average . values)
+        (/ (apply + values) (length values)))
       
       (define (debug-definitions-text-mixin super%)
         (class super%
@@ -250,11 +297,16 @@
           (inherit dc-location-to-editor-location
                    editor-location-to-dc-location
                    invalidate-bitmap-cache
-                   get-canvas)
+                   begin-edit-sequence
+                   end-edit-sequence
+                   get-canvas
+                   get-top-level-window)
           
           (define parent #f)
+          (define debug? #f)
           (define/public (set-parent! p)
-            (set! parent p))
+            (set! parent p)
+            (set! debug? (send parent debug?)))
           (define mouse-over-pos #f)
           (define bp-pen (send the-pen-list find-or-create-pen "black" 1 'solid))
           (define bp-brush (send the-brush-list find-or-create-brush "red" 'solid))
@@ -272,6 +324,26 @@
           (define pc-brk-brush (send the-brush-list find-or-create-brush "gray" 'solid))
           
           (super-instantiate ())
+          
+          (define/augment (on-delete start len)
+            (begin-edit-sequence)
+            (inner (void) on-delete start len))
+          (define/augment (after-delete start len)
+            (inner (void) after-delete start len)
+            (clean-up)
+            (end-edit-sequence))
+          
+          (define/augment (on-insert start len)
+            (begin-edit-sequence)
+            (inner (void) on-insert start len))
+          (define/augment (after-insert start len)
+            (inner (void) after-insert start len)
+            (clean-up)
+            (end-edit-sequence))
+
+          (define/private (clean-up)
+            (set! debug? #f)
+            (invalidate-bitmap-cache))
           
           (define/private (get-pos/text event)
             (let ([event-x (send event get-x)]
@@ -315,7 +387,7 @@
                 (values xl yl xr yr))))
           
           (define/override (on-event event)
-            (if (and parent (send parent debug?))
+            (if (and parent debug?)
                 (let ([breakpoints (send parent get-breakpoints)])
                   (cond
                     [(send event leaving?)
@@ -326,20 +398,39 @@
                          (send event entering?))
                      (let-values ([(pos text) (get-pos/text event)])
                        (when (and pos text)
-                         (cond
-                           ; mouse on breakable pos and hasn't moved significantly
-                           [(eq? (add1 pos) mouse-over-pos)]
-                           ; mouse on new breakable pos
-                           [(not (eq? (hash-table-get
+                         (let ([pos (add1 pos)])
+                           (cond
+                             ; mouse on breakable pos and hasn't moved significantly
+                             [(eq? pos mouse-over-pos)]
+                             ; mouse on new breakable pos
+                             [(not (eq? (hash-table-get
                                        breakpoints
-                                       (add1 pos) (lambda () 'invalid)) 'invalid))
-                            (set! mouse-over-pos (add1 pos))
-                            (invalidate-bitmap-cache)]
-                           ; moved off breakable pos
-                           [mouse-over-pos
-                            (set! mouse-over-pos #f)
-                            (invalidate-bitmap-cache)]))
-                       (super on-event event))]
+                                       pos (lambda () 'invalid)) 'invalid))
+                              (set! mouse-over-pos pos)
+                              (invalidate-bitmap-cache)]
+                             ; moved off breakable pos
+                             [mouse-over-pos
+                              (set! mouse-over-pos #f)
+                              (invalidate-bitmap-cache)])
+                           (let* ([frames (send parent get-stack-frames)]
+                                  [pos-vec (send parent get-pos-vec)]
+                                  [id (vector-ref pos-vec pos)]
+                                #;[_ (printf "frames = ~a~npos-vec = ~a~nid = ~a~n"
+                                             frames pos-vec id)])
+                             (send parent
+                                   set-mouse-over-msg
+                                   (cond
+                                     [(and id frames
+                                           (let/ec k
+                                             (let* ([id-sym (syntax-e id)]
+                                                    [binding (lookup-first-binding
+                                                              (lambda (id2) (module-identifier=? id id2))
+                                                              frames (lambda () (k #f)))]
+                                                    [val (mark-binding-value
+                                                          binding)])
+                                               (truncate (format "~a = ~a" id-sym val) 200))))]
+                                     [""])))
+                           (super on-event event))))]
                     [(send event button-down? 'right)
                      (let-values ([(pos text) (get-pos/text event)])
                        (if (and pos text)
@@ -356,7 +447,8 @@
                                       (invalidate-bitmap-cache)))
                                   (let ([pc (send parent get-pc)])
                                     (if (and pc (= pos pc))
-                                        (let ([stat (send parent get-break-status)])
+                                        (let ([stat (send parent get-break-status)]
+                                              [f (get-top-level-window)])
                                           (when (cons? stat)
                                             (send (make-object menu-item%
                                                     (truncate
@@ -392,52 +484,50 @@
                                         (+ 1 (inexact->exact (floor (send event get-x))))
                                         (+ 1 (inexact->exact (floor (send event get-y))))))]
                                [(invalid)
-                                (if parent
-                                    (let* ([frames (send parent get-stack-frames)]
-                                           [pos-vec (send parent get-pos-vec)]
-                                           [id (vector-ref pos-vec pos)]
-                                           #;[_ (printf "frames = ~a~npos-vec = ~a~nid = ~a~n"
-                                                        frames pos-vec id)])
-                                      (unless (and
-                                               id frames
-                                               (let/ec k
-                                                 (let* ([id-sym (syntax-e id)]
-                                                        [binding (lookup-first-binding
-                                                                  (lambda (id2) (module-identifier=? id id2))
-                                                                  frames (lambda () (k #f)))]
+                                (let* ([frames (send parent get-stack-frames)]
+                                       [pos-vec (send parent get-pos-vec)]
+                                       [id (vector-ref pos-vec pos)]
+                                       #;[_ (printf "frames = ~a~npos-vec = ~a~nid = ~a~n"
+                                                    frames pos-vec id)])
+                                  (unless (and
+                                           id frames
+                                           (let/ec k
+                                             (let* ([id-sym (syntax-e id)]
+                                                    [binding (lookup-first-binding
+                                                              (lambda (id2) (module-identifier=? id id2))
+                                                              frames (lambda () (k #f)))]
                                                         [val (mark-binding-value
                                                               binding)]
                                                         [menu (make-object popup-menu% #f)])
-                                                   (send (make-object menu-item%
-                                                           (truncate
-                                                            (format "~a = ~a" id-sym val)
-                                                            200)
-                                                           menu
-                                                           (lambda (item evt)
-                                                             (printf "~a" val))) enable #f)
-                                                   (make-object menu-item%
-                                                     (format "(set! ~a ...)" id-sym)
-                                                     menu
-                                                     (lambda (item evt)
-                                                       (let ([tmp
-                                                              (get-text-from-user
+                                               (send (make-object menu-item%
+                                                       (truncate
+                                                        (format "~a = ~a" id-sym val)
+                                                        200)
+                                                       menu
+                                                       (lambda (item evt)
+                                                         (printf "~a" val))) enable #f)
+                                               (make-object menu-item%
+                                                 (format "(set! ~a ...)" id-sym)
+                                                 menu
+                                                 (lambda (item evt)
+                                                   (let ([tmp
+                                                          (get-text-from-user
                                                                (format "New value for ~a" id-sym) #f #f
                                                                (format "~a" val))])
-                                                         (when tmp
-                                                           (mark-binding-set! binding (eval-string tmp))))))
-                                                   (send (get-canvas) popup-menu menu
-                                                         (+ 1 (inexact->exact (floor (send event get-x))))
-                                                         (+ 1 (inexact->exact (floor (send event get-y)))))
-                                                   #t)))
-                                        (super on-event event)))
-                                    (super on-event event))]))
+                                                     (when tmp
+                                                       (mark-binding-set! binding (eval-string tmp))))))
+                                               (send (get-canvas) popup-menu menu
+                                                     (+ 1 (inexact->exact (floor (send event get-x))))
+                                                     (+ 1 (inexact->exact (floor (send event get-y)))))
+                                               #t)))
+                                    (super on-event event)))]))
                            (super on-event event)))]
                     [else (super on-event event)]))
                 (super on-event event)))
           
           (define/override (on-paint before dc left top right bottom dx dy draw-caret)
             (super on-paint before dc left top right bottom dx dy draw-caret)
-            (when (and parent (send parent debug?) (not before))
+            (when (and parent debug? (not before))
               (let ([breakpoints (send parent get-breakpoints)])
                 (hash-table-for-each
                  breakpoints
@@ -461,21 +551,42 @@
                                  (+ xl dx)
                                  (+ yl dy 2))
                          (send dc set-pen op)
-                         (send dc set-brush ob))))))
-                (let ([pos (send parent get-pc)])
-                  (when pos
-                    (let*-values ([(xl yl xr yr) (find-char-box this (sub1 pos) pos)]
-                                  [(ym) (/ (+ yl yr) 2)])
-                      (let ([op (send dc get-pen)]
-                            [ob (send dc get-brush)])
-                        (case (send parent get-break-status)
-                          [(error) (send dc set-pen pc-err-pen)
-                                   (send dc set-brush pc-err-brush)]
-                          [(break) (send dc set-pen pc-brk-pen)
-                                   (send dc set-brush pc-brk-brush)]
-                          [else    (send dc set-pen pc-pen)
-                                   (send dc set-brush pc-brush)]))
-                        (drscheme:arrow:draw-arrow dc xl ym xr ym dx dy)))))))))
+                         (send dc set-brush ob)))))))
+              (let ([pos (send parent get-pc)])
+                (when pos
+                  (let*-values ([(xl yl xr yr) (find-char-box this (sub1 pos) pos)]
+                                [(ym) (average yl yr)])
+                    (let ([op (send dc get-pen)]
+                          [ob (send dc get-brush)])
+                      (case (send parent get-break-status)
+                        [(error) (send dc set-pen pc-err-pen)
+                                 (send dc set-brush pc-err-brush)]
+                        [(break) (send dc set-pen pc-brk-pen)
+                                 (send dc set-brush pc-brk-brush)]
+                        [else    (send dc set-pen pc-pen)
+                                 (send dc set-brush pc-brush)]))
+                    (drscheme:arrow:draw-arrow dc xl ym xr ym dx dy))
+                  #;(let loop ([end-pos pos]
+                             [marks (send parent get-stack-frames)])
+                    (when (cons? marks)
+                      (let*-values ([(start-pos) (syntax-position (mark-source (first marks)))]
+                                    [(xl0 yl0 xr0 yr0) (find-char-box this (sub1 start-pos) start-pos)]
+                                    [(xm0) (average xl0 xr0)]
+                                    [(ym0) (average yl0 yr0)]
+                                    [(xl yl xr yr) (find-char-box this (sub1 end-pos) end-pos)]
+                                    [(xm) (average xl xr)]
+                                    [(ym) (average yl yr)])
+                        (let ([op (send dc get-pen)]
+                              [ob (send dc get-brush)])
+                          (case (send parent get-break-status)
+                            [(error) (send dc set-pen pc-err-pen)
+                                     (send dc set-brush pc-err-brush)]
+                            [(break) (send dc set-pen pc-brk-pen)
+                                     (send dc set-brush pc-brk-brush)]
+                            [else    (send dc set-pen pc-pen)
+                                     (send dc set-brush pc-brush)]))
+                        (drscheme:arrow:draw-arrow dc xm0 ym0 xr ym dx dy)
+                        (loop start-pos (rest marks)))))))))))
       
       (define (debug-interactions-text-mixin super%)
         (class super%
@@ -526,32 +637,40 @@
                                  (annotate-stx
                                   (expand-syntax top-e)
                                   breakpoints
-                                  (lambda (debug-info annotated raw)
+                                  (lambda (debug-info annotated raw is-tail?)
                                     (let* ([start (syntax-position raw)]
                                            [end (+ start (syntax-span raw) -1)])
-                                      #`(let-values ([(value-list) #f])
-                                          (if (#,break? #,start)
-                                              (set! value-list (#,break (current-continuation-marks)
-                                                                  'entry-break #,debug-info)))
-                                          (if (not value-list)
-                                              (call-with-values
-                                               (lambda () #,annotated)
-                                               (case-lambda
-                                                 [(val) (if (#,break? #,end)
-                                                            (apply values
+                                      (if is-tail?
+                                          #`(let-values ([(value-list) #f])
+                                              (if (#,break? #,start)
+                                                  (set! value-list (#,break (current-continuation-marks)
+                                                                      'entry-break #,debug-info)))
+                                              (if (not value-list)
+                                                  #,annotated
+                                                  (apply values value-list)))
+                                          #`(let-values ([(value-list) #f])
+                                              (if (#,break? #,start)
+                                                  (set! value-list (#,break (current-continuation-marks)
+                                                                      'entry-break #,debug-info)))
+                                              (if (not value-list)
+                                                  (call-with-values
+                                                   (lambda () #,annotated)
+                                                   (case-lambda
+                                                     [(val) (if (#,break? #,end)
+                                                                (apply values
                                                                    (#,break (current-continuation-marks)
                                                                       (list 'exit-break val) #,debug-info))
-                                                            val)]
-                                                 [vals (apply values
-                                                              (if (#,break? #,end)
+                                                                val)]
+                                                     [vals (apply values
+                                                                  (if (#,break? #,end)
                                                                   (#,break (current-continuation-marks)
                                                                      (cons 'exit-break vals) #,debug-info)
                                                                   vals))]))
-                                              (apply values
-                                                     (if (#,break? #,end)
-                                                         (#,break (current-continuation-marks)
-                                                            (cons 'exit-break value-list) #,debug-info)
-                                                         value-list))))))
+                                                  (apply values
+                                                         (if (#,break? #,end)
+                                                             (#,break (current-continuation-marks)
+                                                                (cons 'exit-break value-list) #,debug-info)
+                                                             value-list)))))))
                                   (lambda (bound binding)
                                     ;(display-results (list bound))
                                     (let loop ([i 0])
@@ -573,7 +692,7 @@
                      (error-display-handler
                       (lambda (msg exn)
                         (err-hndlr msg exn)
-                        (if (eq? self (current-thread))
+                        (if (and (eq? self (current-thread)) (exn:fail? exn))
                             (send parent suspend oeh
                                   (continuation-mark-set->list (exn-continuation-marks exn) debug-key)
                                   'error)))) ; this breaks the buttons because it looks like we can resume
@@ -594,13 +713,6 @@
                         (if (and (exn:break? exn) (send parent suspend-on-break?))
                             (let ([marks (exn-continuation-marks exn)]
                                   [cont (exn:break-continuation exn)])
-                              (thread (lambda ()
-                                        (raise
-                                         (make-exn:break
-                                          (string->immutable-string
-                                           (format "~a (suspending)" (exn-message exn)))
-                                          marks
-                                          cont))))
                               (send parent suspend oeh (continuation-mark-set->list marks debug-key) 'break)
                               (cont))
                             (oeh exn))))))))))))
@@ -613,9 +725,8 @@
                    get-interactions-text
                    get-menu-bar
                    break-callback
-                   reset-offer-kill)
-          
-          (super-instantiate ())
+                   reset-offer-kill
+                   get-top-level-window)
           
           (define breakpoints (make-hash-table))
           (hash-table-put! breakpoints -1 #f)
@@ -634,9 +745,6 @@
             pos-vec)
           (define/public (get-breakpoints)
             breakpoints)
-          (define in-execute? #f)
-          (define/public (running-defs?)
-            in-execute?)
           (define break-status #f)
           (define/public (get-break-status)
             break-status)
@@ -645,6 +753,9 @@
           (define control-panel #f)
           (define/public (resume)
             (semaphore-post resume-sem))
+          (define/public (set-mouse-over-msg msg)
+            (when (not (string=? msg (send mouse-over-message get-label)))
+              (send mouse-over-message set-label msg)))
           
           (define/public (get-pc)
             (if (cons? stack-frames)
@@ -660,15 +771,37 @@
             (opt-lambda (break-handler frames [status #f])
               (set! want-suspend-on-break? #f)
               (hash-table-put! breakpoints -1 #f)
+              (send pause-button enable #f)
+              (send step-button enable #t)
+              (send resume-button enable #t)
               ;(fprintf (current-error-port) "break: ~a~n" (map expose-mark frames))
               ;(printf "status = ~a~n" status)
               (let ([osf stack-frames]
                     [obs break-status])
                 (set! stack-frames frames)
                 (set! break-status status)
-                (send (get-definitions-text) scroll-to-position (get-pc))
+                (when (cons? status)
+                  (let ([expr (mark-source (first frames))])
+                    (send status-message set-label
+                                        (truncate
+                                         (format "~a ==> ~a"
+                                                 (trim-expr-str
+                                                  (send (get-definitions-text) get-text
+                                                        (sub1 (syntax-position expr))
+                                                        (+ -1 (syntax-position expr) (syntax-span expr))))
+                                                 (if (= 2 (length status))
+                                                     (cadr status)
+                                                     (cons 'values (rest status))))
+                                         200))))
+                (cond [(get-pc) => (lambda (pc) (send (get-definitions-text) scroll-to-position pc))])
                 (send (get-definitions-text) invalidate-bitmap-cache)
-                (with-handlers ([exn:break? break-handler])
+                (with-handlers ([exn:break?
+                                 (lambda (exn)
+                                   (set! stack-frames osf)
+                                   (set! break-status obs)
+                                   (send status-message set-label "")
+                                   (send (get-definitions-text) invalidate-bitmap-cache)
+                                   (break-handler exn))])
                   (semaphore-wait/enable-break resume-sem))
                 (begin0
                   (if (cons? break-status)
@@ -676,15 +809,17 @@
                       #f)
                   (set! stack-frames osf)
                   (set! break-status obs)
+                  (send pause-button enable #t)
+                  (send step-button enable #f)
+                  (send resume-button enable #f)
+                  (send status-message set-label "")
                   (send (get-definitions-text) invalidate-bitmap-cache)))))
           
           (define (my-execute debug?)
             (set! want-debug? debug?)
-            (when control-panel
-              (send control-panel show #f)
-              (set! control-panel #f))
-            (when debug?
-              (make-control-panel))
+            (if debug?
+                (show-debug)
+                (hide-debug))
             (set! breakpoints (make-hash-table))
             (hash-table-put! breakpoints -1 #t)
             (set! pos-vec (make-vector (add1 (send (get-definitions-text) last-position)) #f))
@@ -693,11 +828,55 @@
             (set! stack-frames #f)
             (send (get-definitions-text) set-parent! this)
             (send (get-interactions-text) set-parent! this)
-            (fluid-let ([in-execute? #t])
-              (super execute-callback)))
+            (super execute-callback))
           
           (define/override (execute-callback)
             (my-execute #f))
+          
+          (define/augment (enable-evaluation)
+            (send debug-button enable #t)
+            (inner (void) enable-evaluation))
+          
+          (define/augment (disable-evaluation)
+            (send debug-button enable #f)
+            (inner (void) disable-evaluation))
+          
+          (define debug-parent-panel 'uninitialized-debug-parent-panel)
+          (define debug-panel 'uninitialized-debug-panel)
+          (define/override (get-definitions/interactions-panel-parent)
+            (set! debug-parent-panel
+                  (make-object vertical-panel%
+                    (super get-definitions/interactions-panel-parent)))
+            (set! debug-panel (instantiate horizontal-panel% ()
+                                (parent debug-parent-panel)
+                                (stretchable-height #f)
+                                (alignment '(center center))
+                                (style '(border))))
+            (send debug-parent-panel change-children (lambda (l) null))
+            #;(instantiate button% ()
+              (label "Hide")
+              (parent debug-panel)
+              (callback (lambda (x y) (hide-debug)))
+              (stretchable-height #t))
+            (make-object vertical-panel% debug-parent-panel))
+
+          (define/private (hide-debug)
+            (when (member debug-panel (send debug-parent-panel get-children))
+              (send debug-parent-panel change-children
+                    (lambda (l) (remq debug-panel l)))))
+          
+          (define/private (show-debug)
+            (unless (member debug-panel (send debug-parent-panel get-children))
+              (send debug-parent-panel change-children
+                    (lambda (l) (cons debug-panel l)))))
+                    
+          (super-new)
+          
+          (define status-message
+            (instantiate message% ()
+              [label ""]
+              [parent debug-panel]
+              [stretchable-width #t]))
           
           (define debug-button
             (make-object button%
@@ -708,49 +887,52 @@
               (lambda (button evt)
                 (my-execute #t))))
           
-          (define/augment (on-close)
-            (when control-panel
-              (send control-panel show #f))
-            (inner (void) on-close))
+          (define pause-button
+            (instantiate button% ()
+              [label ((bitmap-label-maker
+                       "Pause"
+                       (build-path (collection-path "skipper") "pause.png")) this)]
+              [parent debug-panel]
+              [callback (lambda (button evt)
+                          (if stack-frames
+                              (bell)
+                              (begin
+                                (set! want-suspend-on-break? #t)
+                                (break-callback)
+                                (reset-offer-kill))))]
+              [enabled #t]))
           
-          (define/augment (enable-evaluation)
-            (send debug-button enable #t)
-            (inner (void) enable-evaluation))
+          (define resume-button
+            (instantiate button% ()
+              [label ((bitmap-label-maker
+                       "Continue"
+                       (build-path (collection-path "skipper") "resume.png")) this)]
+              [parent debug-panel]
+              [callback (lambda (button evt)
+                          (if stack-frames
+                              (semaphore-post resume-sem)
+                              (bell)))]
+              [enabled #f]))
           
-          (define/augment (disable-evaluation)
-            (send debug-button enable #f)
-            (inner (void) disable-evaluation))
-          
-          (define (make-control-panel)
-            (set! control-panel (make-object frame% "Debugging Controls" this))
-            (let ([container (make-object vertical-panel% control-panel)])
-              (make-object button%
-                "Break"
-                container
-                (lambda (button evt)
-                  (if stack-frames
-                      (bell)
-                      (begin
-                        (set! want-suspend-on-break? #t)
-                        (break-callback)
-                        (reset-offer-kill)))))
-              (make-object button%
-                "Resume";(debugger-bitmap this)
-                container
-                (lambda (button evt)
-                  (if stack-frames
-                      (semaphore-post resume-sem)
-                      (bell))))
-              (make-object button%
-                "Step"
-                container
-                (lambda (btn evt)
-                  (if stack-frames
-                      (begin
-                        (hash-table-put! breakpoints -1 #t)
-                        (semaphore-post resume-sem))
-                      (bell))))
-              (send control-panel show #t)))
+          (define step-button
+            (instantiate button% ()
+              [label ((bitmap-label-maker
+                       "Step"
+                       (build-path (collection-path "skipper") "step.png")) this)]
+              [parent debug-panel]
+              [callback (lambda (btn evt)
+                          (if stack-frames
+                              (begin
+                                (hash-table-put! breakpoints -1 #t)
+                                (semaphore-post resume-sem))
+                              (bell)))]
+              [enabled #f]))
+
+          (define mouse-over-message
+            (instantiate message% ()
+              [label ""]
+              [parent debug-panel]
+              [stretchable-width #t]))
           
           (send (get-button-panel) change-children
                 (lambda (_)

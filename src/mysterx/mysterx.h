@@ -1,8 +1,7 @@
 // mysterx.h
 
-#define MX_PATCH_LEVEL "p3"
-
-#define MX_VERSION VERSION "-" MX_PATCH_LEVEL
+#define MX_PATCH_LEVEL ""
+#define MX_VERSION MZSCHEME_VERSION // "-" MX_PATCH_LEVEL
 
 #ifndef _SINKTBL_
 #include "sinktbl.h"

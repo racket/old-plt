@@ -55,6 +55,7 @@ HANDLE eventSinkMutex;
 const CLSID emptyClsId;
 
 static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
+static Scheme_Object *mx_name;     /* module name */
 
 Scheme_Object *scheme_date_type;
 
@@ -4384,7 +4385,6 @@ Scheme_Object *mx_release_type_table(void) {
 
   for (i = 0; i < sizeray(typeTable); i++) {
     p = typeTable[i];
-
     while (p) {
       scheme_release_typedesc((void *)p->pTypeDesc,NULL);
       psave = p;
@@ -4392,7 +4392,7 @@ Scheme_Object *mx_release_type_table(void) {
       scheme_gc_ptr_ok(psave);
     }
   }
-
+  
   return scheme_void;
 }
 
@@ -4411,9 +4411,14 @@ void mx_cleanup(void) {
   /* looks like CoUninitialize() gets called automatically */
 }
 
+Scheme_Object *scheme_module_name(void) {
+  mx_name = scheme_intern_symbol("mxmain");
+  return mx_name;
+}
+
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
-  Scheme_Object *mx_name,*mx_fun;
+  Scheme_Object *mx_fun;
   int i;
 
   // should not be necessary, but sometimes
@@ -4423,6 +4428,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   // globals in mysterx.cxx
 
+  scheme_register_extension_global(&mx_name,sizeof(mx_name));
   scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
   scheme_register_extension_global(&scheme_date_type,sizeof(scheme_date_type));
 
@@ -4451,7 +4457,6 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   
   // export prims + omit value
   
-  mx_name = scheme_intern_symbol("mxmain");
   env = scheme_primitive_module(mx_name,env);
 
   for (i = 0; i < sizeray(mxPrims); i++) {

@@ -37,6 +37,7 @@ Scheme_Type mx_com_iunknown_type;
 Scheme_Type mx_com_pointer_type;
 Scheme_Type mx_com_array_type;
 Scheme_Type mx_com_omit_type;
+Scheme_Type mx_com_typedesc_type;
 
 Scheme_Object *mx_document_pred(int argc,Scheme_Object **argv) {
   return MX_DOCUMENTP(argv[0]) ? scheme_true : scheme_false;
@@ -93,6 +94,7 @@ Scheme_Object *mx_make_idispatch(IDispatch *pIDispatch) {
   retval->pIConnectionPoint = NULL;
   retval->pISink = NULL;
   retval->connectionCookie = (DWORD)0;
+  retval->released = FALSE;
 
   mx_register_com_object((Scheme_Object *)retval,pIDispatch);
 
@@ -107,6 +109,7 @@ Scheme_Object *mx_make_iunknown(IUnknown *pIUnknown) {
   retval = (MX_COM_Data_Object *)scheme_malloc(sizeof(MX_COM_Data_Object));
 
   retval->type = mx_com_iunknown_type;
+  retval->released = FALSE;
   retval->pIUnknown = pIUnknown;
 
   mx_register_simple_com_object((Scheme_Object *)retval,pIUnknown);

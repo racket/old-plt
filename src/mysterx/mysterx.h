@@ -43,6 +43,7 @@ typedef struct _MX_prim_ {
 
 typedef struct _scheme_com_obj_ { 
   Scheme_Type type;
+  BOOL released;
   IDispatch *pIDispatch;
   ITypeInfo *pITypeInfo;
   ITypeInfo *pEventTypeInfo;
@@ -53,11 +54,13 @@ typedef struct _scheme_com_obj_ {
 
 typedef struct _scheme_com_type_ { 
   Scheme_Type type;
+  BOOL released;
   ITypeInfo *pITypeInfo;
 } MX_COM_Type;
 
 typedef struct _scheme_mx_event_ { 
   Scheme_Type type;
+  BOOL released;
   IEvent *pEvent;
 } MX_Event;
 
@@ -66,6 +69,8 @@ typedef enum _mx_desckind_ {
 } MX_DESCKIND;
 
 typedef struct _method_desc_ {
+  Scheme_Type type;
+  BOOL released;
   MEMBERID memID;
   ITypeInfo *pITypeInfo;
   MX_DESCKIND descKind;
@@ -77,6 +82,7 @@ typedef struct _method_desc_ {
 
 typedef struct _mx_com_data_ {
   Scheme_Type type;
+  BOOL released;
   union { // MS representations
     DATE date; 
     CY cy;    
@@ -87,6 +93,7 @@ typedef struct _mx_com_data_ {
 
 typedef struct _com_document_ {
   Scheme_Type type;
+  BOOL released;
   HWND hwnd;
   IHTMLDocument2 *pIHTMLDocument2;
   IEventQueue *pIEventQueue;
@@ -95,6 +102,7 @@ typedef struct _com_document_ {
 
 typedef struct _mx_element_ {
   Scheme_Type type;
+  BOOL released;
   BOOL valid;
   IHTMLElement *pIHTMLElement;
 } MX_Element;
@@ -138,6 +146,16 @@ typedef struct _document_window_style_option {
   DWORD bits;
   BOOL enable;
 } DOCUMENT_WINDOW_STYLE_OPTION;
+
+// dummy type for "subtyping"
+// a managed object has a Scheme_Type, followed by a released flag
+
+typedef struct _managed_obj_ {
+  Scheme_Type type;
+  BOOL released;
+} MX_MANAGED_OBJ;
+
+#define MX_MANAGED_OBJ_RELEASED(o) (((MX_MANAGED_OBJ *)o)->released)
 
 #define MX_COM_OBJP(o) (!SCHEME_INTP(o) && o->type == mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
@@ -187,6 +205,7 @@ extern Scheme_Type mx_com_iunknown_type;
 extern Scheme_Type mx_com_pointer_type;
 extern Scheme_Type mx_com_array_type;
 extern Scheme_Type mx_com_omit_type;
+extern Scheme_Type mx_com_typedesc_type;
 
 extern Scheme_Object *hash_table_get;
 extern Scheme_Object *hash_table_put;
@@ -227,6 +246,7 @@ MX_PRIM_DECL(mx_cocreate_instance);
 MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_object_pred);
 MX_PRIM_DECL(mx_com_register_object);
+MX_PRIM_DECL(mx_com_release_object);
 MX_PRIM_DECL(mx_com_get_object_type);
 MX_PRIM_DECL(mx_com_is_a);
 MX_PRIM_DECL(mx_com_help);

@@ -99,6 +99,7 @@ static MX_PRIM mxPrims[] = {
   { mx_com_object_pred,"com-object?",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
   { mx_com_register_object,"com-register-object",1,1 },  
+  { mx_com_release_object,"com-release-object",1,1 },  
 
   // documents 
   
@@ -347,6 +348,10 @@ void scheme_release_typedesc(void *p,void *) {
 
   pTypeDesc = (MX_TYPEDESC *)p;
 
+  if (MX_MANAGED_OBJ_RELEASED(pTypeDesc)) {
+    return;
+  }
+
   pITypeInfo = pTypeDesc->pITypeInfo;
 
   if (pTypeDesc->descKind == funcDesc) {
@@ -357,6 +362,8 @@ void scheme_release_typedesc(void *p,void *) {
   }
 
   pITypeInfo->Release();
+
+  MX_MANAGED_OBJ_RELEASED(pTypeDesc) = TRUE;
 }
 
 void scheme_release_com_object(void *comObject,void *pIDispatch) {
@@ -364,6 +371,10 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
   ITypeInfo *pEventTypeInfo;
   IConnectionPoint *pIConnectionPoint;
   ISink *pISink;
+
+  if (MX_MANAGED_OBJ_RELEASED(comObject)) {
+    return;
+  }
   
   // when COM object GC'd, release associated interfaces
 
@@ -392,10 +403,16 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
   if (pIDispatch) {
     ((IDispatch *)pIDispatch)->Release();
   }
+
+  MX_MANAGED_OBJ_RELEASED(comObject) = TRUE;
 }
 
 void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
   scheme_register_finalizer(obj,scheme_release_com_object,pIDispatch,NULL,NULL);
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
+		     (Scheme_Object *)obj,
+		     (Scheme_Close_Manager_Client *)scheme_release_com_object,
+		     pIDispatch,0);
 }
 
 Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
@@ -409,16 +426,31 @@ Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
 }
 
 void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
+
+  if (MX_MANAGED_OBJ_RELEASED(comObject)) {
+    return;
+  }
+
   if (pIUnknown) {
     ((IUnknown *)pIUnknown)->Release();
   }
+
+  MX_MANAGED_OBJ_RELEASED(comObject) = TRUE;
 }
 
 void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
   scheme_register_finalizer(obj,scheme_release_simple_com_object,pIUnknown,NULL,NULL);
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
+		     (Scheme_Object *)obj,
+		     (Scheme_Close_Manager_Client *)scheme_release_simple_com_object,
+		     pIUnknown,0);
 }
 
 void scheme_release_document(void *doc,void *) {
+  if (MX_MANAGED_OBJ_RELEASED(doc)) {
+    return;
+  }
+
   if (((MX_Document_Object *)doc)->pIHTMLDocument2) {
     ((MX_Document_Object *)doc)->pIHTMLDocument2->Release();
   }
@@ -426,6 +458,18 @@ void scheme_release_document(void *doc,void *) {
   if (((MX_Document_Object *)doc)->pIEventQueue) {
     ((MX_Document_Object *)doc)->pIEventQueue->Release();
   }
+
+  MX_MANAGED_OBJ_RELEASED(doc);
+}
+
+Scheme_Object *mx_com_release_object(int argc,Scheme_Object **argv) {
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-release-object","com-object",0,argc,argv);
+  }
+
+  scheme_release_com_object((void *)argv[0],MX_COM_OBJ_VAL(argv[0]));
+  
+  return scheme_void;
 }
 
 char *inv_kind_string(INVOKEKIND invKind) {
@@ -587,6 +631,7 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
   com_object->pIConnectionPoint = NULL;
   com_object->pISink = NULL;
   com_object->connectionCookie = (DWORD)0;
+  com_object->released = FALSE;
   
   mx_register_com_object((Scheme_Object *)com_object,pIDispatch);
   
@@ -637,6 +682,7 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
   retval = (MX_COM_Type *)scheme_malloc(sizeof(MX_COM_Type));
 
   retval->type = mx_com_type_type;
+  retval->released = FALSE;
   retval->pITypeInfo = pITypeInfo;
 
   pITypeInfo->AddRef();
@@ -1078,13 +1124,16 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
   
   pTypeDesc = (MX_TYPEDESC *)scheme_malloc(sizeof(MX_TYPEDESC));
   
+  pTypeDesc->type = mx_com_typedesc_type;
+  pTypeDesc->released = FALSE;
+
   pTypeDesc->memID = memID;
 
   pTypeDesc->pITypeInfo = pITypeInfo;
   pITypeInfo->AddRef();
 
   pTypeDesc->descKind = descKind;
-  
+
   if (descKind == funcDesc) {
     pTypeDesc->pFuncDesc = pFuncDesc;
   }
@@ -1092,6 +1141,10 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
     pTypeDesc->pVarDesc = pVarDesc;
   }
 
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
+		     (Scheme_Object *)pTypeDesc,
+		     (Scheme_Close_Manager_Client *)scheme_release_typedesc,
+		     NULL,0);
   scheme_register_finalizer(pTypeDesc,scheme_release_typedesc,NULL,NULL,NULL);
 
   return pTypeDesc;
@@ -3140,6 +3193,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
     com_object->pIConnectionPoint = NULL;
     com_object->pISink = NULL;
     com_object->connectionCookie = (DWORD)0;
+    com_object->released = FALSE;
 
     mx_register_com_object((Scheme_Object *)com_object,pObjectDispatch);
     
@@ -3314,6 +3368,7 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval = (MX_Element *)scheme_malloc(sizeof(MX_Element));
   
   retval->type = mx_element_type;
+  retval->released = FALSE;
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
   
@@ -3697,6 +3752,10 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   doc->pIHTMLDocument2 = pIHTMLDocument2;
   doc->pIEventQueue = pIEventQueue;
 
+  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
+		     (Scheme_Object *)doc,
+		     (Scheme_Close_Manager_Client *)scheme_release_document,
+		     NULL,0);
   scheme_register_finalizer(doc,scheme_release_document,NULL,NULL,NULL);
 
   return (Scheme_Object *)doc;
@@ -3790,6 +3849,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   mx_com_pointer_type = scheme_make_type("<com-pointer>");
   mx_com_array_type = scheme_make_type("<com-array>");
   mx_com_omit_type = scheme_make_type("<com-omit>");
+  mx_com_typedesc_type = scheme_make_type("<com-typedesc>");
   
   hr = CoInitialize(NULL);
   

@@ -293,6 +293,7 @@ Scheme_Object *mx_get_event(int argc,Scheme_Object **argv) {
   event_object = (MX_Event *)scheme_malloc(sizeof(MX_Event));
 
   event_object->type = mx_event_type;
+  event_object->released = FALSE;
   event_object->pEvent = pEvent;
 
   mx_register_simple_com_object((Scheme_Object *)event_object,pEvent);

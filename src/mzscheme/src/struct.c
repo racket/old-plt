@@ -156,7 +156,7 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_constant("make-struct-type", 
 			    scheme_make_prim_w_arity2(make_struct_type,
 						      "make-struct-type",
-						      4, 8,
+						      4, 7,
 						      4, 4),
 			    env);
 
@@ -1392,7 +1392,7 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 {
-  int initc, uninitc, num_props = 0, opaque = 1, i;
+  int initc, uninitc, num_props = 0, i;
   Scheme_Object *props = scheme_null, *l, *a, **r;
   Scheme_Object *inspector = NULL, **names, *uninit_val;
   Scheme_Struct_Type *type;
@@ -1448,9 +1448,6 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 	  
 	  inspector = argv[6];
 	}
-
-	if (argc > 7)
-	  opaque = SCHEME_TRUEP(argv[7]);
       }
     }
   } else
@@ -1459,8 +1456,8 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
   if (!inspector)
     inspector = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
 
-  if (opaque)
-    inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
+  /* To make it opaque: */
+  inspector = (Scheme_Object *)((Scheme_Inspector *)inspector)->superior;
 
   type = (Scheme_Struct_Type *)_make_struct_type(argv[0], NULL, 0, 
 						 SCHEME_FALSEP(argv[1]) ? NULL : argv[1],

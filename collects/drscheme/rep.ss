@@ -1012,9 +1012,43 @@
             (cleanup)
             (end-edit-sequence)
             (send context enable-evaluation))]
-        
-        [define do-many-text-evals ; =Kernel=, =Handler=
-          (lambda (text start end)
+
+	[define do-many-text-evals
+	  (lambda (text start end)
+	    (do-many-evals
+	     (lambda (single-loop-eval)
+	       (process-text
+                ; BUG: is it possible that a macro turns on breaking?
+		text
+		(lambda (expr recur) ; =User=, =Handler=, =No-Breaks=
+		  (cond
+		   [(basis:process-finish? expr)
+		    (void)]
+		   [else
+		    (single-loop-eval
+		     (lambda ()
+		       (let ([answers
+			      (call-with-values
+			       (lambda ()
+				 (if (basis:zodiac-vocabulary? (basis:current-setting))
+				     (basis:syntax-checking-primitive-eval expr)
+				     (basis:primitive-eval expr)))
+			       list)])
+			 (display-results answers))))
+		    (recur)]))
+                   start
+                   end
+                   #t
+                   #t))))]
+		    
+
+	;; do-many-evals : (((-> void) -> void) -> void)
+	[define do-many-evals ; =Kernel=, =Handler=
+
+	  ;; run-loop has the loop. It expects one argument, a procedure that
+	  ;; can be called with a thunk. The argument to run-loop maintains the right
+	  ;; breaking state and calls the thunk it was called with.
+          (lambda (run-loop) 
             (send context disable-evaluation)
             (cleanup-transparent-io)
             (reset-pretty-print-width)
@@ -1034,14 +1068,8 @@
                 (lambda () ; =User=, =Handler=, =No-Breaks=
                   ; This procedure must also ensure that breaks are off before
                   ;  returning or escaping.
-                  (process-text
-                   ; BUG: is it possible that a macro turns on breaking?
-                   text
-                   (lambda (expr recur) ; =User=, =Handler=, =No-Breaks=
-                     (cond
-                       [(basis:process-finish? expr)
-                        (void)]
-                       [else
+                  (run-loop
+		   (lambda (thunk)
                         ; Evaluate the user's expression. We're careful to turn on
                         ;   breaks as we go in and turn them off as we go out.
                         ;   (Actually, we adjust breaks however the user wanted it.)
@@ -1052,22 +1080,10 @@
                            (break-enabled user-break-enabled)
                            (set! user-break-enabled 'user))
                          (lambda ()
-                           (let ([answers
-                                  (call-with-values
-                                   (lambda ()
-                                     (if (basis:zodiac-vocabulary? (basis:current-setting))
-                                         (basis:syntax-checking-primitive-eval expr)
-                                         (basis:primitive-eval expr)))
-                                   list)])
-                             (display-results answers)))
+			   (thunk))
                          (lambda () 
                            (set! user-break-enabled (break-enabled))
-                           (break-enabled #f)))
-                        (recur)]))
-                   start
-                   end
-                   #t
-                   #t))
+                           (break-enabled #f))))))
                 
                 ; Cleanup after evaluation:
                 (lambda () ; =User=, =Handler=, =No-Breaks=

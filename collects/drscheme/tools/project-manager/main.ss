@@ -393,35 +393,34 @@
 	(when (offer-to-save-files)
           (let ([rep (get-editor)])
             (send rep reset-console)
-            (parameterize ([current-eventspace (ivar rep user-eventspace)])
-              (queue-callback
-               (lambda ()
-                 (when collection-paths
-                   (current-library-collection-paths collection-paths))
-                 
-                 (drscheme:basis:error-display/debug-handler
-                  (let ([project-manager-error-display/debug-handler
-                         (lambda (msg zodiac exn)
-                           (if (and zodiac
-                                    (zodiac:zodiac? zodiac))
-                               (show-error/open-file msg zodiac)
-                               (message-box (format "Error running project ~a" project-name) msg)))])
-                    project-manager-error-display/debug-handler))
-                 
-                 (let ([ol (current-load)])
-                   (current-load
-                    (lambda (l)
-                      (dynamic-wind
-                       (lambda () (push-file l))
-                       (lambda () (ol l))
-                       (lambda () (pop-file))))))
-                 
-                 (for-each
-                  (lambda (file)
-                    (cond
-                      [(string? file) (load file)]
-                      [else (apply require-library/proc file)]))
-                  files)))))))
+	    (send rep run-in-evaluation-thread
+		  (lambda ()
+		    (when collection-paths
+		      (current-library-collection-paths collection-paths))
+		    
+		    (drscheme:basis:error-display/debug-handler
+		     (let ([project-manager-error-display/debug-handler
+			    (lambda (msg zodiac exn)
+			      (if (and zodiac
+				       (zodiac:zodiac? zodiac))
+				  (show-error/open-file msg zodiac)
+				  (message-box (format "Error running project ~a" project-name) msg)))])
+		       project-manager-error-display/debug-handler))
+		    
+		    (let ([ol (current-load)])
+		      (current-load
+		       (lambda (l)
+			 (dynamic-wind
+			  (lambda () (push-file l))
+			  (lambda () (ol l))
+			  (lambda () (pop-file))))))
+		    
+		    (for-each
+		     (lambda (file)
+		       (cond
+			[(string? file) (load file)]
+			[else (apply require-library/proc file)]))
+		     files))))))
       
       '(define (execute-project)
 	(when (offer-to-save-files)
@@ -869,7 +868,9 @@
 		    (list loaded-files-panel)
 		    null)))
 	(send loaded-files-outer-panel stretchable-height loaded-files-shown?)
-	(send loaded-files-outer-panel stretchable-width loaded-files-shown?))
+	(send loaded-files-outer-panel stretchable-width loaded-files-shown?)
+	(send top-horizontal-panel stretchable-width (or to-load-files-shown? loaded-files-shown?))
+	(send top-horizontal-panel stretchable-height (or to-load-files-shown? loaded-files-shown?)))
       (define (show/hide-loaded-files)
         (set! loaded-files-shown? (not loaded-files-shown?))
         (is-changed)
@@ -891,7 +892,9 @@
 		    (list to-load-files-panel)
 		    null)))
 	(send to-load-files-outer-panel stretchable-height to-load-files-shown?)
-	(send to-load-files-outer-panel stretchable-width to-load-files-shown?))
+	(send to-load-files-outer-panel stretchable-width to-load-files-shown?)
+	(send top-horizontal-panel stretchable-width (or to-load-files-shown? loaded-files-shown?))
+	(send top-horizontal-panel stretchable-height (or to-load-files-shown? loaded-files-shown?)))
       (define (show/hide-to-load-files)
 	(set! to-load-files-shown? (not to-load-files-shown?))
         (is-changed)
@@ -1079,7 +1082,6 @@
           (set! top-panel (make-object vertical-panel% main))
           (set! rep-outer-panel (make-object vertical-panel% top-panel))
           (set! rep-panel (make-object class% rep-outer-panel))
-          (printf "make-root-area-container.2 ~s~n" top-panel)
           rep-panel))
       
       (super-init project-name #f 400 450)

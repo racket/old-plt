@@ -1,9 +1,7 @@
 #|
 
 TODO:
-  - fix relative path problem
-  - figure out whether or not to color syntax differently...
-    (maybe in teaching languages, do no coloring, thanks to Scott?)
+ - problem with coordinates
 
 Check Syntax separates four classes of identifiers:
 

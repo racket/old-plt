@@ -12,7 +12,7 @@
 	       ((reference-unit/sig "basis.ss")
 		init language mred drzodiac)]
 	[aries : plt:aries^ ((reference-library-unit/sig "ariesr.ss" "cogen")
-			     drzodiac
+			     (drzodiac : zodiac:system^)
 			     (interface : zodiac:interface^))]
 	[language : drscheme:language^
 		  ((reference-unit/sig "language.ss")
@@ -20,7 +20,9 @@
 		   (mzlib function@) print-convert)]
 	[interface : drscheme:interface^
 		   ((reference-unit/sig "intrface.ss") 
-		    drzodiac init mred)]
+		    drzodiac
+		    init
+		    mred)]
 	[drzodiac : drscheme:zodiac^
 		  ((reference-unit/sig "zlink.ss")
 		   mred

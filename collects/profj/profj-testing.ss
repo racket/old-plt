@@ -57,6 +57,7 @@
                             (interaction-msgs (cons
                                                (format "Test ~a: Exception raised for ~a : ~a"
                                                        msg ent (exn-message exn)) (interaction-msgs)))))])
+                    (my-syntax-source (lambda () (open-input-string ent)))
                     (parse-error-port (lambda () (open-input-string ent)))
                     (let ((new-val (eval `(begin
                                             (require (lib "class.ss")
@@ -84,6 +85,7 @@
                  (interaction-msgs (cons (format "Test ~a: Exception raised in definition : ~a"
                                                  msg (exn-message exn))
                                          (interaction-msgs))))])
+           (my-syntax-source (lambda () (open-input-string defn)))
            (parse-error-port (lambda () (open-input-string defn)))
            (execution? #t)
            (eval-modules (compile-java 'port 'port level #f def-st def-st type-recs))
@@ -100,11 +102,13 @@
               (interaction-msgs (cons (format "Test ~a: Exception raised in definition : ~a"
                                               msg (exn-message exn))
                                       (interaction-msgs))))])
+        (my-syntax-source (lambda () (open-input-string defn)))
         (parse-error-port (lambda () (open-input-string defn)))
         (execution? #t)
         (eval-modules (compile-java 'port 'port level #f def-st def-st type-recs))
         (let ((vals (map (lambda (ex-val)
                            (let ((st (open-input-string ex-val)))
+                             (my-syntax-source (lambda () (open-input-string ex-val)))
                              (parse-error-port (lambda () (open-input-string ex-val)))
                              (eval `(begin (require (lib "class.ss")
                                                     (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))
@@ -123,6 +127,7 @@
                 (execution-msgs (cons
                                  (format "Test ~a : Exception-raised: ~a" msg (exn-message exn)) (execution-msgs)))))])
         (parse-error-port (lambda () (open-input-string defn)))
+        (my-syntax-source (lambda () (open-input-string defn)))
         (eval-modules (compile-java 'port 'port level #f st st)))))
   
   ;run-test: symbol string (U string (list string)) (U string (list string)) -> (U (list (list symbol bool string)) (list ...))
@@ -152,6 +157,7 @@
             (lambda (exn)
               (list 'defn #f (exn-message exn)))])
         (parse-error-port (lambda () (open-input-string defn)))
+        (my-syntax-source (lambda () (open-input-string defn)))
         (execution? #t)
         (eval-modules (compile-java 'port 'port level #f def-st def-st type-recs))
         (cond

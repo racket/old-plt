@@ -74,4 +74,4 @@
 			orig-append!
 			(lambda x
 			  (check-last 'append! x)
-			  (apply append! x))))))
+			  (apply orig-append! x))))))

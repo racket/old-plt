@@ -568,6 +568,7 @@
 					 s))
 			     (let ([end (send edit last-position)])
 			       (send edit change-style null start end)
+			       (send edit set-prompt-position end)
 			       (style-func start end))
 			     (send edit lock c-locked?)))])
 		    (if first-time?
@@ -763,7 +764,7 @@
 	   (let* ([g (lambda ()
 		       (init-transparent-io #t)
 		       (send transparent-edit fetch-sexp))]
-		  [f (lambda ()
+		  [f (lambda () 
 		       (mzlib:function:dynamic-disable-break g))])
 	     (lambda ()
 	       (single-threader f)))])
@@ -998,11 +999,12 @@
 	  [insert-prompt
 	   (lambda ()
 	     (set! prompt-mode? #t)
+	     (begin-edit-sequence)
+	     (flush-console-output)
 	     (let* ([last (last-position)]
 		    [start-selection (get-start-position)]
 		    [end-selection (get-end-position)]
 		    [last-str (get-text (- last 1) last)])
-	       (begin-edit-sequence)
 	       (unless (string=? last-str newline-string)
 		 (insert #\newline last))
 	       (let ([last (last-position)])
@@ -1010,11 +1012,8 @@
 		 (change-style normal-delta last (last-position)))
 	       (set! prompt-position (last-position))
 	       ;(clear-undos)
-	       (flush-console-output)
-	       (unless (= start-selection end-selection)
-		 (set-position start-selection end-selection) 
-		 (scroll-to-position start-selection (last-position) 1 1))
-	       (end-edit-sequence)))])
+	       (end-edit-sequence)
+	       (scroll-to-position start-selection #f (last-position) 1)))])
 	
 	(public
 	  [reset-console-start-position 0]
@@ -1206,7 +1205,6 @@
 	(public [reset-console-end-position #f]
 		[reset-console-start-position #f])
 
-
 	(public
 	  [potential-sexps-protect (make-semaphore 1)]
 	  [potential-sexps null]
@@ -1260,13 +1258,14 @@
 			      (set! answer (read (open-input-string text))))]))
 		  (lambda ()
 		    (semaphore-post potential-sexps-protect)))
-		 (cond
-		   [yield/loop?
-		    (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
-		    (loop)]
-		   [answer answer]
-		   [else (void)])))
-	     (set-cursor null))]
+		 (begin0
+		   (cond
+		     [yield/loop?
+		      (dynamic-enable-break (lambda () (wx:yield wait-for-sexp)))
+		      (loop)]
+		     [answer answer]
+		     [else (void)])
+		   (set-cursor null)))))]
 	  [fetch-char
 	   (lambda ()
 	     (flush-console-output)

@@ -41,19 +41,14 @@
 	 (expand-defmacro expr)))))
 
 
-  (define exception-reporting-rep
-    (let ([edit #f])
-      (case-lambda 
-       [() edit]
-       [(x)
-	(set! edit x)])))
+  (define exception-reporting-rep (make-parameter #f))
 
   (define user-error-display-handler
     (rec drscheme-error-display-handler
 	 (lambda (msg)
-	   (with-parameterization drscheme:init:system-parameterization
-	     (lambda ()
-	       (let ([rep (exception-reporting-rep)])
+	   (let ([rep (exception-reporting-rep)])
+	     (with-parameterization drscheme:init:system-parameterization
+	       (lambda ()
 		 (if rep
 		     (send rep report-unlocated-error msg)
 		     (mred:message-box msg "Uncaught Error"))))))))
@@ -61,9 +56,9 @@
   (define user-exception-handler
     (rec drscheme-exception-handler
 	 (lambda (exn)
-	   (with-parameterization drscheme:init:system-parameterization
-	     (lambda ()
-	       (let ([rep (exception-reporting-rep)])
+	   (let ([rep (exception-reporting-rep)])
+	     (with-parameterization drscheme:init:system-parameterization
+	       (lambda ()
 		 (if rep
 		     (begin
 		       (send rep report-exception-error exn)
@@ -528,7 +523,6 @@
 		 (end-edit-sequence))))]
 	  [do-many-buffer-evals
 	   (lambda (edit start end)
-	     (exception-reporting-rep this)
 	     (mred:debug:printf 'console-threading "do-many-buffer-evals: waiting in-evaluation")
 	     (semaphore-wait in-evaluation-semaphore)
 	     (mred:debug:printf 'console-threading "do-many-buffer-evals: passed in-evaluation")
@@ -558,15 +552,14 @@
 		      (lambda ()
 			(dynamic-wind
 			 (lambda ()
+			   (mred:debug:printf 'console-threading "initializing thread-grace and thread-kill")
 			   (set! evaluation-sucessful  (make-semaphore 0))
 			   (set! cleanup-semaphore (make-semaphore 1))
 			   (set! thread-grace
 				 (thread
 				  (lambda ()
 				    (semaphore-wait evaluation-sucessful)
-				    (mred:debug:printf
-				     'console-threading
-				     "thread-grace passed.1")
+				    (mred:debug:printf 'console-threading "thread-grace passed.1")
 				    (when (semaphore-try-wait? cleanup-semaphore)
 				      (mred:debug:printf
 				       'console-threading
@@ -601,13 +594,15 @@
 					 (lambda (expr recur)
 					   (cond
 					     [(process-finish? expr)
+					      (mred:debug:printf 'console-threading "posting evaluation-sucessful.1")
 					      (semaphore-post evaluation-sucessful)]
 					     [else
 					      (let-values ([(answers error?) (send-scheme expr)])
 						(display-results answers)
 						(if error?
-						    (semaphore-post
-						     evaluation-sucessful)
+						    (begin 
+						      (mred:debug:printf 'console-threading "posting evaluation-sucessful.1")
+						      (semaphore-post evaluation-sucessful))
 						    (recur)))]))
 					 start
 					 end

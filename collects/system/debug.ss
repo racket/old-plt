@@ -12,8 +12,8 @@
        (#%if debug-env
 	   (append
 	    DEFAULT-ON
-	    (#%let ([r (with-handlers ([void exn-message])
-		       (eval (read (open-input-string debug-env))))])
+	    (#%let ([r (#%with-handlers ([void exn-message])
+		         (eval (read (open-input-string debug-env))))])
 	      (#%cond
 	       [(symbol? r) (list r)]
 	       [(list? r) r]

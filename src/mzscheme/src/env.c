@@ -62,6 +62,7 @@ static void make_init_env(void);
 static Scheme_Object *namespace_identifier(int, Scheme_Object *[]);
 static Scheme_Object *namespace_variable_value(int, Scheme_Object *[]);
 static Scheme_Object *namespace_set_variable_value(int, Scheme_Object *[]);
+static Scheme_Object *namespace_undefine_variable(int, Scheme_Object *[]);
 static Scheme_Object *namespace_mapped_symbols(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
@@ -400,6 +401,12 @@ static void make_init_env(void)
 			     scheme_make_prim_w_arity(namespace_set_variable_value,
 						      "namespace-set-variable-value!",
 						      2, 3),
+			     env);
+
+  scheme_add_global_constant("namespace-undefine-variable!",
+			     scheme_make_prim_w_arity(namespace_undefine_variable,
+						      "namespace-undefine-variable!",
+						      1, 1),
 			     env);
 
   scheme_add_global_constant("namespace-mapped-symbols",
@@ -2546,6 +2553,29 @@ namespace_set_variable_value(int argc, Scheme_Object *argv[])
   
   if ((argc > 2) && SCHEME_TRUEP(argv[2])) {
     scheme_shadow(env, argv[0], 1);
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *
+namespace_undefine_variable(int argc, Scheme_Object *argv[])
+{
+  Scheme_Env *env;
+  Scheme_Bucket *bucket;
+
+  if (!SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("namespace-undefine-variable!", "symbol", 0, argc, argv);
+
+  env = scheme_get_env(scheme_config);
+
+  if (scheme_lookup_global(argv[0], env)) {
+    bucket = scheme_global_bucket(argv[0], env);
+    bucket->val = NULL;
+  } else {
+    scheme_raise_exn(MZEXN_VARIABLE, argv[0],
+		     "namespace-undefine-variable!: %S is not defined",
+		     argv[0]);
   }
 
   return scheme_void;

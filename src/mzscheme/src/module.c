@@ -43,6 +43,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[]);
+static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_path_index_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[]);
@@ -304,6 +305,12 @@ void scheme_init_module(Scheme_Env *env)
 			     scheme_make_prim_w_arity(module_path_index_join,
 						      "module-path-index-join",
 						      2, 2),
+			     env);
+
+  scheme_add_global_constant("module->namespace",
+			     scheme_make_prim_w_arity(module_to_namespace,
+						      "module->namespace",
+						      1, 1),
 			     env);
 }
 
@@ -1064,6 +1071,39 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   }
 
   return scheme_void;
+}
+
+static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
+{
+  Scheme_Env *menv, *env;
+  Scheme_Object *modchain, *name;
+
+  name = argv[0];
+
+  if (!SCHEME_SYMBOLP(name))
+    scheme_wrong_type("module->namespace", "symbol", 0, argc, argv);
+
+  env = scheme_get_env(scheme_config);
+  modchain = env->modchain;
+  menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(modchain), name);
+  if (!menv) {
+    if (scheme_hash_get(env->module_registry, name))
+      scheme_arg_mismatch("namespace-attach-module",
+			  "module not instantiated in the current namespace: ",
+			  name);
+    else
+      scheme_arg_mismatch("namespace-attach-module",
+			  "unknown module in the current namespace: ",
+			  name);
+  }
+
+  if (menv->attached) {
+    scheme_raise_exn(MZEXN_MODULE,
+		     "module: cannot obtain namespace of attached module: %S",
+		     name);
+  }
+
+  return (Scheme_Object *)menv;
 }
 
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[])

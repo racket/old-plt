@@ -1574,23 +1574,24 @@ Implements Base 64 (mime-standard) encoder and decoder.
 
 PROCEDURES -----------------------------------------------------------
 
-> (base64-encode string) -> string
+> (base64-encode bytes) -> bytes
 
-  Consumes a string and returns its Base 64 encoding as a new string.
-  The returned string is broken into 72-character lines separated by
-  CRLF combinations, and always ends with a CRLF combination unless
-  the input is empty.
+  Consumes a byte string and returns its Base 64 encoding as a new
+  byte string.  The returned string is broken into 72-byte lines
+  separated by CRLF combinations, and always ends with a CRLF
+  combination unless the input is empty.
 
-> (base64-decode string) -> string
+> (base64-decode bytes) -> bytes
 
-  Consumes a string and returns its Base 64 decoding as a new string.
+  Consumes a byte string and returns its Base 64 decoding as a new
+  byte string.
 
-> (base64-encode-stream input-port output-port [newline-string]) -> void
+> (base64-encode-stream input-port output-port [newline-bytes]) -> void
 
-  Reads characters from `input-port' and writes the encoded result to
+  Reads bytes from `input-port' and writes the encoded result to
   `output-port', breaking the output into 72-character lines separated
-  by `newline-string', and ending with `newline-string' unless the
-  input stream is empty. The default `newline-string' contains just a
+  by `newline-bytes, and ending with `newline-bytes unless the
+  input stream is empty. The default `newline-bytes contains just a
   newline (not CRLF). The procedure returns when it encounters an
   end-of-file from `input-port'.
 
@@ -1638,24 +1639,34 @@ PROCEDURES -----------------------------------------------------------
 
 > (qp-encode string) -> string
   
-  Consumes a string and returns its quoted printable representation
-  (using "\r\n" newlines) as a new string.
+  Consumes a string and returns its quoted printable representation as
+  a new string. The encoded string uses "\r\n" where necessary to
+  create shorter lines.
 
 > (qp-decode string) -> string
 
   Consumes a string and returns its un-quoted printable representation
-  as a new string.
+  as a new string. Non-soft linebreaks are preserved in whatever form
+  they exist (CR, LR, or CRLF) in the input string.
 
 > (qp-encode-stream input output [newline-string]) -> void
 
   Reads characters from `input' and writes the quoted printable
-  encoded result to `output', using `newline-string' as the line
-  separator. The default `newline-string' is "\n".
+  encoded result to `output'. 
+
+  The `newline-string' argument is used for soft line-breaks (after
+  "="). The default `newline-string' is #"\n", though it should
+  probably be #"\r\n" instead.
+
+  Other linebreaks are preserved in whatever form they exist (CR, LR,
+  or CRLF) in the input stream.
 
 > (qp-decode-stream input output) -> void
 
-   Reads characters from `input' and writes de un-quoted printable
-   result to `output'.
+   Reads characters from `input' and writes de-quoted-printable result
+   to `output'.  Non-soft linebreaks are preserved in whatever form
+   they exist (CR, LR, or CRLF) in the input stream.
+
 
 ==========================================================================
 _FTP client_

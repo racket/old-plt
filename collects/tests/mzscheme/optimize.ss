@@ -96,6 +96,7 @@
 
 (test-comp (void) '(void))
 (test-comp 3 '(+ 1 2))
+(test-comp 65 '(char->integer #\A))
 (test-comp (expt 5 30)
 	   '(expt 5 (* 5 6)))
 (test-comp 88

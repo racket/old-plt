@@ -32,7 +32,7 @@
       (let ([each-char (lambda (s e pos)
 			 (let loop ([i (char->integer s)][pos pos])
 			   (unless (> i (char->integer e))
-			     (vector-set! digit-base64 pos (integer->char i))
+			     (vector-set! digit-base64 pos i)
 			     (loop (add1 i) (add1 pos)))))])
 	(each-char #\A #\Z 0)
 	(each-char #\a #\z 26)
@@ -44,35 +44,35 @@
 	(let loop ([waiting 0][waiting-bits 0])
 	  (if (>= waiting-bits 8)
 	      (begin
-		(display (integer->char (arithmetic-shift waiting (- 8 waiting-bits)))
-			 out)
+		(write-byte (arithmetic-shift waiting (- 8 waiting-bits))
+			    out)
 		(let ([waiting-bits (- waiting-bits 8)])
 		  (loop (bitwise-and waiting (sub1 (arithmetic-shift 1 waiting-bits)))
 			waiting-bits)))
-	      (let* ([c0 (read-char in)]
-		     [c (if (eof-object? c0) #\= c0)]
-		     [v (vector-ref base64-digit (char->integer c))])
+	      (let* ([c0 (read-byte in)]
+		     [c (if (eof-object? c0) (char->integer #\=) c0)]
+		     [v (vector-ref base64-digit c)])
 		(cond
 		 [v (loop (+ (arithmetic-shift waiting 6) v)
 			  (+ waiting-bits 6))]
-		 [(eq? c #\=) (void)] ; done
+		 [(eq? c (char->integer #\=)) (void)] ; done
 		 [else (loop waiting waiting-bits)])))))
 
 
       (define base64-encode-stream
 	(case-lambda
-	 [(in out) (base64-encode-stream in out #\newline)]
+	 [(in out) (base64-encode-stream in out #"\n")]
 	 [(in out linesep)
 	  ;; Process input 3 characters at a time, because 18 bits
 	  ;;  is divisible by both 6 and 8, and 72 (the line length)
 	  ;;  is divisible by 3.
 	  (let ([three (make-bytes 3)]
 		[outc (lambda (n)
-			(display (vector-ref digit-base64 n) out))]
+			(write-byte (vector-ref digit-base64 n) out))]
 		[done (lambda (fill)
 			(let loop ([fill fill])
 			  (unless (zero? fill)
-			    (display #\= out)
+			    (write-byte (char->integer #\=) out)
 			    (loop (sub1 fill))))
 			(display linesep out))])
 	    (let loop ([pos 0])
@@ -114,10 +114,10 @@
 			  (if (eof-object? next)
 			      (done 2)
 			      ;; More to go
-			      (let* ([next (read-char in)]
-				     [c (if (char? next)
-					    (char->integer next)
-					    0)])
+			      (let* ([next (read-byte in)]
+				     [c (if (eof-object? next)
+					    0
+					    next)])
 				(outc (+ (bitwise-and #x3f (arithmetic-shift b 2))
 					 (arithmetic-shift c -6)))
 				(if (eof-object? next)

@@ -4,7 +4,7 @@
 ;;; Copyright (C) 2002 by PLT. 
 ;;; Copyright (C) 2001 by Francisco Solsona. 
 ;;;
-;;; This file is part of mime-plt.
+;;; This file was part of mime-plt.
 
 ;;; mime-plt is free software; you can redistribute it and/or
 ;;; modify it under the terms of the GNU Lesser General Public
@@ -41,73 +41,65 @@
       (define-struct (qp-wrong-input qp-error) ())
       (define-struct (qp-wrong-line-size qp-error) (size))
       
-      ;; qp-encode : string -> string
+      ;; qp-encode : bytes -> bytes
       ;; returns the quoted printable representation of STR.
       (define qp-encode
         (lambda (str)
-          (let ((out (open-output-string)))
-            (qp-encode-stream (open-input-string str) out "\r\n")
-            (get-output-string out))))
+          (let ((out (open-output-bytes)))
+            (qp-encode-stream (open-input-bytes str) out #"\r\n")
+            (get-output-bytes out))))
       
       ;; qp-decode : string -> string
       ;; returns STR unqp.
       (define qp-decode
         (lambda (str)
-          (let ((out (open-output-string)))
-            (qp-decode-stream (open-input-string str) out)
-            (get-output-string out))))
+          (let ((out (open-output-bytes)))
+            (qp-decode-stream (open-input-bytes str) out)
+            (get-output-bytes out))))
       
       (define qp-decode-stream
         (lambda (in out)
-          (let ((iport (cond ((input-port? in) in)
-                             ((string? in) (open-input-string in))
-                             (else
-                              (raise (make-qp-wrong-input))))))
-            (let loop ((ln (read-line iport 'return-linefeed)))
-              (cond ((eof-object? ln) (void)) ;; done reading
-                    (else
-                     (when (> (string-length ln) 76)
-                       (warning "quoted-printable line is too long: ~a" (string-length ln)))
-                     (quoted-printable-decode-line ln out)
-                     (loop (read-line iport 'return-linefeed))))))))
-      
-      (define quoted-printable-decode-line
-        (lambda (line out)
-          (let ((in (open-input-string line)))
-            (let loop ((ch (read-char in)))
-              (if (eof-object? ch)
-		  (newline out) ;; preserve linefeed
-		  (case ch
-		    ((#\=);; quoted-printable stuff
-		     (let ((next (read-char in)))
-		       (cond ((eof-object? next);; end of qp-line
-			      null)
-			     ((hex-digit? next)
-			      (let ((next-next (read-char in)))
-				(cond ((eof-object? next-next)
-				       (warning "Illegal qp sequence: `=~a'" next)
-				       (display "=" out)
-				       (display next out))
-				      ((hex-digit? next-next)
-				       ;; qp-encoded
-				       (display (hex-octet->char
-						 (format "~a~a" next next-next))
-						out))
-				      (else
-				       (warning "Illegal qp sequence: `=~a~a'" next next-next)
-				       (display "=" out)
-				       (display next out)
-				       (display next-next out)))))
-			     (else
-			      ;; Warning: invalid
+	  (let loop ((ch (read-byte in)))
+	    (unless (eof-object? ch)
+	      (case ch
+		((61) ;; A "=", which is quoted-printable stuff
+		 (let ((next (read-byte in)))
+		   (cond 
+		    ((eq? next 10)
+		     ;; Soft-newline -- drop it
+		     (void))
+		    ((eq? next 13)
+		     ;; Expect a newline for a soft CRLF...
+		     (let ((next-next (read-byte in)))
+		       (if (eq? next-next 10)
+			   ;; Good.
+			   (loop (read-byte in))
+			   ;; Not a LF? Well, ok.
+			   (loop next-next))))
+		    ((hex-digit? next)
+		     (let ((next-next (read-byte in)))
+		       (cond ((eof-object? next-next)
 			      (warning "Illegal qp sequence: `=~a'" next)
 			      (display "=" out)
-			      (display next out)))
-		       (unless (eof-object? next) ;; eol is effectively consumed by =
-			 (loop (read-char in)))))
+			      (display next out))
+			     ((hex-digit? next-next)
+			      ;; qp-encoded
+			      (write-byte (hex-bytes->byte next next-next)
+					  out))
+			     (else
+			      (warning "Illegal qp sequence: `=~a~a'" next next-next)
+			      (write-byte 61 out)
+			      (write-byte next out)
+			      (write-byte next-next out)))))
 		    (else
-		     (display ch out)
-		     (loop (read-char in)))))))))
+		     ;; Warning: invalid
+		     (warning "Illegal qp sequence: `=~a'" next)
+		     (write-byte 61 out)
+		     (write-byte next out)))
+		   (loop (read-byte in))))
+		(else
+		 (write-byte ch out)
+		 (loop (read-byte in))))))))
       
       (define warning
         (lambda (msg . args)
@@ -115,84 +107,70 @@
 	    (fprintf (current-error-port)
 		     (apply format msg args))
 	    (newline (current-error-port)))))
-	
-      (define hex-digit?
-        (lambda (char)
-          (regexp-match (regexp "[0-9abcdefABCDEF]")
-                        (string char))))
-      
-      (define hex-octet->char
-        (lambda (str)
-          (integer->char (string->number str 16))))
-      
-      (define qp-blank?
-        (lambda (char)
-          (or (char=? char #\space)
-              (char=? char #\tab))))
-      
-      (define qp-newline
-        (lambda (port)
-          (display #\return port)
-          (display #\linefeed port)))
-      
-      (define qp-uppercase
-        (lambda (hex-octet)
-          (list->string (map char-upcase (string->list hex-octet)))))
-      
-      (define char->hex-octet
-        (lambda (char)
-          (let* ((ans (qp-uppercase
-                       (number->string (char->integer char) 16)))
-                 (padding? (< (string-length ans) 2)))
-            (if padding?
-                (format "=0~a" ans)
-                (format "=~a" ans)))))
-      
-      (define re:blanks (regexp "[ \t]+$"))
-      
-      (define display-qp-encoded
-        (lambda (line out newline-string)
-          (let* ((end-pos (string-length line))
-                 (m (regexp-match-positions re:blanks line))
-                 (force-encoding-pos (if m (caar m) end-pos)))
-            (let loop ([p 0][col 0])
-              (unless (= p end-pos)
-                (if (= col 75)
-                    (begin
-                      (write-char #\= out)
-                      (display newline-string out)
-                      (loop p 0))
-                    (let ([i (char->integer (string-ref line p))])
-                      (cond
-                        [(or (<= 33 i 60) (<= 62 i 126)
-                             (and (or (= i 32) (= i 9)) (< p force-encoding-pos)))
-                         ;; single-char mode:
-                         (write-char (integer->char i) out)
-                         (loop (add1 p) (add1 col))]
-                        [(>= col 73)
-                         ;; need a soft newline first
-                         (write-char #\= out)
-                         (display newline-string out)
-                         ;; now the octect
-                         (display (char->hex-octet (integer->char i)) out)
-                         (loop (add1 p) 3)]
-                        [else
-                         ;; the octect
-                         (display (char->hex-octet (integer->char i)) out)
-                         (loop (add1 p) (+ col 3))]))))))))
 
+      (define (hex-digit? i)
+	(vector-ref hex-values i))
+
+      (define hex-bytes->byte
+        (lambda (b1 b2)
+	  (+ (* 16 (vector-ref hex-values b1))
+	     (vector-ref hex-values b2))))
+
+      (define write-hex-bytes
+        (lambda (byte p)
+	  (write-byte 61 p)
+	  (write-byte (vector-ref hex-bytes (arithmetic-shift byte -4)) p)
+	  (write-byte (vector-ref hex-bytes (bitwise-and byte 15)) p)))
+      
+      (define re:blanks #rx#"[ \t]+$")
+      
       (define qp-encode-stream
-        (opt-lambda (in out [newline-string "\n"])
-          (let ((iport (cond ((input-port? in) in)
-                             ((string? in) (open-input-string in))
-                             (else
-                              (raise (make-qp-wrong-input))))))
-            (let loop ([first? #t])
-              (let ([line (read-line iport 'linefeed)])
-                (unless (eof-object? line)
-                  (unless first?
-                    (display newline-string out))
-                  (display-qp-encoded line out newline-string)
-                  (loop #f))))))))))
+        (opt-lambda (in out [newline-string #"\n"])
+          (let loop ([col 0])
+	    (if (= col 75)
+		(begin
+		  ;; Soft newline:
+		  (write-byte 61 out)
+		  (display newline-string out)
+		  (loop 0))
+		(let ([i (read-byte in)])
+		  (cond
+		   [(eof-object? i) (void)]
+		   [(or (= i 10) (= i 13))
+		    (write-byte i out)
+		    (loop 0)]
+		   [(or (<= 33 i 60) (<= 62 i 126)
+			(and (or (= i 32) (= i 9)) 
+			     (not (let ([next (peek-byte in)])
+				    (or (eof-object? next) (= next 10) (= next 13))))))
+		    ;; single-byte mode:
+		    (write-byte i out)
+		    (loop (add1 col))]
+		   [(>= col 73)
+		    ;; need a soft newline first
+		    (write-byte 61 out)
+		    (display newline-string out)
+		    ;; now the octect
+		    (write-hex-bytes i out)
+		    (loop 3)]
+		   [else
+		    ;; an octect
+		    (write-hex-bytes i out)
+		    (loop (+ col 3))]))))))
+
+      ;; Tables
+      (define hex-values (make-vector 256 #f))
+      (define hex-bytes (make-vector 16))
+      (let loop ([i 0])
+	(unless (= i 10)
+	  (vector-set! hex-values (+ i 48) i)
+	  (vector-set! hex-bytes i (+ i 48))
+	  (loop (add1 i))))
+      (let loop ([i 0])
+	(unless (= i 6)
+	  (vector-set! hex-values (+ i 65) (+ 10 i))
+	  (vector-set! hex-values (+ i 97) (+ 10 i))
+	  (vector-set! hex-bytes (+ 10 i) (+ i 65))
+	  (loop (add1 i)))))))
 
 ;;; qp-unit.ss ends here

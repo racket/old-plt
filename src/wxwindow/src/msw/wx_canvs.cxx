@@ -12,6 +12,8 @@
 
 #include "wx.h"
 
+#include "../../../wxcommon/wxGLConfig.h"
+
 #include <math.h>
 
 #define COMBO_WIDTH 18
@@ -94,7 +96,10 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 		  0, 0, 1, 1, 0, 0, FALSE);
 
   wx_dc = new wxCanvasDC(this);
-  wx_dc->wx_gl_cfg = cfg;
+  if (cfg) {
+    cfg = cfg->Clone();
+    wx_dc->wx_gl_cfg = cfg;
+  }
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AdvanceCursor(this);

@@ -3126,7 +3126,7 @@ void wxWinGL::Reset(wxGLConfig *cfg, HDC dc, int offscreen)
       pfd.cAccumAlphaBits = cfg->accum;
     }
 
-    if (cfg->multisample) {
+    if (cfg && cfg->multisample) {
       /* Based on code from http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=46 */
       PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
 

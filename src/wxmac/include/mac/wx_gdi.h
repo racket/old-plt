@@ -98,6 +98,8 @@ class wxBrush: public wxbBrush
 // Bitmap
 class wxItem;
 class wxMemoryDC;
+class wxGLConfig;
+
 class wxBitmap: public wxObject
 {
  protected:
@@ -112,6 +114,7 @@ class wxBitmap: public wxObject
   Bool selectedIntoDC;
   wxBitmap *mask;
   void *accounting;
+  wxGLConfig *gl_cfg;
 
   wxBitmap(void) ;
   wxBitmap(char bits[], int width, int height);
@@ -142,9 +145,11 @@ class wxBitmap: public wxObject
   inline void SetMask(wxBitmap *newmask) { mask = newmask; }
   inline wxBitmap *GetMask(void) { return mask; }
 
-  // Some Mac extensions ---- should only be used inside wxWindows, Please.
   void DrawMac(void);
   void DrawMac(int x, int y, int mode = srcCopy);
+  
+  void SetGLConfig(wxGLConfig *gl_cfg);
+  wxGLConfig *GetGLConfig(void);
 };
 
 // Cursor

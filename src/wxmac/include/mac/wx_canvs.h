@@ -20,6 +20,7 @@ typedef       void* wxCanvas ;
 class wxFrame;
 class wxBorderArea;
 class wxScrollArea;
+class wxGLConfig;
 
 // Canvas subwindow for drawing on
 class wxCanvas: public wxbCanvas
@@ -53,6 +54,7 @@ class wxCanvas: public wxbCanvas
      int			height = -1,
      long		style = 0,
      char*		windowName = "canvas",
+     wxGLConfig         *gl_cfg = NULL,
      WXTYPE		objectType = wxTYPE_CANVAS
      );
 
@@ -65,6 +67,7 @@ class wxCanvas: public wxbCanvas
      int			height = -1,
      long		style = 0,
      char*		windowName = "canvas",
+     wxGLConfig         *gl_cfg = NULL,
      WXTYPE		objectType = wxTYPE_CANVAS
      );
 
@@ -77,6 +80,7 @@ class wxCanvas: public wxbCanvas
      int			height = -1,
      long		style = 0,
      char*		windowName = "canvas",
+     wxGLConfig         *gl_cfg = NULL,
      WXTYPE		objectType = wxTYPE_CANVAS
      );
 
@@ -92,7 +96,7 @@ class wxCanvas: public wxbCanvas
   //=============================================================================
  private:
 
-  void InitDefaults(void);
+  void InitDefaults(wxGLConfig *gl_cfg);
 
   //=============================================================================
   // Public methods

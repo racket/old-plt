@@ -18,6 +18,7 @@
 #include "wxScrollArea.h"
 #include "wxBorderArea.h"
 #include "wxRectBorder.h"
+#include "../../../wxcommon/wxGLConfig.h"
 
 extern void wxCallDoPaintOrQueue(wxCanvas *win);
 extern void MrEdQueuePaint(wxWindow *wx_window);
@@ -36,11 +37,12 @@ wxCanvas::wxCanvas // Constructor (given parentFrame)
  int			height,
  long		style,
  char*		windowName,
+ wxGLConfig         *gl_cfg = NULL,
  WXTYPE		objectType
  ) :
  wxbCanvas (windowName, parentFrame, x, y, width, height, style)
 {
-  InitDefaults();
+  InitDefaults(gl_cfg);
 }
 
 
@@ -54,11 +56,12 @@ wxCanvas::wxCanvas // Constructor (given parentArea)
  int			height,
  long		style,
  char*		windowName,
+ wxGLConfig         *gl_cfg = NULL,
  WXTYPE		objectType
  ) :
  wxbCanvas (windowName, parentArea, x, y, width, height, style)
 {
-  InitDefaults();
+  InitDefaults(gl_cfg);
 
   wx_dc = new wxCanvasDC(this);
 }
@@ -73,11 +76,12 @@ wxCanvas::wxCanvas // Constructor (given parentWindow)
  int			height,
  long		style,
  char*		windowName,
+ wxGLConfig         *gl_cfg = NULL,
  WXTYPE		objectType
  ) :
  wxbCanvas (windowName, parentWindow, x, y, width, height, style)
 {
-  InitDefaults();
+  InitDefaults(gl_cfg);
 }
 
 
@@ -96,7 +100,7 @@ wxCanvas::~wxCanvas(void)
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-void wxCanvas::InitDefaults(void)
+void wxCanvas::InitDefaults(wxGLConfig *gl_cfg)
 {
   units_x = 0;
   units_y = 0;
@@ -110,6 +114,9 @@ void wxCanvas::InitDefaults(void)
   bgcol = ((cStyle & wxTRANSPARENT_WIN) ? NULL : wxWHITE);
 
   wx_dc = new wxCanvasDC(this);
+
+  gl_cfg = gl_cfg->Clone();
+  wx_dc->gl_cfg = gl_cfg;
 
   if (cStyle & wxCONTROL_BORDER) {
     if (cStyle & wxBORDER)

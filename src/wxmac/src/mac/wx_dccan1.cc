@@ -1098,7 +1098,7 @@ wxGL::wxGL()
 {
 }
 
-void wxGL::Reset(CGrafPtr gp, int offscreen, int w, int h)
+void wxGL::Reset(wxGLConfig *cfg, CGrafPtr gp, int offscreen, int w, int h)
 {
 #ifdef OS_X
   AGLContext ctx; 

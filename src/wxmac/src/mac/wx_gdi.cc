@@ -26,6 +26,7 @@
 #if USE_IMAGE_LOADING_IN_MAC
 # include "wx_image.h"
 #endif
+#include "../../../wxcommon/wxGLConfig.h"
 
 extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
 
@@ -1265,4 +1266,19 @@ void wxBitmap::DrawMac(int x, int y, int mode)
       SetThemeDrawingState(s, TRUE);
     }
   }
+}
+
+void wxBitmap::SetGLConfig(wxGLConfig *_gl_cfg)
+{
+  if (_gl_cfg)
+    _gl_cfg = _gl_cfg->Clone();
+  gl_cfg = _gl_cfg;
+}
+
+wxGLConfig *wxBitmap::GetGLConfig(void)
+{
+  if (gl_cfg)
+    return gl_cfg->Clone();
+  else
+    return NULL;
 }

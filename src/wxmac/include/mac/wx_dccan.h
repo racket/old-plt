@@ -19,6 +19,8 @@ typedef       void* wxCanvasDC ;
 #else
 
 class wxCanvas;
+class wxGLConfig;
+
 class wxCanvasDC: public wxbCanvasDC
 {
  protected:
@@ -26,6 +28,7 @@ class wxCanvasDC: public wxbCanvasDC
  public:
   wxCanvas* canvas;
   wxGL *gl;
+  wxGLConfig *gl_cfg;
   // Every time a callback happens, these are set to point to the right values
   // for drawing calls to work
 
@@ -211,7 +214,7 @@ public:
 
   int Ok();
   
-  void Reset(CGrafPtr gp, int offscreen, int w, int h);
+  void Reset(wxGLConfig *cfg, CGrafPtr gp, int offscreen, int w, int h);
   
   void SwapBuffers(void);
   void ThisContextCurrent(void);

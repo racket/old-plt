@@ -1,4 +1,4 @@
-;; $Id: gears.ss,v 1.3 2003/06/20 20:04:26 sowens Exp $
+;; $Id: gears.ss,v 1.4 2005/01/08 06:25:39 sowens Exp $
 ;;
 ;; This is a version of the venerable "gears" demo for PLT Scheme 200 using
 ;; Scott Owens' SGL OpenGL bindings.  It was ported from "glxgears.c" 1.3 from
@@ -41,6 +41,9 @@
          
          
 (define controls? #t)
+
+(define cfg (new gl-config%))
+(send cfg set-multisample-size 4)
 
 (define gears-canvas%
   (class* canvas% ()
@@ -97,9 +100,11 @@
 
         (gl-shade-model 'flat)
 
+	(gl-enable 'multisample)
+
         (gl-normal 0.0 0.0 1.0)
 
-        ;; Draw front face.
+	;; Draw front face.
         (gl-begin 'quad-strip)
         (do ((i 0 (+ 1 i))) ((> i teeth))
           (let* ((angle     (/ (* i 2.0 pi) teeth))
@@ -337,7 +342,7 @@
 	  (set! step? #f)
 	  (queue-callback (lambda x (send this run))))))
 
-    (super-instantiate () (style '(gl no-autoclear)))))
+    (super-instantiate () (style '(gl no-autoclear)) (gl-config cfg))))
 (define (f)
   (let* ((f (make-object frame% "gears.ss" #f))
          (c (instantiate gears-canvas% (f) (min-width 300) (min-height 300))))

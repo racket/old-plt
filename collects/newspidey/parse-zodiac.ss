@@ -565,10 +565,10 @@
       [(zodiac:define-values-form? term)
        (unless (= 1 (length (zodiac:define-values-form-vars term)))
          (error 'derive-top-term-constraints "define-values forms may only contain a single var"))
-       (let ([var (car (zodiac:define-values-form-vars term))]
-             [lhs-var (get-top-level-var (zodiac:varref-var var))]
-             [rhs-var (derive-top-term-constraints Gamma (zodiac:define-values-form-val term))])
-         (associate-set-var-and-term lhs-var var)
+       (let* ([var (car (zodiac:define-values-form-vars term))]
+              [lhs-var (get-top-level-var (zodiac:varref-var var))]
+              [rhs-var (derive-top-term-constraints Gamma (zodiac:define-values-form-val term))])
+         (associate-set-var-and-term (Set-var-name lhs-var) var)
          (add-constraint-with-bounds rhs-var lhs-var #t))]
       [(zodiac:top-level-varref/bind/unit? term)
        (let* ([name (zodiac:varref-var term)]
@@ -950,7 +950,7 @@
   (let ([term (lookup-term-from-set-var sym)])
     (if term
         (zodiac:zodiac-start term)
-        (zodiac:make-location 1 1 0 "term not found"))))
+        #f)))
   
 (define (get-var offset)
   (letrec ([find-loc (lambda (offset l)

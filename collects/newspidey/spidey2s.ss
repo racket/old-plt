@@ -4,7 +4,7 @@
 (define-signature spidey2^
   (get-prims ; -> (listof (list zodiac:location zodiac:location
              ;                  (union 'green 'red)))
-   get-loc ; : set-var -> zodiac:location
+   get-loc ; : set-var -> (union #f zodiac:location)
    get-var ; : location/offset -> (union set-var #f)
    get-type; : set-var -> type
    pp-type; : type -> string

@@ -11,16 +11,16 @@
    read-exprs
    read->raw 
    arglist->ilist 
-   *unevaluated* 
-   if-temp
    make-closure-record
    closure-record-name
    closure-record-mark
    ;(struct closure-record (name mark))
    create-bogus-bound-varref
    create-bogus-top-level-varref
+   *unevaluated* 
+   if-temp
+   struct-flag
    get-arg-symbol
-   (struct varref (var top-level?))
    expr-read
    set-expr-read!
    flatten-take

@@ -21,12 +21,12 @@
     (let-values ([(annotated exprs)
                   (a:annotate text break)])
       (set! expr-list exprs)
-      annotated
-      ;(thread (lambda ()
-      ;          (for-each eval annotated)
-      ;          (semaphore-post break-sema)))
-      ;(semaphore-wait break-sema)
-      ;(display-break-info)
+      ;annotated
+      (thread (lambda ()
+                (for-each eval annotated)
+                (semaphore-post break-sema)))
+      (semaphore-wait break-sema)
+      (display-break-info)
   ))
   
   (define (stepper-step)

@@ -84,6 +84,10 @@
 (define string-program
   '("this is a string"))
 
+(define simple-struct-program
+  '((define-struct my-cons (first rest))
+    (+ 3 4)))
+
 (define struct-program
   '((define-struct my-cons (first rest))
     (define (last-elt my-list)

@@ -116,17 +116,7 @@
            null
            a
            b))
-  
-  
-  (define (find-defined-vars expr)
-    (cond ([z:define-values-form? expr]
-           (map z:varref-var (z:define-values-form-vars expr)))
-          (else
-           null)))
-  
-  (define (top-defs exprs)
-    (map find-defined-vars exprs))
-  
+    
   (define all-defs-list-sym (gensym "all-defs-list-"))
   (define current-def-sym (gensym "current-def-"))
 
@@ -167,17 +157,18 @@
   (define (wrap-struct-form names annotated)
     (let* ([arg-temps (build-list (length names) get-arg-symbol)]
            [arg-temp-syms (map z:varref-var arg-temps)]
-           [struct-proc-names (list-take (- (length names) 1) names)]
-           [closure-records (map (lambda (proc-name) `(list (#%quote ,proc-name) 
-                                                            (lambda () #f)))
+           [struct-proc-names (cdr names)]
+           [closure-records (map (lambda (proc-name) `(,make-closure-record
+                                                       (#%quote ,proc-name) 
+                                                       (lambda () #f)))
                                  struct-proc-names)]
-           [proc-arg-temp-syms (list-take (- (length names) 1) arg-temp-syms)]
+           [proc-arg-temp-syms (cdr arg-temp-syms)]
            [setters (map (lambda (arg-temp-sym closure-record)
                            `(,closure-table-put! ,arg-temp-sym ,closure-record))
                          proc-arg-temp-syms
                          closure-records)]
            [full-body (append setters (list `(values ,@arg-temp-syms)))])
-      `(#%let-values ((,arg-temp-syms ,annotated)) ,full-body)))
+      `(#%let-values ((,arg-temp-syms ,annotated)) ,@full-body)))
   
   
   ; How do we know which bindings we need?  For every lambda body, there is a
@@ -248,6 +239,18 @@
                        (else (e:static-error "unknown read type" expr))))))))
   
          (define parsed-exprs (map z:scheme-expand exprs-read))  
+  
+         (define (find-defined-vars expr)
+           (cond [(z:define-values-form? expr)
+                  (let ([raw-expr (read->raw (find-read-expr expr))])
+                    (if (eq? (car raw-expr) 'define-struct)
+                        (list (cons struct-flag raw-expr))
+                        (map z:varref-var (z:define-values-form-vars expr))))]
+                 [else
+                  null]))
+         
+         (define (top-defs exprs)
+           (map find-defined-vars exprs))
          
 	 ; annotate/inner takes an expression to annotate and (this is now wrong) a boolean
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
@@ -410,12 +413,15 @@
                        [val val (z:define-values-form-val expr)]
                        [val (values annotated-val free-vars-val)
 			    (tail-recur val)]
-		       [val free-vars (varref-remove* vars free-vars-val)]
-		       [val annotated `(#%define-values ,var-names ,annotated-val)])
+		       [val free-vars (varref-remove* vars free-vars-val)])
                       (cond [(z:struct-form? val)
-                             (values (wrap-struct-form var-names annotated) free-vars)]
+                             (values `(#%define-values ,var-names
+                                       ,(wrap-struct-form var-names annotated-val)) 
+                                     free-vars)]
                             [else
-                             (values annotated free-vars)]))]
+                             (values `(#%define-values ,var-names
+                                       ,annotated-val) 
+                                     free-vars)]))]
 	       
 	       ; there is no set! in beginner level
 	       
@@ -441,7 +447,7 @@
 		       [closure-info (make-debug-info-app 'all new-free-vars 'none)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       (,closure-table-put! (,closure-key-maker ,closure-temp) 
-                                        (,make-closure-record (#%quote no-name) ,closure-info))
+                                        (,make-closure-record #f ,closure-info))
 				       ,closure-temp)])
 		  (values hash-wrapped
 			  new-free-vars))]

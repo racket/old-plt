@@ -29,6 +29,9 @@
 		 (unless (null? edit)
 		   (mred:debug:printf 'rewrap "canvas:rewrap")
 		   (send edit rewrap))))]
+	    [must-resize-edit #f]
+	    [needs-rewrapping #f])
+	  (public
 	    [resize-edit
 	       ;; only resize the edit when the container classes are 
 	       ;; force redrawing or when the frame is shown.
@@ -37,9 +40,7 @@
 		 (mred:debug:printf 'rewrap "resize-edit: ~a" frame-shown?)
 		 (if frame-shown?
 		     (rewrap)
-		     (set! needs-rewrapping #t))))]
-	    [must-resize-edit #f]
-	    [needs-rewrapping #f])
+		     (set! needs-rewrapping #t))))])
 	  (rename
 	    [super-show show]
 	    [super-force-redraw force-redraw]

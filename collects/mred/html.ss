@@ -87,8 +87,8 @@
 	     
 	     [whitespaces (string #\space #\tab #\newline #\return)]
 
-	     [verbatim-tags '(blockquote listing xmp plaintext)]
-	     [preformatted-tags '(pre)]
+	     [verbatim-tags '(listing xmp plaintext)]
+	     [preformatted-tags '(pre blockquote)]
 	     [comment-tags '(script)]
 	     [atomic-tags '(p br hr li dd dt img html ! meta link)]
 	     [enum-tags '(ul dl ol)]

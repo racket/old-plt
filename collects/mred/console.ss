@@ -81,6 +81,24 @@
 
     (define console-max-save-previous-exprs 30)
 
+    (define dynamic-break-later
+      (let ([p (current-output-port)])
+	(lambda (t)
+	  (let ([break? #f]
+		[old-handler (user-break-poll-handler)])
+	    (begin0
+	      (parameterize ([user-break-poll-handler
+			      (lambda ()
+				(unless break?
+				  '(fprintf p "checking break~n")
+				  (when (old-handler)
+				    '(fprintf p "setting break to #f~n")
+				    (set! break? #t)))
+				#f)])
+			    (t))
+	      (when break?
+		(break-thread (current-thread))))))))
+		    
     (define make-console-edit%
       (lambda (super%)
 	(class super% args
@@ -232,19 +250,23 @@
 	       (set! autoprompting? v))]
 	    [this-out-write
 	     (lambda (s)
-	       (init-transparent-io)
-	       (send transparent-edit 
-		     generic-write s 
-		     (lambda (start end)
-		       (send transparent-edit
-			     change-style output-delta 
-			     start end))))]
+	       (dynamic-break-later
+		(lambda ()
+		  (init-transparent-io)
+		  (send transparent-edit 
+			generic-write s 
+			(lambda (start end)
+			  (send transparent-edit
+				change-style output-delta 
+				start end))))))]
 	    [this-err-write
 	     (lambda (s)
-	       (generic-write s
-			      (lambda (start end)
-				(change-style error-delta 
-					      start end))))])
+	       (dynamic-break-later
+		(lambda ()
+		  (generic-write s
+				 (lambda (start end)
+				   (change-style error-delta 
+						 start end))))))])
 	       
 	  (public
 	    [transparent-edit #f]
@@ -271,37 +293,37 @@
 		   (insert #\newline))
 		 (set! transparent-edit (make-object transparent-io-edit%))
 		 (send transparent-edit enable-autoprompt #f)
-		 (for-each (lambda (c) (send c add-rep-snip transparent-edit))
-			   canvases)
 		 (dynamic-wind
-		  (lambda ()
-		    (begin-edit-sequence))
+		  (lambda () (begin-edit-sequence))
 		  (lambda ()		  
 		    (let ([snip (make-object wx:media-snip% transparent-edit)])
+		      (for-each (lambda (c) (send c add-rep-snip snip))
+				canvases)
 		      (insert snip)
 		      (insert #\newline))
 		    (let ([a (send transparent-edit get-admin)])
 		      (unless (null? a)
 			(send a grab-caret))))
-		  (lambda ()
-		    (end-edit-sequence)))
+		  (lambda () (end-edit-sequence)))
 		 (set! prompt-position (last-position))))]
 	    [transparent-read
 	     (lambda ()
-	       (init-transparent-io)
-	       (send transparent-edit flush-console-output)
-	       (send transparent-edit set-position (send transparent-edit last-position))
-	       (let/ec k
-		 (read 
-		  (open-input-string 
-		   (let loop ()
-		     (cond
-		       [(not transparent-edit) (k (void))]
-		       [(send transparent-edit ready?)
-			(send transparent-edit get-data)]
-		       [else
-			(wx:yield)
-			(loop)]))))))])
+	       (dynamic-break-later
+		(lambda ()
+		  (init-transparent-io)
+		  (send transparent-edit flush-console-output)
+		  (send transparent-edit set-position (send transparent-edit last-position))
+		  (let/ec k
+		    (read 
+		     (open-input-string 
+		      (let loop ()
+			(cond
+			  [(not transparent-edit) (k (void))]
+			  [(send transparent-edit ready?)
+			   (send transparent-edit get-data)]
+			  [else
+			   (wx:yield)
+			   (loop)]))))))))])
 	  (public
 	    [set-output-delta
 	     (lambda (delta)
@@ -636,10 +658,20 @@
 	    [snips null]
 	    [update-snip-size
 	     (lambda (s)
-	       (let ([width (box 0)])
+	       (let ([width (box 0)]
+		     [lefti (box 0)]
+		     [righti (box 0)]
+		     [leftm (box 0)]
+		     [rightm (box 0)])
 		 (send (send (get-media) get-admin)
 		       get-view null null width null)
-		 (send s set-min-width (- (unbox width) 12))))])
+		 (send s get-inset lefti (box 0) righti (box 0))
+		 (send s get-margin leftm (box 0) rightm (box 0))
+		 (send s set-min-width (- (unbox width)
+					  ;(unbox lefti)
+					  ;(unbox righti)
+					  (unbox leftm)
+					  (unbox rightm)))))])
 	  (public
 	    [add-rep-snip
 	     (lambda (snip)

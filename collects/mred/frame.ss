@@ -351,7 +351,10 @@
 	    
 	    (private
 	      [edit-menu:do (lambda (const)
-			      (lambda () (send edit do-edit const)
+			      (lambda () 
+				(let ([edit (active-edit)])
+				  (when edit
+				    (send edit do-edit const)))
 				#t))])
 	    
 	    (public

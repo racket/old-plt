@@ -586,21 +586,21 @@
 		 #t))]	    
 	    [get-backward-sexp
 	     (lambda (edit start-pos)
-	       (let ([end-pos 
-		      (mred:scheme-paren:scheme-backward-match 
-		       edit start-pos 
-		       (get-limit edit start-pos) 
-		       backward-cache)]
-		     [min-pos
-		      (mred:scheme-paren:scheme-backward-containing-sexp 
-		       edit start-pos
-		       (get-limit edit start-pos) 
-		       backward-cache)])
-		 (if (and end-pos 
-			  (or (not min-pos)
-			      (>= end-pos min-pos)))
-		     end-pos
-		     #f)))]
+	       (let* ([limit (get-limit edit start-pos)]
+		      [end-pos
+		       (mred:scheme-paren:scheme-backward-match 
+			edit start-pos limit backward-cache)]
+		      [min-pos
+		       (mred:scheme-paren:scheme-backward-containing-sexp 
+			edit start-pos limit backward-cache)]
+		      [ans
+		       (if (and end-pos 
+				(or (not min-pos)
+				    (>= end-pos min-pos)))
+			   end-pos
+			   #f)])
+		 (mred:dv min-pos start-pos limit end-pos ans)
+		 ans))]
 	    [flash-backward-sexp
 	     (lambda (edit start-pos)
 	       (lambda (edit start-pos move?)

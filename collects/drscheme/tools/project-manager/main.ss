@@ -113,13 +113,14 @@
   (define project-frames null)
 
 
-  ; ??? infoness goes away?
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin frame:text-info%) (filename)
-      ((inherit get-area-container get-menu-bar)
+      ((inherit get-area-container get-menu-bar get-editor)
+       (rename [super-make-root-area-container make-root-area-container])
        (override file-menu:save file-menu:save-as
-		 can-close?
-                 on-close)
+                 make-root-area-container
+		 can-close? on-close
+                 get-canvas% get-editor%)
        (public project-name ;; : string
                has-file? ;; : (string -> boolean)
                ))
@@ -390,36 +391,37 @@
 
       (define (execute-project)
 	(when (offer-to-save-files)
-          (send rep reset-console)
-          (parameterize ([current-eventspace (ivar rep user-eventspace)])
-            (queue-callback
-             (lambda ()
-               (when collection-paths
-                 (current-library-collection-paths collection-paths))
-               
-               (drscheme:basis:error-display/debug-handler
-                (let ([project-manager-error-display/debug-handler
-                       (lambda (msg zodiac exn)
-                         (if (and zodiac
-                                  (zodiac:zodiac? zodiac))
-                             (show-error/open-file msg zodiac)
-                             (message-box (format "Error running project ~a" project-name) msg)))])
-                  project-manager-error-display/debug-handler))
-               
-               (let ([ol (current-load)])
-                 (current-load
-                  (lambda (l)
-                    (dynamic-wind
-                     (lambda () (push-file l))
-                     (lambda () (ol l))
-                     (lambda () (pop-file))))))
-               
-               (for-each
-                (lambda (file)
-                  (cond
-                    [(string? file) (load file)]
-                    [else (apply require-library/proc file)]))
-                files))))))
+          (let ([rep (get-editor)])
+            (send rep reset-console)
+            (parameterize ([current-eventspace (ivar rep user-eventspace)])
+              (queue-callback
+               (lambda ()
+                 (when collection-paths
+                   (current-library-collection-paths collection-paths))
+                 
+                 (drscheme:basis:error-display/debug-handler
+                  (let ([project-manager-error-display/debug-handler
+                         (lambda (msg zodiac exn)
+                           (if (and zodiac
+                                    (zodiac:zodiac? zodiac))
+                               (show-error/open-file msg zodiac)
+                               (message-box (format "Error running project ~a" project-name) msg)))])
+                    project-manager-error-display/debug-handler))
+                 
+                 (let ([ol (current-load)])
+                   (current-load
+                    (lambda (l)
+                      (dynamic-wind
+                       (lambda () (push-file l))
+                       (lambda () (ol l))
+                       (lambda () (pop-file))))))
+                 
+                 (for-each
+                  (lambda (file)
+                    (cond
+                      [(string? file) (load file)]
+                      [else (apply require-library/proc file)]))
+                  files)))))))
       
       '(define (execute-project)
 	(when (offer-to-save-files)
@@ -786,7 +788,8 @@
 		    [loaded-open-table (assoc 'open-table all)]
 		    [loaded-collection-paths (assoc 'collection-paths all)]
 		    [loaded-to-load-files-shown? (assoc 'to-load-files-shown? all)]
-		    [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)])
+		    [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)]
+                    [loaded-rep-shown? (assoc 'rep-shown? all)])
 
 		(if (and loaded-language-settings
 			 (= (arity drscheme:basis:make-setting)
@@ -804,7 +807,10 @@
 		(when loaded-to-load-files-shown?
 		  (set! to-load-files-shown? (function:second loaded-to-load-files-shown?)))
 		(update-to-load-files-shown)
-		
+		(when loaded-rep-shown?
+                  (set! rep-shown? (function:second loaded-rep-shown?)))
+                (update-rep-shown)
+
 		(when loaded-files
 		  (set! files (function:second loaded-files)))
 
@@ -830,6 +836,7 @@
 	       (fprintf port "; save data~n")
 	       (write `'((loaded-files-shown? ,loaded-files-shown?)
 			 (to-load-files-shown? ,to-load-files-shown?)
+                         (rep-shown? ,rep-shown?)
 			 (collection-paths ,collection-paths)
 			 (open-table ,(hash-table-map open-table (lambda (x v) (list x (open-info-open? v)))))
 			 (files ,files)
@@ -861,14 +868,16 @@
 		(if loaded-files-shown?
 		    (list loaded-files-panel)
 		    null)))
-	(send loaded-files-outer-panel stretchable-height loaded-files-shown?))
+	(send loaded-files-outer-panel stretchable-height loaded-files-shown?)
+	(send loaded-files-outer-panel stretchable-width loaded-files-shown?))
       (define (show/hide-loaded-files)
         (set! loaded-files-shown? (not loaded-files-shown?))
         (is-changed)
         (update-loaded-files-shown)
         (unless (or to-load-files-shown?
-                    loaded-files-shown?)
-          (show/hide-to-load-files)))
+                    loaded-files-shown?
+                    rep-shown?)
+          (show/hide-rep)))
 
       (define to-load-files-shown? #t)
       (define (update-to-load-files-shown)
@@ -881,14 +890,16 @@
 		(if to-load-files-shown?
 		    (list to-load-files-panel)
 		    null)))
-	(send to-load-files-outer-panel stretchable-height to-load-files-shown?))
+	(send to-load-files-outer-panel stretchable-height to-load-files-shown?)
+	(send to-load-files-outer-panel stretchable-width to-load-files-shown?))
       (define (show/hide-to-load-files)
 	(set! to-load-files-shown? (not to-load-files-shown?))
         (is-changed)
         (update-to-load-files-shown)
         (unless (or to-load-files-shown?
-                    loaded-files-shown?)
-          (show/hide-loaded-files)))
+                    loaded-files-shown?
+                    rep-shown?)
+          (show/hide-rep)))
 
       (define rep-shown? #t)
       (define (update-rep-shown)
@@ -901,11 +912,16 @@
 		(if rep-shown?
 		    (list rep-panel)
 		    null)))
-	(send rep-outer-panel stretchable-height rep-shown?))
+	(send rep-outer-panel stretchable-height rep-shown?)
+	(send rep-outer-panel stretchable-width rep-shown?))
       (define (show/hide-rep)
 	(set! rep-shown? (not rep-shown?))
         (is-changed)
-        (update-rep-shown))
+        (update-rep-shown)
+        (unless (or to-load-files-shown?
+                    loaded-files-shown?
+                    rep-shown?)
+          (show/hide-loaded-files)))
       
       (define (hierlist-item-mixin class%)
 	(class/d class% args
@@ -1033,6 +1049,39 @@
 	     (lambda (o) (send o new-item hierlist-item-mixin)))))
 	(set! hl-stack (cdr hl-stack)))
 
+      (define context%
+        (class/d* object% (drscheme:rep:context<%>) ()
+          ((public ensure-rep-shown
+                   needs-execution?
+                   enable-evaluation disable-evaluation
+                   running not-running
+                   get-directory))
+
+          (define (ensure-rep-shown) (void))
+          (define (needs-execution?) #f)
+          (define (enable-evaluation) (void))
+          (define (disable-evaluation) (void))
+          (define (running) (void))
+          (define (not-running) (void))
+          (define (get-directory) (current-directory))
+          (super-init)))
+      
+      (define localized-rep-text%
+        (class drscheme:rep:text% ()
+          (sequence
+            (super-init (make-object context%)))))
+
+      (define (get-canvas%) (canvas:wide-snip-mixin canvas:info%))
+      (define (get-editor%) localized-rep-text%)
+      
+      (define (make-root-area-container class% parent)
+        (let ([main (super-make-root-area-container vertical-panel% parent)])
+          (set! top-panel (make-object vertical-panel% main))
+          (set! rep-outer-panel (make-object vertical-panel% top-panel))
+          (set! rep-panel (make-object class% rep-outer-panel))
+          (printf "make-root-area-container.2 ~s~n" top-panel)
+          rep-panel))
+      
       (super-init project-name #f 400 450)
 
       (set! project-frames (cons this project-frames))
@@ -1055,12 +1104,15 @@
       (make-object menu-item% "Configure Language..." project-menu (lambda x (configure-language)) #\l)
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
-      (make-object button% "Execute" (get-area-container) (lambda x (execute-project)))
-      (define top-panel (make-object horizontal-panel% (get-area-container)))
-      (define rep-outer-panel (make-object vertical-panel% (get-area-container)))
-      (define rep-panel (make-object horizontal-panel% rep-outer-panel))
+      (define top-panel top-panel)
+      (define rep-outer-panel rep-outer-panel)
+      (define rep-panel rep-panel)
       
-      (define to-load-files-outer-panel (make-object vertical-panel% top-panel))
+      (define execute-button (make-object button% "Execute" top-panel (lambda x (execute-project))))
+
+      (define top-horizontal-panel (make-object horizontal-panel% top-panel))
+
+      (define to-load-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
       (define to-load-files-panel (make-object horizontal-panel% to-load-files-outer-panel '(border)))
       (define files-list-box (make-object list-box% #f null to-load-files-panel
 					  (lambda (lb evt)
@@ -1075,7 +1127,7 @@
       (send to-load-button-panel stretchable-width #f)
       (send to-load-button-panel set-alignment 'center 'center)
 
-      (define loaded-files-outer-panel (make-object vertical-panel% top-panel))
+      (define loaded-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
       (define loaded-files-panel (make-object horizontal-panel% loaded-files-outer-panel '(border)))
       (define loaded-files-hierarchical-list (make-object hierlist% loaded-files-panel))
       (define loaded-files-button-panel (make-object vertical-panel% loaded-files-panel))
@@ -1092,31 +1144,16 @@
 	     [max-width (apply max (map (lambda (x) (send x get-width)) buttons))])
 	(for-each (lambda (button) (send button min-width max-width))
 		  buttons))
-
+      
       (send open-loaded-file-button enable #f)
 
+      (frame:reorder-menus this)
+      (update-loaded-files-shown)
+      (update-to-load-files-shown)
+      (update-rep-shown)
       (update-buttons)
 
-      (define context%
-        (class/d* object% (drscheme:rep:context<%>) ()
-          ((public ensure-rep-shown
-                   needs-execution?
-                   enable-evaluation disable-evaluation
-                   running not-running
-                   get-directory))
-
-          (define (ensure-rep-shown) (void))
-          (define (needs-execution?) #f)
-          (define (enable-evaluation) (void))
-          (define (disable-evaluation) (void))
-          (define (running) (void))
-          (define (not-running) (void))
-          (define (get-directory) (current-directory))
-          (super-init)))
-      (define rep (make-object drscheme:rep:text% (make-object context%)))
-      (define rep-canvas (make-object canvas:wide-snip% rep-panel rep))
-
-      (frame:reorder-menus this)
+      (send top-panel change-children (lambda (l) (list execute-button top-horizontal-panel rep-outer-panel)))
 
       (when (and filename
 		 (file-exists? filename))

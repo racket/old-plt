@@ -195,7 +195,7 @@ wxMediaBuffer::~wxMediaBuffer()
 
 /******************************************************************/
 
-extern int objscheme_something_prepared;
+extern "C" int objscheme_something_prepared;
 
 void wxMediaBuffer::OnLocalEvent(wxMouseEvent *event)
 {

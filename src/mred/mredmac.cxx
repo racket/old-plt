@@ -266,6 +266,7 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
 
 static int no_modifiers_last_time = 1;
 static int last_was_option_down;
+static int WeAreFront(); /* forward decl */
 
 /* WNE: a replacement for WaitNextEvent so we can get things like
    wheel events. */
@@ -348,14 +349,17 @@ int WNE(EventRecord *e, double sleep_secs)
 	SendEventToEventTarget(ref, GetEventDispatcherTarget());
       }
     }
-    ReleaseEvent(ref);
 
     if (ok && (e->what == mouseDown)) {
-      /* We have to bring-to-front ourselves: */
-      ProcessSerialNumber psn;
-      GetCurrentProcess(&psn);
-      SetFrontProcess(&psn);
+      /* For bring-to-front: */
+      if (!WeAreFront()) {
+	SendEventToEventTarget(ref, GetEventDispatcherTarget());
+	/* (Maybe sending the event is actually always ok. But
+	   we'll just do it here where it's necessary.) */
+      }
     }
+
+    ReleaseEvent(ref);
 
     if (ok)
       no_modifiers_last_time = !(e->modifiers & (shiftKey | cmdKey | controlKey | optionKey));
@@ -462,7 +466,6 @@ static int WindowStillHere(WindowPtr win)
   return FALSE;
 }
 
-#if defined(SELF_SUSPEND_RESUME)
 static int WeAreFront()
 {
   static int inited;
@@ -479,7 +482,6 @@ static int WeAreFront()
   
   return r;
 }
-#endif
 
 static int GetMods(void)
 {

@@ -476,9 +476,7 @@ typedef struct Scheme_Hash_Table
   Scheme_Object **vals;
   void (*make_hash_indices)(void *v, long *h1, long *h2);
   int (*compare)(void *v1, void *v2);
-#ifdef MZ_REAL_THREADS
-  void *mutex;
-#endif
+  Scheme_Object *mutex;
 } Scheme_Hash_Table;
 
 
@@ -497,9 +495,9 @@ typedef struct Scheme_Bucket_Table
   int size, count, step;
   Scheme_Bucket **buckets;
   char weak, with_home;
-#ifdef MZ_REAL_THREADS
-  void *mutex;
-#endif
+  void (*make_hash_indices)(void *v, long *h1, long *h2);
+  int (*compare)(void *v1, void *v2);
+  Scheme_Object *mutex;
 } Scheme_Bucket_Table;
 
 /* Hash tablekey types, used with scheme_hash_table */

@@ -1863,4 +1863,6 @@ void scheme_count_generic(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table 
 Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
 Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
+Scheme_Object *scheme_regexp_source(Scheme_Object *re);
+
 #endif /* __mzscheme_private__ */

@@ -639,7 +639,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
     SCHEME_SET_STRING_IMMUTABLE(so);
     SCHEME_VEC_ELS(sch_argv)[i] = so;
   }
-  SCHEME_SET_VECTOR_IMMUTABLE(sch_argv);
+  if (argc)
+    SCHEME_SET_VECTOR_IMMUTABLE(sch_argv);
   scheme_set_param(scheme_config, MZCONFIG_CMDLINE_ARGS, sch_argv);
 
   scheme_add_global("argv", sch_argv, global_env);

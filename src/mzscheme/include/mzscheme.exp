@@ -274,6 +274,8 @@ scheme_struct_type_property_ref
 scheme_eq
 scheme_eqv
 scheme_equal
+scheme_equal_hash_key
+scheme_equal_hash_key2
 scheme_build_list
 scheme_list_length
 scheme_proper_list_length

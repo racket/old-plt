@@ -1174,6 +1174,21 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_this_string(p, scheme_symbol_val(ip->sub_type), 0, SCHEME_SYM_LEN(ip->sub_type));
       }
     }
+  else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_regexp_type))
+    {
+       if (compact) {
+	cannot_print(p, notdisplay, obj, ht);
+       } else {
+	 Scheme_Object *src = scheme_regexp_source(obj);
+	 print_this_string(p, "#<regexp", 0, 8);
+	 if (src) {
+	   print_this_string(p, ":", 0, 1);
+	   print_string(src, 1, p);
+	 }
+	 print_this_string(p, ">", 0, 1);
+	 closed = 1;
+       }
+    }
   else if (SCHEME_OUTPORTP(obj))
     {
       if (compact) {

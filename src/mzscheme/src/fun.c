@@ -1299,6 +1299,11 @@ static Scheme_Object *object_name(int argc, Scheme_Object **argv)
     return ((Scheme_Struct_Type *)argv[0])->name;
   } else if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)) {
     return ((Scheme_Struct_Property *)argv[0])->name;
+  } if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_regexp_type)) {
+    Scheme_Object *s;
+    s = scheme_regexp_source(argv[0]);
+    if (s)
+      return s;
   }
 
   return scheme_false;

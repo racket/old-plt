@@ -51,6 +51,7 @@ typedef int rxpos;
 typedef struct regexp {
   Scheme_Type type;
   MZ_HASH_KEY_EX
+  Scheme_Object *source;
   long nsubexp;
   long regsize;
   char regstart;		/* Internal use only. */
@@ -1369,6 +1370,13 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
   re = (Scheme_Object *)regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
 
   RELEASE_RE_LOCK();
+
+  if (SCHEME_IMMUTABLE_STRINGP(argv[0]))
+    ((regexp *)re)->source = argv[0];
+  else
+    ((regexp *)re)->source = scheme_make_immutable_sized_string(SCHEME_STR_VAL(argv[0]), 
+								SCHEME_STRTAG_VAL(argv[0]), 
+								1);
   
   return re;
 }
@@ -1572,6 +1580,11 @@ static Scheme_Object *replace_star(int argc, Scheme_Object *argv[])
 static Scheme_Object *regexp_p(int argc, Scheme_Object *argv[])
 {
   return (SCHEME_TYPE(argv[0]) == scheme_regexp_type) ? scheme_true : scheme_false;
+}
+
+Scheme_Object *scheme_regexp_source(Scheme_Object *re)
+{
+  return ((regexp *)re)->source;
 }
 
 #ifdef MZ_PRECISE_GC

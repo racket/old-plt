@@ -142,6 +142,7 @@
   ;; replace-path: (url-path -> url-path) url -> url
   ;; make a new url by replacing the path part of a url with a function
   ;; of the url's old path
+  ;; also remove the query
   (define (replace-path proc in-url)
     (let ([new-path (proc (url-path in-url))])
       (make-url
@@ -150,7 +151,7 @@
        (url-host in-url)
        (url-port in-url)
        new-path
-       (url-query in-url)
+       '()
        (url-fragment in-url))))
 
   ;; **************************************************

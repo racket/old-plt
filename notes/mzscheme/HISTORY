@@ -1,4 +1,11 @@
 
+Version 203.7
+Changed thread-resume to install a transitive resume
+Added current-wait-pseudo-random-generator, and made
+ object-wait-multiple fair using the parameter's
+ value for controllable randomness
+Added tcp-port?
+
 Version 203.6
 Added synchronous channels
 Added thread-suspend and thread-resume

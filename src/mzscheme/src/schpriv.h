@@ -881,7 +881,6 @@ typedef struct Scheme_Sema {
   MZ_HASH_KEY_EX
   Scheme_Sema_Waiter *first, *last;
   long value;
-  int unfair_count;
 } Scheme_Sema;
 
 typedef struct Scheme_Channel {

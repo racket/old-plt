@@ -1,7 +1,7 @@
-(unless (equal? (version) "100alpha1")
+(unless (equal? (version) "100/27")
   (error 'mred-interfaces
          "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~a"
-         "100alpha1"
+         "100/27"
          (version)))
 (require-library "mred-interfacess.ss" "framework")
 
@@ -1252,7 +1252,21 @@
                           is-enabled?))
                       ($$menu-bar<%>
                         (interface () enable get-items is-enabled? get-frame))
-                      ($$menu<%> (interface () get-items get-item))
+                      ($$menu<%>
+                        (interface
+                          ()
+                          enable
+                          get-parent
+                          delete
+                          get-label
+                          set-label
+                          set-help-string
+                          get-plain-label
+                          get-help-string
+                          restore
+                          is-deleted?
+                          get-items
+                          is-enabled?))
                       ($$list-box<%>
                         (interface
                           ()
@@ -2778,13 +2792,12 @@
                           the-clipboard
                           the-brush-list
                           subwindow<%>
-                          submenu-item<%>
                           subarea<%>
                           style%
                           special-control-key
                           snip-class-list%
                           sleep/yield
-                          shortcut-menu-item<%>
+                          selectable-menu-item<%>
                           register-collecting-blit
                           read-editor-global-header
                           read-editor-global-footer

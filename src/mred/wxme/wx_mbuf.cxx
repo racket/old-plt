@@ -726,13 +726,15 @@ int wxmeCheckFormatAndVersion(wxMediaStreamIn *s, wxMediaStreamInBase *b, Bool s
   if (strcmp(s->read_version, MRED_VERSION_STR)
       && strcmp(s->read_version, "01")
       && strcmp(s->read_version, "02")
-      && strcmp(s->read_version, "03")) {
+      && strcmp(s->read_version, "03")
+      && strcmp(s->read_version, "04")) {
     if (showErrors)
       wxmeError("load-file: unknown version number in editor<%> file format");
     return 0;
   }
 
-  if (!strcmp(s->read_version, MRED_VERSION_STR)) {
+  if (WXME_VERSION_FOUR(s)
+      || !strcmp(s->read_version, MRED_VERSION_STR)) {
     /* Need to skip " ## " */
     char buf[4];
     b->Read((char *)buf, 4);

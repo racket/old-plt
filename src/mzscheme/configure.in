@@ -22,7 +22,7 @@ AC_INIT(mzscheme/src/bignum.c)
 
 AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
-AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (enabled by default for Linux)])
+AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (often enabled by default)])
 AC_ARG_ENABLE(xrender, [  --enable-xrender        use Xrender when available (enabled by default)])
 AC_ARG_ENABLE(xft, [  --enable-xft            use Xft when available (enabled by default)])
 AC_ARG_ENABLE(libpng, [  --enable-libpng         use libpng instead of building (enabled by default)])
@@ -130,10 +130,16 @@ else
   fi
 fi
 
+# Enable OpenGL by default (assuming the headers and libs
+#  are available) on certain platforms:
 if test "${enable_gl}" = "" ; then
-  if test "$OS" = "Linux" ; then
-    enable_gl=maybe
-  fi
+  case $OS in
+    Linux | Darwin | SunOS)
+      enable_gl=maybe
+      ;;
+    *)
+      ;;
+  esac
 fi
 
 ###### Make sure MrEd is really there ######
@@ -433,6 +439,7 @@ case $OS in
       MZINSTALLTARGET=osx-install
       enable_xrender=no
       enable_shared=no
+      enable_gl=no
       if test "${enable_libfw}" = "yes" ; then
         FRAMEWORK_INSTALL_DIR=/Library/Frameworks
       else

@@ -88,7 +88,7 @@ struct SOCKADDR_IN {
 #endif
 
 #ifdef USE_UNIX_SOCKETS_TCP
-typedef int tcp_t;
+typedef long tcp_t;
 # define INVALID_SOCKET (-1)
 #define closesocket close
 #endif

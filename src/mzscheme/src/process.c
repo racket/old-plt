@@ -193,7 +193,8 @@ extern long GC_get_memory_use();
 
 static Scheme_Object *keywords_symbol, *no_keywords_symbol;
 static Scheme_Object *callcc_is_callec_symbol, *callcc_is_not_callec_symbol;
-static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_symbol;
+static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol;
+static Scheme_Object *hash_percent_globals_symbol, *all_globals_symbol, *empty_symbol;
 
 static Scheme_Object *nested_exn_handler;
 
@@ -501,6 +502,8 @@ void scheme_init_process(Scheme_Env *env)
     REGISTER_SO(callcc_is_not_callec_symbol);
     REGISTER_SO(hash_percent_syntax_symbol);
     REGISTER_SO(all_syntax_symbol);
+    REGISTER_SO(hash_percent_globals_symbol);
+    REGISTER_SO(all_globals_symbol);
     REGISTER_SO(empty_symbol);
 
     keywords_symbol = scheme_intern_symbol("keywords");
@@ -509,6 +512,8 @@ void scheme_init_process(Scheme_Env *env)
     callcc_is_not_callec_symbol = scheme_intern_symbol("call/cc!=call/ec");
     hash_percent_syntax_symbol = scheme_intern_symbol("hash-percent-syntax");
     all_syntax_symbol = scheme_intern_symbol("all-syntax");
+    hash_percent_globals_symbol = scheme_intern_symbol("hash-percent-globals");
+    all_globals_symbol = scheme_intern_symbol("all-globals");
     empty_symbol = scheme_intern_symbol("empty");
   }
 }
@@ -2945,7 +2950,7 @@ void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
 
 Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
 {
-  int save_no_key, save_ec_only, save_hp_syntax;
+  int save_no_key, save_ec_only, save_hp_syntax, save_hp_globals;
   int i, with_nso = 0;
   int empty = 0;
   Scheme_Object *v;
@@ -2958,6 +2963,7 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   save_no_key = scheme_no_keywords;
   save_ec_only = scheme_escape_continuations_only;
   save_hp_syntax = scheme_hash_percent_syntax_only;
+  save_hp_globals = scheme_hash_percent_globals_only;
 
   for (i = 0; i < argc; i++) {
     v = argv[i];
@@ -2973,6 +2979,10 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
       scheme_hash_percent_syntax_only = 1;
     else if (v == all_syntax_symbol)
       scheme_hash_percent_syntax_only = 0;
+    else if (v == hash_percent_globals_symbol)
+      scheme_hash_percent_globals_only = 1;
+    else if (v == all_globals_symbol)
+      scheme_hash_percent_globals_only = 0;
     else if (v == empty_symbol)
       empty = 1;
     else {
@@ -2997,6 +3007,7 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   scheme_no_keywords = save_no_key;   
   scheme_escape_continuations_only = save_ec_only;
   scheme_hash_percent_syntax_only = save_hp_syntax;
+  scheme_hash_percent_globals_only = save_hp_globals;
 
   if (with_nso && !empty) {
     int j;

@@ -45,6 +45,7 @@ int scheme_allow_set_undefined;
 int scheme_no_keywords = 0;
 int scheme_escape_continuations_only = 0; 
 int scheme_hash_percent_syntax_only = 0;
+int scheme_hash_percent_globals_only = 0;
 
 int scheme_starting_up;
 
@@ -783,9 +784,11 @@ void scheme_copy_from_original_env(Scheme_Env *env)
       int builtin = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_IS_PRIMITIVE;
       int refid = (((Scheme_Bucket_With_Const_Flag *)b)->flags) & GLOB_HAS_REF_ID;
       
-      if (!scheme_hash_percent_syntax_only || key 
-	  || !(SCHEME_SYNTAXP(val)
-	       || SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))) {
+      if (key
+	  || ((SCHEME_SYNTAXP(val)
+	       || SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))
+	      ? !scheme_hash_percent_syntax_only
+	      : !scheme_hash_percent_globals_only)) {
 	if (call_ec) {
 	  char *s = SCHEME_SYM_VAL(name);
 	  /* WARNING: s is GC-misaligned... */

@@ -1274,15 +1274,10 @@
 		    vector? make-vector vector vector-ref vector-set! 
 		    char? char=? char<? char>? char<=? char>=? char-ci=? char-ci<? char-ci>? char-ci<=? char-ci>=? 
 		    char-upcase boolean? eqv? equal? force)]
-	  [#%r4 '(#%make-promise)]
-	  [r5 '(call-with-values values eval port?)]
-	  [copy-env (#%lambda (l l2)
-		      (#%let ([n (#%make-namespace 'empty)]
-			      [all (#%make-namespace)]
-			      [l (#%append l l2 (#%map (#%lambda (s) 
-						          (#%string->symbol 
-							   (#%string-append "#%" (#%symbol->string s)))) 
-						       l))])
+	  [r5 '(call-with-values values eval port? scheme-report-environment null-environment)]
+	  [copy-env (#%lambda (l)
+		      (#%let ([n (#%make-namespace 'hash-percent-syntax 'hash-percent-globals)]
+			      [all (#%make-namespace)])
 			 (#%parameterize ([#%current-namespace n])
 			   (#%for-each
 			    (#%lambda (s v) (#%global-defined-value s v))
@@ -1293,11 +1288,15 @@
 			       l))))
 			 n))]
 	  [make-maker
-	   (#%lambda (who r5 r4 #%r4)
+	   (#%lambda (who r5 r4)
             (#%lambda (n)
 	     (#%cond
-	      [(#%eq? n 5) (copy-env (#%append r5 r4) #%r4)]
-	      [(#%eq? n 4) (copy-env r4 #%r4)]
+	      [(#%eq? n 5) (#%let ([n (copy-env (#%append r5 r4))])
+			     (#%with-handlers ([#%void #%void])
+				(#%parameterize ([#%current-namespace n])
+				  (#%require-library "synrule.ss")))
+			     n)]
+	      [(#%eq? n 4) (copy-env r4)]
 	      [(#%and (#%number? n) (#%integer? n) (#%positive? n))
 	       (#%raise (#%make-exn:misc:unsupported
 			 (#%string->immutable-string
@@ -1305,8 +1304,8 @@
 			 (debug)))]
 	      [else (#%raise-type-error who "positive integer" n)])))])
      (#%values
-      (make-maker 'scheme-report-environment r5 (append r4-syntax r4) #%r4)
-      (make-maker 'null-environment '() r4-syntax '()))))
+      (make-maker 'scheme-report-environment r5 (append r4-syntax r4))
+      (make-maker 'null-environment '() r4-syntax))))
 
 > fstop scheme-report-environment null-environment <
 

@@ -9,18 +9,39 @@
 ;   "impure" = they have text waiting
 ;   "pure" = the MIME headers have been read
 
-(define-signature mred:url^
-  (http/get-impure-port    ; url [x list (str)] -> in-port
-    display-pure-port      ; in-port -> ()
-    string->url            ; str -> url
-    call/input-url         ; url x (in-port -> ()) [x list (str)] -> ()
-    purify-port            ; in-port -> ()
-    combine-url/relative   ; url x str -> url
-))
-
 (define mred:url@
   (unit/sig mred:url^
     (import)
+
+    ;; if the path is absolute, it just arbitrarily picks the first
+    ;; filesystem root.
+    (define unixpath->path
+      (letrec* ([r (regexp "([^/]*)/(.*)")]
+                [translate-dir
+                 (lambda (s)
+                   (cond
+                    [(string=? s "") 'same] ;; handle double slashes
+                    [(string=? s "..") 'up]
+                    [(string=? s ".") 'same]
+                    [else s]))]
+                [build-relative-path
+                 (lambda (s)
+                   (let ([m (regexp-match r s)])
+                     (cond
+                      [(string=? s "") 'same]
+                      [(not m) s]
+                      [else
+                       (build-path (translate-dir (cadr m))
+                                   (build-relative-path (caddr m)))])))])
+               (lambda (s)
+                 (let ([root (car (filesystem-root-list))])
+                   (cond
+                    [(string=? s "") ""]
+                    [(string=? s "/") root]
+                    [(char=? #\/ (string-ref s 0))
+                     (build-path root
+                                 (build-relative-path (substring s 1 (string-length s))))]
+                    [else (build-relative-path s)])))))
 
     ; scheme : str + #f
     ; host : str + #f

@@ -635,9 +635,9 @@
 		 ;; delete newline
 		 (send snip-edit delete)
 		 ;; set style
-		 (send snip-edit change-style base-delta 
-		       0 (string-length type))
+		 (send snip-edit set-style-list (scheme:get-style-list))
 		 (send snip-edit change-style type-delta 0 (string-length type))
+		 (send snip-edit change-style base-delta) 
 		 ;; add clickback
 		 (send snip-edit set-clickback 
 		       0 (string-length type)

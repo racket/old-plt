@@ -2258,17 +2258,35 @@
                                       ;; Copy text in target to `insert':
                                       (insert (send target get-text) void)))]
                                  [else
-				  (let ([bytes->string
-					 (cond
-					  [(equal? "UTF-8" (mime:entity-charset ent))
-					   bytes->string/utf-8]
-					  [else bytes->string/latin-1])])
-				    (insert (bytes->string (crlf->lf (slurp ent)) #\?)
-					    (lambda (t s e)
-					      (when (SHOW-URLS) (hilite-urls t s e))
-					      ;;(handle-formatting e) ; too slow
-					      (if (eq? disp 'error)
-						  (send t change-style red-delta s e)))))])]
+				  (let-values ([(bytes->string done)
+						(cond
+						 [(and mime-mode?
+						       (string? (mime:entity-charset ent))
+						       (string-ci=? "UTF-8" (mime:entity-charset ent)))
+						  (values bytes->string/utf-8 void)]
+						 [(and mime-mode?
+						       (string? (mime:entity-charset ent))
+						       (bytes-open-converter (mime:entity-charset ent) "UTF-8"))
+						  => (lambda (c)
+						       (values
+							(lambda (s alt)
+							  (let-values ([(r got status) (bytes-convert c s)])
+							    (if (eq? status 'complete)
+								(bytes->string/utf-8 r alt)
+								(bytes->string/latin-1 s))))
+							(lambda ()
+							  (bytes-close-converter c))))]
+						 [else (values bytes->string/latin-1 void)])])
+				    (dynamic-wind
+					void
+					(lambda ()
+					  (insert (bytes->string (crlf->lf (slurp ent)) #\?)
+						  (lambda (t s e)
+						    (when (SHOW-URLS) (hilite-urls t s e))
+						    ;;(handle-formatting e) ; too slow
+						    (if (eq? disp 'error)
+							(send t change-style red-delta s e)))))
+					done))])]
                               [else
                                (generic ent)]))]
                   [(image) 

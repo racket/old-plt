@@ -319,7 +319,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   (define (download-package pkg)
   
     (define-values (ip op) (tcp-connect (PLANET-SERVER-NAME) (PLANET-SERVER-PORT)))
-    (define dummy1 (printf "connected to port ~a\n" (PLANET-SERVER-PORT)))
+
     (define (close-ports)
       (close-input-port ip)
       (close-output-port op))

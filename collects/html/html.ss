@@ -1,5 +1,5 @@
 ;; copyright by Paul Graunke June 2000 AD
-(require-library "sgml.ss" "xml" "legacy")
+(require-library "sgml.ss" "html")
 (require-library "function.ss")
 (load-relative "html-structs.ss")
 (load-relative "case.ss")

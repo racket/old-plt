@@ -10,9 +10,9 @@
  (compound-unit/sig
    (import (F : mzlib:function^) (S : mzlib:string^))
    (link
-    [AST : dtd-ast^ ((require-library "dtd-ast.ss" "xml" "legacy"))]
-    [ENT : entity-expander^ ((require-library "entity-expander.ss" "xml" "legacy"))]
-    [DTD : dtd^ ((require-library "dtdr.ss" "xml" "legacy") AST ENT F S)])
+    [AST : dtd-ast^ ((require-library "dtd-ast.ss" "html"))]
+    [ENT : entity-expander^ ((require-library "entity-expander.ss" "html"))]
+    [DTD : dtd^ ((require-library "dtdr.ss" "html") AST ENT F S)])
    (export (open AST) (open DTD)))
  #f
  mzlib:function^

@@ -150,6 +150,9 @@
 	(define (<-> a)
 	  (lambda (b)
 	    (- a b)))
+
+	(define (<~-> a)
+	  (- a))
 	
 	(define (<quotient> a)
 	  (lambda (b)
@@ -175,6 +178,7 @@
 	(define (<expt> a)
 	  (lambda (b)
 	    (expt a b)))
+
 
 	(define (!= a)
 	  (lambda (b)
@@ -315,6 +319,8 @@
 	(hash-table-put! built-in-and-user-funcs "+." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <+>))
 	(hash-table-put! built-in-and-user-funcs "-" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <->))
 	(hash-table-put! built-in-and-user-funcs "-." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <->))
+	(hash-table-put! built-in-and-user-funcs "~-" (cons (make-arrow (list "int") "int") <~->))
+	(hash-table-put! built-in-and-user-funcs "~-." (cons (make-arrow (list "float") "float") <~->))
 	(hash-table-put! built-in-and-user-funcs "*" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <*>))
 	(hash-table-put! built-in-and-user-funcs "*." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <*>))
 	(hash-table-put! built-in-and-user-funcs "/" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <quotient>))
@@ -335,6 +341,7 @@
 	(hash-table-put! built-in-and-user-funcs "not" (cons (make-arrow (list "bool") "bool") not))
 	(hash-table-put! built-in-and-user-funcs "~-" (cons (make-arrow (list "int") "int") -))
 	(hash-table-put! built-in-and-user-funcs "**" (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <expt>))
+	(hash-table-put! built-in-and-user-funcs "sqrt" (cons (make-arrow (list "float") "float") sqrt))
 	(hash-table-put! built-in-and-user-funcs "float" (cons (make-arrow (list "int") "float") (lambda (x) x)))
 	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) <append>))
 	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string") (make-arrow (list "string") "string")) <string-append>))

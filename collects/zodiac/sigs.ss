@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.47 1998/03/06 21:15:42 shriram Exp $
+; $Id: sigs.ss,v 1.48 1998/03/14 17:53:46 mflatt Exp $
 
 (begin-elaboration-time
  (reference-relative-library "namedarg.ss"))
@@ -48,7 +48,8 @@
 	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))))
 
 (define-signature zodiac:misc^
-  (pretty-print debug-level symbol-append flush-printf print-and-return))
+  (pretty-print debug-level symbol-append flush-printf print-and-return 
+   attributes-resetters))
 
 (define-signature zodiac:correlate^
   (make-correlator add-to-correlator find-in-correlator))

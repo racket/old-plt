@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.58 1998/03/14 22:05:16 mflatt Exp $
+; $Id: scm-unit.ss,v 1.59 1998/03/14 22:57:51 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -1126,4 +1126,12 @@
   (reference-library-unit-maker 'reference-relative-library-unit #f #t)
   (reference-library-unit-maker 'reference-relative-library-unit/sig #t #t)
 
+  (define (reset-unit-attributes attr)
+    (put-attribute attr c-unit-link-import/body-vocab-attr null)
+    (put-attribute attr c-unit-current-link-tag-attribute null)
+    (put-attribute attr 'unit-vars null)
+    (put-attribute attr 'unresolved-unit-vars null))
+
+  (attributes-resetters (cons reset-unit-attributes (attributes-resetters)))
+  
   )

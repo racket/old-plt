@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.41 1997/09/20 18:51:55 shriram Exp shriram $
+; $Id: scm-core.ss,v 1.42 1997/10/28 17:49:10 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -219,13 +219,17 @@
 
   (define previous-attribute (make-attributes))
 
+  (define (reset-internal-attributes attr)
+    (set-top-level-status attr #t)
+    (for-each (lambda (r) (r attr)) (attributes-resetters)))
+
   (define scheme-expand
     (lambda/nal zodiac:scheme-expand/nal
       (let ((attr (cond
 		    ((eq? attr 'previous) previous-attribute)
 		    ((not attr) (make-attributes))
 		    (else attr))))
-	(set-top-level-status attr #t)
+	(reset-internal-attributes attr)
 	(call/nal zodiac:expand/nal expand
 	  (expression: expr)
 	  (attributes: attr)
@@ -239,7 +243,7 @@
 		    ((eq? attr 'previous) previous-attribute)
 		    ((not attr) (make-attributes))
 		    (else attr))))
-	(set-top-level-status attr #t)
+	(reset-internal-attributes attr)
 	(call/nal zodiac:expand-program/nal expand-program
 	  (expressions: exprs)
 	  (attributes: attr)

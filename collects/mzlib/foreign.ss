@@ -55,11 +55,12 @@
                                       (make-rename-transformer #'from))
                                     ...))]))))])))))
 
-(provide* ctype-sizeof ctype-alignof malloc free end-stubborn-change
-          cpointer? (unsafe ptr-ref) (unsafe ptr-set!) ptr-equal?
-          ctype? make-ctype make-cstruct-type make-sized-byte-string)
-(provide* _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
-          _byte _word _int _uint _fixint _ufixint _long _ulong _fixnum _ufixnum
+(provide* ctype-sizeof ctype-alignof compiler-sizeof
+          malloc free end-stubborn-change
+          cpointer? ptr-equal? (unsafe ptr-ref) (unsafe ptr-set!)
+          ctype? make-ctype make-cstruct-type make-sized-byte-string
+          _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
+          _fixint _ufixint _fixnum _ufixnum
           _float _double _double*
           _bool _pointer _scheme _fpointer)
 
@@ -69,6 +70,58 @@
      (begin (provide name) (define (name . args) body ...))]
     [(_ name expr)
      (begin (provide name) (define name expr))]))
+
+;; ----------------------------------------------------------------------------
+;; C integer types
+
+;; _byte etc is a convenient name for _uint8 & _sint8
+;; (_byte is unsigned)
+(define* _byte  _uint8)
+(define* _ubyte _uint8)
+(define* _sbyte _int8)
+
+;; _word etc is a convenient name for _uint16 & _sint16
+;; (_word is unsigned)
+(define* _word  _uint16)
+(define* _uword _uint16)
+(define* _sword _int16)
+
+;; _short etc is a convenient name for whatever is the compiler's `short'
+;; (_short is signed)
+(provide _short _ushort _sshort)
+(define-values (_short _ushort _sshort)
+  (case (compiler-sizeof 'short)
+    [(2) (values _int16 _uint16 _int16)]
+    [(4) (values _int32 _uint32 _int32)]
+    [else (error 'foreign "internal error: bad compiler size for `short'")]))
+
+;; _int etc is a convenient name for whatever is the compiler's `int'
+;; (_int is signed)
+(provide _int _uint _sint)
+(define-values (_int _uint _sint)
+  (case (compiler-sizeof 'int)
+    [(2) (values _int16 _uint16 _int16)]
+    [(4) (values _int32 _uint32 _int32)]
+    [(8) (values _int64 _uint64 _int64)]
+    [else (error 'foreign "internal error: bad compiler size for `int'")]))
+
+;; _long etc is a convenient name for whatever is the compiler's `long'
+;; (_long is signed)
+(provide _long _ulong _slong)
+(define-values (_long _ulong _slong)
+  (case (compiler-sizeof 'long)
+    [(4) (values _int32 _uint32 _int32)]
+    [(8) (values _int64 _uint64 _int64)]
+    [else (error 'foreign "internal error: bad compiler size for `long'")]))
+
+;; _llong etc is a convenient name for whatever is the compiler's `long long'
+;; (_llong is signed)
+(provide _llong _ullong _sllong)
+(define-values (_llong _ullong _sllong)
+  (case (compiler-sizeof '(long long))
+    [(4) (values _int32 _uint32 _int32)]
+    [(8) (values _int64 _uint64 _int64)]
+    [else (error 'foreign "internal error: bad compiler size for `llong'")]))
 
 ;; ----------------------------------------------------------------------------
 ;; Getting and setting library objects
@@ -947,6 +1000,14 @@
 (make-srfi-4 f64 _double*)
 (define-srfi-4-provider provide-srfi-4)
 (provide provide-srfi-4)
+
+;; check that the types that were used above have the proper sizes
+(unless (= 4 (ctype-sizeof _float))
+  (error 'foreign "internal error: float has a bad size (~s)"
+         (ctype-sizeof _float)))
+(unless (= 8 (ctype-sizeof _double*))
+  (error 'foreign "internal error: double has a bad size (~s)"
+         (ctype-sizeof _double*)))
 
 ;; ----------------------------------------------------------------------------
 ;; Tagged pointers

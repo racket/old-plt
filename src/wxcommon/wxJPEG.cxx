@@ -705,18 +705,22 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 	 my_background.red = bg->Red();
 	 my_background.green = bg->Green();
 	 my_background.blue = bg->Blue();
-	 my_background.red = (my_background.red << 8) | my_background.red;
-	 my_background.green = (my_background.green << 8) | my_background.green;
-	 my_background.blue = (my_background.blue << 8) | my_background.blue;
 	 g = (((int)my_background.red) 
 	      + ((int)my_background.green)
 	      + ((int)my_background.blue)) / 3;
 	 my_background.gray = g;
        } else {
-	 my_background.red = 0xffff;
-	 my_background.green = 0xffff;
-	 my_background.blue = 0xffff;
-	 my_background.gray = 0xffff;
+	 my_background.red = 0xff;
+	 my_background.green = 0xff;
+	 my_background.blue = 0xff;
+	 my_background.gray = 0xff;
+       }
+
+       if (bit_depth == 16) {
+	 my_background.red = (my_background.red << 8) | my_background.red;
+	 my_background.green = (my_background.green << 8) | my_background.green;
+	 my_background.blue = (my_background.blue << 8) | my_background.blue;
+	 my_background.gray = (my_background.gray << 8) | my_background.gray;
        }
 
        png_set_background(png_ptr, &my_background,

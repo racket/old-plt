@@ -6,7 +6,7 @@
 (module info (lib "infotab.ss" "setup")
   (define name "SrPersist")
   (define help-desk-message 
-     "Mz/Mr: (require (lib \"srpersist.ss\" \"srpersist\")")
+     "Mz/Mr: (require (lib \"srpersist.ss\" \"srpersist\"))")
   (define compile-omit-files
     '("info.ss"
       "srpersist.ss"))

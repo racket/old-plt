@@ -2,6 +2,24 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.24:
+
+ * Changed the way references to top-level and module-top-level
+   variables are implemented. The change has various performance
+   implications (but it should be invisible otherwise):
+
+      GOOD - code is shared completely for separate instantiations of
+      a module, saving space in many cases.
+
+      BAD - `lambda' expressions that reference only top-levels and
+      imports used to be constant closures, but now they have to be
+      constructed (unless all the references are to primitives).
+
+ * Got rid of lazy invocations for compile-time code in a module (and
+   its for-syntax imports, etc.) via `require'. This simplifies the
+   programming model in a useful way, and it's cheap enough after the
+   change to top-level variable access.
+
 Version 199.23:
 
  * Changed the first argument of `raise-syntax-error' so that syntax

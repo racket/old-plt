@@ -1,4 +1,4 @@
-(define graphical-debug? #t)
+(define graphical-debug? (getenv "GRAPHICAL_DEBUG"))
 (define textual-debug? #f)
 
 (require-library "macro.ss")

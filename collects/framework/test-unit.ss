@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-unit.ss,v 1.6 2001/06/17 05:21:36 robby Exp $
+;; $Id: test-unit.ss,v 1.7 2001/10/07 04:06:37 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -261,21 +261,30 @@
 
   (define object-tag 'test:find-object)
 
+  ;; find-object : class (union string (object -> boolean)) -> object
   (define (find-object obj-class b-desc)
     (lambda ()
       (cond
-	[(string? b-desc)
+	[(or (string? b-desc)
+             (procedure? b-desc))
 	 (let* ([active-frame (get-active-frame)]
 		[_ (unless active-frame
 		     (error object-tag
                             "could not find object: ~a, no active frame" 
                             b-desc))]
+                [child-matches?
+                 (lambda (child)
+                   (cond
+                     [(string? b-desc)
+                      (equal? (send child get-label) b-desc)]
+                     [(procedure? b-desc)
+                      (b-desc child)]))]
 		[found
 		 (let loop ([panel active-frame])
 		   (ormap (lambda (child)
 			    (cond
 			      [(and (is-a? child obj-class)
-				    (equal? (send child get-label) b-desc))
+				    (child-matches? child))
 			       child]
 			      [(is-a? child mred:area-container-window<%>) 
                                (and (send child is-shown?)
@@ -339,7 +348,7 @@
      'check-box 
      (find-object mred:check-box% in-cb)
      (lambda (cb) (send cb set-value state))))
-
+  
 ;; 
 ;; RADIO-BOX 
 ;;
@@ -360,7 +369,7 @@
   (define (set-radio-box! in-cb state) 
     (control-action
      'test:set-radio-box!
-     'check-box 
+     'radio-box 
      (find-object mred:radio-box% in-cb)
      (lambda (rb) 
        (cond
@@ -389,6 +398,36 @@
 		     "expected a string or a number as second arg, got: ~e (other arg: ~e)"
 		     state in-cb)]))))
 
+  ;; set-radio-box-item! : string -> void
+  (define (set-radio-box-item! state) 
+    (control-action
+     'test:set-check-box-state!
+     'radio-box
+     (find-object mred:radio-box% (entry-matches state))
+     (lambda (rb) 
+       (let ([total (send rb get-number)])
+         (let loop ([n total])
+           (cond
+             [(zero? n) (error 'test:set-radio-box-item! "internal error")]
+             [else (let ([i (- total n)])
+                     (if (or (string=? state (send rb get-item-label i))
+                             (string=? state (send rb get-item-plain-label i)))
+                         (if (send rb is-enabled? i)
+                             (send rb set-selection i)
+                             (error 'test:set-radio-box!
+                                    "label ~e is disabled"
+                                    state))
+                         (loop (- n 1))))]))))))
+  
+  ;; entry-matches : string -> radio-box -> boolean
+  (define (entry-matches name)
+    (lambda (rb)
+      (let loop ([n (send rb get-number)])
+        (and (not (zero? n))
+             (or (equal? name (send rb get-item-label (- n 1)))
+                 (equal? name (send rb get-item-plain-label (- n 1)))
+                 (loop (- n 1)))))))
+  
 ;;; CHOICE 
 
 ; set-choice! : ((instance in-choice%) (union string number) -> void)

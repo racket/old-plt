@@ -767,8 +767,15 @@
 ", except that it creates a launcher instead of a"
 "stand-alone executable.")
 
+(drscheme:language:get-post-hash-bang-start
+ ((is-a?/c text%) . -> . (>=/c 0))
+ (text)
+ "Returns the starting position of this text,"
+ "skipping over \\#! if there is one. If there"
+ "is no \\#!, returns 0.")
+
 (drscheme:language:open-input-text
- ((is-a?/c text%) (>=/c 0) (>=/c 0)
+ ((is-a?/c text%) (>=/c 0) (>=/c 0) 
   . -> .
   input-port?)
  (text start end)
@@ -776,6 +783,10 @@
 "Returns a port that reads from the \\var{text}, starting"
 "at position \\var{start} and ending at"
 "position \\var{end}. "
+""
+"If \\var{ignore-hash-bang?} is \\#t, and the"
+"first line begins with the characters \\#!,"
+"then the first line is ignored."
 ""
 "Any non-\\iscmclass{string-snip} snips in the text that"
 "implement the"

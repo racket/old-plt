@@ -38,6 +38,7 @@
      |#
 
      set-radio-box!
+     set-radio-box-item!
      set-check-box!
      set-choice!
      keystroke  

@@ -735,7 +735,8 @@
           ;; syncheck:button-callback : -> void
           ;; this is the only function that has any code running on the user's thread
           (define/public (syncheck:button-callback)
-            (let-values ([(expanded-expression expansion-completed) (make-traversal)])
+            (let-values ([(expanded-expression expansion-completed) (make-traversal)]
+                         [(old-break-thread old-kill-eventspace) (get-breakables)])
               (let* ([definitions-text (get-definitions-text)]
                      [drs-eventspace (current-eventspace)]
                      [users-namespace #f]
@@ -743,7 +744,7 @@
                      [normal-termination? #f]
                      [cleanup
                       (lambda ()
-                        (set-breakables #f #f)
+                        (set-breakables old-break-thread old-kill-eventspace)
                         (enable-evaluation))]
                      [kill-termination
                       (lambda ()
@@ -767,9 +768,9 @@
                         (set-directory definitions-text)
                         (set! users-custodian (current-custodian))
                         (set! users-namespace (current-namespace)))])
+                (disable-evaluation) ;; this locks the editor, so must be outside.
                 (with-lock/edit-sequence
                  (lambda ()
-                   (disable-evaluation)
                    (clear-annotations)
                    (reset-offer-kill)
                    (send definitions-text syncheck:init-arrows)
@@ -794,8 +795,8 @@
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (expansion-completed users-namespace)
-                                 (cleanup)))
+                                 (expansion-completed users-namespace)))
+                              (cleanup)
                               (custodian-shutdown-all users-custodian))))]
                         [else
                          (parameterize ([current-eventspace drs-eventspace])

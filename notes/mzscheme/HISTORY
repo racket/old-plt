@@ -7,6 +7,9 @@ Version 102/12:
  * Fixed handling of file output ports on exit: file is flushed and
    closed. (Bug introduced in 102/10.)
 
+ * Changed code for MzScheme2k so that it does not rely on interior
+   pointers.
+
 Version 102/11:
 
  * Added `interface->ivar-names', which takes an interface and returns

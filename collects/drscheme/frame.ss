@@ -39,7 +39,7 @@
 	(rename [super-make-root-panel make-root-panel]
 		[super-on-close on-close]
 		[super-make-menu-bar make-menu-bar])
-	(inherit panel get-edit)
+	(inherit panel get-edit save-as)
 	(public
 	  [on-close
 	   (lambda ()
@@ -97,6 +97,11 @@
 
 	(public
 	  [file-menu:new-stringg "Unit"]
+	  [file-menu:between-save-and-print
+	   (lambda (file-menu)
+	     (send* file-menu 
+	       (append-item "Save as Text..." (lambda () (save-as wx:const-media-ff-text)))
+	       (append-separator)))]
 	  [file-menu:new
 	   (lambda ()
 	     (make-object drscheme:unit:frame% #f #f group))]

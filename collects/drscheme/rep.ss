@@ -104,7 +104,6 @@
 		   output-delta set-output-delta
 		   do-pre-eval user-parameterization
 		   do-post-eval
-		   display-result
 		   insert-prompt
 		   erase prompt-mode?
 		   get-canvas
@@ -169,6 +168,13 @@
 		 (with-parameterization param
 		   (lambda ()
 		     (primitive-eval expr)))))]
+
+	    [display-result
+	     (lambda (v)
+	       (unless (void? v)
+		 (with-parameterization param
+		   (lambda ()
+		     (mzlib:pretty-print@:pretty-print v this-result)))))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (get-expr [before void] [after void])
@@ -189,13 +195,14 @@
 				(if (null? anss)
 				    (void)
 				    (let ([f (lambda (ans)
-					       (display-result
-						(if (eq? print-style 'r4rs-style)
-						    ans
-						    (print-convert:print-convert ans))))])
-				      (f (car anss))
-				      (for-each (lambda (x) (newline this-result) (f x))
-						(cdr anss))))))))])
+					       (let ([res 
+						      (if (eq? print-style 'r4rs-style)
+							  ans
+							  (print-convert:print-convert ans))])
+						 (with-parameterization param
+						   (lambda ()
+						     (display-result res)))))])
+				      (for-each f anss)))))))])
 		   (set! current-thread-desc
 			 (thread
 			  (lambda ()

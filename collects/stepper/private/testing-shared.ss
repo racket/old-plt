@@ -1,7 +1,5 @@
 (module testing-shared mzscheme
   (require (lib "contract.ss")
-           (lib "mz-testing.ss" "tests" "utils")
-           (lib "sexp-diff.ss" "tests" "utils")
            "shared.ss"
            (lib "kerncase.ss" "syntax")
            (lib "file.ss"))
@@ -33,6 +31,8 @@
                  (read-loop (read-syntax temp-file file-port))))))
         (delete-file temp-file))))
   
+;  (require (lib "mz-testing.ss" "tests" "utils")
+;           (lib "sexp-diff.ss" "tests" "utils"))
 ; (test `((define a 13) 14 15 #f 1)
 ;       map
 ;       syntax-object->datum

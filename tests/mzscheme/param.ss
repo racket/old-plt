@@ -265,7 +265,7 @@
 		      (list (current-load) (lambda (f e) (error "This won't do it")))
 		      '(load "tmp5")
 		      exn:user?
-		      (list "bad setting" zero-arg-proc two-arg-proc))
+		      (list "bad setting" zero-arg-proc one-arg-proc))
 		(list current-eval	
 		      (list (current-eval) erroring-eval)
 		      '(begin 

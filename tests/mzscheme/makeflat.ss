@@ -51,7 +51,10 @@
     (lambda (e)
       (unless (or (and (pair? e)
 		       (memq (car e) '(load load-relative error-test)))
-		  (not (eq? (current-namespace) old-namespace)))
+		  (not (eq? (current-namespace) old-namespace))
+		  ;; Skip test use of `eval' on unprintable value:
+		  (and (pair? e) (pair? (cdr e))
+		       (eq? void (cadr e))))
 	      (flat-pp e))
       (old-eval e))))
  (lambda ()

@@ -200,6 +200,16 @@
 
 (test 10 'include (invoke-unit/sig i2@))
 
+;; Include with begin:
+
+(test 5 'include-begin
+      (invoke-unit/sig
+       (unit/sig ()
+	 (import)
+	 (define x 5)
+	 (include "binc.ss")
+	 y)))
+
 ; Simple:
 
 (define-signature m1^

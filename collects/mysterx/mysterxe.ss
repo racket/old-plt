@@ -808,10 +808,21 @@
     (exit-handler 
      (lambda (arg)
        (for-each 
-	(lambda (obj) (when (com-object? (cdr obj))
-			    (mxprims:com-release-object (cdr obj))))
+	(lambda (obj) 
+	  (let ([val (cdr obj)])
+	    (cond
+	     [(com-object? val)
+	      (mxprims:com-release-object (cdr obj))]
+
+	     ; rely on GC to release interfaces in documents, elements
+	     ; not entirely reliable, since collector is conservative
+	     
+	     [(or (is-a? val mx-document%)
+		  (is-a? val mx-element%))
+	      (undefine (car obj))])))
 	(make-global-value-list))
        (collect-garbage)
+       (mxprims:release-type-table)
        (old-exit-handler arg))))
 
   (thread

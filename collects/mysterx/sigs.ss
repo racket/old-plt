@@ -269,5 +269,6 @@
    event-error?
    block-until-event
    process-win-events
-   com-omit))
+   com-omit
+   release-type-table))
 

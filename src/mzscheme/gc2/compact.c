@@ -244,7 +244,7 @@ static long mark_stackoflw;
 
 static int fnl_weak_link_count;
 
-static int ran_final = 1;
+static int ran_final;
 
 static int during_gc;
 
@@ -3545,7 +3545,9 @@ void *malloc_pages_try_hard(size_t len, size_t alignment)
   void *m;
   int i = 5;
 
-  while(i--) {
+  ran_final = 1;
+
+  while (i--) {
     m = malloc_pages(len, alignment);
     if (m)
       return m;

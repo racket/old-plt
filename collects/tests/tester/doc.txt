@@ -28,9 +28,9 @@ value, and the result of the test will be printed to a GUI window.
 
 =========================================================================
 
-The file _tester.ss_ defines a module named tester that provides four
-names: run-tests, test, test-error, and test-function. run-tests has
-the form:
+The file _tester.ss_ defines a module named tester that provides six
+names: run-tests, run-tests/initialize, test, test-error, test-function,
+and test-manifest. run-tests is a function that has the form:
 
 > (run-tests str a-test ...)
 
@@ -38,10 +38,10 @@ Where a-test is either:
 
 > (test str expr value [str])
 > (test-error str expr str [str])
-> (test-function str expr (value x str -> bool))
+> (test-function str expr (value x str -> bool) [str])
 
-In all three test forms, the first position should be a description of
-the test to be performed and the second should be the expression to be
+In all three forms of a-test, the first position should be a description 
+of the test to be performed and the second should be the expression to be
 tested. The third position is the "comparison datum," which is used to
 determine whether or not the test should pass. The optional fourth
 position specifies an output string that the program must produce for
@@ -66,3 +66,10 @@ should pass based on the following rules:
   (if the optional string was not provided). If evaluating the
   expression results in an error being raised, the test fails.
 
+run-tests/initialize is a function that has the form
+
+> (run-tests/initialize str (-> void) a-test ...)
+
+where a-test is the same as the tests for run-test. run-tests/initialize
+behaves like run-tests except that it evaluates the given thunk before
+evaluating any of the test expressions

@@ -63,8 +63,9 @@
           (send (current-tester) run-test-group the-group)
           (send (get-tester-gui) test-one-group the-group)))))
   
-;; test-manifest : (listof require-spec-datum) -> void
-;; side effect: tests the given manifest (i.e., allows 
+;; test-manifest : (listof require-spec-datum) -> thread
+;; side effect: tests the given manifest. returns the thread on which
+;; the gui is running.
 (define (test-manifest man)
   (parameterize ([current-tester (get-tester-gui)])
     (send (current-tester) test-manifest man))))

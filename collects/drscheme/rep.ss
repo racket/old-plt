@@ -51,6 +51,8 @@
   (define scheme-interaction-mode-keymap (make-object mred:keymap%))
   (setup-scheme-interaction-mode-keymap scheme-interaction-mode-keymap)
   
+  (define drs-font-delta (make-object mred:style-delta% 'change-family 'decorative))
+
   (define modern-style-delta (make-object mred:style-delta% 'change-family 'modern))
   (define output-delta (make-object mred:style-delta%
                          'change-weight
@@ -1543,11 +1545,13 @@
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         
         (define insert-delta
-          (lambda (s delta)
+          (lambda (s . deltas)
             (let ([before (last-position)])
               (insert s before before #f)
               (let ([after (last-position)])
-                (change-style delta before after)
+                (for-each (lambda (delta)
+                            (change-style delta before after))
+                          deltas)
                 (values before after)))))
         
         (define repl-initially-active? #f)
@@ -1724,7 +1728,7 @@
             
             (insert-delta "Welcome to " welcome-delta)
             (let-values ([(before after)
-                          (insert-delta "DrScheme" click-delta)])
+                          (insert-delta "DrScheme" click-delta drs-font-delta)])
               (insert-delta (format ", version ~a.~n" (fw:version:version))
                             welcome-delta)
               (set-clickback before after 

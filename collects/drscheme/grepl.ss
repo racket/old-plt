@@ -128,7 +128,6 @@
   (define user-eventspace
     (parameterize ([current-custodian user-custodian])
       (make-eventspace)))
-  (define user-parameterization (eventspace-parameterization user-eventspace))
   
   (define make-user-output-port
     (let ([semaphore (make-semaphore 1)])
@@ -190,7 +189,6 @@
     (parameterize ([current-eventspace user-eventspace])
       (queue-callback
        (lambda ()
-	 (current-parameterization user-parameterization)
 	 (dynamic-wind
 	  (lambda ()
 	    (set! evaluation-thread (current-thread))
@@ -244,11 +242,18 @@
   (send repl-buffer auto-wrap #t)
 
   ;; Go
-  ((in-parameterization user-parameterization current-output-port) user-output-port)
-  ((in-parameterization user-parameterization current-error-port) user-error-port)
-  ((in-parameterization user-parameterization current-input-port) (make-input-port (lambda () eof) void void))
-  ((in-parameterization user-parameterization current-custodian) user-custodian)
-  ((in-parameterization user-parameterization current-will-executor) (make-will-executor))
+  (let ([semaphore (make-semaphore 0)])
+    (parameterize ([current-eventspace user-eventspace])
+      (queue-callback
+       (lambda ()
+	 (current-output-port user-output-port)
+	 (current-error-port user-error-port)
+	 (current-input-port (make-input-port (lambda () eof) void void))
+	 (current-custodian user-custodian)
+	 (current-will-executor (make-will-executor))
+	 (semaphore-post semaphore))))
+    (semaphore-wait semaphore))
+
   (send repl-display-canvas set-editor repl-buffer)
   (send frame show #t)
 

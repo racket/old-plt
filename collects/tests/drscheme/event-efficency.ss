@@ -1,6 +1,25 @@
 (define semaphore (make-semaphore 0))
-(define loop-size 2000)
-(define events/loop 3)
+(define loop-size 1000)
+(define events/loop 10)
+
+(define frame (make-object frame% "frame" #f 100 100))
+(define canvas
+  (let ([counter events/loop])
+    (make-object 
+     (class canvas% ()
+       (inherit refresh)
+       (override
+	[on-paint
+	 (lambda ()
+	   (cond
+	     [(equal? 0 counter)
+	      (set! counter #f)]
+	     [else
+	      (unless counter
+		(set! counter events/loop))
+	      (set! counter (- counter 1))
+	      (refresh)]))])
+       (sequence (super-init frame))))))
 
 ;(event-dispatch-handler (let ([orig (event-dispatch-handler)]) (lambda (eventspace) (orig eventspace))))
 
@@ -8,9 +27,7 @@
 
 (let loop ([n loop-size])
   (unless (zero? n)
-    (queue-callback void)
-    (queue-callback void)
-    (queue-callback void)
+    (send canvas on-paint)
     (loop (- n 1))))
 
 (queue-callback (lambda () (semaphore-post semaphore)))
@@ -20,12 +37,6 @@
 
 (define total-time (- end-time start-time))
 
-(define (mixed n)
-  (cond
-   [(<= -1 n 1) n]
-   [(= n (floor n)) n]
-   [else `(+ ,(floor n) ,(- n (floor n)))]))
-
-(printf "time per event ~amsec~ntotal time ~amsec~n"
+(printf "time per event ~a msec~ntotal time ~a msec~n"
 	(exact->inexact (/ (floor (* (/ total-time loop-size events/loop) 1000)) 1000))
 	total-time)

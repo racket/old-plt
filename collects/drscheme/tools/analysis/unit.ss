@@ -10,7 +10,7 @@
       (lambda (frame)
 	(fw:gui-utils:show-busy-cursor
 	 (lambda ()
-	   (let* ([e (mred:make-eventspace (make-parameterization))]
+	   (let* ([e (mred:make-eventspace)]
 		  [f (parameterize ([mred:current-eventspace e])
 		       (mred:begin-busy-cursor)
 		       (make-object mred:dialog% "Spidey"))]

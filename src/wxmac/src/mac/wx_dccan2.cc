@@ -380,9 +380,16 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
 
     CGContextSaveGState(cg);
 
+    start = (2 * wxPI) - start;
+    end = (2 * wxPI) - end;
+
     path = CGPathCreateMutable();
     xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(x, y), w, h);
-    CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, FALSE);
+    CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
+    if ((end != 0) || (start != (2 * wxPI))) {
+      CGPathAddLineToPoint(path, &xform, 0.5, 0.5);
+      CGPathCloseSubpath(path);
+    }
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kBrushTool);
@@ -493,6 +500,45 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   
   if (n <= 0) return;
 
+  if (anti_alias) {
+    CGContextRef cg;
+    CGMutablePathRef path;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    path = CGPathCreateMutable();
+    CGPathMoveToPoint(path, NULL, points[0].x + xoffset, points[0].y + yoffset);
+    for (i = 1; i < n; i++) {
+      CGPathAddLineToPoint(path, NULL, points[i].x + xoffset, points[i].y + yoffset);
+    }
+    CGPathCloseSubpath(path);
+
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kBrushTool);
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, path);
+      CGContextFillPath(cg);
+    }
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kPenTool);
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, path);
+      CGContextStrokePath(cg);
+    }
+    wxMacSetCurrentTool(kNoTool);
+
+    CGPathRelease(path);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
+
   if ((rgn = BrushStipple())) {
     rgn->SetPolygon(n, points, xoffset, yoffset, fillStyle);
     PaintStipple(rgn);
@@ -544,7 +590,36 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffs
   if (!Ok() || !cMacDC) return;
   
   if (n <= 0) return;
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+
+  if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
+    return;
+
+  if (anti_alias) {
+    CGContextRef cg;
+    int i;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    CGContextMoveToPoint(cg, points[0].x + xoffset, points[0].y + yoffset);
+    for (i = 1; i < n; i++) {
+      CGContextAddLineToPoint(cg, points[i].x + xoffset, points[i].y + yoffset);
+    }
+    
+    wxMacSetCurrentTool(kPenTool);
+    CGContextStrokePath(cg);
+    wxMacSetCurrentTool(kNoTool);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
+
+  {
     Point *xpoints;
     int i, j, dpx, dpy;
     PolyHandle thePolygon;

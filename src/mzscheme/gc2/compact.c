@@ -2796,7 +2796,13 @@ static void fixup_xtagged_mpage(void **p, MPage *page)
     }
 #endif
 
-    GC_fixup_xtagged(p + 1);
+#if ALIGN_DOUBLES
+    if (size > 1) {
+#endif
+      GC_fixup_xtagged(p + 1);
+#if ALIGN_DOUBLES
+    }
+#endif
 
     p += size;
   }

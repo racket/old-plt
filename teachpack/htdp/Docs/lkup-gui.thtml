@@ -1,0 +1,21 @@
+#define LIBNAME Lkup GUI
+#include head.tinc
+
+<<LIBDESC>>{lkup-gui.ss}
+
+<p>The library <code>lkup-gui.ss</code> implements three functions: 
+<menu>
+<li> <code>control : -> symbol</code> 
+     <br> to read out the name that a user typed into the query field 
+
+<li> <code>view : (union string symbol) -> true </code>
+     <br> to display its argument in the message panel 
+
+<li> <code>modelT = (button% event% -> true)</code>
+     <br>
+     <code>connect : modelT -> true</code>
+     <br> to connect a controller with the Check button
+     <br> displays frame 
+</menu>
+
+#include foot.tinc

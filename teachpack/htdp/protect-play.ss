@@ -1,9 +1,10 @@
-(reference-file "pingp-sig.ss")
+(require-library "pingp-sig.ss" "htdp")
 
 (define-signature ballS
   (mk-balls move-balls remove-balls-hit-paddle remove-outside-balls balls-posn))
 (define-signature goS
   (go))
+
 (define-signature playS
   (make-ball ball-speed make-speed speed-x bounces-from ns-bounce move-ball 
 	     ns-time-to-wall ew-time-to-wall ball-posn))
@@ -11,10 +12,16 @@
 (compound-unit/sig (import (PLT : plt:userspace^))
   (link
     [PINGP : pingpDrawS ((require-unit/sig "pingp-lib.ss") PLT)]
-    [PLAY  : playS  ((unit/sig playS (import pingpDrawS plt:userspace^) (include "pingp-test-play.ss"))
-		     PINGP PLT)]
-    [BALL : ballS   ((unit/sig ballS (import playS pingpDrawS plt:userspace^) (include "protect-test.ss"))
-		     PLAY PINGP PLT)]
+    [PLAY  : playS
+      ((unit/sig playS
+	 (import pingpDrawS plt:userspace^)
+	 (require-library "pingp-test-play.ss" "htdp" "Test"))
+       PINGP PLT)]
+    [BALL : ballS
+      ((unit/sig ballS
+	 (import playS pingpDrawS plt:userspace^)
+	 (require-library "protect-test.ss" "htdp" "Test"))
+       PLAY PINGP PLT)]
     (GO : goS
       ((unit/sig goS (import ballS pingpS)
 	 (define n (+ 10 (random 10)))

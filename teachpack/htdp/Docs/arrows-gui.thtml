@@ -1,0 +1,20 @@
+#define LIBNAME Arrows GUI
+#include head.tinc
+
+<<LIBDESC>>{arrow-gui.ss}
+
+<p>The library <code>arrow-gui.ss</code> implements three functions: 
+<menu>
+<li> <code>control : -> symbol</code> 
+     <br> to read out the current state of the msg field 
+
+<li> <code>view : (union string symbol) -> true </code>
+     <br> to display its argument in the message panel 
+
+<li> <code>modelT = (button% event% -> true)</code>
+     <br>
+     <code>connect : modelT modelT modelT modelT -> true</code>
+     <br> to connect four controllers with the four directions in the arrow window
+</menu>
+
+#include foot.tinc

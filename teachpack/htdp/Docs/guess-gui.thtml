@@ -1,0 +1,21 @@
+#define LIBNAME Guess GUI
+#include head.tinc
+
+<<LIBDESC>>{guess-gui.ss}
+
+<p>The library <code>guess-gui.ss</code> implements three functions: 
+<menu>
+<li> <code>control : N -> symbol</code> 
+     <br> to read out the i-th guess choice, starting with 0
+
+<li> <code>view : (union string symbol) -> true </code>
+     <br> to display its argument in the message panel 
+
+<li> <code>modelT = (button% event% -> true)</code>
+     <br>
+     <code>connect : modelT -> true</code>
+     <br> to connect a controller with the Check button
+     <br> displays frame 
+</menu>
+
+#include foot.tinc

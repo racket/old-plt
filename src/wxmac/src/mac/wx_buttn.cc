@@ -539,9 +539,16 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 // Sizing methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+void wxButton::SetSize(int x, int y, int width, int height, int flags)
+{
+	fprintf(stderr,"SetSize called for button, this = %X\n",(long)this);
+	wxItem::SetSize(x,y,width,height,flags);
+}
+
 //-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
+	fprintf(stderr,"OnClientAreaDSize called for this = %X\n",(long)this);
 	SetCurrentDC();
 	if (buttonBitmap || !cMacControl)
 		return;
@@ -557,16 +564,17 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		::SizeControl(cMacControl, clientWidth - 2 * PAD_X, clientHeight - 2 * PAD_Y);
 	}
 
-	if (dX || dY)
-	{
+	//if (dX || dY)
+	//{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
         ::MoveControl(cMacControl, SetOriginX + PAD_X, SetOriginY + PAD_Y);
-	}
+	//}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
 
-	if (!cHidden && (dW || dH || dX || dY))
+	if (!cHidden) 
+//	if (!cHidden && (dW || dH || dX || dY))
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);

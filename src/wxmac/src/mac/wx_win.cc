@@ -506,7 +506,8 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 	Bool widthIsChanged = (width != cWindowWidth);
 	Bool heightIsChanged = (height != cWindowHeight);
 
-	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
+//	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
+	if (!cHidden)
 	{
 		Rect oldWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
 		SetCurrentMacDCNoMargin();

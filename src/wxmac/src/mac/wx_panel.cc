@@ -520,3 +520,15 @@ Bool wxPanel::WantsFocus()
 {
 	return TRUE;
 }
+
+void wxPanel::SetSize(int x, int y, int width, int height, int flags)
+{
+	wxWindow::SetSize(x,y,width,height,flags);
+
+	// I'm very unhappy about adding redundant calls to all these children. Ugh.
+	wxChildNode *childNode = children->First();
+	while (childNode) {
+		((wxWindow *)childNode->Data())->SetSize(-1,-1,-1,-1);
+		childNode = childNode->Next();
+	}
+}

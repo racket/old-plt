@@ -253,18 +253,18 @@
       (StatementWithoutTrailingSubstatement
        [(EmptyStatement) $1]
        [(Assignment SEMI_COLON) $1]
-       [(ExpressionStatement) $1]
+;       [(ExpressionStatement) $1]
        [(ReturnStatement) $1])
       
       (EmptyStatement
        [(SEMI_COLON) (make-block null (build-src 1))])
       
-      (ExpressionStatement
-       [(StatementExpression SEMI_COLON) $1])
+;      (ExpressionStatement
+;       [(StatementExpression SEMI_COLON) $1])
       
-      (StatementExpression
-       [(MethodInvocation) $1]
-       [(ClassInstanceCreationExpression) $1])
+;      (StatementExpression
+;       [(MethodInvocation) $1]
+;       [(ClassInstanceCreationExpression) $1])
       
       (IfThenElseStatement
        [(if O_PAREN Expression C_PAREN StatementNoShortIf else Statement)

@@ -606,12 +606,15 @@
                              (map var-decl-type
                                   (method-parms method)))
                         (map (lambda (t)
-                               (cons (id-string (name-id t))
-                                     (map id-string (name-path t))))
+                               (let ((name (cons (id-string (name-id t))
+                                                 (map id-string (name-path t)))))
+                                 (if (is-subclass? name throw-type type-recs)
+                                     name
+                                     (raise-error t thrown-not-throwable))))
                              (method-throws method))
                         ""
                         cname))
-  
+    
   ;-----------------------------------------------------------------------------------
   ;Code to check modifiers
   
@@ -784,6 +787,9 @@
   (define (dir-not-found a) (format "Required directory ~a not found" a))
   (define (file-not-found a) (format "Required file ~a not found" a))
   
+  (define (thrown-not-throwable given)
+    (format "Classes listed as thrown by a method must be subtypes of Throwable. Given ~a"))
+  
   (define (make-so id src)
     (datum->syntax-object #f id (build-src-list src)))
   
@@ -809,7 +815,7 @@
              (raise-syntax-error kind (type kind) (make-so kind (modifier-src wrong-code)))))
           
           ((memq type (list extends-self cyclic-depends repeating-inherited-iface final-extend iface-extend-class
-                            class-extend-iface class-implement-class repeating-implement))
+                            class-extend-iface class-implement-class repeating-implement thrown-not-throwable))
            ;wrong-code : name
            (let ((name (string->symbol (id-string (name-id wrong-code)))))
              (raise-syntax-error name (type name) (make-so name (name-src wrong-code)))))

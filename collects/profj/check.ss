@@ -324,13 +324,21 @@
                       check-e
                       type-recs))
         ((break? statement)
-         void)
+         (check-break (break-label statement)
+                      (break-src statement)
+                      env))
         ((continue? statement)
-         void)
+         (check-continue (continue-label statement)
+                         (continue-src statement)
+                         env))
         ((label? statement)
-         (check-s-no-change (label-stmt statement)))
+         (check-label (label-stmt statement)
+                      (label-label statement)
+                      check-s
+                      env))
         ((synchronized? statement)
-         (check-e-no-change (synchronized-expr statement))
+         (check-synchronized (check-e-no-change (synchronized-expr statement))
+                             (expr-src (synchronized-expr statement)))
          (check-s-no-change (synchronized-stmt statement)))
         ((statement-expression? statement)
          (check-e-no-change statement))))))
@@ -469,7 +477,10 @@
                   (if (or (eq? 'default constant)
                           (type=? cons-type expr-type))
                       void
-                      (raise-statement-error (list cons-type expr-type) (expr-src constant) 'switch incompatible-case))))
+                      (raise-statement-error (list cons-type expr-type) 
+                                             (expr-src constant) 
+                                             'switch 
+                                             incompatible-case))))
               cases))
   
   ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) type-records -> void
@@ -483,6 +494,29 @@
         (else
          (check-s (car stmts) block-env)
          (loop (cdr stmts) block-env (lambda (e) (check-e e block-env)))))))
+
+  ;Skips check to make sure that a non-labeled break is in a loop
+  ;check-goto: symbol -> ((U id #f) src env -> void))
+  (define (check-goto kind)
+    (lambda (label src env)
+      (when (and label
+                 (not (lookup-label (id-string label) env)))
+        (raise-statement-error (id-string label) (id-src label) kind (no-label kind)))))
+      
+  ;check-break: (U id #f) src env -> void
+  (define check-break (check-goto 'break))
+
+  ;check-continue: (U id #f) src env -> void
+  (define check-continue (check-goto 'continue))
+  
+  ;check-label: statement string (statement env -> void) env -> void
+  (define (check-label stmt label check-s env)
+    (check-s stmt (add-label-to-env env)))
+
+  ;check-synchronized: type src -> void
+  (define (check-synchronized e-type e-src)
+    (unless (reference-type? e-type)
+      (raise-statement-error e-type e-src 'synchronized synch-wrong-exp)))  
   
   ;Statement error messages
   
@@ -522,17 +556,24 @@
     (format "Switch expression must be of type byte, short, int or char. Given: ~a" given))
   (define (incompatible-case given expected)
     (format "Each switch case must be the same type as switch expression. Given ~a: expected ~a" given expected))
+
+  (define (no-label kind)
+    (lambda (label)
+      (format "~a attempting to ~a to label ~a when no statement has that label" kind kind label)))
+
+  (define (synch-wrong-exp given)
+    (format "The expression for synchronization must be a subtype of Object. Given ~a" given))
   
   ;raise-statement-error: ast src symbol ( 'a -> string) -> void
   (define (raise-statement-error code src kind msg)
     (match code
       ;Covers statement-cond-not-bool throw-not-throwable thrown-not-declared
-      ;array-not-expected catch-throwable wrong-switch-type
+      ;array-not-expected catch-throwable wrong-switch-type synch-wrong-exp
       ((? type? c) (raise-syntax-error kind (msg (type->ext-name c)) (make-so kind src)))
       ;Covers return-not-match init-incompatible incompatibe-type incompatible-case
       (((? type? fst) (? type? snd)) 
        (raise-syntax-error kind (msg (type->ext-name fst) (type->ext-name snd)) (make-so kind src)))
-      ;name-already-defined
+      ;name-already-defined no-label
       ((? string? name)
        (raise-syntax-error kind (msg name) (make-so kind src)))
       (_ (error 'raise-statement-error "Given ~a" code)))) 

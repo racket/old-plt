@@ -55,7 +55,8 @@
 			   (if browser-frame
 			       (begin (send browser-frame show #t)
 				      (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
-			       (set! browser-frame (open-url url-str))))))
+			       (set! browser-frame (open-url url-str)))
+			   browser-frame)))
                       TCP BROWSER WEB-SERVER)])
          (export))
        setup:plt-installer^

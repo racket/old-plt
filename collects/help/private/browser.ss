@@ -96,6 +96,16 @@
 		 (stretchable-width #f)
 		 (stretchable-height #f)))
 
+
+  (define (start-help-desk-browser url hd-cookie)
+    (let* ([mk-browser (hd-cookie->browser hd-cookie)]
+	   [browser-frame-maybe (send-help-desk-url mk-browser url)])
+      (when (is-a? browser-frame-maybe frame%)
+	    (let ([browser-panel (send browser-frame-maybe get-hyper-panel)])
+	      (send browser-panel set-init-page 
+		    (format home-page-format
+			    (hd-cookie->port hd-cookie)))))))
+
   (define (help-desk-navigate hd-cookie url)
     (when (semaphore-try-wait? nav-mutex)
 	  (set! navigate? #t)
@@ -137,7 +147,7 @@
 			      (internal-start-help-server hd-cookie)
 			      (debug-msg "Starting internal browser")
 			      ; should never fail, so no handler
-			      (send-help-desk-url (hd-cookie->browser hd-cookie) url))
+			      (start-help-desk-browser url hd-cookie))
 			(kill-thread monitor-thread)
 			(semaphore-post nav-sem)))])
 		 (debug-msg "Starting Help Desk browser")
@@ -147,8 +157,8 @@
 				     "Starting Help Desk browser raised an exception")
 				    (set! start-exn exn)
 				    (set! timer 0))])
-		  (send-help-desk-url (hd-cookie->browser hd-cookie) 
-				      (build-dispatch-url hd-cookie url)))
+		  (start-help-desk-browser (build-dispatch-url hd-cookie url)
+					   hd-cookie))
 		 (yield nav-sem)
 		 (set! navigate? #f)
 		 (semaphore-post nav-mutex)))))
@@ -157,6 +167,7 @@
     (help-desk-navigate hd-cookie 
 			(format home-page-format 
 				(hd-cookie->port hd-cookie)))))
+
 
 
 

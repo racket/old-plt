@@ -1300,7 +1300,7 @@ top_level_import_execute(Scheme_Object *data)
 
   brn = env->rename;
   if (!brn) {
-    brn = scheme_make_module_rename(1);
+    brn = scheme_make_module_rename(0);
     env->rename = brn;
   }
 

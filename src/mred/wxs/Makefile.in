@@ -87,7 +87,7 @@ repatriate:
 	rmdir $(HIDEDIR)/wxs_objects
 
 XCTOCXX = $(PERL) $(srcdir)/../../mzscheme/utils/xctocc -cxx
-XCDEPEND = $(srcdir)/../../mzscheme/utils/xctocc $(srcdir)/../../mzscheme/utils/parse.pl $(srcdir)/wxs.xci
+XCDEPEND = $(srcdir)/../../mzscheme/utils/xctocc $(srcdir)/wxs.xci
 
 CB_DEPEND = $(srcdir)/cb_start.xci $(srcdir)/cb_end.xci $(srcdir)/cbgen_s.xci
 LIST_DEPEND = $(srcdir)/list.xci

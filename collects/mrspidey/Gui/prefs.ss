@@ -17,8 +17,6 @@
 ; ----------------------------------------------------------------------
 ; ported to MrEd 100 by Paul Steckler 
 
-(define p #f) ; temp!!!!
-
 (define parameter-radio-boxes
   (lambda (name param sym p direction)
     (preferences:set-default sym (param) 
@@ -34,10 +32,9 @@
                (map cadr (param '?))
 	       p 
                (lambda (bx event)
-                 ;;(printf "~s~n" (param '?))
                  (match
                    (list-ref (param '?)
-                     (send event get-command-int))
+	              (send bx get-selection))
                    [(tag . _) 
                      (param tag)
                      (preferences:set sym tag)]))
@@ -73,10 +70,9 @@
 			   name 
 			   hp 
 			   (lambda (bx event)
-			     ;;(printf "~s~n" (param '?))
 			     (match
 			      (list-ref (param '?)
-					(send event get-command-int))
+					(send bx get-selection))
 			      [(tag . _) 
 			       (param tag)
 			       (preferences:set sym tag)])))]
@@ -130,9 +126,9 @@
              1 100 
 	     vp 
              (lambda (slider event)
-               (st:const-merge-size (send event get-command-int))
-               (preferences:set 'merge-size 
-				(send event get-command-int)))
+	       (let ([val (send slider get-value)])
+		 (st:const-merge-size val)
+		    (preferences:set 'merge-size val)))
              (st:const-merge-size))]
         [_ (send g enable #t)]
         [_ (parameter-check-box

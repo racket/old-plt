@@ -748,13 +748,13 @@
 				       (zodiac:case-lambda-form-args zodiac-ast))
 			     (for-each color-loop (zodiac:case-lambda-form-bodies zodiac-ast))]
 			    
-			    [(zodiac:letrec*-values-form? zodiac-ast)
+			    [(zodiac:letrec-values-form? zodiac-ast)
 			     (color-syntax)
 			     (for-each (lambda (x) (for-each color-loop x))
-				       (zodiac:letrec*-values-form-vars zodiac-ast))
+				       (zodiac:letrec-values-form-vars zodiac-ast))
 			     (for-each color-loop
-				       (zodiac:letrec*-values-form-vals zodiac-ast))
-			     (color-loop (zodiac:letrec*-values-form-body zodiac-ast))]
+				       (zodiac:letrec-values-form-vals zodiac-ast))
+			     (color-loop (zodiac:letrec-values-form-body zodiac-ast))]
 			    
 			    [(zodiac:let-values-form? zodiac-ast)
 			     (color-syntax)

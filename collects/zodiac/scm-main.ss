@@ -1496,7 +1496,12 @@
 			  (user-exn-handler))
 			(real-handler (begin
 					(user-exn-handler
-					  (current-exception-handler))
+					  (lambda args
+					    (printf
+					      "Entering exn handler in userspc"
+					      (apply
+						(current-exception-handler)
+						args))))
 					(begin0
 					  (with-parameterization
 					    zodiac-user-parameterization

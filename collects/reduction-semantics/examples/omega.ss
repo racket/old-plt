@@ -7,15 +7,25 @@
   
   (define lang
     (language (e (e e)
-                 variable
+                 (abort e)
+                 (variable-except lambda call/cc abort)
                  v)
               (c (v c)
                  (c e)
                  hole)
-              (v (lambda (variable) e))))
+              (v call/cc
+                 number
+                 (lambda (variable) e))))
   
   (define reductions
     (list
+     (reduction lang
+                (in-hole (name c c) (call/cc (name arg v)))
+                (let ([v (variable-not-in c 'x)])
+                  (replace c hole `(,arg (lambda (,v) (abort ,(replace c hole v)))))))
+     (reduction lang
+                (in-hole c (abort (name e e)))
+                e)
      (reduction/context lang
                         c
                         ((lambda ((name x variable)) (name body e)) (name arg v))
@@ -24,10 +34,15 @@
   (define lc-subst
     (subst
      [(? symbol?) (variable)]
+     [(? number?) (constant)]
      [`(lambda (,x) ,b)
       (all-vars (list x))
       (build (lambda (vars body) `(lambda (,(car vars)) ,body)))
       (subterm (list x) b)]
+     [`(call/cc ,v)
+      (all-vars '())
+      (build (lambda (vars arg) `(call/cc ,arg)))
+      (subterm '() v)]
      [`(,f ,x)
       (all-vars '())
       (build (lambda (vars f x) `(,f ,x)))
@@ -35,4 +50,8 @@
       (subterm '() x)]))
       
   
-  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x)))))
+  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
+  
+  ;; what's wrong with this one? (not constant space)
+  ;;(gui lang reductions '((call/cc call/cc) (call/cc call/cc)))
+  )

@@ -638,8 +638,7 @@ int wxCanvas::GetScrollRange(int dir)
 
 void wxCanvas::Paint(void)	// called from wxWindow::Paint
 {
-	/* if (cActive || (wxSubType(__type, wxTYPE_PANEL))) */
-	  wxWindow::Paint();	// does the scrolls 
+	wxWindow::Paint();	// does the scrolls 
 	OnPaint();
 }
 

@@ -38,7 +38,6 @@ wxBorder::wxBorder // Constructor (given parentArea)
 	if (height < 0) cWindowHeight = parentArea->Height();
 	SetJustify(Direction::wxAll);
 	SetGravitate(Direction::wxTop | Direction::wxLeft);
-	cActive = TRUE; // Kludge, so that "ShowAsActive" method will be called
 	
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
@@ -75,9 +74,8 @@ void wxBorder::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxBorder::ShowAsActive(Bool flag) // mac platform only
 {
-	if (cHidden) return;
-
-	if (flag)
+#if (! defined(OS_X))
+	if (flag && (! cHidden))
 	{
 		// The following is a kludge, to paint border before subsequent update event
 		Paint();
@@ -94,4 +92,6 @@ void wxBorder::ShowAsActive(Bool flag) // mac platform only
 		::DisposeRgn(outerRgn);
 		::DisposeRgn(innerRgn);
 	}
+#endif
+	
 }

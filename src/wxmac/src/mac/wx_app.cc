@@ -81,16 +81,7 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 		wxFatalError("Unable to invoke the Gestalt Manager.", "");
 	}
 	
-	::MaxApplZone();
-	for (long i = 1; i <= 4; i++) ::MoreMasters();
 	::FlushEvents(everyEvent, 0);
-	::InitGraf(&qd.thePort);
-	::InitFonts();
-	::InitWindows();
-	::InitMenus();
-	::TEInit();
-	::InitDialogs(0L);
-	::InitCursor();
 
 	gMacFontGrafPort = new CGrafPort;
 	::OpenPort((GrafPtr)gMacFontGrafPort);

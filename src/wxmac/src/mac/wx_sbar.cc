@@ -123,8 +123,6 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 //-----------------------------------------------------------------------------
 void wxScrollBar::InitDefaults(wxFunction function)
 {
-	cActive = TRUE;
-
 	Callback(function);
 
 	cStyle = (cStyle & wxHSCROLL ? wxHSCROLL : wxVSCROLL); // kludge
@@ -190,9 +188,12 @@ void wxScrollBar::Enable(Bool enable)
 	if (cEnable != enable)
 	{
 		SetCurrentDC();
-		const int kActiveControl = 0;
-		const int kInactiveControl = 255;
-		::HiliteControl(cMacControl, enable ? kActiveControl : kInactiveControl);
+		if (enable) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
+		}
 		cEnable = enable;
 	}
 }
@@ -201,6 +202,8 @@ void wxScrollBar::Enable(Bool enable)
 void wxScrollBar::Paint(void)
 {
 	if (cHidden) return;
+	
+ 	*((char *)0L) = 123;
 
 	SetCurrentDC();
  	// GRW
@@ -243,33 +246,11 @@ void wxScrollBar::ShowAsActive(Bool flag) // mac platform only
 	if (cEnable)
 	{
 		SetCurrentDC();
-		const int kActiveControl = 0;
-		const int kInactiveControl = 255;
- 		//GRW
- 		if (flag)
- 			::ShowControl(cMacControl);
- 		else
- 		{
- 			// Would look better than calling HideControl, if it worked:
- 			//		(**cMacControl).contrlVis   0;
- 			//		Rect controlRect   (**cMacControl).contrlRect;
- 			//		::InvalRect(&controlRect);
- 			::HideControl(cMacControl);
- 			Rect controlRect = (**cMacControl).contrlRect;
-			::InvalRect(&controlRect);
- 		}
-	   // OLD: ::HiliteControl(cMacControl, flag ? kActiveControl : kInactiveControl);
-	
-		// The following is a kludge, to prevent erasure during subsequent update event
-		if (flag)
-		{
-			Bool isVisible = (**cMacControl).contrlVis == 255;
-			if (isVisible)
-			{
-				::Draw1Control(cMacControl);
-				Rect controlRect = (**cMacControl).contrlRect;
-				::ValidRect(&controlRect);
-			}
+		if (flag) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
 		}
 	}
 }

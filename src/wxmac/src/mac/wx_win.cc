@@ -79,10 +79,11 @@ wxWindow::wxWindow // Constructor (for screen window)
 		cStyle (style),
 		cScroll (NULL),
 		cAreas (wxList(wxList::kDestroyData)),
-		children (new wxChildList()),
-		cActive (TRUE), // WCH: I forgot if this is necessary
-		cEnable (TRUE)
+		children (new wxChildList())
 {
+	cActive = FALSE;
+	cEnable = TRUE;
+	
 	InitDefaults();
 
 	cParentArea = NULL;
@@ -115,10 +116,11 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
 		cStyle (style),
 		cScroll (NULL),
 		cAreas (wxList(wxList::kDestroyData)),
-		children (new wxChildList()),
-		cActive (TRUE), // this must be TRUE to handle wx_menu_bar correctly
-		cEnable (TRUE)
+		children (new wxChildList())
 {
+	cActive = FALSE;
+	cEnable = TRUE;
+	
 	if (!parentScreen) wxFatalError("No parent screen for constructing frame.");
 
 	InitDefaults();
@@ -157,10 +159,11 @@ wxWindow::wxWindow // Constructor (given parentArea)
 		cStyle (style),
 		cScroll (NULL),
 		cAreas (wxList(wxList::kDestroyData)),
-		children (new wxChildList()),
-		cActive (FALSE),
-		cEnable (TRUE)
+		children (new wxChildList())
 {
+	cActive = FALSE;
+	cEnable = TRUE;
+
 	if (!parentArea) wxFatalError("No parent area for constructing window.");
 
 	InitDefaults();
@@ -197,10 +200,11 @@ wxWindow::wxWindow // Constructor (given parentWindow)
 		cStyle (style),
 		cScroll (NULL),
 		cAreas (wxList(wxList::kDestroyData)),
-		children (new wxChildList()),
-		cActive (FALSE),
-		cEnable (TRUE)
+		children (new wxChildList())
 {
+	cActive = FALSE;
+	cEnable = TRUE;
+
 	if (!parentWindow) wxFatalError("No parent window for constructing window.");
 
 	InitDefaults();
@@ -233,10 +237,11 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
 		cStyle (0),
 		cScroll (NULL),
 		cAreas (wxList(wxList::kDestroyData)),
-		children (new wxChildList()),
-		cActive (FALSE),
-		cEnable (TRUE)
+		children (new wxChildList())
 {
+	cActive = FALSE;
+	cEnable = TRUE;
+
 	InitDefaults();
 
 	cParentArea = NULL;
@@ -1264,15 +1269,11 @@ void wxWindow::SetFocus(void)
 //-----------------------------------------------------------------------------
 void wxWindow::OnSetFocus(void)
 {
-	// cActive = TRUE;
-	// Activate(TRUE);
 }
 
 //-----------------------------------------------------------------------------
 void wxWindow::OnKillFocus(void)
 {
-	// Activate(FALSE);
-	// cActive = FALSE;
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1335,6 +1336,7 @@ void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* desc
 //-----------------------------------------------------------------------------
 void wxWindow::Activate(Bool flag) // mac platform only
 {
+	cActive = flag;
 	ShowAsActive(flag);
 	wxNode* areaNode = cAreas.First();
 	while (areaNode)

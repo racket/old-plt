@@ -313,6 +313,15 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 //-----------------------------------------------------------------------------
 void wxButton::Enable(Bool enable)
 {
+	if ((enable != cEnable) && cActive && cMacControl) {
+		SetCurrentDC();
+		if (enable) {
+			::ActivateControl(cMacControl);
+		}
+		else {
+			::DeactivateControl(cMacControl);
+		}
+	}
 	wxWindow::Enable(enable);
 }
 
@@ -427,7 +436,15 @@ void wxButton::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxButton::ShowAsActive(Bool flag) // mac platform only
 {
-
+	if ((! buttonBitmap) && cEnable && cMacControl) {
+		SetCurrentDC();
+		if (flag) {
+			ActivateControl(cMacControl);
+		}
+		else {
+			DeactivateControl(cMacControl);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -485,9 +502,13 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxButton::ChangeToGray(Bool gray)
 {
+  /* graying is now handled by the ShowAsActive routine. 
+     as far as I can tell, this code was never called anyway. */  
+  /*
   SetCurrentDC();
   if (cMacControl)
     ::HiliteControl(cMacControl, gray ? kInactiveControl : kActiveControl);
+  */
     
   wxWindow::ChangeToGray(gray);
 }

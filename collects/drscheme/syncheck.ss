@@ -610,7 +610,8 @@
       (define syncheck-frame<%>
         (interface ()
           syncheck:clear-highlighting
-          syncheck:button-callback))
+          syncheck:button-callback
+          syncheck:add-to-cleanup-texts))
       
       (define (make-new-unit-frame% super%)
         (class* super% (syncheck-frame<%>)
@@ -640,19 +641,30 @@
             (send check-syntax-button enable #f)
             (super-disable-evaluation))
           
+          (field [cleanup-texts '()])
           (define/public (syncheck:clear-highlighting)
             (let* ([definitions (get-definitions-text)]
                    [locked? (send definitions is-locked?)])
               (send definitions begin-edit-sequence #f)
               (send definitions lock #f)
               (send definitions syncheck:clear-arrows)
-              (let* ([list (send definitions get-style-list)]
-                     [style (send list find-named-style "Standard")])
-                (when style
-                  (send definitions change-style
-                        style 0 (send definitions last-position) #f)))
+              (for-each (lambda (text)
+                          (send text begin-edit-sequence)
+                          (let* ([list (send text get-style-list)]
+                                 [style (send list find-named-style "Standard")])
+                            (when style
+                              (send text change-style
+                                    style 0 (send definitions last-position) #f))))
+                        cleanup-texts)
+              (for-each (lambda (text) (send text end-edit-sequence)) cleanup-texts)
+              (set! cleanup-texts '())
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
+          
+          ;; syncheck:add-to-cleanup-texts : (is-a?/c text%) -> void
+          (define/public (syncheck:add-to-cleanup-texts txt)
+            (unless (memq txt cleanup-texts)
+              (set! cleanup-texts (cons txt cleanup-texts))))
           
 	  (define/override (on-close)
 	    (send report-error-text on-close)
@@ -1776,7 +1788,23 @@
         (let ([style (send (send source get-style-list)
                            find-named-style
                            style-name)])
+          (add-to-cleanup-texts source)
           (send source change-style style start finish #f)))
+      
+      ;; add-to-cleanup-texts : (is-a?/c editor<%>) -> void
+      (define (add-to-cleanup-texts ed)
+        (let ([canvas 
+               (let loop ([ed ed])
+                 (let ([admin (send ed get-admin)])
+                   (if (is-a? admin editor-snip-editor-admin<%>)
+                       (let* ([enclosing-snip (send admin get-snip)]
+                              [enclosing-snip-admin (send enclosing-snip get-admin)])
+                         (loop (send enclosing-snip-admin get-editor)))
+                       (send ed get-canvas))))])
+          (when canvas
+            (let ([frame (send canvas get-top-level-window)])
+              (when (is-a? frame syncheck-frame<%>)
+                (send frame syncheck:add-to-cleanup-texts ed))))))
       
       ;; make-rename-menu : stx[original] (hash-table symbol (listof syntax)) -> void
       (define (make-rename-menu stx vars-ht)

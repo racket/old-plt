@@ -2207,3 +2207,10 @@ void wxFlushDisplay(void)
   XSync(d, FALSE);
 #endif
 }
+
+#ifdef DEFINE_DUMMY_PURE_VIRTUAL
+/* Weird hack to avoid linking to libg++ */
+extern "C" {
+ void __pure_virtual(void) {  }
+}
+#endif

@@ -173,6 +173,16 @@
 			      (set! uid-validity (car l))
 			      (cdr l))
 			    l)))
+
+      (define mailbox-ht #f)
+      (define (rebuild-mailbox-table!)
+	(set! mailbox-ht (make-hash-table 'equal))
+	(for-each (lambda (m) (hash-table-put! mailbox-ht (car m) m))
+		  mailbox))
+      (rebuild-mailbox-table!)
+
+      (define (find-message id)
+	(hash-table-get mailbox-ht id (lambda () #f)))
       
       (define message-uid car)
       (define message-position cadr)
@@ -435,6 +445,7 @@
 						  (cdr new)
 						  0))))))
 			    uids positions)))
+		    (rebuild-mailbox-table!)
 		    (write-mailbox)
 		    (initialized count)
 		    (display-message-count (length mailbox))
@@ -469,7 +480,7 @@
       
       ;; gets cached body or downloads from server (and caches)
       (define (get-body uid break-bad break-ok)
-	(let ([v (assoc uid mailbox)]
+	(let ([v (find-message uid)]
 	      [file (build-path mailbox-dir (format "~abody" uid))])
 	  (when (not v)
 	    (error 'internal-error "unknown message: ~a" uid))
@@ -549,6 +560,7 @@
                   (filter
                    (lambda (m) (not (memq m marked)))
                    mailbox))
+	    (rebuild-mailbox-table!)
             (let loop ([l mailbox][p 1])
               (unless (null? l)
                 (set-message-position! (car l) p)
@@ -1289,7 +1301,7 @@
           (define/public (mark marked?)
             (when selected
               (let* ([uid (send selected user-data)]
-                     [m (assoc uid mailbox)]
+                     [m (find-message uid)]
                      [flags (message-flags m)])
                 (unless (eq? (not marked?) 
                              (not (memq 'marked flags)))
@@ -1309,7 +1321,7 @@
               (let ([archive-mailbox (ARCHIVE-MAILBOX)])
                 (when archive-mailbox
                   (let* ([uid (send selected user-data)]
-                         [item (assoc uid mailbox)])
+                         [item (find-message uid)])
                     (header-changing-action
                      #f
                      (lambda ()
@@ -1401,7 +1413,7 @@
                        (set! drag-start-y (send evt get-y))
                        (when dragging-item
                          (let* ([ud (send dragging-item user-data)]
-                                [message (assoc ud mailbox)]
+                                [message (find-message ud)]
                                 [cap-length 50])
                            (when message
                              (let ([title (message-subject message)])
@@ -1431,7 +1443,7 @@
 		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
                      (if (bytes? mailbox-name)
                          (let* ([user-data (send ditem user-data)]
-                                [item (assoc user-data mailbox)])
+                                [item (find-message user-data)])
                            (when item
 			     (header-changing-action
 			      #f
@@ -1478,7 +1490,7 @@
 	       (send (send header-list get-editor) begin-edit-sequence)
 	       (for-each
 		(lambda (i)
-		  (let ([a (assoc (send i user-data) mailbox)])
+		  (let ([a (find-message (send i user-data))])
 		    (if a
 			(begin ; Message still here
 			  (when (and downloads? (message-downloaded? a))
@@ -2095,8 +2107,8 @@
                  (lambda (a b)
                    (let* ([aid (send a user-data)]
                           [bid (send b user-data)]
-                          [ma (assq aid mailbox)]
-                          [mb (assq bid mailbox)])
+                          [ma (find-message aid)]
+                          [mb (find-message bid)])
                      (compare ma mb))))
            (status ""))
          close-frame))

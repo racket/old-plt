@@ -58,7 +58,7 @@ typedef short Type_Tag;
 
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 1
+#define SAFETY 0
 #define NOISY 0
 #define MARK_STATS 0
 

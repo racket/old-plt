@@ -2505,7 +2505,7 @@ void wxMediaEdit::NeedCaretRefresh(void)
     caretBlinked = FALSE;
     CaretOn();
   } else {
-    if (!caretBlinked)
+    if (!caretBlinked && caretOn)
       CaretOff();
     caretBlinked = FALSE;
   }

@@ -1,3 +1,7 @@
+;;
+;; $Id$
+;;
+
 ; need to export:
 ; const-default-size
 ; const-default-posn
@@ -24,6 +28,7 @@
     (unit/sig mred:container-children^
       (import mred:wx^
 	      [mred:constants : mred:constants^]
+              [mred : mred:testable-window^]
 	      [mred:connections : mred:connections^]
 	      mred:container-frames^
 	      mred:container-panels^)
@@ -376,22 +381,22 @@
       ; these next definitions descend classes from the children of wx:item%
       ; which can be inserted into panel% objects.
       (define button%
-	(make-item% wx:button% 
+	(make-item% mred:testable-button% 
 		    const-default-x-margin const-default-y-margin 
 		    #f #f standard-make-default-size))
       
       (define check-box%
-	(make-item% wx:check-box% 
+	(make-item% mred:testable-check-box% 
 		    const-default-x-margin const-default-y-margin 
 		    #f #f standard-make-default-size))
       
       (define choice%
-	(make-item% wx:choice% 
+	(make-item% mred:testable-choice% 
 		    const-default-x-margin const-default-y-margin 
 		    #t #f standard-make-default-size))
       
       (define gauge%
-	(class (make-item% wx:gauge% 
+	(class (make-item% mred:testable-gauge% 
 			   const-default-x-margin const-default-y-margin 
 			   #t #f list) args
 	  (inherit
@@ -481,7 +486,7 @@
 		     new-args)))))
       
       (define list-box%
-	(make-item% wx:list-box% 
+	(make-item% mred:testable-list-box% 
 		    const-default-x-margin const-default-y-margin 
 		    #t #t
 		    (opt-lambda (parent callback label
@@ -494,7 +499,7 @@
 			     const-default-size const-default-size args))))
       
       (define message%
-	(make-item% wx:message% 
+	(make-item% mred:testable-message% 
 		    const-default-x-margin const-default-y-margin 
 		    #f #f list))
       ; we don't need to process the size args at all cause there aren't
@@ -502,12 +507,12 @@
       ; already does that.
       
       (define radio-box%
-	(make-item% wx:radio-box% 
+	(make-item% mred:testable-radio-box% 
 		    const-default-x-margin const-default-y-margin 
 		    #f #f standard-make-default-size))
       
       (define slider%
-	(class (make-item% wx:slider% 
+	(class (make-item% mred:testable-slider% 
 			   const-default-x-margin const-default-y-margin 
 			   #f #f list) args
 	  (inherit
@@ -604,8 +609,8 @@
 			   (stretchable-in-y #t))))
 		   args))))
       
-      (define text%;; for now
-	(make-item% wx:text% 
+      (define text% ;; for now
+	(make-item% mred:testable-text% 
 		    const-default-x-margin const-default-y-margin 
 		    #t #f
 		    (opt-lambda (parent callback label
@@ -618,7 +623,7 @@
 			     const-default-size const-default-size args))))
       
       (define multi-text%
-	(make-item% wx:multi-text% 
+	(make-item% mred:testable-multi-text% 
 		    const-default-x-margin const-default-y-margin 
 		    #t #t
 		    (opt-lambda (parent callback label
@@ -641,8 +646,8 @@
 			    [h canvas-default-size] . args)
 	  (list* parent x y canvas-default-size canvas-default-size args)))
       
-      (define canvas% (make-item% wx:canvas% 0 0 #t #t canvas-args))
+      (define canvas% (make-item% mred:testable-canvas% 0 0 #t #t canvas-args))
       (define media-canvas% (make-item%
 			     mred:connections:connections-media-canvas%
 			     0 0 #t #t canvas-args))
-      (define text-window% (make-item% wx:text-window% 0 0 #t #t canvas-args)))
+      (define text-window% (make-item% mred:testable-text-window% 0 0 #t #t canvas-args)))

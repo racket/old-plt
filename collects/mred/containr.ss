@@ -1,3 +1,7 @@
+;;
+;; $Id$
+;;
+
 ; resizes too small really confuse things, since client sizes wrap (-2
 ; becomes 65534.  Matthew knows; I'm waiting to hear from him before I do
 ; anything.)
@@ -30,20 +34,25 @@
 ;  single-panel%
 
   (compound-unit/sig
+
     (import [wx : mred:wx^]
 	    [constants : mred:constants^]
+            [testable  : mred:testable-window^]
             [connections : mred:connections^]
 	    [function : mzlib:function^])
+
     (link [container-frames : mred:container-frames^
 	    ((reference-unit/sig "contfram.ss") wx
 	     constants connections container-children container-panels)]
 
 	  [container-children : mred:container-children^
 	    ((reference-unit/sig "contkids.ss") wx
-	     constants connections container-frames container-panels)]
+	     constants testable connections container-frames container-panels)]
+
 	  [container-panels : mred:container-panels^
 	    ((reference-unit/sig "contpanl.ss") wx
 	     constants connections function container-children)])
+
     (export
      (open (container-frames : mred:container-frames^))
      (open (container-children : mred:container-children-export^))

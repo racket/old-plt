@@ -1,5 +1,5 @@
 ;;
-;; $Id: sig.ss,v 1.66 1997/07/07 15:13:51 krentel Exp $
+;; $Id: sig.ss,v 1.67 1997/07/10 23:40:40 robby Exp krentel $
 ;;
 
 (begin-elaboration-time
@@ -423,6 +423,6 @@
    (open mred:panel^) (open mred:paren^) (open mred:project^)
    (open mred:scheme-paren^) (open mred:scheme-mode^) 
    (open mred:hyper-edit^) (open mred:hyper-dialog^) (open mred:hyper-frame^)
-   (open mred:test:active-frame^)
+   (open mred:testable-window^)
    (unit test : mred:self-test-export^)
    (open mred:url^)))

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stlink.ss,v 1.3 1997/07/07 15:14:20 krentel Exp krentel $
+;; $Id: stlink.ss,v 1.4 1997/07/07 19:25:32 krentel Exp krentel $
 ;;
 ;; Link the gui tester together into compound unit.
 ;;
@@ -8,7 +8,7 @@
 
   (import 
     [wx : mred:wx^]
-    [frame : mred:test:active-frame^])
+    [testable : mred:testable-window^])
 
   (link
     [struct : mred:test:struct^
@@ -17,13 +17,13 @@
 	(define-struct event (thunk))))]
 	    
     [global : mred:test:globals^
-      ((reference-unit/sig "stglobal.ss") wx frame struct)]
+      ((reference-unit/sig "stglobal.ss") wx testable struct)]
 
     [run : mred:test:run^
       ((reference-unit/sig "strun.ss") struct global)]
     
     [prim : mred:test:primitives^
-      ((reference-unit/sig "stprims.ss") wx struct global)]
+      ((reference-unit/sig "stprims.ss") wx testable struct global)]
 
     [drscheme : mred:test:drscheme^
       ((reference-unit/sig "stdrs.ss") wx struct global)])

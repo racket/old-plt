@@ -1,5 +1,5 @@
 ;;
-;; $Id: link.ss,v 1.35 1997/07/07 15:13:36 krentel Exp $
+;; $Id: link.ss,v 1.37 1997/07/10 20:17:52 robby Exp krentel $
 ;;
 
   (compound-unit/sig
@@ -20,18 +20,18 @@
 				    constants
 				    (core function@)
 				    (core string@))]
-	  [active-frame : mred:test:active-frame^
-	     ((reference-unit/sig "stframe.ss") wx)]
+	  [testable : mred:testable-window^
+	     ((reference-unit/sig "testable.ss") wx)]
 	  [connections : mred:connections^
 		       ((reference-unit/sig "connect.ss")
 			wx
 			constants 
                         (core function@)
-                        active-frame)]
+                        testable)]
 	  [exn : mred:exn^ ((reference-unit/sig "exn.ss") constants)]
 	  [container : mred:container^
 		     ((reference-unit/sig "containr.ss") wx 
-		      constants connections (core function@))]
+		      constants testable connections (core function@))]
 	  [exit : mred:exit^ ((reference-unit/sig "exit.ss") wx 
 			      constants preferences gui-utils)]
 	  [preferences : mred:preferences^
@@ -153,7 +153,7 @@
 			frame canvas group find-string
 			preferences handler)]
           [self-test : mred:self-test^
-             ((reference-unit/sig  "stlink.ss")  wx  active-frame)]
+             ((reference-unit/sig  "stlink.ss")  wx  testable)]
 	  [html : mred:html^ ((reference-unit/sig "html.ss") wx 
 			      constants
 			      url (core file@)
@@ -173,6 +173,6 @@
 	    (open panel) (open paren) (open project)
 	    (open scheme-paren) (open scheme-mode) 
 	    (open hyper-edit) (open hyper-dialog) (open hyper-frame)
- 	    (open active-frame)
+ 	    (open testable)
             (unit (self-test : mred:self-test-export^) test)
 	    (open url)))

@@ -34,7 +34,9 @@
 	   this-expression-source-directory
 	   define-syntax-set
            
-           hash-table)
+           hash-table
+
+	   begin-with-definitions)
   
   (define true #t)
   (define false #f)
@@ -497,4 +499,52 @@
        (syntax/loc stx
          (let ([ht (make-hash-table)])
            (hash-table-put! ht key value) ...
-           ht))])))
+           ht))]))
+
+  (define-syntax (begin-with-definitions stx)
+    ;; Body can have mixed exprs and defns. Wrap expressions with
+    ;; `(define-values () ... (values))' as needed, and add a (void)
+    ;; at the end if needed.
+    (let* ([ctx (generate-expand-context)]
+	   [kernel-forms (kernel-form-identifier-list #'here)]
+	   [init-exprs (let ([v (syntax->list stx)])
+			 (unless v
+			   (raise-syntax-error #f "bad syntax" stx))
+			 (cdr v))]
+	   [exprs (let loop ([exprs init-exprs])
+		    (apply 
+		     append
+		     (map (lambda (expr)
+			    (let ([expr (local-expand
+					 expr
+					 ctx
+					 kernel-forms)])
+			      (syntax-case expr (begin)
+				[(begin . rest)
+				 (loop (syntax->list #'rest))]
+				[else
+				 (list expr)])))
+			  exprs)))])
+      #`(let ()
+	  #,@(let loop ([exprs exprs][prev-defns null][prev-exprs null])
+	       (cond
+		[(null? exprs) (append 
+				(reverse prev-defns)
+				(reverse prev-exprs)
+				(if (null? prev-exprs)
+				    (list #'(void))
+				    null))]
+		[(and (stx-pair? (car exprs))
+		      (identifier? (stx-car (car exprs)))
+		      (or (module-identifier=? #'define-values (stx-car (car exprs)))
+			  (module-identifier=? #'define-syntaxes (stx-car (car exprs)))))
+		 (loop (cdr exprs)
+		       (cons (car exprs)
+			     (append
+			      (map (lambda (expr)
+				     #`(define-values () (begin #,expr (values))))
+				   prev-exprs)
+			      prev-defns))
+		       null)]
+		[else
+		 (loop (cdr exprs) prev-defns (cons (car exprs) prev-exprs))]))))))

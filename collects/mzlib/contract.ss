@@ -1473,10 +1473,10 @@
                  (let ([dom-x dom] ...
                        [rng-mk-x rng-mk])
                    (unless (-contract? dom-x)
-                     (error '->*d "expected contract as argument, given: ~e" dom-x)) ...
+                     (error '->d* "expected contract as argument, given: ~e" dom-x)) ...
                    (unless (and (procedure? rng-mk-x)
                                 (procedure-arity-includes? rng-mk-x dom-length))
-                     (error '->*d "expected range position to be a procedure that accepts ~a arguments, given: ~e"
+                     (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
                             dom-length rng-mk-x))
                    body))))
             (lambda (stx)
@@ -1542,11 +1542,11 @@
                        [dom-rest-x rest]
                        [rng-mk-x rng-mk])
                    (unless (-contract? dom-x)
-                     (error '->*d "expected contract as argument, given: ~e" dom-x)) ...
+                     (error '->d* "expected contract as argument, given: ~e" dom-x)) ...
                    (unless (-contract? dom-rest-x)
-                     (error '->*d "expected contract for rest argument, given: ~e" dom-rest-x))
+                     (error '->d* "expected contract for rest argument, given: ~e" dom-rest-x))
                    (unless (procedure? rng-mk-x)
-                     (error '->*d "expected range position to be a procedure that accepts ~a arguments, given: ~e"
+                     (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
                             arity rng-mk-x))
                    body))))
             (lambda (stx)

@@ -493,7 +493,11 @@
 	    (require-library-use-compiled #f)
 	    (error-value->string-handler drscheme-error-value->string-handler)
 	    (debug-info-handler (let ([drscheme-debug-info-handler
-				       (lambda () (unbox aries:error-box))])
+				       ; the current-continuation-marks version is for use with
+				       ; the aries which wraps all expressions in a w-c-m expression.
+				       (lambda () (car (current-continuation-marks 'JBC-debug)))
+				       ;(lambda () (unbox aries:error-box))
+				       ])
 				  drscheme-debug-info-handler))
 	    (current-exception-handler drscheme-exception-handler)
 	    (current-namespace n)

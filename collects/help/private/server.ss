@@ -6,6 +6,8 @@
 	   (lib "configuration.ss" "web-server")
 	   (lib "configuration-structures.ss" "web-server"))
 
+  (require (lib "external.ss" "help" "servlets" "private"))
+
   (provide start-help-server
 	   hd-cookie->port
 	   hd-cookie?)
@@ -39,6 +41,7 @@
 		(build-path (collection-path "help")
 			    "server-configuration")))]
 	     [help-desk-port (get-free-port)])
+	(set-box! external-box external-connections?)
 	(make-hd-cookie 
 	 help-desk-port  	
 	 (if external-connections?

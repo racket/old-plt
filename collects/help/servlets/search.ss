@@ -7,6 +7,7 @@
 
 (require "private/util.ss")
 (require "private/search-util.ss")
+(require "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -89,16 +90,18 @@
 					match-types))))
 		    (TR 
 		     (TD 'nbsp)
-		     (TD ((COLSPAN "2"))
-			 ,(make-sys-link
-			   "/servlets/hd-config.ss"
-			   "Configure Help Desk"
-			   "_top")
-			 'nbsp 'nbsp
-			 ,(make-sys-link
-			   "/servlets/shutdown.ss"
-			   "Shutdown Help Desk server"
-			   "_top")))))
+		     ,(if (unbox external-box)
+			  `(TD 'nbsp)
+			  `(TD ((COLSPAN "2"))
+			       ,(make-sys-link
+				 "/servlets/hd-config.ss"
+				 "Configure Help Desk"
+				 "_top")
+			       'nbsp 'nbsp
+			       ,(make-sys-link
+				 "/servlets/shutdown.ss"
+				 "Shutdown Help Desk server"
+				 "_top"))))))
 		  (TD
 		   (TABLE ((BGCOLOR ,search-bg)
 			   (CELLSPACING "0")

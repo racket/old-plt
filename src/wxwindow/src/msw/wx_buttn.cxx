@@ -66,7 +66,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId(this);
+  windows_id = NewId(this);
 
   if (bitmap) {
     if (width < 0)
@@ -101,14 +101,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 
   SubclassControl(wx_button);
 
-  if (buttonFont) {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle);
-    if (buttonFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc);
-  }
+  wxSetWinFont(buttonFont, ms_handle);
 
   SetSize(x, y, width, height);
 

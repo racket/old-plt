@@ -118,8 +118,6 @@ static Scheme_Object *wait_symbol;
 
 #define CONS scheme_make_pair
 
-extern "C" Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env);
-
 void wxsScheme_setup(Scheme_Env *env)
 {
   wxREGGLOB(get_file);

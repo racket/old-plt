@@ -32,8 +32,6 @@
 #include "wx_ptreq.h"
 #include <string.h>
 
-extern "C" int scheme_directory_exists(char *dirname);
-
 #define LINE_HEIGHT 16
 
 #define DOT_WIDTH 5

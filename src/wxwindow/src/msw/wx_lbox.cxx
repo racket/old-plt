@@ -76,14 +76,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-    {
-      HDC the_dc;
-      the_dc = GetWindowDC(static_label) ;
-      if (labelFont && labelFont->GetInternalFont(the_dc))
-	SendMessage(static_label,WM_SETFONT,
-		    (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-      ReleaseDC(static_label,the_dc) ;
-    }
+
+    wxSetWinFont(labelFont, (HANDLE)static_label);
   }
   else
     static_label = NULL;

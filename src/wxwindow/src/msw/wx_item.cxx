@@ -494,3 +494,16 @@ void wxRemoveControlHandle(HWND hWnd)
   wxControlHandleList->Delete((long)hWnd);
 }
 
+void wxSetWinFont(wxFont *buttonFont, HANDLE ms_handle)
+{
+  if (buttonFont) {
+    HDC the_dc;
+    HFONT hf;
+    the_dc = GetWindowDC((HWND)ms_handle);
+    hf = buttonFont->GetInternalFont(the_dc);
+    if (hf) {
+      SendMessage((HWND)ms_handle, WM_SETFONT, (LPARAM)hf, 0L);
+    }
+    ReleaseDC((HWND)ms_handle,the_dc);
+  }
+}

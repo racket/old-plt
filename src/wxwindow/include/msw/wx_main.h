@@ -26,7 +26,6 @@ class wxApp: public wxbApp
 {
  public:
   HANDLE hInstance;
-  MSG current_msg;
   BOOL keep_going;
 
   // this variable holds the display mode, which is

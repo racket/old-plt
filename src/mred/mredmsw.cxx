@@ -440,7 +440,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
 	  het->timer_on = 0;
 	  KillTimer(NULL, het->timer_id);
 	}
-	mred_het_run_some();
+	mred_het_run_some(NULL, NULL);
 	if (het->in_progress && !het->timer_on) {
 	  /* Make a timer event so that we get more time... */
 	  het->timer_on = 1;
@@ -523,7 +523,7 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
   if (!tramp && ((message == WM_VSCROLL) || (message == WM_HSCROLL))) {
     HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
     if (het) {
-      mred_het_run_some();
+      mred_het_run_some(NULL, NULL);
       if (het->in_progress && !het->timer_on) {
 	/* Make a timer event so that we get more time... */
 	het->timer_on = 1;
@@ -552,7 +552,7 @@ static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime
       het->timer_on = 0;
       KillTimer(NULL, het->timer_id);
     }
-    mred_het_run_some();
+    mred_het_run_some(NULL, NULL);
     if (het->in_progress) {
       het->timer_on = 1;
       het->timer_id = SetTimer(0, NULL, 100, HETRunSome);

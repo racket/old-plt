@@ -142,7 +142,7 @@ class wxDC: public wxbDC
   void SelectOldObjects(HDC dc);
    HDC ThisDC();
    void DoneDC(HDC dc);
-   void ShiftXY(float x, float y, int &ix, int &iy);
+   void ShiftXY(float x, float y, int *ix, int *iy);
 
   Bool StartBrush(HDC dc, Bool no_stipple = FALSE);
   Bool StartPen(HDC dc);

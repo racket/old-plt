@@ -27,10 +27,14 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
        know its eventspace. If so, re-post the event to get
        eventspaces right. */
     if (wxIsPrimEventspace()) {
-      PostMessage(GetParent()->GetHWND(),
+      wxWindow *par;
+      LPARAM lp;
+      par = GetParent();
+      lp = (LPARAM)GetHWND();
+      PostMessage(par->GetHWND(),
 	          WM_COMMAND,
 		  (WPARAM)MAKELONG(id, param),
-		  (LPARAM)GetHWND());
+		  lp);
     } else {
       wxCommandEvent *event;
       event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
@@ -55,6 +59,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 {
   wxWnd *cparent = NULL;
   char *the_label = NULL;
+  HWND wx_combo;
 
   panel->AddChild(this);
 
@@ -62,7 +67,6 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
-  HWND wx_combo;
 
   if (panel)
     cparent = (wxWnd *)(panel->handle);
@@ -77,22 +81,20 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   }
 
   if (Title) {
-    HDC the_dc;
+    HMENU nid;
 
+    nid = (HMENU)NewId(this);
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS
 				      | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				      0, 0, 0, 0, cparent->handle, nid,
 				      wxhInstance, NULL);
-    the_dc = GetWindowDC(static_label) ;
-    if (labelFont && labelFont->GetInternalFont(the_dc))
-      SendMessage(static_label,WM_SETFONT,
-                  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-    ReleaseDC(static_label,the_dc) ;
+
+    wxSetWinFont(labelFont, (HANDLE)static_label);
   } else
     static_label = NULL;
   
-  windows_id = (int)NewId(this);
+  windows_id = NewId(this);
 
   wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
 				WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
@@ -104,14 +106,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   SubclassControl(wx_combo);
 
-  {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle);
-    if (panel->buttonFont && panel->buttonFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle, WM_SETFONT,
-		  (WPARAM)panel->buttonFont->GetInternalFont(the_dc), 0L);
-    ReleaseDC((HWND)ms_handle,the_dc);
-  }
+  wxSetWinFont(panel->buttonFont, ms_handle);
 
   {
     int i;

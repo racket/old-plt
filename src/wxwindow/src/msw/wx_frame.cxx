@@ -58,9 +58,7 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
   if (Parent) Parent->AddChild(this);
   window_parent = Parent;
 
-  for (i = 0; i < wxMAX_STATUS; i++) {
-    status_window[i] = NULL;
-  }
+  status_window = NULL;
 
   hiddenmax = 0;
   if (Parent)
@@ -69,18 +67,30 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
   switch (frame_type)
   {
     case wxMDI_PARENT:
-      wxWinType = wxTYPE_XWND;
-      handle = (char *)new wxMDIFrame(NULL, this, title, x, y, width, height, style);
+      {
+	wxMDIFrame *mf;
+	wxWinType = wxTYPE_XWND;
+	mf = new wxMDIFrame(NULL, this, title, x, y, width, height, style);
+	handle = (char *)mf;
+      }
       break;
     case wxMDI_CHILD:
-      wxWinType = wxTYPE_MDICHILD;
-      handle = (char *)new wxMDIChild((wxMDIFrame *)cparent, this, title, x, y, width, height, style);
+      {
+	wxMDIChild *mc;
+	wxWinType = wxTYPE_MDICHILD;
+	mc = new wxMDIChild((wxMDIFrame *)cparent, this, title, x, y, width, height, style);
+	handle = (char *)mc;
+      }
       break;
     default:
     case wxSDI:
-      wxWinType = wxTYPE_XWND;
-      handle = (char *)new wxFrameWnd(cparent, wxFrameClassName, this, title,
-                   x, y, width, height, style);
+      {
+	wxFrameWnd *fw;
+	wxWinType = wxTYPE_XWND;
+	fw = new wxFrameWnd(cparent, wxFrameClassName, this, title,
+			    x, y, width, height, style);
+	handle = (char *)fw;
+      }
       break;
   }
 
@@ -106,11 +116,9 @@ wxFrame::~wxFrame(void)
   if (wx_menu_bar)
     DELETE_OBJ wx_menu_bar;
 
-  for (i = 0; i < wxMAX_STATUS; i++) {
-    if (status_window[i]) {
-      status_window[i]->DestroyWindow();
-      delete status_window[i];
-    }
+  if (status_window) {
+    status_window->DestroyWindow();
+    delete status_window;
   }
 }
 
@@ -174,8 +182,8 @@ void wxFrame::GetClientSize(int *x, int *y)
       int cheight = rect.bottom;
       int ctop = 0;
 
-      if (status_window[0])
-        cheight -= status_window[0]->height;
+      if (status_window)
+        cheight -= status_window->height;
       *x = cwidth;
       *y = cheight;
       break;
@@ -184,8 +192,8 @@ void wxFrame::GetClientSize(int *x, int *y)
     case wxMDI_CHILD:
     case wxSDI:
     {
-      if (status_window[0])
-        rect.bottom -= status_window[0]->height;
+      if (status_window)
+        rect.bottom -= status_window->height;
 
       *x = rect.right;
       *y = rect.bottom;
@@ -199,7 +207,7 @@ void wxFrame::GetClientSize(int *x, int *y)
 void wxFrame::SetClientSize(int width, int height)
 {
   wxFrame *parent;
-  HWND hWnd = GetHWND();
+  HWND hWnd;
   HWND hParentWnd = 0;
   RECT rect;
   RECT rect2;
@@ -222,8 +230,8 @@ void wxFrame::SetClientSize(int width, int height)
   actual_width = rect2.right - rect2.left - rect.right + width;
   actual_height = rect2.bottom - rect2.top - rect.bottom + height;
 
-  if (status_window[0])
-    actual_height += status_window[0]->height;
+  if (status_window)
+    actual_height += status_window->height;
 
   point.x = rect2.left;
   point.y = rect2.top;
@@ -321,6 +329,7 @@ Bool wxFrame::Show(Bool show)
 {
   int skipShow;
   int cshow;
+  wxChildList *tlw;
 
   skipShow = (!show == !IsShown());
 
@@ -333,20 +342,29 @@ Bool wxFrame::Show(Bool show)
     } else
       cshow = SW_RESTORE; /* Show */
   } else {
-    if (!skipShow)
-      hiddenmax = ::IsZoomed(GetHWND());
+    if (!skipShow) {
+      int hm;
+      hm = IsZoomed(GetHWND());
+      hiddenmax = hm;
+    }
     cshow = SW_HIDE;
   }
   
-  wxTopLevelWindows(this)->Show(this, show);
-  if (window_parent)
-    window_parent->GetChildren()->Show(this, show);
+  tlw = wxTopLevelWindows(this);
+  tlw->Show(this, show);
+  if (window_parent) {
+    wxChildList *cl;
+    cl = window_parent->GetChildren();
+    cl->Show(this, show);
+  }
 
   if (!show) {
     // Try to highlight the correct window (the parent)
     HWND hWndParent = 0;
     if (GetParent()) {
-      hWndParent = GetParent()->GetHWND();
+      wxWindow *par;
+      par = GetParent();
+      hWndParent = par->GetHWND();
       if (hWndParent)
 	wxwmBringWindowToTop(hWndParent);
     }
@@ -363,13 +381,15 @@ Bool wxFrame::Show(Bool show)
   if (!skipShow) {
     if (frame_type == wxMDI_CHILD) {
       wxMDIFrame *cparent;
-      cparent = (wxMDIFrame *)GetParent()->handle;
+      wxWindow *par;
+      par = GetParent();
+      cparent = (wxMDIFrame *)par->handle;
       if (cparent->current_child == (wxFrameWnd *)handle) {
 	if (cshow == SW_HIDE) {
 	  HMENU new_menu;
 
 	  cparent->parent_frame_active = TRUE;
-	  new_menu = ((wxFrame *)GetParent())->GetWinMenu();
+	  new_menu = ((wxFrame *)par)->GetWinMenu();
 	  
 	  if (!new_menu) {
 	    if (!emptyMenu)
@@ -529,12 +549,7 @@ void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))
     wxStatusWhitePen = new wxPen("WHITE", wxTHICK_LINE_WIDTH, wxSOLID);
   }
 
-  {
-    int i;
-    for (i = 0; i < number; i++) {
-      status_window[i] = new wxStatusWnd(cframe, status_window_height);
-    }
-  }
+  status_window = new wxStatusWnd(cframe, status_window_height);
   PositionStatusWindow();
 }
 
@@ -552,24 +567,26 @@ void wxFrame::SetStatusText(char *text, int number)
     return;
 
   // Microsoft standard: use button colors for status line
-  status_window[number]->light_grey_brush = brushFace ;
+  status_window->light_grey_brush = brushFace ;
 
-  if (text)
-    status_window[number]->status_text = copystring(text);
-  else 
-    status_window[number]->status_text = NULL;
+  if (text) {
+    char *s;
+    s = copystring(text);
+    status_window->status_text = s;
+  } else 
+    status_window->status_text = NULL;
 
-  dc = GetDC(status_window[number]->handle);
+  dc = GetDC(status_window->handle);
   SelectObject(dc, wxSTATUS_LINE_FONT);
 
-  GetClientRect(status_window[number]->handle, &rect );
+  GetClientRect(status_window->handle, &rect );
 
   width = rect.right;
   height = rect.bottom;
 
   SetBkMode(dc, TRANSPARENT);
 
-  ::SetTextColor(dc, ::GetSysColor( COLOR_BTNTEXT ) );
+  ::SetTextColor(dc, GetSysColor( COLOR_BTNTEXT ) );
 
   GetTextMetrics(dc, &tm);
   cy = tm.tmHeight + tm.tmExternalLeading;
@@ -579,17 +596,17 @@ void wxFrame::SetStatusText(char *text, int number)
   rect.top += wxTHICK_LINE_BORDER + 1;
   rect.right -= (wxTHICK_LINE_BORDER + 1);
   rect.bottom -= (wxTHICK_LINE_BORDER + 1);
-  FillRect(dc, &rect, status_window[number]->light_grey_brush);
+  FillRect(dc, &rect, status_window->light_grey_brush);
 
   IntersectClipRect(dc, wxTHICK_LINE_BORDER + 3, y-1,
                             width - wxTHICK_LINE_BORDER - 1, height);
 
-  if (status_window[number]->status_text)
+  if (status_window->status_text)
     TextOut(dc, wxTHICK_LINE_BORDER + 4, y,
-                status_window[number]->status_text, strlen(status_window[number]->status_text));
+                status_window->status_text, strlen(status_window->status_text));
 
   SelectClipRgn(dc, NULL);
-  ReleaseDC(status_window[number]->handle, dc);
+  ReleaseDC(status_window->handle, dc);
 }
 
 void wxFrame::PositionStatusWindow(void)
@@ -597,16 +614,17 @@ void wxFrame::PositionStatusWindow(void)
   // We will assume that in a multi status line, all fields have the
   //  same width.
   RECT rect;
-  int cwidth, cheight, i;
+  int cwidth, cheight;
 
   GetClientRect(GetHWND(), &rect);
   cwidth = rect.right;
   cheight = rect.bottom;
 
-  for (i = 0; i < nb_status; i++) {
+  {
     int real_width = (int)(cwidth/nb_status);
-    MoveWindow(status_window[i]->handle, i*real_width, cheight - status_window[0]->height,
-	       real_width, status_window[0]->height, TRUE);
+    MoveWindow(status_window->handle, 
+	       0, cheight - status_window->height,
+	       real_width, status_window->height, TRUE);
   }
 }
 
@@ -675,7 +693,7 @@ BOOL wxStatusWnd::OnPaint()
   RECT rect;
   if (GetUpdateRect(handle, &rect, FALSE)) {
     PAINTSTRUCT ps;
-    int width, height, cy, y;
+    int width, _height, cy, y;
     HBRUSH old_brush;
     HPEN old_pen;
     TEXTMETRIC tm;
@@ -691,7 +709,7 @@ BOOL wxStatusWnd::OnPaint()
     ::GetClientRect(handle, &rect);
 
     width = rect.right;
-    height = rect.bottom;
+    _height = rect.bottom;
 
     ::SetBkMode(cdc, TRANSPARENT);
     ::FillRect(cdc, &rect, light_grey_brush);
@@ -707,18 +725,18 @@ BOOL wxStatusWnd::OnPaint()
     // Right and bottom white lines
     old_pen = (HPEN)::SelectObject(cdc,penLight) ;
     MoveToEx(cdc, width-wxTHICK_LINE_BORDER,
-                  wxTHICK_LINE_BORDER, NULL);
+	     wxTHICK_LINE_BORDER, NULL);
     LineTo(cdc, width-wxTHICK_LINE_BORDER,
-                height-wxTHICK_LINE_BORDER);
+	   _height-wxTHICK_LINE_BORDER);
     LineTo(cdc, wxTHICK_LINE_BORDER,
-              height-wxTHICK_LINE_BORDER);
+	   _height-wxTHICK_LINE_BORDER);
 
     // Left and top grey lines
     ::SelectObject(cdc,penShadow) ;
     LineTo(cdc, wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
     LineTo(cdc, width-wxTHICK_LINE_BORDER, wxTHICK_LINE_BORDER);
 
-    SetTextColor(cdc, ::GetSysColor( COLOR_BTNTEXT ) );
+    SetTextColor(cdc, GetSysColor(COLOR_BTNTEXT) );
 
     ::GetTextMetrics(cdc, &tm);
     cy = tm.tmHeight + tm.tmExternalLeading;
@@ -756,7 +774,7 @@ wxFrameWnd::wxFrameWnd(void)
 }
 		   
 wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, char *title,
-                   int x, int y, int width, int height, long style)
+		       int x, int y, int width, int height, long style)
 {
   DWORD msflags = WS_POPUP;  
   DWORD extendedStyle = 0;
@@ -819,11 +837,13 @@ BOOL wxFrameWnd::OnPaint(void)
       if (the_icon) {
         RECT rect;
         GetClientRect(handle, &rect);
-        int icon_width = 32;
-        int icon_height = 32;
-        int icon_x = (int)((rect.right - icon_width)/2);
-        int icon_y = (int)((rect.bottom - icon_height)/2);
-        DrawIcon(cdc, icon_x, icon_y, the_icon);
+	{
+	  int icon_width = 32;
+	  int icon_height = 32;
+	  int icon_x = (int)((rect.right - icon_width)/2);
+	  int icon_y = (int)((rect.bottom - icon_height)/2);
+	  DrawIcon(cdc, icon_x, icon_y, the_icon);
+	}
       }
     }
 
@@ -859,7 +879,7 @@ void wxFrameWnd::OnSize(int bad_x, int bad_y, UINT id)
  if (!iconized)
  {
   wxFrame *frame = (wxFrame *)wx_window;
-  if (frame && frame->status_window[0])
+  if (frame && frame->status_window)
     frame->PositionStatusWindow();
 
   if (wx_window && wx_window->handle)
@@ -1000,7 +1020,7 @@ void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
  {
   wxFrame *frame = (wxFrame *)wx_window;
 
-  if (frame && (frame->status_window[0]))
+  if (frame && (frame->status_window))
   {
     RECT rect;
     int cwidth, cheight, ctop = 0;
@@ -1009,7 +1029,7 @@ void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
     cwidth = rect.right;
     cheight = rect.bottom;
 
-    cheight -= frame->status_window[0]->height;
+    cheight -= frame->status_window->height;
 
     MoveWindow(client_hwnd, 0, ctop, cwidth, cheight, TRUE);
 
@@ -1182,7 +1202,7 @@ void wxMDIChild::OnSize(int bad_x, int bad_y, UINT id)
  if (!iconized)
  {
   wxFrame *frame = (wxFrame *)wx_window;
-  if (frame && frame->status_window[0])
+  if (frame && frame->status_window)
     frame->PositionStatusWindow();
 
   if (wx_window && wx_window->handle)

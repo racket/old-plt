@@ -34,8 +34,6 @@
 
 #include "wx_mpriv.h"
 
-extern "C" int scheme_directory_exists(char *dirname);
-
 static void StandardWordbreak(wxMediaEdit *win, long *start, long *end, int, void*);
 
 wxMediaWordbreakMap *wxTheMediaWordbreakMap;

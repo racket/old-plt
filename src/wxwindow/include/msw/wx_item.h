@@ -54,4 +54,6 @@ class wxItem: public wxbItem
 long NewId(wxItem *i);
 void DoneIds(wxItem *i);
 
+void wxSetWinFont(wxFont *buttonFont, HANDLE ms_handle);
+
 #endif // wx_itemh

@@ -15,7 +15,7 @@
 wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   wxItem(panel)
 {
-  int x = 0, y = 0, width, height;
+  int x = 0, y = 0, width, height, nid;
   wxWnd *cparent;
   char *the_label;
   HWND the_handle;
@@ -33,21 +33,16 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
 
   the_handle = cparent->handle;
 
+  nid = NewId(this);
+
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
 				 GROUP_FLAGS
 				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				 0, 0, 0, 0,
-				 cparent->handle, (HMENU)NewId(this),
+				 cparent->handle, (HMENU)nid,
 				 wxhInstance, NULL);
 
-  {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle) ;
-    if (labelFont && labelFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc) ;
-  }
+  wxSetWinFont(labelFont, ms_handle);
 
   SubclassControl((HWND)ms_handle);
 

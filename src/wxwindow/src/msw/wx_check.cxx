@@ -19,6 +19,7 @@ BOOL wxCheckBox::MSWCommand(UINT param, WORD WXUNUSED(id))
     ProcessCommand(event);
     return TRUE;
   }
+  return FALSE;
 }
 
 // Single check box item
@@ -58,7 +59,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 
   panel->GetValidPosition(&x, &y);
 
-  windows_id = (int)NewId(this);
+  windows_id = NewId(this);
 
   if (bitmap) {
     isFafa = TRUE;
@@ -96,14 +97,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 
   ms_handle = (HANDLE)wx_button;
 
-  {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle) ;
-    if (labelFont && labelFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc) ;
-  }
+  wxSetWinFont(labelFont, ms_handle);
 
   SetSize(x, y, width, height);
 

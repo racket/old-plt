@@ -458,10 +458,12 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
   RECT rect;
   wxCanvas *canvas;
   int mode;
+  HBRUSH brsh;
 
   GetClientRect(handle, &rect);
   mode = SetMapMode(pDC, MM_TEXT);
-  FillRect(pDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+  brsh = (HBRUSH)GetStockObject(WHITE_BRUSH);
+  FillRect(pDC, &rect, brsh);
   SetMapMode(pDC, mode);
 
   canvas = (wxCanvas *)wx_window;
@@ -535,7 +537,11 @@ wxGLContext::wxGLContext(wxWindow *win)
   m_hDC = NULL;
   m_hGLRC = NULL;
 
-  m_hDC = ::GetDC(win->GetHWND());
+  {
+    HDC h;
+    h = ::GetDC(win->GetHWND());
+    m_hDC = h;
+  }
  
   SetupPixelFormat();
   SetupPalette();

@@ -193,8 +193,10 @@ void wxDialogBox::SetClientSize(int width, int height)
 
 void wxDialogBox::GetPosition(int *x, int *y)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
   RECT rect;
+
+  hWnd = GetHWND();
 
   GetWindowRect(hWnd, &rect);
 
@@ -228,12 +230,17 @@ Bool wxDialogBox::Show(Bool show)
 	wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
       } else {    
 	wxChildNode *cnode;
+	wxChildList *twl;
 
 	SetShown(TRUE);
 	
-	wxTopLevelWindows(this)->Show(this, TRUE);
-	if (window_parent)
-	  window_parent->GetChildren()->Show(this, TRUE);
+	twl = wxTopLevelWindows(this);
+	twl->Show(this, TRUE);
+	if (window_parent) {
+	  wxChildList *cl;
+	  cl = window_parent->GetChildren();
+	  cl->Show(this, TRUE);
+	}
       
 	disabled_windows = new wxList();
 	
@@ -244,7 +251,7 @@ Bool wxDialogBox::Show(Bool show)
 	wxwmBringWindowToTop(dialog->handle);
 	
 	// Make list of windows that are disabled:
-	for (cnode = wxTopLevelWindows(this)->First(); cnode; cnode = cnode->Next()) {
+	for (cnode = twl->First(); cnode; cnode = cnode->Next()) {
 	  wxWindow *w;
 	  w = (wxWindow *)cnode->Data();
 	  if (w && cnode->IsShown() && w != this) {
@@ -258,12 +265,17 @@ Bool wxDialogBox::Show(Bool show)
     } else {
       if (disabled_windows) {
 	wxNode *node;
+	wxChildList *twl;
 
 	SetShown(FALSE);
 	
-	wxTopLevelWindows(this)->Show(this, FALSE);
-	if (window_parent)
-	  window_parent->GetChildren()->Show(this, FALSE);
+	twl = wxTopLevelWindows(this);
+	twl->Show(this, FALSE);
+	if (window_parent) {
+	  wxChildList *cl;
+	  cl = window_parent->GetChildren();
+	  cl->Show(this, FALSE);
+	}
 	
 	wxPopModalWindow(this, this);
 	    
@@ -279,11 +291,16 @@ Bool wxDialogBox::Show(Bool show)
       
 	ShowWindow(dialog->handle, SW_HIDE);
 	    
-	if (GetParent())
-	  wxwmBringWindowToTop(GetParent()->GetHWND());
+	if (GetParent()) {
+	  wxWindow *par;
+	  par = GetParent();
+	  wxwmBringWindowToTop(par->GetHWND());
+	}
       }
     }
   } else {
+    wxChildList *twl;
+
     if (!!show == !!IsShown()) {
       if (show)
 	wxwmBringWindowToTop(dialog->handle);
@@ -292,9 +309,13 @@ Bool wxDialogBox::Show(Bool show)
     
     SetShown(show);
     
-    wxTopLevelWindows(this)->Show(this, show);
-    if (window_parent)
-      window_parent->GetChildren()->Show(this, show);
+    twl = wxTopLevelWindows(this);
+    twl->Show(this, show);
+    if (window_parent) {
+      wxChildList *cl;
+      cl = window_parent->GetChildren();
+      cl->Show(this, show);
+    }
 
     if (show) {
       ShowWindow(dialog->handle, SW_SHOW);
@@ -303,7 +324,9 @@ Bool wxDialogBox::Show(Bool show)
       // Try to highlight the correct window (the parent)
       HWND hWndParent = 0;
       if (GetParent()) {
-        hWndParent = GetParent()->GetHWND();
+	wxWindow *par;
+	par = GetParent();
+        hWndParent = par->GetHWND();
         if (hWndParent)
 	  wxwmBringWindowToTop(hWndParent);
       }

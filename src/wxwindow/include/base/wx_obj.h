@@ -23,12 +23,21 @@
 # define WXGC_CLEANUP_CLASS gc_cleanup
 #endif
 
-#define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
-#define WXGC_ATOMIC (AtomicGC)
+#ifdef MZ_PRECISE_GC
+# define WXGC_IGNORE(base, ptr) GC_finalization_weak_ptr((void **)base, (void **)&(ptr) - (void **)base)
+# define WXGC_ATOMIC /* empty */
+# define COPYSTRING_TO_ALIGNED(s, d) copystring_to_aligned(s, d)
+# define DELETE_OBJ delete_wxobject
+# define DELETE_VAL delete
+#else
+# define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
+# define WXGC_ATOMIC (AtomicGC)
+# define COPYSTRING_TO_ALIGNED(s, d) (s + d)
+# define DELETE_OBJ delete
+# define DELETE_VAL delete
+#endif
+
 #define WXGC_NO_CLEANUP FALSE
-#define DELETE_OBJ delete
-#define DELETE_VAL delete
-#define COPYSTRING_TO_ALIGNED(s, d) (s + d)
 
 class wxObject : public WXGC_CLEANUP_CLASS
 {

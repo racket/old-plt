@@ -49,25 +49,28 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
     case wxCF_BITMAP:
     {
       wxBitmap *wxBM = (wxBitmap *)obj;
-
-      HDC hdcMem = CreateCompatibleDC(NULL);
-      HDC hdcSrc = CreateCompatibleDC(NULL);
-      HBITMAP old = (HBITMAP)::SelectObject(hdcSrc, wxBM->ms_bitmap);
-      HPALETTE origPal = NULL;
-
-      wxColourMap *cm = wxBM->GetColourMap();
-      if (cm && cm->ms_palette)
-	origPal = SelectPalette(hdcSrc, cm->ms_palette, TRUE);
-
       HBITMAP hBitmap;
       BITMAP bm;
+      HDC hdcMem, hdcSrc;
+      HPALETTE origPal = NULL;
+      HBITMAP old, old1;
+      wxColourMap *cm;
+      Bool success;
+
+      hdcMem = CreateCompatibleDC(NULL);
+      hdcSrc = CreateCompatibleDC(NULL);
+      old = (HBITMAP)::SelectObject(hdcSrc, wxBM->ms_bitmap);
+
+      cm = wxBM->GetColourMap();
+      if (cm && cm->ms_palette)
+	origPal = SelectPalette(hdcSrc, cm->ms_palette, TRUE);
 
       GetObject(wxBM->ms_bitmap, sizeof(BITMAP), (LPSTR)&bm);
       hBitmap = CreateBitmapIndirect(&bm);
 
       if (!hBitmap)
         return FALSE;
-      HBITMAP old1 = (HBITMAP)SelectObject(hdcMem, hBitmap);
+      old1 = (HBITMAP)SelectObject(hdcMem, hBitmap);
       BitBlt(hdcMem, 0, 0, wxBM->GetWidth(), wxBM->GetHeight(),
              hdcSrc, 0, 0, SRCCOPY);
 
@@ -75,7 +78,7 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
       SelectObject(hdcMem, old1);
 
       // Set the data
-      Bool success = (Bool)::SetClipboardData(CF_BITMAP, hBitmap);
+      success = (Bool)::SetClipboardData(CF_BITMAP, hBitmap);
 
       // Clean up
       if (origPal)
@@ -86,24 +89,6 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
       return success;
       break;
     }
-#if USE_METAFILE
-    case wxCF_METAFILE:
-    {
-      wxMetaFile *wxMF = (wxMetaFile *)obj;
-      HANDLE data = GlobalAlloc(GHND, sizeof(METAFILEPICT) + 1);
-      METAFILEPICT *mf = (METAFILEPICT *)GlobalLock(data);
-
-      mf->mm = MM_TEXT;
-      mf->xExt = width;
-      mf->yExt = height;
-      mf->hMF = (HMETAFILE)wxMF->metafile;
-      GlobalUnlock(data);
-      wxMF->metafile = NULL;
-
-      return (Bool)SetClipboardData(CF_METAFILEPICT, data);
-      break;
-    }
-#endif
     case CF_SYLK:
     case CF_DIF:
     case CF_TIFF:
@@ -122,18 +107,21 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
     {
       char *s = (char *)obj;
       DWORD l;
+      HANDLE hGlobalMemory;
+      LPSTR lpGlobalMemory;
+      HANDLE success;
 
       l = (width * height);
-      HANDLE hGlobalMemory = GlobalAlloc(GHND, l);
+      hGlobalMemory = GlobalAlloc(GHND, l);
       if (!hGlobalMemory)
         return FALSE;
 
-      LPSTR lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
+      lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
 
       memcpy(lpGlobalMemory, s, l);
 
       GlobalUnlock(hGlobalMemory);
-      HANDLE success = SetClipboardData(dataFormat, hGlobalMemory);
+      success = SetClipboardData(dataFormat, hGlobalMemory);
       return (Bool)success;
       break;
     }
@@ -148,22 +136,30 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
     case wxCF_BITMAP:
     {
       BITMAP bm;
-      HBITMAP hBitmap = (HBITMAP)GetClipboardData(CF_BITMAP);
+      wxBitmap *wxBM;
+      HBITMAP hBitmap;
+      HDC hdcMem;
+      HDC hdcSrc;
+      HBITMAP old;
+      HBITMAP hNewBitmap;
+      HBITMAP old1;
+      
+      hBitmap = (HBITMAP)GetClipboardData(CF_BITMAP);
       if (!hBitmap)
         return NULL;
 
-      HDC hdcMem = CreateCompatibleDC(NULL);
-      HDC hdcSrc = CreateCompatibleDC(NULL);
+      hdcMem = CreateCompatibleDC(NULL);
+      hdcSrc = CreateCompatibleDC(NULL);
 
-      HBITMAP old = (HBITMAP)::SelectObject(hdcSrc, hBitmap);
+      old = (HBITMAP)::SelectObject(hdcSrc, hBitmap);
       GetObject(hBitmap, sizeof(BITMAP), (LPSTR)&bm);
 
-      HBITMAP hNewBitmap = CreateBitmapIndirect(&bm);
+      hNewBitmap = CreateBitmapIndirect(&bm);
 
       if (!hNewBitmap)
         return NULL;
         
-      HBITMAP old1 = (HBITMAP)SelectObject(hdcMem, hNewBitmap);
+      old1 = (HBITMAP)SelectObject(hdcMem, hNewBitmap);
       BitBlt(hdcMem, 0, 0, bm.bmWidth, bm.bmHeight,
              hdcSrc, 0, 0, SRCCOPY);
 
@@ -176,7 +172,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
       DeleteDC(hdcMem);
 
       // Create a new wxBitmap
-      wxBitmap *wxBM = new wxBitmap;
+      wxBM = new wxBitmap;
       wxBM->ms_bitmap = hNewBitmap;
       wxBM->SetWidth(bm.bmWidth);
       wxBM->SetHeight(bm.bmHeight);
@@ -201,19 +197,24 @@ wxObject *wxGetClipboardData(int dataFormat, long *len)
     case wxCF_TEXT:
     default:
     {
-      HANDLE hGlobalMemory = GetClipboardData(dataFormat);
+      HANDLE hGlobalMemory;
+      int hsize;
+      char *s;
+      LPSTR lpGlobalMemory;
+
+      hGlobalMemory = GetClipboardData(dataFormat);
       if (!hGlobalMemory)
         return NULL;
 
-      int hsize = (int)GlobalSize(hGlobalMemory);
+      hsize = (int)GlobalSize(hGlobalMemory);
       if (len)
         *len = hsize;
 
-      char *s = new char[hsize];
+      s = new char[hsize];
       if (!s)
         return NULL;
 
-      LPSTR lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
+      lpGlobalMemory = (LPSTR)GlobalLock(hGlobalMemory);
       memcpy(s, lpGlobalMemory, GlobalSize(hGlobalMemory));
 
       GlobalUnlock(hGlobalMemory);
@@ -422,8 +423,9 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
       return NULL;
   } else {
     if (wxOpenClipboard()) {
-      receivedString = (char *)wxGetClipboardData(FormatStringToID(format), 
-						  length);
+      char *s;
+      s = (char *)wxGetClipboardData(FormatStringToID(format), length);
+      receivedString = s;
       wxCloseClipboard();
     } else
       receivedString = NULL;

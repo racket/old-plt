@@ -73,7 +73,7 @@ char *
 wxFileNameFromPath (char *path)
 {
   if (path) {
-    char *tcp;
+    char *tcp = path;
     int tcpd;
     
     tcpd = strlen(path);

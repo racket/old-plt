@@ -45,7 +45,7 @@
     "type"
     "vector"))
 
-(define (try src deps dest objdest includes use-precomp?)
+(define (try src deps dest objdest includes use-precomp extra-compile-flags)
   (unless (and (file-exists? dest)
 	       (let ([t (file-or-directory-modify-seconds dest)])
 		 (andmap
@@ -58,12 +58,11 @@
 				(list "-r"
 				      "xform.ss")
 				(if objdest
-				    (if use-precomp?
-					(list "--precompiled" "xsrc/precomp.h")
+				    (if use-precomp
+					(list "--precompiled" use-precomp)
 					null)
 				    (list "--precompile"))
 				(list
-				 "ctok.ss"
 				 (format "cl.exe /MT /DSCHEME_EMBEDDED_NO_DLL /E ~a" includes)
 				 src
 				 dest)))
@@ -72,7 +71,7 @@
 	(delete-file dest))
       (error "error xforming")))
   (when objdest
-    (compile dest objdest null "")))
+    (compile dest objdest null extra-compile-flags)))
 
 (define (compile c o deps flags)
   (unless (and (file-exists? o)
@@ -85,10 +84,66 @@
     (unless (system- (format "cl.exe ~a /MT /Zi /O2 /c ~a /Fdxsrc/ /Fo~a" flags c o))
       (error "failed compile"))))
 
-(define common-deps (list "xform.ss" "ctok.ss"))
+(define common-deps (list "xform.ss"))
 (define (find-obj f d) (format "../../worksp/~a/release/~a.obj" d f))
 
-(try "precomp.c" common-deps "xsrc/precomp.h" #f "/I ../include /I ../src" #f)
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define wx-inc (string-append "/I ../include "
+			      "/I ../gc2 "
+			      "/I ../../wxwindow/include/msw "
+			      "/I ../../wxwindow/include/base "
+			      "/I ../../wxwindow/contrib/wxxpm/libxpm.34b/lib "
+			      "/I ../../wxWindow/contrib/fafa"))
+(try "wxprecomp.cxx" common-deps "xsrc/wxprecomp.h" #f wx-inc #f "")
+
+(define (wx-try base x)
+  (let ([cxx-file (format "../../~a/~a.cxx" base x)])
+    (try cxx-file
+	 (list* (find-obj x "wxwin")
+		cxx-file
+		common-deps)
+	 (format "xsrc/~a.cxx" x)
+	 (format "xsrc/~a.obj" x)
+	 wx-inc
+	 "xsrc/wxprecomp.h"
+	 "-DGC2_JUST_MACROS /FI../gc2.h")))
+
+(map (lambda (x)
+       (wx-try "wxwindow/src/msw" x))
+     '("wx_buttn"
+       "wx_canvs"
+       "wx_check"
+       "wx_choic"
+       "wx_clipb"
+       "wx_cmdlg"
+       "wx_dc"
+       "wx_dialg"
+       "wx_frame"
+       "wx_gauge"
+       "wx_gbox"
+       "wx_gdi"
+       "wx_item"
+       "wx_lbox"
+       "wx_main"
+       "wx_menu"
+       "wx_messg"
+       "wx_panel"
+       "wx_pdf"
+       "wx_rbox"
+       "wx_slidr"
+       "wx_tabc"
+       "wx_timer"
+       "wx_utils"
+       "wx_win"
+       "wximgfil"
+       "wximgxbm"))
+
+(exit)
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(try "precomp.c" common-deps "xsrc/precomp.h" #f "/I ../include /I ../src" #f "")
 
 (for-each
  (lambda (x)
@@ -99,7 +154,8 @@
 	(format "xsrc/~a.c" x)
 	(format "xsrc/~a.obj" x)
 	"/I ../include"
-	#t))
+	"xsrc/precomp.h"
+	""))
  srcs)
 
 (try "../main.c"
@@ -109,7 +165,8 @@
      "xsrc/main.c"
      "xsrc/main.obj"
      "/I ../include"
-     #f)
+     #f
+     "")
 
 (compile "gc2.c" "xsrc/gc2.obj" '("compact.c") "")
 (compile "../src/mzsj86.c" "xsrc/mzsj86.obj" '() "/I ../include")
@@ -146,5 +203,3 @@
 				      (loop (cdr objs)))))
 			       libs))
 	(error "link failed")))))
-
-				 

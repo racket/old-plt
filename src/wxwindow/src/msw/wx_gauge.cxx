@@ -46,22 +46,19 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   // If label exists, create a static control for it.
   if (label) {
+    int nid;
+
+    nid = NewId(this);
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				      0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				      wxhInstance, NULL);
-    {
-      HDC the_dc;
-      the_dc = GetWindowDC(static_label) ;
-      if (labelFont && labelFont->GetInternalFont(the_dc))
-	SendMessage(static_label,WM_SETFONT,
-		    (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-      ReleaseDC(static_label,the_dc);
-    }
+
+    wxSetWinFont(labelFont, (HANDLE)static_label);
   } else
     static_label = NULL;
 
-  windows_id = (int)NewId(this);
+  windows_id = NewId(this);
   
   wx_button =
     wxwmCreateWindowEx(0, PROGRESS_CLASS, label, 
@@ -76,14 +73,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   SendMessage(wx_button, PBM_SETRANGE, 0, MAKELPARAM(0, range));
 
-  {
-    HDC the_dc;
-    the_dc = GetWindowDC((HWND)ms_handle) ;
-    if (buttonFont && buttonFont->GetInternalFont(the_dc))
-      SendMessage((HWND)ms_handle,WM_SETFONT,
-		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-    ReleaseDC((HWND)ms_handle,the_dc) ;
-  }
+  wxSetWinFont(buttonFont, ms_handle);
 
   SetSize(x, y, width, height, wxSIZE_AUTO);
 
@@ -214,9 +204,11 @@ void wxGauge::GetSize(int *width, int *height)
 
 void wxGauge::GetPosition(int *x, int *y)
 {
-  wxWindow *parent = GetParent();
+  wxWindow *parent;
   RECT rect;
   POINT point;
+
+  parent = GetParent();
 
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
@@ -262,17 +254,17 @@ void wxGauge::SetLabel(char *label)
   {
     float w, h;
     RECT rect;
+    POINT point;
+    wxWindow *parent;
 
-    wxWindow *parent = GetParent();
+    parent = GetParent();
     GetWindowRect(static_label, &rect);
 
     // Since we now have the absolute screen coords,
     // if there's a parent we must subtract its top left corner
-    POINT point;
     point.x = rect.left;
     point.y = rect.top;
-    if (parent)
-    {
+    if (parent) {
       wxWnd *cparent = (wxWnd *)(parent->handle);
       ::ScreenToClient(cparent->handle, &point);
     }

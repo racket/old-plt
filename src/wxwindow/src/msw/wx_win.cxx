@@ -204,8 +204,9 @@ wxWindow::~wxWindow(void)
     }
     case wxTYPE_HWND:
     {
-      if (ms_handle)
+      if (ms_handle) {
 	wxwmDestroyWindow((HWND)ms_handle);
+      }
       handle = NULL;
       
       if (wxControlHandleList)
@@ -270,8 +271,9 @@ void wxWindow::SetFocus(void)
     if (GetActiveWindow() == p->GetHWND()) {
       HWND hWnd;
       hWnd = GetHWND();
-      if (hWnd)
+      if (hWnd) {
 	wxwmSetFocus(hWnd);
+      }
     }
   }
 }
@@ -358,7 +360,9 @@ void wxWindow::InternalGrayChildren(Bool gray)
 {
   /* Called by ChangeToGray */
   wxChildNode *cn;
-  for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
+  wxChildList *cl;
+  cl = GetChildren();
+  for (cn = cl->First(); cn; cn = cn->Next()) {
     wxWindow *w;
     w = (wxWindow *)cn->Data();
     w->InternalEnable(!gray, TRUE);
@@ -548,11 +552,13 @@ static wxWnd *wxCurrentWindow(int in_content)
 void wxResetCurrentCursor(void)
 {
   wxWnd *wnd;
-  wxWindow *w = wnd->wx_window;
+  wxWindow *w;
   wxCursor *cursor = wxSTANDARD_CURSOR;
 
   wnd = wxCurrentWindow(1);
   if (!wnd) return;
+
+  w = wnd->wx_window;
 
   while (w) {
     if (w->wx_cursor) {
@@ -665,8 +671,11 @@ Bool wxWindow::Show(Bool show)
 
   SetShown(show);
 
-  if (window_parent)
-    window_parent->GetChildren()->Show(this, show);
+  if (window_parent) {
+    wxChildList *cl;
+    cl = window_parent->GetChildren();
+    cl->Show(this, show);
+  }
 
   hWnd = GetHWND();
   if (show)
@@ -743,7 +752,9 @@ wxWindow *wxWindow::FindFocusWindow()
 {
   if (IsShown()) {
     wxChildNode *cn;
-    for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
+    wxChildList *cl;
+    cl = GetChildren();
+    for (cn = cl->First(); cn; cn = cn->Next()) {
       wxWindow *w;
       w = (wxWindow *)cn->Data();
       w = w->FindFocusWindow();
@@ -1300,8 +1311,9 @@ HDC wxWnd::GetHDC(void)
 {
   if (cdc)
     return cdc;
-  if (dc_count==0)
+  if (dc_count==0) {
     ldc = wxwmGetDC(handle);
+  }
   dc_count++;
   return ldc;
 }
@@ -1527,7 +1539,7 @@ void wxWnd::OnDropFiles(WPARAM wParam)
   HDROP hFilesInfo = (HDROP)wParam;
   POINT dropPoint;
   WORD gwFilesDropped;
-  char **files;
+  char **files, *a_file;
   int wIndex;
 
   DragQueryPoint(hFilesInfo, (LPPOINT) &dropPoint);
@@ -1539,9 +1551,11 @@ void wxWnd::OnDropFiles(WPARAM wParam)
                                    (UINT)0);
 
   files = new char *[gwFilesDropped];
+
   for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++) {
     DragQueryFile (hFilesInfo, wIndex, (LPSTR) wxBuffer, 1000);
-    files[wIndex] = copystring(wxBuffer);
+    a_file = copystring(wxBuffer);
+    files[wIndex] = a_file;
   }
   DragFinish (hFilesInfo);
 
@@ -1926,6 +1940,8 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
   tempControlDown = (::GetKeyState(VK_CONTROL) >> 1);
 
   if (isASCII) {
+    int sc;
+
     // If 1 -> 26, translate to CTRL plus a letter.
     id = wParam;
     if ((id > 0) && (id < 27) && tempControlDown) {
@@ -1934,7 +1950,7 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
     
     /* Ignore character created by numpad, since it's
        already handled as WM_KEYDOWN */
-    int sc = THE_SCAN_CODE(lParam);
+    sc = THE_SCAN_CODE(lParam);
     if (sc) {
       if ((id >= '0') && (id <= '9')) {
 	if (numpad_scan_codes[id - '0'] == sc)
@@ -2246,8 +2262,8 @@ int wxCharCodeMSWToWX(int keySym)
 
 int wxCharCodeWXToMSW(int id, Bool *isVirtual)
 {
-  *isVirtual = TRUE;
   int keySym = 0;
+  *isVirtual = TRUE;
   switch (id)
   {
     case WXK_CANCEL:            keySym = VK_CANCEL; break;
@@ -2371,6 +2387,7 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
   long orient = event->direction;
   int nScrollInc = 0;
   wxWnd *wnd = (wxWnd *)handle;
+  HWND hWnd;
 
   switch (event->moveType)
   {
@@ -2429,7 +2446,7 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
       break;
     }
   }
-  HWND hWnd;
+
   hWnd = GetHWND();
   if (orient == wxHORIZONTAL) {
     if (wnd->calcScrolledOffset) {
@@ -2464,8 +2481,8 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
       // We're scrolling automatically
       RECT rect;
       int h;
-      int nMaxHeight;;
-      int nVscrollMax
+      int nMaxHeight;
+      int nVscrollMax;
 
       GetClientRect(hWnd, &rect);
       h = rect.bottom - rect.top;
@@ -2518,10 +2535,15 @@ void wxWindow::SetScrollPos(int orient, int pos)
   if (hWnd) {
     ::SetScrollPos(hWnd, wOrient, pos, TRUE);
 
-    if (orient == wxHORIZONTAL)
-      wnd->xscroll_position = ::GetScrollPos(hWnd, SB_HORZ);
-    else
-      wnd->yscroll_position = ::GetScrollPos(hWnd, SB_VERT);
+    if (orient == wxHORIZONTAL) {
+      int x;
+      x = ::GetScrollPos(hWnd, SB_HORZ);
+      wnd->xscroll_position = x;
+    } else {
+      int y;
+      y = ::GetScrollPos(hWnd, SB_VERT);
+      wnd->yscroll_position = y;
+    }
   }
 }
 
@@ -2654,19 +2676,24 @@ void wxWindow::OnSize(int bad_w, int bad_h)
 
   if (wxWinType != wxTYPE_XWND)
     return;
+
   wnd = (wxWnd *)handle;
     
   if (wxSubType(__type, wxTYPE_DIALOG_BOX)) {
     wxChildNode* node;
-    node = GetChildren()->First(); 
+    wxChildList *cl;
+    cl = GetChildren();
+    node = cl->First(); 
 
     if (node && !node->Next()) {
       wxWindow *win;
+      Bool hasSubPanel;
+
       win = (wxWindow *)node->Data();
-      Bool hasSubPanel = ((wxSubType(win->__type, wxTYPE_PANEL)
-			   && !wxSubType(win->__type, wxTYPE_DIALOG_BOX))
-			  || wxSubType(win->__type, wxTYPE_CANVAS)
-			  || wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
+      hasSubPanel = ((wxSubType(win->__type, wxTYPE_PANEL)
+		      && !wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+		     || wxSubType(win->__type, wxTYPE_CANVAS)
+		     || wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
       
       if (hasSubPanel) {
 	int w, h;

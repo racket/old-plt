@@ -55,11 +55,13 @@ wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined):
   wxbFont(PointSize, Family, Style, Weight, Underlined)
 {
+  int id;
+
   COUNT_P(font_count);
 
-  Create(PointSize, 
-	 wxTheFontNameDirectory->FindOrCreateFontId(Face, Family), 
-	 Style, Weight, Underlined);
+  id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
+
+  Create(PointSize, id, Style, Weight, Underlined);
 }
 
 Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined)
@@ -99,7 +101,14 @@ static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *l
 HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 {
   int nHeight;
-
+  HFONT cfont;
+  BYTE ff_italic;
+  int ff_weight = 0;
+  int ff_family = 0;
+  char *ff_face = NULL;
+  int charset = ANSI_CHARSET;
+  Bool ff_underline = underlined;
+    
   if (screenFont && screen_cfont)
     return screen_cfont;
   if (!screenFont && general_cfont)
@@ -107,19 +116,13 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 
   if (screenFont) {
     int dpi;
-    HDC dc2 = ::GetDC(NULL);
+    HDC dc2;
+    dc2 = ::GetDC(NULL);
     dpi = ::GetDeviceCaps(dc, LOGPIXELSY);
     ::ReleaseDC(NULL, dc2);
     nHeight = point_size*dpi/72;
   } else
     nHeight = point_size;
-  
-  HFONT cfont;
-  BYTE ff_italic;
-  int ff_weight = 0;
-  int ff_family = 0;
-  char *ff_face = NULL;
-  int charset = ANSI_CHARSET;
   
   ff_face = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
   if (!*ff_face)
@@ -173,8 +176,6 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
     ff_weight = FW_LIGHT;
   else if (weight == wxBOLD)
     ff_weight = FW_BOLD;
-  
-  Bool ff_underline = underlined;
   
   cfont = CreateFont(-nHeight, 0, 0, 0,ff_weight,ff_italic,(BYTE)ff_underline,
 		     0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -323,12 +324,12 @@ wxPen::wxPen(const char *col, float Width, int Style)
 
 void wxPen::ChangePen(void)
 {
+  Bool must_change = FALSE;
+  COLORREF ms_colour = 0;
+  wxBitmap *bm;
+
   if (style==wxTRANSPARENT)
     return;
-
-  Bool must_change = FALSE;
-
-  COLORREF ms_colour = 0;
 
   ms_colour = colour->pixel;
 
@@ -363,7 +364,7 @@ void wxPen::ChangePen(void)
     cpen = NULL;
   }
 
-  wxBitmap *bm = GetStipple();
+  bm = GetStipple();
   if (bm && !bm->Ok())
     bm = NULL;
 
@@ -371,11 +372,17 @@ void wxPen::ChangePen(void)
       cap==wxCAP_BUTT           &&
       style!=wxUSER_DASH        &&
       !bm                       &&
-      (width || style == wxSOLID))
-    cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
-  else {
-    DWORD ms_style = wx2msPenStyle(style);
+      (width || style == wxSOLID)) {
+    HPEN naya;
+    naya = CreatePen(wx2msPenStyle(style), width, ms_colour);
+    cpen = naya;
+  } else {
+    LOGBRUSH logb;
     int xwidth = width;
+    DWORD ms_style;
+    wxDash *real_dash;
+
+    ms_style = wx2msPenStyle(style);
 
     if (!width) {
       xwidth = 1;
@@ -383,8 +390,6 @@ void wxPen::ChangePen(void)
     } else
       ms_style |= PS_GEOMETRIC;
     
-    LOGBRUSH logb;
-
     switch(join) {
     case wxJOIN_BEVEL: ms_style |= PS_JOIN_BEVEL; break;
     case wxJOIN_MITER: ms_style |= PS_JOIN_MITER; break;
@@ -434,12 +439,13 @@ void wxPen::ChangePen(void)
       }
     }
     logb.lbColor = ms_colour;
-    wxDash *real_dash;
+
     if (style==wxUSER_DASH && nb_dash && dash) {
-      real_dash = new wxDash[nb_dash];
       int i;
-      for (i=0;i<nb_dash;i++)
+      real_dash = new wxDash[nb_dash];
+      for (i=0;i<nb_dash;i++) {
         real_dash[i] = dash[i] * xwidth;
+      }
     } else
       real_dash = NULL;
     
@@ -460,7 +466,8 @@ HPEN wxPen::SelectPen(HDC dc)
   if (cpen && style!=wxTRANSPARENT)
     prev_pen = (HPEN)::SelectObject(dc,cpen);
   else {
-    HPEN nullPen = (HPEN)::GetStockObject(NULL_PEN);
+    HPEN nullPen;
+    nullPen = (HPEN)::GetStockObject(NULL_PEN);
     prev_pen = (HPEN)::SelectObject(dc , nullPen);
   }
   
@@ -554,12 +561,12 @@ wxBrush::wxBrush(wxColour *col, int Style)
 
 void wxBrush::ChangeBrush(void) 
 {
+  Bool must_change = FALSE;
+  COLORREF ms_colour = 0;
+  wxBitmap *bm;
+
   if (style==wxTRANSPARENT)
     return;
-
-  Bool must_change = FALSE;
-
-  COLORREF ms_colour = 0;
 
   ms_colour = colour->pixel;
 
@@ -579,7 +586,7 @@ void wxBrush::ChangeBrush(void)
     cbrush = NULL;
   }
 
-  wxBitmap *bm = GetStipple();
+  bm = GetStipple();
   if (bm && !bm->Ok())
     bm = NULL;
 
@@ -590,28 +597,41 @@ void wxBrush::ChangeBrush(void)
     case wxTRANSPARENT:
       break;
     case wxBDIAGONAL_HATCH:
-      cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
-      break;
+      {
+	cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
+	break;
+      }
     case wxCROSSDIAG_HATCH:
-      cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
-      break;
+      {
+	cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
+	break;
+      }
     case wxFDIAGONAL_HATCH:
-      cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
-      break;
+      {
+	cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
+	break;
+      }
     case wxCROSS_HATCH:
-      cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
-      break;
+      {
+	cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
+	break;
+      }
     case wxHORIZONTAL_HATCH:
-      cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
-      break;
+      {
+	cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
+	break;
+      }
     case wxVERTICAL_HATCH:
-      cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
-      break;
-      break;
+      {
+	cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
+	break;
+      }
     case wxSOLID:
     default:
-      cbrush = CreateSolidBrush(ms_colour);
-      break;
+      {
+	cbrush = CreateSolidBrush(ms_colour);
+	break;
+      }
     }
   }
 
@@ -629,7 +649,8 @@ HBRUSH wxBrush::SelectBrush(HDC dc)
   if (cbrush && style!=wxTRANSPARENT) {
     prev_brush = (HBRUSH)::SelectObject(dc, cbrush);
   } else {
-    HBRUSH nullBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
+    HBRUSH nullBrush;
+    nullBrush = (HBRUSH)::GetStockObject(NULL_BRUSH);
     prev_brush = (HBRUSH)::SelectObject(dc, nullBrush);
   }
 
@@ -730,8 +751,8 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   /* Windows wants cursor data in terms of an "and" bit array and
      "xor" bit array. */
   s = (w * h) >> 3; /* size of arrays in bytes */
-  ands = new unsigned char[s];
-  xors = new unsigned char[s];
+  ands = new uchar[s];
+  xors = new uchar[s];
 
   /* Init arrays to a value that means "the screen" */
   for (i = 0; i < s; i++) {
@@ -786,114 +807,129 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
 wxCursor::wxCursor(int cursor_type)
 {
   __type = wxTYPE_CURSOR;
-  switch (cursor_type)
-  {
-    case wxCURSOR_WAIT:
+  switch (cursor_type) {
+  case wxCURSOR_WAIT:
   case wxCURSOR_WATCH:
+    {
       ms_cursor = LoadCursor(NULL, IDC_WAIT);
       break;
-    case wxCURSOR_IBEAM:
+    }
+  case wxCURSOR_IBEAM:
+    {
       ms_cursor = LoadCursor(NULL, IDC_IBEAM);
       break;
-    case wxCURSOR_CROSS:
+    }
+  case wxCURSOR_CROSS:
+    {
       ms_cursor = LoadCursor(NULL, IDC_CROSS);
       break;
-    case wxCURSOR_SIZENWSE:
+    }
+  case wxCURSOR_SIZENWSE:
+    {
       ms_cursor = LoadCursor(NULL, IDC_SIZENWSE);
       break;
-    case wxCURSOR_SIZENESW:
+    }
+  case wxCURSOR_SIZENESW:
+    {
       ms_cursor = LoadCursor(NULL, IDC_SIZENESW);
       break;
-    case wxCURSOR_SIZEWE:
+    }
+  case wxCURSOR_SIZEWE:
+    {
       ms_cursor = LoadCursor(NULL, IDC_SIZEWE);
       break;
-    case wxCURSOR_SIZENS:
+    }
+  case wxCURSOR_SIZENS:
+    {
       ms_cursor = LoadCursor(NULL, IDC_SIZENS);
       break;
-    case wxCURSOR_CHAR:
+    }
+  case wxCURSOR_CHAR:
     {
       ms_cursor = LoadCursor(NULL, IDC_ARROW);
       break;
     }
-    case wxCURSOR_HAND:
+  case wxCURSOR_HAND:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_HAND");
       break;
     }
-    case wxCURSOR_BULLSEYE:
+  case wxCURSOR_BULLSEYE:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_BULLSEYE");
       break;
     }
-    case wxCURSOR_PENCIL:
+  case wxCURSOR_PENCIL:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_PENCIL");
       break;
     }
-    case wxCURSOR_MAGNIFIER:
+  case wxCURSOR_MAGNIFIER:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_MAGNIFIER");
       break;
     }
-    case wxCURSOR_NO_ENTRY:
+  case wxCURSOR_NO_ENTRY:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_NO_ENTRY");
       break;
     }
-    case wxCURSOR_LEFT_BUTTON:
+  case wxCURSOR_LEFT_BUTTON:
     {
       ms_cursor = LoadCursor(NULL, IDC_ARROW);
       break;
     }
-    case wxCURSOR_RIGHT_BUTTON:
+  case wxCURSOR_RIGHT_BUTTON:
     {
       ms_cursor = LoadCursor(NULL, IDC_ARROW);
       break;
     }
-    case wxCURSOR_MIDDLE_BUTTON:
+  case wxCURSOR_MIDDLE_BUTTON:
     {
       ms_cursor = LoadCursor(NULL, IDC_ARROW);
       break;
     }
-    case wxCURSOR_SIZING:
+  case wxCURSOR_SIZING:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_SIZING");
       break;
     }
-    case wxCURSOR_SPRAYCAN:
+  case wxCURSOR_SPRAYCAN:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_ROLLER");
       break;
     }
-    case wxCURSOR_PAINT_BRUSH:
+  case wxCURSOR_PAINT_BRUSH:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_PBRUSH");
       break;
     }
-    case wxCURSOR_POINT_LEFT:
+  case wxCURSOR_POINT_LEFT:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_PLEFT");
       break;
     }
-    case wxCURSOR_POINT_RIGHT:
+  case wxCURSOR_POINT_RIGHT:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_PRIGHT");
       break;
     }
-    case wxCURSOR_QUESTION_ARROW:
+  case wxCURSOR_QUESTION_ARROW:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_QARROW");
       break;
     }
-    case wxCURSOR_BLANK:
+  case wxCURSOR_BLANK:
     {
       ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_BLANK");
       break;
     }
-    default:
-    case wxCURSOR_ARROW:
+  default:
+  case wxCURSOR_ARROW:
+    {
       ms_cursor = LoadCursor(NULL, IDC_ARROW);
       break;
+    }
   }
 //  wxTheCursorList->Append(this);
   ok = !!ms_cursor;
@@ -917,9 +953,12 @@ void wxSetCursor(wxCursor *cursor)
 // Return TRUE if we have a colour display
 Bool wxColourDisplay(void)
 {
-  HDC dc = ::GetDC(NULL);
+  HDC dc;
   Bool flag;
-  int num = GetDeviceCaps(dc, NUMCOLORS);
+  int num;
+
+  dc = ::GetDC(NULL);
+  num = GetDeviceCaps(dc, NUMCOLORS);
   if ((num < 0) || (num > 2))
     flag = TRUE;
   else
@@ -931,10 +970,12 @@ Bool wxColourDisplay(void)
 // Returns depth of screen
 int wxDisplayDepth(void)
 {
-  HDC dc = ::GetDC(NULL);
-  int planes = GetDeviceCaps(dc, PLANES);
-  int bitsPerPixel = GetDeviceCaps(dc, BITSPIXEL);
-  int depth = planes*bitsPerPixel;
+  HDC dc;
+  int planes, bitsPerPixel, depth;
+  dc = ::GetDC(NULL);
+  planes = GetDeviceCaps(dc, PLANES);
+  bitsPerPixel = GetDeviceCaps(dc, BITSPIXEL);
+  depth = planes*bitsPerPixel;
   ReleaseDC(NULL, dc);
   return depth;
 }
@@ -948,8 +989,10 @@ void wxDisplaySize(int *width, int *height)
     *width = (r.right - r.left);
     *height = (r.bottom - r.top);
   } else {
-    HDC dc = ::GetDC(NULL);
-    *width = GetDeviceCaps(dc, HORZRES); *height = GetDeviceCaps(dc, VERTRES);
+    HDC dc;
+    dc = ::GetDC(NULL);
+    *width = GetDeviceCaps(dc, HORZRES);
+    *height = GetDeviceCaps(dc, VERTRES);
     ReleaseDC(NULL, dc);
   }
 }
@@ -975,6 +1018,9 @@ static char *map;
 wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 {
   int i, j;
+  int rowwidth, offset;
+  char *copy;
+  int sp, cp;
 
   COUNT_P(bitmap_count);
 
@@ -985,7 +1031,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   numColors = 0;
   bitmapColourMap = NULL;
 
-  int rowwidth = ((width + 7) / 8), offset;
+  rowwidth = ((width + 7) / 8);
   if (rowwidth % sizeof(WORD))
     /* byte-aligned => word aligned */
     offset = 1;
@@ -1009,11 +1055,11 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
     }
   }
 
-  char *copy = new char[(rowwidth + offset) * height], *sp, *cp;
-  sp = bits; cp = copy;
+  copy = new char[(rowwidth + offset) * height];
+  sp = 0; cp = 0;
   for (i = 0; i < height; i++) {
     for (j = 0; j < rowwidth; j++, sp++, cp++) {
-      *cp = map[*(unsigned char *)sp];
+      copy[cp] = map[((unsigned char *)bits)[sp]];
     }
     cp += offset;
   }
@@ -1069,16 +1115,16 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 // Create from data
 wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem))
 {
+  XImage *ximage;
+  int     ErrorStatus;
+  XpmAttributes xpmAttr;
+  HDC     dc;
+
   COUNT_P(bitmap_count);
 
   __type = wxTYPE_BITMAP;
   selectedInto = NULL;
   bitmapColourMap = NULL;
-
-  XImage *ximage;
-  int     ErrorStatus;
-  XpmAttributes xpmAttr;
-  HDC     dc;
 
   ok = FALSE;
   numColors = 0;
@@ -1093,11 +1139,12 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem))
 
     if (ErrorStatus == XpmSuccess)
     {
+      BITMAP  bm;
+
       /* ximage is malloced and contains bitmap and attributes */
       ms_bitmap = ximage->bitmap;
       RegisterGDIObject(ms_bitmap);
 
-      BITMAP  bm;
       GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
 
       width = (bm.bmWidth);
@@ -1127,10 +1174,11 @@ Bool wxBitmap::Create(int w, int h, int d)
   height = h;
   depth = d;
 
-  if (d > 0)
+  if (d > 0) {
     ms_bitmap = CreateBitmap(w, h, d, 1, NULL);
-  else {
-    HDC dc = GetDC(NULL);
+  } else {
+    HDC dc;
+    dc = GetDC(NULL);
     ms_bitmap = ::CreateCompatibleBitmap(dc, w, h);
     ReleaseDC(NULL, dc);
     depth = wxDisplayDepth();
@@ -1148,6 +1196,7 @@ extern int wxsGetImageType(char *fn);
 Bool wxBitmap::LoadFile(char *bitmap_file, long flags)  
 {
   Bool getMask;
+  wxMemoryDC *oldSel;
 
   if (selectedIntoDC)
     return FALSE;
@@ -1160,7 +1209,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
   /* Nevermind the palette */
   flags |= wxBITMAP_DISCARD_COLOURMAP;
 
-  wxMemoryDC *oldSel = (wxMemoryDC *)selectedInto;
+  oldSel = (wxMemoryDC *)selectedInto;
 
   ok = FALSE;
   width = 0;
@@ -1178,11 +1227,10 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
   if (flags & wxBITMAP_TYPE_BMP_RESOURCE)
   {
     ms_bitmap = LoadBitmap(wxhInstance, bitmap_file);
-    if (ms_bitmap)
-    {
+    if (ms_bitmap) {
+      BITMAP bm;
       RegisterGDIObject(ms_bitmap);
       ok = TRUE;
-      BITMAP bm;
       GetObject(ms_bitmap, sizeof(BITMAP), (LPSTR) &bm);
       width = bm.bmWidth;
       height = bm.bmHeight;
@@ -1197,24 +1245,31 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 
     c = wxLoadXBM(bitmap_file, &w, &h);
     if (c) {
-      HDC glob_dc = GetDC(NULL);
+      HDC glob_dc;
+      glob_dc = GetDC(NULL);
       ms_bitmap = CreateBitmap(w, h, 1, 1, NULL);
       RegisterGDIObject(ms_bitmap);
       ReleaseDC(NULL, glob_dc);
       if (ms_bitmap) {
-	HDC dc = ::CreateCompatibleDC(NULL);
-			
+	HDC dc;
+
+	dc = ::CreateCompatibleDC(NULL);
+	
 	if (dc)
 	  {
-	    HGDIOBJ orig = ::SelectObject(dc, ms_bitmap);
-	    char *p;
+	    HGDIOBJ orig;
+	    int p;
 	    COLORREF white = RGB(255, 255, 255);
 	    COLORREF black = RGB(0, 0, 0);
 	    int i, j;
 				
-	    for (i = 0, p = c; i < h; i++)
-	      for (j = 0; j < w; j++, p++)
-		::SetPixelV(dc, j, i, *p ? black : white);
+	    orig = ::SelectObject(dc, ms_bitmap);
+
+	    for (i = 0, p = 0; i < h; i++) {
+	      for (j = 0; j < w; j++, p++) {
+		::SetPixelV(dc, j, i, c[p] ? black : white);
+	      }
+	    }
 
 	    ::SelectObject(dc, orig);
 	    DeleteDC(dc);
@@ -1240,33 +1295,31 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 
       ok = False;
       dc = ::CreateCompatibleDC(NULL);
-      if (dc)
-	{
-	  xpmAttr.valuemask = XpmReturnPixels;
-	  int errorStatus = XpmReadFileToImage(&dc, bitmap_file, &ximage, (XImage **) NULL, &xpmAttr);
-	  DeleteDC(dc);
-	  if (errorStatus == XpmSuccess)
-	    {
-	      ms_bitmap = ximage->bitmap;
-	      RegisterGDIObject(ms_bitmap);
+      if (dc) {
+	int errorStatus;
+	xpmAttr.valuemask = XpmReturnPixels;
+	errorStatus = XpmReadFileToImage(&dc, bitmap_file, &ximage, (XImage **) NULL, &xpmAttr);
+	DeleteDC(dc);
+	if (errorStatus == XpmSuccess) {
+	  BITMAP  bm;
 
-	      BITMAP  bm;
-	      GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
+	  ms_bitmap = ximage->bitmap;
+	  RegisterGDIObject(ms_bitmap);
 
-	      width = (bm.bmWidth);
-	      height = (bm.bmHeight);
-	      depth = (bm.bmPlanes * bm.bmBitsPixel);
-	      numColors = xpmAttr.npixels;
-	      XpmFreeAttributes(&xpmAttr);
-	      XImageFree(ximage);
+	  GetObject(ms_bitmap, sizeof(bm), (LPSTR) & bm);
+
+	  width = (bm.bmWidth);
+	  height = (bm.bmHeight);
+	  depth = (bm.bmPlanes * bm.bmBitsPixel);
+	  numColors = xpmAttr.npixels;
+	  XpmFreeAttributes(&xpmAttr);
+	  XImageFree(ximage);
 	
-	      ok = TRUE;
-	    }
-	  else
-	    {
-	      ok = FALSE;
-	    }
+	  ok = TRUE;
+	} else {
+	  ok = FALSE;
 	}
+      }
     }
 #endif
 #if USE_IMAGE_LOADING_IN_MSW
@@ -1318,12 +1371,10 @@ wxBitmap::~wxBitmap(void)
 {
   COUNT_M(bitmap_count);
 
-  if (selectedInto)
-  {
+  if (selectedInto) {
     ((wxMemoryDC *)selectedInto)->SelectObject(NULL);
   }
-  if (ms_bitmap)
-  {
+  if (ms_bitmap) {
     DeleteRegisteredGDIObject(ms_bitmap);
   }
   ms_bitmap = NULL;
@@ -1349,80 +1400,88 @@ Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
     }
 #endif
     case wxBITMAP_TYPE_XBM:
-    {
-	  char *c, *p;
-      HGDIOBJ orig = NULL;
-	  int i, j;
+      {
+	char *c;
+	int p;
+	HGDIOBJ orig = NULL;
+	int i, j;
+	HDC dc;
 
-	  c = new char[width * height];
-
-	  HDC dc = selectedInto 
-		       ? selectedInto->cdc
-		       : CreateCompatibleDC(NULL);
-			
-	  if (dc && !selectedInto) {
-	    orig = SelectObject(dc, ms_bitmap);
-		if (!orig) {
-			DeleteDC(dc);
-			dc = NULL;
-		}
-	  }
-
-	  if (!dc) return FALSE;
-
-	  for (i = 0, p = c; i < height; i++)
-		for (j = 0; j < width; j++, p++)
-		  *p = (::GetPixel(dc, j, i) ? 1 : 0);
+	c = new char[width * height];
 	
-	  if (!selectedInto) {
-		  SelectObject(dc, orig);
-		  DeleteDC(dc);
+	dc = (selectedInto 
+	      ? selectedInto->cdc
+	      : CreateCompatibleDC(NULL));
+			
+	if (dc && !selectedInto) {
+	  orig = SelectObject(dc, ms_bitmap);
+	  if (!orig) {
+	    DeleteDC(dc);
+	    dc = NULL;
 	  }
+	}
 
-      return wxSaveXBM(filename, c, width, height);
-      break;
-    }
+	if (!dc) return FALSE;
+
+	for (i = 0, p = 0; i < height; i++) {
+	  for (j = 0; j < width; j++, p++) {
+	    int v;
+	    v = (::GetPixel(dc, j, i) ? 1 : 0);
+	    c[p] = v;
+	  }
+	}
+	
+	if (!selectedInto) {
+	  SelectObject(dc, orig);
+	  DeleteDC(dc);
+	}
+
+	return wxSaveXBM(filename, c, width, height);
+	break;
+      }
 #if USE_XPM_IN_MSW
     case wxBITMAP_TYPE_XPM:
-    {
-      HGDIOBJ orig = NULL;
+      {
+	HGDIOBJ orig = NULL;
+	Visual *visual = NULL;
+	XImage  ximage;
+	HDC dc;
+	int errorStatus;
 
-      Visual *visual = NULL;
-      XImage  ximage;
+	dc = (selectedInto 
+	      ? selectedInto->cdc
+	      : CreateCompatibleDC(NULL));
 
-	  HDC dc = selectedInto 
-		       ? selectedInto->cdc
-		       : CreateCompatibleDC(NULL);
-
-	  if (dc && !selectedInto) {
-	    orig = SelectObject(dc, ms_bitmap);
-		if (!orig) {
-			DeleteDC(dc);
-			dc = NULL;
-		}
+	if (dc && !selectedInto) {
+	  orig = SelectObject(dc, ms_bitmap);
+	  if (!orig) {
+	    DeleteDC(dc);
+	    dc = NULL;
 	  }
+	}
 
-	  if (!dc) return FALSE;
+	if (!dc) return FALSE;
 
-	  /* for following SetPixel */
-      /* fill the XImage struct 'by hand' */
-	  ximage.width = width; ximage.height = height;
-	  ximage.depth = depth; ximage.bitmap = ms_bitmap;
-	  int errorStatus = XpmWriteFileFromImage(&dc, filename,
-						  &ximage, (XImage *) NULL, (XpmAttributes *) NULL);
+	/* for following SetPixel */
+	/* fill the XImage struct 'by hand' */
+	ximage.width = width; ximage.height = height;
+	ximage.depth = depth; ximage.bitmap = ms_bitmap;
+	errorStatus = XpmWriteFileFromImage(&dc, filename,
+					    &ximage, (XImage *) NULL,
+					    (XpmAttributes *) NULL);
 
-      if (!selectedInto) {
-		 SelectObject(dc, orig);
-		 DeleteDC(dc);
-	  }
+	if (!selectedInto) {
+	  SelectObject(dc, orig);
+	  DeleteDC(dc);
+	}
 
-	  if (errorStatus == XpmSuccess)
-	    return TRUE;		/* no error */
-	  else
-	    return FALSE;
+	if (errorStatus == XpmSuccess)
+	  return TRUE;		/* no error */
+	else
+	  return FALSE;
 
-      break;
-    }
+	break;
+      }
 #endif
     default:
       break;

@@ -509,7 +509,7 @@
   (define recorded-cpp-in
     (and precompiled-header
 	 (open-input-file (change-suffix precompiled-header ".e"))))
-  (define re:boring (regexp "^(()|(# .*)|(#pragma implementation.*)|(#pragma interface.*))$"))
+  (define re:boring (regexp "^(()|(# .*)|(#line .*)|(#pragma implementation.*)|(#pragma interface.*))$"))
   (define (skip-to-interesting-line p)
     (let ([l (read-line p 'any)])
       (cond
@@ -519,19 +519,20 @@
 
   (when recorded-cpp-in
     ;; Skip over common part:
-    (let loop ()
+    (let loop ([lpos 1])
       (let ([pl (read-line recorded-cpp-in 'any)])
 	(unless (eof-object? pl)
 	  (let ([l (skip-to-interesting-line (car cpp-process))])
 	    (unless (equal? pl l)
-	      (error 'precompiled-header "line mismatch with precompiled: ~s versus ~s"
+	      (error 'precompiled-header "line mismatch with precompiled: ~s (line ~a) versus ~s"
 		     pl
+		     lpos
 		     l))
-	    (loop)))))
+	    (loop (add1 lpos))))))
     (close-input-port recorded-cpp-in))
 
-  ;; cpp output to ctok input, filters "boring" lines
-  ;; so that the tokenizer doesn't have to deal with them
+  ;; cpp output to ctok input, also writes filtered lines to
+  ;; cpp-out when reading a recompiled header
   (thread (lambda ()
 	    (if recorded-cpp-out
 		;; line-by-line, so we can filter:
@@ -906,11 +907,12 @@
 			(live-var-info-num-calls live-vars)
 			(live-var-info-num-noreturn-calls live-vars)))
 
+  (define gentag-count 0)
+
   (define gentag
-    (let ([count 0])
-      (lambda ()
-	(set! count (add1 count))
-	(format "XfOrM~a" count))))
+    (lambda ()
+      (set! gentag-count (add1 gentag-count))
+      (format "XfOrM~a" gentag-count)))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; State
@@ -1262,7 +1264,7 @@
      ;; process 'extern "C"' blocks 
      [(and (>= (length e) 3)
 	   (eq? (tok-n (car e)) 'extern)
-	   (equal? (tok-n (cadr e)) "C")
+	   (member (tok-n (cadr e)) '("C" "C++"))
 	   (braces? (caddr e)))
       (list* (car e)
 	     (cadr e)
@@ -2547,6 +2549,22 @@
 					  (if setup-stack-return-type
 					      (apply append (live-var-info-new-vars live-vars))
 					      null)
+					  (if (and setup-stack-return-type
+						   ;; Look for RET_VALUE_START anywhere:
+						   (let loop ([e body-x])
+						     (cond
+						      [(list? e) (ormap loop e)]
+						      [(pair? e) (or (loop (cdr e))
+								     (loop (car e)))]
+						      [(seq? e) (ormap loop (seq->list (seq-in e)))]
+						      [(and (tok? e) (eq? RET_VALUE_START (tok-n e)))
+						       #t]
+						      [else #f])))
+					      (list (make-tok DECL_RET_SAVE #f #f)
+						    (make-parens
+						     "(" #f #f ")"
+						     (list->seq setup-stack-return-type)))
+					      null)
 					  (if (and setup-stack-return-type (not (negative? (live-var-info-maxlive live-vars))))
 					      (list (make-note 'note #f #f 
 							       (format "PREPARE_VAR_STACK~a(~a);" 
@@ -2567,23 +2585,6 @@
 					      (if once?
 						  (list no-nested-pushable)
 						  (list nested-pushable))
-					      null)
-					  (if (and setup-stack-return-type
-						   ;; Look for RET_VALUE_START anywhere:
-						   (let loop ([e body-x])
-						     (cond
-						      [(list? e) (ormap loop e)]
-						      [(pair? e) (or (loop (cdr e))
-								     (loop (car e)))]
-						      [(seq? e) (ormap loop (seq->list (seq-in e)))]
-						      [(and (tok? e) (eq? RET_VALUE_START (tok-n e)))
-						       #t]
-						      [else #f])))
-					      (list (make-tok DECL_RET_SAVE #f #f)
-						    (make-parens
-						     "(" #f #f ")"
-						     (list->seq setup-stack-return-type))
-						    (make-tok semi #f #f))
 					      null))))
 			  ;; Null out local vars:
 			  (map (lambda (var)
@@ -2967,6 +2968,8 @@
 	  ;; Look forward in result to semicolon, and wrap that:
 	  (let rloop ([result result][l null])
 	    (cond
+	     [(null? result)
+	      (error 'xform "odd return at ~a:~a" (tok-file (car e-)) (tok-line (car e-)))]
 	     [(eq? (tok-n (car result)) semi)
 	      (loop (cdr e-) 
 		    (if (null? l)
@@ -3030,8 +3033,14 @@
 			       (values (list (car e-) (cadr e-)) (cddr e-))]
 			      ;; Struct reference, class-specified:
 			      [(memq (tok-n (cadr e-)) '(-> |.| ::))
-			       (let-values ([(func rest-) (loop (cddr e-))])
-				 (values (list* (car e-) (cadr e-) func) rest-))]
+			       ;; In ':: case, check for 'return or parens that might mean "if"
+			       (if (and (eq? ':: (tok-n (cadr e-)))
+					(pair? (cddr e-))
+					(or (eq? 'return (tok-n (caddr e-)))
+					    (seq? (caddr e-))))
+				   (values (list (car e-) (cadr e-)) (cddr e-))
+				   (let-values ([(func rest-) (loop (cddr e-))])
+				     (values (list* (car e-) (cadr e-) func) rest-)))]
 			      [else (values (list (car e-)) (cdr e-))]))])
 	       (when (and complain-not-in
 			  (or (not (pair? complain-not-in))
@@ -3615,6 +3624,13 @@
 	  (lambda ()
 	    (write (compile e)))
 	  'truncate))))
+
+  (when precompiling-header?
+    (let loop ([i 1])
+      (unless (i . > . gentag-count)
+	(printf "#undef XfOrM~a_COUNT~n" i)
+	(printf "#undef SETUP_XfOrM~a~n" i)
+	(loop (add1 i)))))
 
   (close-output-port (current-output-port))
 

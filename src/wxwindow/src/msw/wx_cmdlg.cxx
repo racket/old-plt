@@ -104,7 +104,7 @@ static char* ExtractMultipleFileNames(OPENFILENAME* of, char* fileBuffer)
   if (of->nFileOffset && !fileBuffer[of->nFileOffset - 1]) {
     char directory[FILEBUF_SIZE];
     int directoryLength = 0;
-    int currentFiled;
+    int currentFile;
     int currentFileLength = 0;
     int currentTotal = 0;
     int totalLength = 0;
@@ -210,8 +210,8 @@ char *wxFileSelector(char *message,
   wxWnd *wnd = NULL;
   HWND hwnd = NULL;
   char *file_buffer;
-  char *title_buffer;
   char *filter_buffer;
+  char *def_path, *def_ext;
   OPENFILENAME *of;
   long msw_flags = 0;
   Bool success;
@@ -226,11 +226,12 @@ char *wxFileSelector(char *message,
 
   if (flags & wxGETDIR) {
     BROWSEINFO *b;
-    char *result;
+    char *result, *_result;
+    int ok;
 
-    result = new char[MAX_PATH];
-
-    b = new BROWSEINFO;
+    _result = (char *)malloc(MAX_PATH + 1);
+    
+    b = (BROWSEINFO *)malloc(sizeof(BROWSEINFO));
     memset(b, 0, sizeof(BROWSEINFO));
 
 #ifndef BIF_NEWDIALOGSTYLE
@@ -238,82 +239,111 @@ char *wxFileSelector(char *message,
 #endif
 
     b->pidlRoot = NULL;
-    b->pszDisplayName = result;
+    b->pszDisplayName = _result;
     b->lpszTitle = message;
     b->ulFlags = (BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS);
 
-    if (wxPrimitiveDialog((wxPDF)DoGetDir, b, 1))
-      return result;
-    else
-      return NULL;
+    ok = wxPrimitiveDialog((wxPDF)DoGetDir, b, 1);
+    free(b);
+
+    if (ok) {
+      result = new WXGC_ATOMIC char[MAX_PATH + 1];
+      memcpy(result, _result, MAX_PATH + 1);
+    } else
+      result = NULL;
+
+    free(_result);
+
+    return result;
   }
 
-  file_buffer = new WXGC_ATOMIC char[FILEBUF_SIZE];
+  file_buffer = (char *)malloc(FILEBUF_SIZE);
 
-  if (default_filename)
-    strcpy(file_buffer, default_filename);
-  else file_buffer[0] = 0;
-
-  title_buffer = new WXGC_ATOMIC char[50];
-  title_buffer[0] = 0;
-
-  filter_buffer = new WXGC_ATOMIC char[200];
+  if (default_filename) {
+    strncpy(file_buffer, default_filename, FILEBUF_SIZE);
+    file_buffer[FILEBUF_SIZE-1] = 0;
+  } else 
+    file_buffer[0] = 0;
 
   if (!wildcard)
     wildcard = "*.*";
-  
-  /* Alejandro Sierra's wildcard modification
+  else if (strlen(wildcard) > 50) {
+    char *s;
+    s = new WXGC_ATOMIC char[51];
+    memcpy(s, wildcard, 50);
+    s[50] = 0;
+    wildcard = s;
+  }
 
-     In wxFileSelector you can put, instead of a single wild_card, pairs of
+  /* In wxFileSelector you can put, instead of a single wild_card, pairs of
      strings separated by '|'. The first string is a description, and the
      second is the wild card. You can put any number of pairs.
      
      eg.  "description1 (*.ex1)|*.ex1|description2 (*.ex2)|*.ex2"
-     
-     If you put a single wild card, it works as before my modification.
   */
   
-  // Here begin my changes (Alex)              ******************************
-  if (wildcard)                               
-    {
-         if (!strchr(wildcard, '|'))         // No '|'s, I leave it as it was
-                sprintf(filter_buffer, "Files (%s)|%s",wildcard, wildcard);
-         else
-                strcpy(filter_buffer, wildcard);
+  if (wildcard) {
+    int i, len;
 
-         int len = strlen(filter_buffer);
+    filter_buffer = (char *)malloc(200);
+  
+    if (!strchr(wildcard, '|'))
+      sprintf(filter_buffer, "Files (%s)|%s", wildcard, wildcard);
+    else
+      strcpy(filter_buffer, wildcard);
 
-         int i;
-         for (i = 0; i < len; i++)
-                if (filter_buffer[i]=='|')
-                  filter_buffer[i] = '\0';
+    len = strlen(filter_buffer);
+	 
+    for (i = 0; i < len; i++) {
+      if (filter_buffer[i]=='|')
+	filter_buffer[i] = '\0';
+    }
 
-         filter_buffer[len+1] = '\0';
-
-  }
+    /* Extra terminator: */
+    filter_buffer[len+1] = '\0';
+  } else
+    filter_buffer = NULL;
 
   if (!set_init_dir) {
     set_init_dir = 1;
     MrEdSyncCurrentDir();
   }
 
-  of = new OPENFILENAME;
+  of = (OPENFILENAME *)malloc(sizeof(OPENFILENAME));
 
   memset(of, 0, sizeof(OPENFILENAME));
 
   of->lStructSize = sizeof(OPENFILENAME);
   of->hwndOwner = hwnd;
 
-  // Picky, picky. Need backslashes.
   if (default_path) {
-    int i;
-    default_path = copystring(default_path);
-    for (i = 0; default_path[i]; i++) {
-      if (default_path[i] == '/')
-	default_path[i] = '\\';
-    }
-  }
+    int len, alen;
+    len = strlen(default_path);
+    alen = min(MAX_PATH, len);
+    def_path = (char *)malloc(alen + 1);
+    memcpy(def_path, default_path, alen + 1);
+    def_path[alen] = 0;
 
+    // Picky, picky. Need backslashes.
+    {
+      int i;
+      for (i = 0; def_path[i]; i++) {
+	if (def_path[i] == '/')
+	  def_path[i] = '\\';
+      }
+    }
+  } else
+    def_path = NULL;
+
+  if (default_extension) {
+    int len;
+    len = strlen(default_extension);
+    def_ext = (char *)malloc(min(50, len) + 1);
+    memcpy(def_ext, default_path, min(50, len+1));
+    def_ext[50] = 0;
+  } else
+    def_ext = NULL;
+      
   if (wildcard) {
     of->lpstrFilter = (LPSTR)filter_buffer;
     of->nFilterIndex = 1L;
@@ -325,14 +355,13 @@ char *wxFileSelector(char *message,
   of->nMaxCustFilter = 0L;
   of->lpstrFile = file_buffer;
   of->nMaxFile = FILEBUF_SIZE;
-  of->lpstrFileTitle = title_buffer;
-  of->nMaxFileTitle = 50;
-  of->lpstrInitialDir = default_path;
+  of->lpstrFileTitle = NULL;
+  of->nMaxFileTitle = 0;
+  of->lpstrInitialDir = def_path;
   of->lpstrTitle = message;
   of->nFileOffset = 0;
   of->nFileExtension = 0;
-  of->lpstrDefExt = default_extension;
-
+  of->lpstrDefExt = def_ext;
 
   if (flags & wxSAVE)
     msw_flags |= OFN_OVERWRITEPROMPT;
@@ -352,12 +381,22 @@ char *wxFileSelector(char *message,
   if (success && !*file_buffer)
     success = 0;
 
-  if (success && (flags & wxMULTIOPEN)) {
-    return ExtractMultipleFileNames(of, file_buffer);
-  }
+  if (def_path) free(def_path);
+  if (def_ext) free(def_ext);
+  if (filter_buffer) free(filter_buffer);
 
-  if (success)
-    return file_buffer;
-  else
-    return NULL;
+  {
+    char *s;
+    if (success && (flags & wxMULTIOPEN)) {
+      s = ExtractMultipleFileNames(of, file_buffer);
+    } else if (success) {
+      s = copystring(file_buffer);
+    } else
+      s = NULL;
+    
+    free(of);
+    free(file_buffer);
+
+    return s;
+  }
 }

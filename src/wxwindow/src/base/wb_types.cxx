@@ -82,7 +82,7 @@ wxTypeTree::~wxTypeTree(void)
 
 void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 {
-  wxTypeDef  *;
+  wxTypeDef  *typ;
   typ = new wxTypeDef;
   typ->type = type;
   typ->parent = parent;

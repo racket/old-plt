@@ -142,8 +142,12 @@ HDC wxDC::ThisDC(void)
     dc = wnd->GetHDC();
 
   if (!old_pen) {
-    old_pen = (HPEN)::SelectObject(dc, null_pen);
-    old_brush = (HBRUSH)::SelectObject(dc, null_brush);
+    HPEN op;
+    HBRUSH ob;
+    op = (HPEN)::SelectObject(dc, null_pen);
+    old_pen = op;
+    ob = (HBRUSH)::SelectObject(dc, null_brush);
+    old_brush = ob;
   }
 
   return dc;
@@ -200,9 +204,9 @@ void wxDC::SetClippingRegion(wxRegion *c)
 
   if (clipping) delete clipping;
 
-  if (c)
+  if (c) {
     clipping = new wxRegion(this, c);
-  else
+  } else
     clipping = NULL;
 
   dc = ThisDC();
@@ -229,25 +233,28 @@ Bool wxDC::CanDrawBitmap(void)
 
 Bool wxDC::CanGetTextExtent(void)
 {
-  HDC dc = ThisDC();
+  HDC dc;
+  Bool tok;
+
+  dc = ThisDC();
   
   // What sort of display is it?
 
   if (dc) {
     int technology;
-    Bool ok;
     
     technology = ::GetDeviceCaps(dc, TECHNOLOGY);
     
     if (technology != DT_RASDISPLAY && technology != DT_RASPRINTER)
-      ok = FALSE;
-    else ok = TRUE;
+      tok = FALSE;
+    else 
+      tok = TRUE;
   } else
-    ok = FALSE;
+    tok = FALSE;
 
   DoneDC(dc);
   
-  return ok;
+  return tok;
 }
 
 void wxDC::SetColourMap(wxColourMap *cmap)
@@ -375,12 +382,14 @@ void wxDC::IntDrawLine(int x1, int y1, int x2, int y2)
 
 void wxDC::CrossHair(float x, float y)
 {
-  HDC dc = ThisDC(); 
+  HDC dc;
   int xx, yy;
   int xx1;
   int yy1;
   int xx2;
   int yy2;
+
+  dc = ThisDC(); 
 
   if (!dc) return;
 
@@ -627,14 +636,15 @@ void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int
   int xoffset1;
   int yoffset1;
   POINT *cpoints;
-  int i;
+  int i, prev;
 
   dc = ThisDC();
 
   if (!dc) return;
 
   if (StippleBrush()) {
-    wxRegion *r = new wxRegion(this);
+    wxRegion *r;
+    r = new wxRegion(this);
     r->SetPolygon(n, points, xoffset, yoffset, fillStyle);
     FillWithStipple(this, r, current_brush);
   }
@@ -741,7 +751,8 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
   if (!dc) return;
 
   if (StippleBrush()) {
-    wxRegion *r = new wxRegion(this);
+    wxRegion *r;
+    r = new wxRegion(this);
     r->SetRectangle(x, y, width, height);
     FillWithStipple(this, r, current_brush);
   }
@@ -1028,7 +1039,8 @@ int wxDC::StartBrush(HDC dc, Bool no_stipple)
 {
   if (current_brush && current_brush->GetStyle() !=wxTRANSPARENT) {
     if (no_stipple) {
-      wxBitmap *bm = current_brush->GetStipple();
+      wxBitmap *bm;
+      bm = current_brush->GetStipple();
       if (bm && bm->Ok())
 	return FALSE;
     }
@@ -1175,10 +1187,11 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     return;
   }
   
-  if (use16bit)
+  if (use16bit) {
     len = wstrlen(string + d);
-  else
+  } else {
     len = strlen(string + d);
+  }
 
   if (use16bit && len) {
     GetTextExtentPointW(dc, (wchar_t *)(string + d), len, &sizeRect);
@@ -1286,12 +1299,16 @@ void wxDC::SetSystemScale(float x, float y)
 
 void wxDC::SetLogicalOrigin(float x, float y)
 {
+  HDC dc;
+
   logical_origin_x = x;
   logical_origin_y = y;
 
-  HDC dc = ThisDC();
+  dc = ThisDC();
 
-  if (dc) ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
+  if (dc) {
+    ::SetWindowOrgEx(dc, (int)logical_origin_x, (int)logical_origin_y, NULL);
+  }
 
   DoneDC(dc);
 }
@@ -1512,8 +1529,9 @@ wxCanvasDC::wxCanvasDC(wxCanvas *the_canvas) : wxbCanvasDC()
   SetBrush(wxWHITE_BRUSH);
   SetPen(wxBLACK_PEN);
 
-  if (canvas)
+  if (canvas) {
     cdc = ((wxWnd *)canvas->handle)->GetHDC();
+  }
 }
 
 wxCanvasDC::~wxCanvasDC(void)
@@ -1533,15 +1551,21 @@ void wxCanvasDC::GetSize(float *width, float *height)
 
 void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
 {
-  COLORREF result;
+  COLORREF result, col;
+  HDC dc;
+  int r, g, b;
 
-  HDC dc = ThisDC();
+  dc = ThisDC();
   if (!dc) {
     dest->Set(0, 0, 0);
     return;
   }
 
-  result = GetNearestColor(dc, RGB(src->Red(), src->Green(), src->Blue()));
+  r = src->Red();
+  g = src->Green();
+  b = src->Blue();
+  col = RGB(r, g, b);
+  result = GetNearestColor(dc, col);
   dest->Set(GetRValue(result), GetGValue(result), GetBValue(result));
   DoneDC(dc);
 }
@@ -1571,9 +1595,9 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
   wx_interactive = interactive;
   device = wxDEVICE_WINDOWS;
 
-  if (file)
+  if (file) {
     filename = copystring(file);
-  else
+  } else
     filename = NULL;
 
   if (parent) {
@@ -1586,7 +1610,7 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
   if (interactive) {
     PRINTDLG *pd;
 
-    pd = new PRINTDLG;
+    pd = (PRINTDLG*)malloc(sizeof(PRINTDLG));
     
     memset(pd, 0, sizeof(PRINTDLG));
     pd->lStructSize = sizeof(PRINTDLG);
@@ -1604,11 +1628,13 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
     if (wxPrimitiveDialog((wxPDF)DoPrintDlg, pd, 0)) {
       cdc = pd->hDC;
       ok = TRUE;
+      free(pd);
     } else {
       ok = FALSE;
+      free(pd);    
       return;
     }
-    
+
     dont_delete = TRUE; // ??? WHY???
   } else if (driver_name && device_name && file) {
     cdc = CreateDC(driver_name, device_name, file, NULL);
@@ -1660,9 +1686,11 @@ HDC wxGetPrinterDC(void)
     LPSTR       lpszDeviceName;
     LPSTR       lpszPortName;
 
-    PRINTDLG    *pd;
+    PRINTDLG *pd;
 
-    pd = new PRINTDLG;
+    pd = (PRINTDLG*)malloc(sizeof(PRINTDLG));
+
+    memset(pd, 0, sizeof(PRINTDLG));
     pd->lStructSize    = sizeof(PRINTDLG);
     pd->hwndOwner      = (HWND)NULL;
     pd->hDevMode       = NULL;
@@ -1670,11 +1698,15 @@ HDC wxGetPrinterDC(void)
     pd->Flags          = PD_RETURNDEFAULT;
     pd->nCopies        = 1;
 
-    if (!wxPrimitiveDialog((wxPDF)DoPrintDlg, pd, 0))
+    if (!wxPrimitiveDialog((wxPDF)DoPrintDlg, pd, 0)) {
+      free(pd);
       return NULL;
+    }
 
-    if (!pd->hDevNames)
-        return(NULL);
+    if (!pd->hDevNames) {
+      free(pd);
+      return NULL;
+    }
 
     lpDevNames = (LPDEVNAMES)GlobalLock(pd->hDevNames);
     lpszDriverName = (LPSTR)lpDevNames + lpDevNames->wDriverOffset;
@@ -1683,24 +1715,25 @@ HDC wxGetPrinterDC(void)
     GlobalUnlock(pd->hDevNames);
 
     if (pd->hDevMode)
-        lpDevMode = (LPDEVMODE)GlobalLock(pd->hDevMode);
+      lpDevMode = (LPDEVMODE)GlobalLock(pd->hDevMode);
 
     hDC = CreateDC(lpszDriverName, lpszDeviceName, lpszPortName, (DEVMODE *)lpDevMode);
 
     if (pd->hDevMode && lpDevMode)
-        GlobalUnlock(pd->hDevMode);
+      GlobalUnlock(pd->hDevMode);
 
-    if (pd->hDevNames)
-    {
+    if (pd->hDevNames) {
 	GlobalFree(pd->hDevNames);
 	pd->hDevNames=NULL;
     }
-    if (pd->hDevMode)
-    {
+    if (pd->hDevMode) {
        GlobalFree(pd->hDevMode);
        pd->hDevMode=NULL;
     }
-    return(hDC);
+
+    free(pd);
+
+    return hDC;
 }
 
 /*

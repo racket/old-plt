@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -29,6 +29,8 @@ wxList *wxControlHandleList = NULL;
 #else
 wxNonlockingHashTable *wxControlHandleList = NULL;
 #endif
+
+extern long last_msg_time; /* MATTHEW: timeStamp implementation */
 
 IMPLEMENT_ABSTRACT_CLASS(wxItem, wxWindow)
 
@@ -74,6 +76,8 @@ wxItem::~wxItem(void)
     panel->has_child = FALSE ;
     panel->last_created = 0 ;
   }
+ 
+  UnsubclassControl((HWND)ms_handle);
 }
 
 void wxItem::GetSize(int *width, int *height)
@@ -191,6 +195,14 @@ void wxItem::SubclassControl(HWND hWnd)
   SetWindowLong(hWnd, GWL_WNDPROC, (LONG) wxGenericControlSubClassProc);
 }
 
+void wxItem::UnsubclassControl(HWND hWnd)
+{
+  if (oldWndProc) {
+    wxRemoveControlHandle(hWnd);
+    SetWindowLong(hWnd, GWL_WNDPROC, (LONG)oldWndProc);
+  }
+}
+
 // Call this repeatedly for several wnds to find the overall size
 // of the widget.
 // Call it initially with -1 for all values in rect.
@@ -242,24 +254,138 @@ void wxConvertDialogToPixels(wxWindow *control, int *x, int *y)
 }
 */
 
-// Sub-classed generic control proc
-LONG APIENTRY _EXPORT
-  wxSubclassedGenericControlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-  wxItem *item = wxFindControlFromHandle(hWnd);
-
-  if (!item)
-  {
-    wxDebugMsg("Panic! Cannot find wxItem for this HWND in wxSubclassedGenericControlProc.\n");
-    return FALSE;
-  }
 
   // If not in edit mode (or has been removed from parent), call the default proc.
   wxPanel *panel = (wxPanel *)item->GetParent();
 
-  if (!panel || item->isBeingDeleted)
-    return CallWindowProc(item->oldWndProc, hWnd, message, wParam, lParam);
+  if (panel && !item->isBeingDeleted) {
    
+  /* Check PreOnChar or PreOnEvent */
+  switch (message) {
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+    case WM_RBUTTONDBLCLK:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+    case WM_MBUTTONDBLCLK:
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_LBUTTONDBLCLK:
+	case WM_MOUSEMOVE:
+    	{
+			int et;
+	switch(message) {
+        case WM_RBUTTONDOWN:
+		  et = wxEVENT_TYPE_RIGHT_DOWN; break;
+        case WM_RBUTTONUP:
+		  et = wxEVENT_TYPE_RIGHT_UP; break;
+        case WM_RBUTTONDBLCLK:
+		  et = wxEVENT_TYPE_RIGHT_DCLICK; break;    
+        case WM_MBUTTONDOWN:
+		  et = wxEVENT_TYPE_MIDDLE_DOWN; break;
+        case WM_MBUTTONUP:
+		  et = wxEVENT_TYPE_MIDDLE_UP; break;
+        case WM_MBUTTONDBLCLK:
+		  et = wxEVENT_TYPE_MIDDLE_DCLICK; break;
+        case WM_LBUTTONDOWN:
+		  et = wxEVENT_TYPE_LEFT_DOWN; break;
+        case WM_LBUTTONUP:
+		  et = wxEVENT_TYPE_LEFT_UP; break;
+        case WM_LBUTTONDBLCLK:
+		  et = wxEVENT_TYPE_LEFT_DCLICK; break;
+	    case WM_MOUSEMOVE:
+		  et = wxEVENT_TYPE_MOTION; break;
+    	  }
+
+		int x = (int)LOWORD(lParam);
+            int y = (int)HIWORD(lParam);
+            int flags = wParam;
+
+		  wxMouseEvent *_event = new wxMouseEvent(et);
+  wxMouseEvent &event = *_event;
+
+  event.x = (float)x;
+  event.y = (float)y;
+
+  event.shiftDown = (flags & MK_SHIFT);
+  event.controlDown = (flags & MK_CONTROL);
+  event.leftDown = (flags & MK_LBUTTON);
+  event.middleDown = (flags & MK_MBUTTON);
+  event.rightDown = (flags & MK_RBUTTON);
+  event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = item;
+
+  if (item->CallPreOnEvent(item, &event))
+	  return 0;
+		}
+
+	case WM_KEYDOWN:
+    case WM_CHAR: // Always an ASCII character
+		{
+			int id = wParam;
+			int tempControlDown = FALSE;
+
+    if (message == WM_CHAR) {
+		if ((id > 0) && (id < 27))
+    {
+      switch (id)
+      {
+        case 13:
+        {
+          id = WXK_RETURN;
+          break;
+        }
+        case 8:
+        {
+          id = WXK_BACK;
+          break;
+        }
+        case 9:
+        {
+          id = WXK_TAB;
+          break;
+        }
+        default:
+        {
+          tempControlDown = TRUE;
+          id = id + 96;
+        }
+      } 
+		} else
+       if ((id = wxCharCodeMSWToWX(wParam)) == 0)
+      id = -1;
+
+			wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+    wxKeyEvent &event = *_event;
+
+    if (::GetKeyState(VK_SHIFT) >> 1)
+      event.shiftDown = TRUE;
+    if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
+      event.controlDown = TRUE;
+    if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
+      event.altDown = TRUE;
+
+    event.eventObject = item;
+    event.keyCode = id;
+    event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+
+    POINT pt ;
+    GetCursorPos(&pt) ;
+    RECT rect ;
+    GetWindowRect(item->handle,&rect) ;
+    pt.x -= rect.left ;
+    pt.y -= rect.top ;
+    event.x = pt.x;
+	event.y = pt.y;
+
+	if (item->CallPreOnChar(item, &event))
+      return FALSE;
+  }
+		}
+  }
+
   // Special edit control processing
   if (!panel->GetUserEditMode() && (item->__type == wxTYPE_TEXT))
   {
@@ -278,253 +404,34 @@ LONG APIENTRY _EXPORT
           wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_TEXT_ENTER_COMMAND);
           event->commandString = ((wxText *)item)->GetValue();
           event->eventObject = item;
-          item->ProcessCommand(*event);
-          return FALSE;
+		  item->ProcessCommand(*event);
+          return 0;
         }
       }
       break;
     }
   }
 
-  if (!panel || !panel->GetUserEditMode())
-    return CallWindowProc(item->oldWndProc, hWnd, message, wParam, lParam);
-
-  int x = (int)LOWORD(lParam);
-  int y = (int)HIWORD(lParam);
-  unsigned int flags = wParam;
-
-  // If a mouse message, must convert X and Y to item coordinates
-  // from HWND coordinates (the HWND may be part of the composite wxItem)
-  if ((message == WM_RBUTTONDOWN) || (message == WM_LBUTTONDOWN) || (message == WM_MBUTTONDOWN) || 
-      (message == WM_RBUTTONUP) || (message == WM_LBUTTONUP) || (message == WM_MBUTTONUP) || 
-      (message == WM_RBUTTONUP) || (message == WM_LBUTTONUP) || (message == WM_MBUTTONUP) || 
-      (message == WM_RBUTTONDBLCLK) || (message == WM_LBUTTONDBLCLK) || (message == WM_MBUTTONDBLCLK) || 
-      (message == WM_RBUTTONDBLCLK) || (message == WM_LBUTTONDBLCLK) || (message == WM_MBUTTONDBLCLK) || 
-      (message == WM_MOUSEMOVE))
-  {
-    int ix, iy;
-    item->GetPosition(&ix, &iy);
-    RECT rect;
-    GetWindowRect(hWnd, &rect);
-
-    // Since we now have the absolute screen coords,
-    // convert to panel coordinates.
-    POINT point;
-    point.x = rect.left;
-    point.y = rect.top;
-    ::ScreenToClient(panel->GetHWND(), &point);
-
-    x += (point.x - ix);
-    y += (point.y - iy);
   }
 
-  switch (message)
+  return 1;
+}
+
+// Sub-classed generic control proc
+LONG APIENTRY _EXPORT
+  wxSubclassedGenericControlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  wxItem *item = wxFindControlFromHandle(hWnd);
+
+  if (!item)
   {
-    case WM_KILLFOCUS:
-      item->GetEventHandler()->OnSetFocus();
-      break;
-    case WM_SETFOCUS:
-      item->GetEventHandler()->OnKillFocus();
-      break;
-    case WM_RBUTTONDOWN:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_DOWN);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_RIGHT_DOWN;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_RBUTTONUP:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_UP);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_RIGHT_UP;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_RBUTTONDBLCLK:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_RIGHT_DCLICK);
-      wxMouseEvent &event = *_event;
-
-      event.x = x; event.y = y;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_RIGHT_DCLICK;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_MBUTTONDOWN:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_DOWN);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_MIDDLE_DOWN;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_MBUTTONUP:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_UP);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_MIDDLE_UP;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_MBUTTONDBLCLK:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MIDDLE_DCLICK);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_MIDDLE_DCLICK;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_LBUTTONDOWN:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEFT_DOWN);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_LEFT_DOWN;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_LBUTTONUP:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEFT_UP);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_LEFT_UP;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_LBUTTONDBLCLK:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_LEFT_DCLICK);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_LEFT_DCLICK;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    case WM_MOUSEMOVE:
-    {
-      wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
-      wxMouseEvent &event = *_event;
-
-      event.shiftDown = (flags & MK_SHIFT);
-      event.controlDown = (flags & MK_CONTROL);
-      event.leftDown = (flags & MK_LBUTTON);
-      event.middleDown = (flags & MK_MBUTTON);
-      event.rightDown = (flags & MK_RBUTTON);
-
-      event.x = x; event.y = y;
-
-      if ((item->mswLastEvent == wxEVENT_TYPE_RIGHT_DOWN || item->mswLastEvent == wxEVENT_TYPE_LEFT_DOWN ||
-           item->mswLastEvent == wxEVENT_TYPE_MIDDLE_DOWN) &&
-          (item->mswLastXPos == event.x && item->mswLastYPos == event.y))
-      {
-        item->mswLastXPos = x; item->mswLastYPos = y;
-        item->mswLastEvent = wxEVENT_TYPE_MOTION;
-        return TRUE;
-      }
-      
-      item->mswLastXPos = x; item->mswLastYPos = y;
-      item->mswLastEvent = wxEVENT_TYPE_MOTION;
-      item->GetEventHandler()->OnEvent(event);
-      return TRUE;
-    }
-    // Ensure that static items get messages
-    case WM_NCHITTEST:
-    {
-      return (long)HTCLIENT;
-    }
-    default:
-    {
-      return CallWindowProc(item->oldWndProc, hWnd, message, wParam, lParam);
-    }
+    wxDebugMsg("Panic! Cannot find wxItem for this HWND in wxSubclassedGenericControlProc.\n");
+    return NULL;
   }
+  
+  if (!wxDoItemPres(item, hWnd, message, wParam, lParam))
+	  return FALSE;
+
   return CallWindowProc(item->oldWndProc, hWnd, message, wParam, lParam);
 }
 
@@ -554,4 +461,8 @@ void wxAddControlHandle(HWND hWnd, wxItem *item)
   wxControlHandleList->Append((long)hWnd, item);
 }
 
+void wxRemoveControlHandle(HWND hWnd)
+{
+  wxControlHandleList->Delete((long)hWnd);
+}
 

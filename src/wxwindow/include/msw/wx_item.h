@@ -58,6 +58,7 @@ class wxItem: public wxbItem
 
    // Windows subclassing
    void SubclassControl(HWND hWnd);
+   void UnsubclassControl(HWND hWnd);
 
    // For ownerdraw items
    virtual Bool MSWOnDraw(DRAWITEMSTRUCT *WXUNUSED(item)) { return FALSE; };

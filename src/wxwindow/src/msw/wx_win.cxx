@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.2 1998/02/03 18:49:57 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.3 1998/03/29 15:43:59 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -2535,6 +2535,7 @@ void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2567,6 +2568,7 @@ void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2603,6 +2605,7 @@ void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
 
@@ -2653,6 +2656,7 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2686,6 +2690,7 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
@@ -2721,6 +2726,7 @@ void wxSubWnd::OnMButtonDClick(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DCLICK;
   
@@ -2770,7 +2776,7 @@ void wxSubWnd::OnRButtonDown(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-
+  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2803,6 +2809,7 @@ void wxSubWnd::OnRButtonUp(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
 
@@ -2838,6 +2845,7 @@ void wxSubWnd::OnRButtonDClick(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_DCLICK;
 
@@ -2937,6 +2945,7 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   // Window gets a click down message followed by a mouse move
   // message even if position isn't changed!  We want to discard
@@ -2982,6 +2991,7 @@ void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   last_event = wxEVENT_TYPE_ENTER_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
@@ -3015,6 +3025,7 @@ void wxSubWnd::OnMouseLeave(int x, int y, UINT flags)
   event.middleDown = (flags & MK_MBUTTON);
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+  event.eventObject = wx_window;
 
   last_event = wxEVENT_TYPE_LEAVE_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;

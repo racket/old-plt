@@ -114,5 +114,6 @@ extern HINSTANCE wxhInstance;
 
 wxItem *wxFindControlFromHandle(HWND hWnd);
 void wxAddControlHandle(HWND hWnd, wxItem *item);
+void wxRemoveControlHandle(HWND hWnd);
 
 #endif

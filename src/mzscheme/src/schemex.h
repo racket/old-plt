@@ -416,6 +416,7 @@ Scheme_Object *(*scheme_bignum_from_float)(float d);
 char *(*scheme_bignum_to_string)(const Scheme_Object *n, int radix);
 char *(*scheme_bignum_to_allocated_string)(const Scheme_Object *n, int radix, int alloc);
 Scheme_Object *(*scheme_read_bignum)(const mzchar *str, int offset, int radix);
+Scheme_Object *(*scheme_read_bignum_bytes)(const char *str, int offset, int radix);
 Scheme_Object *(*scheme_bignum_normalize)(const Scheme_Object *n);
 /*========================================================================*/
 /*                              rationals                                 */

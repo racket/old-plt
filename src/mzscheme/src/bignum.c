@@ -1132,7 +1132,16 @@ Scheme_Object *scheme_read_bignum(const mzchar *str, int offset, int radix)
   SCHEME_BIGDIG(o) = digs;
 
   return scheme_bignum_normalize(o);
+}
 
+Scheme_Object *scheme_read_bignum_bytes(const char *str, int offset, int radix)
+{
+  mzchar *us;
+
+  us = scheme_utf8_decode_to_buffer((unsigned char *)str, 
+				    strlen(str XFORM_OK_PLUS offset), 
+				    NULL, 0);
+  return scheme_read_bignum(us, 0, radix);
 }
 
 static void bignum_double_inplace(Scheme_Object **_stk_o)

@@ -35,6 +35,7 @@ extern "C" {
 };
 
 static int found_nothing;
+static long max_sleep_time;
 
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
@@ -174,6 +175,7 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
   {
     MSG msg;
     while (PeekMessage(&msg, NULL, 0x4000, 0xFFFF, PM_REMOVE)) {
+      found_nothing = 0;
       TranslateMessage(&msg);
       DispatchMessage(&msg);
     }
@@ -610,11 +612,16 @@ void MrEdMSWSleep(float secs, void *fds)
        modifies the "newness" of queue events. */
     if (found_nothing) {
       /* Ok, we've already gone around. Go ahead and block. */
-      found_nothing = 0;
+      if (max_sleep_time < 0x20000000)
+	max_sleep_time *= 2;
     } else {
       found_nothing = 1;
+      max_sleep_time = 10;
       return;
     }
+  } else {
+    found_nothing = 0;
+    max_sleep_time = 0;
   }
  
   if (secs > 0) {
@@ -622,8 +629,16 @@ void MrEdMSWSleep(float secs, void *fds)
       msecs = 100000000;
     else
       msecs = (DWORD)(secs * 1000);
-  } else
-    msecs = 0;
+    if (max_sleep_time && (msecs > max_sleep_time))
+      msecs = max_sleep_time;
+  } else {
+    if (max_sleep_time) {
+      msecs = max_sleep_time;
+      /* Avoid infinite sleep: */
+      secs = 1.0;
+    } else
+      msecs = 0;
+  }
 
   if (fds) {
     r = (win_extended_fd_set *)fds;

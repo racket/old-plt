@@ -3,15 +3,15 @@
 (load "mysterx.ss")
 
 ; the document with the calendar
-(define caldoc (make-object mx-document% "Demo or die!" 500 600 100 100 '()))
+(define caldoc (make-object mx-document% "Demo or die!" 350 400 100 100 '()))
 
 (send caldoc insert-html 
 	(string-append	
-	"<H1>MysterX Calendar Demo</H1>"
+	"<H1>MysterX Demo</H1>"
 	"<p>"
 	"<hr>"
 	"<p>"
-	(object->html "Calendar Control 8.0")))
+	(coclass->html "Calendar Control 8.0")))
 
 (define cal (car (send caldoc objects)))
 
@@ -76,50 +76,50 @@
 	"<td><BUTTON id=\"About\">About</BUTTON></td>"))
 	
 (define (about-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "AboutBox")))
 
 (define (hide-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(send caldoc show #f)))
 
 (define (show-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(send caldoc show #t)))
 
 (define rub-me-handler
   (let ([count 0])
     (lambda (ev)
-      (when (event-mousemove? ev)
+      (when (send ev mousemove?)
 	    (printf "mousemove #~a, but who's counting?~n" count)
 	    (set! count (add1 count))))))
 
 (define (today-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "Today")))
 
 (define (yesterday-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "PreviousDay")))
 
 (define (tomorrow-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "NextDay")))
 
 (define (last-month-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "PreviousMonth")))
 
 (define (next-month-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "NextMonth")))
 
 (define (last-year-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "PreviousYear")))
 
 (define (next-year-handler ev)
-  (when (event-click? ev)
+  (when (send ev click?)
 	(invoke cal "NextYear")))
 
 (define button-handlers
@@ -144,7 +144,3 @@
  button-handlers)
 
 (send ctrldoc handle-events)
- 
-
-
-

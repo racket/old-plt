@@ -5,6 +5,39 @@
 
 (load-extension "mysterx.dll")
 
+(define mx-event%
+  (class null (dhtml-event)
+
+	 (private
+	  [event dhtml-event])
+
+	 (public
+
+	  ; predicates
+
+	  [keypress? (lambda () (event-keypress? event))]
+	  [keydown? (lambda () (event-keydown? event))]
+	  [keyup? (lambda () (event-keyup? event))] 
+	  [mousedown? (lambda () (event-mousedown? event))] 
+	  [mousemove? (lambda () (event-mousemove? event))] 
+	  [mouseover? (lambda () (event-mouseover? event))] 
+	  [mouseout? (lambda () (event-mouseout? event))] 
+	  [mouseup? (lambda () (event-mouseup? event))] 
+	  [click? (lambda () (event-click? event))] 
+	  [dblclick? (lambda () (event-dblclick? event))] 
+	  [error? (lambda () (event-error? event))]
+	  
+	  ; attributes
+
+	  [tag (lambda () (event-tag event))]
+	  [id (lambda () (event-id event))]
+	  [from-tag (lambda () (event-from-tag event))]
+	  [from-id (lambda () (event-id event))]
+	  [to-tag (lambda () (event-to-tag event))]
+	  [to-id (lambda () (event-to-id event))]
+	  [x (lambda () (event-x event))]
+	  [y (lambda () (event-y event))])))
+
 (define mx-document%
   (class null 
 
@@ -87,9 +120,10 @@
 			      (lambda ()
 				(let loop ()
 				  (block-until-event)
-				     (let* ([event (get-event doc)]
-					    [tag (event-tag event)]
-					    [id (event-id event)]
+				     (let* ([event (make-object mx-event% 
+								(get-event doc))]
+					    [tag (send event tag)]
+					    [id (send event id)]
 					    [key (make-event-key tag id)]
 					    [handler (hash-table-get handler-table key void)])
 				       (unless (void? handler)

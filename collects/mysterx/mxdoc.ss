@@ -146,7 +146,7 @@
 	 
 (define button-handler-sexp
   '(lambda (ev) 
-     (when (event-click? ev)
+     (when (send ev click?)
 	   (send *example-doc* append-html "click! "))))
 
 (define button-handler
@@ -288,7 +288,8 @@
 
    para
 
-   "User interaction with a document produces <it>events</it>. "
+   "User interaction with a document produces <it>events</it>, "
+   "which are instances of the class " (tt "mx-event%") ". "
    "Each event is associated with a particular HTML element. "
    "You can associate procedures with the events in a "
    "particular HTML element. "
@@ -360,13 +361,10 @@
 
    (h2 "More about events")
 
-   "Events themselves are detectable using the "
-   " predicate " (tt "event?") "."
-
    para
 
    "Besides mouse clicks, there are other kinds of events, which can "
-   "be tested with the following " (it "predicates") ": " 
+   "be tested with the following " (it "predicate") " methods: " 
 
    para
 
@@ -380,20 +378,20 @@
 
        (ul-list
 	(map code 
-	     '("event-dblclick?"
-	       "event-error"
-	       "event-keypress?"
-	       "event-keyup?")))
+	     '("dblclick?"
+	       "error?"
+	       "keypress?"
+	       "keyup?")))
       
        (ul-list
 	(map code
-	     '("event-mousedown?"
-	       "event-mouseout?"
-	       "event-mouseover?"
-	       "event-mouseup?")))))))
+	     '("mousedown?"
+	       "mouseout?"
+	       "mouseover?"
+	       "mouseup?")))))))
    	
    "Events have " (it "attributes") " obtainable using these "
-   "procedures, each of which takes an event argument:" 
+   "methods:" 
 
    para
 
@@ -407,23 +405,23 @@
 
        (ul-list
 	(map code 
-	     '("event-tag?"
-	       "event-id"
-	       "event-from-tag"
-	       "event-from-id")))
+	     '("tag"
+	       "id"
+	       "from-tag"
+	       "from-id")))
 
        (ul-list
 	(map code
-	     '("event-to-tag"
-	       "event-to-id"
-	       "event-x"
-	       "event-y")))))))
+	     '("to-tag"
+	       "to-id"
+	       "x"
+	       "y")))))))
 
-   "The " (tt "event-tag") " and " (tt "event-id") " attributes "
+   "The " (tt "tag") " and " (tt "id") " attributes "
    "are the tag and identifier of the HTML element where the event "
    "occurred.  The \"from\" and \"to\" versions are meaningful "
-   "only for event for which either " (tt "event-mouseout?") " or " 
-   (tt "event-mouseover?") " holds."
+   "only for event for which either " (tt "mouseout?") " or " 
+   (tt "mouseover?") " holds."
 
    para
 
@@ -761,7 +759,7 @@
       'A 'make-document
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not *example-doc*)
 		     (not done))
 		(set! done #t)
@@ -777,7 +775,7 @@
      (make-handler
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (goto-page html-html))))))
 
    (page-entry 
@@ -790,7 +788,7 @@
       'A 'insert-text
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(eval insert-text-command)
@@ -805,7 +803,7 @@
      (make-handler
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (goto-page events-html))))))
 
    (page-entry 
@@ -818,7 +816,7 @@
       'A 'append-button
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #f)
 		(send *example-doc* append-html para)
@@ -837,7 +835,7 @@
       'A 'register-handler
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(eval register-handler-command)
@@ -854,7 +852,7 @@
       'A 'handle-events
        (let ([done #f])
 	 (lambda (ev)
-	   (when (and (event-click? ev)
+	   (when (and (send ev click?)
 		      (not done))
 		 (set! done #t)
 		 (eval handle-events-command)
@@ -869,7 +867,7 @@
      (make-handler 
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (goto-page more-events-html))))))
         
    (page-entry 
@@ -880,7 +878,7 @@
      (make-handler 
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (goto-page com-html))))))
 
    (page-entry 
@@ -891,7 +889,7 @@
      (make-handler 
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (send *example-doc* replace-html "")
 	      (goto-page activex-html))))))
 
@@ -904,7 +902,7 @@
       'A 'insert-calendar
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(set! *calendar* (eval insert-calendar-command))
@@ -918,7 +916,7 @@
      (make-handler 
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (goto-page activex-3-html))))))
 
    (page-entry 
@@ -931,7 +929,7 @@
       'A 'calendar-month
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(send *doc* 
@@ -950,7 +948,7 @@
      (make-handler
       'BUTTON 'next-page
       (lambda (ev)
-	(when (event-click? ev)
+	(when (send ev click?)
 	      (goto-page complete-html))))))
 
 
@@ -964,7 +962,7 @@
       'A 'calendar-buttons
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(send *example-doc* append-html para)
@@ -980,7 +978,7 @@
       'BUTTON 'did-it
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(send *doc* unregister-event-handler 'BUTTON 'give-up)
@@ -989,19 +987,19 @@
       'BUTTON 'give-up
       (let ([done #f])
 	(lambda (ev)
-	  (when (and (event-click? ev)
+	  (when (and (send ev click?)
 		     (not done))
 		(set! done #t)
 		(send *doc* unregister-event-handler 'BUTTON 'did-it)
 		(send *example-doc* register-event-handler
 		      'BUTTON 'PreviousYear
 		      (lambda (ev)
-			(when (event-click? ev)
+			(when (send ev click?)
 			      (invoke *calendar* "PreviousYear"))))
 		(send *example-doc* register-event-handler
 		      'BUTTON 'NextYear
 		      (lambda (ev)
-			(when (event-click? ev)
+			(when (send ev click?)
 			      (invoke *calendar* "NextYear"))))
 		(goto-page complete-give-up-html)))))))
 

@@ -4,8 +4,8 @@
 	   (lib "etc.ss")
 	   (lib "xml.ss" "xml")
 	   (lib "url.ss" "net")
-           ; help-desk here gives load cycle
- 	   (lib "finddoc.ss" "help" "private"))
+ 	   (lib "finddoc.ss" "help" "private")
+ 	   (lib "path.ss" "help" "private"))
 	
   (provide get-pref/default
 	   put-prefs

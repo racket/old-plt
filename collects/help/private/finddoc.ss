@@ -1,4 +1,6 @@
 (module finddoc mzscheme
+  (require "path.ss")
+
   (provide finddoc
 	   findreldoc
            finddoc-page
@@ -34,14 +36,13 @@
       (if (string? m)
 	(error (format "Error finding index \"~a\" in manual \"~a\""
 		       index-key manual))
-	(let ([raw-page (if anchor?
-			    (string-append (caddr m) "#" (cadddr m))
-			    (caddr m))])
-	  (if (regexp-match "^/servlets/" raw-page)
-	      raw-page
-	      (format "/doc/~a/~a" manual raw-page))))))
+	(let ([path (if anchor?
+			(string-append (caddr m) "#" (cadddr m))
+			(caddr m))])
+	  (if (servlet-path? path)
+	      path
+	      (format "/doc/~a/~a" manual path))))))
   
-
   ; finddoc-page : string string -> string
   ; returns path for use by PLT Web server
   ;  path is of form /doc/manual/page, or

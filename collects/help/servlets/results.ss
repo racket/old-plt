@@ -6,6 +6,7 @@
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
          (lib "xml.ss" "xml")
+         (lib "path.ss" "help" "private")
          (lib "search.ss" "help" "private"))
 
 (require "private/util.ss")
@@ -124,7 +125,7 @@
   ; servlets, a forward-slashified path beginning with "/servlets/"
   (define (make-anchored-path page-label path)
     (let ([normal-path 
-	   (if (hd-servlet? path) 
+	   (if (servlet-path? path) 
 	       path
 	       (normalize-path path))])
       (if (and page-label
@@ -146,7 +147,7 @@
   (define (make-html-href page-label path)
     (let ([anchored-path (make-anchored-path page-label path)])
       (cond
-       [(hd-servlet? anchored-path) 
+       [(servlet-path? anchored-path) 
 	anchored-path]
        [(doc-txt? anchored-path) ; collection doc.txt
 	(let ([maybe-coll (maybe-extract-coll last-header)])

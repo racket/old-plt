@@ -121,7 +121,7 @@
                    (error 'check-defs 
                           "Internal error: Current def does not have a record entry")))))
       (if (interface-def? def)
-          (check-interface def package-name type-recs)
+          (check-interface def package-name level type-recs)
           (check-class def package-name level type-recs)))
     (packages (cons def (packages)))
     (when (not (null? (check-list)))
@@ -470,7 +470,8 @@
         ((continue? statement)
          (check-continue (continue-label statement)
                          (continue-src statement)
-                         env))
+                         env
+                         in-loop?))
         ((label? statement)
          (check-label (label-stmt statement)
                       (label-label statement)
@@ -539,7 +540,7 @@
     (if (null? vars)
         env
         (check-for-vars (cdr vars) 
-                        (check-local-var (car vars) env check-e types) types)))
+                        (check-local-var (car vars) env check-e types) check-e types)))
   
   ;Need to allow shadowing of field names
   ;check-local-var: field env (expression -> type) type-records -> env
@@ -628,7 +629,7 @@
   
   ;check-label: statement string (statement env -> void) env -> void
   (define (check-label stmt label check-s env)
-    (check-s stmt (add-label-to-env env)))
+    (check-s stmt (add-label-to-env label env)))
 
   ;check-synchronized: type src -> void
   (define (check-synchronized e-type e-src)
@@ -845,7 +846,7 @@
            (prim-check prim-numeric-type? binary-promotion 'num l r op src)))
       ((<< >> >>> <<= >>= >>>=)      ;; 15.19
        (prim-check prim-integral-type? 
-                   (lambda (l r) (unary-promotion l)) 'int l r src))
+                   (lambda (l r) (unary-promotion l)) 'int l r op src))
       ((< > <= >=)      ;; 15.20
        (prim-check prim-numeric-type? (lambda (l r) 'boolean) 'num l r op src))
       ((== !=)      ;; 15.21

@@ -691,7 +691,7 @@
     (if (null? methods)
         null
         (if (memq (car methods) minus-methods)
-            (make-method-names (cdr methods) minus-methods)
+            (make-method-names (cdr methods) minus-methods type-recs)
             (cons (build-identifier (build-method-name (method-name (car methods)) 
                                                        (map (lambda (t) (type-spec-to-type t type-recs))
                                                             (map field-type (method-parms (car methods))))))
@@ -1009,9 +1009,9 @@
                         (build-src (if (name? (car inits)) (name-src (car inits)) (expr-src (car inits)))))))))
   
   ;Converted
-  ;translate-try: syntax (list catch) (U syntax boolean) src src string type-records-> syntax
+  ;translate-try: syntax (list catch) (U syntax boolean) src src type-records-> syntax
   (define translate-try
-    (lambda (block catches finally key src parent-name type-recs)
+    (lambda (block catches finally key src type-recs)
       (let* ((handle (create-syntax #f 'with-handlers (build-src key)))
              (handlers (make-syntax #f `(,handle [ ,@(make-predicates catches type-recs) ]
                                                   ,block)
@@ -1118,7 +1118,7 @@
   ;Converted
   ;translate-break: (U id #f) src -> syntax
   (define translate-break
-    (lambda (id nodeLabel src)
+    (lambda (id src)
       (if (not id)
           (make-syntax #f `(break-k void) (build-src src))
           (make-syntax #f `(,(translate-id (string-append (id-string id "-k")) (id-src id)) void) (build-src src)))))
@@ -1415,7 +1415,7 @@
         ((null? (cdr sizes))
          (make-syntax #f `(make-java-array ,type ,(car sizes) null) (build-src src)))
         (else
-         (make-syntax #f `(make-java-array ,type ,(car sizes) ,(create-array (cdr sizes) src)) (build-src src))))))
+         (make-syntax #f `(make-java-array ,type ,(car sizes) ,(create-array (cdr sizes) type src)) (build-src src))))))
   
   ;converted
   ;translate-type-spec: type-spec -> syntax

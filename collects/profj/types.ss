@@ -134,7 +134,7 @@
                   (map id-string (name-path n)) type-recs)
     (make-ref-type (id-string (name-id n)) 
                    (if (null? (name-path n))
-                       (send type-recs lookup-path (id-string (name-id n)) (lambda () (raise-error)))
+                       (send type-recs lookup-path (id-string (name-id n)) (lambda () (raise-error #f #f)))
                        (map id-string (name-path n)))))
   
   ;; type-spec-to-type: type-spec type-records -> type

@@ -3,14 +3,20 @@
          (lib "servlet-helpers.ss" "web-server")
 	 (lib "help-desk-mz.ss" "help")
 	 (lib "string-constant.ss" "string-constants")
-	 (lib "xml.ss" "xml"))
+	 (lib "xml.ss" "xml")
+         (lib "url.ss" "net"))
 
-(require "private/util.ss")
-(require "private/hd-css.ss")
-(require "private/refresh-util.ss")
+(require "private/util.ss"
+         "private/hd-css.ss"
+	 "private/refresh-util.ss"
+	 "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
+
+  (check-external 	
+   send/finish
+   (url-path (request-uri initial-request)))
 
   (define no-dir-page
     `(HTML

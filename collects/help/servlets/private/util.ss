@@ -8,7 +8,7 @@
 	   (lib "string-constant.ss" "string-constants")
  	   (lib "path.ss" "help" "private")
 	   (lib "docpos.ss" "help" "private"))
-	
+
   (provide get-pref/default
 	   get-bool-pref/default
 	   put-prefs

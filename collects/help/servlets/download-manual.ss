@@ -1,14 +1,20 @@
 (require (lib "unitsig.ss")
 	 (lib "xml.ss" "xml")
          (lib "servlet-helpers.ss" "web-server")
-         (lib "servlet-sig.ss" "web-server"))
+         (lib "servlet-sig.ss" "web-server")
+	 (lib "url.ss" "net"))
 
-(require "private/util.ss")
-(require "private/hd-css.ss")
-(require "private/refresh-util.ss")
+(require "private/util.ss"
+         "private/hd-css.ss"
+         "private/refresh-util.ss"
+         "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
+
+  (check-external 	
+   send/finish
+   (url-path (request-uri initial-request)))
 
   (define no-dir-page
     `(HTML
@@ -85,9 +91,6 @@
 	(delete-known-doc tmp-directory manual))
 
     (page-fun)))
-
-    
-    
     
     
     

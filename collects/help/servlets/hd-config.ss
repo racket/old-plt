@@ -4,13 +4,19 @@
 	 (lib "file.ss")
 	 (lib "etc.ss")
 	 (lib "string-constant.ss" "string-constants")
-	 (lib "xml.ss" "xml"))
+	 (lib "xml.ss" "xml")
+	 (lib "url.ss" "net")
 
-(require "private/util.ss")
-(require "private/hd-css.ss")
+(require "private/util.ss"
+	 "private/hd-css.ss"
+	 "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
+
+  (check-external 	
+   send/finish
+   (url-path (request-uri initial-request)))
 
   (define search-height 
     (get-pref/default 'plt:hd:search-height search-height-default))

@@ -13,10 +13,11 @@
 (define (make-break num-steps expr action)
   (let ([counter num-steps])
     (lambda (mark-set key break-kind returned-value-list)
-      (if (> counter 0)
-          (set! counter (- counter 1))
-          (let ([mark-list (continuation-mark-set->list mark-set key)])
-            (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list)))))))
+      (let ([mark-list (continuation-mark-set->list mark-set key)])
+        (unless (reconstruct:skip-step? break-kind mark-list)
+          (if (> counter 0)
+              (set! counter (- counter 1))
+              (action (reconstruct:reconstruct-current expr mark-list break-kind returned-value-list))))))))
 
 (define (string->stx-list stx)
   (let ([port (open-input-string stx)])
@@ -201,14 +202,24 @@
      (test 'or-part syntax-e (syntax or-part-1))
      (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
-(test-beginner-sequence "(or true false true)"
-                        `((((or ,highlight-placeholder false true)) (true))
-                          (((or ,highlight-placeholder false true)) (true))
-                          ((,highlight-placeholder) ((or true false true)))
-                          ((,highlight-placeholder) ((or false true)))
-                          (((or ,highlight-placeholder true)) (false))
-                          (((or ,highlight-placeholder true)) (false))
-                          ((,highlight-placeholder) ((or false true)))
+(test-beginner-sequence "(or false true false)"
+                        `((((or ,highlight-placeholder true false)) (false))
+                          (((or ,highlight-placeholder true false)) (false))
+                          ((,highlight-placeholder) ((or false true false)))
+                          ((,highlight-placeholder) ((or true false)))
+                          (((or ,highlight-placeholder false)) (true))
+                          (((or ,highlight-placeholder false)) (true))
+                          ((,highlight-placeholder) ((or true false)))
+                          ((,highlight-placeholder) (true))))
+
+(test-beginner-sequence "(and true false true)"
+                        `((((and ,highlight-placeholder false true)) (true))
+                          (((and ,highlight-placeholder false true)) (true))
+                          ((,highlight-placeholder) ((and true false true)))
+                          ((,highlight-placeholder) ((and false true)))
+                          (((and ,highlight-placeholder true)) (false))
+                          (((and ,highlight-placeholder true)) (false))
+                          ((,highlight-placeholder) ((and false true)))
                           ((,highlight-placeholder) (false))))
 
 (report-errs)

@@ -153,7 +153,7 @@
 						  "zodiac eval; structurized: ~a~n" structurized)]
 			    [_ (mred:debug:printf 'zodiac
 						  "zodiac eval; unsexp: ~a~n" (zodiac:sexp->raw structurized))]
-			    [expanded (zodiac:scheme-expand structurized)]
+			    [expanded (zodiac:scheme-expand structurized param)]
 			    [_ (mred:debug:printf 'zodiac
 						  "zodiac eval; expanded: ~a~n" expanded)]
 			    [_ (mred:debug:printf 'zodiac
@@ -230,7 +230,7 @@
 		     [get-zodiac-code
 		      (lambda ()
 			(let* ([structurized (send edit get-zodiac-sexp)]
-			       [expanded (zodiac:scheme-expand structurized)]
+			       [expanded (zodiac:scheme-expand structurized param)]
 			       [annotated (aries:annotate expanded)])
 			  annotated))])
 		 (do-many-evals get-zodiac-code pre post)))]
@@ -283,7 +283,7 @@
 			       [_ (mred:debug:printf 
 				   'zodiac
 				   "zodiac; structurized: ~a~n" structurized)]
-			       [expanded (zodiac:scheme-expand structurized)]
+			       [expanded (zodiac:scheme-expand structurized param)]
 			       [_ (mred:debug:printf 
 				   'zodiac
 				   "zodiac; expanded: ~a~n" expanded)]

@@ -102,7 +102,7 @@
 	     (make-object drscheme:unit:frame% #f #f group))]
 	  [file-menu:between-new-and-open
 	   (lambda (file-menu)
-	     (send file-menu append-item "Get Program Text"
+	     '(send file-menu append-item "Get Program Text"
 		   (lambda ()
 		     (mred:message-box
 		      (format "~s" (zodiac:parsed->raw

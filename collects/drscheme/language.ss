@@ -176,13 +176,13 @@
 			  [(constructor-style) 
 			   (constructor-style-printing #t)
 			   0]
-			  [(quasi-read-style) 
-			   (constructor-style-printing #f)
-			   (quasi-read-style-printing #t)
-			   1]
 			  [(quasi-style)
 			   (constructor-style-printing #f)
 			   (quasi-read-style-printing #f)
+			   1]
+			  [(quasi-read-style)
+			   (constructor-style-printing #f)
+			   (quasi-read-style-printing #t)
 			   2]
 			  [(r4rs-style) 3]
 			  [else (error 'drscheme:language:update-to "got: ~a as printing style"

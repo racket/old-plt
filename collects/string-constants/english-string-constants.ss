@@ -237,7 +237,7 @@
  (automatically-to-ps "Automatically print to postscript file")
  (use-mdi "Use MDI Windows") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Use separate dialog for searching")
- (reuse-existing-frames "Reuse existing frames when opening new files?")
+ (reuse-existing-frames "Reuse existing frames when opening new files")
  (default-fonts "Default Fonts")
  
  ; should have entire alphabet

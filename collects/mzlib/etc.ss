@@ -508,7 +508,8 @@
               (syntax/loc stx
                 (let ([ht (make-hash-table flag ...)])
                   (hash-table-put! ht key val) ...
-                  ht)))]))]))
+                  ht)))]
+           [_else (raise-syntax-error 'hash-table "bad syntax" stx)]))]))
 
   (define-syntax (begin-with-definitions stx)
     ;; Body can have mixed exprs and defns. Wrap expressions with

@@ -34,7 +34,7 @@
       (list 'american 'chinese 'german 'indian 'irish))
 
     (define date-display-format 
-      (make-parameter 'irish
+      (make-parameter 'american
 		      (lambda (s)
 			(unless (memq s legal-formats)
 				(raise-type-error 'date-display-format

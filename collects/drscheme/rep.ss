@@ -248,11 +248,6 @@
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (public
-	[report-exception-error
-	 (lambda (exn)
-	   (if (exn? exn)
-	       (report-located-error (exn-message exn) (exn-debug-info exn))
-	       (report-unlocated-error (format "uncaught exception: ~e" exn))))]
 	[report-located-error
 	 (lambda (message di)
 	   (if (and (zodiac:zodiac? di)

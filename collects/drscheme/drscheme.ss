@@ -244,6 +244,17 @@
 
   (yield waiting))
 
+(define loading-frame (make-object frame% "Loading message"))
+(define loading-message (make-object message% 
+			  (apply string-append
+				 (let loop ([n (if (eq? (system-type) 'macos) 6 1)])
+				   (cond
+				     [(zero? n) null]
+				     [else (cons "abcdefghijklmnopqrstuvwxyz" (loop (- n 1)))])))
+			  loading-frame))
+(send loading-frame set-alignment 'left 'center)
+(send loading-frame show #t)
+
 (current-load
  (let ([ol (current-load)])
    (lambda (fn)
@@ -252,8 +263,6 @@
      (let ([sym (string->symbol fn)])
        (dynamic-wind
 	(lambda ()
-	  (unless (equal? fn (global-defined-value 'working-on-fn))
-	    (printf "~a slipped by (last known: ~a)~n" fn (global-defined-value 'working-on-fn)))
 	  (for-each (lambda (stack-fn)
 		      (let ([old (hash-table-get file-ht stack-fn (lambda () null))])
 			(unless (member fn old)
@@ -265,48 +274,44 @@
 	(lambda ()
 	  (set! file-stack (cdr file-stack))))))))
 
-(define working-on-fn #f)
-
 (define check-require/proc
-  (lambda (filename)
-    (unless (file-exists? filename)
-      (error 'check-require/proc "file does not exist: ~a~n" filename))
-    
-    (let* ([sym (string->symbol filename)]
-	   [load/save
-	    (lambda (filename reason)
-	      (printf "loading: ~a because ~a~n" filename reason)
-	      (let ([anss (call-with-values (lambda () (load filename)) list)])
-		(hash-table-put! value-ht sym anss)
-		(apply values anss)))]
-	   [last-working-on (global-defined-value 'working-on-fn)]
-	   [hash-table-maps?
-	    (lambda (ht value)
-	      (let/ec k
-		(hash-table-get ht value (lambda () (k #f)))
-		#t))])
-      (global-defined-value 'working-on-fn filename)
-      (begin0
-	(if (hash-table-maps? value-ht sym)
-	    (let* ([secs (hash-table-get mods-ht sym)]
-		   [reason (ormap (lambda (fn)
-				    (if (< (hash-table-get mods-ht (string->symbol fn))
-					   (file-or-directory-modify-seconds fn))
-					fn
-					#f))
-				  (cons filename (hash-table-get file-ht sym (lambda () null))))])
-	      (if reason
-		  (load/save filename (format "~a was modified" reason))
-		  (apply values (hash-table-get value-ht sym))))
-	    (load/save filename "never before loaded"))
-	(global-defined-value 'working-on-fn last-working-on)))))
+  (let ([loading-message loading-message])
+    (lambda (filename)
+      (unless (file-exists? filename)
+	(error 'check-require/proc "file does not exist: ~a~n" filename))
+      
+      (let* ([sym (string->symbol filename)]
+	     [load/save
+	      (lambda (filename reason)
+		(send loading-message set-label (format "loading: ~a because ~a" filename reason))
+		(let ([anss (call-with-values (lambda () (load filename)) list)])
+		  (hash-table-put! value-ht sym anss)
+		  (apply values anss)))]
+	     [hash-table-maps?
+	      (lambda (ht value)
+		(let/ec k
+		  (hash-table-get ht value (lambda () (k #f)))
+		  #t))])
+	(begin0
+	  (if (hash-table-maps? value-ht sym)
+	      (let* ([secs (hash-table-get mods-ht sym)]
+		     [reason (ormap (lambda (fn)
+				      (if (< (hash-table-get mods-ht (string->symbol fn))
+					     (file-or-directory-modify-seconds fn))
+					  fn
+					  #f))
+				    (cons filename (hash-table-get file-ht sym (lambda () null))))])
+		(if reason
+		    (load/save filename (format "~a was modified" reason))
+		    (apply values (hash-table-get value-ht sym))))
+	      (load/save filename "never before loaded")))))))
 
 (define-macro require-relative-library
   (lambda (filename)
     `(let ([require-relative-collection (current-require-relative-collection)])
        (unless require-relative-collection
 	 (error 'require-relative-library "no collection~n"))
-       ((global-defined-value 'check-require/proc)
+       (,check-require/proc
 	(build-path
 	 (apply collection-path require-relative-collection)
 	 ,filename)))))
@@ -319,7 +324,7 @@
 		    (list "mzlib")
 		    g)])
 	 (parameterize ([current-require-relative-collection h])
-	   ((global-defined-value 'check-require/proc)
+	   (,check-require/proc
 	    (build-path
 	     (apply collection-path h)
 	     f)))))))
@@ -335,7 +340,8 @@
   (set! drscheme-custodian (make-custodian))
   (parameterize ([current-custodian drscheme-custodian]
 		 [current-eventspace (make-eventspace)])
-    (start-drscheme)))
+    (start-drscheme))
+  (send loading-message set-label ""))
 
 (define start-drscheme-expression '(T))
 

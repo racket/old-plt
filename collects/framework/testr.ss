@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.10 1999/02/02 22:28:27 robby Exp $
+;; $Id: testr.ss,v 1.11 1999/02/04 14:32:41 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -189,7 +189,7 @@
   
   ;;
   ;; Return list of window's ancestors from root down to window
-  ;; (including window).  Used for pre-on-char and pre-on-event.
+  ;; (including window).  Used for on-subwindow-char and on-subwindow-event.
   ;; get-parent returns () for no parent.
   ;;
 
@@ -197,8 +197,8 @@
     (lambda (window)
       (let loop ([w window] [l null])
 	(if w
-	    l
-	    (loop (send w get-parent) (cons w l))))))
+	    (loop (send w get-parent) (cons w l))
+	    l))))
   
   ;;
   ;; Returns #t if window is in active-frame, else #f.
@@ -330,7 +330,7 @@
   ;; KEYSTROKES 
   ;;
   ;; Give ancestors (from root down) option of handling key event
-  ;; with pre-on-char.  If none want it, then send to focused window
+  ;; with on-subwindow-char.  If none want it, then send to focused window
   ;; with (send <window> on-char <wx:key-event>).
   ;;
   ;; key: char or integer.
@@ -338,7 +338,7 @@
   ;;   'noalt, 'nocontrol, 'nometa, 'noshift.
   ;;
   ;; Window must be shown, in active frame, and either the window has
-  ;; on-char, or else some ancestor must grab key with pre-on-char.
+  ;; on-char, or else some ancestor must grab key with on-subwindow-char.
   ;;
   
   (define key-tag 'test:keystroke)
@@ -379,14 +379,14 @@
 		   (send-key-event window event)
 		   (void))]))))])]))
   
-  ;; delay test for on-char until all ancestors decline pre-on-char.
+  ;; delay test for on-char until all ancestors decline on-subwindow-char.
   (define (send-key-event window event)
     (let loop ([l (ancestor-list window)])
       (cond [(null? l)
 	     (if (ivar-in-class? 'on-char (object-class window))
 		 (send window on-char event)
 		 (run-error key-tag "focused window does not have on-char"))]
-	    [(send (car l) pre-on-char window event) #f]
+	    [(send (car l) on-subwindow-char window event) #f]
 	    [else (loop (cdr l))])))
   
   ;; Make full mred:key-event% object.
@@ -571,7 +571,7 @@
 	   (if (ivar-in-class? 'on-event (object-class window))
 	       (send window on-event event)
 	       (run-error mouse-tag "focused window does not have on-event"))]
-	  [(send (car l) pre-on-event window event)  #f]
+	  [(send (car l) on-subwindow-event window event)  #f]
 	  [else  (loop (cdr l))]))))
   
   ;;
@@ -650,7 +650,7 @@
   ;;
   ;; Move mouse to new window.
   ;; Implement with three events:
-  ;; leave old window, show top-level frame, enter new window, set-focus.
+  ;; leave old window, show top-level frame, enter new window, focus.
   ;;
   ;; NEED TO CLEAN UP ACTIONS FOR MOVING TO NEW FRAME.
   ;;
@@ -659,8 +659,8 @@
     (let ([tag  'test:new-window])
       (lambda (new-window)
 	(cond
-	  [(not (is-a? new-window mred:top-level-window<%>))
-	   (arg-error tag "new-window is not a top-level-window<%>")]
+	  [(not (is-a? new-window mred:window<%>))
+	   (arg-error tag "new-window is not a window<%>")]
 	  [else
 	   (run-one
 	    (lambda ()
@@ -679,5 +679,5 @@
 		(send root show #t)
 		(when (ivar-in-class? 'on-event (object-class new-window))
 		  (send-mouse-event new-window enter))
-		(send new-window set-focus)
+		(send new-window focus)
 		(void))))])))))

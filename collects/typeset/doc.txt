@@ -15,10 +15,11 @@ are evaluated and their results are placed into the blue box. If the red
 box evaluates to a value other than a blue box, the value is display'd into
 the blue box.
 
-Technically speaking, the blue boxes evalute to an editor-snip object, so
+Technically speaking, the blue boxes evalute to an editor-snip% object, so
 any of the methods of an editor snip will work on the objects. Using these
 methods is discouraged, except possibly to provide better memory or time
-performance.
+performance. The editor-snip%'s set-tight-text-fit method is called with #t 
+and it's set-align-top-line method is called with #t.
 
 The tool also provides several new primitive functions:
 

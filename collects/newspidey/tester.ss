@@ -3,15 +3,16 @@
 
 ;; TESTS
 
-;; (: parse-i (nothing -> void))
+;; (: test-i (nothing -> void))
 ;; parse expression interactively
-(define (parse-i)
-  (newspidey:newspidey-driver zodiac:read))
+(define (test-i)
+  (newspidey:newspidey-driver (zodiac:read)))
 
-;;; (: parse-f (string -> (listof Ast)))
-;(define (parse-f filename)
-;  (typeparser:parse-types (read-file zodiac:read zodiac:eof? filename)))
-;
+;; (: test-f (string -> (listof Ast)))
+(define (test-f filename)
+ (newspidey:newspidey-driver (zodiac:read (open-input-file filename))))
+
+
 ;(require-library "compat.ss")
 ;
 ;;; (: parse-t (nothing -> (listof (list string boolean))))

@@ -7,10 +7,11 @@
 ;; use our own gensym for now
 ;; because real gensym generates uninterned symbols
 ;; that are not eq? to symbols entered in the REPL
+;; Use "k" instead of "g" to help debugging (it's never too late...)
 (define counter 0)
-(define (gensym)
+(define (interned-gensym)
   (set! counter (add1 counter))
-  (string->symbol (string-append "g" (number->string counter))))
+  (string->symbol (string-append "k" (number->string counter))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constraints
@@ -27,12 +28,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; common stuff
 
 (define *Nullexp* (setexp:make-Const '()))
+(define *Voidexp* (setexp:make-Const (void)))
 (define *pair-token* (setexp:make-Token 'pair))
 
 ;; -> Set-var
 ;; generate fresh set variable, add to table
 (define (gen-set-var)
-  (let ([set-var (setexp:make-Set-var (gensym))])
+  (let ([set-var (setexp:make-Set-var (interned-gensym))])
     (add-set-var set-var)
     set-var))
 
@@ -178,7 +180,7 @@
 
 ;; symbol -> (listof Arity)
 (define (lookup-ars-from-label label)
-  (hash-table-get *label-to-ars-table* label (lambda () #f)))
+  (hash-table-get *label-to-ars-table* label (lambda () '())))
 
 ;; (hash-table-of symbol (listof Set-var))
 ;; encoded Dom-Interval interval, pos, and alpha -> (listof Set-var)
@@ -201,7 +203,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; set-var and label to term tables
 ;;
-;; (hash-table-of symbol zodiac:parsed)
+;; Note: setvars are represented as symbols, because they are sometimes reconstructed from scratch
+;; (i.e. eq? would not work on the structures, and hash tables use eq ?)
+;; (hash-table-of symbol zodiac:parsed) ;; XXX this should be a list of zodiac:parsed, because of top level redefinitions
 (define *set-var-to-term-table* (make-hash-table))
 ;; (hash-table-of zodiac:parsed symbol) note: not used in practice
 (define *term-to-set-var-table* (make-hash-table))
@@ -209,6 +213,10 @@
 (define *label-to-lambda-table* (make-hash-table))
 ;; (hash-table-of zodiac:parsed Label) note: not used in practice
 (define *lambda-to-label-table* (make-hash-table))
+;; (hash-table-of Label symbol)
+(define *label-to-set-var-table* (make-hash-table))
+;; (hash-table-of symbol Label)
+(define *set-var-to-label-table* (make-hash-table))
 
 ;; (listof (list number symbol))
 ;; need this for DrScheme, to find the set-var that
@@ -260,7 +268,22 @@
 ;; zodiac:parsed -> Label
 ;; not used...
 (define (lookup-label-from-lambda ar)
-  (hash-table-get *lambda-to-label-table* ar (lambda () '())))
+  (hash-table-get *lambda-to-label-table* ar (lambda () #f)))
+
+;; Label symbol -> void
+(define (associate-label-and-set-var label setvar)
+  ;;(printf "LABEL: ~a~nSETVAR: ~a~n" label setvar)
+  (hash-table-put! *label-to-set-var-table* label setvar)
+  (hash-table-put! *set-var-to-label-table* setvar label))
+  
+;; Label -> symbol
+(define (lookup-set-var-from-label label)
+  (hash-table-get *label-to-set-var-table* label (lambda () #f)))
+
+;; symbol -> Label
+;; not used...
+(define (lookup-label-from-set-var setvar)
+  (hash-table-get *set-var-to-label-table* setvar (lambda () #f)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; misc encoders for hash table keys
 
@@ -291,6 +314,7 @@
    [(symbol? v)
     (string-append "sym:" (symbol->string v))]
    [(null? v) "empty-list"]
+   [(void? v) "void"]
    [else (error (format "Unknown value: ~a" v))]))
 
 ;; (nonempty-listof string) -> string
@@ -325,6 +349,7 @@
 
 ; Set-exp -> string
 (define (set-exp->string val)
+  ;;(printf "VAL: ~a~n" val)
   (let ([build-hash-from-sym
          (lambda (s sym)
            (make-hash-string s (symbol->string sym)))])
@@ -353,12 +378,16 @@
                             (setexp:Set-var-name (setexp:Rng-arity-set-var val)))]
       [(setexp:Rng-interval? val)
        (build-hash-from-sym (string-append "rng-interval" (encode-interval (setexp:Rng-interval-interval val))
-                            (number->string (setexp:Rng-interval-n val)))
+                                           (number->string (setexp:Rng-interval-n val)))
                             (setexp:Set-var-name (setexp:Rng-interval-set-var val)))]
       [(setexp:Car? val)
        (build-hash-from-sym "car" (setexp:Set-var-name (setexp:Car-set-var val)))]
       [(setexp:Cdr? val)
        (build-hash-from-sym "cdr" (setexp:Set-var-name (setexp:Cdr-set-var val)))]
+      [(setexp:Struct? val)
+       (apply make-hash-string
+        "struct:" (symbol->string (setexp:Struct-name val))
+        (map setexp:Set-var-name (setexp:Struct-fields val)))]
       [else (error (format "Unknown set expression: ~a" val))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constraint hash table manipulation
@@ -495,7 +524,7 @@
 
 ;; -> Label
 (define (create-label)
-  (setexp:make-Label (gensym)))
+  (setexp:make-Label (interned-gensym)))
 
 ;; (listof (symbol Set-var)) (listof symbol) (listof Set-var) -> (listof (symbol Set-var))
 (define (spidey-extend-env Gamma xs alphas)
@@ -503,10 +532,8 @@
   (append (map list xs alphas)
           Gamma))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constraint generation
-
-(define *whole-interval* (setexp:make-Interval 0 'omega))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; top level environment
+  
 ;; symbol -> Set-var
 ;; keeps track of name<->set-var association for top-level names
 (define get-top-level-var 
@@ -517,6 +544,9 @@
                         (let ([set-var (gen-set-var)])
                           (hash-table-put! top-level-vars var set-var)
                           set-var))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constraint generation
+
+(define *whole-interval* (setexp:make-Interval 0 'omega))
 
 ;(define (add-constraints-for-apply alpha) APPLY
 ;  (let ([alpha1 (gen-set-var)]
@@ -552,27 +582,134 @@
          ;;(printf "set-var: ~a~nGamma: ~a~nterm: ~a~n" set-var Gamma (zodiac:binding-orig-name (zodiac:bound-varref-binding term)))
          (add-constraint-with-bounds set-var alpha #t))]
       [(zodiac:define-values-form? term)
-       (unless (= 1 (length (zodiac:define-values-form-vars term)))
-         (error 'derive-top-term-constraints "define-values forms may only contain a single var"))
-       (let* ([var (car (zodiac:define-values-form-vars term))]
-              [lhs-var (get-top-level-var (zodiac:varref-var var))]
-              [rhs-var (derive-top-term-constraints Gamma (zodiac:define-values-form-val term))])
-         (associate-set-var-and-term (setexp:Set-var-name lhs-var) var)
-         (add-constraint-with-bounds rhs-var lhs-var #t))]
+       (if (zodiac:struct-form? (zodiac:define-values-form-val term))
+           (let* ([struct (zodiac:define-values-form-val term)]
+                  [struct-name (zodiac:symbol-orig-name (zodiac:struct-form-type struct))]
+                  [struct-name-string (symbol->string struct-name)]
+                  [field-names (map zodiac:symbol-orig-name (zodiac:struct-form-fields struct))]
+                  [n (length field-names)]
+                  [alphas-fields (mzlib:build-list n (lambda (n) (gen-set-var)))]
+                  [constructor-name (string->symbol (string-append "make-" struct-name-string))]
+                  [alpha-constructor (get-top-level-var constructor-name)]
+                  [constructor-label (create-label)]
+                  [predicate-name (string->symbol (string-append struct-name-string "?"))]
+                  [alpha-predicate (get-top-level-var predicate-name)]
+                  [predicate-label (create-label)]
+                  [selector-names (map (lambda (sym)
+                                         (string->symbol (string-append struct-name-string "-" (symbol->string sym))))
+                                       field-names)]
+                  [alphas-selectors (map get-top-level-var selector-names)]
+                  [selectors-labels (mzlib:build-list n (lambda (n) (create-label)))]
+                  [mutator-names (map (lambda (sym)
+                                        (string->symbol (string-append "set-" struct-name-string "-"
+                                                                       (symbol->string sym) "!")))
+                                      field-names)]
+                  [alphas-mutators (map get-top-level-var mutator-names)]
+                  [mutators-labels (mzlib:build-list n (lambda (n) (create-label)))]
+                  [beta-constructor (gen-set-var)]
+                  [beta-predicate (gen-set-var)]
+                  [betas-mutators (mzlib:build-list n (lambda (n) (gen-set-var)))]
+                  [arity-n (setexp:make-Arity (setexp:make-Interval n n) '())]
+                  [arity-1 (setexp:make-Arity (setexp:make-Interval 1 1) '())]
+                  [arity-2 (setexp:make-Arity (setexp:make-Interval 2 2) '())])
+             ;; constructor
+             (add-constraint-with-bounds constructor-label alpha-constructor #t)
+             (let loop ([i 1]
+                        [alphas-fields alphas-fields])
+               (when (<= i n)
+                 (add-constraint-with-bounds (setexp:make-Dom-arity arity-n i alpha-constructor) (car alphas-fields) #t)
+                 (loop (add1 i) (cdr alphas-fields))))
+             (add-constraint-with-bounds (setexp:make-Struct struct-name alphas-fields) beta-constructor #t)
+             (add-constraint-with-bounds beta-constructor (setexp:make-Rng-arity arity-n alpha-constructor) #t)
+             (associate-set-var-and-term (setexp:Set-var-name alpha-constructor) term)
+             (associate-label-and-lambda constructor-label term)
+             (associate-label-and-set-var constructor-label (setexp:Set-var-name alpha-constructor))
+             (associate-label-with-ars (setexp:Label-name constructor-label) arity-n)
+             ;; predicate
+             ;; no constraint on domain, since it accepts top
+             (add-constraint-with-bounds predicate-label alpha-predicate #t)
+             (add-constraint-with-bounds (setexp:make-Const #t) beta-predicate #t)
+             (add-constraint-with-bounds (setexp:make-Const #f) beta-predicate #t)
+             (add-constraint-with-bounds beta-predicate (setexp:make-Rng-arity arity-1 alpha-predicate) #t)
+             (associate-set-var-and-term (setexp:Set-var-name alpha-predicate) term)
+             (associate-label-and-lambda predicate-label term)
+             (associate-label-and-set-var predicate-label (setexp:Set-var-name alpha-predicate))
+             (associate-label-with-ars (setexp:Label-name predicate-label) arity-1)
+             ;; selectors
+             ;; no constraint on domains, but final debug phase should check that argument is actually a
+             ;; structure of the right type. XXX
+             (for-each (lambda (alpha-field alpha-selector selector-label)
+                         (add-constraint-with-bounds selector-label alpha-selector #t)
+                         (add-constraint-with-bounds alpha-field (setexp:make-Rng-arity arity-1 alpha-selector) #t)
+                         (associate-set-var-and-term (setexp:Set-var-name alpha-selector) term)
+                         (associate-label-and-lambda selector-label term)
+                         (associate-label-and-set-var selector-label (setexp:Set-var-name alpha-selector))
+                         (associate-label-with-ars (setexp:Label-name selector-label) arity-1))
+                       alphas-fields alphas-selectors selectors-labels)
+             ;; mutators
+             ;; no constraint on first argument, but final debug phase should check that argument is actually a
+             ;; structure of the right type. XXX
+             (for-each (lambda (alpha-mutator alpha-field beta-mutator mutator-label)
+                         (add-constraint-with-bounds mutator-label alpha-mutator #t)
+                         (add-constraint-with-bounds (setexp:make-Dom-arity arity-2 2 alpha-mutator) alpha-field #t)
+                         (add-constraint-with-bounds *Voidexp* beta-mutator #t)
+                         (add-constraint-with-bounds beta-mutator (setexp:make-Rng-arity arity-2 alpha-mutator) #t)
+                         (associate-set-var-and-term (setexp:Set-var-name alpha-mutator) term)
+                         (associate-label-and-lambda mutator-label term)
+                         (associate-label-and-set-var mutator-label (setexp:Set-var-name alpha-mutator))
+                         (associate-label-with-ars (setexp:Label-name mutator-label) arity-2))
+                       alphas-mutators alphas-fields betas-mutators mutators-labels))
+           (if (= 1 (length (zodiac:define-values-form-vars term)))
+               (let* ([var (car (zodiac:define-values-form-vars term))]
+                      [top-level-var (get-top-level-var (zodiac:varref-var var))]
+                      [rhs-var (derive-top-term-constraints Gamma (zodiac:define-values-form-val term))])
+                 (associate-set-var-and-term (setexp:Set-var-name top-level-var) var)
+                 (add-constraint-with-bounds rhs-var top-level-var #t))
+               (error 'derive-top-term-constraints "define-values forms may only contain a single var")))
+       (add-constraint-with-bounds *Voidexp* alpha #t)]
       [(zodiac:top-level-varref/bind/unit? term)
+       ;; XXX we should have a function is-primitive? and do all the primitive stuff inside add-constraints-from-type type
        (let* ([name (zodiac:varref-var term)]
               [type (cft:lookup-prim-type name)]
-              [label (cft:lookup-prim-label name)])
-         (associate-label-and-lambda label term)
+              [label (cft:lookup-prim-label name)]) ;; TOPLEVEL
          (if type ;;(or type (mzlib:symbol=? name 'apply)) APPLY
              ;; primitive
-             (begin
+             (let (;;[prim-setvar (get-top-level-var name)]
+                   [label (create-label)]
+                   )
+               ;; XXX
+               ;;(set! alpha prim-setvar)
+               (associate-set-var-and-term (setexp:Set-var-name alpha) term)
+               (associate-label-and-lambda label term)
+               (associate-label-and-set-var label (setexp:Set-var-name alpha))
                (add-constraint-with-bounds label alpha #t)
 ;               (if (mzlib:symbol=? name 'apply) APPLY
 ;                   (add-constraints-for-apply alpha)
+               ;; XXX This will miserably fail as soon as we come accross a primitive that doesn't have an
+               ;; arrow type (or an arrow type inside a scheme type). Does such a thing exist ? The current
+               ;; Mrspidey considers nil and true/false as primitives...
+               (associate-label-with-ars (setexp:Label-name label) (cft:get-arity type))
                (cft:add-constraints-from-type type alpha #t (make-hash-table))) ;;) APPLY
-             ;; variable
-             (add-constraint-with-bounds (get-top-level-var name) alpha #t)))]
+               
+;               ;; TOPLEVEL
+;               ;; primitives should always be associated with the same set-var, so the type for the primitive
+;               ;; is computed correctly
+;               (set! alpha (get-top-level-var name))
+;               ;; The primitive's setvar is associated to the primitive's label, and the generation of constraints
+;               ;; for the primitive is all done in the init-prim function.
+;               ;; XXX label->term is overwritten each time we see the primitive, but term->label is ok
+;               ;; XXX this creates a bug if a primitive has an arity error, because it doesn't have any
+;               ;; term actually associated with it. This problem should disappear when the "doesn't underline
+;               ;; the right thing" problem disappears... Maybe...
+;               (associate-label-and-lambda (cft:lookup-prim-label name) term)
+;               (when (mzlib:symbol=? name 'apply) APPLY
+;                 (add-constraints-for-apply alpha)
+;                 ) APPLY
+;               ) TOPLEVEL
+             
+             ;; variable, XXX should test somewhere at the end whether it's bound
+             (add-constraint-with-bounds (get-top-level-var name) alpha #t)
+             ))]
       [(zodiac:case-lambda-form? term)
        (let* (;;[xs-l (map (lambda (l) (map zodiac:binding-orig-name (zodiac:arglist-vars l))) (zodiac:case-lambda-form-args term))]
               [xs-l (zodiac:case-lambda-form-args term)]
@@ -609,6 +746,7 @@
                    xs-l alphas-l)
          ;;(printf "betas: ~a~n" betas)
          (associate-label-and-lambda label term)
+         (associate-label-and-set-var label (setexp:Set-var-name alpha))
          (add-constraint-with-bounds label alpha #t)
          (for-each (lambda (alphas arity index beta)
                      (let loop ([j 1]
@@ -702,6 +840,43 @@
                                              #t)
                  (loop-j (add1 j) (cdr loc-betas))))
              (loop-i (add1 i)))))]
+      [(zodiac:if-form? term)
+       (let ([test (zodiac:if-form-test term)]
+             [then (zodiac:if-form-then term)]
+             [else (zodiac:if-form-else term)])
+         (if #f ;; (and (zodiac:app? test)
+;                  ;; it's an app
+;                  (let ([fun (zodiac:app-fun test)]
+;                        [args (zodiac:app-args test)])
+;                    (and (zodiac:top-level-varref/bind/unit? fun)
+;                         ;; and the app's function is a top level variable
+;                         (let* ([name (zodiac:varref-var term)]
+;                                [type (cft:lookup-prim-type name)])
+;                           (and type ;; it's a primitive
+;                                (predicate? name) ;; It's a predicate
+;             
+;
+;                                XXX what happens if user redefines a predicate ?
+;                                
+;               (predicate? (zodiac:app-fun test)
+;                   
+;                         (zodiac:top-level-varref/bind/unit? term)
+;       (let* ([name (zodiac:varref-var term)]
+;              [type (cft:lookup-prim-type name)]
+;              [label (cft:lookup-prim-label name)])
+;         (associate-label-and-lambda label term)
+;         (associate-label-and-set-var label ?)
+;         (if type ;;(or type (mzlib:symbol=? name 'apply)) APPLY
+;             ;; primitive  
+;                           
+;                           
+;        
+             (void)
+             (let ([test-alpha (derive-top-term-constraints Gamma test)]
+                   [then-alpha (derive-top-term-constraints Gamma then)]
+                   [else-alpha (derive-top-term-constraints Gamma else)])
+               (add-constraint-with-bounds then-alpha alpha #t)
+               (add-constraint-with-bounds else-alpha alpha #t))))]
       [else (error 'derive-top-term-constraints "unknown term ~a~n" term)]
            )
     alpha))
@@ -710,7 +885,7 @@
 
 ;; Set-exp -> boolean
 (define (constant-set-exp? set-exp)
-  (or (setexp:Const? set-exp) (setexp:Label? set-exp) (setexp:Token? set-exp)))
+  (or (setexp:Const? set-exp) (setexp:Label? set-exp) (setexp:Token? set-exp) (setexp:Struct? set-exp)))
 
 ;; Set-exp -> boolean
 (define (selector? set-exp)
@@ -760,6 +935,7 @@
 ;; as an upper bound, and returns all the lower bounds that
 ;; satisfy "pred"
 (define (lookup-lo-and-filter pred set-exp)
+  ;;(printf "SETEXP: ~a~n" set-exp)
   (mzlib:filter pred (cadr (lookup-in-constraint-table set-exp))))
 
 ;; (Set-exp -> boolean) Set-exp -> (listof Set-exp)
@@ -984,6 +1160,8 @@
          los-other)))
     ))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constraint pretty printing
+
 ;; Interval -> void
 ;; Interval pretty printer
 (define (pp-interval int)
@@ -1031,7 +1209,21 @@
     [(setexp:Car? setexp)
      (printf "Car(~a)" (setexp:Set-var-name (setexp:Car-set-var setexp)))]
     [(setexp:Cdr? setexp)
-     (printf "Cdr(~a)" (setexp:Set-var-name (setexp:Cdr-set-var setexp)))]))
+     (printf "Cdr(~a)" (setexp:Set-var-name (setexp:Cdr-set-var setexp)))]
+    [(setexp:Struct? setexp)
+     (let ([fields (setexp:Struct-fields setexp)])
+       (apply printf
+              (apply string-append "Struct:~a("
+                     (if (null? fields)
+                         (list ")")
+                         (letrec ([pp-list (lambda (l)
+                                             (if (null? (cdr l))
+                                                 (list "~a)")
+                                                 (cons "~a " (pp-list (cdr l)))))])
+                           (pp-list fields))))
+              (setexp:Struct-name setexp)
+              (map setexp:Set-var-name fields)))]
+    [else (printf "unknown set expression: ~a" setexp)]))
     
 ;; (listof constraint) -> void
 ;; constraints pretty printer

@@ -15,6 +15,8 @@
 (define-struct Type-Rec (bindings type))
 ;; types = (listof Type)
 (define-struct Type-Union (types))
+;; name = symbol, fields = (listof Type)
+(define-struct Type-Struct (name fields))
 ;;
 (define-struct Type-Empty ())
 

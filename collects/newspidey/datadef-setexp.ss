@@ -22,6 +22,8 @@
 (define-struct Car (set-var))
 ;; set-var = Set-var
 (define-struct Cdr (set-var))
+;; name = symbol, fields = (listof Set-var)
+(define-struct Struct (name fields))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; arity information
 

@@ -12,6 +12,7 @@
    (struct Label (name))
    (struct Car (set-var))
    (struct Cdr (set-var))
+   (struct Struct (name fields))
    
    (struct Interval (lo hi))
    (struct Arity (req proh))))
@@ -24,6 +25,7 @@
    (struct Type-Binding (set-var type))
    (struct Type-Rec (bindings type))
    (struct Type-Union (types))
+   (struct Type-Struct (name fields))
    (struct Type-Empty ())
    
    *empty-type*))
@@ -31,14 +33,17 @@
 (define-signature newspidey:constraints-from-type^
   (lookup-prim-type
    lookup-prim-label
-   add-constraints-from-type
+   add-constraints-from-type ;; TOPLEVEL
+   get-arity
    init-prim
    prim-init-list))
 
 (define-signature newspidey:constraints-gen-and-prop^
-  (*pair-token*
+  (create-label
+   *pair-token*
    gen-set-var
    associate-label-with-ars
+   ;;associate-label-and-set-var ;; TOPEVEL
    add-constraint-with-bounds
    lookup-hi-and-filter
    lookup-ars-from-label
@@ -47,10 +52,19 @@
    derive-top-term-constraints
    propagate-constraints
    lookup-term-from-set-var
+   lookup-set-var-from-term
    *location-list*
    lookup-lo-and-filter
    get-all-set-vars
-   lookup-set-vars-from-dom-int))
+   lookup-set-vars-from-dom-int
+   lookup-set-var-from-label
+   satisfies
+   ;;get-top-level-var ;; TOPLEVEL
+   
+   ;; debug
+   ;;*the-constraints*
+   ;;pp-constraints
+   ))
 
 (define-signature newspidey:debug-arity^
   (*bad-apps*

@@ -28,6 +28,9 @@
           (tr:init-set-var-to-type)
           (tr:type-reduce-rec-bindings)
 	  (for-each da:debug-arity terms)
+          
+          ;; debug
+          ;;(cgp:pp-constraints cgp:*the-constraints*)
           ))))
 
   ) ;; unit/sig

@@ -99,55 +99,99 @@
                 (type:make-Type-Cons omega-car omega-cdr)))]
          [omega-arrow
           (let* ([labels (cgp:lookup-hi-and-filter setexp:Label? alpha)])
-            (if (null? labels)
-                type:*empty-type*
-                (type:make-Type-Union
-                 (let* ([arities (apply append (map (lambda (label)
-                                                       (cgp:lookup-ars-from-label (setexp:Label-name label)))
-                                                     labels))]
-                        ;;[foo (printf "arities: ~a~n" arities)]
-                        [deltas (set-var-upper-bounds alpha '())]
-;                        [doms-omega (apply APPLY
-;                                     append
-;                                     (map
-;                                      (lambda (delta)
-;                                        (cgp:lookup-hi-and-filter
-;                                         setexp:Set-var?
-;                                         (setexp:make-Dom-interval (setexp:make-Interval 'star 'star) 0 delta)))
-;                                      deltas))]
-			)
-                   ;;(printf "alpha: ~a~nlabels: ~a~ndeltas: ~a~n" alpha labels deltas)
-                   (map
-                    (lambda (arity)
-                      (let* ([int (setexp:Arity-req arity)]
-                             [n (setexp:Interval-lo int)]
-                             [m (setexp:Interval-hi int)]
-                             [max-j (if (eq? m 'omega) (add1 n) n)]
-                             [omega-doms (let loop ([j 1])
-                                           (if (> j max-j)
-                                               '()
-                                               (cons
-                                                (types->type (remove-duplicates-eq
-                                                 (apply
-                                                  append
-                                                  ;; doms-omega APPLY
-                                                  (map
-                                                   (lambda (delta)
-;                                                     (cgp:lookup-hi-and-filter
-;                                                      setexp:Set-var?
-;                                                      (setexp:make-Dom-interval int j delta))
-                                                     ;; no need to filter, we filter before calling
-                                                     ;; relate-set-var-to-dom in add-contraint-and-update-tables
-                                                     (cgp:lookup-set-vars-from-dom-int int delta j)
-                                                     )
-                                                   deltas))))
-                                                (loop (add1 j)))))]
-                             [omega-rng (lookup-filtered-set-exp setexp:Set-var? (setexp:make-Rng-arity arity alpha))])
-                        ;;(printf "max-j: ~a~nomega-doms: ~a~n" max-j omega-doms)
-                        ;;(printf "TYPE: ~a -> ~a~n" omega-doms omega-rng)
-                        (type:make-Type-Arrow omega-doms omega-rng)))
-                    arities)))))])
-    (type:make-Type-Union (list omega-c omega-cons omega-arrow))))
+            ;;(printf "labels: ~a~n" labels)
+            (types->type
+             (apply append
+                    (map
+                         (lambda (label)
+                           (let* ([arities (cgp:lookup-ars-from-label (setexp:Label-name label))]
+                                  [label-alpha (setexp:make-Set-var
+                                                ;; structures are not associated with a lambda, but structure
+                                                ;; related functions have labels
+                                                ;;(cgp:lookup-set-var-from-term (cgp:lookup-lambda-from-label label))
+                                                ;; we don't compute the "right" type here for primitives, because
+                                                ;; all primitive applications are independant. XXX
+                                                (cgp:lookup-set-var-from-label label)
+                                                )]
+                                  ;;[foo (printf "label: ~a~narities: ~a~nlabel-alpha: ~a~n" label arities label-alpha)]
+                                  ;;[goo (cgp:pp-constraints cgp:*the-constraints*)]
+                                  [deltas (set-var-upper-bounds label-alpha '())]
+;                                  [doms-omega (apply APPLY
+;                                                     append
+;                                                     (map
+;                                                      (lambda (delta)
+;                                                        (cgp:lookup-hi-and-filter
+;                                                         setexp:Set-var?
+;                                                         (setexp:make-Dom-interval (setexp:make-Interval 'star 'star)
+;                                                                                   0 delta)))
+;                                                      deltas))]
+                                  )
+                             ;;(printf "deltas: ~a~n" deltas)
+                             (map
+                              (lambda (arity)
+                                (let* ([int (setexp:Arity-req arity)]
+                                       [n (setexp:Interval-lo int)]
+                                       [m (setexp:Interval-hi int)]
+                                       [max-j (if (eq? m 'omega) (add1 n) n)]
+                                       [sat (cgp:satisfies int max-j arity)]
+                                       ;;[foo (printf "int: ~a~nn: ~a~narity: ~a~nsat: ~a~n~n" int n arity sat)]
+                                       [omega-doms
+                                        (let loop ([j 1])
+                                          (if (> j max-j)
+                                              '()
+                                              (cons
+                                               (if sat
+                                                   (types->type
+                                                    (remove-duplicates-eq
+                                                     (apply
+                                                      append
+                                                      ;; doms-omega APPLY
+                                                      (map
+                                                       (lambda (delta)
+;                                                         (cgp:lookup-hi-and-filter
+;                                                          setexp:Set-var?
+;                                                          (setexp:make-Dom-interval int j delta))
+                                                         ;; no need to filter, we filter before calling
+                                                         ;; relate-set-var-to-dom in add-contraint-and-update-tables
+                                                         (cgp:lookup-set-vars-from-dom-int int delta j)
+                                                         )
+                                                       deltas))))
+                                                   type:*empty-type*)
+                                               (loop (add1 j)))))]
+;                                       [omega-doms
+;                                        (let loop ([j 1])
+;                                          (if (> j max-j)
+;                                              '()
+;                                              (cons
+;                                               (types->type
+;                                                (cgp:lookup-lo-and-filter
+;                                                 setexp:Set-var?
+;                                                 (setexp:make-Dom-arity arity j alpha)))
+;                                               (loop (add1 j)))))]
+                                       [omega-rng (lookup-filtered-set-exp setexp:Set-var?
+                                                                           (setexp:make-Rng-arity arity label-alpha))]
+;                                       [omega-rng (types->type (remove-duplicates-eq
+;                                                                (apply
+;                                                                 append
+;                                                                 (map
+;                                                                  (lambda (delta)
+;                                                                    (cgp:lookup-lo-and-filter
+;                                                                     setexp:Set-var?
+;                                                                     (setexp:make-Rng-interval int n delta)))
+;                                                                  deltas))))]
+                                       )
+                                  ;;(printf "max-j: ~a~nomega-doms: ~a~n" max-j omega-doms)
+                                  ;;(printf "TYPE: ~a -> ~a~n" omega-doms omega-rng)
+                                  (type:make-Type-Arrow omega-doms omega-rng)))
+                              arities)))
+                         labels))))]
+         [omega-struct (let ([structs (cgp:lookup-hi-and-filter setexp:Struct? alpha)])
+                         (types->type
+                          (map (lambda (struct)
+                                 (type:make-Type-Struct (setexp:Struct-name struct)
+                                                        (setexp:Struct-fields struct)))
+                               structs)))])
+    (type:make-Type-Union (list omega-c omega-cons omega-arrow omega-struct))))
   
 ; (listof type) -> type
 ; implements Set2Type from TR
@@ -168,7 +212,7 @@
                                      (type:make-Type-Binding
                                       (setexp:make-Set-var name)
                                       type)))])
-(set! rec-bindings (let loop ([cur-bindings bindings]
+    (set! rec-bindings (let loop ([cur-bindings bindings]
                                   [accum '()])
                          (if (null? cur-bindings)
                              accum
@@ -225,7 +269,11 @@
       [(type:Type-Union? type)
        (remove-duplicates-eq
         (map-and-flatten (type:Type-Union-types type)))]
-      [(type:Type-Empty? type) '()])))
+      [(type:Type-Struct? type)
+       (remove-duplicates-eq
+        (map-and-flatten (type:Type-Struct-fields type)))]
+      [(type:Type-Empty? type) '()]
+      [else (error "extract-set-vars: unknown type: ~a~n" type)])))
 
 
 ; implements type reduction rules
@@ -284,7 +332,11 @@
      (type:make-Type-Arrow (map type-reduce (type:Type-Arrow-doms type))
                            (type-reduce (type:Type-Arrow-rng type)))]
     [(setexp:Const? type) type]
-    [(type:Type-Empty? type) type]))
+    [(type:Type-Struct? type)
+     (type:make-Type-Struct (type:Type-Struct-name type)
+                            (map type-reduce (type:Type-Struct-fields type)))]
+    [(type:Type-Empty? type) type]
+    [else (error "type-reduce: unknown type: ~a~n" type)]))
 
 ; type sym type -> type
 (define (type-subst type alpha omega)
@@ -315,6 +367,11 @@
      (if (mzlib:symbol=? (setexp:Set-var-name type) alpha)
          omega
          type)]
+    [(type:Type-Struct? type)
+     (type:make-Type-Struct (type:Type-Struct-name type)
+                            (map (lambda (type) 
+                                   (type-subst type alpha omega))
+                                 (type:Type-Struct-fields type)))]
     [(setexp:Const? type) type]
     [(type:Type-Empty? type) type]
     [else (error "type-subst: unknown type: ~a~n" type)]))

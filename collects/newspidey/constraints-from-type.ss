@@ -50,17 +50,24 @@
 (define (init-prim prim-entries)
   (for-each
    (lambda (prim-entry)
-     (let ([prim-name (car prim-entry)]
-           [prim-type (cadr prim-entry)]
-           [label (setexp:make-Label (gensym))])
+     (let* ([prim-name (car prim-entry)]
+            [prim-type (cadr prim-entry)]
+            [label (cgp:create-label)]
+            ;;[setvar (cgp:get-top-level-var prim-name)] ;; register primitive with top-level at the same time TOPLEVEL
+            )
        (add-prim-type prim-name prim-type)
        (add-prim-label prim-name label)
+;       (cgp:associate-label-and-set-var label (setexp:Set-var-name setvar)) TOPLEVEL
+;       (cgp:add-constraint-with-bounds label setvar #t)
+;       (add-constraints-from-type (lookup-prim-type prim-name) setvar #t (make-hash-table))
        (let ([arg-list (cond
                          [(and (type:Type-Scheme? prim-type) (type:Type-Arrow? (type:Type-Scheme-type prim-type)))
                           (type:Type-Arrow-doms (type:Type-Scheme-type prim-type))]
                          [(type:Type-Arrow? prim-type)
                           (type:Type-Arrow-doms prim-type)]
                          [else #f])])
+         ;; XXX useless stuff, new labels are now created on the fly each time we see a primitive applied
+         ;; get rid of associate-label-with-ars fron cgp sig, then.
          (when arg-list
            (let ([len (length arg-list)])
              (cgp:associate-label-with-ars
@@ -139,6 +146,24 @@
                (type:Type-Arrow-doms type))
      (create-set-vars-lists type-vars->set-vars (type:Type-Arrow-rng type) vars flag type-var->set-var)]
     [else (error 'create-set-vars-lists "unkown type: ~a~n" type)]))
+
+
+;; Type -> Arity
+;; Gets the arity from a primitive type, or #f otherwise.
+;; Was originaly directly computed inside add-constraints-from-type, but we need now an interface
+;; to this function so it can be used in constraints-gen-and-prop.ss to associate the arity with
+;; the label created on the fly when we see a primitive being used, so debug-arity won't flag the
+;; use as an arity error.
+(define (get-arity type)
+  (cond
+    [(type:Type-Arrow? type)
+     (let* ([len (length (type:Type-Arrow-doms type))])
+       (setexp:make-Arity (setexp:make-Interval len len) '()))]
+    [(type:Type-Scheme? type)
+     (get-arity (type:Type-Scheme-type type))]
+    [else
+     (error 'get-arity "type with no arity: ~a" type)]))
+
 
 ;; Type Set-var boolean (hash-table-of Type-var Set-var) -> boolean
 ;; generates all the constraints associated with a given type.

@@ -17,18 +17,17 @@
             (lambda (l)
               (if (null? l)
                   '()
-                  (let* ([func (cadr l)]
-                         [lambda-symbol (car (zodiac:read-object (zodiac:origin-how (zodiac:zodiac-origin func))))] ;; XXX bug here when arity error ?
-                         [start-loc (zodiac:zodiac-start lambda-symbol)]
-                         [end-loc (zodiac:zodiac-finish lambda-symbol)])
+                  (let* ([func (car l)]
+                         [start-loc (zodiac:zodiac-start func)]
+                         [end-loc (zodiac:zodiac-finish func)])
                     (cons (list start-loc end-loc 'red)
-                          (get-prims-l (cddr l))))))])
+                          (get-prims-l (cdr l))))))])
     (get-prims-l da:*bad-apps*)))
 
 ;; symbol -> (union #f zodiac:location)
 ;; returns start location of term associated with set-var (represented as a symbol)
 (define (get-loc sym)
-  (let ([term (cgp:lookup-term-from-set-var sym)])
+  (let ([term (cgp:lookup-term-from-set-var sym)]) ;; XXX this should be a list because of top level redefinitions
     (if term
         (zodiac:zodiac-start term)
         #f)))
@@ -99,8 +98,10 @@
       ")")]
     [(type:Type-Union? type)
      (string-append
-      "(union "
-      (apply string-append (map pp-type (type:Type-Union-types type)))
+      "(union"
+      (apply string-append (map (lambda (t)
+                                  (string-append " " (pp-type t)))
+                                (type:Type-Union-types type)))
       ")")]
     [(setexp:Const? type)
      (let ([val (setexp:Const-val type)])
@@ -109,9 +110,22 @@
          [(string? val) "str"]
          [(symbol? val) "symbol"]
          [(null? val) "null"]
+         [(boolean? val) (if val "true" "false")]
+         [(void? val) "void"]
          [else (error 'pp-type "unknown constant type ~a" type)]))]
+    
+    
+    [(type:Type-Struct? type)
+     (string-append
+      "(struct:"
+      (symbol->string (type:Type-Struct-name type))
+      (apply string-append (map (lambda (t)
+                                  (string-append " " (pp-type t)))
+                                (type:Type-Struct-fields type)))
+      ")")]
     [(type:Type-Empty? type)
-     "empty"]))
+     "empty"]
+    [else (error "pptype: unknown type: ~a" type)]))
 
 ;; symbol -> (listof symbol)
 ;; returns list of children of set-var (represented as symbol)
@@ -121,6 +135,7 @@
   
 ;; symbol -> (listof symbol)
 ;; returns list of parents of set-var (represented as symbol)
+;; XXX should recur until the returned set-vars are associated with terms
 (define (parents sym)
   (let ([par-set-vars (cgp:lookup-hi-and-filter setexp:Set-var? (setexp:make-Set-var sym))])
     (map setexp:Set-var-name par-set-vars)))
@@ -141,6 +156,8 @@
         [(mzlib:symbol=? sym 'pair)
          (type:Type-Cons? type)]
         [(mzlib:symbol=? sym 'procedure)
-         (type:Type-Arrow? type)])))
+         (type:Type-Arrow? type)]
+        ;; XXX struct ?
+        [else (error "has=member?: unknown predicate: ~a" sym)])))
 
   ) ;; unit/sig

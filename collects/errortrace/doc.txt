@@ -232,6 +232,30 @@ The import signature contains these names:
   expression. Use `st-mark-source' to extract V from the result of the
   expression.
 
+> test-coverage-enabled : (parameter boolean)
+
+  This parameter determines if the test coverage annotation
+  is inserted into the code. This parameter controls how
+  compilation happens -- it does not affect the dynamic
+  behavior of the already compiled code. If the parameter is
+  set, calls to test-covered are inserted into the code (and
+  initialize-test-coverage-point is called during
+  compilation). If not, no calls to test-covered are inserted.
+
+> test-covered : symbol -> void
+
+  During execution of the program, this is called for each
+  point with the key for that program point that was passed
+  to initialize-test-coverage-point.
+
+> initialize-test-coverage-point : symbol syntax -> void
+
+  During compilation of the program, this function is called
+  with each sub-expression of the program. The first
+  argument is a special key used to identify this program
+  point. The second argument is the syntax of this program
+  point. 
+
 > profile-key : symbol
 
   only used for profiling paths
@@ -267,3 +291,4 @@ The import signature contains these names:
   Note that register-profile-start and register-profile-done
   can be called in a nested manner; in this case, the result
   of register-profile-point should be #f.
+

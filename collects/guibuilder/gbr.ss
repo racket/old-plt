@@ -18,16 +18,16 @@
 
   ; Keep in order of choice items:
   (define FRAME-MODE 0)
-  (define MODAL-DIALOG-MODE 1)
-  (define DIALOG-MODE 2)
-  (define PANEL-MODE 3)
+  (define DIALOG-MODE 1)
+  (define PANEL-MODE 2)
 
   (define -FIRST-MODE- FRAME-MODE)
   (define -LAST-MODE- PANEL-MODE)
 
   (define make-one-line/callback-edit
     (opt-lambda (parent label cb [v ""])
-      (make-object mred:text% label parent cb v)))
+      (make-object mred:text-field% label parent 
+		   (lambda (t e) (cb (send t get-value))) v)))
 
   (define make-number-control
     (lambda (parent label value get-min get-max set-v)
@@ -40,27 +40,30 @@
 		(send vl set-label (number->string n))
 		(set-v n))]
 	     [b (make-object mred:button%
+			     "Set..."
 			     p
 			     (lambda (b e)
 			       (let ([v (mred:get-text-from-user 
 					 (format "~a, in [~a, ~a]:" label (get-min) (get-max))
 					 label
+					 #f
 					 (number->string value))])
 				 (when v
 				   (let ([n (string->number v)])
-				     (if (and (integer? n) (exact? n) (>= n (get-min)) (<= n (get-max)))
+				     (if (and (integer? n) (exact? n) 
+					      (>= n (get-min)) (<= n (get-max)))
 					 (set-value n)
-					 (mred:message-box "Error" "Bad value"))))))
-			     "Set...")])
+					 (mred:message-box "Error" "Bad value")))))))])
 	(send vl set-label (number->string value))
-	(make-object (class null ()
+	(make-object (class object% ()
 		       (public
 			 [get-val (lambda () value)]
 			 [check (lambda () 
 				  (when (< value (get-min))
 				    (set-value (get-min)))
 				  (when (> value (get-max))
-				    (set-value (get-max))))]))))))
+				    (set-value (get-max))))])
+		       (sequence (super-init)))))))
   
   (define new-name (lambda (base) (symbol->string (gensym base))))
   
@@ -79,13 +82,10 @@
 	    (cons (send stream get-string) (loop (sub1 n)))))))
 
   (define (with-clipping-region dc x y w h thunk)
-    (let ([cx (box 0)][cy (box 0)][cw (box 0)][ch (box 0)])
-      (send dc get-clipping-region cx cy cw ch)
-      (send dc set-clipping-region x y w h)
+    (let ([r (send dc get-clipping-region)])
+      (send dc set-clipping-rect x y w h)
       (thunk)
-      (if (positive? (unbox cw))
-	  (send dc set-clipping-region (unbox cx) (unbox cy) (unbox cw) (unbox ch))
-	  (send dc destroy-clipping-region))))
+      (send dc set-clipping-region r)))
   
   (define gb:snip%
     (class mred:snip% ([lm 5][tm 5][rm 5][bm 5])
@@ -147,7 +147,7 @@
 	       [on-main (lambda (x) x)]
 	       [find-control (lambda (tag) #f)])
 	     (sequence
-	       (super-init null (format "~a Settings" kind) -1 -1 200 10))
+	       (super-init (format "~a Settings" kind) #f 200 10))
 	     (private
 	       [main (on-main (make-object mred:vertical-panel% this))])
 	     (public
@@ -159,21 +159,21 @@
 	     (override
 	       [on-close (lambda () (do-on-close))])
 	     (sequence
-	       (send controls minor-align-left)
+	       (send controls set-alignment 'left 'center)
 	       (let* ([p (make-object mred:vertical-panel% main)]
 		      [make-sc
 		       (lambda (name set)
 			 (make-object mred:check-box% 
+				      name
 				      p
 				      (lambda (c e)
 					(set (send c get-value))
-					(gb-need-recalc-size))
-				      name))]
+					(gb-need-recalc-size))))]
 		      [xsc (make-sc "Allow Horizontal Stretching"
 				    (lambda (on?) (set! x-stretch? on?)))]
 		      [ysc (make-sc "Allow Vertical Stretching"
 				    (lambda (on?) (set! y-stretch? on?)))])
-		 (send p minor-align-left)
+		 (send p set-alignment 'left 'center)
 		 (send xsc set-value x-stretch?)
 		 (send ysc set-value y-stretch?)
 		 (let ([p (make-object mred:vertical-panel% p)])
@@ -444,7 +444,7 @@
 	 (lambda (v)
 	   `(-:init-stretch ,v ,x-stretch? ,y-stretch?)))
 
-	(gb-get-default-class (lambda () 'mred:vertical-panel%))
+	(gb-get-default-class (lambda () 'vertical-panel%))
 	(gb-aux-instantiate
 	 (lambda ()
 	   (list
@@ -490,12 +490,12 @@
 	(refresh
 	 (lambda ()
 	   (let ([admin (get-admin)])
-	     (unless (null? admin)
+	     (when admin
 	       (send admin needs-update this 0 0 w h)))))
 	(resized
 	 (lambda ()
 	   (let ([admin (get-admin)])
-	     (unless (null? admin)
+	     (when admin
 	       (send admin resized this #t))))))
 
       (override
@@ -505,25 +505,25 @@
 	   (when need-recalc?
 	     (set! need-recalc? #f)
 	     (gb-recalc-size dc))
-	   (if (not (null? hbox))
-	       (set-box! hbox h))
-	   (if (not (null? wbox))
-	       (set-box! wbox w))
-	   (if (not (null? descentbox))
-	       (set-box! descentbox 0))
-	   (if (not (null? spacebox))
-	       (set-box! spacebox 0))
-	   (if (not (null? rspacebox))
-	       (set-box! rspacebox 0))
-	   (if (not (null? lspacebox))
-	       (set-box! lspacebox 0))))
+	   (when hbox
+	     (set-box! hbox h))
+	   (when wbox
+	     (set-box! wbox w))
+	   (when descentbox
+	     (set-box! descentbox 0))
+	   (when spacebox
+	     (set-box! spacebox 0))
+	   (when rspacebox
+	     (set-box! rspacebox 0))
+	   (when lspacebox
+	     (set-box! lspacebox 0))))
 	(draw
 	 (lambda (dc x y . other)
 	   (draw-box dc x y w h)
 	   (when (or with-border? hilited?)
-		 (draw-box dc (add1 x) (add1 y) (- w 2) (- h 2)))
+	     (draw-box dc (add1 x) (add1 y) (- w 2) (- h 2)))
 	   (when (and with-border? hilited?)
-		 (draw-box dc (+ 2 x) (+ 2 y) (- w 4) (- h 4)))))
+	     (draw-box dc (+ 2 x) (+ 2 y) (- w 4) (- h 4)))))
 	(copy
 	 (lambda ()
 	   (let ([o (make-object (object-class this) lm tm rm bm)])
@@ -543,8 +543,8 @@
 	   (send stream << name)
 	   (send stream << (if x-stretch? 1 0))
 	   (send stream << (if y-stretch? 1 0))
-	   (send stream << (inexact->exact w))
-	   (send stream << (inexact->exact h))
+	   (send stream << (floor (inexact->exact w)))
+	   (send stream << (floor (inexact->exact h)))
 	   (send stream << horizontal-child-alignment)
 	   (send stream << vertical-child-alignment)
 	   (send stream << (if with-border? 1 0))
@@ -624,29 +624,29 @@
 		 (apply super-init args))
 	       (public
 		 [hca-choice
-		  (make-object mred:choice% controls 
+		  (make-object mred:choice%
+			       "Horizontal Align Children:"
+			       '("Left" "Center" "Right")
+			       controls 
 			       (lambda (r e)
 				 (set-horizontal-child-alignment
 				  (add1 (send r get-selection)))
-				 (gb-need-recalc-size))
-			       "Horizontal Align Children:"
-			       -1 -1 -1 -1
-			       '("Left" "Center" "Right"))]
+				 (gb-need-recalc-size)))]
 		 [vca-choice
-		  (make-object mred:choice% controls 
+		  (make-object mred:choice% 
+			       "Vertical Align Children:"
+			       '("Top" "Center" "Bottom")
+			       controls 
 			       (lambda (r e)
 				 (set-vertical-child-alignment
 				  (add1 (send r get-selection)))
-				 (gb-need-recalc-size))
-			       "Vertical Align Children:"
-			       -1 -1 -1 -1
-			       '("Top" "Center" "Bottom"))]
+				 (gb-need-recalc-size)))]
 		 [border-check
-		  (make-object mred:check-box% controls
+		  (make-object mred:check-box%
+			       "Show Border" controls
 			       (lambda (c e)
 				 (set-with-border (send c get-value))
-				 (gb-need-recalc-size))
-			       "Show Border")])
+				 (gb-need-recalc-size)))])
 	       (sequence
 		 (send hca-choice stretchable-width #f)
 		 (send hca-choice set-selection (sub1 horizontal-child-alignment))
@@ -664,28 +664,19 @@
 	    (append (super-gb-get-class-defines)
 		    (list `[-:init-panel
 			    (lambda (c ha va)
-			      ((ivar/proc c ha))
-			      ((ivar/proc c va))
+			      (send c set-alignment ha va)
 			      c)])))]
 	 [gb-wrap-instantiate
 	  (lambda (v)
 	    `(-:init-panel ,(super-gb-wrap-instantiate v)
-			   ',(symbol-append
-			      (if horizontal-is-major?
-				  'major
-				  'minor)
-			      (case horizontal-child-alignment
-				[(1) '-align-left]
-				[(2) '-align-center]
-				[(3) '-align-right]))
-			   ',(symbol-append
-				 (if horizontal-is-major?
-				     'minor
-				     'major)
-				 (case horizontal-child-alignment
-				   [(1) '-align-top]
-				   [(2) '-align-center]
-				   [(3) '-align-bottom]))))]))))
+			   ',(case horizontal-child-alignment
+			       [(1) 'left]
+			       [(2) 'center]
+			       [(3) 'right])
+			   ',(case horizontal-child-alignment
+			       [(1) 'top]
+			       [(2) 'center]
+			       [(3) 'bottom])))]))))
 
   (define gb:vertical-panel-snip% 
     (class-asi (gb:make-panel-params-snip% gb:snip%)
@@ -765,7 +756,7 @@
 	 (lambda (fx fy cx cy)
 	   (< fx cx)))
 	
-	[gb-get-default-class (lambda () 'mred:horizontal-panel%)])))
+	[gb-get-default-class (lambda () 'horizontal-panel%)])))
 
   (register-class gb:horizontal-panel-snip% "gb:horizontal-panel")
   
@@ -789,7 +780,7 @@
 	   (lambda ()
 	     (class (super-get-frame%) args
 	       (inherit controls)
-	       (public
+	       (override
 		 [kind deflabel])
 	       (sequence
 		 (apply super-init args))
@@ -806,11 +797,9 @@
 	     label)]
 	  [get-label-size
 	   (lambda (dc)
-	     (let ([xb (box 0.0)]
-		   [yb (box 0.0)])
-	       (send dc get-text-extent label xb yb null null
-		     (send (get-style) get-font))
-	       (values (unbox xb) (unbox yb))))]
+	     (let-values ([(w h d a) (send dc get-text-extent label 
+					   (send (get-style) get-font))])
+	       (values w h)))]
 	  [draw-label
 	   (lambda (dc x y)
 	     (send dc draw-text label x y))]
@@ -847,10 +836,10 @@
 	  [draw
 	   (lambda (dc x y . other)
 	     (draw-label dc x y))]
-	  [gb-get-default-class (lambda () 'mred:message%)]
+	  [gb-get-default-class (lambda () 'message%)]
 	  [gb-local-instantiate
 	   (lambda (p)
-	     `(make-object ,(gb-get-instantiate-class-getter) ,p ,(get-label)))]))))
+	     `(make-object ,(gb-get-instantiate-class-getter) ,(get-label) ,p))]))))
   
   (define gb:message-snip% (gb:make-message-snip%
 			    (gb:make-text-label-snip% gb:atomic-snip% 
@@ -901,11 +890,12 @@
 	       (draw-label dc 
 			   (+ (+ x m) (/ (- w lw (* 2 m)) 2))
 			   (+ (+ y m) (/ (- h lh (* 2 m)) 2)))))]
-	  [gb-get-default-class (lambda () 'mred:button%)]
+	  [gb-get-default-class (lambda () 'button%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     `(make-object ,(gb-get-instantiate-class-getter) 
-			   ,p (lambda (b e) (,(car (get-callback-names)) b e)) ,(get-label)))]))))
+			   ,(get-label)
+			   ,p (lambda (b e) (,(car (get-callback-names)) b e))))]))))
   
   (define gb:make-check-box-snip%
     (lambda (cl cn)
@@ -927,11 +917,12 @@
 	     (let-values ([(lx ly) (get-label-size dc)])
 	       (send dc draw-rectangle x (+ y (/ (- h boxsize) 2)) boxsize boxsize)
 	       (draw-label dc (+ x boxsize hspace) (+ y (/ (- h ly) 2)))))]
-	  [gb-get-default-class (lambda () 'mred:check-box%)]
+	  [gb-get-default-class (lambda () 'check-box%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     `(make-object ,(gb-get-instantiate-class-getter)
-			   ,p (lambda (c e) (,(car (get-callback-names)) c e)) ,(get-label)))]))))
+			   ,(get-label)
+			   ,p (lambda (c e) (,(car (get-callback-names)) c e))))]))))
   
   (define gb:button-snip% (gb:make-button-snip%
 			   (gb:make-callback-snip%
@@ -971,19 +962,15 @@
 	  [init-items null]
 	  [get-item-height
 	   (lambda (dc)
-	     (let ([w (box 0)]
-		   [h (box 0)])
-	       (send dc get-text-extent "Xj" w h)
-	       (unbox h)))]
+	     (let-values ([(w h d a) (send dc get-text-extent "Xj")])
+	       h))]
 	  [get-max-item-width
 	   (lambda (dc)
 	     (let loop ([l items][mw 0])
 	       (if (null? l)
 		   mw
-		   (let ([w (box 0)]
-			 [h (box 0)])
-		     (send dc get-text-extent (car l) w h)
-		     (loop (cdr l) (max mw (unbox w)))))))]
+		   (let-values ([(w h d a) (send dc get-text-extent (car l))])
+		     (loop (cdr l) (max mw w))))))]
 	  
 	  [items-install
 	   (lambda (l)
@@ -997,14 +984,14 @@
 		 (apply super-init args))
 	       (public
 		 [user-item (lambda (v)
-			      (mred:get-text-from-user "Item name:" "List Item Name" v))]
+			      (mred:get-text-from-user "Item name:" "List Item Name" #f v))]
 		 [items-panel (make-object mred:vertical-panel% controls)]
 		 [items-list (make-object mred:list-box%
 					  "Items:" 
 					  items
 					  items-panel 
 					  (lambda (l e)
-					    (when (= 2 (send e get-extra-long))
+					    (when (eq? 'list-box-dclick (send e get-event-type))
 					      (let ([pos (send items-list get-selection)])
 						(unless (negative? pos)
 						  (let ([v (user-item (list-ref items pos))])
@@ -1017,7 +1004,9 @@
 				       v)]
 		 [add-item (make-object mred:button% "Add Item" item-buttons-panel
 					(lambda (b e)
-					  (let ([v (user-item (format "Item~a" (send items-list number)))])
+					  (let ([v (user-item (format 
+							       "Item~a" 
+							       (send items-list get-number)))])
 					    (when v
 					      (send items-list append v)
 					      (set! items (append items (list v)))
@@ -1151,11 +1140,9 @@
 	  [get-initial (lambda () initial)]
 	  [get-initial-size
 	   (lambda (dc)
-	     (let ([xb (box 0.0)]
-		   [yb (box 0.0)])
-	       (send dc get-text-extent initial xb yb null null
-		     (send (get-style) get-font))
-	       (values (unbox xb) (unbox yb))))]
+	     (let-values ([(w h d a) (send dc get-text-extent initial
+					   (send (get-style) get-font))])
+	       (values w h)))]
 
 	  [initial-install
 	   (lambda (i)
@@ -1231,7 +1218,7 @@
 	     (class*/names (frame super-init) (super-get-frame%) () args
 	       (inherit controls)
 	       (rename [super-find-control find-control])
-	       (public
+	       (override
 		[find-control
 		 (lambda (t)
 		   (if (eq? t tag)
@@ -1240,12 +1227,12 @@
 	       (sequence
 		 (apply super-init args))
 	       (private
-		 [c (make-object mred:check-box% controls
+		 [c (make-object mred:check-box% 
+				 label controls
 				 (lambda (c e)
 				   (set-tagged-value tag (send c get-value))
 				   (change-cb frame this)
-				   (gb-need-recalc-size))
-				 label)])
+				   (gb-need-recalc-size)))])
 	       (sequence
 		 (send c set-value (get-tagged-value tag))
 		 (init-cb frame this))))]
@@ -1292,8 +1279,9 @@
     (lambda (cl cn)
       (class-asi cl
 	(inherit w h get-initial-size get-initial
-		 get-callback-names get-multi get-style-flag
+		 get-callback-names get-multi
 		 wrap-label-direction get-label gb-get-instantiate-class-getter)
+	(rename [super-get-style-flag get-style-flag])
 	(private
 	  [margin 2])
 	(override
@@ -1312,10 +1300,10 @@
 	     (send dc draw-rectangle x y w h)
 	     (send dc draw-text (get-initial) (+ x margin) (+ y margin)))]
 	  [callback-kinds (list "-change-callback" "-return-callback" "-focus-callback")]
-	  [gb-get-default-class (lambda () 
-				  (if (get-multi)
-				      'mred:media-multi-text%
-				      'mred:media-text%))]
+	  [gb-get-default-class (lambda () 'text-field%)]
+	  [get-style-flag (lambda () (append
+				      (super-get-style-flag)
+				      (if (get-multi) ''(multiple) ''(single))))]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
@@ -1377,7 +1365,7 @@
 			    (send dc draw-text (car l) (+ 2 x) iy)
 			    (loop (cdr l) (+ iy ih))))))))]
 	  [callback-kinds (list "-select-callback" "-double-select-callback")]
-	  [gb-get-default-class (lambda () 'mred:list-box%)]
+	  [gb-get-default-class (lambda () 'list-box%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
@@ -1422,7 +1410,8 @@
 			       '("Vertical" "Horizontal")
 			       controls 
 			       (lambda (r e)
-				 (set! vertical-layout? (zero? (send layout-direction-radio get-selection)))
+				 (set! vertical-layout? 
+				       (zero? (send layout-direction-radio get-selection)))
 				 (gb-need-recalc-size))
 			       '(horizontal))])
 	       (sequence
@@ -1482,7 +1471,7 @@
 		   (if vertical-layout?
 		       (loop (cdr l) (+ iy ih) ix)
 		       (loop (cdr l) iy (+ ix iw)))))))]
-	  [gb-get-default-class (lambda () 'mred:radio-box%)]
+	  [gb-get-default-class (lambda () 'radio-box%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
@@ -1534,14 +1523,13 @@
 	     (let ([l (get-items)])
 	       (unless (null? l)
 		 (send dc draw-text (car l) (+ 1 lmargin arrow-size amargin x) (add1 y)))))]
-	  [gb-get-default-class (lambda () 'mred:choice%)]
+	  [gb-get-default-class (lambda () 'choice%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
 	      p `(make-object ,(gb-get-instantiate-class-getter)
-			      ,p (lambda (b e) (,(car (get-callback-names)) b e)) 
-			      ,(get-label)
-			      -1 -1 -1 -1 ',(get-items))))]))))
+			      ,(get-label) ',(get-items)
+			      ,p (lambda (b e) (,(car (get-callback-names)) b e)))))]))))
   
   
   (define gb:choice-snip% (gb:make-choice-snip%
@@ -1628,7 +1616,7 @@
 			   (+ x (/ arrow-size 2)) (+ y (/ arrow-size 2)) 
 			   (- w arrow-size) line-height)
 		     (send dc draw-polygon darrow (+ x (* percent (- w arrow-size))) y)))))]
-	  [gb-get-default-class (lambda () 'mred:slider%)]
+	  [gb-get-default-class (lambda () 'slider%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
@@ -1710,7 +1698,7 @@
 		     x (if vertical-layout? (+ y (* 0.75 h)) y)
 		     (if vertical-layout? w (* 0.25 w)) (if vertical-layout? (* 0.25 h) h))
 	       (send dc set-brush b)))]
-	  [gb-get-default-class (lambda () 'mred:gauge%)]
+	  [gb-get-default-class (lambda () 'gauge%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     (wrap-label-direction
@@ -1770,7 +1758,7 @@
 	 [get-frame%
 	  (lambda ()
 	    (class-asi (super-get-frame%)
-	     (public
+	     (override
 	       [kind item-kind])))]
 	  [x-stretch? #t]
 	  [y-stretch? #t]
@@ -1806,11 +1794,10 @@
 	  [classname cn]
 	  [name (new-name "canvas")]
 	  
-	  [gb-get-default-class (lambda () 'mred:canvas%)]
+	  [gb-get-default-class (lambda () 'canvas%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     `(make-object ,(gb-get-instantiate-class-getter) ,p
-			   -1 -1 -1 -1
 			   ,(get-style-flag)))]))))
 	  
   (define gb:canvas-snip% (gb:make-canvas-snip%
@@ -1838,13 +1825,11 @@
 	       (sequence
 		 (apply super-init args))
 	       (private
-		 [c (make-object mred:choice% controls
+		 [c (make-object mred:choice% 
+				 label choices controls
 				 (lambda (c e)
 				   (set-tagged-value tag (send c get-selection))
-				   (gb-need-recalc-size))
-				 label
-				 -1 -1 -1 -1
-				 choices)])
+				   (gb-need-recalc-size)))])
 	       (sequence
 		 (send c set-selection (get-tagged-value tag)))))]
 	  [write
@@ -1898,19 +1883,18 @@
 	  [classname cn]
 	  [name (new-name "mcanvas")]
 	  
-	  [gb-get-default-class (lambda () 'mred:media-canvas%)]
+	  [gb-get-default-class (lambda () 'editor-canvas%)]
 	  [gb-local-instantiate
 	   (lambda (p)
 	     `(make-object ,(gb-get-instantiate-class-getter) ,p
-			   -1 -1 -1 -1 "media-canvas"
-			   ,(get-style-flag)))]))))
+			   #f ,(get-style-flag)))]))))
 	  
   (define gb:media-canvas-snip% (gb:make-media-canvas-snip%
 				 (gb:make-sb-box-snip%
 				  (gb:make-mcanvas-vscroll-select-snip%
 				   (gb:make-mcanvas-hscroll-select-snip%
 				    gb:atomic-snip%))
-				  "Media Canvas")
+				  "Editor Canvas")
 				 "gb:media-canvas"))
   
   (register-class gb:media-canvas-snip% "gb:media-canvas")
@@ -1933,7 +1917,7 @@
 			 12 'default 'normal 'normal #f))
 
   (define gb:edit%
-    (class framework:pasteboard:backup-autosave% ()
+    (class mred:pasteboard% ()
       (inherit set-selected find-next-selected-snip insert
 	       find-first-snip is-selected? add-selected remove-selected
 	       get-admin find-snip begin-edit-sequence end-edit-sequence
@@ -1967,13 +1951,13 @@
 	[for-each-snip
 	 (lambda (f)
 	   (let loop ([s (find-first-snip)])
-	     (unless (null? s)
+	     (when s
 	       (f s)
 	       (loop (send s next)))))]
 	[for-each-selected-snip
 	 (lambda (f)
-	   (let loop ([s (find-next-selected-snip null)])
-	     (unless (null? s)
+	   (let loop ([s (find-next-selected-snip #f)])
+	     (when s
 	       (f s)
 	       (loop (find-next-selected-snip s)))))]
 	[in-selected-hierarchy?
@@ -1985,12 +1969,12 @@
 	[find-unselected-snip
 	 (lambda (x y)
 	   (let ([s (find-snip x y)])
-	     (if (or (null? s) (and (not (in-selected-hierarchy? s))
-				    (ivar s container?)))
+	     (if (or (not s) (and (not (in-selected-hierarchy? s))
+				  (ivar s container?)))
 		 s
 		 (let loop ([s (find-first-snip)])
 		   (cond
-		     [(null? s) (values null)]
+		     [(not s) #f]
 		     [(and (ivar s container?)
 			   (not (in-selected-hierarchy? s)))
 		      (let ([tb (box 0)]
@@ -2032,7 +2016,7 @@
 						     (or frame-label-h 0) 2)))))])
 
       (override
-	[on-move-to
+	[can-move-to?
 	 (lambda (snip x y dragging?)
 	   (or (not (eq? snip main-panel))
 	       (and (= x main-panel-x)
@@ -2048,10 +2032,10 @@
 			 (invalidate-bitmap-cache 
 			  0 0 last-frame-paint-w last-frame-paint-h))))]
 	[on-interactive-move
-	 (lambda ()
+	 (lambda (e)
 	   (set! dragging? #t)
 	   (for-each-snip (lambda (s) (send s gb-set-stable-position)))
-	   (super-on-interactive-move))]
+	   (super-on-interactive-move e))]
 	[on-select
 	 (lambda (s on?)
 	   (when (and (not copying?) on?)
@@ -2066,12 +2050,11 @@
 	      (lambda (c)
 		(when (is-selected? c)
 		  (remove-selected c)))
-	      (send s gb-get-children)))
-	   #t)]
+	      (send s gb-get-children))))]
 	[after-interactive-move
-	 (lambda ()
+	 (lambda (e)
 	   (set! dragging? #f)
-	   (super-after-interactive-move)
+	   (super-after-interactive-move e)
 	   
 	   ; Adjust parent of selected snips & move selected snip's children
 	   (for-each-selected-snip
@@ -2138,15 +2121,15 @@
 	       (let ([lx (+ x (unbox xb))]
 		     [ly (+ y (unbox yb))])
 		 (let ([s (find-unselected-snip lx ly)])
-		   (when (not (null? s))
+		   (when s
 		     (set! cur-hilite-pos (send s gb-find-position lx ly)))
-		   (when (and (or cur-hilite (not (null? s)))
+		   (when (and (or cur-hilite s)
 			      (not (eq? cur-hilite s)))
 		     (begin-edit-sequence)
 		     (when cur-hilite
 		       (send cur-hilite gb-hilite #f)
 		       (set! cur-hilite #f))
-		     (unless (null? s)
+		     (when s
 		       (set! cur-hilite s)
 		       (send s gb-hilite #t))
 		     (end-edit-sequence))))))
@@ -2161,7 +2144,7 @@
 	     (when parent
 	       (send parent gb-remove-child snip)))
 	   (super-after-delete snip))]
-	[on-insert
+	[can-insert?
 	 (lambda (snip before x y)
 	   (is-a? snip gb:snip%))]
 	[after-insert
@@ -2196,13 +2179,13 @@
 	   (dynamic-wind
 	    (lambda () (set! copying? #t))
 	    (lambda () 
-	      (unless (null? (find-next-selected-snip null))
+	      (when (find-next-selected-snip #f)
 		(letrec ([selected
-			  (let loop ([s (find-next-selected-snip null)])
+			  (let loop ([s (find-next-selected-snip #f)])
 			    (let ([next (find-next-selected-snip s)])
-			      (if (null? next)
-				  (list s)
-				  (cons s (loop next)))))]
+			      (if next
+				  (cons s (loop next))
+				  (list s))))]
 			 [close-selected
 			  (lambda (method)
 			    (lambda (s)
@@ -2218,9 +2201,9 @@
       (public
 	[get-selected-snip
 	 (lambda () 
-	   (let ([s (find-next-selected-snip null)])
-	     (if (or (null? s)
-		     (not (null? (find-next-selected-snip s))))
+	   (let ([s (find-next-selected-snip #f)])
+	     (if (or (not s)
+		     (not (find-next-selected-snip s)))
 		 main-panel
 		 s)))]
 	[insert-element
@@ -2258,28 +2241,28 @@
 	     (set! configure-frame (make-object 
 				    (class-asi mred:frame%
 				       (rename [super-on-close on-close])
-				       (public
+				       (override
 					[on-close
 					 (lambda ()
-					   (and (super-on-close)
-						(set! configure-frame #f)))]))
-				    null "Output"))
+					   (super-on-close)
+					   (set! configure-frame #f))]))
+				    "Output"))
 	     (let ([p (make-object mred:vertical-panel% configure-frame)])
-	       (send p minor-align-left)
+	       (send p set-alignment 'left 'center)
 	       (letrec ([update-frame
 			 (lambda ()
 			   (send main-panel gb-need-recalc-size)
-			   (invalidate-bitmap-cache 0 0 -1 -1))]
+			   (invalidate-bitmap-cache 0 0 'end 'end))]
 			[kind-choice
-			 (make-object mred:choice% p
+			 (make-object mred:choice% 
+				      "Output:" 
+				      '("Frame" "Dialog" "Panel")
+				      p
 				      (lambda (c e)
 					(let ([mode (send c get-selection)])
 					  (set! top-level-type mode)
 					  (send frame-stuff enable (< mode PANEL-MODE))
-					  (update-frame)))
-				      "Output:"
-				      -1 -1 -1 -1
-				      '("Frame" "Modal Dialog" "Non-modal Dialog" "Panel"))]
+					  (update-frame))))]
 			[frame-stuff (make-object mred:vertical-panel% p)]
 			[title-text (make-one-line/callback-edit 
 				     frame-stuff
@@ -2292,11 +2275,11 @@
 						 (set! frame-label-h #f)
 						 (update-frame))))
 				     frame-label)]
-			[auto-show-check (make-object mred:check-box% frame-stuff
+			[auto-show-check (make-object mred:check-box%
+						      "Show Frame Automatically" frame-stuff
 						      (lambda (c e)
-							(set! auto-show? (send c get-value)))
-						      "Show Frame Automatically")])
-		 (send frame-stuff minor-align-left)
+							(set! auto-show? (send c get-value))))])
+		 (send frame-stuff set-alignment 'left 'center)
 		 (send frame-stuff enable (< top-level-type PANEL-MODE))
 		 (send kind-choice stretchable-width #f)
 		 (send kind-choice set-selection top-level-type)
@@ -2311,11 +2294,10 @@
 		       (set! main-panel-y 0))
 		     (begin
 		       (unless frame-label-h
-			 (let ([wb (box 0)]
-			       [hb (box 0)])
-			   (send dc get-text-extent frame-label wb hb null null top-font)
-			   (set! frame-label-w (unbox wb))
-			   (set! frame-label-h (unbox hb))))
+			 (let-values ([(w h d a) (send dc get-text-extent
+						       frame-label top-font)])
+			   (set! frame-label-w w)
+			   (set! frame-label-h h)))
 		       (set! main-panel-x margin)
 		       (set! main-panel-y (+ frame-label-h 2 margin))))
 		 (set-box! dx main-panel-x)
@@ -2351,7 +2333,7 @@
 		       (let ([f (send dc get-font)])
 			 (send dc set-font f)
 			 (send dc draw-text frame-label 
-			       (+ dx (/ (- tw frame-label-w) 2)) 
+			       (+ dx (/ (- tw (or frame-label-w 0)) 2)) 
 			       (+ dy 1))
 			 (send dc set-font f)))))))))]
 	[write-footers-to-file
@@ -2489,7 +2471,7 @@
 	    (when active-tool
 		  (let ([cb (tool-callback active-tool)])
 		    (deactivate-tool)
-		    (cb)))]
+		    (cb #f #f)))]
 	   [(send e dragging?)
 	    (when can-drag
 		  (let ([old-active active-tool])
@@ -2509,8 +2491,8 @@
 		   icons name
 		   (lambda ()
 		     (let* ([icon (make-object mred:bitmap% 
-					       (build-path (collection-path "guibuilder") icon-name)
-					       'xpm)])
+					       (build-path (collection-path "guibuilder") 
+							   icon-name))])
 		       (if (send icon ok?) 
 			   icon
 			   #f))))])
@@ -2521,28 +2503,51 @@
 	(min-height (+ icon-size (* margin 2)))
 	(stretchable-height #f))))
 
+  (define -my-base-frame%
+    (class mred:frame% (file)
+      (public
+	help-menu:about-string
+	help-menu:about
+	(help-menu:after-about void)
+	get-editor%)
+      (sequence
+	(super-init file #f 400 400)
+	(make-object mred:menu-bar% this))
+      (private
+	[c (make-object mred:editor-canvas% this)]
+	[e (make-object (get-editor%))])
+      (sequence
+	(send c set-editor e))
+      (public
+	[get-area-container (lambda () this)]
+	[get-editor (lambda () (send c get-editor))])))
+
+  (define my-base-frame% 
+    (framework:frame:pasteboard-mixin framework:frame:editor%))
+
   (define gb:frame%
-    (class framework:frame:pasteboard-info-file% ([file #f])
+    (class my-base-frame% ([file #f])
       (inherit get-editor show get-area-container get-menu-bar)
-      (rename [super-get-menu-bar% get-menu-bar%]
-	      [super-help-menu:after-about help-menu:after-about])
+      (rename [super-help-menu:after-about help-menu:after-about])
       (private)
       (override
-        [help-menu:about-string "GUI Builder"]
+        [help-menu:about-string (lambda () "GUI Builder")]
 	[help-menu:about
-	 (lambda (evt)
+	 (lambda (itm evt)
 	   (mred:message-box (format "Version ~a.~a, Copyright (c) 1997, PLT (Matthew Flatt)~n"
 				     GB:SNIP-VERSION
 				     MINOR-VERSION)
 			     "About GUI Builder"))]
 	[help-menu:after-about
 	 (lambda (help-menu)
-	   (send help-menu append-item "GUI Builder Help"
-		 (lambda ()
-		   (let ([f (framework:handler:edit-file (build-path (collection-path "guibuilder") "help.mre"))])
-		     (send (send f get-editor) lock #t))))
+	   (make-object mred:menu-item% "GUI Builder Help"
+			help-menu
+			(lambda (itm evt)
+			  (let ([f (framework:handler:edit-file 
+				    (build-path (collection-path "guibuilder") "help.mre"))])
+			    (send (send f get-editor) lock #t))))
 	   (super-help-menu:after-about help-menu))]
-
+	
 	[get-editor% (lambda () gb:edit%)])
 
       (public
@@ -2557,8 +2562,10 @@
 	 (lambda ()
 	   (let ([port (open-output-string)])
 	     (pretty-print (build-code #f) port)
-	     (let ([f (make-object framework:frame:editor%)])
-	       (send (send f get-editor) insert (get-output-string port)))))]
+	     (let ([f (make-object (framework:frame:text-mixin framework:frame:editor%)
+				   "code.scm")])
+	       (send (send f get-editor) insert (get-output-string port))
+	       (send f show #t))))]
 	[build-code
 	 (lambda (force-frame?)
 	   (let* ([edit (get-editor)]
@@ -2567,29 +2574,28 @@
 		  [frame-label (if (and (= type PANEL-MODE) force-frame?)
 				   "Panel Tester"
 				   (send edit get-frame-label))])
-	     `(class null ,(if (and (= type PANEL-MODE) (not force-frame?))
-			       '(top) 
-			       '())
+	     `(class object% ,(if (and (= type PANEL-MODE) (not force-frame?))
+				  '(top) 
+				  '())
 		(private
 		 ,@(get-class-functions))
 		(public
 		 ,@(cond
 		    [(or (= type FRAME-MODE) 
 			 (and (= type PANEL-MODE) force-frame?))
-		     `([get-top% (lambda () mred:frame%)]
-		       [top (make-object (get-top%) null ,frame-label)])]
+		     `([get-top% (lambda () frame%)]
+		       [top (make-object (get-top%) ,frame-label)])]
 		    [(= type PANEL-MODE) null]
 		    [else
-		     `([get-top% (lambda () mred:dialog-box%)]
-		       [top (make-object (get-top%) null ,frame-label
-					 ,(= type MODAL-DIALOG-MODE)
-					 -1 -1 10 10)])])
+		     `([get-top% (lambda () dialog%)]
+		       [top (make-object (get-top%) ,frame-label)])])
 		 ,@(send main gb-instantiate 'top))
-		,@(if (and (not force-frame?)
-			   (or (= type PANEL-MODE) (not (send edit get-auto-show))))
-		      null
-		      '((sequence
-			  (send top show #t)))))))]
+		(sequence
+		  (super-init)
+		  ,@(if (and (not force-frame?)
+			     (or (= type PANEL-MODE) (not (send edit get-auto-show))))
+			null
+			'((send top show #t)))))))]
 	[get-class-functions
 	 (lambda ()
 	   (let ([ht (make-hash-table)])
@@ -2635,7 +2641,7 @@
 	     (append-element-type "New Slider" "slider.xpm" gb:slider-snip%)
 	     (append-element-type "New Gauge" "gauge.xpm" gb:gauge-snip%)
 	     (append-element-type "New Canvas" "canvas.xpm" gb:canvas-snip%)
-	     (append-element-type "New Media Canvas" "mcanvas.xpm" gb:media-canvas-snip%)
+	     (append-element-type "New Editor Canvas" "mcanvas.xpm" gb:media-canvas-snip%)
 	     
 	     (make-object mred:menu-item% "Configure Output"  vmenu
 			  (lambda (i e) (send (get-editor) open-dialog)))
@@ -2652,10 +2658,18 @@
 	(init-tools (get-menu-bar))
 
 	(let ([file (and file (normalize-path file))])
-	  (unless (and file (file-exists? file) (send (get-editor) load-file file))
-	      (send (get-editor) create-main-panel)
-	      (when file
-		    (send (get-editor) set-filename file))))
+	  (if (and file (file-exists? file) (send (get-editor) load-file file))
+	      ; Force title size calc:
+	      (let ([e (get-editor)])
+		(send e get-main-location 
+		      (send e get-main-panel)
+		      (send (send e get-canvas) get-dc)
+		      (box 0) (box 0)))
+	      (begin
+		(send (get-editor) create-main-panel)
+		(when file
+		  (send (get-editor) set-filename file)))))
+	
 	(show #t))))
   
   (framework:handler:insert-format-handler "GUI Builder" "gui"

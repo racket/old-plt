@@ -1,5 +1,5 @@
 
-(require-library "sig.ss" "guibuilder")
+(require-relative-library "sig.ss")
 (require-library "functio.ss")
 (require-library "pretty.ss")
 (require-library "file.ss")
@@ -10,7 +10,7 @@
 (require-library "errortrace.ss" "errortrace")
 
 (invoke-open-unit/sig 
- (require-library "gbr.ss" "guibuilder") 
+ (require-relative-library "gbr.ss")
  #f
  mzlib:function^
  mzlib:pretty-print^

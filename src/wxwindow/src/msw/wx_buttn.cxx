@@ -229,3 +229,8 @@ void wxButton::SetDefault(void)
   wnd = (wxWnd *)panel->handle;
   SendMessage(wnd->handle, DM_SETDEFID, windows_id, 0L);
 }
+
+void wxButton::SetBorder(Bool on)
+{
+  SendMessage((HWND)ms_handle, BM_SETSTYLE, on ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON, TRUE);
+}

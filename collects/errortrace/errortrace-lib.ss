@@ -270,10 +270,12 @@
 		 (let ([top-e (expand-syntax top-e)])
 		   (syntax-case top-e (module #%plain-module-begin)
 		     [(module name init-import (#%plain-module-begin body ...))
-		      (normal #'(module name init-import 
+		      (normal #`(module name init-import 
 				  (#%plain-module-begin 
-				   (require (lib "errortrace-key.ss" "errortrace")) 
-				   (require-for-syntax (lib "errortrace-key.ss" "errortrace")) 
+				   #,((make-syntax-introducer)
+				      #'(require (lib "errortrace-key.ss" "errortrace")))
+				   #,((make-syntax-introducer)
+				      #'(require-for-syntax (lib "errortrace-key.ss" "errortrace")))
 				   body ...)))])))]
 	    [_else
 	     ;; Not `begin', so proceed with normal expand and eval

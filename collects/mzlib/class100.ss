@@ -1,7 +1,6 @@
 
 (module class100 mzscheme
-
-  (require "class2.ss")
+  (require "class.ss")
 
   (require-for-syntax (lib "stx.ss" "syntax"))
 

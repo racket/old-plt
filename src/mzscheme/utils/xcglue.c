@@ -612,6 +612,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *_obj, Scheme_Object *sclass,
   if (*cache)
     s = (Scheme_Object *)*cache;
   else {
+    scheme_register_extension_global((void *)cache, sizeof(Scheme_Object*));
     s = scheme_box(scheme_intern_symbol(name));
     *cache = s;
   }

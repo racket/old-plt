@@ -8,14 +8,14 @@
   
   (require (lib "lex.ss" "parser-tools"))
 
-  (require (lib "build-grammar.ss" "tester"))
+  ;(require (lib "build-grammar.ss" "tester"))
   
   (provide (all-defined-except get-token-name))
   (define-struct test-case (test))
   (define-struct interact-case (box))
   ;(provide (struct test-case (test)) (struct interact-case (box)))
   
-  #;(define-syntax define-open-tokens
+  (define-syntax define-open-tokens
     (syntax-rules ()
       ((_ dt group-name list-name (token-symbols ...))
        (dt group-name (token-symbols ...)))))

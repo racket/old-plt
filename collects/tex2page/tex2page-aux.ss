@@ -3713,6 +3713,7 @@
 
 (define output-navigation-bar
   (lambda (top-or-bottom)
+    (do-end-para)
     (let ((first-page? (= *html-page-count* 0))
           (last-page? (= *html-page-count* *last-page-number*)))
       (cond
@@ -3721,7 +3722,7 @@
          ((eqv? top-or-bottom 'top)
           (emit "<div id=")
           (cond
-           ((and first-page? *title*) (emit "title"))
+           (first-page? (emit "title"))
            (else (display "," *js-port*) (emit "content")))
           (emit ">")
           (newline *js-port*)
@@ -7351,8 +7352,15 @@
         (set! *js-port* (open-output-file js-file))
         (display "var toc = new Array(" *js-port*))
       (display
-        "\n              body {\n              background: white;\n              font-size: 22;\n              font-weight: bold;\n              font-family: Verdana, Arial, Lucida;\n              }\n\n              div#content {\n              position: absolute;\n              top: 10px;\n              left: 150px;\n              }\n              \n              div#title {\n              position: absolute;\n              top: 150px;\n              left: 250px;\n              }\n\n              h1 {\n              color: darkblue;\n              font-size: 1.5em;\n              padding-bottom: 20px;\n              border-bottom: thick solid blue;\n              }\n              "
-        *css-port*))))
+        "\n              body {\n              background: white;\n              font-size: 22;\n              font-weight: bold;\n              font-family: Verdana, Arial, Lucida;\n              }\n\n              div#content {\n              position: absolute;\n              top: 10px;\n              left: 150px;\n              }\n              \n              div#title {\n              position: absolute;\n              top: 150px;\n              left: 250px;\n              }\n\n              h1 {\n              color: darkblue;\n              font-size: 1.5em;\n              padding-bottom: 20px;\n              border-bottom: thick solid blue;\n              }\n\n              div#title {\n              position: absolute;\n              "
+        *css-port*)
+      (display
+        (if *title*
+          "\n                  top: 150px;\n                  left: 250px;\n                  "
+          "\n                  top: 10px;\n                  left: 150px;\n                  ")
+        *css-port*)
+      (display "}" *css-port*)
+      (newline *css-port*))))
 
 (define load-aux-file
   (lambda ()

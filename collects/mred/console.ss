@@ -267,12 +267,14 @@
 		 (let ([handle-insertion
 			(lambda ()
 			  (let ((start (last-position)))
+			    (begin-edit-sequence)
 			    (insert (if (is-a? s wx:snip%)
 					(send s copy)
 					s))
 			    (let ((end (last-position)))
 			      (change-style () start end)
-			      (style-func start end))))])
+			      (style-func start end)
+			      (end-edit-sequence))))])
 		 (if first-time?
 		     (begin
 		       (set! first-time? #f)

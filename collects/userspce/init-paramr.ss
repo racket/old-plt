@@ -30,21 +30,11 @@
   
   (define-struct/parse setting (key
 				name
-				vocabulary-symbol
-				primitives
-				macro-libraries
+				language-defining-module
 				case-sensitive?
-				allow-set!-on-undefined?
-				unmatched-cond/case-is-error?
-				allow-improper-lists?
 				allow-reader-quasiquote?
 				sharing-printing?
 				abbreviate-cons-as-list?
-				signal-undefined
-				signal-not-boolean
-				eq?-only-compares-symbols?
-				<=-at-least-two-args
-				error-sym/string-only
 				disallow-untagged-inexact-numbers
 				print-tagged-inexact-numbers
 				whole/fractional-exact-numbers
@@ -53,29 +43,18 @@
 				print-exact-as-decimal?
 				read-decimal-as-exact?
 				define-argv?
-				use-pretty-printer?
-				teaching-primitives-and-syntax?))
+				use-pretty-printer?))
   
   ;; settings : (list-of setting)
   (define settings
     (list (make-setting/parse
 	   `((key beginner)
 	     (name "Beginning Student")
-	     (macro-libraries ())
-	     (vocabulary-symbol beginner)
-	     (primitives beginner)
+	     (language-defining-module (lib "beginner.ss" "languages"))
 	     (case-sensitive? #t)
-	     (allow-set!-on-undefined? #f)
-	     (unmatched-cond/case-is-error? #t)
-	     (allow-improper-lists? #f)
 	     (allow-reader-quasiquote? #f)
 	     (sharing-printing? #f)
 	     (abbreviate-cons-as-list? #f)
-	     (signal-undefined #t)
-	     (signal-not-boolean #t)
-	     (eq?-only-compares-symbols? #t)
-	     (<=-at-least-two-args #t)
-	     (error-sym/string-only #t)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
 	     (whole/fractional-exact-numbers #t)
@@ -84,26 +63,15 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key intermediate)
 	     (name "Intermediate Student")
-	     (macro-libraries ())
-	     (vocabulary-symbol intermediate)
-	     (primitives intermediate)
+	     (language-defining-module (lib "beginner.ss" "languages"))
 	     (case-sensitive? #t)
-	     (allow-set!-on-undefined? #f)
-	     (unmatched-cond/case-is-error? #t)
-	     (allow-improper-lists? #f)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #f)
 	     (abbreviate-cons-as-list? #t)
-	     (signal-undefined #t)
-	     (signal-not-boolean #t)
-	     (eq?-only-compares-symbols? #t)
-	     (<=-at-least-two-args #t)
-	     (error-sym/string-only #t)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
 	     (whole/fractional-exact-numbers #t)
@@ -112,26 +80,15 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key advanced)
 	     (name "Advanced Student")
-	     (macro-libraries ())
-	     (vocabulary-symbol advanced)
-	     (primitives advanced)
+	     (language-defining-module (lib "intermediate.ss" "languages"))
 	     (case-sensitive? #t)
-	     (allow-set!-on-undefined? #f)
-	     (unmatched-cond/case-is-error? #t)
-	     (allow-improper-lists? #f)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #t)
 	     (abbreviate-cons-as-list? #t)
-	     (signal-undefined #t)
-	     (signal-not-boolean #f)
-	     (eq?-only-compares-symbols? #f)
-	     (<=-at-least-two-args #t)
-	     (error-sym/string-only #t)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #t)
 	     (whole/fractional-exact-numbers #t)
@@ -140,26 +97,15 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #t)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme (MzScheme)")
-	     (vocabulary-symbol mzscheme-debug)
-	     (primitives all)
-	     (macro-libraries ())
+	     (language-defining-module (lib "advanced.ss" "languages"))
 	     (case-sensitive? #f)
-	     (allow-set!-on-undefined? #f)
-	     (unmatched-cond/case-is-error? #f)
-	     (allow-improper-lists? #t)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #f)
 	     (abbreviate-cons-as-list? #t)
-	     (signal-undefined #f)
-	     (signal-not-boolean #f)
-	     (eq?-only-compares-symbols? #f)
-	     (<=-at-least-two-args #f)
-	     (error-sym/string-only #f)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #f)
 	     (whole/fractional-exact-numbers #t)
@@ -168,26 +114,15 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #f)))
+	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key full)
 	     (name "Textual Full Scheme without Debugging (MzScheme)")
-	     (macro-libraries ())
-	     (vocabulary-symbol mzscheme)
-	     (primitives all)
+	     (language-defining-module #%mz-kernel)
 	     (case-sensitive? #f)
-	     (allow-set!-on-undefined? #f)
-	     (unmatched-cond/case-is-error? #f)
-	     (allow-improper-lists? #t)
 	     (allow-reader-quasiquote? #t)
 	     (sharing-printing? #f)
 	     (abbreviate-cons-as-list? #t)
-	     (signal-undefined #f)
-	     (signal-not-boolean #f)
-	     (eq?-only-compares-symbols? #f)
-	     (<=-at-least-two-args #f)
-	     (error-sym/string-only #f)
 	     (disallow-untagged-inexact-numbers #f)
 	     (print-tagged-inexact-numbers #f)
 	     (whole/fractional-exact-numbers #t)
@@ -196,8 +131,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (define-argv? #t)
-	     (use-pretty-printer? #t)
-	     (teaching-primitives-and-syntax? #f)))))
+	     (use-pretty-printer? #t)))))
   
   (define (snoc x y) (append y (list x)))
   
@@ -260,11 +194,6 @@
   
   ;; number->setting : (int -> symbol)
   (define number->setting (lambda (n) (list-ref settings n)))
-  
-  ;; zodiac-vocabulary? : setting -> boolean
-  (define (zodiac-vocabulary? setting)
-    (not (or (eq? (setting-vocabulary-symbol setting) 'mzscheme)
-	     (eq? (setting-vocabulary-symbol setting) 'mred))))
   
   ;; X-language : setting -> boolean
   ;; returns true if the input language is the specified language
@@ -695,21 +624,7 @@
   ;;                       -> void
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
-    (let* ([namespace-flags (let* ([flag-l1
-                                    (let ([name (setting-name setting)])
-                                      (if (regexp-match re:mred name)
-                                          (list 'mred)
-                                          (list)))]
-                                   [flag-l2
-                                    (if (teaching-level? setting)
-                                        (cons 'no-keywords flag-l1)
-                                        flag-l1)]
-                                   [flag-l3
-                                    (if (zodiac-vocabulary? setting)
-                                        (cons 'hash-percent-syntax flag-l2)
-                                        flag-l2)])
-                              flag-l3)]
-           [namespace (apply make-namespace namespace-flags)])
+    (let ([namespace (make-namespace 'empty)])
       
       (when (zodiac-vocabulary? setting)
         (use-compiled-file-kinds 'non-elaboration))
@@ -720,8 +635,7 @@
       (error-value->string-handler drscheme-error-value->string-handler)
       (current-exception-handler drscheme-exception-handler)
       (initial-exception-handler drscheme-exception-handler)
-      (current-namespace namespace)
-      (current-zodiac-namespace namespace)
+
       (break-enabled #t)
       (read-curly-brace-as-paren #t)
       (read-square-bracket-as-paren #t)
@@ -734,42 +648,15 @@
       (current-load-relative-directory #f)
       (current-require-relative-collection #f)
       
-      ;; sequencing here is subtle
-      (begin
-        (when (zodiac-vocabulary? setting)
-          (current-vocabulary
-           (zodiac:create-vocabulary
-            'scheme-w/user-defined-macros/drscheme
-            (case (setting-vocabulary-symbol setting)
-              [(beginner) zodiac:beginner-vocabulary]
-              [(intermediate) zodiac:intermediate-vocabulary]
-              [(advanced) zodiac:advanced-vocabulary]
-              [(mzscheme-debug mred-debug)
-               (if (setting-teaching-primitives-and-syntax? setting)
-                   zodiac:extended-scheme-vocabulary
-                   zodiac:scheme-vocabulary)]
-              [else (error 'init "bad vocabulary spec: ~a ~e"
-                           (setting-vocabulary-symbol setting) setting)]))))
-        (init-namespace:init-namespace (current-vocabulary))
-        (when (zodiac-vocabulary? setting)
-          (zodiac:reset-previous-attribute 
-           #f
-           (eq? (setting-vocabulary-symbol setting)
-                'mred-debug))
-          (zodiac:prepare-current-namespace-for-vocabulary (current-vocabulary))))
+      (current-namespace namespace)
+      (namespace-require (setting-language-defining-module setting))
 
       (read-case-sensitive (setting-case-sensitive? setting))
-      
-      (aries:signal-undefined (setting-signal-undefined setting))
-      (aries:signal-not-boolean (setting-signal-not-boolean setting))
       
       ;; Allow ` , and ,@ ? - FIXME!
       (zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
       (zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
             
-      (compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
-      (compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? setting)))
-      
       (current-eval drscheme-eval-handler)
       (current-load drscheme-load-handler)
       
@@ -811,9 +698,4 @@
        (setting-print-booleans-as-true/false setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
       (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
-      
-      ;; ROBBY : attempt to back out of John's changes
-      (global-defined-value '#%break aries:break)
-      
-      (for-each (lambda (l) (apply require-library/proc l))
-                (setting-macro-libraries setting)))))
+)))

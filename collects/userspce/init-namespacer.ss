@@ -11,7 +11,6 @@
   (define (init-namespace vocab)
     ;; setup-primitives before the teachpack in case the teachpack
     ;; re-introduces any primitive definitions that were removed
-    (setup-primitives)
     (teachpack-thunk vocab)
 
     (add-extra-macros)
@@ -367,35 +366,6 @@
   (define to-remove-from-beginning (make-prims-to-remove prims:beginning))
   (define to-remove-from-intermediate (make-prims-to-remove prims:intermediate))
   (define to-remove-from-advanced (make-prims-to-remove prims:advanced))
-  
-  (define (setup-primitives)
-    (let ([to-remove
-           (case (init-params:setting-primitives (init-params:current-setting))
-             [(beginner)
-              to-remove-from-beginning]
-             [(intermediate)
-              to-remove-from-intermediate]
-             [(advanced)
-              to-remove-from-advanced]
-             [else null])])
-      (for-each undefine to-remove)
-      
-      ;; ricedefs
-      (let* ([setting (init-params:current-setting)]
-             [improper-lists?
-              (or (not (init-params:zodiac-vocabulary? setting))
-                  (init-params:setting-allow-improper-lists? setting))])
-        (zodiac:allow-improper-lists improper-lists?)
-        (params:allow-improper-lists improper-lists?)
-        (params:eq?-only-compares-symbols (init-params:setting-eq?-only-compares-symbols? setting))
-        (params:<=-at-least-two-args (init-params:setting-<=-at-least-two-args setting))
-        (params:error-sym/string-only (init-params:setting-error-sym/string-only setting))
-        (when (init-params:teaching-level? setting)
-          (global-define-values/invoke-unit/sig
-           ricedefs^ ricedefs@
-           #f (params : plt:userspace:params^))))))
-  
-  
   
   (define keyword-languages '(beginner intermediate advanced))
   

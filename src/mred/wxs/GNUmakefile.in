@@ -126,7 +126,7 @@ $(srcdir)/wxs_win.cxx : $(srcdir)/wxs_win.xc $(srcdir)/wxs_win.xci $(XCDEPEND)
 
 WXSCC = $(CXX) $(WXSCFLAGS) $(LOCALFLAGS) -c
 
-wxscheme.o : $(srcdir)/wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(srcdir)/wxsmred.h $(srcdir)/wrap.inc $(srcdir)/cwrap.inc
+wxscheme.o : $(srcdir)/wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(DCHEADERS) $(srcdir)/wxsmred.h $(srcdir)/wrap.inc $(srcdir)/cwrap.inc
 	$(WXSCC) $(srcdir)/wxscheme.cxx -o wxscheme.o 
 
 xcglue.o : $(srcdir)/../../mzscheme/utils/xcglue.c $(srcdir)/../../mzscheme/utils/xcglue.h $(WXSCHEMEHEADERS)
@@ -158,7 +158,7 @@ wxs_item.o : $(srcdir)/wxs_item.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) $(srcdir)/wxs_item.cxx -o wxs_item.o
 wxs_lbox.o : $(srcdir)/wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)  $(srcdir)/../../wxxt/src/Windows/ListBox.h
 	$(WXSCC) $(srcdir)/wxs_lbox.cxx -o wxs_lbox.o
-wxs_madm.o : $(srcdir)/wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
+wxs_madm.o : $(srcdir)/wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
 	$(WXSCC) $(srcdir)/wxs_madm.cxx -o wxs_madm.o
 wxs_medi.o : $(srcdir)/wxs_medi.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
 	$(WXSCC) $(srcdir)/wxs_medi.cxx -o wxs_medi.o

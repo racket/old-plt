@@ -2794,7 +2794,7 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 
 void wxMediaEdit::PrintToDC(wxDC *dc, int page)
 {
-  float H, W, FH, FW, y, h;
+  float H, W, FH, FW, y, h, next_h;
   long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
@@ -2829,13 +2829,30 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   W -= (2 * hm);
 
   y = 0;
+  next_h = 0;
   line = firstLine;
   for (i = 0; i < numValidLines; this_page++) {
-    h = 0;
+    h = next_h;
+    next_h = 0;
+
     while (!h || ((i < numValidLines) && (line->h < H - h))) {
       h += line->h;
       i++;
       line = line->next;
+    }
+
+    if (h > H) {
+      /* Only happens if we have something that's too big to fit on a page. */
+      /* Look for internal scroll positions */
+      int pos;
+      float py;
+      pos = FindScrollLine(y + H);
+      py = ScrollLineLocation(pos);
+      if (py > y) {
+	int new_h = py - y;
+	next_h = h - new_h;
+	h = new_h;
+      }
     }
 
     if (page < 0 || (page == this_page)) {

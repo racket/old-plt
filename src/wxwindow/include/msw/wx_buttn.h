@@ -36,6 +36,8 @@ class wxButton: public wxbButton
 
   BOOL MSWCommand(UINT param, WORD id);
 
+  void SetBorder(Bool on);
+
   wxBitmap *bm_label;
 };
 

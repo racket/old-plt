@@ -228,8 +228,6 @@ EXPORTS
  scheme_getdrive
  scheme_split_pathname
  scheme_build_pathname
- scheme_carbon_spec_to_path
- scheme_carbon_path_to_spec
  scheme_alloc_fdset_array
  scheme_init_fdset_array
  scheme_get_fdset

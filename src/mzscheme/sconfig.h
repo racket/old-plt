@@ -554,7 +554,7 @@
   /* assembly file. Nevertheless, the old flags and       */
   /* instructions have been preserved.                    */
 
-#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN__)) \
+#if (defined(__BORLANDC__) || defined(_MSC_VER) || defined(__CYGWIN32__)) \
     && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "win32\\i386"
@@ -572,7 +572,7 @@
 #  define NO_READLINK
 #  define MKDIR_NO_MODE_FLAG
 # endif
-# if defined(__CYGWIN__)
+# if defined(__CYGWIN32__)
 #  define USE_GET_CURRENT_DIRECTORY
 #  define USE_WINDOWS_FIND_FIRST
 #  define DIRENT_NO_NAMLEN
@@ -580,7 +580,7 @@
 # endif
 
 # define TIME_SYNTAX
-# ifdef __CYGWIN__
+# ifdef __CYGWIN32__
 #  define USE_PLAIN_TIME
 #  define USE_TOD_FOR_TIMEZONE
 # else
@@ -595,6 +595,9 @@
 # define WINDOWS_FIND_STACK_BOUNDS
 
 # define USE_MZ_SETJMP
+# ifdef __CYGWIN32__
+#  define USE_MZ_CYGWIN_SETJMP
+# endif
 
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE
@@ -603,7 +606,7 @@
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
 #endif
-#ifdef __CYGWIN__
+#ifdef __CYGWIN32__
 # define USE_DIVIDE_MAKE_INFINITY
 #endif
 
@@ -611,7 +614,7 @@
 # define DONT_IGNORE_PIPE_SIGNAL
 
 # define PROCESS_FUNCTION
-#ifdef __CYGWIN__
+#ifdef __CYGWIN32__
 # define UNIX_PROCESSES
 # define FILES_HAVE_FDS
 # define HAS_CYGWIN_IOB
@@ -626,7 +629,7 @@
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
-#ifdef __CYGWIN__
+#ifdef __CYGWIN32__
 # define USE_UNIX_SOCKETS_TCP
 # define CANT_SET_SOCKET_BUFSIZE
 # define NO_NEED_FOR_BEGINTHREAD

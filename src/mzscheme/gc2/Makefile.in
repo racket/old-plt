@@ -240,3 +240,6 @@ ctok: lex.yy.c
 
 lex.yy.c: $(srcdir)/ctok.lex
 	flex -olex.yy.c $(srcdir)/ctok.lex
+
+clean:
+	/bin/rm -f ctok lex.yy.c ../mzscheme2k *.o $(XSRCDIR)/*

@@ -195,6 +195,7 @@ clean:
 	/bin/rm -f *.o core
 	/bin/rm -f mzdyn.o libgc.a libmzscheme.a libdl.a mzscheme mzscheme.multiboot
 	cd gc; $(MAKE) clean
+	cd gc2; $(MAKE) clean
 	cd sgc; $(MAKE) clean
 	cd src; $(MAKE) clean
 	cd dynsrc; $(MAKE) clean

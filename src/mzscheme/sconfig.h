@@ -202,13 +202,10 @@ int scheme_solaris_semaphore_try_down(void *);
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "rs6k-aix"
 
 # include "uconfig.h"
-# undef UNIX_DYNAMIC_LOAD
 # undef USE_FCHDIR
 
 # define STACK_GROWS_DOWN
 # define UNIX_LIMIT_STACK 33554944
-
-# define AIX_DYNAMIC_LOAD
 
 # define SELECT_INCLUDE
 

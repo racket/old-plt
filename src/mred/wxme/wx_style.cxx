@@ -1162,7 +1162,7 @@ void *wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
   } else {
     void *weak_data;
     weak_data = GC_malloc_atomic(sizeof(short) + sizeof(short) + sizeof(void *));
-    *(void **)(weak_data + 2 * sizeof(short)) = data;
+    *(void **)((char *)weak_data + 2 * sizeof(short)) = data;
     GC_finalization_weak_ptr((void **)weak_data);
     rec->data = weak_data;
   }

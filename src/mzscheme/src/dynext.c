@@ -30,10 +30,6 @@
 #ifdef UNIX_DYNAMIC_LOAD
 # include <dlfcn.h>
 #endif
-#ifdef AIX_DYNAMIC_LOAD
-# include  "../aixdlfcn/dlfcn.h"
-# define UNIX_DYNAMIC_LOAD
-#endif
 #if defined(WINDOWS_DYNAMIC_LOAD)
 # include <windows.h>
 #endif

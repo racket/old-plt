@@ -1,11 +1,8 @@
-_HTML_ Library
-==============
+_HTML_ Library, _html.ss_
+=========================
 
-> (require-library "html.ss" "html") will provide functions to read
+(require (lib "html.ss" "html")) will provide functions to read
 html documents and structures to represent them.
-
-Note: Everything below will be prefixed with "html:" in order to
-      avoid name collisions.
 
 Functions:
 ==========

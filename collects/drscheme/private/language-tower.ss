@@ -81,7 +81,7 @@
           (define (config-panel _parent settings)
 	    (simple-module-based-language-config-panel _parent settings))
 	  (define (on-execute setting run-in-user-thread)
-	    (initialize-module-based-language setting (get-module) run-in-user-thread))
+	    (initialize-simple-module-based-language setting (get-module) run-in-user-thread))
 	  (define (get-language-position)
 	    (send simple-module-based-language get-language-position))
           (define (render-value/format value settings port put-snip)
@@ -190,7 +190,7 @@
            (print-convert value))]))
         
       ;; initialize-simple-module-based-language : setting module-spec ((-> void) -> void)
-      (define (initialize-module-based-language settings module-spec run-in-user-thread)
+    (define (initialize-simple-module-based-language settings module-spec run-in-user-thread)
         ;; must call the resolver before setting the namespace
         (dynamic-require module-spec #f)
         (let ([orig-namespace (current-namespace)]

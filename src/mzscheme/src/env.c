@@ -85,8 +85,7 @@ typedef struct Constant_Binding {
 
 #define ARBITRARY_USE 1
 #define CONSTRAINED_USE 2
-#define NOT_SETTABLE 4
-#define WAS_SET_BANGED 8
+#define WAS_SET_BANGED 4
 
 typedef struct Compile_Data {
   char **stat_dists; /* (pos, depth) => used? */
@@ -730,13 +729,6 @@ int scheme_is_env_variable_boxed(Scheme_Comp_Env *env, int which)
   return !!(data->use[which] & WAS_SET_BANGED);
 }
 
-void scheme_unsettable_variable(Scheme_Comp_Env *env, int which)
-{
-  Compile_Data *data = COMPILE_DATA(env);
-
-  data->use[which] |= NOT_SETTABLE;
-}
-
 void
 scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *frame)
 {
@@ -1007,10 +999,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       }
 
       if (frame->values[i] && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
-	if ((flags & SCHEME_SETTING) && (COMPILE_DATA(frame)->use[i] & NOT_SETTABLE))
-	  scheme_wrong_syntax("set!", NULL, symbol,
-			      "imported/inherited variable cannot be mutated");
-
 	if (flags & SCHEME_DONT_MARK_USE)
 	  return scheme_make_local(scheme_local_type, 0);
 	else
@@ -1090,8 +1078,14 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   if (modname && !b->val) {
     if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
       symbol = NULL;
-    scheme_wrong_syntax("compile", symbol, srcsym, "unbound variable in module");
+    scheme_wrong_syntax("module", symbol, srcsym, "unbound variable");
     return NULL;
+  }
+
+  if (modname && (flags & SCHEME_SETTING)) {
+    if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
+      symbol = NULL;
+    scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate imported variable");
   }
 
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 

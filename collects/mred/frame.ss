@@ -341,7 +341,7 @@
 					    "About "
 					    "...")
 			      (make-between 'help-menu 'after-about #f))])
-	       `(rec mred:standard-menus-frame
+	       `(rec mred:instance-standard-menus-frame%
 		     (class-asi super%
 		       (inherit make-menu on-close)
 		       (rename [super-make-menu-bar make-menu-bar]
@@ -358,7 +358,7 @@
 					 #f)))]
 				[set-close-menu-item-state! 
 				 (lambda (frame state)
-				   (when (is-a? frame mred:standard-menus-frame)
+				   (when (is-a? frame mred:instance-standard-menus-frame%)
 					 (let ([close-menu-item 
 						(get-standard-menu-close-item frame)])
 					   (when close-menu-item

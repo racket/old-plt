@@ -27,7 +27,8 @@
 (pretty-print '(define section #f) flatp)
 
 (define (flat-pp v)
-  (pretty-print (if (syntax? v) (syntax-object->datum v) v) flatp)
+  (parameterize ([print-hash-table #t])
+    (pretty-print (if (syntax? v) (syntax-object->datum v) v) flatp))
   (set! line-count (add1 line-count))
   (when (>= line-count lines-per-file)
     (set! line-count 0)
@@ -43,9 +44,11 @@
    [(expr) (error-test expr #f)]
    [(expr exn?)
     (unless (or (eq? exn? exn:syntax?)
-		(syntax-case expr (define define-values)
+		(syntax-case expr (define define-values define-syntax define-syntaxes)
 		  [(define . _) #t]
 		  [(define-values . _) #t]
+		  [(define-syntax . _) #t]
+		  [(define-syntaxes . _) #t]
 		  [_else #f]))
       (let ([dexpr (syntax-object->datum expr)])
 	(flat-pp 

@@ -230,18 +230,18 @@
 	(err/rt-test (bad3 1) exn:application:arity?)
 	(err/rt-test (bad11 1) exn:application:arity?)
 
-	(test #f not (regexp-match "p:"
-				   (with-handlers ([not-break-exn? exn-message])
-				     (bad1))))
-	(test #f not (regexp-match "q:"
-				   (with-handlers ([not-break-exn? exn-message])
-				     (bad2))))
-	(test #f not (regexp-match "r:"
-				   (with-handlers ([not-break-exn? exn-message])
-				     (bad3))))
-	(test #f not (regexp-match "p:"
-				   (with-handlers ([not-break-exn? exn-message])
-				     (bad11)))))
+	(test '("p:") regexp-match "p:"
+	      (with-handlers ([not-break-exn? exn-message])
+		(bad1)))
+	(test '("q:") regexp-match "q:"
+	      (with-handlers ([not-break-exn? exn-message])
+		(bad2)))
+	(test '("r:") regexp-match "r:"
+	      (with-handlers ([not-break-exn? exn-message])
+		(bad3)))
+	(test '("p:") regexp-match "p:"
+	      (with-handlers ([not-break-exn? exn-message])
+		(bad11))))
 
       (let* ([cons1 (make cons)]
 	     [cons2 (make2 cons -18)]

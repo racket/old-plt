@@ -254,7 +254,11 @@ regcomp(char *exp, int explen)
   
   /* Allocate space. */
   r = (regexp *)scheme_malloc_tagged(sizeof(regexp) + (unsigned)regsize);
-  
+
+  /* Senora/Precise GC: reset the globals */
+  regparse = exp;
+  regparse_end = exp + explen;
+
   if (r == NULL)
     FAIL("out of space");
   

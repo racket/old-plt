@@ -1,8 +1,23 @@
 (require (planet "test.ss" ("schematics" "schemeunit.plt" 1 1))
          (planet "graphical-ui.ss" ("schematics" "schemeunit.plt" 1))
-         (lib "serialize.ss")
-         "../closure.ss")
+         (lib "serialize.ss"))
 
+(require-for-syntax "../closure.ss")
+(require-for-template mzscheme)
+
+(define-syntax (define-closure stx)
+  (syntax-case stx ()
+    [(_ tag (formals ...) (free-vars ...) body)
+     (let-values ([(make-CLOSURE closure-definitions)
+                   (make-closure-definition-syntax
+                    #'tag
+                    (syntax->list #'(formals ...))
+                    (syntax->list #'(free-vars ...))
+                    #'body)])
+       #`(begin #,@closure-definitions))]))
+
+
+(define-closure id (x) () x)
 
 (define-closure add-y (x) (y) (+ x y))
 (define-closure even? (n) (odd?) (or (zero? n)
@@ -49,6 +64,14 @@
 (define closure-tests
   (make-test-suite
    "Tests for closure.ss"
+   
+   (make-test-case
+    "serialize id procedure"
+    (assert = 7 ((deserialize (serialize (make-id))) 7)))
+  
+   (make-test-case
+    "id procedure"
+    (assert = 7 ((make-id) 7)))
    
    (make-test-case
     "add-y procedure"
@@ -101,7 +124,7 @@
       (assert = 4 (env6 'x))
       (assert = 5 (env6 'y))
       (assert = 6 (env6 'z))))
-         
+            
    ))
 
 

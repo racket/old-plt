@@ -1344,7 +1344,9 @@
 		   (in:sig (pat:pexpand 'sig p-env kwd)))
 	      (internal-error expr "Not implemented yet"))))
 	(else
-	  (static-error expr "Invalid invoke-linkage specification"))))))
+	  (cons immediate-signature-name
+	    (signature-exploded
+	      (expand-expr expr env attributes sig-vocab))))))))
 
 (define iu/s-imports-vocab (make-vocabulary))
 
@@ -1366,7 +1368,9 @@
 		   (in:sig (pat:pexpand 'sig p-env kwd)))
 	      (internal-error expr "Not implemented yet"))))
 	(else
-	  (static-error expr "Invalid invoke-linkage specification"))))))
+	  (convert-to-prim-format
+	    (signature-elements
+	      (expand-expr expr env attributes sig-vocab))))))))
 
 (add-micro-form 'invoke-unit/sig scheme-vocabulary
   (let* ((kwd '(invoke-unit/sig))
@@ -1404,3 +1408,42 @@
 		  env attributes vocab)))))
 	(else
 	  (static-error expr "Malformed invoke-unit/sig"))))))
+
+(add-micro-form 'invoke-open-unit/sig scheme-vocabulary
+  (let* ((kwd '(invoke-open-unit/sig))
+	  (in-pattern '(invoke-open-unit/sig expr name-spec linkage ...))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((in:expr (pat:pexpand 'expr p-env kwd))
+		   (in:name-spec (pat:pexpand 'name-spec p-env kwd))
+		   (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
+	      (let ((proc:linkage (map (lambda (l)
+					 (expand-expr l env attributes
+					   iu/s-linkage-vocab))
+				    in:linkage))
+		     (proc:imports (apply append
+				     (map (lambda (l)
+					    (expand-expr l env attributes
+					      iu/s-imports-vocab))
+				       in:linkage))))
+		(expand-expr
+		  (structurize-syntax
+		    `(let ((unit ,in:expr))
+		       (#%verify-linkage-signature-match
+			 'invoke-open-unit/sig
+			 '(invoke)
+			 (#%list unit)
+			 '(())
+			 '(,proc:linkage))
+		       (invoke-open-unit
+			 (#%unit-with-signature-unit unit)
+			 ,in:name-spec
+			 ,@proc:imports))
+		    expr)
+		  env attributes vocab)))))
+	(else
+	  (static-error expr "Malformed invoke-open-unit/sig"))))))

@@ -5342,6 +5342,40 @@ static int tcp_addr(char *address, struct hostInfo *info)
 {
   int tries = 3;
   long *done = MALLOC_ONE_ATOMIC(long);
+  
+  /* Check for numerical address: */
+  {
+     unsigned char *s = (unsigned char *)address, n[4];
+     int p = 0, v = 0;
+     while (*s) {
+       if (isdigit(*s)) {
+         if (v < 256)
+           v = (v * 10) + (*s - '0');
+       } else if (*s == '.') {
+         if (p < 4) {
+           n[p] = v;
+           p++;
+         }
+         v = 0;
+       } else
+         break;
+       s++;
+     }
+     
+     if (p == 3) {
+       n[p] = v;
+       p++;
+     }
+     
+     if (!*s && (p == 4)
+         && (s[0] < 256) && (s[1] < 256)
+         && (s[2] < 256) && (s[3] < 256)) {
+       /* Numerical address */
+       info->addr[0] = *(unsigned long *)n;
+       return 0;
+     }
+  }
+  
  try_again:
   *done = 0;
   info->rtnCode = 0;

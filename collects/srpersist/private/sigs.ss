@@ -16,18 +16,18 @@
    ; utility
 
      make-length
-     free-length
+     free-length!
      read-length
      make-indicator
-     free-indicator
+     free-indicator!
      read-indicator
-     set-indicator
+     set-indicator!
      read-row-status
-     free-row-status
+     free-row-status!
      make-buffer
-     free-buffer
+     free-buffer!
      read-buffer
-     write-buffer
+     write-buffer!
 
      ; ODBC procedures 
 

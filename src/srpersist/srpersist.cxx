@@ -139,7 +139,8 @@ char *findBitByValueInDict(SQLUINTEGER value,SRP_NAMED_CONSTANT *entry,size_t nu
   return NO_BIT_NAME;
 }
 
-SQLUINTEGER findBitByNameInDict(char *intName,SRP_NAMED_CONSTANT *entry,size_t numBits) {
+SQLUINTEGER findBitByNameInDict(char *intName,SRP_NAMED_CONSTANT *entry,
+				size_t numBits) {
   size_t i;
   
   for (i = 0; i < numBits; i++,entry++) {
@@ -360,13 +361,10 @@ void removeFromBufferTable(SRP_SQL_BUFFER *buffer) {
   
   p = bufferTable[hashVal];
 
-  puts("1");
-
   if (p == NULL) {
     return;
   }
 
-  puts("2");
   if (p->buffer == buffer) {
     bufferTable[hashVal] = p->next;
     scheme_gc_ptr_ok(p); 
@@ -375,7 +373,6 @@ void removeFromBufferTable(SRP_SQL_BUFFER *buffer) {
   q = p;
   p = p->next;
 
-  puts("3");
   while (p) {
     if (p->buffer == buffer) {
       q->next = p->next;
@@ -432,7 +429,7 @@ Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
 
   if (argc == 1) {
     if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE) {
-      scheme_wrong_type("make-length","int",0,argc,argv);
+      scheme_wrong_type("make-length","exact integer",0,argc,argv);
     }
     else if (scheme_get_int_val(argv[0],&len) == 0) {
       scheme_signal_error("Too-large length");
@@ -464,12 +461,32 @@ Scheme_Object *srp_free_length(int argc,Scheme_Object **argv) {
 
 Scheme_Object *srp_make_indicator(int argc,Scheme_Object **argv) {
   SRP_SQL_INDICATOR *retval;
+  long size;
+
+  if (argc == 1) {
+    if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE) {
+      scheme_wrong_type("make-indicator","positive exact integer",0,argc,argv);
+    }
+
+    if (scheme_get_int_val(argv[0],&size) == 0) {
+      scheme_signal_error("make-indicator: size argument too big = %V",argv[0]);
+    }
+
+    if (size <= 0) {
+      scheme_signal_error("make-indicator: size argument is 0, expected positive exact number");
+    }
+  }
+  else {
+    size = 1;
+  }
 
   retval = (SRP_SQL_INDICATOR *)scheme_malloc(sizeof(SRP_SQL_INDICATOR));
   scheme_dont_gc_ptr(retval);
 
   retval->type = sql_indicator_type; 
-  retval->value = 0;
+  retval->arrayLength = size;
+  retval->storage = (SQLINTEGER *)scheme_malloc(sizeof(SQLINTEGER) * size);
+  memset(retval->storage,0,sizeof(SQLINTEGER) * size); /* redundant? */
 
   return (Scheme_Object *)retval;
 }
@@ -531,15 +548,8 @@ Scheme_Object *srp_read_boxed_uint(int argc,Scheme_Object **argv) {
   return scheme_make_integer_value_from_unsigned(*(SQL_BOXED_UINT_VAL(argv[0])));
 }
 
-Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
-  SQLINTEGER value;
-  Scheme_Object *value_object;
-
-  if (SQL_INDICATORP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-read-indicator","sql-indicator",0,argc,argv);
-  }
-
-  value = SQL_INDICATOR_VAL(argv[0]);
+Scheme_Object *make_one_indicator(SQLINTEGER value) {
+  Scheme_Object *retval;
 
   switch(value) {
   case SQL_NO_TOTAL :
@@ -556,14 +566,58 @@ Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
     return scheme_intern_symbol("sql-data-at-exec");
   }
 
-  value_object = scheme_make_integer_value(value);
+  retval = scheme_make_integer_value(value);
 
   if (value <= SQL_LEN_DATA_AT_EXEC_OFFSET) {
     return scheme_make_pair(scheme_intern_symbol("sql-len-data-at-exec"),
-			    scheme_make_pair(value_object,scheme_null));
+			    scheme_make_pair(retval,scheme_null));
   }
 
-  return value_object;
+  return retval;
+}
+
+Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
+  SQLINTEGER *storage;
+  Scheme_Object *retval;
+  long len;
+  long offset;
+  long i;
+
+  if (SQL_INDICATORP(argv[0]) == FALSE) {
+    scheme_wrong_type("read-indicator","sql-indicator",0,argc,argv);
+  }
+
+  storage = SQL_INDICATOR_VAL(argv[0]);
+
+  if (argc == 2) { /* return one indicator */
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("read-indicator","nonnegative exact integer",1,
+			argc,argv);
+    }
+
+    if (scheme_get_int_val(argv[1],&offset) == 0) {
+      scheme_signal_error("read-indicator: offset too big = %V",argv[1]);
+    }
+
+    if (offset < 0 || offset >= SQL_INDICATOR_LEN(argv[0])) {
+      scheme_signal_error("read-indicator: offset %d out of range [0..%d]",
+			  offset,SQL_INDICATOR_LEN(argv[0]) - 1);
+    }
+
+    return make_one_indicator(storage[offset]);
+  }
+
+  /* return list of indicators */
+
+  retval = scheme_null;
+
+  len = SQL_INDICATOR_LEN(argv[0]);
+
+  for (i = len - 1; i >= 0; i--) {
+    retval = scheme_make_pair(make_one_indicator(storage[i]),retval);
+  } 
+
+  return retval;
 }
 
 Scheme_Object *srp_read_length(int argc,Scheme_Object **argv) {
@@ -576,64 +630,87 @@ Scheme_Object *srp_read_length(int argc,Scheme_Object **argv) {
 
 Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
   char *lenString;
-  SRP_SQL_INDICATOR *indicator;
+  SQLINTEGER *storage;
+  long offset;
+  int execVal;
 
   if (SQL_INDICATORP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-set-indicator","sql-indicator",0,argc,argv);
+    scheme_wrong_type("set-indicator!","sql-indicator",0,argc,argv);
   }
 
-  if (SCHEME_SYMBOLP(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-set-indicator","symbol",1,argc,argv);
+  storage = SQL_INDICATOR_VAL(argv[0]);
+
+  if (SCHEME_INTP(argv[1]) == FALSE && 
+      SCHEME_SYMBOLP(argv[1]) == FALSE &&  SCHEME_PAIRP(argv[1]) == FALSE) {
+    scheme_wrong_type("set-indicator!","integer or symbol or pair",1,argc,argv);
   }
 
-  indicator = (SRP_SQL_INDICATOR *)(argv[0]);
+  if (argc == 3) { /* explicit offset */
 
-  lenString = SCHEME_SYM_VAL(argv[1]);
-
-  if (stricmp(lenString,"sql-len-data-at-exec") == 0) {
-    int execVal;
-
-    if (argc != 3) {
-      scheme_signal_error("sql-set-indicator: "
-			  "%s requires additional integer argument",lenString);
+    if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) {
+      scheme_wrong_type("set-indicator!","nonnegative exact integer",2,
+			argc,argv);
     }
 
-    if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type("sql-set-indicator","int",2,argc,argv);
+    if (scheme_get_int_val(argv[2],&offset) == 0) {
+      scheme_signal_error("set-indicator!: offset too big = %V",argv[2]);
     }
 
-    execVal = SCHEME_INT_VAL(argv[2]);
-
-    indicator->value = SQL_LEN_DATA_AT_EXEC(execVal);
-
-    return scheme_void;
-  }
-
-  if (argc != 2) {
-      scheme_signal_error("sql-set-indicator: "
-			  "too many arguments for indicator value %s",
-			  lenString);
-  }
-
-  if (stricmp(lenString,"sql-nts") == 0) {
-    indicator->value = SQL_NTS;
-  }
-  else if (stricmp(lenString,"sql-null-data") == 0) {
-    indicator->value = SQL_NULL_DATA;
-  }
-#if (ODBCVER >= 0x0300)
-  else if (stricmp(lenString,"sql-column-ignore") == 0) {
-    indicator->value = SQL_COLUMN_IGNORE;
-  }
-#endif
-  else if (stricmp(lenString,"sql-data-at-exec") == 0) {
-    indicator->value = SQL_DATA_AT_EXEC;
+    if (offset < 0 || offset >= SQL_INDICATOR_LEN(argv[0])) {
+      scheme_signal_error("set-indicator!: offset %d out of range [0..%d]",
+			  offset,SQL_INDICATOR_LEN(argv[0]) - 1);
+    }
   }
   else {
-    scheme_signal_error("sql-set-indicator: "
-			"unknown indicator value %s",
-			lenString);
+    offset = 0;
+  }
 
+  if (SCHEME_SYMBOLP(argv[1])) {
+    lenString = SCHEME_SYM_VAL(argv[1]);
+
+    if (stricmp(lenString,"sql-nts") == 0) {
+      storage[offset] = SQL_NTS;
+    }
+    else if (stricmp(lenString,"sql-null-data") == 0) {
+      storage[offset] = SQL_NULL_DATA;
+    }
+#if (ODBCVER >= 0x0300)
+    else if (stricmp(lenString,"sql-column-ignore") == 0) {
+      storage[offset] = SQL_COLUMN_IGNORE;
+    }
+#endif
+    else if (stricmp(lenString,"sql-data-at-exec") == 0) {
+      storage[offset] = SQL_DATA_AT_EXEC;
+    }
+    else {
+      scheme_signal_error("set-indicator!: "
+			  "unknown indicator value %s",
+			  lenString);
+    }
+
+  } /* should be len-data-at-exec pair */
+  else if (SCHEME_PAIRP(argv[1])) {
+    Scheme_Object *car,*cadr;
+
+    car = SCHEME_CAR(argv[1]);
+    cadr = SCHEME_CADR(argv[1]);
+
+    if (SCHEME_SYMBOLP(car) == FALSE ||
+	stricmp(SCHEME_SYM_VAL(car),"sql-len-data-at-exec")) {
+      scheme_signal_error("set-indicator!: first element of pair argument must be 'sql-len-data-at-exec, got: %V",car);
+    }
+    
+    if (SCHEME_INTP(cadr) == FALSE) {
+      scheme_signal_error("set-indicator!: second element of pair argument must be integer, got: %V",cadr);
+    }
+
+    /* argument to len-data-at-exec */
+    execVal = SCHEME_INT_VAL(cadr);
+
+    storage[offset] = SQL_LEN_DATA_AT_EXEC(execVal);
+  }
+  else { /* must be integer */
+    storage[offset] = SCHEME_INT_VAL(argv[1]);
   }
 
   return scheme_void;
@@ -868,26 +945,62 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
   SRP_SQL_BUFFER *retval;
   char *typeName;
   SRP_NAMED_SMALL_CONSTANT *p;
-  unsigned long numElts;
+  long width;
+  long arrayLength;
 
-  if (SCHEME_SYMBOLP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-make-buffer","symbol",0,argc,argv);
+  if (SCHEME_SYMBOLP(argv[0]) == FALSE && 
+      SCHEME_PAIRP(argv[0]) == FALSE) {
+    scheme_wrong_type("make-buffer","symbol or pair",0,argc,argv);
   }
 
-  if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
-    scheme_wrong_type("sql-make-buffer","int",1,argc,argv);
+  if (argc == 2) {
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("make-buffer","positive exact integer",1,argc,argv);
+    }
+    if (scheme_get_int_val(argv[1],&arrayLength) == 0) {
+      scheme_signal_error("make-buffer: number of elements too large");
+    }
+  }
+  else {
+    arrayLength = 1;
   }
 
-  typeName = SCHEME_SYM_VAL(argv[0]);
+  if (SCHEME_SYMBOLP(argv[0])) {
+    typeName = SCHEME_SYM_VAL(argv[0]);
+    width = 1;
+  }
+  else { /* should be pair of char-type, width */
+    Scheme_Object *car,*cadr;
+
+    car = SCHEME_CAR(argv[0]);
+    cadr = SCHEME_CADR(argv[0]);
+
+    if (SCHEME_SYMBOLP(car) == FALSE ||
+	SCHEME_EXACT_INTEGERP(cadr) == FALSE) {
+      scheme_wrong_type("make-buffer","symbol, exact integer pair",0,argc,argv);
+    }
+    
+    typeName = SCHEME_SYM_VAL(car);
+
+    if (stricmp(typeName,"sql-c-char") && 
+	stricmp(typeName,"sql-c-wchar")) {
+      scheme_signal_error("make-buffer: invalid character C data type \"%s\"",
+			  typeName);
+    }
+
+    if (scheme_get_int_val(cadr,&width) == 0) {
+      scheme_signal_error("make-buffer: requested width of character buffer too big");
+    }
+
+    if (width <= 0) {
+      scheme_signal_error("make-buffer: requested width of character buffer too small");
+    }
+  }    
 
   p = namedSmallConstSearch(typeName,CDataTypes);
   
   if (p == NULL) {
-    scheme_signal_error("sql-make-buffer: invalid C type: %s",typeName);
-  }
-
-  if (scheme_get_unsigned_int_val(argv[1],&numElts) == 0) {
-    scheme_signal_error("sql-make-buffer: too many elements requested");
+    scheme_signal_error("make-buffer: invalid C type: %s",typeName);
   }
 
   retval = (SRP_SQL_BUFFER *)scheme_malloc(sizeof(SRP_SQL_BUFFER));
@@ -895,7 +1008,8 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
 
   retval->type = sql_buffer_type;
 
-  retval->numElts = numElts;
+  retval->width = width;
+  retval->arrayLength = arrayLength;
 
   retval->CDataType = (SQLSMALLINT)(p->val);
 
@@ -905,7 +1019,7 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
      but still bound to OBDC columns
      so make actual storage uncollectable for now */
 
-  retval->storage = scheme_malloc(retval->numElts * sizeof(retval->eltSize));
+  retval->storage = scheme_malloc(retval->width * retval->arrayLength * sizeof(retval->eltSize));
   scheme_dont_gc_ptr(retval->storage);  
 
   /* need to be able to recover <sql-buffer> from storage address
@@ -936,114 +1050,141 @@ Scheme_Object *srp_free_buffer(int argc,Scheme_Object **argv) {
 Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   SQLSMALLINT CDataType;
   void *buffer;
-  unsigned long numElts;
+  long width;
+  long arrayLength;
+  BOOL isCharType;
+  long ndx;
 
   if (SQL_BUFFERP(argv[0]) == FALSE) {
     scheme_wrong_type("read-buffer","<sql-buffer>",0,argc,argv);
   } 
 
+  if (argc == 2) {
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE ||
+	SCHEME_INT_VAL(argv[1]) <= 0) {
+      scheme_wrong_type("read-buffer","positive exact integer",1,argc,argv);
+    }
+    ndx = SCHEME_INT_VAL(argv[1]);
+  }
+  else {
+    ndx = WHOLE_BUFFER;
+  }
+
   CDataType = SQL_BUFFER_CTYPE(argv[0]);
   buffer = SQL_BUFFER_VAL(argv[0]);
-  numElts = SQL_BUFFER_NUMELTS(argv[0]);
+
+#if (ODBCVER >= 0x0300)
+  isCharType = (CDataType == SQL_C_CHAR || CDataType == SQL_C_WCHAR);
+#else
+  isCharType = (CDataType == SQL_C_CHAR);
+#endif 
+
+  width = SQL_BUFFER_WIDTH(argv[0]);
+  arrayLength = SQL_BUFFER_ARRAYLEN(argv[0]);
+
+  if (ndx != WHOLE_BUFFER && ndx >= arrayLength) {
+    scheme_signal_error("read-buffer: index = %d outside buffer range = [0..%d]",
+			ndx,arrayLength-1);
+  }
 
   switch(CDataType) {
   case SQL_C_CHAR :
-    return readCharBuffer((char *)buffer,numElts);
+    return readCharBuffer((char *)buffer,width,arrayLength,ndx);
 #if (ODBCVER >= 0x0300)
   case SQL_C_WCHAR :
-    return readWideCharBuffer((wchar_t *)buffer,numElts);
+    return readWideCharBuffer((wchar_t *)buffer,width,arrayLength,ndx);
 #endif
   case SQL_C_SLONG :
   case SQL_C_LONG :
-    return readLongBuffer((long *)buffer,numElts);
+    return readLongBuffer((long *)buffer,arrayLength,ndx);
   case SQL_C_ULONG :
     /* SQL_C_BOOKMARK is the same */
-    return readULongBuffer((unsigned long *)buffer,numElts);
+    return readULongBuffer((unsigned long *)buffer,arrayLength,ndx);
   case SQL_C_SSHORT :
   case SQL_C_SHORT :
-    return readShortBuffer((short *)buffer,numElts);
+    return readShortBuffer((short *)buffer,arrayLength,ndx);
   case SQL_C_USHORT :
-    return readUShortBuffer((unsigned short *)buffer,numElts);
+    return readUShortBuffer((unsigned short *)buffer,arrayLength,ndx);
   case SQL_C_FLOAT :
-    return readFloatBuffer((float *)buffer,numElts);
+    return readFloatBuffer((float *)buffer,arrayLength,ndx);
   case SQL_C_DOUBLE :
-    return readDoubleBuffer((double *)buffer,numElts);
+    return readDoubleBuffer((double *)buffer,arrayLength,ndx);
 #if (ODBCVER >= 0x0300)
   case SQL_C_NUMERIC :
-    return readNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,numElts);
+    return readNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,arrayLength,ndx);
 #endif
   case SQL_C_DATE :
 #if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_DATE :
-    return readDateBuffer((SQL_DATE_STRUCT *)buffer,numElts);
+    return readDateBuffer((SQL_DATE_STRUCT *)buffer,arrayLength,ndx);
 #else
-    return readDateBuffer((DATE_STRUCT *)buffer,numElts);
+    return readDateBuffer((DATE_STRUCT *)buffer,arrayLength,ndx);
 #endif
   case SQL_C_TIME :
 #if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIME :
-    return readTimeBuffer((SQL_TIME_STRUCT *)buffer,numElts);
+    return readTimeBuffer((SQL_TIME_STRUCT *)buffer,arrayLength,ndx);
 #else
-    return readTimeBuffer((TIME_STRUCT *)buffer,numElts);
+    return readTimeBuffer((TIME_STRUCT *)buffer,arrayLength,ndx);
 #endif
   case SQL_C_TIMESTAMP :
 #if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIMESTAMP :
-    return readTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,numElts);
+    return readTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,arrayLength,ndx);
 #else
-    return readTimeStampBuffer((TIMESTAMP_STRUCT *)buffer,numElts);
+    return readTimeStampBuffer((TIMESTAMP_STRUCT *)buffer,arrayLength,ndx);
 #endif
 #if (ODBCVER >= 0x0300)
   case SQL_C_INTERVAL_YEAR :
-    return readIntervalYearBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalYearBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_MONTH :
-    return readIntervalMonthBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalMonthBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_DAY :
-    return readIntervalDayBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalDayBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_HOUR :
-    return readIntervalHourBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalHourBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_MINUTE :
-    return readIntervalMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_SECOND :
-    return readIntervalSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_YEAR_TO_MONTH :
-    return readIntervalYearMonthBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalYearMonthBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_DAY_TO_HOUR :
-    return readIntervalDayHourBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalDayHourBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_DAY_TO_MINUTE :
-    return readIntervalDayMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalDayMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_DAY_TO_SECOND :
-    return readIntervalDaySecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalDaySecondBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_HOUR_TO_MINUTE :
-    return readIntervalHourMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalHourMinuteBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_HOUR_TO_SECOND :
-    return readIntervalHourSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalHourSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
   case SQL_C_INTERVAL_MINUTE_TO_SECOND :
-    return readIntervalMinuteSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+    return readIntervalMinuteSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,arrayLength,ndx);
 #endif
   case SQL_C_BINARY :
     /* SQL_C_VARBOOKMARK is the same */
-    return readBinaryBuffer((char *)buffer,numElts);
+    return readBinaryBuffer((char *)buffer,arrayLength,ndx);
   case SQL_C_BIT :
-    return readBitBuffer((unsigned char *)buffer,numElts);
+    return readBitBuffer((unsigned char *)buffer,arrayLength,ndx);
 
 #ifdef WIN32
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
-    return readBigIntBuffer((_int64 *)buffer,numElts);
+    return readBigIntBuffer((_int64 *)buffer,arrayLength,ndx);
   case SQL_C_UBIGINT :
-    return readUBigIntBuffer((unsigned _int64 *)buffer,numElts);
+    return readUBigIntBuffer((unsigned _int64 *)buffer,arrayLength,ndx);
 #endif
 #endif
 
   case SQL_C_STINYINT :
   case SQL_C_TINYINT :
-    return readTinyBuffer((char *)buffer,numElts);
+    return readTinyBuffer((char *)buffer,arrayLength,ndx);
   case SQL_C_UTINYINT :
-    return readUTinyBuffer((unsigned char *)buffer,numElts);
+    return readUTinyBuffer((unsigned char *)buffer,arrayLength,ndx);
 #if (ODBCVER >= 0x0350)
   case SQL_C_GUID :
-    return readGuidBuffer((SQLGUID *)buffer,numElts);
+    return readGuidBuffer((SQLGUID *)buffer,arrayLength,ndx);
 #endif
   }
 
@@ -1089,63 +1230,9 @@ BOOL schemeGuidP(Scheme_Object *o) {
   return (scheme_is_struct_instance(GUID_STRUCT_TYPE,o));
 }
 
-BOOL schemeIntervalIntegerP(Scheme_Object *o) {
-  Scheme_Object *currList;
-  Scheme_Object *sign,*theInt;
-
-  if (scheme_proper_list_length(o) != 2) {
-    return FALSE;
-  }
-
-  currList = o;
-
-  sign = SCHEME_CAR(currList);
-
-  if (SCHEME_SYMBOLP(sign) == FALSE) {
-    return FALSE;
-  }
-
-  if (strcmp(SCHEME_SYM_VAL(sign),"+") && 
-      strcmp(SCHEME_SYM_VAL(sign),"-")) {
-    return FALSE;
-  }
-
-  theInt = SCHEME_CADR(currList);
-
-  return isUnsignedInt(theInt);
-}
-
-BOOL checkIsPredList(Scheme_Object *o,BOOL (*p)(Scheme_Object *),long numElts) {
-  Scheme_Object *currList,*currVal;
-  long count;
-
-  if (SCHEME_PAIRP(o) == FALSE) {
-    return FALSE;
-  }
-
-  currList = o;
-  count = 0;
-
-  while (currList != scheme_null) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (++count > numElts) {
-      scheme_signal_error("write-buffer: too many elements to fit in buffer");
-    }
-
-    if ((*p)(currVal) == FALSE) {
-      return FALSE;
-    }
-
-    currList = SCHEME_CDR(currList);
-  }
-
-  return TRUE;
-}
-
 #if (ODBCVER >= 0x0300)
-void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
+void writeIntervalToBuff(void *buffer,Scheme_Object *obj,
+			 long arrayLength,long ndx,
 			 SQLINTERVAL intervalType,
 			 short numFields,
 			 Scheme_Object *signProc,
@@ -1155,36 +1242,29 @@ void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
   Scheme_Object *currSign,*currInt;
   char *signStr;
   SQL_INTERVAL_STRUCT *pInterval;
-  long i,j;
+  long i;
 
-  checkIsPredList(currList,schemeIntervalIntegerP,numElts);
+  currVal = obj;
 
-  for (i = 0; currList != scheme_null; i++) {
+  pInterval = (SQL_INTERVAL_STRUCT *)buffer + ndx;
 
-    currVal = SCHEME_CAR(currList);
+  currSign = scheme_apply(signProc,1,&currVal);
 
-    pInterval = (SQL_INTERVAL_STRUCT *)buffer + i;
+  pInterval->interval_type = intervalType;
 
-    currSign = scheme_apply(signProc,1,&currVal);
+  signStr = SCHEME_SYM_VAL(currSign);
+  pInterval->interval_sign = 
+    (*signStr == '+') ? SQL_FALSE : SQL_TRUE;
 
-    pInterval->interval_type = intervalType;
+  for (i = 0; i < numFields; i++) {
 
-    signStr = SCHEME_SYM_VAL(currSign);
-    pInterval->interval_sign = 
-      (*signStr == '+') ? SQL_FALSE : SQL_TRUE;
+    currInt = scheme_apply(intProc[i],1,&currVal);
 
-    for (j = 0; j < numFields; j++) {
+    /* this depends on sizeof(long) == sizeof(int) */
 
-      currInt = scheme_apply(intProc[j],1,&currVal);
-
-      /* this depends on sizeof(long) == sizeof(int) */
-
-      if (scheme_get_unsigned_int_val(currInt,fieldFromInterval[j](pInterval)) == 0) {
-	scheme_signal_error("sql-write-buffer: interval too big");
-      }
+    if (scheme_get_unsigned_int_val(currInt,fieldFromInterval[i](pInterval)) == 0) {
+      scheme_signal_error("write-buffer: interval too big");
     }
-
-    currList = SCHEME_CDR(currList);
   }
 }
 #endif
@@ -1192,21 +1272,36 @@ void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
 Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   SQLSMALLINT CDataType;
   void *buffer;
-  long numElts;
+  long arrayLength,width,ndx;
 #if (ODBCVER >= 0x0300)
   Scheme_Object *accessors[5];
   INTERVAL_FIELD_ACCESSOR fields[5];
 #endif  
 
   if (SQL_BUFFERP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-write-buffer","int",0,argc,argv);
+    scheme_wrong_type("write-buffer","sql-buffer",0,argc,argv);
   } 
+
+  if (argc == 3) {
+    if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE ||
+	SCHEME_INT_VAL(argv[2]) < 0)
+      scheme_wrong_type("write-buffer","nonnegative exact integer",2,
+			argc,argv);
+    ndx = SCHEME_INT_VAL(argv[2]);
+  }
+  else {
+    ndx = 0;
+  }
 
   CDataType = SQL_BUFFER_CTYPE(argv[0]);
   buffer = SQL_BUFFER_VAL(argv[0]);
-  numElts = SQL_BUFFER_NUMELTS(argv[0]);
+  arrayLength = SQL_BUFFER_ARRAYLEN(argv[0]);
 
-  memset(buffer,'\0',numElts * sizeofCDataType(CDataType));
+  if (ndx >= arrayLength) {
+    scheme_signal_error("write-buffer: index = %d outside buffer range = [0..%d]",
+			ndx,arrayLength - 1);
+
+  }
 
   /* check that data to be written is of appropriate type, 
      then call specialized write routine */
@@ -1215,36 +1310,41 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_CHAR :
 
     if (SCHEME_STRINGP(argv[1]) == FALSE) {
-      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+      scheme_wrong_type("write-buffer","string",1,argc,argv);
     }
 
-    if (SCHEME_STRLEN_VAL(argv[1]) >= numElts) {
-      scheme_signal_error("sql-write-buffer: string too long for buffer");
+    width = SQL_BUFFER_WIDTH(argv[0]);
+    if (SCHEME_STRLEN_VAL(argv[1]) >= width) {
+      scheme_signal_error("write-buffer: string too wide for buffer");
     }
 
-    writeCharBuffer((char *)buffer,argv[1]);
+    writeCharBuffer((char *)buffer,argv[1],width,ndx);
     break;
 
 #if (ODBCVER >= 0x0300)
   case SQL_C_WCHAR :
 
     if (SCHEME_STRINGP(argv[1]) == FALSE) {
-      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+      scheme_wrong_type("write-buffer","string",1,argc,argv);
     }
 
-    if (SCHEME_STRLEN_VAL(argv[1]) >= numElts) {
-      scheme_signal_error("sql-write-buffer: string too long for buffer");
+    width = SQL_BUFFER_WIDTH(argv[0]);
+    if (SCHEME_STRLEN_VAL(argv[1]) >= width) {
+      scheme_signal_error("write-buffer: string too wide for buffer");
     }
 
-    writeWideCharBuffer((wchar_t *)buffer,argv[1]);
+    writeWideCharBuffer((wchar_t *)buffer,argv[1],width,ndx);
     break;
 #endif
 
   case SQL_C_SLONG :
   case SQL_C_LONG :
 
-    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
-    writeLongBuffer((long *)buffer,argv[1]); 
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","exact integer",1,argc,argv);
+    }
+
+    writeLongBuffer((long *)buffer,argv[1],ndx); 
 
     break;
 
@@ -1252,71 +1352,101 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     /* SQL_C_BOOKMARK is the same */
 
-    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
-    writeULongBuffer((unsigned long *)buffer,argv[1]); 
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","exact integer",1,argc,argv);
+    }
+
+    writeULongBuffer((unsigned long *)buffer,argv[1],ndx); 
 
     break;
 
   case SQL_C_SSHORT :
   case SQL_C_SHORT :
 
-    checkIsPredList(argv[1],schemeIntP,numElts);
-    writeShortBuffer((short *)buffer,argv[1]); 
+    if (SCHEME_INTP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","integer",1,argc,argv);
+    }
+
+    writeShortBuffer((short *)buffer,argv[1],ndx); 
 
     break;
 
 
   case SQL_C_USHORT :
 
-    checkIsPredList(argv[1],schemeIntP,numElts);
-    writeUShortBuffer((unsigned short *)buffer,argv[1]); 
+    if (SCHEME_INTP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","integer",1,argc,argv);
+    }
+
+    writeUShortBuffer((unsigned short *)buffer,argv[1],ndx); 
 
     break;
 
   case SQL_C_STINYINT :
   case SQL_C_TINYINT :
 
-    checkIsPredList(argv[1],schemeIntP,numElts);
-    writeTinyBuffer((char *)buffer,argv[1]); 
+    if (SCHEME_INTP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","integer",1,argc,argv);
+    }
+
+    writeTinyBuffer((char *)buffer,argv[1],ndx); 
 
   case SQL_C_UTINYINT :
 
-    checkIsPredList(argv[1],schemeIntP,numElts);
-    writeUTinyBuffer((unsigned char *)buffer,argv[1]); 
+    if (SCHEME_INTP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","integer",1,argc,argv);
+    }
+
+    writeUTinyBuffer((unsigned char *)buffer,argv[1],ndx); 
 
 #ifdef WIN32
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
 
-    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
-    writeBigIntBuffer((_int64 *)buffer,argv[1]); 
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","integer",1,argc,argv);
+    }
+
+    writeBigIntBuffer((_int64 *)buffer,argv[1],ndx); 
 
   case SQL_C_UBIGINT :
 
-    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
-    writeUBigIntBuffer((unsigned _int64 *)buffer,argv[1]); 
+    if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","integer",1,argc,argv);
+    }
+
+    writeUBigIntBuffer((unsigned _int64 *)buffer,argv[1],ndx); 
 #endif
 #endif
 
   case SQL_C_FLOAT :
 
-    checkIsPredList(argv[1],schemeFloatP,numElts);
-    writeFloatBuffer((float *)buffer,argv[1]); 
+    if (SCHEME_FLOATP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","single-precision flonum",1,argc,argv);
+    }
+
+    writeFloatBuffer((float *)buffer,argv[1],ndx); 
 
     break;
 
   case SQL_C_DOUBLE :
 
-    checkIsPredList(argv[1],schemeDoubleP,numElts);
-    writeDoubleBuffer((double *)buffer,argv[1]); 
+    if (SCHEME_DBLP(argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","double-precision flonum",1,argc,argv);
+    }
+
+    writeDoubleBuffer((double *)buffer,argv[1],ndx); 
 
     break;
 
 #if (ODBCVER >= 0x0300)
   case SQL_C_NUMERIC :
 
-    checkIsPredList(argv[1],schemeNumericP,numElts);
-    writeNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(NUMERIC_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-numeric",1,argc,argv);
+    }
+
+    writeNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,argv[1],ndx); 
 
     break;
 #endif
@@ -1324,11 +1454,18 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_DATE :
 #if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_DATE :
-    checkIsPredList(argv[1],schemeDateP,numElts);
-    writeDateBuffer((SQL_DATE_STRUCT *)buffer,argv[1]); 
+
+    if (scheme_is_struct_instance(DATE_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-date",1,argc,argv);
+    }
+
+    writeDateBuffer((SQL_DATE_STRUCT *)buffer,argv[1],ndx); 
 #else
-    checkIsPredList(argv[1],schemeDateP,numElts);
-    writeDateBuffer((DATE_STRUCT *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(DATE_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-date",1,argc,argv);
+    }
+
+    writeDateBuffer((DATE_STRUCT *)buffer,argv[1],ndx); 
 #endif
 
     break;
@@ -1336,11 +1473,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_TIME :
 #if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIME :
-    checkIsPredList(argv[1],schemeTimeP,numElts);
-    writeTimeBuffer((SQL_TIME_STRUCT *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(TIME_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-time",1,argc,argv);
+    }
+    writeTimeBuffer((SQL_TIME_STRUCT *)buffer,argv[1],ndx); 
 #else
-    checkIsPredList(argv[1],schemeTimeP,numElts);
-    writeTimeBuffer((TIME_STRUCT *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(TIME_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-time",1,argc,argv);
+    }
+    writeTimeBuffer((TIME_STRUCT *)buffer,argv[1],ndx); 
 #endif
 
     break;
@@ -1348,11 +1489,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_TIMESTAMP :
 #if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIMESTAMP :
-    checkIsPredList(argv[1],schemeTimeP,numElts);
-    writeTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(TIMESTAMP_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-timestamp",1,argc,argv);
+    }
+    writeTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,argv[1],ndx); 
 #else
-    checkIsPredList(argv[1],schemeTimeP,numElts);
-    writeTimeStampBuffer((TIMESTAMP_STRUCT *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(TIMESTAMP_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-timestamp",1,argc,argv);
+    }
+    writeTimeStampBuffer((TIMESTAMP_STRUCT *)buffer,argv[1],ndx); 
 #endif
 
     break;
@@ -1360,8 +1505,10 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 #if (ODBCVER >= 0x0350)
   case SQL_C_GUID :
 
-    checkIsPredList(argv[1],schemeGuidP,numElts);
-    writeGuidBuffer((SQLGUID *)buffer,argv[1]); 
+    if (scheme_is_struct_instance(GUID_STRUCT_TYPE,argv[1]) == FALSE) {
+      scheme_wrong_type("write-buffer","sql-guid",1,argc,argv);
+    }
+    writeGuidBuffer((SQLGUID *)buffer,argv[1],ndx); 
 
     break;
 #endif
@@ -1369,10 +1516,10 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_BIT :
 
     if (SCHEME_STRINGP(argv[1]) == FALSE) {
-      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+      scheme_wrong_type("write-buffer","string",1,argc,argv);
     }
 
-    writeBitBuffer((char *)buffer,argv[1]); 
+    writeBitBuffer((char *)buffer,argv[1],ndx); 
 
     break;
 
@@ -1380,10 +1527,10 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     /* SQL_C_VARBOOKMARK is the same */
 
     if (SCHEME_STRINGP(argv[1]) == FALSE) {
-      scheme_wrong_type("sql-write-buffer","string",1,argc,argv);
+      scheme_wrong_type("write-buffer","string",1,argc,argv);
     }
 
-    writeBinaryBuffer((char *)buffer,argv[1]); 
+    writeBinaryBuffer((char *)buffer,argv[1],ndx); 
 
     break;
 
@@ -1391,10 +1538,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 #if (ODBCVER >= 0x0300)
   case SQL_C_INTERVAL_YEAR :
 
+    if (scheme_is_struct_instance(YEAR_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-year",1,argc,argv);
+    }
+
     accessors[0] = YEAR_INTERVAL_YEAR;
     fields[0] = getIntervalYear;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_YEAR,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_YEAR,
 			1,YEAR_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1402,10 +1554,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_MONTH :
 
+    if (scheme_is_struct_instance(MONTH_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-month",1,argc,argv);
+    }
+
     accessors[0] = MONTH_INTERVAL_MONTH;
     fields[0] = getIntervalMonth;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_MONTH,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_MONTH,
 			1,MONTH_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1413,10 +1570,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_DAY :
 
+    if (scheme_is_struct_instance(DAY_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-day",1,argc,argv);
+    }
+
     accessors[0] = DAY_INTERVAL_DAY;
     fields[0] = getIntervalDay;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_DAY,
 			1,DAY_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1424,10 +1586,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_HOUR :
 
+    if (scheme_is_struct_instance(HOUR_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-hour",1,argc,argv);
+    }
+
     accessors[0] = HOUR_INTERVAL_HOUR;
     fields[0] = getIntervalHour;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_HOUR,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_HOUR,
 			1,HOUR_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1435,10 +1602,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_MINUTE :
 
+    if (scheme_is_struct_instance(MINUTE_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-minute",1,argc,argv);
+    }
+
     accessors[0] = MINUTE_INTERVAL_MINUTE;
     fields[0] = getIntervalMinute;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_MINUTE,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_MINUTE,
 			1,MINUTE_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1446,10 +1618,15 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_SECOND :
 
+    if (scheme_is_struct_instance(SECOND_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-second",1,argc,argv);
+    }
+
     accessors[0] = SECOND_INTERVAL_SECOND;
     fields[0] = getIntervalSecond;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_SECOND,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_SECOND,
 			1,SECOND_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1457,13 +1634,18 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_YEAR_TO_MONTH :
 
+    if (scheme_is_struct_instance(YEAR_TO_MONTH_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-year-to-month",1,argc,argv);
+    }
+
     accessors[0] = YEAR_TO_MONTH_INTERVAL_YEAR;
     accessors[1] = YEAR_TO_MONTH_INTERVAL_MONTH;
 
     fields[0] = getIntervalYear;
     fields[1] = getIntervalMonth;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_YEAR_TO_MONTH,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_YEAR_TO_MONTH,
 			2,YEAR_TO_MONTH_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1472,13 +1654,18 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_DAY_TO_HOUR :
 
+    if (scheme_is_struct_instance(DAY_TO_HOUR_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-day-to-hour",1,argc,argv);
+    }
+
     accessors[0] = DAY_TO_HOUR_INTERVAL_DAY;
     accessors[1] = DAY_TO_HOUR_INTERVAL_HOUR;
 
     fields[0] = getIntervalDay;
     fields[1] = getIntervalHour;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY_TO_HOUR,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_DAY_TO_HOUR,
 			2,DAY_TO_HOUR_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1486,6 +1673,10 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
 
   case SQL_C_INTERVAL_DAY_TO_MINUTE :
+
+    if (scheme_is_struct_instance(DAY_TO_MINUTE_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-day-to-minute",1,argc,argv);
+    }
 
     accessors[0] = DAY_TO_MINUTE_INTERVAL_DAY;
     accessors[1] = DAY_TO_MINUTE_INTERVAL_HOUR;
@@ -1495,13 +1686,18 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     fields[1] = getIntervalHour;
     fields[2] = getIntervalMinute;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY_TO_MINUTE,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_DAY_TO_MINUTE,
 			3,DAY_TO_MINUTE_INTERVAL_SIGN,
 			accessors,fields);
 			
     break;
 
   case SQL_C_INTERVAL_DAY_TO_SECOND :
+
+    if (scheme_is_struct_instance(DAY_TO_SECOND_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-day-to-second",1,argc,argv);
+    }
 
     accessors[0] = DAY_TO_SECOND_INTERVAL_DAY;
     accessors[1] = DAY_TO_SECOND_INTERVAL_HOUR;
@@ -1513,12 +1709,17 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     fields[2] = getIntervalMinute;
     fields[3] = getIntervalSecond;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_DAY_TO_SECOND,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_DAY_TO_SECOND,
 			4,DAY_TO_SECOND_INTERVAL_SIGN,
 			accessors,fields);
 
 			
   case SQL_C_INTERVAL_HOUR_TO_MINUTE :
+
+    if (scheme_is_struct_instance(HOUR_TO_MINUTE_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-hour-to-minute",1,argc,argv);
+    }
 
     accessors[0] = HOUR_TO_MINUTE_INTERVAL_HOUR;
     accessors[1] = HOUR_TO_MINUTE_INTERVAL_MINUTE;
@@ -1526,7 +1727,8 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     fields[0] = getIntervalHour;
     fields[1] = getIntervalMinute;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_HOUR_TO_MINUTE,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_HOUR_TO_MINUTE,
 			2,HOUR_TO_MINUTE_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1534,6 +1736,10 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
 
   case SQL_C_INTERVAL_HOUR_TO_SECOND :
+
+    if (scheme_is_struct_instance(HOUR_TO_SECOND_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-hour-to-second",1,argc,argv);
+    }
 
     accessors[0] = HOUR_TO_SECOND_INTERVAL_HOUR;
     accessors[1] = HOUR_TO_SECOND_INTERVAL_MINUTE;
@@ -1543,7 +1749,8 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     fields[1] = getIntervalMinute;
     fields[2] = getIntervalSecond;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_HOUR_TO_SECOND,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_HOUR_TO_SECOND,
 			3,HOUR_TO_SECOND_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1551,13 +1758,18 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
   case SQL_C_INTERVAL_MINUTE_TO_SECOND :
 
+    if (scheme_is_struct_instance(MINUTE_TO_SECOND_INTERVAL_STRUCT_TYPE,argv[1]) == 0) {
+      scheme_wrong_type("write-buffer","sql-interval-minute-to-second",1,argc,argv);
+    }
+
     accessors[0] = MINUTE_TO_SECOND_INTERVAL_MINUTE;
     accessors[1] = MINUTE_TO_SECOND_INTERVAL_SECOND;
 
     fields[0] = getIntervalMinute;
     fields[1] = getIntervalSecond;
 
-    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_MINUTE_TO_SECOND,
+    writeIntervalToBuff(buffer,argv[1],arrayLength,ndx,
+			SQL_IS_MINUTE_TO_SECOND,
 			2,MINUTE_TO_SECOND_INTERVAL_SIGN,
 			accessors,fields);
 
@@ -1573,7 +1785,7 @@ Scheme_Object *srp_SQLLenBinaryAttr(int argc,Scheme_Object **argv) {
   long intVal;
 
   if (SCHEME_INTP(argv[0]) == FALSE) {
-    scheme_wrong_type("len-binary-attr","int",0,argc,argv);
+    scheme_wrong_type("len-binary-attr","integer",0,argc,argv);
   }
 
   if (scheme_get_int_val(argv[0],&intVal) == 0) {
@@ -2123,7 +2335,7 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
   buflen = SQL_BUFFER_LEN(argv[2]);
   buftype = SQL_BUFFER_CTYPE(argv[2]);
 
-  indicator = &SQL_INDICATOR_VAL(argv[3]);
+  indicator = SQL_INDICATOR_VAL(argv[3]);
 
   sr = SQLBindCol(stmtHandle,colNumber,buftype,buffer,buflen,indicator);
 
@@ -2161,7 +2373,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   }
    
   if (SCHEME_EXACT_INTEGERP(argv[3]) == FALSE) {
-    scheme_wrong_type("bind-param","int",3,argc,argv);
+    scheme_wrong_type("bind-param","exact integer",3,argc,argv);
   }
    
   if (SQL_BUFFERP(argv[4]) == FALSE) {
@@ -2192,7 +2404,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 
   buffer = SQL_BUFFER_VAL(argv[4]);
 
-  indicator = &(SQL_INDICATOR_VAL(argv[5]));
+  indicator = SQL_INDICATOR_VAL(argv[5]);
 
   switch(SQLTypeVal) {
 
@@ -2814,7 +3026,7 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
 			  orientationString);
     }
     if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) {
-      scheme_wrong_type("fetch-scroll","int",2,argc,argv);
+      scheme_wrong_type("fetch-scroll","exact integer",2,argc,argv);
       if (scheme_get_int_val(argv[2],&offset) == 0) {
 	scheme_signal_error("sql-fetch-scroll: offset too large");
       }
@@ -3155,7 +3367,7 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
   bufferlen = SQL_BUFFER_LEN(argv[2]);
   buffertype = SQL_BUFFER_CTYPE(argv[2]);
 
-  indicator = &SQL_INDICATOR_VAL(argv[3]);
+  indicator = SQL_INDICATOR_VAL(argv[3]);
 
   sr = SQLGetData(stmtHandle,colNumber,buffertype,buffer,bufferlen,indicator);
 
@@ -3314,7 +3526,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
     pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc(sizeof(SRP_SQL_INDICATOR));
     scheme_dont_gc_ptr(pIndicator);
     pIndicator->type = sql_indicator_type;
-    pIndicator->value = *pIntVal;
+    pIndicator->arrayLength = 1;
+    pIndicator->storage = pIntVal;
 
     sql_return((Scheme_Object *)pIndicator,retcode,"get-desc-field");
 
@@ -4507,7 +4720,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
     SQLUINTEGER number;
 
     if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) { 
-      scheme_wrong_type("set-connect-attr","int",2,argc,argv);
+      scheme_wrong_type("set-connect-attr","exact integer",2,argc,argv);
     }
 
     if (scheme_get_unsigned_int_val(argv[2],&number) == 0) {
@@ -4610,7 +4823,7 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     SQLUINTEGER number;
 
     if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) { 
-      scheme_wrong_type("set-connect-option","int",2,argc,argv);
+      scheme_wrong_type("set-connect-option","exact integer",2,argc,argv);
     }
 
     if (scheme_get_unsigned_int_val(argv[2],&number) == 0) {
@@ -4752,7 +4965,7 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
   case sqlinteger :
 
     if (SCHEME_EXACT_INTEGERP(argv[3]) == FALSE) {
-      scheme_wrong_type("set-desc-field","int",3,argc,argv);    
+      scheme_wrong_type("set-desc-field","exact integer",3,argc,argv);    
     }
 
     if (scheme_get_int_val(argv[3],&intVal) == 0) {
@@ -4942,7 +5155,7 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   }
 
   if (SQL_INDICATORP(argv[7]) == FALSE) {
-    scheme_wrong_type("set-desc-rec","int",7,argc,argv);    
+    scheme_wrong_type("set-desc-rec","sql-indicator",7,argc,argv);    
   }
 
   typeString = SCHEME_SYM_VAL(argv[2]);
@@ -4959,7 +5172,7 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   if (type == SQL_DATETIME || type == SQL_INTERVAL) {
 
     if (SCHEME_INTP(argv[8]) == FALSE) {
-      scheme_wrong_type("set-desc-rec","int",3,argc,argv);    
+      scheme_wrong_type("set-desc-rec","integer",3,argc,argv);    
     }
 
     subTypeString = SCHEME_SYM_VAL(argv[8]);
@@ -4985,7 +5198,7 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   octetLen = SQL_BUFFER_LEN(argv[5]);
   buffer = SQL_BUFFER_VAL(argv[5]);
   length = &SQL_LENGTH_VAL(argv[6]);
-  indicator = &(SQL_INDICATOR_VAL(argv[7]));
+  indicator = SQL_INDICATOR_VAL(argv[7]);
   
   sr = SQLSetDescRec(descHandle,recNumber,type,subType,
 		     octetLen,precision,scale,buffer,
@@ -5101,7 +5314,7 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   } 
 
   if (SCHEME_INTP(argv[1]) == FALSE) {
-    scheme_wrong_type("set-param","int",1,argc,argv);
+    scheme_wrong_type("set-param","integer",1,argc,argv);
   } 
 
   if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
@@ -5140,7 +5353,7 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
     }
 
     if (isUnsignedInt(argv[5]) == FALSE) {
-      scheme_wrong_type("set-param","int",5,argc,argv);
+      scheme_wrong_type("set-param","integer",5,argc,argv);
     }
 
     if (isSmallInt(argv[6]) == FALSE) {
@@ -5168,7 +5381,7 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
   paramNumber = (SQLUSMALLINT)SCHEME_INT_VAL(argv[1]);
   buffer = SQL_BUFFER_VAL(argv[3]);
-  indicator = &SQL_INDICATOR_VAL(argv[4]);
+  indicator = SQL_INDICATOR_VAL(argv[4]);
 
   sr = SQLSetParam(stmtHandle,paramNumber,CDataType,paramType,
 		   precision,scale,buffer,indicator);
@@ -5224,7 +5437,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
   case sqluinteger :
 
     if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) {
-      scheme_wrong_type("set-stmt-attr","int",2,argc,argv);
+      scheme_wrong_type("set-stmt-attr","exact integer",2,argc,argv);
     }
 
     if (scheme_get_unsigned_int_val(argv[2],&number) == 0) {
@@ -5394,7 +5607,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
   case sqluinteger :
 
     if (SCHEME_EXACT_INTEGERP(argv[2]) == FALSE) {
-      scheme_wrong_type("set-stmt-option","int",2,argc,argv);
+      scheme_wrong_type("set-stmt-option","exact integer",2,argc,argv);
     }
 
     if (scheme_get_unsigned_int_val(argv[2],&number) == 0) {
@@ -6201,7 +6414,7 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   case SQL_FETCH_RELATIVE :
   case SQL_FETCH_BOOKMARK :
     if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type("extended-fetch","int",2,argc,argv);
+      scheme_wrong_type("extended-fetch","integer",2,argc,argv);
     }
     rowNumber = SCHEME_INT_VAL(argv[1]);
     break;
@@ -6804,7 +7017,7 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   valueType = SQL_BUFFER_CTYPE(argv[5]);
   bufferLen = SQL_BUFFER_LEN(argv[5]);
   scheme_get_unsigned_int_val(argv[4],&valueSize);
-  indicator = &(SQL_INDICATOR_VAL(argv[6]));
+  indicator = SQL_INDICATOR_VAL(argv[6]);
 
   sr = SQLBindParameter(stmtHandle,paramNumber,ioType,
 			valueType,paramType,

@@ -34,277 +34,293 @@ typedef int GUID;
 #include "srpbuffer.h"
 #include "srpersist.h"
 
-Scheme_Object *readCharBuffer(char *buffer,long numElts) {
-  return scheme_make_sized_string(buffer,numElts,TRUE);
+Scheme_Object *readCharBuffer(char *buffer,long width,long arrayLength,long ndx) {
+  Scheme_Object *retval;
+  long i,j;
+
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+
+    for (i = arrayLength - 1, j = width * (arrayLength-1); i >= 0; i--, j -= width) {
+      retval = scheme_make_pair(scheme_make_sized_string(buffer + j,width,TRUE),retval);
+    }
+  }
+  else {
+    retval = scheme_make_sized_string(buffer + (ndx * width),width,TRUE);
+  }
+
+  return retval;
 }
 
-void writeCharBuffer(char *buffer,Scheme_Object *obj) {
-  strcpy((char *)buffer,SCHEME_STR_VAL(obj));
+void writeCharBuffer(char *buffer,Scheme_Object *obj,long width,long ndx) {
+  char *b;
+
+  b = buffer + width * ndx;
+  memset(b,'\0',width);
+  strcpy(b,SCHEME_STR_VAL(obj));
 }
 
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readWideCharBuffer(wchar_t *buffer,long numElts) {
-  Scheme_Object *retval;
+Scheme_Object *readWideString(long sz,wchar_t *buffer,unsigned long n) {
+  Scheme_Object *sobj;
   char *s;
-  int i;
+  long i,j;
 
-  retval = scheme_alloc_string(numElts,0);
-  s = SCHEME_STR_VAL(retval);
+  sobj = scheme_alloc_string(sz,0);
+  s = SCHEME_STR_VAL(sobj);
 
   /* truncate wide chars */
-
-  for (i = 0; i < numElts; i++) {
-    if (s[i] & 0xFF00) {
+      
+  for (i = n,j = 0; j < sz; i++,j++) {
+    if (buffer[i] & 0xFF00) {
       scheme_signal_error("SQL_C_WCHAR buffer contains wide character, "
-			  "value %s",intToHexString(s[i]));
+			  "value %s",intToHexString(buffer[i]));
     }
     s[i] = (char)(buffer[i] & 0xFF);
   }
 
+  return sobj;
+}
+
+
+Scheme_Object *readWideCharBuffer(wchar_t *buffer,long width,long arrayLength,long ndx) {
+  Scheme_Object *retval;
+  long i;
+
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readWideString(width,buffer,i*width),retval);
+    }
+  }
+  else {
+    retval = readWideString(width,buffer,ndx*width);
+  }
+
   return retval;
 }
 
-void writeWideCharBuffer(wchar_t *buffer,Scheme_Object *obj) {
+void writeWideCharBuffer(wchar_t *buffer,Scheme_Object *obj,
+			 long width,long ndx) {
   char *s;
+  wchar_t *b;
 
   s = SCHEME_STR_VAL(obj);
 
+  b = buffer + width * ndx;
+  memset(b,'\0',width * sizeof(wchar_t));
   while (*s) {
-    *buffer++ = (wchar_t)(*s++);
+    *b++ = (wchar_t)(*s++);
   }
 }
 #endif
 
-Scheme_Object *readLongBuffer(long *buffer,long numElts) {
+Scheme_Object *readLongBuffer(long *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_integer_value(buffer[i]),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_integer_value(buffer[i]),retval);
+    }
+
+  }
+  else {
+    retval = scheme_make_integer_value(buffer[ndx]);
   }
 
   return retval;
 }
 
-void writeLongBuffer(long *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
+void writeLongBuffer(long *buffer,Scheme_Object *obj,long ndx) {
   long longVal;
-  long i;
 
-  currList = obj;
-
-  for (i = 0;currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (scheme_get_int_val(currVal,&longVal) == 0) {
-      scheme_signal_error("sql-write-buffer: number too big");
-    } 
-
-    buffer[i] = longVal;
-
-    currList = SCHEME_CDR(currList);
+  if (scheme_get_int_val(obj,&longVal) == 0) {
+    scheme_signal_error("write-buffer: number too big");
   }
+
+  buffer[ndx] = longVal;
 }
 
-Scheme_Object *readULongBuffer(unsigned long *buffer,long numElts) {
+Scheme_Object *readULongBuffer(unsigned long *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_integer_value_from_unsigned(buffer[i]),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_integer_value_from_unsigned(buffer[i]),retval);
+    }
+  }
+  else {
+    retval = scheme_make_integer_value_from_unsigned(buffer[ndx]);
   }
 
   return retval;
 }
 
-void writeULongBuffer(unsigned long *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
+void writeULongBuffer(unsigned long *buffer,Scheme_Object *obj,long ndx) {
   unsigned long ulongVal;
-  long i;
 
-  currList = obj;
-
-  for (i = 0;currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (scheme_get_unsigned_int_val(currVal,&ulongVal) == 0) {
-      scheme_signal_error("sql-write-buffer: number too big");
+  if (scheme_get_unsigned_int_val(obj,&ulongVal) == 0) {
+      scheme_signal_error("write-buffer: number too big");
     } 
 
-    buffer[i] = ulongVal;
-
-    currList = SCHEME_CDR(currList);
-  }
+  buffer[ndx] = ulongVal;
 }
 
-Scheme_Object *readShortBuffer(short *buffer,long numElts) {
+Scheme_Object *readShortBuffer(short *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_integer_value((long)(buffer[i])),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_integer_value((long)(buffer[i])),retval);
+    }
+  }
+  else {
+    retval = scheme_make_integer_value((long)(buffer[ndx]));
   }
 
   return retval;
 }
 
-void writeShortBuffer(short *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeShortBuffer(short *buffer,Scheme_Object *obj,long ndx) {
+  if (isSmallInt(obj) == FALSE) {
+    scheme_signal_error("write-buffer: number too big");
+  } 
 
-  currList = obj;
-
-  for (i = 0; currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (isSmallInt(currVal) == FALSE) {
-      scheme_signal_error("sql-write-buffer: number too big");
-    } 
-
-    buffer[i] = (short)SCHEME_INT_VAL(currVal);
-
-    currList = SCHEME_CDR(currList);
-  }
+  buffer[ndx] = (short)SCHEME_INT_VAL(obj);
 }
 
-Scheme_Object *readUShortBuffer(unsigned short *buffer,long numElts) {
+Scheme_Object *readUShortBuffer(unsigned short *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_integer_value_from_unsigned((unsigned long)(buffer[i])),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_integer_value_from_unsigned((unsigned long)(buffer[i])),retval);
+    }
+  }
+  else {
+    retval = scheme_make_integer_value_from_unsigned((unsigned long)(buffer[ndx]));
   }
 
   return retval;
 }
 
-void writeUShortBuffer(unsigned short *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeUShortBuffer(unsigned short *buffer,Scheme_Object *obj,long ndx) {
+  if (isUnsignedSmallInt(obj) == FALSE) {
+    scheme_signal_error("write-buffer: number too big");
+  } 
 
-  currList = obj;
-
-  for (i = 0; currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (isUnsignedSmallInt(currVal) == FALSE) {
-      scheme_signal_error("sql-write-buffer: number too big");
-    } 
-
-    buffer[i] = (unsigned short)SCHEME_INT_VAL(currVal);
-
-    currList = SCHEME_CDR(currList);
-  }
+  buffer[ndx] = (unsigned short)SCHEME_INT_VAL(obj);
 }
 
-Scheme_Object *readFloatBuffer(float *buffer,long numElts) {
+Scheme_Object *readFloatBuffer(float *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_double((double)(buffer[i])),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_double((double)(buffer[i])),retval);
+    }
+  }
+  else {
+    retval = scheme_make_double((double)(buffer[ndx]));
   }
 
   return retval;
 }
 
-void writeFloatBuffer(float *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeFloatBuffer(float *buffer,Scheme_Object *obj,long ndx) {
+  Scheme_Object *currVal;
 
-  currList = obj;
+  currVal = obj;
 
-  for (i = 0; currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    buffer[i] = (float)SCHEME_FLOAT_VAL(currVal);
-
-    currList = SCHEME_CDR(currList);
-  }
+  buffer[ndx] = (float)SCHEME_FLOAT_VAL(currVal);
 }
 
-Scheme_Object *readDoubleBuffer(double *buffer,long numElts) {
+Scheme_Object *readDoubleBuffer(double *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_double(buffer[i]),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_double(buffer[i]),retval);
+    }
+  }
+  else {
+    retval = scheme_make_double(buffer[ndx]);
   }
 
   return retval;
 }
 
-void writeDoubleBuffer(double *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
-
-  currList = obj;
-
-  for (i = 0; currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    buffer[i] = SCHEME_DBL_VAL(currVal);
-
-    currList = SCHEME_CDR(currList);
-  }
+void writeDoubleBuffer(double *buffer,Scheme_Object *obj,long ndx) {
+  buffer[ndx] = SCHEME_DBL_VAL(obj);
 }
 
 #if ODBCVER >= 0x0300
-Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *buffer,long numElts) {
-  Scheme_Object *retval,*numStruct,*digits;
+
+Scheme_Object *readNumericVal(SQL_NUMERIC_STRUCT *buffer,long offset) {
+  Scheme_Object *digits;
   Scheme_Object *argv[4];
   SQL_NUMERIC_STRUCT *currVal;
+  long j,k;
+
+  currVal = buffer + offset;
+  argv[0] = scheme_make_integer(currVal->precision);
+  argv[1] = scheme_make_integer(currVal->scale);
+  argv[2] = scheme_make_integer_value_from_unsigned(currVal->sign);
+      
+  /* in Scheme structure, store hex digits with MSBytes leftmost
+     in MS structure, MSBytes are rightmost */
+
+  digits = scheme_null;
+
+  /* rightmost 0's in MS structure can be stripped off */
+
+  k = sizeray(currVal->val) - 1;
+  while (k >= 0) {
+    if (currVal->val[k] != 0) {
+      break;
+    }
+    k--;
+  }
+
+  for (j = 0; j <= k; j++) {
+    digits = scheme_make_pair(scheme_make_integer(currVal->val[j]),digits);
+  }
+  argv[3] = scheme_list_to_vector(digits);  
+  
+  return scheme_make_struct_instance(NUMERIC_STRUCT_TYPE,sizeray(argv),argv);
+}
+
+Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *buffer,long arrayLength,long ndx) {
+  Scheme_Object *retval;
   long i;
-  int j,k;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    currVal = buffer + i;
-    argv[0] = scheme_make_integer(currVal->precision);
-    argv[1] = scheme_make_integer(currVal->scale);
-    argv[2] = scheme_make_integer_value_from_unsigned(currVal->sign);
-
-    /* in Scheme structure, store hex digits with MSBytes leftmost
-       in MS structure, MSBytes are rightmost */
-
-    digits = scheme_null;
-
-    /* rightmost 0's in MS structure can be stripped off */
-
-    k = sizeray(currVal->val) - 1;
-    while (k >= 0) {
-      if (currVal->val[k] != 0) {
-	break;
-      }
-      k--;
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readNumericVal(buffer,i),retval);
     }
-
-    for (j = 0; j <= k; j++) {
-      digits = scheme_make_pair(scheme_make_integer(currVal->val[j]),digits);
-    }
-    argv[3] = scheme_list_to_vector(digits);  
-
-    numStruct = scheme_make_struct_instance(NUMERIC_STRUCT_TYPE,sizeray(argv),argv);
-    retval = scheme_make_pair(numStruct,retval);
+  }
+  else {
+    retval = readNumericVal(buffer,ndx);
   }
 
   return retval;
@@ -312,244 +328,238 @@ Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *buffer,long numElts) {
 #endif
 
 #if ODBCVER >= 0x0300 
-void writeNumericBuffer(SQL_NUMERIC_STRUCT *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
+void writeNumericBuffer(SQL_NUMERIC_STRUCT *buffer,Scheme_Object *obj,
+			long ndx) {
   Scheme_Object *precision,*scale,*sign,*val;
   SQL_NUMERIC_STRUCT *currBuff;
   char *signStr;
-  long i;
-  int j,k;
+  int i,j;
 
-  currList = obj;
+  currBuff = buffer + ndx;
 
-  for (i = 0; currList != scheme_null; i++) {
+  precision = scheme_apply(NUMERIC_PRECISION,1,&obj);
+  scale = scheme_apply(NUMERIC_SCALE,1,&obj);  
+  sign = scheme_apply(NUMERIC_SIGN,1,&obj);    
+  val = scheme_apply(NUMERIC_VAL,1,&obj);    
+  
+  if (isUnsignedCharInt(precision) == FALSE) {
+    scheme_signal_error("Precision in numeric structure not exact integer or too large");
+  }
 
-    currVal = SCHEME_CAR(currList);
-    currBuff = buffer + i;
+  if (isCharInt(scale) == FALSE) {
+    scheme_signal_error("Scale in numeric structure not exact integer or too large");
+  }
 
-    precision = scheme_apply(NUMERIC_PRECISION,1,&currVal);
-    scale = scheme_apply(NUMERIC_SCALE,1,&currVal);  
-    sign = scheme_apply(NUMERIC_SIGN,1,&currVal);    
-    val = scheme_apply(NUMERIC_VAL,1,&currVal);    
+  if (SCHEME_SYMBOLP(sign) == FALSE) {
+    scheme_signal_error("Sign in numeric structure neither \'+ nor \'-");
+  }
 
-    if (isUnsignedCharInt(precision) == FALSE) {
-      scheme_signal_error("Precision in numeric structure not exact integer or too large");
-    }
+  signStr = SCHEME_SYM_VAL(sign);
 
-    if (isCharInt(scale) == FALSE) {
-      scheme_signal_error("Scale in numeric structure not exact integer or too large");
-    }
+  if (strcmp(signStr,"+") && strcmp(signStr,"-")) {
+    scheme_signal_error("Sign in numeric structure neither \'+ nor \'-");
+  }
 
-    if (SCHEME_SYMBOLP(sign) == FALSE) {
-      scheme_signal_error("Sign in numeric structure neither \'+ nor \'-");
-    }
+  if (SCHEME_VECTORP(val) == FALSE) {
+    scheme_signal_error("Value in numeric structure not a vector of exact integers");
+  }
 
-    signStr = SCHEME_SYM_VAL(sign);
+  if (SCHEME_VEC_SIZE(val) > SQL_MAX_NUMERIC_LEN) {
+    scheme_signal_error("Length of value vector in numeric structure too long");
+  }
 
-    if (strcmp(signStr,"+") && strcmp(signStr,"-")) {
-      scheme_signal_error("Sign in numeric structure neither \'+ nor \'-");
-    }
-
-    if (SCHEME_VECTORP(val) == FALSE) {
+  for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++) {
+    if (isUnsignedCharInt(SCHEME_VEC_ELS(val)[i]) == FALSE) {
       scheme_signal_error("Value in numeric structure not a vector of exact integers");
     }
+  }
 
-    if (SCHEME_VEC_SIZE(val) > SQL_MAX_NUMERIC_LEN) {
-      scheme_signal_error("Length of value vector in numeric structure too long");
+  currBuff->precision = (SQLCHAR)SCHEME_INT_VAL(precision);
+  currBuff->scale = (SQLSCHAR)SCHEME_INT_VAL(scale);
+  currBuff->sign = (*signStr == '+') ?  1 : 0;
+
+  i = SQL_MAX_NUMERIC_LEN - 1;
+  while (i >= 0) {
+    if (SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[i]) != 0) {
+      break;
     }
+    i--;
+  }
 
-    for (j = 0; j < SQL_MAX_NUMERIC_LEN; j++) {
-      if (isUnsignedCharInt(SCHEME_VEC_ELS(val)[j]) == FALSE) {
-	scheme_signal_error("Value in numeric structure not a vector of exact integers");
-      }
-    }
-
-    currBuff->precision = (SQLCHAR)SCHEME_INT_VAL(precision);
-    currBuff->scale = (SQLSCHAR)SCHEME_INT_VAL(scale);
-    currBuff->sign = (*signStr == '+') ?  1 : 0;
-
-    j = SQL_MAX_NUMERIC_LEN - 1;
-    while (j >= 0) {
-      if (SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[j]) != 0) {
-	break;
-      }
-      j--;
-    }
-
-    for (k = 0; j >= 0; j--,k++) {
-      currBuff->val[k] = (SQLCHAR)SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[j]);
-    }
-
-    currList = SCHEME_CDR(currList);
+  for (j = 0; i >= 0; i--,j++) {
+    currBuff->val[j] = (SQLCHAR)SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[i]);
   }
 }
 #endif
 
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long numElts) {
-#else
-Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long numElts) {
-#endif
-  Scheme_Object *retval,*dateStruct;
-  Scheme_Object *argv[3];
-#if (ODBCVER >= 0x0300)
+Scheme_Object *readDateVal(SQL_DATE_STRUCT *buffer,long offset) {
   SQL_DATE_STRUCT *currVal;
 #else
+Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long offset) {
   DATE_STRUCT *currVal;
 #endif
+  Scheme_Object *argv[3];
+
+  currVal = buffer + offset;
+  argv[0] = scheme_make_integer(currVal->year);
+  argv[1] = scheme_make_integer_value_from_unsigned(currVal->month);
+  argv[2] = scheme_make_integer_value_from_unsigned(currVal->day);
+  return scheme_make_struct_instance(DATE_STRUCT_TYPE,sizeray(argv),argv);
+}
+
+#if (ODBCVER >= 0x0300)
+Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long arrayLength,long ndx) {
+#else
+Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long arrayLength,long ndx) {
+#endif
+  Scheme_Object *retval;
   long i;
 
   retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    currVal = buffer + i;
-    argv[0] = scheme_make_integer(currVal->year);
-    argv[1] = scheme_make_integer_value_from_unsigned(currVal->month);
-    argv[2] = scheme_make_integer_value_from_unsigned(currVal->day);
-    dateStruct = scheme_make_struct_instance(DATE_STRUCT_TYPE,sizeray(argv),argv);
-    retval = scheme_make_pair(dateStruct,retval);
+  for (i = arrayLength - 1; i >= 0; i--) {
+    retval = scheme_make_pair(readDateVal(buffer,i),retval);
   }
 
   return retval;
 }
 
-void writeDateBuffer(DATE_STRUCT *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
+void writeDateBuffer(DATE_STRUCT *buffer,Scheme_Object *obj,long ndx) {
   Scheme_Object *year,*month,*day;
   DATE_STRUCT *currBuff;
-  long i;
 
-  currList = obj;
+  currBuff = buffer + ndx;
 
-  for (i = 0; currList != scheme_null; i++) {
+  year = scheme_apply(DATE_YEAR,1,&obj);
+  month = scheme_apply(DATE_MONTH,1,&obj);  
+  day = scheme_apply(DATE_DAY,1,&obj);    
 
-    currVal = SCHEME_CAR(currList);
-    currBuff = buffer + i;
-
-    year = scheme_apply(DATE_YEAR,1,&currVal);
-    month = scheme_apply(DATE_MONTH,1,&currVal);  
-    day = scheme_apply(DATE_DAY,1,&currVal);    
-
-    if (isSmallInt(year) == FALSE) {
+  if (isSmallInt(year) == FALSE) {
       scheme_signal_error("Year in date structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(month) == FALSE) {
-      scheme_signal_error("Month in date structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(day) == FALSE) {
-      scheme_signal_error("Day in date structure not exact integer or too large");
-    }
-
-    currBuff->year = (SQLSMALLINT)SCHEME_INT_VAL(year);
-    currBuff->month = (SQLUSMALLINT)SCHEME_INT_VAL(month);
-    currBuff->day = (SQLUSMALLINT)SCHEME_INT_VAL(day);
-
-    currList = SCHEME_CDR(currList);
   }
+
+  if (isUnsignedSmallInt(month) == FALSE) {
+    scheme_signal_error("Month in date structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(day) == FALSE) {
+    scheme_signal_error("Day in date structure not exact integer or too large");
+  }
+
+  currBuff->year = (SQLSMALLINT)SCHEME_INT_VAL(year);
+  currBuff->month = (SQLUSMALLINT)SCHEME_INT_VAL(month);
+  currBuff->day = (SQLUSMALLINT)SCHEME_INT_VAL(day);
 }
 
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long numElts) {
-#else
-Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long numElts) {
-#endif
-  Scheme_Object *retval,*timeStruct;
-  Scheme_Object *argv[3];
-#if (ODBCVER >= 0x0300)
+Scheme_Object *readTimeVal(SQL_TIME_STRUCT *buffer,long offset) { 
   SQL_TIME_STRUCT *currVal;
 #else
+Scheme_Object *readTimeVal(TIME_STRUCT *buffer,long offset) {
   TIME_STRUCT *currVal;
 #endif
+  Scheme_Object *argv[3];
+
+  currVal = buffer + offset;
+  argv[0] = scheme_make_integer_value_from_unsigned(currVal->hour);
+  argv[1] = scheme_make_integer_value_from_unsigned(currVal->minute);
+  argv[2] = scheme_make_integer_value_from_unsigned(currVal->second);
+  return scheme_make_struct_instance(TIME_STRUCT_TYPE,sizeray(argv),argv);
+}
+
+#if (ODBCVER >= 0x0300)
+Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long arrayLength,long ndx) {
+#else
+Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long arrayLength,long ndx) {
+#endif
+  Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
-
-  for (i = numElts - 1; i >= 0; i--) {
-    currVal = buffer + i;
-    argv[0] = scheme_make_integer_value_from_unsigned(currVal->hour);
-    argv[1] = scheme_make_integer_value_from_unsigned(currVal->minute);
-    argv[2] = scheme_make_integer_value_from_unsigned(currVal->second);
-    timeStruct = scheme_make_struct_instance(TIME_STRUCT_TYPE,sizeray(argv),argv);
-    retval = scheme_make_pair(timeStruct,retval);
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readTimeVal(buffer,i),retval);
+    }
+  }
+  else {
+    retval = readTimeVal(buffer,ndx);
   }
 
   return retval;
 }
 
 #if (ODBCVER >= 0x0300)
-void writeTimeBuffer(SQL_TIME_STRUCT *buffer,Scheme_Object *obj) {
-#else
-void writeTimeBuffer(TIME_STRUCT *buffer,Scheme_Object *obj) {
-#endif
-  Scheme_Object *currList,*currVal;
-  Scheme_Object *hour,*minute,*second;
-#if (ODBCVER >= 0x0300)
+void writeTimeBuffer(SQL_TIME_STRUCT *buffer,Scheme_Object *obj,long ndx) {
   SQL_TIME_STRUCT *currBuff;
 #else
+void writeTimeBuffer(TIME_STRUCT *buffer,Scheme_Object *obj,long ndx) {
   TIME_STRUCT *currBuff;
 #endif
-  long i;
+  Scheme_Object *currVal;
+  Scheme_Object *hour,*minute,*second;
 
-  currList = obj;
+  currVal = obj;
 
-  for (i = 0; currList != scheme_null; i++) {
+  currBuff = buffer + ndx;
 
-    currVal = SCHEME_CAR(currList);
-    currBuff = buffer + i;
+  hour = scheme_apply(TIME_HOUR,1,&currVal);
+  minute = scheme_apply(TIME_MINUTE,1,&currVal);  
+  second = scheme_apply(TIME_SECOND,1,&currVal);    
 
-    hour = scheme_apply(TIME_HOUR,1,&currVal);
-    minute = scheme_apply(TIME_MINUTE,1,&currVal);  
-    second = scheme_apply(TIME_SECOND,1,&currVal);    
-
-    if (isUnsignedSmallInt(hour) == FALSE) {
-      scheme_signal_error("Hour in time structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(minute) == FALSE) {
-      scheme_signal_error("Minute in time structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(second) == FALSE) {
-      scheme_signal_error("Second in time structure not exact integer or too large");
-    }
-
-    currBuff->hour = (SQLUSMALLINT)SCHEME_INT_VAL(hour);
-    currBuff->minute = (SQLUSMALLINT)SCHEME_INT_VAL(minute);
-    currBuff->second = (SQLUSMALLINT)SCHEME_INT_VAL(second);
-
-    currList = SCHEME_CDR(currList);
+  if (isUnsignedSmallInt(hour) == FALSE) {
+    scheme_signal_error("Hour in time structure not exact integer or too large");
   }
+
+  if (isUnsignedSmallInt(minute) == FALSE) {
+    scheme_signal_error("Minute in time structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(second) == FALSE) {
+    scheme_signal_error("Second in time structure not exact integer or too large");
+  }
+
+  currBuff->hour = (SQLUSMALLINT)SCHEME_INT_VAL(hour);
+  currBuff->minute = (SQLUSMALLINT)SCHEME_INT_VAL(minute);
+  currBuff->second = (SQLUSMALLINT)SCHEME_INT_VAL(second);
 }
 
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long numElts) {
-#else
-Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long numElts) {
-#endif
-  Scheme_Object *retval,*timeStampStruct;
-  Scheme_Object *argv[7];
-#if (ODBCVER >= 0x0300)
+Scheme_Object *readTimeStampVal(SQL_TIMESTAMP_STRUCT *buffer,long offset) {
   SQL_TIMESTAMP_STRUCT *currVal;
 #else
+Scheme_Object *readTimeStampVal(TIMESTAMP_STRUCT *buffer,long offset) {
   TIMESTAMP_STRUCT *currVal;
 #endif
+  Scheme_Object *argv[7];
+
+  currVal = buffer + offset;
+  argv[0] = scheme_make_integer(currVal->year);
+  argv[1] = scheme_make_integer_value_from_unsigned(currVal->month);
+  argv[2] = scheme_make_integer_value_from_unsigned(currVal->day);
+  argv[3] = scheme_make_integer_value_from_unsigned(currVal->hour);
+  argv[4] = scheme_make_integer_value_from_unsigned(currVal->minute);
+  argv[5] = scheme_make_integer_value_from_unsigned(currVal->second);
+  argv[6] = scheme_make_integer_value_from_unsigned(currVal->fraction);
+  return scheme_make_struct_instance(TIMESTAMP_STRUCT_TYPE,sizeray(argv),argv);
+}
+
+#if (ODBCVER >= 0x0300)
+Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long arrayLength,long ndx) {
+#else
+Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long arrayLength,long ndx) {
+#endif
+  Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
-
-  for (i = numElts - 1; i >= 0; i--) {
-    currVal = buffer + i;
-    argv[0] = scheme_make_integer(currVal->year);
-    argv[1] = scheme_make_integer_value_from_unsigned(currVal->month);
-    argv[2] = scheme_make_integer_value_from_unsigned(currVal->day);
-    argv[3] = scheme_make_integer_value_from_unsigned(currVal->hour);
-    argv[4] = scheme_make_integer_value_from_unsigned(currVal->minute);
-    argv[5] = scheme_make_integer_value_from_unsigned(currVal->second);
-    argv[6] = scheme_make_integer_value_from_unsigned(currVal->fraction);
-    timeStampStruct = scheme_make_struct_instance(TIMESTAMP_STRUCT_TYPE,sizeray(argv),argv);
-    retval = scheme_make_pair(timeStampStruct,retval);
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readTimeStampVal(buffer,i),retval);
+    }
+  }
+  else {
+    retval = readTimeStampVal(buffer,ndx);
   }
 
   return retval;
@@ -557,102 +567,101 @@ Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long numElts) {
 
 
 #if ODBCVER >= 0x0300 
-void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,Scheme_Object *obj) {
-#else
-void writeTimeStampBuffer(TIMESTAMP_STRUCT *buffer,Scheme_Object *obj) {
-#endif
-  Scheme_Object *currList,*currVal;
-  Scheme_Object *year,*month,*day,*hour,*minute,*second,*fraction;
-#if ODBCVER >= 0x0300
+void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,Scheme_Object *obj,
+			  long ndx) {
   SQL_TIMESTAMP_STRUCT *currBuff;
 #else
+void writeTimeStampBuffer(TIMESTAMP_STRUCT *buffer,Scheme_Object *obj,
+			  long ndx) {
   TIMESTAMP_STRUCT *currBuff;
 #endif
+  Scheme_Object *currVal;
+  Scheme_Object *year,*month,*day,*hour,*minute,*second,*fraction;
   SQLUINTEGER fractionVal;
-  long i;
 
-  currList = obj;
+  currVal = obj;
+  currBuff = buffer + ndx;
 
-  for (i = 0; currList != scheme_null; i++) {
+  year = scheme_apply(TIMESTAMP_YEAR,1,&currVal);
+  month = scheme_apply(TIMESTAMP_MONTH,1,&currVal);  
+  day = scheme_apply(TIMESTAMP_DAY,1,&currVal);    
+  hour = scheme_apply(TIMESTAMP_HOUR,1,&currVal);
+  minute = scheme_apply(TIMESTAMP_MINUTE,1,&currVal);  
+  second = scheme_apply(TIMESTAMP_SECOND,1,&currVal);    
+  fraction = scheme_apply(TIMESTAMP_FRACTION,1,&currVal);    
 
-    currVal = SCHEME_CAR(currList);
-    currBuff = buffer + i;
-
-    year = scheme_apply(TIMESTAMP_YEAR,1,&currVal);
-    month = scheme_apply(TIMESTAMP_MONTH,1,&currVal);  
-    day = scheme_apply(TIMESTAMP_DAY,1,&currVal);    
-    hour = scheme_apply(TIMESTAMP_HOUR,1,&currVal);
-    minute = scheme_apply(TIMESTAMP_MINUTE,1,&currVal);  
-    second = scheme_apply(TIMESTAMP_SECOND,1,&currVal);    
-    fraction = scheme_apply(TIMESTAMP_FRACTION,1,&currVal);    
-
-    if (isSmallInt(year) == FALSE) {
-      scheme_signal_error("Year in timestamp structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(month) == FALSE) {
-      scheme_signal_error("Month in timestamp structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(day) == FALSE) {
-      scheme_signal_error("Day in timestamp structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(hour) == FALSE) {
-      scheme_signal_error("Hour in timestamp structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(minute) == FALSE) {
-      scheme_signal_error("Minute in timestamp structure not exact integer or too large");
-    }
-
-    if (isUnsignedSmallInt(second) == FALSE) {
-      scheme_signal_error("Second in timestamp structure not exact integer or too large");
-    }
-
-    if (SCHEME_EXACT_INTEGERP(fraction) == FALSE) {
-      scheme_signal_error("Fraction in timestamp structure not exact integer");
-
-    }
-
-    if (scheme_get_unsigned_int_val(fraction,&fractionVal) == 0) {
-      scheme_signal_error("Fraction in timestamp structure too large");
-    }
-
-    currBuff->year = (SQLSMALLINT)SCHEME_INT_VAL(year);
-    currBuff->month = (SQLUSMALLINT)SCHEME_INT_VAL(month);
-    currBuff->day = (SQLUSMALLINT)SCHEME_INT_VAL(day);
-    currBuff->hour = (SQLUSMALLINT)SCHEME_INT_VAL(hour);
-    currBuff->minute = (SQLUSMALLINT)SCHEME_INT_VAL(minute);
-    currBuff->second = (SQLUSMALLINT)SCHEME_INT_VAL(second);
-    currBuff->fraction = fractionVal;
-
-    currList = SCHEME_CDR(currList);
+  if (isSmallInt(year) == FALSE) {
+    scheme_signal_error("Year in timestamp structure not exact integer or too large");
   }
+
+  if (isUnsignedSmallInt(month) == FALSE) {
+    scheme_signal_error("Month in timestamp structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(day) == FALSE) {
+    scheme_signal_error("Day in timestamp structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(hour) == FALSE) {
+    scheme_signal_error("Hour in timestamp structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(minute) == FALSE) {
+    scheme_signal_error("Minute in timestamp structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(second) == FALSE) {
+    scheme_signal_error("Second in timestamp structure not exact integer or too large");
+  }
+
+  if (SCHEME_EXACT_INTEGERP(fraction) == FALSE) {
+    scheme_signal_error("Fraction in timestamp structure not exact integer");
+  }
+
+  if (scheme_get_unsigned_int_val(fraction,&fractionVal) == 0) {
+    scheme_signal_error("Fraction in timestamp structure too large");
+  }
+
+  currBuff->year = (SQLSMALLINT)SCHEME_INT_VAL(year);
+  currBuff->month = (SQLUSMALLINT)SCHEME_INT_VAL(month);
+  currBuff->day = (SQLUSMALLINT)SCHEME_INT_VAL(day);
+  currBuff->hour = (SQLUSMALLINT)SCHEME_INT_VAL(hour);
+  currBuff->minute = (SQLUSMALLINT)SCHEME_INT_VAL(minute);
+  currBuff->second = (SQLUSMALLINT)SCHEME_INT_VAL(second);
+  currBuff->fraction = fractionVal;
 }
 
 #if ODBCVER >= 0x0350 
-Scheme_Object *readGuidBuffer(SQLGUID *buffer,long numElts) {
-  Scheme_Object *retval,*guidStruct;
+Scheme_Object *readGuidVal(SQLGUID *buffer,long offset) {
   Scheme_Object *argv[4];
   SQLGUID *currVal;
-  long i;
   short j;
 
-  retval = scheme_null;
+  currVal = buffer + offset;
+  argv[0] = scheme_make_integer_value_from_unsigned(currVal->Data1);
+  argv[1] = scheme_make_integer_value_from_unsigned(currVal->Data2);
+  argv[2] = scheme_make_integer_value_from_unsigned(currVal->Data3);
+  argv[3] = scheme_make_vector(8,scheme_void);
+  for (j = 0; j < 8; j++) {
+    SCHEME_VEC_ELS(argv[3])[j] = 
+      scheme_make_integer_value_from_unsigned(currVal->Data4[j]);
+  }
+  return scheme_make_struct_instance(GUID_STRUCT_TYPE,sizeray(argv),argv);
+}
 
-  for (i = numElts - 1; i >= 0; i--) {
-    currVal = buffer + i;
-    argv[0] = scheme_make_integer_value_from_unsigned(currVal->Data1);
-    argv[1] = scheme_make_integer_value_from_unsigned(currVal->Data2);
-    argv[2] = scheme_make_integer_value_from_unsigned(currVal->Data3);
-    argv[3] = scheme_make_vector(8,scheme_void);
-    for (j = 0; j < 8; j++) {
-      SCHEME_VEC_ELS(argv[3])[j] = 
-	scheme_make_integer_value_from_unsigned(currVal->Data4[j]);
+Scheme_Object *readGuidBuffer(SQLGUID *buffer,long arrayLength,long ndx) {
+  Scheme_Object *retval;
+  long i;
+
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readGuidVal(buffer,i),retval);
     }
-    guidStruct = scheme_make_struct_instance(GUID_STRUCT_TYPE,sizeray(argv),argv);
-    retval = scheme_make_pair(guidStruct,retval);
+  }
+  else {
+    retval = readGuidVal(buffer,ndx);
   }
 
   return retval;
@@ -660,85 +669,91 @@ Scheme_Object *readGuidBuffer(SQLGUID *buffer,long numElts) {
 #endif
 
 #if ODBCVER >= 0x0350 
-void writeGuidBuffer(SQLGUID *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
+void writeGuidBuffer(SQLGUID *buffer,Scheme_Object *obj,long ndx) {
+  Scheme_Object *currVal;
   Scheme_Object *Data1,*Data2,*Data3,*Data4;
   unsigned long Data1Val;
   SQLGUID *currBuff;
-  long i;
-  short j;
+  short i;
 
-  currList = obj;
+  currVal = obj;
+  currBuff = buffer + ndx;
 
-  for (i = 0; currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-    currBuff = buffer + i;
-
-    Data1 = scheme_apply(GUID_DATA1,1,&currVal);
-    Data2 = scheme_apply(GUID_DATA2,1,&currVal);
-    Data3 = scheme_apply(GUID_DATA3,1,&currVal);
-    Data4 = scheme_apply(GUID_DATA4,1,&currVal);
+  Data1 = scheme_apply(GUID_DATA1,1,&currVal);
+  Data2 = scheme_apply(GUID_DATA2,1,&currVal);
+  Data3 = scheme_apply(GUID_DATA3,1,&currVal);
+  Data4 = scheme_apply(GUID_DATA4,1,&currVal);
     
-    if (SCHEME_EXACT_INTEGERP(Data1) == FALSE ||
-	scheme_get_unsigned_int_val(Data1,&Data1Val) == 0) {
-      scheme_signal_error("Data2 in GUID structure not exact integer or too large");
+  if (SCHEME_EXACT_INTEGERP(Data1) == FALSE ||
+      scheme_get_unsigned_int_val(Data1,&Data1Val) == 0) {
+    scheme_signal_error("Data2 in GUID structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(Data2) == FALSE) {
+    scheme_signal_error("Data2 in GUID structure not exact integer or too large");
+  }
+
+  if (isUnsignedSmallInt(Data3) == FALSE) {
+    scheme_signal_error("Data3 in GUID structure not exact integer or too large");
+  }
+
+  if (SCHEME_VECTORP(Data4) == FALSE) {
+    scheme_signal_error("Data4 in GUID structure not a vector of exact integers");
+  }
+
+  for (i = 0; i < 8; i++) {
+    if (isUnsignedCharInt(SCHEME_VEC_ELS(Data4)[i]) == FALSE) {
+      scheme_signal_error("vector element in Data4 in GUID structure not exact integer or too large");
     }
+  }
 
-    if (isUnsignedSmallInt(Data2) == FALSE) {
-      scheme_signal_error("Data2 in GUID structure not exact integer or too large");
-    }
+  currBuff->Data1 = Data1Val;
+  currBuff->Data2 = (SQLUSMALLINT)SCHEME_INT_VAL(Data2);
+  currBuff->Data3 = (SQLUSMALLINT)SCHEME_INT_VAL(Data3);
 
-    if (isUnsignedSmallInt(Data3) == FALSE) {
-      scheme_signal_error("Data3 in GUID structure not exact integer or too large");
-    }
-
-    if (SCHEME_VECTORP(Data4) == FALSE) {
-      scheme_signal_error("Data4 in GUID structure not a vector of exact integers");
-    }
-
-    for (j = 0; j < 8; j++) {
-      if (isUnsignedCharInt(SCHEME_VEC_ELS(Data4)[j]) == FALSE) {
-	scheme_signal_error("vector element in Data4 in GUID structure not exact integer or too large");
-      }
-    }
-
-    currBuff->Data1 = Data1Val;
-    currBuff->Data2 = (SQLUSMALLINT)SCHEME_INT_VAL(Data2);
-    currBuff->Data3 = (SQLUSMALLINT)SCHEME_INT_VAL(Data3);
-
-    for (j = 0; j < 8; j++) {
-      currBuff->Data4[j] = 
-	(BYTE)SCHEME_INT_VAL(SCHEME_VEC_ELS(Data4)[j]);
-    }
-
-    currList = SCHEME_CDR(currList);
+  for (i = 0; i < 8; i++) {
+    currBuff->Data4[i] = 
+      (BYTE)SCHEME_INT_VAL(SCHEME_VEC_ELS(Data4)[i]);
   }
 }
 #endif
 
 #if ODBCVER >= 0x0300
+Scheme_Object *readIntervalVal(SQL_INTERVAL_STRUCT *buffer,long offset,
+			       Scheme_Object *structType,
+			       INTERVAL_FIELD_ACCESSOR *fs,
+			       size_t numAcc) {
+  SQL_INTERVAL_STRUCT *currVal;
+  Scheme_Object *argv[3];
+  size_t j;
+  
+  currVal = buffer + offset;
+  argv[0] = scheme_make_integer(currVal->interval_sign);
+  for (j = 0; j < numAcc; j++) {
+    argv[j+1] = scheme_make_integer_value_from_unsigned(*(fs[j](currVal)));
+  }
+  return scheme_make_struct_instance(structType,numAcc+1,argv);
+}
+
 Scheme_Object *readIntervalBuffer(SQL_INTERVAL_STRUCT *buffer,
-				  long numElts,
+				  long arrayLength,
+				  long ndx,
 				  Scheme_Object *structType,
 				  INTERVAL_FIELD_ACCESSOR *fs,
 				  size_t numAcc) {
-  Scheme_Object *retval,*theStruct;
-  Scheme_Object *argv[3];
-  SQL_INTERVAL_STRUCT *currVal;
+  Scheme_Object *retval;
   long i;
-  size_t j;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    currVal = buffer + i;
-    argv[0] = scheme_make_integer(currVal->interval_sign);
-    for (j = 0; j < numAcc; j++) {
-      argv[j+1] = scheme_make_integer_value_from_unsigned(*(fs[j](currVal)));
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readIntervalVal(buffer,i,structType,fs,numAcc),
+				retval);
     }
-    theStruct = scheme_make_struct_instance(structType,numAcc+1,argv);
-    retval = scheme_make_pair(theStruct,retval);
+  }
+  else {
+    retval = readIntervalVal(buffer,ndx,structType,fs,numAcc);
   }
 
   return retval;
@@ -753,9 +768,10 @@ SQLUINTEGER *getIntervalYear(SQL_INTERVAL_STRUCT *p) {
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalYearBuffer(SQL_INTERVAL_STRUCT *buffer,
-				      long numElts) {
+				      long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalYear };
-  return readIntervalBuffer(buffer,numElts,YEAR_INTERVAL_STRUCT_TYPE,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
+			    YEAR_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
@@ -768,9 +784,10 @@ SQLUINTEGER *getIntervalMonth(SQL_INTERVAL_STRUCT *p) {
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalMonthBuffer(SQL_INTERVAL_STRUCT *buffer,
-				       long numElts) {
+				       long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalMonth };
-  return readIntervalBuffer(buffer,numElts,MONTH_INTERVAL_STRUCT_TYPE,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
+			    MONTH_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
@@ -783,9 +800,10 @@ SQLUINTEGER *getIntervalDay(SQL_INTERVAL_STRUCT *p) {
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayBuffer(SQL_INTERVAL_STRUCT *buffer,
-				       long numElts) {
+				       long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay };
-  return readIntervalBuffer(buffer,numElts,DAY_INTERVAL_STRUCT_TYPE,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
+			    DAY_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
@@ -798,9 +816,10 @@ SQLUINTEGER *getIntervalHour(SQL_INTERVAL_STRUCT *p) {
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalHourBuffer(SQL_INTERVAL_STRUCT *buffer,
-				      long numElts) {
+				      long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalHour };
-  return readIntervalBuffer(buffer,numElts,HOUR_INTERVAL_STRUCT_TYPE,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
+			    HOUR_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
@@ -813,9 +832,10 @@ SQLUINTEGER *getIntervalMinute(SQL_INTERVAL_STRUCT *p) {
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
-					long numElts) {
+					long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalMinute };
-  return readIntervalBuffer(buffer,numElts,MINUTE_INTERVAL_STRUCT_TYPE,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
+			    MINUTE_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
@@ -828,19 +848,20 @@ SQLUINTEGER *getIntervalSecond(SQL_INTERVAL_STRUCT *p) {
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
-					long numElts) {
+					long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalSecond };
-  return readIntervalBuffer(buffer,numElts,SECOND_INTERVAL_STRUCT_TYPE,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
+			    SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalYearMonthBuffer(SQL_INTERVAL_STRUCT *buffer,
-					   long numElts) {
+					   long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalYear,getIntervalMonth };
 
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    YEAR_TO_MONTH_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
@@ -848,10 +869,10 @@ Scheme_Object *readIntervalYearMonthBuffer(SQL_INTERVAL_STRUCT *buffer,
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,
-					 long numElts) {
+					 long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour }; 
 
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    DAY_TO_HOUR_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
@@ -859,10 +880,10 @@ Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
-					   long numElts) {
+					   long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, getIntervalMinute }; 
 
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    DAY_TO_MINUTE_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
@@ -870,11 +891,11 @@ Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,
-					   long numElts) {
+					   long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, 
 			      getIntervalMinute,getIntervalSecond }; 
 
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    DAY_TO_SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
@@ -882,10 +903,10 @@ Scheme_Object *readIntervalDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
-					    long numElts) {
+					    long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalHour,getIntervalMinute };
 
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    HOUR_TO_MINUTE_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
@@ -893,10 +914,10 @@ Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
-					    long numElts) {
+					    long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalHour,getIntervalMinute, getIntervalSecond };
 
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    HOUR_TO_SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
@@ -904,26 +925,36 @@ Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
 
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
-					      long numElts) {
+					      long arrayLength,long ndx) {
   INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalMinute,getIntervalSecond };
-  return readIntervalBuffer(buffer,numElts,
+  return readIntervalBuffer(buffer,arrayLength,ndx,
 			    MINUTE_TO_SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
 #endif
 
-Scheme_Object *readBinaryBuffer(char *buffer,long numElts) {
+Scheme_Object *readBinaryBuffer(char *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   char *s;
+  char *fmt = "%02X";
   int i,j;
 
   /* convert each byte to hex char pairs */
 
-  retval = scheme_alloc_string(numElts * 2 + 1,'\0');
-  s = SCHEME_STR_VAL(retval);
+  if (ndx == WHOLE_BUFFER) {
 
-  for (i = 0,j = 0; i < numElts; i++,j+=2) {
-    sprintf(s + j,"%02X",(int)buffer[i]);
+    retval = scheme_alloc_string(arrayLength * 2 + 1,'\0');
+    s = SCHEME_STR_VAL(retval);
+
+    for (i = 0,j = 0; i < arrayLength; i++,j+=2) {
+      sprintf(s + j,fmt,(int)buffer[i]);
+    }
+  }
+  else {
+    retval = scheme_alloc_string(3,'\0');
+    s = SCHEME_STR_VAL(retval);
+
+    sprintf(s,fmt,(int)buffer[ndx]);
   }
 
   return retval;
@@ -945,85 +976,105 @@ int hexCharToValue(int c) {
   return 0;
 }
 
-void writeBinaryBuffer(char *buffer,Scheme_Object *obj) {
+void writeBinaryBuffer(char *buffer,Scheme_Object *obj,long ndx) {
   char *s;
   int len;
   int i;
+  long j;
 
   s = SCHEME_STR_VAL(obj);
   len = SCHEME_STRLEN_VAL(obj);
   
-  if (len % 2 != 0) {
-    scheme_signal_error("Binary buffer not of even length");
+  if (len != 2) {
+    scheme_signal_error("Binary buffer not of length 2");
   }
 
-  for (i = 0; i < len; i++) {
+  for (i = 0,j = ndx; i < len; i++,j++) {
     if (isxdigit(*s) == FALSE) {
       scheme_signal_error("Non-hex value in binary buffer");
     }
 
-    buffer[i] = hexCharToValue(*s);
-    buffer[i] *= 16;
+    buffer[j] = hexCharToValue(*s);
+    buffer[j] *= 16;
     s++;
-    buffer[i] += hexCharToValue(*s);
+    buffer[j] += hexCharToValue(*s);
     s++;
   }
 }
 
-Scheme_Object *readBitBuffer(unsigned char *buffer,long numElts) {
+Scheme_Object *readBitBuffer(unsigned char *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   char *s;
   int i;
 
-  retval = scheme_alloc_string(numElts + 1,'\0');
-  s = SCHEME_STR_VAL(retval);
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_alloc_string(arrayLength + 1,'\0');
+    s = SCHEME_STR_VAL(retval);
 
-  for (i = 0; i < numElts; i++) {
-    sprintf(s + i,buffer[i] ? "1" : "0");
+    for (i = 0; i < arrayLength; i++) {
+      sprintf(s + i,buffer[i] ? "1" : "0");
+    }
+  }
+  else {
+    retval = scheme_alloc_string(2,'\0');
+    s = SCHEME_STR_VAL(retval);
+    sprintf(s,buffer[ndx] ? "1" : "0");
   }
 
   return retval;
 }
 
-void writeBitBuffer(char *buffer,Scheme_Object *obj) {
+void writeBitBuffer(char *buffer,Scheme_Object *obj,long ndx) {
   char *s;
   int len;
-  int i;
 
   s = SCHEME_STR_VAL(obj);
   len = SCHEME_STRLEN_VAL(obj);
   
-  for (i = 0; i < len; i++) {
-    if (s[i] == '0') {
-      buffer[i] = 0;
-    }
-    else if (s[i] == '1') {
-      buffer[i] = 1;
-    }
-    else {
-      scheme_signal_error("sql-write-buffer: invalid character in bit string");
-    }
+  if (len != 1) {
+    scheme_signal_error("Bit buffer not of length 1");
+  }
+
+  if (s[0] == '0') {
+    buffer[ndx] = 0;
+  }
+  else if (s[0] == '1') {
+    buffer[ndx] = 1;
+  }
+  else {
+    scheme_signal_error("write-buffer: character other than 0 or 1 in bit string");
   }
 }
 
 #ifdef WIN32 
-Scheme_Object *readBigIntBuffer(_int64 *buffer,long numElts) {
-  Scheme_Object *retval,*bigLo,*bigHi;
-  char bigBuff[25];
-  long i;
+Scheme_Object *readBigIntVal(_int64 *buffer,long offset) {
   int lo,hi;
+  char bigBuff[25];
+  Scheme_Object *bigLo,*bigHi;
 
-  retval = scheme_null;
+  lo = (int)(buffer[offset] & 0xFFFFFFFF);
+  hi = (int)((buffer[offset] >> 32) & 0xFFFFFFFF);
+  bigLo = scheme_make_bignum(lo);
+  bigHi = scheme_make_bignum(hi);
+  sprintf(bigBuff,"%s%s",
+	  scheme_bignum_to_string(bigHi,16),
+	  scheme_bignum_to_string(bigLo,16));
+  return scheme_read_bignum(bigBuff,0,16);
+}
 
-  for (i = numElts - 1; i >= 0; i--) {
-    lo = (int)(buffer[i] & 0xFFFFFFFF);
-    hi = (int)((buffer[i] >> 32) & 0xFFFFFFFF);
-    bigLo = scheme_make_bignum(lo);
-    bigHi = scheme_make_bignum(hi);
-    sprintf(bigBuff,"%s%s",
-	    scheme_bignum_to_string(bigHi,16),
-	    scheme_bignum_to_string(bigLo,16));
-    retval = scheme_make_pair(scheme_read_bignum(bigBuff,0,16),retval);
+Scheme_Object *readBigIntBuffer(_int64 *buffer,long arrayLength,long ndx) {
+  Scheme_Object *retval;
+  long i;
+
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readBigIntVal(buffer,i),retval);
+    }
+  }
+  else {
+    retval = readBigIntVal(buffer,ndx);
   }
 
   return retval;
@@ -1031,9 +1082,8 @@ Scheme_Object *readBigIntBuffer(_int64 *buffer,long numElts) {
 #endif
 
 #ifdef WIN32
-void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj,long ndx) {
+  Scheme_Object *currVal;
   static Scheme_Object *argv[2];
   static Scheme_Object *reallyBigNum;
   static Scheme_Object *reallySmallNum;
@@ -1051,56 +1101,60 @@ void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj) {
     init = TRUE;
   }
 
-  currList = obj;
+  currVal = obj;
 
-  for (i = 0;currList != scheme_null; i++) {
+  if (SCHEME_INTP(currVal)) {
+    buffer[ndx] = SCHEME_INT_VAL(currVal);
+  }
+  else {
 
-    currVal = SCHEME_CAR(currList);
+    argv[0] = currVal;
+    argv[1] = reallyBigNum;
 
-    if (SCHEME_INTP(currVal)) {
-      buffer[i] = SCHEME_INT_VAL(currVal);
-    }
-    else {
-
-      argv[0] = currVal;
-      argv[1] = reallyBigNum;
-
-      if (scheme_apply(greaterThan,2,argv) == scheme_true) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      }
-
-      argv[1] = reallySmallNum;
-
-      if (scheme_apply(lessThan,2,argv) == scheme_true) {
-	scheme_signal_error("sql-write-buffer: number too small");
-      }
-
-      buffer[i] = _atoi64(scheme_bignum_to_string(currVal,10));
+    if (scheme_apply(greaterThan,2,argv) == scheme_true) {
+      scheme_signal_error("write-buffer: number too big");
     }
 
-    currList = SCHEME_CDR(currList);
+    argv[1] = reallySmallNum;
+
+    if (scheme_apply(lessThan,2,argv) == scheme_true) {
+      scheme_signal_error("write-buffer: number too small");
+    }
+
+    buffer[ndx] = _atoi64(scheme_bignum_to_string(currVal,10));
   }
 }
 #endif
 
 #ifdef WIN32
-Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long numElts) {
-  Scheme_Object *retval,*bigLo,*bigHi;
-  char bigBuff[25];
-  long i;
+Scheme_Object *readUBigIntVal(unsigned _int64 *buffer,long offset) {
   unsigned lo,hi;
+  char bigBuff[25];
+  Scheme_Object *bigLo,*bigHi;
 
-  retval = scheme_null;
+  lo = (unsigned)(buffer[offset] & 0xFFFFFFFF);
+  hi = (unsigned)((buffer[offset] >> 32) & 0xFFFFFFFF);
+  bigLo = scheme_make_bignum_from_unsigned(lo);
+  bigHi = scheme_make_bignum_from_unsigned(hi);
+  sprintf(bigBuff,"%s%s",
+	  scheme_bignum_to_string(bigHi,16),
+	  scheme_bignum_to_string(bigLo,16));
+  return scheme_read_bignum(bigBuff,0,16);
+}
 
-  for (i = numElts - 1; i >= 0; i--) {
-    lo = (unsigned)(buffer[i] & 0xFFFFFFFF);
-    hi = (unsigned)((buffer[i] >> 32) & 0xFFFFFFFF);
-    bigLo = scheme_make_bignum_from_unsigned(lo);
-    bigHi = scheme_make_bignum_from_unsigned(hi);
-    sprintf(bigBuff,"%s%s",
-	    scheme_bignum_to_string(bigHi,16),
-	    scheme_bignum_to_string(bigLo,16));
-    retval = scheme_make_pair(scheme_read_bignum(bigBuff,0,16),retval);
+Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long arrayLength,long ndx) {
+  Scheme_Object *retval;
+  long i;
+
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
+
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(readUBigIntVal(buffer,i),retval);
+    }
+  }
+  else {
+    retval = readUBigIntVal(buffer,ndx);
   }
 
   return retval;
@@ -1124,9 +1178,8 @@ unsigned _int64 _atoui64(char *s) {
 #endif
 
 #ifdef WIN32
-void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj,long ndx) {
+  Scheme_Object *currVal;
   static Scheme_Object *argv[2];
   static Scheme_Object *reallyBigNum;
   static Scheme_Object *greaterThan;
@@ -1145,101 +1198,87 @@ void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj) {
     init = TRUE;
   }
 
-  currList = obj;
+  currVal = obj;
 
-  for (i = 0;currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (SCHEME_INTP(currVal)) {
-      buffer[i] = SCHEME_INT_VAL(currVal);
+  if (SCHEME_INTP(currVal)) {
+    buffer[ndx] = SCHEME_INT_VAL(currVal);
     }
-    else {
+  else {
 
-      argv[0] = currVal;
-      argv[1] = reallyBigNum;
+    argv[0] = currVal;
+    argv[1] = reallyBigNum;
 
-      if (scheme_apply(greaterThan,2,argv) == scheme_true) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      }
+    if (scheme_apply(greaterThan,2,argv) == scheme_true) {
+      scheme_signal_error("write-buffer: number too big");
+    }
       
-      argv[1] = zero;
+    argv[1] = zero;
 
-      if (scheme_apply(lessThan,2,argv) == scheme_true) {
-	scheme_signal_error("sql-write-buffer: number too small");
-      }
-
-      buffer[i] = _atoui64(scheme_bignum_to_string(currVal,10));
+    if (scheme_apply(lessThan,2,argv) == scheme_true) {
+      scheme_signal_error("write-buffer: number too small");
     }
 
-    currList = SCHEME_CDR(currList);
+    buffer[ndx] = _atoui64(scheme_bignum_to_string(currVal,10));
   }
 }
 #endif
 
-Scheme_Object *readTinyBuffer(char *buffer,long numElts) {
+Scheme_Object *readTinyBuffer(char *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_integer(buffer[i]),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_integer(buffer[i]),retval);
+    }
+  }
+  else {
+    retval = scheme_make_integer(buffer[ndx]);
   }
 
   return retval;
 }
 
-void writeTinyBuffer(char *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeTinyBuffer(char *buffer,Scheme_Object *obj,long ndx) {
+  Scheme_Object *currVal;
 
-  currList = obj;
+  currVal = obj;
 
-  for (i = 0; currList != scheme_null; i++) {
-
-    currVal = SCHEME_CAR(currList);
-
-    if (isCharInt(currVal) == FALSE) {
-      scheme_signal_error("sql-write-buffer: number too big");
-    } 
-
-    buffer[i] = (char)SCHEME_INT_VAL(currVal);
-
-    currList = SCHEME_CDR(currList);
-  }
+  if (isCharInt(currVal) == FALSE) {
+    scheme_signal_error("write-buffer: number too big");
+  } 
+  
+  buffer[ndx] = (char)SCHEME_INT_VAL(currVal);
 }
 
-Scheme_Object *readUTinyBuffer(unsigned char *buffer,long numElts) {
+Scheme_Object *readUTinyBuffer(unsigned char *buffer,long arrayLength,long ndx) {
   Scheme_Object *retval;
   long i;
 
-  retval = scheme_null;
+  if (ndx == WHOLE_BUFFER) {
+    retval = scheme_null;
 
-  for (i = numElts - 1; i >= 0; i--) {
-    retval = scheme_make_pair(scheme_make_integer_value_from_unsigned(buffer[i]),retval);
+    for (i = arrayLength - 1; i >= 0; i--) {
+      retval = scheme_make_pair(scheme_make_integer_value_from_unsigned(buffer[i]),retval);
+    }
+  }
+  else {
+    retval = scheme_make_integer_value_from_unsigned(buffer[ndx]);
   }
 
   return retval;
 }
 
-void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *obj) {
-  Scheme_Object *currList,*currVal;
-  long i;
+void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *obj,long ndx) {
+  Scheme_Object *currVal;
 
-  currList = obj;
+  currVal = obj;
 
-  for (i = 0; currList != scheme_null; i++) {
+  if (isUnsignedCharInt(currVal) == FALSE) {
+    scheme_signal_error("write-buffer: number too big");
+  } 
 
-    currVal = SCHEME_CAR(currList);
-
-    if (isUnsignedCharInt(currVal) == FALSE) {
-      scheme_signal_error("sql-write-buffer: number too big");
-    } 
-
-    buffer[i] = (unsigned char)SCHEME_INT_VAL(currVal);
-
-    currList = SCHEME_CDR(currList);
-  }
+  buffer[ndx] = (unsigned char)SCHEME_INT_VAL(currVal);
 }
-

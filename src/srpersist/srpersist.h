@@ -152,78 +152,78 @@ BOOL isUnsignedCharInt(Scheme_Object *);
 
 /* buffer procedures */
 
-Scheme_Object *readCharBuffer(char *,long);
-void writeCharBuffer(char *,Scheme_Object *);
+Scheme_Object *readCharBuffer(char *,long,long,long);
+void writeCharBuffer(char *,Scheme_Object *,long,long);
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readWideCharBuffer(wchar_t *,long);
-void writeWideCharBuffer(wchar_t *,Scheme_Object *);
+Scheme_Object *readWideCharBuffer(wchar_t *,long,long,long);
+void writeWideCharBuffer(wchar_t *,Scheme_Object *,long,long);
 #endif
-Scheme_Object *readLongBuffer(long *,long);
-void writeLongBuffer(long *,Scheme_Object *);
-Scheme_Object *readULongBuffer(unsigned long *buffer,long);
-void writeULongBuffer(unsigned long *,Scheme_Object *);
-Scheme_Object *readShortBuffer(short *,long);
-void writeShortBuffer(short *,Scheme_Object *);
-Scheme_Object *readUShortBuffer(unsigned short *buffer,long);
-void writeUShortBuffer(unsigned short *,Scheme_Object *);
-Scheme_Object *readFloatBuffer(float *,long);
-void writeFloatBuffer(float *,Scheme_Object *);
-Scheme_Object *readDoubleBuffer(double *,long);
-void writeDoubleBuffer(double *,Scheme_Object *);
+Scheme_Object *readLongBuffer(long *,long,long);
+void writeLongBuffer(long *,Scheme_Object *,long);
+Scheme_Object *readULongBuffer(unsigned long *buffer,long,long);
+void writeULongBuffer(unsigned long *,Scheme_Object *,long);
+Scheme_Object *readShortBuffer(short *,long,long);
+void writeShortBuffer(short *,Scheme_Object *,long);
+Scheme_Object *readUShortBuffer(unsigned short *buffer,long,long);
+void writeUShortBuffer(unsigned short *,Scheme_Object *,long);
+Scheme_Object *readFloatBuffer(float *,long,long);
+void writeFloatBuffer(float *,Scheme_Object *,long);
+Scheme_Object *readDoubleBuffer(double *,long,long);
+void writeDoubleBuffer(double *,Scheme_Object *,long);
 
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *,long);
-void writeNumericBuffer(SQL_NUMERIC_STRUCT *,Scheme_Object *);
-Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long);
-void writeDateBuffer(SQL_DATE_STRUCT *,Scheme_Object *);
-Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long);
-void writeTimeBuffer(SQL_TIME_STRUCT *,Scheme_Object *);
-Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long);
-void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *,Scheme_Object *);
+Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *,long,long);
+void writeNumericBuffer(SQL_NUMERIC_STRUCT *,Scheme_Object *,long);
+Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long,long);
+void writeDateBuffer(SQL_DATE_STRUCT *,Scheme_Object *,long);
+Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long,long);
+void writeTimeBuffer(SQL_TIME_STRUCT *,Scheme_Object *,long);
+Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long,long);
+void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *,Scheme_Object *,long);
 #else
-Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long);
-void writeDateBuffer(DATE_STRUCT *,Scheme_Object *);
-Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long);
-void writeTimeBuffer(TIME_STRUCT *,Scheme_Object *);
-Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long);
-void writeTimeStampBuffer(TIMESTAMP_STRUCT *,Scheme_Object *);
+Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long,long);
+void writeDateBuffer(DATE_STRUCT *,Scheme_Object *,long);
+Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long,long);
+void writeTimeBuffer(TIME_STRUCT *,Scheme_Object *,long);
+Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long,long);
+void writeTimeStampBuffer(TIMESTAMP_STRUCT *,Scheme_Object *,long);
 #endif
 
 #if (ODBCVER >= 0x0350)
-Scheme_Object *readGuidBuffer(SQLGUID *buffer,long);
-void writeGuidBuffer(SQLGUID *,Scheme_Object *);
+Scheme_Object *readGuidBuffer(SQLGUID *buffer,long,long);
+void writeGuidBuffer(SQLGUID *,Scheme_Object *,long);
 #endif
 
 #if (ODBCVER >= 0x0300)
-Scheme_Object *readIntervalYearBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalDayBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalHourBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalYearMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
-Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+Scheme_Object *readIntervalYearBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalDayBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalHourBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalYearMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
+Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long,long);
 #endif
 
-Scheme_Object *readBinaryBuffer(char *buffer,long);
-void writeBinaryBuffer(char *buffer,Scheme_Object *);
-Scheme_Object *readBitBuffer(unsigned char *buffer,long);
-void writeBitBuffer(char *buffer,Scheme_Object *);
-Scheme_Object *readTinyBuffer(char *buffer,long);
-void writeTinyBuffer(char *buffer,Scheme_Object *);
-Scheme_Object *readUTinyBuffer(unsigned char *buffer,long);
-void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *);
+Scheme_Object *readBinaryBuffer(char *buffer,long,long);
+void writeBinaryBuffer(char *buffer,Scheme_Object *,long);
+Scheme_Object *readBitBuffer(unsigned char *buffer,long,long);
+void writeBitBuffer(char *buffer,Scheme_Object *,long);
+Scheme_Object *readTinyBuffer(char *buffer,long,long);
+void writeTinyBuffer(char *buffer,Scheme_Object *,long);
+Scheme_Object *readUTinyBuffer(unsigned char *buffer,long,long);
+void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *,long);
 
 #ifdef WIN32
-Scheme_Object *readBigIntBuffer(_int64 *buffer,long);
-void writeBigIntBuffer(_int64 *buffer,Scheme_Object *);
-Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long);
-void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *);
+Scheme_Object *readBigIntBuffer(_int64 *buffer,long,long);
+void writeBigIntBuffer(_int64 *buffer,Scheme_Object *,long);
+Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long,long);
+void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *,long);
 #endif
 
 /* version info */

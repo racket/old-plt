@@ -2370,34 +2370,51 @@
  Utilities
  ---------
 
-> (make-indicator)  
+> (make-indicator [n])  
 
- Creates an sql-indicator.  
+ Creates an sql-indicator.  `n' is a positive exact integer, which
+ defaults to 1.  A larger `n' may be used to create an sql-indicator 
+ representing an array of ODBC indicators.
 
-> (free-indicator sql-indicator)
+> (free-indicator! sql-indicator)
 
  Allows the Scheme garbage collector to reclaim the memory used by 
  the indicator `sql-indicator'.  If the indicator is subsequently 
  accessed by the ODBC driver, unpredictable effects may occur.
 
-> (read-indicator sql-indicator)
+> (read-indicator sql-indicator [n])
 
- Given an sql-indicator, returns its stored value, which is
- one of 'sql-no-total, 'sql-null-data, 'sql-nts, 'sql-column-ignore,
- 'sql-data-at-exec, a pair consisting of 'sql-len-data-at-exec
- and an integer, or an integer.
+ Given an sql-indicator, returns its stored value or values.  
+ The optional parameter `n' is an index into the array of ODBC indicators 
+ represented by `sql-indicator'. If `n' is omitted, all the values 
+ associated with the sql-indicator are returned in a list.  The 
+ possible values are 'sql-no-total, 'sql-null-data, 'sql-nts, 
+ 'sql-column-ignore, 'sql-data-at-exec, a pair consisting of 
+ 'sql-len-data-at-exec and an integer, or an integer.
  
  Please consult an ODBC reference for the significance of these 
  values.
 
-> (make-length [n])
+> (set-indicator! sql-indicator val [n])
 
- Creates an sql-length.  `n' is an exact integer, which defaults to 0.
+ Stores a value in an sql-indicator.  The optional parameter `n' is 
+ an index into the array of ODBC indicators represented by `sql-indicator'.
+ The default value of `n' is 0.  The possible values of `val' are 
+ 'sql-no-total, 'sql-null-data, 'sql-nts, 'sql-column-ignore, 
+ 'sql-data-at-exec, a pair consisting of 'sql-len-data-at-exec and 
+ an integer, or an integer.
+ 
+ Please consult an ODBC reference for the significance of these 
+ values.
 
-> (free-length sql-length)
+> (make-length)
+
+ Creates an sql-length. 
+
+> (free-length! sql-length)
 
  Allows the Scheme garbage collector to reclaim the memory used by 
- the length `sql-length'.  If the length is subsequently accessed by s
+ the length `sql-length'.  If the length is subsequently accessed by 
  the ODBC driver, unpredictable effects may occur.
 
 > (read-length an-sql-length)
@@ -2405,46 +2422,48 @@
  Given an sql-length, returns its stored value, which is
  an integer.
 
-> (make-buffer c-type num-elts) 
+> (make-buffer c-type [num-elts]) 
 
- Creates an sql-buffer.  `c-type' is a symbol denoting a C data type
- (see "C data types", below) indicating the size of buffer elements.  
- `num-elts' is a nonnegative exact integer indicating the number 
- of buffer elements.
+ Creates an sql-buffer.  The `c-type' parameter is either
+  - a symbol denoting a C data type (see "C data types", below), or
+  - a pair consisting of 'sql-c-char or 'sql-c-wchar, and a 
+      positive exact integer indicating a string width
+ The optional parameter `num-elts' is a positive exact integer 
+ indicating the number of buffer elements (default = 1).  If `ctype' is 
+ 'sql-c-char or 'sql-c-wchar (not in a pair), the string width 
+ defaults to 1.
 
  It is the responsibility of the programmer to make sure that 
  buffers bound to columns have the correct type and adequate 
  size for the column.  If a column has the incorrect type or 
  is too small, unpredictable effects may occur.
 
-> (free-buffer sql-buffer)
+> (free-buffer! sql-buffer)
 
  Allows the Scheme garbage collector to reclaim the memory used by 
  the buffer `sql-buffer'.  If the buffer is subsequently accessed by 
  the ODBC driver, unpredictable effects may occur.
 
-> (read-buffer sql-buffer) 
+> (read-buffer sql-buffer [n]) 
 
- Returns the contents of an sql-buffer.  For a buffer of type
- 'sql-c-char or 'sql-c-wchar, a string is returned.  For all other 
- types, a list of values of appropriate type is returned.  In the
- case of 'sql-c-wchar, an error occurs if the buffer contains
- a character not representable as an ordinary character.  
+ Returns the contents of an sql-buffer.  `n' is a zero-based index
+ into the buffer.  If `n' is omitted, the entire buffer contents 
+ are returned, in a form appropriate to the type of data contained
+ in the buffer.  For most C data types, the buffer is read as a 
+ list; for buffers containing 'sql-c-binary and 'sql-c-bit elements,
+ the buffer is read as a string.  If `n' is given, an individual 
+ element of the buffer is returned.   In the case of 'sql-c-wchar, an 
+ error occurs if the segment of the buffer to be read contains a 
+ character not representable as an ordinary character.  
 
  SrPersist provides no guarantees that a buffer contains valid data.
 
-> (write-buffer sql-buffer vals) 
+> (write-buffer! sql-buffer val [n]) 
 
- Updates the contents of an sql-buffer.  The type of `vals' 
- depends on the C type used to create the buffer.  Also, if
- `vals' is a list, its length should depend on the size of 
- `sql-buffer'.  For a type of 'sql-c-char or 'sql-c-wchar, `vals' 
- should be a string.  For all other types, `vals' should be a a list 
- of values of appropriate Scheme type.  If the type of `vals' is
- incorrect, an error occurs.  If `vals' is a string that is longer 
- than the number of elements in `sql-buffer', or `vals' is a list
- longer than the number of elements in `sql-buffer', an error 
- occurs. 
+ Updates the contents of an sql-buffer.  The type of `val' 
+ depends on the C type used to create the buffer. The `n' parameter
+ is a nonnegative exact integer used to indicate an offset in the
+ buffer; the default is 0.
 
 > (read-row-status sql-row-status)
 
@@ -2472,7 +2491,7 @@
  SQL data types
  --------------
 
- Data stored in data source have SQL data types.  In contrast, 
+ Data stored in data sources have SQL data types.  In contrast, 
  data in sql-buffer's have C data types.
 
  The significance of most of these types should be clear.  Consult

@@ -7,14 +7,25 @@ Registered bufferTable[] with garbage collector
 Added version information procedures srp-version and 
  compiled-odbc-version
 Procedure execute becomes sql-execute
-Added procedures free-buffer, free-indicator,
- free-length, free-row-status
+Added procedures free-buffer!, free-indicator!,
+ free-length!, free-row-status!
 Removed invoke-n.m.ss mechanism, use srpersist.ss
  instead
 All ODBC procedures available, regardless of 
  ODBC version used when compiling
 Procedures not implemented for a particular 
  version of ODBC raise not-implemented exception 
+scheme_reload() calls scheme_initialize(), for better 
+ integration with DrScheme
+write-buffer!, set-indicator! have `!' added to names;
+ latter is documented in doc.txt
+make-buffer defaults to buffer of size 1; character
+ data types may take explicit string width argument
+make-indicator takes optional size argument
+write-buffer! now takes a single value argument and
+ optional offset
+read-buffer, read-indicator takes optional offset 
+ argument
 
 Version 103
 

@@ -63,7 +63,8 @@ typedef struct _sql_buffer_ {
   Scheme_Type type;
   void *storage;
   SQLSMALLINT CDataType;
-  unsigned long numElts;
+  long width;
+  long arrayLength;
   int eltSize;
 } SRP_SQL_BUFFER;
 
@@ -74,7 +75,8 @@ typedef struct _sql_length_ {
 
 typedef struct _sql_indicator_ {
   Scheme_Type type;
-  SQLINTEGER value;
+  long arrayLength;
+  SQLINTEGER *storage;
 } SRP_SQL_INDICATOR;
 
 typedef struct _sql_row_status_ {
@@ -136,16 +138,18 @@ typedef struct _sql_guid_ {
 
 #define SQL_BUFFERP(o) (!SCHEME_INTP(o) && o->type == sql_buffer_type) 
 #define SQL_BUFFER_VAL(o) (((SRP_SQL_BUFFER *)o)->storage)
-#define SQL_BUFFER_NUMELTS(o) (((SRP_SQL_BUFFER *)o)->numElts)
+#define SQL_BUFFER_WIDTH(o) (((SRP_SQL_BUFFER *)o)->width)
+#define SQL_BUFFER_ARRAYLEN(o) (((SRP_SQL_BUFFER *)o)->arrayLength)
 #define SQL_BUFFER_ELTSIZE(o) (((SRP_SQL_BUFFER *)o)->eltSize)
-#define SQL_BUFFER_LEN(o) (SQL_BUFFER_NUMELTS(o) * SQL_BUFFER_ELTSIZE(o))
+#define SQL_BUFFER_LEN(o) (SQL_BUFFER_WIDTH(o) * SQL_BUFFER_ARRAYLEN(o) * SQL_BUFFER_ELTSIZE(o))
 #define SQL_BUFFER_CTYPE(o) (((SRP_SQL_BUFFER *)o)->CDataType)
 
 #define SQL_LENGTHP(o) (!SCHEME_INTP(o) && o->type == sql_length_type) 
 #define SQL_LENGTH_VAL(o) (((SRP_SQL_LENGTH *)o)->value)
 
 #define SQL_INDICATORP(o) (!SCHEME_INTP(o) && o->type == sql_indicator_type) 
-#define SQL_INDICATOR_VAL(o) (((SRP_SQL_INDICATOR *)o)->value)
+#define SQL_INDICATOR_VAL(o) (((SRP_SQL_INDICATOR *)o)->storage)
+#define SQL_INDICATOR_LEN(o) (((SRP_SQL_INDICATOR *)o)->arrayLength)
 
 #define SQL_OP_PARMSP(o) (!SCHEME_INTP(o) && o->type == sql_op_parms_type) 
 #define SQL_OP_PARMS_LEN(o) (((SRP_SQL_OP_PARMS *)o)->paramSetSize)

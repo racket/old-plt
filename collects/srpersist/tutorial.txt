@@ -118,11 +118,11 @@ Assume that the name column consists of strings
 no longer than 50 characters.  We create a 
 buffer to hold results:
 
-    (define name-buffer (make-buffer 'sql-c-char 50))
+    (define name-buffer (make-buffer '(sql-c-char 50)))
 
 For the age column:
 
-    (define age-buffer (make-buffer 'sql-c-slong 1))
+    (define age-buffer (make-buffer 'sql-c-slong))
 
 There are ways to find out the types associated with columns,
 but unfortunately, it's a complicated business.  There are

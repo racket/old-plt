@@ -19,6 +19,8 @@ extern Scheme_Object *hourToMinuteIntervalStructType;
 extern Scheme_Object *hourToSecondIntervalStructType;
 extern Scheme_Object *minuteToSecondIntervalStructType;
 
+#define WHOLE_BUFFER (-1)
+
 #if (ODBCVER >= 0x0300)
 SQLUINTEGER *getIntervalYear(SQL_INTERVAL_STRUCT *);
 SQLUINTEGER *getIntervalMonth(SQL_INTERVAL_STRUCT *);

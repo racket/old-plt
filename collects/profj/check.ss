@@ -306,6 +306,9 @@
     (let* ((class-record (lookup-this type-recs env))
            (fields (class-record-fields class-record))
            (field-env (create-field-env fields env (car c-class)))
+           (base-fields (create-field-env (filter (lambda (field)
+                                                    (not (equal? (field-record-class field) (car c-class))))
+                                                  fields) env (car c-class)))
            (ctor-throw-env (if iface? field-env
                                (consolidate-throws 
                                 (get-constructors (class-record-methods class-record)) field-env)))
@@ -317,7 +320,7 @@
           (when (memq 'abstract (class-record-modifiers parent))
             (set! inherited-fields 
                   (filter (lambda (f) (not (field-record-init? f))) (get-field-records parent))))))
-      (let loop ((rest members) (statics empty-env) (fields env))
+      (let loop ((rest members) (statics empty-env) (fields base-fields))
         (unless (null? rest)
           (let ((member (car rest)))
             (cond
@@ -1494,6 +1497,10 @@
                      (private? (memq 'private mods))
                      (protected? (memq 'protected mods)))
                 
+                (when (and (special-name? obj)
+                           (not (lookup-var-in-env fname env)))
+                  (access-before-define (string->symbol fname) src))
+                
                 (when (and (field-access-access acc)
                            (var-access-static? (field-access-access acc)))
                   (unless (memq 'static mods)
@@ -1954,7 +1961,7 @@
              (non-static-called-error name c-class src level))
            
            (when (and (memq 'protected mods) (reference-type? exp-type) 
-                      (or (not (is-eq-subclass? this exp-type))
+                      (or (not (is-eq-subclass? this exp-type type-recs))
                           (not (package-members? c-class (cons (ref-type-class/iface exp-type) (ref-type-path exp-type))
                                                  type-recs))))
              (call-access-error 'pro level name exp-type src))
@@ -2069,7 +2076,7 @@
                     (method-record-throws const)))
         (when (and (memq 'private mods) (not (eq? class-record this)))
           (class-access-error 'pri level type src))
-        (when (and (memq 'protected mods) (or (not (is-eq-subclass? this type)) 
+        (when (and (memq 'protected mods) (or (not (is-eq-subclass? this type type-recs)) 
                                               (not (package-members? c-class (cons (ref-type-class/iface type) 
                                                                                    (ref-type-path type)) type-recs))))
           (class-access-error 'pro level type src))
@@ -2468,6 +2475,11 @@
                  (format "local variable ~a was not set along all paths reaching this point, and cannot be used"
                          name)
                  name src))     
+  ;access-before-defined: symbol src -> void
+  (define (access-before-define name src)
+    (raise-error name
+                 (format "field ~a cannot be accessed before its definition" name)
+                 name src))
   
   ;not-static-field-access-error symbol symbol src -> void
   (define (not-static-field-access-error name level src)

@@ -331,7 +331,7 @@
                (hash-table-get records (cons key path) new-search))))))
 
       ;normalize-key: (U 'strung ref-type (list string)) -> (values string (list string))
-      (define (normalize-key ctype)
+      (define/private (normalize-key ctype)
         (cond
           ((eq? ctype 'string) (values "String" `("java" "lang")))
           ((ref-type? ctype) (values (ref-type-class/iface ctype) (ref-type-path ctype)))
@@ -339,7 +339,7 @@
           (else (values ctype null))))
       
       ;search-for-record string string (list string) (-> #f) (-> 'a) -> class-record
-      (define (search-for-record class-name new-prefix path test-fail fail)
+      (define/private (search-for-record class-name new-prefix path test-fail fail)
         (let* ((new-class-name (string-append new-prefix "." class-name))
                (rec? (hash-table-get records (cons new-class-name path) test-fail))
                (back-path (reverse path)))
@@ -355,7 +355,7 @@
               (hash-table-put! package-contents package classes)
               (hash-table-put! package-contents package (non-dup-append classes existing-classes)))))
 
-      (define (non-dup-append cl pa)
+      (define/private (non-dup-append cl pa)
         (cond
           ((null? cl) pa)
           ((member (car cl) pa) (non-dup-append (cdr cl) pa))
@@ -424,7 +424,7 @@
       (define/public (require-prefix? name fail)
         (hash-table-get (hash-table-get class-require location require-fail) name fail))
       
-      (define (member-req req reqs)
+      (define/private (member-req req reqs)
         (and (not (null? reqs))
              (or (and (equal? (req-class req) (req-class (car reqs)))
                       (equal? (req-path req) (req-path (car reqs))))

@@ -151,7 +151,7 @@
 
       (define/public (length) (vector-length array))
       
-      (define (array-out-of-bounds i)
+      (define/private (array-out-of-bounds i)
         (raise (create-java-exception ArrayIndexOutOfBoundsException
                                       (format "Array index out of bounds. Range is 0 to ~a, given ~a"
                                               (sub1 (vector-length array)) i)
@@ -470,7 +470,7 @@
           hash))
     
     ; character int -> int
-    (define (find-char ch pos)
+    (define/private (find-char ch pos)
       (if (>= pos (string-length text))
           -1
           (if (char=? ch (string-ref text pos))
@@ -478,7 +478,7 @@
               (find-char ch (add1 pos)))))
       
       ;character int int -> int
-      (define (find-last-char ch pos lpos)
+      (define/private (find-last-char ch pos lpos)
         (if (>= pos (string-length text))
             lpos
             (if (char=? ch (string-ref text pos))
@@ -486,7 +486,7 @@
                 (find-last-char ch (add1 pos) lpos))))
       
       ; string int -> int
-      (define (find-str sch-str str pos)
+      (define/private (find-str sch-str str pos)
         (if (> (+ pos (string-length sch-str)) (string-length text))
             -1
             (if (startsWith-java.lang.String-int str pos)
@@ -494,7 +494,7 @@
                 (find-str sch-str str (add1 pos)))))
     
       ; string int int -> int
-      (define (find-last-string sch-str str pos lpos)
+      (define/private (find-last-string sch-str str pos lpos)
         (if (> (+ pos (string-length sch-str)) (string-length text))
             lpos
             (if (startsWith-java.lang.String-int str pos)

@@ -426,7 +426,7 @@
                   (process-extras (cdr extras) type-recs))))))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)
-          (define (find-main-module mod-lists)
+          (define/private (find-main-module mod-lists)
             (if (null? mod-lists)
                 #f
                 (let ((names (compilation-unit-contains (car mod-lists)))
@@ -438,7 +438,7 @@
                       (find-main-module (cdr mod-lists))))))
         
           ;find-position: (list string) number-> number
-          (define (find-position l p)
+          (define/private (find-position l p)
             (when (null? l)
               (error 'find-position "Internal Error: member incorrectly chose an element as a member"))
             (if (equal? (cadr (main)) (car l))
@@ -446,12 +446,11 @@
                 (find-position (cdr l) (add1 p))))
           
           ;order: (list compilation-unit) -> (list syntax)
-          (define order
-            (lambda (mod-lists)
-              (if (null? mod-lists)
-                  null
-                  (append (compilation-unit-code (car mod-lists))
-                          (order (cdr mod-lists))))))
+          (define/private (order mod-lists)
+            (if (null? mod-lists)
+                null
+                (append (compilation-unit-code (car mod-lists))
+                        (order (cdr mod-lists)))))
               
           (define/public (get-comment-character) (values "//" "*"))
           (define/public (get-style-delta) #f)
@@ -596,13 +595,13 @@
                    (send admin get-editor))))
           
           ;; find-this-position : -> (union #f number)
-          (define (find-this-position)
+          (define/private (find-this-position)
             (let ([ed (find-containing-editor)])
               (and ed
                    (send ed get-snip-position this))))
           
           ;; copy-contents-with-comment-char-to-position : (is-a? text%) number -> void
-          (define (copy-contents-with-comment-char-to-position to-ed from-ed pos)
+          (define/private (copy-contents-with-comment-char-to-position to-ed from-ed pos)
             (let loop ([snip (find-last-snip from-ed)])
               (cond
                 [snip 
@@ -616,7 +615,7 @@
           
           ;; find-last-snip : editor -> snip
           ;; returns the last snip in the editor
-          (define (find-last-snip ed)
+          (define/private (find-last-snip ed)
             (let loop ([snip (send ed find-first-snip)]
                        [acc (send ed find-first-snip)])
               (cond

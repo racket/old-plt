@@ -555,6 +555,8 @@
                                           `(Object-Mix ,(translate-id parent parent-src)))
                                      ,(translate-implements (header-implements header))
                              
+                             (super-instantiate ())
+                                     
                              ,@(map (lambda (f) (translate-field (map modifier-kind (field-modifiers f))
                                                                  (field-type f)
                                                                  (field-name f)
@@ -624,7 +626,7 @@
                                                                       type-recs))
                                     (members-init class-members))
                              
-                             (super-instantiate ())))
+                             ))
                           
                           ,@(create-generic-methods (append (accesses-public methods)
                                                             (accesses-package methods)

@@ -2,7 +2,8 @@
   (require (lib "unitsig.ss")
            (lib "kerncase.ss" "syntax")
            (lib "stx.ss" "syntax")
-           (lib "shared.ss" "stepper" "private"))
+           (lib "shared.ss" "stepper" "private")
+           (lib "marks.ss" "stepper" "private"))
   
   (provide stacktrace@ stacktrace^ stacktrace-imports^)
   
@@ -192,23 +193,27 @@
       (define (annotate-from-info prior-tail-bound trans?)
         (lambda (info)
           (let*-values 
-              ([(local-free-vars) (free-vars-of (stx-info-stx info) trans?)]
+              ([(src) (stx-info-stx info)]
+               [(local-free-vars) (free-vars-of src trans?)]
                [(my-tail-bound) (tail-bound prior-tail-bound 
                                             (stx-info-new-bindings info)
                                             (stx-info-tailness info))]
-               [(pieces rebuilder) (expose (stx-info-stx info) trans?)]
+               [(pieces rebuilder) (expose src trans?)]
                [(annotated-tree sub-free-vars) (cons-tree-map/fv (annotate-from-info my-tail-bound trans?)
                                                                  pieces trans?)]
-               [(free-vars) (varref-set-union (list local-free-vars (varref-set-remove-bindings sub-free-vars (stx-info-new-bindings info))))]
+               [(free-here) (varref-set-union (list local-free-vars sub-free-vars))]
+               [(free-for-parent) (varref-set-remove-bindings free-here (stx-info-new-bindings info))]
                [(rebuilt) (rebuilder annotated-tree)]
                [(profiled) (if (eq? (stx-info-tailness info) 'lambda-body)
-                               (profile-point rebuilt (stx-info-inferred-name info) (stx-info-stx info) trans?)
-                               rebuilt)])
+                               (profile-point rebuilt (stx-info-inferred-name info) src trans?)
+                               rebuilt)]
+               [(mark-maker) (lambda (label) 
+                               (make-debug-info src my-tail-bound free-here label #f))])
             (if (should-be-annotated? info (null? pieces) trans?)
-                (values (with-mark (stx-info-stx info) profiled my-tail-bound free-vars)
-                        free-vars)
+                (values (with-mark src mark-maker profiled)
+                        free-for-parent)
                 (values rebuilt
-                        free-vars)))))
+                        free-for-parent)))))
       
       ;; cons-tree-map/fv walks over a cons tree, building a new one by applying fn to each
       ;; non-cons non-null item.  fn is also expected to return a list of free-vars.  These
@@ -415,7 +420,7 @@
            (identifier? stx)
            (list stx)]
           [(set! v body)
-           (list #`body)]
+           (list #`v)]
           [_
            null]))
       

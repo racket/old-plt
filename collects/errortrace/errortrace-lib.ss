@@ -66,13 +66,13 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Stacktrace instrumenter
 
-  ;; with-mark : syntax? syntax? 
-  (define (with-mark src ann tail-bound free-vars)
-    (with-syntax ([expr ann]
-		  [mark (make-debug-info src tail-bound free-vars 'no-label #f)]
+  ;; with-mark : syntax? (any? -> syntax?) syntax? -> syntax?
+  (define (with-mark src-stx mark-maker expr)
+    (with-syntax ([expr expr]
+		  [mark (mark-maker 'no-label)]
 		  [key key])
       (execute-point
-       src
+       src-stx
        #`(with-continuation-mark
           'key
           mark
@@ -181,12 +181,12 @@
   ;; effect: prints out the context surrounding the exception
   (define (print-error-trace p x)
     (let loop ([n (error-context-display-depth)]
-               [l (continuation-mark-set->list (exn-continuation-marks x) key)])
+               [l (map mark-source (continuation-mark-set->list (exn-continuation-marks x) key))])
 
       (cond
         [(or (zero? n) (null? l)) (void)]
         [(pair? l)
-	 (let* ([stx (mark-source (car l))]
+	 (let* ([stx (car l)]
 		[file (cond
 		       [(string? (syntax-source stx))
 			(string->symbol (syntax-source stx))]

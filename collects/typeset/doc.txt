@@ -23,10 +23,10 @@ and it's set-align-top-line method is called with #t.
 
 The tool also provides several new primitive functions:
 
- - postscript : editor-snip string -> void
+ - postscript : (instance editor-snip%) string -> void
 
-   generates postscript for the editor-snip and saves it into the filename
-   named by the second argument.
+   generates postscript for the editor-snip% object and saves it into
+   the filename named by the second argument.
 
  - single-bracket : TST -> snip
 

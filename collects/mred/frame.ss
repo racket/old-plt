@@ -291,7 +291,7 @@
 			      (make-an-item 'edit-menu:select-all "" #f "a" "Select A&ll" "")
 			      (make-between 'edit-menu 'between-select-all-and-find #t)
 			      (make-an-item 'edit-menu:find "Search for a string in the buffer"
-					    '(lambda () (send this search 1) #t)
+					    '(lambda () (send this move-to-search-or-search) #t)
 					    "f" "Find" "")
 			      (make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
 					    #f #f "Replace" "")
@@ -441,9 +441,10 @@
 	     (send file-menu append-separator))]
 	  [file-menu:print (lambda ()
 			     (send (get-edit) print
-				   '() #t
-				   (mred:preferences:get-preference
-				    'mred:print-output-mode))
+				   '()
+				   #t
+				   #t
+				   (mred:preferences:get-preference 'mred:print-output-mode))
 			     #t)])
 	
 	

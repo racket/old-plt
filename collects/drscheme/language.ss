@@ -21,19 +21,20 @@
 			  signal-not-boolean
 			  eq?-only-compares-symbols?
 			  disallow-untagged-inexact-numbers
+			  whole/fractional-exact-numbers
 			  printing))
   
   (define settings
-    (list (list 'Beginner (make-setting #t 'core #t #f #t #f #f #f #t #t #t #t
+    (list (list 'Beginner (make-setting #t 'core #t #f #t #f #f #f #t #t #t #t #f
 					'constructor-style))
 	  (list 'Intermediate (make-setting #t 'structured
-					    #t #f #t #f #f #t #t #t #t #t
+					    #t #f #t #f #f #t #t #t #t #t #f
 					    'constructor-style))
 	  (list 'Advanced (make-setting #t 'side-effecting
-					#t #f #t #f #t #t #t #f #t #f
+					#t #f #t #f #t #t #t #f #t #f #f
 					'constructor-style))
 	  (list 'Quasi-R4RS (make-setting #t 'advanced
-					  #t #t #t #t #f #t #t #f #f #f
+					  #t #t #t #t #f #t #t #f #f #f #f
 					  'r4rs-style))))
   
   (define (setting-name setting)
@@ -124,6 +125,7 @@
 	  [else (error 'install-language "found bad setting-printing: ~a~n" 
 		       (setting-printing pref))])
 	(show-sharing (setting-sharing-printing? pref))
+	(whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers pref))
 	(print-graph (setting-sharing-printing? pref))
 	(abbreviate-cons-as-list (setting-abbreviate-cons-as-list? pref)))))
   
@@ -285,6 +287,11 @@
 			    setting-sharing-printing?
 			    "Show sharing in values"
 			    output-syntax-panel)]
+	   [whole/fractional-exact-numbers
+	    (make-check-box set-setting-whole/fractional-exact-numbers!
+			    setting-whole/fractional-exact-numbers
+			    "Print rationals in whole/part notation"
+			    output-syntax-panel)]
 	   [ok-panel (make-object mred:horizontal-panel% main)]
 	   [hide-button (make-object mred:button% ok-panel
 				     (lambda (button evt) (show-specifics #f))
@@ -315,6 +322,7 @@
 		     (compare-check-box disallow-untagged-inexact-numbers setting-disallow-untagged-inexact-numbers)
 		     (compare-check-box allow-improper-lists? setting-allow-improper-lists?)
 		     (compare-check-box sharing-printing? setting-sharing-printing?)
+		     (compare-check-box whole/fractional-exact-numbers setting-whole/fractional-exact-numbers)
 		     (compare-check-box abbreviate-cons-as-list? setting-abbreviate-cons-as-list?)
 		     (eq? (printer-number->symbol (send printing get-selection))
 			  (setting-printing setting))
@@ -350,7 +358,9 @@
 				signal-not-boolean)))
 	      (send printing set-selection
 		    (get-printer-style-number (setting-printing v)))
-	      (send abbreviate-cons-as-list? enable (not (eq? 'r4rs-style (setting-printing v))))
+	      (for-each (lambda (x) (send x enable (not (eq? 'r4rs-style (setting-printing v)))))
+			(list abbreviate-cons-as-list?
+			      whole/fractional-exact-numbers))
 	      (map (lambda (get check-box) (send check-box set-value (get v)))
 		   (list setting-case-sensitive?
 			 setting-allow-set!-on-undefined?
@@ -361,6 +371,7 @@
 			 setting-eq?-only-compares-symbols?
 			 setting-allow-improper-lists?
 			 setting-sharing-printing?
+			 setting-whole/fractional-exact-numbers
 			 setting-abbreviate-cons-as-list?)
 		   (list case-sensitive? 
 			 allow-set!-on-undefined? 
@@ -371,6 +382,7 @@
 			 eq?-only-compares-symbols?
 			 allow-improper-lists?
 			 sharing-printing?
+			 whole/fractional-exact-numbers
 			 abbreviate-cons-as-list?))
 	      (reset-choice))])
 	(send language-choice stretchable-in-x #f)

@@ -2,6 +2,7 @@
 (module writer mzscheme
   (require (lib "unitsig.ss")
            (lib "list.ss")
+	   (lib "string.ss")
            (lib "etc.ss"))
   
   (require "sig.ss")
@@ -107,13 +108,19 @@
 		     (case short
 		       [(always) #t]
 		       [(never) #f]
-		       [else (memq name short)])))
+		       [else (memq (lowercase-symbol name) short)])))
 	      (fprintf out " />")
 	      (begin
 		(fprintf out ">")
 		(for-each (lambda (c) (write-xml-content c (incr over) dent out)) content)
 		(start "</~a")
 		(fprintf out ">")))))
+
+      ; : sym -> sym
+      (define (lowercase-symbol x)
+	(let ([s (symbol->string x)])
+	   (string-lowercase! s)
+	   (string->symbol s)))
       
       ;; write-xml-base : (U String Char Symbol) Nat (Nat Output-Stream -> Void) Output-Stream -> Void
       (define (write-xml-base el over dent out)

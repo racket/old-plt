@@ -745,8 +745,9 @@ extern Scheme_Object *scheme_null_break_poll;
 void scheme_real_sema_down(void *sema);
 
 extern void *scheme_global_lock;
-#define SCHEME_GET_LOCK() SCHEME_LOCK_MUTEX(scheme_global_lock)
-#define SCHEME_RELEASE_LOCK()  SCHEME_UNLOCK_MUTEX(scheme_global_lock)
+extern int scheme_global_lock_c;
+#define SCHEME_GET_LOCK() (SCHEME_LOCK_MUTEX(scheme_global_lock), scheme_global_lock_c++)
+#define SCHEME_RELEASE_LOCK()  (--scheme_global_lock_c, SCHEME_UNLOCK_MUTEX(scheme_global_lock))
 #endif
 
 #ifdef MUST_REGISTER_GLOBALS

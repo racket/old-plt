@@ -237,9 +237,8 @@ static void COLLECT(OFFSET_ARG)
 #if ALLOW_TAIL_PUSH
 		    if (s + PTR_ALIGNMENT >= end) {
 		      MARK_STATISTIC(num_blockpushes_tail_stat++);
-		      s = p;
+		      s = p - PTR_ALIGNMENT;
 		      end = p + size;
-		      continue;
 		    } else 
 #endif
 		      LOCAL_PUSH_COLLECT(p, p + size, s);

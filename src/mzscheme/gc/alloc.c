@@ -375,13 +375,15 @@ GC_bool GC_stopped_mark(stop_func)
 GC_stop_func stop_func;
 {
     register int i;
-#   ifdef PRINTSTATS
+#   if defined(PRINTSTATS) || defined(PRINTTIMES)
 	CLOCK_TYPE start_time, current_time;
 #   endif
 	
     STOP_WORLD();
-#   ifdef PRINTSTATS
+#   if defined(PRINTSTATS) || defined(PRINTTIMES)
 	GET_TIME(start_time);
+#   endif
+#   ifdef PRINTSTATS
 	GC_printf1("--> Marking for collection %lu ",
 	           (unsigned long) GC_gc_no + 1);
 	GC_printf2("after %lu allocd bytes + %lu wasted bytes\n",

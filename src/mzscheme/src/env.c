@@ -117,6 +117,7 @@ static void init_compile_data(Scheme_Comp_Env *env);
 
 #ifdef MZ_REAL_THREADS
 void *scheme_global_lock;
+int scheme_global_lock_c;
 #endif
 
 Scheme_Env *scheme_basic_env ()

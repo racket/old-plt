@@ -163,7 +163,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES (0 && SGC_STD_DEBUGGING)
+#define PAD_BOUNDARY_BYTES (1 && SGC_STD_DEBUGGING)
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.
@@ -4159,7 +4159,7 @@ static void run_finalizers(void)
 static int traced_from_roots, traced_from_stack, traced_from_uncollectable, traced_from_finals;
 #endif
 
-#if 1
+#if 0
 # define GETTIME() ((long)scheme_get_milliseconds())
 #else
 # define GETTIME() ((long)scheme_get_process_milliseconds())
@@ -4193,6 +4193,10 @@ void GC_flush_mark_stack()
   collect();  
 }
 
+#if PRINT_INFO_PER_GC
+static long last_gc_end;
+#endif
+
 void do_GC_gcollect(void *stack_now)
 {
   long root_marked;
@@ -4202,16 +4206,16 @@ void do_GC_gcollect(void *stack_now)
   long orig_mem_use = mem_use;
   long start_time;
   start_time = GETTIME();
-  FPRINTF(STDERR, "gc at %ld (%ld): %ld\n",
+  FPRINTF(STDERR, "gc at %ld (%ld): %ld after %ld msecs\n",
 	  mem_use, sector_mem_use, 
 # if GET_MEM_VIA_SBRK
-	  (long)sbrk(0)
+	  (long)sbrk(0),
 # elif defined(WIN32) && AUTO_STATIC_ROOTS_IF_POSSIBLE
-	  total_memory_use()
+	  total_memory_use(),
 # else
-	  0
+	  0,
 # endif
-	  );
+	  start_time - last_gc_end);
 # if SHOW_SECTOR_MAPS_AT_GC
   dump_sector_map("");
 # endif
@@ -4482,6 +4486,7 @@ void do_GC_gcollect(void *stack_now)
 # if SHOW_SECTOR_MAPS_AT_GC
   dump_sector_map("                            ");
 # endif
+  last_gc_end = GETTIME();
 #endif
 
 #if STAMP_AND_REMEMBER_SOURCE

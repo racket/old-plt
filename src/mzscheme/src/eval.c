@@ -1723,9 +1723,14 @@ static Scheme_Object *do_apply_known_k(void)
 }
 
 #if 0
-# define DEBUG_CHECK_TYPE(v) if (SCHEME_TYPE(v) > _scheme_last_type_) \
+# define DEBUG_CHECK_TYPE(v) \
+  if ((v != SCHEME_MULTIPLE_VALUES) \
+      && (v != SCHEME_TAIL_CALL_WAITING) \
+      && (v != SCHEME_EVAL_WAITING) \
+      && (SCHEME_TYPE(v) > (_scheme_last_type_ + 5))) \
   { Scheme_Object *o = *(Scheme_Object **)(v); \
-    if (SCHEME_TYPE(o) > _scheme_last_type_) scheme_signal_error("bad type"); }
+    if (SCHEME_TYPE(o) > (_scheme_last_type_ + 5))\
+       scheme_signal_error("bad type"); }
 #else
 # define DEBUG_CHECK_TYPE(v) /**/
 #endif

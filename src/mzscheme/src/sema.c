@@ -309,8 +309,8 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       scheme_current_process->ran_some = 1;
 # endif
     }
-    v = 1;
 #endif
+    v = 1;
   }
 
   return v;

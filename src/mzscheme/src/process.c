@@ -272,12 +272,14 @@ void *make_namespace_mutex;
 #define RELEASE_CUST_LOCK() /* empty */
 #else
 static void *will_mutex;
-#define GET_WILL_LOCK() SCHEME_LOCK_MUTEX(will_mutex)
-#define RELEASE_WILL_LOCK()  SCHEME_UNLOCK_MUTEX(will_mutex)
+static int will_lock_c;
+#define GET_WILL_LOCK() (SCHEME_LOCK_MUTEX(will_mutex), will_lock_c++)
+#define RELEASE_WILL_LOCK()  (--will_lock_c, SCHEME_UNLOCK_MUTEX(will_mutex))
 
 static void *cust_mutex;
-#define GET_CUST_LOCK() SCHEME_LOCK_MUTEX(cust_mutex)
-#define RELEASE_CUST_LOCK()  SCHEME_UNLOCK_MUTEX(cust_mutex)
+static int cust_lock_c;
+#define GET_CUST_LOCK() (SCHEME_LOCK_MUTEX(cust_mutex), cust_lock_c++)
+#define RELEASE_CUST_LOCK()  (--cust_lock_c, SCHEME_UNLOCK_MUTEX(cust_mutex))
 #endif
 
 #ifdef WIN32_THREADS

@@ -96,7 +96,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
   while ((bucket = table->buckets[h])) {
     if (SAME_OBJ((Scheme_Object *)bucket, scheme_false)) {
       if (naya) {
-	/* We're re-suing, so decrement count and it will be
+	/* We're re-using, so decrement count and it will be
 	   re-incremented. */
 	--table->count;
 	break;

@@ -51,3 +51,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 {
   return scheme_reload(env);
 }
+
+Scheme_Object *scheme_module_name() {
+  return scheme_make_string("addrhack");
+}

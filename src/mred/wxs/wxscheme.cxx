@@ -365,13 +365,13 @@ static Scheme_Object *wxSchemeGetColourFromUser(int, Scheme_Object **argv)
 
   cc = new CHOOSECOLOR;
   cc->lStructSize = sizeof(CHOOSECOLOR);
-  cc->hwndOwner = NULL;
+  cc->hwndOwner = NULL; /* (parent ? parent->GetHWND() : (HWND)NULL */
   if (c)
     cc->rgbResult = RGB(c->Red(), c->Green(), c->Blue());
   cc->Flags = (c ? CC_RGBINIT : 0);
   cc->lpCustColors = userCustomColors;
 
-  if (!wxPrimitiveDialog(do_choose_color, cc, parent ? parent->GetHWND() : 0))
+  if (!wxPrimitiveDialog(do_choose_color, cc, 0))
     return scheme_false;
 
   c = new wxColour(GetRValue(cc->rgbResult), GetGValue(cc->rgbResult), GetBValue(cc->rgbResult));
@@ -490,12 +490,12 @@ static Scheme_Object *wxSchemeGetFontFromUser(int, Scheme_Object **argv)
     lf->lfPitchAndFamily |= FF_DONTCARE;
 
   c->lStructSize = sizeof(CHOOSEFONT);
-  c->hwndOwner = NULL;
+  c->hwndOwner = NULL; /* (parent ? parent->GetHWND() : (HWND)NULL) */
   c->lpLogFont = lf;
   c->iPointSize = 10 * (f ? f->GetPointSize() : 10);
   c->Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
 
-  if (!wxPrimitiveDialog(do_choose_font, c, parent ? parent->GetHWND() : 0))
+  if (!wxPrimitiveDialog(do_choose_font, c, 0))
     return scheme_false;
   
   if (!lf->lfFaceName[0])

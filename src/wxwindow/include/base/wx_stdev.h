@@ -97,7 +97,7 @@ class wxPopupEvent: public wxCommandEvent
 {
  public:
   wxPopupEvent();
-  int menuId;
+  long menuId;
 };
 
 // Item or menu event class

@@ -54,26 +54,26 @@ class wxMenu: public wxbMenu
   wxMenu(char *Title = NULL, wxFunction func = NULL);
   ~wxMenu(void);
   void AppendSeparator(void);
-  void Append(int Id, char *Label, char *helpString=NULL, Bool checkable=FALSE);
-  void Append(int Id, char *Label, wxMenu *SubMenu, char *helpString = NULL);
-  void Enable(int Id, Bool Flag);
+  void Append(long Id, char *Label, char *helpString=NULL, Bool checkable=FALSE);
+  void Append(long Id, char *Label, wxMenu *SubMenu, char *helpString = NULL);
+  void Enable(long Id, Bool Flag);
   // Avoid compiler warning
   void Enable(Bool Flag) { wxItem::Enable(Flag); }
-  void Check(int Id, Bool Flag);
-  Bool Checked(int Id);
+  void Check(long Id, Bool Flag);
+  Bool Checked(long Id);
   void SetTitle(char *label);
   char *GetTitle(void);
-  void SetLabel(int id, char *label);
+  void SetLabel(long Id, char *label);
   // Avoid compiler warning
   void SetLabel(char *label) { wxItem::SetLabel(label); }
-  char *GetLabel(int id);
+  char *GetLabel(long Id);
   // Avoid compiler warning
   char *GetLabel(void) { return wxItem::GetLabel(); }
   void Break(void) ;
 
   /* MATTHEW: [6] */
-  Bool DeleteItem(int id, int pos);
-  Bool Delete(int id);
+  Bool DeleteItem(long Id, int pos);
+  Bool Delete(long Id);
   Bool DeleteByPosition(int pos);
 
   int Number(void);
@@ -85,10 +85,10 @@ class wxMenu: public wxbMenu
   // For popups, need to destroy, then recreate menu for a different (or
   // possibly same) window, since the parent may change.
   void DestroyMenu(Bool full); /* MATTHEW: [13] */
-  Widget FindMenuItem(int Id, wxMenuItem **it = NULL);
+  Widget FindMenuItem(long Id, wxMenuItem **it = NULL);
 #endif
 #ifdef wx_xview
-  Menu_item FindMenuItem(int Id);
+  Menu_item FindMenuItem(long Id);
 #endif
 };
 
@@ -105,16 +105,16 @@ class wxMenuBar:public wxbMenuBar
 
   // Must only be used AFTER menu has been attached to frame,
   // otherwise use individual menus to enable/disable items
-  void Enable(int id, Bool flag);
+  void Enable(long Id, Bool flag);
   // Avoid compiler warning
   void Enable(Bool Flag) { wxItem::Enable(Flag); }
   void EnableTop(int pos, Bool flag);
-  void Check(int id, Bool flag);
-  Bool Checked(int Id);
+  void Check(long Id, Bool flag);
+  Bool Checked(long Id);
   // Avoid compiler warning
   void SetLabel(char *label) { wxItem::SetLabel(label); }
-  void SetLabel(int id, char *label) ;
-  char *GetLabel(int id) ;
+  void SetLabel(long Id, char *label) ;
+  char *GetLabel(long Id) ;
   // Avoid compiler warning
   char *GetLabel(void) { return wxItem::GetLabel(); }
   void SetLabelTop(int pos,char *label) ;

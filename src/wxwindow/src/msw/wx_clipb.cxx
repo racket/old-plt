@@ -33,20 +33,17 @@ Bool wxClipboardIsOpen = FALSE;
 
 Bool wxOpenClipboard(void)
 {
-  if (wxTheApp->wx_frame && !wxClipboardIsOpen)
-  {
+  if (wxTheApp->wx_frame && !wxClipboardIsOpen) {
     wxClipboardIsOpen = (Bool)::OpenClipboard(((wxWnd *)wxTheApp->wx_frame->handle)->handle);
     return wxClipboardIsOpen;
-  }
-  else return FALSE;
+  } else
+    return FALSE;
 }
 
 Bool wxCloseClipboard(void)
 {
   if (wxClipboardIsOpen)
-  {
     wxClipboardIsOpen = FALSE;
-  }
   return (Bool)::CloseClipboard();
 }
 

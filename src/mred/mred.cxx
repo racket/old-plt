@@ -1846,7 +1846,12 @@ wxFrame *MrEdApp::OnInit(void)
 
   MrEdInitFirstContext(mred_main_context);
 
-  mred_real_main_frame = new wxFrame(NULL, "MrEd"); /* Just in case wxWindows needs an initial frame */
+  /* Just in case wxWindows needs an initial frame: */
+  /* (Windows needs it for the clipboard.) */
+  mred_real_main_frame = new wxFrame(NULL, "MrEd");
+#ifdef wx_msw
+  TheMrEdApp->wx_frame = mred_real_main_frame;
+#endif
 
   wxInitMedia();
 

@@ -199,7 +199,7 @@ class os_wxFrame : public wxFrame {
   void OnSize(int x0, int x1);
   void OnSetFocus();
   void OnKillFocus();
-  void OnMenuCommand(int x0);
+  void OnMenuCommand(ExactLong x0);
   Bool OnClose();
   void OnActivate(Bool x0);
 };
@@ -420,7 +420,7 @@ wxFrame::OnKillFocus();
   }
 }
 
-void os_wxFrame::OnMenuCommand(int x0)
+void os_wxFrame::OnMenuCommand(ExactLong x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
@@ -442,7 +442,7 @@ void os_wxFrame::OnMenuCommand(int x0)
 wxFrame::OnMenuCommand(x0);
   } else {
   
-  p[0] = scheme_make_integer(x0);
+  p[0] = scheme_make_integer_value(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -654,10 +654,10 @@ static Scheme_Object *os_wxFrameOnMenuCommand(Scheme_Object *obj, int n,  Scheme
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  int x0;
+  ExactLong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "frame%::on-menu-command");
+  x0 = objscheme_unbundle_ExactLong(p[0], "frame%::on-menu-command");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)

@@ -29,7 +29,7 @@ class wbMenuItem: public wxObject
 {
  public:
   wxMenuBar *menuBar;
-  int itemId;
+  long itemId;
   char *itemName;
   char *helpString;
   wxMenu *subMenu;

@@ -36,25 +36,27 @@ class wxMenu: public wxbMenu
   wxMenu(char *Title = NULL, wxFunction func = NULL);
   ~wxMenu(void);
   void AppendSeparator(void);
-  void Append(int id, char *Label, char *helpString=NULL, Bool checkable=FALSE);
-  void Append(int id, char *Label, wxMenu *SubMenu, char *helpString = NULL);
-  void Enable(int id, Bool Flag);
-  void Check(int id, Bool Flag);
-  Bool Checked(int id);
+  void Append(long Id, char *Label, char *helpString=NULL, Bool checkable=FALSE);
+  void Append(long Id, char *Label, wxMenu *SubMenu, char *helpString = NULL);
+  void Enable(long Id, Bool Flag);
+  void Check(long Id, Bool Flag);
+  Bool Checked(long Id);
   void SetTitle(char *label);
   char *GetTitle(void);
   inline void SetLabel(char *label) { wxItem::SetLabel(label); } ;
-  void SetLabel(int id, char *label);
+  void SetLabel(long Id, char *label);
   inline char *GetLabel(void) {return wxItem::GetLabel(); };
-  char *GetLabel(int id);
+  char *GetLabel(long Id);
   void Break(void) ;
 
   /* MATTHEW: [6] */
-  Bool DeleteItem(int, int);
-  Bool Delete(int id);
+  Bool DeleteItem(long, int);
+  Bool Delete(long Id);
   Bool DeleteByPosition(int pos);
 
   int Number(void);
+
+  wxMenuItem *FindItemForMenuId(WORD menuId);
 
   BOOL MSWCommand(UINT param, WORD id);
 };
@@ -74,16 +76,18 @@ class wxMenuBar:public wxbMenuBar
   void Append(wxMenu *menu, char *title);
   // Must only be used AFTER menu has been attached to frame,
   // otherwise use individual menus to enable/disable items
-  void Enable(int Id, Bool Flag);
+  void Enable(long Id, Bool Flag);
   void EnableTop(int pos, Bool Flag);
-  void Check(int id, Bool Flag);
-  Bool Checked(int id);
+  void Check(long Id, Bool Flag);
+  Bool Checked(long Id);
   inline void SetLabel(char *label) { wxItem::SetLabel(label); } ;
-  void SetLabel(int id,char *label) ;
+  void SetLabel(long Id,char *label) ;
   inline char *GetLabel(void) {return wxItem::GetLabel(); };
-  char *GetLabel(int id) ;
-  void SetLabelTop(int pos,char *label) ;
+  char *GetLabel(long Id) ;
+  void SetLabelTop(int pos, char *label) ;
   char *GetLabelTop(int pos) ;
+
+  wxMenuItem *FindItemForMenuId(WORD menuId);
 
   /* MATTHEW: [6] */
   virtual Bool OnAppend(wxMenu *menu, char *title);

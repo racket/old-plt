@@ -145,7 +145,7 @@ void wxMenu:: Break (void)
 }
 
 // Ordinary menu item
-void wxMenu:: Append (int Id, char *Label, char *helpString, Bool checkable)
+void wxMenu:: Append (long Id, char *Label, char *helpString, Bool checkable)
 {
   wxMenuItem *item = new wxMenuItem;
   item->checkable = checkable;
@@ -224,7 +224,7 @@ But that doesn't works...
 }
 
 // Pullright item
-void wxMenu:: Append (int Id, char *Label, wxMenu * SubMenu, char *helpString)
+void wxMenu:: Append (long Id, char *Label, wxMenu * SubMenu, char *helpString)
 {
   /* MATTHEW: [6] Safety */
   if (SubMenu->window_parent)
@@ -270,7 +270,7 @@ void wxMenu:: Append (int Id, char *Label, wxMenu * SubMenu, char *helpString)
 }
 
 /* MATTHEW: [6] New method */
-Bool wxMenu::DeleteItem(int Id, int  Pos)
+Bool wxMenu::DeleteItem(long Id, int  Pos)
 {
   wxMenuItem *item = NULL;
   wxNode *node;
@@ -307,12 +307,12 @@ Bool wxMenu::DeleteItem(int Id, int  Pos)
   return TRUE;
 }
 
-Bool wxMenu::Delete(int Id)
+Bool wxMenu::Delete(long Id)
 {
   return DeleteItem(Id, -1);
 }
 
-Bool wxMenu::DeleteByPosition(int Id)
+Bool wxMenu::DeleteByPosition(long Id)
 {
   return DeleteItem(0, Id);
 }
@@ -322,75 +322,34 @@ int wxMenu::Number()
   return no_items;
 }
 
-void wxMenu:: Enable (int Id, Bool Flag)
+void wxMenu:: Enable (long Id, Bool Flag)
 {
-#ifdef wx_motif
   wxMenuItem *it = NULL;
   Widget w = FindMenuItem (Id, &it);
 
   if (it)
     it->isEnabled = Flag;
 
-  if (w)
-    {
-      if (w)
-	XtSetSensitive (w, Flag);
-      return;
-    }
-#endif
-#ifdef wx_xview
-  Menu menu = (Menu) handle;
-  int n = (int) xv_get (menu, MENU_NITEMS);
-  int i;
-  for (i = 1; i <= n; i++)
-    {
-      Menu_item item = FindMenuItem (Id);
-      if (item)
-	{
-	  xv_set (item, MENU_INACTIVE, !Flag, NULL);
-	}
-    }
-#endif
+  if (w) {
+    if (w)
+      XtSetSensitive (w, Flag);
+    return;
+  }
 }
 
-void wxMenu:: Check (int Id, Bool Flag)
+void wxMenu:: Check (long Id, Bool Flag)
 {
-#ifdef wx_motif
   wxMenuItem *it = NULL;
   Widget w = FindMenuItem (Id, &it);
   if (it) 
     it->isChecked = Flag;
 
-  if (w && XtIsSubclass (w, xmToggleButtonGadgetClass))
-    {
-      XtVaSetValues (w, XmNset, (Boolean) Flag, NULL);
-    }
-#endif
-#ifdef wx_xview
-  // Simulate checking in XView
-  Menu menu = (Menu) handle;
-  int n = (int) xv_get (menu, MENU_NITEMS);
-  int i;
-  for (i = 1; i <= n; i++)
-    {
-      Menu_item item = FindMenuItem (Id);
-      if (item)
-	{
-          wxMenuItem *menuItem = (wxMenuItem *) xv_get(item, MENU_CLIENT_DATA);
-          if (menuItem && menuItem->checkable)
-          {
-            menuItem->isChecked = Flag;
-            char *str = (Flag ? menuItem->checkedString : menuItem->uncheckedString);
-	      
-            xv_set (item, MENU_STRING, str, NULL);
-	  }
-          return;
-	}
-    }
-#endif
+  if (w && XtIsSubclass (w, xmToggleButtonGadgetClass)) {
+    XtVaSetValues (w, XmNset, (Boolean) Flag, NULL);
+  }
 }
 
-Bool wxMenu:: Checked (int Id)
+Bool wxMenu:: Checked (long Id)
 {
   wxMenuItem *it;
   Widget w = FindMenuItem(Id, &it);
@@ -441,7 +400,7 @@ char *wxMenu:: GetTitle ()
   return title;
 }
 
-void wxMenu:: SetLabel (int Id, char *label)
+void wxMenu:: SetLabel (long Id, char *label)
 {
 #ifdef wx_motif
   char mnem = wxFindMnemonic (label);
@@ -517,7 +476,7 @@ void wxMenu:: SetLabel (int Id, char *label)
 #endif
 }
 
-char *wxMenu:: GetLabel (int Id)
+char *wxMenu:: GetLabel (long Id)
 {
 #ifdef wx_motif
   wxMenuItem *it = NULL;
@@ -547,7 +506,7 @@ char *wxMenu:: GetLabel (int Id)
 }
 
 #ifdef wx_xview
-Menu_item wxMenu:: FindMenuItem (int Id)
+Menu_item wxMenu:: FindMenuItem (long Id)
 {
   Menu x_menu = (Menu) handle;
 
@@ -574,7 +533,7 @@ Menu_item wxMenu:: FindMenuItem (int Id)
 #endif
 
 #ifdef wx_motif
-Widget wxMenu:: FindMenuItem (int Id, wxMenuItem ** it)
+Widget wxMenu:: FindMenuItem (long Id, wxMenuItem ** it)
 {
   if (it)
     *it = NULL;
@@ -683,7 +642,7 @@ wxMenuBar::~wxMenuBar (void)
   delete[]titles;
 }
 
-void wxMenuBar::Enable (int Id, Bool Flag)
+void wxMenuBar::Enable (long Id, Bool Flag)
 {
   int j;
   for (j = 0; j < n; j++)
@@ -695,7 +654,7 @@ void wxMenuBar::Enable (int Id, Bool Flag)
     }
 }
 
-void wxMenuBar::Check (int Id, Bool Flag)
+void wxMenuBar::Check (long Id, Bool Flag)
 {
   int j;
   for (j = 0; j < n; j++)
@@ -707,7 +666,7 @@ void wxMenuBar::Check (int Id, Bool Flag)
     }
 }
 
-Bool wxMenuBar::Checked (int Id)
+Bool wxMenuBar::Checked (long Id)
 {
   int j;
   for (j = 0; j < n; j++)
@@ -718,7 +677,7 @@ Bool wxMenuBar::Checked (int Id)
   return FALSE;
 }
 
-void wxMenuBar::SetLabel (int Id, char *label)
+void wxMenuBar::SetLabel (long Id, char *label)
 {
   int j;
   for (j = 0; j < n; j++)
@@ -730,7 +689,7 @@ void wxMenuBar::SetLabel (int Id, char *label)
     }
 }
 
-char *wxMenuBar::GetLabel (int Id)
+char *wxMenuBar::GetLabel (long Id)
 {
   int j;
   for (j = 0; j < n; j++) {

@@ -99,7 +99,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
 
 /***************************************************************************/
 
-int objscheme_istype_bool(Scheme_Object *, const char *)
+int objscheme_istype_bool(Scheme_Object *obj, const char *where)
 {
   return 1; /* Anything can be a boolean */
 }
@@ -392,7 +392,7 @@ void objscheme_set_box(Scheme_Object *b, Scheme_Object *v)
 
 /************************************************************************/
 
-void objscheme_note_creation(Scheme_Object *)
+void objscheme_note_creation(Scheme_Object *obj)
 {
   num_objects_allocated++;
 }
@@ -515,7 +515,7 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
   }
 }
 
-void objscheme_backpointer(void * /* obj */)
+void objscheme_backpointer(void *obj)
 {
 }
 

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_types.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_types.cxx,v 1.1.1.1 1997/12/22 16:11:57 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -35,17 +35,13 @@ void wxInitStandardTypes(void)
 
   wxAllTypes.AddType(wxTYPE_CANVAS,      wxTYPE_WINDOW,                     "canvas");
   wxAllTypes.AddType(wxTYPE_PANEL,       wxTYPE_CANVAS,                     "panel");
-  wxAllTypes.AddType(wxTYPE_TEXT_WINDOW, wxTYPE_WINDOW,                     "text window");
   wxAllTypes.AddType(wxTYPE_FRAME,       wxTYPE_WINDOW,                     "frame");
   wxAllTypes.AddType(wxTYPE_ITEM,        wxTYPE_WINDOW,                     "item");
 
   wxAllTypes.AddType(wxTYPE_DIALOG_BOX,  wxTYPE_PANEL,                      "dialog box");
-  wxAllTypes.AddType(wxTYPE_ENHANCED_DIALOG,  wxTYPE_DIALOG_BOX,            "enhanced dialog");
 
   wxAllTypes.AddType(wxTYPE_BUTTON,      wxTYPE_ITEM,                       "button");
   wxAllTypes.AddType(wxTYPE_MESSAGE,     wxTYPE_ITEM,                       "message");
-  wxAllTypes.AddType(wxTYPE_TEXT,        wxTYPE_ITEM,                       "text");
-  wxAllTypes.AddType(wxTYPE_MULTI_TEXT,  wxTYPE_TEXT,                       "multi text");
   wxAllTypes.AddType(wxTYPE_CHOICE,      wxTYPE_ITEM,                       "choice");
   wxAllTypes.AddType(wxTYPE_LIST_BOX,    wxTYPE_ITEM,                       "list box");
   wxAllTypes.AddType(wxTYPE_CHECK_BOX,   wxTYPE_ITEM,                       "check box");
@@ -86,20 +82,6 @@ void wxInitStandardTypes(void)
   wxAllTypes.AddType(wxTYPE_NODE,        wxTYPE_ANY,                        "node");
   wxAllTypes.AddType(wxTYPE_HASH_TABLE,  wxTYPE_ANY,                        "hash table");
   wxAllTypes.AddType(wxTYPE_APP,         wxTYPE_ANY,                        "application");
-  wxAllTypes.AddType(wxTYPE_DATE,        wxTYPE_ANY,                        "date");
-
-  wxAllTypes.AddType(wxTYPE_TOOLBAR,     wxTYPE_CANVAS,                     "toolbar");
-  wxAllTypes.AddType(wxTYPE_BUTTONBAR,   wxTYPE_TOOLBAR,                    "buttonbar");
-
-  wxAllTypes.AddType(wxTYPE_DDE_SERVER,  wxTYPE_ANY,                        "DDE server");
-  wxAllTypes.AddType(wxTYPE_DDE_CLIENT,  wxTYPE_ANY,                        "DDE client");
-  wxAllTypes.AddType(wxTYPE_DDE_CONNECTION, wxTYPE_ANY,                     "DDE connection");
-  wxAllTypes.AddType(wxTYPE_HELP_INSTANCE, wxTYPE_ANY,                      "wxHelp instance");
-
-  wxAllTypes.AddType(wxTYPE_DATABASE,    wxTYPE_ANY,                        "ODBC database");
-  wxAllTypes.AddType(wxTYPE_RECORDSET,   wxTYPE_ANY,                        "ODBC recordset");
-  wxAllTypes.AddType(wxTYPE_QUERY_FIELD, wxTYPE_ANY,                        "ODBC query field");
-  wxAllTypes.AddType(wxTYPE_QUERY_COL,   wxTYPE_ANY,                        "ODBC query col");
 }
 
 // Explicit type hierarchy required

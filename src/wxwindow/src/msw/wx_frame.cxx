@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.3 1998/08/09 20:55:21 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.4 1998/08/11 14:25:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -870,24 +870,20 @@ BOOL wxFrameWnd::OnClose(void)
   return FALSE;
 }
 
-BOOL wxFrameWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
+BOOL wxFrameWnd::OnCommand(WORD menuId, WORD cmd, HWND WXUNUSED(control))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxFrameWnd::OnCommand %d\n", handle);
-#endif
-  if (cmd == 0 || cmd == 1 ) // Can be either a menu command or an accelerator.
-  {
+  if (cmd == 0 || cmd == 1 ) { // Can be either a menu command or an accelerator.
     wxFrame *frame = (wxFrame *)wx_window;
-    if (frame->GetMenuBar() && frame->GetMenuBar()->FindItemForId(id))
-    {
-      ((wxFrame *)wx_window)->Command(id);
-      return TRUE;
+    if (frame->GetMenuBar()) {
+      wxMenuItem *i = frame->GetMenuBar()->FindItemForMenuId(menuId);
+      if (i) {
+	((wxFrame *)wx_window)->Command(i->itemId);
+	return TRUE;
+      }
     }
-    else
-      return FALSE;
   }
-  else
-    return FALSE;
+
+  return FALSE;
 }
 
 void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)

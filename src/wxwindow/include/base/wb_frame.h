@@ -64,8 +64,8 @@ class wxbFrame: public wxWindow
   void OnActivate(Bool flag);
 
   // Default behaviour is to display a help string for the menu item.
-  virtual void OnMenuSelect(int id);
-  inline virtual void OnMenuCommand(int WXUNUSED(id)) {};         // Called on frame menu command
+  virtual void OnMenuSelect(long id);
+  inline virtual void OnMenuCommand(long WXUNUSED(id)) {}; // Called on frame menu command
 
   // Set menu bar
   virtual void SetMenuBar(wxMenuBar *menu_bar) = 0;
@@ -92,8 +92,8 @@ class wxbFrame: public wxWindow
   virtual void LoadAccelerators(char *table) = 0;
 
   // Call this to simulate a menu command
-  virtual void Command(int id);
-  virtual void ProcessCommand(int id);
+  virtual void Command(long id);
+  virtual void ProcessCommand(long id);
 
   // Toolbar (currently, for use by Windows MDI parent frames ONLY)
   virtual inline void SetToolBar(wxToolBar *toolbar) { frameToolBar = (wxWindow *)toolbar; }

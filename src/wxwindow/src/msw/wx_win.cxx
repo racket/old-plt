@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.12 1998/08/11 14:25:06 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.13 1998/08/15 02:15:33 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -453,6 +453,39 @@ HCURSOR wxMSWSetCursor(HCURSOR c)
   return SetCursor(c);
 }
 
+void wxResetCurrentCursor(void)
+{
+  POINT pos;
+  if (!GetCursorPos(&pos)) return;
+
+  HWND hwnd = WindowFromPoint(pos);
+  if (!hwnd) return;
+
+  wxWnd *wnd = NULL;
+  while (hwnd) {
+    wnd = wxFindWinFromHandle(hwnd);
+    if (wnd)
+      break;
+    else
+      hwnd = GetParent(hwnd);
+  }
+  if (!wnd) return;
+  
+  wxWindow *w = wnd->wx_window;
+  if (!w) return;
+
+  wxCursor *cursor = wxSTANDARD_CURSOR;
+  while (w) {
+    if (w->wx_cursor) {
+      cursor = w->wx_cursor;
+      break;
+    }
+    w = w->GetParent();
+  }
+
+  wxMSWSetCursor(cursor->ms_cursor);
+}
+
 wxCursor *wxWindow::SetCursor(wxCursor *cursor)
 {
   wxCursor *old_cursor = wx_cursor;
@@ -461,22 +494,10 @@ wxCursor *wxWindow::SetCursor(wxCursor *cursor)
     return old_cursor;
 
   wx_cursor = cursor;
-  if (wx_cursor)
-  {
-    HWND hWnd = GetHWND();
 
-    // Change the cursor NOW if we're within the correct window
-    POINT point;
-    ::GetCursorPos(&point);
+  if (!wxIsBusy())
+    wxResetCurrentCursor();
 
-    RECT rect;
-    ::GetWindowRect(hWnd, &rect);
-
-    if (::PtInRect(&rect, point) && !wxIsBusy())
-      wxMSWSetCursor(wx_cursor->ms_cursor);
-  }
-
-  wxFlushEvents();
   return old_cursor;
 }
 
@@ -1577,27 +1598,11 @@ LONG APIENTRY _EXPORT
     return FALSE;
 }
 
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-wxList *wxWinHandleList = NULL;
-#else
 wxNonlockingHashTable *wxWinHandleList = NULL;
-#endif
 
 wxWnd *wxFindWinFromHandle(HWND hWnd)
 {
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-  wxNode *node = wxWinHandleList->Find((long)hWnd);
-  if (!node)
-    return NULL;
-  return (wxWnd *)node->Data();
-#else
   return (wxWnd *)wxWinHandleList->Find((long)hWnd);
-#endif
-}
-
-void wxAssociateWinWithHandle(HWND hWnd, wxWnd *win)
-{
-  wxWinHandleList->Append((long)hWnd, win);
 }
 
 /* wxWnd class used to implement all Windows 3 windows
@@ -2206,7 +2211,7 @@ wxSubWnd::wxSubWnd(wxWnd *parent, char *wclass, wxWindow *wx_win,
 
 {
   Create(parent, wclass, wx_win, NULL, x, y, width, height, style, dialog_template);
-  mouse_in_window = FALSE ;
+  mouse_in_window = FALSE;
 }
 
 wxSubWnd::~wxSubWnd(void)
@@ -2678,13 +2683,15 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
 	  wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
 	else {
 	  wxWindow *w = wx_window;
+	  wxCursor *cursor = wxSTANDARD_CURSOR;
 	  while (w) {
 	    if (w->wx_cursor) {
-	      wxMSWSetCursor(w->wx_cursor->ms_cursor);
+	      cursor = w->wx_cursor;
 	      break;
 	    }
 	    w = w->GetParent();
 	  }
+	  wxMSWSetCursor(cursor->ms_cursor);
 	  OnMouseEnter(x, y, flags);
 	  return;
 	}

@@ -4,7 +4,7 @@
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_clipb.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_clipb.cxx,v 1.1.1.1 1997/12/22 16:12:07 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -275,25 +275,9 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
     cbString = NULL;
   }
 
-#ifdef wx_motif
   got_selection = XtOwnSelection(wxTheApp->topLevel, XA_PRIMARY, time,
 				 wxConvertClipboard, wxLoseClipboard, 
 				 wxSelectionDone);
-#endif
-#ifdef wx_xview
-  if (!sel_owner) {
-    Frame x_frame = (Frame)wxTheApp->wx_frame->handle;
-    sel_owner = xv_create(x_frame, SELECTION_OWNER, NULL);
-  }
-
-  xv_set(sel_owner, SEL_OWN, TRUE,
-	 SEL_CONVERT_PROC, wxConvertClipboard,
-	 SEL_LOSE_PROC, wxLoseClipboard,
-	 SEL_DONE_PROC, wxSelectionDone,
-	 NULL);
-
-  got_selection = TRUE;
-#endif
 
   if (!got_selection) {
     clipOwner->BeingReplaced();
@@ -319,25 +303,9 @@ void wxClipboard::SetClipboardString(char *str, long time)
 
   cbString = str;
 
-#ifdef wx_motif
   got_selection = XtOwnSelection(wxTheApp->topLevel, XA_PRIMARY, time,
 				 wxConvertClipboard, wxLoseClipboard,
 				 wxStringSelectionDone);
-#endif
-#ifdef wx_xview
-  if (!sel_owner) {
-    Frame x_frame = (Frame)wxTheApp->wx_frame->handle;
-    sel_owner = xv_create(x_frame, SELECTION_OWNER, NULL);
-  }
-
-  xv_set(sel_owner, SEL_OWN, TRUE,
-	 SEL_CONVERT_PROC, wxConvertClipboard,
-	 SEL_LOSE_PROC, wxLoseClipboard,
-	 SEL_DONE_PROC, wxStringSelectionDone,
-	 NULL);
-
-  got_selection = TRUE;
-#endif
 
   if (!got_selection) {
     delete[] cbString;
@@ -411,29 +379,10 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     receivedString = NULL;
     receivedTargets = NULL;
 
-#ifdef wx_motif
     XtGetSelectionValue(wxTheApp->topLevel, XA_PRIMARY,
 			xa_targets, wxGetTargets, (XtPointer)this, time);
 
-#if 1
     wxDispatchEventsUntil(CheckReady, &receivedTargets);
-#else
-    while (!receivedTargets)
-      wxYield();
-#endif
-#endif
-#if wx_xview
-    Selection_requestor req;
-    Frame x_frame = (Frame)wxTheApp->wx_frame->handle;
-    int get_format;
-
-    req = (Selection_requestor)xv_create(x_frame, SELECTION_REQUESTOR, 
-					 SEL_TYPE, xa_targets, NULL);
-    receivedTargets = (void *)xv_get(req, SEL_DATA, &receivedLength, 
-				     &get_format);
-    if (!receivedTargets)
-      receivedLength = 0;
-#endif
 
     Atom xa;
     long i;
@@ -446,47 +395,19 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 	      && xa == xa_text))
 	break;
 
-#ifdef wx_motif
     if (receivedLength)
       delete[] receivedTargets;
-#endif
-#ifdef wx_xview
-    if (receivedLength)
-      free(receivedTargets);
-#endif
 
     if (i >= receivedLength)
       return NULL;
 
-#ifdef wx_motif
     XtGetSelectionValue(wxTheApp->topLevel, XA_PRIMARY,
 			xa, wxGetSelection, (XtPointer)this, 0);
     
-#if 1
     wxDispatchEventsUntil(CheckReady, &receivedString);
-#else
-    while (!receivedString)
-      wxYield();
-#endif
 
     *length = receivedLength;
-#endif
-#ifdef wx_xview
-    char *str;
 
-    xv_set(req, SEL_TYPE, xa, NULL);
-    str = (char *)xv_get(req, SEL_DATA, length, &get_format);
-    if (!str)
-      *length = 0;
-    
-    if (str) {
-      receivedString = new char[*length + 1];
-      memcpy(receivedString, str, *length);
-      receivedString[*length] = 0;
-      free(str);
-    } else
-      receivedString = NULL;
-#endif
     return receivedString;
   }
 }

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	March 1995
- * RCS_ID:      $Id: wb_item.cxx,v 1.4 1998/07/15 02:38:01 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cxx,v 1.5 1998/08/09 20:55:18 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -439,35 +439,35 @@ int wxbMenu::FindItem (char *itemString)
   return -1;
 }
 
-wxMenuItem *wxbMenu::FindItemForId (int itemId, wxMenu ** itemMenu)
+wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
 {
+  int i = 0;
   if (itemMenu)
     *itemMenu = NULL;
-  for (wxNode * node = menuItems.First (); node; node = node->Next ())
-    {
-      wxMenuItem *item = (wxMenuItem *) node->Data ();
+  for (wxNode * node = menuItems.First (); node; node = node->Next (), i++) {
+    wxMenuItem *item = (wxMenuItem *) node->Data ();
 
-      if (item->itemId == itemId)
-	{
-	  if (itemMenu)
-	    *itemMenu = (wxMenu *) this;
-	  return item;
-	}
-
-      if (item->subMenu)
-	{
-	  wxMenuItem *ans = item->subMenu->FindItemForId (itemId, itemMenu);
-	  if (ans)
-	    return ans;
-	}
+    if (item->itemId == itemId) {
+      if (itemMenu)
+	*itemMenu = (wxMenu *) this;
+      if (pos)
+	*pos = i;
+      return item;
     }
+
+    if (item->subMenu) {
+      wxMenuItem *ans = item->subMenu->FindItemForId (itemId, itemMenu, pos);
+      if (ans)
+	return ans;
+    }
+  }
 
   if (itemMenu)
     *itemMenu = NULL;
   return NULL;
 }
 
-void wxbMenu::SetHelpString (int itemId, char *helpString)
+void wxbMenu::SetHelpString (long itemId, char *helpString)
 {
   wxMenuItem *item = FindItemForId (itemId);
   if (item)
@@ -481,7 +481,7 @@ void wxbMenu::SetHelpString (int itemId, char *helpString)
     }
 }
 
-char *wxbMenu::GetHelpString (int itemId)
+char *wxbMenu::GetHelpString (long itemId)
 {
   wxMenuItem *item = FindItemForId (itemId);
   if (item)
@@ -617,7 +617,7 @@ int wxbMenuBar::FindMenuItem (char *menuString, char *itemString)
   return -1;
 }
 
-wxMenuItem *wxbMenuBar::FindItemForId (int Id, wxMenu ** itemMenu)
+wxMenuItem *wxbMenuBar::FindItemForId (long Id, wxMenu ** itemMenu)
 {
   if (itemMenu)
     *itemMenu = NULL;
@@ -630,7 +630,7 @@ wxMenuItem *wxbMenuBar::FindItemForId (int Id, wxMenu ** itemMenu)
   return NULL;
 }
 
-void wxbMenuBar::SetHelpString (int Id, char *helpString)
+void wxbMenuBar::SetHelpString (long Id, char *helpString)
 {
   int i;
   for (i = 0; i < n; i++)
@@ -640,7 +640,7 @@ void wxbMenuBar::SetHelpString (int Id, char *helpString)
     }
 }
 
-char *wxbMenuBar::GetHelpString (int Id)
+char *wxbMenuBar::GetHelpString (long Id)
 {
   int i;
   for (i = 0; i < n; i++) {

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cxx,v 1.3 1998/07/13 19:08:19 mflatt Exp $
+ * RCS_ID:      $Id: wx_utils.cxx,v 1.4 1998/07/15 02:38:02 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,12 +32,16 @@
                     // If this works for Borland 4.0 as well, then no worries.
 #include <dir.h>
 #endif
-
+
+
+
 #if 0
 #ifdef WIN32
 #include <io.h>
 #endif
-#endif
+#endif
+
+
 
 /* MATTHEW: [5] Normalize wxSleep(): */
 #define WX_USE_GLOBAL_SLEEP 1
@@ -45,10 +49,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if 0
+#if 0
+
+
 #ifndef __WATCOMC__
 #include <errno.h>
-#endif
+#endif
+
+
 #endif
 #include <stdarg.h>
 
@@ -641,8 +649,12 @@ Bool wxGetResource(const char *section, const char *entry, char **value, const c
   int no_file = !file;
 
   if (!file)
-    file = wxUserResourceFile;
-
+    file = wxUserResourceFile;
+
+
+
+
+
   wxBuffer[0] = 0;
 
   if (file)
@@ -704,24 +716,22 @@ Bool wxGetResource(const char *section, const char *entry, int *value, const cha
 }
 #endif // USE_RESOURCES
 
-// Old cursor
-static HCURSOR wxBusyCursorOld = 0;
-static int wxBusyCursorCount = 0;
-
 extern int wxGetBusyState();
 extern void wxSetBusyState(int);
+
+extern void wxResetCurrentCursor(void);
 
 extern HCURSOR wxMSWSetCursor(HCURSOR c);
 
 // Set the cursor to the busy cursor for all windows
 void wxBeginBusyCursor(wxCursor *cursor)
 {
-  wxBusyCursorCount = wxGetBusyState();
+  int wxBusyCursorCount = wxGetBusyState();
   wxBusyCursorCount++;
   wxSetBusyState(wxBusyCursorCount);
 
   if (wxBusyCursorCount == 1)
-    wxBusyCursorOld = wxMSWSetCursor(cursor->ms_cursor);
+    wxMSWSetCursor(cursor->ms_cursor);
   else
     (void)wxMSWSetCursor(cursor->ms_cursor);
 }
@@ -729,16 +739,14 @@ void wxBeginBusyCursor(wxCursor *cursor)
 // Restore cursor to normal
 void wxEndBusyCursor(void)
 {
-  wxBusyCursorCount = wxGetBusyState();
+  int wxBusyCursorCount = wxGetBusyState();
   if (wxBusyCursorCount == 0)
     return;
   --wxBusyCursorCount;
   wxSetBusyState(wxBusyCursorCount);
     
-  if (wxBusyCursorCount == 0)
-  {
-    wxMSWSetCursor(wxBusyCursorOld);
-    wxBusyCursorOld = 0;
+  if (wxBusyCursorCount == 0) {
+    wxResetCurrentCursor();
   }
 }
 

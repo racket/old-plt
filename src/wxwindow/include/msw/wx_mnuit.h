@@ -17,7 +17,7 @@
 #include "wb_mnuit.h"
 
 #ifdef IN_CPROTO
-typedef       void    *wxMenuItem ;
+typedef       void    *wxMenuItem;
 #else
 
 class wxMenuItem: public wbMenuItem
@@ -25,9 +25,10 @@ class wxMenuItem: public wbMenuItem
   DECLARE_DYNAMIC_CLASS(wxMenuItem)
 
  public:
-  Bool checkable ;
-  inline wxMenuItem(void) { }
-  inline ~wxMenuItem(void) { }
+  Bool checkable;
+  WORD menuId;
+  wxMenuItem(void);
+  ~wxMenuItem(void);
 };
 
 #endif // IN_CPROTO

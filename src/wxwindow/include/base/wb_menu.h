@@ -41,22 +41,22 @@ class wxbMenu: public wxItem
   wxbMenu(char *Title = NULL, wxFunction func = NULL);
   ~wxbMenu(void);
   virtual void AppendSeparator(void) = 0;
-  virtual void Append(int id, char *Label, char *helpString = NULL,Bool checkable=FALSE) = 0;
-  virtual void Append(int id, char *Label, wxMenu *SubMenu, char *helpString = NULL) = 0;
+  virtual void Append(long id, char *Label, char *helpString = NULL,Bool checkable=FALSE) = 0;
+  virtual void Append(long id, char *Label, wxMenu *SubMenu, char *helpString = NULL) = 0;
   // Avoids compiler warning
   inline void Enable(Bool enable) { wxWindow::Enable(enable) ; }
-  virtual void Enable(int id, Bool Flag) = 0;
-  virtual void Check(int id, Bool Flag) = 0;
-  virtual Bool Checked(int id) = 0;
-  virtual void SetHelpString(int id, char *helpString);
-  virtual char *GetHelpString(int id);
+  virtual void Enable(long id, Bool Flag) = 0;
+  virtual void Check(long id, Bool Flag) = 0;
+  virtual Bool Checked(long id) = 0;
+  virtual void SetHelpString(long id, char *helpString);
+  virtual char *GetHelpString(long id);
 
   // Finds the item id matching the given string, -1 if not found.
   virtual int FindItem(char *itemString);
 
   // Find wxMenuItem for item ID, and return item's
   // menu too if itemMenu is non-NULL.
-  wxMenuItem *FindItemForId(int itemId, wxMenu **itemMenu = NULL);
+  wxMenuItem *FindItemForId(long itemId, wxMenu **itemMenu = NULL, int *pos = NULL);
 
   void ProcessCommand(wxCommandEvent& event);
 };
@@ -81,18 +81,18 @@ class wxbMenuBar: public wxItem
 
   // Must only be used AFTER menu has been attached to frame,
   // otherwise use individual menus to enable/disable items
-  virtual void Enable(int Id, Bool Flag) = 0;
+  virtual void Enable(long id, Bool Flag) = 0;
   virtual void EnableTop(int pos, Bool Flag) = 0;
-  virtual void Check(int Id, Bool Flag) = 0;
-  virtual Bool Checked(int id) = 0;
-  virtual void SetHelpString(int Id, char *helpString);
-  virtual char *GetHelpString(int Id);
+  virtual void Check(long id, Bool Flag) = 0;
+  virtual Bool Checked(long id) = 0;
+  virtual void SetHelpString(long id, char *helpString);
+  virtual char *GetHelpString(long id);
 
   virtual int FindMenuItem(char *menuString, char *itemString);
 
   // Find wxMenuItem for item ID, and return item's
   // menu too if itemMenu is non-NULL.
-  wxMenuItem *FindItemForId(int itemId, wxMenu **menuItem = NULL);
+  wxMenuItem *FindItemForId(long itemId, wxMenu **menuItem = NULL);
 
   int Number();
 

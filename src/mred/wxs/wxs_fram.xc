@@ -69,7 +69,7 @@
 @SETMARK f = d
 @INCLUDE wxs_fram.xci
 
-@ v "on-menu-command" : void OnMenuCommand(int)
+@ v "on-menu-command" : void OnMenuCommand(ExactLong)
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

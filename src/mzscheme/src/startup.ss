@@ -2183,6 +2183,7 @@
 			(cond
 			 [(pair? l)
 			  (if (and (stx-pair? (car l))
+				   (identifier? (stx-car (car l)))
 				   (module-identifier=? (stx-car (car l)) (quote-syntax unsyntax-splicing)))
 			      ;; Found an `unsyntax-splicing'; stop the special
 			      ;; handling for pairs

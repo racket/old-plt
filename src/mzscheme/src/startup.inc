@@ -1869,6 +1869,7 @@
 "(cond"
 "((pair? l)"
 "(if(and(stx-pair?(car l))"
+"(identifier?(stx-car(car l)))"
 "(module-identifier=?(stx-car(car l))(quote-syntax unsyntax-splicing)))"
 "(loop(datum->syntax-object #f l #f) depth"
 " same-k "

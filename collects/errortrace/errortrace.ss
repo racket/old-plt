@@ -1,13 +1,16 @@
 
-;; Poor man's stack-trace-on-exceptions and profiler
-;;  - Matthew
+;; Poor man's stack-trace-on-exceptions/profiler
+
+;; see doc.txt for information
 
 (invoke-open-unit
  (unit 
    (import)
-   (export profiling-enabled profile-paths-enabled get-profile-counts)
+   (export instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
    
    (define key (gensym 'key))
+
+   (define instrumenting-enabled (make-parameter #t))
 
    (define profile-thread #f)
    (define profile-key (gensym))
@@ -29,7 +32,7 @@
      (let ([v (cdr (hash-table-get profile-info key))])
        (set-car! v (+ (- (current-milliseconds) start) (car v)))))
 
-   (define (get-profile-counts)
+   (define (get-profile-results)
      (hash-table-map profile-info (lambda (key val)
 				    (let ([count (car val)]
 					  [time (cadr val)]
@@ -219,8 +222,9 @@
    (current-eval
     (let ([orig (current-eval)])
       (lambda (e)
-	(if (with-handlers ([void (lambda (x) #f)])
-	      (global-defined-value '#%with-continuation-mark))
+	(if (and (instrumenting-enabled)
+		 (with-handlers ([void (lambda (x) #f)])
+		   (global-defined-value '#%with-continuation-mark)))
 	    (let ([a (annotate-top (expand-defmacro e))])
 	      ; (printf "~s~n" a)
 	      (orig a))

@@ -1,0 +1,104 @@
+
+Errortrace is a poor man's stack-trace-on-exceptions/profiler for
+ MzScheme.  Errortrace is not a complete debugger, and a real debugger
+ in DrScheme is eminent; meanwhile, errotrace might be better than
+ nothing.
+
+Quick instructions
+------------------
+
+  0) Throw away .zo versions of your source
+
+  1) Start your program with
+      (require-library "errortrace.ss" "errortrace")
+     or start MzScheme with the -L flag:
+      mzscheme -L errortrace.ss errortrace
+
+  2) When an exception occurs, the exception handler
+     prints something like a stack trace, most recent
+     contexts first
+
+Exception Information
+---------------------
+
+Loading errortrace.ss file sets the eval handler to instrument
+Scheme source code. 
+
+ NOTE: errortrace has no effect on code loaded as compiled byte codes
+ (i.e., from a .zo file) or native code (i.e., from a .dll or .so
+ file).
+
+Errortrace.ss also sets a debug info handler to record information
+about the context of exceptions, and an exception handler to print out
+information recorded by the debug info handler. The load handler is
+changed to correlate source code with source files.
+
+Errortrace's instrumentation can be explicitly disabled via the
+`instrumenting-enabled' Boolean parameter. Instrumentation is on by
+default. The `instrumenting-enabled' parameter affects only the way
+that source code is compiled, not the way that exception information
+is reported.
+
+Do not load errortrace.ss before writing .zo files. Errortrace
+instrumentats S-expressions with unprintable values; this works fine
+if the instrumented S-expression is passed to the default eval
+handler, but neither the S-expression nor its bytecode form can be
+marshalled to a string.
+
+The instrucmentation for storing exception information slows most
+programs by a factor of 2 or 3.
+
+Profiling
+---------
+
+Errortrace's profiling instrumentation is off by default. Enable
+profiling instrumentation with the `profiling-enabled' Boolean
+parameter (but setting `instrumentation-enabled' to #f also disables
+profiling).
+
+Profiling records:
+
+ * the number of times a procedure was called.
+
+ * the number of milliseconds consumed by the procedure's body across
+   all calls (including the time consumed by any nested non-tail call
+   within the procedure, but not including time consumed by a
+   tail-call from the procedure).
+
+ * an inferred name for the procedure, or the procedure's source
+   expression if no name can be inferred.
+
+ * the name of the procedure's source file, or #f if the source file
+   is unknown.
+
+ * optionally, information about the procedure call path (something
+   like the stack trace) for every call to the procedure. Path
+   information is collected when the `profile-paths-enabled' Boolean
+   parameter is #t; the default is #f, but setting the parameter to #t
+   immediately affects all procedure instrumented for profiling
+   information.
+
+Profiling information is accumulated in a hash table. If a procedure
+is redefined, new profiling information is accumulated for the new
+version of the procedure, but the old information is also preserved.
+
+To retireve all profiling information accumulated so far, call
+`get-profile-results', which returns a list of lists that contain:
+
+  * the number of milliseconds of process time consumed by the
+    procedure.
+
+  * the number of times the procedure was called.
+
+  * the inferred name or source of the procedure.
+
+  * the name of the procedure's source file or #f.
+
+  * a list of call paths, recorded while `profile-paths-enabled' is
+    set to #t. Each call path is a list containing two-element lists;
+    each two-element list contains the calling proceure's name or
+    source expression and the calling procedure's source file or #f.
+
+Depending of the source program, profiling induces a factor of 2 to 4
+slowdown (in addition to any slowdown from the exception information
+instrumentation).

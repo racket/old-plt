@@ -226,12 +226,18 @@ Bool wxTabChoice::Show(Bool show)
 
 void wxTabChoice::Set(int N, char **Choices)
 {
-  int i;
+  int i, sel;
 
+  sel = GetSelection();
   for (i = Number(); i--; ) {
     TabCtrl_DeleteItem((HWND)ms_handle, i);
   }
   for (i = N; i--; ) {
     Append(Choices[N]);
+  }
+  if (N) {
+    if (sel >= N)
+      sel = N-1;
+    SetSelection(sel);
   }
 }

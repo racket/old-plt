@@ -548,16 +548,16 @@ static Scheme_Object *os_wxTabChoiceSet(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x1);
 
-  x1 = WITH_VAR_STACK(__MakestringArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("tab-group","set")));
+  
   if (n > (POFFSET+0)) {
     x1 = NULL;
   } else
     x1 = NULL;
 
-  delete[] x1;
+  x1 = WITH_VAR_STACK(__MakestringArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("tab-group","set")));
   WITH_VAR_STACK(((wxTabChoice *)((Scheme_Class_Object *)p[0])->primdata)->Set(x0, x1));
 
-  
+  delete[] x1;
   
   READY_TO_RETURN;
   return scheme_void;

@@ -386,5 +386,5 @@ void wxTabChoice::Set(int N, char **Choices)
   tab_labels = Choices;
   if (sel >= N)
     sel = N - 1;
-  Append(NULL); /* refreshes the control */
+  Append(NULL, sel); /* refreshes the control */
 }

@@ -89,7 +89,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 
 @ "set-label" : void SetLabel(int,string); : : /RANGE[0]
 
-@ "set" : void Set(-int=0,string[]=NULL/bList/ubList/cStringList///push) : : glueListSet[string.0.1.0.METHODNAME("tab-group","set")]/glueCleanup[1]
+@ "set" : void Set(-int=0,string[]=NULL/bList/ubList/cStringList///push) : : /glueListSet[string.0.1.0.METHODNAME("tab-group","set")]/glueCleanup[1]
 
 @END
 

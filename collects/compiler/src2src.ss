@@ -8,7 +8,6 @@
 
 (module src2src mzscheme
   (require (lib "class.ss")
-	   (lib "class100.ss")
 	   (lib "kerncase.ss" "syntax")
 	   (lib "primitives.ss" "syntax")
 	   (lib "etc.ss")
@@ -65,117 +64,108 @@
     (make-context 'bool (context-indef ctx)))
 
   (define exp%
-    (class100 object% (stx)
-      (private-field
-       [src-stx stx] ;; generally only useful for src loc info
-       [known-value #f])
-      (public
-	;; resets known-value computation, use counts, etc.
-	[reset-varflags
-	 (lambda ()
-	   (set! known-value #f)
-	   (for-each (lambda (e) (send e reset-varflags)) (sub-exprs)))]
+    (class object%
+      
+      (init-field src-stx)
+      (field (known-value #f))
+      
+      ;; resets known-value computation, use counts, etc.
+      (define/public (reset-varflags)
+        (set! known-value #f)
+        (for-each (lambda (e) (send e reset-varflags)) (sub-exprs)))
+      
+      ;; accumulates known-value mappings, use counts on bindings, etc.;
+      ;; assumes varflags are reset
+      (define/public (set-known-values)
+        (for-each (lambda (e) (send e set-known-values)) (nonbind-sub-exprs)))
 
-	;; accumulates known-value mappings, use counts on bindings, etc.;
-	;; assumes varflags are reset
-	[set-known-values
-	 (lambda ()
-	   (for-each (lambda (e) (send e set-known-values)) (nonbind-sub-exprs)))]
+      ;; for each reference of a binding in the exp, drop one use
+      (define/public (drop-uses)
+        (for-each (lambda (e) (send e drop-uses)) (nonbind-sub-exprs)))
 
-	;; for each reference of a binding in the exp, drop one use
-	[drop-uses
-	 (lambda ()
-	   (for-each (lambda (e) (send e drop-uses)) (nonbind-sub-exprs)))]
+      ;; any side-effects might be in this expression?
+      ;; (return #t if unsure)
+      (define/public (no-side-effect?)
+        (andmap (lambda (e) (send e no-side-effect?))
+                (nonbind-sub-exprs)))
 
-	;; any side-effects might be in this expression?
-	;; (return #t if unsure)
-	[no-side-effect? (lambda () (andmap (lambda (e) (send e no-side-effect?))
-					    (nonbind-sub-exprs)))]
+      ;; arity is a number or 'unknown
+      (define/public (get-result-arity) 'unknown)
 
-	;; arity is a number or 'unknown
-	[get-result-arity (lambda () 'unknown)]
+      ;; gets all subexpressions, including binding%s for lambda, etc.
+      (define/public (sub-exprs) (append (bind-sub-exprs) (nonbind-sub-exprs)))
+      ;; just the binding%s
+      (define/public (bind-sub-exprs) null)
+      ;; all subexpressions that aren't binding%s
+      (define/public (nonbind-sub-exprs) null)
 
-	;; gets all subexpressions, including binding%s for lambda, etc.
-	[sub-exprs (lambda () (append (bind-sub-exprs) (nonbind-sub-exprs)))]
-	;; just the binding%s
-	[bind-sub-exprs (lambda () null)]
-	;; all subexpressions that aren't binding%s
-	[nonbind-sub-exprs (lambda () null)]
+      ;; some default implementations map over nonbind-sub-exprs, 
+      ;; the install the results with this method
+      (define/public (set-nonbind-sub-exprs x) (void))
 
-	;; some default implementations map over nonbind-sub-exprs, 
-	;; the install the results with this method
-	[set-nonbind-sub-exprs (lambda (x) (void))]
+      ;; valueable means that evaluating the expression can't access
+      ;;  a variable before it is initialized or mutate a
+      ;;  variable. It's used, for example, on the RHSs of a letrec
+      ;;  to determine known bindings.
+      (define/public (valueable?)
+        (andmap (lambda (x) (send x valueable?)) (nonbind-sub-exprs)))
+      
+      ;; ok to duplicate or move the expression?
+      ;; (return #f if unsure)
+      (define/public (can-dup/move?) #f)
+      
+      ;; known value is an exp%; usually only binding% objects
+      ;; get known-value settings
+      (define/public (set-known-value x) (set! known-value x))
 
-	;; valueable means that evaluating the expression can't access
-	;;  a variable before it is initialized or mutate a
-	;;  variable. It's used, for example, on the RHSs of a letrec
-	;;  to determine known bindings.
-	[valueable? (lambda () (andmap (lambda (x) (send x valueable?)) (nonbind-sub-exprs)))]
+      ;; finds the most-specific exp% whose value is the
+      ;; same this this expression's value
+      (define/public (get-value) (or known-value this))
 
-	;; ok to duplicate or move the expression?
-	;; (return #f if unsure)
-	[can-dup/move? (lambda () #f)]
+      ;; helper:
+      (define (subexp-map! f)
+        (set-nonbind-sub-exprs (map f (nonbind-sub-exprs)))
+        this)
 
-	;; known value is an exp%; usually only binding% objects
-	;; get known-value settings
-	[set-known-value (lambda (x) (set! known-value x))]
-
-	;; finds the most-specific exp% whose value is the
-	;; same this this expression's value
-	[get-value (lambda () (or known-value this))])
-
-      (private
-	;; helper:
-	[subexp-map!
-	 (lambda (f)
-	   (set-nonbind-sub-exprs (map f (nonbind-sub-exprs)))
-	   this)])
-
-      (public
-	;; main optimization method:
-	[simplify (lambda (ctx) 
-		    (subexp-map! (lambda (x) 
-				   (send x simplify (need-all ctx)))))]
+      ;; main optimization method:
+      (define/public (simplify ctx)
+        (subexp-map! (lambda (x) 
+                       (send x simplify (need-all ctx)))))
 	
-	;; not an optimizations, but exposes info (epsecially to mzc)
-	[reorganize (lambda ()
-		      (subexp-map! (lambda (x)
-				     (send x reorganize))))]
-	;; reverses reorganize
-	[deorganize (lambda ()
-		      (subexp-map! (lambda (x)
-				     (send x deorganize))))]
+      ;; not an optimizations, but exposes info (epsecially to mzc)
+      (define/public (reorganize)
+        (subexp-map! (lambda (x) (send x reorganize))))
+      ;; reverses reorganize
+      (define/public (deorganize)
+        (subexp-map! (lambda (x)
+                       (send x deorganize))))
 
-	;; substitution of lexical refs for global variables
-	[global->local (lambda (env)
-			 (subexp-map! (lambda (x)
-					(send x global->local env))))]
+      ;; substitution of lexical refs for global variables
+      (define/public (global->local env)
+        (subexp-map! (lambda (x)
+                       (send x global->local env))))
+      
+      ;; substitution of lexical refs for either lex or global vars
+      (define/public (substitute env)
+        (subexp-map! (lambda (x)
+                       (send x substitute env))))
 
-	;; substitution of lexical refs for either lex or global vars
-	[substitute (lambda (env)
-		      (subexp-map! (lambda (x)
-				     (send x substitute env))))]
+      ;; creates a copy, used for inling; don't try to preserve
+      ;;  analysis, because we'll just re-compute it
+      (define/public (clone env)
+        (error 'clone "unimplemented: ~a" this))
 
-	;; creates a copy, used for inling; don't try to preserve
-	;;  analysis, because we'll just re-compute it
-	[clone 
-	 (lambda (env) 
-	   (error 'clone "unimplemented: ~a" this))]
+      ;; gets stx object, usually for src info
+      (define/public (get-stx) src-stx)
 
-	;; gets stx object, usually for src info
-	[get-stx (lambda () src-stx)]
+      ;; convert back to a syntax object
+      (define/public (sexpr) src-stx)
+      
+      ;; list of body exprs (avoids redundant `begin', just for
+      ;; readability)
+      (define/public (body-sexpr) (list (sexpr)))
 
-	;; convert back to a syntax object
-	[sexpr
-	 (lambda ()
-	   src-stx)]
-
-	;; list of body exprs (avoids redundant `begin', just for
-	;; readability)
-	[body-sexpr
-	 (lambda ()
-	   (list (sexpr)))])
-      (sequence (super-init))))
+      (super-instantiate ())))
 
   (define (get-sexpr o) (send o sexpr))
   (define (get-body-sexpr o) (send o body-sexpr))
@@ -197,350 +187,323 @@
   (define-struct tables (global-ht et-global-ht))
 
   (define global%
-    (class100 exp% (-stx -trans? -tables -needs-top?)
-      (private-field
-       [stx -stx]
-       [trans? -trans?]
-       [tables -tables]
-       [needs-top? -needs-top?]
-       [mbind #f]
-       [bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) stx)])
-      (private
-	[get-mbind!
-	 (lambda ()
-	   (unless mbind
-	     (set! mbind ((if trans?
-			      identifier-transformer-binding 
-			      identifier-binding)
-			  stx))))])
-      (public
-	[orig-name
-	 (lambda ()
-	   (get-mbind!)
-	   (if (pair? mbind)
-	       (cadr mbind)
-	       (syntax-e stx)))]
+    (class exp% 
+      (init -stx -trans? -tables -needs-top?)
 
-	[is-kernel?
-	 (lambda ()
-	   (get-mbind!)
-	   (and (pair? mbind)
-		(eq? (car mbind) '#%kernel)))]
+      (define stx -stx)
+      (define trans? -trans?)
+      (define tables -tables)
+      (define needs-top? -needs-top?)
+      (define mbind #f)
+      (define bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) stx))
+      (define (get-mbind!)
+        (unless mbind
+          (set! mbind ((if trans?
+                           identifier-transformer-binding 
+                           identifier-binding)
+                       stx))))
+      (define/public (orig-name)
+        (get-mbind!)
+        (if (pair? mbind)
+            (cadr mbind)
+            (syntax-e stx)))
 
-	[is-trans? (lambda () trans?)]
+      (define/public (is-kernel?)
+        (get-mbind!)
+        (and (pair? mbind)
+             (eq? (car mbind) '#%kernel)))
 
-	[is-mutated? (lambda () (bucket-mutated? bucket))])
+      (define/public (is-trans?) trans?)
 
-      (override
-	[no-side-effect?
-	 ;; If not built in, could raise exn
-	 (lambda () (is-kernel?))]
+      (define/public (is-mutated?) (bucket-mutated? bucket))
 
-	[get-result-arity (lambda () 1)]
+      (define/override (no-side-effect?)
+        ;; If not built in, could raise exn
+	(is-kernel?))
 
-	[valueable? (lambda () (or (bucket-inited-before-use? bucket)
-				   (is-kernel?)))]
+      (define/override (get-result-arity) 1)
 
-	[can-dup/move? (lambda () (valueable?))]
+      (define/override (valueable?) (or (bucket-inited-before-use? bucket)
+                                        (is-kernel?)))
 
-	[clone (lambda (env) (make-object global% stx trans? tables needs-top?))]
+      (define/override (can-dup/move?) (valueable?))
 
-	[global->local (lambda (env)
-			 (or (ormap (lambda (e)
-				      (and (module-identifier=? (car e) stx)
-					   (make-object ref% stx (cdr e))))
-				    env)
-			     this))]
+      (define/override (clone env) (make-object global% stx trans? tables needs-top?))
 
-	[sexpr
-	 (lambda ()
-	   (if needs-top?
-	       (with-syntax ([stx stx])
-		 (syntax (#%top . stx)))
-	       stx))])
-      (public
-	[set-mutated (lambda () (set-bucket-mutated?! bucket #t))]
-	[set-inited (lambda () (set-bucket-inited-before-use?! bucket #t))])
+      (define/override (global->local env)
+        (or (ormap (lambda (e)
+                     (and (module-identifier=? (car e) stx)
+                          (make-object ref% stx (cdr e))))
+                   env)
+            this))
 
-      (sequence
-	(super-init stx))))
+      (define/override (sexpr)
+        (if needs-top?
+            (with-syntax ([stx stx])
+              (syntax (#%top . stx)))
+            stx))
+      
+      (define/public (set-mutated) (set-bucket-mutated?! bucket #t))
+      (define/public (set-inited) (set-bucket-inited-before-use?! bucket #t))
+
+      (super-instantiate (stx))))
 
   (define binding% 
-    (class100 exp% (-name -always-inited?)
-      (private-field
-       [name -name]
-       [always-inited? -always-inited?]
+    (class exp% 
+      (init -name -always-inited?)
+      (define name -name)
+      (define always-inited? -always-inited?)
+      (define value #f)
+      (define used 0)
+      (define mutated? #f)
+      (define inited? always-inited?)
 
-       [value #f]
-       [used 0]
-       [mutated? #f]
-       [inited? always-inited?])
+      (define/public (is-used?) (positive? used))
+      (define/public (is-mutated?) mutated?)
+      (define/public (is-inited?) inited?)
 
-      (public
-	[is-used? (lambda () (positive? used))]
-	[is-mutated? (lambda () mutated?)]
-	[is-inited? (lambda () inited?)]
+      (define/public (get-use-count) used)
 
-	[get-use-count (lambda () used)]
+      (define/public (set-mutated) (set! mutated? #t))
+      (define/public (set-inited) (set! inited? #t))
+      (define/public (set-value v) (set! value v))
 
-	[set-mutated
-	 (lambda ()
-	   (set! mutated? #t))]
-	[set-inited
-	 (lambda ()
-	   (set! inited? #t))]
-	[set-value (lambda (v) (set! value v))]
+      (define/public (clone-binder env) 
+        (make-object binding% (datum->syntax-object
+                               #f
+                               (gensym (syntax-e name))
+                               name
+                               always-inited?)))
 
-	[clone-binder (lambda (env) 
-			(make-object binding% (datum->syntax-object
-					       #f
-					       (gensym (syntax-e name))
-					       name
-					       always-inited?)))])
+      (define/override (reset-varflags)
+        (set! used 0)
+        (set! mutated? #f)
+        (set! inited? always-inited?))
+      (define/override (set-known-values)
+        (set! used (add1 used))
+        (unless inited?
+          (set! mutated? #t)))
 
-      (override
-	[reset-varflags
-	 (lambda ()
-	   (set! used 0)
-	   (set! mutated? #f)
-	   (set! inited? always-inited?))]
-	[set-known-values
-	 (lambda ()
-	   (set! used (add1 used))
-	   (unless inited?
-	     (set! mutated? #t)))]
+      (define/override (valueable?) (and inited? (not mutated?)))
 
-	[valueable? (lambda () (and inited? (not mutated?)))]
+      (define/override (drop-uses) (set! used (sub1 used)))
 
-	[drop-uses (lambda () (set! used (sub1 used)))]
+      (define/override (get-value) 
+        (and (not mutated?)
+             value
+             (send value get-value)))
 
-	[get-value (lambda () 
-		     (and (not mutated?)
-			  value
-			  (send value get-value)))]
-
-	[sexpr
-	 (lambda ()
-	   ;; `(==lexical== ,name ,used ,mutated? ,inited? ,(get-value))
-	   name
-	   )])
-      (public
-	[orig-name
-	 (lambda ()
-	   (syntax-e name))])
-      (sequence
-	(super-init name))))
+      (define/override (sexpr)
+        ;; `(==lexical== ,name ,used ,mutated? ,inited? ,(get-value))
+        name
+        )
+      (define/public (orig-name)
+        (syntax-e name))
+      (super-instantiate (name))))
 
   (define ref% 
-    (class100 exp% (-stx lexical-var)
-      (private-field
-       [stx -stx]
-       [binding lexical-var]) 
-      (public
-	[is-used? (lambda () (send binding is-used?))]
-	[is-mutated? (lambda () (send binding is-mutated?))]
-	[is-inited? (lambda () (send binding is-inited?))]
+    (class exp% 
+      (init -stx lexical-var)
+      (define stx -stx)
+      (define binding lexical-var)
 
-	[get-use-count (lambda () (send binding get-use-count))]
+      (define/public (is-used?) (send binding is-used?))
+      (define/public (is-mutated?) (send binding is-mutated?))
+      (define/public (is-inited?) (send binding is-inited?))
+      
+      (define/public (get-use-count) (send binding get-use-count))
 
-	[set-mutated (lambda () (send binding set-mutated))]
-	[set-inited (lambda () (send binding set-inited))]
-	[set-value (lambda (v) (send binding set-value v))])
+      (define/public (set-mutated) (send binding set-mutated))
+      (define/public (set-inited) (send binding set-inited))
+      (define/public (set-value v) (send binding set-value v))
 
-      (override
-	[set-known-values
-	 (lambda () (send binding set-known-values))]
+      (define/override (set-known-values) (send binding set-known-values))
 
-	[valueable? (lambda () (send binding valueable?))]
-	[can-dup/move? (lambda () (valueable?))]
+      (define/override (valueable?) (send binding valueable?))
+      (define/override (can-dup/move?) (valueable?))
 
-	[drop-uses (lambda () (send binding drop-uses))]
+      (define/override (drop-uses) (send binding drop-uses))
 
-	[get-result-arity (lambda () 1)]
+      (define/override (get-result-arity) 1)
 
-	[get-value (lambda () (send binding get-value))]
+      (define/override (get-value) (send binding get-value))
 
-	[simplify (lambda (ctx)
-		    (if (context-need ctx)
-			(let ([v (get-value)])
-			  (if (and v (send v can-dup/move?))
-			      (begin
-				(drop-uses)
-				(send v simplify ctx))
-			      this))
-			(begin
-			  (drop-uses)
-			  (make-object void% stx))))]
+      (define/override (simplify ctx)
+        (if (context-need ctx)
+            (let ([v (get-value)])
+              (if (and v (send v can-dup/move?))
+                  (begin
+                    (drop-uses)
+                    (send v simplify ctx))
+                  this))
+            (begin
+              (drop-uses)
+              (make-object void% stx))))
 
-	[clone (lambda (env) (lookup-clone binding this env))]
-	[substitute (lambda (env) (lookup-clone binding this env))]
+      (define/override (clone env) (lookup-clone binding this env))
+      (define/override (substitute env) (lookup-clone binding this env))
 
-	[sexpr (lambda () 
-		 (let ([x (send binding sexpr)])
-		   (datum->syntax-object
-		    x
-		    (syntax-e x)
-		    stx)))])
-      (public
-	[get-binding (lambda () binding)]
-	[orig-name
-	 (lambda ()
-	   (send binding orig-name))])
-      (sequence
-	(super-init stx))))
+      (define/override (sexpr) 
+        (let ([x (send binding sexpr)])
+          (datum->syntax-object
+           x
+           (syntax-e x)
+           stx)))
+      (define/public (get-binding) binding)
+      (define/public (orig-name) (send binding orig-name))
+      
+      (super-instantiate (stx))))
 
   (define begin% 
-    (class100 exp% (-stx -subs)
-      (private-field
-       [stx -stx]
-       [subs -subs])
-      (override
-	[nonbind-sub-exprs (lambda () subs)]
-	[set-nonbind-sub-exprs (lambda (s) (set! subs s))]
+    (class exp%
+      (init -stx -subs)
+      (define stx -stx)
+      (define subs -subs)
 
-	[get-result-arity (lambda ()
-			    (if (null? subs)
-				'unknown
-				(let loop ([subs subs])
-				  (if (null? (cdr subs))
-				      (send (car subs) get-result-arity)
-				      (loop (cdr subs))))))]
+      (define/override (nonbind-sub-exprs) subs)
+      (define/override (set-nonbind-sub-exprs s) (set! subs s))
 
-	[simplify (lambda (ctx)
-		    (set! subs
-			  (let loop ([subs subs])
-			    (cond
-			     [(null? subs) null]
-			     [(null? (cdr subs))
-			      (list (send (car subs) simplify ctx))]
-			     [else
-			      (let ([r (send (car subs) simplify (need-none ctx))]
-				    [rest (loop (cdr subs))])
-				(cond
-				 [(send r no-side-effect?)
-				  (send r drop-uses)
-				  rest]
-				 [(is-a? r begin%)
-				  (append (send r nonbind-sub-exprs)
-					  rest)]
-				 [else (cons r rest)]))])))
-		    (if (and (pair? subs)
-			     (null? (cdr subs)))
-			(car subs)
-			this))]
+      (define/override (get-result-arity)
+        (if (null? subs)
+            'unknown
+            (let loop ([subs subs])
+              (if (null? (cdr subs))
+                  (send (car subs) get-result-arity)
+                  (loop (cdr subs))))))
 
-	[clone (lambda (env) (make-object begin% 
-					  stx
-					  (map (lambda (x) (send x clone env)) 
-					       subs)))]
+      (define/override (simplify ctx)
+        (set! subs
+              (let loop ([subs subs])
+                (cond
+                  [(null? subs) null]
+                  [(null? (cdr subs))
+                   (list (send (car subs) simplify ctx))]
+                  [else
+                   (let ([r (send (car subs) simplify (need-none ctx))]
+                         [rest (loop (cdr subs))])
+                     (cond
+                       [(send r no-side-effect?)
+                        (send r drop-uses)
+                        rest]
+                       [(is-a? r begin%)
+                        (append (send r nonbind-sub-exprs)
+                                rest)]
+                       [else (cons r rest)]))])))
+        (if (and (pair? subs)
+                 (null? (cdr subs)))
+            (car subs)
+            this))
 
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([(body ...) (body-sexpr)])
-	     (syntax/loc stx (begin body ...))))]
-	[body-sexpr
-	 (lambda ()
-	   (map get-sexpr subs))])
-      (sequence
-	(super-init stx))))
+      (define/override (clone env)
+        (make-object begin% 
+          stx
+          (map (lambda (x) (send x clone env)) 
+               subs)))
 
+	(define/override (sexpr)
+          (with-syntax ([(body ...) (body-sexpr)])
+            (syntax/loc stx (begin body ...))))
+      (define/override (body-sexpr)
+        (map get-sexpr subs))
+
+      (super-instantiate (stx))))
+  
   (define top-def% 
-    (class100 exp% (-stx -formname -varnames -expr -tables)
-      (private-field
-       [stx -stx]
-       [formname -formname]
-       [varnames -varnames]
-       [expr -expr]
-       [tables -tables]
-       [globals #f])
-      (override
-	[nonbind-sub-exprs (lambda () (list expr))]
-	[set-nonbind-sub-exprs (lambda (s) (set! expr (car s)))]
+    (class exp% 
+      (init -stx -formname -varnames -expr -tables)
+      (define stx -stx)
+      (define formname -formname)
+      (define varnames -varnames)
+      (define expr -expr)
+      (define tables -tables)
+      (define globals #f)
+      
+      (define/override (nonbind-sub-exprs) (list expr))
+      (define/override (set-nonbind-sub-exprs s) (set! expr (car s)))
 
-	[get-result-arity (lambda () 1)]
+      (define/override (get-result-arity) 1)
 
-	[no-side-effect? (lambda () #f)]
-	[valueable? (lambda () #f)]
+      (define/override (no-side-effect?) #f)
+      (define/override (valueable?) #f)
+      
+      (define/override (clone env) (make-object top-def% stx varnames 
+                                     (send expr clone env)))
 
-	[clone (lambda (env) (make-object top-def% stx varnames 
-					  (send expr clone env)))]
+      (define/override (sexpr)
+        (with-syntax ([formname formname]
+                      [(varname ...) varnames]
+                      [rhs (get-sexpr expr)])
+          (syntax/loc stx (formname (varname ...) rhs))))
 
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([formname formname]
-			 [(varname ...) varnames]
-			 [rhs (get-sexpr expr)])
-	     (syntax/loc stx (formname (varname ...) rhs))))])
-      (public
-	[get-vars (lambda () varnames)]
-	[get-rhs (lambda () expr)]
+      (define/public (get-vars) varnames)
+      (define/public (get-rhs) expr)
 
-	;; Like get-vars, but return global% objects, instead.
-	;; Useful because the global% object has the global variable bucket info.
-	[get-globals (lambda ()
-		       (unless globals
-			 (set! globals
-			       (map (lambda (v)
-				      (make-object global% v #f tables #f))
-				    varnames)))
-		       globals)])
-      (sequence
-	(super-init stx))))
+      ;; Like get-vars, but return global% objects, instead.
+      ;; Useful because the global% object has the global variable bucket info.
+      (define/public (get-globals)
+        (unless globals
+          (set! globals
+                (map (lambda (v)
+                       (make-object global% v #f tables #f))
+                     varnames)))
+        globals)
+
+      (super-instantiate (stx))))
 
   (define variable-def% 
-    (class100 top-def% (-stx -varnames -expr -tables)
-      (sequence
-	(super-init -stx (quote-syntax define-values) -varnames -expr -tables))))
+    (class top-def% 
+      (init -stx -varnames -expr -tables)
+      
+      (super-instantiate (-stx (quote-syntax define-values) -varnames -expr -tables))))
 
   (define syntax-def% 
-    (class100 top-def% (-stx -varnames -expr -tables)
-      (sequence
-	(super-init -stx (quote-syntax define-syntaxes) -varnames -expr -tables))))
+    (class top-def% 
+      (init -stx -varnames -expr -tables)
+      (super-instantiate (-stx (quote-syntax define-syntaxes) -varnames -expr -tables))))
 
   (define (install-values vars expr)
     (when (= 1 (length vars))
       (send (car vars) set-value expr)))
 
   (define constant% 
-    (class100 exp% (-stx -val)
-      (private-field
-       [stx -stx]
-       [val -val])
-      (public
-	[get-const-val (lambda () val)])
-      (override
-	[get-value (lambda () this)]
+    (class exp% 
+      (init -stx -val)
+      (define stx -stx)
+      (define val -val)
 
-	[valueable? (lambda () #t)]
+      (define/public (get-const-val) val)
 
-	[can-dup/move? (lambda ()
-			 (or (number? val)
-			     (boolean? val)
-			     (char? val)
-			     (symbol? val)
-			     (void? val)))]
+      (define/override (get-value) this)
+      
+      (define/override (valueable?) #t)
 
-	[get-result-arity (lambda () 1)]
+      (define/override (can-dup/move?)
+        (or (number? val)
+            (boolean? val)
+            (char? val)
+            (symbol? val)
+            (void? val)))
 
-	[simplify (lambda (ctx)
-		    (cond
-		     [(eq? 'bool (context-need ctx))
-		      (if (boolean? val)
-			  this
-			  (make-object constant% stx #t))]
-		     [(context-need ctx)
-		      (cond
-		       [(eq? val (void))
-			(make-object void% stx)]
-		       [else this])]
-		     [else (make-object void% stx)]))]
+      (define/override (get-result-arity) 1)
 
-	[clone (lambda (env) (make-object constant% stx val))]
-
-	[sexpr
-	 (lambda ()
-	   (let ([vstx (datum->syntax-object (quote-syntax here) val stx)])
-	     (cond
+      (define/override (simplify ctx)
+        (cond
+          [(eq? 'bool (context-need ctx))
+           (if (boolean? val)
+               this
+               (make-object constant% stx #t))]
+          [(context-need ctx)
+           (cond
+             [(eq? val (void))
+              (make-object void% stx)]
+             [else this])]
+          [else (make-object void% stx)]))
+      
+      (define/override (clone env) (make-object constant% stx val))
+      
+      (define/override (sexpr)
+        (let ([vstx (datum->syntax-object (quote-syntax here) val stx)])
+          (cond
 	      [(or (number? val)
 		   (string? val)
 		   (boolean? val)
@@ -551,947 +514,930 @@
 		 (syntax (quote-syntax vstx)))]
 	      [else
 	       (with-syntax ([vstx vstx])
-		 (syntax (quote vstx)))])))])
-      (sequence
-	(super-init stx))))
+		 (syntax (quote vstx)))])))
+      
+      (super-instantiate (stx))))
 
   (define void%
-    (class100 constant% (-stx)
-      (private-field
-       [stx -stx])
-      (override
-	[sexpr (lambda () (quote-syntax (void)))]
+    (class constant% 
+      (init -stx)
+      (define stx -stx)
 
-	[simplify (lambda (ctx)
-		    (if (eq? 'bool (context-need ctx))
-			(make-object constant% stx #t)
-			this))]
+      (define/override (sexpr) (quote-syntax (void)))
 
-	[clone (lambda (env) (make-object void% stx))])
+      (define/override (simplify ctx)
+        (if (eq? 'bool (context-need ctx))
+            (make-object constant% stx #t)
+            this))
 
-      (sequence
-	(super-init stx (void)))))
+      (define/override (clone env) (make-object void% stx))
+
+      (super-instantiate (stx (void)))))
 
   (define app%
-    (class100 exp% (-stx -rator -rands -tables)
-      (private-field
-       [stx -stx]
-       [rator -rator]
-       [rands -rands]
-       [tables -tables]
-       [known-single-result? #f])
+    (class exp% 
+      (init -stx -rator -rands -tables)
+
+      (define stx -stx)
+      (define rator -rator)
+      (define rands -rands)
+      (define tables -tables)
+      (define known-single-result? #f)
+
       (rename [super-simplify simplify]
 	      [super-valueable? valueable?])
       (inherit set-known-value)
-      (private
-	[known-single-result (lambda (v)
-			       (set! known-single-result? #t)
-			       (set-known-value v)
-			       v)])
-      (override
-	[nonbind-sub-exprs (lambda () (cons rator rands))]
-	[set-nonbind-sub-exprs (lambda (s) 
-				 (set! rator (car s))
-				 (set! rands (cdr s)))]
+      
+      (define (known-single-result v)
+        (set! known-single-result? #t)
+        (set-known-value v)
+        v)
 
-	[no-side-effect? (lambda ()
-			   ;; Note: get-result-arity assumes #t result => single value
-			   ;;
-			   ;; Some prims are known to be side-effect-free (including no errors)
-			   ;; get-result-arity assumes 1 when this returns #t
-			   (or known-single-result?
-			       (and (rator . is-a? . global%)
-				    (send rator is-kernel?)
-				    (memq (send rator orig-name) effectless-prims)
-				    (andmap (lambda (rand) (send rand no-side-effect?))
-					    rands))))]
+      
+      (define/override (nonbind-sub-exprs) (cons rator rands))
+      (define/override (set-nonbind-sub-exprs s) 
+        (set! rator (car s))
+        (set! rands (cdr s)))
 
-	[valueable? (lambda ()
-		      (and (rator . is-a? . global%)
-			   (send rator is-kernel?)
-			   (not (memq (send rator orig-name)
-				      (non-valueable-prims)))
-			   (super-valueable?)))]
+      (define/override (no-side-effect?)
+        ;; Note: get-result-arity assumes #t result => single value
+        ;;
+        ;; Some prims are known to be side-effect-free (including no errors)
+        ;; get-result-arity assumes 1 when this returns #t
+        (or known-single-result?
+            (and (rator . is-a? . global%)
+                 (send rator is-kernel?)
+                 (memq (send rator orig-name) effectless-prims)
+                 (andmap (lambda (rand) (send rand no-side-effect?))
+                         rands))))
 
-	[get-result-arity (lambda ()
-			    (if (or known-single-result? (no-side-effect?))
-				1
-				'unknown))]
+      (define/override (valueable?)
+        (and (rator . is-a? . global%)
+             (send rator is-kernel?)
+             (not (memq (send rator orig-name)
+                        (non-valueable-prims)))
+             (super-valueable?)))
 
-	[simplify
-	 (lambda (ctx)
-	   (super-simplify ctx)
-	   (cond
-	    ;; ((lambda (a ...) ...) v ...) => (let ([a v] ...) ...)
-	    [(and (is-a? rator lambda%)
-		  (send rator arg-body-exists? (length rands))
-		  (send rator can-inline?))
-	     (send rator drop-other-uses (length rands))
-	     (let-values ([(vars body) (send rator arg-vars-and-body (length rands))])
-	       (for-each (lambda (var rand)
-			   (install-values (list var) rand))
-			 vars rands)
-	       (send (make-object let%
-				  stx
-				  (map list vars)
-				  rands
-				  body)
-		     simplify ctx))]
+      (define/override (get-result-arity)
+        (if (or known-single-result? (no-side-effect?))
+            1
+            'unknown))
 
-	    ;; constant folding
-	    [(and (is-a? rator global%)
-		  (memq (send rator orig-name) foldable-prims)
-		  (send rator is-kernel?)
-		  (andmap (lambda (x) (is-a? x constant%)) rands))
-	     (if (eq? (send rator orig-name) 'void)
-		 (make-object void% stx)
-		 (let ([vals (map (lambda (x) (send x get-const-val)) rands)]
-		       [f (dynamic-require 'mzscheme (send rator orig-name))])
-		   (with-handlers ([not-break-exn? (lambda (x) 
-						     (fprintf (current-error-port)
-							      "constant calculation error: ~a~n"
-							      (exn-message x))
-						     this)])
-		     (known-single-result
-		      (send (make-object constant% stx (apply f vals))
-			    simplify ctx)))))]
+      (define/override (simplify ctx)
+        (super-simplify ctx)
+        (cond
+          ;; ((lambda (a ...) ...) v ...) => (let ([a v] ...) ...)
+          [(and (is-a? rator lambda%)
+                (send rator arg-body-exists? (length rands))
+                (send rator can-inline?))
+           (send rator drop-other-uses (length rands))
+           (let-values ([(vars body) (send rator arg-vars-and-body (length rands))])
+             (for-each (lambda (var rand)
+                         (install-values (list var) rand))
+                       vars rands)
+             (send (make-object let%
+                     stx
+                     (map list vars)
+                     rands
+                     body)
+                   simplify ctx))]
+          
+          ;; constant folding
+          [(and (is-a? rator global%)
+                (memq (send rator orig-name) foldable-prims)
+                (send rator is-kernel?)
+                (andmap (lambda (x) (is-a? x constant%)) rands))
+           (if (eq? (send rator orig-name) 'void)
+               (make-object void% stx)
+               (let ([vals (map (lambda (x) (send x get-const-val)) rands)]
+                     [f (dynamic-require 'mzscheme (send rator orig-name))])
+                 (with-handlers ([not-break-exn? (lambda (x) 
+                                                   (fprintf (current-error-port)
+                                                            "constant calculation error: ~a~n"
+                                                            (exn-message x))
+                                                   this)])
+                   (known-single-result
+                    (send (make-object constant% stx (apply f vals))
+                          simplify ctx)))))]
+          
+          ;; (+ x 1) => (add1 x)
+          [(and (is-a? rator global%)
+                (send rator is-kernel?)
+                (eq? (send rator orig-name) '+)
+                (= 2 (length rands))
+                (or (and (is-a? (car rands) constant%)
+                         (eq? 1 (send (car rands) get-const-val)))
+                    (and (is-a? (cadr rands) constant%)
+                         (eq? 1 (send (cadr rands) get-const-val)))))
+           (make-object app% 
+             stx
+             (make-object global% (quote-syntax add1) (send rator is-trans?) tables #f)
+             (list
+              (if (and (is-a? (car rands) constant%)
+                       (eq? 1 (send (car rands) get-const-val)))
+                  (cadr rands)
+                  (car rands)))
+             tables)]
+          ;; (- x 1) => (sub1 x)
+          [(and (is-a? rator global%)
+                (send rator is-kernel?)
+                (eq? (send rator orig-name) '-)
+                (= 2 (length rands))
+                (and (is-a? (cadr rands) constant%)
+                     (eq? 1 (send (cadr rands) get-const-val))))
+           (make-object app% 
+             stx
+             (make-object global% (quote-syntax sub1)  (send rator is-trans?) tables #f)
+             (list (car rands))
+             tables)]
+          
+          ;; (car x) where x is known to be a list construction
+          [(and (is-a? rator global%)
+                (send rator is-kernel?)
+                (let-values ([(pos len) (case (send rator orig-name) 
+                                          [(car) (values 0 1)]
+                                          [(cadr) (values 1 1)]
+                                          [(caddr) (values 2 1)]
+                                          [(cadddr) (values 3 1)]
+                                          [(list-ref) (values (and (= 2 (length rands))
+                                                                   (let ([v (send (cadr rands) get-value)])
+                                                                     (and (v . is-a? . constant%)
+                                                                          (send v get-const-val))))
+                                                              2)]
+                                          [else (values #f #f)])])
+                  (and (number? pos)
+                       (= len (length rands))
+                       (and ((car rands) . is-a? . ref%)
+                            (let ([val (send (car rands) get-value)])
+                              (and (val . is-a? . app%)
+                                   (send val get-list-ref pos)))))))
+           =>
+           (lambda (val)
+             (send (car rands) drop-uses)
+             (known-single-result val))]
+          
+          ;; (memv x '(c ...)) in a boolean context => (if (eq[v]? x 'c) ...)
+          ;; relevant to the output of `case'
+          [(and (eq? (context-need ctx) 'bool) 
+                (is-a? rator global%)
+                (send rator is-kernel?)
+                (eq? (send rator orig-name) 'memv)
+                (= 2 (length rands))
+                (is-a? (car rands) ref%)
+                (is-a? (cadr rands) constant%)
+                (list? (send (cadr rands) get-const-val)))
+           (let ([xformed
+                  (let ([l (send (cadr rands) get-const-val)]
+                        [l-stx (send (cadr rands) get-stx)]
+                        [false (make-object constant% (datum->syntax-object #f #f) #f)]
+                        [true (make-object constant% (datum->syntax-object #f #t) #t)])
+                    (if (null? l)
+                        false
+                        (let loop ([l l])
+                          (let ([test
+                                 (make-object app%
+                                   stx
+                                   (make-object global% 
+                                     (let ([a (car l)])
+                                       (if (or (symbol? a)
+                                               (and (number? a)
+                                                    (exact? a)
+                                                    (integer? a)
+                                                    ;; fixnums:
+                                                    (<= (- (expt 2 29))
+                                                        a
+                                                        (expt 2 29))))
+                                           (quote-syntax eq?)
+                                           (quote-syntax eqv?)))
+                                     (send rator is-trans?)
+                                     tables
+                                     #f)
+                                   (list
+                                    (car rands)
+                                    (make-object constant% 
+                                      l-stx
+                                      (car l)))
+                                   tables)])
+                            (cond
+                              [(null? (cdr l)) test]
+                              [else (let ([rest (loop (cdr l))])
+                                      ;; increment use count:
+                                      (send (car rands) set-known-values)
+                                      (make-object if%
+                                        stx
+                                        test
+                                        true
+                                        rest))])))))])
+             (send xformed simplify ctx))]
+          
+          ;; (values e) where e has result arity 1
+          [(and (is-a? rator global%)
+                (send rator is-kernel?)
+                (eq? 'values (send rator orig-name))
+                (= 1 (length rands))
+                (equal? 1 (send (car rands) get-result-arity)))
+           (known-single-result (car rands))]
+          
+          ;; inlining: currently hacked for testing to only inline on two special names
+          [(and (is-a? rator binding%)
+                (is-a? (send rator get-value) lambda%)
+                (or 
+                 (eq? (send rator orig-name) '*++scan)
+                 (eq? (send rator orig-name) '*++match)
+                 ;; Only use and not in defn context? Always inline
+                 (and (= (send rator get-use-count) 1)
+                      (not (memq rator (context-indef ctx))))))
+           (let ([f (send (send rator get-value) clone null)])
+             (send rator drop-uses)
+             (set! rator f)
+             (send f set-known-values)
+             ;; Now we have ((lambda ...) ...). Go again.
+             (simplify ctx))]
+          
+          [else this]))
 
-	    ;; (+ x 1) => (add1 x)
-	    [(and (is-a? rator global%)
-		  (send rator is-kernel?)
-		  (eq? (send rator orig-name) '+)
-		  (= 2 (length rands))
-		  (or (and (is-a? (car rands) constant%)
-			   (eq? 1 (send (car rands) get-const-val)))
-		      (and (is-a? (cadr rands) constant%)
-			   (eq? 1 (send (cadr rands) get-const-val)))))
-	     (make-object app% 
-			  stx
-			  (make-object global% (quote-syntax add1) (send rator is-trans?) tables #f)
-			  (list
-			   (if (and (is-a? (car rands) constant%)
-				    (eq? 1 (send (car rands) get-const-val)))
-			       (cadr rands)
-			       (car rands)))
-			  tables)]
-	    ;; (- x 1) => (sub1 x)
-	    [(and (is-a? rator global%)
-		  (send rator is-kernel?)
-		  (eq? (send rator orig-name) '-)
-		  (= 2 (length rands))
-		  (and (is-a? (cadr rands) constant%)
-		       (eq? 1 (send (cadr rands) get-const-val))))
-	     (make-object app% 
-			  stx
-			  (make-object global% (quote-syntax sub1)  (send rator is-trans?) tables #f)
-			  (list (car rands))
-			  tables)]
+      (define/override (clone env) (make-object app%
+                                     stx
+                                     (send rator clone env)
+                                     (map (lambda (rand)
+                                            (send rand clone env))
+                                          rands)
+                                     tables))
 
-	    ;; (car x) where x is known to be a list construction
-	    [(and (is-a? rator global%)
-		  (send rator is-kernel?)
-		  (let-values ([(pos len) (case (send rator orig-name) 
-					    [(car) (values 0 1)]
-					    [(cadr) (values 1 1)]
-					    [(caddr) (values 2 1)]
-					    [(cadddr) (values 3 1)]
-					    [(list-ref) (values (and (= 2 (length rands))
-								     (let ([v (send (cadr rands) get-value)])
-								       (and (v . is-a? . constant%)
-									    (send v get-const-val))))
-								2)]
-					    [else (values #f #f)])])
-		    (and (number? pos)
-			 (= len (length rands))
-			 (and ((car rands) . is-a? . ref%)
-			      (let ([val (send (car rands) get-value)])
-				(and (val . is-a? . app%)
-				     (send val get-list-ref pos)))))))
-	     =>
-	     (lambda (val)
-	       (send (car rands) drop-uses)
-	       (known-single-result val))]
+      (define/override (sexpr)
+        (keep-mzc-property
+         (with-syntax ([rator (get-sexpr rator)]
+                       [(rand ...) (map get-sexpr rands)])
+           (syntax/loc stx (rator rand ...)))
+         stx))
 
-	    ;; (memv x '(c ...)) in a boolean context => (if (eq[v]? x 'c) ...)
-	    ;; relevant to the output of `case'
-	    [(and (eq? (context-need ctx) 'bool) 
-		  (is-a? rator global%)
-		  (send rator is-kernel?)
-		  (eq? (send rator orig-name) 'memv)
-		  (= 2 (length rands))
-		  (is-a? (car rands) ref%)
-		  (is-a? (cadr rands) constant%)
-		  (list? (send (cadr rands) get-const-val)))
-	     (let ([xformed
-		    (let ([l (send (cadr rands) get-const-val)]
-			  [l-stx (send (cadr rands) get-stx)]
-			  [false (make-object constant% (datum->syntax-object #f #f) #f)]
-			  [true (make-object constant% (datum->syntax-object #f #t) #t)])
-		      (if (null? l)
-			  false
-			  (let loop ([l l])
-			    (let ([test
-				   (make-object app%
-						stx
-						(make-object global% 
-							     (let ([a (car l)])
-							       (if (or (symbol? a)
-								       (and (number? a)
-									    (exact? a)
-									    (integer? a)
-									    ;; fixnums:
-									    (<= (- (expt 2 29))
-										a
-										(expt 2 29))))
-								   (quote-syntax eq?)
-								   (quote-syntax eqv?)))
-							     (send rator is-trans?)
-							     tables
-							     #f)
-						(list
-						 (car rands)
-						 (make-object constant% 
-							      l-stx
-							      (car l)))
-						tables)])
-			      (cond
-			       [(null? (cdr l)) test]
-			       [else (let ([rest (loop (cdr l))])
-				       ;; increment use count:
-				       (send (car rands) set-known-values)
-				       (make-object if%
-						    stx
-						    test
-						    true
-						    rest))])))))])
-	       (send xformed simplify ctx))]
+      ;; Checks whether the expression is an app of `values'
+      ;; to a particular set of bindings.
+      (define/public (is-values-of? args)
+        (and (rator . is-a? . global%)
+             (send rator is-kernel?)
+             (eq? (send rator orig-name) 'values)
+             (= (length rands) (length args))
+             (andmap
+              (lambda (rand arg)
+                (and (rand . is-a? . ref%)
+                     (eq? arg (send rand get-binding))))
+              rands args)))
 
-	    ;; (values e) where e has result arity 1
-	    [(and (is-a? rator global%)
-		  (send rator is-kernel?)
-		  (eq? 'values (send rator orig-name))
-		  (= 1 (length rands))
-		  (equal? 1 (send (car rands) get-result-arity)))
-	     (known-single-result (car rands))]
-
-	    ;; inlining: currently hacked for testing to only inline on two special names
-	    [(and (is-a? rator binding%)
-		  (is-a? (send rator get-value) lambda%)
-		  (or 
-		   (eq? (send rator orig-name) '*++scan)
-		   (eq? (send rator orig-name) '*++match)
-		   ;; Only use and not in defn context? Always inline
-		   (and (= (send rator get-use-count) 1)
-			(not (memq rator (context-indef ctx))))))
-	     (let ([f (send (send rator get-value) clone null)])
-	       (send rator drop-uses)
-	       (set! rator f)
-	       (send f set-known-values)
-	       ;; Now we have ((lambda ...) ...). Go again.
-	       (simplify ctx))]
-
-	    [else this]))]
-
-	[clone (lambda (env) (make-object app%
-					  stx
-					  (send rator clone env)
-					  (map (lambda (rand)
-						 (send rand clone env))
-					       rands)
-					  tables))]
-
-	[sexpr
-	 (lambda ()
-	   (keep-mzc-property
-	    (with-syntax ([rator (get-sexpr rator)]
-			  [(rand ...) (map get-sexpr rands)])
-	      (syntax/loc stx (rator rand ...)))
-	    stx))])
-
-      (public
-	;; Checks whether the expression is an app of `values'
-	;; to a particular set of bindings.
-	[is-values-of?
-	 (lambda (args)
-	   (and (rator . is-a? . global%)
-		(send rator is-kernel?)
-		(eq? (send rator orig-name) 'values)
-		(= (length rands) (length args))
-		(andmap
-		 (lambda (rand arg)
-		   (and (rand . is-a? . ref%)
-			(eq? arg (send rand get-binding))))
-		 rands args)))]
-
-	;; If app constructs a list and the nth element can be
-	;;  safely extracted, then extract it.
-	[get-list-ref
-	 (lambda (n)
-	   (and (rator . is-a? . global%)
-		(send rator is-kernel?)
-		(eq? 'list (send rator orig-name))
-		((length rands) . > . n)
-		(let ([i (list-ref rands n)])
-		  (if (send i can-dup/move?)
-		      i
-		      #f))))])
-      (sequence
-	(super-init stx))))
+      ;; If app constructs a list and the nth element can be
+      ;;  safely extracted, then extract it.
+      (define/public (get-list-ref n)
+        (and (rator . is-a? . global%)
+             (send rator is-kernel?)
+             (eq? 'list (send rator orig-name))
+             ((length rands) . > . n)
+             (let ([i (list-ref rands n)])
+               (if (send i can-dup/move?)
+                   i
+                   #f))))
+      
+      (super-instantiate (stx))))
 
   (define lambda% 
-    (class100 exp% (-stx -varss -normal?s -bodys)
-      (private-field
-       [stx -stx]
-       [varss -varss]
-       [normal?s -normal?s]
-       [bodys -bodys])
+    (class exp% 
+      (init -stx -varss -normal?s -bodys)
+      
+      (define stx -stx)
+      (define varss -varss)
+      (define normal?s -normal?s)
+      (define bodys -bodys)
+
       (rename [super-simplify simplify])
       (inherit drop-uses)
-      (private
-	[multarity-ize (lambda (l)
-			 (if (null? (cdr l))
-			     (car l)
-			     (cons (car l)
-				   (multarity-ize (cdr l)))))])
+      
+      
+      (define (multarity-ize l)
+        (if (null? (cdr l))
+            (car l)
+            (cons (car l)
+                  (multarity-ize (cdr l)))))
 
-      (public
-	[multi? (lambda () (or (null? bodys)
-			       (pair? (cdr bodys))))]
-
-	[arg-body-exists?
-	 (lambda (n)
-	   (ormap (lambda (vs n?) (and n? (= n (length vs))))
-		  varss normal?s))]
-	[arg-vars-and-body
-	 (lambda (n)
-	   (let loop ([varss varss][normal?s normal?s][bodys bodys])
-	     (if (and (car normal?s)
-		      (= (length (car varss)) n))
-		 (values (car varss) (car bodys))
-		 (loop (cdr varss) (cdr normal?s) (cdr bodys)))))]
-
-	[drop-other-uses
-	 (lambda (n)
-	   (let loop ([n n][varss varss][normal?s normal?s][bodys bodys])
-	     (unless (null? varss)
-	       (let ([n (if (and (car normal?s)
-				 (= (length (car varss)) n))
-			    -1
-			    (begin
-			      (send (car bodys) drop-uses)
-			      n))])
-		 (loop n (cdr varss) (cdr normal?s) (cdr bodys))))))]
-
-	[can-inline?
-	 (lambda ()
-	   (not (syntax-property stx 'mzc-cffi)))])
-
-      (override
-	[bind-sub-exprs (lambda () (apply append varss))]
-	[nonbind-sub-exprs (lambda () bodys)]
-	[set-nonbind-sub-exprs (lambda (s) (set! bodys s))]
-
-	[no-side-effect? (lambda () #t)]
-	[get-result-arity (lambda () 1)]
-
-	[valueable? (lambda () #t)]
+      (define/public (multi?) (or (null? bodys)
+                                  (pair? (cdr bodys))))
+      
+      (define/public (arg-body-exists? n)
+        (ormap (lambda (vs n?) (and n? (= n (length vs))))
+               varss normal?s))
+      (define/public (arg-vars-and-body n)
+        (let loop ([varss varss][normal?s normal?s][bodys bodys])
+          (if (and (car normal?s)
+                   (= (length (car varss)) n))
+              (values (car varss) (car bodys))
+              (loop (cdr varss) (cdr normal?s) (cdr bodys)))))
+      
+      (define/public (drop-other-uses n)
+        (let loop ([n n][varss varss][normal?s normal?s][bodys bodys])
+          (unless (null? varss)
+            (let ([n (if (and (car normal?s)
+                              (= (length (car varss)) n))
+                         -1
+                         (begin
+                           (send (car bodys) drop-uses)
+                           n))])
+              (loop n (cdr varss) (cdr normal?s) (cdr bodys))))))
+      
+      (define/public (can-inline?)
+        (not (syntax-property stx 'mzc-cffi)))
+      
+      (define/override (bind-sub-exprs) (apply append varss))
+      (define/override (nonbind-sub-exprs) bodys)
+      (define/override (set-nonbind-sub-exprs s) (set! bodys s))
+      
+      (define/override (no-side-effect?) #t)
+      (define/override (get-result-arity) 1)
+      
+      (define/override (valueable?) #t)
 	
-	[simplify (lambda (ctx)
-		    (if (eq? 'bool (context-need ctx))
-			(begin
-			  (drop-uses)
-			  (make-object constant% stx #t))
-			(super-simplify ctx)))]
+      (define/override (simplify ctx)
+        (if (eq? 'bool (context-need ctx))
+            (begin
+              (drop-uses)
+              (make-object constant% stx #t))
+            (super-simplify ctx)))
+      
+      (define/override (clone env)
+        (let ([varss+bodys
+               (let loop ([varss varss][bodys bodys])
+                 (if (null? varss)
+                     null
+                     (let* ([vars (car varss)]
+                            [new-vars (map (lambda (v) (send v clone-binder env))
+                                           vars)])
+                       (cons
+                        (cons new-vars
+                              (send (car bodys)
+                                    clone (append (map cons vars new-vars)
+                                                  env)))
+                        (loop (cdr varss) (cdr bodys))))))])
+          (make-object lambda%
+            stx
+            (map car varss+bodys)
+            normal?s
+            (map cdr varss+bodys))))
 
-	[clone (lambda (env)
-		 (let ([varss+bodys
-			(let loop ([varss varss][bodys bodys])
-			  (if (null? varss)
-			      null
-			      (let* ([vars (car varss)]
-				     [new-vars (map (lambda (v) (send v clone-binder env))
-						    vars)])
-				(cons
-				 (cons new-vars
-				       (send (car bodys)
-					     clone (append (map cons vars new-vars)
-							   env)))
-				 (loop (cdr varss) (cdr bodys))))))])
-		   (make-object lambda%
-				stx
-				(map car varss+bodys)
-				normal?s
-				(map cdr varss+bodys))))]
+      (define/override (sexpr)
+        (with-syntax ([(vars ...)
+                       (map (lambda (vars normal?)
+                              (let ([vs (map get-sexpr vars)])
+                                (if normal?
+                                    vs
+                                    (multarity-ize vs))))
+                            varss normal?s)]
+                      [(body ...)
+                       (map (lambda (body)
+                              (get-body-sexpr body))
+                            bodys)])
+          (keep-mzc-property
+           (if (multi?)
+               (syntax/loc stx
+                           (case-lambda
+                             [vars . body] ...))
+               (with-syntax ([body (car (syntax->list (syntax (body ...))))])
+                 (syntax/loc stx
+                             (lambda vars ... . body))))
+           stx)))
 
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([(vars ...)
-			  (map (lambda (vars normal?)
-				 (let ([vs (map get-sexpr vars)])
-				   (if normal?
-				       vs
-				       (multarity-ize vs))))
-			       varss normal?s)]
-			 [(body ...)
-			  (map (lambda (body)
-				 (get-body-sexpr body))
-			       bodys)])
-	     (keep-mzc-property
-	      (if (multi?)
-		  (syntax/loc stx
-		      (case-lambda
-		       [vars . body] ...))
-		  (with-syntax ([body (car (syntax->list (syntax (body ...))))])
-		    (syntax/loc stx
-			(lambda vars ... . body))))
-	      stx)))])
-      (sequence
-	(super-init stx))))
+      (super-instantiate (stx))))
 
   (define local% 
-    (class100 exp% (-stx -form -varss -rhss -body)
-      (private-field
-       [stx -stx]
-       [form -form]
-       [varss -varss]
-       [rhss -rhss]
-       [body -body])
-      (public
-	[get-rhss (lambda () rhss)]
-	[get-varss (lambda () varss)]
-	[get-body (lambda () body)])
-      (override
-	[bind-sub-exprs (lambda () (apply append varss))]
-	[nonbind-sub-exprs (lambda () (cons body rhss))]
-	[set-nonbind-sub-exprs (lambda (s) 
-				 (set! body (car s))
-				 (set! rhss (cdr s)))]
+    (class exp% 
+      (init -stx -form -varss -rhss -body)
 
-	[get-result-arity (lambda () (send body get-result-arity))]
+      (define stx -stx)
+      (define form -form)
+      (define varss -varss)
+      (define rhss -rhss)
+      (define body -body)
+      
+      (define/public (get-rhss) rhss)
+      (define/public (get-varss) varss)
+      (define/public (get-body) body)
 
-	[simplify (lambda (ctx)
-		    (set! rhss (map (lambda (rhs vars) 
-				      (send rhs simplify 
-					    (make-context 'all
-							  (append vars (context-indef ctx)))))
-				    rhss varss))
-		    (set! body (send body simplify ctx))
+      (define/override (bind-sub-exprs) (apply append varss))
+      (define/override (nonbind-sub-exprs) (cons body rhss))
+      (define/override (set-nonbind-sub-exprs s) 
+        (set! body (car s))
+        (set! rhss (cdr s)))
 
-		    ;; Drop unused constant bindings
-		    (set!-values (varss rhss)
-				 (let loop ([varss varss][rhss rhss])
-				   (cond
-				    [(null? varss) (values null null)]
-				    [else (let-values ([(rest-vss rest-rhss)
-							(loop (cdr varss) (cdr rhss))])
-					    (if (and (andmap (lambda (var) (not (send var is-used?)))
-							     (car varss))
-						     (equal? (send (car rhss) get-result-arity)
-							     (length (car varss)))
-						     (send (car rhss) no-side-effect?))
-						(begin
-						  (send (car rhss) drop-uses)
-						  (values rest-vss rest-rhss))
-						(values (cons (car varss) rest-vss)
-							(cons (car rhss) rest-rhss))))])))
+      (define/override (get-result-arity) (send body get-result-arity))
 
-		    (cond
-		     ;; (let-values ([(x) e]) (if e ... ...))
-		     ;;  is a pattern created by `or'
-		     [(and (is-a? body if%)
-			   (let ([t (send body get-if-test)])
-			     (and (is-a? t binding%)
-				  (= 1 (length varss))
-				  (= 1 (length (car varss)))
-				  (eq? (caar varss) t)
-				  (= 1 (send t get-use-count)))))
-		      (make-object if%
-				   stx
-				   (car rhss)
-				   (send body get-if-then)
-				   (send body get-if-else))]
-		     [(null? varss)
-		      (send body simplify ctx)]
-		     ;; (let-values [(x) y] ...) whether y is inited, and
-		     ;;  neither x nor y is mutated => replace x by y
-		     [(and (andmap (lambda (vars) (= 1 (length vars))) varss)
-			   (send (caar varss) valueable?)
-			   (andmap (lambda (rhs) (and (or (rhs . is-a? . ref%)
-							  (rhs . is-a? . global%))
-						      (send rhs valueable?)))
-				   rhss))
-		      (send body substitute
-			    (map (lambda (vars rhs) (cons (car vars) 
-							  (if (rhs . is-a? . ref%)
-							      (send rhs get-binding)
-							      rhs)))
-				 varss rhss))]
-		     
-		     [else
-		      this]))]
+      (define/override (simplify ctx)
+        (set! rhss (map (lambda (rhs vars) 
+                          (send rhs simplify 
+                                (make-context 'all
+                                              (append vars (context-indef ctx)))))
+                        rhss varss))
+        (set! body (send body simplify ctx))
+        
+        ;; Drop unused constant bindings
+        (set!-values (varss rhss)
+                     (let loop ([varss varss][rhss rhss])
+                       (cond
+                         [(null? varss) (values null null)]
+                         [else (let-values ([(rest-vss rest-rhss)
+                                             (loop (cdr varss) (cdr rhss))])
+                                 (if (and (andmap (lambda (var) (not (send var is-used?)))
+                                                  (car varss))
+                                          (equal? (send (car rhss) get-result-arity)
+                                                  (length (car varss)))
+                                          (send (car rhss) no-side-effect?))
+                                     (begin
+                                       (send (car rhss) drop-uses)
+                                       (values rest-vss rest-rhss))
+                                     (values (cons (car varss) rest-vss)
+                                             (cons (car rhss) rest-rhss))))])))
+        
+        (cond
+          ;; (let-values ([(x) e]) (if e ... ...))
+          ;;  is a pattern created by `or'
+          [(and (is-a? body if%)
+                (let ([t (send body get-if-test)])
+                  (and (is-a? t binding%)
+                       (= 1 (length varss))
+                       (= 1 (length (car varss)))
+                       (eq? (caar varss) t)
+                       (= 1 (send t get-use-count)))))
+           (make-object if%
+             stx
+             (car rhss)
+             (send body get-if-then)
+             (send body get-if-else))]
+          [(null? varss)
+           (send body simplify ctx)]
+          ;; (let-values [(x) y] ...) whether y is inited, and
+          ;;  neither x nor y is mutated => replace x by y
+          [(and (andmap (lambda (vars) (= 1 (length vars))) varss)
+                (send (caar varss) valueable?)
+                (andmap (lambda (rhs) (and (or (rhs . is-a? . ref%)
+                                               (rhs . is-a? . global%))
+                                           (send rhs valueable?)))
+                        rhss))
+           (send body substitute
+                 (map (lambda (vars rhs) (cons (car vars) 
+                                               (if (rhs . is-a? . ref%)
+                                                   (send rhs get-binding)
+                                                   rhs)))
+                      varss rhss))]
+          
+          [else
+           this]))
 
-	[clone (lambda (env)
-		 (let* ([new-varss
-			 (map (lambda (vs)
-				(map (lambda (v) (send v clone-binder env))
-				     vs))
-			      varss)]
-			[body-env (append
-				   (map cons
-					(apply append varss)
-					(apply append new-varss))
-				   env)]
-			[letrec? (eq? form 'letrec-values)])
-		   (make-object (if letrec? letrec% let%)
-				new-varss
-				(map (lambda (rhs) 
-				       (send rhs clone (if letrec? body-env env)))
-				     rhss)
-				(send body clone body-env))))]
+      (define/override (clone env)
+        (let* ([new-varss
+                (map (lambda (vs)
+                       (map (lambda (v) (send v clone-binder env))
+                            vs))
+                     varss)]
+               [body-env (append
+                          (map cons
+                               (apply append varss)
+                               (apply append new-varss))
+                          env)]
+               [letrec? (eq? form 'letrec-values)])
+          (make-object (if letrec? letrec% let%)
+            new-varss
+            (map (lambda (rhs) 
+                   (send rhs clone (if letrec? body-env env)))
+                 rhss)
+            (send body clone body-env))))
 
-	[get-value (lambda () (send body get-value))]
+      (define/override (get-value) (send body get-value))
 	
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([form form]
-			 [(vars ...)
-			  (map (lambda (vars)
-				 (map get-sexpr vars))
-			       varss)]
-			 [(rhs ...)
-			  (map get-sexpr rhss)]
-			 [(body ...) (get-body-sexpr body)])
-	     (syntax/loc stx
-	       (form ([vars rhs] ...) 
-		     body ...))))])
-      (sequence
-	(super-init -stx))))
+      (define/override (sexpr)
+        (with-syntax ([form form]
+                      [(vars ...)
+                       (map (lambda (vars)
+                              (map get-sexpr vars))
+                            varss)]
+                      [(rhs ...)
+                       (map get-sexpr rhss)]
+                      [(body ...) (get-body-sexpr body)])
+          (syntax/loc stx
+                      (form ([vars rhs] ...) 
+                            body ...))))
+      
+      
+      (super-instantiate (-stx))))
 
   (define let%
-    (class100 local% (-stx -varss -rhss -body)
+    (class local% 
+      (init -stx -varss -rhss -body)
       (inherit get-varss get-rhss get-body)
       (rename [super-set-known-values set-known-values])
       
-      (override
-	[set-known-values
-	 (lambda ()
-	   (for-each (lambda (vars rhs) (install-values vars rhs))
-		     (get-varss) (get-rhss))
-	   (super-set-known-values))])
-      (sequence
-	(super-init -stx (quote-syntax let-values) -varss -rhss -body))))
+      (define/override (set-known-values)
+        (for-each (lambda (vars rhs) (install-values vars rhs))
+                  (get-varss) (get-rhss))
+        (super-set-known-values))
+      
+      (super-instantiate (-stx (quote-syntax let-values) -varss -rhss -body))))
 
   (define letrec%
-    (class100 local% (-stx -varss -rhss -body)
+    (class local% 
+      (init -stx -varss -rhss -body)
       (inherit get-varss get-rhss)
       (rename [super-set-known-values set-known-values])
       
-      (override
-	[set-known-values
-	 (lambda ()
-	   (let loop ([varss (get-varss)][rhss (get-rhss)])
-	     (unless (null? varss)
-	       (when (send (car rhss) valueable?)
-		 (for-each (lambda (var) (send var set-inited))
-			   (car varss))
-		 (loop (cdr varss) (cdr rhss)))))
-	   (for-each install-values (get-varss) (get-rhss))
-	   (super-set-known-values))])
+      (define/override (set-known-values)
+        (let loop ([varss (get-varss)][rhss (get-rhss)])
+          (unless (null? varss)
+            (when (send (car rhss) valueable?)
+              (for-each (lambda (var) (send var set-inited))
+                        (car varss))
+              (loop (cdr varss) (cdr rhss)))))
+        (for-each install-values (get-varss) (get-rhss))
+        (super-set-known-values))
 
-      (sequence
-	(super-init -stx (quote-syntax letrec-values) -varss -rhss -body))))
+      (super-instantiate (-stx (quote-syntax letrec-values) -varss -rhss -body))))
 
   (define set!%
-    (class100 exp% (-stx -var -val)
-      (private-field
-       [stx -stx]
-       [var -var]
-       [val -val])
-      (override
-	[nonbind-sub-exprs (lambda () (list var val))]
-	[set-nonbind-sub-exprs (lambda (s) 
-				 (set! var (car s))
-				 (set! val (cadr s)))]
+    (class exp% 
+      (init -stx -var -val)
+      
+      (define stx -stx)
+      (define var -var)
+      (define val -val)
+      
+      (define/override (nonbind-sub-exprs) (list var val))
+      (define/override (set-nonbind-sub-exprs s) 
+        (set! var (car s))
+        (set! val (cadr s)))
 
-	[no-side-effect? (lambda () #f)]
-	[valueable? (lambda () #f)]
-	[get-result-arity (lambda () 1)]
+      (define/override (no-side-effect?) #f)
+      (define/override (valueable?) #f)
+      (define/override (get-result-arity) 1)
 	
-	[set-known-values (lambda ()
-			    (send var set-mutated)
-			    (send var set-known-values) ; increments use
-			    (send val set-known-values))]
+      (define/override (set-known-values)
+        (send var set-mutated)
+        (send var set-known-values) ; increments use
+        (send val set-known-values))
 	
-	[clone (lambda (env)
-		 (make-object set!% 
-			      (send var clone env)
-			      (send val clone env)))]
+      (define/override (clone env)
+        (make-object set!% 
+          (send var clone env)
+          (send val clone env)))
 
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([var (get-sexpr var)]
-			 [val (get-sexpr val)])
-	     (syntax/loc stx
-	       (set! var val))))])
-      (sequence
-	(super-init -stx))))
+	(define/override (sexpr)
+          (with-syntax ([var (get-sexpr var)]
+                        [val (get-sexpr val)])
+            (syntax/loc stx
+                        (set! var val))))
+      
+      (super-instantiate (-stx))))
 
   (define if%
-    (class100 exp% (-stx -test -then -else)
-      (private-field
-       [stx -stx]
-       [test -test]
-       [then -then]
-       [else -else])
-      (public
-	[get-if-test (lambda () test)]
-	[get-if-then (lambda () then)]
-	[get-if-else (lambda () else)])
-      (override
-	[nonbind-sub-exprs (lambda () (list test then else))]
-	[set-nonbind-sub-exprs (lambda (s)
-				 (set! test (car s))
-				 (set! then (cadr s))
-				 (set! else (caddr s)))]
+    (class exp% 
+      (init -stx -test -then -else)
+
+      (define stx -stx)
+      (define test -test)
+      (define then -then)
+      (define else -else)
+
+      (define/public (get-if-test) test)
+      (define/public (get-if-then) then)
+      (define/public (get-if-else) else)
+
+      (define/override (nonbind-sub-exprs) (list test then else))
+      (define/override (set-nonbind-sub-exprs s)
+        (set! test (car s))
+        (set! then (cadr s))
+        (set! else (caddr s)))
 	
-	[get-result-arity (lambda ()
-			    (let ([t (send then get-result-arity)]
-				  [e (send else get-result-arity)])
-			      (if (equal? t e)
-				  t
-				  'unknown)))]
-
-	[simplify (lambda (ctx)
-		    (set! test (send test simplify (need-bool ctx)))
-		    (set! then (send then simplify ctx))
-		    (set! else (send else simplify ctx))
+      (define/override (get-result-arity)
+        (let ([t (send then get-result-arity)]
+              [e (send else get-result-arity)])
+          (if (equal? t e)
+              t
+              'unknown)))
+      
+      (define/override (simplify ctx)
+        (set! test (send test simplify (need-bool ctx)))
+        (set! then (send then simplify ctx))
+        (set! else (send else simplify ctx))
 		    
-		    ;; (if xvar xvar y) when need bool
-		    ;;   => (if xvar #t y)
-		    (when (and (eq? 'bool (context-need ctx))
-			       (is-a? test binding%)
-			       (eq? test then))
-		      (send then drop-uses)
-		      (set! then (make-object constant% stx #t)))
-		    (when (and (eq? 'bool (context-need ctx))
-			       (eq? test else)
-			       (is-a? test binding%))
-		      (send else drop-uses)
-		      (set! else (make-object constant% stx #f)))
-		    
+        ;; (if xvar xvar y) when need bool
+        ;;   => (if xvar #t y)
+        (when (and (eq? 'bool (context-need ctx))
+                   (is-a? test binding%)
+                   (eq? test then))
+          (send then drop-uses)
+          (set! then (make-object constant% stx #t)))
+        (when (and (eq? 'bool (context-need ctx))
+                   (eq? test else)
+                   (is-a? test binding%))
+          (send else drop-uses)
+          (set! else (make-object constant% stx #f)))
+        
+        
+        (cond
+          ;; Constant switch
+          [(is-a? test constant%)
+           (if (eq? (send test get-const-val) #f)
+               (begin
+                 (send test drop-uses)
+                 (send then drop-uses)
+                 else)
+               (begin
+                 (send test drop-uses)
+                 (send else drop-uses)
+                 then))]
+          
+          ;; (if (if x y #f) a (void))
+          ;;    => (if x (if y a (void)) (void))
+          [(and (is-a? test if%)
+                (is-a? else void%)
+                (let ([c (send test get-if-else)])
+                  (and (is-a? c constant%)
+                       (eq? #f (send c get-const-val)))))
+           (send
+            (make-object if%
+              stx
+              (send test get-if-test)
+              (make-object if%
+                stx
+                (send test get-if-then)
+                then
+                (make-object void% stx))
+              (make-object void% stx))
+            simplify ctx)]
+          
+          [else this]))
 
-		    (cond
-		     ;; Constant switch
-		     [(is-a? test constant%)
-		      (if (eq? (send test get-const-val) #f)
-			  (begin
-			    (send test drop-uses)
-			    (send then drop-uses)
-			    else)
-			  (begin
-			    (send test drop-uses)
-			    (send else drop-uses)
-			    then))]
-
-		     ;; (if (if x y #f) a (void))
-		     ;;    => (if x (if y a (void)) (void))
-		     [(and (is-a? test if%)
-			   (is-a? else void%)
-			   (let ([c (send test get-if-else)])
-			     (and (is-a? c constant%)
-				  (eq? #f (send c get-const-val)))))
-		      (send
-		       (make-object if%
-				    stx
-				    (send test get-if-test)
-				    (make-object if%
-						 stx
-						 (send test get-if-then)
-						 then
-						 (make-object void% stx))
-				    (make-object void% stx))
-		       simplify ctx)]
-		     
-		     [else this]))]
-
-	[clone (lambda (env) 
-		 (make-object if%
-			      stx
-			      (send test clone env)
-			      (send then clone env)
-			      (send else clone env)))]
-
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([test (get-sexpr test)]
-			 [then (get-sexpr then)])
-	     (if (else . is-a? . void%)
-		 (syntax/loc stx
-		   (if test then))
-		 (with-syntax ([else (get-sexpr else)])
-		   (syntax/loc stx
-		     (if test then else))))))])
-      (sequence
-	(super-init -stx))))
+      (define/override (clone env) 
+        (make-object if%
+          stx
+          (send test clone env)
+          (send then clone env)
+          (send else clone env)))
+      
+      (define/override (sexpr)
+        (with-syntax ([test (get-sexpr test)]
+                      [then (get-sexpr then)])
+          (if (else . is-a? . void%)
+              (syntax/loc stx
+                          (if test then))
+              (with-syntax ([else (get-sexpr else)])
+                (syntax/loc stx
+                            (if test then else))))))
+      
+      (super-instantiate (-stx))))
 
   (define begin0%
-    (class100 exp% (-stx -first -rest)
-      (private-field
-       [stx -stx]
-       [first -first]
-       [rest -rest])
-      (override
-	[nonbind-sub-exprs (lambda () (list first rest))]
-	[set-nonbind-sub-exprs (lambda (s)
-				 (set! first (car s))
-				 (set! rest (cadr s)))]
-	
-	[get-result-arity (lambda () (send first get-result-arity))]
+    (class exp% 
+      (init -stx -first -rest)
+      
+      (define stx -stx)
+      (define first -first)
+      (define rest -rest)
 
-	[simplify (lambda (ctx)
-		    (set! first (send first simplify ctx))
-		    (set! rest (send rest simplify (need-none ctx)))
-		    (if (send rest no-side-effect?)
-			(begin
-			  (send rest drop-uses)
-			  first)
-			this))]
+      (define/override (nonbind-sub-exprs) (list first rest))
+      (define/override (set-nonbind-sub-exprs s)
+        (set! first (car s))
+        (set! rest (cadr s)))
 	
-	[clone (lambda (env) 
-		 (make-object begin0%
-			      (send first clone env)
-			      (send rest clone env)))]
+      (define/override (get-result-arity) (send first get-result-arity))
+
+      (define/override (simplify ctx)
+        (set! first (send first simplify ctx))
+        (set! rest (send rest simplify (need-none ctx)))
+        (if (send rest no-side-effect?)
+            (begin
+              (send rest drop-uses)
+              first)
+            this))
 	
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([first (get-sexpr first)]
-			 [(rest ...) (get-body-sexpr rest)])
-	     (syntax/loc stx
-	       (begin0 first rest ...))))])
-      (sequence
-	(super-init -stx))))
+      (define/override (clone env) 
+        (make-object begin0%
+          (send first clone env)
+          (send rest clone env)))
+	
+	(define/override (sexpr)
+          (with-syntax ([first (get-sexpr first)]
+                        [(rest ...) (get-body-sexpr rest)])
+            (syntax/loc stx
+                        (begin0 first rest ...))))
+
+      (super-instantiate (-stx))))
 
   (define wcm%
-    (class100 exp% (-stx -key -val -body)
-      (private-field
-       [stx -stx]
-       [key -key]
-       [val -val]
-       [body -body])
-      (override
-	[nonbind-sub-exprs (lambda () (list key val body))]
-	[set-nonbind-sub-exprs (lambda (s)
-				 (set! key (car s))
-				 (set! val (cadr s))
-				 (set! body (caddr s)))]
+    (class exp% 
+      (init -stx -key -val -body)
 
-	[get-result-arity (lambda () (send body get-result-arity))]
+      (define stx -stx)
+      (define key -key)
+      (define val -val)
+      (define body -body)
+
+      (define/override (nonbind-sub-exprs) (list key val body))
+      (define/override (set-nonbind-sub-exprs s)
+        (set! key (car s))
+        (set! val (cadr s))
+        (set! body (caddr s)))
+
+      (define/override (get-result-arity) (send body get-result-arity))
 	
-	[clone (lambda (env) 
-		 (make-object wcm%
-			      (send key clone env)
-			      (send val clone env)
-			      (send body clone env)))]
+      (define/override (clone env) 
+        (make-object wcm%
+          (send key clone env)
+          (send val clone env)
+          (send body clone env)))
 
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([key (get-sexpr key)]
-			 [val (get-sexpr val)]
-			 [body (get-sexpr body)])
-	     (syntax/loc stx
-	       (with-continuation-mark key val body))))])
-      (sequence
-	(super-init -stx))))
-
+      (define/override (sexpr)
+        (with-syntax ([key (get-sexpr key)]
+                      [val (get-sexpr val)]
+                      [body (get-sexpr body)])
+          (syntax/loc stx
+                      (with-continuation-mark key val body))))
+      
+      (super-instantiate (-stx))))
 
   (define module%
-    (class100 exp% (-stx -body -et-body -name -init-req -req-prov -tables)
-      (private-field
-       [stx -stx]
-       [body -body]
-       [et-body -et-body]
-       [req-prov -req-prov]
-       [name -name]
-       [init-req -init-req]
-       [tables -tables])
-      (rename
-       [super-deorganize deorganize])
-      (override
-	[reset-varflags
-	 (lambda ()
-	   (for-each (lambda (e) (send e reset-varflags)) body)
-	   (for-each (lambda (e) (send e reset-varflags)) et-body))]
-	[set-known-values
-	 ;; Assumes varflags are reset
-	 (lambda ()
-	   (for-each (lambda (e) (send e set-known-values)) (nonbind-sub-exprs)))]
+    (class exp% 
+      (init -stx -body -et-body -name -init-req -req-prov -tables)
 
-	[drop-uses
-	 ;; Assumes varflags are reset
-	 (lambda ()
-	   (for-each (lambda (e) (send e drop-uses)) (nonbind-sub-exprs)))]
+      (define stx -stx)
+      (define body -body)
+      (define et-body -et-body)
+      (define req-prov -req-prov)
+      (define name -name)
+      (define init-req -init-req)
+      (define tables -tables)
+      (rename [super-deorganize deorganize])
+
+      (define/override (reset-varflags)
+        (for-each (lambda (e) (send e reset-varflags)) body)
+        (for-each (lambda (e) (send e reset-varflags)) et-body))
+      (define/override (set-known-values)
+        ;; Assumes varflags are reset
+        (for-each (lambda (e) (send e set-known-values)) (nonbind-sub-exprs)))
+
+      (define/override (drop-uses)
+        ;; Assumes varflags are reset
+        (for-each (lambda (e) (send e drop-uses)) (nonbind-sub-exprs)))
 	
-	[no-side-effect? (lambda () #f)]
-	[valueable? (lambda () #f)]
+      (define/override (no-side-effect?) #f)
+      (define/override (valueable?) #f)
 
-	[get-result-arity (lambda () 'unknown)]
+      (define/override (get-result-arity) 'unknown)
 
-	[sub-exprs (lambda () (append (append et-body body)))]
-	[bind-sub-exprs (lambda () null)]
-	[nonbind-sub-exprs (lambda () (sub-exprs))]
-	[set-nonbind-sub-exprs (lambda (l)
-				 (let-values ([(etb b)
-					       (let loop ([l l][etb et-body][accum null])
-						 (cond
-						  [(null? etb)
-						   (values (reverse! accum) l)]
-						  [else (loop (cdr l) (cdr etb) (cons (car l)
-										      accum))]))])
-				   (set! body body)
-				   (set! et-body etb)))]
+      (define/override (sub-exprs) (append (append et-body body)))
+      (define/override (bind-sub-exprs) null)
+      (define/override (nonbind-sub-exprs) (sub-exprs))
+      (define/override (set-nonbind-sub-exprs l)
+        (let-values ([(etb b)
+                      (let loop ([l l][etb et-body][accum null])
+                        (cond
+                          [(null? etb)
+                           (values (reverse! accum) l)]
+                          [else (loop (cdr l) (cdr etb) (cons (car l)
+                                                              accum))]))])
+          (set! body body)
+          (set! et-body etb)))
+      
+      ;; expose known bindings by converting a sequence of top-level
+      ;;  expressions into a letrec:
+      ;;   (define-values (a ...) body) ...
+      ;;   => (define-values (a ... ...) 
+      ;;          (letrec-values ([(a ...) body] ...) (values a ... ...)))
+      (define/override (reorganize)
+        (let ([-body (map (lambda (x) (send x reorganize)) body)]
+              [-et-body (map (lambda (x) (send x reorganize)) et-body)])
+          (let loop ([l -body][defs null])
+            (cond
+              [(and (pair? l) 
+                    ((car l) . is-a? . variable-def%)
+                    (not (ormap (lambda (v) (send v is-mutated?))
+                                (send (car l) get-globals)))
+                    (send (send (car l) get-rhs) valueable?))
+               (for-each (lambda (g) (send g set-inited))
+                         (send (car l) get-globals))
+               (loop (cdr l)
+                     (cons (car l) defs))]
+              [else
+               (if (null? defs)
+                   (void) ; no reorganization
+                   (let* ([defs (reverse defs)]
+                          [varss
+                           (map (lambda (def) (send def get-vars)) defs)]
+                          [rhss
+                           (map (lambda (def) (send def get-rhs)) defs)]
+                          [lex-varss (map (lambda (vars)
+                                            (map (lambda (var)
+                                                   (make-object binding%
+                                                     (datum->syntax-object
+                                                      #f
+                                                      (syntax-e var)
+                                                      var)
+                                                     #t))
+                                                 vars))
+                                          varss)]
+                          [vars (apply append varss)]
+                          [lex-vars (apply append lex-varss)]
+                          [env (map cons vars lex-vars)])
+                     (set! -body
+                           (cons
+                            (make-object variable-def%
+                              (send (car defs) get-stx)
+                              vars
+                              (make-object letrec%
+                                (send (car defs) get-stx)
+                                lex-varss
+                                (map (lambda (rhs)
+                                       (send rhs global->local env))
+                                     rhss)
+                                (make-object app%
+                                  (send (car defs) get-stx)
+                                  (make-object global%
+                                    (quote-syntax values)
+                                    #f
+                                    tables
+                                    #f)
+                                  (map (lambda (var lex-var)
+                                         (make-object ref% var lex-var))
+                                       vars
+                                       lex-vars)
+                                  tables))
+                              tables)
+                            l))))])
+            (set! body -body)
+            (set! et-body -et-body)))
+        this)
 
-	;; expose known bindings by converting a sequence of top-level
-	;;  expressions into a letrec:
-	;;   (define-values (a ...) body) ...
-	;;   => (define-values (a ... ...) 
-        ;;          (letrec-values ([(a ...) body] ...) (values a ... ...)))
-	[reorganize
-	 (lambda ()
-	   (let ([-body (map (lambda (x) (send x reorganize)) body)]
-		 [-et-body (map (lambda (x) (send x reorganize)) et-body)])
-	     (let loop ([l -body][defs null])
-	       (cond
-		[(and (pair? l) 
-		      ((car l) . is-a? . variable-def%)
-		      (not (ormap (lambda (v) (send v is-mutated?))
-				  (send (car l) get-globals)))
-		      (send (send (car l) get-rhs) valueable?))
-		 (for-each (lambda (g) (send g set-inited))
-			   (send (car l) get-globals))
-		 (loop (cdr l)
-		       (cons (car l) defs))]
-		[else
-		 (if (null? defs)
-		     (void) ; no reorganization
-		     (let* ([defs (reverse defs)]
-			    [varss
-			     (map (lambda (def) (send def get-vars)) defs)]
-			    [rhss
-			     (map (lambda (def) (send def get-rhs)) defs)]
-			    [lex-varss (map (lambda (vars)
-					      (map (lambda (var)
-						     (make-object binding%
-								  (datum->syntax-object
-								   #f
-								   (syntax-e var)
-								   var)
-								  #t))
-						   vars))
-					    varss)]
-			    [vars (apply append varss)]
-			    [lex-vars (apply append lex-varss)]
-			    [env (map cons vars lex-vars)])
-		       (set! -body
-			     (cons
-			      (make-object variable-def%
-					   (send (car defs) get-stx)
-					   vars
-					   (make-object letrec%
-							(send (car defs) get-stx)
-							lex-varss
-							(map (lambda (rhs)
-							       (send rhs global->local env))
-							     rhss)
-							(make-object app%
-								     (send (car defs) get-stx)
-								     (make-object global%
-										  (quote-syntax values)
-										  #f
-										  tables
-										  #f)
-								     (map (lambda (var lex-var)
-									    (make-object ref% var lex-var))
-									  vars
-									  lex-vars)
-								     tables))
-					   tables)
-			      l))))])
-	       (set! body -body)
-	       (set! et-body -et-body)))
-	   this)]
+      (define/override (deorganize)
+        ;; Check for
+        ;;   (define-values (a ... ...) 
+        ;;       (letrec-values ([(a ...) body] ...) (values a ... ...)))
+        ;;   => (define-values (a ...) body) ...
+        (when (and (pair? body)
+                   (let ([first (car body)])
+                     (and (first . is-a? . variable-def%)
+                          (let ([rhs (send first get-rhs)])
+                            (and (rhs . is-a? . letrec%)
+                                 (let ([lbody (send rhs get-body)]
+                                       [lvarss (send rhs get-varss)])
+                                   (and (lbody . is-a? . app%)
+                                        (send lbody is-values-of? 
+                                              (apply append lvarss)))))))))
+          (let ([vars (send (car body) get-vars)]
+                [bindingss (send (send (car body) get-rhs) get-varss)]
+                [bodys (send (send (car body) get-rhs) get-rhss)])
+            ;; split vars into varss:
+            (let ([varss (let loop ([bindingss bindingss][vars vars])
+                           (if (null? bindingss)
+                               null
+                               (let loop2 ([bindings (car bindingss)][vars vars][accum null])
+                                 (if (null? bindings)
+                                     (cons (reverse! accum)
+                                           (loop (cdr bindingss) vars))
+                                     (loop2 (cdr bindings) (cdr vars) (cons (car vars) accum))))))]
+                  [bindings (apply append bindingss)])
+              (let ([env (map cons bindings 
+                              (map (lambda (var) 
+                                     (make-object global% var #f tables #f)) 
+                                   vars))])
+                (set! body
+                      (append
+                       (map (lambda (vars body)
+                              (make-object variable-def%
+                                stx
+                                vars
+                                (send body substitute env)
+                                tables))
+                            varss bodys)
+                       (cdr body)))))))
+        (super-deorganize))
 
-	[deorganize
-	 (lambda ()
-	   ;; Check for
-	   ;;   (define-values (a ... ...) 
-	   ;;       (letrec-values ([(a ...) body] ...) (values a ... ...)))
-	   ;;   => (define-values (a ...) body) ...
-	   (when (and (pair? body)
-		      (let ([first (car body)])
-			(and (first . is-a? . variable-def%)
-			     (let ([rhs (send first get-rhs)])
-			       (and (rhs . is-a? . letrec%)
-				    (let ([lbody (send rhs get-body)]
-					  [lvarss (send rhs get-varss)])
-				      (and (lbody . is-a? . app%)
-					   (send lbody is-values-of? 
-						 (apply append lvarss)))))))))
-	     (let ([vars (send (car body) get-vars)]
-		   [bindingss (send (send (car body) get-rhs) get-varss)]
-		   [bodys (send (send (car body) get-rhs) get-rhss)])
-	       ;; split vars into varss:
-	       (let ([varss (let loop ([bindingss bindingss][vars vars])
-			      (if (null? bindingss)
-				  null
-				  (let loop2 ([bindings (car bindingss)][vars vars][accum null])
-				    (if (null? bindings)
-					(cons (reverse! accum)
-					      (loop (cdr bindingss) vars))
-					(loop2 (cdr bindings) (cdr vars) (cons (car vars) accum))))))]
-		     [bindings (apply append bindingss)])
-		 (let ([env (map cons bindings 
-				 (map (lambda (var) 
-					(make-object global% var #f tables #f)) 
-				      vars))])
-		   (set! body
-			 (append
-			  (map (lambda (vars body)
-				 (make-object variable-def%
-					      stx
-					      vars
-					      (send body substitute env)
-					      tables))
-			       varss bodys)
-			  (cdr body)))))))
-	   (super-deorganize))]
-
-	[sexpr
-	 (lambda ()
-	   (with-syntax ([name name]
-			 [init-req init-req]
-			 [(body ...) (map get-sexpr body)]
-			 [(et-body ...) (map get-sexpr et-body)]
-			 [(req-prov ...) (map get-sexpr req-prov)])
-	     (syntax/loc stx
-	       (module name init-req
-		 (#%plain-module-begin
-		  req-prov ...
-		  body ...
-		  et-body ...)))))]
-	[body-sexpr
-	 (lambda ()
-	   (list (sexpr)))])
-      (sequence (super-init stx))))
+	(define/override (sexpr)
+          (with-syntax ([name name]
+                        [init-req init-req]
+                        [(body ...) (map get-sexpr body)]
+                        [(et-body ...) (map get-sexpr et-body)]
+                        [(req-prov ...) (map get-sexpr req-prov)])
+            (syntax/loc stx
+                        (module name init-req
+                          (#%plain-module-begin
+                           req-prov ...
+                           body ...
+                           et-body ...)))))
+      (define/override (body-sexpr)
+        (list (sexpr)))
+      
+      (super-instantiate (stx))))
 
   ;; requires and provides should really be ignored:
   (define require/provide%
-    (class100 exp% (stx)
-      (override
-	[valueable? (lambda () #f)]
-	[no-side-effect? (lambda () #f)])
-      (sequence
-	(super-init stx))))
-
+    (class exp% 
+      (init stx)
+      (define/override (valueable?) #f)
+      (define/override (no-side-effect?) #f)
+      (super-instantiate (stx))))
+  
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Parser
   ;; converts a syntax object to an exp%
@@ -1729,3 +1675,6 @@
 			 (send p deorganize)))))))
 
   (provide optimize))
+(require src2src)
+(optimize (expand (call-with-input-file "src2src.ss"
+                    (lambda (x) (read-syntax "src2src.ss" x)))))

@@ -62,13 +62,6 @@ wxMenu::wxMenu(char *_title, wxFunction _func)
 	topdummy = top;
     }
 
-    {
-      void *p;
-      p = MALLOC_SAFEREF();
-      saferef = p;
-    }
-    SET_SAFEREF(saferef, this);
-
 #ifdef MZ_PRECISE_GC
     children = DEBUG_NEW wxChildList;
 #endif
@@ -102,9 +95,17 @@ wxMenu::~wxMenu(void)
 	FREE_MENU_ITEM(temp);
     }
 
-    FREE_SAFEREF(saferef);
-
     owner = NULL;
+
+    /* Each saferef is attached to a widget.
+       The widget's destroy proc deletes the saferef.
+       But we need to zero it here to prevent callbacks. */
+    while (saferefs) {
+      void *sr;
+      sr = saferefs[0];
+      *(void **)(saferefs[0]) = NULL;
+      saferefs = (void **)sr;
+    }
 
 #ifdef MZ_PRECISE_GC
     DELETE_OBJ children;
@@ -120,6 +121,23 @@ extern "C" {
   extern void wxRemoveGrab(Widget);
 };
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+static void FreeSaferef(Widget WXUNUSED(w), wxMenu** menup,
+			XtPointer WXUNUSED(null))
+{
+  FREE_SAFEREF((char *)menup);
+
+  /* No XFORM_RESET_VAR_STACK because this one isn't xformed.  No need
+     to xform because FREE_SAFEREF won't set the GC variable stack. */
+}
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 int wxPopupForChoice;
 
 Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
@@ -130,6 +148,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     XEvent xevent;
     String a[1];
     Bool forChoice = wxPopupForChoice;
+    void *saferef;
 
     wxPopupForChoice = 0;
 
@@ -158,8 +177,24 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     X->menu = wgt;
     XtRealizeWidget(X->shell);
 
+    {
+      void *p;
+      p = MALLOC_SAFEREF();
+      saferef = p;
+    }
+    SET_SAFEREF(saferef, this);
+
+    {
+      void **srs;
+      srs = new void*[2];
+      srs[0] = saferef;
+      srs[1] = saferefs;
+      saferefs = srs;
+    }
+
     XtAddCallback(X->menu, XtNonSelect, wxMenu::EventCallback, saferef);
     XtAddCallback(X->menu, XtNonNoSelect, wxMenu::EventCallback, saferef);
+    XtAddCallback(X->menu, XtNonMDestroy, (XtCallbackProc)FreeSaferef, (XtPointer)saferef);
     Xaw3dPopupMenuAtPos((MenuWidget)(X->menu), root_x, root_y);
 
     /* Get the menu started: */
@@ -532,6 +567,25 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
   if (menu) {
     if (popped_up_menu == menu)
       popped_up_menu = NULL;
+    
+    /* remove dclient from the saferefs chain: */
+    {
+      void **prev = NULL, **srs = menu->saferefs;
+      while (srs) {
+	if ((void *)dclient == srs[0]) {
+	  if (prev)
+	    prev[1] = srs[1];
+	  else
+	    menu->saferefs = (void **)(srs[1]);
+	  break;
+	} else {
+	  prev = srs;
+	  srs = (void **)(srs[1]);
+	}
+      }
+    }
+    /* zero out to prevent future callbacks: */
+    *(void **)dclient = NULL;
 
     /* MATTHEW: remove grab */
     XtRemoveGrab(menu->X->shell);

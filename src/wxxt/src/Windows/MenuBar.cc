@@ -219,6 +219,8 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
   }
 
   if (i) {
+    Stop();
+
     if (i == (menu_item *)top)
       top = (wxMenuItem *)i->next;
     if (i == (menu_item *)last)

@@ -114,7 +114,7 @@ private:
 #endif
 
     void *client_data;
-    void *saferef;
+    void **saferefs; /* cons-like chain of saferefs */
 };
 
 extern void wxInitPopupMgr(void);

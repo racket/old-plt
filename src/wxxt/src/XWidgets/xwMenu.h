@@ -75,6 +75,7 @@ SOFTWARE.
 #define XtNonNewItem            "onNewItem"
 #define XtNonSelect             "onSelect"
 #define XtNonNoSelect           "onNoSelect"
+#define XtNonMDestroy           "onMDestroy"
 
 #define XtNindicatorPixel       "indicatorPixel"
 #define XtCIndicatorPixel       "IndicatorPixel"

@@ -117,6 +117,8 @@ static XtResource MenuResources[] =
         offset(menu.on_select), XtRCallback, (XtPointer)NULL},
     {XtNonNoSelect, XtCCallback, XtRCallback, sizeof(XtPointer), 
         offset(menu.on_no_select), XtRCallback, (XtPointer)NULL},
+    {XtNonMDestroy, XtCCallback, XtRCallback, sizeof(XtPointer), 
+        offset(menu.on_destroy), XtRCallback, (XtPointer)NULL},
 };
 #undef offset
 
@@ -315,6 +317,8 @@ static void MenuDestroy(w)
     }
     FreeTimer(ms->timer);
     XtFree((char*)ms); /* free menu_state of widget's window */
+
+    XtCallCallbackList(w, mw->menu.on_destroy, (XtPointer)NULL);
 }
 
 #define CHANGED_bg_  (new->core.background_pixel != old->core.background_pixel)

@@ -350,6 +350,7 @@
 		(lambda (p-env)
 		  (let* ((vars (pat:pexpand '(vars ...) p-env kwd))
 			  (val (pat:pexpand 'val p-env kwd)))
+		    (map valid-syntactic-id? vars)
 		    (let ((new-names (map generate-name vars)))
 		      (expand-expr
 			(structurize-syntax

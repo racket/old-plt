@@ -5,23 +5,27 @@ Bugs
 * Motif: pre-on-char doesn't work for sliders (therefore, frame/dialog
   navagation doesn't work when a slider has the focus)
 
+* Motif: pre-on-char doesn't work when an Alt/Meta combination matches
+  a mnemonicked menu (therefore, the Alt/Meta combination cannot be
+  overridden)
+
 * MacOS: bitmaps don't print with platform-specific printing
 
 * Windows and MacOS: "primitive" dialogs don't get closed by
-   custodian-shutdown-all
+  custodian-shutdown-all
 
 * MacOS: std file dialog and print dialogs block MzScheme threads
 
 * Need to penalize the current thread more for certain primitive
-   operations that can take a long time (e.g., loading a bitmap
-   or saving a file)
+  operations that can take a long time (e.g., loading a bitmap or
+  saving a file)
 
 Needed Features
 ---------------
 
 * Need directory-selection dialog
 
-* Keys like KP_end, etc. are not currently accessible
+* X Keys such as KP_end are not currently accessible
 
 * Editor: the full width for non-wrapped lines need not include the autowrap bitmap
 
@@ -29,8 +33,8 @@ Needed Features
 
 * Optimization: dragging selection shouldn't keep changing the auto-X-selection
 
-* Add background color for buffers
+* Background color for buffers
 
 * Updating bug?: long flash, not on same line, update on focus-in
 
-* Add paragraph styles
+* Paragraph styles

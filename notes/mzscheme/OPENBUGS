@@ -8,6 +8,9 @@ Inexact (i.e., floating-point) numbers are not write/read invariant
 Under MacOS, in the standalone MzScheme application, a blocking read 
  from stdin blocks all MzScheme threads
 
+Under MacOS, an input expression that is longer than 256 characters
+ makes the console get stuck (CodeWarrior SIOUX bug)
+
 Under Windows, the `system' procedure blocks all MzScheme threads
  (`system*' works correctly)
 

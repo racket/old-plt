@@ -34,21 +34,6 @@ OSErr setup_alias(char *execPath, char *starterPath)
   
   return noErr;
 } 
-  
-  
-int setup_aliases(char *mzPath, char *mrPath, char *mzStarterPath, char *mrStarterPath)
-{
-  int mzresult, mrresult;
-  
-  mzresult = setup_alias(mzPath, mzStarterPath);
-  mrresult = setup_alias(mrPath, mrStarterPath);
-  
-  if ((mzresult == noErr) && (mrresult == noErr)) {
-    return noErr;
-  } else {
-    return 1;
-  }
-}
 
 Scheme_Object *setup_wrapper(int argc, Scheme_Object **argv)
 {
@@ -56,21 +41,27 @@ Scheme_Object *setup_wrapper(int argc, Scheme_Object **argv)
   
   if (!(SCHEME_STRINGP(argv[0])) ||
       !(SCHEME_STRINGP(argv[1])) ||
-      !(SCHEME_STRINGP(argv[2])) ||
-      !(SCHEME_STRINGP(argv[3]))) {
+      ((argc > 2) &&
+       (!(SCHEME_STRINGP(argv[2])) ||
+        !(SCHEME_STRINGP(argv[3]))))) {
     return scheme_false;
   }
   
-  err = setup_aliases((SCHEME_STR_VAL(argv[0])), // I admit I'm assuming pathnames don't contain NULL
-                      (SCHEME_STR_VAL(argv[1])),
-                      (SCHEME_STR_VAL(argv[2])),
-                      (SCHEME_STR_VAL(argv[3])));
-                      
-  if (err != noErr) {
+  err = setup_alias(SCHEME_STR_VAL(argv[0]), SCHEME_STR_VAL(argv[1]));
+  
+  if (err != noErr) 
     return scheme_false;
-  } else {
-    return scheme_true;
+  
+  if (argc > 2) {
+    err = setup_alias(SCHEME_STR_VAL(argv[2]), SCHEME_STR_VAL(argv[3]));
+    
+    if (err != noErr)
+      return scheme_false;
   }
+  
+  // I admit I'm assuming pathnames don't contain NULL
+
+  return scheme_true;
 }
 
 Scheme_Object *result_proc;

@@ -290,15 +290,18 @@
                          [else (error 'maybe-install-aliases "cannot find ppc or 68k MzScheme application in plthome.")])]
            [mr-app (cond [(file-exists? mr-ppc) mr-ppc]
                          [(file-exists? mr-68k) mr-68k]
-                         [else (error 'maybe-install-aliases "cannot find ppc or 68k MrEd application in plthome.")])]
+                         [else #f])] ; in DrScheme Jr, there is no MrEd
            [launcher-path (collection-path "launcher")]
            [extension-source-file (build-path launcher-path "starter-setup.c")]
            [extension (build-path launcher-path "starter-setup.so")]
            [gomz (build-path launcher-path "gomz")]
            [gomr (build-path launcher-path "gomr")]
            [marker-file (build-path launcher-path "marker-file")])
-      (unless (andmap file-exists? (list gomz gomr))
-        (error 'install-aliases "startup templates GoMz and GoMr are missing."))
+      (unless (file-exists? gomz)
+        (error 'install-aliases "startup template GoMz is missing."))
+      (when mr-app
+        (unless (file-exists? gomr)
+          (error 'install-aliases "startup template GoMr is missing.")))
       (unless (string=? (system-library-subpath) "68k-mac")   ; cannot use extensions on 68k mac
         (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
                   (and (let ([extension-file-date (file-or-directory-modify-seconds extension)])
@@ -313,9 +316,12 @@
             (l:link-extension #t (list obj-file) extension)))
         (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (starters, apps, extension)
                   (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
-                    (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
-                           (list extension gomz gomr mz-app mr-app))))
-          (let ([installation-result ((load-extension extension) mz-app mr-app gomz gomr)])
+                    (or (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
+                               (list extension gomz gomr mz-app))
+                        (and mr-app (> (file-or-directory-modify-seconds mr-app) marker-file-date)))))
+          (let ([installation-result (if mr-app
+                                         ((load-extension extension) mz-app gomz mr-app gomr)
+                                         ((load-extension extension) mz-app gomz))])
             (unless installation-result
               (error 'maybe-install-aliases "installing aliases failed"))
             (with-output-to-file marker-file

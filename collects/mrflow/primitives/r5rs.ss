@@ -349,14 +349,14 @@
                  (a_member (listof b_member) -> (union #f (cons a_member (listof b_member))))))
  
  (assq (forall ([a_assq top]
-                [b_assq (cons top top)])
-               (a_assq (listof b_assq) -> (union #f (cons (cons a_assq top) (listof b_assq))))))
+                [b_assq top])
+               (a_assq (listof (cons top b_assq)) -> (union #f (cons a_assq b_assq)))))
  (assv (forall ([a_assv top]
-                [b_assv (cons top top)])
-               (a_assv (listof b_assv) -> (union #f (cons (cons a_assv top) (listof b_assv))))))
+                [b_assv top])
+               (a_assv (listof (cons top b_assv)) -> (union #f (cons a_assv b_assv)))))
  (assoc (forall ([a_assoc top]
-                 [b_assoc (cons top top)])
-                (a_assoc (listof b_assoc) -> (union #f (cons (cons a_assoc top) (listof b_assoc))))))
+                 [b_assoc top])
+                (a_assoc (listof (cons top b_assoc)) -> (union #f (cons a_assoc b_assoc)))))
  
  
  ; 6.3.3. Symbols

@@ -21,7 +21,8 @@
   (define use-3m?
     (and (memq (system-type) '(unix macosx windows))
 	 (memq '3m (available-mzscheme-variants))
-	 (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2"))))
+	 (directory-exists? (build-path (collection-path "sgl")
+					'up 'up "src" "mzscheme" "gc2"))))
   
   (define (append-h-suffix s)
     (string-append s ".h"))
@@ -58,7 +59,9 @@
                       (append
                        (dynext:current-extension-compiler-flags)
                        (case (system-type)
-                         ((windows) '("/FIwindows.h"))
+                         ((windows) (if (eq? variant 'normal)
+					'("/FIwindows.h")
+					null))
                          (else '()))))
                      (dynext:current-standard-link-libraries
                       (append
@@ -108,7 +111,7 @@
 							 (build-path p "include"))))
 						     X11-include))])
 			    (if (eq? 'windows (system-type))
-				(format "cl.exe /MT /E ~a" 
+				(format "cl.exe /MT /E /FIwindows.h ~a" 
 					extras)
 				(format "gcc -E ~a~a" 
 					(if (eq? 'macosx (system-type))

@@ -438,7 +438,12 @@
 		 (unless (void? v)
 		   (with-parameterization user-parameterization
 		     (lambda ()
-		       (mzlib:pretty-print:pretty-print v this-result)))))]
+		       (parameterize 
+			   ([mzlib:pretty-print:pretty-print-size-hook
+			     (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+			    [mzlib:pretty-print:pretty-print-print-hook
+			     (lambda (x _ port) (this-result-write x))])
+			 (mzlib:pretty-print:pretty-print v this-result))))))]
 	      [eval-and-display
 	       (lambda (str)
 		 (catch-errors
@@ -681,10 +686,11 @@
 					(let ([handler-maker
 					       (lambda (pretty)
 						 (lambda (v p)
-						   (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-								   (lambda (x _) (and (is-a? x wx:snip%) 1))]
-								  [mzlib:pretty-print:pretty-print-print-hook
-								   (lambda (x _) (port-out-write x))])
+						   (parameterize 
+						       ([mzlib:pretty-print:pretty-print-size-hook
+							 (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+							[mzlib:pretty-print:pretty-print-print-hook
+							(lambda (x _ port) (port-out-write x))])
 						     (pretty v p 'infinity))))])
 					(port-write-handler port (handler-maker mzlib:pretty-print:pretty-print))
 					(port-display-handler port (handler-maker mzlib:pretty-print:pretty-display))))

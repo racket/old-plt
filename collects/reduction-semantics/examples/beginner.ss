@@ -48,7 +48,7 @@
         boolean
         string)
         
-     (prim-op + / cons first rest empty?)
+     (prim-op + / cons first rest empty? struct?)
      
      (p-ctxt (d/e-v ... d/e-ctxt d/e ...))
      (d/e-ctxt (define x e-ctxt)
@@ -316,6 +316,9 @@
         ,(replace ctxt hole (multi-subst var arg body))
         ,@after))
      
+     ((struct? ((name maker maker) v ...)) . --> . 'true)
+     ((struct? non-struct-value) . --> . 'false)
+     
      ;; struct predicate passes
      (reduction
       lang
@@ -332,6 +335,8 @@
         ,@middle
         ,(replace ctxt hole 'true)
         ,@after))
+     
+     
      
      ;; struct predicate fail to another struct
      (reduction
@@ -470,10 +475,10 @@
     (eq? (string->symbol (format "~a?" name)) predicate))
 
   (define failed-tests 0)
-  (define tests 0)
+  (define total-tests 0)
   
   (define (test in out)
-    (set! tests (+ tests 1))
+    (set! total-tests (+ total-tests 1))
     (let/ec k
       (let* ([failed
               (lambda (msg)
@@ -501,274 +506,289 @@
   (define (show-test-results)
     (cond
       [(= failed-tests 0) 
-       (fprintf (current-error-port) "passed all ~a tests" tests)]
+       (fprintf (current-error-port) "passed all ~a tests" total-tests)]
       [else
-       (fprintf (current-error-port) "failed ~a out of ~a tests" failed-tests tests)]))
+       (fprintf (current-error-port) "failed ~a out of ~a tests" failed-tests total-tests)]))
+  
+  (define-syntax (tests stx)
+    (syntax-case stx ()
+      [(_ args ...)
+       (syntax
+        (begin
+          (set! failed-tests 0)
+          (set! total-tests 0)
+          args ...
+          (show-test-results)))]))
   
   (define (run-tests)
-    (set! failed-tests 0)
-    (set! tests 0)
-
-    (test
-     '((define-struct s ())
-       (s? (make-s)))
-     '((define-struct s ())
-       true))
-    
-    (test
-     '((define-struct s (a b))
-       (s-a (make-s 1 3)))
-     '((define-struct s (a b))
-       1))
-    
-    (test
-     '((define-struct s (a b))
-       (s-b (make-s 1 3)))
-     '((define-struct s (a b))
-       3))
-    
-    (test
-     '((define-struct s (a b))
-       (define-struct t (x y))
-       (t-x (make-s 1 2)))
-     "t-x: expects argument of matching struct")
-    
-    (test
-     '((define-struct t (x y))
-       (t-x 12))
-     "t-x: expects argument of matching struct")
-    
-    (test
-     '((define-struct s (a b))
-       (define-struct t (x y))
-       (s? (make-s 1 2)))
-     '((define-struct s (a b))
-       (define-struct t (x y))
-       true))
-    
-    (test
-     '((define-struct s (a b))
-       (define-struct t (x y))
-       (t? (make-s 1 2)))
-     '((define-struct s (a b))
-       (define-struct t (x y))
-       false))
-    
-    (test
-     '((define (f x) x)
-       (f 1))
-     '((define (f x) x)
-       1))
-    
-    (test
-     '((define (double l) (+ l l))
-       (double 2))
-     '((define (double l) (+ l l))
-       4))
-    
-    (test
-     '((define f (lambda (x) x))
-       (f 1))
-     '((define f (lambda (x) x))
-       1))
-
-    (test
-     '((define double (lambda (l) (+ l l)))
-       (double 2))
-     '((define double (lambda (l) (+ l l)))
-       4))
-    
-    (test
-     '((f 1))
-     "reference to undefined identifier: f")
-    
-    (test
-     '((f 1)
-       (define (f x) x))
-     "reference to undefined identifier: f")
-    
-    (test
-     '((make-s 1)
-       (define-struct s (a b)))
-     "reference to undefined identifier: make-s")
-    
-    (test
-     '((+ 1 2 3))
-     '(6))
-    
-    (test
-     '((+ 1 "2" 3))
-     "+: expects type <number>")
-    
-    (test
-     '((/ 1 2 3))
-     '(1/6))
-    
-    (test
-     '((/ 1 2 0 3))
-     "/: division by zero")
-    
-    (test
-     '((/ 1 "2" 3))
-     "/: expects type <number>")
-    
-    (test '((+ 1 (/ (+ 3 5) (+ 2 2)))) '(3))
-    
-    (test '((cons 1 empty)) '((cons 1 empty)))
-    (test '((cons 1 2))
-          "cons: second argument must be of type <list>")
-    (test '((+ (first (cons 1 2)) 2))
-          "cons: second argument must be of type <list>")
-    (test '((+ (first (cons 1 empty)) 2))
-          '(3))
-    
-    (test
-     '((first (cons 1 empty)))
-     '(1))
-    
-    (test
-     '((first 1))
-     "first: expects argument of type <pair>")
-    
-    (test
-     '((first 1 2))
-     "first: expects one argument")
-    
-    (test
-     '((first))
-     "first: expects one argument")
-    
-    (test
-     '((rest (cons 1 empty)))
-     '(empty))
-    
-    (test
-     '((rest 1))
-     "rest: expects argument of type <pair>")
-    
-    (test
-     '((rest 1 2))
-     "rest: expects one argument")
-    
-    (test
-     '((rest))
-     "rest: expects one argument")
-    
-    (test
-     '((empty? empty))
-     '(true))
-    
-    (test
-     '((empty? 1))
-     '(false))
-    
-    (test
-     '((empty?))
-     "empty?: expects one argument")
-    
-    (test
-     '((empty? 1 2))
-     "empty?: expects one argument")
-    
-    (test
-     '((cond [true 1]))
-     '(1))
-    
-    (test
-     '((cond [else 1]))
-     '(1))
-    
-    (test
-     '((cond [false 1] [else 2]))
-     '(2))
-    
-    (test
-     '((cond [false 1] [false 2]))
-     "cond: all question results were false")
-    
-    (test
-     '((cond [1 1]))
-     "cond: question result is not true or false")
-    
-    (test
-     '((cond [(empty? empty) 'infinite] [else 3]))
-     '('infinite))
-    
-    (test
-     '((and true true 3))
-     "and: question result is not true or false")
-    
-    (test
-     '((and 1 true true))
-     "and: question result is not true or false")
-    
-    (test
-     '((and true true true false))
-     '(false))
-    
-    (test
-     '((and false true))
-     '(false))
-
-    (test
-     '((or false false 3))
-     "or: question result is not true or false")
-    
-    (test
-     '((or 1 false false))
-     "or: question result is not true or false")
-    
-    (test
-     '((or false false false true))
-     '(true))
-    
-    (test
-     '((or true false))
-     '(true))
-    
-    (test
-     '((if 1 2 3))
-     "if: question result is not true or false")
-    
-    (test
-     '((if true 'x 'y))
-     '('x))
-    
-    (test
-     '((if false 'x 'y))
-     '('y))
-
-    (show-test-results))
+    (tests
+     (test
+      '((define-struct s ())
+        (s? (make-s)))
+      '((define-struct s ())
+        true))
+     
+     (test
+      '((define-struct s (a b))
+        (s-a (make-s 1 3)))
+      '((define-struct s (a b))
+        1))
+     
+     (test
+      '((define-struct s (a b))
+        (s-b (make-s 1 3)))
+      '((define-struct s (a b))
+        3))
+     
+     (test
+      '((define-struct s (a b))
+        (define-struct t (x y))
+        (t-x (make-s 1 2)))
+      "t-x: expects argument of matching struct")
+     
+     (test
+      '((define-struct t (x y))
+        (t-x 12))
+      "t-x: expects argument of matching struct")
+     
+     (test
+      '((define-struct s (a b))
+        (define-struct t (x y))
+        (s? (make-s 1 2)))
+      '((define-struct s (a b))
+        (define-struct t (x y))
+        true))
+     
+     (test
+      '((define-struct s (a b))
+        (define-struct t (x y))
+        (t? (make-s 1 2)))
+      '((define-struct s (a b))
+        (define-struct t (x y))
+        false))
+     
+     (test
+      '((define-struct s (a b))
+        (struct? (make-s 1 2))
+        (struct? 1))
+      '((define-struct s (a b))
+        true
+        false))
+     
+     (test
+      '((define (f x) x)
+        (f 1))
+      '((define (f x) x)
+        1))
+     
+     (test
+      '((define (double l) (+ l l))
+        (double 2))
+      '((define (double l) (+ l l))
+        4))
+     
+     (test
+      '((define f (lambda (x) x))
+        (f 1))
+      '((define f (lambda (x) x))
+        1))
+     
+     (test
+      '((define double (lambda (l) (+ l l)))
+        (double 2))
+      '((define double (lambda (l) (+ l l)))
+        4))
+     
+     (test
+      '((f 1))
+      "reference to undefined identifier: f")
+     
+     (test
+      '((f 1)
+        (define (f x) x))
+      "reference to undefined identifier: f")
+     
+     (test
+      '((make-s 1)
+        (define-struct s (a b)))
+      "reference to undefined identifier: make-s")
+     
+     (test
+      '((+ 1 2 3))
+      '(6))
+     
+     (test
+      '((+ 1 "2" 3))
+      "+: expects type <number>")
+     
+     (test
+      '((/ 1 2 3))
+      '(1/6))
+     
+     (test
+      '((/ 1 2 0 3))
+      "/: division by zero")
+     
+     (test
+      '((/ 1 "2" 3))
+      "/: expects type <number>")
+     
+     (test '((+ 1 (/ (+ 3 5) (+ 2 2)))) '(3))
+     
+     (test '((cons 1 empty)) '((cons 1 empty)))
+     (test '((cons 1 2))
+           "cons: second argument must be of type <list>")
+     (test '((+ (first (cons 1 2)) 2))
+           "cons: second argument must be of type <list>")
+     (test '((+ (first (cons 1 empty)) 2))
+           '(3))
+     
+     (test
+      '((first (cons 1 empty)))
+      '(1))
+     
+     (test
+      '((first 1))
+      "first: expects argument of type <pair>")
+     
+     (test
+      '((first 1 2))
+      "first: expects one argument")
+     
+     (test
+      '((first))
+      "first: expects one argument")
+     
+     (test
+      '((rest (cons 1 empty)))
+      '(empty))
+     
+     (test
+      '((rest 1))
+      "rest: expects argument of type <pair>")
+     
+     (test
+      '((rest 1 2))
+      "rest: expects one argument")
+     
+     (test
+      '((rest))
+      "rest: expects one argument")
+     
+     (test
+      '((empty? empty))
+      '(true))
+     
+     (test
+      '((empty? 1))
+      '(false))
+     
+     (test
+      '((empty?))
+      "empty?: expects one argument")
+     
+     (test
+      '((empty? 1 2))
+      "empty?: expects one argument")
+     
+     (test
+      '((cond [true 1]))
+      '(1))
+     
+     (test
+      '((cond [else 1]))
+      '(1))
+     
+     (test
+      '((cond [false 1] [else 2]))
+      '(2))
+     
+     (test
+      '((cond [false 1] [false 2]))
+      "cond: all question results were false")
+     
+     (test
+      '((cond [1 1]))
+      "cond: question result is not true or false")
+     
+     (test
+      '((cond [(empty? empty) 'infinite] [else 3]))
+      '('infinite))
+     
+     (test
+      '((and true true 3))
+      "and: question result is not true or false")
+     
+     (test
+      '((and 1 true true))
+      "and: question result is not true or false")
+     
+     (test
+      '((and true true true false))
+      '(false))
+     
+     (test
+      '((and false true))
+      '(false))
+     
+     (test
+      '((or false false 3))
+      "or: question result is not true or false")
+     
+     (test
+      '((or 1 false false))
+      "or: question result is not true or false")
+     
+     (test
+      '((or false false false true))
+      '(true))
+     
+     (test
+      '((or true false))
+      '(true))
+     
+     (test
+      '((if 1 2 3))
+      "if: question result is not true or false")
+     
+     (test
+      '((if true 'x 'y))
+      '('x))
+     
+     (test
+      '((if false 'x 'y))
+      '('y))))
 
   (define (run-big-test)
-    (test
-     '((define-struct pr (hd tl))
-       (define (avg l)
-         (cond
-           [(empty? l) 'infinite]
-           [else (/ (sum l) (howmany/acc l 0))]))
-       (define (sum l)
-         (cond
-           [(empty? (pr-tl l)) (pr-hd l)]
-           [else (+ (pr-hd l) (sum (pr-tl l)))]))
-       (define (howmany/acc l acc)
-         (cond
-           [(empty? l) acc]
-           [else (howmany/acc (pr-tl l) (+ acc 1))]))
-       (avg empty)
-       (avg (make-pr 3 (make-pr 4 (make-pr 5 empty)))))
-     '((define-struct pr (hd tl))
-       (define (avg l)
-         (cond
-           [(empty? l) 'infinite]
-           [else (/ (sum l) (howmany/acc l 0))]))
-       (define (sum l)
-         (cond
-           [(empty? (pr-tl l)) (pr-hd l)]
-           [else (+ (pr-hd l) (sum (pr-tl l)))]))
-       (define (howmany/acc l acc)
-         (cond
-           [(empty? l) acc]
-           [else (howmany/acc (pr-tl l) (+ acc 1))]))
-       'infinite
-       4))))
+    (tests
+     (test
+      '((define-struct pr (hd tl))
+        (define (avg l)
+          (cond
+            [(empty? l) 'infinite]
+            [else (/ (sum l) (howmany/acc l 0))]))
+        (define (sum l)
+          (cond
+            [(empty? (pr-tl l)) (pr-hd l)]
+            [else (+ (pr-hd l) (sum (pr-tl l)))]))
+        (define (howmany/acc l acc)
+          (cond
+            [(empty? l) acc]
+            [else (howmany/acc (pr-tl l) (+ acc 1))]))
+        (avg empty)
+        (avg (make-pr 3 (make-pr 4 (make-pr 5 empty)))))
+      '((define-struct pr (hd tl))
+        (define (avg l)
+          (cond
+            [(empty? l) 'infinite]
+            [else (/ (sum l) (howmany/acc l 0))]))
+        (define (sum l)
+          (cond
+            [(empty? (pr-tl l)) (pr-hd l)]
+            [else (+ (pr-hd l) (sum (pr-tl l)))]))
+        (define (howmany/acc l acc)
+          (cond
+            [(empty? l) acc]
+            [else (howmany/acc (pr-tl l) (+ acc 1))]))
+        'infinite
+        4)))))

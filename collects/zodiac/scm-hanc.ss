@@ -1,10 +1,70 @@
-(define-struct signature-element ())
+(define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
 (define-struct (unit-element struct:signature-element) (id signature))
 
 (define immediate-signature-name '|<immediate signature>|)
 
 (define cu/s-this-link-attr 'cu/s-this-link-name)
+
+(define-struct signature (name elements exploded))
+
+; This is based on code lifted from Matthew's implementation (note the
+; use of brackets (-:).
+
+(define verify-duplicates-&-sort-signature-elements
+  (lambda (elements)
+    (let loop ((seen '()) (rest elements))
+      (unless (null? rest)
+	(let ((first (car rest)))
+	  (let ((first-name
+		  (cond
+		    ((name-element? first)
+		      (name-element-name first))
+		    ((unit-element? first)
+		      (unit-element-id first))
+		    (else
+		      (internal-error first "Invalid unit element")))))
+	    (when (memq first-name seen)
+	      (static-error (signature-element-source first)
+		"Duplicate signature entry: ~s" first-name))
+	    (loop (cons first-name seen) (cdr rest))))))
+    (letrec
+      ((split
+	 (lambda (l f s)
+	   (cond
+	     [(null? l) (values f s)]
+	     [(null? (cdr l)) (values (cons (car l) f) s)]
+	     [else (split (cddr l) (cons (car l) f)
+		     (cons (cadr l) s))])))
+	(merge
+	  (lambda (f s)
+	    (cond
+	      [(null? f) s]
+	      [(null? s) f]
+	      [(less-than? (car s) (car f))
+		(cons (car s) (merge f (cdr s)))]
+	      [else
+		(cons (car f) (merge (cdr f) s))])))
+	(less-than?
+	  (lambda (a b)
+	    (if (name-element? a)
+	      (if (name-element? b)
+		(symbol-less-than? (name-element-name a)
+		  (name-element-name b))
+		#t)
+	      (if (name-element? b)
+		#f
+		(symbol-less-than? (unit-element-id a)
+		  (unit-element-id b))))))
+	(symbol-less-than?
+	  (lambda (a b)
+	    (string<? (symbol->string a) (symbol->string b)))))
+      (let loop ([elements elements])
+	(cond
+	  [(null? elements) null]
+	  [(null? (cdr elements)) elements]
+	  [else (let-values ([(f s) (split elements null null)])
+		  (merge (loop f) (loop s)))])))))
 
 (define explode-signature-elements
   (lambda (elements)
@@ -19,53 +79,12 @@
 	       (internal-error elt "Invalid signature element"))))
       elements)))
 
-(define-struct signature (name elements exploded))
-
-; This procedure shamelessly snarfed from Matthew (and modified).
-
-(define sort-signature-elements
-  (lambda (elems)
-    (letrec ([split
-	       (lambda (l f s)
-		 (cond
-		   [(null? l) (values f s)]
-		   [(null? (cdr l)) (values (cons (car l) f) s)]
-		   [else (split (cddr l) (cons (car l) f)
-			   (cons (cadr l) s))]))]
-	      [merge
-		(lambda (f s)
-		  (cond
-		    [(null? f) s]
-		    [(null? s) f]
-		    [(less-than? (car s) (car f))
-		      (cons (car s) (merge f (cdr s)))]
-		    [else
-		      (cons (car f) (merge (cdr f) s))]))]
-	      [less-than?
-		(lambda (a b)
-		  (if (symbol? a)
-		    (if (symbol? b)
-		      (symbol-less-than? a b)
-		      #t)
-		    (if (symbol? b)
-		      #f
-		      (symbol-less-than? (car a)
-			(car b)))))]
-	      [symbol-less-than?
-		(lambda (a b)
-		  (string<? (symbol->string a) (symbol->string b)))])
-      (let loop ([elems elems])
-	(cond
-	  [(null? elems) null]
-	  [(null? (cdr elems)) elems]
-	  [else (let-values ([(f s) (split elems null null)])
-		  (merge (loop f) (loop s)))])))))
-
 (define create-signature
   (opt-lambda (elements (name immediate-signature-name))
-    (make-signature name elements
-      (sort-signature-elements
-	(explode-signature-elements elements)))))
+    (let ((sorted-elements
+	    (verify-duplicates-&-sort-signature-elements elements)))
+      (make-signature name sorted-elements
+	(explode-signature-elements sorted-elements)))))
 
 (define add-signature
   (lambda (name attributes elements)
@@ -171,7 +190,7 @@
 
 (add-sym-micro sig-element-vocab
   (lambda (expr env attributes vocab)
-    (list (make-name-element (z:read-object expr)))))
+    (list (make-name-element expr (z:read-object expr)))))
 
 (add-micro-form 'struct sig-element-vocab
   (let* ((kwd '(struct))
@@ -216,7 +235,7 @@
 		      (if (null? names) '()
 			(if (memq (car names) real-omits)
 			  (loop (cdr names))
-			  (cons (make-name-element (car names))
+			  (cons (make-name-element expr (car names))
 			    (loop (cdr names))))))))))))
 	(else
 	  (static-error expr "Malformed struct clause"))))))
@@ -274,7 +293,7 @@
 	    (let ((id (pat:pexpand 'id p-env kwd))
 		   (sig (pat:pexpand 'sig p-env kwd)))
 	      (valid-syntactic-id? id)
-	      (list (make-unit-element (z:read-object id)
+	      (list (make-unit-element expr (z:read-object id)
 		      (expand-expr sig env attributes sig-vocab))))))
 	(else
 	  (static-error expr "Malformed unit clause"))))))

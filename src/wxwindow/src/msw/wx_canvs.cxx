@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.2 1998/07/18 01:16:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.3 1998/08/11 14:25:04 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -117,13 +117,12 @@ wxCanvas::~wxCanvas (void)
   // to call this code BEFORE we destroy the window (or how
   // do we get hold of the DC?)
     
-  if (wx_dc)
-  {
+  if (wx_dc) {
     wxWnd *wnd = (wxWnd *)handle;
-	 HDC dc = wxwmGetDC(wnd->handle);
-    wx_dc->SelectOldObjects (dc);
-	 wxwmReleaseDC(wnd->handle, dc);
-	 delete wx_dc;
+    HDC dc = wxwmGetDC(wnd->handle);
+    wx_dc->SelectOldObjects(dc);
+    wxwmReleaseDC(wnd->handle, dc);
+    delete wx_dc;
   }
 }
 

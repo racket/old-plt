@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.17 1998/10/19 03:49:54 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.18 1998/10/20 18:51:03 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1694,20 +1694,20 @@ wxWnd::~wxWnd(void)
 HDC wxWnd::GetHDC(void)
 {
   if (cdc)
-	 return(cdc) ;
+    return(cdc);
   if (dc_count==0)
-	 ldc = wxwmGetDC(handle) ;
-  dc_count++ ;
-  return(ldc) ;
+    ldc = wxwmGetDC(handle);
+  dc_count++;
+  return ldc;
 }
 
 void wxWnd::ReleaseHDC(void)
 {
   if (cdc)
-    return ;
-  dc_count-- ;
+    return;
+  dc_count--;
   if (dc_count==0)
-	 wxwmReleaseDC(handle,ldc) ;
+    wxwmReleaseDC(handle,ldc);
   if (dc_count < 0)
     dc_count = 0;
 }

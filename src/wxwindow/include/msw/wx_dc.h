@@ -44,10 +44,9 @@ class wxDC: public wxbDC
 
   HDC cdc;
 
-  HPEN     cur_cpen;
-  HBRUSH   cur_cbrush;
   HDC      cur_dc;
   COLORREF cur_bk;
+  int cur_rop;
 
   // Store all old GDI objects when do a SelectObject,
   // so we can select them back in (this unselecting user's
@@ -57,9 +56,6 @@ class wxDC: public wxbDC
   HBRUSH  old_brush;
   HFONT   old_font;
   HPALETTE old_palette;
-
-  HPEN   suspended_pen;
-  HBRUSH suspended_brush;
 
   wxDC(void);
   ~wxDC(void);

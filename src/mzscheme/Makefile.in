@@ -213,13 +213,13 @@ cygwin-install:
 	rm -f $(srcdir)/../../mzscheme.exe
 	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
 	cd dynsrc; $(MAKE) cygwin-install
-	($ICP) mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
+	$(ICP) mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
 	if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
-	($ICP) libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
-	($ICP) libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
+	$(ICP) libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
+	$(ICP) libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=gcc' > $(WBUILDINFO)
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
-	echo 'LIBS=-lm gmzwin.exp' >> $(WBUILDINFO)
+	echo 'LIBS=@LIBS@' >> $(WBUILDINFO)
 
 config:
 	autoconf $(srcdir)/configure.in | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure

@@ -2689,7 +2689,8 @@ add struct contracts for immutable structs?
 		 (if (flat-contract? x)
 		     (flat-contract-predicate x)
 		     x))]
-	      [pred
+	      [contracts (map (lambda (x) (if (contract? x) x (flat-contract x))) fs)]
+              [pred
 	       (let loop ([pred (to-predicate (car fs))]
 			  [preds (cdr fs)])
 		 (cond
@@ -2699,7 +2700,7 @@ add struct contracts for immutable structs?
 		      (loop (let ([and/c-contract? (lambda (x) (and (pred x) (fst x)))])
                               and/c-contract?)
 			    (cdr preds)))]))])
-	 (flat-contract pred))]
+	 (flat-named-contract (apply build-compound-type-name 'and/c contracts) pred))]
       [else
        (let* ([contracts (map (lambda (x) (if (contract? x) x (flat-contract x))) fs)]
               [contract/procs (map contract-proc contracts)])

@@ -331,7 +331,7 @@ char *wxFileSelector(char *message, char *default_path,
     if (default_filename) 
         dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
     if (message)
-        dialogOptions.message = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
+        dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
     dialogOptions.modality = kWindowModalityAppModal;
     
     NavDialogRef outDialog;

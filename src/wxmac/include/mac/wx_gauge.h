@@ -42,7 +42,7 @@ class wxGauge: public wxbGauge
 
   virtual void DoShow(Bool s);
 
-  virtual void ChangeToGray(Bool gray);
+  virtual void InternalGray(Bool gray);
 };
 
 #endif

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_item.cc,v 1.7 2001/06/29 21:24:55 clements Exp $
+ * RCS_ID:      $Id: wb_item.cc,v 1.8 2001/10/30 05:15:35 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -13,24 +13,58 @@
 /* static const char sccsid[] = "%W% %G%"; */
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation
+#endif
 
+#ifdef __GNUG__
 #pragma implementation "wb_item.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_lbox.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_rbox.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_buttn.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_choic.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_check.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_messg.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_slidr.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_slidr.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_menu.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_mnuit.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_txt.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_mtxt.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_menu.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_group.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_gauge.h"
+#endif
 #endif
 
 #include "common.h"

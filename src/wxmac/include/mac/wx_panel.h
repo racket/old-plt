@@ -148,8 +148,6 @@ public:
  	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	void DestroyChildren() ; // tom
  	void OnDeleteChild(wxWindow* win); //tom
- 
-    virtual void ChangeToGray(Bool gray);
 
 //=============================================================================
 // Protected methods

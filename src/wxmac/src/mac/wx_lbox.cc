@@ -943,13 +943,6 @@ void wxListBox::OnKillFocus()
 }
 
 //-----------------------------------------------------------------------------
-void wxListBox::ShowAsActive(Bool flag) // mac platform only
-{
-	if (cHidden || IsGray()) return;
-	
-	SetCurrentDC();
-	ALActivate(flag, cListReference);
-}
 
 void wxListBox::DoShow(Bool on)
 {
@@ -962,14 +955,18 @@ void wxListBox::DoShow(Bool on)
 	wxWindow::DoShow(on);
 }
 
+void wxListBox::InternalGray(Bool gray)
+{
+	if (cListTitle)
+		((wxLabelArea *)cListTitle)->GetMessage()->InternalGray(gray);
+	wxItem::InternalGray(gray);
+}
+	
 void wxListBox::ChangeToGray(Bool gray)
 {
 	if (cHidden) return;
 	
 	SetCurrentDC();
 	ALActivate(!gray, cListReference);
-	// ((wxBorderArea *)cThinBorderArea)->cBorder->InternalGray(gray);
-	if (cListTitle)
-		((wxLabelArea *)cListTitle)->GetMessage()->InternalGray(gray);
 	wxWindow::ChangeToGray(gray);
 }

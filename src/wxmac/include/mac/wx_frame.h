@@ -125,9 +125,7 @@ public:
 	wxWindow* GetFocusWindow(void);
 	void SetFocusWindow(wxWindow* window);
 	void LoadAccelerators(char* table);
-	void OnActivate(Bool active);
 	void Enable(Bool on);
-	virtual void ChangeToGray(Bool on);
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Other methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

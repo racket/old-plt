@@ -41,10 +41,6 @@ public:
 #endif
 	void SetLabel(char *label) {};	// This should be overridden in all subclasses
 
-        virtual void Enable(Bool enable);
-        virtual void ShowAsActive(Bool flag);
-        virtual void ChangeToGray(Bool gray);
-
 	virtual void SetBackgroundColour(wxColour* col);
 	virtual void SetLabelColour(wxColour* col);
 	virtual void SetButtonColour(wxColour* col);
@@ -53,6 +49,9 @@ public:
 	virtual void OnChar(wxKeyEvent *event); // mac platform only
         
         ControlHandle cMacControl;
+protected:
+    virtual void ChangeToGray(Bool gray);
+        
 };
 
 char *wxItemStripLabel(char *label);

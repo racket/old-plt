@@ -126,34 +126,6 @@ void wxItem::ChangeColour(void)
 {
 }
 
-//-----------------------------------------------------------------------------
-void wxItem::Enable(Bool enable)
-{
-	if ((enable != cEnable) && cActive && cMacControl) {
-		SetCurrentDC();
-		if (enable) {
-			::ActivateControl(cMacControl);
-		}
-		else {
-			::DeactivateControl(cMacControl);
-		}
-	}
-	wxWindow::Enable(enable);
-}
-
-//-----------------------------------------------------------------------------
-void wxItem::ShowAsActive(Bool flag)
-{
-	if (cEnable && cMacControl) {
-		SetCurrentDC();
-		if (flag) {
-			ActivateControl(cMacControl);
-		}
-		else {
-			DeactivateControl(cMacControl);
-		}
-	}
-}
 
 //-----------------------------------------------------------------------------
 void wxItem::ChangeToGray(Bool gray)

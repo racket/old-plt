@@ -4,7 +4,7 @@
  * Author:      Julian Smart/Cecil Coupe
  * Created:     1993
  * Updated:	August 1995
- * RCS_ID:      $Id: wx_timer.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_timer.cc,v 1.1.1.1 1998/01/13 17:55:00 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -14,7 +14,9 @@ static const char sccsid[] = "@(#)wx_timer.cc	1.2 5/9/94";
 #if 0
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation
+#endif
 #endif
 
 #include <time.h>

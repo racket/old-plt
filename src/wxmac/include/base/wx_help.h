@@ -13,7 +13,9 @@
 #define wxb_helph
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 #include <stdio.h>

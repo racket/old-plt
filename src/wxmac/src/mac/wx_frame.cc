@@ -900,12 +900,7 @@ void wxFrame::SetFocusWindow(wxWindow* window)
 }
 
 //-----------------------------------------------------------------------------
-void wxFrame::OnActivate(Bool active)
-{
-	wxWindow::OnActivate(active);
-}
 
-//-----------------------------------------------------------------------------
 void wxFrame::LoadAccelerators(char* table) { } // Not Applicable for Mac platform
 
 //-----------------------------------------------------------------------------
@@ -1010,8 +1005,3 @@ void wxFrame::Enable(Bool enable)
 		wx_menu_bar->Install();	
 }
 
-void wxFrame::ChangeToGray(Bool gray)
-{
-  ChildrenInternalGray(gray);
-  wxWindow::ChangeToGray(gray);
-}

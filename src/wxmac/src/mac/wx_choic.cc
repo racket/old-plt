@@ -11,8 +11,12 @@
 
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation
+#endif
+#ifdef __GNUG__
 #pragma implementation "wx_choic.h"
+#endif
 #endif
 
 #include <stdlib.h>

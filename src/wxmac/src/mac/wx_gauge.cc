@@ -299,9 +299,9 @@ void wxGauge::SetLabel(char *label)
 	
 }
 
-void wxGauge::ChangeToGray(Bool gray)
+void wxGauge::InternalGray(Bool gray)
 {
   if (cTitle)
 	((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray);
-  wxItem::ChangeToGray(gray);
+  wxItem::InternalGray(gray);
 }

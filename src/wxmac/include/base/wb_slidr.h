@@ -13,7 +13,9 @@
 #define wxb_slidrh
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 #include "common.h"

@@ -94,7 +94,6 @@ public:
   char* GetLabel(int item);
 
   void ChangeColour(void);
-  void ChangeToGray(Bool gray);
   
   int ButtonFocus(int);
   

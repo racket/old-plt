@@ -49,20 +49,6 @@ class wxScroll;
 class wxScreen;
 
 
-/* A note, for want of a better location, on activation/enablement/showasgraying:
-   On the mac, for a control to be "clickable," three things must hold.  
-   1) the control must be "active," indicated by cActive,
-   2) the control must be "enabled," indicated by cEnable, and
-   3) all of the control's enclosing windows must be enabled.
-   The observant reader will note that the last of these is not really a local
-   property, and thus is not stored locally.  However, it does confuse the 
-   code a little bit.  The long and short of it is this: en/disable and de/activate
-   methods must check the other's state --- i.e., don't make the control
-   clickable when you get an activate message unless cEnable is set --- but
-   ShowAsGray, which is called by an enclosing panel, is self-managing.  That
-   is, ShowAsGray won't be called unless the enclosing window has already
-   checked the active and enabled properties.  Ugh.
-*/
 
 class wxWindow: public wxbWindow
 {
@@ -81,6 +67,8 @@ protected:
 	Bool 		cColour; 		// use colour for this window?
 	Bool		cActive;		// active window is "highlighted" (mac platform only)
 	Bool		cEnable;		// enabled window accepts mouse/keyboard events
+ 	int			internal_gray;	// how many enclosing windows are disabled?
+ 	Bool		OS_Active(void);// should this window be shown as active right now?
 	Bool		cHidden;		// Hidden?
 	Bool		cUserHidden;	// Hidden because user asked (not just inherited)?
 	Bool        cGrandcursor;   // Skip parent for retriving the effective cursor
@@ -101,7 +89,6 @@ protected:
  	int 		cWindowHeight;
  	int 		cWindowWidth;
  	
- 	int			internal_gray;
 
   // For window area
   	wxArea* 	cParentArea; 	// mac platform only
@@ -330,13 +317,22 @@ public:
 	
 	virtual Bool IsShown(void) { return !IsUserHidden(); }
 	
-	virtual void ChangeToGray(Bool gray);
-	
+	/* InternalGray is part of the command hierarchy: calling InternalGray
+	 * increases the internal_gray index of this and all enclosed windows.
+	 * Only when the internal_gray index is zero is a window OS_activated.
+	 */
 	void InternalGray(Bool gray);
 	Bool IsGray(void);
-	void ChildrenInternalGray(Bool gray);
 	
+	/* The Highlight method is used to make an item look "pressed." This is
+	 * the case, for instance, when there's been a mouse-down over a button, 
+	 * but no mouse-up yet.
+	 */
 	virtual void Highlight(Bool flag);
+	/* Track is used to track the mouse between a mouse-down and a mouse-up.
+	 * Track is used only when there is no mac ControlHandle, and thus the
+	 * OS tracker cannot be used.
+	 */
 	int Track(Point start);
 
 	void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
@@ -344,6 +340,16 @@ public:
 	wxCursor *GetEffectiveCursor(void);
 	
 	Bool GetsFocus();
+	
+protected:
+	/* ChildrenInternalGray is a local abstraction which calls
+	 * InternalGray for each of the children of this window.
+	 */
+	virtual void ChildrenInternalGray(Bool Gray);
+	/* ChangeToGray is the procedure which physically changes
+	 * the window gray, OS_deactivating it if necessary.
+	 */
+	virtual void ChangeToGray(Bool Gray);
 
 //=============================================================================
 // Private methods

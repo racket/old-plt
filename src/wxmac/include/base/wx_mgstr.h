@@ -10,7 +10,9 @@
 /* sccsid[] = "@(#)wx_mgstr.h	1.2 5/9/94" */
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 #ifndef wx_mgstr

@@ -151,8 +151,6 @@ private:
     int  GetScrollRange(int dir);
 	void SetScrollPos(int dir, int val);
 
-	virtual void ChangeToGray(Bool gray);
-
 	virtual void Paint(void);
 	virtual void OnPaint(void);
         

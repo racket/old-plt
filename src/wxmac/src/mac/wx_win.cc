@@ -1377,8 +1377,11 @@ void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* desc
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //-----------------------------------------------------------------------------
+
 void wxWindow::Activate(Bool flag) // mac platform only
 {
+	Bool current = OS_Active();
+	
 	cActive = flag;
 	ShowAsActive(flag);
 	wxNode* areaNode = cAreas.First();
@@ -1395,6 +1398,10 @@ void wxWindow::Activate(Bool flag) // mac platform only
 		areaNode = areaNode->Next();
 	}
 	OnActivate(flag);
+	
+	if (current != OS_Active()) {
+		ChangeToGray(!OS_Active());
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1434,33 +1441,59 @@ void wxWindow::Paint(void)
 }
 
 //-----------------------------------------------------------------------------
+
+// Enabling Logic:  a window (or control) is shown as OS-activated when
+// a) the window is active (cActive == true)
+// b) the window is enabled (cEnabled == true)
+// c) no enclosing window is disabled (internal_gray == 0)
+// These are all local properties of windows.
+// So, if we imagine this as a state machine, when does this predicate
+// go from true to false or false to true? The least error-prone way to
+// do this is simply to compute the predicate given above, and see whether
+// it changes.
+
+// The OS_Active predicate tells whether, for the current state of the
+// window, it should be displayed as "usable" or not.
+
+Bool wxWindow::OS_Active()
+{
+	return ((internal_gray == 0) && cEnable && cActive);
+}
+
 void wxWindow::Enable(Bool Flag) 
 /* Disabling blocks mouse and keyboard events, not update events. */
 /* I.e., like Windows, not like X-Windows */
-{ 
-	if (!!cEnable == !!Flag)
-		return;
-		
+{
+	Bool current = OS_Active();
+	
 	cEnable = Flag;
-	if (!internal_gray)
-	  ChangeToGray(!Flag);
+	
+	ChildrenInternalGray(Flag);
+	
+	if (current != OS_Active()) {
+		ChangeToGray(!OS_Active());
+	} 
 }
 
 void wxWindow::InternalGray(Bool gray)
 {
-	Bool change = 0;
+	Bool current = OS_Active();
 
 	if (gray) {
-	  change = !internal_gray;
-	  internal_gray++;
+		internal_gray += 1;
 	} else {
-	  --internal_gray;
-	  change = !internal_gray;
+		internal_gray -= 1;
 	}
-
-	if (change && cEnable)
-		ChangeToGray(!!internal_gray);
+	
+	ChildrenInternalGray(gray);
+	
+	if (current != OS_Active()) {
+		ChangeToGray(!OS_Active());
+	}
 }
+
+// the ChangeToGray procedures doesn't check anything:
+// it just changes the window to gray or not-gray
 
 void wxWindow::ChangeToGray(Bool gray)
 {

@@ -13,7 +13,9 @@
 #define wx_setuph
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 /*

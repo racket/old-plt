@@ -207,7 +207,7 @@ void wxCheckBox::SetLabel(char* label)
   if (label && cMacControl)
   {
 	SetCurrentDC();
-  	wxMacString1 theMacString1 = label;
+  	wxMacString1 theMacString1 = labelString;
   	::SetControlTitle(cMacControl, theMacString1());
   } else
     Refresh();
@@ -364,7 +364,7 @@ void wxCheckBox::Highlight(Bool on)
 	    MoveTo(SetOriginX, top + IC_BOX_SIZE - 1 + SetOriginY);
 	    Line(IC_BOX_SIZE - 1, -(IC_BOX_SIZE - 1));
 	  }
-	}
+	}	
 }
 
 //-----------------------------------------------------------------------------

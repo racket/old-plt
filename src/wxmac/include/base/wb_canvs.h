@@ -14,7 +14,11 @@
 #define wxb_canvsh
 
 #ifdef __GNUG__
+#ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
+#endif
 #endif
 
 #include "common.h"

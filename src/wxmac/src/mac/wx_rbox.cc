@@ -344,10 +344,9 @@ void wxRadioBox::DoShow(Bool show)
 
 void wxRadioBox::Enable(Bool enable)
 {
-    wxItem::Enable(enable);
+	wxItem::Enable(enable);
 }
 
-//-----------------------------------------------------------------------------
 void wxRadioBox::Enable(int item, Bool enable)
 {
       int numberItems = cRadioButtons.Number();
@@ -372,11 +371,6 @@ void wxRadioBox::Show(int item, Bool show)
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioBox::ChangeToGray(Bool gray)
-{
-  ChildrenInternalGray(gray);
-  wxWindow::ChangeToGray(gray);
-}
 
 int wxRadioBox::ButtonFocus(int)
 {

@@ -14,7 +14,9 @@
 #define wx_mfh
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 #include "common.h"

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.28 2001/10/29 16:27:06 clements Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.29 2001/11/02 21:53:09 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -13,8 +13,12 @@
 /* static const char sccsid[] = "%W% %G%"; */
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation
+#endif
+#ifdef __GNUG__
 #pragma implementation "FontDirectory.h"
+#endif
 #endif
 
 #include "common.h"

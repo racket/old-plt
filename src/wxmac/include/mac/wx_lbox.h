@@ -86,8 +86,6 @@ class wxListBox: public wxbListBox
   char *GetClientData(int N);
   void SetClientData(int N, char *Client_data);
 
-  virtual void ChangeToGray(Bool gray);
-
   void Deselect(int N);
 
   // For single choice list item only
@@ -120,7 +118,6 @@ class wxListBox: public wxbListBox
 
   void OnSetFocus(void);
   void OnKillFocus(void);
-  void ShowAsActive(Bool flag);
   
   void DoShow(Bool);
   
@@ -137,6 +134,10 @@ class wxListBox: public wxbListBox
   int GetFirstItem();
 
   virtual Bool WantsFocus(void); // mflatt
+  virtual void InternalGray(Bool gray);
+protected:
+
+  virtual void ChangeToGray(Bool gray);
 };
 
 #endif // IN_CPROTO

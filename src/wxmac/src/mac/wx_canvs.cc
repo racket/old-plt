@@ -650,7 +650,3 @@ void wxCanvas::OnPaint(void)
 {
 	/* Do nothing */
 }
-
-void wxCanvas::ChangeToGray(Bool gray)
-{
-}

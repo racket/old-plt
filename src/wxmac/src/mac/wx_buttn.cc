@@ -561,11 +561,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
-#ifdef OS_X
-                ::MoveControl(cMacControl, SetOriginX + PAD_X, SetOriginY + PAD_Y);
-#else                
-		::MoveControl(cMacControl, SetOriginX, SetOriginY);
-#endif                
+        ::MoveControl(cMacControl, SetOriginX + PAD_X, SetOriginY + PAD_Y);
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
@@ -575,7 +571,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-                OffsetRect(&clientRect,SetOriginX,SetOriginY);
+        OffsetRect(&clientRect,SetOriginX,SetOriginY);
 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }

@@ -520,9 +520,3 @@ Bool wxPanel::WantsFocus()
 {
 	return TRUE;
 }
-
-void wxPanel::ChangeToGray(Bool gray)
-{
-	ChildrenInternalGray(gray);
-	wxWindow::ChangeToGray(gray);
-}

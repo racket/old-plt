@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_form.cc,v 1.4 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_form.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -13,9 +13,15 @@
 /* static const char sccsid[] = "@(#)wb_form.cc	1.2 5/9/94"; */
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation "wx_form.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation
+#endif
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 #include "common.h"

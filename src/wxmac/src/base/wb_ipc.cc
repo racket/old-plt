@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_ipc.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_ipc.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -13,9 +13,15 @@
 /* static const char sccsid[] = "@(#)wb_ipc.cc	1.2 5/9/94"; */
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_ipcob.h"
+#endif
+#ifdef __GNUG__
 #pragma implementation "wb_ipc.h"
+#endif
 #endif
 
 #include "common.h"

@@ -110,8 +110,6 @@ public:
 	virtual void Paint(void); // mac platform only
 	virtual void DoShow(Bool show); // mac platform only
 
-    virtual void ChangeToGray(Bool gray);
-
 	void ChangeColour(void) ;
 };
 

@@ -17,7 +17,9 @@
 #include "wx_setup.h"
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma interface
+#endif
 #endif
 
 #ifdef wx_mac

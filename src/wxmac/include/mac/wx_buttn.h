@@ -107,7 +107,7 @@ public:
 	virtual void DoShow(Bool show);
 
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
- 	virtual void Highlight(Bool flag); // mac platform only, supercedes ShowAsActive
+ 	virtual void Highlight(Bool flag); // mac platform only, to make items look "pressed".
 
 };
 

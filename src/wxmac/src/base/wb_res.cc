@@ -10,7 +10,9 @@
 static const char sccsid[] = "%W% %G%";
 
 #ifdef __GNUG__
+#ifdef __GNUG__
 #pragma implementation "wx_res.h"
+#endif
 #endif
 
 // If not MS C++, don't include wx.h: we'll just include

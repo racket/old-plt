@@ -129,6 +129,15 @@ MzCOM has a single event.
 The SchemeError() event is passed a BSTR (BASIC string)
 that explains the error.  
 
+Errors
+------
+
+When an error occurs in MzCOM, it creates a COM
+error object.  C and C++ clients can use GetErrorInfo()
+to retrieve error information.  Clients implemented 
+in other languages typically have some equivalent means 
+to obtain COM error information.
+
 Collections
 -----------
 

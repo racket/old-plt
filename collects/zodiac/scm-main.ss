@@ -1170,7 +1170,9 @@
 	(add-macro-form 'letec scheme-vocabulary
 	  (rewriter 'letec "letec"))
 	(add-macro-form 'let/ec scheme-vocabulary
-	  (rewriter 'let/ec "let/ec"))))
+	  (rewriter 'let/ec "let/ec"))
+	(add-macro-form 'catch scheme-vocabulary
+	  (rewriter 'catch "catch"))))
 
     ; (define-schema var exp)                                  [macro]
 

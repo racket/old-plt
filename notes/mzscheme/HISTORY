@@ -2,6 +2,30 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.26:
+
+ * Changed mzc to better support module-less programs. Top-level
+   `require', `define-syntax', etc. expressions are processed
+   (executing expansion-time code) so their effects are available for
+   expanding later top-level expressions. A sequence of top-level
+   expressions can still execute differently when compiled, but
+   typical programs (especially ones using `require' or
+   `define-struct') will compile as expected.
+
+   The new "toplevel.ss" library in "syntax" provides a
+   general-purpose `eval-compile-time-part-of-top-level' procedure for
+   mzc-like tools.
+
+ * Added `namespace-require/expansion-time', which is like
+   `namespace-require' except that only the transformer part of the
+   required module is executed. This function is used by
+   `eval-compile-time-part-of-top-level'.
+
+ * Added a .plt-creation interface to mzc.
+
+ * Removed redundant `with-input-from-file*' and
+   `with-output-to-file*' from MzLib's "file.ss".
+
 Version 199.25:
 
  * Fixed a serious set of tail-call+thread-or-exception+GC bugs in the

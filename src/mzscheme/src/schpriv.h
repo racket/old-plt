@@ -1032,9 +1032,16 @@ extern int scheme_is_pos_inf(double);
 extern int scheme_is_neg_inf(double); 
 extern int scheme_is_nan(double); 
 #  else
-#   define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
-#   define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
-#   define MZ_IS_NAN(d) isnan(d)
+#   ifdef USE_OSF_IEEE_PREDS
+#    include <math.h>
+#    define MZ_IS_POS_INFINITY(d) (fp_class(d) == FP_POS_INF)
+#    define MZ_IS_NEG_INFINITY(d) (fp_class(d) == FP_NEG_INF)
+#    define MZ_IS_NAN(d) isnan(d)
+#   else
+#    define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
+#    define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
+#    define MZ_IS_NAN(d) isnan(d)
+#   endif
 #  endif
 # endif
 #endif

@@ -42,7 +42,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef int rxpos;
+typedef long rxpos;
 #ifdef SIXTY_FOUR_BIT_INTEGERS
 # define BIGGEST_RXPOS 0x7FFFFFFFFFFFFFFF
 #else

@@ -392,6 +392,7 @@
 # define SIXTY_FOUR_BIT_INTEGERS
 
 # define ALPHA_CONTROL_FP
+# deifne USE_OSF_IEEE_PREDS
 
 # define FLAGS_ALREADY_SET
 
@@ -1019,10 +1020,13 @@
     instead of using HUGE_VAL. */
 
  /* USE_IEEE_FP_PREDS uses isinf() and isnan() to implement tests for
-    infinity. */
+    infinity and not-a-number. */
+
+ /* USE_OSF_IEEE_PREDS uses fp-class() and isnan() to implement tests for
+    infinity and not-a-number. */
 
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
-    infinity. */
+    infinity and not-a-number. */
 
  /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that
     converts (a == a) to TRUE, even if `a' is floating-point. Used

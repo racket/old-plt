@@ -62,7 +62,6 @@ static Scheme_Object *bitwise_and (int argc, Scheme_Object *argv[]);
 static Scheme_Object *bitwise_or (int argc, Scheme_Object *argv[]);
 static Scheme_Object *bitwise_xor (int argc, Scheme_Object *argv[]);
 static Scheme_Object *bitwise_not (int argc, Scheme_Object *argv[]);
-static Scheme_Object *bitwise_shift (int argc, Scheme_Object *argv[]);
 static Scheme_Object *gcd (int argc, Scheme_Object *argv[]);
 static Scheme_Object *lcm (int argc, Scheme_Object *argv[]);
 static Scheme_Object *floor_prim (int argc, Scheme_Object *argv[]);
@@ -273,7 +272,7 @@ scheme_init_number (Scheme_Env *env)
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("arithmetic-shift", 
-			     scheme_make_folding_prim(bitwise_shift,
+			     scheme_make_folding_prim(scheme_bitwise_shift,
 						      "arithmetic-shift",
 						      2, 2, 1),
 			     env);
@@ -2054,9 +2053,9 @@ GEN_BIN_INT_OP(bin_bitwise_and, "bitwise-and", &, scheme_bignum_and)
 GEN_BIN_INT_OP(bin_bitwise_or, "bitwise-ior", |, scheme_bignum_or)
 GEN_BIN_INT_OP(bin_bitwise_xor, "bitwise-xor", ^, scheme_bignum_xor)
 
-GEN_TWOARY_OP(bitwise_and, "bitwise-and", bin_bitwise_and, SCHEME_EXACT_INTEGERP, "exact integer")
-GEN_TWOARY_OP(bitwise_or, "bitwise-ior", bin_bitwise_or, SCHEME_EXACT_INTEGERP, "exact integer")
-GEN_TWOARY_OP(bitwise_xor, "bitwise-xor", bin_bitwise_xor, SCHEME_EXACT_INTEGERP, "exact integer")
+GEN_TWOARY_OP(static, bitwise_and, "bitwise-and", bin_bitwise_and, SCHEME_EXACT_INTEGERP, "exact integer")
+GEN_TWOARY_OP(static, bitwise_or, "bitwise-ior", bin_bitwise_or, SCHEME_EXACT_INTEGERP, "exact integer")
+GEN_TWOARY_OP(static, bitwise_xor, "bitwise-xor", bin_bitwise_xor, SCHEME_EXACT_INTEGERP, "exact integer")
 
 static Scheme_Object *
 bitwise_not(int argc, Scheme_Object *argv[])
@@ -2075,8 +2074,8 @@ bitwise_not(int argc, Scheme_Object *argv[])
   ESCAPED_BEFORE_HERE;
 }
 
-static Scheme_Object *
-bitwise_shift(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_bitwise_shift(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v, *so;
   long shift;

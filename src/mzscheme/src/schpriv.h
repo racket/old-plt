@@ -1075,6 +1075,8 @@ Scheme_Object *scheme_negative_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_positive_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_make_polar(int argc, Scheme_Object *argv[]);
 
+Scheme_Object *scheme_bitwise_shift(int argc, Scheme_Object *argv[]);
+
 int scheme_nonneg_exact_p(Scheme_Object *n);
 
 Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);

@@ -465,8 +465,8 @@ name (int argc, Scheme_Object *argv[]) \
   return (ret); \
 }
 
-#define GEN_TWOARY_OP(name, scheme_name, bin_name, TYPEP, type) \
-static Scheme_Object * \
+#define GEN_TWOARY_OP(stat, name, scheme_name, bin_name, TYPEP, type) \
+stat Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
   Scheme_Object *ret; \

@@ -2073,4 +2073,72 @@
 (test (expt 2 256) inexact->exact 1.157920892373162d+77)
 (test 115792089237316195423570985008687907853269984665640564039457584007913129639936 inexact->exact 1.157920892373162d+77)
 
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(test (integer-byte-string->integer "\1\2" #f) integer-byte-string->integer "\1\2" #f (system-big-endian?))
+
+(test 0 integer-byte-string->integer "\0\0" #t)
+(test -1 integer-byte-string->integer "\377\377" #t)
+(test 65535 integer-byte-string->integer "\377\377" #f)
+;;
+(test 0 integer-byte-string->integer "\0\0" #t #t)
+(test -1 integer-byte-string->integer "\377\377" #t #t)
+(test 65535 integer-byte-string->integer "\377\377" #f #t)
+(test -256 integer-byte-string->integer "\377\0" #t #t)
+(test -255 integer-byte-string->integer "\377\1" #t #t)
+(test 511 integer-byte-string->integer "\1\377" #t #t)
+(test 513 integer-byte-string->integer "\1\2" #f #f)
+;;
+(test 0 integer-byte-string->integer "\0\0" #t #f)
+(test -1 integer-byte-string->integer "\377\377" #t #f)
+(test 65535 integer-byte-string->integer "\377\377" #f #f)
+(test 511 integer-byte-string->integer "\377\1" #t #f)
+(test -255 integer-byte-string->integer "\1\377" #t #f)
+(test 258 integer-byte-string->integer "\1\2" #f #t)
+
+(test 0 integer-byte-string->integer "\0\0\0\0" #t)
+(test -1 integer-byte-string->integer "\377\377\377\377" #t)
+(test 4294967295 integer-byte-string->integer "\377\377\377\377" #f)
+;;
+(test 0 integer-byte-string->integer "\0\0\0\0" #t #t)
+(test -1 integer-byte-string->integer "\377\377\377\377" #t #t)
+(test 4294967295 integer-byte-string->integer "\377\377\377\377" #f #t)
+(test -16777216 integer-byte-string->integer "\377\0\0\0" #t #t)
+(test 255 integer-byte-string->integer "\0\0\0\377" #t #t)
+;;
+(test 0 integer-byte-string->integer "\0\0\0\0" #t #f)
+(test -1 integer-byte-string->integer "\377\377\377\377" #t #f)
+(test 4294967295 integer-byte-string->integer "\377\377\377\377" #f #f)
+(test 16777471 integer-byte-string->integer "\377\0\0\1" #t #f)
+(test -16777216 integer-byte-string->integer "\0\0\0\377" #t #f)
+(test -16777215 integer-byte-string->integer "\1\0\0\377" #t #f)
+
+(test 1835103348 integer-byte-string->integer "matt" #t #t)
+(test 1953784173 integer-byte-string->integer "matt" #t #f)
+
+(test 0 integer-byte-string->integer "\0\0\0\0\0\0\0\0" #t #t)
+(test -1 integer-byte-string->integer "\377\377\377\377\377\377\377\377" #t #f)
+(test 18446744073709551615 integer-byte-string->integer "\377\377\377\377\377\377\377\377" #f #f)
+(test 4294967295 integer-byte-string->integer "\377\377\377\377\0\0\0\0" #t #f)
+(test -4294967296 integer-byte-string->integer "\0\0\0\0\377\377\377\377" #t #f)
+(test 8589934591 integer-byte-string->integer "\377\377\377\377\1\0\0\0" #t #f)
+(test -4294967295 integer-byte-string->integer "\1\0\0\0\377\377\377\377" #t #f)
+;;
+(test 0 integer-byte-string->integer "\0\0\0\0\0\0\0\0" #t #f)
+(test -1 integer-byte-string->integer "\377\377\377\377\377\377\377\377" #t #f)
+(test 18446744073709551615 integer-byte-string->integer "\377\377\377\377\377\377\377\377" #f #f)
+(test -4294967296 integer-byte-string->integer "\377\377\377\377\0\0\0\0" #t #t)
+(test 4294967295 integer-byte-string->integer "\0\0\0\0\377\377\377\377" #t #t)
+(test -4294967295 integer-byte-string->integer "\377\377\377\377\0\0\0\1" #t #t)
+(test 8589934591 integer-byte-string->integer "\0\0\0\1\377\377\377\377" #t #t)
+
+(arity-test integer-byte-string->integer 2 3)
+(err/rt-test (integer-byte-string->integer 'ok #t))
+(err/rt-test (integer-byte-string->integer "" #t))
+(err/rt-test (integer-byte-string->integer "a" #t))
+(err/rt-test (integer-byte-string->integer "abc" #t))
+(err/rt-test (integer-byte-string->integer "abcdefghi" #t))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (report-errs)

@@ -36,6 +36,12 @@
 static Scheme_Object *number_to_string (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_number (int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[]);
+static Scheme_Object *integer_to_bytes (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bytes_to_rational (int argc, Scheme_Object *argv[]);
+static Scheme_Object *rational_to_bytes (int argc, Scheme_Object *argv[]);
+static Scheme_Object *system_big_endian_p (int argc, Scheme_Object *argv[]);
+
 static Scheme_Object *random_seed(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_random(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv);
@@ -46,6 +52,10 @@ static char *infinity_str = "+inf.0";
 static char *minus_infinity_str = "-inf.0";
 static char *not_a_number_str = "+nan.0";
 static char *other_not_a_number_str = "-nan.0";
+
+#ifndef SCHEME_BIG_ENDIAN
+# define SCHEME_BIG_ENDIAN 0
+#endif
 
 #define TO_DOUBLE scheme_TO_DOUBLE
 
@@ -62,6 +72,32 @@ void scheme_init_numstr(Scheme_Env *env)
 			     scheme_make_folding_prim(string_to_number,
 						      "string->number", 
 						      1, 2, 1),
+			     env);
+
+  scheme_add_global_constant("integer-byte-string->integer", 
+			     scheme_make_folding_prim(bytes_to_integer,
+						      "integer-byte-string->integer", 
+						      2, 3, 1),
+			     env);
+  scheme_add_global_constant("integer->integer-byte-string", 
+			     scheme_make_prim_w_arity(integer_to_bytes,
+						      "integer->integer-byte-string", 
+						      3, 5),
+			     env);
+  scheme_add_global_constant("floating-point-byte-string->rational", 
+			     scheme_make_folding_prim(bytes_to_rational,
+						      "floating-point-byte-string->rational",
+						      1, 2, 1),
+			     env);
+  scheme_add_global_constant("rational->floating-point-byte-string",
+			     scheme_make_prim_w_arity(rational_to_bytes,
+						      "rational->floating-point-byte-string",
+						      2, 4),
+			     env);
+  scheme_add_global_constant("system-big-endian?",
+			     scheme_make_prim_w_arity(system_big_endian_p,
+						      "system-big-endian?",
+						      0, 0),
 			     env);
 
   scheme_add_global_constant("random", 
@@ -1392,6 +1428,103 @@ int scheme_check_double(const char *where, double d, const char *dest)
   }
 
   return 1;
+}
+
+/*========================================================================*/
+/*                      native representations                            */
+/*========================================================================*/
+
+static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
+{
+  int slen, sgned;
+  char *str;
+  int buf[2], i;
+  int bigend = SCHEME_BIG_ENDIAN;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    slen = 0;
+  else
+    slen = SCHEME_STRLEN_VAL(argv[0]);
+
+  if ((slen != 2)  && (slen != 4) && (slen != 8))
+    scheme_wrong_type("integer-byte-string->integer", "string (2, 4, or 8 characters)", 0, argc, argv);
+
+  str = SCHEME_STR_VAL(argv[0]);
+
+  sgned = SCHEME_TRUEP(argv[1]);
+  if (argc > 2)
+    bigend = SCHEME_TRUEP(argv[2]);
+
+  if (bigend != SCHEME_BIG_ENDIAN) {
+    for (i = 0; i < slen; i++)
+      ((char *)buf)[slen - i - 1] = str[i];
+    str = (char *)buf;
+  }
+
+  switch(slen) {
+  case 2:
+    if (sgned)
+      return scheme_make_integer(((short *)str)[0]);
+    else
+      return scheme_make_integer(((unsigned short *)str)[0]);
+    break;
+  case 4:
+    if (sgned)
+      return scheme_make_integer_value(((int *)str)[0]);
+    else
+      return scheme_make_integer_value_from_unsigned(((unsigned int *)str)[0]);
+    break;
+  default:
+    {
+      Scheme_Object *h, *l, *a[2];
+
+#if SCHEME_BIG_ENDIAN
+      /* make little-endian at int level: */
+      {
+	int v;
+	v = ((int *)str)[0];
+	buf[0] = ((int *)str)[1];
+	buf[1] = v;
+	str = (char *)buf;
+      }
+#endif
+
+      if (sgned)
+	h = scheme_make_integer_value(((int *)str)[1]);
+      else
+	h = scheme_make_integer_value_from_unsigned(((unsigned int *)str)[1]);
+      l = scheme_make_integer_value_from_unsigned(((unsigned int *)str)[0]);
+      a[0] = h;
+      a[1] = scheme_make_integer(32);
+      h = scheme_bitwise_shift(2, a);
+      return scheme_bin_plus(h, l);
+    }
+    break;
+  }
+}
+
+static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
+{
+  return scheme_false;
+}
+
+static Scheme_Object *bytes_to_rational (int argc, Scheme_Object *argv[])
+{
+  return scheme_false;
+}
+
+static Scheme_Object *rational_to_bytes (int argc, Scheme_Object *argv[])
+{
+  return scheme_false;
+}
+
+static Scheme_Object *system_big_endian_p (int argc, Scheme_Object *argv[])
+{
+#if SCHEME_BIG_ENDIAN
+  return scheme_true;
+#else
+  return scheme_false;
+#endif
 }
 
 /*========================================================================*/

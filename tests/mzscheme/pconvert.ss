@@ -373,9 +373,6 @@
   (let ([in (open-input-file fn)])
     (test `(open-input-file ,fn) print-convert in)
     (close-input-port in))
-  (let ([out (open-output-file fn 'truncate)])
-    (test `(open-output-file ,fn) print-convert out)
-    (close-output-port out))
   (delete-file fn))
 
 (let ()

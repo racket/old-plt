@@ -393,10 +393,12 @@
                                [(eq? expr #t) (if (booleans-as-true/false) 'true #t)]
                                
                                [(and (input-port? expr)
-                                     (file-stream-port? expr))
+                                     (file-stream-port? expr)
+                                     (object-name expr))
                                 `(open-input-file ,(object-name expr))]
                                [(and (output-port? expr)
-                                     (file-stream-port? expr))
+                                     (file-stream-port? expr)
+                                     (object-name expr))
                                 `(open-output-file ,(object-name expr))]
                                [(port? expr) expr]
                                

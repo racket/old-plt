@@ -250,6 +250,10 @@ please adhere to these guidelines:
  (scheme-mode-color-parenthesis "Parenthesis")
  (scheme-mode-color-error "Error")
  (scheme-mode-color-other "Other")
+ (color-syntax-interactively "Color syntax interactively")
+ (syntax-coloring "Syntax Coloring")
+ ;; the ~a is filled in with one of the above (scheme-mode-*)
+ (syntax-coloring-choose-color "Choose a color for ~a")
  
  (url "URL")
  (url: "URL:")
@@ -445,6 +449,7 @@ please adhere to these guidelines:
  (choose-color "Choose Color") ; in prefs dialog
  (online-coloring-active "Color syntax interactively")
  (open-files-in-tabs "Open files in separate tabs (not separate windows)")
+ (limit-interactions-size "Limit interactions size")
 
  ; title of the color choosing dialog
  (choose-paren-highlight-color "Choose Parenthesis Highlight Color")

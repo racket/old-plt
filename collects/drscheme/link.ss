@@ -1,5 +1,5 @@
 (compound-unit/sig (import [i : (program argv)])
-  (link [mred : mred-interfaces^ (mred-interfaces@)]
+  (link [mred : mred^ (mred@)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]

@@ -1,6 +1,6 @@
 
 (unit/sig drscheme:rep^
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  [mzlib : mzlib:core^]
 	  [fw : framework^]
 	  [print-convert : mzlib:print-convert^]
@@ -246,7 +246,7 @@
 	   (map (lambda (ls)
 		  (map (lambda (s)
 			 (cond
-			   [(is-a? s mred:original:string-snip%)
+			   [(is-a? s mred:string-snip%)
 			    (send s get-text 0 (send s get-count))]
 			   [(string? s) s]
 			   [else "'non-string-snip"]))
@@ -604,7 +604,7 @@
 	       (send text begin-edit-sequence)
 	       (send text lock #f)
 	       (send text insert
-		     (if (is-a? s mred:original:snip%)
+		     (if (is-a? s mred:snip%)
 			 (send s copy)
 			 s)
 		     start
@@ -738,7 +738,7 @@
 				     (original v p)
 				     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
 						     (lambda (x _ port)
-						       (and (is-a? x mred:original:snip%) 1))]
+						       (and (is-a? x mred:snip%) 1))]
 						    [mzlib:pretty-print:pretty-print-print-hook
 						     (lambda (x _ port)
 						       (port-out-write x))]
@@ -764,7 +764,7 @@
 			     v
 			     (print-convert:print-convert v))])
 		  (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-				  (lambda (x _ port) (and (is-a? x mred:original:snip%) 1))]
+				  (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
 				 [mzlib:pretty-print:pretty-print-print-hook
 				  (lambda (x _ port) (this-result-write x))])
 		    (mzlib:pretty-print:pretty-print v this-result)))))
@@ -1227,7 +1227,7 @@
 			  (eq? port this-out)
 			  (eq? port this-err))
 		      (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-				      (lambda (x _ port) (and (is-a? x mred:original:snip%) 1))]
+				      (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
 				     [mzlib:pretty-print:pretty-print-print-hook
 				      (lambda (x _ port)
 					(evcase port
@@ -1239,7 +1239,7 @@
 	     
 	     (print-convert:current-print-convert-hook
 	      (lambda (expr basic-convert sub-convert)
-		(let ([ans (if (is-a? expr mred:original:snip%)
+		(let ([ans (if (is-a? expr mred:snip%)
 			       expr
 			       (basic-convert expr))])
 		  ans)))
@@ -1587,7 +1587,7 @@
 		 (insert-prompt))
 	       (delete prompt-position (last-position) #f)
 	       (for-each (lambda (snip/string)
-			   (insert (if (is-a? snip/string mred:original:snip%)
+			   (insert (if (is-a? snip/string mred:snip%)
 				       (send snip/string copy)
 				       snip/string)
 				   prompt-position))

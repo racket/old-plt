@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.22 1999/03/22 16:35:03 robby Exp $
+;; $Id: testr.ss,v 1.23 1999/06/28 05:30:37 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -17,7 +17,7 @@
 ;;
 
 (unit/sig framework:test^
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  [keys : framework:keys^])
 
   (define initial-run-interval 100)  ;; milliseconds
@@ -315,7 +315,7 @@
     (control-action
      'test:button-push
      'button
-     (find-object mred:original:button% button)
+     (find-object mred:button% button)
      void))
 
 ;; 
@@ -326,7 +326,7 @@
     (control-action
      'test:set-check-box!
      'check-box 
-     (find-object mred:original:check-box% in-cb)
+     (find-object mred:check-box% in-cb)
      (lambda (cb) (send cb set-value state))))
 
 ;; 
@@ -337,7 +337,7 @@
     (control-action
      'test:set-radio-box!
      'check-box 
-     (find-object mred:original:radio-box% in-cb)
+     (find-object mred:radio-box% in-cb)
      (lambda (rb) 
        (cond
 	[(string? state) 
@@ -366,7 +366,7 @@
     (control-action
      'test:set-choice!
      'choice
-     (find-object mred:original:choice% in-choice)
+     (find-object mred:choice% in-choice)
      (lambda (choice)
        (cond
 	 [(number? str) (send choice set-selection str)]

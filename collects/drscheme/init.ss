@@ -1,5 +1,5 @@
 (unit/sig drscheme:init^
-  (import [mred : mred-interfaces^])
+  (import [mred : mred^])
   
   (define original-output-port (current-output-port))
   (define original-error-port (current-error-port))

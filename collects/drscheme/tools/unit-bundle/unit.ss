@@ -1,5 +1,5 @@
 (unit/sig ()
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  mzlib:core^
 	  [fw : framework^]
 	  mzlib:print-convert^

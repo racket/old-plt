@@ -1,5 +1,5 @@
 (unit/sig drscheme:prefs^
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  [framework : framework^])
 
   (framework:preferences:set-default 'drscheme:execute-warning-once

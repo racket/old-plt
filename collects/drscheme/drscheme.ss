@@ -9,8 +9,6 @@
   (require-library "rload.ss" "drscheme")
   (require-library "errortrace.ss" "errortrace"))
 
-(require-library "mred-interfaces.ss" "framework")
-
 (error-print-width 80)
 
 (require-library "refer.ss")

@@ -1,5 +1,5 @@
 (unit/sig drscheme:graph^
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  [fw : framework^]
 	  [mzlib:string : mzlib:string^]
 	  [mzlib:function : mzlib:function^])
@@ -14,7 +14,7 @@
   (define pasteboard<%> (interface (fw:editor:basic<%>)))
 
   (define pasteboard-mixin
-    (mixin (mred:pasteboard<%> fw:editor:basic<%>) (pasteboard<%>) ()
+    (mixin ((class->interface mred:pasteboard%) fw:editor:basic<%>) (pasteboard<%>) ()
       (inherit find-first-snip get-snip-location get-canvas
 	       find-next-selected-snip get-dc find-snip
 	       invalidate-bitmap-cache begin-write-header-footer-to-file

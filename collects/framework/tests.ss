@@ -1,8 +1,6 @@
 (require-library "refer.ss")
 (require-library "macro.ss")
 
-(require-relative-library "mred-interfacess.ss")
-
 (define-signature framework:keys^
   (get-shifted-key-list))
 

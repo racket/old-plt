@@ -7,7 +7,7 @@
 
 
 (unit/sig ()
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  [mzlib : mzlib:core^]
 	  [fw : framework^]
 	  [print-convert : mzlib:print-convert^]

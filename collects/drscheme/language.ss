@@ -1,6 +1,6 @@
 
 (unit/sig drscheme:language^
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [aries : plt:aries^]

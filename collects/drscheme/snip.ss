@@ -1,5 +1,5 @@
 (unit/sig drscheme:snip^
-  (import [mred : mred-interfaces^])
+  (import [mred : mred^])
 
   (define separator-snipclass
     (make-object

@@ -5,7 +5,7 @@
 
 '(define tool@
   (unit/sig ()
-    (import [mred : mred-interfaces^]
+    (import [mred : mred^]
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
 	    [drscheme : drscheme:export^]

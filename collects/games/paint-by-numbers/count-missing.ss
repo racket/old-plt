@@ -2,6 +2,8 @@
 
 string=? ; exec mzscheme -qr $0
 
+(printf "checking problems in ~s~n" (collection-path "games" "paint-by-numbers"))
+
 (require-library "sig.ss" "games" "paint-by-numbers")
 
 (require-library "errortrace.ss" "errortrace")

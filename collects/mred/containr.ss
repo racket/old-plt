@@ -943,7 +943,13 @@
 	    (set! counter (add1 counter))))))
     
     (define frame% (make-top-container% wx:frame%))
-    (define dialog-box% (make-top-container% wx:dialog-box%))
+    (define dialog-box%
+      (class (make-top-container% wx:dialog-box%) args
+	(inherit
+	  centre)
+	(sequence
+	  (apply super-init args)
+	  (centre wx:const-both))))
     
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.

@@ -5,7 +5,7 @@
   (syntax-case a-def (define lambda case-lambda)
     [(define f (lambda formals body-exprs ...))
      (let-values ([(new-body body-defs)
-                   (normalize-term #'(begin body-exprs ...) '())])
+                   (normalize-term #'(begin body-exprs ...))])
        (cons
         #`(define f (lambda formals #,new-body))
         body-defs))]
@@ -21,7 +21,7 @@
   (if (null? cases) (values '() '())
       (with-syntax ([(formals body-exprs ...) (car cases)])
         (let-values ([(new-body body-defs)
-                      (normalize-term #'(begin body-exprs ...) '())]
+                      (normalize-term #'(begin body-exprs ...))]
                      [(rest-cases case-defs) (normalize-cases (cdr cases))])
           (values
            (cons #`(formals #,new-body) rest-cases)
@@ -48,7 +48,7 @@
                       (if (null? defs) '()
                           (append (normalize-def (car defs))
                                   (loop (cdr defs)))))])
-               (let-values ([(body body-defs) (normalize-term body '())])
+               (let-values ([(body body-defs) (normalize-term body)])
                  (let ([defs (append body-defs defs)])
                    (myprint "defs = ~s~n" defs)
                    (myprint "body = ~s~n" body)
@@ -186,6 +186,3 @@
 (even1? 4)
 (not (even1? 5))
 (even1? 6)
-
-
-

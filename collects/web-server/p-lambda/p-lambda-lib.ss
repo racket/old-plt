@@ -4,12 +4,16 @@
            (lib "kerncase.ss" "syntax")
            "proc-table.ss"
            "closure.ss")
-  (provide p-lambda)
+  (provide p-lambda current-abort)
   
   ;; ****************************************
   ;; continuation-mark mumble
   (define-struct cont-key ())
   (define the-cont-key (make-cont-key))
+  
+  (define current-abort
+    (make-parameter (lambda (val)
+                      (error "current-abort: no top level continuation"))))
   
   ;; ****************************************
   ;; FREE VARS
@@ -86,7 +90,11 @@
               (union (free-vars #'expr1)
                      (free-vars #'expr2)))]
       [(#%app exprs ...)
-       (free-vars* (syntax->list #'(exprs ...)))]
+       (syntax-case #'(exprs ...) (p-lambda #%app list)
+         [(p-lambda proc-sym (lambda () (#%app list more-exprs ...)))
+          (free-vars* (syntax->list #'(more-exprs ...)))]
+         [_else
+          (free-vars* (syntax->list #'(exprs ...)))])]
       [(#%datum . datum) '()]
       [(#%top . var) '()]
       [s (identifier? #'s)
@@ -194,7 +202,7 @@
          (let-values ([(lifted-body-exprs body-definitions)
                        (lift* (syntax->list #'(body-exprs ...)))])
            (values
-            #`(#%app p-lambda #,f (lambda () (list #,@fv)))
+            #`(#%app p-lambda #,f (lambda () (#%app list #,@fv)))
             (cons #`(define #,f
                       (lambda #,new-formals
                         #,@lifted-body-exprs)) body-definitions))))]
@@ -205,7 +213,7 @@
          (let-values ([(new-cases case-definitions)
                        (lift-cases #'(cases ...) fv)])
            (values
-            #`(#%app p-lambda #,f (lambda () (list #,@fv)))
+            #`(#%app p-lambda #,f (lambda () (#%app list #,@fv)))
             (cons
              #`(define #,f
                  (case-lambda #,@new-cases))
@@ -377,12 +385,12 @@
   
   ;; value?: expr -> boolean
   (define (value? expr)
-    (syntax-case expr (#%app #%top #%datum p-lambda quote)
+    (syntax-case expr (#%app #%top #%datum p-lambda quote lambda)
       [(#%top . d) #t]
       [(#%datum . d) #t]
       [(quote . whatever) #t]
       [id (identifier? #'id) #t]
-      [(#%app p-lambda id exprs ...)
+      [(#%app p-lambda id (lambda () (#%app list exprs ...)))
        (andmap value? (syntax->list #'(exprs ...)))]
       [something_else #f]))
   
@@ -397,70 +405,93 @@
   
   (define myprint void)
   
-  ;; normalize-term: flat-expr (listof identifier) -> P-expr (listof definition)
+  ;; normalize-term: flat-expr -> P-expr (listof definition)
   ;; convert a flat-expr into p-normal form
-  (define (normalize-term f-expr fvars)
-    (normalize f-expr fvars (lambda (pexp) (values pexp '()))))
+  (define (normalize-term f-expr)
+    (normalize f-expr (lambda (pexp) (values pexp '()))))
   
-  ;; normalize: flat-expr (listof identifier)
-  ;;            (P-expr -> P-expr (listof definition)
+  ;; normalize: flat-expr (P-expr -> P-expr (listof definition)
   ;;            -> P-expr (listof definition)
   ;; given a function that wraps a (normalized) term in a context,
   ;; convert a flat-expr into p-normal-form
-  (define (normalize f-expr fvars k)
+  (define (normalize f-expr k)
     (myprint "normalize: f-expr = ~s~n" f-expr)
-    (myprint "normalize: fvars = ~s~n" fvars)
     (syntax-case f-expr (p-lambda if begin begin0 let-values letrec-values
-                                  quote #%app #%datum #%top)
-      [(p-lambda proc-id f-exprs ...)
-       (normalize-name* (syntax->list #'(f-exprs ...)) fvars
+                                  quote #%app #%datum #%top call/cc lambda list)
+      [(#%app p-lambda proc-id (lambda () (#%app list f-exprs ...)))
+       (normalize-name* (syntax->list #'(f-exprs ...))
                         (lambda (vals)
-                          (k #`(p-lambda proc-id (lambda () (list #,@vals))))))]
+                          (k #`(#%app p-lambda proc-id (lambda () (#%app list #,@vals))))))]
       [(if test-f-expr csq-f-expr)
        (normalize-name
         #'test-f-expr
-        fvars
-        (lambda (new-test new-fvars)
-          (let-values ([(csq csq-defs) (normalize-term #'csq-f-expr fvars)])
+        (lambda (new-test)
+          (let-values ([(csq csq-defs) (normalize-term #'csq-f-expr)])
             (let-values ([(new-if defs) (k #`(if #,new-test #,csq))])
               (values new-if (append csq-defs defs))))))]
       [(if test-f-expr csq-f-expr alt-f-expr)
        (normalize-name
-        #'test-f-expr fvars
-        (lambda (new-test new-fvars)
-          (let-values ([(csq csq-defs) (normalize-term #'csq-f-expr fvars)]
-                       [(alt alt-defs) (normalize-term #'alt-f-expr fvars)])
+        #'test-f-expr
+        (lambda (new-test )
+          (let-values ([(csq csq-defs) (normalize-term #'csq-f-expr)]
+                       [(alt alt-defs) (normalize-term #'alt-f-expr)])
             (let-values ([(new-if defs) (k #`(if #,new-test #,csq #,alt))])
               (values
                new-if
                (append csq-defs alt-defs defs))))))]
       [(begin f-exprs ...)
        (syntax-case #'(f-exprs ...) ()
-         [(e) (normalize #'e fvars k)]
+         [(e) (normalize #'e k)]
          [(e es ...)
-          (normalize #'(let-values ([(x) e]) (begin es ...)) fvars k)])]
+          (normalize #'(let-values ([(x) e]) (begin es ...)) k)])]
       [(begin0 f-exprs ...)
        (syntax-case #'(f-exprs ...) ()
-         [(e) (normalize #'e fvars k)]
+         [(e) (normalize #'e k)]
          
          [(e es ...)
           (let ([x (datum->syntax-object #'e (gensym 'x))])
-            (normalize #`(let-values ([(#,x) e]) (begin es ... #,x)) fvars k))])]
+            (normalize #`(let-values ([(#,x) e]) (begin es ... #,x)) k))])]
       [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
-       (normalize-let f-expr fvars k)]
+       (normalize-let f-expr k)]
       [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
-       (normalize-letrec f-expr fvars k)]
+       (normalize-letrec f-expr k)]
+      [(#%app call/cc proc)
+       (normalize-name
+        #'proc
+        (lambda (new-proc)
+          (let ([f (namespace-syntax-introduce
+                    (datum->syntax-object #f (genproc 'f)))]
+                [k-var (namespace-syntax-introduce
+                    (datum->syntax-object #f (gensym 'k)))])
+            (let-values ([(body body-defines)
+                          (k #`(#%app #,new-proc #,k-var))])
+              (let ([fvars (set-diff (free-vars body)
+                                     (union (list k-var)
+                                            (defined-ids body-defines)))])
+                (values
+                 #`(#%app #,f #,@fvars
+                          (let-values ([(marks)
+                                        (#%app continuation-mark-set->list
+                                               (#%app current-continuation-marks)
+                                               the-cont-key)])
+                            (#%app p-lambda
+                                   resume
+                                   (lambda ()
+                                     (#%app list marks)))))
+                 (cons
+                  #`(define (#,f #,@fvars #,k-var) #,body)
+                  body-defines)))))))]
       [(#%app fn f-exprs ...)
        (if (primop? #'fn)
            (normalize-name*
-            (syntax->list #'(f-exprs ...)) fvars
+            (syntax->list #'(f-exprs ...))
             (lambda (vals)
               (k #`(#%app fn #,@vals))))
            (normalize-name
-            #'fn fvars
-            (lambda (val new-fvars)
+            #'fn
+            (lambda (val)
               (normalize-name*
-               (syntax->list #'(f-exprs ...)) new-fvars
+               (syntax->list #'(f-exprs ...))
                (lambda (vals)
                  (k #`(#%app #,val #,@vals)))))))]
       [(quote datum) (k f-expr)]
@@ -468,21 +499,20 @@
       [(#%top . var) (k f-expr)]
       [s (identifier? #'s) (k f-expr)]))
   
-  ;; normalize-name: flat-expr (listof identifier)
-  ;;                 (value (listof identifier) -> P-expr (listof definition))
+  ;; normalize-name: flat-expr (value (listof identifier) -> P-expr (listof definition))
   ;;                 -> P-expr (listof definition)
   ;; given a function that wraps a value in a context,
   ;; convert a term in core-scheme into a-normal form
   ;; and name it if necessary
-  (define (normalize-name f-expr fvars k)
+  (define (normalize-name f-expr k)
     (normalize
-     f-expr fvars
+     f-expr
      (lambda (n)
        (if (value? n)
-           (k n fvars)
+           (k n)
            (let ([t (namespace-syntax-introduce
                      (datum->syntax-object #f (gensym 'z)))])
-             (let-values ([(body defs) (k t (cons t fvars))])
+             (let-values ([(body defs) (k t)])
                (syntax-case n (#%app)
                  [v (value? #'v)
                     (values #`(let-values ([(#,t) #,n]) #,body) defs)]
@@ -492,41 +522,38 @@
                  [_else
                   (let ([f (namespace-syntax-introduce
                             (datum->syntax-object #f (genproc 'f)))])
-                    (values
-                     #`(#,f #,@fvars
-                          (with-continuation-mark the-cont-key
-                            (p-lambda #,f (lambda () (list #,@fvars))) #,n))
-                     (cons #`(define (#,f #,@fvars #,t) #,body) defs)))])))))))
+                    (let ([fvars (set-diff (free-vars body)
+                                           (union (list t) (defined-ids defs)))])
+                      (values
+                       #`(#%app #,f #,@fvars
+                            (with-continuation-mark the-cont-key
+                              (#%app p-lambda #,f (lambda () (#%app list #,@fvars))) #,n))
+                       (cons #`(define (#,f #,@fvars #,t) #,body) defs))))])))))))
   
-  ;; normalize-name*: (listof flat-expr) (listof identifier)
-  ;;                  ((listof value) -> P-expr (listof definition))
+  ;; normalize-name*: (listof flat-expr) ((listof value) -> P-expr (listof definition))
   ;;                  -> P-expr (listof definition)
   ;; like normalize-name, but for several expressions
-  (define (normalize-name* f-exprs fvars k)
+  (define (normalize-name* f-exprs k)
     (if (null? f-exprs)
         (k '())
         (normalize-name
-         (car f-exprs) fvars
-         (lambda (val new-fvars)
+         (car f-exprs)
+         (lambda (val)
            (normalize-name*
-            (cdr f-exprs) new-fvars
+            (cdr f-exprs)
             (lambda (vals) (k #`(#,val #,@vals))))))))
   
-  ;; normalize-let: flat-expr (listof identifier)
-  ;;                (P-expr -> P-expr (listof definition))
+  ;; normalize-let: flat-expr (P-expr -> P-expr (listof definition))
   ;;                -> P-expr (listof definition)
   ;; convert a let-values expresion into P-normal form
-  (define (normalize-let l-expr fvars k)
+  (define (normalize-let l-expr k)
     (syntax-case l-expr (let-values)
       [(let-values ([(vars ...) rhs-f-expr]) body-f-expr)
        (normalize
-        #'rhs-f-expr fvars
+        #'rhs-f-expr
         (lambda (new-rhs)
           (let-values ([(body defs)
-                        (normalize
-                         #'body-f-expr (union
-                                        (free-vars #'body-f-expr)
-                                        fvars) k)])
+                        (normalize #'body-f-expr k)])
             (syntax-case new-rhs (#%app values)
               [v (value? #'v)
                  (values
@@ -540,11 +567,16 @@
               [_else
                (let ([f (namespace-syntax-introduce
                          (datum->syntax-object #f (genproc 'f)))])
-                 (values
-                  #`(#,f #,@fvars
-                       (with-continuation-mark the-cont-key
-                         (p-lambda #,f (lambda () (list #,@fvars))) #,new-rhs))
-                  (cons #`(define (#,f #,@fvars vars ...) #,body) defs)))]))))]
+                 (let ([fvars (set-diff
+                               (free-vars body)
+                               (union
+                                (syntax->list #'(vars ...))
+                                (defined-ids defs)))])
+                   (values
+                    #`(#%app #,f #,@fvars
+                         (with-continuation-mark the-cont-key
+                           (#%app p-lambda #,f (lambda () (#%app list #,@fvars))) #,new-rhs))
+                    (cons #`(define (#,f #,@fvars vars ...) #,body) defs))))]))))]
       
       ;; just unroll the let into nested lets
       ;; hopfully the syntax magic will prevent variable capture
@@ -556,15 +588,14 @@
         #'(let-values ([(vars ...) rhs-f-expr])
             (let-values ([(rest-varss ...) rest-rhs-f-exprs] ...)
               body-f-expr))
-        fvars k)]
+        k)]
       ;; make the implicit begin explicit
       [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
        (normalize-let
         #'(let-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
-        fvars k)]))
+        k)]))
   
-  ;; normalize-letrec: flat-expr (listof identifier)
-  ;;                   (P-expr -> P-expr (listof definition))
+  ;; normalize-letrec: flat-expr (P-expr -> P-expr (listof definition))
   ;;                   -> P-expr (listof definition)
   ;; convert a letrec-values expression into A-normal form (sort of)
   ;; Note: right now I'm not going to convert the r.h.s.
@@ -572,10 +603,10 @@
   ;;       while evaluation the r.h.s. of a letrec. To make this safe,
   ;;       I will put a mark around the r.h.s. and raise an error
   ;;       if a stack serialization happens during a r.h.s.  
-  (define (normalize-letrec l-expr fvars k)
+  (define (normalize-letrec l-expr k)
     (syntax-case l-expr (letrec-values)
       [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-expr)
-       (normalize #'body-f-expr fvars
+       (normalize #'body-f-expr
                   (lambda (new-body-expr)
                     (let-values ([(new-body-expr defs) (k new-body-expr)])
                       (values
@@ -587,7 +618,7 @@
       [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
        (normalize-letrec
         #'(letrec-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
-        fvars k)]))
+        k)]))
   
   ;; primop?: x -> boolean
   (define (primop? x)
@@ -597,4 +628,24 @@
           (and (namespace-defined? (syntax-object->datum #'id))
                (primitive? (namespace-variable-value (syntax-object->datum #'id))))]
       [_else #f]))
+  
+  
+  ;; defined-ids: (listof definition) -> (listof identifier)
+  ;; pull out the function identifer from a list of function definitions
+  (define (defined-ids defs)
+    (map
+     (lambda (a-def)
+       (syntax-case a-def (define)
+         [(define (proc-id formals ...) body) #'proc-id]))
+     defs))
+  
+  ;; resume: (listof closure) val -> value
+  ;; resume a continuation
+  (define (resume k val)
+    (if (null? k)
+        ((current-abort) val)
+        (resume (cdr k)
+                (with-continuation-mark the-cont-key
+                  (p-lambda resume (lambda () (list (cdr k))))
+                  ((car k) val)))))
   )

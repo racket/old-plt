@@ -108,12 +108,14 @@ static int regexec(regexp *, char *, int, char **, char **);
 #define	NOTHING	9	/* no	Match empty string. */
 #define	STAR	10	/* node	Match this (simple) thing 0 or more times. */
 #define	PLUS	11	/* node	Match this (simple) thing 1 or more times. */
+#define OPENN   12      /* like OPEN, but with an n >= 50 */
+#define CLOSEN  13      /* like CLOSE, but with an n >= 50 */
 #define	OPEN	20	/* no	Mark this point in input as start of #n. */
 /*	OPEN+1 is number 1, etc. */
 #define	CLOSE	70	/* no	Analogous to OPEN. */
 
 # define OPSTR(o) (o + 2)
-# define OPLEN(o) ((int)((o)[0] << 8) | (o)[1])
+# define OPLEN(o) ((int)(((unsigned char *)o)[0] << 8) | (((unsigned char *)o)[1]))
 
 /*
  * Opcode notes:
@@ -350,10 +352,15 @@ reg(int paren, int *flagp)
   /* Make an OPEN node, if parenthesized. */
   if (paren) {
     parno = regnpar;
-    if (OPEN + parno >= CLOSE)
-      regerror("too many subexpressions in regular expression");
     regnpar++;
-    ret = regnode(OPEN+parno);
+    if (OPEN + parno >= CLOSE) {
+      ret = regcode;
+      regc(parno >> 8);
+      regc(parno & 255);
+      reginsert(OPENN, ret);
+    } else {
+      ret = regnode(OPEN+parno);
+    }
   } else
     ret = NULL;
 
@@ -380,7 +387,17 @@ reg(int paren, int *flagp)
   }
 
   /* Make a closing node, and hook it on the end. */
-  ender = regnode((paren) ? CLOSE+parno : END);	
+  if (paren) {
+    if (OPEN + parno >= CLOSE) {
+      ender = regcode;
+      regc(parno >> 8);
+      regc(parno & 255);
+      reginsert(CLOSEN, ender);
+    } else
+      ender = regnode(CLOSE+parno);
+  } else {
+    ender = regnode(END);	
+  }
   regtail(ret, ender);
 
   /* Hook the tails of the branches to the closing node. */
@@ -995,42 +1012,57 @@ regmatch(char *prog)
       return(1);		/* Success! */
       break;
     default:
-      if (OP(scan) < CLOSE) {
-	MZREGISTER int no;
-	MZREGISTER char *save;
-	
-	no = OP(scan) - OPEN;
+      {
+	int isopen;
+	int no;
+	char *save;
+
+	switch (OP(scan)) {
+	case OPENN:
+	  isopen = 1;
+	  no = OPLEN(OPERAND(scan));
+	  break;
+	case CLOSEN:
+	  isopen = 0;
+	  no = OPLEN(OPERAND(scan));
+	  break;
+	default:
+	  if (OP(scan) < CLOSE) {
+	    isopen = 1;
+	    no = OP(scan) - OPEN;
+	  } else {
+	    isopen = 0;
+	    no = OP(scan) - CLOSE;
+	  }
+	}
+
 	save = reginput;
 
-	if (regmatch(next)) {
-	  /*
-	   * Don't set startp if some later
-	   * invocation of the same parentheses
-	   * already has.
-	   */
-	  if (regstartp[no] == NULL)
-	    regstartp[no] = save;
-	  return(1);
-	} else
-	  return(0);
-      } else {
-	MZREGISTER int no;
-	MZREGISTER char *save;
-	
-	no = OP(scan) - CLOSE;
-	save = reginput;
-	
-	if (regmatch(next)) {
-	  /*
-	   * Don't set endp if some later
-	   * invocation of the same parentheses
-	   * already has.
-	   */
-	  if (regendp[no] == NULL)
-	    regendp[no] = save;
-	  return(1);
-	} else
-	  return(0);
+	if (isopen) {
+	  if (regmatch(next)) {
+	    /*
+	     * Don't set startp if some later
+	     * invocation of the same parentheses
+	     * already has.
+	     */
+	    if (regstartp[no] == NULL)
+	      regstartp[no] = save;
+	    return(1);
+	  } else
+	    return(0);
+	} else {
+	  if (regmatch(next)) {
+	    /*
+	     * Don't set endp if some later
+	     * invocation of the same parentheses
+	     * already has.
+	     */
+	    if (regendp[no] == NULL)
+	      regendp[no] = save;
+	    return(1);
+	  } else
+	    return(0);
+	}
       }
       break;
     }

@@ -118,7 +118,8 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
     CreateWxMessage("<bad-image>");
 }
 
-IconRef msg_icons[3];
+static int icons_ready;
+static IconRef msg_icons[3];
 
 wxMessage::wxMessage // Constructor (given parentPanel and icon id)
 (
@@ -133,30 +134,28 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
   wxbMessage(parentPanel, x, y, 0, 0, style, windowName)
 {
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
+
+  if (iconID) {
+    if (!icons_ready) {
+      SInt16 lbl;
+      GetIconRefFromFile(&wx_app_spec, msg_icons + wxMSGICON_APP - 1, &lbl);
+      GetIconRef(kOnSystemDisk, 'macs', kAlertCautionIcon, msg_icons + wxMSGICON_WARNING - 1);
+      GetIconRef(kOnSystemDisk, 'macs', kAlertStopIcon, msg_icons + wxMSGICON_ERROR - 1);
+      icons_ready = 1;
+    }
+  }
+
   switch (iconID) {
   case wxMSGICON_APP:
-    if (!msg_icons[wxMSGICON_APP]) {
-      SInt16 lbl;
-      GetIconRefFromFile(&wx_app_spec, msg_icons + wxMSGICON_APP, &lbl);
-    }
-    break;
   case wxMSGICON_WARNING:
-    if (!msg_icons[iconID]) {
-      GetIconRef(kOnSystemDisk, 'macs', kAlertCautionIcon, msg_icons + iconID);
-    }
-    break;
   case wxMSGICON_ERROR:
-    if (!msg_icons[iconID]) {
-      GetIconRef(kOnSystemDisk, 'macs', kAlertStopIcon, msg_icons + iconID);
-    }
     break;
-    /* kAlertNoteIcon */
   default:
     CreateWxMessage("<bad-icon>");
     return;
   }
 
-  if (msg_icons[iconID]) {
+  if (msg_icons[iconID - 1]) {
     icon_id = iconID;
     SetClientSize(64, 64);
     if (GetParent()->IsHidden())
@@ -283,7 +282,15 @@ void wxMessage::Paint(void)
     } else if (icon_id) {
       Rect r = { SetOriginY, SetOriginX, 
 		 SetOriginY + clientHeight, SetOriginX + clientWidth };
-      PlotIconRef(&r, kAlignNone, kTransformNone, 0 /* kIconServicesDefaultUsageFlags */, msg_icons[icon_id]);
+      PlotIconRef(&r, kAlignNone, kTransformNone, 0 /* kIconServicesDefaultUsageFlags */, msg_icons[icon_id - 1]);
+#ifdef OS_X
+      if ((icon_id != wxMSGICON_APP) && msg_icons[wxMSGICON_APP - 1]) {
+	/* Add app badge: */
+	r.left += 32;
+	r.top += 32;
+	PlotIconRef(&r, kAlignNone, kTransformNone, 0, msg_icons[wxMSGICON_APP - 1]);
+      }
+#endif
     } else if (font && (font != wxNORMAL_FONT)) {
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);

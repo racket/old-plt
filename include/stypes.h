@@ -169,6 +169,7 @@ enum {
   scheme_rt_user_output,
   scheme_rt_compact_port,
   scheme_rt_read_special_dw,
+  scheme_rt_regwork,
 #endif
 
   _scheme_last_type_

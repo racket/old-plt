@@ -1014,6 +1014,10 @@ please adhere to these guidelines:
  (module-browser... "Module Browser...") ;; menu item title
  (module-browser-error-expanding "Error expanding the program:\n\n~a")
  (module-browser-show-lib-paths "Show files loaded by (lib ..) paths")
+ (module-browser-progress "Module Browser: ~a") ;; prefix in the status line
+ (module-browser-compiling-defns "Module Browser: compiling definitions")
+ (module-browser-show-lib-paths/short "Follow lib requires") ;; check box label in show module browser pane in drscheme window.
+ (module-browser-refresh "Refresh") ;; button label in show module browser pane in drscheme window.
 
  (happy-birthday-matthias "Happy Birthday, Matthias!")
  (happy-birthday-matthew "Happy Birthday, Matthew!")

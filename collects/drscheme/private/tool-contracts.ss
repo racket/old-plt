@@ -433,7 +433,7 @@
 (drscheme:unit:add-to-program-editor-mixin
  (((subclass?/c text%) . -> . (subclass?/c text%)) . -> . void?)
  (mixin)
- "\\phase{1}."
+ "\\phase{1}"
  ""
  "Adds \\var{mixin} to the result of"
  "@flink drscheme:unit:get-program-editor-mixin %"

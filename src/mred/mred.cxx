@@ -3118,6 +3118,11 @@ static void wxDo(Scheme_Object *proc)
 
 void Drop_Quit()
 {
+  if (ioFrame) {
+    if (ioFrame->OnClose())
+      ioFrame->Show(FALSE);
+  }
+
   wxDo(wxs_app_quit_proc);
 }
 

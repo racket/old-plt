@@ -39,7 +39,7 @@
 			    (#%make-exn:unit
 			     ,(format "~s: result from ~s is not a ~aunit"
 				      sname names (if sig? "signed " ""))
-			     ((debug-info-handler)))))
+			     (#%current-continuation-marks))))
 		 result)))))
 
   (define make-require

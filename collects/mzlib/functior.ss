@@ -181,7 +181,7 @@
 	     [(not (pair? l)) 
 	      (raise (make-exn:application:mismatch
 		      (format "~a: second argument must be a (proper) list; given ~e" name list)
-		      ((debug-info-handler))
+		      (current-continuation-marks)
 		      list))]
 	     [(f (car l)) (if whole-list? l (car l))]
 	     [else (loop (cdr l))]))))))
@@ -209,7 +209,7 @@
 		  frest))]
 	   [else (raise (make-exn:application:mismatch
 			 (format "filter: second argument must be a (proper) list; given ~e" list)
-			 ((debug-info-handler))
+			 (current-continuation-marks)
 			 list))])))))
    
    (define first (polymorphic (lambda (x) 

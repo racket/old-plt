@@ -48,7 +48,7 @@
 		      (make-exn:application:arity
 		       (format "<procedure-from-consumer-thread>: consumer procedure arity is ~e; provided ~s argument~a"
 			       (arity f) num (if (= 1 num) "" "s"))
-		       ((debug-info-handler))
+		       (current-continuation-marks)
 		       num
 		       (arity f)))))
 	   (semaphore-wait protect)

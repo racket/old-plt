@@ -158,12 +158,12 @@ match-letrec match-let match-let*)
 [(val) (raise
 (make-exn:misc:match 
 (format "match: no matching clause for ~s" val)
-((debug-info-handler))
+(current-continuation-marks)
 val))]
 [(val expr) (raise
 (make-exn:misc:match 
 (format "match: no matching clause for ~s: ~s" val expr)
-((debug-info-handler))
+(current-continuation-marks)
 val))]))
 
 (define match:syntax-err (lambda (obj msg) (error 'match

@@ -59,6 +59,9 @@
 	     (filled-circle (w h c) (fake-p 'filled-circle))
 	     (outline-circle (w h c) (fake-p 'outline-circle))
 	     
+	     (line (x y c) (fake-p 'line))
+	     (text (str c) (fake-p 'text))
+
 	     (image-inside? (a b))
 	     (find-image (a b))
 	     

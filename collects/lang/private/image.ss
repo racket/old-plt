@@ -18,7 +18,7 @@
 	   outline-rect
 	   filled-circle
 	   outline-circle
-           color-line
+           line
            text
 
 	   image-inside?
@@ -197,17 +197,22 @@
 			   (error (format "unknown color: ~a" color))))
       dc))
 
-  (define (color-line x y color)
+  (define (line x y color)
     (let ([dc (new-dc+bm 'color-line x y color 'transparent 'solid)])
       (send dc draw-line 0 0 x y)
       (dc->snip dc)))
 
-   (define (text str)
-     (let ([dc (new-dc+bm 'text 200 30 'black 'transparent 'solid)])
-       (let*-values ([(x y d s) (send dc get-text-extent str)]
-                     [(dc) (new-dc+bm 'text x y 'black 'transparent 'solid)])
-         (send dc draw-text str 0 0)
-         (dc->snip dc))))
+  ;; String Symbol -> Image
+  (define (text str color)
+    (check 'text string? str "string")
+    (check 'text symbol? color "symbol")
+    (let ([dc (new-dc+bm 'text 200 30 'black 'transparent 'solid)])
+      (let*-values ([(x y d s) (send dc get-text-extent str)]
+                    [(dc) (new-dc+bm 'text (+ x 1) (+ y 1) 'black 'solid 'solid)])
+        (send dc set-text-mode 'solid)
+        (send dc set-text-background (send the-color-database find-color (symbol->string color)))
+        (send dc draw-text str 0 0)
+        (dc->snip dc))))
 
   (define (a-rect who w h color brush pen)
     (let ([dc (new-dc+bm who w h color brush pen)])

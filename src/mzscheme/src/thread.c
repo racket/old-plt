@@ -2652,7 +2652,8 @@ Scheme_Object *scheme_thread_w_details(Scheme_Object *thunk,
     p->ku.k.p1 = thunk;
     p->ku.k.p2 = config;
     p->ku.k.p3 = mgr;
-    p->ku.k.p4 = scheme_make_pair((Scheme_Object *)cells, break_cell);
+    result = scheme_make_pair((Scheme_Object *)cells, break_cell);
+    p->ku.k.p4 = result;
     p->ku.k.i1 = suspend_to_kill;
 
     return scheme_handle_stack_overflow(thread_k);

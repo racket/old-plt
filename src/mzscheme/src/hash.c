@@ -795,10 +795,16 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_evt_set_type, hash_general);
   PROC(scheme_udp_type, hash_general);
   PROC(scheme_udp_evt_type, hash_general);
-  PROC(scheme_wrapped_evt_type, hash_general);
+  PROC(scheme_convert_evt_type, hash_general);
+  PROC(scheme_finish_evt_type, hash_general);
   PROC(scheme_nack_evt_type, hash_general);
   PROC(scheme_nack_guard_evt_type, hash_general);
   PROC(scheme_poll_evt_type, hash_general);
+  PROC(scheme_always_evt_type, hash_general);
+  PROC(scheme_never_evt_type, hash_general);
+  PROC(scheme_read_evt_type, hash_general);
+  PROC(scheme_peek_evt_type, hash_general);
+  PROC(scheme_write_evt_type, hash_general);
   PROC(scheme_semaphore_repost_type, hash_general);
   PROC(scheme_string_converter_type, hash_general);
   PROC(scheme_alarm_type, hash_general);

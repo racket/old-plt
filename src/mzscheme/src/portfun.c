@@ -1107,8 +1107,8 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
        This can't happen is peek is 1, because in that case we have a
        peek_proc, so there's no need for read-based peeks. */
     uip->peeked = NULL;
-    if (SCHEME_CHARP(val)) {
-      buffer[offset] = SCHEME_CHAR_VAL(val);
+    if (SCHEME_INTP(val)) {
+      buffer[offset] = SCHEME_INT_VAL(val);
       return 1;
     } else if (SCHEME_VOIDP(val)) {
       return SCHEME_SPECIAL;
@@ -1357,7 +1357,7 @@ user_byte_ready_sinfo(Scheme_Input_Port *port, Scheme_Schedule_Info *sinfo)
       if (c == SCHEME_SPECIAL)
 	uip->peeked = scheme_void;
       else
-	uip->peeked = scheme_make_character(s[0]);
+	uip->peeked = scheme_make_integer(s[0]);
     }
     return 1;
   } else

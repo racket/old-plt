@@ -2205,13 +2205,19 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       DO_CHECK_FOR_BREAK(p, ;);
 
-      if (NOT_SAME_OBJ(c->home, p))
+      if (NOT_SAME_OBJ(c->home, p)) {
+	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
+			 c,
 			 "continuation application: attempted to apply foreign continuation"
 			 " (created in another thread)");
-      if (c->ok && !*c->ok)
+      }
+      if (c->ok && !*c->ok) {
+	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
+			 c,
 			 "continuation application: attempted to cross a continuation boundary");
+      }
       
       p->suspend_break = 1; /* restored at call/cc destination */
 
@@ -2267,16 +2273,25 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	p->tail_buffer_set = 0;
 #endif
 
-      if (!SCHEME_CONT_HOME(obj))
+      if (!SCHEME_CONT_HOME(obj)) {
+	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
+			 obj,
 			 "continuation application: attempt to jump into an escape continuation");
-      if (NOT_SAME_OBJ(SCHEME_CONT_HOME(obj), p))
+      }
+      if (NOT_SAME_OBJ(SCHEME_CONT_HOME(obj), p)) {
+	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
+			 obj,
 			 "continuation application: attempted to apply foreign escape continuation"
 			 " (created in another thread)");
-      if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj))
+      }
+      if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj)) {
+	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
+			 obj,
 			 "continuation application: attempted to cross an escape continuation boundary");
+      }
       p->cjs.u.val = value;
       p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)obj;
       scheme_longjmp(MZTHREADELEM(p, error_buf), 1);

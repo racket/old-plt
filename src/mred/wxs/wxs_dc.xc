@@ -191,7 +191,7 @@ class baseMetaFileDC : public wxMetaFileDC {
 public:
   baseMetaFileDC(char *s = NULL);
 
-  baseMetaFile* baseClose() { return (baseMetaFile *)close(); }
+  baseMetaFile* baseClose() { return (baseMetaFile *)Close(); }
 };
 
 baseMetaFileDC::baseMetaFileDC(char *s)

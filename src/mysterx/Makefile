@@ -12,10 +12,10 @@ all :
 	cd myspage
 	nmake MZC=$(MZC) HTMLHELP=$(HTMLHELP) SHELL32=$(SHELL32) \
 	 REGSVR32=$(REGSVR32) /f myspage.mak 
-	cd ../mysc
+	cd ..\mysc
 	nmake MZC=$(MZC) HTMLHELP=$(HTMLHELP) SHELL32=$(SHELL32) \
 	 REGSVR32=$(REGSVR32) /f mysc.mak
-	cd ../myssink
+	cd ..\myssink
 	nmake MZC=$(MZC) HTMLHELP=$(HTMLHELP) SHELL32=$(SHELL32) \
 	 REGSVR32=$(REGSVR32) /f myssink.mak
 	cd ..
@@ -25,9 +25,9 @@ all :
 clean :
 	cd myspage
 	nmake clean /f myspage.mak
-	cd ../mysc
+	cd ..\mysc
 	nmake clean /f mysc.mak
-	cd ../myssink
+	cd ..\myssink
 	nmake clean /f myssink.mak
 	cd ..
 	nmake clean /f mysterx.mak

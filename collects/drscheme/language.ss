@@ -236,7 +236,7 @@
       (send f stretchable-width #f)
       (send f stretchable-height #f)
       (send language-choice stretchable-width #f)
-      (send printing stretchable-width #f)
+      (send printing stretchable-width #t)
       (update-to (fw:preferences:get 'drscheme:settings))
       (show-specifics (not (ormap compare-setting-to-gui basis:settings)))
       (for-each (lambda (x) (send x stretchable-height #f))

@@ -4,6 +4,6 @@
 	  [fw : framework^]
 	  mzlib:print-convert^
 	  (drscheme : drscheme:export^)
-	  drscheme:zodiac^)
+	  zodiac:system^)
 
   (void))

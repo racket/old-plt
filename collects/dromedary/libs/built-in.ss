@@ -442,7 +442,7 @@
 
 
 	(define <pervasive-funcs> (make-hash-table 'equal))
-	(hash-table-put! <pervasive-funcs> "raise" (cons (make-arrow (list (make-ml-exn)) (make-tvar "'a")) raise))
+	(hash-table-put! <pervasive-funcs> "raise" (cons (make-arrow (list "exception") (make-tvar "'a")) raise))
 	(hash-table-put! <pervasive-funcs> "=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <=>))
 	(hash-table-put! <pervasive-funcs> "<>" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <>))
 
@@ -456,9 +456,9 @@
 
 	(hash-table-put! <pervasive-funcs> "compare" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool") ) <compare>))
 
-	(hash-table-put! <pervasive-funcs> "min" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "'a") ) <min>))
+	(hash-table-put! <pervasive-funcs> "min" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) (make-tvar "'a")) ) <min>))
 
-	(hash-table-put! <pervasive-funcs> "max" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "'a") ) <max> ))
+	(hash-table-put! <pervasive-funcs> "max" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) (make-tvar "'a")) ) <max> ))
 
 	(hash-table-put! <pervasive-funcs> "==" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <==> ))
 

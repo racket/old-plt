@@ -153,7 +153,7 @@
 			  
 
 ;(string->symbol (format "exn:~a" (syntax-object->datum name)))) exn) ())
-			(make-<voidstruct> #f))]
+			(make-<voidstruct>))]
 	      [($ ast:pstr_exn_rebind name ident)
 ;	       #'"voigt"]
 	       (let* ([rname (syntax-object->datum name)]
@@ -163,7 +163,7 @@
 		      [test (string->symbol (format "~a?" rname))]
 		      [otest (string->symbol (format "~a?" rident))])
 	       #`(begin (define-values (#,maker #,test) (values #,omaker #,otest))
-			(make-<voidstruct> #f)))]
+			(make-<voidstruct>)))]
 	      [else
 	       (pretty-print (list "Unknown structure: " desc))]))
 
@@ -175,13 +175,13 @@
 ;			 (let ([core (compile-core_type (ast:type_declaration-manifest typedecl))])
 ;			   (begin
 ;			     (hash-table-put! user-types name core)
-			     #'(make-<voidstruct> #f)]
+			     #'(make-<voidstruct>)]
 			[($ ast:ptype_variant scll)
 ;			 (let ([cscll (compile-scll scll)])
 ;			   (begin
 ;			     (hash-table-put! user-types name (lambda (x) (isa-variant? 'a 'b cscll)))
 ;			     (pretty-print "begining type definitions")
-			     #`(begin #,@(mkdefinestructs scll) (make-<voidstruct> #f))]
+			     #`(begin #,@(mkdefinestructs scll) (make-<voidstruct>))]
 ;			     #`(define-struct #,(string->symbol(eval (caar scll))) (tlist))))]
 			 )))
 

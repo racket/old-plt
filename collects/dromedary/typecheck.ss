@@ -90,6 +90,7 @@
 		   (let ([tkind (ast:type_declaration-kind (cdr (car tdlist)))])
 		     (cond
 		      [(ast:ptype_abstract? tkind)
+		       (pretty-print (format "ptype_abstract: ~a" (syntax-object->datum (car (car tdlist)))))
 		       (make-tconstructor (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)) (syntax-object->datum (car (car tdlist))))]
 		      [(ast:ptype_variant? tkind) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))]
 		      [else (raise-error #f
@@ -121,7 +122,7 @@
 											       [(null? args) null]
 											       [(= (length args) 1) (car args)]
 											       [else (make-<tuple> args)])) "exception" ) #`#,(string->symbol (format "make-~a" (syntax-object->datum name)))))
-			 (make-mlexn (syntax-object->datum name) nconst)))]
+			 nconst))]
 		       
 		    [else
 		     (raise-error #f
@@ -545,11 +546,13 @@
 		    [($ ast:ptyp_tuple ctlist)
 		     (make-<tuple> (map typecheck-type ctlist (repeat boundlist (length ctlist)) (repeat decl? (length ctlist))))]
 		    [($ ast:ptyp_constr name ctlist)
-;		     (pretty-print (format "ptyp_constr ~a ~a" (unlongident name) ctlist))
+		     (pretty-print (format "ptyp_constr ~a ~a" (unlongident name) ctlist))
 		     (let* ([cexists (get-type (unlongident name) boundlist)]
 			    [fconstructor (if cexists
-					      ;(car (convert-tvars cexists null))
-					      cexists
+					;(car (convert-tvars cexists null))
+					      (begin 
+						(pretty-print (format "cexists: ~a" cexists))
+					      cexists)
 					      (constructor-lookup (unlongident name)))]
 ;			    [foobar (pretty-print (format "constructor-lookup: ~a" (unlongident name)))]
 			    )
@@ -644,7 +647,7 @@
 			    [else
 			     (raise-error #f
 					  (loc)
-					  (format "I don't now how to handle this. fcsontructor: ~a ctlist: ~a"
+					  (format "I don't know how to handle this. fcontructor: ~a ctlist: ~a"
 						  fconstructor ctlist)
 					  fconstructor
 					  (ast:core_type-src asttype))])
@@ -1137,6 +1140,11 @@
 		       (unify-error t1 t2 syn))]
 		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		  [else (unify-error t1 t2 syn)])]
+		[(ml-exn? t1)
+		 (cond
+		  [(ml-exn? t2) #t]
+		  [(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
+		  [else (unify-error t1 t2 syn)])]
 		[(tlist? t1)
 		 (cond
 		  [(tlist? t2) (unify (tlist-type t1) (tlist-type t2) syn)]
@@ -1265,6 +1273,7 @@
 )]
 	      [(option? type) (let ([mtype (convert-tvars (option-type type)  mappings)])
 				(cons (make-option (car mtype)) (cdr mtype)))]
+	      [(ml-exn? type) (cons type mappings)]
 	      [(ref? type) (let ([rtype (convert-tvars (ref-type type) mappings)])
 			     (cons (make-ref (car rtype)) (cdr rtype)))]
 	      
@@ -1298,10 +1307,7 @@
 				(cons (make-option (car otype)) (cdr otype)))]
 	      [(ref? type) (let ([rtype (unconvert-tvars (ref-type type) mappings)])
 			     (cons (make-ref (car rtype)) (cdr rtype)))]
-	      [(mlexn? type) (let ([newtypes (if (null? (tconstructor-argtype (mlexn-types type)))
-						(cons null mappings)
-						(unconvert-tvars (tconstructor-argtype (mlexn-types type)) mappings))])
-			       (cons (make-mlexn (mlexn-name type) (make-tconstructor (car newtypes) (tconstructor-result (mlexn-types type)))) (cdr newtypes)))]
+	      [(ml-exn? type) (cons type mappings)]
 	      [(tconstructor? type) (let* ([atype (unconvert-tvars (tconstructor-argtype type) mappings)]
 					   [rtype (unconvert-tvars (tconstructor-result type) (if (null? atype)
 												  mappings 

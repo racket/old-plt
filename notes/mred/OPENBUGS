@@ -9,6 +9,8 @@ Bugs
 
 * MacOS: std file dialog and print dialogs block MzScheme threads
 
+* Unix: Clipboard client is invoked in the wrong thread/eventspace
+
 * Need to penalize the current thread more (i.e., swap it out sooner)
   after certain primitive operations that can take a long time (e.g.,
   loading a bitmap or saving a file)

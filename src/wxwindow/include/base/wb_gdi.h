@@ -110,36 +110,7 @@ class wxbFont: public wxObject
   inline Bool GetUnderlined(void) { return underlined; }
 };
 
-/* MATTHEW: [2] wxFontNameDirectory and wxTheFontNameDirectory */
-
-class wxFontNameDirectory : public wxObject
-{
-  DECLARE_DYNAMIC_CLASS(wxFontNameDirectory)
-  class wxHashTable *table;
-  int nextFontId;
- public:
-  wxFontNameDirectory(void);
-  ~wxFontNameDirectory();
-  void Initialize(void);
-  char *GetScreenName(int fontid, int weight, int style);
-  char *GetPostScriptName(int fontid, int weight, int style);
-  char *GetAFMName(int fontid, int weight, int style);
-
-  void SetScreenName(int fontid, int weight, int style, char *s);
-  void SetPostScriptName(int fontid, int weight, int style, char *s);
-  void SetAFMName(int fontid, int weight, int style, char *s);
-
-  void Initialize(int fontid, int family, const char *name);/* MATTHEW: [4] New font system */
-  int GetNewFontId(void);
-  
-  int FindOrCreateFontId(const char *name, int family); /* MATTHEW: [4] New font system */
-
-  int GetFontId(const char *name);/* MATTHEW: [4] const */
-  char *GetFontName(int fontid);
-  int GetFamily(int fontid); /* MATTHEW: [4] New font system */
-};
-
-extern wxFontNameDirectory wxTheFontNameDirectory;
+#include "../../../wxcommon/FontDirectory.h"
 
 // Colour
 class wxColour: public wxObject

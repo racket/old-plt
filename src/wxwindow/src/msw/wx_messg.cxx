@@ -201,7 +201,6 @@ void wxMessage::SetLabel(char *label)
   if (bm_label)
     return;
 
-  float w, h;
   RECT rect;
 
   wxWindow *parent = GetParent();

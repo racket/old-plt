@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.22 1999/08/03 18:15:26 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.23 1999/10/26 21:32:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1266,6 +1266,26 @@ int wxDC::LogicalToDeviceY(float y)
 }
 
 int wxDC::LogicalToDeviceYRel(float y)
+{
+  return MS_YLOG2DEVREL(y);
+}
+
+float wxDC::FLogicalToDeviceX(float x)
+{
+  return MS_XLOG2DEV(x);
+}
+
+float wxDC::FLogicalToDeviceXRel(float x)
+{
+  return MS_XLOG2DEVREL(x);
+}
+
+float wxDC::FLogicalToDeviceY(float y)
+{
+  return MS_YLOG2DEV(y);
+}
+
+float wxDC::FLogicalToDeviceYRel(float y)
 {
   return MS_YLOG2DEVREL(y);
 }

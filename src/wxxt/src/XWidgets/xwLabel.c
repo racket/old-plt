@@ -485,7 +485,8 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 			  ((XfwfLabelWidget)self)->xfwfLabel.pixmap, ((XfwfLabelWidget)self)->xfwfLabel.maskmap, 
 			  XtWindow(self), ((XfwfLabelWidget)self)->xfwfLabel.gc,
 			  x, y, width, height, 
-			  ((XfwfLabelWidget)self)->xfwfLabel.label_depth, ((XfwfLabelWidget)self)->xfwfLabel.mask_depth);
+			  ((XfwfLabelWidget)self)->xfwfLabel.label_depth, ((XfwfLabelWidget)self)->xfwfLabel.mask_depth,
+			  reg);
     }
 
     /* Gray out if not sensitive */

@@ -365,7 +365,8 @@ responsible for drawing the frame.
 			  $pixmap, $maskmap, 
 			  XtWindow($), $gc,
 			  x, y, width, height, 
-			  $label_depth, $mask_depth);
+			  $label_depth, $mask_depth,
+			  reg);
     }
 
     /* Gray out if not sensitive */

@@ -973,7 +973,8 @@ void doDrawBitmapLabel(Display *dpy,
 		       Pixmap pixmap, Pixmap maskmap,
 		       Drawable drawable, GC agc,
 		       int x, int y, int width, int height, 
-		       int depth, int mask_depth)
+		       int depth, int mask_depth,
+		       Region reg)
 {
 #ifdef WX_USE_XRENDER
   if (mask_depth > 1) {
@@ -986,6 +987,8 @@ void doDrawBitmapLabel(Display *dpy,
 				alpha_format,
 				0,
 				NULL);
+
+    XRenderSetPictureClipRegion(wxAPP_DISPLAY, dest, reg);
 
     XRenderComposite(wxAPP_DISPLAY,
 		     PictOpOver,
@@ -1028,11 +1031,13 @@ extern "C" {
 			 Pixmap pixmap, Pixmap maskmap,
 			 Drawable drawable, GC agc,
 			 int x, int y, int width, int height, 
-			 int depth, int mask_depth) {
+			 int depth, int mask_depth,
+			 Region reg) {
     return doDrawBitmapLabel(dpy, pixmap, maskmap,
 			     drawable, agc,
 			     x, y, width, height, 
-			     depth, mask_depth);
+			     depth, mask_depth,
+			     reg);
   }
 };
 

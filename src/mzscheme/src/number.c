@@ -2908,14 +2908,14 @@ string_to_number (int argc, Scheme_Object *argv[])
 			    radix, 0, NULL, NULL);
 }
 
+/* Exponent threshold for obvious infinity: */
+#define CHECK_INF_EXP_THRESHOLD 400
+
 #ifdef USE_EXPLICT_FP_FORM_CHECK
 
 /* Fixes Linux problem of 0e...  => non-number (0 with ptr at e...) */
 /* Fixes SunOS problem with numbers like .3e2666666666666 => 0.0 */
 /* Fixes HP/UX problem with numbers like .3e2666666666666 => non-number */
-
-/* Exponent threshold for obvious infinity: */
-#define CHECK_INF_EXP_THRESHOLD 400
 
 double STRTOD(const char *orig_c, char **f)
 {
@@ -3639,6 +3639,39 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	exponent = scheme_bin_minus(exponent, scheme_make_integer(extra_power));
     }
     
+    /* Don't perform a huge exponential if we're returning a float: */
+    if (is_float || (!is_not_float && decimal_means_float)) {
+      if (scheme_bin_gt(exponent, scheme_make_integer(CHECK_INF_EXP_THRESHOLD))) {
+	if (SCHEME_TRUEP(negative_p(1, &mantissa))) {
+#ifdef MZ_USE_SINGLE_FLOATS
+	  if (single)
+	    return single_minus_inf_object;
+#endif	  
+	  return minus_inf_object;
+	} else {
+#ifdef MZ_USE_SINGLE_FLOATS
+	  if (single)
+	    return single_inf_object;
+#endif	  
+	  return inf_object;
+	}
+      } else if (scheme_bin_lt(exponent, scheme_make_integer(-CHECK_INF_EXP_THRESHOLD))) {
+	if (SCHEME_TRUEP(negative_p(1, &mantissa))) {
+#ifdef MZ_USE_SINGLE_FLOATS
+	  if (single)
+	    return nzerof;
+#endif
+	  return nzerod;
+	} else {
+#ifdef MZ_USE_SINGLE_FLOATS
+	  if (single)
+	    return zerof;
+#endif
+	  return zerod;
+	}
+      }
+    }
+
     args[0] = scheme_make_integer(radix);
     args[1] = exponent;
     power = scheme_expt(2, args);

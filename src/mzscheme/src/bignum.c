@@ -1238,7 +1238,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
 
 #define USE_FLOAT_BITS 51
 #define FP_TYPE double
-#define IS_FLOAT_INF is_double_int
+#define IS_FLOAT_INF is_double_inf
 #define SCHEME_BIGNUM_TO_FLOAT_INFO scheme_bignum_to_double_inf_info
 #define SCHEME_BIGNUM_TO_FLOAT scheme_bignum_to_double
 #define SCHEME_CHECK_FLOAT scheme_check_double
@@ -1256,7 +1256,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
 
 # define USE_FLOAT_BITS 22
 # define FP_TYPE float
-# define IS_FLOAT_INF is_float_int
+# define IS_FLOAT_INF is_float_inf
 # define SCHEME_BIGNUM_TO_FLOAT_INFO scheme_bignum_to_float_inf_info
 # define SCHEME_BIGNUM_TO_FLOAT scheme_bignum_to_float
 # define SCHEME_CHECK_FLOAT scheme_check_float

@@ -909,6 +909,28 @@ static Scheme_Object *FP_cpointer_p(int argc, Scheme_Object *argv[])
   return SCHEME_FFIANYPTRP(argv[0]) ? scheme_true : scheme_false;
 }
 
+#undef MYNAME
+#define MYNAME "cpointer-type"
+static Scheme_Object *FP_cpointer_type(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *type;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
+  type = NULL;
+  if (SCHEME_CPTRP(argv[0])) type = SCHEME_CPTR_TYPE(argv[0]);
+  return (type==NULL) ? scheme_false : type;
+}
+
+#undef MYNAME
+#define MYNAME "set-cpointer-type!"
+static Scheme_Object *FP_set_cpointer_type(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_CPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "proper-cpointer", 0, argc, argv);
+  SCHEME_CPTR_TYPE(argv[0]) = argv[1];
+  return scheme_void;
+}
+
 /*****************************************************************************/
 /* Callback type */
 
@@ -1644,6 +1666,10 @@ void scheme_init_foreign(Scheme_Env *env)
     scheme_make_prim_w_arity(FP_make_ffi_struct_type, "make-ffi-struct-type", 1, 1), menv);
   scheme_add_global("cpointer?",
     scheme_make_prim_w_arity(FP_cpointer_p, "cpointer?", 1, 1), menv);
+  scheme_add_global("cpointer-type",
+    scheme_make_prim_w_arity(FP_cpointer_type, "cpointer-type", 1, 1), menv);
+  scheme_add_global("set-cpointer-type!",
+    scheme_make_prim_w_arity(FP_set_cpointer_type, "set-cpointer-type!", 2, 2), menv);
   scheme_add_global("ffi-callback?",
     scheme_make_prim_w_arity(FP_ffi_callback_p, "ffi-callback?", 1, 1), menv);
   scheme_add_global("ffi-sizeof",

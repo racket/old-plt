@@ -943,6 +943,24 @@ static int ffi_sizeof(Scheme_Object *type)
   return SCHEME_FFIANYPTRP(argv[0]) ? scheme_true : scheme_false;
 }
 
+{:(cdefine cpointer-type 1):}
+{
+  Scheme_Object *type;
+  if (!SCHEME_FFIANYPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "cpointer", 0, argc, argv);
+  type = NULL;
+  if (SCHEME_CPTRP(argv[0])) type = SCHEME_CPTR_TYPE(argv[0]);
+  return (type==NULL) ? scheme_false : type;
+}
+
+{:(cdefine set-cpointer-type! 2):}
+{
+  if (!SCHEME_CPTRP(argv[0]))
+    scheme_wrong_type(MYNAME, "proper-cpointer", 0, argc, argv);
+  SCHEME_CPTR_TYPE(argv[0]) = argv[1];
+  return scheme_void;
+}
+
 /*****************************************************************************/
 /* Callback type */
 

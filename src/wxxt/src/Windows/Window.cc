@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.18 1998/10/10 15:27:57 mflatt Exp $
+ * $Id: Window.cc,v 1.19 1998/10/16 15:55:56 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -265,9 +265,20 @@ void wxWindow::ClientToScreen(int *x, int *y)
     if (!X->handle) // forbid, if no widget associated
 	return;
 
+#if 1
+    Display *dpy  = XtDisplay(X->handle);
+    Screen  *scn  = XtScreen(X->handle);
+    Window  root  = RootWindowOfScreen(scn);
+    Window  win   = XtWindow(X->handle);
+    Window  child;
+    int xx = *x;
+    int yy = *y;
+    XTranslateCoordinates(dpy, win, root, xx, yy, x, y, &child);
+#else
     short int root_x, root_y;
     XtTranslateCoords(X->handle, *x, *y, &root_x, &root_y);
     *x = root_x; *y = root_y;
+#endif
 }
 
 void wxWindow::Configure(int x, int y, int width, int height)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.9 1998/08/08 03:33:04 mflatt Exp $
+ * $Id: ListBox.cc,v 1.10 1998/09/08 15:07:57 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -395,9 +395,14 @@ int wxListBox::GetSelection(void)
 {
     XfwfMultiListReturnStruct *rs
 	= XfwfMultiListGetHighlighted(MULTILIST);
-    if (rs->num_selected==1)
+    if (rs->num_selected >= 1)
 	return rs->selected_items[0];
     return -1;
+}
+
+static int int_le(const void *a, const void *b)
+{
+  return (*(int *)a - *(int *)b);
 }
 
 int wxListBox::GetSelections(int **list_selections)
@@ -409,6 +414,8 @@ int wxListBox::GetSelections(int **list_selections)
     for (i = 0; i < rs->num_selected; i++)
       selections[i] = rs->selected_items[i];
     
+    qsort(selections, rs->num_selected, sizeof(int), int_le);
+
     *list_selections = selections;
 
     return (rs->num_selected);
@@ -456,11 +463,20 @@ void wxListBox::SetSelection(int n, Bool select)
       XfwfMultiListUnhighlightItem(MULTILIST, n);
 }
 
+void wxListBox::SetOneSelection(int n)
+{
+  if (0 <= n && n < num_choices) {
+    if (style & (wxMULTIPLE | wxEXTENDED))
+      XfwfMultiListUnhighlightAll(MULTILIST);
+    XfwfMultiListHighlightItem(MULTILIST, n);
+  }
+}
+
 Bool wxListBox::SetStringSelection(char *s)
 {
     int n;
     if ((n = FindString(s)) > -1) {
-	SetSelection(n);
+	SetOneSelection(n);
 	return TRUE;
     }
     return FALSE;

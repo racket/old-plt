@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Menu.cc,v 1.6 1998/08/14 21:44:41 mflatt Exp $
+ * $Id: Menu.cc,v 1.7 1998/09/11 01:25:30 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -351,12 +351,15 @@ void wxMenu::SetTitle(char *label)
 // find items by ID or by label
 //-----------------------------------------------------------------------------
 
-int wxMenu::FindItem(char *itemstring)
+int wxMenu::FindItem(char *itemstring, int strip)
 {
     char *label, *key;
     int  answer = -1;
 
-    wxGetLabelAndKey(itemstring, &label, &key);
+    if (strip)
+      wxGetLabelAndKey(itemstring, &label, &key);
+    else
+      label = itemstring;
     for (menu_item *item = (menu_item*)top; item; item=item->next) {
 	if (!strcmp(label, item->label)) { // label found
 	    answer = item->ID;
@@ -366,7 +369,6 @@ int wxMenu::FindItem(char *itemstring)
 	    if ((answer = ((wxMenu*)item->user_data)->FindItem(label)) > -1)
 		break; // found
     }
-    delete label; // key is part of label
     return answer;
 }
 

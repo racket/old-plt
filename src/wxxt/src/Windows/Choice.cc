@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.7 1998/10/16 15:55:55 mflatt Exp $
+ * $Id: Choice.cc,v 1.8 1998/11/12 18:14:45 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -182,7 +182,7 @@ void wxChoice::Append(char *s)
 {
     choice_menu->Append(num_choices++, s, (char *)(-1));
     if (num_choices == 1)
-      XtVaSetValues(X->handle, XtNlabel, s, NULL);
+      XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, s, NULL);
 }
 
 void wxChoice::Clear(void)
@@ -191,12 +191,12 @@ void wxChoice::Clear(void)
     choice_menu = DEBUG_NEW wxMenu(NULL, (wxFunction)&(wxChoice::MenuEventCallback));
     num_choices = 0;
     selection = 0;
-    XtVaSetValues(X->handle, XtNlabel, "", NULL);
+    XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, "", NULL);
 }
 
 int wxChoice::FindString(char *s)
 {
-    return choice_menu->FindItem(s);
+    return choice_menu->FindItem(s, 0);
 }
 
 char *wxChoice::GetString(int n)
@@ -214,7 +214,7 @@ void wxChoice::SetSelection(int n)
     if (0 <= n && n < num_choices) {
 	selection = n;
 	char *label = GetString(selection);
-	XtVaSetValues(X->handle, XtNlabel, label, NULL);
+	XtVaSetValues(X->handle, XtNshrinkToFit, False, XtNlabel, label, NULL);
     }
 }
 
@@ -275,4 +275,27 @@ void wxChoice::MenuEventCallback(wxObject& obj, wxCommandEvent& ev)
 
     choice->SetSelection(pu->menuId);
     choice->ProcessCommand(*event);
+}
+
+void wxChoice::OnChar(wxKeyEvent &e)
+{
+  int delta = 0;
+
+  switch (e.keyCode) {
+  case WXK_UP:
+    delta = -1;
+    break;
+  case WXK_DOWN:
+    delta = 1;
+    break;
+  }
+
+  if (delta) {
+    int s = GetSelection();
+    SetSelection(s + delta);
+    if (s != GetSelection()) {
+      wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+      ProcessCommand(*event);
+    }
+  }
 }

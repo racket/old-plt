@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.57 1998/12/17 03:30:27 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.58 1999/02/10 17:35:19 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -702,27 +702,29 @@
 		      (dynamic-wind
 			void
 			(lambda ()
-			  (apply append
-			    (map (lambda (e)
-				   (expand-expr e env attributes
-				     vocab))
-			      (let ((reader (z:read p
-					      (z:make-location
-						(z:location-line
-						  z:default-initial-location)
-						(z:location-column
-						  z:default-initial-location)
-						(z:location-offset
-						  z:default-initial-location)
-						(build-path
-						  (current-load-relative-directory)
-						  name)))))
-				(let loop ()
-				  (let ((input (reader)))
-				    (if (z:eof? input)
-				      '()
-				      (cons input
-					(loop)))))))))
+			  (let ([exprs
+				 (let ((reader (z:read p
+						       (z:make-location
+							(z:location-line
+							 z:default-initial-location)
+							(z:location-column
+							 z:default-initial-location)
+							(z:location-offset
+							 z:default-initial-location)
+							(build-path
+							 (current-load-relative-directory)
+							 name)))))
+				   (let loop ()
+				     (let ((input (reader)))
+				       (if (z:eof? input)
+					   '()
+					   (cons input
+						 (loop))))))])
+			    (expand-expr (structurize-syntax 
+					  (cons 'begin exprs) 
+					  expr '(-1))
+					 env attributes
+					 vocab)))
 			(lambda ()
 			  (close-input-port p))))))))))
 	(else
@@ -1922,16 +1924,16 @@
 	    =>
 	    (lambda (p-env)
 	      (let ((in:expr (pat:pexpand 'expr p-env kwd))
-		     (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
+		    (in:linkage (pat:pexpand '(linkage ...) p-env kwd)))
 		(let ((proc:linkage (map (lambda (l)
 					   (expand-expr l env attributes
-					     iu/s-linkage-vocab))
-				      in:linkage))
-		       (proc:imports (apply append
-				       (map (lambda (l)
-					      (expand-expr l env attributes
-						iu/s-imports-vocab))
-					 in:linkage))))
+							iu/s-linkage-vocab))
+					 in:linkage))
+		      (proc:imports (apply append
+					   (map (lambda (l)
+						  (expand-expr l env attributes
+							       iu/s-imports-vocab))
+						in:linkage))))
 		  (expand-expr
 		   (structurize-syntax
 		    `(let ((unit ,in:expr))

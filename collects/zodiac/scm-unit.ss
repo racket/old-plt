@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.76 1999/02/02 21:03:25 mflatt Exp $
+; $Id: scm-unit.ss,v 1.77 1999/02/10 17:35:44 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -1081,19 +1081,19 @@
       (lambda (expr env attributes vocab)
 	(let loop ((r (resolve expr env vocab)))
 	  (cond
-	    ((or (macro-resolution? r) (micro-resolution? r))
-	      (if (check-export expr attributes)
+	   ((or (macro-resolution? r) (micro-resolution? r))
+	    (if (check-export expr attributes)
 		(loop top-level-resolution)
 		(static-error expr
-		  "Invalid use of keyword ~a" (z:symbol-orig-name expr))))
-	    ((lexical-binding? r)
-	      (create-lexical-varref r expr))
-	    ((top-level-resolution? r)
-	     (process-unit-top-level-resolution expr attributes))
-	    (else
-	      (internal-error expr "Invalid resolution in unit delta: ~s"
-		r)))))))
-
+			      "Invalid use of keyword ~a" (z:symbol-orig-name expr))))
+	   ((lexical-binding? r)
+	    (create-lexical-varref r expr))
+	   ((top-level-resolution? r)
+	    (process-unit-top-level-resolution expr attributes))
+	   (else
+	    (internal-error expr "Invalid resolution in unit delta: ~s"
+			    r)))))))
+  
   ; --------------------------------------------------------------------
 
   (include "scm-hanc.ss")

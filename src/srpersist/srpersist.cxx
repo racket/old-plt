@@ -132,7 +132,7 @@ char *findBitByValueInDict(SQLUINTEGER value,SRP_NAMED_CONSTANT *entry,size_t nu
 
 SQLUINTEGER findBitByNameInDict(char *intName,SRP_NAMED_CONSTANT *entry,size_t numBits) {
   size_t i;
-
+  
   for (i = 0; i < numBits; i++,entry++) {
     if (stricmp(entry->scheme_name,intName) == 0) {
       return entry->val;
@@ -6726,6 +6726,29 @@ void initTypes(void) {
   sql_op_parms_type = scheme_make_type("<sql-op-parms>");
   sql_guid_type = scheme_make_type("<sql-guid>");
   sql_paramlength_type = scheme_make_type("<sql-paramlength>");
+
+  register_global(sql_date_type);
+  register_global(sql_decimal_type);
+  register_global(sql_pointer_type);
+  register_global(sql_time_type);
+  register_global(sql_timestamp_type);
+  register_global(sql_return_type);
+  register_global(sql_henv_type);
+  register_global(sql_hdbc_type);
+  register_global(sql_hstmt_type);
+  register_global(sql_hdesc_type);
+  register_global(sql_boxed_uint_type);
+  register_global(sql_buffer_type);
+  register_global(sql_length_type);
+  register_global(sql_indicator_type);
+  register_global(sql_row_status_type);
+  register_global(sql_array_status_type);
+  register_global(sql_binding_offset_type);
+  register_global(sql_rows_processed_type);
+  register_global(sql_octet_length_type);
+  register_global(sql_op_parms_type);
+  register_global(sql_guid_type);
+  register_global(sql_paramlength_type);
 }
 
 void initExns(Scheme_Env *env) {
@@ -6756,6 +6779,13 @@ void initExns(Scheme_Env *env) {
     srp_exns[i].name_count = name_count;
     exnNameCount += name_count;
   }
+
+  register_global(withInfoFuns);
+  register_global(noDataFuns);
+  register_global(invalidHandleFuns);
+  register_global(errorFuns);
+  register_global(needDataFuns);
+  register_global(stillExecutingFuns);
 }
 
 void initStructs(void) {
@@ -6777,6 +6807,25 @@ void initStructs(void) {
     srpStructs[i].name_count = name_count;
     structNameCount += name_count;
   }
+
+  register_global(numericStructFuns);
+  register_global(dateStructFuns);
+  register_global(timeStructFuns);
+  register_global(timeStampStructFuns);
+  register_global(guidStructFuns);
+  register_global(yearIntervalStructFuns);
+  register_global(monthIntervalStructFuns);
+  register_global(dayIntervalStructFuns);
+  register_global(hourIntervalStructFuns);
+  register_global(minuteIntervalStructFuns);
+  register_global(secondIntervalStructFuns);
+  register_global(yearToMonthIntervalStructFuns);
+  register_global(dayToHourIntervalStructFuns);
+  register_global(dayToMinuteIntervalStructFuns);
+  register_global(dayToSecondIntervalStructFuns);
+  register_global(hourToMinuteIntervalStructFuns);
+  register_global(hourToSecondIntervalStructFuns);
+  register_global(minuteToSecondIntervalStructFuns);
 }
 
 Scheme_Object *schemeObjectFromString(char *s,Scheme_Env *env) {
@@ -6785,6 +6834,7 @@ Scheme_Object *schemeObjectFromString(char *s,Scheme_Env *env) {
 
 void initGlobals(Scheme_Env *env) {
   scheme_raise = schemeObjectFromString("raise",env);
+  register_global(scheme_raise);
 }
 
 void sortConsts(void) {
@@ -6884,7 +6934,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 #ifndef __MAC_OS__
   if (isatty(fileno(stdin))) {
     fputs("SisterPersist extension for MzScheme, "
-	  "Copyright (c) 1999 Rice PLT (Paul Steckler)\n",stderr);
+	  "Copyright (c) 1999-2000 Rice PLT (Paul Steckler)\n",stderr);
   }
 #endif
 

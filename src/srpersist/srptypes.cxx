@@ -36,7 +36,6 @@ Scheme_Type sql_pointer_type;
 Scheme_Type sql_time_type;
 Scheme_Type sql_timestamp_type;
 Scheme_Type sql_return_type;
-Scheme_Type sql_handle_type;
 Scheme_Type sql_henv_type;
 Scheme_Type sql_hdbc_type;
 Scheme_Type sql_hstmt_type;

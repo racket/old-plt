@@ -2255,6 +2255,7 @@ int mark_comp_env_MARK(void *p) {
   gcMARK(e->data.const_vals);
   gcMARK(e->data.const_uids);
   gcMARK(e->data.use);
+  gcMARK(e->data.lifts);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
@@ -2281,6 +2282,7 @@ int mark_comp_env_FIXUP(void *p) {
   gcFIXUP(e->data.const_vals);
   gcFIXUP(e->data.const_uids);
   gcFIXUP(e->data.use);
+  gcFIXUP(e->data.lifts);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
@@ -3128,6 +3130,7 @@ int mark_udp_evt_MARK(void *p) {
   Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)p;
 
   gcMARK(uw->udp);
+  gcMARK(uw->str);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));
@@ -3137,6 +3140,7 @@ int mark_udp_evt_FIXUP(void *p) {
   Scheme_UDP_Evt *uw = (Scheme_UDP_Evt *)p;
 
   gcFIXUP(uw->udp);
+  gcFIXUP(uw->str);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));

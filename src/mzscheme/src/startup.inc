@@ -2190,7 +2190,7 @@
 "((_) #'(begin))"
 "((_ elem)"
 "(not(eq? ctx 'module-begin))"
-"(let((e(local-transformer-expand"
+"(let((e(local-transformer-expand/capture-lifts"
 " #'elem"
 " ctx"
 "(syntax->list"

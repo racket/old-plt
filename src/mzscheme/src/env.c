@@ -74,6 +74,7 @@ static Scheme_Object *local_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_module_introduce(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_get_shadower(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_certify(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_lift_expr(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_introducer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
@@ -104,6 +105,8 @@ static Scheme_Object *kernel_symbol;
 
 static int intdef_counter = 0;
 
+static int lifted_counter = 0;
+
 static int builtin_ref_counter = 0;
 
 static int env_uid_counter;
@@ -121,6 +124,7 @@ typedef struct Compile_Data {
   Scheme_Object **const_vals;
   Scheme_Object **const_uids;
   int *use;
+  Scheme_Object *lifts;
 } Compile_Data;
 
 typedef struct Scheme_Full_Comp_Env {
@@ -513,6 +517,12 @@ static void make_init_env(void)
 			     scheme_make_prim_w_arity(rename_transformer_target,
 						      "rename-transformer-target",
 						      1, 1),
+			     env);
+
+  scheme_add_global_constant("syntax-local-lift-expression", 
+			     scheme_make_prim_w_arity(local_lift_expr, 
+						      "syntax-local-lift-expression",
+						      1, 1), 
 			     env);
 
   {
@@ -1143,6 +1153,27 @@ scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *f
   frame->values[index] = val;
 }
 
+void scheme_frame_captures_lifts(Scheme_Comp_Env *env, Scheme_Lift_Capture_Proc cp, Scheme_Object *data)
+{
+  Scheme_Lift_Capture_Proc *pp;
+  Scheme_Object *vec;
+  
+  pp = (Scheme_Lift_Capture_Proc *)scheme_malloc_atomic(sizeof(Scheme_Lift_Capture_Proc));
+  *pp = cp;
+
+  vec = scheme_make_vector(3, NULL);
+  SCHEME_VEC_ELS(vec)[0] = scheme_null;
+  SCHEME_VEC_ELS(vec)[1] = (Scheme_Object *)pp;
+  SCHEME_VEC_ELS(vec)[2] = data;
+
+  COMPILE_DATA(env)->lifts = vec;
+}
+
+Scheme_Object *scheme_frame_get_lifts(Scheme_Comp_Env *env)
+{
+  return SCHEME_VEC_ELS(COMPILE_DATA(env)->lifts)[0];
+}
+
 void scheme_add_local_syntax(int cnt, Scheme_Comp_Env *env)
 {
   Scheme_Object **ns, **vs;
@@ -1154,6 +1185,7 @@ void scheme_add_local_syntax(int cnt, Scheme_Comp_Env *env)
     COMPILE_DATA(env)->num_const = cnt;
     COMPILE_DATA(env)->const_names = ns;
     COMPILE_DATA(env)->const_vals = vs;
+
   }
 }
 
@@ -1973,9 +2005,12 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 
       for (i = frame->num_bindings; i--; ) {
 	if (frame->values[i]) {
-	  if (frame->uids) uid = frame->uids[i];
+	  if (frame->uids) 
+	    uid = frame->uids[i];
 	  if (SAME_OBJ(SCHEME_STX_VAL(find_id), SCHEME_STX_VAL(frame->values[i]))
-	      && scheme_stx_env_bound_eq(find_id, frame->values[i], uid, phase)) {
+	      && (scheme_stx_env_bound_eq(find_id, frame->values[i], uid, phase)
+		  || ((frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+		      && scheme_stx_bound_eq(find_id, frame->values[i], phase)))) {
 	    /* Found a lambda- or let-bound variable: */
 	    if (flags & SCHEME_DONT_MARK_USE)
 	      return scheme_make_local(scheme_local_type, 0);
@@ -2004,6 +2039,7 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
 				"variable used out of context");
 	    return NULL;
 	  }
+
 	  if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
 	    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))
 	      return val;
@@ -3132,6 +3168,55 @@ local_certify(int argc, Scheme_Object *argv[])
 					 cert_data,
 					 "certifier",
 					 1, 3);
+}
+
+static Scheme_Object *
+local_lift_expr(int argc, Scheme_Object *argv[])
+{
+  Scheme_Comp_Env *env;
+  Scheme_Object *id, *local_mark, *expr, *data, *vec, *a[1];
+  char buf[16];
+  Scheme_Lift_Capture_Proc cp;  
+
+  expr = argv[0];
+  if (!SCHEME_STXP(expr))
+    scheme_wrong_type("syntax-local-lift-expression", "syntax", 0, argc, argv);
+
+  env = scheme_current_thread->current_local_env;
+  local_mark = scheme_current_thread->current_local_mark;
+
+  if (!env)
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, 
+		     "syntax-local-lift-expression: not currently transforming");
+
+  while (env && !COMPILE_DATA(env)->lifts) {
+    env = env->next;
+  }
+
+  if (!env)
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, 
+		     "syntax-local-lift-expression: no lift target");
+  
+  expr = scheme_add_remove_mark(expr, local_mark);
+
+  sprintf(buf, "lifted%d", lifted_counter++);
+  id = scheme_intern_exact_parallel_symbol(buf, strlen(buf));
+  id = scheme_datum_to_syntax(id, scheme_false, scheme_false, 0, 0);
+  a[0] = id;
+  id = local_module_introduce(1, a);
+
+  vec = COMPILE_DATA(env)->lifts;
+  cp = *(Scheme_Lift_Capture_Proc *)SCHEME_VEC_ELS(vec)[1];
+  data = SCHEME_VEC_ELS(vec)[2];
+
+  expr = cp(data, id, expr);
+
+  expr = scheme_make_pair(expr, SCHEME_VEC_ELS(vec)[0]);
+  SCHEME_VEC_ELS(vec)[0] = expr;
+
+  id = scheme_add_remove_mark(id, local_mark);
+
+  return id;
 }
 
 static Scheme_Object *

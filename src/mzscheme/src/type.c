@@ -222,6 +222,8 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_certifications_type, "<certifications>");
 
+  set_name(scheme_already_comp_type, "<internal:already-compiled>");
+
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
 }

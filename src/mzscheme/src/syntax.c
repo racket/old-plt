@@ -3238,7 +3238,7 @@ do_define_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_compile_rec_done_local(&rec1, 0);
   }
 
-  val = scheme_compile_expr(code, exp_env, &rec1, 0);
+  val = scheme_compile_expr_lift_to_let(code, exp_env, &rec1, 0);
 
   return scheme_make_syntax_compiled((for_stx ? DEFINE_FOR_SYNTAX_EXPD : DEFINE_SYNTAX_EXPD), 
 				     cons((Scheme_Object *)exp_env->prefix, 
@@ -3274,7 +3274,7 @@ define_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_
 
   scheme_rec_add_certs(erec, drec, form);
   erec[drec].value_name = names;
-  fpart = scheme_expand_expr(code, env, erec, drec);
+  fpart = scheme_expand_expr_lift_to_let(code, env, erec, drec);
   
   code = icons(fpart, scheme_null);
   code = icons(names, code);
@@ -3561,7 +3561,7 @@ do_letrec_syntaxes(const char *where, int normal,
 
     eenv = scheme_new_comp_env(stx_env->genv->exp_env, stx_env->insp, 0);
 
-    a = scheme_compile_expr(a, eenv, &mrec, 0);
+    a = scheme_compile_expr_lift_to_let(a, eenv, &mrec, 0);
 
     rp = scheme_resolve_prefix(eenv->genv->phase, eenv->prefix, 0);
 

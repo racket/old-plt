@@ -3318,10 +3318,30 @@ static Scheme_Object *add_req(Scheme_Object *imods, Scheme_Object *requires)
   return requires;
 }
 
+static Scheme_Object *add_lifted_defn(Scheme_Object *data, Scheme_Object *id, Scheme_Object *expr)
+{
+  Scheme_Comp_Env *env;
+  Scheme_Object *self_modidx, *rn, *name;
+
+  env = (Scheme_Comp_Env *)SCHEME_VEC_ELS(data)[0];
+  self_modidx = SCHEME_VEC_ELS(data)[1];
+  rn = SCHEME_VEC_ELS(data)[2];
+  
+  name = scheme_tl_id_sym(env->genv, id, 1);
+
+  /* Create the bucket, indicating that the name will be defined: */
+  scheme_add_global_symbol(name, scheme_undefined, env->genv);
+  
+  /* Add a renaming: */
+  scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name, 0);
+
+  return scheme_make_lifted_defn(scheme_sys_wraps(env), id, expr);
+}
+
 static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env, 
 				      Scheme_Compile_Expand_Info *rec, int drec)
 {
-  Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn, *tt_rn, *self_modidx;
+  Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn, *tt_rn, *self_modidx, *prev_p;
   Scheme_Comp_Env *xenv, *cenv, *rhs_env;
   Scheme_Hash_Table *et_required; /* just to avoid duplicates */
   Scheme_Hash_Table *tt_required; /* just to avoid duplicates */
@@ -3332,14 +3352,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *all_defs;        /* list of stxid; this is almost redundant to the syntax and toplevel
 				     tables, but it preserves the original name for exporting */
   void *tables[3], *et_tables[3], *tt_tables[3];
-  Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false;
+  Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false, *lift_data;
   char *exps;
   int excount, exvcount, exicount;
-  int num_to_compile;
   int reprovide_kernel;
   int max_let_depth;
   int all_simple_renames = 1, et_all_simple_renames = 1, tt_all_simple_renames = 1;
-  Scheme_Compile_Info *recs;
   Scheme_Object *redef_modname;
   Scheme_Object *simplify_cache;
 
@@ -3479,8 +3497,6 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   exp_body = scheme_null;
 
-  num_to_compile = 0;
-
   self_modidx = env->genv->module->self_modidx;
 
   /* For syntax-local-context, etc., in a d-s RHS: */
@@ -3499,6 +3515,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
       e = SCHEME_STX_CAR(fm);
 
+      scheme_frame_captures_lifts(xenv, scheme_make_lifted_defn, scheme_sys_wraps(xenv));
+
       /* -2 means expand all the way (to stops), but preserve letrec-syntax. */
       {
 	Scheme_Expand_Info erec1;
@@ -3506,23 +3524,32 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	erec1.depth = -1;
 	erec1.value_name = scheme_false;
 	erec1.certs = rec[drec].certs;
-	e = scheme_expand_expr(e, xenv, &erec1, 0);
+	e = scheme_expand_expr(e, xenv, &erec1, 0);	
       }
 
-      if (SCHEME_STX_PAIRP(e))
-	fst = SCHEME_STX_CAR(e);
-      else
-	fst = NULL;
-
-      if (fst && SCHEME_STX_SYMBOLP(fst) && scheme_stx_module_eq(scheme_begin_stx, fst, 0)) {
+      fst = scheme_frame_get_lifts(xenv);
+      if (!SCHEME_NULLP(fst)) {
+	/* Expansion lifted expressions, so add them to
+	   the front and try again. */
 	fm = SCHEME_STX_CDR(fm);
-	fm = scheme_flatten_begin(e, fm);
-	if (SCHEME_STX_NULLP(fm)) {
-	  e = NULL;
+	fm = scheme_append(fst, scheme_make_pair(e, fm));
+      } else {
+	/* No lifts added... */
+	if (SCHEME_STX_PAIRP(e))
+	  fst = SCHEME_STX_CAR(e);
+	else
+	  fst = NULL;
+	
+	if (fst && SCHEME_STX_SYMBOLP(fst) && scheme_stx_module_eq(scheme_begin_stx, fst, 0)) {
+	  fm = SCHEME_STX_CDR(fm);
+	  fm = scheme_flatten_begin(e, fm);
+	  if (SCHEME_STX_NULLP(fm)) {
+	    e = NULL;
+	    break;
+	  }
+	} else
 	  break;
-	}
-      } else
-	break;
+      }
     }
     if (!e) break; /* (begin) expansion at end */
     
@@ -3671,9 +3698,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    erec1.depth = -1;
 	    erec1.value_name = boundname;
 	    erec1.certs = rec[drec].certs;
-	    code = scheme_expand_expr(code, eenv, &erec1, 0);
+	    code = scheme_expand_expr_lift_to_let(code, eenv, &erec1, 0);
 	  }
-	  m = scheme_compile_expr(code, eenv, &mrec, 0);
+	  m = scheme_compile_expr_lift_to_let(code, eenv, &mrec, 0);
 
 	  rp = scheme_resolve_prefix(1, eenv->prefix, 1);
 	  m = scheme_resolve_expr(m, scheme_resolve_info_create(rp));
@@ -3991,54 +4018,76 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	first = p;
       last = p;
     }
-
-    if (normal)
-      num_to_compile++;
   }
   /* first =  a list of (cons semi-expanded-expression normal?) */
 
   if (rec[drec].comp) {
     /* Module manages its own prefix. That's how we get
-       multiple instantiation of module with "dynamic linking". */
+       multiple instantiation of a module with "dynamic linking". */
     cenv = scheme_new_comp_env(env->genv, env->insp, SCHEME_TOPLEVEL_FRAME);
+    rec[drec].max_let_depth = 0; /* since module executer takes care of it */
   } else
     cenv = scheme_extend_as_toplevel(env);
+  max_let_depth = 0;
 
-  if (rec[drec].comp) {
-    recs = MALLOC_N_RT(Scheme_Compile_Info, num_to_compile);
-    scheme_init_compile_recs(rec, drec, recs, num_to_compile);
-    num_to_compile = 0;
-  } else
-    recs = NULL;
+  lift_data = scheme_make_vector(3, NULL);
+  SCHEME_VEC_ELS(lift_data)[0] = (Scheme_Object *)cenv;
+  SCHEME_VEC_ELS(lift_data)[1] = self_modidx;
+  SCHEME_VEC_ELS(lift_data)[2] = rn;
 
-  for (p = first; !SCHEME_NULLP(p); p = SCHEME_CDR(p)) {
-    Scheme_Object *e;
+  prev_p = NULL;
+  for (p = first; !SCHEME_NULLP(p); ) {
+    Scheme_Object *e, *l, *ll;
     int normal;
 
     e = SCHEME_CAR(p);
     normal = SCHEME_TRUEP(SCHEME_CDR(e));
     e = SCHEME_CAR(e);
     if (normal) {
+      scheme_frame_captures_lifts(cenv, add_lifted_defn, lift_data);
+
       if (rec[drec].comp) {
-	recs[num_to_compile].resolve_module_ids = 0;
-	e = scheme_compile_expr(e, cenv, recs, num_to_compile++);
+	Scheme_Compile_Info crec1;
+	scheme_init_compile_recs(rec, drec, &crec1, 1);
+	crec1.resolve_module_ids = 0;
+	e = scheme_compile_expr(e, cenv, &crec1, 0);
+	if (crec1.max_let_depth > max_let_depth)
+	  max_let_depth = crec1.max_let_depth;
       } else {
 	Scheme_Expand_Info erec1;
 	scheme_init_expand_recs(rec, drec, &erec1, 1);
 	erec1.value_name = scheme_false;
 	e = scheme_expand_expr(e, cenv, &erec1, 0);
       }
+      
+      l = scheme_frame_get_lifts(cenv);
+      if (SCHEME_NULLP(l)) {
+	/* No lifts - continue normally */
+	SCHEME_CAR(p) = e;
+	prev_p = p;
+	p = SCHEME_CDR(p);
+      } else {
+	/* Lifts - insert them and try again */
+	e = scheme_make_pair(e, scheme_false); /* don't re-compile/-expand */
+	SCHEME_CAR(p) = e;
+	for (ll = l; SCHEME_PAIRP(ll); ll = SCHEME_CDR(ll)) {
+	  e = scheme_make_pair(SCHEME_CAR(ll), scheme_true);
+	  SCHEME_CAR(ll) = e;
+	}
+	p = scheme_append(l, p);
+	if (prev_p) {
+	  SCHEME_CDR(prev_p) = p;
+	} else {
+	  first = p;
+	}
+      }
+    } else {
+      SCHEME_CAR(p) = e;
+      prev_p = p;
+      p = SCHEME_CDR(p);
     }
-    SCHEME_CAR(p) = e;
   }
   /* first =  a list of expanded/compiled expressions */
-
-  if (rec[drec].comp) {
-    scheme_merge_compile_recs(rec, drec, recs, num_to_compile);
-    max_let_depth = rec[drec].max_let_depth;
-    rec[drec].max_let_depth = 0; /* since module executer takes care of it */
-  } else
-    max_let_depth = 0; /* not used */
 
   scheme_clean_dead_env(env->genv);
 

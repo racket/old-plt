@@ -891,6 +891,7 @@ mark_comp_env {
   gcMARK(e->data.const_vals);
   gcMARK(e->data.const_uids);
   gcMARK(e->data.use);
+  gcMARK(e->data.lifts);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Full_Comp_Env));
@@ -1254,7 +1255,6 @@ mark_udp_evt {
 
   gcMARK(uw->udp);
   gcMARK(uw->str);
-  gcMARK(uw->from_addr);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Evt));

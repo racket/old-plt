@@ -23,7 +23,7 @@
                       (read-from-thunk defs-thunk)
                       (zodiac:make-attributes)
                       zodiac:scheme-vocabulary)])
-          ;;(printf "terms: ~a~n" terms)
+          (printf "terms: ~a~n" terms)
 	  (set! *ast* terms)
           (map (lambda (term) (derive-top-term-constraints '() term))
                terms)
@@ -1048,7 +1048,19 @@
 ;;(load-relative "type-reconstruct.ss")
 ;;(load-relative "debug.ss")
 
-(define (get-prims) '())
+;; extremely ad-hoc...
+(define (get-prims)
+  (letrec ([get-prims-l
+            (lambda (l)
+              (if (null? l)
+                  '()
+                  (let* ([func (cadr l)]
+                         [lambda-symbol (car (zodiac:read-object (zodiac:origin-how (zodiac:zodiac-origin func))))]
+                         [start-loc (zodiac:zodiac-start lambda-symbol)]
+                         [end-loc (zodiac:zodiac-finish lambda-symbol)])
+                    (cons (list start-loc end-loc 'red)
+                          (get-prims-l (cddr l))))))])
+    (get-prims-l *bad-apps*)))
 
 (define (get-loc sym)
   (let ([term (lookup-term-from-set-var sym)])

@@ -10,7 +10,7 @@
   ;;             |  #f
   (define-struct xmlD (version encoding standalone))
   
-  ;; DocType ::= (make-doctype String ExtID DTD)
+  ;; DocType ::= (make-doctype String ExtID Dtd)
   ;;          |  #f
   (define-struct doctype (root ext-id dtd))
   

@@ -1,4 +1,4 @@
-Version 100, ??, 1998
+Version 100alpha1, January 29, 1998
 Changed class syntax, splitting public clause use into:
  public : defines ivars not in superclass
  override : defines ivars already in superclass

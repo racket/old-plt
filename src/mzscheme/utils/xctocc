@@ -8,7 +8,6 @@
 
 # See xctocc.dvi for information about using this program.
 
-# SORRY, SORRY, SORRY, SORRY, SORRY, SORRY, SORRY, SORRY, SORRY, SORRY.
 # No one should write code like this. It's horrible. It's immoral.
 #
 # Still, it works well enough for now.
@@ -81,6 +80,8 @@ if (open(COMMONL, "common.txt")) {
     }
     close(COMMONL);
 }
+
+@waiting_integer_constants = ();
 
 $thisfile = "$file.xc";
 &ReadFile();
@@ -333,6 +334,9 @@ sub DoPrintClass
 	print HEADER $setup_d_start;
 	print "$proto\n{\n";
 	
+	# First, define waiting constants (@SYM temporary hack to continue using integer constants)
+	&PrintWaitingConstants();
+
 	if (1) {
 	    print "if (${newclass}_class) {\n";
 	    print "    objscheme_add_global_class(${newclass}_class, ";
@@ -445,6 +449,9 @@ sub DoPrintClass
 	print HEADER "$proto;\n";
         print HEADER $setup_d_start;
 	print "$proto\n{\n";
+
+	&PrintWaitingConstants();
+
 	@funcs = ();
 	foreach $function (@functions) {
 	    &ReadFields($function);
@@ -557,6 +564,16 @@ sub DoPrintClass
     if ($common) {
 	close(COMMONL);
     }
+}
+
+sub PrintWaitingConstants
+{
+    foreach $wc (@waiting_integer_constants) {
+	($n, $v) = split(/,/, $wc);
+	print "  if (!scheme_lookup_xc_global($n, env))\n";
+	print "    scheme_install_xc_global($n, scheme_make_integer($v), env);\n";
+    }
+    @waiting_integer_constants = ();
 }
 
 sub CalcNumRequired
@@ -1377,7 +1394,7 @@ sub PrintBundleVar
     } elsif (substr($paramtype, 0, 3) eq 'SYM') {
 	$paramtype =~ /SYM\[(.*)\]/;
 	$symtype = $1;
-	print "bundle_symset_${symtype}($var);";
+	print "bundle_symset_${symtype}($var)";
     } else {
 	print STDERR "Unknown type ${paramtype} in $func.\n";
     }
@@ -1475,7 +1492,7 @@ sub PrintUnbundleVar
     } elsif (substr($paramtype, 0, 3) eq 'SYM') {
 	$paramtype =~ /SYM\[(.*)\]/;
 	$symtype = $1;
-	print "unbundle_symset_${symtype}($var, $stop);";
+	print "unbundle_symset_${symtype}($var, $stop)";
     } else {
 	print STDERR "Unknown type ${paramtype} in $func.\n";
     }
@@ -1882,7 +1899,7 @@ sub OIEnd
     }
 }
 
-sub PrintSymSet
+sub newPrintSymSet
 {
     local ($name, $kind, @syms) = @_;
     local ($multi, $vv, $lname);
@@ -1896,14 +1913,14 @@ sub PrintSymSet
     }
 
     foreach $sym (@syms) {
-	($n, $v) = split(/=/, $sym, 2);
+	($n, $v) = split(/,/, $sym);
 	print "static Scheme_Object *${name}_${v}_sym = NULL;\n";
     }
     print "\n";
 
     print "static void init_symset_${name}(void) {\n";
     foreach $sym (@syms) {
-	($n, $v) = split(/=/, $sym, 2);
+	($n, $v) = split(/,/, $sym);
 	print "  ${name}_${v}_sym = scheme_intern_symbol($n);\n";
     }
     print "}\n\n";
@@ -1934,7 +1951,7 @@ sub PrintSymSet
 	}
 	print "  if (0) { }\n";
 	foreach $sym (@syms) {
-	    ($n, $v) = split(/=/, $sym, 2);
+	    ($n, $v) = split(/,/, $sym);
 	    if ($mode eq 'unbundle') {
 		$result = $v;
 	    } else {
@@ -1962,18 +1979,80 @@ sub PrintSymSet
     if ($multi) {
 	print "  Scheme_Object *l = scheme_null;\n";
 	foreach $sym (@syms) {
-	    ($n, $v) = split(/=/, $sym, 2);
+	    ($n, $v) = split(/,/, $sym);
 	    print "  if (v & $v) l = scheme_make_pair(${name}_${v}_sym, l);\n";
 	}
 	print "  return l;\n";
     } else {
 	print "  switch (v) {\n";
 	foreach $sym (@syms) {
-	    ($n, $v) = split(/=/, $sym, 2);
+	    ($n, $v) = split(/,/, $sym);
 	    print "  case $v: return ${name}_${v}_sym;\n";
 	}
 	print "  default: return NULL;\n";
 	print "  }\n";
     }
     print "}\n\n";
+}
+
+sub PrintSymSet
+{
+    local ($name, $kind, @syms) = @_;
+    local ($multi, $vv, $lname);
+
+    if ($kind =~ /ONE/) {
+	$multi = 0;
+    } else {
+	$multi = 1;
+    }
+
+    foreach $mode ("unbundle", "istype") {
+	print "static int ${mode}_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	print "  long vi;\n";
+	if ($multi) {
+	    print "  long orig_vi;\n";
+	}
+	print "  if (SCHEME_INTP(v)) {\n";
+	print "    vi = SCHEME_INT_VAL(v);\n";
+	if ($multi) {
+	    print "    orig_vi = vi;\n";
+	}
+	foreach $sym (@syms) {
+	    ($n, $v) = split(/,/, $sym);
+	    if ($multi) {
+		$result = "vi -= $v";
+		$calc = " & ${v}";
+	    } else {
+		if ($mode eq 'unbundle') {
+		    $result = "return $v";
+		} else {
+		    $result = "return 1";
+		}
+		$calc = "";
+	    }
+	    print "    if ((vi${calc}) == ${v}) { $result; }\n";
+	}
+	if ($multi) {
+	    print "    if (!vi) {";
+	    if ($mode eq 'unbundle') {
+		print " return orig_vi; ";
+	    } else {
+		print " return 1; ";
+	    }
+	    print "}\n";
+	}
+	print "  }\n";
+	print "  if (where) scheme_wrong_type(where, \"$name integer\", -1, 0, &v);\n";
+	print "  return 0;\n";
+	print "}\n\n";
+    }
+
+    print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
+    print "  return scheme_make_integer(v);\n";
+    print "}\n\n";
+
+    foreach $sym (@syms) {
+	($n, $v) = split(/,/, $sym);
+	@waiting_integer_constants = (@waiting_integer_constants, "\"wx:const-\"$n,$v");
+    }
 }

@@ -212,7 +212,7 @@ sub ReadFile {
 		($name, $val) = split(/:/, &SkipKey($_, $key_sym), 2);
 		$name = &Wash($name);
 		$val = &Wash($val);
-		@syms = (@syms, "$name=$val");
+		@syms = (@syms, "$name,$val");
 	    } elsif (&StartsWithKey($_, $key_endsymbols)) {
 		&PrintSymSet($cursymset, $symsetkind, @syms);
 	    } elsif (substr($_, 1, 1) ne ' ') {

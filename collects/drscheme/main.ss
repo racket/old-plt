@@ -1,18 +1,21 @@
-(unit/sig drscheme:main^
-  (import [top-level : (program argv get-dropped-files)]
-          mred^
-	  [fw : framework^]
-	  [pretty-print : mzlib:pretty-print^]
-	  [print-convert : mzlib:print-convert^]
-	  [drscheme:app : drscheme:app^]
-	  [drscheme:unit : drscheme:unit^]
-	  [drscheme:get/extend : drscheme:get/extend^]
-	  [drscheme:language : drscheme:language^]
-	  [basis : plt:basis^]
-	  mzlib:function^
-          mzlib:file^
-	  setup:plt-installer^)
+(module main mzscheme
+  (require "mred-wrap.ss"
+           "framework-wrap.ss"
+           (prefix pretty-print: (lib "pretty.ss"))
+           (prefix print-convert: (lib "pconvert.ss"))
+           (prefix drscheme:app: "app.ss")
+           (prefix drscheme:unit: "unit.ss")
+           (prefix drscheme:get/extend: "get-extend.ss")
+           (prefix drscheme:language "language.ss")
+           (prefix basis: (lib "basis" "userspce"))
+           (lib "list.ss")
+           (lib "file.ss")
+           (lib "plt-installer.ss" "setup"))
 
+  (define argv (namespace-variable-binding 'argv))
+  (define program (namespace-variable-binding 'program))
+  (define get-dropped-files (namespace-variable-binding 'get-dropped-files))
+  
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)
   (drscheme:get/extend:get-definitions-canvas%)

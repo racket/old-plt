@@ -8,7 +8,6 @@
 			   [app : drscheme:app^]
 			   [text : drscheme:text^]
 			   [init : drscheme:init^]
-			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
   (link [dynext-compiler : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
@@ -62,7 +61,7 @@
            framework
            launcher basis help-desk
 	   app frame text rep
-	   language get/extend graph snip)]
+	   language get/extend snip)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 

@@ -1,5 +1,12 @@
-(unit/sig drscheme:init^
-  (import [mred : mred^])
+(module init mzscheme
+  (require "mred-wrap.ss")
+  (provide original-output-port
+           original-error-port
+           primitive-eval
+           primitive-load
+           system-custodian
+           system-eventspace
+           first-dir)
   
   (define original-output-port (current-output-port))
   (define original-error-port (current-error-port))

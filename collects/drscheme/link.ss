@@ -15,8 +15,6 @@
 
 	[text : drscheme:text^ ((require-relative-library "edit.ss")
 				mzlib:date framework zodiac)]
-	[graph : drscheme:graph^ ((require-relative-library "graph.ss")
-                                  mred framework (mzlib string) (mzlib function))]
         [zodiac : zodiac:system^
 		  ((require-library "link2.ss" "zodiac")
 		   ((export* interface) : zodiac:interface^)
@@ -27,7 +25,7 @@
 				     mred mzlib mzlib:date framework
 				     plt-installer get-info
 				     print-convert app
-				     text init graph
+				     text init
 				     cogen zodiac)]
 
         [main-before : ()

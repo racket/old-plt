@@ -17,8 +17,11 @@ either be a string or a vector of strings.
 
 `spec' is a MAKE-SPEC:
 
-  MAKE-SPEC = (list MAKE-LINE ...)
-  MAKE-LINE = (list TARGET-STRING (list DEPEND-STRING ...) COMMAND-THUNK)
+  MAKE-SPEC = (list-of MAKE-LINE)
+  MAKE-LINE = (list TARGET (list-of DEPEND-STRING) COMMAND-THUNK)
+  TARGET = (union string (list-of string)) ; either a string or a list of strings
+  DEPEND-STRING = string
+  COMMAND-THUNK = (-> void)
 
 To make a target, make/proc is first called on each of the target's
 dependencies. If a target is not in the spec and it exists, then the
@@ -34,8 +37,8 @@ are defined with:
 
   (define-struct (exn:make struct:exn) (target orig-exn))
 
-The `target' field is a string naming the target, and the `orig-exn' field
-is the original exception.
+The `target' field is a string or a list of strings naming the target(s),
+and the `orig-exn' field is the original exception.
 
 The maker.ss library is a signed unit that requires no imports
 and provdes `make/proc'.

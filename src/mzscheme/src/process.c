@@ -60,6 +60,9 @@
 # include <thread.h>
 # include <synch.h>
 #endif
+#ifdef MZ_USE_PTHREADS
+# include <semaphore.h>
+#endif
 #ifdef WIN32_THREADS
 # include <process.h>
 #endif
@@ -1118,7 +1121,7 @@ static void start_child(Scheme_Process *child,
       scheme_swap_process(return_to_process);
 #endif    
 
-    if (!scheme_setjmp(scheme_error_buf))
+    if (!scheme_setjmp(scheme_error_buf)) 
       scheme_apply_multi(child_eval, 0, NULL);
     
     SCHEME_GET_LOCK();
@@ -3144,7 +3147,7 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object **argv)
    Scheme_Process* SCHEME_GET_CURRENT_PROCESS() - retrieves the Scheme thread
      pointer for the current thread.
 
-   void* SCHEME_MAKE_MUTEX(int init) - creates a new mutex.
+   void* SCHEME_MAKE_MUTEX() - creates a new mutex.
 
    void SCHEME_FREE_MUTEX(void* m) - destroys the mutex `m'.
 
@@ -3187,6 +3190,170 @@ void scheme_real_sema_down(void *sema)
 #endif
 
 /****************************************/
+
+#ifdef MZ_USE_PTHREADS
+
+static pthread_key_t cp_key;
+typedef struct {
+  void (*f)(void *);
+  void *data;
+  void *stack;
+  long *stackend;
+  sem_t go_sema;
+  sem_t stackset_sema;
+} pthread_closure;
+
+void *scheme_pthread_init_threads(void)
+{
+  if (pthread_key_create(&cp_key, NULL)) {
+    printf("init failed\n");
+    exit(-1);
+  }
+
+  return (void *)pthread_self();
+}
+
+static void do_nothing(int ignored)
+{
+# ifdef SIGSET_NEEDS_REINSTALL
+  MZ_SIGSET(SIGINT, do_nothing);
+# endif
+}
+
+static void *start_pthread_thread(void *_cl)
+{
+  pthread_closure *cl = (pthread_closure *)_cl;
+
+  sem_wait(&cl->go_sema);
+  sem_destroy(&cl->go_sema);
+
+  MZ_SIGSET(SIGINT, do_nothing);
+
+#ifdef MZ_USE_LINUX_PTHREADS
+  {
+    /* LinuxThreads: thread stacks are allocated on 2M boundaries and grow
+       to no more than 2M. */
+    int dummy;
+    unsigned long loc;
+
+    loc = ((unsigned long)&dummy);
+    loc -= (loc & 0x1FFFFF);
+    *(cl->stackend) = loc + STACK_SAFETY_MARGIN;
+  }
+#else
+  >>> Need something more specific than ``pthreads'' <<<
+#endif
+
+  sem_post(&cl->stackset_sema);
+
+  cl->f(((pthread_closure *)cl)->data);
+
+  return NULL;
+}
+
+void scheme_pthread_create_thread(void (*f)(void *), void *data, 
+				  unsigned long *stackend, void **thp)
+{
+  pthread_t naya;
+  pthread_closure *cl = scheme_malloc(sizeof(pthread_closure));
+
+  cl->f = f;
+  cl->data = data;
+  cl->stackend = stackend;
+
+  sem_init(&cl->go_sema, 0, 0);
+  sem_init(&cl->stackset_sema, 0, 0);
+
+  /* weird trick: as long as the thread's stack is needed, cl will be
+     on it, so let GC decide whether the stack is active and therefore
+     whether "stack" is still active. */
+
+  pthread_create(&naya, NULL, start_pthread_thread, (void *)cl);
+
+  *thp = (void *)naya;
+
+  sem_post(&cl->go_sema);
+
+  sem_wait(&cl->stackset_sema);
+  sem_destroy(&cl->stackset_sema);
+}
+
+void scheme_pthread_exit_thread()
+{
+  pthread_exit(0);
+}
+
+void scheme_pthread_break_thread(void *th)
+{
+  pthread_kill((pthread_t)th, SIGINT);
+}
+
+Scheme_Process *scheme_pthread_get_current_process()
+{
+  return (Scheme_Process *)pthread_getspecific(cp_key);
+}
+
+void scheme_pthread_set_current_process(Scheme_Process *p)
+{
+  pthread_setspecific(cp_key, (void *)p);
+}
+
+void *scheme_pthread_make_mutex()
+{
+  pthread_mutex_t *m;
+  m = (pthread_mutex_t *)scheme_malloc_atomic(sizeof(pthread_mutex_t));
+  pthread_mutex_init(m, NULL);
+
+  return (void *)m;
+}
+
+void scheme_pthread_free_mutex(void *m)
+{
+  pthread_mutex_destroy((pthread_mutex_t *)m);
+}
+
+void scheme_pthread_lock_mutex(void *m)
+{
+  pthread_mutex_lock((pthread_mutex_t *)m);
+}
+
+void scheme_pthread_unlock_mutex(void *m)
+{
+  pthread_mutex_unlock((pthread_mutex_t *)m);
+}
+
+void *scheme_pthread_make_semaphore(int v)
+{
+  sem_t *s;
+  s = (sem_t *)scheme_malloc_atomic(sizeof(sem_t));
+  sem_init(s, 0, v);
+
+  return (void *)s;
+}
+
+void scheme_pthread_free_semaphore(void *s)
+{
+  sem_destroy((sem_t *)s);
+}
+
+int scheme_pthread_semaphore_up(void *s)
+{
+  return !sem_post((sem_t *)s);
+}
+
+int scheme_pthread_semaphore_down_breakable(void *s)
+{
+  return !sem_wait((sem_t *)s);
+}
+
+int scheme_pthread_semaphore_try_down(void *s)
+{
+  return !sem_trywait((sem_t *)s);
+}
+
+#endif /* MZ_USE_PTHREADS */
+
+/****************************************************************/
 
 #ifdef MZ_USE_SOLARIS_THREADS
 
@@ -3281,7 +3448,7 @@ void scheme_solaris_set_current_process(Scheme_Process *p)
   thr_setspecific(cp_key, (void *)p);
 }
 
-void *scheme_solaris_make_mutex(int v)
+void *scheme_solaris_make_mutex()
 {
   mutex_t *m;
   m = (mutex_t *)scheme_malloc_atomic(sizeof(mutex_t));

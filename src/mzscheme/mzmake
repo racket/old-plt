@@ -54,8 +54,15 @@ case $OS in
     make SHELL=/bin/sh RANLIB=':' CC='cc' CXX='CC' AS='as' WARN='' DEBUGFLAGS='' $IRIXTFLAGS LIBS="-lm $IRIXTLIBS" $IRIXGCEXTRA "$@"
     ;;
   Linux)
+    if [ "${USELINTH}" = "yes" ] ; then
+       LINUXTHFLAGS='-DLINUX_THREADS -D_REENTRANT'
+       LINUXTHLIBS="-lpthread"
+    else
+       LINUXTHFLAGS=""
+       LINUXTHLIBS=""
+    fi
     if [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
-      make $GCOPTS LIBS='-lm -ldl -rdynamic' "$@"
+      make $GCOPTS LIBS="-lm -ldl -rdynamic $LINUXTHLIBS" THREADFLAGS="$LINUXTHFLAGS" "$@"
     else
       make $GCOPTS "$@"
     fi

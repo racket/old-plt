@@ -19,8 +19,6 @@
 
 ;; The code to be loaded from DrScheme
 
-(require-library "errortrace.ss" "errortrace")
-
 (require-relative-library "pltrc-co.ss")
 (require-relative-library "macros.ss")
 
@@ -38,27 +36,30 @@
     (import	
       [zodiac : zodiac:system^]
       mzlib:file^)
+
     (include "handlers.ss")
 
-    (mrspidey:error-handler
-      (case-lambda
+    (define mrspidey:error-handler
+      (make-parameter
+       (case-lambda
         [(message object)
-          (unless (zodiac:zodiac? object)
-            (printf "Bad object in mrspidey:error-handler ~s~n" object)
-            ((mrspidey:error-handler) message))
-          (let* ([loc (zodiac:zodiac-start object)])
-            (unless (zodiac:location? loc)
-              (printf "Bad location in mrspidey:error-handler ~s~n" loc)
-              ((mrspidey:error-handler) message))
-            ((mrspidey:error-handler)
-              (format "~a at ~s line ~s, column ~s~n"
-                message
-                (file-name-from-path (zodiac:location-file loc))
-                (zodiac:location-line loc)
-                (zodiac:location-column loc))))]
+	 (unless (zodiac:zodiac? object)
+		 (printf "Bad object in mrspidey:error-handler ~s~n" object)
+		 ((mrspidey:error-handler) message))
+	 (let* ([loc (zodiac:zodiac-start object)])
+	   (unless (zodiac:location? loc)
+		   (printf "Bad location in mrspidey:error-handler ~s~n" loc)
+		   ((mrspidey:error-handler) message))
+	   ((mrspidey:error-handler)
+	    (format "~a at ~s line ~s, column ~s~n"
+		    message
+		    (file-name-from-path (zodiac:location-file loc))
+		    (zodiac:location-line loc)
+		    (zodiac:location-column loc))))]
         [(message) 
-	 ((mrspidey:error-handler) message)
-	 (raise 'mrspidey-raise)]))))
+	 (printf "MrSpidey error: ~a~n" message)]
+	[else
+	 (printf "Unknown MrSpidey error~n")])))))
 
 ;; ----------------------------------------------------------------------
 

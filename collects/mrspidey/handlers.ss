@@ -22,27 +22,6 @@
   (lambda args
     (apply (mrspidey:error-handler) args)))
 
-(define mrspidey:error-handler
-  (make-parameter
-   (case-lambda
-    [(message object)
-     (unless (zodiac:zodiac? object)
-	     (printf "Bad object in mrspidey:error-handler ~s~n" object)
-	     ((mrspidey:error-handler) message))
-     (let* ([loc (zodiac:zodiac-start object)])
-       (unless (zodiac:location? loc)
-	       (printf "Bad location in mrspidey:error-handler ~s~n" loc)
-	       ((mrspidey:error-handler) message))
-       (error 'MrSpidey "~a"
-	      (format "~a at ~s line ~s, column ~s~n"
-		      message
-		      (file-name-from-path (zodiac:location-file loc))
-		      (zodiac:location-line loc)
-		      (zodiac:location-column loc))))]
-    [(message)
-     (error 'MrSpidey "~a" (format "~a~n" message))])
-   (lambda (x) x)))
-
 (define mrspidey:internal-error error)
 
 ;; ----------------------------------------------------------------------

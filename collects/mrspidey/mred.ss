@@ -20,7 +20,8 @@
 ;; ----------------------------------------------------------------------
 ;; ported to MrEd 100 and unitized by Paul Steckler
 
-(require-library "errortrace.ss" "errortrace")
+;; this code probably doesn't work any longer
+;; we only use it when testing Spidey outside of DrScheme
 
 (require-library "match.ss")                
 
@@ -88,28 +89,27 @@
 
     (include "handlers.ss")
 
-    (mrspidey:error-handler
-      (case-lambda
-        [(message object)
-          (unless (zodiac:zodiac? object)
-            (printf "Bad object in mrspidey:error-handler ~s~n" object)
-            ((mrspidey:error-handler) message))
-          (let* ([loc (zodiac:zodiac-start object)])
-            (unless (zodiac:location? loc)
-              (printf "Bad location in mrspidey:error-handler ~s~n" loc)
-              ((mrspidey:error-handler) message))
-            ((mrspidey:error-handler)
-              (format "~a at ~s line ~s, column ~s~n"
-                message
-                (file-name-from-path (zodiac:location-file loc))
-                (zodiac:location-line loc)
-                (zodiac:location-column loc))))]
-        [(message)
-          (mred:message-box
-	   "MrSpidey Error"
-            (format "~a~n" message))
-          (raise 'mrspidey-raise)]))))
-
+(define mrspidey:error-handler
+  (make-parameter
+   (case-lambda
+    [(message object)
+     (unless (zodiac:zodiac? object)
+	     (printf "Bad object in mrspidey:error-handler ~s~n" object)
+	     ((mrspidey:error-handler) message))
+     (let* ([loc (zodiac:zodiac-start object)])
+       (unless (zodiac:location? loc)
+	       (printf "Bad location in mrspidey:error-handler ~s~n" loc)
+	       ((mrspidey:error-handler) message))
+       (error 'MrSpidey "~a"
+	      (format "~a at ~s line ~s, column ~s~n"
+		      message
+		      (file-name-from-path (zodiac:location-file loc))
+		      (zodiac:location-line loc)
+		      (zodiac:location-column loc))))]
+    [(message)
+     (printf "MrSpidey: ~a~n" message)]
+    [else
+     (printf "Unknown MrSpidey error~n")])))))
 
 (define mred:mrspidey@
   (compound-unit/sig ; mrspidey:mred^ 

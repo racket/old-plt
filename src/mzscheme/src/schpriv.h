@@ -382,12 +382,13 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 			       Scheme_Object *src);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
-Scheme_Object *scheme_make_graphref_stx(Scheme_Object *stx, 
-					long line, long col);
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
+
+Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, 
+					   Scheme_Hash_Table *ht);
 
 /*========================================================================*/
 /*                   syntax run-time structures                           */

@@ -668,11 +668,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 				   port,
 				   "read: multiple #%ld= tags",
 				   vector_length);
-		  return scheme_void;
+		  return NULL;
 		}
 	      } else {
 		Scheme_Hash_Table *tht;
-		tht = scheme_hash_table(100, SCHEME_hash_ptr, 0, 0);
+		tht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
 		*ht = tht;
 	      }
 	      ph = scheme_alloc_small_object();
@@ -747,7 +747,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 					 Scheme_Hash_Table *ht
 					 CURRENTPROCPRM)
 {
-  Scheme_Object *start = obj;
+  Scheme_Object *start = obj, *result;
 
 #ifdef DO_STACK_CHECK
   {
@@ -772,15 +772,14 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	scheme_raise_exn(MZEXN_READ,
 			 port,
 			 "read: illegal cycle");
-	return scheme_void;
+	return NULL;
       }
       obj = (Scheme_Object *)SCHEME_PTR_VAL(obj);
     }
-    if (mkstx)
-      obj = scheme_make_graphref_stx(obj, -1, -1);
     return obj;
   }
 
+  result = obj;
   while (SCHEME_STXP(obj)) {
     obj = ((Scheme_Stx *)obj)->val;
   }
@@ -814,7 +813,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
     }
   }
 
-  return obj;
+  return result;
 }
 
 Scheme_Object *
@@ -887,6 +886,15 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
   p->ku.k.p1 = (void *)port;
   p->ku.k.p1 = (void *)stxsrc;
   return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
+}
+
+Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, 
+					   Scheme_Hash_Table *ht)
+{
+#ifdef MZ_REAL_THREADS
+  Scheme_Process *p = scheme_current_process;
+#endif
+  resolve_references(obj, NULL, 0, ht CURRENTPROCARG);
 }
 
 /*========================================================================*/

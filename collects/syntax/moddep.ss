@@ -220,9 +220,12 @@
 
   (define collapse-module-path
     ;; relto-mp should be a relative path, '(lib relative-path collection), or '(file path)
+    ;;          of a thunk that produces one of those
     (lambda (s relto-mp)
       (let ([combine-relative-elements
 	     (lambda (elements)
+	       (when (procedure? relto-mp)
+		 (set! relto-mp (relto-mp)))
 	       (cond
 		[(string? relto-mp)
 		 (apply
@@ -290,7 +293,8 @@
   (define (collapse-module-path-index mpi relto-mp)
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (collapse-module-path path (resolve-possible-module-path-index base relto-mp))
+	  (collapse-module-path path (lambda ()
+				       (resolve-possible-module-path-index base relto-mp)))
 	  relto-mp)))
 
   (define (show-import-tree module-path)

@@ -51,24 +51,24 @@
 		  (lambda (l)
 		    (let-values ([(modifier rest) (if (member #\: l)
 						      (find-next l (lambda (x) (char=? x #\:)))
-						      (values null l))]
-				 [(key rest) (find-next rest (lambda (x) (char=? x #\;)))])
-		      (let ([mod (if (null? modifier) 
-				     ""
-				     (handle-modifier (apply string modifier)))])
-			
-			(values (string-append mod
-					       (apply string (capitalize key)))
-				rest))))]
+						      (values null l))])
+		      (let-values ([(key rest) (find-next rest (lambda (x) (char=? x #\;)))])
+			(let ([mod (if (null? modifier) 
+				       ""
+				       (handle-modifier (apply string modifier)))])
+			  
+			  (values (string-append mod
+						 (apply string (capitalize key)))
+				  rest)))))]
 		 [handle-string
 		  (lambda (l)
-		    (let-values ([(combo rest) (find-next l (lambda (x) (char=? x #\;)))]
-				 [(combo-string rest2) (handle-key-combo combo)])
-		      (unless (null? rest2)
-			(error 'parse-key "uncomprehended key-string: ~a (problems from ~a)" str rest2))
-		      (if (null? rest)
-			  combo-string
-			  (string-append combo-string " " (handle-string rest)))))])
+		    (let-values ([(combo rest) (find-next l (lambda (x) (char=? x #\;)))])
+		      (let-values ([(combo-string rest2) (handle-key-combo combo)])
+			(unless (null? rest2)
+			  (error 'parse-key "uncomprehended key-string: ~a (problems from ~a)" str rest2))
+			(if (null? rest)
+			    combo-string
+			    (string-append combo-string " " (handle-string rest))))))])
 	  (handle-string (string->list str)))))
 
     (define make-menu%

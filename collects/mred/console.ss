@@ -375,8 +375,9 @@
 		    (lambda () #f)
 		    (dynamic-enable-break
 		     (lambda ()
-		       (let-values ([v (eval-str str)])
-			 (map display-result v))))))])
+		       (call-with-values 
+			(lambda () (eval-str str))
+			(lambda v (map display-result v)))))))])
 	       
 	       (private
 		[only-spaces-after

@@ -51,7 +51,7 @@
 			       share share-from
 			       sequence))
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'lambda))
-			'(lambda let let* letrec letrec* recur let-values
+			'(lambda let let* letrec letrec* recur
 			   let/cc let/ec letcc catch
 			   let-syntax letrec-syntax syntax-case
 			   let-struct let-macro let-values

@@ -94,9 +94,9 @@
 
 	     [base-path (let ([f (get-filename)])
 			  (let-values ([(base name dir?) (split-path f)])
-				      (if (string? base)
-					  base
-					  (current-directory))))]
+			    (if (string? base)
+				base
+				(current-directory))))]
 	     
 	     [whitespaces (string #\space #\tab #\newline #\return)]
 
@@ -373,28 +373,28 @@
 	     [find-end
 	      (lambda (tag pos dewhite? del-white? enum-depth)
 		(let-values ([(pos del-white?) (find-bracket pos dewhite? del-white?)])
-			    (if (= pos -1)
-				(begin
-				  (html-error "couldn't find </~a>" tag)
-				  (values (last-position) del-white? #f #f))
-				(let ([cmd (read-bracket)]
-				      [found-end
-				       (lambda (pos del-white? found-tag args)
-					 (if (eq? tag found-tag)
-					     (values pos del-white? #f #f)
-					     (begin
-					       (html-error "found </~a> looking for </~a>"
-							   found-tag tag)
-					       (values pos del-white? found-tag args))))])
-				  (let-values ([(found-tag args end?) (parse-command cmd)])
-					      (if (not end?)
-						  (let-values ([(pos del-white? found-tag args) 
-								(translate-command pos dewhite? del-white? enum-depth
-										   found-tag args)])
-							      (if found-tag
-								  (found-end pos del-white? found-tag args)
-								  (find-end tag pos dewhite? del-white? enum-depth)))
-						  (found-end pos del-white? found-tag args)))))))]
+		  (if (= pos -1)
+		      (begin
+			(html-error "couldn't find </~a>" tag)
+			(values (last-position) del-white? #f #f))
+		      (let ([cmd (read-bracket)]
+			    [found-end
+			     (lambda (pos del-white? found-tag args)
+			       (if (eq? tag found-tag)
+				   (values pos del-white? #f #f)
+				   (begin
+				     (html-error "found </~a> looking for </~a>"
+						 found-tag tag)
+				     (values pos del-white? found-tag args))))])
+			(let-values ([(found-tag args end?) (parse-command cmd)])
+			  (if (not end?)
+			      (let-values ([(pos del-white? found-tag args) 
+					    (translate-command pos dewhite? del-white? enum-depth
+							       found-tag args)])
+				(if found-tag
+				    (found-end pos del-white? found-tag args)
+				    (find-end tag pos dewhite? del-white? enum-depth)))
+			      (found-end pos del-white? found-tag args)))))))]
 
 	     [translate-command
 	      (lambda (pos dewhite? del-white? enum-depth tag args)
@@ -480,15 +480,15 @@
 				    [(h2) (heading delta:h2)]
 				    [(h3) (heading delta:h3)]
 				    [(a) (let-values ([(name tag label) (parse-href args)])
-						     (if (or name tag)
-							 (begin
-							   (add-link pos end-pos 
-								     (unixpath->path name)
-								     (or tag "top")
-								     #t)
-							   (make-link-style pos end-pos))
-							 (when label
-							       (add-tag label pos)))
+					   (if (or name tag)
+					       (begin
+						 (add-link pos end-pos 
+							   (unixpath->path name)
+							   (or tag "top")
+							   #t)
+						 (make-link-style pos end-pos))
+					       (when label
+						 (add-tag label pos)))
 						     (normal))]
 				    [else 
 				     (html-error "unimplemented tag: ~s" tag)
@@ -500,21 +500,21 @@
 	      (lambda (pos dewhite? del-white? enum-depth)
 		(let-values ([(cmd) (read-bracket)])
 		  (let-values ([(tag args end?) (parse-command cmd)])
-			    (if end? 
-				(begin
-				  (html-error "closing </~a> without opening" tag)
-				  (values pos del-white?))
-				(let-values ([(end-pos del-white? extra-tag extra-args) 
-					      (translate-command pos dewhite? del-white? enum-depth tag args)])
-					    (when extra-tag
-						  (html-error "closing </~a> without opening" tag))
-					    (values end-pos del-white?))))))])
+		    (if end? 
+			(begin
+			  (html-error "closing </~a> without opening" tag)
+			  (values pos del-white?))
+			(let-values ([(end-pos del-white? extra-tag extra-args) 
+				      (translate-command pos dewhite? del-white? enum-depth tag args)])
+			  (when extra-tag
+			    (html-error "closing </~a> without opening" tag))
+			  (values end-pos del-white?))))))])
 
 	     (add-tag "top" 0)
 	     (let loop ([pos 0][del-white? #t])
 	       (let-values ([(pos del-white?) (find-bracket pos #t del-white?)])
-			   (unless (= pos -1)
-				   (call-with-values
-				    (lambda () (translate pos #t del-white? 0))
-				    loop))))
+		 (unless (= pos -1)
+		   (call-with-values
+		    (lambda () (translate pos #t del-white? 0))
+		    loop))))
 	     (set-position 0))))))

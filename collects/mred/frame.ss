@@ -100,6 +100,17 @@
     (define menu-frame% (make-menu-frame% empty-frame%))
 
     (define tab (string #\tab))
+
+    (define make-standard-menus-frame%
+      (lambda (super%)
+	(let-macro main
+	  (lambda args
+	    `(class-asi super% ,args))
+	  (let-macro menu-item
+	    (lambda (name
+	
+	
+
     (define make-standard-menus-frame%
       (lambda (super%)
 	(class-asi super%

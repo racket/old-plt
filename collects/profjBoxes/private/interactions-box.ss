@@ -27,7 +27,7 @@
       
       (define interactions-box%
         (class* editor-snip% (readable-snip<%>)
-          
+          (inherit set-snipclass)
           (init [interactions-to-copy #f])
           
           #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
@@ -85,6 +85,12 @@
           (define/override (write f)
             (send interactions write f))
             
+          
+          #;((is-a?/c editor-stream-in%) . -> . void?)
+          ;; Reads interactions from file
+          (define/public (read-from-file f)
+            (send interactions read-from-file f))
+          
           ;;;;;;;;;;
           ;; Layout
           
@@ -103,14 +109,29 @@
           
           (super-new (editor pb))
           (unless interactions-to-copy
-            (send interactions add-new))))
+            (send interactions add-new))
+          (set-snipclass sc)))
       
+      (define interactions-box-snipclass%
+        (class snip-class%
+          #;((is-a?/c editor-stream-in%) . -> . (is-a?/c interactions-box%))
+          ;; Produces an interaction box from the given file stream
+          (define/override (read f)
+            (let ([box (new interaction-box%)])
+              (send box read-from-file f)
+              box))
+          (super-new)))
+      
+      (define sc (new interactions-box-snipclass%))
+      (send sc set-classname "interactions-box%")
+      (send sc set-version 1)
+      (send (get-the-snip-class-list) add sc)
+  
       ;; One interaction laid out horizontally
       (define interaction%
         (class* horizontal-alignment% (table-item<%>)
           (inherit get-parent next)
           (init [copy-constructor #f])
-          
           
           #;(-> (is-a?/c text%))
           ;; The first text in the item that can be typed into
@@ -148,6 +169,16 @@
             (send (get-parent) add-new this)
             (send (send (next) get-input) set-caret-owner
                   false 'global))
+          
+          #;((is-a?/c editor-stream-out%) . -> . void?)
+          ;; Writes the interaction to file
+          (define/public (write f)
+            (send input write-to-file f))
+          
+          #;((is-a?/c editor-stream-in%) . -> . void?)
+          ;; Reads the interaction from file
+          (define/public (read-from-file f)
+            (send input read-from-file f))
           
           (super-new)
           

@@ -11,7 +11,15 @@
     (interface ()
       #;(-> (is-a?/c text%))
       ;; The first text in the item that can be typed into
-      get-first-text))
+      get-first-text
+      
+      #;((is-a?/c editor-stream-out%) . -> . void?)
+      ;; Writes the interaction to file
+      write
+     
+      #;((is-a?/c editor-stream-in%) . -> . void?)
+      ;; Reads the interaction from file
+      read-from-file))
   
   (provide/contract
    (table ((implementation?/c table-item<%>) . -> . (implementation?/c alignment<%>)))

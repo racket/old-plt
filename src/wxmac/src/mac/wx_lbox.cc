@@ -763,11 +763,9 @@ void wxListBox::SetFirstItem(char *s)
 
 int wxListBox::GetFirstItem()
 {
-   Rect view;
    LongPt c;
    
-   ALGetViewRect(&view,cListReference);
-   Point p = {view.top,view.left};
+   Point p = {VIEW_RECT_OFFSET,VIEW_RECT_OFFSET};
    
    ALGetCellAndEdge(p,&c,cListReference);
    
@@ -792,13 +790,12 @@ int wxListBox::NumberOfVisibleItems()
    LongPt result;
    long top_row;
    
-   ALGetViewRect(&view,cListReference);
-   query.v = view.top;
-   query.h = view.left;
+   query.v = VIEW_RECT_OFFSET;
+   query.h = VIEW_RECT_OFFSET;
    ALGetCellAndEdge(query,&result,cListReference);
    top_row = result.v;
-   query.v = view.bottom;
-   query.h = view.right;
+   query.v = ClientArea()->Height() - VIEW_RECT_OFFSET;
+   query.h = VIEW_RECT_OFFSET;
    ALGetCellAndEdge(query,&result,cListReference);
    
    return result.v - top_row + 1;

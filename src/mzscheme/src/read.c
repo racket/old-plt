@@ -308,6 +308,7 @@ void scheme_init_read(Scheme_Env *env)
     delim['"'] -= SCHEME_OK;
     delim['\''] -= SCHEME_OK;
     delim[','] -= SCHEME_OK;
+    delim[';'] -= SCHEME_OK;
     delim['_'] |= CROC_OK;
     {
       GC_CAN_IGNORE const char *syms = "+-_=?:<>.!%^&*/~|";

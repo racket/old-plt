@@ -432,6 +432,7 @@ void scheme_init_stx(Scheme_Env *env)
   REGISTER_SO(share_symbol);
   REGISTER_SO(origin_symbol);
   REGISTER_SO(lexical_symbol);
+  REGISTER_SO(protected_symbol);
   source_symbol = scheme_make_symbol("source"); /* not interned! */
   share_symbol = scheme_make_symbol("share"); /* not interned! */
   origin_symbol = scheme_intern_symbol("origin");
@@ -4451,10 +4452,7 @@ static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **arg
     scheme_wrong_type("syntax-recertify-constrained?", "inspector", 2, argc, argv);
 
   stx = argv[0];
-  if (SCHEME_FALSEP(argv[1]))
-    certs = NULL;
-  else
-    certs = (Scheme_Cert *)SCHEME_PTR_VAL(argv[1]);
+  certs = (Scheme_Cert *)SCHEME_PTR_VAL(argv[1]);
   insp = argv[2];
 
   while (certs) {
@@ -4463,8 +4461,9 @@ static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **arg
       if (!HAS_MARKS(((Scheme_Stx *)stx)->certs))
 	accum_all_marks(stx, NULL, NULL);
       if (scheme_hash_get((Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)stx)->certs), 
-			  certs->mark))
+			  certs->mark)) {
 	return scheme_true;
+      }
     }
     certs = certs->next;
   }
@@ -4668,10 +4667,7 @@ static Scheme_Object *syntax_extend_certificate_env(int argc, Scheme_Object **ar
   if (!SAME_TYPE(scheme_cert_context_type, SCHEME_TYPE(argv[1])))
     scheme_wrong_type("syntax-extend-certificate-context", "certificate environment", 1, argc, argv);
 
-  if (SCHEME_FALSEP(argv[1]))
-    result = NULL;
-  else
-    result = (Scheme_Cert *)SCHEME_PTR_VAL(argv[1]);
+  result = (Scheme_Cert *)SCHEME_PTR_VAL(argv[1]);
 
   o = argv[0];
 

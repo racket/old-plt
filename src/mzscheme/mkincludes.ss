@@ -49,8 +49,8 @@
 (copy-if-newer mzsrcdir "uconfig.h")
 (copy-if-newer mzsrcdir "include/escheme.h")
 (copy-if-newer mzsrcdir "include/scheme.h" #f
-               (change-regexp "\n */[*]III[*]/ *\n"
-                              "\n#define INCLUDE_WITHOUT_PATHS\n"))
+               (change-regexp "/[*]III[*]/"
+                              "#define INCLUDE_WITHOUT_PATHS"))
 (copy-if-newer mzsrcdir "src/schemef.h")
 (copy-if-newer mzsrcdir "src/schvers.h")
 (copy-if-newer mzsrcdir "src/stypes.h")

@@ -41,24 +41,24 @@ static void FillZero(int *a, int *b) {
 @SETMARK c = d
 @INCLUDE wxs_cnvs.xci
 
-@ "popup-menu" : void PopupMenu(wxMenu!, float, float);
+@ "popup-menu" : void PopupMenu(wxMenu!, rint[0|10000], rint[0|10000]);
 
 @ "get-dc" : wxCanvasDC! GetDC();
 
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 @ "get-virtual-size" : void GetVirtualSize(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
-@ "set-scrollbars" : void SetScrollbars(int,int,int,int,int,int,int=0,int=0,bool=TRUE);  : : / PANELREDIRECT[return scheme_void]
+@ "set-scrollbars" : void SetScrollbars(rint[0|10000],rint[0|10000],rint[0|10000],rint[0|10000],rint[1|10000],rint[1|10000],rint[0|10000]=0,rint[0|10000]=0,bool=TRUE);  : : / PANELREDIRECT[return scheme_void]
 @ "view-start" : void ViewStart(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
-@ "warp-pointer" : void WarpPointer(int,int);  : : / PANELREDIRECT[return scheme_void]
+@ "warp-pointer" : void WarpPointer(rint[0|10000],rint[0|10000]);  : : / PANELREDIRECT[return scheme_void]
 
-@ "scroll" : void Scroll(int,int);
+@ "scroll" : void Scroll(rint[0|10000],rint[0|10000]);
 @ "get-scroll-pos" : int GetScrollPos(SYM[orientation]);
 @ "get-scroll-range" : int GetScrollRange(SYM[orientation]);
 @ "get-scroll-page" : int GetScrollPage(SYM[orientation]);
 
-@ "set-scroll-pos" : void SetScrollPos(SYM[orientation], int);
-@ "set-scroll-range" : void SetScrollRange(SYM[orientation], int);
-@ "set-scroll-page" : void SetScrollPage(SYM[orientation], int);
+@ "set-scroll-pos" : void SetScrollPos(SYM[orientation], rint[0|10000]);
+@ "set-scroll-range" : void SetScrollRange(SYM[orientation], rint[0|10000]);
+@ "set-scroll-page" : void SetScrollPage(SYM[orientation], rint[1|10000]);
 
 @ v "on-scroll" : void OnScroll(wxScrollEvent%); : : / PANELREDIRECT[return scheme_void]
 

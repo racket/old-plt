@@ -672,7 +672,7 @@ static Scheme_Object *os_wxCanvasSetScrollPage(Scheme_Object *obj, int n,  Schem
 
   
   x0 = unbundle_symset_orientation(p[0], "set-scroll-page in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "set-scroll-page in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 1, 10000, "set-scroll-page in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetScrollPage(x0, x1);
@@ -692,7 +692,7 @@ static Scheme_Object *os_wxCanvasSetScrollRange(Scheme_Object *obj, int n,  Sche
 
   
   x0 = unbundle_symset_orientation(p[0], "set-scroll-range in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "set-scroll-range in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "set-scroll-range in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetScrollRange(x0, x1);
@@ -712,7 +712,7 @@ static Scheme_Object *os_wxCanvasSetScrollPos(Scheme_Object *obj, int n,  Scheme
 
   
   x0 = unbundle_symset_orientation(p[0], "set-scroll-pos in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "set-scroll-pos in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "set-scroll-pos in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->SetScrollPos(x0, x1);
@@ -788,8 +788,8 @@ static Scheme_Object *os_wxCanvasScroll(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "scroll in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "scroll in canvas%");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 10000, "scroll in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "scroll in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->Scroll(x0, x1);
@@ -808,8 +808,8 @@ static Scheme_Object *os_wxCanvasWarpPointer(Scheme_Object *obj, int n,  Scheme_
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "warp-pointer in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "warp-pointer in canvas%");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 10000, "warp-pointer in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "warp-pointer in canvas%");
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { return scheme_void; }
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->WarpPointer(x0, x1);
@@ -861,18 +861,18 @@ static Scheme_Object *os_wxCanvasSetScrollbars(Scheme_Object *obj, int n,  Schem
   Bool x8;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-scrollbars in canvas%");
-  x1 = objscheme_unbundle_integer(p[1], "set-scrollbars in canvas%");
-  x2 = objscheme_unbundle_integer(p[2], "set-scrollbars in canvas%");
-  x3 = objscheme_unbundle_integer(p[3], "set-scrollbars in canvas%");
-  x4 = objscheme_unbundle_integer(p[4], "set-scrollbars in canvas%");
-  x5 = objscheme_unbundle_integer(p[5], "set-scrollbars in canvas%");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 10000, "set-scrollbars in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "set-scrollbars in canvas%");
+  x2 = objscheme_unbundle_integer_in(p[2], 0, 10000, "set-scrollbars in canvas%");
+  x3 = objscheme_unbundle_integer_in(p[3], 0, 10000, "set-scrollbars in canvas%");
+  x4 = objscheme_unbundle_integer_in(p[4], 1, 10000, "set-scrollbars in canvas%");
+  x5 = objscheme_unbundle_integer_in(p[5], 1, 10000, "set-scrollbars in canvas%");
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "set-scrollbars in canvas%");
+    x6 = objscheme_unbundle_integer_in(p[6], 0, 10000, "set-scrollbars in canvas%");
   } else
     x6 = 0;
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "set-scrollbars in canvas%");
+    x7 = objscheme_unbundle_integer_in(p[7], 0, 10000, "set-scrollbars in canvas%");
   } else
     x7 = 0;
   if (n > 8) {
@@ -937,13 +937,13 @@ static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Ob
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   class wxMenu* x0;
-  float x1;
-  float x2;
+  int x1;
+  int x2;
 
   
   x0 = objscheme_unbundle_wxMenu(p[0], "popup-menu in canvas%", 0);
-  x1 = objscheme_unbundle_float(p[1], "popup-menu in canvas%");
-  x2 = objscheme_unbundle_float(p[2], "popup-menu in canvas%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 10000, "popup-menu in canvas%");
+  x2 = objscheme_unbundle_integer_in(p[2], 0, 10000, "popup-menu in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2);

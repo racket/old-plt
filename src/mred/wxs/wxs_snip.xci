@@ -2,11 +2,11 @@
 @MACRO makeNoCopyString[len] = scheme_make_sized_string(r, <len>, 0)
 
 @ s "get-extent" : void GetExtent(wxDC!,float,float,float?=NULL,float?=NULL,float?=NULL,float?=NULL,float?=NULL,float?=NULL); : : /CHECKDCOK[0.METHODNAME("snip%","get-extent")]
-@ s "partial-offset" : float PartialOffset(wxDC!,float,float,long); : : /CHECKDCOK[0.METHODNAME("snip%","partial-offset")]
+@ s "partial-offset" : float PartialOffset(wxDC!,float,float,nnlong); : : /CHECKDCOK[0.METHODNAME("snip%","partial-offset")]
 @ s "draw" : void Draw(wxDC!,float,float,float,float,float,float,float,float,SYM[caret]); : : /CHECKDCOK[0.METHODNAME("snip%","draw")]
-@ s "split" : void Split(long,wxSnip!*,wxSnip!*);
+@ s "split" : void Split(nnlong,wxSnip!*,wxSnip!*);
 @ s "merge-with" : wxSnip^ MergeWith(wxSnip!);
-@ s "get-text" : string/makeNoCopyString[_x3] GetText(long,nnlong,bool=FALSE,-long*=NULL);
+@ s "get-text" : string/makeNoCopyString[_x3] GetText(nnlong,nnlong,bool=FALSE,-long*=NULL);
 @ s "copy" : wxSnip! Copy();
 @ s "size-cache-invalid" : void SizeCacheInvalid();
 
@@ -25,6 +25,6 @@
 
 @ s "set-admin" : void SetAdmin(wxSnipAdmin^);
 
-@ s "get-num-scroll-steps" : long GetNumScrollSteps()
-@ s "find-scroll-step" :  long FindScrollStep(float)
-@ s "get-scroll-step-offset" : float GetScrollStepOffset(long)
+@ s "get-num-scroll-steps" : nnlong GetNumScrollSteps()
+@ s "find-scroll-step" :  nnlong FindScrollStep(float)
+@ s "get-scroll-step-offset" : float GetScrollStepOffset(nnlong)

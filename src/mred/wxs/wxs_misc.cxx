@@ -108,24 +108,23 @@ static Scheme_Object *os_wxTimerStop(Scheme_Object *obj, int n,  Scheme_Object *
 static Scheme_Object *os_wxTimerStart(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   int x0;
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "start in timer%");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 1000000000, "start in timer%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "start in timer%");
   } else
     x1 = FALSE;
 
   
-  r = ((wxTimer *)((Scheme_Class_Object *)obj)->primdata)->Start(x0, x1);
+  ((wxTimer *)((Scheme_Class_Object *)obj)->primdata)->Start(x0, x1);
 
   
   
-  return (r ? scheme_true : scheme_false);
+  return scheme_void;
 }
 
 #pragma argsused
@@ -304,11 +303,11 @@ static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n, 
   string x0;
   long _x1;
   long* x1 = &_x1;
-  long x2;
+  ExactLong x2;
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "get-clipboard-data in clipboard<%>");
-  x2 = objscheme_unbundle_integer(p[1], "get-clipboard-data in clipboard<%>");
+  x2 = objscheme_unbundle_ExactLong(p[1], "get-clipboard-data in clipboard<%>");
 
   
   r = ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardData(x0, x1, x2);
@@ -324,10 +323,10 @@ static Scheme_Object *os_wxClipboardGetClipboardString(Scheme_Object *obj, int n
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   nstring r;
   objscheme_check_valid(obj);
-  long x0;
+  ExactLong x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "get-clipboard-string in clipboard<%>");
+  x0 = objscheme_unbundle_ExactLong(p[0], "get-clipboard-string in clipboard<%>");
 
   
   r = ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardString(x0);
@@ -360,11 +359,11 @@ static Scheme_Object *os_wxClipboardSetClipboardString(Scheme_Object *obj, int n
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   string x0;
-  long x1;
+  ExactLong x1;
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "set-clipboard-string in clipboard<%>");
-  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-string in clipboard<%>");
+  x1 = objscheme_unbundle_ExactLong(p[1], "set-clipboard-string in clipboard<%>");
 
   
   ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardString(x0, x1);
@@ -380,11 +379,11 @@ static Scheme_Object *os_wxClipboardSetClipboardClient(Scheme_Object *obj, int n
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
   class wxClipboardClient* x0;
-  long x1;
+  ExactLong x1;
 
   
   x0 = objscheme_unbundle_wxClipboardClient(p[0], "set-clipboard-client in clipboard<%>", 0);
-  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-client in clipboard<%>");
+  x1 = objscheme_unbundle_ExactLong(p[1], "set-clipboard-client in clipboard<%>");
 
   
   ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardClient(x0, x1);

@@ -28,7 +28,7 @@
 
 @ "interval" : int Interval();
 @ v "notify" : void Notify();
-@ "start" : bool Start(int,bool=FALSE); : : : : rFALSE
+@ "start" : void Start(rint[0|1000000000],bool=FALSE); : : : : rFALSE
 @ "stop" : void Stop();
 
 @END
@@ -62,11 +62,11 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @CLASSBASE wxClipboard "clipboard" : "object"
 @INTERFACE "clipboard"
 
-@ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,long);
-@ "set-clipboard-string" : void SetClipboardString(string,long);
+@ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,ExactLong);
+@ "set-clipboard-string" : void SetClipboardString(string,ExactLong);
 @ "get-clipboard-client" : wxClipboardClient^ GetClipboardClient();
-@ "get-clipboard-string" : nstring GetClipboardString(long);
-@ "get-clipboard-data" : nstring/makeSizedString[1] GetClipboardData(string,-long*,long);
+@ "get-clipboard-string" : nstring GetClipboardString(ExactLong);
+@ "get-clipboard-data" : nstring/makeSizedString[1] GetClipboardData(string,-long*,ExactLong);
 
 @CONSTANT "the-clipboard" : wxClipboard^ wxTheClipboard
 
@@ -114,7 +114,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "get-mode" : SYM[psMode] GetPrinterMode();
 @ "get-orientation" : SYM[psOrientation] GetPrinterOrientation();
 @ "get-options" : string GetPrinterOptions();
-@ "get-scaling" : void GetPrinterScaling(float*,float*);
+@ "get-scaling" : void GetPrinterScaling(nnfloat*,nnfloat*);
 @ "get-translation" : void GetPrinterTranslation(float*,float*);
 @ "get-paper-name" : nstring GetPaperName();
 @ "get-afm-path" : nstring GetAFMPath();

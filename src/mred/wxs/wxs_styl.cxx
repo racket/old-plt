@@ -278,14 +278,14 @@ static Scheme_Object *os_wxAddColourSet(Scheme_Object *obj, int n,  Scheme_Objec
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  short x0;
-  short x1;
-  short x2;
+  int x0;
+  int x1;
+  int x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set in add-color<%>");
-  x1 = objscheme_unbundle_integer(p[1], "set in add-color<%>");
-  x2 = objscheme_unbundle_integer(p[2], "set in add-color<%>");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "set in add-color<%>");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set in add-color<%>");
+  x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set in add-color<%>");
 
   
   ((wxAddColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
@@ -329,7 +329,7 @@ static Scheme_Object *os_wxAddColourGet(Scheme_Object *obj, int n,  Scheme_Objec
 static Scheme_Object *objscheme_wxAddColour_Getr(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  short v;
+  int v;
 
   objscheme_check_valid(obj);
   if (n) scheme_wrong_count("get-r in add-color%", 0, 0, n, p);
@@ -346,11 +346,11 @@ static Scheme_Object *objscheme_wxAddColour_Setr(Scheme_Object *obj, int n,  Sch
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  short v;
+  int v;
 
   if (n != 1) scheme_wrong_count("set-r in add-color%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "set-r in add-color%");
+  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-r in add-color%");
   ((wxAddColour *)cobj->primdata)->r = v;
 
   return scheme_void;
@@ -359,7 +359,7 @@ static Scheme_Object *objscheme_wxAddColour_Setr(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *objscheme_wxAddColour_Getg(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  short v;
+  int v;
 
   objscheme_check_valid(obj);
   if (n) scheme_wrong_count("get-g in add-color%", 0, 0, n, p);
@@ -376,11 +376,11 @@ static Scheme_Object *objscheme_wxAddColour_Setg(Scheme_Object *obj, int n,  Sch
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  short v;
+  int v;
 
   if (n != 1) scheme_wrong_count("set-g in add-color%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "set-g in add-color%");
+  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-g in add-color%");
   ((wxAddColour *)cobj->primdata)->g = v;
 
   return scheme_void;
@@ -389,7 +389,7 @@ static Scheme_Object *objscheme_wxAddColour_Setg(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *objscheme_wxAddColour_Getb(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  short v;
+  int v;
 
   objscheme_check_valid(obj);
   if (n) scheme_wrong_count("get-b in add-color%", 0, 0, n, p);
@@ -406,11 +406,11 @@ static Scheme_Object *objscheme_wxAddColour_Setb(Scheme_Object *obj, int n,  Sch
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  short v;
+  int v;
 
   if (n != 1) scheme_wrong_count("set-b in add-color%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "set-b in add-color%");
+  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-b in add-color%");
   ((wxAddColour *)cobj->primdata)->b = v;
 
   return scheme_void;
@@ -1210,7 +1210,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(Scheme_Object *obj, int n,  Scheme
     if (n != 2) 
       scheme_wrong_count("set-delta in style-delta% (size case)", 2, 2, n, p);
     x0 = unbundle_symset_changeSize(p[0], "set-delta in style-delta% (size case)");
-    x1 = objscheme_unbundle_integer(p[1], "set-delta in style-delta% (size case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set-delta in style-delta% (size case)");
 
     
     r = ((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(x0, x1);
@@ -1368,7 +1368,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetsizeAdd(Scheme_Object *obj, int 
 
   if (n != 1) scheme_wrong_count("set-size-add in style-delta%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "set-size-add in style-delta%");
+  v = objscheme_unbundle_integer_in(p[0], 0, 255, "set-size-add in style-delta%");
   ((wxStyleDelta *)cobj->primdata)->sizeAdd = v;
 
   return scheme_void;
@@ -1764,7 +1764,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     if (n != 2) 
       scheme_wrong_count("initialization in style-delta% (size case)", 2, 2, n, p);
     x0 = unbundle_symset_changeSize(p[0], "initialization in style-delta% (size case)");
-    x1 = objscheme_unbundle_integer(p[1], "initialization in style-delta% (size case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in style-delta% (size case)");
 
     
     realobj = new os_wxStyleDelta(obj, x0, x1);

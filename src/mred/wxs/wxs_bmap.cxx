@@ -219,7 +219,6 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
-
 class os_wxBitmap : public wxBitmap {
  public:
 
@@ -416,11 +415,11 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
     Bool x2;
 
-    if (!SCHEME_INTP(p[0]) || (SCHEME_INT_VAL(p[0]) < 1) || (SCHEME_INT_VAL(p[0]) > 10000)) scheme_wrong_type(METHODNAME("bitmap%","initialization"), "integer in [1,10000]", 0, n, p);if (!SCHEME_INTP(p[1]) || (SCHEME_INT_VAL(p[1]) < 1) || (SCHEME_INT_VAL(p[1]) > 10000)) scheme_wrong_type(METHODNAME("bitmap%","initialization"), "integer in [1,10000]", 1, n, p);
+    
     if ((n < 2) ||(n > 3)) 
       scheme_wrong_count("initialization in bitmap% (width/height case)", 2, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "initialization in bitmap% (width/height case)");
-    x1 = objscheme_unbundle_integer(p[1], "initialization in bitmap% (width/height case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 1, 10000, "initialization in bitmap% (width/height case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (width/height case)");
     if (n > 2) {
       x2 = objscheme_unbundle_bool(p[2], "initialization in bitmap% (width/height case)");
     } else
@@ -439,10 +438,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     if (n != 3) 
       scheme_wrong_count("initialization in bitmap% (character list case)", 3, 3, n, p);
     x0 = NULL;
-    x1 = objscheme_unbundle_integer(p[1], "initialization in bitmap% (character list case)");
-    x2 = objscheme_unbundle_integer(p[2], "initialization in bitmap% (character list case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (character list case)");
+    x2 = objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (character list case)");
 
-    if (!SCHEME_INTP(p[1]) || (SCHEME_INT_VAL(p[1]) < 1) || (SCHEME_INT_VAL(p[1]) > 10000)) scheme_wrong_type(METHODNAME("bitmap%","initialization"), "integer in [1,10000]", 1, n, p);if (!SCHEME_INTP(p[2]) || (SCHEME_INT_VAL(p[2]) < 1) || (SCHEME_INT_VAL(p[2]) > 10000)) scheme_wrong_type(METHODNAME("bitmap%","initialization"), "integer in [1,10000]", 2, n, p);if (scheme_proper_list_length(p[0]) < ((x1 * x2) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte list string too short: ", p[0]);x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));
+    if (scheme_proper_list_length(p[0]) < ((x1 * x2) >> 3)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte list string too short: ", p[0]);x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));
     realobj = new os_wxBitmap(obj, x0, x1, x2);
     
     

@@ -251,8 +251,8 @@ class os_wxFont : public wxFont {
  public:
 
   os_wxFont(Scheme_Object * obj);
-  os_wxFont(Scheme_Object * obj, nnint x0, int x1, int x2, int x3, Bool x4 = 0);
-  os_wxFont(Scheme_Object * obj, nnint x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0);
+  os_wxFont(Scheme_Object * obj, int x0, int x1, int x2, int x3, Bool x4 = 0);
+  os_wxFont(Scheme_Object * obj, int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0);
   ~os_wxFont();
 };
 
@@ -266,7 +266,7 @@ os_wxFont::os_wxFont(Scheme_Object * o)
   objscheme_note_creation(o);
 }
 
-os_wxFont::os_wxFont(Scheme_Object * o, nnint x0, int x1, int x2, int x3, Bool x4)
+os_wxFont::os_wxFont(Scheme_Object * o, int x0, int x1, int x2, int x3, Bool x4)
 : wxFont(x0, x1, x2, x3, x4)
 {
   __gc_external = (void *)o;
@@ -274,7 +274,7 @@ os_wxFont::os_wxFont(Scheme_Object * o, nnint x0, int x1, int x2, int x3, Bool x
   objscheme_note_creation(o);
 }
 
-os_wxFont::os_wxFont(Scheme_Object * o, nnint x0, cstring x1, int x2, int x3, int x4, Bool x5)
+os_wxFont::os_wxFont(Scheme_Object * o, int x0, cstring x1, int x2, int x3, int x4, Bool x5)
 : wxFont(x0, x1, x2, x3, x4, x5)
 {
   __gc_external = (void *)o;
@@ -411,7 +411,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
 {
   os_wxFont *realobj;
   if ((n >= 2) && objscheme_istype_number(p[0], NULL) && objscheme_istype_string(p[1], NULL)) {
-    nnint x0;
+    int x0;
     cstring x1;
     int x2;
     int x3;
@@ -421,7 +421,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     
     if ((n < 5) ||(n > 6)) 
       scheme_wrong_count("initialization in font% (font name case)", 5, 6, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "initialization in font% (font name case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 1, 255, "initialization in font% (font name case)");
     x1 = (cstring)objscheme_unbundle_string(p[1], "initialization in font% (font name case)");
     x2 = unbundle_symset_family(p[2], "initialization in font% (font name case)");
     x3 = unbundle_symset_style(p[3], "initialization in font% (font name case)");
@@ -436,7 +436,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     
     
   } else if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
-    nnint x0;
+    int x0;
     int x1;
     int x2;
     int x3;
@@ -445,7 +445,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
     
     if ((n < 4) ||(n > 5)) 
       scheme_wrong_count("initialization in font% (family case)", 4, 5, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "initialization in font% (family case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 1, 255, "initialization in font% (family case)");
     x1 = unbundle_symset_family(p[1], "initialization in font% (family case)");
     x2 = unbundle_symset_style(p[2], "initialization in font% (family case)");
     x3 = unbundle_symset_weight(p[3], "initialization in font% (family case)");
@@ -581,7 +581,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
   class wxFont* r;
   objscheme_check_valid(obj);
   if ((n >= 2) && objscheme_istype_number(p[0], NULL) && istype_symset_family(p[1], NULL)) {
-    nnint x0;
+    int x0;
     int x1;
     int x2;
     int x3;
@@ -590,7 +590,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     
     if ((n < 4) ||(n > 5)) 
       scheme_wrong_count("find-or-create-font in font-list% (family id case)", 4, 5, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "find-or-create-font in font-list% (family id case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "find-or-create-font in font-list% (family id case)");
     x1 = unbundle_symset_family(p[1], "find-or-create-font in font-list% (family id case)");
     x2 = unbundle_symset_style(p[2], "find-or-create-font in font-list% (family id case)");
     x3 = unbundle_symset_weight(p[3], "find-or-create-font in font-list% (family id case)");
@@ -606,7 +606,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     
   } else  {
 #if  USE_FONT_NAME_DIRECTORY
-    nnint x0;
+    int x0;
     cstring x1;
     int x2;
     int x3;
@@ -616,7 +616,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     
     if ((n < 5) ||(n > 6)) 
       scheme_wrong_count("find-or-create-font in font-list% (font name case)", 5, 6, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "find-or-create-font in font-list% (font name case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "find-or-create-font in font-list% (font name case)");
     x1 = (cstring)objscheme_unbundle_string(p[1], "find-or-create-font in font-list% (font name case)");
     x2 = unbundle_symset_family(p[2], "find-or-create-font in font-list% (font name case)");
     x3 = unbundle_symset_style(p[3], "find-or-create-font in font-list% (font name case)");
@@ -834,9 +834,9 @@ static Scheme_Object *os_wxColourSet(Scheme_Object *obj, int n,  Scheme_Object *
   ubyte x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set in color%");
-  x1 = objscheme_unbundle_integer(p[1], "set in color%");
-  x2 = objscheme_unbundle_integer(p[2], "set in color%");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "set in color%");
+  x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set in color%");
+  x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set in color%");
 
   if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("color%","set"), "color", "color");
   ((wxColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
@@ -906,9 +906,9 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
     
     if (n != 3) 
       scheme_wrong_count("initialization in color% (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "initialization in color% (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "initialization in color% (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "initialization in color% (rgb values case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "initialization in color% (rgb values case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in color% (rgb values case)");
+    x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "initialization in color% (rgb values case)");
 
     
     realobj = new os_wxColour(obj, x0, x1, x2);
@@ -1557,9 +1557,9 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
     
     if (n != 3) 
       scheme_wrong_count("set-color in brush% (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "set-color in brush% (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "set-color in brush% (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "set-color in brush% (rgb values case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "set-color in brush% (rgb values case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set-color in brush% (rgb values case)");
+    x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set-color in brush% (rgb values case)");
 
     if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
@@ -2020,8 +2020,8 @@ class os_wxPen : public wxPen {
  public:
 
   os_wxPen(Scheme_Object * obj);
-  os_wxPen(Scheme_Object * obj, class wxColour& x0, nnint x1, int x2);
-  os_wxPen(Scheme_Object * obj, string x0, nnint x1, int x2);
+  os_wxPen(Scheme_Object * obj, class wxColour& x0, int x1, int x2);
+  os_wxPen(Scheme_Object * obj, string x0, int x1, int x2);
   ~os_wxPen();
 };
 
@@ -2035,7 +2035,7 @@ os_wxPen::os_wxPen(Scheme_Object * o)
   objscheme_note_creation(o);
 }
 
-os_wxPen::os_wxPen(Scheme_Object * o, class wxColour& x0, nnint x1, int x2)
+os_wxPen::os_wxPen(Scheme_Object * o, class wxColour& x0, int x1, int x2)
 : wxPen(x0, x1, x2)
 {
   __gc_external = (void *)o;
@@ -2043,7 +2043,7 @@ os_wxPen::os_wxPen(Scheme_Object * o, class wxColour& x0, nnint x1, int x2)
   objscheme_note_creation(o);
 }
 
-os_wxPen::os_wxPen(Scheme_Object * o, string x0, nnint x1, int x2)
+os_wxPen::os_wxPen(Scheme_Object * o, string x0, int x1, int x2)
 : wxPen(x0, x1, x2)
 {
   __gc_external = (void *)o;
@@ -2165,9 +2165,9 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
     
     if (n != 3) 
       scheme_wrong_count("set-color in pen% (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "set-color in pen% (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "set-color in pen% (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "set-color in pen% (rgb values case)");
+    x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "set-color in pen% (rgb values case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set-color in pen% (rgb values case)");
+    x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set-color in pen% (rgb values case)");
 
     if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
@@ -2274,7 +2274,7 @@ static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "set-width in pen%");
+  x0 = objscheme_unbundle_integer_in(p[0], 0, 255, "set-width in pen%");
 
   
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetWidth(x0);
@@ -2307,14 +2307,14 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
   os_wxPen *realobj;
   if ((n >= 1) && objscheme_istype_string(p[0], NULL)) {
     string x0;
-    nnint x1;
+    int x1;
     int x2;
 
     
     if (n != 3) 
       scheme_wrong_count("initialization in pen% (color name case)", 3, 3, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "initialization in pen% (color name case)");
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "initialization in pen% (color name case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in pen% (color name case)");
     x2 = unbundle_symset_penStyle(p[2], "initialization in pen% (color name case)");
 
     
@@ -2323,14 +2323,14 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     
   } else if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
     class wxColour* x0;
-    nnint x1;
+    int x1;
     int x2;
 
     
     if (n != 3) 
       scheme_wrong_count("initialization in pen% (color% case)", 3, 3, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "initialization in pen% (color% case)", 0);
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "initialization in pen% (color% case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in pen% (color% case)");
     x2 = unbundle_symset_penStyle(p[2], "initialization in pen% (color% case)");
 
     
@@ -2467,14 +2467,14 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
   if ((n >= 1) && objscheme_istype_wxColour(p[0], NULL, 0)) {
     class wxColour* x0;
-    nnint x1;
+    int x1;
     int x2;
 
     
     if (n != 3) 
       scheme_wrong_count("find-or-create-pen in pen-list% (color% case)", 3, 3, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "find-or-create-pen in pen-list% (color% case)", 0);
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "find-or-create-pen in pen-list% (color% case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "find-or-create-pen in pen-list% (color% case)");
     x2 = unbundle_symset_penStyle(p[2], "find-or-create-pen in pen-list% (color% case)");
 
     
@@ -2484,14 +2484,14 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
     
   } else  {
     string x0;
-    nnint x1;
+    int x1;
     int x2;
 
     
     if (n != 3) 
       scheme_wrong_count("find-or-create-pen in pen-list% (color name case)", 3, 3, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "find-or-create-pen in pen-list% (color name case)");
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "find-or-create-pen in pen-list% (color name case)");
+    x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "find-or-create-pen in pen-list% (color name case)");
     x2 = unbundle_symset_penStyle(p[2], "find-or-create-pen in pen-list% (color name case)");
 
     
@@ -2670,14 +2670,14 @@ static Scheme_Object *bundle_symset_cursor(int v) {
 class os_wxCursor : public wxCursor {
  public:
 
-  os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, int x2 = 0, int x3 = 0);
+  os_wxCursor(Scheme_Object * obj, string x0, int x1 = 0, nnint x2 = 0, nnint x3 = 0);
   os_wxCursor(Scheme_Object * obj, int x0);
   ~os_wxCursor();
 };
 
 Scheme_Object *os_wxCursor_class;
 
-os_wxCursor::os_wxCursor(Scheme_Object * o, string x0, int x1, int x2, int x3)
+os_wxCursor::os_wxCursor(Scheme_Object * o, string x0, int x1, nnint x2, nnint x3)
 : wxCursor(x0, x1, x2, x3)
 {
   __gc_external = (void *)o;
@@ -2734,8 +2734,8 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else  {
     string x0;
     int x1;
-    int x2;
-    int x3;
+    nnint x2;
+    nnint x3;
 
     
     if ((n < 1) ||(n > 4)) 
@@ -2746,11 +2746,11 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x1 = 0;
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "initialization in cursor% (cursor name case)");
+      x2 = objscheme_unbundle_nonnegative_integer(p[2], "initialization in cursor% (cursor name case)");
     } else
       x2 = 0;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "initialization in cursor% (cursor name case)");
+      x3 = objscheme_unbundle_nonnegative_integer(p[3], "initialization in cursor% (cursor name case)");
     } else
       x3 = 0;
 

@@ -96,7 +96,7 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 #define CHECKTHISONE(x) 1
 #endif
 
-@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckOkFalse|CheckFalse[0] : : rFALSE <> with size
+@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,nnfloat,nnfloat,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckOkFalse|CheckFalse[0] : : rFALSE <> with size
 @ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL);
 
 @ Q "try-color" : void TryColour(wxColour!,wxColour!);

@@ -23,12 +23,12 @@
 @CLASSBASE wxAddColour "add-color" : "object"
 @INTERFACE "add-color"
 
-@IVAR "r" : short r
-@IVAR "g" : short g
-@IVAR "b" : short b
+@IVAR "r" : rint[0|255] r
+@IVAR "g" : rint[0|255] g
+@IVAR "b" : rint[0|255] b
 
 @ "get" : void Get(short*,short*,short*);
-@ "set" : void Set(short,short,short);
+@ "set" : void Set(rint[0|255],rint[0|255],rint[0|255]);
 
 @END
 
@@ -101,7 +101,7 @@
 @IVAR "family" : SYM[family] family
 @IVAR "face" : nstring face
 @IVAR "size-mult" : float sizeMult
-@IVAR "size-add" : int sizeAdd
+@IVAR "size-add" : rint[0|255] sizeAdd
 @IVAR "weight-on" : SYM[weight] weightOn
 @IVAR "weight-off" : SYM[weight] weightOff
 @IVAR "style-on" : SYM[style] styleOn
@@ -122,7 +122,7 @@
 @CREATORX (SYM[changeStyle],SYM[style]); <> style
 @CREATORX (SYM[changeWeight],SYM[weight]); <> weight
 @CREATORX (SYM[changeUnderline],bool); <> underline
-@CREATORX (SYM[changeSize],int); <> size
+@CREATORX (SYM[changeSize],rint[0|255]); <> size
 @CREATORX (SYM[changeAlign],SYM[align]); <> size
 
 @CLASSID wxTYPE_STYLE_DELTA
@@ -132,7 +132,7 @@
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeStyle],SYM[style]); <> style
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeWeight],SYM[weight]); <> weight
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeUnderline],bool); <> underline
-@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],int); <> size
+@ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],rint[0|255]); <> size
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeAlign],SYM[align]); <> size
 
 @ "set-delta-face" : wxStyleDelta! SetDeltaFace(string);
@@ -207,8 +207,10 @@
 
 @ "convert" : wxStyle! Convert(wxStyle!);
 
-@ "index-to-style" : wxStyle^ IndexToStyle(int);
-@ "style-to-index" : int StyleToIndex(wxStyle!);
+@MACRO bNegAsFalse = (({x} < 0) ? scheme_false : scheme_make_integer({x}))
+
+@ "index-to-style" : wxStyle^ IndexToStyle(nnint);
+@ "style-to-index" : int/bNegAsFalse StyleToIndex(wxStyle!);
 
 @CONSTANT "the-style-list" : wxStyleList! wxTheStyleList
 

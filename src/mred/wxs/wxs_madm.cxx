@@ -3374,10 +3374,10 @@ static Scheme_Object *os_wxSnipClassListNth(Scheme_Object *obj, int n,  Scheme_O
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxSnipClass* r;
   objscheme_check_valid(obj);
-  int x0;
+  nnint x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "nth in snip-class-list%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "nth in snip-class-list%");
 
   
   r = ((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->Nth(x0);

@@ -89,7 +89,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @ "get-resource" : bool wxGetResource(string,string,string*,nstring=NULL); <> string
 @ "get-resource" : bool wxGetResource(string,string,long*,nstring=NULL); <> number
 @ "write-resource" : bool wxWriteResource(string,string,string,nstring=NULL); <> string
-@ "write-resource" : bool wxWriteResource(string,string,long,nstring=NULL); <> number
+@ "write-resource" : bool wxWriteResource(string,string,ExactLong,nstring=NULL); <> number
 
 @MACRO BundleVoidStar = (void *){x}
 @MACRO spSema = semaphore

@@ -34,7 +34,7 @@
 @ "get-selection" : int GetSelection();
 @ "get-string-selection" : nstring GetStringSelection();
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
-@ "set-string-selection" : void SetStringSelection(string);
+@ "set-string-selection" : bool SetStringSelection(string);
 @ "get-string" : nstring GetString(int); : : /RANGERET[0.XC_SCHEME_NULL]
 
 @END

@@ -67,8 +67,8 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 @CREATOR ();
 
 @ V "tell" : long Tell(); : : : rZERO
-@ V "seek" : void Seek(long);
-@ V "skip" : void Skip(long);
+@ V "seek" : void Seek(nnlong);
+@ V "skip" : void Skip(nnlong);
 @ V "bad?" : bool Bad(); : : : rZERO
 @ V "read" : long Read(char[]/setNULL/setNULL,-long); : /arrayToVector/copyVectorToArray : /vectorToArray/copyArrayToVector : rZERO
 
@@ -79,7 +79,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 @CREATOR ();
 
 @ V "tell" : long Tell(); : : : rZERO
-@ V "seek" : void Seek(long);
+@ V "seek" : void Seek(nnlong);
 @ V "bad?" : bool Bad(); : : : rZERO
 @ V "write" : void Write(char[]/bList/ubList/cList,-long); : /methListSet[char.0.0.1] : /glueListSet[char.0.0.1.METHODNAME("editor-stream-out-base%","write")]
 
@@ -135,12 +135,12 @@ static double GetInexact(wxMediaStreamIn *s)
 @ ">>" : wxMediaStreamIn% operator>>(Long+); <> exact
 @ ">>" : wxMediaStreamIn% operator>>(Double+); <> inexact
 
-@ "set-boundary" : void SetBoundary(long);
+@ "set-boundary" : void SetBoundary(nnlong);
 @ "remove-boundary" : void RemoveBoundary();
 
 @ "skip" : void Skip(long);
 @ "tell" : long Tell();
-@ "jump-to" : void JumpTo(long);
+@ "jump-to" : void JumpTo(nnlong);
 
 @ "ok?" : bool Ok();
 
@@ -163,7 +163,7 @@ static double GetInexact(wxMediaStreamIn *s)
 @ "<<" : wxMediaStreamOut% operator<<(Long); <> exact number
 
 @ "tell" : long Tell();
-@ "jump-to" : void JumpTo(long);
+@ "jump-to" : void JumpTo(nnlong);
 
 @ "ok?" : bool Ok();
 

@@ -116,14 +116,14 @@
 @ "delete" : void Delete(); <> no position
 @ "erase" :  void Erase();
 
-@ "cut" :  void Cut(bool,long,nnls[start],nnls[end]=-1); <> position
-@ "copy" : void Copy(bool,long,nnls[start],nnls[end]=-1); <> position
-@ "paste" : void Paste(long,nnls[end],nnls[same]=-1); <> position
+@ "cut" :  void Cut(bool,ExactLong,nnls[start],nnls[end]=-1); <> position
+@ "copy" : void Copy(bool,ExactLong,nnls[start],nnls[end]=-1); <> position
+@ "paste" : void Paste(ExactLong,nnls[end],nnls[same]=-1); <> position
 @ "paste-next" : void PasteNext();
-@ "kill" : void Kill(long,nnlong,nnlong); <> position
+@ "kill" : void Kill(ExactLong,nnlong,nnlong); <> position
 
-@ v "do-copy" : void DoCopy(nnlong,nnlong,long,bool);
-@ v "do-paste" : void DoPaste(nnlong,long);
+@ v "do-copy" : void DoCopy(nnlong,nnlong,ExactLong,bool);
+@ v "do-paste" : void DoPaste(nnlong,ExactLong);
 
 @ "change-style" : void ChangeStyle(wxStyleDelta^,nnls[start],nnls[end]=-1); <> style-delta% and position
 @ "change-style" : void ChangeStyle(wxStyle^,nnls[start]=-1,nnls[end]=-1); <> style%

@@ -189,7 +189,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
   } else  {
     string x0;
     string x1;
-    long x2;
+    ExactLong x2;
     nstring x3;
 
     
@@ -197,7 +197,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
       scheme_wrong_count("write-resource (number case)", 3, 4, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "write-resource (number case)");
     x1 = (string)objscheme_unbundle_string(p[1], "write-resource (number case)");
-    x2 = objscheme_unbundle_integer(p[2], "write-resource (number case)");
+    x2 = objscheme_unbundle_ExactLong(p[2], "write-resource (number case)");
     if (n > 3) {
       x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "write-resource (number case)");
     } else

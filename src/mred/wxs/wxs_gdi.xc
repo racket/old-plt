@@ -52,8 +52,8 @@
 @CLASSBASE wxFont "font":"object"
 
 @CREATOR (); <> no argument
-@CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family
-@CREATOR (nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name
+@CREATOR (rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family
+@CREATOR (rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name
 
 @ "get-family" : SYM[family] GetFamily();
 @ "get-face" : nstring GetFaceString();
@@ -70,8 +70,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[0|255],SYM[family],SYM[style],SYM[weight],bool=0) <> family id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[0|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
 @CONSTANT "the-font-list" : wxFontList! wxTheFontList
 
@@ -200,11 +200,11 @@
 @CLASSBASE wxPen "pen" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,nnint,SYM[penStyle]); <> color%
-@CREATOR (string,nnint,SYM[penStyle]); <> color name
+@CREATOR (wxColour%,rint[0|255],SYM[penStyle]); <> color%
+@CREATOR (string,rint[0|255],SYM[penStyle]); <> color name
 
 @ "get-width" : int GetWidth();
-@ "set-width" : void SetWidth(int);
+@ "set-width" : void SetWidth(rint[0|255]);
 @ "get-cap" : SYM[cap] GetCap();
 @ "set-cap" : void SetCap(SYM[cap]);
 @ "get-join" : SYM[join] GetJoin();
@@ -228,8 +228,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,nnint,SYM[penStyle]); <> color%
-@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,nnint,SYM[penStyle]); <> color name
+@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,rint[0|255],SYM[penStyle]); <> color%
+@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,rint[0|255],SYM[penStyle]); <> color name
 
 @CONSTANT "the-pen-list" : wxPenList! wxThePenList
 
@@ -264,7 +264,7 @@
 
 @CLASSBASE wxCursor "cursor" : "object"
 
-@CREATOR (string,SYM[bitmapType]=0,int=0,int=0); <> cursor name
+@CREATOR (string,SYM[bitmapType]=0,nnint=0,nnint=0); <> cursor name
 @CREATOR (SYM[cursor]); <> cursor id
 
 @ "ok?" : bool Ok();

@@ -37,7 +37,7 @@
 
 @ "get-admin" : wxSnipAdmin! GetAdmin();
 
-@ "set-count" : void SetCount(long);
+@ "set-count" : void SetCount(rint[1|100000]);
 @ "set-flags" : void SetFlags(SYM[flags]);
 
 @ "set-style" : void SetStyle(wxStyle!)
@@ -56,15 +56,15 @@
 
 @CLASSBASE wxTextSnip "string-snip":"snip"
 
-@CREATOR (long=0);
+@CREATOR (nnlong=0);
 
 @CLASSID wxTYPE_TEXT_SNIP
 
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 
-@ "insert" : void Insert(string,long,long=0);
-@ "read" : void Read(long,wxMediaStreamIn%);
+@ "insert" : void Insert(string,nnlong,nnlong=0);
+@ "read" : void Read(nnlong,wxMediaStreamIn%);
 
 @END
 
@@ -107,7 +107,7 @@
 
 @CLASSBASE wxMediaSnip "editor-snip" : "snip"
 
-@CREATOR (wxMediaBuffer^=NULL,bool=TRUE,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1);
+@CREATOR (wxMediaBuffer^=NULL,bool=TRUE,nnint=wxMSNIPBOX_XMARGIN,nnint=wxMSNIPBOX_YMARGIN,nnint=wxMSNIPBOX_XMARGIN,nnint=wxMSNIPBOX_YMARGIN,nnint=wxMSNIPBOX_XINSET,nnint=wxMSNIPBOX_YINSET,nnint=wxMSNIPBOX_XINSET,nnint=wxMSNIPBOX_YINSET,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1);
 
 @CLASSID wxTYPE_MEDIA_SNIP
 
@@ -129,10 +129,10 @@
 @ "show-border" : void ShowBorder(bool);
 @ "border-visible?" : bool BorderVisible();
 
-@ "set-margin" : void SetMargin(int,int,int,int);
-@ "get-margin" :void GetMargin(int*,int*,int*,int*);
-@ "set-inset" :void SetInset(int,int,int,int);
-@ "get-inset" :void GetInset(int*,int*,int*,int*);
+@ "set-margin" : void SetMargin(nnint,nnint,nnint,nnint);
+@ "get-margin" :void GetMargin(nnint*,nnint*,nnint*,nnint*);
+@ "set-inset" :void SetInset(nnint,nnint,nnint,nnint);
+@ "get-inset" :void GetInset(nnint*,nnint*,nnint*,nnint*);
 
 @END
 
@@ -161,7 +161,7 @@
 @ "find-position" : short FindPosition(wxBufferDataClass!);
 @ "add" : void Add(wxBufferDataClass!);
 @ "number" : int Number();
-@ "nth" : wxBufferDataClass^ Nth(int);
+@ "nth" : wxBufferDataClass^ Nth(nnint);
 
 @END
 

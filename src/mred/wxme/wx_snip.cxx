@@ -493,6 +493,9 @@ wxTextSnip::wxTextSnip(long allocsize)
 
   w = -1.0;
 
+  if (allocsize > 5000)
+    allocsize = 5000;
+
   allocated = (allocsize > 0) ? 2 * allocsize : 20;
   text = buffer = STRALLOC(allocated + 1);
 

@@ -28,8 +28,8 @@
 @ "delete" : void Delete(); <> no argument
 @ "delete" : void Delete(wxSnip!); <> snip%
 
-@ v "do-copy" : void DoCopy(long,bool);
-@ v "do-paste" : void DoPaste(long);
+@ v "do-copy" : void DoCopy(ExactLong,bool);
+@ v "do-paste" : void DoPaste(ExactLong);
 
 @ "erase" : void Erase();
 

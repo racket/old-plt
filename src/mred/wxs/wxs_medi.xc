@@ -137,10 +137,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "redo": void Redo()
 @ "clear-undos" : void ClearUndos();
 
-@ "set-max-undo-history" : void SetMaxUndoHistory(int);
+@ "set-max-undo-history" : void SetMaxUndoHistory(rint[0|100000]);
 @ "get-max-undo-history" : int GetMaxUndoHistory();
 
-@ "do-edit-operation" : void DoEdit(SYM[editOp],bool=TRUE,long=0);
+@ "do-edit-operation" : void DoEdit(SYM[editOp],bool=TRUE,ExactLong=0);
 
 @ "set-keymap" : void SetKeymap(wxKeymap^=NULL);
 @ "get-keymap" : wxKeymap^ GetKeymap();
@@ -182,7 +182,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @GLOBAL wxMediaGlobal
 
 @ "get-editor-print-margin" : void wxGetMediaPrintMargin(long?,long?);
-@ "set-editor-print-margin" : void wxSetMediaPrintMargin(long,long);
+@ "set-editor-print-margin" : void wxSetMediaPrintMargin(nnlong,nnlong);
 
 @ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn%);
 @ "read-editor-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn%);

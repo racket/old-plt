@@ -44,7 +44,7 @@ os_wxEvent::~os_wxEvent()
 static Scheme_Object *objscheme_wxEvent_GettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  long v;
+  ExactLong v;
 
   objscheme_check_valid(obj);
   if (n) scheme_wrong_count("get-time-stamp in event%", 0, 0, n, p);
@@ -54,18 +54,18 @@ static Scheme_Object *objscheme_wxEvent_GettimeStamp(Scheme_Object *obj, int n, 
   else
     v = ((wxEvent *)cobj->primdata)->timeStamp;
 
-  return scheme_make_integer(v);
+  return scheme_make_integer_value(v);
 }
 
 static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  long v;
+  ExactLong v;
 
   if (n != 1) scheme_wrong_count("set-time-stamp in event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "set-time-stamp in event%");
+  v = objscheme_unbundle_ExactLong(p[0], "set-time-stamp in event%");
   ((wxEvent *)cobj->primdata)->timeStamp = v;
 
   return scheme_void;
@@ -727,7 +727,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n, 
 
   if (n != 1) scheme_wrong_count("set-position in scroll-event%", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "set-position in scroll-event%");
+  v = objscheme_unbundle_integer_in(p[0], 0, 10000, "set-position in scroll-event%");
   ((wxScrollEvent *)cobj->primdata)->pos = v;
 
   return scheme_void;

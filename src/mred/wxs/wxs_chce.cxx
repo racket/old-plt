@@ -413,6 +413,7 @@ static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Ob
 static Scheme_Object *os_wxChoiceSetStringSelection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
   objscheme_check_valid(obj);
   string x0;
 
@@ -420,11 +421,11 @@ static Scheme_Object *os_wxChoiceSetStringSelection(Scheme_Object *obj, int n,  
   x0 = (string)objscheme_unbundle_string(p[0], "set-string-selection in choice%");
 
   
-  ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->SetStringSelection(x0);
+  r = ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->SetStringSelection(x0);
 
   
   
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused

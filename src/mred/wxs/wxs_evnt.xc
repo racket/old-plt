@@ -11,7 +11,7 @@
 
 @CREATOR ()
 
-@IVAR "time-stamp" : long timeStamp
+@IVAR "time-stamp" : ExactLong timeStamp
 
 @END
 
@@ -65,7 +65,7 @@
 
 @IVAR "event-type" : SYM[scrollMoveType] moveType
 @IVAR "direction" : SYM[orientation] direction
-@IVAR "position" : int pos
+@IVAR "position" : rint[0|10000] pos
 
 @END
 

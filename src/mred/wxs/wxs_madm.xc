@@ -161,7 +161,7 @@ typedef void *(*CAPOFunc)(void*);
 @ "find-position" : short FindPosition(wxSnipClass!);
 @ "add" : void Add(wxSnipClass!);
 @ "number" : int Number();
-@ "nth" : wxSnipClass^ Nth(int);
+@ "nth" : wxSnipClass^ Nth(nnint);
 @ "reading-version" : int ReadingVersion(wxSnipClass!);
 
 @END
@@ -204,8 +204,8 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @CLASSID wxTYPE_KEYMAP
 
-@ "get-double-click-interval" : long GetDoubleClickInterval();
-@ "set-double-click-interval" : void SetDoubleClickInterval(long);
+@ "get-double-click-interval" : int GetDoubleClickInterval();
+@ "set-double-click-interval" : void SetDoubleClickInterval(rint[0|1000000]);
 
 @MACRO bAnythingFromVoid = ((Scheme_Object *){x})
 @MACRO ubAnythingToVoid = ((void *){x})

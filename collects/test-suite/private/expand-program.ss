@@ -31,9 +31,8 @@
            [first-break? true]
            [done? false]
            [expand-program
-            (drscheme:eval:expand-program/multiple
+            (drscheme:eval:traverse-program/multiple
              language
-             false
              (lambda () ; =user-eventspace=
                (current-load-relative-directory load-path)
                (error-display-handler error-handler)
@@ -93,7 +92,7 @@
                    [(syntax? object)
                     (if first-expr?
                         (begin
-                          (set! value object)
+                          (set! value (eval object))
                           (set! first-expr? false)
                           (continue))
                         (error-handler

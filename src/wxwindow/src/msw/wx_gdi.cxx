@@ -42,7 +42,7 @@ wxFont::wxFont(void)
 {
   COUNT_P(font_count);
 
-  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT, FALSE);
+  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT, FALSE, 0.0);
 }
 
 /* Constructor for a font. Note that the real construction is done
@@ -53,7 +53,7 @@ wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined
 {
   COUNT_P(font_count);
 
-  Create(PointSize, Family, Style, Weight, Underlined, Smoothing, sip);
+  Create(PointSize, Family, Style, Weight, Underlined, Smoothing, sip, Rotation);
 }
 
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip):
@@ -65,7 +65,7 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
 
-  Create(PointSize, id, Style, Weight, Underlined, Smoothing, sip);
+  Create(PointSize, id, Style, Weight, Underlined, Smoothing, sip, 0.0);
 }
 
 Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing, 
@@ -96,16 +96,16 @@ wxFont::~wxFont()
   if (general_cfont)
     DeleteRegisteredGDIObject(general_cfont);
   
-  if (rotated_fonts) {
+  if (rotated_font) {
     wxNode *node;
     wxFont *rot;
-    node = rotated_fonts->First();
+    node = rotated_font->First();
     while (node) {
       rot = (wxFont*)node->Data();
       DELETE_OBJ rot;
       node = node->Next();
     }
-    DELETE_OBJ rotated_fonts;
+    DELETE_OBJ rotated_font;
   }
 
   COUNT_M(font_count);
@@ -129,19 +129,23 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, float angle)
   int charset = ANSI_CHARSET;
   Bool ff_underline = underlined;
   int ff_qual;
+  int orientation;
 
   if (angle != rotation) {
     int int_angle = (int)(angle * 1800 / 3.14159);
-    if (!rotated_fonts) {
-      rotated_fonts = new wxList(wxKEY_INTEGER);
+    wxNode *node;
+    wxFont *rot;
+
+    if (!rotated_font) {
+      rotated_font = new wxList(wxKEY_INTEGER);
     }
-    node = rotated_fonts->Find(int_angle);
+    node = rotated_font->Find(int_angle);
     if (node)
       rot = (wxFont *)node->Data();
     else {
-      rot = new wxFont(point_size, font_id, style, weight,
+      rot = new wxFont(point_size, fontid, style, weight,
 		       underlined, smoothing, size_in_pixels, angle);
-      rotated_fonts->Append(int_angle, (wxObject*)rot);
+      rotated_font->Append(int_angle, (wxObject*)rot);
     }
 
     return rot->BuildInternalFont(dc, screenFont, angle);
@@ -227,22 +231,25 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, float angle)
   } else
     ff_qual = NONANTIALIASED_QUALITY;
 
-  orientation = angle * 1800 / 3.14159;
+  orientation = (int)(angle * 1800 / 3.14159);
   
-  cfont = CreateFont(-nHeight, 0, 0, orientation, ff_weight, ff_italic, (BYTE)ff_underline,
+  cfont = CreateFont(-nHeight, 0, orientation, orientation, 
+		     ff_weight, ff_italic, (BYTE)ff_underline,
 		     0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		     ff_qual, DEFAULT_PITCH | ff_family, ff_face);
   
   if (!cfont) {
     /* Try defaulting to family: */
     ff_face = wxTheFontNameDirectory->GetScreenName(family, weight, style);
-    cfont = CreateFont(-nHeight, 0, 0, orientation, ff_weight, ff_italic, (BYTE)ff_underline,
+    cfont = CreateFont(-nHeight, 0, orientation, orientation, 
+		       ff_weight, ff_italic, (BYTE)ff_underline,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		       ff_qual, DEFAULT_PITCH | ff_family, ff_face);
   }
 
   if (!cfont)
-    cfont = CreateFont(12, 0, 0, orientation, FW_NORMAL, 0,(BYTE)0,
+    cfont = CreateFont(12, 0, orientation, orientation, 
+		       FW_NORMAL, 0,(BYTE)0,
 		       0, charset, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		       ff_qual, DEFAULT_PITCH | FF_SWISS, NULL);
 

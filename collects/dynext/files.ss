@@ -11,4 +11,5 @@
    extract-base-filename/ss
    extract-base-filename/c
    extract-base-filename/kp
-   extract-base-filename/o))
+   extract-base-filename/o
+   extract-base-filename/ext))

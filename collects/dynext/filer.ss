@@ -38,22 +38,32 @@
  (define-values (extract-base-filename/ss
 		 extract-base-filename/c
 		 extract-base-filename/kp
-		 extract-base-filename/o)
+		 extract-base-filename/o
+		 extract-base-filename/ext)
    (let ([mk
-	  (lambda (pat kind)
+	  (lambda (pat kind simple)
 	    (letrec ([extract-base-filename
 		      (case-lambda
 		       [(s p)
 			(let ([m (regexp-match (format "^(.*)\\.(~a)$" pat) s)])
 			  (cond
 			   [m (cadr m)]
-			   [p (error p "not a ~a file: ~a" kind s)]
+			   [p (error p "not a ~a filename (doesn't end with ~a): ~a" kind simple s)]
 			   [else #f]))]
 		       [(s) (extract-base-filename s #f)])])
 	      extract-base-filename))])
      (values
-      (mk "[sS][sS]|[sS][cC][mM]" "Scheme")
-      (mk "[cC]" "C")
-      (mk "[kK][pP]" "constant pool")
-      (mk "[oO]|[oO][bB][jJ]" "compiled object")))))
+      (mk "[sS][sS]|[sS][cC][mM]" "Scheme" ".ss or .scm")
+      (mk "[cC]" "C" ".c")
+      (mk "[kK][pP]" "constant pool" ".kp")
+      (mk (case (system-type)
+	    [(unix macos) "[oO]"]
+	    [(windows) "[oO][bB][jJ]"])
+	  "compiled object"
+	  (append-object-suffix ""))
+      (mk (case (system-type)
+	    [(unix macos) "[sS][oO]"]
+	    [(windows) "[dD][lL][lL]"])
+	  "MzScheme extension"
+	  (append-extension-suffix ""))))))
 

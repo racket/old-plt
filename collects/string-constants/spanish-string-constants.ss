@@ -117,14 +117,15 @@
  ;; Help Desk
  (search-results "Buscar resultados")
  (help-desk "Módulo de Ayuda")
- (help-desk-n "Módulo de Ayuda ~a")
- (about-help-desk "Acerca del Módulo de Ayuda")
- (help-desk-about-string
-  "El Módulo de Ayuda es una fuente complete de información acerca del software del grupo PLT, incluyendo DrScheme, MzScheme y MrEd.\n\nVersión ~a\nCopyright (c) 1995-2001 PLT")
- (help-on-help "Ayuda para la ayuda")
- (help-on-help-details "Para ayuda sobre el uso del Módulo de Ayuda, sigue la liga `Cómo usar el Módulo de Ayuda' desde el página principal del Módulo de Ayuda.  (Para llegar a la página principal si no estás ahí ya, presiona el botón marcado `Hogar' en la parte superior de la ventana del Módulo de Ayuda.")
- (find-docs-for "Localiza la documentación para:")
  (search "Buscar")
+ (search-for "Busca")
+ (lucky "¡Suerte!")
+ (options "Opciones")
+ (configure-hd "Configurar")
+ (hd-home "Hogar del Módulo de Ayuda")
+ (show-manuals "Mostrar manuales")
+ (send-bug-report "Enviar reporte de problemas")
+ (query-bug-reports "Buscar en los reporetes de problemas")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "por Palabra clave")
  (search-for-keyword-or-index "por palabra clave o entrada en el índice")
@@ -133,17 +134,43 @@
  (containing-match "subcadena") ;; containing match ??
  (regexp-match "expresión regular") ;; match regexp
  (stop "Detener")
- (feeling-lucky "Me siento afortunado")
  (nothing-found-for-search-key "No se encontró nada con \"~a\".")
  (searching "Buscando...")
  (search-stopped "(Búsqueda detenida.)")
  (search-stopped-too-many-matches "(Búsqueda detenida - demasiados patrones casan.)")
- (reload "Volver a cargar") ;; Reload
  (help "Ayuda")
- (searching... "Buscando...")
- (nothing-found-for-empty-search "Nada casa con la búsqueda vacía")
  (nothing-found-for "Nada casa con ~a")
  (and "y")
+ (refresh "refrescar")
+ (refresh-all-manuals "refrescar todos los manuales")
+ (manual-installed-date "(~a instalado)")
+
+ ;; Help Desk configuration
+ 
+ (hd-configuration "Configuración del Módulo de Ayuda PLT")
+ (hd-search-frame-options "Buscar opciones de pantalla")
+ (hd-height "Altura")
+ (hd-bg-color "Color del fondo")
+ (hd-pixels "pixeles")
+ (hd-text-color "Color del texto")
+ (hd-link-color "Color de ligas")
+ (hd-text-sample "El texto en las búsquedas aparece en este color")
+ (hd-link-sample "Las ligas son mostradas en este color")
+ (hd-save-changes "Salvar cambios")
+ (hd-reset "Reajuste")
+ (hd-defaults "Valores por omisión")
+ (hd-javascript-note
+  "La selección que hagas aparecerá aquí si haz habilitado javascript y tienes un navegador estándar reciente.")
+
+ ;; refreshing manuals
+ (refresh-downloading "Bajando ~a")
+ (refresh-deleting "Borrando ~a")
+ (refresh-installing "Instalando ~a")
+ (refresh-progress "Progreso de la descarga del manual del PLT")
+ (refresh-done "Refresco de los manuales via CVS terminado")
+ (refresh-installation-log "Bitácora de instalación")
+ (refresh-stopped "Refresco de manuales del PLT detenido")
+
 
  (install-plt-file-menu-item... "Instalar archivo .plt ...")
  (install-plt-file-dialog-title "Instalar archivo .plt")
@@ -377,7 +404,6 @@
  (about-menu-item "Acerca ...")
 
  ;;; help-desk-specific menus
- (new-help-desk "&Nuevo Módulo de Ayuda")
  ;; open here's new menu item
  (create-new-window-or-clear-current
   "¿Deseas una nueva ventana o limpiar la ventana actual?")
@@ -469,6 +495,8 @@
 ;; (comment-out-menu-item-label "&Comentar")
  (uncomment-menu-item-label "&Des-comentar")
 
+ (convert-to-semicolon-comment "Convertir a comentario con punto y coma")
+ 
  ;;; executables
  (inline-saved-program-in-executable?
   "¿Deseas que ponga \"en línea\" (auto-contenido) el programa salvado en el ejecutable? Si sí, puedes copiar el ejecutable ~a a otra computadora, pero el ejecutable será muy grande.  Si no, no podrás copiar el ejecutable a otra computadora pero será más pequeño.  Adicionalmente, si escojes no, el ejecutable siempre cargará la última versión del programa.")
@@ -482,10 +510,14 @@
  (filename "Nombre de archivo: ")
  (create "Crear")
  (please-choose-an-executable-filename "Por favor selecciona un nombre de archivo para salvar el ejecutable.")
+ (windows-executables-must-end-with-exe
+  "El nombre de archivo \n\n  ~a\n\nes ilegal.  En Windows, los ejecutables deben tener terminación .exe.")
+ (macosx-executables-must-end-with-app
+  "El nombre de archivo\n\n  ~a\n\nes ilegal.  En MacOS X, los ejecutables deben tener terminación .app.")
+ (warning-directory-will-be-replaced
+  "ADVERTENCIA: el directorio:\n\n  ~a\n\nserá reemplazado.  ¿Continuar?")
  
  (create-servlet "Crear Servlet...")
-
-
  
  ;;; buttons
  (execute-button-label "Ejecutar") 
@@ -517,7 +549,6 @@
  (teachpack-error-invoke "El archivo del Paquete de Enseñanza ~a lanzó un error durante su invocación.")
  (add-teachpack-menu-item-label "Añadir un Paquete de Enseñanza...")
  (clear-all-teachpacks-menu-item-label "Limpia Todos los Paquetes de Enseñanza")
- (teachpack-not-only-one-import "La unit/sig del Paquete de Enseñanza ~a debe tener exactamente una clausula de importación.")
  (drscheme-teachpack-message-title "DrScheme Paquete de Enseñanza")
  (already-added-teachpack "El paquete de enseñanza ~a ya estaba cargado")
  
@@ -529,6 +560,7 @@
  (output-style-label "Estilo de salida")
  (constructor-printing-style "Constructor")
  (quasiquote-printing-style "Quasiquote")
+ (print-printing-style "current-print")
  (write-printing-style "write")
  (sharing-printing-label "Show sharing in values")
  (use-pretty-printer-label "Insertar caracteres de nueva línea en valores impresos")
@@ -591,8 +623,15 @@
  ;; Nobody will know what CLEI is, I think. OTHO, most people won't know what REPL stands for either.
  (bug-report-synthesized-information "Información Sintetizada")
  (cannot-display-url "No puedo desplegar URL ~s: ~a")
+
+ ;;; executables
  (create-executable-menu-item-label "Crear ejecutable...")
  (create-executable-title "Crear Ejecutable")
+ (save-a-mred-launcher "Salvar un lanzador de MrEd")
+ (save-a-mzscheme-launcher "Salvar un lanzador de MzScheme")
+ (save-a-mred-stand-alone-executable "Salvar un ejecutable autocontenido de MrEd")
+ (save-a-mzscheme-stand-alone-executable "Salvar un ejecutable autocontenido de MzScheme")
+
  (definitions-not-saved "La ventana de definiciones no ha sido salvada. El ejecutable usará la última versión salvada de la ventana de definiciones. ¿Desea continuar?")
  (do-you-want-to-install-it? "¿Desea intalarlo?")
  (dock "Atracar")
@@ -603,8 +642,16 @@
  (downloading-file... "Descargando archivo...")
  (drscheme-homepage "DrScheme")
  (error-finding-docs "No pude encontrar la documentación.\n\n~a")
+
+ ;; saving a file
+ ; ~a is filled with the filename
  (error-saving "Error al Salvar")
  (error-saving-file/name "Hubo un error mientras salvaba ~a.")
+ (error-loading "Error al cargar")
+ (error-loading-file/name "Hubo un error mientras cargaba ~a.")
+  (unknown-filename "<< desconocido >>")
+
+ 
  (getting-page "Obteniendo Página")
  (help-menu-check-for-updates "Buscando Actualizaciones...")
  (how-to-use-scheme "Cómo Usar Scheme")
@@ -689,7 +736,6 @@
  (fraction-style "Estilo de fracción")
  (happy-birthday-matthias "¡Feliz cumpleaños Matthias!")
  
- (manual-installed-date "(~a instalado)")
  (module-browser "Módulo Navegador")
  (module-browser-adding-file "Añadiendo archivo: ~a...")
  (module-browser-error-expanding "Error al expandir el programa:\n\n~a")
@@ -751,11 +797,7 @@
    (profiling-update "Actualiza Delineado")
    (recent-items-sort-by-age "Ordena por Edad")
    (recent-items-sort-by-name "Ordena por Nombre")
-   (refresh-deleting... "Borrando la versión vieja de ~a...")
-   (refresh-downloading... "Bajando ~a...")
-   (refresh-installing... "Instalando nueva versión de ~a...")
-   (refreshing-manuals "Bajando (nuevamente) los Manuales")
-   
+
    ;; help desk http proxy
    (http-proxy "Proxy de HTTP")
    (proxy-direct-connection "Coneción Directa")
@@ -773,9 +815,14 @@
    (no-browser "Ninguno")    
    (reuse-existing-frames "Reutilizar marcos existentes cuando se abre un nuevo archivo")
    (scheme-prefs-panel-label "Scheme")
+
+   ;; number snip popup menu
    (show-decimal-expansion "Ver expansión decimal")
    (show-fraction-view "Ver como fracción")
+   (show-mixed-fraction-view "Ver como una fracción mixta")   
+   (show-improper-fraction-view "Ver como fracción impropia")
    (show-more-decimal-places "Muestra más posiciones decimales")
+   
    (special-menu "Especial")
    (switch-anyway "Cambia de archivo de cualquier forma")
    (tool-error-phase1 "Error en la fase 1 de la herramienta ~s; ~s")
@@ -807,5 +854,6 @@
    (wizard-next "Siguiente")
    (wizard-back "Atrás")
    (wizard-finish "Finalizar")
-   
+
+   (plt-installer-progress-window-title "Progreso del instalador")
    )

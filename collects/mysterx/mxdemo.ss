@@ -15,7 +15,7 @@
 	 "<p>"
 	 "<hr>"
 	 "<p>"
-	 (coclass->html "Calendar Control 8.0" 300 200)
+	 (progid->html "MSCAL.Calendar.7" 300 200)
 	 "<p>"
 	 "<H3 id=\"event-header\"></H3>"))
 

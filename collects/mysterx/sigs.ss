@@ -21,10 +21,11 @@
    com-all-coclasses
    com-all-controls
    coclass->html
+   progid->html
    cocreate-instance-from-coclass
    cocreate-instance-from-progid
    coclass
-   coclass-as-progid
+   progid
    set-coclass!
    set-coclass-from-progid!
    com-object-eq?
@@ -58,10 +59,11 @@
    com-all-coclasses
    com-all-controls
    coclass->html
+   progid->html
    cocreate-instance-from-coclass
    cocreate-instance-from-progid
    coclass
-   coclass-as-progid
+   progid
    set-coclass!
    set-coclass-from-progid!
    com-object-eq?

@@ -29,10 +29,11 @@
   (define com-all-coclasses mxprims:com-all-coclasses)
   (define com-all-controls mxprims:com-all-controls)
   (define coclass->html mxprims:coclass->html)
+  (define progid->html mxprims:progid->html)
   (define cocreate-instance-from-coclass mxprims:cocreate-instance-from-coclass)
   (define cocreate-instance-from-progid mxprims:cocreate-instance-from-progid)
   (define coclass mxprims:coclass)
-  (define coclass-as-progid mxprims:coclass-as-progid)
+  (define progid mxprims:progid)
   (define set-coclass! mxprims:set-coclass!)
   (define set-coclass-from-progid! mxprims:set-coclass-from-progid!)
   (define com-object-eq? mxprims:com-object-eq?)
@@ -68,7 +69,42 @@
 		       (error 
 			(format "~a: Expected value in '~a, got ~a" 
 				name vals sym)))
-	       (f elt (symbol->string sym)))])
+	       (f elt (symbol->string sym)))]
+	    [insert-object-maker 
+	     (lambda (name->html)
+	       (opt-lambda 
+		(object width height [size 'pixels])
+		(dynamic-wind
+		 html-wait
+		 (lambda () 
+		   (let ([old-objects (mxprims:document-objects doc)])
+		     (mxprims:element-insert-html 
+		      elt 
+		      (name->html object width height size))
+			(let* ([new-objects (mxprims:document-objects doc)]
+			       [obj (car (mzlib:remove* old-objects new-objects
+							com-object-eq?))])
+			  (mxprims:com-register-object obj)
+			  obj)))
+		 html-post)))]
+	    [append-object-maker 
+	     (lambda (name->html)
+	       (opt-lambda 
+		(object width height [size 'pixels])
+		(dynamic-wind
+		 html-wait
+		 (lambda ()
+		   (let* ([old-objects (mxprims:document-objects doc)])
+		     (mxprims:element-append-html 
+		      elt 
+		      (name->html object width height size))
+		     (let* ([new-objects (mxprims:document-objects doc)]
+			    [obj (car (mzlib:remove* old-objects
+						     new-objects
+						     com-object-eq?))])
+		       (mxprims:com-register-object obj)
+		       obj)))
+		 html-post)))])
 	   (public
 	    [insert-html
 	     (lambda (s)
@@ -94,37 +130,14 @@
 	    [append-text
 	     (lambda (s)
 	       (mxprims:element-append-text elt s))]
-	    [insert-object 
-	     (opt-lambda (object width height [size 'pixels])
-	       (dynamic-wind
-		html-wait
-		(lambda () 
-		  (let ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-insert-html 
-		     elt 
-		     (coclass->html object width height size))
-		       (let* ([new-objects (mxprims:document-objects doc)]
-			      [obj (car (mzlib:remove* old-objects new-objects
-						 com-object-eq?))])
-			 (mxprims:com-register-object obj)
-			 obj)))
-		html-post))]
-	    [append-object 
-	     (opt-lambda (object width height [size 'pixels])
-	       (dynamic-wind
-		html-wait
-		(lambda ()
-		  (let* ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-append-html 
-		     elt 
-		     (coclass->html object width height size))
-		       (let* ([new-objects (mxprims:document-objects doc)]
-			      [obj (car (mzlib:remove* old-objects
-						 new-objects
-						 com-object-eq?))])
-			 (mxprims:com-register-object obj)
-			 obj)))
-		html-post))]
+	    [insert-object-from-coclass 
+	     (insert-object-maker coclass->html)]
+	    [append-object-from-coclass 
+	     (append-object-maker coclass->html)]
+	    [insert-object-from-progid
+	     (insert-object-maker progid->html)]
+	    [append-object-from-progid
+	     (append-object-maker progid->html)]
 	    [focus
 	     (lambda ()
 	       (mxprims:element-focus elt))]
@@ -1588,6 +1601,31 @@
 
   (define mx-document%	
     (class object% (doc)
+	(private
+	    [insert-object-maker 
+	     (lambda (name->html)
+	       (opt-lambda 
+		(object width height [size 'pixels])
+		(dynamic-wind 
+		 html-wait
+		 (lambda ()
+		   (mxprims:document-insert-html 
+		    doc 
+		    (name->html object width height size))
+		   (car (mxprims:document-objects doc)))
+		 html-post)))]
+	    [append-object-maker 
+	     (lambda (name->html)
+	       (opt-lambda 
+		(object width height [size 'pixels])
+		(dynamic-wind
+		 html-wait
+		 (lambda ()
+		   (mxprims:document-append-html 
+		    doc 
+		    (name->html object width height size))
+		   (car (mzlib:last-pair (mxprims:document-objects doc))))
+		 html-post)))])
 	   (public
 	    [find-element
 	     (lambda (tag id)
@@ -1625,26 +1663,14 @@
 		html-wait
 		(lambda () (mxprims:document-replace-html doc html-string))
 		html-post))]
-	    [insert-object 
-	     (opt-lambda (object width height [size 'pixels])
-	       (dynamic-wind 
-		html-wait
-		(lambda ()
-		  (mxprims:document-insert-html 
-		   doc 
-		   (coclass->html object width height size))
-		  (car (mxprims:document-objects doc)))
-		html-post))]
-	    [append-object 
-	     (opt-lambda (object width height [size 'pixels])
-	       (dynamic-wind
-		html-wait
-		(lambda ()
-		  (mxprims:document-append-html 
-		   doc 
-		   (coclass->html object width height size))
-		  (car (mzlib:last-pair (mxprims:document-objects doc))))
-		html-post))])
+	    [insert-object-from-coclass 
+	     (insert-object-maker coclass->html)]
+	    [append-object-from-coclass
+	     (append-object-maker coclass->html)]
+	    [insert-object-from-progid
+	     (insert-object-maker progid->html)]
+	    [append-object-from-progid
+	     (append-object-maker progid->html)])
 	   (sequence 
 	     (super-init))))
 	     

@@ -54,7 +54,7 @@
      (datum->syntax-object #'here expression)
      (lambda (exn)
        (and (exn? exn)
-            (has-good-blame? (exn-message exn))))))
+            (has-proper-blame? (exn-message exn))))))
   
   (define (test/well-formed stx)
     (test (void) 

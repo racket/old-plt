@@ -556,6 +556,8 @@ OSErr setup_alias(char *execPath, char *starterPath)
   FSSpec execSpec, starterSpec;
   AliasHandle aliasHndl;
   Str255 newName = "\pExecutable Location";
+  int resFile;
+  AliasHandle oldHndl;
 
   scheme_mac_path_to_spec(execPath, &execSpec, NULL);
   scheme_mac_path_to_spec(starterPath, &starterSpec, NULL);
@@ -565,9 +567,19 @@ OSErr setup_alias(char *execPath, char *starterPath)
   }
   
   FSpOpenResFile(&starterSpec,fsRdWrPerm);
+  resFile = CurResFile();
+  
+  // is the resource already there?
+  oldHndl = (AliasHandle)GetResource('alis',128);
+  if (oldHndl != NULL) {
+    RemoveResource((Handle)oldHndl);
+    DisposeHandle((Handle)oldHndl);
+  }
   
   AddResource((Handle)aliasHndl,'alis',128,newName);
   WriteResource((Handle)aliasHndl);
+  CloseResFile(resFile);
+  DisposeHandle((Handle)aliasHndl);
   
   return noErr;
 } 
@@ -640,7 +652,7 @@ char *strcat(char *a, const char *b) // I have no idea what it's supposed to ret
   unsigned long i,j;
   i = strlen(a);
   for (j = 0; a[i] = b[j]; i++, j++);
-  return NULL;
+  return a;
 }
 
 void *memcpy(void *dst, const void *src, unsigned long len) // this one either.
@@ -649,5 +661,5 @@ void *memcpy(void *dst, const void *src, unsigned long len) // this one either.
   for (i = 0; i < len; i++) {
     ((char *)dst)[i] = ((char *)src)[i];
   }
-  return NULL;
+  return dst;
 }

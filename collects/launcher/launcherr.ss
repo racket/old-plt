@@ -312,11 +312,7 @@
                 (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
                   (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
                          (list extension gomz gomr))))
-        (let ([installation-result ((load-extension extension)
-                                    (build-path plthome mz-app)
-                                    (build-path plthome mr-app)
-                                    gomz
-                                    gomr)])
+        (let ([installation-result ((load-extension extension) mz-app mr-app gomz gomr)])
           (unless installation-result
             (error 'maybe-install-aliases "installing aliases failed"))
           (with-output-to-file marker-file

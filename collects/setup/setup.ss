@@ -66,7 +66,8 @@
 	  [function : mzlib:function^ ((require-library "functior.ss"))]
 	  [compile : mzlib:compile^ ((require-library "compiler.ss"))]
 	  [pretty-print : mzlib:pretty-print^ ((require-library "prettyr.ss"))]
-	  [launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher") file)]
+	  [launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher") 
+                                       file dcompile dlink)]
 	  [dcompile : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
 	  [dlink : dynext:link^ ((require-library "linkr.ss" "dynext"))]
 	  [dfile : dynext:file^ ((require-library "filer.ss" "dynext"))]

@@ -77,27 +77,27 @@ Additional info-table.ss fields trigger additional setup actions:
 >  mred-launcher-names - a list of executable names to be
    installed in plt (or plt/bin) to run MrEd programs
    implemented by the collection.  This is treated in
-   parallel to mzscheme-launcher-names. 
+   parallel to `mzscheme-launcher-names'. 
 
 >  mred-launcher-libraries - a list of library names in
    parallel to `mred-launcher-names'.
 
->  install-collection - a procedure that accepts a directory path
-   argument (the path to the collection) and performs
-   collection-specific installation work.  This procedure should avoid
-   unnecessary work in the case that it is called multiple times for
-   the same installation.
+> install-collection - a string for a library module relative to the
+   collection. The module must provide `installer' as a procedure that
+   accepts a directory path argument (the path to the collection) and
+   performs collection-specific installation work.  This procedure
+   should avoid unnecessary work in the case that it is called
+   multiple times for the same installation.
 
-> clean - a list of pathnames to be deleted when the --clean or
-  -c flag is passed to setup-plt. The pathnames must be relative to
-  the collection.  If the any path names a directory, each of the
-  files in the directory are deleted but none of the subdirectories of that
-  directory are checked. If the path names a file,
-  the file is deleted.  The default, if this flag is not specified, is
-  to delete all files in the compiled subdirectory.
-  and all of the files in the architecture-specific subdirectory of
-  the compiled directory, for the architecture that setup-plt
-  is running under.
+>  clean - a list of pathnames to be deleted when the --clean or -c
+   flag is passed to Setup PLT. The pathnames must be relative to the
+   collection.  If any path names a directory, each of the files
+   in the directory are deleted, but none of the subdirectories of the
+   directory are checked. If the path names a file, the file is
+   deleted.  The default, if this flag is not specified, is to delete
+   all files in the "compiled" subdirectory, and all of the files in
+   the platform-specific subdirectory of the compiled directory
+   for the current platform.
 
 
  Unpacking .plt Distribution Archives

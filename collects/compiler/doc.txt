@@ -126,34 +126,31 @@ next section.
       information about compiling the collection.  The following
       fields are used:
 
->      'name - the name of the collection as a string.
+>      name - the name of the collection as a string.
 
->      'compile-prefix - an S-expression to use as the elaboration-time
-         prefix expression for compiling all files in the collection.
-
->      'compile-omit-files - a list of filenames (without paths); all
+>      compile-omit-files - a list of filenames (without paths); all
          Scheme files in the collection are compiled except for the
          files in this list.  If a file contains elaboration time
          expressions (e.g., macros, signatures) that are not intended
          to be local to the file, then the file should be included in
          this list.
 
->      'compile-extension-omit-files - a list of filenames to extend
+>      compile-extension-omit-files - a list of filenames to extend
          the list returned for `compile-omit-files'. Unlike the list
          returned for `compile-omit-files', this extension is not used
          when compiling .zo files.
 
->      'compile-subcollections - a list of collection paths, where each
+>      compile-subcollections - a list of collection paths, where each
          path is a list of strings. `compile-collection-extension' is 
          applied to each of the collections.
 
-      Only the 'name field is required from info.ss, but the 
-      'compile-prefix field should also be provided, because the
-      Setup PLT uses this field as an indication that the collection 
-      should be compiled (see "Setup PLT" below).
+      Only the `name' field is required from info.ss.(Note: Setup PLT
+      uses this field as an indication that the collection should be
+      compiled.)
 
-      The compilation process is driven by the 'make-collection
-      function in the collection.ss library of the `make' collection.
+      The compilation process is driven by the 'make-collection'
+      function in the "collection.ss" library of the "make"
+      collection.
 
 >  (compile-collection-zos collection sub-collection ...)
 
@@ -165,26 +162,12 @@ next section.
       except for `compile-extension-omit-files'. In addition, the
       following two fields are used:
 
->      'compile-zo-omit-files - a list of filenames to extend the
+>      compile-zo-omit-files - a list of filenames to extend the
          list returned for 'compile-omit-files.
 
->      'compile-elaboration-zos - a list of filenames (without paths);
-         the Scheme files in this list are compiled with elaborations 
-         preserved (see MzLib's compile-file for information about 
-         preserving elaborations). The files are compiled from left to
-         right in the list, all in the same namespace. If a file does 
-         not need to be compiled, it is nevertheless loaded before 
-         subsequent files in the list are compiled.
-
->      'compile-elaboration-zos-prefix - an S-expression to use
-         as an elaboration-time prefix expression for compiling
-         the files returned for 'compile-elaboration-zos.
-
       The main compilation process is driven by the `make-collection'
-      function in the collection.ss library of the `make'
-      collection. The elaboration-preserving compilation does not
-      use make, but it only recompiles a file when the source file
-      is newer.
+      function in the "collection.ss" library of the "make"
+      collection.
 
 ---------------------------------------------------------------------------
 
@@ -208,7 +191,7 @@ _option.ss_ module. Options are set by the following parameters:
      .c/.o files.  Default = #f.
 
 > compile-subcollections - #t uses info.ss's
-     'compile-subcollections for compiling collections. Default = #t.
+     'compile-subcollections' for compiling collections. Default = #t.
 
 > compile-for-embedded - #t creates .c files and
      object files to be linked directly with an embedded MzScheme

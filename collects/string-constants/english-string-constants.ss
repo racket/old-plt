@@ -876,13 +876,17 @@ please adhere to these guidelines:
  (pretty-big-scheme-one-line-summary "Adds syntax and functions from the HtDP languages")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, with no frills")
+ (expander "Expander")
+ (expander-one-line-summary "Expands, rather than evaluates, expressions")
  (professional-languages "Professional Languages")
  (teaching-languages "Teaching Languages")
- (unknown-debug-frame "[unknown]")
+ (experimental-languages "Experimental Languages")
  
  (module-language-one-line-summary "Execute creates a REPL in the context of the module, including the module's declared language")
   
+
  ;;; debug language
+ (unknown-debug-frame "[unknown]")
  (backtrace-window-title "Backtrace - DrScheme")
  (files-interactions "~a's interactions") ;; filled with a filename
  (current-interactions "interactions")

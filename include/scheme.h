@@ -566,7 +566,7 @@ typedef struct {
 typedef struct Scheme_Hash_Table
 {
   Scheme_Type type;
-  MZ_HASH_KEY_EX
+  short keyex; /* always needed to support immutability */
   int size, count, step;
   Scheme_Object **keys;
   Scheme_Object **vals;

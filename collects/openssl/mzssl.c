@@ -1033,6 +1033,7 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 
   /* check we have the security clearance to actually do this */
   scheme_security_check_network("ssl-connect", address, port, 1);
+  scheme_custodian_check_available(NULL, "ssl-connect", "network");
 
   TCP_INIT("ssl-connect");
 
@@ -1160,6 +1161,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
     backlog = 4;
 
   scheme_security_check_network("ssl-listen", address, origid, 0);
+  scheme_custodian_check_available(NULL, "ssl-listen", "network");
 
   if (!ctx) {
     ctx = SSL_CTX_new(meth);
@@ -1203,6 +1205,7 @@ ssl_listen(int argc, Scheme_Object *argv[])
 	    l = (listener_t *)scheme_malloc_tagged(sizeof(listener_t));
 	    l->type = ssl_listener_type;
 	    l->s = s;
+	    l->ctx = ctx;
 	    {
 	      Scheme_Custodian_Reference *mref;
 	      mref = scheme_add_managed(NULL,
@@ -1212,7 +1215,6 @@ ssl_listen(int argc, Scheme_Object *argv[])
 					1);
 	      l->mref = mref;
 	    }
-	    l->ctx = ctx;
 	    
 	    return (Scheme_Object *)l;
 	  }
@@ -1490,6 +1492,8 @@ ssl_accept(int argc, Scheme_Object *argv[])
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
     scheme_wrong_type("ssl-accept", "ssl-listener", 0, argc, argv);
 
+  scheme_custodian_check_available(NULL, "ssl-accept", "network");
+
   listener = argv[0];
 
   was_closed = LISTENER_WAS_CLOSED(listener);
@@ -1505,6 +1509,8 @@ ssl_accept(int argc, Scheme_Object *argv[])
 		     "ssl-accept: listener is closed");
     return NULL;
   }
+
+  scheme_custodian_check_available(NULL, "ssl-accept", "network");
   
   s = ((listener_t *)listener)->s;
 

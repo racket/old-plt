@@ -1,4 +1,11 @@
 
+Version 205.10
+A shut-down custodian is no longer allowed to manage new
+ objects
+Changed thread-resume so that it adds custodians to a thread,
+ instead of changing the thread's custodian
+Added make-thread-group, etc.
+
 Version 205.9
 Changed define to support MIT-style curried-procedure forms
 Fixed a bug in the bytecode verifier that caused it to skip

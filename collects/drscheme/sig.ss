@@ -1,5 +1,5 @@
 (unit/sig drscheme:signature^
-  (import [mred : mred^]
+  (import [mred : mred-interfaces^]
 	  [fw : framework^])
 
   (define frame%

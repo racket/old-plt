@@ -6,11 +6,10 @@
 ;; syntax checker, that should be unbound.
 
 
-(define mainU
   (unit/sig ()
-    (import [wx : wx^]
-	    [mred : mred^]
+    (import [mred : mred-interfaces^]
 	    [mzlib : mzlib:core^]
+	    [fw : framework^]
 	    [print-convert : mzlib:print-convert^]
 	    [drscheme : drscheme:export^]
 	    [zodiac : zodiac:system^])
@@ -67,7 +66,7 @@
 
     (define unmarshall-style
       (lambda (info)
-	(let ([style (make-object wx:style-delta%)])
+	(let ([style (make-object mred:style-delta%)])
 	  (for-each (lambda (fs v) ((cdr fs) style v)) style-delta-get/set info)
 	  style)))
     
@@ -78,7 +77,7 @@
 				'|mzprizm:bound variable|
 				'|mzprizm:unbound variable|))
 
-    (for-each (lambda (s) (mred:set-preference-un/marshall
+    (for-each (lambda (s) (fw:preferences:set-un/marshall
 			   s
 			   marshall-style
 			   unmarshall-style))
@@ -86,39 +85,37 @@
 
     (let ([style-delta?
 	   (lambda (x)
-	     (is-a? x wx:style-delta%))])
-      (mred:set-preference-default 'mzprizm:syntax
-				   (let ([s (make-object wx:style-delta%)])
-				     (when (< (wx:display-depth) 8)
-				       (send s set-delta wx:const-change-bold))
+	     (is-a? x mred:style-delta%))])
+      (fw:preferences:set-default 'mzprizm:syntax
+				   (let ([s (make-object mred:style-delta%)])
+				     (when (< (mred:get-display-depth) 8)
+				       (send s set-delta 'change-bold))
 				     (send s set-delta-foreground "BLACK")
 				     s)
 				   style-delta?)
-      (mred:set-preference-default 'mzprizm:primitive
-				   (let ([s (make-object wx:style-delta%)])
+      (fw:preferences:set-default 'mzprizm:primitive
+				   (let ([s (make-object mred:style-delta%)])
 				     (send s set-delta-foreground "BLUE")
 				     s)
 				   style-delta?)
-      (mred:set-preference-default 'mzprizm:constant
-				   (let ([s (make-object wx:style-delta%)])
+      (fw:preferences:set-default 'mzprizm:constant
+				   (let ([s (make-object mred:style-delta%)])
 				     (send s set-delta-foreground "BLUE")
 				     s)
 				   style-delta?)
-      (mred:set-preference-default '|mzprizm:bound variable|
-				   (let ([s (make-object wx:style-delta%)])
-				     (if (< (wx:display-depth) 8)
-					 (send s set-delta
-					   wx:const-change-underline #t)
-					 (send s set-delta-foreground
-					       "DARK GREEN"))
+      (fw:preferences:set-default '|mzprizm:bound variable|
+				   (let ([s (make-object mred:style-delta%)])
+				     (if (< (mred:get-display-depth) 8)
+					 (send s set-delta 'change-underline #t)
+					 (send s set-delta-foreground "DARK GREEN"))
 				     s)
 				   style-delta?)
-      (mred:set-preference-default '|mzprizm:unbound variable|
-				   (let ([s (make-object wx:style-delta%)])
-				     (when (< (wx:display-depth) 8)
+      (fw:preferences:set-default '|mzprizm:unbound variable|
+				   (let ([s (make-object mred:style-delta%)])
+				     (when (< (mred:get-display-depth) 8)
 				       (send s set-delta
-					     wx:const-change-style
-					     wx:const-slant))
+					     'change-style
+					     'slant))
 				     (send s set-delta-foreground "RED")
 				     s)
 				   style-delta?))
@@ -127,17 +124,18 @@
     ; a symbol naming the style  and a delta to set it to
     (define set-slatex-style
       (lambda (sym delta)
-	(let* ([name (symbol->string sym)]
-	       [style (send mred:scheme-mode-style-list find-named-style name)])
+	(let* ([style-list (fw:scheme:get-style-list)]
+	       [name (symbol->string sym)]
+	       [style (send style-list find-named-style name)])
 	  (if (null? style)
-	      (send mred:scheme-mode-style-list new-named-style name
-		    (send mred:scheme-mode-style-list find-or-create-style
-			  (send mred:scheme-mode-style-list
+	      (send style-list new-named-style name
+		    (send style-list find-or-create-style
+			  (send style-list
 				find-named-style "Standard")
 			  delta))
 	      (send style set-delta delta)))))
 
-    (for-each set-slatex-style delta-symbols (map mred:get-preference delta-symbols))
+    (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))
 
     (define others-string "Other...")
 
@@ -159,28 +157,29 @@
 			   "SPRING GREEN" "STEEL BLUE" "TAN" "THISTLE" "TURQUOISE" "VIOLET"
 			   "VIOLET RED" "WHEAT" "WHITE" "YELLOW" "YELLOW GREEN"))
 
-    (for-each (lambda (x) (send wx:the-colour-database find-colour x))
+    (for-each (lambda (x) (send mred:the-color-database find-colour x))
 	      (append short-colors other-colors))
 
     ;; used for quicker debugging of the preference panel
     '(define test-preference-panel
       (lambda (name f)
-	(let ([frame (make-object mred:frame% '() name)])
+	(let ([frame (make-object mred:frame% name)])
 	  (f frame)
 	  (send frame show #t))))
 
-    (mred:add-preference-panel
+    (fw:preferences:add-panel
      "Check Syntax"
      (let ([delta-panel
 	    (lambda (sym parent)
-	      (let* ([delta (mred:get-preference sym)]
+	      (let* ([delta (fw:preferences:get sym)]
 		     [style-name (symbol->string sym)]
-		     [h (make-object mred:horizontal-panel% parent
-				     -1 -1 -1 -1 wx:const-border)]
-		     [c (make-object mred:one-line-canvas% h 30 20 -1 -1 ""
-				     (+ wx:const-mcanvas-hide-h-scroll
-					wx:const-mcanvas-hide-v-scroll))]
-		     [e (make-object (class-asi mred:media-edit%
+		     [h (make-object mred:horizontal-panel% parent '(border))]
+		     [c (make-object mred:editor-canvas% h
+				     #f
+				     (list 'hide-hscroll
+					   'hide-vscroll))]
+		     [_ (send c set-line-count 1)]
+		     [e (make-object (class-asi fw:scheme:text%
 				       (inherit change-style get-style-list)
 				       (rename [super-after-insert after-insert])
 				       (public
@@ -189,12 +188,10 @@
 					   (super-after-insert pos offset)
 					   (let ([style (send (get-style-list) find-named-style style-name)])
 					     (change-style style pos (+ pos offset))))])))]
-		     [_ (send e set-mode
-			      (make-object mred:scheme-mode%))]
-		     [_ (mred:add-preference-callback sym
-						      (lambda (sym v)
-							(set-slatex-style sym v)
-							#t))]
+		     [_ (fw:preferences:add-callback sym
+						     (lambda (sym v)
+						       (set-slatex-style sym v)
+						       #t))]
 		     [_ (set-slatex-style sym delta)]
 		     [make-check
 		      (lambda (name on off)
@@ -202,10 +199,10 @@
 				    (if (send command checked?)
 					(on)
 					(off))
-				    (mred:set-preference sym delta))]
-			       [check (make-object mred:check-box% h c name)])
+				    (fw:preferences:set sym delta))]
+			       [check (make-object mred:check-box% name h c)])
 			  check))]
-		     [_ (send c set-media e)]
+		     [_ (send c set-editor e)]
 		     [_ (send* e
 			       (insert (substring style-name
 						  (string-length "mzprizm:")
@@ -214,19 +211,19 @@
 		     [slant-check
 		      (make-check "Slant"
 				  (lambda ()
-				    (send delta set-style-on wx:const-slant)
-				    (send delta set-style-off wx:const-base))
+				    (send delta set-style-on 'slant)
+				    (send delta set-style-off 'base))
 				  (lambda ()
-				    (send delta set-style-on wx:const-base)
-				    (send delta set-style-off wx:const-slant)))]
+				    (send delta set-style-on 'base)
+				    (send delta set-style-off 'slant)))]
 		     [bold-check
 		      (make-check "Bold"
 				  (lambda ()
-				    (send delta set-weight-on wx:const-bold)
-				    (send delta set-weight-off wx:const-base))
+				    (send delta set-weight-on 'bold)
+				    (send delta set-weight-off 'base))
 				  (lambda ()
-				    (send delta set-weight-on wx:const-base)
-				    (send delta set-weight-off wx:const-bold)))]
+				    (send delta set-weight-on 'base)
+				    (send delta set-weight-off 'bold)))]
 		     [underline-check
 		      (make-check "Underline"
 				  (lambda ()
@@ -239,27 +236,29 @@
 		      (lambda (choice command)
 			(let ([string (send choice get-string (send command get-selection))])
 			  (when (string=? string others-string)
-			    (set! string (wx:get-single-choice "Choose a color" "Colors" other-colors)))
-			  (unless (null? string)
+			    (set! string (mred:get-choices-from-user "Choose a color" "Colors" other-colors)))
+			  (when string
 			    (send delta set-delta-foreground string)
-			    (mred:set-preference sym delta))))]
-		     [color-choice (if (< (wx:display-depth) 8)
+			    (fw:preferences:set sym delta))))]
+		     [color-choice (if (< (mred:get-display-depth) 8)
 				       #f
-				       (make-object mred:choice% h change-color
-						    "Color" -1 -1 -1 -1
-						    (if (eq? wx:platform 'unix)
-							(append short-colors
-								(list others-string))
-							(append short-colors
-								other-colors))))]
+				       (make-object mred:choice%
+					 "Color"
+					 (if (eq? (system-type) 'unix)
+					     (append short-colors
+						     (list others-string))
+					     (append short-colors
+						     other-colors))
+					 h
+					 change-color))]
 		     [style (send (send e get-style-list) find-named-style style-name)])
 		(when color-choice
 		  (send color-choice stretchable-in-x #f)
-		  (let ([color (send wx:the-colour-database find-name (send style get-foreground))])
+		  (let ([color (send mred:the-color-database find-name (send style get-foreground))])
 		    (cond
 		     [(null? color)
 		      (send delta set-delta-foreground "BLACK")
-		      (mred:set-preference sym delta)
+		      (fw:preferences:set sym delta)
 		      (send color-choice set-selection
 			    (send color-choice find-string "BLACK"))]
 		     [else
@@ -267,8 +266,8 @@
 			(if (= -1 c)
 			    (send color-choice set-selection (length short-colors))
 			    (send color-choice set-selection c)))])))
-		(send slant-check set-value (eq? (send style get-style) wx:const-slant))
-		(send bold-check set-value (eq? (send style get-weight) wx:const-bold))
+		(send slant-check set-value (eq? (send style get-style) 'slant))
+		(send bold-check set-value (eq? (send style get-weight) 'bold))
 		(send underline-check set-value (send style get-underlined))))])
      (lambda (parent)
        (let ([v (make-object mred:vertical-panel% parent)])
@@ -289,9 +288,9 @@
 					 start-x start-y end-x end-y
 					 id-name rename))
 
-    (define TACKED-BRUSH (send wx:the-brush-list find-or-create-brush "BLUE" wx:const-solid))
-    (define UNTACKED-BRUSH (send wx:the-brush-list find-or-create-brush "WHITE" wx:const-solid))
-    (define PEN (send wx:the-pen-list find-or-create-pen (make-object wx:colour% "BLUE") 1 wx:const-solid))
+    (define TACKED-BRUSH (send mred:the-brush-list find-or-create-brush "BLUE" 'solid))
+    (define UNTACKED-BRUSH (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
+    (define PEN (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
 
     (class null args (sequence (apply super-init args)))
 
@@ -303,7 +302,7 @@
 	       [sin-angle (sin arrow-head-angle)]
 	       [arrow-head-size 10]
 	       [arrow-root-radius 3.5]
-	       [cursor-arrow (make-object wx:cursor% wx:const-cursor-arrow)])
+	       [cursor-arrow (make-object mred:cursor% 'arrow)])
 	  (class-asi super%
 	    (inherit set-cursor get-admin invalidate-bitmap-cache set-position
 		     position-location
@@ -400,15 +399,15 @@
 				   [head-y  (* ofs-y arrow-head-size)]
 				   [end-x   (+ end-x (* ofs-x delta))]
 				   [end-y   (+ end-y (* ofs-y delta))]
-				   [pt1     (make-object wx:point% end-x end-y)]
+				   [pt1     (make-object mred:point% end-x end-y)]
 				   [pt2     (make-object 
-					     wx:point%
+					     mred:point%
 					     (+ end-x (* cos-angle head-x) 
 						(* sin-angle head-y))
 					     (+ end-y (- (* sin-angle head-x))
 						(* cos-angle head-y)))]
 				   [pt3     (make-object 
-					     wx:point%
+					     mred:point%
 					     (+ end-x (* cos-angle head-x)
 						(- (* sin-angle head-y)))
 					     (+ end-y (* sin-angle head-x)
@@ -462,48 +461,51 @@
 				 [arrows (vector-ref arrow-vector pos)])
 			    (if (null? arrows)
 				(super-on-local-event event)
-				(let* ([canvas (get-canvas)]
-				       [JUMP-ID 1]
-				       [STICK-ID 2]
-				       [RENAME-ID 3]
-				       [callback (lambda (menu evt)
-						   (let* ([id (send evt get-command-int)])
-						     (cond
-						       [(= id STICK-ID)
-							(for-each 
-							 (lambda (arrow)
-							   (hash-table-put! tacked-hash-table 
-									    arrow 
-									    (not (hash-table-get tacked-hash-table
-												 arrow
-												 (lambda () #f)))))
-							 arrows)
-							(invalidate-bitmap-cache)]
-						       [(= id JUMP-ID)
-							(unless (null? arrows)
-							  (let* ([arrow (car arrows)]
-								 [start-pos-left (arrow-start-pos-left arrow)]
-								 [start-pos-right (arrow-start-pos-right arrow)]
-								 [end-pos-left (arrow-end-pos-left arrow)]
-								 [end-pos-right (arrow-end-pos-right arrow)])
-							    (if (<= start-pos-left pos start-pos-right)
-								(set-position end-pos-left end-pos-right)
-								(set-position start-pos-left start-pos-right))))]							     
-						       [(= id RENAME-ID)
-							(unless (null? arrows)
-							  (let* ([arrow (car arrows)]
-								 [id-name (arrow-id-name arrow)])
-							    ((arrow-rename arrow)
-							     (mred:get-text-from-user
-							      (format "Rename ~a to:" id-name)
-							      "Rename Identifier"
-							      (format "~a" id-name))))
-							  (invalidate-bitmap-cache))])))]
-				       [menu (make-object wx:menu% null callback)])
-				  (send menu append STICK-ID "Tack/Untack Arrow")
-				  (send menu append JUMP-ID "Jump")
-				  (send menu append RENAME-ID "Rename")
-				  (send canvas popup-menu menu
+				(let* ([menu (make-object mred:popup-menu% #f)]
+				       [stick-item
+					(make-object mred:menu-item%
+					  "Tack/Untack Arrow"
+					  menu
+					  (lambda (item evt)
+					    (for-each 
+					     (lambda (arrow)
+					       (hash-table-put! tacked-hash-table 
+								arrow 
+								(not (hash-table-get
+								      tacked-hash-table
+								      arrow
+								      (lambda () #f)))))
+					     arrows)
+					    (invalidate-bitmap-cache)))]
+				       [jump-item
+					(make-object mred:menu-item%
+					  "Jump"
+					  menu
+					  (lambda (item evt)
+					    (unless (null? arrows)
+					      (let* ([arrow (car arrows)]
+						     [start-pos-left (arrow-start-pos-left arrow)]
+						     [start-pos-right (arrow-start-pos-right arrow)]
+						     [end-pos-left (arrow-end-pos-left arrow)]
+						     [end-pos-right (arrow-end-pos-right arrow)])
+						(if (<= start-pos-left pos start-pos-right)
+						    (set-position end-pos-left end-pos-right)
+						    (set-position start-pos-left start-pos-right))))))]
+				       [rename-item
+					(make-object mred:menu-item%
+					  menu
+					  "Rename"
+					  (lambda (item evt)
+					    (unless (null? arrows)
+					      (let* ([arrow (car arrows)]
+						     [id-name (arrow-id-name arrow)])
+						((arrow-rename arrow)
+						 (mred:get-text-from-user
+						  "Rename Identifier"
+						  (format "Rename ~a to:" id-name)
+						  (format "~a" id-name))))
+					      (invalidate-bitmap-cache))))])
+				  (send (get-canvas) popup-menu menu
 					(send event get-x)
 					(send event get-y)))))]
 			 [else (super-on-local-event event)])
@@ -550,7 +552,7 @@
 	       (if (ivar interactions-edit user-param)
 		   (with-parameterization (ivar interactions-edit user-param)
 		     (lambda ()
-		       (letrec* ([add-arrow (ivar definitions-edit syncheck:add-arrow)]
+		       (letrec ([add-arrow (ivar definitions-edit syncheck:add-arrow)]
 				 [find-string (ivar definitions-edit find-string)]
 				 [change-style (lambda (s x y)
 						 ((ivar definitions-edit change-style) s x y))]
@@ -599,7 +601,7 @@
 				       (with-parameterization (ivar interactions-edit user-param)
 					 (lambda ()
 					   (let* ([new-name (format "~a" (string->symbol input-name))]
-						  [sorted (mzlib:function@:quicksort
+						  [sorted (mzlib:function:quicksort
 							   occurrances
 							   (lambda (x y)
 							     (<= (zodiac:location-offset (zodiac:zodiac-start y))
@@ -770,19 +772,11 @@
 					(for-each color-loop
 						  (zodiac:struct-form-fields zodiac-ast))]
 				       
-				       [else
-					(begin
-					  '(display zodiac-ast) 
-					  '(newline)
-					  '(mred:message-box (string-append 
-							      (format "unrecognized syntax ~a"
-								      zodiac-ast))
-							     "Unrecognized Syntax")
-					  (void))])))])
+				       [else (void)])))])
 			 (let ([mod-flag void]) ; buffer modified before check-syntax run
 			   (dynamic-wind
 			    (lambda ()
-			      (wx:begin-busy-cursor)
+			      (mred:begin-busy-cursor)
 			      (set! mod-flag
 				    (send definitions-edit modified?))
 			      (send definitions-edit set-styles-fixed #f)
@@ -826,7 +820,7 @@
 							  [rename (lambda (new-name)
 								    (when new-name
 								      (rename-bindings
-								       (mzlib:function@:foldl
+								       (mzlib:function:foldl
 									(lambda (test-var l)
 									  (if (eq? (zodiac:varref-var test-var)
 										   (zodiac:varref-var defn-var))
@@ -848,20 +842,22 @@
 			      (unless mod-flag
 				(send definitions-edit set-modified #f))
 			      (send definitions-edit set-styles-fixed #t)
-			      (wx:end-busy-cursor)))))))
-		   (mred:message-box "Cannot check syntax until REPL is active. Click Execute")))])
+			      (mred:end-busy-cursor)))))))
+		   (mred:message-box "Check Syntax"
+				     "Cannot check syntax until REPL is active. Click Execute")))])
 
 	  (public
 	    [check-syntax-button
-	     (make-object mred:button% button-panel
-			  (lambda (button evt) (button-callback))
-			  syncheck-bitmap)])
+	     (make-object mred:button%
+	       syncheck-bitmap
+	       (lambda (button evt) (button-callback))
+	       button-panel)])
 	  (sequence
 	    (send definitions-edit set-styles-fixed #t)
 	    (send button-panel change-children
 		  (lambda (l)
 		    (cons check-syntax-button
-			  (mzlib:function@:remove check-syntax-button l))))))))
+			  (mzlib:function:remove check-syntax-button l))))))))
       
     (define (make-syncheck-interactions-edit% super%)
       (class-asi super%
@@ -876,14 +872,4 @@
 
       (drscheme:get/extend:extend-definitions-edit% make-graphics:media-edit%)
       (drscheme:get/extend:extend-unit-frame% make-new-unit-frame%)
-      (drscheme:get/extend:extend-interactions-edit% make-syncheck-interactions-edit%)))
-
-(compound-unit/sig
-  (import [wx : wx^]
-	  [mred : mred^]
-	  [mzlib : mzlib:core^]
-	  [print-convert : mzlib:print-convert^]
-	  [drscheme : drscheme:export^]
-	  [zodiac : drscheme:zodiac^])
-  (link [T : () (mainU wx mred mzlib print-convert drscheme (zodiac : zodiac:system^))])
-  (export))
+      (drscheme:get/extend:extend-interactions-edit% make-syncheck-interactions-edit%))

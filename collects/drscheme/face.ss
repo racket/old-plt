@@ -1,5 +1,5 @@
 (unit/sig drscheme:face^
-  (import [mred : mred^])
+  (import [mred : mred-interfaces^])
   
   (define unitI (interface ()
 		  get-filename

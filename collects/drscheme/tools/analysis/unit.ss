@@ -1,33 +1,38 @@
   (unit/sig ()
-    (import [wx : wx^]
-	    [mred : mred^]
+    (import [mred : mred-interfaces^]
             mzlib:core^
+	    [fw : framework^]
             mzlib:print-convert^
             (drscheme : drscheme:export^)
 	    drscheme:zodiac^)
 
     (define invoke-spidey
       (lambda (frame)
-	(mred:show-busy-cursor
+	(fw:gui-utils:show-busy-cursor
 	 (lambda ()
-	   (let* ([e (wx:make-eventspace (make-parameterization))]
-		  [f (parameterize ([wx:current-eventspace e])
-		       (make-object mred:dialog-box% null "Spidey" #f))]
+	   (let* ([e (mred:make-eventspace (make-parameterization))]
+		  [f (parameterize ([mred:current-eventspace e])
+		       (make-object mred:dialog% "Spidey"))]
 		  [p (make-object mred:vertical-panel% f)]
-		  [m (make-object mred:message% p "Please wait, loading the Analysis.")])
+		  [m (make-object mred:message% "Please wait, loading the Analysis." p)])
 	     (send p stretchable-in-y #f)
 	     (send p stretchable-in-x #f)
 	     (send f show #t)
-	     (parameterize ([wx:current-eventspace e])
-		(wx:flush-display) (wx:yield)
-		(wx:flush-display) (wx:yield))
+	     (parameterize ([mred:current-eventspace e])
+		(mred:flush-display) (mred:yield)
+		(mred:flush-display) (mred:yield)
+		(mred:flush-display) (mred:yield)
+		(mred:flush-display) (mred:yield)
+		(mred:flush-display) (mred:yield)
+		(mred:flush-display) (mred:yield)
+		(mred:flush-display) (mred:yield))
 	     (require-library "drspidey.ss" "mrspidey")
 	     (send f show #f))
 	   (set! invoke-spidey
 		 (invoke-open-unit/sig
 		  (global-defined-value 'tool@) 
 		  mrspidey
-		  (wx : wx^)
+		  (fw : framework^)
 		  (mred : mred^)
 		  mzlib:core^
 		  mzlib:print-convert^
@@ -58,10 +63,10 @@
 	       (super-disable-evaluation))])
 	 (public
 	   [analyze-button (make-object mred:button%
+				spidey-bitmap
 				button-panel
-				(lambda (button evt) (invoke-spidey this))
-				spidey-bitmap)])
+				(lambda (button evt) (invoke-spidey this)))])
 	 (sequence
 	   (send button-panel change-children
 		 (lambda (l)
-		   (cons analyze-button (function@:remq analyze-button l)))))))))
+		   (cons analyze-button (function:remq analyze-button l)))))))))

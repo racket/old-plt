@@ -1,4 +1,4 @@
-(compound-unit/sig (import [mred : mred^]
+(compound-unit/sig (import [mred : mred-interfaces^]
 			   [mzlib : mzlib:core^]
 			   [framework : framework^]
 			   [print-convert : mzlib:print-convert^]

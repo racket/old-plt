@@ -1,7 +1,7 @@
 (unit/sig ()
-  (import [wx : wx^]
-	  [mred : mred^]
+  (import [mred : mred-interfaces^]
 	  [core : mzlib:core^]
+	  [fw : framework^]
 	  [pc : mzlib:print-convert^]
 	  (drscheme : drscheme:export^)
 	  [zodiac : drscheme:zodiac^])
@@ -16,7 +16,7 @@
 			    (lambda ()
 			      (with-parameterization system-parameterization
 				(lambda ()
-				  (let ([p (core:file@:normalize-path test)])
+				  (let ([p (core:file:normalize-path test)])
 				    (printf "t>> ~a started~n" p)
 				    (thunk)
 				    (printf "t>> ~a finished~n" p))))))])
@@ -38,8 +38,8 @@
 
   (define (run-test-suite file) (test-thread file (lambda () (load/cd file))))
 
-  (mred:set-preference-default 'drscheme:test-suite:file-name "repl-tests.ss" string?)
-  (mred:set-preference-default 'drscheme:test-suite:run-interval 10 number?)
+  (fw:preferences:set-default 'drscheme:test-suite:file-name "repl-tests.ss" string?)
+  (fw:preferences:set-default 'drscheme:test-suite:run-interval 10 number?)
 
   (define (ask-test-suite)
     (let* ([drscheme-test-dir (ormap (lambda (d)
@@ -48,24 +48,25 @@
 					     d
 					     #f)))
 				     (current-library-collection-paths))]
-	   [frame (make-object mred:frame% null "Test Suites")]
+	   [frame (make-object mred:frame% "Test Suites")]
 	   [panel (make-object mred:vertical-panel% frame)]
 	   [top-panel (make-object mred:vertical-panel% panel)]
 	   [bottom-panel (make-object mred:horizontal-panel% panel)])
       (send top-panel stretchable-in-y #f)
-      (send (make-object mred:button% bottom-panel 
-			 (lambda (_1 _2)
-			   (send frame show #f)
-			   (make-repl))
-			 "REPL")
+      (send (make-object mred:button%
+	      "REPL" 
+	      bottom-panel
+	      (lambda (_1 _2)
+		(send frame show #f)
+		(make-repl)))
 	    set-focus)
       
       (when drscheme-test-dir
 	(send top-panel stretchable-in-y #t)
 	(send bottom-panel stretchable-in-y #f)
 	(let* ([tests
-		(core:function@:quicksort
-		 (core:function@:foldl 
+		(core:function:quicksort
+		 (core:function:foldl 
 		  (lambda (x l)
 		    (if (and (file-exists? (build-path drscheme-test-dir x))
 			     (>= (string-length x) 3)
@@ -75,55 +76,60 @@
 		  null
 		  (directory-list drscheme-test-dir))
 		 string<=?)]
-	       [lb (make-object mred:list-box% top-panel null null wx:const-single -1 -1 -1 -1 tests)])
+	       [lb (make-object mred:list-box%
+		     #f
+		     top-panel
+		     tests)])
 
 	  ;; set values from preferences
-	  (let* ([test-suite (mred:get-preference 'drscheme:test-suite:file-name)])
+	  (let* ([test-suite (fw:preferences:get 'drscheme:test-suite:file-name)])
 	    (send lb set-string-selection test-suite)
 	    (send lb set-first-item test-suite)
-	    (mred:test:run-interval (mred:get-preference 'drscheme:test-suite:run-interval)))
+	    (fw:test:run-interval (fw:preferences:get 'drscheme:test-suite:run-interval)))
 
 	  (send
-	   (make-object mred:button% bottom-panel (lambda (_1 _2)
-						    (let ([selection (send lb get-selection)])
-						      (if (null? selection)
-							  (wx:bell)
-							  (begin
-							    (send frame show #f)
-							    (let ([test (list-ref tests selection)])
-							      (mred:set-preference
-							       'drscheme:test-suite:file-name
-							       test)
-							      (run-test-suite 
-							       (build-path drscheme-test-dir test)))))))
-			"Run Test Suite")
+	   (make-object mred:button%
+	     "Run Test Suite"
+	     bottom-panel
+	     (lambda (_1 _2)
+	       (let ([selection (send lb get-selection)])
+		 (if (null? selection)
+		     (mred:bell)
+		     (begin
+		       (send frame show #f)
+		       (let ([test (list-ref tests selection)])
+			 (fw:preferences:set
+			  'drscheme:test-suite:file-name
+			  test)
+			 (run-test-suite 
+			  (build-path drscheme-test-dir test))))))))
 	   set-focus))
 
 	(let* ([pre-times (list 0 10 50 100 500)]
-	       [times (if (member (mred:test:run-interval) pre-times)
+	       [times (if (member (fw:test:run-interval) pre-times)
 			  pre-times
-			  (append pre-times (list (mred:test:run-interval))))]
+			  (append pre-times (list (fw:test:run-interval))))]
 	       [choice
 		(make-object mred:choice%
+		  "Run Interval"
+		  (map number->string times)
 		  top-panel
 		  (lambda (choice event)
 		    (let ([time (list-ref times (send event get-command-int))])
-		      (mred:set-preference 'drscheme:test-suite:run-interval time)
-		      (mred:test:run-interval time)))
-		  "Run Interval"
-		  -1 -1 -1 -1
-		  (map number->string times))])
+		      (fw:preferences:set 'drscheme:test-suite:run-interval time)
+		      (fw:test:run-interval time))))])
 	    (send choice set-selection
 		  (let loop ([l times]
 			     [n 0])
-		    (if (= (car l) (mred:test:run-interval))
+		    (if (= (car l) (fw:test:run-interval))
 			n
 			(loop (cdr l)
 			      (+ n 1)))))))
-      (make-object mred:button% bottom-panel 
-		   (lambda (_1 _2)
-		     (send frame show #f))
-		   "Cancel")
+      (make-object mred:button%
+	"Cancel" 
+	bottom-panel
+	(lambda (_1 _2)
+	  (send frame show #f)))
       (send frame show #t)))
 
   (drscheme:get/extend:extend-unit-frame%
@@ -132,22 +138,20 @@
        (inherit button-panel)
        (sequence (apply super-init args))
        (private
-	 [bitmap (make-object wx:bitmap% 
-			      (if (<= (wx:display-depth) 1)
-				  (build-path (collection-path "icons")
-					      "bb-sm-bw.bmp")
-				  (build-path (collection-path "icons")
-					      "bb-small.bmp"))
-			      wx:const-bitmap-type-bmp)]
+	 [bitmap (make-object mred:bitmap% 
+		   (if (<= (mred:get-display-depth) 1)
+		       (build-path (collection-path "icons") "bb-sm-bw.bmp")
+		       (build-path (collection-path "icons") "bb-small.bmp"))
+		   'bmp)]
 	 [button (make-object
 		  mred:button%
-		  button-panel
-		  (lambda (button evt)
-		    (ask-test-suite))
 		  (if (send bitmap ok?)
 		      bitmap
-		      "Console"))])
+		      "Console")
+		  button-panel
+		  (lambda (button evt)
+		    (ask-test-suite)))])
        (sequence
 	 (send button-panel change-children
 	       (lambda (l)
-		 (cons button (core:function@:remq button l)))))))))
+		 (cons button (core:function:remq button l)))))))))

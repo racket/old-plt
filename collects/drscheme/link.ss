@@ -1,14 +1,14 @@
 (compound-unit/sig (import [I : (program argv)])
-  (link [init : drscheme:init^ ((require-relative-library "init.ss") mred)]
-	[mred : mred^ (mred-interfaces@)]
+  (link [mred : mred-interfaces^ (mred-interfaces@)]
 	[mzlib : mzlib:core^ ((require-library-unit/sig "corer.ss"))]
-	[framework : framework^ ((require-library "frameworkr.ss" "framework") mred mzlib)]
+	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
+	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^
 		       ((require-library-unit/sig "pconverr.ss")
 			(mzlib string)
 			(mzlib function))]
 	[face : drscheme:face^ ((require-relative-library "face.ss") mred)]
-	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred)]
+	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred framework)]
 	[aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]
@@ -28,7 +28,8 @@
 				     init interface face graph
 				     aries zodiac)]
 	[language : drscheme:language^
-		  ((require-relative-library "language.ss") mred 
+		  ((require-relative-library "language.ss")
+		   mred framework
 		   (export* unit)
 		   aries zodiac
 		   (export* basis)
@@ -37,15 +38,17 @@
 		   print-convert)]
 	[tool : () 
 	      ((require-relative-library "tool.ss")
-	       mred mzlib print-convert 
+	       mred mzlib framework
+	       print-convert 
 	       zodiac
 	       export*)]
 	[app : drscheme:app^ ((require-relative-library "app.ss")
 			      mred
-			      mzlib)]
+			      mzlib
+			      framework)]
 	[main : drscheme:main^ ((require-relative-library "main.ss")
 				I
-				mred
+				framework
 				(mzlib pretty-print)
 				print-convert
 				(export* unit)

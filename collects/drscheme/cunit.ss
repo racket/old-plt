@@ -1,5 +1,5 @@
 (unit/sig drscheme:compound-unit^
-  (import [mred : mred^]
+  (import [mred : mred-interfaces^]
 	  [mzlib : mzlib:core^]
 	  [fw : framework^]
 	  [drscheme:graph : drscheme:graph^]

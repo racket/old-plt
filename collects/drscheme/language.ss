@@ -1,6 +1,7 @@
 
 (unit/sig drscheme:language^
-  (import [mred : mred^]
+  (import [mred : mred-interfaces^]
+	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [aries : plt:aries^]
 	  [zodiac : drscheme:zodiac^]
@@ -9,16 +10,16 @@
 	  mzlib:file^
 	  mzlib:print-convert^)
   
-  (mred:set-preference-default 'drscheme:settings
+  (fw:preferences:set-default 'drscheme:settings
 			       (basis:get-default-setting)
 			       basis:setting?)
-  (mred:set-preference-un/marshall 'drscheme:settings
-				   (compose cdr vector->list struct->vector)
-				   (lambda (x) 
-				     (if (and (list? x)
-					      (equal? (arity basis:make-setting) (length x)))
-					 (apply basis:make-setting x)
-					 (basis:get-default-setting))))
+  (fw:preferences:set-un/marshall 'drscheme:settings
+				  (compose cdr vector->list struct->vector)
+				  (lambda (x) 
+				    (if (and (list? x)
+					     (equal? (arity basis:make-setting) (length x)))
+					(apply basis:make-setting x)
+					(basis:get-default-setting))))
 
   (define (get-printer-style-number printing-setting)
     (case printing-setting
@@ -30,20 +31,20 @@
 		   printing-setting)]))
   
   (define (language-dialog)
-    (letrec*
+    (letrec
 	([language-levels (map (lambda (x) (symbol->string (vector-ref x 0))) basis:settings)]
-	 [f (make-object mred:dialog-box% '() "Language" #t)]
+	 [f (make-object mred:dialog% "Language")]
 	 [main (make-object mred:vertical-panel% f)]
-	 [language-panel (make-object mred:horizontal-panel% main -1 -1 -1 -1 wx:const-border)]
+	 [language-panel (make-object mred:horizontal-panel% main '(border))]
 	 [customization-panel (make-object mred:horizontal-panel% main)]
 	 [customization-left-panel (make-object mred:vertical-panel% customization-panel)]
 	 [customization-right-panel (make-object mred:vertical-panel% customization-panel)]
-	 [when-message (make-object mred:message% main "Language changes effective after next execution")]
+	 [when-message (make-object mred:message% "Language changes effective after next execution" main)]
 	 [make-sub-panel
 	  (lambda (name panel)
 	    (let* ([p (make-object mred:vertical-panel% panel)]
-		   [message (make-object mred:message% p name)])
-	      (make-object mred:vertical-panel% p -1 -1 -1 -1 wx:const-border)))]
+		   [message (make-object mred:message% name p)])
+	      (make-object mred:vertical-panel% p '(border))))]
 	 [input-syntax-panel (make-sub-panel "Input Syntax" customization-right-panel)]
 	 [dynamic-panel (make-sub-panel "Safety Properties" customization-left-panel)]
 	 [output-syntax-panel (make-sub-panel "Output Syntax" customization-right-panel)]
@@ -63,19 +64,19 @@
 		    (if bool
 			(list language-panel customization-panel when-message ok-panel)
 			(list language-panel when-message ok-panel)))))]
-	 [language-choice (make-object mred:choice% language-panel
-				       (lambda (choice evt)
-					 (let ([which (send evt get-command-int)]
-					       [len (length basis:settings)])
-					   (when (= which len)
-					     (show-specifics #t))
-					   (when (< which len)
-					     (mred:set-preference
-					      'drscheme:settings
-					      (basis:copy-setting (vector-ref (list-ref basis:settings which) 1))))))
-				       "Language"
-				       -1 -1 -1 -1
-				       (append language-levels (list "Custom")))]
+	 [language-choice (make-object mred:choice%
+			    "Language"
+			    (append language-levels (list "Custom"))
+			    language-panel
+			    (lambda (choice evt)
+			      (let ([which (send evt get-command-int)]
+				    [len (length basis:settings)])
+				(when (= which len)
+				  (show-specifics #t))
+				(when (< which len)
+				  (fw:preferences:set
+				   'drscheme:settings
+				   (basis:copy-setting (vector-ref (list-ref basis:settings which) 1)))))))]
 	 [_2 (make-object mred:horizontal-panel% language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)
@@ -87,27 +88,27 @@
 	  (lambda (set-setting! setting name panel)
 	    (right-align
 	     (lambda (hp)
-	       (make-object mred:check-box% hp
-			    (lambda (check-box evt)
-			      (let ([i (send evt checked?)]
-				    [s (mred:get-preference 'drscheme:settings)])
-				(set-setting! s i)
-				(mred:set-preference 'drscheme:settings
-						     s)))
-			    name))
+	       (make-object mred:check-box%
+		 name
+		 hp
+		 (lambda (check-box evt)
+		   (let ([i (send evt checked?)]
+			 [s (fw:preferences:get 'drscheme:settings)])
+		     (set-setting! s i)
+		     (fw:preferences:set 'drscheme:settings s)))))
 	     panel))]
 	 [vocab (right-align 
 		 (lambda (hp)
-		   (make-object mred:choice% hp
-				(lambda (vocab evt)
-				  (let ([pos (send evt get-selection)]
-					[s (mred:get-preference 'drscheme:settings)])
-				    (basis:set-setting-vocabulary-symbol! s (list-ref basis:level-symbols pos))
-				    (basis:set-setting-use-zodiac?! s (not (= pos (- (length basis:level-symbols) 1))))
-				    (mred:set-preference 'drscheme:settings s)))
-				"Vocabulary"
-				-1 -1 -1 -1
-				language-levels))
+		   (make-object mred:choice%
+		     "Vocabulary"
+		     language-levels
+		     hp
+		     (lambda (vocab evt)
+		       (let ([pos (send evt get-selection)]
+			     [s (fw:preferences:get 'drscheme:settings)])
+			 (basis:set-setting-vocabulary-symbol! s (list-ref basis:level-symbols pos))
+			 (basis:set-setting-use-zodiac?! s (not (= pos (- (length basis:level-symbols) 1))))
+			 (fw:preferences:set 'drscheme:settings s)))))
 		 input-syntax-panel)]
 	 [case-sensitive? (make-check-box basis:set-setting-case-sensitive?!
 					  basis:setting-case-sensitive?
@@ -166,18 +167,19 @@
 	 [printing
 	  (right-align
 	   (lambda (main)
-	     (make-object mred:choice% main
-			  (lambda (box evt)
-			    (let* ([which (send evt get-command-int)]
-				   [setting (mred:get-preference 'drscheme:settings)]
-				   [symbol-which (printer-number->symbol which)])
-			      (basis:set-setting-printing! setting symbol-which)
-			      (mred:set-preference 'drscheme:settings setting)))
-			  "Output Style" -1 -1 -1 -1
-			  (list "Constructor"
-				"Quasiquote (lists only)"
-				"Quasiquote (read syntax)"
-				"R4RS")))
+	     (make-object mred:choice%
+	       "Output Style"
+	       (list "Constructor"
+		     "Quasiquote (lists only)"
+		     "Quasiquote (read syntax)"
+		     "R4RS")
+	       main
+	       (lambda (box evt)
+		 (let* ([which (send evt get-command-int)]
+			[setting (fw:preferences:get 'drscheme:settings)]
+			[symbol-which (printer-number->symbol which)])
+		   (basis:set-setting-printing! setting symbol-which)
+		   (fw:preferences:set 'drscheme:settings setting)))))
 	   output-syntax-panel)]
 	 [abbreviate-cons-as-list?
 	  (make-check-box basis:set-setting-abbreviate-cons-as-list?!
@@ -200,18 +202,25 @@
 			  "Print rationals in whole/part notation"
 			  output-syntax-panel)]
 	 [ok-panel (make-object mred:horizontal-panel% main)]
-	 [hide-button (make-object mred:button% ok-panel
-				   (lambda (button evt) (show-specifics #f))
-				   "Hide Details")]
-	 [show-button (make-object mred:button% ok-panel
-				   (lambda (button evt) (show-specifics #t))
-				   "Show Details")]
+	 [hide-button (make-object mred:button%
+			"Hide Details"
+			ok-panel
+			(lambda (button evt) (show-specifics #f)))]
+	 [show-button (make-object mred:button%
+			"Show Details"
+			ok-panel
+			(lambda (button evt) (show-specifics #t)))]
 	 [_3 (make-object mred:horizontal-panel% ok-panel)]
-	 [cancel-button (make-object mred:button% ok-panel (lambda (button evt) 
-							     (mred:read-user-preferences)
-							     (send f show #f))
-				     "Cancel")]
-	 [ok-button (make-object mred:button% ok-panel (lambda (button evt) (send f show #f)) "OK")]
+	 [cancel-button (make-object mred:button%
+			  "Cancel"
+			  ok-panel
+			  (lambda (button evt) 
+			    (fw:preferences:read)
+			    (send f show #f)))]
+	 [ok-button (make-object mred:button%
+		      "OK"
+		      ok-panel
+		      (lambda (button evt) (send f show #f)))]
 	 [compare-setting-to-gui
 	  (lambda (setting)
 	    (let ([compare-check-box
@@ -300,11 +309,11 @@
       (send language-choice stretchable-in-x #f)
       (send printing stretchable-in-x #f)
       (send vocab stretchable-in-x #f)
-      (update-to (mred:get-preference 'drscheme:settings))
+      (update-to (fw:preferences:get 'drscheme:settings))
       (show-specifics (not (ormap (lambda (x) (compare-setting-to-gui (vector-ref x 1))) basis:settings)))
-      (mred:add-preference-callback 'drscheme:settings 
+      (fw:preferences:add-callback 'drscheme:settings 
 				    (lambda (p v) 
-				      (send mred:the-frame-group
+				      (send (fw:group:get-the-frame-group)
 					    for-each-frame 
 					    (lambda (x)
 					      (when (is-a? x drscheme:unit:frame%)
@@ -314,8 +323,8 @@
       (for-each (lambda (x) (send x stretchable-in-y #f))
 		(list language-panel ok-panel main))
       (send ok-button user-min-width (send cancel-button get-width))
-      (mred:save-user-preferences)
-      (send f center wx:const-both)
+      (fw:preferences:save)
+      (send f center 'both)
       (send f show #t)
       f))
   
@@ -336,15 +345,15 @@
 	   (append-separator)
 	   (append-item "Set Library To..."
 			(lambda ()
-			  (let ([lib-file (mred:get-file 
+			  (let ([lib-file (fw:finder:get-file 
 					   library-directory
 					   "Select a library" 
 					   ".*\\.ss$")])
 			    (when lib-file
-			      (mred:set-preference
+			      (fw:preferences:set
 			       'drscheme:library-file lib-file)
 			      (set! library-directory (path-only lib-file))))))
 	   (append-item "Clear Library"
 			(lambda ()
-			  (mred:set-preference 'drscheme:library-file #f))))))
+			  (fw:preferences:set 'drscheme:library-file #f))))))
 

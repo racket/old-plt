@@ -2,7 +2,7 @@
   ((require-library "splash.ss" "framework")
    (build-path (collection-path "icons") "plt.gif")
    "DrScheme"
-   200
+   123
    5))
 
 (require-relative-library "drsig.ss")

@@ -1,14 +1,14 @@
 (unit/sig drscheme:main^
   (import [I : (program argv)]
-	  [mred : mred^]
+	  [fw : framework^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:get/extend : drscheme:get/extend^])
   
-  (mred:current-app-name "DrScheme")
-  '(mred:add-version-spec 'd 1)
+  (fw:application:current-app-name "DrScheme")
+  (fw:version:add-spec 'd 1)
   
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)
@@ -16,10 +16,6 @@
   (drscheme:get/extend:get-unit-frame%)
   (drscheme:get/extend:get-interactions-edit%)
   (drscheme:get/extend:get-definitions-edit%)
-  
-  (wx:application-file-handler
-   (lambda (filename)
-     (drscheme:unit:open-as-unit filename)))
   
   '(define (make-basic)
     (send (drscheme:compound-unit:make-compound-unit #f)
@@ -32,7 +28,7 @@
 	   [_ (send unit create-frame #f)]
 	   [frame (send unit get-frame)])
 
-      (unless (mred:get-preference 'drscheme:repl-always-active)
+      (unless (fw:preferences:get 'drscheme:repl-always-active)
 	(let* ([interactions-edit (ivar frame interactions-edit)]
 	       [definitions-edit (ivar frame interactions-edit)]
 	       [filename (send definitions-edit get-filename)])
@@ -50,4 +46,4 @@
   (let ([files-to-open (reverse (vector->list I:argv))])
     (if (null? files-to-open)
 	(make-basic)
-	(for-each mred:edit-file files-to-open))))
+	(for-each fw:handler:edit-file files-to-open))))

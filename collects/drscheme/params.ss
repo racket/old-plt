@@ -1,5 +1,5 @@
 (unit/sig drscheme:get/extend^
-  (import [mred : mred^]
+  (import [mred : mred-interfaces^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:frame : drscheme:frame^]
 	  [drscheme:rep : drscheme:rep^]

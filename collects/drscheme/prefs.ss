@@ -1,5 +1,5 @@
 (unit/sig drscheme:prefs^
-  (import [mred : mred^]
+  (import [mred : mred-interfaces^]
 	  [framework : framework^])
   
   (framework:preferences:set-default 'drscheme:keep-interactions-history #f

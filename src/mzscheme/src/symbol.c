@@ -98,14 +98,12 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
   }
 
   if (h < 0) h = -h;
+  if (h2 < 0) h2 = -h2;
 
   if (!h2)
     h2 = 2;
   else if (h2 & 0x1)
-    h2++;
-
-  if (h2 < 0)
-    h2 = -h2;
+    h2++; /* note: table size is never even, so no % needed */
 
   while ((bucket = table->buckets[WEAK_ARRAY_HEADSIZE + h])) {
     if (SAME_OBJ((Scheme_Object *)bucket, SYMTAB_LOST_CELL)) {

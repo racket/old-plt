@@ -3195,8 +3195,10 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       }
 
       if (ename) {
-	scheme_wrong_syntax("require", i, form, "no such provided variable");
-	return NULL;
+	if (!m->reprovide_kernel) {
+	  scheme_wrong_syntax("require", i, form, "no such provided variable");
+	  return NULL;
+	}
       }
       
       if (is_kern)
@@ -3206,9 +3208,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	idx = kernel_symbol;
 	exns = m->kernel_exclusion;
 	m = kernel;
-	is_kern = !prefix && !unpack_kern;
-	iname = NULL;
-	ename = NULL;
+	is_kern = !prefix && !unpack_kern && !ename;
       } else
 	break;
     }

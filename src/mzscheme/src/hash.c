@@ -164,7 +164,7 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
   if (!h2)
     h2 = 2;
   else if (h2 & 0x1)
-    h2++;
+    h2++; /* note: table size is never even, so no % needed */
 
   keys = table->keys;
   

@@ -1,10 +1,14 @@
 #|
 
-A bundle-anchor% is an anchor class. It keeps track of an instance
-of a Bundle and the views associated with that instance.
-It supports two methods:
-  create-view : ((snip -> void) -> void)
-    constructs a snip that displays the Bundle that this anchor
+A bundle-manager% is an manager class. It keeps track of an instance
+of a Bundle Contents and the views associated with that instance.
+It supports three methods:
+
+  get-bundle : (-> bundle<%>)
+    returns the bundle that this manager manages
+
+  create-view : (-> void)
+    constructs a snip that displays the Bundle that this manager
     manages. Calls its argument with the snip, which must insert
     the snip into an editor%.
   
@@ -25,9 +29,42 @@ using the interpreter pattern:
 
  bundle% supports:
    
-    set-bundle-anchor : (bundle-anchor<%> -> void)
+
+    set-bundle-manager : (bundle-manager<%> -> void)
       sets the anchor (used to notify views of modifications)
 
+ <<<<<<< bundle.ss
+    traverse : ((bundle A -> A) A -> A)
+      visits the entire tree (leaves and nodes) by calling the function argument
+      at each node. The second argument is used as the initial second argument to
+      the function argument, after that the result of one call to the function is used
+      as the input for the next call to the function.
+
+    get-flat-names : (-> (list-of symbols))
+      
+  bundle-leaf% supports:
+  
+     get-names : (-> (list-of symbol))
+     set-names : ((list-of symbol) -> void)
+
+  bundle-node% supports:
+    
+    get-label     : (-> symbol)
+    set-label     : (symbol -> void)
+    set-children  : ((list-of bundle%) -> void)
+    get-children  : (-> (list-of bundle%))
+    add-child     : (bundle% -> void)
+
+--
+
+bundle-pasteboard%
+
+leaf-bundle-snip%
+node-bundle-snip%
+    
+|#
+
+ =======
     traverse : ((bundle A -> A) A -> A)
       visits the entire tree (leaves and nodes) by calling the function argument
       at each node. The second argument is used as the initial second argument to
@@ -56,17 +93,19 @@ node-bundle-snip%
     
  |#
 
+ >>>>>>> 1.9
 (invoke-unit/sig
  (unit/sig ()
    (import mred^)
    
-   (define bundle-anchor<%>
+   (define bundle-manager<%>
      (interface ()
+       get-bundle
        create-view
        bundle-changed))
    
-   (define bundle-anchor%
-     (class* object% (bundle-anchor<%>) (contents)
+   (define bundle-manager%
+     (class* object% (bundle-manager<%>) (contents)
        (private
 	 [views null]
 	 [interior-height-addition 10]
@@ -166,7 +205,8 @@ node-bundle-snip%
 		   snip)]
 		[else (error 'create-view "fell off cond: ~e~n" contents)])))])
        (public
-	 [create-view
+	 [get-bundle (lambda () contents)]
+         [create-view
 	  (lambda (insert-into-editor)
 	    (let* ([view (make-object bundle-pasteboard%)]
 		   [snip (make-object editor-snip% view)])
@@ -203,13 +243,15 @@ node-bundle-snip%
        (sequence
 	 (super-init)
 	 (send contents traverse
-	       (lambda (c x) (send c set-bundle-anchor this))
+	       (lambda (c x) (send c set-bundle-manager this))
 	       (void)))))
    
    (define bundle<%>
      (interface ()
-       set-bundle-anchor
-       traverse))
+       set-bundle-manager
+       get-flat-names
+       traverse ; ((bundle A -> A) A -> A)
+       ))
    
    (define bundle%
      (class* object% (bundle<%>) ()
@@ -224,17 +266,17 @@ node-bundle-snip%
 	 [set-tree-height (lambda (h) (set! tree-height h))])
        
        (private
-	 [bundle-anchor #f])
+	 [bundle-manager #f])
        (public
-	 [get-bundle-anchor
+	 [get-bundle-manager
 	  (lambda ()
-	    bundle-anchor)]
-	 [set-bundle-anchor
+	    bundle-manager)]
+	 [set-bundle-manager
 	  (lambda (b)
-	    (unless (is-a? b bundle-anchor<%>)
-	      (error 'set-bundle-anchor "expected a bundle-anchor<%>, got: ~e"
+	    (unless (is-a? b bundle-manager<%>)
+	      (error 'set-bundle-manager "expected a bundle-manager<%>, got: ~e"
 		     b))
-	    (set! bundle-anchor b))]
+	    (set! bundle-manager b))]
 	 [traverse
 	  (lambda (f init)
 	    (void))])
@@ -315,12 +357,12 @@ node-bundle-snip%
 	      (error 'set-names "expected a list of bundle<%> objects, got: ~e" bc))
 	    (set! children chils))])
 
-       (inherit get-bundle-anchor)
+       (inherit get-bundle-manager)
        (public
 	 [add-child
 	  (lambda (c)
-	    (set! children (cons c children))
-	    (send (get-bundle-anchor) bundle-changed))])
+	    (set! bundle (cons c bundle))
+	    (send (get-bundle-manager) bundle-changed))])
        (sequence
 	 (super-init)
 	 (set-label _label)
@@ -410,16 +452,6 @@ node-bundle-snip%
 	 (update-text)
 	 (super-init text))))
    
-   (define (set-box/f! b/f contents)
-     (when (box? b/f)
-       (set-box! b/f contents)))
-   (define (set-dc-pen dc color width style)
-     (send dc set-pen (send the-pen-list find-or-create-pen color width style)))
-   (define (set-dc-brush dc color style)
-     (send dc set-brush (send the-brush-list find-or-create-brush color style)))
-   (define white (make-object color% "WHITE"))
-   (define black (make-object color% "BLACK"))
-   
    (define node-bundle-snip%
      (class snip% (node-bundle bundle-snips)
        (public
@@ -483,7 +515,7 @@ node-bundle-snip%
 			   x)]
 		     [else (error)]))
 		 null))
-   (define bundle (make-object bundle-anchor% int2))
+   (define bundle (make-object bundle-manager% int2))
    
    (define frame (make-object frame% "Bundles" #f 400 400))
    (define button-panel (make-object horizontal-panel% frame))

@@ -72,6 +72,7 @@ exit 1
   (current-library-collection-paths (list (build-path plthome "collects"))))
 
 (require (lib "cmdline.ss"))
+(define setup-flags (make-parameter '()))
 (define (process-command-line)
   (define more-help
     (lambda (help)
@@ -87,7 +88,11 @@ exit 1
        existing zos (making only missing ones), and recreate the launchers.\n\
        This script will be deleted afterwars."
       (set! install-mode? #t)))
-    (=> (lambda (_) _) '() more-help)))
+    (help-labels
+     "Additional arguments (after a \"--\" are passed on to setup-plt")
+    (=> (lambda (f . _) (setup-flags _))
+        '("setup-flags")
+        more-help)))
 
 ;; Set up GUI if we're using MrEd
 (when (namespace-variable-value 'make-eventspace #t (lambda () #f))
@@ -155,23 +160,27 @@ exit 1
       (initial-exception-handler (current-exception-handler)))))
 
 (define (create-zos)
-  (parameterize
-      (;; Need a new namespace to ensure that all modules are compiled,
-       ;; including ones we've already loaded.  We also need to re-enable
-       ;; compiled files, since cm.ss checks on that flag.
-       [current-namespace (make-namespace)]
-       [use-compiled-file-kinds 'all]
-       [current-command-line-arguments
-        (if install-mode? #("--trust-zos" "--no-install") #())]
-       ;; setup will use `exit' when done, so catch these, and stop if
-       ;; non-zero
-       [exit-handler
-        (lambda (n)
-          (unless (zero? n)
-            (error 'install "Errors in compilation process! (~a)" n)))]
-       ;; also, protect `current-directory' since it will change
-       [current-directory (current-directory)])
-    (dynamic-require '(lib "setup.ss" "setup") #f)))
+  (let/ec return
+    (parameterize
+        (;; Need a new namespace to ensure that all modules are compiled,
+         ;; including ones we've already loaded.  We also need to re-enable
+         ;; compiled files, since cm.ss checks on that flag.
+         [current-namespace (make-namespace)]
+         [use-compiled-file-kinds 'all]
+         [current-command-line-arguments
+          (list->vector
+           (append (if install-mode? '("--trust-zos" "--no-install") '())
+                   (setup-flags)))]
+         ;; setup will use `exit' when done, so catch these, and stop if
+         ;; non-zero
+         [exit-handler
+          (lambda (n)
+            (if (zero? n)
+              (return)
+              (error 'install "Errors in compilation process! (~a)" n)))]
+         ;; also, protect `current-directory' since it will change
+         [current-directory (current-directory)])
+      (dynamic-require '(lib "setup.ss" "setup") #f))))
 
 (define (main args)
   (set-plthome (car args))

@@ -2080,6 +2080,8 @@ static Scheme_Object *read_compact(CPort *port,
 	v = read_compact(port, ht, symtab, 1);
 	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory,
 				   ch == CPT_GSTX, 0);
+	if (!v)
+	  scheme_ill_formed_code(port);
       }
       break;
     case CPT_MARSHALLED:
@@ -2097,6 +2099,8 @@ static Scheme_Object *read_compact(CPort *port,
       {
 	int p;
 	p = read_compact_number(port);
+	if (p < 0)
+	  scheme_ill_formed_code(port);
 	v = scheme_make_local(scheme_local_type, p);
       }
       break;
@@ -2104,6 +2108,8 @@ static Scheme_Object *read_compact(CPort *port,
       {
 	int p;
 	p = read_compact_number(port);
+	if (p < 0)
+	  scheme_ill_formed_code(port);
 	v = scheme_make_local(scheme_local_unbox_type, p);
       }
       break;
@@ -2284,11 +2290,12 @@ static Scheme_Object *read_compact(CPort *port,
       }
       break;
     default:
-      {
-	v = NULL;
-	scheme_ill_formed_code(port);
-      }
+      v = NULL;
+      break;
     }
+
+    if (!v)
+      scheme_ill_formed_code(port);
 
     if (need_car) {
       Scheme_Object *pair;
@@ -2323,9 +2330,6 @@ static Scheme_Object *read_compact(CPort *port,
       break;
     }
   }
-
-  if (!first && !v)
-    *(long *)0x0 = 1;
 
   return first ? first : v;
 }
@@ -2417,6 +2421,9 @@ static Scheme_Object *read_marshalled(int type,
   STACK_START(r);
   l = read_compact(port, ht, symtab, 1);
   STACK_END(r);
+
+  if ((type < 0) || (type >= _scheme_last_type_))
+    scheme_ill_formed_code(port);
 
   reader = scheme_type_readers[type];
 

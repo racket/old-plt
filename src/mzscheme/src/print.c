@@ -1224,6 +1224,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	else
 	  print_compact(p, CPT_STX);
 	
+	/* "2" in scheme_syntax_to_datum() call preserves wraps. */
 	closed = print(scheme_syntax_to_datum(obj, 2, rnht), 
 		       notdisplay, 1, ht, symtab, rnht, p);
       } else {

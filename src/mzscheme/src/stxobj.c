@@ -2371,14 +2371,23 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
   /* rns maps numbers (table indices) to renaming tables, and negative
      numbers (negated fixnum marks) and symbols (interned marks) to marks.*/
 
-  if (SCHEME_INTP(w))
-    return scheme_hash_get(rns, w);
+  /* This function has to be defensive, since `w' can originate in
+     untrusted .zo bytecodes. Return NULL for bad wraps. */
+
+  if (SCHEME_INTP(w)) {
+    w = scheme_hash_get(rns, w);
+    if (!w || !SCHEME_LISTP(w)) /* list => a wrap, as opposed to a mark, etc. */
+      return NULL;
+    return w;
+  }
+
+  if (!SCHEME_PAIRP(w)) return NULL;
 
   wraps_key = SCHEME_CAR(w);
   w = SCHEME_CDR(w);
 
-  stack_size = scheme_list_length(w);
-  if (!stack_size) {
+  stack_size = scheme_proper_list_length(w);
+  if (stack_size < 1) {
     scheme_hash_set(rns, wraps_key, scheme_null);
     return scheme_null;
   } else if (stack_size < 2) {
@@ -2396,12 +2405,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
     if (SCHEME_NUMBERP(a)) {
       /* Re-use rename table or env rename */
       a = scheme_hash_get(rns, a);
-      if (!a) {
-	a = SCHEME_CAR(w);
-	scheme_read_err(scheme_false, NULL, -1, -1, -1, -1, 0,
-			"read (compiled): unknown rename table index: %d",
-			SCHEME_INT_VAL(a));
-      }
+      if (!a || SCHEME_LISTP(a)) /* list => a whole wrap, no good as an element */
+	return NULL;
     } else if (SCHEME_PAIRP(a) 
 	       && SCHEME_NULLP(SCHEME_CDR(a))
 	       && SCHEME_NUMBERP(SCHEME_CAR(a))) {
@@ -2423,11 +2428,27 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	scheme_hash_set(rns, a, n);
       }
 
+      /* Really a mark? */
+      if (!SCHEME_NUMBERP(n))
+	return NULL;
+
       a = n;
     } else if (SCHEME_VECTORP(a)) {
       /* A (simplified) rename table. First element is the key. */
-      Scheme_Object *local_key = SCHEME_VEC_ELS(a)[0];
-      
+      Scheme_Object *local_key;
+      int i = SCHEME_VEC_SIZE(a);
+
+      /* Make sure that it's a well-formed rename table. */
+      if ((i < 2) || !SCHEME_FALSEP(SCHEME_VEC_ELS(a)[1]))
+	return NULL;
+      while (i > 2) {
+	i--;
+	if (!SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[i]))
+	  return NULL;
+      }
+
+      /* It's ok: */
+      local_key = SCHEME_VEC_ELS(a)[0];
       scheme_hash_set(rns, local_key, a);
     } else if (SCHEME_PAIRP(a)) {
       /* A rename table:
@@ -2444,6 +2465,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       
       local_key = SCHEME_CAR(a);
       a = SCHEME_CDR(a);
+
+      if (!SCHEME_PAIRP(a)) return NULL;
       
       /* Convert list to rename table: */
       
@@ -2460,8 +2483,12 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       mrn->plus_kernel = plus_kernel;
       /* note: information on nominals has been dropped */
 
+      if (!SCHEME_VECTORP(a)) return NULL;
       count = SCHEME_VEC_SIZE(a);
+      if (count & 0x1) return NULL;
+
       for (i = 0; i < count; i+= 2) {
+	/* key and p be bad, but that shouldn't cause a crash */
 	key = SCHEME_VEC_ELS(a)[i];
 	p = SCHEME_VEC_ELS(a)[i+1];
 	  
@@ -2495,6 +2522,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       /* mark barrier */
     } else {
       /* must be a box for a phase shift */
+      /* (or garbage due to a bad .zo, and we'll ignore it) */
     }
 
     if (wc)
@@ -2585,6 +2613,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   }
 
   if ((Scheme_Object *)SCHEME_HASHTP(stx_wraps)) {
+    if (!SCHEME_PAIRP(o)) return NULL;
     wraps = SCHEME_CDR(o);
     o = SCHEME_CAR(o);
   } else
@@ -2609,8 +2638,10 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 	Scheme_Object *a;
       
 	if (wraps) {
-	  if (!SCHEME_PAIRP(SCHEME_CAR(o)))
+	  if (!SCHEME_PAIRP(SCHEME_CAR(o))) {
+	    if (!last) return NULL;
 	    break;
+	  }
 	}
 
 	if (ht && last) {
@@ -2621,6 +2652,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 	}
 
 	a = datum_to_syntax_inner(SCHEME_CAR(o), stx_src, stx_wraps, ht);
+	if (!a) return NULL;
       
 	p = scheme_make_immutable_pair(a, scheme_null);
       
@@ -2633,6 +2665,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
       }
       if (!SCHEME_NULLP(o)) {
 	o = datum_to_syntax_inner(o, stx_src, stx_wraps, ht);
+	if (!o) return NULL;
 	SCHEME_CDR(last) = o;
       }
 
@@ -2640,6 +2673,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     }
   } else if (SCHEME_BOXP(o)) {
     o = datum_to_syntax_inner(SCHEME_PTR_VAL(o), stx_src, stx_wraps, ht);
+    if (!o) return NULL;
     result = scheme_box(o);
     SCHEME_SET_BOX_IMMUTABLE(result);
   } else if (SCHEME_VECTORP(o)) {
@@ -2650,6 +2684,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     
     for (i = 0; i < size; i++) {
       a = datum_to_syntax_inner(SCHEME_VEC_ELS(o)[i], stx_src, stx_wraps, ht);
+      if (!a) return NULL;
       SCHEME_VEC_ELS(result)[i] = a;
     }
 
@@ -2666,6 +2701,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 
   if (wraps) {
     wraps = datum_to_wraps(wraps, (Scheme_Hash_Table *)stx_wraps);
+    if (!wraps) return NULL;
     ((Scheme_Stx *)result)->wraps = wraps;
   } else if (SCHEME_FALSEP((Scheme_Object *)stx_wraps)) {
     /* wraps already nulled */
@@ -2687,6 +2723,8 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
 				      Scheme_Object *stx_wraps,
 				      int can_graph, int copy_props)
 {
+  /* If stx_wraps is a hash table, then `o' includes marks */
+
   Scheme_Hash_Table *ht;
   Scheme_Object *v;
 
@@ -2705,6 +2743,8 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
 			    (Scheme_Stx *)stx_src, 
 			    (Scheme_Stx *)stx_wraps,
 			    ht);
+
+  if (!v) return NULL; /* only happens with bad wraps from a bad .zo */
 
   if (ht)
     v = scheme_resolve_placeholders(v, 1);

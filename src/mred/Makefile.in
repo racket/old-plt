@@ -117,7 +117,7 @@ wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
 
 wxJPEG.o : $(srcdir)/../wxcommon/wxJPEG.cxx $(srcdir)/../wxcommon/wxGC.h
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -I$(srcdir)/../wxcommon/jpeg -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -Ijpeg/ -I$(srcdir)/../wxcommon/jpeg -c $(srcdir)/../wxcommon/wxJPEG.cxx -o wxJPEG.o
 
 dl_stub.o: $(srcdir)/misc/dl_stub.c
 	$(CC) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/misc/dl_stub.c -o dl_stub.o

@@ -195,7 +195,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   Bool dragable, selectionVisible;
 
   wxSnip *snips, *lastSnip;
-  wxList *snipLocationList;
+  Scheme_Hash_Table *snipLocationList;
 
   wxStandardSnipAdmin *snipAdmin;
   

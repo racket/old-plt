@@ -45,24 +45,28 @@
 static wxCursor *arrow = NULL;
 
 int wxmeGetDoubleClickThreshold();
+
+extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
   
-static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
+static wxSnipLocation *DoXSnipLoc(Scheme_Hash_Table *snipLocationList, wxSnip *s)
 {
-  /* FIXME: key should be address instead of long */
-  wxNode *n;
-  n = snipLocationList->FindPtr(s);
-  if (n)
-    return (wxSnipLocation *)n->Data();
-  else
-    return NULL;
+  Scheme_Object *key, *v;
+
+  key = objscheme_bundle_wxSnip(s);
+  v = scheme_hash_get(snipLocationList, key);
+  return (wxSnipLocation *)v;
+}
+
+static void SetSnipLoc(Scheme_Hash_Table *snipLocationList, wxSnip *s, wxSnipLocation *loc)
+{
+  Scheme_Object *key;
+
+  key = objscheme_bundle_wxSnip(s);
+  scheme_hash_set(snipLocationList, key, (Scheme_Object *)loc);
 }
 
 #define XSnipLoc(snip) DoXSnipLoc(snipLocationList, snip)
-#ifdef MZ_PRECISE_GC
-# define SnipLoc(snip) XSnipLoc(snip)
-# else
-# define SnipLoc(snip) ((wxSnipLocation *)snipLocationList->FindPtr(snip)->Data())
-#endif
+#define SnipLoc(snip) XSnipLoc(snip)
 
 inline Bool Inbox(double lx, double x)
 { 
@@ -93,7 +97,7 @@ extern void wxMediaSetFileCreatorType(char *file, Bool is_binary);
 
 wxMediaPasteboard::wxMediaPasteboard()
 {
-  wxList *sll;
+  Scheme_Hash_Table *sll;
 
   sizeCacheInvalid = TRUE;
   updateNonempty = FALSE;
@@ -101,9 +105,8 @@ wxMediaPasteboard::wxMediaPasteboard()
   writeLocked = 0;
 
   snips = lastSnip = NULL;
-  sll = new wxList(wxKEY_INTEGER, FALSE);
+  sll = scheme_make_hash_table(SCHEME_hash_ptr);
   snipLocationList = sll;
-  snipLocationList->DeleteContents(TRUE);
 
   sequence = 0;
 
@@ -156,8 +159,6 @@ wxMediaPasteboard::~wxMediaPasteboard()
     next = snip->next;
     DELETE_OBJ snip;
   }
-
-  DELETE_OBJ snipLocationList;
 
   DELETE_OBJ snipAdmin;
 }
@@ -787,7 +788,7 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, double x, double y)
   loc->snip = snip;
   loc->needResize = TRUE;
   loc->selected = FALSE;
-  snipLocationList->Append((void *)snip, loc);
+  SetSnipLoc(snipLocationList, snip, loc);
 
   snip->style = styleList->Convert(snip->style);
   if (PTREQ(snip->style, styleList->BasicStyle())) {
@@ -850,7 +851,7 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before)
 
 void wxMediaPasteboard::Delete()
 {
-  wxNode *node;
+  int i;
   wxSnipLocation *loc;
   wxDeleteSnipRecord *del;
 
@@ -863,10 +864,12 @@ void wxMediaPasteboard::Delete()
 
   BeginEditSequence();
 
-  for (node = snipLocationList->First(); node; node = node->Next()) {
-    loc = (wxSnipLocation *)node->Data();
-    if (loc->selected) 
-      _Delete(loc->snip, del);
+  for (i = 0; i < snipLocationList->size; i++) {
+    loc = (wxSnipLocation *)snipLocationList->vals[i];
+    if (loc) {
+      if (loc->selected) 
+	_Delete(loc->snip, del);
+    }
   }
 
   if (!noundomode)
@@ -903,7 +906,6 @@ Bool wxMediaPasteboard::_Delete(wxSnip *del_snip,
 				wxDeleteSnipRecord *del)
 {
   wxSnip *snip;
-  wxNode *node;
   wxSnipLocation *loc;
   Bool updateCursor = FALSE;
   Bool result = FALSE;
@@ -937,9 +939,8 @@ Bool wxMediaPasteboard::_Delete(wxSnip *del_snip,
       else
 	snip->next->prev = snip->prev;
 
-      node = snipLocationList->FindPtr(snip);
-      snipLocationList->DeleteNode(node);
-      loc = (wxSnipLocation *)node->Data();
+      loc = DoXSnipLoc(snipLocationList, snip);
+      SetSnipLoc(snipLocationList, snip, NULL);
       if (del)
 	del->InsertSnip(snip, snip->next, loc->x, loc->y);
       snip->next = snip->prev = NULL;
@@ -1001,16 +1002,15 @@ void wxMediaPasteboard::Remove(wxSnip *del_snip)
 
 void wxMediaPasteboard::MoveTo(wxSnip *snip, double x, double y)
 {
-  wxNode *node;
   wxSnipLocation *loc;
   wxMoveSnipRecord *rec;
 
   if (userLocked || writeLocked)
     return;
 
-  if ((node = snipLocationList->FindPtr(snip))) {
-    loc = (wxSnipLocation *)node->Data();
+  loc = DoXSnipLoc(snipLocationList, snip);
 
+  if (loc) {
     if ((loc->x == x) && (loc->y == y))
       return;
 
@@ -1063,21 +1063,20 @@ void wxMediaPasteboard::MoveTo(wxSnip *snip, double x, double y)
 
 void wxMediaPasteboard::Move(wxSnip *snip, double dx, double dy)
 {
-  wxNode *node;
   wxSnipLocation *loc;
 
   if (userLocked || writeLocked)
     return;
 
-  if ((node = snipLocationList->FindPtr(snip))) {
-    loc = (wxSnipLocation *)node->Data();
+  loc = DoXSnipLoc(snipLocationList, snip);
+  if (loc) {
     MoveTo(snip, loc->x + dx, loc->y + dy);
   }
 }
 
 void wxMediaPasteboard::Move(double dx, double dy)
 {
-  wxNode *node;
+  int i;
   wxSnipLocation *loc;
 
   if (userLocked || writeLocked)
@@ -1085,10 +1084,12 @@ void wxMediaPasteboard::Move(double dx, double dy)
 
   BeginEditSequence();
 
-  for (node = snipLocationList->First(); node; node = node->Next()) {
-    loc = (wxSnipLocation *)node->Data();
-    if (loc->selected)
-      Move(loc->snip, dx, dy);
+  for (i = 0; i < snipLocationList->size; i++) {
+    loc = (wxSnipLocation *)snipLocationList->vals[i];
+    if (loc) {
+      if (loc->selected)
+	Move(loc->snip, dx, dy);
+    }
   }
 
   EndEditSequence();
@@ -1096,7 +1097,6 @@ void wxMediaPasteboard::Move(double dx, double dy)
 
 Bool wxMediaPasteboard::Resize(wxSnip *snip, double w, double h)
 {
-  wxNode *node;
   wxSnipLocation *loc;
   double oldw, oldh;
   Bool rv;
@@ -1104,10 +1104,10 @@ Bool wxMediaPasteboard::Resize(wxSnip *snip, double w, double h)
   if (!admin)
     return FALSE;
 
-  if (!(node = snipLocationList->FindPtr(snip)))
+  loc = DoXSnipLoc(snipLocationList, snip);
+  if (!loc)
     return FALSE;
 
-  loc = (wxSnipLocation *)node->Data();
   oldw = loc->w;
   oldh = loc->h;
 
@@ -1171,7 +1171,6 @@ void wxMediaPasteboard::ChangeStyle(wxStyleDelta *delta, wxSnip *snip)
 void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta, 
 				     wxSnip *snip)
 {
-  wxNode *node;
   wxSnipLocation *loc;
   wxStyleChangeSnipRecord *rec;
   Bool didit = FALSE;
@@ -1202,21 +1201,24 @@ void wxMediaPasteboard::_ChangeStyle(wxStyle *style, wxStyleDelta *delta,
     UpdateSnip(snip);
     didit = TRUE;
   } else {
-    for (node = snipLocationList->First(); node; node = node->Next()) {
-      loc = (wxSnipLocation *)node->Data();
-      if (loc->selected) {
-	rec->AddStyleChange(loc->snip, loc->snip->style);
-	if (style)
-	  loc->snip->style = style;
-	else {
-	  loc->snip->style = styleList->FindOrCreateStyle(loc->snip->style, 
-							  delta);
+    int i;
+    for (i = 0; i < snipLocationList->size; i++) {
+      loc = (wxSnipLocation *)snipLocationList->vals[i];
+      if (loc) {
+	if (loc->selected) {
+	  rec->AddStyleChange(loc->snip, loc->snip->style);
+	  if (style)
+	    loc->snip->style = style;
+	  else {
+	    loc->snip->style = styleList->FindOrCreateStyle(loc->snip->style, 
+							    delta);
+	  }
+	  loc->snip->SizeCacheInvalid();
+	  loc->needResize = TRUE;
+	  needResize = TRUE;
+	  UpdateLocation(loc);
+	  didit = TRUE;
 	}
-	loc->snip->SizeCacheInvalid();
-	loc->needResize = TRUE;
-	needResize = TRUE;
-	UpdateLocation(loc);
-	didit = TRUE;
       }
     }
   }
@@ -1251,8 +1253,8 @@ void wxMediaPasteboard::SetBefore(wxSnip *snip, wxSnip *before)
   if (!before)
     before = snips;
 
-  if (!snipLocationList->FindPtr(snip)
-      || !snipLocationList->FindPtr(before))
+  if (!DoXSnipLoc(snipLocationList, snip)
+      || !DoXSnipLoc(snipLocationList, before))
     return;
 
   if (snip == before)
@@ -1302,8 +1304,8 @@ void wxMediaPasteboard::SetAfter(wxSnip *snip, wxSnip *after)
   if (!after)
     after = lastSnip;
 
-  if (!snipLocationList->FindPtr(snip)
-      || !snipLocationList->FindPtr(after))
+  if (!DoXSnipLoc(snipLocationList, snip)
+      || !DoXSnipLoc(snipLocationList, after))
     return;
 
   if (snip == after)
@@ -1750,7 +1752,6 @@ void wxMediaPasteboard::CheckRecalc()
 {
   double r, b;
   wxDC *dc;
-  wxNode *node;
   wxSnipLocation *loc;
   
   if (!admin)
@@ -1763,19 +1764,22 @@ void wxMediaPasteboard::CheckRecalc()
 
   if (needResize) {
     /* Find right & bottom */
+    int i;
     r = b = 0;
-    for (node = snipLocationList->First(); node; node = node->Next()) {
-      loc = (wxSnipLocation *)node->Data();
-      if (sizeCacheInvalid) {
-	loc->snip->SizeCacheInvalid();
-	loc->needResize = TRUE;
+    for (i = 0; i < snipLocationList->size; i++) {
+      loc = (wxSnipLocation *)snipLocationList->vals[i];
+      if (loc) {
+	if (sizeCacheInvalid) {
+	  loc->snip->SizeCacheInvalid();
+	  loc->needResize = TRUE;
+	}
+	if (loc->needResize)
+	  loc->Resize(dc);
+	if (loc->r + HALF_DOT_WIDTH > r)
+	  r = loc->r + HALF_DOT_WIDTH;
+	if (loc->b + HALF_DOT_WIDTH > b)
+	  b = loc->b + HALF_DOT_WIDTH;
       }
-      if (loc->needResize)
-	loc->Resize(dc);
-      if (loc->r + HALF_DOT_WIDTH > r)
-	r = loc->r + HALF_DOT_WIDTH;
-      if (loc->b + HALF_DOT_WIDTH > b)
-	b = loc->b + HALF_DOT_WIDTH;
     }
   
     realWidth = r;
@@ -1926,26 +1930,27 @@ void wxMediaPasteboard::UpdateLocation(wxSnipLocation *loc)
 
 void wxMediaPasteboard::UpdateSnip(wxSnip *snip)
 {
-  wxNode *node;
+  int i;
   wxSnipLocation *loc;
 
-  if ((node = snipLocationList->FindPtr(snip))) {
-    loc = (wxSnipLocation *)node->Data();
-    UpdateLocation(loc);
+  for (i = 0; i < snipLocationList->size; i++) {
+    loc = (wxSnipLocation *)snipLocationList->vals[i];
+    if (loc)
+      UpdateLocation(loc);
   }
 }
 
 void wxMediaPasteboard::UpdateSelected()
 {
-  wxNode *node;
+  int i;
   wxSnipLocation *loc;
 
   BeginEditSequence();
 
-  for (node = snipLocationList->First(); node; node = node->Next()) {
-    loc = (wxSnipLocation *)node->Data();
-    if (loc->selected)
-      UpdateLocation(loc);
+  for (i = 0; i < snipLocationList->size; i++) {
+    loc = (wxSnipLocation *)snipLocationList->vals[i];
+    if (loc && loc->selected)
+	UpdateLocation(loc);
   }
   
   EndEditSequence();
@@ -2050,13 +2055,13 @@ void wxMediaPasteboard::SetCaretOwner(wxSnip *snip, int dist)
 
 void wxMediaPasteboard::Resized(wxSnip *snip, Bool redraw_now)
 {
-  wxNode *node;
   wxSnipLocation *loc;
   Bool no_implicit_update;
 
-  if (!(node = snipLocationList->FindPtr(snip)))
+  loc = DoXSnipLoc(snipLocationList, snip);
+
+  if (!loc)
     return;
-  loc = (wxSnipLocation *)node->Data();  
 
   if (loc->needResize)
     return;
@@ -2491,7 +2496,6 @@ void wxMediaPasteboard::Kill(long time)
 Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, double *x, double *y, 
 					Bool bottomRight)
 {
-  wxNode *node;
   wxSnipLocation *loc;
 
   if (bottomRight) {
@@ -2500,11 +2504,10 @@ Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, double *x, double *y,
     CheckRecalc();
   }
 
-  node = snipLocationList->FindPtr(thesnip);
-  if (!node)
+  loc = DoXSnipLoc(snipLocationList, thesnip);
+  if (!loc)
     return FALSE;
   
-  loc = (wxSnipLocation *)node->Data();
   if (x)
     *x = loc->x;
   if (y)
@@ -2523,14 +2526,14 @@ Bool wxMediaPasteboard::GetSnipLocation(wxSnip *thesnip, double *x, double *y,
 
 wxBufferData *wxMediaPasteboard::GetSnipData(wxSnip *snip)
 {
-  wxNode *node;
   wxSnipLocation *loc;
   wxLocationBufferData *data;
 
-  if (!(node = snipLocationList->FindPtr(snip)))
+  loc = DoXSnipLoc(snipLocationList, snip);
+
+  if (!loc)
     return wxMediaBuffer::GetSnipData(snip);
 
-  loc = (wxSnipLocation *)node->Data();  
   data = new wxLocationBufferData;
   data->x = loc->x;
   data->y = loc->y;

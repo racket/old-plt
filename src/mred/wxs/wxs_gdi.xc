@@ -268,6 +268,8 @@ static void *RgnBoundingBox(wxRegion *r)
 @SET TYPE = wxPoint
 @SET INDIRECT = 1
 @SET POINTWISE = 1
+@SET NEWATOMIC = 1
+@SET DIRECTMALLOC = 1
 @INCLUDE list.xci
 
 @MACRO CheckRadius[name.r.w.h] = { if (x<r> < -0.5)  WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius must be no less than -0.5: ", p[POFFSET+<r>])); if (x<r> > 0) { if (2 * x<r> > x<w>) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius is more than half the width: ", p[POFFSET+<r>])); if (2 * x<r> > x<h>) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius is more than half the height: ", p[POFFSET+<r>])); } }

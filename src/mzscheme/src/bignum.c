@@ -95,7 +95,7 @@ static Scheme_Object *bignum_one;
 # define SCHEME_BIGDIG_SAFE(b, s) ((SCHEME_BIGDIG(b) == ((Small_Bignum *) mzALIAS b)->v) ? (s[0] = SCHEME_BIGDIG(b)[0], s) : SCHEME_BIGDIG(b))
 
 # define PROTECT(digarray, len) digarray = copy_to_protected(digarray, len * sizeof(bigdig), 0);
-# define RELEASE(digarray) free(digarray);
+# define RELEASE(digarray) (free(digarray), digarray = NULL);
 
 # define PROTECT_RESULT(len) copy_to_protected(NULL, len * sizeof(bigdig), 1);
 # define FINISH_RESULT(digarray, len) { bigdig *save = digarray; digarray = (bigdig *)scheme_malloc_atomic(len * sizeof(bigdig)); memcpy(digarray, save, len * sizeof(bigdig)); RELEASE(save); }

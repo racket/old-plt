@@ -3638,7 +3638,7 @@ static void *RgnBoundingBox(wxRegion *r)
 
 #define l_ADDRESS &
 #define l_DEREF *
-#define l_NEWATOMIC 
+#define l_NEWATOMIC (AtomicGC)
 #define l_NULLOK 0
 #define l_TEST , l_NULLOK
 #define l_POINT 
@@ -3647,7 +3647,7 @@ static void *RgnBoundingBox(wxRegion *r)
 #define l_COPY l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y;
 #define l_OKTEST 
 #define l_INTTYPE int
-#define l_DIRECTMALLOC 0
+#define l_DIRECTMALLOC 1
 
 #define l_TYPE wxPoint
 #define l_LIST_ITEM_BUNDLE objscheme_bundle_wxPoint

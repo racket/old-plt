@@ -100,6 +100,7 @@ typedef short Type_Tag;
 #define SKIP_FORCED_GC 0
 #define RECORD_MARK_SRC 0
 #define KEEP_BACKPOINTERS 0
+#define DEFINE_MALLOC_FREE 0
 
 #ifdef COMPACT_BACKTRACE_GC
 # undef KEEP_BACKPOINTERS
@@ -181,7 +182,7 @@ Fixup_Proc fixup_table[_num_tags_];
    updating pointers during the fixup phase.
 */
 
-#if ALIGN_DOUBLES
+#if ALIGN_DOUBLES || DEFINE_MALLOC_FREE
 # define SQUASH_OFFSETS 0
 #else
 # define SQUASH_OFFSETS 1
@@ -190,7 +191,7 @@ Fixup_Proc fixup_table[_num_tags_];
    the minimum size of an allocation is two words (unless
    ALIGN_DOUBLES), we can squash the index array into half as much
    space as we might otherwise. For example, let **** and #### be the
-   offsets for indexes 0 and 4, respectively:
+   offsets for indexes 0 and 3, respectively:
 
      ---- ---- ---- ---- ----
     |****|    |    |####|    |  Unsquashed representation
@@ -279,6 +280,7 @@ MPage **mpage_maps;
 #define MTYPE_TAGGED_ARRAY 3
 #define MTYPE_ARRAY        4
 #define MTYPE_XTAGGED      5
+#define MTYPE_MALLOCFREE   6
 
 /* Allocation flags */
 
@@ -400,6 +402,10 @@ static void CRASH(int where)
 #endif
   abort();
 }
+
+#if DEFINE_MALLOC_FREE
+static void check_not_freed(MPage *page, const void *p);
+#endif
 
 static int just_checking, the_size;
 #endif
@@ -1012,6 +1018,10 @@ static int is_marked(void *p)
     MPage *page;
 
     page = map + (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
+#if DEFINE_MALLOC_FREE
+    if (page->type == MTYPE_MALLOCFREE)
+      return 1;
+#endif
     if (page->flags & MFLAG_BIGBLOCK) {
       if (page->flags & MFLAG_CONTINUED)
 	return is_marked(page->o.bigblock_start);
@@ -1297,6 +1307,16 @@ void GC_mark(const void *p)
     mflags_t flags;
 
     page = map + (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
+
+#if DEFINE_MALLOC_FREE
+    if (page->type == MTYPE_MALLOCFREE) {
+#if CHECKS
+      check_not_freed(page, p);
+#endif
+      return;
+    }
+#endif
+
     flags = page->flags;
     if (flags & (MFLAG_MARK | MFLAG_CONTINUED)) {
 #if MARK_STATS
@@ -2515,6 +2535,12 @@ void GC_fixup(void *pp)
     MPage *page;
 
     page = map + addr;
+
+#if DEFINE_MALLOC_FREE
+    if (page->type == MTYPE_MALLOCFREE)
+      return;
+#endif
+
     if (page->type) {
       if (page->compact_to_age < min_referenced_page_age)
 	min_referenced_page_age = page->compact_to_age;
@@ -3132,6 +3158,11 @@ static void check_ptr(void **a)
       }
 
     }
+#if DEFINE_MALLOC_FREE
+    else if (page->type == MTYPE_MALLOCFREE) {
+      check_not_freed(page, p);
+    }
+#endif
   }
 }
 # endif
@@ -4013,13 +4044,13 @@ static MPage *get_page_rec(void *p, mtype_t mtype, mflags_t flags)
   return map + addr;
 }
 
-static void new_page(mtype_t mtype, mflags_t mflags, MSet *set)
+static void new_page(mtype_t mtype, mflags_t mflags, MSet *set, int link)
 {
   void *p;
   MPage *map;
   OffsetArrTy *offsets;
 
-  if (memory_in_use > gc_threshold) {
+  if ((memory_in_use > gc_threshold) && link) {
     gcollect(0);
     return;
   }
@@ -4038,13 +4069,17 @@ static void new_page(mtype_t mtype, mflags_t mflags, MSet *set)
   map->age = 0;
   map->refs_age = 0;
 
-  map->next = NULL;
-  map->prev = last;
-  if (last)
-    last->next = map;
-  else
-    first = map;
-  last = map;
+  if (link) {
+    map->next = NULL;
+    map->prev = last;
+    if (last)
+      last->next = map;
+    else
+      first = map;
+    last = map;
+  } else {
+    map->next = map->prev = NULL;
+  }
 
   set->malloc_page = map;
 
@@ -4056,7 +4091,7 @@ static void new_page(mtype_t mtype, mflags_t mflags, MSet *set)
 #endif
 }
 
-static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
+static void *malloc_bigblock(long size_in_bytes, mtype_t mtype, int link)
 {
   void *p, *mp;
   MPage *map;
@@ -4067,9 +4102,9 @@ static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
     stop();
 #endif
 
-  if (memory_in_use > gc_threshold) {
+  if ((memory_in_use > gc_threshold) && link) {
     gcollect(0);
-    return malloc_bigblock(size_in_bytes, mtype);
+    return malloc_bigblock(size_in_bytes, mtype, 1);
   }
   
   p = (void *)malloc_pages_try_hard(size_in_bytes, MPAGE_SIZE);
@@ -4085,13 +4120,18 @@ static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
   map->age = 0;
   map->refs_age = 0;
 
-  map->next = NULL;
-  map->prev = last;
-  if (last)
-    last->next = map;
-  else
-    first = map;
-  last = map;
+  if (link) {
+    map->next = NULL;
+    map->prev = last;
+    if (last)
+      last->next = map;
+    else
+      first = map;
+    last = map;
+  } else {
+    map->next = NULL;
+    map->prev = NULL;
+  }
 
   s = size_in_bytes;
   mp = p;
@@ -4130,7 +4170,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
 #endif
 
   if (size_in_words >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {
-    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, MTYPE_TAGGED);
+    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, MTYPE_TAGGED, 1);
   }
 
 #if USE_FREELIST
@@ -4154,7 +4194,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
     /* Make sure memory is 8-aligned */
     if (((long)tagged.low & 0x4)) {
       if (tagged.low == tagged.high) {
-	new_page(MTYPE_TAGGED, 0, &tagged);
+	new_page(MTYPE_TAGGED, 0, &tagged, 1);
 	return GC_malloc_one_tagged(size_in_words << LOG_WORD_SIZE);
       }
       ((Type_Tag *)tagged.low)[0] = SKIP;
@@ -4173,7 +4213,7 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   if (naya >= tagged.high) {
     if (tagged.low < tagged.high)
       *(Type_Tag *)tagged.low = TAGGED_EOM;
-    new_page(MTYPE_TAGGED, 0, &tagged);
+    new_page(MTYPE_TAGGED, 0, &tagged, 1);
     return GC_malloc_one_tagged(size_in_words << LOG_WORD_SIZE);
   }
   tagged.low = naya;
@@ -4206,7 +4246,7 @@ static gcINLINE void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet 
   size_in_words = ((size_in_bytes + 3) >> LOG_WORD_SIZE);
 
   if (size_in_words >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {
-    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, mtype);
+    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, mtype, 1);
   }
 
 #if USE_FREELIST
@@ -4230,7 +4270,7 @@ static gcINLINE void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet 
     /* Make sure memory is 8-aligned */
     if (!((long)set->low & 0x4)) {
       if (set->low == set->high) {
-	new_page(mtype, 0, set);
+	new_page(mtype, 0, set, 1);
 	return malloc_untagged(size_in_words << LOG_WORD_SIZE, mtype, set);
       }
       (set->low)[0] = 0;
@@ -4249,7 +4289,7 @@ static gcINLINE void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet 
   if (naya >= set->high) {
     if (set->low < set->high)
       *(long *)set->low = UNTAGGED_EOM - 1;
-    new_page(mtype, 0, set);
+    new_page(mtype, 0, set, 1);
     return malloc_untagged(size_in_words << LOG_WORD_SIZE, mtype, set);
   }
   set->low = naya;
@@ -4273,7 +4313,7 @@ void *GC_malloc(size_t size_in_bytes)
 
 void *GC_malloc_allow_interior(size_t size_in_bytes)
 {
-  return malloc_bigblock(size_in_bytes, MTYPE_ARRAY);
+  return malloc_bigblock(size_in_bytes, MTYPE_ARRAY, 1);
 }
 
 void *GC_malloc_array_tagged(size_t size_in_bytes)
@@ -4302,6 +4342,31 @@ void *GC_malloc_atomic_uncollectable(size_t size_in_bytes)
 /*                                  misc                                      */
 /******************************************************************************/
 
+static void free_bigpage(MPage *page)
+{
+  long s;
+  unsigned long i, j;
+
+  page->type = 0;
+  page->flags = 0;
+
+  free_pages(page->block_start, page->u.size);
+	
+  s = page->u.size;
+  i = ((unsigned long)page->block_start >> MAPS_SHIFT);
+  j = (((unsigned long)page->block_start & MAP_MASK) >> MAP_SHIFT);
+  while (s > MPAGE_SIZE) {
+    s -= MPAGE_SIZE;
+    j++;
+    if (j == MAP_SIZE) {
+      j = 0;
+      i++;
+    }
+    mpage_maps[i][j].type = 0;
+    mpage_maps[i][j].flags = 0;
+  }
+}
+
 void GC_free(void *p)
 {
   MPage *page;
@@ -4311,9 +4376,6 @@ void GC_free(void *p)
   if ((page->flags & MFLAG_BIGBLOCK)
       && !(page->flags & MFLAG_CONTINUED)
       && (p == page->block_start)) {
-    long s;
-    unsigned long i, j;
-
     memory_in_use -= page->u.size;
 
     if (page->prev)
@@ -4324,24 +4386,8 @@ void GC_free(void *p)
       page->next->prev = page->prev;
     else
       last = page->prev;
-    page->type = 0;
-    page->flags = 0;
 
-    free_pages((void *)p, page->u.size);
-	
-    s = page->u.size;
-    i = ((unsigned long)p >> MAPS_SHIFT);
-    j = (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
-    while (s > MPAGE_SIZE) {
-      s -= MPAGE_SIZE;
-      j++;
-      if (j == MAP_SIZE) {
-	j = 0;
-	i++;
-      }
-      mpage_maps[i][j].type = 0;
-      mpage_maps[i][j].flags = 0;
-    }
+    free_bigpage(page);
   }
 }
 
@@ -4374,6 +4420,198 @@ unsigned long GC_get_stack_base(void)
 {
   return stack_base;
 }
+
+/******************************************************************************/
+/*                        malloc and free replacements                        */
+/******************************************************************************/
+
+#if DEFINE_MALLOC_FREE
+
+# define MALLOC_MIDDLE_SIZE (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)
+
+static MSet mallocfree_set;
+
+void *mallocfree_freelists[FREE_LIST_ARRAY_SIZE];
+
+void *malloc(size_t size)
+{
+  void **m, **naya;
+  long size_in_words = (size +  (WORD_SIZE - 1)) >> LOG_WORD_SIZE;
+  int pos;
+
+  if (size_in_words < 2)
+    size_in_words = 2; /* need at least 2 for freelist */
+
+  if (size_in_words >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE)) {
+    return malloc_bigblock(size_in_words << LOG_WORD_SIZE, MTYPE_MALLOCFREE, 0);
+  }
+
+#if ALIGN_DOUBLES
+  if (size_in_words & 0x1)
+    size_in_words++;
+#endif
+
+  if (mallocfree_freelists[size_in_words]) {
+    MPage *page;
+
+    m = mallocfree_freelists[size_in_words];
+    mallocfree_freelists[size_in_words] = ((void **)m)[1];
+
+    page = find_page(m);
+    pos = m - (void **)((long)m & MPAGE_START);
+
+    OFFSET_SET_SIZE_UNMASKED(page->u.offsets, pos, size_in_words);
+    while (--size_in_words) {
+      pos++;
+      OFFSET_SET_SIZE_UNMASKED(page->u.offsets, pos, MALLOC_MIDDLE_SIZE);
+    }
+
+    return m;
+  }
+
+  m = mallocfree_set.low;
+  naya = m + size_in_words;
+  if (naya >= mallocfree_set.high) {
+    new_page(MTYPE_MALLOCFREE, 0, &mallocfree_set, 0);
+    return malloc(size);
+  }
+  mallocfree_set.low = naya;
+
+  pos = m - (void **)mallocfree_set.malloc_page->block_start;
+
+  OFFSET_SET_SIZE_UNMASKED(mallocfree_set.malloc_page->u.offsets, pos, size_in_words);
+  while (--size_in_words) {
+    pos++;
+    OFFSET_SET_SIZE_UNMASKED(mallocfree_set.malloc_page->u.offsets, pos, MALLOC_MIDDLE_SIZE);
+  }
+
+  return m;
+}
+
+void free(void *p)
+{
+  MPage *page;
+  int pos;
+  long sz;
+
+  if (!p)
+    return;
+
+  page = find_page(p);
+  if (!page || (page->type != MTYPE_MALLOCFREE)) {
+    GCPRINT(GCOUTF, "Free of non-malloced pointer! %p\n", p);
+    return;
+  }
+  
+  if (page->flags & MFLAG_BIGBLOCK) {
+    if ((page->flags & MFLAG_CONTINUED) || (p != page->block_start)) {
+      GCPRINT(GCOUTF, "Free of in the middle of large malloced pointer! %p\n", p);
+      return;
+    }
+
+    free_bigpage(page);
+
+    return;
+  }
+
+  pos = (void **)p - (void **)page->block_start;
+
+  sz = OFFSET_SIZE(page->u.offsets, pos);
+
+  if (!sz) {
+    GCPRINT(GCOUTF, "Free of non-malloced to already-freed pointer! %p\n", p);
+    return;
+  }
+
+  if (sz == MALLOC_MIDDLE_SIZE) {
+    GCPRINT(GCOUTF, "Free in middle of malloced pointer! %p\n", p);
+    return;
+  }
+
+  OFFSET_SET_SIZE_UNMASKED(page->u.offsets, pos, 0);
+
+  ((int *)p)[0] = sz;
+  ((void **)p)[1] = mallocfree_freelists[sz];
+  mallocfree_freelists[sz] = p;
+
+  while (--sz) {
+    pos++;
+    OFFSET_SET_SIZE_UNMASKED(page->u.offsets, pos, 0);
+  }
+}
+
+void *realloc(void *p, size_t size)
+{
+  void *naya;
+  size_t oldsize;
+
+  if (p) {
+    MPage *page;
+    page = find_page(p);
+    if (!page || (page->type != MTYPE_MALLOCFREE)) {
+      GCPRINT(GCOUTF, "Realloc of non-malloced pointer! %p\n", p);
+      oldsize = 0;
+    } else {
+      if (page->flags & MFLAG_BIGBLOCK) {
+	if ((page->flags & MFLAG_CONTINUED) || (p != page->block_start)) {
+	  GCPRINT(GCOUTF, "Realloc of in the middle of large malloced pointer! %p\n", p);
+	  oldsize = 0;
+	} else
+	  oldsize = page->u.size;
+      } else {
+	int pos;
+	pos = (void **)p - (void **)page->block_start;
+	oldsize = OFFSET_SIZE(page->u.offsets, pos);
+	if (oldsize == MALLOC_MIDDLE_SIZE) {
+	  GCPRINT(GCOUTF, "Realloc in middle of malloced pointer! %p\n", p);
+	  oldsize = 0;
+	}
+      }
+    }
+  } else
+    oldsize = 0;
+
+  oldsize <<= LOG_WORD_SIZE;
+
+  naya = malloc(size);
+  if (oldsize > size)
+    oldsize = size;
+  memcpy(naya, p, oldsize);
+  if (p)
+    free(p);
+
+  return naya;
+}
+
+void *calloc(size_t n, size_t size)
+{
+  void *p;
+  long c;
+
+  c = n * size;
+  p = malloc(c);
+  memset(p, 0, c);
+
+  return p;
+}
+
+# if CHECKS
+static void check_not_freed(MPage *page, const void *p)
+{
+  if (page->flags & MFLAG_BIGBLOCK) {
+    /* Ok */
+  } else {
+    int pos;
+    pos = (void **)p - (void **)page->block_start;
+    if (!OFFSET_SIZE(page->u.offsets, pos)) {
+      GCPRINT(GCOUTF, "Mark of previously malloced? (now freed) pointer: %p\n", p);
+      CRASH(77);
+    }
+  }
+}
+# endif
+
+#endif
 
 /******************************************************************************/
 /*                             GC stat dump                                   */
@@ -4504,6 +4742,8 @@ void *print_out_pointer(const char *prefix, void *p)
     what = "ATOMIC";
   } else if (page->type == MTYPE_XTAGGED) {
     what = "XTAGGED";
+  } else if (page->type == MTYPE_MALLOCFREE) {
+    what = "MALLOCED";
   } else {
     what = "?!?";
   }
@@ -4560,7 +4800,11 @@ void GC_dump(void)
 	if (j && !(j & 63))
 	  GCPRINT(GCOUTF, "\n ");
 
-	if (maps[j].type) {
+	if (maps[j].type
+#if DEFINE_MALLOC_FREE
+	    && (maps[j].type != MTYPE_MALLOCFREE)
+#endif
+	    ) {
 	  int c;
 
 	  if (maps[j].flags & MFLAG_CONTINUED) 

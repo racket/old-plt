@@ -37,7 +37,7 @@
 static int defaultSize = 12;
 #endif
 #ifdef wx_msw
-static int defaultSize = 12;
+static int defaultSize = 10;
 #endif
 #ifdef wx_mac
 static int defaultSize = 12;

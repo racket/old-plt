@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.20 1998/12/01 19:01:53 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.21 1998/12/07 02:52:30 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -685,17 +685,12 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
   HFONT fnt = 0; 
   HFONT was = 0;
-  if (fontToUse && (fnt=fontToUse->GetInternalFont(dc))) 
-    was = (HFONT)SelectObject(dc,fnt) ; 
-
+  if (fontToUse && (fnt = fontToUse->GetInternalFont(dc))) 
+    was = (HFONT)SelectObject(dc, fnt); 
   else {
-
-	fnt = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0L);
-
-	if (fnt)
-
-	 was = (HFONT)SelectObject(dc, fnt);
-
+    fnt = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0L);
+    if (fnt)
+      was = (HFONT)SelectObject(dc, fnt);
   }
 
   SIZE sizeRect;
@@ -704,7 +699,7 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
   GetTextMetrics(dc, &tm);
 
   if (fontToUse && fnt && was) 
-    SelectObject(dc,was) ; 
+    SelectObject(dc,was); 
 
   wxwmReleaseDC(hWnd, dc);
 
@@ -2531,7 +2526,13 @@ extern void wxEntered(wxWindow *mw, int x, int y, int flags)
   glob.y = y;
   ::ClientToScreen(mw->GetHWND(), &glob);
   
-  join = current_mouse_wnd;
+  wxWindow *mouse_wnd = current_mouse_wnd;
+  void *mouse_context = current_mouse_context;
+
+  current_mouse_wnd = NULL;
+  current_mouse_context = NULL;
+
+  join = mouse_wnd;
   while (join) {
     for (imw = mw; imw; imw = el_PARENT(imw)) {
       if (join == imw)
@@ -2543,13 +2544,13 @@ extern void wxEntered(wxWindow *mw, int x, int y, int flags)
   }
   
   /* Leave old window(s) */
-  for (imw = current_mouse_wnd; imw != join; imw = el_PARENT(imw)) {
+  for (imw = mouse_wnd; imw != join; imw = el_PARENT(imw)) {
     pos = glob;
     ::ScreenToClient(imw->GetHWND(), &pos);
-    if (current_mouse_context == curr_context)
+    if (mouse_context == curr_context)
       wxDoOnMouseLeave(imw, pos.x, pos.y, flags);
     else
-      wxQueueLeaveEvent(current_mouse_context, imw, pos.x, pos.y, flags);
+      wxQueueLeaveEvent(mouse_context, imw, pos.x, pos.y, flags);
   }
   
   /* Enter new window(s) - outside to inside */
@@ -2563,9 +2564,11 @@ extern void wxEntered(wxWindow *mw, int x, int y, int flags)
     wxDoOnMouseEnter(imw, pos.x, pos.y, flags);
     join = imw;
   }
-  
-  current_mouse_wnd = mw;
-  current_mouse_context = curr_context;
+
+  if (!current_mouse_wnd) {
+    current_mouse_wnd = mw;
+    current_mouse_context = curr_context;
+  }
 }
 
 void wxWnd::OnMouseMove(int x, int y, UINT flags)
@@ -2576,7 +2579,12 @@ void wxWnd::OnMouseMove(int x, int y, UINT flags)
     wxResetCurrentCursor();
 
   /* Check mouse-position based stuff */
-  wxEntered(wx_window, x, y, flags);
+  if (wx_window)
+    wxEntered(wx_window, x, y, flags);
+  else {
+    /* Could be status line... */
+    /* We'd like to re-dispatch to the frame... */
+  }
 
   wxMouseEvent *_event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
   wxMouseEvent &event = *_event;

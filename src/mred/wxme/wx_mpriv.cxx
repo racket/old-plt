@@ -1290,9 +1290,10 @@ void wxMediaEdit::AdjustClickbacks(long start, long end,
     } else if (click->start >= end) {
       click->start += d;
       click->end += d;
-    } else if (click->start <= start && click->end > end)
-      click->end += d;
-    else if (click->start > start && click->end > end) {
+    } else if (click->start <= start && click->end >= end) {
+      if ((d < 0) || (click->end > end))
+	click->end += d;
+    } else if (click->start > start && click->end > end) {
       click->start = start;
       click->end += d;
     }

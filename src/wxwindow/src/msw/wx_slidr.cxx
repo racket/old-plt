@@ -105,9 +105,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     static_label = NULL;
 
   if (!(style & (wxHORIZONTAL << 2))) {
-    edit_value = wxwmCreateWindowEx(0, "EDIT", NULL,
-				    ES_AUTOHSCROLL | ES_LEFT | WS_VISIBLE | WS_CHILD |
-				    WS_TABSTOP | ES_READONLY,
+    edit_value = wxwmCreateWindowEx(0, STATIC_CLASS, NULL,
+				    STATIC_FLAGS,
 				    0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				    wxhInstance, NULL);
 #if CTL3D

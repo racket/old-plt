@@ -985,9 +985,9 @@
       (raise-error m
                    (case kind
                      ((dups) 
-                      (format "Modifier ~a appears multiple times in one declaration" m))
+                      (format "Modifier ~a may only appear once in a declaration, it occurs multiple times here." m))
                      ((access)
-                      "Declaration can only be one of public, private, or protected")
+                      "Declaration may only be one of public, private, or protected, more than one occurs here")
                      ((invalid-iface)
                       (format "Modifier ~a is not valid for interfaces" m))
                      ((invalid-class)
@@ -1000,9 +1000,9 @@
                       (format "Modifier ~a is not valid for constructors" m))
                      ((invalid-abstract)
                       (format "Modifier ~a is not valid for an abstract method" m))
-                     ((final-abstract) "Class cannot be final and abstract")
-                     ((final-volatile) "Field cannot be final and volatile")
-                     ((native-strictfp) "Method cannot be native and strictfp"))
+                     ((final-abstract) "Class declared final and abstract which is not allowed")
+                     ((final-volatile) "Field declared final and volatile which is not allowed")
+                     ((native-strictfp) "Method declared native and strictfp which is not allowed"))
                    m src)))
 
   ;dependence-error: symbol id src -> void
@@ -1010,7 +1010,7 @@
     (let ((n (id->ext-name name)))
       (raise-error n
                    (case kind
-                     ((immediate) (format "~a may not extend itself" n))
+                     ((immediate) (format "~a may not extend itself, which it does here" n))
                      ((cycle) 
                       (format "~a is illegally dependent on itself, potentially through other definitions" n)))
                    n src)))
@@ -1019,36 +1019,42 @@
   (define (extension-error kind name super src) 
     (let ((n (if name (id->ext-name name) name))
           (s (id->ext-name super)))
-      (raise-error s
-                   (case kind
-                     ((final) (format "Final class ~a may not be extended by ~a" s n))
-                     ((implement) (format "Interface ~a may not be implemented twice by this class" s))
-                     ((ifaces) (format "Interface ~a cannot be extended twice by this interface" s))
-                     ((iface-class) (format "Interface ~a may not extend class ~a" n s))
-                     ((class-iface) (format "Class ~a may not extend interface ~a" n s))
-                     ((implement-class) (format "Class ~a cannot implement class ~a" n s)))
-                   s src)))
+      (raise-error 
+       s
+       (case kind
+         ((final) 
+          (format "Final classes may never be extended, therefore final class ~a may not be extended by ~a" s n))
+         ((implement) 
+          (format "A class may only declare an implemented interface once, this class declares it is implementing ~a more than once" s))
+         ((ifaces) 
+          (format "An interface may only declare each extended interface once, ~a declares this interface more than once" s))
+         ((iface-class) 
+          (format "Interfaces may never extend classes, interface ~a has attemped to extend ~a, which is a class" n s))
+         ((class-iface) 
+          (format "Classes may never extend interfaces, class ~a has attempted to extend ~a, which is an interface" n s))
+         ((implement-class) 
+          (format "Only interfaces may be implemented, class ~a has attempted to implement class ~a" n s)))
+       s src)))
 
   ;method-error: symbol id (list type) string src bool -> void
   (define (method-error kind name parms class src ctor?)
     (let ((m-name (method-name->ext-name (id-string name) parms)))
-      (raise-error m-name
-                   (case kind
-                     ((illegal-abstract)
-                      (format "Abstract method ~a is not allowed in non-abstract class ~a" m-name class))
-                     ((repeated)
-                      (format "~a ~a has already been written in this class (~a)" 
-                              (if ctor? "Constructor" "Method") m-name class))
-                     ((inherit-conflict)
-                      (format "Inherited method ~a from ~a conflicts with another method of the same name"
-                              m-name class))
-                     ((conflict)
-                      (format "Method ~a conflicts with a method inherited from ~a" m-name class))
-                     ((not-implement)
-                      (format "Method ~a from ~a is not implemented" m-name class))
-                     ((class-name)
-                      (format "Method ~a from ~a has the same name as a class, which is not allowed" m-name class)))
-                   m-name src)))
+      (raise-error 
+       m-name
+       (case kind
+         ((illegal-abstract)
+          (format "Abstract method ~a is not allowed in non-abstract class ~a, abstract methods must be in abstract classes" m-name class))
+         ((repeated)
+          (format "~a ~a has already been written in this class (~a) and cannot be written again" 
+                  (if ctor? "Constructor" "Method") m-name class))
+         ((inherit-conflict)
+          (format "Inherited method ~a from ~a conflicts with another method of the same name" m-name class))
+         ((conflict)
+          (format "Method ~a conflicts with a method inherited from ~a" m-name class))
+         ((not-implement) (format "Method ~a from ~a should be implemented and was not" m-name class))
+         ((class-name)
+          (format "Method ~a from ~a has the same name as a class, which is not allowed" m-name class)))
+       m-name src)))
 
   ;not-ctor-error: string string src -> void
   (define (not-ctor-error meth class src)
@@ -1062,10 +1068,7 @@
   ;beginner-ctor-error: id src -> void
   (define (beginner-ctor-error class src) 
     (let ((n (id->ext-name class)))
-      (raise-error n
-                   (format "Class ~a must have a constructor"
-                           n)
-                   n src)))
+      (raise-error n (format "Class ~a must have a constructor" n) n src)))
 
   ;default-ctor-error symbol id string src symbol -> void
   (define (default-ctor-error kind name parent src level)
@@ -1075,8 +1078,7 @@
                      ((private)
                       (if (memq level '(beginner intermediate))
                           (format "Class ~a cannot extend ~a" n parent)
-                          (format "Class ~a cannot access the default constructor of ~a, which is private"
-                                  n parent)))
+                          (format "Class ~a cannot access the default constructor of ~a, which is private" n parent)))
                      ((non-accessible)
                       (if (memq level '(beginner intermediate))
                           (format "Class ~a cannot extend ~a" n parent)
@@ -1103,10 +1105,12 @@
   (define (override-return-error name parms class ret old-ret src)
     (let ((name (string->symbol name))
           (m-name (method-name->ext-name name parms)))
-      (raise-error name
-                   (format "Method ~a of class ~a overrides an inherited method, but return has changed from ~a to ~a"
-                          m-name (car class) (type->ext-name old-ret) (type->ext-name ret))
-                   name src)))
+      (raise-error 
+       name
+       (format "Method ~a of class ~a overrides an inherited method, in overriding the return type must remain the same~n
+                ~a's return has changed from ~a to ~a"
+               m-name (car class) m-name (type->ext-name old-ret) (type->ext-name ret))
+       name src)))
   
   ;override-access-error symbol symbol string (list type) (list string) string src -> void
   (define (override-access-error kind level name parms class parent src)
@@ -1116,18 +1120,17 @@
                    (case kind
                      ((final) 
                       (if (eq? level 'full)
-                          (format "Method ~a in ~a attempts to override final method from ~a"
+                          (format "Method ~a in ~a attempts to override final method from ~a, final methods may not be overridden"
                                   m-name (car class) parent)
-                          (format "Method ~a from ~a cannot be overridden in ~a"
-                                  m-name parent (car class))))
+                          (format "Method ~a from ~a cannot be overridden in ~a" m-name parent (car class))))
                      ((static)
-                      (format "Method ~a in ~a attempts to override static method from ~a"
+                      (format "Method ~a in ~a attempts to override static method from ~a, which is not allowed"
                               m-name (car class) parent))
                      ((public) 
-                      (format "Method ~a in ~a must be public to override public method from ~a"
-                              m-name (car class) parent))
+                      (format "Method ~a in ~a must be public to override public method from ~a, ~a is not public" 
+                              m-name (car class) parent m-name))
                      ((protected) 
-                      (format "Method ~a in ~a must be public or protected to override protected method from ~a"
+                      (format "Method ~a in ~a must be public or protected to override protected method from ~a, it is neither"
                               m-name (car class) parent))
                      ((package) 
                       (format "Method ~a in ~a must be public, or have no access modifier, to override method from ~a"
@@ -1138,7 +1141,7 @@
   (define (repeated-parm-error parm meth class)
     (let ((name (id->ext-name (field-name parm))))
       (raise-error name
-                   (format "Method ~a in ~a has multiple parameters with the name ~a"
+                   (format "Method parameters may not share names, ~a in ~a cannot have multiple parameters with the name ~a"
                            meth (car class) name)
                    name (id-src (field-name parm)))))
 
@@ -1147,8 +1150,10 @@
     (let ((n (id->ext-name name)))
       (raise-error n
                    (case kind
-                     ((field) (format "Multiple fields have been declared with the name ~a" n))
-                     ((method) (format "~a has been declared as a field and a method, which is not allowed" n))
+                     ((field) 
+                      (format "Each field in a class must have a unique name. Multiple fields have been declared with the name ~a" n))
+                     ((method) 
+                      (format "~a has been declared as a field and a method, which is not allowed" n))
                      ((class) 
                       (format "~a has been declared as a field and a ~a, which is not allowed" n
                               (if (eq? level 'intermediate) "class or interface" "class"))))
@@ -1172,7 +1177,7 @@
         (raise-error (string->symbol (car path))
                      (case kind
                        ((file) (format "Class ~a is not known" (path->ext path)))
-                       ((dir) (format "Directory to search ~a is not known" (path->ext path))))
+                       ((dir) (format "Directory to search, ~a, is not known" (path->ext path))))
                      (string->symbol (car path))
                      src)))
 
@@ -1186,8 +1191,7 @@
   ;throws-error id src -> void
   (define (throws-error t src)
     (raise-error 'throws
-                 (format "Thrown class must be a subtype of Throwable: Given ~a" 
-                         (id->ext-name t))
+                 (format "Thrown class must be a subtype of Throwable: Given ~a" (id->ext-name t))
                  'throws src))
         
   (define build-info-location (make-parameter #f))

@@ -564,19 +564,18 @@
   (define (method-error kind method src)
     (raise-error method
                  (case kind
-                   ((no-reachable)
-                    (format "method ~a does not have a reachable return" method))
+                   ((no-reachable) (format "method ~a does not have a reachable return" method))
                    ((abstract)
-                    (format "abstract method ~a has an implementation. A ';' should come after the header"
+                    (format "abstract method ~a has an implementation, abstract methods maynot have implementations.~n
+                             Either a ';' should come after the header, or the method should not be abstract"
                             method))
-                   ((native)
-                    (format "native method ~a has an implementation." method)))
+                   ((native) (format "native method ~a has an implementation which is not allowed" method)))
                  method src))
   
   ;var-init-error: symbol type src -> void
   (define (var-init-error name dec-type src)
     (raise-error name
-                 (format "~a declared to be of type ~a, given an array" 
+                 (format "Expected ~a to be of declared type ~a, given an array" 
                          name (type->ext-name dec-type))
                  name src))
 
@@ -584,17 +583,16 @@
   (define (array-init-error dec-type given src)
     (let ((d (type->ext-name dec-type))
           (g (type->ext-name given)))
-      (raise-error 
-       g
-       (format "Error initializing declared array of ~a, given element with incompatible type ~a"
-               d g)
-       d src)))
+      (raise-error g
+                   (format "Error initializing declared array of ~a, given element with incompatible type ~a"
+                           d g)
+                   d src)))
 
   ;field-not-set-error: id string symbol src
   (define (field-not-set-error name class kind src)
     (let ((n (id->ext-name name)))
       (raise-error n
-                   (format "Field ~a from ~a must be set in the ~a"
+                   (format "Field ~a from ~a must be set in the ~a and is not"
                            n
                            class
                            (case kind
@@ -686,6 +684,7 @@
                       (break-src statement)
                       in-loop?
                       in-switch?
+                      level
                       env))
         ((continue? statement)
          (check-continue (continue-label statement)
@@ -828,14 +827,14 @@
          (check-s (car stmts) block-env)
          (loop (cdr stmts) block-env (lambda (e) (check-e e block-env)))))))
       
-  ;check-break: (U id #f) src env bool bool -> void
-  (define (check-break label src env in-loop? in-switch?)
+  ;check-break: (U id #f) src bool bool symbol env-> void
+  (define (check-break label src in-loop? in-switch? level env)
     (cond
       (label
        (unless (lookup-label (id-string label) env)
          (illegal-label 'break (id-string label) (id-src label))))
       ((or (not in-loop?) (not in-switch?))
-       (break-error src))))
+       (break-error src level))))
 
   ;check-continue: (U id #f) src env bool -> void
   (define (check-continue label src env in-loop?)
@@ -880,21 +879,22 @@
   (define (return-error kind given expected src)
     (let ((g (type->ext-name given))
           (e (type->ext-name expected)))
-      (raise-error 'return
-                   (case kind
-                     ((not-equal)
-                      (format "type of returned expression must be equal to or a subclass of ~a: given ~a"
-                              e g))
-                     ((void) "No value should be returned from void method.")
-                     ((val)
-                      (format "Expected a return value assignable to ~a. No value was given" e)))
-                     'return src)))
+      (raise-error 
+       'return
+       (case kind
+         ((not-equal)
+          (format "type of returned expression must be equal to or a subclass of the declared return ~a: given ~a which does not meet the criteria"
+                  e g))
+         ((void) "No value should be returned from void method, found a returned value")
+         ((val)
+          (format "Expected a return value assignable to ~a. No value was given" e)))
+       'return src)))
 
   ;illegal-redefinition: id src -> void
   (define (illegal-redefinition field src)
     (let ((f (id->ext-name field)))
       (raise-error f
-                   (format "Variable ~a already exists. Another name must be chosen" f)
+                   (format "Variable name ~a has already been used and may not be reused. Another name must be chosen" f)
                    f src)))
   
   ;variable-type-error: id type type src -> void
@@ -902,7 +902,7 @@
     (let ((f (id->ext-name field)))
       (raise-error 
        f
-       (format "Variable ~a declared to be ~a, which is incompatible with the initial value type of ~a"
+       (format "Variable ~a was declared to be ~a, which is incompatible with the initial value type of ~a"
                f (type->ext-name expt) (type->ext-name given))
        f src)))
 
@@ -935,7 +935,9 @@
                  
   ;break-error: src -> void
   (define (break-error src)
-    (raise-error 'break "break must be in either a loop or a switch"
+    (raise-error 'break (if (eq? level 'full) 
+                            "break must be in either a loop or a switch"
+                            "break must be in a loop")
                  'break src))
   (define (continue-error src)
     (raise-error 'continue "continue must be in a loop" 'continue src))
@@ -1665,12 +1667,9 @@
       (raise-error
        op
        (case side
-         ((right) (format "Right hand side of ~a should be of type ~a, but given ~a" 
-                          op ext-out rt))
-         ((left) (format "Left hand side of ~a should be of type ~a, but given ~a"
-                         op ext-out lt))
-         (else
-          (format "~a expects arguments of type ~a, but given ~a and ~a" op ext-out lt rt)))
+         ((right) (format "Right hand side of ~a should be of type ~a, but given ~a" op ext-out rt))
+         ((left) (format "Left hand side of ~a should be of type ~a, but given ~a" op ext-out lt))
+         (else (format "~a expects arguments of type ~a, but given ~a and ~a" op ext-out lt rt)))
        op src)))
   
   ;bin-op-equality-error symbol symbol type type src -> void
@@ -1681,11 +1680,11 @@
        op
        (case type
          ((right) 
-          (format "Right hand side of ~a should be assignable to ~a. Given ~a" op lt rt))
+          (format "Right hand side of ~a should be assignable to ~a. Given ~a which is not" op lt rt))
          ((left) 
-          (format "Left hand side of ~a should be assignable to ~a. Given ~a" op rt lt))
+          (format "Left hand side of ~a should be assignable to ~a. Given ~a which is not" op rt lt))
          ((both) 
-          (format "~a expects its arguments to be assignable to each other, ~a and ~a cannot" op lt rt))          
+          (format "~a expects its arguments to be assignable to each other, ~a and ~a cannot" op lt rt))
          (else 
           (format "~a expects its arguments to be equivalent types, given non-equivalent ~a and ~a" 
                   op lt rt)))
@@ -1721,12 +1720,14 @@
   ;variable-not-found-error: symbol id src -> void
   (define (variable-not-found-error kind var src)
     (let ((name (id->ext-name var)))
-      (raise-error name
-                   (case kind
-                     ((not-found) (format "reference to undefined identifier ~a" name))
-                     ((class-name) (format "class ~a used as variable" name))
-                     ((method-name) (format "method ~a used as variable" name)))
-                   name src)))
+      (raise-error 
+       name
+       (case kind
+         ((not-found) (format "reference to undefined identifier ~a" name))
+         ((class-name) (format "class named ~a cannot be used as a variable, which is how it is used here" name))
+         ((method-name) (format "method named ~a cannot be used as a variable, which is how it is used here~n
+                                 A call to a method should be followed by () and any arguments to the method" name)))
+       name src)))
   
   ;field-lookup-error: symbol symbol type src -> void
   (define (field-lookup-error kind field exp src)
@@ -1734,30 +1735,29 @@
       (raise-error
        field
        (case kind
-         ((not-found)
-          (format "field ~a not found for object with type ~a" field t))
+         ((not-found) (format "field ~a not found for object with type ~a" field t))
          ((class-name)
-          (format "Class ~a is being erroneously accessed as a field" field))
+          (format "Class named ~a is being erroneously accessed as a field" field))
          ((method-name)
-          (format "Method ~a is being erroneously accessed as a field for class ~a" field t))
+          (format "Method ~a is being erroneously accessed as a field for class ~a~n
+                   A call to a method chould be followed by () and any arguments to the method" field t))
          ((array)
           (format "~a only has a length field, attempted to access ~a" t field))
          ((primitive)
-          (format "attempted to access field ~a on ~a, this type does not have fields" field t)))
+          (format "attempted to access field ~a on ~a, this value does not have fields" field t)))
        field src)))
 
   ;unusable-var-error: symbol src -> void
   (define (unusable-var-error name src)
-    (raise-error name
-                 (format "field ~a cannot be used in this class, as two or more parents contain a field with this name"
-                         name)
-                 name src))
+    (raise-error 
+     name
+     (format "field ~a cannot be used in this class, as two or more parents contain a field with this name" name)
+     name src))
   
   ;restricted-field-access: id (list string) src -> void
   (define (restricted-field-access field class src)
     (let ((n (id->ext-name field)))
-      (raise-error n
-                   (format "field ~a from ~a may not be used" n (car class))
+      (raise-error n (format "field ~a from ~a may not be used" n (car class))
                    n src)))
   
   ;;special-name errors
@@ -1765,9 +1765,7 @@
   (define (special-error src interactions?)
     (raise-error 'this 
                  (format "use of 'this' is not allowed in ~a"
-                         (if interactions? 
-                             "the interactions window"
-                             "static code"))
+                         (if interactions? "the interactions window" "static code"))
                  'this src))
   
   ;;Call errors
@@ -1777,7 +1775,8 @@
     (let ((n (id->ext-name name))
           (t (type->ext-name exp)))
       (raise-error n
-                   (format "attempted to call method ~a on ~a, only ~a types have methods"
+                   (format "attempted to call method ~a on ~a which does not have methods.~n
+                            Only values with ~a types have methods"
                            n t
                            (case level 
                              ((beginner) "class")
@@ -1791,16 +1790,18 @@
           (n (id->ext-name name)))
       (raise-error n
                    (case sub-kind
-                     ((not-found) (format "~a does not contain a method ~a"
+                     ((not-found) (format "~a does not contain a method named ~a"
                                           (case kind
                                             ((class) t)
                                             ((super) "This class's super class")
                                             ((this) "The current class"))
                                           n))
-                     ((class-name) 
-                      (format "Class ~a is being used as a method, to create an instance of ~a use 'new'" n n))
+                     ((class-name)
+                      (format "Class ~a is inappropriately being used as a method.~n
+                               Since parenthesis typically follow a class name in creating an instance of the class, perhaps 'new' was forgotten"
+                              n))
                      ((field-name)
-                      (format "Field ~a is being used as a method" n)))                     
+                      (format "Field ~a is being inappropriately used as a method, parentheses are not used in interacting with a field" n)))                     
                    n src)))
   
   ;restricted-method-call id (list string) src -> void
@@ -1815,17 +1816,14 @@
     (let ((t (type->ext-name exp))
           (n (id->ext-name name)))
       (raise-error n
-                   (format "Constructor ~a from ~a cannot be used as a method"
-                           n t)
+                   (format "Constructor ~a from ~a cannot be used as a method" n t)
                    n src)))
   
   (define (illegal-ctor-call name src level)
     (let ((n (string->symbol name)))
       (raise-error n (format "calls to ~a may only occur in ~a"
                              n
-                             (if (memq level `(full advanced))
-                                 "other constructors"
-                                 "the constructor"))
+                             (if (memq level `(full advanced)) "other constructors" "the super constructor"))
                    n src)))
 
   ;method-arg-error symbol (list type) (list type) id type src -> void
@@ -1853,10 +1851,8 @@
                  (case kind
                    ((abs) (format "Abstract methods may not be called. ~a from ~a is abstract"
                                   n t))
-                   ((pro) (format "Protected method ~a from ~a may not be called here" 
-                                  n t))
-                   ((pri) (format "Private method ~a from ~a may not be called here"
-                                  n t)))
+                   ((pro) (format "Protected method ~a from ~a may not be called here" n t))
+                   ((pri) (format "Private method ~a from ~a may not be called here" n t)))
                  n src)))
 
   ;call-arg-error: symbol id (list type) type src -> void
@@ -1898,8 +1894,8 @@
     (let ((cl (type->ext-name type)))
       (raise-error cl
                    (case kind
-                     ((abstract) (format "Class ~a is abstract and may not be constructed" cl))
-                     ((interface) (format "Interface ~a is an interface: only classes may be constructed" cl)))
+                     ((abstract) (format "Instances cannot be made of abstract classes, class ~a is abstract" cl))
+                     ((interface) (format "Instances cannot be made of interfaces, ~a is an interface" cl)))
                    cl src)))
 
   ;ctor-arg-error symbol (list type) (list type) type src -> void
@@ -1977,7 +1973,7 @@
   ;condition-mismatch-error: type type src -> void
   (define (condition-mismatch-error then else src)
     (raise-error '?
-                 (format "? requires that the then and else branches have equivalent types: given ~a and ~a"
+                 (format "? requires that the then and else branches have equivalent types: given ~a and ~a which are not equivalent"
                          (type->ext-name then) (type->ext-name else))
                  '? src))
     
@@ -1986,7 +1982,7 @@
   (define (illegal-array-access type src)
     (let ((n (type->ext-name type)))
       (raise-error n
-                   (format "Expression of type ~a accessed as if it were an array" n)
+                   (format "Expression of type ~a accessed as if it were an array, only arrays may be accessed with [N]" n)
                    n src)))
   
   ;array-access-error: type type src -> void
@@ -2011,10 +2007,12 @@
     (raise-error 'cast
                  (case kind
                    ((from-prim) 
-                    (format "Illegal cast from primitive, ~a, to class or interface ~a"
+                    (format "Illegal cast from primitive, ~a, to class or interface ~a~n
+                             Non-class or interface types may not be cast to class or interface types"
                             (type->ext-name exp) (type->ext-name cast)))
                    ((from-ref)
-                    (format "Illegal cast from class or interface ~a to primitive, ~a"
+                    (format "Illegal cast from class or interface ~a to primitive, ~a~n
+                             Class or interface types may not be cast to non-class or interface types"
                             (type->ext-name exp) (type->ext-name cast))))
                  'cast src))
   
@@ -2030,16 +2028,17 @@
           (format "instanceof requires that its expression be a subtype of the given type: ~a is not a subtype of ~a"
                   e i))
          ((not-class)
-          (format "instance of requires the expression to be compared to a class or interface: Given ~a" i))
+          (format "instanceof requires its expression to be compared to a class or interface: Given ~a which is neither a class or interface"
+                  i))
          ((not-ref)
-          (format "instance of requires the expression, compared to ~a, to be a class or interface: Given ~a"
+          (format "instanceof requires the expression, compared to ~a, to be a class or interface: Given ~a"
                   i e)))
        'instanceof src)))
   
   ;;Assignment errors
   ;illegal-assignment: src -> void
   (define (illegal-assignment src)
-    (raise-error '= "Assignment is only allowed in the constructor" '= src)) 
+    (raise-error '= "Assignment is only allowed in the constructor" '= src))
 
   (define (assignment-error op ltype rtype src)
     (raise-error op
@@ -2048,7 +2047,7 @@
                  op src))
   
   (define (illegal-beginner-assignment)
-    "Assignment expressions are only allowed in constructors")
+    "Assignment statements are only allowed in constructors")
   (define (assignment-convert-fail op d ltype rtype)
     (format "~a requires that the right hand type be equivalent to or a subtype of ~a: given ~a" 
             op ltype rtype))

@@ -1019,4 +1019,9 @@
                                    (loop (add1 j)))))
                           (else null)))))
                    (loop (add1 hit)))))))))
+  
+  (provide get-version-number)
+  (define (get-version-number)
+    (let ((x (regexp-match "^([0-9]*)\\.([0-9*])" (get-string 'version))))
+      (string->number (string-append (cadr x) (caddr x)))))
   )

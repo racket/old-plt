@@ -262,7 +262,8 @@ process-selection parses the contents of a gl-vector from the format used by
 glSelectBuffer.  The second argument should be the number of hits as returned
 by glRenderMode.
 
-
+get-version-number: -> int
+Returns the version number as an integer: 10, 11, 12, 13, 14, 15, or 20.
 
 Function indexes:
 
@@ -319,6 +320,7 @@ gen-lists
 gen-queries
 get-error
 get-string
+get-version-number
 hint
 index
 index-mask

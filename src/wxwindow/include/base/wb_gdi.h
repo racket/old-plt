@@ -82,6 +82,7 @@ class wxbFont: public wxObject
   inline int GetSmoothing(void) { return smoothing; }
   inline int GetSizeInPixels(void) { return size_in_pixels; }
   inline int CanRotate(void) { return TRUE; }
+  inline double GetRotation(void) { return rotation; }
 };
 
 #include "../../../wxcommon/FontDirectory.h"
@@ -285,10 +286,10 @@ class wxFontList: public wxObject
   void AddFont(wxFont *font);
   wxFont *FindOrCreateFont(int PointSize, int FamilyOrFontId, int Style, int Weight, 
 			   Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT,
-			   Bool sip = FALSE);
+			   Bool sip = FALSE, double rotation = 0.0);
   wxFont *FindOrCreateFont(int PointSize, const char *Face, int Family, int Style, 
 			   int Weight, Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT,
-			   Bool sip = FALSE); 
+			   Bool sip = FALSE, double rotation = 0.0); 
 };
 
 class wxColourDatabase: public wxList

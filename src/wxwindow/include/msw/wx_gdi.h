@@ -20,6 +20,7 @@
 class wxFont: public wxbFont
 {
  public:
+  wxFont *redirect;
   HFONT screen_cfont;
   HFONT general_cfont;
   wxList *rotated_font;
@@ -29,15 +30,18 @@ class wxFont: public wxbFont
   HFONT c_f_cfont;
 
   void *glyph_cache;
+  void *size_cache;
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
-	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, double Rotation = 0.0);
+	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, double Rotation = 0.0,
+	 Bool redirect_ok = TRUE);
   wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
+	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE,
+	 Bool redirect_ok = TRUE);
   ~wxFont(void);
   Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined,
-	      int smoothing, Bool sip, double Rotation);
+	      int smoothing, Bool sip, double Rotation, Bool redirect_ok);
   HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, double angle = 0.0);
   inline HFONT GetInternalFont(HDC dc, double angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
 

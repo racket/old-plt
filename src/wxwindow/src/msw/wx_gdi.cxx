@@ -52,21 +52,23 @@ wxFont::wxFont(void)
 {
   COUNT_P(font_count);
 
-  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT, FALSE, 0.0);
+  Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE, wxSMOOTHING_DEFAULT, FALSE, 0.0, TRUE);
 }
 
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip, double Rotation):
+wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip, 
+	       double Rotation, Bool redirect_ok):
   wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing, sip, Rotation)
 {
   COUNT_P(font_count);
 
-  Create(PointSize, Family, Style, Weight, Underlined, Smoothing, sip, Rotation);
+  Create(PointSize, Family, Style, Weight, Underlined, Smoothing, sip, Rotation, redirect_ok);
 }
 
-wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip):
+wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined, 
+	       int Smoothing, Bool sip, Bool redirect_ok):
   wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing, sip)
 {
   int id;
@@ -75,11 +77,11 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
 
-  Create(PointSize, id, Style, Weight, Underlined, Smoothing, sip, 0.0);
+  Create(PointSize, id, Style, Weight, Underlined, Smoothing, sip, 0.0, redirect_ok);
 }
 
 Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing, 
-		    Bool sip, double Rotation)
+		    Bool sip, double Rotation, Bool redirect_ok)
 {
   fontid = FontId;
   family = wxTheFontNameDirectory->GetFamily(fontid);
@@ -95,6 +97,11 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
 
   screen_cfont = NULL;
   general_cfont = NULL;
+
+  if (redirect_ok) {
+    redirect = wxTheFontList->FindOrCreateFont(PointSize, FontId, Style, Weight, Underlined,
+					       Smoothing, sip, Rotation);
+  }
 
   return TRUE;
 }
@@ -129,6 +136,8 @@ wxFont::~wxFont()
     }
     DELETE_OBJ substitute_font;
   }
+
+  redirect = NULL;
 
   COUNT_M(font_count);
 }
@@ -242,6 +251,9 @@ Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
 {
   GlyphFindData gfd;
 
+  if (redirect)
+    return redirect->GlyphAvailable(c, hdc, screen_font);
+
   gfd.hdc = hdc;
   gfd.c = c;
   gfd.face = NULL;
@@ -252,6 +264,9 @@ Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
 Bool wxFont::GlyphAvailableNow(int c, HDC hdc, int screen_font)
 {
   Bool avail;
+
+  if (redirect)
+    return redirect->GlyphAvailableNow(c, hdc, screen_font);
 
   if (screen_font && glyph_cache) {
     Scheme_Hash_Table *ht;
@@ -283,6 +298,9 @@ Bool wxFont::ScreenGlyphAvailable(int c, Bool for_label)
   HDC hdc;
   Bool r;
 
+  if (redirect)
+    return redirect->ScreenGlyphAvailable(c, for_label);
+
   hdc = ::GetDC(NULL);
 
   if (for_label) {
@@ -305,6 +323,9 @@ wxFont *wxFont::Substitute(int c, HDC dc, Bool screen_font)
 {
   wxFont *sub;
   wxNode *node;
+
+  if (redirect)
+    return redirect->Substitute(c, dc, screen_font);
 
   if (screen_font) {
     if (!substitute_font) {
@@ -360,6 +381,9 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, double angle)
   Bool ff_underline = underlined;
   int ff_qual;
   int orientation;
+
+  if (redirect)
+    return redirect->BuildInternalFont(dc, screenFont, angle);
 
   if (angle != rotation) {
     int int_angle = (int)(angle * 1800 / 3.14159);

@@ -1665,16 +1665,64 @@ static int substitute_font(wchar_t *ustring, int d, int alen, wxFont *font, HDC 
   return alen;
 }
 
+static void wxTextSize(wxFont *font, wchar_t *ustring, int d, int alen, double *ow, double *oh)
+{
+  /* Gets the text size, caching the result in font when alen == 1 */ 
+
+  if ((alen == 1) && is_nt()) {
+    Scheme_Hash_Table *ht;
+    double *sz;
+
+    if (font) {
+      if (font->size_cache) {
+	ht = (Scheme_Hash_Table *)font->size_cache;
+      } else {
+	ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	font->size_cache = ht;
+      }
+      
+      sz = (double *)scheme_hash_get(ht, scheme_make_integer(ustring[d]));
+    } else {
+      ht = NULL;
+      sz = NULL;
+    }
+
+    if (sz) {
+      *ow = sz[0];
+      *oh = sz[1];
+    } else {
+      ABCFLOAT cw;
+      SIZE sizeRect;
+      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
+      *ow = (cw.abcfA + cw.abcfB + cw.abcfC);
+      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+      *oh = (double)sizeRect.cy;
+
+      if (ht) {
+	sz = (double *)scheme_malloc_atomic(sizeof(double) * 2);
+	sz[0] = *ow;
+	sz[1] = *oh;
+	scheme_hash_set(ht, scheme_make_integer(ustring[d]), sz);
+      }
+    }
+  } else {
+    SIZE sizeRect;
+    GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+    *ow = (double)sizeRect.cx;
+    *oh = (double)sizeRect.cy;
+  }
+}
+
 void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
   HDC dc;
   DWORD old_background;
-  double w, h, ws, hs;
+  double w, h, ws, hs, ow, oh;
   wchar_t *ustring;
   long len, alen;
-  SIZE sizeRect;
   double oox, ooy;
   int fam, reset = 0;
+  wxFount *theFont;
 
   dc = ThisDC();
 
@@ -1696,6 +1744,10 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     fam = wxDEFAULT;
   }
   
+  theFont = font;
+  if (theFont->redirect)
+    theFont = theFont->redirect;
+
   ustring = convert_to_drawable_format(text, d, ucs4, &len, fam == wxSYMBOL);
 
   if (current_text_foreground->Ok())
@@ -1733,19 +1785,11 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 		    MS_YLOG2DEVREL(y + h) + ooy + canvas_scroll_dy);
 
     (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
-    
-    if ((alen == 1) && is_nt()) {
-      ABCFLOAT cw;
-      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-      w += (cw.abcfA + cw.abcfB + cw.abcfC) * ws;
-      if (angle != 0.0) {
-	GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-	h += ((double)sizeRect.cx) * hs;
-      }
-    } else {
-      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-      w += ((double)sizeRect.cx) * ws;
-      h += ((double)sizeRect.cx) * hs;
+
+    if (alen < len) {
+      wxTextSize(screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
+      w += ow * ws;
+      h += ow * hs;
     }
 
     len -= alen;
@@ -1997,10 +2041,9 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 {
   wxFont *oldFont = NULL;
   HDC dc;
-  SIZE sizeRect;
   TEXTMETRIC tm;
   long len, alen;
-  double tx, ty;
+  double tx, ty, ow, oh;
   wchar_t *ustring;
   int once = 1, fam, reset = 0;
 
@@ -2011,7 +2054,9 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
     theFont = font;
     SetFont(font);
   }
-  fam = font->GetFamily();
+  if (theFont->redirect)
+    theFont = theFont->redirect;
+  fam = theFont->GetFamily();
 
   dc = ThisDC();
 
@@ -2043,18 +2088,11 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
     alen = substitute_font(ustring, d, alen, theFont, dc, screen_font, 0.0, &reset);
 
-    if ((alen == 1) && is_nt()) {
-      ABCFLOAT cw;
-      GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
-      tx += cw.abcfA + cw.abcfB + cw.abcfC;
-      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-    } else {
-      GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
-      if (len)
-	tx += sizeRect.cx;
-    }
-    if (sizeRect.cy > ty)
-      ty = sizeRect.cy;
+    wxTextSize(screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
+
+    tx += ow;
+    if (oh > ty)
+      ty = oh;
 
     len -= alen;
     d += alen;

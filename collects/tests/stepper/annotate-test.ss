@@ -1,4 +1,3 @@
-(current-library-collection-paths '("/Users/clements/hot/plt/collects"))
 (require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
 
@@ -10,7 +9,17 @@
 ; check-mark : test the validity of a mark.  the symbols in 'binding-ids' must be included. the symbols
 ; in excluded-ids must not appear in the list.  If binding-ids is 'all, then no symbols other than those
 ; in the binding-ids may appear.
-; (syntax-object (listof symbol) (union (listof symbol) 'all) -> void)
+; 
+; note: cheap hack: if a string is supplied rather than a symbol in binding-ids, it passes if the string
+; is a prefix of (symbol->string) of one of the present symbols.
+; (syntax-object (listof (union symbol string)) (union (listof symbol) 'all) -> void)
+
+(define (binding-match? input actual)
+  (if (string? input)
+      (and (>= (string-length (symbol->string actual)) (string-length input))
+           (string=? (substring (symbol->string actual) 0 (string-length input)) input))
+      (eq? input actual)))
+
 (define (check-mark mark-stx binding-ids excluded-ids) 
   (let* ([bindings (syntax-case mark-stx (lambda )
                      [(lambda ()
@@ -23,10 +32,11 @@
                               [(null? (cdr binding-list)) 
                                (error 'check-mark "odd number of elements in binding list: ~a" (syntax-object->datum (syntax bindings)))]
                               [else
-                               (when (not (eq? (car binding-list)
-                                               (syntax-case (cadr binding-list) (quote-syntax)
-                                                 [(quote-syntax stx)
-                                                  (syntax stx)])))
+                               (when (not (module-identifier=?
+                                           (car binding-list)
+                                           (syntax-case (cadr binding-list) (quote-syntax)
+                                             [(quote-syntax stx)
+                                              (syntax stx)])))
                                  (error 'check-mark "binding pair does not match: ~a, ~a" (syntax-object->datum (car binding-list))
                                         (syntax-object->datum (cadr binding-list))))
                                (when (not (identifier? (car binding-list)))
@@ -39,12 +49,16 @@
           (error 'check-mark "binding ~a appears twice in binding-list: ~a" (car remaining) bindings))
         (loop (cdr remaining))))
     (for-each (lambda (desired)
-                (unless (memq desired bindings)
+                (unless (ormap (lambda (binding)
+                                 (binding-match? desired binding))
+                               bindings)
                   (error 'check-mark "binding ~a not contained in binding-list: ~a" desired bindings)))
               binding-ids)
     (if (eq? excluded-ids 'all)
         (for-each (lambda (binding)
-                    (unless (memq binding binding-ids)
+                    (unless (ormap (lambda (binding-id)
+                                     (binding-match? binding-id binding))
+                                   binding-ids)
                       (error 'check-mark "binding ~a does not appear in desired list: ~a" binding binding-ids)))
                   bindings)
         (for-each (lambda (not-desired)
@@ -67,7 +81,9 @@
      (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) 'all) exn:user?) ; bad 'all
      (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '(c))
      (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '(b c)) exn:user?) ; b is there
-     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '()))])
+     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '())
+     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label arg0-436 (quote-syntax arg0-436) c (quote-syntax c)))) '("arg0" c) '())
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label arg0-436 (quote-syntax arg0-436) c (quote-syntax c)))) '("djs") '()) exn:user?))])
 
 ; syntax-symbol=? : compares a list of symbols to a given symbol (or to each other if sym = #f)
 ; (union symbol #f) (listof syntax-object) -> boolean
@@ -450,22 +466,22 @@
                       (begin
                         pre-break-0
                         (begin
-                          (set! var-0 (with-continuation-mark key-1 mark-1 (begin break-1 sym-1)))
-                          (set! var-1 (with-continuation-mark key-2 mark-2 (begin break-2 sym-2)))
+                          (set! var-0 (with-continuation-mark key-1 mark-1 sym-1))
+                          (set! var-1 (with-continuation-mark key-2 mark-2 sym-2))
                           (begin 
                             break-0
                             (with-continuation-mark key-3 mark-3 (sym-3 sym-4)))))))
                    (begin
-                     (test (void) check-mark (syntax mark-0) '(a b arg-temp-0 arg-temp-1) 'all)
-                     (test 'arg-temp-0 syntax-e (syntax var-0))
+                     (test (void) check-mark (syntax mark-0) '(a b "arg0" "arg1") 'all)
+                     (test "arg0" substring (symbol->string (syntax-e (syntax var-0))) 0 4)
                      (test (void) check-mark (syntax mark-1) '() 'all)
                      (test 'a syntax-e (syntax sym-1))
-                     (test 'arg-temp-1 syntax-e (syntax var-1))
+                     (test "arg1" substring (symbol->string (syntax-e (syntax var-1))) 0 4)
                      (test (void) check-mark (syntax mark-2) '() 'all)
                      (test 'b syntax-e (syntax sym-2))
-                     (test (void) check-mark (syntax mark-3) '(arg-temp-0 arg-temp-1) 'all)
-                     (test 'arg-temp-0 syntax-e (syntax sym-3))
-                     (test 'arg-temp-1 syntax-e (syntax sym-4)))])))
+                     (test (void) check-mark (syntax mark-3) '("arg0" "arg1") 'all)
+                     (test "arg0" substring (symbol->string (syntax-e (syntax sym-3))) 0 4)
+                     (test "arg1" substring (symbol->string (syntax-e (syntax sym-4))) 0 4))])))
         
         ; application with return-wrap
         (list #'(+ 3 4) 'mzscheme cadr
@@ -491,9 +507,9 @@
                      (test 'result syntax-e (syntax result-var-0))
                      (test 'result syntax-e (syntax result-var-1))
                      (test 'result syntax-e (syntax result-var-2))
-                     (test 'arg-temp-0 syntax-e (syntax var-4))
-                     (test 'arg-temp-1 syntax-e (syntax var-5))
-                     (test 'arg-temp-2 syntax-e (syntax var-6)))])))
+                     (test "arg0" substring (symbol->string (syntax-e (syntax var-4))) 0 4)
+                     (test "arg1" substring (symbol->string (syntax-e (syntax var-5))) 0 4)
+                     (test "arg2" substring (symbol->string (syntax-e (syntax var-6))) 0 4))])))
         
          ; application with non-var in fun pos
         (list #'(4 3 4) 'mzscheme cadr
@@ -511,9 +527,9 @@
                           break-0
                           (with-continuation-mark key-3 mark-3 (var-4 var-5 var-6))))))
                    (begin 
-                     (test 'arg-temp-0 syntax-e (syntax var-4))
-                     (test 'arg-temp-1 syntax-e (syntax var-5))
-                     (test 'arg-temp-2 syntax-e (syntax var-6)))])))
+                     (test "arg0" substring (symbol->string (syntax-e (syntax var-4))) 0 4)
+                     (test "arg1" substring (symbol->string (syntax-e (syntax var-5))) 0 4)
+                     (test "arg2" substring (symbol->string (syntax-e (syntax var-6))) 0 4))])))
                     
         ; datum
         (list #'3 'mzscheme cadr
@@ -589,7 +605,7 @@
                                mark-1
                                (begin
                                  (with-continuation-mark key-2 mark-2 (begin break-2 a-var-1))
-                                 (with-continuation-mark key-3 mark-3 (begin pre-break-1 (begin break-3 b-var-0)))))))))))
+                                 (with-continuation-mark key-3 mark-3 (begin pre-break-1 b-var-0))))))))))
                    (begin
                      (test 'a syntax-e (syntax a-var-0))
                      (test 'a syntax-e (syntax a-var-1))

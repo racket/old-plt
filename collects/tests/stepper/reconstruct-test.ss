@@ -2,10 +2,11 @@
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
 (require (prefix reconstruct: (lib "reconstruct.ss" "stepper" "private")))
 (require (lib "shared.ss" "stepper" "private"))
-
+(require (lib "highlight-placeholder.ss" "stepper" "private"))
+     
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
-(SECTION 'stepper-annotater)
+(SECTION 'stepper-reconstruct)
 
 
 (define (wrap-expand-unwrap stx language-level-spec)
@@ -53,9 +54,16 @@
 (test `(((,highlight-placeholder 4 3)) (+)) test-expr test2 'mzscheme 2 cadr)
 (test `(((,highlight-placeholder 4 3)) (+)) test-expr test2 'mzscheme 3 cadr)
 (test `((,highlight-placeholder) ((+ 4 3))) test-expr test2 'mzscheme 4 cadr)
-;(test `((,highlight-placeholder) (7)) test-expr test2 'mzscheme 5 cadr)
+(test `((,highlight-placeholder) (7)) test-expr test2 'mzscheme 5 cadr)
 
-(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
+(define test3
+  #'(if 3 4 5))
+(test `((,highlight-placeholder) ((if 3 4 5))) test-expr test3 'mzscheme 0 cadr)
+(test `((,highlight-placeholder) ((4))) test-expr test3 'mzscheme 1 cadr)
+  
+
+
+;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 
 
 

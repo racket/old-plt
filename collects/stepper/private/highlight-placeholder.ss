@@ -2,6 +2,5 @@
   
   (provide highlight-placeholder)
   
-  (define-struct hp ())
-  
-  (define highlight-placeholder (make-hp)))
+  ; highlight-placeholder : uninterned symbol
+  (define highlight-placeholder (gensym "highlight-placeholder")))

@@ -389,7 +389,7 @@ typedef struct Scheme_Vector {
 #define GUARANTEE_PAIR(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_PAIRP, "pair")
 #define GUARANTEE_PROCEDURE(fname, argnum) GUARANTEE_TYPE (fname, argnum, SCHEME_PROCP, "procedure")
 #define GUARANTEE_STRING(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRINGP, "string")
-#define GUARANTEE_STRSYM(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRINGP, "string or symbol")
+#define GUARANTEE_STRSYM(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRSYMP, "string or symbol")
 #define GUARANTEE_SYMBOL(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_SYMBOLP, "symbol")
 
 /*========================================================================*/

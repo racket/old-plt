@@ -29,7 +29,7 @@
       ; (printf "IError~n")
       (analysis-internal-error (xloc object) message)]
      [(message)
-      (mrspidey:internal-error message #f #f)]))
+      (mrspidey:internal-error message #f)]))
 
   (define mrspidey:warning
     (case-lambda

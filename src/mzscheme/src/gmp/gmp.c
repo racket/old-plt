@@ -4652,6 +4652,8 @@ void scheme_gmp_tls_init(long *s)
   s[0] = 0;
   s[1] = 0;
   s[2] = (long)&xxx;
+  ((tmp_marker *)(s + 3))->which_chunk = &xxx;
+  ((tmp_marker *)(s + 3))->alloc_point = &xxx;
 }
 
 void scheme_gmp_tls_load(long *s) 
@@ -4667,6 +4669,37 @@ void scheme_gmp_tls_unload(long *s)
   max_total_allocation = (unsigned long)s[1];
   current = (tmp_stack *)s[2];
 }
+
+void scheme_gmp_tls_snapshot(long *s, long *save)
+{
+  save[0] = s[3];
+  save[1] = s[4];
+  __gmp_tmp_mark((tmp_marker *)(s + 3));
+}
+
+void scheme_gmp_tls_restore_snapshot(long *s, long *save, int do_free)
+{
+  long other[6];
+
+  if (do_free == 2) {
+    scheme_gmp_tls_load(other);
+    scheme_gmp_tls_unload(s);
+  }
+
+  if (do_free)
+    __gmp_tmp_free((tmp_marker *)(s + 3));  
+
+  if (save) {
+    s[3] = save[0];
+    s[4] = save[1];
+  }
+
+  if (do_free == 2) {
+    scheme_gmp_tls_load(s);
+    scheme_gmp_tls_unload(other);
+  }
+}
+
 #else
 
 void scheme_gmp_tls_init(long *s) 

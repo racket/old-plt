@@ -139,6 +139,8 @@ static int swapping = 0;
 extern void scheme_gmp_tls_init(long *s);
 extern void scheme_gmp_tls_load(long *s);
 extern void scheme_gmp_tls_unload(long *s);
+extern void scheme_gmp_tls_snapshot(long *s, long *save);
+extern void scheme_gmp_tls_restore_snapshot(long *s, long *save, int do_free);
 
 /*========================================================================*/
 /*                    local variables and proptypes                       */
@@ -1511,6 +1513,9 @@ static void remove_thread(Scheme_Thread *r)
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
+  /* In case we kill a thread while in a bignum operation: */
+  scheme_gmp_tls_restore_snapshot(r->gmp_tls, NULL, ((r == scheme_current_thread) ? 1 : 2));
+
   if (r == scheme_current_thread) {
     /* We're going to be swapped out immediately. */
     swap_no_setjmp = 1;
@@ -1866,6 +1871,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->list_stack = p->list_stack;
   np->list_stack_pos = p->list_stack_pos;
 
+  scheme_gmp_tls_init(np->gmp_tls);
+
   /* np->prev = NULL; - 0ed by allocation */
   np->next = scheme_first_thread;
   scheme_first_thread->prev = np;
@@ -2146,9 +2153,29 @@ int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
 	  && !p->exn_raised);
 }
 
-static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
+static Scheme_Object *raise_user_break(int argc, Scheme_Object **  volatile argv)
 {
-  scheme_raise_exn(MZEXN_BREAK, argv[0], "user break");
+  /* The main action here is buried in code to free temporary
+     bignum space on escapes. */
+  mz_jmp_buf savebuf;
+  long save[4];
+
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  scheme_gmp_tls_snapshot(scheme_current_thread->gmp_tls, save);
+
+  if (!scheme_setjmp(scheme_error_buf)) {
+    /* >>>> This is the main action <<<< */
+    scheme_raise_exn(MZEXN_BREAK, argv[0], "user break");
+    /* will definitely escape (or thread will die) */
+  } else {
+    /* As expected, we're escaping. Unless we're continuing, then
+       reset temporary bignum memory. */
+    int cont;
+    cont = SAME_OBJ((Scheme_Object *)scheme_jumping_to_continuation,
+		    argv[0]);
+    scheme_gmp_tls_restore_snapshot(scheme_current_thread->gmp_tls, save, !cont);
+    scheme_longjmp(savebuf, 1);
+  }
 
   return scheme_void;
 }

@@ -3139,7 +3139,7 @@ static long file_get_string(Scheme_Input_Port *port,
   fip = (Scheme_Input_File *)port->port_data;
   fp = fip->f;
 
-  c = fread(buffer + offset, 1, size, fp);
+  c = fread(buffer XFORM_OK_PLUS offset, 1, size, fp);
 
   if (c <= 0) {
     if (!feof(fp)) {
@@ -4041,7 +4041,7 @@ file_write_string(Scheme_Output_Port *port,
     return 0;
   }
 
-  if (fwrite(str + d, len, 1, fp) != 1) {
+  if (fwrite(str XFORM_OK_PLUS d, len, 1, fp) != 1) {
     scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		     port,
 		     "error writing to file port (%e)",
@@ -5413,8 +5413,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #ifdef PROCESS_FUNCTION
       Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
 
-      if (SAME_OBJ(op->sub_type, file_output_port_type))
-	from_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+      if (SAME_OBJ(op->sub_type, file_output_port_type)) {
+	int tmp;
+	tmp = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+	from_subprocess[1] = tmp;
+      }
 # ifdef MZ_FDS
       else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
@@ -5431,8 +5434,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #ifdef PROCESS_FUNCTION
       Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
 
-      if (SAME_OBJ(ip->sub_type, file_input_port_type))
-	to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
+      if (SAME_OBJ(ip->sub_type, file_input_port_type)) {
+	int tmp;
+	tmp = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
+	to_subprocess[0] = tmp;
+      }
 # ifdef MZ_FDS
       else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
 	to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
@@ -5449,8 +5455,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #ifdef PROCESS_FUNCTION
       Scheme_Output_Port *op = (Scheme_Output_Port *)errport;
 
-      if (SAME_OBJ(op->sub_type, file_output_port_type))
-	err_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+      if (SAME_OBJ(op->sub_type, file_output_port_type)) {
+	int tmp;
+	tmp = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
+	err_subprocess[1] = tmp;
+      }
 # ifdef MZ_FDS
       else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;

@@ -865,7 +865,7 @@ void scheme_finish_application(Scheme_App_Rec *app)
   for (i = 0; i < n; i++) {
     char etype;
     etype = scheme_get_eval_type(app->args[i]);
-    ((char *)app + devals)[i] = etype;
+    ((char *)app XFORM_OK_PLUS devals)[i] = etype;
   }
 }
 
@@ -891,7 +891,7 @@ static Scheme_Object *resolve_application(Scheme_Object *o, Resolve_Info *info)
   for (i = 0; i < n; i++) {
     char et;
     et = scheme_get_eval_type(app->args[i]);
-    ((char *)app + devals)[i] = et;
+    ((char *)app XFORM_OK_PLUS devals)[i] = et;
   }
 
   return (Scheme_Object *)app;
@@ -4537,7 +4537,7 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
 
   rs_save = rs = MZ_RUNSTACK;
 
-  rs -= rp->num_stxes;
+  rs = rs XFORM_OK_MINUS rp->num_stxes;
   MZ_RUNSTACK = rs;
   for (i = 0; i < rp->num_stxes; i++) { rs[i] = NULL; } /* for GC */
   for (i = 0; i < rp->num_stxes; i++) {

@@ -205,7 +205,7 @@
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (define (trans pattern)
-    (regexp (format "^(~a)" pattern)))
+    (regexp-byte (format "^(~a)" pattern)))
 
   (define (translations . t)
     (let loop ([t t])
@@ -222,18 +222,18 @@
 
   (define seqs string-append)
   (define startseq seqs)
-  (define (arbno s) (format "(~a)*" s))
+  (define (arbno s) (format "(?:~a)*" s))
   (define (arbno/ s) (format "~a*" s))
-  (define (one+ s) (format "(~a)+" s))
+  (define (one+ s) (format "(?:~a)+" s))
   (define (one+/ s) (format "~a+" s))
-  (define (maybe s) (format "(~a)?" s))
+  (define (maybe s) (format "(?:~a)?" s))
   (define (maybe/ s) (format "~a?" s))
   (define (alt a b) (format "~a|~a" a b))
   (define (alt* . l)
     (let loop ([l l])
       (if (null? (cdr l))
-	  (format "(~a)" (car l))
-	  (format "(~a)|~a" (car l) (loop (cdr l))))))
+	  (format "(?:~a)" (car l))
+	  (format "(?:~a)|~a" (car l) (loop (cdr l))))))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -306,8 +306,8 @@
   (define L "[a-zA-Z_]")
   (define H "[a-fA-F0-9]")
   (define E (format "[Ee][+-]?~a+" D))
-  (define FS "(f|F|l|L)")
-  (define IS "(u|U|l|L)*")
+  (define FS "(?:f|F|l|L)")
+  (define IS "(?:u|U|l|L)*")
 
   (define symbol-complex (trans (seqs L (arbno (alt L D)))))
 
@@ -630,6 +630,8 @@
     (newline (current-error-port))
     (set! exit-with-error? #t))
 
+  (define log-warning log-error)
+
   (define map-port
     (if palm-out
 	(open-output-file palm-out 'truncate)
@@ -741,6 +743,9 @@
     ;; In case a conversion is unnecessary where we have this annotation:
     (printf "#define START_XFORM_SKIP /**/~n")
     (printf "#define END_XFORM_SKIP /**/~n")
+    ;; For avoiding warnings:
+    (printf "#define XFORM_OK_PLUS +~n")
+    (printf "#define XFORM_OK_MINUS -~n")
     (printf "~n")
     
     ;; C++ cupport:
@@ -847,7 +852,7 @@
   ;; finding function calls
   (define non-functions
     '(<= < > >= == != !
-	 \| \|\| & && : ? % + - * / ^ >> << ~
+	 \| \|\| & && : ? % + - * / ^ >> << ~ #csXFORM_OK_PLUS #csXFORM_OK_MINUS 
 	 = >>= <<= ^= += *= /= -= %= \|= &= ++ --
 	 return sizeof if for while else switch case
 	 asm __asm __asm__ __volatile __volatile__ volatile __extension__
@@ -1766,9 +1771,8 @@
 							    (and (struc-type? v)
 								 (has-union? (struc-type-struct v)))))
 						      v))))))
-			       (fprintf (current-error-port)
-					"Warning [UNION] ~a in ~a: Can't handle union or record with union, ~a.~n"
-					(tok-line v) (tok-file v) name))
+			       (log-warning "[UNION] ~a in ~a: Can't handle union or record with union, ~a."
+					    (tok-line v) (tok-file v) name))
 			     (if (and (or pointer?
 					  base-is-ptr?
 					  base-struct
@@ -2374,10 +2378,9 @@
 		       (brackets? (caddr e)))
 		  ;; An array of objects
 		  (unless atom?
-		    (fprintf (current-error-port)
-			     "Warning [ARRAY] ~a in ~a: array of ~a objects, allocating as array of atomic.~n"
-			     (tok-line t) (tok-file t)
-			     (tok-n t)))
+		    (log-warning "[ARRAY] ~a in ~a: array of ~a objects, allocating as array of atomic."
+				 (tok-line t) (tok-file t)
+				 (tok-n t)))
 		  (loop (list*
 			 (make-tok (if atom? 
 				       NEW_ATOM_ARRAY 
@@ -2943,7 +2946,7 @@
 				[(and (>= (length e) 3)
 				      (let ([n (tok-n (car e))])
 					(or (number? n) (symbol? n)))
-				      (memq (tok-n (cadr e)) '(+ - * /)))
+				      (memq (tok-n (cadr e)) '(+ - * / #csXFORM_OK_PLUS #csXFORM_OK_MINUS)))
 				 (let ([k (lift-in-arithmetic? (cddr e))])
 				   (and k
 					(lambda (wrap)
@@ -2957,7 +2960,7 @@
 				   (and (>= len 3)
 					(let ([n (tok-n (list-ref e (sub1 len)))])
 					  (or (number? n) (symbol? n)))
-					(memq (tok-n (list-ref e (- len 2))) '(+ - * /))))
+					(memq (tok-n (list-ref e (- len 2))) '(+ - * / #csXFORM_OK_PLUS #csXFORM_OK_MINUS))))
 				 (let* ([last? (null? el)]
 					[len (if last?
 						 (length e)
@@ -3345,10 +3348,9 @@
 						      (pair? (cddr assignee))
 						      (memq (tok-n (caddr assignee)) '(if while for until))))))
 				   (not (eq? 'exn_table (tok-n (car (last-pair e-))))))
-			  (fprintf (current-error-port)
-				   "Warning [ASSIGN] ~a in ~a: suspicious assignment with a function call, LHS ends ~s.~n"
-				   (tok-line (car e-)) (tok-file (car e-))
-				   (tok-n (cadr e-))))
+			  (log-warning "[ASSIGN] ~a in ~a: suspicious assignment with a function call, LHS ends ~s."
+				       (tok-line (car e-)) (tok-file (car e-))
+				       (tok-n (cadr e-))))
 			(loop (cdr e-) (cons (car e-) result) live-vars)))))
 	      (loop (cdr e-) (cons (car e-) result) live-vars))]
 	 [(and (braces? (car e-)) (not braces-are-aggregates?))
@@ -3488,10 +3490,9 @@
 				    (pointer-type? special-case-type))))))
 	      ;; __u comes from memset in some variants of gcc
 	      (unless (eq? '__u (tok-n (cadr e-)))
-		(fprintf (current-error-port)
-			 "Warning [ARITH] ~a in ~a: suspicious arithmetic, LHS ends ~s.~n"
-			 (tok-line (car e-)) (tok-file (car e-))
-			 (tok-n (cadr e-))))))
+		(log-warning "[ARITH] ~a in ~a: suspicious arithmetic, LHS ends ~s."
+			     (tok-line (car e-)) (tok-file (car e-))
+			     (tok-n (cadr e-))))))
 	  (loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
   (define (convert-seq-interior v comma-sep? vars &-vars c++-class live-vars complain-not-in memcpy?)

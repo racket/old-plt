@@ -41,6 +41,14 @@
 # include "schsys.h"
 #endif
 
+typedef struct Scheme_Converter {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  short closed;
+  iconv_t cd;
+  Scheme_Custodian_Reference *mref;
+} Scheme_Converter;
+
 /* globals */
 int scheme_locale_on;
 static const char *current_locale_name = "C";
@@ -96,8 +104,10 @@ static Scheme_Object *system_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_locale(int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_locale_to_unicode(int argc, Scheme_Object *argv[]);
-static Scheme_Object *string_unicode_to_locale(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_open_converter(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_close_converter(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_convert(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_convert_end(int argc, Scheme_Object *argv[]);
 
 static int mz_strcmp(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 static int mz_strcmp_ci(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
@@ -341,17 +351,28 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_LOCALE), 
 			     env);
 
-  scheme_add_global_constant("string-encode-locale->utf8", 
-			     scheme_make_prim_w_arity2(string_locale_to_unicode,
-						       "string-encode-locale->utf8",
-						       1, 6,
+
+  scheme_add_global_constant("string-convert",
+			     scheme_make_prim_w_arity2(string_convert,
+						       "string-convert",
+						       1, 7,
 						       3, 3),
 			     env);
-  scheme_add_global_constant("string-encode-utf8->locale", 
-			     scheme_make_prim_w_arity2(string_unicode_to_locale,
-						       "string-encode-utf8->locale",
-						       1, 6,
-						       3, 3),
+  scheme_add_global_constant("string-convert-end",
+			     scheme_make_prim_w_arity2(string_convert_end,
+						       "string-convert-end",
+						       0, 3,
+						       2, 2),
+			     env);
+  scheme_add_global_constant("string-open-converter", 
+			     scheme_make_prim_w_arity(string_open_converter,
+						      "string-open-converter",
+						      2, 2),
+			     env);
+  scheme_add_global_constant("string-close-converter", 
+			     scheme_make_prim_w_arity(string_close_converter,
+						      "string-close-converter",
+						      1, 1),
 			     env);
 
   scheme_add_global_constant("format", 
@@ -467,7 +488,7 @@ scheme_make_sized_offset_string(char *chars, long d, long len, int copy)
   str->type = scheme_string_type;
 
   if (len < 0)
-    len = strlen(chars + d);
+    len = strlen(chars XFORM_OK_PLUS d);
   if (copy) {
     char *naya;
 
@@ -824,7 +845,7 @@ string_append (int argc, Scheme_Object *argv[])
     s = argv[i];
     len = SCHEME_STRLEN_VAL(s);
     memcpy(chars, SCHEME_STR_VAL(s), len);
-    chars += len;
+    chars = chars XFORM_OK_PLUS len;
   }
   
   return naya;
@@ -1063,7 +1084,7 @@ string_unicode_length (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 string_unicode_index(int argc, Scheme_Object *argv[])
 {
-  long istart, ifinish, pos, opos, ipos;
+  long istart, ifinish, pos = -1, opos, ipos;
   char *chars;
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -1076,8 +1097,7 @@ string_unicode_index(int argc, Scheme_Object *argv[])
   } else if (SCHEME_BIGNUMP(argv[1])) {
     if (SCHEME_BIGPOS(argv[1]))
       pos = 0x7FFFFFFF;
-  } else
-    pos = -1;
+  }
 
   if (pos < 0) {
     scheme_wrong_type("string-unicode-index", "non-negative exact integer", 1, argc, argv);
@@ -1100,7 +1120,7 @@ string_unicode_index(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 string_unicode_ref(int argc, Scheme_Object *argv[])
 {
-  long istart, ifinish, pos, opos, ipos;
+  long istart, ifinish, pos = -1, opos, ipos;
   char *chars;
   unsigned int us[1];
 
@@ -1114,8 +1134,7 @@ string_unicode_ref(int argc, Scheme_Object *argv[])
   } else if (SCHEME_BIGNUMP(argv[1])) {
     if (SCHEME_BIGPOS(argv[1]))
       pos = 0x7FFFFFFF;
-  } else
-    pos = -1;
+  }
 
   if (pos < 0) {
     scheme_wrong_type("string-unicode-ref", "non-negative exact integer", 1, argc, argv);
@@ -1196,24 +1215,26 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
 
 #ifndef DONT_USE_LOCALE
 
-static char *locale_convert(const char *from_e, const char *to_e, 
-			    char *in, int id, int iilen, 
-			    char *out, int od, int iolen, 
-			    /* if grow, then reallocate when out isn't big enough */
-			    int grow, 
-			    /* extra specifies the length of a terminator, 
-			       not included in iolen or *oolen */
-			    int extra,
-			    /* these two report actual read/wrote sizes: */
-			    long *oilen, long *oolen,
-			    /* status is set to 
-			       0 for complete, 
-			       -1 for error (possibly partial input),
-			       1 for more avail */
-			    int *status)
+static char *do_convert(iconv_t cd,
+			const char *from_e, const char *to_e, 
+			/* in can be NULL to output just a shift; in that case,
+			   id should be 0, too */
+			char *in, int id, int iilen, 
+			char *out, int od, int iolen, 
+			/* if grow, then reallocate when out isn't big enough */
+			int grow, 
+			/* extra specifies the length of a terminator, 
+			   not included in iolen or *oolen */
+			int extra,
+			/* these two report actual read/wrote sizes: */
+			long *oilen, long *oolen,
+			/* status is set to 
+			   0 for complete, 
+			   -1 for error (possibly partial input),
+			   1 for more avail */
+			int *status)
 {
-  int dip, dop;
-  iconv_t cd;
+  int dip, dop, close_it = 0;
   size_t il, ol, r;
   GC_CAN_IGNORE char *ip, *op;
 
@@ -1222,12 +1243,15 @@ static char *locale_convert(const char *from_e, const char *to_e,
   if (oilen)
     *oilen = 0;
   *oolen = 0;
-    
-  if (!from_e)
-    from_e = nl_langinfo(CODESET);
-  if (!to_e)
-    to_e = nl_langinfo(CODESET);
-  cd = iconv_open(to_e, from_e);
+
+  if (cd == (iconv_t)-1) {
+    if (!from_e)
+      from_e = nl_langinfo(CODESET);
+    if (!to_e)
+      to_e = nl_langinfo(CODESET);
+    cd = iconv_open(to_e, from_e);
+    close_it = 1;
+  }
 
   if (cd == (iconv_t)-1) {
     if (out) {
@@ -1256,11 +1280,11 @@ static char *locale_convert(const char *from_e, const char *to_e,
   dop = 0;
 
   while (1) {
-    ip = in + id + dip;
-    op = out + od + dop;
+    ip = in XFORM_OK_PLUS id + dip;
+    op = out XFORM_OK_PLUS od + dop;
     r = iconv(cd, &ip, &il, &op, &ol);
-    dip = ip - (in + id);
-    dop = op - (out + od);
+    dip = ip - (in XFORM_OK_PLUS id);
+    dop = op - (out XFORM_OK_PLUS od);
     ip = op = NULL;
 
     /* Record how many chars processed, now */
@@ -1280,11 +1304,10 @@ static char *locale_convert(const char *from_e, const char *to_e,
 	  iolen += iolen;
 	  out = naya;
 	  od = 0;
-	  /* reset the converter */
-	  iconv(cd, NULL, NULL, NULL, NULL);
 	} else {
 	  *status = 1;
-	  iconv_close(cd);
+	  if (close_it)
+	    iconv_close(cd);
 	  while (extra--) {
 	    out[od + dop + extra] = 0;
 	  }
@@ -1292,7 +1315,8 @@ static char *locale_convert(const char *from_e, const char *to_e,
 	}
       } else {
 	/* Assume EINVAL */
-	iconv_close(cd);
+	if (close_it)
+	  iconv_close(cd);
 	while (extra--) {
 	  out[od + dop + extra] = 0;
 	}
@@ -1301,7 +1325,8 @@ static char *locale_convert(const char *from_e, const char *to_e,
     } else {
       /* All done. */
       *status = 0;
-      iconv_close(cd);
+      if (close_it)
+	iconv_close(cd);
       while (extra--) {
 	out[od + dop + extra] = 0;
       }
@@ -1321,9 +1346,9 @@ static char *locale_recase(int to_up,
   /* To change the case, convert the string to multibyte, re-case the
      multibyte, then convert back. */
 # define MZ_WC_BUF_SIZE 32
-  mbstate_t state;
+  GC_CAN_IGNORE mbstate_t state;
   size_t wl, wl2, ml, ml2;
-  wchar_t *wc, *ws, wcbuf[MZ_WC_BUF_SIZE];
+  wchar_t *wc, *ws, wcbuf[MZ_WC_BUF_SIZE], cwc;
   const char *s;
   int j;
   /* The "n" versions are apparently not too standard: */
@@ -1334,7 +1359,7 @@ static char *locale_recase(int to_up,
 
   /* Get length */
   memset(&state, 0, sizeof(mbstate_t));
-  s = in + id;
+  s = in XFORM_OK_PLUS id;
   wl = mz_mbsnrtowcs(NULL, &s, iilen, 0, &state);
   s = NULL;
   if (wl < 0) return NULL;
@@ -1348,7 +1373,7 @@ static char *locale_recase(int to_up,
 
   /* Convert */
   memset(&state, 0, sizeof(mbstate_t));
-  s = in + id;
+  s = in XFORM_OK_PLUS id;
   wl2 = mz_mbsnrtowcs(wc, &s, iilen, wl + 1, &state);
   s = NULL;
   if (wl2 < 0) return NULL; /* Very strange! */
@@ -1359,11 +1384,13 @@ static char *locale_recase(int to_up,
 
   if (to_up) {
     for (j = 0; j < wl; j++) {
-      wc[j] = towupper(wc[j]);
+      cwc = towupper(wc[j]);
+      wc[j] = cwc;
     }
   } else {
     for (j = 0; j < wl; j++) {
-      wc[j] = towlower(wc[j]);
+      cwc = towlower(wc[j]);
+      wc[j] = cwc;
     }
   }
 
@@ -1432,18 +1459,18 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
     l1 = origl1;
     l2 = origl2;
     while (1) {
-      c1 = locale_convert(MZ_UCS4_NAME, NULL, 
-			  s1, d1 * 4, 4 * l1,
-			  buf1, 0, MZ_SC_BUF_SIZE - 1,
-			  1 /* grow */, 1 /* terminator size */,
-			  &used1, &clen1,
-			  &status);
-      c2 = locale_convert(MZ_UCS4_NAME, NULL, 
-			  s2, d2 * 4, 4 * l2,
-			  buf2, 0, MZ_SC_BUF_SIZE - 1,
-			  1 /* grow */, 1 /* terminator size */,
-			  &used2, &clen2,
-			  &status);
+      c1 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
+		      s1, d1 * 4, 4 * l1,
+		      buf1, 0, MZ_SC_BUF_SIZE - 1,
+		      1 /* grow */, 1 /* terminator size */,
+		      &used1, &clen1,
+		      &status);
+      c2 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
+		      s2, d2 * 4, 4 * l2,
+		      buf2, 0, MZ_SC_BUF_SIZE - 1,
+		      1 /* grow */, 1 /* terminator size */,
+		      &used2, &clen2,
+		      &status);
 
       if ((used1 < 4 * l1) || (used2 < 4 * l2)) {
 	if (got_more) {
@@ -1661,12 +1688,12 @@ char *do_locale_recase(int to_up, char *in, int delta, int len, long *olen)
 
   while (len) {
     /* We might have conversion errors... */
-    c = locale_convert(MZ_UCS4_NAME, NULL, 
-		       in, 4 * delta, 4 * len,
-		       buf, 0, MZ_SC_BUF_SIZE - 1,
-		       1 /* grow */, 1 /* terminator size */,
-		       &used, &clen,
-		       &status);
+    c = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
+		   in, 4 * delta, 4 * len,
+		   buf, 0, MZ_SC_BUF_SIZE - 1,
+		   1 /* grow */, 1 /* terminator size */,
+		   &used, &clen,
+		   &status);
 
     used >>= 2;
     delta += used;
@@ -1678,12 +1705,12 @@ char *do_locale_recase(int to_up, char *in, int delta, int len, long *olen)
     if (!c)
       clen = 0;
     
-    c = locale_convert(NULL, MZ_UCS4_NAME,
-		       c, 0, clen,
-		       NULL, 0, 0,
-		       1 /* grow */, 0 /* terminator size */,
-		       &used, &clen,
-		       &status);
+    c = do_convert((iconv_t)-1, NULL, MZ_UCS4_NAME,
+		   c, 0, clen,
+		   NULL, 0, 0,
+		   1 /* grow */, 0 /* terminator size */,
+		   &used, &clen,
+		   &status);
 
     if (!len && SCHEME_NULLP(parts)) {
       *olen = (clen >> 2);
@@ -2390,57 +2417,137 @@ static Scheme_Object *current_locale(int argc, Scheme_Object *argv[])
   return v;
 }
 
-static Scheme_Object *convert_unicode_locale(const char *who, int argc, Scheme_Object *argv[],
-					     const char *from_e, const char *to_e)
+
+static void close_converter(Scheme_Object *o, void *data)
+{
+  Scheme_Converter *c = (Scheme_Converter *)o;
+
+  if (!c->closed) {
+    c->closed = 1;
+    iconv_close(c->cd);
+    c->cd = (iconv_t)-1;
+    scheme_remove_managed(c->mref, (Scheme_Object *)c);
+  }
+}
+
+static Scheme_Object *string_open_converter(int argc, Scheme_Object **argv)
+{
+  Scheme_Converter *c;
+  char *from_e, *to_e;
+  iconv_t cd;
+  Scheme_Custodian_Reference *mref;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string-open-converter", "string", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("string-open-converter", "string", 1, argc, argv);
+  
+  scheme_custodian_check_available(NULL, "string-open-converter", "converter");
+
+  from_e = SCHEME_STR_VAL(argv[0]);
+  to_e = SCHEME_STR_VAL(argv[1]);
+
+  if (!*from_e)
+    from_e = nl_langinfo(CODESET);
+  if (!*to_e)
+    to_e = nl_langinfo(CODESET);
+  cd = iconv_open(to_e, from_e);
+
+  if (cd == (iconv_t)-1)
+    return scheme_false;
+
+  c = MALLOC_ONE_TAGGED(Scheme_Converter);
+  c->type = scheme_string_converter_type;
+  c->closed = 0;
+  c->cd = cd;
+  mref = scheme_add_managed(NULL,
+			    (Scheme_Object *)c,
+			    close_converter,
+			    NULL, 1);
+  c->mref = mref;
+
+  return (Scheme_Object *)c;
+}
+
+static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Object *argv[])
 {
   char *r;
   int status;
   long amt_read, amt_wrote;
   long istart, ifinish, ostart, ofinish;
   Scheme_Object *a[3];
+  Scheme_Converter *c;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(who, "string", 0, argc, argv);  
-  scheme_get_substring_indices("substring", argv[0], argc, argv, 1, 2, &istart, &ifinish);
-  if (argc > 3) {
-    if (!SCHEME_MUTABLE_STRINGP(argv[3]))
-      scheme_wrong_type(who, "mutable string", 3, argc, argv);  
-    r = SCHEME_STR_VAL(argv[3]);
-    scheme_get_substring_indices("substring", argv[3], argc, argv, 4, 5, &ostart, &ofinish);
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_string_converter_type))
+    scheme_wrong_type(who, "converter", 0, argc, argv);  
+
+  if (opos > 1) {
+    if (!SCHEME_STRINGP(argv[1]))
+      scheme_wrong_type(who, "string", 1, argc, argv);  
+    scheme_get_substring_indices("substring", argv[1], argc, argv, 2, 3, &istart, &ifinish);
+  } else {
+    istart = 0;
+    ifinish = 4; /* This is really a guess about how much space we need */
+  }
+  
+  if (argc > opos) {
+    if (!SCHEME_MUTABLE_STRINGP(argv[opos]))
+      scheme_wrong_type(who, "mutable string", opos, argc, argv);  
+    r = SCHEME_STR_VAL(argv[4]);
+    scheme_get_substring_indices("substring", argv[opos], argc, argv, opos + 1, opos + 2, &ostart, &ofinish);
   } else {
     r = NULL;
     ostart = 0;
     ofinish = 0;
   }
 
-  r = locale_convert(from_e, to_e,
-		     SCHEME_STR_VAL(argv[0]), istart, ifinish-istart,
-		     r, ostart, ofinish-ostart,
-		     !r, 
-		     0,
-		     &amt_read, &amt_wrote,
-		     &status);
+  c = (Scheme_Converter *)argv[0];
+  if (c->closed)
+    scheme_arg_mismatch(who, "converter is closed: ", argv[0]);
+
+  r = do_convert(c->cd, NULL, NULL,
+		 ((opos > 1) ? SCHEME_STR_VAL(argv[1]) : NULL), istart, ifinish-istart,
+		 r, ostart, ofinish-ostart,
+		 !r, /* grow? */
+		 (r ? 0 : 1), /* terminator */
+		 &amt_read, &amt_wrote,
+		 &status);
   
-  if (argc < 4) {
+  if (argc < 5) {
     a[0] = scheme_make_sized_string(r, amt_wrote, 0);
   } else {
     a[0] = scheme_make_integer(amt_wrote);
   }
-  a[1] = scheme_make_integer(amt_read);
-  a[2] = ((status < 0) ? scheme_false : scheme_true);
-  
-  return scheme_values(3, a);
+  if (opos > 1) {
+    a[1] = scheme_make_integer(amt_read);
+    a[2] = ((status < 0) ? scheme_false : scheme_true);
+    return scheme_values(3, a);
+  } else {
+    a[1] = ((status < 0) ? scheme_false : scheme_true);
+    return scheme_values(2, a);
+  }
 }
 
-static Scheme_Object *string_locale_to_unicode(int argc, Scheme_Object *argv[])
+static Scheme_Object *string_convert(int argc, Scheme_Object *argv[])
 {
-  return convert_unicode_locale("string-encode-locale->utf8", argc, argv, NULL, "UTF-8");
+  return convert_one("string-convert", 4, argc, argv);
 }
 
-static Scheme_Object *string_unicode_to_locale(int argc, Scheme_Object *argv[])
+static Scheme_Object *string_convert_end(int argc, Scheme_Object *argv[])
 {
-  return convert_unicode_locale("string-encode-utf8->locale", argc, argv, "UTF-8", NULL);
+  return convert_one("string-convert-end", 1, argc, argv);
 }
+
+static Scheme_Object *string_close_converter(int argc, Scheme_Object **argv)
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_string_converter_type))
+    scheme_wrong_type("string-close-converter", "converter", 0, argc, argv);
+
+  close_converter(argv[0], NULL);
+
+  return scheme_void;
+}
+
 
 static Scheme_Object *
 unicode_recase(const char *who, int to_up, int argc, Scheme_Object *argv[])
@@ -2974,3 +3081,23 @@ void machine_details(char *buff)
 }
 #endif
 
+
+/**********************************************************************/
+/*                           Precise GC                               */
+/**********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+
+START_XFORM_SKIP;
+
+#define MARKS_FOR_STRING_C
+#include "mzmark.c"
+
+static void register_traversers(void)
+{
+  GC_REG_TRAV(scheme_string_converter_type, mark_string_convert);
+}
+
+END_XFORM_SKIP;
+
+#endif

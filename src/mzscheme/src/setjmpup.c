@@ -263,7 +263,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STAC
 
   here = &size;
 
-  size = (long)here - (long)start;
+  size = (long)here XFORM_OK_MINUS (long)start;
   if (scheme_stack_grows_up) {
     b->stack_from = start;
   } else {
@@ -286,7 +286,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STAC
 #else
     /* b is a pointer into the middle of `base'; bad for precise gc: */
     unsigned long diff;
-    diff = (unsigned long)b - (unsigned long)base;
+    diff = (unsigned long)b XFORM_OK_MINUS (unsigned long)base;
     b = NULL;
 
     copy = NULL;
@@ -311,7 +311,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STAC
     }
 
     /* Restore b: */
-    b = (Scheme_Jumpup_Buf *)(((char *)base) + diff);
+    b = (Scheme_Jumpup_Buf *)(((char *)base) XFORM_OK_PLUS diff);
 
     set_copy(b->stack_copy, copy);
 #endif

@@ -1629,6 +1629,20 @@ END regexp;
 
 /**********************************************************************/
 
+START string;
+
+mark_string_convert {
+ mark:
+  Scheme_Converter *c = (Scheme_Converter *)p;
+  gcMARK(c->mref);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Converter));
+}
+
+END string;
+
+/**********************************************************************/
+
 START stxobj;
 
 mark_rename_table {

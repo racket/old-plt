@@ -4052,6 +4052,35 @@ int mark_regwork_FIXUP(void *p) {
 
 /**********************************************************************/
 
+#ifdef MARKS_FOR_STRING_C
+
+int mark_string_convert_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Converter));
+}
+
+int mark_string_convert_MARK(void *p) {
+  Scheme_Converter *c = (Scheme_Converter *)p;
+  gcMARK(c->mref);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Converter));
+}
+
+int mark_string_convert_FIXUP(void *p) {
+  Scheme_Converter *c = (Scheme_Converter *)p;
+  gcFIXUP(c->mref);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Converter));
+}
+
+#define mark_string_convert_IS_ATOMIC 0
+#define mark_string_convert_IS_CONST_SIZE 1
+
+
+#endif  /* STRING */
+
+/**********************************************************************/
+
 #ifdef MARKS_FOR_STXOBJ_C
 
 int mark_rename_table_SIZE(void *p) {

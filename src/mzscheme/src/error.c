@@ -372,7 +372,8 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	}
 
 	while (tlen && i < maxlen) {
-	  s[i++] = *(t++);
+	  s[i++] = *t;
+	  t = t XFORM_OK_PLUS 1;
 	  tlen--;
 	}
 

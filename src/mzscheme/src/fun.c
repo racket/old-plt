@@ -1650,7 +1650,7 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
       s = (char *)scheme_malloc_atomic((*len) + 8);
       memcpy(s, "struct ", 7);
       memcpy(s + 7, scheme_symbol_val(sym), *len);
-      *len += 7;
+      (*len) += 7;
       s[*len] = 0;
       return s;
     } else {

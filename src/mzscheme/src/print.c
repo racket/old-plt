@@ -524,7 +524,7 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
       scheme_hash_set(ht, obj, (Scheme_Object *)0x1);
     else {
       if ((long)v == 1) {
-	*counter += 2;
+	(*counter) += 2;
 	scheme_hash_set(ht, obj, (Scheme_Object *)(long)*counter);
       }
       return;
@@ -670,7 +670,7 @@ static void print_this_string(Scheme_Thread *p, const char *str, int offset, int
   } else if (autolen > 0)
     len = autolen;
   else
-    len = strlen(str + offset);
+    len = strlen(str XFORM_OK_PLUS offset);
 
   if (!p->print_buffer) {
     /* Just getting the length */

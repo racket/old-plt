@@ -995,9 +995,11 @@ regexec(const char *who,
   if (!port && (prog->regmust >= 0)) {
     spos = stringpos;
     slen = stringlen;
-    while ((spos = l_strchr(string, spos, slen, (ITO(prog->program, (char *)prog) + prog->regmust)[0])) != -1) {
+    while ((spos = l_strchr(string, spos, slen, 
+			    (ITO(prog->program, (char *)prog) XFORM_OK_PLUS prog->regmust)[0])) != -1) {
       int i, l = prog->regmlen;
-      GC_CAN_IGNORE char *p = (ITO(prog->program, (char *)prog) + prog->regmust); /* ASSUMING NO GC HERE! */
+      /* ASSUMING NO GC HERE! */
+      GC_CAN_IGNORE char *p = (ITO(prog->program, (char *)prog) XFORM_OK_PLUS prog->regmust);
       slen = stringlen - (spos - stringpos);
       for (i = 0; (i < l) && (i < slen); i++) {
 	if (string[spos + i] != p[i])
@@ -1967,7 +1969,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       }
       r[j++] = lo[same_chars];
       *_j = j;
-      r = add_byte_range(lo + same_chars + 1, highest, count - same_chars - 1,
+      r = add_byte_range(lo XFORM_OK_PLUS same_chars + 1, highest, count - same_chars - 1,
 			 r, _j, rs, 1, 1);
       j = *_j;
       p = lo[same_chars] + 1;
@@ -1982,7 +1984,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       }
       r[j++] = hi[same_chars];
       *_j = j;
-      r = add_byte_range(lowest, hi + same_chars + 1, count - same_chars - 1,
+      r = add_byte_range(lowest, hi  XFORM_OK_PLUS same_chars + 1, count - same_chars - 1,
 			 r, _j, rs, 1, 1);
       j = *_j;
       did_alt = 0;
@@ -2324,9 +2326,8 @@ int translate(unsigned char *s, int len, char **result)
       /* "." has to be expanded, but only if it's not followed by "*".
 	 (The ".*" exception is important to the regexp matcher, snce there's
 	 always an implement ".*" at the start of a pattern.) */
-      const char *any_str = "(?:[0-\177]|[\300-\375][\200-\277]*)";
-      int len;
-      len = strlen(any_str);
+      const char *any_str = "(?:[\000-\177]|[\300-\375][\200-\277]*)";
+      int len = 21;
       r = make_room(r, j, len - 1, &rs);
       memcpy(r + j, any_str, len);
       j += len;
@@ -2427,7 +2428,7 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *make_byte_regexp(int argc, Scheme_Object *argv[])
 {
-  return do_make_regexp("byte-regexp", 1, argc, argv);
+  return do_make_regexp("regexp-byte", 1, argc, argv);
 }
 
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatile result_is_err_string)
@@ -2532,9 +2533,12 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (iport && !startv)
     startv = scheme_make_integer(0);
 
-  if (SCHEME_STRINGP(argv[0]))
-    r = regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
-  else
+  if (SCHEME_STRINGP(argv[0])) {
+    char *s = SCHEME_STR_VAL(argv[0]);
+    long slen = SCHEME_STRTAG_VAL(argv[0]);
+    slen = translate((unsigned char *)s, slen, &s);
+    r = regcomp(s, 0, slen);
+  } else
     r = (regexp *)argv[0];
 
   if (!iport)
@@ -2630,7 +2634,10 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
     scheme_wrong_type("regexp-replace", "string", 2, argc, argv);
 
   if (SCHEME_STRINGP(argv[0])) {
-    r = regcomp(SCHEME_STR_VAL(argv[0]), 0, SCHEME_STRTAG_VAL(argv[0]));
+    char *s = SCHEME_STR_VAL(argv[0]);
+    long slen = SCHEME_STRTAG_VAL(argv[0]);
+    slen = translate((unsigned char *)s, slen, &s);
+    r = regcomp(s, 0, slen);
   } else
     r = (regexp *)argv[0];
 
@@ -2756,9 +2763,9 @@ void scheme_regexp_initialize(Scheme_Env *env)
 						      "regexp", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("byte-regexp", 
+  scheme_add_global_constant("regexp-byte", 
 			     scheme_make_prim_w_arity(make_byte_regexp, 
-						      "byte-regexp", 
+						      "regexp-byte", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("regexp-match",

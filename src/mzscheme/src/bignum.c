@@ -596,9 +596,9 @@ static Scheme_Object *bignum_multiply(const Scheme_Object *a, const Scheme_Objec
   }
 
   if ((a_size - i) > (b_size - j))
-    mpn_mul(o_digs + i + j, a_digs + i, a_size - i, b_digs + j, b_size - j);
+    mpn_mul(o_digs XFORM_OK_PLUS i + j, a_digs XFORM_OK_PLUS i, a_size - i, b_digs XFORM_OK_PLUS j, b_size - j);
   else
-    mpn_mul(o_digs + i + j, b_digs + j, b_size - j, a_digs + i, a_size - i);
+    mpn_mul(o_digs XFORM_OK_PLUS i + j, b_digs XFORM_OK_PLUS j, b_size - j, a_digs XFORM_OK_PLUS i, a_size - i);
 
   RELEASE(a_digs);
   RELEASE(b_digs);
@@ -935,7 +935,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
 
     if (shift_bits != 0)
       /* no allocation/blocking */
-      mpn_lshift(res_digs + shift_words, res_digs + shift_words, res_alloc - shift_words, shift_bits);
+      mpn_lshift(res_digs XFORM_OK_PLUS shift_words, res_digs XFORM_OK_PLUS shift_words, res_alloc - shift_words, shift_bits);
 
   }
 
@@ -1073,7 +1073,7 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
       negate = !negate;
     stri++;
   }
-  len = strlen(str + stri);
+  len = strlen(str XFORM_OK_PLUS stri);
 
   if (radix == 10 && (len < SMALL_NUM_STR_LEN)) {
     /* try simple fixnum read first */
@@ -1252,9 +1252,9 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
       r_digs[i] = n_digs[i];
     }
 
-    mpn_tdiv_qr(q_digs, r_digs + i, 0,
-		n_digs + i, n_size - i,
-		d_digs + i, d_size - i);
+    mpn_tdiv_qr(q_digs, r_digs XFORM_OK_PLUS i, 0,
+		n_digs XFORM_OK_PLUS i, n_size - i,
+		d_digs XFORM_OK_PLUS i, d_size - i);
 
     RELEASE(d_digs);
     RELEASE(n_digs);
@@ -1318,8 +1318,10 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
   if (SCHEME_INTP(n)) {
     unsigned long root, rem;
     root = fixnum_sqrt(SCHEME_INT_VAL(n), &rem);
-    if (remainder)
-      *remainder = scheme_make_integer_value(rem);
+    if (remainder) {
+      o = scheme_make_integer_value(rem);
+      *remainder = o;
+    }
     rem_size = (rem == 0 ? 0 : 1);
     o = scheme_make_integer(root);
   } else {
@@ -1371,7 +1373,8 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
 	SCHEME_BIGLEN(p) = rem_alloc;
 	SCHEME_BIGDIG(p) = rem_digs;
 	SCHEME_BIGPOS(p) = 1;
-	*remainder = scheme_bignum_normalize(p);
+	o = scheme_bignum_normalize(p);
+	*remainder = o;
       }
 
       o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));

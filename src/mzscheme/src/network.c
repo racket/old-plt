@@ -445,17 +445,17 @@ static int parse_numerical(const char *address, unsigned long *addr)
   while (*s) {
     if (isdigit(*s)) {
       if (v < 256)
-	v = (v * 10) + (*s - '0');
+	v = (v * 10) + ((*s) - '0');
     } else if (*s == '.') {
       if (p < 4) {
 	vs[p] = v;
 	n[p] = (unsigned char)v;
-	p++;
+	p = p XFORM_OK_PLUS 1;
       }
       v = 0;
     } else
       break;
-    s++;
+    s = s XFORM_OK_PLUS 1;
   }
      
   if (p == 3) {
@@ -1691,7 +1691,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
 
 #ifdef USE_SOCKETS_TCP
   do {
-    sent = send(data->tcp, s + offset, len, 0);
+    sent = send(data->tcp, s XFORM_OK_PLUS offset, len, 0);
   } while ((sent == -1) && (NOT_WINSOCK(errno) == EINTR));
 
   if (sent != len) {

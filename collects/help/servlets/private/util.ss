@@ -23,6 +23,7 @@
 	   color-with
 	   hexify-string
 	   main-manual-page
+           make-main-frameset
 	   manual-entry
 	   collection-doc-link
 	   fold-into-web-path
@@ -72,6 +73,17 @@
 
   (define (use-frames?)
     (get-bool-pref/default 'use-frames use-frames-default))
+  
+  (define (make-main-frameset lower-url)
+    (let ([search-height 
+	   (get-pref/default 'search-height search-height-default)])
+      `(FRAMESET ((ROWS ,(string-append search-height ",*")))
+		 (FRAME ((NAME "search")
+			 (SRC "/servlets/search.ss")
+			 (MARGINHEIGHT "2")
+			 (MARGINWIDTH "2")))
+		 (FRAME ((NAME "main")
+			 (SRC ,lower-url))))))
 
   ; manual is doc collection subdirectory, e.g. "mred"
   (define (main-manual-page manual)

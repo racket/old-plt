@@ -8,20 +8,10 @@
 (unit/sig ()
   (import servlet^)
 
-  (define search-height
-    (get-pref/default 'search-height search-height-default))
-
   `(HTML 
     (HEAD ,hd-css
 	  (TITLE "PLT Help Desk"))
-    (FRAMESET ((ROWS ,(string-append search-height ",*")))
-	      (FRAME ((NAME "search")
-		      (SRC "/servlets/search.ss")
-		      (MARGINHEIGHT "2")
-		      (MARGINWIDTH "2")))
-	      (FRAME ((NAME "main")
-		      (SRC "/servlets/main.ss"))))))
-
+    ,(make-main-frameset "/servlets/main.ss")))
 
 
 

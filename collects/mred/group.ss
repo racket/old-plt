@@ -2,7 +2,7 @@
   (unit/sig mred:group^
     (import [mred:debug : mred:debug^]
 	    [mred:preferences : mred:preferences^]
-	    [mred:frame : mred:frame^]
+	    [mred:editor-frame : mred:editor-frame^]
 	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:exit : mred:exit^]
 	    [mred:autosave : mred:autosave^]
@@ -153,7 +153,7 @@
 
 		 (public
 		  [buffer-group% b-group%]
-		  [frame% mred:frame:editor-frame%]
+		  [frame% mred:editor-frame:editor-frame%]
 		  [get-frame% (lambda () frame%)]
 
 		  [get-buffer-group% (lambda () buffer-group%)]

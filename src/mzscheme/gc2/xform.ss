@@ -26,6 +26,19 @@
 ;; To call for Palm:
 ;;   mzscheme -r xform.ss [--notes] --palm <ctok> <cpp> <src> <dest> <mapdest>
 
+
+;; Make sure we can find MzLib:
+(unless (with-handlers ([not-break-exn? (lambda (x) #f)])
+	  (collection-path "mzlib"))
+  (let ([p (build-path (current-load-relative-directory)
+		       'up
+		       'up
+		       'up
+		       "collects")])
+    (printf "Setting collection path: ~s~n" p)
+    (current-library-collection-paths 
+     (list p))))
+
 (define show-info? #f)
 (define check-arith? #t)
 

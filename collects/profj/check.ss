@@ -7,9 +7,8 @@
            "restrictions.ss"
            "profj-pref.ss"
            "build-info.ss"
-           (lib "class.ss")
-           (lib "list.ss")
-           (lib "string.ss"))
+           (lib "class.ss") (lib "list.ss") 
+           (prefix srfi: (lib "1.ss" "srfi")) (lib "string.ss"))
   (provide check-defs check-interactions-types)
   
   ;symbol-remove-last: symbol->symbol
@@ -21,20 +20,22 @@
   ;Environment functions
 
   ;env =>
-  ;(make-environment (list var-type) (list type) (list string))
-  (define-struct environment (types exns labels))
+  ;(make-environment (list var-type) (list string) (list type) (list string))
+  (define-struct environment (types set-vars exns labels))
   
   ;Constant empty environment
-  (define empty-env (make-environment null null null))
+  (define empty-env (make-environment null null null null))
 
   ;; var-type => (make-var-type string type properties)
   (define-struct var-type (var type properties))
   
   ;;Environment variable properties
   ;;(make-properties bool bool bool bool bool bool)
-  (define-struct properties (local? field? static? settable? final? usable?))
+  (define-struct properties (parm? field? static? settable? final? usable?))
   (define parm (make-properties #t #f #f #t #f #t))
   (define final-parm (make-properties #t #f #f #f #t #t))
+  (define method-var (make-properties #f #f #f #t #f #t))
+  (define final-method-var (make-properties #f #f #f #f #t #t))
   (define obj-field (make-properties #f #t #f #t #f #t))
   (define (final-field settable) (make-properties #f #t #f settable #t #t))
   (define class-field (make-properties #f #t #t #f #t #t))
@@ -42,10 +43,11 @@
   (define inherited-conflict (make-properties #f #t #f #f #f #f))
   
   ;; add-var-to-env: string type properties env -> env
-  (define (add-var-to-env name type properties oldEnv)
-    (make-environment (cons (make-var-type name type properties) (environment-types oldEnv))
-                      (environment-exns oldEnv)
-                      (environment-labels oldEnv)))
+  (define (add-var-to-env name type properties env)
+    (make-environment (cons (make-var-type name type properties) (environment-types env))
+                      (environment-set-vars env)
+                      (environment-exns env)
+                      (environment-labels env)))
   
   ;; lookup-var-in-env: string env -> (U var-type boolean)
   (define (lookup-var-in-env name env)
@@ -115,6 +117,26 @@
       (make-environment (update-env (environment-types env))
                         (environment-exns env)
                         (environment-labels env))))
+
+  ;;add-set-to-env: string env -> env
+  (define (add-set-to-env name env)
+    (make-environment (environment-types env)
+                      (cons name (environment-set-vars env))
+                      (environment-exns env)
+                      (environment-labels env)))
+  
+  ;;var-set?: string env -> bool
+  (define (var-set? name env)
+    (member name (environment-set-vars env)))
+  
+  ;;intersect-var-sets: base-env env env -> env
+  ;;Intersects the list of set variables for the two env, creating a new env with the remainder from base
+  (define (intersect-var-sets base-env env-1 env-2)
+    (make-environment (environment-types base-env)
+                      (srfi:lset-intersection (environment-set-vars env-1)
+                                              (environment-set-vars env-2))
+                      (environment-exns base-env)
+                      (environment-labels base-env)))
   
   ;;add-exn-to-env: type env -> env
   (define (add-exn-to-env exn env)
@@ -147,6 +169,9 @@
     
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Generic helper functions
+
+  ;;(make-type/env type env)
+  (define-struct type/env (t e))
   
   ;; set-expr-type: expr type -> type
   (define (set-expr-type exp t)
@@ -767,7 +792,7 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   
-  ;;check-statement: statement type env symbol type-records (U #f string) bool bool bool bool bool-> type
+  ;;check-statement: statement type env symbol type-records (U #f string) bool bool bool bool bool-> type/env
   (define (check-statement statement return env level type-recs c-c ctor? static? in-loop? in-switch? interactions?)
     (let* ((check-s (lambda (stmt env in-l? in-s?)
                       (check-statement stmt return env level type-recs c-c ctor? static? in-l? in-s? interactions?)))
@@ -779,9 +804,11 @@
       (cond
         ((ifS? statement) 
          (check-ifS (check-e-no-change (ifS-cond statement))
-                    (expr-src (ifS-cond statement)))
-         (check-s-no-change (ifS-then statement))
-         (when (ifS-else statement) (check-s-no-change (ifS-else statement))))
+                    (expr-src (ifS-cond statement))
+                    env
+                    check-s-env-change
+                    (ifS-then statement)
+                    (ifS-else statement)))
         ((throw? statement)
          (check-throw (check-e-no-change (throw-expr statement))
                       (expr-src (throw-expr statement))
@@ -875,9 +902,17 @@
           ((scheme-val? cond?) (set-scheme-val-type! cond? 'boolean))
           (else (check cond?))))))
         
-  ;check-ifS: type src -> void
-  (define check-ifS (check-cond 'if))
-
+  ;check-ifS: type/env src (stmt env -> type/env) stmt (U stmt #f) -> type/env
+  (define (check-ifS cond-t/e src check-s then else)
+    ((check-cond 'if) (type/env-t cond-t/e))
+    (let ((then/env (check-s then (type/env-e cond-t/e)))
+          (else/env (and else (check-s else (type/env-e cond-t/e)))))
+      (if else/env
+          (make-type/env 'void 
+                         (intersect-var-sets 
+                          (type/env-e cond-t/e) (type/env-e then/env) (type/env-e else-e)))
+          cond-t/e)))
+        
   ;check-throw: type src env bool type-records -> void
   (define (check-throw exp-type src env interact? type-recs)
     (cond
@@ -937,14 +972,16 @@
            (name (id-string (field-name local)))
            (in-env? (lookup-var-in-env name env))
            (sym-name (string->symbol name))
-           (type (type-spec-to-type (field-type local) c-class level type-recs)))
+           (type (type-spec-to-type (field-type local) c-class level type-recs))
+           (new-env (add-var-to-env name type method-var env)))
       (when (and in-env? (not (properties-field? (var-type-properties in-env?))))
         (illegal-redefinition (field-name local) (field-src local)))
-      (when is-var-init?
-        (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
-          (unless (assignment-conversion type new-type type-recs)
-            (variable-type-error (field-name local) new-type type (var-init-src local)))))
-      (add-var-to-env name type parm env)))
+      (if is-var-init?
+          (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
+            (unless (assignment-conversion type new-type type-recs)
+              (variable-type-error (field-name local) new-type type (var-init-src local)))
+            (add-set-to-env name new-env))
+          new-env)))
 
   ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
   (define (check-try body catches finally env check-s type-recs)
@@ -1474,7 +1511,7 @@
                                                      (cadr acc)
                                                      (make-var-access #t #f #f 'temp first-acc)))
                      (cddr acc)))
-                   ((and first-binding (properties-local? (var-type-properties first-binding)))
+                   ((and first-binding (not (properties-field? (var-type-properties first-binding))))
                     (build-field-accesses
                      (make-access #f (expr-src exp) (make-local-access (car acc)))
                      (cdr acc)))
@@ -2149,7 +2186,7 @@
                 (settable? (properties-settable? properties))
                 (static? (properties-static? properties)))
            (when (properties-final? properties)
-             (when (properties-local? properties) (assign-final-error 'local name class))
+             (when (not (properties-field? properties)) (assign-final-error 'local name class))
              (cond
                ((and ctor? settable? (not static?)) (void))
                ((and ctor? settable? static?) (assign-final-error 'static-in-ctor name class))

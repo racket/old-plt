@@ -112,16 +112,20 @@
 
 
   ; page-label is #f or a string that labels an HTML anchor
-  ; path is either an absolute pathname in the format of the native OS, 
-  ;  or, in the case of Help Desk servlets, a forward-slashified path 
-  ;  beginning with "/servlets/"
+  ; path is either an absolute pathname (possibly not normalized) 
+  ; in the format of the native OS, or, in the case of Help Desk 
+  ; servlets, a forward-slashified path beginning with "/servlets/"
   (define (make-anchored-path page-label path)
-    (if (and page-label
-	     (string? page-label)
-	     (not (or (string=? page-label "NO TAG") 
-		      (regexp-match "\\?|&" page-label))))
-	(string-append path "#" page-label)
-	path))
+    (let ([normal-path 
+	   (if (hd-servlet? path) 
+	       path
+	       (normalize-path path))])
+      (if (and page-label
+	       (string? page-label)
+	       (not (or (string=? page-label "NO TAG") 
+			(regexp-match "\\?|&" page-label))))
+	  (string-append normal-path "#" page-label)
+	  normal-path)))
 
   (define (doc-txt? url)
     (let ([len (string-length url)])
@@ -146,7 +150,7 @@
 	   maybe-coll))]
        [else ; manual, so have absolute path
 	(let* ([tidy-path (tidy-manual-path anchored-path)]
-	       [base-path (path-only path)]
+	       [base-path (path-only (normalize-path path))]
 	       [exp-base-path (explode-path base-path)]
 	       [doc-dir (car (last-pair exp-base-path))]
 	       [full-doc-dir (build-path (collection-path "doc") doc-dir)]
@@ -171,13 +175,13 @@
   ; path is absolute pathname
   (define (make-text-href page-label path)
     (let* ([maybe-coll (maybe-extract-coll last-header)]
-	   [hex-path (hexify-string path)]
+	   [hex-path (hexify-string (normalize-path path))]
 	   [hex-caption (if (eq? maybe-coll last-header)
 			hex-path
 			(hexify-string (make-caption maybe-coll)))])
       (format 
        with-anchor-format
-       (hexify-string path)
+       hex-path
        hex-caption
        (hexify-string maybe-coll)
        (or (and (number? page-label)

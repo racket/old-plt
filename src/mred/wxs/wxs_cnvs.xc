@@ -36,8 +36,6 @@ static void FillZero(int *a, int *b) {
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel
 
-@ "allow-double-click" : void AllowDoubleClick(bool);
-
 @SETMARK c = d
 @INCLUDE wxs_cnvs.xci
 

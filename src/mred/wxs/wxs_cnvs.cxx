@@ -121,7 +121,6 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
-
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 
 
@@ -1070,28 +1069,6 @@ static Scheme_Object *os_wxCanvasOnPaint(Scheme_Object *obj, int n,  Scheme_Obje
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCanvasAllowDoubleClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-  Bool x0;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "allow-double-click in canvas%"));
-
-  
-  WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->AllowDoubleClick(x0));
-
-  
-  
-  return scheme_void;
-}
-
 static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
@@ -1164,7 +1141,7 @@ void objscheme_setup_wxCanvas(void *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 23));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file", os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2));
@@ -1188,7 +1165,6 @@ void objscheme_setup_wxCanvas(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-char", os_wxCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-event", os_wxCanvasOnEvent, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-paint", os_wxCanvasOnPaint, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "allow-double-click", os_wxCanvasAllowDoubleClick, 1, 1));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxCanvas_class));

@@ -4,12 +4,13 @@
 (plt:require-library "ricedefs.ss")
 (plt:require-library "graphics.ss")
 (plt:require-library "sparams.ss")
-
+(plt:require-library "turtles.ss")
 
 (define-signature drscheme:userspace^
   ((open mzlib:function^)
    (open mzlib:compat^)
    (open mzlib:string^)
    (open ricedefs^)
-   (open graphics^)))
+   (open graphics^)
+   (open turtle^)))
 

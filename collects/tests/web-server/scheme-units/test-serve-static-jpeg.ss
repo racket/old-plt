@@ -2,7 +2,7 @@
 ;; Test serving JPEGs. This also tests PR #6302.
 (module test-serve-static-jpeg mzscheme
   (require (lib "contract.ss")
-           (lib "test.ss" "schemeunit")
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            "assertions.ss")
 
   (provide/contract

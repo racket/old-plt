@@ -2,7 +2,7 @@
 ;; Test serving files that require authentication.
 (module test-authentication mzscheme
   (require (lib "contract.ss")
-           (lib "test.ss" "schemeunit")
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "url.ss" "net")
            (lib "head.ss" "net")
            (lib "base64.ss" "net")
@@ -38,6 +38,7 @@
 
   (define test-authentication
     (make-test-suite
+     "Authentication Suite"
       (make-test-case
         "Authorization-only file without providing authorization, implicit file"
         (assert-no-serve "/secret/"))
@@ -62,5 +63,5 @@
   ;;; browser provides creditentials,
   ;;; creditentials are bogus,
   ;;; server does not provide file
-  
+
   )

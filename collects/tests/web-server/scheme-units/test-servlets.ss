@@ -7,7 +7,7 @@
 ;; - URL paths
 (module test-servlets mzscheme
   (require (lib "contract.ss")
-           (lib "test.ss" "schemeunit")
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "url.ss" "net")
            "assertions.ss"
            )

@@ -1,7 +1,7 @@
 ;; Test send/suspend, send/back, send/finish, and send/forward
 ;;; TODO: test send/suspend/callback, send/suspend/dispatch
 (module test-send mzscheme
-  (require (lib "test.ss" "schemeunit")
+  (require (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "servlet.ss" "web-server")
            "backend-servlet-testing.ss"
            )

@@ -3,7 +3,7 @@
 (module test-web-server mzscheme
   (require (lib "web-server.ss" "web-server")
            (lib "configuration.ss" "web-server")
-           (lib "test.ss" "schemeunit")
+           (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "etc.ss"))
 
   (provide test-web-server)
@@ -13,7 +13,7 @@
     (load-configuration (expand-path "configuration-table")))
 
   (define the-port 8135)
-  
+
   (define the-ip "127.0.0.1")
 
   (define test-web-server

@@ -1,7 +1,7 @@
 ;; Mike Burns, July 28th, 2004, netgeek@speakeasy.net
 ;; Test the error messages for both headers and content.
 (module test-errors mzscheme
-  (require (lib "test.ss" "schemeunit")
+  (require (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "url.ss" "net")
            "assertions.ss"
            )
@@ -44,7 +44,7 @@
           "/servlets/bad-require.ss"
           (lambda (http-port)
             (purify-port http-port) ;; For the effect
-            (input-port-equal? 
+            (input-port-equal?
               http-port
               (open-input-string
                 (format

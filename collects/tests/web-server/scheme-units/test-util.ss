@@ -1,6 +1,6 @@
 ;; Tests for util.ss
 (module test-util mzscheme
-  (require (lib "test.ss" "schemeunit")
+  (require (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "util.ss" "web-server")
            )
 

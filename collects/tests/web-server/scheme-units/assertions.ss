@@ -1,7 +1,7 @@
 ;; Mike Burns, July 8th, 2004, netgeek@speakeasy.net
 ;; Useful assertions
 (module assertions mzscheme
-  (require (lib "test.ss" "schemeunit")
+  (require (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "web-server.ss" "web-server")
            (lib "configuration.ss" "web-server")
            (lib "url.ss" "net")

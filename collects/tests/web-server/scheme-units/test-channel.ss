@@ -1,7 +1,7 @@
 ;; Mike Burns, July 8th, 2004, netgeek@speakeasy.net
 ;; Test async-channel:
 (module test-channel mzscheme
-  (require (lib "test.ss" "schemeunit")
+  (require (planet "test.ss" ("schematics" "schemeunit.plt" 1))
            (lib "channel.ss" "web-server"))
 
   (provide test-channel)
@@ -22,7 +22,7 @@
           "async-channel-try-get of the empty channel"
           (assert-false (async-channel-try-get c (lambda () #f))))
         (make-test-case
-          "async-channel-try-get of the non-empty channel" 
+          "async-channel-try-get of the non-empty channel"
           (assert-eq? v (begin (async-channel-put c v)
                                (async-channel-try-get c (lambda () #f))))))))
   )

@@ -1877,7 +1877,7 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   cl_cif_args = malloc(sizeof(closure_and_cif) + nargs*sizeof(ffi_cif*));
   cl = &(cl_cif_args->closure); /* cl is the same as cl_cif_args */
   cif = &(cl_cif_args->cif);
-  atypes = ((void*)cl_cif_args) + sizeof(closure_and_cif);
+  atypes = (ffi_type **)((intptr_t)cl_cif_args) + sizeof(closure_and_cif);
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);

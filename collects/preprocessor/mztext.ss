@@ -15,11 +15,6 @@
 ;; list can also hold thunk values -- these thunks will be executed when
 ;; reading input goes past them (when peeking goes past them, nothing happens).
 
-(define (copy-string! dst skip-k src . ks)
-  (if (zero? (string-length src))
-    0
-    (apply peek-string-avail! dst skip-k (open-input-string src) ks)))
-
 (define (make-composite-input . ports)
   ;; don't care about concurrency, since multiple uses should use different
   ;; input ports.
@@ -39,20 +34,20 @@
                (loop so-far)]
               [(<= len so-far) so-far]
               [(not (string? (car ports)))
-               (let ([r (read-string-avail!* str (car ports) so-far len)])
+               (let ([r '(!!!read-string-avail!* str (car ports) so-far len)])
                  (cond [(eof-object? r) (set! ports (cdr ports)) (loop so-far)]
                        ;; this probably doesn't happen
                        [(not (number? r)) (if (zero? so-far) r so-far)]
                        [(zero? (+ r so-far)) (car ports)]
                        [else (+ r so-far)]))]
               [(<= (- len so-far) (string-length (car ports)))
-               (copy-string! str 0 (car ports) so-far len)
+               (string-copy! str 0 (car ports) so-far len)
                (if (< (- len so-far) (string-length (car ports)))
                  (set-car! ports (substring (car ports) (- len so-far)))
                  (set! ports (cdr ports)))
                len]
               [else
-               (loop (begin0 (+ (copy-string! str 0 (car ports) so-far len)
+               (loop (begin0 (+ (string-copy! str 0 (car ports) so-far len)
                                 so-far)
                        (set! ports (cdr ports))))]))))
   ;; `peek!' could just call `read!' to fill in a string, then copy the
@@ -67,7 +62,7 @@
               [(and (zero? skip) (<= len so-far)) so-far]
               [(input-port? (car ports))
                (let* ([buf  (make-string (+ skip len))]
-                      [blen (read-string-avail!* buf (car ports) 0)])
+                      [blen '(!!!read-string-avail!* buf (car ports) 0)])
                  (cond [(eof-object? blen)
                         (set-car! ports #f) ; mark for removal
                         (loop skip so-far ports)]
@@ -81,7 +76,7 @@
               [(and (> skip 0) (<= (string-length (car ports)) skip))
                (loop (- skip (string-length (car ports))) so-far (cdr ports))]
               [else
-               (let ([n (copy-string! str skip (car ports) so-far)])
+               (let ([n (string-copy! str skip (car ports) so-far)])
                  (loop 0 (+ n so-far) (cdr ports)))]))))
   (define (close)
     (for-each (lambda (p) (when (input-port? p) (close-input-port p))) ports))

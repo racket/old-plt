@@ -559,6 +559,8 @@
   "WARNING: under windows, you also need libmred.dll, libmzsch.dll, and libmzgc.dll to run standalone executables.")
  (use-mred-binary?
   "Use the mred binary for this executable?\n\nIf yes, your program can use the (lib \"mred.ss\" \"mred\") library. If no, DrScheme will use mzscheme as the binary for this executable and you cannot use that library.\n\nIf unsure, choose yes.")
+ (inline-saved-program-in-executable/windows
+  "WARNING: if you copy the executable to another machine, you must also copy llibmred.dll, libmzscheme.dll, and libgc.dll. In addition, your PATH environment variable must also contain the location of the dll files.")
  
  ;;; buttons
  (execute-button-label "Execute") 
@@ -643,23 +645,23 @@
  (full-language "Full") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")
- (pretty-big-scheme "Pretty Big Scheme")
- (pretty-big-scheme-one-line-summary "Graphical Scheme, plus many standard libraries")
+ (pretty-big-scheme "Pretty Big Scheme (includes MrEd and Advanced)")
+ (pretty-big-scheme-one-line-summary "Adds syntax and functions from the HtDP languages")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, with no frills")
  (unknown-debug-frame "[unknown]")
  
- (module-language-one-line-summary "Language with module as the only construct")
+ (module-language-one-line-summary "Execute creates a REPL in the language of the module")
   
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
  (files-interactions "~a's interactions") ;; filled with a filename
  (current-interactions "interactions")
  (current-definitions "definitions")
- (mzscheme-w/debug "Textual Scheme")
- (mzscheme-one-line-summary "PLT Scheme without the GUI library")
- (mred-w/debug "Graphical Scheme")
- (mred-one-line-summary "PLT Scheme plus the GUI library")
+ (mzscheme-w/debug "Textual (MzScheme, includes R5RS)")
+ (mzscheme-one-line-summary "PLT's implementation Scheme")
+ (mred-w/debug "Graphical (MrEd, includes MzScheme)")
+ (mred-one-line-summary "Adds GUI support to MzScheme")
 
  ;; profiling
  (profiling-low-color "Low")

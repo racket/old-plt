@@ -3197,7 +3197,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       if (c->ok && !*c->ok) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_FAIL_CONTRACT_CONTINUATION,
-			 c,
 			 "continuation application: attempted to cross a continuation barrier");
       }
       
@@ -3264,7 +3263,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       if (!scheme_escape_continuation_ok(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_FAIL_CONTRACT_CONTINUATION,
-			 obj,
 			 "continuation application: attempt to jump into an escape continuation");
       }
       

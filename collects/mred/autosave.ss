@@ -5,8 +5,8 @@
 	    
     (mred:debug:printf 'invoke "mred:autosave@")
 
-    (define autosave-delay (mred:preferences:get-preference 'autosave-delay))
-    (define autosaving-on? (mred:preferences:get-preference 'autosaving-on?))
+    (mred:preferences:set-preference-default 'mred:autosave-delay 300)
+    (mred:preferences:set-preference-default 'mred:autosaving-on? #t)
 
     (define register-autosave
       (let* ([objects '()]
@@ -17,7 +17,7 @@
 			 (public
 			  [notify
 			   (lambda ()
-			     (if autosaving-on?
+			     (if (mred:preferences:get-preference 'mred:autosaving-on?)
 				 (set! objects
 				       (let loop ([list objects])
 					 (if (null? list)
@@ -28,14 +28,13 @@
 						     (send object do-autosave)
 						     (cons (car list) (loop (cdr list))))
 						   (loop (cdr list))))))))
-			     (if (not (number? autosave-delay))
-				 (set! autosave-delay 300))
-			     (start (* 1000 autosave-delay) #t))])
+			     (start (* 1000 (mred:preferences:get-preference 'mred:autosave-delay)) #t))])
 			 (sequence
 			   (super-init)
-			   (if (not (number? autosave-delay))
-			       (set! autosave-delay 300))
-			   (start (* 1000 autosave-delay) #t))))])
+			   (start (* 1000
+				     (mred:preferences:get-preference
+				      'mred:autosave-delay))
+				  #t))))])
 	(lambda (b)
 	  (set! objects
 		(cons (make-weak-box b) objects)))))))

@@ -465,7 +465,7 @@
 		    scheme
 		    #f			; host
 		    #f			; port
-		    (build-path (substring string path-start total-length))
+		    (substring string path-start total-length)
 		    #f			; params
 		    #f			; query
 		    #f)			; fragment

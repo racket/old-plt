@@ -144,7 +144,7 @@
               (define results-editor% (class100 hyper-text% ()
                                                 (inherit set-title)
                                                 (sequence 
-                                                  (super-init #f #f)
+                                                  (super-init #f #f void)
                                                   (set-title (string-constant search-results)))))
               
               (define (get-unique-title)

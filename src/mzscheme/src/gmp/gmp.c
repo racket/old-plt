@@ -22,7 +22,9 @@ MA 02111-1307, USA. */
 #define _FORCE_INLINES
 #define _EXTERN_INLINE /* empty */
 
-/* We use malloc for now; this will have to change: */
+/* We use malloc for now; this will have to change. */
+/* The allocation function should not create collectable
+   memory, though it can safely GC when allocating. */
 extern void *malloc(long);
 extern void free(void *);
 #define MALLOC malloc
@@ -36,6 +38,9 @@ static const int mp_bits_per_limb = BITS_PER_MP_LIMB;
 static const int __gmp_0 = 0;
 static int __gmp_junk;
 static int gmp_errno = 0;
+
+#define SCHEME_USE_FUEL(n) scheme_bignum_use_fuel(n)
+extern void scheme_bignum_use_fuel(long n);
 
 /* Compare OP1_PTR/OP1_SIZE with OP2_PTR/OP2_SIZE.
    There are no restrictions on the relative sizes of
@@ -206,6 +211,8 @@ mpn_kara_mul_n(p, a, b, n, ws)
 
   n2 = n >> 1;
   ASSERT (n2 > 0);
+
+  SCHEME_USE_FUEL(n);
 
   if (n & 1)
     {
@@ -424,6 +431,8 @@ mpn_kara_sqr_n (p, a, n, ws)
 
   n2 = n >> 1;
   ASSERT (n2 > 0);
+
+  SCHEME_USE_FUEL(n);
 
   if (n & 1)
     {
@@ -1242,6 +1251,8 @@ mpn_toom3_mul_n (p, a, b, n, ws)
   mp_limb_t *A,*B,*C,*D,*E, *W;
   mp_size_t l,l2,l3,l4,l5,ls;
 
+  SCHEME_USE_FUEL(n);
+
   /* Break n words into chunks of size l, l and ls.
    * n = 3*k   => l = k,   ls = k
    * n = 3*k+1 => l = k+1, ls = k-1
@@ -1349,6 +1360,8 @@ mpn_toom3_sqr_n (p, a, n, ws)
   mp_limb_t cB,cC,cD, tB,tC,tD;
   mp_limb_t *A,*B,*C,*D,*E, *W;
   mp_size_t l,l2,l3,l4,l5,ls;
+
+  SCHEME_USE_FUEL(n);
 
   /* Break n words into chunks of size l, l and ls.
    * n = 3*k   => l = k,   ls = k
@@ -1727,6 +1740,8 @@ mpn_get_str (str, base, mptr, msize)
 	{
 	  int i;
 	  mp_limb_t n0, n1;
+
+	  SCHEME_USE_FUEL(1);
 
 #if UDIV_NEEDS_NORMALIZATION || UDIV_TIME > 2 * UMUL_TIME
 	  /* If we shifted BIG_BASE above, shift the dividend too, to get
@@ -3544,6 +3559,8 @@ mpn_mul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
   register mp_size_t j;
   register mp_limb_t prod_high, prod_low;
 
+  SCHEME_USE_FUEL(s1_size);
+
   /* The loop counter and index J goes from -S1_SIZE to -1.  This way
      the loop becomes faster.  */
   j = -s1_size;
@@ -3583,6 +3600,8 @@ mpn_addmul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
   register mp_size_t j;
   register mp_limb_t prod_high, prod_low;
   register mp_limb_t x;
+
+  SCHEME_USE_FUEL(s1_size);
 
   /* The loop counter and index J goes from -SIZE to -1.  This way
      the loop becomes faster.  */
@@ -3627,6 +3646,8 @@ mpn_submul_1 (res_ptr, s1_ptr, s1_size, s2_limb)
   register mp_size_t j;
   register mp_limb_t prod_high, prod_low;
   register mp_limb_t x;
+
+  SCHEME_USE_FUEL(s1_size);
 
   /* The loop counter and index J goes from -SIZE to -1.  This way
      the loop becomes faster.  */
@@ -3684,6 +3705,8 @@ mpn_divexact_by3c (dst, src, size, c)
 #endif
 {
   mp_size_t  i;
+
+  SCHEME_USE_FUEL(size);
 
   ASSERT (size >= 1);
 
@@ -3888,6 +3911,8 @@ mpn_divrem (qp, qxn, np, nn, dp, dn)
      mp_size_t dn;
 #endif
 {
+  SCHEME_USE_FUEL(dn + nn);
+
   if (dn == 1)
     {
       mp_limb_t ret;

@@ -841,7 +841,7 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
       }
     }
   } else
-    arity = scheme_false; /* BUG! if this happens */
+    arity = scheme_null; /* a primitive case-lambda with zero cases */
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, v, arity, "%t", s, len);
 }
@@ -879,8 +879,12 @@ void scheme_case_lambda_wrong_count(const char *name,
     maxa = mzVA_ARG(args, int);
     
     if (is_method) {
-      mina -= 1;
-      maxa -= 1;
+      if (maxa == -1) {
+	mina -= 1;
+      } else {
+	mina -= 1;
+	maxa -= 1;
+      }
     }
 
     av = scheme_make_arity(mina, maxa);
@@ -889,6 +893,10 @@ void scheme_case_lambda_wrong_count(const char *name,
   va_end(args);
 
   s = make_arity_expect_string(name, -1, -2, 0, argc, argv, &len, is_method);
+
+  /* Adjust argc for a method before making the exn record: */
+  if (is_method && argc)
+    argc--;
 
   scheme_raise_exn(MZEXN_APPLICATION_ARITY, scheme_make_integer(argc), 
 		   arity, "%t", s, len);

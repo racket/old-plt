@@ -199,10 +199,10 @@ static Scheme_Object *do_breakable_wait(void *data)
 
   /* Need to check for a break, in case one was queued and we just enabled it: */
   {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     if (p->external_break)
       if (scheme_can_break(p, p->config))
-	scheme_process_block_w_process(0.0, p);
+	scheme_thread_block_w_thread(0.0, p);
   }
 
   scheme_wait_sema(bw->sema, 0);
@@ -219,14 +219,14 @@ static void post_breakable_wait(void *data)
 # ifndef MZ_REAL_THREADS
 static int out_of_line(Scheme_Object *w)
 {
-  Scheme_Process *p;
+  Scheme_Thread *p;
 
   /* Out of line? */
   if (!((Scheme_Sema_Waiter **)w)[0]->in_line)
     return 1;
 
   /* Suspended break? */
-  p = ((Scheme_Process **)w)[1];
+  p = ((Scheme_Thread **)w)[1];
   if (p->external_break) {
     p->suspend_break = 0;
     if (scheme_can_break(p, p->config))
@@ -288,7 +288,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       w->type = scheme_rt_sema_waiter;
 #endif
       
-      w->p = scheme_current_process;
+      w->p = scheme_current_thread;
       
       while (1) {
 	/* Get into line */
@@ -301,22 +301,22 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	sema->last = w;
 	w->next = NULL;
 
-	if (!scheme_current_process->next) {
+	if (!scheme_current_thread->next) {
 	  void **a;
 	  a = MALLOC_N(void*, 2);
 	  /* We're not allowed to suspend the main thread. Delay
 	     breaks so we get a chance to clean up. */
-	  scheme_current_process->suspend_break = 1;
+	  scheme_current_thread->suspend_break = 1;
 	  a[0] = w;
-	  a[1] = scheme_current_process;
+	  a[1] = scheme_current_thread;
 	  scheme_block_until(out_of_line, NULL, a, (float)0.0);
-	  scheme_current_process->suspend_break = 0;
+	  scheme_current_thread->suspend_break = 0;
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
 	     if the thread is killed. */
-	  scheme_current_process->running |= MZTHREAD_NEED_KILL_CLEANUP;
-	  scheme_weak_suspend_thread(scheme_current_process);
-	  scheme_current_process->running -= MZTHREAD_NEED_KILL_CLEANUP;
+	  scheme_current_thread->running |= MZTHREAD_NEED_KILL_CLEANUP;
+	  scheme_weak_suspend_thread(scheme_current_thread);
+	  scheme_current_thread->running -= MZTHREAD_NEED_KILL_CLEANUP;
 	}
 
 	/* We've been resumed. But was it for the semaphore, or a signal? */
@@ -332,18 +332,18 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	  else
 	    sema->last = w->prev;
 	  
-	  scheme_process_block(0); /* ok if it returns multiple times */
+	  scheme_thread_block(0); /* ok if it returns multiple times */
 	} else {
 	  /* The semaphore picked us to go */
-	  if (scheme_current_process->running & MZTHREAD_KILLED) {
+	  if (scheme_current_thread->running & MZTHREAD_KILLED) {
 	    /* We've been killed!  Consume the value and repost,
 	       (because no one else has been told to go). Then die by
-	       calling scheme_process_block. */
+	       calling scheme_thread_block. */
 	    if (sema->value) {
 	      --sema->value;
 	      scheme_post_sema((Scheme_Object *)sema);
 	    }
-	    scheme_process_block(0); /* dies */
+	    scheme_thread_block(0); /* dies */
 	  }
 
 	  if (sema->value) {
@@ -358,16 +358,16 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	}
       }
 # else
-      scheme_current_process->block_descriptor = SEMA_BLOCKED;
-      scheme_current_process->blocker = (Scheme_Object *)sema;
+      scheme_current_thread->block_descriptor = SEMA_BLOCKED;
+      scheme_current_thread->blocker = (Scheme_Object *)sema;
       
       while (!sema->value)
-	scheme_process_block(0); /* ok if it returns multiple times */
+	scheme_thread_block(0); /* ok if it returns multiple times */
       --sema->value;
       
-      scheme_current_process->block_descriptor = NOT_BLOCKED;
-      scheme_current_process->blocker = NULL;
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->block_descriptor = NOT_BLOCKED;
+      scheme_current_thread->blocker = NULL;
+      scheme_current_thread->ran_some = 1;
 # endif
     }
 #endif

@@ -1195,7 +1195,7 @@
 "(syntax/loc"
 " stx"
 "(letrec-syntax((tmp expr) ...)"
-"(letrec-syntax((id(syntax-local-value(quote tmp) void)) ...)"
+"(letrec-syntax((id(syntax-local-value(quote-syntax tmp) void)) ...)"
 " body))))))))"
 "(define-syntax syntax-rules"
 "(lambda(x)"

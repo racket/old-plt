@@ -411,7 +411,7 @@ void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
   }
 }
 
-void scheme_ensure_stack_start(Scheme_Process *p, void *d)
+void scheme_ensure_stack_start(Scheme_Thread *p, void *d)
 {
   if (!p->stack_start 
       || (STK_COMP((unsigned long)p->stack_start, (unsigned long)d)))

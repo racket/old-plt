@@ -454,9 +454,9 @@ syntax_compiler {
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
 }
 
-process_val {
+thread_val {
  mark:
-  Scheme_Process *pr = (Scheme_Process *)p;
+  Scheme_Thread *pr = (Scheme_Thread *)p;
   
   gcMARK(pr->next);
   gcMARK(pr->prev);
@@ -520,7 +520,7 @@ process_val {
   gcMARK(pr->mref);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Process));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
 }
 
 cont_mark_set_val {
@@ -575,7 +575,7 @@ namespace_val {
   gcMARK(e->link_midx);
 
   gcMARK(e->toplevel);
-  gcMARK(e->modpair);
+  gcMARK(e->modchain);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -674,7 +674,8 @@ mark_comp_env {
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
-  gcMARK(e->data.constants);
+  gcMARK(e->data.const_names);
+  gcMARK(e->data.const_vals);
   gcMARK(e->data.use);
 
  size:
@@ -975,7 +976,7 @@ mark_system_child {
 mark_beos_process {
  mark:
  size:
-  gcBYTES_TO_WORDS(sizeof(BeOSProcess));
+  gcBYTES_TO_WORDS(sizeof(BeOSThread));
 }
 #endif
 
@@ -1043,7 +1044,7 @@ END network;
 
 /**********************************************************************/
 
-START process;
+START thread;
 
 mark_config_val {
  mark:
@@ -1072,9 +1073,9 @@ mark_will_executor_val {
   gcBYTES_TO_WORDS(sizeof(WillExecutor));
 }
 
-mark_manager_val {
+mark_custodian_val {
  mark:
-  Scheme_Manager *m = (Scheme_Manager *)p;
+  Scheme_Custodian *m = (Scheme_Custodian *)p;
   
   gcMARK(m->boxes);
   gcMARK(m->mrefs);
@@ -1086,17 +1087,17 @@ mark_manager_val {
   gcMARK(m->children);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }
 
-mark_process_hop {
+mark_thread_hop {
  mark:
-  Scheme_Process_Manager_Hop *hop = (Scheme_Process_Manager_Hop *)p;
+  Scheme_Thread_Custodian_Hop *hop = (Scheme_Thread_Custodian_Hop *)p;
 
   gcMARK(hop->p);
 
  size:
-   gcBYTES_TO_WORDS(sizeof(Scheme_Process_Manager_Hop));
+   gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Custodian_Hop));
 }
 
 mark_namespace_option {
@@ -1145,7 +1146,7 @@ mark_will_registration {
   gcBYTES_TO_WORDS(sizeof(WillRegistration));
 }
 
-END process;
+END thread;
 
 /**********************************************************************/
 

@@ -117,7 +117,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_eof_type, "<eof>");
   set_name(scheme_input_port_type, "<input-port>");
   set_name(scheme_output_port_type, "<output-port>");
-  set_name(scheme_process_type, "<thread>");
+  set_name(scheme_thread_type, "<thread>");
   set_name(scheme_string_type, "<string>");
   set_name(scheme_struct_info_type, "<struct-info>");
   set_name(scheme_structure_type, "<struct>");
@@ -150,7 +150,7 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_svector_type, "<short-vector>");
 
-  set_name(scheme_manager_type, "<custodian>");
+  set_name(scheme_custodian_type, "<custodian>");
   set_name(scheme_cont_mark_set_type, "<continuation-mark-set>");
 
   set_name(scheme_inspector_type, "<inspector>");
@@ -384,7 +384,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_syntax_compiler_type, syntax_compiler);
   GC_REG_TRAV(scheme_macro_type, small_object);
   GC_REG_TRAV(scheme_box_type, small_object);
-  GC_REG_TRAV(scheme_process_type, process_val);
+  GC_REG_TRAV(scheme_thread_type, thread_val);
   GC_REG_TRAV(scheme_generic_type, bad_trav); /* generic = proc */
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_REG_TRAV(scheme_sema_type, sema_val);

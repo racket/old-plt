@@ -128,7 +128,7 @@ if ($list) {
 		print "$f\n" unless $suspend;
 	    } elsif ($winex || $gwinex) {
 		$data = "";
-		if (($f =~ /scheme_current_process/)
+		if (($f =~ /scheme_current_thread/)
 		    || ($f =~ /scheme_fuel_counter/)
 		    || ($f =~ /scheme_eof/)
 		    || ($f =~ /scheme_null/)

@@ -52,42 +52,42 @@ Scheme_Env *(*scheme_get_env)(Scheme_Config *config);
 /*                                threads                                 */
 /*========================================================================*/
 #ifdef MZ_REAL_THREADS
-Scheme_Process *(*scheme_get_current_process)();
+Scheme_Thread *(*scheme_get_current_thread)();
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
-Scheme_Process *scheme_current_process;
+Scheme_Thread *scheme_current_thread;
 volatile int scheme_fuel_counter;
 #else
-Scheme_Process **scheme_current_process_ptr;
+Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
 #endif
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk, Scheme_Config *config);
-Scheme_Object *(*scheme_thread_w_manager)(Scheme_Object *thunk, Scheme_Config *config,
-				       Scheme_Manager *mgr);
-void (*scheme_kill_thread)(Scheme_Process *p);
+Scheme_Object *(*scheme_thread_w_custodian)(Scheme_Object *thunk, Scheme_Config *config,
+				       Scheme_Custodian *mgr);
+void (*scheme_kill_thread)(Scheme_Thread *p);
 #endif
-void (*scheme_break_thread)(Scheme_Process *p);
+void (*scheme_break_thread)(Scheme_Thread *p);
 #ifndef MZ_REAL_THREADS
-void (*scheme_process_block)(float sleep_time);
-void (*scheme_swap_process)(Scheme_Process *process);
+void (*scheme_thread_block)(float sleep_time);
+void (*scheme_swap_thread)(Scheme_Thread *process);
 #else
-void (*scheme_process_block_w_process)(float sleep_time, Scheme_Process *p);
+void (*scheme_thread_block_w_thread)(float sleep_time, Scheme_Thread *p);
 #endif
-void (*scheme_weak_suspend_thread)(Scheme_Process *p);
-void (*scheme_weak_resume_thread)(Scheme_Process *p);
+void (*scheme_weak_suspend_thread)(Scheme_Thread *p);
+void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);
 int (*scheme_in_main_thread)(void);
 int (*scheme_tls_allocate)();
 void (*scheme_tls_set)(int pos, void *v);
 void *(*scheme_tls_get)(int pos);
-Scheme_Manager *(*scheme_make_manager)(Scheme_Manager *);
-Scheme_Manager_Reference *(*scheme_add_managed)(Scheme_Manager *m, Scheme_Object *o, 
-					     Scheme_Close_Manager_Client *f, void *data, 
+Scheme_Custodian *(*scheme_make_custodian)(Scheme_Custodian *);
+Scheme_Custodian_Reference *(*scheme_add_managed)(Scheme_Custodian *m, Scheme_Object *o, 
+					     Scheme_Close_Custodian_Client *f, void *data, 
 					     int strong);
-void (*scheme_remove_managed)(Scheme_Manager_Reference *m, Scheme_Object *o);
-void (*scheme_close_managed)(Scheme_Manager *m);
+void (*scheme_remove_managed)(Scheme_Custodian_Reference *m, Scheme_Object *o);
+void (*scheme_close_managed)(Scheme_Custodian *m);
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
@@ -147,13 +147,13 @@ Scheme_Object *(*scheme_apply_eb)(Scheme_Object *rator, int num_rands, Scheme_Ob
 Scheme_Object *(*scheme_apply_multi_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands);
 #else
 Scheme_Object *(*scheme_apply_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-			       Scheme_Process *p);
+			       Scheme_Thread *p);
 Scheme_Object *(*scheme_apply_multi_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-				     Scheme_Process *p);
+				     Scheme_Thread *p);
 Scheme_Object *(*scheme_apply_eb_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-				  Scheme_Process *p);
+				  Scheme_Thread *p);
 Scheme_Object *(*scheme_apply_multi_eb_wp)(Scheme_Object *rator, int num_rands, Scheme_Object **rands,
-					Scheme_Process *p);
+					Scheme_Thread *p);
 #endif
 Scheme_Object *(*scheme_apply_to_list)(Scheme_Object *rator, Scheme_Object *argss);
 Scheme_Object *(*scheme_eval_string)(const char *str, Scheme_Env *env);
@@ -186,7 +186,7 @@ Scheme_Object *(*scheme_current_continuation_marks)(void);
 #ifndef MZ_REAL_THREADS
 Scheme_Object *(*scheme_do_eval)(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);
 #else
-Scheme_Object *(*scheme_do_eval_w_process)(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val, Scheme_Process *p);
+Scheme_Object *(*scheme_do_eval_w_thread)(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val, Scheme_Thread *p);
 #endif
 /*========================================================================*/
 /*                           memory management                            */

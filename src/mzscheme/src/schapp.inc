@@ -2,7 +2,7 @@
   MZ_MARK_STACK_TYPE old_cont_mark_stack;
   Scheme_Object *v;
   Scheme_Closed_Primitive_Proc *prim;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
 #if !PRIM_NO_STACK_CHECK
 # ifdef DO_STACK_CHECK
@@ -13,7 +13,7 @@
 #  include "mzstkchk.h"
   {
 #  ifndef ERROR_ON_OVERFLOW
-    Scheme_Process *cp = scheme_current_process;
+    Scheme_Thread *cp = scheme_current_thread;
     cp->ku.k.p1 = (void *)rator;
     cp->ku.k.i1 = argc;
     cp->ku.k.p2 = (void *)argv;

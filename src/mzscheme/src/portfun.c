@@ -742,17 +742,17 @@ static int pipe_getc(Scheme_Input_Port *p)
     SCHEME_SEMA_DOWN(pipe->wait_sem);
     SCHEME_LOCK_MUTEX(pipe->change_mutex);
     BEGIN_ESCAPEABLE(do_unlock_mutex, pipe->change_mutex);
-    scheme_process_block(0);
+    scheme_thread_block(0);
     END_ESCAPEABLE();
   }
 #else
-  scheme_current_process->block_descriptor = PIPE_BLOCKED;
-  scheme_current_process->blocker = (Scheme_Object *)p;
+  scheme_current_thread->block_descriptor = PIPE_BLOCKED;
+  scheme_current_thread->blocker = (Scheme_Object *)p;
   while (pipe->bufstart == pipe->bufend && !pipe->eof) {
-    scheme_process_block((float)0.0);
+    scheme_thread_block((float)0.0);
   }
-  scheme_current_process->block_descriptor = NOT_BLOCKED;
-  scheme_current_process->ran_some = 1;
+  scheme_current_thread->block_descriptor = NOT_BLOCKED;
+  scheme_current_thread->ran_some = 1;
 #endif
 
   if (p->closed) {
@@ -1254,7 +1254,7 @@ close_output_port (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 call_with_output_file (int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port, *v, **m;
 
   scheme_check_proc_arity("call-with-output-file", 1, 1, argc, argv);
@@ -1273,7 +1273,7 @@ call_with_output_file (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 call_with_input_file(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port, *v, **m;
 
   scheme_check_proc_arity("call-with-input-file", 1, 1, argc, argv);
@@ -1372,7 +1372,7 @@ with_input_from_file(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("default-port-read-handler", "input-port", 0, argc, argv);
@@ -1391,7 +1391,7 @@ static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
@@ -1422,7 +1422,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port;
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
@@ -1682,10 +1682,10 @@ static Scheme_Object *do_breakable(void *data)
 
   /* Need to check for a break, in case one was queued and we just enabled it: */
   {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     if (p->external_break)
       if (scheme_can_break(p, p->config))
-	scheme_process_block_w_process(0.0, p);
+	scheme_thread_block_w_thread(0.0, p);
   }
 
   k = b->k;
@@ -1710,7 +1710,7 @@ read_string_bang_break(int argc, Scheme_Object *argv[])
   b->argc = argc;
   b->argv = argv;
   b->k = read_string_bang;
-  b->config = scheme_current_process->config;
+  b->config = scheme_current_thread->config;
 
   return scheme_dynamic_wind(pre_breakable, 
 			     do_breakable, 
@@ -1730,7 +1730,7 @@ write_string_avail_break(int argc, Scheme_Object *argv[])
   b->argc = argc;
   b->argv = argv;
   b->k = scheme_write_string_avail;
-  b->config = scheme_current_process->config;
+  b->config = scheme_current_thread->config;
 
   return scheme_dynamic_wind(pre_breakable, 
 			     do_breakable, 
@@ -2054,7 +2054,7 @@ typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Config *config;
   Scheme_Object *port;
-  Scheme_Process *p;
+  Scheme_Thread *p;
   Scheme_Object *stxsrc;
 } LoadHandlerData;
 
@@ -2069,7 +2069,7 @@ static Scheme_Object *do_load_handler(void *data)
 {  
   LoadHandlerData *lhd = (LoadHandlerData *)data;
   Scheme_Object *port = lhd->port;
-  Scheme_Process *p = lhd->p;
+  Scheme_Thread *p = lhd->p;
   Scheme_Config *config = lhd->config;
   Scheme_Object *last_val = scheme_void, *obj, **save_array = NULL;
   int save_count = 0;
@@ -2106,7 +2106,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port, *name;
   int ch;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Config *config = p->config;
   LoadHandlerData *lhd;
 
@@ -2186,7 +2186,7 @@ static Scheme_Object *do_load(void *data)
 Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
 				     char *who, int handler_param)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Config *config = p->config;
   LoadData *ld;
   const char *filename;

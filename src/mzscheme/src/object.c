@@ -1535,7 +1535,7 @@ static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *s
 
 static void
 PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *sclass, 
-		   int level, Scheme_Process *p,
+		   int level, Scheme_Thread *p,
 		   Scheme_Object ***_priv_stack, Scheme_Object ***_obj_stack)
 {
   /* Called at start of class-specific initialization */
@@ -1638,7 +1638,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 
 static void *init_obj_frame_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Internal_Object *o = (Internal_Object *)p->ku.k.p1;
   Scheme_Object **argv = (Scheme_Object **)p->ku.k.p2;
   Init_Object_Rec *irec = (Init_Object_Rec *)p->ku.k.p3;
@@ -1659,7 +1659,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
   int i, j, pthresh;
   Scheme_Object **priv_stack, **obj_stack, **orig_stack;
   Scheme_Class *sclass;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (level == -1) {
     level = irec->init_level;
@@ -1724,7 +1724,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
       stack[i] = saved[i];
     }
 
-    PushFrameVariables(o, irec, sclass, level, scheme_current_process,
+    PushFrameVariables(o, irec, sclass, level, scheme_current_thread,
 		       &priv_stack, &obj_stack);
 
     /* Set init arg values in environment: */

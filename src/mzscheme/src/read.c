@@ -63,7 +63,7 @@ static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 # define CURRENTPROCPRM /* empty */
 # define CURRENTPROCARG /* empty */
 #else
-# define CURRENTPROCPRM , Scheme_Process *p
+# define CURRENTPROCPRM , Scheme_Thread *p
 # define CURRENTPROCARG , p
 #endif
 
@@ -114,24 +114,24 @@ static int skip_whitespace_comments(Scheme_Object *port);
 
 /* local_... is copy of parameter values, made before read starts: */
 
-#define local_can_read_compiled (PROCESS_FOR_LOCALS->quick_can_read_compiled)
-#define local_can_read_pipe_quote (PROCESS_FOR_LOCALS->quick_can_read_pipe_quote)
-#define local_can_read_box (PROCESS_FOR_LOCALS->quick_can_read_box)
-#define local_can_read_graph (PROCESS_FOR_LOCALS->quick_can_read_graph)
-#define local_case_sensitive (PROCESS_FOR_LOCALS->quick_case_sens)
-#define local_square_brackets_are_parens (PROCESS_FOR_LOCALS->quick_square_brackets_are_parens)
-#define local_curly_braces_are_parens (PROCESS_FOR_LOCALS->quick_curly_braces_are_parens)
-#define local_read_decimal_inexact (PROCESS_FOR_LOCALS->quick_read_decimal_inexact)
+#define local_can_read_compiled (THREAD_FOR_LOCALS->quick_can_read_compiled)
+#define local_can_read_pipe_quote (THREAD_FOR_LOCALS->quick_can_read_pipe_quote)
+#define local_can_read_box (THREAD_FOR_LOCALS->quick_can_read_box)
+#define local_can_read_graph (THREAD_FOR_LOCALS->quick_can_read_graph)
+#define local_case_sensitive (THREAD_FOR_LOCALS->quick_case_sens)
+#define local_square_brackets_are_parens (THREAD_FOR_LOCALS->quick_square_brackets_are_parens)
+#define local_curly_braces_are_parens (THREAD_FOR_LOCALS->quick_curly_braces_are_parens)
+#define local_read_decimal_inexact (THREAD_FOR_LOCALS->quick_read_decimal_inexact)
 
-#define local_list_stack (PROCESS_FOR_LOCALS->list_stack)
-#define local_list_stack_pos (PROCESS_FOR_LOCALS->list_stack_pos)
+#define local_list_stack (THREAD_FOR_LOCALS->list_stack)
+#define local_list_stack_pos (THREAD_FOR_LOCALS->list_stack_pos)
 
-#define local_rename_memory (PROCESS_FOR_LOCALS->rn_memory)
+#define local_rename_memory (THREAD_FOR_LOCALS->rn_memory)
 
 #ifndef MZ_REAL_THREADS
-# define PROCESS_FOR_LOCALS scheme_current_process
+# define THREAD_FOR_LOCALS scheme_current_thread
 #else
-# define PROCESS_FOR_LOCALS p
+# define THREAD_FOR_LOCALS p
 #endif
 
 /* A list stack is used to speed up the creation of intermediate lists
@@ -244,7 +244,7 @@ void scheme_init_read(Scheme_Env *env)
 			     env);
 }
 
-void scheme_alloc_list_stack(Scheme_Process *process)
+void scheme_alloc_list_stack(Scheme_Thread *process)
 {
   Scheme_Object *sa;
   process->list_stack_pos = 0;
@@ -348,7 +348,7 @@ static Scheme_Object *read_inner(Scheme_Object *port,
 
 static Scheme_Object *read_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
   Scheme_Object *stxsrc = (Scheme_Object *)p->ku.k.p3;
@@ -378,7 +378,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 # include "mzstkchk.h"
     {
 # ifndef MZ_REAL_THREADS
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
 # endif
       p->ku.k.p1 = (void *)port;
       p->ku.k.p2 = (void *)ht;
@@ -735,7 +735,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
 static Scheme_Object *resolve_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object *port = (Scheme_Object *)p->ku.k.p2;
 
@@ -758,7 +758,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 # include "mzstkchk.h"
     {
 # ifndef MZ_REAL_THREADS
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
 # endif
       p->ku.k.p1 = (void *)obj;
       p->ku.k.p2 = (void *)port;
@@ -825,7 +825,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
 		     Scheme_Config *config CURRENTPROCPRM)
 {
 #ifndef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   Scheme_Object *v;
   Scheme_Hash_Table *ht = NULL;
@@ -854,7 +854,7 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
 
 static void *scheme_internal_read_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *port = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object *stxsrc = (Scheme_Object *)p->ku.k.p2;
 
@@ -862,14 +862,14 @@ static void *scheme_internal_read_k(void)
   p->ku.k.p2 = NULL;
 
   return (void *)scheme_internal_read(port, stxsrc, local_can_read_compiled,
-				      scheme_current_process->config
+				      scheme_current_thread->config
 				      CURRENTPROCARG);
 }
 
 Scheme_Object *
 scheme_read(Scheme_Object *port)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   local_can_read_compiled = SCHEME_TRUEP(scheme_get_param(scheme_config, 
 							  MZCONFIG_CAN_READ_COMPILED));
@@ -882,7 +882,7 @@ scheme_read(Scheme_Object *port)
 Scheme_Object *
 scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   local_can_read_compiled = SCHEME_TRUEP(scheme_get_param(scheme_config, 
 							  MZCONFIG_CAN_READ_COMPILED));
@@ -895,7 +895,7 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
 {
 #ifdef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   return resolve_references(obj, NULL, mkstx CURRENTPROCARG);
 }
@@ -2149,7 +2149,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 				    CURRENTPROCPRM)
 {
 #ifndef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   Scheme_Object *result;
   CPort cp;

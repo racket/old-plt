@@ -1411,7 +1411,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 
 static Scheme_Object *syntax_to_datum_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
   Scheme_Hash_Table *rns = (Scheme_Hash_Table *)p->ku.k.p3;
@@ -1437,7 +1437,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 # include "mzstkchk.h"
     {
 # ifndef MZ_REAL_THREADS
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
 # endif
       p->ku.k.p1 = (void *)o;
       p->ku.k.p2 = (void *)ht;
@@ -1551,7 +1551,7 @@ static int syntax_is_graph_inner(Scheme_Object *o);
 
 static Scheme_Object *syntax_is_graph_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
 
   p->ku.k.p1 = NULL;
@@ -1570,7 +1570,7 @@ static int syntax_is_graph_inner(Scheme_Object *o)
 # include "mzstkchk.h"
     {
 # ifndef MZ_REAL_THREADS
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
 # endif
       p->ku.k.p1 = (void *)o;
       return (int)scheme_handle_stack_overflow(syntax_is_graph_k);
@@ -1756,11 +1756,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
       stack = scheme_make_pair((Scheme_Object *)mrn, stack);
     } else if (SCHEME_TRUEP(a)) {
       /* current env rename */
-      Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV);
+      Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
       stack = scheme_make_pair(env->rename, stack);
     } else if (SCHEME_FALSEP(a)) {
       /* current exp-env rename */
-      Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV);
+      Scheme_Env *env = (Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV);
       stack = scheme_make_pair(env->exp_env->rename, stack);
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */
@@ -1798,7 +1798,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 
 static Scheme_Object *datum_to_syntax_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Stx *stx_src = (Scheme_Stx *)p->ku.k.p2;
   Scheme_Stx *stx_wraps = (Scheme_Stx *)p->ku.k.p3;
@@ -1828,7 +1828,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 # include "mzstkchk.h"
     {
 # ifndef MZ_REAL_THREADS
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
 # endif
       p->ku.k.p1 = (void *)o;
       p->ku.k.p2 = (void *)stx_src;
@@ -2218,7 +2218,7 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
     scheme_wrong_type("bound-identifier=?", "identifier syntax", 0, argc, argv);
@@ -2235,7 +2235,7 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
     scheme_wrong_type("free-identifier=?", "identifier syntax", 0, argc, argv);
@@ -2252,7 +2252,7 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
 
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
     scheme_wrong_type("module-identifier=?", "identifier syntax", 0, argc, argv);
@@ -2269,7 +2269,7 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
 
 static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
     scheme_wrong_type("module-transformer-identifier=?", "identifier syntax", 0, argc, argv);
@@ -2286,7 +2286,7 @@ static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
 
 static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **argv, int dphase)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *a, *m;
 
   a = argv[0];

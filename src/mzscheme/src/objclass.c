@@ -860,7 +860,7 @@ Scheme_Object *scheme_DefineClass_Execute(Scheme_Object *form, int already_evale
   i = sclass->closure_size = data->closure_size;
   if (i) {
 #ifndef RUNSTACK_IS_GLOBAL
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
 #endif
     Scheme_Object **saved, **stack;
     short *map = data->closure_map;

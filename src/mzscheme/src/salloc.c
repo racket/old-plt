@@ -746,7 +746,7 @@ void (*scheme_external_dump_arg)(Scheme_Object *arg);
 char *(*scheme_external_dump_type)(void *v);
 
 #ifdef USE_TAGGED_ALLOCATION
-static void count_managed(Scheme_Manager *m, int *c, int *a, int *u, int *t,
+static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 			  int *ipt, int *opt, int *th)
 {
   int i;
@@ -758,7 +758,7 @@ static void count_managed(Scheme_Manager *m, int *c, int *a, int *u, int *t,
     if (m->boxes[i]) {
       Scheme_Object *o = (*(m->boxes[i]));
       (*u)++;
-      if (SCHEME_PROCESSP(o))
+      if (SCHEME_THREADP(o))
 	(*th)++;
       else if (SCHEME_INPORTP(o))
 	(*ipt)++;
@@ -902,7 +902,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     scheme_console_printf("End MzScheme\n");
 
     {
-      Scheme_Manager *m = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
+      Scheme_Custodian *m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
       int c = 0, a = 0, u = 0, t = 0, ipt = 0, opt = 0, th = 0;
 
       while (*m->parent)
@@ -969,7 +969,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	  if (!scheme_strncmp(type, "#<thread", 8)) {
 	    char buffer[256];
 	    char *run, *sus, *kill, *clean, *all, *t2;
-	    int state = ((Scheme_Process *)v)->running, len2;
+	    int state = ((Scheme_Thread *)v)->running, len2;
 	    
 	    run = (state & MZTHREAD_RUNNING) ? "+run" : "";
 	    sus = (state & MZTHREAD_SUSPENDED) ? "+suspended" : "";
@@ -1388,23 +1388,23 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_will_executor_type:
     s = sizeof(Scheme_Object);
     break;
-  case scheme_manager_type: 
+  case scheme_custodian_type: 
     {
-      Scheme_Manager *m = (Scheme_Manager *)root;
+      Scheme_Custodian *m = (Scheme_Custodian *)root;
 
-      s = sizeof(Scheme_Manager);
+      s = sizeof(Scheme_Custodian);
       e = m->alloc * (sizeof(Scheme_Object **)
-		      + sizeof(Scheme_Manager_Reference *)
+		      + sizeof(Scheme_Custodian_Reference *)
 		      + sizeof(void *)
 		      + sizeof(void *));
     }
     break;
-  case scheme_process_type:
+  case scheme_thread_type:
     {
-      Scheme_Process *p = (Scheme_Process *)root;
+      Scheme_Thread *p = (Scheme_Thread *)root;
       Scheme_Saved_Stack *saved;
 
-      s = sizeof(Scheme_Process)
+      s = sizeof(Scheme_Thread)
 	+ ((p->runstack_size + p->tail_buffer_size) * sizeof(Scheme_Object *));
 
 #if FORCE_KNOWN_SUBPARTS

@@ -332,13 +332,13 @@ scheme_init_eval (Scheme_Env *env)
 #ifndef MZ_REAL_THREADS
 # define DO_CHECK_FOR_BREAK(p, e) \
 	if (DECREMENT_FUEL(scheme_fuel_counter, 1) <= 0) { \
-	  e scheme_process_block(0); \
+	  e scheme_thread_block(0); \
           (p)->ran_some = 1; \
 	}
 #else
 # define DO_CHECK_FOR_BREAK(p, e) \
 	if (DECREMENT_FUEL((p)->fuel_counter, 1) <= 0) { \
-	  e scheme_process_block_w_process(0, p); \
+	  e scheme_thread_block_w_thread(0, p); \
 	}
 #endif
 
@@ -347,16 +347,16 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
 {
   scheme_overflow_k = k;
   scheme_init_jmpup_buf(&scheme_overflow_cont);
-  scheme_zero_unneeded_rands(scheme_current_process);
-  if (scheme_setjmpup(&scheme_overflow_cont, scheme_current_process,
-		      scheme_current_process->cc_start)) {
+  scheme_zero_unneeded_rands(scheme_current_thread);
+  if (scheme_setjmpup(&scheme_overflow_cont, scheme_current_thread,
+		      scheme_current_thread->cc_start)) {
     scheme_init_jmpup_buf(&scheme_overflow_cont);
     if (!scheme_overflow_reply) {
       scheme_longjmp(scheme_error_buf, 1);
     } else
       return scheme_overflow_reply;
   } else
-    scheme_longjmp(scheme_current_process->overflow_buf, 1);
+    scheme_longjmp(scheme_current_thread->overflow_buf, 1);
   return NULL; /* never gets here */
 }
 
@@ -446,7 +446,7 @@ void scheme_init_stack_check()
 # ifndef MZ_REAL_THREADS
     scheme_stack_boundary = bnd;
 # else
-    scheme_current_process->stack_end = (void *)bnd;
+    scheme_current_thread->stack_end = (void *)bnd;
 # endif
   }
 #endif
@@ -456,7 +456,7 @@ void scheme_init_stack_check()
 int scheme_check_runstack(long size)
 {
 #ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
 
   return ((MZ_RUNSTACK - MZ_RUNSTACK_START) >= (size + TAIL_COPY_THRESHOLD));
@@ -464,7 +464,7 @@ int scheme_check_runstack(long size)
 
 void *scheme_enlarge_runstack(long size, void *(*k)())
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Saved_Stack *saved;
   void *v;
 
@@ -562,7 +562,7 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
 {
   Scheme_Object * volatile result;
   mz_jmp_buf savebuf;
-  scheme_current_process->error_invoked = 5;
+  scheme_current_thread->error_invoked = 5;
   memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf))
@@ -571,7 +571,7 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
     result = _scheme_apply_to_list(f, args);
   
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-  scheme_current_process->error_invoked = 0;  
+  scheme_current_thread->error_invoked = 0;  
 
   return result;
 }
@@ -1318,7 +1318,7 @@ scheme_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
 
 static void *compile_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *form;
   int writeable;
   Scheme_Comp_Env *env;
@@ -1359,7 +1359,7 @@ static void *compile_k(void)
 
 static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeable, int eb)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (SAME_TYPE(SCHEME_TYPE(form), scheme_compilation_top_type))
     return form;
@@ -1523,7 +1523,7 @@ scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
 
 static Scheme_Object *compile_expand_expr_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *form = (Scheme_Object *)p->ku.k.p1;
   Scheme_Comp_Env *env = (Scheme_Comp_Env *)p->ku.k.p2;
   Scheme_Compile_Info *rec = (Scheme_Compile_Info *)p->ku.k.p3;
@@ -1554,7 +1554,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 #ifdef DO_STACK_CHECK
 # include "mzstkchk.h"
   {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     p->ku.k.p1 = (void *)form;
     p->ku.k.p2 = (void *)env;
     p->ku.k.p3 = (void *)rec;
@@ -1566,7 +1566,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 #endif
 
-  DO_CHECK_FOR_BREAK(scheme_current_process, ;);
+  DO_CHECK_FOR_BREAK(scheme_current_thread, ;);
 
 #if 1
   if (!SCHEME_STXP(form))
@@ -2189,7 +2189,7 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
 #ifdef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   d->cont_mark_pos = MZ_CONT_MARK_POS;
   d->cont_mark_stack = MZ_CONT_MARK_STACK;
@@ -2200,7 +2200,7 @@ void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
 #ifdef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   MZ_CONT_MARK_POS = d->cont_mark_pos;
   MZ_CONT_MARK_STACK = d->cont_mark_stack;
@@ -2209,7 +2209,7 @@ void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *d)
 
 void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Cont_Mark *cm = NULL;
   long findpos;
   
@@ -2271,7 +2271,7 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
 void scheme_temp_dec_mark_depth()
 {
 #ifdef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   MZ_CONT_MARK_POS -= 2;
 }
@@ -2279,7 +2279,7 @@ void scheme_temp_dec_mark_depth()
 void scheme_temp_inc_mark_depth()
 {
 #ifdef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
   MZ_CONT_MARK_POS += 2;
 }
@@ -2292,7 +2292,7 @@ void scheme_temp_inc_mark_depth()
 
 static Scheme_Object *do_apply_known_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object **argv = (Scheme_Object **)p->ku.k.p2;
 
   p->ku.k.p2 = NULL;
@@ -2360,7 +2360,7 @@ Scheme_Object *scheme_check_one_value(Scheme_Object *v)
 
 static Scheme_Object *do_eval_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *obj = (Scheme_Object *)p->ku.k.p1;
   Scheme_Object **argv = (Scheme_Object **)p->ku.k.p2;
 
@@ -2413,8 +2413,8 @@ static Scheme_Object *do_eval_k(void)
 
 #ifdef MZ_REAL_THREADS
 Scheme_Object *
-scheme_do_eval_w_process(Scheme_Object *obj, int num_rands, Scheme_Object **rands, 
-			 int get_value, Scheme_Process *p)
+scheme_do_eval_w_thread(Scheme_Object *obj, int num_rands, Scheme_Object **rands, 
+			 int get_value, Scheme_Thread *p)
 #else
 Scheme_Object *
 scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands, 
@@ -2430,9 +2430,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 #ifndef MZ_REAL_THREADS
 # ifdef REGISTER_POOR_MACHINE
-#  define p scheme_current_process
+#  define p scheme_current_thread
 # else
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 # endif
 #endif
 
@@ -3325,7 +3325,7 @@ Scheme_Object *scheme_eval_multi(Scheme_Object *obj, Scheme_Env *env)
 
 static void *eval_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *v;
   Scheme_Env *env;
   int isexpr, multi, expr_let_depth;
@@ -3379,7 +3379,7 @@ static Scheme_Object *_eval(Scheme_Object *obj, Scheme_Env *env,
 			    int isexpr, int expr_let_depth,
 			    int multi, int top)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   
   p->ku.k.p1 = obj;
   p->ku.k.p2 = env;
@@ -3425,7 +3425,7 @@ Scheme_Object *scheme_eval_linked_expr(Scheme_Object *obj, int let_depth)
 
 static void *expand_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *obj;
   Scheme_Comp_Env *env;
   int depth, rename;
@@ -3457,7 +3457,7 @@ static void *expand_k(void)
 static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, 
 			      int depth, int rename, int eb)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   p->ku.k.p1 = obj;
   p->ku.k.p2 = env;
@@ -3615,7 +3615,7 @@ local_expand(int argc, Scheme_Object **argv)
   Scheme_Object *l, *local_mark;
   int cnt, pos;
 
-  env = scheme_current_process->current_local_env;
+  env = scheme_current_thread->current_local_env;
 
   if (!env)
     scheme_raise_exn(MZEXN_MISC, "local-expand: not currently transforming");
@@ -3626,7 +3626,7 @@ local_expand(int argc, Scheme_Object **argv)
   (void)scheme_get_stop_expander();
 
   env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
-  local_mark = scheme_current_process->current_local_mark;
+  local_mark = scheme_current_thread->current_local_mark;
   
   cnt = scheme_stx_proper_list_length(argv[1]);
   if (cnt > 0)
@@ -3717,7 +3717,7 @@ static Scheme_Object *
 enable_break(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   v = scheme_param_config("break-enabled", 
 			  scheme_make_integer(MZCONFIG_ENABLE_BREAK),
@@ -3726,7 +3726,7 @@ enable_break(int argc, Scheme_Object *argv[])
 
   if (argc == 1) /* might have turned on breaking... */
     if (p->external_break && scheme_can_break(p, p->config))
-      scheme_process_block_w_process(0.0, p);
+      scheme_thread_block_w_thread(0.0, p);
 
   return v;
 }

@@ -111,7 +111,7 @@ void scheme_init_stack_check(void);
 void scheme_register_traversers(void);
 void scheme_init_hash_key_procs(void);
 #endif
-Scheme_Process *scheme_make_process(void);
+Scheme_Thread *scheme_make_thread(void);
 void scheme_init_true_false(void);
 void scheme_init_symbol_table(void);
 void scheme_init_symbol_type(Scheme_Env *env);
@@ -143,7 +143,7 @@ void scheme_init_error(Scheme_Env *env);
 void scheme_init_exn(Scheme_Env *env);
 #endif
 void scheme_init_debug(Scheme_Env *env);
-void scheme_init_process(Scheme_Env *env);
+void scheme_init_thread(Scheme_Env *env);
 void scheme_init_read(Scheme_Env *env);
 void scheme_init_print(Scheme_Env *env);
 void scheme_init_image(Scheme_Env *env);
@@ -161,7 +161,7 @@ extern Scheme_Type_Writer *scheme_type_writers;
 
 void scheme_init_port_config(void);
 void scheme_init_port_fun_config(void);
-void scheme_init_error_escape_proc(Scheme_Process *p);
+void scheme_init_error_escape_proc(Scheme_Thread *p);
 void scheme_init_error_config(void);
 #ifndef NO_SCHEME_EXNS
 void scheme_init_exn_config(void);
@@ -238,9 +238,9 @@ void scheme_out_of_fuel(void);
 #define SCHEME_USE_FUEL(n) { \
   if (DECREMENT_FUEL(scheme_fuel_counter, n) <= 0) { scheme_out_of_fuel(); }}
 
-extern Scheme_Process *scheme_main_process;
+extern Scheme_Thread *scheme_main_thread;
 
-/* Flags for Scheme_Process's `running' field: */
+/* Flags for Scheme_Thread's `running' field: */
 #define MZTHREAD_RUNNING 0x1
 #define MZTHREAD_SUSPENDED 0x2
 #define MZTHREAD_KILLED 0x4
@@ -263,15 +263,15 @@ void scheme_start_itimer_thread(long usec);
 void scheme_block_child_signals(int block);
 #endif
 
-void scheme_alloc_list_stack(Scheme_Process *process);
+void scheme_alloc_list_stack(Scheme_Thread *process);
 
 #ifdef WIN32_THREADS
 void *scheme_win32_get_break_semaphore(void *th);
 #endif
 
-void scheme_zero_unneeded_rands(Scheme_Process *p);
+void scheme_zero_unneeded_rands(Scheme_Thread *p);
 
-int scheme_can_break(Scheme_Process *p, Scheme_Config *config);
+int scheme_can_break(Scheme_Thread *p, Scheme_Config *config);
 
 #ifdef MZ_REAL_THREADS
 #define MZTHREADELEM(p, x) p->x
@@ -279,23 +279,23 @@ int scheme_can_break(Scheme_Process *p, Scheme_Config *config);
 #define MZTHREADELEM(p, x) scheme_ ## x
 #endif
 
-struct Scheme_Manager {
+struct Scheme_Custodian {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   int count, alloc;
   Scheme_Object ***boxes;
-  Scheme_Manager_Reference **mrefs;
-  Scheme_Close_Manager_Client **closers;
+  Scheme_Custodian_Reference **mrefs;
+  Scheme_Close_Custodian_Client **closers;
   void **data;
 
   /* weak indirections: */
-  Scheme_Manager_Reference *parent;
-  Scheme_Manager_Reference *sibling;
-  Scheme_Manager_Reference *children;
+  Scheme_Custodian_Reference *parent;
+  Scheme_Custodian_Reference *sibling;
+  Scheme_Custodian_Reference *children;
 };
 
-typedef void (*Closer_Func)(Scheme_Object *, Scheme_Close_Manager_Client *, void *);
-Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func f);
+typedef void (*Closer_Func)(Scheme_Object *, Scheme_Close_Custodian_Client *, void *);
+Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Closer_Func f);
 
 /*========================================================================*/
 /*                       hash tables and globals                          */
@@ -604,14 +604,14 @@ scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun,
 
 Scheme_Object *scheme_handle_stack_overflow(Scheme_Object *(*k)(void));
 
-void scheme_ensure_stack_start(Scheme_Process *p, void *d);
+void scheme_ensure_stack_start(Scheme_Thread *p, void *d);
 void scheme_jmpup_free(Scheme_Jumpup_Buf *);
 void *scheme_enlarge_runstack(long size, void *(*k)());
 int scheme_check_runstack(long size);
 void scheme_init_setjumpup(void);
 
 void *scheme_top_level_do(void *(*k)(void), int eb);
-#define scheme_top_level_do_w_process(k, eb, p) scheme_top_level_do(k, eb)
+#define scheme_top_level_do_w_thread(k, eb, p) scheme_top_level_do(k, eb)
 
 void scheme_on_next_top(struct Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object *name);
 
@@ -686,7 +686,7 @@ typedef struct Scheme_Cont {
   Scheme_Jumpup_Buf buf;
   long *ok;
   Scheme_Dynamic_Wind *dw, *common;
-  Scheme_Process *home;
+  Scheme_Thread *home;
   Scheme_Continuation_Jump_State cjs;
   mz_jmp_buf save_overflow_buf;
   int suspend_break;
@@ -702,7 +702,7 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   Scheme_Continuation_Jump_State cjs;
-  Scheme_Process *home;
+  Scheme_Thread *home;
   long *ok;  
   Scheme_Object *f;
   int suspend_break;
@@ -713,18 +713,18 @@ typedef struct Scheme_Escaping_Cont {
 #define SCHEME_CONT_OK(obj)  (((Scheme_Escaping_Cont *)(obj))->ok)
 #define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *)(obj))->f)
 
-#define scheme_save_env_stack_w_process(ss, p) \
+#define scheme_save_env_stack_w_thread(ss, p) \
     (ss.runstack = MZ_RUNSTACK, ss.runstack_start = MZ_RUNSTACK_START, \
      ss.cont_mark_stack = MZ_CONT_MARK_STACK, ss.cont_mark_pos = MZ_CONT_MARK_POS, \
      ss.runstack_size = p->runstack_size, ss.runstack_saved = p->runstack_saved)
-#define scheme_restore_env_stack_w_process(ss, p) \
+#define scheme_restore_env_stack_w_thread(ss, p) \
     (MZ_RUNSTACK = ss.runstack, MZ_RUNSTACK_START = ss.runstack_start, \
      MZ_CONT_MARK_STACK = ss.cont_mark_stack, MZ_CONT_MARK_POS = ss.cont_mark_pos, \
      p->runstack_size = ss.runstack_size, p->runstack_saved = ss.runstack_saved)
 #define scheme_save_env_stack(ss) \
-    scheme_save_env_stack_w_process(ss, scheme_current_process)
+    scheme_save_env_stack_w_thread(ss, scheme_current_thread)
 #define scheme_restore_env_stack(ss) \
-    scheme_restore_env_stack_w_process(ss, scheme_current_process)
+    scheme_restore_env_stack_w_thread(ss, scheme_current_thread)
 
 typedef struct Scheme_Overflow {
   MZTAG_IF_REQUIRED
@@ -771,7 +771,7 @@ extern unsigned long scheme_stack_boundary;
 # if SEMAPHORE_WAITING_IS_COLLECTABLE
 typedef struct Scheme_Sema_Waiter {
   MZTAG_IF_REQUIRED
-  Scheme_Process *p;
+  Scheme_Thread *p;
   int in_line;
   struct Scheme_Sema_Waiter *prev, *next;
 } Scheme_Sema_Waiter;
@@ -1097,15 +1097,15 @@ Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *
 #ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *);
 #else
-Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *, Scheme_Process *p);
+Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *, Scheme_Thread *p);
 #endif
 void scheme_internal_display(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 
 #define _scheme_eval_linked_expr(obj) scheme_do_eval(obj,-1,NULL,1)
 #define _scheme_eval_linked_expr_multi(obj) scheme_do_eval(obj,-1,NULL,-1)
-#define _scheme_eval_linked_expr_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,1,p)
-#define _scheme_eval_linked_expr_multi_wp(obj, p) scheme_do_eval_w_process(obj,-1,NULL,-1,p)
+#define _scheme_eval_linked_expr_wp(obj, p) scheme_do_eval_w_thread(obj,-1,NULL,1,p)
+#define _scheme_eval_linked_expr_multi_wp(obj, p) scheme_do_eval_w_thread(obj,-1,NULL,-1,p)
 
 Scheme_Object *scheme_named_map_1(char *, 
 				  Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object *form), 
@@ -1250,7 +1250,7 @@ void scheme_set_local_syntax(int pos, Scheme_Object *name, Scheme_Object *val,
 
 void scheme_env_make_closure_map(Scheme_Comp_Env *frame, short *size, short **map);
 
-Scheme_Object *scheme_make_linked_closure(Scheme_Process *p, 
+Scheme_Object *scheme_make_linked_closure(Scheme_Thread *p, 
 					  Scheme_Object *compiled_code,
 					  int close);
 

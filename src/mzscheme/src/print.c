@@ -45,25 +45,25 @@
 /* Don't use can_read_pipe_quote! */
 
 static void print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, 
-			  int notdisplay, long maxl, Scheme_Process *p,
+			  int notdisplay, long maxl, Scheme_Thread *p,
 			  Scheme_Config *config);
 static int print(Scheme_Object *obj, int notdisplay, int compact, 
 		 Scheme_Hash_Table *ht,
 		 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht,
-		 Scheme_Process *p);
-static void print_string(Scheme_Object *string, int notdisplay, Scheme_Process *p);
+		 Scheme_Thread *p);
+static void print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p);
 static void print_pair(Scheme_Object *pair, int notdisplay, int compact, 
 		       Scheme_Hash_Table *ht, 
 		       Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
-		       Scheme_Process *p);
+		       Scheme_Thread *p);
 static void print_vector(Scheme_Object *vec, int notdisplay, int compact, 
 			 Scheme_Hash_Table *ht, 
 			 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
-			 Scheme_Process *p);
-static void print_char(Scheme_Object *chobj, int notdisplay, Scheme_Process *p);
+			 Scheme_Thread *p);
+static void print_char(Scheme_Object *chobj, int notdisplay, Scheme_Thread *p);
 static char *print_to_string(Scheme_Object *obj, long *len, int write,
 			     Scheme_Object *port, long maxl,
-			     Scheme_Process *p, Scheme_Config *config);
+			     Scheme_Thread *p, Scheme_Config *config);
 
 static Scheme_Object *quote_link_symbol = NULL;
 static char *quick_buffer = NULL;
@@ -132,7 +132,7 @@ scheme_debug_print (Scheme_Object *obj)
 
 static void *print_to_port_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *obj, *port;
 
   port = (Scheme_Object *)p->ku.k.p1;
@@ -177,7 +177,7 @@ void scheme_write_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
   if (((Scheme_Output_Port *)port)->write_handler)
     do_handled_print(obj, port, scheme_write_proc, maxl);
   else {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     
     p->ku.k.p1 = port;
     p->ku.k.p2 = obj;
@@ -198,7 +198,7 @@ void scheme_display_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl)
   if (((Scheme_Output_Port *)port)->display_handler)
     do_handled_print(obj, port, scheme_display_proc, maxl);
   else {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     
     p->ku.k.p1 = port;
     p->ku.k.p2 = obj;
@@ -216,7 +216,7 @@ void scheme_display(Scheme_Object *obj, Scheme_Object *port)
 
 static void *print_to_string_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *obj;
   long *len, maxl;
   int iswrite;
@@ -236,7 +236,7 @@ static void *print_to_string_k(void)
 
 char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   p->ku.k.p1 = obj;
   p->ku.k.p2 = len;
@@ -253,7 +253,7 @@ char *scheme_write_to_string(Scheme_Object *obj, long *len)
 
 char *scheme_display_to_string_w_max(Scheme_Object *obj, long *len, long maxl)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   p->ku.k.p1 = obj;
   p->ku.k.p2 = len;
@@ -272,22 +272,22 @@ void
 scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, 
 		      Scheme_Config *config)
 {
-  print_to_port("write", obj, port, 1, -1, scheme_current_process, config);
+  print_to_port("write", obj, port, 1, -1, scheme_current_thread, config);
 }
 
 void
 scheme_internal_display(Scheme_Object *obj, Scheme_Object *port, 
 		      Scheme_Config *config)
 {
-  print_to_port("display", obj, port, 0, -1, scheme_current_process, config);
+  print_to_port("display", obj, port, 0, -1, scheme_current_thread, config);
 }
 
 #ifdef DO_STACK_CHECK
-static int check_cycles(Scheme_Object *, Scheme_Process *, Scheme_Hash_Table *);
+static int check_cycles(Scheme_Object *, Scheme_Thread *, Scheme_Hash_Table *);
 
 static Scheme_Object *check_cycle_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p2;
 
@@ -299,7 +299,7 @@ static Scheme_Object *check_cycle_k(void)
 }
 #endif
 
-static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table *ht)
+static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table *ht)
 {
   Scheme_Type t;
   Scheme_Bucket *b;
@@ -317,8 +317,8 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table
       {
 #include "mzstkchk.h"
 	{
-	  scheme_current_process->ku.k.p1 = (void *)obj;
-	  scheme_current_process->ku.k.p2 = (void *)ht;
+	  scheme_current_thread->ku.k.p1 = (void *)obj;
+	  scheme_current_thread->ku.k.p2 = (void *)ht;
 	  return SCHEME_TRUEP(scheme_handle_stack_overflow(check_cycle_k));
 	}
       }
@@ -383,7 +383,7 @@ START_XFORM_SKIP;
 
 static int fast_checker_counter;
 
-static int check_cycles_fast(Scheme_Object *obj, Scheme_Process *p)
+static int check_cycles_fast(Scheme_Object *obj, Scheme_Thread *p)
 {
   Scheme_Type t;
   int cycle = 0;
@@ -441,15 +441,15 @@ END_XFORM_SKIP;
 
 #ifdef DO_STACK_CHECK
 static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
-			      int *counter, Scheme_Process *p);
+			      int *counter, Scheme_Thread *p);
 
 static Scheme_Object *setup_graph_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p2;
   int *counter = (int *)p->ku.k.p3;
-  Scheme_Process *pp = (Scheme_Process *)p->ku.k.p4;
+  Scheme_Thread *pp = (Scheme_Thread *)p->ku.k.p4;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
@@ -463,7 +463,7 @@ static Scheme_Object *setup_graph_k(void)
 #endif
 
 static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
-			      int *counter, Scheme_Process *p)
+			      int *counter, Scheme_Thread *p)
 {
   if (HAS_SUBSTRUCT(obj, ssQUICKp)) {
     Scheme_Bucket *b;
@@ -486,10 +486,10 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
   {
 # include "mzstkchk.h"
     {
-      scheme_current_process->ku.k.p1 = (void *)obj;
-      scheme_current_process->ku.k.p2 = (void *)ht;
-      scheme_current_process->ku.k.p3 = (void *)counter;
-      scheme_current_process->ku.k.p4 = (void *)p;
+      scheme_current_thread->ku.k.p1 = (void *)obj;
+      scheme_current_thread->ku.k.p2 = (void *)ht;
+      scheme_current_thread->ku.k.p3 = (void *)counter;
+      scheme_current_thread->ku.k.p4 = (void *)p;
       scheme_handle_stack_overflow(setup_graph_k);
       return;
     }
@@ -525,7 +525,7 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print)
 
   ht = scheme_hash_table(101, SCHEME_hash_ptr, 0, 0);
   setup_graph_table(o, ht, &counter, 
-		    for_print ? scheme_current_process : NULL);
+		    for_print ? scheme_current_thread : NULL);
 
   if (counter > 1)
     return ht;
@@ -537,7 +537,7 @@ static char *
 print_to_string(Scheme_Object *obj, 
 		long * volatile len, int write,
 		Scheme_Object *port, long maxl, 
-		Scheme_Process * volatile p,
+		Scheme_Thread * volatile p,
 		Scheme_Config *config)
 {
   Scheme_Hash_Table * volatile ht;
@@ -594,7 +594,7 @@ print_to_string(Scheme_Object *obj,
 
 static void 
 print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdisplay,
-	      long maxl, Scheme_Process *p, Scheme_Config *config)
+	      long maxl, Scheme_Thread *p, Scheme_Config *config)
 {
   Scheme_Output_Port *op;
   char *str;
@@ -613,7 +613,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
   op->pos += len;
 }
 
-static void print_this_string(Scheme_Process *p, const char *str, int autolen)
+static void print_this_string(Scheme_Thread *p, const char *str, int autolen)
 {
   long len;
   char *oldstr;
@@ -681,7 +681,7 @@ static void print_this_string(Scheme_Process *p, const char *str, int autolen)
   }
 }
 
-static void print_compact_number(Scheme_Process *p, long n)
+static void print_compact_number(Scheme_Thread *p, long n)
 {
   unsigned char s[5];
 
@@ -710,7 +710,7 @@ static void print_compact_number(Scheme_Process *p, long n)
   print_this_string(p, (char *)s, 5);
 }
 
-static void print_string_in_angle(Scheme_Process *p, const char *start, const char *prefix, int slen)
+static void print_string_in_angle(Scheme_Thread *p, const char *start, const char *prefix, int slen)
 {
   /* Used to do something special for type symbols. No more. */
   print_this_string(p, prefix, -1);
@@ -721,7 +721,7 @@ static void print_string_in_angle(Scheme_Process *p, const char *start, const ch
 
 static Scheme_Object *print_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p2;
   Scheme_Hash_Table *symtab = (Scheme_Hash_Table *)p->ku.k.p3;
@@ -745,7 +745,7 @@ static Scheme_Object *print_k(void)
 static int
 print_substring(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 		Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
-		Scheme_Process *p, char **result, long *rlen)
+		Scheme_Thread *p, char **result, long *rlen)
 {
   int closed;
   long save_alloc, save_pos, save_maxl;
@@ -786,7 +786,7 @@ print_substring(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Tab
   return closed;
 }
 
-static void print_escaped(Scheme_Process *p, int notdisplay, 
+static void print_escaped(Scheme_Thread *p, int notdisplay, 
 			  Scheme_Object *obj, Scheme_Hash_Table *ht)
 {
   char *r;
@@ -800,7 +800,7 @@ static void print_escaped(Scheme_Process *p, int notdisplay,
 }
 
 #ifdef SGC_STD_DEBUGGING
-static void printaddress(Scheme_Process *p, Scheme_Object *o)
+static void printaddress(Scheme_Thread *p, Scheme_Object *o)
 {
   char buf[40];
   sprintf(buf, ":%lx", (long)o);
@@ -812,7 +812,7 @@ static void printaddress(Scheme_Process *p, Scheme_Object *o)
 #endif
 
 static void print_named(Scheme_Object *obj, const char *kind,
-			const char *s, int len, Scheme_Process *p)
+			const char *s, int len, Scheme_Thread *p)
 {
   print_this_string(p, "#<", 2);
   print_this_string(p, kind, -1);
@@ -829,7 +829,7 @@ static void print_named(Scheme_Object *obj, const char *kind,
 
 static int
 print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
-      Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, Scheme_Process *p)
+      Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, Scheme_Thread *p)
 {
   int closed = 0;
 
@@ -1390,7 +1390,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 }
 
 static void
-print_string(Scheme_Object *string, int notdisplay, Scheme_Process *p)
+print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
 {
   char *str, minibuf[2];
   int simple;
@@ -1436,7 +1436,7 @@ static void
 print_pair(Scheme_Object *pair, int notdisplay, int compact, 
 	   Scheme_Hash_Table *ht, 
 	   Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
-	   Scheme_Process *p)
+	   Scheme_Thread *p)
 {
   Scheme_Object *cdr;
   int no_space_ok;
@@ -1517,7 +1517,7 @@ static void
 print_vector(Scheme_Object *vec, int notdisplay, int compact, 
 	     Scheme_Hash_Table *ht, 
 	     Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
-	     Scheme_Process *p)
+	     Scheme_Thread *p)
 {
   int i, no_space_ok, size, common = 0;
   Scheme_Object **elems;
@@ -1556,7 +1556,7 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
 }
 
 static void
-print_char(Scheme_Object *charobj, int notdisplay, Scheme_Process *p)
+print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 {
   char ch, minibuf[4], *str;
   int len = -1;

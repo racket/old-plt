@@ -61,7 +61,7 @@ enum {
   scheme_syntax_compiler_type,
   scheme_macro_type,
   scheme_box_type,
-  scheme_process_type,     /* 50 */
+  scheme_thread_type,     /* 50 */
   scheme_structure_type,
   scheme_generic_type, 
   scheme_cont_mark_set_type, 
@@ -77,7 +77,7 @@ enum {
   scheme_config_type,
   scheme_stx_type, 
   scheme_will_executor_type,
-  scheme_manager_type,
+  scheme_custodian_type,
   scheme_random_state_type,
   scheme_regexp_type,
 
@@ -152,7 +152,7 @@ enum {
   scheme_rt_cpp_array_object,
   scheme_rt_stack_object,
   scheme_rt_preallocated_object,
-  scheme_process_hop_type,
+  scheme_thread_hop_type,
   scheme_rt_breakable,
 #endif
 

@@ -110,7 +110,7 @@ typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   tcp_t s;
-  Scheme_Manager_Reference *mref;
+  Scheme_Custodian_Reference *mref;
 } listener_t;
 #endif
 
@@ -130,7 +130,7 @@ typedef struct {
   int portid;
   int count;
   struct Scheme_Tcp **datas;
-  Scheme_Manager_Reference *mref;
+  Scheme_Custodian_Reference *mref;
 } listener_t;
 # define htons(x) x
 # define htonl(x) x
@@ -540,8 +540,8 @@ static int tcp_addr(char *address, struct hostInfo *info)
   if (StrToAddr(address, info, u_dnr_done, (char *)done) == cacheFault) {
     /* FIXME: If we get a break, it's possible that `info' and `done' will be
               GCed before the async call completes. */
-    while (!*done) { scheme_process_block(0.25); }
-    scheme_current_process->ran_some = 1;
+    while (!*done) { scheme_thread_block(0.25); }
+    scheme_current_thread->ran_some = 1;
   }
   if (info->rtnCode == cacheFault) {
     if (--tries)
@@ -1027,17 +1027,17 @@ static int tcp_getc(Scheme_Input_Port *port)
 
   if (!tcp_char_ready(port)) {
 #ifdef USE_SOCKETS_TCP
-    scheme_current_process->block_descriptor = PORT_BLOCKED;
-    scheme_current_process->blocker = (Scheme_Object *)port;
+    scheme_current_thread->block_descriptor = PORT_BLOCKED;
+    scheme_current_thread->blocker = (Scheme_Object *)port;
 #endif
     do {
-      scheme_process_block((float)0.0);
+      scheme_thread_block((float)0.0);
     } while (!tcp_char_ready(port));
 #ifdef USE_SOCKETS_TCP
-    scheme_current_process->block_descriptor = NOT_BLOCKED;
-    scheme_current_process->blocker = NULL;
+    scheme_current_thread->block_descriptor = NOT_BLOCKED;
+    scheme_current_thread->blocker = NULL;
 #endif
-    scheme_current_process->ran_some = 1;
+    scheme_current_thread->ran_some = 1;
   }
 
 #ifdef USE_SOCKETS_TCP
@@ -1729,7 +1729,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
       l->datas = datas;
       l->mref = scheme_add_managed(NULL,
 				   (Scheme_Object *)l,
-				   (Scheme_Close_Manager_Client *)stop_listener,
+				   (Scheme_Close_Custodian_Client *)stop_listener,
 				   NULL,
 				   1);
       
@@ -1768,10 +1768,10 @@ tcp_listen(int argc, Scheme_Object *argv[])
 	  l->type = scheme_listener_type;
 	  l->s = s;
 	  {
-	    Scheme_Manager_Reference *mref;
+	    Scheme_Custodian_Reference *mref;
 	    mref = scheme_add_managed(NULL,
 				      (Scheme_Object *)l,
-				      (Scheme_Close_Manager_Client *)stop_listener,
+				      (Scheme_Close_Custodian_Client *)stop_listener,
 				      NULL,
 				      1);
 	    l->mref = mref;
@@ -1920,16 +1920,16 @@ tcp_accept(int argc, Scheme_Object *argv[])
 
   if (!was_closed) {
     if (!tcp_check_accept(listener)) {
-      scheme_current_process->block_descriptor = -1;
-      scheme_current_process->blocker = listener;
-      scheme_current_process->block_check = tcp_check_accept;
-      scheme_current_process->block_needs_wakeup = tcp_accept_needs_wakeup;
+      scheme_current_thread->block_descriptor = -1;
+      scheme_current_thread->blocker = listener;
+      scheme_current_thread->block_check = tcp_check_accept;
+      scheme_current_thread->block_needs_wakeup = tcp_accept_needs_wakeup;
       do {
-	scheme_process_block((float)0.0);
+	scheme_thread_block((float)0.0);
       } while (!tcp_check_accept(listener));
-      scheme_current_process->block_descriptor = NOT_BLOCKED;
-      scheme_current_process->blocker = NULL;
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->block_descriptor = NOT_BLOCKED;
+      scheme_current_thread->blocker = NULL;
+      scheme_current_thread->ran_some = 1;
     }
     was_closed = LISTENER_WAS_CLOSED(listener);
   }

@@ -88,7 +88,7 @@ static void default_output(char *s, long len)
   fflush(stderr);
 }
 
-void scheme_init_error_escape_proc(Scheme_Process *p)
+void scheme_init_error_escape_proc(Scheme_Thread *p)
 {
   if (!def_error_esc_proc) {
     REGISTER_SO(def_error_esc_proc);
@@ -495,30 +495,30 @@ call_error(char *buffer, int len)
   Scheme_Object *p[1];
   mz_jmp_buf savebuf;
 
-  if (scheme_current_process->error_invoked == 5) {
+  if (scheme_current_thread->error_invoked == 5) {
     scheme_longjmp (scheme_error_buf, 1);
-  } else if (scheme_current_process->error_invoked == 1) {
+  } else if (scheme_current_thread->error_invoked == 1) {
     scheme_inescapeable_error("error trying to display error: ", buffer);
     scheme_longjmp (scheme_error_buf, 1);
-  } else if (scheme_current_process->error_invoked == 2) {
+  } else if (scheme_current_thread->error_invoked == 2) {
     scheme_inescapeable_error("error trying to escape from error: ", buffer);
     scheme_longjmp(scheme_error_buf, 1);
   } else {
-    scheme_current_process->error_invoked = 1;
+    scheme_current_thread->error_invoked = 1;
     p[0] = scheme_make_immutable_sized_string(buffer, len, 1);
     memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(scheme_error_buf)) {
-      scheme_current_process->error_invoked = 0;
+      scheme_current_thread->error_invoked = 0;
       scheme_longjmp(savebuf, 1);
     } else {
       if (buffer)
 	scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 1, p);
-      scheme_current_process->error_invoked = 2;
+      scheme_current_thread->error_invoked = 2;
       /* Typically jumps out of here */
       scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
       /* Uh-oh; record the error fall back to the default escaper */
       scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
-      scheme_current_process->error_invoked = 0;
+      scheme_current_thread->error_invoked = 0;
       scheme_longjmp(savebuf, 1); /* force an exit */
     }
   }
@@ -576,7 +576,7 @@ scheme_signal_error (char *msg, ...)
 
   prepared_buf = init_buf(NULL, &prepared_buf_len);
 
-  if (scheme_current_process->current_local_env) {
+  if (scheme_current_thread->current_local_env) {
     char *s2 = " [during expansion]";
     strcpy(buffer + len, s2);
     len = strlen(s2);
@@ -621,7 +621,7 @@ void scheme_warning(char *msg, ...)
 
 static void pre_conv(void *v)
 {
-  scheme_current_process->err_val_str_invoked = 1;
+  scheme_current_thread->err_val_str_invoked = 1;
 }
 	
 static Scheme_Object *now_do_conv(void *v)
@@ -632,7 +632,7 @@ static Scheme_Object *now_do_conv(void *v)
 
 static void post_conv(void *v)
 {
-  scheme_current_process->err_val_str_invoked = 0;
+  scheme_current_thread->err_val_str_invoked = 0;
 }
 	
 static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
@@ -642,7 +642,7 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
   o = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER);
   
   if (SAME_OBJ(o, def_err_val_proc)
-      || (scheme_current_process->err_val_str_invoked)) {
+      || (scheme_current_thread->err_val_str_invoked)) {
     long l;
     char *s;
     s = scheme_write_to_string_w_max(v, &l, len);
@@ -1635,7 +1635,7 @@ init_exn_handler(int argc, Scheme_Object *argv[])
 
 static void pre_raise(void *v)
 {
-  scheme_current_process->exn_raised = 1;
+  scheme_current_thread->exn_raised = 1;
 }
 	
 static Scheme_Object *now_do_raise(void *v)
@@ -1650,7 +1650,7 @@ static Scheme_Object *now_do_raise(void *v)
 
 static void post_raise_or_debug(void *v)
 {
-  scheme_current_process->exn_raised = 0;
+  scheme_current_thread->exn_raised = 0;
 }
 	
 static Scheme_Object *
@@ -1658,7 +1658,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 {
  Scheme_Object *v;
 
- if (scheme_current_process->error_invoked) {
+ if (scheme_current_thread->error_invoked) {
    char *s;
    long slen = -1;
    if (SAME_TYPE(SCHEME_TYPE(arg), scheme_structure_type)
@@ -1680,7 +1680,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
    call_error(s, slen);
  }
 
- if (scheme_current_process->exn_raised) {
+ if (scheme_current_thread->exn_raised) {
    long len, mlen = -1, blen;
    char *buffer, *msg, *raisetype;
 
@@ -1702,7 +1702,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 
    blen = scheme_sprintf(buffer, blen, "%s by %s: %t",
 			 raisetype,
-			 (scheme_current_process->exn_raised < 2) 
+			 (scheme_current_thread->exn_raised < 2) 
 			 ? "exception handler"
 			 : "debug info handler",
 			 msg, mlen);

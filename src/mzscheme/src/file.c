@@ -2989,7 +2989,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     find_position++;
 
     if (!(find_position & 0x15))
-      scheme_process_block(0);
+      scheme_thread_block(0);
     
     n = scheme_make_sized_offset_string(buf, 1, buf[0], 1);
     elem = scheme_make_pair(n, scheme_null);
@@ -3036,7 +3036,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     counter++;
     if (!(counter & 0x15)) {
       BEGIN_ESCAPEABLE(FIND_CLOSE, hfile);
-      scheme_process_block(0);
+      scheme_thread_block(0);
       END_ESCAPEABLE();
     }
   } while (!FIND_NEXT(hfile, &info));
@@ -3072,7 +3072,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     counter++;
     if (!(counter & 0xF)) {
       BEGIN_ESCAPEABLE(closedir, dir);
-      scheme_process_block(0);
+      scheme_thread_block(0);
       END_ESCAPEABLE();
     }
   }
@@ -4331,7 +4331,7 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
      escaped = 1;
      return TRUE; /* Immediately return to AESend */
    } else {
-     scheme_process_block(0);
+     scheme_thread_block(0);
      memcpy(&scheme_error_buf, &save, sizeof(mz_jmp_buf));
    }
    

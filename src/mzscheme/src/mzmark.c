@@ -1102,13 +1102,13 @@ int syntax_compiler_FIXUP(void *p) {
 }
 
 
-int process_val_SIZE(void *p) {
+int thread_val_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Process));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
 }
 
-int process_val_MARK(void *p) {
-  Scheme_Process *pr = (Scheme_Process *)p;
+int thread_val_MARK(void *p) {
+  Scheme_Thread *pr = (Scheme_Thread *)p;
   
   gcMARK(pr->next);
   gcMARK(pr->prev);
@@ -1172,11 +1172,11 @@ int process_val_MARK(void *p) {
   gcMARK(pr->mref);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Process));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
 }
 
-int process_val_FIXUP(void *p) {
-  Scheme_Process *pr = (Scheme_Process *)p;
+int thread_val_FIXUP(void *p) {
+  Scheme_Thread *pr = (Scheme_Thread *)p;
   
   gcFIXUP(pr->next);
   gcFIXUP(pr->prev);
@@ -1240,7 +1240,7 @@ int process_val_FIXUP(void *p) {
   gcFIXUP(pr->mref);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Process));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
 }
 
 
@@ -1344,7 +1344,7 @@ int namespace_val_MARK(void *p) {
   gcMARK(e->link_midx);
 
   gcMARK(e->toplevel);
-  gcMARK(e->modpair);
+  gcMARK(e->modchain);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -1369,7 +1369,7 @@ int namespace_val_FIXUP(void *p) {
   gcFIXUP(e->link_midx);
 
   gcFIXUP(e->toplevel);
-  gcFIXUP(e->modpair);
+  gcFIXUP(e->modchain);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -1572,7 +1572,8 @@ int mark_comp_env_MARK(void *p) {
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
-  gcMARK(e->data.constants);
+  gcMARK(e->data.const_names);
+  gcMARK(e->data.const_vals);
   gcMARK(e->data.use);
 
   return
@@ -1590,7 +1591,8 @@ int mark_comp_env_FIXUP(void *p) {
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);
-  gcFIXUP(e->data.constants);
+  gcFIXUP(e->data.const_names);
+  gcFIXUP(e->data.const_vals);
   gcFIXUP(e->data.use);
 
   return
@@ -2228,17 +2230,17 @@ int mark_system_child_FIXUP(void *p) {
 #ifdef BEOS_PROCESSES
 int mark_beos_process_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(BeOSProcess));
+  gcBYTES_TO_WORDS(sizeof(BeOSThread));
 }
 
 int mark_beos_process_MARK(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(BeOSProcess));
+  gcBYTES_TO_WORDS(sizeof(BeOSThread));
 }
 
 int mark_beos_process_FIXUP(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(BeOSProcess));
+  gcBYTES_TO_WORDS(sizeof(BeOSThread));
 }
 
 #endif
@@ -2371,7 +2373,7 @@ int mark_write_data_FIXUP(void *p) {
 
 /**********************************************************************/
 
-#ifdef MARKS_FOR_PROCESS_C
+#ifdef MARKS_FOR_THREAD_C
 
 int mark_config_val_SIZE(void *p) {
   return
@@ -2436,13 +2438,13 @@ int mark_will_executor_val_FIXUP(void *p) {
 }
 
 
-int mark_manager_val_SIZE(void *p) {
+int mark_custodian_val_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }
 
-int mark_manager_val_MARK(void *p) {
-  Scheme_Manager *m = (Scheme_Manager *)p;
+int mark_custodian_val_MARK(void *p) {
+  Scheme_Custodian *m = (Scheme_Custodian *)p;
   
   gcMARK(m->boxes);
   gcMARK(m->mrefs);
@@ -2454,11 +2456,11 @@ int mark_manager_val_MARK(void *p) {
   gcMARK(m->children);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }
 
-int mark_manager_val_FIXUP(void *p) {
-  Scheme_Manager *m = (Scheme_Manager *)p;
+int mark_custodian_val_FIXUP(void *p) {
+  Scheme_Custodian *m = (Scheme_Custodian *)p;
   
   gcFIXUP(m->boxes);
   gcFIXUP(m->mrefs);
@@ -2470,31 +2472,31 @@ int mark_manager_val_FIXUP(void *p) {
   gcFIXUP(m->children);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Manager));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Custodian));
 }
 
 
-int mark_process_hop_SIZE(void *p) {
+int mark_thread_hop_SIZE(void *p) {
   return
-   gcBYTES_TO_WORDS(sizeof(Scheme_Process_Manager_Hop));
+   gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Custodian_Hop));
 }
 
-int mark_process_hop_MARK(void *p) {
-  Scheme_Process_Manager_Hop *hop = (Scheme_Process_Manager_Hop *)p;
+int mark_thread_hop_MARK(void *p) {
+  Scheme_Thread_Custodian_Hop *hop = (Scheme_Thread_Custodian_Hop *)p;
 
   gcMARK(hop->p);
 
   return
-   gcBYTES_TO_WORDS(sizeof(Scheme_Process_Manager_Hop));
+   gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Custodian_Hop));
 }
 
-int mark_process_hop_FIXUP(void *p) {
-  Scheme_Process_Manager_Hop *hop = (Scheme_Process_Manager_Hop *)p;
+int mark_thread_hop_FIXUP(void *p) {
+  Scheme_Thread_Custodian_Hop *hop = (Scheme_Thread_Custodian_Hop *)p;
 
   gcFIXUP(hop->p);
 
   return
-   gcBYTES_TO_WORDS(sizeof(Scheme_Process_Manager_Hop));
+   gcBYTES_TO_WORDS(sizeof(Scheme_Thread_Custodian_Hop));
 }
 
 
@@ -2606,7 +2608,7 @@ int mark_will_registration_FIXUP(void *p) {
 }
 
 
-#endif  /* PROCESS */
+#endif  /* THREAD */
 
 /**********************************************************************/
 

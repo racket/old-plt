@@ -740,7 +740,7 @@ static void init_thread_memory()
   tm_next->type = scheme_rt_thread_memory;
 #endif
 
-  /* scheme_init_process() will replace these: */
+  /* scheme_init_thread() will replace these: */
   GC_collect_start_callback = scheme_suspend_remembered_threads;
   GC_collect_end_callback = scheme_resume_remembered_threads;
 }
@@ -872,10 +872,10 @@ _scheme_make_input_port(Scheme_Object *subtype,
 #endif
 
   if (must_close) {
-    Scheme_Manager_Reference *mref;    
+    Scheme_Custodian_Reference *mref;    
     mref = scheme_add_managed(NULL,
 			      (Scheme_Object *)ip, 
-			      (Scheme_Close_Manager_Client *)force_close_input_port, 
+			      (Scheme_Close_Custodian_Client *)force_close_input_port, 
 			      NULL, must_close);
     ip->mref = mref;
   } else
@@ -926,10 +926,10 @@ scheme_make_output_port(Scheme_Object *subtype,
 #endif
 
   if (must_close) {
-    Scheme_Manager_Reference *mref;
+    Scheme_Custodian_Reference *mref;
     mref = scheme_add_managed(NULL,
 			      (Scheme_Object *)op, 
-			      (Scheme_Close_Manager_Client *)force_close_output_port, 
+			      (Scheme_Close_Custodian_Client *)force_close_output_port, 
 			      NULL, must_close);
     op->mref = mref;
   } else
@@ -1186,7 +1186,7 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
     int c;
     Getc_Fun f = ip->getc_fun;
     Char_Ready_Fun cr = ip->char_ready_fun;
-    Scheme_Process *pr = scheme_current_process;
+    Scheme_Thread *pr = scheme_current_thread;
 #ifdef USE_FD_PORTS
     Scheme_FD *fip;
 #endif
@@ -1640,7 +1640,7 @@ force_close_output_port(Scheme_Object *port)
 int
 scheme_return_eof_for_error()
 {
-  return scheme_current_process->eof_on_error;
+  return scheme_current_thread->eof_on_error;
 }
 
 Scheme_Object *
@@ -2502,20 +2502,20 @@ static int file_getc(Scheme_Input_Port *port)
 
   if (!fip->regfile && !file_char_ready(port)) {
 #if defined(FILES_HAVE_FDS) || defined(WIN32_FD_HANDLES)
-    scheme_current_process->block_descriptor = PORT_BLOCKED;
-    scheme_current_process->blocker = (Scheme_Object *)port;
+    scheme_current_thread->block_descriptor = PORT_BLOCKED;
+    scheme_current_thread->blocker = (Scheme_Object *)port;
 # define FILE_BLOCK_TIME (float)0.0
 #else
 # define FILE_BLOCK_TIME (float)0.5
 #endif
     do {
-      scheme_process_block(FILE_BLOCK_TIME);
+      scheme_thread_block(FILE_BLOCK_TIME);
     } while (!file_char_ready(port));
 #if defined(FILES_HAVE_FDS) || defined(WIN32_FD_HANDLES)
-    scheme_current_process->block_descriptor = NOT_BLOCKED;
-    scheme_current_process->blocker = NULL;
+    scheme_current_thread->block_descriptor = NOT_BLOCKED;
+    scheme_current_thread->blocker = NULL;
 #endif
-    scheme_current_process->ran_some = 1;
+    scheme_current_thread->ran_some = 1;
   }
 
   if (port->closed) {
@@ -2693,14 +2693,14 @@ static int fd_getc(Scheme_Input_Port *port)
     return fip->buffer[fip->buffpos++];
   } else {
     if (!fd_char_ready(port)) {
-      scheme_current_process->block_descriptor = PORT_BLOCKED;
-      scheme_current_process->blocker = (Scheme_Object *)port;
+      scheme_current_thread->block_descriptor = PORT_BLOCKED;
+      scheme_current_thread->blocker = (Scheme_Object *)port;
       do {
-	scheme_process_block(0.0);
+	scheme_thread_block(0.0);
       } while (!fd_char_ready(port));
-      scheme_current_process->block_descriptor = NOT_BLOCKED;
-      scheme_current_process->blocker = NULL;
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->block_descriptor = NOT_BLOCKED;
+      scheme_current_thread->blocker = NULL;
+      scheme_current_thread->ran_some = 1;
     }
 
     if (port->closed) {
@@ -2911,14 +2911,14 @@ static int osk_getc(Scheme_Input_Port *port)
   osk_console_input *osk;
 
   if (!osk_char_ready(port)) {
-    scheme_current_process->block_descriptor = PORT_BLOCKED;
-    scheme_current_process->blocker = (Scheme_Object *)port;
+    scheme_current_thread->block_descriptor = PORT_BLOCKED;
+    scheme_current_thread->blocker = (Scheme_Object *)port;
     do {
-      scheme_process_block(0.0);
+      scheme_thread_block(0.0);
     } while (!osk_char_ready(port));
-    scheme_current_process->block_descriptor = NOT_BLOCKED;
-    scheme_current_process->blocker = NULL;
-    scheme_current_process->ran_some = 1;
+    scheme_current_thread->block_descriptor = NOT_BLOCKED;
+    scheme_current_thread->blocker = NULL;
+    scheme_current_thread->ran_some = 1;
   }
 
   if (port->closed) {
@@ -3096,14 +3096,14 @@ static int tested_file_getc(Scheme_Input_Port *p)
   tip = (Tested_Input_File *)p->port_data;
 
   if (!tested_file_char_ready(p)) {
-    scheme_current_process->block_descriptor = PORT_BLOCKED;
-    scheme_current_process->blocker = (Scheme_Object *)p;
+    scheme_current_thread->block_descriptor = PORT_BLOCKED;
+    scheme_current_thread->blocker = (Scheme_Object *)p;
     do {
-      scheme_process_block((float)0.0);
+      scheme_thread_block((float)0.0);
     } while (!tested_file_char_ready(p));
-    scheme_current_process->block_descriptor = NOT_BLOCKED;
-    scheme_current_process->blocker = NULL;
-    scheme_current_process->ran_some = 1;
+    scheme_current_thread->block_descriptor = NOT_BLOCKED;
+    scheme_current_thread->blocker = NULL;
+    scheme_current_thread->ran_some = 1;
   }
 
   /* Might get closed while we were waiting: */
@@ -3208,7 +3208,7 @@ static BOOL CALLBACK that_was_a_break(DWORD x)
   was_break = 1;
 
   {
-    Scheme_Process *p = scheme_main_process;
+    Scheme_Thread *p = scheme_main_thread;
     if (!p->external_break)
       scheme_break_thread(p);
   }
@@ -3799,7 +3799,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
   return (Scheme_Object *)op;  
 }
 
-static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
+static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
 {
   if (SCHEME_OUTPORTP(o)) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)o;
@@ -4135,7 +4135,7 @@ make_fd_output_port(int fd, int regfile)
 						  1);
 }
 
-static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
+static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
 {
   if (SCHEME_OUTPORTP(o)) {
     Scheme_Output_Port *op = (Scheme_Output_Port *)o;
@@ -4321,7 +4321,7 @@ static int subp_done(Scheme_Object *sci)
 #ifdef WINDOWS_PROCESSES
   DWORD w;
   if (sci) {
-    if (GetExitCodeProcess((HANDLE)sci, &w))
+    if (GetExitCodeThread((HANDLE)sci, &w))
       return w != STILL_ACTIVE;
     else
       return 1;
@@ -4372,7 +4372,7 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
     if (!sci)
       return scheme_intern_symbol("done-error");
     
-    if (GetExitCodeProcess((HANDLE)sci, &w)) {
+    if (GetExitCodeThread((HANDLE)sci, &w)) {
       if (w == STILL_ACTIVE)
 	return scheme_intern_symbol("running");
       else if (w)
@@ -5352,11 +5352,11 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 /********************* RealThreads hack  *******************/
 
 #ifdef MZ_REAL_THREADS
-# define CHECK_MZBREAK_SIGNAL(t) { if (scheme_current_process->break_received) \
+# define CHECK_MZBREAK_SIGNAL(t) { if (scheme_current_thread->break_received) \
                                      (t)->tv_sec = 0, (t)->tv_usec = 0; \
-                                   scheme_current_process->select_tv = t; }
-# define DONE_MZBREAK_CHECK() (scheme_current_process->select_tv = NULL, \
-                               scheme_current_process->break_received = 0)
+                                   scheme_current_thread->select_tv = t; }
+# define DONE_MZBREAK_CHECK() (scheme_current_thread->select_tv = NULL, \
+                               scheme_current_thread->break_received = 0)
 #else
 # define CHECK_MZBREAK_SIGNAL(t) /* empty */
 # define DONE_MZBREAK_CHECK()    /* empty */
@@ -5472,7 +5472,7 @@ static void default_sleep(float v, void *fds)
       }
       rps[count] = 0;
 # ifdef WIN32_THREADS
-      break_sema = (HANDLE)scheme_win32_get_break_semaphore(scheme_current_process->thread);
+      break_sema = (HANDLE)scheme_win32_get_break_semaphore(scheme_current_thread->thread);
 # else
       break_sema = scheme_break_semaphore;
 # endif

@@ -14,27 +14,27 @@
   scheme_extension_table->scheme_register_parameter = scheme_register_parameter;
   scheme_extension_table->scheme_get_env = scheme_get_env;
 #ifdef MZ_REAL_THREADS
-  scheme_extension_table->scheme_get_current_process = scheme_get_current_process;
+  scheme_extension_table->scheme_get_current_thread = scheme_get_current_thread;
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
-  scheme_extension_table->scheme_current_process = scheme_current_process;
+  scheme_extension_table->scheme_current_thread = scheme_current_thread;
   scheme_extension_table->scheme_fuel_counter = scheme_fuel_counter;
 #else
-  scheme_extension_table->scheme_current_process_ptr = scheme_current_process_ptr;
+  scheme_extension_table->scheme_current_thread_ptr = scheme_current_thread_ptr;
   scheme_extension_table->scheme_fuel_counter_ptr = scheme_fuel_counter_ptr;
 #endif
 #endif
 #ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_thread = scheme_thread;
-  scheme_extension_table->scheme_thread_w_manager = scheme_thread_w_manager;
+  scheme_extension_table->scheme_thread_w_custodian = scheme_thread_w_custodian;
   scheme_extension_table->scheme_kill_thread = scheme_kill_thread;
 #endif
   scheme_extension_table->scheme_break_thread = scheme_break_thread;
 #ifndef MZ_REAL_THREADS
-  scheme_extension_table->scheme_process_block = scheme_process_block;
-  scheme_extension_table->scheme_swap_process = scheme_swap_process;
+  scheme_extension_table->scheme_thread_block = scheme_thread_block;
+  scheme_extension_table->scheme_swap_thread = scheme_swap_thread;
 #else
-  scheme_extension_table->scheme_process_block_w_process = scheme_process_block_w_process;
+  scheme_extension_table->scheme_thread_block_w_thread = scheme_thread_block_w_thread;
 #endif
   scheme_extension_table->scheme_weak_suspend_thread = scheme_weak_suspend_thread;
   scheme_extension_table->scheme_weak_resume_thread = scheme_weak_resume_thread;
@@ -43,7 +43,7 @@
   scheme_extension_table->scheme_tls_allocate = scheme_tls_allocate;
   scheme_extension_table->scheme_tls_set = scheme_tls_set;
   scheme_extension_table->scheme_tls_get = scheme_tls_get;
-  scheme_extension_table->scheme_make_manager = scheme_make_manager;
+  scheme_extension_table->scheme_make_custodian = scheme_make_custodian;
   scheme_extension_table->scheme_add_managed = scheme_add_managed;
   scheme_extension_table->scheme_remove_managed = scheme_remove_managed;
   scheme_extension_table->scheme_close_managed = scheme_close_managed;
@@ -111,7 +111,7 @@
 #ifndef MZ_REAL_THREADS
   scheme_extension_table->scheme_do_eval = scheme_do_eval;
 #else
-  scheme_extension_table->scheme_do_eval_w_process = scheme_do_eval_w_process;
+  scheme_extension_table->scheme_do_eval_w_thread = scheme_do_eval_w_thread;
 #endif
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO

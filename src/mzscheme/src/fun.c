@@ -342,7 +342,7 @@ Scheme_Object *
 scheme_force_value(Scheme_Object *obj)
 {
   if (SAME_OBJ(obj, SCHEME_TAIL_CALL_WAITING)) {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     Scheme_Object *v;
 
     v = _scheme_apply_multi(p->ku.apply.tail_rator, 
@@ -350,7 +350,7 @@ scheme_force_value(Scheme_Object *obj)
 			    p->ku.apply.tail_rands);
     return v;
   } else if (SAME_OBJ(obj, SCHEME_EVAL_WAITING)) {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     return _scheme_eval_linked_expr_multi(p->ku.eval.wait_expr);
   } else if (obj)
     return obj;
@@ -487,7 +487,7 @@ scheme_make_closed_prim(Scheme_Closed_Prim *fun, void *data)
 }
 
 Scheme_Object *
-scheme_make_linked_closure(Scheme_Process *p, 
+scheme_make_linked_closure(Scheme_Thread *p, 
 			   Scheme_Object *linked_code, int close)
 {
   Scheme_Closure_Compilation_Data *data;
@@ -785,7 +785,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
   Scheme_Object * volatile save_mark, *  volatile save_name;
-  Scheme_Process * volatile p = scheme_current_process;
+  Scheme_Thread * volatile p = scheme_current_thread;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
   void *external_stack;
@@ -823,7 +823,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     external_stack = NULL;
 #endif
   
-  scheme_save_env_stack_w_process(envss, p);
+  scheme_save_env_stack_w_thread(envss, p);
 
   save_current_local_env = p->current_local_env;
   save_mark = p->current_local_mark;
@@ -854,7 +854,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
 	/* We get `p' again because it might be a nestee: */
-	Scheme_Process * volatile pp = scheme_current_process;
+	Scheme_Thread * volatile pp = scheme_current_thread;
 	Scheme_Overflow *overflow;
 
 	overflow = MALLOC_ONE_RT(Scheme_Overflow);
@@ -885,7 +885,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  i3 = pp->ku.k.i3;
 	
 	  /* stack overflow is a lot of work; force a sleep */
-	  scheme_process_block(0);
+	  scheme_thread_block(0);
 	
 	  pp->ku.k.p1 = p1;
 	  pp->ku.k.p2 = p2;
@@ -921,7 +921,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(p->error_buf)) {
-    scheme_restore_env_stack_w_process(envss, p);
+    scheme_restore_env_stack_w_thread(envss, p);
 #ifdef MZ_PRECISE_GC
     if (scheme_set_external_stack_val)
       scheme_set_external_stack_val(external_stack);
@@ -976,7 +976,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
 static void *apply_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *rator;
   int num_rands;
   Scheme_Object **rands;
@@ -995,7 +995,7 @@ static void *apply_k(void)
 }
 
 #ifdef MZ_REAL_THREADS
-# define APP_PROC_FORMAL , Scheme_Process *p
+# define APP_PROC_FORMAL , Scheme_Thread *p
 # define APP_PROC_ARG    , p
 # define APP_PROC_NAME(x) x ## _wp
 #else
@@ -1009,7 +1009,7 @@ _apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi,
        int eb APP_PROC_FORMAL)
 {
 #ifndef MZ_REAL_THREADS
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
 
   p->ku.k.p1 = rator;
@@ -1053,7 +1053,7 @@ Scheme_Object *
 scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
   int i;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   p->ku.apply.tail_rator = rator;
   p->ku.apply.tail_num_rands = num_rands;
@@ -1083,7 +1083,7 @@ Scheme_Object *
 scheme_tail_apply_no_copy (Scheme_Object *rator, int num_rands, 
 			   Scheme_Object **rands)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   p->ku.apply.tail_rator = rator;
   p->ku.apply.tail_num_rands = num_rands;
@@ -1534,7 +1534,7 @@ apply(int argc, Scheme_Object *argv[])
   Scheme_Object *rands, *r;
   Scheme_Object **rand_vec;
   int i, num_rands;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_PROCP(argv[0]))
     scheme_wrong_type("apply", "procedure", 0, argc, argv);
@@ -1701,7 +1701,7 @@ ormap(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *v;
 
   scheme_check_proc_arity("call-with-values", 0, 0, argc, argv);
@@ -1726,14 +1726,14 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
 {
-  Scheme_Process *p;
+  Scheme_Thread *p;
   int i;
   Scheme_Object **a;
 
   if (argc == 1)
     return argv[0];
 
-  p = scheme_current_process;
+  p = scheme_current_thread;
   p->ku.multiple.count = argc;
   if (argc)
     a = MALLOC_N(Scheme_Object *, argc);
@@ -1750,7 +1750,7 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
 
 void scheme_clear_escape(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   p->cjs.jumping_to_continuation = NULL;
   p->cjs.u.val = NULL;
@@ -1767,7 +1767,7 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
 
 static void pre_call_ec(void *ec)
 {
-  SCHEME_CONT_HOME(ec) = scheme_current_process;
+  SCHEME_CONT_HOME(ec) = scheme_current_thread;
 }
 
 static void post_call_ec(void *ec)
@@ -1787,7 +1787,7 @@ static Scheme_Object *do_call_ec(void *ec)
 
 static Scheme_Object *handle_call_ec(void *ec)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   if ((void *)p->cjs.jumping_to_continuation == ec) {
     int n = p->cjs.num_vals;
@@ -1807,7 +1807,7 @@ Scheme_Object *
 scheme_call_ec (int argc, Scheme_Object *argv[])
 {
   Scheme_Escaping_Cont *cont;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   scheme_check_proc_arity("call-with-escaping-continuation", 1, 
 			  0, argc, argv);
@@ -1833,7 +1833,7 @@ call_cc (int argc, Scheme_Object *argv[])
   Scheme_Object *ret;
   Scheme_Cont * volatile cont;
   Scheme_Dynamic_Wind *dw;
-  Scheme_Process * volatile p = scheme_current_process;
+  Scheme_Thread * volatile p = scheme_current_thread;
   Scheme_Saved_Stack *saved, *isaved, *csaved;
   long size, cmcount;
   
@@ -1851,7 +1851,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->save_overflow = p->overflow;
   memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
   cont->current_local_env = p->current_local_env;
-  scheme_save_env_stack_w_process(cont->ss, p);
+  scheme_save_env_stack_w_thread(cont->ss, p);
 
   /* Hide call/cc's arg off of stack */
   p->ku.k.p1 = argv[0];
@@ -1953,7 +1953,7 @@ call_cc (int argc, Scheme_Object *argv[])
     copy_cjs(&p->cjs, &cont->cjs);
     memcpy(&p->overflow_buf, &cont->save_overflow_buf, sizeof(mz_jmp_buf));
     p->overflow = cont->save_overflow;
-    scheme_restore_env_stack_w_process(cont->ss, p);
+    scheme_restore_env_stack_w_thread(cont->ss, p);
 
     /* Copy stack back in: (p->runstack and p->runstack_saved arrays
        are already restored, so the shape is certainly the same as 
@@ -2010,7 +2010,7 @@ call_cc (int argc, Scheme_Object *argv[])
 
     /* We may have just re-activated breaking: */
     if (p->external_break && scheme_can_break(p, p->config))
-      scheme_process_block_w_process(0.0, p);
+      scheme_thread_block_w_thread(0.0, p);
 
     return result;
   } else {
@@ -2027,7 +2027,7 @@ call_cc (int argc, Scheme_Object *argv[])
   }
 }
 
-static Scheme_Object *continuation_marks(Scheme_Process *p, 
+static Scheme_Object *continuation_marks(Scheme_Thread *p, 
 					 Scheme_Object *_cont,
 					 Scheme_Object *econt)
      /* cont => p is not used */
@@ -2095,7 +2095,7 @@ static Scheme_Object *continuation_marks(Scheme_Process *p,
 
 Scheme_Object *scheme_current_continuation_marks(void)
 {
-  return continuation_marks(scheme_current_process, NULL, NULL);
+  return continuation_marks(scheme_current_thread, NULL, NULL);
 }
 
 static Scheme_Object *
@@ -2167,7 +2167,7 @@ typedef struct {
 
 static void pre_dyn_wind(void *d)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Dyn_Wind *dw = (Dyn_Wind *)d;
   int s = p->suspend_break;
 
@@ -2186,7 +2186,7 @@ static Scheme_Object *do_dyn_wind(void *d)
 
 static void post_dyn_wind(void *d)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Dyn_Wind *dw = (Dyn_Wind *)d;
   int s = p->suspend_break;
 
@@ -2222,9 +2222,9 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   volatile int err;
   Scheme_Dynamic_Wind * volatile dw;
   volatile int save_count;
-  Scheme_Process * volatile p;
+  Scheme_Thread * volatile p;
 
-  p = scheme_current_process;
+  p = scheme_current_thread;
 
   dw = MALLOC_ONE_RT(Scheme_Dynamic_Wind);
 #ifdef MZTAG_REQUIRED
@@ -2243,12 +2243,12 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   memcpy(&dw->saveerr, &scheme_error_buf, sizeof(mz_jmp_buf));
 
-  scheme_save_env_stack_w_process(dw->envss, p);
+  scheme_save_env_stack_w_thread(dw->envss, p);
 
   dw->current_local_env = p->current_local_env;
 
   if (scheme_setjmp(p->error_buf)) {
-    scheme_restore_env_stack_w_process(dw->envss, p);
+    scheme_restore_env_stack_w_thread(dw->envss, p);
     p->current_local_env = dw->current_local_env;
     if (p->dw != dw) {
       /* Apparently, a full continuation jump was interrupted by an
@@ -2292,7 +2292,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   if (post) {
     if (scheme_setjmp(p->error_buf)) {
-      scheme_restore_env_stack_w_process(dw->envss, p);
+      scheme_restore_env_stack_w_thread(dw->envss, p);
       p->current_local_env = dw->current_local_env;
       err = 1;
     } else {
@@ -2307,7 +2307,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   /* We may have just re-activated breaking: */
   if (p->external_break && scheme_can_break(p, p->config))
-    scheme_process_block_w_process(0.0, p);
+    scheme_thread_block_w_thread(0.0, p);
   
   if (save_values) {
     p->ku.multiple.count = save_count;
@@ -2655,7 +2655,7 @@ static Scheme_Object *time_apply(int argc, Scheme_Object *argv[])
   gcdur = gcend - gcstart;
 
   if (v == SCHEME_MULTIPLE_VALUES) {
-    Scheme_Process *cp = scheme_current_process;
+    Scheme_Thread *cp = scheme_current_thread;
     v = scheme_build_list(cp->ku.multiple.count,
 			  cp->ku.multiple.array);
   } else

@@ -501,9 +501,9 @@ define_values_execute(Scheme_Object *data)
 
     for (v = vars, i = 0; SCHEME_PAIRP(v); i++, v = SCHEME_CDR(v)) {}
     
-    g = scheme_current_process->ku.multiple.count;
+    g = scheme_current_thread->ku.multiple.count;
     if (i == g) {
-      values = scheme_current_process->ku.multiple.array;
+      values = scheme_current_thread->ku.multiple.array;
       for (i = 0; i < g; i++, vars = SCHEME_CDR(vars)) {
 	b = (Scheme_Bucket *)SCHEME_CAR(vars);
 	scheme_set_global_bucket("define-values", b, values[i], 1);
@@ -536,7 +536,7 @@ define_values_execute(Scheme_Object *data)
     symname = (show_any ? scheme_symbol_name(name) : "");
     scheme_wrong_return_arity("define-values",
 			      i, g,
-			      (g == 1) ? (Scheme_Object **)vals : scheme_current_process->ku.multiple.array,
+			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,
 			      "%s%s%s",
 			      show_any ? "defining \"" : "0 names",
 			      symname,
@@ -1085,7 +1085,7 @@ case_lambda_execute(Scheme_Object *expr)
 {
   Scheme_Case_Lambda *seqin, *seqout;
   int i;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   seqin = (Scheme_Case_Lambda *)expr;
 
@@ -1315,7 +1315,7 @@ Scheme_Object *bangboxenv_execute(Scheme_Object *data)
   int pos = SCHEME_INT_VAL(SCHEME_CAR(data));
   Scheme_Object *bb;
 #ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 #endif
 
   data = SCHEME_CDR(data);
@@ -1351,7 +1351,7 @@ bangboxvalue_execute(Scheme_Object *data)
   val = _scheme_eval_linked_expr_multi(data);
 
   if (SAME_OBJ(val, SCHEME_MULTIPLE_VALUES)) {
-    Scheme_Process *p = scheme_current_process;
+    Scheme_Thread *p = scheme_current_thread;
     if (pos < p->ku.multiple.count) {
       Scheme_Object **naya, **a;
       int i;
@@ -2388,7 +2388,7 @@ Scheme_Object *scheme_compiled_void()
 static Scheme_Object *
 begin0_execute(Scheme_Object *obj)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *v, **mv;
   int i, mc, apos;
   
@@ -2693,7 +2693,7 @@ defmacro_execute(Scheme_Object *form)
 {
   Scheme_Object *name;
   Scheme_Object *val, *macro;
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   name = SCHEME_CAR(SCHEME_CAR(form));
   val = SCHEME_CDR(form);

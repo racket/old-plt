@@ -349,7 +349,7 @@ regcomp(char *expstr, rxpos exp, int explen)
 
 static Scheme_Object *reg_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
   int *flagp = (int *)p->ku.k.p1;
 
   p->ku.k.p1 = NULL;
@@ -381,7 +381,7 @@ reg(int paren, int *flagp)
   {
 # include "mzstkchk.h"
     {
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
       p->ku.k.i1 = paren;
       p->ku.k.p1 = (void *)flagp;
       return (rxpos)scheme_handle_stack_overflow(reg_k);
@@ -973,7 +973,7 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
 
 static Scheme_Object *regmatch_k(void)
 {
-  Scheme_Process *p = scheme_current_process;
+  Scheme_Thread *p = scheme_current_thread;
 
   return (Scheme_Object *)regmatch(p->ku.k.i1);
 }
@@ -1000,7 +1000,7 @@ regmatch(rxpos prog)
   {
 # include "mzstkchk.h"
     {
-      Scheme_Process *p = scheme_current_process;
+      Scheme_Thread *p = scheme_current_thread;
       p->ku.k.i1 = prog;
       return (int)scheme_handle_stack_overflow(regmatch_k);
     }

@@ -1,5 +1,5 @@
 #ifndef SCHEME_CURRENT_PROCESS
-# define SCHEME_CURRENT_PROCESS scheme_current_process
+# define SCHEME_CURRENT_PROCESS scheme_current_thread
 #endif
 #ifndef SCHEME_STACK_BOUNDARY
 # define SCHEME_STACK_BOUNDARY scheme_stack_boundary

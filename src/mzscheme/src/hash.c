@@ -512,7 +512,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_syntax_compiler_type, hash_general);
   PROC(scheme_macro_type, hash_general);
   PROC(scheme_box_type, hash_general);
-  PROC(scheme_process_type, hash_general);
+  PROC(scheme_thread_type, hash_general);
   PROC(scheme_structure_type, hash_general);
   PROC(scheme_cont_mark_set_type, hash_general);
   PROC(scheme_sema_type, hash_general);
@@ -525,7 +525,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_config_type, hash_general);
   PROC(scheme_will_executor_type, hash_general);
   PROC(scheme_stx_type, hash_general);
-  PROC(scheme_manager_type, hash_general);
+  PROC(scheme_custodian_type, hash_general);
   PROC(scheme_random_state_type, hash_general);
   PROC(scheme_regexp_type, hash_general);
   PROC(scheme_compilation_top_type, hash_general);

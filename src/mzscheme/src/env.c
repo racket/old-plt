@@ -364,7 +364,7 @@ static void make_init_env(void)
   
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
-						      "syntax-value",
+						      "syntax-local-value",
 						      1, 2),
 			     env);
   scheme_add_global_constant("syntax-local-name", 

@@ -8,7 +8,7 @@
 #include "mzstkchk.h"
 	{
 #ifndef ERROR_ON_OVERFLOW
-	  Scheme_Process *p = scheme_current_process;
+	  Scheme_Thread *p = scheme_current_thread;
 	  p->ku.k.p1 = (void *)obj1;
 	  p->ku.k.p2 = (void *)obj2;
 #endif

@@ -120,7 +120,11 @@ if test "$CC" = "gcc" ; then
   CFLAGS="$CFLAGS -Wall"
 fi
 
-AC_PATH_PROG(PERL,perl)
+if test "$PERL" = ":" ; then
+  PERL=""
+else
+  AC_PATH_PROG(PERL,perl)
+fi
 
 if test "${enable_mred}" = "yes" ; then
   AC_PATH_XTRA

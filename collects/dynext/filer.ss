@@ -45,7 +45,7 @@
 	      extract-base-filename))])
      (values
       (mk "[sS][sS]|[sS][cC][mM]" "Scheme" ".ss or .scm")
-      (mk "[cC]|[cC][cC]|[cC][xX][xX]|[cC][+][+]" "C" ".c, .cc, .cxx, or .c++")
+      (mk "[cC]|[cC][cC]|[cC][xX][xX]|[cC][pP][pP]|[cC][+][+]" "C" ".c, .cc, .cxx, .cpp, or .c++")
       (mk "[kK][pP]" "constant pool" ".kp")
       (mk (case (system-type)
 	    [(unix beos macos) "[oO]"]

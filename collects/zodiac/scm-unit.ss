@@ -49,6 +49,25 @@
 
   ; --------------------------------------------------------------------
 
+  (define c-unit-link-import/body-vocab-attr 'c-unit-link-import/body-vocab)
+
+  (define put-c-unit-vocab-attribute
+    (lambda (attributes vocab)
+      (put-attribute attributes c-unit-link-import/body-vocab-attr
+	(cons vocab
+	  (get-attribute attributes c-unit-link-import/body-vocab-attr
+	    (lambda () null))))))
+
+  (define get-c-unit-vocab-attribute
+    (lambda (attributes)
+      (car
+	(get-attribute attributes c-unit-link-import/body-vocab-attr))))
+
+  (define remove-c-unit-vocab-attribute
+    (lambda (attributes)
+      (put-attribute attributes c-unit-link-import/body-vocab-attr
+	(cdr (get-attribute attributes c-unit-link-import/body-vocab-attr)))))
+
   (define make-vars-attribute
     (lambda (attributes)
       (put-attribute attributes 'unit-vars
@@ -91,7 +110,7 @@
       (put-attribute attributes 'unresolved-unit-vars
 	(cdr (get-attribute attributes 'unresolved-unit-vars)))))
 
-					; --------------------------------------------------------------------
+  ; --------------------------------------------------------------------
 
   (define-struct import-id (id))
   (define-struct export-id (id))
@@ -322,7 +341,8 @@
   (add-sym-micro c-unit-link-import-vocab
     (lambda (expr env attributes vocab)
       (if (check-import expr attributes)
-	(list (expand-expr expr env attributes scheme-vocabulary))
+	(list (expand-expr expr env attributes
+		(get-c-unit-vocab-attribute attributes)))
 	(static-error expr "~a: Not an imported identifier"
 	  (z:read-object expr)))))
 
@@ -357,7 +377,7 @@
 		     (imported-vars
 		       (pat:pexpand '(imported-var ...) p-env kwd)))
 		(cons (expand-expr sub-unit-expr env attributes
-			scheme-vocabulary)
+			(get-c-unit-vocab-attribute attributes))
 		  (map (lambda (imported-var)
 			 (expand-expr imported-var env attributes
 			   c-unit-link-import-vocab))
@@ -435,6 +455,7 @@
 		       (pat:pexpand '(export-clause ...) p-env kwd)))
 		(distinct-valid-syntactic-id/s? in:link-tags)
 		(make-vars-attribute attributes)
+		(put-c-unit-vocab-attribute attributes vocab)
 		(let*
 		  ((top-level? (get-top-level-status attributes))
 		    (_ (set-top-level-status attributes))
@@ -484,6 +505,7 @@
 			  in:export-clauses)))
 		    (_ (retract-env (map car proc:imports) env)))
 		  (set-top-level-status attributes top-level?)
+		  (remove-c-unit-vocab-attribute attributes)
 		  (remove-vars-attribute attributes)
 		  (create-compound-unit-form
 		    (map car proc:imports)

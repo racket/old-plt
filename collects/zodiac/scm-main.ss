@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.107 1997/08/11 17:09:50 shriram Exp $
+; $Id: scm-main.ss,v 1.111 1997/08/11 20:15:18 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -439,7 +439,8 @@
 	    (if (or (language>=? 'side-effecting)
 		  (z:symbol? (cadr contents)))
 	      (create-quote-form (cadr contents) expr)
-	      (static-error (cadr contents) "Not appropriate for a symbol"))
+	      (static-error expr "'~s is not a symbol"
+		(sanitized-sexp->raw (cadr contents))))
 	    (static-error expr "Malformed quote")))
 	(static-error expr "Malformed quote"))))
 

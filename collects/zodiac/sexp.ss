@@ -1,4 +1,4 @@
-; $Id$
+; $Id: sexp.ss,v 1.17 1997/07/21 15:51:43 shriram Exp $
 
 (unit/sig zodiac:sexp^
   (import zodiac:misc^
@@ -100,12 +100,29 @@
 			      (cons (car objects) (loop (cdr objects)))))))
 		      ((z:vector? expr)
 			(apply vector objects))))))
-					;	      (printf "Created entry for ~s~n" output)
 	    (when table
 	      (hash-table-put! table output expr))
 	    output))
 	(else
 	  expr))))
+
+  (define sanitized-sexp->raw
+    (let ((sa string-append))
+      (lambda (expr)
+	(cond
+	  ((z:scalar? expr)
+	    (if (z:box? expr)
+	      (box
+		(sanitized-sexp->raw (z:read-object expr)))
+	      (z:read-object expr)))
+	  ((z:vector? expr)
+	    '(vector ...))
+	  ((z:list? expr)
+	    '(list ...))
+	  ((z:improper-list? expr)
+	    '(cons ...))
+	  (else
+	    expr)))))
 
   ; ----------------------------------------------------------------------
 

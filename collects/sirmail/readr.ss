@@ -544,28 +544,18 @@
           (send sorting-subject-snip set-min-width SUBJECT-WIDTH)
           (send sorting-subject-snip set-max-width SUBJECT-WIDTH))
         
-	(when (object? header-list)
+        (when (object? header-list)
 	  (let ([e (send header-list get-editor)])
 	    (send e begin-edit-sequence)
 	    (for-each (lambda (item)
 			(let* ([e (send item get-editor)]
-			       [embedded-editors
-				(let loop ([s (send e find-first-snip)]
-					   [l null])
+			       [line-snip
+				(let loop ([s (send e find-first-snip)])
 				  (cond
-                                    [(not s) (reverse! l)]
-                                    [(is-a? s editor-snip%) (loop (send s next)
-                                                                  (cons s l))]
-                                    [else (loop (send s next) l)]))]
-			       [from-snip (car embedded-editors)]
-			       [subject-snip (cadr embedded-editors)]
-                               [date-snip (caddr embedded-editors)])
-			  (send from-snip set-min-width FROM-WIDTH)
-			  (send from-snip set-max-width FROM-WIDTH)
-			  (send subject-snip set-min-width SUBJECT-WIDTH)
-			  (send subject-snip set-max-width SUBJECT-WIDTH)
-                          (send date-snip set-min-width UID-WIDTH)
-			  (send date-snip set-max-width UID-WIDTH)))
+                                    [(not s) #f]
+                                    [(is-a? s line-snip%) s]
+                                    [else (loop (send s next))]))])
+			  (send line-snip set-width (+ FROM-WIDTH SUBJECT-WIDTH UID-WIDTH))))
 		      (send header-list get-items))
 	    (send e end-edit-sequence))))
       
@@ -720,39 +710,86 @@
       
       (define re:one-line (regexp (format "^[^~a~a]*" #\newline #\return)))
       
-      (define (add-message m)
-	(let* ([i (send header-list new-item)]
-	       [e (send i get-editor)]
-	       [from (make-field FROM-WIDTH)]
-	       [sep1 (make-object vertical-line-snip%)]
-	       [subject (make-field SUBJECT-WIDTH)]
-               [sep2 (make-object vertical-line-snip%)]
-               [date (make-field UID-WIDTH)]
-	       [one-line (lambda (s)
-			   (let ([m (regexp-match re:one-line s)])
-			     (if m (car m) s)))])
-	  (send e begin-edit-sequence)
-          (send e set-line-spacing 0)
-	  (send e insert from)
-	  (send e insert sep1)
-	  (send e insert subject)
-          (send e insert sep2)
-          (send e insert date)
-	  (send i user-data (message-uid m))
-	  (send (send from get-editor) insert 
-		(one-line (or (parse-iso-8859-1 (message-from m))
-			      "<unknown>")))
-	  (send (send subject get-editor) insert 
-		(one-line (or (parse-iso-8859-1 (message-subject m))
-			      no-subject-string)))
-          (send (send date get-editor) insert (format "~a" (message-uid m)))
+      (define first-gap 35)
+      (define second-gap 15)
+      (define line-space 8)
+      
+      (define line-snip%
+        (class snip%
+          (init-field from subject uid)
+          (define/override (draw dc x y left top bottom right dx dy draw-caret)
+            (let ([w (get-width)])
+              (let-values ([(_1 h _2 _3) (send dc get-text-extent "yX")])
+                
+                (let ([old-clip (send dc get-clipping-region)])
+                  (send dc set-clipping-rect x y (+ FROM-WIDTH (/ first-gap 2) (- line-space)) h)
+                  (send dc draw-text from x y)
+                  (send dc set-clipping-rect 
+                        (+ x FROM-WIDTH (/ first-gap 2) line-space)
+                        y 
+                        (+ SUBJECT-WIDTH (/ second-gap 2) (- line-space))
+                        h)
+                  (send dc draw-text subject (+ x FROM-WIDTH (/ first-gap 2) line-space) y)
+                  (send dc set-clipping-region old-clip)
+                  (send dc draw-text
+                        uid 
+                        (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2) line-space)
+                        y))
+                  
+                (send dc draw-line 
+                      (+ x FROM-WIDTH (/ first-gap 2))
+                      y
+                      (+ x FROM-WIDTH (/ first-gap 2))
+                      (+ y h))
+                (send dc draw-line 
+                      (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
+                      y
+                      (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
+                      (+ y h)))))
           
-	  (unless (message-downloaded? m)
-	    (apply-style i unread-delta))
-	  (when (memq 'marked (message-flags m))
-	    (apply-style i marked-delta))
-	  (send e end-edit-sequence)
-	  i))
+          (define/override (get-extent dc x y wb hb db sb lb rb)
+            (let-values ([(w h _1 _2) (send dc get-text-extent "yX")])
+              (set-box/f! hb h)
+              (set-box/f! wb (get-width))))
+          (inherit get-admin)
+          
+          (field [width 500])
+          (define/public (set-width w) 
+            (let ([admin (get-admin)])
+              (when admin
+                (send admin resized this #t)))
+            (set! width w))
+          (define/private (get-width) width)
+          (super-new)))
+
+      (define (set-box/f! b v) (when (box? b) (set-box! b v)))
+      
+      (define (add-message m)
+        (let* ([i (send header-list new-item)]
+	       [e (send i get-editor)]
+               [one-line
+                (lambda (s)
+                  (let ([m (regexp-match re:one-line s)])
+                    (if m (car m) s)))]
+	       [snip (new line-snip% 
+                          (from
+                           (one-line (or (parse-iso-8859-1 (message-from m))
+                                         "<unknown>")))
+                          (subject
+                           (one-line (or (parse-iso-8859-1 (message-subject m))
+                                         no-subject-string)))
+                          (uid (format "~a" (message-uid m))))]
+               [before (send e last-position)])
+          (send e begin-edit-sequence)
+          (send i user-data (message-uid m))
+          (send e set-line-spacing 0)
+	  (send e insert snip)
+          (unless (message-downloaded? m)
+            (send e change-style unread-delta before (+ before 1)))
+          (when (memq 'marked (message-flags m))
+            (send e change-style unread-delta before (+ before 1)))
+          (send e end-edit-sequence)
+          i))
 
       (define display-text% (html-text-mixin text:standard-style-list%))
       

@@ -61,9 +61,7 @@
 	   (lambda ()
 	     (super-on-frame-active)
 	     (send mred:group:the-frame-group set-active-frame this))]
-	  [keymap (make-object (class-asi wx:keymap%
-				 (public
-				   [DUMMY6 (eval '(make-rectangular 6 1))])))]
+	  [keymap (make-object wx:keymap%)]
 	  [make-root-panel
 	   (lambda (% parent)
 	     (make-object % parent))]

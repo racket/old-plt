@@ -50,9 +50,7 @@
 		[name "default"]
 		[make-keymap 
 		 (lambda ()
-		   (let ([keymap (make-object 
-				  (class-asi wx:keymap%
-				    (public [DUMMY2 (eval '(make-rectangular 2 1))])))])
+		   (let ([keymap (make-object wx:keymap%)])
 		     (mred:keymap:set-keymap-error-handler keymap)
 		     (mred:keymap:set-keymap-implied-shifts keymap)))]
 		[deinstall 

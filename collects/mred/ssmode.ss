@@ -913,10 +913,7 @@
 	    (map-meta "c:l" "evaluate-buffer"))
 	  (send keymap map-function "c:c;c:b" "remove-parens-forward"))))
 
-    (define global-scheme-mode-keymap (make-object 
-				       (class-asi wx:keymap%
-					 (public
-					   [DUMMY3 (eval '(make-rectangular 3 1))]))))
+    (define global-scheme-mode-keymap (make-object wx:keymap%))
     (setup-global-scheme-mode-keymap global-scheme-mode-keymap)
 
     (mred:handler:insert-mode-handler "Scheme" '("ss" "scm" "sch" "mredrc")
@@ -956,8 +953,5 @@
 	(mred:keymap:send-map-function-meta keymap "p" "put-previous-sexp")
 	(mred:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
 
-    (define global-scheme-interaction-mode-keymap (make-object
-						   (class-asi wx:keymap%
-						     (public
-						       [DUMMY4 (eval' (make-rectangular 4 1))]))))
+    (define global-scheme-interaction-mode-keymap (make-object wx:keymap%))
     (setup-global-scheme-interaction-mode-keymap global-scheme-interaction-mode-keymap))

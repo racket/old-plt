@@ -203,11 +203,10 @@
 	     (class-asi wx:keymap%
 	       (rename [super-map-function map-function])
 	       (public
-		 [DUMMY5 (eval '(make-rectangular 5 1))]
-		 (map-function
+		 [map-function
 		  (lambda args
 		    '(printf "map-functinon: ~a~n" args)
-		    (apply super-map-function args)))))]
+		    (apply super-map-function args))]))]
 	    [macintosh-keymap (make-object keymap%)]
 	    [windows-keymap (make-object keymap%)]
 	    [unix-keymap (make-object keymap%)])

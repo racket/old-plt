@@ -1,6 +1,6 @@
 
-(module slatex-launcher mzscheme
-  (require "slatex.ss")
+(module pdf-slatex-launcher mzscheme
+  (require "slatex-wrapper.ss")
 
   (define argv (current-command-line-arguments))
   
@@ -8,13 +8,11 @@
     [(macos)
      
      ;; set up drag and drop
-     (current-load slatex)
-     
-     (for-each slatex (vector->list argv))]
+     (error 'slatex "pdf-slatex not supported under Mac OS Classic")]
     [(windows unix macosx)
      (when (eq? (vector) argv)
        (error 'slatex "expected a file on the command line~n"))
      (parameterize ([error-escape-handler exit])
-       (slatex (vector-ref argv 0)))
+       (pdf-slatex (vector-ref argv 0)))
      (exit)]))
 

@@ -32,6 +32,6 @@
                 (list "-qge" 
                       (string-append "(require (lib \"" launcher "\" \"slatex\"))"))
                 (mzscheme-program-launcher-path name)))])
-        (meta-make-mzscheme-launcher "slatex-launcher.scm" "SLaTeX")
-        (meta-make-mzscheme-launcher "pdf-slatex-launcher.scm" "PDF SLaTeX"))))
+        (meta-make-mzscheme-launcher "slatex-launcher.ss" "SLaTeX")
+        (meta-make-mzscheme-launcher "pdf-slatex-launcher.ss" "PDF SLaTeX"))))
   (provide installer))

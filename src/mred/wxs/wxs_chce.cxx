@@ -853,7 +853,7 @@ void objscheme_setup_wxChoice(Scheme_Env *env)
 
   wxREGGLOB(os_wxChoice_class);
 
-  os_wxChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "choice%", "item%", os_wxChoice_ConstructScheme, 15));
+  os_wxChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "choice%", "item%", (Scheme_Method_Prim *)os_wxChoice_ConstructScheme, 15));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "get-string" " method", (Scheme_Method_Prim *)os_wxChoiceGetString, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxChoice_class, "set-string-selection" " method", (Scheme_Method_Prim *)os_wxChoiceSetStringSelection, 1, 1));

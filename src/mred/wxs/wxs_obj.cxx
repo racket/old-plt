@@ -100,7 +100,7 @@ void objscheme_setup_wxObject(Scheme_Env *env)
 
   wxREGGLOB(os_wxObject_class);
 
-  os_wxObject_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0));
+  os_wxObject_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "object%", NULL, (Scheme_Method_Prim *)os_wxObject_ConstructScheme, 0));
 
 
 

@@ -2084,7 +2084,7 @@ void objscheme_setup_wxStyleDelta(Scheme_Env *env)
 
   wxREGGLOB(os_wxStyleDelta_class);
 
-  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", os_wxStyleDelta_ConstructScheme, 39));
+  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", (Scheme_Method_Prim *)os_wxStyleDelta_ConstructScheme, 39));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "copy" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse" " method", (Scheme_Method_Prim *)os_wxStyleDeltaCollapse, 1, 1));
@@ -3197,7 +3197,7 @@ void objscheme_setup_wxStyleList(Scheme_Env *env)
 
   wxREGGLOB(os_wxStyleList_class);
 
-  os_wxStyleList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 12));
+  os_wxStyleList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-list%", "object%", (Scheme_Method_Prim *)os_wxStyleList_ConstructScheme, 12));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "forget-notification" " method", (Scheme_Method_Prim *)os_wxStyleListForgetNotification, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "notify-on-change" " method", (Scheme_Method_Prim *)os_wxStyleListNotifyOnChange, 1, 1));

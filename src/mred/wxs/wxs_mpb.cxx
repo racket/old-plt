@@ -5767,7 +5767,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaPasteboard_class);
 
-  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 103));
+  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 103));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardSetScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetScrollStep, 0, 0));

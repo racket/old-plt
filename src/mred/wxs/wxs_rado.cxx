@@ -1077,7 +1077,7 @@ void objscheme_setup_wxRadioBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxRadioBox_class);
 
-  os_wxRadioBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 15));
+  os_wxRadioBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "radio-box%", "item%", (Scheme_Method_Prim *)os_wxRadioBox_ConstructScheme, 15));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "button-focus" " method", (Scheme_Method_Prim *)os_wxRadioBoxButtonFocus, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "enable" " method", (Scheme_Method_Prim *)os_wxRadioBoxEnable, 1, 2));

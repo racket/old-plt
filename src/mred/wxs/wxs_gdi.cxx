@@ -497,7 +497,7 @@ void objscheme_setup_wxFont(Scheme_Env *env)
 
   wxREGGLOB(os_wxFont_class);
 
-  os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 7));
+  os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontGetFontId, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxFontGetUnderlined, 0, 0));
@@ -712,7 +712,7 @@ void objscheme_setup_wxFontList(Scheme_Env *env)
 
   wxREGGLOB(os_wxFontList_class);
 
-  os_wxFontList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 1));
+  os_wxFontList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-list%", "object%", (Scheme_Method_Prim *)os_wxFontList_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", (Scheme_Method_Prim *)os_wxFontListFindOrCreateFont, 4, 6));
 
@@ -1048,7 +1048,7 @@ void objscheme_setup_wxColour(Scheme_Env *env)
 
   wxREGGLOB(os_wxColour_class);
 
-  os_wxColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 6));
+  os_wxColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "color%", "object%", (Scheme_Method_Prim *)os_wxColour_ConstructScheme, 6));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "blue" " method", (Scheme_Method_Prim *)os_wxColourBlue, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxColour_class, "green" " method", (Scheme_Method_Prim *)os_wxColourGreen, 0, 0));
@@ -1436,7 +1436,7 @@ void objscheme_setup_wxPoint(Scheme_Env *env)
 
   wxREGGLOB(os_wxPoint_class);
 
-  os_wxPoint_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "point%", "object%", os_wxPoint_ConstructScheme, 4));
+  os_wxPoint_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "point%", "object%", (Scheme_Method_Prim *)os_wxPoint_ConstructScheme, 4));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPoint_class,"get-x" " method", objscheme_wxPoint_Getx, 0, 0));
@@ -1887,7 +1887,7 @@ void objscheme_setup_wxBrush(Scheme_Env *env)
 
   wxREGGLOB(os_wxBrush_class);
 
-  os_wxBrush_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "brush%", "object%", os_wxBrush_ConstructScheme, 6));
+  os_wxBrush_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "brush%", "object%", (Scheme_Method_Prim *)os_wxBrush_ConstructScheme, 6));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "set-style" " method", (Scheme_Method_Prim *)os_wxBrushSetStyle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrush_class, "get-style" " method", (Scheme_Method_Prim *)os_wxBrushGetStyle, 0, 0));
@@ -2082,7 +2082,7 @@ void objscheme_setup_wxBrushList(Scheme_Env *env)
 
   wxREGGLOB(os_wxBrushList_class);
 
-  os_wxBrushList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "brush-list%", "object%", os_wxBrushList_ConstructScheme, 1));
+  os_wxBrushList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "brush-list%", "object%", (Scheme_Method_Prim *)os_wxBrushList_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBrushList_class, "find-or-create-brush" " method", (Scheme_Method_Prim *)os_wxBrushListFindOrCreateBrush, 2, 2));
 
@@ -2739,7 +2739,7 @@ void objscheme_setup_wxPen(Scheme_Env *env)
 
   wxREGGLOB(os_wxPen_class);
 
-  os_wxPen_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pen%", "object%", os_wxPen_ConstructScheme, 12));
+  os_wxPen_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pen%", "object%", (Scheme_Method_Prim *)os_wxPen_ConstructScheme, 12));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-style" " method", (Scheme_Method_Prim *)os_wxPenSetStyle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-style" " method", (Scheme_Method_Prim *)os_wxPenGetStyle, 0, 0));
@@ -2945,7 +2945,7 @@ void objscheme_setup_wxPenList(Scheme_Env *env)
 
   wxREGGLOB(os_wxPenList_class);
 
-  os_wxPenList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pen-list%", "object%", os_wxPenList_ConstructScheme, 1));
+  os_wxPenList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pen-list%", "object%", (Scheme_Method_Prim *)os_wxPenList_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPenList_class, "find-or-create-pen" " method", (Scheme_Method_Prim *)os_wxPenListFindOrCreatePen, 3, 3));
 
@@ -3240,7 +3240,7 @@ void objscheme_setup_wxCursor(Scheme_Env *env)
 
   wxREGGLOB(os_wxCursor_class);
 
-  os_wxCursor_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "cursor%", "object%", os_wxCursor_ConstructScheme, 1));
+  os_wxCursor_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "cursor%", "object%", (Scheme_Method_Prim *)os_wxCursor_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCursor_class, "ok?" " method", (Scheme_Method_Prim *)os_wxCursorOk, 0, 0));
 
@@ -3809,7 +3809,7 @@ void objscheme_setup_wxRegion(Scheme_Env *env)
 
   wxREGGLOB(os_wxRegion_class);
 
-  os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", os_wxRegion_ConstructScheme, 11));
+  os_wxRegion_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "region%", "object%", (Scheme_Method_Prim *)os_wxRegion_ConstructScheme, 11));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "is-empty?" " method", (Scheme_Method_Prim *)os_wxRegionEmpty, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRegion_class, "get-bounding-box" " method", (Scheme_Method_Prim *)os_wxRegionRgnBoundingBox, 0, 0));

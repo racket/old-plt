@@ -477,7 +477,7 @@ void objscheme_setup_wxMenu(Scheme_Env *env)
 
   wxREGGLOB(os_wxMenu_class);
 
-  os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", os_wxMenu_ConstructScheme, 12));
+  os_wxMenu_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu%", "object%", (Scheme_Method_Prim *)os_wxMenu_ConstructScheme, 12));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "select" " method", (Scheme_Method_Prim *)os_wxMenumenuSelect, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenu_class, "set-title" " method", (Scheme_Method_Prim *)os_wxMenuSetTitle, 1, 1));
@@ -782,7 +782,7 @@ void objscheme_setup_wxMenuBar(Scheme_Env *env)
 
   wxREGGLOB(os_wxMenuBar_class);
 
-  os_wxMenuBar_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu-bar%", "object%", os_wxMenuBar_ConstructScheme, 5));
+  os_wxMenuBar_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu-bar%", "object%", (Scheme_Method_Prim *)os_wxMenuBar_ConstructScheme, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "set-label-top" " method", (Scheme_Method_Prim *)os_wxMenuBarSetLabelTop, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMenuBar_class, "number" " method", (Scheme_Method_Prim *)os_wxMenuBarNumber, 0, 0));
@@ -997,7 +997,7 @@ void objscheme_setup_wxsMenuItem(Scheme_Env *env)
 
   wxREGGLOB(os_wxsMenuItem_class);
 
-  os_wxsMenuItem_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu-item%", "object%", os_wxsMenuItem_ConstructScheme, 1));
+  os_wxsMenuItem_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "menu-item%", "object%", (Scheme_Method_Prim *)os_wxsMenuItem_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsMenuItem_class, "id" " method", (Scheme_Method_Prim *)os_wxsMenuItemId, 0, 0));
 

@@ -1161,7 +1161,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaCanvas_class);
 
-  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 22));
+  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", (Scheme_Method_Prim *)os_wxMediaCanvas_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event" " method", (Scheme_Method_Prim *)os_wxMediaCanvasOnEvent, 1, 1));
@@ -2062,7 +2062,7 @@ void objscheme_setup_wxMediaAdmin(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaAdmin_class);
 
-  os_wxMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-admin%", "object%", os_wxMediaAdmin_ConstructScheme, 10));
+  os_wxMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-admin%", "object%", (Scheme_Method_Prim *)os_wxMediaAdmin_ConstructScheme, 10));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "refresh-delayed?" " method", (Scheme_Method_Prim *)os_wxMediaAdminDelayRefresh, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "popup-menu" " method", (Scheme_Method_Prim *)os_wxMediaAdminPopupMenu, 3, 3));
@@ -3161,7 +3161,7 @@ void objscheme_setup_wxSnipAdmin(Scheme_Env *env)
 
   wxREGGLOB(os_wxSnipAdmin_class);
 
-  os_wxSnipAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-admin%", "object%", os_wxSnipAdmin_ConstructScheme, 12));
+  os_wxSnipAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-admin%", "object%", (Scheme_Method_Prim *)os_wxSnipAdmin_ConstructScheme, 12));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "popup-menu" " method", (Scheme_Method_Prim *)os_wxSnipAdminPopupMenu, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "update-cursor" " method", (Scheme_Method_Prim *)os_wxSnipAdminUpdateCursor, 0, 0));
@@ -3584,7 +3584,7 @@ void objscheme_setup_wxSnipClass(Scheme_Env *env)
 
   wxREGGLOB(os_wxSnipClass_class);
 
-  os_wxSnipClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class%", "object%", os_wxSnipClass_ConstructScheme, 8));
+  os_wxSnipClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class%", "object%", (Scheme_Method_Prim *)os_wxSnipClass_ConstructScheme, 8));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "reading-version" " method", (Scheme_Method_Prim *)os_wxSnipClassReadingVersion, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-header" " method", (Scheme_Method_Prim *)os_wxSnipClassWriteHeader, 1, 1));
@@ -4397,7 +4397,7 @@ void objscheme_setup_wxKeymap(Scheme_Env *env)
 
   wxREGGLOB(os_wxKeymap_class);
 
-  os_wxKeymap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "keymap%", "object%", os_wxKeymap_ConstructScheme, 15));
+  os_wxKeymap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "keymap%", "object%", (Scheme_Method_Prim *)os_wxKeymap_ConstructScheme, 15));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-chained-keymap" " method", (Scheme_Method_Prim *)os_wxKeymapRemoveChainedKeymap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "chain-to-keymap" " method", (Scheme_Method_Prim *)os_wxKeymapChainToKeymap, 2, 2));
@@ -4726,7 +4726,7 @@ void objscheme_setup_wxMediaWordbreakMap(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaWordbreakMap_class);
 
-  os_wxMediaWordbreakMap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", os_wxMediaWordbreakMap_ConstructScheme, 2));
+  os_wxMediaWordbreakMap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", (Scheme_Method_Prim *)os_wxMediaWordbreakMap_ConstructScheme, 2));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "get-map" " method", (Scheme_Method_Prim *)os_wxMediaWordbreakMapGetMap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "set-map" " method", (Scheme_Method_Prim *)os_wxMediaWordbreakMapSetMap, 2, 2));

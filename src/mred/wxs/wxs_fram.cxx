@@ -1087,7 +1087,7 @@ void objscheme_setup_wxFrame(Scheme_Env *env)
 
   wxREGGLOB(os_wxFrame_class);
 
-  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21));
+  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", (Scheme_Method_Prim *)os_wxFrame_ConstructScheme, 21));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxFrameOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxFramePreOnEvent, 2, 2));

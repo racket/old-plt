@@ -684,7 +684,7 @@ void objscheme_setup_wxButton(Scheme_Env *env)
 
   wxREGGLOB(os_wxButton_class);
 
-  os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7));
+  os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", (Scheme_Method_Prim *)os_wxButton_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label" " method", (Scheme_Method_Prim *)os_wxButtonSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxButtonOnDropFile, 1, 1));

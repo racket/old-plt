@@ -2089,7 +2089,7 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxSnip_class);
 
-  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 35));
+  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", (Scheme_Method_Prim *)os_wxSnip_ConstructScheme, 35));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous" " method", (Scheme_Method_Prim *)os_wxSnipPrevious, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next" " method", (Scheme_Method_Prim *)os_wxSnipNext, 0, 0));
@@ -3887,7 +3887,7 @@ void objscheme_setup_wxTextSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxTextSnip_class);
 
-  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", os_wxTextSnip_ConstructScheme, 24));
+  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", (Scheme_Method_Prim *)os_wxTextSnip_ConstructScheme, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read" " method", (Scheme_Method_Prim *)os_wxTextSnipRead, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert" " method", (Scheme_Method_Prim *)os_wxTextSnipInsert, 2, 3));
@@ -5580,7 +5580,7 @@ void objscheme_setup_wxTabSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxTabSnip_class);
 
-  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", os_wxTabSnip_ConstructScheme, 22));
+  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", (Scheme_Method_Prim *)os_wxTabSnip_ConstructScheme, 22));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxTabSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxTabSnipFindScrollStep, 1, 1));
@@ -7545,7 +7545,7 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxImageSnip_class);
 
-  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 27));
+  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", (Scheme_Method_Prim *)os_wxImageSnip_ConstructScheme, 27));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset" " method", (Scheme_Method_Prim *)os_wxImageSnipSetOffset, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap" " method", (Scheme_Method_Prim *)os_wxImageSnipSetBitmap, 1, 2));
@@ -9779,7 +9779,7 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaSnip_class);
 
-  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 42));
+  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", (Scheme_Method_Prim *)os_wxMediaSnip_ConstructScheme, 42));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetInset, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset" " method", (Scheme_Method_Prim *)os_wxMediaSnipSetInset, 4, 4));
@@ -10054,7 +10054,7 @@ void objscheme_setup_wxBufferDataClass(Scheme_Env *env)
 
   wxREGGLOB(os_wxBufferDataClass_class);
 
-  os_wxBufferDataClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 3));
+  os_wxBufferDataClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data-class%", "object%", (Scheme_Method_Prim *)os_wxBufferDataClass_ConstructScheme, 3));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class, "read" " method", (Scheme_Method_Prim *)os_wxBufferDataClassRead, 1, 1));
 
@@ -10564,7 +10564,7 @@ void objscheme_setup_wxBufferData(Scheme_Env *env)
 
   wxREGGLOB(os_wxBufferData_class);
 
-  os_wxBufferData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data%", "object%", os_wxBufferData_ConstructScheme, 5));
+  os_wxBufferData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data%", "object%", (Scheme_Method_Prim *)os_wxBufferData_ConstructScheme, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "set-next" " method", (Scheme_Method_Prim *)os_wxBufferDataSetNextNoCycle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "write" " method", (Scheme_Method_Prim *)os_wxBufferDataWrite, 1, 1));

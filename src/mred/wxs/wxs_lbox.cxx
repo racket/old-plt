@@ -1201,7 +1201,7 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxListBox_class);
 
-  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 26));
+  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 26));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string" " method", (Scheme_Method_Prim *)os_wxListBoxSetString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string" " method", (Scheme_Method_Prim *)os_wxListBoxGetString, 1, 1));

@@ -237,7 +237,7 @@ void objscheme_setup_wxTimer(Scheme_Env *env)
 
   wxREGGLOB(os_wxTimer_class);
 
-  os_wxTimer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "timer%", "object%", os_wxTimer_ConstructScheme, 4));
+  os_wxTimer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "timer%", "object%", (Scheme_Method_Prim *)os_wxTimer_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "stop" " method", (Scheme_Method_Prim *)os_wxTimerStop, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "start" " method", (Scheme_Method_Prim *)os_wxTimerStart, 1, 2));
@@ -883,7 +883,7 @@ void objscheme_setup_wxClipboardClient(Scheme_Env *env)
 
   wxREGGLOB(os_wxClipboardClient_class);
 
-  os_wxClipboardClient_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard-client%", "object%", os_wxClipboardClient_ConstructScheme, 4));
+  os_wxClipboardClient_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard-client%", "object%", (Scheme_Method_Prim *)os_wxClipboardClient_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "get-types" " method", (Scheme_Method_Prim *)os_wxClipboardClientGetTypes, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "add-type" " method", (Scheme_Method_Prim *)os_wxClipboardClientAddType, 1, 1));
@@ -1678,7 +1678,7 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
 
   wxREGGLOB(os_wxPrintSetupData_class);
 
-  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 25));
+  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", (Scheme_Method_Prim *)os_wxPrintSetupData_ConstructScheme, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from" " method", (Scheme_Method_Prim *)os_wxPrintSetupDatacopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetMargin, 2, 2));

@@ -1803,7 +1803,7 @@ void objscheme_setup_wxMemoryDC(Scheme_Env *env)
 
   wxREGGLOB(os_wxMemoryDC_class);
 
-  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", os_wxMemoryDC_ConstructScheme, 4));
+  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", (Scheme_Method_Prim *)os_wxMemoryDC_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-bitmap" " method", (Scheme_Method_Prim *)os_wxMemoryDCGetObject, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-bitmap" " method", (Scheme_Method_Prim *)os_wxMemoryDCSelectObject, 1, 1));
@@ -1962,7 +1962,7 @@ void objscheme_setup_wxPostScriptDC(Scheme_Env *env)
 
   wxREGGLOB(os_wxPostScriptDC_class);
 
-  os_wxPostScriptDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "post-script-dc%", "dc%", os_wxPostScriptDC_ConstructScheme, 0));
+  os_wxPostScriptDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "post-script-dc%", "dc%", (Scheme_Method_Prim *)os_wxPostScriptDC_ConstructScheme, 0));
 
 
 
@@ -2147,7 +2147,7 @@ void objscheme_setup_basePrinterDC(Scheme_Env *env)
 
   wxREGGLOB(os_basePrinterDC_class);
 
-  os_basePrinterDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "printer-dc%", "dc%", os_basePrinterDC_ConstructScheme, 0));
+  os_basePrinterDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "printer-dc%", "dc%", (Scheme_Method_Prim *)os_basePrinterDC_ConstructScheme, 0));
 
 
 

@@ -785,7 +785,7 @@ void objscheme_setup_wxMessage(Scheme_Env *env)
 
   wxREGGLOB(os_wxMessage_class);
 
-  os_wxMessage_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7));
+  os_wxMessage_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "message%", "item%", (Scheme_Method_Prim *)os_wxMessage_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label" " method", (Scheme_Method_Prim *)os_wxMessageSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxMessageOnDropFile, 1, 1));

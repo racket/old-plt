@@ -541,7 +541,7 @@ void objscheme_setup_wxMediaStreamInBase(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaStreamInBase_class);
 
-  os_wxMediaStreamInBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 5));
+  os_wxMediaStreamInBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", (Scheme_Method_Prim *)os_wxMediaStreamInBase_ConstructScheme, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "read" " method", (Scheme_Method_Prim *)os_wxMediaStreamInBaseRead, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "bad?" " method", (Scheme_Method_Prim *)os_wxMediaStreamInBaseBad, 0, 0));
@@ -911,7 +911,7 @@ void objscheme_setup_wxMediaStreamOutBase(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaStreamOutBase_class);
 
-  os_wxMediaStreamOutBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 4));
+  os_wxMediaStreamOutBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", (Scheme_Method_Prim *)os_wxMediaStreamOutBase_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "write" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutBaseWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "bad?" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutBaseBad, 0, 0));
@@ -1056,7 +1056,7 @@ void objscheme_setup_wxMediaStreamInStringBase(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaStreamInStringBase_class);
 
-  os_wxMediaStreamInStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 0));
+  os_wxMediaStreamInStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", (Scheme_Method_Prim *)os_wxMediaStreamInStringBase_ConstructScheme, 0));
 
 
 
@@ -1215,7 +1215,7 @@ void objscheme_setup_wxMediaStreamOutStringBase(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaStreamOutStringBase_class);
 
-  os_wxMediaStreamOutStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 1));
+  os_wxMediaStreamOutStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", (Scheme_Method_Prim *)os_wxMediaStreamOutStringBase_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutStringBaseGetString, 0, 0));
 
@@ -1709,7 +1709,7 @@ void objscheme_setup_wxMediaStreamIn(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaStreamIn_class);
 
-  os_wxMediaStreamIn_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 12));
+  os_wxMediaStreamIn_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in%", "object%", (Scheme_Method_Prim *)os_wxMediaStreamIn_ConstructScheme, 12));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "ok?" " method", (Scheme_Method_Prim *)os_wxMediaStreamInOk, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "jump-to" " method", (Scheme_Method_Prim *)os_wxMediaStreamInJumpTo, 1, 1));
@@ -2099,7 +2099,7 @@ void objscheme_setup_wxMediaStreamOut(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaStreamOut_class);
 
-  os_wxMediaStreamOut_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 6));
+  os_wxMediaStreamOut_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out%", "object%", (Scheme_Method_Prim *)os_wxMediaStreamOut_ConstructScheme, 6));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutOk, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to" " method", (Scheme_Method_Prim *)os_wxMediaStreamOutJumpTo, 1, 1));

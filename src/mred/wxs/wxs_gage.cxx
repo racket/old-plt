@@ -671,7 +671,7 @@ void objscheme_setup_wxsGauge(Scheme_Env *env)
 
   wxREGGLOB(os_wxsGauge_class);
 
-  os_wxsGauge_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10));
+  os_wxsGauge_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "gauge%", "item%", (Scheme_Method_Prim *)os_wxsGauge_ConstructScheme, 10));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-value" " method", (Scheme_Method_Prim *)os_wxsGaugeGetValue, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-value" " method", (Scheme_Method_Prim *)os_wxsGaugeSetValue, 1, 1));

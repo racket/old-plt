@@ -442,7 +442,7 @@ void objscheme_setup_wxBitmap(Scheme_Env *env)
 
   wxREGGLOB(os_wxBitmap_class);
 
-  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7));
+  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", (Scheme_Method_Prim *)os_wxBitmap_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file" " method", (Scheme_Method_Prim *)os_wxBitmapSaveFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file" " method", (Scheme_Method_Prim *)os_wxBitmapLoadFile, 1, 2));

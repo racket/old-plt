@@ -616,7 +616,7 @@ void objscheme_setup_wxSlider(Scheme_Env *env)
 
   wxREGGLOB(os_wxSlider_class);
 
-  os_wxSlider_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8));
+  os_wxSlider_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "slider%", "item%", (Scheme_Method_Prim *)os_wxSlider_ConstructScheme, 8));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "set-value" " method", (Scheme_Method_Prim *)os_wxSliderSetValue, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "get-value" " method", (Scheme_Method_Prim *)os_wxSliderGetValue, 0, 0));

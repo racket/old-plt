@@ -207,7 +207,7 @@ void objscheme_setup_wxEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxEvent_class);
 
-  os_wxEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "event%", "object%", os_wxEvent_ConstructScheme, 2));
+  os_wxEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "event%", "object%", (Scheme_Method_Prim *)os_wxEvent_ConstructScheme, 2));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxEvent_class,"get-time-stamp" " method", objscheme_wxEvent_GettimeStamp, 0, 0));
@@ -465,7 +465,7 @@ void objscheme_setup_wxCommandEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxCommandEvent_class);
 
-  os_wxCommandEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "control-event%", "event%", os_wxCommandEvent_ConstructScheme, 2));
+  os_wxCommandEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "control-event%", "event%", (Scheme_Method_Prim *)os_wxCommandEvent_ConstructScheme, 2));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCommandEvent_class,"get-event-type" " method", objscheme_wxCommandEvent_GeteventType, 0, 0));
@@ -638,7 +638,7 @@ void objscheme_setup_wxPopupEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxPopupEvent_class);
 
-  os_wxPopupEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "popup-event%", "control-event%", os_wxPopupEvent_ConstructScheme, 2));
+  os_wxPopupEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "popup-event%", "control-event%", (Scheme_Method_Prim *)os_wxPopupEvent_ConstructScheme, 2));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPopupEvent_class,"get-menu-id" " method", objscheme_wxPopupEvent_GetmenuId, 0, 0));
@@ -984,7 +984,7 @@ void objscheme_setup_wxScrollEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxScrollEvent_class);
 
-  os_wxScrollEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "scroll-event%", "event%", os_wxScrollEvent_ConstructScheme, 6));
+  os_wxScrollEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "scroll-event%", "event%", (Scheme_Method_Prim *)os_wxScrollEvent_ConstructScheme, 6));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxScrollEvent_class,"get-event-type" " method", objscheme_wxScrollEvent_GetmoveType, 0, 0));
@@ -1803,7 +1803,7 @@ void objscheme_setup_wxKeyEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxKeyEvent_class);
 
-  os_wxKeyEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 16));
+  os_wxKeyEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "key-event%", "event%", (Scheme_Method_Prim *)os_wxKeyEvent_ConstructScheme, 16));
 
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeyEvent_class,"get-key-code" " method", objscheme_wxKeyEvent_GetkeyCode, 0, 0));
@@ -2590,7 +2590,7 @@ void objscheme_setup_wxMouseEvent(Scheme_Env *env)
 
   wxREGGLOB(os_wxMouseEvent_class);
 
-  os_wxMouseEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 27));
+  os_wxMouseEvent_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "mouse-event%", "event%", (Scheme_Method_Prim *)os_wxMouseEvent_ConstructScheme, 27));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?" " method", (Scheme_Method_Prim *)os_wxMouseEventMoving, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?" " method", (Scheme_Method_Prim *)os_wxMouseEventLeaving, 0, 0));

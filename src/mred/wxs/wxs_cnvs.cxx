@@ -1195,7 +1195,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", (Scheme_Method_Prim *)os_wxCanvas_ConstructScheme, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxCanvasPreOnEvent, 2, 2));

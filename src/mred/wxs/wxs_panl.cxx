@@ -959,7 +959,7 @@ void objscheme_setup_wxPanel(Scheme_Env *env)
 
   wxREGGLOB(os_wxPanel_class);
 
-  os_wxPanel_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "panel%", "window%", os_wxPanel_ConstructScheme, 17));
+  os_wxPanel_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "panel%", "window%", (Scheme_Method_Prim *)os_wxPanel_ConstructScheme, 17));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-font" " method", (Scheme_Method_Prim *)os_wxPanelGetLabelFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-font" " method", (Scheme_Method_Prim *)os_wxPanelSetLabelFont, 1, 1));
@@ -1740,7 +1740,7 @@ void objscheme_setup_wxDialogBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxDialogBox_class);
 
-  os_wxDialogBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dialog%", "window%", os_wxDialogBox_ConstructScheme, 10));
+  os_wxDialogBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dialog%", "window%", (Scheme_Method_Prim *)os_wxDialogBox_ConstructScheme, 10));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "system-menu" " method", (Scheme_Method_Prim *)os_wxDialogBoxdialogMenu, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "set-title" " method", (Scheme_Method_Prim *)os_wxDialogBoxSetTitle, 1, 1));

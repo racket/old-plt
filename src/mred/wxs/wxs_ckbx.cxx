@@ -707,7 +707,7 @@ void objscheme_setup_wxCheckBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxCheckBox_class);
 
-  os_wxCheckBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 9));
+  os_wxCheckBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "check-box%", "item%", (Scheme_Method_Prim *)os_wxCheckBox_ConstructScheme, 9));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-label" " method", (Scheme_Method_Prim *)os_wxCheckBoxSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-value" " method", (Scheme_Method_Prim *)os_wxCheckBoxSetValue, 1, 1));

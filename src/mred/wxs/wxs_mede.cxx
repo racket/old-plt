@@ -7380,7 +7380,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 138));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 138));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));

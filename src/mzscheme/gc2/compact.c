@@ -43,6 +43,12 @@ typedef short Type_Tag;
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
+#define MARK_STACK_MAX 4096
+
+void *mark_stack[MARK_STACK_MAX];
+unsigned short mark_stack_type[MARK_STACK_MAX];
+long mark_stack_pos = 0;
+
 #if TIME
 # include <sys/time.h>
 # include <sys/resource.h>
@@ -161,7 +167,9 @@ static void *park[2];
 static int cycle_count = 0;
 static int skipped_pages, scanned_pages, young_pages, inited_pages;
 
-static long iterations, tail_iterations;
+static long iterations;
+
+static long mark_maxdepth, mark_stackcount;
 
 static int during_gc;
 
@@ -1090,12 +1098,16 @@ long mark_calls, mark_hits, mark_recalls, mark_colors, mark_one, mark_many, mark
 
 void GC_mark(const void *p)
 {
-  unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
+  unsigned long g;
   MPage *map;
 
 #if MARK_STATS
   mark_calls++;
 #endif
+
+  if ((long)p & 0x1) return;
+
+  g = ((unsigned long)p >> MAPS_SHIFT);
 
   map = mpage_maps[g];
   if (map) {
@@ -1158,24 +1170,32 @@ void GC_mark(const void *p)
 	  mark_colors++;
 #endif
 
-	  page->u.offsets[offset] = (v | GRAY_BIT);
-
-	  if (!(type & GRAY_BIT)) {
-	    page->type |= GRAY_BIT;
-	    
-	    if (!(type & MTYPE_ATOMIC)) {
-	      page->gray_next = gray_first;
-	      gray_first = page;
-
-	      page->gray_start = offset;
-	      page->gray_end = offset;
-	    }
+	  if (!(type & (MTYPE_ATOMIC | MTYPE_TAGGED_ARRAY))
+	      && (mark_stack_pos < MARK_STACK_MAX)) {
+	    page->type |= BLACK_BIT;
+	    page->u.offsets[offset] = (v | BLACK_BIT); /* black can mean on stack */
+	    mark_stack[mark_stack_pos] = ((void **)page->block_start) + offset;
+	    mark_stack_type[mark_stack_pos++] = type;
 	  } else {
-	    if (!(type & MTYPE_ATOMIC)) {
-	      if (page->gray_start > offset)
+	    page->u.offsets[offset] = (v | GRAY_BIT);
+
+	    if (!(type & GRAY_BIT)) {
+	      page->type |= GRAY_BIT;
+	      
+	      if (!(type & MTYPE_ATOMIC)) {
+		page->gray_next = gray_first;
+		gray_first = page;
+		
 		page->gray_start = offset;
-	      if (page->gray_end < offset)
 		page->gray_end = offset;
+	      }
+	    } else {
+	      if (!(type & MTYPE_ATOMIC)) {
+		if (page->gray_start > offset)
+		  page->gray_start = offset;
+		if (page->gray_end < offset)
+		  page->gray_end = offset;
+	      }
 	    }
 	  }
 	} else {
@@ -1201,8 +1221,6 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
   void **p, **graybottom;
 
   offsets = page->u.offsets;
-
- go_again:
 
   if (page->gray_start == page->gray_end) {
     Type_Tag tag;
@@ -1262,13 +1280,6 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
 #if MARK_STATS
     mark_many++;
 #endif
-  }
-
-  if (page == gray_first) {
-    gray_first = page->gray_next;
-    page->type = ((page->type & TYPE_MASK) | BLACK_BIT);
-    tail_iterations++;
-    goto go_again;
   }
 
 #if MARK_STATS
@@ -1519,34 +1530,75 @@ static void propagate_all_mpages()
   MPage *page;
   void *p;
 
-  while (gray_first) {
+  while (gray_first || mark_stack_pos) {
     iterations++;
 
-    page = gray_first;
-    gray_first = page->gray_next;
+    if (mark_stack_pos > mark_maxdepth)
+      mark_maxdepth = mark_stack_pos;
+    mark_stackcount += mark_stack_pos;
 
-    page->type = ((page->type & TYPE_MASK) | BLACK_BIT);
-    if (!(page->type & MTYPE_ATOMIC)) {
-      p = page->block_start;
-
-      if (page->type & MTYPE_BIGBLOCK) {
-	if (!(page->type & MTYPE_CONTINUED))
-	  do_bigblock((void **)p, page, 0);
-      } else if (page->type & MTYPE_TAGGED) {
-	if (page->type & MTYPE_OLD)
-	  propagate_tagged_whole_mpage((void **)p, page);
-	else
-	  propagate_tagged_mpage((void **)p, page);
-      } else if (page->type & MTYPE_TAGGED_ARRAY) {
-	if (page->type & MTYPE_OLD)
-	  propagate_tagged_array_whole_mpage((void **)p, page);
-	else
-	  propagate_tagged_array_mpage((void **)p, page);
+    while (mark_stack_pos) {
+      unsigned short type;
+      
+      p = mark_stack[--mark_stack_pos];
+      type = mark_stack_type[mark_stack_pos];
+      if (type & MTYPE_TAGGED) {
+	Type_Tag tag;
+	tag = *(Type_Tag *)p;
+	
+#if ALIGN_DOUBLES
+	if (tag != SKIP) {
+#endif
+	  
+#if SAFETY
+	  if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
+	    CRASH();
+	  }
+#endif
+	  
+	  mark_table[tag](p);
+	  
+#if ALIGN_DOUBLES
+	}
+#endif
       } else {
-	if (page->type & MTYPE_OLD)
-	  propagate_array_whole_mpage((void **)p, page);
-	else
-	  propagate_array_mpage((void **)p, page);
+	long size, i;
+
+	size = *(long *)p;
+	
+	for (i = 1; i <= size; i++) {
+	  gcMARK(((void **)p)[i]);
+	}
+      }
+    }
+
+    if (gray_first) {
+      page = gray_first;
+      gray_first = page->gray_next;
+      
+      page->type = ((page->type & TYPE_MASK) | BLACK_BIT);
+      if (!(page->type & MTYPE_ATOMIC)) {
+	p = page->block_start;
+	
+	if (page->type & MTYPE_BIGBLOCK) {
+	  if (!(page->type & MTYPE_CONTINUED))
+	    do_bigblock((void **)p, page, 0);
+	} else if (page->type & MTYPE_TAGGED) {
+	  if (page->type & MTYPE_OLD)
+	    propagate_tagged_whole_mpage((void **)p, page);
+	  else
+	    propagate_tagged_mpage((void **)p, page);
+	} else if (page->type & MTYPE_TAGGED_ARRAY) {
+	  if (page->type & MTYPE_OLD)
+	    propagate_tagged_array_whole_mpage((void **)p, page);
+	  else
+	    propagate_tagged_array_mpage((void **)p, page);
+	} else {
+	  if (page->type & MTYPE_OLD)
+	    propagate_array_whole_mpage((void **)p, page);
+	  else
+	    propagate_array_mpage((void **)p, page);
+	}
       }
     }      
   }
@@ -1869,8 +1921,11 @@ static int min_referenced_page_age;
 void GC_fixup(void *pp)
 {
   void *p = *(void **)pp;
-  unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
+  unsigned long g;
   MPage *map;
+
+  if ((long)p & 0x1) return;
+  g = ((unsigned long)p >> MAPS_SHIFT);
 
   map = mpage_maps[g];
   if (map) {
@@ -2262,13 +2317,12 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 #if SAFETY
 static void **o_var_stack, **oo_var_stack;
 #endif
+static int stack_depth;
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
 			    void *limit)
 {
-  int stack_depth;
-
   stack_depth = 0;
   while (var_stack) {
     long size;
@@ -2323,8 +2377,6 @@ void GC_fixup_variable_stack(void **var_stack,
 			     long delta,
 			     void *limit)
 {
-  int stack_depth;
-
   stack_depth = 0;
   while (var_stack) {
     long size;
@@ -2558,12 +2610,13 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: roots (%d) [%ld faults]: %ld\n", 
-	     inited_pages,  post.ru_minflt - pre.ru_minflt,
+  PRINTTIME((STDERR, "gc: roots (i:%d d:%d) [%ld faults]: %ld\n", 
+	     inited_pages, stack_depth, post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));
 
   iterations = 0;
-  tail_iterations = 0;
+  mark_stackcount = 0;
+  mark_maxdepth = 0;
 
 #if MARK_STATS
   mark_calls = mark_hits = mark_recalls = mark_colors = mark_one = mark_many = mark_slow = 0;
@@ -2726,10 +2779,11 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: mark (i:%d c:%ld t:%ld)"
+  PRINTTIME((STDERR, "gc: mark (i:%d c:%ld s:%ld d:%ld)"
 	     STATS_FORMAT
 	     " [%ld faults]: %ld\n", 
-	     inited_pages, iterations, tail_iterations, 
+	     inited_pages, iterations, 
+	     mark_stackcount, mark_maxdepth,
 	     STATS_ARGS
 	     post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));

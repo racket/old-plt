@@ -78,9 +78,9 @@ the parent and the second snip is the child.
 
 When called with four arguments, uses the two pens and
 brushes for the color scheme. The first pen and the first
-brush are used when the mouse cursor is not over the snip
+brush are used when the mouse cursor is over the snip
 (or a child or parent) and the second pen and brush are used
-when the mouse cursor is over the snip. The brush is used to
+when the mouse cursor is not over the snip. The brush is used to
 draw inside the arrow head and the pen is used to draw the
 border of the arrowhead and the line connecting the two
 snips.

@@ -15,14 +15,17 @@ OBJDIR = objects/sys$(MZPLATFORMSUFFIX)
 
 DIRDEPS = objects $(OBJDIR)
 
+EXPORT= CC='$(CC)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS)' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)'
+XMAKE = $(MAKE) $(EXPORT)
+
 dynlib: $(DIRDEPS)
-	$(MAKE) ../$(LIBDIR)/mzdyn.o
+	$(XMAKE) ../$(LIBDIR)/mzdyn.o
 
 dynexample: $(DIRDEPS)
-	$(MAKE) ../$(OBJDIR)/dynexmpl.so
+	$(XMAKE) ../$(OBJDIR)/dynexmpl.so
 
 oe: $(DIRDEPS)
-	$(MAKE) ../$(OBJDIR)/oe.so
+	$(XMAKE) ../$(OBJDIR)/oe.so
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
@@ -56,7 +59,7 @@ clean:
 	/bin/rm -f objects/*/*.o *~ Makefile.bak
 
 exile:
-	$(MAKE) clean
+	$(XMAKE) clean
 
 # Note: 'make depend' is no longer required. As distributed, the below
 #       dependencies have been trimmed to include only dependencies

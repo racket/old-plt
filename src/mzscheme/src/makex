@@ -90,6 +90,9 @@ if ($list) {
 		if ($f =~ /#ifdef MZ_USE_SINGLE_FLOATS/) {
 		    $suspend = 1;
 		}
+		if ($exports && $f =~ /#ifdef USE_MZ_SETJMP/) {
+		    $suspend = 1;
+		}
 		if ($f =~ /#ifndef LINK_EXTENSIONS_BY_TABLE/) {
 		    $elsesuspend = 1;
 		}

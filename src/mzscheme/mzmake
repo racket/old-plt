@@ -32,7 +32,7 @@ case $OS in
     ;;
   AIX)
     if [ "${AIXUSEGCC}" = "yes" ]; then
-      make "$@" $GCOPTS RANLIB=':'
+      `which make` "$@" $GCOPTS RANLIB=':'
     else
       make "$@" $GCOPTS RANLIB=':' CC='cc' WARN='' 
     fi

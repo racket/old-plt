@@ -522,15 +522,24 @@
 	(imap-store imap '- (map message-position mailbox) (list (symbol->imap-flag 'deleted))))
       
       ;; purge-messages : (listof messages) -> void
-      (define (purge-messages marked)
+      (define (purge-messages marked bad-break break-ok)
         (unless (null? marked)
           (let-values ([(imap count new next-uid) (connect)])
-            (check-positions imap marked)
-            (remove-delete-flags imap)
-            (status "Deleting marked messages...")
-            (imap-store imap '+ (map message-position marked)
-                        (list (symbol->imap-flag 'deleted)))
-            (imap-expunge imap)
+	    (with-handlers ([exn:break?
+			     (lambda (exn)
+			       (force-disconnect/status)
+			       (raise exn))])
+	      (break-ok)
+	      (check-positions imap marked)
+	      (remove-delete-flags imap)
+	      (status "Deleting marked messages...")
+	      (imap-store imap '+ (map message-position marked)
+			  (list (symbol->imap-flag 'deleted)))
+	      (imap-expunge imap)
+	      (unless (equal? (imap-get-expunges imap)
+			      (map message-position marked))
+		(error "expunge notification list doesn't match expunge request"))
+	      (bad-break))
             (set! mailbox
                   (filter
                    (lambda (m) (not (memq m marked)))
@@ -573,9 +582,9 @@
 
       ;; purge-marked : -> void
       ;; purges the marked mailbox messages.
-      (define (purge-marked)
+      (define (purge-marked bad-break break-ok)
 	(let* ([marked (filter message-marked? mailbox)])
-	  (purge-messages marked)))
+	  (purge-messages marked bad-break break-ok)))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  GUI: Message List Tools                                ;;
@@ -1304,7 +1313,7 @@
                         (lambda (bad-break break-ok)
                           (with-handlers ([void no-status-handler])
                             (copy-messages-to (list item) archive-mailbox)
-                            (purge-messages (list item))))
+                            (purge-messages (list item) bad-break break-ok)))
                         close-frame))))))))
           
           (define/public (hit)
@@ -1428,7 +1437,7 @@
 				   (with-handlers ([void no-status-handler])
                                      (void)
 				     (copy-messages-to (list item) mailbox-name)
-                                     (purge-messages (list item))))
+                                     (purge-messages (list item) bad-break break-ok)))
 				 close-frame)))))
                          (status "")))))]
               [else
@@ -1551,7 +1560,7 @@
 	    enable-main-frame
 	    (lambda (break-bad break-ok) 
 	      (with-handlers ([void no-status-handler])
-		(purge-marked)))
+		(purge-marked break-bad break-ok)))
 	    close-frame))))
       
       (define (copy-marked-to dest-mailbox-name)

@@ -1732,7 +1732,7 @@ print_char_string(char *str, int len,
 		  mzchar *ustr, int ulen,
 		  int notdisplay, Scheme_Thread *p)
 {
-  char minibuf[8], *esc;
+  char minibuf[10], *esc;
   int a, i, v, ui, cont_utf8 = 0, isize;
 
   if (notdisplay) {

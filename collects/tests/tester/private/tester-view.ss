@@ -42,12 +42,7 @@
       
     ;; --------------------- overall frame ------------------------------
       (define top-frame 
-        (make-object 
-            (class* frame% ()
-              (override on-close)
-              (define (on-close)
-                (kill-thread gui-thread))                
-              (super-make-object "Tester" #f 600 400))))
+        (make-object frame%  "Tester" #f 600 400))
       
       (define menu-bar  (make-object menu-bar% top-frame))
       (define menu-edit (make-object menu% "Edit" menu-bar))

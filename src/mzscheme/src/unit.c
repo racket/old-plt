@@ -2824,7 +2824,7 @@ static char *sig_path_name(Scheme_Object *name, Scheme_Object *path)
     char *n = (char *)scheme_symbol_name(SCHEME_CAR(path)), *v;
     int nl;
     nl = strlen(n);
-    v = scheme_malloc_atomic(nl + l + 2);
+    v = scheme_malloc_atomic(nl + l + 3);
     memcpy(v + nl + 1, s, l);
     memcpy(v, n, nl);
     v[nl] = ':';

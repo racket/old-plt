@@ -1605,6 +1605,8 @@ static void get_ready_for_GC()
   scheme_fuel_counter = 0;
 }
 
+extern int GC_words_allocd;
+
 static void done_with_GC()
 {
   scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);

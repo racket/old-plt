@@ -1115,7 +1115,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
   varlen = strlen(var);
   vallen = strlen(val);
 
-  s = (char *)scheme_malloc_atomic(varlen + vallen + 1);
+  s = (char *)scheme_malloc_atomic(varlen + vallen + 2);
   memcpy(s, var, varlen);
   memcpy(s + varlen + 1, val, vallen + 1);
   s[varlen] = '=';

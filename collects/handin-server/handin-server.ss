@@ -5,7 +5,8 @@
 	   (lib "file.ss")
 	   (lib "date.ss")
 	   (lib "list.ss")
-	   "md5.ss")
+	   "md5.ss"
+	   "web-status-server.ss")
 
   (define log-port (open-output-file "log.ss" 'append))
 
@@ -193,6 +194,8 @@
     (quicksort (directory-list "active") string<?))
 
   (LOG "server started ------------------------------")
+
+  (serve-status)
   
   (define session-count 0)
 

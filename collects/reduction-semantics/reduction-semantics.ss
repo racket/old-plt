@@ -58,18 +58,18 @@
          (with-syntax ([(names ...) (map (lambda (name)
                                            (datum->syntax-object (syntax pattern) name))
                                          names)]
-                       [hole (datum->syntax-object stx 'hole)])
+                       [holeg (datum->syntax-object stx (gensym 'hole))])
            (syntax 
             (let ([lang lang-exp])
               (build-red lang
-                         '(in-hole (name context ctxt) pattern)
+                         '(in-hole* holeg (name context ctxt) pattern)
                          (lambda (bindings)
-                           (let ([hole (lookup-binding bindings 'hole)]
+                           (let ([holeg (lookup-binding bindings 'holeg)]
                                  [context (lookup-binding bindings 'context)]
                                  [names (lookup-binding bindings 'names)] ...)
                              (replace
                               context
-                              hole
+                              holeg
                               (begin
                                 (void)
                                 bodies ...)))))))))]))
@@ -86,8 +86,7 @@
               (build-red lang
                          'pattern
                          (lambda (bindings)
-                           (let ([hole (lookup-binding bindings 'hole (lambda () #f))]
-                                 [name (lookup-binding bindings 'name)] ...)
+                           (let ([name (lookup-binding bindings 'name)] ...)
                              bodies ...)))))))]))
   
   (define-syntax (language stx)

@@ -1,20 +1,25 @@
 (module red-sem-macro-helpers mzscheme
   
   (provide extract-names)
+
+  (require (lib "match.ss"))
   
   (define (extract-names stx)
     (let ([dup-names
            (let loop ([sexp (syntax-object->datum stx)]
                       [names null])
-             (cond
-               [(and (pair? sexp)
-                     (eq? 'name (car sexp))
-                     (pair? (cdr sexp))
-                     (symbol? (cadr sexp))
-                     (pair? (cddr sexp))
-                     (null? (cdddr sexp)))
-                (loop (caddr sexp) (cons (cadr sexp) names))]
-               [(list? sexp)
+             (match sexp
+               [`(name ,(and sym (? symbol?)) ,pat)
+                (loop pat (cons sym names))]
+               [`(in-hole* ,(and sym (? symbol?)) ,pat1 ,pat2)
+                (loop pat1
+                      (loop pat2
+                            (cons sym names)))]
+               [`(in-hole ,pat1 ,pat2)
+                (loop pat1
+                      (loop pat2
+                            (cons 'hole names)))]
+               [(? list?)
                 (let i-loop ([sexp sexp]
                              [names names])
                   (cond

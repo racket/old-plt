@@ -54,6 +54,7 @@ language, used in various ways:
           | <symbol>
           | (name <symbol> <pattern>)
           | (in-hole <pattern> <pattern>)
+          | (in-hole* <symbol> <pattern> <pattern>)
           | (pattern ...)
           | <scheme-constant>
 
@@ -76,6 +77,14 @@ sexpression. Then, the sexpression that matched the hole
 pattern is used to match against the second pattern. The
 in-hole pattern also binds `hole' in the right-hand side of
 a reduction.
+
+The (in-hole* <symbol> <pattern> <pattern>) is just like the
+in-hole pattern, except that you can specify the name to be
+implicitly bound. This is important to write reductions with
+nested contexts; if you were to use in-hole twice, you would
+get two bindings of `hole' and the pattern matcher would
+require them to be equal, according to the semantics of
+repeated variables.
 
 The (pattern ...) pattern matches a sexpression list, where
 each pattern matches an element of the list. In addition, if

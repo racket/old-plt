@@ -18,9 +18,15 @@ extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *
 extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern class wxPen *objscheme_unbundle_wxPen(Scheme_Object *, const char *, int);
-extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
+extern int objscheme_istype_wxBrush(Scheme_Object *, const char *, int);
 extern class wxBrush *objscheme_unbundle_wxBrush(Scheme_Object *, const char *, int);
+extern int objscheme_istype_wxColour(Scheme_Object *, const char *, int);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
+extern int objscheme_istype_wxPen(Scheme_Object *, const char *, int);
+extern class wxPen *objscheme_unbundle_wxPen(Scheme_Object *, const char *, int);
+extern int objscheme_istype_wxColour(Scheme_Object *, const char *, int);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
+extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxRegion(class wxRegion *);
 extern class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *, const char *, int);

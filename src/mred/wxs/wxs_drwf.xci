@@ -27,9 +27,16 @@
 @ Q "get-clipping-region" : wxRegion^ GetClippingRegion() : : /CheckOk[METHODNAME("dc<%>","set-clipping-region")]
 
 @ Q "set-background" : void SetBackground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-background")]
-@ Q "set-brush" : void SetBrush(wxBrush!); : : /CheckOk[METHODNAME("dc<%>","set-brush")]
 @ Q "set-font" : void SetFont(wxFont!); : : /CheckOk[METHODNAME("dc<%>","set-font")]
-@ Q "set-pen" : void SetPen(wxPen!); : : /CheckOk[METHODNAME("dc<%>","set-pen")]
+
+@ Q "set-pen" : void SetPen(wxPen!); : : /CheckOk[METHODNAME("dc<%>","set-pen")] <> pen%
+@ m "set-pen" : void SetPen(wxColour!,rdouble[0|255],SYM[penStyle]);  : : /CheckOk[METHODNAME("dc<%>","set-pen")] <> color%
+@ m "set-pen" : void SetPen(string,rdouble[0|255],SYM[penStyle]);  : : /CheckOk[METHODNAME("dc<%>","set-pen")] <> color name
+
+@ Q "set-brush" : void SetBrush(wxBrush!); : : /CheckOk[METHODNAME("dc<%>","set-brush")] <> brush%
+@ m "set-brush" : void SetBrush(wxColour!,SYM[brushStyle]); : : /CheckOk[METHODNAME("dc<%>","set-brush")] <> color%
+@ m "set-brush" : void SetBrush(string,SYM[brushStyle]); : : /CheckOk[METHODNAME("dc<%>","set-brush")] <> color name
+
 @ q "set-text-background" : void SetTextBackground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-text-background")]
 @ q "set-text-foreground" : void SetTextForeground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-text-foreground")]
 

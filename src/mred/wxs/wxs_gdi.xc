@@ -125,20 +125,7 @@
 
 @END
 
-@BEGINSYMBOLS brushStyle > ONE > PRED
-@SYM "transparent" : wxTRANSPARENT
-@SYM "solid" : wxSOLID
-@SYM "opaque" : wxSTIPPLE
-@SYM "xor" : wxXOR
-@SYM "hilite" : wxCOLOR
-@SYM "bdiagonal-hatch" : wxBDIAGONAL_HATCH
-@SYM "crossdiag-hatch" : wxCROSSDIAG_HATCH
-@SYM "fdiagonal-hatch" : wxFDIAGONAL_HATCH
-@SYM "cross-hatch" : wxCROSS_HATCH
-@SYM "horizontal-hatch" : wxHORIZONTAL_HATCH
-@SYM "vertical-hatch" : wxVERTICAL_HATCH
-@SYM "panel" : wxPANEL_PATTERN
-@ENDSYMBOLS
+@INCLUDE wxs_gdistyle.xci
 
 @CLASSBASE wxBrush "brush" : "object"
 
@@ -167,21 +154,6 @@
 @ "find-or-create-brush" : wxBrush^ FindOrCreateBrush(string,SYM[brushStyle]); <> color name
 
 @END
-
-@BEGINSYMBOLS penStyle > ONE > PRED
-@SYM "transparent" : wxTRANSPARENT
-@SYM "solid" : wxSOLID
-@SYM "xor" : wxXOR
-@SYM "hilite" : wxCOLOR
-@SYM "dot" : wxDOT
-@SYM "long-dash" : wxLONG_DASH
-@SYM "short-dash" : wxSHORT_DASH
-@SYM "dot-dash" : wxDOT_DASH
-@SYM "xor-dot" : wxXOR_DOT
-@SYM "xor-long-dash" : wxXOR_LONG_DASH
-@SYM "xor-short-dash" : wxXOR_SHORT_DASH
-@SYM "xor-dot-dash" : wxXOR_DOT_DASH
-@ENDSYMBOLS
 
 @BEGINSYMBOLS join > ONE > PRED
 @SYM "bevel" : wxJOIN_BEVEL

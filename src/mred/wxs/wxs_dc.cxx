@@ -12,6 +12,7 @@
 #include "wx_dccan.h"
 #include "wx_dcmem.h"
 #include "wx_dcps.h"
+#include "wx_gdi.h"
 #ifdef wx_msw
 #include "wx_mf.h"
 #endif
@@ -699,6 +700,220 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
   READY_TO_RETURN;
 }
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
+static void SetPen(wxDC *dc, wxColour *c, double pw, int style)
+{
+  wxPenList *pl;
+  wxPen *p;
+  pl = wxThePenList;
+  p = pl->FindOrCreatePen(c, pw, style);
+  dc->SetPen(p);
+}
+
+static void SetPen(wxDC *dc, char *cname, double pw, int style)
+{
+  wxPenList *pl;
+  wxPen *p;
+  pl = wxThePenList;
+  p = pl->FindOrCreatePen(cname, pw, style);
+  if (p)
+    dc->SetPen(p);
+}
+
+static void SetBrush(wxDC *dc, wxColour *c, int style)
+{
+  wxBrushList *bl;
+  wxBrush *b;
+  bl = wxTheBrushList;
+  b = bl->FindOrCreateBrush(c, style);
+  dc->SetBrush(b);
+}
+
+static void SetBrush(wxDC *dc, char *cname, int style)
+{
+  wxBrushList *bl;
+  wxBrush *b;
+  bl = wxTheBrushList;
+  b = bl->FindOrCreateBrush(cname, style);
+  if (b)
+    dc->SetBrush(b);
+}
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+
+static Scheme_Object *brushStyle_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *brushStyle_wxSOLID_sym = NULL;
+static Scheme_Object *brushStyle_wxSTIPPLE_sym = NULL;
+static Scheme_Object *brushStyle_wxXOR_sym = NULL;
+static Scheme_Object *brushStyle_wxCOLOR_sym = NULL;
+static Scheme_Object *brushStyle_wxBDIAGONAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxCROSSDIAG_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxFDIAGONAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxCROSS_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxHORIZONTAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxVERTICAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxPANEL_PATTERN_sym = NULL;
+
+static void init_symset_brushStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(brushStyle_wxTRANSPARENT_sym);
+  brushStyle_wxTRANSPARENT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
+  wxREGGLOB(brushStyle_wxSOLID_sym);
+  brushStyle_wxSOLID_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("solid"));
+  wxREGGLOB(brushStyle_wxSTIPPLE_sym);
+  brushStyle_wxSTIPPLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("opaque"));
+  wxREGGLOB(brushStyle_wxXOR_sym);
+  brushStyle_wxXOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor"));
+  wxREGGLOB(brushStyle_wxCOLOR_sym);
+  brushStyle_wxCOLOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hilite"));
+  wxREGGLOB(brushStyle_wxBDIAGONAL_HATCH_sym);
+  brushStyle_wxBDIAGONAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("bdiagonal-hatch"));
+  wxREGGLOB(brushStyle_wxCROSSDIAG_HATCH_sym);
+  brushStyle_wxCROSSDIAG_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("crossdiag-hatch"));
+  wxREGGLOB(brushStyle_wxFDIAGONAL_HATCH_sym);
+  brushStyle_wxFDIAGONAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("fdiagonal-hatch"));
+  wxREGGLOB(brushStyle_wxCROSS_HATCH_sym);
+  brushStyle_wxCROSS_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("cross-hatch"));
+  wxREGGLOB(brushStyle_wxHORIZONTAL_HATCH_sym);
+  brushStyle_wxHORIZONTAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal-hatch"));
+  wxREGGLOB(brushStyle_wxVERTICAL_HATCH_sym);
+  brushStyle_wxVERTICAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical-hatch"));
+  wxREGGLOB(brushStyle_wxPANEL_PATTERN_sym);
+  brushStyle_wxPANEL_PATTERN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("panel"));
+}
+
+static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!brushStyle_wxPANEL_PATTERN_sym) WITH_VAR_STACK(init_symset_brushStyle());
+  if (0) { }
+  else if (v == brushStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
+  else if (v == brushStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
+  else if (v == brushStyle_wxSTIPPLE_sym) { READY_TO_RETURN; return wxSTIPPLE; }
+  else if (v == brushStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == brushStyle_wxCOLOR_sym) { READY_TO_RETURN; return wxCOLOR; }
+  else if (v == brushStyle_wxBDIAGONAL_HATCH_sym) { READY_TO_RETURN; return wxBDIAGONAL_HATCH; }
+  else if (v == brushStyle_wxCROSSDIAG_HATCH_sym) { READY_TO_RETURN; return wxCROSSDIAG_HATCH; }
+  else if (v == brushStyle_wxFDIAGONAL_HATCH_sym) { READY_TO_RETURN; return wxFDIAGONAL_HATCH; }
+  else if (v == brushStyle_wxCROSS_HATCH_sym) { READY_TO_RETURN; return wxCROSS_HATCH; }
+  else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { READY_TO_RETURN; return wxHORIZONTAL_HATCH; }
+  else if (v == brushStyle_wxVERTICAL_HATCH_sym) { READY_TO_RETURN; return wxVERTICAL_HATCH; }
+  else if (v == brushStyle_wxPANEL_PATTERN_sym) { READY_TO_RETURN; return wxPANEL_PATTERN; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_brushStyle(int v) {
+  if (!brushStyle_wxPANEL_PATTERN_sym) init_symset_brushStyle();
+  switch (v) {
+  case wxTRANSPARENT: return brushStyle_wxTRANSPARENT_sym;
+  case wxSOLID: return brushStyle_wxSOLID_sym;
+  case wxSTIPPLE: return brushStyle_wxSTIPPLE_sym;
+  case wxXOR: return brushStyle_wxXOR_sym;
+  case wxCOLOR: return brushStyle_wxCOLOR_sym;
+  case wxBDIAGONAL_HATCH: return brushStyle_wxBDIAGONAL_HATCH_sym;
+  case wxCROSSDIAG_HATCH: return brushStyle_wxCROSSDIAG_HATCH_sym;
+  case wxFDIAGONAL_HATCH: return brushStyle_wxFDIAGONAL_HATCH_sym;
+  case wxCROSS_HATCH: return brushStyle_wxCROSS_HATCH_sym;
+  case wxHORIZONTAL_HATCH: return brushStyle_wxHORIZONTAL_HATCH_sym;
+  case wxVERTICAL_HATCH: return brushStyle_wxVERTICAL_HATCH_sym;
+  case wxPANEL_PATTERN: return brushStyle_wxPANEL_PATTERN_sym;
+  default: return NULL;
+  }
+}
+
+
+static Scheme_Object *penStyle_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *penStyle_wxSOLID_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_sym = NULL;
+static Scheme_Object *penStyle_wxCOLOR_sym = NULL;
+static Scheme_Object *penStyle_wxDOT_sym = NULL;
+static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxDOT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_DOT_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_LONG_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_SHORT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_DOT_DASH_sym = NULL;
+
+static void init_symset_penStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(penStyle_wxTRANSPARENT_sym);
+  penStyle_wxTRANSPARENT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
+  wxREGGLOB(penStyle_wxSOLID_sym);
+  penStyle_wxSOLID_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("solid"));
+  wxREGGLOB(penStyle_wxXOR_sym);
+  penStyle_wxXOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor"));
+  wxREGGLOB(penStyle_wxCOLOR_sym);
+  penStyle_wxCOLOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hilite"));
+  wxREGGLOB(penStyle_wxDOT_sym);
+  penStyle_wxDOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot"));
+  wxREGGLOB(penStyle_wxLONG_DASH_sym);
+  penStyle_wxLONG_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("long-dash"));
+  wxREGGLOB(penStyle_wxSHORT_DASH_sym);
+  penStyle_wxSHORT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("short-dash"));
+  wxREGGLOB(penStyle_wxDOT_DASH_sym);
+  penStyle_wxDOT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot-dash"));
+  wxREGGLOB(penStyle_wxXOR_DOT_sym);
+  penStyle_wxXOR_DOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-dot"));
+  wxREGGLOB(penStyle_wxXOR_LONG_DASH_sym);
+  penStyle_wxXOR_LONG_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-long-dash"));
+  wxREGGLOB(penStyle_wxXOR_SHORT_DASH_sym);
+  penStyle_wxXOR_SHORT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-short-dash"));
+  wxREGGLOB(penStyle_wxXOR_DOT_DASH_sym);
+  penStyle_wxXOR_DOT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-dot-dash"));
+}
+
+static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!penStyle_wxXOR_DOT_DASH_sym) WITH_VAR_STACK(init_symset_penStyle());
+  if (0) { }
+  else if (v == penStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
+  else if (v == penStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
+  else if (v == penStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == penStyle_wxCOLOR_sym) { READY_TO_RETURN; return wxCOLOR; }
+  else if (v == penStyle_wxDOT_sym) { READY_TO_RETURN; return wxDOT; }
+  else if (v == penStyle_wxLONG_DASH_sym) { READY_TO_RETURN; return wxLONG_DASH; }
+  else if (v == penStyle_wxSHORT_DASH_sym) { READY_TO_RETURN; return wxSHORT_DASH; }
+  else if (v == penStyle_wxDOT_DASH_sym) { READY_TO_RETURN; return wxDOT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_sym) { READY_TO_RETURN; return wxXOR_DOT; }
+  else if (v == penStyle_wxXOR_LONG_DASH_sym) { READY_TO_RETURN; return wxXOR_LONG_DASH; }
+  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { READY_TO_RETURN; return wxXOR_SHORT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_DASH_sym) { READY_TO_RETURN; return wxXOR_DOT_DASH; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "penStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_penStyle(int v) {
+  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
+  switch (v) {
+  case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
+  case wxSOLID: return penStyle_wxSOLID_sym;
+  case wxXOR: return penStyle_wxXOR_sym;
+  case wxCOLOR: return penStyle_wxCOLOR_sym;
+  case wxDOT: return penStyle_wxDOT_sym;
+  case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
+  case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;
+  case wxDOT_DASH: return penStyle_wxDOT_DASH_sym;
+  case wxXOR_DOT: return penStyle_wxXOR_DOT_sym;
+  case wxXOR_LONG_DASH: return penStyle_wxXOR_LONG_DASH_sym;
+  case wxXOR_SHORT_DASH: return penStyle_wxXOR_SHORT_DASH_sym;
+  case wxXOR_DOT_DASH: return penStyle_wxXOR_DOT_DASH_sym;
+  default: return NULL;
+  }
+}
+
+
+
 
 
 
@@ -818,6 +1033,9 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 /* The methods are here: */
+
+
+
 
 
 
@@ -1612,26 +1830,147 @@ static Scheme_Object *os_wxDCSetTextBackground(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxDCSetBrush(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxDC_class, "set-brush in dc<%>", n, p);
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBrush(p[POFFSET+0], NULL, 0))) {
+    class wxBrush* x0 INIT_NULLED_OUT;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if (n != (POFFSET+1)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-brush in dc<%> (brush% case)", POFFSET+1, POFFSET+1, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxBrush(p[POFFSET+0], "set-brush in dc<%> (brush% case)", 0));
+
+    DO_OK_CHECK(METHODNAME("dc<%>","set-brush"))
+    WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetBrush(x0));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[POFFSET+0], NULL, 0))) {
+    class wxColour* x0 INIT_NULLED_OUT;
+    int x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-brush in dc<%> (color% case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-brush in dc<%> (color% case)", 0));
+    x1 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[POFFSET+1], "set-brush in dc<%> (color% case)"));
+
+    DO_OK_CHECK(METHODNAME("dc<%>","set-brush"))
+    WITH_VAR_STACK(SetBrush(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  } else  {
+    string x0 INIT_NULLED_OUT;
+    int x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-brush in dc<%> (color name case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-brush in dc<%> (color name case)"));
+    x1 = WITH_VAR_STACK(unbundle_symset_brushStyle(p[POFFSET+1], "set-brush in dc<%> (color name case)"));
+
+    DO_OK_CHECK(METHODNAME("dc<%>","set-brush"))
+    WITH_VAR_STACK(SetBrush(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  }
+
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxDCSetPen(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "set-pen in dc<%>", n, p);
-  class wxPen* x0 INIT_NULLED_OUT;
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPen(p[POFFSET+0], NULL, 0))) {
+    class wxPen* x0 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
 
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxPen(p[POFFSET+0], "set-pen in dc<%>", 0));
+    
+    if (n != (POFFSET+1)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-pen in dc<%> (pen% case)", POFFSET+1, POFFSET+1, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxPen(p[POFFSET+0], "set-pen in dc<%> (pen% case)", 0));
 
-  DO_OK_CHECK(METHODNAME("dc<%>","set-pen"))
-  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetPen(x0));
+    DO_OK_CHECK(METHODNAME("dc<%>","set-pen"))
+    WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetPen(x0));
 
-  
-  
-  READY_TO_RETURN;
+    
+    
+    READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[POFFSET+0], NULL, 0))) {
+    class wxColour* x0 INIT_NULLED_OUT;
+    double x1;
+    int x2;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if (n != (POFFSET+3)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-pen in dc<%> (color% case)", POFFSET+3, POFFSET+3, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-pen in dc<%> (color% case)", 0));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+1], 0, 255, "set-pen in dc<%> (color% case)"));
+    x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[POFFSET+2], "set-pen in dc<%> (color% case)"));
+
+    DO_OK_CHECK(METHODNAME("dc<%>","set-pen"))
+    WITH_VAR_STACK(SetPen(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  } else  {
+    string x0 INIT_NULLED_OUT;
+    double x1;
+    int x2;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if (n != (POFFSET+3)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-pen in dc<%> (color name case)", POFFSET+3, POFFSET+3, n, p, 1));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-pen in dc<%> (color name case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_double_in(p[POFFSET+1], 0, 255, "set-pen in dc<%> (color name case)"));
+    x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[POFFSET+2], "set-pen in dc<%> (color name case)"));
+
+    DO_OK_CHECK(METHODNAME("dc<%>","set-pen"))
+    WITH_VAR_STACK(SetPen(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  }
+
   return scheme_void;
 }
 
@@ -1651,29 +1990,6 @@ static Scheme_Object *os_wxDCSetFont(int n,  Scheme_Object *p[])
 
   DO_OK_CHECK(METHODNAME("dc<%>","set-font"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetFont(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
-}
-
-static Scheme_Object *os_wxDCSetBrush(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxDC_class, "set-brush in dc<%>", n, p);
-  class wxBrush* x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxBrush(p[POFFSET+0], "set-brush in dc<%>", 0));
-
-  DO_OK_CHECK(METHODNAME("dc<%>","set-brush"))
-  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetBrush(x0));
 
   
   
@@ -2195,9 +2511,9 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-smoothing" " method", (Scheme_Method_Prim *)os_wxDCSetAntiAlias, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-foreground" " method", (Scheme_Method_Prim *)os_wxDCSetTextForeground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-background" " method", (Scheme_Method_Prim *)os_wxDCSetTextBackground, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-pen" " method", (Scheme_Method_Prim *)os_wxDCSetPen, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-brush" " method", (Scheme_Method_Prim *)os_wxDCSetBrush, 1, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-pen" " method", (Scheme_Method_Prim *)os_wxDCSetPen, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-font" " method", (Scheme_Method_Prim *)os_wxDCSetFont, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-brush" " method", (Scheme_Method_Prim *)os_wxDCSetBrush, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-background" " method", (Scheme_Method_Prim *)os_wxDCSetBackground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-clipping-region" " method", (Scheme_Method_Prim *)os_wxDCGetClippingRegion, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-clipping-region" " method", (Scheme_Method_Prim *)os_wxDCSetClippingRegion, 1, 1));

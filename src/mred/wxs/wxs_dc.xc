@@ -4,6 +4,7 @@
 #include "wx_dccan.h"
 #include "wx_dcmem.h"
 #include "wx_dcps.h"
+#include "wx_gdi.h"
 #ifdef wx_msw
 #include "wx_mf.h"
 #endif
@@ -564,6 +565,54 @@ static void ScaleSection(wxMemoryDC *dest, wxBitmap *src,
 
   READY_TO_RETURN;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
+static void SetPen(wxDC *dc, wxColour *c, double pw, int style)
+{
+  wxPenList *pl;
+  wxPen *p;
+  pl = wxThePenList;
+  p = pl->FindOrCreatePen(c, pw, style);
+  dc->SetPen(p);
+}
+
+static void SetPen(wxDC *dc, char *cname, double pw, int style)
+{
+  wxPenList *pl;
+  wxPen *p;
+  pl = wxThePenList;
+  p = pl->FindOrCreatePen(cname, pw, style);
+  if (p)
+    dc->SetPen(p);
+}
+
+static void SetBrush(wxDC *dc, wxColour *c, int style)
+{
+  wxBrushList *bl;
+  wxBrush *b;
+  bl = wxTheBrushList;
+  b = bl->FindOrCreateBrush(c, style);
+  dc->SetBrush(b);
+}
+
+static void SetBrush(wxDC *dc, char *cname, int style)
+{
+  wxBrushList *bl;
+  wxBrush *b;
+  bl = wxTheBrushList;
+  b = bl->FindOrCreateBrush(cname, style);
+  if (b)
+    dc->SetBrush(b);
+}
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+@INCLUDE wxs_gdistyle.xci
 
 @MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
 

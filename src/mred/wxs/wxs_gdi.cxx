@@ -1715,6 +1715,7 @@ class wxPoint *objscheme_unbundle_wxPoint(Scheme_Object *obj, const char *where,
 }
 
 
+
 static Scheme_Object *brushStyle_wxTRANSPARENT_sym = NULL;
 static Scheme_Object *brushStyle_wxSOLID_sym = NULL;
 static Scheme_Object *brushStyle_wxSTIPPLE_sym = NULL;
@@ -1796,6 +1797,90 @@ static Scheme_Object *bundle_symset_brushStyle(int v) {
   default: return NULL;
   }
 }
+
+
+static Scheme_Object *penStyle_wxTRANSPARENT_sym = NULL;
+static Scheme_Object *penStyle_wxSOLID_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_sym = NULL;
+static Scheme_Object *penStyle_wxCOLOR_sym = NULL;
+static Scheme_Object *penStyle_wxDOT_sym = NULL;
+static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxDOT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_DOT_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_LONG_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_SHORT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_DOT_DASH_sym = NULL;
+
+static void init_symset_penStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(penStyle_wxTRANSPARENT_sym);
+  penStyle_wxTRANSPARENT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
+  wxREGGLOB(penStyle_wxSOLID_sym);
+  penStyle_wxSOLID_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("solid"));
+  wxREGGLOB(penStyle_wxXOR_sym);
+  penStyle_wxXOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor"));
+  wxREGGLOB(penStyle_wxCOLOR_sym);
+  penStyle_wxCOLOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hilite"));
+  wxREGGLOB(penStyle_wxDOT_sym);
+  penStyle_wxDOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot"));
+  wxREGGLOB(penStyle_wxLONG_DASH_sym);
+  penStyle_wxLONG_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("long-dash"));
+  wxREGGLOB(penStyle_wxSHORT_DASH_sym);
+  penStyle_wxSHORT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("short-dash"));
+  wxREGGLOB(penStyle_wxDOT_DASH_sym);
+  penStyle_wxDOT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot-dash"));
+  wxREGGLOB(penStyle_wxXOR_DOT_sym);
+  penStyle_wxXOR_DOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-dot"));
+  wxREGGLOB(penStyle_wxXOR_LONG_DASH_sym);
+  penStyle_wxXOR_LONG_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-long-dash"));
+  wxREGGLOB(penStyle_wxXOR_SHORT_DASH_sym);
+  penStyle_wxXOR_SHORT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-short-dash"));
+  wxREGGLOB(penStyle_wxXOR_DOT_DASH_sym);
+  penStyle_wxXOR_DOT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-dot-dash"));
+}
+
+static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!penStyle_wxXOR_DOT_DASH_sym) WITH_VAR_STACK(init_symset_penStyle());
+  if (0) { }
+  else if (v == penStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
+  else if (v == penStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
+  else if (v == penStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
+  else if (v == penStyle_wxCOLOR_sym) { READY_TO_RETURN; return wxCOLOR; }
+  else if (v == penStyle_wxDOT_sym) { READY_TO_RETURN; return wxDOT; }
+  else if (v == penStyle_wxLONG_DASH_sym) { READY_TO_RETURN; return wxLONG_DASH; }
+  else if (v == penStyle_wxSHORT_DASH_sym) { READY_TO_RETURN; return wxSHORT_DASH; }
+  else if (v == penStyle_wxDOT_DASH_sym) { READY_TO_RETURN; return wxDOT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_sym) { READY_TO_RETURN; return wxXOR_DOT; }
+  else if (v == penStyle_wxXOR_LONG_DASH_sym) { READY_TO_RETURN; return wxXOR_LONG_DASH; }
+  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { READY_TO_RETURN; return wxXOR_SHORT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_DASH_sym) { READY_TO_RETURN; return wxXOR_DOT_DASH; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "penStyle symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_penStyle(int v) {
+  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
+  switch (v) {
+  case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
+  case wxSOLID: return penStyle_wxSOLID_sym;
+  case wxXOR: return penStyle_wxXOR_sym;
+  case wxCOLOR: return penStyle_wxCOLOR_sym;
+  case wxDOT: return penStyle_wxDOT_sym;
+  case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
+  case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;
+  case wxDOT_DASH: return penStyle_wxDOT_DASH_sym;
+  case wxXOR_DOT: return penStyle_wxXOR_DOT_sym;
+  case wxXOR_LONG_DASH: return penStyle_wxXOR_LONG_DASH_sym;
+  case wxXOR_SHORT_DASH: return penStyle_wxXOR_SHORT_DASH_sym;
+  case wxXOR_DOT_DASH: return penStyle_wxXOR_DOT_DASH_sym;
+  default: return NULL;
+  }
+}
+
 
 
 
@@ -2385,89 +2470,6 @@ class wxBrushList *objscheme_unbundle_wxBrushList(Scheme_Object *obj, const char
     return (os_wxBrushList *)o->primdata;
   else
     return (wxBrushList *)o->primdata;
-}
-
-
-static Scheme_Object *penStyle_wxTRANSPARENT_sym = NULL;
-static Scheme_Object *penStyle_wxSOLID_sym = NULL;
-static Scheme_Object *penStyle_wxXOR_sym = NULL;
-static Scheme_Object *penStyle_wxCOLOR_sym = NULL;
-static Scheme_Object *penStyle_wxDOT_sym = NULL;
-static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
-static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
-static Scheme_Object *penStyle_wxDOT_DASH_sym = NULL;
-static Scheme_Object *penStyle_wxXOR_DOT_sym = NULL;
-static Scheme_Object *penStyle_wxXOR_LONG_DASH_sym = NULL;
-static Scheme_Object *penStyle_wxXOR_SHORT_DASH_sym = NULL;
-static Scheme_Object *penStyle_wxXOR_DOT_DASH_sym = NULL;
-
-static void init_symset_penStyle(void) {
-  REMEMBER_VAR_STACK();
-  wxREGGLOB(penStyle_wxTRANSPARENT_sym);
-  penStyle_wxTRANSPARENT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
-  wxREGGLOB(penStyle_wxSOLID_sym);
-  penStyle_wxSOLID_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("solid"));
-  wxREGGLOB(penStyle_wxXOR_sym);
-  penStyle_wxXOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor"));
-  wxREGGLOB(penStyle_wxCOLOR_sym);
-  penStyle_wxCOLOR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hilite"));
-  wxREGGLOB(penStyle_wxDOT_sym);
-  penStyle_wxDOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot"));
-  wxREGGLOB(penStyle_wxLONG_DASH_sym);
-  penStyle_wxLONG_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("long-dash"));
-  wxREGGLOB(penStyle_wxSHORT_DASH_sym);
-  penStyle_wxSHORT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("short-dash"));
-  wxREGGLOB(penStyle_wxDOT_DASH_sym);
-  penStyle_wxDOT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("dot-dash"));
-  wxREGGLOB(penStyle_wxXOR_DOT_sym);
-  penStyle_wxXOR_DOT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-dot"));
-  wxREGGLOB(penStyle_wxXOR_LONG_DASH_sym);
-  penStyle_wxXOR_LONG_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-long-dash"));
-  wxREGGLOB(penStyle_wxXOR_SHORT_DASH_sym);
-  penStyle_wxXOR_SHORT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-short-dash"));
-  wxREGGLOB(penStyle_wxXOR_DOT_DASH_sym);
-  penStyle_wxXOR_DOT_DASH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("xor-dot-dash"));
-}
-
-static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
-  SETUP_VAR_STACK(1);
-  VAR_STACK_PUSH(0, v);
-  if (!penStyle_wxXOR_DOT_DASH_sym) WITH_VAR_STACK(init_symset_penStyle());
-  if (0) { }
-  else if (v == penStyle_wxTRANSPARENT_sym) { READY_TO_RETURN; return wxTRANSPARENT; }
-  else if (v == penStyle_wxSOLID_sym) { READY_TO_RETURN; return wxSOLID; }
-  else if (v == penStyle_wxXOR_sym) { READY_TO_RETURN; return wxXOR; }
-  else if (v == penStyle_wxCOLOR_sym) { READY_TO_RETURN; return wxCOLOR; }
-  else if (v == penStyle_wxDOT_sym) { READY_TO_RETURN; return wxDOT; }
-  else if (v == penStyle_wxLONG_DASH_sym) { READY_TO_RETURN; return wxLONG_DASH; }
-  else if (v == penStyle_wxSHORT_DASH_sym) { READY_TO_RETURN; return wxSHORT_DASH; }
-  else if (v == penStyle_wxDOT_DASH_sym) { READY_TO_RETURN; return wxDOT_DASH; }
-  else if (v == penStyle_wxXOR_DOT_sym) { READY_TO_RETURN; return wxXOR_DOT; }
-  else if (v == penStyle_wxXOR_LONG_DASH_sym) { READY_TO_RETURN; return wxXOR_LONG_DASH; }
-  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { READY_TO_RETURN; return wxXOR_SHORT_DASH; }
-  else if (v == penStyle_wxXOR_DOT_DASH_sym) { READY_TO_RETURN; return wxXOR_DOT_DASH; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "penStyle symbol", -1, 0, &v));
-  READY_TO_RETURN;
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_penStyle(int v) {
-  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
-  switch (v) {
-  case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
-  case wxSOLID: return penStyle_wxSOLID_sym;
-  case wxXOR: return penStyle_wxXOR_sym;
-  case wxCOLOR: return penStyle_wxCOLOR_sym;
-  case wxDOT: return penStyle_wxDOT_sym;
-  case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
-  case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;
-  case wxDOT_DASH: return penStyle_wxDOT_DASH_sym;
-  case wxXOR_DOT: return penStyle_wxXOR_DOT_sym;
-  case wxXOR_LONG_DASH: return penStyle_wxXOR_LONG_DASH_sym;
-  case wxXOR_SHORT_DASH: return penStyle_wxXOR_SHORT_DASH_sym;
-  case wxXOR_DOT_DASH: return penStyle_wxXOR_DOT_DASH_sym;
-  default: return NULL;
-  }
 }
 
 

@@ -6141,7 +6141,6 @@ class wxTabSnip *objscheme_unbundle_wxTabSnip(Scheme_Object *obj, const char *wh
 #define wxBITMAP_TYPE_UNKNOWN 0
 #define wxBITMAP_TYPE_GIF_MASK (wxBITMAP_TYPE_GIF | wxBITMAP_TYPE_MASK)
 #define wxBITMAP_TYPE_PNG_MASK (wxBITMAP_TYPE_PNG | wxBITMAP_TYPE_MASK)
-#define wxBITMAP_TYPE_PNG_ALPHA (wxBITMAP_TYPE_PNG | wxBITMAP_TYPE_ALPHA)
 
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;

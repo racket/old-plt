@@ -979,6 +979,23 @@ user_char_ready(Scheme_Input_Port *port)
     return 0;
 }
 
+int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip)
+{
+  User_Input_Port *uip = (User_Input_Port *)ip->port_data;
+  Scheme_Object *waitable;
+
+  waitable = uip->waitable;
+  if (SCHEME_TRUEP(waitable)) {
+    if (scheme_wait_on_waitable(waitable, 1)) {
+      if (SCHEME_SEMAP(waitable))
+	scheme_post_sema(waitable);
+      return 1;
+    } else
+      return 0;
+  } else
+    return 1;
+}
+
 static void
 user_needs_wakeup_input (Scheme_Input_Port *port, void *fds)
 {

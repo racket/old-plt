@@ -1056,10 +1056,24 @@ static void output_need_wakeup (Scheme_Object *port, void *fds)
   }
 }
 
+static int char_ready_or_user_port_ready(Scheme_Object *p)
+{
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
+
+  if (SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
+    /* We can't call the normal char_ready because that runs Scheme
+       code, and this function is called by the scheduler. So
+       We asume that if the port's waitable is ready, then the
+       port is ready. */
+    return scheme_user_port_char_probably_ready(ip);
+  } else
+    return scheme_char_ready(p);
+}
+
 static void register_port_wait()
 {
   scheme_add_waitable(scheme_input_port_type,
-		      scheme_char_ready, scheme_need_wakeup, 
+		      char_ready_or_user_port_ready, scheme_need_wakeup, 
 		      waitable_input_port_p);
   scheme_add_waitable(scheme_output_port_type,
 		      output_ready, output_need_wakeup, 

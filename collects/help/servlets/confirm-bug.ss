@@ -78,7 +78,9 @@
 	     "your bug report, you'll need to start over."
 	     (P)
 	     (A ((HREF "/servlets/bug-report.ss")) "Click here")
-	     " to start a new bug report."))))])
+	     " to start a new bug report."
+	     (P)
+	     ,home-page))))])
      (extract-binding/single 
       sym 
       (request-bindings initial-request))))

@@ -1,3 +1,19 @@
+                       
+                       
+                     ; 
+                     ; 
+  ;;;  ;   ;   ;;;   ; 
+ ;   ; ;   ;  ;   ;  ; 
+ ;   ;  ; ;       ;  ; 
+ ;;;;;  ; ;    ;;;;  ; 
+ ;      ; ;   ;   ;  ; 
+ ;      ;;    ;   ;  ; 
+  ;;;;   ;     ;;;;; ; 
+                       
+                       
+                       
+
+
 (drscheme:eval:set-basic-parameters
  ((listof (is-a?/c snip-class%)) . -> . void?)
  (snipclasses)
@@ -1006,3 +1022,27 @@
 
 "Queries the user for a URL and opens it in a new help desk window. The"
 "\\var{frame} argument is used as a parent for the dialog box.")
+
+
+                                                           
+                                                           
+                                                           
+                         ;                           ;     
+ ;                       ;                           ;     
+;;;;  ;;;    ;;;    ;;;  ; ;;   ; ;;;    ;;;    ;;;  ;   ; 
+ ;   ;   ;  ;   ;  ;     ;;  ;  ;;   ;  ;   ;  ;     ;  ;  
+ ;   ;   ;      ;  ;     ;   ;  ;    ;      ;  ;     ; ;   
+ ;   ;;;;;   ;;;;  ;     ;   ;  ;    ;   ;;;;  ;     ;;    
+ ;   ;      ;   ;  ;     ;   ;  ;    ;  ;   ;  ;     ; ;   
+ ;   ;      ;   ;  ;     ;   ;  ;;   ;  ;   ;  ;     ;  ;  
+  ;;  ;;;;   ;;;;;  ;;;  ;   ;  ; ;;;    ;;;;;  ;;;  ;   ; 
+                                ;                          
+                                ;                          
+                                                           
+
+
+(drscheme:teachpack:install-teachpacks
+ (-> any? void?)
+ (teachpack-cache)
+ "Docs Here")
+

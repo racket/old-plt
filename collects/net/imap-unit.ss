@@ -60,7 +60,7 @@
 	      s)))
 
       (define (log-warning . args)
-	;; (apply printf args)
+        ;; (apply printf args)
 	(void))
       (define log log-warning)
 
@@ -97,17 +97,20 @@
 		   [accum null]
 		   [eol-k (lambda (accum) (reverse! accum))]
 		   [eop-k (lambda (s accum) (error 'imap-read "unxpected close parenthesis"))])
-	  (cond
-	   [(bytes=? #"" s) (eol-k accum)]
+          (cond
+	   [(bytes=? #"" s) 
+            (eol-k accum)]
 	   [(char-whitespace? (integer->char (bytes-ref s 0)))
-	    (loop (skip s 1) r accum eol-k eop-k)]
+            (loop (skip s 1) r accum eol-k eop-k)]
 	   [else
 	    (case (integer->char (bytes-ref s 0))
-	      [(#\") (let ([m (regexp-match #rx#"\"([^\"]*)\"(.*)" s)])
+	      [(#\") 
+               (let ([m (regexp-match #rx#"\"([^\"]*)\"(.*)" s)])
 		       (if m
 			   (loop (caddr m) r (cons (cadr m) accum) eol-k eop-k)
 			   (error 'imap-read "didn't find end of quoted string in: ~a" s)))]
-	      [(#\)) (eop-k (skip s 1) accum)]
+	      [(#\)) 
+               (eop-k (skip s 1) accum)]
 	      [(#\() (letrec ([next-line
 			       (lambda (accum) 
 				 (loop (read-bytes-line r eol) r
@@ -119,19 +122,20 @@
 				 (loop s r
 				       (cons (reverse! laccum) accum)
 				       eol-k eop-k))])
-		       (loop (skip s 1) r null next-line finish-parens))]
+                       (loop (skip s 1) r null next-line finish-parens))]
 	      [(#\{) (let ([m (regexp-match #rx#"{([0-9]+)}(.*)" s)])
 		       (cond
 			[(not m) (error 'imap-read "couldn't read {} number: ~a" s)]
 			[(not (bytes=? (caddr m) #"")) (error 'imap-read "{} not at end-of-line: ~a" s)]
-			[else (loop #"" r
-				    (cons (read-bytes (string->number 
-						       (bytes->string/latin-1 (cadr m)))
-						      r)
-					  accum)
-				    eol-k eop-k)]))]
+			[else 
+                         (loop #"" r
+                               (cons (read-bytes (string->number 
+                                                  (bytes->string/latin-1 (cadr m)))
+                                                 r)
+                                     accum)
+                               eol-k eop-k)]))]
 	      [else (let ([m (regexp-match #rx#"([^ (){}]+)(.*)" s)])
-		      (if m
+                      (if m
 			  (loop (caddr m) r
 				(cons (let ([v (cadr m)])
 					(if (regexp-match #rx#"^[0-9]*$" v)
@@ -144,7 +148,7 @@
       (define (get-response r id info-handler continuation-handler)
 	(let loop ()
 	  (let ([l (read-bytes-line r eol)])
-	    ;; (log "raw-reply: ~s~n" l)
+	    (log "raw-reply: ~s~n" l)
 	    (cond
 	     [(and id (starts-with? l id))
 	      (let ([reply (imap-read (skip l id) r)])
@@ -543,10 +547,14 @@
                       (lambda (x)
 			(when (and (pair? x)
 				   (tag-eq? (car x) 'LIST))
-			  (let ([flags (cadr x)]
-				[name (cadddr x)])
-			    (unless (and except
-					 (bytes=? name except))
+			  (let* ([flags (cadr x)]
+                                 [name (cadddr x)]
+                                 [bytes-name (if (symbol? name)
+                                                 (string->bytes/utf-8 (symbol->string name))
+                                                 name)])
+                            (printf "~s\n" (list 'bytes=? bytes-name except))
+                            (unless (and except
+					 (bytes=? bytes-name except))
 			      (set! sub-folders 
 				    (cons 
 				     (list flags name)

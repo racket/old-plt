@@ -1,3 +1,10 @@
+Version 103.2:
+
+ * Windows and Unix: MzScheme-implemented threads swap roughly every
+   10ms, instead of roughly every 10,000 non-primitive applications.
+
+ * 2k: some bug fixes, performance tuning.
+
 103.1:
 
  * Fixed `lambda' and `case-lambda' to signal an error when a keyword

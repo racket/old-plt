@@ -48,13 +48,13 @@
 @END
 
 @BEGINSYMBOLS scrollMoveType > ONE
-@SYM "scroll-top" : wxEVENT_TYPE_SCROLL_TOP
-@SYM "scroll-bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
-@SYM "scroll-line-up" : wxEVENT_TYPE_SCROLL_LINEUP
-@SYM "scroll-line-down" : wxEVENT_TYPE_SCROLL_LINEDOWN
-@SYM "scroll-page-up" : wxEVENT_TYPE_SCROLL_PAGEUP
-@SYM "scroll-page-down" : wxEVENT_TYPE_SCROLL_PAGEDOWN
-@SYM "scroll-thumb" : wxEVENT_TYPE_SCROLL_THUMBTRACK
+@SYM "top" : wxEVENT_TYPE_SCROLL_TOP
+@SYM "bottom" : wxEVENT_TYPE_SCROLL_BOTTOM
+@SYM "line-up" : wxEVENT_TYPE_SCROLL_LINEUP
+@SYM "line-down" : wxEVENT_TYPE_SCROLL_LINEDOWN
+@SYM "page-up" : wxEVENT_TYPE_SCROLL_PAGEUP
+@SYM "page-down" : wxEVENT_TYPE_SCROLL_PAGEDOWN
+@SYM "thumb" : wxEVENT_TYPE_SCROLL_THUMBTRACK
 @ENDSYMBOLS
 
 @INCLUDE wxs_ornt.xci
@@ -167,9 +167,6 @@
 @SYM "motion" : wxEVENT_TYPE_MOTION
 @SYM "enter" : wxEVENT_TYPE_ENTER_WINDOW
 @SYM "leave" : wxEVENT_TYPE_LEAVE_WINDOW
-@SYM "left-dclick" : wxEVENT_TYPE_LEFT_DCLICK
-@SYM "middle-dclick" : wxEVENT_TYPE_MIDDLE_DCLICK
-@SYM "right-dclick" : wxEVENT_TYPE_RIGHT_DCLICK
 @ENDSYMBOLS
 
 #define NEGATIVE_ONE (-1)
@@ -185,7 +182,6 @@
 @CREATOR (SYM[mouseEventType]);
 
 @ "button-changed?" : bool Button(SYM[buttonId]);
-@ "button-dclick?" : bool ButtonDClick(SYM[buttonId]=-1);
 @ "button-down?" : bool ButtonDown(SYM[buttonId]=-1);
 @ "button-up?" : bool ButtonUp(SYM[buttonId]=-1);
 @ "dragging?" : bool Dragging();

@@ -5,18 +5,18 @@
 #include "wx_stdev.h"
 #include "wx_hash.h"
 
-class wxObject;
+#define UNKNOWN_OBJ wxObject
 
-typedef Bool (*wxKeyFunction)(wxObject *media, wxKeyEvent &event, 
+typedef Bool (*wxKeyFunction)(UNKNOWN_OBJ *media, wxKeyEvent &event, 
 			      void *data);
-typedef Bool (*wxMouseFunction)(wxObject *media, wxMouseEvent &event, 
+typedef Bool (*wxMouseFunction)(UNKNOWN_OBJ *media, wxMouseEvent &event, 
 				void *data);
 
 typedef Bool (*wxGrabKeyFunction)(char *str, class wxKeymap *km,
-				  wxObject *media, wxKeyEvent &event, 
+				  UNKNOWN_OBJ *media, wxKeyEvent &event, 
 				  void *data);
 typedef Bool (*wxGrabMouseFunction)(char *str, class wxKeymap *km,
-				    wxObject *media, wxMouseEvent &event, 
+				    UNKNOWN_OBJ *media, wxMouseEvent &event, 
 				    void *data);
 
 typedef void (*wxBreakSequenceFunction)(void *data);
@@ -79,17 +79,17 @@ class wxKeymap : public wxObject
 
   Bool CycleCheck(wxKeymap *km);
 
-  int ChainHandleKeyEvent(wxObject *media, wxKeyEvent &event,
+  int ChainHandleKeyEvent(UNKNOWN_OBJ *media, wxKeyEvent &event,
 			  wxGrabKeyFunction grab, void *grabData,
 			  int try_state);
-  int ChainHandleMouseEvent(wxObject *media, wxMouseEvent &event,
+  int ChainHandleMouseEvent(UNKNOWN_OBJ *media, wxMouseEvent &event,
 			    wxGrabMouseFunction grab, void *grabData,
 			    int try_state);
 
-  int OtherHandleKeyEvent(wxObject *media, wxKeyEvent &event,
+  int OtherHandleKeyEvent(UNKNOWN_OBJ *media, wxKeyEvent &event,
 			  wxGrabKeyFunction grab, void *grabData,
 			  int try_state);
-  int OtherHandleMouseEvent(wxObject *media, wxMouseEvent &event,
+  int OtherHandleMouseEvent(UNKNOWN_OBJ *media, wxMouseEvent &event,
 			    wxGrabMouseFunction grab, void *grabData,
 			    int try_state);
 
@@ -99,8 +99,8 @@ class wxKeymap : public wxObject
   wxKeymap();
   ~wxKeymap();
   
-  virtual Bool HandleKeyEvent(wxObject *media, wxKeyEvent &event);
-  virtual Bool HandleMouseEvent(wxObject *media, wxMouseEvent &event);
+  virtual Bool HandleKeyEvent(UNKNOWN_OBJ *media, wxKeyEvent &event);
+  virtual Bool HandleMouseEvent(UNKNOWN_OBJ *media, wxMouseEvent &event);
 
   void SetGrabKeyFunction(wxGrabKeyFunction grab, void *grabData);
   void RemoveGrabKeyFunction(void);
@@ -120,9 +120,9 @@ class wxKeymap : public wxObject
 
   void AddKeyFunction(char *name, wxKeyFunction func, void *data);
   void AddMouseFunction(char *name, wxMouseFunction func, void *data);
-  Bool CallFunction(char *name, wxObject *media, wxKeyEvent &event, 
+  Bool CallFunction(char *name, UNKNOWN_OBJ *media, wxKeyEvent &event, 
 		    Bool try_chained = FALSE);
-  Bool CallFunction(char *name, wxObject *media, wxMouseEvent &event, 
+  Bool CallFunction(char *name, UNKNOWN_OBJ *media, wxMouseEvent &event, 
 		    Bool try_chained = FALSE);
 
   void SetErrorCallback(wxKeyErrorFunction, void *d=NULL);

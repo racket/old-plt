@@ -61,6 +61,8 @@
 @ "get-weight" : SYM[weight] GetWeight();
 @ "get-underlined" : bool GetUnderlined();
 
+@ "get-font-id" : int GetFontId();
+
 @END
 
 @CLASSBASE wxFontList "font-list":"object"
@@ -288,9 +290,9 @@ static inline int Identity(wxFontNameDirectory *, int v)
 
 @CLASSBASE wxFontNameDirectory "font-name-directory":"object"
 
-@ "get-screen-name" : nstring GetScreenName(SYM[family],SYM[style],SYM[weight]);
-@ "get-post-script-name" : nstring GetPostScriptName(SYM[family],SYM[style],SYM[weight]);
-@ "get-afm-name" : nstring GetAFMName(SYM[family],SYM[style],SYM[weight]);
+@ "get-screen-name" : nstring GetScreenName(int,SYM[style],SYM[weight]);
+@ "get-post-script-name" : nstring GetPostScriptName(int,SYM[style],SYM[weight]);
+@ "get-afm-name" : nstring GetAFMName(int,SYM[style],SYM[weight]);
 
 @ "get-new-font-id" :   int GetNewFontId()
 @ "initialize" : void Initialize(int,int,string);

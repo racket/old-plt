@@ -1477,7 +1477,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "pre-on-event in dialog-box%"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in dialog%"", extracting return value");
   }
 }
 
@@ -1512,7 +1512,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "pre-on-char in dialog-box%"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in dialog%"", extracting return value");
   }
 }
 
@@ -1643,7 +1643,7 @@ return wxDialogBox::OnClose();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "on-close in dialog-box%"", extracting return value");
+  return objscheme_unbundle_bool(v, "on-close in dialog%"", extracting return value");
   }
 }
 
@@ -1688,7 +1688,7 @@ static Scheme_Object *os_wxDialogBoxOnDefaultAction(Scheme_Object *obj, int n,  
   class wxItem* x0;
 
   
-  x0 = objscheme_unbundle_wxItem(p[0], "on-default-action in dialog-box%", 0);
+  x0 = objscheme_unbundle_wxItem(p[0], "on-default-action in dialog%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1709,7 +1709,7 @@ static Scheme_Object *os_wxDialogBoxOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-char in dialog-box%", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-char in dialog%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1730,7 +1730,7 @@ static Scheme_Object *os_wxDialogBoxOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-event in dialog-box%", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-event in dialog%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1770,7 +1770,7 @@ static Scheme_Object *os_wxDialogBoxOnDropFile(Scheme_Object *obj, int n,  Schem
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in dialog-box%");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in dialog%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1793,8 +1793,8 @@ static Scheme_Object *os_wxDialogBoxPreOnEvent(Scheme_Object *obj, int n,  Schem
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in dialog-box%", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in dialog-box%", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in dialog%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in dialog%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1817,8 +1817,8 @@ static Scheme_Object *os_wxDialogBoxPreOnChar(Scheme_Object *obj, int n,  Scheme
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in dialog-box%", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in dialog-box%", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in dialog%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in dialog%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1840,8 +1840,8 @@ static Scheme_Object *os_wxDialogBoxOnSize(Scheme_Object *obj, int n,  Scheme_Ob
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "on-size in dialog-box%");
-  x1 = objscheme_unbundle_integer(p[1], "on-size in dialog-box%");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in dialog%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in dialog%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1920,7 +1920,7 @@ static Scheme_Object *os_wxDialogBoxOnActivate(Scheme_Object *obj, int n,  Schem
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "on-activate in dialog-box%");
+  x0 = objscheme_unbundle_bool(p[0], "on-activate in dialog%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1949,39 +1949,39 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
 
   
   if ((n < 2) ||(n > 9)) 
-    scheme_wrong_count("initialization in dialog-box%", 2, 9, n, p);
-  x0 = objscheme_unbundle_wxWindow(p[0], "initialization in dialog-box%", 1);
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "initialization in dialog-box%");
+    scheme_wrong_count("initialization in dialog%", 2, 9, n, p);
+  x0 = objscheme_unbundle_wxWindow(p[0], "initialization in dialog%", 1);
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "initialization in dialog%");
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "initialization in dialog-box%");
+    x2 = objscheme_unbundle_bool(p[2], "initialization in dialog%");
   } else
     x2 = FALSE;
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "initialization in dialog-box%");
+    x3 = objscheme_unbundle_integer(p[3], "initialization in dialog%");
   } else
     x3 = 300;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "initialization in dialog-box%");
+    x4 = objscheme_unbundle_integer(p[4], "initialization in dialog%");
   } else
     x4 = 300;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "initialization in dialog-box%");
+    x5 = objscheme_unbundle_integer(p[5], "initialization in dialog%");
   } else
     x5 = 500;
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "initialization in dialog-box%");
+    x6 = objscheme_unbundle_integer(p[6], "initialization in dialog%");
   } else
     x6 = 500;
   if (n > 7) {
-    x7 = unbundle_symset_dialogStyle(p[7], "initialization in dialog-box%");
+    x7 = unbundle_symset_dialogStyle(p[7], "initialization in dialog%");
   } else
     x7 = 0;
   if (n > 8) {
-    x8 = (string)objscheme_unbundle_string(p[8], "initialization in dialog-box%");
+    x8 = (string)objscheme_unbundle_string(p[8], "initialization in dialog%");
   } else
     x8 = "dialogBox";
 
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog-box%","initialization"), "frame or dialog box", 0, n, p);if (!x5) x5 = -1;if (!x6) x6 = -1;
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", 0, n, p);if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = new os_wxDialogBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
   
   
@@ -1994,9 +1994,9 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
 void objscheme_setup_wxDialogBox(void *env)
 {
 if (os_wxDialogBox_class) {
-    objscheme_add_global_class(os_wxDialogBox_class, "dialog-box%", env);
+    objscheme_add_global_class(os_wxDialogBox_class, "dialog%", env);
 } else {
-  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog-box%", "panel%", os_wxDialogBox_ConstructScheme, 12);
+  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog%", "panel%", os_wxDialogBox_ConstructScheme, 12);
 
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-default-action", os_wxDialogBoxOnDefaultAction, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-char", os_wxDialogBoxOnChar, 1, 1);
@@ -2028,7 +2028,7 @@ int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "dialog-box% object or " XC_NULL_STR: "dialog-box% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "dialog% object or " XC_NULL_STR: "dialog% object", -1, 0, &obj);
     return 0;
   }
 }

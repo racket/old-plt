@@ -73,7 +73,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 @MACRO IFNOTMAC = HIDETHISSTATEMENT(
 @MACRO ENDIF = )
 
-@ "set-optimization" : void SetOptimization(bool); : : /IFNOTMAC/ENDIF/
+// @ "set-optimization" : void SetOptimization(bool); : : /IFNOTMAC/ENDIF/
 
 #ifndef wx_mac
 #define CHECKTHISONE(x) x

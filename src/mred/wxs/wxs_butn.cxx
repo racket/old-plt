@@ -20,7 +20,7 @@
 static Scheme_Object *buttonStyle_1_sym = NULL;
 
 static void init_symset_buttonStyle(void) {
-  buttonStyle_1_sym = scheme_intern_symbol("default");
+  buttonStyle_1_sym = scheme_intern_symbol("border");
 }
 
 static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {

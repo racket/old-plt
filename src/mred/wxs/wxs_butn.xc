@@ -8,7 +8,7 @@
 @HEADER
 
 @BEGINSYMBOLS buttonStyle
-@SYM "default" : 1
+@SYM "border" : 1
 @ENDSYMBOLS
 
 @CLASSBASE wxButton "button":"item"

@@ -250,6 +250,7 @@ static Scheme_Object *bundle_symset_style(int v) {
 
 
 
+
 class os_wxFont : public wxFont {
  public:
 
@@ -288,6 +289,23 @@ os_wxFont::os_wxFont(Scheme_Object * o, nnint x0, cstring x1, int x2, int x3, in
 os_wxFont::~os_wxFont()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxFontGetFontId(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxFont *)((Scheme_Class_Object *)obj)->primdata)->GetFontId();
+
+  
+  
+  return scheme_make_integer(r);
 }
 
 #pragma argsused
@@ -467,8 +485,9 @@ void objscheme_setup_wxFont(void *env)
 if (os_wxFont_class) {
     objscheme_add_global_class(os_wxFont_class, "font%", env);
 } else {
-  os_wxFont_class = objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 6);
+  os_wxFont_class = objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 7);
 
+ scheme_add_method_w_arity(os_wxFont_class, "get-font-id", os_wxFontGetFontId, 0, 0);
  scheme_add_method_w_arity(os_wxFont_class, "get-underlined", os_wxFontGetUnderlined, 0, 0);
  scheme_add_method_w_arity(os_wxFont_class, "get-weight", os_wxFontGetWeight, 0, 0);
  scheme_add_method_w_arity(os_wxFont_class, "get-point-size", os_wxFontGetPointSize, 0, 0);
@@ -3217,7 +3236,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
   int x2;
 
   
-  x0 = unbundle_symset_family(p[0], "get-afm-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-afm-name in font-name-directory%");
   x1 = unbundle_symset_style(p[1], "get-afm-name in font-name-directory%");
   x2 = unbundle_symset_weight(p[2], "get-afm-name in font-name-directory%");
 
@@ -3240,7 +3259,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
   int x2;
 
   
-  x0 = unbundle_symset_family(p[0], "get-post-script-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-post-script-name in font-name-directory%");
   x1 = unbundle_symset_style(p[1], "get-post-script-name in font-name-directory%");
   x2 = unbundle_symset_weight(p[2], "get-post-script-name in font-name-directory%");
 
@@ -3263,7 +3282,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
   int x2;
 
   
-  x0 = unbundle_symset_family(p[0], "get-screen-name in font-name-directory%");
+  x0 = objscheme_unbundle_integer(p[0], "get-screen-name in font-name-directory%");
   x1 = unbundle_symset_style(p[1], "get-screen-name in font-name-directory%");
   x2 = unbundle_symset_weight(p[2], "get-screen-name in font-name-directory%");
 

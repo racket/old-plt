@@ -530,13 +530,13 @@ static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = NULL;
 static Scheme_Object *scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = NULL;
 
 static void init_symset_scrollMoveType(void) {
-  scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = scheme_intern_symbol("scroll-top");
-  scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = scheme_intern_symbol("scroll-bottom");
-  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = scheme_intern_symbol("scroll-line-up");
-  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = scheme_intern_symbol("scroll-line-down");
-  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = scheme_intern_symbol("scroll-page-up");
-  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = scheme_intern_symbol("scroll-page-down");
-  scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = scheme_intern_symbol("scroll-thumb");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_TOP_sym = scheme_intern_symbol("top");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_BOTTOM_sym = scheme_intern_symbol("bottom");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEUP_sym = scheme_intern_symbol("line-up");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_LINEDOWN_sym = scheme_intern_symbol("line-down");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEUP_sym = scheme_intern_symbol("page-up");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_PAGEDOWN_sym = scheme_intern_symbol("page-down");
+  scrollMoveType_wxEVENT_TYPE_SCROLL_THUMBTRACK_sym = scheme_intern_symbol("thumb");
 }
 
 static int unbundle_symset_scrollMoveType(Scheme_Object *v, const char *where) {
@@ -1537,9 +1537,6 @@ static Scheme_Object *mouseEventType_wxEVENT_TYPE_RIGHT_UP_sym = NULL;
 static Scheme_Object *mouseEventType_wxEVENT_TYPE_MOTION_sym = NULL;
 static Scheme_Object *mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = NULL;
 static Scheme_Object *mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = NULL;
-static Scheme_Object *mouseEventType_wxEVENT_TYPE_LEFT_DCLICK_sym = NULL;
-static Scheme_Object *mouseEventType_wxEVENT_TYPE_MIDDLE_DCLICK_sym = NULL;
-static Scheme_Object *mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym = NULL;
 
 static void init_symset_mouseEventType(void) {
   mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym = scheme_intern_symbol("left-down");
@@ -1551,13 +1548,10 @@ static void init_symset_mouseEventType(void) {
   mouseEventType_wxEVENT_TYPE_MOTION_sym = scheme_intern_symbol("motion");
   mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym = scheme_intern_symbol("enter");
   mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym = scheme_intern_symbol("leave");
-  mouseEventType_wxEVENT_TYPE_LEFT_DCLICK_sym = scheme_intern_symbol("left-dclick");
-  mouseEventType_wxEVENT_TYPE_MIDDLE_DCLICK_sym = scheme_intern_symbol("middle-dclick");
-  mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym = scheme_intern_symbol("right-dclick");
 }
 
 static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
-  if (!mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym) init_symset_mouseEventType();
+  if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) init_symset_mouseEventType();
   if (0) { }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym) { return wxEVENT_TYPE_LEFT_DOWN; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_UP_sym) { return wxEVENT_TYPE_LEFT_UP; }
@@ -1568,15 +1562,12 @@ static int unbundle_symset_mouseEventType(Scheme_Object *v, const char *where) {
   else if (v == mouseEventType_wxEVENT_TYPE_MOTION_sym) { return wxEVENT_TYPE_MOTION; }
   else if (v == mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym) { return wxEVENT_TYPE_ENTER_WINDOW; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) { return wxEVENT_TYPE_LEAVE_WINDOW; }
-  else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DCLICK_sym) { return wxEVENT_TYPE_LEFT_DCLICK; }
-  else if (v == mouseEventType_wxEVENT_TYPE_MIDDLE_DCLICK_sym) { return wxEVENT_TYPE_MIDDLE_DCLICK; }
-  else if (v == mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym) { return wxEVENT_TYPE_RIGHT_DCLICK; }
   if (where) scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_mouseEventType(Scheme_Object *v, const char *where) {
-  if (!mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym) init_symset_mouseEventType();
+  if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) init_symset_mouseEventType();
   if (0) { }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym) { return 1; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEFT_UP_sym) { return 1; }
@@ -1587,15 +1578,12 @@ static int istype_symset_mouseEventType(Scheme_Object *v, const char *where) {
   else if (v == mouseEventType_wxEVENT_TYPE_MOTION_sym) { return 1; }
   else if (v == mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym) { return 1; }
   else if (v == mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_LEFT_DCLICK_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_MIDDLE_DCLICK_sym) { return 1; }
-  else if (v == mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym) { return 1; }
   if (where) scheme_wrong_type(where, "mouseEventType symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_mouseEventType(int v) {
-  if (!mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym) init_symset_mouseEventType();
+  if (!mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym) init_symset_mouseEventType();
   switch (v) {
   case wxEVENT_TYPE_LEFT_DOWN: return mouseEventType_wxEVENT_TYPE_LEFT_DOWN_sym;
   case wxEVENT_TYPE_LEFT_UP: return mouseEventType_wxEVENT_TYPE_LEFT_UP_sym;
@@ -1606,9 +1594,6 @@ static Scheme_Object *bundle_symset_mouseEventType(int v) {
   case wxEVENT_TYPE_MOTION: return mouseEventType_wxEVENT_TYPE_MOTION_sym;
   case wxEVENT_TYPE_ENTER_WINDOW: return mouseEventType_wxEVENT_TYPE_ENTER_WINDOW_sym;
   case wxEVENT_TYPE_LEAVE_WINDOW: return mouseEventType_wxEVENT_TYPE_LEAVE_WINDOW_sym;
-  case wxEVENT_TYPE_LEFT_DCLICK: return mouseEventType_wxEVENT_TYPE_LEFT_DCLICK_sym;
-  case wxEVENT_TYPE_MIDDLE_DCLICK: return mouseEventType_wxEVENT_TYPE_MIDDLE_DCLICK_sym;
-  case wxEVENT_TYPE_RIGHT_DCLICK: return mouseEventType_wxEVENT_TYPE_RIGHT_DCLICK_sym;
   default: return NULL;
   }
 }
@@ -1793,28 +1778,6 @@ static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Sche
 
   
   r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->ButtonDown(x0);
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxMouseEventButtonDClick(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-  int x0;
-
-  
-  if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "button-dclick? in mouse-event%");
-  } else
-    x0 = -1;
-
-  
-  r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->ButtonDClick(x0);
 
   
   
@@ -2166,7 +2129,7 @@ void objscheme_setup_wxMouseEvent(void *env)
 if (os_wxMouseEvent_class) {
     objscheme_add_global_class(os_wxMouseEvent_class, "mouse-event%", env);
 } else {
-  os_wxMouseEvent_class = objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 28);
+  os_wxMouseEvent_class = objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 27);
 
  scheme_add_method_w_arity(os_wxMouseEvent_class, "moving?", os_wxMouseEventMoving, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "leaving?", os_wxMouseEventLeaving, 0, 0);
@@ -2174,7 +2137,6 @@ if (os_wxMouseEvent_class) {
  scheme_add_method_w_arity(os_wxMouseEvent_class, "dragging?", os_wxMouseEventDragging, 0, 0);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-up?", os_wxMouseEventButtonUp, 0, 1);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-down?", os_wxMouseEventButtonDown, 0, 1);
- scheme_add_method_w_arity(os_wxMouseEvent_class, "button-dclick?", os_wxMouseEventButtonDClick, 0, 1);
  scheme_add_method_w_arity(os_wxMouseEvent_class, "button-changed?", os_wxMouseEventButton, 1, 1);
 
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-event-type", objscheme_wxMouseEvent_GeteventType, 0, 0);

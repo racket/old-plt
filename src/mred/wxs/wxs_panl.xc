@@ -51,13 +51,13 @@
 @SYM "no-caption" : wxNO_CAPTION
 @ENDSYMBOLS
 
-@CLASSBASE wxDialogBox "dialog-box" : "panel"
+@CLASSBASE wxDialogBox "dialog" : "panel"
 
 @CLASSID wxTYPE_DIALOG_BOX
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=0,string="dialogBox"); : : /DLGORFRAME[0.METHODNAME("dialog-box%","initialization")]|NOZERO[5]|NOZERO[6]
+@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=0,string="dialogBox"); : : /DLGORFRAME[0.METHODNAME("dialog%","initialization")]|NOZERO[5]|NOZERO[6]
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci

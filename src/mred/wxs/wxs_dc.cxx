@@ -438,6 +438,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #endif
 
 
+// @ "set-optimization" : void SetOptimization(bool); : : /IFNOTMAC/ENDIF/
 
 #ifndef wx_mac
 #define CHECKTHISONE(x) x
@@ -924,24 +925,6 @@ static Scheme_Object *os_wxDCDrawIcon(Scheme_Object *obj, int n,  Scheme_Object 
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawIcon(x0, x1, x2);
 
   
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxDCSetOptimization(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  Bool x0;
-
-  
-  x0 = objscheme_unbundle_bool(p[0], "set-optimization in dc<%>");
-
-  HIDETHISSTATEMENT(
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetOptimization(x0);
-
-  )
   
   return scheme_void;
 }
@@ -1581,7 +1564,7 @@ if (os_wxDC_class) {
     objscheme_add_global_class(os_wxDC_class, "dc%", env);
     objscheme_add_global_interface(os_wxDC_interface, "dc" "<%>", env);
 } else {
-  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 51);
+  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 50);
 
  scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0);
@@ -1607,7 +1590,6 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "try-colour", os_wxDCTryColour, 2, 2);
  scheme_add_method_w_arity(os_wxDC_class, "blit", os_wxDCBlit, 7, 8);
  scheme_add_method_w_arity(os_wxDC_class, "draw-icon", os_wxDCDrawIcon, 3, 3);
- scheme_add_method_w_arity(os_wxDC_class, "set-optimization", os_wxDCSetOptimization, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-height", os_wxDCGetCharHeight, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCGetTextExtent, 3, 7);

@@ -854,7 +854,6 @@ static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object
 static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   objscheme_check_valid(obj);
   class wxMenu* x0;
   float x1;
@@ -866,11 +865,11 @@ static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Ob
   x2 = objscheme_unbundle_float(p[2], "popup-menu in canvas%");
 
   
-  r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2);
+  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2);
 
   
   
-  return (r ? scheme_true : scheme_false);
+  return scheme_void;
 }
 
 #pragma argsused

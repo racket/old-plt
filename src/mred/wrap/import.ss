@@ -3,7 +3,7 @@
  canvas%
  check-box%
  choice%
- dialog-box%
+ dialog%
  frame%
  gauge%
  item%

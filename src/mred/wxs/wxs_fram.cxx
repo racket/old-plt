@@ -52,7 +52,7 @@ static void init_symset_frameStyle(void) {
   frameStyle_wxMAXIMIZE_sym = scheme_intern_symbol("maximize");
   frameStyle_wxMDI_PARENT_sym = scheme_intern_symbol("mdi-parent");
   frameStyle_wxMDI_CHILD_sym = scheme_intern_symbol("mdi-child");
-  frameStyle_wxNO_THICK_FRAME_sym = scheme_intern_symbol("no-thick-frame");
+  frameStyle_wxNO_THICK_FRAME_sym = scheme_intern_symbol("no-thick-border");
   frameStyle_wxNO_SYSTEM_MENU_sym = scheme_intern_symbol("no-system-menu");
   frameStyle_wxNO_RESIZE_BORDER_sym = scheme_intern_symbol("no-resize-border");
 }

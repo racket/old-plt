@@ -43,7 +43,7 @@ static void FillZero(int *a, int *b) {
 @SETMARK c = d
 @INCLUDE wxs_cnvs.xci
 
-@ "popup-menu" : bool PopupMenu(wxMenu!, float, float);
+@ "popup-menu" : void PopupMenu(wxMenu!, float, float);
 
 @ "get-dc" : wxCanvasDC! GetDC();
 

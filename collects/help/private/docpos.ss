@@ -13,7 +13,8 @@
       [(drscheme) -1]
       [(r5rs) 0]
       [(mzscheme) 1]
-      [(mred) 2]
+      [(mzlib) 2]
+      [(mred) 3]
       [(framework) 4]
       [(mrspidey) 5]
       [(misclib) 6]
@@ -31,6 +32,7 @@
       ("drscheme" . "PLT DrScheme: Programming Environment Manual")
       ("r5rs" . "Revised(5) Report on the Algorithmic Language Scheme")
       ("mzscheme" . "PLT MzScheme: Language Manual")
+      ("mzlib" . "PLT MzLib: Libraries Manual")
       ("mred" . "PLT MrEd: Graphical Toolbox Manual")
       ("framework" . "PLT Framework: GUI Application Framework")
       ("mrspidey" . "PLT MrSpidey: Static Debugger Manual")

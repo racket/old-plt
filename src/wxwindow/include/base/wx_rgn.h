@@ -62,7 +62,9 @@ class wxPSRgn : public wxObject
   wxPSRgn() { is_intersect = 0; }
   virtual char *GetString() = 0;
   virtual wxPSRgn *Lift() = 0;
+#ifdef RGN_DEBUGGING_PRINTS
   virtual void DebugPrint() = 0;
+#endif
 };
 
 class wxPSRgn_Atomic : public wxPSRgn
@@ -72,7 +74,9 @@ class wxPSRgn_Atomic : public wxPSRgn
   wxPSRgn_Atomic(char *ps, char *dn) { s = ps; debug_name = dn; }
   char *GetString() { return s; }
   wxPSRgn *Lift() { return this; }
+#ifdef RGN_DEBUGGING_PRINTS
   void DebugPrint() { printf("%s%lx", debug_name, (long)this); }
+#endif
 };
 
 class wxPSRgn_Composite : public wxPSRgn
@@ -90,7 +94,9 @@ class wxPSRgn_Union : public wxPSRgn_Composite
   wxPSRgn_Union(wxPSRgn *ra, wxPSRgn *rb) { a = ra; b = rb; }
   char *GetString();
   wxPSRgn *Lift();
+#ifdef RGN_DEBUGGING_PRINTS
   void DebugPrint() { printf("("); a->DebugPrint(); printf(" U "); b->DebugPrint(); printf(")"); }
+#endif
 };
 
 class wxPSRgn_Intersect : public wxPSRgn_Composite
@@ -99,7 +105,9 @@ class wxPSRgn_Intersect : public wxPSRgn_Composite
   wxPSRgn_Intersect(wxPSRgn *ra, wxPSRgn *rb) { a = ra; b = rb; is_intersect = 1; }
   char *GetString();
   wxPSRgn *Lift();
+#ifdef RGN_DEBUGGING_PRINTS
   void DebugPrint() { printf("("); a->DebugPrint(); printf(" n "); b->DebugPrint(); printf(")"); }
+#endif
 };
 
 class wxPSRgn_Diff : public wxPSRgn_Composite
@@ -108,7 +116,9 @@ class wxPSRgn_Diff : public wxPSRgn_Composite
   wxPSRgn_Diff(wxPSRgn *ra, wxPSRgn *rb) { a = ra; b = rb; }
   char *GetString();
   wxPSRgn *Lift();
+#ifdef RGN_DEBUGGING_PRINTS
   void DebugPrint() { printf("("); a->DebugPrint(); printf(" \\ "); b->DebugPrint(); printf(")"); }
+#endif
 };
 
 #endif

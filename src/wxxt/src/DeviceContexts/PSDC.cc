@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.23 1999/07/14 00:20:00 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.24 1999/09/22 20:58:55 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -925,9 +925,9 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   current_font = the_font;
   /* MATTHEW: [2] Use wxTheFontDirectory */
   char *name;
-  int Family = current_font->GetFamily ();
-  int Style = current_font->GetStyle ();
-  int Weight = current_font->GetWeight ();
+  int Family = current_font->GetFontId();
+  int Style = current_font->GetStyle();
+  int Weight = current_font->GetWeight();
 
   name = wxTheFontNameDirectory.GetPostScriptName(Family, Weight, Style);
   if (!name)
@@ -1725,7 +1725,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   static int lastWidths[256]; // widths of the characters
 
   // get actual parameters
-  const int Family = fontToUse->GetFamily();
+  const int Family = fontToUse->GetFontId();
   const int Size =   fontToUse->GetPointSize();
   const int Style =  fontToUse->GetStyle();
   const int Weight = fontToUse->GetWeight();

@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.5 1998/09/06 01:43:30 mflatt Exp $
+ * $Id: Font.cc,v 1.6 1999/01/14 22:24:12 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -273,16 +273,26 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid,
 	int min_size = point_size - 20 * (1 + (point_size/180));
 	int i;
 
+	// Try plain style
+	font = wxLoadQueryFont(point_size, fontid, wxNORMAL, wxNORMAL_WEIGHT, underlined);
+
 	// Search for smaller size (approx.)
-	for (i=point_size-10; !font && i >= 10 && i >= min_size; i -= 10)
-	    font = wxLoadQueryFont(i, fontid, style, weight, underlined);
+	for (i=point_size-10; !font && i >= 10 && i >= min_size; i -= 10) {
+	  font = wxLoadQueryFont(i, fontid, style, weight, underlined);
+	  if (!font)
+	    font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined);
+	}
 	// Search for larger size (approx.)
-	for (i=point_size+10; !font && i <= max_size; i += 10)
-	    font = wxLoadQueryFont(i, fontid, style, weight, underlined);
+	for (i=point_size+10; !font && i <= max_size; i += 10) {
+	  font = wxLoadQueryFont(i, fontid, style, weight, underlined);
+	  if (!font)
+	    font = wxLoadQueryFont(i, fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined);
+	}
+
 	// Try default family
 	if (!font && fontid != wxDEFAULT)
-	    font = wxLoadQueryFont(point_size, wxDEFAULT, style, 
-				   weight, underlined);
+	    font = wxLoadQueryFont(point_size, wxDEFAULT, style, weight, underlined);
+	
 	// Bogus font
 	if (!font)
 	    font = wxLoadQueryFont(120, wxDEFAULT, wxNORMAL, wxNORMAL_WEIGHT,

@@ -187,12 +187,12 @@ void PSStream::Out(long l)
     fprintf(f, "%ld", l);
 }
 
-wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent)
+wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent, Bool usePaperBBox)
 {
-  Create(interactive, parent);
+  Create(interactive, parent, usePaperBBox);
 }
 
-Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent)
+Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBox)
 {
   wxPrintSetupData *wxThePrintSetupData;
   char *paperType;
@@ -253,7 +253,7 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent)
   clipw = -1;
   cliph = -1;
 
-  ok = PrinterDialog(interactive, parent);
+  ok = PrinterDialog(interactive, parent, usePaperBBox);
   if (!ok)
     return FALSE;
 
@@ -328,7 +328,7 @@ wxPostScriptDC::~wxPostScriptDC (void)
     DELETE_OBJ pstream;
 }
 
-Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
+Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent, Bool usePaperBBox)
 {
   wxPrintSetupData *wxThePrintSetupData;
   char *s;
@@ -349,6 +349,8 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
   print_cmd = copystring(s);
   s = wxThePrintSetupData->GetPrinterOptions();
   print_opts = copystring(s);
+
+  use_paper_bbox = usePaperBBox;
 
   if ((mode == PS_PREVIEW) || (mode == PS_PRINTER)) {
     // For PS_PRINTER action this depends on a Unix-style print spooler
@@ -1412,10 +1414,8 @@ extern void wxsExecute(char **);
 
 void wxPostScriptDC::EndDoc (void)
 {
-  float llx;
-  float lly;
-  float urx;
-  float ury;
+  float llx, lly, urx, ury;
+  float minx, miny, maxx, maxy;
 
   if (!pstream)
     return;
@@ -1427,16 +1427,28 @@ void wxPostScriptDC::EndDoc (void)
   // Compute the bounding box.  Note that it is in the default user
   // coordinate system, thus we have to convert the values.
   // If we're landscape, our sense of "x" and "y" is reversed.
-  if (landscape) {
-    llx = min_y * paper_y_scale + paper_y + paper_margin_y;
-    lly = min_x * paper_x_scale + paper_x + paper_margin_x;
-    urx = max_y * paper_y_scale + paper_y + paper_margin_y;
-    ury = max_x * paper_x_scale + paper_x + paper_margin_x;
+  if (use_paper_bbox) {
+    minx = 0;
+    miny = 0;
+    maxx = paper_w;
+    maxy = paper_h;
   } else {
-    llx = min_x * paper_x_scale + paper_x + paper_margin_x;
-    lly = paper_h * paper_y_scale - (max_y * paper_y_scale) + paper_y + paper_margin_y;
-    urx = max_x * paper_x_scale + paper_x + paper_margin_x;
-    ury = paper_h * paper_y_scale - (min_y * paper_y_scale) + paper_y + paper_margin_y;
+    minx = min_x;
+    miny = min_y;
+    maxx = max_x;
+    maxy = max_y;
+  }
+   
+  if (landscape) {
+    llx = miny * paper_y_scale + paper_y + paper_margin_y;
+    lly = minx * paper_x_scale + paper_x + paper_margin_x;
+    urx = maxy * paper_y_scale + paper_y + paper_margin_y;
+    ury = maxx * paper_x_scale + paper_x + paper_margin_x;
+  } else {
+    llx = minx * paper_x_scale + paper_x + paper_margin_x;
+    lly = paper_h * paper_y_scale - (maxy * paper_y_scale) + paper_y + paper_margin_y;
+    urx = maxx * paper_x_scale + paper_x + paper_margin_x;
+    ury = paper_h * paper_y_scale - (miny * paper_y_scale) + paper_y + paper_margin_y;
   }
 
   // The Adobe specifications call for integers; we round as to make

@@ -72,7 +72,7 @@ wx_mpbrd.o : $(srcdir)/wx_mpbrd.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_
 wx_medad.o : $(srcdir)/wx_medad.cxx $(HEADERS) $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h
 	$(MCC) $(srcdir)/wx_medad.cxx -o wx_medad.o
 
-wx_mbuf.o : $(srcdir)/wx_mbuf.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h
+wx_mbuf.o : $(srcdir)/wx_mbuf.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/../../wxcommon/PSDC.h
 	$(MCC) $(srcdir)/wx_mbuf.cxx -o wx_mbuf.o
 
 wx_snip.o : $(srcdir)/wx_snip.cxx $(HEADERS) $(srcdir)/wx_gcrct.h

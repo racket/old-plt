@@ -59,7 +59,6 @@ class wxPostScriptDC: public wxDC
   unsigned char currentRed;
   unsigned char currentGreen;
   unsigned char currentBlue;
-  /* MATTHEW: [8] */
   float clipx, clipy, clipw, cliph;
 
   char *current_font_name, *next_font_name;
@@ -70,17 +69,17 @@ class wxPostScriptDC: public wxDC
   Bool landscape, resetFont, level2ok;
   char *afm_path;
 
-  int mode;
+  int mode, use_paper_bbox;
   char *preview_cmd, *print_cmd, *print_opts;
 
   // Create a printer DC
-  wxPostScriptDC(Bool interactive = TRUE, wxWindow *parent = NULL);
+  wxPostScriptDC(Bool interactive = TRUE, wxWindow *parent = NULL, Bool usePaperBBox = FALSE);
 
   ~wxPostScriptDC(void);
 
-  Bool Create(Bool interactive = TRUE, wxWindow *parent = NULL);
+  Bool Create(Bool interactive = TRUE, wxWindow *parent = NULL, Bool usePaperBBox = FALSE);
 
-  Bool PrinterDialog(Bool interactive, wxWindow *parent);
+  Bool PrinterDialog(Bool interactive, wxWindow *parent, Bool usePaperBBox);
 
   inline virtual void BeginDrawing(void) {} ;
   inline virtual void EndDrawing(void) {} ;

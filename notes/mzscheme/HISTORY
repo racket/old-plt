@@ -1,9 +1,9 @@
 
 Version 203.5
 Changed make-custom-input-port to drop the initial
- waitbale argument; instead the read and peek
+ waitable argument; instead the read and peek
  functions should return a waitable instead of 0
-Changed make-custom-output-port so tha the first
+Changed make-custom-output-port so that the first
  argument is #f or a procedure to return a waitable
  (instead of #f or a waitable)
 Added make-semaphore-peek

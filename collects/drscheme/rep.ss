@@ -276,9 +276,13 @@
 			       (begin (set! answer
 					    (call-with-values
 					     (lambda ()
-					       (with-parameterization user-param
-						 (lambda ()
-						   (syntax-checking-primitive-eval annotated))))
+					       (if (drscheme:language:use-zodiac)
+						   (with-parameterization user-param
+						     (lambda ()
+						       (syntax-checking-primitive-eval annotated)))
+						   (with-parameterization user-param
+						     (lambda ()
+						       (drscheme:init:primitive-eval annotated)))))
 					     (lambda x x)))
 				      (recur))))])
 		   (apply values (process-sexp sexp z f #t))))))]
@@ -681,9 +685,13 @@
 			   (lambda ()
 			     (call-with-values
 			      (lambda ()
-				(with-parameterization user-param
-				  (lambda ()
-				    (syntax-checking-primitive-eval expr))))
+				(if (drscheme:language:use-zodiac)
+				    (with-parameterization user-param
+				      (lambda ()
+					(syntax-checking-primitive-eval expr)))
+				    (with-parameterization user-param
+				      (lambda ()
+					(drscheme:init:primitive-eval expr)))))
 			      (lambda anss
 				(values anss #f))))
 			   (lambda () 
@@ -709,42 +717,50 @@
 	   (lambda (filename)
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
-		 (let* ([p (with-parameterization user-param
-			     (lambda ()
-			       (open-input-file filename)))]
-			[loc (zodiac:make-location 0 0 0 filename)]
-			[chars (begin0
-				 (list (read-char p) (read-char p) (read-char p) (read-char p))
-				 (close-input-port p))]
-			[process-sexps
-			 (let ([last (list (void))])
-			   (lambda (sexp recur)
-			     (cond
-			       [(process-finish? sexp)
-				(if (process-finish-error? sexp)
-				    (escape)
-				    last)]
-			       [else
-				(set! last
-				      (call-with-values
-				       (lambda ()
-					 (with-handlers ([(lambda (x) #t)
-							  (lambda (exn) 
-							    (report-exception-error exn))])
-					   (with-parameterization user-param
-					     (lambda ()
-					       (syntax-checking-primitive-eval sexp)))))
-				       (lambda x x)))
-				(recur)])))])
-		   (apply values 
-			  (if (equal? chars (list #\W #\X #\M #\E))
-			      (let ([edit (make-object drscheme:edit:edit%)])
-				(send edit load-file filename)
-				(process-edit edit process-sexps
-					      0 
-					      (send edit last-position)
-					      #t))
-			      (process-file filename process-sexps #t)))))))])
+		 (if (drscheme:language:use-zodiac)
+		     (let* ([p (with-parameterization user-param
+				 (lambda ()
+				   (open-input-file filename)))]
+			    [loc (zodiac:make-location 0 0 0 filename)]
+			    [chars (begin0
+				     (list (read-char p) (read-char p) (read-char p) (read-char p))
+				     (close-input-port p))]
+			    [process-sexps
+			     (let ([last (list (void))])
+			       (lambda (sexp recur)
+				 (cond
+				   [(process-finish? sexp)
+				    (if (process-finish-error? sexp)
+					(escape)
+					last)]
+				   [else
+				    (set! last
+					  (call-with-values
+					   (lambda ()
+					     (with-handlers ([(lambda (x) #t)
+							      (lambda (exn) 
+								(report-exception-error exn))])
+					       (if (drscheme:language:use-zodiac)
+						   (with-parameterization user-param
+						     (lambda ()
+						       (syntax-checking-primitive-eval sexp)))
+						   (with-parameterization user-param
+						     (lambda ()
+						       (drscheme:init:primitive-eval sexp))))))
+					   (lambda x x)))
+				    (recur)])))])
+		       (apply values 
+			      (if (equal? chars (list #\W #\X #\M #\E))
+				  (let ([edit (make-object drscheme:edit:edit%)])
+				    (send edit load-file filename)
+				    (process-edit edit process-sexps
+						  0 
+						  (send edit last-position)
+						  #t))
+				  (process-file filename process-sexps #t))))
+		     (with-parameterization user-param
+		       (lambda ()
+			 (drscheme:init:primitive-load filename)))))))])
 	(private 
 	  [insert-delta
 	   (lambda (s delta)

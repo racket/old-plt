@@ -74,6 +74,13 @@ _MysterX_
  browsers, which are instances of the class
  mx-browser%.
 
+> (block-while-browsers) 
+ 
+ Blocks until all browser windows have been closed or hidden,
+ using the show method of mx-browser%.  This is useful when
+ a MysterX program file is run as a script, to prevent MzScheme 
+ or MrEd from closing prematurely.
+
 > mx-browser% :: (make-object mx-browser% [label] [width] [height] [x] [y] [style-list])
 
   Creates an instance of a MysterX browser.

@@ -133,6 +133,7 @@ static MX_PRIM mxPrims[] = {
   // browsers
 
   { mx_make_browser,"make-browser",6,6},
+  { mx_block_while_browsers,"block-while-browsers",0,0}, 
   { mx_browser_show,"browser-show",2,2},
   { mx_navigate,"navigate",2,2 },
   { mx_go_back,"go-back",1,1 },
@@ -556,6 +557,8 @@ void scheme_release_browser(void *wb,void *hwndDestroy) {
     // dummy msg to force GetMessage() to return
     PostMessage(b->hwnd,WM_NULL,0,0);
   }
+
+  browserCount--;
 
   MX_MANAGED_OBJ_RELEASED(wb) = TRUE;
 }
@@ -4567,7 +4570,7 @@ void browserHwndMsgLoop(LPVOID p) {
       }
     }
 
-    while (GetMessage(&msg,NULL,0,0)) {
+    while (IsWindow(hwnd) && GetMessage(&msg,NULL,0,0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
       if (*destroy) {
@@ -4575,6 +4578,8 @@ void browserHwndMsgLoop(LPVOID p) {
 	DestroyWindow(hwnd);
       }
     }
+
+    browserCount--;
   }
 }
 

@@ -25,6 +25,7 @@
     mx-browser%
     mx-element%
     mx-version
+    block-while-browsers
     com-invoke
     com-get-property
     com-set-property!
@@ -77,6 +78,7 @@
     com-iunknown?)
 
   (define mx-version mxprims:mx-version)
+  (define block-while-browsers mxprims:block-while-browsers)
   (define com-invoke mxprims:com-invoke)
   (define com-method-type mxprims:com-method-type)
   (define com-get-property-type mxprims:com-get-property-type)

@@ -253,6 +253,7 @@ MX_PRIM_DECL(mx_version);
 // browsers
 
 MX_PRIM_DECL(mx_browser_show);
+MX_PRIM_DECL(mx_block_while_browsers);
 MX_PRIM_DECL(mx_navigate);
 MX_PRIM_DECL(mx_go_back);
 MX_PRIM_DECL(mx_go_forward);
@@ -592,4 +593,6 @@ extern HWND browserHwnd;
 extern BROWSER_WINDOW_STYLE_OPTION styleOptions[6];
 extern WCHAR *eventNames[11];
 
+// misc
 
+extern unsigned long browserCount;

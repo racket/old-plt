@@ -5,6 +5,7 @@ COM cleanup at shutdown now gets all objects
 In the demo (plt/collects/mxdemo.ss), the 
  mx-browser% object is instantiated using by-name
  arguments
+Added block-while-browsers
 
 Version 103-p3
 

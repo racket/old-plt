@@ -6,6 +6,7 @@
 
   (provide
    mx-version
+   block-while-browsers
    com-invoke
    com-set-property!
    com-get-property

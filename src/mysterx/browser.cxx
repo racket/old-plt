@@ -19,6 +19,11 @@
 
 HWND browserHwnd;
 
+/* we don't worry about overflow, since 
+   Windows can't even create this many windows */
+unsigned long browserCount;
+static BOOL noBrowsersCache = TRUE;
+
 BROWSER_WINDOW_STYLE_OPTION styleOptions[6] = {
   
   // keep alphabetic for bsearch()
@@ -253,7 +258,28 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
 
   scheme_register_finalizer(browser,scheme_release_browser,NULL,NULL,NULL);
 
+  ++browserCount;
+  noBrowsersCache = FALSE;
+
   return (Scheme_Object *)browser;
+}
+
+int browserExists(Scheme_Object *v) {
+  if (noBrowsersCache == TRUE) {
+    return TRUE;
+  }
+
+  if (browserCount == 0) {
+    noBrowsersCache = TRUE;
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+Scheme_Object *mx_block_while_browsers(int argc,Scheme_Object **argv) {
+  scheme_block_until(browserExists,NULL,NULL,1.0);
+  return scheme_void;
 }
 
 Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
@@ -342,8 +368,11 @@ Scheme_Object *mx_show_browser_window(int argc,Scheme_Object **argv,
 }
 
 Scheme_Object *mx_browser_show(int argc,Scheme_Object **argv) {
+  BOOL noShow;
+  noShow = (argv[1] == scheme_false);
+  browserCount +=  noShow ? -1 : 1;
   return mx_show_browser_window(argc,argv,
-				argv[1] == scheme_false ? SW_HIDE : SW_SHOW,
+				noShow ? SW_HIDE : SW_SHOW,
 				"show");
 }
 

@@ -33,7 +33,8 @@
 	(public
 	  [panel% (class-asi mred:container:vertical-panel%
 		    (public
-		      [default-border-size 2]))]
+		      [default-spacing-width 1]
+		      [default-border-width 1]))]
 	  [on-close (lambda () #t)])
 	(sequence 
 	  (apply super-init args))

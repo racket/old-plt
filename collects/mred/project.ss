@@ -22,7 +22,7 @@
     
     (define make-project-frame%
       (lambda (super%)
-	(class super% ([filename #f][visible? #t])
+	(class super% ([filename #f] [visible? #t])
 	  (inherit file-menu file-menu:open-id show
 		   get-client-size set-title make-menu panel% panel)
 	  (rename [super-on-size on-size]
@@ -32,7 +32,6 @@
 	    [HEIGHT 300]
 	    [TOP-MARGIN 0])
 	  (private 
-	    [file-count 0]
 	    [project-modified? #f]
 	    [project-ok-unsaved? #f])
 	  (public
@@ -90,10 +89,14 @@
 	    [add-file 
 	     (lambda (name)
 	       (let ([name (mzlib:file:find-relative-path project-dir name)])
-		 (set! file-count (add1 file-count))
 		 (send project-item-list append name)
 		 (set-modified #t)
 		 name))]
+	    [remove-file
+	     (lambda (name)
+	       (let ([name (mzlib:file:find-relative-path project-dir name)])
+		 (send project-item-list delete
+		       (send project-item-list find-string name))))]
 	    [open-file
 	     (lambda (name)
 	       (let ([name (mzlib:file:normalize-path name project-dir)])
@@ -122,8 +125,7 @@
 		 (for-each (lambda (n) (send project-item-list delete n))
 			   selections)
 		 (unless (null? selections)
-		   (set-modified #t))
-		 (set! file-count (- file-count (length selections)))))]
+		   (set-modified #t))))]
 	    [save-project
 	     (lambda (as?)
 	       (let* ([new? (or as? (not project-filename))]
@@ -137,6 +139,7 @@
 		 (when file
 		   (if new?
 		       (let* ([new-dir (mzlib:file:path-only file)]
+			      [file-count (send project-item-list number)]
 			      [names
 			       (let loop ([n 0])
 				 (if (< n file-count)
@@ -156,12 +159,13 @@
 		     (lambda ()
 		       (write (make-options-assoc-list))
 		       (newline)
-		       (let loop ([n 0])
-			 (if (< n file-count)
-			     (let ([s (send project-item-list get-string n)])
-			       (write s)
-			       (newline)
-			       (loop (add1 n)))))
+		       (let ([file-count (send project-item-list number)])
+			 (let loop ([n 0])
+			   (if (< n file-count)
+			       (let ([s (send project-item-list get-string n)])
+				 (write s)
+				 (newline)
+				 (loop (add1 n))))))
 		       (set-modified #f))
 		     'truncate)
 		   (let ([name (or (mzlib:file:file-name-from-path file) "Project")])
@@ -169,20 +173,22 @@
 		     (set-title name)))))]
 	    [for-each-file
 	     (lambda (f)
-	       (let loop ([n 0])
-		 (if (< n file-count)
-		     (let ([s (send project-item-list get-string n)])
-		       (f (mzlib:file:normalize-path s project-dir))
-		       (loop (add1 n))))))]
+	       (let ([file-count (send project-item-list number)])
+		 (let loop ([n 0])
+		   (if (< n file-count)
+		       (let ([s (send project-item-list get-string n)])
+			 (f (mzlib:file:normalize-path s project-dir))
+			 (loop (add1 n)))))))]
 	    [map-file
 	     (lambda (f)
+	       (let ([file-count (send project-item-list number)])
 	       (let loop ([n 0])
 		 (if (< n file-count)
 		     (let ([s (send project-item-list get-string n)])
 		       (cons
 			(f (mzlib:file:normalize-path s project-dir))
 			(loop (add1 n))))
-		     '())))]
+		     '()))))]
 	    [file-in-project?
 	     (lambda (name)
 	       (ormap mzlib:function:identity (map-file (lambda (n) (string=? n name)))))]
@@ -199,7 +205,6 @@
 		   (begin
 		     (send group close-all)
 		     (send project-item-list clear)
-		     (set! file-count 0)
 		     (send group clear)
 		     (when filename
 		       (set! project-filename (mzlib:file:normalize-path filename))
@@ -217,7 +222,6 @@
 					"Error reading Scheme project file items."
 					"Error")
 				       (read-error #f))
-				     (set! file-count (add1 file-count))
 				     (send project-item-list append item)
 				     (loop))))))))
 		     (set! project-modified? #f)

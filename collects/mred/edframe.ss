@@ -38,13 +38,13 @@
 	    [allow-split? #t])
 	  (private 
 	    [other-offset 0]
-	    [keep-buffers? (is-a? frameset mred:group:frame-group%)]
 	    
 	    [frames frameset]
+	    [keep-buffers? (is-a? frameset mred:group:frame-group%)]
 	    [buffers (if keep-buffers? (ivar frames buffers))]
 	    
 	    [save-as
-	     (lambda (format)
+	     (opt-lambda ([format wx:const-media-ff-same])
 	       (let ([file (mred:finder:put-file)])
 		 (if file
 		     (send edit save-file file format))))])
@@ -206,7 +206,7 @@
 				 (mred:handler:edit-file #f)))]
 	    [file-menu:revert (lambda () (send (active-edit) load-file))]
 	    [file-menu:save (lambda () (send (active-edit) save-file))]
-	    [file-menu:save-as (lambda () (save-as wx:const-media-ff-same))]
+	    [file-menu:save-as (lambda () (save-as))]
 	    [file-menu:close (lambda () (if (on-close) (show #f)))]
 	    [file-menu:between-open-and-save
 	     (lambda (file-menu)
@@ -304,7 +304,6 @@
 	      (open-file filename))
 	    
 	    (when show?
-	      (wx:yield)
 	      (send (active-canvas) set-focus)))
 	  (public
 	    [edit (active-edit)]))))

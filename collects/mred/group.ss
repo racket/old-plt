@@ -146,117 +146,126 @@
       (let ([b-group% buffer-group%])
 	(let-struct frame (frame id)
 	  (class '() ()
-		 (private
-		  [active-frame #f]
-		  [frame-counter 0]
-		  [frames ()])
+	    (private
+	      [active-frame #f]
+	      [frame-counter 0]
+	      [frames null]
+	      [todo-to-new-frames null])
+	    
+	    (public
+	      [buffer-group% b-group%]
+	      [frame% mred:editor-frame:editor-frame%]
+	      [get-frame% (lambda () frame%)]
+	      
+	      [get-buffer-group% (lambda () buffer-group%)]
+	      [ask-before-closing-last? #t]
+	      [frame-title-prefix "MrEd"]
+	      [make-full-frame-prefix
+	       (lambda (id)
+		 (string-append 
+		  frame-title-prefix
+		  (if (= 1 id)
+		      ""
+		      (string-append
+		       " #"
+		       (number->string id)))
+		  ": "))]
 
-		 (public
-		  [buffer-group% b-group%]
-		  [frame% mred:editor-frame:editor-frame%]
-		  [get-frame% (lambda () frame%)]
+	      [for-each-frame
+	       (lambda (f)
+		 (for-each (lambda (x) (f (frame-frame x))) frames)
+		 (set! todo-to-new-frames (cons f todo-to-new-frames)))]
 
-		  [get-buffer-group% (lambda () buffer-group%)]
-		  [ask-before-closing-last? #t]
-		  [frame-title-prefix "MrEd"]
-		  [make-full-frame-prefix
-		   (lambda (id)
-		     (string-append 
-		      frame-title-prefix
-		      (if (= 1 id)
-			  ""
-			  (string-append
-			   " #"
-			   (number->string id)))
-		      ": "))]
-		  [set-frame-title-prefix
-		   (lambda (t)
-		     (if (string? t)
-			 (begin
-			   (set! frame-title-prefix t)
-			   (for-each
-			    (lambda (f)
-			      (send (frame-frame f) set-title-prefix
-				    (make-full-frame-prefix (frame-id f))))
-			    frames))))]
-		  [get-active-frame
-		   (lambda ()
-		     (cond
-		      [active-frame active-frame]
-		      [(null? frames) #f]
-		      [else (frame-frame (car frames))]))]
-		  [set-active-frame
-		   (lambda (f)
-		     (set! active-frame f))]
-		  [insert-frame
-		   (lambda (f)
-		     (set! frame-counter (add1 frame-counter))
-		     (send f set-title-prefix
-			   (make-full-frame-prefix frame-counter))
-		     (set! frames (append frames 
-					  (list (make-frame f
-							    frame-counter)))))]
-		  
-		  [remove-frame
-		   (opt-lambda (f [reason "Close"])
-		     (if (eq? f active-frame)
-			 (set! active-frame #f))
-		     (catch exit
-			    (set! frames
-				  (mzlib:function:remove
-				   f frames
-				   (lambda (f fr)
-				     (if (eq? f (frame-frame fr))
-					 (begin
-					   (if (and (null? (cdr frames))
-						    ask-before-closing-last?
-						    (not (send buffers 
-							       check-buffers
-							       reason)))
-					       (exit #f))
-					   #t)
-					 #f))))
-			    #t))]
-		  [clear
-		   (lambda ()
-		     (if (send buffers clear)
-			 (begin 
-			   (set! frames ())
-			   #t)
-			 #f))]
-		  [close-all
-		   (lambda ()
-		     (catch escape
-			    (for-each (lambda (f)
-					(let ([frame (frame-frame f)])
-					  (if (send frame on-close)
-					      (send frame show #f)
-					      (escape #f))))
-				      frames)
-			    #t))]
-		  [new-frame
-		   (lambda (filename)
-		     (if (string? filename)
-			 (mred:handler:edit-file filename this #f
-						  (lambda (fn group)
-						    (make-object frame% fn #t group)))
-			 (make-object (get-frame%) filename #t this)))]
-		  [new-frame-for-buffer
-		   (lambda (buffer)
-		     (new-frame buffer))]
-		  [open-file
-		   (lambda (name)
-		     (let* ([b (send buffers find-buffer-by-name 'file name)]
-			    [f (if b
-				   (send b get-frame)
-				   #f)])
-		       (if f
-			   (begin
-			     (send f show #t)
-			     (send f iconize #f))
-			   (new-frame name))))])
-		 (public
-		  [buffers (make-object (get-buffer-group%))])))))
+	      [set-frame-title-prefix
+	       (lambda (t)
+		 (if (string? t)
+		     (begin
+		       (set! frame-title-prefix t)
+		       (for-each
+			(lambda (f)
+			  (send (frame-frame f) set-title-prefix
+				(make-full-frame-prefix (frame-id f))))
+			frames))))]
+	      [get-active-frame
+	       (lambda ()
+		 (cond
+		   [active-frame active-frame]
+		   [(null? frames) #f]
+		   [else (frame-frame (car frames))]))]
+	      [set-active-frame
+	       (lambda (f)
+		 (set! active-frame f))]
+	      [insert-frame
+	       (lambda (f)
+		 (set! frame-counter (add1 frame-counter))
+		 (send f set-title-prefix
+		       (make-full-frame-prefix frame-counter))
+		 (set! frames 
+		       (append frames 
+			       (list 
+				(make-frame f frame-counter))))
+		 (for-each (lambda (fn) (fn f)) todo-to-new-frames))]
+	      
+	      [remove-frame
+	       (opt-lambda (f [reason "Close"])
+		 (if (eq? f active-frame)
+		     (set! active-frame #f))
+		 (catch exit
+		   (set! frames
+			 (mzlib:function:remove
+			  f frames
+			  (lambda (f fr)
+			    (if (eq? f (frame-frame fr))
+				(begin
+				  (if (and (null? (cdr frames))
+					   ask-before-closing-last?
+					   (not (send buffers 
+						      check-buffers
+						      reason)))
+				      (exit #f))
+				  #t)
+				#f))))
+		   #t))]
+	      [clear
+	       (lambda ()
+		 (if (send buffers clear)
+		     (begin 
+		       (set! frames ())
+		       #t)
+		     #f))]
+	      [close-all
+	       (lambda ()
+		 (catch escape
+		   (for-each (lambda (f)
+			       (let ([frame (frame-frame f)])
+				 (if (send frame on-close)
+				     (send frame show #f)
+				     (escape #f))))
+			     frames)
+		   #t))]
+	      [new-frame
+	       (lambda (filename)
+		 (if (string? filename)
+		     (mred:handler:edit-file filename this #f
+					     (lambda (fn group)
+					       (make-object frame% fn #t group)))
+		     (make-object (get-frame%) filename #t this)))]
+	      [new-frame-for-buffer
+	       (lambda (buffer)
+		 (new-frame buffer))]
+	      [open-file
+	       (lambda (name)
+		 (let* ([b (send buffers find-buffer-by-name 'file name)]
+			[f (if b
+			       (send b get-frame)
+			       #f)])
+		   (if f
+		       (begin
+			 (send f show #t)
+			 (send f iconize #f))
+		       (new-frame name))))])
+	    (public
+	      [buffers (make-object (get-buffer-group%))])))))
     
     (define frames #f)
 

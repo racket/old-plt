@@ -1,12 +1,13 @@
 (define mred:icon@
   (unit/sig mred:icon^
-    (import [mred:debug : mred:debug^])
+    (import [mred:debug : mred:debug^]
+	    [mred:constants : mred:constants^])
 	    
     (mred:debug:printf 'invoke "mred:icon@")
 
     ; Load the MrEd icon
     (define icon 
-      (let ([dir (global-defined-value 'mred:system-source-directory)])
+      (let ([dir mred:constants:system-source-directory])
 	(if (eq? wx:platform 'windows)
 	    (make-object wx:icon% (build-path dir "mred.bmp") 
 			 wx:const-bitmap-type-bmp)
@@ -15,7 +16,7 @@
 
     ; Load autowrapping bitmap
     (define autowrap-bitmap 
-      (let ([dir (global-defined-value 'mred:system-source-directory)])
+      (let ([dir mred:constants:system-source-directory])
 	(if (eq? wx:platform 'windows)
 	    (make-object wx:bitmap% (build-path dir "return.bmp") 
 			 wx:const-bitmap-type-bmp)
@@ -23,7 +24,7 @@
 			 wx:const-bitmap-type-xbm))))
     
     (define paren-highlight-bitmap 
-      (let ([dir (global-defined-value 'mred:system-source-directory)])
+      (let ([dir mred:constants:system-source-directory])
 	(if (eq? wx:platform 'windows)
 	    (make-object wx:bitmap% (build-path dir "paren.bmp") 
 			 wx:const-bitmap-type-bmp)

@@ -1,30 +1,6 @@
-(define-signature mred:debug^ (printf exit?))
-
-(define-signature mred:application^
-  (console-frame
-   eval-string))
-
 (define-signature mred:exn^
   ((struct exn ())
    (struct exn:unknown-preference ())))
-
-(define-signature mred:exn-external^
-  (exn? exn:unknown-preference?))
-
-(define-signature mred:preferences^
-  (get-preference
-   add-preference-callback
-   set-preference
-   set-preference-default
-   set-preference-un/marshall
-
-   save-user-preferences
-   read-user-preferences
-   restore-defaults
-
-   add-preference-panel
-   show-preferences-dialog
-   hide-preferences-dialog))
 
 (define-signature mred:container-children^
   (const-default-size
@@ -49,14 +25,42 @@
    media-canvas%
    text-window%))
 
+(define-signature mred:hyper-loader^
+  (open-hyper-make
+   open-hyper-view
+   hyper-text-require))
+
+(define-signature mred:application^
+  (console
+   eval-string))
+
+; mred^ is the concatenation of the following signatures in order.
+
+(define-signature mred:debug^ (printf exit? on?))
+
+(define-signature mred:constants^
+  (plt-home-directory system-source-directory))
+
+(define-signature mred:exn-external^
+  (exn? exn:unknown-preference?))
+
+(define-signature mred:preferences^
+  (get-preference
+   add-preference-callback
+   set-preference
+   set-preference-default
+   set-preference-un/marshall
+
+   save-user-preferences
+   read-user-preferences
+   restore-defaults
+
+   add-preference-panel
+   show-preferences-dialog
+   hide-preferences-dialog))
+
 (define-signature mred:container-frames^
   (frame% dialog-box%))
-
-(define-signature mred:container-panels^
-  (panel%
-   horizontal-panel%
-   vertical-panel%
-   single-panel%))
 
 (define-signature mred:container-children-export^
   (const-default-size
@@ -78,34 +82,11 @@
    media-canvas%
    text-window%))
 
-(define-signature mred:container^
-  ((open mred:container-frames^)
-   (open mred:container-children-export^)
-   (open mred:container-panels^)))
-;  (const-default-size
-;   const-default-posn
-;   const-default-spacing
-;   (struct child-info (x-posn y-posn x-min y-min x-stretch y-stretch))
-;   frame%
-;   dialog-box%
-;   canvas%
-;   media-canvas%
-;   button%
-;   check-box%
-;   choice%
-;   gauge%
-;   list-box%
-;   message%
-;   radio-box%
-;   slider%
-;   text-window%
-;   text%
-;   multi-text%
-;   panel%
-;   horizontal-panel%
-;   vertical-panel%
-;   single-panel%))
-
+(define-signature mred:container-panels^
+  (panel%
+   horizontal-panel%
+   vertical-panel%
+   single-panel%))
 
 (define-signature mred:autoload^
   (make-autoload))
@@ -279,7 +260,51 @@
    backward-match
    skip-whitespace))
 
-(define-signature mred:hyper-loader^
-  (open-hyper-make
+
+(define-signature mred:hyper-edit^
+  ((struct hypertag (name position))
+   (struct hyperlink (anchor-start anchor-end reference-file reference-tag))
+   hyper-buffer-data%
+   hyper-data-class
+   make-hyper-edit%
+   hyper-edit%))
+
+(define-signature mred:hyper-dialog^
+  (hyper-tag-dialog%
+   hyper-get-current-tags))
+
+(define-signature mred:hyper-frame^
+  (hyper-frame-group
+   make-hyper-canvas%
+   hyper-canvas%
+   make-hyper-basic-frame%
+   hyper-basic-frame%
+   make-hyper-view-frame%
+   hyper-view-frame%
+   make-hyper-make-frame%
+   hyper-make-frame%
    open-hyper-view
+   open-hyper-make
    hyper-text-require))
+
+;; mred^ is the concatenation of the signatures above this
+
+(define-signature mred:container^
+  ((open mred:container-frames^)
+   (open mred:container-children-export^)
+   (open mred:container-panels^)))
+
+(define-signature mred^
+  ((unit debug : mred:debug^)
+   (open mred:constants^)
+   (open mred:exn-external^)
+   (open mred:container^) (open mred:preferences^)
+   (open mred:autoload^) (open mred:autosave^) (open mred:exit^)
+   (open mred:gui-utils^) (open mred:console^) (open mred:path-utils^)
+   (open mred:finder^)
+   (open mred:find-string^) (open mred:edit^) (open mred:canvas^)
+   (open mred:frame^) (open mred:editor-frame^)
+   (open mred:group^) (open mred:handler^) (open mred:icon^) (open mred:keymap^)
+   (open mred:match-cache^) (open mred:menu^) (open mred:mode^) (open mred:project^)
+   (open mred:scheme-paren^) (open mred:scheme-mode^) (open mred:paren^)
+   (open mred:hyper-edit^) (open mred:hyper-dialog^) (open mred:hyper-frame^)))

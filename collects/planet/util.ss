@@ -135,16 +135,14 @@
        (let-values ([(path name must-be-dir?) (split-path dir)])
          (make-planet-archive dir (string-append (path->string name) ".plt")))]
       [(dir archive-name)
-       (begin
-         (parameterize ((current-directory dir))
-           
-           (pack archive-name
-                 "archive" 
-                 '(".")
-                 null
-                 std-filter
-                 #t
-                 'file
-                 #f
-                 #f))
-         (build-path (find-system-path 'temp-dir) archive-name))])))
+       (pack archive-name
+             "archive" 
+             (list (find-relative-path (normalize-path (current-directory)) 
+                                       (normalize-path dir)))
+             null
+             std-filter
+             #t
+             'file
+             #f
+             #f)
+       (normalize-path archive-name)])))

@@ -327,7 +327,7 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
     }
 
   if ((long)whatScrollData != 0)
-    cScroll->SetScrollData(&scrollData, whatScrollData, NULL);	
+    cScroll->SetScrollData(scrollData, whatScrollData, NULL);	
 }
 
 //-----------------------------------------------------------------------------
@@ -469,7 +469,7 @@ void wxCanvas::Scroll(int xPos, int yPos)
     }
 
   if ((long)whatScrollData != 0)
-    cScroll->SetScrollData(&scrollData, whatScrollData, NULL);
+    cScroll->SetScrollData(scrollData, whatScrollData, NULL);
 }
 
 void wxCanvas::ScrollPercent(float x, float y)
@@ -643,7 +643,7 @@ void wxCanvas::SetScrollPos(int dir, int val)
   if (dir == wxVERTICAL)
     vv = val;
   else
-    vv = GetScrollPos(wxVERTICAL)
+    vv = GetScrollPos(wxVERTICAL);
 
   wxCanvas::SetScrollbars(horiz_units, vert_units, 
 			  units_x, units_y,

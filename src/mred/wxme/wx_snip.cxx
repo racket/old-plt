@@ -946,13 +946,16 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
     }
     STRFREE(buffer);
     if (l > 500) {
-      buffer = TRY_STRALLOC(l + 1);
+      char *ts;
+      ts = TRY_STRALLOC(l + 1);
+      buffer = ts;
       if (!buffer) {
 	Read(100, f);
 	return;
       }
-    } else
+    } else {
       buffer = STRALLOC(l + 1);
+    }
 
     allocated = l;
 
@@ -1392,11 +1395,12 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 #ifdef wx_mac
     if (name[0] != ':') {
       int i;
-      for (i = 0; name[i]; i++)
+      for (i = 0; name[i]; i++) {
 	if (name[i] == ':') {
 	  relative = FALSE;
 	  break;
 	}
+      }
     }
 #else
     if (name[0] == '/')

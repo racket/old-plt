@@ -272,7 +272,8 @@ static char pref_buf[1024];
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {
   int k, i, j;
-  char resource[1024], **defaults, *internal;
+  char resource[1024], *internal;
+  GC_CAN_IGNORE char **defaults;
 
   k = 1 << count;
 

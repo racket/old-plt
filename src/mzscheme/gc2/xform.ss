@@ -41,8 +41,8 @@
     (current-library-collection-paths 
      (list p))))
 
-(define precompiling-header? #f)
-(define precompiled-header #f)
+(define precompiling-header? (getenv "XFORM_PRECOMP"))
+(define precompiled-header (getenv "XFORM_USE_PRECOMP"))
 
 (define show-info? #f)
 (define check-arith? #t)
@@ -96,6 +96,9 @@
 
 ;(require-library "errortrace.ss" "errortrace")
 (error-print-width 100)
+
+(define (change-suffix filename new)
+  (regexp-replace "[.][^.]*$" filename new))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; "AST" structures
@@ -191,10 +194,10 @@
 
 (define recorded-cpp-out
   (and precompiling-header?
-       (open-output-file (regexp-replace "[.].*" file-out ".e") 'truncate)))
+       (open-output-file (change-suffix file-out ".e") 'truncate)))
 (define recorded-cpp-in
   (and precompiled-header
-       (open-input-file (regexp-replace "[.].*" precompiled-header ".e"))))
+       (open-input-file (change-suffix precompiled-header ".e"))))
 (define (skip-to-interesting-line p)
   (let ([l (read-line p 'any)])
     (cond
@@ -206,7 +209,7 @@
 (when recorded-cpp-in
   ;; Skip over common part:
   (let loop ()
-    (let ([pl (skip-to-interesting-line recorded-cpp-in)])
+    (let ([pl (read-line recorded-cpp-in 'any)])
       (unless (eof-object? pl)
 	(let ([l (skip-to-interesting-line (car cpp-process))])
 	  (unless (equal? pl l)
@@ -215,22 +218,34 @@
 		   l))
 	  (loop)))))
   (close-input-port recorded-cpp-in))
-	  
+
 ;; cpp output to ctok input:
 (thread (lambda ()
-	  (let ([s (make-string 4096)])
-	    (let loop ()
-	      (let ([l (read-string-avail! s (car cpp-process))])
-		(unless (eof-object? l)
-	          (let ([s (if (< l 4096) (substring s 0 l) s)])
-		    (when recorded-cpp-out
-		      (display s recorded-cpp-out))
-		    (display s local-ctok-write))
-		  (loop))))
-	    (when recorded-cpp-out
-	      (close-output-port recorded-cpp-out))
-	    (close-input-port (car cpp-process))
-	    (close-output-port local-ctok-write))))
+	  (if recorded-cpp-out
+	      ;;line-by-line, so we can filter:
+	      (begin
+		(let loop ()
+		  (let ([l (read-line (car cpp-process))])
+		    (unless (eof-object? l)
+		      (unless (or (string=? l "") (eq? #\# (string-ref l 0)))
+			(display l recorded-cpp-out)
+			(newline  recorded-cpp-out))
+		      (display l local-ctok-write)
+		      (newline local-ctok-write)
+		      (loop))))
+		(close-output-port recorded-cpp-out)
+		(close-input-port (car cpp-process))
+		(close-output-port local-ctok-write))
+	      ;; block copy:
+	      (let ([s (make-string 4096)])
+		(let loop ()
+		  (let ([l (read-string-avail! s (car cpp-process))])
+		    (unless (eof-object? l)
+		      (let ([s (if (< l 4096) (substring s 0 l) s)])
+			(display s local-ctok-write))
+		      (loop))))
+		(close-input-port (car cpp-process))
+		(close-output-port local-ctok-write)))))
 
 (define e-raw #f)
 
@@ -289,7 +304,7 @@
 
 (define per-block-push? #t)
 
-(when (and pgc? (not precompiling-header?))
+(when (and pgc? (not precompiled-header))
   ;; Header:
   (printf "#define FUNCCALL(setup, x) (setup, x)~n")
   (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(GC_variable_stack = (void **)__gc_var_stack__[0], x)~n")
@@ -319,6 +334,10 @@
   (printf "#define DELETE_ARRAY(x) (delete[] x)~n")
   (printf "#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n")
   (printf "~n"))
+
+(when (and pgc? precompiled-header)
+  (printf "#include \"~a\"~n" (let-values ([(base name dir?) (split-path precompiled-header)])
+				name)))
 
 (when palm?
   (printf "#include \"segmap.h\"~n"))
@@ -489,46 +508,10 @@
 (define non-pointer-types '(int char long unsigned ulong uint void float double))
 (define struct-defs '())
 
-;; For precompiling a header:
-(define precompiled '())
-
-(define makers (make-hash-table))
-(hash-table-put! makers 'struct:tok make-tok)
-(hash-table-put! makers 'struct:seq make-seq)
-(hash-table-put! makers 'struct:parens make-parens)
-(hash-table-put! makers 'struct:brackets make-brackets)
-(hash-table-put! makers 'struct:braces make-braces)
-(hash-table-put! makers 'struct:callstage-parens make-callstage-parens)
-(hash-table-put! makers 'struct:creation-parens make-creation-parens)
-(hash-table-put! makers 'struct:call make-call)
-(hash-table-put! makers 'struct:block-push make-block-push)
-(hash-table-put! makers 'struct:note make-note)
-(hash-table-put! makers 'struct:vtype make-vtype)
-(hash-table-put! makers 'struct:pointer-type make-pointer-type)
-(hash-table-put! makers 'struct:array-type make-array-type)
-(hash-table-put! makers 'struct:struct-type make-struct-type)
-(hash-table-put! makers 'struct:struct-array-type make-struct-array-type)
-(hash-table-put! makers 'struct:union-type make-union-type)
-(hash-table-put! makers 'struct:non-pointer-type make-non-pointer-type)
-(hash-table-put! makers 'struct:live-var-info make-live-var-info)
-(hash-table-put! makers 'struct:prototype make-prototype)
-(hash-table-put! makers 'struct:c++-class make-c++-class)
-
-(define (unmarshall v)
-  (let loop ([v v])
-    (cond
-     [(pair? v) (cons (loop (car v)) (loop (cdr v)))]
-     [(vector? v)
-      (let ([maker (hash-table-get makers (vector-ref v 0) (lambda () #f))])
-	(if maker
-	    (apply maker (map loop (cdr (vector->list v))))
-	    (list->vector (map loop (vector->list v)))))]
-     [else v])))
+(define (make-short-tok l) (make-tok l #f #f))
 
 (when precompiled-header
-  (let ([p (open-input-file precompiled-header)])
-    (set! precompiled (map unmarshall (read p)))
-
+  (let ([l (load (change-suffix precompiled-header ".zo"))])
     (for-each (lambda (x)
 		(hash-table-put! used-symbols (car x) 
 				 (+
@@ -536,15 +519,16 @@
 				   used-symbols (car x)
 				   (lambda () 0))
 				  (cdr x))))
-	      (read p))
+	      (list-ref l 0))
 
-    (set! c++-classes (map unmarshall (read p)))
-    (prototyped (map unmarshall (read p)))
-    (top-vars (map unmarshall (read p)))
 
-    (set! pointer-types (map unmarshall (read p)))
-    (set! non-pointer-types (map unmarshall (read p)))
-    (set! struct-defs (map unmarshall (read p)))))
+    (set! c++-classes (list-ref l 1))
+    (prototyped (list-ref l 2))
+    (top-vars (list-ref l 3))
+
+    (set! pointer-types (list-ref l 4))
+    (set! non-pointer-types (list-ref l 5))
+    (set! struct-defs (list-ref l 6))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pretty-printing output
@@ -748,6 +732,8 @@
 
 (define skipping? #f)
 
+(define re:h (regexp "[.]h$"))
+
 (define (top-level e where can-drop-vars?)
   (cond
    [(end-skip? e)
@@ -835,7 +821,7 @@
       (when show-info? (printf "/* FUNCTION ~a */~n" name))
       (if (or (not pgc?)
 	      (and where 
-		   (regexp-match "[.]h$" where)
+		   (regexp-match re:h where)
 		   (let loop ([e e][prev #f])
 		     (cond
 		      [(null? e) #t]
@@ -2900,10 +2886,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(for-each (lambda (sube)
-	    (print-it sube 0 #t #f))
-	  precompiled)
-
 (let* ([e e-raw])
   (set! e-raw #f) ;; to allow GC
   (foldl-statement
@@ -2913,34 +2895,69 @@
      (let* ([where (or (tok-file (car sube))
 		       where)]
 	    [sube (top-level sube where #t)])
-       (if precompiling-header?
-	   (set! precompiled (cons sube precompiled))
-	   (print-it sube 0 #t #f))
+       (print-it sube 0 #t #f)
        where))
    #f))
+
+
+(define makers (make-hash-table))
+(hash-table-put! makers 'struct:tok 'make-tok)
+(hash-table-put! makers 'struct:seq 'make-seq)
+(hash-table-put! makers 'struct:parens 'make-parens)
+(hash-table-put! makers 'struct:brackets 'make-brackets)
+(hash-table-put! makers 'struct:braces 'make-braces)
+(hash-table-put! makers 'struct:callstage-parens 'make-callstage-parens)
+(hash-table-put! makers 'struct:creation-parens 'make-creation-parens)
+(hash-table-put! makers 'struct:call 'make-call)
+(hash-table-put! makers 'struct:block-push 'make-block-push)
+(hash-table-put! makers 'struct:note 'make-note)
+(hash-table-put! makers 'struct:vtype 'make-vtype)
+(hash-table-put! makers 'struct:pointer-type 'make-pointer-type)
+(hash-table-put! makers 'struct:array-type 'make-array-type)
+(hash-table-put! makers 'struct:struct-type 'make-struct-type)
+(hash-table-put! makers 'struct:struct-array-type 'make-struct-array-type)
+(hash-table-put! makers 'struct:union-type 'make-union-type)
+(hash-table-put! makers 'struct:non-pointer-type 'make-non-pointer-type)
+(hash-table-put! makers 'struct:live-var-info 'make-live-var-info)
+(hash-table-put! makers 'struct:prototype 'make-prototype)
+(hash-table-put! makers 'struct:c++-class 'make-c++-class)
+
+(define (marshall v)
+  (let loop ([v v])
+    (cond
+     [(struct? v) (let ([vec (struct->vector v)])
+		    (if (eq? 'struct:tok (vector-ref vec 0))
+			(list 'make-short-tok (loop (vector-ref vec 1)))
+			(cons
+			 (hash-table-get makers (vector-ref vec 0))
+			 (map loop (cdr (vector->list vec))))))]
+     [(list? v) (cons 'list (map loop v))]
+     [(pair? v) (list 'cons (loop (car v)) (loop (cdr v)))]
+     [(vector? v)
+      (cons 'vector (map loop (vector->list v)))]
+     [(symbol? v) (list 'quote v)]
+     [else v])))
 
 (when precompiling-header?
   (parameterize ([current-inspector power-inspector]
 		 [print-struct #t])
-    (write (reverse! precompiled))
-    (newline)
+    (let ([e
+	   (list
+	    'list
+	    
+	    (list 'quote (hash-table-map used-symbols cons))
 
-    (write (hash-table-map used-symbols cons))
-    (newline)
+	    (marshall c++-classes)
+	    (marshall (prototyped))
+	    (marshall (top-vars))
 
-    (write c++-classes)
-    (newline)
-    (write (prototyped))
-    (newline)
-    (write (top-vars))
-    (newline)
-
-    (write pointer-types)
-    (newline)
-    (write non-pointer-types)
-    (newline)
-    (write struct-defs)
-    (newline)))
+	    (marshall pointer-types)
+	    (marshall non-pointer-types)
+	    (marshall struct-defs))])
+      (with-output-to-file (change-suffix file-out ".zo")
+	(lambda ()
+	  (write (compile e)))
+	'truncate))))
 
 (close-output-port (current-output-port))
 

@@ -413,6 +413,8 @@ wxbMenuBar::wxbMenuBar(int N, wxMenu* Menus[],
 		       char* windowName)
   : wxItem( windowName)
 {
+  wxMenu *menu;
+
   n = N;
   menus = Menus;
   titles = Titles;
@@ -420,20 +422,24 @@ wxbMenuBar::wxbMenuBar(int N, wxMenu* Menus[],
   __type = wxTYPE_MENU_BAR;
 	
   for (int i = 0; i < n; i++) {
-    menus[i]->menu_bar = (wxMenuBar*) this;
-    menus[i]->SetTitle(titles[i]);
+    menu = Menus[i];
+    menu->menu_bar = (wxMenuBar*) this;
+    menu->SetTitle(titles[i]);
   }
 }
 
 wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
 {
+  wxMenu *menu;
+
   __type = wxTYPE_MENU_BAR;
   n = N;
   menus = Menus;
   titles = Titles;
   menu_bar_frame = NULL;
   for (int i = 0; i < N; i++) {
-    menus[i]->menu_bar = (wxMenuBar *) this;
+    menu = menus[i];
+    menu->menu_bar = (wxMenuBar *) this;
   }
 }
 
@@ -479,12 +485,16 @@ int wxbMenuBar::FindMenuItem (char *menuString, char *itemString)
 {
   char buf1[200];
   char buf2[200];
+  wxMenu *menu;
+
   wxStripMenuCodes (menuString, buf1);
   for (int i = 0; i < n; i++)
     {
       wxStripMenuCodes (titles[i], buf2);
-      if (strcmp (buf1, buf2) == 0)
-	return menus[i]->FindItem (itemString);
+      if (strcmp (buf1, buf2) == 0) {
+	menu = menus[i];
+	return menu->FindItem (itemString);
+      }
     }
   return -1;
 }
@@ -492,12 +502,15 @@ int wxbMenuBar::FindMenuItem (char *menuString, char *itemString)
 wxMenuItem *wxbMenuBar::FindItemForId (int Id, wxMenu ** itemMenu)
 {
   wxMenuItem *item = NULL;
+  wxMenu *menu;
 
   if (itemMenu)
     *itemMenu = NULL;
 
   for (int i = 0; i < n; i++) {
-    if ((item = menus[i]->FindItemForId (Id, itemMenu)))
+    menu = menus[i];
+    item = menu->FindItemForId(Id, itemMenu);
+    if (item)
       return item;
   }
   return NULL;
@@ -505,23 +518,26 @@ wxMenuItem *wxbMenuBar::FindItemForId (int Id, wxMenu ** itemMenu)
 
 void wxbMenuBar::SetHelpString (int Id, char *helpString)
 {
-  for (int i = 0; i < n; i++)
-    {
-      if (menus[i]->FindItemForId (Id))
-	{
-	  menus[i]->SetHelpString (Id, helpString);
-	  return;
-	}
+  wxMenu *menu;
+
+  for (int i = 0; i < n; i++) {
+    menu = menus[i];
+    if (menu->FindItemForId (Id)) {
+      menu->SetHelpString (Id, helpString);
+      return;
     }
+  }
 }
 
 char *wxbMenuBar::GetHelpString (int Id)
 {
-  for (int i = 0; i < n; i++)
-    {
-      if (menus[i]->FindItemForId (Id))
-	return menus[i]->GetHelpString (Id);
-    }
+  wxMenu *menu;
+
+  for (int i = 0; i < n; i++) {
+    menu = menus[i];
+    if (menu->FindItemForId (Id))
+      return menu->GetHelpString (Id);
+  }
   return NULL;
 }
 

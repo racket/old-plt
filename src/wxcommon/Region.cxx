@@ -107,6 +107,9 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   wxRegion *lt, *rt, *lb, *rb, *w, *h, *r;
   int ix, iy, iw, ih;
   float xw, yh;
+#if defined(wx_msw) || defined(wx_mac)
+  int xradius, yradius;
+#endif
 
   Cleanup();
 
@@ -164,8 +167,8 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   width = dc->FLogicalToDeviceX(xw) - x;
   height = dc->FLogicalToDeviceY(yh) - y;
 #if defined(wx_msw) || defined(wx_mac)
-  int xradius = (int)(dc->FLogicalToDeviceXRel(radius));
-  int yradius = (int)(dc->FLogicalToDeviceYRel(radius));
+  xradius = (int)(dc->FLogicalToDeviceXRel(radius));
+  yradius = (int)(dc->FLogicalToDeviceYRel(radius));
 #endif
 
   ix = (int)floor(x);
@@ -186,16 +189,21 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
-  Rect r2;
-  SetRect(&r2, ix, iy, ix + iw, iy + ih);
-  FrameRoundRect(&r2, xradius, yradius); // SET-ORIGIN FLAGGED
-  CloseRgn(rgn);
+  {
+    Rect r2;
+    SetRect(&r2, ix, iy, ix + iw, iy + ih);
+    FrameRoundRect(&r2, xradius, yradius); // SET-ORIGIN FLAGGED
+    CloseRgn(rgn);
+  }
 #endif
 }
 
 void wxRegion::SetEllipse(float x, float y, float width, float height)
 {
   float xw, yh;
+#if defined(wx_msw) || defined(wx_mac)
+  int ix, iy, iw, ih;
+#endif
 
   Cleanup();
 
@@ -223,8 +231,6 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   }
 
 #if defined(wx_msw) || defined(wx_mac)
-  int ix, iy, iw, ih;
-  
   ix = (int)floor(x);
   iy = (int)floor(y);
   iw = ((int)floor(x + width)) - ix;
@@ -237,10 +243,12 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
-  Rect r;
-  SetRect(&r, ix, iy, ix + iw, iy + ih);
-  FrameOval(&r); // SET-ORIGIN FLAGGED
-  CloseRgn(rgn);
+  {
+    Rect r;
+    SetRect(&r, ix, iy, ix + iw, iy + ih);
+    FrameOval(&r); // SET-ORIGIN FLAGGED
+    CloseRgn(rgn);
+  }
 #endif
 
 #ifdef wx_x
@@ -341,8 +349,9 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
   rgn = NewRgn();
   OpenRgn();
   MoveTo(cpoints[0].x, cpoints[0].y); // SET-ORIGIN FLAGGED
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     LineTo(cpoints[i].x, cpoints[i].y); // SET-ORIGIN FLAGGED
+  }
   LineTo(cpoints[0].x, cpoints[0].y); // SET-ORIGIN FLAGGED
   CloseRgn(rgn);
 #endif
@@ -523,8 +532,9 @@ void wxRegion::Union(wxRegion *r)
   XUnionRegion(rgn, r->rgn, rgn);
 #endif
 #ifdef wx_mac
-  if (!rgn)
+  if (!rgn) {
     rgn = NewRgn();
+  }
   UnionRgn(rgn, r->rgn, rgn);
 #endif
 }
@@ -619,12 +629,14 @@ void wxRegion::BoundingBox(float *x, float *y, float *w, float *h)
     *h = r.height;
 #endif
 #ifdef wx_mac
-    Rect r;
-    GetRegionBounds(rgn,&r);
-    *x = r.left;
-    *y = r.top;
-    *w = r.right - *x;
-    *h = r.bottom - *y;
+    {
+      Rect r;
+      GetRegionBounds(rgn,&r);
+      *x = r.left;
+      *y = r.top;
+      *w = r.right - *x;
+      *h = r.bottom - *y;
+    }
 #endif
 
     if (is_ps) {

@@ -79,7 +79,7 @@ void wxNode::Kill(wxList *list)
 
 #ifndef wx_mac
   if (list && list->destroy_data)
-    delete data;
+    DELETE_OBJ data;
 #endif
 
   // Make next node point back to the previous node from here
@@ -359,11 +359,13 @@ void wxList::Clear (void)
 long wxList::MemberIndex(wxObject *object) // WCH wx_mac added 8/12/94
 {
   long result = 0;
-  wxNode *current = First();
+  wxNode *current;
   wxNode *found = NULL;
+  current = First();
   while (current && !found)
   {
-    wxObject *each = current->Data();
+    wxObject *each;
+    each = current->Data();
     if (each == object)
       found = current;
     else {

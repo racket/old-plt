@@ -63,6 +63,7 @@ void wxbFrame::OnSize(int x, int y)
 {
   wxWindow *child = NULL, *win;
   int noChildren = 0;
+  wxChildList *cl;
   wxChildNode *node;
   int client_x, client_y;
 
@@ -71,7 +72,8 @@ void wxbFrame::OnSize(int x, int y)
 
   // Search for a child which is a subwindow, not another frame.
   // Count the number of _subwindow_ children
-  for (node = GetChildren()->First(); node; node = node->Next())
+  cl = GetChildren();
+  for (node = cl->First(); node; node = node->Next())
   {
     WXTYPE winType;
 
@@ -108,7 +110,7 @@ void wxbFrame::OnMenuSelect(int id)
       menuBar = GetMenuBar();
       if (menuBar) {
         char *helpString;
-	helpString = GetMenuBar()->GetHelpString(id);
+	helpString = menuBar->GetHelpString(id);
         if (helpString)
           SetStatusText(helpString);
       }

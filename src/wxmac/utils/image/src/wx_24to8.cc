@@ -213,7 +213,7 @@ void wxImage::get_histogram(CBOX *box)
 
   /* zero out histogram */
   ptr = &histogram[0][0][0];
-  for (i=B_LEN*B_LEN*B_LEN; i--) {
+  for (i=B_LEN*B_LEN*B_LEN; i--; ) {
     ptr[i] = 0;
   }
 
@@ -578,19 +578,19 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 
   rp=0;  gp=0;  bp=0;
   for (i=0; i<num_colors; i++,rp++,gp++,bp++) {
-    if (*rp >> (COLOR_DEPTH-C_DEPTH) != ir  ||
-	*gp >> (COLOR_DEPTH-C_DEPTH) != ig  ||
-	*bp >> (COLOR_DEPTH-C_DEPTH) != ib) {
+    if (r[rp] >> (COLOR_DEPTH-C_DEPTH) != ir  ||
+	g[gp] >> (COLOR_DEPTH-C_DEPTH) != ig  ||
+	b[bp] >> (COLOR_DEPTH-C_DEPTH) != ib) {
 
       dist = 0;
 
-      if ((tmp = r1 - r[rp])>0 || (tmp = *rp - (r1 + MAX_COLOR/C_LEN-1)) > 0 )
+      if ((tmp = r1 - r[rp])>0 || (tmp = r[rp] - (r1 + MAX_COLOR/C_LEN-1)) > 0 )
 	dist += tmp*tmp;
 
-      if( (tmp = g1 - g[gp])>0 || (tmp = *gp - (g1 + MAX_COLOR/C_LEN-1)) > 0 )
+      if( (tmp = g1 - g[gp])>0 || (tmp = g[gp] - (g1 + MAX_COLOR/C_LEN-1)) > 0 )
 	dist += tmp*tmp;
 
-      if( (tmp = b1 - b[bp])>0 || (tmp = *bp - (b1 + MAX_COLOR/C_LEN-1)) > 0 )
+      if( (tmp = b1 - b[bp])>0 || (tmp = b[bp] - (b1 + MAX_COLOR/C_LEN-1)) > 0 )
 	dist += tmp*tmp;
 
       if( dist < mindist ) {
@@ -776,8 +776,8 @@ int wxImage::quant_fsdither()
       if (!lastline) {
 	if (j) {
 	  nextline[nextptr-3] += (r1*3)/16;
-	  nextlein[nextptr-2] += (g1*3)/16;
-	  nextlein[nextptr-1] += (b1*3)/16;
+	  nextline[nextptr-2] += (g1*3)/16;
+	  nextline[nextptr-1] += (b1*3)/16;
 	}
 
 	nextline[nextptr+0] += (r1*5)/16;
@@ -857,7 +857,7 @@ int wxImage::Quick24to8(byte *pb24, int w, int h)
       RANGE(r1,0,255);  RANGE(g1,0,255);  RANGE(b1,0,255);  
 
       rerr = r1 & 0x1f;  gerr = g1 & 0x1f;  berr = b1 & 0x3f;
-      *pp = (r1&0xe0) | ((g1>>3)&0x1c) | (b1>>6); 
+      pic[pp] = (r1&0xe0) | ((g1>>3)&0x1c) | (b1>>6); 
 
       if (j!=jmax) {  /* adjust RIGHT pixel */
 	thisline[thisptr+0] += tbl7[rerr];
@@ -867,13 +867,13 @@ int wxImage::Quick24to8(byte *pb24, int w, int h)
       
       if (i!=imax) {	/* do BOTTOM pixel */
 	nextline[nextptr+0] += tbl5[rerr];
-	nextlein[nextptr+1] += tbl5[gerr];
+	nextline[nextptr+1] += tbl5[gerr];
 	nextline[nextptr+2] += tbl5[berr];
 
 	if (j>0) {  /* do BOTTOM LEFT pixel */
 	  nextline[nextptr-3] += tbl3[rerr];
 	  nextline[nextptr-2] += tbl3[gerr];
-	  nextlein[nextptr-1] += tbl3[berr];
+	  nextline[nextptr-1] += tbl3[berr];
 	}
 
 	if (j!=jmax) {  /* do BOTTOM RIGHT pixel */
@@ -954,7 +954,7 @@ int wxImage::QuickCheck(byte *pic24, int w, int h, int maxcol)
   /* run through the data a second time, this time mapping pixel values in
      pic24 into colormap offsets into 'colors' */
 
-  for (i=w*h,p=0, pix=p0; i; i--,pix++) {
+  for (i=w*h,p=0, pix=0; i; i--,pix++) {
     col  = (pic24[p++] << 16);  
     col += (pic24[p++] << 8);
     col +=  pic24[p++];

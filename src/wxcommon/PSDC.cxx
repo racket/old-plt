@@ -958,7 +958,7 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
 void wxPostScriptDC::SetFont (wxFont * the_font)
 {
   char *name;
-  int Family, Style, Weight, size;
+  int family, style, weight, size;
 
   if (!pstream)
     return;
@@ -968,11 +968,11 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
   resetFont -= (resetFont & RESET_FONT);
 
   current_font = the_font;
-  Family = current_font->GetFontId();
-  Style = current_font->GetStyle();
-  Weight = current_font->GetWeight();
+  family = current_font->GetFontId();
+  style = current_font->GetStyle();
+  weight = current_font->GetWeight();
 
-  name = wxTheFontNameDirectory->GetPostScriptName(Family, Weight, Style);
+  name = wxTheFontNameDirectory->GetPostScriptName(family, weight, style);
   if (!name)
     name = "Times-Roman";
 
@@ -1786,10 +1786,10 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    Bool WXUNUSED(use16), int dt)
 {
   wxFont *fontToUse = theFont;
-  int Family;
-  int Size;
-  int Style;
-  int Weight;
+  int family;
+  int size;
+  int style;
+  int weight;
 
   float widthSum = 0.0;
   float height;
@@ -1820,30 +1820,30 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // i try to get files for the other ones!
 
   // get actual parameters
-  Family = fontToUse->GetFontId();
-  Size =   fontToUse->GetPointSize();
-  Style =  fontToUse->GetStyle();
-  Weight = fontToUse->GetWeight();
+  family = fontToUse->GetFontId();
+  size =   fontToUse->GetPointSize();
+  style =  fontToUse->GetStyle();
+  weight = fontToUse->GetWeight();
   
   // if we have a new font, read the font-metrics
-  if (Family != lastFamily 
-      || Size != lastSize 
-      || Style != lastStyle
-      || Weight != lastWeight) {
+  if (family != lastFamily 
+      || size != lastSize 
+      || style != lastStyle
+      || weight != lastWeight) {
     char *name;
     char *afmName;
     Scheme_Object *afmFile;
 
     // store cached values
-    lastFamily = Family;
-    lastSize =   Size;
-    lastStyle =  Style;
-    lastWeight = Weight;
+    lastFamily = family;
+    lastSize =   size;
+    lastStyle =  style;
+    lastWeight = weight;
 
     // read in new font metrics **************************************
 
     // 1. construct filename ******************************************
-    name = wxTheFontNameDirectory->GetPostScriptName(Family, Weight, Style);
+    name = wxTheFontNameDirectory->GetPostScriptName(family, weight, style);
     if (name && afm_path) {
       int len = strlen(afm_path);
       // get the directory of the AFM files
@@ -1954,7 +1954,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // this is done by adding the widths of the characters in the
   // string. they are given in 1/1000 of the size!
 
-  height = (float)Size;
+  height = (float)size;
   for (dp = dt; string[dp]; dp++) {
     int ch;
     ch = ((unsigned char *)string)[dp];
@@ -1963,13 +1963,13 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
                  ch, ch);
       widthSum += lastWidths[' ']; // assume space
     } else {
-      widthSum += (lastWidths[ch] / 1000.0F) * Size;
+      widthSum += (lastWidths[ch] / 1000.0F) * size;
     }
   }
 
   // add descender to height (it is usually a negative value)
   if (lastDescender != INT_MIN) {
-    height += ((-lastDescender) / 1000.0F) * Size;
+    height += ((-lastDescender) / 1000.0F) * size;
   }
   
   // return size values
@@ -1979,14 +1979,14 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // return other parameters
   if (descent){
     if (lastDescender != INT_MIN)
-      *descent = ((-lastDescender) / 1000.0F) * Size;
+      *descent = ((-lastDescender) / 1000.0F) * size;
     else
       *descent = 0.0;
   }
 
   if (topSpace) {
     if (capHeight > -1)
-      *topSpace = ((1000 - capHeight) / 1000.0F) * Size;
+      *topSpace = ((1000 - capHeight) / 1000.0F) * size;
     else
       *topSpace = 0.0;
   }
@@ -2235,12 +2235,12 @@ void wxPrintSetupData::copy(wxPrintSetupData* data)
 
 void wxInitializePrintSetupData(Bool /* init */)
 {
+  wxPrintSetupData *wxThePrintSetupData;
+  
 #ifdef wx_mac
   wxThePrintPaperDatabase = new wxPrintPaperDatabase;
   wxThePrintPaperDatabase->CreateDatabase();
 #endif
-  
-  wxPrintSetupData *wxThePrintSetupData;
   
   wxThePrintSetupData = new wxPrintSetupData;
   

@@ -307,7 +307,7 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
     wxREGGLOB(lite);
 
     nr = norm->Red();
-    ng norm->Green();
+    ng = norm->Green();
     nb = norm->Blue();
 
     dark = new wxColour(DARK_SCALE(nr), DARK_SCALE(ng), DARK_SCALE(nb));

@@ -29,11 +29,13 @@ wxbPanel::~wxbPanel(void)
 
 wxObject* wxbPanel::GetChild(int number)
 {
+  wxChildList *cl;
   wxChildNode *node;
   // Return a pointer to the Nth object in the Panel
   if (!children)
     return(NULL) ;
-  node = GetChildren()->First();
+  cl = GetChildren();
+  node = cl->First();
   while (node && number--) {
     node = node->Next() ;
   }

@@ -11,10 +11,10 @@
 #define wx_mac_utilsh
 
 char *wxP2C(const unsigned char *p);
-void wxP2C(const unsigned char *p, char *c);
+char *wxP2C(const unsigned char *p, char *c);
 
 unsigned char *wxC2P(const char *c);
-void wxC2P(const char *c, unsigned char *p);
+unsigned char *wxC2P(const char *c, unsigned char *p);
 
 char* macCopyString(char* s);
 char* macCopyString0(char* s);

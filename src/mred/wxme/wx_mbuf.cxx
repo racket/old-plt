@@ -1360,13 +1360,18 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
   } 
 
 #ifndef wx_x
-  wxPrinter *p = new wxPrinter();
-  wxPrintout *o = new wxMediaPrintout(this, fitToPage);
+  {
+    wxPrinter *p;
+    wxPrintout *o;
   
-  p->Print(parent, o, interactive);
+    p = new wxPrinter();
+    o = new wxMediaPrintout(this, fitToPage);
 
-  DELETE_OBJ o;
-  DELETE_OBJ p;
+    p->Print(parent, o, interactive);
+    
+    DELETE_OBJ o;
+    DELETE_OBJ p;
+  }
 #endif
 }
 

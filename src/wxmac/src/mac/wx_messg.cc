@@ -112,8 +112,12 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
     cMessage = NULL;
     if (cStyle & wxBORDER) new wxBorderArea(this);
     SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
-    if (GetParent()->IsHidden())
-      DoShow(FALSE);
+    {
+      wxWindow *p;
+      p = GetParent();
+      if (p->IsHidden())
+	DoShow(FALSE);
+    }
     InitInternalGray();
   } else
     CreateWxMessage("<bad-image>");
@@ -163,8 +167,12 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
 #else
     SetClientSize(32, 32);
 #endif
-    if (GetParent()->IsHidden())
-      DoShow(FALSE);
+    {
+      wxWindow *p;
+      p = GetParent();
+      if (p->IsHidden())
+	DoShow(FALSE);
+    }
     InitInternalGray();
   } else
     CreateWxMessage("<icon-missing>");
@@ -221,8 +229,13 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
   }
   SetClientSize((int)floor(clientWidth) + 3, (int)floor(clientHeight)); // mflatt: +3 is needed (even for plain)
 	
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
+
   InitInternalGray();
 }
 

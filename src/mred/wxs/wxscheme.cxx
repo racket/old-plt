@@ -427,6 +427,9 @@ pascal void MyColorChangedCallback ( SInt32 userData, PMColor *newColor )
 static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 {
   char *s;
+#ifndef wx_x
+  wxColour *c;
+#endif
 
   if (!argc || SCHEME_FALSEP(argv[0]))
     s = "Choose a color";
@@ -439,9 +442,9 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 		      ? objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1)
 		      : NULL);
 # endif
-  wxColour *c = ((argc > 2)
-		 ? objscheme_unbundle_wxColour(argv[2], "get-color-from-user", 1)
-		 : NULL);
+  c = ((argc > 2)
+       ? objscheme_unbundle_wxColour(argv[2], "get-color-from-user", 1)
+       : NULL);
 #endif
 
 #ifdef wx_x
@@ -449,41 +452,42 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 #endif
 #ifdef wx_mac
 # ifdef WX_CARBON
-  struct ColorPickerInfo cpInfo;
-  
-  cpInfo.theColor.profile = NULL; // use the default ColorSync profile
-  if (c) {
-    cpInfo.theColor.color.rgb.red = c->Red() << 8;
-    cpInfo.theColor.color.rgb.green = c->Green() << 8;
-    cpInfo.theColor.color.rgb.blue = c->Blue() << 8;
-  } else {
-    cpInfo.theColor.color.rgb.red = cpInfo.theColor.color.rgb.green = cpInfo.theColor.color.rgb.blue = 0;
-  }
+  {
+    struct ColorPickerInfo cpInfo;
+    
+    cpInfo.theColor.profile = NULL; // use the default ColorSync profile
+    if (c) {
+      cpInfo.theColor.color.rgb.red = c->Red() << 8;
+      cpInfo.theColor.color.rgb.green = c->Green() << 8;
+      cpInfo.theColor.color.rgb.blue = c->Blue() << 8;
+    } else {
+      cpInfo.theColor.color.rgb.red = cpInfo.theColor.color.rgb.green = cpInfo.theColor.color.rgb.blue = 0;
+    }
 
-  cpInfo.dstProfile = NULL; // default Profile (again!)
-  cpInfo.flags = NULL;
-  cpInfo.placeWhere = kCenterOnMainScreen;  
-  cpInfo.dialogOrigin.h = 0;
-  cpInfo.dialogOrigin.v = 0;
-  cpInfo.pickerType = 0; 
-  cpInfo.eventProc = NewUserEventUPP(NullEventFilter);
-  cpInfo.colorProc = NewColorChangedUPP(MyColorChangedCallback);
-  cpInfo.colorProcData = 0;
-  cpInfo.mInfo.editMenuID = 128; // Not sure this will work.
-  CopyCStringToPascal(s,cpInfo.prompt);
-  cpInfo.newColorChosen = FALSE;
-  
-  if (PickColor(&cpInfo) != noErr) {
-    return scheme_false;
-  }
-  if (cpInfo.newColorChosen == FALSE) {
-    return scheme_false;
-  }
-  
-  c = new wxColour(cpInfo.theColor.color.rgb.red >> 8, cpInfo.theColor.color.rgb.green >> 8, cpInfo.theColor.color.rgb.blue >> 8);
+    cpInfo.dstProfile = NULL; // default Profile (again!)
+    cpInfo.flags = NULL;
+    cpInfo.placeWhere = kCenterOnMainScreen;  
+    cpInfo.dialogOrigin.h = 0;
+    cpInfo.dialogOrigin.v = 0;
+    cpInfo.pickerType = 0; 
+    cpInfo.eventProc = NewUserEventUPP(NullEventFilter);
+    cpInfo.colorProc = NewColorChangedUPP(MyColorChangedCallback);
+    cpInfo.colorProcData = 0;
+    cpInfo.mInfo.editMenuID = 128; // Not sure this will work.
+    CopyCStringToPascal(s,cpInfo.prompt);
+    cpInfo.newColorChosen = FALSE;
+    
+    if (PickColor(&cpInfo) != noErr) {
+      return scheme_false;
+    }
+    if (cpInfo.newColorChosen == FALSE) {
+      return scheme_false;
+    }
+    
+    c = new wxColour(cpInfo.theColor.color.rgb.red >> 8, cpInfo.theColor.color.rgb.green >> 8, cpInfo.theColor.color.rgb.blue >> 8);
 
-  return objscheme_bundle_wxColour(c);
-  
+    return objscheme_bundle_wxColour(c);
+  }    
 # else
   int l;
   Point pt = {0, 0};
@@ -934,11 +938,12 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
 extern int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
 # endif
 
-typedef struct AsyncSoundRec {
+class AsyncSoundRec {
+public:
   Movie mov;
   short file;
-  struct AsyncSoundRec *next;
-} AsyncSoundRec;
+  AsyncSoundRec *next;
+};
 
 static AsyncSoundRec *playing = NULL;
 
@@ -1031,104 +1036,50 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   ok = PlaySound(f, NULL, async ? SND_ASYNC : SND_SYNC);
 #endif
 #ifdef wx_mac
-  FSSpec spec;
-  short osErr;
-  short resRefNum;
-  Movie theMovie;
-  Handle soundHandle = NULL;
-  
-  if (! movieInitialized) {
-    MovieInitialize();
-  }
-  
-  osErr = scheme_mac_path_to_spec(f,&spec);
-
-  if (! osErr) 
-    scheme_signal_error("cannot find file: \"%s\"", SCHEME_STR_VAL(argv[0]));
-  
-  // load sound as "movie"
-  
-  osErr = OpenMovieFile(&spec,&resRefNum,fsRdPerm);
-  if (osErr != noErr)
-    my_signal_error("cannot open as movie file", SCHEME_STR_VAL(argv[0]), osErr);
+  {
+    FSSpec spec;
+    short osErr;
+    short resRefNum;
+    Movie theMovie;
     
-  osErr = NewMovieFromFile(&theMovie, resRefNum, NULL, NULL, newMovieActive, NULL);
-  if (osErr != noErr)
-    my_signal_error("cannot create movie from file", SCHEME_STR_VAL(argv[0]), osErr);
-
-  // play the movie once thru
-  StartMovie(theMovie);
-  
-  if (!async) {
-    wxDispatchEventsUntil(IsFinished,theMovie);
-    MyCloseMovie(theMovie, resRefNum);
-  } else {
-    AsyncSoundRec *r = new AsyncSoundRec;
-    
-    r->mov = theMovie;
-    r->file = resRefNum;
-    r->next = playing;
-    playing = r;
-  }
-      
-  ok = TRUE;
-
-/*
-  // old play sound code
-  Bool local_async = TRUE;
-  SndChannelPtr snd;
-  short file;
-  long buffsize = 1024;
-  OSErr snd_err;
-  AsyncSoundRec *r;
-  FSSpec spec;
-  
-  if (!scheme_mac_path_to_spec(f, &spec))
-    return scheme_false;
-  
-  if (FSpOpenDF(&spec, fsRdPerm, &file))
-    return scheme_false;
-
-  snd = NULL;
-  if (local_async) {
-    if (SndNewChannel(&snd, sampledSynth, 0, NULL)) {
-      DisposePtr((Ptr)snd);
-      snd = NULL;
+    if (! movieInitialized) {
+      MovieInitialize();
     }
+    
+    osErr = scheme_mac_path_to_spec(f,&spec);
+
+    if (! osErr) 
+      scheme_signal_error("cannot find file: \"%s\"", SCHEME_STR_VAL(argv[0]));
+    
+    // load sound as "movie"
+    
+    osErr = OpenMovieFile(&spec,&resRefNum,fsRdPerm);
+    if (osErr != noErr)
+      my_signal_error("cannot open as movie file", SCHEME_STR_VAL(argv[0]), osErr);
+    
+    osErr = NewMovieFromFile(&theMovie, resRefNum, NULL, NULL, newMovieActive, NULL);
+    if (osErr != noErr)
+      my_signal_error("cannot create movie from file", SCHEME_STR_VAL(argv[0]), osErr);
+
+    // play the movie once thru
+    StartMovie(theMovie);
+    
+    if (!async) {
+      wxDispatchEventsUntil(IsFinished,theMovie);
+      MyCloseMovie(theMovie, resRefNum);
+    } else {
+      AsyncSoundRec *r;
+      
+      r = new AsyncSoundRec;
+
+      r->mov = theMovie;
+      r->file = resRefNum;
+      r->next = playing;
+      playing = r;
+    }
+    
+    ok = TRUE;
   }
-
-  if (local_async) {
-    r = new AsyncSoundRec;
-
-    r->snd = snd;
-    r->file = file;
-
-    r->next = playing;
-    playing = r;
-  } else
-    r = NULL;
-
-  do {
-    buffsize *= 2;
-    snd_err = SndStartFilePlay(snd, file, 0, buffsize, NULL, NULL, 
-  			 local_async ? SoundFinishedProc : NULL, 
-  			 local_async);
-  } while (snd_err == buffersTooSmall);
-
-  ok = !snd_err;
-
-  if (ok && local_async && !async) {
-    wxDispatchEventsUntil(IsFinished, r);
-  }
-
-  if (!local_async)
-    FSClose(file);
-
-  if ((!local_async || !ok) && snd) {
-    SoundFinished(snd);
-    wxCheckFinishedSounds();
-  }
-  */
 #endif  
 
   return (ok ? scheme_true : scheme_false);
@@ -1449,8 +1400,10 @@ static Scheme_Object *wxSendEvent(int c, Scheme_Object *args[])
   Scheme_Object *result;
   if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
-  else
+  else {
     scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, err);
+    return NULL;
+  }
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");

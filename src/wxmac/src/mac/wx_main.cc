@@ -7,12 +7,7 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef WX_CARBON
-# include <Windows.h>
-# include <Folders.h>
-#endif
-#include <stdlib.h>
-
+#include "common.h"
 #include "wx_item.h"
 #include "wx_main.h"
 #include "wx_list.h"

@@ -648,13 +648,16 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
 
   while ((node = list->NextNode(i))) {
     each_pen = (wxPen *) (node->Data ());
-    if (each_pen &&
-	each_pen->GetWidthF() == width &&
-	each_pen->GetStyle() == style &&
-	each_pen->GetColour()->Red () == colour->Red () &&
-	each_pen->GetColour()->Green () == colour->Green () &&
-	each_pen->GetColour()->Blue () == colour->Blue ())
-      return each_pen;
+    if (each_pen) {
+      wxColour *c;
+      c = each_pen->GetColour();
+      if (each_pen->GetWidthF() == width &&
+	  each_pen->GetStyle() == style &&
+	  c->Red () == colour->Red () &&
+	  c->Green () == colour->Green () &&
+	  c->Blue () == colour->Blue ())
+	return each_pen;
+    }
   }
   pen = new wxPen (colour, width, style);
   AddPen(pen);
@@ -700,12 +703,15 @@ wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 
   while ((node = list->NextNode(i))) {
     each_brush = (wxBrush *) (node->Data ());
-    if (each_brush &&
-	each_brush->GetStyle() == style &&
-	each_brush->GetColour()->Red() == colour->Red() &&
-	each_brush->GetColour()->Green() == colour->Green() &&
-	each_brush->GetColour()->Blue() == colour->Blue())
-      return each_brush;
+    if (each_brush) {
+      wxColour *c;
+      c = each_brush->GetColour();
+      if (each_brush->GetStyle() == style &&
+	  c->Red() == colour->Red() &&
+	  c->Green() == colour->Green() &&
+	  c->Blue() == colour->Blue())
+	return each_brush;
+    }
   }
   brush = new wxBrush (colour, style);
   AddBrush(brush);

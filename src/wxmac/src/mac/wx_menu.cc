@@ -97,6 +97,8 @@ void wxRegisterLastInstalledBar()
 //-----------------------------------------------------------------------------
 wxMenuBar::~wxMenuBar(void)
 {
+  wxMenu *menu;
+
   if (last_installed_bar == this) {
     ::ClearMenuBar();
     last_installed_bar = NULL;
@@ -104,15 +106,12 @@ wxMenuBar::~wxMenuBar(void)
 
   if (menu_bar_frame) 
     menu_bar_frame->wx_menu_bar = 0;
-  for (int i = 0; i < n; i++)
-    {
-      menus[i]->menu_bar = NULL;  // So menu doesn't try to remove itself
-      menus[i]->window_parent = NULL; // So menu doesn't try to remove itself
-      delete menus[i];
-      delete[] titles[i];
-    }
-  delete[] menus;
-  delete[] titles;
+  for (int i = 0; i < n; i++) {
+    menu = menus[i];
+    menu->menu_bar = NULL;  // So menu doesn't try to remove itself
+    menu->window_parent = NULL; // So menu doesn't try to remove itself
+    DELETE_OBJ menu;
+  }
 }
 
 
@@ -335,14 +334,17 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     {
       Bool v;
       v = menuItem->IsChecked();
-      if (v)
+      if (v) {
 	::CheckMenuItem(nmh, i + offset, TRUE);
+      }
       v = menuItem->IsEnabled();
-      if (!v || (toHandle && !cEnable))
+      if (!v || (toHandle && !cEnable)) {
 	::DisableMenuItem(nmh, i + offset);
+      }
     }
-    if (hId)
+    if (hId) {
       ::SetMenuItemHierarchicalID(nmh, i + offset, hId);
+    }
     node = node->Next();						// watch for null?	
   }
 	
@@ -381,6 +383,7 @@ void wxMenuBar::Enable(int Id, Bool Flag)
 {
   int j;
   wxMenuItem* theMenuItem;
+  wxMenu *menu;
 
   for (j = 0; j < n; j++) {
     theMenuItem = menus[j]->FindItemForId(Id);
@@ -396,9 +399,11 @@ void wxMenuBar::Check(int Id, Bool Flag)
 {
   int j;
   wxMenuItem* theMenuItem;
+  wxMenu *menu;
 
   for (j = 0; j < n; j++) {
-    theMenuItem = menus[j]->FindItemForId(Id);
+    menu = menus[j];
+    theMenuItem = menu->FindItemForId(Id);
     if (theMenuItem) {
       theMenuItem->Check(Flag);
       return;
@@ -411,9 +416,11 @@ Bool wxMenuBar::Checked(int Id)
 {
   int j;
   wxMenuItem* theMenuItem;
+  wxMenu *menu;
 
   for (j = 0; j < n; j++) {
-    theMenuItem = menus[j]->FindItemForId(Id);
+    menu = menus[j];
+    theMenuItem = menu->FindItemForId(Id);
     if (theMenuItem)
       return theMenuItem->IsChecked();
   }
@@ -426,9 +433,11 @@ void wxMenuBar::SetLabel(int Id, char* label)
 {
   int j;
   wxMenuItem* theMenuItem;
+  wxMenu *menu;
 
   for (j = 0; j < n; j++) {
-    theMenuItem = menus[j]->FindItemForId(Id);
+    menu = menus[j];
+    theMenuItem = menu->FindItemForId(Id);
     if (theMenuItem) {
       theMenuItem->SetLabel(label);
       return;
@@ -441,9 +450,11 @@ char* wxMenuBar::GetLabel(int Id)
 {
   int j;
   wxMenuItem* theMenuItem;
+  wxMenu *menu;
 
   for (j = 0; j < n; j++) {
-    theMenuItem = menus[j]->FindItemForId(Id);
+    menu = menus[j];
+    theMenuItem = menu->FindItemForId(Id);
     if (theMenuItem)
       return theMenuItem->GetLabel();
   }
@@ -455,9 +466,11 @@ char* wxMenuBar::GetLabel(int Id)
 void wxMenuBar::SetLabelTop(int pos, char* label)
 {
   char *s;
+  wxMenu *menu;
 
   if ((pos >= 0) && (pos < n)) {
-    menus[pos]->SetTitle(label);
+    menu = menus[pos];
+    menu->SetTitle(label);
     s = copystring(label);
     titles[pos] = s;
   }
@@ -466,9 +479,11 @@ void wxMenuBar::SetLabelTop(int pos, char* label)
 //-----------------------------------------------------------------------------
 char* wxMenuBar::GetLabelTop(int pos)
 { 
-  if ((pos >= 0) && (pos < n))
-    return menus[pos]->GetTitle();
-  else
+  if ((pos >= 0) && (pos < n)) {
+    wxMenu *menu;
+    menu = menus[pos];
+    return menu->GetTitle();
+  } else
     return NULL;
 }
 
@@ -480,8 +495,11 @@ void wxMenuBar::EnableTop(int pos, Bool flag)
   if (!menu_bar_frame && !flag)
     return;
 	
-  if (pos >= 0 && (pos < n))
-    menus[pos]->Enable(flag);
+  if (pos >= 0 && (pos < n)) {
+    wxMenu *menu;
+    menu = menus[pos];
+    menu->Enable(flag);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -505,25 +523,26 @@ void wxMenuBar::SetLabel(char* label) { } // The menubar doesn't have a label
 //-----------------------------------------------------------------------------
 wxMenu* wxMenuBar::wxMacFindMenu(int macMenuId)
 {
-  wxMenu* result = NULL;
+  wxMenu* result = NULL, *menu;
   int i = 0;
 
-  while (i < n && !result) // try to find among main menus
-    {
-      if (menus[i]->GetMacMenuId() == macMenuId)
-	result = menus[i];
-      else i++;
-    }
+  while (i < n && !result) {
+    // try to find among main menus
+    menu = menus[i];
+    if (menu->GetMacMenuId() == macMenuId)
+      result = menu;
+    else i++;
+  }
 
-  if (!result)
-    {
-      i = 0;
-      while (i < n && !result) // try to find among submenus
-	{
-	  result = menus[i]->wxMacFindSubmenu(macMenuId);
-	  if (!result) i++;
-	}
+  if (!result) {
+    i = 0;
+    while (i < n && !result) {
+      // try to find among submenus
+      menu = menus[i];
+      result = menu->wxMacFindSubmenu(macMenuId);
+      if (!result) i++;
     }
+  }
 
   return result;
 }
@@ -704,8 +723,9 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
      if (wxCan_Do_Pref()) {
        ::SetMenuItemCommandKey(mnu, idx, FALSE, ';');
        ::EnableMenuItem(mnu, idx);
-     } else
+     } else {
        ::DisableMenuItem(mnu, idx);
+     }
    }
  }
 }
@@ -726,17 +746,18 @@ void wxMenuBar::Install(void)
       ::InsertMenu(mh, 0);
       menu->wxMacInsertSubmenu();
       v = menu->IsEnable();
-      if (!v)
+      if (!v) {
 	::DisableMenuItem(mh, 0);
-      else {
+      } else {
 	if (menu_bar_frame)
 	  v = menu_bar_frame->CanAcceptEvent();
 	else
 	  v = 1;
-	if (!v)
+	if (!v) {
 	  ::DisableMenuItem(mh, 0);
-	else
+	} else {
 	  ::EnableMenuItem(mh, 0);
+	}
       }
     }
   }

@@ -78,6 +78,22 @@ extern void *GC_weak_box_val(void *);
 #define gcOBJ_TO_PTR(x) x
 #define gcPTR_TO_OBJ(x) x
 
+
+#ifndef START_XFORM_SKIP
+# ifndef MZ_PRECISE_GC
+#  define START_XFORM_SKIP /**/
+#  define END_XFORM_SKIP /**/
+#  define GC_CAN_IGNORE /**/
+#  define GC_MAYBE_IGNORE_INTERIOR /**/
+# else
+#  ifdef GC_INTERIORABLES_NEVER_MOVE
+#   define GC_MAYBE_IGNORE_INTERIOR GC_CAN_IGNORE
+#  else
+#   define GC_MAYBE_IGNORE_INTERIOR /**/
+#  endif
+# endif
+#endif
+
 /**** The `gc' and `gc_cleanup' class ************/
 
 class gc
@@ -231,5 +247,6 @@ inline void *operator new[](size_t size, GCPlacement gcp)
   return ::operator new(size, gcp);
 }
 #endif
+
 
 #endif /* WXGC_CPP_H */

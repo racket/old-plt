@@ -19,7 +19,6 @@
 #endif
 #endif
 
-#include <stdlib.h>
 #include "common.h"
 #include "wx_utils.h"
 #include "wx_choic.h"
@@ -171,10 +170,11 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   // to number of pixels to substract from the rect bottom.
   if (labelPosition == wxVERTICAL) {
     w = max(lblw, maxdfltw);
-    if (Title)
+    if (Title) {
       SetBounds(&TitleRect, 1, 1, lblh+1, w);
-    else
+    } else {
       SetBounds(&TitleRect, 1, 1, 1, 1);
+    }
     SetBounds(&ValueRect, TitleRect.bottom + VSLOP, 1,
 	      TitleRect.bottom + maxdflth + 1, maxdfltw);
     valuebase += MSPACEY;
@@ -204,8 +204,12 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 
   ::EmbedControl(cMacControl, GetRootControl());
 
-  if (GetParent()->IsHidden())
-    DoShow(FALSE);
+  {
+    wxWindow *p;
+    p = GetParent();
+    if (p->IsHidden())
+      DoShow(FALSE);
+  }
   InitInternalGray();
 
   return TRUE;
@@ -218,7 +222,9 @@ int wxChoice::Number(void)
 
 wxChoice::~wxChoice (void)
 {
-  if (cMacControl) ::DisposeControl(cMacControl);
+  if (cMacControl) {
+    ::DisposeControl(cMacControl);
+  }
   cMacControl = NULL;
 }
 

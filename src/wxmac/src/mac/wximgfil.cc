@@ -165,8 +165,8 @@ BOOL wxGIF::ReadHeader(FILE *fp)
     fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
     for (i = 0; i < TabCol.sogct; i++) {
       TabCol.paleta[i].r = rgbTable[tp++];
-      TabCol.paleta[i].g = rgbTable[*tp++];
-      TabCol.paleta[i].b = rgbTable[*tp++];
+      TabCol.paleta[i].g = rgbTable[tp++];
+      TabCol.paleta[i].b = rgbTable[tp++];
     }
   }
 
@@ -289,7 +289,7 @@ ushort wxGIF::get_next_code()
 		}
             }
 	}
-      b1 = bytes_buf[pbytes++];
+      b1 = byte_buff[pbytes++];
       nbits_left = 8;
       --navail_bytes;
     }
@@ -313,7 +313,7 @@ ushort wxGIF::get_next_code()
 		}
             }
 	}
-      b1 = bytes_buf[pbytes++];
+      b1 = byte_buff[pbytes++];
       ret |= b1 << nbits_left;
       nbits_left += 8;
       --navail_bytes;
@@ -378,7 +378,7 @@ ushort  wxGIF::decoder(ushort linewidth)
   if (lbuf == NULL)
     return (OUT_OF_MEMORY);
 
-  sp = stack;
+  sp = 0;
   bufptr = 0;
   bufcnt = linewidth;
 
@@ -589,7 +589,7 @@ void wxGIF::SetRow(ushort n, byte *buf)
 {
   ushort i;
   for (i=0; i<n; i++) {
-    rawImage[IterImage + i] = buf[i];
+    RawImage[IterImage + i] = buf[i];
   }
 }
 

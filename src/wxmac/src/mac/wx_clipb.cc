@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
  */
 
-static const char sccsid[] = "%W% %G%";
-
 #ifdef __GNUG__
 #ifdef __GNUG__
 #pragma implementation

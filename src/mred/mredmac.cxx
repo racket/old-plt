@@ -49,6 +49,7 @@ static void QueueTransferredEvent(EventRecord *e);
 typedef MrQueueElem *MrQueueRef;
 
 class EventFinderClosure {
+public:
   int check_only;
   MrEdContext *c;
   MrEdContext *keyOk;
@@ -128,6 +129,7 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
 
 
 class MrQueueElem {
+public:
   EventRecord event;
   RgnHandle rgn;
   MrQueueElem *next, *prev;

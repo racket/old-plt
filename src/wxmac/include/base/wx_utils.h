@@ -29,6 +29,9 @@ char *wxNow(void);
 
 // Make a copy of this string using 'new'
 char *copystring(const char *s);
+#ifdef MZ_PRECISE_GC
+char *copystring_to_aligned(const char *s, int d);
+#endif
 
 // Generate a unique ID
 long wxNewId(void);

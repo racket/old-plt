@@ -1,7 +1,7 @@
 
 This is the source code distribution for PLT Scheme (MzScheme and/or
-MrEd, possibly with DrScheme). For license information, please see the
-file plt/notes/COPYING.LIB.
+MrEd with DrScheme). For license information, please see the file
+plt/notes/COPYING.LIB.
 
 Compiled binaries, documentation, and up-to-date information are
 available at
@@ -10,8 +10,8 @@ available at
   http://www.plt-scheme.org/software/mred/
 
 The MzScheme source code should compile and execute on any Windows,
-MacOS, Unix (Linux), or BeOS platform. The MrEd source code should
-compile and execute on any Windows, MacOS, or Unix (Linux) platform,
+Mac OS, Unix (Linux), or BeOS platform. The MrEd source code should
+compile and execute on any Windows, Mac OS, or Unix (Linux) platform,
 but not on BeOS and not using Cygwin with Windows.
 
 Per-platform instructions are below.
@@ -46,58 +46,41 @@ The mkbordyn.bat script requires bcc23.exe.
 Read the instructions in plt/src/mac/README.
 
 ========================================================================
- Compiling for Unix (including Linux), Cygwin, or BeOS (but not Mac OS X)
+ Compiling for supported Unix variants (including Linux), Cygwin, 
+               or BeOS (but not Mac OS X)
 ========================================================================
 
- 1. Run the script `configure', which is in the same directory as
-    this README.
+ 0. If you have an old PLT installation in the target directory,
+    remove it (unless you are using CVS with an "in-place" build).
+
+ 1. Run the script `configure' (which is in the same directory as this
+    README), usually with a --prefix=TARGETDIR command-line argument,
+    and optionally with --enable-dynlib.
+
+    For example, if you want to install into /usr/local/plt using
+    dynamic libraries, then run
+
+        configure --prefix=/usr/local/plt --enable-dynlib
+
+    If the --prefix flag is omitted, the binaries are built for an
+    in-place installation (i.e., the plt directory containing this
+    README will be used directly). Unless --enable-dynlib is used, the
+    plt directory can be moved later.
 
     The `configure' script generates the makefiles for building
     MzScheme and/or MrEd. The current directory at the time
-    `configure' is run will be used for building the executables. This
-    build directory does not have to be in the plt/ tree, but if you
-    are building for a single configuration, you can run `configure'
-    from its own directory.
+    `configure' is run will be used as working space for building the
+    executables (independent of --prefix). This build directory does
+    not have to be in the plt/ tree, even for an "in-place"
+    build. It's ok to run `configure' from its own directory, but it's
+    usually better to pick a separate build directory.
 
-    The `configure' script accepts a number of flags that adjust the
-    build process. Run `configure --help' for more information.  For
-    details on the OSKit kernel configuration for MzScheme, see
-    plt/src/mzscheme/README.
+    The --enable-dynlib flag works only when `configure' is called
+    using an absolute path, or when an absolute path is provided with
+    --prefix.
 
-    To port MzScheme to a new platform, edit mzscheme/sconfig.h to
-    provide a platform-specific compilation information. As
-    dsitributed, mzscheme/sconfig.h contains configurations for the
-    following platforms:
-
-              Windows
-              Mac OS (PPC and 68k) and Mac OS X
-              Linux (x86, PPC, and 68k)
-              Cygwin
-              BeOS
-              Solaris (x86 and Sparc)    [see notes below]
-              SunOS4 (Sparc)
-              IBM AIX (RS6000)
-              SGI IRIX (Mips)
-              DEC Ultrix
-              HP/UX
-              FreeBSD
-              OpenBSD
-              OSF1 (Alpha)
-              SCO Unix (x86)
-
-    If your platfrom is not supported by the Boehm garbage collector
-    (distributed with PLT source), provide the `--enable-sgc' flag to
-    `configure'. (For BeOS, this flag is inferred automatically.)
-
-    [Solaris Note: To ensure that dynamic extensions work right, make
-    sure your compiler uses the native Solaris `ld' rather than GNU's
-    `ld'.]
-
-    [Solaris 2.7 Note: gcc 2.8.1 does not work correctly under Solaris
-    2.7, producing a MzScheme binary that crashes. Thanks to
-    Stever Hall for figuring this out in a long--and presumably
-    torturous--process.  Compiling under Solaris 2.6 or compiling
-    without -O under Solaris 2.7 apparently solves the problem.]
+    The `configure' script accepts many other flags that adjust the
+    build process. Run `configure --help' for more information.
 
  2. Run `make'.
 
@@ -109,26 +92,39 @@ Read the instructions in plt/src/mac/README.
 
  3. Run `make install'.
 
-    This step copies binaries and libraries into their normal places
-    in the plt tree relative to the source directory. For example, the
-    `mzscheme' binary is copied for Unix into the directory
-    plt/mzscheme.
+    This step copies binaries and libraries into place within the plt
+    tree. For example, the `mzscheme' binary is copied for Unix into
+    the directory plt/bin/mzscheme. For a --prefix, build, the rest of
+    the plt tree is also copied to the target directory.
 
- 4. Unix (Linux) and BeOS: Run ./install in the plt directory (one
-    directory up from here). Afterwards, programs like 
-    plt/bin/setup-plt and plt/bin/mzc should work. If you move the 
-    plt tree, re-run plt/install.
+    In addition, this step runs the plt/install script, which updates
+    script paths and builds .zo files.
 
-    Cygwin: Create the other executables (besides mred.exe and
-    mzscheme.exe) by running
-       mzscheme.exe -mvqL- setup.ss setup
+    If the installation fails because the target directory cannot be
+    created, or because the target directory is not the one you
+    wanted, then you can run `configure' again with a new --prefix
+    value, then try step 3 again. After changing the --prefix value,
+    it is not necessary to repeat steps 1 or 2.
+
+ 4a. ONLY Cygwin: Create the other executables (besides mred.exe and
+     mzscheme.exe) by running
+        mzscheme.exe -mvqL- setup.ss setup
     in the plt directory (one directory up from here). The above makes
     the .zo files, too, but add -n to the end of the command to skip
     the .zo-compiling step. Afterwards, `plt/Setup PLT.exe' and
     `plt/mzc.exe' work.
 
-    After installation, the plt/src directory is no longer needed, and
-    can be safely deleted.
+ 4b. ONLY CVS users with in-place builds: the `make install' step does
+    not run plt/install for an in-place build, because old .zo files
+    typically need to be deleted, first. After an initial in-place
+    build, manually run ./install in the plt directory. For later
+    builds, manually run plt/bin/setup-plt with the -c flag.
+
+After an "in-place" install without CVS, the plt/src directory is no
+longer needed, and it can be safely deleted.
+
+If you move the plt tree (for a build without dynamic libraries), run
+the script ./install in the relocated plt directory.
 
 ========================================================================
  Compiling the OSKit-based kernel
@@ -176,6 +172,35 @@ To access a filesystem or the network from non-multiboot kernels
 (e.g., a LILO-compatible kernel), you must hardwire filesystem and
 networking parameters in oskglue.inc when compiling the kernel; see
 oskglue.inc for details (grep for `hardwire').
+
+========================================================================
+ Porting to New Platforms
+========================================================================
+
+At a mininum, to port MzScheme to a new platform, edit
+mzscheme/sconfig.h to provide a platform-specific compilation
+information. As dsitributed, mzscheme/sconfig.h contains
+configurations for the following platforms:
+
+              Windows
+              Mac OS (PPC and 68k) and Mac OS X
+              Linux (x86, PPC, and 68k)
+              Cygwin
+              BeOS
+              Solaris (x86 and Sparc)    [see notes below]
+              SunOS4 (Sparc)
+              IBM AIX (RS6000)
+              SGI IRIX (Mips)
+              DEC Ultrix
+              HP/UX
+              FreeBSD
+              OpenBSD
+              OSF1 (Alpha)
+              SCO Unix (x86)
+
+If your platfrom is not supported by the Boehm garbage collector
+(distributed with PLT source), provide the `--enable-sgc' flag to
+`configure'. (For BeOS, this flag is added automatically.)
 
 ========================================================================
  Additional Compilation Notes

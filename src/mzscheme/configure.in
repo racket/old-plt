@@ -48,6 +48,15 @@ if test "${enable_perl}" = "" ; then
   fi
 fi
 
+if test "${prefix}" = "NONE" ; then
+  prefix="${srcdir}/.."
+  MAKE_FINISH=inplace-finish
+else
+  echo "----> Installation will go to ${prefix} <-----"
+  MAKE_COPYTREE=copytree
+  MAKE_FINISH=copy-finish
+fi
+
 ###### Make sure MrEd is really there ######
 
 if test "${enable_mred}" = "yes" ; then
@@ -360,7 +369,7 @@ if test "${enable_dynlib}" = "yes" ; then
   echo "generating libtool"
   ${srcdir}/lt/ltconfig ${srcdir}/lt/ltmain.sh
   LTDIR=`pwd`
-  AR="${LTDIR}/libtool $CC -rpath ${srcdir}/../lib -o"
+  AR="${LTDIR}/libtool $CC -rpath ${prefix}/lib -o"
   ARFLAGS=""
   RANLIB=":"
   CC="${LTDIR}/libtool $CC"
@@ -419,6 +428,8 @@ AC_SUBST(MAKE_MRED)
 AC_SUBST(MAKE_MRED3M)
 AC_SUBST(MAKE_MREDINSTALL)
 AC_SUBST(MAKE_WBUILD)
+AC_SUBST(MAKE_COPYTREE)
+AC_SUBST(MAKE_FINISH)
 
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)

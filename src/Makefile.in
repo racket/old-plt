@@ -5,7 +5,7 @@ all: mz @MAKE_MRED@
 
 3m: mz3m @MAKE_MRED3M@
 
-install: mzinstall @MAKE_MREDINSTALL@ lib-finish
+install: @MAKE_COPYTREE@ mzinstall @MAKE_MREDINSTALL@ lib-finish @MAKE_FINISH@
 
 clean:
 	cd mzscheme; $(MAKE) clean
@@ -30,4 +30,25 @@ mrinstall:
 	cd mred; $(MAKE) install
 
 lib-finish:
-	@LIBFINISH@ @srcdir@/../lib
+	@LIBFINISH@ @prefix@/lib
+
+srcdir = @srcdir@
+prefix = @prefix@
+
+copy-finish:
+	cd $(prefix); ./install
+
+inplace-finish:
+	if [ ! -d $(srcdir)/CVS ] ; then cd $(prefix); ./install ; fi
+	if [ -d $(srcdir)/CVS ] ; then echo; echo ">> run plt/install or setup-plt -c to finish <<" ; echo; fi
+
+copytree:
+	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi
+	cp -r $(srcdir)/../collects $(prefix)/collects
+	cp -r $(srcdir)/../bin $(prefix)/bin
+	cp -r $(srcdir)/../lib $(prefix)/lib
+	cp -r $(srcdir)/../include $(prefix)/include
+	cp -r $(srcdir)/../notes $(prefix)/notes
+	cp -r $(srcdir)/../man $(prefix)/man
+	if [ -d $(srcdir)/../teachpack ] ; then  cp -r $(srcdir)/../teachpack $(prefix)/teachpack ; fi
+	cp -r $(srcdir)/../install $(prefix)/install

@@ -3,6 +3,7 @@
 #
 
 srcdir = @srcdir@
+prefix = @prefix@
 
 CC = @CC@
 CPP = @CPP@
@@ -190,14 +191,14 @@ clean:
 install:
 	$(MAKE) @MZINSTALLTARGET@
 
-LIBIDIR=$(srcdir)/../../lib
+LIBIDIR=$(prefix)/lib
 BUILDINFO=$(LIBIDIR)/buildinfo
 ICP=@ICP@
 
 normal-install:
-	if [ ! -d $(srcdir)/../../bin ] ; then mkdir $(srcdir)/../../bin ; fi
-	rm -f $(srcdir)/../../bin/mzscheme
-	$(ICP) mzscheme $(srcdir)/../../bin/mzscheme
+	if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
+	rm -f $(prefix)/bin/mzscheme
+	$(ICP) mzscheme $(prefix)/bin/mzscheme
 	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
 	cp mzdyn.o $(LIBIDIR)/mzdyn.o
 	$(ICP) libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
@@ -206,14 +207,14 @@ normal-install:
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
-WLIBIDIR=$(srcdir)/../../lib
+WLIBIDIR=$(prefix)/lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo
 
 cygwin-install:
-	rm -f $(srcdir)/../../mzscheme.exe
-	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
+	rm -f $(prefix)/mzscheme.exe
+	cp mzscheme.exe $(prefix)/mzscheme.exe
 	cd dynsrc; $(MAKE) cygwin-install
-	$(ICP) mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
+	$(ICP) mzstart.exe $(prefix)/collects/launcher/mzstart.exe
 	if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
 	$(ICP) libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
 	$(ICP) libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@

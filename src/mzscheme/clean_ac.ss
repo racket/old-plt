@@ -9,7 +9,8 @@
     (unless (eof-object? l)
       (cond
        [(regexp-match "^Directory and file names:" l)
-	;; start skipping lines
+	(printf "~a~n" l)
+	;; start skipping lines, except --prefix:
 	(loop 1)]
        [(and skip (regexp-match "^EOF$" l))
 	;; Done skipping. Output line, then add blank lines
@@ -20,6 +21,9 @@
 	    (newline)
 	    (loop (sub1 n))))
 	(loop #f)]
+       [(and skip (regexp-match "--prefix" l))
+	(printf "  --prefix=TARGETDIR      install to TARGETDIR/plt~n")
+	(loop skip)]
        [skip
 	(loop (add1 skip))]
        [else

@@ -1,5 +1,6 @@
 
 srcdir = @srcdir@
+prefix = @prefix@
 
 WXDIR = $(srcdir)/../wxxt
 
@@ -139,12 +140,12 @@ install-no-lib:
 	echo "no dynamic libs"
 
 install-lib:
-	$(ICP) libmred.@LIBSFX@ $(srcdir)/../../lib/
+	$(ICP) libmred.@LIBSFX@ $(prefix)/lib/
 
 install:
-	if [ ! -d $(srcdir)/bin ] ; then mkdir $(srcdir)/bin ; fi
-	rm -f $(srcdir)/../../bin/mred
-	$(ICP) mred $(srcdir)/../../bin/
+	if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
+	rm -f $(prefix)/bin/mred
+	$(ICP) mred $(prefix)/bin/
 	$(MAKE) @MRLIBINSTALL@
 
 3m:

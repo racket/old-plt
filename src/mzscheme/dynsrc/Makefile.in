@@ -6,6 +6,7 @@
 DYNLINK = mzc --ld 
 
 srcdir = @srcdir@
+prefix = @prefix@
 
 CC = @CC@
 CFLAGS = @CFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src
@@ -43,17 +44,17 @@ dynexmpl.o: $(srcdir)/dynexmpl.c  $(HEADERS)
 oe.o: $(srcdir)/oe.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $(srcdir)/oe.c -o oe.o
 
-ILIBDIR = $(srcdir)/../../../lib
+ILIBDIR = $(prefix)/lib
 
 cygwin-install:
 	gcc -c -O2 -I$(srcdir)/../include $(srcdir)/mzdyn.c
 	gcc -c $(srcdir)/init.cc
 	gcc -c $(srcdir)/fixup.c
-	dlltool --def $(srcdir)/mzdyn.def --output-exp $(srcdir)/mzdyn.exp
+	dlltool --def mzdyn.def --output-exp mzdyn.exp
 	if [ ! -d $(ILIBDIR) ] ; then mkdir $(ILIBDIR) ; fi
 	if [ ! -d $(ILIBDIR)/gcc ] ; then mkdir $(ILIBDIR)/gcc ; fi
-	cp $(srcdir)/mzdyn.def $(ILIBDIR)/gcc
-	cp $(srcdir)/mzdyn.exp $(ILIBDIR)/gcc
+	cp mzdyn.def $(ILIBDIR)/gcc
+	cp mzdyn.exp $(ILIBDIR)/gcc
 	cp mzdyn.o $(ILIBDIR)/gcc
 	cp init.o $(ILIBDIR)/gcc
 	cp fixup.o $(ILIBDIR)/gcc

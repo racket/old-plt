@@ -476,19 +476,10 @@
 			   obj) col))
 		    ((string? obj)      (if display?
 					    (out obj col)
-					    (let loop ((i 0) (j 0) (col (out "\"" col)))
-					      (if (and col (< j (string-length obj)))
-						  (let ((c (string-ref obj j)))
-						    (if (or (char=? c #\\)
-							    (char=? c #\"))
-							(loop j
-							      (+ j 1)
-							      (out "\\"
-								   (out (substring obj i j)
-									col)))
-							(loop i (+ j 1) col)))
-						  (out "\""
-						       (out (substring obj i j) col))))))
+					    (let ([p (open-output-string)])
+					      (write obj p)
+					      (let ([s (get-output-string p)])
+						(out s col)))))
 		    ((char? obj)        (if display?
 					    (out (make-string 1 obj) col)
 					    (out (case obj

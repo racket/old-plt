@@ -436,6 +436,7 @@ please adhere to these guidelines:
  (display-line-numbers "Display line numbers in buffer; not character offsets")
  (enable-keybindings-in-menus "Enable keybindings in menus")
  (automatically-to-ps "Automatically print to postscript file")
+ (option-as-meta "Treat option key as meta") ;; macos/macos x only
  (use-mdi "Use MDI Windows") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Use separate dialog for searching")
  (reuse-existing-frames "Reuse existing frames when opening new files")

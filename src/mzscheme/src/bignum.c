@@ -89,7 +89,7 @@ static Scheme_Object *bignum_one;
 #define RELEASE(digarray) free(digarray);
 
 # define PROTECT_RESULT(len) copy_to_protected(NULL, len * sizeof(bigdig), 1);
-# define FINISH_RESULT(digarray, len) { bigdig *save = digarray; digarray = allocate_bigdig_array(len, 0); memcpy(digarray, save, len * sizeof(bigdig)); RELEASE(save); }
+# define FINISH_RESULT(digarray, len) { bigdig *save = digarray; digarray = (bigdig *)scheme_malloc_atomic(len * sizeof(bigdig)); memcpy(digarray, save, len * sizeof(bigdig)); RELEASE(save); }
 # define MALLOC_PROTECT(size) copy_to_protected(NULL, size, 0)
 
 static void *copy_to_protected(void *p, long len, int zero)
@@ -108,7 +108,7 @@ static void *copy_to_protected(void *p, long len, int zero)
 # define PROTECT(digarray, len) /* no-op */
 #define RELEASE(digarray) /* no-op */
 
-# define PROTECT_RESULT(len) allocate_bigdig_array(len, 1)
+# define PROTECT_RESULT(len) allocate_bigdig_array(len)
 # define FINISH_RESULT(digarray, len) /* no-op */
 #endif
 
@@ -366,15 +366,13 @@ Scheme_Object *scheme_bignum_negate(const Scheme_Object *n)
   return o;
 }
 
-static bigdig* allocate_bigdig_array(int length, int zero)
+static bigdig* allocate_bigdig_array(int length)
 {
   int i;
   bigdig* res;
   res = (bigdig *)scheme_malloc_atomic(length * sizeof(bigdig));
-  if (zero) {
-    for(i = 0; i < length; ++i) {
-      res[i] = 0;
-    }
+  for(i = 0; i < length; ++i) {
+    res[i] = 0;
   }
   return res;
 }
@@ -424,7 +422,7 @@ Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object *b, in
   {
     int carry;
 
-    o_digs = allocate_bigdig_array(max_size, 1);
+    o_digs = allocate_bigdig_array(max_size);
 
     /* mpn_add doesn't allocate or block */
     if (a_size > b_size)
@@ -456,7 +454,7 @@ Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object *b, in
       else
 	sw = 1;
     }
-    o_digs = allocate_bigdig_array(max_size, 1);
+    o_digs = allocate_bigdig_array(max_size);
 
     /* mpn_sub doesn't allocate or block */
     if (sw)
@@ -639,7 +637,7 @@ static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, i
     res_alloc = a_size;
   }
   
-  res_digs = allocate_bigdig_array(res_alloc, 1);
+  res_digs = allocate_bigdig_array(res_alloc);
   
   carry_out_a = carry_out_b = carry_out_res = 1;  
   carry_in_a = carry_in_b = carry_in_res = 0;  
@@ -697,7 +695,7 @@ static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, i
   SCHEME_BIGPOS(o) = res_pos;
   if (!res_pos && carry_out_res == 1) /* Overflow */
   {
-    res_digs = allocate_bigdig_array(res_alloc + 1, 1);
+    res_digs = allocate_bigdig_array(res_alloc + 1);
     res_digs[res_alloc] = 1;
     SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc + 1);
   }
@@ -779,7 +777,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     res_alloc = n_size - shift_words;
     if (shift_bits == 0 && !SCHEME_BIGPOS(n))
       res_alloc++;   /* Very unlikely event of a carryout on the later add1 increasing the word size */
-    res_digs = allocate_bigdig_array(res_alloc, 1);
+    res_digs = allocate_bigdig_array(res_alloc);
     
     if (!SCHEME_BIGPOS(n)) {
       for(i = 0; i < shift_words; ++i) {
@@ -811,7 +809,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     res_alloc = SCHEME_BIGLEN(n) + shift_words;
     if (shift_bits != 0)
       ++res_alloc;
-    res_digs = allocate_bigdig_array(res_alloc, 1);
+    res_digs = allocate_bigdig_array(res_alloc);
     
     for(i = 0, j = shift_words; i < SCHEME_BIGLEN(n); ++i, ++j) {
       res_digs[j] = n_digs[i];
@@ -1103,7 +1101,7 @@ Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
     if (t == 0)
       return scheme_make_integer(0);
     n_size = 1;
-    sqr_digs = allocate_bigdig_array(1, 1);
+    sqr_digs = allocate_bigdig_array(1);
     sqr_digs[0] = t;
   } else {
     n_size = SCHEME_BIGLEN(n);

@@ -416,7 +416,9 @@
        floor ceil round fmod fabs __maskrune _errno
        isalpha isdigit isspace tolower toupper
        fread fwrite socket fcntl setsockopt connect send recv close
-       __builtin_next_arg __builtin_saveregs __error __errno_location __toupper __tolower
+       __builtin_next_arg __builtin_saveregs 
+       __builtin_constant_p __builtin_memset
+       __error __errno_location __toupper __tolower
        __attribute__ __mode__ ; not really functions in gcc
        scheme_get_env
        scheme_get_milliseconds scheme_get_process_milliseconds

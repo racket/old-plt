@@ -112,6 +112,9 @@ static Scheme_Hash_Table *fullpath_loaded_extensions; /* hash on full path name 
 # define VERSION_AND_VARIANT MZSCHEME_VERSION
 #endif
 
+/* For precise GC, make a proc ptr look like a fixnum: */
+#define mzPROC_TO_HASH_OBJ(f) ((Scheme_Object *)(((long)f) | 0x1))
+
 static Scheme_Object *fail_err_symbol, *version_err_symbol;
 
 void scheme_init_dynamic_extension(Scheme_Env *env)
@@ -431,14 +434,14 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Object *exp
 #else
 
     if (comppath)
-      scheme_hash_set(fullpath_loaded_extensions, (Scheme_Object *)filename, (Scheme_Object *)init_f);
+      scheme_hash_set(fullpath_loaded_extensions, (Scheme_Object *)filename, mzPROC_TO_HASH_OBJ(init_f));
   }
 #endif
 
 #ifndef NO_DYNAMIC_LOAD
   scheme_no_dumps("a dynamic extension has been loaded");
 
-  ed = (ExtensionData *)scheme_hash_get(loaded_extensions, (Scheme_Object *)init_f);
+  ed = (ExtensionData *)scheme_hash_get(loaded_extensions, mzPROC_TO_HASH_OBJ(init_f));
 
   if (ed) {
     init_f = ed->reload_f;
@@ -449,7 +452,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Object *exp
     ed->init_f = init_f;
     ed->reload_f = reload_f;
     ed->modname_f = modname_f;
-    scheme_hash_set(loaded_extensions, (Scheme_Object *)init_f, (Scheme_Object *)ed);
+    scheme_hash_set(loaded_extensions, mzPROC_TO_HASH_OBJ(init_f), (Scheme_Object *)ed);
   }
 
   if (SCHEME_SYMBOLP(expected_module)) {

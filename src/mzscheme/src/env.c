@@ -1184,20 +1184,18 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
   /* Register use at lambda, if any: */
   while (env) {
     if (env->flags & SCHEME_LAMBDA_FRAME) {
-      Compile_Data *data = COMPILE_DATA(env);
-      
-      if (data->max_stx_used <= pos) {
+      if (COMPILE_DATA(env)->max_stx_used <= pos) {
 	char *p;
 	int max_stx_used = (pos * 2) + 10;
 	
 	p = MALLOC_N_ATOMIC(char, max_stx_used);
 	memset(p, 0, max_stx_used);
-	memcpy(p, data->stxes_used, data->max_stx_used);
-	data->stxes_used = p;
-	data->max_stx_used = max_stx_used;
+	memcpy(p, COMPILE_DATA(env)->stxes_used, COMPILE_DATA(env)->max_stx_used);
+	COMPILE_DATA(env)->stxes_used = p;
+	COMPILE_DATA(env)->max_stx_used = max_stx_used;
       }
       
-      data->stxes_used[pos] = 1;
+      COMPILE_DATA(env)->stxes_used[pos] = 1;
       break;
     }
     env = env->next;
@@ -2035,21 +2033,20 @@ void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzsh
     frame = frame->next;
     while (frame) {
       if (frame->flags & SCHEME_LAMBDA_FRAME) {
-	Compile_Data *data = COMPILE_DATA(frame);
-
-	if (data->max_stx_used < max_stx_used) {
+	if (COMPILE_DATA(frame)->max_stx_used < max_stx_used) {
 	  char *p;
 
 	  p = MALLOC_N_ATOMIC(char, max_stx_used);
 	  memset(p, 0, max_stx_used);
-	  memcpy(p, data->stxes_used, data->max_stx_used);
-	  data->stxes_used = p;
-	  data->max_stx_used = max_stx_used;
+	  memcpy(p, COMPILE_DATA(frame)->stxes_used, 
+		 COMPILE_DATA(frame)->max_stx_used);
+	  COMPILE_DATA(frame)->stxes_used = p;
+	  COMPILE_DATA(frame)->max_stx_used = max_stx_used;
 	}
 
 	for (i = 0; i < max_stx_used; i++) {
 	  if (used[i])
-	    data->stxes_used[i] = 1;
+	    COMPILE_DATA(frame)->stxes_used[i] = 1;
 	}
 
 	break;

@@ -352,7 +352,7 @@
 	(public
 	  [definitions-canvas canvas]
 	  [definitions-edit edit]
-	  [interactions-canvas (make-object mred:simple-frame-canvas% panel)]
+	  [interactions-canvas (make-object mred:console-canvas% panel)]
 	  [interactions-edit (make-object drscheme:rep:edit%)])
 	
 	(sequence

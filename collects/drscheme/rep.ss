@@ -80,16 +80,14 @@
     (define make-edit%
       (lambda (super%)
 	(class super% args
-	  (inherit insert
+	  (inherit insert change-style
 		   get-end-position
 		   set-clickback
 		   set-last-header-position
-		   this-err-write
-		   this-out
-		   this-out-write
-		   this-err
-		   this-in
-		   display-delta set-display-delta
+		   this-err-write this-err 
+		   this-out this-out-write
+		   this-in this-result
+		   output-delta set-output-delta
 		   do-pre-eval
 		   do-post-eval
 		   display-result
@@ -126,36 +124,44 @@
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (expr [callback (lambda (error?) (void))])
-		 (let* ([user-code
-			 (lambda ()
-			   '(begin (printf "sending scheme:~n")
-				  (pretty-print expr))
-			   (call-with-values
-			    (lambda ()
-			      (with-parameterization param
-				(lambda ()
-				  (eval expr))))
-			    (lambda anss
-			      (for-each
-			       (lambda (ans)
-				 (unless (void? ans)
-				   (mzlib:pretty-print@:pretty-print
-				    (print-convert:print-convert ans)
-				    this-out)))
-			       anss))))])
-		   (thread
-		    (lambda ()
-		      (let ([user-code-error? #t])
-			(dynamic-wind (lambda () (semaphore-wait s))
-				      (lambda ()
-					(set! user-code-error? (let/ec k 
-								 (set-escape (lambda () (k #t)))
-								 (user-code)
-								 #f)))
-				      (lambda () 
-					(set-escape #f)
-					(semaphore-post s)
-					(callback user-code-error?)))))))))]
+		 (letrec ([add-tread
+			   (lambda () 
+			     (eval `(#%define tread ,(ivar this transparent-read)))
+			     (set! add-tread void))])
+		   (let* ([user-code
+			   (lambda ()
+			     '(begin (printf "sending scheme:~n")
+				     (pretty-print expr))
+			     (call-with-values
+			      (lambda ()
+				(with-parameterization param
+				  (lambda ()
+				    (parameterize ([current-output-port this-out]
+						   [current-error-port this-err]
+						   [current-input-port this-in])
+						  (add-tread)
+						  (eval expr)))))
+			      (lambda anss
+				(for-each
+				 (lambda (ans)
+				   (unless (void? ans)
+				     (mzlib:pretty-print@:pretty-print
+				      (print-convert:print-convert ans)
+				      this-result)))
+				 anss))))])
+		     (thread
+		      (lambda ()
+			(let ([user-code-error? #t])
+			  (dynamic-wind (lambda () (semaphore-wait s))
+					(lambda ()
+					  (set! user-code-error? (let/ec k 
+								   (set-escape (lambda () (k #t)))
+								   (user-code)
+								   #f)))
+					(lambda () 
+					  (set-escape #f)
+					  (semaphore-post s)
+					  (callback user-code-error?))))))))))]
 	    [do-many-aries-evals
 	     (lambda (edit start end pre post)
 	       (let ([post-done? #f]
@@ -219,31 +225,33 @@
 		 (send red-delta copy delta)
 		 (send red-delta set-delta-foreground "RED")
 
-		 (let ([dd display-delta])
-		   (dynamic-wind
-		    (lambda () (set-display-delta delta))
-		    (lambda ()
-		      (let* ([_ (this-out-write "Welcome to ")]
-			     [before (get-end-position)]
-			     [_ (set-display-delta click-delta)]
-			     [_ (this-out-write "DrScheme")]
-			     [_ (set-display-delta delta)]
-			     [after (get-end-position)]
-			     [_ (this-out-write (format ", version ~a.~nLanguage: " (version)))]
-			     [_ (set-display-delta red-delta)]
-			     [_ (this-out-write
-				 (format "~a Scheme."
-					 (list-ref
-					  drscheme:basis:level-strings
-					  (drscheme:basis:level->number
-					   (mred:get-preference
-					    'drscheme:scheme-level)))))])
-			(set-clickback before after 
-				       (lambda args (drscheme:app:about-drscheme))
-				       click-delta)))
-		    (lambda () (set-display-delta dd)))
-		   (set-last-header-position (get-end-position))))
-	       (reset-console))])
+		 (let ([dd output-delta]
+		       [insert-delta
+			(lambda (s delta)
+			  (let ([before (get-end-position)])
+			    (insert s)
+			    (let ([after (get-end-position)])
+			      (change-style delta before after)
+			      (values before after))))])
+		   (insert-delta "Welcome to " delta)
+		   (let-values ([(before after)
+				 (insert-delta "DrScheme" click-delta)])
+		     (insert-delta (format ", version ~a.~nLanguage: " (version))
+				   delta)
+		     (insert-delta 
+		      (format "~a Scheme."
+			      (list-ref
+			       drscheme:basis:level-strings
+			       (drscheme:basis:level->number
+				(mred:get-preference
+				 'drscheme:scheme-level))))
+		      red-delta)
+		     (insert-delta "." delta)
+		     (set-clickback before after 
+				    (lambda args (drscheme:app:about-drscheme))
+				    click-delta)))
+		 (set-last-header-position (get-end-position))
+		 (reset-console)))])
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before drscheme:rep:edit")

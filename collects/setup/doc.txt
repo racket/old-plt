@@ -285,8 +285,7 @@ The raw format is
    this unit. The result of invoking the unit must be a list of collection
    paths (where each collection path is a list of strings); once the
    archive is unpacked, Setup PLT will compile and setup the specified
-   collections, as if it was invoked with the "-c" option, so the
-   "compiled" directories will be deleted.
+   collections.
 
    The `unmztar' procedure takes one argument: a filter
    procedure. The filter procedure is called for each directory and

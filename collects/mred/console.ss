@@ -18,6 +18,7 @@
     (mred:debug:printf 'invoke "mred:console@")
 
     (define newline-string (string #\newline))
+    (define newline-indent-string (string-append (string #\newline) "   "))
 
     (define welcome-message
       (string-append
@@ -26,27 +27,27 @@
        ", Copyright (c) 1995-96 PLT, Rice University."
        newline-string
        "Based on the following: "
-       newline-string
-       " wxWindows (c) 1994 Artificial Intelligence"
-       " Applications Institute, The University of Edinburgh."
+       newline-indent-string
+       "wxWindows (c) 1994 Artificial Intelligence"
+       "Applications Institute, The University of Edinburgh."
        (if (eq? wx:window-system 'xt)
 	   (string-append
-	    newline-string
-	    " wxWindows/Xt (c) 1995, GNU (Markus Holzem).")
+	    newline-indent-string
+	    "wxWindows/Xt (c) 1995, GNU (Markus Holzem).")
 	   "")
-       newline-string
-       " MzScheme (c) 1995 Matthew Flatt."
-       newline-string
-       " libscheme (c) 1994 Brent Benson."
-       newline-string
-       " conservative GC (c) 1988, 1989 Hans-J. Boehm, Alan J. Demers"
+       newline-indent-string
+       "MzScheme (c) 1995 Matthew Flatt."
+       newline-indent-string
+       "libscheme (c) 1994 Brent Benson."
+       newline-indent-string
+       "conservative GC (c) 1988, 1989 Hans-J. Boehm, Alan J. Demers"
        " (c) 1991-1994 Xerox Corp."
-       newline-string
-       " C++ GC extension by Jesse Hull and John Ellis"
+       newline-indent-string
+       "C++ GC extension by Jesse Hull and John Ellis"
        " (c) 1994 Xerox Corp."
        newline-string
        "See the license agreement or"
-       " http://www.cs.rice.edu/CS/PLT/packages/mred/ for more info."))		     
+       " http://www.cs.rice.edu/CS/PLT/ (under DrScheme) for more info."))		     
 
     (define make-scheme-mode-edit%
       (lambda (super%)

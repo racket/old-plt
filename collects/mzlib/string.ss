@@ -11,7 +11,8 @@
 	   regexp-match*
 	   regexp-match-positions*
 	   regexp-split
-	   regexp-match-exact?)
+	   regexp-match-exact?
+           regexp-match/fail-without-reading)
 
   (require (lib "etc.ss"))
 
@@ -128,6 +129,25 @@
       (raise-type-error 'regexp-replace-quote "string" s))
     (regexp-replace* "\\\\" s "\\\\\\\\"))
 
+  (define regexp-match/fail-without-reading
+    (opt-lambda (pattern input-port [start-k 0] [end-k #f] [output-port #f])
+      (unless (input-port? input-port)
+        (raise-type-error 'regexp-match/fail-without-reading "input port" input-port))
+      (let ([m (apply regexp-match-peek-positions
+                      pattern input-port start-k end-k
+                      (if output-port
+                          (list output-port)
+                          null))])
+        (and m
+             ;; What happens if someone swipes our chars before we can get them?
+             (begin
+               ;; drop prefix before match:
+               (read-string (caar m) input-port)
+               (let ([s (read-string (- (cdar m) (caar m)) input-port)])
+                 (cons s
+                       (map (lambda (p)
+                              (substring s (- (car p) (caar m)) (- (cdr p) (caar m))))
+                            (cdr m)))))))))
 
   ;; Helper function for the regexp functions below.
   (define (regexp-fn name success failure)

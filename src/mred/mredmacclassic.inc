@@ -189,5 +189,4 @@ static void MrDequeue(MrQueueElem *q)
     last = q->prev;
 }
  
-#define leaveEvt 42
 

@@ -79,8 +79,17 @@ all:
 bin:
 	$(MAKE) mred
 
+LINKRESULT_wx_xt = mred
+LINKRESULT_wx_mac = pre-mred
+LINKRESULT = $(LINKRESULT_@WXVARIANT@)
+
+LINKCOMPLETE_wx_xt = :
+LINKCOMPLETE_wx_mac = @REZ@ -o pre-mred -c MrEd -t APPL $(srcdir)/../mac/cw/MrEd.r ; mv pre-mred mred
+LINKCOMPLETE = $(LINKCOMPLETE_@WXVARIANT@)
+
 mred : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
-	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o mred $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
+	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
+	$(LINKCOMPLETE)
 
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)

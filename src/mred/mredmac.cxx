@@ -41,13 +41,33 @@ static long resume_ticks;
 
 static int dispatched = 1;
 
-#if defined(OS_X) && 0
-# define USE_OS_X_EVENTHANDLER
+#define leaveEvt 42
+
+#if defined(OS_X)
+# define XX_USE_OS_X_EVENTHANDLER
 #endif
 
-#ifndef USE_OS_X_EVENTHANDLER
+#ifdef USE_OS_X_EVENTHANDLER
+static OSErr InstallAEventHandler();
+typedef EventRef MrQueueRef;
+static EventQueueRef mainQueue = NULL;
+#else
 static int QueueTransferredEvent(EventRecord *e);
+typedef struct MrQueueElem *MrQueueRef;
 #endif
+
+
+typedef struct {
+  int check_only;
+  MrEdContext *c;
+  MrEdContext *keyOk;
+  EventRecord *event;
+  MrEdContext **which;
+  int (*checker)(EventRecord *evt, MrQueueRef q, int check_only, 
+                 MrEdContext *c, MrEdContext *keyOk, 
+	         EventRecord *event, MrEdContext **which);
+} EventFinderClosure;
+
 
 void MrEdInitFirstContext(MrEdContext *)
 {
@@ -58,7 +78,7 @@ void MrEdInitFirstContext(MrEdContext *)
   mainQueue = GetMainEventQueue();
 #endif
 #ifdef MACINTOSH_EVENTS
-  scheme_handle_aewait_event = (void (*)(EventRecord*))QueueTransferredEvent;
+  scheme_handle_aewait_event = QueueMrEdEvent;
 #endif
 }
 
@@ -125,25 +145,21 @@ UInt32 kEventMrEdLeave = 'LEEV';
 
 UInt32 typeWxWindowPtr = FOUR_CHAR_CODE('WinP'); /* wxWindow * */
 
-static EventQueueRef mainQueue = NULL;
-
-
-OSErr QueueMrEdCarbonEvent(EventRef e)
+static OSErr QueueMrEdCarbonEvent(EventRef e)
 {
   OSErr err;
   
-  err = PostEventToQueue(eventRef, mainQueue, kEventPriorityStandard);
+  err = PostEventToQueue(mainQueue, e, kEventPriorityStandard);
   if (err != noErr) {
   	return err;
   }
 }
 
 /* after installing this Apple Event Handler, the main event loop should never even see
- * the apple events coming in.  One possible concern is that we should be calling WNE every
- * once in a while to make sure that the OS gets to dispatch these calls.
+ * the apple events coming in.
  */
  
-OSStatus myAEventHandler(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData)
+static OSStatus myAEventHandler(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData)
 {
 	EventRecord e;
 	
@@ -154,7 +170,7 @@ OSStatus myAEventHandler(EventHandlerCallRef inHandlerCallRef, EventRef inEvent,
 	AEProcessAppleEvent(&e);
 }	
 	
-OSErr InstallAEventHandler()
+static OSErr InstallAEventHandler()
 {
     EventTypeSpec typeSpec = {kEventClassAppleEvent, kEventAppleEvent};
     EventTargetRef target = GetApplicationEventTarget();
@@ -168,70 +184,72 @@ enum {
 	kActionAccept
 };
 
-Bool EventFinder(EventRef inEvent, EventFinderClosure *closure)
+static Boolean EventFinder(EventRef inEvent, EventFinderClosure *closure)
 {
-  MrEdContext *fc, *c;
-  wxFrame *fr;
-  
-  c = closure.c;
-  
-  switch (GetEventClass(inEvent)) {
-  case kEventClassMrEd:
-    switch(GetEventKind(inEvent)) {
-    case kEventMrEdLeave:
+  EventRecord evt;
+
+  if (GetEventClass(inEvent) == kEventClassMrEd) {
+    if (GetEventKind(inEvent) == kEventMrEdLeave) {
       wxWindow *win;
       
       // result ignored:
       GetEventParameter(inEvent,kEventParamDirectObject,typeWxWindowPtr,
       					NULL, sizeof(wxWindow *), NULL, &win);
-      					
-      if ((win->__type == -1) || !(win->IsShown())) {
-        closure.action_to_take = kActionRemove;
-      	return TRUE;
-      } else {
-		fr = (wxFrame *)(win->GetRootFrame());
-		fc = fr ? (MrEdContext *)(fr->context) : (MrEdContext *)NULL;
-	    if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	      closure.which = fc;
-
-#ifdef RECORD_HISTORY
-	      fprintf(history, "leave\n");
-	      fflush(history);
-#endif
-		  closure.action_to_take = kActionAccept;
-		  return TRUE;
-	    } else {
-	      return FALSE; // wrong context
-	    }
-	  }
-	default:
-	  return FALSE; // unknown event
-	}
-  case kEventClassMouse:
-  case kEventClassKeyboard:
-    switch (GetEventKind(inEvent)) {
-    case kEventMouseDown:
+      			
       
-	
-	        if (check_only)
-	          return TRUE;
-	
-	        MrDequeue(q);
-	        memcpy(event, &q->event, sizeof(EventRecord));
-	        return TRUE;
-	      }
-        } else {
-          MrDequeue(q);
-        }
+      evt.what = leaveEvt;
+      evt.message = (long)win;
+    } else
+      return FALSE; // unknown event
+    } else
+       ConvertEventRefToEventRecord(inEvent,&evt);
 
+
+  return closure->checker(&evt, inEvent, closure->check_only, 
+                 closure->c, closure->keyOk, 
+	         closure->event, closure->which);
 }          
 
 
-EventComparatorUPP EventFinderUPP = NewEventComparatorUPP(EventFinder);
+EventComparatorUPP eventFinderUPP = NewEventComparatorUPP(EventFinder);
+
+static MrQueueRef Find(EventFinderClosure *closure)
+{
+  return FindSpecificEventInQueue(mainQueue,eventFinderUPP,closure);
+}
+
+static void MrDequeue(MrQueueRef e) {
+  RemoveEventFromQueue(mainQueue, e);
+  ReleaseEvent(e);
+}
+
+void QueueMrEdEvent(EventRecord *e)
+{
+}
  
 #else
 
 #include "mredmacclassic.inc"
+
+static MrQueueRef Find(EventFinderClosure *closure)
+{
+  MrQueueRef osq, next;
+
+  osq = first;
+  while (osq) {
+    next = osq->next;
+
+    if (closure->checker(&osq->event, osq, closure->check_only, 
+                 closure->c, closure->keyOk, 
+	         closure->event, closure->which)) {
+       return osq;
+    }
+
+    osq = next;
+ }
+
+ return NULL;
+}
 
 #endif
 
@@ -316,33 +334,267 @@ static WindowPtr last_front_window;
 FILE *history;
 #endif
 
+static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,   MrEdContext *keyOk, 
+	          EventRecord *event, MrEdContext **which) {
+    switch (evt->what) {
+    case leaveEvt:
+      {
+        wxWindow *win = (wxWindow *)event->message;
+	wxFrame *fr;
+	MrEdContext *fc;
+
+        if ((win->__type != -1) && win->IsShown()) {
+          fr = (wxFrame *)win->GetRootFrame();
+	      fc = fr ? (MrEdContext *)fr->context : NULL;
+	      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	        if (which)
+	          *which = fc;
+
+#ifdef RECORD_HISTORY
+	        fprintf(history, "leave\n");
+	        fflush(history);
+#endif
+
+	        if (check_only)
+	          return TRUE;
+	
+	        MrDequeue(q);
+	        memcpy(event, evt, sizeof(EventRecord));
+	        return TRUE;
+	      }
+        } else {
+          MrDequeue(q);
+        }
+      }
+    }
+
+  return FALSE;
+}
+
+static int saw_mup = 0, saw_mdown = 0, saw_kdown = 0, kill_context = 0;
+
+static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, MrEdContext *c,  MrEdContext *keyOk, 
+	          EventRecord *event, MrEdContext **foundc) {
+    int found = 0;
+  wxFrame *fr;
+   MrEdContext *fc;
+
+    switch (e->what) {
+      case mouseDown:
+      {
+	WindowPtr window, front;
+	int part;
+
+	saw_mdown = 1;
+	
+        part = FindWindow(e->where, &window);
+	front = FrontWindow();
+	if (part == inMenuBar)
+	  window = front;
+
+	if (!window) {
+	  MrDequeue(osq);
+	  found = 1;
+	  *foundc = keyOk;
+	  cont_event_context = NULL;
+        } else if (window != front) {
+          /* Handle bring-window-to-front click immediately */
+          if (!WindowStillHere(window)) {
+            MrDequeue(osq);
+          } else {
+	    fr = wxWindowPtrToFrame(window, NULL);
+	    fc = fr ? (MrEdContext *)fr->context : NULL;
+	    if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
+	      SelectWindow(window);
+	      MrDequeue(osq);
+	      cont_event_context = NULL;
+	    } else if (fc && fc->modal_window) {
+	      SysBeep(0);
+	      MrDequeue(osq);
+	      cont_event_context = NULL;
+	      SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
+	    }
+	  }
+	} else if (resume_ticks > e->when) {
+	  /* Clicked MrEd into foreground - toss the event */
+	  MrDequeue(osq);
+	} else {
+	  *foundc = keyOk;
+	  if (*foundc) {
+	    last_mouse.h = -1;
+	    found = 1;
+	    if (!check_only && (part != inMenuBar)) {
+	      cont_event_context = *foundc;
+	      cont_event_context_window = window;
+	      kill_context = 0;
+	    } else
+	      cont_event_context = NULL;
+	  }
+	}
+      }
+      break;
+    case mouseUp:
+      saw_mup = 1;
+      if (!cont_event_context) {
+      	if (!saw_mdown) {
+	  MrDequeue(osq);
+        }
+      } else if (keyOk == cont_event_context) {
+	*foundc = keyOk;
+	if (*foundc) {
+	  found = 1;
+	  if (!check_only)
+	    cont_event_context = NULL;
+	}
+      }
+      break;
+    case keyDown:
+    case autoKey:
+      *foundc = keyOk;
+      if (*foundc) {
+	found = 1;
+      }
+      break;
+    case keyUp:
+      if (!cont_event_context) {
+        if (!saw_kdown) {
+	  MrDequeue(osq);
+        }
+      } else if (keyOk == cont_event_context) {
+	*foundc = keyOk;
+	if (*foundc)
+	  found = 1;
+	if (!check_only)
+	  cont_event_context = NULL;
+      }
+      break;
+    }
+
+  if (found)
+    memcpy(event, e, sizeof(EventRecord));
+
+  return found;
+}
+
+static int CheckForActivate(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,   MrEdContext *keyOk, 
+	          EventRecord *event, MrEdContext **which)
+ {
+   WindowPtr window;
+
+    switch (evt->what) {
+#ifndef OS_X    
+    // OS X does not support the diskEvt event. Yay!
+    case diskEvt:
+#endif    
+    case kHighLevelEvent:
+    {
+	MrEdContext *fc;
+       fc = NULL;
+	   if ((!c && !fc) || (!c && fc->ready) || (fc == c)) {
+	    if (which)
+	      *which = fc;
+        if (check_only)
+          return TRUE;
+	    memcpy(event, evt, sizeof(EventRecord));
+        MrDequeue(q);
+	    return TRUE;
+	  }
+}
+	  break;
+    case activateEvt:
+      window = (WindowPtr)evt->message;
+      if (WindowStillHere(window)) {
+	wxFrame *fr;
+	MrEdContext *fc;
+
+        fr = wxWindowPtrToFrame(window, c);
+        fc = fr ? (MrEdContext *)fr->context : NULL;
+        if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	  if (which)
+	    *which = fc;
+
+#ifdef RECORD_HISTORY
+	  fprintf(history, "activate\n");
+	  fflush(history);
+#endif
+
+	  if (check_only)
+	    return TRUE;
+	
+	  memcpy(event, evt, sizeof(EventRecord));
+	  MrDequeue(q);
+	  return TRUE;
+        }
+      } else
+	MrDequeue(q);
+      break;
+    }
+
+  return FALSE;
+}
+
+static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only, MrEdContext *c,  MrEdContext *keyOk, 
+	          EventRecord *event, MrEdContext **which)
+ {
+    WindowPtr window;
+
+    switch (evt->what) {
+    case updateEvt:
+      window = (WindowPtr)evt->message;
+      if (WindowStillHere(window)) {
+	wxFrame *fr;
+	MrEdContext *fc;
+
+	fr = wxWindowPtrToFrame(window, c);
+	fc = fr ? (MrEdContext *)fr->context : NULL;
+	if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	  if (which)
+	    *which = fc;
+
+#ifdef RECORD_HISTORY
+	  fprintf(history, "update\n");
+	  fflush(history);
+#endif
+
+	  if (check_only)
+	    return TRUE;
+	
+	  memcpy(event, evt, sizeof(EventRecord));
+	  // MrDequeue(q);
+	  return TRUE;
+	}
+      } else {
+#ifndef USE_OS_X_EVENTHANDLER
+	DisposeRgn(q->rgn);
+#endif
+	MrDequeue(q);
+      }
+      break;
+    }
+
+ return FALSE;
+}
+
 int MrEdGetNextEvent(int check_only, int current_only,
 		     EventRecord *event, MrEdContext **which)
 {
   /* Search for an event. Handle clicks in non-frontmost windows
      immediately. */
-#ifndef USE_OS_X_EVENTHANDLER
-  MrQueueElem *osq, *next;
-  MrQueueElem *q;
-#else
-  EventRef eRef;  
-  EventFinderClosure eventFinderClosure;
-#endif
+  MrQueueRef osq;
+  EventFinderClosure closure;
   EventRecord *e, ebuf;
-  MrEdContext *c, *keyOk, *fc, *foundc;
+  MrEdContext *c, *keyOk, *foundc;
   WindowPtr window;
-  wxFrame *fr;
-  int found = 0, kill_context = 0;
-  int saw_mup = 0, saw_mdown = 0, saw_kdown = 0, we_are_front;
-  
+  int found = 0;
+  int we_are_front;
+
+  saw_mup = 0; saw_mdown = 0; saw_kdown = 0;
+  kill_context = 0;
+
   if (!event)
     event = &ebuf;
   
   c = current_only ? MrEdGetContext() : NULL;
-
-#ifdef USE_OS_X_EVENTHANDLER  
-  eventFinderClosure.c = c;
-#endif
     
   keyOk = KeyOk(current_only);
   
@@ -356,7 +608,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
-#ifndef USE_OS_X_EVENTHANDLER  
+#ifdef USE_OS_X_EVENTHANDLER  
   // just to give the event manager a little time:
   EventRecord ignored;
   WaitNextEvent(0, // no events
@@ -398,7 +650,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
      WindowPtr front = FrontWindow();
   
      if (front) {
-     
+      MrQueueElem *q;
+
       q = new MrQueueElem;
       q->next = NULL;
       q->prev = last;
@@ -418,164 +671,36 @@ int MrEdGetNextEvent(int check_only, int current_only,
       if (we_are_front)
         wxSetCursor(NULL); /* reset cursor */
     }
-#endif // !defined(OS_X)     
+#endif
   }
 #endif
   
+  closure.c = c;
+  closure.check_only = check_only;
+  closure.keyOk = keyOk;
+  closure.event = event;
+  closure.which = which;
+
   /* First, service leave events: */
-#ifdef USE_OS_X_EVENTHANDLER
-
-  eventFinderClosure.eventClass = kEventClassMrEd;
-  eventFinderClosure.eventKind = kEventMrEdLeave;
-
-  eRef = FindSpecificEventInQueue(mainQueue,eventFinderUPP,&eventFinderClosure);
-
-  
-
-
-
-#else // OS_X  
-  for (q = first; q; q = q->next) {
-    switch (q->event.what) {
-    case leaveEvt:
-      {
-        wxWindow *win = (wxWindow *)q->event.message;
-
-        if ((win->__type != -1) && win->IsShown()) {
-          fr = (wxFrame *)win->GetRootFrame();
-	      fc = fr ? (MrEdContext *)fr->context : NULL;
-	      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	        if (which)
-	          *which = fc;
-
-#ifdef RECORD_HISTORY
-	        fprintf(history, "leave\n");
-	        fflush(history);
-#endif
-
-	        if (check_only)
-	          return TRUE;
-	
-	        MrDequeue(q);
-	        memcpy(event, &q->event, sizeof(EventRecord));
-	        return TRUE;
-	      }
-        } else {
-          MrDequeue(q);
-        }
-      }
-    }
-  }
-#endif // OS_X  
+  closure.checker = CheckForLeave;
+  if (Find(&closure))
+     return TRUE; 
   
   /* Next, service mouse & key events: */
-  osq = first;
-  while (osq) {
-    next = osq->next;
-    e = &osq->event;
-    switch (e->what) {
-      case mouseDown:
-      {
-	WindowPtr window, front;
-	int part;
-
-	saw_mdown = 1;
-	
-        part = FindWindow(e->where, &window);
-	front = FrontWindow();
-	if (part == inMenuBar)
-	  window = front;
-
-	if (!window) {
-	  MrDequeue(osq);
-	  found = 1;
-	  foundc = keyOk;
-	  cont_event_context = NULL;
-        } else if (window != front) {
-          /* Handle bring-window-to-front click immediately */
-          if (!WindowStillHere(window)) {
-            MrDequeue(osq);
-          } else {
-	    fr = wxWindowPtrToFrame(window, NULL);
-	    fc = fr ? (MrEdContext *)fr->context : NULL;
-	    if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
-	      SelectWindow(window);
-	      MrDequeue(osq);
-	      cont_event_context = NULL;
-	    } else if (fc && fc->modal_window) {
-	      SysBeep(0);
-	      MrDequeue(osq);
-	      cont_event_context = NULL;
-	      SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
-	    }
-	  }
-	} else if (resume_ticks > e->when) {
-	  /* Clicked MrEd into foreground - toss the event */
-	  MrDequeue(osq);
-	} else {
-	  foundc = keyOk;
-	  if (foundc) {
-	    last_mouse.h = -1;
-	    found = 1;
-	    if (!check_only && (part != inMenuBar)) {
-	      cont_event_context = foundc;
-	      cont_event_context_window = window;
-	      kill_context = 0;
-	    } else
-	      cont_event_context = NULL;
-	  }
-	}
-      }
-      break;
-    case mouseUp:
-      saw_mup = 1;
-      if (!cont_event_context) {
-      	if (!saw_mdown) {
-	  MrDequeue(osq);
-        }
-      } else if (keyOk == cont_event_context) {
-	foundc = keyOk;
-	if (foundc) {
-	  found = 1;
-	  if (!check_only)
-	    cont_event_context = NULL;
-	}
-      }
-      break;
-    case keyDown:
-    case autoKey:
-      foundc = keyOk;
-      if (foundc) {
-	found = 1;
-      }
-      break;
-    case keyUp:
-      if (!cont_event_context) {
-        if (!saw_kdown) {
-	  MrDequeue(osq);
-        }
-      } else if (keyOk == cont_event_context) {
-	foundc = keyOk;
-	if (foundc)
-	  found = 1;
-	if (!check_only)
-	  cont_event_context = NULL;
-      }
-      break;
-    }
-
-    if (found)
-      break;
-
-    osq = next;
+  closure.checker = CheckForMouseOrKey;
+  closure.which = &foundc;
+  if (osq = Find(&closure)) {
+    found = 1;
   }
+  closure.which = which;
   
   if (kill_context && !saw_mup)
     cont_event_context = NULL;
   
   if (found) {
+#ifndef USE_OS_X_EVENTHANDLER  
     /* Remove intervening mouse/key events: */
-    MrQueueElem *qq;
+    MrQueueElem *qq, *next;
     for (qq = first; qq && (qq != osq); qq = next) {
       next = qq->next;
       switch (qq->event.what) {
@@ -588,7 +713,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
           break;
       }
     }
-    e = &osq->event;
+#endif
 
     if (which)
       *which = foundc;
@@ -600,8 +725,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
     if (check_only)
       return TRUE;
-    
-    memcpy(event, e, sizeof(EventRecord));
+        
     MrDequeue(osq);
     
     return TRUE;
@@ -610,82 +734,14 @@ int MrEdGetNextEvent(int check_only, int current_only,
   // TransferQueue(0);
     
   /* Try activate and high-level events: */
-  for (q = first; q; q = q->next) {
-    switch (q->event.what) {
-#ifndef OS_X    
-    // OS X does not support the diskEvt event. Yay!
-    case diskEvt:
-#endif    
-    case kHighLevelEvent:
-       fc = NULL;
-	   if ((!c && !fc) || (!c && fc->ready) || (fc == c)) {
-	    if (which)
-	      *which = fc;
-        if (check_only)
-          return TRUE;
-        MrDequeue(q);
-	    memcpy(event, &q->event, sizeof(EventRecord));
-	    return TRUE;
-	  }
-	  break;
-    case activateEvt:
-      window = (WindowPtr)q->event.message;
-      if (WindowStillHere(window)) {
-        fr = wxWindowPtrToFrame(window, c);
-        fc = fr ? (MrEdContext *)fr->context : NULL;
-        if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	  if (which)
-	    *which = fc;
-
-#ifdef RECORD_HISTORY
-	  fprintf(history, "activate\n");
-	  fflush(history);
-#endif
-
-	  if (check_only)
-	    return TRUE;
-	
-	  MrDequeue(q);
-	  memcpy(event, &q->event, sizeof(EventRecord));
-	  return TRUE;
-        }
-      } else
-	MrDequeue(q);
-      break;
-    }
-  }
+  closure.checker = CheckForActivate;
+  if (Find(&closure))
+     return TRUE; 
   
   /* Update events: */
-  for (q = first; q; q = q->next) {
-    switch (q->event.what) {
-    case updateEvt:
-      window = (WindowPtr)q->event.message;
-      if (WindowStillHere(window)) {
-	fr = wxWindowPtrToFrame(window, c);
-	fc = fr ? (MrEdContext *)fr->context : NULL;
-	if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	  if (which)
-	    *which = fc;
-
-#ifdef RECORD_HISTORY
-	  fprintf(history, "update\n");
-	  fflush(history);
-#endif
-
-	  if (check_only)
-	    return TRUE;
-	
-	  // MrDequeue(q);
-	  memcpy(event, &q->event, sizeof(EventRecord));
-	  return TRUE;
-	}
-      } else {
-	DisposeRgn(q->rgn);
-	MrDequeue(q);
-      }
-      break;
-    }
-  }
+  closure.checker = CheckForUpdate;
+  if (Find(&closure))
+     return TRUE; 
 
   /* Generate a motion event? */
   if (keyOk) {
@@ -749,7 +805,7 @@ void MrEdDispatchEvent(EventRecord *e)
 {
   dispatched = 1;
 
-
+#ifndef USE_OS_X_EVENTHANDLER
   if (e->what == updateEvt) {
     /* Find the update event for this window: */
     RgnHandle rgn;
@@ -784,6 +840,7 @@ void MrEdDispatchEvent(EventRecord *e)
     }
 #endif
   }
+#endif
     
   wxTheApp->doMacPreEvent();
   wxTheApp->doMacDispatch(e);
@@ -794,6 +851,7 @@ void MrEdDispatchEvent(EventRecord *e)
 
 int MrEdCheckForBreak(void)
 {
+#ifndef USE_OS_X_EVENTHANDLER  
   MrQueueElem *q;
   
   if (!KeyOk(TRUE))
@@ -812,6 +870,7 @@ int MrEdCheckForBreak(void)
       }
     }
   }
+#endif
   
   return FALSE;
 }
@@ -832,12 +891,11 @@ void MrEdMacSleep(float secs)
     LocalToGlobal(&pt);
     ::SetRectRgn(rgn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
   }
-#else
-  RgnHandle rgn = NULL;
-#endif
-    
   if (WaitNextEvent(everyEvent, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
+#else
+  RgnHandle rgn = NULL;
+#endif    
 }
 
 /**********************************************************************/

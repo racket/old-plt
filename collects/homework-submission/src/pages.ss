@@ -2,6 +2,7 @@
 ;; because it has a mutual dependency on transitions@.
 ;; The naming convention for pages is `page-foo', where `foo' describes that
 ;; page.
+; vim:lispwords+=,page
 
 (module pages mzscheme
   (require (lib "unitsig.ss")
@@ -23,12 +24,14 @@
           (form transition-log-in '()
                 (text-input "User name" "username")
                 (password-input "password")
-                (submit-button "Log in"))))
+                (submit-button "Log in"))
+          (p (hyperlink transition-create-user "Create Username"))))
 
       ;; Confirm the user has logged in.
       (define page-logged-in
         (page (session)
           "You Are Logged In"
+          (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
 
@@ -41,13 +44,50 @@
                     (input "New password" "new-password1" "password")
                     (input "New password (again)" "new-password2" "password")
                     (submit-button "Change"))
+              (p (hyperlink (transition-courses session) "Courses"))
               (p (hyperlink transition-log-out "Logout"))))
+
+      ;; Prompt the user for all the information needed to create an account.
+      ;; This is: their name as we know it, the last four digits of their
+      ;; Northeastern ID, their desired username, and their password (twice).
+      (define page-create-user
+        (page ()
+          "Create A Username"
+          (form transition-create-a-user '()
+                (text-input "Last name" "name")
+                (text-input "Last four digits of Northeastern ID" "neu-id")
+                (text-input "Desired username" "username")
+                (password-input "password1")
+                (password-input "password2")
+                (submit-button "Log in"))))
+
+
+      ;; The courses a user is in.
+      (define page-courses
+        (page (session courses)
+          "Courses"
+          (html-table "Courses in which you are enrolled"
+                      (list "Name" "Number")
+                      (map
+                        (lambda (c)
+                          `(tr (td ,(hyperlink
+                                      (transition-main 
+                                        (make-session 
+                                          (session-username session)
+                                          c))
+                                      (course-name c)))
+                               (td ,(course-number c))))
+                        courses))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ))
 
 
       ;; ************************************************************
 
       ;; page : (Symbol? ...) String? Xexpr ... ->
-      ;;         ((Alpha ... [String]) -> Xexpr
+      ;;         ((Alpha ... [String]) -> Xexpr)
       ;; Produce a function that produces a page with an optional message.
       (define-syntax page
         (syntax-rules ()
@@ -58,4 +98,4 @@
                (if message (p message) "")
                body ...)))))
 
-      )))
+      )

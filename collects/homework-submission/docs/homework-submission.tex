@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass[a4paper]{article}
 \usepackage{graphicx}
 
 \begin{document}
@@ -9,16 +9,24 @@
 
 \maketitle
 
-\section{User Interface}\label{sec:ui}
+Revision 4.
 
-\begin{figure}[ht]
-\centering
-\includegraphics[scale=.35]{servlet.eps}
-\caption{The servlet user interface, with interactions}
-\label{fig:ui}
-\end{figure}
+\section{Overview}\label{sec:overview}
+
+The homework submission servlet is a tool for students to electronically submit
+homework assignments. It supports username and password authentication,
+changing passwords, logging out, account creation, and courses.
+%and a separation of students from non-students.
+Future goals are file submission, task assignment, and
+online grading.
 
 \section{Use Cases}\label{sec:usecases}
+
+The servlet currently supports users logging in with a valid username and
+password, changing their password, selecting a course, and logging out. They
+can also create an account if they have not already done so.
+
+\subsection{Supported Use Cases}\label{subsec:detailed-usecases}
 
 \begin{itemize}
 \item{A user enters an invalid username and/or password pair.}
@@ -37,158 +45,340 @@ new passwords, then logs out.}
 new passwords, sucessfully enters the correct data and changes his or her password,
 then logs out.}
 \item{The Web server is restarted by the TA or instructor.}
-\item{The password file is edited, with the server stopped, by the TA or
-instructor.}
+\end{itemize}
+
+%\subsubsection{New Use Cases}\label{subsubsec:newusecases}
+%\begin{itemize}
+%\item{A user creates an account, then logs out.}
+%\end{itemize}
+
+\section{Goals}\label{sec:goals}
+
+The feature goals of this iteration are:
+
+\begin{itemize}
+\item{Multiple courses.}
 \end{itemize}
 
 \section{Architecture}\label{sec:arch}
 
+The high-level view of the components is described, followed by a breakdown of
+the modules and units that are composed to make the servlet.
+
+\subsection{High-Level Components}\label{subsec:high-level}
+
 \begin{figure}[ht]
 \centering
 \includegraphics[scale=.35]{architecture.eps}
-\caption{The high-level view of the homework submission servlet}
+\caption{High-level view of the homework submission servlet}
 \label{fig:architecture}
 \end{figure}
 
+The homework submission servlet is a module run by the PLT Web server. The
+servlet is a composition of other modules ($\S$\ref{subsec:components}). A
+PostgreSQL database with a table holding data about people is connected to the
+servlet via the spgsql library.
+
+\subsection{Modules and Units}\label{subsec:components}
+
+At its core, the servlet is a form-based application. The code for generating 
+forms and the code for generating transitions between forms are separated into 
+separate modules, named pages, and transitions, respecitively.
+
 \begin{figure}[ht]
 \centering
-\includegraphics[scale=.35]{design.eps}
-\caption{The module and unit layout of the homework submission servlet}
+\includegraphics[scale=.30]{units.eps}
+\caption{Pages and transitions are mutually recursive}
 \label{fig:layout}
 \end{figure}
 
-The homework submission servlet is driven by the PLT Web server. It is a simple
-program that calls the initial transition to send the initial login page to
-the client (Web browser).
+Each page function embeds calls to multiple transitions, and each transition
+calls a page function. Because of this recursive dependency, pages and 
+transitions are grouped into signed units.
 
-The module \verb|pages-transitions| handles the contents of the actual Web
-pages and the transitions between them. It invokes and provides all from the
-signed units \verb|pages@| and \verb|transitions@|.
+The scheduler module is \verb|requir|ed from both the servlet and the
+transitions module. The body of the scheduler module is only executed when the
+servlet is first loaded by the Web server, and not when the transitions module
+is required by the pages-transitions module.
 
-The functions defined in the \verb|pages@| signed unit are
-\verb|xexpr/callback|; that is, they are Web pages with embedded procedures.
-These embedded procedures (``transitions'') have the contract\\
-\verb|(request?  . -> . (union xexpr? xexpr/callback?))|.
+\subsubsection{Pages-transitions}\label{subsubsec:pages-transitions}
 
-The functions provided from the \verb|pages^| signature are
+The module \verb|pages-transitions| links and provides the procedures which
+create XML ($\S$\ref{subsubsec:pages}) with the procedures that control the
+interaction and drive the backend ($\S$\ref{subsubsec:transitions}).
+
+\subsubsection{Pages}\label{subsubsec:pages}
+
+A page is an XML expression (xexpression) with embedded callbacks. These callbacks
+are transitions ($\S$\ref{subsubsec:transitions}). Page functions take an
+optional xexpression to use as a status message. Pages are defined in the
+\verb|pages@| signed unit.
+
+Pages have the form:
+
+\begin{verbatim}
+(define page-foo 
+ (page (...)
+  "Foo"
+  ... (hyperlink (transition-bar ...) "Bar") ...))
+\end{verbatim}
+
+\paragraph{Interface}\label{para:pages-interface}
+
+The functions provided from the \verb|pages^| signature are:
 
 \begin{verbatim}
 page-login : (() (xexpr?) . opt-> . xexpr/callback?)
+\end{verbatim}
 Prompt the user for his or her username and password.
-\end{verbatim}
 
 \begin{verbatim}
-page-logged-in :  ((session?) (xexpr?) . opt-> . xexpr/callback?)
+page-log-in  ((session?) (xexpr?) . opt-> . xexpr/callback?)
+\end{verbatim}
 Confirm the user has logged in.
-\end{verbatim}
+
+%\begin{verbatim}
+%page-student-main:  ((session?) (xexpr?) . opt-> . xexpr/callback?)
+%\end{verbatim}
+%Confirm the user has logged in as a student.
+
+%\begin{verbatim}
+%page-non-student-main:  ((session?) (xexpr?) . opt-> . xexpr/callback?)
+%\end{verbatim}
+%Confirm the user has logged in as a non-student.
 
 \begin{verbatim}
-page-change-password : ((session?) (xexpr?) . opt-> . xexpr/callback?)
+page-change-password : ((session?) (xexpr?) . opt-> . 
+                        xexpr/callback?)
+\end{verbatim}
 Prompt the user for a new password.
-\end{verbatim}
-
-Pages follow the template:
 
 \begin{verbatim}
-(define (page-foo ...)
- `(html (head (title ...))
-    (body (h1 ...)
-      ...
-      (a ((href ,(transition-bar ...))) "Bar")
-      ...)))
+page-create-user : (() (xexpr?) . opt-> . xexpr/callback?)
+\end{verbatim}
+Prompt the user for all the information needed to create a
+new account. This is: their name as we know it, the last
+four digits of their Northeastern ID, their desired username,
+and their password twice.
+
+\begin{verbatim}
+page-courses : ((session?) (xexpr?) . opt-> . xexpr/callback?)
+\end{verbatim}
+Show the user all courses he or she is in, allowing him or her to select one.
+
+\subsubsection{Transitions}\label{subsubsec:transitions}
+
+A transition is a procedure used to move between pages. There are two categories
+of transitions. An action transition performs some backend work
+($\S$\ref{subsubsec:backend})---such as updating a password field in the
+database---then sends a page to the user. A direct transition sends a page to
+the user without backend work. Transitions are defined in the
+\verb|transitions@| signed unit.
+
+Direct transition procedures have the form:
+
+\begin{verbatim}
+(define-transition (transition-foo ...)
+  (send/suspend/callback (page-foo ...)))
 \end{verbatim}
 
-Transitions are defined in the \verb|transitions@| signed unit. These are the
-procedures embedded in the pages, defined in the \verb|pages@| signed unit. The
-procedures provided from the \verb|transitions^| signature are
+Action transition procedures have the form:
+
+\begin{verbatim}
+(define-action-transition (transition-action ...)
+  (binding ...)
+  (schedule (lambda () (backend-action ...)))
+  (send/suspend/callback (page-foo ...)))
+\end{verbatim}
+
+\paragraph{Interface}\label{para:transitions-interface}
+
+The procedures provided from the \verb|transitions^| signature are:
 
 \begin{verbatim}
 transition-login : (request? . -> . xexpr/callback?)
+\end{verbatim}
 Direct transition to the login page.
-\end{verbatim}
-
-\begin{verbatim}
-transition-log-in : (request? . -> . xexpr/callback??)
-Action transition to the logged-in page.
-Action: Check that the username and password pair are correct.
-If the username and password match, send page-logged-in;
-otherwise send page-login with a message.
-\end{verbatim}
 
 \begin{verbatim}
 transition-log-out : (request? . -> . xexpr/callback?)
-Direct transition to the login page. This clears the previously-
-stored continuations first.
 \end{verbatim}
+Direct transition to the login page. This clears the previously-
+stored continuations first through \verb|send/forward|.
 
 \begin{verbatim}
-transition-change-password : (session? (request? . -> . xexpr/callback?))
-Direct transition to the change-password page.
+transition-change-password : (session? . -> .
+                               (request? . -> . xexpr/callback?))
 \end{verbatim}
+Direct transition to the change-password page.
+
+\begin{verbatim}
+transition-create-user : (request? . -> . xexpr/callback?)
+\end{verbatim}
+Direct transtion to the user creation page.
+
+\begin{verbatim}
+transition-courses : (session? . -> .
+                       (request? . -> . xexpr/callback?))
+\end{verbatim}
+Direct transition to the courses selection page.
+
+\begin{verbatim}
+transition-main : (session? . -> .
+                    (request? . -> . xexpr/callback?))
+\end{verbatim}
+Direct transition to the main page.
+
+%\begin{verbatim}
+%transition-student-main : (session? . -> .
+                            %(request? . -> . xexpr/callback?))
+%\end{verbatim}
+%Direct transition to the main page for a student.
+
+%\begin{verbatim}
+%transition-non-student-main : (session? . -> .
+                                %(request? . -> . xexpr/callback?))
+%\end{verbatim}
+%Direct transition to the main page for a non-student.
+
+\begin{verbatim}
+transition-log-in : (request? . -> . xexpr/callback??)
+\end{verbatim}
+Action transition to the logged-in page.
+Action: Check that the username and password pair are correct.
+If the username and password do not match, send page-login with a message.
+Otherwise, send page-courses.
 
 \begin{verbatim}
 transition-update-password : (session? . -> .
                                (request? . -> . xexpr/callback?))
+\end{verbatim}
 Action transition to the change-password page.
 Action: Change the password.
-Send the change-password page with a message explaining whether
-it worked and, if it failed, why.
-\end{verbatim}
-
-Servlets are run in multiple threads to support multiple users; however, each
-thread must access the single passwords data base as a shared resource,
-creating a requirement to synchronize between threads.
-
-Semaphores interact poorly with the timeouts maintained by the Web server, as
-demonstrated in the following scenerio: the servlet grabs a semaphore, then the
-Web server's timer goes off. The Web server's timer kills the servlet, which
-never has a chance to post to the semaphore. This locks the servlet until it is
-manually refreshed.
-
-Instead of semaphores, we use a scheduler based on channels. All actions are
-passed through the scheduler, which writes to a global scheduler channel.
-These actions are read from the global scheduler channel sequentially and
-executed, with their results placed on an asynchronous result channel.
-
-The scheduler thread is started before the servlet enters the start state. It
-reads, from a channel, a pair containing the thunk to execute and the
-asynchronous result channel; it then executes the thunk and puts it on the
-asynchronous result channel; then, it loops. The Web server's timer does not
-kill this thread because it is started before the servlet enters the starting
-state. 
-
-The \verb|schedule| form creates an asynchronous result channel and puts it and
-the thunk on the scheduling channel. It then reads the result from the result
-channel and produces it.
-
-Transition procedures have the form:
+Send the main page with a message explaining whether changing the password
+worked and, if it failed, why.
 
 \begin{verbatim}
-(define (transition-foo ...)
-  (lambda (req)
-    (let* ((a (schedule (lambda () (backend-a)))) ...)
-      (send/suspend/callback (page-foo a)))))
+transition-create-a-user : (request? . -> . xexpr/callback?)
 \end{verbatim}
+Action transition to the logged-in page.
+Action: create a user with a username and password.
+Check the Northeastern ID against the name in the list of
+ID/name pairs; if they match, check the passwords; if they
+match, and the username is not taken, and the user is not
+already created, then create the account and transition to
+the main page. Otherwise, transition to the user
+creation page with an error explaining which step failed.
 
-The backend module provides procedures only used by the procedures defined in
-the \verb|transitions@| signed unit. These procedures affect the database by
-selecting data from, inserting data into, or updating data in the data base.
+\subsubsection{Scheduler}\label{subsubsec:scheduler}
 
-The data base is a simple file containing a data structure with the contract
-\verb|(listof (list/c string? string?))|. The first string is the username, the
-second string the MD5-encrypted password. The username must be unique.
+The scheduler is used to solve synchonization problems between servlet threads.
+Servlets are run in multiple threads to support multiple users; however, each
+thread must access the single database as a shared resource, creating a
+synchonization requirement. The database management system uses transactions to
+maintain invariants in case of failure, but only takes care of simple
+concurrency problems, such as simultaneous access to a table.
 
+A possible solution to this problem is a semaphore; however, semaphores cause
+problems with the PLT Web server. Semaphores interact poorly with the timeouts
+maintained by the Web server, as demonstrated in the following scenerio (figure
+\ref{fig:semaphores}):
+
+\begin{enumerate}
+\item{The servlet grabs a semaphore.}
+\item{The Web server's timer goes off.}
+\item{The Web server's timer kills the servlet, which never has a chance to
+post to the semaphore. This locks the servlet until it is manually refreshed.}
+\end{enumerate}
+
+
+%% TODO: Document the timer interactions in the Web server documentation.
+%% Include the semaphore problem and the channel solution.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[scale=.30]{semaphore-deadlock.eps}
+\caption{Semaphore deadlocking with the timer}
+\label{fig:semaphores}
+\end{figure}
+
+Instead of semaphores, we use a scheduler based on channels. The scheduler
+thread is started before the servlet enters the start state. This thread
+performs all procedures that use the shared resource (the database), to
+guarantee sequential access to this resource.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[scale=.30]{channel.eps}
+\caption{State diagram of the scheduler based on channels}
+\label{fig:channel}
+\end{figure}
+
+The thread is a loop that listens on a synchronous channel for requests. A
+request must contain a result channel; this result channel is asynchronous so
+the scheduler never blocks on a client.
+
+The Web server's timer does not kill this thread because it is started before
+the servlet enters the starting state. 
+
+The \verb|schedule| form creates an asynchronous result channel and puts it and
+the thunk on the scheduling channel. The result of the \verb|schedule| form is
+read from the result channel.
+
+%\begin{figure}[ht]
+%\centering
+%\includegraphics[scale=.30]{kripke-channels.eps}
+%\caption{Kripke diagram of the scheduler based on channels with a client}
+%\label{fig:kripke-channel}
+%\end{figure}
+
+\subsubsection{Backend}\label{subsubsec:backend}
+
+Backend procedures affect the database by selecting data from, inserting data
+into, or updating data in the database. The backend module provides procedures
+only used by the procedures defined in the \verb|transitions@| signed unit.
+
+The backend uses the PostgreSQL object-relational database management system.
+This is a full ACID database using standard SQL92; we use a system of this
+complexity to more easily achieve future goals:
+
+\begin{itemize}
+\item{Multiple courses.}
+\item{Support multiple user roles (e.g. instructor for one course, student in
+another).}
+\item{Relationships between users (e.g. partnerships, student-grader).}
+\end{itemize}
 
 \section{Testing}\label{sec:tests}
 
+Two kinds of tests are run on the homework submission servlet: use case tests
+and stress tests. Use case tests are automated tests that verify that the
+servlet performs all the specified use cases
+($\S$\ref{subsec:detailed-usecases}), with tests for user error. These are
+automated using a simulated Web server ($\S$\ref{subsec:use-case-tests}).
+Stress tests verify that the servlet and Web server can handle the desired
+number of users concurrently and over long periods, without exhausting memory
+and other resources.  These are automated by sending requests to the Web server
+using HTTP ($\S$\ref{subsec:stresstests}).
+
+\subsection{Use Case Tests}\label{subsec:use-case-tests}
+
 The simulated server framework uses existing Web server modules to create its
-own server, then drives the servlet through this server.
+own server which then drives the servlet.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[scale=.30]{servlet-test.eps}
+\caption{The servlet test framework replaces the Web server}
+\label{fig:servlet-tests}
+\end{figure}
 
 %%% 1. Clean up interface for framework
 %%% 2. Document
-%%% 3. Replace this will a reference to the documentation from (2).
+%%% 3. Replace this with a reference to the documentation from (2).
 
-The following tests must pass, using the simulated server framework:
+The following tests must pass, using the simulated server framework, as a
+student and non-student:
 
 \begin{itemize}
 \item{A user enters an invalid username and/or password.}
@@ -200,31 +390,36 @@ again.}
 \item{A user logs in, attempts to change his or her password, enters an invalid
 old password, then enters mismatched new passwords, then sucessfully changes his or
 her password, then logs out.}
-%%% Intentionally not tested
-%\item{The password file is modified to add a user.}
-%\item{The password file is modified to remove a user.}
-%\item{The password file is corrupt.}
+\item{A user attempts to create an account, enters the wrong Northeastern ID,
+then enters a taken username, then enters mismatched passwords, then succeeds
+in creating an account, then logs out.}
 \end{itemize}
 
 %%% Note yet done. Not sure how best to do this, either.
 In addition, the script to start and stop the Web server must work for all TAs
 and instructors.
 
-\subsection{Stress Testing}\label{subsec:stresstests}
+\subsection{Stress Tests}\label{subsec:stresstests}
 
-The stress-test suite drives the servlet using HTTP. This is accomplished with
-\verb|get-pure-port| and \verb|call/input-url|, both from the \verb|url.ss|
-module in the \verb|net| collection.
+The stress-test suite drives the servlet using HTTP 1.0, simulating a real Web
+browser hitting the real Web server. Stress tests demonstrate potential
+problems this servlet has in a real-life situation.
 
-Stress tests will demonstrate potential problems this servlet will have in a
-real-life situation, where many hundreds of users will be using this servlet
-at once.
+\begin{figure}[ht]
+\centering
+\includegraphics[scale=.30]{stress-test.eps}
+\caption{Stress tests use the full Web server via TCP/IP}
+\label{fig:stress-tests}
+\end{figure}
 
 \subsubsection{Memory Stress}\label{subsubsec:mem-stress}
 
-These tests will be run in an unbounded loop, in an attempt to show any memory
+These tests are run in an unbounded loop, in an attempt to show any memory
 leaks and high memory usage in places where the servlet can not clean up after
-itself.
+itself. This simulates how the servlet and server perform over the desired
+period of use.
+
+The memory tests are:
 
 \begin{itemize}
 \item{A user logs in, then closes the Web browser.}
@@ -232,11 +427,15 @@ itself.
 
 \subsubsection{Concurrency Tests}\label{subsubsec:parrallel-stress}
 
-These tests will be run in parrallel with themselves, in an unbounded loop.
+These tests are to determine how the servlet and server perform during very
+heavy, parallel-access load. For this, 1000 concurrent test clients are run
+1000 times.
+
+The concurrency tests are:
 
 \begin{itemize}
 \item{A user logs in, changes his or her password, then logs out.}
-\item{Test the scheduler against timeouts.}
+%\item{Test the scheduler against timeouts.}
 \end{itemize}
 
 %An hourly automated test will be run against the live servlet; if this test
@@ -246,6 +445,6 @@ These tests will be run in parrallel with themselves, in an unbounded loop.
 
 The documentation provided with this servlet are this outline and three
 documents each describing typical use cases for instructors, teaching
-assistants, and students, respecitively.
+assistants, and students, respectively.
 
 \end{document}

@@ -1,3 +1,8 @@
+#!/bin/sh
+#|
+exec mzscheme3m -vt "$0" "$@" -e '(test-memory)'
+|#
+
 ;; Drive the servlet using HTTP, with a new connection for every page request.
 ;; The idea of this stress test is to test memory usage: does the servlet
 ;; continuously eat memory, and where?
@@ -17,12 +22,16 @@
   (define *SERVLET-URL* (string-append *SERVER-URL* "/servlets/submit.ss"))
 
   (define (test-memory)
-    (time
-    (let loop ((n 0))
-      (single-memory-test)
-      (printf "Memory stress test ~a~n" n)
-      (loop (add1 n))))
-    )
+    (fprintf (current-error-port) "here~n")
+    (let ((tester (lambda (id)
+                    (let loop ((n 0))
+                      (single-memory-test)
+                      (fprintf (current-error-port)
+                               "Memory stress test ~a:~a~n" id n)
+                      (loop (add1 n))))))
+      (thread (lambda () (tester 0)))
+      (thread (lambda () (tester 1))))
+    (sleep +inf.0))
 
   ;; id-display : a -> a
   ;; Print the argument to STDOUT, then produce the argument.
@@ -30,7 +39,9 @@
 
   ;; Read a page and convert it to a Xexpr
   (define (pre-process-page p)
-    (xml->xexpr (read-xml/element p)))
+    (begin0
+      (xml->xexpr (read-xml/element p))
+      (close-input-port p)))
 
   ;; Convert a k-url to a url.
   ;; post-process-page : string -> (string -> url)

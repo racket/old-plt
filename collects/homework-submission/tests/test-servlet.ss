@@ -1,148 +1,273 @@
+#!/bin/sh
+#|
+exec mzscheme -r "$0" "$@"
+|#
+
 ;; Automated tests of the use cases. These are meant to be run as a single
 ;; client, once, against a testing backend. This tests that the servlet has the
 ;; functionality we want for a single user, once.
 
-(module test-servlet mzscheme
-  (require (lib "etc.ss")
-           (lib "test.ss" "schemeunit")
-           (lib "send-assertions.ss" "web-server" "tools")
-           
-           "../src/pages-transitions.ss"
-           (prefix backend: "../src/backend.ss")
-           )
+(require (lib "text-ui.ss" "schemeunit")
+         (lib "etc.ss")
+         (lib "class.ss")
+         (lib "test.ss" "schemeunit")
+         (lib "send-assertions.ss" "web-server" "tools")
 
-  (provide test-servlet)
+         "../src/pages-transitions.ss"
+         (prefix backend: "../src/backend.ss")
+         )
 
-  (define (the-servlet)
-    (transition-login #f)) ;;; #f is usually req
+(define (the-servlet)
+  (transition-login #f)) ;;; #f is usually req
 
-  (define test-servlet
-    (make-test-suite
-      "Test all the use cases"
+(define test-servlet
+  (make-test-suite
+    "Test all the use cases"
 
-      (make-test-case
-        "A user enters an invalid username and/or password"
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "The Test Username")
-                            (cons 'password "The Wrong Password"))))
-          (login-page "Invalid username or password.")))
+    (make-test-case
+      "A user enters an invalid username and/or password"
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Username")
+                          (cons 'password "The Wrong Password"))))
+        (login-page "Invalid username or password.")))
 
-      (make-test-case
-        "A user logs in, then logs out"
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "The Test Username")
-                            (cons 'password "The Test Password")))
-                (list (hyperlink->k-url "Logout") '()))
-          (login-page)))
+    (make-test-case
+      "A user logs in, then logs out"
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Username")
+                          (cons 'password "The Test Password")))
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page)))
 
-      (make-test-case
-        "A user logs in, then closes the Web browser"
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "The Test Username")
-                            (cons 'password "The Test Password"))))
-          logged-in-page))
+    (make-test-case
+      "A user logs in, then closes the Web browser"
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Username")
+                          (cons 'password "The Test Password"))))
+        logged-in-page))
 
-      (make-test-case
-        (string-append
-          "A user logs in, logs out, goes back to the logged-in page, and "
-          "logs out again")
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "The Test Username")
-                            (cons 'password "The Test Password")))
-                (list (hyperlink->k-url "Logout") '())
-                'back
-                'forward)
-          restart-session-page))
+    (make-test-case
+      (string-append
+        "A user logs in, logs out, goes back to the logged-in page, and "
+        "logs out again")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Username")
+                          (cons 'password "The Test Password")))
+              (list (hyperlink->k-url "Logout") '())
+              'back
+              'forward)
+        restart-session-page))
 
-      (make-test-case
-        (string-append
-          "A user logs in, sucessfully changes his or her password, then logs "
-          "out")
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "The Test Username")
-                            (cons 'password "The Test Password")))
-                (list (hyperlink->k-url "Change Password") '())
-                (list form->k-url
-                      (list (cons 'old-password "The Test Password")
-                            (cons 'new-password1 "The New Password")
-                            (cons 'new-password2 "The New Password")))
-                (list (hyperlink->k-url "Logout") '()))
-          (login-page))
-        (void)
-        (backend:update-password! "The Test Username" "The Test Password"))
+    (make-test-case
+      (string-append
+        "A user logs in, sucessfully changes his or her password, then logs "
+        "out")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Username")
+                          (cons 'password "The Test Password")))
+              (list (hyperlink->k-url "Change Password") '())
+              (list form->k-url
+                    (list (cons 'old-password "The Test Password")
+                          (cons 'new-password1 "The New Password")
+                          (cons 'new-password2 "The New Password")))
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page))
+      (void)
+      (backend:update-password! "The Test Username" "The Test Password"))
 
-      (make-test-case
-        (string-append
-          "A user logs in, attempts to change his or her password, enters an "
-          "invalid old password, then enters mismatched new passwords, then "
-          "sucessfully changes his or her password, then logs out")
-        (assert-output-response/suspended
-          the-servlet
-          (list (list form->k-url
-                      (list (cons 'username "The Test Username")
-                            (cons 'password "The Test Password")))
-                (list (hyperlink->k-url "Change Password") '())
-                (list form->k-url
-                      (list (cons 'old-password "The Wrong Password")
-                            (cons 'new-password1 "The New Password")
-                            (cons 'new-password2 "The New Password")))
-                (list form->k-url
-                      (list (cons 'old-password "The Test Password")
-                            (cons 'new-password1 "The New Password1")
-                            (cons 'new-password2 "The New Password2")))
-                (list form->k-url
-                      (list (cons 'old-password "The Test Password")
-                            (cons 'new-password1 "The New Password")
-                            (cons 'new-password2 "The New Password")))                
-                (list (hyperlink->k-url "Logout") '()))
-          (login-page))
-        (void)
-        (backend:update-password! "The Test Username" "The Test Password"))
+    (make-test-case
+      (string-append
+        "A user logs in, attempts to change his or her password, enters an "
+        "invalid old password, then enters mismatched new passwords, then "
+        "sucessfully changes his or her password, then logs out")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list form->k-url
+                    (list (cons 'username "The Test Username")
+                          (cons 'password "The Test Password")))
+              (list (hyperlink->k-url "Change Password") '())
+              (list form->k-url
+                    (list (cons 'old-password "The Wrong Password")
+                          (cons 'new-password1 "The New Password")
+                          (cons 'new-password2 "The New Password")))
+              (list form->k-url
+                    (list (cons 'old-password "The Test Password")
+                          (cons 'new-password1 "The New Password1")
+                          (cons 'new-password2 "The New Password2")))
+              (list form->k-url
+                    (list (cons 'old-password "The Test Password")
+                          (cons 'new-password1 "The New Password")
+                          (cons 'new-password2 "The New Password")))                
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page))
+      (void)
+      (backend:update-password! "The Test Username" "The Test Password"))
 
-      ))
+    (make-test-case
+      (string-append
+        "A user attempts to create an account, enters the wrong Northeastern "
+        "ID, then enters a taken username, then enters mismatched passwords, "
+        "then succeeds in creating an account, then logs out")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list (hyperlink->k-url "Create Username") '())
+              (list form->k-url
+                    (list (cons 'name "Unmade User")
+                          (cons 'neu-id "1010") ;; The wrong ID
+                          (cons 'username "unmade")
+                          (cons 'password1 "unmade")
+                          (cons 'password2 "unmade")))
+              (list form->k-url
+                    (list (cons 'name "Unmade User")
+                          (cons 'neu-id "1234")
+                          (cons 'username "The Test Username") ;; Taken
+                          (cons 'password1 "unmade")
+                          (cons 'password2 "unmade")))
+              (list form->k-url
+                    (list (cons 'name "Unmade User")
+                          (cons 'neu-id "1234")
+                          (cons 'username "unmade")
+                          (cons 'password1 "p1")
+                          (cons 'password2 "p2"))) ;; Mismatched
+              (list form->k-url
+                    (list (cons 'name "Unmade User")
+                          (cons 'neu-id "1234")
+                          (cons 'username "unmade")
+                          (cons 'password1 "unmade")
+                          (cons 'password2 "unmade")))
+              (list (hyperlink->k-url "Logout") '()))
+        (login-page)))
+
+    (make-test-case
+      (string-append
+        "Create a username such that the username is not already taken, but "
+        "the person for whom the username is being made already has a "
+        "username. This should not be possible.")
+      (assert-output-response/suspended
+        the-servlet
+        (list (list (hyperlink->k-url "Create Username") '())
+              (list form->k-url
+                    (list (cons 'name "The Test Name")
+                          (cons 'neu-id "1111")
+                          (cons 'username "not taken as a username")
+                          (cons 'password1 "p")
+                          (cons 'password2 "p"))))
+        (create-username-page "You already have a username."))
+      ;;; - "not taken as a username" must not be taken;
+      ;;; - "The Test Name" must have a username.
+      (backend:destroy-user! "not taken as a username")
+      ;;; "The Test Name"'s username must be "The Test Username"
+      (backend:destroy-user! "not taken as a username")
+      )
+
+    ))
 
 
-  ;; login-page : [string] -> xexpr/callback
-  ;; The login page, with an optional error message.
-  (define login-page
-    (opt-lambda ((message #f))
-      `(html () (head () (title () "Please Log In"))
-             (body () (h1 () "Please Log In")
-                   ,(if message `(p () ,message) "")
-                   (form ((action ,(make-unknown)))
-                         (p () (label ((for "username")) "User name")
-                            (input ((name "username") (id "username")
-                                                      (type "text"))))
-                         (p () (label ((for "password")) "Password")
-                            (input ((name "password") (id "password")
-                                                      (type "password"))))
-                         (p () (input ((type "submit") (value "Log in")))))))))
+;; login-page : [string] -> xexpr/callback
+;; The login page, with an optional error message.
+(define login-page
+  (opt-lambda ((message #f))
+    `(html () (head () (title () "Please Log In"))
+           (body () (h1 () "Please Log In")
+                 ,(if message `(p () ,message) "")
+                 (form ((action ,(make-unknown)))
+                       (p () (label ((for "username")) "User name")
+                          (input ((name "username") (id "username")
+                                                    (type "text"))))
+                       (p () (label ((for "password")) "Password")
+                          (input ((name "password") (id "password")
+                                                    (type "password"))))
+                       (p () (input ((type "submit") (value "Log in")))))))))
 
-  ;; logged-in-page : xexpr/callback
-  ;; The page after logging in.
-  (define logged-in-page
-    `(html () (head () (title () "You Are Logged In"))
-           (body () (h1 () "You Are Logged In")
-                 (p "Congrats, you've logged in.")
-                 (p (a ((href ,(make-unknown))) "Logout")))))
+;; logged-in-page : xexpr/callback
+;; The page after logging in.
+(define logged-in-page
+  `(html () (head () (title () "You Are Logged In"))
+         (body () (h1 () "You Are Logged In")
+               (p "Congrats, you've logged in.")
+               (p (a ((href ,(make-unknown))) "Logout")))))
 
-  ;; restart-session-page : xexpr/callback
-  ;; The session has timed out.
-  (define restart-session-page
-    `(html () (head () (title () "Timeout"))
-           (body () (p () ,(string-append
-                             "The transaction referred to by this url is no "
-                             "longer active.  Please ")
-                       ,(make-unknown) " the transaction."))))
+;; create-username-page : [string] -> xexpr/callback
+;; The create username page, with an optional error message.
+(define create-username-page
+  (opt-lambda ((message #f))
+    `(html () (head () (title () "Create A Username"))
+           (body () (h1 () "Create A Username")
+                 ,(if message `(p () ,message))
+                 (form ((method "POST")
+                        (action ,(make-unknown)))
+                       (p () (label ((for "name")) "Last name")
+                          (input ((type "text") (id "name") (name "name"))))
+                       (p () (label ((for "neu-id")
+                                     "Last four digits of Northeastern ID"))
+                          (input ((type "text") (id "neu-id") (name "neu-id"))))
+                       (p () (label ((for "username")) "Desired username")
+                          (input ((type "text") (id "username")
+                                                (name "username"))))
+                       (p () (label ((for "password1")) "Password")
+                          (input ((type "password") (id "password1")
+                                                    (name "password1"))))
+                       (p () (label ((for "password2")) "Password")
+                          (input ((type "password") (id "password2")
+                                                    (name "password2"))))
+                       (p () (input ((type "submit") (value "Log in")))))))))
 
-  )
+;; restart-session-page : xexpr/callback
+;; The session has timed out.
+(define restart-session-page
+  `(html () (head () (title () "Timeout"))
+         (body () (p () ,(string-append
+                           "The transaction referred to by this url is no "
+                           "longer active.  Please ")
+                     ,(make-unknown) " the transaction."))))
+
+;; ********************************************************************
+
+;; db-do : String -> void
+;; Execute the SQL statement.
+(define (db-do sql)
+  (send backend:*connection* exec sql))
+
+;; Clean up the database
+(define (cleanup)
+  (db-do "BEGIN")
+  (db-do "DELETE FROM people WHERE name = 'Unmade User'")
+  (db-do "DELETE FROM people WHERE name = 'The Test User'")
+  (db-do "DELETE FROM courses WHERE name = 'The Test Course'")
+  (db-do (string-append
+           "DELETE FROM course_people WHERE "
+           "person_id IN (SELECT id FROM people WHERE name = 'Unmade User' OR name = 'The Test User') AND "
+           "course_id = (SELECT id FROM courses WHERE name = 'The Test Course')"))
+  (db-do "COMMIT"))
+
+(cleanup)
+
+;; Add
+(backend:add-user! "Unmade User" 1234)
+(backend:add-user! "The Test User" 1111)
+(backend:create-account! "The Test User" 1111 "The Test Username" "The Test Password")
+(db-do "INSERT INTO courses (name, number) VALUES ('The Test Course','CSU000')")
+(db-do (string-append
+         "INSERT INTO course_people (person_id, course_id) "
+         "VALUES ((SELECT id FROM people WHERE name = 'Unmade User'), "
+         "(SELECT id FROM courses WHERE name = 'The Test Course'))"))
+(db-do (string-append
+         "INSERT INTO course_people (person_id, course_id) "
+         "VALUES ((SELECT id FROM people WHERE name = 'The Test User'), "
+         "(SELECT id FROM courses WHERE name = 'The Test Course'))"))
+
+;; The test(s)
+(test/text-ui test-servlet)
+
+;; The teardown
+(cleanup)

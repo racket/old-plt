@@ -2,12 +2,17 @@
 (module data mzscheme
   (require (lib "contract.ss"))
 
-  (provide/contract
-    (struct session ((username string?)))
-    )
-
   ;; A Session is a
-  ;; (make-session String)
-  (define-struct session (username))
+  ;; (make-session String Course)
+  (define-struct session (username course))
 
-  )
+  ;; A Course is a
+  ;; (make-course String String)
+  (define-struct course (name number))
+
+  (provide/contract
+    (struct course ((name string?)
+                    (number string?)))
+    (struct session ((username string?)
+                     (course (union course? not))))
+    ))

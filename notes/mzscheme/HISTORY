@@ -86,9 +86,13 @@ Added check-parameter-procedure and changed parameterize
 Changed order of first two arguments to process[*]/ports, and
  fixed bugs
 Fixed bugs in (eval (compile e))
+Changed handling of pre- and post-queued breaks by
+ call-in-nested-thread
 Unix: fixed interaction among signals, I/O, and process sleeping
 Unix: fixed bug in writing/closing file-stream output ports
  when a write error occurs
+MacOS: changed `split-path' to preserve the colon suffix on a root
+ name
 
 Version 102, June 26, 2000
 Switched to configure-based makefiles (autoconf)

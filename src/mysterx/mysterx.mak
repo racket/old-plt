@@ -12,8 +12,8 @@ clean :
 	-@erase mxmain.dll
 
 CPP=cl.exe
-CPP_FLAGS=/I"../../collects/mzscheme/include" /I"./myspage" /I"./mysc" /I"./myssink" /I"$(SHELL32)\Include" \
-	/I"$(HTMLHELP)\include" /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D"NEWMSHTML=$(NEWMSHTML)" /c 
+CPP_FLAGS=/I"../../include" /I"./myspage" /I"./mysc" /I"./myssink" /I"$(SHELL32)\Include" \
+	/I"$(HTMLHELP)\include" /W3 /GX /MT /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D"NEWMSHTML=$(NEWMSHTML)" /c 
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 
@@ -30,8 +30,8 @@ LINK32_OBJS= \
         browser.obj
 
 mxmain.dll : $(DEF_FILE) $(LINK32_OBJS) mysc\mysc.lib
-	$(LINK32) --ld mxmain.dll $(LINK32_OBJS) $(LINK32_LIBS)
-	copy mxmain.dll ..\..\collects\mysterx\dlls
+	@ -255 $(LINK32) --ld mxmain.dll $(LINK32_OBJS) $(LINK32_LIBS)
+	copy mxmain.dll ..\..\collects\mysterx\private\compiled\native\win32\i386
 	
 comtypes.obj : comtypes.cxx mysterx.h stdafx.h
 

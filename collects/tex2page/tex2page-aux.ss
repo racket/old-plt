@@ -13,11 +13,11 @@
     (hash-table-get ht k (let ((d (if (null? d) #f (car d)))) (lambda () d)))))
 
 ; ensure shell-magic above
-;Configured for Scheme dialect plt by scmxlate, v 1a7,
+;Configured for Scheme dialect plt by scmxlate, v 1a9,
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r8c")
+(define *tex2page-version* "4r8d")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -3366,7 +3366,6 @@
 (define do-index
   (lambda ()
     (let ((idx-entry (ungroup (get-group))))
-      (ignorespaces)
       (unless (substring? "|)" idx-entry)
         (set! *index-count* (+ *index-count* 2))
         (!index *index-count* *html-page-count*)

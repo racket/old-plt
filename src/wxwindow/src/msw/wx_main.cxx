@@ -232,56 +232,13 @@ extern void wxInitUserResource(char *s);
 
 static int retValue = 0;
 
-static int parse_command_line(int count, char **command, char *buf, int maxargs)
-{
-  GC_CAN_IGNORE unsigned char *parse, *created, *write;
-  int findquote = 0;
-  
-  parse = created = write = (unsigned char *)buf;
-  while (*parse) {
-    while (*parse && isspace(*parse)) { parse++; }
-    while (*parse && (!isspace(*parse) || findquote))	{
-      if (*parse== '"') {
-	findquote = !findquote;
-      } else if (*parse== '\\') {
-	unsigned char *next;
-	for (next = parse; *next == '\\'; next++) { }
-	if (*next == '"') {
-	  /* Special handling: */
-	  int count = (next - parse), i;
-	  for (i = 1; i < count; i += 2) {
-	    *(write++) = '\\';
-	  }
-	  parse += (count - 1);
-	  if (count & 0x1) {
-	    *(write++) = '\"';
-	    parse++;
-	  }
-	}	else
-	  *(write++) = *parse;
-      } else
-	*(write++) = *parse;
-      parse++;
-    }
-    if (*parse)
-      parse++;
-    *(write++) = 0;
-    
-    if (*created)	{
-      command[count++] = (char *)created;
-      if (count == maxargs)
-	return count;
-    }
-    created = write;
-  }
-  
-  return count;
-}
-
 extern void wxCreateApp(void);
 extern "C" __declspec(dllimport) void scheme_set_stack_base(void *, int);
 
-int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), 
+int WM_IS_MRED;
+
+int wxWinMain(int wm_is_mred,
+	      HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance), 
 	      int count, char **command, int nCmdShow,
 	      int (*main)(int, char**))
 {
@@ -297,6 +254,7 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
   scheme_set_stack_base(mzscheme_stack_start, 1);
 
   wxhInstance = hInstance;
+  WM_IS_MRED = wm_is_mred;
 
   InitCommonControls();
 

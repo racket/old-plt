@@ -377,14 +377,10 @@ int main(int argc, char *argv[])
 
 #ifdef wx_msw 
 
-static int name_len;
-static wchar_t *my_name, *other_name;
-WINUSERAPI UINT WINAPI
-GetWindowModuleFileNameW(
-    HWND   hwnd,
-    LPWSTR pszFileName,
-    UINT   cchFileNameMax);
+/* Some of the code to avoid multiple application instances is taken from
+    http://www.codeproject.com/cpp/avoidmultinstance.asp */
 
+static int wm_is_mred;
 
 static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 {
@@ -392,16 +388,24 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
   DWORD w;
   char **argv, *v;
   COPYDATASTRUCT cd;
+  DWORD result;
+  LRESULT ok;
 
-  GetWindowModuleFileNameW(wnd, other_name, name_len + 1);
-  other_name[name_len + 1] = 0;
+  ok = SendMessageTimeout(wnd, wm_is_mred,
+			  0, 0, 
+			  SMTO_BLOCK |
+			  SMTO_ABORT_IF_HUNG,
+			  200,
+			  &result);
 
-  for (i = 0; i < name_len; i++) {
-    if (my_name[i] != other_name[i])
-      return FALSE;
-  }
+  if (ok == 0)
+    return TRUE; /* ignore and continue */
+  if (result == 79) {
+    /* found it */
+  } else
+    return TRUE; /* continue search */
 
-  /* This window is owned by another instance of this application. */
+  /* wnd is owned by another instance of this application. */
 
   SetForegroundWindow(wnd);
   if (IsIconic(wnd)) 
@@ -437,7 +441,7 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 
   free(v);
 
-  return TRUE;
+  return FALSE;
 }
 
 char *wchar_to_char(wchar_t *wa, int len)
@@ -534,6 +538,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
      GetModuleFileName, just in case */
   name_len = 1024;
   while (1) {
+    wchar_t *my_name;
+    int name_len;
     my_name = (wchar_t *)malloc(sizeof(wchar_t) * name_len);
     l = GetModuleFileNameW(NULL, my_name, name_len);
     if (!l) {
@@ -541,7 +547,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
       my_name = NULL;
       break;
     } if (l < name_len) {
-      name_len = l;
+      a = wchar_to_char(my_name, l);
+      argv[0] = a;
+      free(my_name);
       break;
     } else {
       free(my_name);
@@ -550,13 +558,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
   }
 
   /* Check for an existing instance: */
-  if (my_name) {
-	int alreadyrunning;
+  {
+    int alreadyrunning;
     HANDLE mutex;
 
-    a = wchar_to_char(my_name, name_len);
-    argv[0] = a;
-  
     /* This mutex creation synchronizes multiple instances of
        the application that may have been started. */
     j = strlen(argv[0]);
@@ -569,6 +574,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
     // The call fails with ERROR_ACCESS_DENIED if the Mutex was 
     // created in a different users session because of passing
     // NULL for the SECURITY_ATTRIBUTES on Mutex creation);
+    wm_is_mred = RegisterWindowMessage(a);
     free(a);
     
     if (my_name && alreadyrunning) {
@@ -583,7 +589,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
     free(my_name);
   }
 
-  return wxWinMain(hInstance, hPrevInstance, argc, argv, nCmdShow, main);
+  return wxWinMain(wm_is_mred, hInstance, hPrevInstance, argc, argv, nCmdShow, main);
 }
 
 #endif

@@ -221,49 +221,7 @@ int wx_trampolining;
 
 void MrEdDispatchEvent(MSG *msg)
 {
-  if (msg->message == WM_COPYDATA) {
-    /* Is this a message from another MrEd? */
-    int len;
-    COPYDATASTRUCT *cd;
-    len = strlen(MRED_GUID);
-    cd = (COPYDATASTRUCT *)msg->lParam;
-    if ((cd->cbData > len + 4 + sizeof(DWORD)) 
-	&& !strncmp((char *)cd->lpData, MRED_GUID, len)) {
-      if (!strncmp((char *)cd->lpData + len, "OPEN", 4)) {
-	/* This is an "OPEN" event, with a command line.
-	   The command line's argv (sans argv[0]) is
-	   expressed as a DWORD for the number of args,
-	   followed by each arg. Each arg is a DWORD
-	   for the number of chars and then the chars. */
-	DWORD w;
-	int cnt, i, pos;
-	char **argv, *s;
-	memcpy(&w, (char *)cd->cbData + len + 4, sizeof(DWORD));
-	cnt = w;
-	pos = len + 4 + sizeof(DWORD);
-	argv = new char*[cnt];
-	for (i = 0; i < cnt; i++) {
-	  if (pos + sizeof(DWORD) <= cd->cbData) {
-	    memcpy(&w, (char *)cd->cbData + pos, sizeof(DWORD));
-	    pos += sizeof(DWORD);
-	    if (w >= 0 && (pos + w <= cd->cbData)) {
-	      s = new WXGC_ATOMIC char[w + 1];
-	      memcpy(s, (char *)cd->cbData + pos, w);
-	      s[w] = NULL;
-	      pos += w;
-	    } else {
-	      cnt = i;
-	      break;
-	    }
-	  } else {
-	    cnt = i;
-	    break;
-	  }
-	}
-	Drop_Runtime(argv, cnt);
-      }
-    }
-  } else if (WM_MRED_LEAVE && (msg->message == WM_MRED_LEAVE)) {
+  if (WM_MRED_LEAVE && (msg->message == WM_MRED_LEAVE)) {
     /* Queued leave event */
     LeaveEvent *e = (LeaveEvent *)msg->lParam;
     wxDoLeaveEvent(e->wnd, e->x, e->y, e->flags);
@@ -313,6 +271,51 @@ void MrEdDispatchEvent(MSG *msg)
 	} else
 	  break;
       }
+    }
+  }
+}
+
+void wxCopyData(LPARAM lParam)
+{
+  /* Is this a message from another MrEd? */
+  int len;
+  COPYDATASTRUCT *cd;
+  len = strlen(MRED_GUID);
+  cd = (COPYDATASTRUCT *)lParam;
+  if ((cd->cbData > len + 4 + sizeof(DWORD)) 
+      && !strncmp((char *)cd->lpData, MRED_GUID, len)) {
+    if (!strncmp((char *)cd->lpData + len, "OPEN", 4)) {
+      /* This is an "OPEN" event, with a command line.
+	 The command line's argv (sans argv[0]) is
+	 expressed as a DWORD for the number of args,
+	 followed by each arg. Each arg is a DWORD
+	 for the number of chars and then the chars. */
+      DWORD w;
+      int cnt, i, pos;
+      char **argv, *s;
+      memcpy(&w, (char *)cd->cbData + len + 4, sizeof(DWORD));
+      cnt = w;
+      pos = len + 4 + sizeof(DWORD);
+      argv = new char*[cnt];
+      for (i = 0; i < cnt; i++) {
+	if (pos + sizeof(DWORD) <= cd->cbData) {
+	  memcpy(&w, (char *)cd->cbData + pos, sizeof(DWORD));
+	  pos += sizeof(DWORD);
+	  if (w >= 0 && (pos + w <= cd->cbData)) {
+	    s = new WXGC_ATOMIC char[w + 1];
+	    memcpy(s, (char *)cd->cbData + pos, w);
+	    s[w] = NULL;
+	    pos += w;
+	  } else {
+	    cnt = i;
+	    break;
+	  }
+	} else {
+	  cnt = i;
+	  break;
+	}
+      }
+      Drop_Runtime(argv, cnt);
     }
   }
 }

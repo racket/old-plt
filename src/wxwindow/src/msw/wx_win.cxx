@@ -31,6 +31,8 @@ wxWnd *wxWndHook = NULL;
 
 extern long last_msg_time; /* timeStamp implementation */
 
+extern int WM_IS_MRED;
+
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
 
@@ -792,6 +794,7 @@ static int call_dwp(void *_c) {
 }
 
 extern int wxHiEventTrampoline(int (*f)(void *), void *data);
+extern void wxCopyData(LPARAM lparam);
 
 extern int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int tramp);
 extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramps);
@@ -862,8 +865,12 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
   wnd->last_msg = message;
   wnd->last_wparam = wParam;
   wnd->last_lparam = lParam;
-  
+
   switch (message) {
+  case WM_COPYDATA:
+    wxCopyData(lParam);
+    retval = 0;
+    break;
   case WM_SETFONT:
     retval = 0;
     break;
@@ -1218,6 +1225,10 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     }
   default: /* ^^^ fallthrough ^^^ */
     {
+      if (message == WM_IS_MRED) {
+	retval = 79;
+      }
+
       if (dialog)
 	retval = 0;
       else

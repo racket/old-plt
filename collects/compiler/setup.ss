@@ -513,3 +513,5 @@
 						   x))])
 		     (t plthome))))
 	      collections-to-compile)))
+
+(printf "Done setting up~n")

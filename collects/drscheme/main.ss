@@ -10,8 +10,8 @@
   
 
   ;; add the new settings
-  (basis:add-setting 'MrEd (basis:copy-setting (basis:find-setting-name 'MzScheme)))
-  (basis:add-setting '|MrEd Debug| (basis:copy-setting (basis:find-setting-name '|MzScheme Debug|)))
+  (basis:add-setting 'MrEd (basis:copy-setting (basis:find-setting-named 'MzScheme)))
+  (basis:add-setting '|MrEd Debug| (basis:copy-setting (basis:find-setting-named '|MzScheme Debug|)))
 
   (fw:application:current-app-name "DrScheme")
   (fw:version:add-spec 'd 1)

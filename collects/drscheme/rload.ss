@@ -20,6 +20,7 @@
 
 	 (define (check-cache/force filename)
 	   (let* ([sym (string->symbol filename)]
+		  [normal-termination? #f]
 		  [load/save
 		   (lambda (filename reason)
 		     
@@ -33,10 +34,10 @@
 
 		     (hash-table-put! (get-mods-ht) (string->symbol filename) (file-or-directory-modify-seconds filename))
 
-		     (with-handlers ([(lambda (x) #t)
-				      (lambda (exn)
-					(set! exception-raised? #t)
-					(raise exn))])
+		     (dynamic-wind
+		      (lambda () 
+			(set! normal-termination? #f))
+		      (lambda ()
 		       (let* ([index #f]
 			      [old-message #f])
 
@@ -52,7 +53,11 @@
 			 (let ([anss (call-with-values (lambda () (ol filename)) list)])
 			   (hash-table-put! (get-value-ht) sym anss)
 			   (send (list-ref loading-messages index) set-label old-message)
-			   (apply values anss)))))]
+			   (set! normal-termination? #t)
+			   (apply values anss))))
+		      (lambda ()
+			(unless normal-termination?
+			  (set! exception-raised? #t)))))]
 
 		  [hash-table-maps?
 		   (lambda (ht value)

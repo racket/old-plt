@@ -1071,11 +1071,7 @@
 	   (insert-delta "Language: " WELCOME-DELTA)
 	   (let ([setting (fw:preferences:get 'drscheme:settings)])
 	     (insert-delta 
-	      (list-ref
-	       basis:level-strings
-	       (basis:level->number
-		(basis:setting-vocabulary-symbol
-		 setting)))
+	      (basis:find-setting-name setting)
 	      RED-DELTA)
 	     (unless (basis:find-setting-name setting)
 	       (insert-delta " Custom" RED-DELTA)))

@@ -149,13 +149,15 @@
     (set! level-strings (map symbol->string level-symbols)))
 
   ;; level-symbols (list-of sym)
-  (define level-symbols (list 'Beginner 'Intermediate 'Advanced 'MzScheme '|MzScheme Debug|))
+  (define level-symbols (map (lambda (x) (vector-ref x 0)) settings))
 
   ;; level-strings : (list-of string)
   (define level-strings (map symbol->string level-symbols))
 
   ;; find-setting-name : setting -> (union symbol #f)
   (define (find-setting-name setting)
+    (unless (setting? setting)
+      (error 'find-setting-name "expected setting, got ~e" setting))
     (or (ormap (lambda (x)
 		 (if (equal? (vector-ref x 1) setting)
 		     (vector-ref x 0)
@@ -163,13 +165,29 @@
 	       settings)
 	#f))
 
+  ;; find-setting-named : symbol -> setting
+  ;; effect: raises an exception if no setting named by the symbol exists
+  (define (find-setting-named name)
+    (unless (symbol? name)
+      (error 'find-setting-named "expected symbol, got ~e" name))
+    (let loop ([settings settings])
+      (cond
+	[(null? settings) (error 'find-setting-named "no setting named ~e" name)]
+	[else (let ([setting (car settings)])
+		(if (eq? name (vector-ref setting 0))
+		    (vector-ref setting 1)
+		    (loop (cdr settings))))])))
+		    
+
   ;; copy-setting : setting -> setting
   (define copy-setting
     (lambda (x)
+      (unless (setting? x)
+	(error 'copy-setting "expected a setting, got ~e" x))
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
   ;; get-default-setting : _ -> setting
-  (define (get-default-setting) (copy-setting (car settings)))
+  (define (get-default-setting) (copy-setting (vector-ref (car settings) 1)))
 
   ;; level->number : symbol -> int
   (define level->number

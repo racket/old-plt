@@ -78,8 +78,6 @@
    level-symbols
    level-strings
 
-   add-setting
-   copy-setting
    (struct setting (vocabulary-symbol
 		    case-sensitive?
 		    allow-set!-on-undefined?
@@ -96,8 +94,13 @@
 		    whole/fractional-exact-numbers
 		    printing))
    make-setting/parse
-   r4rs-style-printing?
-   find-setting-name))
+
+   find-setting-name
+   find-setting-named
+   add-setting
+   copy-setting
+
+   r4rs-style-printing?))
 
 (define-signature drscheme:interface^ 
   ((open zodiac:interface^)

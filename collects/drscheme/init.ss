@@ -14,7 +14,7 @@
   (define system-eventspace (mred:current-eventspace))
   (define first-dir (current-directory))
 
-  (error-display-handler
+  '(error-display-handler
    (lambda (msg)
      (parameterize ([mred:current-eventspace system-eventspace]
 		    [current-custodian system-custodian])

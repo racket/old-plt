@@ -306,27 +306,33 @@
 	 [else (void)])))
    
    (current-exception-handler
-    (let ([orig (current-exception-handler)])
-      (lambda (x)
-	(if (exn? x)
-	    (let ([p (current-error-port)])
-	      (display (exn-message x) p)
-	      (newline p)
-	      (print-error-trace p x)
-	      ((error-escape-handler)))
-	    (orig x)))))
+    (let* ([orig (current-exception-handler)]
+	   [errortrace-exception-handler
+	    (lambda (x)
+	      (if (exn? x)
+		  (let ([p (current-error-port)])
+		    (display (exn-message x) p)
+		    (newline p)
+		    (print-error-trace p x)
+		    ((error-escape-handler)))
+		  (orig x)))])
+      errortrace-exception-handler))
 
    (define current-file #f)
 
    (current-load
-    (let ([load (current-load)])
-      (lambda (f)
-	(let ([cf current-file])
-	  (dynamic-wind
-	   (lambda () (set! current-file f))
-	   (lambda () (load f))
-	   (lambda () (set! current-file cf)))))))
+    (let* ([load (current-load)]
+	   [errortrace-load-handler
+	    (lambda (f)
+	      (let ([cf current-file])
+		(dynamic-wind
+		 (lambda () (set! current-file f))
+		 (lambda () (load f))
+		 (lambda () (set! current-file cf)))))])
+      errortrace-load-handler))
    
    (debug-info-handler
-    (lambda () (current-continuation-marks key)))))
+    (let ([errortrace-debug-info-handler
+	   (lambda () (current-continuation-marks key))])
+      errortrace-debug-info-handler))))
  

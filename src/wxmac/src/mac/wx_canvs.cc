@@ -128,6 +128,7 @@ void wxCanvas::InitDefaults(void)
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  InitInternalGray();
 }
 
 void wxCanvas::AddWhiteRgn(RgnHandle rgn) 

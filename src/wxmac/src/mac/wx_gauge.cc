@@ -117,7 +117,7 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
-  
+  InitInternalGray();  
 }
 
 // ------------ Destructor ----------------------------------------
@@ -200,7 +200,7 @@ void wxGauge::DoShow(Bool show)
 {
   if (!CanShow(show)) return;
 
-  if (!show)
+  if (!show && cTitle)
     cTitle->DoShow(show);
 
   if (cMacControl) {
@@ -212,7 +212,7 @@ void wxGauge::DoShow(Bool show)
   }
   wxWindow::DoShow(show);
 
-  if (show)
+  if (show && cTitle)
     cTitle->DoShow(show);
 }
 

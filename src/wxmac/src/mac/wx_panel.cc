@@ -107,9 +107,12 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
     }
   }
 
+#if 0
+  /* Handled in wxCanvas construction: */
   if (GetParent()->IsHidden())
     DoShow(FALSE);
   InitInternalGray();
+#endif
 }
 
 //-----------------------------------------------------------------------------

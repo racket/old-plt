@@ -223,14 +223,17 @@ void wxChoice::DrawChoice(Bool active)
   SetCurrentDC();
   
   if (sTitle) {
+    Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
+	       SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };
+
+    ::EraseRect(&r);
+
     if (font && (font != wxNORMAL_FONT)) {
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);
       MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
       DrawLatin1Text((char *)sTitle, 1, sTitle[0], 0);
     } else {
-      Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
-		 SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };
       CFStringRef str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
       
       DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
@@ -329,9 +332,11 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
       if (::StillDown()) {
 	int trackResult;
 	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
-	selection = ::GetControlValue(cMacControl) - 1;
-	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-	ProcessCommand(commandEvent);
+	if (trackResult) {
+	  selection = ::GetControlValue(cMacControl) - 1;
+	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	  ProcessCommand(commandEvent);
+	}
       }
     }
 }

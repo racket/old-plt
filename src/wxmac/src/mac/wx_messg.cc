@@ -114,6 +114,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
     SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
     if (GetParent()->IsHidden())
       DoShow(FALSE);
+    InitInternalGray();
   } else
     CreateWxMessage("<bad-image>");
 }
@@ -160,6 +161,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
     SetClientSize(64, 64);
     if (GetParent()->IsHidden())
       DoShow(FALSE);
+    InitInternalGray();
   } else
     CreateWxMessage("<icon-missing>");
 }

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-08-15")
+(define *tex2page-version* "2003-08-16")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -136,7 +136,7 @@
 
 (define *html-dagger* "&plusmn;")
 
-(define *html-dagger-2* "&plusmn;&plusmn;")
+(define *html-^dagger* "&plusmn;&plusmn;")
 
 (define *html-ldquo* "``")
 
@@ -150,7 +150,7 @@
 
 (define *html-oelig* "oe")
 
-(define *html-oelig-cap* "OE")
+(define *html-^oelig* "OE")
 
 (define *html-rdquo* "''")
 
@@ -160,30 +160,32 @@
 
 (define *html-scaron* "<u>s</u>")
 
-(define *html-scaron-cap* "<u>S</u>")
+(define *html-^scaron* "<u>S</u>")
 
 (define *html-trade* "<sup>TM</sup>")
 
-(define *html-yuml-cap* "Y&quot;")
+(define *html-^yuml* "Y&quot;")
 
-(when *use-advanced-html-entities?*
-  (set! *html-bull* "&#8226;")
-  (set! *html-dagger* "&#8224;")
-  (set! *html-dagger-2* "&#8225;")
-  (set! *html-ldquo* "&#8220;")
-  (set! *html-lsaquo* "&#8249;")
-  (set! *html-lsquo* "&#8216;")
-  (set! *html-mdash* "&#8212;")
-  (set! *html-ndash* "&#8211;")
-  (set! *html-oelig* "&#339;")
-  (set! *html-oelig-cap* "&#338;")
-  (set! *html-rdquo* "&#8221;")
-  (set! *html-rsaquo* "&#8250;")
-  (set! *html-rsquo* "&#8217;")
-  (set! *html-scaron* "&#353;")
-  (set! *html-scaron-cap* "&#352;")
-  (set! *html-trade* "&#8482;")
-  (set! *html-yuml-cap* "&#376;"))
+(define html-advanced-entities
+  (lambda ()
+    (set! *use-advanced-html-entities?* #t)
+    (set! *html-bull* "&#8226;")
+    (set! *html-dagger* "&#8224;")
+    (set! *html-^dagger* "&#8225;")
+    (set! *html-ldquo* "&#8220;")
+    (set! *html-lsaquo* "&#8249;")
+    (set! *html-lsquo* "&#8216;")
+    (set! *html-mdash* "&#8212;")
+    (set! *html-ndash* "&#8211;")
+    (set! *html-^oelig* "&#338;")
+    (set! *html-oelig* "&#339;")
+    (set! *html-rdquo* "&#8221;")
+    (set! *html-rsaquo* "&#8250;")
+    (set! *html-rsquo* "&#8217;")
+    (set! *html-^scaron* "&#352;")
+    (set! *html-scaron* "&#353;")
+    (set! *html-trade* "&#8482;")
+    (set! *html-^yuml* "&#376;")))
 
 (define *filename-delims* '())
 
@@ -669,7 +671,7 @@
 (define file-stem-name
   (lambda (f)
     (let ((slash (string-reverse-index f #\/)))
-      (if slash (set! f (substring f (+ slash 1) (string-length f))))
+      (when slash (set! f (substring f (+ slash 1) (string-length f))))
       (let ((dot (string-reverse-index f #\.)))
         (if dot (substring f 0 dot) f)))))
 
@@ -2863,7 +2865,7 @@
           (begin (get-actual-char) (do-ndash))
           (emit #\-)))))))
 
-(define do-iexcl
+(define do-excl
   (lambda ()
     (if (or *math-mode?* (not *ligatures?*))
       (emit #\!)
@@ -2872,7 +2874,7 @@
           (begin (get-actual-char) (emit "&iexcl;"))
           (emit #\!))))))
 
-(define do-iquest
+(define do-quest
   (lambda ()
     (if (or *math-mode?* (not *ligatures?*))
       (emit #\?)
@@ -3981,7 +3983,7 @@
       ((hacek)
        (case c
          ((#\s) (emit *html-scaron*))
-         ((#\S) (emit *html-scaron-cap*))
+         ((#\S) (emit *html-^scaron*))
          ((#\space) (emit #\^))
          (else (emit c) (emit #\^))))
       ((ring)
@@ -4000,7 +4002,7 @@
           (emit #\&)
           (emit c)
           (emit "uml;"))
-         ((#\Y) (emit *html-yuml-cap*))
+         ((#\Y) (emit *html-^yuml*))
          ((#\space) (emit "&quot;"))
          (else (emit c) (emit "&quot;"))))
       (else (emit "<u>") (emit c) (emit "</u>")))))
@@ -6747,7 +6749,7 @@
     (let loop ()
       (ignorespaces)
       (let ((c (snoop-actual-char)))
-        (if (char=? c #\\)
+        (when (and (char? c) (char=? c #\\))
           (let ((x (get-ctl-seq)))
             (cond
              ((string=? x "\\hline") (loop))
@@ -6838,8 +6840,8 @@
      ((char=? c #\`) (do-lsquo))
      ((char=? c #\') (do-rsquo))
      ((char=? c #\~) (emit-nbsp 1))
-     ((char=? c #\!) (do-iexcl))
-     ((char=? c #\?) (do-iquest))
+     ((char=? c #\!) (do-excl))
+     ((char=? c #\?) (do-quest))
      ((or (char=? c #\<) (char=? c #\>) (char=? c #\")) (emit-html-char c))
      ((char=? c #\&)
       (cond
@@ -7471,7 +7473,7 @@
     (cond
      ((string=? not-a-file "--version")
       (write-log
-        "Copyright (c) 1997-2003, Dorai Sitaram.\n\nPermission to distribute and use this work for any\npurpose is hereby granted provided this copyright\nnotice is included in the copy.  This work is provided\nas is, with no warranty of any kind.\n\nFor more information on TeX2page, please see")
+        "Copyright (c) 1997-2003, Dorai Sitaram.\n\n                  Permission to distribute and use this work for any\n                  purpose is hereby granted provided this copyright\n                  notice is included in the copy.  This work is provided\n                  as is, with no warranty of any kind.\n\n                  For more information on TeX2page, please see")
       (write-log #\newline)
       (write-log *tex2page-website*)
       (write-log #\.)
@@ -7479,7 +7481,7 @@
       (write-log #\newline))
      ((string=? not-a-file "--help")
       (write-log
-        "\nThe command tex2page converts a (La)TeX document into\nWeb pages.  Call tex2page with the relative or full\npathname of the main (La)TeX file.  The file extension\nis optional if it is .tex.\n\nThe relative pathnames of the main and any subsidiary\n(La)TeX files are resolved against the current working\ndirectory and the list of directories in the\nenvironment variable TIIPINPUTS, or if that does not\nexist, TEXINPUTS.  \n\nThe output Web files are generated in the current\ndirectory by default.  An alternate location can be\nspecified in  <jobname>.hdir, tex2page.hdir, or\n~/tex2page.hdir, where <jobname> is the basename of the\nmain (La)TeX file.  \n\nFor more information on tex2page, please see")
+        "\n                  The command tex2page converts a (La)TeX document into\n                  Web pages.  Call tex2page with the relative or full\n                  pathname of the main (La)TeX file.  The file extension\n                  is optional if it is .tex.\n\n                  The relative pathnames of the main and any subsidiary\n                  (La)TeX files are resolved against the current working\n                  directory and the list of directories in the\n                  environment variable TIIPINPUTS, or if that does not\n                  exist, TEXINPUTS.  \n\n                  The output Web files are generated in the current\n                  directory by default.  An alternate location can be\n                  specified in  <jobname>.hdir, tex2page.hdir, or\n                  ~/tex2page.hdir, where <jobname> is the basename of the\n                  main (La)TeX file.  \n\n                  For more information on tex2page, please see")
       (write-log #\newline)
       (write-log *tex2page-website*)
       (write-log #\.)
@@ -7489,8 +7491,6 @@
       (when (string=? not-a-file "--missing-arg")
         (write-log "! Missing command-line argument.")
         (write-log 'separation-newline))
-      (write-log "No pages of output.")
-      (write-log 'separation-newline)
       (when (> *infructuous-calls-to-tex2page* 0)
         (write-log "You have called TeX2page")
         (write-log #\space)
@@ -7498,12 +7498,16 @@
         (write-log #\space)
         (write-log "times without a valid input document.")
         (write-log 'separation-newline))
-      (when (>= *infructuous-calls-to-tex2page* 4)
+      (cond
+       ((>= *infructuous-calls-to-tex2page* 4)
         (write-log "I can't go on meeting you like this.")
+        (write-log 'separation-newline)
+        (write-log "Good bye!")
         (write-log 'separation-newline))
-      (write-log
-        "Do you need help using TeX2page?\nTry the commands\n  tex2page --help\n  tex2page --version")
-      (write-log 'separation-newline)))
+       (else
+        (write-log
+          "Do you need help using TeX2page?\nTry the commands\n  tex2page --help\n  tex2page --version")
+        (write-log 'separation-newline)))))
     (close-all-open-ports)))
 
 (define non-fatal-error
@@ -7586,7 +7590,7 @@
 
 (tex-def-math-prim "\\dagger" (lambda () (emit *html-dagger*)))
 
-(tex-def-math-prim "\\ddagger" (lambda () (emit *html-dagger-2*)))
+(tex-def-math-prim "\\ddagger" (lambda () (emit *html-^dagger*)))
 
 (tex-def-math-prim "\\leq" (lambda () (emit "<u>&lt;</u>")))
 
@@ -7804,8 +7808,6 @@
 
 (tex-def-prim "\\char" do-char)
 
-(tex-def-prim "\\circledR" (lambda () (emit "&reg;")))
-
 (tex-def-prim "\\cite" do-cite)
 
 (tex-def-prim "\\closegraphsfile" do-mfpic-closegraphsfile)
@@ -7832,7 +7834,7 @@
 
 (tex-def-prim "\\date" do-date)
 
-(tex-def-prim "\\ddag" (lambda () (emit *html-dagger-2*)))
+(tex-def-prim "\\ddag" (lambda () (emit *html-^dagger*)))
 
 (tex-def-prim "\\def" (lambda () (do-def #f)))
 
@@ -8033,6 +8035,8 @@
 (tex-def-prim "\\hspace" do-hspace)
 
 (tex-def-prim "\\htmladdimg" do-htmladdimg)
+
+(tex-def-prim "\\htmladvancedentities" html-advanced-entities)
 
 (tex-def-prim "\\htmlcolophon" do-htmlcolophon)
 
@@ -8260,7 +8264,7 @@
 
 (tex-def-prim "\\OE" (lambda () (emit *html-oelig*)))
 
-(tex-def-prim "\\oe" (lambda () (emit *html-oelig-cap*)))
+(tex-def-prim "\\oe" (lambda () (emit *html-^oelig*)))
 
 (tex-def-prim "\\opengraphsfile" do-mfpic-opengraphsfile)
 
@@ -8420,11 +8424,43 @@
 
 (tex-def-prim "\\texonly" (lambda () (ignore-tex-specific-text "texonly")))
 
+(tex-def-prim "\\textasciicircum" (lambda () (emit "^")))
+
+(tex-def-prim "\\textbar" (lambda () (emit "|")))
+
+(tex-def-prim "\\textbackslash" (lambda () (emit "\\")))
+
 (tex-def-prim "\\textbf" (lambda () (do-function "\\textbf")))
+
+(tex-def-prim "\\textbullet" (lambda () (emit *html-bull*)))
 
 (tex-def-prim "\\textdegree" (lambda () (emit "&deg;")))
 
+(tex-def-prim "\\textemdash" (lambda () (emit *html-mdash*)))
+
+(tex-def-prim "\\textendash" (lambda () (emit *html-ndash*)))
+
+(tex-def-prim "\\textexclamdown" (lambda () (emit "&iexcl;")))
+
+(tex-def-prim "\\textgreater" (lambda () (emit "&gt;")))
+
 (tex-def-prim "\\textit" (lambda () (do-function "\\textit")))
+
+(tex-def-prim "\\textless" (lambda () (emit "&lt;")))
+
+(tex-def-prim "\\textperiodcentered" (lambda () (emit "&middot;")))
+
+(tex-def-prim "\\textquestiondown" (lambda () (emit "&iquest;")))
+
+(tex-def-prim "\\textquotedblleft" (lambda () (emit *html-ldquo*)))
+
+(tex-def-prim "\\textquotedblright" (lambda () (emit *html-rdquo*)))
+
+(tex-def-prim "\\textquoteleft" (lambda () (emit *html-lsquo*)))
+
+(tex-def-prim "\\textquoteright" (lambda () (emit *html-rsquo*)))
+
+(tex-def-prim "\\textregistered" (lambda () (emit "&reg;")))
 
 (tex-def-prim "\\textrm" (lambda () (do-function "\\textrm")))
 
@@ -8435,7 +8471,13 @@
 
 (tex-def-prim "\\textsl" (lambda () (do-function "\\textsl")))
 
+(tex-def-prim "\\textasciitilde" (lambda () (emit "~")))
+
+(tex-def-prim "\\texttrademark" (lambda () (emit *html-trade*)))
+
 (tex-def-prim "\\texttt" (lambda () (do-function "\\texttt")))
+
+(tex-def-prim "\\textvisiblespace" emit-visible-space)
 
 (tex-def-prim "\\TH" (lambda () (emit "&THORN;")))
 
@@ -8859,7 +8901,9 @@
 
 (tex-let-prim "\\pagehtmlref" "\\htmlref")
 
-(tex-let-prim "\\registered" "\\circledR")
+(tex-let-prim "\\circledR" "\\textregistered")
+
+(tex-let-prim "\\registered" "\\textregistered")
 
 (tex-let-prim "\\href" "\\urlhd")
 
@@ -9077,6 +9121,7 @@
        (*write-log-index* 0)
        (*write-log-possible-break?* #f)
        (*zeroth-html-page* #f))
+      (when *use-advanced-html-entities?* (html-advanced-entities))
       (set! *main-tex-file*
         (actual-tex-filename tex-file (check-input-file-timestamp? tex-file)))
       (write-log "This is TeX2page, Version ")

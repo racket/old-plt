@@ -10,7 +10,7 @@
                  (compile-java 'file 'file 'full
                                (build-path draw-path file)
                                #f #f)))))
-        ;(javac "Posn.java")
+        (javac "Posn.java")
         (javac "Color.java")
         (javac "ICanvas.java")
         (javac "Canvas.java")

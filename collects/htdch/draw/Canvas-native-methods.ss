@@ -3,7 +3,7 @@
   (require (lib "draw.ss" "htdp")
            (lib "posn.ss" "lang")
            (lib "class.ss"))
-  (require "Posn.ss")
+  ;(require "Posn.ss")
   
   (define-syntax (define/provide stx)
     (syntax-case stx ()
@@ -16,6 +16,9 @@
        #'(begin
 	   (define (id . formals) . rest)
 	   (provide id))]))
+  
+  (define Posn-x-get (dynamic-require '(lib "Posn.ss" "htdch" "draw") 'Posn-x-get))
+  (define Posn-y-get (dynamic-require '(lib "Posn.ss" "htdch" "draw") 'Posn-y-get))
   
   (define (build-posn posnO)
     (make-posn (Posn-x-get posnO) (Posn-y-get posnO)))

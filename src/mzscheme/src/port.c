@@ -1830,6 +1830,12 @@ int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
     ((Scheme_Closed_Primitive_Proc *)v)->data = target_evt;
   }
 
+  /* This commit implementation is essentially CML style, but we avoid
+     actually allocating a manager thread. Instead the various
+     committing threads elect a leader, and we rely on being in the
+     kernel to detect when the leader is killed or suspended, in which
+     case we elect a new leader. */
+
   while (1) {
     if (scheme_wait_sema(unless_evt, 1)) {
       if (current_leader)

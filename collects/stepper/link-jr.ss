@@ -23,8 +23,7 @@
         [fake-stepper : stepper:model^
                      ((require-library-unit/sig "fake-model.ss" "stepper"))]
         [fake-ankle-query : (use-ankle-wrap?)
-                    ((require-library-unit/sig "fake-ankle-query.ss" "stepper")
-                     error)]
+                    ((require-library-unit/sig "fake-ankle-query.ss" "stepper"))]
         [fake-break : (break)
                     ((require-library-unit/sig "fake-break.ss" "stepper")
                      error)]

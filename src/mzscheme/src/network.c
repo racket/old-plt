@@ -784,7 +784,7 @@ static int tcp_addr(const char *address, struct hostInfo *info)
   long *done = MALLOC_ONE_ATOMIC(long);
   
   /* Check for numerical address: */
-  if (parse_numerical(&(info->addr[0])))
+  if (parse_numerical(address, &(info->addr[0])))
     return 0;
 
  try_again:

@@ -176,7 +176,7 @@
 		     [c (make-object mred:one-line-canvas% h 30 20 -1 -1 ""
 				     (+ wx:const-mcanvas-hide-h-scroll
 					wx:const-mcanvas-hide-v-scroll))]
-		     [e (make-object (class-asi mred:edit%
+		     [e (make-object (class-asi mred:media-edit%
 				       (inherit change-style get-style-list)
 				       (rename [super-after-insert after-insert])
 				       (public

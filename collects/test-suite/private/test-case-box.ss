@@ -470,8 +470,8 @@
   (define turn-button%
     (class embedded-toggle-button%
       (super-new
-       (images-off (cons (icon "turn-down.gif") (icon "turn-down-click.gif")))
-       (images-on (cons (icon "turn-up.gif") (icon "turn-up-click.gif"))))))
+       (images-off (cons (icon "turn-down.png") (icon "turn-down-click.png")))
+       (images-on (cons (icon "turn-up.png") (icon "turn-up-click.png"))))))
   
   ;; a snip which will display a pass/fail result
   (define result-snip%

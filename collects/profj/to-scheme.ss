@@ -184,7 +184,7 @@
   ;-------------------------------------------------------------------------------------------------------------------------
   ;Translation
   
-  (define (translate-interactions prog location type-recs lvl)
+  (define (translate-interactions prog location type-recs)
     (loc location)
     (let ((reqs (send type-recs get-class-reqs))
           (syn (cond 

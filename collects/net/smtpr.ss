@@ -32,13 +32,10 @@
 		(check-reply r v)))))))
 
   (define (protect-line l)
-    ; If it's only dots, add one more
+    ; If begins with a dot, add one more
     (if (or (string=? "" l) (not (char=? #\. (string-ref l 0))))
-	l ; certainly no protection needed
-	; stronger check...
-	(if (andmap (lambda (c) (char=? c #\.)) (string->list l))
-	    (string-append "." l) ; it was all dots
-	    l)))
+	l
+	(string-append "." l)))
 
   (define smtp-sending-end-of-message
     (make-parameter void

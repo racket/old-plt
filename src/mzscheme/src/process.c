@@ -339,6 +339,9 @@ extern BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved);
 # define scheme_process_hop_type scheme_process_type
 #endif
 
+typedef int (*Block_Check_Procedure)(Scheme_Object *blocker);
+typedef void (*Block_Needs_Wakeup_Procedure)(Scheme_Object *blocker, void *fds);
+
 void scheme_init_process(Scheme_Env *env)
 {
   scheme_add_global_constant("dump-memory-stats",
@@ -1649,8 +1652,10 @@ static int check_sleep(int need_activity, int sleep_now)
       if (p->nestee) {
 	/* nothing */
       } else if (p->block_descriptor == -1) {
-	if (p->block_needs_wakeup)
-	  (p->block_needs_wakeup)(p->blocker, fds);
+	if (p->block_needs_wakeup) {
+	  Block_Needs_Wakeup_Procedure f = p->block_needs_wakeup;
+	  f(p->blocker, fds);
+	}
 	merge_time = (p->sleep_time > 0.0);
       } else if (p->block_descriptor == PORT_BLOCKED)
 	scheme_need_wakeup(p->blocker, fds);
@@ -1863,9 +1868,6 @@ static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-typedef int (*Block_Check_Procedure)(Scheme_Object *blocker);
-typedef void (*Block_Needs_Wakeup_Procedure)(Scheme_Object *blocker, void *fds);
-
 static void signal_break(Scheme_Process *p)
 {
   int block_descriptor;
@@ -2002,9 +2004,11 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	break;
       } else {
 	if (next->block_descriptor == -1) {
-	  if (next->block_check)
-	    if ((next->block_check)(next->blocker))
+	  if (next->block_check) {
+	    Block_Check_Procedure f = next->block_check;
+	    if (f(next->blocker))
 	      break;
+	  }
 	} else if (next->block_descriptor == EVENTLOOP_BLOCKED) {
 	  /* Can't use it. */
 	} else if (next->block_descriptor == SEMA_BLOCKED) {
@@ -2134,8 +2138,10 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     MZ_FD_ZERO(set2);
     
     if (p->block_descriptor == -1) {
-      if (p->block_needs_wakeup)
-	(p->block_needs_wakeup)(p->blocker, fds);
+      if (p->block_needs_wakeup) {
+	Block_Needs_Wakeup f = p->block_needs_wakeup;
+	f(p->blocker, fds);
+      }
       sleep_time = p->sleep_time;
     } else
       scheme_need_wakeup(p->blocker, fds);

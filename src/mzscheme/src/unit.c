@@ -53,6 +53,10 @@ static Scheme_Object *invoke_unit_symbol;
 
 static Scheme_Object *unitsig_macros;
 
+typedef Scheme_Object *(*Init_Func)(Scheme_Object **boxes, Scheme_Object **anchors,
+				    struct Scheme_Unit *m,
+				    void *debug_request);
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -1934,8 +1938,9 @@ typedef struct {
 static Scheme_Object *do_invoke_unit(void *data, int argc, Scheme_Object **argv)
 {
   Do_Invoke_Data *diu = (Do_Invoke_Data *)data;
+  Init_Func f = diu->unit->init_func;
 
-  return diu->unit->init_func(diu->boxes, diu->anchors, diu->unit, NULL);
+  return f(diu->boxes, diu->anchors, diu->unit, NULL);
 }
 
 static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
@@ -2339,8 +2344,8 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
 
   /* All boxes are set up; now initialize units and we're done */
   for (i = 0; i < num_mods; i++) {
-    v = subunits[i]->init_func(boxesList[i], anchorsList[i], 
-			       subunits[i], NULL);
+    Init_Func f = subunits[i]->init_func;
+    v = f(boxesList[i], anchorsList[i], subunits[i], NULL);
     if (i + 1 < num_mods) {
       /* could be a tail-call or a tail-eval */
       v = scheme_force_value(v);

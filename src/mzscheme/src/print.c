@@ -468,6 +468,8 @@ print_to_string(Scheme_Object *obj, long *len, int write,
   return p->print_buffer;
 }
 
+typedef void (*Write_String_Fun)(char *str, long len, struct Scheme_Output_Port *);
+
 static void 
 print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int escaped,
 	      long maxl, Scheme_Process *p, Scheme_Config *config)
@@ -482,7 +484,10 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int escaped,
 
   str = print_to_string(obj, &len, escaped, port, maxl, p, config);
 
-  (op->write_string_fun)(str, len, op);
+  {
+    Write_String_Fun f = op->write_string_fun;
+    f(str, len, op);
+  }
   op->pos += len;
 }
 
@@ -543,7 +548,10 @@ static void print_this_string(Scheme_Process *p, const char *str, int autolen)
       Scheme_Output_Port *op = (Scheme_Output_Port *)p->print_port;
 
       p->print_buffer[p->print_position] = 0;
-      (op->write_string_fun)(p->print_buffer, p->print_position, op);
+      {
+	Write_String_Fun f = op->write_string_fun;
+	f(p->print_buffer, p->print_position, op);
+      }
       op->pos += p->print_position;
       
       p->print_position = 0;

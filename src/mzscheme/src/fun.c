@@ -742,6 +742,8 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   return (Scheme_Object *)data;
 }
 
+typdef Scheme_Object *(*Overflow_K_Proc)(void);
+
 void *scheme_top_level_do(void *(*k)(void), int eb)
 {
   void *v;
@@ -832,7 +834,10 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	  p->ku.k.i1 = i1;
 	  p->ku.k.i2 = i2;
 	
-	  scheme_overflow_reply = scheme_overflow_k();
+	  {
+	    Overflow_K_Proc f = scheme_overflow_k;
+	    scheme_overflow_reply = f();
+	  }
 	}
       
 	overflow = p->overflow;

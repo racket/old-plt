@@ -612,6 +612,8 @@ static int bignum_obj(void *p, Mark_Proc mark)
   if (mark) {
     if (!b->allocated_inline)
       gcMARK(b->digits);
+    else
+      b->digits = ((Small_Bignum *)b)->v;
   }
 
   if (!b->allocated_inline)
@@ -713,7 +715,12 @@ static int input_port(void *p, Mark_Proc mark)
     gcMARK(ip->sub_type);
     gcMARK(ip->port_data);
     gcMARK(ip->name);
+    gcMARK(ip->ungotten);
     gcMARK(ip->read_handler);
+    gcMARK(ip->mref);
+#ifdef MZ_REAL_THREADS
+    gcMARK(ip->sema);
+#endif
   }
 
   return gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -729,6 +736,10 @@ static int output_port(void *p, Mark_Proc mark)
     gcMARK(op->display_handler);
     gcMARK(op->write_handler);
     gcMARK(op->print_handler);
+    gcMARK(op->mref);
+#ifdef MZ_REAL_THREADS
+    gcMARK(op->sema);
+#endif
   }
 
   return gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));

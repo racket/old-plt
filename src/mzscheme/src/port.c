@@ -399,6 +399,15 @@ static Scheme_Object *default_display_handler;
 static Scheme_Object *default_write_handler;
 static Scheme_Object *default_print_handler;
 
+typedef void (*Write_String_Fun)(char *str, long len, struct Scheme_Output_Port *);
+typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);
+
+typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
+typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
+typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
+
 #include "schwinfd.h"
 
 #if defined(USE_BEOS_PORT_THREADS) || defined(BEOS_PROCESSES)
@@ -1367,8 +1376,10 @@ scheme_getc (Scheme_Object *port)
   if (ip->ungotten_count)
     c = ip->ungotten[--ip->ungotten_count];
   else {
+    Getc_Fun f;
     check_closed("#<primitive:get-port-char>", "input", port, ip->closed);
-    c = ip->getc_fun(ip);
+    f = ip->getc_fun;
+    c = f(ip);
   }
 
   if (c != EOF) {
@@ -1443,7 +1454,8 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
       int c;
       
       while (size--) {
-	c = ip->getc_fun(ip);
+	Getc_Fun f = ip->getc_fun;
+	c = f(ip);
 	if (c != EOF)
 	  buffer[got++] = c;
 	else
@@ -1497,8 +1509,10 @@ int scheme_peekc(Scheme_Object *port)
     if (ip->ungotten_count)
       ch = ip->ungotten[ip->ungotten_count - 1];
     else {
+      Peekc_Fun f;
       check_closed("#<primitive:peek-port-char>", "input", port, ip->closed);
-      ch = ip->peekc_fun(ip);
+      f = ip->peekc_fun;
+      ch = f(ip);
     }
 
     END_LOCK_PORT(ip->sema);
@@ -1596,8 +1610,10 @@ scheme_char_ready (Scheme_Object *port)
 
   if (ip->ungotten_count)
     retval = 1;
-  else
-    retval = ip->char_ready_fun(ip);
+  else {
+    Char_Ready_Fun f = ip->char_ready_fun;
+    retval = f(ip);
+  }
 
   END_LOCK_PORT(ip->sema);
 
@@ -1611,8 +1627,10 @@ scheme_need_wakeup (Scheme_Object *port, void *fds)
 
   ip = (Scheme_Input_Port *)port;
   
-  if (ip->need_wakeup_fun)
-    ((ip->need_wakeup_fun)(ip, fds));
+  if (ip->need_wakeup_fun) {
+    Need_Wakeup_Fun f = ip->need_wakeup_fun;
+    f(ip, fds);
+  }
 }
 
 long
@@ -1666,8 +1684,10 @@ scheme_close_input_port (Scheme_Object *port)
     if (ip->mref)
       scheme_remove_managed(ip->mref, (Scheme_Object *)ip);
 
-    if (ip->close_fun)
-      ip->close_fun(ip);
+    if (ip->close_fun) {
+      Close_Fun_i f = ip->close_fun;
+      f(ip);
+    }
     ip->closed = 1;
     ip->ungotten_count = 0;
   }
@@ -1686,7 +1706,10 @@ scheme_write_string(const char *str, long len, Scheme_Object *port)
 
   check_closed("#<primitive:write-port-string>", "output", port, op->closed);
 
-  (op->write_string_fun)((char *)str, len, op);
+  {
+    Write_String_Fun f = op->write_string_fun;
+    f((char *)str, len, op);
+  }
   op->pos += len;
 
   END_LOCK_PORT(op->sema);
@@ -1724,8 +1747,10 @@ scheme_close_output_port (Scheme_Object *port)
     if (op->mref)
       scheme_remove_managed(op->mref, (Scheme_Object *)op);
 
-    if (op->close_fun)
-      op->close_fun(op);
+    if (op->close_fun) {
+      Close_Fun_o f = op->close_fun;
+      f(op);
+    }
     op->closed = 1;
   }
 
@@ -3925,9 +3950,10 @@ display_write(char *name,
 	Scheme_Output_Port *op = (Scheme_Output_Port *)port;
 	int len = SCHEME_STRTAG_VAL(v);
 	check_closed(name, "output", port, op->closed);
-	(op->write_string_fun)(SCHEME_STR_VAL(v), 
-			       len,
-			       op);
+	{
+	  Write_String_Fun f = op->write_string_fun;
+	  f(SCHEME_STR_VAL(v), len, op);
+	}
 	op->pos += len;
       } else
 #endif
@@ -4028,7 +4054,10 @@ write_char (int argc, Scheme_Object *argv[])
   scheme_write_string((char *)buffer, 1, port);
 #else
   check_closed("write-char", "output", port, op->closed);
-  (op->write_string_fun)((char *)buffer, 1, op);
+  {
+    Write_String_Fun f = op->write_string_fun;
+    f((char *)buffer, 1, op);
+  }
   op->pos++;
 #endif
 

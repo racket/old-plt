@@ -443,7 +443,7 @@ static void make_init_env(void)
   scheme_add_global_constant("syntax-local-get-shadower", 
 			     scheme_make_prim_w_arity(local_get_shadower,
 						      "syntax-local-get-shadower",
-						      1, 2),
+						      1, 1),
 			     env);
   scheme_add_global_constant("syntax-local-introduce", 
 			     scheme_make_prim_w_arity(local_introduce,
@@ -2792,7 +2792,6 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 {
   Scheme_Comp_Env *env, *frame;
   Scheme_Object *sym, *esym, *sym_marks = NULL, *orig_sym, *uid = NULL, *env_marks;
-  int skip = 0;
 
   env = scheme_current_thread->current_local_env;
   if (!env)
@@ -2804,16 +2803,6 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 
   if (!(SCHEME_STXP(sym) && SCHEME_SYMBOLP(SCHEME_STX_VAL(sym))))
     scheme_wrong_type("syntax-local-get-shadower", "syntax identifier", 0, argc, argv);
-  if (argc > 1) {
-    Scheme_Object *v;
-    v = argv[1];
-    if (SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0)) {
-      skip = SCHEME_INT_VAL(v);
-    } else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))
-      return sym;
-    else
-      scheme_wrong_type("syntax-local-get-shadower", "non-negative exact integer", 1, argc, argv);
-  }
 
   sym_marks = scheme_stx_extract_marks(sym);
 
@@ -2829,15 +2818,12 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 	  esym = frame->values[i];
 	  env_marks = scheme_stx_extract_marks(esym);
 	  if (scheme_equal(env_marks, sym_marks)) {
-	    if (!skip) {
-	      sym = esym;
-	      if (frame->uids)
-		uid = frame->uids[i];
-	      else
-		uid = frame->uid;
-	      break;
-	    }
-	    skip--;
+	    sym = esym;
+	    if (frame->uids)
+	      uid = frame->uids[i];
+	    else
+	      uid = frame->uid;
+	    break;
 	  }
 	}
       }
@@ -2852,15 +2838,12 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 	  esym = COMPILE_DATA(frame)->const_names[i];
 	  env_marks = scheme_stx_extract_marks(esym);
 	  if (scheme_equal(env_marks, sym_marks)) {
-	    if (!skip) {
-	      sym = esym;
-	      if (COMPILE_DATA(frame)->const_uids)
-		uid = COMPILE_DATA(frame)->const_uids[i];
-	      else
-		uid = frame->uid;
-	      break;
-	    }
-	    skip--;
+	    sym = esym;
+	    if (COMPILE_DATA(frame)->const_uids)
+	      uid = COMPILE_DATA(frame)->const_uids[i];
+	    else
+	      uid = frame->uid;
+	    break;
 	  }
 	}
       }

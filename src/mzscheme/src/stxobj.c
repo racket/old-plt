@@ -22,7 +22,7 @@
 
 /* FIXME: syntax->list and resolve_env need stack checks. */
 
-#define STX_DEBUG 1
+#define STX_DEBUG 0
 
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);
@@ -649,8 +649,6 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
 Scheme_Object *scheme_new_mark()
 {
-  /* Odd mark numbers are reserved for syntax-local-introduce */
-  mark_id = scheme_add1(1, &mark_id);
   mark_id = scheme_add1(1, &mark_id);
   return mark_id;
 }
@@ -1155,53 +1153,6 @@ Scheme_Object *scheme_stx_extract_marks(Scheme_Object *stx)
 
     if (WRAP_POS_END_P(awl))
       return first;
-  }
-}
-
-Scheme_Object *scheme_stx_strip_odd_marks(Scheme_Object *_stx)
-{
-  Scheme_Stx *stx = (Scheme_Stx *)_stx;
-  WRAP_POS awl;
-  int odd_pos_count = 0, skipped = 0; 
-  Scheme_Object *v;
-  Wrap_Chunk *chunk;
-
-  /* Check for any odd marks, first: */
-  WRAP_POS_INIT(awl, stx->wraps);
-  while (!WRAP_POS_END_P(awl)) {
-    if (SCHEME_NUMBERP(WRAP_POS_FIRST(awl))) {
-      v = WRAP_POS_FIRST(awl);
-      if (SCHEME_TRUEP(scheme_odd_p(1, &v))) {
-	odd_pos_count++;
-      }
-    }
-    WRAP_POS_INC(awl);
-    skipped++;
-  }
-
-  if (!odd_pos_count)
-    return _stx;
-
-  if (odd_pos_count == skipped) {
-    return scheme_make_stx(stx->val, stx->srcloc, stx->props);
-  } else {
-    /* We saw an odd mark. Copy everything else into a new chunk. */
-    chunk = MALLOC_WRAP_CHUNK((skipped - odd_pos_count));
-    skipped = 0;
-    WRAP_POS_INIT(awl, stx->wraps);
-    while (!WRAP_POS_END_P(awl)) {
-      v = WRAP_POS_FIRST(awl);
-      if (!SCHEME_NUMBERP(v) || !SCHEME_TRUEP(scheme_odd_p(1, &v))) {
-	chunk->a[skipped] = v;
-	skipped++;
-      }
-      WRAP_POS_INC(awl);
-    }
-
-    stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
-    v = scheme_make_pair(v, scheme_null);
-    stx->wraps = v;
-    return (Scheme_Object *)stx;
   }
 }
 

@@ -4521,6 +4521,7 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
 
       /* scheme_channel_waiter_type needs to know its location, which
 	 might have changed: */
+      argv = waitable_set->argv;
       for (i = waitable_set->argc; i--; ) {
 	if (SAME_TYPE(SCHEME_TYPE(argv[i]), scheme_channel_waiter_type)) {
 	  ((Scheme_Channel_Waiter *)argv[i])->waiting_i = i;
@@ -4884,6 +4885,10 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
     /* Apply wrap functions to the selected waitable: */
     Scheme_Object *o, *l, *a, *to_call = NULL, *args[1];
     o = waitable_set->argv[waiting->result - 1];
+    if (SAME_TYPE(SCHEME_TYPE(o), scheme_channel_waiter_type)) {
+      /* This is a put that got changed to a waiter, but not changed back */
+      o = ((Scheme_Channel_Waiter *)o)->obj;
+    }
     if (waiting->wrapss) {
       l = waiting->wrapss[waiting->result - 1];
       if (l) {

@@ -135,7 +135,7 @@ void scheme_init_sema(Scheme_Env *env)
   scheme_add_waitable(scheme_sema_type, sema_ready, NULL, NULL, 0);
   scheme_add_waitable_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
   scheme_add_waitable(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
-  scheme_add_waitable(scheme_channel_put_type, (Scheme_Ready_Fun)channel_put_ready, NULL, NULL, 0);
+  scheme_add_waitable(scheme_channel_put_type, (Scheme_Ready_Fun)channel_put_ready, NULL, NULL, 1);
   scheme_add_waitable(scheme_channel_waiter_type, (Scheme_Ready_Fun)channel_waiter_ready, NULL, NULL, 0);
   scheme_add_waitable(scheme_alarm_type, (Scheme_Ready_Fun)alarm_ready, NULL, NULL, 0);
 }
@@ -431,7 +431,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	    scheme_set_param(w->waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
 	  if (result)
 	    *result = chp->val;
-	  if (waiting) {
+	  if (waiting && (pos >= 0)) {
 	    waiting->result = pos + 1;
 	    if (waiting->disable_break)
 	      scheme_set_param(waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
@@ -468,7 +468,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	  w->waiting->result = w->waiting_i + 1;
 	  if (w->waiting->disable_break)
 	    scheme_set_param(w->waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
-	  if (waiting) {
+	  if (waiting && (pos >= 0)) {
 	    waiting->result = pos + 1;
 	    if (waiting->disable_break)
 	      scheme_set_param(waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
@@ -879,7 +879,7 @@ static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *result;
 
-  if (try_channel((Scheme_Sema *)ch, NULL, 0, &result)) {
+  if (try_channel((Scheme_Sema *)ch, (Waiting *)sinfo->current_waiting, -1, &result)) {
     scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 0);
     return 1;
   }
@@ -891,7 +891,7 @@ static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
 
 static int channel_put_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
 {
-  if (try_channel((Scheme_Sema *)ch, NULL, 0, NULL))
+  if (try_channel((Scheme_Sema *)ch, (Waiting *)sinfo->current_waiting, -1, NULL))
     return 1;
 
   ext_get_into_line(ch, sinfo);

@@ -210,6 +210,8 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_string_converter_type, "<string-converter>");
 
+  set_name(scheme_channel_waiter_type, "<channel-waiter>");
+
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
 }

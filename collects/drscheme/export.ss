@@ -10,7 +10,8 @@
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
-  (link [interface : drscheme:interface^
+  (link [teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") mred)]
+        [interface : drscheme:interface^
           ((require-library "interface.ss" "userspce") aries zodiac)]
         [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
         [help-desk : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
@@ -39,7 +40,7 @@
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
 	      interface init snip language app frame unit
-	      basis text
+	      basis text teachpack
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")

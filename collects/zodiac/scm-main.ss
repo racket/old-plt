@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.123 1997/08/22 22:07:49 shriram Exp $
+; $Id: scm-main.ss,v 1.124 1997/08/25 14:54:32 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -835,11 +835,13 @@
   (when (language>=? 'structured)
     (add-primitivized-macro-form 'time scheme-vocabulary
       (let* ((kwd '())
-	      (in-pattern '(_ expr))
+	      (in-pattern '(_ e0 e1 ...))
 	      (out-pattern '(let-values (((s)
 					   (#%current-gc-milliseconds))
 					  ((v cpu user)
-					    (#%time-apply (lambda () expr))))
+					    (#%time-apply (lambda ()
+							    e0
+							    e1 ...))))
 			      (#%printf
 				"cpu time: ~s real time: ~s gc time: ~s~n"
 				cpu user (#%- (#%current-gc-milliseconds) s))

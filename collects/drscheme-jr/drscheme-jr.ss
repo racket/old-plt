@@ -57,6 +57,8 @@
   (begin-elaboration-time
     (build-path plt-dir "zodiac" "sigs")))
 
+(printf "Got here~n")
+
 (define zodiac:system@
   (reference-unit/sig
     (begin-elaboration-time

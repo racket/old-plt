@@ -1229,7 +1229,7 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
 }
 
 void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
-			      Bool use16, int dt)
+			      Bool use16, int dt, float angle)
 {
   float tw, th;
   int i, len, size;
@@ -1314,7 +1314,21 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     size = current_font->GetPointSize();
 
-  pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + size)); pstream->Out(" moveto\n");
+  if (angle != 0.0) {
+    pstream->Out("gsave\n");
+  }
+
+  if (angle != 0.0) {
+    pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE(y)); 
+    pstream->Out(" translate\n");
+    pstream->Out(angle * 180 / pie);
+    pstream->Out(" rotate 0 ");
+    pstream->Out(YSCALEREL(-size));
+    pstream->Out(" moveto\n"); 
+  } else {
+    pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE(y + size)); 
+    pstream->Out(" moveto\n");
+  }
 
   pstream->Out("(");
   len = strlen(text + dt);
@@ -1328,8 +1342,19 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
 
   pstream->Out(")"); pstream->Out(" show\n");
 
+  if (angle != 0.0) {
+    pstream->Out("grestore\n"); 
+  }
+
   CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
-  CalcBoundingBox(XSCALEBND(x + tw), YSCALEBND(y + th));
+  if (angle != 0.0) {
+    float xe, ye;
+    xe = x + (tw * cos(angle)) + (th * sin(angle));
+    ye = y - (th * cos(angle)) - (tw * sin(angle));
+    CalcBoundingBox(XSCALEBND(xe), YSCALEBND(ye));
+  } else {
+    CalcBoundingBox(XSCALEBND(x + tw), YSCALEBND(y + th));
+  }
 }
 
 

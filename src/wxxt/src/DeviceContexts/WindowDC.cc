@@ -1651,7 +1651,8 @@ static int str16len(const char *s)
   return count;
 }
 
-void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
+void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
+			  float angle)
 {
   XFontStruct *fontinfo;
 #ifdef WX_USE_XFT
@@ -1670,12 +1671,12 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
 
 #ifdef WX_USE_XFT
   InitPicture();
-  xfontinfo = (wxFontStruct*)current_font->GetInternalAAFont(scale_x);
+  xfontinfo = (wxFontStruct*)current_font->GetInternalAAFont(scale_x, angle);
   if (xfontinfo)
     fontinfo = NULL;
   else
 #endif
-    fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x);
+    fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, angle);
 
   dev_x = XLOG2DEV(x);
   dev_y = YLOG2DEV(y);
@@ -1684,12 +1685,17 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
 # ifdef WX_USE_XFT
   if (xfontinfo) {
     XGlyphInfo overall;
-    if (use16bit)
-      XftTextExtents16(DPY, xfontinfo, (XftChar16 *)(text + dt), textlen, &overall);
+    wxFontStruct *no_rotate;
+    if (angle != 0.0)
+      no_rotate = (wxFontStruct*)current_font->GetInternalAAFont(scale_x, 0.0);
     else
-      XftTextExtents8(DPY, xfontinfo, (XftChar8 *)(text + dt), textlen, &overall);
-    ascent = xfontinfo->ascent;
-    descent = xfontinfo->descent;
+      no_rotate = xfontinfo;
+    if (use16bit)
+      XftTextExtents16(DPY, no_rotate, (XftChar16 *)(text + dt), textlen, &overall);
+    else
+      XftTextExtents8(DPY, no_rotate, (XftChar8 *)(text + dt), textlen, &overall);
+    ascent = no_rotate->ascent;
+    descent = no_rotate->descent;
     cx = overall.xOff;
   } else
 #endif
@@ -1709,6 +1715,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
   cy = ascent + descent;
 #ifdef WX_USE_XFT
   if (xfontinfo) {
+    int xasc;
     XftColor col;
     col.pixel = current_text_fg->GetPixel();
     col.color.red = current_text_fg->Red();
@@ -1745,10 +1752,17 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
       }
     }
 
+    if (angle != 0.0) {
+      angle -= 1.5708;
+      xasc = (int)((double)ascent * cos(angle));
+      ascent = (int)((double)-ascent * sin(angle));
+    } else
+      xasc = 0;
+
     if (use16bit)
-      XftDrawString16(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (XftChar16 *)(text + dt), textlen);
+      XftDrawString16(XFTDRAW, &col, xfontinfo, dev_x+xasc, dev_y+ascent, (XftChar16 *)(text + dt), textlen);
     else
-      XftDrawString8(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (XftChar8 *)(text + dt), textlen);
+      XftDrawString8(XFTDRAW, &col, xfontinfo, dev_x+xasc, dev_y+ascent, (XftChar8 *)(text + dt), textlen);
 
     if (CURRENT_REG)
       XftDrawSetClip(XFTDRAW, None);

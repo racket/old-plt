@@ -63,11 +63,12 @@ class wxbFont: public wxObject
   int smoothing;
   Bool underlined;
   Bool size_in_pixels;
+  float rotation;
  public:
   wxbFont(void);
   wxbFont(int PointSize, int FamilyOrFontId, int Style, int Weight, 
 	  Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT,
-	  Bool sip = FALSE);
+	  Bool sip = FALSE, float Rotation = 0.0);
   ~wxbFont();
 
   inline int GetPointSize(void) { return point_size; }
@@ -79,6 +80,7 @@ class wxbFont: public wxObject
   inline Bool GetUnderlined(void) { return underlined; }
   inline int GetSmoothing(void) { return smoothing; }
   inline int GetSizeInPixels(void) { return size_in_pixels; }
+  inline int CanRotate(void) { return TRUE; }
 };
 
 #include "../../../wxcommon/FontDirectory.h"

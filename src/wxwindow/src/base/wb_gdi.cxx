@@ -25,7 +25,7 @@ wxbFont::wxbFont (void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxbFont::wxbFont (int WXUNUSED(PointSize), int WXUNUSED(Family), int WXUNUSED(Style), int WXUNUSED(Weight), Bool WXUNUSED(Underline), int WXUNUSED(smoothing), Bool WXUNUSED(sip))
+wxbFont::wxbFont (int WXUNUSED(PointSize), int WXUNUSED(Family), int WXUNUSED(Style), int WXUNUSED(Weight), Bool WXUNUSED(Underline), int WXUNUSED(smoothing), Bool WXUNUSED(sip), float WXUNUSED(Rotation))
 {
   __type = wxTYPE_FONT;
 }

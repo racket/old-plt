@@ -120,7 +120,7 @@ class wxPostScriptDC: public wxDC
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);
-  void DrawText(DRAW_TEXT_CONST char *text, float x, float y, Bool use16 = FALSE, int dt = 0);
+  void DrawText(DRAW_TEXT_CONST char *text, float x, float y, Bool use16 = FALSE, int dt = 0, float angle = 0.0);
 
   void Clear(void);
   void SetFont(wxFont *font);

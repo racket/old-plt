@@ -977,7 +977,7 @@ static int wstrlen(const char *c)
   return i / 2;
 }
 
-void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d)
+void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d, float angle)
 {
   int xx1, yy1;
   HDC dc;
@@ -992,7 +992,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d)
 
   if (font) {
     HFONT cfont;
-    cfont = font->BuildInternalFont(dc, screen_font);
+    cfont = font->BuildInternalFont(dc, screen_font, angle);
     if (cfont) {
       HFONT f;
       f = (HFONT)::SelectObject(dc, cfont);

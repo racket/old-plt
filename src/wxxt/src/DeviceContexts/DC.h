@@ -120,7 +120,7 @@ public:
 				       float radius=20) = 0;
 
     virtual void  DrawText(char *text, float x, float y,
-			   Bool use16 = FALSE, int dt = 0) = 0;
+			   Bool use16 = FALSE, int dt = 0, float angle = 0.0) = 0;
     virtual void  FloodFill(float x, float y, wxColour *col,
 			    int style=wxFLOOD_SURFACE) = 0;
     virtual float GetCharHeight(void) = 0;

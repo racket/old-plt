@@ -20,17 +20,18 @@ class wxFont: public wxbFont
  public:
   HFONT screen_cfont;
   HFONT general_cfont;
+  wxList *rotated_font;
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
-	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
+	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, float Rotation = 0.0);
   wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
   ~wxFont(void);
   Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined,
-	      int smoothing, Bool sip);
-  HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE);
-  inline HFONT GetInternalFont(HDC dc) { return BuildInternalFont(dc, TRUE); }
+	      int smoothing, Bool sip, float Rotation);
+  HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, float angle = 0.0);
+  inline HFONT GetInternalFont(HDC dc, float angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
 };
 
 class wxColourMap: public wxObject

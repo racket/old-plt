@@ -48,8 +48,8 @@ wxFont::wxFont(void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip):
-  wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing)
+wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip, float Rotation):
+  wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing, sip, Rotation)
 {
   COUNT_P(font_count);
 
@@ -68,7 +68,8 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
   Create(PointSize, id, Style, Weight, Underlined, Smoothing, sip);
 }
 
-Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip)
+Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing, 
+		    Bool sip, float Rotation)
 {
   fontid = FontId;
   family = wxTheFontNameDirectory->GetFamily(fontid);
@@ -78,6 +79,7 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
   underlined = Underlined;
   smoothing = Smoothing;
   size_in_pixels = sip;
+  rotation = Rotation;
 
   temporary = FALSE;
 
@@ -94,6 +96,18 @@ wxFont::~wxFont()
   if (general_cfont)
     DeleteRegisteredGDIObject(general_cfont);
   
+  if (rotated_fonts) {
+    wxNode *node;
+    wxFont *rot;
+    node = rotated_fonts->First();
+    while (node) {
+      rot = (wxFont*)node->Data();
+      DELETE_OBJ rot;
+      node = node->Next();
+    }
+    DELETE_OBJ rotated_fonts;
+  }
+
   COUNT_M(font_count);
 }
 
@@ -104,7 +118,7 @@ static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *l
   return 0;
 }
 
-HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
+HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, float angle)
 {
   int nHeight;
   HFONT cfont;
@@ -115,6 +129,23 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   int charset = ANSI_CHARSET;
   Bool ff_underline = underlined;
   int ff_qual;
+
+  if (angle != rotation) {
+    int int_angle = (int)(angle * 1800 / 3.141579);
+    if (!rotated_fonts) {
+      rotated_fonts = new wxList(wxKEY_INTEGER);
+    }
+    node = rotated_fonts->Find(int_angle);
+    if (node)
+      rot = (wxFont *)node->Data();
+    else {
+      rot = new wxFont(point_size, font_id, style, weight,
+		       underlined, smoothing, size_in_pixels, angle);
+      rotated_fonts->Append(int_angle, (wxObject*)rot);
+    }
+
+    return rot->BuildInternalFont(dc, screenFont, angle);
+  }
     
   if (screenFont && screen_cfont)
     return screen_cfont;

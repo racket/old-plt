@@ -1521,6 +1521,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   float x2;
   Bool x3;
   nnint x4;
+  float x5;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1538,9 +1539,13 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
     x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+4], "draw-text in dc<%>"));
   } else
     x4 = 0;
+  if (n > (POFFSET+5)) {
+    x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "draw-text in dc<%>"));
+  } else
+    x5 = 0.0;
 
   if (x4 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+4]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))
-  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4));
+  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4, x5));
 
   
   
@@ -1761,7 +1766,7 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-lines" " method", (Scheme_Method_Prim *)os_wxDCDrawLines, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-ellipse" " method", (Scheme_Method_Prim *)os_wxDCDrawEllipse, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-arc" " method", (Scheme_Method_Prim *)os_wxDCDrawArc, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-text" " method", (Scheme_Method_Prim *)os_wxDCDrawText, 3, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-text" " method", (Scheme_Method_Prim *)os_wxDCDrawText, 3, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-spline" " method", (Scheme_Method_Prim *)os_wxDCDrawSpline, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-rounded-rectangle" " method", (Scheme_Method_Prim *)os_wxDCDrawRoundedRectangle, 4, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-rectangle" " method", (Scheme_Method_Prim *)os_wxDCDrawRectangle, 4, 4));

@@ -136,7 +136,7 @@ public:
     void  DrawRoundedRectangle(float x, float y, float w, float h,
 				       float radius=20);
 
-    void  DrawText(char *text, float x, float y, Bool use16 = FALSE, int dt = 0);
+    void  DrawText(char *text, float x, float y, Bool use16 = FALSE, int dt = 0, float angle = 0.0);
     void  FloodFill(float x, float y, wxColour *col,int style=wxFLOOD_SURFACE);
     float GetCharHeight(void);
     float GetCharWidth(void);

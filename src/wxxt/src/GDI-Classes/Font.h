@@ -42,7 +42,7 @@ public:
     wxFont(void);
     wxFont(int PointSize, int FontIdOrFamily, int Style, int Weight,
 	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, 
-	   Bool sip = FALSE);
+	   Bool sip = FALSE, float Rotation = 0.0);
     wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	   Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, 
 	   Bool sip = FALSE);
@@ -63,18 +63,23 @@ public:
     int   GetSmoothing(void)     { return smoothing; }
     int   GetSizeInPixels(void)  { return size_in_pixels; }
 
-    void  *GetInternalFont(float scale = 1.0); // return type XFontStruct*
-    void  *GetInternalAAFont(float scale = 1.0); // return type wxFontStruct*
+    wxFont *GetRotated(float angle);
+    int CanRotate();
+
+    void  *GetInternalFont(float scale = 1.0, float angle = 0.0); // return type XFontStruct*
+    void  *GetInternalAAFont(float scale = 1.0, float angle = 0.0); // return type wxFontStruct*
 private:
     wxList *scaled_xfonts;
 #ifdef WX_USE_XFT
     wxList *scaled_xft_fonts;
 #endif
+    wxList *rotated_fonts;
     short  point_size;
     short  family, style, weight;
     Bool   underlined, size_in_pixels;
     int    font_id;
     int    smoothing;
+    float  rotation;
 };
 
 class wxFontList : public wxObject {

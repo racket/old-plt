@@ -102,7 +102,7 @@ class wxDC: public wxbDC
   wxRegion* GetClippingRegion();
   void SetClippingRegion(wxRegion*);
   void SetColourMap(wxColourMap *cmap);
-  void DrawText(const char *text, float x, float y, Bool use16bit = FALSE, int d = 0);
+  void DrawText(const char *text, float x, float y, Bool use16bit = FALSE, int d = 0, float angle = 0.0);
 
   float GetCharHeight(void);
   float GetCharWidth(void);

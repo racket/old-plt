@@ -1,4 +1,5 @@
 
+; (require-library "errortrace.ss" "errortrace")
 (require-library "core.ss")
 
 (define example-list%
@@ -37,9 +38,11 @@
 	  (set! filter f))]
        [add
 	(lambda (x)
-	  (when (filter x)
+	  (if (filter x)
+	      (begin
 		(set! num-items (add1 num-items))
-		(set! items (cons x items))))]
+		(set! items (cons x items)))
+	      (error 'add "rejected: ~a in: ~a" x name)))]
        [all-examples
 	(lambda ()
 	  (apply append items (map (lambda (p) (send p all-examples)) parents)))]
@@ -70,6 +73,21 @@
 	      (void)
 	      (box ex))))])))
 
+(define listed-example-list%
+  (class () (parent)
+    (public
+     [name `(listed ,(ivar parent name))]
+     [all-examples
+      (lambda ()
+	(let ([l (map list (send parent all-examples))])
+	  l))]
+     [choose-example
+      (opt-lambda ([which #f])
+	(let ([ex (send parent choose-example)])
+	  (if (void? ex)
+	      (void)
+	      (list ex))))])))
+
 (define optional-example-list%
   (class () (parent val)
     (public
@@ -97,18 +115,18 @@
      [add void]
      [choose-example
       (opt-lambda ([which #f])
-	(send (list-ref parents (random (add1 (length parents))))
+	(send (list-ref parents (random (length parents)))
 	      choose-example which))])))
 
 (define unknown-example-list%
-  (class () ()
+  (class () (who)
     (public
-     [name 'unknown]
+     [name `(unknown ,who)]
      [all-examples (lambda () null)]
      [add void]
      [choose-example
       (opt-lambda ([which #f])
-	(error 'choose-example "can't choose unknown example"))])))
+	(void))])))
 
 (define discrete-example-list%
   (class () (vals)
@@ -120,7 +138,7 @@
 				 "no good: ~a" x)))]
      [choose-example
       (opt-lambda ([which #f])
-	(list-ref vals (random (add1 (length vals)))))])))
+	(list-ref vals (random (length vals))))])))
 
 (define-struct (fatal-exn struct:exn) ())
 
@@ -182,10 +200,6 @@
   0-to-255
   0-to-10000
   -10000-to-10000
-
-  void*
-  istream%
-  ostream%
 
   (area<%> window<%> subarea<%> area-container<%>)
 
@@ -249,7 +263,6 @@
   color-database%
   font-name-directory<%>
 
-  color-map%
   cursor%
   icon%
   bitmap%
@@ -268,23 +281,7 @@
   printer-dc%
   meta-file-dc%
   
-  meta-file%
-
-
-  (item% button% checkbox% choice%
-	   listbox% slider% sgauge% text% multitext% 
-	   radiobox% message% groupbox%)
-  button%
-  checkbox%
-  choice%
-  listbox%
-  slider%
-  sgauge%
-  text%
-  multitext%
-  message%
-  radiobox%
-  groupbox%
+  meta-file<%>
 
   (menu-item-container<%> menu% menu-bar% popup-menu%)
 
@@ -302,8 +299,8 @@
 
   timer%
 
-  add-color%
-  mult-color%
+  add-color<%>
+  mult-color<%>
   style-delta%
   style%
   style-list%
@@ -345,6 +342,13 @@
   clipboard-client%)
 
 (send bitmap%-example-list set-filter (lambda (bm) (send bm ok?)))
+
+(send char-example-list set-filter char?)
+(send string-example-list set-filter string?)
+(send symbol-example-list set-filter symbol?)
+(send real-example-list set-filter number?)
+(send integer-example-list set-filter (lambda (x) (and (number? x) (integer? x))))
+(send nonnegative-integer-example-list set-filter (lambda (x) (and (number? x) (integer? x) (not (negative? x)))))
 
 (define false-example-list (make-object example-list% 'false '()))
 (send false-example-list add #f)
@@ -408,6 +412,19 @@
        (add 255)
        (add 5))
 
+(send* 0-to-10000-example-list
+       (add 0) (add 100) (add 1000) (add 10000))
+
+(send* -10000-to-10000-example-list
+       (add 0) (add 100) (add 1000) (add 10000)
+       (add -100) (add -1000) (add -10000))
+
+(send* symbol-example-list
+       (add 'ok) (add 'change-family))
+
+(send* string-list-example-list
+       (add '("apple" "banana" "coconut")))
+
 (send* char-example-list
        (add #\nul)
        (add #\a)
@@ -454,13 +471,12 @@
 	       (map (lambda (x) (bitwise-ior (car items) x)) l)
 	       l))]))))
 
-(define unknown-example-list (make-object unknown-example-list%))
-
 (define (optional v l) (make-object optional-example-list% l v))
 (define (boxed l) (make-object boxed-example-list% l))
-(define (unknown s) unknown-example-list)
+(define (unknown s) (make-object unknown-example-list% s))
 (define (choice . l) (make-object choose-example-list% l))
-(define (style-list . l) (make-object discrete-example-list% l))
+(define (style-list . l) (make-object listed-example-list% (make-object discrete-example-list% l)))
+(define (symbol-in l) (make-object discrete-example-list% l))
 
 (load-relative "windowing-classes.ss")
 (load-relative "drawing-classes.ss")
@@ -468,14 +484,14 @@
 
 (define (get-args l)
   (let/ec bad
-	  (let loop ([l l])
-	    (if (null? l)
-		'()
-		(let* ([source (car l)]
-		       [value (send source choose-example #f)])
-		  (if (void? value)
-		      (bad #f)
-		      (cons value (loop (cdr l)))))))))
+    (let loop ([l l])
+      (if (null? l)
+	  '()
+	  (let* ([source (car l)]
+		 [value (send source choose-example #f)])
+	    (if (void? value)
+		(bad (format "no examples: ~a" (ivar source name)))
+		(cons value (loop (cdr l)))))))))
 
 (define (get-all-args l)
   (let loop ([l l])
@@ -494,19 +510,21 @@
 (define thread-output-port current-output-port)
 
 (define (apply-args v dest name k)
-  (if v
+  (if (list? v)
       (begin
-	(fprintf (thread-output-port) "~a: ~a" name v)
+	(fprintf (thread-output-port) "~a: ~s" name v)
 	(flush-output (thread-output-port))
 	(with-handlers (((lambda (x) (not (fatal-exn? x)))
 			 (lambda (x)
 			   (fprintf (thread-output-port)
 				    ": error: ~a~n"
 				    (exn-message x)))))
-	  (send dest add (k v))
-	  (:flush-display)
+	  (if (eq? dest 'values)
+	      (k v)
+	      (send dest add (k v)))
+	  (flush-display)
 	  (fprintf (thread-output-port) ": success~n")))
-      (fprintf (thread-output-port) "~a: failure~n" name)))
+      (fprintf (thread-output-port) "~a: failure: ~a~n" name v)))
 
 (define (try-args arg-types dest name k)
   (apply-args (get-args arg-types) dest name k))
@@ -551,8 +569,8 @@
 	  (unless (null? l)
 		  (let* ([method (car l)]
 			 [iv (car method)]
-			 [resulttype (cadr method)]
-			 [argtypes (cddr method)])
+			 [resulttype (caddr method)]
+			 [argtypes (cdddr method)])
 		    (set! trying-class (and source (ivar source name)))
 		    (set! trying-method iv)
 		    (try argtypes resulttype (list name iv use)
@@ -583,7 +601,127 @@
 (with-handlers ([void void])
   (load-relative-extension "classhack.so"))
 
-(printf "Random loaded~n")
+(printf " Creating Example Instances~n")  
+
+(define f (make-object frame% "Example Frame 1"))
+(send frame%-example-list add f)
+
+(define d (make-object dialog% "Example Dialog 1"))
+(send dialog%-example-list add d)
+
+(define hpl (make-object horizontal-panel% f))
+(send horizontal-panel%-example-list add hpl)
+(define vpl (make-object vertical-panel% d))
+(send vertical-panel%-example-list add vpl)
+(define hp (make-object horizontal-pane% d))
+(send horizontal-pane%-example-list add hp)
+(define vp (make-object vertical-pane% f))
+(send vertical-pane%-example-list add vp)
+
+(send message%-example-list add (make-object message% "Message 1" hpl))
+(send button%-example-list add (make-object button% "Button 1" vpl void))
+(send check-box%-example-list add (make-object check-box% "Check Box 1" hp void))
+(send slider%-example-list add (make-object slider% "Slider 1" -10 10 vp void))
+(send gauge%-example-list add (make-object gauge% "Gauge 1" 100 hpl))
+(send text-field%-example-list add (make-object text-field% "Text Field 1" vpl void))
+(send radio-box%-example-list add (make-object radio-box% "Radio Box 1" '("Radio Button 1.1" "Radio Button 1.2") hp void))
+(send choice%-example-list add (make-object choice% "Choice 1" '("Choice 1.1" "Choice 1.2" "Choice 1.3") vp void))
+(send list-box%-example-list add (make-object list-box% "List Box 1" '("List Box 1.1" "List Box 1.2" "List Box 1.3") hpl void))
+
+(send canvas%-example-list add (make-object canvas% f))
+(define c (make-object editor-canvas% d))
+(send editor-canvas%-example-list add c)
+
+(send point%-example-list add (make-object point% 50 60))
+
+(send ps-setup%-example-list add (make-object ps-setup%))
+
+(send color%-example-list add (make-object color% "RED"))
+(send font%-example-list add (make-object font% 12 'roman 'normal 'normal))
+(send brush%-example-list add (make-object brush% "GREEN" 'solid))
+(send pen%-example-list add (make-object pen% "BLUE" 1 'solid))
+
+(send font-list%-example-list add the-font-list)
+(send pen-list%-example-list add the-pen-list)
+(send brush-list%-example-list add the-brush-list)
+(send color-database%-example-list add the-color-database)
+(send font-name-directory<%>-example-list add the-font-name-directory)
+
+(send cursor%-example-list add (make-object cursor% 'watch))
+(send icon%-example-list add (make-object icon% (build-path (collection-path "icons") "mred.xbm")))
+(send bitmap%-example-list add (make-object bitmap% (build-path (collection-path "icons") "bb.gif")))
+
+(send control-event%-example-list add (make-object control-event% 'list-box))
+(send scroll-event%-example-list add (make-object scroll-event%))
+(send mouse-event%-example-list add (make-object mouse-event% 'left-down))
+(send key-event%-example-list add (make-object key-event%))
+
+(send memory-dc%-example-list add (make-object memory-dc%))
+(send post-script-dc%-example-list add (make-object post-script-dc% "/tmp/ps" #f #f))
+
+(with-handlers ([void void])
+  (send printer-dc%-example-list add (make-object printer-dc%))
+  (let ([mfdc (make-object meta-file-dc%)])
+    (send meta-file-dc%-example-list add mfdc)
+    (send meta-file%-example-list add (send mfdc close))))
+
+(define mb (make-object menu-bar% f))
+(send menu-bar%-example-list add mb)
+(define m (make-object menu% "Menu1" mb))
+(send menu%-example-list add m)
+(send popup-menu%-example-list add (make-object popup-menu% "Popup Menu 1"))
+  
+(send submenu-item<%>-example-list add (send m get-item))
+(send separator-menu-item%-example-list add (make-object separator-menu-item% m))
+(send menu-item%-example-list add (make-object menu-item% "Menu Item 1" m void))
+(send checkable-menu-item%-example-list add (make-object checkable-menu-item% "Checkable Menu Item 1" m void))
+
+(send timer%-example-list add (make-object timer%))
+
+(define sd (make-object style-delta%))
+(send add-color<%>-example-list add (send sd get-background-add))
+(send mult-color<%>-example-list add (send sd get-background-mult))
+(send style-delta%-example-list add sd)
+(define sl (make-object style-list%))
+(send style-list%-example-list add sl)
+(send style%-example-list add (send sl basic-style))
+
+(define e (make-object text%))
+(send c set-editor e)
+(send text%-example-list add e)
+(send pasteboard%-example-list add (make-object pasteboard%))
+
+(define s (make-object editor-snip%))
+(send e insert s)
+(send editor-snip-editor-admin%-example-list add (send (send s get-editor) get-admin))
+(send snip-admin%-example-list add (make-object snip-admin%))
+
+(send tab-snip%-example-list add (make-object tab-snip%))
+(send image-snip%-example-list add (make-object image-snip%))
+(send editor-snip%-example-list add (make-object editor-snip%))
+
+(send snip-class%-example-list add (make-object snip-class%))
+(send snip-class-list%-example-list add (get-the-snip-class-list))
+
+(send editor-data%-example-list add (make-object editor-data%))
+(send editor-data-class%-example-list add (make-object editor-data-class%))
+(send editor-data-class-list%-example-list add (get-the-editor-data-class-list))
+
+(send keymap%-example-list add (make-object keymap%))
+(send editor-wordbreak-map%-example-list add the-editor-wordbreak-map)
+
+(define sib (make-object editor-stream-in-string-base% "Hello"))
+(send editor-stream-in-string-base%-example-list add sib)
+(define sob (make-object editor-stream-out-string-base%))
+(send editor-stream-out-string-base%-example-list add sob)
+
+(send editor-stream-in%-example-list add (make-object editor-stream-in% sib))
+(send editor-stream-out%-example-list add (make-object editor-stream-out% sob))
+  
+(send clipboard<%>-example-list add the-clipboard)
+(send clipboard-client%-example-list add (make-object clipboard-client%))
+
+(printf " Done Creating Example Instances~n")  
 
 (printf " Checking all methods~n")
 (define in-top-level null)
@@ -603,6 +741,7 @@
 			     ;; Check intf/class methods
 			     (begin
 			       (set! in-top-level (cons (cadr v) in-top-level))
+			       
 			       ; Check printed form:
 			       (let ([p (open-output-string)])
 				 (display key p)
@@ -613,15 +752,30 @@
 						     s))])
 				   (unless (string=? sp ss)
 				     (printf "bad printed form: ~a != ~a~n" sp ss))))
-			       ; Check documented are right
-			       (for-each
-				(lambda (name)
-				  (unless (or (and (interface? key)
-						   (ivar-in-interface? name key))
-					      (and (class? key)
-						   (ivar-in-class? name key)))
-				    (printf "No such method: ~a in ~a~n" name key)))
-				names)
+			       
+			       ; Check documented methods are right
+			       (let ([ex (send (car v) choose-example)])
+				 (unless (is-a? ex key)
+				   (printf "Bad example: ~a for ~a~n" ex key))
+				 (for-each
+				  (lambda (name method)
+				    (if (or (and (interface? key)
+						 (ivar-in-interface? name key))
+					    (and (class? key)
+						 (ivar-in-class? name key)))
+					
+					;; Method is there, check arity
+					(when (is-a? ex key)
+					  (let ([m (ivar/proc ex name)])
+					    (unless (equal? (arity m) (cadr method))
+					      (printf "Warning: arity mismatch for ~a in ~a, real: ~a documented: ~a~n" 
+						      name key
+						      (arity m) (cadr method)))))
+					
+					;; Not there
+					(printf "No such method: ~a in ~a~n" name key)))
+				  names methods))
+			       
 			       ; Check everything is documented
 			       (when (procedure? (with-handlers ([void void]) (global-defined-value 'class->names)))
 				 (for-each
@@ -641,5 +795,3 @@
      (unless (memq i expect-n)
        (printf "Undocumented global: ~a~n" i)))
    actual-n))
-
-  

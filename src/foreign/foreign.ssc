@@ -1438,7 +1438,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   if (CTYPE_PRIMLABEL(base) == FOREIGN_struct) {
     /* need to have p be a pointer that is invisible to the GC */
     p = malloc(CTYPE_PRIMTYPE(base)->size);
-    newp = scheme_malloc(CTYPE_PRIMTYPE(base)->size);
+    newp = scheme_malloc_atomic(CTYPE_PRIMTYPE(base)->size);
   } else {
     p = &oval;
     newp = NULL;
@@ -1479,6 +1479,13 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   return c_to_scheme(otype, p);
 }
 
+/* see below */
+void free_fficall_data(void *ignored, void *p)
+{
+  free(((ffi_cif*)p)->arg_types);
+  free(p);
+}
+
 /* (ffi-call ffi-obj in-types out-type) -> (in-types -> out-value) */
 /* the real work is done by ffi_do_call above */
 {:(cdefine ffi-call 3 3):}
@@ -1487,8 +1494,8 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   Scheme_Object *itypes = argv[1];
   Scheme_Object *otype  = argv[2];
   Scheme_Object *obj, **data, *p, *base;
-  ffi_type *rtype, **atypes;
-  ffi_cif *cif;
+  GC_CAN_IGNORE ffi_type *rtype, **atypes;
+  GC_CAN_IGNORE ffi_cif *cif;
   int i, nargs;
   if (!ffi_name_prefix)
     ffi_name_prefix = scheme_make_byte_string_without_copying("ffi:");
@@ -1503,7 +1510,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   if (NULL == (base = get_ctype_base(otype)))
     scheme_wrong_type(MYNAME, "C-type", 2, argc, argv);
   rtype = CTYPE_PRIMTYPE(base);
-  atypes = scheme_malloc(nargs * sizeof(ffi_cif));
+  atypes = malloc(nargs * sizeof(ffi_type*));
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
@@ -1511,7 +1518,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 1, argc, argv);
     atypes[i] = CTYPE_PRIMTYPE(base);
   }
-  cif = scheme_malloc(sizeof(ffi_cif));
+  cif = malloc(sizeof(ffi_cif));
   if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
   data = scheme_malloc(5 * sizeof(void*));
@@ -1525,6 +1532,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   data[2] = itypes;
   data[3] = otype;
   data[4] = (Scheme_Object*)cif;
+  scheme_register_finalizer(data, free_fficall_data, cif, NULL, NULL);
   return scheme_make_closed_prim_w_arity
            (ffi_do_call, (void*)data, SCHEME_BYTE_STR_VAL(data[0]),
             nargs, nargs);

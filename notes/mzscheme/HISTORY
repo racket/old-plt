@@ -2,6 +2,19 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+- According to rfc2396, params of a url (uri, really) can appear
+  attached to any part of the path, so the data definitions have
+  changed correspondingly.
+
+- url/user is gone. All url structs have users (it may be #f as with
+  other fields in a url).
+
+- There is no extra encoding/decoding required once a url has been
+  parsed anymore (I also got rid of decode-some-url-parts). For
+  example, url->params may return a string with a space in it. That
+  happens when there is a %20 in the original url (as a string). The
+  %20 is restored when calling url->string.
+
 Version 299.3
 Simplified the built-in exn hierarchy; the built-in exn structures
  are immutable, and fields guards enforce "type" contraints; the

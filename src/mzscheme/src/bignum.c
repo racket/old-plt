@@ -1409,6 +1409,123 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
   }
 }
 
+int gcd_calls = 0;
+
+Scheme_Object *scheme_bignum_gcd(const Scheme_Object *n, const Scheme_Object *d)
+{
+  bigdig *r_digs, *n_digs, *d_digs;
+  long n_size, d_size, r_alloc, r_size;
+  int res_double;
+  Scheme_Object *r;
+
+  if (scheme_bignum_lt(d, n)) {
+    const Scheme_Object *tmp;
+    tmp = n;
+    n = d;
+    d = tmp;
+    d_size = n_size;
+    n_size = SCHEME_BIGLEN(n);
+  }
+
+  n_size = SCHEME_BIGLEN(n);
+  d_size = SCHEME_BIGLEN(d);
+
+  r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
+  r->type = scheme_bignum_type;
+    
+#ifdef MZ_PRECISE_GC
+  n_digs = SCHEME_BIGDIG(n);
+  d_digs = SCHEME_BIGDIG(d);
+  PROTECT(n_digs, n_size);
+  PROTECT(d_digs, d_size);
+#else
+  n_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * n_size);
+  d_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * d_size);
+  memcpy(n_digs, SCHEME_BIGDIG(n), sizeof(bigdig) * n_size);
+  memcpy(d_digs, SCHEME_BIGDIG(d), sizeof(bigdig) * d_size);
+#endif
+
+  /* GMP wants the first argument to be odd. Compute a shift. */
+  {
+    bigdig mask;
+    int b, w, nz = 0, dz = 0;
+    
+    b = 1; w = 0; mask = 0x1;
+    while (!(n_digs[w] & mask)) {
+      nz++;
+      if (b == WORD_SIZE) {
+	b = 1;
+	mask = 0x1;
+	w++;
+      } else {
+	b++;
+	mask = mask << 1;
+      }
+    }
+
+    b = 1; w = 0; mask = 0x1;
+    while ((dz < nz) && !(d_digs[w] & mask)) {
+      dz++;
+      if (b == WORD_SIZE) {
+	b = 1;
+	mask = 0x1;
+	w++;
+      } else {
+	b++;
+	mask = mask << 1;
+      }
+    }
+
+    if (nz) {
+      w = nz / WORD_SIZE;
+      memmove(n_digs, n_digs + w, sizeof(bigdig) * (n_size - w));
+      n_size -= w;
+      w = nz & (WORD_SIZE - 1);
+      if (w)
+	mpn_rshift(n_digs, n_digs, n_size, w);
+    }
+    if (dz) {
+      w = dz / WORD_SIZE;
+      memmove(d_digs, d_digs + w, sizeof(bigdig) * (d_size - w));
+      d_size -= w;
+      w = dz & (WORD_SIZE - 1);
+      if (w)
+	mpn_rshift(d_digs, d_digs, d_size, w);
+    }
+    
+    if (nz < dz)
+      res_double = nz;
+    else
+      res_double = dz;
+
+    /* Most-significant word must be non-zero: */
+    if (!(n_digs[n_size - 1]))
+      --n_size;
+    if (!(d_digs[d_size - 1]))
+      --d_size;
+  }
+
+  r_alloc = n_size;
+
+  r_digs = PROTECT_RESULT(r_alloc);
+
+  r_size = mpn_gcd(r_digs, d_digs, d_size, n_digs, n_size);
+ 
+  RELEASE(d_digs);
+  RELEASE(n_digs);
+  FINISH_RESULT(r_digs, r_size);
+
+  SCHEME_BIGDIG(r) = r_digs;
+  r_alloc = bigdig_length(r_digs, r_size);
+  SCHEME_BIGLEN(r) = r_alloc;
+  SCHEME_BIGPOS(r) = 1;
+
+  if (res_double)
+    return scheme_bignum_shift(r, res_double);
+  else
+    return scheme_bignum_normalize(r);
+}
+
 /* Used by GMP library (which is not xformed for precise GC): */
 void scheme_bignum_use_fuel(long n)
 {

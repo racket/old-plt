@@ -910,20 +910,7 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
     if (!SCHEME_BIGPOS(n2))
       n2 = scheme_bignum_negate(n2);
 
-    if (scheme_bignum_lt(n1, n2)) {
-      const Scheme_Object *save;
-      save = n1;
-      n1 = n2;
-      n2 = save;
-    }
-    
-    while (SCHEME_BIGLEN(n2)) {
-      scheme_bignum_divide(n1, n2, NULL, &r, 0);
-      n1 = n2;
-      n2 = r;
-    }
-
-    return scheme_bignum_normalize(n1);
+    return scheme_bignum_gcd(n1, n2);
   }
 }
 

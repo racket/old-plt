@@ -35,6 +35,43 @@ extern void free(void *);
 #include "gmp-impl.h"
 #include "gmplonglong.h"
 
+# define GMP_NAIL_BITS 0
+# define GMP_LIMB_BITS BITS_PER_MP_LIMB
+# define GMP_NUMB_BITS BITS_PER_MP_LIMB
+# define GMP_LIMB_HIGHBIT (1 << (BITS_PER_MP_LIMB - 1))
+# define GMP_NUMB_HIGHBIT GMP_LIMB_HIGHBIT
+# define NULL 0L
+
+#if GMP_NUMB_BITS == 32
+# define MP_BASES_CHARS_PER_LIMB_10      9
+# define MP_BASES_BIG_BASE_10            CNST_LIMB(0x3b9aca00)
+# define MP_BASES_BIG_BASE_INVERTED_10   CNST_LIMB(0x12e0be82)
+# define MP_BASES_NORMALIZATION_STEPS_10 2
+# define GMP_NUMB_MASK 0xFFFFFFFF
+#else
+# define MP_BASES_CHARS_PER_LIMB_10      19
+# define MP_BASES_BIG_BASE_10            CNST_LIMB(0x8ac7230489e80000)
+# define MP_BASES_BIG_BASE_INVERTED_10   CNST_LIMB(0xd83c94fb6d2ac34a)
+# define GMP_NUMB_MASK 0xFFFFFFFFFFFFFFFF
+#endif
+
+#define MPN_DIVREM_OR_PREINV_DIVREM_1(qp,xsize,ap,size,d,dinv,shift)    \
+  mpn_divrem_1 (qp, xsize, ap, size, d)
+
+#define ABOVE_THRESHOLD(size,thresh)    \
+  ((thresh) == 0                        \
+   || ((thresh) != MP_SIZE_T_MAX        \
+       && (size) >= (thresh)))
+#define BELOW_THRESHOLD(size,thresh)  (! ABOVE_THRESHOLD (size, thresh))
+
+/* n-1 inverts any low zeros and the lowest one bit.  If n&(n-1) leaves zero
+   then that lowest one bit must have been the only bit set.  n==0 will
+   return true though, so avoid that.  */
+#define POW2_P(n)  (((n) & ((n) - 1)) == 0)
+
+# define __GMP_ALLOCATE_FUNC_LIMBS(n) TMP_ALLOC(n * sizeof(mp_limb_t))
+# define __GMP_FREE_FUNC_LIMBS(p, n) /* */
+
 static const int mp_bits_per_limb = BITS_PER_MP_LIMB;
 static const int __gmp_0 = 0;
 /* static int __gmp_junk; */
@@ -1615,6 +1652,493 @@ mpn_lshift (wp, up, usize, cnt)
   return retval;
 }
 
+
+
+/* Conversion of U {up,un} to a string in base b.  Internally, we convert to
+     base B = b^m, the largest power of b that fits a limb.  Basic algorithms:
+
+  A) Divide U repeatedly by B, generating a quotient and remainder, until the
+     quotient becomes zero.  The remainders hold the converted digits.  Digits
+     come out from right to left.  (Used in mpn_sb_get_str.)
+
+  B) Divide U by b^g, for g such that 1/b <= U/b^g < 1, generating a fraction.
+     Then develop digits by multiplying the fraction repeatedly by b.  Digits
+     come out from left to right.  (Currently not used herein, except for in
+     code for converting single limbs to individual digits.)
+
+  C) Compute B^1, B^2, B^4, ..., B^(2^s), for s such that B^(2^s) > sqrt(U).
+     Then divide U by B^(2^k), generating an integer quotient and remainder.
+     Recursively convert the quotient, then the remainder, using the
+     precomputed powers.  Digits come out from left to right.  (Used in
+     mpn_dc_get_str.)
+
+  When using algorithm C, algorithm B might be suitable for basecase code,
+  since the required b^g power will be readily accessible.
+
+  Optimization ideas:
+  1. The recursive function of (C) could avoid TMP allocation:
+     a) Overwrite dividend with quotient and remainder, just as permitted by
+        mpn_sb_divrem_mn.
+     b) If TMP memory is anyway needed, pass it as a parameter, similarly to
+        how we do it in Karatsuba multiplication.
+  2. Store the powers of (C) in normalized form, with the normalization count.
+     Quotients will usually need to be left-shifted before each divide, and
+     remainders will either need to be left-shifted of right-shifted.
+  3. When b is even, the powers will end up with lots of low zero limbs.  Could
+     save significant time in the mpn_tdiv_qr call by stripping these zeros.
+  4. In the code for developing digits from a single limb, we could avoid using
+     a full umul_ppmm except for the first (or first few) digits, provided base
+     is even.  Subsequent digits can be developed using plain multiplication.
+     (This saves on register-starved machines (read x86) and on all machines
+     that generate the upper product half using a separate instruction (alpha,
+     powerpc, IA-64) or lacks such support altogether (sparc64, hppa64).
+  5. Separate mpn_dc_get_str basecase code from code for small conversions. The
+     former code will have the exact right power readily available in the
+     powtab parameter for dividing the current number into a fraction.  Convert
+     that using algorithm B.
+  6. Completely avoid division.  Compute the inverses of the powers now in
+     powtab instead of the actual powers.
+
+  Basic structure of (C):
+    mpn_get_str:
+      if POW2_P (n)
+	...
+      else
+	if (un < GET_STR_PRECOMPUTE_THRESHOLD)
+	  mpn_sb_get_str (str, base, up, un);
+	else
+	  precompute_power_tables
+	  mpn_dc_get_str
+
+    mpn_dc_get_str:
+	mpn_tdiv_qr
+	if (qn < GET_STR_DC_THRESHOLD)
+	  mpn_sb_get_str
+	else
+	  mpn_dc_get_str
+	if (rn < GET_STR_DC_THRESHOLD)
+	  mpn_sb_get_str
+	else
+	  mpn_dc_get_str
+
+
+  The reason for the two threshold values is the cost of
+  precompute_power_tables.  GET_STR_PRECOMPUTE_THRESHOLD will be considerably
+  larger than GET_STR_PRECOMPUTE_THRESHOLD.  Do you think I should change
+  mpn_dc_get_str to instead look like the following?  */
+
+
+/* The x86s and m68020 have a quotient and remainder "div" instruction and
+   gcc recognises an adjacent "/" and "%" can be combined using that.
+   Elsewhere "/" and "%" are either separate instructions, or separate
+   libgcc calls (which unfortunately gcc as of version 3.0 doesn't combine).
+   A multiply and subtract should be faster than a "%" in those cases.  */
+#if HAVE_HOST_CPU_FAMILY_x86            \
+  || HAVE_HOST_CPU_m68020               \
+  || HAVE_HOST_CPU_m68030               \
+  || HAVE_HOST_CPU_m68040               \
+  || HAVE_HOST_CPU_m68060               \
+  || HAVE_HOST_CPU_m68360 /* CPU32 */
+#define udiv_qrnd_unnorm(q,r,n,d)       \
+  do {                                  \
+    mp_limb_t  __q = (n) / (d);         \
+    mp_limb_t  __r = (n) % (d);         \
+    (q) = __q;                          \
+    (r) = __r;                          \
+  } while (0)
+#else
+#define udiv_qrnd_unnorm(q,r,n,d)       \
+  do {                                  \
+    mp_limb_t  __q = (n) / (d);         \
+    mp_limb_t  __r = (n) - __q*(d);     \
+    (q) = __q;                          \
+    (r) = __r;                          \
+  } while (0)
+#endif
+
+/* When to stop divide-and-conquer and call the basecase mpn_get_str.  */
+#ifndef GET_STR_DC_THRESHOLD
+#define GET_STR_DC_THRESHOLD 15
+#endif
+/* Whether to bother at all with precomputing powers of the base, or go
+   to the basecase mpn_get_str directly.  */
+#ifndef GET_STR_PRECOMPUTE_THRESHOLD
+#define GET_STR_PRECOMPUTE_THRESHOLD 30
+#endif
+
+struct powers
+{
+  size_t digits_in_base;
+  mp_ptr p;
+  mp_size_t n;		/* mpz_struct uses int for sizes, but not mpn! */
+  int base;
+};
+typedef struct powers powers_t;
+
+
+/* Convert {UP,UN} to a string with a base as represented in POWTAB, and put
+   the string in STR.  Generate LEN characters, possibly padding with zeros to
+   the left.  If LEN is zero, generate as many characters as required.
+   Return a pointer immediately after the last digit of the result string.
+   Complexity is O(UN^2); intended for small conversions.  */
+static unsigned char *
+mpn_sb_get_str (unsigned char *str, size_t len,
+		mp_ptr up, mp_size_t un,
+		const powers_t *powtab)
+{
+  mp_limb_t rl, ul;
+  unsigned char *s;
+  int base;
+  size_t l;
+  /* Allocate memory for largest possible string, given that we only get here
+     for operands with un < GET_STR_PRECOMPUTE_THRESHOLD and that the smallest
+     base is 3.  7/11 is an approximation to 1/log2(3).  */
+#if TUNE_PROGRAM_BUILD
+#define BUF_ALLOC (GET_STR_THRESHOLD_LIMIT * BITS_PER_MP_LIMB * 7 / 11)
+#else
+#define BUF_ALLOC (GET_STR_PRECOMPUTE_THRESHOLD * BITS_PER_MP_LIMB * 7 / 11)
+#endif
+  unsigned char buf[BUF_ALLOC];
+#if TUNE_PROGRAM_BUILD
+  mp_limb_t rp[GET_STR_THRESHOLD_LIMIT];
+#else
+  mp_limb_t rp[GET_STR_PRECOMPUTE_THRESHOLD];
+#endif
+
+  base = powtab->base;
+  if (base == 10)
+    {
+      /* Special case code for base==10 so that the compiler has a chance to
+	 optimize things.  */
+
+      MPN_COPY (rp + 1, up, un);
+
+      s = buf + BUF_ALLOC;
+      while (un > 1)
+	{
+	  int i;
+	  mp_limb_t frac, digit;
+	  MPN_DIVREM_OR_PREINV_DIVREM_1 (rp, (mp_size_t) 1, rp + 1, un,
+					 MP_BASES_BIG_BASE_10,
+					 MP_BASES_BIG_BASE_INVERTED_10,
+					 MP_BASES_NORMALIZATION_STEPS_10);
+	  un -= rp[un] == 0;
+	  frac = (rp[0] + 1) << GMP_NAIL_BITS;
+	  s -= MP_BASES_CHARS_PER_LIMB_10;
+#if HAVE_HOST_CPU_FAMILY_x86
+	  /* The code below turns out to be a bit slower for x86 using gcc.
+	     Use plain code.  */
+	  i = MP_BASES_CHARS_PER_LIMB_10;
+	  do
+	    {
+	      umul_ppmm (digit, frac, frac, 10);
+	      *s++ = digit;
+	    }
+	  while (--i);
+#else
+	  /* Use the fact that 10 in binary is 1010, with the lowest bit 0.
+	     After a few umul_ppmm, we will have accumulated enough low zeros
+	     to use a plain multiply.  */
+	  if (MP_BASES_NORMALIZATION_STEPS_10 == 0)
+	    {
+	      umul_ppmm (digit, frac, frac, 10);
+	      *s++ = digit;
+	    }
+	  if (MP_BASES_NORMALIZATION_STEPS_10 <= 1)
+	    {
+	      umul_ppmm (digit, frac, frac, 10);
+	      *s++ = digit;
+	    }
+	  if (MP_BASES_NORMALIZATION_STEPS_10 <= 2)
+	    {
+	      umul_ppmm (digit, frac, frac, 10);
+	      *s++ = digit;
+	    }
+	  if (MP_BASES_NORMALIZATION_STEPS_10 <= 3)
+	    {
+	      umul_ppmm (digit, frac, frac, 10);
+	      *s++ = digit;
+	    }
+	  i = MP_BASES_CHARS_PER_LIMB_10 - (4-MP_BASES_NORMALIZATION_STEPS_10);
+	  frac = (frac + 0xf) >> 4;
+	  do
+	    {
+	      frac *= 10;
+	      digit = frac >> (BITS_PER_MP_LIMB - 4);
+	      *s++ = digit;
+	      frac &= (~(mp_limb_t) 0) >> 4;
+	    }
+	  while (--i);
+#endif
+	  s -= MP_BASES_CHARS_PER_LIMB_10;
+	}
+
+      ul = rp[1];
+      while (ul != 0)
+	{
+	  udiv_qrnd_unnorm (ul, rl, ul, 10);
+	  *--s = rl;
+	}
+    }
+  else /* not base 10 */
+    {
+      unsigned chars_per_limb;
+      mp_limb_t big_base, big_base_inverted;
+      unsigned normalization_steps;
+
+      chars_per_limb = __mp_bases[base].chars_per_limb;
+      big_base = __mp_bases[base].big_base;
+      big_base_inverted = __mp_bases[base].big_base_inverted;
+      count_leading_zeros (normalization_steps, big_base);
+
+      MPN_COPY (rp + 1, up, un);
+
+      s = buf + BUF_ALLOC;
+      while (un > 1)
+	{
+	  int i;
+	  mp_limb_t frac;
+	  MPN_DIVREM_OR_PREINV_DIVREM_1 (rp, (mp_size_t) 1, rp + 1, un,
+					 big_base, big_base_inverted,
+					 normalization_steps);
+	  un -= rp[un] == 0;
+	  frac = (rp[0] + 1) << GMP_NAIL_BITS;
+	  s -= chars_per_limb;
+	  i = chars_per_limb;
+	  do
+	    {
+	      mp_limb_t digit;
+	      umul_ppmm (digit, frac, frac, base);
+	      *s++ = digit;
+	    }
+	  while (--i);
+	  s -= chars_per_limb;
+	}
+
+      ul = rp[1];
+      while (ul != 0)
+	{
+	  udiv_qrnd_unnorm (ul, rl, ul, base);
+	  *--s = rl;
+	}
+    }
+
+  l = buf + BUF_ALLOC - s;
+  while (l < len)
+    {
+      *str++ = 0;
+      len--;
+    }
+  while (l != 0)
+    {
+      *str++ = *s++;
+      l--;
+    }
+  return str;
+}
+
+
+/* Convert {UP,UN} to a string with a base as represented in POWTAB, and put
+   the string in STR.  Generate LEN characters, possibly padding with zeros to
+   the left.  If LEN is zero, generate as many characters as required.
+   Return a pointer immediately after the last digit of the result string.
+   This uses divide-and-conquer and is intended for large conversions.  */
+static unsigned char *
+mpn_dc_get_str (unsigned char *str, size_t len,
+		mp_ptr up, mp_size_t un,
+		const powers_t *powtab)
+{
+  if (un < GET_STR_DC_THRESHOLD)
+    {
+      if (un != 0)
+	str = mpn_sb_get_str (str, len, up, un, powtab);
+      else
+	{
+	  while (len != 0)
+	    {
+	      *str++ = 0;
+	      len--;
+	    }
+	}
+    }
+  else
+    {
+      mp_ptr pwp, qp, rp;
+      mp_size_t pwn, qn;
+
+      pwp = powtab->p;
+      pwn = powtab->n;
+
+      if (un < pwn || (un == pwn && mpn_cmp (up, pwp, un) < 0))
+	{
+	  str = mpn_dc_get_str (str, len, up, un, powtab - 1);
+	}
+      else
+	{
+	  TMP_DECL (marker);
+	  TMP_MARK (marker);
+	  qp = TMP_ALLOC_LIMBS (un - pwn + 1);
+	  rp = TMP_ALLOC_LIMBS (pwn);
+
+	  mpn_tdiv_qr (qp, rp, 0L, up, un, pwp, pwn);
+	  qn = un - pwn; qn += qp[qn] != 0;		/* quotient size */
+	  if (len != 0)
+	    len = len - powtab->digits_in_base;
+	  str = mpn_dc_get_str (str, len, qp, qn, powtab - 1);
+	  str = mpn_dc_get_str (str, powtab->digits_in_base, rp, pwn, powtab - 1);
+	  TMP_FREE (marker);
+	}
+    }
+  return str;
+}
+
+
+/* There are no leading zeros on the digits generated at str, but that's not
+   currently a documented feature.  */
+
+size_t
+mpn_get_str (unsigned char *str, int base, mp_ptr up, mp_size_t un)
+{
+  mp_ptr powtab_mem, powtab_mem_ptr;
+  mp_limb_t big_base;
+  size_t digits_in_base;
+  powers_t powtab[30];
+  int pi;
+  mp_size_t n;
+  mp_ptr p, t;
+  size_t out_len;
+
+  /* Special case zero, as the code below doesn't handle it.  */
+  if (un == 0)
+    {
+      str[0] = 0;
+      return 1;
+    }
+
+  if (POW2_P (base))
+    {
+      /* The base is a power of 2.  Convert from most significant end.  */
+      mp_limb_t n1, n0;
+      int bits_per_digit = __mp_bases[base].big_base;
+      int cnt;
+      int bit_pos;
+      mp_size_t i;
+      unsigned char *s = str;
+
+      n1 = up[un - 1];
+      count_leading_zeros (cnt, n1);
+
+      /* BIT_POS should be R when input ends in least significant nibble,
+	 R + bits_per_digit * n when input ends in nth least significant
+	 nibble. */
+
+      {
+	unsigned long bits;
+
+	bits = GMP_NUMB_BITS * un - cnt + GMP_NAIL_BITS;
+	cnt = bits % bits_per_digit;
+	if (cnt != 0)
+	  bits += bits_per_digit - cnt;
+	bit_pos = bits - (un - 1) * GMP_NUMB_BITS;
+      }
+
+      /* Fast loop for bit output.  */
+      i = un - 1;
+      for (;;)
+	{
+	  bit_pos -= bits_per_digit;
+	  while (bit_pos >= 0)
+	    {
+	      *s++ = (n1 >> bit_pos) & ((1 << bits_per_digit) - 1);
+	      bit_pos -= bits_per_digit;
+	    }
+	  i--;
+	  if (i < 0)
+	    break;
+	  n0 = (n1 << -bit_pos) & ((1 << bits_per_digit) - 1);
+	  n1 = up[i];
+	  bit_pos += GMP_NUMB_BITS;
+	  *s++ = n0 | (n1 >> bit_pos);
+
+	  if (!(i & 0xFF)) SCHEME_BIGNUM_USE_FUEL(1);
+	}
+
+      *s = 0;
+
+      return s - str;
+    }
+
+  /* General case.  The base is not a power of 2.  */
+
+  if (un < GET_STR_PRECOMPUTE_THRESHOLD)
+    {
+      struct powers ptab[1];
+      ptab[0].base = base;
+      return mpn_sb_get_str (str, (size_t) 0, up, un, ptab) - str;
+    }
+
+  /* Allocate one large block for the powers of big_base.  With the current
+     scheme, we need to allocate twice as much as would be possible if a
+     minimal set of powers were generated.  */
+#define ALLOC_SIZE (2 * un + 30)
+ {
+   TMP_DECL (marker);
+   TMP_MARK (marker);
+
+   powtab_mem = __GMP_ALLOCATE_FUNC_LIMBS (ALLOC_SIZE);
+   powtab_mem_ptr = powtab_mem;
+
+  /* Compute a table of powers: big_base^1, big_base^2, big_base^4, ...,
+     big_base^(2^k), for k such that the biggest power is between U and
+     sqrt(U).  */
+
+  big_base = __mp_bases[base].big_base;
+  digits_in_base = __mp_bases[base].chars_per_limb;
+
+  powtab[0].base = base; /* FIXME: hack for getting base to mpn_sb_get_str */
+  powtab[1].p = &big_base;
+  powtab[1].n = 1;
+  powtab[1].digits_in_base = digits_in_base;
+  powtab[1].base = base;
+  powtab[2].p = &big_base;
+  powtab[2].n = 1;
+  powtab[2].digits_in_base = digits_in_base;
+  powtab[2].base = base;
+  n = 1;
+  pi = 2;
+  p = &big_base;
+  for (;;)
+    {
+      ++pi;
+      t = powtab_mem_ptr;
+      powtab_mem_ptr += 2 * n;
+      mpn_sqr_n (t, p, n);
+      n *= 2; n -= t[n - 1] == 0;
+      digits_in_base *= 2;
+      p = t;
+      powtab[pi].p = p;
+      powtab[pi].n = n;
+      powtab[pi].digits_in_base = digits_in_base;
+      powtab[pi].base = base;
+
+      if (2 * n > un)
+	break;
+    }
+  ASSERT_ALWAYS (ALLOC_SIZE > powtab_mem_ptr - powtab_mem);
+
+  /* Using our precomputed powers, now in powtab[], convert our number.  */
+  out_len = mpn_dc_get_str (str, 0, up, un, powtab + pi) - str;
+
+  __GMP_FREE_FUNC_LIMBS (powtab_mem, ALLOC_SIZE);
+  
+  TMP_FREE(marker);
+ }
+
+  return out_len;
+}
+
+#if 0
+
 /* mpn_get_str -- Convert a MSIZE long limb vector pointed to by MPTR
    to a printable string in STR in base BASE. */
 
@@ -1810,6 +2334,337 @@ mpn_get_str (str, base, mptr, msize)
     }
 }
 
+#endif
+
+/* When to switch to sub-quadratic code.  This counts characters/digits in
+   the input string, not limbs as most other *_THRESHOLD.  */
+#ifndef SET_STR_THRESHOLD
+#define SET_STR_THRESHOLD 4000
+#endif
+
+/* Don't define this to anything but 1 for now.  In order to make other values
+   work well, either the convert_blocks function should be generazed to handle
+   larger blocks than chars_per_limb, or the basecase code should be broken out
+   of the main function.  Also note that this must be a power of 2.  */
+#ifndef SET_STR_BLOCK_SIZE
+#define SET_STR_BLOCK_SIZE 1	/* Must be a power of 2. */
+#endif
+
+
+/* This check interferes with expression based values of SET_STR_THRESHOLD
+   used for tuning and measuring.
+#if SET_STR_BLOCK_SIZE >= SET_STR_THRESHOLD
+These values are silly.
+The sub-quadratic code would recurse to itself.
+#endif
+*/
+
+static mp_size_t
+convert_blocks (mp_ptr dp, const unsigned char *str, size_t str_len, int base);
+
+mp_size_t
+mpn_set_str (mp_ptr rp, const unsigned char *str, size_t str_len, int base)
+{
+  mp_size_t size;
+  mp_limb_t big_base;
+  int chars_per_limb;
+  mp_limb_t res_digit;
+
+  ASSERT (base >= 2);
+  ASSERT (base < numberof (__mp_bases));
+  ASSERT (str_len >= 1);
+
+  big_base = __mp_bases[base].big_base;
+  chars_per_limb = __mp_bases[base].chars_per_limb;
+
+  size = 0;
+
+  if (POW2_P (base))
+    {
+      /* The base is a power of 2.  Read the input string from least to most
+	 significant character/digit.  */
+
+      const unsigned char *s;
+      int next_bitpos;
+      int bits_per_indigit = big_base;
+
+      res_digit = 0;
+      next_bitpos = 0;
+
+      for (s = str + str_len - 1; s >= str; s--)
+	{
+	  int inp_digit = *s;
+
+	  res_digit |= ((mp_limb_t) inp_digit << next_bitpos) & GMP_NUMB_MASK;
+	  next_bitpos += bits_per_indigit;
+	  if (next_bitpos >= GMP_NUMB_BITS)
+	    {
+	      rp[size++] = res_digit;
+	      next_bitpos -= GMP_NUMB_BITS;
+	      res_digit = inp_digit >> (bits_per_indigit - next_bitpos);
+	    }
+
+	  if (!((long)s & 0xFF)) SCHEME_BIGNUM_USE_FUEL(1);
+	}
+
+      if (res_digit != 0)
+	rp[size++] = res_digit;
+      return size;
+    }
+  else
+    {
+      /* General case.  The base is not a power of 2.  */
+
+      if (str_len < SET_STR_THRESHOLD)
+	{
+	  size_t i;
+	  int j;
+	  mp_limb_t cy_limb;
+
+	  for (i = chars_per_limb; i < str_len; i += chars_per_limb)
+	    {
+	      res_digit = *str++;
+	      if (base == 10)
+		{ /* This is a common case.
+		     Help the compiler to avoid multiplication.  */
+		  for (j = MP_BASES_CHARS_PER_LIMB_10 - 1; j != 0; j--)
+		    res_digit = res_digit * 10 + *str++;
+		}
+	      else
+		{
+		  for (j = chars_per_limb - 1; j != 0; j--)
+		    res_digit = res_digit * base + *str++;
+		}
+
+	      if (size == 0)
+		{
+		  if (res_digit != 0)
+		    {
+		      rp[0] = res_digit;
+		      size = 1;
+		    }
+		}
+	      else
+		{
+#if HAVE_NATIVE_mpn_mul_1c
+		  cy_limb = mpn_mul_1c (rp, rp, size, big_base, res_digit);
+#else
+		  cy_limb = mpn_mul_1 (rp, rp, size, big_base);
+		  cy_limb += mpn_add_1 (rp, rp, size, res_digit);
+#endif
+		  if (cy_limb != 0)
+		    rp[size++] = cy_limb;
+		}
+	    }
+
+	  big_base = base;
+	  res_digit = *str++;
+	  if (base == 10)
+	    { /* This is a common case.
+		 Help the compiler to avoid multiplication.  */
+	      for (j = str_len - (i - MP_BASES_CHARS_PER_LIMB_10) - 1; j > 0; j--)
+		{
+		  res_digit = res_digit * 10 + *str++;
+		  big_base *= 10;
+		}
+	    }
+	  else
+	    {
+	      for (j = str_len - (i - chars_per_limb) - 1; j > 0; j--)
+		{
+		  res_digit = res_digit * base + *str++;
+		  big_base *= base;
+		}
+	    }
+
+	  if (size == 0)
+	    {
+	      if (res_digit != 0)
+		{
+		  rp[0] = res_digit;
+		  size = 1;
+		}
+	    }
+	  else
+	    {
+#if HAVE_NATIVE_mpn_mul_1c
+	      cy_limb = mpn_mul_1c (rp, rp, size, big_base, res_digit);
+#else
+	      cy_limb = mpn_mul_1 (rp, rp, size, big_base);
+	      cy_limb += mpn_add_1 (rp, rp, size, res_digit);
+#endif
+	      if (cy_limb != 0)
+		rp[size++] = cy_limb;
+	    }
+	  return size;
+	}
+      else
+	{
+	  /* Sub-quadratic code.  */
+
+	  mp_ptr dp;
+	  mp_size_t dsize;
+	  mp_ptr xp, tp;
+	  mp_size_t step;
+	  mp_size_t i;
+	  size_t alloc;
+	  mp_size_t n;
+	  mp_ptr pow_mem;
+	  TMP_DECL (marker);
+	  TMP_MARK (marker);
+
+	  alloc = (str_len + chars_per_limb - 1) / chars_per_limb;
+	  alloc = 2 * alloc;
+	  dp = __GMP_ALLOCATE_FUNC_LIMBS (alloc);
+
+#if SET_STR_BLOCK_SIZE == 1
+	  dsize = convert_blocks (dp, str, str_len, base);
+#else
+	  {
+	    const unsigned char *s;
+	    mp_ptr ddp = dp;
+
+	    s = str + str_len;
+	    while (s - str >  SET_STR_BLOCK_SIZE * chars_per_limb)
+	      {
+		s -= SET_STR_BLOCK_SIZE * chars_per_limb;
+		mpn_set_str (ddp, s, SET_STR_BLOCK_SIZE * chars_per_limb, base);
+		ddp += SET_STR_BLOCK_SIZE;
+	      }
+	    ddp += mpn_set_str (ddp, str, s - str, base);
+	    dsize = ddp - dp;
+	  }
+#endif
+
+	  /* Allocate space for powers of big_base.  Could trim this in two
+	     ways:
+	     1. Only really need 2^ceil(log2(dsize)) bits for the largest
+		power.
+	     2. Only the variable to get the largest power need that much
+		memory.  The other variable needs half as much.  Need just
+		figure out which of xp and tp will hold the last one.
+	     Net space savings would be in the range 1/4 to 5/8 of current
+	     allocation, depending on how close to the next power of 2 that
+	     dsize is.  */
+	  pow_mem = __GMP_ALLOCATE_FUNC_LIMBS (2 * alloc);
+	  xp = pow_mem;
+	  tp = pow_mem + alloc;
+
+	  xp[0] = big_base;
+	  n = 1;
+	  step = 1;
+#if SET_STR_BLOCK_SIZE != 1
+	  for (i = SET_STR_BLOCK_SIZE; i > 1; i >>= 1)
+	    {
+	      mpn_sqr_n (tp, xp, n);
+	      n = 2 * n;
+	      n -= tp[n - 1] == 0;
+
+	      step = 2 * step;
+	      MP_PTR_SWAP (tp, xp);
+	    }
+#endif
+
+	  /* Multiply every second limb block, each `step' limbs large by the
+	     base power currently in xp[], then add this to the adjacent block.
+	     We thereby convert from dsize blocks in base big_base, to dsize/2
+	     blocks in base big_base^2, then to dsize/4 blocks in base
+	     big_base^4, etc, etc.  */
+
+	  if (step < dsize)
+	    {
+	      for (;;)
+		{
+		  for (i = 0; i < dsize - step; i += 2 * step)
+		    {
+		      mp_ptr bp = dp + i;
+		      mp_size_t m = dsize - i - step;
+		      mp_size_t hi;
+		      if (n >= m)
+			{
+			  mpn_mul (tp, xp, n, bp + step, m);
+			  mpn_add (bp, tp, n + m, bp, n);
+			  hi = i + n + m;
+			  dsize = hi;
+			  dsize -= dp[dsize - 1] == 0;
+			}
+		      else
+			{
+			  mpn_mul_n (tp, xp, bp + step, n);
+			  mpn_add (bp, tp, n + n, bp, n);
+			}
+		    }
+
+		  step = 2 * step;
+		  if (! (step < dsize))
+		    break;
+
+		  mpn_sqr_n (tp, xp, n);
+		  n = 2 * n;
+		  n -= tp[n - 1] == 0;
+		  MP_PTR_SWAP (tp, xp);
+		}
+	    }
+
+	  MPN_NORMALIZE (dp, dsize);
+	  MPN_COPY (rp, dp, dsize);
+	  __GMP_FREE_FUNC_LIMBS (pow_mem, 2 * alloc);
+	  __GMP_FREE_FUNC_LIMBS (dp, alloc);
+	  TMP_FREE (marker);
+	  return dsize;
+	}
+    }
+}
+
+static mp_size_t
+convert_blocks (mp_ptr dp, const unsigned char *str, size_t str_len, int base)
+{
+  int chars_per_limb;
+  mp_size_t i;
+  int j;
+  int ds;
+  mp_size_t dsize;
+  mp_limb_t res_digit;
+
+  chars_per_limb = __mp_bases[base].chars_per_limb;
+
+  dsize = str_len / chars_per_limb;
+  ds = str_len % chars_per_limb;
+
+  if (ds != 0)
+    {
+      res_digit = *str++;
+      for (j = ds - 1; j != 0; j--)
+	res_digit = res_digit * base + *str++;
+      dp[dsize] = res_digit;
+    }
+
+  if (base == 10)
+    {
+      for (i = dsize - 1; i >= 0; i--)
+	{
+	  res_digit = *str++;
+	  for (j = MP_BASES_CHARS_PER_LIMB_10 - 1; j != 0; j--)
+	    res_digit = res_digit * 10 + *str++;
+	  dp[i] = res_digit;
+	}
+    }
+  else
+    {
+      for (i = dsize - 1; i >= 0; i--)
+	{
+	  res_digit = *str++;
+	  for (j = chars_per_limb - 1; j != 0; j--)
+	    res_digit = res_digit * base + *str++;
+	  dp[i] = res_digit;
+	}
+    }
+
+  return dsize + (ds != 0);
+}
+
+#if 0
+
 /* mpn_set_str (mp_ptr res_ptr, const char *str, size_t str_len, int base)
    -- Convert a STR_LEN long base BASE byte string pointed to by STR to a
    limb vector pointed to by RES_PTR.  Return the number of limbs in
@@ -1946,6 +2801,8 @@ mpn_set_str (xp, str, str_len, base)
 
   return size;
 }
+ 
+#endif
 
 /* mpn_tdiv_qr -- Divide the numerator (np,nn) by the denominator (dp,dn) and
    write the nn-dn+1 quotient limbs at qp and the dn remainder limbs at rp.  If
@@ -2335,489 +3192,256 @@ mpn_tdiv_qr (qp, rp, qxn, np, nn, dp, dn)
     }
 }
 
-/* mpn_sqrtrem (root_ptr, rem_ptr, op_ptr, op_size)
 
-   Write the square root of {OP_PTR, OP_SIZE} at ROOT_PTR.
-   Write the remainder at REM_PTR, if REM_PTR != NULL.
-   Return the size of the remainder.
-   (The size of the root is always half of the size of the operand.)
+/* Square roots table.  Generated by the following program:
+#include "gmp.h"
+main(){mpz_t x;int i;mpz_init(x);for(i=64;i<256;i++){mpz_set_ui(x,256*i);
+mpz_sqrt(x,x);mpz_out_str(0,10,x);printf(",");if(i%16==15)printf("\n");}}
+*/
+static const unsigned char approx_tab[192] =
+  {
+    128,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,
+    143,144,144,145,146,147,148,149,150,150,151,152,153,154,155,155,
+    156,157,158,159,160,160,161,162,163,163,164,165,166,167,167,168,
+    169,170,170,171,172,173,173,174,175,176,176,177,178,178,179,180,
+    181,181,182,183,183,184,185,185,186,187,187,188,189,189,190,191,
+    192,192,193,193,194,195,195,196,197,197,198,199,199,200,201,201,
+    202,203,203,204,204,205,206,206,207,208,208,209,209,210,211,211,
+    212,212,213,214,214,215,215,216,217,217,218,218,219,219,220,221,
+    221,222,222,223,224,224,225,225,226,226,227,227,228,229,229,230,
+    230,231,231,232,232,233,234,234,235,235,236,236,237,237,238,238,
+    239,240,240,241,241,242,242,243,243,244,244,245,245,246,246,247,
+    247,248,248,249,249,250,250,251,251,252,252,253,253,254,254,255
+  };
 
-   OP_PTR and ROOT_PTR may not point to the same object.
-   OP_PTR and REM_PTR may point to the same object.
+#define HALF_NAIL (GMP_NAIL_BITS / 2)
 
-   If REM_PTR is NULL, only the root is computed and the return value of
-   the function is 0 if OP is a perfect square, and *any* non-zero number
-   otherwise. */
-
-/* This code is just correct if "unsigned char" has at least 8 bits.  It
-   doesn't help to use CHAR_BIT from limits.h, as the real problem is
-   the static arrays.  */
-
-/* Square root algorithm:
-
-   1. Shift OP (the input) to the left an even number of bits s.t. there
-      are an even number of words and either (or both) of the most
-      significant bits are set.  This way, sqrt(OP) has exactly half as
-      many words as OP, and has its most significant bit set.
-
-   2. Get a 9-bit approximation to sqrt(OP) using the pre-computed tables.
-      This approximation is used for the first single-precision
-      iterations of Newton's method, yielding a full-word approximation
-      to sqrt(OP).
-
-   3. Perform multiple-precision Newton iteration until we have the
-      exact result.  Only about half of the input operand is used in
-      this calculation, as the square root is perfectly determinable
-      from just the higher half of a number.  */
-
-/* Define this macro for IEEE P854 machines with a fast sqrt instruction.  */
-#if defined __GNUC__ && ! defined __SOFT_FLOAT
-
-#if defined (__sparc__) && BITS_PER_MP_LIMB == 32
-#define SQRT(a) \
-  ({									\
-    double __sqrt_res;							\
-    asm ("fsqrtd %1,%0" : "=f" (__sqrt_res) : "f" (a));			\
-    __sqrt_res;								\
-  })
-#endif
-
-#if defined (__HAVE_68881__)
-#define SQRT(a) \
-  ({									\
-    double __sqrt_res;							\
-    asm ("fsqrtx %1,%0" : "=f" (__sqrt_res) : "f" (a));			\
-    __sqrt_res;								\
-  })
-#endif
-
-#if defined (__hppa) && BITS_PER_MP_LIMB == 32
-#define SQRT(a) \
-  ({									\
-    double __sqrt_res;							\
-    asm ("fsqrt,dbl %1,%0" : "=fx" (__sqrt_res) : "fx" (a));		\
-    __sqrt_res;								\
-  })
-#endif
-
-#if defined (_ARCH_PWR2) && BITS_PER_MP_LIMB == 32
-#define SQRT(a) \
-  ({									\
-    double __sqrt_res;							\
-    asm ("fsqrt %0,%1" : "=f" (__sqrt_res) : "f" (a));			\
-    __sqrt_res;								\
-  })
-#endif
-
-#if 0
-#if defined (__i386__) || defined (__i486__)
-#define SQRT(a) \
-  ({									\
-    double __sqrt_res;							\
-    asm ("fsqrt" : "=t" (__sqrt_res) : "0" (a));			\
-    __sqrt_res;								\
-  })
-#endif
-#endif
-
-#endif
-
-#ifndef SQRT
-
-/* Tables for initial approximation of the square root.  These are
-   indexed with bits 1-8 of the operand for which the square root is
-   calculated, where bit 0 is the most significant non-zero bit.  I.e.
-   the most significant one-bit is not used, since that per definition
-   is one.  Likewise, the tables don't return the highest bit of the
-   result.  That bit must be inserted by or:ing the returned value with
-   0x100.  This way, we get a 9-bit approximation from 8-bit tables!  */
-
-/* Table to be used for operands with an even total number of bits.
-   (Exactly as in the decimal system there are similarities between the
-   square root of numbers with the same initial digits and an even
-   difference in the total number of digits.  Consider the square root
-   of 1, 10, 100, 1000, ...)  */
-static const unsigned char even_approx_tab[256] =
+/* same as mpn_sqrtrem, but for size=1 and {np, 1} normalized */
+static mp_size_t
+mpn_sqrtrem1 (mp_ptr sp, mp_ptr rp, mp_srcptr np)
 {
-  0x6a, 0x6a, 0x6b, 0x6c, 0x6c, 0x6d, 0x6e, 0x6e,
-  0x6f, 0x70, 0x71, 0x71, 0x72, 0x73, 0x73, 0x74,
-  0x75, 0x75, 0x76, 0x77, 0x77, 0x78, 0x79, 0x79,
-  0x7a, 0x7b, 0x7b, 0x7c, 0x7d, 0x7d, 0x7e, 0x7f,
-  0x80, 0x80, 0x81, 0x81, 0x82, 0x83, 0x83, 0x84,
-  0x85, 0x85, 0x86, 0x87, 0x87, 0x88, 0x89, 0x89,
-  0x8a, 0x8b, 0x8b, 0x8c, 0x8d, 0x8d, 0x8e, 0x8f,
-  0x8f, 0x90, 0x90, 0x91, 0x92, 0x92, 0x93, 0x94,
-  0x94, 0x95, 0x96, 0x96, 0x97, 0x97, 0x98, 0x99,
-  0x99, 0x9a, 0x9b, 0x9b, 0x9c, 0x9c, 0x9d, 0x9e,
-  0x9e, 0x9f, 0xa0, 0xa0, 0xa1, 0xa1, 0xa2, 0xa3,
-  0xa3, 0xa4, 0xa4, 0xa5, 0xa6, 0xa6, 0xa7, 0xa7,
-  0xa8, 0xa9, 0xa9, 0xaa, 0xaa, 0xab, 0xac, 0xac,
-  0xad, 0xad, 0xae, 0xaf, 0xaf, 0xb0, 0xb0, 0xb1,
-  0xb2, 0xb2, 0xb3, 0xb3, 0xb4, 0xb5, 0xb5, 0xb6,
-  0xb6, 0xb7, 0xb7, 0xb8, 0xb9, 0xb9, 0xba, 0xba,
-  0xbb, 0xbb, 0xbc, 0xbd, 0xbd, 0xbe, 0xbe, 0xbf,
-  0xc0, 0xc0, 0xc1, 0xc1, 0xc2, 0xc2, 0xc3, 0xc3,
-  0xc4, 0xc5, 0xc5, 0xc6, 0xc6, 0xc7, 0xc7, 0xc8,
-  0xc9, 0xc9, 0xca, 0xca, 0xcb, 0xcb, 0xcc, 0xcc,
-  0xcd, 0xce, 0xce, 0xcf, 0xcf, 0xd0, 0xd0, 0xd1,
-  0xd1, 0xd2, 0xd3, 0xd3, 0xd4, 0xd4, 0xd5, 0xd5,
-  0xd6, 0xd6, 0xd7, 0xd7, 0xd8, 0xd9, 0xd9, 0xda,
-  0xda, 0xdb, 0xdb, 0xdc, 0xdc, 0xdd, 0xdd, 0xde,
-  0xde, 0xdf, 0xe0, 0xe0, 0xe1, 0xe1, 0xe2, 0xe2,
-  0xe3, 0xe3, 0xe4, 0xe4, 0xe5, 0xe5, 0xe6, 0xe6,
-  0xe7, 0xe7, 0xe8, 0xe8, 0xe9, 0xea, 0xea, 0xeb,
-  0xeb, 0xec, 0xec, 0xed, 0xed, 0xee, 0xee, 0xef,
-  0xef, 0xf0, 0xf0, 0xf1, 0xf1, 0xf2, 0xf2, 0xf3,
-  0xf3, 0xf4, 0xf4, 0xf5, 0xf5, 0xf6, 0xf6, 0xf7,
-  0xf7, 0xf8, 0xf8, 0xf9, 0xf9, 0xfa, 0xfa, 0xfb,
-  0xfb, 0xfc, 0xfc, 0xfd, 0xfd, 0xfe, 0xfe, 0xff,
-};
+  mp_limb_t np0, s, r, q, u;
+  int prec;
 
-/* Table to be used for operands with an odd total number of bits.
-   (Further comments before previous table.)  */
-static const unsigned char odd_approx_tab[256] =
+  ASSERT (np[0] >= GMP_NUMB_HIGHBIT / 2);
+  ASSERT (GMP_LIMB_BITS >= 16);
+
+  /* first compute a 8-bit approximation from the high 8-bits of np[0] */
+  np0 = np[0] << GMP_NAIL_BITS;
+  q = np0 >> (GMP_LIMB_BITS - 8);
+  /* 2^6 = 64 <= q < 256 = 2^8 */
+  s = approx_tab[q - 64];				/* 128 <= s < 255 */
+  r = (np0 >> (GMP_LIMB_BITS - 16)) - s * s;		/* r <= 2*s */
+  if (r > 2 * s)
+    {
+      r -= 2 * s + 1;
+      s++;
+    }
+
+  prec = 8;
+  np0 <<= 2 * prec;
+  while (2 * prec < GMP_LIMB_BITS)
+    {
+      /* invariant: s has prec bits, and r <= 2*s */
+      r = (r << prec) + (np0 >> (GMP_LIMB_BITS - prec));
+      np0 <<= prec;
+      u = 2 * s;
+      q = r / u;
+      u = r - q * u;
+      s = (s << prec) + q;
+      u = (u << prec) + (np0 >> (GMP_LIMB_BITS - prec));
+      q = q * q;
+      r = u - q;
+      if (u < q)
+	{
+	  r += 2 * s - 1;
+	  s --;
+	}
+      np0 <<= prec;
+      prec = 2 * prec;
+    }
+
+  ASSERT (2 * prec == GMP_LIMB_BITS); /* GMP_LIMB_BITS must be a power of 2 */
+
+  /* normalize back, assuming GMP_NAIL_BITS is even */
+  ASSERT (GMP_NAIL_BITS % 2 == 0);
+  sp[0] = s >> HALF_NAIL;
+  u = s - (sp[0] << HALF_NAIL); /* s mod 2^HALF_NAIL */
+  r += u * ((sp[0] << (HALF_NAIL + 1)) + u);
+  r = r >> GMP_NAIL_BITS;
+
+  if (rp != NULL)
+    rp[0] = r;
+  return r != 0 ? 1 : 0;
+}
+
+
+#define Prec (GMP_NUMB_BITS >> 1)
+
+/* same as mpn_sqrtrem, but for size=2 and {np, 2} normalized
+   return cc such that {np, 2} = sp[0]^2 + cc*2^GMP_NUMB_BITS + rp[0] */
+static mp_limb_t
+mpn_sqrtrem2 (mp_ptr sp, mp_ptr rp, mp_srcptr np)
 {
-  0x00, 0x00, 0x00, 0x01, 0x01, 0x02, 0x02, 0x03,
-  0x03, 0x04, 0x04, 0x05, 0x05, 0x06, 0x06, 0x07,
-  0x07, 0x08, 0x08, 0x09, 0x09, 0x0a, 0x0a, 0x0b,
-  0x0b, 0x0c, 0x0c, 0x0d, 0x0d, 0x0e, 0x0e, 0x0f,
-  0x0f, 0x10, 0x10, 0x10, 0x11, 0x11, 0x12, 0x12,
-  0x13, 0x13, 0x14, 0x14, 0x15, 0x15, 0x16, 0x16,
-  0x16, 0x17, 0x17, 0x18, 0x18, 0x19, 0x19, 0x1a,
-  0x1a, 0x1b, 0x1b, 0x1b, 0x1c, 0x1c, 0x1d, 0x1d,
-  0x1e, 0x1e, 0x1f, 0x1f, 0x20, 0x20, 0x20, 0x21,
-  0x21, 0x22, 0x22, 0x23, 0x23, 0x23, 0x24, 0x24,
-  0x25, 0x25, 0x26, 0x26, 0x27, 0x27, 0x27, 0x28,
-  0x28, 0x29, 0x29, 0x2a, 0x2a, 0x2a, 0x2b, 0x2b,
-  0x2c, 0x2c, 0x2d, 0x2d, 0x2d, 0x2e, 0x2e, 0x2f,
-  0x2f, 0x30, 0x30, 0x30, 0x31, 0x31, 0x32, 0x32,
-  0x32, 0x33, 0x33, 0x34, 0x34, 0x35, 0x35, 0x35,
-  0x36, 0x36, 0x37, 0x37, 0x37, 0x38, 0x38, 0x39,
-  0x39, 0x39, 0x3a, 0x3a, 0x3b, 0x3b, 0x3b, 0x3c,
-  0x3c, 0x3d, 0x3d, 0x3d, 0x3e, 0x3e, 0x3f, 0x3f,
-  0x40, 0x40, 0x40, 0x41, 0x41, 0x41, 0x42, 0x42,
-  0x43, 0x43, 0x43, 0x44, 0x44, 0x45, 0x45, 0x45,
-  0x46, 0x46, 0x47, 0x47, 0x47, 0x48, 0x48, 0x49,
-  0x49, 0x49, 0x4a, 0x4a, 0x4b, 0x4b, 0x4b, 0x4c,
-  0x4c, 0x4c, 0x4d, 0x4d, 0x4e, 0x4e, 0x4e, 0x4f,
-  0x4f, 0x50, 0x50, 0x50, 0x51, 0x51, 0x51, 0x52,
-  0x52, 0x53, 0x53, 0x53, 0x54, 0x54, 0x54, 0x55,
-  0x55, 0x56, 0x56, 0x56, 0x57, 0x57, 0x57, 0x58,
-  0x58, 0x59, 0x59, 0x59, 0x5a, 0x5a, 0x5a, 0x5b,
-  0x5b, 0x5b, 0x5c, 0x5c, 0x5d, 0x5d, 0x5d, 0x5e,
-  0x5e, 0x5e, 0x5f, 0x5f, 0x60, 0x60, 0x60, 0x61,
-  0x61, 0x61, 0x62, 0x62, 0x62, 0x63, 0x63, 0x63,
-  0x64, 0x64, 0x65, 0x65, 0x65, 0x66, 0x66, 0x66,
-  0x67, 0x67, 0x67, 0x68, 0x68, 0x68, 0x69, 0x69,
-};
-#endif
+  mp_limb_t qhl, q, u, np0;
+  int cc;
 
-
+  ASSERT (np[1] >= GMP_NUMB_HIGHBIT / 2);
+
+  np0 = np[0];
+  mpn_sqrtrem1 (sp, rp, np + 1);
+  qhl = 0;
+  while (rp[0] >= sp[0])
+    {
+      qhl++;
+      rp[0] -= sp[0];
+    }
+  /* now rp[0] < sp[0] < 2^Prec */
+  rp[0] = (rp[0] << Prec) + (np0 >> Prec);
+  u = 2 * sp[0];
+  q = rp[0] / u;
+  u = rp[0] - q * u;
+  q += (qhl & 1) << (Prec - 1);
+  qhl >>= 1; /* if qhl=1, necessary q=0 as qhl*2^Prec + q <= 2^Prec */
+  /* now we have (initial rp[0])<<Prec + np0>>Prec = (qhl<<Prec + q) * (2sp[0]) + u */
+  sp[0] = ((sp[0] + qhl) << Prec) + q;
+  cc = u >> Prec;
+  rp[0] = ((u << Prec) & GMP_NUMB_MASK) + (np0 & (((mp_limb_t) 1 << Prec) - 1));
+  /* subtract q * q or qhl*2^(2*Prec) from rp */
+  cc -= mpn_sub_1 (rp, rp, 1, q * q) + qhl;
+  /* now subtract 2*q*2^Prec + 2^(2*Prec) if qhl is set */
+  if (cc < 0)
+    {
+      cc += sp[0] != 0 ? mpn_add_1 (rp, rp, 1, sp[0]) : 1;
+      cc += mpn_add_1 (rp, rp, 1, --sp[0]);
+    }
+
+  return cc;
+}
+
+/* writes in {sp, n} the square root (rounded towards zero) of {np, 2n},
+   and in {np, n} the low n limbs of the remainder, returns the high
+   limb of the remainder (which is 0 or 1).
+   Assumes {np, 2n} is normalized, i.e. np[2n-1] >= B/4
+   where B=2^GMP_NUMB_BITS.  */
+static mp_limb_t
+mpn_dc_sqrtrem (mp_ptr sp, mp_ptr np, mp_size_t n)
+{
+  mp_limb_t q;			/* carry out of {sp, n} */
+  int c, b;			/* carry out of remainder */
+  mp_size_t l, h;
+
+  ASSERT (np[2 * n - 1] >= GMP_NUMB_HIGHBIT / 2);
+
+  if (n == 1)
+    c = mpn_sqrtrem2 (sp, np, np);
+  else
+    {
+      l = n / 2;
+      h = n - l;
+      q = mpn_dc_sqrtrem (sp + l, np + 2 * l, h);
+      if (q != 0)
+        mpn_sub_n (np + 2 * l, np + 2 * l, sp + l, h);
+      q += mpn_divrem (sp, 0, np + l, n, sp + l, h);
+      c = sp[0] & 1;
+      mpn_rshift (sp, sp, l, 1);
+      sp[l - 1] |= (q << (GMP_NUMB_BITS - 1)) & GMP_NUMB_MASK;
+      q >>= 1;
+      if (c != 0)
+        c = mpn_add_n (np + l, np + l, sp + l, h);
+      mpn_sqr_n (np + n, sp, l);
+      b = q + mpn_sub_n (np, np, np + n, 2 * l);
+      c -= (l == h) ? b : mpn_sub_1 (np + 2 * l, np + 2 * l, 1, b);
+      q = mpn_add_1 (sp + l, sp + l, h, q);
+
+      if (c < 0)
+        {
+          c += mpn_addmul_1 (np, sp, n, 2) + 2 * q;
+          c -= mpn_sub_1 (np, np, n, 1);
+          q -= mpn_sub_1 (sp, sp, n, 1);
+        }
+    }
+
+  return c;
+}
+
+
 mp_size_t
-#if __STDC__
-mpn_sqrtrem (mp_ptr root_ptr, mp_ptr rem_ptr, mp_srcptr op_ptr, mp_size_t op_size)
-#else
-mpn_sqrtrem (root_ptr, rem_ptr, op_ptr, op_size)
-     mp_ptr root_ptr;
-     mp_ptr rem_ptr;
-     mp_srcptr op_ptr;
-     mp_size_t op_size;
-#endif
+mpn_sqrtrem (mp_ptr sp, mp_ptr rp, mp_srcptr np, mp_size_t nn)
 {
-  /* R (root result) */
-  mp_ptr rp;			/* Pointer to least significant word */
-  mp_size_t rsize;		/* The size in words */
-
-  /* T (OP shifted to the left a.k.a. normalized) */
-  mp_ptr tp;			/* Pointer to least significant word */
-  mp_size_t tsize;		/* The size in words */
-  mp_ptr t_end_ptr;		/* Pointer right beyond most sign. word */
-  mp_limb_t t_high0, t_high1;	/* The two most significant words */
-
-  /* TT (temporary for numerator/remainder) */
-  mp_ptr ttp;			/* Pointer to least significant word */
-
-  /* X (temporary for quotient in main loop) */
-  mp_ptr xp;			/* Pointer to least significant word */
-  mp_size_t xsize;		/* The size in words */
-
-  unsigned cnt;
-  mp_limb_t initial_approx;	/* Initially made approximation */
-  mp_size_t tsizes[BITS_PER_MP_LIMB];	/* Successive calculation precisions */
-  mp_size_t tmp;
-  mp_size_t i;
-
-  mp_limb_t cy_limb;
+  mp_limb_t *tp, s0[1], cc, high, rl;
+  int c;
+  mp_size_t rn, tn;
   TMP_DECL (marker);
 
+  ASSERT (nn >= 0);
+
   /* If OP is zero, both results are zero.  */
-  if (op_size == 0)
+  if (nn == 0)
     return 0;
 
-  count_leading_zeros (cnt, op_ptr[op_size - 1]);
-  tsize = op_size;
-  if ((tsize & 1) != 0)
-    {
-      cnt += BITS_PER_MP_LIMB;
-      tsize++;
-    }
+  ASSERT (np[nn - 1] != 0);
+  ASSERT (rp == NULL || MPN_SAME_OR_SEPARATE_P (np, rp, nn));
+  ASSERT (rp == NULL || ! MPN_OVERLAP_P (sp, (nn + 1) / 2, rp, nn));
+  ASSERT (! MPN_OVERLAP_P (sp, (nn + 1) / 2, np, nn));
 
-  rsize = tsize / 2;
-  rp = root_ptr;
+  high = np[nn - 1];
+  if (nn == 1 && (high & GMP_NUMB_HIGHBIT))
+    return mpn_sqrtrem1 (sp, rp, np);
+  count_leading_zeros (c, high);
+  c -= GMP_NAIL_BITS;
+
+  c = c / 2; /* we have to shift left by 2c bits to normalize {np, nn} */
+  tn = (nn + 1) / 2; /* 2*tn is the smallest even integer >= nn */
 
   TMP_MARK (marker);
-
-  /* Shift OP an even number of bits into T, such that either the most or
-     the second most significant bit is set, and such that the number of
-     words in T becomes even.  This way, the number of words in R=sqrt(OP)
-     is exactly half as many as in OP, and the most significant bit of R
-     is set.
-
-     Also, the initial approximation is simplified by this up-shifted OP.
-
-     Finally, the Newtonian iteration which is the main part of this
-     program performs division by R.  The fast division routine expects
-     the divisor to be "normalized" in exactly the sense of having the
-     most significant bit set.  */
-
-  tp = (mp_ptr) TMP_ALLOC (tsize * BYTES_PER_MP_LIMB);
-
-  if ((cnt & ~1) % BITS_PER_MP_LIMB != 0)
-    t_high0 = mpn_lshift (tp + cnt / BITS_PER_MP_LIMB, op_ptr, op_size,
-			  (cnt & ~1) % BITS_PER_MP_LIMB);
-  else
-    MPN_COPY (tp + cnt / BITS_PER_MP_LIMB, op_ptr, op_size);
-
-  if (cnt >= BITS_PER_MP_LIMB)
-    tp[0] = 0;
-
-  t_high0 = tp[tsize - 1];
-  t_high1 = tp[tsize - 2];	/* Never stray.  TSIZE is >= 2.  */
-
-/* Is there a fast sqrt instruction defined for this machine?  */
-#ifdef SQRT
-  {
-    initial_approx = SQRT (t_high0 * MP_BASE_AS_DOUBLE + t_high1);
-    /* If t_high0,,t_high1 is big, the result in INITIAL_APPROX might have
-       become incorrect due to overflow in the conversion from double to
-       mp_limb_t above.  It will typically be zero in that case, but might be
-       a small number on some machines.  The most significant bit of
-       INITIAL_APPROX should be set, so that bit is a good overflow
-       indication.  */
-    if ((mp_limb_signed_t) initial_approx >= 0)
-      initial_approx = ~(mp_limb_t)0;
-  }
-#else
-  /* Get a 9 bit approximation from the tables.  The tables expect to
-     be indexed with the 8 high bits right below the highest bit.
-     Also, the highest result bit is not returned by the tables, and
-     must be or:ed into the result.  The scheme gives 9 bits of start
-     approximation with just 256-entry 8 bit tables.  */
-
-  if ((cnt & 1) == 0)
+  if (nn % 2 != 0 || c > 0)
     {
-      /* The most significant bit of t_high0 is set.  */
-      initial_approx = t_high0 >> (BITS_PER_MP_LIMB - 8 - 1);
-      initial_approx &= 0xff;
-      initial_approx = even_approx_tab[initial_approx];
-    }
-  else
-    {
-      /* The most significant bit of t_high0 is unset,
-	 the second most significant is set.  */
-      initial_approx = t_high0 >> (BITS_PER_MP_LIMB - 8 - 2);
-      initial_approx &= 0xff;
-      initial_approx = odd_approx_tab[initial_approx];
-    }
-  initial_approx |= 0x100;
-  initial_approx <<= BITS_PER_MP_LIMB - 8 - 1;
-
-  /* Perform small precision Newtonian iterations to get a full word
-     approximation.  For small operands, these iterations will do the
-     entire job.  */
-  if (t_high0 == ~(mp_limb_t)0)
-    initial_approx = t_high0;
-  else
-    {
-      mp_limb_t quot;
-
-      if (t_high0 >= initial_approx)
-	initial_approx = t_high0 + 1;
-
-      /* First get about 18 bits with pure C arithmetics.  */
-      quot = t_high0 / (initial_approx >> BITS_PER_MP_LIMB/2) << BITS_PER_MP_LIMB/2;
-      initial_approx = (initial_approx + quot) / 2;
-      initial_approx |= (mp_limb_t) 1 << (BITS_PER_MP_LIMB - 1);
-
-      /* Now get a full word by one (or for > 36 bit machines) several
-	 iterations.  */
-      for (i = 18; i < BITS_PER_MP_LIMB; i <<= 1)
+      tp = TMP_ALLOC_LIMBS (2 * tn);
+      tp[0] = 0;	     /* needed only when 2*tn > nn, but saves a test */
+      if (c != 0)
+	mpn_lshift (tp + 2 * tn - nn, np, nn, 2 * c);
+      else
+	MPN_COPY (tp + 2 * tn - nn, np, nn);
+      rl = mpn_dc_sqrtrem (sp, tp, tn);
+      /* We have 2^(2k)*N = S^2 + R where k = c + (2tn-nn)*GMP_NUMB_BITS/2,
+	 thus 2^(2k)*N = (S-s0)^2 + 2*S*s0 - s0^2 + R where s0=S mod 2^k */
+      c += (nn % 2) * GMP_NUMB_BITS / 2;		/* c now represents k */
+      s0[0] = sp[0] & (((mp_limb_t) 1 << c) - 1);	/* S mod 2^k */
+      rl += mpn_addmul_1 (tp, sp, tn, 2 * s0[0]);	/* R = R + 2*s0*S */
+      cc = mpn_submul_1 (tp, s0, 1, s0[0]);
+      rl -= (tn > 1) ? mpn_sub_1 (tp + 1, tp + 1, tn - 1, cc) : cc;
+      mpn_rshift (sp, sp, tn, c);
+      tp[tn] = rl;
+      if (rp == NULL)
+	rp = tp;
+      c = c << 1;
+      if (c < GMP_NUMB_BITS)
+	tn++;
+      else
 	{
-	  mp_limb_t ignored_remainder;
-
-	  udiv_qrnnd (quot, ignored_remainder,
-		      t_high0, t_high1, initial_approx);
-	  initial_approx = (initial_approx + quot) / 2;
-	  initial_approx |= (mp_limb_t) 1 << (BITS_PER_MP_LIMB - 1);
+	  tp++;
+	  c -= GMP_NUMB_BITS;
 	}
-    }
-#endif
-
-  rp[0] = initial_approx;
-  rsize = 1;
-
-#ifdef SQRT_DEBUG
-	  printf ("\n\nT = ");
-	  mpn_dump (tp, tsize);
-#endif
-
-  if (tsize > 2)
-    {
-      /* Determine the successive precisions to use in the iteration.  We
-	 minimize the precisions, beginning with the highest (i.e. last
-	 iteration) to the lowest (i.e. first iteration).  */
-
-      xp = (mp_ptr) TMP_ALLOC (tsize * BYTES_PER_MP_LIMB);
-      ttp = (mp_ptr) TMP_ALLOC (tsize * BYTES_PER_MP_LIMB);
-
-      t_end_ptr = tp + tsize;
-
-      tmp = tsize / 2;
-      for (i = 0;; i++)
-	{
-	  tsize = (tmp + 1) / 2;
-	  if (tmp == tsize)
-	    break;
-	  tsizes[i] = tsize + tmp;
-	  tmp = tsize;
-	}
-
-      /* Main Newton iteration loop.  For big arguments, most of the
-	 time is spent here.  */
-
-      /* It is possible to do a great optimization here.  The successive
-	 divisors in the mpn_divmod call below have more and more leading
-	 words equal to its predecessor.  Therefore the beginning of
-	 each division will repeat the same work as did the last
-	 division.  If we could guarantee that the leading words of two
-	 consecutive divisors are the same (i.e. in this case, a later
-	 divisor has just more digits at the end) it would be a simple
-	 matter of just using the old remainder of the last division in
-	 a subsequent division, to take care of this optimization.  This
-	 idea would surely make a difference even for small arguments.  */
-
-      /* Loop invariants:
-
-	 R <= shiftdown_to_same_size(floor(sqrt(OP))) < R + 1.
-	 X - 1 < shiftdown_to_same_size(floor(sqrt(OP))) <= X.
-	 R <= shiftdown_to_same_size(X).  */
-
-      while (--i >= 0)
-	{
-	  mp_limb_t cy;
-#ifdef SQRT_DEBUG
-	  mp_limb_t old_least_sign_r = rp[0];
-	  mp_size_t old_rsize = rsize;
-
-	  printf ("R = ");
-	  mpn_dump (rp, rsize);
-#endif
-	  tsize = tsizes[i];
-
-	  /* Need to copy the numerator into temporary space, as
-	     mpn_divmod overwrites its numerator argument with the
-	     remainder (which we currently ignore).  */
-	  MPN_COPY (ttp, t_end_ptr - tsize, tsize);
-	  cy = mpn_divmod (xp, ttp, tsize, rp, rsize);
-	  xsize = tsize - rsize;
-
-#ifdef SQRT_DEBUG
-	  printf ("X =%d ", cy);
-	  mpn_dump (xp, xsize);
-#endif
-
-	  /* Add X and R with the most significant limbs aligned,
-	     temporarily ignoring at least one limb at the low end of X.  */
-	  tmp = xsize - rsize;
-	  cy += mpn_add_n (xp + tmp, rp, xp + tmp, rsize);
-
-	  /* If T begins with more than 2 x BITS_PER_MP_LIMB of ones, we get
-	     intermediate roots that'd need an extra bit.  We don't want to
-	     handle that since it would make the subsequent divisor
-	     non-normalized, so round such roots down to be only ones in the
-	     current precision.  */
-	  if (cy == 2)
-	    {
-	      mp_size_t j;
-	      for (j = xsize; j >= 0; j--)
-		xp[j] = ~(mp_limb_t)0;
-	    }
-
-	  /* Divide X by 2 and put the result in R.  This is the new
-	     approximation.  Shift in the carry from the addition.  */
-	  mpn_rshift (rp, xp, xsize, 1);
-	  rp[xsize - 1] |= ((mp_limb_t) 1 << (BITS_PER_MP_LIMB - 1));
-	  rsize = xsize;
-#ifdef SQRT_DEBUG
-	  if (old_least_sign_r != rp[rsize - old_rsize])
-	    printf (">>>>>>>> %d: %0*lX, %0*lX <<<<<<<<\n",
-		    i, 2 * BYTES_PER_MP_LIMB, old_least_sign_r,
-		    2 * BYTES_PER_MP_LIMB, rp[rsize - old_rsize]);
-#endif
-	}
-    }
-
-#ifdef SQRT_DEBUG
-  printf ("(final) R = ");
-  mpn_dump (rp, rsize);
-#endif
-
-  /* We computed the square root of OP * 2**(2*floor(cnt/2)).
-     This has resulted in R being 2**floor(cnt/2) to large.
-     Shift it down here to fix that.  */
-  if (cnt / 2 != 0)
-    {
-      mpn_rshift (rp, rp, rsize, cnt/2);
-      rsize -= rp[rsize - 1] == 0;
-    }
-
-  /* Calculate the remainder.  */
-  mpn_mul_n (tp, rp, rp, rsize);
-  tsize = rsize + rsize;
-  tsize -= tp[tsize - 1] == 0;
-  if (op_size < tsize
-      || (op_size == tsize && mpn_cmp (op_ptr, tp, op_size) < 0))
-    {
-      /* R is too large.  Decrement it.  */
-
-      /* These operations can't overflow.  */
-      cy_limb  = mpn_sub_n (tp, tp, rp, rsize);
-      cy_limb += mpn_sub_n (tp, tp, rp, rsize);
-      mpn_decr_u (tp + rsize, cy_limb);
-      mpn_incr_u (tp, (mp_limb_t) 1);
-
-      mpn_decr_u (rp, (mp_limb_t) 1);
-
-#ifdef SQRT_DEBUG
-      printf ("(adjusted) R = ");
-      mpn_dump (rp, rsize);
-#endif
-    }
-
-  if (rem_ptr != 0L)
-    {
-      cy_limb = mpn_sub (rem_ptr, op_ptr, op_size, tp, tsize);
-      MPN_NORMALIZE (rem_ptr, op_size);
-      TMP_FREE (marker);
-      return op_size;
+      if (c != 0)
+	mpn_rshift (rp, tp, tn, c);
+      else
+	MPN_COPY_INCR (rp, tp, tn);
+      rn = tn;
     }
   else
     {
-      int res;
-      res = op_size != tsize || mpn_cmp (op_ptr, tp, op_size);
-      TMP_FREE (marker);
-      return res;
+      if (rp == NULL)
+	rp = TMP_ALLOC_LIMBS (nn);
+      if (rp != np)
+	MPN_COPY (rp, np, nn);
+      rn = tn + (rp[tn] = mpn_dc_sqrtrem (sp, rp, tn));
     }
+
+  MPN_NORMALIZE (rp, rn);
+
+  TMP_FREE (marker);
+  return rn;
 }
 
 /* mpn_bz_divrem_n and auxilliary routines. */
@@ -3959,6 +4583,1514 @@ mpn_divrem (qp, qxn, np, nn, dp, dn)
       return qhl;
     }
 }
+
+/************************************************************************/
+/* GCD: */
+
+#define MPN_MOD_OR_MODEXACT_1_ODD(src,size,divisor)     \
+  mpn_mod_1 (src, size, divisor)
+
+
+
+/* The size where udiv_qrnnd_preinv should be used rather than udiv_qrnnd,
+   meaning the quotient size where that should happen, the quotient size
+   being how many udiv divisions will be done.
+
+   The default is to use preinv always, CPUs where this doesn't suit have
+   tuned thresholds.  Note in particular that preinv should certainly be
+   used if that's the only division available (USE_PREINV_ALWAYS).  */
+
+#ifndef MOD_1_NORM_THRESHOLD
+#define MOD_1_NORM_THRESHOLD  0
+#endif
+#ifndef MOD_1_UNNORM_THRESHOLD
+#define MOD_1_UNNORM_THRESHOLD  0
+#endif
+
+
+/* The comments in mpn/generic/divrem_1.c apply here too.
+
+   As noted in the algorithms section of the manual, the shifts in the loop
+   for the unnorm case can be avoided by calculating r = a%(d*2^n), followed
+   by a final (r*2^n)%(d*2^n).  In fact if it happens that a%(d*2^n) can
+   skip a division where (a*2^n)%(d*2^n) can't then there's the same number
+   of divide steps, though how often that happens depends on the assumed
+   distributions of dividend and divisor.  In any case this idea is left to
+   CPU specific implementations to consider.  */
+
+mp_limb_t
+mpn_mod_1 (mp_srcptr up, mp_size_t un, mp_limb_t d)
+{
+  mp_size_t  i;
+  mp_limb_t  n1, n0, r;
+  mp_limb_t  dummy;
+
+  ASSERT (un >= 0);
+  ASSERT (d != 0);
+
+  /* Botch: Should this be handled at all?  Rely on callers?
+     But note un==0 is currently required by mpz/fdiv_r_ui.c and possibly
+     other places.  */
+  if (un == 0)
+    return 0;
+
+  d <<= GMP_NAIL_BITS;
+
+  if ((d & GMP_LIMB_HIGHBIT) != 0)
+    {
+      /* High limb is initial remainder, possibly with one subtract of
+	 d to get r<d.  */
+      r = up[un - 1] << GMP_NAIL_BITS;
+      if (r >= d)
+	r -= d;
+      r >>= GMP_NAIL_BITS;
+      un--;
+      if (un == 0)
+	return r;
+
+      if (BELOW_THRESHOLD (un, MOD_1_NORM_THRESHOLD))
+	{
+	plain:
+	  for (i = un - 1; i >= 0; i--)
+	    {
+	      n0 = up[i] << GMP_NAIL_BITS;
+	      udiv_qrnnd (dummy, r, r, n0, d);
+	      r >>= GMP_NAIL_BITS;
+	    }
+	  return r;
+	}
+      else
+	{
+	  mp_limb_t  inv;
+	  invert_limb (inv, d);
+	  for (i = un - 1; i >= 0; i--)
+	    {
+	      n0 = up[i] << GMP_NAIL_BITS;
+	      udiv_qrnnd_preinv (dummy, r, r, n0, d, inv);
+	      r >>= GMP_NAIL_BITS;
+	    }
+	  return r;
+	}
+    }
+  else
+    {
+      int norm;
+
+      /* Skip a division if high < divisor.  Having the test here before
+	 normalizing will still skip as often as possible.  */
+      r = up[un - 1] << GMP_NAIL_BITS;
+      if (r < d)
+	{
+	  r >>= GMP_NAIL_BITS;
+	  un--;
+	  if (un == 0)
+	    return r;
+	}
+      else
+	r = 0;
+
+      /* If udiv_qrnnd doesn't need a normalized divisor, can use the simple
+	 code above. */
+      if (! UDIV_NEEDS_NORMALIZATION
+	  && BELOW_THRESHOLD (un, MOD_1_UNNORM_THRESHOLD))
+	goto plain;
+
+      count_leading_zeros (norm, d);
+      d <<= norm;
+
+      n1 = up[un - 1] << GMP_NAIL_BITS;
+      r = (r << norm) | (n1 >> (GMP_LIMB_BITS - norm));
+
+      if (UDIV_NEEDS_NORMALIZATION
+	  && BELOW_THRESHOLD (un, MOD_1_UNNORM_THRESHOLD))
+	{
+	  for (i = un - 2; i >= 0; i--)
+	    {
+	      n0 = up[i] << GMP_NAIL_BITS;
+	      udiv_qrnnd (dummy, r, r,
+			  (n1 << norm) | (n0 >> (GMP_NUMB_BITS - norm)),
+			  d);
+	      r >>= GMP_NAIL_BITS;
+	      n1 = n0;
+	    }
+	  udiv_qrnnd (dummy, r, r, n1 << norm, d);
+	  r >>= GMP_NAIL_BITS;
+	  return r >> norm;
+	}
+      else
+	{
+	  mp_limb_t inv;
+	  invert_limb (inv, d);
+
+	  for (i = un - 2; i >= 0; i--)
+	    {
+	      n0 = up[i] << GMP_NAIL_BITS;
+	      udiv_qrnnd_preinv (dummy, r, r,
+				 (n1 << norm) | (n0 >> (GMP_NUMB_BITS - norm)),
+				 d, inv);
+	      r >>= GMP_NAIL_BITS;
+	      n1 = n0;
+	    }
+	  udiv_qrnnd_preinv (dummy, r, r, n1 << norm, d, inv);
+	  r >>= GMP_NAIL_BITS;
+	  return r >> norm;
+	}
+    }
+}
+
+/* Does not work for U == 0 or V == 0.  It would be tough to make it work for
+   V == 0 since gcd(x,0) = x, and U does not generally fit in an mp_limb_t.
+
+   The threshold for doing u%v when size==1 will vary by CPU according to
+   the speed of a division and the code generated for the main loop.  Any
+   tuning for this is left to a CPU specific implementation.  */
+
+mp_limb_t
+mpn_gcd_1 (mp_srcptr up, mp_size_t size, mp_limb_t vlimb)
+{
+  mp_limb_t      ulimb;
+  unsigned long  zero_bits, u_low_zero_bits;
+
+  ASSERT (size >= 1);
+  ASSERT (vlimb != 0);
+  /* ASSERT_MPN_NONZERO_P (up, size); */
+
+  ulimb = up[0];
+
+  /* Need vlimb odd for modexact, want it odd to get common zeros. */
+  count_trailing_zeros (zero_bits, vlimb);
+  vlimb >>= zero_bits;
+
+  if (size > 1)
+    {
+      /* Must get common zeros before the mod reduction.  If ulimb==0 then
+	 vlimb already gives the common zeros.  */
+      if (ulimb != 0)
+	{
+	  count_trailing_zeros (u_low_zero_bits, ulimb);
+	  zero_bits = MIN (zero_bits, u_low_zero_bits);
+	}
+
+      ulimb = MPN_MOD_OR_MODEXACT_1_ODD (up, size, vlimb);
+      if (ulimb == 0)
+	goto done;
+
+      goto strip_u_maybe;
+    }
+
+  /* size==1, so up[0]!=0 */
+  count_trailing_zeros (u_low_zero_bits, ulimb);
+  ulimb >>= u_low_zero_bits;
+  zero_bits = MIN (zero_bits, u_low_zero_bits);
+
+  /* make u bigger */
+  if (vlimb > ulimb)
+    MP_LIMB_T_SWAP (ulimb, vlimb);
+
+  /* if u is much bigger than v, reduce using a division rather than
+     chipping away at it bit-by-bit */
+  if ((ulimb >> 16) > vlimb)
+    {
+      ulimb %= vlimb;
+      if (ulimb == 0)
+	goto done;
+      goto strip_u_maybe;
+    }
+
+  while (ulimb != vlimb)
+    {
+      ASSERT (ulimb & 1);
+      ASSERT (vlimb & 1);
+
+      if (ulimb > vlimb)
+	{
+	  ulimb -= vlimb;
+	  do
+	    {
+	      ulimb >>= 1;
+	      ASSERT (ulimb != 0);
+	    strip_u_maybe:
+	      ;
+	    }
+	  while ((ulimb & 1) == 0);
+	}
+      else /*  vlimb > ulimb.  */
+	{
+	  vlimb -= ulimb;
+	  do
+	    {
+	      vlimb >>= 1;
+	      ASSERT (vlimb != 0);
+	    }
+	  while ((vlimb & 1) == 0);
+	}
+    }
+
+ done:
+  return vlimb << zero_bits;
+}
+
+
+/* Integer greatest common divisor of two unsigned integers, using
+   the accelerated algorithm (see reference below).
+
+   mp_size_t mpn_gcd (up, usize, vp, vsize).
+
+   Preconditions [U = (up, usize) and V = (vp, vsize)]:
+
+   1.  V is odd.
+   2.  numbits(U) >= numbits(V).
+
+   Both U and V are destroyed by the operation.  The result is left at vp,
+   and its size is returned.
+
+   Ken Weber (kweber@mat.ufrgs.br, kweber@mcs.kent.edu)
+
+   Funding for this work has been partially provided by Conselho Nacional
+   de Desenvolvimento Cienti'fico e Tecnolo'gico (CNPq) do Brazil, Grant
+   301314194-2, and was done while I was a visiting reseacher in the Instituto
+   de Matema'tica at Universidade Federal do Rio Grande do Sul (UFRGS).
+
+   Refer to
+	K. Weber, The accelerated integer GCD algorithm, ACM Transactions on
+	Mathematical Software, v. 21 (March), 1995, pp. 111-122.  */
+
+/* If MIN (usize, vsize) >= GCD_ACCEL_THRESHOLD, then the accelerated
+   algorithm is used, otherwise the binary algorithm is used.  This may be
+   adjusted for different architectures.  */
+#ifndef GCD_ACCEL_THRESHOLD
+#define GCD_ACCEL_THRESHOLD 5
+#endif
+
+/* When U and V differ in size by more than BMOD_THRESHOLD, the accelerated
+   algorithm reduces using the bmod operation.  Otherwise, the k-ary reduction
+   is used.  0 <= BMOD_THRESHOLD < GMP_NUMB_BITS.  */
+enum
+  {
+    BMOD_THRESHOLD = GMP_NUMB_BITS/2
+  };
+
+
+/* Use binary algorithm to compute V <-- GCD (V, U) for usize, vsize == 2.
+   Both U and V must be odd.  */
+static inline mp_size_t
+gcd_2 (mp_ptr vp, mp_srcptr up)
+{
+  mp_limb_t u0, u1, v0, v1;
+  mp_size_t vsize;
+
+  u0 = up[0];
+  u1 = up[1];
+  v0 = vp[0];
+  v1 = vp[1];
+
+  while (u1 != v1 && u0 != v0)
+    {
+      unsigned long int r;
+      if (u1 > v1)
+	{
+	  u1 -= v1 + (u0 < v0);
+	  u0 = (u0 - v0) & GMP_NUMB_MASK;
+	  count_trailing_zeros (r, u0);
+	  u0 = ((u1 << (GMP_NUMB_BITS - r)) & GMP_NUMB_MASK) | (u0 >> r);
+	  u1 >>= r;
+	}
+      else  /* u1 < v1.  */
+	{
+	  v1 -= u1 + (v0 < u0);
+	  v0 = (v0 - u0) & GMP_NUMB_MASK;
+	  count_trailing_zeros (r, v0);
+	  v0 = ((v1 << (GMP_NUMB_BITS - r)) & GMP_NUMB_MASK) | (v0 >> r);
+	  v1 >>= r;
+	}
+    }
+
+  vp[0] = v0, vp[1] = v1, vsize = 1 + (v1 != 0);
+
+  /* If U == V == GCD, done.  Otherwise, compute GCD (V, |U - V|).  */
+  if (u1 == v1 && u0 == v0)
+    return vsize;
+
+  v0 = (u0 == v0) ? (u1 > v1) ? u1-v1 : v1-u1 : (u0 > v0) ? u0-v0 : v0-u0;
+  vp[0] = mpn_gcd_1 (vp, vsize, v0);
+
+  return 1;
+}
+
+/* The function find_a finds 0 < N < 2^GMP_NUMB_BITS such that there exists
+   0 < |D| < 2^GMP_NUMB_BITS, and N == D * C mod 2^(2*GMP_NUMB_BITS).
+   In the reference article, D was computed along with N, but it is better to
+   compute D separately as D <-- N / C mod 2^(GMP_NUMB_BITS + 1), treating
+   the result as a twos' complement signed integer.
+
+   Initialize N1 to C mod 2^(2*GMP_NUMB_BITS).  According to the reference
+   article, N2 should be initialized to 2^(2*GMP_NUMB_BITS), but we use
+   2^(2*GMP_NUMB_BITS) - N1 to start the calculations within double
+   precision.  If N2 > N1 initially, the first iteration of the while loop
+   will swap them.  In all other situations, N1 >= N2 is maintained.  */
+
+#if HAVE_NATIVE_mpn_gcd_finda
+#define find_a(cp)  mpn_gcd_finda (cp)
+
+#else
+static
+#if ! defined (__i386__)
+inline				/* don't inline this for the x86 */
+#endif
+mp_limb_t
+find_a (mp_srcptr cp)
+{
+  unsigned long int leading_zero_bits = 0;
+
+  mp_limb_t n1_l = cp[0];	/* N1 == n1_h * 2^GMP_NUMB_BITS + n1_l.  */
+  mp_limb_t n1_h = cp[1];
+
+  mp_limb_t n2_l = (-n1_l & GMP_NUMB_MASK);	/* N2 == n2_h * 2^GMP_NUMB_BITS + n2_l.  */
+  mp_limb_t n2_h = (~n1_h & GMP_NUMB_MASK);
+
+  /* Main loop.  */
+  while (n2_h != 0)		/* While N2 >= 2^GMP_NUMB_BITS.  */
+    {
+      /* N1 <-- N1 % N2.  */
+      if (((GMP_NUMB_HIGHBIT >> leading_zero_bits) & n2_h) == 0)
+	{
+	  unsigned long int i;
+	  count_leading_zeros (i, n2_h);
+	  i -= GMP_NAIL_BITS;
+	  i -= leading_zero_bits;
+	  leading_zero_bits += i;
+	  n2_h = ((n2_h << i) & GMP_NUMB_MASK) | (n2_l >> (GMP_NUMB_BITS - i));
+	  n2_l = (n2_l << i) & GMP_NUMB_MASK;
+	  do
+	    {
+	      if (n1_h > n2_h || (n1_h == n2_h && n1_l >= n2_l))
+		{
+		  n1_h -= n2_h + (n1_l < n2_l);
+		  n1_l = (n1_l - n2_l) & GMP_NUMB_MASK;
+		}
+	      n2_l = (n2_l >> 1) | ((n2_h << (GMP_NUMB_BITS - 1)) & GMP_NUMB_MASK);
+	      n2_h >>= 1;
+	      i -= 1;
+	    }
+	  while (i != 0);
+	}
+      if (n1_h > n2_h || (n1_h == n2_h && n1_l >= n2_l))
+	{
+	  n1_h -= n2_h + (n1_l < n2_l);
+	  n1_l = (n1_l - n2_l) & GMP_NUMB_MASK;
+	}
+
+      MP_LIMB_T_SWAP (n1_h, n2_h);
+      MP_LIMB_T_SWAP (n1_l, n2_l);
+    }
+
+  return n2_l;
+}
+#endif
+
+
+mp_size_t
+mpn_gcd (mp_ptr gp, mp_ptr up, mp_size_t usize, mp_ptr vp, mp_size_t vsize)
+{
+  mp_ptr orig_vp = vp;
+  mp_size_t orig_vsize = vsize;
+  int binary_gcd_ctr;		/* Number of times binary gcd will execute.  */
+  TMP_DECL (marker);
+
+  ASSERT (usize >= 1);
+  ASSERT (vsize >= 1);
+  ASSERT (usize >= vsize);
+  ASSERT (vp[0] & 1);
+  ASSERT (up[usize - 1] != 0);
+  ASSERT (vp[vsize - 1] != 0);
+#if WANT_ASSERT
+  if (usize == vsize)
+    {
+      int  uzeros, vzeros;
+      count_leading_zeros (uzeros, up[usize - 1]);
+      count_leading_zeros (vzeros, vp[vsize - 1]);
+      ASSERT (uzeros <= vzeros);
+    }
+#endif
+  ASSERT (! MPN_OVERLAP_P (up, usize, vp, vsize));
+  ASSERT (MPN_SAME_OR_SEPARATE2_P (gp, vsize, up, usize));
+  ASSERT (MPN_SAME_OR_SEPARATE2_P (gp, vsize, vp, vsize));
+
+  TMP_MARK (marker);
+
+  /* Use accelerated algorithm if vsize is over GCD_ACCEL_THRESHOLD.
+     Two EXTRA limbs for U and V are required for kary reduction.  */
+  if (vsize >= GCD_ACCEL_THRESHOLD)
+    {
+      unsigned long int vbitsize, d;
+      mp_ptr orig_up = up;
+      mp_size_t orig_usize = usize;
+      mp_ptr anchor_up = (mp_ptr) TMP_ALLOC ((usize + 2) * BYTES_PER_MP_LIMB);
+
+      MPN_COPY (anchor_up, orig_up, usize);
+      up = anchor_up;
+
+      count_leading_zeros (d, up[usize - 1]);
+      d -= GMP_NAIL_BITS;
+      d = usize * GMP_NUMB_BITS - d;
+      count_leading_zeros (vbitsize, vp[vsize - 1]);
+      vbitsize -= GMP_NAIL_BITS;
+      vbitsize = vsize * GMP_NUMB_BITS - vbitsize;
+      ASSERT (d >= vbitsize);
+      d = d - vbitsize + 1;
+
+      /* Use bmod reduction to quickly discover whether V divides U.  */
+      up[usize++] = 0;				/* Insert leading zero.  */
+      mpn_bdivmod (up, up, usize, vp, vsize, d);
+
+      /* Now skip U/V mod 2^d and any low zero limbs.  */
+      d /= GMP_NUMB_BITS, up += d, usize -= d;
+      while (usize != 0 && up[0] == 0)
+	up++, usize--;
+
+      if (usize == 0)				/* GCD == ORIG_V.  */
+	goto done;
+
+      vp = (mp_ptr) TMP_ALLOC ((vsize + 2) * BYTES_PER_MP_LIMB);
+      MPN_COPY (vp, orig_vp, vsize);
+
+      do					/* Main loop.  */
+	{
+	  /* mpn_com_n can't be used here because anchor_up and up may
+	     partially overlap */
+	  if ((up[usize - 1] & GMP_NUMB_HIGHBIT) != 0)  /* U < 0; take twos' compl. */
+	    {
+	      mp_size_t i;
+	      anchor_up[0] = -up[0] & GMP_NUMB_MASK;
+	      for (i = 1; i < usize; i++)
+		anchor_up[i] = (~up[i] & GMP_NUMB_MASK);
+	      up = anchor_up;
+	    }
+
+	  MPN_NORMALIZE_NOT_ZERO (up, usize);
+
+	  if ((up[0] & 1) == 0)			/* Result even; remove twos. */
+	    {
+	      unsigned int r;
+	      count_trailing_zeros (r, up[0]);
+	      mpn_rshift (anchor_up, up, usize, r);
+	      usize -= (anchor_up[usize - 1] == 0);
+	    }
+	  else if (anchor_up != up)
+	    MPN_COPY_INCR (anchor_up, up, usize);
+
+	  MPN_PTR_SWAP (anchor_up,usize, vp,vsize);
+	  up = anchor_up;
+
+	  if (vsize <= 2)		/* Kary can't handle < 2 limbs and  */
+	    break;			/* isn't efficient for == 2 limbs.  */
+
+	  d = vbitsize;
+	  count_leading_zeros (vbitsize, vp[vsize - 1]);
+	  vbitsize -= GMP_NAIL_BITS;
+	  vbitsize = vsize * GMP_NUMB_BITS - vbitsize;
+	  d = d - vbitsize + 1;
+
+	  if (d > BMOD_THRESHOLD)	/* Bmod reduction.  */
+	    {
+	      up[usize++] = 0;
+	      mpn_bdivmod (up, up, usize, vp, vsize, d);
+	      d /= GMP_NUMB_BITS, up += d, usize -= d;
+	    }
+	  else				/* Kary reduction.  */
+	    {
+	      mp_limb_t bp[2], cp[2];
+
+	      /* C <-- V/U mod 2^(2*GMP_NUMB_BITS).  */
+	      {
+		mp_limb_t u_inv, hi, lo;
+		modlimb_invert (u_inv, up[0]);
+		cp[0] = (vp[0] * u_inv) & GMP_NUMB_MASK;
+		umul_ppmm (hi, lo, cp[0], up[0] << GMP_NAIL_BITS);
+		lo >>= GMP_NAIL_BITS;
+		cp[1] = (vp[1] - hi - cp[0] * up[1]) * u_inv & GMP_NUMB_MASK;
+	      }
+
+	      /* U <-- find_a (C)  *  U.  */
+	      up[usize] = mpn_mul_1 (up, up, usize, find_a (cp));
+	      usize++;
+
+	      /* B <-- A/C == U/V mod 2^(GMP_NUMB_BITS + 1).
+		  bp[0] <-- U/V mod 2^GMP_NUMB_BITS and
+		  bp[1] <-- ( (U - bp[0] * V)/2^GMP_NUMB_BITS ) / V mod 2
+
+		  Like V/U above, but simplified because only the low bit of
+		  bp[1] is wanted. */
+	      {
+		mp_limb_t  v_inv, hi, lo;
+		modlimb_invert (v_inv, vp[0]);
+		bp[0] = (up[0] * v_inv) & GMP_NUMB_MASK;
+		umul_ppmm (hi, lo, bp[0], vp[0] << GMP_NAIL_BITS);
+		lo >>= GMP_NAIL_BITS;
+		bp[1] = (up[1] + hi + (bp[0] & vp[1])) & 1;
+	      }
+
+	      up[usize++] = 0;
+	      if (bp[1] != 0)	/* B < 0: U <-- U + (-B)  * V.  */
+		{
+		   mp_limb_t c = mpn_addmul_1 (up, vp, vsize, -bp[0] & GMP_NUMB_MASK);
+		   mpn_add_1 (up + vsize, up + vsize, usize - vsize, c);
+		}
+	      else		/* B >= 0:  U <-- U - B * V.  */
+		{
+		  mp_limb_t b = mpn_submul_1 (up, vp, vsize, bp[0]);
+		  mpn_sub_1 (up + vsize, up + vsize, usize - vsize, b);
+		}
+
+	      up += 2, usize -= 2;  /* At least two low limbs are zero.  */
+	    }
+
+	  /* Must remove low zero limbs before complementing.  */
+	  while (usize != 0 && up[0] == 0)
+	    up++, usize--;
+	}
+      while (usize != 0);
+
+      /* Compute GCD (ORIG_V, GCD (ORIG_U, V)).  Binary will execute twice.  */
+      up = orig_up, usize = orig_usize;
+      binary_gcd_ctr = 2;
+    }
+  else
+    binary_gcd_ctr = 1;
+
+  /* Finish up with the binary algorithm.  Executes once or twice.  */
+  for ( ; binary_gcd_ctr--; up = orig_vp, usize = orig_vsize)
+    {
+      if (usize > 2)		/* First make U close to V in size.  */
+	{
+	  unsigned long int vbitsize, d;
+	  count_leading_zeros (d, up[usize - 1]);
+	  d -= GMP_NAIL_BITS;
+	  d = usize * GMP_NUMB_BITS - d;
+	  count_leading_zeros (vbitsize, vp[vsize - 1]);
+	  vbitsize -= GMP_NAIL_BITS;
+	  vbitsize = vsize * GMP_NUMB_BITS - vbitsize;
+	  d = d - vbitsize - 1;
+	  if (d != -(unsigned long int)1 && d > 2)
+	    {
+	      mpn_bdivmod (up, up, usize, vp, vsize, d);  /* Result > 0.  */
+	      d /= (unsigned long int)GMP_NUMB_BITS, up += d, usize -= d;
+	    }
+	}
+
+      /* Start binary GCD.  */
+      do
+	{
+	  mp_size_t zeros;
+
+	  /* Make sure U is odd.  */
+	  MPN_NORMALIZE (up, usize);
+	  while (up[0] == 0)
+	    up += 1, usize -= 1;
+	  if ((up[0] & 1) == 0)
+	    {
+	      unsigned int r;
+	      count_trailing_zeros (r, up[0]);
+	      mpn_rshift (up, up, usize, r);
+	      usize -= (up[usize - 1] == 0);
+	    }
+
+	  /* Keep usize >= vsize.  */
+	  if (usize < vsize)
+	    MPN_PTR_SWAP (up, usize, vp, vsize);
+
+	  if (usize <= 2)				/* Double precision. */
+	    {
+	      if (vsize == 1)
+		vp[0] = mpn_gcd_1 (up, usize, vp[0]);
+	      else
+		vsize = gcd_2 (vp, up);
+	      break;					/* Binary GCD done.  */
+	    }
+
+	  /* Count number of low zero limbs of U - V.  */
+	  for (zeros = 0; up[zeros] == vp[zeros] && ++zeros != vsize; )
+	    continue;
+
+	  /* If U < V, swap U and V; in any case, subtract V from U.  */
+	  if (zeros == vsize)				/* Subtract done.  */
+	    up += zeros, usize -= zeros;
+	  else if (usize == vsize)
+	    {
+	      mp_size_t size = vsize;
+	      do
+		size--;
+	      while (up[size] == vp[size]);
+	      if (up[size] < vp[size])			/* usize == vsize.  */
+		MP_PTR_SWAP (up, vp);
+	      up += zeros, usize = size + 1 - zeros;
+	      mpn_sub_n (up, up, vp + zeros, usize);
+	    }
+	  else
+	    {
+	      mp_size_t size = vsize - zeros;
+	      up += zeros, usize -= zeros;
+	      if (mpn_sub_n (up, up, vp + zeros, size))
+		{
+		  while (up[size] == 0)			/* Propagate borrow. */
+		    up[size++] = -(mp_limb_t)1;
+		  up[size] -= 1;
+		}
+	    }
+	}
+      while (usize);					/* End binary GCD.  */
+    }
+
+done:
+  if (vp != gp)
+    MPN_COPY_INCR (gp, vp, vsize);
+  TMP_FREE (marker);
+  return vsize;
+}
+
+
+/* q_high = mpn_bdivmod (qp, up, usize, vp, vsize, d).
+
+   Puts the low d/BITS_PER_MP_LIMB limbs of Q = U / V mod 2^d at qp, and
+   returns the high d%BITS_PER_MP_LIMB bits of Q as the result.
+
+   Also, U - Q * V mod 2^(usize*BITS_PER_MP_LIMB) is placed at up.  Since the
+   low d/BITS_PER_MP_LIMB limbs of this difference are zero, the code allows
+   the limb vectors at qp to overwrite the low limbs at up, provided qp <= up.
+
+   Preconditions:
+   1.  V is odd.
+   2.  usize * BITS_PER_MP_LIMB >= d.
+   3.  If Q and U overlap, qp <= up.
+
+   Ken Weber (kweber@mat.ufrgs.br, kweber@mcs.kent.edu)
+
+   Funding for this work has been partially provided by Conselho Nacional
+   de Desenvolvimento Cienti'fico e Tecnolo'gico (CNPq) do Brazil, Grant
+   301314194-2, and was done while I was a visiting reseacher in the Instituto
+   de Matema'tica at Universidade Federal do Rio Grande do Sul (UFRGS).
+
+   References:
+       T. Jebelean, An algorithm for exact division, Journal of Symbolic
+       Computation, v. 15, 1993, pp. 169-180.
+
+       K. Weber, The accelerated integer GCD algorithm, ACM Transactions on
+       Mathematical Software, v. 21 (March), 1995, pp. 111-122.  */
+
+mp_limb_t
+mpn_bdivmod (mp_ptr qp, mp_ptr up, mp_size_t usize,
+	     mp_srcptr vp, mp_size_t vsize, unsigned long int d)
+{
+  mp_limb_t v_inv;
+
+  ASSERT (usize >= 1);
+  ASSERT (vsize >= 1);
+  ASSERT (usize * GMP_NUMB_BITS >= d);
+  ASSERT (! MPN_OVERLAP_P (up, usize, vp, vsize));
+  ASSERT (! MPN_OVERLAP_P (qp, d/GMP_NUMB_BITS, vp, vsize));
+  ASSERT (MPN_SAME_OR_INCR2_P (qp, d/GMP_NUMB_BITS, up, usize));
+  /* ASSERT_MPN (up, usize); */
+  /* ASSERT_MPN (vp, vsize); */
+
+  /* 1/V mod 2^GMP_NUMB_BITS. */
+  modlimb_invert (v_inv, vp[0]);
+
+  /* Fast code for two cases previously used by the accel part of mpn_gcd.
+     (Could probably remove this now it's inlined there.) */
+  if (usize == 2 && vsize == 2 &&
+      (d == GMP_NUMB_BITS || d == 2*GMP_NUMB_BITS))
+    {
+      mp_limb_t hi, lo;
+      mp_limb_t q = (up[0] * v_inv) & GMP_NUMB_MASK;
+      umul_ppmm (hi, lo, q, vp[0] << GMP_NAIL_BITS);
+      up[0] = 0;
+      up[1] -= hi + q*vp[1];
+      qp[0] = q;
+      if (d == 2*GMP_NUMB_BITS)
+        {
+          q = (up[1] * v_inv) & GMP_NUMB_MASK;
+          up[1] = 0;
+          qp[1] = q;
+        }
+      return 0;
+    }
+
+  /* Main loop.  */
+  while (d >= GMP_NUMB_BITS)
+    {
+      mp_limb_t q = (up[0] * v_inv) & GMP_NUMB_MASK;
+      mp_limb_t b = mpn_submul_1 (up, vp, MIN (usize, vsize), q);
+      if (usize > vsize)
+	mpn_sub_1 (up + vsize, up + vsize, usize - vsize, b);
+      d -= GMP_NUMB_BITS;
+      up += 1, usize -= 1;
+      *qp++ = q;
+    }
+
+  if (d)
+    {
+      mp_limb_t b;
+      mp_limb_t q = (up[0] * v_inv) & (((mp_limb_t)1<<d) - 1);
+      if (q <= 1)
+	{
+	  if (q == 0)
+	    return 0;
+	  else
+	    b = mpn_sub_n (up, up, vp, MIN (usize, vsize));
+	}
+      else
+	b = mpn_submul_1 (up, vp, MIN (usize, vsize), q);
+
+      if (usize > vsize)
+	mpn_sub_1 (up + vsize, up + vsize, usize - vsize, b);
+      return q;
+    }
+
+  return 0;
+}
+
+
+/* modlimb_invert_table[i] is the multiplicative inverse of 2*i+1 mod 256,
+   ie. (modlimb_invert_table[i] * (2*i+1)) % 256 == 1 */
+
+const unsigned char  modlimb_invert_table[128] = {
+  0x01, 0xAB, 0xCD, 0xB7, 0x39, 0xA3, 0xC5, 0xEF,
+  0xF1, 0x1B, 0x3D, 0xA7, 0x29, 0x13, 0x35, 0xDF,
+  0xE1, 0x8B, 0xAD, 0x97, 0x19, 0x83, 0xA5, 0xCF,
+  0xD1, 0xFB, 0x1D, 0x87, 0x09, 0xF3, 0x15, 0xBF,
+  0xC1, 0x6B, 0x8D, 0x77, 0xF9, 0x63, 0x85, 0xAF,
+  0xB1, 0xDB, 0xFD, 0x67, 0xE9, 0xD3, 0xF5, 0x9F,
+  0xA1, 0x4B, 0x6D, 0x57, 0xD9, 0x43, 0x65, 0x8F,
+  0x91, 0xBB, 0xDD, 0x47, 0xC9, 0xB3, 0xD5, 0x7F,
+  0x81, 0x2B, 0x4D, 0x37, 0xB9, 0x23, 0x45, 0x6F,
+  0x71, 0x9B, 0xBD, 0x27, 0xA9, 0x93, 0xB5, 0x5F,
+  0x61, 0x0B, 0x2D, 0x17, 0x99, 0x03, 0x25, 0x4F,
+  0x51, 0x7B, 0x9D, 0x07, 0x89, 0x73, 0x95, 0x3F,
+  0x41, 0xEB, 0x0D, 0xF7, 0x79, 0xE3, 0x05, 0x2F,
+  0x31, 0x5B, 0x7D, 0xE7, 0x69, 0x53, 0x75, 0x1F,
+  0x21, 0xCB, 0xED, 0xD7, 0x59, 0xC3, 0xE5, 0x0F,
+  0x11, 0x3B, 0x5D, 0xC7, 0x49, 0x33, 0x55, 0xFF
+};
+
+#if 0
+
+/************************************************************************/
+/* GCD: */
+
+
+#ifndef UMUL_TIME
+#define UMUL_TIME 1
+#endif
+
+#ifndef UDIV_TIME
+#define UDIV_TIME UMUL_TIME
+#endif
+
+/* FIXME: We should be using invert_limb (or invert_normalized_limb)
+   here (not udiv_qrnnd).  */
+
+mp_limb_t
+#if __STDC__
+mpn_mod_1 (mp_srcptr dividend_ptr, mp_size_t dividend_size,
+	   mp_limb_t divisor_limb)
+#else
+mpn_mod_1 (dividend_ptr, dividend_size, divisor_limb)
+     mp_srcptr dividend_ptr;
+     mp_size_t dividend_size;
+     mp_limb_t divisor_limb;
+#endif
+{
+  mp_size_t i;
+  mp_limb_t n1, n0, r;
+  int dummy;
+
+  /* Botch: Should this be handled at all?  Rely on callers?  */
+  if (dividend_size == 0)
+    return 0;
+
+  /* If multiplication is much faster than division, and the
+     dividend is large, pre-invert the divisor, and use
+     only multiplications in the inner loop.  */
+
+  /* This test should be read:
+       Does it ever help to use udiv_qrnnd_preinv?
+	 && Does what we save compensate for the inversion overhead?  */
+  if (UDIV_TIME > (2 * UMUL_TIME + 6)
+      && (UDIV_TIME - (2 * UMUL_TIME + 6)) * dividend_size > UDIV_TIME)
+    {
+      int normalization_steps;
+
+      count_leading_zeros (normalization_steps, divisor_limb);
+      if (normalization_steps != 0)
+	{
+	  mp_limb_t divisor_limb_inverted;
+
+	  divisor_limb <<= normalization_steps;
+
+	  /* Compute (2**2N - 2**N * DIVISOR_LIMB) / DIVISOR_LIMB.  The
+	     result is a (N+1)-bit approximation to 1/DIVISOR_LIMB, with the
+	     most significant bit (with weight 2**N) implicit.  */
+
+	  /* Special case for DIVISOR_LIMB == 100...000.  */
+	  if (divisor_limb << 1 == 0)
+	    divisor_limb_inverted = ~(mp_limb_t) 0;
+	  else
+	    udiv_qrnnd (divisor_limb_inverted, dummy,
+			-divisor_limb, 0, divisor_limb);
+
+	  n1 = dividend_ptr[dividend_size - 1];
+	  r = n1 >> (BITS_PER_MP_LIMB - normalization_steps);
+
+	  /* Possible optimization:
+	     if (r == 0
+	     && divisor_limb > ((n1 << normalization_steps)
+			     | (dividend_ptr[dividend_size - 2] >> ...)))
+	     ...one division less... */
+
+	  for (i = dividend_size - 2; i >= 0; i--)
+	    {
+	      n0 = dividend_ptr[i];
+	      udiv_qrnnd_preinv (dummy, r, r,
+				 ((n1 << normalization_steps)
+				  | (n0 >> (BITS_PER_MP_LIMB - normalization_steps))),
+				 divisor_limb, divisor_limb_inverted);
+	      n1 = n0;
+	    }
+	  udiv_qrnnd_preinv (dummy, r, r,
+			     n1 << normalization_steps,
+			     divisor_limb, divisor_limb_inverted);
+	  return r >> normalization_steps;
+	}
+      else
+	{
+	  mp_limb_t divisor_limb_inverted;
+
+	  /* Compute (2**2N - 2**N * DIVISOR_LIMB) / DIVISOR_LIMB.  The
+	     result is a (N+1)-bit approximation to 1/DIVISOR_LIMB, with the
+	     most significant bit (with weight 2**N) implicit.  */
+
+	  /* Special case for DIVISOR_LIMB == 100...000.  */
+	  if (divisor_limb << 1 == 0)
+	    divisor_limb_inverted = ~(mp_limb_t) 0;
+	  else
+	    udiv_qrnnd (divisor_limb_inverted, dummy,
+			-divisor_limb, 0, divisor_limb);
+
+	  i = dividend_size - 1;
+	  r = dividend_ptr[i];
+
+	  if (r >= divisor_limb)
+	    r = 0;
+	  else
+	    i--;
+
+	  for (; i >= 0; i--)
+	    {
+	      n0 = dividend_ptr[i];
+	      udiv_qrnnd_preinv (dummy, r, r,
+				 n0, divisor_limb, divisor_limb_inverted);
+	    }
+	  return r;
+	}
+    }
+  else
+    {
+      if (UDIV_NEEDS_NORMALIZATION)
+	{
+	  int normalization_steps;
+
+	  count_leading_zeros (normalization_steps, divisor_limb);
+	  if (normalization_steps != 0)
+	    {
+	      divisor_limb <<= normalization_steps;
+
+	      n1 = dividend_ptr[dividend_size - 1];
+	      r = n1 >> (BITS_PER_MP_LIMB - normalization_steps);
+
+	      /* Possible optimization:
+		 if (r == 0
+		 && divisor_limb > ((n1 << normalization_steps)
+				 | (dividend_ptr[dividend_size - 2] >> ...)))
+		 ...one division less... */
+
+	      SCHEME_BIGNUM_USE_FUEL(dividend_size);
+
+	      for (i = dividend_size - 2; i >= 0; i--)
+		{
+		  n0 = dividend_ptr[i];
+		  udiv_qrnnd (dummy, r, r,
+			      ((n1 << normalization_steps)
+			       | (n0 >> (BITS_PER_MP_LIMB - normalization_steps))),
+			      divisor_limb);
+		  n1 = n0;
+		}
+	      udiv_qrnnd (dummy, r, r,
+			  n1 << normalization_steps,
+			  divisor_limb);
+	      return r >> normalization_steps;
+	    }
+	}
+      /* No normalization needed, either because udiv_qrnnd doesn't require
+	 it, or because DIVISOR_LIMB is already normalized.  */
+
+      i = dividend_size - 1;
+      r = dividend_ptr[i];
+
+      if (r >= divisor_limb)
+	r = 0;
+      else
+	i--;
+
+      SCHEME_BIGNUM_USE_FUEL(i);
+
+      for (; i >= 0; i--)
+	{
+	  n0 = dividend_ptr[i];
+	  udiv_qrnnd (dummy, r, r, n0, divisor_limb);
+	}
+      return r;
+    }
+}
+
+
+/* q_high = mpn_bdivmod (qp, up, usize, vp, vsize, d).
+
+   Puts the low d/BITS_PER_MP_LIMB limbs of Q = U / V mod 2^d at qp, and
+   returns the high d%BITS_PER_MP_LIMB bits of Q as the result.
+
+   Also, U - Q * V mod 2^(usize*BITS_PER_MP_LIMB) is placed at up.  Since the
+   low d/BITS_PER_MP_LIMB limbs of this difference are zero, the code allows
+   the limb vectors at qp to overwrite the low limbs at up, provided qp <= up.
+
+   Preconditions:
+   1.  V is odd.
+   2.  usize * BITS_PER_MP_LIMB >= d.
+   3.  If Q and U overlap, qp <= up.
+
+   Ken Weber (kweber@mat.ufrgs.br, kweber@mcs.kent.edu)
+
+   Funding for this work has been partially provided by Conselho Nacional
+   de Desenvolvimento Cienti'fico e Tecnolo'gico (CNPq) do Brazil, Grant
+   301314194-2, and was done while I was a visiting reseacher in the Instituto
+   de Matema'tica at Universidade Federal do Rio Grande do Sul (UFRGS).
+
+   References:
+       T. Jebelean, An algorithm for exact division, Journal of Symbolic
+       Computation, v. 15, 1993, pp. 169-180.
+
+       K. Weber, The accelerated integer GCD algorithm, ACM Transactions on
+       Mathematical Software, v. 21 (March), 1995, pp. 111-122.  */
+
+mp_limb_t
+#if __STDC__
+mpn_bdivmod (mp_ptr qp, mp_ptr up, mp_size_t usize,
+	     mp_srcptr vp, mp_size_t vsize, unsigned long int d)
+#else
+mpn_bdivmod (qp, up, usize, vp, vsize, d)
+     mp_ptr qp;
+     mp_ptr up;
+     mp_size_t usize;
+     mp_srcptr vp;
+     mp_size_t vsize;
+     unsigned long int d;
+#endif
+{
+  /* Cache for v_inv is used to make mpn_accelgcd faster.  */
+  static mp_limb_t previous_low_vlimb = 0;
+  static mp_limb_t v_inv;		/* 1/V mod 2^BITS_PER_MP_LIMB.  */
+
+  if (vp[0] != previous_low_vlimb)	/* Cache miss; compute v_inv.  */
+    {
+      mp_limb_t v = previous_low_vlimb = vp[0];
+      mp_limb_t make_zero = 1;
+      mp_limb_t two_i = 1;
+      v_inv = 0;
+      do
+	{
+	  while ((two_i & make_zero) == 0)
+	    two_i <<= 1, v <<= 1;
+	  v_inv += two_i;
+	  make_zero -= v;
+	}
+      while (make_zero);
+    }
+
+  /* Need faster computation for some common cases in mpn_accelgcd.  */
+  if (usize == 2 && vsize == 2 &&
+      (d == BITS_PER_MP_LIMB || d == 2*BITS_PER_MP_LIMB))
+    {
+      mp_limb_t hi, lo;
+      mp_limb_t q = up[0] * v_inv;
+      umul_ppmm (hi, lo, q, vp[0]);
+      up[0] = 0, up[1] -= hi + q*vp[1], qp[0] = q;
+      if (d == 2*BITS_PER_MP_LIMB)
+	q = up[1] * v_inv, up[1] = 0, qp[1] = q;
+      return 0;
+    }
+
+  /* Main loop.  */
+  while (d >= BITS_PER_MP_LIMB)
+    {
+      mp_limb_t q = up[0] * v_inv;
+      mp_limb_t b = mpn_submul_1 (up, vp, MIN (usize, vsize), q);
+      if (usize > vsize)
+	mpn_sub_1 (up + vsize, up + vsize, usize - vsize, b);
+      d -= BITS_PER_MP_LIMB;
+      up += 1, usize -= 1;
+      *qp++ = q;
+    }
+
+  if (d)
+    {
+      mp_limb_t b;
+      mp_limb_t q = (up[0] * v_inv) & (((mp_limb_t)1<<d) - 1);
+      switch (q)
+	{
+	  case 0:  return 0;
+	  case 1:  b = mpn_sub_n (up, up, vp, MIN (usize, vsize));   break;
+	  default: b = mpn_submul_1 (up, vp, MIN (usize, vsize), q); break;
+	}
+      if (usize > vsize)
+	mpn_sub_1 (up + vsize, up + vsize, usize - vsize, b);
+      return q;
+    }
+
+  return 0;
+}
+
+
+/* Does not work for U == 0 or V == 0.  It would be tough to make it work for
+   V == 0 since gcd(x,0) = x, and U does not generally fit in an mp_limb_t.  */
+
+mp_limb_t
+mpn_gcd_1 (up, size, vlimb)
+     mp_srcptr up;
+     mp_size_t size;
+     mp_limb_t vlimb;
+{
+  mp_limb_t ulimb;
+  unsigned long int u_low_zero_bits, v_low_zero_bits;
+
+  if (size > 1)
+    {
+      ulimb = mpn_mod_1 (up, size, vlimb);
+      if (ulimb == 0)
+	return vlimb;
+    }
+  else
+    ulimb = up[0];
+
+  /*  Need to eliminate low zero bits.  */
+  count_trailing_zeros (u_low_zero_bits, ulimb);
+  ulimb >>= u_low_zero_bits;
+
+  count_trailing_zeros (v_low_zero_bits, vlimb);
+  vlimb >>= v_low_zero_bits;
+
+  while (ulimb != vlimb)
+    {
+      if (ulimb > vlimb)
+	{
+	  ulimb -= vlimb;
+	  do
+	    ulimb >>= 1;
+	  while ((ulimb & 1) == 0);
+	}
+      else /*  vlimb > ulimb.  */
+	{
+	  vlimb -= ulimb;
+	  do
+	    vlimb >>= 1;
+	  while ((vlimb & 1) == 0);
+	}
+    }
+
+  return  ulimb << MIN (u_low_zero_bits, v_low_zero_bits);
+}
+
+/* Integer greatest common divisor of two unsigned integers, using
+   the accelerated algorithm (see reference below).
+
+   mp_size_t mpn_gcd (vp, vsize, up, usize).
+
+   Preconditions [U = (up, usize) and V = (vp, vsize)]:
+
+   1.  V is odd.
+   2.  numbits(U) >= numbits(V).
+
+   Both U and V are destroyed by the operation.  The result is left at vp,
+   and its size is returned.
+
+   Ken Weber (kweber@mat.ufrgs.br, kweber@mcs.kent.edu)
+
+   Funding for this work has been partially provided by Conselho Nacional
+   de Desenvolvimento Cienti'fico e Tecnolo'gico (CNPq) do Brazil, Grant
+   301314194-2, and was done while I was a visiting reseacher in the Instituto
+   de Matema'tica at Universidade Federal do Rio Grande do Sul (UFRGS).
+
+   Refer to
+	K. Weber, The accelerated integer GCD algorithm, ACM Transactions on
+	Mathematical Software, v. 21 (March), 1995, pp. 111-122.  */
+
+/* If MIN (usize, vsize) > ACCEL_THRESHOLD, then the accelerated algorithm is
+   used, otherwise the binary algorithm is used.  This may be adjusted for
+   different architectures.  */
+#ifndef ACCEL_THRESHOLD
+#define ACCEL_THRESHOLD 4
+#endif
+
+/* When U and V differ in size by more than BMOD_THRESHOLD, the accelerated
+   algorithm reduces using the bmod operation.  Otherwise, the k-ary reduction
+   is used.  0 <= BMOD_THRESHOLD < BITS_PER_MP_LIMB.  */
+enum
+  {
+    BMOD_THRESHOLD = BITS_PER_MP_LIMB/2
+  };
+
+#define SIGN_BIT  (~(~(mp_limb_t)0 >> 1))
+
+
+#define SWAP_LIMB(UL, VL) do{mp_limb_t __l=(UL);(UL)=(VL);(VL)=__l;}while(0)
+#define SWAP_PTR(UP, VP) do{mp_ptr __p=(UP);(UP)=(VP);(VP)=__p;}while(0)
+#define SWAP_SZ(US, VS) do{mp_size_t __s=(US);(US)=(VS);(VS)=__s;}while(0)
+#define SWAP_MPN(UP, US, VP, VS) do{SWAP_PTR(UP,VP);SWAP_SZ(US,VS);}while(0)
+
+/* Use binary algorithm to compute V <-- GCD (V, U) for usize, vsize == 2.
+   Both U and V must be odd.  */
+static __gmp_inline mp_size_t
+#if __STDC__
+gcd_2 (mp_ptr vp, mp_srcptr up)
+#else
+gcd_2 (vp, up)
+     mp_ptr vp;
+     mp_srcptr up;
+#endif
+{
+  mp_limb_t u0, u1, v0, v1;
+  mp_size_t vsize;
+
+  u0 = up[0], u1 = up[1], v0 = vp[0], v1 = vp[1];
+
+  while (u1 != v1 && u0 != v0)
+    {
+      unsigned long int r;
+      if (u1 > v1)
+	{
+	  u1 -= v1 + (u0 < v0), u0 -= v0;
+	  count_trailing_zeros (r, u0);
+	  u0 = u1 << (BITS_PER_MP_LIMB - r) | u0 >> r;
+	  u1 >>= r;
+	}
+      else  /* u1 < v1.  */
+	{
+	  v1 -= u1 + (v0 < u0), v0 -= u0;
+	  count_trailing_zeros (r, v0);
+	  v0 = v1 << (BITS_PER_MP_LIMB - r) | v0 >> r;
+	  v1 >>= r;
+	}
+    }
+
+  vp[0] = v0, vp[1] = v1, vsize = 1 + (v1 != 0);
+
+  /* If U == V == GCD, done.  Otherwise, compute GCD (V, |U - V|).  */
+  if (u1 == v1 && u0 == v0)
+    return vsize;
+
+  v0 = (u0 == v0) ? (u1 > v1) ? u1-v1 : v1-u1 : (u0 > v0) ? u0-v0 : v0-u0;
+  vp[0] = mpn_gcd_1 (vp, vsize, v0);
+
+  return 1;
+}
+
+/* The function find_a finds 0 < N < 2^BITS_PER_MP_LIMB such that there exists
+   0 < |D| < 2^BITS_PER_MP_LIMB, and N == D * C mod 2^(2*BITS_PER_MP_LIMB).
+   In the reference article, D was computed along with N, but it is better to
+   compute D separately as D <-- N / C mod 2^(BITS_PER_MP_LIMB + 1), treating
+   the result as a twos' complement signed integer.
+
+   Initialize N1 to C mod 2^(2*BITS_PER_MP_LIMB).  According to the reference
+   article, N2 should be initialized to 2^(2*BITS_PER_MP_LIMB), but we use
+   2^(2*BITS_PER_MP_LIMB) - N1 to start the calculations within double
+   precision.  If N2 > N1 initially, the first iteration of the while loop
+   will swap them.  In all other situations, N1 >= N2 is maintained.  */
+
+static __gmp_inline mp_limb_t
+#if __STDC__
+find_a (mp_srcptr cp)
+#else
+find_a (cp)
+     mp_srcptr cp;
+#endif
+{
+  unsigned long int leading_zero_bits = 0;
+
+  mp_limb_t n1_l = cp[0];	/* N1 == n1_h * 2^BITS_PER_MP_LIMB + n1_l.  */
+  mp_limb_t n1_h = cp[1];
+
+  mp_limb_t n2_l = -n1_l;	/* N2 == n2_h * 2^BITS_PER_MP_LIMB + n2_l.  */
+  mp_limb_t n2_h = ~n1_h;
+
+  /* Main loop.  */
+  while (n2_h)			/* While N2 >= 2^BITS_PER_MP_LIMB.  */
+    {
+      /* N1 <-- N1 % N2.  */
+      if ((SIGN_BIT >> leading_zero_bits & n2_h) == 0)
+	{
+	  unsigned long int i;
+	  count_leading_zeros (i, n2_h);
+	  i -= leading_zero_bits, leading_zero_bits += i;
+	  n2_h = n2_h<<i | n2_l>>(BITS_PER_MP_LIMB - i), n2_l <<= i;
+	  do
+	    {
+	      if (n1_h > n2_h || (n1_h == n2_h && n1_l >= n2_l))
+		n1_h -= n2_h + (n1_l < n2_l), n1_l -= n2_l;
+	      n2_l = n2_l>>1 | n2_h<<(BITS_PER_MP_LIMB - 1), n2_h >>= 1;
+	      i -= 1;
+	    }
+	  while (i);
+	}
+      if (n1_h > n2_h || (n1_h == n2_h && n1_l >= n2_l))
+	n1_h -= n2_h + (n1_l < n2_l), n1_l -= n2_l;
+
+      SWAP_LIMB (n1_h, n2_h);
+      SWAP_LIMB (n1_l, n2_l);
+    }
+
+  return n2_l;
+}
+
+mp_size_t
+#if __STDC__
+mpn_gcd (mp_ptr gp, mp_ptr vp, mp_size_t vsize, mp_ptr up, mp_size_t usize)
+#else
+mpn_gcd (gp, vp, vsize, up, usize)
+     mp_ptr gp;
+     mp_ptr vp;
+     mp_size_t vsize;
+     mp_ptr up;
+     mp_size_t usize;
+#endif
+{
+  mp_ptr orig_vp = vp;
+  mp_size_t orig_vsize = vsize;
+  int binary_gcd_ctr;		/* Number of times binary gcd will execute.  */
+  TMP_DECL (marker);
+
+  TMP_MARK (marker);
+
+  /* Use accelerated algorithm if vsize is over ACCEL_THRESHOLD.
+     Two EXTRA limbs for U and V are required for kary reduction.  */
+  if (vsize > ACCEL_THRESHOLD)
+    {
+      unsigned long int vbitsize, d;
+      mp_ptr orig_up = up;
+      mp_size_t orig_usize = usize;
+      mp_ptr anchor_up = (mp_ptr) TMP_ALLOC ((usize + 2) * BYTES_PER_MP_LIMB);
+
+      MPN_COPY (anchor_up, orig_up, usize);
+      up = anchor_up;
+
+      count_leading_zeros (d, up[usize-1]);
+      d = usize * BITS_PER_MP_LIMB - d;
+      count_leading_zeros (vbitsize, vp[vsize-1]);
+      vbitsize = vsize * BITS_PER_MP_LIMB - vbitsize;
+      d = d - vbitsize + 1;
+
+      /* Use bmod reduction to quickly discover whether V divides U.  */
+      up[usize++] = 0;				/* Insert leading zero.  */
+      mpn_bdivmod (up, up, usize, vp, vsize, d);
+
+      /* Now skip U/V mod 2^d and any low zero limbs.  */
+      d /= BITS_PER_MP_LIMB, up += d, usize -= d;
+      while (usize != 0 && up[0] == 0)
+	up++, usize--;
+
+      if (usize == 0)				/* GCD == ORIG_V.  */
+	goto done;
+
+      vp = (mp_ptr) TMP_ALLOC ((vsize + 2) * BYTES_PER_MP_LIMB);
+      MPN_COPY (vp, orig_vp, vsize);
+
+      do					/* Main loop.  */
+	{
+	  SCHEME_BIGNUM_USE_FUEL(1);
+
+	  if (up[usize-1] & SIGN_BIT)		/* U < 0; take twos' compl. */
+	    {
+	      mp_size_t i;
+	      anchor_up[0] = -up[0];
+	      for (i = 1; i < usize; i++)
+		anchor_up[i] = ~up[i];
+	      up = anchor_up;
+	    }
+
+	  MPN_NORMALIZE_NOT_ZERO (up, usize);
+
+	  if ((up[0] & 1) == 0)			/* Result even; remove twos. */
+	    {
+	      unsigned long int r;
+	      count_trailing_zeros (r, up[0]);
+	      mpn_rshift (anchor_up, up, usize, r);
+	      usize -= (anchor_up[usize-1] == 0);
+	    }
+	  else if (anchor_up != up)
+	    MPN_COPY (anchor_up, up, usize);
+
+	  SWAP_MPN (anchor_up, usize, vp, vsize);
+	  up = anchor_up;
+
+	  if (vsize <= 2)		/* Kary can't handle < 2 limbs and  */
+	    break;			/* isn't efficient for == 2 limbs.  */
+
+	  d = vbitsize;
+	  count_leading_zeros (vbitsize, vp[vsize-1]);
+	  vbitsize = vsize * BITS_PER_MP_LIMB - vbitsize;
+	  d = d - vbitsize + 1;
+
+	  if (d > BMOD_THRESHOLD)	/* Bmod reduction.  */
+	    {
+	      up[usize++] = 0;
+	      mpn_bdivmod (up, up, usize, vp, vsize, d);
+	      d /= BITS_PER_MP_LIMB, up += d, usize -= d;
+	    }
+	  else				/* Kary reduction.  */
+	    {
+	      mp_limb_t bp[2], cp[2];
+
+	      /* C <-- V/U mod 2^(2*BITS_PER_MP_LIMB).  */
+	      cp[0] = vp[0], cp[1] = vp[1];
+	      mpn_bdivmod (cp, cp, 2, up, 2, 2*BITS_PER_MP_LIMB);
+
+	      /* U <-- find_a (C)  *  U.  */
+	      up[usize] = mpn_mul_1 (up, up, usize, find_a (cp));
+	      usize++;
+
+	      /* B <-- A/C == U/V mod 2^(BITS_PER_MP_LIMB + 1).
+		  bp[0] <-- U/V mod 2^BITS_PER_MP_LIMB and
+		  bp[1] <-- ( (U - bp[0] * V)/2^BITS_PER_MP_LIMB ) / V mod 2 */
+	      bp[0] = up[0], bp[1] = up[1];
+	      mpn_bdivmod (bp, bp, 2, vp, 2, BITS_PER_MP_LIMB);
+	      bp[1] &= 1;	/* Since V is odd, division is unnecessary.  */
+
+	      up[usize++] = 0;
+	      if (bp[1])	/* B < 0: U <-- U + (-B)  * V.  */
+		{
+		   mp_limb_t c = mpn_addmul_1 (up, vp, vsize, -bp[0]);
+		   mpn_add_1 (up + vsize, up + vsize, usize - vsize, c);
+		}
+	      else		/* B >= 0:  U <-- U - B * V.  */
+		{
+		  mp_limb_t b = mpn_submul_1 (up, vp, vsize, bp[0]);
+		  mpn_sub_1 (up + vsize, up + vsize, usize - vsize, b);
+		}
+
+	      up += 2, usize -= 2;  /* At least two low limbs are zero.  */
+	    }
+
+	  /* Must remove low zero limbs before complementing.  */
+	  while (usize != 0 && up[0] == 0)
+	    up++, usize--;
+	}
+      while (usize);
+
+      /* Compute GCD (ORIG_V, GCD (ORIG_U, V)).  Binary will execute twice.  */
+      up = orig_up, usize = orig_usize;
+      binary_gcd_ctr = 2;
+    }
+  else
+    binary_gcd_ctr = 1;
+
+  /* Finish up with the binary algorithm.  Executes once or twice.  */
+  for ( ; binary_gcd_ctr--; up = orig_vp, usize = orig_vsize)
+    {
+      if (usize > 2)		/* First make U close to V in size.  */
+	{
+	  unsigned long int vbitsize, d;
+	  count_leading_zeros (d, up[usize-1]);
+	  d = usize * BITS_PER_MP_LIMB - d;
+	  count_leading_zeros (vbitsize, vp[vsize-1]);
+	  vbitsize = vsize * BITS_PER_MP_LIMB - vbitsize;
+	  d = d - vbitsize - 1;
+	  if (d != -(unsigned long int)1 && d > 2)
+	    {
+	      mpn_bdivmod (up, up, usize, vp, vsize, d);  /* Result > 0.  */
+	      d /= (unsigned long int)BITS_PER_MP_LIMB, up += d, usize -= d;
+	    }
+	}
+
+      /* Start binary GCD.  */
+      do
+	{
+	  mp_size_t zeros;
+
+	  /* Make sure U is odd.  */
+	  MPN_NORMALIZE (up, usize);
+	  while (up[0] == 0)
+	    up += 1, usize -= 1;
+	  if ((up[0] & 1) == 0)
+	    {
+	      unsigned long int r;
+	      count_trailing_zeros (r, up[0]);
+	      mpn_rshift (up, up, usize, r);
+	      usize -= (up[usize-1] == 0);
+	    }
+
+	  /* Keep usize >= vsize.  */
+	  if (usize < vsize)
+	    SWAP_MPN (up, usize, vp, vsize);
+
+	  if (usize <= 2)				/* Double precision. */
+	    {
+	      if (vsize == 1)
+		vp[0] = mpn_gcd_1 (up, usize, vp[0]);
+	      else
+		vsize = gcd_2 (vp, up);
+	      break;					/* Binary GCD done.  */
+	    }
+
+	  /* Count number of low zero limbs of U - V.  */
+	  for (zeros = 0; up[zeros] == vp[zeros] && ++zeros != vsize; )
+	    continue;
+
+	  /* If U < V, swap U and V; in any case, subtract V from U.  */
+	  if (zeros == vsize)				/* Subtract done.  */
+	    up += zeros, usize -= zeros;
+	  else if (usize == vsize)
+	    {
+	      mp_size_t size = vsize;
+	      do
+		size--;
+	      while (up[size] == vp[size]);
+	      if (up[size] < vp[size])			/* usize == vsize.  */
+		SWAP_PTR (up, vp);
+	      up += zeros, usize = size + 1 - zeros;
+	      mpn_sub_n (up, up, vp + zeros, usize);
+	    }
+	  else
+	    {
+	      mp_size_t size = vsize - zeros;
+	      up += zeros, usize -= zeros;
+	      if (mpn_sub_n (up, up, vp + zeros, size))
+		{
+		  while (up[size] == 0)			/* Propagate borrow. */
+		    up[size++] = -(mp_limb_t)1;
+		  up[size] -= 1;
+		}
+	    }
+	}
+      while (usize);					/* End binary GCD.  */
+    }
+
+done:
+  if (vp != gp)
+    MPN_COPY (gp, vp, vsize);
+  TMP_FREE (marker);
+  return vsize;
+}
+
+/************************************************************************/
+
+#endif
 
 /* __mp_bases -- Structure for conversion between internal binary
    format and strings in base 2..255.  The fields are explained in

@@ -1031,7 +1031,6 @@ wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
   window_menu = ::LoadMenu(wxhInstance, "wxDefaultMenu");
   
   if (!(style & wxNO_RESIZE_BORDER)) {
-    msflags |= WS_MINIMIZEBOX;
     msflags |= WS_MAXIMIZEBOX;
   }
   if (!(style & wxNO_THICK_FRAME))
@@ -1042,8 +1041,10 @@ wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
     msflags |= WS_MINIMIZE;
   if (style & wxMAXIMIZE)
     msflags |= WS_MAXIMIZE;
-  if (!(style & wxNO_CAPTION))
+  if (!(style & wxNO_CAPTION)) {
     msflags |= WS_CAPTION;
+    msflags |= WS_MINIMIZEBOX;
+  }
 
   Create(parent, wxMDIFrameClassName, wx_win, title, x, y, width, height,
          msflags);
@@ -1203,7 +1204,6 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
   else mcs_cy = 1;
 
   if (!(style & wxNO_RESIZE_BORDER)) {
-    msflags |= WS_MINIMIZEBOX;
     msflags |= WS_MAXIMIZEBOX;
   }
   if (!(style & wxNO_THICK_FRAME))
@@ -1214,8 +1214,10 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
     msflags |= WS_MINIMIZE;
   if (style & wxMAXIMIZE)
     msflags |= WS_MAXIMIZE;
-  if (!(style & wxNO_CAPTION))
+  if (!(style & wxNO_CAPTION)) {
+    msflags |= WS_MINIMIZEBOX;
     msflags |= WS_CAPTION;
+  }
 
   o = (HWND)::SendMessage(parent->client_hwnd, WM_MDIGETACTIVE, 0, 0);
 

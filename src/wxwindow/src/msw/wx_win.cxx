@@ -927,6 +927,8 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       break;
     }
   case WM_SIZE:
+    if (wParam == SIZE_MINIMIZED)
+      break;
   case WM_MOVE:
     {
       /* w & h ignored... */

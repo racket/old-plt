@@ -39,6 +39,7 @@
                       (lib "stx.ss" "syntax")
 		      (lib "boundmap.ss" "syntax")
 		      (lib "context.ss" "syntax")
+		      (lib "define.ss" "syntax")
                       (lib "list.ss"))
 
   (provide package package*
@@ -89,14 +90,8 @@
       (multi stx #'define-values))
   
     (define (single stx def-vals)
-      (syntax-case stx ()
-	((_ id body) 
-	 (identifier? #'id)
-	 (quasisyntax/loc stx (#,def-vals (id) body)))
-	((_ (id . formals) body1 body ...) 
-	 (and (identifier? #'id)
-	      (check-formals #'formals))
-	 (quasisyntax/loc stx (#,def-vals (id) (lambda formals body1 body ...))))))
+      (let-values ([(id rhs) (normalize-definition stx #'lambda)])
+	(quasisyntax/loc stx (#,def-vals (id) #,rhs))))
 
     (define (define*-syntax/proc stx)
       (single stx #'define*-syntaxes))

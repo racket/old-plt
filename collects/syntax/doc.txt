@@ -102,6 +102,24 @@ _toplevel.ss_: helper for moduleless compilation and expansion
   code.
 
 ======================================================================
+_define.ss_: handling all the same function forms as `define'
+======================================================================
+
+> (normalize-definition defn-stx lambda-id-stx [check-context?]) -
+  takes a definition form whose shape is like `define' (though
+  possibly with a different keyword) and returns two values: the
+  defined identifier and the right-hand side expression.
+
+  To generate the right-hand side, this funciton may need to insert
+  uses of `lambda'. The `lambda-id-stx' argument provides a suitable
+  `lambda' identifier.
+
+  If the definition is ill-formed, a syntax error is raised. If
+  `check-context?' is true, then a syntax error is raised if
+  `(syntax-local-context)' indicates that the current context is an
+  expression context. The default value of `check-context?' is #t.
+
+======================================================================
 _struct.ss_: generating the same names as `define-struct'
 ======================================================================
 

@@ -26,7 +26,7 @@
                     [find-doc-names (-> (listof (cons/p string? string?)))]
                     
                     [goto-manual-link (hd-cookie? string? string? . -> . any?)]
-                    [get-index-file (string? . -> . (union false? string))])
+                    [get-index-file (string? . -> . (union false? string?))])
   
   (provide find-manuals)
 

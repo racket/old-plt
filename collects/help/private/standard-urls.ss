@@ -39,7 +39,9 @@
   
   (define (make-docs-html-url manual-name)
     (format "http://download.plt-scheme.org/doc/~a/html/~a/index.htm" 
-            (version)
+            (if (cvs-or-nightly-build?)
+                "pre-release"
+                (version))
             manual-name))
   
   (define (prefix-with-server cookie suffix)

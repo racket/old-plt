@@ -11,6 +11,8 @@
       (import [z : zodiac:system^]
 	[z:interface : zodiac:interface^])
 
+      (define w-c-m-key (gensym))
+      
       (define error-box
 	(box #f))
 
@@ -69,7 +71,7 @@
 	(lambda (zodiac body)
 	  (let ([start (z:zodiac-start zodiac)]
 		[finish (z:zodiac-finish zodiac)])
-	    `(#%with-continuation-mark (#%quote ,'JBC-debug)
+	    `(#%with-continuation-mark (#%quote ,w-c-m-key)
 	      ,(z:make-zodiac #f start finish)
 	      ,body))))
 

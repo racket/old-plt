@@ -495,7 +495,7 @@
 	    (debug-info-handler (let ([drscheme-debug-info-handler
 				       ; the current-continuation-marks version is for use with
 				       ; the aries which wraps all expressions in a w-c-m expression.
-				       (lambda () (car (current-continuation-marks 'JBC-debug)))
+				       (lambda () (car (current-continuation-marks aries:w-c-m-key)))
 				       ;(lambda () (unbox aries:error-box))
 				       ])
 				  drscheme-debug-info-handler))

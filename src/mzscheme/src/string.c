@@ -3526,7 +3526,8 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 		    ? (utf16
 		       ? (((v >= 0x10FFFF) && (v < 0x11D800))
 			  || (v > 0x11FFFF))
-		       : 1))
+		       : 1)
+		    : 0)
 # else
 		|| (v > 0x10FFFF)
 # endif
@@ -3621,7 +3622,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	if (utf16) {
 	  if (v > 0xFFFF) {
 # ifdef WINDOWS_UNICODE_SUPPORT
-	    if ((v >= 0x11D800) {
+	    if (v >= 0x11D800) {
 	      /* 0x11Dxxx means misplaced surrogate 0xDxxx,
 		 so misplace it! */
 	      if (us) {

@@ -830,7 +830,9 @@
                                     (method-parms wrong-code)))))
              (raise-syntax-error (string->symbol m-name)
                                  ((get-error-message type) (format "~a(~a)" m-name 
-                                                                   (substring parms 0 (sub1 (string-length parms)))))
+                                                                   (if (null? parms)
+                                                                       ""
+                                                                       (substring parms 0 (sub1 (string-length parms))))))
                                  (datum->syntax-object #f 
                                                        (string->symbol m-name)
                                                        (build-src-list (method-src wrong-code))))))
@@ -842,7 +844,9 @@
                                     (method-parms (cadr wrong-code))))))
              (raise-syntax-error (string->symbol m-name)
                                  ((get-error-message type) (format "~a(~a)" m-name 
-                                                                   (substring parms 0 (sub1 (string-length parms))))
+                                                                   (if (null? parms)
+                                                                       ""
+                                                                       (substring parms 0 (sub1 (string-length parms)))))
                                                            (car (class-record-name (car wrong-code))))
                                  (datum->syntax-object #f 
                                                        (string->symbol m-name)

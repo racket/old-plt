@@ -197,7 +197,7 @@ widgets and redirects the callbacks.
 {
     Position x, y, xa2, xslider, ya2, yslider;
     int w, h, wa, ha, wslider, hslider;
-    XtPointer bg;
+    Pixel bg, thumb_bg;
 
     $initializing = True;
     $compute_inside($, &x, &y, &w, &h);
@@ -217,6 +217,7 @@ widgets and redirects the callbacks.
 	xa2 = xslider + wslider;
     }
     XtVaGetValues($, XtNbackground, &bg, NULL),
+    $set_color($, bg, &thumb_bg);
     $arrow1 = XtVaCreateManagedWidget
 	("_arrow1", xfwfArrowWidgetClass, $,
 	 XtNx, x,
@@ -232,7 +233,7 @@ widgets and redirects the callbacks.
 	 XtNdirection, $vertical?XfwfTop:XfwfLeft,
 	 XtNouterOffset, 0,
 	 XtNborderWidth, 0,
-	 XtNbackground, bg,
+	 XtNbackground, thumb_bg,
 	 NULL);
     XtAddCallback($arrow1, XtNcallback, up, $);
     $arrow2 = XtVaCreateManagedWidget
@@ -250,7 +251,8 @@ widgets and redirects the callbacks.
 	 XtNdirection, $vertical?XfwfBottom:XfwfRight,
 	 XtNouterOffset, 0,
 	 XtNborderWidth, 0,
-	 XtNbackground, bg,
+	 XtNbackground, thumb_bg,
+         XtNthumbFrameWidth, 1,
 	 NULL);
     XtAddCallback($arrow2, XtNcallback, down, $);
     $slider = XtVaCreateManagedWidget
@@ -267,7 +269,8 @@ widgets and redirects the callbacks.
 	 XtNhighlightThickness, 0,
 	 XtNouterOffset, 0,
 	 XtNborderWidth, 0,
-	 XtNbackground, bg,
+	 XtNbackground, thumb_bg,
+         XtNthumbFrameWidth, 1,
 	 NULL);
     XtAddCallback($slider, XtNscrollCallback, thumbscroll, $);
     XtVaGetValues($slider, XtNscrollResponse, &$slider_scroll, NULL);

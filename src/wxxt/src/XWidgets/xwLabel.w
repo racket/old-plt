@@ -47,6 +47,7 @@ within the label.
 text.
 
 	@var Pixel foreground = <String> XtDefaultForeground
+	@var Pixel text_bg = <Pointer> NULL
 
 @ The text can be aligned in the widget in nine ways: left, right or
 center, combined with top, center or bottom. Symbolic constants
@@ -246,6 +247,8 @@ routines to actually create them.
     $gc = NULL;
     $graygc = NULL;
     $tabs = XfwfTablist2Tabs($tablist);
+    if (!$text_bg)
+      $text_bg = $background_pixel;
     if ($shrinkToFit) {
 	$compute_inside($, &x, &y, &w, &h);
 	wd = $label_width + $width - w;
@@ -287,7 +290,7 @@ responsible for drawing the frame.
 	  grayed = ((!$sensitive || $drawgray) && wx_enough_colors(XtScreen($)));
 	  XfwfDrawImageString(dpy, win, 
 			      ($xfont
-			       ? $gc
+			       ? NULL
 			       : (grayed
 				  ? $graygc 
 				  : $gc)), 
@@ -395,7 +398,7 @@ text.
     XGCValues values;
 
     if ($gc != NULL) XtReleaseGC($, $gc);
-    values.background = $background_pixel;
+    values.background = $text_bg;
     if (!$xfont) {
       values.foreground = $foreground;
       values.font = $font->fid;
@@ -423,15 +426,15 @@ the text.
 
     if (($pixmap != 0) || !wx_enough_colors(XtScreen($))) {
       /* A GC to draw over bitmaps/text: */
-      values.foreground = $background_pixel;
+      values.foreground = $text_bg;
       values.stipple = GetGray($);
       values.fill_style = FillStippled;
       mask = GCForeground | GCStipple | GCFillStyle;
     } else {
       /* A GC for drawing gray text: */
       static Pixel color;
-      values.background = $background_pixel;
-      $darker_color($, $background_pixel, &color);
+      values.background = $text_bg;
+      $darker_color($, $text_bg, &color);
       values.foreground = color;
       mask = GCBackground | GCForeground;
       if ($font) {

@@ -2037,41 +2037,16 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
 			     float *ext_leading, wxFont *theFont,
 			     Bool use16bit)
 {
-    int direction, ascent, descent2;
-    XCharStruct overall;
-    void *ifont;
-
-    if (dc) {
-      dc->GetTextExtent(s, w, h, descent, ext_leading, theFont, use16bit);
-      return;
-    }
-
-    if (!theFont) theFont = font;
-
-#ifdef WX_USE_XFT
-    {
-      XftFont *xfont;
-
-      xfont = (XftFont *)theFont->GetInternalAAFont();
-      if (xfont) {
-	XGlyphInfo goverall;
-	XftTextExtents8(wxAPP_DISPLAY, xfont, (XftChar8 *)s, strlen(s), &goverall);
-	*w = (float)(goverall.xOff);
-	*h = (float)(xfont->ascent + xfont->descent);
-	if (descent) *descent = (float)xfont->descent;
-	if (ext_leading) *ext_leading = 0.0;
-	return;
-      }
-    }
-#endif
-
-    ifont = theFont->GetInternalFont();
-    XTextExtents((XFontStruct *)ifont, s, strlen(s),
-		 &direction, &ascent, &descent2, &overall);
-    *w = (float)(overall.width);
-    *h = (float)(ascent + descent2);
-    if (descent) *descent = (float)descent2;
-    if (ext_leading) *ext_leading = 0.0;
+  if (dc) {
+    dc->GetTextExtent(s, w, h, descent, ext_leading, theFont, use16bit);
+    return;
+  }
+  
+  if (!theFont) theFont = font;
+  
+  wxGetTextExtent(wxAPP_DISPLAY, 1.0, 1.0,
+		  s, w, h, descent, ext_leading, theFont,
+		  1, use16bit, 0);
 }
 
 

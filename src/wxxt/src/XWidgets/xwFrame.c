@@ -110,6 +110,11 @@ static void create_lightgc(
 Widget
 #endif
 );
+static void create_fggc(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
 static void compute_topcolor(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
@@ -150,10 +155,8 @@ static void create_darkgc(self)Widget self;
     case XfwfAuto:
         if (DefaultDepthOfScreen(XtScreen(self)) > 4
             && ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfFrameWidget)self)->core.background_pixel, &values.foreground)) {
-            Pixel hi;
             mask = GCForeground;
-            ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, values.foreground, &hi);
-	    ((XfwfFrameWidget)self)->xfwfCommon.highlightColor = values.foreground; /* BlackPixelOfScreen(XtScreen($)); */
+	    ((XfwfFrameWidget)self)->xfwfCommon.highlightColor = values.foreground;
         } else {
             mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
             values.fill_style = FillOpaqueStippled;
@@ -208,6 +211,21 @@ static void create_lightgc(self)Widget self;
         break;
     }
     ((XfwfFrameWidget)self)->xfwfFrame.lightgc = XtGetGC(self, mask, &values);
+}
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+static void create_fggc(Widget self)
+#else
+static void create_fggc(self)Widget self;
+#endif
+{
+    XtGCMask mask=0;
+    XGCValues values;
+
+    if (((XfwfFrameWidget)self)->xfwfFrame.fggc != NULL) XtReleaseGC(self, ((XfwfFrameWidget)self)->xfwfFrame.fggc);
+    mask = GCForeground;
+    ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.set_color(self, ((XfwfFrameWidget)self)->core.background_pixel, &values.foreground);
+    ((XfwfFrameWidget)self)->xfwfFrame.fggc = XtGetGC(self, mask, &values);
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -338,7 +356,7 @@ static void set_shadow(self,event,params,num_params)Widget self;XEvent*event;Str
 	h -= 2*((XfwfFrameWidget)self)->xfwfFrame.outerOffset;
         XfwfDrawFrame(self, x + ((XfwfFrameWidget)self)->xfwfFrame.outerOffset, y + ((XfwfFrameWidget)self)->xfwfFrame.outerOffset,
                       max(w, 0), max(h, 0),
-                      ((XfwfFrameWidget)self)->xfwfFrame.frameType, ((XfwfFrameWidget)self)->xfwfFrame.frameWidth, ((XfwfFrameWidget)self)->xfwfFrame.lightgc, ((XfwfFrameWidget)self)->xfwfFrame.darkgc);
+                      ((XfwfFrameWidget)self)->xfwfFrame.frameType, ((XfwfFrameWidget)self)->xfwfFrame.frameWidth, ((XfwfFrameWidget)self)->xfwfFrame.lightgc, ((XfwfFrameWidget)self)->xfwfFrame.darkgc, ((XfwfFrameWidget)self)->xfwfFrame.fggc);
     }
 }
 
@@ -392,6 +410,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 
     ((XfwfFrameWidget)self)->xfwfFrame.lightgc = NULL;
     ((XfwfFrameWidget)self)->xfwfFrame.darkgc = NULL;
+    ((XfwfFrameWidget)self)->xfwfFrame.fggc = NULL;
     ((XfwfFrameWidget)self)->xfwfFrame.old_frame_type = ((XfwfFrameWidget)self)->xfwfFrame.frameType;
     /* Make sure the width and height are at least as large as the frame */
     frame = ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.total_frame_width(self);
@@ -415,6 +434,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 
     create_lightgc(self);
     create_darkgc(self);
+    create_fggc(self);
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -425,6 +445,7 @@ static void destroy(self)Widget self;
 {
   if (((XfwfFrameWidget)self)->xfwfFrame.darkgc) XtReleaseGC(self, ((XfwfFrameWidget)self)->xfwfFrame.darkgc); ((XfwfFrameWidget)self)->xfwfFrame.darkgc = NULL;
   if (((XfwfFrameWidget)self)->xfwfFrame.lightgc) XtReleaseGC(self, ((XfwfFrameWidget)self)->xfwfFrame.lightgc); ((XfwfFrameWidget)self)->xfwfFrame.lightgc = NULL;
+  if (((XfwfFrameWidget)self)->xfwfFrame.fggc) XtReleaseGC(self, ((XfwfFrameWidget)self)->xfwfFrame.fggc); ((XfwfFrameWidget)self)->xfwfFrame.fggc = NULL;
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -445,6 +466,7 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     ||  ((XfwfFrameWidget)self)->core.background_pixel != ((XfwfFrameWidget)old)->core.background_pixel) {
         create_darkgc(self);
         create_lightgc(self);
+        create_fggc(self);
         need_redisplay = True;
     } else if (((XfwfFrameWidget)self)->xfwfFrame.shadowScheme == XfwfColor) {
         if (((XfwfFrameWidget)self)->xfwfFrame.topShadowColor != ((XfwfFrameWidget)old)->xfwfFrame.topShadowColor) {
@@ -498,6 +520,7 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
     if (region != NULL) {
         XSetRegion(XtDisplay(self), ((XfwfFrameWidget)self)->xfwfFrame.lightgc, region);
         XSetRegion(XtDisplay(self), ((XfwfFrameWidget)self)->xfwfFrame.darkgc, region);
+        XSetRegion(XtDisplay(self), ((XfwfFrameWidget)self)->xfwfFrame.fggc, region);
     }
     ((XfwfFrameWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
     w += 2*((XfwfFrameWidget)self)->xfwfFrame.innerOffset + 2*((XfwfFrameWidget)self)->xfwfFrame.frameWidth;
@@ -507,10 +530,11 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 		  y - ((XfwfFrameWidget)self)->xfwfFrame.frameWidth - ((XfwfFrameWidget)self)->xfwfFrame.innerOffset,
 		  max(w, 0),
 		  max(h, 0),
-		  ((XfwfFrameWidget)self)->xfwfFrame.frameType, ((XfwfFrameWidget)self)->xfwfFrame.frameWidth, ((XfwfFrameWidget)self)->xfwfFrame.lightgc, ((XfwfFrameWidget)self)->xfwfFrame.darkgc);
+		  ((XfwfFrameWidget)self)->xfwfFrame.frameType, ((XfwfFrameWidget)self)->xfwfFrame.frameWidth, ((XfwfFrameWidget)self)->xfwfFrame.lightgc, ((XfwfFrameWidget)self)->xfwfFrame.darkgc, ((XfwfFrameWidget)self)->xfwfFrame.fggc);
     if (region != NULL) {
         XSetClipMask(XtDisplay(self), ((XfwfFrameWidget)self)->xfwfFrame.lightgc, None);
         XSetClipMask(XtDisplay(self), ((XfwfFrameWidget)self)->xfwfFrame.darkgc, None);
+        XSetClipMask(XtDisplay(self), ((XfwfFrameWidget)self)->xfwfFrame.fggc, None);
     }
     xfwfCommonClassRec.xfwfCommon_class._expose(self, event, region);
 }
@@ -656,9 +680,9 @@ static void change_managed(self)Widget self;
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-void XfwfDrawFrame(Widget self,int  x,int  y,int  w,int  h,FrameType  tp,int  t,GC  lightgc,GC  darkgc)
+void XfwfDrawFrame(Widget self,int  x,int  y,int  w,int  h,FrameType  tp,int  t,GC  lightgc,GC  darkgc,GC  fggc)
 #else
-void XfwfDrawFrame(self,x,y,w,h,tp,t,lightgc,darkgc)Widget self;int  x;int  y;int  w;int  h;FrameType  tp;int  t;GC  lightgc;GC  darkgc;
+void XfwfDrawFrame(self,x,y,w,h,tp,t,lightgc,darkgc,fggc)Widget self;int  x;int  y;int  w;int  h;FrameType  tp;int  t;GC  lightgc;GC  darkgc;GC  fggc;
 #endif
 {
     XPoint tlPoints[7], brPoints[7];
@@ -695,16 +719,18 @@ void XfwfDrawFrame(self,x,y,w,h,tp,t,lightgc,darkgc)Widget self;int  x;int  y;in
             XFillPolygon(XtDisplay(self), XtWindow(self),
                          darkgc, brPoints, 7, Nonconvex, CoordModeOrigin);
         }
+	if (fggc)
+	  XDrawRectangle(XtDisplay(self), XtWindow(self), fggc, x, y, w-1, h-1);
         break;
     case XfwfLedged:
-        XfwfDrawFrame(self, x, y, w, h, XfwfRaised, t/2, lightgc, darkgc);
+        XfwfDrawFrame(self, x, y, w, h, XfwfRaised, t/2, lightgc, darkgc, NULL);
         XfwfDrawFrame(self, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
-                  XfwfSunken, t/2, lightgc, darkgc);
+                  XfwfSunken, t/2, lightgc, darkgc, NULL);
         break;
     case XfwfChiseled:
-        XfwfDrawFrame(self, x, y, w, h, XfwfSunken, t/2, lightgc, darkgc);
+        XfwfDrawFrame(self, x, y, w, h, XfwfSunken, t/2, lightgc, darkgc, NULL);
         XfwfDrawFrame(self, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
-                  XfwfRaised, t/2, lightgc, darkgc);
+                  XfwfRaised, t/2, lightgc, darkgc, NULL);
         break;
     }
 

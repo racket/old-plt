@@ -116,7 +116,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
     // create the slider widget
     wgt = XtVaCreateManagedWidget
 	("slider", xfwfSlider2WidgetClass, X->frame,
-	 XtNbackground,    wxGREY_PIXEL,
+	 XtNbackground,    wxDARK_GREY_PIXEL,
 	 XtNforeground,    wxBLACK_PIXEL,
 	 XtNthumbColor,    wxGREY_PIXEL,
 	 XtNfont,          font->GetInternalFont(),

@@ -183,7 +183,10 @@ GC's need to be created.
 	$p1[2].x = x + width - a2;	  $p1[2].y = y + height - a;
 	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
 		     CoordModeOrigin);
-	if (a == 0) break;
+	if (a == 0) {
+	  XDrawLines(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, CoordModeOrigin);
+	  break;
+	}
 	$p2[0].x = x + width/2;	          $p2[0].y = y;
 	$p2[1].x = x + width/2;	          $p2[1].y = y + a3;
 	$p2[2].x = x + width - a2;	  $p2[2].y = y + height - a;
@@ -236,14 +239,16 @@ GC's need to be created.
 		     CoordModeOrigin);
 	break;
     case XfwfBottom:
-	a2 = (1.0 + 0.71*width/height) * a;
-	a3 = (1.0 + 0.83*height/width) * a;
+	a2 = (1.0 + 0.71*(float)width/(float)height) * a;
+	a3 = (1.0 + 0.83*(float)height/(float)width) * a;
 	$p1[0].x = x + width/2;	          $p1[0].y = y + height - a3;
 	$p1[1].x = x + a2;		  $p1[1].y = y + a;
 	$p1[2].x = x + width - a2;	  $p1[2].y = y + a;
 	XFillPolygon(XtDisplay($), XtWindow($), $arrowgc, $p1, 3, Convex,
 		     CoordModeOrigin);
-	if ($arrowShadow == 0) break;
+	if ($arrowShadow == 0) {
+	  break;
+	}
 	$p2[0].x = x;			  $p2[0].y = y;
 	$p2[1].x = x + width/2;	          $p2[1].y = y + height;
 	$p2[2].x = x + width/2;	          $p2[2].y = y + height - a3;

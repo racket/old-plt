@@ -121,6 +121,7 @@ parts of the thumb's frame.
 @var GC thumbgc
 @var GC thumblightgc
 @var GC thumbdarkgc
+@var GC fggc
 
 
 
@@ -243,16 +244,20 @@ and the text inside the thumb. Only the frame of the thumb is drawn here.
 
     if (! XtIsRealized($)) return;
     if (region != NULL) {
+	XSetRegion(XtDisplay($), $fggc, region);
 	XSetRegion(XtDisplay($), $thumbgc, region);
 	XSetRegion(XtDisplay($), $thumbdarkgc, region);
 	XSetRegion(XtDisplay($), $thumblightgc, region);
     }
     $compute_thumb($, &x, &y, &wd, &ht);
     d = $thumbFrameWidth;
-    XFillRectangle(XtDisplay($), XtWindow($), $thumbgc, x + d, y + d, wd - 2 * d, ht - 2 * d);
-    XfwfDrawFrame($, x, y, wd, ht, $thumbFrameType, d,
-	       $thumblightgc, $thumbdarkgc);
+    if ((wd > 2 * d) && (ht > 2 * d)) {
+      XFillRectangle(XtDisplay($), XtWindow($), $thumbgc, x + d, y + d, wd - 2 * d, ht - 2 * d);
+      XfwfDrawFrame($, x, y, wd, ht, $thumbFrameType, d,
+	            $thumblightgc, $thumbdarkgc, NULL);
+    }
     if (region != NULL) {
+	XSetClipMask(XtDisplay($), $fggc, None);
 	XSetClipMask(XtDisplay($), $thumbgc, None);
 	XSetClipMask(XtDisplay($), $thumbdarkgc, None);
 	XSetClipMask(XtDisplay($), $thumblightgc, None);
@@ -269,9 +274,11 @@ differently.  The two new GC's are also initialized.
 
 @proc initialize
 {
+    $text_bg = $thumbColor;
     $thumb_x = $thumb_y = 0.0;
     $thumb_wd = $thumb_ht = 1.0;
     $drag_in_progress = False;
+    create_fggc($);
     create_thumbgc($);
     create_gc($);
     $thumblightgc = NULL; create_thumblightgc($);
@@ -283,6 +290,8 @@ differently.  The two new GC's are also initialized.
   if ($gc) XtReleaseGC($, $gc); $gc = NULL;
   if ($thumblightgc) XtReleaseGC($, $thumblightgc); $thumblightgc = NULL;
   if ($thumbdarkgc) XtReleaseGC($, $thumbdarkgc); $thumbdarkgc = NULL;
+  if ($thumbgc) XtReleaseGC($, $thumbdarkgc); $thumbgc = NULL;
+  if ($fggc) XtReleaseGC($, $fggc); $fggc = NULL;
 }
 
 @ The following routine's name, |move_thumb|, indicates what it is
@@ -354,12 +363,14 @@ needs to be redrawn.
     Dimension w, h;
 
     if ($thumbPixmap != $old$thumbPixmap) {
+	create_fggc($);
 	create_thumbgc($);
 	create_thumblightgc($);
 	create_thumbdarkgc($);
 	need_redisplay = True;
     } else if ($thumbColor != $old$thumbColor) {
 	$thumbPixmap = 0;
+	create_fggc($);
 	create_thumbgc($);
 	create_thumblightgc($);
 	create_thumbdarkgc($);
@@ -615,6 +626,17 @@ thumb.
 	values.foreground = $thumbColor;
     }
     $thumbgc = XtGetGC($, mask, &values);
+}
+
+@proc create_fggc($)
+{
+    XtGCMask mask;
+    XGCValues values;
+
+    if ($fggc != NULL) XtReleaseGC($, $fggc);
+    mask = GCForeground;
+    $set_color($, $background_pixel, &values.foreground);
+    $fggc = XtGetGC($, mask, &values);
 }
 
 @ The |create_thumblightgc| functions makes the GC for drawing the light

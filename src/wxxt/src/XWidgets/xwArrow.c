@@ -567,7 +567,10 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	((XfwfArrowWidget)self)->xfwfArrow.p1[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[2].y = y + height - a;
 	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
 		     CoordModeOrigin);
-	if (a == 0) break;
+	if (a == 0) {
+	  XDrawLines(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, CoordModeOrigin);
+	  break;
+	}
 	((XfwfArrowWidget)self)->xfwfArrow.p2[0].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[0].y = y;
 	((XfwfArrowWidget)self)->xfwfArrow.p2[1].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[1].y = y + a3;
 	((XfwfArrowWidget)self)->xfwfArrow.p2[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p2[2].y = y + height - a;
@@ -620,14 +623,16 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 		     CoordModeOrigin);
 	break;
     case XfwfBottom:
-	a2 = (1.0 + 0.71*width/height) * a;
-	a3 = (1.0 + 0.83*height/width) * a;
+	a2 = (1.0 + 0.71*(float)width/(float)height) * a;
+	a3 = (1.0 + 0.83*(float)height/(float)width) * a;
 	((XfwfArrowWidget)self)->xfwfArrow.p1[0].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p1[0].y = y + height - a3;
 	((XfwfArrowWidget)self)->xfwfArrow.p1[1].x = x + a2;		  ((XfwfArrowWidget)self)->xfwfArrow.p1[1].y = y + a;
 	((XfwfArrowWidget)self)->xfwfArrow.p1[2].x = x + width - a2;	  ((XfwfArrowWidget)self)->xfwfArrow.p1[2].y = y + a;
 	XFillPolygon(XtDisplay(self), XtWindow(self), ((XfwfArrowWidget)self)->xfwfArrow.arrowgc, ((XfwfArrowWidget)self)->xfwfArrow.p1, 3, Convex,
 		     CoordModeOrigin);
-	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) break;
+	if (((XfwfArrowWidget)self)->xfwfArrow.arrowShadow == 0) {
+	  break;
+	}
 	((XfwfArrowWidget)self)->xfwfArrow.p2[0].x = x;			  ((XfwfArrowWidget)self)->xfwfArrow.p2[0].y = y;
 	((XfwfArrowWidget)self)->xfwfArrow.p2[1].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[1].y = y + height;
 	((XfwfArrowWidget)self)->xfwfArrow.p2[2].x = x + width/2;	          ((XfwfArrowWidget)self)->xfwfArrow.p2[2].y = y + height - a3;

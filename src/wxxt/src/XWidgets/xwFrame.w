@@ -116,7 +116,7 @@ exported. |t| is the thickness of the frame. The frame is drawn inside
 the rectangle |(x, y, x+w-1, y+h-1)|.
 
 @proc XfwfDrawFrame($, int x, int y, int w, int h, FrameType tp, int t,
-        GC lightgc, GC darkgc)
+        GC lightgc, GC darkgc, GC fggc)
 {
     XPoint tlPoints[7], brPoints[7];
 
@@ -152,16 +152,18 @@ the rectangle |(x, y, x+w-1, y+h-1)|.
             XFillPolygon(XtDisplay($), XtWindow($),
                          darkgc, brPoints, 7, Nonconvex, CoordModeOrigin);
         }
+	if (fggc)
+	  XDrawRectangle(XtDisplay($), XtWindow($), fggc, x, y, w-1, h-1);
         break;
     case XfwfLedged:
-        XfwfDrawFrame($, x, y, w, h, XfwfRaised, t/2, lightgc, darkgc);
+        XfwfDrawFrame($, x, y, w, h, XfwfRaised, t/2, lightgc, darkgc, NULL);
         XfwfDrawFrame($, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
-                  XfwfSunken, t/2, lightgc, darkgc);
+                  XfwfSunken, t/2, lightgc, darkgc, NULL);
         break;
     case XfwfChiseled:
-        XfwfDrawFrame($, x, y, w, h, XfwfSunken, t/2, lightgc, darkgc);
+        XfwfDrawFrame($, x, y, w, h, XfwfSunken, t/2, lightgc, darkgc, NULL);
         XfwfDrawFrame($, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
-                  XfwfRaised, t/2, lightgc, darkgc);
+                  XfwfRaised, t/2, lightgc, darkgc, NULL);
         break;
     }
 
@@ -178,6 +180,10 @@ the rectangle |(x, y, x+w-1, y+h-1)|.
 @ The GC for drawing the dark parts of the frame:
 
         @var GC darkgc
+
+@ The GC fro drawing the border for sunken variants:
+
+        @var GC fggc
 
 @ The |gray| bitmap is used on screens with insufficient colors to
 simulate light and dark shadows. It will be created by the
@@ -230,6 +236,7 @@ ID is needed for most of the initializations.
 
     $lightgc = NULL;
     $darkgc = NULL;
+    $fggc = NULL;
     $old_frame_type = $frameType;
     /* Make sure the width and height are at least as large as the frame */
     frame = $total_frame_width($);
@@ -259,12 +266,14 @@ have to use it as a stipple.
 
     create_lightgc($);
     create_darkgc($);
+    create_fggc($);
 }
 
 @proc destroy
 {
   if ($darkgc) XtReleaseGC($, $darkgc); $darkgc = NULL;
   if ($lightgc) XtReleaseGC($, $lightgc); $lightgc = NULL;
+  if ($fggc) XtReleaseGC($, $fggc); $fggc = NULL;
 }
 
 @ The |set_values| method has to create new GC's if the resources
@@ -293,6 +302,7 @@ provided the widget is realized.
     ||  $background_pixel != $old$background_pixel) {
         create_darkgc($);
         create_lightgc($);
+        create_fggc($);
         need_redisplay = True;
     } else if ($shadowScheme == XfwfColor) {
         if ($topShadowColor != $old$topShadowColor) {
@@ -351,6 +361,7 @@ destroyed or unrealized.
     if (region != NULL) {
         XSetRegion(XtDisplay($), $lightgc, region);
         XSetRegion(XtDisplay($), $darkgc, region);
+        XSetRegion(XtDisplay($), $fggc, region);
     }
     $compute_inside($, &x, &y, &w, &h);
     w += 2*$innerOffset + 2*$frameWidth;
@@ -360,10 +371,11 @@ destroyed or unrealized.
 		  y - $frameWidth - $innerOffset,
 		  max(w, 0),
 		  max(h, 0),
-		  $frameType, $frameWidth, $lightgc, $darkgc);
+		  $frameType, $frameWidth, $lightgc, $darkgc, $fggc);
     if (region != NULL) {
         XSetClipMask(XtDisplay($), $lightgc, None);
         XSetClipMask(XtDisplay($), $darkgc, None);
+        XSetClipMask(XtDisplay($), $fggc, None);
     }
     #_expose($, event, region);
 }
@@ -551,7 +563,7 @@ the frame type, will have to redefine the |set_shadow| action.
 	h -= 2*$outerOffset;
         XfwfDrawFrame($, x + $outerOffset, y + $outerOffset,
                       max(w, 0), max(h, 0),
-                      $frameType, $frameWidth, $lightgc, $darkgc);
+                      $frameType, $frameWidth, $lightgc, $darkgc, $fggc);
     }
 }
 
@@ -698,10 +710,8 @@ the frame. The contents of the GC depend on the resources
     case XfwfAuto:
         if (DefaultDepthOfScreen(XtScreen($)) > 4
             && $darker_color($, $background_pixel, &values.foreground)) {
-            Pixel hi;
             mask = GCForeground;
-            $darker_color($, values.foreground, &hi);
-	    $highlightColor = values.foreground; /* BlackPixelOfScreen(XtScreen($)); */
+	    $highlightColor = values.foreground;
         } else {
             mask = GCFillStyle | GCBackground | GCForeground | GCStipple;
             values.fill_style = FillOpaqueStippled;
@@ -757,6 +767,17 @@ will be used for the frame.
         break;
     }
     $lightgc = XtGetGC($, mask, &values);
+}
+
+@proc create_fggc($)
+{
+    XtGCMask mask=0;
+    XGCValues values;
+
+    if ($fggc != NULL) XtReleaseGC($, $fggc);
+    mask = GCForeground;
+    $set_color($, $background_pixel, &values.foreground);
+    $fggc = XtGetGC($, mask, &values);
 }
 
 @ The function |compute_topcolor| is a resource default proc. It is

@@ -96,6 +96,11 @@ static void create_thumbgc(
 Widget
 #endif
 );
+static void create_fggc(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
 static void create_thumblightgc(
 #if NeedFunctionPrototypes
 Widget
@@ -143,6 +148,21 @@ static void create_thumbgc(self)Widget self;
 	values.foreground = ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor;
     }
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc = XtGetGC(self, mask, &values);
+}
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+static void create_fggc(Widget self)
+#else
+static void create_fggc(self)Widget self;
+#endif
+{
+    XtGCMask mask;
+    XGCValues values;
+
+    if (((XfwfSlider2Widget)self)->xfwfFrame.fggc != NULL) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfFrame.fggc);
+    mask = GCForeground;
+    ((XfwfSlider2WidgetClass)self->core.widget_class)->xfwfCommon_class.set_color(self, ((XfwfSlider2Widget)self)->core.background_pixel, &values.foreground);
+    ((XfwfSlider2Widget)self)->xfwfFrame.fggc = XtGetGC(self, mask, &values);
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -485,16 +505,20 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 
     if (! XtIsRealized(self)) return;
     if (region != NULL) {
+	XSetRegion(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfFrame.fggc, region);
 	XSetRegion(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc, region);
 	XSetRegion(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc, region);
 	XSetRegion(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc, region);
     }
     ((XfwfSlider2WidgetClass)self->core.widget_class)->xfwfSlider2_class.compute_thumb(self, &x, &y, &wd, &ht);
     d = ((XfwfSlider2Widget)self)->xfwfSlider2.thumbFrameWidth;
-    XFillRectangle(XtDisplay(self), XtWindow(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc, x + d, y + d, wd - 2 * d, ht - 2 * d);
-    XfwfDrawFrame(self, x, y, wd, ht, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbFrameType, d,
-	       ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc);
+    if ((wd > 2 * d) && (ht > 2 * d)) {
+      XFillRectangle(XtDisplay(self), XtWindow(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc, x + d, y + d, wd - 2 * d, ht - 2 * d);
+      XfwfDrawFrame(self, x, y, wd, ht, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbFrameType, d,
+	            ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc, NULL);
+    }
     if (region != NULL) {
+	XSetClipMask(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfFrame.fggc, None);
 	XSetClipMask(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc, None);
 	XSetClipMask(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc, None);
 	XSetClipMask(XtDisplay(self), ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc, None);
@@ -508,9 +532,11 @@ static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
 {
+    ((XfwfSlider2Widget)self)->xfwfLabel.text_bg = ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor;
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_x = ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_y = 0.0;
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_wd = ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_ht = 1.0;
     ((XfwfSlider2Widget)self)->xfwfSlider2.drag_in_progress = False;
+    create_fggc(self);
     create_thumbgc(self);
     create_gc(self);
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc = NULL; create_thumblightgc(self);
@@ -526,6 +552,8 @@ static void destroy(self)Widget self;
   if (((XfwfSlider2Widget)self)->xfwfLabel.gc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfLabel.gc); ((XfwfSlider2Widget)self)->xfwfLabel.gc = NULL;
   if (((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc); ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc = NULL;
   if (((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc); ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc = NULL;
+  if (((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc); ((XfwfSlider2Widget)self)->xfwfSlider2.thumbgc = NULL;
+  if (((XfwfSlider2Widget)self)->xfwfFrame.fggc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfFrame.fggc); ((XfwfSlider2Widget)self)->xfwfFrame.fggc = NULL;
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -593,12 +621,14 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     Dimension w, h;
 
     if (((XfwfSlider2Widget)self)->xfwfSlider2.thumbPixmap != ((XfwfSlider2Widget)old)->xfwfSlider2.thumbPixmap) {
+	create_fggc(self);
 	create_thumbgc(self);
 	create_thumblightgc(self);
 	create_thumbdarkgc(self);
 	need_redisplay = True;
     } else if (((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor != ((XfwfSlider2Widget)old)->xfwfSlider2.thumbColor) {
 	((XfwfSlider2Widget)self)->xfwfSlider2.thumbPixmap = 0;
+	create_fggc(self);
 	create_thumbgc(self);
 	create_thumblightgc(self);
 	create_thumbdarkgc(self);

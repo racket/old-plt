@@ -67,7 +67,7 @@ static void make_gc(self)Widget self;
     XGCValues values;
 
     if (((XfwfLabelWidget)self)->xfwfLabel.gc != NULL) XtReleaseGC(self, ((XfwfLabelWidget)self)->xfwfLabel.gc);
-    values.background = ((XfwfLabelWidget)self)->core.background_pixel;
+    values.background = ((XfwfLabelWidget)self)->xfwfLabel.text_bg;
     if (!((XfwfLabelWidget)self)->xfwfLabel.xfont) {
       values.foreground = ((XfwfLabelWidget)self)->xfwfLabel.foreground;
       values.font = ((XfwfLabelWidget)self)->xfwfLabel.font->fid;
@@ -95,15 +95,15 @@ static void make_graygc(self)Widget self;
 
     if ((((XfwfLabelWidget)self)->xfwfLabel.pixmap != 0) || !wx_enough_colors(XtScreen(self))) {
       /* A GC to draw over bitmaps/text: */
-      values.foreground = ((XfwfLabelWidget)self)->core.background_pixel;
+      values.foreground = ((XfwfLabelWidget)self)->xfwfLabel.text_bg;
       values.stipple = GetGray(self);
       values.fill_style = FillStippled;
       mask = GCForeground | GCStipple | GCFillStyle;
     } else {
       /* A GC for drawing gray text: */
       static Pixel color;
-      values.background = ((XfwfLabelWidget)self)->core.background_pixel;
-      ((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfLabelWidget)self)->core.background_pixel, &color);
+      values.background = ((XfwfLabelWidget)self)->xfwfLabel.text_bg;
+      ((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfLabelWidget)self)->xfwfLabel.text_bg, &color);
       values.foreground = color;
       mask = GCBackground | GCForeground;
       if (((XfwfLabelWidget)self)->xfwfLabel.font) {
@@ -160,6 +160,7 @@ static XtResource resources[] = {
 {XtNxfont,XtCXFont,XtRvoid,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.xfont),XtOffsetOf(XfwfLabelRec,xfwfLabel.xfont),XtRPointer,(XtPointer)NULL },
 {XtNpixmap,XtCPixmap,XtRPixmap,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.pixmap),XtOffsetOf(XfwfLabelRec,xfwfLabel.pixmap),XtRImmediate,(XtPointer)0 },
 {XtNforeground,XtCForeground,XtRPixel,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.foreground),XtOffsetOf(XfwfLabelRec,xfwfLabel.foreground),XtRString,(XtPointer)XtDefaultForeground },
+{XtNtext_bg,XtCText_bg,XtRPixel,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.text_bg),XtOffsetOf(XfwfLabelRec,xfwfLabel.text_bg),XtRPointer,(XtPointer)NULL },
 {XtNalignment,XtCAlignment,XtRAlignment,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.alignment),XtOffsetOf(XfwfLabelRec,xfwfLabel.alignment),XtRImmediate,(XtPointer)0 },
 {XtNtopMargin,XtCTopMargin,XtRDimension,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.topMargin),XtOffsetOf(XfwfLabelRec,xfwfLabel.topMargin),XtRImmediate,(XtPointer)2 },
 {XtNbottomMargin,XtCBottomMargin,XtRDimension,sizeof(((XfwfLabelRec*)NULL)->xfwfLabel.bottomMargin),XtOffsetOf(XfwfLabelRec,xfwfLabel.bottomMargin),XtRImmediate,(XtPointer)2 },
@@ -186,7 +187,7 @@ XfwfLabelClassRec xfwfLabelClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  16,
+/* num_resources 	*/  17,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
 /* compress_exposure 	*/  XtExposeCompressMultiple ,
@@ -355,6 +356,8 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((XfwfLabelWidget)self)->xfwfLabel.gc = NULL;
     ((XfwfLabelWidget)self)->xfwfLabel.graygc = NULL;
     ((XfwfLabelWidget)self)->xfwfLabel.tabs = XfwfTablist2Tabs(((XfwfLabelWidget)self)->xfwfLabel.tablist);
+    if (!((XfwfLabelWidget)self)->xfwfLabel.text_bg)
+      ((XfwfLabelWidget)self)->xfwfLabel.text_bg = ((XfwfLabelWidget)self)->core.background_pixel;
     if (((XfwfLabelWidget)self)->xfwfLabel.shrinkToFit) {
 	((XfwfLabelWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
 	wd = ((XfwfLabelWidget)self)->xfwfLabel.label_width + ((XfwfLabelWidget)self)->core.width - w;
@@ -396,7 +399,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 	  grayed = ((!((XfwfLabelWidget)self)->core.sensitive || ((XfwfLabelWidget)self)->xfwfLabel.drawgray) && wx_enough_colors(XtScreen(self)));\
 	  XfwfDrawImageString(dpy, win, \
 			      (((XfwfLabelWidget)self)->xfwfLabel.xfont\
-			       ? ((XfwfLabelWidget)self)->xfwfLabel.gc\
+			       ? NULL\
 			       : (grayed\
 				  ? ((XfwfLabelWidget)self)->xfwfLabel.graygc \
 				  : ((XfwfLabelWidget)self)->xfwfLabel.gc)), \

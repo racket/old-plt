@@ -94,6 +94,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 XtNtraversalOn, FALSE,
 	 XtNframeType,   XfwfSunken,
 	 XtNframeWidth,  2,
+	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
 	 NULL);
     if (!(style & wxINVISIBLE))
       XtManageChild(wgt);
@@ -101,7 +102,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     // create the slider widget
     wgt = XtVaCreateManagedWidget
 	("gauge", xfwfSlider2WidgetClass, X->frame,
-	 XtNbackground,    wxGREY_PIXEL,
+	 XtNbackground,    wxDARK_GREY_PIXEL,
 	 XtNforeground,    wxBLACK_PIXEL,
 	 XtNthumbColor,    wxGREY_PIXEL,
 	 XtNminsize,	   0,
@@ -111,7 +112,6 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 NULL);
     X->handle = wgt;
     XtUninstallTranslations(X->handle);
-    SetValue(0);
     // set data declared in wxItem
     // panel positioning
 
@@ -138,12 +138,13 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 			 : ((style & wxVERTICAL) 
 			    ? (int)lvh + wxDEFAULT_GAUGE_WIDTH
 			    : (int)lvh + wxDEFAULT_GAUGE_HEIGHT)));
+
+    SetValue(0);
+
     AddEventHandlers();
 
     if (style & wxINVISIBLE)
       Show(FALSE);
-
-    SetValue(0);
 
     return TRUE;
 }
@@ -162,14 +163,14 @@ void wxGauge::SetRange(int new_range)
 
 void wxGauge::SetValue(int new_value)
 {
-    if (0 <= new_value && new_value <= range) {
-	value = new_value;
-	if (style & wxVERTICAL) {
-	    XfwfMoveThumb  (X->handle, 0.0, 1.0                      );
-	    XfwfResizeThumb(X->handle, 1.0, ((float)value)/((float)range));
-	} else {
-	    XfwfMoveThumb  (X->handle, 0.0,                       0.0);
-	    XfwfResizeThumb(X->handle, ((float)value)/((float)range), 1.0);
-	}
+  if (0 <= new_value && new_value <= range) {
+    value = new_value;
+    if (style & wxVERTICAL) {
+      XfwfMoveThumb (X->handle, 0.0, 1.0);
+      XfwfResizeThumb(X->handle, 1.0, ((float)value)/((float)range));
+    } else {
+      XfwfMoveThumb(X->handle, 0.0, 0.0);
+      XfwfResizeThumb(X->handle, ((float)value)/((float)range), 1.0);
     }
+  }
 }

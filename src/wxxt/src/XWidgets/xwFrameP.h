@@ -35,6 +35,7 @@ Bitmap  bottomShadowStipple;
 /* private state */
 GC  lightgc;
 GC  darkgc;
+GC  fggc;
 Pixmap  gray;
 Pixmap  darkGray;
 Pixmap  lightGray;

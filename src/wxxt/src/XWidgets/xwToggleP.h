@@ -34,6 +34,8 @@ int  indicatorType;
 Pixel  indicatorColor;
 /* private state */
 GC  indicator_gc;
+GC  center_gc;
+GC  ex_gc;
 Dimension  saveLeftMargin;
 } XfwfTogglePart;
 

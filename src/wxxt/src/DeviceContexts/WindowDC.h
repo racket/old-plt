@@ -224,4 +224,11 @@ public:
 };
 #endif
 
+#ifdef Have_X_Types
+void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
+		     const char *orig_s, float *_w, float *_h, float *_descent,
+		     float *_topspace, wxFont *font_to_use,
+		     Bool combine, Bool isUnicode, int dt);
+#endif
+
 #endif // WindowDC_hh

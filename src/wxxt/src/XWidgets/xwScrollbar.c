@@ -308,7 +308,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 {
     Position x, y, xa2, xslider, ya2, yslider;
     int w, h, wa, ha, wslider, hslider;
-    XtPointer bg;
+    Pixel bg, thumb_bg;
 
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.initializing = True;
     ((XfwfScrollbarWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
@@ -328,6 +328,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	xa2 = xslider + wslider;
     }
     XtVaGetValues(self, XtNbackground, &bg, NULL),
+    ((XfwfScrollbarWidgetClass)self->core.widget_class)->xfwfCommon_class.set_color(self, bg, &thumb_bg);
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow1 = XtVaCreateManagedWidget
 	("_arrow1", xfwfArrowWidgetClass, self,
 	 XtNx, x,
@@ -343,7 +344,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	 XtNdirection, ((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical?XfwfTop:XfwfLeft,
 	 XtNouterOffset, 0,
 	 XtNborderWidth, 0,
-	 XtNbackground, bg,
+	 XtNbackground, thumb_bg,
 	 NULL);
     XtAddCallback(((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow1, XtNcallback, up, self);
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow2 = XtVaCreateManagedWidget
@@ -361,7 +362,8 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	 XtNdirection, ((XfwfScrollbarWidget)self)->xfwfScrollbar.vertical?XfwfBottom:XfwfRight,
 	 XtNouterOffset, 0,
 	 XtNborderWidth, 0,
-	 XtNbackground, bg,
+	 XtNbackground, thumb_bg,
+         XtNthumbFrameWidth, 1,
 	 NULL);
     XtAddCallback(((XfwfScrollbarWidget)self)->xfwfScrollbar.arrow2, XtNcallback, down, self);
     ((XfwfScrollbarWidget)self)->xfwfScrollbar.slider = XtVaCreateManagedWidget
@@ -378,7 +380,8 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	 XtNhighlightThickness, 0,
 	 XtNouterOffset, 0,
 	 XtNborderWidth, 0,
-	 XtNbackground, bg,
+	 XtNbackground, thumb_bg,
+         XtNthumbFrameWidth, 1,
 	 NULL);
     XtAddCallback(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, XtNscrollCallback, thumbscroll, self);
     XtVaGetValues(((XfwfScrollbarWidget)self)->xfwfScrollbar.slider, XtNscrollResponse, &((XfwfScrollbarWidget)self)->xfwfScrollbar.slider_scroll, NULL);

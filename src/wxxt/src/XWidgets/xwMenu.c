@@ -131,8 +131,8 @@ static XtResource MenuResources[] =
 
 #define VMARGIN 2
 #define ISPACING 4
-#define CHOICE_LEFT 13
-#define CHOICE_RIGHT 1
+#define CHOICE_LEFT 1
+#define CHOICE_RIGHT 13
 
 static void    MenuClassInitialize();
 static void    MenuDestroy();
@@ -951,16 +951,29 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
     Boolean    in_menubar = (mw->menu.horizontal && !ms->prev);
     Dimension  extra_x = 0;
     char       *label;
+    int on, width, height;
 
     if (in_menubar) {
 	if (item->type == MENU_TOGGLE || item->type == MENU_RADIO) {
 	    extra_x = mw->menu.indicator_size + ISPACING;
 	}
     }
+
+    on = (ms->selected==item);
+
+    width = (in_menubar? item->end-item->start : ms->w-2*mw->menu.shadow_width);
+    height = (in_menubar? ms->h-2*mw->menu.shadow_width : item->end-item->start);
+
+    XFillRectangle(XtDisplay(mw), ms->win, 
+		   (on ? mw->menu.indicator_GC : mw->menu.erase_GC), 
+		   x, y, width, height);
+
     if ((label=ResourcedText(mw, item, SUBRESOURCE_LABEL))) {
       XfwfDrawString(XtDisplay(mw), ms->win,
 		     (wxEXT_FONT(mw->menu.xft_font)
-		      ? mw->menu.erase_GC 
+		      ? (on
+			 ? mw->menu.indicator_GC
+			 : mw->menu.erase_GC)
 		      : ((item->enabled || item->type==MENU_TEXT) 
 			 ? mw->menu.normal_GC 
 			 : mw->menu.inactive_GC)),
@@ -969,21 +982,26 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 							       mw->menu.xft_font),
 		     label, strlen(label), NULL,
 		     mw->menu.font, wxEXT_FONT(mw->menu.xft_font), 
-		     (item->enabled || item->type==MENU_TEXT), 0, NULL);
+		     (on ? -1 : (item->enabled || item->type==MENU_TEXT)), 
+		     0, NULL);
     }
     if (item->enabled && item->type!=MENU_TEXT)
 	Xaw3dDrawRectangle(
 	    XtDisplay((Widget)mw), ms->win,
-	    mw->menu.top_shadow_GC,
+	    (on
+	     ? mw->menu.erase_GC
+	     : mw->menu.top_shadow_GC),
 	    mw->menu.bot_shadow_GC,
-	    mw->menu.erase_GC,
-	    mw->menu.normal_GC,
+	    (on
+	     ? mw->menu.indicator_GC
+	     : mw->menu.erase_GC),
+	    mw->menu.indicator_GC,
 	    x,
 	    y,
-	    (in_menubar? item->end-item->start : ms->w-2*mw->menu.shadow_width),
-	    (in_menubar? ms->h-2*mw->menu.shadow_width : item->end-item->start),
+	    width,
+	    height,
 	    mw->menu.shadow_width,
-	    (ms->selected==item) ? XAW3D_OUT : XAW3D_BACKGROUND);
+	    (ms->selected==item) ? XAW3D_OUT_HARD : XAW3D_BACKGROUND);
 }
 
 static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
@@ -996,14 +1014,16 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
     && (key=ResourcedText(mw, item, SUBRESOURCE_KEY)))
       XfwfDrawString(XtDisplay(mw), ms->win,
 		     (wxEXT_FONT(mw->menu.xft_font)
-		      ? mw->menu.erase_GC 
+		      ? ((ms->selected==item)
+			 ? mw->menu.indicator_GC 
+			 : mw->menu.erase_GC)
 		      : (item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC)),
 		     x+ms->wLeft+ms->wMiddle+(3 * ISPACING),
 		     y+mw->menu.shadow_width+VMARGIN+wx_ASCENT(mw->menu.font,
 							       mw->menu.xft_font),
 		     key, strlen(key), NULL, mw->menu.font, 
 		     wxEXT_FONT(mw->menu.xft_font),
-		     item->enabled, 0, NULL);
+		     ((ms->selected==item) ? -1 : item->enabled), 0, NULL);
 }
 
 static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,
@@ -1065,25 +1085,29 @@ static void DrawCascadeItem(MenuWidget mw, menu_state *ms, menu_item *item,
 			    unsigned x, unsigned y)
 {
     DrawTextItem(mw, ms, item, x, y);
-    if (!mw->menu.horizontal || ms->prev)
-	Xaw3dDrawArrow(
-	    XtDisplay((Widget)mw), ms->win,
-	    mw->menu.top_shadow_GC,
-	    mw->menu.bot_shadow_GC,
-	    mw->menu.indicator_GC,
-	    mw->menu.erase_GC,
-	    x+ms->w
-	    -(3*mw->menu.shadow_width
-	      +mw->menu.hmargin
-	      +mw->menu.indicator_size),
-	    y+mw->menu.shadow_width+VMARGIN
-		       +(wx_ASCENT(mw->menu.font,
-			 mw->menu.xft_font)
-			 + wx_DESCENT(mw->menu.font,
-				      mw->menu.xft_font)
-			 - mw->menu.indicator_size)/2,
-	    mw->menu.indicator_size, mw->menu.shadow_width, 
-	    RIGHT, item->enabled && ms->selected==item);
+    if (!mw->menu.horizontal || ms->prev) {
+      int on, size;
+      on = item->enabled && ms->selected==item;
+      size = mw->menu.indicator_size - 2 * mw->menu.shadow_width;
+      if (size & 0x1) size--;
+      Xaw3dDrawArrow(XtDisplay((Widget)mw), ms->win,
+		     mw->menu.top_shadow_GC,
+		     mw->menu.bot_shadow_GC,
+		     (on ? mw->menu.top_shadow_GC : mw->menu.normal_GC),
+		     (on ? mw->menu.top_shadow_GC : mw->menu.normal_GC),
+		     x+ms->w
+		     -(3*mw->menu.shadow_width
+		       +mw->menu.hmargin
+		       +mw->menu.indicator_size),
+		     y+mw->menu.shadow_width+VMARGIN
+		     +(wx_ASCENT(mw->menu.font,
+				 mw->menu.xft_font)
+		       + wx_DESCENT(mw->menu.font,
+				    mw->menu.xft_font)
+		       - size)/2,
+		     size, 0,
+		     RIGHT, 0);
+    }
 }
 
 static void DrawSeparatorItem(MenuWidget mw, menu_state *ms, menu_item *item,
@@ -1190,8 +1214,9 @@ static void DisplayMenu(MenuWidget mw, menu_state *ms)
 	mw->menu.bot_shadow_GC,
 	mw->menu.erase_GC,
 	mw->menu.normal_GC,
-	0, 0, ms->w, ms->h, mw->menu.shadow_width,
-	XAW3D_OUT);
+	0, 0, ms->w, ms->h, 
+	in_menubar ? 1 : mw->menu.shadow_width,
+	in_menubar ? XAW3D_OUT : XAW3D_OUT_HARD);
 }
 
 

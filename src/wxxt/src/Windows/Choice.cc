@@ -107,7 +107,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 #endif
 	 XtNframeWidth,  2,
 	 XtNalignment,   XfwfLeft,
-	 XtNleftMargin,  16,
+	 XtNrightMargin,  16,
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 // XtNtraversalOn, TRUE, /* MATTHEW */
 	 NULL);
@@ -116,10 +116,11 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     button = XtVaCreateManagedWidget
 	("choice_button", xfwfArrowWidgetClass, X->handle,
 	 XtNbackground,  wxGREY_PIXEL,
-	 XtNforeground,  wxGREY_PIXEL,
+	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNdirection,   XfwfBottom,
 	 XtNrepeat,      FALSE,
-	 XtNlocation,    "0 0 14 1.0",
+	 XtNarrowShadow, 0,
+	 XtNlocation,    "1.0 - 16 0.5 - 5 16 10",
 	 NULL);
     // set data declared in wxItem
     callback = function;

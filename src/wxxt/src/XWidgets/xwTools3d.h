@@ -110,7 +110,9 @@ typedef enum _e_ShadowType {
     XAW3D_SINGLE_LINE_DASH = 10,/*  SINGLE: single line 2d                */
     XAW3D_DOUBLE_LINE_DASH = 11,/*  DOUBLE: double line 2d                */
     XAW3D_NO_LINE = 12,		/*  NO:     do not draw the line          */
-    XAW3D_XED = 13
+    XAW3D_XED = 13,
+    XAW3D_OUT_HARD = 14,
+    XAW3D_IN_HARD = 15
 } ShadowType;
 
 /*

@@ -207,6 +207,7 @@ ShadowType shadow_type		/* type of shadow */
 	inner_thickness = thickness/2;
 	thickness      -= inner_thickness;
     case XAW3D_IN:
+    case XAW3D_IN_HARD:
     case XAW3D_XED:
 	topGC = shadowGC;
 	botGC = lightGC;
@@ -268,14 +269,12 @@ ShadowType shadow_type		/* type of shadow */
 	    thickness = 0;
 	}
     }
+    
 
-    if (shadow_type == XAW3D_XED) {
-      thickness = orig_thickness;
-      XDrawLine(dpy, win, fgGC, x+thickness, y+thickness, 
-		x+width-thickness-1, y+height-thickness-1);
-      XDrawLine(dpy, win, fgGC, x+thickness, y+height-thickness-1,
-		x+width-thickness-1, y+thickness);
-    }
+    if ((shadow_type == XAW3D_OUT_HARD)
+	|| (shadow_type == XAW3D_IN_HARD)
+	|| (shadow_type == XAW3D_XED))
+      XDrawRectangle(dpy, win, fgGC, x, y, width-1, height-1);
 }
 
 void Xaw3dDrawLine(
@@ -370,9 +369,26 @@ Boolean    pushed		/* is toggle pushed(in) or released(out) */
 		   x+thickness, y+thickness,
 		   width-(2*thickness), width-(2*thickness));
   }
-  Xaw3dDrawRectangle(dpy, win, lightGC, shadowGC, (GC)0, fgGC,
+  Xaw3dDrawRectangle(dpy, win, lightGC, shadowGC, (GC)0, inGC,
 		     x, y, width, width, thickness,
-		     pushed ? XAW3D_XED : XAW3D_OUT);
+		     XAW3D_IN_HARD);
+
+  if (pushed) {
+    XDrawLine(dpy, win, fgGC, x+thickness+1, y+thickness, 
+	      x+width-thickness-1, y+width-thickness-2);
+    XDrawLine(dpy, win, fgGC, x+thickness, y+thickness+1, 
+	      x+width-thickness-2, y+width-thickness-1);
+
+    XDrawLine(dpy, win, fgGC, x+thickness+1, y+width-thickness-1,
+	      x+width-thickness-1, y+thickness+1);
+    XDrawLine(dpy, win, fgGC, x+thickness, y+width-thickness-2,
+	      x+width-thickness-2, y+thickness);
+
+    XDrawLine(dpy, win, fgGC, x+thickness, y+thickness, 
+	      x+width-thickness-1, y+width-thickness-1);
+    XDrawLine(dpy, win, fgGC, x+thickness, y+width-thickness-1,
+	      x+width-thickness-1, y+thickness);
+  }
 }
 
 void Xaw3dDrawRadio(
@@ -389,64 +405,25 @@ int        thickness,		/* thickness of shadow */
 Boolean    pushed		/* is radio pushed(in) or released(out) */
 )
 {
-    XPoint   pt[6];
-    unsigned half;
-    GC       topGC, botGC, plainGC;
+    GC       topGC, botGC;
 
-    if (width & 0x01)
-	width++;
-    half=width/2;
-    if (pushed) {
-	topGC = shadowGC;
-	botGC = lightGC;
-	plainGC = inGC;
-    } else {
-	topGC = lightGC;
-	botGC = shadowGC;
-	plainGC = outGC;
-    }
+    topGC = shadowGC;
+    botGC = lightGC;
 	
-    /* Points are numbered as follows:
-     *
-     *               1'
-     *               /\
-     *              /4'\
-     *             / /\ \
-     *           0/_/  \_\2
-     *            \5\  /3/
-     *             \ \/ /
-     *              \ 4/   2''=4
-     *               \/
-     *                1
-     */
-    /* bottom part of radio button */
-    pt[0].x = x;                    pt[0].y = y+half;
-    pt[1].x = x+half;               pt[1].y = y+width;
-    pt[2].x = x+width;              pt[2].y = y+half;
-    pt[3].x = x+width-thickness;    pt[3].y = y+half;
-    pt[4].x = x+half;               pt[4].y = y+width-thickness;
-    pt[5].x = x+thickness;          pt[5].y = y+half;
-    XFillPolygon(dpy, win, botGC, pt, 6, Complex, CoordModeOrigin);
-    /* top part of radio button */
-    pt[1].x = x+half;               pt[1].y = y;
-    pt[4].x = x+half;               pt[4].y = y+thickness;
-    XFillPolygon(dpy, win, topGC, pt, 6, Complex, CoordModeOrigin);
-    if (plainGC) {
-      /* inner plain of radio button */
-      pt[2].x = x+half;               pt[2].y = y+width-thickness;
-      XFillPolygon(dpy, win, plainGC, pt+2, 4, Convex, CoordModeOrigin);
+    XFillArc(dpy, win, inGC, x, y, width, width, 0, 64*360);
+    XFillArc(dpy, win, topGC, x+1, y+1, width-2, width-2, 0, 64*360);
+    XDrawArc(dpy, win, topGC, x+1, y+1, width-2, width-2, 0, 64*360);
+    XFillArc(dpy, win, botGC, x+1, y+1, width-2, width-2, 64*225, 64*180);
+    XDrawArc(dpy, win, botGC, x+1, y+1, width-2, width-2, 64*225, 64*180);
+    if (outGC) {
+      XFillArc(dpy, win, outGC, x+thickness, y+thickness, width-2*thickness, width-2*thickness, 0, 64*360);
+      XDrawArc(dpy, win, outGC, x+thickness, y+thickness, width-2*thickness, width-2*thickness, 0, 64*360);
     }
-
-#if 0
-    if (pushed) {
-      int i;
-      pt[2].y -= 2;
-      pt[3].x -= 2;
-      pt[4].y += 2;
-      pt[5].x += 2;
-      XFillPolygon(dpy, win, fgGC, pt+2, 4, Convex, CoordModeOrigin);
+    if (pushed && fgGC) {
+      XFillArc(dpy, win, fgGC, x+thickness+2, y+thickness+2, width-2*thickness-4, width-2*thickness-4, 0, 64*360);
+      XDrawArc(dpy, win, fgGC, x+thickness+2, y+thickness+2, width-2*thickness-4, width-2*thickness-4, 0, 64*360);
     }
-#endif
+    XDrawArc(dpy, win, inGC, x, y, width, width, 0, 64*360);
 }
 
 void Xaw3dDrawArrow(
@@ -544,7 +521,11 @@ Boolean    pushed		/* is radio pushed(in) or released(out) */
     ptplain[2] = pt[7];
     /* first draw inner area so that the borders have a nice edge */
     XFillPolygon(dpy, win, plainGC, ptplain, 3, Convex, CoordModeOrigin);
-    /* draw bottom before top so that top casts the longer shadow */
-    XFillPolygon(dpy, win, botGC, botPt, botNpts, Complex, CoordModeOrigin);
-    XFillPolygon(dpy, win, topGC, topPt, topNpts, Complex, CoordModeOrigin);
+    if (thickness) {
+      /* draw bottom before top so that top casts the longer shadow */
+      XFillPolygon(dpy, win, botGC, botPt, botNpts, Complex, CoordModeOrigin);
+      XFillPolygon(dpy, win, topGC, topPt, topNpts, Complex, CoordModeOrigin);
+    } else {
+      XDrawLines(dpy, win, plainGC, ptplain, 3, CoordModeOrigin);
+    }
 }

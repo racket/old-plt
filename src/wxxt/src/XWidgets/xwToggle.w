@@ -109,6 +109,8 @@ the widget is changed, the |onCallback| is called with the event as
 @ The |indicator_gc| GC holds the color for the `on' state.
 
 	@var GC indicator_gc
+	@var GC center_gc
+	@var GC ex_gc
 
 @ The previous value of |leftMargin| is stored in a private variable.
 This value is added to the width of the widest pixmap to give the new
@@ -134,19 +136,25 @@ increased to make room for the indicators.
     }
 
     $indicator_gc = NULL;
+    $center_gc = NULL;
+    $ex_gc = NULL;
 
     XtVaSetValues($, XtNleftMargin, 2 * $leftMargin + $indicatorSize, NULL);
 }
 
 @proc destroy
 {
+   if ($center_gc) XtReleaseGC($, $center_gc); $center_gc = NULL;
    if ($indicator_gc) XtReleaseGC($, $indicator_gc); $indicator_gc = NULL;
+   if ($ex_gc) XtReleaseGC($, $ex_gc); $ex_gc = NULL;
 }
 
 @proc realize
 {
     #realize($, mask, attributes);
     create_indicator_gc($);
+    create_center_gc($);
+    create_ex_gc($);
 }
 
 @ Question: Does the computation of |leftMargin| have the desired
@@ -201,12 +209,12 @@ button and then possibly adds a tick mark.
 	XtWarning("XfwfToggle has wrong indicatorType, using square!");
     case XfwfSquareIndicator:
 	Xaw3dDrawToggle(XtDisplay($), XtWindow($),
-	   	        $lightgc, $darkgc, $indicator_gc, NULL, $gc,
+	   	        $lightgc, $darkgc, $indicator_gc, NULL, $ex_gc,
 		        x, y, $indicatorSize, 2, $on);
 	break;
     case XfwfDiamondIndicator:
 	Xaw3dDrawRadio(XtDisplay($), XtWindow($),
-	   	       $lightgc, $darkgc, $indicator_gc, NULL, $gc,
+	   	       $lightgc, $darkgc, $indicator_gc, $center_gc, $ex_gc,
 		       x, y, $indicatorSize, 2, $on);
 	break;
     }
@@ -215,6 +223,17 @@ button and then possibly adds a tick mark.
 @utilities
 
 @ The |create_indicator_gc| function creates the color for the 'on' state.
+
+@proc create_ex_gc($)
+{
+    XtGCMask mask = 0;
+    XGCValues values;
+
+    if ($ex_gc != NULL) XtReleaseGC($, $ex_gc);
+    mask = GCForeground;
+    values.foreground = BlackPixelOfScreen(XtScreen($));
+    $ex_gc = XtGetGC($, mask, &values);
+}
 
 @proc create_indicator_gc($)
 {
@@ -249,6 +268,20 @@ button and then possibly adds a tick mark.
         break;
     }
     $indicator_gc = XtGetGC($, mask, &values);
+}
+
+@proc create_center_gc($)
+{
+  XtGCMask mask = 0;
+  XGCValues values;
+
+  if ($center_gc != NULL) XtReleaseGC($, $center_gc);
+  if ($indicatorType == XfwfDiamondIndicator) {
+    mask = GCForeground;
+    values.foreground = $background_pixel;
+    $center_gc = XtGetGC($, mask, &values);
+  } else
+    $center_gc = NULL;
 }
 
 @proc compute_indicatorcolor($, int offset, XrmValue* value)

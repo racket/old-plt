@@ -414,6 +414,17 @@ void wxCommonInit(void)
     wxWHITE_PIXEL = wxWHITE->GetPixel(wxAPP_COLOURMAP);
     wxBLACK_PIXEL = wxBLACK->GetPixel(wxAPP_COLOURMAP);;
     wxGREY_PIXEL = wxGREY->GetPixel(wxAPP_COLOURMAP);;
+    {
+      wxColour *c;
+      int r, g, b;
+      r = wxGREY->Red();
+      g = wxGREY->Green();
+      b = wxGREY->Blue();
+      c = new wxColour((int)(r * 0.85),
+		       (int)(g * 0.85),
+		       (int)(b * 0.85));
+      wxDARK_GREY_PIXEL = c->GetPixel(wxAPP_COLOURMAP);
+    }
 
     wxREGGLOB(wxSTANDARD_CURSOR);
     wxSTANDARD_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_ARROW);

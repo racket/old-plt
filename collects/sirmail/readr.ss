@@ -1657,7 +1657,7 @@
                              (parent top-half)
                              (stretchable-height #f)
 			     (vertical-inset 1)
-                             (style '(hide-hscroll))))
+                             (style '(hide-hscroll hide-vscroll))))
       (define header-list (make-object header-list% top-half))
       (send (send header-list get-editor) set-line-spacing 0)
       (define message (make-object editor-canvas% sizing-panel))

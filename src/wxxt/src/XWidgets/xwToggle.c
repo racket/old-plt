@@ -62,7 +62,17 @@ static void _expose(
 Widget,XEvent *,Region 
 #endif
 );
+static void create_ex_gc(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
 static void create_indicator_gc(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+static void create_center_gc(
 #if NeedFunctionPrototypes
 Widget
 #endif
@@ -72,6 +82,21 @@ static void compute_indicatorcolor(
 Widget,int ,XrmValue *
 #endif
 );
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+static void create_ex_gc(Widget self)
+#else
+static void create_ex_gc(self)Widget self;
+#endif
+{
+    XtGCMask mask = 0;
+    XGCValues values;
+
+    if (((XfwfToggleWidget)self)->xfwfToggle.ex_gc != NULL) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.ex_gc);
+    mask = GCForeground;
+    values.foreground = BlackPixelOfScreen(XtScreen(self));
+    ((XfwfToggleWidget)self)->xfwfToggle.ex_gc = XtGetGC(self, mask, &values);
+}
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
 static void create_indicator_gc(Widget self)
@@ -110,6 +135,24 @@ static void create_indicator_gc(self)Widget self;
         break;
     }
     ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = XtGetGC(self, mask, &values);
+}
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+static void create_center_gc(Widget self)
+#else
+static void create_center_gc(self)Widget self;
+#endif
+{
+  XtGCMask mask = 0;
+  XGCValues values;
+
+  if (((XfwfToggleWidget)self)->xfwfToggle.center_gc != NULL) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.center_gc);
+  if (((XfwfToggleWidget)self)->xfwfToggle.indicatorType == XfwfDiamondIndicator) {
+    mask = GCForeground;
+    values.foreground = ((XfwfToggleWidget)self)->core.background_pixel;
+    ((XfwfToggleWidget)self)->xfwfToggle.center_gc = XtGetGC(self, mask, &values);
+  } else
+    ((XfwfToggleWidget)self)->xfwfToggle.center_gc = NULL;
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -271,6 +314,8 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     }
 
     ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = NULL;
+    ((XfwfToggleWidget)self)->xfwfToggle.center_gc = NULL;
+    ((XfwfToggleWidget)self)->xfwfToggle.ex_gc = NULL;
 
     XtVaSetValues(self, XtNleftMargin, 2 * ((XfwfToggleWidget)self)->xfwfLabel.leftMargin + ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, NULL);
 }
@@ -281,7 +326,9 @@ static void destroy(Widget self)
 static void destroy(self)Widget self;
 #endif
 {
+   if (((XfwfToggleWidget)self)->xfwfToggle.center_gc) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.center_gc); ((XfwfToggleWidget)self)->xfwfToggle.center_gc = NULL;
    if (((XfwfToggleWidget)self)->xfwfToggle.indicator_gc) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc); ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = NULL;
+   if (((XfwfToggleWidget)self)->xfwfToggle.ex_gc) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.ex_gc); ((XfwfToggleWidget)self)->xfwfToggle.ex_gc = NULL;
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -292,6 +339,8 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 {
     xfwfButtonClassRec.core_class.realize(self, mask, attributes);
     create_indicator_gc(self);
+    create_center_gc(self);
+    create_ex_gc(self);
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -346,12 +395,12 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	XtWarning("XfwfToggle has wrong indicatorType, using square!");
     case XfwfSquareIndicator:
 	Xaw3dDrawToggle(XtDisplay(self), XtWindow(self),
-	   	        ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, NULL, ((XfwfToggleWidget)self)->xfwfLabel.gc,
+	   	        ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, NULL, ((XfwfToggleWidget)self)->xfwfToggle.ex_gc,
 		        x, y, ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, 2, ((XfwfToggleWidget)self)->xfwfToggle.on);
 	break;
     case XfwfDiamondIndicator:
 	Xaw3dDrawRadio(XtDisplay(self), XtWindow(self),
-	   	       ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, NULL, ((XfwfToggleWidget)self)->xfwfLabel.gc,
+	   	       ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfToggle.center_gc, ((XfwfToggleWidget)self)->xfwfToggle.ex_gc,
 		       x, y, ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, 2, ((XfwfToggleWidget)self)->xfwfToggle.on);
 	break;
     }

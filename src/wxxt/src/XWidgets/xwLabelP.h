@@ -36,6 +36,7 @@ XFontStruct * font;
 void * xfont;
 Pixmap  pixmap;
 Pixel  foreground;
+Pixel  text_bg;
 Alignment  alignment;
 Dimension  topMargin;
 Dimension  bottomMargin;

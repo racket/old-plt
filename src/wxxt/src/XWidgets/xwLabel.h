@@ -65,6 +65,16 @@ _XFUNCPROTOBEGIN
 #define XtRPixel "Pixel"
 #endif
 
+#ifndef XtNtext_bg
+#define XtNtext_bg "text_bg"
+#endif
+#ifndef XtCText_bg
+#define XtCText_bg "Text_bg"
+#endif
+#ifndef XtRPixel
+#define XtRPixel "Pixel"
+#endif
+
 #ifndef XtNalignment
 #define XtNalignment "alignment"
 #endif

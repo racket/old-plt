@@ -2083,11 +2083,11 @@ float wxWindowDC::GetCharWidth(void)
   return w;
 }
 
-void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *_descent,
-			       float *_topspace, wxFont *_font,
-			       Bool combine, Bool isUnicode, int dt)
+void wxGetTextExtent(Display *dpy, float scale_x, float scale_y,
+		     const char *orig_s, float *_w, float *_h, float *_descent,
+		     float *_topspace, wxFont *font_to_use,
+		     Bool combine, Bool isUnicode, int dt)
 {
-  wxFont *font_to_use;
   int         ascent, descent, space = 0;
   long        textlen;
   XFontStruct *fontinfo;
@@ -2096,16 +2096,6 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 #endif
   float w, h;
   unsigned *s;
-
-  if (!DRAWABLE) // ensure that a drawable has been associated
-    return;
-
-  font_to_use = _font ? _font : current_font;
-  if (!font_to_use) {
-    wxError("set a font before calling GetTextExtent", "wxWindowDC");
-    *_w = *_h = -1.0;
-    return;
-  }
 
 #ifdef WX_USE_XFT
   xfontinfo = (wxFontStruct*)font_to_use->GetInternalAAFont(scale_x, scale_y);
@@ -2140,7 +2130,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	this_time = xfontinfo;
 	while (1) {
 	  cval = s[dt];
-	  if (!XftGlyphExists(DPY, this_time, cval)) {
+	  if (!XftGlyphExists(dpy, this_time, cval)) {
 	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, cval, scale_x, scale_y, 0.0);
 	    if (!this_time) {
 	      this_time = xfontinfo;
@@ -2155,8 +2145,8 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	  while (partlen < textlen) {
 	    cval = s[dt + partlen];
 	    if (((this_time != xfontinfo)
-		 && XftGlyphExists(DPY, xfontinfo, cval))
-		|| !XftGlyphExists(DPY, this_time, cval))
+		 && XftGlyphExists(dpy, xfontinfo, cval))
+		|| !XftGlyphExists(dpy, this_time, cval))
 	      break;
 	    partlen++;
 	  }
@@ -2166,8 +2156,8 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	this_time = xfontinfo;
       }
       
-      XftTextExtents32(DPY, this_time, ((XftChar32 *)s) + dt, partlen, &overall);
-      w += XDEV2LOGREL(overall.xOff);
+      XftTextExtents32(dpy, this_time, ((XftChar32 *)s) + dt, partlen, &overall);
+      w += overall.xOff;
 
       textlen -= partlen;
       dt += partlen;
@@ -2184,19 +2174,61 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 
       XTextExtents16(fontinfo, (XChar2b *)s + dt, textlen,
 		     &direction, &ascent, &descent, &overall);
-      w = XDEV2LOGREL(overall.width);
+      w = overall.width;
     }
 
   *_w = w;
-  h = YDEV2LOGREL(ascent + descent);
+  h = ascent + descent;
   *_h = h;
   if (_descent) {
     float d;
-    d = YDEV2LOGREL(descent);
+    d = descent;
     *_descent = d;
   }
   if (_topspace)
     *_topspace = space;
+}
+
+void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *_descent,
+			       float *_topspace, wxFont *_font,
+			       Bool combine, Bool isUnicode, int dt)
+{
+  wxFont *font_to_use;
+  float v;
+
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+
+  font_to_use = _font ? _font : current_font;
+  if (!font_to_use) {
+    wxError("set a font before calling GetTextExtent", "wxWindowDC");
+    if (_w)
+      *_w = -1.0;
+    if (_h)
+      *_h = -1.0;
+    return;
+  }
+
+  wxGetTextExtent(DPY, scale_x, scale_y,
+		  orig_s, _w, _h, _descent, _topspace, 
+		  font_to_use, combine, isUnicode, dt);
+
+  if (_w) {
+    v = XDEV2LOGREL((int)*_w);
+    *_w = v;
+  }
+  if (_h) {
+    v = YDEV2LOGREL((int)*_h);
+    *_h = v;
+  }
+  if (_descent) {
+    v = YDEV2LOGREL((int)*_descent);
+    *_descent = v;
+  }
+  if (_topspace) {
+    v = YDEV2LOGREL((int)*_topspace);
+    *_topspace = v;
+  }
 }
 
 Bool wxWindowDC::GlyphAvailable(int c, wxFont *font)

@@ -14,7 +14,7 @@ typedef Pixmap  Bitmap;
 
 void XfwfDrawFrame(
 #if NeedFunctionPrototypes
-Widget,int ,int ,int ,int ,FrameType ,int ,GC ,GC 
+Widget,int ,int ,int ,int ,FrameType ,int ,GC ,GC ,GC 
 #endif
 );
 Boolean  cvtStringToFrameType(

@@ -605,35 +605,39 @@ static int mac_tcp_make(TCPiopbX **_xpb, TCPiopb **_pb, Scheme_Tcp **_data)
   return 0;
 }
 
-static void mac_tcp_close(Scheme_Tcp *data)
+static void mac_tcp_close(Scheme_Tcp *data, int cls, int rel)
 {
   TCPiopb *pb;
   
   pb = (TCPiopb *)mac_make_xpb(data);
   
-  pb->ioCompletion = NULL;
-  pb->csCode = TCPClose;
-  pb->csParam.close.validityFlags = timeoutValue | timeoutAction;
-  pb->csParam.close.ulpTimeoutValue = 60 /* seconds */;
-  pb->csParam.close.ulpTimeoutAction = 1 /* 1:abort 0:report */;
-  PBControlSync((ParamBlockRec*)pb);
+  if (cls) {
+    pb->ioCompletion = NULL;
+    pb->csCode = TCPClose;
+    pb->csParam.close.validityFlags = timeoutValue | timeoutAction;
+    pb->csParam.close.ulpTimeoutValue = 60 /* seconds */;
+    pb->csParam.close.ulpTimeoutAction = 1 /* 1:abort 0:report */;
+    PBControlSync((ParamBlockRec*)pb);
+  }
 
-  pb->csCode = TCPRelease;
-  PBControlSync((ParamBlockRec*)pb);
+  if (rel) {
+    pb->csCode = TCPRelease;
+    PBControlSync((ParamBlockRec*)pb);
 
- {
-    TCPiopbX *x, *prev = NULL;
-    x = active_pbs;
-    while (x) {
-      if (x->data->tcp.stream == data->tcp.stream) {
-	if (!prev)
-	  active_pbs = x->next;
-	else
-	  prev->next = x->next;
-	break;
-      } else {
-        prev = x;
-        x = x->next;
+    {
+      TCPiopbX *x, *prev = NULL;
+      x = active_pbs;
+      while (x) {
+	if (x->data->tcp.stream == data->tcp.stream) {
+	  if (!prev)
+	    active_pbs = x->next;
+	  else
+	    prev->next = x->next;
+	  break;
+	} else {
+	  prev = x;
+	  x = x->next;
+	}
       }
     }
   }
@@ -669,7 +673,7 @@ static int mac_tcp_listen(int id, Scheme_Tcp **_data)
 
     if ((errid = PBControlAsync((ParmBlkPtr)pb))) {
       data->tcp.state = SOCK_STATE_UNCONNECTED;
-      mac_tcp_close(data);
+      mac_tcp_close(data, 1, 1);
       return errid;
     } else {
       *_data = data;
@@ -684,7 +688,7 @@ static void tcp_cleanup(void)
   while (active_pbs) {
     TCPiopbX *pb = active_pbs;
     active_pbs = active_pbs->next;
-    mac_tcp_close(pb->data);
+    mac_tcp_close(pb->data, 1, 1);
   }
 }
 
@@ -1126,7 +1130,7 @@ static void tcp_close_input(Scheme_Input_Port *port)
   closesocket(data->tcp);
 #endif
 #ifdef USE_MAC_TCP
-  mac_tcp_close(data);
+  mac_tcp_close(data, 0, 1);
 #endif
 
   --scheme_file_open_count;
@@ -1322,15 +1326,16 @@ static void tcp_close_output(Scheme_Output_Port *port)
   shutdown(data->tcp, 1);
 #endif
 
+#ifdef USE_MAC_TCP
+  mac_tcp_close(data, 1, data->b.refcount == 1);
+#endif
+
   if (--data->b.refcount)
     return;
 
 #ifdef USE_SOCKETS_TCP
   UNREGISTER_SOCKET(data->tcp);
   closesocket(data->tcp);
-#endif
-#ifdef USE_MAC_TCP
-  mac_tcp_close(data);
 #endif
 
   --scheme_file_open_count;
@@ -1454,7 +1459,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       goto tcp_close_and_error;
     }
     
-    BEGIN_ESCAPEABLE(mac_tcp_close(data));
+    BEGIN_ESCAPEABLE(mac_tcp_close(data, 1, 1));
     scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, pb, 0);
     END_ESCAPEABLE();
     
@@ -1471,7 +1476,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     
   tcp_close_and_error:
     
-    mac_tcp_close(data);
+    mac_tcp_close(data, 1, 1);
     
   tcp_error:
     
@@ -1632,7 +1637,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
         /* Close listeners that had succeeded: */
         int j;
         for (j = 0; j < i; j++)
-          mac_tcp_close(datas[i]);
+          mac_tcp_close(datas[i], 1, 1);
 	break;
       }
       datas[i] = data;
@@ -1735,7 +1740,7 @@ static int stop_listener(Scheme_Object *o)
       l->count = 0;
       for (i = 0; i < count; i++)
 	if (datas[i])
-	  mac_tcp_close(datas[i]);
+	  mac_tcp_close(datas[i], 1, 1);
     }
  }
 #endif

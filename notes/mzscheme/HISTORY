@@ -1,3 +1,9 @@
+Version 103, ??
+Windows: Fixed bug in close-output-port for TCP ports
+Closing a TCP output port always sends an EOF to the other
+ end of the connection, even if the associated input port
+ remains open
+
 Version 102, June 26, 2000
 Switched to configure-based makefiles (autoconf)
 with-input-from-file and with-output-to-file close the port when

@@ -6,8 +6,9 @@
 (require-library "cores.ss")
 (require-relative-library "sigs.ss")
 
-(invoke-open-unit/sig 
-  (compound-unit/sig ; mysterx:mysterx^
+(define-values/invoke-unit/sig
+  mysterx:mysterx^
+  (compound-unit/sig
    (import)
    (link [core : mzlib:core^ ((require-library "corer.ss"))]
 	 [mxprims : mysterx:prims^ ((require-relative-library "prims.ss"))]

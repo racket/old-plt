@@ -797,17 +797,12 @@
 
 	     (super-init)
 
-             ; make sure Windows messages handled
-		
-	     (thread
-	      (lambda ()
-		(let loop ()
+	     (thread 
+	      (lambda () 
+		(let loop ()	
 		  (mxprims:document-pump-msgs doc)
-		  (sleep 0)   
+		  (sleep 0.1)
 		  (loop))))))))
-
-
-   
 		    
 	
 

@@ -183,7 +183,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 	if (!(multiple & (wxMULTIPLE | wxEXTENDED))) {
 		flags = flags | alDoSelOnlyOne;
 	}
-					
+	
+        ::OffsetRect(&viewRect,SetOriginX,SetOriginY);
 	result = ::ALNew(GetWindowFromPort(theMacGrafPort), &viewRect, &dataRect, cellsize,
 				flags, &cListReference);
 	
@@ -301,6 +302,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	int clientWidth = ClientArea()->Width() - VIEW_RECT_OFFSET;
 	/*if (cHaveVScroll)*/ clientWidth -= KSBWidth;
 
+        OffsetRect(&viewRect,SetOriginX,SetOriginY);
 	if (dW || dH)
 	{	// Changing the size
 		ALSetViewRect(&viewRect, cListReference);
@@ -382,7 +384,7 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 		int startV;
                 event->Position(&startH,&startV); // client c.s.
 		
-		Point startPt = {startV, startH}; 	// client c.s.
+		Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
 		int modifiers = 0;
 		if (event->shiftDown)
 		  modifiers += shiftKey;
@@ -771,7 +773,7 @@ int wxListBox::GetFirstItem()
 {
    LongPt c;
    
-   Point p = {VIEW_RECT_OFFSET,VIEW_RECT_OFFSET};
+   Point p = {VIEW_RECT_OFFSET + SetOriginY, VIEW_RECT_OFFSET + SetOriginX};
    
    ALGetCellAndEdge(p,&c,cListReference);
    
@@ -791,18 +793,14 @@ int wxListBox::GetFirstItem()
 
 int wxListBox::NumberOfVisibleItems()
 {
-   Rect view;
-   Point query;
    LongPt result;
    long top_row;
    
-   query.v = VIEW_RECT_OFFSET;
-   query.h = VIEW_RECT_OFFSET;
+   Point query = {VIEW_RECT_OFFSET + SetOriginY, VIEW_RECT_OFFSET + SetOriginX};
    ALGetCellAndEdge(query,&result,cListReference);
    top_row = result.v;
-   query.v = ClientArea()->Height() - VIEW_RECT_OFFSET;
-   query.h = VIEW_RECT_OFFSET;
-   ALGetCellAndEdge(query,&result,cListReference);
+   Point query2 = {ClientArea()->Height() - VIEW_RECT_OFFSET + SetOriginY, VIEW_RECT_OFFSET + SetOriginX};
+   ALGetCellAndEdge(query2,&result,cListReference);
    
    return result.v - top_row + 1;
       

@@ -391,9 +391,9 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 	
 		int startH;
 		int startV;
-		event->Position(&startH, &startV); // frame c.s.
+		event->Position(&startH, &startV); // client c.s.
 	
-		Point startPt = {startH, startV}; // frame c.s.
+		Point startPt = {startV + SetOriginX, startH + SetOriginY}; // port c.s.
 		int trackResult;
 		if (::StillDown()) {
 			if (cMacControl)

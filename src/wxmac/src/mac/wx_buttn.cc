@@ -24,9 +24,17 @@ static const char sccsid[] = "%W% %G%";
 #include "wxButtonBorder.h"
 
 #if 1
-#define MIN_BUTTON_WIDTH 58
-#define BUTTON_H_SPACE 12
-#define BUTTON_V_SPACE 4
+# define MIN_BUTTON_WIDTH 58
+# ifdef OS_X
+// Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
+#  define BUTTON_H_SPACE 38
+#  define BUTTON_H_INSET 5
+#  define BUTTON_V_SPACE 15
+#  define BUTTON_V_INSET 5
+# else
+#  define BUTTON_H_SPACE 12
+#  define BUTTON_V_SPACE 4
+# endif
 #else
 /* Original parameters */
 #define MIN_BUTTON_WIDTH 60
@@ -117,6 +125,9 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
+#ifdef OS_X
+        ::InsetRect(&boundsRect,BUTTON_H_INSET,BUTTON_V_INSET);
+#endif        
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
@@ -418,9 +429,17 @@ void wxButton::Paint(void)
 	if (buttonBitmap) {
 	    PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
 	} else if (cMacControl) {
+#ifdef OS_X
+            if (!IsControlVisible(cMacControl)) {
+                ::EraseRect(&r);
+            } else {
+                ::Draw1Control(cMacControl);
+            }
+#else            
 	    ::EraseRect(&r);
             if (!IsControlVisible(cMacControl)) return;
             ::Draw1Control(cMacControl);
+#endif            
 	}
 	wxWindow::Paint();
 }
@@ -480,15 +499,17 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 		SetCurrentDC();
 	
 		int startH, startV;
-		event->Position(&startH, &startV); // port c.s.
-	
-		Point startPt = {startH, startV}; // port c.s.
+		event->Position(&startH, &startV); // client c.s.
+
+		Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+
 		int trackResult;
 		if (::StillDown()) {
-			if (buttonBitmap == NULL && cMacControl)
+			if (buttonBitmap == NULL && cMacControl) {
 				trackResult = ::TrackControl(cMacControl, startPt, NULL);
-			else
+                        } else {
 				trackResult = Track(startPt);
+                        }
 		} else {
 			Highlight(TRUE); // highlight button
 			long delayTicks = 4; // one tick is 1/60th of a second
@@ -546,7 +567,11 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentDC(); // put new origin at (0, 0)
+#ifdef OS_X
+                ::MoveControl(cMacControl, SetOriginX + BUTTON_H_INSET, SetOriginY + BUTTON_V_INSET);
+#else                
 		::MoveControl(cMacControl, SetOriginX, SetOriginY);
+#endif                
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);

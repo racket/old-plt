@@ -653,3 +653,45 @@ to do anything special GC-wise to add such a global?  Is that true?
 john
 
 *********
+
+That worked (mostly) okay.  I've made the following mistakes during this
+changeover:
+
+This is the big one: the SetOrigin is port-persistent, so the OS keeps
+track of the origin for each port.  We're changing things to have just
+one global port.  Obviously, there's the potential for disaster, if
+the existing code switches to a new port and relies upon the prior 
+value for the origin.  Fortunately, the wx code obeys the invariant
+that SetCurrentDC is called for the new client window (and hence, for
+the port) before each drawing operation.  However, inside the call
+to SetCurrentDC (I'm glossing over the fact that this code actually
+appears in four locations), the port setup (including the setup of
+SetOriginX and SetOriginY) is predicated on a check to see whether
+CMacDC->currentUser already points to 'this'.  If so, none of this 
+setup is done.  This is because (duh!) the things in this block
+are all persistent.  The SetOrigin setup is _not_ persistent 
+any more, so this needs to be moved outside of the block.  The 
+manifestation of this bug was painfully subtle.
+
+Also, I didn't know when debugging this code that OS X does lazy 
+screen updating.  Trying to track down when the screen changes
+was therefore unbelievably frustrating.
+
+Another mistake was that I didn't know that points were declared
+as {y,x} and not {x,y}.  This screwed up my handling of mouse-clicks,
+and I have no reliable way to check whether I made this mistake
+in other yet-undiscovered places.
+
+Finally, when doing the SetOrigin update, I started with the result
+of nm.  This implicitly draws the boundary between the user code
+and the system code.  In fact, I really wanted the A-List code to
+be considered "system."  So I missed all calls to A-List code in
+my SetOrigin sweep.  Fortunately, these calls are all contained 
+in wx_lbox.cc, so I can fix them up pretty easily.
+
+Here's another boo-boo; I assumed that Toolbox calls that accepted
+global positions would not be a problem, on the theory that these
+would not be calculated based on local positions.  There's at
+least one example where this isn't true; PopUpMenuSelect accepts
+a point at which to pop up the menu.  It's global, but it's
+calculated from a local point.  Oops.

@@ -409,7 +409,10 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	{
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalidRect(&clientRect);
+                OffsetRect(&clientRect,SetOriginX,SetOriginY);
+		::InvalidRect(&clientRect); 
+                // evidently this illegal function name InvalidRect? has been around for a long 
+                // long time. At least since revision 1.1.  Should this have been InvalRect all along?
 	}
 #endif
 }
@@ -438,7 +441,7 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 		SetCurrentDC();
 	
 		int	newsel;
-		Point pos = {ValueRect.top, ValueRect.left};
+		Point pos = {ValueRect.top + SetOriginY, ValueRect.left + SetOriginX};
 		LocalToGlobal(&pos);
                 // Rect r = TitleRect;
                 // OffsetRect(&r,SetOriginX,SetOriginY);
@@ -452,7 +455,7 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 		::GetForeColor(&save);
 		::ForeColor(whiteColor);
                 Rect r = ValueRect;
-                OffsetRect(&r,SetOriginX,SetOriginY);
+                ::OffsetRect(&r,SetOriginX,SetOriginY);
 		::PaintRect(&r);
 		::RGBForeColor(&save);
 		if (newsel) {

@@ -268,9 +268,9 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 {
 	if (event->leftDown) {
 		int startH, startV;
-		event->Position(&startH, &startV); // client c.s.
-		Point pt = {startV, startH};
 		SetCurrentDC();
+		event->Position(&startH, &startV); // client c.s.
+		Point pt = {startV + SetOriginY, startH + SetOriginX};
 		int part;
 		part = ::TestControl(cMacControl, pt);
 		if (part) {

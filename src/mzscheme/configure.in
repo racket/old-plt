@@ -264,6 +264,24 @@ if test "${enable_sgcdebug}" = "yes" ; then
   OPTIONS="$OPTIONS -DSGC_STD_DEBUGGING=1"
 fi
 
+############## C flags ################
+
+MZOPTIONS=
+
+AC_LANG_C
+
+[ msg="for inline keyword" ]
+AC_MSG_CHECKING($msg)
+AC_TRY_RUN(
+   static inline int foo() { return 0; }
+   int main() {
+      return foo();
+   }, inline=yes, inline=no, inline=no)
+if test "$inline" = "no" ; then
+  MZOPTIONS="$MZOPTIONS -DNO_INLINE_KEYWORD"
+fi
+AC_MSG_RESULT($inline) 
+
 ############## C++ grunge ################
 
 MROPTIONS=
@@ -281,7 +299,7 @@ if test "${enable_mred}" = "yes" ; then
    class C { int x; };
    int main() {
 [    return (new C) == (new C[10]);       ]
-   }, different=yes, different=no)
+   }, different=yes, different=no, different=yes)
   if test "$different" = "yes" ; then
     MROPTIONS="$MROPTIONS -DOPERATOR_NEW_ARRAY"
   fi
@@ -321,6 +339,7 @@ AC_SUBST(X_PRE_LIBS)
 AC_SUBST(X_EXTRA_LIBS)
 
 AC_SUBST(OPTIONS)
+AC_SUBST(MZOPTIONS)
 AC_SUBST(MROPTIONS)
 AC_SUBST(GCDIR)
 AC_SUBST(MZBINTARGET)

@@ -412,8 +412,6 @@ int scheme_solaris_semaphore_try_down(void *);
 # define DEFEAT_FP_COMP_OPTIMIZATION
 # define FMOD_CAN_RETURN_NEG_ZERO
 
-# define NO_INLINE_KEYWORD
-
 # define NO_USLEEP
 # define USE_FCNTL_O_NONBLOCK
 

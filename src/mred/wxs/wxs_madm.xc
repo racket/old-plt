@@ -80,7 +80,7 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 
-@CLASSBASE wxMediaAdmin "editor-admin":"object"
+@CLASSBASE wxMediaAdmin "editor-admin":"object" / nofnl
 
 @CREATOR ();
 
@@ -91,7 +91,7 @@ typedef void *(*CAPOFunc)(void*);
 
 @END
 
-@CLASSBASE wxMediaSnipMediaAdmin "editor-snip-editor-admin":"editor-admin"
+@CLASSBASE wxMediaSnipMediaAdmin "editor-snip-editor-admin":"editor-admin" / nofnl
 @INTERFACE "editor-snip-editor-admin"
 
 @CLASSID wxTYPE_MEDIA_SNIP_MEDIA_ADMIN
@@ -100,7 +100,7 @@ typedef void *(*CAPOFunc)(void*);
 
 @END
 
-@CLASSBASE wxSnipAdmin "snip-admin":"object"
+@CLASSBASE wxSnipAdmin "snip-admin":"object" / nofnl
 
 @CREATOR ();
 

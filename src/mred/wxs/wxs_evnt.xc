@@ -7,7 +7,7 @@
 
 @HEADER
 
-@CLASSBASE wxEvent "event":"object"
+@CLASSBASE wxEvent "event":"object" / nofnl
 
 @CREATOR ()
 
@@ -30,7 +30,7 @@
 @SYM "menu-popdown-none" : wxEVENT_TYPE_MENU_POPDOWN_NONE
 @ENDSYMBOLS
 
-@CLASSBASE wxCommandEvent "control-event":"event"
+@CLASSBASE wxCommandEvent "control-event":"event" / nofnl
 
 @CREATOR (SYM[actionType])
 
@@ -39,7 +39,7 @@
 @END
 
 
-@CLASSBASE wxPopupEvent "popup-event":"control-event"
+@CLASSBASE wxPopupEvent "popup-event":"control-event" / nofnl
 
 @CREATOR ()
 
@@ -61,7 +61,7 @@
 
 @INCLUDE wxs_ornt.xci
 
-@CLASSBASE wxScrollEvent "scroll-event":"event"
+@CLASSBASE wxScrollEvent "scroll-event":"event" / nofnl
 
 @CREATOR ()
 
@@ -141,7 +141,7 @@
 @SYM "scroll" : WXK_SCROLL
 @ENDSYMBOLS
 
-@CLASSBASE wxKeyEvent "key-event":"event"
+@CLASSBASE wxKeyEvent "key-event":"event" / nofnl
 
 @MACRO SETX0 = x0=wxEVENT_TYPE_CHAR;
 @CREATOR (-int=wxEVENT_TYPE_CHAR); : : /SETX0
@@ -177,7 +177,7 @@
 @SYM "right" : 3
 @ENDSYMBOLS
 
-@CLASSBASE wxMouseEvent "mouse-event":"event"
+@CLASSBASE wxMouseEvent "mouse-event":"event" / nofnl
 
 @CREATOR (SYM[mouseEventType]);
 

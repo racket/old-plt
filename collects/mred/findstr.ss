@@ -313,22 +313,24 @@
 				  (if (= 1 searching-direction)
 				      (send searching-edit get-end-position)
 				      (send searching-edit get-start-position))))
-			  (let ([first-pos (send searching-edit
-						 find-string 
-						 string 
-						 searching-direction
-						 anchor)])
+			  (let-values ([(found-edit first-pos)
+					(send searching-edit
+					      find-string-embedded
+					      string 
+					      searching-direction
+					      anchor)])
 			    (cond
 			      [(= -1 first-pos)
-			       (let ([pos (send searching-edit
-						find-string
-						string 
-						searching-direction
-						(if (= 1 searching-direction)
-						    0
-						    (send searching-edit last-position)))])
+			       (let-values ([(found-edit pos)
+					     (send searching-edit
+						   find-string-embedded
+						   string 
+						   searching-direction
+						   (if (= 1 searching-direction)
+						       0
+						       (send searching-edit last-position)))])
 				 (if (= -1 pos)
-				     (begin (send searching-edit set-position anchor)
+				     (begin (send found-edit set-position anchor)
 					    (not-found))
 				     (found pos)))]
 			      [else

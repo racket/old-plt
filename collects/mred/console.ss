@@ -16,6 +16,7 @@
 	    [mred:icon : mred:icon^]
 	    [mred:hyper-frame : mred:hyper-frame^]
 	    [mred:version : mred:version^]
+	    [mred:application : mred:application^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:string : mzlib:string^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
@@ -130,7 +131,8 @@
 		   erase set-mode get-canvas
 		   invalidate-bitmap-cache
 		   get-extent get-style-list canvases)
-	  (rename [super-on-local-char on-local-char]
+	  (rename [super-set-auto-set-wrap set-auto-set-wrap]
+		  [super-on-local-char on-local-char]
 		  [super-on-paint on-paint]
 		  [super-after-set-size-constraint after-set-size-constraint]
 		  [super-after-insert after-insert]
@@ -262,7 +264,6 @@
 	       (if (> pos prompt-position)
 		   prompt-position
 		   0))]
-	    [auto-set-wrap? #t]
 	    [auto-save? #f]
 	    [autoprompting? #f]
 	    [enable-autoprompt
@@ -305,6 +306,10 @@
 		   (unless (null? a)
 		     (send a grab-caret)))		 
 		 (set! transparent-edit #f)))]
+	    [set-auto-set-wrap
+	     (lambda (x)
+	       (super-set-auto-set-wrap x)
+	       (for-each (lambda (c) (send c wrap-rep-snips x)) canvases))]
 	    [init-transparent-io
 	     (lambda ()
 	       (unless transparent-edit
@@ -709,25 +714,38 @@
 	(class-asi super%
 	  (inherit get-media)
 	  (rename [super-on-size on-size])
-	  (private 
+	  (private
 	    [snips null]
+	    [autowrap-snips? (mred:preferences:get-preference 'mred:auto-set-wrap?)]
 	    [update-snip-size
 	     (lambda (s)
-	       (let ([width (box 0)]
-		     [lefti (box 0)]
-		     [righti (box 0)]
-		     [leftm (box 0)]
-		     [rightm (box 0)])
+	       (let* ([width (box 0)]
+		      [lefti (box 0)]
+		      [righti (box 0)]
+		      [leftm (box 0)]
+		      [rightm (box 0)]
+		      [snip-media (send s get-this-media)])
 		 (send (send (get-media) get-admin)
 		       get-view null null width null)
 		 (send s get-inset lefti (box 0) righti (box 0))
 		 (send s get-margin leftm (box 0) rightm (box 0))
-		 (send s set-min-width (- (unbox width)
-					  ;(unbox lefti)
-					  ;(unbox righti)
-					  (unbox leftm)
-					  (unbox rightm)))))])
+		 (let ([snip-width (- (unbox width)
+				      ;(unbox lefti)
+				      ;(unbox righti)
+				      (unbox leftm)
+				      (unbox rightm))])
+		   (send s set-min-width snip-width)
+		   (send s set-max-width snip-width)
+		   (unless (null? snip-media)
+		     (send snip-media set-max-width
+			   (if autowrap-snips?
+			       snip-width
+			       0))))))])
 	  (public
+	    [wrap-rep-snips
+	     (lambda (x)
+	       (set! autowrap-snips? x)
+	       (for-each update-snip-size snips))]
 	    [add-rep-snip
 	     (lambda (snip)
 	       (set! snips (cons snip snips))
@@ -924,7 +942,7 @@
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before console-frame%")
-	    (super-init "MrEdConsole")
+	    (super-init (string-append mred:application:app-name "Console"))
 	    (mred:debug:printf 'super-init "after console-frame%")
 	    (let ([edit (get-edit)])
 	      (send edit set-file-format wx:const-media-ff-std)

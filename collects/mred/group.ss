@@ -7,6 +7,7 @@
 	    [mred:exit : mred:exit^]
 	    [mred:autosave : mred:autosave^]
 	    [mred:handler : mred:handler^]
+	    [mred:application : mred:application^]
 	    [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:group@")
@@ -162,7 +163,7 @@
 	      
 	      [get-buffer-group% (lambda () buffer-group%)]
 	      [ask-before-closing-last? #t]
-	      [frame-title-prefix "MrEd"]
+	      [frame-title-prefix mred:application:app-name]
 	      [make-full-frame-prefix
 	       (lambda (id)
 		 (string-append 

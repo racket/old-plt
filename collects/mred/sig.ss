@@ -74,6 +74,7 @@
 
 (define-signature mred:application^
   (console
+   app-name
    eval-string))
 
 (define-signature mred:html-mode^
@@ -202,7 +203,10 @@
    make-return-edit%
    edit%
    return-edit%
-   pasteboard%))
+   pasteboard%
+   
+   make-media-snip%
+   media-snip%))
 
 (define-signature mred:canvas^
   (make-wrapping-canvas%
@@ -215,8 +219,7 @@
    frame-title-canvas%))
 
 (define-signature mred:frame^
-  (frame-name
-   frame-width
+  (frame-width
    frame-height
 
    make-simple-frame%

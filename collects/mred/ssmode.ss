@@ -678,6 +678,7 @@
 	    [install
 	     (lambda (edit)
 	       '(highlight-parens edit #t)
+	       (send edit set-load-overwrites-styles #f)
 	       (send edit set-wordbreak-map scheme-media-wordbreak-map)
 	       (send edit set-tabs '() 8 #f)
 	       (set! tab-size 8)

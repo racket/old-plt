@@ -16,12 +16,11 @@
 	    [mred:autosave : mred:autosave^]
 	    [mred:panel : mred:panel^]
 	    [mred:gui-utils : mred:gui-utils^]
+	    [mred:application : mred:application^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:file : mzlib:file^])
 	    
     (mred:debug:printf 'invoke "mred:frame@")
-
-    (define frame-name "MrEd")
 
     (define frame-width 600)
     (define frame-height 600)
@@ -247,7 +246,7 @@
 
     (define make-simple-frame%
       (lambda (super%)
-	(class super% ([name frame-name])
+	(class super% ([name mred:application:app-name])
 	  (inherit panel get-client-size set-icon get-menu-bar
 		   make-menu on-close show active-edit active-canvas)
 	  (rename [super-on-close on-close]

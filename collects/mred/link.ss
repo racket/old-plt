@@ -58,14 +58,16 @@
 				(core string@) (core function@) (core file@))]
 	    [group : mred:group^ 
 		   (mred:group@ debug preferences editor-frame gui-utils
-			      exit autosave handler (core function@))]
+			      exit autosave handler application
+			      (core function@))]
 	    [canvas : mred:canvas^ 
 		    (mred:canvas@ debug container edit (core file@))]
 	    [panel : mred:panel^ (mred:panel@ debug container canvas (core function@))]
 	    [frame : mred:frame^ 
 	      (mred:frame@ debug preferences edit container canvas icon
 			   menu group finder find-string handler exit autosave
-			   panel gui-utils (core function@) (core file@))]
+			   panel gui-utils application
+			   (core function@) (core file@))]
 	    [find-string : mred:find-string^ 
 			 (mred:find-string@ debug container canvas edit frame)]
 	    [editor-frame : mred:editor-frame^ 
@@ -79,7 +81,7 @@
 	    [console : mred:console^ 
 		     (mred:console@ debug preferences edit frame canvas find-string
 				  exit finder handler gui-utils scheme-mode
-				  scheme-paren icon hyper-frame version
+				  scheme-paren icon hyper-frame version application
 				  (core function@) 
 				  (core string@) (core pretty-print@) trigger)]
 	    [scheme-mode : mred:scheme-mode^ 

@@ -791,11 +791,11 @@
   ;override?: symbol type-records -> bool
   (define (override? method-name type-recs)
     (let* ((internal-error (lambda () (error 'override "Internal Error class or it's parent not in class record table")))
-           (class-record (send type-recs get-class-record 
-                               (make-ref-type (class-name)
-                                              (send type-recs lookup-path (class-name) (lambda () null)))
-                               #f
-                               internal-error))
+           (class-record (get-record (send type-recs get-class-record 
+                                           (make-ref-type (class-name)
+                                                          (send type-recs lookup-path (class-name) (lambda () null)))
+                                           #f
+                                           internal-error) type-recs))
            (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) #f internal-error)))
       (memq method-name
             (map (lambda (m) (string->symbol (build-method-name (method-record-name m)

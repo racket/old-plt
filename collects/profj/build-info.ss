@@ -84,7 +84,9 @@
       (for-each (lambda (def) (add-def-info def pname type-recs current-loc (null? args) level)) defs)
 
       ;Set the package of the interactions window to that of the definitions window
-      (when (execution?) (send type-recs set-interactions-package pname))
+      (when (execution?) 
+        (send type-recs set-interactions-package pname)
+        (send type-recs set-execution-loc! current-loc))
       
       ;All further definitions do not come from the execution window
       (execution? #f)
@@ -105,6 +107,7 @@
   ;build-interactions-info: ast location type-records -> void
   (define (build-interactions-info prog level loc type-recs)
     (build-info-location loc)
+    (send type-recs give-interaction-execution-names)
     (if (list? prog)
         (for-each (lambda (f) (build-interactions-info f level loc type-recs)) prog)
         (when (field? prog)
@@ -233,7 +236,9 @@
   (define (add-my-package type-recs package defs loc level)
     (let* ((dir (find-directory package (lambda () #f)))
            (classes (if dir (get-class-list dir) null)))
-      (for-each (lambda (c) (import-class c package dir loc type-recs level #f #t)) 
+      (for-each (lambda (c) 
+                  (import-class c package dir loc type-recs level #f #t)
+                  (send type-recs add-to-env c package loc))
                 (filter (lambda (c) (not (contained-in? defs c))) classes))
       (send type-recs add-package-contents package classes)))
       

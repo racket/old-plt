@@ -17,7 +17,7 @@
   ;;      | array-type
   ;;      | contract
 
-  (define-struct ref-type (class/iface path))
+  (define-struct ref-type (class/iface path) (make-inspector))
   (define-struct array-type (type dim))
   
   (define object-type (make-ref-type "Object" `("java" "lang")))
@@ -172,7 +172,7 @@
   (define-struct field-record (name modifiers init? class type))
   
   ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
-  (define-struct method-record (name modifiers rtype atypes throws override class))
+  (define-struct method-record (name modifiers rtype atypes throws override class) (make-inspector))
 
   ;;(make-inner-record string (list symbol) bool)
   (define-struct inner-record (name modifiers class?))
@@ -246,7 +246,7 @@
                                (fail)
                                (let ((back-path (reverse path)))
                                  (search-for-record key (car back-path) (reverse (cdr back-path)) (lambda () #f) fail))))))
-;            (printf "~a~n" ctype)
+;            (printf "get-class-record: ~a~n" ctype)
 ;            (hash-table-for-each records (lambda (k v) (printf "~a -> ~a~n" k v)))
             (cond
               ((and container 
@@ -316,6 +316,9 @@
       
       ;lookup-path: string ( -> 'a) -> (U (list string) #f)
       (define/public (lookup-path class fail)
+;        (printf "lookup ~a~n" class)
+;        (hash-table-for-each (hash-table-get class-environment location)
+;                            (lambda (k v) (printf "~a -> ~a~n" k v)))
         (if location
             (hash-table-get (hash-table-get class-environment 
                                             location 
@@ -378,7 +381,8 @@
 
       (define interaction-package null)
       (define interaction-fields null)
-      (define interaction-boxes null)
+      (define interaction-boxes null)      
+      (define execution-loc #f)
       
       (define/public (set-interactions-package p) (set! interaction-package p))
       (define/public (get-interactions-package) interaction-package)
@@ -389,6 +393,13 @@
       (define/public (add-interactions-box box)
         (set! interaction-boxes (cons box interaction-boxes)))
       (define/public (get-interactions-boxes) (reverse interaction-boxes))
+      (define/public (set-execution-loc! loc) (set! execution-loc loc))
+      
+      (define/public (give-interaction-execution-names)
+        (when execution-loc
+          (hash-table-for-each (hash-table-get class-environment execution-loc)
+                               (lambda (k v) (add-to-env k v 'interactions)))
+          (set! execution-loc #f)))
       
       (super-instantiate ())))
   

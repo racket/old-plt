@@ -2,5 +2,6 @@
   (define name "ProfessorJ")
   (define tools (list (list "tool.ss")))
   (define compile-subcollections (list (list "profj" "parsers")
+                                       ;(list "profj" "libs" "draw")
                                        (list "profj" "libs" "java" "lang")
 				       (list "profj" "libs" "java" "io"))))

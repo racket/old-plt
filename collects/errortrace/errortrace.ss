@@ -81,7 +81,7 @@
 				       (case (car clause)
 					 [(sequence) `(sequence ,@(map annotate (cdr clause)))]
 					 [(inherit rename) clause]
-					 [(public private)
+					 [(public override private)
 					  `(,(car clause) ,@(map (lambda (binding)
 								   (if (or (symbol? binding)
 									   (null? (cdr binding)))

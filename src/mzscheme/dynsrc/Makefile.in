@@ -11,6 +11,7 @@ prefix = @prefix@
 MZSRC = $(srcdir)/../src
 
 CC = @CC@
+PLAIN_CC = @PLAIN_CC@
 CFLAGS = @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
 
 dynlib:
@@ -31,20 +32,20 @@ HEADERS = $(srcdir)/../include/scheme.h $(srcdir)/../src/schemef.h \
 MZDYNDEP = ../mzdyn.o $(srcdir)/../include/ext.exp $(srcdir)/../include/mzscheme.exp
 
 ../mzdyn.o: $(srcdir)/mzdyn.c $(srcdir)/../src/schvers.h  $(HEADERS)
-	$(CC) $(CFLAGS) -c $(srcdir)/mzdyn.c -o ../mzdyn.o
+	$(PLAIN_CC) $(CFLAGS) -c $(srcdir)/mzdyn.c -o ../mzdyn.o
 
 ../mzdyn3m.o: $(srcdir)/mzdyn.c $(srcdir)/../src/schvers.h  $(HEADERS)
-	$(CC) $(CFLAGS) -DMZ_PRECISE_GC -c $(srcdir)/mzdyn.c -o ../mzdyn3m.o
+	$(PLAIN_CC) $(CFLAGS) -DMZ_PRECISE_GC -c $(srcdir)/mzdyn.c -o ../mzdyn3m.o
 
 ../dynexmpl.so: dynexmpl.o $(MZDYNDEP)
 	$(DYNLINK) ../dynexmpl.so dynexmpl.o
 dynexmpl.o: $(srcdir)/dynexmpl.c  $(HEADERS)
-	$(CC) $(CFLAGS) -c $(srcdir)/dynexmpl.c -o dynexmpl.o
+	$(PLAIN_CC) $(CFLAGS) -c $(srcdir)/dynexmpl.c -o dynexmpl.o
 
 ../oe.so: oe.o  $(MZDYNDEP)
 	$(DYNLINK) ../oe.so oe.o
 oe.o: $(srcdir)/oe.c $(HEADERS)
-	$(CC) $(CFLAGS) -c $(srcdir)/oe.c -o oe.o
+	$(PLAIN_CC) $(CFLAGS) -c $(srcdir)/oe.c -o oe.o
 
 ILIBDIR = $(prefix)/lib
 

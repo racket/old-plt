@@ -309,7 +309,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all $subbuilds"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS LTO subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER PLAIN_CC x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS LTO subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4918,7 +4918,7 @@ esac
 
 MACH=`$UNAME -m`
 case "$MACH" in
-  alpha)
+  alpha | SunOS)
     if test "$CC" = "gcc" ; then
       if test "$as_was_set" = "no" ; then
        AS="gcc -c -x assembler-with-cpp"
@@ -6668,19 +6668,25 @@ fi
 
 if test "${enable_shared}" = "yes" ; then
   echo "Configuring libtool"
+
   if test ! -d "lt" ; then
     mkdir "lt"
   fi
   abssrcdir=`(cd ${srcdir}; pwd)`
+  absprefix=`(cd ${prefix}; pwd)`
+
   (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
   LTDIR=`pwd`/lt
-  absprefix=`(cd ${prefix}; pwd)`
-  AR="${LTDIR}/libtool --mode=link $CC -rpath ${absprefix}/lib -o"
+
+  plt_lib_version=`grep " MZSCHEME_VERSION " ${srcdir}/mzscheme/src/schvers.h | cut -d '"' -f 2`
+
+  AR="${LTDIR}/libtool --mode=link $CC -release ${plt_lib_version} -rpath ${absprefix}/lib -o"
   STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"
   ARFLAGS=""
   RANLIB=":"
   MZLINKER="${LTDIR}/libtool --mode=link $CC"
   MREDLINKER="${LTDIR}/libtool --mode=link $CXX"
+  PLAIN_CC="$CC"
   CC="${LTDIR}/libtool --mode=compile $CC"
   CXX="${LTDIR}/libtool --mode=compile $CXX"
   AS="${LTDIR}/libtool --mode=compile $AS"
@@ -6705,6 +6711,7 @@ fi
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
+
 
 
 
@@ -7524,6 +7531,7 @@ s,@WBUILD@,$WBUILD,;t t
 s,@CC_FOR_BUILD@,$CC_FOR_BUILD,;t t
 s,@REZ@,$REZ,;t t
 s,@MZLINKER@,$MZLINKER,;t t
+s,@PLAIN_CC@,$PLAIN_CC,;t t
 s,@x_includes@,$x_includes,;t t
 s,@x_libraries@,$x_libraries,;t t
 s,@OPTIONS@,$OPTIONS,;t t

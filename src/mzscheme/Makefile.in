@@ -201,7 +201,7 @@ clean@NOT_OSX@:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
 	/bin/rm -f *.@LTO@ core
-	/bin/rm -f mzdyn.@LTO@ libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
+	/bin/rm -f mzdyn.o libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
 	/bin/rm -f include/macosxpre
 	/bin/rm -f include/macosxpre.p
 	cd gc; $(MAKE) clean
@@ -220,7 +220,7 @@ install:
 
 install-3m-basic:
 	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
-	cd ..; cp mzscheme/mzdyn3m.@LTO@ $(prefix)/lib/mzdyn3m.@LTO@
+	cd ..; cp mzscheme/mzdyn3m.o $(prefix)/lib/mzdyn3m.o
 
 install-3m@NOT_OSX@:
 	$(MAKE) install-3m-basic
@@ -237,7 +237,7 @@ normal-install:
 	cd ..; rm -f $(prefix)/bin/mzscheme
 	cd ..; $(ICP) mzscheme/mzscheme `(cd $(prefix); pwd)`/bin/mzscheme
 	cd ..; if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
-	cd ..; cp mzscheme/mzdyn.@LTO@ $(LIBIDIR)/mzdyn.@LTO@
+	cd ..; cp mzscheme/mzdyn.o $(LIBIDIR)/mzdyn.o
 	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
 	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
 	cd ..; echo 'CC=@CC@' > $(BUILDINFO)

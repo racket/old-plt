@@ -670,12 +670,13 @@
                                          (is-a? snip editor-snip%))
                                     (loop (send snip get-editor))
                                     (values pos editor)))]))]
-                        [(is-a? editor text%)
+                        [(is-a? editor pasteboard%)
                          (let ([snip (send editor find-snip x y)])
                            (if (and snip
                                     (is-a? snip editor-snip%))
                                (loop (send snip get-editor))
-                               (values #f #f)))])))))
+                               (values #f #f)))]
+                        [else (values #f #f)])))))
               
             (define/override (on-event event)
               (if arrow-vectors
@@ -693,30 +694,29 @@
                          (send event entering?))
                      (let-values ([(pos text) (get-pos/text event)])
                        (cond
-                         [pos
-                          (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))]
-                                 [eles (and arrow-vector (vector-ref arrow-vector cursor-location))])
+                         [(and pos text)
+                          (unless (and (equal? pos cursor-location)
+                                       (eq? cursor-text text))
+                            (set! cursor-location pos)
+                            (set! cursor-text text)
                             
-                            (when eles
-                              (let ([has-txt? #f])
-                                (for-each (lambda (ele)
-                                            (when (string? ele)
-                                              (set! has-txt? #t)
-                                              (let ([f (get-top-level-window)])
-                                                (when f
-                                                  (send f update-status-line 'drscheme:check-syntax:mouse-over ele)))))
-                                          eles)
-                                (unless has-txt?
-                                  (let ([f (get-top-level-window)])
-                                    (when f
-                                      (send f update-status-line 'drscheme:check-syntax:mouse-over #f))))))
-                            
-                            (unless (and cursor-location
-                                         cursor-text
-                                         (= pos cursor-location)
-                                         (eq? cursor-text text))
-                              (set! cursor-location pos)
-                              (set! cursor-text text)
+                            (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))]
+                                   [eles (and arrow-vector (vector-ref arrow-vector cursor-location))])
+                              (when eles
+                                (let ([has-txt? #f])
+                                  (for-each (lambda (ele)
+                                              (when (string? ele)
+                                                (set! has-txt? #t)
+                                                (let ([f (get-top-level-window)])
+                                                  (when f
+                                                    (send f update-status-line 'drscheme:check-syntax:mouse-over ele)))))
+                                            eles)
+                                  (unless has-txt?
+                                    (let ([f (get-top-level-window)])
+                                      (when f
+                                        (send f update-status-line 'drscheme:check-syntax:mouse-over #f))))))
+                              
+                              
                               (when eles
                                 (for-each (lambda (ele)
                                             (cond

@@ -7,11 +7,29 @@
   
   ;line : (number -> number) [number] [symbol] [number] -> (2dplotview -> nothing)
   (define line 
-    (r-lambda func 2dplotview (x-min x-max) ((samples 150) (color 'red) (width 1))
-      (send* 2dplotview 
-        (set-line-color color) (set-line-width width)
-        (plot-line (map (lambda (x) (vector x (func x))) 
-                        (x-values samples x-min x-max))))))
+    (r-lambda func 2dplotview (x-min x-max) ((samples 150) (color 'red) 
+                                             (width 1) 
+                                             (mode 'standard) 
+                                             (mapping 'cartesian)
+                                             (t-min -5) (t-max 5))
+      
+      (let*
+          ((t-min (if (eq? mapping 'polar) t-min x-min))
+           (t-max (if (eq? mapping 'polar) t-max x-max))  ; maybe let-values?
+           (points
+            (case mode
+              ((standard) (map (lambda (x) (vector x (func x))) 
+                               (x-values samples x-min x-max)))
+              ((parametric) (map func (x-values samples t-min t-max))))))
+        (send* 2dplotview 
+          (set-line-color color) (set-line-width width))
+        (case mapping
+          ((cartesian) points)
+          ((polar) (map 
+                    (lambda (point)  ; convert to cartesian from theta, r
+                      (vector 
+                       (* (vector-y point) (cos (vector-x point)))
+                       (* (vector-y point) (sin (vector-x point)))))))))))
   
     ; error-bars : (listof (vector x y err)) [symbol] -> (2dplotview -> nothing)
   (define error-bars

@@ -242,10 +242,8 @@
   
   (define 3d-view%
     (class* plot-view% ()
-      (public 
-        box3d
-        world3d
-        plot3d
+      (public        
+        plot-surface
         get-z-min
         get-z-max
         get-alt
@@ -273,7 +271,7 @@
                  zopts zlabel zticks nzsub))
       
       ; draw a 3d plot
-      (define (plot3d x y z)
+      (define (plot-surface x y z)
         (pl-plot3d x y z))
       
       (inherit start-plot set-plot-environment finish-plot get-x-min 

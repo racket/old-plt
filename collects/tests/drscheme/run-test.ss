@@ -3,7 +3,7 @@
 (require-library "guis.ss" "tests" "utils")
 
 (define-signature drscheme:test-util^
-  (get-user-eventspace
+  (get-top-level-drscheme-focus-window
    test-util-error
    poll-until
    wait-for-drscheme-frame

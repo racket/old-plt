@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.4 1999/01/16 04:52:07 robby Exp $
+;; $Id: frameworkc.ss,v 1.5 1999/02/02 01:07:39 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -66,8 +66,8 @@
 	[frame : framework:frame^ 
 	       ((require-relative-library "frame.ss")
 		mred
-		group preferences icon handler application
-		panel gui-utils exit finder keymap text editor
+		group preferences icon handler application panel
+		gui-utils exit finder keymap text pasteboard editor
 		core:function)]
 	[scheme : framework:scheme^ 
 		((require-relative-library "scheme.ss")

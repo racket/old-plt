@@ -1922,7 +1922,7 @@ static void done_with_GC()
   scheme_resume_remembered_threads();
 #endif
 #ifdef UNIX_PROCESSES
-  scheme_block_child_signals(1);
+  scheme_block_child_signals(0);
 #endif
 
   delay_breaks = 0;

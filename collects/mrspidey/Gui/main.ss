@@ -40,7 +40,7 @@
 	  (if (or (eof-object? ch) 
 		  (and (char? ch) (char=? ch #\newline)))
 	      (reverse items)
-	      (if (is-a? ch image-snip%)
+	      (if (is-a? ch snip%)
 		  (loop (cons (send ch copy) items) #f)
 		  (loop (cons ch items) #f)))))))
 

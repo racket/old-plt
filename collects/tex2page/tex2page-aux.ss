@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-02-24")
+(define *tex2page-version* "2005-02-26")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -7351,7 +7351,7 @@
         (set! *js-port* (open-output-file js-file))
         (display "var toc = new Array(" *js-port*))
       (display
-        "\n               body {\n               background: white;\n               font-size: 22;\n               font-weight: bold;\n               font-family: Verdana, Arial, Lucida;\n               }\n\n               div#content {\n               position: absolute;\n               top: 10px;\n               left: 150px;\n               }\n\n               div#title {\n               position: absolute;\n               top: 150px;\n               left: 250px;\n               }\n\n               h1 {\n               color: darkblue;\n               font-size: 1.5em;\n               padding-bottom: 20px;\n               border-bottom: thick solid blue;\n               }\n               "
+        "\n               body {\n               background: white;\n               font-size: 22;\n               font-weight: bold;\n               font-family: Verdana, Arial, Lucida;\n               }\n\n               div#content {\n               position: absolute;\n               top: 10px;\n               left: 150px;\n               }\n\n               div#title {\n               position: absolute;\n               top: 150px;\n               left: 250px;\n               }\n\n               div#other {\n               position: absolute;\n               top: 0px;\n               left: 0px;\n               height: 100%;\n               width: 100%;\n               background-color: transparent;\n               z-index: 1;\n               }\n\n               h1 {\n               color: darkblue;\n               font-size: 1.5em;\n               padding-bottom: 20px;\n               border-bottom: thick solid blue;\n               }\n               "
         *css-port*)
       (unless *title*
         (display

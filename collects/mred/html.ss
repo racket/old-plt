@@ -47,14 +47,14 @@
 		(let ([m (let loop ([n 1][m (vector-ref cached-use 0)])
 			   (if (= n NUM-CACHED)
 			       m
-			       (loop (add1 n) (vector-ref cached-use n))))])
+			       (loop (add1 n) (min m (vector-ref cached-use n)))))])
 		  (let loop ([n 0])
 		    (if (= (vector-ref cached-use n) m)
 			(let ([image (get-image-from-url url)])
 			  (vector-set! cached n image)
 			  (vector-set! cached-name n url)
-			  (vector-set! cached-use n 0)
-			  image)
+			  (vector-set! cached-use n 1)
+			  (send image copy))
 			(loop (add1 n)))))]
 	       [(equal? url (vector-ref cached-name n))
 		(vector-set! cached-use n (add1 (vector-ref cached-use n)))

@@ -1,5 +1,5 @@
 ;;
-;; $Id$
+;; $Id: zsigs.ss,v 1.4 1997/02/25 16:13:43 krentel Exp $
 ;;
 ;; The signatures for all scanner/reader units.
 ;;
@@ -91,5 +91,5 @@
 ;;
 
 (define-signature  zodiac:scanner-code^  (scan))
-(define-signature  zodiac:reader-code^   (read))
+(define-signature  zodiac:reader-code^   (read allow-improper-lists))
 

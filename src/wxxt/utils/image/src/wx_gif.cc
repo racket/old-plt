@@ -168,9 +168,12 @@ int wxImage::LoadGIF(char *fname, int /* nc */)
   
   Background = NEXTBYTE;		/* background color... not used. */
   
-  if (NEXTBYTE) { /* supposed to be NULL */
-    fclose(fp);
-    return( GifError("corrupt GIF file (screen descriptor)") );
+  if (NEXTBYTE) { /* NULL for normal GIF */
+    /* Non-null means animated; we pretend it's normal. */
+    if (0) {
+      fclose(fp);
+      return( GifError("corrupt GIF file (screen descriptor)") );
+    }
   }
   
   

@@ -206,6 +206,11 @@ The PList library provides the ability to read and write xml documents which
 conform to the "plist" DTD, used to store 'dictionaries' of string - value
 associations.
 
+To Load
+=======
+
+(require (lib "plist.ss" "xml"))
+
 Functions
 =========
 

@@ -1175,17 +1175,23 @@ typedef struct Comp_Prefix
 typedef struct Scheme_Comp_Env
 {
   MZTAG_IF_REQUIRED
-  short num_bindings;
-  short flags; /* used for expanding/compiling */
-  Scheme_Object *uid; /* renaming symbol for syntax */
-  Scheme_Env *genv; /* run-time environment */
+  short num_bindings;   /* number of `values' slots */
+  short flags;          /* used for expanding/compiling */
+  Scheme_Env *genv;     /* top-level environment */
+  Comp_Prefix *prefix;  /* stack base info: globals and stxes */
+
+  struct Scheme_Object **values; /* names bound in this frame */
+
+  Scheme_Object *uid;            /* renaming symbol for syntax, if all the same */
+  struct Scheme_Object **uids;   /* renaming symbol for syntax when multiple are needed */
+
+  struct Scheme_Object *renames; /* an stx lexical rename or an improper list of them */
+
+  short rename_var_count;        /* number of non-NULL `values' when `renames' was computed */
+  short rename_rstart;           /* leftover rstart from previous round; see env.c */
+  Scheme_Hash_Table *dup_check;  /* table for finding colliding symbols in `values' */
+
   struct Scheme_Comp_Env *next;
-  struct Scheme_Object **values;
-
-  struct Scheme_Object *renames;
-  int rename_var_count;
-
-  Comp_Prefix *prefix;
 } Scheme_Comp_Env;
 
 #define CLOS_HAS_REST 1
@@ -1866,7 +1872,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, 
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 
-typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Getc_Fun)(struct Scheme_Input_Port *port, int *nonblock, int *eof_on_error);
 typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
 typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
 typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);

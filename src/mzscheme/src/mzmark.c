@@ -1958,18 +1958,21 @@ int mark_comp_env_SIZE(void *p) {
 int mark_comp_env_MARK(void *p) {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
-  gcMARK(e->base.uid);
   gcMARK(e->base.genv);
+  gcMARK(e->base.prefix);
   gcMARK(e->base.next);
   gcMARK(e->base.values);
   gcMARK(e->base.renames);
-  gcMARK(e->base.prefix);
+  gcMARK(e->base.uid);
+  gcMARK(e->base.uids);
+  gcMARK(e->base.dup_check);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
   gcMARK(e->data.stxes_used);
   gcMARK(e->data.const_names);
   gcMARK(e->data.const_vals);
+  gcMARK(e->data.const_uids);
   gcMARK(e->data.use);
 
   return

@@ -1046,7 +1046,7 @@ static int tcp_char_ready (Scheme_Input_Port *port)
   return 0;
 }
 
-static int tcp_getc(Scheme_Input_Port *port)
+static int tcp_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_err)
 {
   int errid;
   Scheme_Tcp *data;
@@ -1068,6 +1068,11 @@ static int tcp_getc(Scheme_Input_Port *port)
       return (unsigned char)data->b.buffer[data->b.bufpos++];
 
   if (!tcp_char_ready(port)) {
+    if (nonblock) {
+      *nonblock = 1;
+      return EOF;
+    }
+
 #ifdef USE_SOCKETS_TCP
     scheme_current_thread->block_descriptor = PORT_BLOCKED;
     scheme_current_thread->blocker = (Scheme_Object *)port;
@@ -1160,7 +1165,8 @@ static int tcp_getc(Scheme_Input_Port *port)
 #endif
   
   if (data->b.bufmax == -1) {
-    if (scheme_return_eof_for_error()) {
+    if (eof_on_err) {
+      *eof_on_err = 1;
       return EOF;
     } else {
       scheme_raise_exn(MZEXN_I_O_PORT_READ,
@@ -1228,9 +1234,11 @@ static void tcp_close_output(Scheme_Output_Port *port);
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port)
 {
   /* TCP writes aren't buffered at all right now. */
-  /* If rarely_block is nonzero, it means only write as much as
+  /* If rarely_block is 1, it means only write as much as
      can be flushed immediately, blocking only if nothing
      can be written. */
+  /* If rarely_block is 2, it means only write as much as
+     can be flushed immediately, never ever blocking. */
 
   Scheme_Tcp *data;
   int errid, would_block = 0;
@@ -1385,6 +1393,9 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 #endif
 
   if (would_block) {
+    if (rarely_block == 2)
+      return 0;
+
     /* Block for writing: */
     scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, (Scheme_Object *)port, (float)0.0);
 

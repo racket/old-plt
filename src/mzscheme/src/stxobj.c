@@ -705,6 +705,8 @@ Scheme_Object *scheme_make_rename(Scheme_Object *newname, int c)
 
 void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
 {
+  /* Every added name must be symbolicly distinct! */
+
   SCHEME_VEC_ELS(rnm)[2 + pos] = oldname;
 
   /* Add ht mapping, if there's a hash table: */
@@ -1471,6 +1473,7 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase,
 }
 
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase)
+     /* If uid is given, it's the environment for b. */
 {
   Scheme_Object *asym, *bsym;
 

@@ -102,6 +102,7 @@ typedef struct Compile_Data {
   int num_const;
   Scheme_Object **const_names;
   Scheme_Object **const_vals;
+  Scheme_Object **const_uids;
   int *use;
 } Compile_Data;
 
@@ -1257,20 +1258,91 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
   return val;
 }
 
+static Scheme_Object *make_uid()
+{
+  char name[20];
+  env_uid_counter++;
+  sprintf(name, "env%d", env_uid_counter);
+  return scheme_make_symbol(name); /* uninterned! */
+}
+
 static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
 {
   if (env->flags & (SCHEME_NO_RENAME | SCHEME_CAPTURE_WITHOUT_RENAME))
     return NULL;
 
   if (!env->uid) {
-    char name[20];
     Scheme_Object *sym;
-    env_uid_counter++;
-    sprintf(name, "env%d", env_uid_counter);
-    sym = scheme_make_symbol(name); /* uninterned! */
+    sym = make_uid();
     env->uid = sym;
   }
   return env->uid;
+}
+
+static void make_env_renames(Scheme_Comp_Env *env, int rcount, int rstart, int rstart_sec, int force_multi)
+{
+  Scheme_Object *rnm;
+  Scheme_Object *uid = NULL;
+  int i, pos;
+
+  env_frame_uid(env);
+
+  if (force_multi) {
+    if (env->num_bindings && !env->uids) {
+      Scheme_Object **uids;
+      uids = MALLOC_N(Scheme_Object *, env->num_bindings);
+      env->uids = uids;
+    }
+    if (COMPILE_DATA(env)->num_const && !COMPILE_DATA(env)->const_uids) {
+      Scheme_Object **cuids;
+      cuids = MALLOC_N(Scheme_Object *, COMPILE_DATA(env)->num_const);
+      COMPILE_DATA(env)->const_uids = cuids;
+    }
+    if (env->uid && !SCHEME_FALSEP(env->uid)) {
+      uid = env->uid;
+      env->uid = scheme_false;
+    }
+  }
+
+  if (!uid) {
+    if (env->uid && SCHEME_TRUEP(env->uid)) {
+      /* single-uid mode (at least for now) */
+      uid = env->uid;
+    } else {
+      /* multi-uid mode */
+      if (!rstart_sec)
+	uid = COMPILE_DATA(env)->const_uids[rstart];
+      else
+	uid = env->uids[rstart];
+      if (!uid)
+	uid = make_uid();
+    }
+  }
+  
+  rnm = scheme_make_rename(uid, rcount);
+  pos = 0;
+
+  if (!rstart_sec) {
+    for (i = rstart; (i < COMPILE_DATA(env)->num_const) && (pos < rcount); i++, pos++) {
+      if (COMPILE_DATA(env)->const_uids)
+	COMPILE_DATA(env)->const_uids[i] = uid;
+      scheme_set_rename(rnm, pos, COMPILE_DATA(env)->const_names[i]);
+    }
+    rstart = 0;
+  }
+  for (i = rstart; pos < rcount; i++, pos++) {
+    if (env->uids)
+      env->uids[i] = uid;
+    scheme_set_rename(rnm, pos, env->values[i]);
+  }
+  
+  if (env->renames) {
+    if (SCHEME_PAIRP(env->renames) || SCHEME_NULLP(env->renames))
+      rnm = scheme_make_pair(rnm, env->renames);
+    else
+      rnm = scheme_make_pair(rnm, scheme_make_pair(env->renames, scheme_null));
+  }
+  env->renames = rnm;
 }
 
 Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env, 
@@ -1283,13 +1355,12 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 
   while (env != upto) {
     if (!(env->flags & (SCHEME_NO_RENAME | SCHEME_CAPTURE_WITHOUT_RENAME))) {
-      Scheme_Object *uid;
       int i, count;
       
-      uid = env_frame_uid(env);
-
-      /* IMMUTABLE flag is used to indicate non-hygenic names */
-
+      /* How many slots filled in the frame so far?  This can change
+	 due to the style of let* compilation, which generates a
+	 rename record after each binding set. The "const" bindings
+	 are always all in place before we generate any renames. */
       count = COMPILE_DATA(env)->num_const;
       for (i = env->num_bindings; i--; ) {
 	if (env->values[i])
@@ -1297,25 +1368,145 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
       }
       
       if (count) {
+	Scheme_Object *l;
+
 	if (!env->renames || (env->rename_var_count != count)) {
-	  Scheme_Object *rnm;
+	  /* Need to create lexical renaming record(s). We create
+	     multiple records as necessary to avoid uids that contain
+	     more than one variable with the same symbol name.
+
+	     This is complicated, because we don't want to allocate a
+	     hash table in the common case of a binding set with a few
+	     names. It's also complicated by incremental rename
+	     building: if env->rename_var_count is not zero, we've
+	     done this before for a subset of `values' (and there are
+	     no consts in that case.) In the incremental case, we have
+	     a dup_check hash table left from the previous round. */
+	  Scheme_Hash_Table *ht;
+	  Scheme_Object *name;
+	  int rcount = 0, rstart, rstart_sec = 0;
 	  
-	  rnm = scheme_make_rename(uid, count);
-	  
-	  count = 0;
-	  for (i = COMPILE_DATA(env)->num_const; i--; ) {
-	    scheme_set_rename(rnm, count++, COMPILE_DATA(env)->const_names[i]);
+	  rstart = env->rename_rstart;
+	  if (env->renames) {
+	    /* Incremental mode. Reverse the list and drop the most
+               recent (last) rename table, because we'll recreate it: */
+	    if (SCHEME_PAIRP(env->renames))
+	      env->renames = SCHEME_CDR(env->renames);
+	    else
+	      env->renames = NULL;
 	  }
-	  for (i = env->num_bindings; i--; ) {
-	    if (env->values[i])
-	      scheme_set_rename(rnm, count++, env->values[i]);
+
+	  /* Create or find the hash table: */
+	  if (env->dup_check)
+	    ht = env->dup_check;
+	  else if (env->num_bindings + COMPILE_DATA(env)->num_const > 10)
+	    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	  else
+	    ht = NULL;
+
+	  /* Check for dups among the statics, and build a rename for
+             each dup-free set. */
+
+	  /* First: constants. */
+	  if (COMPILE_DATA(env)->num_const) {
+	    /* Start at the beginning, since this can't be incremental. */
+	    for (i = 0; i < COMPILE_DATA(env)->num_const; i++) {
+	      int found = 0;
+	      name = SCHEME_STX_VAL(COMPILE_DATA(env)->const_names[i]);
+	      if (ht) {
+		if (scheme_hash_get(ht, name))
+		  found = 1;
+		else
+		  scheme_hash_set(ht, name, scheme_true);
+	      } else {
+		int j;
+		for (j = rstart; j < i; j++) {
+		  if (SAME_OBJ(name, SCHEME_STX_VAL(COMPILE_DATA(env)->const_names[j]))) {
+		    found = 1;
+		    break;
+		  }
+		}
+	      }
+
+	      if (found) {
+		make_env_renames(env, rcount, rstart, rstart_sec, 1);
+		rcount = 1;
+		rstart = i;
+		if (ht) {
+		  /* Flush the table for a new set: */
+		  ht = scheme_make_hash_table(SCHEME_hash_ptr);
+		}
+	      } else
+		rcount++;
+	    }
+	  } else
+	    rstart_sec = 1;
+
+	  for (i = rstart; (i < env->num_bindings) && env->values[i]; i++) {
+	    int found = 0;
+	    name = SCHEME_STX_VAL(env->values[i]);
+
+	    if (ht) {
+	      if (scheme_hash_get(ht, name))
+		found = 1;
+	      else
+		scheme_hash_set(ht, SCHEME_STX_VAL(env->values[i]), scheme_true);
+	    } else {
+	      int j;
+	      if (!rstart_sec) {
+		/* Look in consts, first: */
+		for (j = rstart; j < COMPILE_DATA(env)->num_const; j++) {
+		  if (SAME_OBJ(name, SCHEME_STX_VAL(COMPILE_DATA(env)->const_names[j]))) {
+		    found = 1;
+		    break;
+		  }
+		}
+
+		j = 0;
+	      } else
+		j = rstart;
+
+	      if (!found) {
+		for (; j < i; j++) {
+		  if (SAME_OBJ(name, SCHEME_STX_VAL(env->values[j]))) {
+		    found = 1;
+		    break;
+		  }
+		}
+	      }
+	    }
+
+	    if (found) {
+	      make_env_renames(env, rcount, rstart, rstart_sec, 1);
+	      rcount = 1;
+	      rstart = i;
+	      rstart_sec = 1;
+	      if (ht) {
+		/* Flush the table for a new set: */
+		ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	      }
+	    } else
+	      rcount++;
 	  }
 	  
-	  env->renames = rnm;
+	  make_env_renames(env, rcount, rstart, rstart_sec, 0);
+
 	  env->rename_var_count = count;
+	  env->rename_rstart = rstart;
+	  if (count < env->num_bindings) {
+	    /* save for next time around: */
+	    env->dup_check = ht;
+	  } else { 
+	    /* drop a saved table if there; we're done with all increments */
+	    env->dup_check = NULL;
+	  }
 	}
 	
-	stx = scheme_add_rename(stx, env->renames);
+	for (l = env->renames; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	  stx = scheme_add_rename(stx, SCHEME_CAR(l));
+	}
+	if (!SCHEME_NULLP(l))
+	  stx = scheme_add_rename(stx, l);
       }
     }
 
@@ -1372,9 +1563,10 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	skip_stops = 1;
 
       uid = env_frame_uid(frame);
-      
+
       for (i = frame->num_bindings; i--; ) {
 	if (frame->values[i]) {
+	  if (frame->uids) uid = frame->uids[i];
 	  if (SAME_OBJ(SCHEME_STX_VAL(symbol), SCHEME_STX_VAL(frame->values[i]))
 	      && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
 	    /* Found a lambda- or let-bound variable: */
@@ -1390,10 +1582,12 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	int issame;
 	if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
 	  issame = scheme_stx_module_eq(symbol, COMPILE_DATA(frame)->const_names[i], phase);
-	else
+	else {
+	  if (COMPILE_DATA(frame)->const_uids) uid = COMPILE_DATA(frame)->const_uids[i];
 	  issame = (SAME_OBJ(SCHEME_STX_VAL(symbol), 
 			     SCHEME_STX_VAL(COMPILE_DATA(frame)->const_names[i]))
 		    && scheme_stx_env_bound_eq(symbol, COMPILE_DATA(frame)->const_names[i], uid, phase));
+	}
       
 	if (issame) {
 	  val = COMPILE_DATA(frame)->const_vals[i];

@@ -284,7 +284,6 @@
 #define scheme_fdisset (scheme_extension_table->scheme_fdisset)
 #define scheme_add_fd_handle (scheme_extension_table->scheme_add_fd_handle)
 #define scheme_add_fd_eventmask (scheme_extension_table->scheme_add_fd_eventmask)
-#define scheme_return_eof_for_error (scheme_extension_table->scheme_return_eof_for_error)
 #define scheme_security_check_file (scheme_extension_table->scheme_security_check_file)
 #define scheme_security_check_network (scheme_extension_table->scheme_security_check_network)
 #define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)

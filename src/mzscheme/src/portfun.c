@@ -506,7 +506,7 @@ void scheme_init_port_fun_config(void)
 /*========================================================================*/
 
 static int 
-string_getc (Scheme_Input_Port *port)
+string_getc (Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 {
   Scheme_Indexed_String *is;
 
@@ -684,7 +684,7 @@ scheme_get_string_output(Scheme_Object *port)
 /*========================================================================*/
 
 static int 
-user_getc (Scheme_Input_Port *port)
+user_getc (Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 {
   Scheme_Object *fun, *val;
   int special_ok;
@@ -708,7 +708,8 @@ user_getc (Scheme_Input_Port *port)
 	  scheme_bad_time_for_special("read-char", (Scheme_Object *)port);
 	  return 0;
 	}
-      } else if (scheme_return_eof_for_error()) {
+      } else if (eof_on_error) {
+	*eof_on_error = 1;
 	return EOF;
       } else {
 	scheme_wrong_type("user port read-char", "character, eof, or procedure of arity 4", -1, -1, &val);
@@ -793,32 +794,38 @@ user_close_output (Scheme_Output_Port *port)
 /*                               pipe ports                               */
 /*========================================================================*/
 
-static int pipe_getc(Scheme_Input_Port *p)
+static int pipe_getc(Scheme_Input_Port *p, int *nonblock, int *eof_on_error)
 {
   Scheme_Pipe *pipe;
   int c;
 
   pipe = (Scheme_Pipe *)(p->port_data);
 
-  scheme_current_thread->block_descriptor = PIPE_BLOCKED;
-  scheme_current_thread->blocker = (Scheme_Object *)p;
-  while (pipe->bufstart == pipe->bufend && !pipe->eof) {
-    scheme_thread_block((float)0.0);
-  }
-  scheme_current_thread->block_descriptor = NOT_BLOCKED;
-  scheme_current_thread->ran_some = 1;
+  if ((pipe->bufstart == pipe->bufend) && !pipe->eof) {
+    if (nonblock) {
+      *nonblock = 1;
+      return EOF;
+    }
 
-  if (p->closed) {
-    /* Another thread closed the input port while we were waiting. */
-    /* Call scheme_getc to signal the error */
-    scheme_getc((Scheme_Object *)p);
+    scheme_current_thread->block_descriptor = PIPE_BLOCKED;
+    scheme_current_thread->blocker = (Scheme_Object *)p;
+    while ((pipe->bufstart == pipe->bufend) && !pipe->eof) {
+      scheme_thread_block((float)0.0);
+    }
+    scheme_current_thread->block_descriptor = NOT_BLOCKED;
+    scheme_current_thread->ran_some = 1;
+
+    if (p->closed) {
+      /* Another thread closed the input port while we were waiting. */
+      /* Call scheme_getc to signal the error */
+      scheme_getc((Scheme_Object *)p);
+    }
   }
   
-  if (pipe->bufstart == pipe->bufend)
+  if (pipe->eof)
     c = EOF;
   else {
     c = pipe->buf[pipe->bufstart];
-    
     pipe->bufstart = (pipe->bufstart + 1) % pipe->buflen;
   }
 
@@ -861,19 +868,21 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
   firstpos = pipe->bufend;
 
   if (pipe->bufmax && (avail < len)) {
-    /* Must we block? */
+    /* Must we block to write it all? */
     long xavail = avail + (pipe->bufmax - pipe->buflen);
     if (xavail < len) {
-      /* We must block. */
+      /* We must block to write it all. */
       Scheme_Object *my_sema;
 
-      /* First, write as much as seems immediately possible */
+      /* First, write as much as seems immediately possible. */
       xavail = scheme_pipe_write(str, d, xavail, p, nonblock);
       wrote += xavail;
       d += xavail;
       len -= xavail;
 
-      if (nonblock && wrote)
+      /* For non-blocking mode, that might be good enough.
+	 nonblock == 2 means that even nothing is good enough. */
+      if ((nonblock && wrote) || (nonblock == 2))
 	return wrote;
 
       /* Now, wait until we can write more, then start over. */
@@ -997,11 +1006,11 @@ static int pipe_out_ready(Scheme_Output_Port *p)
   Scheme_Pipe *pipe;
   long avail;
 
+  pipe = (Scheme_Pipe *)(p->port_data);
+  
   if (pipe->eof || !pipe->bufmax)
     return 1;
 
-  pipe = (Scheme_Pipe *)(p->port_data);
-  
   if (pipe->bufstart <= pipe->bufend) {
     avail = (pipe->buflen - pipe->bufend) + pipe->bufstart - 1;
   } else {

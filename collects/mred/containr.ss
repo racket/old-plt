@@ -872,7 +872,8 @@
 		    (send panel get-client-size p-x p-y)
 		    (let* ([panel-info (send panel get-info)]
 			   
-			   ; minimum size assumable by client area of panel
+			   ; minimum size assumable by client area of
+			   ; panel
 			   [min-width (child-info-x-min panel-info)]
 			   [min-height (child-info-y-min panel-info)]
 			   
@@ -887,8 +888,8 @@
 			   [p-delta-h (- (send panel get-height)
 					 p-client-height)]
 			   
-			   ; difference between frame's full size & panel's
-			   ; client size.
+			   ; difference between frame's full size &
+			   ; panel's client size.
 			   [delta-w (- new-width p-client-width)]
 			   [delta-h (- new-height p-client-height)]
 			   
@@ -897,16 +898,16 @@
 				    [(< p-client-width min-width)
 				     min-width]
 				    [(and (> p-client-width min-width)
-					  (not (child-info-x-stretch
-						panel-info)))
+				       (not (child-info-x-stretch
+					      panel-info)))
 				     min-width]
 				    [else p-client-width])]
 			   [new-h (cond
 				    [(< p-client-height min-height)
 				     min-height] 
 				    [(and (> p-client-height min-height)
-					  (not (child-info-y-stretch
-						panel-info)))
+				       (not (child-info-y-stretch
+					      panel-info)))
 				     min-height]
 				    [else p-client-height])]
 			   
@@ -915,27 +916,27 @@
 			   [f-width (+ new-w delta-w)]
 			   [f-height (+ new-h delta-h)])
 		      (mred:debug:printf 'container
-					 "FRAME: panel client ~s x ~s"
-					 p-client-width p-client-height)
+			"FRAME: panel client ~s x ~s"
+			p-client-width p-client-height)
 		      (mred:debug:printf 'container
-					 "FRAME: size differences: ~s, ~s"
-					 delta-w delta-h)
+			"FRAME: size differences: ~s, ~s"
+			delta-w delta-h)
 		      (mred:debug:printf 'container
-					 "FRAME: New size: ~s x ~s"
-					 new-w new-h)
+			"FRAME: New size: ~s x ~s"
+			new-w new-h)
 		      (send panel set-size const-default-posn
-			    const-default-posn
-			    (+ (- f-width delta-w) p-delta-w)
-			    (+ (- f-height delta-h) p-delta-h))
+			const-default-posn
+			(+ (- f-width delta-w) p-delta-w)
+			(+ (- f-height delta-h) p-delta-h))
 		      (unless (and (= new-width f-width)
-				   (= new-height f-height))
+				(= new-height f-height))
 			(mred:debug:printf 'container
-					   "FRAME: Resizing to ~s x ~s"
-					   f-width f-height)
+			  "FRAME: Resizing to ~s x ~s"
+			  f-width f-height)
 			(set-size const-default-posn const-default-posn
-				  f-width f-height)))))
+			  f-width f-height)))))
 		(mred:debug:printf 'container
-				   "FRAME: Leaving onsize at the end."))])
+		  "FRAME: Leaving onsize at the end."))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)
@@ -943,12 +944,16 @@
     
     (define frame% (make-top-container% wx:frame%))
     (define dialog-box%
-      (class (make-top-container% wx:dialog-box%) args
+      (class-asi (make-top-container% wx:dialog-box%)
 	(inherit
 	  centre)
-	(sequence
-	  (apply super-init args)
-	  (centre wx:const-both))))
+	(rename
+	  [super-show show])
+	(public
+	  [show
+	    (lambda (now?)
+	      (super-show now?)
+	      (centre wx:const-both))])))
     
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.

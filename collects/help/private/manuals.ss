@@ -67,8 +67,10 @@
 	   [names (map get-name doc-paths)]
 	   [names+paths (map cons names doc-paths)]
 	   [is-lang? (lambda (name+path)
-		       (or (regexp-match "Language" (car name+path))
-			   (regexp-match "MrEd" (car name+path))))] ;; hack
+		       (let ([name (car name+path)])
+			 (ormap (lambda (s)
+				  (regexp-match s name))
+				'("Language" "MrEd"))))]
 	   [lang-names+paths (filter is-lang? names+paths)]
 	   [tool-names+paths (filter (lambda (x) (not (is-lang? x))) names+paths)]
 	   [lang-names (map car lang-names+paths)]
@@ -93,17 +95,18 @@
 					 ""
 					 (string-append
 					  (format 
-					   "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">refresh</A>]"
+					   "[<A HREF=\"/servlets/download-manual.ss?manual=~a&label=~a\">~a</A>]"
 					   manual-dir
-					   (hexify-string name))
+					   (hexify-string name)
+					   (string-constant refresh))
 					  "&nbsp;"))
-                                     (format (string-constant manual-installed-date)
+				     (format (string-constant manual-installed-date)
                                              (date->string
                                               (seconds->date
                                                (file-or-directory-modify-seconds
                                                 index-file))))
 				     "</FONT>")
-                                    ""))))]
+				    ""))))]
 	   [break-between (lambda (re l)
 			    (if (null? l)
 				l
@@ -128,7 +131,9 @@
 	  (list "<H1>Installed Manuals</H1>")
 	  
 	  (if (and cvs-user? (not external-connections?))
-	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">refresh all manuals</a>")
+	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">"
+		    (string-constant refresh-all-manuals)
+		    "</a>")
 	      '())
 	  
 	  (list "<H3>Languages</H3>"

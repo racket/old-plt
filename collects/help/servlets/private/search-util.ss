@@ -1,22 +1,24 @@
 (module search-util mzscheme
 
+  (require (lib "string-constant.ss" "string-constants"))
+
   (provide 
     search-types 
     match-types
     kind-types)
 
   (define search-types
-    '(("keyword" "Keyword entry")
-      ("keyword-index" "Keyword or index entry" *) ; default
-      ("keyword-index-text" "Keyword, index entry, or text")))
+    `(("keyword" ,(string-constant search-for-keyword))
+      ("keyword-index" ,(string-constant search-for-keyword-or-index) *) ; default
+      ("keyword-index-text" ,(string-constant search-for-keyword-or-index-or-text))))
 
   (define match-types
-    '(("exact-match" "exact match")
-      ("containing-match" "containing match" *) ; default
-      ("regexp-match" "regexp match")))
+    `(("exact-match" ,(string-constant exact-match))
+      ("containing-match" ,(string-constant containing-match) *) ; default
+      ("regexp-match" ,(string-constant regexp-match))))
 
   (define kind-types
-    '(("index entries" html)
+    `(("index entries" html)
       ("keyword entries" text)
       ("text" text))))
 

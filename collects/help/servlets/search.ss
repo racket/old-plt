@@ -2,6 +2,7 @@
 	 (lib "string.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
+	 (lib "string-constant.ss" "string-constants")
          (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
@@ -62,7 +63,8 @@
 		    (TR 
 		     (TD ((ALIGN "right"))
 			 (B ,(color-with search-fg
-					 "Search for:")))
+					 (string-constant search-for)
+					 ":")))
 		     (TD 
 		      (INPUT ((TYPE "text")
 			      (NAME "search-string")
@@ -71,15 +73,16 @@
 		     (TD 
 		      (INPUT ((TYPE "submit")
 			      (NAME "search")
-			      (VALUE "Search")))
+			      (VALUE ,(string-constant search))))
 		      'nbsp 
 		      (INPUT ((TYPE "submit")
 			      (NAME "lucky")
-			      (VALUE "Lucky!"))))
+			      (VALUE ,(string-constant lucky)))))
 		     (TD 'nbsp 'nbsp))
 		    (TR 
 		     (TD ((ALIGN "right")) 
-			 (B  ,(color-with search-fg "Options:")))
+			 (B  ,(color-with search-fg (string-constant
+						     options))))
 		     (TD ((COLSPAN "2"))
 			 (SELECT ((NAME "search-type"))
 				 ,@(map make-option
@@ -95,7 +98,7 @@
 			  `(TD ((COLSPAN "2"))
 			       ,(make-sys-link
 				 "/servlets/hd-config.ss"
-				 "Configure Help Desk"
+				 (string-constant configure-hd)
 				 "_top"))))))
 		  (TD
 		   (TABLE ((BGCOLOR ,search-bg)
@@ -104,21 +107,25 @@
 			  (TR 
 			   (TD
 			    ,(make-search-link "/servlets/main.ss" 
-					       "Help Desk home"
+					       (string-constant hd-home)
 					       "main")))
 			  (TR
 			   (TD 
 			    ,(make-search-link "/servlets/manuals.ss"
-					       "Show manuals"
+					       (string-constant 
+						show-manuals)
 					       "main")))
 			   (TR 
 			    (TD
 			     ,(make-search-link "/servlets/bug-report.ss"
-					       "Send bug report"
+					       (string-constant 
+						send-bug-report)
 					       "_top")))
 
 			   (TR 
 			    (TD
 			     ,(make-search-link "http://bugs.plt-scheme.org/query/"
-					       "Query bug reports"
+					       (string-constant 
+						query-bug-reports)
 					       "main")))))))))))
+

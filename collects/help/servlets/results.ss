@@ -8,6 +8,7 @@
          (lib "xml.ss" "xml")
          (lib "path.ss" "help" "private")
 	 (lib "docpos.ss" "help" "private")
+	 (lib "string-constant.ss" "string-constants")
          (lib "search.ss" "help" "private"))
 
 (require "private/util.ss")
@@ -43,7 +44,7 @@
 	      (set! search-responses
 		    (cons `(B ,(color-with 
 				"red"
-				"Search aborted: too many responses"))
+				(string-constant search-stopped-too-many-matches)))
 			  search-responses)))
     (k #f)))
 
@@ -229,7 +230,7 @@
 	    (TITLE "PLT Help Desk search results"))
       (BODY
        (FONT ((SIZE "+1"))
-	     ,(color-with "blue" `(B "Search results")))
+	     ,(color-with "blue" `(B ,(string-constant search-results))))
        (BR)
        ,@items)))
 

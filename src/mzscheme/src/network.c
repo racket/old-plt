@@ -1429,7 +1429,7 @@ make_tcp_output_port(void *data)
 # endif
 
 #ifdef USE_SOCKETS_TCP
-static int closesocket_w_decrement(tcp_t s)
+static void closesocket_w_decrement(tcp_t s)
 {
   closesocket(s);
   --scheme_file_open_count;

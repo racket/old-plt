@@ -208,8 +208,9 @@
 	 ,@(rotate width height)
 	 ,@(if (>= seg width)
 	       `((put ,@(rotate 0 vpos) (line ,@(rotate 1 0) ,width)))
-	       (let* ([remain (remainder width (* 2 seg))]
-		      [count (quotient* width (* 2 seg))]
+	       (let* ([remain (+ (- width (floor width))
+				 (remainder (floor width) (* 2 seg)))]
+		      [count (inexact->exact (floor (quotient* width (* 2 seg))))]
 		      [lremain (quotient* remain 2)]
 		      [rremain (- remain lremain)])
 		 `((put ,@(rotate 0 vpos) (line ,@(rotate 1 0) ,lremain))

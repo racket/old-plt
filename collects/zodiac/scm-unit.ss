@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.78 1999/02/17 22:42:36 mflatt Exp $
+; $Id: scm-unit.ss,v 1.79 1999/02/25 22:21:30 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -601,7 +601,8 @@
 		      (put-attribute attributes 'top-levels old-top-level)
 		      (set-top-level-status attributes top-level?)
 		      (set-internal-define-status attributes internal?)
-		      
+		      (put-attribute attributes 'exports-expand-vocab #f)
+
 		      (create-unit-form
 		       (map car proc:imports)
 		       proc:exports
@@ -1218,7 +1219,8 @@
     (put-attribute attr 'c-unit-current-link-tag-attribute null)
     (put-attribute attr 'c-unit-expand-env null)
     (put-attribute attr 'unit-vars null)
-    (put-attribute attr 'unresolved-unit-vars null))
+    (put-attribute attr 'unresolved-unit-vars null)
+    (put-attribute attr 'exports-expand-vocab #f))
 
   (attributes-resetters (cons reset-unit-attributes (attributes-resetters)))
   

@@ -51,6 +51,12 @@
 	    (else #t)))
      (if (procedure? fun) (apply fun args) (car args)))))
 
+
+(define (nonneg-exact? x)
+  (and (exact? x)
+       (integer? x)
+       (x . >= . 0)))
+
 (define exn-table
   (list (cons exn? (cons exn-message string?))
 	(cons exn? (cons exn-continuation-marks continuation-mark-set?))
@@ -74,6 +80,10 @@
 						       a))))))
 	(cons exn:application:type? (cons exn:application:type-expected symbol?))
 	
+	(cons exn:read? (cons exn:read-port input-port?))
+	(cons exn:read? (cons exn:read-line (lambda (x) (if x (nonneg-exact? x) #t))))
+	(cons exn:read? (cons exn:read-column (lambda (x) (if x (nonneg-exact? x) #t))))
+
 	(cons exn:i/o:port? (cons exn:i/o:port-port (lambda (x) (or (input-port? x) (output-port? x)))))
 	(cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
 	(cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))

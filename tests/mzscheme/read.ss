@@ -276,7 +276,48 @@
   (test a-special syntax-e (car (syntax-e (cadr l))))
   (test b-special syntax-e (cadr (syntax-e (cadr l))))
   (test 108 syntax-position (caddr l)))
-	    
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test read-syntax offsets:
+
+(let ([p (open-input-string " a ")])
+  (let ([v (read-syntax 'ok p (list 70 700 7000))])
+    (test #f syntax-line v)
+    (test #f syntax-column v)
+    (test  7002 syntax-position v)))
+
+(let ([p (open-input-string " a ")])
+  (port-count-lines! p)
+  (let ([v (read-syntax 'ok p (list 70 700 7000))])
+    (test 71 syntax-line v)
+    (test 702 syntax-column v)
+    (test  #f syntax-position v)))
+
+(let ([p (open-input-string " \n a ")])
+  (port-count-lines! p)
+  (let ([v (read-syntax 'ok p (list 70 700 7000))])
+    (test 72 syntax-line v)
+    (test 2 syntax-column v)
+    (test  #f syntax-position v)))
+
+;; Check exception record:
+(let ([p (open-input-string " . ")])
+  (let ([x (with-handlers ([values values])
+	     (read-syntax 'ok p (list 70 700 7000)))])
+    (test p exn:read-port x)
+    (test 'ok exn:read-source x)
+    (test #f exn:read-line x)
+    (test 7002 exn:read-column x)))
+    
+(let ([p (open-input-string " . ")])
+  (port-count-lines! p)
+  (let ([x (with-handlers ([values values])
+	     (read-syntax 'ok p (list 70 700 7000)))])
+    (test p exn:read-port x)
+    (test 'ok exn:read-source x)
+    (test 71 exn:read-line x)
+    (test 702 exn:read-column x)))
+    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

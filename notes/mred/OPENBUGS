@@ -1,28 +1,23 @@
 
 MrEd Engine:
 
-* Motif: pre-on-char doesn't work for sliders
-
-* MacOS needs way to control the 0-window menu bar
+* Motif: pre-on-char doesn't work for sliders (therefore, frame/dialog
+  navagation doesn't work when a slider has the focus)
 
 * MacOS: bitmaps don't print with platform-specific printing
 
-* need to penalize the current thread more for certain primitive
+* Need to penalize the current thread more for certain primitive
    operations that can take a long time (e.g., loading a bitmap
    or saving a file)
 
-* need directory-selection dialog
+* Need directory-selection dialog
 
 * Keys like KP_end, etc. are not currently accessible
-
-* doc: [Mr] clarify "owning the caret" with respect to ownership by the parent, etc.
 
 * Windows and MacOS: "primitive" dialogs don't get closed by
    custodian-shutdown-all
 
 * MacOS: std file dialog and print dialogs block MzScheme threads
-
-* how does wx:dc% get-size interact with the user scale?
 
 * editor: the full width for non-wrapped lines need not include the autowrap bitmap
 
@@ -34,8 +29,6 @@ MrEd Engine:
 
 * optimization: dragging selection shouldn't keep changing the auto-X-selection
 
-* Xt: busy cursor not shown in the menu bar
-
 * add background color for buffers?
 
 * updating bug?: long flash, not on same line, update on focus-in
@@ -45,141 +38,3 @@ MrEd Engine:
 * need better de-fragmentation of text snips
 
 * need to show a mystery snip icon when unknown data is loaded from a file
-
-==========================================================================
-
-MrEd System:
-
-- replace can't replace with an empty string (ie, deleting
-  a word by finding it and replacing it with empty doesn't work)
-
-- bad url's are not handled smoothly
-
-- mred:console%'s initialization argument: `close-item?' is being ignored
-
-- backup files don't preserve permissions
-
-- the directory line in the common-file-dialogs is confusing
-
-- embedded snips should be reset on the styles-fixed? ivar
-
-- "scale" in open-viewport does effect the size
-  of the viewport, but is ignored by at least
-  draw-line into that viewport.
-	
-- pathnames should be normalized to early and can cause automouter problems
-
-- control-l doesn't get the horizontal direction right.
-
-See also the open prs:
-
-      14 steck    mredsyst open      serious   medium   unknown    Weird Ctl-C behavior in MrEd
- 
-      32 robby    drscheme open      serious   medium   unknown    unevaled REP expressions aren't greyed
- 
-      44 robby    mredsyst open      serious   medium   unknown    URL bug
- 
-      64 robby    mredsyst open      non-criti medium   unknown    mailto: URL not treated okay
- 
-      70 robby    mredsyst open      serious   medium   unknown    html reference to nonexistant file
- 
-      71 steck    drscheme open      serious   medium   unknown    hashed lines after resizing
- 
-     206 mflatt   mredengi open      serious   medium   unknown    two canvas's, with the same edit can interfere with each other
- 
-     211 robby    mredsyst open      serious   medium   unknown    Network operations seem to block all DrScheme threads, and cannot be interrupted
- 
-     229 robby    mredsyst open      serious   medium   unknown    esc-% doesn't work anymoe
- 
-     238 robby    mredsyst open      serious   medium   unknown    opening docs that don't exist in mred web browser
- 
-     242 robby    drscheme open      serious   medium   unknown    Loading Unix file on DrScheme on a PC
- 
-     250 steck    mredsyst open      serious   medium   unknown    Hit break many times -> next expression is broken
- 
-     269 steck    mredsyst open      serious   medium   unknown    error text from a thread is not locked
- 
-     274 steck    drscheme open      non-criti medium   unknown    DrScheme Save File dialog doesn't do .ss
- 
-     304 mflatt   mzscheme open      serious   medium   unknown    bad unit/sig error message
- 
-     324 mflatt   mredengi open      serious   medium   unknown    mouse selection and wide lines in mred
- 
-     361 robby    drscheme open      serious   medium   unknown    check syntax is broken
- 
-     391 steck    drscheme open      serious   medium   unknown    DrScheme read breaks when thread reports an error
- 
-     406 robby    drscheme open      serious   medium   unknown    bad error message for sixlib op
- 
-     454 robby    mredsyst open      serious   medium   unknown    mzos uses shutdown object
- 
-     460 robby    drscheme open      non-criti medium   unknown    syntax highlighting should occur inside unit/sig
- 
-     499 robby    mredsyst open      non-criti low      unknown    auto indenting is funny
- 
-     501 robby    mredsyst open      non-criti low      unknown    lock bitmap on DrScheme frame is selectable
- 
-     512 robby    mredsyst open      serious   medium   unknown    menu keybindings should change automatically according to pref
- 
-     529 robby    drscheme open      serious   high     unknown    font problem
- 
-     530 robby    mredsyst open      serious   medium   unknown    search menu item has bad default action
- 
-     531 robby    drscheme open      non-criti low      unknown    read following newline un-puts a newline
- 
-     532 robby    drscheme open      non-criti low      unknown    error-message line numbers off by one between files?
- 
-     539 shriram  mcmicmac open      serious   medium   unknown    (require-library "refer.ss") fails in drs
- 
-     546 robby    mredsyst open      serious   medium   unknown    indentation problem
- 
-     547 robby    mredsyst open      serious   medium   unknown    spurious black lines show up when balancing parens
- 
-     555 robby    mredsyst open      non-criti low      unknown    indent all in search box give an internal error
- 
-     562 mflatt   mredengi open      serious   medium   unknown    error of type 2 occurred
- 
-     563 mflatt   mredengi open      serious   medium   unknown    dragging files onto mred broken
- 
-     564 mflatt   mredengi open      serious   medium   unknown    dragging two files to mred app only opens first one
- 
-     565 mflatt   mredengi open      serious   medium   unknown    command line args for mac mred
- 
-     568 mflatt   mredengi open      non-criti low      unknown    mac mred doesn't use macos 8 dialog items
- 
-     577 robby    drscheme open      serious   medium   unknown    MrEd -u -- -f does not run programs in the main thread
- 
-     581 mflatt   mredengi open      serious   medium   unknown    setting a button label on the mac causes (out of mem) crash
- 
-     599 mflatt   mredengi open      serious   medium   unknown    mac: can't double click to open files while mred starts up
- 
-     601 mflatt   mredengi open      serious   medium   unknown    mac: buttons in dialogs don't show focus
- 
-     606 shriram  mcmicmac open      serious   medium   unknown    funny error message for "#if"
- 
-     626 steck    mredsyst open      serious   medium   unknown    Search mis-hilights text
- 
-     642 mflatt   mredengi open      serious   high     unknown    on-default-action for dialog box called with null
- 
-     649 robby    mredsyst open      serious   medium   unknown    Meta-P is painfully slow
- 
-     651 mflatt   mredengi open      serious   medium   unknown    "Error: Unresolved inheritance operation" ??
- 
-     674 steck    drscheme open      serious   medium   unknown    autosave files not checking for failed copy
- 
-     678 mflatt   mredengi open      serious   low      unknown    Horizontal scrolling broken after DrScheme window resize
- 
-     681 steck    mredsyst open      non-criti low      unknown    mred:menu% should have is-enabled? method
- 
-     693 mflatt   mredengi open      serious   medium   unknown    menu's get-label doesn't report keybinding strings under Xt
- 
-     699 mflatt   mredengi open      serious   medium   unknown    Xt wx:canvas-dc% instance invalidated by canvas GC
- 
-     701 robby    mredsyst open      non-criti medium   unknown    reference-library-... are gone in 52 without doc change
- 
- 
-
-
-
-
-

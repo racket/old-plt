@@ -9,7 +9,7 @@
 	  mzlib:file^
 	  mzlib:print-convert^)
 
-  (define settings-preferences-symbol 'drscheme:102-settings)
+  (define settings-preferences-symbol 'drscheme:103-settings)
 
   (define (get-printer-style-number printing-setting)
     (case printing-setting

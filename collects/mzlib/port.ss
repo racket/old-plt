@@ -131,7 +131,8 @@
        (lambda (x) 0)))
     (define (make-progress)
       (write-byte 0 peeked-w)
-      (read-byte peeked-r))
+      (read-byte peeked-r)
+      (set! peeked-end (add1 peeked-end)))
     (define (read-it s)
       (call-with-semaphore
        lock-semaphore
@@ -205,7 +206,7 @@
 	     [else
 	      ;; Non-empty special queue, so try to use it
 	      (let* ([pos (file-position peeked-r)]
-		     [avail (max 0 (- peeked-end pos))]
+		     [avail (- peeked-end pos)]
 		     [sk (- skip avail)])
 		(let loop ([sk sk]
 			   [l special-peeked])

@@ -112,6 +112,7 @@
 
   (define project-frames null)
 
+  (define project-save-file-tag ";; project file")
 
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin frame:standard-menus%) (filename)
@@ -796,8 +797,6 @@
 
 		(refresh-files-list-box))))))
 
-      (define project-save-file-tag ";; project file")
-
       (define (save-file filename)
 	(is-not-changed
 	 (lambda ()
@@ -1197,15 +1196,16 @@
 
   (drscheme:get/extend:extend-unit-frame make-project-aware-unit-frame)
   
-  (fw:handler:insert-format-handler 
+  (handler:insert-format-handler 
    "Projects"
    (lambda (filename) 
      (call-with-input-file filename
        (lambda (port)
          (let ([l (let loop ([i (string-length project-save-file-tag)])
                     (cond
-                      [(zero? i) null]
-                      [else (cons (read-char port) (loop (- i 1)))]))])
+		     [(zero? i) null]
+		     [else (cons (read-char port) (loop (- i 1)))]))])
            (and (equal? l (string->list project-save-file-tag))
-                (gui-utils:get-choice "Open this file as a project file?" "Yes" "No"))))))
-   open-drscheme-window))
+                (gui-utils:get-choice (format "Open ~a as a project file?" filename)
+				      "Yes" "No"))))))
+   open-project))

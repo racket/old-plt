@@ -92,4 +92,13 @@
 			      (lambda (x)
 				(or (string? x)
 				    (not x))))
-  (drscheme:app:check-new-version))
+  (drscheme:app:check-new-version)
+
+  (fw:handler:insert-format-handler 
+   "Projects"
+   (lambda (filename) 
+     (and (equal? ".plt" (filename-extension filename))
+	  (gui-utils:get-choice (format "Install ~a?" filename)
+				"Yes" "No")))
+   (lambda (x)
+     (message-box "hi" "hi"))))

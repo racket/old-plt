@@ -233,6 +233,15 @@ make .plt archives, especially under Unix:
    `file-mode' argument specifies the default mode for packing a file,
    either 'file or 'file-replace.
 
+ Unpacking .plt archives
+ -----------------------
+
+ The _plt-installer.ss_ library in the setup collection defines two
+ procedures:
+
+> (run-installer filename) - run the .plt installer on the .plt file in
+  `filename' and show the output in a window.
+
  Setup PLT as a Unit
  -------------------
 

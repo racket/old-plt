@@ -10,6 +10,9 @@
        [bullet : bullet-snip^ ((require-relative-library "bullet.ss") mred)]
        [html : browser:html^ ((require-relative-library "html.ss") 
 			      file string btree url bullet mred)]
+       [plt-installer : plt-installer^
+		      ((require-library "plt-installerr.ss" "setup"))]
        [hyper : browser^ ((require-relative-library "hyper.ss") 
-			  html function file string url bullet mred framework)])
+			  html function file string url bullet mred framework
+			  plt-installer)])
  (export (open hyper)))

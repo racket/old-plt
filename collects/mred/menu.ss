@@ -79,10 +79,10 @@
 	     (lambda (id)
 	       (super-delete id)
 	       (set! submenus (mzlib:function:remove id submenus
-						     (lambda (pair)
+						     (lambda (id pair)
 						       (= (car pair) id))))
 	       (set! callbacks (mzlib:function:remove id callbacks
-						      (lambda (pair)
+						      (lambda (id pair)
 							(= (car pair) id)))))]
 	    [dispatch
 	     (lambda (id)
@@ -99,47 +99,39 @@
     (define make-menu-bar%
       (lambda (super%)
 	(class-asi super%
-		   (inherit enable-top)
-		   (rename [super-append append]
-			   [super-delete delete])
-		   (private
-		    [menus ()])
-		   (public
-		    [append
-		     (lambda (menu name)
-		       (when (not (ivar menu menu-bar))
-			 (super-append menu name)
-			 (set! menus (#%append menus (list menu)))
-			 (send menu set-menu-bar this)))]
-		    [delete
-		     (opt-lambda (menu [pos 0])
-		       (if (null? menu)
-			   (if (< pos (length menus))
-			       (delete (list-ref menus pos)))
-			   (when (member menu menus)
-			     (super-delete menu)
-			     (send menu set-menu-bar #f)
-			     (set! menus (mzlib:function:remove menu menus)))))]
-		    [enable-all
-		     (lambda (on?)
-		       (let loop ([i (length menus)])
-			 (unless (zero? i)
-			   (enable-top (sub1 i) on?)
-			   (loop (sub1 i)))))]
-		    [dispatch
-		     (lambda (op)
-		       (let loop ([menus menus])
-			 (if (null? menus)
-			     #f
-			     (if (send (car menus) dispatch op)
-				 #t
-				 (loop (cdr menus))))))]))))
-    (define menu-bar% (make-menu-bar% wx:menu-bar%))
-    ))
-
-
-
-			
-	   
-       
-	       
+	  (inherit enable-top)
+	  (rename [super-append append]
+		  [super-delete delete])
+	  (private
+	    [menus ()])
+	  (public
+	    [append
+	     (lambda (menu name)
+	       (when (not (ivar menu menu-bar))
+		 (super-append menu name)
+		 (set! menus (#%append menus (list menu)))
+		 (send menu set-menu-bar this)))]
+	    [delete
+	     (opt-lambda (menu [pos 0])
+	       (if (null? menu)
+		   (if (< pos (length menus))
+		       (delete (list-ref menus pos)))
+		   (when (member menu menus)
+		     (super-delete menu)
+		     (send menu set-menu-bar #f)
+		     (set! menus (mzlib:function:remove menu menus)))))]
+	    [enable-all
+	     (lambda (on?)
+	       (let loop ([i (length menus)])
+		 (unless (zero? i)
+		   (enable-top (sub1 i) on?)
+		   (loop (sub1 i)))))]
+	    [dispatch
+	     (lambda (op)
+	       (let loop ([menus menus])
+		 (if (null? menus)
+		     #f
+		     (if (send (car menus) dispatch op)
+			 #t
+			 (loop (cdr menus))))))]))))
+    (define menu-bar% (make-

@@ -196,37 +196,67 @@
 		 (assemble-exec exec args))
 	(close-output-port p))))
   
-  
   (define (make-windows-launcher kind flags dest)
     (install-template dest kind "mzstart.exe" "mrstart.exe")
     (let ([str (str-list->dos-str flags)]
 	  [p (open-input-file dest)]
-	  [m (string->list "<Command Line: Replace This")])
-      ; Find the magic start
-      (let* ([pos (let loop ([pos 0][l m])
-		    (cond
-		      [(null? l) (- pos (length m))]
-		      [else (let ([c (read-char p)])
-			      (when (eof-object? c)
+	  [m (string->list "<Command Line: Replace This")]
+	  [x (string->list "<Executable Directory: Replace This")])
+      ; null character at end marks end of executable directory
+      (let* ([exedir (string-append plthome 
+				    (string (latin-1-integer->char 0)))]
+	     [pos-fun
+              ; Find the magic start
+	      (lambda 
+	       (magic s init-pos)
+	       (let loop ([pos init-pos][l magic])
+		 (cond
+		  [(null? l) (- pos (length magic))]
+		  [else (let ([c (read-char p)])
+			  (when (eof-object? c)
 				(close-input-port p)
 				(when (file-exists? dest)
-				  (delete-file dest))
-				(error 'make-windows-launcher 
-				       "Couldn't find command-line position in template"))
-			      (if (eq? c (car l))
-				  (loop (add1 pos) (cdr l))
-				  (loop (add1 pos) m)))]))]
-	     [len (+ (length m)
-		     (let loop ([c 1])
-		       (let ([v (read-char p)])
-			 (if (or (eof-object? v) (eq? v #\>))
-			     c
-			     (loop (add1 c))))))]
-	     [total (+ pos len
+				      (delete-file dest))
+				(error 
+				 'make-windows-launcher 
+				 (format
+				  "Couldn't find ~a position in template" s)))
+			     (if (eq? c (car l))
+				 (loop (add1 pos) (cdr l))
+				 (loop (add1 pos) magic)))])))]
+	     [len-fun
+	      (lambda (magic)
+		(+ (length magic)
+		   (let loop ([c 1])
+		     (let ([v (read-char p)])
+		       (if (or (eof-object? v) (eq? v #\>))
+			   c
+			   (loop (add1 c)))))))]
+	     ; exedir precedes command line in m{r,z}start.exe
+	     ; that's the reverse of their order in source code start.c!
+	     [pos-exedir (pos-fun x "executable path" 0)]
+	     [len-exedir (len-fun x)]
+	     [pos-command (pos-fun m "command-line" (+ pos-exedir len-exedir))]
+	     [len-command (len-fun m)]
+	     [total (+ pos-command len-command
 		       (let loop ([c 0])
 			 (if (eof-object? (read-char p))
 			     c
 			     (loop (add1 c)))))]
+	     [write-magic
+	      (lambda (p s pos len)
+		(file-position p pos)
+		(display s p)
+		(let loop ([c (- len (string-length s))])
+		  (unless (zero? c)
+			  (write-char #\space p)
+			  (loop (sub1 c)))))]
+	     [check-len
+	      (lambda (len s es)
+		(when (> (string-length s) len)
+		      (when (file-exists? dest)
+			    (delete-file dest))
+		      (error 'make-windows-launcher es)))]
 	     [v (make-vector total #\000)])
 	(file-position p 0)
 	(let loop ([pos 0][c total])
@@ -234,18 +264,12 @@
 	    (vector-set! v pos (read-char p))
 	    (loop (add1 pos) (sub1 c))))
 	(close-input-port p)
-	(when (> (string-length str) len)
-	  (when (file-exists? dest)
-	    (delete-file dest))
-	  (error 'make-windows-launcher "collection/file name is too long"))
+	(check-len len-exedir exedir "executable home directory is too long")
+	(check-len len-command str "collection/file name is too long")
 	(let ([p (open-output-file dest 'truncate)])
 	  (display (list->string (vector->list v)) p)
-	  (file-position p pos)
-	  (display str p)
-	  (let loop ([c (- len (string-length str))])
-	    (unless (zero? c)
-	      (write-char #\space p)
-	      (loop (sub1 c))))
+	  (write-magic p exedir pos-exedir len-exedir)   
+	  (write-magic p str pos-command len-command)   
 	  (close-output-port p)))))
   
   (define (make-macos-launcher kind flags dest)

@@ -13,6 +13,14 @@
   ;; (verbose)
   ;;  compile-extension
 
+  (require (rename (lib "plthome.ss" "setup") plthome* plthome))
+  (define mz-inc-dir (build-path plthome* "include"))
+  (define headers
+    (map (lambda (name)
+           (build-path mz-inc-dir name))
+         '("scheme.h" "schvers.h" "schemef.h" "sconfig.h" "stypes.h")))
+
+  
   (define here (this-expression-source-directory))
 
   (define dir (build-path here "compiled" "native" (system-library-subpath)))
@@ -61,7 +69,8 @@
                        src-dir)))
               (map (lambda (file)
                      (list (append-object-suffix file)
-                           (list (append-c-suffix file))
+                           (append headers
+                                   (list (append-c-suffix file)))
                            (lambda ()
                              (compile-c-extension-parts
                               (list (append-c-suffix file))

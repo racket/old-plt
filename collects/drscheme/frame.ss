@@ -10,25 +10,7 @@
     
     (mred:debug:printf 'invoke "drscheme:frame@")
 
-    (define frame-group%
-      (class-asi mred:frame-group%
-	(inherit get-frames)
-	(public
-	  [get-whole-program
-	   (lambda ()
-	     (let* ([exps (map (lambda (frame)
-				 (when (is-a? frame drscheme:unit:frame%)
-				   (send (ivar frame definitions-edit)
-					 get-zodiac-sexp)))
-			       (get-frames))]
-		    [mixed `(begin ,@exps)]
-		    [loc (zodiac:make-location 0 0 0 'drscheme-main)]
-		    [structurized (zodiac:structurize-syntax
-				   mixed
-				   (zodiac:make-zodiac 'drscheme loc loc))])
-	       (zodiac:scheme-expand structurized)))])))
-
-    (define group (make-object frame-group%))
+    (define group (make-object mred:frame-group%))
     (send group set-empty-callback (lambda () (mred:exit) #f))
     (mred:current-frames group)
 
@@ -76,7 +58,7 @@
 	     (send root-panel change-children
 		   (lambda (l)
 		     (let ([removed (mzlib:function@:remq imports-panel l)])
-		       (if (send show-menu checked? imports-id)
+		       (if (and imports-id (send show-menu checked? imports-id))
 			   (cons imports-panel removed)
 			   removed)))))]
 	  [make-menu-bar
@@ -85,12 +67,13 @@
 	       (set! show-menu (make-menu))
 	       (send mb append show-menu "S&how")
 	       (set! imports-id 
-		     (send show-menu append-item
-			   "&Imports"
-			   (lambda () (update-shown))
-			   "Show the imports to this unit"
-			   #t))
-	       (send show-menu check imports-id snip)
+		     (begin '(send show-menu append-item
+				   "&Imports"
+				   (lambda () (update-shown))
+				   "Show the imports to this unit"
+				   #t)
+			    #f))
+	       '(send show-menu check imports-id snip)
 	       mb))])
 
 	(public

@@ -202,6 +202,12 @@
       (close-input-port r) 
       (close-output-port w)))
 
+  (define (imap-force-disconnect imap)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (close-input-port r) 
+      (close-output-port w)))
+
   (define (imap-get-messages imap msgs field-list)
     (let ([r (imap-connection-r imap)]
 	  [w (imap-connection-w imap)])

@@ -2,6 +2,7 @@
 (define-signature mzlib:imap^
   (imap-connect
    imap-disconnect
+   imap-force-disconnect
    imap-reselect
    imap-get-messages
 

@@ -667,7 +667,13 @@ PROCEDURES -----------------------------------------------------------
 
 > (imap-disconnect imap) -> void
 
-  Closes an IMAP connection.
+  Closes an IMAP connection. The close may fail due to a communication
+  error.
+
+> (imap-force-disconnect imap) -> void
+
+  Closes an IMAP connection forcefully (i.e., without send a close
+  message to the server). A forced disconnect never fails.
 
 > (imap-reselect imap mailbox-string)
   -> two values: message count and recent message count

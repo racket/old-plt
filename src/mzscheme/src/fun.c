@@ -887,9 +887,9 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   if (scheme_active_but_sleeping)
     scheme_wake_up();
 
-  old_cc_ok = p->cc_ok;
-
   if (eb) {
+    old_cc_ok = p->cc_ok;
+
     if (top_next_use_thread_cc_ok) {
       top_next_use_thread_cc_ok = 0;
       if (!thread_init_cc_ok) {
@@ -909,8 +909,10 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
       *old_cc_ok = 0;
     }
     *cc_ok = 1;
-  } else
+  } else {
     cc_ok = NULL;
+    old_cc_ok = NULL;
+  }
 
 #ifdef MZ_PRECISE_GC
   if (scheme_get_external_stack_val)
@@ -1026,10 +1028,10 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
 	available_cc_ok = cc_ok;
       } else
 	*cc_ok = 0;
+      if (old_cc_ok)
+	*old_cc_ok = old_cc_ok_val;
+      p->cc_ok = old_cc_ok;
     }
-    if (old_cc_ok)
-      *old_cc_ok = old_cc_ok_val;
-    p->cc_ok = old_cc_ok;
     if (set_overflow) {
       p->overflow_buf = oversave;
       p->overflow_set = 0;
@@ -1064,10 +1066,10 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
       available_cc_ok = cc_ok;
     } else
       *cc_ok = 0;
+    if (old_cc_ok)
+      *old_cc_ok = old_cc_ok_val;
+    p->cc_ok = old_cc_ok;
   }
-  if (old_cc_ok)
-    *old_cc_ok = old_cc_ok_val;
-  p->cc_ok = old_cc_ok;
 
   if (scheme_active_but_sleeping)
     scheme_wake_up();

@@ -3,8 +3,9 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 
 ; This list determines the order of libraries in the index file:
 (define libraries
-  '("Mastermind"
-    "Guess"
+  '("Convert"
+    "Guess"    
+    "Mastermind"
     "Hangman"
     "Arrows"
     "Simple Drawing Exercises"

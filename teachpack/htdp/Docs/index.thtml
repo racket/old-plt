@@ -1,8 +1,9 @@
 #define LIBNAME Teachpacks for How to Design Programs
 #include head.tinc
 <UL>
-<LI> <A HREF="master.html">Mastermind</A>
+<LI> <A HREF="convert.html">Convert</A>
 <LI> <A HREF="guess.html">Guess</A>
+<LI> <A HREF="master.html">Mastermind</A>
 <LI> <A HREF="hangman.html">Hangman</A>
 <LI> <A HREF="arrows.html">Arrows</A>
 <LI> <A HREF="draw.html">Simple Drawing Exercises</A>

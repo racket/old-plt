@@ -248,8 +248,8 @@
       (let ([v (peek-byte input-port peeked)])
 	(unless (eof-object? v)
 	  (set! bb (+ bb (arithmetic-shift v bk)))
-	  ;; assume that lookahead never needs more than 1 byte:
-	  (if (zero? peeked)
+	  ;; assume that lookahead never needs more than 32 bytes:
+	  (if (peeked . < . 32)
 	      (set! peeked (add1 peeked))
 	      (read-byte input-port))))
       (set! bk (+ bk 8))

@@ -12,7 +12,7 @@ LIBDIR=/usr/site/unixODBC/lib
 MZC=../../bin/mzc 
 
 CPP=gcc 
-CPP_FLAGS=-DODBCVER=$(ODBCVER) -I. -I../mzscheme/include -c
+CPP_FLAGS=-DODBCVER=$(ODBCVER) -I. -I../../collects/mzscheme/include -c
 
 OBJS=srpersist.o srpbuffer.o srptypes.o
 

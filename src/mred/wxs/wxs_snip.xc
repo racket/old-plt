@@ -54,19 +54,19 @@
 
 @END
 
-@MACRO SetLength = x1 = SCHEME_STRLEN_VAL(p[POFFSET]);
+@MACRO SetLength = x1 = SCHEME_CHAR_STRLEN_VAL(p[POFFSET]);
 
 @CLASSBASE wxTextSnip "string-snip":"snip" / nofnl
 
 @CREATOR (nnlong=0); <> initial size
-@CREATOR (string,-long); : : /SetLength <> initial string
+@CREATOR (mzstring,-long); : : /SetLength <> initial string
 
 @CLASSID wxTYPE_TEXT_SNIP
 
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 
-@ "insert" : void InsertUTF8(string,nnlong,nnlong=0);
+@ "insert" : void Insert(mzstring,nnlong,nnlong=0);
 @ "read" : void Read(nnlong,wxMediaStreamIn!);
 
 @END
@@ -91,7 +91,7 @@
 @CLASSBASE wxImageSnip "image-snip":"snip" / nofnl
 
 // This isn't `pathname' because it expands internally
-@CREATOR (nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE); : : //USEALLFUEL[x0] <> filename
+@CREATOR (npstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE); : : //USEALLFUEL[x0] <> filename
 @CREATOR (wxBitmap!,wxBitmap^=NULL) : : /CheckBW[1.METHODNAME("image-snip%","initialization")]|CHECKOK[0.METHODNAME("image-snip%","initialization")]|CHECKOK[1.METHODNAME("image-snip%","initialization")]|CheckSizes[0.1.METHODNAME("image-snip%","initialization")] <> bitmap
 
 @CLASSID wxTYPE_IMAGE_SNIP
@@ -100,9 +100,9 @@
 @INCLUDE wxs_snip.xci
 
 // This isn't `pathname' because it expands internally
-@ "load-file" : void LoadFile(nstring,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);  : : //USEALLFUEL[x0]
+@ "load-file" : void LoadFile(npstring,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);  : : //USEALLFUEL[x0]
 
-@ "get-filename" : nstring GetFilename(bool?=NULL);
+@ "get-filename" : nbstring GetFilename(bool?=NULL);
 @ "get-filetype" : SYM[bitmapType] GetFiletype();
 
 @ "set-bitmap" : void SetBitmap(wxBitmap!,wxBitmap^=NULL); : : /CheckBW[1.METHODNAME("image-snip%","set-bitmap")]|CHECKOK[0.METHODNAME("image-snip%","set-bitmap")]|CHECKOK[1.METHODNAME("image-snip%","set-bitmap")]|CheckSizes[0.1.METHODNAME("image-snip%","set-bitmap")]

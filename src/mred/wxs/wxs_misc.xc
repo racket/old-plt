@@ -57,7 +57,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
   n = WITH_VAR_STACK(c->formats->First());
   for (; n; n = WITH_VAR_STACK(n->Next())) {
-    s = WITH_VAR_STACK(scheme_make_string((char *)n->Data()));
+    s = WITH_VAR_STACK(scheme_make_utf8_string((char *)n->Data()));
     p = WITH_VAR_STACK(scheme_make_pair(s, scheme_null));
     if (last)
       SCHEME_CDR(last) = p;
@@ -71,16 +71,18 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
   return first;
 }
 
-@MACRO makeSizedString[i] = (r ? scheme_make_sized_string(r, _x<i>, 1) : XC_SCHEME_NULL)
+@MACRO makeSizedString[i] = (r ? scheme_make_sized_byte_string(r, _x<i>, 1) : XC_SCHEME_NULL)
 
 @CLASSBASE wxClipboard "clipboard" : "object"
 @INTERFACE "clipboard"
 
 @ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,ExactLong);
-@ "set-clipboard-string" : void SetClipboardString(string,ExactLong);
+@ "set-clipboard-string" : void SetClipboardString(string,ExactLong); <> string
+@ "set-clipboard-bytes" : void SetClipboardString(bstring,ExactLong); <> byte string
 // @ "get-clipboard-client" : wxClipboardClient^ GetClipboardClient();
 @ "get-clipboard-string" : nstring GetClipboardString(ExactLong);
-@ "get-clipboard-data" : nstring/makeSizedString[1] GetClipboardData(string,-long*,ExactLong);
+@ "get-clipboard-bytes" : nbstring GetClipboardString(ExactLong);
+@ "get-clipboard-data" : nbstring/makeSizedString[1] GetClipboardData(string,-long*,ExactLong);
 
 @ "set-clipboard-bitmap" : void SetClipboardBitmap(wxBitmap!,ExactLong);
 @ "get-clipboard-bitmap" : wxBitmap^ GetClipboardBitmap(ExactLong);
@@ -96,7 +98,7 @@ static wxClipboard* wxGetTheClipboard()
 @ "get-the-clipboard" : wxClipboard^ wxGetTheClipboard()
 @END
 
-@MACRO setStringSize[cn] = if (SCHEME_STRINGP(v)) (*x<cn>) = SCHEME_STRTAG_VAL(v);
+@MACRO setStringSize[cn] = if (SCHEME_BYTE_STRINGP(v)) (*x<cn>) = SCHEME_BYTE_STRTAG_VAL(v);
 @MACRO identity = {x}
 @MACRO XrNULL = return NULL;
 
@@ -108,7 +110,7 @@ static wxClipboard* wxGetTheClipboard()
 @ARGNAMES
 
 @ V "on-replaced" : void BeingReplaced();
-@ V "get-data" : nstring GetData(string,-long*); : //setStringSize[1] : : : XrNULL
+@ V "get-data" : nbstring GetData(string,-long*); : //setStringSize[1] : : : XrNULL
 
 @ m "add-type" : void AddType(string);
 @ m "get-types" : Scheme_Object*/identity//sbString GetTypes();
@@ -147,30 +149,30 @@ void check_ps_mode(int v, Scheme_Object *p)
 @CREATOR ()
 @ARGNAMES
 
-@ "get-command" : string GetPrinterCommand();
-@ "get-file" : string GetPrinterFile();
-@ "get-preview-command" : string GetPrintPreviewCommand();
+@ "get-command" : bstring GetPrinterCommand();
+@ "get-file" : bstring GetPrinterFile();
+@ "get-preview-command" : bstring GetPrintPreviewCommand();
 @ "get-mode" : SYM[psMode] GetPrinterMode();
 @ "get-orientation" : SYM[psOrientation] GetPrinterOrientation();
-// @ "get-options" : string GetPrinterOptions();
+// @ "get-options" : bstring GetPrinterOptions();
 @ "get-scaling" : void GetPrinterScaling(nnfloat*,nnfloat*);
 @ "get-translation" : void GetPrinterTranslation(float*,float*);
 @ "get-paper-name" : nstring GetPaperName();
-@ "get-afm-path" : nstring GetAFMPath();
+@ "get-afm-path" : nbstring GetAFMPath();
 @ "get-level-2" : bool GetLevel2();
 @ "get-editor-margin" : void GetEditorMargin(nnlong*,nnlong*);
 @ "get-margin" : void GetMargin(nnfloat*,nnfloat*);
 
-@ "set-command" : void SetPrinterCommand(string);
-@ "set-file" : void SetPrinterFile(nstring);
-@ "set-preview-command" : void SetPrintPreviewCommand(string); 
+@ "set-command" : void SetPrinterCommand(pstring);
+@ "set-file" : void SetPrinterFile(npstring);
+@ "set-preview-command" : void SetPrintPreviewCommand(pstring); 
 @ "set-mode" : void SetPrinterMode(SYM[psMode]); : : /checkPSMode[0]
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);
-// @ "set-options" : void SetPrinterOptions(string);
+// @ "set-options" : void SetPrinterOptions(pstring);
 @ "set-scaling" : void SetPrinterScaling(nnfloat,nnfloat);
 @ "set-translation" : void SetPrinterTranslation(float,float);
 @ "set-paper-name" : void SetPaperName(nstring);
-@ "set-afm-path" : void SetAFMPath(nstring);
+@ "set-afm-path" : void SetAFMPath(npstring);
 @ "set-level-2" : void SetLevel2(bool);
 @ "set-editor-margin" : void SetEditorMargin(nnlong,nnlong);
 @ "set-margin" : void SetMargin(nnfloat,nnfloat);

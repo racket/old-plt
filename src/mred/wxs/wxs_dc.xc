@@ -114,7 +114,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool combine, int offset)
+static void* MyTextExtent(wxDC *dc, mzchar *s, wxFont *f, Bool combine, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
@@ -124,7 +124,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool combine, int offset
 
   a[0] = a[1] = a[2] = a[3] = NULL;
 
-  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, combine, FALSE, offset));
+  WITH_VAR_STACK(dc->GetTextExtent((char *)s, &w, &h, &d, &asc, f, combine, TRUE, offset));
     
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -278,7 +278,7 @@ static wxBitmap *dc_target(Scheme_Object *obj)
   return (wxBitmap *)0x1; /* dont't return NULL because that matches unspecified mask */
 }
 
-@MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
+@MACRO CheckStringIndex[n.s.i] = if (x<i> > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+<s>])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>",<n>), "string index too large: ", p[POFFSET+<i>]));
 
 @CLASSBASE wxDC "dc":"object"
 @INTERFACE "dc"
@@ -289,7 +289,7 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]
+@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(mzstring,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]
 @ Q "get-char-height" : float GetCharHeight();
 @ Q "get-char-width" : float GetCharWidth();
 
@@ -350,7 +350,7 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @END
 
-@MACRO STRINGENOUGH[who] = if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%",<who>), "string too short: ", p[4+POFFSET]));
+@MACRO STRINGENOUGH[who] = if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%",<who>), "byte string too short: ", p[4+POFFSET]));
 
 @CLASSBASE wxMemoryDC "bitmap-dc":"dc"
 
@@ -362,8 +362,8 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 @ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","get-pixel")]
 @ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","set-pixel")]
 
-@ m "get-argb-pixels" : void dcGetARGBPixels(float,float,rint[0|10000],rint[0|10000],wstring) : : /CheckOk[METHODNAME("memory-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
-@ m "set-argb-pixels" : void dcSetARGBPixels(float,float,rint[0|10000],rint[0|10000],string) : : /CheckOk[METHODNAME("memory-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
+@ m "get-argb-pixels" : void dcGetARGBPixels(float,float,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("memory-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
+@ m "set-argb-pixels" : void dcSetARGBPixels(float,float,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("memory-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("memory-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

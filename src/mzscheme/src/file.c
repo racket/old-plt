@@ -544,6 +544,7 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #ifdef DOS_FILE_SYSTEM
 #define WC_BUFFER_SIZE 1024
 static wchar_t wc_buffer[WC_BUFFER_SIZE];
+static wchar_t *bad_wide_path = L":::";
 
 static int wc_strlen(wchar_t *ws)
 {
@@ -561,6 +562,10 @@ wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
   len = scheme_utf8_decode(s, 0, l,
 			   NULL, 0, -1,
 			   NULL, 1/*UTF-16*/, 0);
+
+  if (len < 0)
+    return bad_wide_path;
+
   if (!do_copy && (len < (WC_BUFFER_SIZE-1)))
     ws = wc_buffer;
   else
@@ -1013,13 +1018,6 @@ static int has_null(const char *s, long l)
   return 0;
 }
 
-#ifdef FILENAME_MUST_BE_UTF8
-static int bad_utf8(const char *s, long l)
-{
-  return (scheme_utf8_decode_all((const unsigned char *)s, l, NULL, 0) < 0);
-}
-#endif
-
 static void raise_null_error(const char *name, Scheme_Object *path, const char *mod)
 {
   if (!(SCHEME_BYTE_STRINGP(path) ? SCHEME_BYTE_STRTAG_VAL(path) : SCHEME_CHAR_STRTAG_VAL(path)))
@@ -1036,18 +1034,6 @@ static void raise_null_error(const char *name, Scheme_Object *path, const char *
 		     name, mod, 
 		     path);
 }
-
-#ifdef FILENAME_MUST_BE_UTF8
-static void raise_utf8_error(const char *name, Scheme_Object *path, const char *mod)
-{
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   path,
-		   path_err_symbol,
-		   "%s: pathname%s is not a well-formed UTF-8 encoding: %Q", 
-		   name, mod, 
-		   path);
-}
-#endif
 
 #ifdef DOS_FILE_SYSTEM
 static int check_dos_slashslash_drive(const char *next, int len, 
@@ -1264,10 +1250,6 @@ static char *do_expand_filename(Scheme_Object *o, char* filename, int ilen, cons
 	return NULL;
     }
   }
-#ifdef FILENAME_MUST_BE_UTF8
-  if (bad_utf8(filename, ilen))
-    raise_utf8_error(errorin, scheme_make_sized_byte_string(filename, ilen, 1), "");
-#endif
 
 #ifdef EXPAND_FILENAME_TILDE
   /* User home lookup strategy taken from wxWindows: */
@@ -1730,12 +1712,6 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
     raise_null_error("link-exists?", bs, "");
     return NULL;
   }
-# ifdef FILENAME_MUST_BE_UTF8
-  if (bad_utf8(filename, SCHEME_BYTE_STRTAG_VAL(bs))) {
-    raise_utf8_error("link-exists?", bs, "");
-    return NULL;
-  }
-# endif
 #endif
 
 #ifdef DOS_FILE_SYSTEM
@@ -1979,12 +1955,6 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	  raise_null_error("build-path", argv[i], " element");
 	  return NULL;
 	}
-#ifdef FILENAME_MUST_BE_UTF8
-	if (bad_utf8(next, len)) {
-	  raise_utf8_error("build-path", argv[i], " element");
-	  return NULL;
-	}
-#endif
       }
 
       /* +3: null term, leading sep, and trailing sep (if up & Mac) */
@@ -2375,10 +2345,6 @@ static Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
 
   if (has_null(s, len))
     raise_null_error("split-path", inpath, "");
-#ifdef FILENAME_MUST_BE_UTF8
-  if (bad_utf8(s, len))
-    raise_utf8_error("split-path", inpath, "");
-#endif
 
   three[1] = scheme_split_pathname(s, len, &three[0], &is_dir);
 
@@ -2514,10 +2480,6 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
 
   if (has_null(s, len))
     raise_null_error("path->complete-path", p, "");
-#ifdef FILENAME_MUST_BE_UTF8
-  if (bad_utf8(s, len))
-    raise_utf8_error("path->complete-path", p, "");
-#endif
 
   if (wrt) {
     char *ws;
@@ -2528,10 +2490,6 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
     
     if (has_null(ws, wlen))
       raise_null_error("path->complete-path", p, "");
-#ifdef FILENAME_MUST_BE_UTF8
-    if (bad_utf8(ws, wlen))
-      raise_utf8_error("path->complete-path", p, "");
-#endif
 
     if (!scheme_is_complete_path(ws, wlen))
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -2992,11 +2950,7 @@ static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv)
   s = SCHEME_BYTE_STR_VAL(bs);
   len = SCHEME_BYTE_STRTAG_VAL(bs);
 
-  if (has_null(s, len)
-#ifdef FILENAME_MUST_BE_UTF8
-      || bad_utf8(s, len)
-#endif
-      )
+  if (has_null(s, len))
     return scheme_false;
 
   return (scheme_is_relative_path(s, len)
@@ -3018,11 +2972,7 @@ static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv)
   s = SCHEME_BYTE_STR_VAL(bs);
   len = SCHEME_BYTE_STRTAG_VAL(bs);
 
-  if (has_null(s, len)
-#ifdef FILENAME_MUST_BE_UTF8
-      || bad_utf8(s, len)
-#endif
-      )
+  if (has_null(s, len))
     return scheme_false;
 
   return (scheme_is_complete_path(s, len)
@@ -3044,11 +2994,7 @@ static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv)
   s = SCHEME_BYTE_STR_VAL(bs);
   len = SCHEME_BYTE_STRTAG_VAL(bs);
 
-  if (has_null(s, len) 
-#ifdef FILENAME_MUST_BE_UTF8
-      || bad_utf8(s, len)
-#endif
-      )
+  if (has_null(s, len))
     return scheme_false;
 
   return (!scheme_is_relative_path(s, len)
@@ -3272,10 +3218,6 @@ static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[])
 
   if (has_null(s, len))
     raise_null_error("simplify-path", argv[0], "");
-#ifdef FILENAME_MUST_BE_UTF8
-  if (bad_utf8(s, len))
-    raise_utf8_error("simplify-path", argv[0], "");
-#endif
 
   return do_simplify_path(argv[0], scheme_null);
 }

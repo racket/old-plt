@@ -249,7 +249,6 @@ static Scheme_Object *bundle_symset_editOp(int v) {
 
 
 
-// @ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 
 
 
@@ -281,7 +280,8 @@ class os_wxSnip : public wxSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetTextUTF8(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
+  void GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3);
+  mzstring GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(nnlong x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -942,7 +942,44 @@ class wxSnip* os_wxSnip::Copy()
   }
 }
 
-string os_wxSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
+void os_wxSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
+{
+  Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-text!", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxSnip::GetTextBang(x0, x1, x2, x3);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+1] = scheme_make_integer(x1);
+  p[POFFSET+2] = scheme_make_integer(x2);
+  p[POFFSET+3] = scheme_make_integer(x3);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
+  
+  
+     READY_TO_RETURN;
+  }
+}
+
+mzstring os_wxSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -961,7 +998,7 @@ string os_wxSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    READY_TO_RETURN; return ASSELF wxSnip::GetTextUTF8(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -974,8 +1011,8 @@ string os_wxSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   
   
   {
-     string resval;
-     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in snip%"", extracting return value"));
+     mzstring resval;
+     resval = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(v, "get-text in snip%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -1729,11 +1766,43 @@ static Scheme_Object *os_wxSnipCopy(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxSnipGetTextUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxSnipGetTextBang(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  objscheme_check_valid(os_wxSnip_class, "get-text! in snip%", n, p);
+  wmzstring x0 INIT_NULLED_OUT;
+  nnlong x1;
+  nnlong x2;
+  nnlong x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (wmzstring)WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(p[POFFSET+0], "get-text! in snip%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "get-text! in snip%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "get-text! in snip%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+3], "get-text! in snip%"));
+
+  if (SCHEME_CHAR_STRTAG_VAL(p[0+POFFSET]) < (x2 + x3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-text!"), "string too short: ", p[0+POFFSET]));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxSnip::GetTextBang(x0, x1, x2, x3));
+  else
+    WITH_VAR_STACK(((wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextBang(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxSnipGetText(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  mzstring r;
   objscheme_check_valid(os_wxSnip_class, "get-text in snip%", n, p);
   nnlong x0;
   nnlong x1;
@@ -1754,14 +1823,14 @@ static Scheme_Object *os_wxSnipGetTextUTF8(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxSnip::GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((os_wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxSnip::GetText(x0, x1, x2, x3));
   else
-    r = WITH_VAR_STACK(((wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((wxSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x3, 0));
 }
 
 static Scheme_Object *os_wxSnipMergeWith(int n,  Scheme_Object *p[])
@@ -2252,7 +2321,7 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxSnip_class);
 
-  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", (Scheme_Method_Prim *)os_wxSnip_ConstructScheme, 36));
+  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", (Scheme_Method_Prim *)os_wxSnip_ConstructScheme, 37));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous" " method", (Scheme_Method_Prim *)os_wxSnipPrevious, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next" " method", (Scheme_Method_Prim *)os_wxSnipNext, 0, 0));
@@ -2273,7 +2342,8 @@ void objscheme_setup_wxSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "on-event" " method", (Scheme_Method_Prim *)os_wxSnipOnEvent, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "size-cache-invalid" " method", (Scheme_Method_Prim *)os_wxSnipSizeCacheInvalid, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "copy" " method", (Scheme_Method_Prim *)os_wxSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxSnipGetTextUTF8, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-text!" " method", (Scheme_Method_Prim *)os_wxSnipGetTextBang, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxSnipGetText, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "merge-with" " method", (Scheme_Method_Prim *)os_wxSnipMergeWith, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "split" " method", (Scheme_Method_Prim *)os_wxSnipSplit, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "draw" " method", (Scheme_Method_Prim *)os_wxSnipDraw, 10, 10));
@@ -2362,7 +2432,6 @@ class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *obj, const char *where, i
 
 
 
-// @ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 
 
 
@@ -2377,7 +2446,7 @@ class os_wxTextSnip : public wxTextSnip {
 
   os_wxTextSnip CONSTRUCTOR_ARGS((nnlong x0 = 0));
 #ifndef MZ_PRECISE_GC
-  os_wxTextSnip CONSTRUCTOR_ARGS((string x0, long x1));
+  os_wxTextSnip CONSTRUCTOR_ARGS((mzstring x0, long x1));
 #endif
   ~os_wxTextSnip();
   void SetUnmodified();
@@ -2397,7 +2466,8 @@ class os_wxTextSnip : public wxTextSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetTextUTF8(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
+  void GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3);
+  mzstring GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(nnlong x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -2426,7 +2496,7 @@ CONSTRUCTOR_INIT(: wxTextSnip(x0))
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxTextSnip::os_wxTextSnip CONSTRUCTOR_ARGS((string x0, long x1))
+os_wxTextSnip::os_wxTextSnip CONSTRUCTOR_ARGS((mzstring x0, long x1))
 CONSTRUCTOR_INIT(: wxTextSnip(x0, x1))
 {
 }
@@ -3065,7 +3135,44 @@ class wxSnip* os_wxTextSnip::Copy()
   }
 }
 
-string os_wxTextSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
+void os_wxTextSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
+{
+  Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxTextSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-text!", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxTextSnip::GetTextBang(x0, x1, x2, x3);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+1] = scheme_make_integer(x1);
+  p[POFFSET+2] = scheme_make_integer(x2);
+  p[POFFSET+3] = scheme_make_integer(x3);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
+  
+  
+     READY_TO_RETURN;
+  }
+}
+
+mzstring os_wxTextSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -3084,7 +3191,7 @@ string os_wxTextSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTextSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    READY_TO_RETURN; return ASSELF wxTextSnip::GetTextUTF8(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxTextSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -3097,8 +3204,8 @@ string os_wxTextSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   
   
   {
-     string resval;
-     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in string-snip%"", extracting return value"));
+     mzstring resval;
+     resval = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(v, "get-text in string-snip%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -3349,12 +3456,12 @@ static Scheme_Object *os_wxTextSnipRead(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxTextSnipInsertUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxTextSnipInsert(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxTextSnip_class, "insert in string-snip%", n, p);
-  string x0 INIT_NULLED_OUT;
+  mzstring x0 INIT_NULLED_OUT;
   nnlong x1;
   nnlong x2;
 
@@ -3363,7 +3470,7 @@ static Scheme_Object *os_wxTextSnipInsertUTF8(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert in string-snip%"));
+  x0 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "insert in string-snip%"));
   x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "insert in string-snip%"));
   if (n > (POFFSET+2)) {
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "insert in string-snip%"));
@@ -3371,7 +3478,7 @@ static Scheme_Object *os_wxTextSnipInsertUTF8(int n,  Scheme_Object *p[])
     x2 = 0;
 
   
-  WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->InsertUTF8(x0, x1, x2));
+  WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1, x2));
 
   
   
@@ -3865,11 +3972,43 @@ static Scheme_Object *os_wxTextSnipCopy(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxTextSnipGetTextUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxTextSnipGetTextBang(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  objscheme_check_valid(os_wxTextSnip_class, "get-text! in string-snip%", n, p);
+  wmzstring x0 INIT_NULLED_OUT;
+  nnlong x1;
+  nnlong x2;
+  nnlong x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (wmzstring)WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(p[POFFSET+0], "get-text! in string-snip%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "get-text! in string-snip%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "get-text! in string-snip%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+3], "get-text! in string-snip%"));
+
+  if (SCHEME_CHAR_STRTAG_VAL(p[0+POFFSET]) < (x2 + x3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-text!"), "string too short: ", p[0+POFFSET]));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTextSnip::GetTextBang(x0, x1, x2, x3));
+  else
+    WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextBang(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxTextSnipGetText(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  mzstring r;
   objscheme_check_valid(os_wxTextSnip_class, "get-text in string-snip%", n, p);
   nnlong x0;
   nnlong x1;
@@ -3890,14 +4029,14 @@ static Scheme_Object *os_wxTextSnipGetTextUTF8(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTextSnip::GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((os_wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTextSnip::GetText(x0, x1, x2, x3));
   else
-    r = WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((wxTextSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x3, 0));
 }
 
 static Scheme_Object *os_wxTextSnipMergeWith(int n,  Scheme_Object *p[])
@@ -4143,8 +4282,8 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
   PRE_VAR_STACK_PUSH(0, p);
   os_wxTextSnip *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
-    string x0 INIT_NULLED_OUT;
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_mzstring(p[POFFSET+0], NULL))) {
+    mzstring x0 INIT_NULLED_OUT;
     long x1;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -4155,9 +4294,9 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
     
     if (n != (POFFSET+1)) 
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial string case)", POFFSET+1, POFFSET+1, n, p, 1));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in string-snip% (initial string case)"));
+    x0 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "initialization in string-snip% (initial string case)"));
 
-    x1 = SCHEME_STRLEN_VAL(p[POFFSET]);
+    x1 = SCHEME_CHAR_STRLEN_VAL(p[POFFSET]);
     realobj = WITH_VAR_STACK(new os_wxTextSnip CONSTRUCTOR_ARGS((x0, x1)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxTextSnip(x0, x1));
@@ -4204,10 +4343,10 @@ void objscheme_setup_wxTextSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxTextSnip_class);
 
-  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", (Scheme_Method_Prim *)os_wxTextSnip_ConstructScheme, 25));
+  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", (Scheme_Method_Prim *)os_wxTextSnip_ConstructScheme, 26));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read" " method", (Scheme_Method_Prim *)os_wxTextSnipRead, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert" " method", (Scheme_Method_Prim *)os_wxTextSnipInsertUTF8, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert" " method", (Scheme_Method_Prim *)os_wxTextSnipInsert, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxTextSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxTextSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "find-scroll-step" " method", (Scheme_Method_Prim *)os_wxTextSnipFindScrollStep, 1, 1));
@@ -4225,7 +4364,8 @@ void objscheme_setup_wxTextSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "on-event" " method", (Scheme_Method_Prim *)os_wxTextSnipOnEvent, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "size-cache-invalid" " method", (Scheme_Method_Prim *)os_wxTextSnipSizeCacheInvalid, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "copy" " method", (Scheme_Method_Prim *)os_wxTextSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxTextSnipGetTextUTF8, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-text!" " method", (Scheme_Method_Prim *)os_wxTextSnipGetTextBang, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxTextSnipGetText, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "merge-with" " method", (Scheme_Method_Prim *)os_wxTextSnipMergeWith, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "split" " method", (Scheme_Method_Prim *)os_wxTextSnipSplit, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "draw" " method", (Scheme_Method_Prim *)os_wxTextSnipDraw, 10, 10));
@@ -4303,7 +4443,6 @@ class wxTextSnip *objscheme_unbundle_wxTextSnip(Scheme_Object *obj, const char *
 
 
 
-// @ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 
 
 
@@ -4334,7 +4473,8 @@ class os_wxTabSnip : public wxTabSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetTextUTF8(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
+  void GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3);
+  mzstring GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(nnlong x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -4995,7 +5135,44 @@ class wxSnip* os_wxTabSnip::Copy()
   }
 }
 
-string os_wxTabSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
+void os_wxTabSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
+{
+  Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxTabSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-text!", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxTabSnip::GetTextBang(x0, x1, x2, x3);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+1] = scheme_make_integer(x1);
+  p[POFFSET+2] = scheme_make_integer(x2);
+  p[POFFSET+3] = scheme_make_integer(x3);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
+  
+  
+     READY_TO_RETURN;
+  }
+}
+
+mzstring os_wxTabSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -5014,7 +5191,7 @@ string os_wxTabSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxTabSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    READY_TO_RETURN; return ASSELF wxTabSnip::GetTextUTF8(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxTabSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -5027,8 +5204,8 @@ string os_wxTabSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   
   
   {
-     string resval;
-     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in tab-snip%"", extracting return value"));
+     mzstring resval;
+     resval = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(v, "get-text in tab-snip%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -5740,11 +5917,43 @@ static Scheme_Object *os_wxTabSnipCopy(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxTabSnipGetTextUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxTabSnipGetTextBang(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  objscheme_check_valid(os_wxTabSnip_class, "get-text! in tab-snip%", n, p);
+  wmzstring x0 INIT_NULLED_OUT;
+  nnlong x1;
+  nnlong x2;
+  nnlong x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (wmzstring)WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(p[POFFSET+0], "get-text! in tab-snip%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "get-text! in tab-snip%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "get-text! in tab-snip%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+3], "get-text! in tab-snip%"));
+
+  if (SCHEME_CHAR_STRTAG_VAL(p[0+POFFSET]) < (x2 + x3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-text!"), "string too short: ", p[0+POFFSET]));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTabSnip::GetTextBang(x0, x1, x2, x3));
+  else
+    WITH_VAR_STACK(((wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextBang(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxTabSnipGetText(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  mzstring r;
   objscheme_check_valid(os_wxTabSnip_class, "get-text in tab-snip%", n, p);
   nnlong x0;
   nnlong x1;
@@ -5765,14 +5974,14 @@ static Scheme_Object *os_wxTabSnipGetTextUTF8(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTabSnip::GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((os_wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxTabSnip::GetText(x0, x1, x2, x3));
   else
-    r = WITH_VAR_STACK(((wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((wxTabSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x3, 0));
 }
 
 static Scheme_Object *os_wxTabSnipMergeWith(int n,  Scheme_Object *p[])
@@ -6048,7 +6257,7 @@ void objscheme_setup_wxTabSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxTabSnip_class);
 
-  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", (Scheme_Method_Prim *)os_wxTabSnip_ConstructScheme, 23));
+  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", (Scheme_Method_Prim *)os_wxTabSnip_ConstructScheme, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "set-unmodified" " method", (Scheme_Method_Prim *)os_wxTabSnipSetUnmodified, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset" " method", (Scheme_Method_Prim *)os_wxTabSnipGetScrollStepOffset, 1, 1));
@@ -6067,7 +6276,8 @@ void objscheme_setup_wxTabSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "on-event" " method", (Scheme_Method_Prim *)os_wxTabSnipOnEvent, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "size-cache-invalid" " method", (Scheme_Method_Prim *)os_wxTabSnipSizeCacheInvalid, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "copy" " method", (Scheme_Method_Prim *)os_wxTabSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxTabSnipGetTextUTF8, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-text!" " method", (Scheme_Method_Prim *)os_wxTabSnipGetTextBang, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxTabSnipGetText, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "merge-with" " method", (Scheme_Method_Prim *)os_wxTabSnipMergeWith, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "split" " method", (Scheme_Method_Prim *)os_wxTabSnipSplit, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "draw" " method", (Scheme_Method_Prim *)os_wxTabSnipDraw, 10, 10));
@@ -6234,7 +6444,6 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
-// @ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 
 
 
@@ -6252,7 +6461,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 class os_wxImageSnip : public wxImageSnip {
  public:
 
-  os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
+  os_wxImageSnip CONSTRUCTOR_ARGS((npstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
 #ifndef MZ_PRECISE_GC
   os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1 = NULL));
 #endif
@@ -6274,7 +6483,8 @@ class os_wxImageSnip : public wxImageSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetTextUTF8(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
+  void GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3);
+  mzstring GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(nnlong x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -6297,7 +6507,7 @@ void os_wxImageSnip::gcFixup() {
 
 static Scheme_Object *os_wxImageSnip_class;
 
-os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0, int x1, Bool x2, Bool x3))
+os_wxImageSnip::os_wxImageSnip CONSTRUCTOR_ARGS((npstring x0, int x1, Bool x2, Bool x3))
 CONSTRUCTOR_INIT(: wxImageSnip(x0, x1, x2, x3))
 {
 }
@@ -6942,7 +7152,44 @@ class wxSnip* os_wxImageSnip::Copy()
   }
 }
 
-string os_wxImageSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
+void os_wxImageSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
+{
+  Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxImageSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-text!", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxImageSnip::GetTextBang(x0, x1, x2, x3);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+1] = scheme_make_integer(x1);
+  p[POFFSET+2] = scheme_make_integer(x2);
+  p[POFFSET+3] = scheme_make_integer(x3);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
+  
+  
+     READY_TO_RETURN;
+  }
+}
+
+mzstring os_wxImageSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -6961,7 +7208,7 @@ string os_wxImageSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxImageSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    READY_TO_RETURN; return ASSELF wxImageSnip::GetTextUTF8(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxImageSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -6974,8 +7221,8 @@ string os_wxImageSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   
   
   {
-     string resval;
-     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in image-snip%"", extracting return value"));
+     mzstring resval;
+     resval = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(v, "get-text in image-snip%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -7321,7 +7568,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r INIT_NULLED_OUT;
+  nbstring r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxImageSnip_class, "get-filename in image-snip%", n, p);
   Bool _x0;
   Bool* x0 = &_x0;
@@ -7348,7 +7595,7 @@ static Scheme_Object *os_wxImageSnipGetFilename(int n,  Scheme_Object *p[])
     { Scheme_Object *sbv_ = (_x0 ? scheme_true : scheme_false); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
@@ -7356,7 +7603,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxImageSnip_class, "load-file in image-snip%", n, p);
-  nstring x0 INIT_NULLED_OUT;
+  npstring x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
   Bool x3;
@@ -7366,7 +7613,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "load-file in image-snip%"));
+  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "load-file in image-snip%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "load-file in image-snip%"));
   } else
@@ -7875,11 +8122,43 @@ static Scheme_Object *os_wxImageSnipCopy(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxImageSnipGetTextUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxImageSnipGetTextBang(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  objscheme_check_valid(os_wxImageSnip_class, "get-text! in image-snip%", n, p);
+  wmzstring x0 INIT_NULLED_OUT;
+  nnlong x1;
+  nnlong x2;
+  nnlong x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (wmzstring)WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(p[POFFSET+0], "get-text! in image-snip%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "get-text! in image-snip%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "get-text! in image-snip%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+3], "get-text! in image-snip%"));
+
+  if (SCHEME_CHAR_STRTAG_VAL(p[0+POFFSET]) < (x2 + x3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-text!"), "string too short: ", p[0+POFFSET]));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxImageSnip::GetTextBang(x0, x1, x2, x3));
+  else
+    WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextBang(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxImageSnipGetText(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  mzstring r;
   objscheme_check_valid(os_wxImageSnip_class, "get-text in image-snip%", n, p);
   nnlong x0;
   nnlong x1;
@@ -7900,14 +8179,14 @@ static Scheme_Object *os_wxImageSnipGetTextUTF8(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxImageSnip::GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((os_wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxImageSnip::GetText(x0, x1, x2, x3));
   else
-    r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((wxImageSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x3, 0));
 }
 
 static Scheme_Object *os_wxImageSnipMergeWith(int n,  Scheme_Object *p[])
@@ -8182,7 +8461,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     
     READY_TO_PRE_RETURN;
   } else  {
-    nstring x0 INIT_NULLED_OUT;
+    npstring x0 INIT_NULLED_OUT;
     int x1;
     Bool x2;
     Bool x3;
@@ -8196,7 +8475,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     if ((n > (POFFSET+4))) 
       WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (filename case)", POFFSET+POFFSET, POFFSET+4, n, p, 1));
     if (n > (POFFSET+0)) {
-      x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in image-snip% (filename case)"));
+      x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "initialization in image-snip% (filename case)"));
     } else
       x0 = NULL;
     if (n > (POFFSET+1)) {
@@ -8235,7 +8514,7 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxImageSnip_class);
 
-  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", (Scheme_Method_Prim *)os_wxImageSnip_ConstructScheme, 30));
+  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", (Scheme_Method_Prim *)os_wxImageSnip_ConstructScheme, 31));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset" " method", (Scheme_Method_Prim *)os_wxImageSnipSetOffset, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-bitmap-mask" " method", (Scheme_Method_Prim *)os_wxImageSnipGetSnipBitmapMask, 0, 0));
@@ -8261,7 +8540,8 @@ void objscheme_setup_wxImageSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "on-event" " method", (Scheme_Method_Prim *)os_wxImageSnipOnEvent, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "size-cache-invalid" " method", (Scheme_Method_Prim *)os_wxImageSnipSizeCacheInvalid, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "copy" " method", (Scheme_Method_Prim *)os_wxImageSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxImageSnipGetTextUTF8, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-text!" " method", (Scheme_Method_Prim *)os_wxImageSnipGetTextBang, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxImageSnipGetText, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "merge-with" " method", (Scheme_Method_Prim *)os_wxImageSnipMergeWith, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "split" " method", (Scheme_Method_Prim *)os_wxImageSnipSplit, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "draw" " method", (Scheme_Method_Prim *)os_wxImageSnipDraw, 10, 10));
@@ -8339,7 +8619,6 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 
 
 
-// @ s "get-text!" : void GetTextBang(wstring,nnlong,nnlong,nnlong); : : /gtSTRINGENOUGH[METHODNAME("snip%","get-text!")]
 
 
 
@@ -8374,7 +8653,8 @@ class os_wxMediaSnip : public wxMediaSnip {
   void OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, class wxMouseEvent* x5);
   void SizeCacheInvalid();
   class wxSnip* Copy();
-  string GetTextUTF8(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
+  void GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3);
+  mzstring GetText(nnlong x0, nnlong x1, Bool x2 = FALSE, long* x3 = NULL);
   class wxSnip* MergeWith(class wxSnip* x0);
   void Split(nnlong x0, class wxSnip** x1, class wxSnip** x2);
   void Draw(class wxDC* x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, int x9);
@@ -9035,7 +9315,44 @@ class wxSnip* os_wxMediaSnip::Copy()
   }
 }
 
-string os_wxMediaSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
+void os_wxMediaSnip::GetTextBang(wmzstring x0, nnlong x1, nnlong x2, nnlong x3)
+{
+  Scheme_Object *p[POFFSET+4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaSnip *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(6);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+4);
+  VAR_STACK_PUSH(5, x0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-text!", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaSnip::GetTextBang(x0, x1, x2, x3);
+  } else {
+  
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_mzstring((mzchar *)x0));
+  p[POFFSET+1] = scheme_make_integer(x1);
+  p[POFFSET+2] = scheme_make_integer(x2);
+  p[POFFSET+3] = scheme_make_integer(x3);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+4, p));
+  
+  
+     READY_TO_RETURN;
+  }
+}
+
+mzstring os_wxMediaSnip::GetText(nnlong x0, nnlong x1, Bool x2, long* x3)
 {
   Scheme_Object *p[POFFSET+3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -9054,7 +9371,7 @@ string os_wxMediaSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaSnip_class, "get-text", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    READY_TO_RETURN; return ASSELF wxMediaSnip::GetTextUTF8(x0, x1, x2, x3);
+    READY_TO_RETURN; return ASSELF wxMediaSnip::GetText(x0, x1, x2, x3);
   } else {
   
   p[POFFSET+0] = scheme_make_integer(x0);
@@ -9067,8 +9384,8 @@ string os_wxMediaSnip::GetTextUTF8(nnlong x0, nnlong x1, Bool x2, long* x3)
   
   
   {
-     string resval;
-     resval = (string)WITH_VAR_STACK(objscheme_unbundle_string(v, "get-text in editor-snip%"", extracting return value"));
+     mzstring resval;
+     resval = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(v, "get-text in editor-snip%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -10219,11 +10536,43 @@ static Scheme_Object *os_wxMediaSnipCopy(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxMediaSnipGetTextUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaSnipGetTextBang(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  objscheme_check_valid(os_wxMediaSnip_class, "get-text! in editor-snip%", n, p);
+  wmzstring x0 INIT_NULLED_OUT;
+  nnlong x1;
+  nnlong x2;
+  nnlong x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (wmzstring)WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(p[POFFSET+0], "get-text! in editor-snip%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "get-text! in editor-snip%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "get-text! in editor-snip%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+3], "get-text! in editor-snip%"));
+
+  if (SCHEME_CHAR_STRTAG_VAL(p[0+POFFSET]) < (x2 + x3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("snip%","get-text!"), "string too short: ", p[0+POFFSET]));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaSnip::GetTextBang(x0, x1, x2, x3));
+  else
+    WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextBang(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaSnipGetText(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  mzstring r;
   objscheme_check_valid(os_wxMediaSnip_class, "get-text in editor-snip%", n, p);
   nnlong x0;
   nnlong x1;
@@ -10244,14 +10593,14 @@ static Scheme_Object *os_wxMediaSnipGetTextUTF8(int n,  Scheme_Object *p[])
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    r = WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaSnip::GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((os_wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaSnip::GetText(x0, x1, x2, x3));
   else
-    r = WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3));
+    r = WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x3, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x3, 0));
 }
 
 static Scheme_Object *os_wxMediaSnipMergeWith(int n,  Scheme_Object *p[])
@@ -10642,7 +10991,7 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaSnip_class);
 
-  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", (Scheme_Method_Prim *)os_wxMediaSnip_ConstructScheme, 43));
+  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", (Scheme_Method_Prim *)os_wxMediaSnip_ConstructScheme, 44));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetInset, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset" " method", (Scheme_Method_Prim *)os_wxMediaSnipSetInset, 4, 4));
@@ -10679,7 +11028,8 @@ void objscheme_setup_wxMediaSnip(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "on-event" " method", (Scheme_Method_Prim *)os_wxMediaSnipOnEvent, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "size-cache-invalid" " method", (Scheme_Method_Prim *)os_wxMediaSnipSizeCacheInvalid, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "copy" " method", (Scheme_Method_Prim *)os_wxMediaSnipCopy, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetTextUTF8, 2, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-text!" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetTextBang, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaSnipGetText, 2, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "merge-with" " method", (Scheme_Method_Prim *)os_wxMediaSnipMergeWith, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "split" " method", (Scheme_Method_Prim *)os_wxMediaSnipSplit, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "draw" " method", (Scheme_Method_Prim *)os_wxMediaSnipDraw, 10, 10));

@@ -990,16 +990,16 @@ class os_wxMediaEdit : public wxMediaEdit {
   void DoPaste(nnlong x0, ExactLong x1);
   void DoCopy(nnlong x0, nnlong x1, ExactLong x2, Bool x3);
   void SetAnchor(Bool x0);
-  nstring PutFile(nstring x0, nstring x1);
-  nstring GetFile(nstring x0);
+  nbstring PutFile(nbstring x0, nbstring x1);
+  nbstring GetFile(nbstring x0);
   void AfterEditSequence();
   void OnEditSequence();
   void AfterLoadFile(Bool x0);
-  void OnLoadFile(string x0, int x1);
-  Bool CanLoadFile(string x0, int x1);
+  void OnLoadFile(bstring x0, int x1);
+  Bool CanLoadFile(bstring x0, int x1);
   void AfterSaveFile(Bool x0);
-  void OnSaveFile(string x0, int x1);
-  Bool CanSaveFile(string x0, int x1);
+  void OnSaveFile(bstring x0, int x1);
+  Bool CanSaveFile(bstring x0, int x1);
   class wxSnip* OnNewBox(int x0);
   class wxImageSnip* OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3);
   void InvalidateBitmapCache(float x0 = 0.0, float x1 = 0.0, float x2 = -1.0, float x3 = -1.0);
@@ -1008,7 +1008,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   Bool WriteHeadersToFile(class wxMediaStreamOut* x0);
   Bool ReadFooterFromFile(class wxMediaStreamIn* x0, string x1);
   Bool ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1);
-  void SetFilename(nstring x0, Bool x1 = FALSE);
+  void SetFilename(npstring x0, Bool x1 = FALSE);
   Bool ReleaseSnip(class wxSnip* x0);
   void OnSnipModified(class wxSnip* x0, Bool x1);
   void SetModified(Bool x0);
@@ -1769,7 +1769,7 @@ void os_wxMediaEdit::SetAnchor(Bool x0)
   }
 }
 
-nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
+nbstring os_wxMediaEdit::PutFile(nbstring x0, nbstring x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1793,8 +1793,8 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
     READY_TO_RETURN; return ASSELF wxMediaEdit::PutFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
-  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_string((char *)x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
@@ -1802,15 +1802,15 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
   
   
   {
-     nstring resval;
-     resval = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "put-file in text%"", extracting return value"));
+     nbstring resval;
+     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "put-file in text%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
   }
 }
 
-nstring os_wxMediaEdit::GetFile(nstring x0)
+nbstring os_wxMediaEdit::GetFile(nbstring x0)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1833,7 +1833,7 @@ nstring os_wxMediaEdit::GetFile(nstring x0)
     READY_TO_RETURN; return ASSELF wxMediaEdit::GetFile(x0);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
@@ -1841,8 +1841,8 @@ nstring os_wxMediaEdit::GetFile(nstring x0)
   
   
   {
-     nstring resval;
-     resval = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "get-file in text%"", extracting return value"));
+     nbstring resval;
+     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "get-file in text%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -1946,7 +1946,7 @@ void os_wxMediaEdit::AfterLoadFile(Bool x0)
   }
 }
 
-void os_wxMediaEdit::OnLoadFile(string x0, int x1)
+void os_wxMediaEdit::OnLoadFile(bstring x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -1969,7 +1969,7 @@ void os_wxMediaEdit::OnLoadFile(string x0, int x1)
     READY_TO_RETURN; ASSELF wxMediaEdit::OnLoadFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -1981,7 +1981,7 @@ void os_wxMediaEdit::OnLoadFile(string x0, int x1)
   }
 }
 
-Bool os_wxMediaEdit::CanLoadFile(string x0, int x1)
+Bool os_wxMediaEdit::CanLoadFile(bstring x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2004,7 +2004,7 @@ Bool os_wxMediaEdit::CanLoadFile(string x0, int x1)
     READY_TO_RETURN; return ASSELF wxMediaEdit::CanLoadFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -2054,7 +2054,7 @@ void os_wxMediaEdit::AfterSaveFile(Bool x0)
   }
 }
 
-void os_wxMediaEdit::OnSaveFile(string x0, int x1)
+void os_wxMediaEdit::OnSaveFile(bstring x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2077,7 +2077,7 @@ void os_wxMediaEdit::OnSaveFile(string x0, int x1)
     READY_TO_RETURN; ASSELF wxMediaEdit::OnSaveFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -2089,7 +2089,7 @@ void os_wxMediaEdit::OnSaveFile(string x0, int x1)
   }
 }
 
-Bool os_wxMediaEdit::CanSaveFile(string x0, int x1)
+Bool os_wxMediaEdit::CanSaveFile(bstring x0, int x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2112,7 +2112,7 @@ Bool os_wxMediaEdit::CanSaveFile(string x0, int x1)
     READY_TO_RETURN; return ASSELF wxMediaEdit::CanSaveFile(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_bstring((char *)x0));
   p[POFFSET+1] = WITH_VAR_STACK(bundle_symset_fileType(x1));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -2447,7 +2447,7 @@ Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
   }
 }
 
-void os_wxMediaEdit::SetFilename(nstring x0, Bool x1)
+void os_wxMediaEdit::SetFilename(npstring x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2470,7 +2470,7 @@ void os_wxMediaEdit::SetFilename(nstring x0, Bool x1)
     READY_TO_RETURN; ASSELF wxMediaEdit::SetFilename(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_string((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pstring((char *)x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -4363,7 +4363,7 @@ static Scheme_Object *os_wxMediaEditReadFromFile(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMediaEditGetTruncatedCharacter(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
@@ -4378,7 +4378,7 @@ static Scheme_Object *os_wxMediaEditGetTruncatedCharacter(int n,  Scheme_Object 
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "get-character in text%"));
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetTruncatedCharacter(x0));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetCharacter(x0));
 
   
   
@@ -4386,34 +4386,11 @@ static Scheme_Object *os_wxMediaEditGetTruncatedCharacter(int n,  Scheme_Object 
   return scheme_make_char(r);
 }
 
-static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditGetText(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  int r;
-  objscheme_check_valid(os_wxMediaEdit_class, "get-unicode in text%", n, p);
-  nnlong x0;
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "get-unicode in text%"));
-
-  
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetCharacter(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_make_integer(r);
-}
-
-static Scheme_Object *os_wxMediaEditGetTextUTF8(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  string r;
+  mzstring r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-text in text%", n, p);
   nnlong x0;
   long x1;
@@ -4444,12 +4421,12 @@ static Scheme_Object *os_wxMediaEditGetTextUTF8(int n,  Scheme_Object *p[])
     x3 = FALSE;
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetTextUTF8(x0, x1, x2, x3, x4));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetText(x0, x1, x2, x3, x4));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x4, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x4, 0));
 }
 
 static Scheme_Object *os_wxMediaEditGetSnipPosition(int n,  Scheme_Object *p[])
@@ -4569,13 +4546,13 @@ static Scheme_Object *os_wxMediaEditFindSnip(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxSnip(r));
 }
 
-static Scheme_Object *os_wxMediaEditFindStringAllUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditFindStringAll(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   long* r;
   objscheme_check_valid(os_wxMediaEdit_class, "find-string-all in text%", n, p);
-  string x0 INIT_NULLED_OUT;
+  mzstring x0 INIT_NULLED_OUT;
   long _x1;
   long* x1 = &_x1;
   int x2;
@@ -4589,7 +4566,7 @@ static Scheme_Object *os_wxMediaEditFindStringAllUTF8(int n,  Scheme_Object *p[]
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "find-string-all in text%"));
+  x0 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "find-string-all in text%"));
   if (n > (POFFSET+1)) {
     x2 = WITH_VAR_STACK(unbundle_symset_direction(p[POFFSET+1], "find-string-all in text%"));
   } else
@@ -4612,7 +4589,7 @@ static Scheme_Object *os_wxMediaEditFindStringAllUTF8(int n,  Scheme_Object *p[]
     x6 = TRUE;
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindStringAllUTF8(x0, x1, x2, x3, x4, x5, x6));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindStringAll(x0, x1, x2, x3, x4, x5, x6));
 
   
   
@@ -4620,13 +4597,13 @@ static Scheme_Object *os_wxMediaEditFindStringAllUTF8(int n,  Scheme_Object *p[]
   return WITH_VAR_STACK(__MakelongList(r, *x1));;
 }
 
-static Scheme_Object *os_wxMediaEditFindStringUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditFindString(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(os_wxMediaEdit_class, "find-string in text%", n, p);
-  string x0 INIT_NULLED_OUT;
+  mzstring x0 INIT_NULLED_OUT;
   int x1;
   long x2;
   long x3;
@@ -4638,7 +4615,7 @@ static Scheme_Object *os_wxMediaEditFindStringUTF8(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "find-string in text%"));
+  x0 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "find-string in text%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(unbundle_symset_direction(p[POFFSET+1], "find-string in text%"));
   } else
@@ -4661,7 +4638,7 @@ static Scheme_Object *os_wxMediaEditFindStringUTF8(int n,  Scheme_Object *p[])
     x5 = TRUE;
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindStringUTF8(x0, x1, x2, x3, x4, x5));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->FindString(x0, x1, x2, x3, x4, x5));
 
   
   
@@ -5923,9 +5900,9 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
   PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaEdit_class, "insert in text%", n, p);
-  if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+1], NULL))) {
+  if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_mzstring(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+1], NULL))) {
     long x0;
-    string x1 INIT_NULLED_OUT;
+    mzstring x1 INIT_NULLED_OUT;
     nnlong x2;
     long x3;
     Bool x4;
@@ -5937,7 +5914,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
       WITH_VAR_STACK(scheme_wrong_count_m("insert in text% (string and position case)", POFFSET+2, POFFSET+4, n, p, 1));
-    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert in text% (string and position case)"));
+    x1 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "insert in text% (string and position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "insert in text% (string and position case)"));
     if (n > (POFFSET+2)) {
       x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "same", "insert in text% (string and position case)"));
@@ -5948,15 +5925,15 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     } else
       x4 = TRUE;
 
-    x0 = SCHEME_STRTAG_VAL(p[POFFSET+0]);
+    x0 = SCHEME_CHAR_STRTAG_VAL(p[POFFSET+0]);
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1, x2, x3, x4));
 
     
     
     READY_TO_PRE_RETURN;
-  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_mzstring(p[POFFSET+0], NULL))) {
     long x0;
-    string x1 INIT_NULLED_OUT;
+    mzstring x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
@@ -5965,17 +5942,17 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     
     if (n != (POFFSET+1)) 
       WITH_VAR_STACK(scheme_wrong_count_m("insert in text% (string without position case)", POFFSET+1, POFFSET+1, n, p, 1));
-    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert in text% (string without position case)"));
+    x1 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "insert in text% (string without position case)"));
 
-    x0 = SCHEME_STRTAG_VAL(p[POFFSET+0]);
+    x0 = SCHEME_CHAR_STRTAG_VAL(p[POFFSET+0]);
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1));
 
     
     
     READY_TO_PRE_RETURN;
-  } else if ((n >= (POFFSET+3)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+2], NULL))) {
+  } else if ((n >= (POFFSET+3)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_mzstring(p[POFFSET+1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+2], NULL))) {
     nnlong x0;
-    string x1 INIT_NULLED_OUT;
+    mzstring x1 INIT_NULLED_OUT;
     nnlong x2;
     long x3;
     Bool x4;
@@ -5988,7 +5965,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     if ((n < (POFFSET+3)) || (n > (POFFSET+5))) 
       WITH_VAR_STACK(scheme_wrong_count_m("insert in text% (length and string without position case)", POFFSET+3, POFFSET+5, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "insert in text% (length and string without position case)"));
-    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "insert in text% (length and string without position case)"));
+    x1 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+1], "insert in text% (length and string without position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "insert in text% (length and string without position case)"));
     if (n > (POFFSET+3)) {
       x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+3], "same", "insert in text% (length and string without position case)"));
@@ -5999,7 +5976,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     } else
       x4 = TRUE;
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+0]));
+    if ((x0 < 0) || (x0 > SCHEME_CHAR_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+0]));
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1, x2, x3, x4));
 
     
@@ -6007,7 +5984,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     READY_TO_PRE_RETURN;
   } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
     nnlong x0;
-    string x1 INIT_NULLED_OUT;
+    mzstring x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
@@ -6017,9 +5994,9 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     if (n != (POFFSET+2)) 
       WITH_VAR_STACK(scheme_wrong_count_m("insert in text% (length, string, and position case)", POFFSET+2, POFFSET+2, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "insert in text% (length, string, and position case)"));
-    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "insert in text% (length, string, and position case)"));
+    x1 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+1], "insert in text% (length, string, and position case)"));
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+0]));
+    if ((x0 < 0) || (x0 > SCHEME_CHAR_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+0]));
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1));
 
     
@@ -6567,11 +6544,11 @@ static Scheme_Object *os_wxMediaEditGetPosition(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMediaEditGetFlattenedTextUTF8(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditGetFlattenedText(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  mzstring r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-flattened-text in text%", n, p);
   long _x0;
   long* x0 = &_x0;
@@ -6582,22 +6559,22 @@ static Scheme_Object *os_wxMediaEditGetFlattenedTextUTF8(int n,  Scheme_Object *
   
 
   
-  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedTextUTF8(x0));
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetFlattenedText(x0));
 
   
   
   READY_TO_RETURN;
-  return WITH_VAR_STACK(scheme_make_sized_string(r, _x0, 0));
+  return WITH_VAR_STACK(scheme_make_sized_char_string(r, _x0, 0));
 }
 
 static Scheme_Object *os_wxMediaEditPutFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r;
+  nbstring r;
   objscheme_check_valid(os_wxMediaEdit_class, "put-file in text%", n, p);
-  nstring x0 INIT_NULLED_OUT;
-  nstring x1 INIT_NULLED_OUT;
+  nbstring x0 INIT_NULLED_OUT;
+  nbstring x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -6605,8 +6582,8 @@ static Scheme_Object *os_wxMediaEditPutFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "put-file in text%"));
-  x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "put-file in text%"));
+  x0 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+0], "put-file in text%"));
+  x1 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+1], "put-file in text%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -6617,23 +6594,23 @@ static Scheme_Object *os_wxMediaEditPutFile(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxMediaEditGetFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r;
+  nbstring r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-file in text%", n, p);
-  nstring x0 INIT_NULLED_OUT;
+  nbstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "get-file in text%"));
+  x0 = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(p[POFFSET+0], "get-file in text%"));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
@@ -6644,7 +6621,7 @@ static Scheme_Object *os_wxMediaEditGetFile(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxMediaEditAfterEditSequence(int n,  Scheme_Object *p[])
@@ -6723,7 +6700,7 @@ static Scheme_Object *os_wxMediaEditOnLoadFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaEdit_class, "on-load-file in text%", n, p);
-  string x0 INIT_NULLED_OUT;
+  bstring x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -6731,7 +6708,7 @@ static Scheme_Object *os_wxMediaEditOnLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "on-load-file in text%"));
+  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "on-load-file in text%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "on-load-file in text%"));
 
   
@@ -6752,7 +6729,7 @@ static Scheme_Object *os_wxMediaEditCanLoadFile(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaEdit_class, "can-load-file? in text%", n, p);
-  string x0 INIT_NULLED_OUT;
+  bstring x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -6760,7 +6737,7 @@ static Scheme_Object *os_wxMediaEditCanLoadFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "can-load-file? in text%"));
+  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "can-load-file? in text%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "can-load-file? in text%"));
 
   
@@ -6805,7 +6782,7 @@ static Scheme_Object *os_wxMediaEditOnSaveFile(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaEdit_class, "on-save-file in text%", n, p);
-  string x0 INIT_NULLED_OUT;
+  bstring x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -6813,7 +6790,7 @@ static Scheme_Object *os_wxMediaEditOnSaveFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "on-save-file in text%"));
+  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "on-save-file in text%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "on-save-file in text%"));
 
   
@@ -6834,7 +6811,7 @@ static Scheme_Object *os_wxMediaEditCanSaveFile(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaEdit_class, "can-save-file? in text%", n, p);
-  string x0 INIT_NULLED_OUT;
+  bstring x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -6842,7 +6819,7 @@ static Scheme_Object *os_wxMediaEditCanSaveFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "can-save-file? in text%"));
+  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "can-save-file? in text%"));
   x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "can-save-file? in text%"));
 
   
@@ -7120,7 +7097,7 @@ static Scheme_Object *os_wxMediaEditSetFilename(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaEdit_class, "set-filename in text%", n, p);
-  nstring x0 INIT_NULLED_OUT;
+  npstring x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -7128,7 +7105,7 @@ static Scheme_Object *os_wxMediaEditSetFilename(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "set-filename in text%"));
+  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "set-filename in text%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "set-filename in text%"));
   } else
@@ -7894,7 +7871,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 141));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 140));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));
@@ -7931,14 +7908,13 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file-format" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFileFormat, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-to-file" " method", (Scheme_Method_Prim *)os_wxMediaEditWriteToFile, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file" " method", (Scheme_Method_Prim *)os_wxMediaEditReadFromFile, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character" " method", (Scheme_Method_Prim *)os_wxMediaEditGetTruncatedCharacter, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-unicode" " method", (Scheme_Method_Prim *)os_wxMediaEditGetCharacter, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetTextUTF8, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character" " method", (Scheme_Method_Prim *)os_wxMediaEditGetCharacter, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetText, 0, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPosition, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPositionAndLocation, 2, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditFindSnip, 2, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all" " method", (Scheme_Method_Prim *)os_wxMediaEditFindStringAllUTF8, 1, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string" " method", (Scheme_Method_Prim *)os_wxMediaEditFindStringUTF8, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all" " method", (Scheme_Method_Prim *)os_wxMediaEditFindStringAll, 1, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string" " method", (Scheme_Method_Prim *)os_wxMediaEditFindString, 1, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-styles-sticky" " method", (Scheme_Method_Prim *)os_wxMediaEditSetStickyStyles, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-styles-sticky" " method", (Scheme_Method_Prim *)os_wxMediaEditGetStickyStyles, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-line-spacing" " method", (Scheme_Method_Prim *)os_wxMediaEditSetLineSpacing, 1, 1));
@@ -7991,7 +7967,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-end-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetEndPosition, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-start-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetStartPosition, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetPosition, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFlattenedTextUTF8, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-flattened-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFlattenedText, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "put-file" " method", (Scheme_Method_Prim *)os_wxMediaEditPutFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-edit-sequence" " method", (Scheme_Method_Prim *)os_wxMediaEditAfterEditSequence, 0, 0));

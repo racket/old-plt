@@ -172,7 +172,7 @@ static Bool IsColor(wxBitmap *bm)
 class os_wxBitmap : public wxBitmap {
  public:
 
-  os_wxBitmap CONSTRUCTOR_ARGS((string x0, int x1, int x2));
+  os_wxBitmap CONSTRUCTOR_ARGS((bstring x0, int x1, int x2));
 #ifndef MZ_PRECISE_GC
   os_wxBitmap CONSTRUCTOR_ARGS((int x0, int x1, Bool x2 = 0));
 #endif
@@ -197,7 +197,7 @@ void os_wxBitmap::gcFixup() {
 
 static Scheme_Object *os_wxBitmap_class;
 
-os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((string x0, int x1, int x2))
+os_wxBitmap::os_wxBitmap CONSTRUCTOR_ARGS((bstring x0, int x1, int x2))
 CONSTRUCTOR_INIT(: wxBitmap(x0, x1, x2))
 {
 }
@@ -442,61 +442,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
   PRE_VAR_STACK_PUSH(0, p);
   os_wxBitmap *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
-    int x0;
-    int x1;
-    Bool x2;
-
-    SETUP_VAR_STACK_PRE_REMEMBERED(2);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, realobj);
-
-    
-    if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (width/height case)", POFFSET+2, POFFSET+3, n, p, 1));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 10000, "initialization in bitmap% (width/height case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (width/height case)"));
-    if (n > (POFFSET+2)) {
-      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in bitmap% (width/height case)"));
-    } else
-      x2 = 0;
-
-    
-    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
-#ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
-#endif
-    realobj->__gc_external = (void *)p[0];
-    
-    
-    READY_TO_PRE_RETURN;
-  } else if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+1], NULL))) {
-    string x0 INIT_NULLED_OUT;
-    int x1;
-    int x2;
-
-    SETUP_VAR_STACK_PRE_REMEMBERED(3);
-    VAR_STACK_PUSH(0, p);
-    VAR_STACK_PUSH(1, realobj);
-    VAR_STACK_PUSH(2, x0);
-
-    
-    if (n != (POFFSET+3)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (datastring case)", POFFSET+3, POFFSET+3, n, p, 1));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in bitmap% (datastring case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (datastring case)"));
-    x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 1, 10000, "initialization in bitmap% (datastring case)"));
-
-    if (SCHEME_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[POFFSET]));
-    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
-#ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
-#endif
-    realobj->__gc_external = (void *)p[0];
-    
-    
-    READY_TO_PRE_RETURN;
-  } else  {
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_pathname(p[POFFSET+0], NULL))) {
     pathname x0 INIT_NULLED_OUT;
     int x1;
     class wxColour* x2 INIT_NULLED_OUT;
@@ -527,6 +473,60 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 #endif
     realobj->__gc_external = (void *)p[0];
     if (realobj->Ok()) WITH_VAR_STACK(scheme_thread_block(0.0));
+    
+    READY_TO_PRE_RETURN;
+  } else if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
+    int x0;
+    int x1;
+    Bool x2;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, realobj);
+
+    
+    if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (width/height case)", POFFSET+2, POFFSET+3, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 10000, "initialization in bitmap% (width/height case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (width/height case)"));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in bitmap% (width/height case)"));
+    } else
+      x2 = 0;
+
+    
+    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
+#endif
+    realobj->__gc_external = (void *)p[0];
+    
+    
+    READY_TO_PRE_RETURN;
+  } else  {
+    bstring x0 INIT_NULLED_OUT;
+    int x1;
+    int x2;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(3);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, realobj);
+    VAR_STACK_PUSH(2, x0);
+
+    
+    if (n != (POFFSET+3)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in bitmap% (datastring case)", POFFSET+3, POFFSET+3, n, p, 1));
+    x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "initialization in bitmap% (datastring case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (datastring case)"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 1, 10000, "initialization in bitmap% (datastring case)"));
+
+    if (SCHEME_BYTE_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "byte string too short: ", p[POFFSET]));
+    realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
+#ifdef MZ_PRECISE_GC
+    WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
+#endif
+    realobj->__gc_external = (void *)p[0];
+    
     
     READY_TO_PRE_RETURN;
   }

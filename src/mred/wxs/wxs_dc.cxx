@@ -211,7 +211,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool combine, int offset)
+static void* MyTextExtent(wxDC *dc, mzchar *s, wxFont *f, Bool combine, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
@@ -221,7 +221,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool combine, int offset
 
   a[0] = a[1] = a[2] = a[3] = NULL;
 
-  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, combine, FALSE, offset));
+  WITH_VAR_STACK(dc->GetTextExtent((char *)s, &w, &h, &d, &asc, f, combine, TRUE, offset));
     
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -1134,7 +1134,7 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   void* r;
   objscheme_check_valid(os_wxDC_class, "get-text-extent in dc<%>", n, p);
-  string x0 INIT_NULLED_OUT;
+  mzstring x0 INIT_NULLED_OUT;
   class wxFont* x1 INIT_NULLED_OUT;
   Bool x2;
   nnint x3;
@@ -1145,7 +1145,7 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "get-text-extent in dc<%>"));
+  x0 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "get-text-extent in dc<%>"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+1], "get-text-extent in dc<%>", 1));
   } else
@@ -1159,7 +1159,7 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   } else
     x3 = 0;
 
-  if (x3 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[POFFSET+3]));
+  if (x3 > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[POFFSET+3]));
   r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3));
 
   
@@ -1516,7 +1516,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-text in dc<%>", n, p);
-  string x0 INIT_NULLED_OUT;
+  mzxstring x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   Bool x3;
@@ -1529,7 +1529,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "draw-text in dc<%>"));
+  x0 = (mzxstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "draw-text in dc<%>"));
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "draw-text in dc<%>"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "draw-text in dc<%>"));
   if (n > (POFFSET+3)) {
@@ -1545,7 +1545,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   } else
     x6 = 0.0;
 
-  if (x5 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+5]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))x4 = FALSE;
+  if (x5 > SCHEME_CHAR_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+5]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))x4 = FALSE;
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4, x5, x6));
 
   
@@ -1935,7 +1935,7 @@ static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
   float x1;
   int x2;
   int x3;
-  string x4 INIT_NULLED_OUT;
+  bstring x4 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1946,9 +1946,9 @@ static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-argb-pixels in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "set-argb-pixels in bitmap-dc%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "set-argb-pixels in bitmap-dc%"));
-  x4 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+4], "set-argb-pixels in bitmap-dc%"));
+  x4 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+4], "set-argb-pixels in bitmap-dc%"));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","set-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-argb-pixels"), "string too short: ", p[4+POFFSET]));
+  DO_OK_CHECK(METHODNAME("memory-dc%","set-argb-pixels"))if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-argb-pixels"), "byte string too short: ", p[4+POFFSET]));
   WITH_VAR_STACK(dcSetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   
@@ -1966,7 +1966,7 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   float x1;
   int x2;
   int x3;
-  wstring x4 INIT_NULLED_OUT;
+  wbstring x4 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1977,9 +1977,9 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "get-argb-pixels in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "get-argb-pixels in bitmap-dc%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "get-argb-pixels in bitmap-dc%"));
-  x4 = (wstring)WITH_VAR_STACK(objscheme_unbundle_mutable_string(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
+  x4 = (wbstring)WITH_VAR_STACK(objscheme_unbundle_mutable_bstring(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","get-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","get-argb-pixels"), "string too short: ", p[4+POFFSET]));
+  DO_OK_CHECK(METHODNAME("memory-dc%","get-argb-pixels"))if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","get-argb-pixels"), "byte string too short: ", p[4+POFFSET]));
   WITH_VAR_STACK(dcGetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   

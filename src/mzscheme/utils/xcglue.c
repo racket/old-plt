@@ -669,19 +669,39 @@ int objscheme_istype_pair(Scheme_Object *obj, const char *stopifbad)
 
 int objscheme_istype_string(Scheme_Object *obj, const char *stopifbad)
 {
-  if (SCHEME_STRINGP(obj))
+  if (SCHEME_CHAR_STRINGP(obj))
     return 1;
   else if (stopifbad)
     scheme_wrong_type(stopifbad, "string", -1, 0, &obj);
   return 0;
 }
 
-int objscheme_istype_pathname(Scheme_Object *obj, const char *stopifbad)
+int objscheme_istype_bstring(Scheme_Object *obj, const char *stopifbad)
 {
-  if (SCHEME_STRINGP(obj))
+  if (SCHEME_BYTE_STRINGP(obj))
     return 1;
   else if (stopifbad)
-    scheme_wrong_type(stopifbad, "pathname string", -1, 0, &obj);
+    scheme_wrong_type(stopifbad, "byte string", -1, 0, &obj);
+  return 0;
+}
+
+int objscheme_istype_pstring(Scheme_Object *obj, const char *stopifbad)
+{
+  if (SCHEME_BYTE_STRINGP(obj)
+      || SCHEME_CHAR_STRINGP(obj))
+    return 1;
+  else if (stopifbad)
+    scheme_wrong_type(stopifbad, "string or byte string", -1, 0, &obj);
+  return 0;
+}
+
+int objscheme_istype_pathname(Scheme_Object *obj, const char *stopifbad)
+{
+  if (SCHEME_BYTE_STRINGP(obj)
+      || SCHEME_CHAR_STRINGP(obj))
+    return 1;
+  else if (stopifbad)
+    scheme_wrong_type(stopifbad, "pathname string or byte string", -1, 0, &obj);
   return 0;
 }
 
@@ -789,12 +809,20 @@ Scheme_Object *objscheme_bundle_string(char *s)
   if (!s)
     return XC_SCHEME_NULL;
   else
-    return scheme_make_string(s);
+    return scheme_make_utf8_string(s);
+}
+
+Scheme_Object *objscheme_bundle_byte_string(char *s)
+{
+  if (!s)
+    return XC_SCHEME_NULL;
+  else
+    return scheme_make_byte_string(s);
 }
 
 Scheme_Object *objscheme_bundle_pathname(char *s)
 {
-  return objscheme_bundle_string(s);
+  return objscheme_bundle_byte_string(s);
 }
 
 Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *symname)
@@ -968,23 +996,50 @@ int objscheme_unbundle_bool(Scheme_Object *obj, const char *where)
 char *objscheme_unbundle_string(Scheme_Object *obj, const char *where)
 {
   (void)objscheme_istype_string(obj, where);
-  return SCHEME_STR_VAL(obj);
+  obj = scheme_char_string_to_byte_string(obj);
+  return SCHEME_BYTE_STR_VAL(obj);
 }
 
-char *objscheme_unbundle_mutable_string(Scheme_Object *obj, const char *where)
+char *objscheme_unbundle_pstring(Scheme_Object *obj, const char *where)
 {
-  if (!SCHEME_MUTABLE_STRINGP(obj)) {
+  (void)objscheme_istype_pstring(obj, where);
+  if (SCHEME_CHAR_STRINGP(obj))
+    obj = scheme_char_string_to_byte_string(obj);
+  return SCHEME_BYTE_STR_VAL(obj);
+}
+
+mzchar *objscheme_unbundle_mzstring(Scheme_Object *obj, const char *where)
+{
+  (void)objscheme_istype_string(obj, where);
+  return SCHEME_CHAR_STR_VAL(obj);
+}
+
+mzchar *objscheme_unbundle_mutable_mzstring(Scheme_Object *obj, const char *where)
+{
+  if (!SCHEME_MUTABLE_CHAR_STRINGP(obj)) {
     scheme_wrong_type(where, "mutable string", -1, 0, &obj);
   }
-  return SCHEME_STR_VAL(obj);
+  return SCHEME_CHAR_STR_VAL(obj);
+}
+
+char *objscheme_unbundle_bstring(Scheme_Object *obj, const char *where)
+{
+  (void)objscheme_istype_bstring(obj, where);
+  return SCHEME_BYTE_STR_VAL(obj);
+}
+
+char *objscheme_unbundle_mutable_bstring(Scheme_Object *obj, const char *where)
+{
+  if (!SCHEME_MUTABLE_BYTE_STRINGP(obj)) {
+    scheme_wrong_type(where, "mutable byte string", -1, 0, &obj);
+  }
+  return SCHEME_BYTE_STR_VAL(obj);
 }
 
 char *objscheme_unbundle_pathname_guards(Scheme_Object *obj, const char *where, int guards)
 {
   (void)objscheme_istype_pathname(obj, where);
-  return scheme_expand_filename(SCHEME_STR_VAL(obj), 
-				SCHEME_STRTAG_VAL(obj),
-				(char *)where, NULL, guards);
+  return scheme_expand_string_filename(obj, (char *)where, NULL, guards);
 }
 
 char *objscheme_unbundle_pathname(Scheme_Object *obj, const char *where)
@@ -1001,8 +1056,32 @@ char *objscheme_unbundle_nullable_string(Scheme_Object *obj, const char *where)
 {
   if (XC_SCHEME_NULLP(obj))
     return NULL;
-  else if (!where || SCHEME_STRINGP(obj))
+  else if (!where || SCHEME_CHAR_STRINGP(obj))
     return objscheme_unbundle_string(obj, where);
+  else {
+    scheme_wrong_type(where, "string or "  XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  }
+}
+
+char *objscheme_unbundle_nullable_bstring(Scheme_Object *obj, const char *where)
+{
+  if (XC_SCHEME_NULLP(obj))
+    return NULL;
+  else if (!where || SCHEME_BYTE_STRINGP(obj))
+    return objscheme_unbundle_bstring(obj, where);
+  else {
+    scheme_wrong_type(where, "byte string or "  XC_NULL_STR, -1, 0, &obj);
+    return NULL;
+  }
+}
+
+mzchar *objscheme_unbundle_nullable_mzstring(Scheme_Object *obj, const char *where)
+{
+  if (XC_SCHEME_NULLP(obj))
+    return NULL;
+  else if (!where || SCHEME_CHAR_STRINGP(obj))
+    return objscheme_unbundle_mzstring(obj, where);
   else {
     scheme_wrong_type(where, "string or "  XC_NULL_STR, -1, 0, &obj);
     return NULL;
@@ -1013,10 +1092,10 @@ char *objscheme_unbundle_nullable_pathname(Scheme_Object *obj, const char *where
 {
   if (XC_SCHEME_NULLP(obj))
     return NULL;
-  else  if (!where || SCHEME_STRINGP(obj))
+  else if (!where || SCHEME_BYTE_STRINGP(obj) || SCHEME_CHAR_STRINGP(obj))
     return objscheme_unbundle_pathname_guards(obj, where, SCHEME_GUARD_FILE_READ);
   else  {
-    scheme_wrong_type(where, "pathname string or " XC_NULL_STR, -1, 0, &obj);
+    scheme_wrong_type(where, "pathname string, byte string, or " XC_NULL_STR, -1, 0, &obj);
     return NULL;
   }
     
@@ -1026,10 +1105,10 @@ char *objscheme_unbundle_nullable_write_pathname(Scheme_Object *obj, const char 
 {
   if (XC_SCHEME_NULLP(obj))
     return NULL;
-  else  if (!where || SCHEME_STRINGP(obj))
+  else if (!where || SCHEME_BYTE_STRINGP(obj) || SCHEME_CHAR_STRINGP(obj))
     return objscheme_unbundle_pathname_guards(obj, where, SCHEME_GUARD_FILE_WRITE);
   else  {
-    scheme_wrong_type(where, "pathname string or " XC_NULL_STR, -1, 0, &obj);
+    scheme_wrong_type(where, "pathname string, byte string, or " XC_NULL_STR, -1, 0, &obj);
     return NULL;
   }
     

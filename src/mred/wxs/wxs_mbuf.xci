@@ -54,7 +54,7 @@
 
 @ Y "release-snip" : bool ReleaseSnip(wxSnip!); : : : : XrZERO
 
-@ Y "set-filename" : void SetFilename(nstring,bool=FALSE);
+@ Y "set-filename" : void SetFilename(npstring,bool=FALSE);
 
 @ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,bool=FALSE); <> without position
 @ X "write-to-file" : bool WriteToFile(wxMediaStreamOut!); <> without position
@@ -70,19 +70,19 @@
 @ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nstring,SYM[bitmapType],bool,bool);
 @ Z "on-new-box" : wxSnip! OnNewBox(SYM[bufferType]);
 
-@ Z "can-save-file?" : bool CanSaveFile(string,SYM[fileType]);
-@ Z "on-save-file" : void OnSaveFile(string,SYM[fileType]);
+@ Z "can-save-file?" : bool CanSaveFile(bstring,SYM[fileType]);
+@ Z "on-save-file" : void OnSaveFile(bstring,SYM[fileType]);
 @ Z "after-save-file" : void AfterSaveFile(bool);
-@ Z "can-load-file?" : bool CanLoadFile(string,SYM[fileType]);
-@ Z "on-load-file" : void OnLoadFile(string,SYM[fileType]);
+@ Z "can-load-file?" : bool CanLoadFile(bstring,SYM[fileType]);
+@ Z "on-load-file" : void OnLoadFile(bstring,SYM[fileType]);
 @ Z "after-load-file" : void AfterLoadFile(bool);
 
 @ Z "on-edit-sequence" : void OnEditSequence();
 @ Z "after-edit-sequence" : void AfterEditSequence();
 
-@ Z "get-file" : nstring GetFile(nstring);
-@ Z "put-file" : nstring PutFile(nstring, nstring);
+@ Z "get-file" : nbstring GetFile(nbstring);
+@ Z "put-file" : nbstring PutFile(nbstring, nbstring);
 
-@MACRO makeNoCopyFlatString[len] = WITH_VAR_STACK(scheme_make_sized_string(r, <len>, 0))
+@MACRO makeNoCopyFlatString[len] = WITH_VAR_STACK(scheme_make_sized_char_string(r, <len>, 0))
 
-@ X "get-flattened-text" : string/makeNoCopyFlatString[_x0] GetFlattenedTextUTF8(-long*);
+@ X "get-flattened-text" : mzstring/makeNoCopyFlatString[_x0] GetFlattenedText(-long*);

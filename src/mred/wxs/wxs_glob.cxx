@@ -202,11 +202,6 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 
 
-#if !USE_METAFILE
-#define wxMakeMetaFilePlaceable(a,b,c,d,e,f) TRUE
-#endif
-
-
 
 
 
@@ -594,39 +589,6 @@ static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  string x0 INIT_NULLED_OUT;
-  float x1;
-  float x2;
-  float x3;
-  float x4;
-  float x5;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+0], "make-meta-file-placeable"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[0+1], "make-meta-file-placeable"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[0+2], "make-meta-file-placeable"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_float(p[0+3], "make-meta-file-placeable"));
-  x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[0+4], "make-meta-file-placeable"));
-  x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[0+5], "make-meta-file-placeable"));
-
-  
-  r = WITH_VAR_STACK(wxMakeMetaFilePlaceable(x0, x1, x2, x3, x4, x5));
-
-  
-  
-  READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
-}
-
 static Scheme_Object *wxsGlobalwxDisplayDepth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -761,8 +723,6 @@ void objscheme_setup_wxsGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("is-busy?", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxBeginBusyCursor, "begin-busy-cursor", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("begin-busy-cursor", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxMakeMetaFilePlaceable, "make-meta-file-placeable", 6, 6));
-  WITH_VAR_STACK(scheme_install_xc_global("make-meta-file-placeable", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxDisplayDepth, "get-display-depth", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-display-depth", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxColourDisplay, "is-color-display?", 0, 0));

@@ -71,6 +71,7 @@
 
 (define range-bottom 0)
 (define range-top -1)
+(define range-v -1)
 (define ranges null)
 
 (define ccount 0)
@@ -78,21 +79,27 @@
 (define (map1 c v)
   (set! ccount (add1 ccount))
   (if (= c (add1 range-top))
-      (set! range-top c)
+      (begin
+	(unless (= v range-v)
+	  (set! range-v -1))
+	(set! range-top c))
       (begin
 	;; Drop surrogate from range.
 	;;  At the time of implemenation, the following
 	;;  was never executed, because #D7FF wasn't mapped:
 	(when (and (< range-bottom #xD800)
 		   (> range-top #xD800))
-	  (set! ranges (cons (cons range-bottom #xD7FF) ranges))
+	  (set! ranges (cons (list range-bottom #xD7FF (range-v . > . -1))
+			     ranges))
 	  (set! range-bottom #xE000))
 	;; ... but this one was executed.
 	(when (= range-bottom #xD800)
 	  (set! range-bottom #xE000))
-	(set! ranges (cons (cons range-bottom range-top) ranges))
+	(set! ranges (cons (list range-bottom range-top (range-v . > . -1)) 
+			   ranges))
 	(set! range-bottom c)
-	(set! range-top c)))
+	(set! range-top c)
+	(set! range-v v)))
   (let ([top-index (arithmetic-shift c (- low-bits))])
     (let ([vec (vector-ref top top-index)])
       (unless vec
@@ -241,14 +248,18 @@
 (print-shift (car downs) (unbox (cdr downs)) "downs")
 (print-shift (car titles) (unbox (cdr titles)) "titles")
 
-(set! ranges (cons (cons range-bottom range-top) ranges))
+(set! ranges (cons (list range-bottom range-top (range-v . > . -1))
+		   ranges))
 
 (printf "~n#define NUM_UCHAR_RANGES ~a~n" (length ranges))
+(printf "~n#define URANGE_VARIES 0x40000000~n")
 (printf "static int mapped_uchar_ranges[] = {~n")
 (for-each (lambda (r)
-	    (printf "0x~x, 0x~x~a~n"
-		    (car r) (cdr r)
-		    (if (= (cdr r) range-top)
+	    (printf "0x~x, 0x~x~a~a~n"
+		    (car r) 
+		    (cadr r)
+		    (if (caddr r) "" " | URANGE_VARIES")
+		    (if (= (cadr r) range-top)
 			""
 			",")))
 	  (reverse ranges))

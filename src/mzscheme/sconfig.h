@@ -471,7 +471,6 @@
 
 # define SYSTEM_TYPE_NAME "windows"
 # define DOS_FILE_SYSTEM
-# define FILENAME_MUST_BE_UTF8
 # if defined(_MSC_VER)
 #  define NO_READDIR
 #  define USE_FINDFIRST
@@ -737,7 +736,6 @@
 
 # define SYSTEM_TYPE_NAME "dos"
 # define DOS_FILE_SYSTEM
-# define FILENAME_MUST_BE_UTF8
 # define USE_GETDISK
 # define DIRENT_NO_NAMLEN
 # define NO_READLINK
@@ -897,10 +895,6 @@
 
  /* EXPAND_FILENAME_TILDE expands ~ in a filename with a user's home
      directory. */
-
- /* FILENAME_MUST_BE_UTF8 inidicates that filenames must be valid 
-    UTF-8 encodings, because they will be converted before the
-    filesystem is accessed. */
 
  /* NO_STAT_PROC means that there is no stat() function. */
 

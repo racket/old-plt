@@ -67,6 +67,9 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 @SYM "border" : wxBORDER
 @ENDSYMBOLS
 
+#define RANGECLASS wxTabChoice
+@INCLUDE range.xci
+
 @CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,-int=0,string[]=NULL/bList/ubList/cStringList///push,SYM[tabStyle]=0); : : ubCallbackSetup/glueListSet[string.3.4.3.METHODNAME("tab-group","initialization")]/glueCleanup[4]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci

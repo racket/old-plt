@@ -25,7 +25,6 @@ Scheme_Object *objscheme_bundle_wxMediaStreamOutStringBase(class wxMediaStreamOu
 class wxMediaStreamOutStringBase *objscheme_unbundle_wxMediaStreamOutStringBase(Scheme_Object *obj, const char *where, int nullOK);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
-extern Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *);
 extern class wxMediaStreamInBase *objscheme_unbundle_wxMediaStreamInBase(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxMediaStreamIn(Scheme_Env *env);
@@ -33,7 +32,6 @@ void objscheme_setup_wxMediaStreamIn(Scheme_Env *env);
 int objscheme_istype_wxMediaStreamIn(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxMediaStreamIn(class wxMediaStreamIn *realobj);
 class wxMediaStreamIn *objscheme_unbundle_wxMediaStreamIn(Scheme_Object *obj, const char *where, int nullOK);
-extern Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *);
 extern Scheme_Object *objscheme_bundle_wxMediaStreamOut(class wxMediaStreamOut *);
 extern class wxMediaStreamOutBase *objscheme_unbundle_wxMediaStreamOutBase(Scheme_Object *, const char *, int);

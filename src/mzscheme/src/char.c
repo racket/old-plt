@@ -230,9 +230,9 @@ void scheme_init_char (Scheme_Env *env)
 						      1, 1, 1),
 			     env);
 
-  scheme_add_global_constant("make-char-mapped-list", 
+  scheme_add_global_constant("make-known-char-range-list", 
 			     scheme_make_prim_w_arity(char_map_list, 
-						      "make-char-mapped-list", 
+						      "make-known-char-range-list", 
 						      0, 0),
 			     env);
 }
@@ -306,7 +306,7 @@ GEN_CHAR_TEST(char_numeric, "char-numeric?", scheme_isdigit)
 GEN_CHAR_TEST(char_alphabetic, "char-alphabetic?", scheme_isalpha)
 GEN_CHAR_TEST(char_whitespace, "char-whitespace?", scheme_isspace)
 GEN_CHAR_TEST(char_blank, "char-blank?", scheme_isblank)
-GEN_CHAR_TEST(char_control, "char-iso-control?", scheme_isspace)
+GEN_CHAR_TEST(char_control, "char-iso-control?", scheme_iscontrol)
 GEN_CHAR_TEST(char_punctuation, "char-punctuation?", scheme_ispunc)
 GEN_CHAR_TEST(char_symbolic, "char-symbolic?", scheme_issymbol)
 GEN_CHAR_TEST(char_graphic, "char-graphic?", scheme_isgraphic)
@@ -395,14 +395,23 @@ static Scheme_Object *char_utf8_length (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *char_map_list (int argc, Scheme_Object *argv[])
 {
-  int i;
+  int i, bottom, top, uniform;
   Scheme_Object *l = scheme_null;
 
 # define icons scheme_make_immutable_pair
 
-  for (i = NUM_UCHAR_RANGES - 2; i >= 0; i -= 2) {
-    l = icons(icons(scheme_make_integer_value(mapped_uchar_ranges[i]),
-		    scheme_make_integer_value(mapped_uchar_ranges[i+1])),
+  for (i = 2 * (NUM_UCHAR_RANGES - 1); i >= 0; i -= 2) {
+    bottom = mapped_uchar_ranges[i];
+    top = mapped_uchar_ranges[i + 1];
+    if (top & URANGE_VARIES) {
+      top -= URANGE_VARIES;
+      uniform = 0;
+    } else
+      uniform = 1;
+    l = icons(icons(scheme_make_integer_value(bottom),
+		    icons(scheme_make_integer_value(top),
+			  icons((uniform ? scheme_true : scheme_false),
+				scheme_null))),
 	      l);
   }
 

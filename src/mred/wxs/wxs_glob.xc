@@ -96,12 +96,6 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @ "is-color-display?" : bool wxColourDisplay();
 @ "get-display-depth" : int wxDisplayDepth();
 
-#if !USE_METAFILE
-#define wxMakeMetaFilePlaceable(a,b,c,d,e,f) TRUE
-#endif
-@ "make-meta-file-placeable" : bool wxMakeMetaFilePlaceable(string,float,float,float,float,float);
-
-
 @ "begin-busy-cursor" : void wxBeginBusyCursor()
 @ "is-busy?" : bool wxIsBusy();
 @ "end-busy-cursor" : void wxEndBusyCursor();

@@ -2133,11 +2133,19 @@ sub PrintBundleVar
 	$symname = $1;
 	print "$wvs(objscheme_bundle_nonnegative_symbol_float($var, \"$symname\"))";
     } elsif (($paramtype eq 'string') || ($paramtype eq 'cstring')
-	     || ($paramtype eq 'custring') || ($paramtype eq 'ustring')
-	     || ($paramtype eq 'ncustring') || ($paramtype eq 'nustring')
-	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring') 
-	     || ($paramtype eq 'wstring')) {
+	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')) {
 	print "$wvs(objscheme_bundle_string((char *)$var))";
+    } elsif (($paramtype eq 'bstring') || ($paramtype eq 'cbstring')
+	     || ($paramtype eq 'nbstring') || ($paramtype eq 'ncbstring') 
+	     || ($paramtype eq 'wbstring')) {
+	print "$wvs(objscheme_bundle_bstring((char *)$var))";
+    } elsif (($paramtype eq 'mzstring') || ($paramtype eq 'mzxstring') || ($paramtype eq 'cmzstring')
+	     || ($paramtype eq 'nmzstring') || ($paramtype eq 'ncmzstring') 
+	     || ($paramtype eq 'wmzstring')) {
+	print "$wvs(objscheme_bundle_mzstring((mzchar *)$var))";
+    } elsif (($paramtype eq 'pstring') || ($paramtype eq 'cpstring')
+	     || ($paramtype eq 'npstring') || ($paramtype eq 'ncpstring')) {
+	print "$wvs(objscheme_bundle_pstring((char *)$var))";
     } elsif (($paramtype eq 'pathname') 
 	     || ($paramtype eq 'cpathname')
 	     || ($paramtype eq 'npathname')
@@ -2209,10 +2217,18 @@ sub ParamIsPointer
     } elsif (substr($paramtype,0,4) eq 'nnfs') {
 	return 0;
     } elsif (($paramtype eq 'string') || ($paramtype eq 'cstring')
-	     || ($paramtype eq 'custring') || ($paramtype eq 'ustring')
-	     || ($paramtype eq 'ncustring') || ($paramtype eq 'nustring')
-	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')
-	     || ($paramtype eq 'wstring')) {
+	     || ($paramtype eq 'nstring') || ($paramtype eq 'ncstring')) {
+	return 1;
+    } elsif (($paramtype eq 'bstring') || ($paramtype eq 'cbstring')
+	     || ($paramtype eq 'nbstring') || ($paramtype eq 'ncbstring')
+	     || ($paramtype eq 'wbstring')) {
+	return 1;
+    } elsif (($paramtype eq 'pstring') || ($paramtype eq 'cpstring')
+	     || ($paramtype eq 'npstring') || ($paramtype eq 'ncpstring')) {
+	return 1;
+    } elsif (($paramtype eq 'mzstring') || ($paramtype eq 'mzxstring') || ($paramtype eq 'cmzstring')
+	     || ($paramtype eq 'nmzstring') || ($paramtype eq 'ncmzstring')
+	     || ($paramtype eq 'wmzstring')) {
 	return 1;
     } elsif (($paramtype eq 'pathname') 
 	     || ($paramtype eq 'cpathname')
@@ -2323,14 +2339,26 @@ sub PrintUnbundleVar
 	$paramtype =~ /nnfs\[(.*)\]/;
 	$symname = $1;
 	print "WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_float($var, \"$symname\", $stop))";
-    } elsif ($paramtype eq 'string' || $paramtype eq 'cstring'
-	     || $paramtype eq 'ustring' || $paramtype eq 'custring') {
+    } elsif ($paramtype eq 'string' || $paramtype eq 'cstring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_string(${var}, $stop))";
-    } elsif ($paramtype eq 'wstring') {
-	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mutable_string(${var}, $stop))";
-    } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring'
-	     || $paramtype eq 'nustring' || $paramtype eq 'ncustring') {
+    } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_string($var, $stop))";
+    } elsif ($paramtype eq 'bstring' || $paramtype eq 'cbstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_bstring(${var}, $stop))";
+    } elsif ($paramtype eq 'wbstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mutable_bstring(${var}, $stop))";
+    } elsif ($paramtype eq 'nbstring' || $paramtype eq 'ncbstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_bstring($var, $stop))";
+    } elsif ($paramtype eq 'pstring' || $paramtype eq 'cpstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_pstring(${var}, $stop))";
+    } elsif ($paramtype eq 'npstring' || $paramtype eq 'ncpstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_pstring($var, $stop))";
+    } elsif ($paramtype eq 'mzxstring' || $paramtype eq 'mzstring' || $paramtype eq 'cmzstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mzstring(${var}, $stop))";
+    } elsif ($paramtype eq 'wmzstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_mutable_mzstring(${var}, $stop))";
+    } elsif ($paramtype eq 'nmzstring' || $paramtype eq 'ncmzstring') {
+	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_nullable_mzstring($var, $stop))";
     } elsif ($paramtype eq 'pathname' || $paramtype eq 'cpathname') {
 	print "(${paramtype})WITH_VAR_STACK(objscheme_unbundle_pathname(${var}, $stop))";
     } elsif ($paramtype eq 'npathname' || $paramtype eq 'ncpathname') {
@@ -2681,13 +2709,24 @@ sub PrintTypecheck
 	print "WITH_REMEMBERED_STACK(objscheme_istype_integer($var, $stop))";
     } elsif (($paramtype eq 'Double')) {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_float($var, $stop))";
-    } elsif ($paramtype eq 'string' || $paramtype eq 'cstring'
-	     || $paramtype eq 'ustring' || $paramtype eq 'custring'
-	     || $paramtype eq 'wstring') {
+    } elsif ($paramtype eq 'string' || $paramtype eq 'cstring') {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_string($var, $stop))";
-    } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring'
-	     || $paramtype eq 'nustring' || $paramtype eq 'ncustring') {
+    } elsif ($paramtype eq 'nstring' || $paramtype eq 'ncstring') {
 	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_string($var, $stop)))";
+    } elsif ($paramtype eq 'bstring' || $paramtype eq 'cbstring'
+	     || $paramtype eq 'wbstring') {
+	print "WITH_REMEMBERED_STACK(objscheme_istype_bstring($var, $stop))";
+    } elsif ($paramtype eq 'nbstring' || $paramtype eq 'ncbstring') {
+	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_bstring($var, $stop)))";    
+    } elsif ($paramtype eq 'pstring' || $paramtype eq 'cpstring') {
+	print "WITH_REMEMBERED_STACK(objscheme_istype_pstring($var, $stop))";
+    } elsif ($paramtype eq 'npstring' || $paramtype eq 'ncpstring') {
+	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_pstring($var, $stop)))";
+    } elsif ($paramtype eq 'mzstring' || $paramtype eq 'mzxstring' || $paramtype eq 'cmzstring'
+	     || $paramtype eq 'wmzstring') {
+	print "WITH_REMEMBERED_STACK(objscheme_istype_mzstring($var, $stop))";
+    } elsif ($paramtype eq 'nmzstring' || $paramtype eq 'ncmzstring') {
+	print "(XC_SCHEME_NULLP($var) || WITH_REMEMBERED_STACK(objscheme_istype_mzstring($var, $stop)))";    
     } elsif ($paramtype eq 'pathname' || $paramtype eq 'cpathname') {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_pathname($var, $stop))";
     } elsif ($paramtype eq 'npathname' || $paramtype eq 'ncpathname') {

@@ -13,7 +13,7 @@
 @ Q "draw-rectangle" : void DrawRectangle(float,float,nnfloat,nnfloat); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk[METHODNAME("dc<%>","draw-rectangle")]
 @ Q "draw-rounded-rectangle" : void DrawRoundedRectangle(float,float,nnfloat,nnfloat,float=-0.25); : : /ZeroReturn[2]|ZeroReturn[3]|CheckRadius[METHODNAME("dc<%>","draw-rounded-rectangle").4.2.3]|CheckOk[METHODNAME("dc<%>","draw-rounded-rectangle")]
 @ q "draw-spline" : void DrawSpline(float,float,float,float,float,float); : : /CheckOk[METHODNAME("dc<%>","draw-spline")]
-@ Q "draw-text" : void DrawText(string,float,float,bool=FALSE,-bool=FALSE,nnint=0,float=0.0); : : /CheckStringIndex["draw-text".0.5]|CheckOk[METHODNAME("dc<%>","draw-text")]|SetBool[4.FALSE]
+@ Q "draw-text" : void DrawText(mzxstring,float,float,bool=FALSE,-bool=TRUE,nnint=0,float=0.0); : : /CheckStringIndex["draw-text".0.5]|CheckOk[METHODNAME("dc<%>","draw-text")]|SetBool[4.FALSE]
 
 @ Q "draw-arc" : void DrawArc(float,float,nnfloat,nnfloat,float,float); : : /CheckOk[METHODNAME("dc<%>","draw-arc")]
 @ Q "draw-ellipse" : void DrawEllipse(float,float,nnfloat,nnfloat); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk[METHODNAME("dc<%>","draw-ellipse")]

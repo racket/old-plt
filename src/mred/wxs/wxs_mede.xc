@@ -112,13 +112,13 @@
 
 @ "get-top-line-base" : float GetTopLineBase(); : : : : XrZERO
 
-@MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[POFFSET+<s>]);
-@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[POFFSET+<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+<i>]));
+@MACRO setStringLen[i.s] = x<i> = SCHEME_CHAR_STRTAG_VAL(p[POFFSET+<s>]);
+@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_CHAR_STRTAG_VAL(p[POFFSET+<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+<i>]));
 
-@ "insert" : void Insert(-long,string,nnlong,nnls[same]=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
-@ "insert" : void Insert(-long,string);  : : /setStringLen[0.0] <> string without position
-@ "insert" : void Insert(nnlong,string,nnlong,nnls[same]=-1,bool=TRUE);  : : /checkStringLen[0.1] <> length and string without position
-@ "insert" : void Insert(nnlong,string);  : : /checkStringLen[0.1] <> length, string, and position
+@ "insert" : void Insert(-long,mzstring,nnlong,nnls[same]=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
+@ "insert" : void Insert(-long,mzstring);  : : /setStringLen[0.0] <> string without position
+@ "insert" : void Insert(nnlong,mzstring,nnlong,nnls[same]=-1,bool=TRUE);  : : /checkStringLen[0.1] <> length and string without position
+@ "insert" : void Insert(nnlong,mzstring);  : : /checkStringLen[0.1] <> length, string, and position
 @ "insert" : void Insert(wxSnip!,nnlong,nnls[same]=-1,bool=TRUE); <> snip% and position
 @ "insert" : void Insert(uchar); <> character without position
 @ "insert" : void Insert(uchar,nnlong,nnls[same]=-1); <> character and position
@@ -177,23 +177,22 @@
 
 @MACRO bNegAsFalse = (({x} < 0) ? scheme_false : scheme_make_integer({x}))
 
-@ "find-string" : long/bNegAsFalse FindStringUTF8(string,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
+@ "find-string" : long/bNegAsFalse FindString(mzstring,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
 @SET TYPE = long
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@ "find-string-all" : long[]/bReturnList[long.1] FindStringAllUTF8(string,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
+@ "find-string-all" : long[]/bReturnList[long.1] FindStringAll(mzstring,-long*,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);
 
 @ "find-snip" : wxSnip^ FindSnip(nnlong,SYM[findKind],nnlong?=NULL)
 @ "get-snip-position-and-location" : bool GetSnipPositionAndLocation(wxSnip!,nnlong?,float?=NULL,float?=NULL);
 @ "get-snip-position" : long/bNegAsFalse GetSnipPosition(wxSnip!);
 
-@MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_string(r, <len>, 0))
+@MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_char_string(r, <len>, 0))
 
-@ "get-text" : string/makeNoCopyString[_x4] GetTextUTF8(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
-@ "get-unicode" : int GetCharacter(nnlong);
-@ "get-character" : char GetTruncatedCharacter(nnlong);
+@ "get-text" : mzstring/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
+@ "get-character" : char GetCharacter(nnlong);
 
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,nnls[start],bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut!,nnlong,nnls[eof]=-1); <> with position

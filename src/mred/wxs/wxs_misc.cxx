@@ -338,7 +338,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
   n = WITH_VAR_STACK(c->formats->First());
   for (; n; n = WITH_VAR_STACK(n->Next())) {
-    s = WITH_VAR_STACK(scheme_make_string((char *)n->Data()));
+    s = WITH_VAR_STACK(scheme_make_utf8_string((char *)n->Data()));
     p = WITH_VAR_STACK(scheme_make_pair(s, scheme_null));
     if (last)
       SCHEME_CDR(last) = p;
@@ -436,7 +436,7 @@ static Scheme_Object *os_wxClipboardGetClipboardData(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r;
+  nbstring r;
   objscheme_check_valid(os_wxClipboard_class, "get-clipboard-data in clipboard<%>", n, p);
   string x0 INIT_NULLED_OUT;
   long _x1;
@@ -457,7 +457,7 @@ static Scheme_Object *os_wxClipboardGetClipboardData(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return (r ? scheme_make_sized_string(r, _x1, 1) : XC_SCHEME_NULL);
+  return (r ? scheme_make_sized_byte_string(r, _x1, 1) : XC_SCHEME_NULL);
 }
 
 static Scheme_Object *os_wxClipboardGetClipboardString(int n,  Scheme_Object *p[])
@@ -486,25 +486,52 @@ static Scheme_Object *os_wxClipboardGetClipboardString(int n,  Scheme_Object *p[
 static Scheme_Object *os_wxClipboardSetClipboardString(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxClipboard_class, "set-clipboard-string in clipboard<%>", n, p);
-  string x0 INIT_NULLED_OUT;
-  ExactLong x1;
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
+    string x0 INIT_NULLED_OUT;
+    ExactLong x1;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
 
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-clipboard-string in clipboard<%>"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "set-clipboard-string in clipboard<%>"));
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-clipboard-string in clipboard<%> (string case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-clipboard-string in clipboard<%> (string case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "set-clipboard-string in clipboard<%> (string case)"));
 
-  
-  WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->SetClipboardString(x0, x1));
+    
+    WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->SetClipboardString(x0, x1));
 
-  
-  
-  READY_TO_RETURN;
+    
+    
+    READY_TO_PRE_RETURN;
+  } else  {
+    bstring x0 INIT_NULLED_OUT;
+    ExactLong x1;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if (n != (POFFSET+2)) 
+      WITH_VAR_STACK(scheme_wrong_count_m("set-clipboard-bytes in clipboard<%> (byte string case)", POFFSET+2, POFFSET+2, n, p, 1));
+    x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "set-clipboard-bytes in clipboard<%> (byte string case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "set-clipboard-bytes in clipboard<%> (byte string case)"));
+
+    
+    WITH_VAR_STACK(((wxClipboard *)((Scheme_Class_Object *)p[0])->primdata)->SetClipboardString(x0, x1));
+
+    
+    
+    READY_TO_PRE_RETURN;
+  }
+
   return scheme_void;
 }
 
@@ -546,8 +573,8 @@ void objscheme_setup_wxClipboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bitmap" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardBitmap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bitmap" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardBitmap, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardData, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-string" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardString, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-bytes" " method", (Scheme_Method_Prim *)os_wxClipboardGetClipboardString, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-bytes" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "set-clipboard-client" " method", (Scheme_Method_Prim *)os_wxClipboardSetClipboardClient, 2, 2));
 
 
@@ -664,7 +691,7 @@ class os_wxClipboardClient : public wxClipboardClient {
 
   os_wxClipboardClient CONSTRUCTOR_ARGS(());
   ~os_wxClipboardClient();
-  nstring GetData(string x0, long* x1);
+  nbstring GetData(string x0, long* x1);
   void BeingReplaced();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -693,7 +720,7 @@ os_wxClipboardClient::~os_wxClipboardClient()
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
 }
 
-nstring os_wxClipboardClient::GetData(string x0, long* x1)
+nbstring os_wxClipboardClient::GetData(string x0, long* x1)
 {
   Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -721,11 +748,11 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
   v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
-  if (SCHEME_STRINGP(v)) (*x1) = SCHEME_STRTAG_VAL(v);
+  if (SCHEME_BYTE_STRINGP(v)) (*x1) = SCHEME_BYTE_STRTAG_VAL(v);
   
   {
-     nstring resval;
-     resval = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(v, "get-data in clipboard-client%"", extracting return value"));
+     nbstring resval;
+     resval = (nbstring)WITH_VAR_STACK(objscheme_unbundle_nullable_bstring(v, "get-data in clipboard-client%"", extracting return value"));
      READY_TO_RETURN;
      return resval;
   }
@@ -812,7 +839,7 @@ static Scheme_Object *os_wxClipboardClientGetData(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r;
+  nbstring r;
   objscheme_check_valid(os_wxClipboardClient_class, "get-data in clipboard-client%", n, p);
   string x0 INIT_NULLED_OUT;
   long _x1;
@@ -834,7 +861,7 @@ static Scheme_Object *os_wxClipboardClientGetData(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxClipboardClientBeingReplaced(int n,  Scheme_Object *p[])
@@ -1056,9 +1083,9 @@ void check_ps_mode(int v, Scheme_Object *p)
 
 
 
-// @ "get-options" : string GetPrinterOptions();
+// @ "get-options" : bstring GetPrinterOptions();
 
-// @ "set-options" : void SetPrinterOptions(string);
+// @ "set-options" : void SetPrinterOptions(pstring);
 
 
 class os_wxPrintSetupData : public wxPrintSetupData {
@@ -1191,14 +1218,14 @@ static Scheme_Object *os_wxPrintSetupDataSetAFMPath(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-afm-path in ps-setup%", n, p);
-  nstring x0 INIT_NULLED_OUT;
+  npstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "set-afm-path in ps-setup%"));
+  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "set-afm-path in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetAFMPath(x0));
@@ -1329,14 +1356,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-preview-command in ps-setup%", n, p);
-  string x0 INIT_NULLED_OUT;
+  pstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-preview-command in ps-setup%"));
+  x0 = (pstring)WITH_VAR_STACK(objscheme_unbundle_pstring(p[POFFSET+0], "set-preview-command in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrintPreviewCommand(x0));
@@ -1352,14 +1379,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(int n,  Scheme_Object *p
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-file in ps-setup%", n, p);
-  nstring x0 INIT_NULLED_OUT;
+  npstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "set-file in ps-setup%"));
+  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "set-file in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterFile(x0));
@@ -1375,14 +1402,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-command in ps-setup%", n, p);
-  string x0 INIT_NULLED_OUT;
+  pstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-command in ps-setup%"));
+  x0 = (pstring)WITH_VAR_STACK(objscheme_unbundle_pstring(p[POFFSET+0], "set-command in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterCommand(x0));
@@ -1480,7 +1507,7 @@ static Scheme_Object *os_wxPrintSetupDataGetAFMPath(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  nstring r;
+  nbstring r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-afm-path in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1494,7 +1521,7 @@ static Scheme_Object *os_wxPrintSetupDataGetAFMPath(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupDataGetPaperName(int n,  Scheme_Object *p[])
@@ -1626,7 +1653,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(int n,  Scheme_O
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  bstring r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-preview-command in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1640,14 +1667,14 @@ static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(int n,  Scheme_O
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  bstring r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-file in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1661,14 +1688,14 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(int n,  Scheme_Object *p
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  string r;
+  bstring r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-command in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1682,7 +1709,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(int n,  Scheme_Object
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupData_ConstructScheme(int n,  Scheme_Object *p[])

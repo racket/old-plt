@@ -248,6 +248,11 @@ static int unbundle_symset_tabStyle(Scheme_Object *v, const char *where) {
 }
 
 
+#define RANGECLASS wxTabChoice
+
+#define THISOBJECT ((RANGECLASS *)((Scheme_Class_Object *)THEOBJ)->primdata)
+
+
 
 
 
@@ -593,7 +598,7 @@ static Scheme_Object *os_wxTabChoiceSetSelection(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "set-selection in tab-group%"));
 
-  
+  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   WITH_VAR_STACK(((wxTabChoice *)((Scheme_Class_Object *)p[0])->primdata)->SetSelection(x0));
 
   

@@ -97,21 +97,21 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 @END
 
 
-@CLASSBASE wxMediaStreamInStringBase "editor-stream-in-string-base" : "editor-stream-in-base"
+@CLASSBASE wxMediaStreamInStringBase "editor-stream-in-bytes-base" : "editor-stream-in-base"
 
-@MACRO setStringSize[ss.cn] = x<cn> = SCHEME_STRTAG_VAL(p[POFFSET+<ss>]);
+@MACRO setStringSize[ss.cn] = x<cn> = SCHEME_BYTE_STRTAG_VAL(p[POFFSET+<ss>]);
 
-@CREATOR (string,-long); : : /setStringSize[0.1]
+@CREATOR (bstring,-long); : : /setStringSize[0.1]
 
 @END
 
-@CLASSBASE wxMediaStreamOutStringBase "editor-stream-out-string-base" : "editor-stream-out-base"
+@CLASSBASE wxMediaStreamOutStringBase "editor-stream-out-bytes-base" : "editor-stream-out-base"
 
 @CREATOR ()
 
-@MACRO makeSizedString = (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL)
+@MACRO makeSizedString = (r ? scheme_make_sized_byte_string(r, _x0 - 1, 0) : XC_SCHEME_NULL)
 
-@ "get-string" : nstring/makeSizedString GetString(-long*);
+@ "get-string" : nbstring/makeSizedString GetString(-long*);
 
 @END
 
@@ -139,14 +139,11 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @MACRO alwaysPassPtr = x0 = &_x0;
 
-@ "get-string" : nstring/makeSizedString GetString(nnlong?=NULL); : : /alwaysPassPtr/
+@ "get-bytes" : nbstring/makeSizedString GetString(nnlong?=NULL); : : /alwaysPassPtr/
 @ "get-fixed" : wxMediaStreamIn! GetFixed(long*);
 
 @ m "get-exact" : long GetExact();
 @ m "get-inexact" : double GetInexact();
-
-@ ">>" : wxMediaStreamIn! GET(Long*); <> exact
-@ ">>" : wxMediaStreamIn! GET(Double*); <> inexact
 
 @ "set-boundary" : void SetBoundary(nnlong);
 @ "remove-boundary" : void RemoveBoundary();
@@ -165,16 +162,12 @@ static double GetInexact(wxMediaStreamIn *s)
 
 @CREATOR (wxMediaStreamOutBase!);
 
-@ "put" : wxMediaStreamOut! Put(nnint////long,string); <> length and string
-@ "put" : wxMediaStreamOut! Put(string); <> string without length
+@ "put" : wxMediaStreamOut! Put(nnint////long,bstring); <> length and byte string
+@ "put" : wxMediaStreamOut! Put(bstring); <> byte string without length
 @ "put" : wxMediaStreamOut! Put(Long////long); <> exact number
 @ "put" : wxMediaStreamOut! Put(Double); <> inexact number
 
 @ "put-fixed" : wxMediaStreamOut! PutFixed(long);
-
-@ "<<" : wxMediaStreamOut! PUT(string); <> string
-@ "<<" : wxMediaStreamOut! PUT(Double); <> inexact number
-@ "<<" : wxMediaStreamOut! PUT(Long); <> exact number
 
 @ "tell" : long Tell();
 @ "jump-to" : void JumpTo(nnlong);

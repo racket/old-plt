@@ -1,0 +1,6 @@
+(module info (lib "infotab.ss" "setup")
+  (define name "ICFP Robot GUI")
+  (define mred-launcher-libraries (list "server.ss" "client.ss"))
+  (define mred-launcher-names (list "ICFP Robot Server" "ICFP Robot Client"))
+  (define mzscheme-launcher-libraries (list "auto.ss"))
+  (define mzscheme-launcher-names (list "Simple ICFP Robot")))

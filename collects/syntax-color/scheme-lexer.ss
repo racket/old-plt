@@ -6,8 +6,8 @@
   (provide scheme-lexer)
    
   (define-lex-abbrevs
-   [any (- #\000 #\377)]
-   [letter (: (- "a" "z") (- "A" "Z"))]
+
+   [alphabetic (: (- "a" "z") (- "A" "Z"))]
    
    ;; For case insensitivity
    [a (: "a" "A")]
@@ -38,13 +38,30 @@
    [z (: "z" "Z")]
 
    [digit (- "0" "9")]
+   [digit2 (: "0" "1")]
+   [digit8 (- "0" "7")]
+   [digit10 digit]
+   [digit16 (: digit10 (- "a" "f") (- "A" "F"))]
+
    [whitespace (: #\newline #\return #\tab #\space #\vtab #\page)]
    [line-comment (@ ";" (* (^ #\newline)))]
 
    
-   [character (: (@ "#\\" any)
+   ;; What about char->integer constraint?
+   [unicode  (: (@ (: "U" "u") digit16)
+                (@ (: "U" "u") digit16 digit16)
+                (@ (: "U" "u") digit16 digit16 digit16)
+                (@ (: "U" "u") digit16 digit16 digit16 digit16)
+                (@ "U" digit16 digit16 digit16 digit16 digit16)
+                (@ "U" digit16 digit16 digit16 digit16 digit16 digit16)
+                (@ "U" digit16 digit16 digit16 digit16 digit16 digit16 digit16)
+                (@ "U" digit16 digit16 digit16 digit16 digit16 digit16 digit16 digit16))]
+
+   [character (: (@ "#\\" (^))
                  (@ "#\\" character-name)
-                 (@ "#\\" (- "0" "3") (- "0" "7") (- "0" "7")))]
+                 (@ "#\\" (- "0" "3") digit8 digit8)
+                 (@ "#\\" unicode))]
+   
    [character-name (: (@ s p a c e)
                       (@ n e w l i n e)
                       (@ n u l) 
@@ -56,13 +73,14 @@
                       (@ p a g e)
                       (@ r e t u r n)
                       (@ r u b o u t))]
-   [bad-char (: (@ "#\\" any letter (* letter))
-                (@ "#\\" (- "0" "3") (? letter) (? letter))
-                (@ "#\\" (- "0" "3") (- "0" "7") (? any)))]
-                 
-                 
-   [str (@ (: "" "#rx") "\"" (* string-element) "\"")]
    
+   [bad-char (: (@ "#\\" alphabetic alphabetic (* alphabetic))
+                (@ "#\\" (- "0" "3") digit8))]
+       
+   ;; What about byte string regexp strings
+   [str (: (@ (? "#rx") "\"" (* (: string-element unicode)) "\"")
+           byte-str)]
+   [byte-str (@ (? "#rx") "#\"" (* string-element) "\"")]
    [string-element (: (^ "\"" "\\")
                       "\\\""
                       "\\\\"
@@ -81,9 +99,9 @@
                       (@ "\\x" digit16 digit16)
                       (@ "\\" #\newline))]
 
-   [bad-str (@ (? "#rx") "\"" 
+   [bad-str (@ (? "#rx") (? "#") "\"" 
                (* (: (^ "\"" "\\")
-                     (@ "\\" any)))
+                     (@ "\\" (^))))
                (? (: "\\" "\"")))]
    [num2 (@ prefix2 complex2)]
    [complex2 (: real2
@@ -186,16 +204,12 @@
    [radix8 (: "#o" "#O")]
    [radix10 (: "" "#d" "#D")]
    [radix16 (: "#x" "#X")]
-   [digit2 (: "0" "1")]
-   [digit8 (- "0" "7")]
-   [digit10 digit]
-   [digit16 (: digit10 (- "a" "f") (- "A" "F"))]
    
    [script (@ "#!" (* (: (^ #\newline) (@ #\\ #\newline))))]
 
    [identifier-delims (: "\"" "," "'" "`" "(" ")" "[" "]" "{" "}" ";" whitespace)]
    [identifier-chars (^ (: identifier-delims "\\" "|"))]
-   [identifier-escapes (: (@ "\\" any)
+   [identifier-escapes (: (@ "\\" (^))
                           (@ "|" (* (^ "|")) "|"))]
    [identifier-start (: identifier-escapes
                         (^ (: identifier-delims "\\" "|" "#"))
@@ -204,8 +218,8 @@
                 (* (: identifier-escapes identifier-chars)))]
 
    [bad-id-start (: identifier-escapes
-                    (^ (: identifier-delims "\\" "|" "#"))
-                    (@ "#" (^ "\\" "'" "&" "`" ",")))]
+                    (^ identifier-delims "\\" "|" "#")
+                    (@ "#" (^ identifier-delims "\\" "'" "&" "`" ",")))]
    [bad-id-escapes (: identifier-escapes
                       (@ "|" (* (^ "|"))))]
    [bad-id (: (@ bad-id-start
@@ -227,14 +241,14 @@
     (lexer
      ["#|" (values 1 end-pos)]
      ["|#" (values -1 end-pos)]
+     [(~ (@ (&) "|#" (&))) (get-next-comment input-port)]
      [(eof) (values 'eof end-pos)]
      [(special)
       (get-next-comment input-port)]
      [(special-comment)
       (get-next-comment input-port)]
      [(special-error)
-      (get-next-comment input-port)]
-     [(: "|" "#" (+ (^ "|" "#"))) (get-next-comment input-port)]))
+      (get-next-comment input-port)]))
   
   (define (read-nested-comment num-opens start-pos input)
     (let-values (((diff end) (get-next-comment input)))
@@ -276,7 +290,7 @@
       (ret "" 'no-color #f start-pos end-pos)]
      [(eof) (values lexeme 'eof #f #f #f)]
      [(: bad-char bad-str bad-id) (ret lexeme 'error #f start-pos end-pos)]
-     [any (extend-error lexeme start-pos end-pos input-port)]))
+     [(^) (extend-error lexeme start-pos end-pos input-port)]))
   
   (define (extend-error lexeme start end in)
     (if (memq (peek-char-or-special in)

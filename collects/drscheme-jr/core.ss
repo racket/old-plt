@@ -3,7 +3,8 @@
 (require-library "zsigs.ss" "zodiac")
 (require-library "sigs.ss" "zodiac")
 (require-library "params.ss" "userspce")
-(require-library "sig.ss" "userspce")
+(begin-elaboration-time
+ (require-library "sig.ss" "userspce"))
 
 
 (define-signature prims^ (program argv))

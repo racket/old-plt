@@ -570,6 +570,7 @@
   (done)
 
   (unless (null? errors)
+    (setup-printf "")
     (show-errors (current-error-port))
     (when (pause-on-errors)
       (fprintf (current-error-port)

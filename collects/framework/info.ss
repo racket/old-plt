@@ -7,7 +7,7 @@
 				   (require-library "frameworks.ss" "framework"))]
 	      [(compile-omit-files)
 	       (append
-		(list "macro.ss" "tests.ss" "frameworks.ss")
+		(list "macro.ss" "tests.ss" "guiutilss.ss" "frameworks.ss")
 		(framework-info 'compile-elaboration-zos (lambda () null))
 		(list "gen-mred-interfaces.ss"
 		      "gen-standard-menus.ss"

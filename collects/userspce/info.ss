@@ -13,7 +13,8 @@
 	       (require-library "errors.ss" "userspce")
 	       (require-library "params.ss" "userspce")
 	       (require-library "sig.ss" "userspce"))]
-	   [(compile-omit-files) (list "sig.ss" "errors.ss" "params.ss" "ricedefs.ss")]
-	   [(compile-elaboration-zos) (list "userspcs.ss")]
+	   [(compile-omit-files) (list "sig.ss" "errors.ss" "params.ss" "ricedefs.ss"
+				       "launcher-bootstrap.ss")]
+	   [(compile-elaboration-zos) (list "sig.ss")]
 	   [else (failure)]))])
   userspace-info)

@@ -2006,7 +2006,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   short decimalDigits;
   unsigned long lengthPrecision;
   SQLPOINTER buffer;
-  SQLINTEGER indicator;
+  SQLINTEGER *indicator;
   RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
@@ -2053,7 +2053,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 
   buffer = SQL_BUFFER_VAL(argv[4]);
 
-  indicator = SQL_INDICATOR_VAL(argv[5]);
+  indicator = &(SQL_INDICATOR_VAL(argv[5]));
 
   switch(SQLTypeVal) {
 
@@ -2090,7 +2090,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 
   sr = SQLBindParam(stmtHandle,paramNum,CTypeVal,SQLTypeVal,
 		    lengthPrecision,decimalDigits,buffer,
-		    &indicator);
+		    indicator);
 
   retcode = checkSQLReturn(sr,"bind-param");
 
@@ -4713,7 +4713,7 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   SQLPOINTER buffer;
   SRP_NAMED_SMALL_CONSTANT *p;    
   SQLINTEGER *length;
-  SQLINTEGER indicator;
+  SQLINTEGER *indicator;
   RETURN_CODE retcode;
 
   if (SQL_HDESCP(argv[0]) == FALSE) {
@@ -4788,11 +4788,11 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   octetLen = SQL_BUFFER_LEN(argv[5]);
   buffer = SQL_BUFFER_VAL(argv[5]);
   length = &SQL_LENGTH_VAL(argv[6]);
-  indicator = SQL_INDICATOR_VAL(argv[7]);
+  indicator = &(SQL_INDICATOR_VAL(argv[7]));
   
   sr = SQLSetDescRec(descHandle,recNumber,type,subType,
 		     octetLen,precision,scale,buffer,
-		     length,&indicator);
+		     length,indicator);
   
   retcode = checkSQLReturn(sr,"set-desc-rec");
 
@@ -6487,7 +6487,7 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   SQLSMALLINT decimalDigits;
   SQLPOINTER buffer;
   SQLINTEGER bufferLen;
-  SQLINTEGER indicator;
+  SQLINTEGER *indicator;
   SRP_NAMED_SMALL_CONSTANT *p;      
   RETURN_CODE retcode;
   int i;
@@ -6586,12 +6586,12 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   valueType = SQL_BUFFER_CTYPE(argv[5]);
   bufferLen = SQL_BUFFER_LEN(argv[5]);
   scheme_get_unsigned_int_val(argv[4],&valueSize);
-  indicator = SQL_INDICATOR_VAL(argv[6]);
+  indicator = &(SQL_INDICATOR_VAL(argv[6]));
 
   sr = SQLBindParameter(stmtHandle,paramNumber,ioType,
 			valueType,paramType,
 			valueSize,decimalDigits,
-			buffer,bufferLen,&indicator);
+			buffer,bufferLen,indicator);
 
   retcode = checkSQLReturn(sr,"bind-parameter");    
 

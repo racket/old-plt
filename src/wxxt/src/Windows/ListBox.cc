@@ -156,8 +156,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 			(height > -1 ? height : (wxLIST_BOX_HEIGHT + labelh)));
     AddEventHandlers();
 
-    XtVaSetValues(X->handle, XtNwidth, 0, NULL);
-
     return TRUE;
 }
 

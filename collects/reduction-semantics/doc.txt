@@ -114,9 +114,9 @@ As an example, the reduction for the lambda calculus above
 would be written like this:
 
      (reduction lc-lang
-                (in-context (name c c)
-                            ((lambda ((name xs variable) ...) (name body e))
-                             (name args v) ...))
+                (in-hole (name c c)
+                         ((lambda ((name xs variable) ...) (name body e))
+                          (name args v) ...))
                 (replace c hole 
                  (foldl (lambda (term var arg) (lc-subst x arg term))
                         body
@@ -127,13 +127,13 @@ The first name is the lang definition from above. The second
 argument is a pattern for an evaluation context. Here's how
 it looks without the `name' patterns:
 
-                (in-context c
-                            ((lambda (variable ...) e)
-                             v ...))
+                (in-hole c
+                         ((lambda (variable ...) e)
+                          v ...))
 
-The in-context pattern matches a term against `c', and binds
+The in-hole pattern matches a term against `c', and binds
 what matches the hole to `hole'. Then, it matches what
-matched the hole against ((lambda (variable) e) v). 
+matched the hole against ((lambda (variable) e) v).
 
 With the name patterns restored, c, hole, xs, body, and args
 are bound in the right hand side of the reduction. Then,

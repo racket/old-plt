@@ -69,7 +69,9 @@
 					    ; the edit
 					    (if (send e get-shift-down)
 						(send before-results focus)
-						(send search-text focus))
+						(let ([e (send search-text get-editor)])
+						  (send search-text focus)
+						  (send e set-position 0 (send e last-position))))
 					    (super-on-subwindow-char w e))]))])
 			   (sequence (apply super-init args)))
 			 "PLT Help Desk" #f 600 (max 440 (min 800 (- screen-h 60)))))
@@ -162,7 +164,7 @@
 	 [edit (make-object menu% "&Edit" mb)])
     (append-editor-operation-menu-items edit)
     (make-object separator-menu-item% edit)
-    (make-object menu-item% "Find..." edit
+    (make-object menu-item% "Find on Page..." edit
 		 (lambda (i e)
 		   (send results force-display-focus #t)
 		   (letrec ([d (make-object dialog% "Find" f 300)]

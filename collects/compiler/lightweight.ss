@@ -1412,176 +1412,159 @@
      (traverse-ast-with-scope-zactor ast add-entries-zactor)))
 
  (define (closure-analyze asts)
-   (let*
-       ([done #f]
-	[prop-phi!
-	 (lambda (t1 t2)
-	   (let ([t1-phi (phi t1)]
-		 [t2-phi (phi t2)])
-	     (unless (set-subset? t1-phi t2-phi)
-		     (set-phi! t2 (set-union t1-phi t2-phi))
-		     (set! done #f))))]
-	[prop-phi-and-unknown-to-binder 
-	 (lambda (v)
-	   (when (zodiac:bound-varref? v)
-		 (let ([b (zodiac:bound-varref-binding v)])
-		   (when b
-			 (let* ([v-phi (phi v)]
-				[v-unknown (unknown? v)]
-				[b-phi (phi b)]
-				[new-b-phi (if b-phi
-					       (set-union b-phi v-phi)
-					       v-phi)])
-			   (set-phi! b new-b-phi)
-			   (when v-unknown
-				 (set-unknown! b #t)))))))]
+   (let* ([done #f]
+	  [prop-phi!
+	   (lambda (t1 t2)
+	     (let ([t1-phi (phi t1)]
+		   [t2-phi (phi t2)])
+	       (unless (set-subset? t1-phi t2-phi)
+		       (set-phi! t2 (set-union t1-phi t2-phi))
+		       (set! done #f))))]
+	  [do-set-zactor 
+	   (make-object
+	    (class zactor% ()
 
-	[do-set-zactor 
-	 (make-object
-	  (class zactor% ()
-		 (override
-		  [if-form-action
-		   (lambda (a)
-		     (prop-phi! (zodiac:if-form-then a) a)
-		     (prop-phi! (zodiac:if-form-else a) a))]
+		   (override
 
-		  [set!-form-action
-		   (lambda (a)
-		     (prop-phi! (zodiac:set!-form-val a)
-				(zodiac:set!-form-var a)))]
+		    [if-form-action
+		     (lambda (a)
+		       (prop-phi! (zodiac:if-form-then a) a)
+		       (prop-phi! (zodiac:if-form-else a) a))]
 
-		  [define-values-form-action
-		    (lambda (a)
-		      (let ([the-val (zodiac:define-values-form-val a)]
-			    [the-vars (zodiac:define-values-form-vars a)])
-			(for-each 
-			 (lambda (v) (prop-phi! the-val v))
-			 the-vars)))]
+		    [set!-form-action
+		     (lambda (a)
+		       (prop-phi! (zodiac:set!-form-val a)
+				  (zodiac:set!-form-var a)))]
 
-		  [let-values-form-action
-		   (lambda (a)
-		     (let* ([varss (zodiac:let-values-form-vars a)]
-			    [vals (zodiac:let-values-form-vals a)]
-			    [body (zodiac:let-values-form-body a)])
+		    [define-values-form-action
+		      (lambda (a)
+			(let ([the-val (zodiac:define-values-form-val a)]
+			      [the-vars (zodiac:define-values-form-vars a)])
+			  (for-each 
+			   (lambda (v) (prop-phi! the-val v))
+			   the-vars)))]
 
-		       (for-each
-			(lambda (val vars)
-			  (for-each
-			   (lambda (var)
-			     (prop-phi! val var))
-			   vars))
-			vals
-			varss)
+		    [let-values-form-action
+		     (lambda (a)
+		       (let* ([varss (zodiac:let-values-form-vars a)]
+			      [vals (zodiac:let-values-form-vals a)]
+			      [body (zodiac:let-values-form-body a)])
 
-		       (prop-phi! body a)))]
-
-		  [letrec*-values-form-action
-		   (lambda (a)
-		     (let* ([varss (zodiac:letrec*-values-form-vars a)]
-			    [vals (zodiac:letrec*-values-form-vals a)]
-			    [body (zodiac:letrec*-values-form-body a)])
-
-		       (for-each
-			(lambda (val vars)
-			  (for-each
-			   (lambda (var)
-			     (prop-phi! val var))
-			   vars))
-			vals
-			varss)
-
-		       (prop-phi! body a)))]
-
-		  [top-level-varref/bind-action
-		   (lambda (a) 
-		     (let ([rep (top-var-lookup (zodiac:varref-var a))])
-		       (prop-phi! a rep)
-		       (prop-phi! rep a)))]
-		  
-		  [varref-action
-		   (lambda (a)
-		     (when (zodiac:bound-varref? a)
-			   (let ([binder (zodiac:bound-varref-binding a)])
-			     (when binder
-				   (prop-phi! binder a)
-				   (prop-phi! a binder)))))]
-		  
-		  ; binding-action is default
-
-		  [quote-form-action
-		   (lambda (a)
-		     (set-unknown! a #f)
-		     (set-phi! a empty-set))]
-
-		  ; case-lambda-form-action is default
-
-		  [app-action
-		   (lambda (a)
-		     (let* ([fun (zodiac:app-fun a)]
-			    [fun-phi (phi fun)]
-			    [rands (zodiac:app-args a)]
-			    [rands-len (length rands)])
-		       
-		       (for-each
-
-			(lambda (f) ; f is a case-lambda
-
-			  (let* ([arglists (zodiac:case-lambda-form-args f)]
-
-				 ; arglists : arglist list
-
-				 [bodies (zodiac:case-lambda-form-bodies f)])
-
-
+			 (for-each
+			  (lambda (val vars)
 			    (for-each
-			     
-			     (lambda (arglist body)
+			     (lambda (var)
+			       (prop-phi! val var))
+			     vars))
+			  vals
+			  varss)
+
+			 (prop-phi! body a)))]
+
+		    [letrec*-values-form-action
+		     (lambda (a)
+		       (let* ([varss (zodiac:letrec*-values-form-vars a)]
+			      [vals (zodiac:letrec*-values-form-vals a)]
+			      [body (zodiac:letrec*-values-form-body a)])
+
+			 (for-each
+			  (lambda (val vars)
+			    (for-each
+			     (lambda (var)
+			       (prop-phi! val var))
+			     vars))
+			  vals
+			  varss)
+
+			 (prop-phi! body a)))]
+
+		    [top-level-varref/bind-action
+		     (lambda (a) 
+		       (let ([rep (top-var-lookup (zodiac:varref-var a))])
+			 (prop-phi! a rep)
+			 (prop-phi! rep a)))]
+		    
+		    [varref-action
+		     (lambda (a)
+		       (when (zodiac:bound-varref? a)
+			     (let ([binder (zodiac:bound-varref-binding a)])
+			       (when binder
+				     (prop-phi! binder a)
+				     (prop-phi! a binder)))))]
+		    
+		    ; binding-action is default
+
+		    ; quote-form-action is default
+
+		    ; case-lambda-form-action is default
+
+		    [app-action
+		     (lambda (a)
+		       (let* ([fun (zodiac:app-fun a)]
+			      [fun-phi (phi fun)]
+			      [rands (zodiac:app-args a)]
+			      [rands-len (length rands)])
+			 
+			 (for-each
+
+			  (lambda (f) ; f is a case-lambda
+
+			    (let* ([arglists (zodiac:case-lambda-form-args f)]
+
+				   ; arglists : arglist list
+
+				   [bodies (zodiac:case-lambda-form-bodies f)])
+
+
+			      (for-each
 			       
-			       (let* ([arglist-vars (zodiac:arglist-vars arglist)])
+			       (lambda (arglist body)
+				 
+				 (let* ([arglist-vars (zodiac:arglist-vars arglist)])
 
-				 (cond
+				   (cond
 
-				  [(and (zodiac:list-arglist? arglist)
-					(= (length arglist-vars) rands-len))
+				    [(and (zodiac:list-arglist? arglist)
+					  (= (length arglist-vars) rands-len))
 
-				   ; prop info from args to binders
+				     ; prop info from args to binders
 
-				   (for-each
-				    (lambda (rand arg)
-				      (prop-phi! rand arg))
-				    rands
-				    arglist-vars)]
-				  
-				  [(or (zodiac:sym-arglist? arglist)
-				       (zodiac:ilist-arglist? arglist))
+				     (for-each
+				      (lambda (rand arg)
+					(prop-phi! rand arg))
+				      rands
+				      arglist-vars)]
+				    
+				    [(or (zodiac:sym-arglist? arglist)
+					 (zodiac:ilist-arglist? arglist))
 
-				   ; unesthetic hack
+				     ; unesthetic hack
 
-				   (set-unknown! f #t)]) 
+				     (set-unknown! f #t)]) 
 
-				 ; prop info from lambda bodies to app
+				   ; prop info from lambda bodies to app
 
-				 (prop-phi! body a)))
+				   (prop-phi! body a)))
 
-			     arglists bodies)))
+			       arglists bodies)))
 
-			(set->list fun-phi))))]
+			  (set->list fun-phi))))]
 
-		  [begin-form-action
-		   (lambda (a)
-		     (prop-phi!
-		      (car (last-pair (zodiac:begin-form-bodies a)))
-		      a))]
+		    [begin-form-action
+		     (lambda (a)
+		       (prop-phi!
+			(car (last-pair (zodiac:begin-form-bodies a)))
+			a))]
 
-		  [begin0-form-action
-		   (lambda (a)
-		     (prop-phi!
-		      (car (zodiac:begin-form-bodies a))
-		      a))])
+		    [begin0-form-action
+		     (lambda (a)
+		       (prop-phi!
+			(car (zodiac:begin0-form-bodies a))
+			a))])
 
-		 ; everything else is default
+		   ; everything else is default
 
-		 (sequence (super-init))))])
+		   (sequence (super-init))))])
 
      (let closure-loop ()
        (unless done
@@ -1882,46 +1865,6 @@
 			 (if (and binder (theta binder))
 			     (set-theta! a (theta binder))
 			     (set-theta! a (known-only (scope-binders a))))))]
-		    
-		    [let-values-form-action
-		     (lambda (a)
-		       (let ([vars (zodiac:let-values-form-vars a)]
-			     [sbs (known-only (scope-binders a))])
-
-			 (set-theta! a sbs)
-			 
-			 ; vars : binding list list
-
-			 ; by analogy to rule app-inv-bv
-			 ; scope-binders does not include vars
-
-			 (for-each 
-			  (lambda (vs)
-			    (for-each 
-			     (lambda (v) (set-theta! v sbs))
-			     vs))
-			  vars)))]
-		    [letrec*-values-form-action
-
-		     (lambda (a)
-
-		       (let* ([vars (zodiac:letrec*-values-form-vars a)]
-			      [sbs (known-only (scope-binders a))]
-			      [binders (known-only (list->set (apply append vars)))]
-			      [sbs-plus-binders (set-union sbs binders)])
-
-			 (set-theta! a sbs)
-
-			 ; vars : binding list list
-
-			 ; analog to rule app-inv-bv
-
-			 (for-each 
-			  (lambda (vs)
-			    (for-each 
-			     (lambda (v) (set-theta! v sbs-plus-binders))
-			     vs))
-			  vars)))]
 		    
 		    [case-lambda-form-action
 

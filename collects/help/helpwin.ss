@@ -1,6 +1,7 @@
 
 (unit/sig ()
-  (import browser^
+  (import help:option^
+	  browser^
 	  mzlib:function^
 	  mzlib:string^
 	  mzlib:file^
@@ -34,6 +35,8 @@
 	  (set! exit-count (sub1 exit-count))
 	  (semaphore-post exit-sema))))
 	  
+  (define MAX-HIT-COUNT 300)
+
   (define collecting-thread #f)
 
   (define results-editor% (class hyper-text% ()
@@ -106,6 +109,11 @@
   (define search (make-object button% "Search" search-pane 
 			      (lambda (b e) 
 				(semaphore-wait break-sema) ; protects from too-early break
+				(let ([e (send results get-editor)])
+				  (when (is-a? e results-editor%)
+				    (send e lock #f)
+				    (send e erase)
+				    (send e lock #t)))
 				(set! collecting-thread (thread start-search))) 
 			      '(border)))
   (define where (make-object choice% #f '("for Keyword"
@@ -129,10 +137,58 @@
 
   (send search-text focus)
 
+  (define last-find-str #f)
+  (define find-str
+    (case-lambda
+     [() (find-str last-find-str)]
+     [(s)
+      (set! last-find-str s)
+      (if s
+	  (let* ([e (send results get-editor)]
+		 [sp (send e get-start-position)]
+		 [ep (send e get-end-position)])
+	    (let ([pos (send e find-string s 'forward ep 'eof #t #f)])
+	      (if pos
+		  (send e set-position pos (+ pos (string-length s)))
+		  (let ([pos (send e find-string s 'forward 0 sp #t #f)])
+		    (if pos
+			(send e set-position pos (+ pos (string-length s)))
+			(bell))))))
+	  (bell))]))
+
   (let* ([mb (make-object menu-bar% f)]
 	 [file (make-object menu% "&File" mb)]
 	 [edit (make-object menu% "&Edit" mb)])
     (append-editor-operation-menu-items edit)
+    (make-object separator-menu-item% edit)
+    (make-object menu-item% "Find..." edit
+		 (lambda (i e)
+		   (send results force-display-focus #t)
+		   (letrec ([d (make-object dialog% "Find" f 300)]
+			    [enable-find (lambda ()
+					   (send find enable 
+						 (positive? (send (send t get-editor) 
+								  last-position))))]
+			    [t (make-object text-field% "Find:" d
+					    (lambda (t e) (enable-find)))]
+			    [p (make-object horizontal-panel% d)]
+			    [find (make-object button% "Find" p
+					       (lambda (b e)
+						 (find-str (send t get-value)))
+					       '(border))]
+			    [close (make-object button% "Close" p
+						(lambda (b e) (send d show #f)))])
+		     (send t set-value (or last-find-str ""))
+		     (enable-find)
+		     (send p set-alignment 'right 'center)
+		     (send d center)
+		     (send t focus)
+		     (send d show #t))
+		   (send results force-display-focus #f))
+		 #\F)
+    (make-object menu-item% "Find Again" edit
+		 (lambda (i e) (find-str))
+		 #\G)
 
     (make-object menu-item% "Open URL..." file 
 		 (lambda (i e)
@@ -176,9 +232,7 @@
 
   (send f show #t)
 
-  (send results goto-url 
-	(string-append "file:" (build-path (collection-path "doc") "index.htm"))
-	#f)
+  (send results goto-url startup-url #f)
 
   (define cycle-key #f)
   (define break-sema (make-semaphore 1))
@@ -198,6 +252,7 @@
 	       [editor (send results get-editor)])
 	   (set! choices null)
 	   (semaphore-post choices-sema)
+	   (send editor lock #f)
 	   (send editor begin-edit-sequence)
 	   (for-each
 	    (lambda (i)
@@ -228,7 +283,8 @@
 			(send editor change-style (make-object style-delta% 'change-bold) 
 			      (+ pos 3) (- (send editor last-position) 2)))))))
 	    (reverse l))
-	   (send editor end-edit-sequence))))
+	   (send editor end-edit-sequence)
+	   (send editor lock #t))))
      #f))
 
   (define (add-section name ckey)
@@ -286,10 +342,6 @@
   (define doc-names (append std-doc-names (map (lambda (s) (format "~a collection" s)) txt-doc-names)))
   (define doc-kinds (append (map (lambda (x) 'html) std-docs) (map (lambda (x) 'text) txt-docs)))
 
-  (define re:iname (regexp "A HREF=\"(node[0-9]*[.]htm)\"><IMG SRC=\"../icons/index.gif"))
-  (define re:ientry (regexp "<DT>(.*)<DD>"))
-  (define re:ilink (regexp "(.*)<A HREF=\"(node[0-9]*[.]htm)#([0-9]*)\">(.*)</A>"))
-
   (define (clean-html s)
     (regexp-replace*
      "&[^;]*;"
@@ -314,41 +366,25 @@
 	 (hash-table-put! ht (string->symbol key) v)
 	 v))))
 
+  (define html-keywords (make-hash-table))
+  (define (load-html-keywords doc)
+    (with-hash-table
+     html-keywords
+     doc
+     (lambda ()
+       (with-handlers ([not-break? (lambda (x) null)])
+	 (with-input-from-file (build-path doc "keywords")
+	   read)))))
+
   (define html-indices (make-hash-table))
   (define (load-html-index doc)
     (with-hash-table
      html-indices
      doc
      (lambda ()
-       (let ([index-file (with-handlers ([not-break? (lambda (x) #f)])
-			   (with-input-from-file (build-path doc "index.htm")
-			     (lambda ()
-			       (let loop ()
-				 (let ([r (read-line)])
-				   (cond
-				    [(eof-object? r) #f]
-				    [(regexp-match re:iname r)
-				     =>
-				     (lambda (m) (cadr m))]
-				    [else (loop)]))))))])
-	 (let ([index 
-		(and index-file
-		     (with-handlers ([not-break?
-				      (lambda (x) 
-					; (printf "~a~n" (exn-message x))
-					#f)])
-		       (with-input-from-file (build-path doc index-file)
-			 (lambda ()
-			   (let loop ()
-			     (let ([r (read-line)])
-			       (if (eof-object? r)
-				   null
-				   (let ([m (regexp-match re:ientry r)])
-				     (if m
-					 (cons (cons (clean-html (cadr m)) r)
-					       (loop))
-					 (loop))))))))))])
-	   index)))))
+       (with-handlers ([not-break? (lambda (x) null)])
+	 (with-input-from-file (build-path doc "hdindex")
+	   read)))))
 
   (define (parse-txt-file doc ht handle-one)
     (with-hash-table
@@ -356,7 +392,7 @@
      doc
      (lambda ()
        (with-handlers ([not-break? (lambda (x) 
-				     (printf "~a~n" (exn-message x))
+				     ; (printf "~a~n" (exn-message x))
 				     null)])
 	 (with-input-from-file (build-path doc "doc.txt")
 	   (lambda ()
@@ -377,17 +413,27 @@
      (lambda (r start)
        (cond
 	[(regexp-match re:keyword-line r)
-	 (let* ([entry (read (open-input-string (substring r 1 (string-length r))))]
+	 (let* ([p (open-input-string (substring r 1 (string-length r)))]
+		[entry (read p)]
 		[key (let loop ([entry entry])
 		       (cond
 			[(symbol? entry) entry]
 			[(pair? entry) (loop (car entry))]
-			[else (error "bad entry")]))])
+			[else (error "bad entry")]))]
+		[content (if (symbol? entry)
+			     (with-handlers ([not-break? (lambda (x) #f)])
+			       (let ([s (read p)])
+				 (if (eq? s '::)
+				     (read p)
+				     #f)))
+			     #f)])
 	   (list
 	    ; Make the keyword entry:
 	    (list (symbol->string key) ; the keyword name
 		  (let ([p (open-output-string)])
-		    (display entry p)
+		    (if content
+			(display content p)
+			(display entry p))
 		    (get-output-string p)) ; the text to display
 		  "doc.txt" ; file
 		  start ; label (a position in this case)
@@ -444,8 +490,10 @@
 		     (if (is-a? e results-editor%)
 			 e
 			 (let ([e (make-object results-editor%)])
+			   (send e lock #t)
 			   (send results set-page (editor->page e) #t)
-			   e)))])
+			   e)))]
+	   [hit-count 0])
       (dynamic-wind
        (lambda ()
 	 (begin-busy-cursor)
@@ -459,25 +507,31 @@
 			    (queue-callback
 			     (lambda ()
 			       (when (eq? cycle-key ckey)
-				 (send editor insert "(Search stopped.)" (send editor last-position) 'same #f)))
+				 (send editor lock #f)
+				 (send editor insert 
+				       (format "(Search stopped~a.)" 
+					       (if (= hit-count MAX-HIT-COUNT)
+						   " - found maximum allowed matches" 
+						   ""))
+				       (send editor last-position) 'same #f)
+				 (send editor lock #t)))
 			     #f))])
 	   (semaphore-post break-sema)
 	   (send stop show #t)
-	   (send editor erase)
+	   (set! hit-count 0)
 	   (for-each
 	    (lambda (doc doc-name doc-kind)
 	      (define found-one? #f)
 	      (define (found)
 		(unless found-one?
 		  (set! found-one? #t)
-		  (add-section doc-name ckey)))
+		  (add-section doc-name ckey))
+		(set! hit-count (add1 hit-count))
+		(when (= hit-count MAX-HIT-COUNT)
+		  (break-thread (current-thread))))
 	      ;; Keyword search
 	      (let ([keys (case doc-kind
-			    [(html)
-			     (let ([keywords (build-path doc "keywords")])
-			       (if (file-exists? keywords)
-				   (with-input-from-file keywords read)
-				   null))]
+			    [(html) (load-html-keywords doc)]
 			    [(text) (load-txt-keywords doc)]
 			    [else null])]
 		    [add-key-choice (lambda (v)
@@ -509,16 +563,12 @@
 		      [add-index-choice (lambda (name desc)
 					  (case doc-kind
 					    [(html)
-					     (let loop ([desc desc])
-					       (let ([m (regexp-match re:ilink desc)])
-						 (when m
-						   (loop (list-ref m 1))
-						   (found)
-						   (add-choice "idx" name
-							       (clean-html (list-ref m 4))
-							       (build-path doc (list-ref m 2))
-							       (clean-html (list-ref m 3))
-							       ckey))))]
+					     (found)
+					     (add-choice "idx" name
+							 (list-ref desc 2)
+							 (build-path doc (list-ref desc 0))
+							 (list-ref desc 1)
+							 ckey)]
 					    [(text)
 					     (found)
 					     (add-choice "idx" name
@@ -554,7 +604,8 @@
 		       (with-input-from-file (build-path doc f)
 			 (lambda ()
 			   (let loop ()
-			     (let ([r (read-line)])
+			     (let ([pos (file-position (current-input-port))]
+				   [r (read-line)])
 			       (unless (eof-object? r)
 				 (when (regexp-match find r)
 				   (found)
@@ -564,7 +615,7 @@
 						   r)
 					       "content"
 					       (build-path doc f)
-					       "HTML"
+					       (if (eq? doc-kind 'text) pos "NO TAG")
 					       ckey))
 				 (loop))))))))
 		   files))))
@@ -573,7 +624,9 @@
 	    (lambda ()
 	      (when (eq? cycle-key ckey)
 		(when (zero? (send editor last-position))
-		  (send editor insert (format "Found nothing for \"~a\"." given-find)))))
+		  (send editor lock #f)
+		  (send editor insert (format "Found nothing for \"~a\"." given-find))
+		  (send editor lock #t))))
 	    #f))
 	 (semaphore-wait break-sema)) ; turn off breaks...
        (lambda ()

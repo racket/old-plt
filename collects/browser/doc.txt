@@ -1,0 +1,169 @@
+
+>INDEX: "browser" "HTML" "hypertext"
+
+The "browser.ss" library in the "browser" collection provides the
+following procedures and classes for parsing and vewing HTML files.
+
+The browser supports basic HTML commands, plus special Scheme
+hyperlinks of the form <A SCHEME=sexpr>...</A>. When the user clicks
+on such a link, the string `sexpr' is parsed as a Scheme program and
+evaluated. Since `sexpr' is likely to contain Scheme strings, and
+since escape characters are difficult for people to read, a vertical
+bar (|) character in sexpr is converted to a double-quote (")
+character before it is parsed. Thus,
+
+  <A SCHEME="|This goes nowhere.|">Nowhere</A>
+
+creates a "Nowhere" hyperlink, which executes the Scheme program
+
+  "This goes nowhere."
+
+The values of that program is a string. When a Scheme hyperlink
+returns a string, it is parsed as a new HTML document. Thus, where the
+use clicks on "Nowhere", the result is a new page that says "This goes
+nowhere."
+
+----------------------------------------
+
+> (open-url url) - Opens the given url (either a string, url record,
+  or port) in a vanilla browser frame
+   
+----------------------------------------
+
+> (hyper-text-mixin text%) - Extends the given text% class. The
+   initializtion arguments are extended with a new first argument,
+   which is a url (string, url record, or port) to be loaded into the
+   text% object. Unless the url is a string/url reprsenting a source
+   file ending in ".txt", the loaded text is parsed as HTML.
+
+   An instance of a (hyper-text-mixin text%) class should be displayed
+   only in an instance of a class created with `hyper-canvas-mixin'
+   (described below).
+
+   The mixin adds the following instance variables:
+
+>   map-shift-style :: (send o map-shift-style start end shift-style)
+     Maps the given style over the given range
+
+>   make-link-style :: (send o make-link-style start end)
+     Changes the style for the given range to the link style
+
+>   get-url :: (send o get-url)
+     Returns the URL displayed by the editor
+
+>   get-title :: (send o get-title)
+>   set-title :: (send o set-title string)
+     Gets or sets the page's title
+
+>   hyper-delta
+     A style-delta% object; override it to set the link style
+
+>   add-tag ::(send o add-tag name-string pos)
+     Installs a tag.
+
+>   find-tag :: (send o find-tag name-string/number)
+     Finds the location of a tag in the buffer (where tags are
+     installed in HTML with <A NAME="name">) and returns its
+     position. If `name' is a number, the number is returned (assumed
+     to be an offset rather than a tag). Otherwise, if the tag is not
+     found, #f is returned.
+
+>   remove-tag :: (send o remove-tag name)
+     Removes a tag.
+
+>   add-link :: (send o add-link start end url-string)
+     Installs a hyperlink.
+
+>   add-scheme-callback :: (send o add-scheme-callback start end scheme-string)
+     Installs a Scheme evaluation hyperlink.
+
+>   eval-scheme-string :: (send o eval-scheme-string string)
+     Called to handle the <A SCHEME="expr">...</A> tag. Evaluates the
+     string; if the result is a string, it is opened as an HTML
+     page.
+
+----------------------------------------
+
+> hyper-text% = (hyper-text-mixin text%)
+
+----------------------------------------
+
+> (hyper-canvas-mixin editor-canvas%) - Extends the given
+  editor-canvas% class. The intialization arguments are unchanged.
+
+  The canvas's parent should be an instance of a class derived with
+  `hyper-canvas'mixin' (described below).
+
+  The mixin adds the following instance variables:
+
+>   make-editor :: (send o make-editor url)
+     Creates an hypertext editor for the canvas, called to navigate
+     among hypertext pages. Changing the page changes the editor in
+     the canvas, and the page history is maintained by keeping the old
+     editors.
+ 
+>   current-page :: (send o current-page)
+     Returns a reprsentation of the currently displayed page, which
+     includes a particular editor and a visible range within the
+     editor.
+ 
+>   goto-url :: (send o goto-url url relative-to-url)
+     Changes to the given url, loading it by calling the `make-editor'
+     method. If `relative-to-url' is not #f, it must be a URL for
+     resolving `url' as a relative URL.
+
+>   set-page :: (send o goto-page page notify?)
+     Changes to the given page. If `notify?' is not #f, the canvas's
+     parent is notified about the change by calling its `leaving-page'
+     method.
+
+----------------------------------------
+
+> hyper-canvas% = (hyper-canvas-mixin editor-canvas%)
+
+----------------------------------------
+
+> (hyper-panel-mixin area-container%) - Extends the given area
+  container class. The initialization arguments are unchanged, but
+  initialization creates controls and a hyper text canvas.  The
+  controls permit a user to move back and forth in the hypertext
+  history.
+
+  The mixin adds the following instance variables:
+
+>   make-canvas :: (send o make-canvas)
+     Creates the panel's hypertext canvas, an instance of a class
+     derived using `hyper-canvas-mixin' (described above). This
+     method is called during initialization.
+
+>   rewind :: (send o rewind)
+     Goes back one page, if possible.
+
+>   forward :: (send o forward)
+     Goes forward one page, if possible.
+
+>   get-canvas :: (send o get-canvas)
+     Gets the hypertext canvas.
+
+>   on-navigate :: (send o on-navigate)
+     Callback that is invoked any time the displayed hypertext page
+     changes (either by clicking on a link in the canvas or by
+     `rewind' or `forward' calls).
+
+>   leaving-page :: (send o leaving-page page new-page)
+     This method is called by the hypertext canvas to notify the
+     panel that the hypertext page changed. The `page' is #f
+     if `new-page' is the first page for the canvas. See also
+     `page->editor' (decsribed below).
+
+----------------------------------------
+
+> hyper-panel% = (hyper-panel-mixin vertical-panel%)
+
+----------------------------------------
+
+> (editor->page editor) - Creates a page record for the given editor,
+  suitable for use with the `set-page' method of hyper-canvas-mixin.
+
+> (page->editor page) - Extracts the editor from a page record.
+

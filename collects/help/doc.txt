@@ -1,0 +1,201 @@
+
+>INDEX: "documentation"
+
+The "help" collection provides tools for working with the Help Desk.
+
+Running or Embedding Help Desk
+==============================
+
+Loading the "help.ss" library directly executes the Help Desk
+program. The "helpr.ss" library provides the Help Desk as a unit with
+the following imports:
+
+  help:option^ - described below
+  mzlib:function^
+  mzlib:string^
+  mzlib:file^
+  mzlib:url^ - not really in MzLib; it's in the "net" collection
+  mred^
+
+The help:option^ signature is defined in "sig.ss". It contains one
+item: `startup-url'. The value of `startup-url' must be a url (a
+string or a url record) which is used as the initial page for the Help
+Desk.
+
+Invoking the Help Desk unit executes the Help Desk program. Thus, when
+linking Help Desk into a larger program, all of its imports must be
+initialized before the Help Desk unit itself.
+
+Producing Help Desk Documentation
+=================================
+
+>INDEX: "creating help desk documents" 
+
+Help Desk combines an HTML browser with a search engine. The search
+engine looks for information in three places:
+
+  * keyword directories
+
+  * indexes
+
+  * raw document source
+
+A "keyword" (in this case) is a Scheme identifier, such as `cons' or
+`define', and the keyword directory points to its definition.  Indexes
+contain more general entries, such as "cut and paste" or "creating
+help desk documents", and may map keywords to use sites rather than
+definition sites. Searching through the raw document source (often
+HTML source) may be useful as a last-ditch effort, but the point of
+keyword directories and indexes is to avoid this as much as possible.
+
+When the user searches on a keyword that reprsents a Scheme procedure,
+class, or method, the search result provides immediate information
+about the use of the keyword. For example, performing an exact keyword
+search on "append" produces:
+
+ In r5rs:
+  (append list ...) in "R5RS - Pairs and lists"
+ In mred:
+  (send a-list-box append item data) in "append"
+  (send a-list-box append item) in "append"
+  (send a-list-control append item) in "append"
+
+which shows that the standard Scheme `append' consumes any number of
+lists, the `append' method of a list-box% object consumes one or two
+arguments, etc. The user may click on search result lines to obtain
+further information. Often, however, the immediate information is
+sufficient, because the user merely wants the order of arguments for a
+procedure or method.
+
+The Help Desk locates the installed documentation as follows:
+
+ * Help Desk checks each top-level collection to see if it contains a
+   "doc.txt" file for collection-specific, text-based documentation.
+
+ * Help Desk checks plt/collects/doc for more general, HTML-formatted
+   documentaion.
+
+The two documentation formats are described below.
+
+The doc.txt Format
+------------------
+
+>INDEX: "doc.txt" ">INDEX:"
+
+The Help Desk inspects each top-level collection to see if it contains
+a "doc.txt" file. If so, the "doc.txt" file is parsed for index and
+keyword entries.
+
+No annotations are removed from a doc.txt file before it is presented
+to the user. Thus, despite the annotations described below, "doc.txt"
+is a WYSIWYG documentation format.
+
+Index Entry Annotations
+- - - - - - - - - - - -
+
+An index entry is specified by starting a line with:
+
+  >INDEX:
+
+There can be no spaces at the beginning of the line before the
+">". After the colon, specify a sequence of index entries as Scheme
+string.
+
+Notice that this "doc.txt" section begins with an index specification.
+
+Keyword Entry Annotations
+- - - - - - - - - - - - -
+
+A keyword entry is specified using
+
+  >
+
+at the beginning of a line, with no spaces before the ">" and
+something other than "I" after ">" (normally, a space follows the
+">"). After the ">", put an S-expression that contains only
+symbols. The leftmost atom must be a symbol, and this symbol is used
+as the key for the entry, whereas the whole S-expression is displayed
+when the user searches on the key.
+
+For example, a keyword entry for `cons' might have the following form:
+
+ > (cons v list) - Constructs a new list by ...
+
+When the user searches on "cons", the Help Desk will display a link
+that looks something like
+
+ In mytools collection:
+   _(cons v list)_ in "doc.txt"
+
+Note that a search on "list" will not reveal this entry, because
+"cons" is used as the key, not the whole S-expression.
+
+To create a keyword entry where the key is *not* the leftmost symbol
+in the S-expression, use the follwing form:
+
+  > keyword :: S-expression
+
+where `keyword' is a Scheme symbol. The special "::" indicator
+instructs the Help Desk to look ahead one more S-expression. For
+example, documentation for a `set-title' method might appear as
+follows:
+
+  > set-title :: (send o set-title string) - sets the title
+
+The "(send o set-title string)" part allows a Help Desk user can learn
+about the calling convention of `set-title' without accessing the
+documentation directly.
+
+The HTML Format
+---------------
+
+HTML documention is put in its own sub-directory in the "doc"
+collection. For example, the MzScheme manual is in the directory
+plt/collects/doc/mzscheme. The starting point for the manual must be
+called "index.htm" (no "l").
+
+In addition to HTML files, a manual directory can contain a "keywords"
+file, which maps keywords to HTML pages and labels, and a "hdindex"
+file, which similarly maps index entries HTML pages.
+
+The "keywords" File
+- - - - - - - - - -
+
+The "keywords" file must contain one S-expression (not evaluated),
+which is a list of keyword entries. Each keyword entry is a list of
+five values:
+
+  * keyword - a string, e.g., "cons"
+
+  * result display - a string to be displayed in the search results
+    window when the user searches on the keyword, e.g., "(cons v
+    list)"
+
+  * HTML file - a file name relative to the manual's directory, e.g.,
+    "node198.htm"
+
+  * HTML label - a string reprsenting a label within the HTML file
+
+  * page title - a string presenting the title of the HTML page, e.g.,
+    "List Procedures"
+
+See plt/collects/doc/mzscheme/keywords for an example.
+
+The "hdindex" File
+- - - - - - - - - 
+
+The "hdindex" file is similar to the "keywords" file; it must contain
+one S-expression (not evaluated), which is a list of index entries.
+Each index entry is a list of four values:
+
+  * indexed item - a string, e.g., "creating help desk documents"
+
+  * HTML file - a file name relative to the manual's directory, e.g.,
+    "node198.htm"
+
+  * HTML label - a string reprsenting a label within the HTML file
+
+  * page title - a string presenting the title of the HTML page, e.g.,
+    "How to Create Help Desk Documents"
+
+See plt/collects/doc/mzscheme/hdindex for an example.

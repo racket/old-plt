@@ -20,8 +20,5 @@
    hyper-panel-mixin
    hyper-panel%
 
-   hyper-frame-mixin
-   hyper-frame%
-
    editor->page
    page->editor))

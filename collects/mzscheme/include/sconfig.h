@@ -67,6 +67,14 @@
 # define SYSTEM_TYPE_NAME "oskit"
 
 # define STACK_GROWS_DOWN
+# define DO_STACK_CHECK
+# ifndef OSKIT_TEST
+#  define OSKIT_FIXED_STACK_BOUNDS
+# else
+#  define ASSUME_FIXED_STACK_SIZE
+#  define FIXED_STACK_SIZE 65500
+# endif
+# define STACK_SAFETY_MARGIN 10000
 
 # define UNIX_FILE_SYSTEM
 # define NO_UNIX_USERS
@@ -86,16 +94,16 @@
 # define FIXED_FD_LIMIT 256
 # define USE_UNIX_SOCKETS_TCP
 # define USE_FCNTL_O_NONBLOCK
-# define htons(x) x
-# define PF_INET AF_INET
+
+# ifndef OSKIT_TEST
+#  define INCLUDE_OSKIT_SOCKET
+#  define MZ_PF_INET OSKIT_PF_INET
+#  define PROTOENT_IS_INT IPPROTO_TCP
+# endif
 
 # define NO_USLEEP
 # define NO_SLEEP
 # define USER_TIME_IS_CLOCK
-
-     /* # define DO_STACK_CHECK */
-     /* # define UNIX_FIND_STACK_BOUNDS */
-# define STACK_SAFETY_MARGIN 50000
 
 # define SIGSET_IS_SIGNAL
 
@@ -326,8 +334,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define BEOS_PROCESSES
 
 # define USE_FCNTL_O_NONBLOCK
-# define PF_INET AF_INET
-# define PROTOENT_IS_INT
+# define MZ_PF_INET AF_INET
+# define PROTOENT_IS_INT IPPROTO_TCP
 # define CANT_SET_SOCKET_BUFSIZE
 # define SEND_IS_NEVER_TOO_BIG
 
@@ -1117,6 +1125,9 @@ int scheme_pthread_semaphore_try_down(void *);
  /* UNIX_LIMIT_STACK <X> limits stack usage to <X> bytes. This may
      be necessary to avoid GC-setup traversal over too much memory
      (with GC flag HEURISTIC2?). */
+
+ /* OSKIT_FIXED_STACK_BOUNDS uses base_stack_start to get the hottest
+     stack location */
 
   /***********************/
  /*   Dynamic Loading   */

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.12 1998/11/18 22:05:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.13 1999/01/09 19:18:39 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1148,7 +1148,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 				
 	    for (i = 0, p = c; i < h; i++)
 	      for (j = 0; j < w; j++, p++)
-		::SetPixel(dc, j, i, *p ? black : white);
+		::SetPixelV(dc, j, i, *p ? black : white);
 
 	    ::SelectObject(dc, orig);
 	    DeleteDC(dc);

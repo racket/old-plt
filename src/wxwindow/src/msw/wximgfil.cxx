@@ -606,14 +606,12 @@ BOOL wxGIF::SetColourMap(ushort n, byte *r, byte *g, byte *b)
   ColourMap = new wxColourMap();
   if (ColourMap)
   {
-// temporary fix
     numcmapentries = n;
     for (int i=0; i < n; i++) {
       red[i] = r[i];
       green[i] = g[i];
       blue[i] = b[i];
     }
-    //ColourMap->Create(n, r, g, b);
     return TRUE;
   }
   return FALSE;
@@ -631,6 +629,9 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	unsigned char *data;
 	wxMemoryDC *mem;
 	HDC hdc;
+	unsigned short *red, *green, *blue;
+	COLORREF cref;
+	int white;
 	
 	data = (unsigned char *)gifImage->GetRawImage();
 	
@@ -644,19 +645,36 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	mem = new wxMemoryDC();
 	mem->SelectObject(bm);
 
+	mem->Clear();
+
 	hdc = mem->cdc;
 
+	red = gifImage->red;
+	green = gifImage->green;
+	blue = gifImage->blue;
+
+	white = -1;
+	for (i = gifImage->numcmapentries; i--; )
+	  if (red[i] == 255
+	      && green[i] == 255
+	      && blue[i] == 255) {
+	    white = i;
+	    break;
+	  }
+
 	for (j = 0; j < h; j++) {
-	  for (i = 0; i < w; i++, p++)
-		SetPixel(hdc, i, j, 
-			     RGB(gifImage->red[data[p]],
-			         gifImage->green[data[p]],
-					 gifImage->blue[data[p]]));
+	  for (i = 0; i < w; i++, data++) {
+	    int v = *data;
+	    if (v != white) {
+	      cref = RGB(red[v], green[v], blue[v]);
+	      SetPixelV(hdc, i, j, cref);
+	    }
+	  }
 	}
-		
+	  
 	mem->SelectObject(NULL);
 	delete mem;
-
+	
 	delete gifImage;
 	return TRUE;
   }

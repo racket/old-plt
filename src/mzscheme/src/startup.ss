@@ -3682,7 +3682,7 @@
 
 (module #%r5rs mzscheme
   
-  ;; Copied from R5rS:
+  ;; Copied from R5rS, but with an added `let' around body
   (define undefined (letrec ([u u]) u))
   (define-syntax r5rs:letrec
     (syntax-rules ()
@@ -3701,7 +3701,8 @@
 	 (let ((temp1 init1) ...)
 	   (set! var1 temp1)
 	   ...
-	   body ...)))
+	   (let ()
+	     body ...))))
       ((r5rs:letrec "generate_temp_names"
 	 (x y ...)
 	 (temp ...)

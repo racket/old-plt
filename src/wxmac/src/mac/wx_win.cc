@@ -1380,10 +1380,24 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 //-----------------------------------------------------------------------------
 void wxWindow::SetFocus(void)
 {
-  if (WantsFocus() && IsEnable() && !cHidden) {
+  if (WantsFocus()) {
+    /* Check that it's not hidden relative to the top-level frame: */
+    wxWindow *win = this;
     wxFrame* rootFrame;
     rootFrame = GetRootFrame();
-    rootFrame->SetFocusWindow(this);
+
+    while (win && (win != rootFrame)) {
+      if (win->cUserHidden) {
+	break;
+      }
+      if (!win->IsEnable()) {
+	break;
+      }
+      win = win->GetParent();
+    }
+
+    if (win == rootFrame)
+      rootFrame->SetFocusWindow(this);
   }
 }
 

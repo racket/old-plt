@@ -267,7 +267,12 @@
                        (open-url-from-user this (lambda (x) (goto-url x))))]
                     [file-menu:create-open? (lambda () #t)]
                     
-                    [file-menu:print-callback (lambda (i e) (send (send results get-editor) print))]
+                    [file-menu:print-callback 
+                     (lambda (i e) 
+                       (send (send results get-editor) print
+                             #t
+                             #t
+                             (framework:preferences:get 'framework:print-output-mode)))]
                     [file-menu:create-print? (lambda () #t)]
                     
                     [file-menu:between-open-and-revert

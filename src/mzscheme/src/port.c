@@ -587,8 +587,16 @@ void scheme_init_port_config(void)
 #ifdef USE_DYNAMIC_FDSET_SIZE
 static int dynamic_fd_size;
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 void *scheme_alloc_fdset_array(int count, int permanent)
 {
+  /* Note: alloc only at the end, because this function
+     isn't annotated. We skip annotation so that it's
+     ok with OS X use from default_sleep() */
+
   if (!dynamic_fd_size) {
 #ifdef USE_ULIMIT
     dynamic_fd_size = ulimit(4, 0);
@@ -607,6 +615,10 @@ void *scheme_alloc_fdset_array(int count, int permanent)
   else
     return scheme_malloc_atomic(count * dynamic_fd_size);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void *scheme_init_fdset_array(void *fdarray, int count)
 {

@@ -704,38 +704,45 @@ void sslout_close(Scheme_Output_Port *port)
     /* it's possible that we were shut down in another
        thread, though. */
 
+    /* FIXME: what if a another thread writes at this point?
+       In particular, the code below assumes that the deamon
+       thread is not trying to output. */
+
     while (!ssl->close_out) {
       int status;
       int err;
 
-      status = SSL_shutdown(ssl->ssl);
-      if (status < 1)
-	err = SSL_get_error(ssl->ssl, status);
+      while (1) {
+	status = SSL_shutdown(ssl->ssl);
+	if (status < 0)
+	  err = SSL_get_error(ssl->ssl, status);
 
-      if ((status < 1) && !scheme_close_should_force_port_closed()
-	  /* if an eof occurs, let's agree that it's shut down */
-	  && !((err == SSL_ERROR_SYSCALL) && !status)) {
-	if (err == SSL_ERROR_WANT_READ)
-	  ssl->write_blocked_reason = 1;
-	else if (err == SSL_ERROR_WANT_WRITE)
-	  ssl->write_blocked_reason = 2;
-	else {
-	  const char *errstr;
-	  err = get_ssl_error_msg(err, &errstr, status, 1);
-	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, 
-			   "ssl-close: error shutting down output (%Z)",
-			   err, errstr);
-	  return;
-	}
+	if ((status < 0) && !scheme_close_should_force_port_closed()
+	    /* if an eof occurs, let's agree that it's shut down */
+	    && !(err == SSL_ERROR_SYSCALL)) {
+	  if (err == SSL_ERROR_WANT_READ)
+	    ssl->write_blocked_reason = 1;
+	  else if (err == SSL_ERROR_WANT_WRITE)
+	    ssl->write_blocked_reason = 2;
+	  else {
+	    const char *errstr;
+	    err = get_ssl_error_msg(err, &errstr, status, 1);
+	    scheme_raise_exn(MZEXN_I_O_PORT_WRITE, port, 
+			     "ssl-close: error shutting down output (%Z)",
+			     err, errstr);
+	    return;
+	  }
 
-	scheme_block_until(shutdown_ready, 
-			   shutdown_need_wakeup,
-			   (void *)ssl, (float)0.0);      
-      } else {
-	ssl->close_out = 1;
-	if (ssl->close_in) {
-	  SSL_free(ssl->ssl);
-	}
+	  scheme_block_until(shutdown_ready, 
+			     shutdown_need_wakeup,
+			     (void *)ssl, (float)0.0);      
+	} else if (status) {
+	  ssl->close_out = 1;
+	  if (ssl->close_in) {
+	    SSL_free(ssl->ssl);
+	  }
+	  break;
+	}  
       }
     }
   }

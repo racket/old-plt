@@ -1,6 +1,6 @@
 (let ([bw? (and (defined? 'mred:get-display-depth)
                 (< (mred:get-display-depth) 8))])
-  `((keyword (#x99 00 00) bold)
+  `((keyword (40 25 15) bold)
     (unbound-variable 
      ,@(if bw?
            `("black" slant)

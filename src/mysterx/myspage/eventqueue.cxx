@@ -30,8 +30,6 @@ CEventQueue::CEventQueue(void) {
 }
 
 CEventQueue::~CEventQueue(void) { 
-    MessageBox(NULL,"Destroying EQ","test",0);
-
     if (readSem) {
       CloseHandle(readSem);
     }

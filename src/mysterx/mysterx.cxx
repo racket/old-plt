@@ -3567,7 +3567,7 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
 
 void docHwndMsgLoop(LPVOID p) {
   HRESULT hr;
-  static MSG msg;
+  MSG msg;
   HWND hwnd;
   IUnknown *pIUnknown;
   DOCUMENT_WINDOW_INIT *pDocWindowInit;
@@ -3795,10 +3795,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   }
   
   pIDispatch->Release();
-  
-  if (pIHTMLDocument2 == NULL) {
-    scheme_signal_error("Error retrieving DHTML document interface, code %X",hr);
-  }
   
   pIEventQueue->GetReaderSemaphore((int *)&doc->readSem);
   

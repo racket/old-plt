@@ -32,6 +32,7 @@ clean :
 	-@erase myssink.h
 	-@erase myssink.tlb
 	-@erase myssink_i.c
+	-@erase myssink_p.c
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<

@@ -39,6 +39,7 @@ clean :
 	-@erase myspage.h
 	-@erase myspage.tlb
 	-@erase myspage_i.c
+	-@erase myspage_p.c
 
 .cxx{$(INTDIR)}.obj::
    $(CPP) $(CPP_FLAGS) $< 

@@ -1,6 +1,43 @@
-(unit/sig
-    mzlib:function^
-  (import)
+
+(module list mzscheme
+  (import "spidey.ss")
+
+  (export set-first!
+	  first
+	  second
+	  third
+	  fourth
+	  fifth
+	  sixth
+	  seventh
+	  eighth
+
+	  set-rest!
+	  rest
+
+	  cons?
+	  empty
+	  empty?
+
+	  foldl
+	  foldr
+
+	  last-pair
+
+	  remv
+	  remq
+	  remove
+	  remv*
+	  remq*
+	  remove*
+
+	  assf
+	  memf
+
+	  filter
+	  
+	  quicksort
+	  mergesort)
   
   (define quicksort
     (polymorphic
@@ -260,15 +297,7 @@
                                    (unless (or (null? v) (pair? v))
                                      (raise-type-error 'set-rest! "second argument must be a list" v))
                                    (set-cdr! x v))))
-  
-  (define loop-until
-    (polymorphic
-     (lambda (start done? next body)
-       (let loop ([i start])
-         (unless (done? i)
-           (body i)
-           (loop (next i)))))))
-  
+    
   (define last-pair
     (polymorphic
      (lambda (l)
@@ -278,27 +307,7 @@
                l)
            (raise-type-error 'last-pair "pair" l)))))
   
-  (define boolean=?
-    (lambda (x y)
-      (unless (and (boolean? x)
-                   (boolean? y))
-        (raise-type-error 'boolean=? 
-                          "boolean"
-                          (if (boolean? x) y x)))
-      (eq? x y)))
-  
-  (define (symbol=? x y)
-    (unless (and (symbol? x)
-		 (symbol? y))
-      (raise-type-error 'symbol=? "symbol"
-			(if (symbol? x) y x)))
-    (eq? x y))
-
-  (define (char->string c)
-    (unless (char? c)
-      (raise-type-error 'char->string "character" c))
-    (string c))
-  
   (define cons? (lambda (x) (pair? x)))
   (define empty? (lambda (x) (null? x)))
   (define empty '()))
+

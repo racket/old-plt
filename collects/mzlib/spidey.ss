@@ -1,17 +1,31 @@
-(define-macro define-constructor
-  (lambda args '(#%void)))
 
-(define-macro define-type
-  (lambda args '(#%void)))
+(module spidey mzscheme
 
-(define-macro :
-  (lambda (v . args) v))
+  (export define-constructor
+	  define-type
+	  :
+	  mrspidey:control
+	  polymorphic
+	  type:)
 
-(define-macro mrspidey:control
-  (lambda args '(#%void)))
+  (define-syntax define-constructor
+    (lambda (stx) (syntax (void))))
 
-(define-macro polymorphic
-  (lambda (arg) arg))
+  (define-syntax define-type
+    (lambda (stx) (syntax (void))))
 
-(define-macro type:
-  (lambda (type) `(#%void)))
+  (define-syntax :
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ v t) (syntax v)])))
+
+  (define-syntax mrspidey:control
+    (lambda (stx) (syntax (void))))  
+
+  (define-syntax polymorphic
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ e) (syntax e)])))
+
+  (define-syntax type:
+    (lambda (stx) (syntax (void)))))

@@ -32,6 +32,24 @@
 				     (compose cdr vector->list struct->vector)
 				     (lambda (x) (apply make-setting x)))
 
+    (define set-printer-style/get-number
+      (lambda (printing-setting)
+	(case printing-setting
+	  [(constructor-style) 
+	   (constructor-style-printing #t)
+	   0]
+	  [(quasi-style)
+	   (constructor-style-printing #f)
+	   (quasi-read-style-printing #f)
+	   1]
+	  [(quasi-read-style)
+	   (constructor-style-printing #f)
+	   (quasi-read-style-printing #t)
+	   2]
+	  [(r4rs-style) 3]
+	  [else (error 'drscheme:language:update-to "got: ~a as printing style"
+		       printing-setting)])))
+
     (define case-sensitive? #t)
     (define allow-set!-on-undefined? #t)
     (define unmatched-cond/case-is-error? #t)
@@ -39,6 +57,7 @@
     (define check-syntax-level (car drscheme:basis:level-symbols)) 
     (define callback
       (lambda (pref)
+	(set-printer-style/get-number (setting-printing pref))
 	(set! case-sensitive? (setting-case-sensitive? pref))
 	(set! allow-set!-on-undefined? (setting-allow-set!-on-undefined? pref))
 	(set! unmatched-cond/case-is-error? (setting-unmatched-cond/case-is-error? pref))
@@ -176,21 +195,7 @@
 		  (send vocab set-selection
 			(drscheme:basis:level->number (setting-vocabulary-symbol v)))
 		  (send printing set-selection
-			(case (setting-printing v)
-			  [(constructor-style) 
-			   (constructor-style-printing #t)
-			   0]
-			  [(quasi-style)
-			   (constructor-style-printing #f)
-			   (quasi-read-style-printing #f)
-			   1]
-			  [(quasi-read-style)
-			   (constructor-style-printing #f)
-			   (quasi-read-style-printing #t)
-			   2]
-			  [(r4rs-style) 3]
-			  [else (error 'drscheme:language:update-to "got: ~a as printing style"
-				       (setting-printing v))]))
+			(set-printer-style/get-number (setting-printing v)))
 		  (map (lambda (get check-box) (send check-box set-value (get v)))
 		       (list setting-case-sensitive?
 			     setting-allow-set!-on-undefined?

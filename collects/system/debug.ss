@@ -88,8 +88,15 @@
     (current-load (lambda (f)
 		    (let* ([file (if (relative-path? f)
 				     (build-path (current-directory) f)
-				     f)])
-		      (mred:debug:printf 'load "~aLoading ~a..." indent-string file)
+				     f)]
+			   [counter-string
+			    (let ([MAX-SIZE 4]
+				  [str (format "~a" (and (defined? 'mred:splash-counter)
+							 mred:splash-counter))])
+			      (string-append (make-string (- MAX-SIZE (string-length str)) #\space)
+					     str
+					     (string #\space)))])
+		      (mred:debug:printf 'load "~a~aLoading ~a..." counter-string indent-string file)
 		      (let* ([indent
 			      (lambda ()
 				(set! indent-string (string-append offset-string indent-string)))]
@@ -108,5 +115,5 @@
 					   (lambda () (old-handler f))
 					   list))
 			       outdent)])
-			(mred:debug:printf 'load "~aLoaded ~a." indent-string file)
+			(mred:debug:printf 'load "~a~aLoaded ~a." counter-string indent-string file)
 			(apply values answer)))))))

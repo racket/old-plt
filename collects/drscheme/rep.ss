@@ -63,7 +63,8 @@
     (set-delta-background "YELLOW"))
 
   (define library-unit #f)
-
+  (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
+  
   (fw:preferences:set-default 'drscheme:library-file
 			       #f
 			       (lambda (x) (or (string? x) (not x))))
@@ -1065,7 +1066,7 @@
 		    (link [userspace : plt:userspace^ 
 				     ((compound-unit/sig 
 					  (import)
-					(link [core : mzlib:core-flat^ ((require-library-unit/sig "coreflatr.ss"))]
+					(link [core : mzlib:core-flat^ (core-flat@)]
 					      [mred : mred^ (mred:mred@)])
 					(export (open core)
 						(open mred))))]

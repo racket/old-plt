@@ -75,11 +75,18 @@
 
 (mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
 (mred:debug:printf 'startup "mred:system-source-directory: ~a" mred:system-source-directory)
+(mred:debug:printf 'startup "current-library-collection-paths: ~s"
+		   (current-library-collection-paths))
 
 (define (load-system)
 
   (require-library "corec.ss")
   (require-library "triggerc.ss")
+
+  (current-library-collection-paths
+   (map normalize-path (current-library-collection-paths)))
+  (mred:debug:printf 'startup "normalized current-library-collection-paths: ~s"
+		     (current-library-collection-paths))
 
   (reference-library "sig.ss" "mred")
   (when mred:app-sig-location
@@ -109,8 +116,6 @@
 		(unbox path-box)
 		default-path)))
 	 (load-system)
-	 (current-library-collection-paths
-	  (map normalize-path (current-library-collection-paths)))
 	 (set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
 	 ;(constant-name 'mred:plt-home-directory)
 	 (when (and (eq? wx:platform 'windows))

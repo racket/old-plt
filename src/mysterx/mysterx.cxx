@@ -337,10 +337,31 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
 };
 
 void scheme_release_com_object(void *comObject,void *pIUnknown) {
+  ITypeInfo *pEventTypeInfo;
+  IConnectionPoint *pIConnectionPoint;
+  ISink *pISink;
   
   // when COM object GC'd, release interface pointer
+
+  pEventTypeInfo = MX_COM_OBJ_EVENTTYPEINFO(comObject);
+  pIConnectionPoint = MX_COM_OBJ_CONNECTIONPOINT(comObject);
+  pISink = MX_COM_OBJ_EVENTSINK(comObject);
   
-  ((IUnknown *)pIUnknown)->Release();
+  if (pEventTypeInfo) {
+    pEventTypeInfo->Release();
+  }
+
+  if (pIConnectionPoint) {
+    pIConnectionPoint->Release();
+  }
+
+  if (pISink) {
+    pISink->Release();
+  }
+
+  if (pIUnknown) {
+    ((IUnknown *)pIUnknown)->Release();
+  }
 }
 
 void mx_register_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {

@@ -134,6 +134,7 @@ typedef struct _document_window_style_option {
 
 #define MX_COM_OBJP(o) (!SCHEME_INTP(o) && o->type == mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
+#define MX_COM_OBJ_CONNECTIONPOINT(o) (((MX_COM_Object *)o)->pIConnectionPoint)
 #define MX_COM_OBJ_EVENTTYPEINFO(o) (((MX_COM_Object *)o)->pEventTypeInfo)
 #define MX_COM_OBJ_EVENTSINK(o) (((MX_COM_Object *)o)->pISink)
 

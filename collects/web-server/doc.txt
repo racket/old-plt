@@ -19,14 +19,11 @@ This provides one main function:
 > serve : configuration [nat] -> (-> void)
   (define (serve configuration port) ...)
   
-  It starts the server, where port specifies an alternate port for the server
-  to listen on besides 80 and max-waiting lets the caller specify a maximum
-  number of clients that can wait for a TCP connection other than the default
-  of 40.  The virtual-hosts function maps host names, which may or may not
-  include a colon followed by a port number, to a host structure.  (See
-  configuration.ss for examples of host structures, and see
-  configuration-structures.ss for the data definition.)
-  The result of invoking serve is a thunk that shuts down the server.
+  The serve function starts the Web server, just like the launcher does,
+  but the configuration argument supplies the server's settings.  The
+  optional port argument overrides the port supplied by the configuration.
+  The result of invoking serve is a function of no arguments that shuts down
+  the server.
 
 A later section describes the remaining semi-internal functions.
 
@@ -35,7 +32,7 @@ Serving Content
 
 By default, the Web server serves files out of the directory
 (build-path (collection-path "web-server") "default-web-root" "htdocs"),
-unless the function serve was called with a virtual-hosts argument or
+uless the function serve was called with a virtual-hosts argument or
 the configuration tool modified the location.
 
 Instead of serving files from a special directory verbatim, the Web server

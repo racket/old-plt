@@ -1,9 +1,3 @@
-;Java To Scheme
-;Kathy Gray
-;May 2001
-;Rewrite Dec 2001
-;Rewrite June 2002
-
 #cs
 (module to-scheme mzscheme
   (require "ast.ss"
@@ -55,55 +49,49 @@
   ;Functions which are used throughout the transformation
   
   ;build-identifier: (U string symbol (list string)) -> symbol
-  (define build-identifier
-    (lambda (name)
-      (cond
-        ((symbol? name) name)
-        ((string? name) (string->symbol name))
-        ;PROBLEM might not be best method
-        ((pair? name) (string->symbol (apply string-append (map (lambda (s) (string-append s ".")) name))))
-        (else 
-         (error 'build-identifier (format "Given ~s" name))
-         name))))
+  (define (build-identifier name)
+    (cond
+      ((symbol? name) name)
+      ((string? name) (string->symbol name))
+      ;PROBLEM might not be best method
+      ((pair? name) (string->symbol (apply string-append (map (lambda (s) (string-append s ".")) name))))
+      (else 
+       (error 'build-identifier (format "Given ~s" name))
+       name)))
   
   ;build-static-name: string symbol -> string
-  (define build-static-name
-    (lambda (name . args)
-      (format "~a-~a" (if (null? args) (class-name) (car args)) name)))
+  (define (build-static-name name . args)
+    (format "~a-~a" (if (null? args) (class-name) (car args)) name))
   
   ;build-src: src -> SrcList
-  (define build-src
-    (lambda (src) 
-      (if (not src)
-          src
-          (if (and (= (src-line src) 0)
-                   (= (src-col src) 0)
-                   (= (src-pos src) 0)
-                   (= (src-span src) 0))
-              #f
-              (list (loc) (src-line src) (src-col src) (src-pos src) (src-span src))))))
+  (define (build-src src) 
+    (if (not src)
+        src
+        (if (and (= (src-line src) 0)
+                 (= (src-col src) 0)
+                 (= (src-pos src) 0)
+                 (= (src-span src) 0))
+            #f
+            (list (loc) (src-line src) (src-col src) (src-pos src) (src-span src)))))
   
   ;get-defualt-value: type-spec -> syntax
-  (define get-default-value
-    (lambda (type)
-      (let ((name (type-spec-name type)))
-        (if (> (type-spec-dim type) 0)
-            (make-syntax #f 'null #f)
-            (cond
-              ((prim-numeric-type? name) (make-syntax #f 0 #f))
-              ((eq? 'char name) (make-syntax #f `#\ #f))
-              ((eq? 'boolean name) (make-syntax #f `#f #f))
-              (else (make-syntax #f 'null #f)))))))
+  (define (get-default-value type)
+    (let ((name (type-spec-name type)))
+      (if (> (type-spec-dim type) 0)
+          (make-syntax #f 'null #f)
+          (cond
+            ((prim-numeric-type? name) (make-syntax #f 0 #f))
+            ((eq? 'char name) (make-syntax #f `#\ #f))
+            ((eq? 'boolean name) (make-syntax #f `#f #f))
+            (else (make-syntax #f 'null #f))))))
   
   ;create-get-name: string string? -> symbol
-  (define create-get-name
-    (lambda (name . args)
-      (build-identifier (format "~a-~a-get" (if (null? args) (class-name) (car args))  name))))
+  (define (create-get-name name . args)
+    (build-identifier (format "~a-~a-get" (if (null? args) (class-name) (car args))  name)))
   
   ;create-set-name: string string? -> symbol
-  (define create-set-name
-    (lambda (name . args)
-      (build-identifier (format "~a-~a-set!" (if (null? args) (class-name) (car args)) name))))
+  (define (create-set-name name . args)
+    (build-identifier (format "~a-~a-set!" (if (null? args) (class-name) (car args)) name)))
   
   ;Methods to determine member restrictions
   ;make-mod-test: symbol -> (list -> bool)
@@ -117,69 +105,62 @@
   
   ;retrieves static members from non-static
   ;get-statics: (list member) -> (list member)
-  (define get-statics
-    (lambda (l)
-      (filter (lambda (m) (if (method? m)
-                              (static? (map modifier-kind (method-modifiers m)))
-                              (static? (map modifier-kind (field-modifiers m))))) l)))
+  (define (get-statics l)
+    (filter (lambda (m) (if (method? m)
+                            (static? (map modifier-kind (method-modifiers m)))
+                            (static? (map modifier-kind (field-modifiers m))))) l))
   ;get-non-statics: (list member) -> (list member)
-  (define get-non-statics
-    (lambda (l)
-      (filter (lambda (m) (not (if (method? m)
-                                   (static? (map modifier-kind (method-modifiers m)))
-                                   (static? (map modifier-kind (field-modifiers m)))))) l)))
+  (define (get-non-statics l)
+    (filter (lambda (m) (not (if (method? m)
+                                 (static? (map modifier-kind (method-modifiers m)))
+                                 (static? (map modifier-kind (field-modifiers m)))))) l))
   
   ;get-class-name: (U name type-spec) -> syntax
-  (define get-class-name
-    (lambda (name)
-      (if (type-spec? name)
-          (set! name (type-spec-name name)))
-      (if (null? (name-path name))
-          (translate-id (id-string (name-id name))
-                        (id-src (name-id name)))
-          (create-syntax #f
-                         (build-identifier (get-class-string name))
-                         (build-src (name-src name))))))
+  (define (get-class-name name)
+    (if (type-spec? name)
+        (set! name (type-spec-name name)))
+    (if (null? (name-path name))
+        (translate-id (id-string (name-id name))
+                      (id-src (name-id name)))
+        (create-syntax #f
+                       (build-identifier (get-class-string name))
+                       (build-src (name-src name)))))
   
   ;get-class-string: name -> string
-  (define get-class-string
-    (lambda (name)
-      (format "~a~a" (apply string-append (map (lambda (s)
-                                                 (string-append s "."))
-                                               (map id-string (name-path name))))
-              (id-string (name-id name)))))
+  (define (get-class-string name)
+    (format "~a~a" (apply string-append (map (lambda (s)
+                                               (string-append s "."))
+                                             (map id-string (name-path name))))
+            (id-string (name-id name))))
   
-  ;build-id-name: string -> string
+  ;build-var-name: string -> string
   (define (build-var-name id) (format "~a-f" id))
   
   ;build-method-name: string (list type) -> string
-  (define build-method-name
-    (lambda (id types)
-      (letrec ((parm-name
-                (lambda (t)
-                  (format "-~a"
-                          (cond
-                            ((symbol? t) t)
-                            ((ref-type? t) 
-                             (string-append (apply string-append (map (lambda (p) (string-append p "."))
-                                                                      (ref-type-path t)))
-                                            (ref-type-class/iface t)))
-                            ((array-type? t)
-                             (string-append (let ((s (parm-name (array-type-type t))))
-                                              (substring s 1 (string-length s)))
-                                            (format "~a" (array-type-dim t))))
-                            (else (error 'build-method-name (format "Internal Error: given unexptected type ~a" t))))))))
-        (format "~a~a" id (apply string-append (map parm-name types))))))
+  (define (build-method-name id types)
+    (letrec ((parm-name
+              (lambda (t)
+                (format "-~a"
+                        (cond
+                          ((symbol? t) t)
+                          ((ref-type? t) 
+                           (string-append (apply string-append (map (lambda (p) (string-append p "."))
+                                                                    (ref-type-path t)))
+                                          (ref-type-class/iface t)))
+                          ((array-type? t)
+                           (string-append (let ((s (parm-name (array-type-type t))))
+                                            (substring s 1 (string-length s)))
+                                          (format "~a" (array-type-dim t))))
+                          (else (error 'build-method-name (format "Internal Error: given unexptected type ~a" t))))))))
+      (format "~a~a" id (apply string-append (map parm-name types)))))
   
-  ;Converted, but don't know what generated constructor name will be
   ;constructor? string -> bool
   (define (constructor? name) 
     (equal? name (class-name)))
   
   ;build-constructor-name: string (list type) -> string
-  (define build-constructor-name
-    (lambda (class-name args)
-      (build-method-name (format "~a-constructor" class-name) args)))
+  (define (build-constructor-name class-name args)
+    (build-method-name (format "~a-constructor" class-name) args))
   
   
   ;-------------------------------------------------------------------------------------------------------------------------
@@ -401,29 +382,26 @@
                       (map (lambda (r-pair) (cadr r-pair)) group-reqs)))))
   
   ;filter-reqs: (list (list location req)) (list def) type-records -> (list req)
-  (define filter-reqs
-    (lambda (reqs defs type-recs)
-      (if (null? reqs)
-          null
-          (if (or (reference (car reqs) defs type-recs)
-                  (req-member (car reqs) (cdr reqs)))
-              (filter-reqs (cdr reqs) defs type-recs)
-              (cons (car reqs) (filter-reqs (cdr reqs) defs type-recs))))))
+  (define (filter-reqs reqs defs type-recs)
+    (if (null? reqs)
+        null
+        (if (or (reference (car reqs) defs type-recs)
+                (req-member (car reqs) (cdr reqs)))
+            (filter-reqs (cdr reqs) defs type-recs)
+            (cons (car reqs) (filter-reqs (cdr reqs) defs type-recs)))))
   
   ;reference: (list req location) (list def) type-records -> bool
-  (define reference 
-    (lambda (req defs type-recs)
-      (and (not (null? defs))
-           (or (and (equal? (req-path (cadr req)) (get-package (car defs) type-recs))
-                    (equal? (req-class (cadr req)) (id-string (def-name (car defs)))))
-               (reference req (cdr defs) type-recs)))))
+  (define (reference req defs type-recs)
+    (and (not (null? defs))
+         (or (and (equal? (req-path (cadr req)) (get-package (car defs) type-recs))
+                  (equal? (req-class (cadr req)) (id-string (def-name (car defs)))))
+             (reference req (cdr defs) type-recs))))
   
   ;req-member: (list location req) (list (list location req)) -> bool
-  (define req-member
-    (lambda (req reqs)
-      (and (not (null? reqs))
-           (or (equal? (cadr req) (cadr (car reqs)))
-               (req-member req (cdr reqs))))))
+  (define (req-member req reqs)
+    (and (not (null? reqs))
+         (or (equal? (cadr req) (cadr (car reqs)))
+             (req-member req (cdr reqs)))))
   
   (define (translate-interact-require reqs type-recs)
     (if (null? reqs)
@@ -603,8 +581,8 @@
   ;Code to separate different member types for easier access
   ;(make-accesses (list member) (list member) (list member) ...)
   (define-struct accesses (private protected static public package))
-  ;(make-members (list method) (list field) (list init) (list init))
-  (define-struct members (method field static-init init))
+  ;(make-members (list method) (list field) (list init) (list init) (list def) (list def))
+  (define-struct members (method field static-init init nested inner))
   
   ;update: ('a 'b -> void) 'a ('b -> (list 'a)) 'b) -> 'b 
   ;Allows a set! to be passed in and applied
@@ -614,7 +592,7 @@
   
   ;separate-members: (list member) -> members
   (define (separate-members members)
-    (letrec ((my-members (make-members null null null null))
+    (letrec ((my-members (make-members null null null null null null))
              (separate
               (lambda (m h)
                 (cond
@@ -628,6 +606,12 @@
                              (if (initialize-static (car m))
                                  (update set-members-static-init! (car m) members-static-init h)
                                  (update set-members-init! (car m) members-init h))))
+                  ((def? (car m))
+                   (separate (cdr m)
+                             (if (or (interface-def? (car m))
+                                     (memq 'static (map modifier-kind (header-modifiers (def-header (car m))))))
+                                 (update set-members-nested! (car m) members-nested h)
+                                 (update set-members-inner! (car m) members-inner h))))
                   (else (error 'separate "not something expected: ~e" (car m)))))))
       (separate members my-members)))
   
@@ -671,6 +655,7 @@
   (define (create-local-names names)
     (make-syntax #f  `(define-local-member-name ,@names) #f))
   
+  ;translate-parents: (list name) -> (list syntax)
   (define (translate-parents extends)
     (map (lambda (n)
            (if (null? (name-path n))
@@ -681,7 +666,6 @@
                               (build-src (name-src n)))))
          extends))
   
-  ;Converted
   ;translate-interface: interface-def type-records-> (list syntax)
   (define (translate-interface iface type-recs)
     (let* ((header (def-header iface))
@@ -704,6 +688,17 @@
                                             ,@(make-method-names (members-method members) null type-recs)))
                       ,@(create-static-fields static-field-names (members-field members)))
               (make-syntax #f `(module ,name mzscheme (requires ,(module-name)) ,provides) #f)))))
+
+  ;-----------------------------------------------------------------------------------------------------------------
+  ;Member translation functions
+
+  ;------------------------------------------------------------
+  ;Inner class translation functions
+  
+  
+  
+  ;------------------------------------------------------------
+  ;;Method translation functions
   
   ;override?: symbol type-records -> bool
   (define (override? method-name type-recs)
@@ -843,6 +838,9 @@
            (translate-id (build-var-name (id-string (field-name parm)))
                          (id-src (field-name parm))))
          parms))
+
+  ;----------------------------------------------------------------
+  ;Field translation functions
   
   ;make-field-accessor-names: (list fields) -> (list symbol)
   (define (make-field-accessor-names fields)

@@ -35,8 +35,12 @@
 					#t #f #t #f #t #t #t #f #t #f #f
 					'constructor-style))
 	  (list 'Quasi-R4RS (make-setting #t 'advanced
-					  #t #t #t #t #f #t #t #f #f #f #f
-					  'r4rs-style))))
+					  #t #f #t #t #f #t #t #f #f #f #f
+					  'r4rs-style))
+	  ;(list 'MrEd (make-setting #f 'mred
+	  ;#t #f #t #t #t #t #t #f #f #f #f
+	  ;'r4rs-style))
+	  ))
   
   (define (setting-name setting)
     (or (ormap (lambda (x)

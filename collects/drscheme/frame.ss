@@ -34,7 +34,7 @@
 	 (lambda ()
 	   (let ([mb (super-make-menu-bar)])
 	     (set! show-menu (make-menu))
-	     (send mb append show-menu "S&how")
+	     (send mb append show-menu "&View")
 	     mb))])
       
       (public

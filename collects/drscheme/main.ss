@@ -48,7 +48,9 @@
 	    (send interactions-edit reset-console)
 	    (send interactions-edit enable-autoprompt)
 	    (send interactions-edit insert-prompt)
-	    (send (ivar frame show-menu) check (ivar frame interactions-id) #t)
+	    (send frame toggle-show/hide
+		  (ivar frame show-menu)
+		  (ivar frame interactions-id))
 	    (send frame update-shown)
 	    (send (ivar frame interactions-canvas) set-focus))))
       (send frame show #t)))

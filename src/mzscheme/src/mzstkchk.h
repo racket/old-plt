@@ -16,7 +16,8 @@
 # endif
 # if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
      || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
-     || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS)
+     || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS) \
+     || defined(PALM_FIND_STACK_BOUNDS)
   unsigned long _stk_pos;
 
   _stk_pos = (unsigned long)&_stk_pos;

@@ -124,7 +124,8 @@ typedef void (*DW_PrePost_Proc)(void *);
 
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
     || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
-    || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS)
+    || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS) \
+    || defined(PALM_FIND_STACK_BOUNDS)
 # ifndef MZ_REAL_THREADS
 unsigned long scheme_stack_boundary;
 # endif
@@ -1741,6 +1742,14 @@ void scheme_init_stack_check()
 
 #ifdef MACOS_FIND_STACK_BOUNDS
   scheme_stack_boundary = (unsigned long)&v +  STACK_SAFETY_MARGIN - StackSpace();
+#endif
+
+#ifdef PALMOS_FIND_STACK_BOUNDS
+  {
+    Ptr s, e;
+    SysGetStackInfo(Ptr &s, &e);
+    scheme_stack_boundary = (unsigned long)e + STACK_SAFETY_MARGIN;
+  }
 #endif
 
 #ifdef BEOS_FIND_STACK_BOUNDS

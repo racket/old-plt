@@ -105,15 +105,16 @@ Scheme_Object *scheme_make_svector(short c, short *a)
   return o;
 }
 
-static void make_sym_vec_hash_indices(void *v, int *h1, int *h2)
+static void make_sym_vec_hash_indices(void *v, long *h1, long *h2)
 {
   Scheme_Object *vec = (Scheme_Object *)v, **elems;
-  int i, key1 = 0, key2 = 0;
+  int i;
+  long key1 = 0, key2 = 0;
   
   elems = SCHEME_VEC_ELS(vec);
   for (i = SCHEME_VEC_SIZE(vec); i--; ) {
-    key1 += (int)elems[i];
-    key2 += ((int)elems[i]) & 0x555;
+    key1 += (long)elems[i];
+    key2 += ((long)elems[i]) & 0x555;
   }
 
   *h1 = key1;
@@ -559,7 +560,7 @@ static void print_this_string(Scheme_Process *p, const char *str, int autolen)
   }
 }
 
-static void print_compact_number(Scheme_Process *p, int n)
+static void print_compact_number(Scheme_Process *p, long n)
 {
   unsigned char s[5];
 

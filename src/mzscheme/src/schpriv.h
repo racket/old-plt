@@ -692,7 +692,8 @@ unsigned long scheme_get_deeper_address(void);
 
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
     || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
-    || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS)
+    || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS) \
+    || defined(PALM_FIND_STACK_BOUNDS)
 # ifndef MZ_REAL_THREADS
 extern unsigned long scheme_stack_boundary;
 # endif

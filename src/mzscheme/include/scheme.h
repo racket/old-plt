@@ -64,6 +64,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
+
+#ifdef PALMOS_STUFF
+#include <Pilot.h>
+typedef void FILE;
+#endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED
 #define SCHEME_DIRECT_EMBEDDED 1
@@ -100,7 +106,7 @@ typedef struct Scheme_Hash_Table
   int size, count, step;
   Scheme_Bucket **buckets;
   char has_constants, forever, weak;
-  void (*make_hash_indices)(void *v, int *h1, int *h2);
+  void (*make_hash_indices)(void *v, long *h1, long *h2);
   int (*compare)(void *v1, void *v2);
 #ifdef MZ_REAL_THREADS
   void *mutex;
@@ -359,7 +365,11 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 #ifdef USE_MZ_SETJMP
 typedef long mz_jmp_buf[8];
 #else
-# define mz_jmp_buf jmp_buf
+# ifdef JMP_BUF_IS_JMPBUF
+#  define mz_jmp_buf jmpbuf
+# else
+#  define mz_jmp_buf jmp_buf
+# endif
 #endif
 
 /* Like setjmp & longjmp, but you can jmp to a deeper stack position */
@@ -1042,14 +1052,13 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #endif
 
 #ifndef USE_MZ_SETJMP
-#ifdef WIN32_SETJMP_HACK    /* See comment in setjmpup.c */
-#define scheme_longjmp(b, v) \
-    { jmp_buf hack; setjmp(hack); (b)->j_excep = hack->j_excep; \
-      longjmp(b, v); }
-#else
-#define scheme_longjmp(b, v) longjmp(b, v)
-#endif
-#define scheme_setjmp(b) setjmp(b)
+# ifdef JMP_BUF_IS_JMPBUF
+#  define scheme_longjmp(b, v) longjmp(&b, v)
+#  define scheme_setjmp(b) setjmp(&b)
+# else
+#  define scheme_longjmp(b, v) longjmp(b, v)
+#  define scheme_setjmp(b) setjmp(b)
+# endif
 #endif
 
 #define SAME_PTR(a, b) ((a) == (b))

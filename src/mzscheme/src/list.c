@@ -876,7 +876,11 @@ reverse_bang_prim (int argc, Scheme_Object *argv[])
 }
 
 #define OCCASIONAL_CHECK ((int)0xFF)
-#define LISTREF_BIGNUM_SLICE 1000000
+#ifdef PALMOS_STUFF
+# define LISTREF_BIGNUM_SLICE 1000
+#else
+# define LISTREF_BIGNUM_SLICE 1000000
+#endif
 
 static Scheme_Object *
 do_list_ref(char *name, int takecar, int argc, Scheme_Object *argv[])

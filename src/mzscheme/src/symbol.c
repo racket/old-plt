@@ -62,9 +62,9 @@ static int gensym_counter;
 
 /**************************************************************************/
 
-typedef int hash_v_t;
+typedef long hash_v_t;
 
-extern int scheme_hash_primes[];
+extern long scheme_hash_primes[];
 
 #define SYMTAB_LOST_CELL scheme_false
 

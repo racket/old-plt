@@ -26,28 +26,30 @@
 # ifdef USE_MACTIME
 #  include <OSUtils.h>
 # else
-#  if defined(OSKIT) && !defined(OSKIT_TEST)
+#  ifndef USE_PALMTIME
+#   if defined(OSKIT) && !defined(OSKIT_TEST)
     /* Get FreeBSD version, not oskit/time.h version */
-#   include <freebsd/time.h>
-#  endif
-#  include <time.h>
-#  ifdef USE_FTIME
-#   include <sys/timeb.h>
-#  else
-#   ifndef USE_DIFFTIME
+#    include <freebsd/time.h>
+#   endif
+#   include <time.h>
+#   ifdef USE_FTIME
+#    include <sys/timeb.h>
+#   else
+#    ifndef USE_DIFFTIME
+#     include <sys/time.h>
+#    endif /* USE_DIFFTIME */
+#   endif /* USE_FTIME */
+#   ifdef USE_GETRUSAGE
+#    include <sys/types.h>
 #    include <sys/time.h>
-#   endif /* USE_DIFFTIME */
-#  endif /* USE_FTIME */
-#  ifdef USE_GETRUSAGE
-#   include <sys/types.h>
-#   include <sys/time.h>
-#   include <sys/resource.h>
-#  endif /* USE_GETRUSAGE */
-#  ifdef USE_SYSCALL_GETRUSAGE
-#   include <sys/syscall.h>
-#   define getrusage(a, b)  syscall(SYS_GETRUSAGE, a, b)
-#   define USE_GETRUSAGE
-#  endif /* USE_SYSCALL_GETRUSAGE */
+#    include <sys/resource.h>
+#   endif /* USE_GETRUSAGE */
+#   ifdef USE_SYSCALL_GETRUSAGE
+#    include <sys/syscall.h>
+#    define getrusage(a, b)  syscall(SYS_GETRUSAGE, a, b)
+#    define USE_GETRUSAGE
+#   endif /* USE_SYSCALL_GETRUSAGE */
+#  endif /* USE_PALMTIME */
 # endif /* USE_MACTIME */
 #endif /* TIME_SYNTAX */
 
@@ -2325,19 +2327,23 @@ static long get_seconds(void)
   GetDateTime(&secs);
   return secs;
 #else
-# ifdef USE_FTIME
+# ifdef USE_PALMTIME
+  return TimGetSeconds();
+# else
+#  ifdef USE_FTIME
   struct MSC_IZE(timeb) now;
   MSC_IZE(ftime)(&now);
   return now.time;
-# else
-#  ifdef USE_DIFFTIME
+#  else
+#   ifdef USE_DIFFTIME
   time_t now;
   now = time(NULL);
   return now;
-#  else
+#   else
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec;
+#   endif
 #  endif
 # endif
 #endif
@@ -2351,7 +2357,7 @@ static long get_seconds(void)
 # define UNBUNDLE_TIME_TYPE long
 #endif
 
-#ifdef USE_MACTIME
+#if defined(USE_MACTIME) || defined(USE_PALMTIME)
 static int month_offsets[12] = { 0, 31, 59, 90,
                                 120, 151, 181, 212,
                                 243, 273, 304, 334 };
@@ -2366,8 +2372,13 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
 # define CHECK_TIME_T unsigned long
   DateTimeRec localTime;
 #else
-# define CHECK_TIME_T time_t
+# ifdef USE_PALMTIME
+# define CHECK_TIME_T ULong
+  DateTimeType localTime;
+# else
+#  define CHECK_TIME_T time_t
   struct tm *localTime;
+# endif
 #endif
   CHECK_TIME_T now;
   Scheme_Object *p[10], *secs;
@@ -2387,12 +2398,22 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
     SecondsToDate(lnow, &localTime);
     success = 1;
 #else
+# ifdef USE_PALMTIME
+    TimSecondsToDateTime(lnow, &localTime) ;
+# else
     localTime = localtime(&now);
     success = !!localTime;
+# endif
 #endif
     
     if (success) {
-#ifdef USE_MACTIME
+#if defined(USE_MACTIME) || defined(USE_PALMTIME)
+# ifdef USE_MACTIME
+#  define mzDOW(localTime) localTime.dayOfWeek - 1
+# else
+#  define mzDOW(localTime) localTime.weekDay
+#endif
+
       hour = localTime.hour;
       min = localTime.minute;
       sec = localTime.second;
@@ -2401,12 +2422,12 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       day = localTime.day;
       year = localTime.year;
       
-      wday = localTime.dayOfWeek - 1;
+      wday = wxDOW(localTime);
       
       yday = month_offsets[localTime.month - 1] + localTime.day;
       /* If month > 2, is it a leap-year? */
       if (localTime.month > 2) {
-        DateTimeRec tester;
+#ifdef USE_MACTIME
         unsigned long ttime;
         
         tester.hour = tester.minute = 0;
@@ -2418,8 +2439,14 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
         if (tester.month == 2)
           /* It is a leap-year */
           yday++;
+#else
+	/* PalmOS: */
+	if (DaysInMonth(2, year) > 28)
+	  yday++;
+#endif
       }
 
+# ifdef USE_MACTIME
       {
 	MachineLocation loc;
 	ReadLocation(&loc);
@@ -2432,6 +2459,11 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
 	if (tzoffset & (0x1 << 23))
 	  tzoffset |= 0xFF000000;
       }
+# else
+      /* No timezone on PalmOS: */
+      tzoffset = 0;
+# endif
+
 #else
       hour = localTime->tm_hour;
       min = localTime->tm_min;

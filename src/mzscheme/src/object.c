@@ -25,8 +25,6 @@
 /* For testing handling primitive classes: */
 #define ADD_TEST_PRIM_OBJ 0
 
-#include <memory.h>
-
 #ifndef TRUE
 #define TRUE 1
 #endif

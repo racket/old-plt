@@ -29,7 +29,6 @@
 */
 
 #include "schpriv.h"
-#include <memory.h>
 #include <ctype.h>
 #include <math.h>
 

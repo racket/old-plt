@@ -100,6 +100,10 @@ long scheme_creator_id = 'MzSc';
 # define FN_SEP ':'
 # define IS_A_SEP(x) ((x) == ':')
 #endif
+#ifdef PALMOS_STUFF
+# define FN_SEP 0
+# define IS_A_SEP(x) (!(x))
+#endif
 
 #define CURRENT_WD() scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)
 
@@ -1793,7 +1797,7 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
   }
 		 
   /* Check for 'up and 'same: */
-#if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
+#if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM) || defined(PALMOS_STUFF)
   if ((s[p + 1] == '.') && (s[p + 2] == '.')
       && (p + 3 >= len || IS_A_SEP(s[p + 3])))
 #endif

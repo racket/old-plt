@@ -37,7 +37,9 @@
 #include "schpriv.h"
 #include "schmach.h"
 #include "schgc.h"
-#include <time.h>
+#ifndef PALMOS_STUFF
+# include <time.h>
+#endif
 #ifdef FILES_HAVE_FDS
 # include <sys/types.h>
 # include <sys/time.h>

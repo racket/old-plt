@@ -24,7 +24,6 @@
 #include "schpriv.h"
 #include <string.h>
 #include <ctype.h>
-#include <memory.h>
 
 #ifdef MZ_PRECISE_GC
 # define PTR_TO_LONG(p) scheme_hash_key(p)
@@ -49,7 +48,7 @@
 # define USE_FOREVER 1
 #endif
 
-int scheme_hash_primes[] = 
+long scheme_hash_primes[] = 
 {7, 31, 127, 257, 521, 1031, 2053, 4099, 8209, 16411, 
    32779, 65543, 131101, 262147, 425329, 1048583, 2097169,
    4194319, 8388617, 16777259, 33554467, 67108879, 134217757,
@@ -57,10 +56,10 @@ int scheme_hash_primes[] =
 
 typedef int (*Compare_Proc)(void*, void*);
 
-static void string_hash_indices(void *_key, int *_h, int *_h2)
+static void string_hash_indices(void *_key, long *_h, long *_h2)
 {
   const char *key = (char *)_key;
-  int i, h, h2;
+  long i, h, h2;
 
   h2 = h = i = 0;
   while (key[i]) {
@@ -123,7 +122,7 @@ scheme_hash_table (int size, int type, int has_const, int forever)
   return table;
 }
 
-typedef int hash_v_t;
+typedef long hash_v_t;
 
 static Scheme_Bucket *
 get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b)

@@ -26,7 +26,6 @@
 
 #include "schpriv.h"
 #include <string.h>
-#include <memory.h>
 #include "schgc.h"
 
 #ifdef DOS_FAR_POINTERS
@@ -141,12 +140,12 @@ scheme_calloc (size_t num, size_t size)
 {
   void *space;
   
-  space = MALLOC (num*size);
+  space = MALLOC(num*size);
+  if (!space)
+    scheme_raise_out_of_memory(NULL, NULL);
 #ifdef NO_GC
   memset(space, 0, (num*size));
 #endif
-  if (!space)
-    scheme_raise_out_of_memory(NULL, NULL);
 
   return (space);
 }
@@ -157,7 +156,7 @@ scheme_strdup(const char *str)
   char *naya;
   long len;
 
-  len = strlen (str) + 1;
+  len = strlen(str) + 1;
   naya = (char *)scheme_malloc_atomic (len * sizeof (char));
   memcpy (naya, str, len);
 
@@ -170,7 +169,7 @@ scheme_strdup_eternal(const char *str)
   char *naya;
   long len;
 
-  len = strlen (str) + 1;
+  len = strlen(str) + 1;
   naya = (char *)scheme_malloc_eternal(len * sizeof (char));
   memcpy (naya, str, len);
 

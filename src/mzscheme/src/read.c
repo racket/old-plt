@@ -1333,9 +1333,9 @@ static Scheme_Object *read_compact_quote(CPort *port,
 					 int embedded
 					 CURRENTPROCPRM);
 
-static int read_compact_number(CPort *port)
+static long read_compact_number(CPort *port)
 {
-  int flag, v, a, b, c, d;
+  long flag, v, a, b, c, d;
 
   flag = CP_GETC(port);
 
@@ -1849,9 +1849,9 @@ static Scheme_Object *read_marshalled(int type,
 }
 
 #if USE_BUFFERING_CPORT
-static int read_compact_number_from_port(Scheme_Object *port)
+static long read_compact_number_from_port(Scheme_Object *port)
 {
-  int flag, v, a, b, c, d;
+  long flag, v, a, b, c, d;
 
   flag = scheme_getc(port);
 

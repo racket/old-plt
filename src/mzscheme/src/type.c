@@ -23,7 +23,6 @@
 
 #include "schpriv.h"
 #include <string.h>
-#include <memory.h>
 
 Scheme_Type_Reader *scheme_type_readers;
 Scheme_Type_Writer *scheme_type_writers;

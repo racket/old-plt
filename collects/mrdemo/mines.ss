@@ -1,17 +1,13 @@
 
-(require-library "macro.ss")
+;; This is a simple implementation of the ever-popular Minesweeper game.
+;; Ok, the graphics are primitive, and there are no frills, but what
+;; do you expect in 400 lines?
+;;  -Matthew
 
-(define TILE-HW 24)
-(define WIDTH 16)
-(define HEIGHT 16)
-(define BOMB-COUNT 30)
-
-; Temporary
-(define FRDW 12)
-(define FRDH 39)
-(define PANEL-HEIGHT 50)
-(define TIME-WIDTH 600)
-(define COUNT-WIDTH 600)
+(define TILE-HW 24)    ; height/width of a tile
+(define WIDTH 16)      ; number of tiles across
+(define HEIGHT 16)     ; number of tiles down
+(define BOMB-COUNT 30) ; number of bombs to hide
 
 (define DIGIT-COLOR-NAMES
   ; 0th is background; 8th is foreground
@@ -29,6 +25,7 @@
 (define BG-PEN (send wx:the-pen-list find-or-create-pen BG-COLOR 1 wx:const-solid))
 (define FG-PEN (send wx:the-pen-list find-or-create-pen FG-COLOR 1 wx:const-solid))
 
+;; There's a lot of number-based loops below
 (define step-while
   (opt-lambda (first test until step f [accum void] [init (void)])
     (let loop ([n first][a init])
@@ -36,6 +33,7 @@
 	  (loop (step n) (accum a (f n)))
 	  a))))
 
+; Class for a basic tile
 (define tile:plain%
   (class null ()
     (private
@@ -86,6 +84,7 @@
 			     (number->string neighbor-bomb-count))
 			 (vector-ref DIGIT-COLORS neighbor-bomb-count))]))])))
 
+; Class for a tile with a bomb underneath
 (define tile:bomb%
   (class tile:plain% ()
     (inherit get-state draw-text-tile)
@@ -104,6 +103,8 @@
 	     (super-draw dc x y w h hilite?)))])
     (sequence
       (super-init))))
+
+;; A board is a vector of vectors of tiles
 
 (define (get-tile b x y)
   (vector-ref (vector-ref b x) y))
@@ -165,11 +166,11 @@
 			     (count-surrounding-bombs b x y))))
     b))
 
-(define f (make-object mred:frame% null "Minesweeper"))
-(define vpanel (make-object mred:vertical-panel% f))
-
+;; Most of the work is in this class, which extends the basic canvas
+;; class for drawing to the screen. It isn't necessary to put everything
+;; in this class, but it's convenient.
 (define ms:canvas%
-  (class mred:canvas% args
+  (class mred:canvas% (vpanel)
     (inherit get-dc clear 
 	     set-min-width set-min-height 
 	     stretchable-in-x stretchable-in-y)
@@ -361,7 +362,7 @@
 	 (for-each-tile board (lambda (t x y)
 				(paint-one t x y))))))
     (sequence
-      (apply super-init args)
+      (super-init vpanel)
       (set-min-width (* TILE-HW WIDTH))
       (set-min-height (* TILE-HW HEIGHT))
       (stretchable-in-x #f)
@@ -374,6 +375,7 @@
       (send dc set-brush (send wx:the-brush-list find-or-create-brush 
 			       BG-COLOR wx:const-solid)))))
 
-(define c (make-object ms:canvas% vpanel))
-
+;; Make a frame, install the game, and then show the frame
+(define f (make-object mred:frame% null "Minesweeper"))
+(make-object ms:canvas% (make-object mred:vertical-panel% f))
 (send f show #t)

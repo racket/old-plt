@@ -1,5 +1,5 @@
 (define 2d-vector%
-  (make-class ()
+  (class () (w h v)
     (private
      [default? #f]
      [default (void)]
@@ -46,7 +46,7 @@
 		     (if default?
 			 default
 			 (found-error 'lookup w h)))))])
-    (lambda (w h v)
+    (sequence
       (if (and (integer? w) (integer? h))
 	  (begin 
 	    (set! width w)

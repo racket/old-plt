@@ -11,7 +11,7 @@
 ; size. Try (make-object draw-snip 100 100) and you should get
 ; an empty box (100 pixels x 100 pixles) as the result
 (define draw-snip%
-  (make-class wx:snip%
+  (class wx:snip% (w-in h-in)
     (inherit get-admin set-snipclass set-count)
     (public h w)
     (public
@@ -63,7 +63,7 @@
 	 (set! h h-in)
 	 (resized)
 	 #t)))
-    (lambda (w-in h-in)
+    (sequence
       (super-init)
       (set-snipclass (send (wx:get-the-snip-class-list) find "emptydrawbox"))
       (set-count 1)
@@ -72,7 +72,7 @@
 
 (define draw-snip-class
   (make-object 
-   (make-class wx:snip-class%
+   (class wx:snip-class% ()
      (inherit set-classname)
      (public
        [read
@@ -82,7 +82,7 @@
 	    (send stream >> w-box)
 	    (send stream >> h-box)
 	    (make-object draw-snip% (unbox w-box) (unbox h-box))))])
-     (lambda ()
+     (sequence
        (super-init)
        (set-classname "emptydrawbox")))))
 
@@ -95,7 +95,8 @@
 ; a function on the unit square. (Say, (lambda (x) (* x x)).)
 
 (define graph-snip%
-  (make-class draw-snip%
+  (class draw-snip% ([fs '()] [xaxes '()] [size '()]
+		     [yaxes '()] [ss '()])
     (inherit w h refresh resized set-snipclass)
     (rename [super-draw draw])
     (public [functions '()]
@@ -286,11 +287,7 @@
 	   (send stream << (FLOAT y-start))
 	   (send stream << (FLOAT y-end))
 	   (send stream << (expr->string shades))))))
-    (opt-lambda ([fs '()]
-		 [xaxes '()]
-		 [size '()]
-		 [yaxes '()]
-		 [ss '()])
+    (sequence
       (let* ((h (car-try size 200))
 	     (w (cdr-try size 200)))
 	(super-init h w)
@@ -315,7 +312,7 @@
 
 (define graph-snip-class
   (make-object 
-   (make-class wx:snip-class%
+   (class wx:snip-class% ()
      (inherit set-classname)
      (public
        [read
@@ -347,7 +344,7 @@
 			   (cons w h)
 			   (cons y-start y-end)
 			   shades))))])
-     (lambda ()
+     (sequence
        (super-init)
        (set-classname "graph")))))
 

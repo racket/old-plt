@@ -24,8 +24,9 @@
 		     (let-values ([(draw-x draw-y color) (new-point x y)])
 		       (set-pixel draw-x draw-y 
 				  (vector-ref colors
-					      (floor (* color
-							scale))))
+					      (inexact->exact 
+					       (floor (* color
+							 scale)))))
 		       (cond
 			[(and (zero? y) (zero? x)) (void)]
 			[(zero? x) (begin (when (= 0 (modulo y 15))
@@ -53,7 +54,7 @@
 			     (loop (1- i))))))]
 
 	      [sub-pager%
-	       (make-class pager%
+	       (class-asi pager%
 		 (public
 		  [width dummy-name-width]
 		  [picture-height height]
@@ -64,9 +65,7 @@
 			   (let loop ([i 1])
 			     (if (= i (- total 1)) (list src-mem-dc)
 				 (cons (build-w (/ i (1- total)))
-				       (loop (1+ i))))))))])
-		 (lambda ()
-		   (super-init)))])
+				       (loop (1+ i))))))))]))])
       '(debug-print main memory-dcs)
       (send src-2dvec set-default 1)
       (send dest-2dvec set-default 1)

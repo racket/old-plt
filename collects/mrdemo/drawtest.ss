@@ -5,7 +5,7 @@
       [use-bitmap? #f])
   (let ([canvas
 	 (make-object
-	  (make-class wx:canvas%
+	  (class-asi wx:canvas% args
 	    (inherit get-dc)
 	    (public
 	     [on-paint

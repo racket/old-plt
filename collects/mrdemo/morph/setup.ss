@@ -24,23 +24,6 @@
 		       [else (cons (f i) (build (1+ i)))]))])
       (list->vector (build 0)))))
 
-(define vector-for-each
-  (lambda (f v)
-    (let ([size (vector-length v)])
-      (let loop ([n 0])
-	(when (< n size)
-	  (f i (vector-ref v i))
-	  (loop))))))
-
-'(define remove
-  (lambda (list f)
-    (letrec ([helper
-	      (lambda (l)
-		(cond [(null? l) null]
-		      [(f (car l)) (helper (cdr l))]
-		      [else (cons (car l) (helper (cdr l)))]))])
-      (helper list))))
-
 (define-macro package
   (lambda (x . args)
     (car 'package)))

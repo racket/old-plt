@@ -1,6 +1,6 @@
 (for-each (lambda (x)
-	    (printf "loading ~s...~n" x)
-	    (flush-output)
+	    ; (printf "loading ~s...~n" x)
+	    ; (flush-output)
 	    (load-relative x))
 	  '("setup.ss"
 	    "debug.ss"
@@ -12,4 +12,4 @@
 	    "pager.ss"
 	    "engine.ss"
 	    "main.ss"))
-(printf "done loading~n")
+; (printf "done loading~n")

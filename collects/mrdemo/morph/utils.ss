@@ -85,7 +85,7 @@
       (send memory-dc begin-set-pixel)
       (let loop ([x (1- width)] [y (1- height)])
 	(let* ([l (lookup x y)])
-	  (set-pixel x y (vector-ref colors (floor (* scale l)))))
+	  (set-pixel x y (vector-ref colors (inexact->exact (floor (* scale l))))))
 	(cond
 	 [(and (zero? y) (zero? x)) (void)]
 	 [(zero? x) (loop (1- width) (1- y))]

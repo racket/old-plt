@@ -13,7 +13,7 @@
 			   (* 255 (expt (/ i (1- num-colors)) 1/2))))))
 
 (define mesh%
-  (make-class mred:menu-frame%
+  (class mred:menu-frame% ()
     (rename [super-make-menu-bar make-menu-bar]
 ;	    [super-on-paint on-paint]
 	    )
@@ -30,7 +30,7 @@
 	(send right-canvas on-paint))]
 
      [canvas%
-      (make-class mred:canvas%
+      (class mred:canvas% (get update . args)
 	(inherit set-background get-dc clear get-client-size)
 	(rename [super-on-event on-event])
 	(private
@@ -148,7 +148,7 @@
 		'(send dc set-logical-function wx:const-xor)
 		(graph:traverse mesh traverse)
 		'(send dc set-logical-function wx:const-copy))))])
-	(lambda (get update . args)
+	(sequence
 	  (apply super-init args)
 	  (set! dc (get-dc))
 	  (set! draw-line (ivar dc draw-line))
@@ -376,9 +376,9 @@
 
 	    (set! mesh (lookup 0 0)))))])
 
-    (lambda ()
+    (sequence
       (super-init '() "Mesh Construction")
-      (send panel stretchable-in-x #f)
+      (send panel stretchable-in-x #t)
       (send panel stretchable-in-y #f)
       (let ([p (make-object mred:horizontal-panel% panel)]
 	    [init

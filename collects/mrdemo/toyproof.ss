@@ -183,13 +183,13 @@
       (lambda (panel)
 	(set! num1
 	  (make-object mred:text% panel (lambda (self event) #f)
-		       "" ""))
+		       "" "100"))
 	(set! num2
 	  (make-object mred:text% panel (lambda (self event) #f)
-		       "" ""))
+		       "" "100"))
 	(set! num3
 	  (make-object mred:text% panel (lambda (self event) #f)
-		       "" ""))))
+		       "" "100"))))
     
     (define get-numbers
       (lambda () 

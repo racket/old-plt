@@ -1,5 +1,5 @@
 (define pager%
-  (make-class ()
+  (class null ()
     (public
      [x-pos 650]
      [y-pos 60]
@@ -40,7 +40,7 @@
 	      (close-output-port port))
 	    (loop (1- i)))))]
      [frame%
-      (make-class mred:menu-frame%
+      (class-asi mred:menu-frame%
 	(rename [super-make-menu-bar make-menu-bar])
 	(inherit make-menu show)
 	(public
@@ -62,7 +62,7 @@
      [frame (make-object frame% '() "Morph")]
      [panel (ivar frame panel)]
      [canvas%
-      (make-class mred:canvas%
+      (class-asi mred:canvas%
 	(inherit clear set-background)
         (public
 	 [w-brush (make-object wx:brush% "white" wx:const-solid)]
@@ -105,7 +105,7 @@
 	    (make-object mred:button% s-panel button-click "Play"))]
      [dc (send canvas get-dc)]
      [shutdown (lambda () (send frame show #f))])
-    (lambda ()
+    (sequence
       (send panel stretchable-in-y #f)
       (let ([w (box 0)]
 	    [h (box 0)])

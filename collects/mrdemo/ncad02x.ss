@@ -48,7 +48,7 @@
 
 (define ncad@
   (unit/sig ()
-    (import mred:wx^ (mred : mred^))
+    (import (wx : wx^) (mred : mred^))
     
     (define ncad:stand-alone #f)
     (define (error-msg txt) ())  ;; redefined in GUI
@@ -1001,7 +1001,7 @@
     (define my-frame% mred:frame%)
     
     (define my-canvas%
-      (make-class mred:canvas%
+      (class-asi mred:canvas%
 		  (private
 		    (which-button 0))
 		  (rename [super-on-paint on-paint])
@@ -1389,7 +1389,7 @@
     (make-object session%)))
 
 (define (ncad:go)
-  (invoke-unit/sig ncad@ mred:wx^ (mred : mred^)))
+  (invoke-unit/sig ncad@ (wx : wx^) (mred : mred^)))
 
 
 

@@ -41,7 +41,19 @@
 #define PAD_X 2
 #define MSPACEY 1
 
-extern char *wxBuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds);
+static char *protect_leading_hyphen(char *s)
+{
+  if (s[0] == '-') {
+    char *t;
+    int len;
+    len = strlen(s);
+    t = new WXGC_ATOMIC char[len + 2];
+    memcpy(t + 1, s, len + 1);
+    t[0] = ' ';
+    return t;
+  } else
+    return s;
+}
 
 wxChoice::wxChoice()
 {
@@ -122,7 +134,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     {
       CFStringRef ct;
       char *s;
-      s = wxBuildMacMenuString(NULL, Choices[n], 1);
+      s = protect_leading_hyphen(Choices[n]);
       ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
       ::SetMenuItemTextWithCFString(hDynMenu, n + 1, ct);
       CFRelease(ct);
@@ -291,7 +303,7 @@ void wxChoice::Append (char *Item)
   {
     CFStringRef ct;
     char *s;
-    s = wxBuildMacMenuString(NULL, Item, 1);
+    s = protect_leading_hyphen(Item);
     ct = CFStringCreateWithCString(NULL, s, kCFStringEncodingUTF8);
     ::SetMenuItemTextWithCFString(hDynMenu, no_strings + 1, ct);
     CFRelease(ct);

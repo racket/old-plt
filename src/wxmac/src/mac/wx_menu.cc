@@ -264,13 +264,15 @@ char *wxBuildMacMenuString(StringPtr setupstr, char *itemName, Bool stripCmds)
     s++;
   }
   showstr[d] = 0;
-  setupstr[1] = 'X'; // temporary menu item name
-  if (spc && !stripCmds) {
-    setupstr[2] = '/';
-    setupstr[3] = spc;
-    setupstr[0] = 3;
-  } else
-    setupstr[0] = 1;
+  if (setupstr) {
+    setupstr[1] = 'X'; // temporary menu item name
+    if (spc && !stripCmds) {
+      setupstr[2] = '/';
+      setupstr[3] = spc;
+      setupstr[0] = 3;
+    } else
+      setupstr[0] = 1;
+  }
 
   return showstr;
 }

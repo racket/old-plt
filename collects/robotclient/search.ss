@@ -94,7 +94,6 @@
     (let ((maker (move-maker 0 (make-cord x y) 1 #f))
           (old-x (cord-x (last-move)))
           (old-y (cord-y (last-move))))
-      (display (list (list old-x old-y) (list x y))) (display " : ") 
       (let-values (((p-weight p-bid _ p) (calc-weight 'P x y (current-player) packages))
                    ((d-weight d-bid d __) (if (not (null? (search-player-packages (current-player))))
                                               (calc-weight 'D x y (current-player) null)
@@ -115,7 +114,6 @@
                                               (not (and (= old-x x)
                                                         (= old-y (add1 y)))))
                                          (get-move-weight x (add1 y)) (values #f void))))
-        (display (list n-weight s-weight e-weight w-weight)) (newline)
         (cond 
           ((not (null? d)) (maker d-weight x y d-bid 'D d))
           ((not (null? p)) (maker p-weight x y p-bid 'P p))
@@ -157,7 +155,6 @@
                  (when w-weight (maker (+ weight w-weight) (sub1 x) y w-bid))))))))
   
   (define (compute-move packages robots)
-    (display "x and y: ")(display (get-player-x))(display " : ")(display (get-player-y))(newline)
     (queue-head null)
     (in-queue 0)
     (when (null? (last-move)) (last-move (make-cord -inf.0 -inf.0)))
@@ -173,8 +170,6 @@
           (begin (for-each enqueue moves)
                  (search-node (dequeue)))))
     
-    (display (best-cmd)) (display ":")
-    (display (best-weight))(newline)
     (last-move (make-cord (get-player-x)
                           (get-player-y)))
 
@@ -183,7 +178,7 @@
 
   
   (define (search-node move)
-    (when (< (move-step move) 10)
+    (when (< (move-step move) 30)
       (let ((moves (generate-moves (move-x move) 
                                    (move-y move)
                                    (move-weight move)

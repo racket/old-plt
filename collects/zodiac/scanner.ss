@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.4 1997/05/14 21:20:14 krentel Exp $
+;;  $Id: scanner.ss,v 1.5 1997/08/19 21:06:49 shriram Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -215,8 +215,9 @@
   ;; so *make sure* all calls to z:symbol come through here.
   
   (define text->symbol
-    (lambda (text) 
-      (let ([obj  (if parm:case-sensitive? text (map char-downcase text))])
+    (lambda (text param) 
+      (let ([obj  (if ((in-parameterization param read-case-sensitive))
+		    text (map char-downcase text))])
 	(string->symbol (text->string obj)))))
   
   (define text->char
@@ -252,7 +253,8 @@
 	([port   (current-input-port)]
 	 [init-loc      def-init-loc]
 	 [skip-script?  #t]
-	 [first-col     def-first-col])
+	 [first-col     def-first-col]
+	 [param         (current-parameterization)])
       
       
       ;; The Scanner's State.
@@ -402,7 +404,7 @@
 	     
 	     [scan-delim-sym
 	      (lambda ()
-		(let ([sym  (text->symbol (list char))])
+		(let ([sym  (text->symbol (list char) param)])
 		  (get-char)
 		  (z:symbol  sym  start-loc  start-loc)))]
 	     
@@ -642,7 +644,8 @@
 		 (lambda () (scan-to-delim  delim?  text  #f))
 		 (lambda (text  used-stick?)
 		   (if  used-stick?
-			(z:symbol (text->symbol text) start-loc (prev-loc))
+			(z:symbol (text->symbol text param)
+			  start-loc (prev-loc))
 			(with-handlers
 			    ([(lambda (x) #t)
 			      (lambda (x) (z:error "`~a' is not a valid number"
@@ -652,7 +655,7 @@
 			       [num  (read (open-input-string str))])
 			    (if (number? num)
 				(z:number num start-loc (prev-loc))
-				(z:symbol (text->symbol text)
+				(z:symbol (text->symbol text param)
 					  start-loc  (prev-loc)))))))))]
 	     
 	     [symbol-only
@@ -660,7 +663,7 @@
 		(call-with-values
 		 (lambda () (scan-to-delim  delim?  text  #t))
 		 (lambda (text  foo)
-		   (z:symbol  (text->symbol text)
+		   (z:symbol  (text->symbol text param)
 			      start-loc  (prev-loc)))))]
 	     
 	     [number-only

@@ -140,7 +140,7 @@
 "(lambda(x old)"
 "(if(eq? x old)"
 "(if(stx-null? x) "
-"(quote-syntax())"
+"(quote-syntax(quote()))"
 "(list(quote-syntax quote) x))"
 " x)))"
 "((apply-cons)"

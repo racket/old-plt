@@ -1816,7 +1816,11 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (rec)
       return scheme_null;
     else
-      return forms;
+      return scheme_datum_to_syntax(cons(quote_symbol,
+					 cons(form, scheme_null)),
+				    form,
+				    scheme_sys_wraps(env), 
+				    0, 1);
   } else if (!SCHEME_STX_PAIRP(form) /* will end in error */
 	     || SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(form))) {
     if (rec)

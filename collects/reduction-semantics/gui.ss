@@ -356,15 +356,13 @@
         (add-links parent-snip snip))
       (and new? snip)))
   
-  (define red-text% (scheme:text-mixin (editor:keymap-mixin text:basic%)))
-  
   ;; make-snip : (union #f (is-a?/c graph-snip<%>)) 
   ;;             sexp 
   ;;             (any port number -> void)
   ;;          -> (is-a?/c graph-editor-snip%)
   ;; unconditionally creates a new graph-editor-snip
   (define (make-snip parent-snip expr pp)
-    (let* ([text (make-object red-text%)]
+    (let* ([text (make-object scheme:text%)]
            [es (instantiate graph-editor-snip% ()
                  (char-width (initial-char-width))
                  (editor text)

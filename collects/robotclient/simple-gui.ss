@@ -14,11 +14,10 @@
 	   [height (read lineport)])
       (let loop ((i 0) (acc '()))
 	(cond
-	 ((= i height) (list width height (apply string-append (reverse acc))))
+	 ((= i height) (list width height (reverse acc)))
 	 (else (let* ([new-line (read-line iport)]
-		      [new-line (format "~a~n"
-					(substring new-line 10
-						   (string-length new-line)))])
+		      [new-line (substring new-line 10
+                                           (string-length new-line))])
 		 (loop (add1 i) (cons new-line acc))))))))
 
   (define (parse-intro iport)
@@ -39,25 +38,26 @@
     (let-values ([(line width height board) (parse-intro iport)])
       (let ([gui (initialize-gui width height board)])
 	(let loop ((line line))
-	  (unless (eof-object? line)
-	    (let ([lineport (open-input-string line)])
-	      (case (read lineport)
-		((turn) (let* ((numcolon (read lineport))
-			       (nextnum (read lineport)))
-			  (case nextnum
-			    ((o) (let pos-loop ((acc '()))
-				   (let ((pnum (read lineport)))
-				     (cond
-				      ((eof-object? pnum)
-				       (update-gui gui acc)
-				       (loop (read-line iport)))
-				      (else (let* ((x (read lineport))
-						   (y (read lineport)))
-					      (pos-loop
-					       (cons (list pnum x y)
-						     acc))))))))
-			    (else (loop (read-line iport))))))
-		(else (loop (read-line iport))))))))))
+	  (if (eof-object? line)
+              (send gui end)
+              (let ([lineport (open-input-string line)])
+                (case (read lineport)
+                  ((turn) (let* ((numcolon (read lineport))
+                                 (nextnum (read lineport)))
+                            (case nextnum
+                              ((o) (let pos-loop ((acc '()))
+                                     (let ((pnum (read lineport)))
+                                       (cond
+                                         ((eof-object? pnum)
+                                          (update-gui gui acc)
+                                          (loop (read-line iport)))
+                                         (else (let* ((x (read lineport))
+                                                      (y (read lineport)))
+                                                 (pos-loop
+                                                  (cons (list pnum x y)
+                                                        acc))))))))
+                              (else (loop (read-line iport))))))
+                  (else (loop (read-line iport))))))))))
 
   (define (initialize-gui width height board)
     (instantiate gui% () (board board) (width width) (height height)))
@@ -70,30 +70,41 @@
       
       (init-field board width height)
 
-      (define f (instantiate frame% ("Simple Gui" #f 200 200)))
+      (define f (instantiate frame% ("Simple Gui" #f 400 400)))
       (define c (instantiate editor-canvas% (f)))
       (define t (instantiate text% ()))
       (send c set-editor t)
       (send f show #t)
 
       (define (display-board b)
-        (let ((s (make-object string-snip% b)))
+        (let* ((snips (map (lambda (b) (make-object string-snip% b)) b)))
+          (send t begin-edit-sequence)
           (send t select-all)
           (send t delete)
-          (send t insert b 1)))
+          (for-each
+           (lambda (snip)
+             (send t insert snip)
+             (send t insert #\newline))
+           snips)
+          (send t select-all)
+          (let ((d (make-object style-delta%)))
+            (send d set-face "-misc-fixed")
+            (send t change-style d))
+          (send t set-position 0 'same)
+          (send t end-edit-sequence)))
       
-      (display-board board)
-      
+      (define/public (end) (send f show #t))
       
       (define/public (set-robots l)
-        (let ((b (string-copy board)))
+        (sleep/yield .25)
+        (let ((b (list->vector (map string-copy board))))
           (for-each
            (lambda (robot)
-             (string-set! b (+ (* width (sub1 (caddr robot)))
-                               (sub1 (cadr robot)))
+             (string-set! (vector-ref b (sub1 (caddr robot)))
+                          (sub1 (cadr robot))
                           (string-ref (number->string (car robot) 16) 0)))
            l)
-          (display-board b)))
+          (display-board (reverse (vector->list b)))))
       (super-instantiate ())))
 
   (parse-input (current-input-port))

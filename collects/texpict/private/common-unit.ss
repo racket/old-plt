@@ -174,6 +174,23 @@
 		       (pict-ascent c) (pict-descent c)
 		       (pict-children p)))))
 
+      (define (panorama-box p)
+	(let loop ([x1 0][y1 0][x2 (pict-width p)][y2 (pict-height p)]
+		   [l (pict-children p)])
+	  (if (null? l)
+	      (values x1 y1 x2 y2)
+	      (let ([c (car l)])
+		(let-values ([(cx1 cy1 cx2 cy2) (panorama-box (child-pict c))])
+		  (loop (min x1 (* (+ cx1 (child-dx c)) (child-sx c)))
+			(min y1 (* (+ cy1 (child-dy c)) (child-sy c)))
+			(max x2 (* (+ cx2 (child-dx c)) (child-sx c)))
+			(max y2 (* (+ cy2 (child-dy c)) (child-sy c)))
+			(cdr l)))))))
+
+      (define (panorama p)
+	(let-values ([(x1 y1 x2 y2) (panorama-box p)])
+	  (inset p x1 (- y2 (pict-height p)) (- x2 (pict-width p)) y1)))
+
       (define (clip-descent b)
 	(let* ([w (pict-width b)]
 	       [h (pict-height b)]

@@ -38,6 +38,7 @@
                     ; pict hi vi -> pict
                     ; pict l t r b -> pict
      refocus        ; pict pict -> pict
+     panorama       ; pict -> pict
 
      hline        ; w h -> pict
      dash-hline   ; w h seg-length -> pict ; default seg-length is 5

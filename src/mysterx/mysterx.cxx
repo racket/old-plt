@@ -124,7 +124,6 @@ static MX_PRIM mxPrims[] = {
   { mx_go_forward,"go-forward",1,1 },
   { mx_current_url,"current-url",1,1 },
   { mx_register_navigate_handler,"register-navigate-handler",2,2 },
-  { mx_unregister_navigate_handler,"unregister-navigate-handler",1,1 },
   { mx_current_document,"current-document",1,1 },
 
   // documents 

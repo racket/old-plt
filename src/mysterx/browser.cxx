@@ -269,6 +269,7 @@ Scheme_Object *mx_browser_show(int argc,Scheme_Object **argv) {
 }
 
 Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
+  HRESULT hr;
   IWebBrowser2 *pIWebBrowser2;
   BSTR url;
   VARIANT vars[4];
@@ -287,11 +288,11 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
 
   memset(vars,0,sizeof(vars));
 
-  pIWebBrowser2->Navigate(url,vars,vars+1,vars+2,vars+3);
+  hr = pIWebBrowser2->Navigate(url,vars,vars+1,vars+2,vars+3);
 
   SysFreeString(url);
 
-  return scheme_void;
+  return (hr == S_OK) ? scheme_true : scheme_false;
 }
 
 Scheme_Object *mx_go_back(int argc,Scheme_Object **argv) {
@@ -303,9 +304,7 @@ Scheme_Object *mx_go_back(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-  pIWebBrowser2->GoBack();
-
-  return scheme_void;
+  return (pIWebBrowser2->GoBack() == S_OK) ? scheme_true : scheme_false; 
 }
 
 Scheme_Object *mx_go_forward(int argc,Scheme_Object **argv) {
@@ -317,9 +316,7 @@ Scheme_Object *mx_go_forward(int argc,Scheme_Object **argv) {
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-  pIWebBrowser2->GoForward();
-
-  return scheme_void;
+  return (pIWebBrowser2->GoForward() == S_OK) ? scheme_true : scheme_false; 
 }
 
 Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {
@@ -334,22 +331,6 @@ Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {
   // register handler for NavigateComplete2 event (memID = 259)
 
   pISink->register_handler(259,(int)argv[1]);
-
-  return scheme_void;
-}
-
-Scheme_Object *mx_unregister_navigate_handler(int argc,Scheme_Object **argv) {
-  ISink *pISink;
-
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("unregister-navigate-handler!","mx-browser",0,argc,argv);
-  }
-
-  pISink = MX_BROWSER_SINK(argv[0]);
-
-  // unregister handler for NavigateComplete2 event (memID = 259)
-
-  pISink->unregister_handler(259);
 
   return scheme_void;
 }

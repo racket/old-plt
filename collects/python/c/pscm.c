@@ -378,8 +378,8 @@ Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
 	if ( num_meths->nb_divide )
 	  addmethod(type, "__div__", num_methos->nb_divide);
 	if ( num_meths->nb_remainder )
-	  addmethod(type, "__mod__", num_methos->nb_remainder); */
-	}
+	  addmethod(type, "__mod__", num_methos->nb_remainder);
+	} */
 
   printf("INIT-SPY-EXT-METHOD-TABLE: added %d methods.\n", i);
   return NULL;

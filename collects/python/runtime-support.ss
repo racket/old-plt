@@ -11,6 +11,7 @@
   
   ;; ==: X X -> bool
   (define(== a b)
+    ;(printf "equal equal~n")
     (cond
       [(py-is-a? a py-number%) (and (py-is-a? b py-number%)
                                     (= (py-number%->number a)
@@ -33,6 +34,9 @@
       [(py-is-a? a py-number%) (and (py-is-a? b py-number%)
                                     (scheme> (py-number%->number a)
                                              (py-number%->number b)))]
+      [(py-is-a? a py-string%) (and (py-is-a? b py-string%)
+                                    (string>? (py-string%->string a)
+                                              (py-string%->string b)))]
       [else (scheme> a b)]))
   
   (define (py< a b)
@@ -40,14 +44,15 @@
          (not (py> a b))))
   
   (define (py-compare x op y comp-lst)
+    ;(printf "py-compare~n")
     (bool->py-number%
-    (and (op x y)
-         (if (null? comp-lst)
-             #t
-             (py-compare y
-                         (car comp-lst)
-                         (car (cdr comp-lst))
-                         (cdr (cdr comp-lst)))))))
+     (and (op x y)
+          (if (null? comp-lst)
+              #t
+              (py-compare y
+                          (car comp-lst)
+                          (car (cdr comp-lst))
+                          (cdr (cdr comp-lst)))))))
   
   ;; py-print: (or py-file% #f) (listof X) -> void
   (define (py-print file lst)

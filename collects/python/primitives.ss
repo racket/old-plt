@@ -221,9 +221,9 @@
   (define py-is? eq?)
 
 
-  ;; python-new-static-method: py-type% -> py-static-method%
+  ;; python-new-static-method: py-type% . rest -> py-static-method%
   ;; "allocate" a new static-method object
-  (define (python-new-static-method class)
+  (define (python-new-static-method class . ignore-me)
     (unless (or (py-is? class py-static-method%)
                 (py-is-a? class py-static-method%))
       (error (py-object%->string class)
@@ -568,20 +568,22 @@
       hash-table))
 
 
-  ;; python-index: (union py-list% py-tuple% py-dict%) number -> py-object%
+  ;; python-index: (union py-list% py-tuple% py-dict%) py-number% -> py-object%
   (define (python-index indexable index)
 ;    (python-method-call indexable '__getitem__ (list index)))
     (cond
-      [(py-is-a? indexable py-list%) (list-ref (py-list%->list indexable) index)]
-      [(py-is-a? indexable py-tuple%) (list-ref (py-tuple%->list indexable) index)]
-      [(py-is-a? indexable py-dict%) (error "python-index: dictionaries not yet supported")]
+      [(or (py-is-a? indexable py-list%)
+           (py-is-a? indexable py-tuple%)) (list-ref (py-list%->list indexable)
+                                                     (if (number? index) index (py-number%->number index)))]
+      [(py-is-a? indexable py-dict%) ;(error "python-index: dictionaries not yet supported")]
+       (python-method-call indexable '__getitem__ (list index))]
       [(py-type? indexable) (error (format "Unsubscriptable object: ~a" (py-object%->string indexable)))]
       [else (python-method-call indexable '__getitem__
                                 (list (if (number? index)
                                           (number->py-number% index)
                                           index)))]))
-       ;(error (format "python-index: cannot index into this: ~a"
-       ;                    (py-object%->string indexable)))]))
+    ;(error (format "python-index: cannot index into this: ~a"
+    ;                    (py-object%->string indexable)))]))
 
 
   (define (has-member? class member-name)
@@ -887,6 +889,13 @@
                                                  (simple-get-item this key list->py-list% py-list%->list)))
                         (__setitem__ ,(py-lambda '__setitem__ (this key value)
                                                  (simple-set-item this key value py-list%->list)))
+                        (__add__ ,(py-lambda '__add__ (this lst)
+                                             (list->py-list% (append (py-list%->list this)
+                                                                     (py-list%->list lst)))))
+                        (sort ,(py-lambda 'sort (this)
+                                          (python-set-member! this
+                                                              scheme-list-key
+                                                              (mergesort (py-list%->list this) (eval 'py<)))))
                         (__len__ ,(py-lambda '__len__ (this)
                                              (number->py-number% (length (py-list%->list this)))))))
 
@@ -945,12 +954,39 @@
                                                                   (if (list? v)
                                                                       (assoc-list->hash-table v)
                                                                       v))))
+                        (values ,(py-lambda 'values (this)
+                                            (list->py-list%
+                                             (hash-table-map (python-get-member this scheme-hash-table-key #f)
+                                                             (lambda (key value)
+                                                               value)))))
+                        (keys ,(py-lambda 'keys (this)
+                                          (list->py-list%
+                                           (hash-table-map (python-get-member this scheme-hash-table-key #f)
+                                                           (lambda (key value)
+                                                             (->python key))))))
+                        (setdefault ,(case-lambda
+                                       [(this key value)
+                                        (with-handlers ([exn:application:mismatch? (lambda (exn)
+                                                                          (python-method-call this '__setitem__ (list key value))
+                                                                          value)])
+                                          (python-method-call this '__getitem__ (list key)))]))
+                        (__setitem__ ,(py-lambda '__setitem__ (this key value)
+                                                 (hash-table-put! (python-get-member this
+                                                                                     scheme-hash-table-key
+                                                                                     false)
+                                                                  (let ([key (->scheme key)])
+                                                                    (if (string? key)
+                                                                        (string->symbol key)
+                                                                        key))
+                                                                  value)))
                         (__getitem__ ,(py-lambda '__getitem__ (this key)
                                                  (hash-table-get (python-get-member this
                                                                                     scheme-hash-table-key
                                                                                     false)
-                                                                  (->scheme key))))))
-
+                                                                  (let ([key (->scheme key)])
+                                                                    (if (string? key)
+                                                                        (string->symbol key)
+                                                                        key)))))))
 
   (python-add-members py-module%
                       `((__getattribute__ ,(py-lambda '__getattribute__ (this key)
@@ -1050,6 +1086,7 @@
     (cond
       [(number? sxp) (number->py-number% sxp)]
       [(string? sxp) (string->py-string% sxp)]
+      [(symbol? sxp) (symbol->py-string% sxp)]
       [(list? sxp) (list->py-list% (map ->python sxp))]
       [(hash-table? sxp) (hash-table->py-dict% sxp)]
       [(boolean? sxp) (bool->py-number% sxp)]

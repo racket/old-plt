@@ -15,7 +15,7 @@
            module-path->string
            toggle-python-use-cache-namespace!
            set-python-cache-namespace!
-           python-name-namespace!
+           set-python-namespace-name!
            )
 
   (define (dynamic-python-to-scheme)
@@ -52,7 +52,7 @@
                                                                            absolute-id-list)))]
                                  [ns (make-python-namespace name)])
                             (let ([module (make-loaded-module ns name path)])
-			     (python-name-namespace! ns (loaded-module-name module))
+                              (set-python-namespace-name! ns (loaded-module-name module))
                               (*add-loaded-module* module)
                             (eval-python (parse-module (module-path->string path)) ns)
                               ;;;; now that we loaded the "a" part of "a.b.c.d", load "b" inside "a", and so on
@@ -77,7 +77,7 @@
               (module-path->string (loaded-module-path module)))))))
 
 
-  (define (python-name-namespace! ns name)
+  (define (set-python-namespace-name! ns name)
     (parameterize ([current-namespace ns])
        (eval (datum->syntax-object (eval '(current-toplevel-context))
                                    `(namespace-set-variable-value! '__name__ ,((eval 'symbol->py-string%) name))))))
@@ -200,16 +200,15 @@
   (define outside (current-namespace))
 
   (define (my-dynamic-require dest-namespace spec)
-    ;(parameterize ([current-namespace dest-namespace])
-    ;  (namespace-require spec)))
-      (dynamic-require spec #f)
+    (dynamic-require spec #f)
     (let (;[cache (get-cache-namespace)]
           ;[path (lookup-cached-mzscheme-module spec)]
           [path2 ((current-module-name-resolver) spec #f #f)]
           [caller-namespace (current-namespace)])
       (parameterize ([current-namespace dest-namespace])
-        (with-handlers ([exn:application:mismatch? (lambda (e)
-                                                     (printf "FAILURE. spec: ~a path: ~a exn: ~a~n" spec path2 e))])
+        (with-handlers ([exn:application:mismatch?
+                         (lambda (e)
+                           (printf "FAILURE. spec: ~a path: ~a exn: ~a~n" spec path2 e))])
 ;          (namespace-attach-module cache path)
          ; (printf "SUCCESS. spec: ~a  path: ~a~n" spec path)
           (namespace-attach-module caller-namespace path2)

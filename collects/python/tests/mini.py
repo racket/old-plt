@@ -42,6 +42,29 @@
 #    def m(this, x):
 #        return C.some_static_field + x
 
+print 1 is 1
+
+x = 1
+x = y = z = 2
+
+a,b = (3,4)
+
+def f():
+  x = 1
+
+class A(object): pass
+
+class B(object): pass
+
+class C(A, B):
+  some_static_field = 7
+  #print "hello!", some_static_field
+  another_static_field = some_static_field + 3
+
+  def m(this, x):
+    return C.some_static_field + x
+
+
 def f(pos_arg1, pos_arg2, def_arg=1, *rest, **kw_args):
   return 1
 

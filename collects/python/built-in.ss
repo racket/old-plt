@@ -20,6 +20,7 @@
            (rename py-sqrt sqrt)
            (rename py-map map)
            (rename py-filter filter)
+           (rename py-max max)
            isinstance
            
            ;;; utilities
@@ -68,6 +69,20 @@
                   
 
 
+     (define py-max (py-lambda 'max (lst)
+                               (let* ([s-list (py-list%->list lst)]
+                                      [nums (map py-number%->number s-list)])
+                                (number->py-number% (scm-max nums (if (null? nums)
+                                                                      0
+                                                                      (car nums)))))))
+     
+     (define (scm-max nums max)
+       (cond
+         [(null? nums) max]
+         [else (scm-max (cdr nums)
+                        (if (> (car nums) max)
+                            (car nums)
+                            max))]))
     
   
   )

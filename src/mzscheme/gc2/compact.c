@@ -91,15 +91,15 @@ typedef short Type_Tag;
 
 /* Debugging and performance tools: */
 #define TIME 0
-#define SEARCH 1
+#define SEARCH 0
 #define CHECKS 0
 #define CHECK_STACK_PTRS 0
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
-#define RECORD_MARK_SRC 1
-#define KEEP_BACKPOINTERS 1
+#define RECORD_MARK_SRC 0
+#define KEEP_BACKPOINTERS 0
 
 #if TIME
 # include <sys/time.h>

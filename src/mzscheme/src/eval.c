@@ -4976,14 +4976,6 @@ Scheme_Object **scheme_push_prefix(Scheme_Env *genv, Resolve_Prefix *rp,
 
   rs_save = rs = MZ_RUNSTACK;
 
-  if (rp->num_stxes > 1000) {
-    Scheme_Object *pa[1];
-    for (j = 0; j < rp->num_stxes; j++) {
-      pa[0] = scheme_syntax_to_datum(rp->stxes[j], 0, NULL);
-      scheme_printf_utf8("~a\n", 3, 1, pa);
-    }
-  }
-
   if (rp->num_toplevels || rp->num_stxes) {
     i = rp->num_toplevels;
     if (rp->num_stxes) {

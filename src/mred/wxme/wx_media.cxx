@@ -2564,7 +2564,7 @@ Bool wxMediaEdit::ReallyCanEdit(int op)
   return TRUE;
 }
 
-long wxMediaEdit::GetRevisionNumber()
+double wxMediaEdit::GetRevisionNumber()
 {
   return revision_count;
 }

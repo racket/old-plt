@@ -756,6 +756,7 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
     c = new wxColour(GetRValue(cc->rgbResult), GetGValue(cc->rgbResult), GetBValue(cc->rgbResult));
     
     free(cc);
+    cc = NULL;
 
     return objscheme_bundle_wxColour(c);
   }
@@ -971,7 +972,9 @@ static Scheme_Object *wxSchemeGetFontFromUser(int argc, Scheme_Object **argv)
 		     fontWeight, fontUnderline);
 
     free(c);
+    c = NULL;
     free(lf);
+    lf = NULL;
 
     return objscheme_bundle_wxFont(f);
   }
@@ -1140,7 +1143,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 #ifdef wx_x
   xnames = XListFonts(wxAPP_DISPLAY, "*", 50000, &count);
 
-  names = new char* [count];
+  names = (char **)scheme_malloc_atomic(sizeof(char*)*count);
   for (i = 0; i < count; i++) {
     names[i] = xnames[i];
   }
@@ -1229,6 +1232,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 
 #ifdef wx_x
    XFreeFontNames(xnames);
+   xnames = NULL;
 #endif
 #ifdef wx_msw
    ReleaseDC(NULL, dc);

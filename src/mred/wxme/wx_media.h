@@ -437,7 +437,7 @@ class wxMediaEdit : public wxMediaBuffer
   Bool IsLockedForFlow();
   Bool IsLockedForWrite();
 
-  long GetRevisionNumber();
+  double GetRevisionNumber();
 
  private:
 #define TF_Flag(var) unsigned var : 1

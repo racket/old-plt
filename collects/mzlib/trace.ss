@@ -130,39 +130,24 @@
 				  0))))
 	      (for-each pretty-print (cdr results)))))))))
 
-  (define-struct traced-entry (original-proc trace-proc))
-
-  (define -:make-traced-entry make-traced-entry)
-  (define -:traced-entry-original-proc traced-entry-original-proc)
-  (define -:traced-entry-trace-proc traced-entry-trace-proc)
-
-  (define -:trace-table
-    (make-hash-table))
+  ;; A traced-proc struct instance acts like a procedure,
+  ;;  but preserves the original, too.
+  (define-values (struct:traced-proc make-traced-proc traced-proc? traced-proc-ref traced-proc-set!)
+    (make-struct-type 'traced-proc #f 2 0 #f null (current-inspector) 0))
 
   ;; Install traced versions of a given set of procedures.  The traced
   ;;  versions are also given, so that they can be constructed to have
   ;;  a nice name.
-  (define (do-trace ids mk-traced-procs)
-    (for-each (lambda (id)
-		(let ((global (namespace-variable-value 
-			       id #t 
-			       (lambda () (error 'trace "~s is not bound as a procedure" id)))))
-		  (unless (procedure? global)
-		    (error 'trace
-			   "the top-level value of ~s is not a procedure" id))))
-	      ids)
-    (for-each (lambda (id mk-traced-proc)
-		(let ((global-value (namespace-variable-value id)))
-		  (let ((table-entry (hash-table-get -:trace-table id (lambda () #f))))
-		    (unless (and table-entry
-				 (eq? global-value
-				      (-:traced-entry-trace-proc table-entry)))
-		      (let* ([real-value global-value]
-			     [traced-proc (mk-traced-proc real-value)])
-			(hash-table-put! -:trace-table id
-					 (-:make-traced-entry real-value traced-proc))
-			(namespace-set-variable-value! id traced-proc #f))))))
-	      ids mk-traced-procs)
+  (define (do-trace ids procs setters traced-procs)
+    (for-each (lambda (id proc)
+		(unless (procedure? proc)
+		  (error 'trace
+			 "the value of ~s is not a procedure: ~e" id proc)))
+	      ids procs)
+    (for-each (lambda (proc setter traced-proc)
+		(unless (traced-proc? proc)
+		  (setter (make-traced-proc traced-proc proc))))
+	      procs setters traced-procs)
     ids)
 
   ;; Key used for a continuation mark to indicate
@@ -244,8 +229,10 @@
 			       ids)])
 	     #'(do-trace
 		'(id ...)
+		(list id ...)
+		(list (lambda (v) (set! id v)) ...)
 		(list
-		 (lambda (real-value)
+		 (let ([real-value id])
 		   (let ([traced-name
 			  (lambda args
 			    (do-traced 'id args real-value))])
@@ -266,19 +253,12 @@
 			  id)))
 		     ids)
 	   (syntax
-	    (apply append
-		   (list
-		    (let ((entry (hash-table-get -:trace-table
-						 'id (lambda () #f))))
-		      (if (and entry
-			       (eq? (namespace-variable-value 'id #f)
-				    (-:traced-entry-trace-proc entry)))
-			  (begin
-			    (hash-table-put! -:trace-table 'id #f)
-			    (namespace-set-variable-value! 'id (-:traced-entry-original-proc entry) #f)
-			    (list 'id))
-			  '()))
-		    ...))))])))
-
+	    (append
+	     (if (traced-proc? id)
+		 (begin
+		   (set! id (traced-proc-ref id 1))
+		   '(id))
+		 null)
+	     ...)))])))
   )
 

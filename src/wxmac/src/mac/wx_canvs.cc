@@ -528,14 +528,18 @@ void wxCanvas::DoShow(Bool show)
 {
   if (!CanShow(show)) return;
 
+  if (show)
+    wxWindow::DoShow(show);
+
   wxChildNode* node = GetChildren()->First();
-  while (node)
-    {
-      wxWindow* theChildWindow = (wxWindow*)node->Data();
-      theChildWindow->DoShow(show);
-      node = node->Next();
-    }
-  wxWindow::DoShow(show);
+  while (node) {
+    wxWindow* theChildWindow = (wxWindow*)node->Data();
+    theChildWindow->DoShow(show);
+    node = node->Next();
+  }
+
+  if (!show)
+    wxWindow::DoShow(show);
 }
 
 //-----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-_parser tools_ 
+_parser-tools_ 
 
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.

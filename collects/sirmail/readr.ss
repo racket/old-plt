@@ -723,6 +723,7 @@
           (define/override (on-event evt)
             (cond
               [(send evt button-down?)
+	       (set! dragging-item #f)
                (let ([text (get-editor)])
                  (when text
                    (let ([xb (box (send evt get-x))]
@@ -748,23 +749,26 @@
                                   (set! dragging-title
                                         (string-append (substring title 0 (- cap-length 3)) "..."))])))))))))]
               [(send evt dragging?)
-               (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
-                 (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
-                   (if (string? mailbox-name)
-                       (status "Move message \"~a\" to ~a" dragging-title mailbox-name)
-                       (status ""))))]
+	       (when dragging-item
+		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
+		     (if (string? mailbox-name)
+			 (status "Move message \"~a\" to ~a" dragging-title mailbox-name)
+			 (status "")))))]
               [(send evt button-up?)
-               (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
-                 (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
-                   (when (string? mailbox-name)
-                     (let* ([user-data (send dragging-item user-data)]
-                            [item (assoc user-data mailbox)])
-                       (when item
-                         (copy-messages-to (list item) mailbox-name)
-                         (header-changing-action
-                          #f
-                          (lambda ()
-                            (purge-messages (list item)))))))))])
+	       (when dragging-item
+		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
+		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
+		     (when (string? mailbox-name)
+		       (let* ([user-data (send dragging-item user-data)]
+			      [item (assoc user-data mailbox)])
+			 (when item
+			   (copy-messages-to (list item) mailbox-name)
+			   (header-changing-action
+			    #f
+			    (lambda ()
+			      (purge-messages (list item))))))))))
+	       (set! dragging-item #f)])
             (super-on-event evt))
 
           (super-instantiate ())

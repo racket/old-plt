@@ -1405,7 +1405,8 @@ static void *compile_k(void)
 				     tl_queue);
 	    form = SCHEME_CAR(tl_queue);
 	    tl_queue = SCHEME_CDR(tl_queue);
-	  }
+	  } else
+	    break;
 	} else
 	  break;
       }

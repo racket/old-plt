@@ -3,7 +3,7 @@
 % style file to be used in (La)TeX when using SLaTeX
 % (c) Dorai Sitaram, Rice U., 1991, 1999
 
-\def\slatexversion{2.4y}
+\def\slatexversion{2.4w}
 
 % This file (or a soft link to it) should be in some
 % directory in your TEXINPUTS path (i.e., the one
@@ -232,18 +232,6 @@
 \def\endZZZZschemebox{\endlat@xtabbing
 \egroup\egroup\ignorespaces}
 
-% schemetopbox : added by robby/jbc 2000
-
-\def\ZZZZschemetopbox{%
-  \leavevmode\hbox\bgroup\vtop\bgroup
-  \schemecodehook\ZZZZschemecodehook
-  \frenchspacing
-  \let\sy=\keywordfont \let\cn=\constantfont
-  \let\va=\variablefont \let\dt=\datafont
-  \lat@xtabbing}
-\def\endZZZZschemetopbox{\endlat@xtabbing
-\egroup\egroup\ignorespaces}
-
 \def\ZZZZschemeresponsebox{\ZZZZschemecodehookforresult
   \ZZZZschemebox}
 \let\endZZZZschemeresponsebox\endZZZZschemebox
@@ -416,9 +404,6 @@
 \let\defschemeresponseboxtoken\defschemeboxtoken
 \let\undefschemeresponseboxtoken\undefschemeboxtoken
 
-\let\defschemetopboxtoken\defschemeboxtoken
-\let\undefschemetopboxtoken\undefschemeboxtoken
-
 % for wholesale dumping of all-Scheme files into TeX (converting
 % .scm files to .tex),
 % use
@@ -454,7 +439,6 @@
 \defschemedisplaytoken{schemedisplay}
 \defschemetoken{scheme}
 \defschemeboxtoken{schemebox}
-\defschemetopboxtoken{schemetopbox}
 \defschemeresulttoken{schemeresult}
 \defschemeresponsetoken{schemeresponse}
 \defschemeresponseboxtoken{schemeresponsebox}

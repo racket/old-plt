@@ -17,13 +17,14 @@ slatxdoc.tex
 slatxdoc.bbl
 slatxdoc.dvi
 index.tex
-tex2page.css
+tex2html.css
+margins.tex
 
 ;misc TeX macros
 8pt.tex
 2col.tex
 defun.tex
-tex2page.tex
+tex2html.tex
 
 ;style files
 slatex.sty
@@ -67,7 +68,6 @@ configs/scmunix.cfg
 configs/gclunix.cfg
 configs/clispunix.cfg
 configs/clispw95.cfg
-configs/mzschemelinux.cfg
 configs/mzschemeunix.cfg
 configs/mzschemew95.cfg
 configs/mcl.cfg

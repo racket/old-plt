@@ -7,7 +7,7 @@
 \input slatex.sty
 
 \slatexdisable{enableslatex}
-\input tex2page
+\input tex2html
 \magnification\magstephalf
 
 %\advance\hoffset -.1true in
@@ -192,7 +192,7 @@ SLaTeX) file
 
 ---
 
-\verb+
+\verbatim+
 % quick.tex
 \documentclass{article}
 \usepackage{slatex}
@@ -246,13 +246,13 @@ SLaTeX also allows the form \p{\scheme{...}}.
 The SLaTeX control sequences for
 displayed code are the opening
 
-\verb{
+\verbatim{
 \begin{schemedisplay}
 }
 
 \n and the closing
 
-\verb{
+\verbatim{
 \end{schemedisplay}
 }
 
@@ -260,20 +260,20 @@ The file is now SLaTeX'd by running the command {\tt slatex}
 on it from the Unix or DOS or OS/2 command
 line:
 
-\verb{
+\verbatim{
 slatex quick
 }
 
 \n or
 
-\verb{
+\verbatim{
 slatex quick.tex
 }
 
 \n Alternatively, you can load the file {\tt callsla.scm} into
 your Scheme or Common Lisp, and then call
 
-\verb{
+\verbatim{
 (call-slatex "quick")
 }
 
@@ -346,7 +346,7 @@ The plain TeX version of {\tt quick.tex} looks like:
 
 ---
 
-\verb+
+\verbatim+
 % quick.tex
 \input slatex.sty
 
@@ -436,7 +436,7 @@ examples.
 Typesets the enclosed code, which is typically several
 lines of code indented as is common in Scheme files.  E.g.,
 
-\verb{
+\verbatim{
 \begin{schemedisplay}
 (define compose
   ;this is also known as $B$
@@ -497,7 +497,7 @@ either a paragraph or a Scheme code block.)
 
 E.g.,
 
-\verb{
+\verbatim{
 \begin{schemedisplay}
 (define even?
   ;testing evenness
@@ -599,7 +599,7 @@ It {\it is\/} permitted to intermix calls to
 \p{{schemedisplay}} and
 \p{\scheme}.  Thus,
 
-\verb{
+\verbatim{
 \begin{schemedisplay}
 (define factorial
   (lambda (n)
@@ -640,7 +640,7 @@ Special convenient case (as for \p{\scheme}):
 \p{\schemeresult{...}}.  E.g.,
 \index{schemeresult@{\tt\bs schemeresult}!using grouped argument}
 
-\verb+
+\verbatim+
 \scheme|((lambda () (cons 'lambda
 'cons)))| yields
 \schemeresult|(lambda . cons)|.
@@ -694,7 +694,7 @@ be specified either by its full name, or without its
 extension, if the latter is \p{.scm}, \p{.ss} or
 \p{.s}.  E.g.,
 
-\verb{
+\verbatim{
 \schemeinput{evenodd.scm}
 % the .scm is optional!
 }
@@ -730,7 +730,7 @@ generous about where exactly you throw the cordon.\par}
 
 E.g., you cannot have
 
-\verb{
+\verbatim{
 ...
 The code fragment $\underline
 {\hbox{\scheme{(call/cc I)}}}$ is ...
@@ -739,7 +739,7 @@ The code fragment $\underline
 
 \n but you {\it can\/} have
 
-\verb{
+\verbatim{
 \begin{schemeregion}
 ...
 The code fragment $\underline
@@ -832,7 +832,7 @@ as a (space-separated) list enclosed in braces
 be typeset in the appropriate category.  E.g.,
 
 \enableslatex
-\verb{
+\verbatim{
 \setconstant{infinity -infinity}
 }
 
@@ -888,7 +888,7 @@ concerned identifier to the desired TeX expansion,
 viz.,
 
 \enableslatex
-\verb{
+\verbatim{
 \setspecialsymbol{lambda}{$\lambda$}
 \setspecialsymbol{and}{$\land$}
 \setspecialsymbol{equiv?}{$\equiv$}
@@ -900,7 +900,7 @@ viz.,
 
 \n Now, typing\slatexdisable{enableslatex}
 
-\verb{
+\verbatim{
 \begin{schemedisplay}
 (define equiv?
   (lambda (a1 a2)
@@ -926,7 +926,7 @@ special symbols, you should use
 \p{\unsetspecialsymbol}, e.g.,
 
 \enableslatex
-\verb{
+\verbatim{
 \unsetspecialsymbol{lambda and}
 }
 
@@ -982,7 +982,7 @@ be replaced.
 These are the parameters used by \p{{schemedisplay}} for
 positioning  displayed code.  The default values are
 
-\verb{
+\verbatim{
 \abovecodeskip \medskipamount
 \belowcodeskip \medskipamount
 \leftcodeskip 0pt
@@ -993,7 +993,7 @@ positioning  displayed code.  The default values are
 changed to get new display styles.  E.g., this manual
 sets
 
-\verb{
+\verbatim{
 \leftcodeskip\parindent
 }
 
@@ -1018,7 +1018,7 @@ indentation, and you're not sure what value to give to
 \p{\rightcodeskip}, but nevertheless don't want
 Scheme code broken across pages, you could set
 
-\verb{
+\verbatim{
 \rightcodeskip=0.01pt %or
 \rightcodeskip=0pt plus 1fil
 }
@@ -1026,7 +1026,7 @@ Scheme code broken across pages, you could set
 \n To understand why this would disable pagebreaks
 within the Scheme block, suppose instead you'd set
 
-\verb{
+\verbatim{
 \leftcodeskip=0pt plus 1fil
 \rightcodeskip=0pt plus 1fil
 }
@@ -1075,7 +1075,7 @@ font of your choice.  This manual set
 redefine \p{\constantfont} itself to not rely on
 (the name) \p{\sf}.}
 
-\verb{
+\verbatim{
 \def\keywordfont#1{{\bf#1}}
 \def\constantfont#1{{\sf#1}}
 \def\variablefont#1{{\it#1\/}}
@@ -1107,7 +1107,7 @@ Simply use:
 \def\variablefont#1{\Blue{#1}}
 \def\constantfont#1{\Green{#1}}
 
-\verb{
+\verbatim{
 \input colordvi
 \def\keywordfont#1{\Red{#1}}
 \def\variablefont#1{\Blue{#1}}
@@ -1211,7 +1211,7 @@ within Scheme code.  (Any character other than
 \p{$}.)  This allows one to use TeX
 mathematical subformulas within Scheme code, e.g.,\par}
 
-\verb{
+\verbatim{
 \defschememathescape{$}
 
 \begin{schemedisplay}
@@ -1284,7 +1284,7 @@ The following is a typical example of the
 \p|\begin{schemedisplay}| in a {\tt verbatim}
 environment:
 
-\verb{
+\verbatim{
 \slatexdisable{slatexenable}
 \begin{verbatim}
 SLaTeX provides the command \scheme
@@ -1298,7 +1298,7 @@ respectively.
 
 \n produces the required
 
-\verb{
+\verbatim{
 SLaTeX provides the command \scheme
 and the pair \begin{schemedisplay}
 and \end{schemedisplay} to typeset
@@ -1333,7 +1333,7 @@ with the other.
 1.  If you wish to use the plain-TeX style in LaTeX,
 type
 
-\verb{
+\verbatim{
 \defslatexenvstyle{tex}
 }
 
@@ -1342,7 +1342,7 @@ type
 2. Similarly, if you wish to use the LaTeX
 \p{\begin}/\p{\end} style in plain TeX, use
 
-\verb{
+\verbatim{
 \defslatexenvstyle{latex}
 }
 
@@ -1350,7 +1350,7 @@ type
 \p{\end} appropriately!\/}  One way to accomplish
 this is:
 
-\verb{
+\verbatim{
 \def\begin#1{\begingroup
   \csname#1\endcsname
   \let\end\endenvironment}
@@ -1421,7 +1421,7 @@ subsequent call to \p{{schemedisplay}} and
 \p{{schemebox}}.  E.g.,  if you have \p{\tiny}
 defined (as in LaTeX) to reduce font size, then
 
-\verb{
+\verbatim{
 \let\schemecodehook\tiny
 }
 
@@ -1472,7 +1472,7 @@ $\top$ and $\bot$ respectively.
 
 This could be set up as
 
-\verb{
+\verbatim{
 \abovecodeskip 0pt
 \belowcodeskip 0pt
 \leftcodeskip 0pt plus 1fil
@@ -1764,7 +1764,9 @@ Bug reports are most welcome --- send to
 
 \bibliographystyle{plain}
 
-\bibliography{slatxdoc}
+\iffileexists{slatxdoc.bib}
+{\bibliography{slatxdoc}}
+{\bibliography{bigbib}}
 
 \section{Index}
 

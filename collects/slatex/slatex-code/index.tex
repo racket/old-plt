@@ -1,15 +1,15 @@
-\input tex2page
-
+\input tex2html
 
 
 \htmlonly
 
-\htmlstylesheet{tex2page.css}
+\htmlstylesheet{tex2html.css}
 
-\imgpreamble
+\gifpreamble
 \magnification\magstep1
-\endimgpreamble
+\endgifpreamble
 
+\let\byline\leftline
 
 \endhtmlonly
 
@@ -18,14 +18,14 @@
 
 %%%
 
-\title{SLaTeX}
+\subject{SLaTeX}
 
-\centerline{\urlh{slatex.tar.gz}{[Download version 2.4y]}}
+\byline{\urlh{slatex.tar.gz}{[Download version \input version ]}}
 
 \smallskip
 
-\centerline{\urlh{http://www.cs.rice.edu/~dorai}{Dorai Sitaram}}
-\centerline{\urlh{mailto:ds26@gte.com}{ds26@gte.com}}
+\byline{\urlh{http://www.cs.rice.edu/~dorai}{Dorai Sitaram}}
+\byline{\urlh{mailto:ds26@gte.com}{ds26@gte.com}}
 
 \bigskip
 
@@ -73,9 +73,9 @@ looks as follows:
 
 ---
 
-\htmlimg
+\htmlgif
 \input slatex.sty
-\input tex2page
+\input margins
 \sidemargin 1.75 true in
 In Scheme, the expression
 \scheme|(set! x 42)| returns
@@ -91,7 +91,7 @@ of the latter style with:
      (begin (set! var val)
             var)]))
 \endschemedisplay
-\endhtmlimg
+\endhtmlgif
 
 ---
 

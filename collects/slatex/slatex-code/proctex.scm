@@ -18,7 +18,7 @@
 
 (eval-within slatex
 	
-  (defvar slatex::version-number "2.4y")
+  (defvar slatex::version-number "2.4w")
 
   (define slatex::disable-slatex-temply
     (lambda (in)

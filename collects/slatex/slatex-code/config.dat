@@ -1,11 +1,11 @@
-;mzschemelinux.cfg
-;sample config.dat for MzScheme on Linux
+;mzschemeunix.cfg
+;sample config.dat for MzScheme on Unix
 
 mzscheme
 unix
 "mzscheme"
-"/home/dorai/texmf/tex/slatex/slatex.scm"
-"/home/dorai/texmf/tex"
+"/home/dorai/tex/slatex/slatex.scm"
+"/home/dorai/tex/0tex"
 ()
 #t
 "-f"

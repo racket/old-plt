@@ -12,230 +12,216 @@
     (lambda (raw-filename)
       ;call slatex on the .tex file raw-filename
       (if debug?
-          (begin (display "begin ")
-            (display raw-filename)
-            (newline)))
+	  (begin (display "begin ")
+		 (display raw-filename)
+		 (newline)))
       (let ((filename (full-texfile-name raw-filename)))
-        (if (not filename) ;didn't find it
-            (begin (display "[")
-              (display raw-filename)
-              (display "]") (force-output))
-            (call-with-input-file filename
-              (lambda (in)
-                (let ((done? #f))
-                  (let loop ()
-                    (if done? 'exit-loop
-                        (begin
+	(if (not filename) ;didn't find it
+	    (begin (display "[")
+		   (display raw-filename)
+		   (display "]") (force-output))
+	    (call-with-input-file filename
+	      (lambda (in)
+		(let ((done? #f))
+		  (let loop ()
+		    (if done? 'exit-loop
+			(begin
                           (let ((c (read-char in)))
                             (cond
-                                  ((eof-object? c) (set! done? #t))
-                                  ((char=? c #\%) (eat-till-newline in))
-                                  ((char=? c #\\)
-                                   (let ((cs (read-ctrl-seq in)))
-                                     (if (not seen-first-command?)
-                                         (begin
-                                           (set! seen-first-command? #t)
-                                           (decide-latex-or-tex
-                                             (or
-                                                 (string=? cs "documentstyle")
-                                                 (string=? cs "documentclass")
-                                                 (string=? cs "NeedsTeXFormat")
-                                                 ))))
-                                     (cond
-                                           ((not *slatex-enabled?*)
-                                            (if (string=? cs *slatex-reenabler*)
-                                                (enable-slatex-again)))
-                                           ((string=? cs "slatexignorecurrentfile")
-                                            (set! done? #t))
-                                           ((string=? cs "slatexseparateincludes")
-                                            (if *latex?*
-                                                (set! *slatex-separate-includes?* #t)))
-                                           ((string=? cs "slatexdisable")
-                                            (disable-slatex-temply in))
-                                           ((string=? cs "begin")
-                                            (eat-tex-whitespace in)
-                                            (if (eqv? (peek-char in) #\{)
-                                                (let ((cs (read-grouped-latexexp in)))
-                                                  (cond
-                                                        ((member cs *display-triggerers*)
-                                                         (slatex::trigger-scheme2tex
-                                                           'envdisplay in cs))
-                                                        ((member cs *response-triggerers*)
-                                                         (trigger-scheme2tex 'envresponse
-                                                           in cs))
-                                                        ((member cs *respbox-triggerers*)
-                                                         (trigger-scheme2tex 'envrespbox
-                                                           in cs))
-                                                        ((member cs *box-triggerers*)
-                                                         (trigger-scheme2tex 'envbox
-                                                           in cs))
-                                                        ((member cs *topbox-triggerers*)
-                                                         (trigger-scheme2tex 'envtopbox
-                                                           in cs))
-                                                        ((member cs *region-triggerers*)
-                                                         (slatex::trigger-region
-                                                           'envregion in cs))))))
-                                           ((member cs *intext-triggerers*)
-                                            (trigger-scheme2tex 'intext in #f))
-                                           ((member cs *resultintext-triggerers*)
-                                            (trigger-scheme2tex 'resultintext in #f))
-                                           ((member cs *display-triggerers*)
-                                            (trigger-scheme2tex 'plaindisplay
-                                              in cs))
-                                           ((member cs *response-triggerers*)
-                                            (trigger-scheme2tex 'plainresponse
-                                              in cs))
-                                           ((member cs *respbox-triggerers*)
-                                            (trigger-scheme2tex 'plainrespbox
-                                              in cs))
-                                           ((member cs *box-triggerers*)
-                                            (trigger-scheme2tex 'plainbox
-                                              in cs))
-                                           ((member cs *topbox-triggerers*)
-                                            (trigger-scheme2tex 'plaintopbox
-                                              in cs))
-                                           ((member cs *region-triggerers*)
-                                            (trigger-region 'plainregion
-                                              in cs))
-                                           ((member cs *input-triggerers*)
-                                            (slatex::process-scheme-file
-                                              (read-filename in)))
-                                           ((string=? cs "input")
-                                            (let ((f (read-filename in)))
-                                              (if (not (string=? f ""))
+                             ((eof-object? c) (set! done? #t))
+                             ((char=? c #\%) (eat-till-newline in))
+                             ((char=? c #\\)
+                              (let ((cs (read-ctrl-seq in)))
+                                (if (not seen-first-command?)
+                                    (begin
+				      (set! seen-first-command? #t)
+                                      (decide-latex-or-tex
+                                       (or
+					(string=? cs "documentstyle")
+					(string=? cs "documentclass")
+					(string=? cs "NeedsTeXFormat")
+					))))
+                                (cond
+                                 ((not *slatex-enabled?*)
+                                  (if (string=? cs *slatex-reenabler*)
+                                      (enable-slatex-again)))
+                                 ((string=? cs "slatexignorecurrentfile")
+                                  (set! done? #t))
+                                 ((string=? cs "slatexseparateincludes")
+                                  (if *latex?*
+                                      (set! *slatex-separate-includes?* #t)))
+                                 ((string=? cs "slatexdisable")
+                                  (disable-slatex-temply in))
+                                 ((string=? cs "begin")
+                                  (eat-tex-whitespace in)
+                                  (if (eqv? (peek-char in) #\{)
+                                      (let ((cs (read-grouped-latexexp in)))
+                                        (cond
+                                         ((member cs *display-triggerers*)
+                                          (slatex::trigger-scheme2tex
+                                           'envdisplay in cs))
+                                         ((member cs *response-triggerers*)
+                                          (trigger-scheme2tex 'envresponse
+                                                              in cs))
+                                         ((member cs *respbox-triggerers*)
+                                          (trigger-scheme2tex 'envrespbox
+                                                              in cs))
+                                         ((member cs *box-triggerers*)
+                                          (trigger-scheme2tex 'envbox
+                                                              in cs))
+                                         ((member cs *region-triggerers*)
+                                          (slatex::trigger-region
+                                           'envregion in cs))))))
+                                 ((member cs *intext-triggerers*)
+                                  (trigger-scheme2tex 'intext in #f))
+                                 ((member cs *resultintext-triggerers*)
+                                  (trigger-scheme2tex 'resultintext in #f))
+                                 ((member cs *display-triggerers*)
+                                  (trigger-scheme2tex 'plaindisplay
+                                                      in cs))
+                                 ((member cs *response-triggerers*)
+                                  (trigger-scheme2tex 'plainresponse
+                                                      in cs))
+                                 ((member cs *respbox-triggerers*)
+                                  (trigger-scheme2tex 'plainrespbox
+                                                      in cs))
+                                 ((member cs *box-triggerers*)
+                                  (trigger-scheme2tex 'plainbox
+                                                      in cs))
+                                 ((member cs *region-triggerers*)
+                                  (trigger-region 'plainregion
+                                                  in cs))
+                                 ((member cs *input-triggerers*)
+                                  (slatex::process-scheme-file
+                                   (read-filename in)))
+                                 ((string=? cs "input")
+                                  (let ((f (read-filename in)))
+                                    (if (not (string=? f ""))
+                                        (fluid-let
+					    ((*slatex-in-protected-region?*
+					      #f))
+                                          (process-tex-file f)))))
+                                 ((string=? cs "usepackage")
+                                  (fluid-let ((*slatex-in-protected-region?*
+                                               #f))
+                                    (process-tex-file
+                                     (string-append (read-filename in)
+                                                    ".sty"))))
+                                 ((string=? cs "include")
+                                  (if *latex?*
+                                      (let ((f (full-texfile-name
+                                                (read-filename in))))
+                                        (if (and f
+						 (or (eq? *include-onlys* 'all)
+						     (member f
+							     *include-onlys*)))
+                                            (fluid-let
+                                                ((*slatex-in-protected-region?*
+                                                  #f))
+                                              (if *slatex-separate-includes?*
                                                   (fluid-let
-                                                    ((*slatex-in-protected-region?*
-                                                       #f))
-                                                    (process-tex-file f)))))
-                                           ((string=? cs "usepackage")
-                                            (fluid-let ((*slatex-in-protected-region?*
-                                                          #f))
-                                              (process-tex-file
-                                                (string-append (read-filename in)
-                                                  ".sty"))))
-                                           ((string=? cs "include")
-                                            (if *latex?*
-                                                (let ((f (full-texfile-name
-                                                           (read-filename in))))
-                                                  (if (and f
-                                                           (or (eq? *include-onlys* 'all)
-                                                               (member f
-                                                                 *include-onlys*)))
-                                                      (fluid-let
-                                                        ((*slatex-in-protected-region?*
-                                                           #f))
-                                                        (if *slatex-separate-includes?*
-                                                            (fluid-let
-                                                              ((subjobname
-                                                                 (basename f))
-                                                               (primary-aux-file-count
-                                                                 -1))
-                                                              (process-tex-file f))
-                                                            (process-tex-file f)))))))
-                                           ((string=? cs "includeonly")
-                                            (if *latex?* (process-include-only in)))
-                                           ((string=? cs "documentstyle")
-                                            (if *latex?* (process-documentstyle in)))
-                                           ((string=? cs "documentclass")
-                                            (if *latex?* (process-documentclass in)))
-                                           ((string=? cs "schemecasesensitive")
-                                            (process-case-info in))
-                                           ((string=? cs "defschemetoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'intext))
-                                           ((string=? cs "undefschemetoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'intext))
-                                           ((string=? cs "defschemeresulttoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'resultintext))
-                                           ((string=? cs "undefschemeresulttoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'resultintext))
-                                           ((string=? cs "defschemeresponsetoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'response))
-                                           ((string=? cs "undefschemeresponsetoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'response))
-                                           ((string=? cs "defschemeresponseboxtoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'respbox))
-                                           ((string=? cs "undefschemeresponseboxtoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'respbox))
-                                           ((string=? cs "defschemedisplaytoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'display))
-                                           ((string=? cs "undefschemedisplaytoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'display))
-                                           ((string=? cs "defschemeboxtoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'box))
-                                           ((string=? cs "undefschemeboxtoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'box))
-                                           ((string=? cs "defschemetopboxtoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'topbox))
-                                           ((string=? cs "undefschemetopboxtoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'topbox))
-                                           ((string=? cs "defschemeinputtoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'input))
-                                           ((string=? cs "undefschemeinputtoken")
-                                            (process-slatex-alias
-                                              in (function delete)
-                                              'input))
-                                           ((string=? cs "defschemeregiontoken")
-                                            (process-slatex-alias
-                                              in (function adjoin)
-                                              'region))
-                                           ((string=? cs "undefschemeregiontoken")
-                                            (process-slatex-alias in
-                                              (function delete)
-                                              'region))
-                                           ((string=? cs "defschememathescape")
-                                            (process-slatex-alias in
-                                              (function adjoin)
-                                              'mathescape))
-                                           ((string=? cs "undefschememathescape")
-                                            (process-slatex-alias in
-                                              (function delete)
-                                              'mathescape))
-                                           ((string=? cs "setkeyword")
-                                            (add-to-slatex-db in 'keyword))
-                                           ((string=? cs "setconstant")
-                                            (add-to-slatex-db in 'constant))
-                                           ((string=? cs "setvariable")
-                                            (add-to-slatex-db in 'variable))
-                                           ((string=? cs "setspecialsymbol")
-                                            (add-to-slatex-db in 'setspecialsymbol))
-                                           ((string=? cs "unsetspecialsymbol")
-                                            (add-to-slatex-db in 'unsetspecialsymbol))
-                                           )))))
-                          (loop)))))))))
+                                                      ((subjobname
+                                                        (basename f))
+                                                       (primary-aux-file-count
+                                                        -1))
+                                                    (process-tex-file f))
+                                                  (process-tex-file f)))))))
+                                 ((string=? cs "includeonly")
+                                  (if *latex?* (process-include-only in)))
+                                 ((string=? cs "documentstyle")
+                                  (if *latex?* (process-documentstyle in)))
+                                 ((string=? cs "documentclass")
+                                  (if *latex?* (process-documentclass in)))
+                                 ((string=? cs "schemecasesensitive")
+                                  (process-case-info in))
+                                 ((string=? cs "defschemetoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'intext))
+                                 ((string=? cs "undefschemetoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'intext))
+                                 ((string=? cs "defschemeresulttoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'resultintext))
+                                 ((string=? cs "undefschemeresulttoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'resultintext))
+                                 ((string=? cs "defschemeresponsetoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'response))
+                                 ((string=? cs "undefschemeresponsetoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'response))
+                                 ((string=? cs "defschemeresponseboxtoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'respbox))
+                                 ((string=? cs "undefschemeresponseboxtoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'respbox))
+                                 ((string=? cs "defschemedisplaytoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'display))
+                                 ((string=? cs "undefschemedisplaytoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'display))
+                                 ((string=? cs "defschemeboxtoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'box))
+                                 ((string=? cs "undefschemeboxtoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'box))
+                                 ((string=? cs "defschemeinputtoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'input))
+                                 ((string=? cs "undefschemeinputtoken")
+                                  (process-slatex-alias
+				   in (function delete)
+				   'input))
+                                 ((string=? cs "defschemeregiontoken")
+                                  (process-slatex-alias
+				   in (function adjoin)
+				   'region))
+                                 ((string=? cs "undefschemeregiontoken")
+                                  (process-slatex-alias in
+							(function delete)
+                                                        'region))
+                                 ((string=? cs "defschememathescape")
+                                  (process-slatex-alias in
+							(function adjoin)
+                                                        'mathescape))
+                                 ((string=? cs "undefschememathescape")
+                                  (process-slatex-alias in
+							(function delete)
+                                                        'mathescape))
+                                 ((string=? cs "setkeyword")
+                                  (add-to-slatex-db in 'keyword))
+                                 ((string=? cs "setconstant")
+                                  (add-to-slatex-db in 'constant))
+                                 ((string=? cs "setvariable")
+                                  (add-to-slatex-db in 'variable))
+                                 ((string=? cs "setspecialsymbol")
+                                  (add-to-slatex-db in 'setspecialsymbol))
+                                 ((string=? cs "unsetspecialsymbol")
+                                  (add-to-slatex-db in 'unsetspecialsymbol))
+                                 )))))
+			  (loop)))))))))
       (if debug?
-          (begin (display "end ")
-            (display raw-filename)
-            (newline)))
+	  (begin (display "end ")
+		 (display raw-filename)
+		 (newline)))
       ))
 
   (define slatex::process-scheme-file
@@ -267,51 +253,47 @@
       ;process the slatex command identified by typ;
       ;env is the name of the environment
       (let* ((aux (new-aux-file)) (aux.scm (string-append aux ".scm"))
-             (aux.tex (string-append aux ".tex")))
-        (if (file-exists? aux.scm) (delete-file aux.scm))
-        (if (file-exists? aux.tex) (delete-file aux.tex))
-        (display ".") (force-output)
-        (call-with-output-file aux.scm
-          (lambda (out)
-            (cond ((memq typ '(intext resultintext)) (dump-intext in out))
-                  ((memq typ '(envdisplay envresponse envrespbox envbox
-                                envtopbox))
-                   (dump-display in out (string-append "\\end{" env "}")))
-                  ((memq typ '(plaindisplay plainresponse
-                                plainrespbox plainbox plaintopbox))
-                   (dump-display in out (string-append "\\end" env)))
-                  (else (error "trigger-scheme2tex: ~
-                          Unknown triggerer ~s." typ)))))
-        (call-with-input-file aux.scm
-          (lambda (in)
-            (call-with-output-file aux.tex
-              (lambda (out)
-                (fluid-let
-                  ((*intext?* (memq typ '(intext resultintext)))
-                   (*code-env-spec*
-                     (cond ((eq? typ 'intext) "ZZZZschemecodeintext")
-                           ((eq? typ 'resultintext)
-                            "ZZZZschemeresultintext")
-                           ((memq typ '(envdisplay plaindisplay))
-                            "ZZZZschemedisplay")
-                           ((memq typ '(envresponse plainresponse))
-                            "ZZZZschemeresponse")
-                           ((memq typ '(envrespbox plainrespbox))
-                            "ZZZZschemeresponsebox")
-                           ((memq typ '(envbox plainbox))
-                            "ZZZZschemebox")
-                           ((memq typ '(envtopbox plaintopbox))
-                            "ZZZZschemetopbox")
-                           (else (error "trigger-scheme2tex: ~
-                                   Unknown triggerer ~s." typ)))))
-                  (scheme2tex in out))))))
-        (if *slatex-in-protected-region?*
-            (set! *protected-files* (cons aux.tex *protected-files*)))
-        (if (memq typ '(envdisplay plaindisplay envbox plainbox
-                         envtopbox plaintopbox))
-            (process-tex-file aux.tex))
-        (delete-file aux.scm)
-        )))
+				  (aux.tex (string-append aux ".tex")))
+	(if (file-exists? aux.scm) (delete-file aux.scm))
+	(if (file-exists? aux.tex) (delete-file aux.tex))
+	(display ".") (force-output)
+	(call-with-output-file aux.scm
+	  (lambda (out)
+	    (cond ((memq typ '(intext resultintext)) (dump-intext in out))
+		  ((memq typ '(envdisplay envresponse envrespbox envbox))
+		   (dump-display in out (string-append "\\end{" env "}")))
+		  ((memq typ '(plaindisplay plainresponse
+					    plainrespbox plainbox))
+		   (dump-display in out (string-append "\\end" env)))
+		  (else (error "trigger-scheme2tex: ~
+Unknown triggerer ~s." typ)))))
+	(call-with-input-file aux.scm
+	  (lambda (in)
+	    (call-with-output-file aux.tex
+	      (lambda (out)
+		(fluid-let
+		    ((*intext?* (memq typ '(intext resultintext)))
+		     (*code-env-spec*
+		      (cond ((eq? typ 'intext) "ZZZZschemecodeintext")
+			    ((eq? typ 'resultintext)
+			     "ZZZZschemeresultintext")
+			    ((memq typ '(envdisplay plaindisplay))
+			     "ZZZZschemedisplay")
+			    ((memq typ '(envresponse plainresponse))
+			     "ZZZZschemeresponse")
+			    ((memq typ '(envrespbox plainrespbox))
+			     "ZZZZschemeresponsebox")
+			    ((memq typ '(envbox plainbox))
+			     "ZZZZschemebox")
+			    (else (error "trigger-scheme2tex: ~
+Unknown triggerer ~s." typ)))))
+		  (scheme2tex in out))))))
+	(if *slatex-in-protected-region?*
+	    (set! *protected-files* (cons aux.tex *protected-files*)))
+	(if (memq typ '(envdisplay plaindisplay envbox plainbox))
+	    (process-tex-file aux.tex))
+	(delete-file aux.scm)
+	)))
 
   (define slatex::trigger-region
     (lambda (typ in env)
@@ -346,9 +328,9 @@ Unknown triggerer ~s." typ)))))
     (lambda (in out)
       ;inline all the protected files in port in into port out
       (let ((done? #f))
-        (let loop ()
-          (if done? 'exit-loop
-              (begin
+	(let loop ()
+	  (if done? 'exit-loop
+	      (begin
                 (let ((c (read-char in)))
                   (cond ((eof-object? c)
                          ;(display "{}" out)
@@ -358,56 +340,52 @@ Unknown triggerer ~s." typ)))))
                            (if (not (eof-object? c2))
                                (write-char c out))))
                         ((char=? c #\%)
-                         (write-char c out) (newline out)
-                         (eat-till-newline in))
+                          (write-char c out) (newline out)
+                          (eat-till-newline in))
                         ((char=? c #\\)
                          (let ((cs (read-ctrl-seq in)))
                            (cond
-                                 ((string=? cs "begin")
-                                  (let ((cs (read-grouped-latexexp in)))
-                                    (cond ((member cs *display-triggerers*)
-                                           (slatex::inline-protected
-                                             'envdisplay in out cs))
-                                          ((member cs *response-triggerers*)
-                                           (inline-protected
-                                             'envresponse in out cs))
-                                          ((member cs *respbox-triggerers*)
-                                           (inline-protected
-                                             'envrespbox in out cs))
-                                          ((member cs *box-triggerers*)
-                                           (inline-protected 'envbox in out cs))
-                                          ((member cs *topbox-triggerers*)
-                                           (inline-protected 'envtopbox in out cs))
-                                          ((member cs *region-triggerers*)
-                                           (inline-protected
-                                             'envregion in out cs))
-                                          (else
-                                            (display "\\begin{" out)
-                                            (display cs out)
-                                            (display "}" out)))))
-                                 ((member cs *intext-triggerers*)
-                                  (inline-protected 'intext in out #f))
-                                 ((member cs *resultintext-triggerers*)
-                                  (inline-protected 'resultintext in out #f))
-                                 ((member cs *display-triggerers*)
-                                  (inline-protected 'plaindisplay in out cs))
-                                 ((member cs *response-triggerers*)
-                                  (inline-protected 'plainresponse in out cs))
-                                 ((member cs *respbox-triggerers*)
-                                  (inline-protected 'plainrespbox in out cs))
-                                 ((member cs *box-triggerers*)
-                                  (inline-protected 'plainbox in out cs))
-                                 ((member cs *topbox-triggerers*)
-                                  (inline-protected 'plaintopbox in out cs))
-                                 ((member cs *region-triggerers*)
-                                  (inline-protected 'plainregion in out cs))
-                                 ((member cs *input-triggerers*)
-                                  (inline-protected 'input in out cs))
-                                 (else
-                                   (display "\\" out)
-                                   (display cs out)))))
-                        (else (write-char c out))))
-                (loop)))))))
+                            ((string=? cs "begin")
+                             (let ((cs (read-grouped-latexexp in)))
+                               (cond ((member cs *display-triggerers*)
+                                      (slatex::inline-protected
+                                       'envdisplay in out cs))
+                                     ((member cs *response-triggerers*)
+                                      (inline-protected
+                                       'envresponse in out cs))
+                                     ((member cs *respbox-triggerers*)
+                                      (inline-protected
+                                       'envrespbox in out cs))
+                                     ((member cs *box-triggerers*)
+                                      (inline-protected 'envbox in out cs))
+                                     ((member cs *region-triggerers*)
+                                      (inline-protected
+                                       'envregion in out cs))
+                                     (else
+                                      (display "\\begin{" out)
+                                      (display cs out)
+                                      (display "}" out)))))
+                            ((member cs *intext-triggerers*)
+                             (inline-protected 'intext in out #f))
+                            ((member cs *resultintext-triggerers*)
+                             (inline-protected 'resultintext in out #f))
+                            ((member cs *display-triggerers*)
+                             (inline-protected 'plaindisplay in out cs))
+                            ((member cs *response-triggerers*)
+                             (inline-protected 'plainresponse in out cs))
+                            ((member cs *respbox-triggerers*)
+                             (inline-protected 'plainrespbox in out cs))
+                            ((member cs *box-triggerers*)
+                             (inline-protected 'plainbox in out cs))
+                            ((member cs *region-triggerers*)
+                             (inline-protected 'plainregion in out cs))
+                            ((member cs *input-triggerers*)
+                             (inline-protected 'input in out cs))
+                            (else
+                             (display "\\" out)
+                             (display cs out)))))
+			(else (write-char c out))))
+		(loop)))))))
 
   (define slatex::inline-protected
     (lambda (typ in out env)
@@ -435,12 +413,12 @@ Unknown triggerer ~s." typ)))))
 		  (cond ((memq typ '(intext resultintext))
 			 (display "{}" out)
 			 (dump-intext in #f))
-			((memq typ '(envrespbox envbox envtopbox))
+			((memq typ '(envrespbox envbox))
 			 (if (not *latex?*)
 			     (display "{}" out))
 			 (dump-display in #f
 				       (string-append "\\end{" env "}")))
-			((memq typ '(plainrespbox plainbox plaintopbox))
+			((memq typ '(plainrespbox plainbox))
 			 (display "{}" out)
 			 (dump-display in #f
 				       (string-append "\\end" env)))

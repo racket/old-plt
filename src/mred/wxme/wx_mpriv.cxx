@@ -32,6 +32,8 @@
 #include "wx_media.h"
 #ifdef wx_xt
 # include "wx_types.h"
+#else
+# include "wx_main.h"
 #endif
 
 #include <string.h>
@@ -1910,6 +1912,10 @@ static char xpattern[32] = {0x88, 0x88,
 			    0,    0};
 #endif
 static wxBrush *clearBrush = NULL;
+
+#ifndef wx_x
+# define wxAPP_CLASS wxTheApp->wx_class
+#endif
 
 /* This does the actual drawing */
 void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy, 

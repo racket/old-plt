@@ -4,6 +4,7 @@
   
   (define-signature net:url^
     ((struct url (scheme host port path params query fragment))
+     (struct url/user (user)) ; sub-struct of url
      get-pure-port			;; url [x list (str)] -> in-port
      get-impure-port			;; url [x list (str)] -> in-port
      post-pure-port			;; url [x list (str)] -> in-port

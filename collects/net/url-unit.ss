@@ -80,6 +80,7 @@
       ;; query : str + #f
       ;; fragment : str + #f
       (define-struct url (scheme host port path params query fragment))
+      (define-struct (url/user url) (user))
       
       (define url->string 
         (lambda (url)
@@ -422,19 +423,6 @@
       
       (define character-set-size 256)
       
-      (define marker-list
-        '(#\: #\; #\? #\#))
-      
-      (define ascii-marker-list
-        (map char->integer marker-list))
-      
-      (define marker-locations
-        (make-vector character-set-size))
-      
-      (define first-position-of-marker
-        (lambda (c)
-          (vector-ref marker-locations (char->integer c))))
-      
       ;; netscape/string->url : str -> url
       (define netscape/string->url
         (lambda (string)
@@ -451,8 +439,84 @@
                       url))))))
       
       ;; string->url : str -> url
+      ;; New implemenation, mostly provided by Neil Van Dyke
+      (define string->url
+	(let ((rx (regexp (string-append
+			   "^"
+			   "[ \t\f\r\n]*"
+			   "("                ; <1  front-opt
+			   "([a-zA-Z]*:)?"    ; =2  scheme-colon-opt
+			   "("                ; <3  slashslash-opt
+			   "//"
+			   "([^:/@;?#]*@)?"   ; =4  user-at-opt
+			   "([^:/@;?#]+)?"    ; =5  host-opt
+			   "(:[0-9]*)?"       ; =6  colon-port-opt
+			   ")?"               ; >3  slashslash-opt
+			   ")?"               ; >1  front-opt
+			   "([^;?#]*)"        ; =7  path
+			   "(;[^?#]*)?"       ; =8  semi-parms-opt
+			   "(\\?[^#]*)?"      ; =9  question-query-opt
+			   "(#.*)?"           ; =10 hash-fragment-opt
+			   "[ \t\f\r\n]*"
+			   "$"))))
+	  (lambda (str)
+	    (let ([m (regexp-match #rx"^[ \t\f\r\n]*file:(.*)$" str)])
+	      ;; File scheme:
+	      (if m
+		  (let ([path+fragment (regexp-match #rx"^([^#]*)(#(.*))?$" (cadr m))])
+		    (let ([path (cadr path+fragment)]
+			  [fragment (caddr path+fragment)])
+		      (if (or (relative-path? path)
+			      (absolute-path? path))
+			  (make-url "file"
+				    #f	; host
+				    #f	; port
+				    path
+				    #f	; params
+				    #f	; query
+				    fragment)
+			  (url-error "scheme 'file' path ~s neither relative nor absolute" path))))
+		  ;; Other scheme:
+		  (let ((match (regexp-match-positions rx str)))
+		    (if match
+			(let* ((get-str (lambda (pos skip-left skip-right)
+					  (let ((pair (list-ref match pos)))
+					    (if pair
+						(substring str
+							   (+ (car pair) skip-left)
+							   (- (cdr pair) skip-right))
+						#f))))
+			       (get-num (lambda (pos skip-left skip-right)
+					  (let ((s (get-str pos skip-left skip-right)))
+					    (if s (string->number s) #f)))))
+			  (make-url/user (get-str 2  0 1) ; scheme
+					 (get-str 5  0 0) ; host
+					 (get-num 6  1 0) ; port
+					 (get-str 7  0 0) ; path
+					 (get-str 8  1 0) ; params
+					 (get-str 9  1 0) ; query
+					 (get-str 10 1 0) ; fragment
+					 (get-str 4  0 1) ; user
+					 ))
+			(url-error "Invalid URL string: ~e" str))))))))
+#|
+      Old version. See PR 6152 for information on its replacement.
+
       (define string->url
         (lambda (string)
+	  (define marker-list
+	    '(#\: #\; #\? #\#))
+      
+	  (define ascii-marker-list
+	    (map char->integer marker-list))
+	  
+	  (define marker-locations
+	    (make-vector character-set-size))
+	  
+	  (define first-position-of-marker
+	    (lambda (c)
+	      (vector-ref marker-locations (char->integer c))))
+	  
           (with-handlers [(exn? (lambda (exn)
                                   (url-error "Invalid URL string: ~s" string)))]
 	    (let loop ((markers ascii-marker-list))
@@ -528,6 +592,7 @@
 			    (and fragment-start
 			      (substring string fragment-start
 				fragment-finish)))))))))))))
+|#
       
       ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
       (define parse-host/port/path

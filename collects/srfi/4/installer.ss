@@ -106,9 +106,9 @@
               ("int32_t" "s32" "scheme_get_int" "scheme_make_integer_value" "0" "0" "0") ; no bounds check performed on 32-bit integers
               ("int16_t" "s16" "scheme_get_int" "scheme_make_integer_value" "-0x8000" "0x7fff" "1")
               ("int8_t" "s8" "scheme_get_int" "scheme_make_integer_value" "-0x80" "0x7f" "1")
-              ("u_int32_t" "u32" "scheme_get_uint" "scheme_make_integer_value_from_unsigned" "0x0" "0xffffffff" "1")
-              ("u_int16_t" "u16" "scheme_get_uint" "scheme_make_integer_value_from_unsigned" "0x0" "0xffff" "1")
-              ("u_int8_t" "u8" "scheme_get_uint" "scheme_make_integer_value_from_unsigned" "0x0" "0xff" "1"))]
+              ("uint32_t" "u32" "scheme_get_uint" "scheme_make_integer_value_from_unsigned" "0x0" "0xffffffff" "1")
+              ("uint16_t" "u16" "scheme_get_uint" "scheme_make_integer_value_from_unsigned" "0x0" "0xffff" "1")
+              ("uint8_t" "u8" "scheme_get_uint" "scheme_make_integer_value_from_unsigned" "0x0" "0xff" "1"))]
            [target-dir (build-path "compiled" "native" (system-library-subpath))]
            [source-dir (build-path "c-generation")]
            [specs-list (map (make-make-spec source-dir target-dir) trans-list)])

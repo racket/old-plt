@@ -1,19 +1,21 @@
 #include "escheme.h"
 #include <math.h>
+#include <sys/types.h>
 
 Scheme_Type homo_<type-name>_vector_type;
 #include "homo-<type-name>-vector-prims.h"
 
+static char *int32msg = "expected int32, given %d";
+static char *anytypemsg = "expected <type-name>, given %d";
 
 static int32_t scheme_get_int32(Scheme_Object* o)
 {
   long l;
   l = 0;
-  char msg[] = "expected int32, given %d";
 
   scheme_get_int_val(o, &l);
   if (l > 0x7fffffff || l < -0x7fffffff)
-    scheme_signal_error(msg,l);
+    scheme_signal_error(int32msg,l);
 
   return l;
 }
@@ -28,24 +30,22 @@ static int32_t scheme_get_int(Scheme_Object* o)
 {
   long l;
   l = 0;
-  char msg[] = "expected <type-name>, given %d";
   scheme_get_int_val(o, &l);
   if (<shortcut-check> && (l > <type-largest> || l < <type-smallest>))
-    scheme_signal_error(msg,l);
-  // scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,msg);
+    scheme_signal_error(anytypemsg,l);
+  /* scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,anytypemsg); */
   
   return l;
 }
 
-static u_int32_t scheme_get_uint(Scheme_Object* o)
+static uint32_t scheme_get_uint(Scheme_Object* o)
 {
   unsigned long l;
   l = 0;
-  char msg[] = "expected <type-name>, given %d";
   scheme_get_unsigned_int_val(o, &l);
   if (<shortcut-check> && (l > <type-largest> || l < <type-smallest>))
-    scheme_signal_error(msg,l);
-  // scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,msg);
+    scheme_signal_error(anytypemsg,l);
+  /* scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,anytypemsg); */
   
   return l;
 }

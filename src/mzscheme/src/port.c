@@ -2063,7 +2063,7 @@ HANDLE dup_spec_handle(HANDLE h, int id)
   if (!spec_handle[id])
     len = 0;
   else {
-    for (len = 0; spec_handle[id][len]; len++) {
+    for (len = 0; spec_handle[id][len] != INVALID_HANDLE_VALUE; len++) {
     }
   }
 
@@ -2097,14 +2097,14 @@ static void mzCloseHandle(HANDLE h)
   if (spec_handle) {
     for (i = 0; i < NUM_SPECIAL_FILE_KINDS; i++) {
       if (spec_handle[i]) {
-	for (j = 1; spec_handle[i][j]; j++) {
+	for (j = 1; spec_handle[i][j] != INVALID_HANDLE_VALUE; j++) {
 	  if (spec_handle[i][j] == h) {
 	    /* Close an delete from the array: */
 	    CloseHandle(h);
-	    for (j++; spec_handle[i][j]; j++) {
+	    for (j++; spec_handle[i][j] != INVALID_HANDLE_VALUE; j++) {
 	      spec_handle[i][j-1] = spec_handle[i][j];
 	    }
-	    spec_handle[i][j-1] = NULL; /* terminator */
+	    spec_handle[i][j-1] = INVALID_HANDLE_VALUE; /* terminator */
 	    /* Only one left? If so, close it */
 	    if (j == 2) {
 	      CloseHandle(spec_handle[i][0]);

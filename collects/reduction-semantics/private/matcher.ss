@@ -415,7 +415,7 @@ abstract out the `hole and `(hole name) patterns.
                     (hash-table-put! ht key res)
                     res))])
 	  (unless (< entries 10000)
-	    ;(printf "clearing cache\n")
+            (set! entries 0)
 	    (set! ht (make-hash-table 'equal)))
           (hash-table-get ht key compute/cache)))))
 

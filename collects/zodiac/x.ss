@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.55 2000/06/07 06:20:12 shriram Exp $
+; $Id: x.ss,v 1.56 2000/06/08 19:52:30 mflatt Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -24,10 +24,7 @@
       (global-defined-value s)))
   
   (define (syntax-symbol->id s)
-    (with-handlers ([void (lambda (x)
-			    (let ([mzb (make-mz-binding s)])
-			      (global-defined-value s mzb)
-			      mzb))])
+    (with-handlers ([void (lambda (x) (make-mz-binding s))])
       (parameterize ([current-namespace reference-namespace])
 	(global-defined-value s))))
 

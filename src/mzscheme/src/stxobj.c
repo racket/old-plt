@@ -1268,11 +1268,6 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
   return o;
 }
 
-static int cert_transparent(Scheme_Cert *cert, Scheme_Object *inspkey)
-{
-  return 1;
-}
-
 int scheme_stx_certified(Scheme_Object *stx, Scheme_Object *extra_certs, 
 			 Scheme_Object *home_modidx, Scheme_Object *home_insp)
 {
@@ -1328,45 +1323,57 @@ static Scheme_Cert *cons_cert(Scheme_Object *mark, Scheme_Object *modidx,
   return cert;
 }
 
-static Scheme_Object *add_certs(Scheme_Object *o, Scheme_Cert *certs, Scheme_Object *key, int keep_all)
+static Scheme_Object *add_certs(Scheme_Object *o, Scheme_Cert *certs, Scheme_Object *use_key)
 {
   Scheme_Cert *orig_certs, *cl;
   Scheme_Stx *stx = (Scheme_Stx *)o, *res;
   int copy_on_write;
 
-  if (keep_all && !stx->certs) {
-    res = (Scheme_Stx *)scheme_make_stx(stx->val, 
-					stx->srcloc,
-					stx->props);
-    res->wraps = stx->wraps;
-    res->u.lazy_prefix = stx->u.lazy_prefix;
-    res->certs = certs;
-    return (Scheme_Object *)res;
+  if (!stx->certs) {
+    if (!certs)
+      return stx;
+
+    if (use_key) {
+      for (cl = certs; cl; cl = cl->next) {
+	if (!SAME_OBJ(cl->key, use_key))
+	  break;
+      }
+    } else
+      cl = NULL;
+
+    if (!cl) {
+      res = (Scheme_Stx *)scheme_make_stx(stx->val, 
+					  stx->srcloc,
+					  stx->props);
+      res->wraps = stx->wraps;
+      res->u.lazy_prefix = stx->u.lazy_prefix;
+      res->certs = certs;
+      return (Scheme_Object *)res;
+    }
   }
 
   copy_on_write = 1;
   orig_certs = stx->certs;
 
   for (; certs; certs = certs->next) {
-    if (keep_all || cert_transparent(certs, key)) {
-      for (cl = orig_certs; cl; cl = cl->next) {
-	if (SAME_OBJ(cl->mark, certs->mark))
-	  break;
+    for (cl = orig_certs; cl; cl = cl->next) {
+      if (SAME_OBJ(cl->mark, certs->mark)
+	  && SAME_OBJ(cl->key, use_key))
+	break;
+    }
+    if (!cl) {
+      if (copy_on_write) {
+	res = (Scheme_Stx *)scheme_make_stx(stx->val, 
+					    stx->srcloc,
+					    stx->props);
+	res->wraps = stx->wraps;
+	res->u.lazy_prefix = stx->u.lazy_prefix;
+	res->certs = orig_certs;
+	stx = res;
+	copy_on_write = 0;
       }
-      if (!cl) {
-	if (copy_on_write) {
-	  res = (Scheme_Stx *)scheme_make_stx(stx->val, 
-					      stx->srcloc,
-					      stx->props);
-	  res->wraps = stx->wraps;
-	  res->u.lazy_prefix = stx->u.lazy_prefix;
-	  res->certs = orig_certs;
-	  stx = res;
-	  copy_on_write = 0;
-	}
-	cl = cons_cert(certs->mark, certs->modidx, certs->insp, certs->key, stx->certs);
-	stx->certs = cl;
-      }
+      cl = cons_cert(certs->mark, certs->modidx, certs->insp, use_key, stx->certs);
+      stx->certs = cl;
     }
   }
 
@@ -1375,7 +1382,7 @@ static Scheme_Object *add_certs(Scheme_Object *o, Scheme_Cert *certs, Scheme_Obj
 
 Scheme_Object *scheme_stx_add_certs(Scheme_Object *o, Scheme_Object *certs)
 {
-  return add_certs(o, (Scheme_Cert *)certs, NULL, 1);
+  return add_certs(o, (Scheme_Cert *)certs, NULL);
 }
 
 Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_certs)
@@ -1403,7 +1410,7 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
     else
       certs = (Scheme_Cert *)plus_stx_or_certs;
     if (certs)
-      o = add_certs(o, certs, key, 1);
+      o = add_certs(o, certs, key);
   }
 
   if (menv && !menv->module->no_cert) {

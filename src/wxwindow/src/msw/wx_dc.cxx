@@ -748,6 +748,46 @@ void wxDC::SetPixel(float x, float y, wxColour *c)
   CalcBoundingBox(x, y);
 }
 
+Bool wxDC::BeginSetPixelFast(int x, int y, int w, int h)
+{
+  float ww, hh;
+  
+  GetSize(&ww, &hh);
+
+  return ((x >= 0) && (y >= 0)
+	  && ((x + w) <= (int)ww)
+	  && ((y + h) <= (int)hh));
+}
+
+void wxDC::EndSetPixelFast()
+{
+}
+
+void wxDC::SetPixelFast(int x1, int y1, int r, int g, int b)
+{
+  ::SetPixelV(cdc, x1, y1, RGB(r, g, b));
+}
+
+Bool wxDC::BeginGetPixelFast(int x, int y, int w, int h)
+{
+  return BeginSetPixelFast(w, y, w, h);
+}
+
+void wxDC::EndGetPixelFast()
+{
+}
+
+void wxDC::GetPixelFast(int x1, int y1, int *r, int *g, int *b)
+{
+  COLORREF pixelcolor;
+  
+  pixelcolor = ::GetPixel(cdc, x1, y1);
+  
+  *r = GetRValue(pixelcolor);
+  *g = GetGValue(pixelcolor);
+  *b = GetBValue(pixelcolor);
+}
+
 void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int fillStyle)
 {
   HDC dc;

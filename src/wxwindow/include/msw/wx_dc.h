@@ -73,6 +73,14 @@ class wxDC: public wxbDC
   inline void BeginSetPixel() {}
   inline void EndSetPixel() {}
 
+  Bool BeginSetPixelFast(int x, int y, int w, int h);
+  void EndSetPixelFast();
+  void SetPixelFast(int x1, int y1, int r, int g, int b);
+
+  Bool BeginGetPixelFast(int x, int y, int w, int h);
+  void EndGetPixelFast();
+  void GetPixelFast(int x, int y, int *r, int *g, int *b);
+
   void DrawLine(float x1, float y1, float x2, float y2);
   void IntDrawLine(int x1, int y1, int x2, int y2);
   void CrossHair(float x, float y);

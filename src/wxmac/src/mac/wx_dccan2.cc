@@ -118,19 +118,43 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
   
   SetCurrentDC();
 
+  SetPixelFast(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY,
+	       col->Red(), col->Green(), col->Blue());
+
+  ReleaseCurrentDC();
+}
+
+Bool wxCanvasDC::BeginSetPixelFast(int x, int, y, int w, int h)
+{
+  if ((x >= 0) && (y >= 0)
+      && ((x + w) <= pixmapWidth)
+      && ((y + h) <= pixmapHeight)) {
+    SetCurrentDC();  
+    return TRUE;
+  } else
+    return FALSE;
+}
+
+void wxCanvasDC::EndSetPixelFast()
+{
+  ReleaseCurrentDC();
+}
+
+void wxCanvasDC::SetPixelFast(int i, int j, int r, int g, int b)
+{
   if (Colour) {
-    rgb.red = col->Red();
+    rgb.red = r;
     rgb.red = (rgb.red << 8) | rgb.red;
-    rgb.green = col->Green();
+    rgb.green = g;
     rgb.green = (rgb.green << 8) | rgb.green;
-    rgb.blue = col->Blue();
+    rgb.blue = b;
     rgb.blue = (rgb.blue << 8) | rgb.blue;
 
-    SetCPixel(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY, &rgb);
+    SetCPixel(i, j, &rgb);
   } else {
     int qcol;
 
-    if ((col->Red() == 255) && (col->Blue() == 255) && (col->Green() == 255)) {
+    if ((r == 255) && (b == 255) && (g == 255)) {
       qcol = whiteColor;
     } else {
       qcol = blackColor;      
@@ -138,7 +162,7 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
 
     GetForeColor(&rgb);
     ForeColor(qcol);
-    wxMacDrawPoint(XLOG2DEV(x) + SetOriginX, YLOG2DEV(y) + SetOriginY);
+    wxMacDrawPoint(i, j);
     if (rgb.red) {
       if (qcol != whiteColor)
 	ForeColor(whiteColor);
@@ -147,8 +171,26 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
 	ForeColor(blackColor);
     }
   }
+}
 
-  ReleaseCurrentDC();
+Bool wxCanvasDC::BeginGetPixelFast(int x, int, y, int w, int h)
+{
+  return BeginSetPixelFast(x, y, w, h);
+}
+
+void wxCanvasDC::EndGetPixelFast()
+{
+  EndSetPixelFast();
+}
+
+void wxCanvasDC::GetPixelFast(int x, int y, int *r, int *g, int *b)
+{
+  RGBColor rgb;
+
+  GetCPixel(x, y, &rgb);
+  *r = (rgb.red >> 8);
+  *g = (rgb.green >> 8);
+  *b = (rgb.blue >> 8);
 }
 
 //-----------------------------------------------------------------------------

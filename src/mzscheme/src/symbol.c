@@ -52,7 +52,7 @@ Scheme_Bucket_Table *scheme_parallel_symbol_table = NULL;
 unsigned long scheme_max_found_symbol_name;
 
 /* globals */
-int scheme_case_sensitive;
+int scheme_case_sensitive = 1;
 
 /* locals */
 static Scheme_Object *symbol_p_prim (int argc, Scheme_Object *argv[]);

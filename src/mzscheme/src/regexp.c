@@ -2472,15 +2472,16 @@ static Scheme_Object *make_utf8_regexp(int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatile result_is_err_string)
 {
-  volatile mz_jmp_buf save;
+  mz_jmp_buf * volatile save, newbuf;
   Scheme_Object * volatile result;
 
   *result_is_err_string = 0;
 
   /* we rely on single-threaded, non-blocking regexp compilation: */
-  memcpy((void *)&save, (void *)&scheme_error_buf, sizeof(mz_jmp_buf));
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
   failure_msg_for_read = "yes";
-  if (!scheme_setjmp(scheme_error_buf)) {
+  if (!scheme_setjmp(newbuf)) {
     if (is_byte)
       result = make_regexp(1, &str);
     else
@@ -2491,7 +2492,7 @@ Scheme_Object *scheme_make_regexp(Scheme_Object *str, int is_byte, int * volatil
   }
 
   failure_msg_for_read = NULL;
-  memcpy((void *)&scheme_error_buf, (void *)&save, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = save;
   return result;
 }
 

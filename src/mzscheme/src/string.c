@@ -681,9 +681,10 @@ scheme_init_getenv(void)
   FILE *f = fopen("Environment", "r");
   if (f) {
     Scheme_Object *p = scheme_make_file_input_port(f);
-    mz_jmp_buf savebuf;
-    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-    if (!scheme_setjmp(scheme_error_buf)) {
+    mz_jmp_buf *savebuf, newbuf;
+    savebuf = scheme_current_thread->error_buf;
+    scheme_current_thread->error_buf = &newbuf;
+    if (!scheme_setjmp(newbuf)) {
       while (1) {
 	Scheme_Object *v = scheme_read(p);
 	if (SCHEME_EOFP(v))
@@ -706,7 +707,7 @@ scheme_init_getenv(void)
 	  scheme_signal_error("bad environment specification: %V", v);
       }
     }
-    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+    scheme_current_thread->error_buf = savebuf;
     scheme_close_input_port(p);
   }
 #endif

@@ -815,7 +815,7 @@ typedef struct Scheme_Dynamic_Wind {
   void *data;
   void (*pre)(void *);
   void (*post)(void *);
-  mz_jmp_buf saveerr;
+  mz_jmp_buf *saveerr;
   struct Scheme_Comp_Env *current_local_env;
   struct Scheme_Stack_State envss;
   struct Scheme_Cont *cont;
@@ -842,7 +842,7 @@ typedef struct Scheme_Cont {
   Scheme_Config *init_config;
   struct Scheme_Overflow *save_overflow;
   struct Scheme_Comp_Env *current_local_env;
-  mz_jmp_buf savebuf; /* save old error buffer here */
+  mz_jmp_buf *savebuf; /* save old error buffer here */
 } Scheme_Cont;
 
 typedef struct Scheme_Escaping_Cont {
@@ -851,7 +851,7 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Object *mark_key;
   struct Scheme_Stack_State envss;
   struct Scheme_Comp_Env *current_local_env;
-  mz_jmp_buf saveerr;
+  mz_jmp_buf *saveerr;
   int suspend_break;
 } Scheme_Escaping_Cont;
 
@@ -878,7 +878,7 @@ typedef struct Scheme_Overflow {
   MZTAG_IF_REQUIRED
   Scheme_Jumpup_Buf cont; /* continuation after value obtained in overflowed */
   struct Scheme_Overflow *prev; /* old overflow info */
-  mz_jmp_buf savebuf; /* save old error buffer here */
+  mz_jmp_buf *savebuf; /* save old error buffer pointer here */
   int captured; /* set to 1 if possibly captured in a continuation */
 } Scheme_Overflow;
 
@@ -949,7 +949,7 @@ typedef struct Syncing {
   Scheme_Object **nackss;
   char *reposts;
 
-  Scheme_Config *disable_break; /* when result is set */
+  Scheme_Thread *disable_break; /* when result is set */
 } Syncing;
 
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *syncing);
@@ -1837,6 +1837,7 @@ Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o);
 
 void scheme_clear_modidx_cache(void);
 void scheme_clear_shift_cache(void);
+void scheme_clear_cc_ok(void);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */
@@ -2049,7 +2050,7 @@ Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[]);
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
-Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos);
+Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, int peek);
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 

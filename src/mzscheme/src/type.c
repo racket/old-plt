@@ -195,6 +195,7 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_evt_set_type, "<evt-set>");
   set_name(scheme_wrapped_evt_type, "<evt>");
+  set_name(scheme_cont_evt_type, "<evt>");
   set_name(scheme_nack_evt_type, "<evt>");
   set_name(scheme_nack_guard_evt_type, "<evt>");
   set_name(scheme_poll_evt_type, "<evt>");

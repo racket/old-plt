@@ -761,7 +761,7 @@ typedef struct Scheme_Thread {
   Scheme_Object *t_set_next;
   Scheme_Object *t_set_prev;
 
-  mz_jmp_buf error_buf;
+  mz_jmp_buf *error_buf;
   Scheme_Continuation_Jump_State cjs;
 
   Scheme_Thread_Cell_Table *cell_values;
@@ -791,6 +791,7 @@ typedef struct Scheme_Thread {
   Scheme_Jumpup_Buf jmpup_buf;
 
   long *cc_ok;
+  long cc_ok_save;
   struct Scheme_Dynamic_Wind *dw;
 
   int running;
@@ -811,7 +812,7 @@ typedef struct Scheme_Thread {
 
   short overflow_set;
   struct Scheme_Overflow *overflow;
-  mz_jmp_buf overflow_buf;
+  mz_jmp_buf *overflow_buf;
   void *o_start;
 
   struct Scheme_Comp_Env *current_local_env;
@@ -909,16 +910,17 @@ typedef struct Scheme_Thread {
 typedef void (*Scheme_Kill_Action_Func)(void *);
 
 # define BEGIN_ESCAPEABLE(func, data) \
-    { mz_jmp_buf savebuf; \
+    { mz_jmp_buf *savebuf, newbuf; \
       scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
-      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
-      if (scheme_setjmp(scheme_error_buf)) { \
+      savebuf = scheme_current_thread->error_buf; \
+      scheme_current_thread->error_buf = &newbuf; \
+      if (scheme_setjmp(newbuf)) { \
         func(data); \
-        scheme_longjmp(savebuf, 1); \
+        scheme_longjmp(*savebuf, 1); \
       } else {
 # define END_ESCAPEABLE() \
       scheme_pop_kill_action(); \
-      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
+      scheme_current_thread->error_buf = savebuf; } }
 
 
 /*========================================================================*/
@@ -1065,7 +1067,7 @@ struct Scheme_Input_Port
   Scheme_Object *peeked_read, *peeked_write;
   unsigned char ungotten[24];
   int ungotten_count;
-  Scheme_Object *special, *ungotten_special;
+  Scheme_Object *special, *ungotten_special, *special_width;
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
@@ -1158,7 +1160,7 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 #define scheme_overflow_k (scheme_current_thread->overflow_k)
 #define scheme_overflow_reply (scheme_current_thread->overflow_reply)
 
-#define scheme_error_buf (scheme_current_thread->error_buf)
+#define scheme_error_buf *(scheme_current_thread->error_buf)
 #define scheme_jumping_to_continuation (scheme_current_thread->cjs.jumping_to_continuation)
 
 #define scheme_multiple_count (scheme_current_thread->ku.multiple.count)

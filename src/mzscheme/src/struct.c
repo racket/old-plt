@@ -71,6 +71,8 @@ static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *cont_evt(int argc, Scheme_Object *argv[]);
+static Scheme_Object *cont_evt_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -240,6 +242,9 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_evt(scheme_wrapped_evt_type,
 		 (Scheme_Ready_Fun)wrapped_evt_is_ready,
 		 NULL, NULL, 1);
+  scheme_add_evt(scheme_cont_evt_type,
+		 (Scheme_Ready_Fun)wrapped_evt_is_ready,
+		 NULL, NULL, 1);
   scheme_add_evt(scheme_nack_guard_evt_type,
 		 (Scheme_Ready_Fun)nack_guard_evt_is_ready,
 		 NULL, NULL, 1);
@@ -282,6 +287,11 @@ scheme_init_struct (Scheme_Env *env)
 						      "wrap-evt",
 						      2, 2),
 			     env);
+  scheme_add_global_constant("cont-evt",
+			     scheme_make_prim_w_arity(cont_evt,
+						      "cont-evt",
+						      2, 2),
+			     env);
   scheme_add_global_constant("nack-guard-evt",
 			     scheme_make_prim_w_arity(nack_evt,
 						      "nack-guard-evt",
@@ -292,7 +302,11 @@ scheme_init_struct (Scheme_Env *env)
 						      "poll-guard-evt",
 						      1, 1),
 			     env);
-
+  scheme_add_global_constant("cont-evt?",
+			     scheme_make_folding_prim(cont_evt_p,
+						      "cont-evt?",
+						      1, 1, 1),
+			     env);
 
   scheme_add_global_constant("struct?",
 			     scheme_make_folding_prim(struct_p,
@@ -1381,20 +1395,51 @@ static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
 /*                           wraps and nacks                              */
 /*========================================================================*/
 
-Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[])
+static Scheme_Object *wrap_cont_evt(const char *who, int wrap, int argc, Scheme_Object *argv[])
 {
   Wrapped_Evt *ww;
 
-  if (!scheme_is_evt(argv[0]))
-    scheme_wrong_type("wrap-evt", "evt", 0, argc, argv);
-  scheme_check_proc_arity("wrap-evt", 1, 1, argc, argv);
+  if (!scheme_is_evt(argv[0]) || (wrap && cont_evt_p(0, argv)))
+    scheme_wrong_type(who, wrap ? "non-cont evt" : "evt", 0, argc, argv);
+  scheme_check_proc_arity(who, 1, 1, argc, argv);
 
   ww = MALLOC_ONE_TAGGED(Wrapped_Evt);
-  ww->so.type = scheme_wrapped_evt_type;
+  ww->so.type = (wrap ? scheme_wrapped_evt_type : scheme_cont_evt_type);
   ww->evt = argv[0];
   ww->wrapper = argv[1];
 
   return (Scheme_Object *)ww;
+}
+
+Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[])
+{
+  return wrap_cont_evt("wrap-evt", 1, argc, argv);
+}
+
+Scheme_Object *cont_evt(int argc, Scheme_Object *argv[])
+{
+  return wrap_cont_evt("cont-evt", 0, argc, argv);
+}
+
+Scheme_Object *cont_evt_p(int argc, Scheme_Object *argv[])
+{
+  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_cont_evt_type))
+    return scheme_true;
+
+  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_evt_set_type)) {
+    Evt_Set *es = (Evt_Set *)argv[0];
+    int i;
+    for (i = es->argc; i--; ) {
+      if (SAME_TYPE(SCHEME_TYPE(es->argv[i]), scheme_cont_evt_type)) {
+	return scheme_true;
+      }
+    }
+  }
+
+  if (argc)
+    return scheme_false;
+  else
+    return NULL;
 }
 
 static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[])
@@ -1426,8 +1471,16 @@ Scheme_Object *scheme_poll_evt(int argc, Scheme_Object *argv[])
 static int wrapped_evt_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Wrapped_Evt *ww = (Wrapped_Evt *)o;
+  Scheme_Object *wrapper;
 
-  scheme_set_sync_target(sinfo, ww->evt, ww->wrapper, NULL, 0, 1);
+  if (ww->so.type == scheme_wrapped_evt_type) {
+    wrapper = ww->wrapper;
+  } else {
+    /* A box around the proc means that it's a cont wrapper: */
+    wrapper = scheme_box(ww->wrapper);
+  }
+
+  scheme_set_sync_target(sinfo, ww->evt, wrapper, NULL, 0, 1);
   return 0;
 }
 
@@ -2586,6 +2639,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
   GC_REG_TRAV(scheme_wrapped_evt_type, mark_wrapped_evt);
+  GC_REG_TRAV(scheme_cont_evt_type, mark_wrapped_evt);
   GC_REG_TRAV(scheme_nack_guard_evt_type, mark_nack_guard_evt);
   GC_REG_TRAV(scheme_poll_evt_type, mark_nack_guard_evt);
 

@@ -3,7 +3,6 @@
 /* This command-line parser is used by both MzScheme and MrEd. */
 /***************************************************************/
 
-#define GDESC "Identifiers and symbols are initially case-sensitive.\n"
 #define SDESC "Set! works on undefined identifiers.\n"
 
 char *cmdline_exe_hack = "[Replace me for EXE hack                                       ]";
@@ -558,6 +557,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-l";
     else if (!strcmp("--case-sens", argv[0]))
       argv[0] = "-g";
+    else if (!strcmp("--case-insens", argv[0]))
+      argv[0] = "-G";
     else if (!strcmp("--set-undef", argv[0]))
       argv[0] = "-s";
     else if (!strcmp("--script", argv[0]))
@@ -617,6 +618,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'g':
 	  scheme_case_sensitive = 1;
+	  break;
+	case 'G':
+	  scheme_case_sensitive = 0;
 	  break;
 	case 's':
 	  scheme_allow_set_undefined = 1;
@@ -806,7 +810,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  alternate_rep = 1;
 	  no_front = 1;
 	  break;
-	case 'G':
+	case 'K':
 	  no_front = 1;
 	  break;
 #endif
@@ -843,8 +847,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
       PRINTF(BANNER);
 #ifdef MZSCHEME_CMD_LINE  
-    if (scheme_case_sensitive)
-      PRINTF(GDESC);
     if (scheme_allow_set_undefined)
       PRINTF(SDESC);
 # ifdef DOS_FILE_SYSTEM
@@ -957,7 +959,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # endif
 # ifdef CMDLINE_STDIO_FLAG
 	 "  -z, --stdio : Show version, use read-eval-print-loop (not graphical-...).\n"
-	 "  -G, --back : Don't bring application to the foreground (Mac OS X).\n"
+	 "  -K, --back : Don't bring application to the foreground (Mac OS X).\n"
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"
@@ -967,7 +969,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -q, --no-init-file : Skips trying to load " INIT_FILENAME ".\n"
 	 "  -A : Skips defining `argv' and `program'.\n"
 	 " Language setting switches:\n"
-	 "  -g, --case-sens : " GDESC
+	 "  -g, --case-sens : Identifiers/symbols are initially case-sensitive.\n"
+	 "  -G, --case-insens : Identifiers/symbols are initially case-insensitive.\n"
 	 "  -s, --set-undef : " SDESC
 	 " Miscellaneous switches:\n"
 	 "  -- : No argument following this switch is used as a switch.\n"

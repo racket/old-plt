@@ -117,6 +117,7 @@ enum {
   scheme_id_macro_type,
   scheme_evt_set_type,                  /* 100 */
   scheme_wrapped_evt_type,
+  scheme_cont_evt_type,
   scheme_nack_guard_evt_type,
   scheme_semaphore_repost_type,
   scheme_channel_type,
@@ -124,8 +125,8 @@ enum {
   scheme_thread_resume_type,
   scheme_thread_suspend_type,
   scheme_thread_dead_type,
-  scheme_poll_evt_type,
-  scheme_nack_evt_type,                 /* 110 */
+  scheme_poll_evt_type,                 /* 110 */
+  scheme_nack_evt_type,
   scheme_module_registry_type,
   scheme_thread_set_type,
   scheme_string_converter_type,
@@ -134,8 +135,8 @@ enum {
   scheme_channel_syncer_type,
   scheme_special_comment_type,
   scheme_read_evt_type,
-  scheme_peek_evt_type,
-  scheme_write_evt_type,                /* 120 */
+  scheme_peek_evt_type,                 /* 120 */
+  scheme_write_evt_type,
   scheme_always_evt_type,
   scheme_never_evt_type,
 
@@ -147,8 +148,8 @@ enum {
   scheme_rt_resolve_info,
   scheme_rt_compile_info,
   scheme_rt_cont_mark,
-  scheme_rt_saved_stack,
-  scheme_rt_reply_item,                 /* 130 */
+  scheme_rt_saved_stack,                /* 130 */
+  scheme_rt_reply_item,
   scheme_rt_closure_info,
   scheme_rt_overflow,
   scheme_rt_dyn_wind_cell,
@@ -157,8 +158,8 @@ enum {
   scheme_rt_dyn_wind,
   scheme_rt_dup_check,
   scheme_rt_thread_memory,
-  scheme_rt_input_file,
-  scheme_rt_input_fd,                   /* 140 */
+  scheme_rt_input_file,                 /* 140 */
+  scheme_rt_input_fd,
   scheme_rt_oskit_console_input,
   scheme_rt_tested_input_file,
   scheme_rt_tested_output_file,
@@ -167,8 +168,8 @@ enum {
   scheme_rt_load_handler_data,
   scheme_rt_pipe,
   scheme_rt_beos_process,
-  scheme_rt_system_child,
-  scheme_rt_tcp,                        /* 150 */
+  scheme_rt_system_child,               /* 150 */
+  scheme_rt_tcp,
   scheme_rt_write_data,
   scheme_rt_tcp_select_info,
   scheme_rt_namespace_option,
@@ -177,8 +178,8 @@ enum {
   scheme_rt_will_registration,
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
-  scheme_rt_param_map,
-  scheme_rt_finalization,               /* 160 */
+  scheme_rt_param_map,                  /* 160 */
+  scheme_rt_finalization,
   scheme_rt_finalizations,
   scheme_rt_cpp_object,
   scheme_rt_cpp_array_object,
@@ -187,8 +188,8 @@ enum {
   scheme_thread_hop_type,
   scheme_rt_srcloc,
   scheme_rt_evt,
-  scheme_rt_syncing,
-  scheme_rt_comp_prefix,                /* 170 */
+  scheme_rt_syncing,                    /* 170 */
+  scheme_rt_comp_prefix,
   scheme_rt_user_input,
   scheme_rt_user_output,
   scheme_rt_compact_port,

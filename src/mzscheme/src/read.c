@@ -563,7 +563,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     case SCHEME_SPECIAL:
       {
 	Scheme_Object *v;
-	v = scheme_get_special(port, stxsrc, line, col, pos);
+	v = scheme_get_special(port, stxsrc, line, col, pos, 0);
 	if (scheme_special_comment_value(v)) {
 	  /* a "comment" */
 	  if (return_for_lookahead_on_special_comment)
@@ -633,7 +633,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	if (ch == EOF)
 	  return scheme_eof;
 	if (ch == SCHEME_SPECIAL)
-	  scheme_get_ready_special(port, stxsrc);
+	  scheme_get_ready_special(port, stxsrc, 0);
       }
       goto start_over;
     case '+':
@@ -790,7 +790,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
 			      "read: end of file in #| comment");
 	    else if (ch == SCHEME_SPECIAL)
-	      scheme_get_ready_special(port, stxsrc);
+	      scheme_get_ready_special(port, stxsrc, 0);
 
 	    if ((ch2 == '|') && (ch == '#')) {
 	      if (!(depth--))
@@ -1567,7 +1567,7 @@ read_string(int is_byte, Scheme_Object *port,
 		      "read: expected a closing '\"'");
       return NULL;
     } else if (ch == SCHEME_SPECIAL) {
-      scheme_get_ready_special(port, stxsrc);
+      scheme_get_ready_special(port, stxsrc, 0);
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
 		      "read: found non-character while reading a string");
       return NULL;
@@ -1581,7 +1581,7 @@ read_string(int is_byte, Scheme_Object *port,
 			"read: expected a closing '\"'");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
-	scheme_get_ready_special(port, stxsrc);
+	scheme_get_ready_special(port, stxsrc, 0);
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
 			"read: found non-character while reading a string");
 	return NULL;
@@ -1614,7 +1614,7 @@ read_string(int is_byte, Scheme_Object *port,
 	  ch = n;
 	} else {
 	  if (ch == SCHEME_SPECIAL)
-	    scheme_get_ready_special(port, stxsrc);
+	    scheme_get_ready_special(port, stxsrc, 0);
 	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
 			  "read: no hex digit following \\x in string");
 	  return NULL;
@@ -1648,7 +1648,7 @@ read_string(int is_byte, Scheme_Object *port,
 	    }
 	  } else {
 	    if (ch == SCHEME_SPECIAL)
-	      scheme_get_ready_special(port, stxsrc);
+	      scheme_get_ready_special(port, stxsrc, 0);
 	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
 			    "read: no hex digit following \\%c in string", 
 			    ((maxc == 4) ? 'u' : 'U'));
@@ -1920,7 +1920,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
 			"read: EOF following \\ in symbol");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
-	scheme_get_ready_special(port, stxsrc);
+	scheme_get_ready_special(port, stxsrc, 0);
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
 			"read: non-character following \\ in symbol");
 	return NULL;
@@ -1959,7 +1959,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   }
 
   if (running_quote && (ch == SCHEME_SPECIAL)) {
-    scheme_get_ready_special(port, stxsrc);
+    scheme_get_ready_special(port, stxsrc, 0);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
 		    "read: non-character following \\ in symbol");      
   }
@@ -2059,7 +2059,7 @@ read_character(Scheme_Object *port,
   ch = scheme_getc_special_ok(port);
 
   if (ch == SCHEME_SPECIAL) {
-    scheme_get_ready_special(port, stxsrc);
+    scheme_get_ready_special(port, stxsrc, 0);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), SCHEME_SPECIAL, indentation, 
 		    "read: found non-character after #\\");
     return NULL;
@@ -2298,7 +2298,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
     do {
       ch = scheme_getc_special_ok(port);
       if (ch == SCHEME_SPECIAL)
-	scheme_get_ready_special(port, stxsrc);
+	scheme_get_ready_special(port, stxsrc, 0);
     } while (ch != '\n' && ch != '\r' && ch != EOF);
     goto start_over;
   }
@@ -2319,7 +2319,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
 			"read: end of file in #| comment");
       else if (ch == SCHEME_SPECIAL)
-	scheme_get_ready_special(port, stxsrc);
+	scheme_get_ready_special(port, stxsrc, 0);
 
       if ((ch2 == '|') && (ch == '#')) {
 	if (!(depth--))

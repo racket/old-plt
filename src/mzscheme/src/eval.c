@@ -467,7 +467,7 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
       return reply;
     }
   } else
-    scheme_longjmp(scheme_current_thread->overflow_buf, 1);
+    scheme_longjmp(*scheme_current_thread->overflow_buf, 1);
   return NULL; /* never gets here */
 }
 
@@ -749,16 +749,18 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
         folding attempts */
 {
   Scheme_Object * volatile result;
-  mz_jmp_buf savebuf;
-  scheme_current_thread->skip_error = 5;
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  mz_jmp_buf *savebuf, newbuf;
 
-  if (scheme_setjmp(scheme_error_buf))
+  scheme_current_thread->skip_error = 5;
+  savebuf = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+
+  if (scheme_setjmp(newbuf))
     result = NULL;
   else
     result = _scheme_apply_to_list(f, args);
   
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = savebuf;
   scheme_current_thread->skip_error = 0;  
 
   return result;

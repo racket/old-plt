@@ -1009,19 +1009,7 @@ static long user_read_result(const char *who, Scheme_Input_Port *port,
 	if (scheme_check_proc_arity(NULL, 4, 0, 1, a)
 	    && ((SCHEME_INTP(val) && (SCHEME_INT_VAL(val) >= 0))
 		|| (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)))) {
-	  if (!peek) {
-	    /* Track location */
-	    long pos_delta;
-	    if (SCHEME_INTP(val))
-	      pos_delta = SCHEME_INT_VAL(val) - 1;
-	    else
-	      pos_delta = -(port->position+1); /* drive position to -1 -> lost track */
-	    if (port->position >= 0)
-	      port->position += pos_delta;
-	    port->readpos += pos_delta;
-	    port->column += pos_delta;
-	    port->charsSinceNewline += pos_delta;
-	  }
+	  port->special_width = val;
 	  port->special = a[0];
 	  return SCHEME_SPECIAL;
 	} else
@@ -1122,7 +1110,7 @@ user_get_or_peek_bytes(Scheme_Input_Port *port,
     val = scheme_apply(fun, peek ? 2 : 1, a);
     
     if ((size <= MAX_USER_INPUT_REUSE_SIZE)
-	&& !scheme_is_evt(val)) {
+	&& (SCHEME_INTP(val) || SCHEME_EOFP(val) || SCHEME_PAIRP(val))) {
       uip->reuse_str = bstr;
     }
 
@@ -1180,7 +1168,7 @@ static Scheme_Object *user_read_evt_wrapper(void *d, int argc, struct Scheme_Obj
 
   if (r < 0) {
     if (r == SCHEME_SPECIAL) {
-      val = scheme_get_ready_special(port, NULL);
+      val = scheme_get_ready_special(port, NULL, peek);
       if (SCHEME_TRUEP((Scheme_Object *)((void **)d)[5]))
 	return val;
       else {
@@ -2132,8 +2120,6 @@ make_input_port(int argc, Scheme_Object *argv[])
 			      user_needs_wakeup_input,
 			      0);
 
-  ip->pending_eof = 1; /* means that pending EOFs should be tracked */
-
   return (Scheme_Object *)ip;
 }
 
@@ -2656,10 +2642,7 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek, int spec, in
   }
 
   if (ch == SCHEME_SPECIAL) {
-    if (peek)
-      return scheme_intern_symbol("special");
-    else
-      return scheme_get_ready_special(port, NULL);
+    return scheme_get_ready_special(port, NULL, peek);
   } else if (ch == EOF)
     return scheme_eof;
   else if (is_byte)
@@ -3911,7 +3894,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
     scheme_ungetc(ch, port);
 
   config = scheme_current_config();
-  config = scheme_extend_config(config, MZCONFIG_CASE_SENS, scheme_false);
+  config = scheme_extend_config(config, MZCONFIG_CASE_SENS, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_CURLY_BRACES_ARE_PARENS, scheme_true);
   config = scheme_extend_config(config, MZCONFIG_CAN_READ_GRAPH, scheme_true);
@@ -4039,18 +4022,19 @@ current_load_directory(int argc, Scheme_Object *argv[])
 Scheme_Object *scheme_load(const char *file)
 {
   Scheme_Object *p[1];
-  mz_jmp_buf savebuf;
+  mz_jmp_buf newbuf, *savebuf;
   Scheme_Object * volatile val;
 
   p[0] = scheme_make_path(file);
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-  if (scheme_setjmp(scheme_error_buf)) {
+  savebuf = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+  if (scheme_setjmp(newbuf)) {
     val = NULL;
   } else {
     val = scheme_apply_multi(scheme_make_prim((Scheme_Prim *)load),
 			     1, p);
   }
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+  scheme_current_thread->error_buf = savebuf;
 
   return val;
 }

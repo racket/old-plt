@@ -474,6 +474,7 @@ input_port {
   gcMARK(ip->output_half);
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
+  gcMARK(ip->special_width);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1356,10 +1357,6 @@ mark_will_registration {
 
 mark_evt {
  mark:
-  Evt *r = (Evt *)p;
- 
-  gcMARK(r->next);
-
  size:
   gcBYTES_TO_WORDS(sizeof(Evt));
 }

@@ -221,7 +221,9 @@ static Scheme_Object *nested_exn_handler;
 static Scheme_Object *closers;
 
 static Scheme_Object *thread_swap_callbacks;
-
+	
+static mz_jmp_buf main_init_error_buf;
+	
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -1811,6 +1813,8 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
     process->prev = NULL;
     process->next = NULL;
 
+    process->error_buf = &main_init_error_buf;
+
     thread_swap_callbacks = scheme_null;
 
     GC_collect_start_callback = get_ready_for_GC;
@@ -2074,7 +2078,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
       }
     }
     if (scheme_current_thread->cc_ok)
-      *(scheme_current_thread->cc_ok) = 1;
+      *(scheme_current_thread->cc_ok) = scheme_current_thread->cc_ok_save;
     if ((scheme_current_thread->runstack_owner
 	 && ((*scheme_current_thread->runstack_owner) != scheme_current_thread))
 	|| (scheme_current_thread->cont_mark_stack_owner
@@ -2090,8 +2094,10 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
       config = scheme_current_config();
       scheme_current_thread->config_at_swap = config;
     }
-    if (scheme_current_thread->cc_ok)
+    if (scheme_current_thread->cc_ok) {
+      scheme_current_thread->cc_ok_save = *(scheme_current_thread->cc_ok);
       *(scheme_current_thread->cc_ok) = 0;
+    }
     scheme_gmp_tls_load(scheme_current_thread->gmp_tls);
 #ifdef RUNSTACK_IS_GLOBAL
     scheme_current_thread->runstack = MZ_RUNSTACK;
@@ -2196,9 +2202,9 @@ static void thread_is_dead(Scheme_Thread *r)
   r->overflow = NULL;
 
   r->transitive_resumes = NULL;
-
-  memset(&r->error_buf, 0, sizeof(mz_jmp_buf));
-  memset(&r->overflow_buf, 0, sizeof(mz_jmp_buf));
+  
+  r->error_buf = NULL;
+  r->overflow_buf = NULL;
 }
 
 static void remove_thread(Scheme_Thread *r)
@@ -2641,7 +2647,7 @@ static Scheme_Object *def_nested_exn_handler(int argc, Scheme_Object *argv[])
     p->cjs.jumping_to_continuation = (struct Scheme_Escaping_Cont *)scheme_current_thread;
     p->cjs.u.val = argv[0];
     p->cjs.is_kill = 0;
-    scheme_longjmp(p->error_buf, 1);
+    scheme_longjmp(*p->error_buf, 1);
   }
 
   return scheme_void; /* misuse of exception handler */
@@ -2653,6 +2659,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   Scheme_Thread * volatile np;
   Scheme_Custodian *mgr;
   Scheme_Object * volatile v;
+  mz_jmp_buf newbuf;
   volatile int failure;
 
   scheme_check_proc_arity("call-in-nested-thread", 0, 0, argc, argv);
@@ -2721,8 +2728,10 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   scheme_gmp_tls_init(np->gmp_tls);
   
-  if (p->cc_ok)
+  if (p->cc_ok) {
+    p->cc_ok_save = *p->cc_ok;
     *p->cc_ok = 0;
+  }
 
   /* np->prev = NULL; - 0ed by allocation */
   np->next = scheme_first_thread;
@@ -2795,7 +2804,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     scheme_weak_suspend_thread(p);
 
   /* Call thunk, catch escape: */
-  if (scheme_setjmp(np->error_buf)) {
+  np->error_buf = &newbuf;
+  if (scheme_setjmp(newbuf)) {
     if (!np->cjs.is_kill)
       v = np->cjs.u.val;
     else
@@ -2854,7 +2864,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 #endif
 
   if (p->cc_ok)
-    *p->cc_ok = 1;
+    *p->cc_ok = p->cc_ok_save;
 
   if ((p->running & MZTHREAD_KILLED)
       || (p->running & MZTHREAD_USER_SUSPENDED))
@@ -3097,13 +3107,14 @@ static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
      calculaion. It is possible to have nested bignum calculations,
      though (if the break handler performs bignum arithmetic), so
      that's why we save and restore an old snapshot. */
-  mz_jmp_buf savebuf;
+  mz_jmp_buf *savebuf, newbuf;
   long save[4];
 
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  savebuf = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
   scheme_gmp_tls_snapshot(scheme_current_thread->gmp_tls, save);
 
-  if (!scheme_setjmp(scheme_error_buf)) {
+  if (!scheme_setjmp(newbuf)) {
     /* >>>> This is the main action <<<< */
     scheme_raise_exn(MZEXN_BREAK, argv[0], "user break");
     /* will definitely escape (or thread will die) */
@@ -3114,7 +3125,7 @@ static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
     cont = SAME_OBJ((Scheme_Object *)scheme_jumping_to_continuation,
 		    argv[0]);
     scheme_gmp_tls_restore_snapshot(scheme_current_thread->gmp_tls, save, !cont);
-    scheme_longjmp(savebuf, 1);
+    scheme_longjmp(*savebuf, 1);
   }
 
   return scheme_void;
@@ -3160,7 +3171,7 @@ static void exit_or_escape(Scheme_Thread *p)
       p->running -= MZTHREAD_KILLED;
     p->cjs.jumping_to_continuation = (struct Scheme_Escaping_Cont *)p;
     p->cjs.is_kill = 1;
-    scheme_longjmp(p->error_buf, 1);
+    scheme_longjmp(*p->error_buf, 1);
   }
 
   if (!p->next) {
@@ -4339,33 +4350,46 @@ typedef struct Evt {
   Scheme_Sync_Sema_Fun get_sema;
   Scheme_Sync_Filter_Fun filter;
   int can_redirect;
-  struct Evt *next;
 } Evt;
 
-static Evt *evts;
+static int evts_array_size;
+static Evt **evts;
 
 void scheme_add_evt(Scheme_Type type,
-			 Scheme_Ready_Fun ready, 
-			 Scheme_Needs_Wakeup_Fun wakeup, 
-			 Scheme_Sync_Filter_Fun filter,
-			 int can_redirect)
+		    Scheme_Ready_Fun ready, 
+		    Scheme_Needs_Wakeup_Fun wakeup, 
+		    Scheme_Sync_Filter_Fun filter,
+		    int can_redirect)
 {
-  Evt *next = evts;
+  Evt *naya;
 
   if (!evts) {
     REGISTER_SO(evts);
   }
 
-  evts = MALLOC_ONE_RT(Evt);
+  if (evts_array_size <= type) {
+    Evt **nevts;
+    int new_size;
+    new_size = type + 1;
+    if (new_size < _scheme_last_type_)
+      new_size = _scheme_last_type_;
+    nevts = MALLOC_N(Evt*, new_size);
+    memcpy(nevts, evts, evts_array_size * sizeof(Evt*));
+    evts = nevts;
+    evts_array_size = new_size;
+  }
+
+  naya = MALLOC_ONE_RT(Evt);
 #ifdef MZTAG_REQUIRED
-  evts->type = scheme_rt_evt;
+  naya->type = scheme_rt_evt;
 #endif
-  evts->sync_type = type;
-  evts->ready = (Scheme_Ready_Fun_FPC)ready;
-  evts->needs_wakeup = wakeup;
-  evts->filter = filter;
-  evts->can_redirect = can_redirect;
-  evts->next = next;
+  naya->sync_type = type;
+  naya->ready = (Scheme_Ready_Fun_FPC)ready;
+  naya->needs_wakeup = wakeup;
+  naya->filter = filter;
+  naya->can_redirect = can_redirect;
+
+  evts[type] = naya;
 }
 
 void scheme_add_evt_through_sema(Scheme_Type type,
@@ -4373,7 +4397,7 @@ void scheme_add_evt_through_sema(Scheme_Type type,
 				  Scheme_Sync_Filter_Fun filter)
 {
   scheme_add_evt(type, NULL, NULL, filter, 0);
-  evts->get_sema = get_sema;
+  evts[type]->get_sema = get_sema;
 }
 
 static Evt *find_evt(Scheme_Object *o)
@@ -4382,17 +4406,15 @@ static Evt *find_evt(Scheme_Object *o)
   Evt *w;
 
   t = SCHEME_TYPE(o);
-  
-  for (w = evts; w; w = w->next) {
-    if (SAME_TYPE(t, w->sync_type)) {
-      if (w->filter) {
-	Scheme_Sync_Filter_Fun filter;
-	filter = w->filter;
-	if (!filter(o))
-	  return NULL;
-      }
-      return w;
+  w = evts[t];
+  if (w) {
+    if (w->filter) {
+      Scheme_Sync_Filter_Fun filter;
+      filter = w->filter;
+      if (!filter(o))
+	return NULL;
     }
+    return w;
   }
 
   return NULL;
@@ -4661,7 +4683,7 @@ static int syncing_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	if (!r_sinfo.potentially_false_positive) {
 	  syncing->result = i + 1;
 	  if (syncing->disable_break)
-	    scheme_set_param(syncing->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
+	    syncing->disable_break->suspend_break++;
 	  if (syncing->reposts && syncing->reposts[i])
 	    scheme_post_sema(o);
 	  result = 1;
@@ -4829,12 +4851,15 @@ static void post_syncing_nacks(Syncing *syncing)
   }
 }
 
-static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[], int with_break, int with_timeout, int tailok)
+static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[], 
+			      int with_break, int with_timeout, int tailok)
 {
   Evt_Set *evt_set;
   Syncing *syncing;
   float timeout = -1.0;
   double start_time;
+  Scheme_Cont_Frame_Data cframe;
+  Scheme_Config *orig_config = NULL;
 
   if (with_timeout) {
     if (!SCHEME_FALSEP(argv[0])) {
@@ -4877,6 +4902,21 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
   if (!evt_set)
     evt_set = make_evt_set(name, argc, argv, with_timeout);
 
+  if (with_break) {
+    Scheme_Config *config;
+
+    orig_config = scheme_current_config();
+    config = scheme_extend_config(orig_config,
+				  MZCONFIG_ENABLE_BREAK, 
+				  scheme_true);
+    
+    scheme_push_continuation_frame(&cframe);
+    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+
+    /* Need to check for a break, in case one was queued and we just enabled it: */
+    scheme_check_break_now();
+  }
+
   /* Check for another special case: syncing on a set of semaphores
      without a timeout. Use general code for channels.
      (Note that we check for this case after evt-set flattening.) */
@@ -4894,6 +4934,10 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 	 check for a break, because scheme_wait_semas_chs() won't: */
       scheme_check_break_now();
 
+      if (with_break) {
+	scheme_pop_continuation_frame(&cframe);
+      }
+
       if (i)
 	return evt_set->argv[i - 1];
       else
@@ -4907,9 +4951,8 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
     timeout = 0.0; /* means "no timeout" to block_until */
 
   if (with_break) {
-    Scheme_Config *config;
-    config = scheme_current_config();
-    syncing->disable_break = config;
+    /* Suspended breaks when something is selected: */
+    syncing->disable_break = scheme_current_thread;
   }
 
   BEGIN_ESCAPEABLE(post_syncing_nacks, syncing);
@@ -4919,9 +4962,21 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 
   post_syncing_nacks(syncing);
 
+  if (with_break) {
+    scheme_pop_continuation_frame(&cframe);
+  }
+
+  if (with_break) {
+    /* Reverse low-level break disable: */
+    --syncing->disable_break->suspend_break;
+  }
+
   if (syncing->result) {
     /* Apply wrap functions to the selected evt: */
     Scheme_Object *o, *l, *a, *to_call = NULL, *args[1];
+    Scheme_Config *config;
+    int to_call_is_cont = 0;
+
     o = evt_set->argv[syncing->result - 1];
     if (SAME_TYPE(SCHEME_TYPE(o), scheme_channel_syncer_type)) {
       /* This is a put that got changed to a syncer, but not changed back */
@@ -4932,10 +4987,27 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
       if (l) {
 	for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	  a = SCHEME_CAR(l);
-	  if (SCHEME_PROCP(a)) {
+	  if (SCHEME_BOXP(a) || SCHEME_PROCP(a)) {
+	    if (SCHEME_BOXP(a)) {
+	      a = SCHEME_BOX_VAL(a);
+	      to_call_is_cont = 1;
+	    }
 	    if (to_call) {
 	      args[0] = o;
+
+	      /* Call wrap proc with breaks disabled */
+	      if (!orig_config)
+		orig_config = scheme_current_config();
+	      config = scheme_extend_config(orig_config,
+					    MZCONFIG_ENABLE_BREAK, 
+					    scheme_false);
+	      
+	      scheme_push_continuation_frame(&cframe);
+	      scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+
 	      o = scheme_apply(to_call, 1, args);
+
+	      scheme_pop_continuation_frame(&cframe);
 	    }
 	    to_call = a;
 	  } else if (SAME_TYPE(scheme_thread_suspend_type, SCHEME_TYPE(a))
@@ -4947,10 +5019,28 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
 
 	if (to_call) {
 	  args[0] = o;
-	  if (tailok)
+	  
+	  /* If to_call is still a wrap-evt (not a cont-evt),
+	     then set the config one more time: */
+	  if (!to_call_is_cont) {
+	    if (!orig_config)
+	      orig_config = scheme_current_config();
+	    config = scheme_extend_config(orig_config,
+					  MZCONFIG_ENABLE_BREAK, 
+					  scheme_false);
+	    if (!tailok)
+	      scheme_push_continuation_frame(&cframe);
+	    scheme_set_cont_mark(scheme_parameterization_key, (Scheme_Object *)config);
+	  }
+
+	  if (tailok) {
 	    return _scheme_tail_apply(to_call, 1, args);
-	  else
-	    return scheme_apply(to_call, 1, args);
+	  } else {
+	    o = scheme_apply(to_call, 1, args);
+	    if (!to_call_is_cont)
+	      scheme_pop_continuation_frame(&cframe);
+	    return o;
+	  }
 	}
       }
     }
@@ -4981,48 +5071,24 @@ Scheme_Object *scheme_sync_timeout(int argc, Scheme_Object *argv[])
   return do_sync("sync/timeout", argc, argv, 0, 0, 1);
 }
 
-Scheme_Object *do_sync_break(int argc, Scheme_Object *argv[])
+static Scheme_Object *do_scheme_sync_enable_break(const char *who, int with_timeout, int argc, Scheme_Object *argv[])
 {
-  return do_sync("sync/enable-break", argc, argv, 1, 0, 1);
-}
-
-Scheme_Object *do_sync_timeout_break(int argc, Scheme_Object *argv[])
-{
-  return do_sync("sync/timeout/enable-break", argc, argv, 1, 1, 1);
-}
-
-Scheme_Object *do_scheme_sync_enable_break(int with_timeout, int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *v;
-
   if (argc == 2 && SCHEME_FALSEP(argv[0]) && SCHEME_SEMAP(argv[1])) {
     scheme_wait_sema(argv[1], -1);
     return scheme_void;
   }
 
-  /* Since we do special work to disable breaks after a sucessful sync,
-     make sure that the work is necessary, and that it won't interfere
-     with normal breakpoint checking: */
-  v = scheme_get_param(scheme_current_config(), MZCONFIG_ENABLE_BREAK);
-
-  if (SCHEME_FALSEP(v))
-    return scheme_call_enable_break((with_timeout
-				     ? do_sync_break
-				     : do_sync_timeout_break),
-				    argc, argv);
-  else
-    return do_sync(with_timeout ? "sync/timeout/enable-break" : "sync/enable-break",
-		   argc, argv, 0, with_timeout, 1);
+  return do_sync(who, argc, argv, 1, with_timeout, 1);
 }
 
 Scheme_Object *scheme_sync_enable_break(int argc, Scheme_Object *argv[])
 {
-  return do_scheme_sync_enable_break(0, argc, argv);
+  return do_scheme_sync_enable_break("sync/enable-break", 0, argc, argv);
 }
 
-Scheme_Object *sch_sync_timeout_enable_break(int argc, Scheme_Object *argv[])
+static Scheme_Object *sch_sync_timeout_enable_break(int argc, Scheme_Object *argv[])
 {
-  return do_scheme_sync_enable_break(1, argc, argv);
+  return do_scheme_sync_enable_break("sync/timeout/enable-break", 1, argc, argv);
 }
 
 static Scheme_Object *evts_to_evt(int argc, Scheme_Object *argv[])
@@ -6174,6 +6240,7 @@ static void get_ready_for_GC()
 
   scheme_clear_modidx_cache();
   scheme_clear_shift_cache();
+  scheme_clear_cc_ok();
 
 #ifdef RUNSTACK_IS_GLOBAL
   scheme_current_thread->runstack = MZ_RUNSTACK;

@@ -1268,6 +1268,7 @@ int input_port_MARK(void *p) {
   gcMARK(ip->output_half);
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
+  gcMARK(ip->special_width);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1286,6 +1287,7 @@ int input_port_FIXUP(void *p) {
   gcFIXUP(ip->output_half);
   gcFIXUP(ip->special);
   gcFIXUP(ip->ungotten_special);
+  gcFIXUP(ip->special_width);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));

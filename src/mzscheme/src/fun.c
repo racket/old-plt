@@ -861,16 +861,18 @@ void scheme_on_next_top(Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object
 
 typedef Scheme_Object *(*Overflow_K_Proc)(void);
 
+static long *available_cc_ok;
+
 void *top_level_do(void *(*k)(void), int eb, void *sj_start)
      /* Wraps a function `k' with a handler for stack overflows and
-	barriers to full-continuation jumps. No barrier if !eb, but
-        include an escape-continuation barrier if eb > 1. */
+	barriers to full-continuation jumps. No barrier if !eb. */
 {
   void *v;
   long * volatile old_cc_ok;
+  long volatile old_cc_ok_val = 0;
   long * volatile cc_ok;
   volatile long save_list_stack_pos;
-  mz_jmp_buf save, oversave;
+  mz_jmp_buf *save, *oversave = NULL, newbuf, overbuf;
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
   Scheme_Object * volatile save_mark, *  volatile save_name;
@@ -895,12 +897,17 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
 	thread_init_cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
       }
       cc_ok = thread_init_cc_ok;
+    } else if (available_cc_ok) {
+      cc_ok = available_cc_ok;
+      available_cc_ok = NULL;
     } else
       cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
     p->cc_ok = cc_ok;
 
-    if (old_cc_ok)
+    if (old_cc_ok) {
+      old_cc_ok_val = *old_cc_ok;
       *old_cc_ok = 0;
+    }
     *cc_ok = 1;
   } else
     cc_ok = NULL;
@@ -938,18 +945,22 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   if (set_overflow) {
     p->o_start = sj_start;
     p->overflow_set = 1;
-    memcpy(&oversave, &p->overflow_buf, sizeof(mz_jmp_buf));
-    if (scheme_setjmp(p->overflow_buf)) {
+    
+    oversave = p->overflow_buf;
+    p->overflow_buf = &overbuf;
+    if (scheme_setjmp(overbuf)) {
       while (1) {
 	/* We get `p' again because it might be a nestee: */
 	Scheme_Thread *pp;
 	Scheme_Overflow *overflow;
+	mz_jmp_buf nestedbuf;
 
 	pp = scheme_current_thread;
 	overflow = pp->overflow;
 
-	memcpy(&overflow->savebuf, &pp->error_buf, sizeof(mz_jmp_buf));
-	if (scheme_setjmp(pp->error_buf)) {
+	overflow->savebuf = pp->error_buf;
+	pp->error_buf = &nestedbuf;
+	if (scheme_setjmp(nestedbuf)) {
 	  /* If we use scheme_overflow_reply here, it crashes on
 	     Sparc. Sometimes. Can anyone tell me why? */
 	  pp = scheme_current_thread;
@@ -988,10 +999,10 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
 
 	pp = scheme_current_thread;
 	overflow = pp->overflow;
-	memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
+	pp->error_buf = overflow->savebuf;
 	pp->overflow = overflow->prev;
 	/* Reset overflow buffer and continue */
-	if (scheme_setjmp(pp->overflow_buf)) {
+	if (scheme_setjmp(*pp->overflow_buf)) {
 	  /* handle again */
 	} else
 	  scheme_longjmpup(&overflow->cont);
@@ -999,22 +1010,28 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     }
   }
 
-  memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
+  save = p->error_buf;
+  p->error_buf = &newbuf;
 
-  if (scheme_setjmp(p->error_buf)) {
+  if (scheme_setjmp(newbuf)) {
     p = scheme_current_thread;
     scheme_restore_env_stack_w_thread(envss, p);
 #ifdef MZ_PRECISE_GC
     if (scheme_set_external_stack_val)
       scheme_set_external_stack_val(external_stack);
 #endif
-    if (cc_ok)
-      *cc_ok = 0;
+    if (cc_ok) {
+      if (*cc_ok == 1) {
+	/* It wasn't used */
+	available_cc_ok = cc_ok;
+      } else
+	*cc_ok = 0;
+    }
     if (old_cc_ok)
-      *old_cc_ok = 1;
+      *old_cc_ok = old_cc_ok_val;
     p->cc_ok = old_cc_ok;
     if (set_overflow) {
-      memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
+      p->overflow_buf = oversave;
       p->overflow_set = 0;
     }
     p->current_local_env = save_current_local_env;
@@ -1023,7 +1040,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     p->list_stack = save_list_stack;
     p->list_stack_pos = save_list_stack_pos;
     p->suspend_break = save_suspend_break;
-    scheme_longjmp(save, 1);
+    scheme_longjmp(*save, 1);
   }
 
   v = k();
@@ -1034,17 +1051,22 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   p->current_local_mark = save_mark;
   p->current_local_name = save_name;
 
-  memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
+  p->error_buf = save;
 
   if (set_overflow) {
-    memcpy(&p->overflow_buf, &oversave, sizeof(mz_jmp_buf));
+    p->overflow_buf = oversave;
     p->overflow_set = 0;
   }
 
-  if (cc_ok)
-    *cc_ok = 0;
+  if (cc_ok) {
+    if (*cc_ok == 1) {
+      /* It wasn't used */
+      available_cc_ok = cc_ok;
+    } else
+      *cc_ok = 0;
+  }
   if (old_cc_ok)
-    *old_cc_ok = 1;
+    *old_cc_ok = old_cc_ok_val;
   p->cc_ok = old_cc_ok;
 
   if (scheme_active_but_sleeping)
@@ -1073,6 +1095,11 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 #endif
 
   return sj_start;
+}
+
+void scheme_clear_cc_ok()
+{
+  available_cc_ok = NULL;
 }
 
 /*========================================================================*/
@@ -2101,6 +2128,7 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
 Scheme_Object *
 scheme_call_ec (int argc, Scheme_Object *argv[])
 {
+  mz_jmp_buf newbuf;
   Scheme_Escaping_Cont * volatile cont;
   Scheme_Thread *p1 = scheme_current_thread;
   Scheme_Object * volatile v;
@@ -2118,14 +2146,16 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
   cont->suspend_break = p1->suspend_break;
   copy_cjs(&cont->cjs, &p1->cjs);
 
-  memcpy(&cont->saveerr, &scheme_error_buf, sizeof(mz_jmp_buf));
+  cont->saveerr = p1->error_buf;
+  p1->error_buf = &newbuf;
+
   scheme_save_env_stack_w_thread(cont->envss, p1);
   cont->current_local_env = p1->current_local_env;
 
   scheme_push_continuation_frame((Scheme_Cont_Frame_Data *)&cframe);
   scheme_set_cont_mark(mark_key, scheme_true);
 
-  if (scheme_setjmp(p1->error_buf)) {
+  if (scheme_setjmp(newbuf)) {
     Scheme_Thread *p2 = scheme_current_thread;
     if ((void *)p2->cjs.jumping_to_continuation == cont) {
       int n = p2->cjs.num_vals;
@@ -2138,14 +2168,14 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
       if (n != 1)
 	v = scheme_values(n, vs);
     } else {
-      scheme_longjmp(cont->saveerr, 1);
+      scheme_longjmp(*cont->saveerr, 1);
     }
   } else {
     a[0] = (Scheme_Object *)cont;
     v = _scheme_apply_multi(argv[0], 1, a);
   }
 
-  memcpy(&scheme_error_buf, &cont->saveerr, sizeof(mz_jmp_buf));
+  p1->error_buf = cont->saveerr;
 
   scheme_pop_continuation_frame((Scheme_Cont_Frame_Data *)&cframe);
 
@@ -2315,6 +2345,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->so.type = scheme_cont_type;
   scheme_init_jmpup_buf(&cont->buf);
   cont->ok = p->cc_ok;
+  *(p->cc_ok) = 2; /* Marks it as used */
   cont->dw = p->dw;
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
@@ -2365,7 +2396,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->stack_start = p->stack_start;
   cont->o_start = p->o_start;
 
-  memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
+  cont->savebuf = p->error_buf;
 
   scheme_zero_unneeded_rands(p);
 
@@ -2380,7 +2411,7 @@ call_cc (int argc, Scheme_Object *argv[])
     p = scheme_current_thread; /* maybe different than before */
     p->current_local_env = cont->current_local_env;
 
-    memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
+    p->error_buf = cont->savebuf;
 
     p->stack_start = cont->stack_start;
     p->o_start = cont->o_start;
@@ -2860,6 +2891,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 				   Scheme_Object *(*jmp_handler)(void *),
 				   void * volatile data)
 {
+  mz_jmp_buf newbuf;
   Scheme_Object * volatile v, ** volatile save_values;
   volatile int err;
   Scheme_Dynamic_Wind * volatile dw;
@@ -2887,13 +2919,14 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   p->dw = dw;
   
-  memcpy(&dw->saveerr, &scheme_error_buf, sizeof(mz_jmp_buf));
+  dw->saveerr = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
 
   scheme_save_env_stack_w_thread(dw->envss, p);
 
   dw->current_local_env = p->current_local_env;
 
-  if (scheme_setjmp(p->error_buf)) {
+  if (scheme_setjmp(newbuf)) {
     p = scheme_current_thread;
     scheme_restore_env_stack_w_thread(dw->envss, p);
     p->current_local_env = dw->current_local_env;
@@ -2908,7 +2941,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 	 downward jump.
 
 	 In either case, skip up until we get to the right level. */
-      scheme_longjmp(dw->saveerr, 1);
+      scheme_longjmp(*dw->saveerr, 1);
     } else {
       if (jmp_handler)
 	v = jmp_handler(data);
@@ -2947,7 +2980,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
     post = NULL;
 
   if (post) {
-    if (scheme_setjmp(p->error_buf)) {
+    if (scheme_setjmp(*p->error_buf)) {
       p = scheme_current_thread;
       scheme_restore_env_stack_w_thread(dw->envss, p);
       p->current_local_env = dw->current_local_env;
@@ -2961,9 +2994,9 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   }
 
   if (err)
-    scheme_longjmp(dw->saveerr, 1);
+    scheme_longjmp(*dw->saveerr, 1);
 
-  memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
+  p->error_buf = dw->saveerr;
 
   if (post) {
     /* Need to check for a break, in case one was queued during post: */

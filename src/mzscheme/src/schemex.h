@@ -503,7 +503,7 @@ long (*scheme_get_char_string)(const char *who,
 				      mzchar *buffer, long offset, long size,
 				      int peek, Scheme_Object *peek_skip);
 long (*scheme_get_bytes)(Scheme_Object *port, long size, char *buffer, int offset);
-Scheme_Object *(*scheme_get_ready_special)(Scheme_Object *port, Scheme_Object *stxsrc);
+Scheme_Object *(*scheme_get_ready_special)(Scheme_Object *port, Scheme_Object *stxsrc, int peek);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
 long (*scheme_tell_line)(Scheme_Object *port);

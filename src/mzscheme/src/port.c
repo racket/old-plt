@@ -1312,11 +1312,6 @@ long scheme_get_byte_string(const char *who,
 
       if (gc == SCHEME_SPECIAL) {
 	if (!got && !total_got && special_ok) {
-	  if (peek) {
-	    ip->ungotten_special = ip->special;
-	    ip->special = NULL;
-	  }
-
 	  if (!peek) {
 	    if (ip->position >= 0)
 	      ip->position++;
@@ -1955,7 +1950,8 @@ static int rw_evt_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
 	/* At the time that this was written, no built-in ports
 	   produced specials, so this shouldn't happen. */
 	Scheme_Object *s;
-	s = scheme_get_ready_special(rww->port, NULL);
+	s = scheme_get_ready_special(rww->port, NULL,
+				     rww->so.type == scheme_peek_evt_type);
 	vo = s;
       } else if (v == EOF) {
 	vo = scheme_eof;
@@ -2154,7 +2150,8 @@ scheme_char_ready (Scheme_Object *port)
 }
 
 Scheme_Object *scheme_get_special(Scheme_Object *port,
-				  Scheme_Object *src, long line, long col, long pos)
+				  Scheme_Object *src, long line, long col, long pos,
+				  int peek)
 {
   Scheme_Object *a[4], *special;
   Scheme_Input_Port *ip;
@@ -2169,6 +2166,10 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 
   if (ip->ungotten_count) {
     scheme_signal_error("ungotten characters at get-special");
+    return NULL;
+  }
+  if (!ip->special) {
+    scheme_signal_error("no ready special");
     return NULL;
   }
 
@@ -2192,6 +2193,27 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   special = ip->special;
   ip->special = NULL;
 
+  if (!peek) {
+    /* Track location */
+    long pos_delta;
+    if (SCHEME_INTP(ip->special_width))
+      pos_delta = SCHEME_INT_VAL(ip->special_width) - 1;
+    else
+      pos_delta = -(ip->position+1); /* drive position to -1 -> lost track */
+    if (ip->position >= 0)
+      ip->position += pos_delta;
+    ip->readpos += pos_delta;
+    ip->column += pos_delta;
+    ip->charsSinceNewline += pos_delta;
+  } else {
+    if (line > 0)
+      line++;
+    if (col > 0)
+      col++;
+    if (pos > 0)
+      pos++;
+  }
+
   a[0] = (src ? src : scheme_false);
   a[1] = (line > 0) ? scheme_make_integer(line) : scheme_false;
   a[2] = (col > 0) ? scheme_make_integer(col-1) : scheme_false;
@@ -2201,7 +2223,8 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 }
 
 Scheme_Object *scheme_get_ready_special(Scheme_Object *port, 
-					Scheme_Object *stxsrc)
+					Scheme_Object *stxsrc,
+					int peek)
 {
   if (!stxsrc) {
     stxsrc = ((Scheme_Input_Port *)port)->name;
@@ -2210,7 +2233,8 @@ Scheme_Object *scheme_get_ready_special(Scheme_Object *port,
   return scheme_get_special(port, stxsrc,
 			    scheme_tell_line(port), 
 			    scheme_tell_column(port), 
-			    scheme_tell(port));
+			    scheme_tell(port),
+			    peek);
 }
 
 void scheme_bad_time_for_special(const char *who, Scheme_Object *port)

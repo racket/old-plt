@@ -452,7 +452,7 @@ void wxChoice::OnEvent(wxMouseEvent& event) // mac platform only
 		::RGBForeColor(&save);
 		if (newsel) {
 			newsel = LoWord(newsel) -1;
-			if (newsel != selection) {
+			if (1 || (newsel != selection)) {
 #ifdef Checkem
 				// selected a different item
 				::CheckItem(hDynMenu, selection+1, FALSE);

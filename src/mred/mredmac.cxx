@@ -170,7 +170,7 @@ void QueueMrEdEvent(EventRecord *e)
   QueueTransferredEvent(e);
 }
 
-static GetSleepTime(int *sleep_time, int *delay_time)
+static void GetSleepTime(int *sleep_time, int *delay_time)
 {
 #if FG_SLEEP_TIME
   if (last_was_front && Button())
@@ -268,6 +268,7 @@ static int WeAreFront()
 
 static MrEdContext *cont_event_context;
 static short cont_event_context_modifiers;
+static WindowPtr cont_event_context_window;
 static Point last_mouse;
 static WindowPtr last_front_window;
 
@@ -289,7 +290,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   WindowPtr window;
   wxFrame *fr;
   int found = 0;
-  int saw_mdown = 0, saw_mup = 0, saw_kdown = 0, we_are_front;
+  int saw_mdown = 0, saw_kdown = 0, we_are_front;
   
   if (!event)
     event = &ebuf;
@@ -303,9 +304,13 @@ int MrEdGetNextEvent(int check_only, int current_only,
   fprintf(history, "%lx %lx %lx\n",
   	  c, keyOk, cont_event_context);
 #endif
-  
+
   TransferQueue(0);
 
+  if (cont_event_context)
+    if (!WindowStillHere(cont_event_context_window))
+      cont_event_context = NULL;
+  
 #ifdef SELF_SUSPEND_RESUME 
   /* Do fg/bg ourselves. See note at top. */
   we_are_front = WeAreFront();
@@ -403,10 +408,15 @@ int MrEdGetNextEvent(int check_only, int current_only,
           /* Handle bring-window-to-front click immediately */
 	  fr = wxWindowPtrToFrame(window, NULL);
 	  fc = fr ? (MrEdContext *)fr->context : NULL;
-	  if (!fc->modal_window || (fr == fc->modal_window)) {
+	  if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
 	    SelectWindow(window);
 	    MrDequeue(osq);
 	    cont_event_context = NULL;
+	  } else if (fc && fc->modal_window) {
+	    SysBeep(0);
+	    MrDequeue(osq);
+	    cont_event_context = NULL;
+	    SelectWindow(((wxFrame *)fc->modal_window)->macWindow());
 	  }
 	} else if (resume_ticks > e->when) {
 	  /* Clicked MrEd into foreground - toss the event */
@@ -418,6 +428,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	    found = 1;
 	    if (!check_only && (part != inMenuBar)) {
 	      cont_event_context = foundc;
+	      cont_event_context_window = window;
 	      cont_event_context_modifiers = e->modifiers;
 	      cont_event_context_modifiers |= btnState;
 	    } else
@@ -427,7 +438,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
       }
       break;
     case mouseUp:
-      saw_mup = 1;
       if (!cont_event_context) {
       	if (!saw_mdown) {
 	  MrDequeue(osq);
@@ -469,11 +479,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
     osq = next;
   }
   
-  if (!found && cont_event_context && !saw_mup) {
-    if (!StillDown())
-      cont_event_context = NULL;
-  }
-
   if (found) {
     /* Remove intervening mouse/key events: */
     MrQueueElem *qq;

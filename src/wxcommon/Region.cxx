@@ -83,7 +83,7 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
   ih = ((int)floor(y + height)) - iy;
 
 #ifdef wx_msw
-  rgn = CreateRectRgn(ix, iy, ix + iw, iy + ih);
+  rgn = CreateRectRgn(ix, iy, ix + iw, iy + ih); // SET-ORIGIN FLAGGED
 #endif
 #ifdef wx_x
   {
@@ -98,7 +98,7 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
-  SetRectRgn(rgn, ix, iy, ix + iw, iy + ih);
+  SetRectRgn(rgn, ix, iy, ix + iw, iy + ih); // SET-ORIGIN FLAGGED
 #endif
 }
 
@@ -181,14 +181,14 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   }
 
 #ifdef wx_msw
-  rgn = CreateRoundRectRgn(ix, iy, ix + iw, iy + ih, xradius, yradius);
+  rgn = CreateRoundRectRgn(ix, iy, ix + iw, iy + ih, xradius, yradius); // SET-ORIGIN FLAGGED
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
   Rect r2;
   SetRect(&r2, ix, iy, ix + iw, iy + ih);
-  FrameRoundRect(&r2, xradius, yradius);
+  FrameRoundRect(&r2, xradius, yradius); // SET-ORIGIN FLAGGED
   CloseRgn(rgn);
 #endif
 }
@@ -239,7 +239,7 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   OpenRgn();
   Rect r;
   SetRect(&r, ix, iy, ix + iw, iy + ih);
-  FrameOval(&r);
+  FrameOval(&r); // SET-ORIGIN FLAGGED
   CloseRgn(rgn);
 #endif
 
@@ -340,10 +340,10 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
-  MoveTo(cpoints[0].x, cpoints[0].y);
+  MoveTo(cpoints[0].x, cpoints[0].y); // SET-ORIGIN FLAGGED
   for (i = 0; i < n; i++)
-    LineTo(cpoints[i].x, cpoints[i].y);
-  LineTo(cpoints[0].x, cpoints[0].y);
+    LineTo(cpoints[i].x, cpoints[i].y); // SET-ORIGIN FLAGGED
+  LineTo(cpoints[0].x, cpoints[0].y); // SET-ORIGIN FLAGGED
   CloseRgn(rgn);
 #endif
 }
@@ -511,7 +511,7 @@ void wxRegion::Union(wxRegion *r)
 
 #ifdef wx_msw
   if (!rgn) {
-    rgn = CreateRectRgn(0, 0, 1, 1);
+    rgn = CreateRectRgn(0, 0, 1, 1); // SET-ORIGIN FLAGGED
     CombineRgn(rgn, r->rgn, rgn, RGN_COPY);
   } else
     CombineRgn(rgn, r->rgn, rgn, RGN_OR);
@@ -857,3 +857,4 @@ wxPSRgn *wxPSRgn_Diff::Lift()
     return r;
   }
 }
+

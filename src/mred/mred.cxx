@@ -208,6 +208,7 @@ static int exit_val = 0;
 MrEdContext *mred_contexts;
 static MrEdContext *mred_main_context;
 static MrEdContext *mred_only_context;
+static MrEdContext *user_main_context;
 static MrEdContextFrames *mred_frames; /* list of all frames (weak link to invisible ones) */
 static wxTimer *mred_timers;
 int mred_eventspace_param;
@@ -464,6 +465,11 @@ void wxSetBusyState(int state)
 Bool wxIsPrimEventspace()
 {
   return MrEdGetContext() == mred_main_context;
+}
+
+int wxIsUserMainEventspace(Scheme_Object *o)
+{
+  return o == (Scheme_Object *)user_main_context;
 }
 
 int wxsIsContextShutdown(void *cx)
@@ -1340,6 +1346,9 @@ void wxDoEvents()
     /* Create the user's main thread: */
 
     c = (MrEdContext *)MrEdMakeEventspace(NULL);
+
+    wxREGGLOB(user_main_context);
+    user_main_context = c;
 
     {
       Scheme_Object *cp;
@@ -2857,9 +2866,36 @@ void MrEdApp::RealInit(void)
 }
 
 #ifdef wx_mac
+char *wx_original_argv_zero;
+static char *about_label;
+extern "C" char *scheme_get_exec_path();
 char *MrEdApp::GetDefaultAboutItemName()
 {
-  return "About MrEd...";
+# ifdef OS_X
+#  define ep_SEP '/'
+# else
+#  define ep_SEP ':'
+# endif
+
+  if (!about_label) {
+    char *p, *s;
+    int i, len;
+
+    p = wx_original_argv_zero;
+    len = strlen(p);
+    for (i = len - 1; i; i--) {
+      if (p[i] == ep_SEP) {
+	i++;
+	break;
+      }
+    }
+
+    wxREGGLOB(about_label);
+    about_label = new WXGC_ATOMIC char[len - i + 20];
+    sprintf(about_label, "About %s...", p + i);
+  }
+
+  return about_label;
 }
 
 void MrEdApp::DoDefaultAboutItem()
@@ -2959,7 +2995,7 @@ void Drop_Runtime(char **argv, int argc)
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 }
 
-void Drop_Quit()
+static void wxDo(Scheme_Object *proc)
 {
   mz_jmp_buf savebuf;
   
@@ -2968,9 +3004,30 @@ void Drop_Quit()
   if (scheme_setjmp(scheme_error_buf)) {
     scheme_clear_escape();
   } else {
-    scheme_apply(wxs_app_quit_proc, 0, NULL);
+    scheme_apply(proc, 0, NULL);
   }
 
   memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+}
+
+void Drop_Quit()
+{
+  wxDo(wxs_app_quit_proc);
+}
+
+void wxDo_About()
+{
+  wxDo(wxs_app_about_proc);
+}
+
+void wxDo_Pref()
+{
+  if (!SCHEME_FALSEP(wxs_app_pref_proc))
+    wxDo(wxs_app_pref_proc);
+}
+
+int wxCan_Do_Pref()
+{
+  return SCHEME_TRUEP(wxs_app_pref_proc);
 }
 #endif

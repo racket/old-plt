@@ -25,6 +25,8 @@ extern Scheme_Object *MrEd_mid_queue_key;
 
 extern Scheme_Object *wxs_app_file_proc;
 extern Scheme_Object *wxs_app_quit_proc;
+extern Scheme_Object *wxs_app_about_proc;
+extern Scheme_Object *wxs_app_pref_proc;
 
 extern Bool wxSchemeYield(void *sema);
 
@@ -37,6 +39,8 @@ extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 MRED_EXTERN Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv);
 
 extern int wxGetPreference(const char *name, int *res);
+
+extern int wxIsUserMainEventspace(Scheme_Object *o);
 
 void wxscheme_early_gl_init(void);
 

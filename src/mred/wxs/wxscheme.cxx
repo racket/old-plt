@@ -1294,18 +1294,43 @@ extern short wxMacDisableMods;
 
 Scheme_Object *wxs_app_file_proc;
 Scheme_Object *wxs_app_quit_proc;
+Scheme_Object *wxs_app_about_proc;
+Scheme_Object *wxs_app_pref_proc;
 
 static Scheme_Object *SpecialCtlKey(int c, Scheme_Object *SCK_ARG[])
 {
 #ifdef wx_mac
   if (c) {
     if (SCHEME_FALSEP(p[0]))
-      wxMacDisableMods = 0;
+      wxMacDisableMods -= (wxMacDisableMods & controlKey);
     else
-      wxMacDisableMods = (controlKey | optionKey);
+      wxMacDisableMods |= controlKey;
     return scheme_void;
   } else {
-    if (wxMacDisableMods)
+    if (wxMacDisableMods & controlKey)
+      return scheme_true;
+    else
+      return scheme_false;
+  }
+#else
+  if (c)
+    return scheme_void;
+  else
+    return scheme_false;
+#endif
+}
+
+static Scheme_Object *SpecialOptionKey(int c, Scheme_Object *SCK_ARG[])
+{
+#ifdef wx_mac
+  if (c) {
+    if (SCHEME_FALSEP(p[0]))
+      wxMacDisableMods -= (wxMacDisableMods & optionKey);
+    else
+      wxMacDisableMods |= optionKey;
+    return scheme_void;
+  } else {
+    if (wxMacDisableMods & optionKey)
       return scheme_true;
     else
       return scheme_false;
@@ -1352,6 +1377,33 @@ static Scheme_Object *ApplicationQuitProc(int n, Scheme_Object *p[])
   else {
     scheme_check_proc_arity("application-quit-handler", 0, 0, n, p);
     wxs_app_quit_proc = p[0];
+    return scheme_void;
+  }
+}
+
+static Scheme_Object *ApplicationPrefProc(int n, Scheme_Object *p[])
+{
+  if (!n)
+    return wxs_app_pref_proc;
+  else {
+    wxs_app_pref_proc = p[0];
+    return scheme_void;
+  }
+}
+
+static Scheme_Object *DefaultAppAboutProc(int, Scheme_Object **)
+{
+  wxTheApp->DoDefaultAboutItem();
+  return scheme_void;
+}
+
+static Scheme_Object *ApplicationAboutProc(int n, Scheme_Object *p[])
+{
+  if (!n)
+    return wxs_app_about_proc;
+  else {
+    scheme_check_proc_arity("application-about-handler", 0, 0, n, p);
+    wxs_app_about_proc = p[0];
     return scheme_void;
   }
 }
@@ -1533,6 +1585,11 @@ static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
 
   scheme_wrong_type("eventspace-shutdown?", "eventspace", 0, argc, argv);
   return NULL;
+}
+
+static Scheme_Object *main_eventspace_p(int argc, Scheme_Object **argv)
+{
+  return wxIsUserMainEventspace(argv[0]) ? scheme_true : scheme_false;
 }
 
 extern "C" {
@@ -2213,6 +2270,8 @@ static void wxScheme_Install(Scheme_Env *global_env)
 {
   wxREGGLOB(wxs_app_quit_proc);
   wxREGGLOB(wxs_app_file_proc);
+  wxREGGLOB(wxs_app_about_proc);
+  wxREGGLOB(wxs_app_pref_proc);
 
   wxs_app_file_proc = scheme_make_prim_w_arity(CAST_SP DefaultAppFileProc,
 					       "default-application-file-handler",
@@ -2220,10 +2279,19 @@ static void wxScheme_Install(Scheme_Env *global_env)
   wxs_app_quit_proc = scheme_make_prim_w_arity(CAST_SP DefaultAppQuitProc,
 					       "default-application-quit-handler",
 					       0, 0);
+  wxs_app_about_proc = scheme_make_prim_w_arity(CAST_SP DefaultAppAboutProc,
+					       "default-application-about-handler",
+					       0, 0);
+  wxs_app_pref_proc = scheme_false;
 
   scheme_install_xc_global("special-control-key", 
 			   scheme_make_prim_w_arity(CAST_SP SpecialCtlKey, 
 						    "special-control-key", 
+						    0, 1), 
+			   global_env);
+  scheme_install_xc_global("special-option-key", 
+			   scheme_make_prim_w_arity(CAST_SP SpecialOptionKey, 
+						    "special-option-key", 
 						    0, 1), 
 			   global_env);
   
@@ -2235,6 +2303,16 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("application-quit-handler",
 			   scheme_make_prim_w_arity(CAST_SP ApplicationQuitProc,
 						    "application-quit-handler",
+						    0, 1),
+			   global_env);
+  scheme_install_xc_global("application-about-handler",
+			   scheme_make_prim_w_arity(CAST_SP ApplicationAboutProc,
+						    "application-about-handler",
+						    0, 1),
+			   global_env);
+  scheme_install_xc_global("application-pref-handler",
+			   scheme_make_prim_w_arity(CAST_SP ApplicationPrefProc,
+						    "application-pref-handler",
 						    0, 1),
 			   global_env);
   
@@ -2348,6 +2426,11 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("eventspace-shutdown?",
 			   scheme_make_prim_w_arity(CAST_SP Shutdown_p,
 						    "eventspace-shutdown?",
+						    1, 1),
+			   global_env);
+  scheme_install_xc_global("main-eventspace?",
+			   scheme_make_prim_w_arity(CAST_SP main_eventspace_p,
+						    "main-eventspace?",
 						    1, 1),
 			   global_env);
 

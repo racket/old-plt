@@ -38,6 +38,7 @@ class wxBufferDataClassList;
 #include "mred.h"
 
 #ifdef wx_mac
+extern char *wx_original_argv_zero;
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
 # include "simpledrop.h"
@@ -247,7 +248,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef wx_mac
-  wxMacDisableMods = (controlKey | optionKey);
+  wxMacDisableMods = controlKey;
 
 # ifndef OS_X
   scheme_creator_id = 'MrEd';
@@ -283,6 +284,8 @@ int main(int argc, char *argv[])
     ::MoreMasters();
   }
 #endif
+
+  wx_original_argv_zero = argv[0];
   
   Drop_GetArgs(&argc, &argv, &wx_in_terminal);
 

@@ -615,7 +615,7 @@
       ;; clean-filename : string -> string
       ;; builds a filename from a name by sripping out bad chars.
       (define (clean-filename name)
-        (regexp-replace* "[ /:\\\"'`?*%<>$|\u100-\uFFFFFFF]" name "_"))
+        (regexp-replace* "[ /:\\\"'`?*%<>$|\u0100-\U7FFFFFFF]" name "_"))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message Send                                          ;;

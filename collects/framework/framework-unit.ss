@@ -46,15 +46,14 @@
 	    [preferences : framework:preferences^
 			 (preferences@ mred exn exit panel)]
 	    [autosave : framework:autosave^ (autosave@ mred exit preferences)]
-	    [handler : framework:handler^
-		     (handler@ mred finder group text preferences frame)] 
-	    [keymap : framework:keymap^
-		    (keymap@ mred preferences finder handler scheme-paren frame editor)]
 	    [match-cache : framework:match-cache^ (match-cache@)]
 	    [paren : framework:paren^ (paren@)]
 	    [scheme-paren : framework:scheme-paren^ (scheme-paren@ paren)]
 	    [path-utils : framework:path-utils^ (path-utils@)]
 	    [icon : framework:icon^ (icon@ mred)]
+
+	    [keymap : framework:keymap^
+		    (keymap@ mred preferences finder handler scheme-paren frame editor)]
 	    [editor : framework:editor^
 		    (editor@ mred autosave finder path-utils keymap icon
 			     preferences text pasteboard frame handler)]
@@ -69,6 +68,9 @@
 	    [frame : framework:frame^ 
 		   (frame@ mred group preferences icon handler application panel
 			   exit finder keymap text pasteboard editor canvas menu)]
+	    [handler : framework:handler^
+		     (handler@ mred finder group text preferences frame)]
+
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren
 			     scheme-paren icon keymap text editor frame)]

@@ -23,13 +23,24 @@
       [(_ (id ctrct) ...)
        (andmap identifier? (syntax->list (syntax (id ...))))
        (with-syntax ([(id-rename ...) (generate-temporaries (syntax (id ...)))]
+		     [(contract-id ...)
+		      (generate-temporaries
+		       (with-syntax ([(pre-contract-id ...)
+				      (map (lambda (x)
+					     (string->symbol
+					      (format
+					       "contract-id-~a-"
+					       (syntax-object->datum x))))
+					   (syntax->list (syntax (id ...))))])
+			 (generate-temporaries
+			  (syntax (pre-contract-id ...)))))]
                      [pos-blame-stx (datum->syntax-object provide-stx 'here)]
-                     [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)]
-                     )
+                     [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)])
          (syntax
           (begin
             (provide (rename id-rename id) ...)
             (require (lib "contract-helpers.scm" "framework" "private"))            
+	    (define contract-id ctrct) ...
             (define-syntax id-rename
               (make-set!-transformer
                (lambda (stx)
@@ -41,9 +52,9 @@
                                      "cannot mutate provide/contract identifier"
                                      stx
                                      (syntax _))]
-                     [(_ arg (... ...)) 
+                     [(_ arg (... ...))
                       (syntax 
-                       ((-contract ctrct
+                       ((-contract contract-id
                                    id
                                    (module-source-as-symbol (quote-syntax pos-blame-stx)) 
                                    (module-source-as-symbol (quote-syntax neg-blame-stx))
@@ -53,7 +64,7 @@
                      [_
                       (identifier? (syntax _))
                       (syntax 
-                       (-contract ctrct
+                       (-contract contract-id
                                   id  
                                   (module-source-as-symbol (quote-syntax pos-blame-stx)) 
                                   (module-source-as-symbol (quote-syntax neg-blame-stx))
@@ -546,7 +557,7 @@
   (define-syntax (opt-> stx)
     (syntax-case stx ()
       [(_ (reqs ...) (opts ...) res)
-       (let* ([res-v (generate-temporaries (list (syntax result)))]
+       (let* ([res-v (generate-temporaries (list (syntax res)))]
 	      [req-vs (generate-temporaries (syntax->list (syntax (reqs ...))))]
 	      [opt-vs (generate-temporaries (syntax->list (syntax (opts ...))))]
 	      [cases

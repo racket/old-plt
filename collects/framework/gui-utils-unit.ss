@@ -185,18 +185,27 @@
                    [vp (make-object vertical-panel% dialog)]
                    [hp (make-object horizontal-panel% dialog)])
             
-            (let loop ([m message])
-              (let ([match (regexp-match (format "^([^~n]*)~n(.*)")
-                                         m)])
-                (if match
-                    (begin (make-object message% (cadr match) vp)
-                           (loop (caddr match)))
-                    (make-object message% m vp))))
+            (if ((string-length message) . < . 200)
+                (let loop ([m message])
+                  (let ([match (regexp-match (format "^([^~n]*)~n(.*)")
+                                             m)])
+                    (if match
+                        (begin (make-object message% (cadr match) vp)
+                               (loop (caddr match)))
+                        (make-object message% m vp))))
+                (let* ([t (make-object text%)]
+                       [ec (make-object editor-canvas% vp t)])
+                  (send ec min-width 400)
+                  (send ec min-height 200)
+                  (send t insert message)
+                  (send t auto-wrap #t)
+                  (send t lock #t)))
             
             (send vp set-alignment 'left 'center)
             (send hp set-alignment 'right 'center)
             (send (make-object button% true-choice hp on-true '(border)) focus)
             (make-object button% false-choice hp on-false)
+            (send hp stretchable-height #f)
             (send dialog center 'both)
             (send dialog show #t)
             result)]))

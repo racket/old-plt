@@ -20,7 +20,12 @@
               [framework : framework^]
               [mixin : (frame-mixin)]
               [doc-position : help:doc-position^])
-      (link [browser : browser^ (browser@ plt-installer mred)]
+      (link [hack : () ((unit/sig ()
+                          (import (frame-mixin))
+                          ;; communicate the frame-mixin to the bug report window
+                          (namespace-variable-binding 'help-desk:frame-mixin frame-mixin))
+                        mixin)]
+            [browser : browser^ (browser@ plt-installer mred)]
             [search : search^ (search@ doc-position)]
             [helpwin : help-window^ (helpwin@ search browser plt-installer mred framework mixin)])
       (export (open helpwin)

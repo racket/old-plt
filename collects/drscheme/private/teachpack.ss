@@ -34,7 +34,7 @@
               filenames)))
       
       ;; load-teachpacks : namespace teachpack-cache -> void
-      ;; in this iteration of teachpacks, there is no preloading to do.
+      ;; in this implementation of teachpacks, there is no preloading to do.
       (define (load-teachpacks user-namespace tp)
         (void))
 
@@ -77,6 +77,22 @@
       (define (teachpack-cache-filenames cache)
         (map cache-entry-filename (teachpack-cache-tps cache)))
       
+      ;; launcher-init-code : teachpack-cache -> sexp
+      ;; constructs code to be put in  a module that loads the teachpacks.
+      ;; used with launchers
+      (define (launcher-init-code cache)
+        `(begin
+           (void)
+           ,@(map (lambda (ce)
+                    `(namespace-require '(file ,(cache-entry-filename ce))))
+                  (teachpack-cache-tps cache))))
+      
+      ;; launcher-modules-to-embed : teachpack-cache -> (listof module-spec)
+      ;; the modules to embed in a stand-alone executable.
+      (define (launcher-modules-to-embed cache)
+        (map (lambda (ce) `(file ,(cache-entry-filename ce)))
+             (teachpack-cache-tps cache)))
+
       ;; show-teachpack-error : TST -> void
       ;; shows an error message for a bad teachpack.
       (define (show-teachpack-error tp-filename exn)

@@ -2,10 +2,9 @@
   (require (lib "unitsig.ss")
 	   "test-sig.ss"
 	   "gui-utils-sig.ss"
-	   "prefs-file-sig.ss"
 	   "private/sig.ss")
 
-  (provide framework^ frameworkc^ framework-no-prefs^)
+  (provide framework^ frameworkc^)
 
   (define-signature frameworkc^
     ([unit application : framework:application^]
@@ -41,11 +40,7 @@
      [unit scheme : framework:scheme^]
      [unit main : framework:main^]))
 
-  (define-signature framework-no-prefs^
+  (define-signature framework^
     ([unit test : framework:test^]
      [unit gui-utils : framework:gui-utils^]
-     (open frameworkc^)))
-
-  (define-signature framework^
-    ([unit prefs-file : framework:prefs-file^]
-     (open framework-no-prefs^))))
+     (open frameworkc^))))

@@ -48,13 +48,12 @@ to the original stdout of DrScheme.
       ;; changes the default settings and sets a few more paramters during `on-execute'
       (define (module-based-language-extension super%)
         (class* super% ()
-          (override default-settings on-execute render-value/format render-value)
           (rename [super-on-execute on-execute]
                   [super-render-value/format render-value/format]
                   [super-render-value render-value])
           (inherit get-sharing-printing get-abbreviate-cons-as-list)
           
-          (define (default-settings)
+          (define/override (default-settings)
             (drscheme:language:make-simple-settings 
              #t
              'constructor
@@ -62,14 +61,13 @@ to the original stdout of DrScheme.
              #t
              #f))
           
-          (override config-panel)
           (rename [super-config-panel config-panel])
           (inherit get-allow-sharing? get-use-function-output-syntax? 
                    get-accept-quasiquote? get-read-accept-dot)
-          (define (config-panel parent)
+          (define/override (config-panel parent)
             (sharing/not-config-panel (get-allow-sharing?) parent))
           
-          (define (on-execute settings run-in-user-thread)
+          (define/override (on-execute settings run-in-user-thread)
             (let ([drs-namespace (current-namespace)])
               (run-in-user-thread
                (lambda ()
@@ -126,12 +124,12 @@ to the original stdout of DrScheme.
                   (not (has-decimal-expansion? x))
                   #f)))
           
-          (define (render-value/format value settings port put-snip)
+          (define/override (render-value/format value settings port put-snip)
             (set-printing-parameters
              (lambda ()
                (super-render-value/format value settings port put-snip))))
           
-          (define (render-value value settings port put-snip)
+          (define/override (render-value value settings port put-snip)
             (set-printing-parameters
              (lambda ()
                (super-render-value value settings port put-snip))))
@@ -208,14 +206,65 @@ to the original stdout of DrScheme.
              (send insert-newlines set-value 
                    (drscheme:language:simple-settings-insert-newlines settings))])))
       
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                                                                  ;;
-      ;;                  hack for the hangman teachpack                  ;;
-      ;;                                                                  ;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define simple-htdp-language%
+        (class* drscheme:language:simple-module-based-language% (htdp-language<%>)
+          (init-field sharing-printing
+                      abbreviate-cons-as-list
+                      allow-sharing?
+                      (use-function-output-syntax? #f)
+                      (accept-quasiquote? #t)
+                      (read-accept-dot #f)
+                      (style-delta #f))
+          (define/public (get-sharing-printing) sharing-printing)
+          (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
+          (define/public (get-allow-sharing?) allow-sharing?)
+          (define/public (get-use-function-output-syntax?) use-function-output-syntax?)
+          (define/public (get-accept-quasiquote?) accept-quasiquote?)
+          (define/public (get-read-accept-dot) read-accept-dot)
+          ;(define/override (get-one-line-summary) one-line-summary)
+          (define/public (get-htdp-style-delta) style-delta)
+          
+          (super-instantiate ())))
       
+      (define (language-extension %)
+        (class %
+          (inherit get-htdp-style-delta)
+          
+          (inherit get-module get-transformer-module get-init-code use-namespace-require/copy?)
+          (define/override (create-executable setting parent program-filename executable-filename)
+            (drscheme:language:create-module-based-stand-alone-executable
+             program-filename
+             executable-filename
+             (get-module)
+             (get-transformer-module)
+             (get-init-code setting)
+             #t
+             (use-namespace-require/copy?)))
+          
+          (define/override (get-style-delta)
+            (get-htdp-style-delta))
+          (super-instantiate ())))
+                                                                                          
+
+                                                                                    
+;;                                                      ;;                   ;;     
+ ;                                                       ;                    ;     
+ ;                                                       ;                    ;     
+ ; ;;   ;;;;  ; ;;;    ;;; ;;;; ;   ;;;;  ; ;;;          ; ;;   ;;;;    ;;;   ;  ;; 
+ ;;  ;      ;  ;;  ;  ;   ;  ; ; ;      ;  ;;  ;         ;;  ;      ;  ;   ;  ; ;   
+ ;   ;   ;;;;  ;   ;  ;   ;  ; ; ;   ;;;;  ;   ;         ;   ;   ;;;;  ;      ;;    
+ ;   ;  ;   ;  ;   ;  ;   ;  ; ; ;  ;   ;  ;   ;         ;   ;  ;   ;  ;      ; ;   
+ ;   ;  ;   ;  ;   ;  ;   ;  ; ; ;  ;   ;  ;   ;         ;   ;  ;   ;  ;   ;  ;  ;  
+;;; ;;;  ;;; ;;;;  ;;  ;;;; ;; ; ;;  ;;; ;;;;  ;;       ;;; ;;;  ;;; ;  ;;;  ;;   ;;
+                          ;                                                         
+                          ;                                                         
+                       ;;;                                                          
+      
+
+
       ;; this inspector should be powerful enough to see
-      ;; structure defined in the user's namespace
+      ;; any structure defined in the user's namespace
       (define drscheme-inspector (current-inspector))
       
       (eval `(module drscheme-secrets mzscheme
@@ -223,11 +272,35 @@ to the original stdout of DrScheme.
                (define drscheme-inspector ,drscheme-inspector)))
       (namespace-require 'drscheme-secrets)
       
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                                                                  ;;
-      ;;                 source location for runtime errors               ;;
-      ;;                                                                  ;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      
+      
+      
+                                          
+  ;;;    ;;;  ;;  ;;  ; ;;;   ;;;    ;;;  
+ ;   ;  ;   ;  ;   ;   ;     ;   ;  ;   ; 
+  ;;;   ;   ;  ;   ;   ;     ;      ;;;;; 
+     ;  ;   ;  ;   ;   ;     ;      ;     
+ ;   ;  ;   ;  ;   ;   ;     ;   ;  ;   ; 
+  ;;;    ;;;    ;;; ; ;;;;    ;;;    ;;;  
+                                          
+                                          
+                                          
+
+                                                                             
+                                    ;;;                    ;                 
+                                      ;            ;                         
+                                      ;            ;                         
+  ;;;    ;;;   ; ;;;  ; ;;;   ;;;     ;    ;;;;   ;;;;;  ;;;     ;;;  ; ;;;  
+ ;   ;  ;   ;   ;      ;     ;   ;    ;        ;   ;       ;    ;   ;  ;;  ; 
+ ;      ;   ;   ;      ;     ;;;;;    ;     ;;;;   ;       ;    ;   ;  ;   ; 
+ ;      ;   ;   ;      ;     ;        ;    ;   ;   ;       ;    ;   ;  ;   ; 
+ ;   ;  ;   ;   ;      ;     ;   ;    ;    ;   ;   ;   ;   ;    ;   ;  ;   ; 
+  ;;;    ;;;   ;;;;   ;;;;    ;;;   ;;;;;;  ;;; ;   ;;;  ;;;;;   ;;;  ;;;  ;;
+                                                                             
+                                                                             
+                                                                             
+      
       
       ;; cm-key : symbol
       ;; the key used to put information on the continuation
@@ -312,40 +385,38 @@ to the original stdout of DrScheme.
                    (oe annotated)))])
           teaching-language-eval-handler))
       
-      (define simple-htdp-language%
-        (class* drscheme:language:simple-module-based-language% (htdp-language<%>)
-          (init-field sharing-printing
-                      abbreviate-cons-as-list
-                      allow-sharing?
-                      (use-function-output-syntax? #f)
-                      (accept-quasiquote? #t)
-                      (read-accept-dot #f)
-                      (style-delta #f))
-          (define/public (get-sharing-printing) sharing-printing)
-          (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
-          (define/public (get-allow-sharing?) allow-sharing?)
-          (define/public (get-use-function-output-syntax?) use-function-output-syntax?)
-          (define/public (get-accept-quasiquote?) accept-quasiquote?)
-          (define/public (get-read-accept-dot) read-accept-dot)
 
-          ;; should re-organize, so this can be get-style-delta directly,
-          ;; and can get rid of `language-extension' mixin
-          (define/public (get-htdp-style-delta) style-delta)
 
-          (super-instantiate ())))
+                                                                      
+                               ;                         ;;;    ;;;   
+                ;                    ;                     ;      ;   
+                ;                    ;                     ;      ;   
+; ;;;  ;;  ;;  ;;;;;         ;;;    ;;;;;         ;;;;     ;      ;   
+ ;   ;  ;   ;   ;              ;     ;                ;    ;      ;   
+ ;   ;  ;   ;   ;              ;     ;             ;;;;    ;      ;   
+ ;   ;  ;   ;   ;              ;     ;            ;   ;    ;      ;   
+ ;   ;  ;   ;   ;   ;          ;     ;   ;        ;   ;    ;      ;   
+ ;;;;    ;;; ;   ;;;         ;;;;;    ;;;          ;;; ; ;;;;;; ;;;;;;
+ ;                                                                    
+ ;                                                                    
+;;;                                                                   
+
       
-      (define (language-extension %)
-        (class %
-          (inherit get-htdp-style-delta)
-          (define/override (get-style-delta)
-            (get-htdp-style-delta))
-          (super-instantiate ())))
+                                                        
+                                   ;;                   
+  ;                           ;     ;                   
+  ;                           ;     ;                   
+ ;;;;;   ;;;    ;;; ;  ;;;   ;;;;;  ; ;;    ;;;   ; ;;; 
+  ;     ;   ;  ;   ;  ;   ;   ;     ;;  ;  ;   ;   ;    
+  ;     ;   ;  ;   ;  ;;;;;   ;     ;   ;  ;;;;;   ;    
+  ;     ;   ;  ;   ;  ;       ;     ;   ;  ;       ;    
+  ;   ; ;   ;  ;   ;  ;   ;   ;   ; ;   ;  ;   ;   ;    
+   ;;;   ;;;    ;;;;   ;;;     ;;; ;;; ;;;  ;;;   ;;;;  
+                   ;                                    
+                   ;                                    
+                ;;;                                     
 
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;                                                                  ;;
-      ;;                     put it all together                          ;;
-      ;;                                                                  ;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
       
       (define htdp-language%
         (language-extension
@@ -360,6 +431,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
+         (one-line-summary (string-constant htdp-full-one-line-summary))
          (sharing-printing #t)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #t)
@@ -372,6 +444,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
+         (one-line-summary (string-constant advanced-one-line-summary))
          (module '(lib "htdp-advanced.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
@@ -383,6 +456,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
+         (one-line-summary (string-constant intermediate/lambda-one-line-summary))
          (module '(lib "htdp-intermediate-lambda.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
@@ -403,6 +477,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
+         (one-line-summary (string-constant intermediate-one-line-summary))
          (module '(lib "htdp-intermediate.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
@@ -415,6 +490,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
+         (one-line-summary (string-constant beginning/abbrev-one-line-summary))
          (module '(lib "htdp-beginner-abbr.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
@@ -426,6 +502,7 @@ to the original stdout of DrScheme.
       
       (add-htdp-language
        (instantiate htdp-language% ()
+         (one-line-summary (string-constant beginning-one-line-summary))
          (module '(lib "htdp-beginner.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)

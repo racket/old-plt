@@ -25,12 +25,19 @@
 
       (define (printf . args) (apply fprintf o args))
 
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;                                                                ;;;
-      ;;;                             GUI                                ;;;
-      ;;;                                                                ;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
+                     
+                     
+                      ;;;  ;;; ;;; ;;;;; 
+                     ;   ;  ;   ;    ;   
+                     ;   ;  ;   ;    ;   
+                     ;      ;   ;    ;   
+                     ;  ;;  ;   ;    ;   
+                     ;   ;  ;   ;    ;   
+                     ;   ;  ;; ;;    ;   
+                      ;;;    ;;;   ;;;;; 
+                     
+                     
       (define add/mult-set
         (lambda (m v)
           (send m set (car v) (cadr v) (caddr v))))
@@ -373,23 +380,29 @@
                 (super-after-insert start len)
                 (syncheck:clear-arrows))
               
-              (override on-change)
-              (define (on-change)
+              ;; flush-arrow-coordinates-cache : -> void
+              ;; pre-condition: arrow-vector is not #f.
+              (define/private (flush-arrow-coordinates-cache)
+                (let loop ([n (vector-length arrow-vector)])
+                  (unless (zero? n)
+                    (let ([eles (vector-ref arrow-vector (- n 1))])
+                      (for-each (lambda (ele)
+                                  (when (arrow? ele)
+                                    (update-poss ele)))
+                                eles))
+                    (loop (- n 1)))))
+              
+              (rename [super-on-change on-change])
+              (define/override (on-change)
+                (super-on-change)
                 (when arrow-vector
-                  (let loop ([n (vector-length arrow-vector)])
-                    (unless (zero? n)
-                      (let ([eles (vector-ref arrow-vector (- n 1))])
-                        (for-each (lambda (ele)
-                                    (when (arrow? ele)
-                                      (update-poss ele)))
-                                  eles))
-                      (loop (- n 1))))
+                  (flush-arrow-coordinates-cache)
                   (invalidate-bitmap-cache)))
               
               (override on-paint)
               (define (on-paint before dc left top right bottom dx dy draw-caret)
                 (super-on-paint before dc left top right bottom dx dy draw-caret)
-                (when (and arrow-vector
+                (when (and arrow-vector 
                            (not before))
                   (let ([draw-arrow2
                          (lambda (arrow)
@@ -810,12 +823,37 @@
       (define report-error-style (make-object style-delta% 'change-style 'slant))
       (send report-error-style set-delta-foreground "red")
       
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      ;;;                                                                ;;;
-      ;;;                     Syntax Traversals                          ;;;
-      ;;;                                                                ;;;
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+                                          
+                                          
+  ;;;;                 ;                  
+ ;   ;                 ;                  
+ ;     ;;; ;;;; ;;;   ;;;;;  ;;;;  ;;; ;;;
+ ;;;    ;   ;  ;;  ;   ;         ;   ; ;  
+   ;;;  ;   ;  ;   ;   ;      ;;;;    ;   
+     ;   ; ;   ;   ;   ;     ;   ;   ; ;  
+ ;   ;   ;;;   ;   ;   ;   ; ;   ;  ;   ; 
+ ;;;;     ;   ;;;  ;;   ;;;   ;;; ;;;   ;;
+          ;                               
+          ;                               
+        ;;                                
+
+ 
+                                                                      
+                                                         ;;;          
+;;;;;;;                                                    ;          
+;  ;  ;                                                    ;          
+;  ;  ; ; ;;;  ;;;;  ;;; ;;;  ;;;   ; ;;;   ;;;   ;;;;     ;     ;;;  
+   ;     ;         ;  ;   ;  ;   ;   ;     ;   ;      ;    ;    ;   ; 
+   ;     ;      ;;;;  ;   ;  ;;;;;   ;      ;;;    ;;;;    ;     ;;;  
+   ;     ;     ;   ;   ; ;   ;       ;         ;  ;   ;    ;        ; 
+   ;     ;     ;   ;   ;;;   ;   ;   ;     ;   ;  ;   ;    ;    ;   ; 
+ ;;;;;  ;;;;    ;;; ;   ;     ;;;   ;;;;    ;;;    ;;; ; ;;;;;;  ;;;  
+                                                                      
+                                                                      
+                                                                      
+
+      
       ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
@@ -1085,6 +1123,7 @@
           (let level-loop ([sexp sexp]
                            [high-level? #f])
             (annotate-original-keywords sexp)
+            (annotate-bound-in-source sexp)
             (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
             (set! varrefs (flatten-cons-tree #t (syntax-property sexp 'bound-in-source) varrefs))
             (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
@@ -1237,7 +1276,22 @@
                   require-for-syntaxes
                   referenced-macros
                   has-module?)))
-      
+
+      ;; annotate-bound-in-source : syntax -> void
+      ;; adds arrows between pairs found in the 'bound-in-source syntax property.
+      (define (annotate-bound-in-source stx)
+        (let loop ([bis (syntax-property stx 'bound-in-source)])
+          (cond
+            [(and (cons? bis)
+                  (syntax? (car bis))
+                  (syntax? (cdr bis)))
+             (when (and (syntax-original? (car bis))
+                        (syntax-original? (cdr bis)))
+               (connect-syntaxes (car bis) (cdr bis)))]
+            [(cons? bis)
+             (loop (car bis))
+             (loop (cdr bis))]
+            [else (void)])))
 
       ;; annotate-require-open : ((-> void) -> stx -> void)
       (define (annotate-require-open run-in-expansion-thread)

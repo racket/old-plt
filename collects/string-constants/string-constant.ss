@@ -12,8 +12,7 @@
     (put-preferences (list 'plt:human-language) (list language)))
   
   ;; language : symbol
-  (define language 
-    (get-preference 'plt:human-language (lambda () '|English|)))
+  (define language (get-preference 'plt:human-language (lambda () 'english)))
   
   (define-syntaxes (string-constant string-constants this-language all-languages)
     (let ()
@@ -63,11 +62,9 @@
 		     ht1
 		     (lambda (constant value)
 		       (unless (hash-table-get ht2 constant (lambda () #f))
-			 (let ([unknown-word ;(string-append "UNK" value)
-                                             value
-                                             ]
-			       [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
-			   (hash-table-put! ht2 constant unknown-word)
+			 (let ([no-warning-cache-key
+                                (cons (sc-language-name sc1) (sc-language-name sc2))])
+			   (hash-table-put! ht2 constant value)
 			   (unless (unbox already-printed)
                              (when (getenv "STRINGCONSTANTS")
                                (cond
@@ -75,21 +72,17 @@
                                   =>
                                   (lambda (x)
                                     (let ([ent (car x)])
-                                      (set-car! (cdr ent) (+ (cadr ent) 1))))]
+                                      (set-car! (cdr ent) (cons (list constant value) (cadr ent)))))]
                                  [else
                                   (set! warning-table (cons (list no-warning-cache-key
-                                                                  0
-                                                                  (sc-language-name sc1)
-                                                                  constant
-                                                                  (sc-language-name sc2)
-                                                                  unknown-word)
+                                                                  (list (list constant value)))
                                                             warning-table))])))))))))])
 
           (for-each (lambda (x) 
                       (check-one-way x first-string-constant-set)
                       (check-one-way first-string-constant-set x))
                     (cdr available-string-constant-sets))
-	  		    
+          
 	  ;; in some cases, the printf may raise an exception because the error port
 	  ;; is gone. If so, just don't display the warning.
 	  (unless (unbox already-printed)
@@ -98,23 +91,19 @@
 	      (set-box! already-printed #t)
 	      (for-each
 	       (lambda (bad)
-		 (let ([lang1-name (third bad)]
-		       [constant (fourth bad)]
-		       [lang2-name (fifth bad)]
-		       [unknown-word (sixth bad)]
-		       [count (second bad)])
+		 (let* ([lang-pair (car bad)]
+                        [constants (cadr bad)]
+                        [lang1-name (car lang-pair)]
+                        [lang2-name (cdr lang-pair)])
 		   (fprintf
 		    (current-error-port)
-		    "WARNING: language ~a defines ~a, but\n         language ~a does not, substituting:\n         \"~a\"\n"
+		    "WARNING: language ~a had but ~a does not:\n"
 		    lang1-name
-		    constant
-		    lang2-name
-		    unknown-word)
-		   (unless (zero? count)
-		     (fprintf
-		      (current-error-port)
-		      "         ~a other words were substituted without warning.\n"
-		      count))))
+		    lang2-name)
+                   (for-each
+                    (lambda (x) (fprintf (current-error-port) "   ~s\n" x))
+                    constants)
+                   (newline (current-error-port))))
 	       warning-table)))))
            
       (define (string-constant stx)

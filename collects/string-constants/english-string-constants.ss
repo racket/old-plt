@@ -25,6 +25,13 @@
  (stop "Stop")   
  (&stop "&Stop") ;; for use in button and menu item labels, with short cut.
 
+ ;;; important urls
+ (web-materials "Related Web Sites") ;; menu item title
+ (drscheme-homepage "DrScheme")
+ (plt-homepage "PLT")
+ (how-to-use-scheme "How to Use Scheme") ;; title of a book.
+ (teachscheme!-homepage "TeachScheme!") ;; probably this should be a `word' in all languages
+
  ;;; bug report form
  (cancel-bug-report? "Cancel Bug Report?")
  (are-you-sure-cancel-bug-report?
@@ -58,6 +65,7 @@
  (illegal-bug-report "Illegal Bug Report")
  (pls-fill-in-field "Please fill in the \"~a\" field")
  (malformed-email-address "Malformed email address")
+ (pls-fill-in-either-description-or-reproduce "Please fill in either the Description field or the Steps to Reproduce field.")
 
  ;;; check syntax
  (check-syntax "Check Syntax")
@@ -144,6 +152,15 @@
  (nothing-found-for-empty-search "Nothing found for the empty search")
  (nothing-found-for "Nothing found for ~a")
  (and "and")
+ (error-finding-docs
+  "Could not find documentation.\n\n~a")
+ ; help desk htty proxy
+ (http-proxy "HTTP Proxy")
+ (proxy-direct-connection "Direct connection")
+ (proxy-use-proxy "Use proxy:")
+ (proxy-host "Host")
+ (proxy-port "Port")
+ (proxy-bad-host "Bad Proxy Host")
 
  ;; browser
  (rewind-in-browser-history "Rewind")
@@ -233,6 +250,12 @@
  (general-ii "General II")
  (only-warn-once "Only warn once when executions and interactions are not synchronized")
  
+ ; warning message when lockfile is around
+ (waiting-for-pref-lock "Waiting for the preferences lockfile...")
+ (pref-lock-not-gone
+  "The preferences lockfile:\n\n   ~a\n\nprevents the preferences from being saved. Ensure that no PLT software is running and delete this file.")
+ (still-locked-exit-anyway? "The preferences were not saved sucessfully. Exit anyway?")
+ 
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indenting")
 
@@ -250,6 +273,8 @@
  (find-and-replace "Find and Replace")
  (find "Find")
  (replace "Replace")
+ (dock "Dock")
+ (undock "Undock")
  (use-separate-dialog-for-searching "Use separate dialog for searching")
  (replace&find-again "Replace && Find Again") ;;; need double & to get a single &
  (replace-to-end "Replace to End")
@@ -274,7 +299,8 @@
  (mfs-open-file "Open File")
  (mfs-stop-search "Stop Search")
  (mfs-case-sensitive-label "Case sensitive")
- 
+ (mfs-no-matches-found "No matches found.")
+ (mfs-search-interrupted "Search aborted.")
  
  ;;; reverting a file
  (error-reverting "DrScheme - Error Reverting")
@@ -503,10 +529,16 @@
  (comment-out-menu-item-label "&Comment Out")
  (uncomment-menu-item-label "&Uncomment")
  
- ;;; launcher
- (create-launcher-title "Create Launcher")
- (must-save-before-launcher "You must save your program before creating a launcher.")
- (save-a-launcher "Save a Launcher")
+ ;;; executables
+ (create-executable-menu-item-label "Create Executable...")
+ (create-executable-title "Create Executable")
+ (must-save-before-executable "You must save your program before creating an executable.")
+ (save-an-executable "Save an Executable")
+ (definitions-not-saved "The definitions window has not been saved. The executable will use the latest saved version of the definitions window. Continue?")
+ (inline-saved-program-in-executable?
+  "Inline the saved program in the executable? If yes, you can copy the executable to another ~a computer but the executable will be quite large. If not, you cannot copy the executable to another computer, but it will be much smaller. Additionally, if not, the executable will load the latest version of the program.")
+ (use-mred-binary?
+  "Use the mred binary for this executable?\n\nIf yes, your program can use the (lib \"mred.ss\" \"mred\") library. If no, DrScheme will use mzscheme as the binary for this executable and you cannot use that library.\n\nIf unsure, choose yes.")
  
  ;;; buttons
  (execute-button-label "Execute") 
@@ -563,21 +595,30 @@
  (hide-details-button-label "Hide Details")
  (choose-language-menu-item-label "Choose Language...")
  (revert-to-language-defaults "Revert to Language Defaults")
-
+ (language-docs-button-label "Language Docs")
+ 
  ;;; languages
  (beginning-student "Beginning Student")
+ (beginning-one-line-summary "define, cond, structs, constants, and primitives")
  (beginning-student/abbrev "Beginning Student with List Abbreviations")
+ (beginning/abbrev-one-line-summary "Beginner, with list style printing in the REPL")
  (intermediate-student "Intermediate Student")
+ (intermediate-one-line-summary "Beginner plus lexical scope")
  (intermediate-student/lambda "Intermediate Student with lambda")
+ (intermediate/lambda-one-line-summary "Intermediate plus higher-order functions")
  (advanced-student "Advanced Student")
+ (advanced-one-line-summary "Intermediate plus lambda and mutation")
  (full-language "Full") ;; also in the HtDP languages section
+ (htdp-full-one-line-summary "Advanced, plus PLT extensions and GUI library")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")
  (mred-lang-name "Graphical without debugging (MrEd)")
  (mzscheme-lang-name "Textual without debugging (MzScheme)")
  (r5rs-lang-name "Standard (R5RS)")
+ (r5rs-one-line-summary "R5RS, with no extra frills")
  (unknown-debug-frame "[unknown]")
  
+ (module-language-one-line-summary "Language with module as the only construct")
  (bad-module-language-specs
   "The drscheme-language-position and drscheme-language-modules specifications aren't correct. Expected (listof (cons string (listof string))) and (listof (listof string)) respectively, where the lengths drscheme-language-position and drscheme-language-module lists are the same. Got ~e and ~e")
   
@@ -587,7 +628,9 @@
  (stack-frame-in-current-interactions "interactions")
  (stack-frame-in-current-definitions "definitions")
  (mzscheme-w/debug "Textual (MzScheme)")
+ (mzscheme-one-line-summary "PLT Scheme without the GUI library")
  (mred-w/debug "Graphical (MrEd)")
+ (mred-one-line-summary "PLT Scheme plus the GUI library")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

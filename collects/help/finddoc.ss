@@ -32,7 +32,7 @@
   ;; returns either a string (failure) or
   ;; (list docdir index-key filename anchor title)
   (define (lookup manual index-key label)
-    (with-handlers ([(lambda (x) #t) 
+    (with-handlers ([not-break-exn?
                      (lambda (x) 
                        (format 
                         "<font color=\"red\">[internal error:finddoc didn't find link; manual: ~s index-key: ~s label: ~s]</font>"

@@ -7,9 +7,6 @@
 
            "test-sig.ss"
            "test-unit.ss"
-
-	   "prefs-file-unit.ss"
-	   "prefs-file-sig.ss"
            
            "framework-sig.ss"
 	   "private/sig.ss"
@@ -42,14 +39,12 @@
 	   "private/main.ss")
 
   (provide framework@
-	   framework-no-prefs@
 	   frameworkc@)
 
   (define frameworkc@
     (compound-unit/sig
       (import [mred : mred^]
 	      [test : framework:test^]
-	      [pref-file : framework:prefs-file^]
 	      [gui-utils : framework:gui-utils^])
       (link [application : framework:application^ (application@)]
 	    [version : framework:version^ (version@)]
@@ -58,7 +53,7 @@
 	    [exit : framework:exit^ (exit@ mred preferences gui-utils)]
 	    [menu : framework:menu^ (menu@ mred preferences)]
 	    [preferences : framework:preferences^
-			 (preferences@ mred pref-file exn exit panel)]
+			 (preferences@ mred exn exit panel)]
 	    [autosave : framework:autosave^ (autosave@ mred exit preferences)]
 	    [handler : framework:handler^
 		     (handler@ mred gui-utils finder group text preferences frame)] 
@@ -86,7 +81,7 @@
 	    [scheme : framework:scheme^ 
 		    (scheme@ mred preferences match-cache paren
 			     scheme-paren icon keymap text editor frame)]
-	    [main : framework:main^ (main@ mred preferences exit group)])
+	    [main : framework:main^ (main@ mred preferences exit group gui-utils)])
       (export
        (unit menu)
        (unit application)
@@ -114,24 +109,13 @@
        (unit scheme)
        (unit main))))
 
-  (define framework-no-prefs@
-    (compound-unit/sig
-      (import [mred : mred^]
-	      [pref-file : framework:prefs-file^])
-      (link [test : framework:test^ (framework:test@ mred)]
-	    [gui-utils : framework:gui-utils^ (framework:gui-utils@ mred)]
-	    [f : frameworkc^ (frameworkc@ mred test pref-file gui-utils)])
-      (export
-       (unit test)
-       (unit gui-utils)
-       (open f))))
-
   (define framework@
     (compound-unit/sig
       (import [mred : mred^])
-      (link
-       [prefs-file : framework:prefs-file^ (framework:prefs-file@)]
-       [f : framework-no-prefs^ (framework-no-prefs@ mred prefs-file)])
+      (link [test : framework:test^ (framework:test@ mred)]
+	    [gui-utils : framework:gui-utils^ (framework:gui-utils@ mred)]
+	    [f : frameworkc^ (frameworkc@ mred test gui-utils)])
       (export
-       (unit prefs-file)
+       (unit test)
+       (unit gui-utils)
        (open f)))))

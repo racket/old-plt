@@ -1,6 +1,7 @@
 
 (module main-before mzscheme
   (require (lib "string-constant.ss" "string-constants")
+           (lib "proxy-prefs.ss" "help")
            (lib "unitsig.ss")
            "drsig.ss"
 	   (lib "mred.ss" "mred")
@@ -246,6 +247,7 @@
       
       (scheme:add-preferences-panel)
       (preferences:add-general-panel)
+      (add-proxy-prefs-panel)
       
       (preferences:add-panel
        (string-constant general-ii)
@@ -273,41 +275,50 @@
            (make-object vertical-panel% main)
            main)))
       
-      (let* ([use-copy-mixin
-              (lambda (%)
-                (class %
-                  (define/override (use-namespace-require/copy?) #t)
-                  (super-instantiate ())))]
+      (let* ([extras-mixin
+              (lambda (mred-launcher? one-line-summary)
+                (lambda (%)
+                  (class %
+                    (define/override (get-one-line-summary) one-line-summary)
+                    (define/override (use-namespace-require/copy?) #t)
+                    (define/override (use-mred-launcher?) mred-launcher?)
+                    (super-instantiate ()))))]
              [make-simple
-              (lambda (module position numbers)
-                (instantiate 
-                    (use-copy-mixin
-                     (drscheme:language:module-based-language->language-mixin
-                      (drscheme:language:simple-module-based-language->module-based-language-mixin
-                       drscheme:language:simple-module-based-language%)))
-                  ()
+              (lambda (module position numbers mred-launcher? one-line-summary)
+                (let ([%
+                       ((extras-mixin mred-launcher? one-line-summary)
+                        (drscheme:language:module-based-language->language-mixin
+                         (drscheme:language:simple-module-based-language->module-based-language-mixin
+                          drscheme:language:simple-module-based-language%)))])
+                (instantiate % ()
                   (module module)
                   (language-position position)
-                  (language-numbers numbers)))])
+                  (language-numbers numbers))))])
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "plt-mred.ss" "lang")
                       (list (string-constant plt)
                             (string-constant mred-w/debug))
-                      (list -10 1)))
+                      (list -10 1)
+                      #t
+                      (string-constant mred-one-line-summary)))
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "plt-mzscheme.ss" "lang") 
                       (list (string-constant plt)
                             (string-constant mzscheme-w/debug))
-                      (list -10 2)))
+                      (list -10 2)
+                      #f
+                      (string-constant mzscheme-one-line-summary)))
         (drscheme:language-configuration:add-language
 	 (make-simple '(lib "r5rs.ss" "lang")
                       (list (string-constant r5rs-lang-name))
-                      (list -1000))))
+                      (list -1000)
+                      #f
+                      (string-constant r5rs-one-line-summary))))
       
       (drscheme:module-language:add-module-language)
       (drscheme:language-configuration:add-info-specified-languages)
       
-  ;; add a handler to open .plt files.
+      ;; add a handler to open .plt files.
       (handler:insert-format-handler 
        "PLT Files"
        (lambda (filename)

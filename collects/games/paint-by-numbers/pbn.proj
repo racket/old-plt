@@ -1,0 +1,6 @@
+;; project file
+
+; save data
+(quote ((loaded-files-shown? #f) (to-load-files-shown? #t) (rep-shown? #t) (collection-paths #f) (open-table ()) (files ()) (settings ("Graphical Full Scheme (MrEd)" mred-debug #f () #f #f #f #t #t #f #t #f #f #f #f #f #f #f #f r4rs-style #f #f #t))))
+
+; load commands

@@ -105,7 +105,7 @@
           (let ((old-breaks (break-enabled)))
             (break-enabled #f)
             (cond
-              ((eq? 'eof type)
+              ((not (eq? 'eof type))
                (let ((len (- new-token-end new-token-start)))
                  (set! current-pos (+ len current-pos))
                  (sync-invalid)
@@ -159,7 +159,7 @@
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
         (unless background-thread
-          (set! background-thread (thread background-colorer)))
+          (set! background-thread (thread (lambda () (background-colorer prefix get-token)))))
         (do-insert/delete prefix get-token port-wrapper start-pos 0))
         
         

@@ -4,6 +4,7 @@
   (require "ast.ss"
            "types.ss"
            "parameters.ss"
+           "error-messaging.ss"
            (lib "match.ss")
            (lib "file.ss")
            (lib "class.ss")
@@ -655,7 +656,7 @@
          (set-expr-type exp
                         (check-access exp check-sub-expr env level type-recs current-class)))
         ((special-name? exp)
-         (set-expr-type exp (check-special-name exp env #f)))
+         (set-expr-type exp (check-special-name exp env static? #f))) ;last bool is interactions. PROBLEM
         ((call? exp)
          (set-expr-type exp (check-call exp
                                         (map check-sub-expr (call-args exp))
@@ -762,16 +763,16 @@
                  (left-to-right (assignment-conversion r l type-recs)))
              (cond
                ((and right-to-left left-to-right) 'boolean)
-               (right-to-left (raise-error (list src 'dummy l r op) bin-op-eq-left))
-               (left-to-right (raise-error (list src 'dummy l r op) bin-op-eq-right))
-               (else (raise-error (list src 'dummy l r op) bin-op-eq-both)))))
+               (right-to-left (bin-op-equality-error 'left op l r src))
+               (left-to-right (bin-op-equality-error 'right op l r src))
+               (else (bin-op-equality-error 'both op l r src)))))
           (else 
-           (raise-error (list src 'dummy l r op) bin-op-eq-prim))))
+           (bin-op-equality-error 'prim op l r src))))
       ((& ^ or &= ^= or=)      ;; 15.22
        (cond
          ((and (prim-numeric-type? l) (prim-numeric-type? r)) (binary-promotion l r))
          ((and (eq? 'boolean l) (eq? 'boolean r)) 'boolean)
-         (else (raise-error (list src l r) 'bin-op-bitwise))))
+         (else (bin-op-bitwise-error op l r src))))
       ((&& oror)      ;; 15.23, 15.24
        (prim-check (lambda (b) (eq? b 'boolean)) 
                    (lambda (l r) 'boolean) 'bool l r op src))))
@@ -780,9 +781,9 @@
   (define (prim-check ok? return expt l r op src)
     (cond
       ((and (ok? l) (ok? r)) (return l r))
-      ((ok? l) (raise-error (list src expt l r op) bin-op-prim-right))
-      ((ok? r) (raise-error (list src expt l r op) bin-op-prim-left))
-      (else (raise-error (list src expt l r op) bin-op-prim-both))))
+      ((ok? l) (bin-op-prim-error 'right op expt l r src))
+      ((ok? r) (bin-op-prim-error 'left op expt l r src))
+      (else (bin-op-prim-error 'both op expt l r src))))
 
   ;; 5.6.1
   ;;unary-promotion: symbol -> symbol
@@ -812,18 +813,18 @@
                  (set-field-access-access! acc (make-var-access 
                                                 (memq 'static (field-record-modifiers record))
                                                 (field-record-class record))))
-               (begin 
-                 (set! record 
-                       (let ((name (var-access-class (field-access-access acc))))
-                         (get-field-record fname
-                                           (get-record 
-                                            (send type-recs get-class-record name
-                                                  ((get-importer type-recs) name type-recs 'full))
-                                            type-recs)
-                                           (lambda () (raise-error (list (expr-src exp)
-                                                                         (make-ref-type name null)
-                                                                         fname)
-                                                                   field-not-found)))))))
+               (set! record 
+                     (let ((name (var-access-class (field-access-access acc))))
+                       (get-field-record fname
+                                         (get-record 
+                                          (send type-recs get-class-record name
+                                                ((get-importer type-recs) name type-recs 'full))
+                                          type-recs)
+                                         (lambda () 
+                                           (field-lookup-error 'not-found
+                                                               (string->symbol fname)
+                                                               (make-ref-type name null)
+                                                               (expr-src exp)))))))
            (add-required c-class (car (field-record-class record)) 
                          (cdr (field-record-class record)) type-recs)
            (field-record-type record)))
@@ -866,14 +867,14 @@
                                                          (car acc)
                                                          #f))
                          (cdr acc))))
-                   (else (raise-error (list (id-src (car acc)) (id-string (car acc)))
-                                      variable-not-found)))))
+                   (else (variable-not-found-error (car acc) (id-src (car acc)))))))
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
   ;; field-lookup: string type expression type-records -> field-record
   (define (field-lookup fname obj-type obj type-recs)
-    (let ((src (expr-src obj)))
+    (let ((src (expr-src obj))
+          (name (string->symbol fname)))
       (cond
         ((reference-type? obj-type)
          (let ((obj-record (send type-recs get-class-record obj-type
@@ -881,12 +882,12 @@
            (get-field-record fname 
                              (get-record obj-record type-recs)
                              (lambda () 
-                               (raise-error (list src obj-type fname) field-not-found)))))
+                               (field-lookup-error 'not-found name obj-type src)))))
         ((array-type? obj-type)
          (unless (equal? fname "length")
-           (raise-error (list src obj-type fname) array-field))
+           (field-lookup-error 'array name obj-type src))
          (make-field-record "length" `() `(array) 'int))
-        (else (raise-error (list src obj-type) prim-field-acc)))))
+        (else (field-lookup-error 'primitive name obj-type src)))))
   
   ;; build-field-accesses: access (list id) -> field-access
   (define (build-field-accesses start accesses)
@@ -957,10 +958,10 @@
     (or (file-exists? (string-append (build-path path class) ".java"))
         (file-exists? (string-append (build-path path "compiled" class) ".jinfo"))))
   
-  ;check-special-name: expression env bool -> type
-  (define (check-special-name exp env static?)
+  ;check-special-name: expression env bool bool-> type
+  (define (check-special-name exp env static? interact?)
     (when static? 
-      (raise-error (list (expr-src exp) "this") special-in-static))
+      (special-error (expr-src exp) interact?))
     (var-type-type (lookup-var-in-env "this" env)))
   
   ;;Skipping package access constraints
@@ -987,7 +988,7 @@
             (cond 
               ((special-name? name)
                (let ((n (special-name-name name)))
-                 (unless ctor? (raise-error (list src n) ctor-not-ctor))
+                 (unless ctor? (illegal-ctor-call n src level))
                  (if (string=? n "super")
                      (let ((parent (car (class-record-parents this))))
                        (get-method-records (car parent)
@@ -1020,7 +1021,7 @@
                                             (send type-recs get-class-record call-exp 
                                                   ((get-importer type-recs) call-exp type-recs 'full))
                                             type-recs)))
-                      (else (raise-error (list (expr-src expr) call-exp level) prim-call)))))
+                      (else (prim-call-error call-exp name src level)))))
                  (else 
                   (get-method-records (id-string name)
                                       (if static?
@@ -1029,47 +1030,45 @@
       
       (when (null? methods)
         (cond 
-          ((eq? exp-type 'super) (raise-error (list src (id-string name)) super-meth-not-found))
-          (exp-type (raise-error (list src (id-string name) exp-type)) meth-not-found)
-          (else (raise-error (list src (id-string name)) local-meth-not-found))))
+          ((eq? exp-type 'super) (no-method-error 'super exp-type name src))
+          (exp-type (no-method-error 'class exp-type name src))
+          (else (no-method-error 'this exp-type name src))))
 
-      (let* ((overload-list 
-              (cond 
-                ((eq? exp-type 'super) (list src (id-string name)))
-                (exp-type (list src (id-string name)))
-                (else
-                 (list src
-                       (if (special-name? name) 
-                           (special-name-name name)
-                           (id-string name))))))
-             (method-record (resolve-overloading methods 
-                                                 args
-                                                 (lambda () (raise-error (append overload-list 
-                                                                                 (list (length args))) call-arg-error))
-                                                 (lambda () (raise-error (append overload-list (list args))
-                                                                         call-conflict))
-                                                 (lambda () (raise-error (append overload-list (list exp-type))
-                                                                         full-meth-not-found))
-                                                 type-recs))
-             (mods (method-record-modifiers method-record))
-             (err-list (list src (method-record-name method-record))))
-        (when (memq 'abstract mods) (raise-error err-list abs-meth-called))
+      (let* ((method-record 
+              (if (memq level '(full advanced))
+                  (resolve-overloading methods 
+                                       args
+                                       (lambda () (call-arg-error 'number name args exp-type src))
+                                       (lambda () (call-arg-error 'conflict name args exp-type src))
+                                       (lambda () (call-arg-error 'no-match name args exp-type src))
+                                       type-recs)
+                  (when (check-method-args args (method-record-atypes (car methods)) name exp-type src type-recs)
+                    (car methods))))
+             (mods (method-record-modifiers method-record)))
+        (when (memq 'abstract mods) (call-access-error 'abs name exp-type src))
         (when (and (memq 'protected mods) (reference-type? exp-type) 
                    (not (is-subclass? this exp-type)))
-          (raise-error err-list pro-meth-called))
+          (call-access-error 'pro name exp-type src))
         (when (and (memq 'private mods)
                    (reference-type? exp-type)
                    (not (eq? this (send type-recs get-class-record exp-type))))
-          (raise-error err-list pri-meth-called))
+          (call-access-error 'pri name exp-type src))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
                       (unless (lookup-exn thrown env type-recs)
-                        (raise-error (append err-list (list (ref-type-class/iface thrown)))
-                                     called-throws-not-caught)))
+                        (thrown-error (ref-type-class/iface thrown) name exp-type src)))
                     (method-record-throws method-record)))
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
 
+  ;check-method-args: (list type) (list type) id type src type-records -> void
+  (define (check-method-args args atypes name exp-type src type-recs)
+    (unless (= (length args) (length atypes))
+      (method-arg-error 'number args atypes name exp-type src))
+    (for-each (lambda (arg atype)
+                (unless (assignment-conversion arg atype type-recs)
+                  (method-arg-error 'type (list arg) (cons atype atypes) name exp-type src)))
+              args atypes))
   
   ;;Skip package access controls
   ;; 15.9
@@ -1077,34 +1076,43 @@
   (define (check-class-alloc name args src type-recs c-class env level)
     (let* ((type (java-name->type name type-recs))
            (class-record (send type-recs get-class-record type))
-           (methods (get-method-records (ref-type-class/iface type) class-record))
-           (err-list (list (name-src name) (string->symbol (ref-type-class/iface type)) type)))
+           (methods (get-method-records (ref-type-class/iface type) class-record)))
       (unless (equal? (ref-type-class/iface type) (car c-class))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (when (memq 'abstract (class-record-modifiers class-record))
-        (raise-error err-list class-alloc-abstract))
+        (class-alloc-error 'abstract type (name-src name)))
       (unless (class-record-class? class-record)
-        (raise-error err-list class-alloc-interface))
-      (let* ((const (resolve-overloading methods 
-                                         args 
-                                         (lambda () (raise-error err-list ctor-arg-error))
-                                         (lambda () (raise-error err-list ctor-conflict))
-                                         (lambda () (raise-error err-list ctor-not-found))
-                                         type-recs))
+        (class-alloc-error 'interface type (name-src name)))
+      (let* ((const (if (memq level `(full advanced))
+                        (resolve-overloading methods 
+                                             args 
+                                             (lambda () (ctor-overload-error 'number name args src))
+                                             (lambda () (ctor-overload-error 'conflict name args src))
+                                             (lambda () (ctor-overload-error 'no-match name args src))
+                                             type-recs)
+                        (when (check-ctor-args args (method-record-atypes (car methods)) type src type-recs)
+                          (car methods))))
              (mods (method-record-modifiers const))
              (this (lookup-this type-recs env)))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
                       (unless (lookup-exn thrown env type-recs)
-                        (raise-error (append err-list (list (ref-type-class/iface thrown)))
-                                     called-throws-not-caught)))
+                        (ctor-throws-error (ref-type-class/iface thrown) type src)))
                     (method-record-throws const)))
         (when (and (memq 'private mods) (not (eq? class-record this)))
-          (raise-error err-list class-alloc-access-private))
+          (class-access-error 'pri type src))
         (when (and (memq 'protected mods) (not (is-subclass? this type)))
-          (raise-error err-list class-alloc-access-pro))      
+          (class-access-error 'pro type src))
         type)))
-  
+
+  ;check-method-args: (list type) (list type) type src type-records -> void
+  (define (check-ctor-args args atypes name src type-recs)
+    (unless (= (length args) (length atypes))
+      (ctor-arg-error 'number args atypes name src))
+    (for-each (lambda (arg atype)
+                (unless (assignment-conversion arg atype type-recs)
+                  (ctor-arg-error 'type (list arg) (cons atype atypes) name src)))
+              args atypes))
   
   ;; 15.10
   ;;check-array-alloc type-spec (list expression) int src (expr->type) type-records -> type
@@ -1222,91 +1230,260 @@
        ltype)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;Error code
+  ;;Expression Errors
 
   ;;Binop errors
-  (define (bin-op-prim-side side select)
-    (lambda (op expt left right)
-      (format "~a hand side of ~a should be of type ~a, but given ~a" 
-              side op expt (select left right))))
-  (define bin-op-prim-right (bin-op-prim-side "Right" (lambda (l r) r)))
-  (define bin-op-prim-left (bin-op-prim-side "Left" (lambda (l r) l)))
-  (define (bin-op-prim-both op expt left right)
-    (format "~a expects arguments of type ~a, but given ~a and ~a" op expt left right))
-
-  (define (bin-op-eq-side side select)
-    (lambda (op d left right)
-      (format "~a hand side of ~a should be assignable to ~a" op (select left right))))
-  (define bin-op-eq-left (bin-op-eq-side "Left" (lambda (l r) r)))
-  (define bin-op-eq-right (bin-op-eq-side "Right" (lambda (l r) l)))
-  (define (bin-op-eq-prim op dummy left right)
-    (format "~a expects arguments to be of equivalent types, given non-equivalent ~a and ~a" op left right))
-  (define (bin-op-eq-both op dummy left right)
-    (format "~a expects arguments to be assignable to each other, ~a and ~a cannot" op left right))
-
-  ;check-access errors
-  (define (variable-not-found var)
-    (format "reference to undefined identifier ~a" var))
+  ;;bin-op-prim-error: symbol symbol symbol type type src -> void
+  (define (bin-op-prim-error side op expect left right src)
+    (let ((ext-out (get-expected expect))
+          (rt (type->ext-name right))
+          (lt (type->ext-name left)))
+      (raise-error
+       op
+       (case side
+         ((right) (format "Right hand side of ~a should be of type ~a, but given ~a" 
+                          op ext-out rt))
+         ((left) (format "Left hand side of ~a should be of type ~a, but given ~a"
+                         op ext-out lt))
+         (else
+          (format "~a expects arguments of type ~a, but given ~a and ~a" op ext-out lt rt)))
+       op src)))
   
-  ;field-lookup errors
-  (define (field-not-found type field)
-    (format "field ~a not found for object with type ~a" field type))
-  (define (array-field type field)
-    (format "array ~a does not have a field ~a, only length" type field))
-  (define (prim-field-acc type)
-    (format "attempted to access the field of a ~a, instead of a class" type))
-  
-  ;special-name errors
-  (define (special-in-static a)
-    "use of 'this' is not allowed in static methods")
+  ;bin-op-equality-error symbol symbol type type src -> void
+  (define (bin-op-equality-error type op left right src)
+    (let ((rt (type->ext-name right))
+          (lt (type->ext-name left)))
+      (raise-error 
+       op
+       (case type
+         ((right) 
+          (format "Right hand side of ~a should be assignable to ~a. Given ~a" op lt rt))
+         ((left) 
+          (format "Left hand side of ~a should be assignable to ~a. Given ~a" op rt lt))
+         ((both) 
+          (format "~a expects its arguments to be assignable to each other, ~a and ~a cannot" op lt rt))          
+         (else 
+          (format "~a expects its arguments to be equivalent types, given non-equivalent ~a and ~a" 
+                  op lt rt)))
+       op src)))
 
+  ;bin-op-bitwise-error symbol type type src -> void
+  (define (bin-op-bitwise-error op left right src)
+    (let ((lt (type->ext-name left))
+          (rt (type->ext-name right))
+          (prim-list "double, float, long, int, short, byte or char"))
+      (raise-error 
+       op 
+       (cond
+         ((prim-numeric-type? left) 
+          (format "~a expects the right hand side to be a ~a when the left is ~a. Given ~a"
+                  op prim-list lt rt))
+         ((prim-numeric-type? right)
+          (format "~a expects the left hand side to be a ~a when the left is ~a. Given ~a"
+                  op prim-list rt lt))
+         ((eq? left 'boolean)
+          (format "~a expects the right hand side to be a ~a when the left is ~a. Given ~a"
+                  op "boolean" lt rt))
+         ((eq? right 'boolean)
+          (format "~a expects the left hand side to be a ~a when the right is ~a. Given ~a"
+                  op "boolean" rt lt))
+         (else
+          (format "~a expects its arguments to both be either booleans, or ~a. Given ~a and ~a"
+                  op prim-list lt rt)))
+       op src)))
+
+  ;;check-access errors
+  
+  ;variable-not-found-error: id src -> void
+  (define (variable-not-found-error var src)
+    (let ((name (id->ext-name var)))
+      (raise-error
+       name
+       (format "reference to undefined identifier ~a" name)
+       name src)))
+  
+  ;field-lookup-error: symbol symbol type src -> void
+  (define (field-lookup-error kind field exp src)
+    (let ((t (type->ext-name exp)))
+      (raise-error
+       field
+       (case kind
+         ((not-found)
+          (format "field ~a not found for object with type ~a" field t))
+         ((array)
+          (format "~a only has a length field, attempted to access ~a" t field))
+         ((primitive)     
+          (format "attempted to access field ~a on ~a, this type does not have fields" field t)))
+       field src)))
+  
+  ;;special-name errors
+  ;special-error: src bool -> void
+  (define (special-error src interactions?)
+    (raise-error 'this 
+                 (format "use of 'this' is not allowed in ~a"
+                         (if interactions? 
+                             "the interactions window"
+                             "static code"))
+                 'this src))
+  
   ;;Call errors
-  (define (prim-call type level)
-    (format "attempted to call a method on ~a, instead of a ~a type"
-            (case level 
-              ((beginner) "class")
-              ((intermediate) "class or interface")
-              (else "class, interface, or array"))))
-  (define (meth-not-found class meth)
-    (format "~a does not contain any method named ~a" class meth))
-  (define (super-meth-not-found meth)
-    (format "super class does not contain any method named ~a" meth))
-  (define (local-meth-not-found meth)
-    (format "this class does not contain any method named ~a" meth))
-  (define (ctor-not-ctor ct)
-    (format "calls to ~a may only occur in other constructors" ct))
-  (define (abs-meth-called meth)
-    (format "it is illegal to call abstract method ~a" meth))
-  (define (pro-meth-called meth)
-    (format "it is illegal to call protected method ~a in this class" meth))
-  (define (pri-meth-called meth)
-    (format "it is illegal to call private method ~a in this class" meth))  
-  (define (call-arg-error meth num)
-    (format "No definition of ~a with ~a argument(s) found" meth num))
-  (define (call-conflict meth args)
-    (format "No definition of ~a with ~a arguments found" meth (if (null? args) "no" args)))
-  (define (full-meth-not-found meth)
-    (format "Method ~a is not found with the types of arguments given" meth))
-  (define (called-throws-not-caught thrown called)
-    (format "called method ~a throws exception ~a, which is not caught or listed as thrown" called thrown))
 
+  ;prim-call-error type id src symbol -> void
+  (define (prim-call-error exp name src level)
+    (let ((n (id->ext-name name))
+          (t (type->ext-name exp)))
+      (raise-error n
+                   (format "attempted to call method ~a on ~a, only ~a types have methods"
+                           n t
+                           (case level 
+                             ((beginner) "class")
+                             ((intermediate) "class or interface")
+                             (else "class, interface, or array")))
+                   n src)))
   
+  ;no-method-error: symbol type id src -> void
+  (define (no-method-error kind exp name src)
+    (let ((t (type->ext-name exp))
+          (n (id->ext-name name)))
+      (raise-error n
+                   (format "~a does not contain a method ~a"
+                           (case kind
+                             ((class) t)
+                             ((super) "This class's super class")
+                             ((this) "The current class"))
+                           n)
+                   n src)))
   
+  (define (illegal-ctor-call name src level)
+    (let ((n (string->symbol name)))
+      (raise-error n (format "calls to ~a may only occur in ~a"
+                             n
+                             (if (memq level `(full advanced))
+                                 "other constructors"
+                                 "the constructor"))
+                   n src)))
+
+  ;method-arg-error symbol (list type) (list type) id type src -> void
+  (define (method-arg-error kind args atypes name exp-type src)
+    (let ((n (id->ext-name name))
+          (e (get-call-type exp-type))
+          (givens (map type->ext-name args))
+          (expecteds (map type->ext-name atypes))
+          (awitht "arguments with types"))
+      (raise-error n
+                   (case kind
+                     ((number)
+                      (format "method ~a from ~a expects ~a ~a ~a. Given ~a ~a ~a"
+                              n e (length expecteds) awitht expecteds (length givens) awitht givens))
+                     ((type)
+                      (format "method ~a from ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
+                              n e awitht (cdr atypes) (car givens) (car atypes))))
+                   n src)))
+
+  ;call-access-error: symbol id type src -> void
+  (define (call-access-error kind name exp src)
+    (let ((n (id->ext-name name))
+          (t (get-call-type exp)))
+    (raise-error n
+                 (case kind
+                   ((abs) (format "Abstract methods may not be called. ~a from ~a is abstract"
+                                  n t))
+                   ((pro) (format "Protected method ~a from ~a may not be called here" 
+                                  n t))
+                   ((pri) (format "Private method ~a from ~a may not be called here"
+                                  n t)))
+                 n src)))
+
+  ;call-arg-error: symbol id (list type) type src -> void
+  (define (call-arg-error kind name args exp src)
+    (let ((n (id->ext-name name))
+          (t (get-call-type exp))
+          (as (map type->ext-name exp)))
+      (raise-error n
+                   (case kind
+                     ((number)
+                      (format "method ~a from ~a has no definition with ~a arguments. Given ~a"
+                              n t (length as) as))
+                     ((no-match)
+                      (format "method ~a from ~a has no definition with compatible types as the given types: ~a"
+                              n t as))
+                     ((conflict)
+                      (format "method ~a from ~a has multiple compatible definitions with given arguments: ~a"
+                              n t as)))
+                   n src)))
+  
+  ;thrown-error: string id type src -> void
+  (define (thrown-error thrown name exp src)
+    (let ((n (id->ext-name name))
+          (t (get-call-type exp)))
+      (raise-error n
+                   (format "called method ~a from ~a throws exception ~a, which is not caught or listed as thrown"
+                           n t thrown)
+                   n src)))
+      
   ;;Class Alloc errors
-  (define (class-alloc-abstract type)
-    (format "abstract class ~a may not be constructed" type))
-  (define (class-alloc-interface type)
-    (format "interface ~a may not be constructed" type))
-  (define (class-alloc-access-private class)
-    (format "Access to the specified constructor for ~a is restricted to itself" class))
-  (define (class-alloc-access-pro class)
-    (format "Access to the specified constructor for ~a is restricted to itself and its subclasses" class))
-  (define (ctor-arg-error type) 
-    (format "No constructor found for ~a with given number of arguments" type))
-  (define (ctor-conflict class) 
-    (format "Arguments to constructor for ~a select multiple constructors to call" class))
-  (define (ctor-not-found class) 
-    (format "Constructor for ~a is not found with the types of arguments given" class))
+
+  ;class-alloc-error: symbol type src -> void
+  (define (class-alloc-error kind type src)
+    (let ((cl (type->ext-name type)))
+      (raise-error cl
+                   (case kind
+                     ((abstract) "Class ~a is abstract and may not be constructed" cl)
+                     ((interface) "Interface ~a is an interface: only classes may be constructed" cl))
+                   cl src)))
+
+  ;ctor-arg-error symbol (list type) (list type) type src -> void
+  (define (ctor-arg-error kind args atypes name src)
+    (let ((n (type->ext-name name))
+          (givens (map type->ext-name args))
+          (expecteds (map type->ext-name atypes))
+          (awitht "arguments with types"))
+      (raise-error n
+                   (case kind
+                     ((number)
+                      (format "Constructor for ~a expects ~a ~a ~a. Given ~a ~a ~a"
+                              n (length expecteds) awitht expecteds (length givens) awitht givens))
+                     ((type)
+                      (format "Constructor for ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
+                              n awitht (cdr atypes) (car givens) (car atypes))))
+                   n src)))
+
+  ;ctor-overload-error: symbol type (list type) src -> void
+  (define (ctor-overload-error kind name args src)
+    (let ((n (type->ext-name name))
+          (as (map type->ext-name exp)))
+      (raise-error 
+       n
+       (case kind
+         ((number)
+          (format "No constructor for ~a exists with ~a arguments. Given ~a"
+                  n (length as) as))
+         ((no-match)
+          (format "No constructor for ~a exists with compatible types as the given types: ~a"
+                  n as))
+         ((conflict)
+          (format "Multiple constructors for ~a exist with compatible definitions for the given arguments: ~a"
+                  n as)))
+       n src)))
+  
+  ;class-access-error: symbol type src -> void
+  (define (class-access-error kind name src)
+    (let ((n (type->ext-name name)))
+      (raise-error n
+                   (case kind
+                     ((pro) (format "This constructor for ~a may only be used by ~a and its subclasses"
+                                    n n))
+                   ((pri) (format "This constructor for ~a may only be used by ~a"
+                                  n n)))
+                 n src)))
+
+  ;ctor-throws-error: string type src -> void
+  (define (ctor-throws-error thrown name src)
+    (let ((n (type->ext-name name)))
+      (raise-error n
+                   (format "Constructor for ~a throws exception ~a, which is not caught or listed as thrown"
+                           n thrown)
+                   n src)))
   
   ;;Array Alloc error
   (define (array-alloc-not-int type)
@@ -1360,7 +1537,7 @@
     (format "Implicit import of class ~a failed as this class does not exist at the specified location"
             class))
   
-  (define (raise-error wrong-code make-msg)
+  (define (old-raise-error wrong-code make-msg)
     (match wrong-code
       ;Covers bin-op-* assignment-convert-fail
       ;src symbol type type symbol
@@ -1435,43 +1612,8 @@
         (eq? t 'boolean)
         (prim-numeric-type? t)))
   
-  ;type->ext-name: type -> (U symbol string)
-  (define (type->ext-name t)
-    (cond 
-      ((ref-type? t) (ref-type-class/iface t))
-      ((array-type? t) 
-       (format "~a~a" (type->ext-name (array-type-type t))
-                      (let ((dims ""))
-                        (let loop ((d (array-type-dim t)))
-                          (if (= d 0)
-                              dims
-                              (begin (set! dims (string-append dims "[]"))
-                                     (loop (sub1 d))))))))
-      (else t)))
-
-  ;get-expected: symbol-> string
-  (define (get-expected e)
-    (case e
-      ((bool) 'boolean)
-      ((int) "int, short, byte or char")
-      ((num) "double, float, long, int, short, byte or char")
-      (else "dummy")))
-  
-  ;make-so: symbol src -> syntax-object
-  (define (make-so id src)
-    (datum->syntax-object #f id (build-src-list src)))
-  
   (define check-location (make-parameter #f))
   
-  ;build-src-list: src -> (U bool (list loc int int int int))
-  (define (build-src-list src)
-    (if (not src)
-        src
-        (if (and (= (src-line src) 0)
-                 (= (src-col src) 0)
-                 (= (src-pos src) 0)
-                 (= (src-span src) 0))
-            #f
-            (list (check-location) (src-line src) (src-col src) (src-pos src) (src-span src)))))
+  (define raise-error (make-error-pass check-location))
       
   )

@@ -1,5 +1,7 @@
 (module erepl.ss mzscheme
-  (require (lib "mred.ss" "mred"))
+  (require (lib "mred.ss" "mred")
+	   (lib "class.ss")
+	   (lib "class100.ss"))
   (provide execute-read-eval-print-loop)
 
   (define (execute-read-eval-print-loop)
@@ -39,7 +41,7 @@
            (lock #f)
            (change-style grey-style-delta 0 (last-position))
            (lock #t))]
-	[reset (lambda ()
+	[reset (lambda (prompt?)
 		 (set! locked? #f)
                  (lock #f)
                  (begin-edit-sequence)
@@ -61,12 +63,13 @@
                      (change-style italic-red-style-delta s e)))
                  (insert "The current input port always returns eof.") 
                  (insert #\newline)
-                 (new-prompt)
+		 (when prompt?
+		   (new-prompt))
                  (end-edit-sequence)
                  (clear-undos))])
       (sequence 
 	(super-init)
-        (reset))))
+        (reset #t))))
 
   ;; GUI creation
   (define frame (make-object (class100 frame% args
@@ -172,16 +175,19 @@
       (when execute-filename
         (update-execute-label)))
     (when execute-filename
-      (do-reset)
+      (custodian-shutdown-all user-custodian)
+      (user-space-init)
+      (send repl-buffer reset #f)
       (send execute-button enable #f)
       (evaluate (format "(load ~s)" execute-filename))))
   (define (do-reset)
     (custodian-shutdown-all user-custodian)
     (user-space-init)
-    (send repl-buffer reset)
+    (send repl-buffer reset #t)
     (send execute-button enable #t))
   (define (do-kill)
     (custodian-shutdown-all user-custodian)
+    (send execute-button enable #t)
     (send repl-buffer kill-repl))
   
   (send execute-panel stretchable-height #f)

@@ -95,7 +95,7 @@ static void collect_end_callback(void);
 
 static void wxScheme_Install(Scheme_Env *global_env);
 
-static Scheme_Object *init_file_symbol;
+static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
 static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box;
 
@@ -122,7 +122,9 @@ void wxsScheme_setup(Scheme_Env *env)
 
   objscheme_init(env);
 
+  wxREGGLOB(setup_file_symbol);
   wxREGGLOB(init_file_symbol);
+  setup_file_symbol = scheme_intern_symbol("setup-file");
   init_file_symbol = scheme_intern_symbol("init-file");
 
   wxScheme_Install(env);
@@ -1435,7 +1437,8 @@ extern char *wxmac_startup_directory;
 #endif
 
 enum {
-  id_init_file
+  id_init_file,
+  id_setup_file
 };
 
 #ifdef wx_msw
@@ -1480,24 +1483,33 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   if (argv[0] == init_file_symbol)
     which = id_init_file;
+  else if (argv[0] == setup_file_symbol)
+    which = id_setup_file;
   else {
     scheme_wrong_type("find-graphical-system-path", "graphical path symbol",
 		      0, argc, argv);
     return NULL;
   }
 
-#ifdef wx_x
+#if defined(wx_x) || defined(OS_X)
   {
     Scheme_Object *home;
     int ends_in_slash;
-    
+
+# ifdef OS_X    
+    home = scheme_make_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL));
+# else
     home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
+# endif
     
     ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
     
     if (which == id_init_file)
       return scheme_append_string(home,
 				  scheme_make_string("/.mredrc" + ends_in_slash));
+    if (which == id_setup_file)
+      return scheme_append_string(home,
+				  scheme_make_string("/.mred.resources" + ends_in_slash));
   }
 #endif
 
@@ -1514,24 +1526,12 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string("\\mredrc.ss" + ends_in_slash));
+  if (which == id_setup_file)
+    return scheme_append_string(home,
+				scheme_make_string("\\mred.ini" + ends_in_slash));  
 #endif
 
-#ifdef wx_mac
-# ifdef OS_X
-  {
-    Scheme_Object *home;
-    int ends_in_slash;
-    
-    home = scheme_make_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL));
-    
-    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
-    
-    if (which == id_init_file)
-      return scheme_append_string(home,
-				  scheme_make_string("/.mredrc" + ends_in_slash));
-  }
-# else
-
+#if defined(wx_mac) && !defined(OS_X)
   OSType t;
   FSSpec spec;
   Scheme_Object *home;
@@ -1562,7 +1562,9 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string(":mredrc.ss" + ends_in_colon));
-# endif				
+  if (which == id_setup_file)
+    return scheme_append_string(home,
+				scheme_make_string(":mred.fnt" + ends_in_colon));  
 #endif
 
   return scheme_void;
@@ -1794,7 +1796,6 @@ int wxGetPreference(const char *name, char *res, long len)
       long got;
 
       if (offset + PREF_CACHE_SEG > pref_file_cache_size) {
-	char *s;
 	s = new char[2 * pref_file_cache_size];
 	memcpy(s, pref_file_cache, pref_file_cache_size);
 	pref_file_cache_size *= 2;

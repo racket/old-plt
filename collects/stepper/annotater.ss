@@ -184,7 +184,15 @@
                  (if (= offset (z:location-offset (z:zodiac-start expr)))
                      expr
                      (cond
-                       ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
+                       ((z:scalar? expr)
+
+			;;; ROBBY
+			;;; scalars can contain code now;
+			;;; perhaps we will do this differently later.
+			;;; Suggestions welcome.
+			expr
+			;(e:static-error "starting offset inside scalar:" offset)
+			)
                        ((z:sequence? expr) 
                         (let ([object (z:read-object expr)])
                             (cond

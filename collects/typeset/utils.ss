@@ -2,6 +2,11 @@
   (import mred^
 	  framework^)
 
+  (define (snipize obj)
+    (if (is-a? obj snip%)
+	obj
+	(make-object string-snip% (format "~a" obj))))
+
   (define (set-box/f! b v) (when (box? b) (set-box! b v)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -247,11 +252,12 @@
 ;;;                                                     ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  ;; drawing : ((dc -> exact-int exact-int exact-int) (dc exact-int exact-int -> void) -> snip)
-  ;; get-extent determines the amount of space the new snip needs. The three results are the
-  ;; width, height, descent and ascent. (The descent and space do not actually add space to the snip, they only
-  ;; helps to determine where to lineup adjacent snips.)
-  ;; draw actually draws the snip.
+  ;; drawing : ((dc -> exact-int exact-int exact-int) (dc exact-int
+  ;; exact-int -> void) -> snip) get-extent determines the amount of
+  ;; space the new snip needs. The six results are the width, height,
+  ;; descent, ascent, lspace and rspace. (The descent and space do not
+  ;; actually add space to the snip, they only helps to determine
+  ;; where to lineup adjacent snips.)  draw actually draws the snip.
   (define (drawing name eextent ddraw)
     (unless (string? name)
       (error
@@ -282,13 +288,13 @@
 		  (lambda (dc x y width-b height-b descent-b space-b lspace-b rspace-b)
 		    (let ([old-font (send dc get-font)])
 		      (send dc set-font (send (get-style) get-font))
-		      (let-values ([(width height descent space) (eextent dc)])
+		      (let-values ([(width height descent space lspace rspace) (eextent dc)])
 			(set-box/f! width-b width)
 			(set-box/f! height-b height)
 			(set-box/f! descent-b descent)
 			(set-box/f! space-b space)
-			(set-box/f! lspace-b 0)
-			(set-box/f! rspace-b 0))
+			(set-box/f! lspace-b lspace)
+			(set-box/f! rspace-b rspace))
 		      (send dc set-font old-font)))])
 		(inherit set-snipclass)
 		(sequence
@@ -330,14 +336,14 @@
 
   (define ellipses
     (let* ([margin 2]
-	   [get-w/h/d/s
+	   [get-w/h/d/s/l/r
 	    (lambda (dc)
 	      (let-values ([(width height descent space) (send dc get-text-extent "a")])
-		(values (+ margin (* 2 width) margin) height descent space)))])
+		(values (+ margin (* 2 width) margin) height descent space 0 0)))])
       (drawing "robby:ellipses"
-	       get-w/h/d/s
+	       get-w/h/d/s/l/r
 	       (lambda (dc x y)
-		 (let*-values ([(w h d s) (get-w/h/d/s dc)]
+		 (let*-values ([(w h d s _1 _2) (get-w/h/d/s/l/r dc)]
 			       [(yp) (+ y s (floor (+ 1/2 (/ (- h s d) 2))))]
 			       [(l) (+ x margin 1)]
 			       [(r) (+ x w -1 (- margin) (- margin))])
@@ -350,7 +356,7 @@
   (define-values (arrow b-arrow g-arrow bg-arrow checked-arrow)
     (let* ([arrow/letter-space 1]
 	   [arrow-height 6]
-	   [get-w/h/d/s
+	   [get-w/h/d/s/l/r
 	    (lambda (descender?)
 	      (lambda (dc)
 		(let*-values ([(width height descent space) (send dc get-text-extent "bg")]
@@ -362,10 +368,12 @@
 		  (values (* width 2)
 			  total-arrow-height
 			  0
-			  arrow-space))))]
+			  arrow-space
+			  0
+			  0))))]
 	   [draw-arrow
 	    (lambda (dc x y descender?)
-	      (let*-values ([(w h d s) ((get-w/h/d/s descender?) dc)]
+	      (let*-values ([(w h d s _1 _2) ((get-w/h/d/s/l/r descender?) dc)]
 			    [(bgw bgh bgd bgs) (send dc get-text-extent "bg")]
 			    [(text-height) (- bgh (if descender? 0 bgd))]
 			    [(cap-size) (- h d s)])
@@ -388,35 +396,35 @@
 
 	   [draw-text
 	    (lambda (dc x y text descender?)
-	      (let-values ([(w h d s) ((get-w/h/d/s descender?) dc)]
+	      (let-values ([(w h d s _1 _2) ((get-w/h/d/s/l/r descender?) dc)]
 			   [(bw bh bd bs) (send dc get-text-extent text)])
 		(send dc draw-text text (floor (+ x (- (/ w 2) (/ bw 2)))) y)))]
 	   
 	   [arrow
 	    (drawing "robby:arrow"
-		     (get-w/h/d/s #t)
+		     (get-w/h/d/s/l/r #t)
 		     (lambda (dc x y) (draw-arrow dc x y #t)))]
 	   [b-arrow
 	    (drawing "robby:b-arrow"
-		     (get-w/h/d/s #f)
+		     (get-w/h/d/s/l/r #f)
 		     (lambda (dc x y)
 		       (draw-text dc x y "b" #f)
 		       (draw-arrow dc x  y #f)))]
 	   [g-arrow
 	    (drawing "robby:g-arrow"
-		     (get-w/h/d/s #t)
+		     (get-w/h/d/s/l/r #t)
 		     (lambda (dc x y)
 		       (draw-text dc x y "g" #t)
 		       (draw-arrow dc x y #t)))]
 	   [bg-arrow
 	    (drawing "robby:bg-arrow"
-		     (get-w/h/d/s #t)
+		     (get-w/h/d/s/l/r #t)
 		     (lambda (dc x y)
 		       (draw-text dc x y "bg" #t)
 		       (draw-arrow dc x y #t)))]
 	   [checked-arrow
 	    (drawing "robby:checked-arrow"
-		     (get-w/h/d/s #f)
+		     (get-w/h/d/s/l/r #f)
 		     (lambda (dc x y)
 		       (let ([old-font (send dc get-font)])
 			 (send dc set-font (send the-font-list
@@ -430,27 +438,6 @@
 			 (send dc set-font old-font)
 			 (draw-arrow dc x y #f))))])
       (values arrow b-arrow g-arrow bg-arrow checked-arrow)))
-
-  (define (string-sup base power)
-    (unless (and (string? base)
-		 (string? power))
-      (error 'sup "expected two strings, got: ~s ~s" base power))
-    (let ([get-w/h/d/s
-	   (lambda (dc)
-	     (let-values ([(base-width base-height base-descent base-space) (send dc get-text-extent base)]
-			  [(power-width power-height power-descent power-space) (send dc get-text-extent power)])
-	       (values (+ base-width power-width)
-		       (+ (- base-height base-space) (max base-space (/ power-height 2)))
-		       base-descent
-		       (max base-space (/ power-height 2)))))])
-      (drawing (format "robby:char-sup:~a^~a" base power)
-	       get-w/h/d/s
-	       (lambda (dc x y)
-		 (let-values ([(base-width base-height base-descent base-space) (send dc get-text-extent base)]
-			      [(power-width power-height power-descent power-space) (send dc get-text-extent power)]
-			      [(w h d s) (get-w/h/d/s dc)])
-		   (send dc draw-text base x (+ y h (- base-height)))
-		   (send dc draw-text power (+ x base-width) y))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                     ;;;
@@ -717,11 +704,6 @@
 
     (lambda (snips)
       (make-object position-snip% position-snipclass calc-positions calc-size snips)))
-
-  (define (snipize obj)
-    (if (is-a? obj snip%)
-	obj
-	(make-object string-snip% (format "~a" obj))))
 
   (define sup
     (let ([make-sup

@@ -211,7 +211,16 @@
 			      [on-subwindow-char 
 			       (lambda (w e)
 				 (let ([pgup (lambda () (send (send results get-editor) move-position 'up #f 'page))]
-				       [pgdn (lambda () (send (send results get-editor) move-position 'down #f 'page))])
+				       [pgdn (lambda () (send (send results get-editor) move-position 'down #f 'page))]
+				       [follow-link
+					(lambda ()
+					  (let* ([text (send results get-editor)]
+						 [start (send text get-start-position)]
+						 [end (send text get-end-position)])
+					    (send text
+						  call-clickback
+						  start
+						  end)))])
 				   (case (send e get-key-code)
 				     [(prior) (pgup) #t]
 				     [(#\rubout #\backspace)
@@ -219,6 +228,10 @@
 					  (begin (pgup) #t)
 					  (super-on-subwindow-char w e))]
 				     [(next) (pgdn) #t]
+				     [(#\return numpad-enter)
+				      (if (send results has-focus?)
+					  (begin (follow-link) #t)
+					  (super-on-subwindow-char w e))]
 				     [(#\space)
 				      (if (send results has-focus?)
 					  (begin (pgdn) #t)

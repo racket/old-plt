@@ -705,7 +705,8 @@
       (when extra-definitions
         (extra-definitions))
       
-      (global-defined-value '#%break aries:break)
+      ;; ROBBY : attempt to back out of John's changes
+      ;(global-defined-value '#%break aries:break)
       
       (for-each (lambda (l) (apply require-library/proc l))
                 (setting-macro-libraries setting)))))

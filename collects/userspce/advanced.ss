@@ -7,11 +7,17 @@
 	  (import)
 	  (link [core : mzlib:core-flat^ ((require-library "coreflatr.ss"))]
 		[turtles : turtle^ ((require-library "turtler.ss" "graphics")
-				    (core : mzlib:function^))])
+				    (core : mzlib:function^))]
+		[posn : ((struct posn (x y) -setters))
+		      ((unit/sig ((struct posn (x y) -setters))
+			 (import)
+			 (define-struct posn (x y))))])
 	  (export
 	   (open core)
-	   (open turtles)))])
+	   (open turtles)
+	   (open posn)))])
   (lambda ()
     (global-define-values/invoke-unit/sig ((open mzlib:core-flat^)
-					   (open turtle^))
+					   (open turtle^)
+					   (open ((struct posn (x y) -setters))))
 					  u)))

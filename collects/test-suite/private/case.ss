@@ -64,12 +64,14 @@
           ;; clear-highlighting (-> void?)
           ;; clear any highlighting from the text boxes
           (define/public (clear-highlighting)
-            (let ([sd (make-object style-delta%)])
-              (send sd set-delta-background "white")
-              (for-each
-               (lambda (text)
-                 (send text change-style sd 0 (send text last-position)))
-               (list call expected test))))
+            (for-each
+             (lambda (text)
+               (let* ([list (send text get-style-list)]
+                      [style (send list find-named-style "Standard")])
+                 (when style
+                   (send text change-style
+                         style 0 (send text last-position) #f))))
+             (list call expected test)))
           
           ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
           ;; execute the test case
@@ -130,9 +132,15 @@
           ;; read-from-file ((is-a?/c editor-stream-in%) . -> . void?)
           ;; read saved information form a file
           (define/public (read-from-file f)
-            (send call read-from-file f)
-            (send expected read-from-file f)
-            (send test read-from-file f)
+            (send* call
+              (erase)
+              (read-from-file f))
+            (send* expected
+              (erase)
+              (read-from-file f))
+            (send* test
+              (erase)
+              (read-from-file f))
             (set! test-showing? (string=? "#t" (send f get-string))))
           
           (super-instantiate ())

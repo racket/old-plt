@@ -30,6 +30,8 @@ Philippe
 -------------------
 Make the save button come up when the program to test is changed.
 Make the save button not come up when a test-suite is just loaded.
+Make the save button not come up after the test-suite executes
+  and changest the icons.
 -------------------
 Give a better error message with highlighting when there are too many
 expressions in a test box.
@@ -37,4 +39,6 @@ expressions in a test box.
 Scroll to off screen test cases when tabbing
 -------------------
 Don't unset the caret from a test case when a new case is inserted.
+-------------------
+Lock the test-suites text boxes when executing.
 -------------------

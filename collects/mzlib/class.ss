@@ -2041,9 +2041,9 @@
     ;  corresponding method is overridden in the object's class relative to
     ;  the primitive class, #f otherwise.
     ;
-    ; When a primitive class have a primitive superclass, the
-    ;  struct:prim maker is responsible for ensuring that the returned
-    ;  struct items match the supertype predicate.
+    ; When a primitive class has a superclass, the struct:prim maker
+    ;  is responsible for ensuring that the returned struct items match
+    ;  the supertype predicate.
 
     (compose-class name
 		   (or super object%)

@@ -101,13 +101,9 @@
   
   (define expr->string
     (lambda (v)
-      (let* ([s ""]
-	     [write-to-s
-	      (lambda (str)
-		(set! s (string-append s str)))]
-	     [port (make-output-port write-to-s (lambda () #f))])
+      (let ([port (open-output-string)])
 	(write v port)
-	s)))
+	(get-output-string port))))
   
   (define regexp-quote
     (opt-lambda (s [case-sens? #t])

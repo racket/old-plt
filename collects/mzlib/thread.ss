@@ -97,17 +97,27 @@
 	    thunk
 	    (lambda () (semaphore-post sema))))))))
 
-  (define (copy-port src dest)
+  (define (copy-port src dest . dests)
+    (unless (input-port? src)
+      (raise-type-error 'copy-port "input-port" src))
+    (for-each
+     (lambda (dest)
+       (unless (output-port? dest)
+	 (raise-type-error 'copy-port "output-port" dest)))
+     (cons dest dests))
     (let ([s (make-string 4096)])
       (let loop ()
 	(let ([c (read-string-avail! s src)])
 	  (unless (eof-object? c)
-	    (let loop ([start 0])
-	      (unless (= start c)
-		(let ([c2 (write-string-avail s dest start c)])
-		  (loop (+ start c2)))))
+	    (for-each
+	     (lambda (dest)
+	       (let loop ([start 0])
+		 (unless (= start c)
+		   (let ([c2 (write-string-avail s dest start c)])
+		     (loop (+ start c2))))))
+	     (cons dest dests))
 	    (loop))))))
-
+  
   (define merge-input
     (case-lambda
      [(a b) (merge-input a b 4096)]

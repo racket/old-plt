@@ -250,7 +250,10 @@
   (define mred:hierarchical-list-snip%
     (class wx:media-snip% (top top-select [title #f][content #f])
       (public
-	[get-main-buffer% (lambda () wx:media-edit%)]
+	[get-main-buffer% (lambda () (class-asi wx:media-edit% 
+						(public
+						 [on-default-char void]
+						 [on-default-event void])))]
 	[get-title-buffer% (lambda () mred:hierarchical-item-buffer%)]
 	[get-content-buffer% (lambda () mred:hierarchical-list-buffer%)]
 	[get-arrow-snip% (lambda () arrow-snip%)]

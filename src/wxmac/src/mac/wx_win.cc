@@ -948,7 +948,6 @@ wxWindow* wxWindow::GetGrandParent(void)
    */
 wxFrame* wxWindow::GetRootFrame(void) // mac platform only
 {
-  
 #if 0 // USE_MAC_DIALOG_PANEL
   wxWindow* theWindow = this;
   while (theWindow->window_parent != wxScreen::gScreenWindow &&
@@ -1094,23 +1093,6 @@ static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsr
 
 static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
 {
-#if 0 //#ifdef OS_X
-  EventRef e;
-
-  // result ignored:
-  CreateEvent(NULL, // default allocator
-	      kEventClassMrEd,
-	      kEventMrEdLeave,
-	      TicksToEventTime(UNSCALE_TIMESTAMP(evt->timeStamp)),
-	      kEventAttributeUserEvent,
-	      &e);
-  // result ignored:
-  SetEventParameter(e, kEventParamDirectObject, typeWxWindowPtr, sizeof(wxWindow *), target);  
-  
-  // result ignored:
-  QueueMrEdCarbonEvent(e);
-  ReleaseEvent(e);
-#else
   EventRecord e;
   
   int clientHitX = (int)(evt->x);
@@ -1129,14 +1111,15 @@ static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *ev
 		 + (evt->rightDown ? cmdKey : 0));
   
   QueueMrEdEvent(&e);
-#endif   
 }
 
-Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt)
+Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *_win, wxMouseEvent *evt)
 {
-  if (win == in_win 
+  if (_win == in_win 
       && (evt->eventType != wxEVENT_TYPE_ENTER_WINDOW)
       && (evt->eventType != wxEVENT_TYPE_LEAVE_WINDOW)) {
+    wxWindow *win = _win->EnterLeaveTarget();
+
     /* Do enter/leave events */
     if (entered != win) {
       wxWindow *p;
@@ -1180,8 +1163,8 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt)
     }
   }
 
-  wxWindow *p = win->GetParent();
-  return ((p && doCallPreMouseEvent(in_win, p, evt)) || win->PreOnEvent(in_win, evt));
+  wxWindow *p = _win->GetParent();
+  return ((p && doCallPreMouseEvent(in_win, p, evt)) || _win->PreOnEvent(in_win, evt));
 }
 
 static Bool IsCaptureAncestorArea(wxArea *area)
@@ -1214,77 +1197,74 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
   int capThis = (wxWindow::gMouseWindow == this);
   wxArea* hitArea = NULL;
   wxNode* areaNode = cAreas.Last();
-  while (areaNode && !hitArea)
-    {
+  while (areaNode && !hitArea) {
+    if (!capThis) {
+      wxArea* area = (wxArea*)areaNode->Data();
+      if ((!wxWindow::gMouseWindow && area->WindowPointInArea(hitX, hitY))
+	  || (wxWindow::gMouseWindow && IsCaptureAncestorArea(area)))
+	hitArea = area;
+      else 
+	areaNode = areaNode->Previous();
+    }
+    
+    if (hitArea || capThis) {
+      wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
+      *areaMouseEvent = *mouseEvent;
+      int hitAreaX, hitAreaY;
+      if (hitArea) {
+	wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
+	hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
+	hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
+      } else
+	hitAreaX = hitAreaY = 0;
+      areaMouseEvent->x = hitX - hitAreaX; // hit area c.s.
+      areaMouseEvent->y = hitY - hitAreaY; // hit area c.s.
+      
       if (!capThis) {
-	wxArea* area = (wxArea*)areaNode->Data();
-	if ((!wxWindow::gMouseWindow && area->WindowPointInArea(hitX, hitY))
-	    || (wxWindow::gMouseWindow && IsCaptureAncestorArea(area)))
-	  hitArea = area;
-	else 
-	  areaNode = areaNode->Previous();
+	wxChildNode* childWindowNode = hitArea->Windows()->First();
+	while (childWindowNode && !result) {
+	  wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
+	  result = childWindow->SeekMouseEventArea(areaMouseEvent);
+	  if (!result)
+	    childWindowNode = childWindowNode->Next();
+	}
       }
       
-      if (hitArea || capThis)
-	{
-	  wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
-	  *areaMouseEvent = *mouseEvent;
-	  int hitAreaX, hitAreaY;
-	  if (hitArea) {
-	    wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
-	    hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
-	    hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
-	  } else
-	    hitAreaX = hitAreaY = 0;
-	  areaMouseEvent->x = hitX - hitAreaX; // hit area c.s.
-	  areaMouseEvent->y = hitY - hitAreaY; // hit area c.s.
-	  
-	  if (!capThis) {
-	    wxChildNode* childWindowNode = hitArea->Windows()->First();
-	    while (childWindowNode && !result)
-	      {
-		wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-		result = childWindow->SeekMouseEventArea(areaMouseEvent);
-		if (!result) childWindowNode = childWindowNode->Next();
-	      }
-	  }
-	  
-	  if (!result)
-	    {
-	      if (capThis || (hitArea == ClientArea() && CanAcceptEvent()))
-		{
-		  result = TRUE; // WCH: should this be before this if statement
-		  int clientHitX = (int)(areaMouseEvent->x);
-		  int clientHitY = (int)(areaMouseEvent->y);
-		  //ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
-		  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
-		  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
-		  if (!doCallPreMouseEvent(this, this, areaMouseEvent)) {
-		    if (WantsFocus() && areaMouseEvent->ButtonDown()) {
-		      wxFrame *fr = GetRootFrame();
-		      if (fr)
-			fr->SetFocusWindow(this);
-		    }
-		    
-		    if (wxSubType(__type, wxTYPE_CANVAS)) {
-		      if (areaMouseEvent->ButtonDown())
-			CaptureMouse();
-		      else if (gMouseWindow == this
-			       && !areaMouseEvent->Dragging())
-			ReleaseMouse();
-		    }
-		    
-		    /* PreOnEvent could disable the target... */
-		    if (!IsGray())
-		      OnEvent(areaMouseEvent);
-		  }
-		}
+      if (!result) {
+	if (capThis || (hitArea == ClientArea() && CanAcceptEvent())) {
+	  result = TRUE;
+	  int clientHitX = (int)(areaMouseEvent->x);
+	  int clientHitY = (int)(areaMouseEvent->y);
+	  //ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
+	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
+	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
+	  if (!doCallPreMouseEvent(this, this, areaMouseEvent)) {
+	    if (WantsFocus() && areaMouseEvent->ButtonDown()) {
+	      wxFrame *fr = GetRootFrame();
+	      if (fr)
+		fr->SetFocusWindow(this);
 	    }
+	    
+	    if (wxSubType(__type, wxTYPE_CANVAS)
+		|| wxSubType(__type, wxTYPE_PANEL)) {
+	      if (areaMouseEvent->ButtonDown())
+		CaptureMouse();
+	      else if (gMouseWindow == this
+		       && !areaMouseEvent->Dragging())
+		ReleaseMouse();
+	    }
+	    
+	    /* PreOnEvent could disable the target... */
+	    if (!IsGray())
+	      OnEvent(areaMouseEvent);
+	  }
 	}
-      
-      if (result)
-	break;
+      }
     }
+    
+    if (result)
+      break;
+  }
 
   /* Frame/dialog: hande all events, even outside the window */	
   if (!result && (__type == wxTYPE_FRAME || __type == wxTYPE_DIALOG_BOX)) {
@@ -1785,41 +1765,36 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
 
   wxArea* hitArea = NULL;
   wxNode* areaNode = cAreas.Last();
-  while (areaNode && !hitArea)
-    {
-      wxArea* area = (wxArea*)areaNode->Data();
-      if ((!wxWindow::gMouseWindow && area->WindowPointInArea(hitX, hitY))
-	  || (wxWindow::gMouseWindow && IsCaptureAncestorArea(area)))
-	hitArea = area;
-      else areaNode = areaNode->Previous();
-    }
+  while (areaNode && !hitArea) {
+    wxArea* area = (wxArea*)areaNode->Data();
+    if ((!wxWindow::gMouseWindow && area->WindowPointInArea(hitX, hitY))
+	|| (wxWindow::gMouseWindow && IsCaptureAncestorArea(area)))
+      hitArea = area;
+    else areaNode = areaNode->Previous();
+  }
 
-  if (hitArea)
-    {
-      wxMargin hitAreaMargin = hitArea->Margin(hitArea->ParentWindow());
-      int hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
-      int hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
-      int areaX = hitX - hitAreaX; // hit area c.s.
-      int areaY = hitY - hitAreaY; // hit area c.s.
-      wxChildNode* childWindowNode = hitArea->Windows()->First();
-      while (childWindowNode && !result)
-	{
-	  wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-	  result = childWindow->AdjustCursor(areaX, areaY);
-	  if (!result) childWindowNode = childWindowNode->Next();
-	}
-
-      if (!result)
-	{
-	  if (hitArea == ClientArea())
-	    {
-	      result = TRUE;
-	      wxCursor *c = GetEffectiveCursor();
-	      if (c)
-		wxSetCursor(c);
-	    }
-	}
+  if (hitArea) {
+    wxMargin hitAreaMargin = hitArea->Margin(hitArea->ParentWindow());
+    int hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
+    int hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
+    int areaX = hitX - hitAreaX; // hit area c.s.
+    int areaY = hitY - hitAreaY; // hit area c.s.
+    wxChildNode* childWindowNode = hitArea->Windows()->First();
+    while (childWindowNode && !result) {
+      wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
+      result = childWindow->AdjustCursor(areaX, areaY);
+      if (!result) childWindowNode = childWindowNode->Next();
     }
+    
+    if (!result) {
+      if (hitArea == ClientArea()) {
+	result = TRUE;
+	wxCursor *c = GetEffectiveCursor();
+	if (c)
+	  wxSetCursor(c);
+      }
+    }
+  }
 
   return result;
 }
@@ -1890,4 +1865,10 @@ Bool wxWindow::GetsFocus()
 void wxWindow::MaybeMoveControls()
 {
   // do nothing. This method is overridden for windows that have control children.
+}
+
+
+wxWindow *wxWindow::EnterLeaveTarget()
+{
+  return this;
 }

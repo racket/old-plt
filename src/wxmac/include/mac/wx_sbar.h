@@ -99,6 +99,9 @@ public:
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 	virtual void TrackAction(short part); // mac platform only
 
+        virtual wxWindow *EnterLeaveTarget();
+	virtual wxCursor *GetEffectiveCursor();
+
 	virtual void SetScrollData // adjust scrollBar to match scroll data setting
 	(
 		wxScrollData*		scrollData,

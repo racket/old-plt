@@ -482,7 +482,7 @@ wxCursor::wxCursor(char bits[], int width, int height, int depth)
 static wxMemoryDC *temp_mdc;
 static wxMemoryDC *temp_mask_mdc;
 
-wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
+wxCursor::wxCursor(wxBitmap *mask, wxBitmap *bm, int hotSpotX, int hotSpotY)
 {
   int w, h, bw, bh, i, j, bit;
   unsigned char r, g, b;

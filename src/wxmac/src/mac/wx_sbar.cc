@@ -414,3 +414,14 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
     }
 #endif
 }
+
+
+wxWindow *wxScrollBar::EnterLeaveTarget()
+{
+  return GetParent();
+}
+
+wxCursor *wxScrollBar::GetEffectiveCursor(void)
+{
+  return GetParent()->GetParent()->GetEffectiveCursor();
+}

@@ -43,6 +43,7 @@ exit 1
   ; Rez where needed:
   (let* ([cw-path (build-path plthome "src" "mac" "cw")]
 	 [rez-it (lambda (app)
+		   (printf "Writing ~a~n" (string-append app ".rsrc.OSX"))
 		   (system* rez-path 
 			    (build-path cw-path (string-append app ".r")) "-UseDF" "-o" 
 			    (string-append app ".rsrc.OSX")))])
@@ -87,7 +88,8 @@ exit 1
 	(let* ([rsrc-src (build-path "MrEd.rsrc.OSX")]
 	       [rsrc-dest (build-path contents-path "Resources" "MrEd.rsrc")])
 	  (unless (file-exists? rsrc-dest)
-		  (copy-file rsrc-src rsrc-dest)))
+	    (printf "Installing ~a~n" rsrc-dest)
+	    (copy-file rsrc-src rsrc-dest)))
 	(let* ([icns-name (string-append app-name ".icns")]
 	       [icns-src (build-path plthome "src" "mac" "icon" icns-name)]
 	       [icns-dest (build-path contents-path "Resources" icns-name)])

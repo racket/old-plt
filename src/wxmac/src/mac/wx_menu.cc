@@ -272,7 +272,11 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     }
     *s = 0;
     s = t;
+#ifdef OS_X
+    helpflg = 0;
+#else
     helpflg = strncmp("Help", s, 4) ? 0 : 1;
+#endif
     CopyCStringToPascal(s,tempString);
     nmh = ::NewMenu(cMacMenuId ,tempString);
     CheckMemOK(nmh);

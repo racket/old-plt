@@ -337,11 +337,13 @@ public:
 
 	void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
 	
-	wxCursor *GetEffectiveCursor(void);
+	virtual wxCursor *GetEffectiveCursor(void);
 	
 	Bool GetsFocus();
 
 	virtual void MaybeMoveControls();
+
+        virtual wxWindow *EnterLeaveTarget();
 	
 protected:
 	/* ChildrenInternalGray is a local abstraction which calls

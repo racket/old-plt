@@ -324,8 +324,9 @@ void wxApp::doMacMouseUp(void)
       theMouseEvent.y = hitY;
       theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
       
-      /* Grab is now only used for grabbing on mouse-down for canvases */
-      if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS))
+      /* Grab is now only used for grabbing on mouse-down for canvases & panels: */
+      if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS) 
+	  || wxSubType(mouseWindow->__type, wxTYPE_PANEL))
 	mouseWindow->ReleaseMouse();
       
       if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))
@@ -394,9 +395,11 @@ void wxApp::doMacMouseMotion(void)
       mouseWindow->ClientToLogical(&hitX, &hitY); // mouseWindow logical c.s.
       theMouseEvent.x = hitX;
       theMouseEvent.y = hitY;
-      
-      /* Grab is now only used for grabbing on mouse-down for canvases */
-      if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS) && !isMouseDown)
+
+      /* Grab is now only used for grabbing on mouse-down for canvases & panels: */
+      if ((wxSubType(mouseWindow->__type, wxTYPE_CANVAS) 
+	   || wxSubType(mouseWindow->__type, wxTYPE_PANEL))
+	  && !isMouseDown)
 	mouseWindow->ReleaseMouse();
       
       if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))		  
@@ -741,6 +744,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     if (macMenuId == 128) {
       // Must be "About..."
       DoDefaultAboutItem();
+      HiliteMenu(0); // unhilite the hilited menu
     } else {
       // Must be quit
       exit(0);
@@ -756,6 +760,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     /* Must be the About or Close item. */
     if (macMenuId == 128) {
       DoDefaultAboutItem();
+      HiliteMenu(0); // unhilite the hilited menu
     } else {
       if (theMacWxFrame->OnClose())
 	theMacWxFrame->Show(FALSE);
@@ -784,6 +789,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
       macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
     } else {
       DoDefaultAboutItem();
+      HiliteMenu(0); // unhilite the hilited menu
       return TRUE;
     }
   } else {

@@ -227,7 +227,10 @@ void wxMessage::Paint(void)
     if (sBitmap) {
       sBitmap->DrawMac();
     } else {
-      ::TETextBox(cMessage, strlen(cMessage), &clientRect, teJustLeft);
+      FontInfo info;
+      ::GetFontInfo(&info);
+      MoveTo(SetOriginX, SetOriginY + clientHeight - info.descent);
+      ::DrawText(cMessage, 0, strlen(cMessage));
     }
   }
 }

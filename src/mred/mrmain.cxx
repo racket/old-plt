@@ -284,7 +284,6 @@ int main(int argc, char *argv[])
 
 #ifdef wx_mac
   /* initialize Mac stuff */
-  ::InitCursor();
 #ifdef OS_X
   ::MoreMasterPointers(4);
 #else

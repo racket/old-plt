@@ -543,10 +543,7 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only, Mr
     }
     break;
   case keyUp:
-    if (!e->message) {
-      /* not a real event; we posted this with PostEvent */
-      MrDequeue(osq);
-    } else {
+    {
       if (!cont_event_context) {
 	if (!saw_kdown) {
 	  MrDequeue(osq);
@@ -955,12 +952,20 @@ int MrEdCheckForBreak(void)
 /*                                 sleep                                   */
 /***************************************************************************/
 
+/* How do you break a WaitNextEvent on some external action (i.e., a
+   file descriptor become ready)? I don't know. The only solution I
+   find is to post an event with PostEvent(). To minimize the chances
+   that the post is misinterpreted, we post a keyUp event. Then try to
+   get rid of it before continuing. */
+
 #ifdef OS_X
 #include <pthread.h>
 static volatile int thread_running, need_post;
 static void (*mzsleep)(float secs, void *fds);
 static pthread_t watcher;
 static volatile float sleep_secs;
+
+/* These file descriptors act as semaphores: */
 static int watch_read_fd, watch_write_fd;
 static int watch_done_read_fd, watch_done_write_fd;
 
@@ -985,27 +990,48 @@ static void *do_watch(void *fds)
 
 static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *fds)
 {
+  int limit, i;
+  fd_set *rd, *wr, *ex;
+  
+  /* First, check whether there's really anything to watch: */
+
   if (!fds)
     return 1;
+
+  limit = getdtablesize();
+  rd = (fd_set *)fds;
+  wr = (fd_set *)MZ_GET_FDSET(fds, 1);
+  ex = (fd_set *)MZ_GET_FDSET(fds, 2);
+  for (i = 0; i < limit; i++) {
+    if (FD_ISSET(i, rd)
+	|| FD_ISSET(i, wr)
+	|| FD_ISSET(i, ex))
+      break;
+  }
+
+  if (i == limit)
+    return 1;
+
+  /* Ok, we really need to watch: */
 
   if (!watch_write_fd) {
     int fds[2];
     if (!pipe(fds)) {
-       watch_read_fd = fds[0];
-       watch_write_fd = fds[1];
-     } else {
-       return 0;
-     }
+      watch_read_fd = fds[0];
+      watch_write_fd = fds[1];
+    } else {
+      return 0;
+    }
   }
 
   if (!watch_done_write_fd) {
     int fds[2];
     if (!pipe(fds)) {
-       watch_done_read_fd = fds[0];
-       watch_done_write_fd = fds[1];
-     } else {
-       return 0;
-     }
+      watch_done_read_fd = fds[0];
+      watch_done_write_fd = fds[1];
+    } else {
+      return 0;
+    }
   }
 
   if (!watcher) {
@@ -1021,9 +1047,11 @@ static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *
   write(watch_write_fd, "x", 1);
 }
 
-static void EndFDWatcher(void)
+static int EndFDWatcher(void)
+     /* Returns 1 if watcher posted a keyUp event */
 {
   char buf[1];
+  int retval = 0;
 
   if (thread_running) {
     void *val;
@@ -1031,11 +1059,14 @@ static void EndFDWatcher(void)
     if (need_post) {
       need_post = 0;
       scheme_signal_received();
-    }
+    } else
+      retval = 1;
 
     read(watch_done_read_fd, buf, 1);
     thread_running = 0;
   }
+
+  return retval;
 }
 #endif
 
@@ -1043,32 +1074,51 @@ static RgnHandle msergn;
 
 void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
 {
-  EventRecord e;
+  /* If we're asked to sleep less than 1/60 of a second, then don't
+     bother with WaitNextEvent. */
+  if ((secs > 0) && (secs < 1.0/60)) {
+    mzsleep(secs, fds);
+  } else {
+    EventRecord e;
+    int requeue = 0;
 
-  if (!msergn)
-    msergn = ::NewRgn();
-  if (msergn) {
-    Point pt;
-    GetMouse(&pt);
-    LocalToGlobal(&pt);
-    ::SetRectRgn(msergn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
-  }
+    if (!msergn)
+      msergn = ::NewRgn();
+    if (msergn) {
+      Point pt;
+      GetMouse(&pt);
+      LocalToGlobal(&pt);
+      ::SetRectRgn(msergn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
+    }
 
 #ifdef OS_X
-  if (!StartFDWatcher(mzsleep, secs, fds)) {
-    secs = 0;
-  }
+    if (!StartFDWatcher(mzsleep, secs, fds)) {
+      secs = 0;
+    }
 #else 
-  /* No way to know when fds are ready: */
-  secs = 0;
+    /* No way to know when fds are ready: */
+    secs = 0;
 #endif
 
-  if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))
-    QueueTransferredEvent(&e);
+    if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))
+      requeue = 1;
 
 #ifdef OS_X
-  EndFDWatcher();
+    if (EndFDWatcher()) {
+      if (requeue && (e.what == keyUp)) {
+	/* Hopefully e is the right keyUp event! */
+	requeue = 0;
+      } else {
+	/* Grab a keyUp event... hopefully the right one. */
+	EventRecord e2;
+	WaitNextEvent(keyUpMask, &e2, 0, NULL);
+      }
+    }
 #endif
+
+    if (requeue)
+      QueueTransferredEvent(&e);
+  }
 }
 
 /***************************************************************************/

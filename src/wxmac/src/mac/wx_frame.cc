@@ -823,6 +823,13 @@ void wxFrame::SetTitle(char* title)
 //-----------------------------------------------------------------------------
 void wxFrame::Show(Bool show)
 {
+  static int first_done = 0;
+
+  if (show && !first_done) {
+    ::InitCursor();
+    first_done = 1;
+  }
+
   if (show == IsVisible()) {
     if (show)
       ::SelectWindow(GetWindowFromPort(cMacDC->macGrafPort()));

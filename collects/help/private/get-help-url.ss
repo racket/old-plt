@@ -5,7 +5,11 @@
            "internal-hp.ss"
            (lib "contract.ss"))
   
-  (provide/contract (get-help-url (path? . -> . string?)))
+  (provide/contract (get-help-url
+                     ((lambda (x)
+                        (or (path? x)
+                            (string? x)))
+                      . -> . string?)))
   
   ; given a manual path, convert to absolute Web path
   ; manual path is an anchored path to a collects/doc manual, never a servlet

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cxx,v 1.2 1998/02/10 02:50:18 mflatt Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.3 1998/03/07 00:37:49 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -283,49 +283,6 @@ Bool wxApp::Initialized(void)
   return (wx_frame != NULL);
 }
 
-// added by steve, 04.01.95
-//
-// a safer method for killing objects from methods of this
-// objects:
-// instead of calling 'delete this' in a method, you can
-// use the 'wxPostDelete(this)' function. it inserts the
-// object into a list, which is processed after the current event
-// has been processed.
-// 
-// !!!! interestingly this doesn't work well for the MAIN FRAME !!!!
-// therefore: DON'T DELETE THE MAIN FRAME WITH 'wxPostDelete' 
-//
-// this adds only a very small overhead to the event handling loop
-//
-// if you call 'delete this' from a menubar function, the
-// widget is destroyed before the callback function is completed.
-// under VMS this leads to a crash.
-//
-static Bool somethingToDelete = FALSE;
-static wxList postDeleteList;
-
-// this function can be used by the application
-void wxPostDelete(wxObject *object)
-{
-  postDeleteList.Append(object);
-  somethingToDelete = TRUE;
-}
-
-// process the list and delete objects (used in main loop)
-static void wxPostDeletion(void)
-{
-  if(somethingToDelete){
-    wxNode *node = postDeleteList.First();
-    while(node!=NULL){
-      wxObject *object = (wxObject *)node->Data();
-      delete object;
-      delete node;
-      node = postDeleteList.First();
-    }
-    somethingToDelete = FALSE;
-  }
-}
-
 /*
  * Keep trying to process messages until WM_QUIT
  * received
@@ -349,7 +306,6 @@ int wxApp::MainLoop(void)
                XDefaultRootWindow(XtDisplay(wxTheApp->topLevel)),
                PropertyChangeMask);
 
-  XEvent event;
   keep_going = TRUE;
   // Use this flag to allow breaking the loop via wxApp::ExitMainLoop()
   while (keep_going) {

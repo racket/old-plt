@@ -107,6 +107,8 @@ Create (wxPanel * panel, wxFunction func,
     majorDim = N;
   windowStyle = style;
 
+  panel->GrowReady();
+
   canAddEventHandler = TRUE;
   windowName = copystring (name);
   Widget panelForm = panel->panelWidget;
@@ -308,6 +310,8 @@ Create (wxPanel * panel, wxFunction func,
       buttonBitmap[i] = NULL;
   }
   windowStyle = style;
+
+  panel->GrowReady();
 
   canAddEventHandler = TRUE;
   windowName = copystring (name);

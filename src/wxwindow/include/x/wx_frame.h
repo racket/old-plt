@@ -106,6 +106,9 @@ class wxFrame: public wxbFrame
 
   void CaptureMouse(void);
   void ReleaseMouse(void);
+
+  virtual void GrowReady();
+  virtual void GrowDone();
 };
 
 #endif // IN_CPROTO

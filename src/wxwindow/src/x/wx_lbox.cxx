@@ -91,6 +91,8 @@ Create (wxPanel * panel, wxFunction func,
   canAddEventHandler = TRUE;
   windowName = copystring (name);
 
+  panel->GrowReady();
+
   Widget panelForm = panel->panelWidget;
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,

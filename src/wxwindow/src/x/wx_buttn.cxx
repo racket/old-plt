@@ -85,6 +85,8 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, char *label,
   wxStripMenuCodes(label, buf);
   XmString text = XmStringCreateSimple (buf);
 
+  panel->GrowReady();
+
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,
 					XmNmarginHeight, 0,
@@ -175,6 +177,8 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, wxBitmap * bitmap,
   windowName = copystring (name);
 
   Widget panelForm = panel->panelWidget;
+
+  panel->GrowReady();
 
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,

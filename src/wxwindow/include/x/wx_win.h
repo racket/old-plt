@@ -120,6 +120,9 @@ class wxWindow: public wxbWindow
   Bool CallPreOnChar(wxWindow *win, wxKeyEvent *event);
   virtual Bool PreOnEvent(wxWindow *win, wxMouseEvent *event);
   Bool CallPreOnEvent(wxWindow *win, wxMouseEvent *event);
+
+  virtual void GrowReady();
+  virtual void GrowDone();
 };
 
 #endif // IN_CPROTO

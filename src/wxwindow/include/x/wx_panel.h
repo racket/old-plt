@@ -139,6 +139,9 @@ class wxPanel: public wxbPanel
 
   // Override edit mode so we can remove translations etc.
   void SetUserEditMode(Bool edit);
+
+  virtual void GrowReady();
+  virtual void GrowDone();
 };
 
 #endif // IN_CPROTO

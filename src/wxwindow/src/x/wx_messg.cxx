@@ -75,6 +75,8 @@ Create (wxPanel * panel, char *label, int x, int y, long style, char *name)
   Widget panelForm = panel->panelWidget;
   XmString text = XmStringCreateSimple(slabel);
 
+  panel->GrowReady();
+
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,
 					XmNmarginHeight, 0,
@@ -155,6 +157,7 @@ Create (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
 
   Widget panelForm = panel->panelWidget;
 
+  panel->GrowReady();
 
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,

@@ -83,6 +83,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     Title = "";
 #endif
 
+  panel->GrowReady();
+
   Widget panelForm = panel->panelWidget;
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmRowColumnWidgetClass, panelForm,

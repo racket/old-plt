@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cxx,v 1.5 1998/04/16 15:27:12 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.6 1998/07/15 16:48:55 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1045,5 +1045,13 @@ Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *event)
   wxWindow *p = win->GetParent();
 
   return ((p && CallPreOnEvent(p, event)) || win->PreOnEvent(this, event));
+}
+
+void wxWindow::GrowReady()
+{
+}
+
+void wxWindow::GrowDone()
+{
 }
 

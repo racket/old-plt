@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.2 1998/02/10 02:50:16 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.3 1998/03/12 18:14:20 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -570,7 +570,6 @@ Colormap wxColourMap::GetXColormap(Display *display)
 /* MATTHEW: [4] Get display-specific pix_array */
 unsigned long *wxColourMap::GetXPixArray(Display *display, int *n)
 {
-#ifdef wx_motif
   wxNode *node;
 
   for (node = xcolormaps.First(); node; node = node->Next()) {
@@ -585,22 +584,11 @@ unsigned long *wxColourMap::GetXPixArray(Display *display, int *n)
   /* Not found; call GetXColormap, which will create it, then this again */
   (void)GetXColormap(display);
   return GetXPixArray(display, n);
-#endif
-#ifdef wx_xview
-  if (n)
-    *n = pix_array_n;
-  return pix_array;
-#endif
 }
 
 void wxColourMap::PutXColormap(Display *display, Colormap cm, Bool dp)
 {
   Create(0, NULL, NULL, NULL);
-#ifdef wx_xview
-  cmap = cm;
-  destroyable = dp;
-  pix_array_n = 0;
-#else
   wxXColormap *c = new wxXColormap;
 
   c->pix_array_n = 0;
@@ -610,7 +598,6 @@ void wxColourMap::PutXColormap(Display *display, Colormap cm, Bool dp)
   c->destroyable = dp;
 
   xcolormaps.Append(c);
-#endif  
 }
 
 // Pens
@@ -626,20 +613,10 @@ wxPen::wxPen (void)
   nb_dash = 0;
   dash = NULL;
   width = 1;
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->AddPen (this);
-#endif
 }
 
 wxPen::~wxPen ()
 {
-//  if (colour)
-//    delete colour;
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->RemovePen (this);
-#endif
 }
 
 wxPen::wxPen (wxColour & col, int Width, int Style):
@@ -654,9 +631,6 @@ wxbPen (col, Width, Style)
   cap = wxCAP_ROUND;
   nb_dash = 0;
   dash = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->AddPen (this);
-#endif
 }
 
 wxPen::wxPen (char *col, int Width, int Style):
@@ -670,10 +644,6 @@ wxbPen (col, Width, Style)
   cap = wxCAP_ROUND;
   nb_dash = 0;
   dash = NULL;
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->AddPen (this);
-#endif
 }
 
 // Brushes
@@ -684,18 +654,10 @@ wxBrush::wxBrush (void)
 {
   style = wxSOLID;
   stipple = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->AddBrush (this);
-#endif
 }
 
 wxBrush::~wxBrush ()
 {
-//  if (colour)
-//    delete colour;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->RemoveBrush (this);
-#endif
 }
 
 wxBrush::wxBrush (wxColour & col, int Style):
@@ -704,9 +666,6 @@ wxbBrush (col, Style)
   colour = col;
   style = Style;
   stipple = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->AddBrush (this);
-#endif
 }
 
 wxBrush::wxBrush (char *col, int Style):
@@ -715,9 +674,6 @@ wxbBrush (col, Style)
   colour = col;
   style = Style;
   stipple = NULL;
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBrushList->AddBrush (this);
-#endif
 }
 
 // Icons
@@ -731,35 +687,14 @@ wxIcon::wxIcon (char bits[], int Width, int Height)
   height = Height;
   numColors = 0;
   x_pixmap = 0;
-#ifdef wx_motif
+
   image = 0;
-//  iconWidth = width;
-//  iconHeight = height;
   Display *dpy = display = wxGetDisplay(); /* MATTHEW: [4] Use wxGetDisplay */
   x_pixmap = XCreateBitmapFromData (dpy, RootWindow (dpy, DefaultScreen (dpy)), bits, width, height);
   if (x_pixmap)
     ok = TRUE;
   else
     ok = FALSE;
-#elif defined(wx_xview)
-  x_image = (Server_image) xv_create (XV_NULL,
-				      SERVER_IMAGE,
-				      XV_WIDTH, width,
-				      XV_HEIGHT, height,
-				      SERVER_IMAGE_X_BITS, bits,
-				      NULL);
-  x_icon = (Icon) xv_create (XV_NULL,
-			     ICON,
-                             XV_WIDTH, width,
-                             XV_HEIGHT, height,
-			     ICON_IMAGE, x_image,
-			     NULL);
-  if (x_image && x_icon)
-    ok = TRUE;
-  else
-    ok = FALSE;
-#endif
-//  wxTheIconList->Append (this);
 }
 
 wxIcon::wxIcon (void)
@@ -769,15 +704,7 @@ wxIcon::wxIcon (void)
   width = 0;
   height = 0;
   x_pixmap = 0;
-#ifdef wx_motif
-//  iconWidth = 0;
-//  iconHeight = 0;
   image = 0;
-#elif defined(wx_xview)
-  x_image = 0;
-  x_icon = 0;
-#endif
-//  wxTheIconList->Append (this);
 }
 
 wxIcon::wxIcon (const char *icon_file, long flags)
@@ -788,7 +715,6 @@ wxIcon::wxIcon (const char *icon_file, long flags)
   height = 0;
   numColors = 0;
   x_pixmap = 0;
-#ifdef wx_motif
   image = 0;
   int hotX, hotY;
   unsigned int w, h;
@@ -796,69 +722,25 @@ wxIcon::wxIcon (const char *icon_file, long flags)
   int value = XReadBitmapFile (dpy, RootWindow (dpy, DefaultScreen (dpy)), icon_file, &w, &h, &x_pixmap, &hotX, &hotY);
   width = w;
   height = h;
-  if ((value == BitmapFileInvalid) || (value == BitmapOpenFailed) || (value == BitmapNoMemory))
-  {
+  if ((value == BitmapFileInvalid) || (value == BitmapOpenFailed) || (value == BitmapNoMemory)) {
     x_pixmap = 0;
     ok = FALSE;
-  }
-  else
+  } else
     ok = TRUE;
-#elif defined(wx_xview)
-//  x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
-//				      SERVER_IMAGE_BITMAP_FILE, icon_file,
-//				      NULL);
-   x_icon = 0;
-  (void)LoadFile((char *)icon_file, flags);
-
-  if (x_image)
-  {
-    x_icon = (Icon) xv_create (XV_NULL, ICON,
-  			     ICON_IMAGE, x_image,
-			     NULL);
-    width = (int) xv_get (x_icon, XV_WIDTH);
-    height = (int) xv_get (x_icon, XV_HEIGHT);
-  }
-  if (x_image && x_icon)
-    ok = TRUE;
-  else
-    ok = FALSE;
-#endif
-//  wxTheIconList->Append (this);
 }
 
 #if USE_XPM_IN_X
 wxIcon::wxIcon(char **data):wxBitmap(data)
 {
   __type = wxTYPE_ICON;
-
-#ifdef wx_motif
-#elif defined(wx_xview)
-  if (ok)
-  {
-    x_icon = (Icon) xv_create (XV_NULL, ICON,
-                             XV_WIDTH, width,
-                             XV_HEIGHT, height,
-			     ICON_IMAGE, x_image,
-			     NULL);
-    if (x_icon)
-      ok = TRUE;
-    else
-      ok = FALSE;
-  }
-#endif
 }
 #endif
 
 wxIcon::~wxIcon (void)
 {
-#ifdef wx_motif
   Display *dpy = display; /* MATTHEW: [4] Use display */
   if (x_pixmap)
     XFreePixmap (dpy, x_pixmap);
-#elif defined(wx_xview)
-  xv_destroy_safe (x_icon);
-#endif
-//  wxTheIconList->DeleteObject (this);
 }
 
 // Cursors

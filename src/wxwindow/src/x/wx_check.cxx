@@ -107,6 +107,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   wxStripMenuCodes(Title, buf);
   XmString text = XmStringCreateSimple (buf);
 
+  panel->GrowReady();
+
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,
 					XmNmarginHeight, 0,
@@ -191,6 +193,8 @@ Create (wxPanel * panel, wxFunction func, wxBitmap * bitmap,
   windowName = copystring (name);
 
   Widget panelForm = panel->panelWidget;
+
+  panel->GrowReady();
 
   formWidget = XtVaCreateManagedWidget (windowName,
 					xmFormWidgetClass, panelForm,

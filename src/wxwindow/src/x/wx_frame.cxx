@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.7 1998/04/10 15:08:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.8 1998/08/09 20:55:25 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -289,7 +289,7 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 
   XtVaSetValues(frameShell, 
                  // Allows menu to resize
-                 XmNallowShellResize, True,
+                 XmNallowShellResize, (style & wxRESIZE_BORDER) ? False : True,
                  XmNdeleteResponse, XmDO_NOTHING,
                  XmNmappedWhenManaged, False,
                  XmNiconic, (style & wxICONIZE) ? TRUE : FALSE,
@@ -376,7 +376,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
       decor |= MWM_DECOR_TITLE;
     if (!(style & wxNO_THICK_FRAME))
       decor |= MWM_DECOR_BORDER;
-
     XtVaSetValues(frameShell,XmNmwmDecorations,decor,NULL) ;
   }
 
@@ -1087,5 +1086,26 @@ void wxFrame::ReleaseMouse(void)
     XtRemoveGrab(frameShell);
 
   winCaptured = FALSE;
+}
+
+
+void wxFrame::GrowReady()
+{
+  XtVaSetValues(frameWidget,
+		XmNresizePolicy, XmRESIZE_GROW,
+		NULL);
+  XtVaSetValues(workArea,
+		XmNresizePolicy, XmRESIZE_GROW,
+		NULL);
+}
+
+void wxFrame::GrowDone()
+{
+  XtVaSetValues(frameWidget,
+		XmNresizePolicy, XmRESIZE_NONE,
+		NULL);
+  XtVaSetValues(workArea,
+		XmNresizePolicy, XmRESIZE_NONE,
+		NULL);
 }
 

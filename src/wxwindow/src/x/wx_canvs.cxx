@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.4 1998/07/15 16:48:54 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.5 1998/08/09 20:55:24 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -56,7 +56,6 @@ IMPLEMENT_DYNAMIC_CLASS(wxCanvas, wxWindow)
 
 wxCanvas::wxCanvas (void)
 {
-  is_retained = FALSE;
   horiz_units = 0;
   vert_units = 0;
   wx_dc = NULL;
@@ -64,7 +63,6 @@ wxCanvas::wxCanvas (void)
   units_per_page_y = 0;
   scrolls_set_size = TRUE;
   updateRects.DeleteContents(TRUE);
-  requiresBackingStore = FALSE;
   hScroll = FALSE;
   vScroll = FALSE;
   hScrollBar = NULL;
@@ -72,7 +70,6 @@ wxCanvas::wxCanvas (void)
   allowRepainting = TRUE;
   hScrollingEnabled = TRUE;
   vScrollingEnabled = TRUE;
-  backingPixmap = 0;
   pixmapWidth = 0;
   pixmapHeight = 0;
   hExtent = 0;
@@ -99,7 +96,6 @@ Create (wxWindow * parent, int x, int y, int width, int height,
 {
   requiresRetention = 0 && ((style & wxRETAINED) == wxRETAINED);
   windowStyle = style;
-  is_retained = FALSE;		// Can only be retained after scrollbars have been set
   scrolls_set_size = TRUE;
 
   units_per_page_x = 0;
@@ -107,7 +103,6 @@ Create (wxWindow * parent, int x, int y, int width, int height,
   SetName(name);
   updateRects.DeleteContents(TRUE);
 
-  requiresBackingStore = ((style & wxBACKINGSTORE) == wxBACKINGSTORE);
   hScroll = FALSE;
   vScroll = FALSE;
   hScrollBar = NULL;
@@ -116,7 +111,6 @@ Create (wxWindow * parent, int x, int y, int width, int height,
   borderWidget = 0;
   hScrollingEnabled = TRUE;
   vScrollingEnabled = TRUE;
-  backingPixmap = 0;
   pixmapWidth = 0;
   pixmapHeight = 0;
   hExtent = 0;
@@ -157,6 +151,8 @@ Create (wxWindow * parent, int x, int y, int width, int height,
     return FALSE;
   }
 
+  parent->GrowReady();
+
   if (style & wxBORDER)
     borderWidget = XtVaCreateManagedWidget ("canvasBorder",
 					    xmFrameWidgetClass, parentWidget,
@@ -186,8 +182,8 @@ Create (wxWindow * parent, int x, int y, int width, int height,
 				    xmDrawingAreaWidgetClass, 
 				    scrolledWindow,
 				    XmNunitType, XmPIXELS,
-				    XmNresizePolicy, XmRESIZE_GROW,
-				    // XmNresizePolicy, XmRESIZE_NONE,
+				    // XmNresizePolicy, XmRESIZE_GROW,
+				    XmNresizePolicy, XmRESIZE_NONE,
 				    XmNmarginHeight, 0,
 				    XmNmarginWidth, 0,
 				    XmNtranslations, ptr = XtParseTranslationTable (translations),
@@ -200,6 +196,8 @@ Create (wxWindow * parent, int x, int y, int width, int height,
 		    NULL);
     }
   }
+
+  parent->GrowDone();
 
   /* Must add this window style before uncommenting */
   /* MATTHEW: added flag */
@@ -272,9 +270,6 @@ Create (wxWindow * parent, int x, int y, int width, int height,
 
 wxCanvas::~wxCanvas (void)
 {
-  if (backingPixmap)
-    XFreePixmap (XtDisplay ((Widget) handle), backingPixmap);
-
   // This should be the right ordering now.
   // The (potential) children of a panel-canvas are deleted
   // in ~wxPanel. Now delete the canvas widget.
@@ -667,18 +662,7 @@ void wxCanvas:: DoRefresh (Bool paint)
   if (paint) {
     int x, y;
     ViewStart (&x, &y);
-    if (is_retained && backingPixmap)
-      {
-	Widget drawingArea = (Widget) handle;
-	XCopyArea (XtDisplay (drawingArea), backingPixmap, XtWindow (drawingArea), GetDC ()->gc,
-		   pixmapOffsetX, pixmapOffsetY,
-		   pixmapWidth, pixmapHeight,
-		   0, 0);
-      }
-    else
-      {
-	GetEventHandler()->OnPaint ();
-      }
+    GetEventHandler()->OnPaint ();
   }
 }
 
@@ -782,19 +766,11 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
       x_pos == xp &&
       y_pos == yp &&
       x_page == units_per_page_x &&
-      y_page == units_per_page_y) {
-    if (x_length == units_x &&
-	y_length == units_y) {
-      //DebugMsg("No change\n") ;
-      return;			/* Nothing changed */
-    }
-    /*
-       This flag is to avoid repainting (which causes
-       flickering) when all we are doing
-       is changing the virtual size of the canvas.
-       Hernan Otero (hernan@isoft.com.ar)
-       */
-    needRepaint = FALSE;
+      y_page == units_per_page_y
+      && setVirtualSize == scrolls_set_size
+      && x_length == units_x &&
+      y_length == units_y) {
+    return;			/* Nothing changed */
   }
   
   horiz_units = horizontal;
@@ -870,6 +846,11 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 	GetDC ()->device_origin_x = -(x_pos * horiz_units);
       if (requiresRetention)
 	pixmapOffsetX = (x_pos * horiz_units);
+    } else {
+      if (GetDC ())
+	GetDC ()->device_origin_x = 0;
+      if (requiresRetention)
+	pixmapOffsetX = 0;
     }
 
     hScroll = TRUE;
@@ -878,9 +859,16 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
     hExtent = 0;
     hScroll = FALSE;
     if (GetWindowStyleFlag() & wxHSCROLL) {
-      SetScrollRange(wxHORIZONTAL, 0);
-      SetScrollPage(wxHORIZONTAL, 1);
-      SetScrollPos(wxHORIZONTAL, 0);
+      XtVaSetValues(hScrollBar,
+		    XmNvalue, 0,
+		    XmNsliderSize, 1,
+		    XmNpageIncrement, 1,
+		    XmNmaximum, 1,
+		    NULL);
+      if (GetDC ())
+	GetDC ()->device_origin_x = 0;
+      if (requiresRetention)
+	pixmapOffsetX = 0;
     } else {    
       if (hScrollBar) {
 	XtUnmanageChild (hScrollBar);
@@ -940,11 +928,17 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 
     if (setVirtualSize) {
       vStart = y_pos;
-      if (GetDC ())
-	GetDC ()->device_origin_y = -(y_pos * vert_units);
+      if (GetDC())
+	GetDC()->device_origin_y = -(y_pos * vert_units);
       if (requiresRetention)
 	pixmapOffsetY = (y_pos * vert_units);
+    } else {
+      if (GetDC())
+	GetDC()->device_origin_y = 0;
+      if (requiresRetention)
+	pixmapOffsetY = 0;
     }
+      
 
     vScroll = TRUE;
   } else {
@@ -952,9 +946,16 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
     vExtent = 0;
     vScroll = FALSE;
     if (GetWindowStyleFlag() & wxVSCROLL) {
-      SetScrollRange(wxVERTICAL, 0);
-      SetScrollPage(wxVERTICAL, 1);
-      SetScrollPos(wxVERTICAL, 0);
+      XtVaSetValues(vScrollBar,
+		    XmNvalue, 0,
+		    XmNsliderSize, 1,
+		    XmNpageIncrement, 1,
+		    XmNmaximum, 1,
+		    NULL);
+      if (GetDC())
+	GetDC()->device_origin_y = 0;
+      if (requiresRetention)
+	pixmapOffsetY = 0;
     } else {
       if (vScrollBar) {
 	XtUnmanageChild (vScrollBar);
@@ -973,7 +974,6 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
   EnableScrolling(hScroll, vScroll);
 
   if (!setVirtualSize) {
-    /* No, really, I mean it ... */
     if (hScroll) {
       SetScrollRange(wxHORIZONTAL, x_length);
       SetScrollPage(wxHORIZONTAL, x_page);
@@ -986,6 +986,7 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
     }
   }
 
+#if 0
   Dimension cw, ch;
   XtVaGetValues(drawingArea, XtNwidth, &cw, XtNheight, &ch, NULL);
   if (wx_dc && ((hExtent && (cw > hExtent)) || (vExtent && (ch > vExtent)))) {
@@ -1004,6 +1005,7 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
     else
       wx_dc->DestroyClippingRegion();
   }
+#endif
 
   /*
    * Retained pixmap stuff
@@ -1016,29 +1018,13 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 	{
 	  pixmapWidth = hExtent;
 	  pixmapHeight = vExtent;
-
-	  if (backingPixmap)
-	    XFreePixmap (XtDisplay (drawingArea), backingPixmap);
-
-	  backingPixmap = XCreatePixmap (XtDisplay (drawingArea),
-	      RootWindowOfScreen (XtScreen (drawingArea)), hExtent, vExtent,
-			     DefaultDepthOfScreen (XtScreen (drawingArea)));
-
-	  if (backingPixmap)
-	    is_retained = TRUE;
-	  else
-	    is_retained = FALSE;
-
-	  if (needRepaint) {
-	    Clear ();
-	    GetEventHandler()->OnPaint ();
-	  }
 	}
     }
 
   if (needRepaint) {
     // This necessary to make scrollbars appear, for some reason!
     SetSize (x, y, w, h);
+    if (setVirtualSize) Refresh();
   }
 }
 
@@ -1064,26 +1050,22 @@ void wxCanvas:: Scroll (int x_pos, int y_pos)
     {
       XtVaSetValues (hScrollBar, XmNvalue, x_pos, NULL);
       hStart = x_pos;
-      if (hScrollingEnabled && !is_retained)
-		clearCanvas = TRUE;
+      if (hScrollingEnabled)
+	clearCanvas = TRUE;
 
       if (GetDC ())
 	GetDC ()->device_origin_x = -(x_pos * horiz_units);
-      if (is_retained)
-	pixmapOffsetX = (x_pos * horiz_units);
     }
   if (vScroll)
     {
       XtVaSetValues (vScrollBar, XmNvalue, y_pos, NULL);
       vStart = y_pos;
 
-      if (vScrollingEnabled && !is_retained)
-		clearCanvas = TRUE;
+      if (vScrollingEnabled)
+	clearCanvas = TRUE;
 
       if (GetDC ())
 	GetDC ()->device_origin_y = -(y_pos * vert_units);
-      if (is_retained)
-	pixmapOffsetY = (y_pos * vert_units);
     }
 
 	if (clearCanvas) {
@@ -1814,25 +1796,21 @@ void wxCanvas::DoScroll(wxCommandEvent &event)
 
   if (WXSCROLLORIENT(event) == wxHORIZONTAL)
   {
-    if (hScrollingEnabled && !is_retained)
+    if (hScrollingEnabled)
       doScroll = TRUE;
 
     hStart = value;
     if (GetDC ())
       GetDC ()->device_origin_x = -(value * horiz_units);
-    if (is_retained)
-      pixmapOffsetX = (value * horiz_units);
   }
   else
   {
-    if (vScrollingEnabled && !is_retained)
+    if (vScrollingEnabled)
       doScroll = TRUE;
 
      vStart = value;
      if (GetDC ())
        GetDC ()->device_origin_y = -(value * vert_units);
-     if (is_retained)
-       pixmapOffsetY = (value * vert_units);
   }
 
   if (doScroll)
@@ -1865,6 +1843,8 @@ void wxCanvas::DoScroll(wxCommandEvent &event)
 
 void wxCanvas::SetScrollPos(int orient, int pos)
 {
+  if (scrolls_set_size) return;
+
   Widget bar = ((orient == wxHORIZONTAL) ? hScrollBar : vScrollBar);
   
   int w = ((orient == wxHORIZONTAL) ? units_x : units_y);
@@ -1878,6 +1858,8 @@ void wxCanvas::SetScrollPos(int orient, int pos)
 
 void wxCanvas::SetScrollRange(int orient, int range)
 {
+  if (scrolls_set_size) return;
+
   Widget bar = ((orient == wxHORIZONTAL) ? hScrollBar : vScrollBar);
   int page ((orient == wxHORIZONTAL) ? units_per_page_x : units_per_page_y);
 
@@ -1888,14 +1870,21 @@ void wxCanvas::SetScrollRange(int orient, int range)
 		   XmNmaximum, range + page,
 		   NULL);
 
-  if (orient == wxHORIZONTAL)
+  if (orient == wxHORIZONTAL) {
+    if (horiz_units < 0)
+      return;
     units_x = range;
-  else
+  } else {
+    if (vert_units < 0)
+      return;
     units_y = range;
+  }
 }
 
 int wxCanvas::GetScrollPos(int orient)
 {
+  if (scrolls_set_size) return 0;
+
   Widget bar = ((orient == wxHORIZONTAL) ? hScrollBar : vScrollBar);
   int d;
   if (bar) {
@@ -1910,6 +1899,8 @@ int wxCanvas::GetScrollPos(int orient)
 
 int wxCanvas::GetScrollRange(int orient)
 {
+  if (scrolls_set_size) return 0;
+
   if (orient == wxHORIZONTAL) {
     if (hScroll)
       return units_x;
@@ -1921,6 +1912,8 @@ int wxCanvas::GetScrollRange(int orient)
 
 void wxCanvas::SetScrollPage(int orient, int page)
 {
+  if (scrolls_set_size) return;
+
   if (orient == wxHORIZONTAL)
     units_per_page_x = page;
   else
@@ -1939,6 +1932,8 @@ void wxCanvas::SetScrollPage(int orient, int page)
 
 int wxCanvas::GetScrollPage(int orient)
 {
+  if (scrolls_set_size) return 0;
+
   if (orient == wxHORIZONTAL) {
     if (hScroll)
       return units_per_page_x;

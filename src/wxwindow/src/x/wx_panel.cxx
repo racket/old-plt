@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.2 1998/04/08 00:09:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.3 1998/08/09 20:55:26 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -487,33 +487,6 @@ void wxPanel:: Enable (Bool Flag)
 
 void wxPanel:: AddChild (wxObject * child)
 {
-  /***************************************************/
-  wxWindow *f;
-  for (f = window_parent; 
-       (f 
-	&& !wxSubType(f->__type, wxTYPE_FRAME)
-	&& !wxSubType(f->__type, wxTYPE_DIALOG_BOX));
-       f = f->GetParent());
-  if (f) {
-    if (wxSubType(f->__type, wxTYPE_FRAME)) {
-      wxFrame *fr = (wxFrame *)f;
-      if (fr->GetWindowStyleFlag() & wxPUSH_PIN) {
-	XtVaSetValues(fr->frameWidget,
-		      XmNresizePolicy, XmRESIZE_GROW,
-		      NULL);
-	XtVaSetValues(fr->workArea,
-		      XmNresizePolicy, XmRESIZE_GROW,
-		      NULL);
-      }
-    } else {
-      if (f->GetWindowStyleFlag() & wxPUSH_PIN)
-	XtVaSetValues((Widget)f->handle,
-		      XmNresizePolicy, XmRESIZE_GROW,
-		      NULL);
-    }
-  }
-  /***************************************************/
-
   if (!has_child)
     {
       initial_hspacing = hSpacing;
@@ -592,6 +565,7 @@ void wxPanel:: ChangeColour (void)
 void wxPanel::AttachWidget (wxWindow *item, Widget formWidget,
 	      int x, int y, int width, int height)
 {
+
   if ((x > -1) || (y > -1))
     allRelative = FALSE;
 
@@ -619,35 +593,10 @@ void wxPanel::AttachWidget (wxWindow *item, Widget formWidget,
   item->SetSize (x, y, width, height);
   AdvanceCursor (item);
 
+  GrowDone();
+
   current_hspacing = hSpacing;
   current_vspacing = vSpacing;
-
-  /***************************************************/
-  wxWindow *f;
-  for (f = window_parent; 
-       (f 
-	&& !wxSubType(f->__type, wxTYPE_FRAME)
-	&& !wxSubType(f->__type, wxTYPE_DIALOG_BOX));
-       f = f->GetParent());
-  if (f) {
-    if (wxSubType(f->__type, wxTYPE_FRAME)) {
-      wxFrame *fr = (wxFrame *)f;
-      if (fr->GetWindowStyleFlag() & wxPUSH_PIN) {
-	XtVaSetValues(fr->frameWidget,
-		      XmNresizePolicy, XmRESIZE_NONE,
-		      NULL);
-	XtVaSetValues(fr->workArea,
-		      XmNresizePolicy, XmRESIZE_NONE,
-		      NULL);
-      }
-    } else {
-      if (f->GetWindowStyleFlag() & wxPUSH_PIN)
-	XtVaSetValues((Widget)f->handle,
-		      XmNresizePolicy, XmRESIZE_NONE,
-		      NULL);
-    }
-  }
-  /***************************************************/
 }
 
 void wxPanel::OptimizeLayout (void)
@@ -697,4 +646,25 @@ void wxPanel::SetUserEditMode(Bool edit)
     }
     node = node->Next();
   }
+}
+
+
+void wxPanel::GrowReady()
+{
+  wxWindow *p = GetParent();
+  if (p) p->GrowReady();
+
+  XtVaSetValues((Widget)handle,
+		XmNresizePolicy, XmRESIZE_GROW,
+		NULL);
+}
+
+void wxPanel::GrowDone()
+{
+  XtVaSetValues((Widget)handle,
+		XmNresizePolicy, XmRESIZE_NONE,
+		NULL);
+
+  wxWindow *p = GetParent();
+  if (p) p->GrowDone();
 }

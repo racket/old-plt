@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cc,v 1.4 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -188,9 +188,6 @@ wxCanvasDC::wxCanvasDC (void)
   title = NULL;
 
   gc = NULL;
-#ifdef wx_motif
-  gcBacking = NULL;
-#endif
 
   background_pixel = 0;
   ok = FALSE; /* MATTHEW: [13] */
@@ -274,12 +271,6 @@ wxCanvasDC:: wxCanvasDC (wxCanvas * the_canvas):wxbCanvasDC (the_canvas)
   gc = XCreateGC (display, RootWindow (display, DefaultScreen (display)),
 	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
 		  &gcvalues);
-#ifdef wx_motif
-  gcBacking = XCreateGC (display, RootWindow (display,
-					      DefaultScreen (display)),
-	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
-			 &gcvalues);
-#endif
 
   background_pixel = (int) gcvalues.background;
   ok = TRUE;
@@ -322,11 +313,6 @@ wxCanvasDC::~wxCanvasDC (void)
   if (gc)
     XFreeGC (display, gc);
   gc = NULL;
-#ifdef wx_motif
-  if (gcBacking)
-    XFreeGC (display, gcBacking);
-  gcBacking = NULL;
-#endif
 }
 
 /* MATTHEW: [7] Implement GetPixel */
@@ -360,19 +346,10 @@ void wxCanvasDC:: SetCanvasClipping (void)
   if (current_reg)
     {
       XSetRegion (display, gc, current_reg);
-#ifdef wx_motif
-// NO, see SetClippingRegion
-//      if (canvas && canvas->is_retained)
-//	XSetRegion (display, gcBacking, current_reg);
-#endif
     }
   else
     {
       XSetClipMask (display, gc, None);
-#ifdef wx_motif
-//      if (canvas && canvas->is_retained)
-//	XSetClipMask (display, gcBacking, None);
-#endif
     }
 
 }
@@ -395,26 +372,6 @@ void wxCanvasDC:: GetClippingBox (float *x, float *y, float *w, float *h)
 
 void wxCanvasDC:: SetClippingRegion (float cx, float cy, float cw, float ch)
 {
-/****
-old code, not using optimized Regions
-
-        XRectangle rects[1];
-
-        rects[0].x = XLOG2DEV(cx) - WX_GC_CF; 
-	rects[0].y = YLOG2DEV(cy) - WX_GC_CF;
-        rects[0].width = XLOG2DEVREL(cw); rects[0].height = YLOG2DEVREL(ch);
-        XSetClipRectangles(display, gc, 0, 0, rects, 1, Unsorted);
-#ifdef wx_motif
-        if (canvas && canvas->is_retained)
-	{
-          rects[0].x = XLOG2DEV_2(cx) - WX_GC_CF; 
-	  rects[0].y = YLOG2DEV_2(cy) - WX_GC_CF;
-          rects[0].width = XLOG2DEVREL(cw); rects[0].height = YLOG2DEVREL(ch);
-          XSetClipRectangles(display, gcBacking, 0, 0, rects, 1, Unsorted);
-	}
-#endif
-****/
-
   if (cw < 0)
     cw = 0;
   if (ch < 0)
@@ -434,17 +391,6 @@ old code, not using optimized Regions
 
   // Needs to work differently for Pixmap: without this,
   // there's a nasty display bug. 8/12/94
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-  {
-    XRectangle rects[1];
-    rects[0].x = XLOG2DEV_2(cx); 
-    rects[0].y = YLOG2DEV_2(cy);
-    rects[0].width = XLOG2DEVREL(cw);
-    rects[0].height = YLOG2DEVREL(ch);
-    XSetClipRectangles(display, gcBacking, 0, 0, rects, 1, Unsorted);
-  }
-#endif
 }
 
 void wxCanvasDC:: DestroyClippingRegion (void)
@@ -455,12 +401,6 @@ old code, not using optimized Regions
         XGCValues gc_val;
         gc_val.clip_mask = None;
         XChangeGC(display, gc, GCClipMask, &gc_val);
-#ifdef wx_motif
-        if (canvas && canvas->is_retained)
-	{
-          XChangeGC(display, gcBacking, GCClipMask, &gc_val);
-	}
-#endif
 #ifdef wx_xview
         if (canvas && canvas->xrects)
           XSetClipRectangles(display, gc, 0, 0, canvas->xrects->rect_array,
@@ -472,14 +412,6 @@ old code, not using optimized Regions
     XDestroyRegion (user_reg);
   user_reg = NULL;
   SetCanvasClipping ();
-
-  // Bug fix for Motif backing pixmap, see comment above.
-#ifdef wx_motif
-  XGCValues gc_val;
-  gc_val.clip_mask = None;
-  if (canvas && canvas->is_retained)
-    XChangeGC(display, gcBacking, GCClipMask, &gc_val);
-#endif
 }
 
 /* MATTHEW: [8] */
@@ -500,12 +432,6 @@ void wxCanvasDC::GetSize(float *w, float *h)
     canvas->GetVirtualSize(&ww, &hh);
     *w = ww;
     *h = hh;
-
-    /* MATTHEW: [7] Check canvas->scrolls_set_size */
-    if (canvas->hScroll && canvas->scrolls_set_size)
-      *w = canvas->hExtent;
-    if (canvas->vScroll && canvas->scrolls_set_size)
-      *h = canvas->vExtent;
   } else {
     *w = *h = 0;
   }
@@ -513,19 +439,20 @@ void wxCanvasDC::GetSize(float *w, float *h)
 
 void wxCanvasDC:: Clear (void)
 {
-/*
-   #ifdef wx_xview
-   // If we're not in the middle of a paint event...
-   if (!canvas->xrects || !(canvas && canvas->is_retained))
-   XClearWindow(display, pixmap);
-   #endif
- */
   int w, h;
   float fw, fh;
 
   GetSize(&fw, &fh);
   w = (int)fw;
   h = (int)fh;
+  if (canvas) {
+    int ww, hh;
+    canvas->GetClientSize(&ww, &hh);
+    if (ww > w)
+      w = ww;
+    if (hh > h)
+      h = hh;
+  }
 
   /* MATTHEW: [9] Save old brush */
   wxBrush *save_brush = current_brush;
@@ -535,10 +462,6 @@ void wxCanvasDC:: Clear (void)
 
   SetBrush (current_background_brush);
   XFillRectangle (display, pixmap, gc, 0, 0, w, h);
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XFillRectangle (display, canvas->backingPixmap, gcBacking, 0, 0, w, h);
-#endif
 
   /* MATTHEW: [9] restore */
   current_brush = save_brush;
@@ -560,19 +483,6 @@ void wxCanvasDC:: CrossHair (float x, float y)
 	     ww, yy);
   XDrawLine (display, pixmap, gc, xx, 0,
 	     xx, hh);
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    {
-      xx = XLOG2DEV_2 (x);
-      yy = YLOG2DEV_2 (y);
-      XDrawLine (display, canvas->backingPixmap, gcBacking,
-		 0, yy,
-		 ww, yy);
-      XDrawLine (display, canvas->backingPixmap, gcBacking,
-		 xx, 0,
-		 xx, hh);
-    }
-#endif
 }
 
 void wxCanvasDC:: FloodFill (float x, float y, wxColour * col, int style)
@@ -591,18 +501,10 @@ Bool wxCanvasDC:: GetPixel (float x, float y, wxColour * col)
 
   int w, h;
   if (canvas) {
-    canvas->GetVirtualSize (&w, &h);
-#ifdef wx_motif
-    if (canvas->hScroll && canvas->scrolls_set_size)
-      w = canvas->hExtent;
-    if (canvas->vScroll && canvas->scrolls_set_size)
-      h = canvas->vExtent;
-    
-    if (canvas && canvas->is_retained) {
-      w = canvas->pixmapWidth;
-      h = canvas->pixmapHeight;
-    }
-#endif
+    float fw, fh;
+    GetSize(&fw, &fh);
+    w = (int)fw; 
+    h = (int)fh;
   } else {
     w = pixmapWidth;
     h = pixmapHeight;
@@ -696,18 +598,9 @@ void wxCanvasDC::BeginSetPixel()
 
   int w, h;
   if (canvas) {
-    canvas->GetVirtualSize (&w, &h);
-#ifdef wx_motif
-    if (canvas->hScroll && canvas->scrolls_set_size)
-      w = canvas->hExtent;
-    if (canvas->vScroll && canvas->scrolls_set_size)
-      h = canvas->vExtent;
-    
-    if (canvas && canvas->is_retained) {
-      w = canvas->pixmapWidth;
-      h = canvas->pixmapHeight;
-    }
-#endif
+    float fw, fh;
+    GetSize(&fw, &fh);
+    w = (int)fw; h = (int)fh;
   } else {
     w = pixmapWidth;
     h = pixmapHeight;
@@ -820,12 +713,6 @@ void wxCanvasDC:: DrawLine (float x1, float y1, float x2, float y2)
   if (current_pen && autoSetting)
     SetPen (current_pen);
   XDrawLine (display, pixmap, gc, x1d, y1d, x2d, y2d);
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XDrawLine (display, canvas->backingPixmap, gcBacking, 
-	       XLOG2DEV_2(x1), YLOG2DEV_2(y1),
-	       XLOG2DEV_2(x2), YLOG2DEV_2(y2));
-#endif
   CalcBoundingBox(x1, y1);
   CalcBoundingBox(x2, y2);
 }
@@ -841,8 +728,6 @@ void wxCanvasDC:: DrawArc (float x1, float y1, float x2, float y2, float xc, flo
   int yy2 = YLOG2DEV (y2);
   int xxc = XLOG2DEV (xc);
   int yyc = YLOG2DEV (yc);
-  int xxc_2 = XLOG2DEV_2 (xc);
-  int yyc_2 = YLOG2DEV_2 (yc);
 
   double dx = xx1 - xxc;
   double dy = yy1 - yyc;
@@ -890,11 +775,6 @@ void wxCanvasDC:: DrawArc (float x1, float y1, float x2, float y2, float xc, flo
       SetBrush (current_brush);
       XFillArc (display, pixmap, gc,
 		xxc - r, yyc - r, 2 * r, 2 * r, alpha1, alpha2);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XFillArc (display, canvas->backingPixmap, gcBacking,
-		  xxc_2 - r, yyc_2 - r, 2 * r, 2 * r, alpha1, alpha2);
-#endif
     }
 
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
@@ -903,11 +783,6 @@ void wxCanvasDC:: DrawArc (float x1, float y1, float x2, float y2, float xc, flo
 	SetPen (current_pen);
       XDrawArc (display, pixmap, gc,
 		xxc - r, yyc - r, 2 * r, 2 * r, alpha1, alpha2);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XDrawArc (display, canvas->backingPixmap, gcBacking,
-		  xxc_2 - r, yyc_2 - r, 2 * r, 2 * r, alpha1, alpha2);
-#endif
     }
   CalcBoundingBox (x1, y1);
   CalcBoundingBox (x2, y2);
@@ -922,10 +797,6 @@ void wxCanvasDC:: DrawPoint (float x, float y)
     SetPen (current_pen);
 
   XDrawPoint (display, pixmap, gc, XLOG2DEV (x), YLOG2DEV (y));
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XDrawPoint (display, canvas->backingPixmap, gcBacking, XLOG2DEV_2 (x), YLOG2DEV_2 (y));
-#endif
   CalcBoundingBox (x, y);
 }
 
@@ -958,16 +829,6 @@ void wxCanvasDC:: DrawPolygon (int n, wxPoint points[], float xoffset, float yof
       XSetFillRule (display, gc, fillStyle == wxODDEVEN_RULE ? EvenOddRule : WindingRule);
       XFillPolygon (display, pixmap, gc, xpoints1, n, Complex, 0);
       XSetFillRule (display, gc, EvenOddRule);	// default mode
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	{
-	  XSetFillRule (display, gcBacking,
-		   fillStyle == wxODDEVEN_RULE ? EvenOddRule : WindingRule);
-	  XFillPolygon (display, canvas->backingPixmap, gcBacking, xpoints2, n, Complex, 0);
-	  XSetFillRule (display, gcBacking, EvenOddRule);	// default mode
-
-	}
-#endif
     }
 
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
@@ -975,10 +836,6 @@ void wxCanvasDC:: DrawPolygon (int n, wxPoint points[], float xoffset, float yof
       if (autoSetting)
 	SetPen (current_pen);
       XDrawLines (display, pixmap, gc, xpoints1, n + 1, 0);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XDrawLines (display, canvas->backingPixmap, gcBacking, xpoints2, n + 1, 0);
-#endif
     }
 
   delete[]xpoints1;
@@ -1004,17 +861,6 @@ void wxCanvasDC:: DrawLines (int n, wxIntPoint points[], int xoffset, int yoffse
 	  xpoints[i].y = YLOG2DEV (points[i].y + yoffset);
 	}
       XDrawLines (display, pixmap, gc, xpoints, n, 0);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	{
-	  for (i = 0; i < n; i++)
-	    {
-	      xpoints[i].x = XLOG2DEV_2 (points[i].x + xoffset);
-	      xpoints[i].y = YLOG2DEV_2 (points[i].y + yoffset);
-	    }
-	  XDrawLines (display, canvas->backingPixmap, gcBacking, xpoints, n, 0);
-	}
-#endif
       delete[]xpoints;
     }
 
@@ -1041,17 +887,6 @@ void wxCanvasDC:: DrawLines (int n, wxPoint points[], float xoffset, float yoffs
 
       XDrawLines (display, pixmap, gc, xpoints, n, 0);
 
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	{
-	  for (i = 0; i < n; i++)
-	    {
-	      xpoints[i].x = XLOG2DEV_2 (points[i].x + xoffset);
-	      xpoints[i].y = YLOG2DEV_2 (points[i].y + yoffset);
-	    }
-	  XDrawLines (display, canvas->backingPixmap, gcBacking, xpoints, n, 0);
-	}
-#endif
       delete[]xpoints;
     }
 }
@@ -1074,12 +909,6 @@ void wxCanvasDC:: DrawRectangle (float x, float y, float width, float height)
     {
       SetBrush (current_brush);
       XFillRectangle (display, pixmap, gc, xd, yd, wfd, hfd);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XFillRectangle (display, canvas->backingPixmap, gcBacking, 
-			XLOG2DEV_2 (x), YLOG2DEV_2 (y),
-			wfd, hfd);
-#endif
     }
 
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
@@ -1087,12 +916,6 @@ void wxCanvasDC:: DrawRectangle (float x, float y, float width, float height)
       if (autoSetting)
 	SetPen (current_pen);
       XDrawRectangle (display, pixmap, gc, xd, yd, wd, hd);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XDrawRectangle (display, canvas->backingPixmap, gcBacking, 
-			XLOG2DEV_2 (x), YLOG2DEV_2 (y),
-			wd, hd);
-#endif
     }
   CalcBoundingBox (x, y);
   CalcBoundingBox (x + width, y + height);
@@ -1128,17 +951,6 @@ void wxCanvasDC:: DrawRoundedRectangle (float x, float y, float width, float hei
   int phys_rwidth = phys_radius * 2;
   int phys_rheight = phys_rwidth;
 
-#ifdef wx_motif
-  int phys2_x = XLOG2DEV_2 (x);
-  int phys2_y = YLOG2DEV_2 (y);
-  int phys2_radius = XLOG2DEVREL (radius);
-  int phys2_width = XLOG2DEVREL (width) - WX_GC_CF;
-  int phys2_height = YLOG2DEVREL (height) - WX_GC_CF;
-
-  int phys2_rwidth = phys2_radius * 2;
-  int phys2_rheight = phys2_rwidth;
-#endif
-
   if (current_brush && current_brush->GetStyle () != wxTRANSPARENT)
     {
       SetBrush (current_brush);
@@ -1157,29 +969,6 @@ void wxCanvasDC:: DrawRoundedRectangle (float x, float y, float width, float hei
 		phys_rwidth, phys_rheight, 270 * 64, 90 * 64);
       XFillArc (display, pixmap, gc, phys_x, phys_y + phys_height - phys_rheight,
 		phys_rwidth, phys_rheight, 180 * 64, 90 * 64);
-
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	{
-	  XFillRectangle (display, canvas->backingPixmap, gcBacking,
-			  phys2_x + phys2_radius, phys2_y, phys2_width - phys2_rwidth, phys2_height);
-	  XFillRectangle (display, canvas->backingPixmap, gcBacking,
-			  phys2_x, phys2_y + phys2_radius, phys2_width, phys2_height - phys2_rheight);
-
-	  XFillArc (display, canvas->backingPixmap, gcBacking,
-	   phys2_x, phys2_y, phys2_rwidth, phys2_rheight, 90 * 64, 90 * 64);
-	  XFillArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x + phys2_width - phys2_rwidth, phys2_y,
-		    phys2_rwidth, phys2_rheight, 0, 90 * 64);
-	  XFillArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x + phys2_width - phys2_rwidth,
-		    phys2_y + phys2_height - phys2_rheight,
-		    phys2_rwidth, phys2_rheight, 270 * 64, 90 * 64);
-	  XFillArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x, phys2_y + phys2_height - phys2_rheight,
-		    phys2_rwidth, phys2_rheight, 180 * 64, 90 * 64);
-	}
-#endif
     }
 
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
@@ -1204,37 +993,6 @@ void wxCanvasDC:: DrawRoundedRectangle (float x, float y, float width, float hei
 		phys_rwidth, phys_rheight, 270 * 64, 90 * 64);
       XDrawArc (display, pixmap, gc, phys_x, phys_y + phys_height - phys_rheight,
 		phys_rwidth, phys_rheight, 180 * 64, 90 * 64);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	{
-	  XDrawLine (display, canvas->backingPixmap, gcBacking,
-		     phys2_x + phys2_radius, phys2_y,
-		     phys2_x + phys2_width - phys2_radius, phys2_y);
-	  XDrawLine (display, canvas->backingPixmap, gcBacking,
-		     phys2_x + phys2_radius, phys2_y + phys2_height,
-	      phys2_x + phys2_width - phys2_radius, phys2_y + phys2_height);
-
-	  XDrawLine (display, canvas->backingPixmap, gcBacking,
-		     phys2_x, phys2_y + phys2_radius,
-		     phys2_x, phys2_y + phys2_height - phys2_radius);
-	  XDrawLine (display, canvas->backingPixmap, gcBacking,
-		     phys2_x + phys2_width, phys2_y + phys2_radius,
-	      phys2_x + phys2_width, phys2_y + phys2_height - phys2_radius);
-	  XDrawArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x, phys2_y,
-		    phys2_rwidth, phys2_rheight, 90 * 64, 90 * 64);
-	  XDrawArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x + phys2_width - phys2_rwidth, phys2_y,
-		    phys2_rwidth, phys2_rheight, 0, 90 * 64);
-	  XDrawArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x + phys2_width - phys2_rwidth,
-		    phys2_y + phys2_height - phys2_rheight,
-		    phys2_rwidth, phys2_rheight, 270 * 64, 90 * 64);
-	  XDrawArc (display, canvas->backingPixmap, gcBacking,
-		    phys2_x, phys2_y + phys2_height - phys2_rheight,
-		    phys2_rwidth, phys2_rheight, 180 * 64, 90 * 64);
-	}
-#endif
     }
   CalcBoundingBox (x, y);
   CalcBoundingBox (x + width, y + height);
@@ -1258,13 +1016,6 @@ void wxCanvasDC:: DrawEllipse (float x, float y, float width, float height)
     {
       SetBrush (current_brush);
       XFillArc (display, pixmap, gc, xd, yd, wd, hd, 0, angle);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XFillArc (display, canvas->backingPixmap, gcBacking, 
-		  XLOG2DEV_2 (x), YLOG2DEV_2 (y),
-		  XLOG2DEVREL (width) - WX_GC_CF,
-		  YLOG2DEVREL (height) - WX_GC_CF, 0, angle);
-#endif
     }
 
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
@@ -1272,13 +1023,6 @@ void wxCanvasDC:: DrawEllipse (float x, float y, float width, float height)
       if (autoSetting)
 	SetPen (current_pen);
       XDrawArc (display, pixmap, gc, xd, yd, wd, hd, 0, angle);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XDrawArc (display, canvas->backingPixmap, gcBacking, 
-		  XLOG2DEV_2 (x), YLOG2DEV_2 (y),
-		  XLOG2DEVREL (width),
-		  YLOG2DEVREL (height), 0, angle);
-#endif
     }
   CalcBoundingBox (x, y);
   CalcBoundingBox (x + width, y + height);
@@ -1392,37 +1136,12 @@ void wxCanvasDC:: DrawIcon (wxIcon * icon, float x, float y)
     XCopyPlane (display, iconPixmap, pixmap, gc,
 		0, 0, width, height, 
 		(int) XLOG2DEV (x), (int) YLOG2DEV (y), 1);
-
-/***
-An other way to draw icons. Experimental.
-XCopyPlane seems to be confused if logical function is not wxCOPY, so
-we try to use stippling. Or is it me, who is confused?
-
-  XSetStipple(display,gc,iconPixmap) ;
-  XSetFillStyle(display,gc,FillOpaqueStippled) ;
-  XSetTSOrigin(display,gc,(int)XLOG2DEV(x),(int)YLOG2DEV(y)) ;
-  XFillRectangle(display,pixmap,gc,(int)XLOG2DEV(x),(int)YLOG2DEV(y),width,height) ;
-  XSetFillStyle(display,gc,FillSolid) ;
-***/
-
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XCopyPlane (display, iconPixmap, canvas->backingPixmap, gcBacking,
-	0, 0, width, height, (int) XLOG2DEV_2 (x), (int) YLOG2DEV_2 (y), 1);
-#endif
-
-#ifdef wx_motif
   } else { /* Remote copy (different displays) */
     XImage *cache = NULL;
-    if (canvas && canvas->is_retained)
-      XCopyRemote(icon->display, display, iconPixmap, canvas->backingPixmap, 
-		  gcBacking, 0, 0, width, height, 
-		  (int) XLOG2DEV_2 (x), (int) YLOG2DEV_2 (y), TRUE, &cache);
     XCopyRemote(icon->display, display, iconPixmap, pixmap, gc,
 		0, 0, width, height, 
 		(int) XLOG2DEV (x), (int) YLOG2DEV (y), FALSE, &cache);
   }
-#endif
   CalcBoundingBox (x, y);
 }
 
@@ -1466,10 +1185,6 @@ void wxCanvasDC:: SetFont (wxFont * the_font)
 #endif
   if (gc)
     XSetFont(display, gc, theFont);
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XSetFont(display, gcBacking, theFont);
-#endif
 }
 
 static int alloc_close_color(Display *display, Colormap cmap, XColor *xc)
@@ -1513,7 +1228,7 @@ static int alloc_close_color(Display *display, Colormap cmap, XColor *xc)
     return 0;
 }
 
-void wxCanvasDC:: SetPen (wxPen * pen)
+void wxCanvasDC::SetPen (wxPen * pen)
 {
   wxBitmap *old_stipple = current_stipple;
   int old_style = current_style;
@@ -1637,20 +1352,12 @@ void wxCanvasDC:: SetPen (wxPen * pen)
 	      for (int i = 0; i < req_nb_dash; i++)
 		real_req_dash[i] = req_dash[i] * factor;
 	      XSetDashes (display, gc, 0, real_req_dash, req_nb_dash);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetDashes (display, gcBacking, 0, real_req_dash, req_nb_dash);
-#endif
 	      delete[]real_req_dash;
 	    }
 	  else
 	    {
 	      // No Memory. We use non-scaled dash pattern...
 	      XSetDashes (display, gc, 0, req_dash, req_nb_dash);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetDashes (display, gcBacking, 0, req_dash, req_nb_dash);
-#endif
 	    }
 	}
 
@@ -1683,10 +1390,6 @@ void wxCanvasDC:: SetPen (wxPen * pen)
 	}
 
       XSetLineAttributes (display, gc, scaled_width, style, cap, join);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XSetLineAttributes (display, gcBacking, scaled_width, style, cap, join);
-#endif
     }
 
   if (IS_HATCH(current_fill) && ((current_fill != old_fill) || !dcOptimize))
@@ -1742,26 +1445,14 @@ void wxCanvasDC:: SetPen (wxPen * pen)
 	  break;
 	}
       XSetStipple (display, gc, my_stipple);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XSetStipple (display, gcBacking, my_stipple);
-#endif
     }
   else if (current_stipple
 	   && ((current_stipple != old_stipple) || !dcOptimize))
     {
       if (is_bitmap) {
 	XSetStipple (display, gc, current_stipple->x_pixmap);
-#ifdef wx_motif
-	if (canvas && canvas->is_retained)
-	  XSetStipple (display, gcBacking, current_stipple->x_pixmap);
-#endif
       } else {
 	XSetTile(display, gc, current_stipple->x_pixmap);
-#ifdef wx_motif
-	if (canvas && canvas->is_retained)
-	  XSetTile(display, gcBacking, current_stipple->x_pixmap);
-#endif
       }
     }
 
@@ -1778,10 +1469,6 @@ void wxCanvasDC:: SetPen (wxPen * pen)
       else
 	fill_style = FillSolid;
       XSetFillStyle (display, gc, fill_style);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XSetFillStyle (display, gcBacking, fill_style);
-#endif
     }
 
   // must test current_logical_function, because it involves background!
@@ -1846,18 +1533,10 @@ void wxCanvasDC:: SetPen (wxPen * pen)
 	      XGCValues values;
 	      XGetGCValues (display, gc, GCBackground, &values);
 	      XSetForeground (display, gc, pixel ^ values.background);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetForeground (display, gcBacking, pixel ^ values.background);
-#endif
 	    }
 	  else
 	    {
 	      XSetForeground (display, gc, pixel);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetForeground (display, gcBacking, pixel);
-#endif
 	    }
 	}
     }
@@ -1919,32 +1598,16 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
 	case wxHORIZONTAL_HATCH:
 	case wxVERTICAL_HATCH:
 	  XSetFillStyle (display, gc, FillStippled);
-#ifdef wx_motif
-	  if (canvas && canvas->is_retained)
-	    XSetFillStyle (display, gcBacking, FillStippled);
-#endif
 	  break;
 	case wxSTIPPLE:
 	  XSetFillStyle (display, gc, is_bitmap ? FillStippled : FillTiled);
-#ifdef wx_motif
-	  if (canvas && canvas->is_retained)
-	    XSetFillStyle (display, gcBacking, is_bitmap ? FillStippled : FillTiled);
-#endif
 	  break;
 	case wxOPAQUE_STIPPLE:
 	  XSetFillStyle (display, gc, is_bitmap ? FillOpaqueStippled : FillTiled);
-#ifdef wx_motif
-	  if (canvas && canvas->is_retained)
-	    XSetFillStyle (display, gcBacking, is_bitmap ? FillOpaqueStippled : FillTiled);
-#endif
 	  break;
 	case wxSOLID:
 	default:
 	  XSetFillStyle (display, gc, FillSolid);
-#ifdef wx_motif
-	  if (canvas && canvas->is_retained)
-	    XSetFillStyle (display, gcBacking, FillSolid);
-#endif
 	}
     }
 
@@ -2001,10 +1664,6 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
 	  break;
 	}
       XSetStipple (display, gc, my_stipple);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XSetStipple (display, gcBacking, my_stipple);
-#endif
     }
   // X can forget the stipple value when resizing a window (apparently)
   // so always set the stipple.
@@ -2012,16 +1671,8 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
     {
       if (is_bitmap) {
 	XSetStipple (display, gc, current_stipple->x_pixmap);
-#ifdef wx_motif
-	if (canvas && canvas->is_retained)
-	  XSetStipple (display, gcBacking, current_stipple->x_pixmap);
-#endif
       } else {
 	XSetTile(display, gc, current_stipple->x_pixmap);
-#ifdef wx_motif
-	if (canvas && canvas->is_retained)
-	  XSetTile(display, gcBacking, current_stipple->x_pixmap);
-#endif
       }
     }
 
@@ -2096,18 +1747,10 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
 	      XGCValues values;
 	      XGetGCValues (display, gc, GCBackground, &values);
 	      XSetForeground (display, gc, pixel ^ values.background);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetForeground (display, gcBacking, pixel ^ values.background);
-#endif
 	    }
 	  else
 	    {
 	      XSetForeground (display, gc, pixel);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetForeground (display, gcBacking, pixel);
-#endif
 	    }
 	}
     }
@@ -2248,21 +1891,12 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
 	  if (pixel > -1)
 	    {
 	      XSetForeground (display, gc, pixel);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetForeground (display, gcBacking, pixel);
-#endif
 	    }
 	}
       else
 	current_text_background.pixel = old_pen_colour.pixel;
 
       XFillRectangle (display, pixmap, gc, XLOG2DEV (x), YLOG2DEV (y), cx, cy);
-#ifdef wx_motif
-      if (canvas && canvas->is_retained)
-	XFillRectangle (display, canvas->backingPixmap, gcBacking,
-			XLOG2DEV_2 (x), YLOG2DEV_2 (y), cx, cy);
-#endif
     }
 
   // Now set the text foreground and draw the text
@@ -2331,10 +1965,6 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
 	  if (pixel > -1)
 	    {
 	      XSetForeground (display, gc, pixel);
-#ifdef wx_motif
-	      if (canvas && canvas->is_retained)
-		XSetForeground (display, gcBacking, pixel);
-#endif
 	    }
 	}
       else
@@ -2350,18 +1980,6 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
   else
     XDrawString(display, pixmap, gc, XLOG2DEV (x), YLOG2DEV (y) + ascent, 
 		text, slen);
-#ifdef wx_motif
-  if (canvas && canvas->is_retained) {
-    if (use16Bit)
-      XDrawString16(display, canvas->backingPixmap, gcBacking,
-		    XLOG2DEV_2 (x), YLOG2DEV_2 (y) + ascent, 
-		    (XChar2b *)text, slen);
-    else
-      XDrawString(display, canvas->backingPixmap, gcBacking,
-		  XLOG2DEV_2 (x), YLOG2DEV_2 (y) + ascent, text, slen);      
-  }
-
-#endif
   float w, h;
   GetTextExtent (text, &w, &h);
   CalcBoundingBox (x + w, y + h);
@@ -2408,29 +2026,11 @@ void wxCanvasDC:: SetBackground (wxBrush * brush)
 	  current_background_brush->GetColour().pixel = pixel;
 	}
 
-
-#ifdef wx_xview
-      // Finally, set the background to the required colour
-      Xv_Window pw = canvas_paint_window ((Canvas) (canvas->handle));
-
-      Window win = (Window) xv_get (pw, XV_XID);
-      XSetWindowBackground (display, win, pixel);
-      // Necessary for ::DrawIcon, which use fg/bg pixel or the GC.
-      // And Blit,... (Any fct that use XCopyPlane, in fact.)
-      XSetBackground (display, gc, pixel);
-#endif
-#ifdef wx_motif
       XSetWindowBackground (display, pixmap, pixel);
-/*
-      if (canvas && canvas->is_retained)
-	XSetWindowBackground (display, canvas->backingPixmap, pixel);
-*/
+
       // Necessary for ::DrawIcon, which use fg/bg pixel or the GC.
       // And Blit,... (Any fct that use XCopyPlane, in fact.)
       XSetBackground (display, gc, pixel);
-      if (canvas && canvas->is_retained)
-	XSetBackground (display, gcBacking, pixel);
-#endif
     }
 }
 
@@ -2496,10 +2096,6 @@ void wxCanvasDC:: SetLogicalFunction (int function)
     }
 
   XSetFunction(display, gc, x_function);
-#ifdef wx_motif
-  if (canvas && canvas->is_retained)
-    XSetFunction(display, gcBacking, x_function);
-#endif
 
   if ((current_logical_function == wxXOR) != (function == wxXOR))
     /* MATTHEW: [9] Need to redo pen simply */
@@ -2508,7 +2104,7 @@ void wxCanvasDC:: SetLogicalFunction (int function)
   current_logical_function = function;
 }
 
-Bool wxCanvasDC:: StartDoc (char *message)
+Bool wxCanvasDC:: StartDoc (char *)
 {
   return TRUE;
 }
@@ -2794,21 +2390,9 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
       if (current_pen && autoSetting)
 	SetPen(current_pen);
 
-#ifdef wx_motif
       if (display != source->display)
       {
 	XImage *cache = NULL;
-
-	if (canvas && canvas->is_retained)
-	  XCopyRemote(source->display, display, 
-		      source->pixmap, canvas->backingPixmap, 
-		      gcBacking,
-		      source->LogicalToDeviceX (xsrc), 
-		      source->LogicalToDeviceY (ysrc),
-		      source->LogicalToDeviceXRel(width), 
-		      source->LogicalToDeviceYRel(height),
-		      XLOG2DEV_2 (xdest), YLOG2DEV_2 (ydest),
-		      TRUE, &cache);
 
 	XCopyRemote(source->display, display, source->pixmap, pixmap, gc,
 		    source->LogicalToDeviceX (xsrc), 
@@ -2818,33 +2402,15 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
 		    XLOG2DEV (xdest), YLOG2DEV (ydest), 
 		    FALSE, &cache);
       } else {
-      if (canvas && canvas->is_retained)
-	{
-	  XCopyArea (display, source->pixmap, canvas->backingPixmap, gcBacking,
-		     source->LogicalToDeviceX (xsrc), 
-		     source->LogicalToDeviceY (ysrc),
-		     source->LogicalToDeviceXRel(width), 
-		     source->LogicalToDeviceYRel(height),
-		     XLOG2DEV_2 (xdest), YLOG2DEV_2 (ydest));
-/*
-   XCopyPlane(display, source->pixmap, canvas->backingPixmap, gcBacking,
-   (int)source->LogicalToDeviceX(xsrc), (int)source->LogicalToDeviceY(ysrc), (int)width, (int)height,
-   (int)XLOG2DEV_2(xdest), (int)YLOG2DEV_2(ydest), 1);
- */
-	}
-#endif
-      // Check if we're copying from a mono bitmap
-      if (source->selected_pixmap && (source->selected_pixmap->GetDepth () == 1))
-	{
+	// Check if we're copying from a mono bitmap
+	if (source->selected_pixmap && (source->selected_pixmap->GetDepth () == 1)) {
 	  XCopyPlane (display, source->pixmap, pixmap, gc,
 		      source->LogicalToDeviceX (xsrc), 
 		      source->LogicalToDeviceY (ysrc), 
 		      source->LogicalToDeviceXRel(width), 
 		      source->LogicalToDeviceYRel(height),
 		      XLOG2DEV (xdest), YLOG2DEV (ydest), 1);
-	}
-      else
-	{
+	} else {
 	  XCopyArea (display, source->pixmap, pixmap, gc,
 		     source->LogicalToDeviceX (xsrc), 
 		     source->LogicalToDeviceY (ysrc), 
@@ -2853,9 +2419,8 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
 		     XLOG2DEV (xdest), YLOG2DEV (ydest));
 
 	}
-#ifdef wx_motif
-    } /* Remote/local display */
-#endif
+      } /* Remote/local display */
+      
       CalcBoundingBox (xdest, ydest);
       CalcBoundingBox (xdest + width, ydest + height);
     
@@ -2867,7 +2432,9 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
 
   SetBackground(saveBrush);
   if (resetPen) {
+    current_pen->Lock(-1);
     current_pen = savePen;
+    current_pen->Lock(1);
     autoSetting = 1;
   }
 
@@ -2943,13 +2510,6 @@ wxMemoryDC::wxMemoryDC (void)
   gc = XCreateGC (display, RootWindow (display, DefaultScreen (display)),
 	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
 		  &gcvalues);
-
-#ifdef wx_motif
-  gcBacking = XCreateGC (display, RootWindow (display,
-					      DefaultScreen (display)),
-	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
-			 &gcvalues);
-#endif
 
   background_pixel = (int) gcvalues.background;
   ok = TRUE;
@@ -3030,13 +2590,6 @@ wxMemoryDC:: wxMemoryDC (wxCanvasDC * old_dc):wxbMemoryDC (old_dc)
   gc = XCreateGC (display, RootWindow (display, DefaultScreen (display)),
 	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
 		  &gcvalues);
-
-#ifdef wx_motif
-  gcBacking = XCreateGC (display, RootWindow (display,
-					      DefaultScreen (display)),
-	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
-			 &gcvalues);
-#endif
 
   background_pixel = (int) gcvalues.background;
   ok = TRUE;

@@ -241,10 +241,21 @@
 
   (define bb 0) ;                         /* bit buffer */
   (define bk 0) ;                    /* bits in bit buffer */
+  (define peeked 0)
+  (define PEEK-LIMIT 32) ; assume that lookahead never needs more than 32 bytes
   
   (define (NEEDBITS n)
     (when (< bk n)
-      (set! bb (+ bb (arithmetic-shift (read-byte input-port) bk)))
+      (let ([v (if (peeked . < . PEEK-LIMIT)
+		   (peek-byte input-port peeked)
+		   (begin
+		     (read-byte input-port)
+		     (set! peeked (sub1 peeked))
+		     (peek-byte input-port peeked)))])
+	(unless (eof-object? v)
+	  (begin
+	    (set! bb (+ bb (arithmetic-shift v bk)))
+	    (set! peeked (add1 peeked)))))
       (set! bk (+ bk 8))
       (NEEDBITS n)))
   (define (DUMPBITS n)
@@ -798,10 +809,14 @@
 		; * can discard unused bits in the last meaningful byte.
 		; */
 		(let loop ()
-		  (when (> bk 8)
+		  (when (>= bk 8)
 		    (set! bk (- bk 8))
-		    ; do something: inptr--
+		    (set! peeked (sub1 peeked))
 		    (loop)))
+		(let loop ([peeked peeked])
+		  (when (positive? peeked)
+		    (read-byte input-port)
+		    (loop (sub1 peeked))))
 		(flush-output wp)
 		#t = (void)))
 	  #f))))

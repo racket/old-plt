@@ -846,7 +846,7 @@ zero_p (int argc, Scheme_Object *argv[])
 #endif
     return SCHEME_DBL_VAL(o) ? scheme_false : scheme_true;
   }
-#if INEXACT_ZERO_COMPLEX_PART_IMPLIES_REAL
+
   if (t == scheme_complex_type) {
     Scheme_Complex *c = (Scheme_Complex *)o;
     Scheme_Object *a[1];
@@ -856,7 +856,7 @@ zero_p (int argc, Scheme_Object *argv[])
       return zero_p(1, a);
     }
   }
-#endif
+
   if ((t >= scheme_bignum_type) && (t <= scheme_complex_type))
     return scheme_false;
  
@@ -2321,19 +2321,7 @@ static Scheme_Object *imag_part (int argc, Scheme_Object *argv[])
 
   if (SCHEME_COMPLEXP(o))
     return scheme_complex_imaginary_part(o);
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (SCHEME_FLTP(o)) {
-    if (MZ_IS_NAN(SCHEME_FLT_VAL(o)))
-      return single_nan_object;
-    return zerof;
-  }
-#endif
-  if (SCHEME_DBLP(o)) {
-    if (MZ_IS_NAN(SCHEME_DBL_VAL(o)))
-      return nan_object;
-    return zerod;
-  }
-   
+
   return zeroi;
 }
 

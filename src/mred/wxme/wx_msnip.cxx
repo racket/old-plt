@@ -307,6 +307,7 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
   myAdmin->SaveState(&save, dc, x, y);
   
   if (me) {
+    w = h = 0.0;
     me->GetExtent(&w, &h);
     if (w) --w; /* It looks better to subtract 1 */
   } else 
@@ -464,6 +465,7 @@ void wxMediaSnip::ShowBorder(Bool show)
 
       dc = (*admin_ptr)->GetDC();
       if (dc) {
+	w = h = 0.0;
 	GetExtent(dc, 0, 0, &w, &h);
 	(*admin_ptr)->NeedsUpdate(this, leftInset, topInset, 
 				  w + rightMargin - rightInset, 
@@ -510,6 +512,7 @@ void wxMediaSnip::SetInset(int lm, int tm, int rm, int bm)
 
     dc = (*admin_ptr)->GetDC();
     if (dc) {
+      w = h = 0.0;
       GetExtent(dc, 0, 0, &w, &h);
       (*admin_ptr)->NeedsUpdate(this, 0, 0, 
 			 w + rightMargin + leftMargin,

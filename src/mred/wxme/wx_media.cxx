@@ -3120,7 +3120,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 	  }
 	}
 	
-	float v;
+	float v = 0.0;
 	snip->GetExtent(dc, horiz, topy, &v);
 	horiz += v;
       } else
@@ -3151,6 +3151,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 	return;
       }
     }
+    h = descent = space = 0.0;
     snip->GetExtent(dc, horiz, topy, NULL, &h, &descent, &space);
     align = snip->style->GetAlignment();
     if (align == wxALIGN_BOTTOM)

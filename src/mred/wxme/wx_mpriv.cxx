@@ -453,6 +453,7 @@ long wxMediaEdit::_FindPositionInLine(Bool internal, long i, float x,
     while(1) {
       snip = snip ? snip->next : line->snip;
 
+      w = 0.0;
       snip->GetExtent(dc, X, topy, &w);
 
       if (x > w && snip->next) {
@@ -1245,6 +1246,7 @@ Bool wxMediaEdit::GetSnipLocation(wxSnip *thesnip, float *x, float *y, Bool bott
       writeLocked = TRUE;
       flowLocked = TRUE;
       
+      w = h = 0.0;
       thesnip->GetExtent(dc, *x, *y, &w, &h);
 
       writeLocked = wl;
@@ -1423,6 +1425,7 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
       hadNewline = FALSE;
     }
 
+    w = 0.0;
     snip->GetExtent(dc, totalWidth, Y, &w);
     totalWidth += w;
     if (totalWidth > maxw) {
@@ -1895,6 +1898,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
       snip->style->SwitchTo(dc, oldStyle);
       oldStyle = snip->style;
 
+      w = h = descent = space = 0.0;
       snip->GetExtent(dc, x, ycounter, &w, &h, &descent, &space);
       
       align = snip->style->GetAlignment();

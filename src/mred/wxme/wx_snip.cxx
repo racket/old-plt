@@ -294,7 +294,7 @@ float wxSnip::PartialOffset(wxDC *dc,
   if (!offset)
     return 0.0;
 
-  float w;
+  float w = 0.0;
   GetExtent(dc, x, y, &w);
   return w;
 }
@@ -982,6 +982,7 @@ float wxTabSnip::PartialOffset(wxDC *dc, float x, float y, long offset)
   if (!offset)
     return 0;
   else {
+    w = 0.0;
     GetExtent(dc, x, y, &w);
     return w;
   }

@@ -968,8 +968,8 @@ Bool wxMediaLine::UpdateGraphics(wxMediaEdit *media, wxDC *dc)
 
     next = lastSnip->next;
     for (asnip = snip; PTRNE(asnip, next); asnip = asnip->next) {
-      asnip->GetExtent(dc, totalwidth, y, &w, &h, 
-		       &descent, &space);
+      w = h = descent = space = 0.0;
+      asnip->GetExtent(dc, totalwidth, y, &w, &h, &descent, &space);
 
       int align = asnip->style->GetAlignment();
 	  

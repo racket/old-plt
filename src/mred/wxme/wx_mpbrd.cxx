@@ -2817,6 +2817,7 @@ Bool wxMediaPasteboard::HasPrintPage(wxDC *dc, int p)
   W -= 2 * hm;
   H -= 2 * vm;
 
+  w = h = 0.0;
   GetExtent(&w, &h);
 
   hcount = (long)(w / W);
@@ -2846,6 +2847,7 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
   W -= 2 * hm;
   H -= 2 * vm;
 
+  w = h = 0.0;
   GetExtent(&w, &h);
 
   hcount = (long)(w / W);
@@ -2894,6 +2896,7 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
 
 void wxSnipLocation::Resize(wxDC *dc)
 {
+  w = h = 0.0;
   snip->GetExtent(dc, x, y, &w, &h);
   r = x + w;
   b = y + h;

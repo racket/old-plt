@@ -819,7 +819,9 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
 	y = sy;
       }
       
+      w = h = 0.0;
       GetView(NULL, NULL, &w, &h);
+      totalWidth = totalHeight = 0.0;
       media->GetExtent(&totalWidth, &totalHeight);
 
       if (!h || (!scrollToLast && (h >= totalHeight))) {

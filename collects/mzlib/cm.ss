@@ -75,7 +75,7 @@
         (cond
          [(and (file-exists? zo-name) (trust-existing-zos)) (touch zo-name)]
          [else
-          (with-handlers ([not-break-exn? void]) (delete-file zo-name))
+          (when (file-exists? zo-name) (delete-file zo-name))
           (with-handlers ([exn:get-module-code?
                            (lambda (ex)
                              (compilation-failure

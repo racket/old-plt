@@ -990,6 +990,8 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   ok = !!ms_cursor;
 }
 
+static HCURSOR blank_cursor;
+
 // Cursors by stock number
 wxCursor::wxCursor(int cursor_type)
 {
@@ -1108,7 +1110,22 @@ wxCursor::wxCursor(int cursor_type)
     }
   case wxCURSOR_BLANK:
     {
-      ms_cursor = LoadCursor(wxhInstance, "wxCURSOR_BLANK");
+      if (!blank_cursor) {
+	void *zero, *one;
+	int w, h, s;
+	w = GetSystemMetrics(SM_CXCURSOR);
+	h = GetSystemMetrics(SM_CYCURSOR);
+	s = w * h;
+	zero = new WXGC_ATOMIC char[s];
+	one = new WXGC_ATOMIC char[s];
+	memset(zero, 0, s);
+	memset(one, 255, s);
+	blank_cursor = CreateCursor(wxhInstance, 
+				    0, 0,
+				    w, h,
+				    one, zero);
+      }
+      ms_cursor = blank_cursor;
       break;
     }
   default:

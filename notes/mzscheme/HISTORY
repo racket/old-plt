@@ -1,4 +1,10 @@
 
+Version 299.2
+Added thread cells
+0.0 and -0.0 are now considered the same by eqv?
+Changed \u and #\u to allow only up to 4 digits
+Added \U and #\U to allow up to 8 digits
+
 Version 299.1
 Unicode
 Removed the char-locale... operations

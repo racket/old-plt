@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-code@
-;;  $Id: scanner.ss,v 1.11 1998/11/04 19:52:54 mflatt Exp $
+;;  $Id: scanner.ss,v 1.12 1999/03/12 17:22:30 mflatt Exp $
 ;;
 ;;  Zodiac Scanner  July 96.
 ;;  mwk, plt group, Rice university.
@@ -663,12 +663,12 @@
 		(let-values ([(text  foo) (scan-to-delim  delim?  text  #f)])
 		  (with-handlers
 		      ([(lambda (x) #t)
-			(lambda (x) (z:error "`~a' is not a valid number" text))])
+			(lambda (x) (z:error "`~a' starts out like a number, but isn't one" text))])
 		    (let* ([str  (text->string text)]
 			   [num  (read (open-input-string str))])
 		      (if (number? num)
 			  (z:number  num  start-loc  (prev-loc))
-			  (z:error "`~a' is not a valid number" text))))))]
+			  (z:error "`~a' starts out like a number, but isn't one" text))))))]
 	     
 	     [scan-eof
 	      (lambda () (z:eof (this-loc)))]

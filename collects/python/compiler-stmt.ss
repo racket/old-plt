@@ -2,6 +2,7 @@
   (require (lib "class.ss")
 	   "compiler.ss"
 	   "compiler-expr.ss"
+           "primitives.ss"
            "runtime-context.ss")
 
   (provide (all-defined-except bindings-mixin))
@@ -503,7 +504,7 @@
        (inherit ->orig-so)
        (define/override (to-scheme)
          (->orig-so `(define ,(send name to-scheme)
-                       (lambda ,(send parms to-scheme)
+                       (,(py-so 'py-lambda) ,(send parms to-scheme)
                          ,(send body to-scheme)))))
        
        (super-instantiate ()))))

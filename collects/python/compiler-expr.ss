@@ -287,12 +287,13 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(make-dictionary (list ,@(map (lambda (key-value-pair)
-                                                    (apply (lambda (key value)
-                                                             `(list ,(send key to-scheme)
-                                                                    ,(send value to-scheme)))
-                                                           key-value-pair))
-                                                  key-values)))))
+        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-dictionary%)
+                     (list ,@(map (lambda (key-value-pair)
+                                    (apply (lambda (key value)
+                                             `(list ,(send key to-scheme)
+                                                    ,(send value to-scheme)))
+                                           key-value-pair))
+                                  key-values)))))
       
       (super-instantiate ())))
   

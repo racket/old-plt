@@ -5,7 +5,9 @@
            (lib "class.ss")
 	   (lib "embed.ss" "compiler")
 	   (lib "string-constant.ss" "string-constants")
-           "python.ss")
+           (lib "etc.ss")
+           "python.ss"
+           "primitives.ss")
 
   (provide tool@)
 
@@ -15,6 +17,23 @@
       
       (define (phase1) (void))
       (define (phase2) 
+            (drscheme:get/extend:extend-interactions-text
+                  (lambda (super%)
+                    (class super%
+                      (rename [super-display-results display-results])
+                      
+                      (define/override display-results
+                        (opt-lambda (results)
+                          (super-display-results (map (lambda (result)
+                                                        (if (python-object? result)
+                                                            (py-gbov (py-repr result))
+                                                            result))
+                                                      results))))
+                      
+                      (super-instantiate ()))))
+;                      ))); (if (python-object? to-display)
+;                                                  (py-gbov to-display)
+ ;                                                 to-display))))))
         (drscheme:language-configuration:add-language
          (make-object (override-mrflow-methods
                        ((drscheme:language:get-default-mixin) 
@@ -44,6 +63,7 @@
                                         (drscheme:language:text/pos-start input)
                                         (drscheme:language:text/pos-end input)))
                                  text)))])
+
               (let ([ast-list (parse-python-port port name)])
                 (lambda ()
                   (if (null? ast-list)
@@ -59,6 +79,9 @@
           (define/public (get-teachpack-names) null)
           (define/public (marshall-settings x) x)
           (define/public (on-execute settings run-in-user-thread)
+
+
+
             (dynamic-require '(lib "base.ss" "python") #f)
             (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
                   [n (current-namespace)])
@@ -68,6 +91,8 @@
 		  (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
 		 (current-eval 
 		  (drscheme:debug:make-debug-eval-handler (current-eval)))
+                 
+                 
                  (with-handlers ([void (lambda (x)
                                          (printf "~a~n"
                                                  (exn-message x)))])

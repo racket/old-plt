@@ -2,7 +2,7 @@
   (require (lib "list.ss")
            (lib "etc.ss"))
   (provide (all-defined))
-
+  
   ;; python-object is a:
   ;; (make-python-object (listof python-class) (listof (symbol sexp)))
   
@@ -10,29 +10,47 @@
   ;; (make-python-class (listof python-class) (listof (symbol sexp)) symbol)
   
   (define-struct python-object (super-classes members) (make-inspector))
-
+  
   (define-struct (python-class python-object) (name) (make-inspector))
-
+  
   (define-struct (python-instance python-object) () (make-inspector))
   
   ;; python-repr: python-object -> py-string%
   (define (py-repr x)
-    (py-create py-string%
+    (py-create py-string% (py-repr-nowrap x)))
+  
+  ;; py-repr-nowrap: python-object -> string
+  (define (py-repr-nowrap x)
     (cond
       [(py-is-a? x py-string%) (string-append "'" (python-get-member x '_value) "'")]
       [(py-is-a? x py-number%) (number->string (python-get-member x '_value))]
       [(py-is-a? x py-list%) (letrec ([list-items-repr
-                           (lambda (l)
-                             (cond
-                               [(empty? l) ""]
-                               [(empty? (rest l)) (py-repr (first l))]
-                               [else (string-append (py-repr (first l))
-                                                     ", "
-                                                     (list-items-repr (rest l)))]))])
-                   (string-append "["
-                                  (list-items-repr (python-get-member x '_value))
-                                  "]"))]
-      [else (format "~a" x)])))
+                                       (lambda (l)
+                                         (cond
+                                           [(empty? l) ""]
+                                           [(empty? (rest l)) (py-repr-nowrap (first l))]
+                                           [else (string-append (py-repr-nowrap (first l))
+                                                                ", "
+                                                                (list-items-repr (rest l)))]))])
+                               (string-append "["
+                                              (list-items-repr (python-get-member x '_value))
+                                              "]"))]
+      [(py-is-a? x py-dictionary%)
+       (let ([dict-items-repr
+              (lambda (ht)
+                (foldr (lambda (str1 str2) (if (> (string-length str2) 0)
+                                               (string-append str1 ", " str2)
+                                               str1))
+                       ""
+                       (hash-table-map ht
+                                       (lambda (key value)
+                                         (string-append (py-repr-nowrap key)
+                                                        ": "
+                                                        (py-repr-nowrap value))))))])
+         (string-append "{"
+                        (dict-items-repr (python-get-member x '_value))
+                        "}"))]
+      [else (format "~a" x)]))
   
   (define (assoc-list->hash-table al)
     (let ([hash-table (make-hash-table)])
@@ -40,7 +58,7 @@
                   (hash-table-put! hash-table (car assoc) (cadr assoc)))
                 al)
       hash-table))
-
+  
   (define py-object%
     (make-python-class '()
                        (assoc-list->hash-table `((__repr__ ,py-repr)))
@@ -63,7 +81,7 @@
   (define (py-gbov bo)
     (python-get-member bo '_value false))
   
-
+  
   (define py-procedure%
     (make-python-class (list py-object%)
                        (assoc-list->hash-table
@@ -86,8 +104,8 @@
                           (__sub__ ,(lambda (this rhs)
                                       (py-create py-number% (- (py-gbov this) (py-gbov rhs)))))))
                        'number))
-   
-
+  
+  
   (define py-method%
     (make-python-class (list py-object%)
                        (assoc-list->hash-table
@@ -104,35 +122,45 @@
                           (im_self ,#f))) ; py-object%
                        'method))
   
-
+  
   (define py-string% (make-builtin-class 'string))
   (define py-list% (make-builtin-class 'list))
   (define py-tuple% (make-builtin-class 'tuple))
-  (define py-dict% (make-builtin-class 'dict))
+  
+  (define py-dictionary%
+    (make-python-class (list py-object%)
+                       (assoc-list->hash-table
+                        `((__init__ ,(lambda (this v)
+                                       (python-set-member! this '_value (if (list? v)
+                                                                            (assoc-list->hash-table v)
+                                                                            v))))))
+                       'dict))
   
   (define python-get-member
     (opt-lambda (obj member-name [wrap? #t])
       (if (eq? member-name '__dict__)
-          (python-object-members obj)
-          (let ([member (hash-table-get (python-object-members obj)
-                                        member-name
-                                        (lambda ()
-                                          (let ([super-classes (python-object-super-classes obj)])
-                                            (if (null? super-classes)
-                                                (raise (format "member not found: ~a" member-name))
-                                                (ormap (lambda (super-class)
-                                                         (python-get-member super-class member-name wrap?))
-                                                       super-classes)))))])
-            (if wrap?
-                (if (procedure? member) ;; if this member is a method...
-                    (python-wrap-method member obj)
-                    (if (and (python-object? member)
-                             (py-is-a? member py-method%)) ;; if this was wrapped by a recursive call...
-                        (python-wrap-method (python-unwrap-method member)
-                                            obj)
-                        member))
-                member)))))
-
+          (py-create py-dictionary% (python-object-members obj))
+          (if (eq? member-name '__bases__)
+              (py-create py-tuple% (python-object-super-classes obj))
+              (let ([member (hash-table-get (python-object-members obj)
+                                            member-name
+                                            (lambda ()
+                                              (let ([super-classes (python-object-super-classes obj)])
+                                                (if (null? super-classes)
+                                                    (raise (format "member not found: ~a" member-name))
+                                                    (ormap (lambda (super-class)
+                                                             (python-get-member super-class member-name wrap?))
+                                                           super-classes)))))])
+                (if wrap?
+                    (if (procedure? member) ;; if this member is a method...
+                        (python-wrap-method member obj)
+                        (if (and (python-object? member)
+                                 (py-is-a? member py-method%)) ;; if this was wrapped by a recursive call...
+                            (python-wrap-method (python-unwrap-method member)
+                                                obj)
+                            member))
+                    member))))))
+  
   ;; python-wrap-method: (union procedure py-procedure%) python-object -> python-method%
   (define (python-wrap-method method obj)
     (py-create py-method%
@@ -166,7 +194,7 @@
   ;; get the type of an object
   (define (py-type obj)
     (first (python-object-super-classes obj)))
-
+  
   ;; py-call: callable-python-object arg-list -> ?
   (define (py-call functor arg-list)
     (cond
@@ -200,7 +228,7 @@
                            (py-is-a? super-class class)))
                      super-classes))
           #t #f)))
-
+  
   (define-syntax py-lambda
     (lambda (stx)
       (syntax-case stx ()
@@ -208,7 +236,7 @@
          (let ([args (syntax->list (syntax (arg ...)))]
                [exprs (syntax->list (syntax (expr ...)))])
            #`(py-create py-procedure% (lambda (#,@args)
-                                       #,@exprs)))])))
+                                        #,@exprs)))])))
   
   
   )

@@ -548,14 +548,18 @@
           
           (define/public (syncheck:clear-highlighting)
             (hide-error-report)
-            (send (get-definitions-text) begin-edit-sequence #f)
-            (send (get-definitions-text) syncheck:clear-arrows)
-            (let* ([list (send (get-definitions-text) get-style-list)]
-                   [style (send list find-named-style "Standard")])
-              (when style
-                (send (get-definitions-text) change-style
-                      style 0 (send (get-definitions-text) last-position))))
-            (send (get-definitions-text) end-edit-sequence))
+            (let* ([definitions (get-definitions-text)]
+                   [locked? (send definitions is-locked?)])
+              (send definitions begin-edit-sequence #f)
+              (send definitions lock #f)
+              (send definitions syncheck:clear-arrows)
+              (let* ([list (send definitions get-style-list)]
+                     [style (send list find-named-style "Standard")])
+                (when style
+                  (send definitions change-style
+                        style 0 (send (get-definitions-text) last-position))))
+              (send definitions lock locked?)
+              (send definitions end-edit-sequence)))
           
           (field
            [report-error-parent-panel 'uninitialized-report-error-parent-panel]
@@ -715,74 +719,78 @@
           
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
-            (send (get-definitions-text) begin-edit-sequence #f)
-            (clear-annotations)
-            (send (get-definitions-text) syncheck:init-arrows)            
-            (color-range (get-definitions-text)
-                         0
-                         (send (get-definitions-text) last-position)
-                         base-style-str)
-            (let ([tl-binders null]
-                  [tl-varrefs null]
-                  [tl-requires null]
-                  [tl-require-for-syntaxes null]
-                  [tl-tops null]
-                  [tl-referenced-macros null]
-                  [users-namespace #f]
-                  [err-termination? #f])
-              (send (get-interactions-text)
-                    expand-program
-                    (drscheme:language:make-text/pos (get-definitions-text) 
-                                                     0
-                                                     (send (get-definitions-text)
-                                                           last-position))
-                    (fw:preferences:get
-                     (drscheme:language-configuration:get-settings-preferences-symbol))
-                    (lambda (err? sexp run-in-expansion-thread loop)
-                      (unless users-namespace
-                        (set! users-namespace (run-in-expansion-thread current-namespace)))
-                      (cond
-                        [err?
-                         (begin
-                           (set! err-termination? #t)
-                           (syncheck:clear-highlighting)
-                           (report-error (car sexp) (cdr sexp)))]
-                        [(eof-object? sexp)
-                         (custodian-shutdown-all (run-in-expansion-thread current-custodian))]
-                        [else
-                         (let-values ([(new-binders
-                                        new-varrefs
-                                        new-tops
-                                        new-requires
-                                        new-require-for-syntaxes
-                                        new-referenced-macros
-                                        has-module?)
-                                       (annotate-basic sexp run-in-expansion-thread)])
-                           (if has-module?
-                               (annotate-complete users-namespace
-                                                  new-binders
-                                                  new-varrefs
-                                                  new-tops
-                                                  new-requires
-                                                  new-require-for-syntaxes
-                                                  new-referenced-macros)
-                               (begin
-                                 (set! tl-binders (append new-binders tl-binders))
-                                 (set! tl-varrefs (append new-varrefs tl-varrefs))
-                                 (set! tl-requires (append new-requires tl-requires))
-                                 (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
-                                 (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
-                                 (set! tl-tops (append new-tops tl-tops)))))
-                         (loop)])))
-              (unless err-termination? 
-                (annotate-complete users-namespace
-                                   tl-binders
-                                   tl-varrefs
-                                   tl-tops
-                                   tl-requires
-                                   tl-require-for-syntaxes
-                                   tl-referenced-macros)))
-            (send (get-definitions-text) end-edit-sequence))
+            (let* ([definitions (get-definitions-text)]
+                   [locked? (send definitions is-locked?)])
+              (send definitions begin-edit-sequence #f)
+              (send definitions lock #f)
+              (clear-annotations)
+              (send definitions syncheck:init-arrows)            
+              (color-range definitions
+                           0
+                           (send (get-definitions-text) last-position)
+                           base-style-str)
+              (let ([tl-binders null]
+                    [tl-varrefs null]
+                    [tl-requires null]
+                    [tl-require-for-syntaxes null]
+                    [tl-tops null]
+                    [tl-referenced-macros null]
+                    [users-namespace #f]
+                    [err-termination? #f])
+                (send (get-interactions-text)
+                      expand-program
+                      (drscheme:language:make-text/pos (get-definitions-text) 
+                                                       0
+                                                       (send (get-definitions-text)
+                                                             last-position))
+                      (fw:preferences:get
+                       (drscheme:language-configuration:get-settings-preferences-symbol))
+                      (lambda (err? sexp run-in-expansion-thread loop)
+                        (unless users-namespace
+                          (set! users-namespace (run-in-expansion-thread current-namespace)))
+                        (cond
+                          [err?
+                           (begin
+                             (set! err-termination? #t)
+                             (syncheck:clear-highlighting)
+                             (report-error (car sexp) (cdr sexp)))]
+                          [(eof-object? sexp)
+                           (custodian-shutdown-all (run-in-expansion-thread current-custodian))]
+                          [else
+                           (let-values ([(new-binders
+                                          new-varrefs
+                                          new-tops
+                                          new-requires
+                                          new-require-for-syntaxes
+                                          new-referenced-macros
+                                          has-module?)
+                                         (annotate-basic sexp run-in-expansion-thread)])
+                             (if has-module?
+                                 (annotate-complete users-namespace
+                                                    new-binders
+                                                    new-varrefs
+                                                    new-tops
+                                                    new-requires
+                                                    new-require-for-syntaxes
+                                                    new-referenced-macros)
+                                 (begin
+                                   (set! tl-binders (append new-binders tl-binders))
+                                   (set! tl-varrefs (append new-varrefs tl-varrefs))
+                                   (set! tl-requires (append new-requires tl-requires))
+                                   (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
+                                   (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
+                                   (set! tl-tops (append new-tops tl-tops)))))
+                           (loop)])))
+                (unless err-termination? 
+                  (annotate-complete users-namespace
+                                     tl-binders
+                                     tl-varrefs
+                                     tl-tops
+                                     tl-requires
+                                     tl-require-for-syntaxes
+                                     tl-referenced-macros)))
+              (send definitions lock locked?)
+              (send definitions end-edit-sequence)))
 
           (super-instantiate ())
           

@@ -23,7 +23,7 @@
             (union string? false?)
             (make-mixin-contract frame%))
            ((-> void?)
-            (string . -> . (is-a?/c frame%))))))
+            (string? . -> . (is-a?/c frame%))))))
   
   ;; to serve web connections on a port without TCP/IP.
   ;; rebinds the tcp primitives via the tcp-redirect unit to functions
@@ -32,7 +32,7 @@
     (opt-lambda (configuration
                  [port (configuration-port configuration)]
                  [only-from-host #f]
-                 [hyper-frame-mixin (lambda (x) x)])
+                 [hyper-frame-extension (lambda (x) x)])
       (invoke-unit/sig
        (compound-unit/sig
          (import
@@ -63,10 +63,10 @@
 			     (set! browser-frame #f))
 			   (custodian-shutdown-all browser-and-server-cust))
 			 (lambda (url-str)
-			   (if browser-frame
+                           (if browser-frame
 			       (begin (send browser-frame show #t)
 				      (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
-			       (set! browser-frame (make-object (hyper-frame-mixin hyper-frame%) url-str)))
+			       (set! browser-frame (make-object (hyper-frame-extension hyper-frame%) url-str)))
 			   browser-frame)))
                       TCP BROWSER WEB-SERVER)])
          (export))

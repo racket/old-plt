@@ -567,7 +567,6 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   rn = scheme_make_module_rename(0);
   et_rn = scheme_make_module_rename(1);
 
-  /* scheme_extend_module_rename(rn, mw, scheme_false, scheme_false); */
   menv->rename = rn;
   menv->et_rename = et_rn;
 

@@ -57,7 +57,6 @@ static Scheme_Object *phase_uninterned;
                                          #f => not yet computed
    - A wrap-elem <hash-table> is a module rename set
          the hash table maps renamed syms to modname-srcname pairs,
-         and maps #f to a default module name mapping
          and maps phase_uninterned to phase
    - A wrap-elem (box (cons <num> <env>)) is a phase shift by <num>
          with phase-2 imports acessible via <env>
@@ -463,12 +462,6 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
 	if (rename) {
 	  /* Match: set mresult for the case of no lexical capture: */
 	  mresult = SCHEME_CAR(rename);
-	} else {
-	  rename = scheme_lookup_in_table(ht, (const char *)scheme_false);
-	  if (rename) {
-	    /* Match on default: */
-	    mresult = SCHEME_CAR(rename);
-	  }
 	}
       }
     } else if (SCHEME_BOXP(SCHEME_CAR(wraps)) && home) {
@@ -543,11 +536,6 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 	if (rename) {
 	  /* Match: set result: */
 	  result = SCHEME_CDR(rename);
-	} else {
-	  if (scheme_lookup_in_table(ht, (const char *)scheme_false)) {
-	    /* There's a default module mapping: */
-	    result = SCHEME_STX_VAL(a);
-	  }
 	}
       }
     } else if (SCHEME_BOXP(SCHEME_CAR(wraps))) {

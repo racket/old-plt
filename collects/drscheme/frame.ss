@@ -45,7 +45,7 @@
 
   (define basics-mixin
     (mixin (fw:frame:standard-menus<%>) (basics<%>) args
-      (inherit get-edit-target-object get-menu-bar)
+      (inherit get-edit-target-window get-edit-target-object get-menu-bar)
       (private
 	[get-menu-bindings
 	 (lambda ()
@@ -89,15 +89,20 @@
 	      ht
 	      (lambda (x y) (hash-table-put! res x y)))
 	     res))]
+	[can-show-keybindings?
+	 (lambda ()
+           (let ([edit-object (get-edit-target-object)])
+	     (and edit-object
+		  (is-a? edit-object mred:editor<%>)
+		  (let ([keymap (send edit-object get-keymap)])
+		    (is-a? keymap fw:keymap:aug-keymap<%>)))))]
 
         [show-keybindings
          (lambda ()
-           (let ([edit-object (get-edit-target-object)])
-             (if (and edit-object
-                      (is-a? edit-object mred:editor<%>))
-                 (let ([keymap (send edit-object get-keymap)])
-                   (when (is-a? keymap fw:keymap:aug-keymap<%>)
-                     (let*-values ([(menu-names menu-funs) (get-menu-bindings)])
+             (if (can-show-keybindings?)
+		 (let ([edit-object (get-edit-target-object)])
+		   (let ([keymap (send edit-object get-keymap)])
+		     (let*-values ([(menu-names menu-funs) (get-menu-bindings)])
 		       (let* ([table (send keymap get-map-function-table/ht
 					   (copy-hash-table menu-names))]
 			      [structured-list
@@ -105,7 +110,7 @@
 				(hash-table-map table list)
 				(lambda (x y) (string-ci<=? (cadr x) (cadr y))))])
 			 (show-keybindings-to-user structured-list)))))
-                 (mred:bell))))])
+                 (mred:bell)))])
       
       (override
        [help-menu:before-about
@@ -142,11 +147,21 @@
        [edit-menu:between-find-and-preferences
         (lambda (menu)
           (make-object mred:separator-menu-item% menu)
-          (make-object mred:menu-item% "Keybindings" menu
-		       (lambda x (show-keybindings))
-		       (and (fw:preferences:get 'framework:menu-bindings)
-			    #\h)
-		       "Show the currently active keybindings")
+	  (let ([keybindings-menu-item%
+		 (class mred:menu-item% args
+		   (inherit enable)
+		   (override
+		    [on-demand
+		     (lambda ()
+		       (let ([last-edit-object
+			      (get-edit-target-window)])
+			 (enable (can-show-keybindings?))))])
+		   (sequence (apply super-init args)))])
+	    (make-object keybindings-menu-item% "Keybindings" menu
+			 (lambda x (show-keybindings))
+			 (and (fw:preferences:get 'framework:menu-bindings)
+			      #\h)
+			 "Show the currently active keybindings"))
           (make-object mred:separator-menu-item% menu))])
       
       (sequence 

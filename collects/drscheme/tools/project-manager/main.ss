@@ -118,7 +118,9 @@
       ((inherit get-area-container get-menu-bar)
        (rename [super-make-root-area-container make-root-area-container]
 	       [super-file-menu:between-open-and-revert file-menu:between-open-and-revert]
-	       [super-file-menu:between-new-and-open file-menu:between-new-and-open])
+	       [super-file-menu:between-new-and-open file-menu:between-new-and-open]
+	       [super-on-close on-close]
+	       [super-can-close? can-close?])
        (override file-menu:save file-menu:save-as
 		 edit-menu:between-select-all-and-find
 		 file-menu:between-print-and-close
@@ -138,7 +140,8 @@
 		(when (and (is-a? frame project-aware-frame<%>)
 			   (eq? this (send frame project:get-project-window)))
 		  (send frame project:set-project-window #f))))
-        (send rep shutdown))
+        (send rep shutdown)
+	(super-on-close))
       
       (define (has-file? file)
         (let ([n (file:normalize-path file)])
@@ -171,17 +174,18 @@
 		(semaphore-post sema)))))))
 
       (define (can-close?)
-	(if (is-changed?)
-	    (case (gui-utils:unsaved-warning
-		   (if (string? filename)
-		       filename
-		       "Untitled")
-		   "Close"
-		   #t)
-	      [(continue) #t]
-	      [(save) (save)]
-	      [(cancel) #f])
-	    #t))
+	(and (super-can-close?)
+	     (if (is-changed?)
+		 (case (gui-utils:unsaved-warning
+			(if (string? filename)
+			    filename
+			    "Untitled")
+			"Close"
+			#t)
+		   [(continue) #t]
+		   [(save) (save)]
+		   [(cancel) #f])
+		 #t)))
 
       (define (save)
 	(if filename

@@ -25,30 +25,32 @@
         (else (void)))))
   
   (let ((path (build-path (get-path (current-library-collection-paths)) "profj" "libs" "java" "lang")))
-    (unless (directory-exists? (build-path path "compiled"))
-      (make-directory (build-path path "compiled")))
-    (move-file-in path "Object.jinfo")
-    (move-file-in path "String.jinfo")
-    (move-file-in path "Throwable.jinfo")
-    (for-each (lambda (file)
-                (let ((fp (build-path path "compiled" file)))
-                  (when (file-exists? fp)
-                    (when (< (file-or-directory-modify-seconds fp) 
-                             (file-or-directory-modify-seconds (build-path path "compiled" "Object.jinfo")))
-                      (with-handlers
-                          ((exn:i/o:filesystem? 
-                            (lambda (exn)
-                              (printf "Warning: ProfessorJ needs to be able to modify files in ~a in order to run correctly"
-                                      (build-path path "compiled")))))
-                        (delete-file (build-path path "compiled" file)))))))
-              (filter (lambda (file)
-                        (and
-                         (equal? "jinfo" (filename-extension file))
-                         (not (equal? file "Object.jinfo"))
-                         (not (equal? file "String.jinfo"))
-                         (not (equal? file "Throwable.jinfo"))))
-                      (directory-list (build-path path "compiled"))))
-    )
+    (with-handlers
+        ((exn:i/o:filesystem? 
+          (lambda (exn)
+            (fprintf (current-error-port) 
+                     "Warning: ProfessorJ needs to be able to modify files in ~a in order to run correctly"
+                     (build-path path)))))
+
+      (unless (directory-exists? (build-path path "compiled"))
+        (make-directory (build-path path "compiled")))
+      (move-file-in path "Object.jinfo")
+      (move-file-in path "String.jinfo")
+      (move-file-in path "Throwable.jinfo")
+      (for-each (lambda (file)
+                  (let ((fp (build-path path "compiled" file)))
+                    (when (file-exists? fp)
+                      (when (< (file-or-directory-modify-seconds fp) 
+                               (file-or-directory-modify-seconds (build-path path "compiled" "Object.jinfo")))
+                        (delete-file (build-path path "compiled" file))))))
+                (filter (lambda (file)
+                          (and
+                           (equal? "jinfo" (filename-extension file))
+                           (not (equal? file "Object.jinfo"))
+                           (not (equal? file "String.jinfo"))
+                           (not (equal? file "Throwable.jinfo"))))
+                        (directory-list (build-path path "compiled"))))
+      ))
   
   ;flatten : list -> list
   (define (flatten l)

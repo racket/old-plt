@@ -1142,7 +1142,8 @@ substitutability is checked properly.
 
   (define-struct class (name
 			pos supers     ; pos is subclass depth, supers is vector
-			self-interface     ; self interface
+			self-interface ; self interface
+			insp-mk        ; dummy struct maker to control inspection access
 
 			method-width   ; total number of methods
 			method-ht      ; maps public names to vector positions
@@ -1153,7 +1154,7 @@ substitutability is checked properly.
                                        ;         'final => final
 
 			field-width    ; total number of fields
-			field-ht       ; maps public field names to (cons accessor mutator)
+			field-ht       ; maps public field names to (cons class pos)
 			field-ids      ; list of public field names
 
 			struct:object  ; structure type for instances
@@ -1364,6 +1365,8 @@ substitutability is checked properly.
 				  (add1 (class-pos super))
 				  (list->vector (append (vector->list (class-supers super)) (list #f)))
 				  i
+				  (let-values ([(struct: make- ? -ref -set) (make-struct-type 'insp #f 0 0)])
+				    make-)
 				  method-width method-ht method-names
 				  methods meth-flags
 				  field-width field-ht field-names
@@ -1421,8 +1424,9 @@ substitutability is checked properly.
 		(set-class-struct:object! c struct:object)
 		(set-class-object?! c object?)
 		(set-class-make-object! c tagged-object-make)
-		(unless (null? public-field-names)
-		  ;; We need these only if there are new public fields
+		(unless (zero? num-fields)
+		  ;; We need these only if there are fields, used for for public-field
+		  ;; access or for inspection:
 		  (set-class-field-ref! c object-field-ref)
 		  (set-class-field-set!! c object-field-set!))
 
@@ -1618,6 +1622,7 @@ substitutability is checked properly.
 		   'object%
 		   0 (vector #f) 
 		   object<%>
+		   void ; never inspectable
 
 		   0 (make-hash-table) null
 		   (vector) (vector)
@@ -2140,19 +2145,14 @@ substitutability is checked properly.
       (raise-type-error 'class->interface "class" c))
     (class-self-interface (unsneak-class c)))
   
+  (define (interned? sym)
+    (eq? sym (string->symbol (symbol->string sym))))
+
   (define (interface->method-names i)
     (unless (interface? i)
       (raise-type-error 'interface->method-names "interface" i))
     ;; copy list, and also filter private (interned) methods:
-    (let loop ([l (interface-public-ids i)])
-      (cond
-       [(null? l) null]
-       [(eq? (car l) (string->symbol (symbol->string (car l)))) 
-	;; interned
-	(cons (car l) (loop (cdr l)))]
-       [else 
-	;; uninterned
-	(loop (cdr l))])))
+    (apply list-immutable (filter interned? (interface-public-ids i))))
 
   ;; unsneak-class : class -> class
   ;; returns the class that the sneaky
@@ -2171,7 +2171,62 @@ substitutability is checked properly.
     (let ([v (class-supers c)]) 
       (and ((vector-length v) . > . 1)
            (vector-ref v (- (vector-length v) 2)))))
-  
+
+  (define (object-info o)
+    (unless (object? o)
+      (raise-type-error 'object-info "object" o))
+    (let loop ([c (object-ref o)][skipped? #f])
+      (if (struct? ((class-insp-mk c)))
+	  ;; current inspector can inspect this object
+	  (values c skipped?)
+	  (if (zero? (class-pos c))
+	      (values #f #t)
+	      (loop (vector-ref (class-supers c) (sub1 (class-pos c))) #t)))))
+
+  (define (class-info c)
+    (unless (class? c)
+      (raise-type-error 'class-info "class" c))
+    (if (struct? ((class-insp-mk c)))
+	(let ([super (vector-ref (class-supers c) (sub1 (class-pos c)))])
+	  (let loop ([next super][skipped? #f])
+	    (if (or (not next)
+		    (struct? ((class-insp-mk next))))
+		(values (class-name c)
+			(- (class-field-width c) (class-field-width super))
+			(apply list-immutable (filter interned? (class-field-ids c)))
+			(class-field-ref c)
+			(class-field-set! c)
+			next
+			skipped?)
+		(if (zero? (class-pos next))
+		    (loop #f #t)
+		    (loop (vector-ref (class-supers next) (sub1 (class-pos next))) #t)))))
+	(raise-mismatch-error 'class-info "current inspector cannot inspect class: " c)))
+
+  (define object->vector
+    (opt-lambda (o [opaque-v '...])
+      (unless (object? o)
+	(raise-type-error 'object->vector "object" o))
+      (list->vector
+       (cons
+	(string->symbol (format "object:~a" (class-name (object-ref o))))
+	(reverse
+	 (let-values ([(c skipped?) (object-info o)])
+	   (let loop ([c c][skipped? skipped?])
+	     (cond
+	      [(not c) (if skipped? (list opaque-v) null)]
+	      [else (let-values ([(name num-fields field-ids field-ref field-set next next-skipped?)
+				  (class-info c)])
+		      (let ([rest (loop next next-skipped?)]
+			    [here (let loop ([n num-fields])
+				    (if (zero? n)
+					null
+					(cons (field-ref o (sub1 n))
+					      (loop (sub1 n)))))])
+			(append (if skipped? (list opaque-v) null)
+				here
+				rest)))]))))))))
+    
   ;;--------------------------------------------------------------------
   ;;  primitive classes
   ;;--------------------------------------------------------------------
@@ -2296,8 +2351,8 @@ substitutability is checked properly.
 	   define-local-member-name
 	   (rename generic/form generic) (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
-	   object-interface
-	   method-in-interface? interface->method-names class->interface
+	   object-interface object-info object->vector
+	   method-in-interface? interface->method-names class->interface class-info
 	   exn:object? struct:exn:object make-exn:object
 	   make-primitive-class))
 

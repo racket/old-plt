@@ -2383,7 +2383,16 @@
 	 (syntax (let () expr1 expr ...))]
 	[(_ ([param val] ...) expr1 expr ...)
 	 (with-syntax ([(pz ...) (generate-temporaries (syntax (param ...)))]
-		       [(save ...) (generate-temporaries (syntax (param ...)))])
+		       [(save ...) (generate-temporaries (syntax (param ...)))]
+		       [exprs (let ([name (syntax-local-name)])
+				(if name
+				    ;; Put inferred name on the last expr
+				    (let ([l (syntax->list (syntax (expr1 expr ...)))])
+				      (let loop ([l l])
+					(if (null? (cdr l))
+					    (list (syntax-property (car l) 'inferred-name name))
+					    (cons (car l) (loop (cdr l))))))
+				    (syntax (expr1 expr ...))))])
 	   (syntax/loc
 	    stx
 	    (let ([pz (check-parameter-procedure param)] ...
@@ -2397,7 +2406,7 @@
 		       ...)])
 		(dynamic-wind
 		    swap
-		    (lambda () expr1 expr ...)
+		    (lambda () . exprs)
 		    swap)))))])))
 
   (define-syntax with-handlers

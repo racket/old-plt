@@ -13,7 +13,7 @@
 	   define-local-member-name
 	   generic make-generic send-generic
 	   is-a? subclass? implementation? interface-extension?
-	   object-interface
-	   method-in-interface? interface->method-names class->interface
+	   object-interface object-info object->vector
+	   method-in-interface? interface->method-names class->interface class-info
 	   exn:object? struct:exn:object make-exn:object
 	   make-primitive-class))

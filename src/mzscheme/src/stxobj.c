@@ -81,7 +81,10 @@ static Module_Renames *krn;
 
 /* Wraps:
 
-   A wrap is a list of wrap-elems.
+   A wrap is a list of wrap-elems and wrap-chunks. A wrap-chunk is a
+   "vector" (a scheme_wrap_chunk_type) of wrap-elems.
+
+   Each wrap-elem has one of several shapes:
 
    - A wrap-elem <num> is a mark
 
@@ -105,9 +108,13 @@ static Module_Renames *krn;
          result of an expansion so that top-level marks do not
          break re-expansions
 
-  The lazy_prefix field of a syntax object keeps track of how many of the
-  first wraps need to be propagated to sub-syntax.
-*/
+  The lazy_prefix field of a syntax object keeps track of how many of
+  the first wraps (items and chunks inthe list) need to be propagated
+  to sub-syntax.  */
+
+/*========================================================================*/
+/*                            wrap chunks                                 */
+/*========================================================================*/
 
 typedef struct {
   Scheme_Type type;
@@ -117,7 +124,7 @@ typedef struct {
 
 #define MALLOC_WRAP_CHUNK(n) (Wrap_Chunk *)scheme_malloc_tagged(sizeof(Wrap_Chunk) + ((n - 1) * sizeof(Scheme_Object *)))
 
-#define scheme_wrap_chunk_type scheme_reserved_1_type
+/* Macros for iterating over the elements of a wrap. */
 
 typedef struct {
   Scheme_Object *l;
@@ -142,7 +149,11 @@ static void WRAP_POS_SET_FIRST(Wrap_Pos *w)
   }
 }
 
-static void DO_WRAP_POS_INC(Wrap_Pos *w)
+static
+#ifndef NO_INLINE_KEYWORD
+MSC_IZE(inline)
+#endif
+void DO_WRAP_POS_INC(Wrap_Pos *w)
 {
   Scheme_Object *a;
   if (w->is_limb && (w->pos + 1 < ((Wrap_Chunk *)SCHEME_CAR(w->l))->len)) {
@@ -175,6 +186,8 @@ static void DO_WRAP_POS_INC(Wrap_Pos *w)
 #define WRAP_POS_END_P(w) SCHEME_NULLP(w.l)
 #define WRAP_POS_FIRST(w) w.a
 #define WRAP_POS_COPY(w, w2) w.l = (w2).l; w.a = (w2).a; w.is_limb= (w2).is_limb; w.pos = (w2).pos
+
+/* Walking backwards through one chunk: */
 
 static void DO_WRAP_POS_REVINIT(Wrap_Pos *w, Scheme_Object *k)
 {
@@ -846,6 +859,14 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 	a = SCHEME_CAR(l);
 	if (SAME_TYPE(SCHEME_TYPE(a), scheme_wrap_chunk_type)) {
 	  count += ((Wrap_Chunk *)a)->len;
+	} else if (SCHEME_NUMBERP(a)) {
+	  if ((i >= len) || !SAME_OBJ(a, SCHEME_CADR(l)))
+	    count++;
+	  else {
+	    /* Cancelled marks */
+	    i++;
+	    l= SCHEME_CDR(l);
+	  }
 	} else
 	  count++;
       }
@@ -862,11 +883,22 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
 	  for (k = 0; k < cl; k++) {
 	    wc->a[j++] = ((Wrap_Chunk *)a)->a[k];
 	  }
+	}  else if (SCHEME_NUMBERP(a)) {
+	  if ((i >= len) || !SAME_OBJ(a, SCHEME_CADR(l)))
+	    wc->a[j++] = a;
+	  else {
+	    /* Cancelled marks */
+	    i++;
+	    l= SCHEME_CDR(l);
+	  }
 	} else
 	  wc->a[j++] = a;
       }
 
-      ml = (Scheme_Object *)wc;
+      if (count == 1) /* in case mark removal left only one */
+	ml = wc->a[0];
+      else
+	ml = (Scheme_Object *)wc;
     } else
       ml = SCHEME_CAR(owner_wraps);
 
@@ -1671,7 +1703,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	    int ok = 0;
 
 	    if (!WRAP_POS_END_P(prev)) {
-	      WRAP_POS w2;
+	      WRAP_POS w3;
 	      Scheme_Object *vp, *other_env;
 
 	      other_env = SCHEME_VEC_ELS(v)[2+vsize+i];
@@ -1680,9 +1712,9 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 		SCHEME_VEC_ELS(v)[2+vsize+i] = other_env;
 	      }
 
-	      WRAP_POS_COPY(w2, prev);
-	      for (; !WRAP_POS_END_P(w2); WRAP_POS_INC(w2)) {
-		vp = WRAP_POS_FIRST(w2);
+	      WRAP_POS_COPY(w3, prev);
+	      for (; !WRAP_POS_END_P(w3); WRAP_POS_INC(w3)) {
+		vp = WRAP_POS_FIRST(w3);
 		if (SCHEME_VECTORP(vp)) {
 		  psize = (SCHEME_VEC_SIZE(vp) - 2) / 2;
 		  for (j = 0; j < psize; j++) {
@@ -1695,7 +1727,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 		    break;
 		}
 	      }
-	      if (WRAP_POS_END_P(w2))
+	      if (WRAP_POS_END_P(w3))
 		ok = SCHEME_FALSEP(other_env);
 	    } else
 	      ok = 1;
@@ -3084,6 +3116,7 @@ static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_rename_table_type, mark_rename_table);
   GC_REG_TRAV(scheme_rt_srcloc, mark_srcloc);
+  GC_REG_TRAV(scheme_wrap_chunk_type, mark_wrapchunk);
 }
 
 END_XFORM_SKIP;

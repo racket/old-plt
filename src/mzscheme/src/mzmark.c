@@ -3097,6 +3097,33 @@ int mark_srcloc_FIXUP(void *p) {
 }
 
 
+int mark_wrapchunk_SIZE(void *p) {
+  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  return
+  gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
+}
+
+int mark_wrapchunk_MARK(void *p) {
+  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  int i;
+  for (i = wc->len; i--; ) {
+    gcMARK(wc->a[i]);
+  }
+  return
+  gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
+}
+
+int mark_wrapchunk_FIXUP(void *p) {
+  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+  int i;
+  for (i = wc->len; i--; ) {
+    gcFIXUP(wc->a[i]);
+  }
+  return
+  gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
+}
+
+
 #endif  /* STXOBJ */
 
 /**********************************************************************/

@@ -1371,6 +1371,17 @@ mark_srcloc {
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx_Srcloc));
 }
 
+mark_wrapchunk {
+  Wrap_Chunk *wc= (Wrap_Chunk *)p;
+ mark:
+  int i;
+  for (i = wc->len; i--; ) {
+    gcMARK(wc->a[i]);
+  }
+ size:
+  gcBYTES_TO_WORDS(sizeof(Wrap_Chunk) + ((wc->len - 1) * sizeof(Scheme_Object *)));
+}
+
 END stxobj;
 
 /**********************************************************************/

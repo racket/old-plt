@@ -205,6 +205,13 @@
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact b))
 	       (make-constructed-AV 'box tvar-e))]
+;            [(? struct? s)
+;	     (let ([tvar-e (mk-Tvar 'struct-field)])
+;	       (printf "Found the struct!~n")
+;	       (for-each
+;		(lambda (e) (new-AV! tvar-e (traverse-const-exact e)))
+;		(cdr (vector->list (struct->vector s))))
+;	       (make-constructed-AV 'struct tvar-e))]
 	    [(? box? b)
 	     (let ([tvar-e (mk-Tvar 'box-field)])
 	       (new-AV! tvar-e (traverse-const-exact (unbox b)))

@@ -168,7 +168,7 @@
     ;; (: refs (listof (cons Name Tvar)))
     ;; FlowType is annotated type for list of results
 
-    (letrec*
+    (letrec
      ([refs '()]
       [extend-ref! 
        (lambda (name tvar) (set! refs (cons (cons name tvar) refs)))]

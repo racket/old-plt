@@ -147,7 +147,7 @@
       (if (string? (FlowType-type-annotation start))
 	  ;; start from .za file, show no edges
 	  '()
-	  (letrec*
+	  (letrec
 	   ( [traversed '()]               ; list of FlowType's
 	     [preds '()]                   ; visable FlowType's
 	     [get-edges

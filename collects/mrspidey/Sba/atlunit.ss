@@ -240,7 +240,7 @@
 	  ,(and partial-import-list
 		(map FlowType->pretty (map car partial-import-list)))))
 
-       (letrec*
+       (letrec
 	( [time-N (zodiac-time cmpd-unit)]
 	  [saved-refs '()]              ; forward refs and refs to some imports
 	  [imports (map zodiac:binding-orig-name import-bindings)]

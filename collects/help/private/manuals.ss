@@ -138,7 +138,7 @@
 	  (list "<H1>Installed Manuals</H1>")
 	  
 	  (if (and cvs-user? (not remote-connections?))
-	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"outer\">"
+	      (list "<b>CVS:</b> <a href=\"/servlets/refresh-manuals.ss\" target=\"_top\">"
 		    (string-constant plt:hd:refresh-all-manuals)
 		    "</a>")
 	      '())

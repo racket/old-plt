@@ -1,13 +1,13 @@
 (module refresh-util mzscheme
 
-  (require (lib "launcher.ss" "launcher")
-	   (lib "url.ss" "net")
-	   (lib "process.ss")
+  (require (lib "url.ss" "net")
 	   (lib "etc.ss")
 	   (lib "string-constant.ss" "string-constants")
-	   (lib "file.ss"))
+	   (lib "file.ss")
+           (lib "plt-single-installer.ss" "setup"))
 
   (require "util.ss")
+  (require "headelts.ss")
 
   (provide find/create-temporary-docs-dir
 	   refresh-docs-dir-base
@@ -23,11 +23,12 @@
 	   progress-semaphore
 	   refresh-semaphore
 	   reset-progress-semaphore!
-	   reset-refresh-semaphore!
 	   make-local-doc-filename
 	   download-known-doc
 	   delete-known-doc
-	   run-setup-plt)
+	   run-setup-plt
+           download-in-progress-page
+           no-download-dir-page)           
 
   (define refresh-docs-dir-base
 	"help-refresh-docs")
@@ -138,8 +139,6 @@
     (let ([doc-dir (build-path (collection-path "doc") doc-name)])
       (delete-directory/r doc-dir)))
       
-  (define setup-plt (mzscheme-program-launcher-path "Setup PLT"))
-
   (define (run-setup-plt tmp-dir doc-name)
     (let ([dummy-port (open-input-string "")])
       ; dummy-port prevents MrEd stdio window 
@@ -147,7 +146,38 @@
        ([current-output-port progress-output-port]
 	[current-error-port progress-output-port]
 	[current-input-port dummy-port])
-       (system* setup-plt (make-local-doc-filename tmp-dir doc-name)))))
+       (run-single-installer 
+	(make-local-doc-filename tmp-dir doc-name)
+	(lambda () tmp-dir))))) 
+
+  (define (no-download-dir-page)
+    `(HTML
+      (HEAD ,hd-css
+            ,@hd-links
+	    (TITLE "PLT manual download error"))
+      (BODY
+       (H1 ,(color-with "red"
+			"Manual download error"))
+       (P)
+       (B ,(color-with "red"
+		       "Could not create temporary directory"
+		       `(P)
+		       "Please clean out the "
+		       `(TT ,refresh-docs-dir-base "*")
+		       " subdirectories of "
+		       (find-system-path 'temp-dir)))
+       (P)
+       ,home-page)))
+
+  (define (download-in-progress-page)
+    `(HTML
+      (HEAD ,hd-css
+	    ,@hd-links
+	    (TITLE "Manual download error"))
+      ,(color-with "red"
+		   `(H1 "Manual download already in progress"))
+      (P)
+      (H3 "Please try again later")))
 
   (define progress-input-port #f)
   (define progress-output-port #f)
@@ -165,10 +195,7 @@
     (set! progress-output-port p))
 
   (define progress-semaphore (make-semaphore 0))
-  (define refresh-semaphore (make-semaphore 0))
-
-  (define (reset-refresh-semaphore!)
-    (set! refresh-semaphore (make-semaphore 0)))
+  (define refresh-semaphore (make-semaphore 1))
 
   (define (reset-progress-semaphore!)
     (set! progress-semaphore (make-semaphore 0)))

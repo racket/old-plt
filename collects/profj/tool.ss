@@ -512,7 +512,7 @@
        (if full-print?
            (array->string value (send value length) -1 #t style already-printed newline? num-tabs)
            (array->string value 3 (- (send value length) 3) #f style already-printed newline? num-tabs)))
-      ((is-a? value String) (send value get-mzscheme-string))
+      ((is-a? value String) (format "~s" (send value get-mzscheme-string)))
       ((is-a? value ObjectI)
        (case style
          ((type) (send value my-name))

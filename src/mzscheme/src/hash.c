@@ -173,8 +173,10 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
       } else if (!table->compare(tkey, (char *)key)) {
 	if (set) {
 	  table->vals[h] = val;
-	  if (!val)
+	  if (!val) {
 	    keys[h] = GONE;
+	    --table->count;
+	  }
 	  return val;
 	} else
 	  return table->vals[h];
@@ -186,8 +188,10 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
       if (SAME_PTR(tkey, key)) {
 	if (set) {
 	  table->vals[h] = val;
-	  if (!val)
+	  if (!val) {
 	    keys[h] = GONE;
+	    --table->count;
+	  }
 	  return val;
 	} else
 	  return table->vals[h];
@@ -203,10 +207,9 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
   if (!set || !val)
     return NULL;
 
-  if (set == 1) {
+  if (set == 1)
     h = useme;
-    --table->count; /* counter increment below */
-  } else if (table->count * FILL_FACTOR >= size) {
+  else if (table->mcount * FILL_FACTOR >= size) {
     /* Rehash */
     int i, oldsize = table->size;
     Scheme_Object **oldkeys = table->keys;
@@ -224,18 +227,20 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
     }
 
     table->count = 0;
+    table->mcount = 0;
     for (i = 0; i < oldsize; i++) {
       if (oldkeys[i] && !SAME_PTR(oldkeys[i], GONE))
 	do_hash(table, oldkeys[i], 2, oldvals[i]);
     }
 
     goto rehash_key;
+  } else {
+    table->count++;
+    table->mcount++;
   }
 
   table->keys[h] = key;
   table->vals[h] = val;
-
-  table->count++;
 
   return val;
 }
@@ -548,10 +553,12 @@ int scheme_bucket_table_equal(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2)
   Scheme_Bucket **buckets, *bucket;
   void *v;
   const char *key;
-  int i, weak;
+  int i, weak, checked = 0;
 
-  if ((t1->count != t2->count)
-      || (t1->weak != t2->weak)
+  /* We can't compare the count values, because they're merely
+     >= the number of mapped keys */
+
+  if ((t1->weak != t2->weak)
       || (t1->make_hash_indices != t2->make_hash_indices)
       || (t1->compare != t2->compare))
     return 0;
@@ -568,6 +575,7 @@ int scheme_bucket_table_equal(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2)
 	key = bucket->key;
       }
       if (key) {
+	checked++;
 	v = scheme_lookup_in_table(t2, key);
 	if (!v)
 	  return 0;
@@ -577,7 +585,30 @@ int scheme_bucket_table_equal(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2)
     }
   }
 
-  return 1;
+  /* If count is checked, then all buckets must be for mapped keys. */
+  if (t2->count == checked)
+    return 1;
+
+  /* Need to see whether "t2" maps exactly "checked" keys */
+  buckets = t2->buckets;
+  weak = t2->weak;
+  for (i = t2->size; i--; ) {
+    bucket = buckets[i];
+    if (bucket) {
+      if (weak) {
+	key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+      } else {
+	key = bucket->key;
+      }
+      if (key) {
+	if (!checked)
+	  return 0;
+	--checked;
+      }
+    }
+  }
+
+  return !checked;
 }
 
 /*========================================================================*/

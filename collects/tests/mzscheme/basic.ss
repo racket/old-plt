@@ -1807,6 +1807,23 @@
 (test #f hash-table? (make-hash-table 'weak) 'weak 'equal)
 (test #t hash-table? (make-hash-table 'weak 'equal) 'weak 'equal)
 
+;; Double check that table are equal after deletions
+(let ([test-del-eq
+       (lambda (flags)
+	 (let ([ht1 (apply make-hash-table flags)]
+	       [ht2 (apply make-hash-table flags)])
+	   (test #t equal? ht1 ht2)
+	   (hash-table-put! ht1 'apple 1)
+	   (hash-table-put! ht2 'apple 1)
+	   (test #t equal? ht1 ht2)
+	   (hash-table-put! ht2 'banana 2)
+	   (test #f equal? ht1 ht2)
+	   (hash-table-remove! ht2 'banana)
+	   (test #t equal? ht1 ht2)))])
+  (test-del-eq null)
+  (test-del-eq '(equal))
+  (test-del-eq '(weak)))
+
 (err/rt-test (hash-table-put! 1 2 3))
 (err/rt-test (hash-table-get 1 2))
 (err/rt-test (hash-table-remove! 1 2))

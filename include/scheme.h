@@ -573,6 +573,7 @@ typedef struct Scheme_Hash_Table
   void (*make_hash_indices)(void *v, long *h1, long *h2);
   int (*compare)(void *v1, void *v2);
   Scheme_Object *mutex;
+  int mcount; /* number of non-null keys, <= count */
 } Scheme_Hash_Table;
 
 

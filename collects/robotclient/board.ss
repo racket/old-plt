@@ -322,7 +322,7 @@
 		     (set-robot (get-spot (board)
 					  (robot-x new-robot)
 					  (robot-y new-robot))))
-           (robot-table (make-hash-table))
+           (robot-table (make-hash-table 'equal))
 	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
        flat-responses)
       (robot-indexes alive-robots)
@@ -382,7 +382,7 @@
   
   (define (read-board! input gui?)
     (robot-indexes null)
-    (robot-table (make-hash-table))
+    (robot-table (make-hash-table 'equal))
     (board-width (read input))
     (board-height (read input))
     (board (make-array2d (board-height) (board-width) 0))

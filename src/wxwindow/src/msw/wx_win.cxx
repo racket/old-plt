@@ -953,7 +953,7 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
       break;
     }
   }
-  
+
   return retval;
 }
 

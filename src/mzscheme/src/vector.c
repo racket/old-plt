@@ -111,8 +111,10 @@ scheme_make_vector (int size, Scheme_Object *fill)
   vec->type = scheme_vector_type;
   SCHEME_VEC_SIZE(vec) = size;
 
-  for (i = 0; i < size; i++) {
-    SCHEME_VEC_ELS(vec)[i] = fill;
+  if (fill) {
+    for (i = 0; i < size; i++) {
+      SCHEME_VEC_ELS(vec)[i] = fill;
+    }
   }
 
   return vec;

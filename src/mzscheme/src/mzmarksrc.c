@@ -1071,6 +1071,21 @@ mark_output_file {
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
 }
 
+#ifdef USING_TESTED_OUTPUT_FILE
+mark_tested_output_file {
+ mark:
+  Tested_Output_File *top = (Tested_Output_File *)p;
+  
+  gcMARK(top->fp);
+#ifdef WIN32_FD_HANDLES
+  gcMARK(top->thread_memory);
+#endif
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
+}
+#endif
+
 #ifdef USE_FD_PORTS
 mark_input_fd {
  mark:

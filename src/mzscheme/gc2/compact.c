@@ -17,7 +17,7 @@
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
-#define GENERATIONS 1
+#define GENERATIONS 0
 
 #define USE_FREELIST 0
 
@@ -3037,7 +3037,7 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
   if ((e->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
       && (e->ExceptionRecord->ExceptionInformation[0] == 1)) {
     designate_modified((void *)e->ExceptionRecord->ExceptionInformation[1]);
-    
+
     return EXCEPTION_CONTINUE_EXECUTION;
   } else
     return EXCEPTION_CONTINUE_SEARCH;

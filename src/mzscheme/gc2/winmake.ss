@@ -75,7 +75,7 @@
 		       (lambda (f)
 			 (>= t (file-or-directory-modify-seconds f)))
 		       deps))))
-    (unless (system- (format "cl.exe ~a /MT /c ~a /Fo~a" flags c o))
+    (unless (system- (format "cl.exe ~a /MT /ZI /c ~a /Fdxsrc/ /Fo~a" flags c o))
       (error "failed compile"))))
 
 (define common-deps (list "xform.ss" "ctok.ss"))
@@ -123,7 +123,7 @@
 	     (> (file-or-directory-modify-seconds f)
 		ms))
 	   objs)
-      (unless (system- (format "cl.exe /MT /Fe~a ~a ~a"
+      (unless (system- (format "cl.exe /MT /Zi /Fe~a ~a ~a"
 			       exe
 			       (let loop ([objs objs])
 				 (if (null? objs)

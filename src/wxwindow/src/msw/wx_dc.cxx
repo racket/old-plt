@@ -866,7 +866,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool use16bit, int d)
   int xx1, yy1;
 
   ShiftXY(x, y, xx1, yy1);
-  
+
   if (font) {
     HFONT cfont = font->BuildInternalFont(dc, screen_font);
     if (cfont) {
@@ -1102,7 +1102,8 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
   int len = strlen(string + d);
 
   GetTextExtentPoint(dc, len ? string + d : " ", len ? len : 1, &sizeRect);
-  GetTextMetrics(dc, &tm);
+  if (descent || topSpace)
+    GetTextMetrics(dc, &tm);
 
   DoneDC(dc);
 

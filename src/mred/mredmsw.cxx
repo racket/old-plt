@@ -14,6 +14,8 @@
 
 #include "mred.h"
 
+void mred_log_msg(const char *msg, ...);
+
 #define OS_SEMAPHORE_TYPE HANDLE
 
 #include "../mzscheme/src/schwinfd.h"
@@ -431,3 +433,23 @@ void DeleteRegisteredGDIObject(HANDLE x)
   
   DeleteObject(x);
 }
+
+/**************************************************/
+
+void mred_log_msg(const char *msg, ...)
+{
+  long len;
+  va_list args;
+  FILE *f;
+
+  f = fopen("mredlog", "a");
+
+  fprintf(f, "0x%lx ", scheme_current_process);
+
+  va_start(args, msg);
+  len = vfprintf(f, msg, args);
+  va_end(args);
+
+  fclose(f);
+}
+

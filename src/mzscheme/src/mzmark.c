@@ -2452,6 +2452,38 @@ int mark_output_file_FIXUP(void *p) {
 }
 
 
+#ifdef USING_TESTED_OUTPUT_FILE
+int mark_tested_output_file_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
+}
+
+int mark_tested_output_file_MARK(void *p) {
+  Tested_Output_File *top = (Tested_Output_File *)p;
+  
+  gcMARK(top->fp);
+#ifdef WIN32_FD_HANDLES
+  gcMARK(top->thread_memory);
+#endif
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
+}
+
+int mark_tested_output_file_FIXUP(void *p) {
+  Tested_Output_File *top = (Tested_Output_File *)p;
+  
+  gcFIXUP(top->fp);
+#ifdef WIN32_FD_HANDLES
+  gcFIXUP(top->thread_memory);
+#endif
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Tested_Output_File));
+}
+
+#endif
+
 #ifdef USE_FD_PORTS
 int mark_input_fd_SIZE(void *p) {
   return

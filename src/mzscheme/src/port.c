@@ -731,7 +731,11 @@ static void init_thread_memory()
   /* We start with a pre-allocated tm because we
      want to register a thread before performing any
      allocations. */
+#ifdef MZ_PRECISE_GC
+  tm_next = (Scheme_Thread_Memory *)malloc(sizeof(Scheme_Thread_Memory));
+#else
   tm_next = MALLOC_ONE_RT(Scheme_Thread_Memory);
+#endif
 #ifdef MZTAG_REQUIRED
   tm_next->type = scheme_rt_thread_memory;
 #endif
@@ -741,7 +745,7 @@ static void init_thread_memory()
   GC_collect_end_callback = scheme_resume_remembered_threads;
 }
 
-struct Scheme_Thread_Memory *scheme_remember_thread(void *t)
+Scheme_Thread_Memory *scheme_remember_thread(void *t)
 {
   Scheme_Thread_Memory *tm = tm_next;
 
@@ -750,7 +754,11 @@ struct Scheme_Thread_Memory *scheme_remember_thread(void *t)
     tm->next->prev = tm;
   tm_start = tm;
 
+#ifdef MZ_PRECISE_GC
+  tm_next = (Scheme_Thread_Memory *)malloc(sizeof(Scheme_Thread_Memory));
+#else
   tm_next = MALLOC_ONE_RT(Scheme_Thread_Memory);
+#endif
 #ifdef MZTAG_REQUIRED
   tm_next->type = scheme_rt_thread_memory;
 #endif
@@ -763,6 +771,10 @@ void scheme_remember_subthread(struct Scheme_Thread_Memory *tm, void *t)
   tm->subhandle = t;
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 void scheme_forget_thread(struct Scheme_Thread_Memory *tm)
 {
   if (tm->prev)
@@ -772,16 +784,16 @@ void scheme_forget_thread(struct Scheme_Thread_Memory *tm)
 
   if (tm->next)
     tm->next = tm->prev;
+
+#ifdef MZ_PRECISE_GC
+  free(tm);
+#endif
 }
 
 void scheme_forget_subthread(struct Scheme_Thread_Memory *tm)
 {
   tm->subhandle = NULL;
 }
-
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
 
 void scheme_suspend_remembered_threads(void)
 {
@@ -3289,7 +3301,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
     return _scheme_make_named_file_input_port(fp, name, 1);
     
   tip = MALLOC_ONE_RT(Tested_Input_File);
-#ifdef MZ_PRECSE_GC
+#ifdef MZ_PRECISE_GC
   /* FIXME! */
   /* Use malloc because the testing thread needs to access it. */
   tip = (Tested_Input_File *)malloc(sizeof(Tested_Input_File));
@@ -3643,7 +3655,7 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
     return scheme_make_file_output_port(fp);
     
   top = MALLOC_ONE_RT(Tested_Output_File);
-#ifdef MZ_PRECSE_GC
+#ifdef MZ_PRECISE_GC
   /* FIXME! */
   /* Use malloc because the testing thread needs to access it. */
   top = (Tested_Output_File *)malloc(sizeof(Tested_Output_File));
@@ -5538,6 +5550,10 @@ static HANDLE itimer;
 static OS_SEMAPHORE_TYPE itimer_semaphore;
 static long itimer_delay;
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long ITimer(void)
 {
   WaitForSingleObject(itimer_semaphore, INFINITE);
@@ -5549,6 +5565,10 @@ static long ITimer(void)
     }
   }
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void scheme_start_itimer_thread(long usec)
 {
@@ -5668,6 +5688,9 @@ static void register_traversers(void)
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
   GC_REG_TRAV(scheme_rt_tested_input_file, mark_tested_input_file);
   GC_REG_TRAV(scheme_rt_tcp_select_info, mark_tcp_select_info);
+#endif
+#ifdef USING_TESTED_OUTPUT_FILE
+  GC_REG_TRAV(scheme_rt_tested_output_file, mark_tested_output_file);
 #endif
   GC_REG_TRAV(scheme_rt_output_file, mark_output_file);
 

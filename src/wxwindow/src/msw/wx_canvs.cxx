@@ -423,6 +423,8 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
   return TRUE;
 }
 
+extern void MrEdQueuePaint(wxWindow *wx_window);
+
 BOOL wxCanvasWnd::OnPaint(void)
 {
   int retval = 0;
@@ -434,8 +436,12 @@ BOOL wxCanvasWnd::OnPaint(void)
     if (GetUpdateRgn(handle, tRgn, FALSE)) {
       PAINTSTRUCT ps;
 
-      cdc = BeginPaint(handle, &ps);
-      wx_window->OnPaint();
+      BeginPaint(handle, &ps);
+
+      /* We used to call wx_window->OnPaint directly;
+	 now we queue an event. */
+      MrEdQueuePaint(wx_window);
+
       EndPaint(handle, &ps);
       cdc = NULL;
       

@@ -1624,6 +1624,51 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
   insert_q_callback(cs, cb);
 }
 
+#ifdef wx_msw
+
+static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)
+{
+  wxWindow *w = (wxWindow *)d;
+  w->OnPaint();
+  return scheme_void;
+}
+
+void MrEdQueuePaint(wxWindow *wx_window)
+{
+  MrEdContext *c;
+  Q_Callback *cb;
+  Scheme_Object *p;
+
+  c = MrEdGetContext();
+
+  /* Search for existing queued on-paint: */
+  cb = q_callbacks[1].last;
+  while (cb) {
+    if (cb->context == c) {
+      if (SCHEME_CLSD_PRIMP(cb->callback)) {
+	Scheme_Closed_Primitive_Proc *prim;
+	prim = (Scheme_Closed_Primitive_Proc *)cb->callback;
+	if ((prim->data == wx_window)
+	    && (prim->prim_val == call_on_paint)) {
+	  /* on-paint already queued */
+	  return;
+	}
+      }
+    }
+    cb = cb->next;
+  }
+
+  p = scheme_make_closed_prim(call_on_paint, wx_window);
+
+  cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
+  cb->context = c;
+  cb->callback = p;
+
+  insert_q_callback(q_callbacks + 1, cb);
+}
+
+#endif
+
 /****************************************************************************/
 /*                        Redirected Standard I/O                           */
 /****************************************************************************/

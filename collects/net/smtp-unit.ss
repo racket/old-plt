@@ -58,7 +58,7 @@
 	  (smtp-send-message server sender recipients header message-lines 25)]
 	 [(server sender recipients header message-lines pos)
 	  (when (null? recipients)
-	    (error 'send-smtp-message "no recievers"))
+	    (error 'send-smtp-message "no receivers"))
 	  (let-values ([(r w) (if debug-via-stdio?
 				  (values (current-input-port) (current-output-port))
 				  (tcp-connect server pos))])

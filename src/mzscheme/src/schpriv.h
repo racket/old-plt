@@ -463,8 +463,9 @@ Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o);
 
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule);
 void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
-				 Scheme_Object *locname, Scheme_Object *exname);
-void scheme_extend_module_rename_with_kernel(Scheme_Object *rn);
+				 Scheme_Object *locname, Scheme_Object *exname, 
+				 Scheme_Object *nominal_src, Scheme_Object *nominal_ex);
+void scheme_extend_module_rename_with_kernel(Scheme_Object *rn, Scheme_Object *nominal_src);
 void scheme_remove_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname);
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
@@ -474,7 +475,9 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
-Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
+Scheme_Object *scheme_stx_module_name(Scheme_Object **name, long phase, 
+				      Scheme_Object **nominal_modidx,
+				      Scheme_Object **nominal_name);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);

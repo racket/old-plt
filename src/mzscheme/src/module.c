@@ -322,7 +322,7 @@ void scheme_finish_kernel(Scheme_Env *env)
 
   rn = scheme_make_module_rename(0, 0);
   for (i = kernel->num_provides; i--; ) {
-    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i]);
   }
 
   scheme_sys_wraps(NULL);
@@ -397,7 +397,7 @@ void scheme_require_from_original_env(Scheme_Env *env, int syntax_only)
   c = kernel->num_provides;
   i = (syntax_only ? kernel->num_var_provides : 0);
   for (; i < c; i++) {
-    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i], kernel_symbol, exs[i]);
   }
 }
 
@@ -421,7 +421,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   rn = scheme_make_module_rename(phase, 0);
 
   /* Add a module mapping for all kernel provides: */
-  scheme_extend_module_rename_with_kernel(rn);
+  scheme_extend_module_rename_with_kernel(rn, kernel_symbol);
   
   w = scheme_datum_to_syntax(kernel_symbol, scheme_false, scheme_false, 0, 0);
   w = scheme_add_rename(w, rn);
@@ -1713,7 +1713,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* For each (direct) provide in iim, add a module rename to fm */
   if (SAME_OBJ(iim, kernel)) {
-    scheme_extend_module_rename_with_kernel(rn);
+    scheme_extend_module_rename_with_kernel(rn, kernel_symbol);
     saw_mb = 1;
   } else {
     int i;
@@ -1729,13 +1729,13 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 	midx = scheme_modidx_shift(exss[i], iim->self_modidx, iidx);
       else
 	midx = iidx;
-      scheme_extend_module_rename(rn, midx, exs[i], exsns[i]);
+      scheme_extend_module_rename(rn, midx, exs[i], exsns[i], iim->self_modidx, exs[i]);
       if (SAME_OBJ(exs[i], module_begin_symbol))
 	saw_mb = 1;
     }
 
     if (iim->reprovide_kernel) {
-      scheme_extend_module_rename_with_kernel(rn);
+      scheme_extend_module_rename_with_kernel(rn, iim->self_modidx);
       saw_mb = 1;
     }
   }
@@ -2252,7 +2252,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    scheme_add_global_symbol(name, scheme_undefined, env->genv);
 
 	    /* Add a renaming: */
-	    scheme_extend_module_rename(rn, self_modidx, name, name);
+	    scheme_extend_module_rename(rn, self_modidx, name, name, self_modidx, name);
 
 	    vars = SCHEME_STX_CDR(vars);
 	  }
@@ -2323,7 +2323,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Add a renaming for each name: */
 	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-	    scheme_extend_module_rename(rn, self_modidx, SCHEME_CAR(l), SCHEME_CAR(l));
+	    m = SCHEME_CAR(l);
+	    scheme_extend_module_rename(rn, self_modidx, m, m, self_modidx, m);
 	  }
 
 	  if (rec)
@@ -3014,7 +3015,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
   int j, var_count, is_kern;
   Scheme_Object **exs, **exsns, **exss;
   Scheme_Object *idxstx, *idx, *name, *i, *exns, *one_exn, *prefix, *iname, *ename, *aa;
-  Scheme_Object *imods;
+  Scheme_Object *imods, *nominal_modidx;
 
   imods = scheme_null;
 
@@ -3171,6 +3172,8 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
     }
 
     one_exn = NULL;
+
+    nominal_modidx = idx;
       
     while (1) { /* loop to handle kernel re-provides... */
       int break_if_iname_null = !!iname;
@@ -3226,7 +3229,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	    val = scheme_lookup_in_table(menv->toplevel, (char *)exsns[j]);
 	    scheme_add_global_symbol(iname, val, env);
 	  } else
-	    scheme_extend_module_rename(rn, modidx, iname, exsns[j]);
+	    scheme_extend_module_rename(rn, modidx, iname, exsns[j], nominal_modidx, exs[j]);
 	}
 
 	iname = NULL;
@@ -3245,7 +3248,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       }
 
       if (is_kern)
-	scheme_extend_module_rename_with_kernel(rn);
+	scheme_extend_module_rename_with_kernel(rn, nominal_modidx);
 
       if (break_if_iname_null && !iname)
 	break;

@@ -66,14 +66,19 @@ static Scheme_Object *empty_simplified;
 static void register_traversers(void);
 #endif
 
+#define CONS scheme_make_pair
+
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
 
 typedef struct Module_Renames {
   Scheme_Type type; /* = scheme_rename_table_type */
   MZ_HASH_KEY_EX
   char plus_kernel, nonmodule;
-  Scheme_Hash_Table *ht; /* localname ->  modidx  OR  (cons modidx exportname) */
   long phase;
+  Scheme_Object *plus_kernel_nominal_source;
+  Scheme_Hash_Table *ht; /* localname ->  modidx  OR
+                                          (cons modidx exportname) OR
+                                          (list* modidx exportname nominal_modidx nominal_exportname) */
 } Module_Renames;
 
 static Module_Renames *krn;
@@ -96,7 +101,7 @@ static Module_Renames *krn;
                                       check done, var-resolved is answer to replace #f
    - A wrap-elem (vector <any> <ht> <sym> ... <sym> ...) is also a lexical rename
                                     var       resolved
-         where the variables have already been resolvedand filtered (no mark
+         where the variables have already been resolved and filtered (no mark
          comparison needed with the remaining wraps)
 
    - A wrap-elem <rename-table> is a module rename set
@@ -455,9 +460,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   if (nstx->props) {
     if (SAME_OBJ(nstx->props, STX_SRCTAG)) {
       /* Retain 'source tag. */
-      ne = scheme_make_pair(scheme_make_pair(source_symbol, 
-					     scheme_true),
-			    scheme_null);
+      ne = CONS(CONS(source_symbol, scheme_true), scheme_null);
     } else
       ne = nstx->props;
   } else
@@ -489,12 +492,11 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 	  a = SCHEME_CAR(SCHEME_CAR(oe));
 	  if (!SAME_OBJ(a, source_symbol) && !SAME_OBJ(a, share_symbol)) {
 	    if (!SAME_OBJ(a, origin_symbol)) {
-	      p = scheme_make_pair(SCHEME_CAR(oe), scheme_null);
+	      p = CONS(SCHEME_CAR(oe), scheme_null);
 	    } else {
-	      p = scheme_make_pair(scheme_make_pair(a, 
-						    scheme_make_pair(origin,
-								     SCHEME_CDR(SCHEME_CAR(oe)))),
-				   scheme_null);
+	      p = CONS(CONS(a, CONS(origin, 
+				    SCHEME_CDR(SCHEME_CAR(oe)))),
+		       scheme_null);
 	      add = 0;
 	    }
 
@@ -509,9 +511,9 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 	oe = first;
       } 
       if (add) {
-	oe = scheme_make_pair(scheme_make_pair(origin_symbol, 
-					       scheme_make_pair(origin, scheme_null)),
-			      oe);
+	oe = CONS(CONS(origin_symbol, 
+		       CONS(origin, scheme_null)),
+		  oe);
       }
     }
   } else {
@@ -520,9 +522,9 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   }
 
   if (!oe)
-    oe = scheme_make_pair(scheme_make_pair(origin_symbol, 
-					   scheme_make_pair(origin, scheme_null)),
-			  scheme_null);
+    oe = CONS(CONS(origin_symbol, 
+		   CONS(origin, scheme_null)),
+	      scheme_null);
 
   /* Merge ne and oe (ne takes precedence). */
   
@@ -553,12 +555,12 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
       v = SCHEME_CDR(SCHEME_CAR(e1));
       for (e2 = oe; SCHEME_PAIRP(e2); e2 = SCHEME_CDR(e2)) {
 	if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(e2)), a)) {
-	  v = scheme_make_pair(v, SCHEME_CDR(SCHEME_CAR(e2)));
+	  v = CONS(v, SCHEME_CDR(SCHEME_CAR(e2)));
 	  break;
 	}
       }
 
-      p = scheme_make_pair(scheme_make_pair(a, v), scheme_null);
+      p = CONS(CONS(a, v), scheme_null);
       if (last)
 	SCHEME_CDR(last) = p;
       else
@@ -578,7 +580,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
       }
 
       if (v) {
-	p = scheme_make_pair(scheme_make_pair(a, v), scheme_null);
+	p = CONS(CONS(a, v), scheme_null);
 	if (last)
 	  SCHEME_CDR(last) = p;
 	else
@@ -634,7 +636,7 @@ Scheme_Object *add_remove_mark(Scheme_Object *wraps, Scheme_Object *m, long *lp)
     return SCHEME_CDR(wraps);
   } else {
     (*lp)++;
-    return scheme_make_pair(m, wraps);
+    return CONS(m, wraps);
   }
 }
 
@@ -728,25 +730,33 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule)
   return (Scheme_Object *)mr;
 }
 
-void scheme_extend_module_rename_with_kernel(Scheme_Object *mrn)
+void scheme_extend_module_rename_with_kernel(Scheme_Object *mrn, Scheme_Object *nominal_mod)
 {
   /* Don't use on a non-module namespace, where renames may need
      to be removed... */
   ((Module_Renames *)mrn)->plus_kernel = 1;
+  ((Module_Renames *)mrn)->plus_kernel_nominal_source = nominal_mod;
 }
 
 void scheme_extend_module_rename(Scheme_Object *mrn,
-				 Scheme_Object *modname, 
-				 Scheme_Object *localname, 
-				 Scheme_Object *exname)
+				 Scheme_Object *modname,     /* actual source module */
+				 Scheme_Object *localname,   /* name in local context */
+				 Scheme_Object *exname,      /* name in definition context  */
+				 Scheme_Object *nominal_mod, /* nominal source module */
+				 Scheme_Object *nominal_ex)  /* nominal import before local renaming */
 {
   Scheme_Object *elem;
 
-  if (SAME_OBJ(localname, exname))
-    elem = modname;
-  else
-    elem = scheme_make_pair(modname, exname);
-
+  if (SAME_OBJ(modname, nominal_mod)
+      && SAME_OBJ(exname, nominal_ex)) {
+    if (SAME_OBJ(localname, exname))
+      elem = modname;
+    else
+      elem = CONS(modname, exname);
+  } else {
+    elem = CONS(modname, CONS(exname, CONS(nominal_mod, nominal_ex)));
+  }
+  
   scheme_hash_set(((Module_Renames *)mrn)->ht, localname, elem);
 }
 
@@ -755,8 +765,10 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
   Scheme_Hash_Table *ht, *hts;
   int i;
 
-  if (((Module_Renames *)dest)->plus_kernel)
-    ((Module_Renames *)src)->plus_kernel = 1;
+  if (((Module_Renames *)src)->plus_kernel) {
+    ((Module_Renames *)dest)->plus_kernel = 1;
+    ((Module_Renames *)dest)->plus_kernel_nominal_source = ((Module_Renames *)src)->plus_kernel_nominal_source;
+  }
 
   ht = ((Module_Renames *)dest)->ht;
   hts = ((Module_Renames *)src)->ht;
@@ -787,7 +799,7 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
 
   graph = (stx->hash_code & STX_GRAPH_FLAG);
 
-  wraps = scheme_make_pair(rename, stx->wraps);
+  wraps = CONS(rename, stx->wraps);
   if (stx->hash_code & STX_SUBSTX_FLAG)
     lp = stx->u.lazy_prefix + 1;
   else
@@ -1063,11 +1075,13 @@ static int same_marks(WRAP_POS *_awl, WRAP_POS *_bwl, int a_ignore_barrier)
 #define QUICK_STACK_SIZE 10
 
 static Scheme_Object *resolve_env(Scheme_Object *a, long phase, 
-				  int w_mod, Scheme_Object **get_name)
+				  int w_mod, Scheme_Object **get_names)
 /* Module binding ignored if w_mod is 0.
-   If module bound, result is module idx, and get_name is set to source name.
-   If lexically bound, result is env id, and a get_name is set to scheme_undefined.
-   If neither, result is #f and get_name is unchanged. */
+   If module bound, result is module idx, and get_names[0] is set to source name,
+     get_names[1] is set to the nominal source module, and get_names[2] is set to
+     the nominal source module's export.
+   If lexically bound, result is env id, and a get_names[0] is set to scheme_undefined.
+   If neither, result is #f and get_names is unchanged. */
 {
   WRAP_POS wraps;
   Scheme_Object *o_rename_stack = scheme_null;
@@ -1097,8 +1111,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       }
       if (SCHEME_FALSEP(result))
 	result = mresult;
-      else if (get_name)
-	*get_name = scheme_undefined;
+      else if (get_names)
+	get_names[0] = scheme_undefined;
       return result;
     } else if (SCHEME_RENAMESP(WRAP_POS_FIRST(wraps)) && w_mod) {
       /* Module rename: */
@@ -1108,11 +1122,13 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	  is_in_module = 1;
 	
 	if (phase == mrn->phase) {
-	  Scheme_Object *rename;
+	  Scheme_Object *rename, *nominal = NULL;
 	  
 	  rename = scheme_hash_get(mrn->ht, SCHEME_STX_VAL(a));
-	  if (!rename && mrn->plus_kernel)
+	  if (!rename && mrn->plus_kernel) {
 	    rename = scheme_hash_get(krn->ht, SCHEME_STX_VAL(a));
+	    nominal = mrn->plus_kernel_nominal_source;
+	  }
 	  
 	  if (rename) {
 	    /* match; set mresult, which is used in the case of no lexical capture: */
@@ -1126,11 +1142,29 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 					    modidx_shift_from,
 					    modidx_shift_to);
 
-	    if (get_name) {
-	      if (SCHEME_PAIRP(rename))
-		*get_name = SCHEME_CDR(rename);
-	      else
-		*get_name = SCHEME_STX_VAL(a);
+	    if (get_names) {
+	      if (SCHEME_PAIRP(rename)) {
+		rename = SCHEME_CDR(rename);
+		if (SCHEME_PAIRP(rename)) {
+		  get_names[0] = SCHEME_CAR(rename);
+		  get_names[1] = SCHEME_CADR(rename);
+		  get_names[2] = SCHEME_CDDR(rename);
+		} else {
+		  get_names[0] = rename;
+		  get_names[2] = NULL; /* finish below */
+		}
+	      } else {
+		get_names[0] = SCHEME_STX_VAL(a);
+		get_names[2] = NULL; /* finish below */
+	      }
+
+	      if (!get_names[2]) {
+		get_names[2] = get_names[0];
+		if (nominal)
+		  get_names[1] = nominal;
+		else
+		  get_names[1] = mresult;
+	      }
 	    }
 	  } else
 	    mresult = scheme_false;
@@ -1225,8 +1259,8 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	      rename_stack[stack_pos++] = envname;
 	      rename_stack[stack_pos++] = other_env;
 	    } else {
-	      o_rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
-						o_rename_stack);
+	      o_rename_stack = CONS(CONS(other_env, envname),
+				    o_rename_stack);
 	    }
 
 	    break;
@@ -1242,7 +1276,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 /* Gets a module source name under the assumption that the identifier
    is not lexically renamed. This is used as a quick pre-test for
-   module-identifer=?. */
+   module-identifier=?. */
 {
   WRAP_POS wraps;
   Scheme_Object *result;
@@ -1280,9 +1314,11 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 	  
 	  if (rename) {
 	    /* match; set result: */
-	    if (SCHEME_PAIRP(rename))
+	    if (SCHEME_PAIRP(rename)) {
 	      result = SCHEME_CDR(rename);
-	    else
+	      if (SCHEME_PAIRP(result))
+		result = SCHEME_CAR(result);
+	    } else
 	      result = SCHEME_STX_VAL(a);
 	  } else
 	    result = NULL;
@@ -1367,21 +1403,29 @@ int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase)
   return SAME_OBJ(a, b);
 }
 
-Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase)
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase, 
+				      Scheme_Object **nominal_modidx,
+				      Scheme_Object **nominal_name)
 /* If module bound, result is module idx, and a is set to source name.
    If lexically bound, result is scheme_undefined and a is unchanged. 
    If neither, result is NULL and a is unchanged. */
 {
   if (SCHEME_STXP(*a)) {
-    Scheme_Object *modname, *exname = NULL;
+    Scheme_Object *modname, *names[3];
 
-    modname = resolve_env(*a, phase, 1, &exname);
+    names[0] = NULL;
+
+    modname = resolve_env(*a, phase, 1, names);
     
-    if (exname) {
-      if (SAME_OBJ(exname, scheme_undefined)) {
+    if (names[0]) {
+      if (SAME_OBJ(names[0], scheme_undefined)) {
 	return scheme_undefined;
       } else {
-	*a = exname;
+	*a = names[0];
+	if (nominal_modidx)
+	  *nominal_modidx = names[1];
+	if (nominal_name)
+	  *nominal_name = names[2];
 	return modname;
       }
     } else
@@ -1675,7 +1719,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	    && !SCHEME_SYMBOLP(SCHEME_VEC_ELS(v)[2])) {
 	  /* Need to simplify, but do deepest first: */
 	  if (SCHEME_NULLP(stack) || !SAME_OBJ(SCHEME_CAR(stack), key))
-	    stack = scheme_make_pair(key, stack);
+	    stack = CONS(key, stack);
 	} else {
 	  if (WRAP_POS_END_P(prev))
 	    WRAP_POS_COPY(prev, w);
@@ -1776,7 +1820,7 @@ static void simplify_lex_renames(Scheme_Object *wraps, Scheme_Hash_Table *lex_ca
 	SCHEME_VEC_ELS(v2)[0] = scheme_false;
 	SCHEME_VEC_ELS(v2)[1] = scheme_false;
 
-	v2l = scheme_make_pair(v2, v2l);
+	v2l = CONS(v2, v2l);
 
 	WRAP_POS_COPY(prev, w);
       }
@@ -1830,9 +1874,9 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	WRAP_POS_INC(w); /* delete cancelled mark */
       else {
 	if (just_simplify)
-	  stack = scheme_make_pair(a, stack);
+	  stack = CONS(a, stack);
 	else
-	  stack = scheme_make_pair(scheme_make_pair(a, scheme_null), stack);
+	  stack = CONS(CONS(a, scheme_null), stack);
 	stack_size++;
       }
     } else if (SCHEME_VECTORP(a)) {
@@ -1857,13 +1901,13 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	}
 	  
 	if (just_simplify) {
-	  stack = scheme_make_pair(a, stack);
+	  stack = CONS(a, stack);
 	} else {
 	  Scheme_Object *local_key;
 	    
 	  local_key = scheme_hash_get(rns, a);
 	  if (local_key) {
-	    stack = scheme_make_pair(local_key, stack);
+	    stack = CONS(local_key, stack);
 	  } else {
 	    local_key = scheme_make_integer(rns->count);
 	    scheme_hash_set(rns, a, local_key);
@@ -1873,7 +1917,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	      
 	    SCHEME_VEC_ELS(a)[0] = local_key;
 	      
-	    stack = scheme_make_pair(a, stack);
+	    stack = CONS(a, stack);
 	  }
 	}
 	stack_size++;
@@ -1907,23 +1951,23 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 
       if (!redundant) {
 	if (just_simplify) {
-	  stack = scheme_make_pair((Scheme_Object *)mrn, stack);
+	  stack = CONS((Scheme_Object *)mrn, stack);
 	} else {
 	  if (mrn->nonmodule) {
-	    stack = scheme_make_pair(((mrn->phase == 0)
-				      ? scheme_true
-				      : scheme_false), 
-				     stack);
+	    stack = CONS(((mrn->phase == 0)
+			  ? scheme_true
+			  : scheme_false), 
+			 stack);
 	  } else {
 	    Scheme_Object *local_key;
 	  
 	    local_key = scheme_hash_get(rns, (Scheme_Object *)mrn);
 	    if (local_key) {
-	      stack = scheme_make_pair(local_key, stack);
+	      stack = CONS(local_key, stack);
 	    } else {
 	      /* Convert hash table to list: */
 	      int i, j, count = 0;
-	      Scheme_Object *l;
+	      Scheme_Object *l, *idi;
 	    
 	      for (i = mrn->ht->size; i--; ) {
 		if (mrn->ht->vals[i])
@@ -1935,19 +1979,26 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	      for (i = mrn->ht->size, j = 0; i--; ) {
 		if (mrn->ht->vals[i]) {
 		  SCHEME_VEC_ELS(l)[j++] = mrn->ht->keys[i];
-		  SCHEME_VEC_ELS(l)[j++] = mrn->ht->vals[i];
+		  idi = mrn->ht->vals[i];
+		  /* Drop info on nominals, if any: */
+		  if (SCHEME_PAIRP(idi) && SCHEME_PAIRP(SCHEME_CDR(idi))) {
+		    idi = CONS(SCHEME_CAR(idi), SCHEME_CADR(idi));
+		  }
+		  SCHEME_VEC_ELS(l)[j++] = idi;
 		}
 	      }
 	    
 	      local_key = scheme_make_integer(rns->count);
 	      scheme_hash_set(rns, a, local_key);
 	    
-	      l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
-	      if (mrn->plus_kernel)
-		l = scheme_make_pair(scheme_true,l);
-	      l = scheme_make_pair(local_key, l);
+	      l = CONS(scheme_make_integer(mrn->phase), l);
+	      if (mrn->plus_kernel) {
+		l = CONS(scheme_true,l);
+		/* note: information on nominals intentially omitted */
+	      }
+	      l = CONS(local_key, l);
 	    
-	      stack = scheme_make_pair(l, stack);
+	      stack = CONS(l, stack);
 	    }
 	  }
 	}
@@ -1955,7 +2006,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       }
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */
-      stack = scheme_make_pair(a, stack);
+      stack = CONS(a, stack);
       stack_size++;
     } else {
       /* box, a phase shift */
@@ -1969,7 +2020,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       }
       /* If l is the end, don't need the phase shift */
       if (!WRAP_POS_END_P(l)) {
-	stack = scheme_make_pair(a, stack);
+	stack = CONS(a, stack);
 	stack_size++;
       }
     }
@@ -1985,7 +2036,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     for (i = stack_size; i--; stack = SCHEME_CDR(stack)) {
       wc->a[i] = SCHEME_CAR(stack);
     }
-    stack = scheme_make_pair((Scheme_Object *)wc, scheme_null);
+    stack = CONS((Scheme_Object *)wc, scheme_null);
   }
 
   /* Double-check for equivalent list in table (after simplificiation): */
@@ -2031,12 +2082,12 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 
   /* Create a key for this wrap set: */
   a = scheme_make_integer(rns->count);
-  scheme_hash_set(rns, w_in, scheme_make_pair(a, stack));
+  scheme_hash_set(rns, w_in, CONS(a, stack));
   
   if (just_simplify)
     return stack;
   else
-    return scheme_make_pair(a, stack);
+    return CONS(a, stack);
 }
 
 /*========================================================================*/
@@ -2126,7 +2177,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 
       a = syntax_to_datum_inner(SCHEME_CAR(v), ht, with_marks, rns);
       
-      p = scheme_make_pair(a, scheme_null);
+      p = CONS(a, scheme_null);
       
       if (last)
 	SCHEME_CDR(last) = p;
@@ -2157,12 +2208,12 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     
     result = r;
   } else if ((with_marks == 1) && SCHEME_SYMBOLP(v)) {
-    result = scheme_make_pair(v, stx->wraps);
+    result = CONS(v, stx->wraps);
   } else
     result = v;
 
   if (with_marks > 1)
-    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, rns, 0));
+    result = CONS(result, wraps_to_datum(stx->wraps, rns, 0));
 
   if (ph)
     SCHEME_PTR_VAL(ph) = result;
@@ -2354,6 +2405,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 
       mrn = (Module_Renames *)scheme_make_module_rename(phase, 0);
       mrn->plus_kernel = plus_kernel;
+      /* note: information on nominals has been dropped */
 
       count = SCHEME_VEC_SIZE(a);
       for (i = 0; i < count; i+= 2) {
@@ -2395,7 +2447,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 
   if (wc)
     a = (Scheme_Object *)wc;
-  a = scheme_make_pair(a, scheme_null);
+  a = CONS(a, scheme_null);
 
   scheme_hash_set(rns, wraps_key, a);
 
@@ -2955,8 +3007,8 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
   if (stx->props) {
     if (SAME_OBJ(stx->props, STX_SRCTAG)) {
       if (val)
-	l = scheme_make_pair(scheme_make_pair(source_symbol, scheme_true),
-			     scheme_null);
+	l = CONS(CONS(source_symbol, scheme_true),
+		 scheme_null);
       else
 	l = NULL;
     } else {
@@ -2982,7 +3034,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 	    p = SCHEME_CDR(e);
 	    e = NULL;
 	  } else {
-	    p = scheme_make_pair(SCHEME_CDR(SCHEME_CAR(e)), scheme_null);
+	    p = CONS(SCHEME_CDR(SCHEME_CAR(e)), scheme_null);
 	  }
 
 	  if (last)
@@ -3008,7 +3060,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
     
     graph = (stx->hash_code & STX_GRAPH_FLAG);
 
-    l = scheme_make_pair(scheme_make_pair(key, val), l);
+    l = CONS(CONS(key, val), l);
 
     wraps = stx->wraps;
     if (stx->hash_code & STX_SUBSTX_FLAG) {
@@ -3118,7 +3170,7 @@ static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
 static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **argv, int dphase)
 {
   Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *a, *m;
+  Scheme_Object *a, *m, *nom_mod, *nom_a;
 
   a = argv[0];
 
@@ -3127,14 +3179,15 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
 
   m = scheme_stx_module_name(&a, dphase + (p->current_local_env
 					   ? p->current_local_env->genv->phase
-					   : 0));
+					   : 0),
+			     &nom_mod, &nom_a);
 
   if (!m)
     return scheme_false;
   else if (SAME_OBJ(m, scheme_undefined))
     return lexical_symbol;
   else
-    return scheme_make_pair(m, a);
+    return CONS(m, CONS(a, CONS(nom_mod, CONS(nom_a, scheme_null))));
 }
 
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv)

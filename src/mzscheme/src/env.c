@@ -1263,7 +1263,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
 
   srcsym = symbol;
-  modidx = scheme_stx_module_name(&symbol, phase);
+  modidx = scheme_stx_module_name(&symbol, phase, NULL, NULL);
   
   /* Used out of context? */
   if (SAME_OBJ(modidx, scheme_undefined)) {
@@ -1295,7 +1295,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
 	if (!genv) {
 	  scheme_wrong_syntax("require", NULL, srcsym, 
-			      "broken compiled code (stat-dist, phase %d): cannot find module %S",
+			      "broken compiled code (lookup_binding, phase %d): cannot find module %S",
 			      env->genv->phase, modname /*,  scheme_syntax_to_datum(srcsym, 1, NULL) */);
 	  return NULL;
 	}

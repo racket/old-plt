@@ -2669,15 +2669,20 @@
   (require #%stxcase-scheme)
   (require-for-syntax #%kernel #%stx)
 
+  ;; So that expansions print the way the MzScheme programmer expects:
+  (require (rename #%kernel #%plain-module-begin #%module-begin))
+
   (define-syntax mzscheme-in-stx-module-begin
     (lambda (stx)
-      (datum->syntax-object
-       (quote-syntax here)
-       (list* (quote-syntax #%module-begin)
-	      (quote-syntax
-	       (require-for-syntax mzscheme))
-	      (stx-cdr stx))
-       stx)))
+      (if (stx-pair? stx)
+	  (datum->syntax-object
+	   (quote-syntax here)
+	   (list* (quote-syntax #%plain-module-begin)
+		  (quote-syntax
+		   (require-for-syntax mzscheme))
+		  (stx-cdr stx))
+	   stx)
+	  (raise-syntax-error '#%module-begin "bad syntax" stx))))
 
   (provide mzscheme-in-stx-module-begin))
 

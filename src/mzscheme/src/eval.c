@@ -1954,7 +1954,7 @@ static Scheme_Object *check_top(char *when, Scheme_Object *form, Scheme_Comp_Env
     Scheme_Object *modidx, *symbol = c;
     int bad;
 
-    modidx = scheme_stx_module_name(&symbol, env->genv->phase);
+    modidx = scheme_stx_module_name(&symbol, env->genv->phase, NULL, NULL);
     if (modidx) {
       /* If it's an access path, resolve it: */
       if (env->genv->module

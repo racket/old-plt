@@ -1236,7 +1236,7 @@ void scheme_wrong_syntax(const char *where,
 	  int phase = 0;
  	  if (scheme_current_thread->current_local_env)
 	    phase = scheme_current_thread->current_local_env->genv->phase;
-	  mod = scheme_stx_module_name(&first, phase);
+	  mod = scheme_stx_module_name(&first, phase, NULL, NULL);
 	  if (mod && (SAME_TYPE(SCHEME_TYPE(mod), scheme_module_index_type)
 		      || SCHEME_SYMBOLP(mod))) {
 	    mod = scheme_module_resolve(mod);

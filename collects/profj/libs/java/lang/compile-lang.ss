@@ -67,7 +67,7 @@
   (define (compile-exceptions so)
     (set-syntax-location so)
     (let* ((files (filter (lambda (f) (regexp-match "Exception[.]java$" f))
-                          (directory-list (current-directory)))))
+                          (directory-list (build-path (collection-path "profj") "libs" "java" "lang")))))
       (clear-jinfos files)
       (let* ((compiled (cdr (car (compile-files (list (list files (list "java" "lang"))) #f 'full))))
              (compiled-exceptions (flatten (car compiled)))

@@ -419,7 +419,15 @@
                                                               (send definitions-text last-position))
                              language-settings
                              #t
-                             void
+                             ; set current-directory and current-load-relative-directory before expansion
+                             (lambda ()
+                               (let* ([tmp-b (box #f)]
+                                      [fn (send definitions-text get-filename tmp-b)])
+                                 (unless (unbox tmp-b)
+                                   (when fn
+                                     (let-values ([(base name dir?) (split-path fn)])
+                                       (current-directory base)
+                                       (current-load-relative-directory base))))))
                              void
                              (lambda (syntax-object-or-eof iter)
                                (if (eof-object? syntax-object-or-eof)

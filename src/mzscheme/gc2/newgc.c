@@ -909,8 +909,11 @@ unsigned long scheme_get_tracking_val_memory(void *val)
     for(j = 0; j < MPAGE_TYPES; j++) 
       for(page = pages[i][j]; page; page = page->next) {
 	if(page->man_owner == man_owner)
-	  total_memuse += page->size;
+	  total_memuse += (page->size - PAGE_BYTE_OVERHEAD);
       }
+  for(page = pages[0][MPAGE_BIG]; page; page = page->next)
+    if(page->man_owner == man_owner)
+      total_memuse += (page->size - PAGE_BYTE_OVERHEAD);
   start = gen0_alloc_region + PAGE_WORD_OVERHEAD;  end = gen0_alloc_current;
   while(start < end) {
     struct objhead *info = (struct objhead *)start;

@@ -36,7 +36,7 @@
 	[write (lambda (s) 
 		 (send s put (char->integer #\r)))]
 	[copy (lambda () 
-		(let ([s (make-object (object-class this))])
+		(let ([s (make-object separator-snip%)])
 		  (send s set-style (get-style))
 		  s))]
 	[get-extent

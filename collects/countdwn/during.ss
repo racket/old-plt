@@ -59,56 +59,47 @@
 	    (insert err-string last last #f)
 	    (end-edit-sequence))))))
 
-  (define orig-param (current-parameterization))
-
   (define (load-user-config)
-    (let ([orig-escape #f]
-	  [escape-k #f])
-      (set! files-loaded null)
-      (dynamic-wind
-       (lambda ()
-	 (set! orig-escape (error-escape-handler))
-	 (error-escape-handler (lambda () (escape-k #f)))
-	 (send edit begin-edit-sequence))
-       (lambda ()
-	 (let ([cu (compound-unit/sig (import)
-		    (link [C : mzlib:core^ ((require-library "corer.ss"))]
-			  [mred : mred^ (mred@)])
-		    (export (open mred)
-			    (open C)))])
-	   (let/ec k
-	     (send edit clear-events)
-	     (set! escape-k k)
-	     (let ([param (make-parameterization)])
-	       (map (lambda (x v) ((in-parameterization param x) v))
-		    (list current-load
-			  error-print-width 
-			  current-namespace
-			  current-eventspace
-			  current-custodian
-			  error-display-handler)
-		    (list (let ([ol ((in-parameterization param current-load))])
+    (set! files-loaded null)
+    (let ([cu (compound-unit/sig (import)
+		(link [C : mzlib:core^ ((require-library "corer.ss"))]
+		      [mred : mred^ (mred@)])
+		(export (open mred)
+			(open C)))])
+      (send edit clear-events)
+      (let ([custodian (make-custodian)]
+	    [raised-exception? #f]
+	    [raised-exception #f]
+	    [wakeup (make-semaphore 0)])
+	(parameterize ([current-custodian custodian])
+	  (parameterize ([current-load
+			  (let ([ol (current-load)])
 			    (lambda (f)
 			      (set! files-loaded (cons f files-loaded))
-			      (ol f)))
-			  500
-			  (make-namespace)
-			  (make-eventspace)
-			  (make-custodian)
-			  (lambda (string)
-			    (with-parameterization orig-param
-			      (lambda ()
-				(show-error string))))))
-	       (with-parameterization param
-		 (lambda ()
-		   (invoke-open-unit/sig cu)
-		   (global-defined-value 'remember remember)
-		   (global-defined-value 'remember-around remember-around)
-		   (load/cd user-config-file)))))
-	   (send edit sync)))
-       (lambda ()
-	 (error-escape-handler orig-escape)
-	 (send edit end-edit-sequence)))))
+			      (ol f)))]
+			 [error-print-width 500]
+			 [current-namespace (make-namespace)]
+			 [current-eventspace (make-eventspace)])
+	    (queue-callback
+	     (lambda ()
+	       (global-define-values/invoke-unit/sig ((open mzlib:core^) (open mred^)) cu)
+	       (global-defined-value 'remember remember)
+	       (global-defined-value 'remember-around remember-around)
+	       (let/ec escape
+		 (parameterize ([current-exception-handler
+				 (lambda (exn)
+				   (set! raised-exception? #t)
+				   (set! raised-exception exn)
+				   (escape (void)))])
+		   (load/cd user-config-file)))
+	       (semaphore-post wakeup)))
+	    (semaphore-wait wakeup)
+	    (custodian-shutdown-all custodian)
+	    (when raised-exception?
+	      (show-error (if (exn? raised-exception)
+			      (exn-message raised-exception)
+			      (format "uncaught exception: ~e" raised-exception)))))))
+      (send edit sync)))
 
   (define files-loaded null)
   (load-user-config)

@@ -42,7 +42,7 @@ MrEd Engine:
 
 * the full width for non-wrapped lines need not include the autowrap bitmap
 
-* should use a guranteed offset for stippling in buffer redraws
+* should use a guaranteed offset for stippling in buffer redraws
 
 * Xt: out-of-colours - widgets use too much black
 
@@ -96,76 +96,112 @@ MrEd System:
 See also the open prs:
 
       14 steck    mredsyst open      serious   medium   unknown    Weird Ctl-C behavior in MrEd
-      16 robby    drscheme open      serious   medium   unknown    collapse kills the search buffers
-      28 robby    drscheme open      serious   medium   unknown    Check Syntax makes Spidey think the text has changed.
+ 
       32 robby    drscheme open      serious   medium   unknown    unevaled REP expressions aren't greyed
+ 
       44 robby    mredsyst open      serious   medium   unknown    URL bug
+ 
       64 robby    mredsyst open      non-criti medium   unknown    mailto: URL not treated okay
+ 
       70 robby    mredsyst open      serious   medium   unknown    html reference to nonexistant file
+ 
       71 steck    drscheme open      serious   medium   unknown    hashed lines after resizing
-      72 robby    mredsyst open      non-criti low      unknown    backwards replace-all fails on some strings
-     184 mflatt   mzscheme open      non-criti low      unknown    docs on referencing files
+ 
      206 mflatt   mredengi open      serious   medium   unknown    two canvas's, with the same edit can interfere with each other
+ 
      211 robby    mredsyst open      serious   medium   unknown    Network operations seem to block all DrScheme threads, and cannot be interrupted
-     225 cormac   mrspidey open      serious   medium   unknown    spidey does not report "parents" correctly
-     228 cormac   mrspidey open      serious   medium   unknown    spidey bad on multiple definitions
+ 
      229 robby    mredsyst open      serious   medium   unknown    esc-% doesn't work anymoe
-     233 cormac   mrspidey open      serious   medium   unknown    spidey doesn't understand the struct hierarchy
+ 
      238 robby    mredsyst open      serious   medium   unknown    opening docs that don't exist in mred web browser
+ 
      242 robby    drscheme open      serious   medium   unknown    Loading Unix file on DrScheme on a PC
-     244 ptg      all      open      serious   medium   unknown    spidey doesn't like "(: expr empty)"
-     245 ptg      all      open      serious   medium   unknown    spidey value-flow bug
+ 
      250 steck    mredsyst open      serious   medium   unknown    Hit break many times -> next expression is broken
-     257 mflatt   mzscheme open      non-criti low      unknown    Errors in .zo files are not flagged "nicely"
+ 
      269 steck    mredsyst open      serious   medium   unknown    error text from a thread is not locked
-     274 ptg      all      open      non-criti medium   unknown    DrScheme Save File dialog doesn't do .ss
+ 
+     274 steck    drscheme open      non-criti medium   unknown    DrScheme Save File dialog doesn't do .ss
+ 
      304 mflatt   mzscheme open      serious   medium   unknown    bad unit/sig error message
-     315 mflatt   mredengi open      serious   medium   unknown    gc icon is not on during finalization
+ 
      324 mflatt   mredengi open      serious   medium   unknown    mouse selection and wide lines in mred
-     337 robby    drscheme open      serious   medium   unknown    Check-Syntax in DrScheme not always complete
-     338 mflatt   mredengi open      serious   high     unknown    OSF/1 linking problem
-     349 steck    drscheme open      non-criti low      unknown    REPL returns prompt early when calling old continuations
-     353 mflatt   misc     open      serious   medium   unknown    gui builder has bug
+ 
      361 robby    drscheme open      serious   medium   unknown    check syntax is broken
+ 
      391 steck    drscheme open      serious   medium   unknown    DrScheme read breaks when thread reports an error
+ 
      406 robby    drscheme open      serious   medium   unknown    bad error message for sixlib op
-     409 mflatt   mredengi open      non-criti low      unknown    AIX executables contain stupid paths
-     411 mflatt   mzscheme open      non-criti low      unknown    Docs for process, process* are inconsistent
-     413 mflatt   mredengi open      serious   medium   unknown    error message when attempting to print definitions in Dr. Scheme
-     415 mflatt   mredengi open      non-criti low      unknown    The "print interaction" and "print definitions" are actually printed in very small fonts.
-     418 steck    mzscheme open      non-criti low      unknown    Documentation Source
-     423 robby    mredsyst open      serious   medium   unknown    MrEd's initial directory is confused
-     432 steck    all      open      serious   medium   unknown    MrSpidey Edit|Find generates error
-     434 steck    all      open      non-criti medium   unknown    docs wrong for type: form
-     443 steck    all      open      serious   medium   unknown    macro vocabulary representation in mz
-     444 mflatt   mredengi open      critical  high     unknown    drscheme keeps freezing
-     450 steck    all      open      serious   medium   unknown    MrSpidey chokes (?) on '(apply 0 0)'
+ 
      454 robby    mredsyst open      serious   medium   unknown    mzos uses shutdown object
-     455 mflatt   mzscheme open      serious   medium   unknown    define-macro does not support (define-macro (m x) ...) form
+ 
      460 robby    drscheme open      non-criti medium   unknown    syntax highlighting should occur inside unit/sig
-     461 robby    mredsyst open      serious   medium   unknown    Preferences -> Defaults Fonts -> samples are wrong
-     473 mflatt   mredengi open      serious   medium   unknown    typing letters in save box doesn't work under Motif
-     477 robby    drscheme open      serious   medium   unknown    drscheme doesn't break when loading in tight loop
-     481 robby    drscheme open      serious   medium   unknown    Macro-expansion exception is wrong DrSchgeme
-     483 mflatt   mzscheme open      non-criti low      unknown    COSMETIC-Time indicated not local time
-     484 mflatt   mzscheme open      serious   medium   unknown    display mustn't needlessly be non-tail-recursive!
-     497 robby    drscheme open      non-criti medium   unknown    Invalid use of keyword ignores with-handlers.
+ 
      499 robby    mredsyst open      non-criti low      unknown    auto indenting is funny
+ 
      501 robby    mredsyst open      non-criti low      unknown    lock bitmap on DrScheme frame is selectable
-     502 robby    drscheme open      non-criti low      unknown    Categories in Preferences are confusing
-     503 robby    drscheme open      non-criti medium   unknown    Interactions and definitions can be disabled
-     508 steck    all      open      non-criti medium   unknown    setting a threads current-directory, and parameterization
-     510 steck    all      open      serious   medium   unknown    paren matcher internal error
-     511 robby    drscheme open      serious   medium   unknown    DrScheme can put you in state without a REPL
-     512 steck    all      open      serious   medium   unknown    menu keybindings should change automatically according to pref
-     513 steck    pending  open      serious   medium   unknown    Fwd: mredsystem/423: MrEd's initial directory is confused
-     517 steck    all      open      serious   medium   unknown    eq? doesn't work on non-symbols at Advanced level
-     519 steck    all      open      serious   medium   unknown    Problem in printing documentations.
-     521 steck    all      open      serious   medium   unknown    
-     522 steck    all      open      serious   medium   unknown    docs missing test suite primitives / classes
-     524 steck    all      open      serious   medium   unknown    '() prints as empty in DrScheme, but null in Jr
-     525 steck    all      open      serious   medium   unknown    mred doesn't run DrScheme Jr
-     526 steck    all      open      serious   medium   unknown    "print" not setup right in drscheme
-     528 steck    all      open      serious   medium   unknown    call/cc works at Intermediate, but shouldn't
+ 
+     512 robby    mredsyst open      serious   medium   unknown    menu keybindings should change automatically according to pref
+ 
      529 robby    drscheme open      serious   high     unknown    font problem
-     530 steck    all      open      serious   medium   unknown    search menu item has bad default action
+ 
+     530 robby    mredsyst open      serious   medium   unknown    search menu item has bad default action
+ 
+     531 robby    drscheme open      non-criti low      unknown    read following newline un-puts a newline
+ 
+     532 robby    drscheme open      non-criti low      unknown    error-message line numbers off by one between files?
+ 
+     539 shriram  mcmicmac open      serious   medium   unknown    (require-library "refer.ss") fails in drs
+ 
+     546 robby    mredsyst open      serious   medium   unknown    indentation problem
+ 
+     547 robby    mredsyst open      serious   medium   unknown    spurious black lines show up when balancing parens
+ 
+     555 robby    mredsyst open      non-criti low      unknown    indent all in search box give an internal error
+ 
+     562 mflatt   mredengi open      serious   medium   unknown    error of type 2 occurred
+ 
+     563 mflatt   mredengi open      serious   medium   unknown    dragging files onto mred broken
+ 
+     564 mflatt   mredengi open      serious   medium   unknown    dragging two files to mred app only opens first one
+ 
+     565 mflatt   mredengi open      serious   medium   unknown    command line args for mac mred
+ 
+     568 mflatt   mredengi open      non-criti low      unknown    mac mred doesn't use macos 8 dialog items
+ 
+     577 robby    drscheme open      serious   medium   unknown    MrEd -u -- -f does not run programs in the main thread
+ 
+     581 mflatt   mredengi open      serious   medium   unknown    setting a button label on the mac causes (out of mem) crash
+ 
+     599 mflatt   mredengi open      serious   medium   unknown    mac: can't double click to open files while mred starts up
+ 
+     601 mflatt   mredengi open      serious   medium   unknown    mac: buttons in dialogs don't show focus
+ 
+     606 shriram  mcmicmac open      serious   medium   unknown    funny error message for "#if"
+ 
+     626 steck    mredsyst open      serious   medium   unknown    Search mis-hilights text
+ 
+     642 mflatt   mredengi open      serious   high     unknown    on-default-action for dialog box called with null
+ 
+     649 robby    mredsyst open      serious   medium   unknown    Meta-P is painfully slow
+ 
+     651 mflatt   mredengi open      serious   medium   unknown    "Error: Unresolved inheritance operation" ??
+ 
+     674 steck    drscheme open      serious   medium   unknown    autosave files not checking for failed copy
+ 
+     678 mflatt   mredengi open      serious   low      unknown    Horizontal scrolling broken after DrScheme window resize
+ 
+     681 steck    mredsyst open      non-criti low      unknown    mred:menu% should have is-enabled? method
+ 
+     693 mflatt   mredengi open      serious   medium   unknown    menu's get-label doesn't report keybinding strings under Xt
+ 
+     699 mflatt   mredengi open      serious   medium   unknown    Xt wx:canvas-dc% instance invalidated by canvas GC
+ 
+     701 robby    mredsyst open      non-criti medium   unknown    reference-library-... are gone in 52 without doc change
+ 
+ 
+
+
+
+
+

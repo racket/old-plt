@@ -1,216 +1,111 @@
+The `help' collection provides tools for PLT _Help Desk_.
 
-The `help' collection provides tools for working with _Help Desk_.
+The file help.ss is used to build the Help Desk launcher.
 
-_Running or Embedding Help Desk_
-================================
+Server functions
+----------------
 
-Loading the _help.ss_ library directly executes the Help Desk
-program. 
+The following procedures are made available with
 
-The start-help-desk.ss file contains one unit that imports:
+ (require "server.ss" "help")
 
-  mzlib:function^
-  mzlib:string^
-  mzlib:file^
-  mzlib:url^ - not really in MzLib; it's in the "net" collection
-  mred^
-  framework^
+> start-help-server : -> hd-cookie
 
-and exports _help:start-help-desk^_, a signature with three definitions:
-_help-desk_, and _open-url_.  These functions, when
-invoked, dynamically load the help desk implementation, cache it, and
-create and returns a help-desk frame. The frame they returns is the result
-of invoking new-help-frame with the same startup-url that the stand-alone
-help desk provides.
+Starts the Web server for Help Desk.  The return value is 
+a structure that contains instance information about the
+server.  The cookie needs to be passed to `search-for-docs',
+described below.
 
-> (help-desk)
+> hd-cookie->port : hd-cookie -> number
 
-This just creates a help-desk frame open to the first page of the
-documentation.
+Given a Help Desk server cookie, returns the port number
+used by the server.
 
-> (help-desk key lucky?)
+Browser functions
+-----------------
 
-This creates a help-desk frame and immediately performs a keyword and
-indext exact-match search for key. If lucky? is #f, a normal search is
-performed, otherwise a lucky search is performed. lucky? defaults to #t.
+The following procedures are made available by 
 
-> (open-url url)
+ (require "browser.ss" "help")
 
-Opens a new help desk window and opens `url' in it.
+> help-desk-browser : hd-cookie -> void
 
--------------------------------------------------------------
+Starts the Help Desk browser.
 
-The _help-unit.ss_ library provides the Help Desk as a unit.
+Manual ordering
+---------------
 
-Beware, before invoking this unit, the proxy.ss file must be
-loaded and the `add-proxy-preferences-panel' procedure must
-have been run.
+The following procedures are made available by 
 
-The unit has the following imports:
+ (require "docpos.ss" "help" "private")
 
-  setup:plt-installer^ - see the `plt-installer' docs
-  mred^
-  framework^
-  (frame-mixin) - a mixin to be applied to Help Desk's frame, which
-                  is derived from framework:frame:standard-menus%
-  help:doc-position^ 
-    - contains only:
-         user-defined-doc-position : string -> (union #f number)
-      that specifies a weight to be used for each manual.
-      #f means use the default weight
+> standard-html-doc-position : string -> number
 
-It exports
+Given a manual name, returns a number (possibly negative)
+that indicates its standard search order position.
 
-> help^
+> user-defined-doc-position : string -> (union number #f)
 
-which contains three items:
+Like standard-html-doc-position, but returns a weight 
+only if the user has assigned one using `set-doc-position!',
+described below.  If the user has not set a weight for the
+manual, #f is returned.  If the manual is not among `known-docs' 
+(see below), an error occurs.
 
-> (new-help-frame startup-url [show-immediately? progress-proc])
-       - takes a url (a string or a url record) to use as the initial
-       page for the window. Returns a frame% object (more
-       specifically, an instance of
-       framework:frame:standard-menus%). See below for information
-       about public methods of this object.
+> set-doc-position! : string number -> void
 
-       If `show-immediately?' is true (the default), the frame is
-       shown before the URL is resolved. Otherwise, the frame is shown
-       only if resolving URL results in content to display in the
-       frame.
+Sets the manual, indicated by the string argument, to 
+use the search order position given by the number argument.
+If the manual is not among `known-docs' (see below), an
+error occurs.
 
-       The `progress-proc' is used in the same way as for the
-       `goto-url' method of `hyper-canvas-mixin' in the "browser"
-       collection. It takes a single Boolean argument.
+> reset-doc-positions! : -> void
 
-> (open-url-from-user parent-window open-url-proc) - opens a dialog
-       from which the user selects a url to open. The `parent'
-       argument specifies a parent window for the dialog. The
-       `open-url-proc' proecdure is called with a URL structure (see
-       the URL library in the "net" collection). If `open-url-proc'
-       raises an `exn:file-saved-instead' or `exn:cancelled' exception
-       (as defined by the "browser" collections), it is caught. The
-       dialog is not closed until an URL is opened sucessfully or the
-       user clicks the Cancel button.
+Removes all the user-defined document weights that may have
+been set using `set-doc-position!', above.
 
-> (doc-collections-changed) - resets Help Desks's manuals index.
-       This procedure flushes the cached keywords, hdindex, and
-       doc.txt indicies and reloads them from scratch. It also
-       calls user-defined-doc-position to resort the order of
-       the manuals.
+> known-docs : (listof (cons string string))
 
-The frame returned by `new-help-frame' provides two extra methods:
+A list of pairs, where each pair consists of a short-form name of a
+manual, suitable to pass to `standard-html-doc-position',
+`user-defined-doc-position', or `set-doc-position', and
+a full name for the manual.
 
-> search-for-help :: (send a-help-frame search-for-help string type mode)
-    - simulates a user-initiated search in the window, where `string'
-    is the search input, `type' is 'keyword, 'keyword+index, or 'all,
-    and `mode' is 'exact, 'contains, or 'regexp.
+Search functions
+----------------
 
-> search-for-help/lucky :: (send a-help-frame search-for-help/lucky string type mode)
-    - simulates a user-initiated lucky search in the window, where `string'
-    is the search input, `type' is 'keyword, 'keyword+index, or 'all,
-    and `mode' is 'exact, 'contains, or 'regexp.
+Available via
 
-> goto-url :: (send a-help-frame goto-url url [progress-proc]) 
-    - opens the given URL within the help frame. The `progress-proc'
-    argument is used in the same way as for the `goto-url' method of
-    `hyper-canvas-mixin' in the "browser" collection. It takes a
-    single Boolean argument.
+  (require "search.ss" "help" "private")
+  
+> search-for-docs : hd-cookie search-string search-type match-type lucky? -> void
 
-All of the helpr.ss unit's imports must be initialized before the Help
-Desk unit itself. For dynamic-linking convenience, the
-`new-help-frame' and `open-url-from-user' procedures are also returned
-as the values of the unit's initialization expression.
+Searches for `search-string' in the documentation, using `search-type' 
+and `match-type', and displays result in the Help Desk browser.  The 
+`search-type' is one of "keyword", "keyword-index", or "keyword-index-text".
+The `match-type' is one of "exact-match", "containing-match", or 
+"regexp-match".  The `lucky?' parameter indicates whether to do a 
+lucky search or not; it is considered true for any value other than #f.
 
+> do-search : search-string num bool bool val f1 f2 f3 f4 -> (union string #f)
 
-------------------------------------------------------------
+Peforms a search for `search-string' in the documentation, and returns either 
+a string containing HTML or #f.  More details are provided in the file
+search.ss in the private subdirectory of the help collection.
 
-The _proxy-prefs.ss_ file contains a module that exports a
-single definition:
+> doc-collections-changed : -> void
 
->  (add-proxy-prefs-panel) - adds a panel for setting
-   the http proxy to the framework's preferences panel.
-
-As this module is executed, it sets the defaults for the
-'drscheme:help-desk:http-proxy preference setting to the
-proxy extracted from the net collection's
-current-proxy-servers parameter.
-
-In addition, it sets the current-proxy-servers parameter
-based on the value of 'drscheme:help-desk:http-proxy
-preference.
-
-------------------------------------------------------------
+Calling this procedure indicates to the Help Desk search engine that 
+the documentation collections have changed.
 
 _Creating Help Desk Documentation_
 ==================================
-
-Help Desk combines an HTML browser with a search engine. The search
-engine looks for information in three places:
-
-  * keyword directories
-
-  * indexes
-
-  * raw document source
-
-A "keyword" (in this case) is a Scheme identifier, such as `cons' or
-`define', and the keyword directory points to its definition.  Indexes
-contain more general entries, such as "cut and paste" or "creating
-help desk documents", and may map keywords to use sites rather than
-definition sites. Searching through the raw document source (often
-HTML source) may be useful as a last-ditch effort, but the point of
-keyword directories and indexes is to avoid this as much as possible.
-
-When the user searches on a keyword that reprsents a Scheme procedure,
-class, or method, the search result provides immediate information
-about the use of the keyword. For example, performing an exact keyword
-search on "append" produces:
-
- In r5rs:
-  (append list ...) in "R5RS - Pairs and lists"
- In mred:
-  (send a-list-box append item data) in "append"
-  (send a-list-box append item) in "append"
-  (send a-list-control append item) in "append"
-
-which shows that the standard Scheme `append' consumes any number of
-lists, the `append' method of a list-box% object consumes one or two
-arguments, etc. The user may click on search result lines to obtain
-further information. Often, however, the immediate information is
-sufficient, because the user merely wants the order of arguments for a
-procedure or method.
-
-The Help Desk locates the installed documentation as follows:
-
- * Help Desk checks each top-level collection to see if it contains a
-   doc.txt file for collection-specific, text-based documentation.
-
- * Help Desk checks plt/collects/doc for more general, HTML-formatted
-   documentaion.
-
-The two documentation formats are described below.
-
-The _doc.txt_ Format
---------------------
-
-The Help Desk inspects each top-level collection to see if it contains
-a doc.txt file. If so, the doc.txt file is parsed for index and
-keyword entries. If a top-level collection contains a info.ss file
-with a
->   'doc-sub-collections
-field  (see the mzc manual for information about info.ss), then the
-field's value should be a list of sub-collections to search for
-doc.txt files (or even nested info.ss files).
-
-No annotations are removed from a doc.txt file before it is presented
-to the user. Thus, despite the annotations described below, "doc.txt"
-is a WYSIWYG documentation format.
 
 Index Entry Annotations
 - - - - - - - - - - - -
 
 An index entry is specified by surrounding the indexed phrase with
-underscores. For example, the both of the section titles preceding
-current are indexed: "Creating Help Desk Documentation" and "doc.txt".
+underscores, as for the current portion of this file.
 
 Keyword Entry Annotations
 - - - - - - - - - - - - -
@@ -320,41 +215,13 @@ the html that help desk can parse. If a collection's info.ss file returns
 such a list, the blurb is inserted into the ``installed components'' page
 of the help desk documentation.
 
-Each installed collection is listed in a "ul". The context of the
-individual blurb field is this:
-
-   `(li ()
-        (font ((color "forest green")) 
-              (b () ,name-of-collection))
-        (br ())
-        ,@blurbs)
-
-where `name-of-collection' is the response of the 'name query to the
-info.ss file and `blurbs' is the response of the 'blurb query to the
-info.ss file.
-
 The _'help-desk-message field_ of the _info.ss_ file
 - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 This field must be a string that is displayed at the top of the Help Desk
-window, in green, when the doc.txt file of this collection is displayed. It
-should be a single line, describing how to load the library with a prefix
+results window, in green, when the doc.txt file of this collection is displayed. 
+It should be a single line, describing how to load the library with a prefix
 specifing the applicable language levels.
-
-
-_Help Desk Entry Points_
-========================
-
- The Help Desk documentation base supports the following entry
- points, which may be used by applications.
-
-> Help Desk Start Page
-
-  Found at (build-path (collection-path "doc" "help") "index.html")
-
-> Help Desk Release Notes
- 
-  Found at (build-path (collection-path "doc" "help" "release") "notes.html")
 
 _Supplemental Help Desk documentation libraries_
 ================================================
@@ -362,46 +229,19 @@ _Supplemental Help Desk documentation libraries_
 These libraries are used to build dynamic portions of the documentation.
 
 > Find Doc
-  The _finddoc.ss_ library is a module that defines two procedures:
-> (finddoc manual index-key label)
-  It accepts three strings. The first is the name of a doc collection,
-  the second is an index entry in that manual and the final is a
-  desriptive string. It returns a string representation of an 
-  anchor (in html) that goes to that index entry in the manual.
-  If the manual is not found, or the index-key is not in the manual,
-  it returns html code that shows an error. Because the link is
-  a "file:" link, it cannot link to a particular anchor in the target.
-> (findreldoc to-doc-path manual index-key label)
-  Like `finddoc', but `to-doc-path' is a Unix-style relative path that
-  reaches the "docs" collection. The resulting link is relative, and
-  it can point to a specific anchor in the target.
+  The _finddoc.ss_ library is a module that defines the procedure:
+> (finddoc-page manual index-key)
+  It accepts two strings. The first is the name of a doc collection,
+  the second is an index entry in that manual.  It returns a string 
+  representation of the filename that contains the index 
+  entry in the manual.  If the manual is not found, or the 
+  index-key is not in the manual, an error occurs.
 
 > Installed Components
-  The _installed-components.ss_ library is a module that defines one procedure:
+  The _installed-components.ss_ library is a module that defines 
+  one procedure:
 > (help-desk:installed-components)
-  It returns a string of xhtml with documentation extracted from the 
+  It returns a string of XHTML with documentation extracted from the 
   _'blurb_ fields of the info.ss files in each collection.
-  
-> Design Recipe Window
-  the _recipewin.ss_ library contains a module that defines one procedure:
-> (help-desk:recipewin)
-  This procedures opens up a design recipe browser to help programmers
-  follow the design recipes from _How to Design Programs_.
-  
-> Bug Report
-  The _bug-report.ss_ library contains a module that defines one procedure:
-> (help-desk:report-bug)
-  This opens a window for a user to submit a bug report about DrScheme.
 
-> Known Manuals
-  The _manuals.html_ html file, when visited in Help Desk,
-  shows the currently installed manuals, plus a list
-  of uninstalled manuals.
-
-> Refresh Manuals
-  The _refresh-manuals.ss_ library contains a module that defines a
-  single procedure:
-> (refresh-manuals)
-  It deletes all of the sub-collections of the doc collection and 
-  the downloads all of the .plt files from the documentation web site
-  and installs them.
+  

@@ -1,7 +1,9 @@
 (module installed-components mzscheme
   (require (lib "list.ss")
            (lib "xml.ss" "xml")
-           (lib "getinfo.ss" "setup"))
+           (lib "getinfo.ss" "setup")
+	   (lib "util.ss" "doc" "help" "servlets" "private"))
+
   (provide help-desk:installed-components)
   
   ;; comp = (make-comp string xexpr)
@@ -9,19 +11,18 @@
   ;; the name names the collection and the xml is its xexpr blurb
   (define-struct comp (name xml))
   
-  ;; help-desk:installed-components : -> string
-  ;; the html string that represents all of the collections with blurb fields
-  (define (help-desk:installed-components) 
+  ;; help-desk:installed-components url : -> (listof (list string xexpr))
+  ;; represents all of the collections with blurb fields 
+  (define (help-desk:installed-components)
     (let ([comps 
            (quicksort
             (filter (lambda (x) x)
-                    (map get-blurb (all-collections)))
+                    (map (lambda (c) (get-blurb c)) (all-collections)))
             comp<=?)])
-      (apply string-append
-             (append
-              (list (format "<ul>~n"))
-              (map build-string-from-comp comps)
-              (list (format "</ul>~n"))))))
+      (map build-string-from-comp comps)
+	(map (lambda (c)
+	       (list (comp-name c) (comp-xml c)))
+	     comps)))
   
   ;; all-collections : ->  (lisof string)
   ;; returns a list of the collections from the current-library-collections-path parameter
@@ -40,7 +41,7 @@
       (quicksort (hash-table-map colls (lambda (x v) (symbol->string x)))
                  string<=?)))
   
-  ;; get-blurb : string -> xexpr
+  ;; get-blurb : string url -> xexpr
   ;; builds the xexpr for a collection, based on its name a blurb
   (define (get-blurb collection)
     (let/ec k
@@ -55,7 +56,7 @@
                                          (make-comp
                                           collection
                                           `(li 
-                                            (font ((color "forest green")) (b () ,collection))
+                                            (font ((color "forestgreen")) (b () ,collection))
                                             (p
                                              (font
                                               ((color "red"))
@@ -70,7 +71,7 @@
                                           (make-comp
                                            collection
                                            `(li 
-                                             (font ((color "forest green")) (b () ,name))
+                                             (font ((color "forestgreen")) (b () ,name))
                                              (br)
                                              (font ((color "red"))
                                                    (i
@@ -87,13 +88,18 @@
              (br)
              ,@(append
                 blurb
-                (if (file-exists? (build-path (collection-path collection) "doc.txt"))
-                    (list
-                     " See "
-                     `(a ((href ,(format "file:~a" (build-path (collection-path collection) "doc.txt"))))
+		(let ([fname (build-path (collection-path collection) "doc.txt")])
+		  (if (file-exists? fname)
+		      (list
+		       " See "
+		       `(A ((HREF ,(format 
+				    "/servlets/doc-anchor.ss?file=~a&caption=Documentation for the ~a collection&name=~a" 
+				    (hexify-string fname)
+			            collection
+			            collection)))
                          "the documentation")
                      " for more information.")
-                    null))))))))
+                    null)))))))))
   
   ;; build-string-from-comp : comp -> string
   ;; constructs a string version of the xexpr from a comp

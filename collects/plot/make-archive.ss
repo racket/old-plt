@@ -12,7 +12,7 @@
   
   (define target-sys-type (system-type))
   
-  (define plot-src-collection-name "plot-tmp")
+  (define plot-src-collection-name "plot")
 
   (command-line
    "make-archive"

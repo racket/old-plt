@@ -1338,16 +1338,13 @@ int namespace_val_MARK(void *p) {
 
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
-  gcMARK(e->val_env);
-  gcMARK(e->module_syntax);
 
   gcMARK(e->shadowed_syntax);
 
   gcMARK(e->link_midx);
-  gcMARK(e->for_syntax_of);
 
   gcMARK(e->toplevel);
-  gcMARK(e->modules);
+  gcMARK(e->modpair);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -1366,16 +1363,13 @@ int namespace_val_FIXUP(void *p) {
 
   gcFIXUP(e->syntax);
   gcFIXUP(e->exp_env);
-  gcFIXUP(e->val_env);
-  gcFIXUP(e->module_syntax);
 
   gcFIXUP(e->shadowed_syntax);
 
   gcFIXUP(e->link_midx);
-  gcFIXUP(e->for_syntax_of);
 
   gcFIXUP(e->toplevel);
-  gcFIXUP(e->modules);
+  gcFIXUP(e->modpair);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));
@@ -1454,6 +1448,7 @@ int stx_val_MARK(void *p) {
   gcMARK(stx->val);
   gcMARK(stx->src);
   gcMARK(stx->wraps);
+  gcMARK(stx->props);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }
@@ -1463,6 +1458,7 @@ int stx_val_FIXUP(void *p) {
   gcFIXUP(stx->val);
   gcFIXUP(stx->src);
   gcFIXUP(stx->wraps);
+  gcFIXUP(stx->props);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }

@@ -890,24 +890,26 @@
 	  `(lambda (r src)
 	     ,(let ([main `(datum->syntax ,(apply-to-r l) src (quote-syntax ,dest))])
 		(if (multiple-ellipsis-vars? proto-r)
-		    `(let ([exn #f])
+		    `(let ([exnh #f])
 		       ((let/ec esc
 			  (dynamic-wind
 			   (lambda ()
-			     (set! exn (current-exception-handler))
+			     (set! exnh (current-exception-handler))
 			     (current-exception-handler
 			      (lambda (exn)
 				(esc
 				 (lambda ()
-				   (raise-syntax-error
-				    'syntax
-				    "incompatible ellipsis match counts"
-				    (quote-syntax ,p)))))))
+				   (if (exn:misc:user-break? exn)
+				       (raise exn)
+				       (raise-syntax-error
+					'syntax
+					"incompatible ellipsis match counts"
+					(quote-syntax ,p))))))))
 			   (lambda ()
 			     (let ([v ,main])
 			       (lambda () v)))
 			   (lambda ()
-			     (current-exception-handler exn))))))
+			     (current-exception-handler exnh))))))
 		    main)))
 	  ;; Get list of unique vars:
 	  (let ([ht (make-hash-table)])

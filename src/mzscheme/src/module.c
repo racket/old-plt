@@ -1074,13 +1074,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 				  exsns[i]);
     }
 
-    if (iim->reexport_kernel) {
-      exs = kernel->exports;
-      for (i = kernel->num_exports; i--; ) {
-	if (!SAME_OBJ(iim->kernel_exclusion, exs[i]))
-	  scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
-      } 
-    }
+    if (iim->reexport_kernel)
+      scheme_extend_module_rename_with_kernel(rn);
   }
   
   if (rec) {

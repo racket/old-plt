@@ -569,7 +569,6 @@ namespace_val {
 
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
-  gcMARK(e->module_syntax);
 
   gcMARK(e->shadowed_syntax);
 
@@ -613,6 +612,7 @@ stx_val {
   gcMARK(stx->val);
   gcMARK(stx->src);
   gcMARK(stx->wraps);
+  gcMARK(stx->props);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }

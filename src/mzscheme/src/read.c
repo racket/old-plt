@@ -1798,6 +1798,7 @@ static Scheme_Object *read_compact(CPort *port,
       }
       break;
     case CPT_STX:
+    case CPT_GSTX:
       {
 	if (!local_rename_memory) {
 	  Scheme_Hash_Table *rht;
@@ -1806,7 +1807,8 @@ static Scheme_Object *read_compact(CPort *port,
 	}
 
 	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
-	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory, 1, 0);
+	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory,
+				   ch == CPT_GSTX, 0);
       }
       break;
     case CPT_MARSHALLED:

@@ -15,7 +15,7 @@
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
-#define GENERATIONS 0
+#define GENERATIONS 1
 
 #define USE_FREELIST 0
 
@@ -52,8 +52,8 @@ typedef short Type_Tag;
 
 /* Debugging and performance tools: */
 #define TIME 0
-#define SEARCH 1
-#define CHECKS 1
+#define SEARCH 0
+#define CHECKS 0
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0

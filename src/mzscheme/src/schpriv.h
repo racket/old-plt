@@ -405,6 +405,8 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src,
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks,
 				      Scheme_Hash_Table *renames);
 
+int scheme_syntax_is_graph(Scheme_Object *stx);
+
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old, 
 				Scheme_Object *origin);

@@ -186,6 +186,8 @@ void scheme_init_stx(Scheme_Env *env)
 						      2, 2),
 			     env);
 
+  REGISTER_SO(source_symbol);
+  REGISTER_SO(origin_symbol);
   source_symbol = scheme_make_symbol("source");
   origin_symbol = scheme_intern_symbol("origin");
 }
@@ -1454,6 +1456,79 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks,
     v = scheme_resolve_placeholders(v, 0);
 
   return v;
+}
+
+/*========================================================================*/
+/*                           syntax is graph?                             */
+/*========================================================================*/
+
+#ifdef DO_STACK_CHECK
+static int syntax_is_graph_inner(Scheme_Object *o);
+
+static Scheme_Object *syntax_is_graph_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
+
+  p->ku.k.p1 = NULL;
+
+  return (Scheme_Object *)syntax_is_graph_inner(o);
+}
+#endif
+
+static int syntax_is_graph_inner(Scheme_Object *o)
+{
+  Scheme_Stx *stx = (Scheme_Stx *)o;
+  Scheme_Object *v;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+# ifndef MZ_REAL_THREADS
+      Scheme_Process *p = scheme_current_process;
+# endif
+      p->ku.k.p1 = (void *)o;
+      return (int)scheme_handle_stack_overflow(syntax_is_graph_k);
+    }
+  }
+#endif
+  SCHEME_USE_FUEL(1);
+
+  if (stx->hash_code & STX_GRAPH_FLAG)
+    return 1;
+
+  v = stx->val;
+  
+  if (SCHEME_PAIRP(v)) {
+    while (SCHEME_PAIRP(v)) {
+      if (syntax_is_graph_inner(SCHEME_CAR(v)))
+	return 1;
+      v = SCHEME_CDR(v);
+    }
+    if (!SCHEME_NULLP(v)) {
+      if (syntax_is_graph_inner(v))
+	return 1;
+    }
+    return 0;
+  } else if (SCHEME_BOXP(v)) {
+    return syntax_is_graph_inner(SCHEME_BOX_VAL(v));
+  } else if (SCHEME_VECTORP(v)) {
+    int size = SCHEME_VEC_SIZE(v), i;
+    
+    for (i = 0; i < size; i++) {
+      if (syntax_is_graph_inner(SCHEME_VEC_ELS(v)[i]))
+	return 1;
+    }
+    
+    return 0;
+  } else
+    return 0;
+}
+
+int scheme_syntax_is_graph(Scheme_Object *stx)
+{
+  return syntax_is_graph_inner(stx);
 }
 
 /*========================================================================*/

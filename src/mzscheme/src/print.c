@@ -1140,7 +1140,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SCHEME_STXP(obj))
     {
       if (compact) {
-	print_compact(p, CPT_STX);
+	if (scheme_syntax_is_graph(obj))
+	  print_compact(p, CPT_GSTX);
+	else
+	  print_compact(p, CPT_STX);
+	
 	closed = print(scheme_syntax_to_datum(obj, 2, rnht), 
 		       notdisplay, 1, ht, symtab, rnht, p);
       } else {

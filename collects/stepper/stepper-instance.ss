@@ -11,9 +11,18 @@
           (shared : stepper:shared^)
           (mred : mred^)
           (utils : stepper:cogen-utils^)
-          (marks : stepper:marks^)
-          (annotate : stepper:annotate^))
-  (link [reconstruct : stepper:reconstruct^ 
+          (marks : stepper:marks^))
+  (link [stepper-annotate : stepper:annotate^
+                          ((require-library-unit/sig "annotater.ss" "stepper")
+                           zodiac
+                           (core function)
+                           error
+                           utils
+                           marks
+                           stepper
+                           shared
+                           zcp)]
+        [reconstruct : stepper:reconstruct^ 
                      ((require-library-unit/sig "reconstructr.ss" "stepper")
                       zodiac
                       (core function)
@@ -31,7 +40,7 @@
                   drscheme
                   print-convert
                   error
-                  annotate
+                  stepper-annotate
                   reconstruct
                   shared)])       
       (export))

@@ -1,5 +1,6 @@
-(unit/sig plt:aries-no-break^
+(unit/sig plt:aries^
   (import [zodiac : zodiac:system^]
+          [mred : mred^]
           [utils : stepper:cogen-utils^]
           [marks : stepper:marks^]
           [annotate : stepper:annotate^])
@@ -7,6 +8,10 @@
   (define w-c-m-key annotate:debug-key)
   
   (define current-environments #f)
+  
+  (define drscheme-eventspace (mred:current-eventspace))
+  (define break-semaphore (make-semaphore))
+  (define break-resume-value #f)
   
   (define (annotate sexp zodiac-read)
     (let-values 
@@ -28,6 +33,23 @@
   (define (make-zodiac-mark location)
     (marks:make-cheap-mark location))
     
+  (define (break)
+    (let ([break-info (continuation-mark-set->list (current-continuation-marks) annotate:debug-key)])
+      (parameterize
+          ([mred:current-eventspace drscheme-eventspace])
+        (mred:queue-callback 
+         (lambda ()
+           (current-namespace (make-namespace))
+           (global-defined-value 'break-info break-info)
+           (global-defined-value 'break-resume (lambda (val) 
+                                                 (set! break-resume-value val)
+                                                 (semaphore-post break-semaphore)))
+           (global-defined-value 'expose-mark marks:expose-mark)
+           (global-defined-value 'display-mark marks:display-mark)
+           (mred:graphical-read-eval-print-loop)))
+        (semaphore-wait break-semaphore)
+        break-resume-value)))
+  
   (define signal-not-boolean utils:signal-not-boolean)
   (define signal-undefined utils:signal-undefined)
   
@@ -36,5 +58,3 @@
   ; these environments are totally irrelevant to non-stepper
   ; use of the annotater.
   (set! current-environments annotate:initial-env-package))
-
-  

@@ -3,7 +3,7 @@
   ; Might not be there if this is MrEd-less DrJr distribution
   (require-relative-library "userspcs.ss"))
 (require-relative-library "ricedefs.ss")
-(require-library "ariess.ss" "cogen")
+(require-library "sig.ss" "stepper")
 (require-library "cores.ss")
 (require-library "pconvers.ss")
 (require-library "zsigs.ss" "zodiac")

@@ -1,10 +1,3 @@
-(define-signature plt:aries-core^
-  (annotate
-   extract-zodiac-location
-   w-c-m-key
-   make-zodiac-mark
-   break))
-
 (define-signature stepper:cogen-utils^
   (get-binding-name
    lookup-new-binding-name
@@ -29,14 +22,23 @@
    improper-map
    improper-foreach))
 
-(define-signature plt:aries^
-  ((open plt:aries-core^)
-   
+(define-signature plt:aries-no-break^
+  (annotate
+   extract-zodiac-location
+   w-c-m-key
+   make-zodiac-mark
    signal-not-boolean
    signal-undefined))
+  
+(define-signature plt:aries^
+  ((open plt:aries-no-break^)
+   break))
 
 (define-signature stepper:marks^
-  (make-mark
+  (cheap-mark?
+   make-cheap-mark
+   cheap-mark-source
+   make-full-mark
    mark-source
    mark-bindings
    mark-label

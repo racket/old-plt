@@ -449,12 +449,9 @@
     (let ([dh (error-display/debug-handler)])
       (if (exn? exn)
 	  (let* ([marks (exn-continuation-marks exn)]
-		 [m (if (continuation-mark-set? marks)
-                        (continuation-mark-set->list marks aries:w-c-m-key)
-                        null)]
-		 [debug (if (pair? m)
-			    (car m)
-			    #f)])
+                 [debug (if (continuation-mark-set? marks)
+                            (aries:extract-zodiac-location marks)
+                            #f)])
 	    (dh (format "~a" (exn-message exn)) debug exn))
 	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
@@ -709,7 +706,7 @@
         (extra-definitions))
       
       ;; ROBBY : attempt to back out of John's changes
-      ;(global-defined-value '#%break aries:break)
+      (global-defined-value '#%break aries:break)
       
       (for-each (lambda (l) (apply require-library/proc l))
                 (setting-macro-libraries setting)))))

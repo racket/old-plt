@@ -3,20 +3,36 @@
           [cp : stepper:client-procs^]
           mzlib:function^)
   
-  (define (make-mark location label bindings)
-    (lambda () (cons location (cons label bindings))))
+  (define (make-full-mark location label bindings)
+    `(#%lambda () (#%list ,location (#%quote ,label) ,@(apply append bindings))))
+  
+  (define (make-cheap-mark location)
+    location)
+  
+  (define (cheap-mark? mark)
+    (z:zodiac? mark))
+  
+  (define (cheap-mark-source mark)
+    mark)
   
   (define (mark-source mark)
-    (car (mark)))
+    (if (cheap-mark? mark)
+        (cheap-mark-source mark)
+        (car (mark))))
   
   (define (mark-bindings mark)
-    (cddr (mark)))
+    (letrec ([pair-off
+              (lambda (lst)
+                (cond [(null? lst) null]
+                      [(null? (cdr lst)) (error 'mark-bindings "uneven number of vars and bindings")]
+                      [else (cons (list (car lst) (cadr lst)) (pair-off (cddr lst)))]))])
+      (pair-off (cddr (mark)))))
   
   (define (mark-label mark)
     (cadr (mark)))
   
   (define (mark-binding-value mark-binding)
-    ((car mark-binding)))
+    (car mark-binding))
   
   (define (mark-binding-varref mark-binding)
     (cadr mark-binding))

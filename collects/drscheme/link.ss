@@ -16,7 +16,7 @@
 				     mred mzlib mzlib:date framework print-convert app
 				     text snip
 				     init graph
-				     aries zodiac)]
+				     cogen zodiac)]
 
 	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss")
 				  mred framework
@@ -26,14 +26,14 @@
 		   ((export* interface) : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]
-	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
-			     zodiac
-			     ((export* interface) : zodiac:interface^))]
-;        [aries : plt:aries^ ((require-library "debug-link.ss" "stepper")
-;                             mzlib
-;                             export*
-;                             zodiac
-;                             mred)]        
+        [cogen : plt:aries^
+               ((require-library-unit/sig "link.ss" "stepper")
+                mzlib
+                framework
+                print-convert
+                mred
+                export*
+                zodiac)]
 	[app : drscheme:app^ ((require-relative-library "app.ss")
 			      mred
 			      mzlib
@@ -65,7 +65,7 @@
 	  (open framework)
 	  (unit print-convert)
 	  (unit prefs drscheme:prefs)
-	  (unit aries drscheme:aries)
+	  (unit cogen drscheme:cogen)
 	  (unit zodiac zodiac)
 	  (unit text drscheme:text)
 	  (unit snip drscheme:snip)

@@ -3,6 +3,7 @@
 	  mzlib:function^
 	  [e : stepper:error^]
           [utils : stepper:cogen-utils^]
+          stepper:marks^
           [s : stepper:model^]
 	  stepper:shared^
           stepper:client-procs^)
@@ -35,11 +36,11 @@
   
   ; dual-map : (('a -> (values 'b 'c)) ('a list)) -> (values ('b list) ('c list))
   
-  (define (dual-map f lst) 
-    (if (null? lst)
+  (define (dual-map f . lsts)
+    (if (null? (car lsts))
         (values null null)
-        (let-values ([(a b) (f (car lst))]
-                     [(a-rest b-rest) (dual-map f (cdr lst))])
+        (let+ ([val (values a b) (apply f (map car lsts))]
+               [val (values a-rest b-rest) (apply dual-map f (map cdr lsts))])
           (values (cons a a-rest) (cons b b-rest)))))
     
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
@@ -80,6 +81,12 @@
   (define (closure-key-maker closure)
     closure)
   
+  ; paroptarglist-> ilist and arglist->ilist are used to recreate
+  ; mzscheme sexp syntax from the parsed zodiac form, so that the
+  ; resulting expression can be fed to mzscheme.
+  
+  
+
   ; debug-key: this key will be used as a key for the continuation marks.
   
   (define debug-key (gensym "debug-key-"))
@@ -102,21 +109,7 @@
   ; a source expression (in the parsed zodiac format) and a set of z:varref/value pairs.
   ;((z:parsed (union (list-of z:varref) 'all) (list-of z:varref) (list-of z:varref) symbol) ->
   ; debug-info)
-  
-  ;(define (make-debug-info source tail-bound free-vars label)
-  ;  (let* ([kept-vars (if (eq? tail-bound 'all)
-  ;                        free-vars
-  ;                        (var-set-intersect tail-bound    ; the order of these arguments is important if
-  ;                                                         ; the tail-bound varrefs don't have bindings
-  ;                                           free-vars))]
-  ;         [var-clauses (map (lambda (x) 
-  ;                             (let ([var (translate-varref x)])
-  ;                               `(#%cons (#%lambda () ,var)
-  ;                                 (#%cons ,x
-  ;                                  null))))
-  ;                           kept-vars)])
-  ;    `(#%lambda () (#%list #f (#%quote ,label) ,@var-clauses)))) ; took source out temporarily
-  
+    
   (define (make-debug-info source tail-bound free-vars label)
     (let* ([kept-vars (if (eq? tail-bound 'all)
                           free-vars
@@ -128,7 +121,17 @@
                                (let ([var (translate-varref x)])
                                  (list var x)))
                              real-kept-vars)])
-      `(#%lambda () (#%list ,source (#%quote ,label) ,@(apply append var-clauses)))))
+      (make-full-mark source label var-clauses)))
+  
+  ; cheap-wrap for non-debugging annotation
+  
+  (define cheap-wrap
+    (lambda (zodiac body)
+      (let ([start (z:zodiac-start zodiac)]
+	    [finish (z:zodiac-finish zodiac)])
+	`(#%with-continuation-mark (#%quote ,debug-key)
+	  ,(make-cheap-mark (z:make-zodiac #f start finish))
+	  ,body))))
   
   ; wrap-struct-form 
   
@@ -162,14 +165,19 @@
   
   (define initial-env-package null)
   
-  ; annotate takes a list of zodiac:read expressions, a list of zodiac:parsed expressions,
-  ; a list of previously-defined variables, and a break routine to be called at breakpoints.
+  ; annotate takes 
+  ; a) a list of zodiac:read expressions,
+  ; b) a list of zodiac:parsed expressions,
+  ; c) a list of previously-defined variables, 
+  ; d) a break routine to be called at breakpoints, and
+  ; e) a boolean which indicates whether the expression is to be annotated "cheaply".
+  ;
   ; actually, I'm not sure that annotate works for more than one expression, even though
   ; it's supposed to take a whole list.  I wouldn't count on it. Also, both the red-exprs
   ; and break arguments may be #f, the first during a zodiac:elaboration-evaluator call,
   ; the second during any non-stepper use.
   
-  (define (annotate red-exprs parsed-exprs input-struct-proc-names break)
+  (define (annotate red-exprs parsed-exprs input-struct-proc-names break cheap-wrap?)
     (local
 	(  
          (define (make-break kind)
@@ -262,6 +270,9 @@
          ;    (and therefore should be broken before)
          ; e) a boolean indicating whether this expression is top-level (and therefore should
          ;    not be wrapped, if a begin).
+         ; f) a boolean indicating whether this expression should receive the "cheap wrap" (aka
+         ;    old-style aries annotation) or not.  #t => cheap wrap. NOTE: THIS HAS BEEN 
+         ;    (TEMPORARILY?) TAKEN OUT/MOVED TO THE TOP LEVEL.
          ;
          ; it returns
          ; a) an annotated s-expression
@@ -277,6 +288,7 @@
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f))]
                   [let-body-recur (lambda (expr vars) (annotate/inner expr (var-set-union tail-bound vars) #t #f))]
+                  [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (non-tail-recur expr)]) ann))]
                   [make-debug-info-normal (lambda (free-vars)
                                             (make-debug-info expr tail-bound free-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
@@ -285,11 +297,12 @@
                                 wcm-pre-break-wrap
                                 simple-wcm-wrap)]
                   [wcm-break-wrap (lambda (debug-info expr)
-                                    (wcm-wrap debug-info (break-wrap expr)))])
+                                    (wcm-wrap debug-info (break-wrap expr)))]
+                  [expr-cheap-wrap (lambda (annotated) (cheap-wrap expr annotated))])
 	     
              ; find the source expression and associate it with the parsed expression
              
-             (when red-exprs
+             (when (and red-exprs (not cheap-wrap?))
                (set-expr-read! expr (find-read-expr expr)))
 	     
 	     (cond
@@ -318,40 +331,39 @@
                                                   (#%quote ,v)))
                                         ,v)
                                       v)])
-                  (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars))]
+                  (values (if cheap-wrap?
+                              (expr-cheap-wrap annotated)
+                              (wcm-break-wrap debug-info (return-value-wrap annotated))) free-vars))]
 
                [(z:app? expr)
-		(let+
-		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
-		  [val arg-temps (build-list (length sub-exprs) get-arg-varref)]
-                  [val arg-temp-syms (map z:varref-var arg-temps)] 
-                  [val let-clauses `((,arg-temp-syms 
-                                      (#%values ,@(map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))))]
-                  [val pile-of-values
-		       (map (lambda (expr) 
-			      (let-values ([(annotated free) (non-tail-recur expr)])
-				(list annotated free)))
-			    sub-exprs)]
-		  [val annotated-sub-exprs (map car pile-of-values)]
-		  [val free-vars (apply var-set-union (map cadr pile-of-values))]
-		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
-					`(#%set! ,arg-symbol ,annotated-sub-expr))
-				      arg-temp-syms annotated-sub-exprs)]
-                  [val new-tail-bound (var-set-union tail-bound arg-temps)]
-		  [val app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                  [val annotate-app? (let ([fun-exp (z:app-fun expr)])
-                                        (and (z:top-level-varref? fun-exp)
-                                             (non-annotated-proc? fun-exp)))]
-		  [val final-app (break-wrap (simple-wcm-wrap app-debug-info 
-                                                              (if annotate-app?
-                                                                  (return-value-wrap arg-temp-syms)
-                                                                  arg-temp-syms)))]
-		  [val debug-info (make-debug-info-app new-tail-bound
-                                                       (var-set-union free-vars arg-temps)
-                                                       'not-yet-called)]
-		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))]
-                  [val let-exp `(#%let-values ,let-clauses ,let-body)])
-		 (values let-exp free-vars))]
+		(let+ ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
+                       [val (values annotated-sub-exprs free-vars-sub-exprs)
+                            (dual-map non-tail-recur sub-exprs)]
+                       [val free-vars (apply var-set-union free-vars-sub-exprs)])
+                   (if cheap-wrap?
+                       (values (expr-cheap-wrap annotated-sub-exprs) free-vars)
+                       (let+ ([val arg-temps (build-list (length sub-exprs) get-arg-varref)]
+                              [val arg-temp-syms (map z:varref-var arg-temps)] 
+                              [val let-clauses `((,arg-temp-syms 
+                                                  (#%values ,@(map (lambda (x) `(#%quote ,*unevaluated*)) arg-temps))))]
+                              [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
+                                                    `(#%set! ,arg-symbol ,annotated-sub-expr))
+                                                  arg-temp-syms annotated-sub-exprs)]
+                              [val new-tail-bound (var-set-union tail-bound arg-temps)]
+                              [val app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
+                              [val annotate-app? (let ([fun-exp (z:app-fun expr)])
+                                                   (and (z:top-level-varref? fun-exp)
+                                                        (non-annotated-proc? fun-exp)))]
+                              [val final-app (break-wrap (simple-wcm-wrap app-debug-info 
+                                                                          (if annotate-app?
+                                                                              (return-value-wrap arg-temp-syms)
+                                                                              arg-temp-syms)))]
+                              [val debug-info (make-debug-info-app new-tail-bound
+                                                                   (var-set-union free-vars arg-temps)
+                                                                   'not-yet-called)]
+                              [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))]
+                              [val let-exp `(#%let-values ,let-clauses ,let-body)])
+                         (values let-exp free-vars))))]
 	       
 	       [(z:struct-form? expr)
 		(let ([super-expr (z:struct-form-super expr)]
@@ -365,49 +377,71 @@
 				    ,(list raw-type annotated-super-expr)
 				    ,raw-fields)]
                              [val debug-info (make-debug-info-normal free-vars-super-expr)])
-			    (values (wcm-wrap debug-info annotated) free-vars-super-expr))
-		      (values (wcm-wrap (make-debug-info-normal null)
-                                        `(#%struct ,raw-type ,raw-fields)) 
-                              null)))]
+			    (values (if cheap-wrap?
+                                        (expr-cheap-wrap annotated)
+                                        (wcm-wrap debug-info annotated)) 
+                                    free-vars-super-expr))
+                      (let ([annotated `(#%struct ,raw-type ,raw-fields)])
+                        (values (if cheap-wrap?
+                                    (expr-cheap-wrap annotated)
+                                    (wcm-wrap (make-debug-info-normal null) annotated)) 
+                              null))))]
 
 	       [(z:if-form? expr) 
-		(let+
-		 ([val (values annotated-test free-vars-test) 
-		       (non-tail-recur (z:if-form-test expr))]
-		  [val (values annotated-then free-vars-then) 
-		       (tail-recur (z:if-form-then expr))]
-		  [val (values annotated-else free-vars-else) 
-		       (tail-recur (z:if-form-else expr))]
-                  [val inner-annotated `(#%if ,if-temp
-                                         ,annotated-then
-                                         ,annotated-else)]
-		  [val annotated `(#%begin
-                                   (#%set! ,if-temp ,annotated-test)
-                                   ,(break-wrap
-                                     (if (utils:signal-not-boolean)
-                                         `(#%if (#%boolean? ,if-temp)
-                                           ,inner-annotated
-                                           (#%raise (,utils:make-not-boolean
-                                                     (#%format ,utils:not-boolean-error-format
-                                                      ,if-temp)
-                                                     (#%current-continuation-marks)
-                                                     ,if-temp)))
-                                         inner-annotated)))]
-                  [val if-temp-varref-list (list (create-bogus-bound-varref if-temp #f))]
-		  [val free-vars (var-set-union free-vars-test 
-                                                free-vars-then 
-                                                free-vars-else)]
-		  [val debug-info (make-debug-info-app (var-set-union tail-bound if-temp-varref-list)
-                                                       (var-set-union free-vars if-temp-varref-list)
-                                                       'none)]
-                  [val wcm-wrapped (wcm-wrap debug-info annotated)]
-                  [val outer-annotated `(#%let ((,if-temp (#%quote ,*unevaluated*))) ,wcm-wrapped)])
-		 (values outer-annotated free-vars))]
+		(let+ ([val (values annotated-test free-vars-test) 
+                            (non-tail-recur (z:if-form-test expr))]
+                       [val (values annotated-then free-vars-then) 
+                            (tail-recur (z:if-form-then expr))]
+                       [val (values annotated-else free-vars-else) 
+                            (tail-recur (z:if-form-else expr))]
+                       [val free-vars (var-set-union free-vars-test 
+                                                     free-vars-then 
+                                                     free-vars-else)]
+                       [val inner-annotated `(#%if ,if-temp
+                                              ,annotated-then
+                                              ,annotated-else)]
+                       [val annotated-2 (if (utils:signal-not-boolean)
+                                            `(#%if (#%boolean? ,if-temp)
+                                              ,inner-annotated
+                                              (#%raise (,utils:make-not-boolean
+                                                        (#%format ,utils:not-boolean-error-format
+                                                         ,if-temp)
+                                                        (#%current-continuation-marks)
+                                                        ,if-temp)))
+                                            inner-annotated)])
+                  (if cheap-wrap?
+                      (values 
+                       (expr-cheap-wrap (if (utils:signal-not-boolean)
+                                            `(#%let ((,if-temp ,annotated-test)) annotated-2)
+                                            `(#%if ,annotated-test ,annotated-then ,annotated-else)))
+                       free-vars)
+                      (let+ ([val annotated `(#%begin
+                                              (#%set! ,if-temp ,annotated-test)
+                                              ,(break-wrap
+                                                (if (utils:signal-not-boolean)
+                                                    `(#%if (#%boolean? ,if-temp)
+                                                      ,inner-annotated
+                                                      (#%raise (,utils:make-not-boolean
+                                                                (#%format ,utils:not-boolean-error-format
+                                                                 ,if-temp)
+                                                                (#%current-continuation-marks)
+                                                                ,if-temp)))
+                                                    inner-annotated)))]
+                             [val if-temp-varref-list (list (create-bogus-bound-varref if-temp #f))]
+                             
+                             [val debug-info (make-debug-info-app (var-set-union tail-bound if-temp-varref-list)
+                                                                  (var-set-union free-vars if-temp-varref-list)
+                                                                  'none)]
+                             [val wcm-wrapped (wcm-wrap debug-info annotated)]
+                             [val outer-annotated `(#%let ((,if-temp (#%quote ,*unevaluated*))) ,wcm-wrapped)])
+                        (values outer-annotated free-vars))))]
 	       
 	       [(z:quote-form? expr)
-                (values (wcm-wrap (make-debug-info-normal null)
-                                  `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))) 
-                        null)]
+                (let ([annotated `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))])
+                  (values (if cheap-wrap?
+                              (expr-cheap-wrap annotated)
+                              (wcm-wrap (make-debug-info-normal null) annotated))
+                          null))]
                
                [(z:begin-form? expr)
                 (if top-level? 
@@ -427,9 +461,11 @@
                            [val (values annotated-final free-vars-final)
                                 (tail-recur last-body)]
                            [val free-vars (apply var-set-union free-vars-final free-vars-a)]
-                           [val debug-info (make-debug-info-normal free-vars)])
-                       (values (wcm-wrap debug-info 
-                                         `(#%begin ,@(append annotated-a (list annotated-final))))
+                           [val debug-info (make-debug-info-normal free-vars)]
+                           [val annotated `(#%begin ,@(append annotated-a (list annotated-final)))])
+                       (values (if cheap-wrap?
+                                   (expr-cheap-wrap annotated)
+                                   (wcm-wrap debug-info annotated))
                                free-vars)))]
 
                [(z:begin0-form? expr)
@@ -437,9 +473,11 @@
                        [val (values annotated-bodies free-vars-lists)
                             (dual-map non-tail-recur bodies)]
                        [val free-vars (apply var-set-union free-vars-lists)]
-                       [val debug-info (make-debug-info-normal free-vars)])
-                   (values (wcm-wrap debug-info
-                                     `(#%begin0 ,@annotated-bodies))
+                       [val debug-info (make-debug-info-normal free-vars)]
+                       [val annotated `(#%begin0 ,@annotated-bodies)])
+                   (values (if cheap-wrap?
+                               (expr-cheap-wrap annotated)
+                               (wcm-wrap debug-info annotated))
                            free-vars))]
                
                ; gott in himmel! this transformation is complicated.  Just for the record,
@@ -466,89 +504,99 @@
                        [val vals (z:let-values-form-vals expr)]
                        [_ (for-each utils:check-for-keyword var-set-list)]
                        [_ (for-each mark-never-undefined var-set-list)]
-                       [val dummy-var-sets
-                            (let ([counter 0])
-                              (map (lambda (var-set)
-                                     (map (lambda (var) 
-                                            (begin0 
-                                              (get-arg-varref counter)
-                                              (set! counter (+ counter 1))))
-                                          var-set))
-                                   var-sets))]
-                       [val dummy-var-list (apply append dummy-var-sets)]
-                       [val outer-dummy-initialization
-                            `([,(map z:varref-var dummy-var-list)
-                               (#%values ,@(build-list (length dummy-var-list) 
-                                                       (lambda (_) '(#%quote *undefined*))))])]
                        [val (values annotated-vals free-vars-vals)
                             (dual-map non-tail-recur vals)]
-                       [val set!-clauses
-                            (map (lambda (dummy-var-set val)
-                                   `(#%set!-values ,(map z:varref-var dummy-var-set) ,val))
-                                 dummy-var-sets
-                                 annotated-vals)]
-                       [val inner-transference
-                            `([,(map utils:get-binding-name var-set-list) 
-                               (values ,@(map z:varref-var dummy-var-list))])]
                        [val (values annotated-body free-vars-body)
                             (let-body-recur (z:let-values-form-body expr) 
                                             (bindings->varrefs var-set-list))]
-                       ; time to work from the inside out again
-                       [val inner-let-values
-                            `(#%let-values ,inner-transference ,annotated-body)]
-                       [val middle-begin
-                            `(#%begin ,@set!-clauses ,inner-let-values)]
                        [val free-vars (apply var-set-union (varref-remove* (bindings->varrefs var-set-list) free-vars-body)
-                                             free-vars-vals)]
-                       [val wrapped-begin
-                            (wcm-wrap (make-debug-info-app (var-set-union tail-bound dummy-var-list)
-                                                           (var-set-union free-vars dummy-var-list)
-                                                           'none)
-                                      middle-begin)]
-                       [val whole-thing
-                            `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
-                   (values whole-thing free-vars))]
+                                             free-vars-vals)])
+                  (if cheap-wrap?
+                      (let ([bindings
+                             (map (lambda (vars val)
+                                    `(,(map utils:get-binding-name vars) ,val))
+                                  var-sets
+                                  annotated-vals)])
+                        (values (expr-cheap-wrap `(#%let-values ,bindings ,annotated-body)) free-vars))
+                      (let+ ([val dummy-var-sets
+                                  (let ([counter 0])
+                                    (map (lambda (var-set)
+                                           (map (lambda (var) 
+                                                  (begin0 
+                                                    (get-arg-varref counter)
+                                                    (set! counter (+ counter 1))))
+                                                var-set))
+                                         var-sets))]
+                             [val dummy-var-list (apply append dummy-var-sets)]
+                             [val outer-dummy-initialization
+                                  `([,(map z:varref-var dummy-var-list)
+                                     (#%values ,@(build-list (length dummy-var-list) 
+                                                             (lambda (_) '(#%quote *undefined*))))])]
+                             [val set!-clauses
+                                  (map (lambda (dummy-var-set val)
+                                         `(#%set!-values ,(map z:varref-var dummy-var-set) ,val))
+                                       dummy-var-sets
+                                       annotated-vals)]
+                             [val inner-transference
+                                  `([,(map utils:get-binding-name var-set-list) 
+                                     (values ,@(map z:varref-var dummy-var-list))])]
+                             ; time to work from the inside out again
+                             [val inner-let-values
+                                  `(#%let-values ,inner-transference ,annotated-body)]
+                             [val middle-begin
+                                  `(#%begin ,@set!-clauses ,inner-let-values)]
+                             [val wrapped-begin
+                                  (wcm-wrap (make-debug-info-app (var-set-union tail-bound dummy-var-list)
+                                                                 (var-set-union free-vars dummy-var-list)
+                                                                 'none)
+                                            middle-begin)]
+                             [val whole-thing
+                                  `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
+                        (values whole-thing free-vars))))]
                
                [(z:letrec-values-form? expr)
-                ; Are all RHSes values? ...
-                (when (andmap z:case-lambda-form? (z:letrec-values-form-vals expr))
-                  ; ...yes , mark vars as never undefined.
-                  ; (We do this before annotating any RHS!)
-                  (for-each (lambda (vars)
-                              (for-each mark-never-undefined vars))
-                            (z:letrec-values-form-vars expr)))
                 (let+ ([val var-sets (z:letrec-values-form-vars expr)]
                        [val var-set-list (apply append var-sets)]
                        [val var-set-list-varrefs (bindings->varrefs var-set-list)]
                        [val var-set-list-binding-names (map utils:get-binding-name var-set-list)]
                        [val vals (z:letrec-values-form-vals expr)]
                        [_ (when (andmap z:case-lambda-form? vals)
-                            (for-each mark-never-undefined var-set-list))]
+                            (for-each mark-never-undefined var-set-list))] ; we could be more aggressive about this.
                        [_ (for-each utils:check-for-keyword var-set-list)]
-                       [val outer-initialization
-                            `((,var-set-list-binding-names 
-                               (values ,@var-set-list-binding-names)))]
-                       [val (values annotated-bodies free-vars-vals)
+                       [val (values annotated-vals free-vars-vals)
                             (dual-map non-tail-recur vals)]
-                       [val set!-clauses
-                            (map (lambda (var-set val)
-                                   `(#%set!-values ,(map utils:get-binding-name var-set) ,val))
-                                 var-sets
-                                 annotated-bodies)]
                        [val (values annotated-body free-vars-body)
                             (let-body-recur (z:letrec-values-form-body expr) 
                                             var-set-list-varrefs)]
-                       [val middle-begin
-                            `(#%begin ,@set!-clauses ,annotated-body)]
-                       [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
-                       [val wrapped-begin
-                            (wcm-wrap (make-debug-info-app (var-set-union tail-bound var-set-list-varrefs)
-                                                           (var-set-union free-vars var-set-list-varrefs)
-                                                           'none)
-                                      middle-begin)]
-                       [val whole-thing
-                            `(#%letrec-values ,outer-initialization ,wrapped-begin)])
-                   (values whole-thing (varref-remove* var-set-list-varrefs free-vars)))]
+                       [val free-vars-inner (apply var-set-union free-vars-body free-vars-vals)]
+                       [val free-vars-outer (varref-remove* var-set-list-varrefs free-vars-inner)])
+                  (if cheap-wrap?
+                      (let ([bindings
+                             (map (lambda (vars val)
+                                    `(,(map utils:get-binding-name vars)
+                                      ,val))
+                                  var-sets
+                                  annotated-vals)])
+                        (values (expr-cheap-wrap `(#%letrec-values ,bindings ,annotated-body))
+                                free-vars-outer))
+                      (let+ ([val outer-initialization
+                                  `((,var-set-list-binding-names 
+                                     (values ,@var-set-list-binding-names)))]
+                             [val set!-clauses
+                                  (map (lambda (var-set val)
+                                         `(#%set!-values ,(map utils:get-binding-name var-set) ,val))
+                                       var-sets
+                                       annotated-vals)]
+                             [val middle-begin
+                                  `(#%begin ,@set!-clauses ,annotated-body)]
+                             [val wrapped-begin
+                                  (wcm-wrap (make-debug-info-app (var-set-union tail-bound var-set-list-varrefs)
+                                                                 (var-set-union free-vars-inner var-set-list-varrefs)
+                                                                 'none)
+                                            middle-begin)]
+                             [val whole-thing
+                                  `(#%letrec-values ,outer-initialization ,wrapped-begin)])
+                        (values whole-thing free-vars-outer))))]
                
 	       [(z:define-values-form? expr)
 		(let+ ([val vars (z:define-values-form-vars expr)]
@@ -564,7 +612,7 @@
                        [val (values annotated-val free-vars-val)
 			    (define-values-recur val)]
 		       [val free-vars (varref-remove* vars free-vars-val)])
-                      (cond [(z:case-lambda-form? val)
+                      (cond [(and (z:case-lambda-form? val) (not cheap-wrap?))
                              (values `(#%define-values ,var-names
                                        (#%let ((,closure-temp ,annotated-val))
                                         (,update-closure-record-name ,closure-temp (#%quote ,(car var-names)))
@@ -582,46 +630,53 @@
 	       [(z:set!-form? expr)
                 (utils:check-for-keyword (z:set!-form-var expr))
                 (let+ ([val v (translate-varref (z:set!-form-var expr))]
-                       [val (values annotated rhs-free-vars)
+                       [val (values annotated-body rhs-free-vars)
                             (non-tail-recur (z:set!-form-val expr))]
                        [val free-vars (var-set-union (list (z:set!-form-var expr)) rhs-free-vars)]
-                       [val debug-info (make-debug-info-normal free-vars)])
-                   (values (wcm-wrap (make-debug-info-normal free-vars)
-                                     `(#%set! ,v ,annotated))
+                       [val debug-info (make-debug-info-normal free-vars)]
+                       [val annotated `(#%set! ,v ,annotated-body)])
+                   (values (if cheap-wrap?
+                               (expr-cheap-wrap annotated)
+                               (wcm-wrap (make-debug-info-normal free-vars) annotated))
                            free-vars))]
                 
-	       [(z:case-lambda-form? expr)
-		(let* ([annotate-case
-			(lambda (arglist body)
-			  (let ([var-list (bindings->varrefs (z:arglist-vars arglist))]
-                                [args (utils:arglist->ilist arglist)])
-                            (utils:improper-foreach utils:check-for-keyword args)
-                            (utils:improper-foreach mark-never-undefined args)
-			    (let-values ([(annotated free-vars)
-					  (lambda-body-recur body)])
-			      (let* ([new-free-vars (varref-remove* var-list free-vars)]
-                                     [new-annotated (list (utils:improper-map utils:get-binding-name args) 
-                                                          annotated)]) 
-				(list new-annotated new-free-vars)))))]
-		       [pile-of-results (map annotate-case 
-					     (z:case-lambda-form-args expr)
-					     (z:case-lambda-form-bodies expr))]
-		       [annotated-bodies (map car pile-of-results)]
-		       [annotated-case-lambda (cons '#%case-lambda annotated-bodies)] 
-		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
-		       [closure-info (make-debug-info-app 'all new-free-vars 'none)]
-                       [wrapped-annotated (wcm-wrap (make-debug-info-normal null)
-                                                    annotated-case-lambda)]
-		       [hash-wrapped `(#%let ([,closure-temp ,wrapped-annotated])
-				       (,closure-table-put! (,closure-key-maker ,closure-temp) 
-                                        (,make-closure-record 
-                                         #f
-                                         ,closure-info 
-                                         #f))
-				       ,closure-temp)])
-		  (values hash-wrapped
+               [(z:case-lambda-form? expr)
+		(let+ ([val (values annotated-cases free-vars-cases)
+                            (dual-map
+                             (lambda (arglist body)
+                               (let ([var-list (bindings->varrefs (z:arglist-vars arglist))]
+                                     [args (utils:arglist->ilist arglist)])
+                                 (utils:improper-foreach utils:check-for-keyword args)
+                                 (utils:improper-foreach mark-never-undefined args)
+                                 (let+ ([val (values annotated free-vars)
+                                             (lambda-body-recur body)]
+                                        [val new-free-vars (varref-remove* var-list free-vars)]
+                                        [val new-annotated (list (utils:improper-map utils:get-binding-name args) 
+                                                               annotated)]) 
+                                   (values new-annotated new-free-vars))))
+                             (z:case-lambda-form-args expr)
+                             (z:case-lambda-form-bodies expr))]
+		       [val annotated-case-lambda (cons '#%case-lambda annotated-cases)] 
+		       [val new-free-vars (apply var-set-union free-vars-cases)]
+		       [val closure-info (make-debug-info-app 'all new-free-vars 'none)]
+                       [val wrapped-annotated (wcm-wrap (make-debug-info-normal null)
+                                                        annotated-case-lambda)]
+		       [val hash-wrapped `(#%let ([,closure-temp ,wrapped-annotated])
+                                           (,closure-table-put! (,closure-key-maker ,closure-temp) 
+                                            (,make-closure-record 
+                                             #f
+                                             ,closure-info 
+                                             #f))
+                                           ,closure-temp)])
+		  (values (if cheap-wrap?
+                              (expr-cheap-wrap annotated-case-lambda)
+                              hash-wrapped)
 			  new-free-vars))]
 	       
+               ; the annotation for w-c-m is insufficient for
+               ; debugging: there must be an intermediate let & set!s to
+               ; allow the user to see the computed values for the key and the
+               ; value.
                
                [(z:with-continuation-mark-form? expr)
                 (let+ ([val (values annotated-key free-vars-key)
@@ -631,15 +686,165 @@
                        [val (values annotated-body free-vars-body)
                             (non-tail-recur (z:with-continuation-mark-form-body expr))]
                        [val free-vars (var-set-union free-vars-key free-vars-val free-vars-body)]
-                       [val debug-info (make-debug-info-normal free-vars)])
-                   (values (wcm-wrap debug-info
-                                     `(#%with-continuation-mark
-                                       annotated-key
-                                       annotated-val
-                                       annotated-body))
+                       [val debug-info (make-debug-info-normal free-vars)]
+                       [val annotated `(#%with-continuation-mark
+                                        ,annotated-key
+                                        ,annotated-val
+                                        ,annotated-body)])
+                   (values (if cheap-wrap?
+                               (expr-cheap-wrap annotated)
+                               (wcm-wrap debug-info annotated))
                            free-vars))]
+               
+               [(not cheap-wrap?)
+                (e:static-error "cannot annotate units or classes except in cheap-wrap mode")]
+               
+               [(z:unit-form? expr)
+                (let+ ([val imports (z:unit-form-imports expr)]
+                       [val exports (map (lambda (export)
+                                           (list (translate-varref (car export))
+                                                 (z:read-object (cdr export))))
+                                         (z:unit-form-exports expr))]
+                       [val clauses (map annotate/top-level (z:unit-form-clauses expr))])
+                  (for-each utils:check-for-keyword imports)
+                  (values
+                   `(#%unit
+                     (import ,@(map utils:get-binding-name imports))
+                     (export ,@exports)
+                     ,@clauses)
+                   null))]
 	       
-	       ; there are _definitely_ no units or classes
+               [(z:compound-unit-form? expr)
+                (let ((imports (map utils:get-binding-name
+                                    (z:compound-unit-form-imports expr)))
+                      (links (z:compound-unit-form-links expr))
+                      (exports (z:compound-unit-form-exports expr)))
+                  (let
+                      ((links
+                        (map
+                         (lambda (link-clause)
+                           (let+ ([val tag (utils:read->raw (car link-clause))]
+                                  [val sub-unit (cheap-wrap-recur (cadr link-clause))]
+                                  [val imports
+                                       (map (lambda (import)
+                                              (if (z:lexical-varref? import)
+                                                  (translate-varref import)
+                                                  `(,(utils:read->raw (car import))
+                                                    ,(utils:read->raw (cdr import)))))
+                                            (cddr link-clause))])
+                             `(,tag (,sub-unit ,@imports))))
+                         links))
+                       (exports
+                        (map
+                         (lambda (export-clause)
+                           `(,(utils:read->raw (car export-clause))
+                             (,(utils:read->raw (cadr export-clause))
+                              ,(utils:read->raw (cddr export-clause)))))
+                         exports)))
+                    (let ((e `(#%compound-unit
+                               (import ,@imports)
+                               (link ,@links)
+                               (export ,@exports))))
+                      (values (expr-cheap-wrap e) null))))]
+               
+               [(z:invoke-unit-form? expr)
+                (values
+                 (expr-cheap-wrap `(#%invoke-unit ,(cheap-wrap-recur (z:invoke-unit-form-unit expr))
+                                    ,@(map translate-varref
+                                           (z:invoke-unit-form-variables expr))))
+                 null)]
+               
+               [(z:interface-form? expr)
+                (let ((vars (z:interface-form-variables expr)))
+                  (for-each utils:check-for-keyword vars)
+                  (values
+                   (expr-cheap-wrap
+                    `(#%interface ,(map cheap-wrap-recur
+                                        (z:interface-form-super-exprs expr))
+                      ,@(map utils:read->raw vars)))
+                   null))]
+               
+               [(z:class*/names-form? expr)
+                (let* ([process-arg
+                        (lambda (element)
+                          (if (pair? element)
+                              (and (utils:check-for-keyword (car element))
+                                   (list (utils:get-binding-name (car element))
+                                         (cheap-wrap-recur (cdr element))))
+                              (and (utils:check-for-keyword element)
+                                   (utils:get-binding-name element))))]
+                       [paroptarglist->ilist
+                        (lambda (paroptarglist)
+                          (cond
+                            ((z:sym-paroptarglist? paroptarglist)
+                             (process-arg (car (z:paroptarglist-vars paroptarglist))))
+                            ((z:list-paroptarglist? paroptarglist)
+                             (map process-arg (z:paroptarglist-vars paroptarglist)))
+                            ((z:ilist-paroptarglist? paroptarglist)
+                             (let loop ((vars (map process-arg
+                                                   (z:paroptarglist-vars paroptarglist))))
+                               (if (null? (cddr vars))
+                                   (cons (car vars) (cadr vars))
+                                   (cons (car vars) (loop (cdr vars))))))
+                            (else
+                             (e:internal-error paroptarglist
+                                               "Given to paroptarglist->ilist"))))])
+                  (values
+                   (expr-cheap-wrap
+                    `(#%class*/names
+                      (,(utils:get-binding-name (z:class*/names-form-this expr))
+                       ,(utils:get-binding-name (z:class*/names-form-super-init expr)))
+                      ,(cheap-wrap-recur (z:class*/names-form-super-expr expr))
+                      ,(map cheap-wrap-recur (z:class*/names-form-interfaces expr))
+                      ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
+                      ,@(map
+                         (lambda (clause)
+                           (cond
+                             ((z:public-clause? clause)
+                              `(public
+                                 ,@(map (lambda (internal export expr)
+                                          `((,(utils:get-binding-name internal)
+                                             ,(utils:read->raw export))
+                                            ,(cheap-wrap-recur expr)))
+                                        (z:public-clause-internals clause)
+                                        (z:public-clause-exports clause)
+                                        (z:public-clause-exprs clause))))
+                             ((z:override-clause? clause)
+                              `(override
+                                 ,@(map (lambda (internal export expr)
+                                          `((,(utils:get-binding-name internal)
+                                             ,(utils:read->raw export))
+                                            ,(cheap-wrap-recur expr)))
+                                        (z:override-clause-internals clause)
+                                        (z:override-clause-exports clause)
+                                        (z:override-clause-exprs clause))))
+                             ((z:private-clause? clause)
+                              `(private
+                                 ,@(map (lambda (internal expr)
+                                          `(,(utils:get-binding-name internal)
+                                            ,(cheap-wrap-recur expr)))
+                                        (z:private-clause-internals clause)
+                                        (z:private-clause-exprs clause))))
+                             ((z:inherit-clause? clause)
+                              `(inherit
+                                 ,@(map (lambda (internal inherited)
+                                          `(,(utils:get-binding-name internal)
+                                            ,(utils:read->raw inherited)))
+                                        (z:inherit-clause-internals clause)
+                                        (z:inherit-clause-imports clause))))
+                             ((z:rename-clause? clause)
+                              `(rename
+                                ,@(map (lambda (internal import)
+                                         `(,(utils:get-binding-name internal)
+                                           ,(utils:read->raw import)))
+                                       (z:rename-clause-internals clause)
+                                       (z:rename-clause-imports clause))))
+                             ((z:sequence-clause? clause)
+                              `(sequence
+                                 ,@(map cheap-wrap-recur
+                                        (z:sequence-clause-exprs clause))))))
+                         (z:class*/names-form-inst-clauses expr))))
+                   null))]          
 	       
 	       [else
 		(print-struct #t)
@@ -658,7 +863,6 @@
       (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
-        
         (values annotated-exprs
                 struct-proc-names)))))
 	 

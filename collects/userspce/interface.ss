@@ -15,12 +15,12 @@
     (lambda (string object)
       (raise
        (with-continuation-mark 
-	aries:w-c-m-key 
-        object
-	(case zodiac-phase
-	  [(expander) (make-exn:syntax string (current-continuation-marks) #f)]
-	  [(reader) (make-exn:read string (current-continuation-marks) #f)]
-	  [else (make-exn:user string (current-continuation-marks))])))))
+	aries:w-c-m-key
+        (aries:make-zodiac-mark object)
+        (case zodiac-phase
+            [(expander) (make-exn:syntax string (current-continuation-marks) #f)]
+            [(reader) (make-exn:read string (current-continuation-marks) #f)]
+            [else (make-exn:user string (current-continuation-marks))])))))
   
   ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes

@@ -1,11 +1,5 @@
-; link.ss
-
 (compound-unit/sig 
   (import (core : mzlib:core^)
-          (framework : framework^)
-          (print-convert : mzlib:print-convert^)
-          (mred : mred^)
-          (drscheme : drscheme:export^)
           (zodiac : zodiac:system^))
   (link [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
         [error : stepper:error^ ((unit/sig stepper:error^
@@ -56,29 +50,5 @@
                            marks
                            annotate)]
         [break : (break)
-               ((require-library-unit/sig "break.ss" "stepper")
-                mred
-                marks
-                annotate)]
-        [stepper-view-controller : (stepper-go)
-                 ((require-library-unit/sig "stepper-view-controller.ss" "stepper")
-                  core
-                  error
-                  zodiac
-                  client-procs
-                  pretty
-                  mred
-                  drscheme
-                  print-convert
-                  framework
-                  shared
-                  utils
-                  marks)]
-        [stepper-startup : ()
-                         ((require-library-unit/sig "stepper-startup.ss" "stepper")
-                          core
-                          mred
-                          framework
-                          drscheme
-                          stepper-view-controller)])       
+               ((unit/sig (break) (import) (define break (lambda () #f))))])       
       (export (open debug-wrapper) (open break)))

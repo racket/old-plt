@@ -10,8 +10,7 @@
           [f : framework^]
           stepper:shared^
           [utils : stepper:cogen-utils^]
-          [marks : stepper:marks^]
-          [annotate : stepper:annotate^])
+          [marks : stepper:marks^])
 
   ;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
@@ -363,8 +362,7 @@
                                stepper:shared^
                                mred^
                                (utils : stepper:cogen-utils^)
-                               (marks : stepper:marks^)
-                               (annotate : stepper:annotate^))))
+                               (marks : stepper:marks^))))
       
       (send drscheme-frame stepper-frame s-frame)
       (set! view-currently-updating 0)

@@ -505,9 +505,9 @@
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print)
 		      (mzlib file))]
-	   [aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
-				(drzodiac : zodiac:system^)
-				(interface : zodiac:interface^))]
+	   [aries : plt:aries^ ((require-library-unit/sig "link-jr.ss" "stepper")
+                                mzlib
+				(drzodiac : zodiac:system^))]
 	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						      (import)
 						      (define in-mzscheme? #t)))]

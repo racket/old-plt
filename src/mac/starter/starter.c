@@ -100,6 +100,39 @@ int main(void)
         Str255 ourName;
         int argc;
         char **argv;
+        ProcessSerialNumber psn;
+        
+        psn.highLongOfPSN = 0;
+        psn.lowLongOfPSN = kNoProcess;
+
+	/* Is it already running? */
+	while (!GetNextProcess(&psn)) {
+	  ProcessInfoRec prec;
+          FSSpec got;
+          Str32 name;
+	  
+	  prec.processInfoLength = sizeof(prec);
+	  prec.processName = name;
+	  prec.processAppSpec = &got;
+	  GetProcessInformation(&psn, &prec);
+	  if ((got.vRefNum == dir.vRefNum)
+	      && (got.parID == dir.parID)
+	      && (got.name[0] == dir.name[0])) {
+	    int i = dir.name[0];
+	    while (i--)
+	      if (got.name[i + 1] != dir.name[i + 1])
+	        break;
+	    if (i < 0) {
+	      /* It's already running: */
+	      ParamText("\p" PROGNAME " is already running. \r"
+                        PROGNAME " is needed to run this program. "
+                        "Please quit " PROGNAME " and try again. ",
+                        NULL, NULL, NULL);
+              Alert(128, NULL);
+              return 1;
+	    }
+	  }
+	}
         
         /* Get command-line arguments here */
         Drop_GetArgs(&argc, &argv);

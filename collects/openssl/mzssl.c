@@ -68,6 +68,7 @@ typedef struct {
   MZ_HASH_KEY_EX
   int s;
   Scheme_Custodian_Reference *mref;
+  SSL_CTX *ctx;
 } listener_t;
 
 static Scheme_Type ssl_listener_type;
@@ -798,7 +799,7 @@ void close_socket_and_dec(unsigned short sock)
 
 static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
 				 char *address, int port, int do_accept,
-				 char *cert_chain_file)
+				 SSL_CTX *ctx_in)
 {
   SSL_CTX *ctx = NULL;
   BIO *bio = NULL;
@@ -815,34 +816,26 @@ static Scheme_Object *finish_ssl(const char *name, int sock, SSL_METHOD *meth,
   if(!bio) { errstr = "couldn't create BIO stream"; goto clean_up_and_die; }
 
   /* set up the SSL context object */
-  ctx = SSL_CTX_new(meth);
-  if(!ctx) { 
-    err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
-    goto clean_up_and_die; 
-  }
-
-  if (cert_chain_file) {
-    if (SSL_CTX_use_certificate_chain_file(ctx, cert_chain_file) != 1) {
+  if (!ctx_in) {
+    ctx = SSL_CTX_new(meth);
+    if(!ctx) { 
       err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
-      if (!errstr)
-	errstr = "failed to load certificate chain file";
-      goto clean_up_and_die; 
-    }
-    if(SSL_CTX_use_RSAPrivateKey_file(ctx, cert_chain_file, SSL_FILETYPE_PEM) != 1) {
-      err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
-      if (!errstr)
-	errstr = "failed to load private key file";
       goto clean_up_and_die; 
     }
   }
 
   /* set up the full SSL object */
-  ssl = SSL_new(ctx);
+  ssl = SSL_new(ctx ? ctx : ctx_in);
   if(!ssl) {
     err = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
     goto clean_up_and_die; 
   }
   SSL_set_bio(ssl, bio, bio);
+
+  if (ctx) {
+    SSL_CTX_free(ctx); /* ssl has incremented ref count */
+    ctx = NULL;
+  }
 
   /* see if we can connect via SSL */
   if (do_accept)
@@ -1038,6 +1031,8 @@ ssl_listen(int argc, Scheme_Object *argv[])
 # ifndef PROTOENT_IS_INT
   struct protoent *proto;
 # endif
+  SSL_METHOD *meth;
+  SSL_CTX *ctx;
 
   id = check_port_and_convert("ssl-listen", argc, argv, 0);
   if (argc > 1) {
@@ -1050,6 +1045,8 @@ ssl_listen(int argc, Scheme_Object *argv[])
     if (!SCHEME_FALSEP(argv[3]))
       address = check_host_and_convert("ssl-listen", argc, argv, 3);
   }
+  
+  meth = check_encrypt_and_convert("ssl-connect", argc, argv, 4, 0);
     
   TCP_INIT("ssl-listen");
 
@@ -1059,7 +1056,17 @@ ssl_listen(int argc, Scheme_Object *argv[])
   else
     backlog = 4;
 
-  scheme_security_check_network("tcp-listen", address, origid, 0);
+  scheme_security_check_network("ssl-listen", address, origid, 0);
+
+  ctx = SSL_CTX_new(meth);
+  if(!ctx) { 
+    const char *errstr;
+    errid = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+    scheme_raise_exn(MZEXN_I_O_TCP,
+		     "sll-listen: context creation failed for listen on %d (%Z)",
+		     origid, errid, errstr);
+    return scheme_void;
+  }
 
 # ifndef PROTOENT_IS_INT
   proto = getprotobyname("tcp");
@@ -1100,7 +1107,8 @@ ssl_listen(int argc, Scheme_Object *argv[])
 					1);
 	      l->mref = mref;
 	    }
-
+	    l->ctx = ctx;
+	    
 	    return (Scheme_Object *)l;
 	  }
 	}
@@ -1111,6 +1119,8 @@ ssl_listen(int argc, Scheme_Object *argv[])
       } else
 	errid = SOCK_ERRNO();
     } else {
+      if (ctx)
+	SSL_CTX_free(ctx);
       scheme_raise_exn(MZEXN_I_O_TCP,
 		       "ssl-listen: host not found: %s",
 		       address);
@@ -1123,6 +1133,9 @@ ssl_listen(int argc, Scheme_Object *argv[])
   }
 # endif
 
+  if (ctx)
+    SSL_CTX_free(ctx);
+      
   scheme_raise_exn(MZEXN_I_O_TCP,
 		   "sll-listen: listen on %d failed (%E)",
 		   origid, errid);
@@ -1142,11 +1155,86 @@ static int stop_listener(Scheme_Object *o)
       closesocket(s);
       ((listener_t *)o)->s = INVALID_SOCKET;
       scheme_remove_managed(((listener_t *)o)->mref, o);
+      SSL_CTX_free(((listener_t *)o)->ctx);
     }
   }
 
   return was_closed;
 }
+
+enum {
+  mzssl_CERT_CHAIN,
+  mzssl_RSA_KEY
+};
+
+static Scheme_Object *
+ctx_load_file(const char *name, int mode, int argc, Scheme_Object *argv[])
+{
+  char *filename;
+  const char *what;
+  int result, use_rsa = 1, format = SSL_FILETYPE_PEM;
+  SSL_CTX *ctx;
+  
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
+    scheme_wrong_type(name, "ssl-listener", 0, argc, argv);
+
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type(name, "string", 1, argc, argv);
+
+  if (mode == mzssl_RSA_KEY) {
+    if (argc > 2)
+      use_rsa = SCHEME_TRUEP(argv[2]);
+    if (argc > 3)
+      if (SCHEME_TRUEP(argv[3]))
+	format = SSL_FILETYPE_ASN1;
+  }
+  
+  filename = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
+				    SCHEME_STRTAG_VAL(argv[1]),
+				    name,
+				    NULL,
+				    SCHEME_GUARD_FILE_READ);
+
+  ctx = ((listener_t *)(argv[0]))->ctx;
+
+  if (mode == mzssl_CERT_CHAIN) {
+    result = SSL_CTX_use_certificate_chain_file(ctx, filename);
+    what = "certificate chain";
+  } else if (mode == mzssl_RSA_KEY) {
+    if (use_rsa)
+      result = SSL_CTX_use_RSAPrivateKey_file(ctx, filename, format);
+    else
+      result = SSL_CTX_use_PrivateKey_file(ctx, filename, format);
+    what = "private key";
+  }
+
+  if (result != 1) {
+    int errid;
+    const char *errstr;
+    errid = get_ssl_error_msg(ERR_get_error(), &errstr, 0, 0);
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
+		     argv[1], scheme_false,
+		     "%s: %s load failed from: %s (%Z)",
+		     name, what, filename, errid, errstr);
+    return NULL;
+  }
+
+  return scheme_void;
+}
+
+static Scheme_Object *
+ssl_load_cert_chain(int argc, Scheme_Object *argv[])
+{
+  return ctx_load_file("ssl-load-certificate-chain-file", mzssl_CERT_CHAIN, argc, argv);
+}
+
+
+static Scheme_Object *
+ssl_load_priv_key(int argc, Scheme_Object *argv[])
+{
+  return ctx_load_file("ssl-load-prvate-key-file", mzssl_RSA_KEY, argc, argv);
+}
+
 
 static int tcp_check_accept(Scheme_Object *listener)
 {
@@ -1169,14 +1257,9 @@ ssl_accept(int argc, Scheme_Object *argv[])
   int s;
   int l;
   struct sockaddr_in tcp_accept_addr; /* Use a long name for precise GC's xform.ss */
-  SSL_METHOD *meth;
   
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), ssl_listener_type))
     scheme_wrong_type("ssl-accept", "ssl-listener", 0, argc, argv);
-  if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("ssl-accept", "string", 1, argc, argv);
-
-  meth = check_encrypt_and_convert("ssl-accept", argc, argv, 2, 0);
 
   listener = argv[0];
 
@@ -1212,8 +1295,8 @@ ssl_accept(int argc, Scheme_Object *argv[])
     fcntl(s, F_SETFL, MZ_NONBLOCKING);
 # endif
     
-    return finish_ssl("ssl-accept", s, meth, NULL, 0,
-		      1, SCHEME_STR_VAL(argv[1]));
+    return finish_ssl("ssl-accept", s, NULL, NULL, 0,
+		      1, ((listener_t *)listener)->ctx);
   }
 
 
@@ -1247,6 +1330,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
   scheme_register_extension_global(&ssl_input_port_type, 4);
   scheme_register_extension_global(&ssl_output_port_type, 4);
   
+  SSL_load_error_strings();
+
   scheme_thread_w_custodian(thread, scheme_config, newcust);
   return scheme_reload(env);
 }
@@ -1269,7 +1354,13 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   v = scheme_make_prim_w_arity(ssl_listen,"ssl-listen",1,4);
   scheme_add_global("ssl-listen", v, env);
 
-  v = scheme_make_prim_w_arity(ssl_accept,"ssl-accept",1,2);
+  v = scheme_make_prim_w_arity(ssl_load_cert_chain,"ssl-load-certification-chain",2,2);
+  scheme_add_global("ssl-load-certification-chain", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_load_priv_key,"ssl-load-private-key",2,4);
+  scheme_add_global("ssl-load-private-key", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_accept,"ssl-accept",1,1);
   scheme_add_global("ssl-accept", v, env);
 
   scheme_add_global("ssl-available?", scheme_true, env);

@@ -1,8 +1,7 @@
-The _openssl_ collection provides glue for the OpenSSL library with the
-MzScheme port system. It has been tested under Linux, FreeBSD and Max OS/X.
-The OpenSSL collection functions nearly identically to the standard network
-subsystems, with a few additional flags. It currently exports the following
-three objects:
+The _openssl_ collection provides glue for the OpenSSL library with
+the MzScheme port system. The OpenSSL collection functions nearly
+identically to the standard TCP subsystems in PLT Scheme, with a few
+additional flags.
 
 > ssl-available? 
 
@@ -10,17 +9,42 @@ A boolean value which says whether the system openssl library was successfully
 loaded. Calling ssl-connect or ssl-connect/enable-break when this value is #f 
 (library not loaded) will raise an error.
 
-> (ssl-connect hostname port [flag])
+-- Client ----------------------------------------
 
-Connect to the given host (a string) on the given port (a number from 1 to
-65535). This encryption will be encrypted using SSL. The optional flag 
-determines which encryption protocol is used. At the current time, the flag,
-if given, must be one of: 'sslv2-or-v3 (SSL protocol versions 2 or 3, as
-appropriate; this is the default), 'sslv2 (SSL protocol version 2), 'sslv3
-(SSL protocol version 3), or 'tls (the TLS protocol version 1). The return
-values are as tcp-connect; an input port and an output port. 
+> (ssl-connect hostname port-k [protocol-symbol])
 
-> (ssl-connect/enable-break hostname port [flag])
+Connect to the given host (a string) on the given port-k (a number
+from 1 to 65535). This encryption will be encrypted using SSL. The
+optional `protocol-symbol' determines which encryption protocol is
+used. At the current time, `protocol-symbol' must be one of the
+following: 'sslv2-or-v3 (SSL protocol versions 2 or 3, as appropriate;
+this is the default), 'sslv2 (SSL protocol version 2), 'sslv3 (SSL
+protocol version 3), or 'tls (the TLS protocol version 1). The return
+values are as tcp-connect; an input port and an output port.
+
+> (ssl-connect/enable-break hostname port-k [flag])
 
 Like ssl-connect, but breaking is enabled while trying to connect. 
 
+-- Server ----------------------------------------
+
+> (ssl-listen port-k [queue-k reuse? hostname-or-#f protocol-symbol])
+
+Like `tcp-listen', but the result is an SSL listener. The extra
+optional `protocol-symbol' is as for `ssl-connect'.
+
+> (ssl-load-certification-chain ssl-listener pathname)
+
+Loads a certification chain file for connections to be accepted for
+`ssl-listener'.
+
+> (ssl-load-private-key ssl-listener pathname [rsa? asn1?])
+
+Loads the firprivate key from `pathname' for connections to be
+accepted for `ssl-listener'. If `rsa?' is #t (the default), the first
+RSA key is read (i.e., non-RSA keys are skipped). If `asn1?' is #t
+(the default is #f), the file is parsed as ASN1format instead of PEM.
+
+> (ssl-accept ssl-listener)
+
+Analogous to `tcp-accept'.

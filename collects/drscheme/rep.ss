@@ -857,8 +857,8 @@
 	       (set! count 0))
 	     (let* ([frame (get-top-level-window)]
 		    [definitions-text (ivar frame definitions-text)]
-		    [already-warned? (ivar definitions-text already-warned?)]
-		    [needs-execution? (ivar definitions-text needs-execution?)])
+		    [already-warned? (send definitions-text already-warned?)]
+		    [needs-execution? (send definitions-text needs-execution?)])
 	       (when (if (fw:preferences:get 'drscheme:execute-warning-once)
 			 (and (not already-warned?)
 			      needs-execution?)

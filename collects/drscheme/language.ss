@@ -306,15 +306,7 @@
 	      (reset-choice)))]
 	 [unregister-callback
 	  (fw:preferences:add-callback 'drscheme:settings 
-				       (lambda (p v) 
-					 (send (fw:group:get-the-frame-group)
-					       for-each-frame 
-					       (lambda (frame)
-						 (when (is-a? frame drscheme:unit:frame%)
-						   (let ([edit (ivar frame definitions-text)])
-						     (when (is-a? edit mred:editor<%>)
-						       (send edit language-changed))))))
-					 (update-to v)))])
+				       (lambda (p v) (update-to v)))])
       (send f stretchable-width #f)
       (send f stretchable-height #f)
       (send language-choice stretchable-width #f)
@@ -329,10 +321,8 @@
       (send f center 'both)
       (send f show #t)
       f))
-  
-  
+
   ; object to remember last teachpack directory
-  
   (define teachpack-directory 
     (let ([lib-dir (build-path 
 		    (collection-path "mzlib")
@@ -357,7 +347,7 @@
 	(let ([lib-file (fw:finder:get-file 
 			 teachpack-directory
 			 "Select a Teachpack" 
-			 ".*\\.ss$")])
+			 ".*\\.(ss|scm)$")])
 	  (when lib-file
 	    (fw:preferences:set
 	     'drscheme:teachpack-file lib-file)

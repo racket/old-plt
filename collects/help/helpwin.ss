@@ -321,7 +321,7 @@
 							(and m (cadr m))))
 						    l))])
 			       (if (pair? drlibs)
-				   (format "Teaching library: select ~a using Set Library To... in DrScheme"
+				   (format "Teachpack: select ~a using Language|Set Teachpack To... in DrScheme"
 					   (let loop ([s (format "~s" (car drlibs))]
 						      [l (cdr drlibs)])
 					     (if (null? l)

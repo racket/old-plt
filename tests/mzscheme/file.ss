@@ -1103,6 +1103,52 @@
   (tcp-close l))
 
 ;;----------------------------------------------------------------------
+;; UDP
+
+(unless (eq? 'macos (system-type))
+  (load-relative "udp.ss"))
+
+(when (eq? 'macos (system-type))
+  (err/rt-test (udp-open-socket) exn:misc:unsupported?)
+  ;; All others fail b/c can't supply a UDP.
+  )
+
+(test #f udp? 5)
+
+;; more type tests in udp.ss, where we have UDP socket values
+(err/rt-test (udp-close 5))
+(err/rt-test (udp-bound? 5))
+(err/rt-test (udp-connected? 5))
+(err/rt-test (udp-bind! 5 #f 40000))
+(err/rt-test (udp-connect! 5 "localhost" 40000))
+(err/rt-test (udp-send-to 5 "localhost" 40000 "hello"))
+(err/rt-test (udp-send-to* 5 "localhost" 40000 "hello"))
+(err/rt-test (udp-send-to/enable-break 5 "localhost" 40000 "hello"))
+(err/rt-test (udp-send 5 "hello"))
+(err/rt-test (udp-send* 5 "hello"))
+(err/rt-test (udp-send/enable-break 5 "hello"))
+(err/rt-test (udp-receive! 5 (make-string 10)))
+(err/rt-test (udp-receive!* 5 (make-string 10)))
+(err/rt-test (udp-receive!/enable-break 5 (make-string 10)))
+
+(arity-test udp-open-socket 0 0)
+(arity-test udp-close 1 1)
+(arity-test udp? 1 1)
+(arity-test udp-bound? 1 1)
+(arity-test udp-connected? 1 1)
+(arity-test udp-bind! 3 3)
+(arity-test udp-connect! 3 3)
+(arity-test udp-send-to 4 6)
+(arity-test udp-send-to* 4 6)
+(arity-test udp-send-to/enable-break 4 6)
+(arity-test udp-send 2 4)
+(arity-test udp-send* 2 4)
+(arity-test udp-send/enable-break 2 4)
+(arity-test udp-receive! 2 4)
+(arity-test udp-receive!* 2 4)
+(arity-test udp-receive!/enable-break 2 4)
+
+;;----------------------------------------------------------------------
 ;; Security guards:
 
 ;; Files - - - - - - - - - - - - - - - - - - - - - -
@@ -1165,18 +1211,28 @@
 
 ;; Network - - - - - - - - - - - - - - - - - - - - - -
 
-(define (net-reject? who what)
+(define (net-reject? who host port what)
   (lambda (x) (and (pair? x)
 		   (eq? (car x) 'net-reject)
 		   (eq? (cadr x) who)
-		   (eq? (cddr x) what))))
+		   (equal? (caddr x) host)
+		   (equal? (cadddr x) port)
+		   (eq? (cddddr x) what))))
+
+(define early-udp (and (not (eq? 'macos (system-type)))
+		       (udp-open-socket)))
 
 (parameterize ([current-security-guard 
 		(make-security-guard (current-security-guard)
 				     void
 				     (lambda (who host port mode)
-				       (raise (list* 'net-reject who mode))))])
-  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect 'client))
-  (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen 'server)))
+				       (raise (list* 'net-reject who host port mode))))])
+  (err/rt-test (tcp-connect "other" 123)  (net-reject? 'tcp-connect "other" 123 'client))
+  (err/rt-test (tcp-listen 123)  (net-reject? 'tcp-listen #f 123 'server))
+  (unless (eq? 'macos (system-type)) ; no UDP in Mac OS Classic
+    (err/rt-test (udp-open-socket)  (net-reject? 'udp-open-socket #f #f 'client))
+    (err/rt-test (udp-bind! early-udp "localhost" 40000)  (net-reject? 'udp-bind! "localhost" 40000 'server))
+    (err/rt-test (udp-connect! early-udp "localhost" 40000)  (net-reject? 'udp-connect! "localhost" 40000 'client))
+    (err/rt-test (udp-send-to early-udp "localhost" 40000 "hi")  (net-reject? 'udp-send-to "localhost" 40000 'client))))
 
 (report-errs)

@@ -74,6 +74,7 @@ static int mzerrno = 0;
 # define NOT_WINSOCK(x) x
 # define SOCK_ERRNO() errno
 # define WAS_EAGAIN(e) ((e == EWOULDBLOCK) || (e == EAGAIN) || (errid == EINPROGRESS) || (errid == EALREADY))
+# define WAS_WSAEMSGSIZE(e) 0
 # define mz_AFNOSUPPORT EAFNOSUPPORT
 #endif
 
@@ -89,6 +90,7 @@ struct SOCKADDR_IN {
 # define NOT_WINSOCK(x) 0
 # define SOCK_ERRNO() WSAGetLastError()
 # define WAS_EAGAIN(e) ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
+# define WAS_WSAEMSGSIZE(e) (e == WSAEMSGSIZE)
 # define mz_AFNOSUPPORT WSAEAFNOSUPPORT
 extern int scheme_stupid_windows_machine;
 #endif
@@ -365,17 +367,17 @@ void scheme_init_network(Scheme_Env *env)
   scheme_add_global_constant("udp-receive!", 
 			     scheme_make_prim_w_arity(udp_receive,
 						      "udp-receive!", 
-						      2, 2), 
+						      2, 4), 
 			     env);
   scheme_add_global_constant("udp-receive!*", 
 			     scheme_make_prim_w_arity(udp_receive_star,
 						      "udp-receive!*", 
-						      2, 2), 
+						      2, 4), 
 			     env);
   scheme_add_global_constant("udp-receive!/enable-break", 
 			     scheme_make_prim_w_arity(udp_receive_enable_break,
 						      "udp-receive!/enable-break", 
-						      2, 2), 
+						      2, 4), 
 			     env);
   scheme_add_global_constant("udp->receive-waitable", 
 			     scheme_make_prim_w_arity(udp_read_waitable,
@@ -2875,12 +2877,12 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 
 static Scheme_Object *udp_bind(int argc, Scheme_Object *argv[])
 {
-  return udp_bind_or_connect("udp-bind", argc, argv, 1);
+  return udp_bind_or_connect("udp-bind!", argc, argv, 1);
 }
 
 static Scheme_Object *udp_connect(int argc, Scheme_Object *argv[])
 {
-  return udp_bind_or_connect("udp-connect", argc, argv, 0);
+  return udp_bind_or_connect("udp-connect!", argc, argv, 0);
 }
 
 static int udp_check_send(Scheme_Object *_udp)
@@ -2947,6 +2949,9 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     delta = 0;
   } else
     delta = -2;
+
+  if (!SCHEME_STRINGP(argv[3 + delta]))
+    scheme_wrong_type(name, "string", 3 + delta, argc, argv);
   
   scheme_get_substring_indices(name, argv[3 + delta], 
 			       argc, argv,
@@ -3015,7 +3020,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     }
     
     if (x > -1) {
-      return (can_block ? scheme_true : scheme_void);
+      return (can_block ? scheme_void : scheme_true);
     } else {
       scheme_raise_exn(MZEXN_I_O_UDP,
 		       "%s: send failed (%E)", 
@@ -3150,7 +3155,10 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 
     if (x == -1) {
       errid = SOCK_ERRNO();
-      if (WAS_EAGAIN(errid)) {
+      if (WAS_WSAEMSGSIZE(errid)) {
+	x = end - start;
+	errid = 0;
+      } if (WAS_EAGAIN(errid)) {
 	if (can_block) {
 	  /* Block and eventually try again. */
 	  scheme_block_until(udp_check_recv, udp_recv_needs_wakeup, (Scheme_Object *)udp, 0);

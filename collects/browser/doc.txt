@@ -129,6 +129,12 @@ during the evaluation of the mzscheme code (in both examples)
      the canvas, and the page history is maintained by keeping the old
      editors.
  
+>   get-editor% :: (send o get-editor%)
+     Returns the class used to implement the editor in the browser
+     window. It should be derived from hyper-text% and should pass on the
+     initialization arguments to hyper-text%
+
+
 >   current-page :: (send o current-page)
      Returns a reprsentation of the currently displayed page, which
      includes a particular editor and a visible range within the
@@ -167,6 +173,11 @@ during the evaluation of the mzscheme code (in both examples)
      Creates the panel's hypertext canvas, an instance of a class
      derived using `hyper-canvas-mixin' (described above). This
      method is called during initialization.
+
+>   get-canvas% :: (send o get-canvas%)
+     Returns the class instantiated by make-canvas. It must be derived from
+     hyper-canvas% 
+
 
 >   make-control-bar-panel :: (send o make-control-bar-panel container)
      Create's the panel's sub-container for the control bar containing

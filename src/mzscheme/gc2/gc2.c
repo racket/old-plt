@@ -3,22 +3,27 @@
 
    The copying version is mainly for debugging, since it can move data
    on every collection. */
-#if !defined(USE_ACCT_3M_GC) && !defined(USE_PRECISE_ACCT_3M_GC) && !defined(USE_COMPACT_3M_GC) && !defined(USE_COPYING_3M_GC)
-# define USE_COMPACT_3M_GC
-#endif
-
-#ifdef USE_ACCT_3M_GC
+#ifdef NEWGC_PRECISE_ACCOUNT
 # include "newgc.c"
+# define COLLECTOR_INCLUDED
 #endif
 
-#ifdef USE_PRECISE_ACCT_3M_GC
+#ifdef NEWGC_BTC_ACCOUNT
 # include "newgc.c"
+# define COLLECTOR_INCLUDED
 #endif
 
-#ifdef USE_COMPACT_3M_GC
-# include "compact.c"
+#if defined(NEWGC_MANUAL_ACCOUNT) && !defined(COLLECTOR_INCLUDED)
+# include "newgc.c"
+# define COLLECTOR_INCLUDED
 #endif
 
 #ifdef USE_COPYING_3M_GC
 # include "newgc.c"
+# define COLLECTOR_INCLUDED
 #endif
+
+#ifndef COLLECTOR_INCLUDED
+# include "compact.c"
+#endif
+

@@ -3,7 +3,7 @@
 (define slatex
   (let ([ns (make-namespace)])
     (parameterize ([current-namespace ns])
-      (require-library "slatexsrc.scm" "slatex" "slatex-code")
+      (require-library "slatexsrc.ss" "slatex")
       (global-defined-value 'slatex::*texinputs* #f)
       (global-defined-value 'slatex::*texinputs-list* #f))
     (lambda (file)

@@ -4,7 +4,7 @@
    Field = (list String String)
 
 |#
-
+(module draw-txt mzscheme
 ;; Class (Listof Classes)
 (define (class-union-to-strings utype variants) 
   (let* ([ac (class-to-strings utype)]
@@ -199,3 +199,4 @@
 (class-union-to-strings ARiver (list Source Confluence))
 
 (printf (strings->string-as-lines (class-union-to-strings ARiver (list Source Confluence))))
+)

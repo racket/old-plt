@@ -4,4 +4,6 @@
   (define comment '(define compile-subcollections (list (list "profj" "parsers")
                                        (list "profj" "libs" "java" "lang")
 				       (list "profj" "libs" "java" "io"))))
+  (define compile-omit-files '("draw-txt.ss" "macro-class.scm"))
+
   )

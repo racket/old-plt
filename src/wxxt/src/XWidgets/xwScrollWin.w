@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.1 (see README for history)
 # 
-# $Id: xwScrollWin.w,v 1.6 1998/08/14 21:44:44 mflatt Exp $
+# $Id: xwScrollWin.w,v 1.7 1998/09/08 15:08:01 mflatt Exp $
 
 @CLASS XfwfScrolledWindow (XfwfBoard)  @file = xwScrollWin
 
@@ -383,6 +383,7 @@ to configure the children.
 	hswidth = (int)selfw - 2 * $spacing;
     XtVaGetValues($vscroll, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
+    help += $frameWidth;
     XtConfigureWidget($vscroll,
 		      selfx + selfw - $spacing - $scrollbarWidth,
 		      selfy + $spacing - help,
@@ -391,6 +392,7 @@ to configure the children.
 		      0);
     XtVaGetValues($hscroll, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
+    help += $frameWidth;
     XtConfigureWidget($hscroll,
 		      $spacing - help,
 		      selfy + selfh - $spacing - $scrollbarWidth,

@@ -106,7 +106,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"
-                                         vers)
+                                         (string-append vers "_3m"))
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
@@ -115,7 +115,7 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"
-                                         (string-append vers "_3m"))
+                                         vers)
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"

@@ -16,9 +16,11 @@
       (lambda (frame)
 	(let ([callback
 	       (lambda ()
-		 (let ([edit (send frame get-program-edit)])
+		 (let ([edit (send frame get-program-edit)]
+		       [console-edit (send frame get-console-edit)])
 		   ;; grab the current edit for this frame (it changes)
-
+		   (send edit insert "toy")
+		   (send console-edit send-scheme 'toy)
 		   (wx:bell)))])
 	  
 	  ;; install a menu in each frame

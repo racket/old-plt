@@ -212,6 +212,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define POW_HANDLES_INF_CORRECTLY
 
+# define USE_TIMEZONE_VAR_W_DLS
+
 # define FLAGS_ALREADY_SET
 
 #endif

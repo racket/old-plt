@@ -75,7 +75,7 @@ wxFrame::wxFrame // Constructor (for frame window)
  		theProcID = zoomDocProc;
 
 	/* Select screen so we have the right current device: */
-	wxScreen::gScreenWindow->SetCurrentMacDC();
+	wxScreen::gScreenWindow->SetCurrentMacDCNoMargin();
 
 	const WindowPtr MoveToFront = WindowPtr(-1L);
 	const Bool HasGoAwayBox = TRUE;

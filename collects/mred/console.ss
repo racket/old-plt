@@ -469,120 +469,108 @@
     (define make-console-frame%
       (lambda (super%)
 	(class super% ([close-item? #f][mssg welcome-message])
-	       (inherit edit canvas show make-menu on-close)
-	       (rename [super-on-menu-command on-menu-command]
-		       [super-make-menu-bar make-menu-bar]
-		       [super-next-menu-id next-menu-id])
-	       (private 
-		edit-offset 
-		other-offset)
-	       (public
-		[edit% console-edit%])
-	       (public 
-		[next-menu-id (lambda () other-offset)]
-		[load-file
-		 (lambda (file)
-		   (load file))]
-		[on-quit mred:exit:exit]
-		[on-menu-command
-		 ; Handle menu selections
-		 (lambda (op)
-		   (cond
-		    ((< op other-offset)
-		     (send edit do-edit (- op edit-offset))
-		     #t)
-		    (else
-		     (super-on-menu-command op))))]
-		[quit-menu-label "&Quit"]
-		[make-menu-bar
-		 ; Build the menus:
-		 (lambda ()
-		   (let ([mb (super-make-menu-bar)]
-			 [file-menu (make-menu)]
-			 [edit-menu (make-menu)])
-		     (send file-menu append-item "Load Scheme File..."
-			   (lambda ()
-			     (let ((file (mred:finder:get-file)))
-			       (if file
-				   (load-file file)))))
-		     (send file-menu append-separator)
-		     (send file-menu append-item "Edit File..."
-			   mred:handler:open-file)
-		     (send file-menu append-item "Edit New File..."
-			   (lambda ()
+	  (inherit edit canvas show make-menu on-close)
+	  (private 
+	    edit-offset 
+	    other-offset)
+	  (public
+	    [edit% console-edit%])
+	  (public 
+	    [next-menu-id (lambda () other-offset)]
+	    [load-file
+	     (lambda (file)
+	       (load file))]
+	    [on-quit mred:exit:exit]
+
+	    [quit-menu-label "&Quit"]
+	    [file-menu:open mred:handler:open-file]
+	    [file-menu:open-string
+	     (let ([tab (string #\tab)])
+	       (case wx:platform
+		 [(windows) "&Open..."]
+		 [(macintosh) (string-append "Open..." tab "Cmd+O")]
+		 [else (string-append "Open..." tab "Ctl+x Ctl+f")]))]
+	    [file-menu:new (lambda ()
 			     (let ([file (mred:finder:put-file)])
 			       (if file
-				   (mred:handler:edit-file file)))))
-		     (send file-menu append-separator)
-		     (send file-menu append-item "New Frame"
-			   (lambda ()
-			     (mred:handler:edit-file #f)))
-		     (send file-menu append-separator)
-		     (send file-menu append-item "Save Transcript"
-			   (lambda ()
-			     (send edit save-file
-				   (send edit get-filename))))
-		     (send file-menu append-item "Save Transcript As..."
-			   (lambda ()
-			     (send edit save-file "")))
-		     (send file-menu append-separator)
-		     (if close-item?
-			 (send file-menu append-item "Close"
-			       (lambda ()
-				 (when (on-close)
-				   (send edit release-output)
-				   (show #f)))))
-		     (send file-menu append-item quit-menu-label
-			   on-quit)
-		     
-		     ; Use the built-in menu item lists for the edit menu:
-		     (set! edit-offset (super-next-menu-id))
-		     (set! other-offset
-			   (send edit append-edit-items edit-menu edit-offset))
-		     
-		     (send edit-menu append-separator)
-		     (send edit-menu append-item "Preferences..."
-			   (lambda ()
-			     (mred:preferences:preferences-dialog)))
-
-		     (send mb append file-menu "File")
-		     (send mb append edit-menu "Edit")
-		     mb))]
-		[frame-title "MrEdConsole"])
-	       
-	       (sequence
-		 (super-init frame-title)
-		 (send edit set-file-format wx:const-media-ff-std)
+				   (mred:handler:edit-file file))))]
+	    [file-menu:revert #f]
+	    [file-menu:close
+	     (if close-item?
+		 (lambda ()
+		   (when (on-close)
+		     (send edit release-output)
+		     (show #f)))
+		 #f)]
+	    [file-menu:between-open-and-save
+	     (lambda (file-menu)
+	       (send file-menu append-item "&Load Scheme File..."
+		     (lambda ()
+		       (let ((file (mred:finder:get-file)))
+			 (if file
+			     (load-file file)))))
+	       (send file-menu append-separator)
+	       (send file-menu append-item "New Frame"
+		     (lambda ()
+		       (mred:handler:edit-file #f)))
+	       (send file-menu append-separator))]
+	    [file-menu:save (lambda ()
+			      (send edit save-file
+				    (send edit get-filename)))]
+	    [file-menu:save-as (lambda () (send edit save-file ""))]
+	    [file-menu:after-close
+	     (lambda (file-menu)
+	       (when close-item?
+		 (send file-menu append-separator))
+	       (send file-menu append-item quit-menu-label on-quit))]
 		 
-		 ; Welcome message and initial prompt:
-		 (when mssg
-		   (send edit insert mssg)
+	    [edit-menu:before-preferences
+	     (let ([edit-menu:do  (lambda (const) (lambda () (send edit do-edit const)))])
+	       (lambda (edit-menu)
+		 (send edit-menu append-separator)
+		 (send edit-menu append-item "Insert Text Box"
+		       (edit-menu:do wx:const-edit-insert-text-box))
+		 (send edit-menu append-item "Insert Graphic Box"
+		       (edit-menu:do wx:const-edit-insert-graphic-box))
+		 (send edit-menu append-item "Insert Image"
+		       (edit-menu:do wx:const-edit-insert-image))))]
+
+	    [frame-title "MrEdConsole"])
+	  
+	  (sequence
+	    (super-init frame-title)
+	    (send edit set-file-format wx:const-media-ff-std)
+	    
+	    ; Welcome message and initial prompt:
+	    (when mssg
+	      (send edit insert mssg)
+	      
+	      (mred:gui-utils:local-busy-cursor 
+	       canvas
+	       (lambda ()
+		 (let ([last (send edit last-position)]
+		       [delta (make-object wx:style-delta%
+					   wx:const-change-family
+					   wx:const-decorative)])
+		   (send delta set-delta wx:const-change-size 10)
+		   (send edit insert #\newline)
+		   (send edit change-style delta 0 last)
 		   
-		   (mred:gui-utils:local-busy-cursor 
-		    canvas
-		    (lambda ()
-		      (let ([last (send edit last-position)]
-			    [delta (make-object wx:style-delta%
-				     wx:const-change-family
-				     wx:const-decorative)])
-			(send delta set-delta wx:const-change-size 10)
-			(send edit insert #\newline)
-			(send edit change-style delta 0 last)
-			
-			(show #t)
-			
-			; Visible initialization
-			(let ([dd (ivar edit display-delta)])
-			  (dynamic-wind
-			   (lambda ()
-			     (send edit set-display-delta delta))
-			   (lambda ()
-			     (send edit initialize-console))
-			   (lambda ()
-			     (send edit set-display-delta dd)))))))
+		   (show #t)
 		   
-		   (send edit enable-autoprompt)
-		   (send edit takeover-output)
-		   (send edit insert-prompt)
-		   (send edit clear-undos))))))
-    (define console-frame% (make-console-frame% mred:frame:simple-menu-frame%))))
+		   ; Visible initialization
+		   (let ([dd (ivar edit display-delta)])
+		     (dynamic-wind
+		      (lambda ()
+			(send edit set-display-delta delta))
+		      (lambda ()
+			(send edit initialize-console))
+		      (lambda ()
+			(send edit set-display-delta dd)))))))
+	      
+	      (send edit enable-autoprompt)
+	      (send edit takeover-output)
+	      (send edit insert-prompt)
+	      (send edit clear-undos))))))
+
+    (define console-frame% (make-console-frame% mred:frame:standard-menus-frame%))))

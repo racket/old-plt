@@ -283,8 +283,7 @@
    (define/public file-menu:between-close-and-quit (lambda (menu) (void)))
    (define/public
      file-menu:quit-callback
-     (lambda (item control)
-       (when (exit:user-oks-exit) (printf "user ok'd exit\n") (exit:exit))))
+     (lambda (item control) (when (exit:user-oks-exit) (exit:exit))))
    (define/public file-menu:get-quit-item (lambda () file-menu:quit-item))
    (define/public
      file-menu:quit-string

@@ -166,7 +166,7 @@
     (let loop ()
       (let ([l (read-bytes-avail! buffer)])
         (unless (eof-object? l)
-          (display (if (< l bufsize) (substring buffer 0 l) buffer))
+          (write-bytes buffer (current-output-port) 0 l)
           (loop))))))
 
 (define* (with-output-filter filter proc)

@@ -219,13 +219,23 @@
 
           (define (show-actual show?)
             (set! actual-show? show?)
-            (send actual-pane show actual-show?))
+            (send show-actual-button set-state
+                  (boolean->show-actual-btn-state show?))
+            (send actual-pane show show?))
           
           (define (collapse bool)
             (set! collapsed? bool)
-            (send left show (not collapsed?))
-            (send right show (not collapsed?)))
+            (send collapse-button set-state
+                  (boolean->collapse-btn-state bool))
+            (send left show (not bool))
+            (send right show (not bool)))
             
+          (define (boolean->collapse-btn-state bool)
+            (if bool 'on 'off))
+          
+          (define (boolean->show-actual-btn-state bool)
+            (if bool 'off 'on))
+          
           (field
            [pb (new aligned-pasteboard%)]
            [main (new horizontal-alignment% (parent pb))]
@@ -240,7 +250,19 @@
            [expected-pane (new vertical-alignment% (parent right))]
            [actual-pane (new vertical-alignment%
                              (parent right)
-                             (show? actual-show?))])
+                             (show? actual-show?))]
+           [collapse-button (new turn-button-snip%
+                                 (state (boolean->collapse-btn-state collapsed?))
+                                 (turn-off
+                                  (lambda (b e) (collapse true)))
+                                 (turn-on
+                                  (lambda (b e) (collapse false))))]
+           [show-actual-button (new turn-button-snip%
+                                    (state (boolean->show-actual-btn-state actual-show?))
+                                    (turn-off
+                                     (lambda (b e) (show-actual false)))
+                                    (turn-on
+                                     (lambda (b e) (show-actual true))))])
           
           (super-new (editor pb))
           
@@ -275,20 +297,10 @@
           ;; error-reporting on collapsed test-cases highlight the
           ;; test-case. (PR6955)
           (new snip-wrapper%
-               (snip (new turn-button-snip%
-                          (state (if collapsed? 'up 'down))
-                          (turn-down
-                           (lambda () (collapse true)))
-                          (turn-up
-                           (lambda () (collapse false)))))
+               (snip collapse-button)
                (parent button-pane))
           (new snip-wrapper%
-               (snip (new turn-button-snip%
-                          (state (if actual-show? 'down 'up))
-                          (turn-down
-                           (lambda () (show-actual false)))
-                          (turn-up
-                           (lambda () (show-actual true)))))
+               (snip show-actual-button)
                (parent button-pane))
           
           (set-tabbing to-test expected)
@@ -334,14 +346,9 @@
   ;; a snip which acts as a toggle button for rolling a window up and down
   (define turn-button-snip%
     (class toggle-button-snip%
-      (init state)
-      (init-field turn-down turn-up)
       (super-new
-       (state (if (symbol=? state 'down) 'off 'on))
        (images-off (cons (icon "turn-down.gif") (icon "turn-down-click.gif")))
-       (images-on (cons (icon "turn-up.gif") (icon "turn-up-click.gif")))
-       (callback-off (lambda (b e) (turn-down)))
-       (callback-on (lambda (b e) (turn-up))))))
+       (images-on (cons (icon "turn-up.gif") (icon "turn-up-click.gif"))))))
   
   ;; a snip which will display a pass/fail result
   (define result-snip%

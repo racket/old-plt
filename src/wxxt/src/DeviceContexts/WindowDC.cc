@@ -1469,6 +1469,8 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 // clipping region
 //-----------------------------------------------------------------------------
 
+static Region empty_rgn;
+
 void wxWindowDC::SetClippingRect(float x, float y, float w, float h)
 {
   wxRegion *r;
@@ -1481,9 +1483,16 @@ void wxWindowDC::SetClippingRect(float x, float y, float w, float h)
 void wxWindowDC::SetClippingRegion(wxRegion *r)
 {
   clipping = r;
-  if (r)
-    USER_REG = r->rgn;
-  else
+  if (r) {
+    if (r->rgn) {
+      USER_REG = r->rgn;
+    } else {
+      /* NULL r->rgn means empty region */
+      if (!empty_rgn)
+	empty_rgn = XCreateRegion();
+      USER_REG = empty_rgn;
+    }
+  } else
     USER_REG = NULL;
   SetCanvasClipping();
 }
@@ -1583,7 +1592,7 @@ void wxWindowDC::Destroy(void)
 
 void wxWindowDC::SetCanvasClipping(void)
 {
-    if (!DRAWABLE) /* MATTHEW: [5] */
+    if (!DRAWABLE)
 	return;
 
     if (CURRENT_REG)

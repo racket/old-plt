@@ -63,15 +63,6 @@ static SRP_BUFFER_TBL_ENTRY *bufferTable[BUFFER_TBL_SIZE];
 
 static Scheme_Object *scheme_raise;
 
-/* exception constructors */
-
-static Scheme_Object *make_info_exn;
-static Scheme_Object *make_no_data_exn;
-static Scheme_Object *make_invalid_handle_exn;
-static Scheme_Object *make_error_exn;
-static Scheme_Object *make_need_data_exn;
-static Scheme_Object *make_still_executing_exn;
-
 /* NOTE
 
    When we wish to return a Scheme string, and a string length
@@ -1615,8 +1606,6 @@ Scheme_Object *raise_valued_exn(Scheme_Object *val,char *f,
   return scheme_apply(scheme_raise,1,&exn);  
 }
 
-
-
 Scheme_Object *raise_info_exn(Scheme_Object *val,char *f) {
   return raise_valued_exn(val,f,WITH_INFO_EXN_TYPE,"SQL_SUCCESS_WITH_INFO"); 
 }
@@ -2197,9 +2186,11 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
     retcode = checkSQLReturn(sr,"col-attribute");		       
     retval = scheme_make_sized_string(buff,actualLen,TRUE);
     sql_return(retval,retcode,"col-attribute");
-  }
 
-  scheme_signal_error("sql-col-attribute: invalid attribute type");
+  default :
+    scheme_signal_error("sql-col-attribute: invalid attribute type");
+
+  }
 
   return scheme_void; /* unreachable */
 }
@@ -2399,7 +2390,7 @@ Scheme_Object *srp_SQLDescribeCol(int argc,Scheme_Object **argv) {
 
   dataTypeString = "?";
 
-  for (i = 0; i < sizeray(SQLDataTypes); i++) {
+  for (i = 0; i < (int)sizeray(SQLDataTypes); i++) {
     if (dataType == SQLDataTypes[i].val) {
       dataTypeString = SQLDataTypes[i].scheme_name;
       break;
@@ -2834,6 +2825,10 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
 						    sizeray(namedConnectAttrIntegers)));
     sql_return(retval,retcode,"get-connect-attr");
 
+  default :
+
+    scheme_signal_error("sql-connect-attribute: invalid attribute type");
+
   }
   
   return scheme_void; /* for compiler */
@@ -2905,6 +2900,11 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
     retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = bitsListFromBitMask(optionString,number);
     sql_return(retval,retcode,"get-connect-option");
+
+  default : 
+
+    scheme_signal_error("sql-connect-option: invalid attribute type");
+
   }
   
   return scheme_void; /* for compiler */
@@ -3234,7 +3234,7 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
 
   typeString = "?";
 
-  for (i = 0; i < sizeray(SQLDataTypes); i++) {
+  for (i = 0; i < (int)sizeray(SQLDataTypes); i++) {
     if (SQLDataTypes[i].val == type) {
       typeString = SQLDataTypes[i].scheme_name;
       break;
@@ -3243,7 +3243,7 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
 
   subtypeString = "?";
 
-  for (i = 0; i < sizeray(datetimeIntervalCodes); i++) {
+  for (i = 0; i < (int)sizeray(datetimeIntervalCodes); i++) {
     if ((SQLINTEGER)(datetimeIntervalCodes[i].val) == subtype) {
       subtypeString = datetimeIntervalCodes[i].scheme_name;
       break;
@@ -3487,12 +3487,15 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
 
     retval = (boolval == SQL_FALSE) ? scheme_false : scheme_true;
     sql_return(retval,retcode,"get-env-attr");
+
+  default :
+
+    scheme_signal_error("Unknown environment attribute type: %X",
+			(int)attributeType);
   }
 
-  scheme_signal_error("Unknown environment attribute type: %X",
-		      (int)attributeType);
-
   return scheme_void; /* unreachable */
+
 }
 #endif
 
@@ -3542,7 +3545,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
 
     retval = scheme_null;
 
-    for (i = 0; i < sizeray(sqlFunctions); i++) {
+    for (i = 0; i < (int)sizeray(sqlFunctions); i++) {
       ndx = sqlFunctions[i].val;
       if (ndx < 100) { /* valid ODBC 2 function */
 	if (supported[ndx]) { /* rely on SQL_FALSE == 0 */
@@ -3802,6 +3805,10 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
     }
 #endif
 
+  default :
+
+    scheme_signal_error("get-info-type: invalid info type: %X",infoType);
+
   }
 
   return scheme_void;  /* unreachable */
@@ -3974,10 +3981,13 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
 
       sql_return((Scheme_Object *)retval,retcode,"get-stmt-attr");
     }
-  }
 
-  scheme_signal_error("sql-get-stmt-attr: invalid attribute type: %X",
-		      attributeType);
+  default :
+
+    scheme_signal_error("sql-get-stmt-attr: invalid attribute type: %X",
+			attributeType);
+
+  }
 
   return scheme_void; /* unreachable */
 }
@@ -4057,10 +4067,12 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
 
     sql_return(scheme_intern_symbol(attrName),retcode,"get-stmt-option");
 
-  }
+  default :
 
-  scheme_signal_error("get-stmt-option: invalid option type: %X",
-		      optionType);
+    scheme_signal_error("get-stmt-option: invalid option type: %X",
+			optionType);
+
+  }
 
   return scheme_void; /* unreachable */
 
@@ -4298,7 +4310,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
 			   namedConnectAttrIntegers,
 			   sizeray(namedConnectAttrIntegers));
 
-    if (val == -1) {
+    if (val == (SQLUINTEGER)-1) {
       scheme_signal_error("sql-set-connect-attr: unknown attribute value: %s",
 			  attributeValString);
     }
@@ -4400,7 +4412,7 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
 			   namedConnectOptionIntegers,
 			   sizeray(namedConnectOptionIntegers));
 
-    if (val == -1) {
+    if (val == (SQLUINTEGER)-1) {
       scheme_signal_error("sql-set-connect-option: unknown option value: %s",
 			  optionValString);
     }
@@ -4809,7 +4821,7 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
 			   namedEnvAttrIntegers,
 			   sizeray(namedEnvAttrIntegers));
 
-    if (val == -1) {
+    if (val == (SQLUINTEGER)-1) {
       scheme_signal_error("sql-set-env-attr: unknown attribute value: %s",
 			  attributeValString);
     }
@@ -5013,7 +5025,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
     val = findNamedInteger(attributeString,attributeValString,
 			   namedStmtAttributes,sizeray(namedStmtAttributes));
 
-    if (val == -1) {
+    if (val == (SQLUINTEGER)-1) {
       scheme_signal_error("sql-set-stmt-attr: unknown attribute value: %s",
 			  attributeValString);
     }
@@ -5030,7 +5042,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
       val = findNamedInteger(attributeString,attributeValString,
 			     namedStmtAttributes,sizeray(namedStmtAttributes));
 
-      if (val == -1) {
+      if (val == (SQLUINTEGER)-1) {
 	scheme_signal_error("sql-set-stmt-attr: unknown attribute value: %s",
 			    attributeValString);
       }
@@ -5169,7 +5181,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     val = findNamedInteger(optionString,optionValString,
 			   namedStmtOptions,sizeray(namedStmtOptions));
 
-    if (val == -1) {
+    if (val == (SQLUINTEGER)-1) {
       scheme_signal_error("set-stmt-option: unknown option value: %s",
 			  optionValString);
     }
@@ -5186,7 +5198,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
       val = findNamedInteger(optionString,optionValString,
 			     namedStmtOptions,sizeray(namedStmtOptions));
 
-      if (val == -1) {
+      if (val == (SQLUINTEGER)-1) {
 	scheme_signal_error("sql-set-stmt-option: unknown option value: %s",
 			    optionValString);
       }
@@ -5797,9 +5809,12 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
     retcode = checkSQLReturn(sr,"col-attributes");		       
     sql_return(scheme_make_sized_string(buff,actualLen,TRUE),
 	       retcode,"col-attributes"); 
-  }
 
-  scheme_signal_error("sql-col-attributes: invalid attribute type");
+  default :
+
+    scheme_signal_error("sql-col-attributes: invalid attribute type");
+
+  }
 
   return scheme_void; /* unreachable */
 } 
@@ -5882,7 +5897,7 @@ Scheme_Object *srp_SQLDescribeParam(int argc,Scheme_Object **argv) {
 
   dataTypeString = "?";
 
-  for (i = 0; i < sizeray(SQLDataTypes); i++) {
+  for (i = 0; i < (int)sizeray(SQLDataTypes); i++) {
     if (dataType == SQLDataTypes[i].val) {
       dataTypeString = SQLDataTypes[i].scheme_name;
       break;
@@ -6661,7 +6676,7 @@ Scheme_Object *srp_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
   int name_count;
   int i,j,k;
 
-  for (i = 0; i < sizeray(srpPrims); i++) {
+  for (i = 0; i < (int)sizeray(srpPrims); i++) {
     SCHEME_ENVBOX_VAL(boxes[i]) = scheme_make_prim_w_arity(srpPrims[i].c_fun,
 							   srpPrims[i].name,
 							   srpPrims[i].minargs,
@@ -6669,7 +6684,7 @@ Scheme_Object *srp_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
     anchors[i] = boxes[i];
   }
 
-  for (i = 0,k = sizeray(srpPrims); i < sizeray(srpStructs); i++) {
+  for (i = 0,k = sizeray(srpPrims); i < (int)sizeray(srpStructs); i++) {
     name_count = srpStructs[i].name_count;
     for (j = 0; j < name_count; j++,k++) {
       SCHEME_ENVBOX_VAL(boxes[k]) = (*(srpStructs[i].pStructFuns))[j];
@@ -6677,7 +6692,7 @@ Scheme_Object *srp_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
     }
   }
 
-  for (i = 0,k = sizeray(srpPrims) + structNameCount; i < sizeray(srp_exns); i++) {
+  for (i = 0,k = sizeray(srpPrims) + structNameCount; i < (int)sizeray(srp_exns); i++) {
     name_count = srp_exns[i].name_count;
     for (j = 0; j < name_count; j++,k++) {
       SCHEME_ENVBOX_VAL(boxes[k]) = (*(srp_exns[i].pStructFuns))[j];
@@ -6726,7 +6741,7 @@ void initExns(Scheme_Env *env) {
 
   exnNameCount = 0;
 
-  for (i = 0; i < sizeray(srp_exns); i++) {
+  for (i = 0; i < (int)sizeray(srp_exns); i++) {
     new_exn_name = scheme_intern_symbol(srp_exns[i].name);
     new_exn_type = 
       scheme_make_struct_type(new_exn_name,exn_type,srp_exns[i].num_fields);
@@ -6750,7 +6765,7 @@ void initStructs(void) {
 
   structNameCount = 0;
 
-  for (i = 0; i < sizeray(srpStructs); i++) {
+  for (i = 0; i < (int)sizeray(srpStructs); i++) {
     structNameSymbol = scheme_intern_symbol(srpStructs[i].name);
     structType = scheme_make_struct_type(structNameSymbol,NULL,srpStructs[i].num_fields);
     structNames = scheme_make_struct_names(structNameSymbol,
@@ -6848,18 +6863,18 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   srp_unit->export_debug_names = NULL;
   srp_unit->init_func = srp_unit_init;
   
-  for (i = 0; i < sizeray(srpPrims); i++) {
+  for (i = 0; i < (int)sizeray(srpPrims); i++) {
     srp_unit->exports[i] = scheme_intern_symbol(srpPrims[i].name);
   }
 
-  for (i = 0,k = sizeray(srpPrims); i < sizeray(srpStructs); i++) {
+  for (i = 0,k = sizeray(srpPrims); i < (int)sizeray(srpStructs); i++) {
     name_count = srpStructs[i].name_count;
     for (j = 0; j < name_count; j++,k++) {
       srp_unit->exports[k] = scheme_intern_symbol(srpStructs[i].names[j]);
     }
   }
 
-  for (i = 0,k = sizeray(srpPrims) + structNameCount; i < sizeray(srp_exns); i++) {
+  for (i = 0,k = sizeray(srpPrims) + structNameCount; i < (int)sizeray(srp_exns); i++) {
     name_count = srp_exns[i].name_count;
     for (j = 0; j < name_count; j++,k++) {
       srp_unit->exports[k] = scheme_intern_symbol(srp_exns[i].names[j]);

@@ -28,10 +28,12 @@
       (define mailbox-cache-file (build-path (LOCAL-DIR) "folder-window-mailboxes"))
       
       (define (imap-open-connection)
-	(imap-connect (IMAP-SERVER)
-		      (USERNAME)
-		      (or (get-PASSWORD) (get-text-from-user "Enter Password" "Enter Password"))
-		      mailbox-name))
+	(let-values ([(server port-no)
+		      (parse-server-name (IMAP-SERVER) 143)])
+	  (parameterize ([imap-port-number port-no])
+	    (imap-connect server (USERNAME) 
+			  (or (get-PASSWORD) (get-text-from-user "Enter Password" "Enter Password"))
+			  mailbox-name))))
 
       (define imap-mailbox-name-mixin
         (lambda (list%)
@@ -117,7 +119,7 @@
       ;; fetch-mailboxes : -> (union #f mailbox-folder)
       ;; gets the current mailbox list from the server
       (define (fetch-mailboxes)
-        (with-handlers ([(lambda (x) #t)
+        (with-handlers ([not-break-exn?
                          (lambda (x)
                            (message-box "Error getting IMAP directory"
                                         (if (exn? x)
@@ -259,11 +261,11 @@
       (define top-panel (make-object horizontal-panel% frame))
       (send top-panel stretchable-height #f)
       
-      (define re:setup-mailboxes "^([^/]*)/(.*)$")
+      (define re:setup-mailboxes (regexp "^([^/]*)/(.*)$"))
       (define (setup-mailboxes-file mailbox-name)
         (define mailboxes-file (build-path (LOCAL-DIR) "mailboxes"))
         (define mailboxes
-          (with-handlers ([void (lambda (x) '(("Inbox" "inbox")))])
+          (with-handlers ([not-break-exn? (lambda (x) '(("Inbox" "inbox")))])
             (with-input-from-file mailboxes-file
               read)))
         

@@ -153,6 +153,8 @@
 			      void
 			      (make-string width-num #\space)))))
     (send t set-value (or (preferences:get pref) ""))
+    (when optional?
+      (send e set-value (preferences:get pref)))
     (when e
       (send t enable (send e get-value)))
     (preferences:add-callback pref (lambda (name val)

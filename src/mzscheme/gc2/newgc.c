@@ -19,7 +19,6 @@
 #endif
 
 #include "msgprint.c"
-#define inline /* */
 
 /*****************************************************************************/
 /* Collector selection. Change the definitions of these to set or unset the  */

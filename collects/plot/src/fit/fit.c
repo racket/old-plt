@@ -296,7 +296,7 @@ double *lambda;
 
     if (tmp_chisq < *chisq) {	/* Success, accept new solution */
 	if (*lambda > MIN_LAMBDA) {
-	    (void) putc('/', stderr);
+	  //(void) putc('/', stderr);
 	    *lambda /= lambda_down_factor;
 	}
 	*chisq = tmp_chisq;
@@ -308,7 +308,7 @@ double *lambda;
 	    a[j] = temp_a[j];
 	return BETTER;
     } else {			/* failure, increase lambda and return */
-	(void) putc('*', stderr);
+      //(void) putc('*', stderr);
 	*lambda *= lambda_up_factor;
 	return WORSE;
     }
@@ -462,6 +462,8 @@ static TBOOLEAN regress(a)
 
 
   /* MAIN FIT LOOP: do the regression iteration */
+
+
   
   
   do {
@@ -471,7 +473,8 @@ static TBOOLEAN regress(a)
       last_chisq = chisq;
     }
     if ((res = marquardt(a, C, &chisq, &lambda)) == BETTER)
-      show_fit(iter, chisq, last_chisq, a, lambda, STANDARD);
+      {}
+;      show_fit(iter, chisq, last_chisq, a, lambda, STANDARD);
   } while ((res != ERROR)
 	   && (lambda < MAX_LAMBDA)
 	   && ((maxiter == 0) || (iter <= maxiter))
@@ -485,6 +488,8 @@ static TBOOLEAN regress(a)
     /* fit done */
   
   // save all the info that was otherwise printed out
+
+
   
   rms = sqrt(chisq / (num_data - num_params));
   varience = chisq / (num_data - num_params);

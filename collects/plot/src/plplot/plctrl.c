@@ -1,4 +1,4 @@
-/* $Id: plctrl.c,v 1.1 2003/08/15 22:18:10 cozmic Exp $
+/* $Id: plctrl.c,v 1.2 2003/08/19 18:32:06 cozmic Exp $
 
 	Misc. control routines, like begin, end, exit, change graphics/text
 	mode, change color.  Includes some spillage from plcore.c.  If you
@@ -1468,7 +1468,8 @@ plOpenFile(PLStream *pls)
 	if ((pls->OutFile = fopen(pls->FileName, "wb+")) == NULL) 
 	    fprintf(stdout, "Can't open %s.\n", pls->FileName);
 	else
-	    fprintf(stderr, "Opened %s\n", pls->FileName);
+//	    fprintf(stderr, "Opened %s\n", pls->FileName);
+// 	    this is not needed
     }
 }
 

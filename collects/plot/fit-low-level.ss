@@ -41,6 +41,7 @@
     (scheme-object scheme-object scheme-object
                    scheme-object scheme-object scheme-object) scheme-object
                             "
+ {                            
  double * result_params = do_fit(___arg1,
                                  scheme_list_length(___arg2),
                                  list_to_array(___arg2),
@@ -79,6 +80,7 @@
 	   scheme_make_pair(fit_rms,
 	    scheme_make_pair(fit_varience, scheme_null)))));
 	}
+ }
 "))	
    
   (provide fit-internal))

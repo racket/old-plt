@@ -254,7 +254,7 @@
 
   plscmap1n(256);
   plscmap1l(0, 2, i, h, l, s, NULL);
-  
+  {
   int opts = (___arg4 ? DRAW_LINEXY : 0) |
                          (___arg5 ? MAG_COLOR : 0) |
                          (___arg6 ? BASE_CONT : 0) |
@@ -262,6 +262,7 @@
               plmeshc(list_to_array(___arg1),list_to_array(___arg2),list_of_list_to_array(___arg3),
                                     scheme_list_length(___arg1),scheme_list_length(___arg2),opts,
                                     list_to_array(___arg8),scheme_list_length(___arg8));
+              }
   "))
                          
                          

@@ -1196,7 +1196,8 @@ static struct stacklet *istack = NULL;
 inline static void push_2ptr(void *ptr1, void *ptr2)
 {
   if(!istack || (istack->cur == istack->end)) {
-    struct stacklet *temp = (struct stacklet *)malloc(STACKLET_SIZE);
+    struct stacklet *temp = (struct stacklet *)malloc_pages(STACKLET_SIZE, 
+							    PAGE_SIZE);
     if(temp) {
       temp->prev = istack;
       temp->cur = (void**)((unsigned long)temp + sizeof(struct stacklet));
@@ -1217,13 +1218,23 @@ inline static int pop_2ptr(void **ptr1, void **ptr2)
   if(istack && (istack->cur == istack->start)) {
     void *temp = istack;
     istack = istack->prev;
-    free(temp);
+    free_pages(temp, STACKLET_SIZE);
   }
   if(istack) {
     *ptr2 = *(--istack->cur);
     *ptr1 = *(--istack->cur);
     return 1;
   } else return 0;
+}
+
+inline static void clear_2ptr_stack()
+{
+  while(istack) {
+    struct stacklet *prev = istack->prev;
+    free_pages(istack, STACKLET_SIZE);
+    istack = prev;
+  }
+  flush_freed_pages();
 }
   
 #endif
@@ -1414,9 +1425,6 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
 {
   struct objhead *info = (struct objhead *)((char*)ptr - WORD_SIZE);
 
-  if(page->generation == 0)
-    GCERR((GCOUTF, "Pointer after collection into gen0!\n"));
-
   switch(page->page_type) {
     case PAGE_TAGGED: 
       if(*(unsigned short*)ptr == scheme_thread_type) {
@@ -1465,19 +1473,29 @@ inline static void mark_acc_big_page(struct mpage *page)
   }
 }
 
+int kill_propagation_loop = 0;
+
+static void btc_overmem_abort()
+{
+  kill_propagation_loop = 1;
+  GCWARN((GCOUTF, "WARNING: Ran out of memory accounting. "
+	          "Info will be wrong.\n"));
+}
 
 static void propagate_accounting_marks(void)
 {
   struct mpage *page;
   void *p;
 
-  while(pop_2ptr((void**)&page, &p)) {
+  while(pop_2ptr((void**)&page, &p) && !kill_propagation_loop) {
     GCDEBUG((DEBUGOUTF, "btc_account: popped off page %p, ptr %p\n", page, p));
     if(page->big_page)
       mark_acc_big_page(page);
     else
       mark_normal_obj(page, p);
   }
+  if(kill_propagation_loop)
+    clear_2ptr_stack();
 }
 
 static int doing_memory_accounting = 0;
@@ -1490,6 +1508,8 @@ static void do_btc_accounting(void)
 
   GCDEBUG((DEBUGOUTF, "\nBEGINNING MEMORY ACCOUNTING\n"));
   doing_memory_accounting = 1;
+  in_unsafe_allocation_mode = 1;
+  unsafe_allocation_abort = btc_overmem_abort;
   
   /* clear the memory use numbers out */
   for(i = 1; i < owner_table_top; i++)
@@ -1509,6 +1529,7 @@ static void do_btc_accounting(void)
     
     current_mark_owner = owner;
     GCDEBUG((DEBUGOUTF, "MARKING THREADS OF OWNER %i (CUST %p)\n", owner, cur));
+    kill_propagation_loop = 0;
     mark_threads(owner);
     GCDEBUG((DEBUGOUTF, "Propagating accounting marks\n"));
     propagate_accounting_marks();
@@ -1516,6 +1537,7 @@ static void do_btc_accounting(void)
     box = cur->global_prev; cur = box ? box->u.two_ptr_val.ptr1 : NULL;
   }
   
+  in_unsafe_allocation_mode = 0;
   doing_memory_accounting = 0;
 }
 
@@ -1743,6 +1765,171 @@ void GC_count_lambdas_and_structs(Scheme_Object *stype,
   }
 }
 
+static unsigned long tag_counts[NUMBER_OF_TAGS];
+static int running_undocumented_reach_printer = 0;
+static int kill_reach_prop = 0;
+extern char *scheme_get_type_name(short t);
+
+static void undoc_reach_abort() {
+  kill_reach_prop = 1;
+  GCWARN((GCOUTF, "Ran out of memory tracing links.\n"));
+}
+
+static inline void reach_printer_mark(struct mpage *page, void *p)
+{
+  struct objhead *info;
+
+  /* we do things this way ... which is slow ... because we're in 
+     between collections, and thus the invariants we rely on later
+     aren't necessarily held here */
+  if((NUM(p) % WORD_SIZE) != 0)
+    return;
+
+  if(page->big_page && !(page->generation == 0)) {
+    info = (struct objhead *)(NUM(page) + HEADER_SIZEB); 
+    if(!info->debug_mark) {
+      info->debug_mark = 1;
+      if(info->type == PAGE_TAGGED) 
+	tag_counts[*(unsigned short*)p]++;
+      push_2ptr(page, PTR(NUM(page) + HEADER_SIZEB));
+    }
+  } else {
+    void **start = PPTR(NUM(page) + HEADER_SIZEB);
+    void **end = PPTR(NUM(page) + page->size);
+
+    if((PPTR(p) < start) || (PPTR(p) > end))
+      return;
+
+    while(start < PPTR(NUM(p) - WORD_SIZE)) {
+      struct objhead *info = (struct objhead *)start;
+      start += info->size;
+    }
+
+    if(start == PPTR((NUM(p) - WORD_SIZE))) {
+      struct objhead *info = (struct objhead *)start;
+      
+      if(!info->debug_mark) {
+	info->debug_mark = 1;
+	if(info->type == PAGE_TAGGED)
+	  tag_counts[*(unsigned short*)p]++;
+	push_2ptr(page, p);
+      }
+    } 
+  }
+}
+
+static inline void clear_page_debug_marks(struct mpage *page)
+{
+  if(page->big_page) {
+    ((struct objhead *)(NUM(page) + HEADER_SIZEB))->debug_mark = 0;
+  } else {
+    void **start = PPTR(NUM(page) + HEADER_SIZEB);
+    void **end = PPTR(NUM(page) + page->size);
+    
+    while(start < end) {
+      struct objhead *info = (struct objhead *)start;
+      info->debug_mark = 0;
+      start += info->size;
+    }
+  }
+}
+
+static inline void clear_debug_marks()
+{
+  struct mpage *work;
+  int i;
+  
+  /* unprotect everthing in generation 1 */
+  for(i = 0; i < PAGE_TYPES; i++)
+    for(work = pages[i]; work; work = work->next)
+      protect_pages(work, work->size, 1);
+  /* clear them in generation 0 */
+  for(work = gen0_pages; work; work = work->next)
+    clear_page_debug_marks(work);
+  /* clear them in generation 1 */
+  for(i = 0; i < PAGE_TYPES; i++)
+    for(work = pages[i]; work; work = work->next)
+      clear_page_debug_marks(work);
+}
+
+
+int print_object_reaches(Scheme_Object *obj)
+{
+  if(!find_page(obj) || (NUM(obj) & 0x1) || (NUM(obj) == 0)) {
+    return 0;
+  } else {
+    struct mpage *page;
+    void *ptr;
+    int i;
+
+    /* clear out the counts */
+    for(i = 0; i < NUMBER_OF_TAGS; i++)
+      tag_counts[i] = 0;
+
+    in_unsafe_allocation_mode = 1;
+    running_undocumented_reach_printer = 1;
+    unsafe_allocation_abort = undoc_reach_abort;
+    
+    gcMARK(obj);
+    while(pop_2ptr((void**)&page, &ptr) && !kill_reach_prop) {
+      if(page->big_page && !(page->generation == 0)) {
+	void **start = PPTR(NUM(page) + HEADER_SIZEB + WORD_SIZE);
+	void **end = PPTR(NUM(page) + page->size);
+
+	switch(page->page_type) {
+	  case PAGE_TAGGED: 
+	    if(NUM(mark_table[*(unsigned short*)start]) > PAGE_TYPES)
+	      mark_table[*(unsigned short*)start](start); 
+	    break;
+	  case PAGE_ATOMIC: break;
+	  case PAGE_ARRAY: while(start < end) gcMARK(*(start++)); break;
+	  case PAGE_XTAGGED: GC_mark_xtagged(start); break;
+	  case PAGE_TARRAY: {
+	    unsigned short tag = *(unsigned short*)start;
+	    while(start < end) start += mark_table[tag](start);
+	    break;
+	  }
+	}
+      } else {
+	struct objhead *info = (struct objhead *)(NUM(ptr) - WORD_SIZE);
+
+	switch(info->type) {
+	  case PAGE_TAGGED: 
+	    if(NUM(mark_table[*(unsigned short*)ptr]) > PAGE_TYPES)
+	      mark_table[*(unsigned short*)ptr](ptr); 
+	    break;
+	  case PAGE_ATOMIC: break;
+	  case PAGE_ARRAY: {
+	    void **temp = ptr, **end = temp + info->size;
+	    while(temp < end) gcMARK(*(temp++));
+	    break;
+	  };
+	}
+      }
+    }
+
+    if(kill_reach_prop)
+      clear_2ptr_stack();
+
+    running_undocumented_reach_printer = 0;
+    in_unsafe_allocation_mode = 0;
+    /* reprotect everything in generation 1 */
+    for(i = 0; i < PAGE_TYPES; i++)
+      for(page = pages[i]; page; page = page->next)
+	if(page->page_type != PAGE_ATOMIC)
+	  if(!page->back_pointers)
+	    protect_pages(page, page->size, 0);
+
+    GCWARN((GCOUTF, "Object reaches:\n"));
+    for(i = 0; i < NUMBER_OF_TAGS; i++)
+      if(tag_counts[i] > 0) 
+	GCWARN((GCOUTF, "   %li %s objects\n", tag_counts[i],
+		scheme_get_type_name(i)));
+
+    return 1;
+  }
+}
+
 /*****************************************************************************/
 /* resolution / repair                                                       */
 /*****************************************************************************/
@@ -1857,13 +2044,16 @@ void GC_fixup(void *pp)
 
 void GC_mark(const void *p)
 {
-  if(!doing_memory_accounting) 
-    GCERR((GCOUTF, "ERROR: gcMARK used outside memory accounting!\n"));
-
   if(p && !(NUM(p) & 0x1)) {
     struct mpage *page = find_page(PTR(p));
 
-    if(page) memory_account_mark(page, PTR(p));
+    if(page) {
+      if(doing_memory_accounting) {
+	memory_account_mark(page, PTR(p));
+      } else if(running_undocumented_reach_printer) {
+	reach_printer_mark(page, PTR(p));
+      }
+    }
   }
 }
 

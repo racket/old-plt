@@ -76,7 +76,8 @@
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap gui-utils color-model frame scheme)]
 	    [finder : framework:finder^ (finder@ mred preferences gui-utils keymap)]
-	    [group : framework:group^ (group@ mred application frame preferences gui-utils text canvas)]
+	    [group : framework:group^ 
+                   (group@ mred application frame preferences gui-utils text canvas menu)]
 	    [canvas : framework:canvas^ (canvas@ mred preferences frame)]
 	    [panel : framework:panel^ (panel@ icon mred)]
 	    [frame : framework:frame^ 

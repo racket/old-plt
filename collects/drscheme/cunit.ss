@@ -12,11 +12,11 @@
   
   (define project-pasteboard%
     (class drscheme:graph:graph-pasteboard% (unit . args)
-      (inherit find-first-snip get-snip-location get-frame get-canvas
+      (inherit find-first-snip get-snip-location get-canvas
 	       find-next-selected-snip get-dc find-snip
 	       invalidate-bitmap-cache begin-write-header-footer-to-file
 	       end-write-header-footer-to-file)
-      (public
+      (override
 	[interactive-adjust-resize
 	 (lambda (snip wb hb)
 	   (set-box! wb (max (unbox wb) (ivar snip min-width)))
@@ -33,7 +33,7 @@
 		 (begin (set-box! xb (max x min-x))
 			'(set-box! yb 0)))))])
       (rename [super-on-insert on-insert])
-      (public
+      (override
 	[on-insert
 	 (opt-lambda (snip before x y)
 	   (and (super-on-insert snip before x y)
@@ -64,56 +64,33 @@
   
   (define frame%
     (class* super-frame% (drscheme:face:compound-unit-frameI) (unit)
-      (inherit show show-menu panel)
-      (rename [super-do-close do-close])
-      (public
-	[do-close
+      (inherit show show-menu get-area-container)
+      (rename [super-on-close on-close])
+      (override
+	[on-close
 	 (lambda ()
-	   (super-do-close)
+	   (super-on-close)
 	   (send unit frame-closed))])
       
-      (rename [super-make-menu-bar make-menu-bar]
-	      [super-update-shown update-shown])
+      (rename [super-update-shown update-shown])
       (private
 	[evaluation-order-id #f])
       (public
 	[update-shown
 	 (lambda ()
 	   (super-update-shown)
-	   (send panel change-children
+	   (send (get-area-container) change-children
 		 (lambda (l)
 		   (let ([removed (mzlib:function:remq eval-panel l)])
-		     (if (send show-menu checked? evaluation-order-id)
+		     (if (send evaluation-order-item is-checked?)
 			 (cons eval-panel removed)
-			 removed)))))]
-	[make-menu-bar
-	 (lambda ()
-	   (let ([mb (super-make-menu-bar)]
-		 [add-menu (make-object mred:menu%)])
-	     (set! evaluation-order-id
-		   (send show-menu append-item
-			 "Evaluation Order"
-			 (lambda () (update-shown))
-			 "Show or hide the evaluation order list"
-			 #t))
-	     (send show-menu check evaluation-order-id #t)
-	     
-	     (send mb append add-menu "Add")
-	     (send add-menu append-item "Unit..."
-		   (lambda ()
-		     (let ([unit (drscheme:unit:make-unit #f)])
-		       (send (get-edit) insert (send unit create-snip)))))
-	     (send add-menu append-item "Compound Unit..."
-		   (lambda ()
-		     (let ([cu (make-compound-unit #f)])
-		       (send (get-edit) insert (send cu create-snip)))))
-	     mb))])
+			 removed)))))])
       (public
 	[after-change-name void]
 	[after-add-import 
 	 (lambda (unit)
 	   (let ([imp (make-object import-snip% unit)])
-	     (send (get-edit) insert imp)))]
+	     (send (get-editor) insert imp)))]
 	[after-add-export void]
 	[after-remove-import void]
 	[after-remove-export void]
@@ -124,21 +101,43 @@
 	 (lambda () 
 	   (let ([file (mred:put-file)])
 	     (when file
-	       (send (get-edit) save-file file)))
+	       (send (get-editor) save-file file)))
 	   #t)])
       
-      (public
-	[get-panel% (lambda () mred:horizontal-panel%)]
+      (override
+	[get-area-container% (lambda () mred:horizontal-panel%)]
 	[get-canvas% (lambda () mred:editor-canvas%)]
-	[get-edit% (lambda () project-pasteboard%)]
-	[get-edit (lambda () (send unit get-buffer))])
+	[get-editor% (lambda () project-pasteboard%)]
+	[get-editor (lambda () (send unit get-buffer))])
       
       (sequence
-	(super-init unit))
+	(super-init unit)
+	(let* ([mb (get-make-menu)]
+	       [add-menu (make-object mred:menu% mb "Add")])
+	  (set! evaluation-order-item
+		(make-object mred:checkable-menu-item%
+		  "Evaluation Order"
+		  show-menu
+		  (lambda () (update-shown))
+		  #t
+		  "Show or hide the evaluation order list"))
+	  (send evaluation-order-item check #t)
+	     
+	  (send add-menu append-item "Unit..."
+		(lambda ()
+		  (let ([unit (drscheme:unit:make-unit #f)])
+		    (send (get-editor) insert (send unit create-snip)))))
+	  (send add-menu append-item "Compound Unit..."
+		(lambda ()
+		  (let ([cu (make-compound-unit #f)])
+		    (send (get-editor) insert (send cu create-snip)))))))
+
       (private
-	[eval-panel (make-object mred:vertical-panel% panel)]
+	[eval-panel (make-object mred:vertical-panel% (get-area-container))]
 	[eval-msg (make-object mred:message% eval-panel "Evaluation Order")]
-	[eval-list (make-object mred:list-box% eval-panel null "")])
+	[eval-list (make-object mred:list-box%
+		     "Evaluation Order"
+		     null eval-panel void)])
       
       (sequence
 	(update-shown)

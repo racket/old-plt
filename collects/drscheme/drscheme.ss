@@ -11,19 +11,28 @@
       (inherit insert last-position get-text erase change-style clear-undos
 	       begin-edit-sequence end-edit-sequence get-start-position)
       (rename [super-on-char on-char])
-      (private [prompt-pos 0] [locked? #f])
+      (private [prompt-pos 0]
+	       [locked? #f])
       (override
-	[can-insert? (lambda (start end) (and (>= start prompt-pos) (not locked?)))]
-	[can-delete? (lambda (start end) (and (>= start prompt-pos) (not locked?)))]
+	[can-insert? (lambda (start end) (and (>= start prompt-pos)
+					      (not locked?)))]
+	[can-delete? (lambda (start end) (and (>= start prompt-pos)
+					      (not locked?)))]
 	[on-char (lambda (c)
 		   (super-on-char c)
-		   (when (and (memq (send c get-key-code) '(#\return #\newline #\003))
+		   (when (and (memq (send c get-key-code)
+				    '(#\return #\newline #\003))
 			      (not locked?))
 		     (set! locked? #t)
 		     (evaluate (get-text prompt-pos (last-position)))))])
       (private
 	[plain-style (make-object style-delta% 'change-normal)])
       (public
+	[set-input
+	 (lambda (string)
+	   (begin-edit-sequence)
+	   (delete prompt-pos (last-position))
+	   (insert string (last-position) (last-position)))]
 	[new-prompt (lambda ()
 		      (output "> " #f)
 		      (set! prompt-pos (last-position))
@@ -33,9 +42,11 @@
 		  (let ([l? locked?])
 		    (set! locked? #f)
 		    (begin-edit-sequence)
-		    (let ([pos (get-start-position)])
-		      (insert str)
-		      (change-style (or style-delta plain-style) pos (get-start-position)))
+		    (let ([pos (last-position)])
+		      (insert str pos pos)
+		      (change-style (or style-delta plain-style)
+				    pos
+				    (last-position)))
 		    (end-edit-sequence)
 		    (set! locked? l?)))]
 	[reset (lambda ()
@@ -62,16 +73,47 @@
 	(insert "The current input port always returns eof.") (insert #\newline)
 	(new-prompt))))
 
+  (define frame-section "MrEd-REPL-size")
+
+  (define-values (frame-width frame-height)
+    (let* ([default (lambda (reason)
+		      ;(printf "using default console size: ~a~n" reason)
+		      (values 500 400))]
+	   [b (box "")]
+	   [s (get-resource "mred" frame-section b)])
+      (with-handlers ([(lambda (x) #t)
+		       (lambda (x)
+			 (default (if (exn? x) (exn-message x) x)))])
+	(if s
+	    (let* ([p (open-input-string (unbox b))]
+		   [l (read p)])
+	      (if (and (list? l)
+		       (= 2 (length l))
+		       (andmap number? l))
+		  (values (car l) (cadr l))
+		  (default "not alist of length two of numbers")))
+	    (default "no resource returned")))))
+
   ;; GUI creation
   (define frame (make-object (class frame% args
 			       (inherit accept-drop-files)
 			       (override
+				[on-size
+				 (lambda (w h)
+				   (write-resource
+				    "mred"
+				    frame-section
+				    (format "~s" (list w h))
+				    (find-graphical-system-path 'setup-file)))]
 				 [on-close (lambda () 
 					     (custodian-shutdown-all user-custodian)
 					     (semaphore-post waiting))]
 				 [on-drop-file (lambda (f) (evaluate (format "(load ~s)" f)))])
 			       (sequence (apply super-init args) (accept-drop-files #t)))
-			     "MrEd REPL" #f 500 400))
+			     "Color MrEd REPL"
+			     #f
+			     frame-width
+			     frame-height))
   (define repl-buffer (make-object esq:text%))
   (define repl-display-canvas (make-object editor-canvas% frame))
 
@@ -105,7 +147,34 @@
   
   ;; Evaluation and resetting
   
+  (define previous-expressions null)
+  (define (previous-input)
+    (unless (null? previous-expressions)
+      (let ([exp (car previous-expressions)])
+	(send repl-buffer set-input exp)
+	(let loop ([l (cdr previous-expressions)])
+	  (cond
+	   [(null? l) (list exp)]
+	   [else (cons (car l) (loop (cdr l)0))])))))
+  (define (next-input)
+    (unless (null? previous-expressions)
+      (let loop ([l previous-expressions])
+	(cond
+	 [(null? (cdr l)) (send repl-buffer (car l))
+			  (set-cdr! l null)]
+	 [else (loop (cdr l))]))))
+  (define (next-input)
+    (send repl-buffer set-input (car previous-expressions)))
+  (define (remember exp)
+    (set! previous-expressions
+	  (let loop ([n 50]
+		     [l (cons exp previous-expressions)])
+	    (cond
+	     [(or (zero? n) (null? l)) previous-expressions]
+	     [else (cons (car l) (loop (- n 1) (cdr l)))]))))
+
   (define (evaluate expr-str)
+    (remember exp)
     (parameterize ([current-eventspace user-eventspace])
       (queue-callback
        (lambda ()
@@ -137,6 +206,22 @@
 
   ;; Just a few extra key bindings:
   (install-standard-text-bindings repl-buffer)
+  (define console-keymap (make-object keymap%))
+  (send console-keymap add-key-function
+	"previous-sexp"
+	(lambda (value key-event) (previous-input)))
+  (send console-keymap add-key-function
+	"next-sexp"
+	(lambda (value key-event) (next-input)))
+  (send console-keymap map-function "m:p" "previous-sexp")
+  (send console-keymap map-function "m:n" "next-sexp")
+  (send console-keymap map-function "a:p" "previous-sexp")
+  (send console-keymap map-function "a:n" "next-sexp")
+  (send repl-buffer chain-to-keymap console-keymap)
+
+
+
+
   (send repl-buffer auto-wrap #t)
 
   ;; Go

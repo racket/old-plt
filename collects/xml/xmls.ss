@@ -18,5 +18,6 @@
 
 (define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string xexpr-drop-empty-attributes))
 (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))
-(define-signature xml^ ((open xml-structs^) (open reader^) (open writer^) (open xexpr^)))
+(define-signature space^ (eliminate-whitespace))
+(define-signature xml^ ((open xml-structs^) (open reader^) (open writer^) (open xexpr^) (open space^)))
 

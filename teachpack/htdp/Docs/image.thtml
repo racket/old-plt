@@ -7,37 +7,43 @@ manipulating images.
 These functions create basic shapes. The mode can be either
 <code>'solid</code>, meaning the shape is filled in, or
 <code>'outline</code>, meaning the shape is hollow. Image
-colors can be either strings, symbols, or color structs (see
-below for information about color structs).
+colors can be either symbols (like <code>'blue</code>),
+strings (like <code>"blue"</code>), or color structs (like
+<code>(make-color 0 0 255)</code>) -- see below for
+more information about color structs.
 
 <menu>
 <li><code>{(idx rectangle)}</code> :  int int mode image-color -> image <br>
- to create an image of a rectangle using the given width, height, mode, and color
+ to create a rectangle using the given width, height, mode, and color
 <li><code>{(idx circle)}</code> : int mode image-color -> image <br>
- to create an image of a circle using the given radius, mode, and color
+ to create a circle using the given radius, mode, and color
 <li><code>{(idx ellipse)}</code> : int int mode image-color -> image <br>
- to create an image of an ellipse using the given width, height, and color
+ to create an ellipse using the given width, height, and color
 <li><code>{(idx triangle)}</code> : int mode iamge-color -> image <br>
- to create an equilateral triangle using the given edge size and color
+ to create an upward pointing equilateral triangle using the given edge size and color
 <li><code>{(idx line)}</code> : int int image-color -> image <br>
- to create an image with a colored line from (0,0) to the point with the given coordinates
+ to create an image with a colored line from (0,0) to the
+ point with the given coordinates
 <li><code>{(idx add-line)}</code> : image int int int int image-color -> image <br>
  to add a line to an existing image, drawn between the two given points
 <li><code>{(idx text)}</code> : string size image-color -> image <br>
  to create an image from the given string, point size, and background color
 </menu>
 
-These functions build more complex images from the basic
+These functions build complex images from the basic
 shapes.  When two images are laid on top of each other, the
 are lined up at their <i>pinhole</i>. Most shapes have their
-pinholes right in the middle. The exceptions are
+pinholes in the middle. The exceptions are
 <code>text</code> and <code>line</code> which have their
 pinholes in the top-left corner.
 <menu>
 <li><code>{(idx overlay)}</code> : image image image ... -> image <br> 
  to add the pixels of the second image onto the first image, lining up the pinholes
 <li><code>{(idx overlay/xy)}</code> :  image int int image -> image <br>
- to add the pixels of the second image onto the first image, lining up down and to the right of the first image's pinhole
+ to add the pixels of the second image onto the first image. Instead of lining up
+ on the pinhole, the second image's pinhole is lined up with an offset from the 
+ first image's pinhole. The two coordinates specify how far down and to the right 
+ the offset should be.
 </menu>
 
 After an image has been built up using overlays, it is
@@ -51,20 +57,28 @@ using the next two functions.
  respect to the pinhole of the first image.
 </menu>
 
-These functions provide information about the image's size
-and pinhole location.
+These functions provide information about the image's size.
 
 <menu>
 <li><code>{(idx image-width)}</code> :  image -> number <br>
  to obtain an image's width in pixels
 <li><code>{(idx image-height)}</code> :  image -> number <br>
  to obtain an image's height in pixels
+</menu>
+
+This functions provide information and manipulate an image's
+pinhole.
+
+<menu>
 <li><code>{(idx pinhole-x)}</code> :  image -> number <br>
  to determine the x coordinate of the pinhole, measuring from
  the left of the image
 <li><code>{(idx pinhole-y)}</code> :  image -> number <br>
  to determine the y coordinate of the pinhole, measuring down from 
  the left of the image
+<li><code>{(idx move-pinhole)}</code> :  image number number -> number <br>
+ to move the pinhole down and to the right (by the specified amounts) of 
+ its current location. Use negative numbers to move it up or to the left.
 </menu>
  
 This function precisely specifies what a valid image color is.
@@ -101,7 +115,9 @@ colors and combine pixels together to build an image.
 Like the last group of functions, these functions separate
 an image into its consitiuent colors and combine pixels
 together to build an image, but these provide alpha-channel
-information as well.
+information as well. Alpha channels are a measure of
+transparency; 0 indicates fully opaque and 255 indicates
+fully transparent.
 
 <menu>
 <li><code>{(idx image->alpha-color-list)}</code> : image -> list-of-alpha-color <br>

@@ -2,20 +2,15 @@
   (static-error dynamic-error internal-error))
 
 (define-signature stepper:settings^
-  (get-namespace
-   get-global-defined-vars
-   get-constructor-style-printing
-   get-abbreviate-cons-as-list
-   get-empty-list-name
-   get-show-sharing
-   get-cons
-   get-vector
-   get-vocabulary
+  (check-pre-defined-var
+   check-global-defined
+   global-lookup
+   constructor-style-printing?
+   abbreviate-cons-as-list?
+   user-cons?
+   user-vector?
    image?
    print-convert))
-
-(define-signature stepper:beginner-checker^
-  (check-variable-duplication))
 
 (define-signature stepper:shared^
   (list-take
@@ -39,10 +34,12 @@
    closure-table-lookup))
 
 (define-signature stepper:annotate^
-  (annotate))
+  (initial-env-package
+   annotate))
 
 (define-signature stepper:reconstruct^
-  (reconstruct 
+  (reconstruct-completed
+   reconstruct-current
    final-mark-list?
    skip-result-step?
    skip-redex-step?))

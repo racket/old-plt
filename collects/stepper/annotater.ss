@@ -116,13 +116,7 @@
            null
            a
            b))
-      
-  (define all-defs-list-sym (gensym "all-defs-list-"))
-  (define current-def-sym (gensym "current-def-"))
-
-  (define (current-def-setter val)
-    `(#%set! ,current-def-sym ,val))
-  
+        
   (define (closure-key-maker closure)
     closure)
   
@@ -187,13 +181,16 @@
           (set-closure-record-name! closure-record name))))
   
   
+  (define-struct env-package (top-defs top-defs-no-structs))
 
-
-
-  ; annotate takes an expression to annotate and a `break' function which will be inserted in
-  ; the code.  It returns an annotated expression, ready for evaluation.
+  (define initial-env-package (make-env-package null null))
   
-  (define (annotate red-exprs parsed-exprs break)
+  ; annotate takes a list of expressions to annotate, a list of previously-defined variables
+  ; (in the form returned by annotate), and a break routine to be called at breakpoints in the
+  ; annotated code and returns an annotated expression, along with a new pair
+  ; of environments (to be passed back in etc.)
+  
+  (define (annotate red-exprs parsed-exprs input-envs break)
     (local
 	(  
          (define (make-break kind)
@@ -201,8 +198,6 @@
              (,break (continuation-mark-set->list
                       (current-continuation-marks) 
                       (#%quote ,debug-key))
-                     ,all-defs-list-sym
-                     ,current-def-sym
                      (#%quote ,kind)
                      returned-value-list)))
   
@@ -270,15 +265,23 @@
                       (map z:varref-var (z:define-values-form-vars expr)))]
                  [else 
                   (list (top-level-exp-gensym-source expr))]))
-         
-         (define (top-defs include-structs? exprs)
+ 
+         (define (find-top-defs include-structs? exprs)
            (map (lambda (expr) (find-defined-vars include-structs? expr)) exprs))
          
-         (define (make-env include-structs? exprs)
-           (map create-bogus-top-level-varref (apply append (top-defs include-structs? exprs))))
-
-         (define top-env (make-env #t parsed-exprs))
-         (define no-structs-top-env (make-env #f parsed-exprs))
+         (define (make-env defs)
+           (map create-bogus-top-level-varref (apply append defs)))
+         
+         (define top-defs (append (env-package-top-defs input-envs) 
+                                  (list (find-top-defs #t parsed-exprs))))
+         
+         (define top-env (make-env top-defs))
+         
+         (define top-defs-no-structs (append (env-package-top-defs-no-structs input-envs)
+                                             (list (find-top-defs #f parsed-exprs))))
+         
+         (define top-env-no-structs (make-env top-defs-no-structs))
+         
          
          ; annotate/inner takes 
          ; a) a zodiac expression to annotate
@@ -314,7 +317,7 @@
                                     (wcm-wrap debug-info (break-wrap expr)))]
                   [non-local-ref 
                    (lambda (varref)
-                     (eq? (var-set-intersect (list varref) no-structs-top-env) null))]
+                     (eq? (var-set-intersect (list varref) top-env-no-structs) null))]
 
                   
                   [translate-varref
@@ -532,24 +535,11 @@
          
       (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
-                                   parsed-exprs)]
-             [top-vars-annotation `((#%define-values (,all-defs-list-sym ,current-def-sym)
-                                     (values (#%quote ,(top-defs #t parsed-exprs)) #f)))]
-             [current-def-setters (build-list (length parsed-exprs) current-def-setter)]
-             [top-annotated-exprs (interlace current-def-setters annotated-exprs)]
-             [final-current-def-setter (current-def-setter (length parsed-exprs))]
-             [final-break-exp (simple-wcm-break-wrap (make-debug-info '(#%quote no-source-expression)
-                                                               'all
-                                                               top-env
-                                                               ()
-                                                               'final) 
-                                              'dont-evaluate-this-symbol)])
+                                   parsed-exprs)])
            
-           (values (append top-vars-annotation top-annotated-exprs (list final-current-def-setter
-                                                                         final-break-exp))
-                   parsed-exprs))))
+           (values annotated-exprs
+                   (make-env-package top-defs top-defs-no-structs))))))
 	 
-  )
     
   
     

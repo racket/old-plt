@@ -24,10 +24,6 @@
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error)]
-        [beginner-checker : stepper:beginner-checker^ ((require-library-unit/sig "beginner-checker.ss" "stepper")
-                                                       zodiac
-                                                       (core function)
-                                                       error)]
         [annotate : stepper:annotate^
                   ((require-library-unit/sig "annotater.ss" "stepper")
                    zodiac
@@ -40,8 +36,7 @@
                       zodiac
                       (core function)
                       error
-                      print-convert
-                      (drscheme basis)
+                       (drscheme basis)
                       stepper
                       shared)]
         [stepper : stepper:settings^
@@ -52,7 +47,6 @@
                   drscheme
                   print-convert
                   error
-                  beginner-checker
                   annotate
                   reconstruct
                   framework

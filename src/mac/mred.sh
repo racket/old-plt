@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$PLTHOME" = '' ] ; then
-  PLTHOME="/home/mflatt/proj/plt"
+  PLTHOME=/usr/local/lib/plt
   export PLTHOME
 fi
 

@@ -1,12 +1,26 @@
 
-(let* ([d (collection-path "doc")]
+(let* ([quicksort
+	(invoke-unit/sig
+	 (compound-unit/sig
+	  (import)
+	  (link [F : (quicksort) ((require-library "functior.ss"))]
+		[I : () ((unit/sig () (import (quicksort)) quicksort) F)])
+	  (export)))]
+       [docpos (require-library "docpos.ss" "help")]
+       [d (collection-path "doc")]
        [docs (let loop ([l (directory-list d)])
 	       (cond
 		[(null? l) null]
 		[(file-exists? (build-path d (car l) "index.htm"))
-		 (cons (build-path d (car l))
-		       (loop (cdr l)))]
+		 (cons (car l) (loop (cdr l)))]
 		[else (loop (cdr l))]))]
+       [docs (quicksort docs (lambda (a b)
+			       (let ([ap (docpos a)]
+				     [bp (docpos b)])
+				 (cond
+				  [(= ap bp) (string<? a b)]
+				  [else (< ap bp)]))))]
+       [doc-paths (map (lambda (doc) (build-path d doc)) docs)]
        [names
 	(map
 	 (lambda (d)
@@ -18,14 +32,18 @@
 		    [(eof-object? r) "(Unknown title)"]
 		    [(regexp-match "<TITLE>(.*)</TITLE>" r) => cadr]
 		    [else (loop)]))))))
-	 docs)])
+	 doc-paths)])
   (let-values ([(collections collection-names)
 		(let loop ([collection-paths (current-library-collection-paths)]
 			   [docs null]
 			   [names null])
 		  (cond
 		   [(null? collection-paths)
-		    (values docs names)]
+		    (let ([sorted
+			   (quicksort (map cons docs names)
+				      (lambda (a b)
+					(string<? (cdr a) (cdr b))))])
+		      (values (map car sorted) (map cdr sorted)))]
 		   [else (let ([path (car collection-paths)])
 			   (let cloop ([l (with-handlers ([void (lambda (x) null)]) (directory-list path))]
 				       [docs docs]

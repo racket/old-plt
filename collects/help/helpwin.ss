@@ -293,15 +293,7 @@
   (define not-break? (lambda (x) (not (exn:misc:user-break? x))))
 
   ; Define an order for the documentation:
-  (define (html-doc-position d)
-    (case (string->symbol d)
-      [(r5rs) 0]
-      [(mzscheme) 1]
-      [(mred) 2]
-      [(drscheme) 3]
-      [(framework) 4]
-      [(insidemz) 50]
-      [else 100]))
+  (define html-doc-position (require-library "docpos.ss" "help"))
 
   ; Locate standard HTML documentation
   (define-values (std-docs std-doc-names)

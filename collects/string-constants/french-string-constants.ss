@@ -139,13 +139,13 @@
  (search-results "Résultats de la recherche")
  (search "Chercher")
  (search-for "Chercher")
- (lucky "J'ai de la chance")
+ (lucky "Chanceux!")
  (options "Options")
  (configure-hd "Configurer")
  (hd-home "Page principale de l'Aide")
  (show-manuals "Liste des manuels")
  (send-bug-report "Signaler un bogue") ; Envoyer un formulaire de bogue
- (query-bug-reports "Chercher parmi les bogues connus")
+ (query-bug-reports "Bogues connus")
  ; next 3 are popup menu choices at bottom of help desk window
  (search-for-keyword "par mot clef")
  (search-for-keyword-or-index "par mot clef ou entrée dans l'index")

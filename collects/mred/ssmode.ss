@@ -36,6 +36,8 @@
 		  (- v wx:const-break-for-line))))))
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
+    (mred:preferences:set-preference-default 'mred:highlight-parens #t)
+
     (define make-scheme-mode% 
       (lambda (super%)
 	(class-asi super%
@@ -58,6 +60,7 @@
 			       sequence))
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'lambda))
 			'(lambda let let* letrec letrec* recur let-values
+			   mred:vertical-panel mred:horizontal-panel mred:panel
 			   let/cc let/ec letcc catch
 			   let-syntax letrec-syntax syntax-case
 			   let-struct let-macro
@@ -71,15 +74,15 @@
 			   call-with-input-file with-input-from-file
 			   with-input-from-port call-with-output-file
 			   with-output-to-file with-output-to-port))
-	      (mred:preferences:set-preference-default 'tabify hash-table)
+	      (mred:preferences:set-preference-default 'mred:tabify hash-table)
 	      (mred:preferences:set-preference-un/marshall
-		'tabify 
+		'mred:tabify 
 	       (lambda (t) (hash-table-map t list))
 	       (lambda (l) (let ([h (make-hash-table)])
 			     (for-each (lambda (x) (apply hash-table-put! h x))
 				       l)
 			     h)))
-	      (set! indents (mred:preferences:get-preference-box 'tabify))))
+	      (set! indents (mred:preferences:get-preference-box 'mred:tabify))))
 	  (public
 	    [name "Scheme"]
 	    [backward-cache (make-object mred:match-cache:match-cache%)]
@@ -142,10 +145,15 @@
 	     (lambda (edit)
 	       (highlight-parens edit))]
 	    
-	    [highlight-parens?-box (mred:preferences:get-preference-box 'highlight-parens)]
+	    [highlight-parens?-box (mred:preferences:get-preference-box 'mred:highlight-parens)]
 	    
 	    [highlight-parens
-	     (let ([clear-old-location (lambda () (void))])
+	     (let ([clear-old-location (lambda () (void))]
+		   [color (apply make-object wx:colour% 
+				 (map (lambda (x) (* (/ x 65535) 255))
+				      (if #t
+					  (list 48896 48896 48896)
+					  (list 65535 21437 18932))))])
 	       (opt-lambda (edit [just-clear? #f])
 		 (if (or (not (unbox highlight-parens?-box))
 			 suspend-highlight?)
@@ -184,9 +192,9 @@
 							 (k (void))))]
 						  [else (k (void))])])
 				    (set! clear-old-location
-					    (send edit add-range left right 
-						  mred:icon:paren-highlight-bitmap 
-						  'I-am-not-a-color))))))))
+					    (send edit highlight-range left right 
+						  color
+						  mred:icon:paren-highlight-bitmap))))))))
 			(lambda () (send edit end-edit-sequence)))))))]
 	    
 	    [get-limit
@@ -565,11 +573,12 @@
 		     (wx:bell))
 		 #t))]
 	    [standard-style-delta
-	     (send (make-object wx:style-delta%
-				wx:const-change-normal)
-		   set-delta
-		   wx:const-change-family
-		   wx:const-modern)]
+	     (let ([delta (make-object wx:style-delta% wx:const-change-normal)])
+	       (send delta set-delta wx:const-change-family wx:const-modern)
+	       (when (eq? wx:platform 'macintosh)
+		     (wx:bell)
+		     (send delta set-delta wx:const-change-size 9))
+	       delta)]
 	    [file-format wx:const-media-ff-text]
 	    [install
 	     (lambda (edit)

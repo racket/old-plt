@@ -7,5 +7,5 @@
 @BEGINSYMBOLS smoothingMode > ONE > PRED
 @SYM "unsmoothed" : 0
 @SYM "smoothed" : 1
-@SYM "compatible" : 2
+@SYM "aligned" : 2
 @ENDSYMBOLS

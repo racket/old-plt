@@ -168,6 +168,8 @@ class wxPostScriptDC: public wxDC
 
   void CalcBoundingBoxClip(double x, double y);
 
+  void SetAntiAlias(int mode);
+
   virtual Bool Ok() { return ok; }
 };
 

@@ -472,6 +472,11 @@ void wxPostScriptDC::CalcBoundingBoxClip(double x, double y)
   if (y > max_y) max_y = y;
 }
 
+void wxPostScriptDC::SetAntiAlias(int mode)
+{
+  /* Don't change */
+}
+
 void wxPostScriptDC::Clear(void)
 {
   unsigned char red, blue, green;

@@ -270,6 +270,9 @@ static void *RgnBoundingBox(wxRegion *r)
 @SET POINTWISE = 1
 @INCLUDE list.xci
 
+@MACRO CheckRadius[name.r.w.h] = { if (x<r> < -0.5)  WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius must be no less than -0.5: ", p[POFFSET+<r>])); if (x<r> > 0) { if (2 * x<r> > x<w>) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius is more than half the width: ", p[POFFSET+<r>])); if (2 * x<r> > x<h>) WITH_VAR_STACK(scheme_arg_mismatch(<name>, "radius is more than half the height: ", p[POFFSET+<r>])); } }
+
+
 @INCLUDE wxs_drws.xci
 
 @MACRO CheckRgn[p.who] = if (x<p>->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>",<who>), "provided region's dc does not match this region's dc: ", p[POFFSET+<p>]);
@@ -283,7 +286,7 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "get-dc" : wxDC! GetDC()
 
 @ "set-rectangle" : void SetRectangle(double, double, nndouble, nndouble); : : /CheckRgnLock["set-rectangle"]
-@ "set-rounded-rectangle" : void SetRoundedRectangle(double, double, nndouble, nndouble, double=20.0); : : /CheckRgnLock["set-rounded-rectangle"]
+@ "set-rounded-rectangle" : void SetRoundedRectangle(double, double, nndouble, nndouble, double=-0.25); : : /CheckRgnLock["set-rounded-rectangle"]|CheckRadius[METHODNAME("region","set-rounded-rectangle").4.2.3]
 @ "set-ellipse" : void SetEllipse(double, double, nndouble, nndouble); : : /CheckRgnLock["set-ellipse"]
 @ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,double=0,double=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /CheckRgnLock["set-polygon"]|glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
 @ "set-arc" : void SetArc(double, double, nndouble, nndouble, double, double); : : /CheckRgnLock["set-arc"]
@@ -318,7 +321,7 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "curve-to" : void CurveTo(double, double, double, double, double, double); : : /CheckOpen["curve-to"]
 
 @ "rectangle" : void Rectangle(double, double, nndouble, nndouble);
-@ "rounded-rectangle" : void RoundedRectangle(double, double, nndouble, nndouble, double=20.0);
+@ "rounded-rectangle" : void RoundedRectangle(double, double, nndouble, nndouble, double=-0.25); : : /CheckRadius[METHODNAME("dc-path%","rounded-rectangle").4.2.3]
 @ "ellipse" : void Ellipse(double, double, nndouble, nndouble);
 @ "lines" : void Lines(-int,wxPoint!/bList/ubList/cList,double=0,double=0); : / methListSet[wxPoint.0.1.0]// : /CheckOpen["lines"]|glueListSet[wxPoint.0.1.0.METHODNAME("path%","lines")]//
 

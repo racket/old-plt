@@ -3724,6 +3724,8 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
+
 static Scheme_Object *fillKind_wxODDEVEN_RULE_sym = NULL;
 static Scheme_Object *fillKind_wxWINDING_RULE_sym = NULL;
 
@@ -4145,9 +4147,9 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(int n,  Scheme_Object *p[])
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "set-rounded-rectangle in region%"));
   } else
-    x4 = 20.0;
+    x4 = -0.25;
 
-  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-rounded-rectangle"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-rounded-rectangle"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);{ if (x4 < -0.5)  WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("region","set-rounded-rectangle"), "radius must be no less than -0.5: ", p[POFFSET+4])); if (x4 > 0) { if (2 * x4 > x2) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("region","set-rounded-rectangle"), "radius is more than half the width: ", p[POFFSET+4])); if (2 * x4 > x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("region","set-rounded-rectangle"), "radius is more than half the height: ", p[POFFSET+4])); } }
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetRoundedRectangle(x0, x1, x2, x3, x4));
 
   
@@ -4562,9 +4564,9 @@ static Scheme_Object *os_wxPathRoundedRectangle(int n,  Scheme_Object *p[])
   if (n > (POFFSET+4)) {
     x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "rounded-rectangle in dc-path%"));
   } else
-    x4 = 20.0;
+    x4 = -0.25;
 
-  
+  { if (x4 < -0.5)  WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc-path%","rounded-rectangle"), "radius must be no less than -0.5: ", p[POFFSET+4])); if (x4 > 0) { if (2 * x4 > x2) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc-path%","rounded-rectangle"), "radius is more than half the width: ", p[POFFSET+4])); if (2 * x4 > x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc-path%","rounded-rectangle"), "radius is more than half the height: ", p[POFFSET+4])); } }
   WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->RoundedRectangle(x0, x1, x2, x3, x4));
 
   

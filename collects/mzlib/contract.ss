@@ -1231,10 +1231,14 @@ add struct contracts for immutable structs?
                          [(field-var ...) (generate-temporaries flds)]
                          [(field/app-var ...) (generate-temporaries flds)])
              (syntax
-              (let ([method-ctc-var method-ctc-stx] ...
-                                                    [field-ctc-var (coerce-contract object-contract field-ctc-stx)] ...)
-                (let ([method-var (contract-proc method-ctc-var)] ...
-                                                                  [field-var (contract-proc field-ctc-var)] ...)
+              (let ([method-ctc-var method-ctc-stx] 
+                    ...
+                    [field-ctc-var (coerce-contract object-contract field-ctc-stx)]
+                    ...)
+                (let ([method-var (contract-proc method-ctc-var)] 
+                      ...
+                      [field-var (contract-proc field-ctc-var)] 
+                      ...)
                   (make-contract
                    `(object-contract 
                      ,(build-compound-type-name 'method-name method-ctc-var) ...
@@ -2432,6 +2436,8 @@ add struct contracts for immutable structs?
            vectorof vector-immutableof vector/c vector-immutable/c 
            cons-immutable/c cons/c list-immutable/c list/c
            box-immutable/c box/c
+           promise/c
+           struct/c
 	   mixin-contract make-mixin-contract
            syntax/c)
   
@@ -2963,6 +2969,72 @@ add struct contracts for immutable structs?
        (lambda (val)
          (and (syntax? val)
               (pred (syntax-e val)))))))
+  
+  (define promise/c
+    (lambda (ctc-in)
+      (let* ([ctc (coerce-contract promise/c ctc-in)]
+             [ctc-proc (contract-proc ctc)])
+        (make-contract
+         (build-compound-type-name 'promise/c ctc)
+         (lambda (pos neg src-info orig-str)
+           (let ([p-app (ctc-proc pos neg src-info orig-str)])
+             (lambda (val)
+               (unless (promise? val)
+                 (raise-contract-error
+                  src-info
+                  pos
+                  neg
+                  orig-str
+                  "expected <promise>, given: ~e"
+                  val))
+               (delay (p-app (force val))))))))))
+  
+  (define-syntax (struct/c stx)
+    (syntax-case stx ()
+      [(_ struct-name args ...)
+       (and (identifier? (syntax struct-name))
+            (syntax-local-value (syntax struct-name) (lambda () #f)))
+       (with-syntax ([(ctc-x ...) (generate-temporaries (syntax (args ...)))]
+                     [(ctc-proc-x ...) (generate-temporaries (syntax (args ...)))]
+                     [(ctc-app-x ...) (generate-temporaries (syntax (args ...)))]
+                     [(type-desc-id 
+                       constructor-id 
+                       predicate-id 
+                       (selector-id ...)
+                       (mutator-id ...)
+                       super-id)
+                      (syntax-local-value (syntax struct-name))])
+         (syntax
+          (let ([ctc-x (coerce-contract struct/c args)] ...)
+            
+            (unless predicate-id
+              (error 'struct/c "could not determine predicate for ~s" 'struct-name))
+            (unless (and selector-id ...)
+              (error 'struct/c "could not determine selectors for ~s" 'struct-name))
+            
+            (unless (flat-contract? ctc-x)
+              (error 'struct/c "expected flat contracts as arguments, got ~e" ctc-x))
+            ...
+            
+            (let ([ctc-proc-x (contract-proc ctc-x)] ...)
+              (make-contract
+               (build-compound-type-name 'struct/c 'struct-name ctc-x ...)
+               (lambda (pos neg src-info orig-str)
+                 (let ([ctc-app-x (ctc-proc-x pos neg src-info orig-str)] ...)
+                   (lambda (val)
+                     (unless (predicate-id val)
+                       (raise-contract-error
+                        src-info
+                        pos
+                        neg
+                        orig-str
+                        "expected <~a>, given: ~e"
+                        'struct-name
+                        val))
+                    (ctc-app-x (selector-id val)) ...
+                     val))))))))]
+      [(_ struct-name anything ...)
+       (raise-syntax-error 'struct/c "expected a struct identifier" stx (syntax struct-name))]))
   
   (define (flat-contract/predicate? pred)
     (or (flat-contract? pred)

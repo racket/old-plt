@@ -2395,6 +2395,79 @@
                'neg)
      1))
   
+  (test/pos-blame
+   'promise/c1
+   '(force (contract (promise/c boolean?)
+                     (delay 1)
+                     'pos
+                     'neg)))
+  
+  (test/spec-passed
+   'promise/c2
+   '(force (contract (promise/c boolean?)
+                     (delay #t)
+                     'pos
+                     'neg)))
+  
+  (test/spec-passed/result
+   'promise/c3
+   '(let ([x 0])
+      (contract (promise/c any/c)
+                (delay (set! x (+ x 1)))
+                'pos
+                'neg)
+      x)
+   0)
+  
+  (test/spec-passed/result
+   'promise/c4
+   '(let ([x 0])
+      (force (contract (promise/c any/c)
+                       (delay (set! x (+ x 1)))
+                       'pos
+                       'neg))
+      x)
+   1)
+  
+  (test/spec-passed/result
+   'promise/c5
+   '(let ([x 0])
+      (let ([p (contract (promise/c any/c)
+                         (delay (set! x (+ x 1)))
+                         'pos
+                         'neg)])
+        (force p)
+        (force p))
+      x)
+   1)
+  
+  (test/spec-passed
+   'struct/c1
+   '(let ()
+      (define-struct s (a))
+      (contract (struct/c s integer?)
+                (make-s 1)
+                'pos
+                'neg)))
+  
+  (test/pos-blame
+   'struct/c2
+   '(let ()
+      (define-struct s (a))
+      (contract (struct/c s integer?)
+                (make-s #f)
+                'pos
+                'neg)))
+  
+  (test/pos-blame
+   'struct/c3
+   '(let ()
+      (define-struct s (a))
+      (contract (struct/c s integer?)
+                1
+                'pos
+                'neg)))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
   ;;   Flat Contract Tests                                  ;;
@@ -2640,7 +2713,8 @@
              (object-contract (m (-> integer? any))))
   (test-name '(object-contract (m (-> integer? (values integer? integer?)))) 
              (object-contract (m (-> integer? (values integer? integer?)))))
-  (test-name '(object-contract (m (case-> (-> integer? integer? integer?) (-> integer? (values integer? integer?)))))
+  (test-name '(object-contract (m (case-> (-> integer? integer? integer?)
+                                          (-> integer? (values integer? integer?)))))
              (object-contract (m (case-> 
                                   (-> integer? integer? integer?)
                                   (-> integer? (values integer? integer?))))))
@@ -2669,6 +2743,10 @@
              (object-contract (m (->r ((x number?) (y boolean?) (z pair?)) number?))))
   (test-name '(object-contract (m (->r ((x ...) (y ...) (z ...)) rest-x ... ...))) 
              (object-contract (m (->r ((x number?) (y boolean?) (z pair?)) rest-x any/c number?))))
-  
+  (test-name '(promise/c any/c) (promise/c any/c))
+  (test-name '(struct/c st integer?) 
+             (let ()
+               (define-struct st (a))
+               (struct/c st integer?)))
   ))
 (report-errs)

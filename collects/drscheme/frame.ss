@@ -20,7 +20,46 @@
     
     (define frame%
       (class mred:simple-menu-frame% (name snip)
+	(rename [super-make-root-panel make-root-panel]
+		[super-make-menu-bar make-menu-bar])
 	(inherit panel)
+	(public
+	  [root-panel #f]
+	  [make-root-panel
+	   (lambda (% parent)
+	     (let* ([s-root (super-make-root-panel mred:vertical-panel% parent)]
+		    [root (make-object % s-root)])
+	       (send* s-root (border 0) (spacing 0))
+	       (set! root-panel s-root)
+	       root))])
+
+	(inherit make-menu)
+	(public
+	  [show-menu #f]
+	  [imports-id #f]
+	  
+	  [update-shown
+	   (lambda ()
+	     (send root-panel change-children
+		   (lambda (l)
+		     (let ([removed (mzlib:function@:remq imports-panel l)])
+		       (if (send show-menu checked? imports-id)
+			   (cons imports-panel removed)
+			   removed)))))]
+	  [make-menu-bar
+	   (lambda ()
+	     (let ([mb (super-make-menu-bar)])
+	       (set! show-menu (make-menu))
+	       (send mb append show-menu "S&how")
+	       (set! imports-id 
+		     (send show-menu append-item
+			   "&Imports"
+			   (lambda () (update-shown))
+			   "Show the imports to this unit"
+			   #t))
+	       (send show-menu check imports-id snip)
+	       mb))])
+
 	(public
 	  [file-menu:new-string "Compound Unit"]
 	  [file-menu:new
@@ -37,7 +76,7 @@
 	  (super-init name)
 	  (mred:debug:printf 'super-init "after drscheme:frame%"))
 	(public
-	  [imports-panel (make-object mred:horizontal-panel% panel)]
+	  [imports-panel (make-object mred:horizontal-panel% root-panel)]
 	  [imports-message
 	   (make-object mred:message% imports-panel "imports")]
 	  [update-imports
@@ -61,18 +100,17 @@
     (define unit-frame%
       (class (mred:make-searchable-frame% frame%) (filename frameset snip [show? #t])
 	(inherit canvas edit imports-panel
-		 set-title-prefix
+		 set-title-prefix show-menu
 		 show menu-bar% make-menu
 		 active-edit active-canvas panel 
 		 file-menu file-menu:open-id file-menu:new-id file-menu:save-id 
 		 file-menu:save-as-id file-menu:revert-id file-menu:print-id)
 	(rename [super-make-menu-bar make-menu-bar]
+		[super-update-shown update-shown]
 		[super-on-close on-close])
 	(public
-	  [show-menu #f]
 	  [definitions-id #f]
 	  [interactions-id #f]
-	  [imports-id #f]
 
 	  [name-message #f]
 	  [save-button #f]
@@ -121,7 +159,7 @@
 	   (lambda ()
 	     (unless (send show-menu checked? interactions-id)
 	       (send show-menu check interactions-id #t)
-	       (update-panel)))])
+	       (update-shown)))])
 	
 	(public
 	  [get-edit%
@@ -161,8 +199,9 @@
 	       [(= id interactions-id) interactions-canvas]
 	       [(= id definitions-id) definitions-canvas]
 	       [else imports-panel]))]
-	  [update-panel
+	  [update-shown
 	   (lambda ()
+	     (super-update-shown)
 	     (send panel change-children
 		   (lambda (l)
 		     (cons (if (send show-menu checked? definitions-id)
@@ -174,7 +213,7 @@
 				  (cons (id->child id) sofar)
 				  sofar))
 			    null
-			    (list interactions-id definitions-id imports-id)))))
+			    (list interactions-id definitions-id)))))
 
 	     (send interactions-edit scroll-to-position 
 		   (send interactions-edit get-end-position)
@@ -203,10 +242,8 @@
 		   [scheme-menu (make-menu)]
 		   [tools-menu (make-menu)]
 		   [language-menu (make-menu)])
-	       (set! show-menu (make-menu))
 	       
 	       (send* mb
-		      (append show-menu "S&how")
 		      (append scheme-menu "S&cheme")
 		      (append tools-menu "&Tools")
 		      (append language-menu "&Language"))
@@ -287,20 +324,15 @@
 				     (lambda () (drscheme:setup:do-setup "hw")))
 			(append-item "Setup &Lab..."
 				     (lambda () (drscheme:setup:do-setup "lab")))))
-	       (set! imports-id 
-		     (send show-menu append-item
-			   "&Imports"
-			   update-panel
-			   "Show the imports to this unit"
-			   #t))
+
 	       (set! definitions-id
 		     (send show-menu append-item "&Definitions"
-			   update-panel
+			   (lambda () (update-shown))
 			   "Show the definitions in this unit"
 			   #t))
 	       (set! interactions-id
 		     (send show-menu append-item "&Interactions"
-			   update-panel
+			   (lambda () (update-shown))
 			   "Show the interactions with this unit"
 			   #t))
 	       mb))]
@@ -459,10 +491,9 @@
 	     (list name-message save-button space1 library-msg space2 button-panel))])
 	
 	(sequence
-	  (send show-menu check imports-id snip)
 	  (send show-menu check definitions-id #t)
 	  (send show-menu check interactions-id #t)
-	  (update-panel)
+	  (update-shown)
 
 	  (send interactions-edit initialize-console)
 	  (send interactions-edit enable-autoprompt)

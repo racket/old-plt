@@ -127,11 +127,11 @@
 	    [(z:bound-varref? expr)
 	      (let ((v (z:varref-var expr)))
 		(wrap expr
-		  `(if (eq? ,v ,the-undefined-value)
-		     (raise (make-exn:undefined
-			      ,(format "Undefined value in ~s" v)
-			      (debug-info-handler)
-			      ,v))
+		  `(#%if (#%eq? ,v ,the-undefined-value)
+		     (#%raise (,make-exn:undefined
+				,(format "Undefined value in ~s" v)
+				(debug-info-handler)
+				,v))
 		     ,v)))]
 
 	    [(z:top-level-varref? expr)

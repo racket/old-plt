@@ -3465,7 +3465,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 static Scheme_Object *make_link(int argc, Scheme_Object *argv[])
 {
   char *src, *dest;
-  int len, copied;
+  int copied;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("make-file-or-directory-link", "string", 0, argc, argv);
@@ -3486,7 +3486,7 @@ static Scheme_Object *make_link(int argc, Scheme_Object *argv[])
 #if defined(USE_MAC_FILE_TOOLBOX) || defined(DOS_FILE_SYSTEM)
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "make-file-or-directory-link: link creation not supported on this platform; "
-		   "cannot create link: %e",
+		   "cannot create link: %Q",
 		   argv[1]);
 #else
   while (1) {

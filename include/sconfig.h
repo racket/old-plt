@@ -596,19 +596,17 @@
 #ifndef XONX
 # undef SYSTEM_TYPE_NAME
 # define SYSTEM_TYPE_NAME "macosx"
+# define MACROMAN_CHAR_SET
 #endif
 
 # define STACK_GROWS_DOWN
 # define SCHEME_BIG_ENDIAN
 # define USE_MAP_ANON
 
-/* haven't implemented dylib support */
-# ifdef XONX
-#  define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
-# endif
-
 # define USE_IEEE_FP_PREDS
 # define POW_HANDLES_INF_CORRECTLY
+
+# define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
 
 # define USE_DYNAMIC_FDSET_SIZE
 
@@ -616,9 +614,7 @@
 
 # define USE_TM_GMTOFF_FIELD
 
-#ifndef XONX
 # define MACINTOSH_EVENTS
-#endif
 
 # ifndef OS_X
 #  define OS_X 1

@@ -615,13 +615,17 @@
 	   (let* ([raw-symbol-chars "a-z/!>:%\\+\\*\\?-"]
 		  [symbol-chars (format "[~a]" raw-symbol-chars)]
 		  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
-		  [fallthru-regexp (regexp (format "^()(~a*): " symbol-chars))]
-		  [class-regexp (regexp (format "^(.*~a)(~a+(<%>|%)).*$"
-						not-symbol-chars symbol-chars))]
-		  [ivar-regexp (regexp
-				(format
-				 "^(ivar: instance variable not found: )(~a*)"
-				 symbol-chars))])
+		  [fallthru-regexp-str (format "^()(~a*): " symbol-chars)]
+		  ;[_ (printf "fallthru-regex-str: ~s~n" fallthru-regexp-str)]
+		  [fallthru-regexp (regexp fallthru-regexp-str)]
+		  [class-regexp-str (format "^(.*~a)(~a+(<%>|%)).*$" not-symbol-chars symbol-chars)]
+		  ;[_ (printf "class-regex-str: ~s~n" class-regexp-str)]
+		  [class-regexp (regexp class-regexp-str)]
+		  [ivar-regexp-str (format
+				    "^(ivar: instance variable not found: )(~a*)"
+				    symbol-chars)]
+		  ;[_ (printf "ivar-regex-str: ~s~n" ivar-regexp-str)]
+		  [ivar-regexp (regexp ivar-regexp-str)])
 	     (lambda (s exn) ; =User=
 	       (queue-output
 		(lambda () ; =Kernel=, =Handler=

@@ -380,7 +380,7 @@
 				       (setup-printf "Installing ~a launcher ~a" kind p)
 				       (make-launcher 
 					(list
-					 "-mve-"
+					 "-qmve-"
 					 (format
 					  "~s"
 					  `(require (lib ,mzll ,@(cc-collection cc)))))

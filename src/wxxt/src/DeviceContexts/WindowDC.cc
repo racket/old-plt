@@ -3281,7 +3281,7 @@ void wxWindowDC::GetPixelFast(int i, int j, int *r, int *g, int *b)
 // OpenGL
 #ifdef USE_GL
 static wxGL *current_gl_context = NULL;
-static int gl_registered;
+static int gl_registered, display_has_glx;
 
 static XVisualInfo *null_visual;
 static int null_visual_set = 0;
@@ -3304,9 +3304,18 @@ static XVisualInfo *GetWindowVisual(wxGLConfig *cfg, Boolean offscreen)
   X_Err_Handler old_handler;
 
   if (!gl_registered) {
+    int a, b, c;
+
     wxREGGLOB(current_gl_context); 
     gl_registered = 1;
+
+    if (XQueryExtension(wxAPP_DISPLAY, "GLX", &a, &b, &c)) {
+      display_has_glx = 1;
+    }
   }
+
+  if (!display_has_glx)
+    return NULL;
 
   if (!cfg)
     cfg = new wxGLConfig();

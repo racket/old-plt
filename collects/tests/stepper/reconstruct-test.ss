@@ -166,14 +166,14 @@
                  (((cond (,highlight-placeholder 4) (false 5) (true 3))) (false))
                  ((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
                  ((,highlight-placeholder) ((cond (false 5) (true 3))))
-                 (((cond (,highlight-placeholder 5) (true 3)) (false)))
-                 (((cond (,highlight-placeholder 5) (true 3)) (false)))
+                 (((cond (,highlight-placeholder 5) (true 3))) (false))
+                 (((cond (,highlight-placeholder 5) (true 3))) (false))
                  ((,highlight-placeholder) ((cond (false 5) (true 3))))
                  ((,highlight-placeholder) ((cond (true 3))))
                  (((cond (,highlight-placeholder 3))) (true))
                  (((cond (,highlight-placeholder 3))) (true))
                  ((,highlight-placeholder) ((cond (true 3))))
-                 ((,highlight-placeholder) ((cond)))))
+                 ((,highlight-placeholder) (3))))
 
 
 (report-errs)

@@ -1637,3 +1637,34 @@
 		  env attributes vocab)))))
 	(else
 	  (static-error expr "Malformed invoke-open-unit/sig"))))))
+
+(add-micro-form 'unit->unit/sig scheme-vocabulary
+  (let* ((kwd '(unit->unit/sig))
+	  (in-pattern '(unit->unit/sig expr (in-sig ...) out-sig))
+	  (m&e (pat:make-match&env in-pattern kwd)))
+    (lambda (expr env attributes vocab)
+      (cond
+	((pat:match-against m&e expr env)
+	  =>
+	  (lambda (p-env)
+	    (let ((in-expr (pat:pexpand 'expr p-env kwd))
+		   (in-sigs (pat:pexpand '(in-sig ...) p-env kwd))
+		   (out-sig (pat:pexpand 'out-sig p-env kwd)))
+	      (expand-expr
+		(structurize-syntax
+		  `(#%make-unit-with-signature
+		     ,in-expr
+		     ',(map (lambda (s)
+			      (let ((proc:s
+				      (expand-expr s env attributes
+					sig-vocab)))
+				(cons (signature-name proc:s)
+				  (signature-exploded proc:s))))
+			 in-sigs)
+		     ',(let ((proc:s
+			       (expand-expr out-sig env attributes sig-vocab)))
+			 (signature-exploded proc:s)))
+		  expr)
+		env attributes vocab))))
+	(else
+	  (static-error expr "Malformed unit->unit/sig"))))))

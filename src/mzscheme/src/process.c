@@ -846,6 +846,7 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
 {
   Scheme_Process *kill_self = NULL, *ks;
   Scheme_Manager *c, *next;
+  int cx = 0;
 
   if (!m)
     m = main_manager;
@@ -889,6 +890,7 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
 	      kill_self = p;
 #endif
 	} else {
+	  cx++;
 	  f(o, data);
 	}
       }
@@ -896,6 +898,8 @@ Scheme_Process *scheme_do_close_managed(Scheme_Manager *m, Closer_Func cf)
       --m->count;
     }
   }
+
+  printf("closed %d leaving %d\n", cx, scheme_file_open_count);
 
   return kill_self;
 }

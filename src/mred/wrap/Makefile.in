@@ -3,6 +3,8 @@ srcdir = @srcdir@
 
 MZSCHEME=../../mzscheme/mzscheme -e "(use-compiled-file-kinds 'none)"
 
+none:
+
 all: $(srcdir)/../wxs/wrap.inc $(srcdir)/../wxs/cwrap.inc
 
 again:

@@ -1,10 +1,4 @@
 
-/* WARNING: These classes are not garbage-collected, except in precise GC mode. */
-
-#ifdef MZ_PRECISE_GC
-# define CGREC_COLLECTED
-#endif
-
 class wxcgList;
 
 class wxChangeRecord 

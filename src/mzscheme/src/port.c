@@ -2758,6 +2758,8 @@ fd_close_input(Scheme_Input_Port *port)
   do {
     cr = close(fip->fd);
   } while ((cr == -1) && (errno == EINTR));
+
+  --scheme_file_open_count;
 }
 
 static void
@@ -4103,6 +4105,8 @@ fd_close_output(Scheme_Output_Port *port)
   do {
     cr = close(fop->fd);
   } while ((cr == -1) && (errno == EINTR));
+
+  --scheme_file_open_count;
 }
 
 static Scheme_Object *
@@ -4733,7 +4737,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 #ifdef WINDOWS_PROCESSES
     /* spawnv is too stupid to protect spaces, etc. in the arguments: */
-    for (i = 0; i < c; i++) {
+    for (i = 0; i < (c - offset); i++) {
       char *cla;
       cla = cmdline_protect(argv[i]);
       argv[i] = cla;
@@ -4989,7 +4993,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     } else
       err = scheme_false;
     
-    scheme_file_open_count += 3;
+    scheme_file_open_count += 3; /* FIXME */
 
 #ifdef USE_FD_PORTS
     in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));

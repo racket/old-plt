@@ -13,6 +13,13 @@ extern "C"
 /*                   Utilites used by xctocc                      */
 /******************************************************************/
 
+typedef struct Scheme_Class_Object {
+  Scheme_Type type;
+  short primflag;
+  void *primdata;
+  Scheme_Object *s_obj;
+} Scheme_Class_Object;
+
 typedef long ExactLong;
 
 void objscheme_init(Scheme_Env *env);
@@ -50,7 +57,6 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj,
 /* Checking a class relationship */
 #define objscheme_is_subclass scheme_is_subclass
 
-void objscheme_set_car(Scheme_Object *, Scheme_Object *);
 Scheme_Object *objscheme_unbox(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_nullable_unbox(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_box(Scheme_Object *);

@@ -1,6 +1,105 @@
 #include "xcglue.h"
 #include "gc.h"
 
+/***************************************************************************/
+
+typedef struct Scheme_Class {
+  Scheme_Type type;
+  const char *name;
+  Scheme_Object *sup;
+  Scheme_Object *initf;
+  int num_methods, num_installed;
+  Scheme_Object **names;
+  Scheme_Object **methods;
+} Scheme_Class;
+
+static Scheme_Type scheme_class_type;
+
+static Scheme_Object *call_prim(void *data, int n, Scheme_Object **argv)
+{
+  Scheme_Method_Prim *p = (Scheme_Method_Prim *)data;
+  Scheme_Object **args;
+  int i;
+
+  args = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * (n - 1));
+  for (i = 1; i < n; i++)
+    args[i - 1] = argv[i];
+
+  return p(argv[0], n - 1, args);
+}
+
+Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup, 
+				 Scheme_Method_Prim *initf, int num_methods)
+{
+  Scheme_Class *sclass;
+  Scheme_Object *f, **methods, **names;
+
+  if (!scheme_class_type)
+    scheme_class_type = scheme_make_type("primitive-class");
+
+  sclass = (Scheme_Class *)scheme_malloc_tagged(sizeof(Scheme_Class));
+  sclass->type = scheme_class_type;
+
+  if (!sup)
+    sup = scheme_false;
+
+  sclass->name = name;
+  sclass->sup = sup;
+
+  f = scheme_make_closed_prim(call_prim, initf);
+  sclass->initf = f;
+
+  sclass->num_methods = num_methods;
+  sclass->num_installed = 0;
+
+  methods = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * num_methods);
+  names = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * num_methods);
+
+  sclass->methods = methods;
+  sclass->names = names;
+
+  return (Scheme_Object *)sclass;
+}
+
+void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
+			       Scheme_Method_Prim *f, 
+			       int mina, int maxa)
+{
+  Scheme_Object *s;
+  Scheme_Class *sclass;
+
+  sclass = (Scheme_Class *)c;
+
+  s = scheme_make_closed_prim_w_arity(call_prim, f, name,
+				      mina, maxa);
+
+  sclass->methods[sclass->num_installed] = s;
+
+  s = scheme_intern_symbol(name);
+
+  sclass->names[sclass->num_installed] = s;
+
+  sclass->num_installed++;
+}
+
+void scheme_add_method(Scheme_Object *c, const char *name,
+		       Scheme_Method_Prim *f)
+{
+  scheme_add_method_w_arity(c, name, f, 0, -1);
+}
+
+void scheme_made_class(Scheme_Object *c)
+{
+  /* done */
+}
+
+Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
+{
+  return scheme_false;
+}
+
+/***************************************************************************/
+
 #ifdef SUPPORT_ARBITRARY_OBJECTS
 
 typedef struct {
@@ -28,25 +127,16 @@ static long bhashsize = 201, bhashcount = 0, bhashstep = 17;
 #define TRUE 1
 #endif
 
-static long num_objects_allocated = 0;
-
 #if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC) || defined(GC_MIGHT_USE_REGISTERED_STATICS)
 # define wxREGGLOB(x) scheme_register_extension_global((void *)&x, sizeof(x))
 #else
 # define wxREGGLOB(x) /* empty */
 #endif
 
-static Scheme_Object *set_car_prim;
-
 void objscheme_init(Scheme_Env *env)
 {
   long i;
-  Scheme_Object *set_car_symbol;
 
-  wxREGGLOB(set_car_prim);
-  set_car_symbol = scheme_intern_symbol("set-car!");
-  set_car_prim = scheme_lookup_global(set_car_symbol, env);
-  
 #ifdef SUPPORT_ARBITRARY_OBJECTS
   wxREGGLOB(hash);
   hash = (ObjectHash *)scheme_malloc_atomic(sizeof(ObjectHash) * hashsize);
@@ -562,16 +652,6 @@ Scheme_Object *objscheme_nullable_unbox(Scheme_Object *obj, const char *where)
 
 /************************************************************************/
 
-void objscheme_set_car(Scheme_Object *l, Scheme_Object *v)
-{
-  Scheme_Object *p[2];
-
-  p[0] = l;
-  p[1] = v;
-
-  (void)scheme_apply(set_car_prim, 2, p);
-}
-
 void objscheme_set_box(Scheme_Object *b, Scheme_Object *v)
 {
   (void)objscheme_istype_box(b, "set-box!");
@@ -579,11 +659,6 @@ void objscheme_set_box(Scheme_Object *b, Scheme_Object *v)
 }
 
 /************************************************************************/
-
-void objscheme_note_creation(Scheme_Object *obj)
-{
-  num_objects_allocated++;
-}
 
 #ifdef SUPPORT_ARBITRARY_OBJECTS
 
@@ -655,20 +730,15 @@ void objscheme_check_valid(Scheme_Object *o)
   Scheme_Class_Object *obj = (Scheme_Class_Object *)o;
 
   if (obj->primflag < 0) {
-    int len;
-    const char *classname;
-    classname = scheme_get_class_name(obj->sclass, &len);
-    scheme_signal_error("attempt to use an %sobject%s (class %s)",
+    scheme_signal_error("attempt to use an %sobject%s: %v",
 			(obj->primflag == -2) ? "" : "invalidated ",
 			(obj->primflag == -2) ? " shutdown by custodian" : "",
-			classname ? classname : "unknown");
+			obj->s_obj);
+    return;
   }
-  if (!obj->inited) {
-    int len;
-    const char *classname;
-    classname = scheme_get_class_name(obj->sclass, &len);
-    scheme_signal_error("attempt to use an uninitialized object (class %s)",
-			classname ? classname : "unknown");
+  if (!obj->primdata) {
+    scheme_signal_error("attempt to use an uninitialized object: %v",
+			obj->s_obj);
   }
 }
 
@@ -679,16 +749,11 @@ int objscheme_is_shutdown(Scheme_Object *o)
   return (obj->primflag < 0);
 }
 
-void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
+void objscheme_destroy(void *realobj, Scheme_Object *obj)
 {
 #ifdef SUPPORT_ARBITRARY_OBJECTS
   int i;
 #endif
-  Scheme_Class_Object *obj;
-
-  --num_objects_allocated;
-
-  obj = (Scheme_Class_Object *)obj_in;
 
 #ifdef SUPPORT_ARBITRARY_OBJECTS
   if (!obj) {
@@ -711,6 +776,8 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
     }
   }
 #endif
+
+  send_message(obj, destroy_symbol);
 
   if (obj) {
     if (obj->primflag < 0)

@@ -9,7 +9,6 @@
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
 			   [graph : drscheme:graph^]
-			   [intro : drscheme:intro^]
 			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
   (link [interface : drscheme:interface^
@@ -45,7 +44,7 @@
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
 		mred mzlib mzlib:date framework
-		unit app intro
+		unit app
 		help-desk zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")

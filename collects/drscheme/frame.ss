@@ -5,7 +5,6 @@
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:app : drscheme:app^]
-	  [drscheme:intro : drscheme:intro^]
 	  [help : help:drscheme-interface^]
 	  [zodiac : zodiac:system^])
   
@@ -22,12 +21,7 @@
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
-	      (help:help-desk)))
-	  (make-object mred:menu-item%
-	    "Welcome to DrScheme"
-	    help-menu
-	    (lambda (item evt)
-	      (drscheme:intro:show-introduction))))]
+	      (help:help-desk))))]
 
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")]

@@ -3,7 +3,7 @@
 	  [fw : framework^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
-	  [drscheme:intro : drscheme:intro^]
+	  [drscheme:app : drscheme:app^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:get/extend : drscheme:get/extend^]
 	  [basis : userspace:basis^]
@@ -80,12 +80,11 @@
 
 
   ;;
-  ;; Show release notes when version changes, and 
-  ;; show a first-time intro
+  ;; Show about box when version changes
   ;; 
 
   (fw:preferences:set-default 'drscheme:last-version #f
 			      (lambda (x)
 				(or (string? x)
 				    (not x))))
-  (drscheme:intro:check-new-version))
+  (drscheme:app:check-new-version))

@@ -18,7 +18,7 @@
         [export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib mzlib:date framework print-convert app
 				     text language snip
-				     init graph intro
+				     init graph
 				     aries zodiac)]
 	[zodiac : zodiac:system^
 		  ((require-library "link.ss" "zodiac")
@@ -51,17 +51,12 @@
 			      (export* frame)
 			      (export* help-desk))]
 
-	[intro : drscheme:intro^ ((require-relative-library "intro.ss")
-				  mred
-                                  framework
-                                  (export* help-desk))]
-
 	[main : drscheme:main^ ((require-relative-library "main.ss")
 				i
 				framework
 				(mzlib pretty-print)
 				print-convert
-				intro
+				app
 				(export* unit)
 				(export* get/extend)
 				(export* basis)

@@ -13,6 +13,11 @@ Windows: fixed directory-exists? et al. for UNC paths
 Added local-expand-body-expression
 Removed input-port-post-semaphore; this procedure can be
  implemented using thread, peek-char, and semaphore-post
+Fixed thread: thunk can return any number of values
+Fixed custodian-shutdown-all: if it has to shutdown the
+ current thread, it does so immediately instead of
+ waiting for the next thread context switch
+Fixed will executors: will can return multiple values
 Added link-exists?
 Added copy-file
 Added path-list-string->path-list
@@ -91,6 +96,8 @@ MacOS: Fixed problems with inexact arithmetic: inexact->exact
 Windows: CYGWIN32 gcc compiler now supported
 Inside MzScheme: scheme_setjmp and scheme_longjmp now
  work on values of type mz_jmp_buf instead of jmp_buf
+Inside MzScheme: scheme_apply_multi and scheme_apply were
+ reversed! (The _ forms where ok.)
 Upgraded to gc 4.13alpha1
 
 Version 50, August 26, 1997

@@ -1,4 +1,9 @@
 
+expand-defmacro fails to report certain syntax errors:
+  unbound ids in units
+  duplicate ids in let, let-values, etc.
+  define or define-values not at top-level
+
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'

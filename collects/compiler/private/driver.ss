@@ -626,7 +626,7 @@
 				  (s:expand-top-level-expressions! 
 				   input-directory
 				   (lambda ()
-				     (read-syntax input-path input-port))
+				     (read-syntax (path->complete-path input-path) input-port))
 				   (compiler:option:verbose)))))))])
 		    (verbose-time read-thunk)
 		    (close-input-port input-port)

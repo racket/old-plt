@@ -2,6 +2,7 @@
 (module embed-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "file.ss")
+	   (lib "list.ss")
 	   (lib "moddep.ss" "syntax"))
 
   (provide compiler:embed@)
@@ -40,35 +41,6 @@
 		(unless (file-exists? exe)
 		  (fail))
 		exe)))))
-      
-      ;; Loads module code, using .zo if there, compiling from .scm if not
-      (define (get-code filename module-path codes verbose?)
-	(when verbose?
-	  (fprintf (current-error-port) "Getting ~s~n" filename))
-	(let ([normal (normal-case-path (simplify-path (expand-path filename)))])
-	  (if (assoc normal (unbox codes))
-	      'done ; already got this module
-	      (let ([code (get-module-code filename)])
-		(set-box! codes
-			  (cons (list normal module-path code)
-				(unbox codes)))
-		(let-values ([(imports fs-imports) (module-compiled-imports code)])
-		  (for-each (lambda (i)
-			      (unless (symbol? i)
-				(get-code (resolve-module-path-index i filename)
-					  (collapse-module-path-index i module-path)
-					  codes
-					  verbose?)))
-			    (append imports fs-imports)))))))
-      
-      (define (make-module-name-resolver code-l)
-	'(let ([orig (current-module-name-resolver)])
-	   (current-module-name-resolver
-	    (lambda (name rel-to stx)
-	      (if (not name)
-		  (orig name) ; just a notification
-		  ;; Is the specified module embedded?
-		  '...)))))
 
       ;; Find the magic point in the binary:
       (define (find-cmdline)
@@ -86,26 +58,155 @@
 		       (loop (add1 pos) (cdr l))
 		       (loop (add1 pos) magic)))])))
 
-      ;; The main function (see doc.txt):
-      (define (make-embedding-executable dest mred? verbose? module-paths cmdline)
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; Represent modules with lists starting with the filename, so we
+      ;; can use assoc:
+      (define (make-mod normal-file-path normal-module-path code name prefix full-name relative-mappings)
+	(list normal-file-path normal-module-path code
+	      name prefix full-name relative-mappings))
+
+      (define (mod-file m) (car m))
+      (define (mod-mod-path m) (cadr m))
+      (define (mod-code m) (caddr m))
+      (define (mod-name m) (list-ref m 3))
+      (define (mod-prefix m) (list-ref m 4))
+      (define (mod-full-name m) (list-ref m 5))
+      (define (mod-mappings m) (list-ref m 6))
+      
+      (define re:suffix (regexp "\\..?.?.?$"))
+      
+      (define (normalize filename)
+	(normal-case-path (simplify-path (expand-path filename))))
+
+      ;; Loads module code, using .zo if there, compiling from .scm if not
+      (define (get-code filename module-path codes prefixes verbose?)
+	(when verbose?
+	  (fprintf (current-error-port) "Getting ~s~n" filename))
+	(let ([a (assoc filename (unbox codes))])
+	  (if a
+	      ;; Already have this module. Make sure that library-referenced
+	      ;;  modules are consistently referenced through library paths:
+	      (let ([found-lib? (and (pair? (mod-mod-path a))
+				     (eq? 'lib (car (mod-mod-path a))))]
+		    [look-lib? (and (pair? module-path)
+				    (eq? 'lib (car module-path)))])
+		(cond
+		 [(and found-lib? look-lib?)
+		  'ok]
+		 [(or found-lib? look-lib?)
+		  (error 'find-module
+			 "module referenced both as a library and through a path: ~a"
+			 filename)]
+		 [else 'ok]))
+	      ;; First use of the module. Get code and then get code for imports.
+	      (let ([code (get-module-code filename)])
+		(let-values ([(imports fs-imports) (module-compiled-imports code)])
+		  (let ([name (let-values ([(base name dir?) (split-path filename)])
+				(regexp-replace re:suffix filename ""))]
+			[prefix (let ([a (assoc filename prefixes)])
+				  (if a
+				      (cdr a)
+				      (format "#%embedded:~a:" (gensym))))]
+			[all-file-imports (filter (lambda (x) (not (symbol? x)))
+						  (append imports fs-imports))])
+		    (let ([sub-files (map (lambda (i) (normalize (resolve-module-path-index i filename)))
+					  all-file-imports)]
+			  [sub-paths (map (lambda (i) (collapse-module-path-index i module-path))
+					  all-file-imports)])
+		      ;; Get code for imports:
+		      (for-each (lambda (sub-filename sub-path)
+				  (get-code sub-filename
+					    sub-path
+					    codes
+					    prefixes
+					    verbose?))
+				sub-files sub-paths)
+		      ;; Build up relative module resolutions, relative to this one,
+		      ;; that will be requested at run-time.
+		      (let ([mappings (map (lambda (sub-i sub-filename)
+					     (let-values ([(path base) (module-path-index-split sub-i)])
+					       ;; Assert: base should refer to this module:
+					       (let-values ([(path2 base2) (module-path-index-split base)])
+						 (when (or path2 base2)
+						   (error 'embed "unexpected nested module path index")))
+					       (let ([m (assoc sub-filename (unbox codes))])
+						 (cons path (mod-full-name m)))))
+					   all-file-imports sub-files)])
+			;; Record the module
+			(set-box! codes
+				  (cons (make-mod filename module-path code 
+						  name prefix (string->symbol
+							       (format "~a~a" name prefix))
+						  mappings)
+					(unbox codes)))))))))))
+	    
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define (make-module-name-resolver code-l)
+	`(let ([orig (current-module-name-resolver)]
+	       [mapping-table (quote
+			       ,(map
+				 (lambda (m)
+				   `(,(mod-full-name m)
+				     ,(mod-mappings m)))
+				 code-l))]
+	       [library-table (quote
+			       ,(filter values
+					(map (lambda (m)
+					       (let ([path (mod-mod-path m)])
+						 (if (and (pair? path)
+							  (eq? 'lib (car path)))
+						     (cons path (mod-full-name m))
+						     #f)))
+					     code-l)))])
+	   (current-module-name-resolver
+	    (lambda (name rel-to stx)
+	      (if (not name)
+		  (orig name rel-to stx) ; just a notification
+		  ;; Have a relative mapping?
+		  (let ([a (assoc rel-to mapping-table)])
+		    (if a
+			(let ([a2 (assoc name (cadr a))])
+			  (if a2
+			      (cdr a2)
+			      (error 'embedding-module-name-resolver
+				     "unexpected relative mapping request: ~e in ~e"
+				     name rel-to)))
+			;; A library mapping that we have? 
+			(let ([a3 (and (pair? name)
+				       (eq? (car name 'lib))
+				       (assoc name library-table))])
+			  (if a3
+			      ;; Have it:
+			      (cdr a3)
+			      ;; Let default handler try:
+			      (orig name rel-to stx))))))))))
+
+      ;; The main function (see doc.txt).
+      (define (make-embedding-executable dest mred? verbose? modules cmdline)
 	(unless ((apply + (length cmdline) (map string-length cmdline)) . < . 50)
 	  (error 'make-embedding-executable "command line too long"))
-	(let ([files (map
-		      (lambda (mp)
-			(let ([f (resolve-module-path mp #f)])
-			  (unless f
-			    (error 'make-embedding-executable "bad module path: ~e" mp))
-			  f))
-		      module-paths)]
-	      [collapsed-mps (map
-			      (lambda (mp)
-				(collapse-module-path mp "."))
-			      module-paths)]
-	      ;; Each element is (list filename collapsed-module-path code)
-	      ;; As we descend the module tree, we append to the front, so
-	      ;; this list will need to be reversed.
-	      [codes (box null)])
-	  (for-each (lambda (f mp) (get-code f mp codes verbose?)) 
+	(let* ([module-paths (map cadr modules)]
+	       [files (map
+		       (lambda (mp)
+			 (let ([f (resolve-module-path mp #f)])
+			   (unless f
+			     (error 'make-embedding-executable "bad module path: ~e" mp))
+			   (normalize f)))
+		       module-paths)]
+	       [collapsed-mps (map
+			       (lambda (mp)
+				 (collapse-module-path mp "."))
+			       module-paths)]
+	       [prefix-mapping (map (lambda (f m)
+				      (cons f (car m)))
+				    files modules)]
+	       ;; Each element is created with `make-mod'.
+	       ;; As we descend the module tree, we append to the front after
+	       ;; loasing imports, so the list in the right order.
+	       [codes (box null)])
+	  (for-each (lambda (f mp) (get-code f mp codes prefix-mapping verbose?)) 
 		    files
 		    collapsed-mps)
 	  (let ([exe (find-exe mred?)])
@@ -125,16 +226,12 @@
 		   ;; Install a module name resolver that redirects
 		   ;; to the embedded modules
 		   (write (make-module-name-resolver (unbox codes)) o)
-		   (let ([l (reverse (unbox codes))])
+		   (let ([l (unbox codes)])
 		     (for-each
 		      (lambda (nc)
-			(fprintf (current-error-port) "Writing ~s~n" (car nc))
-			(write `(current-module-name-prefix ',(string->symbol
-							       (format
-								"#%embedded:~a"
-								(car nc))))
-			       o)
-			(write (caddr nc) o))
+			(fprintf (current-error-port) "Writing module from ~s~n" (mod-file nc))
+			(write `(current-module-name-prefix ',(string->symbol (mod-prefix nc))) o)
+			(write (mod-code nc) o))
 		      l))
 		   `(write '(current-module-name-prefix #f) o))
 		 'append)

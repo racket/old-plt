@@ -146,6 +146,12 @@ class wxAutoDragTimer : public wxTimer
 #define INIT_SB ((style & (wxMCANVAS_NO_H_SCROLL | wxMCANVAS_HIDE_H_SCROLL)) ? 0 : wxHSCROLL) \
                 + ((style & (wxMCANVAS_NO_V_SCROLL | wxMCANVAS_HIDE_V_SCROLL)) ? 0 : wxVSCROLL)
 
+#ifdef wx_x
+# define wxmeBORDER wxNO_CAPTION
+#else
+# define wxmeBORDER wxBORDER
+#endif
+
 wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int x, int y,
 			     int width, int height,
@@ -154,7 +160,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int scrollsPP,
 			     wxMediaBuffer *m)
 : wxCanvas(parent, x, y, width, height,
-	   wxRETAINED + wxBORDER + wxOVERRIDE_KEY_TRANSLATIONS + INIT_SB, name)
+	   wxRETAINED + wxmeBORDER + wxOVERRIDE_KEY_TRANSLATIONS + INIT_SB, name)
 {
   static int type_added = FALSE;
 

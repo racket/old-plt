@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.12 1999/07/14 23:34:09 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.13 1999/07/19 19:59:20 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -948,7 +948,7 @@ static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
       GC gc;
       int h, h2, h4, h34;
 
-      x += mw->menu.shadow_width + mw->menu.hmargin + 1;
+      x += mw->menu.shadow_width + mw->menu.hmargin;
       y += (mw->menu.shadow_width + mw->menu.vmargin
 	    + (mw->menu.font->ascent
 	       + mw->menu.font->descent

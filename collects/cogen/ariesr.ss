@@ -168,7 +168,7 @@
   
   (define-struct (not-boolean struct:exn) (val))
   (define signal-not-boolean (make-parameter #f))
-  (define not-boolean-error-format "if: value ~e is neither #t nor #f")
+  (define not-boolean-error-format "Condition value is neither #t nor #f: ~e")
   
   ; there is a problem with Zodiac.  The problem is that Zodiac has not been
   ; distinguishing between top-level variables and those bound by unit clauses.
@@ -192,19 +192,31 @@
   ; this parameter is enabled.  This duplication stems from the problems involving
   ; the miscategorization of unit-vars described above.
   
-  (define (translate-bound-varref expr)
+  (define (translate-bound-varref expr maybe-undef?)
     (let ([v (z:varref-var expr)]
-	  [real-v (z:binding-orig-name
-		   (z:bound-varref-binding expr))])
-      (wrap expr
-	    (if (signal-undefined)
+	  [real-v (if (z:top-level-varref? expr)
+		      (z:varref-var expr)
+		      (z:binding-orig-name
+		       (z:bound-varref-binding expr)))])
+      (if (and maybe-undef? (signal-undefined))
+	  (wrap expr
 		`(#%if (#%eq? ,v ,the-undefined-value)
-		  (#%raise (,make-undefined
-			    ,(format undefined-error-format real-v)
-			    ((#%debug-info-handler))
-			    (#%quote ,v)))
-		  ,v)
-		v))))
+		       (#%raise (,make-undefined
+				 ,(format undefined-error-format real-v)
+				 ((#%debug-info-handler))
+				 (#%quote ,v)))
+		       ,v))
+	  ; don't wrap lexical variables - nothing can go wrong
+	  v)))
+
+  ; mark lexical variables that are known never to be undefined, an
+  ; important optimization when (signal-undefined) is #t
+
+  (define-values (never-undefined? mark-never-undefined)
+    (let-values ([(getter setter) (z:register-client 'aries:never-undefined (lambda () #f))])
+      (values
+       (lambda (parsed) (getter (z:parsed-back parsed)))
+       (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
   
   ; the annotate function is the primary one in aries: it takes a parsed zodiac 
   ; AST, and constructs an SEXP which includes debugging information, and inserts
@@ -220,11 +232,13 @@
       (lambda (expr)
 	(cond
 	  [(z:bound-varref? expr)
-	   (translate-bound-varref expr)]
+	   (translate-bound-varref 
+	    expr
+	    (not (never-undefined? (z:bound-varref-binding expr))))]
 	  
 	  [(z:top-level-varref? expr)
 	   (if (is-unit-bound? expr)
-	       (translate-bound-varref expr)
+	       (translate-bound-varref expr #t)
 	       (begin
 		 (check-for-keyword/proc expr)		   
 		 (wrap expr (z:varref-var expr))))]
@@ -283,6 +297,7 @@
 	   (let ([bindings
 		  (map (lambda (vars val)
 			 (for-each check-for-keyword vars)
+			 (for-each mark-never-undefined vars)
 			 `(,(map z:binding-var vars)
 			   ,(annotate/inner val)))
 		       (z:let-values-form-vars expr)
@@ -297,13 +312,20 @@
 	  ; letrec*-values, at least for a while.
 	  
 	  [(z:letrec*-values-form? expr)
-	   (let ([bindings
-		  (map (lambda (vars val)
-			 (for-each check-for-keyword vars)
-			 `(,(map z:binding-var vars)
-			   ,(annotate/inner val)))
-		       (z:letrec*-values-form-vars expr)
-		       (z:letrec*-values-form-vals expr))])
+	   ; Are all RHSes values? ...
+	   (when (andmap z:case-lambda-form? (z:letrec*-values-form-vals expr))
+	     ; ...yes , mark vars as never undefined.
+	     ; (We do this before annotating any RHS!)
+	     (for-each (lambda (vars)
+			 (for-each mark-never-undefined vars))
+		       (z:letrec*-values-form-vars expr)))
+	   (let* ([bindings
+		   (map (lambda (vars val)
+			  (for-each check-for-keyword vars)
+			  `(,(map z:binding-var vars)
+			    ,(annotate/inner val)))
+			(z:letrec*-values-form-vars expr)
+			(z:letrec*-values-form-vals expr))])
 	     (wrap expr
 		   `(#%letrec-values ,bindings
 		     ,(annotate/inner (z:letrec*-values-form-body expr)))))]
@@ -334,6 +356,7 @@
 	     ,@(map (lambda (args body)
 		      (let ((args (arglist->ilist args)))
 			(improper-foreach check-for-keyword args)
+			(improper-foreach mark-never-undefined args)
 			`(,(improper-map z:binding-var args)
 			  ,(annotate/inner body))))
 		    (z:case-lambda-form-args expr)

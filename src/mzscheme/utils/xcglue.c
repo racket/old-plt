@@ -601,20 +601,20 @@ Scheme_Object *objscheme_def_prim_class(void *global_env,
   Scheme_Object *sclass;
 
   if (superclass)
-    obj = scheme_lookup_xc_global(superclass, global_env);
+    obj = scheme_lookup_xc_global(superclass, (Scheme_Env *) global_env);
   else
     obj = NULL;
 
   sclass = scheme_make_class(name, obj, initf, nmethods);
 
-  scheme_install_xc_global(name, sclass, global_env);
+  scheme_install_xc_global(name, sclass, (Scheme_Env *) global_env);
 
   return sclass;
 }
 
 void objscheme_add_global_class(Scheme_Object *sclass, char *name, void *env)
 {
-  scheme_install_xc_global(name, sclass, env);
+  scheme_install_xc_global(name, sclass, (Scheme_Env *) env);
 }
 
 void objscheme_add_global_interface(Scheme_Object *in, char *name, void *env)

@@ -7,7 +7,7 @@ PLTSRCDIR = $(srcdir)/..
 include Make.env
 
 # system name for installation
-INSTALLSYS = `../../bin/archsys`
+INSTALLSYS = `$(srcdir)/../../bin/archsys`
 
 MREDLDFLAGS = $(LDFLAGS) -L../mzscheme -Lwxs -Lwxme -L../wxxt/src -L../wxxt/utils/image/src  -L../wxxt/contrib/xpm/lib
 MREDLDLIBS = -lmzscheme -lgc -lwxscheme -lwxme -lwx_xt -lXpm -limage_xt $(LDLIBS) $(LDNONSTATICLIBS)

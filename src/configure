@@ -1919,13 +1919,15 @@ fi
 
   MAKE_MRED=mr
   MAKE_MRED2K=mr2k
+  MAKE_MREDINSTALL=mrinstall
 else
   MAKE_MRED=
   MAKE_MRED2K=
+  MAKE_MREDINSTALL=
 fi
 
 echo $ac_n "checking for cos in -lm""... $ac_c" 1>&6
-echo "configure:1929: checking for cos in -lm" >&5
+echo "configure:1931: checking for cos in -lm" >&5
 ac_lib_var=`echo m'_'cos | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1933,7 +1935,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lm  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1937 "configure"
+#line 1939 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1944,7 +1946,7 @@ int main() {
 cos()
 ; return 0; }
 EOF
-if { (eval echo configure:1948: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1950: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -1972,7 +1974,7 @@ else
 fi
 
 echo $ac_n "checking for dlopen in -ldl""... $ac_c" 1>&6
-echo "configure:1976: checking for dlopen in -ldl" >&5
+echo "configure:1978: checking for dlopen in -ldl" >&5
 ac_lib_var=`echo dl'_'dlopen | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -1980,7 +1982,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-ldl  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 1984 "configure"
+#line 1986 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -1991,7 +1993,7 @@ int main() {
 dlopen()
 ; return 0; }
 EOF
-if { (eval echo configure:1995: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:1997: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2041,7 +2043,7 @@ case $OS in
     ;;
   AIX)
     echo $ac_n "checking for dlopen in -ldl""... $ac_c" 1>&6
-echo "configure:2045: checking for dlopen in -ldl" >&5
+echo "configure:2047: checking for dlopen in -ldl" >&5
 ac_lib_var=`echo dl'_'dlopen | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -2049,7 +2051,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-ldl  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 2053 "configure"
+#line 2055 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -2060,7 +2062,7 @@ int main() {
 dlopen()
 ; return 0; }
 EOF
-if { (eval echo configure:2064: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+if { (eval echo configure:2066: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -2170,12 +2172,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="whether new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2174: checking $msg" >&5
+echo "configure:2176: checking $msg" >&5
   if test "$cross_compiling" = yes; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 2179 "configure"
+#line 2181 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2187,7 +2189,7 @@ inline void *operator new(long size) { return (void *)0x1; }
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2191: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2193: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2208,16 +2210,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2212: checking whether need to use -fpermissive" >&5
+echo "configure:2214: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2214 "configure"
+#line 2216 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2221: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2223: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else
@@ -2235,6 +2237,8 @@ rm -f conftest*
 fi
 
 ############## final output ################
+
+
 
 
 
@@ -2455,8 +2459,10 @@ s%@MROPTIONS@%$MROPTIONS%g
 s%@GCDIR@%$GCDIR%g
 s%@MZLIBS@%$MZLIBS%g
 s%@MZBINTARGET@%$MZBINTARGET%g
+s%@MZINSTALLTARGET@%$MZINSTALLTARGET%g
 s%@MAKE_MRED@%$MAKE_MRED%g
 s%@MAKE_MRED2K@%$MAKE_MRED2K%g
+s%@MAKE_MREDINSTALL@%$MAKE_MREDINSTALL%g
 s%@OSKHOME@%$OSKHOME%g
 s%@EXTRA_OSK_LIBS@%$EXTRA_OSK_LIBS%g
 

@@ -29,12 +29,14 @@
 # --fs <drive> <partition> : mounts the given partition as the root
 #  directory. For example, to mount the seventh parition on main disk,
 #  supply: --fs hda f. Many filesystem formats are supported,
-#  including EXT2, MSDOS, and VFAT (see OSKit for details).
+#  including EXT2, MSDOS, and VFAT (all of the ones supported by
+#  Linux; see OSKit for details). The standard kernel can only mount
+#  one filesystem per run; hack main.c to get more.
 
 # --net <address> <netmask> <gateway> : initializes ethernet support
 #  for MzScheme's TCP primitives. Example: --net 128.42.6.101
 #  255.255.255.0 128.42.6.254. Many types of ethernet cards are
-#  supported (see OSKit for details).
+#  supported (the ones supported by FreeBSD; see OSKit for details).
 
 # Each of --fs and --net should be used once at most. The --fs and
 #  --net flags must appear before any other command-line arguments,

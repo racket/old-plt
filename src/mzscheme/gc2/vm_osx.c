@@ -165,12 +165,15 @@ kern_return_t catch_exception_raise(mach_port_t port,
 				    exception_data_t exception_data,
 				    mach_msg_type_number_t data_count)
 {
+#if  GENERATIONS
   /* kernel return value is in exception_data[0], faulting address in
      exception_data[1] */
   if(exception_data[0] == KERN_PROTECTION_FAILURE) {
     designate_modified((void*)exception_data[1]);
     return KERN_SUCCESS;
-  } else return KERN_FAILURE;
+  } else 
+#endif
+    return KERN_FAILURE;
 }
 
 /* this is the thread which forwards of exceptions read from the exception
@@ -203,7 +206,7 @@ void exception_thread(void)
 
 /* this initializes the subsystem (sets the exception port, starts the
    exception handling thread, etc) */
-void macosx_init_exception_handler() 
+static void macosx_init_exception_handler() 
 {
   mach_port_t thread_self, exc_port_s, exc_thread;
   ppc_thread_state_t *exc_thread_state;

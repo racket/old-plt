@@ -22,7 +22,7 @@
 #define GENERATIONS 1
 
 /* Platform-specific disablers (`and'ed with GENERATIONS): */
-#define OS_X_GENERATIONS 0
+#define OS_X_GENERATIONS 1
 #define WIN32_GENERATIONS 1
 
 
@@ -363,8 +363,6 @@ static int num_fnls;
 static int ran_final;
 static int running_finals;
 
-static int page_size; /* OS page size */
-
 /******************** Misc ********************/
 
 /* The answer for all 0-byte requests: */
@@ -462,6 +460,21 @@ void flush_freed_pages(void)
 
 /******************************************************************************/
 
+/* OS X */
+
+#if defined(OS_X)
+# if  GENERATIONS
+static void designate_modified(void *p);
+# endif
+
+# define TEST 0
+# include "vm_osx.c"
+
+# define MALLOCATOR_DEFINED
+#endif
+
+/******************************************************************************/
+
 /* Default: mmap */
 
 #ifndef MALLOCATOR_DEFINED
@@ -471,6 +484,8 @@ void flush_freed_pages(void)
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <errno.h>
+
+static int page_size; /* OS page size */
 
 #ifndef MAP_ANON
 int fd, fd_created;
@@ -3229,7 +3244,11 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 # define NEED_SIGWIN
 #endif
 
-/* ========== Mac OS X signal handler ========== */
+/* ========== Mac OS X Darwin signal handler ========== */
+/* Replaced by Mach-specific vm_osx.c */
+#if 1
+# define NEED_OSX_MACH_HANDLER
+#else
 #if defined(OS_X)
 /* Note: sigaction with SA_SIGINFO doesn't work.  si->si_addr is
    normally the faulting referenced address (on other platforms), but
@@ -3255,6 +3274,7 @@ void fault_handler(int sn, siginfo_t *si, struct sigcontext *scp)
 # endif
 # define NEED_OSX_SIGBUS
 }
+#endif
 #endif
 
 #endif /* GENERATIONS */
@@ -3520,6 +3540,9 @@ static void init(void)
 # endif
 # ifdef NEED_SIGBUS
     signal(SIGBUS, (void (*)(int))fault_handler);
+# endif
+# ifdef NEED_OSX_MACH_HANDLER
+    macosx_init_exception_handler();
 # endif
 # ifdef NEED_OSX_SIGBUS
     {
@@ -4748,7 +4771,7 @@ void GC_dump(void)
   long waste = 0;
 
   GCPRINT(GCOUTF, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
-  GCPRINT(GCOUTF, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
+  GCPRINT(GCOUTF, "mpagesize=%ld  opagesize=%ld\n", (long)MPAGE_SIZE, (long)OPAGE_SIZE);
   GCPRINT(GCOUTF, "[");
   for (i = 0; i < MAPS_SIZE; i++) {
     if (i && !(i & 63))

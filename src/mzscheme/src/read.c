@@ -756,7 +756,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 	      if (SCHEME_EOFP(v))
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 				"read: expected an element for graph (found end-of-file)");
-	      if (stxsrc)
+	      if (stxsrc && SCHEME_STXP(v)) /* might be a placeholder! */
 		v = scheme_make_graph_stx(v, line, col, pos);
 	      SCHEME_PTR_VAL(ph) = v;
 	      

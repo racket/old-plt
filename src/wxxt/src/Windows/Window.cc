@@ -37,6 +37,7 @@
 #define  Uses_wxDialogBox
 #define  Uses_wxItem
 #define  Uses_wxCanvas
+#define  Uses_wxApp
 #include "wx.h"
 #define  Uses_ScrollWinWidget
 #define  Uses_Scrollbar
@@ -1625,10 +1626,20 @@ void wxWindow::WindowEventHandler(Widget w,
 	  }
 
 	if (xev->xany.type == KeyPress) {
-	  if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
-	    win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
-	  else if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
-	    win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
+	  static int handle_alt = 0;
+
+	  if (!handle_alt) {
+	    if (!wxGetPreference("altUpSelectsMenu", &handle_alt))
+	      handle_alt = 0;
+	    handle_alt = !handle_alt ? -1 : 1;
+	  }
+
+	  if (handle_alt > 0) {
+	    if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
+	      win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
+	    else if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
+	      win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
+	  }
 	}
 
 	if (XMB_KC_STATUS(status))

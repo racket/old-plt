@@ -55,7 +55,7 @@
   (define http-regexp (make-url-regexp "http"))
   (define cheap-http-regexp (regexp "http://"))
   (define (http-format url)
-    `(A ((HREF ,url)) ,url))
+    `(A ((HREF ,url) (TARGET "main")) ,url))
   (define ftp-regexp (make-url-regexp "ftp"))
   (define cheap-ftp-regexp (regexp "ftp://"))
   (define ftp-format http-format) 

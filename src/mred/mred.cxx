@@ -737,7 +737,7 @@ static MrEdContext *MakeContext(MrEdContext *c)
 				(Scheme_Object *)c);
 
 #ifdef NEED_HET_PARAM
-  config = scheme_extend_config(config, mred_het_param, NULL);
+  config = scheme_extend_config(config, mred_het_param, scheme_false);
 #endif
 
   c->main_config = config;
@@ -964,7 +964,9 @@ int mred_in_restricted_context()
 {
 #ifdef NEED_HET_PARAM
   /* see wxHiEventTrampoline for info on mred_het_param: */
-  if (scheme_get_param(scheme_current_thread->init_config, mred_het_param))
+  Scheme_Object *v;
+  v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+  if (SCHEME_TRUEP(v))
     return 1;
 #endif
   return 0;
@@ -1139,8 +1141,12 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
 
 #ifdef NEED_HET_PARAM
   /* see wxHiEventTrampoline for info on mred_het_param: */
-  if (scheme_get_param(scheme_current_thread->init_config, mred_het_param))
-    restricted = 1;
+  {
+    Scheme_Object *v;
+    v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+    if (SCHEME_TRUEP(v))
+      restricted = 1;
+  }
 #endif
 
   if (alt) {
@@ -1246,8 +1252,12 @@ int MrEdEventReady(MrEdContext *c)
 
 #ifdef NEED_HET_PARAM
   /* see wxHiEventTrampoline for info on mred_het_param: */
-  if (scheme_get_param(scheme_current_thread->init_config, mred_het_param))
-    restricted = 1;
+  {
+    Scheme_Object *v;
+    v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+    if (SCHEME_TRUEP(v))
+      restricted = 1;
+  }
 #endif
 
   return (c->nested_avail
@@ -3345,7 +3355,7 @@ static void pre_het(void *d)
   HiEventTramp *het = (HiEventTramp *)d;
 
   het->old_param = scheme_get_param(het->config, mred_het_param);
-  scheme_set_param(het->config, mred_het_param, (Scheme_Object *)het);
+  scheme_set_param(het->config, mred_het_param, scheme_make_pair((Scheme_Object *)het, scheme_null));
 }
 
 static Scheme_Object *act_het(void *d)
@@ -3422,8 +3432,11 @@ static void suspend_het_progress(void)
 {
   HiEventTramp * volatile het;
 
-  het = (HiEventTramp *)scheme_get_param(scheme_current_thread->init_config, 
-					 mred_het_param);
+  {
+    Scheme_Object *v;
+    v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+    het = (HiEventTramp *)SCHEME_CAR(v);
+  }
 
   scheme_on_atomic_timeout = NULL;
 
@@ -3497,8 +3510,15 @@ int mred_het_run_some(HiEventTrampProc do_f, void *do_data)
   HiEventTramp * volatile het;
   int more = 0;
 
-  het = (HiEventTramp *)scheme_get_param(scheme_current_thread->init_config, 
-					 mred_het_param);
+  {
+    Scheme_Object *v;
+    v = scheme_get_param(scheme_current_thread->init_config, mred_het_param);
+    if (SCHEME_PAIRP(v))
+      het = (HiEventTramp *)SCHEME_CAR(v);
+    else
+      het = NULL;
+  }
+
   if (het) {
     if (het->in_progress) {
       /* We have work in progress. */

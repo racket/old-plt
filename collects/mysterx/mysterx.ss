@@ -78,6 +78,7 @@
     com-iunknown?
     %%initialize-dotnet-runtime)
 
+  (define %%initialize-dotnet-runtime mxprims:%%initialize-dotnet-runtime)
   (define mx-version mxprims:mx-version)
   (define block-while-browsers mxprims:block-while-browsers)
   (define com-invoke mxprims:com-invoke)

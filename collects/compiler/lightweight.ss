@@ -2796,6 +2796,11 @@
 	  (make-object
 	   (class fv-zolder% ()
 
+		  (rename 
+
+		   [super-class*/names-form-folder class*/names-form-folder]
+		   [super-unit-form-folder unit-form-folder])
+
 		  (override
 
 		   [binder-set-minus ; throw out anchors
@@ -2837,7 +2842,29 @@
 
 			(set-code-free-vars! code all-cases-fvs)
 			
-			all-cases-fvs))])
+			all-cases-fvs))]
+
+	  [class*/names-form-folder
+	   (lambda (a this-fvs super-init-fvs super-expr-fvs 
+		      interface-fvss init-vars-fvss inst-clause-pairs)
+	     (let* ([super-result
+		     (super-class*/names-form-folder
+		      a
+		      this-fvs super-init-fvs super-expr-fvs
+		      interface-fvss init-vars-fvss inst-clause-pairs)]
+		    [code (get-annotation a)])
+	       (set-code-free-vars! code super-result)
+	       super-result))]
+
+	  [unit-form-folder
+	   (lambda (a imports-fv exports-fv clauses-fv)
+	     (let ([super-result
+		    (super-unit-form-folder
+		     a
+		     imports-fv exports-fv clauses-fv)]
+		   [code (get-annotation a)])
+	       (set-code-free-vars! code super-result)
+	       super-result))])
 
 		  (sequence (super-init))))]
 

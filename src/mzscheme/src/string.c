@@ -929,7 +929,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 	break;
       default:
 	{
-	  char buffer[32];
+	  char buffer[64];
 	  sprintf(buffer, "pattern-string (tag ~%c not allowed)", format[i]);
 	  scheme_wrong_type(procname, buffer, fpos, argc, argv);
 	  return;

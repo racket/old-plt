@@ -1984,6 +1984,9 @@ static void remove_console_reading()
 {
   Scheme_Object *p, *prev = NULL;
 
+  if (!console_reading)
+    return;
+
   p = console_reading;
   while (SCHEME_PAIRP(p)) {
     if (SAME_OBJ(SCHEME_CAR(p), (Scheme_Object *)scheme_current_process)) {
@@ -2001,6 +2004,9 @@ static void remove_console_reading()
 static void break_console_reading_threads()
 {
   Scheme_Object *p;
+
+  if (!console_reading)
+    return;
 
   for (p = console_reading; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
     scheme_break_thread((Scheme_Process *)SCHEME_CAR(p));

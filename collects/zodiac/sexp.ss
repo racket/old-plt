@@ -37,7 +37,12 @@
 		   ((char? expr)
 		     (z:make-char origin start finish expr))
 		   (else
-		     (internal-error expr "Invalid structurization"))))))
+		     (z:make-list origin start finish
+		       (list
+			 (z:make-symbol origin start finish
+			   'quote 'quote '(-1))
+			 expr)
+		       2 marks))))))
 	    (structurize expr)))))
 
     (define sexp->raw

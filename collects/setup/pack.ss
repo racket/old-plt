@@ -103,8 +103,8 @@
         (close-output-port fileout)
         (thread-wait thd))))
 
-  (define (element->bytes x)
-    (if (path? x) (path->bytes x) x))
+  (define (element->string x)
+    (if (path? x) (path->string x) x))
 
   (define (mztar path output filter file-mode)
     (define (path->list p)
@@ -126,7 +126,7 @@
 	       (if files
 		   (build-path dir (car files))
 		   dir)))
-      (fprintf output "~s~n~s~n" 'dir (map element->bytes dpath))
+      (fprintf output "~s~n~s~n" 'dir (map element->string dpath))
       (for-each
        (lambda (f)
          (let* ([p (build-path dir f)]
@@ -141,7 +141,7 @@
                               [(file) 'file]
                               [(file-replace) 'file-replace]
                               [else file-mode])
-                            (map element->bytes (append dpath (list f)))
+                            (map element->string (append dpath (list f)))
                             len)
                    (call-with-input-file* p
                      (lambda (p)

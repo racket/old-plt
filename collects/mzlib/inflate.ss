@@ -195,14 +195,12 @@
 
 (define (inflate input-port output-port)
 
-  (define slide (make-string WSIZE))
+  (define slide (make-bytes WSIZE))
   (define wp 0)
   
   (define (flush-output len)
     ; write out the data
-    (if (= len WSIZE)
-	(display slide output-port)
-	(display (substring slide 0 len) output-port)))
+    (write-bytes slide output-port 0 len))
   
   (define (check-flush)
     (when (= wp WSIZE)
@@ -246,7 +244,7 @@
   
   (define (NEEDBITS n)
     (when (< bk n)
-      (set! bb (+ bb (arithmetic-shift (char->integer (read-char input-port)) bk)))
+      (set! bb (+ bb (arithmetic-shift (read-byte input-port) bk)))
       (set! bk (+ bk 8))
       (NEEDBITS n)))
   (define (DUMPBITS n)
@@ -560,7 +558,7 @@
 	; (printf "e: ~s~n" e)
 	(if (= e 16) ; /* then it's a literal */
 	    (begin
-	      (string-set! slide wp (integer->char (huft-v t)))
+	      (bytes-set! slide wp (huft-v t))
 	      (set! wp (add1 wp))
 	      (check-flush))
 	    (begin ; /* it's an EOB or a length */
@@ -597,7 +595,7 @@
 		(set! e (min n (- WSIZE (max d wp))))
 		(set! n (- n e))
 		(let loop ()
-		  (string-set! slide wp (string-ref slide d))
+		  (bytes-set! slide wp (bytes-ref slide d))
 		  (set! wp (add1 wp))
 		  (set! d (add1 d))
 		  (set! e (sub1 e))
@@ -630,7 +628,7 @@
 	(let loop ([n n])
 	  (when (positive? n)
 	    (NEEDBITS 8)
-	    (string-set! slide wp (integer->char (bitwise-and bb #xff)))
+	    (bytes-set! slide wp (bitwise-and bb #xff))
 	    (set! wp (add1 wp))
 	    (check-flush)
 	    (DUMPBITS 8)
@@ -808,23 +806,23 @@
 		#t = (void)))
 	  #f))))
 
-  (define (make-small-endian . chars)
-    (let loop ([chars chars][n 0][mult 1])
-      (if (null? chars)
-	  n
-	  (loop (cdr chars) 
-		(+ n (* mult (char->integer (car chars))))
-		(* mult 256)))))
+  (define make-small-endian
+    (case-lambda
+     [(a b) (+ a (arithmetic-shift b 8))]
+     [(a b c d) (+ a
+		   (arithmetic-shift b 8)
+		   (arithmetic-shift c 16)
+		   (arithmetic-shift d 24))]))
   
   (define (do-gunzip in out name-filter)
-    (let ([header1 (read-char in)]
-	  [header2 (read-char in)])
-      (unless (and (char=? header1 #\037) (char=? header2 #\213))
+    (let ([header1 (read-byte in)]
+	  [header2 (read-byte in)])
+      (unless (and (= header1 #o037) (= header2 #o213))
 	(error 'gnu-unzip "bad header")))
-    (let ([compression-type (read-char in)])
-      (unless (char=? compression-type #\010)
+    (let ([compression-type (read-byte in)])
+      (unless (= compression-type #o010)
 	(error 'gnu-unzip "unknown compression type")))
-    (let* ([flags (char->integer (read-char in))]
+    (let* ([flags (read-byte in)]
 	   [ascii? (positive? (bitwise-and flags #b1))]
 	   [continuation? (positive? (bitwise-and flags #b10))]
 	   [has-extra-field? (positive? (bitwise-and flags #b100))]
@@ -835,25 +833,25 @@
 	(error 'gnu-unzip "cannot unzip encrypted file"))
       (when continuation?
 	(error 'gnu-unzip "cannot handle multi-part files"))
-      (let ([unix-mod-time (make-small-endian (read-char in) (read-char in)
-					      (read-char in) (read-char in))]
-	    [extra-flags (read-char in)]
-	    [source-os (read-char in)])
+      (let ([unix-mod-time (make-small-endian (read-byte in) (read-byte in)
+					      (read-byte in) (read-byte in))]
+	    [extra-flags (read-byte in)]
+	    [source-os (read-byte in)])
 	(when continuation?
-	  (let ([part-number (make-small-endian (read-char in) (read-char in))])
+	  (let ([part-number (make-small-endian (read-byte in) (read-byte in))])
 	    'ok))
 	(when has-extra-field?
-	  (let ([len (make-small-endian (read-char in) (read-char in))])
+	  (let ([len (make-small-endian (read-byte in) (read-byte in))])
 	    (let loop ([len len])
 	      (unless (zero? len)
-		(read-char in)
+		(read-byte in)
 		(loop (sub1 len))))))
 	(let* ([read-null-term-string
 		(lambda ()
 		  (let loop ([s null])
-		    (let ([r (read-char in)])
-		      (if (char=? #\null r)
-			  (list->string (reverse! s))
+		    (let ([r (read-byte in)])
+		      (if (zero? r)
+			  (list->bytes (reverse! s))
 			  (loop (cons r s))))))]
 	       [original-filename (and has-original-filename?
 				       (read-null-term-string))]
@@ -861,14 +859,14 @@
 	  (when encrypted?
 	    (let loop ([n 12])
 	      (unless (zero? n)
-		(read-char in)
+		(read-byte in)
 		(loop (sub1 n)))))
 	  
 	  (let-values ([(out close?) (if out
 					 (values out #f)
 					 (let-values ([(fn orig?)
 						       (if original-filename
-							   (values original-filename #t)
+							   (values (bytes->path original-filename) #t)
 							   (values "unzipped" #f))])
 					   (values (open-output-file (name-filter fn orig?) 'truncate)
 						   #t)))])

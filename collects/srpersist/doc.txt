@@ -43,8 +43,8 @@
  Francisco Solsona has built a higher-level layer, SchemeQL,
  currently in beta, that uses SrPersist as a substrate.
  A SchemeQL programmer avoids the low-level details 
- of ODBC.  You can download SchemeQL at 
- ftp://wish.com.mx/pub/scheme/.
+ of ODBC.  You can download SchemeQL from 
+ http://schematics.sourceforge.net/schemeql.html.
 
  Loading
  -------

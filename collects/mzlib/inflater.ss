@@ -6,14 +6,13 @@
 /* inflate.c -- Not copyrighted 1992 by Mark Adler
    version c10p1, 10 January 1993 */
 ; Taken from the gzip source distribution
-; Translated directly from C (obviously) by Matthew
+; Translated directly from C (obviously) by Matthew, April 1997
 
 /* You can do whatever you like with this source file, though I would
    prefer that if you modify it and redistribute it that you include
    comments to that effect with your name and the date.  Thank you.
    [The history has been moved to the file ChangeLog.]
    ; ChangeLog is distributed with the gzip source. 
-   ; April 24, 1997 - Ported to Scheme
  */
 
 /*
@@ -234,11 +233,11 @@
 
 (define (NEEDBITS n)
   (when (< bk n)
-	(set! bb (+ bb (bitwise-shift (char->integer (read-char input-port)) bk)))
+	(set! bb (+ bb (arithmetic-shift (char->integer (read-char input-port)) bk)))
 	(set! bk (+ bk 8))
 	(NEEDBITS n)))
 (define (DUMPBITS n)
-  (set! bb (bitwise-shift bb (- n)))
+  (set! bb (arithmetic-shift bb (- n)))
   (set! bk (- bk n)))
 
 (define (GETBITS n)
@@ -359,7 +358,7 @@
      ; (printf "min: ~s max: ~s~n" k g)
      ; /* Adjust last length count to fill out codes, if needed */
      (let-values ([(y j)
-		   (let loop ([y (bitwise-shift 1 j)][j j])
+		   (let loop ([y (arithmetic-shift 1 j)][j j])
 		     (if (>= j i)
 			 (values y j)
 			 (let ([new-y (- y (vector-ref c j))])
@@ -423,7 +422,7 @@
 		       ; (printf "z: ~s k: ~s w: ~s~n" z k w)
 
 		       (let* ([j (- k w)]
-			      [f (bitwise-shift 1 j)])
+			      [f (arithmetic-shift 1 j)])
 			 (when (> f (add1 a)) ; /* try a k-w bit table */
 			    ; /* too few codes for k-w bit table */
 			    (set! f (- f a 1)) ; /* deduct codes from patterns left */
@@ -439,7 +438,7 @@
 				      (begin
 					(set! f (- f cv)) ; /* else deduct codes from patterns */
 					(loop c-pos)))))))
-			 (set! z (bitwise-shift 1 j)) ; /* table entries for j-bit table */
+			 (set! z (arithmetic-shift 1 j)) ; /* table entries for j-bit table */
 
 			 ; /* allocate and link in new table */
 			 ; (printf "alloc: ~a~n" z)
@@ -456,7 +455,7 @@
 			   (set-huft-b! r l) ; /* bits to dump before this table */
 			   (set-huft-e! r (+ j 16)); /* bits in this table */
 			   (set-huft-v! r q) ; /* pointer to this table */
-			   (set! j (bitwise-shift i (- l w)))
+			   (set! j (arithmetic-shift i (- l w)))
 			   ; /* connect to last table: */
 			   (huft-copy (vector-ref (vector-ref u (sub1 h)) j) r))) 
 					     
@@ -477,21 +476,21 @@
 			(set! v-pos (add1 v-pos))))
 		  ; /* fill code-like entries with r */
 		  ; (printf "i: ~s w: ~s k: ~s~n" i w k)
-		  (let ([f (bitwise-shift 1 (- k w))]) ; /* i repeats in table every f entries */
-		    (let loop ([j (bitwise-shift i (- w))])
+		  (let ([f (arithmetic-shift 1 (- k w))]) ; /* i repeats in table every f entries */
+		    (let loop ([j (arithmetic-shift i (- w))])
 		      (when (< j z)
 			 (huft-copy (vector-ref q j) r)
 			 (loop (+ j f)))))
 		  ; /* backwards increment the k-bit code i */
-		  (let loop ([j (bitwise-shift 1 (sub1 k))])
+		  (let loop ([j (arithmetic-shift 1 (sub1 k))])
 		    (if (positive? (bitwise-and i j))
 			(begin
 			  (set! i (bitwise-xor i j))
-			  (loop (bitwise-shift j -1)))
+			  (loop (arithmetic-shift j -1)))
 			(set! i (bitwise-xor i j))))
 		  ; /* backup over finished tables */
 		  (let loop ()
-		    (unless (= (vector-ref x h) (bitwise-and i (sub1 (bitwise-shift 1 w))))
+		    (unless (= (vector-ref x h) (bitwise-and i (sub1 (arithmetic-shift 1 w))))
 			    (set! h (sub1 h)) ; /* don't need to update q */
 			    (set! w (- w l))
 			    (loop)))

@@ -3,7 +3,8 @@
   (require-for-syntax (lib "stx.ss" "syntax")
 		      "private/dmhelp.ss")
 
-  (provide define-macro)
+  (provide define-macro
+	   defmacro)
 
   (define-syntax define-macro
     (lambda (stx)
@@ -63,4 +64,9 @@
 		       (dm-subst
 			ht
 			(apply proc (cdr (dm-syntax->datum stx ht))))
-		       stx))))))))]))))
+		       stx))))))))])))
+
+  (define-syntax defmacro
+    (syntax-rules ()
+	[(_ name formals body1 body ...)
+	 (define-macro (name . formals) body1 body ...)])))

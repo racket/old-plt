@@ -35,50 +35,22 @@
    get-arrows-from-labels
    )
   
-  ;(provide (all-defined))
-  
-  ; debug XXX
-  ;read-and-analyze label-case-lambda-exps label-set label-term)
-  
-  ;  (define-syntax debug1
-  ;    (let ([counter 1])
-  ;      (lambda (stx)
-  ;        (syntax-case stx ()
-  ;          [(_ args ...)
-  ;           (begin
-  ;             (printf "debug counter: ~a~n" counter)
-  ;             (let* ([stx-args (syntax (args ...))]
-  ;                    [stx-args-list (syntax-e stx-args)]
-  ;                    [stx-out (datum->syntax-object
-  ;                              stx-args
-  ;                              `(#%app debug2 ,counter ,@stx-args-list))])
-  ;               (set! counter (add1 counter))
-  ;               stx-out))]))))
-  ;  
-  ;  (define (debug2 n . args)
-  ;    ;(when (and (label-cst? (cadr args))
-  ;    ;           (number? (label-cst-value (cadr args)))
-  ;    ;           (= 7 (label-cst-value (cadr args))))
-  ;    (printf "debug: ~a args: ~a~n" n args)
-  ;    ;  )
-  ;    (apply (car args) (cdr args)))
-  ;    
-  ;  (define-syntax debug1
-  ;    (let ([counter 1])
-  ;      (lambda (stx)
-  ;        (syntax-case stx ()
-  ;          [(_ args ...)
-  ;           (begin
-  ;             (printf "debug counter: ~a~n" counter)
-  ;             (let* ([stx-args (syntax (args ...))]
-  ;                    [stx-args-list (syntax-e stx-args)]
-  ;                    [stx-out (datum->syntax-object
-  ;                              stx-args
-  ;                              `(begin
-  ;                                 (printf "debug: ~a~n" ,counter)
-  ;                                 ,stx-args))])
-  ;               (set! counter (add1 counter))
-  ;               stx-out))]))))
+  ;(define-syntax debug1
+  ;  (let ([counter 1])
+  ;    (lambda (stx)
+  ;      (syntax-case stx ()
+  ;        [(_ args ...)
+  ;         (begin
+  ;           (printf "debug counter: ~a~n" counter)
+  ;           (let* ([stx-args (syntax (args ...))]
+  ;                  [stx-args-list (syntax-e stx-args)]
+  ;                  [stx-out (datum->syntax-object
+  ;                            stx-args
+  ;                            `(begin
+  ;                               (printf "debug: ~a~n" ,counter)
+  ;                               ,stx-args))])
+  ;             (set! counter (add1 counter))
+  ;             stx-out))]))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
@@ -2316,7 +2288,7 @@
                 ((sba-state-register-label-with-gui sba-state) label)
                 label)])))
   
-  ; sba-state syntax-object (listof (cons symbol label)) label (listof label) -> label
+  ; sba-state syntax-object (listof (cons symbol label)) label -> label
   ; gamma is the binding-variable-name-to-label environment
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
   ; need it to update its list of free variables if we find any. This means
@@ -2742,15 +2714,54 @@
          (create-simple-edge letrec-values-label))
         letrec-values-label)]
      [(if test then else)
-      (let* ([test-label (create-label-from-term sba-state (syntax test) gamma enclosing-lambda-label)]
-             [then-label (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label)]
-             [else-label (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label)]
+      (let* ([test (syntax test)]
+             ;[test-label (create-label-from-term sba-state (syntax test) gamma enclosing-lambda-label)]
+             [test-label (create-label-from-term sba-state test gamma enclosing-lambda-label)]
+             [then-label 
+              (if (symbol? (syntax-e test))
+                  (let ([binding-label (lookup-env test gamma)])
+                    (if binding-label
+                        (let* ([new-binding-label (create-simple-prim-label term)]
+                               [new-gamma (extend-env gamma (list test) (list new-binding-label))]
+                               [normal-edge (create-simple-edge new-binding-label)]
+                               ; discards #f, passes the rest to normal-edge
+                               [filtering-edge
+                                (cons
+                                 (lambda (out-label inflowing-label tunnel-label)
+                                   (when (or (not (label-cst? inflowing-label))
+                                             (label-cst-value inflowing-label))
+                                     ((car normal-edge) out-label inflowing-label tunnel-label)))
+                                 (cdr normal-edge))])
+                          (add-edge-and-propagate-set-through-edge binding-label filtering-edge)
+                          (create-label-from-term sba-state (syntax then) new-gamma enclosing-lambda-label))
+                        (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label))) 
+                  (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label))]
+             [else-label
+              (if (symbol? (syntax-e test))
+                  (let ([binding-label (lookup-env test gamma)])
+                    (if binding-label
+                        (let* ([new-binding-label (create-simple-prim-label term)]
+                               [new-gamma (extend-env gamma (list test) (list new-binding-label))]
+                               [normal-edge (create-simple-edge new-binding-label)]
+                               ; discards #f, passes the rest to normal-edge
+                               [filtering-edge
+                                (cons
+                                 (lambda (out-label inflowing-label tunnel-label)
+                                   (when (and (label-cst? inflowing-label)
+                                              (not (label-cst-value inflowing-label)))
+                                     ((car normal-edge) out-label inflowing-label tunnel-label)))
+                                 (cdr normal-edge))])
+                          (add-edge-and-propagate-set-through-edge binding-label filtering-edge)
+                          (create-label-from-term sba-state (syntax else) new-gamma enclosing-lambda-label))
+                        (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label))) 
+                  (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label))]
              ; because of the (if test then) case below, else-label might be associated with
              ; the same position as the whole term, so we have to create the if-label after
              ; the else-label, so that the wrong label/position association created by the
              ; else-label is overwritten.
              [if-label (create-simple-label sba-state term)]
              [if-edge (create-simple-edge if-label)]
+             ; that does the outgoing flow sensitivity
              [test-edge (create-self-modifying-edge (lambda (label)
                                                       ; XXX subtping should be used here
                                                       (or (not (label-cst? label))
@@ -2946,7 +2957,7 @@
       ; we cannot directly return the binding label, because, even though it makes for a
       ; simpler graph and simpler types, it screws up the arrows
       (let* ([var-stx (syntax var)]
-             [var-name (syntax-e var-stx)]
+             ;[var-name (syntax-e var-stx)]
              [binding-label (lookup-env var-stx gamma)])
         (if binding-label
             ; lexical variable
@@ -4433,7 +4444,9 @@
     (let ([handle (type-var-handle (label-type-var label))])
       (if handle
           handle
-          (let* ([_ (begin (print-struct #t)(printf "T: ~a " (type-var-name (label-type-var label))))]
+          (let* ([_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
+                                                    (syntax-position (label-term label))
+                                                    (syntax-object->datum (label-term label))))]
                  [start (current-milliseconds)]
                  [reachable-labels (set-map (reachable-labels-from-label label)
                                             (lambda (l) (add-type-var-to-label l sba-state) l))]

@@ -3,6 +3,7 @@
 
   (require "private/checksigs.ss")
   (require "private/gui-defs.ss")
+  (require "private/cmdline.ss")
   (require "private/runcheck.ss")
 
   (invoke-unit/sig
@@ -10,6 +11,7 @@
     (import)
     (link
      [DEFS : defs^ (gui-defs@)]
-     [RUNCHECK : empty^ (runcheck@ (DEFS))])
+     [ARGS : args^ (cmdline@)]
+     [RUNCHECK : empty^ (runcheck@ (ARGS) (DEFS))])
     (export))))
 

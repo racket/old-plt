@@ -1466,7 +1466,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env)
 		      tcp_check_accept, tcp_accept_needs_wakeup,
 		      NULL, 0);
 
-  scheme_thread_w_custodian(thread, scheme_config, newcust);
+  scheme_thread_w_custodian(thread, scheme_branch_config(), newcust);
   return scheme_reload(env);
 }
 

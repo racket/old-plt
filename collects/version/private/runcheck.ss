@@ -30,7 +30,7 @@
       (define nl (string #\newline))
       (define (empty-string? s) (string=? s ""))
 
-      (define up-to-format "~a v.~a (iteration ~a) is up-to-date")
+      (define current-format (string-constant vc-current-format))
 	
       (define (make-url-string vcs)
 	(string-append
@@ -214,7 +214,8 @@
 		    (string-constant vc-latest-binary-information-format)
 		    latest-binary-version latest-binary-iteration)
 		   nl nl
-		   "Updates are available at "
+	           (string-constant vc-updates-available)
+		   " "
 		   download-url-string)
 		  #f)
 	       
@@ -230,7 +231,7 @@
 			       (apply values data)])
 			     (cond
 			      [(eq? verdict 'up-to-date)
-			       (format up-to-format
+			       (format current-format
 				       package installed-version installed-iteration)]
 			      [(eq? verdict 'update)
 			       (begin
@@ -261,7 +262,7 @@
 			 (string-constant vc-no-update-string))
 		     nl
 		     " "
-		     (format up-to-format
+		     (format current-format
 			     (string-constant vc-binary-name)
 			     binary-version binary-iteration))
 		    (if needs-update

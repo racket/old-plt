@@ -153,7 +153,6 @@ static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[]);
-static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_modify_seconds(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[]);
 static Scheme_Object *file_size(int argc, Scheme_Object *argv[]);
@@ -336,11 +335,6 @@ void scheme_init_file(Scheme_Env *env)
   scheme_add_global_constant("expand-path",
 			     scheme_make_prim_w_arity(expand_path,
 						      "expand-path",
-						      1, 1), 
-			     env);
-  scheme_add_global_constant("normal-case-path",
-			     scheme_make_prim_w_arity(normal_path_case,
-						      "normal-case-path",
 						      1, 1), 
 			     env);
   scheme_add_global_constant("directory-list",
@@ -688,7 +682,6 @@ int scheme_os_setcwd(char *expanded, int noexn)
 #ifdef DOS_FILE_SYSTEM
 #define WC_BUFFER_SIZE 1024
 static wchar_t wc_buffer[WC_BUFFER_SIZE];
-static wchar_t *bad_wide_path = L":::";
 
 static int wc_strlen(wchar_t *ws)
 {
@@ -705,10 +698,7 @@ wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
   l = strlen(s);
   len = scheme_utf8_decode(s, 0, l,
 			   NULL, 0, -1,
-			   NULL, 1/*UTF-16*/, 0);
-
-  if (len < 0)
-    return bad_wide_path;
+			   NULL, 1/*UTF-16*/, '?');
 
   if (!do_copy && (len < (WC_BUFFER_SIZE-1)))
     ws = wc_buffer;
@@ -716,7 +706,7 @@ wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
     ws = (wchar_t *)scheme_malloc_atomic(sizeof(wchar_t) * (len + 1));
   scheme_utf8_decode(s, 0, l,
 		     (unsigned int *)ws, 0, -1,
-		     NULL, 1/*UTF-16*/, 0);
+		     NULL, 1/*UTF-16*/, '?');
   ws[len] = 0;
   return ws;
 }
@@ -1985,7 +1975,7 @@ Scheme_Object *scheme_get_fd_identity(Scheme_Object *port, long fd)
   return NULL;
 }
 
-char *scheme_normal_path_case(char *si, int *_len)
+char *scheme_normal_path_seps(char *si, int *_len)
 {
 #ifdef PALMOS_STUFF
   return si;
@@ -1999,8 +1989,6 @@ char *scheme_normal_path_case(char *si, int *_len)
   memcpy(s, si, len + 1);
 
   for (i = 0; i < len; i++) {
-    /* FIXME: this use of tolower probably interacts badly with locales */
-    s[i] = tolower(s[i]);
 #  ifdef DOS_FILE_SYSTEM
     if (s[i] == '/')
       s[i] = '\\';
@@ -3402,34 +3390,6 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
     return scheme_make_sized_path(filename, strlen(filename), 1);
 }
 
-static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *bs;
-  int len;
-  char *s;
-
-  if (!SCHEME_PATH_STRINGP(argv[0]))
-    scheme_wrong_type("normal-case-path", SCHEME_PATH_STRING_STR, 0, argc, argv);
-
-  bs = TO_PATH(argv[0]);
-
-  s = SCHEME_PATH_VAL(argv[0]);
-  len = SCHEME_PATH_LEN(argv[0]);
-
-  if (has_null(s, len))
-    raise_null_error("normal-case-path", argv[0], "");
-
-#ifdef UNIX_FILE_SYSTEM
-  return bs;
-#else
-  {
-    char *nc;
-    nc = scheme_normal_path_case(s, &len);
-    return scheme_make_sized_path(nc, len, 0);
-  }
-#endif
-}
-
 static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 {
 #if !defined(NO_READDIR) || defined(USE_MAC_FILE_TOOLBOX) || defined(USE_FINDFIRST)
@@ -4396,17 +4356,19 @@ find_system_path(int argc, Scheme_Object **argv)
     Scheme_Object *home;
     int ends_in_slash;
 
-#if defined(OS_X) && !defined(XONX)
     if ((which == id_pref_dir) 
-	|| (which == id_pref_file)) {
+	|| (which == id_pref_file)
+	|| (which == id_addon_dir)) {
+#if defined(OS_X) && !defined(XONX)
       home = scheme_make_path(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0));
-    } else if (which == id_addon_dir) {
-      return scheme_make_path(scheme_expand_filename("~/Library/PLT Scheme/", -1, NULL, NULL, 0));
-    } else
+#else
+      home = scheme_make_path(scheme_expand_filename("~/.plt-scheme/", -1, NULL, NULL, 0));
 #endif 
+    } else
       home = scheme_make_path(scheme_expand_filename("~/", 2, NULL, NULL, 0));
     
-    if ((which == id_pref_dir) || (which == id_init_dir) || (which == id_home_dir)) 
+    if ((which == id_pref_dir) || (which == id_init_dir) 
+	|| (which == id_home_dir) || (which == id_addon_dir))
       return home;
 
     ends_in_slash = (SCHEME_PATH_VAL(home))[SCHEME_PATH_LEN(home) - 1] == '/';
@@ -4414,9 +4376,7 @@ find_system_path(int argc, Scheme_Object **argv)
     if (which == id_init_file)
       return append_path(home, scheme_make_path("/.mzschemerc" + ends_in_slash));
     if (which == id_pref_file)
-      return append_path(home, scheme_make_path("/.plt-prefs.ss" + ends_in_slash));
-    if (which == id_addon_dir)
-      return append_path(home, scheme_make_path("/.plt-scheme/" + ends_in_slash));
+      return append_path(home, scheme_make_path("/plt-prefs.ss" + ends_in_slash));
   }
 #endif
 
@@ -4447,7 +4407,9 @@ find_system_path(int argc, Scheme_Object **argv)
 
     home = NULL;
 
-    if (which == id_addon_dir) {
+    if ((which == id_addon_dir)
+	|| (which == id_pref_dir)
+	|| (which == id_pref_file))
       /* Try to get Application Data directory: */
       LPITEMIDLIST items;
       if (SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &items) == S_OK) {
@@ -4508,20 +4470,25 @@ find_system_path(int argc, Scheme_Object **argv)
       }
     }
     
-    if ((which == id_pref_dir)
-	|| (which == id_init_dir)
+    if ((which == id_init_dir)
 	|| (which == id_home_dir))
       return home;
 
     ends_in_slash = (SCHEME_PATH_VAL(home))[SCHEME_PATH_LEN(home) - 1];
     ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
 
+    if ((which == id_addon_dir)
+	|| (which == id_pref_dir)
+	|| (which == id_pref_file)) {
+      home = append_path(home, scheme_make_path("\\PLT Scheme" + ends_in_slash));
+      ends_in_slash = 0;
+    }
+
     if (which == id_init_file)
       return append_path(home, scheme_make_path("\\mzschemerc.ss" + ends_in_slash));
     if (which == id_pref_file)
       return append_path(home, scheme_make_path("\\plt-prefs.ss" + ends_in_slash));
-    if (which == id_addon_dir)
-      return append_path(home, scheme_make_path("\\PLT Scheme" + ends_in_slash));
+    return home;
   }
 #endif
 
@@ -4571,21 +4538,27 @@ find_system_path(int argc, Scheme_Object **argv)
       }
     }
   
-    if ((which == id_pref_dir) 
-	|| (which == id_home_dir) 
+    if ((which == id_home_dir) 
 	|| (which == id_temp_dir) 
 	|| (which == id_init_dir) 
 	|| (which == id_sys_dir))
       return home;
     
     ends_in_colon = (SCHEME_PATH_VAL(home))[SCHEME_PATH_LEN(home) - 1] == ':';
-    
+
+    if ((which == id_addon_dir)
+	|| (which == id_pref_dir)
+	|| (which == id_pref_file))
+      home = append_path(home, scheme_make_path(":PLT Scheme AddOns" + ends_in_colon));
+      ends_in_colon = 0;
+    }
+
     if (which == id_init_file)
       return append_path(home, scheme_make_path(":mzschemerc.ss" + ends_in_colon));
     if (which == id_pref_file)
       return append_path(home, scheme_make_path(":plt-prefs.ss" + ends_in_colon));
-    if (which == id_addon_dir)
-      return append_path(home, scheme_make_path(":PLT Scheme AddOns" + ends_in_colon));
+
+    return home;
   }
 #endif
 

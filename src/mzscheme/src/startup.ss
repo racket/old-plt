@@ -2782,13 +2782,26 @@
   (define (path-replace-suffix s sfx)
     (unless (path-string? s)
       (raise-type-error 'path-replace-suffix "path or valid-path string" 0 s sfx))
-    (unless (bytes? sfx)
-      (raise-type-error 'path-replace-suffix "bytes" 1 s sfx))
+    (unless (or (string? sfx) (bytes? sfx))
+      (raise-type-error 'path-replace-suffix "string or byte string" 1 s sfx))
     (bytes->path (regexp-replace -re:suffix 
 				 (path->bytes (if (string? s)
 						  (string->path s)
 						  s))
-				 sfx)))
+				 (if (string? sfx)
+				     (string->bytes/locale sfx #\?)
+				     sfx))))
+
+  (define (normal-case-path s)
+    (unless (path-string? s)
+      (raise-type-error 'normal-path-case "path or valid-path string" s))
+    (cond
+     [(memq (system-type) '(windows macos))
+      (string->path (string-locale-downcase (if (string? s)
+						s
+						(path->string s))))]
+     [(string? s) (string->path s)]
+     [else s]))
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -3397,7 +3410,7 @@
   ;; -------------------------------------------------------------------------
 
   (provide rationalize 
-	   path-string? path-replace-suffix
+	   path-string? path-replace-suffix normal-case-path
 	   read-eval-print-loop
 	   load/cd memory-trace-lambda
 	   load-relative load-relative-extension

@@ -5869,7 +5869,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     char *np;
     int nplen;
     nplen = strlen(argv[0]);
-    np = scheme_normal_path_case(argv[0], &nplen);
+    np = scheme_normal_path_seps(argv[0], &nplen);
     argv[0] = np;
   }
 
@@ -6306,7 +6306,7 @@ static Scheme_Object *sch_shell_execute(int c, Scheme_Object *argv[])
     Scheme_Object *sv, *sf, *sp;
 
     nplen = strlen(dir);
-    dir = scheme_normal_path_case(dir, &nplen);
+    dir = scheme_normal_path_seps(dir, &nplen);
 
     if (SCHEME_FALSEP(argv[0]))
       sv = scheme_false;

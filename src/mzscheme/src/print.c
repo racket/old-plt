@@ -52,6 +52,7 @@ static int print(Scheme_Object *obj, int notdisplay, int compact,
 		 Scheme_Hash_Table *ht,
 		 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht,
 		 Scheme_Thread *p);
+static void print_char_string(char *s, int l, mzchar *us, int ul, int notdisplay, Scheme_Thread *p);
 static void print_byte_string(char *s, int l, int notdisplay, Scheme_Thread *p);
 static void print_pair(Scheme_Object *pair, int notdisplay, int compact, 
 		       Scheme_Hash_Table *ht, 
@@ -1065,7 +1066,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact_number(p, l);
 	print_this_string(p, buf, 0, el);
       } else {
-	print_byte_string(buf, el, notdisplay, p);
+	print_char_string(buf, el,
+			  SCHEME_CHAR_STR_VAL(obj), l,
+			  notdisplay, p);
 	closed = 1;
       }
 
@@ -1725,10 +1728,83 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 }
 
 static void
+print_char_string(char *str, int len, 
+		  mzchar *ustr, int ulen,
+		  int notdisplay, Scheme_Thread *p)
+{
+  char minibuf[8], *esc;
+  int a, i, v, ui, cont_utf8 = 0, isize;
+
+  if (notdisplay) {
+    print_this_string(p, "\"", 0, 1);
+
+    for (a = i = ui = 0; i < len; i += isize, ui++) {
+      v = ((unsigned char *)str)[i];
+      isize = 1;
+
+      switch (v) {
+      case '\"': esc = "\\\""; break;
+      case '\\': esc = "\\\\"; break;
+      case '\a': esc = "\\a";  break;
+      case '\b': esc = "\\b";  break;
+      case 27: esc = "\\e";  break;
+      case '\f': esc = "\\f";  break;
+      case '\n': esc = "\\n";  break;
+      case '\r': esc = "\\r";  break;
+      case '\t': esc = "\\t";  break;
+      case '\v': esc = "\\v";  break;
+      default:
+	if (v > 127) {
+	  if (cont_utf8) {
+	    cont_utf8--;
+	    ui--;
+	    esc = NULL;
+	  } else {
+	    int clen;
+	    clen = scheme_utf8_encode(ustr, ui, ui+1, NULL, 0, 0);
+	    if (scheme_isgraphic(ustr[ui])
+		|| scheme_isblank(ustr[ui])) {
+	      cont_utf8 = clen - 1;
+	      esc = NULL;
+	    } else {
+	      esc = minibuf;
+	      isize = clen;
+	    }
+	  }
+	} else if (scheme_isgraphic(v)
+		   || scheme_isblank(v)) {
+	  esc = NULL;
+	} else {
+	  esc = minibuf;
+	}
+	break;
+      }
+
+      if (esc) {
+	if (esc == minibuf) {
+	  sprintf(minibuf, "\\u%.4x", ustr[ui]);
+	}
+
+        if (a < i)
+	  print_this_string(p, str, a, i-a);
+        print_this_string(p, esc, 0, -1);
+        a = i+isize;
+      }
+    }
+    if (a < i)
+      print_this_string(p, str, a, i-a);
+
+    print_this_string(p, "\"", 0, 1);
+  } else if (len) {
+    print_this_string(p, str, 0, len);
+  }
+}
+
+static void
 print_byte_string(char *str, int len, int notdisplay, Scheme_Thread *p)
 {
   char minibuf[8], *esc;
-  int a, i, v, utf8_leftover = 0;
+  int a, i, v;
 
   if (notdisplay) {
     print_this_string(p, "\"", 0, 1);
@@ -1749,33 +1825,14 @@ print_byte_string(char *str, int len, int notdisplay, Scheme_Thread *p)
       default:
 	v = ((unsigned char *)str)[i];
 	if (v > 127) {
-	  if (utf8_leftover > 0) {
-	    esc = NULL;
-	  } else {
-	    /* Well-formed UTF-8 ? */
-	    long ipos;
-	    scheme_utf8_decode(str, i, i + len, 
-			       NULL, 0, -1,
-			       &ipos, 0, 0);
-	    if (ipos == i) {
-	      /* Bad UTF-8. Use octal. */
-	      esc = minibuf;
-	    } else {
-	      /* ipos characters are ok UTF-8, so
-		 print them directly. */
-	      utf8_leftover = (ipos - i);
-	      esc = NULL;
-	    }
-	  }
-	} else if (isprint(((unsigned char *)str)[i])) {
+	  esc = minibuf;
+	} else if (scheme_isgraphic(v) || scheme_isblank(v)) {
 	  esc = NULL;
 	} else {
 	  esc = minibuf;
 	}
 	break;
       }
-
-      utf8_leftover--;
 
       if (esc) {
 	if (esc == minibuf) {
@@ -1798,6 +1855,7 @@ print_byte_string(char *str, int len, int notdisplay, Scheme_Thread *p)
     print_this_string(p, str, 0, len);
   }
 }
+
 
 static void
 print_pair(Scheme_Object *pair, int notdisplay, int compact, 
@@ -1968,7 +2026,7 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 				  0);
 	  minibuf[2 + ch] = 0;
 	} else {
-	  sprintf(minibuf, "#\\u%x", ch);
+	  sprintf(minibuf, "#\\u%.4x", ch);
 	}
 	str = minibuf;
 	break;

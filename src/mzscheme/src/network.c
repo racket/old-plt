@@ -2646,11 +2646,11 @@ static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
 
   b = (unsigned char *)&here_a;
   sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
-  result[0] = scheme_make_byte_string(sa);
+  result[0] = scheme_make_utf8_string(sa);
 
   b = (unsigned char *)&there_a;
   sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
-  result[1] = scheme_make_byte_string(sa);
+  result[1] = scheme_make_utf8_string(sa);
 
   return scheme_values(2, result);
 #else

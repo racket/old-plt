@@ -1600,39 +1600,41 @@ read_string(int is_byte, Scheme_Object *port,
 	}
 	break;
       case 'u':
-	ch = scheme_getc_special_ok(port);
-	if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
-	  int count = 1;
-	  n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
-	  while (count < 6) {
-	    ch = scheme_peekc_special_ok(port);
-	    if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
-	      n = n*16 + (ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10));
-	      scheme_getc(port); /* must be ch */
-	      count++;
-	    } else
-	      break;
-	  }
-	  /* overflow makes a negative character, but also disallow
-	     surrogate points */
-	  if (((n >= 0xD800) && (n <= 0xDFFF))
-	      || (n == 0xFFFE)
-	      || (n == 0xFFFF)) {
-	    ch = -1;
+	if (!is_byte) {
+	  ch = scheme_getc_special_ok(port);
+	  if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
+	    int count = 1;
+	    n = ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10);
+	    while (count < 6) {
+	      ch = scheme_peekc_special_ok(port);
+	      if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
+		n = n*16 + (ch<='9' ? ch-'0' : (scheme_toupper(ch)-'A'+10));
+		scheme_getc(port); /* must be ch */
+		count++;
+	      } else
+		break;
+	    }
+	    /* overflow makes a negative character, but also disallow
+	       surrogate points */
+	    if (((n >= 0xD800) && (n <= 0xDFFF))
+		|| (n == 0xFFFE)
+		|| (n == 0xFFFF)) {
+	      ch = -1;
+	    } else {
+	      ch = n;
+	    }
 	  } else {
-	    ch = n;
+	    if (ch == SCHEME_SPECIAL)
+	      scheme_get_special(port, stxsrc,
+				 scheme_tell_line(port), 
+				 scheme_tell_column(port), 
+				 scheme_tell(port), NULL);
+	    scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+			    "read: no hex digit following \\u in string");
+	    return NULL;
 	  }
-	} else {
-	  if (ch == SCHEME_SPECIAL)
-	    scheme_get_special(port, stxsrc,
-			       scheme_tell_line(port), 
-			       scheme_tell_column(port), 
-			       scheme_tell(port), NULL);
-	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
-			  "read: no hex digit following \\u in string");
-	  return NULL;
-	}
-	break;
+	  break;
+	} /* else FALLTHROUGH!!! */
       default:
 	if ((ch >= '0') && (ch <= '7')) {
 	  for (n = j = 0; j < 3; j++) {
@@ -1655,7 +1657,8 @@ read_string(int is_byte, Scheme_Object *port,
 	  ch = n;
 	} else {
 	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation, 
-			  "read: unknown escape sequence \\%c in string", ch);
+			  "read: unknown escape sequence \\%c in %sstring", ch,
+			  is_byte ? "byte " : "");
 	  return NULL;
 	}
 	break;
@@ -1673,12 +1676,10 @@ read_string(int is_byte, Scheme_Object *port,
       }
     }
 
-    if (is_byte && ch > 255)
-      ch = -1;
     if (ch < 0) {
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
 		      "read: out-of-range character in %sstring",
-		      is_byte ? "byte-" : "");
+		      is_byte ? "byte " : "");
       return NULL;
     }
 
@@ -2099,7 +2100,7 @@ read_character(Scheme_Object *port,
     } else {
       ch = n;
     }
-  } else if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && scheme_isalpha(next)) {
+  } else if ((ch != EOF) && scheme_isalpha(ch) && NOT_EOF_OR_SPECIAL(next) && scheme_isalpha(next)) {
     mzchar *buf, *oldbuf, onstack[32];
     int i;
     long size = 31, oldsize;

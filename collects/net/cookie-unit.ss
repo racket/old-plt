@@ -239,7 +239,7 @@
          (char-set-difference char-set:punctuation (string->char-set "_"))
          char-set:whitespace))
       (define char-set:control (char-set-union char-set:iso-control
-                                               (char-set (latin-1-integer->char 127))));; DEL
+                                               (char-set (integer->char 127))));; DEL
       (define char-set:token (char-set-difference char-set:ascii char-set:tspecials char-set:control))
 
       ;;!

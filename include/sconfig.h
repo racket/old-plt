@@ -471,7 +471,6 @@
 
 # define SYSTEM_TYPE_NAME "windows"
 # define DOS_FILE_SYSTEM
-# define FILENAME_MUST_BE_UTF8
 # if defined(_MSC_VER)
 #  define NO_READDIR
 #  define USE_FINDFIRST
@@ -576,6 +575,7 @@
 
 # define WINDOWS_UNICODE_SUPPORT
 # define USE_ICONV_DLL
+# define NO_MBTOWC_FUNCTIONS
 
 # define FLAGS_ALREADY_SET
 
@@ -736,7 +736,6 @@
 
 # define SYSTEM_TYPE_NAME "dos"
 # define DOS_FILE_SYSTEM
-# define FILENAME_MUST_BE_UTF8
 # define USE_GETDISK
 # define DIRENT_NO_NAMLEN
 # define NO_READLINK
@@ -896,10 +895,6 @@
 
  /* EXPAND_FILENAME_TILDE expands ~ in a filename with a user's home
      directory. */
-
- /* FILENAME_MUST_BE_UTF8 inidicates that filenames must be valid 
-    UTF-8 encodings, because they will be converted before the
-    filesystem is accessed. */
 
  /* NO_STAT_PROC means that there is no stat() function. */
 
@@ -1271,6 +1266,9 @@
 
  /* USE_ICONV_DLL loads iconv.dll lazily for string conversion; no
     headers necessary. */
+
+ /* NO_MBTOWC_FUNCTIONS indicates that locale-to-wchar conversion
+    functions are not available. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

@@ -66,7 +66,7 @@
 	  ;; Process input 3 characters at a time, because 18 bits
 	  ;;  is divisible by both 6 and 8, and 72 (the line length)
 	  ;;  is divisible by 3.
-	  (let ([three (make-string 3)]
+	  (let ([three (make-bytes 3)]
 		[outc (lambda (n)
 			(display (vector-ref digit-base64 n) out))]
 		[done (lambda (fill)
@@ -82,16 +82,16 @@
 		    (display linesep out)
 		    (loop 0))
 		  ;; Next group of 3
-		  (let ([n (read-string-avail! three in)])
+		  (let ([n (read-bytes-avail! three in)])
 		    (cond
 		     [(eof-object? n)
 		      (unless (= pos 0)
 			(done 0))]
 		     [(= n 3)
 		      ;; Easy case:
-		      (let ([a (char->integer (string-ref three 0))]
-			    [b (char->integer (string-ref three 1))]
-			    [c (char->integer (string-ref three 2))])
+		      (let ([a (bytes-ref three 0)]
+			    [b (bytes-ref three 1)]
+			    [c (bytes-ref three 2)])
 			(outc (arithmetic-shift a -2))
 			(outc (+ (bitwise-and #x3f (arithmetic-shift a 4))
 				 (arithmetic-shift b -4)))
@@ -101,14 +101,14 @@
 			(loop (+ pos 4)))]
 		     [else
 		      ;; Hard case: n is 1 or 2
-		      (let ([a (char->integer (string-ref three 0))])
+		      (let ([a (bytes-ref three 0)])
 			(outc (arithmetic-shift a -2))
 			(let* ([next (if (= n 2)
-					 (string-ref three 1)
-					 (read-char in))]
-			       [b (if (char? next)
-				      (char->integer next)
-				      0)])
+					 (bytes-ref three 1)
+					 (read-byte in))]
+			       [b (if (eof-object? next)
+				      0
+				      next)])
 			  (outc (+ (bitwise-and #x3f (arithmetic-shift a 4))
 				   (arithmetic-shift b -4)))
 			  (if (eof-object? next)
@@ -128,13 +128,13 @@
 				      (loop (+ pos 4))))))))])))))]))
 
       (define (base64-decode src)
-	(let ([s (open-output-string)])
-	  (base64-decode-stream (open-input-string src) s)
-	  (get-output-string s)))
+	(let ([s (open-output-bytes)])
+	  (base64-decode-stream (open-input-bytes src) s)
+	  (get-output-bytes s)))
 
       (define (base64-encode src)
-	(let ([s (open-output-string)])
-	  (base64-encode-stream (open-input-string src) s
-				(string #\return #\newline))
-	  (get-output-string s))))))
+	(let ([s (open-output-bytes)])
+	  (base64-encode-stream (open-input-bytes src) s
+				(bytes 13 10))
+	  (get-output-bytes s))))))
 

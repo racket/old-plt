@@ -48,7 +48,9 @@
 
 #ifdef USE_ICONV_DLL
 typedef long iconv_t;
-static char *(*nl_langinfo)(int which);
+static char *nl_langinfo(int which) {
+  return "UTF-8";
+}
 static size_t (*iconv)(iconv_t cd,
 		       char **inbuf, size_t *inbytesleft,
 		       char **outbuf, size_t *outbytesleft);
@@ -58,6 +60,16 @@ static void (*iconv_close)(iconv_t cd);
 # define ICONV_errno 0
 #else
 # define ICONV_errno errno
+#endif
+
+#ifdef MACOS_UNICODE_SUPPORT
+# define mzLOCALE_IS_UTF_8(s) (!s || !(*s))
+#endif
+#ifdef WINDOWS_UNICODE_SUPPORT
+# define mzLOCALE_IS_UTF_8(s) (!s || !(*s))
+#endif
+#ifndef mzLOCALE_IS_UTF_8
+# define mzLOCALE_IS_UTF_8(s) !iconv_open
 #endif
 
 #define mzICONV_KIND 0
@@ -1018,7 +1030,7 @@ do_byte_string_to_char_string_locale(const char *who,
   char *us;
   long olen;
 
-  if (!nl_langinfo || !scheme_locale_on)
+  if (mzLOCALE_IS_UTF_8(scheme_current_locale) || !scheme_locale_on)
     return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm);
 
   if (istart < ifinish) {
@@ -1138,8 +1150,8 @@ do_char_string_to_byte_string_locale(const char *who,
 {
   char *s;
   long olen;
-
-  if (!nl_langinfo || !scheme_locale_on)
+  
+  if (mzLOCALE_IS_UTF_8(scheme_current_locale) || !scheme_locale_on)
     return do_char_string_to_byte_string(cstr, istart, ifinish);
 
   if (istart < ifinish) {
@@ -2109,7 +2121,7 @@ static char *do_convert(iconv_t cd,
 static char *string_to_from_locale(int to_bytes,
 				   char *in, int delta, int len, 
 				   long *olen, int perm)
-     /* Call this function only when icon is available */
+     /* Call this function only when iconv is available */
 {
   Scheme_Object *parts = scheme_null, *one;
   char *c;
@@ -2934,10 +2946,10 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
 
   if ((!strcmp(from_e, "UTF-8")
        || !strcmp(from_e, "UTF-8-permissive")
-       || (!*from_e && !iconv_open))
+       || mzLOCALE_IS_UTF_8(from_e))
       && (!strcmp(to_e, "UTF-8")
-	  || (!*to_e && !iconv_open))) {
-    /* Use the built-in conversion UTF-8<->UTF-8 converter: */
+	  || mzLOCALE_IS_UTF_8(to_e))) {
+    /* Use the built-in UTF-8<->UTF-8 converter: */
     kind = mzUTF8_KIND;
     if (!strcmp(from_e, "UTF-8-permissive"))
       permissive = '?';

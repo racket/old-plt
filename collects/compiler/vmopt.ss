@@ -136,8 +136,10 @@
 		  [(vm:if? ast)
 		   (set-vm:if-then! ast (process! (vm:if-then ast)))
 		   (set-vm:if-else! ast (process! (vm:if-else ast)))
+		   (zodiac:print-start! (current-error-port) ast)
 		   (let* ([seq (vm:sequence-vals (vm:if-then ast))]
-			  [last (list-last seq)])
+			  [last (and (pair? seq) ; optimizations can make it null
+				     (list-last seq))])
 		     (if (vm:control-return? last)
 			 (begin0
 			   (cons ast (vm:sequence-vals (vm:if-else ast)))

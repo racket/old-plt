@@ -78,7 +78,7 @@
 
   (preferences:set-default 'sirmail:self-addresses null
 			   (lambda (x) (and (list? x) (andmap string? x))))
-  (preferences:set-default 'sirmail:fields-to-show '("From" "To" "CC" "Subject" "Date" "X-Mailer")
+  (preferences:set-default 'sirmail:fields-to-show '("From" "To" "CC" "Subject" "Date" "X-Mailer" "X-Uptime")
 			   (lambda (x) (and (list? x) (andmap string? x))))
 
 

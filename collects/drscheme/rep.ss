@@ -1242,7 +1242,7 @@
                    (break-enabled #f)
                    (set! user-thread (current-thread))
                    
-                   (initialize-parameters)
+                   (initialize-parameters user-setting)
                    
                    (set! user-namespace (current-namespace))
                    
@@ -1326,65 +1326,63 @@
         (define repl-initially-active? #f)
         
         (define initialize-parameters ; =User=
-          (lambda ()
-            (let ([setting (fw:preferences:get 'drscheme:settings)])
-              
-              (basis:initialize-parameters
-               user-custodian
-               setting)
-              
-              (exception-reporting-rep this)
-              (current-output-port this-out)
-              (current-error-port this-err)
-              (current-input-port this-in)
-              
-              (global-port-print-handler
-               (let ([old (global-port-print-handler)])
-                 (lambda (value port)
-                   (if (or (eq? port this-result)
-                           (eq? port this-out)
-                           (eq? port this-err))
-                       (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-                                       (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-                                      [mzlib:pretty-print:pretty-print-print-hook
-                                       (lambda (x _ port)
-                                         (evcase port
-                                                 [this-result (this-result-write x)]
-                                                 [this-out (this-out-write x)]
-                                                 [this-err (this-err-write x)]))])
-                         (old value port))
-                       (old value port)))))
-              
-              (print-convert:current-print-convert-hook
-               (lambda (expr basic-convert sub-convert)
-                 (let ([ans (if (is-a? expr mred:snip%)
-                                expr
-                                (basic-convert expr))])
-                   ans)))
-              
-              (current-load
-               (let ([userspace-load (current-load)])
-                 (rec drscheme-load-handler
-                   (lambda (filename)
-                     (unless (string? filename)
-                       (raise (raise-type-error
-                               'drscheme-load-handler
-                               "string"
-                               filename)))
-                     (if (and (basis:zodiac-vocabulary? user-setting)
-                              (let* ([p (open-input-file filename)]
-                                     [loc (zodiac:make-location basis:initial-line
-                                                                basis:initial-column
-                                                                basis:initial-offset
-                                                                filename)]
-                                     [chars (begin0
+          (lambda (setting)
+	    (basis:initialize-parameters
+	     user-custodian
+	     setting)
+	    
+	    (exception-reporting-rep this)
+	    (current-output-port this-out)
+	    (current-error-port this-err)
+	    (current-input-port this-in)
+	    
+	    (global-port-print-handler
+	     (let ([old (global-port-print-handler)])
+	       (lambda (value port)
+		 (if (or (eq? port this-result)
+			 (eq? port this-out)
+			 (eq? port this-err))
+		     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+				     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+				    [mzlib:pretty-print:pretty-print-print-hook
+				     (lambda (x _ port)
+				       (evcase port
+					       [this-result (this-result-write x)]
+					       [this-out (this-out-write x)]
+					       [this-err (this-err-write x)]))])
+		       (old value port))
+		     (old value port)))))
+	    
+	    (print-convert:current-print-convert-hook
+	     (lambda (expr basic-convert sub-convert)
+	       (let ([ans (if (is-a? expr mred:snip%)
+			      expr
+			      (basic-convert expr))])
+		 ans)))
+	    
+	    (current-load
+	     (let ([userspace-load (current-load)])
+	       (rec drscheme-load-handler
+		    (lambda (filename)
+		      (unless (string? filename)
+			(raise (raise-type-error
+				'drscheme-load-handler
+				"string"
+				filename)))
+		      (if (and (basis:zodiac-vocabulary? user-setting)
+			       (let* ([p (open-input-file filename)]
+				      [loc (zodiac:make-location basis:initial-line
+								 basis:initial-column
+								 basis:initial-offset
+								 filename)]
+				      [chars (begin0
                                               (list (read-char p) (read-char p) (read-char p) (read-char p))
                                               (close-input-port p))])
-                                (equal? chars (string->list "WXME"))))
-                         (let ([process-sexps
-                                (let ([last (list (void))])
-                                  (lambda (sexp recur)
-                                    (cond
+				 (equal? chars (string->list "WXME"))))
+			  (let ([process-sexps
+				 (let ([last (list (void))])
+				   (lambda (sexp recur)
+				     (cond
                                       [(basis:process-finish? sexp) last]
                                       [else
                                        (set! last
@@ -1392,58 +1390,58 @@
                                               (lambda () (basis:syntax-checking-primitive-eval sexp))
                                               (lambda x x)))
                                        (recur)])))])
-                           (apply values 
-                                  (let ([text (make-object drscheme:text:text%)])
-                                    (parameterize ([mred:current-eventspace
-                                                    drscheme:init:system-eventspace]) ;; to get the right snipclasses
-                                      (send text load-file filename))
-                                    (begin0
+			    (apply values 
+				   (let ([text (make-object drscheme:text:text%)])
+				     (parameterize ([mred:current-eventspace
+						     drscheme:init:system-eventspace]) ;; to get the right snipclasses
+				       (send text load-file filename))
+				     (begin0
                                       (process-text text process-sexps
                                                     0 
                                                     (send text last-position)
                                                     #t
                                                     #f)
                                       (send text on-close)))))
-                         (userspace-load filename))))))
-              
-              
-              (basis:error-display/debug-handler
-               (lambda (msg zodiac exn)
-                 (queue-system-callback/sync
-                  user-thread
-                  (lambda () 
-                    (report-located-error msg zodiac exn)))))
-              
-              (error-display-handler
-               (rec drscheme-error-display-handler
-                 (lambda (msg)
-                   (let ([rep (exception-reporting-rep)])
-                     (if rep
-                         (send rep report-unlocated-error msg #f)
-                         (mred:message-box "Uncaught Error" msg))))))
-              
-              (current-directory (or (send context get-directory) 
-                                     drscheme:init:first-dir))
-              
-              (exit-handler (lambda (arg) ; =User=
-                              (custodian-shutdown-all user-custodian)))
-              
-              (invoke-teachpack)
-              
-              ;; set all parameters before constructing eventspace
-              ;; so that the parameters are set in the eventspace's
-              ;; parameterization
-              (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)])
-                
-                (mred:event-dispatch-handler
-                 (rec drscheme-event-dispatch-handler ; <= a name for #<...> printout
-                   (lambda (eventspace) ; =User=, =Handler=
-                     ; Breaking is enabled if the user turned on breaks and
-                     ;  is in a `yield'. If we get a break, that's ok, because
-                     ;  the kernel never queues an event in the user's eventspace.
-                     (cond
+			  (userspace-load filename))))))
+	    
+	    
+	    (basis:error-display/debug-handler
+	     (lambda (msg zodiac exn)
+	       (queue-system-callback/sync
+		user-thread
+		(lambda () 
+		  (report-located-error msg zodiac exn)))))
+	    
+	    (error-display-handler
+	     (rec drscheme-error-display-handler
+		  (lambda (msg)
+		    (let ([rep (exception-reporting-rep)])
+		      (if rep
+			  (send rep report-unlocated-error msg #f)
+			  (mred:message-box "Uncaught Error" msg))))))
+	    
+	    (current-directory (or (send context get-directory) 
+				   drscheme:init:first-dir))
+	    
+	    (exit-handler (lambda (arg) ; =User=
+			    (custodian-shutdown-all user-custodian)))
+	    
+	    (invoke-teachpack)
+	    
+	    ;; set all parameters before constructing eventspace
+	    ;; so that the parameters are set in the eventspace's
+	    ;; parameterization
+	    (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)])
+	      
+	      (mred:event-dispatch-handler
+	       (rec drscheme-event-dispatch-handler ; <= a name for #<...> printout
+		    (lambda (eventspace) ; =User=, =Handler=
+					; Breaking is enabled if the user turned on breaks and
+					;  is in a `yield'. If we get a break, that's ok, because
+					;  the kernel never queues an event in the user's eventspace.
+		      (cond
                        [(eq? eventspace user-eventspace)
-                        ; =User=, =Handler=, =No-Breaks=
+					; =User=, =Handler=, =No-Breaks=
                         
                         (let* ([ub? (eq? user-break-enabled 'user)]
                                [break-ok? (if ub?
@@ -1451,43 +1449,43 @@
                                               user-break-enabled)])
                           (break-enabled #f)
                           
-                          ; We must distinguish between "top-level" events and
-                          ;  those within `yield' in the user's program.
+					; We must distinguish between "top-level" events and
+					;  those within `yield' in the user's program.
                           
                           (cond
-                            [(not in-evaluation?)
-                             
-                             (reset-break-state) ; Is this a good idea?
-                             
-                             (protect-user-evaluation
-                              ; Run the dispatch:
-                              (lambda () ; =User=, =Handler=, =No-Breaks=
-                                ; This procedure is responsible for adjusting breaks to
-                                ;  match the user's expectations:
-                                (dynamic-wind
-                                 (lambda () 
-                                   (break-enabled break-ok?)
-                                   (unless ub?
-                                     (set! user-break-enabled 'user)))
-                                 (lambda ()
-                                   (primitive-dispatch-handler eventspace))
-                                 (lambda ()
-                                   (unless ub?
-                                     (set! user-break-enabled (break-enabled)))
-                                   (break-enabled #f))))
-                              ; Cleanup after dispatch
-                              void)
-                             
-                             ; Restore break:
-                             (when ub?
-                               (break-enabled break-ok?))]
-                            [else
-                             ; Nested dispatch; don't adjust interface, and restore break:
-                             (break-enabled break-ok?)
-                             (primitive-dispatch-handler eventspace)]))]
+			   [(not in-evaluation?)
+			    
+			    (reset-break-state) ; Is this a good idea?
+			    
+			    (protect-user-evaluation
+					; Run the dispatch:
+			     (lambda () ; =User=, =Handler=, =No-Breaks=
+					; This procedure is responsible for adjusting breaks to
+					;  match the user's expectations:
+			       (dynamic-wind
+				(lambda () 
+				  (break-enabled break-ok?)
+				  (unless ub?
+				    (set! user-break-enabled 'user)))
+				(lambda ()
+				  (primitive-dispatch-handler eventspace))
+				(lambda ()
+				  (unless ub?
+				    (set! user-break-enabled (break-enabled)))
+				  (break-enabled #f))))
+					; Cleanup after dispatch
+			     void)
+			    
+					; Restore break:
+			    (when ub?
+			      (break-enabled break-ok?))]
+			   [else
+					; Nested dispatch; don't adjust interface, and restore break:
+			    (break-enabled break-ok?)
+			    (primitive-dispatch-handler eventspace)]))]
                        [else 
-                        ; =User=, =Non-Handler=, =No-Breaks=
-                        (primitive-dispatch-handler eventspace)]))))))))
+					; =User=, =Non-Handler=, =No-Breaks=
+                        (primitive-dispatch-handler eventspace)])))))))
         
         (define  reset-console
           (lambda ()

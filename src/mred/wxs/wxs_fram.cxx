@@ -61,6 +61,9 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
 #ifndef wxHIDE_MENUBAR
 # define wxHIDE_MENUBAR 0
 #endif
+#ifndef wxMETAL
+# define wxMETAL 0
+#endif
 
 static Scheme_Object *frameStyle_wxNO_CAPTION_sym = NULL;
 static Scheme_Object *frameStyle_wxMDI_PARENT_sym = NULL;
@@ -69,6 +72,7 @@ static Scheme_Object *frameStyle_wxNO_SYSTEM_MENU_sym = NULL;
 static Scheme_Object *frameStyle_wxNO_RESIZE_BORDER_sym = NULL;
 static Scheme_Object *frameStyle_wxTOOLBAR_BUTTON_sym = NULL;
 static Scheme_Object *frameStyle_wxHIDE_MENUBAR_sym = NULL;
+static Scheme_Object *frameStyle_wxMETAL_sym = NULL;
 
 static void init_symset_frameStyle(void) {
   REMEMBER_VAR_STACK();
@@ -86,12 +90,14 @@ static void init_symset_frameStyle(void) {
   frameStyle_wxTOOLBAR_BUTTON_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("toolbar-button"));
   wxREGGLOB(frameStyle_wxHIDE_MENUBAR_sym);
   frameStyle_wxHIDE_MENUBAR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hide-menu-bar"));
+  wxREGGLOB(frameStyle_wxMETAL_sym);
+  frameStyle_wxMETAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("metal"));
 }
 
 static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!frameStyle_wxHIDE_MENUBAR_sym) WITH_VAR_STACK(init_symset_frameStyle());
+  if (!frameStyle_wxMETAL_sym) WITH_VAR_STACK(init_symset_frameStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -104,6 +110,7 @@ static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   else if (i == frameStyle_wxNO_RESIZE_BORDER_sym) { result = result | wxNO_RESIZE_BORDER; }
   else if (i == frameStyle_wxTOOLBAR_BUTTON_sym) { result = result | wxTOOLBAR_BUTTON; }
   else if (i == frameStyle_wxHIDE_MENUBAR_sym) { result = result | wxHIDE_MENUBAR; }
+  else if (i == frameStyle_wxMETAL_sym) { result = result | wxMETAL; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

@@ -484,8 +484,6 @@
 #  define MKDIR_NO_MODE_FLAG
 # endif
 # if defined(__CYGWIN32__)
-#  define USE_GET_CURRENT_DIRECTORY
-#  define USE_WINDOWS_FIND_FIRST
 #  define DIRENT_NO_NAMLEN
 #  define UNISTD_INCLUDE
 # endif
@@ -577,6 +575,7 @@
 # define REGISTER_POOR_MACHINE
 
 # define WINDOWS_UNICODE_SUPPORT
+# define USE_ICONV_DLL
 
 # define FLAGS_ALREADY_SET
 
@@ -920,12 +919,6 @@
      
  /* MKDIR_NO_MODE_FLAG specifies that mkdir() takes only one argument,
      instead of a directory name and mode flags. */
-
- /* USE_GET_CURRENT_DIRECTORY uses Windows's GetCurrentDirectory()
-    instead of getcwd(). */
-
- /* USE_WINDOWS_FIND_FIRST uses Window's FindFirstFile(), etc.
-    instead for _findfirst(), etc. */
 
   /***********************/
  /*       Ports         */
@@ -1275,6 +1268,9 @@
  /* MACOS_UNICODE_SUPPORT and WINDOWS_UNICODE_SUPPORT indicate that
     platform-native functions should be used for string comparisons
     in the default locale. */
+
+ /* USE_ICONV_DLL loads iconv.dll lazily for string conversion; no
+    headers necessary. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

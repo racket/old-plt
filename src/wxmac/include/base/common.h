@@ -79,6 +79,7 @@ typedef short int WXTYPE;
 #define wxRESIZE_BOX       wxMAXIMIZE_BOX
 #define wxNO_RESIZE_BORDER	    0x00800000
 #define wxHIDE_MENUBAR	    0x01000000
+#define wxMETAL             0x02000000
 
 #define wxDEFAULT_FRAME    (wxRESIZE_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxTHICK_FRAME | wxSYSTEM_MENU | wxCAPTION)
 

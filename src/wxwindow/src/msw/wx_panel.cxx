@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.6 1998/12/07 02:52:30 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.7 1999/03/09 19:53:23 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -172,7 +172,7 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   DWORD msflags = 0, exflags = 0;
   if (style & wxBORDER)
     exflags |= WS_EX_STATICEDGE;
-  msflags |= WS_CHILD | WS_VISIBLE;
+  msflags |= WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
 
   wxPanelWnd *wnd = new wxPanelWnd(cparent, wxCanvasClassName, this, x, y, width, height, 
 				   msflags, exflags);
@@ -424,8 +424,8 @@ void wxPanel::Centre(int direction)
 }
 
 void wxPanel::ChangeToGray(Bool gray)
-{
-  wxWindow::ChangeToGray(gray);
+{
+  wxWindow::ChangeToGray(gray);
   InternalGrayChildren(gray);
 }
 

@@ -600,11 +600,6 @@
 			 (not (stx-pair? (stx-cdr code))))
 		     (raise-syntax-error #f "bad syntax" code))
 		 (let ([body (stx-cdr code)])
-		   (if (stx-null? body)
-		       (raise-syntax-error
-			#f
-			"bad syntax (no definition body)"
-			code))
 		   (let ([first (stx-car body)]) 
 		     (cond
 		      [(identifier? first)
@@ -632,11 +627,22 @@
 				 (bad-symbol (stx-car l)))]
 			    [(identifier? l) #f]
 			    [else (bad-symbol l)])))
-		       (datum->syntax-object
-			(quote-syntax here)
-			`(,base (,(stx-car first)) 
-				(lambda ,(stx-cdr first) ,@(stx->list (stx-cdr body))))
-			code)]
+		       (let ([pbody (stx-cdr body)])
+			 (if (not (stx-list? pbody))
+			     (raise-syntax-error
+			      #f
+			      "bad syntax (illegal use of `.')"
+			      code))
+			 (if (stx-null? pbody)
+			     (raise-syntax-error
+			      #f
+			      "bad syntax (empty procedure body)"
+			      code))
+			 (datum->syntax-object
+			  (quote-syntax here)
+			  `(,base (,(stx-car first)) 
+				  (lambda ,(stx-cdr first) ,@(stx->list pbody)))
+			  code))]
 		      [else
 		       (raise-syntax-error
 			#f

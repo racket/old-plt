@@ -353,7 +353,8 @@ typedef struct Scheme_Struct_Type {
   MZ_HASH_KEY_EX
   short num_slots, num_islots, delta_slots;
   short name_pos;
-  Scheme_Object *type_name;
+  Scheme_Object *name;
+  Scheme_Object *type_name; /* struct: prefix */
   Scheme_Object *inspector;
 
   int num_props;

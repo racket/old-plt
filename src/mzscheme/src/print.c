@@ -1123,6 +1123,24 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       }
       closed = 1;
     }
+  else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type))
+    {
+      print_this_string(p, "#<", 2);
+      print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Type *)obj)->name),
+			    "struct-type:",
+			    SCHEME_SYM_LEN(((Scheme_Struct_Type *)obj)->name));
+      PRINTADDRESS(p, obj);
+      print_this_string(p, ">", 1);
+    }
+  else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_property_type))
+    {
+      print_this_string(p, "#<", 2);
+      print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Property *)obj)->name),
+			    "struct-type-property:", 
+			    SCHEME_SYM_LEN(((Scheme_Struct_Property *)obj)->name));
+      PRINTADDRESS(p, obj);
+      print_this_string(p, ">", 1);
+    }
   else if (SCHEME_INPORTP(obj))
     {
       Scheme_Input_Port *ip;

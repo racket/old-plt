@@ -535,6 +535,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       /* Using Xrender... */
       Picture destp, srcp, maskp;
       wxBitmap *free_bmp = NULL;
+      int mono_src;
+
+      mono_src = (src->GetDepth() == 1);
 
       /* Create format records, if not done already: */
       if (!format) {
@@ -570,18 +573,24 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 				   Colour ? format : mask_format,
 				   0,
 				   NULL);
-      srcp = XRenderCreatePicture(wxAPP_DISPLAY,
-				  GETPIXMAP(src),
-				  (src->GetDepth() == 1) ? mask_format : format,
-				  0,
-				  NULL);
+      {
+	Pixmap spm;
+	spm = GETPIXMAP(src);
+	srcp = XRenderCreatePicture(wxAPP_DISPLAY,
+				    spm,
+				    mono_src ? mask_format : format,
+				    0,
+				    NULL);
+      }
 
       /* Mask case is more difficult if it's not 1 bit: */
       if (mask) {
-	if (mask->GetDepth() == 1) {
+	if (mono_src) {
 	  /* Easy: */
+	  Pixmap mpm;
+	  mpm = GETPIXMAP(mask);
 	  maskp = XRenderCreatePicture(wxAPP_DISPLAY,
-				       GETPIXMAP(mask),
+				       mpm,
 				       mask_format,
 				       0,
 				       NULL);
@@ -594,13 +603,15 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	  wxMemoryDC *tmp;
 	  wxColour *c;
 	  int mw, mh, v;
+	  Pixmap bpm;
 
 	  mw = scaled_width;
 	  mh = scaled_height;
 	  
 	  bm = new wxBitmap();
 	  bm->Create(mw, mh, 8);
-
+	  bpm = GETPIXMAP(bm);
+	  
 	  if (bm->Ok()) {
 	    XImage *img;
 	    int i, j;
@@ -609,7 +620,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	    tmp->SelectObject(mask);
 	    
 	    c = new wxColour(0, 0, 0);
-	    img = XGetImage(wxAPP_DISPLAY, GETPIXMAP(bm), 0, 0, mw, mh, AllPlanes, ZPixmap);
+	    img = XGetImage(wxAPP_DISPLAY, bpm, 0, 0, mw, mh, AllPlanes, ZPixmap);
 	    
 	    for (i = 0; i < mw; i++) {
 	      for (j = 0; j < mh; j++) {
@@ -624,13 +635,13 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
 	    {
 	      GC agc;
-	      agc = XCreateGC(DPY, GETPIXMAP(bm), 0, NULL);
-	      XPutImage(wxAPP_DISPLAY, GETPIXMAP(bm), agc, img, 0, 0, 0, 0, mw, mh);
+	      agc = XCreateGC(DPY, bpm, 0, NULL);
+	      XPutImage(wxAPP_DISPLAY, bpm, agc, img, 0, 0, 0, 0, mw, mh);
 	      XFreeGC(DPY, agc);
 	    }
 
 	    maskp = XRenderCreatePicture(wxAPP_DISPLAY,
-					 GETPIXMAP(bm),
+					 bpm,
 					 alpha_format,
 					 0,
 					 NULL);
@@ -649,9 +660,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
       /* This is the actual blit. */
       XRenderComposite(wxAPP_DISPLAY,
-		       (mask || (src->GetDepth() == 1)) ? PictOpOver : PictOpSrc,
+		       (mask || mono_src) ? PictOpOver : PictOpSrc,
 		       srcp,
-		       mask ? maskp : ((src->GetDepth() == 1) ? srcp : 0),
+		       mask ? maskp : (mono_src ? srcp : 0),
 		       destp,
 		       (long)xsrc, (long)ysrc,
 		       (long)xsrc, (long)ysrc,

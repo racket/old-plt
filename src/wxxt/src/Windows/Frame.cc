@@ -679,7 +679,48 @@ Bool wxFrame::Show(Bool show)
 
 void wxFrame::SetFrameModified(Bool mod)
 {
+  if (!!show_as_mod != !!mod) {
+    char *t;
+    t = GetTitle();
+    t = copystring(t);
+    show_as_mod = mod;
+    SetTitle(t);
+  }
 }
+
+char *wxFrame::GetTitle(void)
+{
+  char *t;
+  t = wxWindow::GetTitle();
+  if (t && show_as_mod) {
+    int len;
+    len = strlen(t);
+    /* Double-check for asterisk: */
+    if (len && t[len-1] == '*') {
+      char *s;
+      s = copystring(t);
+      s[len-1] = 0;
+      t = s;
+    }
+  }
+  return t;
+}
+
+void wxFrame::SetTitle(char *title)
+{
+  if (show_as_mod && title) {
+    int len;
+    char *s;
+    len = strlen(title);
+    s = new WXGC_ATOMIC char[len + 2];
+    memcpy(s, title, len);
+    s[len] = '*';
+    s[len+1] = 0;
+    title = s;
+  }
+  wxWindow::SetTitle(title);
+}
+
 
 //-----------------------------------------------------------------------------
 // virtual event functions

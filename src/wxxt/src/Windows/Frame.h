@@ -78,6 +78,9 @@ public:
     virtual void OnToolbarButton();
     void SetFrameModified(Bool mod);
 
+    virtual char  *GetTitle(void);
+    virtual void  SetTitle(char *title);
+
     void *context;
 
 protected:
@@ -86,7 +89,8 @@ protected:
     int        num_status;
     wxBitmap   *frame_icon;
     wxBitmap   *frame_mask;
-    Bool       being_destroyed;
+    short      being_destroyed;
+    short      show_as_mod;
     long       last_shown_time;
 };
 

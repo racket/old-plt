@@ -229,9 +229,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                                    (or
                                     (get-package-from-cache pspec)
                                     (get-package-from-server pspec)
-                                    (raise (make-exn:fail
-                                            "Could not find matching package"
-                                            (current-continuation-marks))))))])
+                                    (raise-syntax-error #f "Could not find matching package" stx))))])
          (values (apply build-path (pkg-path pkg) (append path (list file-name))) pkg))]
       [_ (raise-syntax-error 'require (format "Illegal PLaneT invocation: ~e" (cdr spec)) stx)]))
   

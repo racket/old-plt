@@ -1591,7 +1591,8 @@
   ;translate-call: (U expression #f) (U special-name id) (list syntax) method-record src-> syntax
   (define (translate-call expr method-name args method-record src)
     (let ((cant-be-null? (never-null? expr))
-          (expression (if expr (translate-expression expr) #f)))
+          (expression (if expr (translate-expression expr) #f))
+          (unique-name (gensym)))
       (cond
         ;Constructor case
         ((special-name? method-name)
@@ -1603,9 +1604,10 @@
            (if cant-be-null?
                (create-syntax #f `(send ,(if expr expression 'this) ,c-name ,@args) (build-src src))
                (create-syntax #f 
-                              `(if (null? ,expression)
-                                   (javaRuntime:nullError 'method)
-                                   (send ,expression ,c-name ,@args))
+                              `(let ((,unique-name ,expression))
+                                 (if (null? ,unique-name)
+                                     (javaRuntime:nullError 'method)
+                                     (send ,unique-name ,c-name ,@args)))
                               (build-src src)))))
           
         ;Normal case
@@ -1638,9 +1640,10 @@
                   (static? (create-syntax #f `(,name ,@args) (build-src src)))
                   (else
                    (create-syntax #f
-                                  `(if (null? ,expression)
-                                       (javaRuntime:nullError 'method)
-                                       (send ,expression ,name ,@args))
+                                  `(let ((,unique-name ,expression))
+                                     (if (null? ,unique-name)
+                                         (javaRuntime:nullError 'method)
+                                         (send ,unique-name ,name ,@args)))
                                   (build-src src)))))))))
         
         (else (error 'translate-call (format "Translate call given ~s as method-name" method-name))))))
@@ -1651,6 +1654,7 @@
     (cond
       ((not expr) #t)
       ((special-name? expr) #t)
+      ((class-alloc? expr) #t)
       ((and (access? expr)
             (local-access? (access-name expr))
             (regexp-match "encl-this-" (id-string (local-access-name (access-name expr))))) #t)

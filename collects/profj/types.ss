@@ -1,3 +1,4 @@
+#cs
 (module types mzscheme
 
   (require (lib "etc.ss")
@@ -246,8 +247,8 @@
                                (fail)
                                (let ((back-path (reverse path)))
                                  (search-for-record key (car back-path) (reverse (cdr back-path)) (lambda () #f) fail))))))
-;            (printf "get-class-record: ~a~n" ctype)
-;            (hash-table-for-each records (lambda (k v) (printf "~a -> ~a~n" k v)))
+            ;(printf "get-class-record: ~a~n" ctype)
+            ;(hash-table-for-each records (lambda (k v) (printf "~a -> ~a~n" k v)))
             (cond
               ((and container 
                     (not (null? outer-record))

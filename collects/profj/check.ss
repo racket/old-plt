@@ -1653,7 +1653,9 @@
                        (get-method-records (id-string name)
                                            (get-record 
                                             (send type-recs get-class-record call-exp #f
-                                                  ((get-importer type-recs) call-exp type-recs level src))
+                                                  ((get-importer type-recs) 
+                                                   (cons (ref-type-class/iface call-exp) (ref-type-path call-exp))
+                                                   type-recs level src))
                                             type-recs)))
                       (else (prim-call-error call-exp name src level)))))
                  (else 

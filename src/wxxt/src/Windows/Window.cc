@@ -37,11 +37,13 @@
 #define  Uses_wxItem
 #include "wx.h"
 #define  Uses_ScrollWinWidget
+#define  Uses_Scrollbar
 #define  Uses_ShellWidget
 #define  Uses_SimpleWidget
 #define  Uses_EnforcerWidget
 #define  Uses_LabelWidget
 #define  Uses_MultiListWidget
+#define  Uses_ScrollbarWidget
 #include "widgets.h"
 
 #include <X11/keysym.h> // needed for IsFunctionKey, etc.
@@ -1607,6 +1609,21 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->rightDown	= ((wxevent->eventType == wxEVENT_TYPE_RIGHT_DOWN)
 				   || (xev->xbutton.state & Button3Mask));
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
+
+	/* Adjust location of mouse-moved events when it's
+	   over sub-parts: */
+	if (xev->xbutton.window != XtWindow(win->X->handle)) {
+	  Widget wgt;
+	  wgt = XtWindowToWidget(XtDisplay(win->X->handle), xev->xbutton.window);
+	  if (wgt) {
+	    Position cx, cy, wx, wy;
+	    XtTranslateCoords(wgt, 0, 0, &cx, &cy);
+	    XtTranslateCoords(win->X->handle, 0, 0, &wx, &wy);
+	    wxevent->x += (cx - wx);
+	    wxevent->y += (cy - wy);
+	  }
+	}
+
 	*continue_to_dispatch_return = FALSE;
 	if (!win->CallPreOnEvent(win, wxevent)) {
 	  if (subWin) {

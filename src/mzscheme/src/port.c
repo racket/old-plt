@@ -3383,7 +3383,7 @@ typedef struct {
 
 static void release_inuse_lock(void *data)
 {
-  top = (Tested_Output_File *)data;
+  Tested_Output_File *top = (Tested_Output_File *)data;
   top->inuse = 0;
 }
 
@@ -4133,8 +4133,6 @@ static void child_done(int ingored)
 END_XFORM_SKIP;
 #endif
 
-#endif
-
 static int sigchld_installed = 0;
 
 static void init_sigchld(void)
@@ -4153,6 +4151,8 @@ static void init_sigchld(void)
     sigchld_installed = 1;
   }
 }
+
+#endif
 
 /*********** Unix/Windows/BeOS: process status stuff *************/
 

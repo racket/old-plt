@@ -105,6 +105,19 @@ extern unsigned long scheme_get_stack_base();
 # define HIDE_FROM_XFORM(x) x
 #endif
 
+/* PPC Linux plays a slimy trick, defining strcpy() as a macro that
+   uses __extension__: */
+#if defined(MZ_PRECISE_GC) && defined(strcpy)
+START_XFORM_SKIP;
+static inline void _mzstrcpy(char *a, char *b)
+{
+  strcpy(a, b);
+}
+END_XFORM_SKIP;
+# undef strcpy
+# define strcpy _mzstrcpy
+#endif
+
 /*========================================================================*/
 /*                             initialization                             */
 /*========================================================================*/

@@ -360,7 +360,7 @@
   ;;  nested function calls because it takes more than one argument:
   (append
    '(memcpy memmove
-     strcmp strcpy strcat memset
+     strcmp strcpy _mzstrcpy strcat memset
      printf sprintf vsprintf vprintf
      strncmp scheme_strncmp
      read write

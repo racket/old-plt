@@ -196,10 +196,6 @@
 			 #f)))
 		    l))))
 	     (lambda () (set! asking-for-quit? #f))))))
-  
-  ;; Read in the preferences file from disk ---------------------------------
-
-  (preferences:read)
 
   ;; We start by opening "Inbox" ----------------------------------------
   

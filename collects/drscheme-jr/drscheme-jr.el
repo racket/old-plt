@@ -68,6 +68,8 @@
 
 (defvar mzrice-error-cursor 0)
 
+(defvar mzrice-previous-buffer 'dummy)
+
 (defun mzrice-next-error ()
   (interactive)
   (let ((case-fold-search nil))
@@ -75,6 +77,10 @@
 	(error "No current process."))
     (pop-to-buffer scheme-buffer)
     (let ((saved-location (point)))
+      (if (not (eq (current-buffer) mzrice-previous-buffer))
+	  (progn
+	    (setq mzrice-error-cursor 0)
+	    (setq mzrice-previous-buffer (current-buffer))))
       (if (> mzrice-error-cursor (point-max)) ; The buffer has been edited;
 	  (setq mzrice-error-cursor 0))	      ; assume it's all gone.
       (goto-char mzrice-error-cursor)

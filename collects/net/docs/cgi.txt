@@ -1,4 +1,4 @@
-Time-stamp: <98/07/14 14:59:37 shriram>
+Time-stamp: <98/08/17 14:48:50 shriram>
 
 Package: cgi
 Collection: net
@@ -15,7 +15,7 @@ binding:
 
   A binding is an association of a form item with its value.  Some form
   items (such as checkboxes) may correspond to multiple bindings.  A
-  binding is a symbol-string pair.
+  binding is a tag-string pair, where a tag is a symbol or a string.
 
 bindings:
 

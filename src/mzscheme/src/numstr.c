@@ -79,7 +79,7 @@ void scheme_init_numstr(Scheme_Env *env)
   scheme_add_global_constant("string->number", 
 			     scheme_make_folding_prim(string_to_number,
 						      "string->number", 
-						      1, 3, 1),
+						      1, 2, 1),
 			     env);
 
   scheme_add_global_constant("integer-bytes->integer", 
@@ -1342,7 +1342,7 @@ string_to_number (int argc, Scheme_Object *argv[])
   long len;
   mzchar *mzstr;
   int decimal_inexact, div_by_zero = 0;
-  Scheme_Object *v, *dbz_result;
+  Scheme_Object *v;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
     scheme_wrong_type("string->number", "string", 0, argc, argv);
@@ -1359,10 +1359,6 @@ string_to_number (int argc, Scheme_Object *argv[])
     }
   } else
     radix = 10;
-  if (argc > 2)
-    dbz_result = argv[2];
-  else
-    dbz_result = scheme_false;
 
   decimal_inexact = SCHEME_TRUEP(scheme_get_param(scheme_config, 
 						  MZCONFIG_READ_DECIMAL_INEXACT));
@@ -1376,10 +1372,7 @@ string_to_number (int argc, Scheme_Object *argv[])
 			 0, NULL, 0, 0, 0, 0,
 			 NULL);
 
-  if (div_by_zero)
-    return dbz_result;
-  else
-    return v;
+  return v;
 }
 
 

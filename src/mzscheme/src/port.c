@@ -3138,7 +3138,7 @@ Scheme_Object *scheme_open_input_file(const char *name, const char *who)
 {
   Scheme_Object *a[1];
 
-  a[0]= scheme_make_byte_string(name);
+  a[0]= scheme_make_path(name);
   return scheme_do_open_input_file((char *)who, 0, 1, a);
 }
 
@@ -3146,7 +3146,7 @@ Scheme_Object *scheme_open_output_file(const char *name, const char *who)
 {
   Scheme_Object *a[2];
 
-  a[0]= scheme_make_byte_string(name);
+  a[0]= scheme_make_path(name);
   a[1] = truncate_replace_symbol;
   return scheme_do_open_output_file((char *)who, 0, 2, a, 0);
 }

@@ -459,10 +459,17 @@ static Scheme_Object *path_p(int argc, Scheme_Object **argv)
 
 static Scheme_Object *path_to_string(int argc, Scheme_Object **argv)
 {
+  Scheme_Object *s;
+
   if (!SCHEME_PATHP(argv[0]))
     scheme_wrong_type("path->string", "path", 0, argc, argv);
 
-  return scheme_byte_string_to_char_string_locale(argv[0]);
+  s = scheme_byte_string_to_char_string_locale(argv[0]);
+
+  if (!SCHEME_CHAR_STRLEN_VAL(s))
+    return scheme_make_utf8_string("?");
+  else
+    return s;
 }
 
 static Scheme_Object *path_to_bytes(int argc, Scheme_Object **argv)

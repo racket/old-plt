@@ -639,6 +639,9 @@
           (define/override (get-corner-bitmap) comment-gif)
           (define/override (get-position) 'left-top)
 
+          (define/public (read-special index source line column position)
+            (raise (make-special-comment "msg" (current-continuation-marks) 1)))
+          
            (define/public (read-one-special index source line column position)
             (raise (make-special-comment "msg" (current-continuation-marks) 1)))
           
@@ -692,6 +695,9 @@
           (define-struct input-length (start-pos end-pos))
 
           (define/private (newline? char) (memq char '(#\015 #\012)))
+
+          (define/public (read-special index source line column position)
+            (read-one-special index source line column position))
           
           (define/public (read-one-special index source line column position)
             (let* ((ed (get-editor))

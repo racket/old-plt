@@ -77,7 +77,6 @@ function can be retrieved with |XtGetValues| as the resource
 	@var frameType = XfwfSunken
 
 
-
 @classvars
 
 @ The Core variable |compress_exposure| is OR'ed with

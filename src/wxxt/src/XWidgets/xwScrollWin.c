@@ -99,7 +99,7 @@ static void compute_sizes(self)Widget self;
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     help += ((XfwfScrolledWindowWidget)self)->xfwfFrame.frameWidth;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll,
-		      selfx + selfw - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
+		      selfx + selfw - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? 1 : 0),
 		      selfy + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
 		      max(1, vsheight + 2*help),
@@ -109,7 +109,7 @@ static void compute_sizes(self)Widget self;
     help += ((XfwfScrolledWindowWidget)self)->xfwfFrame.frameWidth;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll,
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
-		      selfy + selfh - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
+		      selfy + selfh - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? 1 : 0),
 		      max(1, hswidth + 2*help),
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
 		      0);
@@ -117,8 +117,8 @@ static void compute_sizes(self)Widget self;
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     framew = selfw - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + 2 * help;
     frameh = selfh - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + 2 * help;
-    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar) framew -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
-    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar) frameh -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
+    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar) framew -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? -1 : 0);
+    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar) frameh -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? -1 : 0);
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame,
 		      selfx + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      selfy + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
@@ -275,6 +275,7 @@ static XtResource resources[] = {
 {XtNhighlightThickness,XtCHighlightThickness,XtRDimension,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfCommon.highlightThickness),XtOffsetOf(XfwfScrolledWindowRec,xfwfCommon.highlightThickness),XtRImmediate,(XtPointer)0 },
 {XtNtraverseToChild,XtCTraverseToChild,XtRBoolean,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.traverseToChild),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.traverseToChild),XtRImmediate,(XtPointer)TRUE },
 {XtNspacing,XtCSpacing,XtRDimension,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.spacing),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.spacing),XtRImmediate,(XtPointer)0 },
+{XtNedgeBars,XtCEdgeBars,XtRBoolean,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.edgeBars),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.edgeBars),XtRImmediate,(XtPointer)FALSE },
 {XtNscrollbarWidth,XtCScrollbarWidth,XtRDimension,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.scrollbarWidth),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.scrollbarWidth),XtRImmediate,(XtPointer)16 },
 {XtNshadowWidth,XtCShadowWidth,XtRDimension,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.shadowWidth),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.shadowWidth),XtRImmediate,(XtPointer)2 },
 {XtNhideHScrollbar,XtCHideHScrollbar,XtRBoolean,sizeof(((XfwfScrolledWindowRec*)NULL)->xfwfScrolledWindow.hideHScrollbar),XtOffsetOf(XfwfScrolledWindowRec,xfwfScrolledWindow.hideHScrollbar),XtRImmediate,(XtPointer)False },
@@ -303,10 +304,10 @@ XfwfScrolledWindowClassRec xfwfScrolledWindowClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  16,
+/* num_resources 	*/  17,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
-/* compress_exposure 	*/  XtExposeCompressMultiple ,
+/* compress_exposure 	*/  XtExposeCompressMaximal ,
 /* compress_enterleave 	*/  True ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  destroy,

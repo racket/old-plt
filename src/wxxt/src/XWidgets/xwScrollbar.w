@@ -139,6 +139,8 @@ changed from 0 to 2.
 
         @var Boolean drawgrayScrollbar = FALSE
 
+	@var Boolean egdeBar = FALSE
+
 @PRIVATE
 
 @ The three children of the scrollbar are stored in private variables.

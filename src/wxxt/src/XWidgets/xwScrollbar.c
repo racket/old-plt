@@ -149,6 +149,7 @@ static XtResource resources[] = {
 {XtNframeWidth,XtCFrameWidth,XtRDimension,sizeof(((XfwfScrollbarRec*)NULL)->xfwfFrame.frameWidth),XtOffsetOf(XfwfScrollbarRec,xfwfFrame.frameWidth),XtRImmediate,(XtPointer)2 },
 {XtNframeType,XtCFrameType,XtRFrameType,sizeof(((XfwfScrollbarRec*)NULL)->xfwfFrame.frameType),XtOffsetOf(XfwfScrollbarRec,xfwfFrame.frameType),XtRImmediate,(XtPointer)XfwfSunken },
 {XtNdrawgrayScrollbar,XtCDrawgrayScrollbar,XtRBoolean,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.drawgrayScrollbar),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.drawgrayScrollbar),XtRImmediate,(XtPointer)FALSE },
+{XtNegdeBar,XtCEgdeBar,XtRBoolean,sizeof(((XfwfScrollbarRec*)NULL)->xfwfScrollbar.egdeBar),XtOffsetOf(XfwfScrollbarRec,xfwfScrollbar.egdeBar),XtRImmediate,(XtPointer)FALSE },
 };
 
 XfwfScrollbarClassRec xfwfScrollbarClassRec = {
@@ -165,10 +166,10 @@ XfwfScrollbarClassRec xfwfScrollbarClassRec = {
 /* actions      	*/  actionsList,
 /* num_actions  	*/  1,
 /* resources    	*/  resources,
-/* num_resources 	*/  12,
+/* num_resources 	*/  13,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
-/* compress_exposure 	*/  XtExposeCompressMultiple ,
+/* compress_exposure 	*/  XtExposeCompressMaximal ,
 /* compress_enterleave 	*/  True ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  NULL,

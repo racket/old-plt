@@ -238,7 +238,7 @@ XfwfArrowClassRec xfwfArrowClassRec = {
 /* num_resources 	*/  8,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  True ,
-/* compress_exposure 	*/  XtExposeCompressMultiple ,
+/* compress_exposure 	*/  XtExposeCompressMaximal ,
 /* compress_enterleave 	*/  True ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  destroy,
@@ -498,12 +498,10 @@ static void  draw_arrow(self,on)Widget self;int  on;
       y++;
       break;
     case XfwfLeft:
-      x++;
       dir = LEFT;
       break;
     default:
     case XfwfRight:
-      --x;
       dir = RIGHT;
       break;
     }

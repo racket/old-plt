@@ -55,6 +55,16 @@ Widget,int *
 #define XtRDimension "Dimension"
 #endif
 
+#ifndef XtNedgeBars
+#define XtNedgeBars "edgeBars"
+#endif
+#ifndef XtCEdgeBars
+#define XtCEdgeBars "EdgeBars"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 #ifndef XtNscrollbarWidth
 #define XtNscrollbarWidth "scrollbarWidth"
 #endif

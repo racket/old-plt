@@ -115,6 +115,16 @@ Widget,double *,double *
 #define XtRBoolean "Boolean"
 #endif
 
+#ifndef XtNegdeBar
+#define XtNegdeBar "egdeBar"
+#endif
+#ifndef XtCEgdeBar
+#define XtCEgdeBar "EgdeBar"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 typedef struct _XfwfScrollbarClassRec *XfwfScrollbarWidgetClass;
 typedef struct _XfwfScrollbarRec *XfwfScrollbarWidget;
 externalref WidgetClass xfwfScrollbarWidgetClass;

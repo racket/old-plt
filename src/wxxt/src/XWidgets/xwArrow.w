@@ -266,12 +266,10 @@ a timeout routine.
       y++;
       break;
     case XfwfLeft:
-      x++;
       dir = LEFT;
       break;
     default:
     case XfwfRight:
-      --x;
       dir = RIGHT;
       break;
     }

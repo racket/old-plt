@@ -33,6 +33,7 @@ typedef struct {
 Boolean  autoAdjustScrollbars;
 Boolean  traverseToChild;
 Dimension  spacing;
+Boolean  edgeBars;
 Dimension  scrollbarWidth;
 Dimension  shadowWidth;
 Boolean  hideHScrollbar;

@@ -33,10 +33,11 @@ keyboard traversal.
 
 	@var Boolean traverseToChild = TRUE
 
-@ By default, the Frame widget and the Scrollbars are placed 2 pixels
+@ By default, the Frame widget and the Scrollbars are placed 0 pixels
 from each other and from the edges of the ScrolledWindow itself.
 
 	@var Dimension spacing = 0
+	@var Boolean edgeBars = FALSE
 
 @ The width of the scrollbars can be set with the |scrollbarWidth|
 resource. The default is 22 pixels.
@@ -392,7 +393,7 @@ to configure the children.
     if (help > $spacing) help = 0;
     help += $frameWidth;
     XtConfigureWidget($vscroll,
-		      selfx + selfw - $spacing - $scrollbarWidth,
+		      selfx + selfw - $spacing - $scrollbarWidth + ($edgeBars ? 1 : 0),
 		      selfy + $spacing - help,
 		      $scrollbarWidth,
 		      max(1, vsheight + 2*help),
@@ -402,7 +403,7 @@ to configure the children.
     help += $frameWidth;
     XtConfigureWidget($hscroll,
 		      $spacing - help,
-		      selfy + selfh - $spacing - $scrollbarWidth,
+		      selfy + selfh - $spacing - $scrollbarWidth + ($edgeBars ? 1 : 0),
 		      max(1, hswidth + 2*help),
 		      $scrollbarWidth,
 		      0);
@@ -410,8 +411,8 @@ to configure the children.
     if (help > $spacing) help = 0;
     framew = selfw - 2 * $spacing + 2 * help;
     frameh = selfh - 2 * $spacing + 2 * help;
-    if (! $hideVScrollbar) framew -= $scrollbarWidth + $spacing;
-    if (! $hideHScrollbar) frameh -= $scrollbarWidth + $spacing;
+    if (! $hideVScrollbar) framew -= $scrollbarWidth + $spacing + ($edgeBars ? -1 : 0);
+    if (! $hideHScrollbar) frameh -= $scrollbarWidth + $spacing + ($edgeBars ? -1 : 0);
     XtConfigureWidget($frame,
 		      selfx + $spacing - help,
 		      selfy + $spacing - help,

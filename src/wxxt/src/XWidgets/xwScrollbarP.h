@@ -40,6 +40,7 @@ Pixel  scrollbarForeground;
 Dimension  shadow;
 Dimension  minsize;
 Boolean  drawgrayScrollbar;
+Boolean  egdeBar;
 /* private state */
 Widget  arrow1;
 Widget  arrow2;

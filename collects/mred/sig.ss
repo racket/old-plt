@@ -11,8 +11,6 @@
    connections-media-canvas%
    connections-panel%
 
-   active-frame
-
    make-connections-frame%
    make-connections-media-buffer%
    make-connections-media-canvas%

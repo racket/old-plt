@@ -6,20 +6,6 @@
 
     (mred:debug:printf 'invoke "mred:connections@")
 
-    (define active-frame #f)
-
-    (define make-active-frame%
-      (lambda (%)
-	(class-asi %
-	  (rename [super-on-activate on-activate])
-	  (public
-	    [on-activate
-	     (lambda (x)
-	       (set! active-frame (and x this))
-	       (fprintf mred:constants:original-output-port
-			(format "on-activate: ~a~n" active-frame))
-	       (super-on-activate x))]))))
-
     (define make-connections-frame%
       (lambda (%)
 	(class-asi %
@@ -145,7 +131,7 @@
 	       (set! canvases (mzlib:function:remq old-canvas canvases)))]))))
 
     (define connections-panel% (make-connections-panel% wx:panel%))
-    (define connections-frame% (make-connections-frame% (make-active-frame% wx:frame%)))
+    (define connections-frame% (make-connections-frame% wx:frame%))
     (define connections-dialog-box% (make-connections-frame% wx:dialog-box%))
     (define connections-media-edit% (make-connections-media-buffer% wx:media-edit%)) 
     (define connections-media-pasteboard% (make-connections-media-buffer% wx:media-pasteboard%))

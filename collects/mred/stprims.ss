@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.19 1998/02/26 23:54:56 steck Exp $
+;; $Id: stprims.ss,v 1.20 1998/05/12 03:10:21 robby Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -227,7 +227,7 @@
   
   (define make-key-event
     (lambda (key window modifier-list)
-      (let ([event  (make-object wx:key-event% wx:const-event-type-char)]
+      (let ([event  (make-object wx:key-event%)]
 	    [int    (if (integer? key) key (char->integer key))])
 	(send event set-key-code int)
 	(send event set-event-object window)

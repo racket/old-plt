@@ -315,7 +315,7 @@
 					     wx:const-default-frame)]
 				     [name "frame"])
 		   (super-init parent title x y w h
-			       (bitwise-ior style wx:const-allow-auto-resize)
+			       style
 			       name))
 		 args))))
     
@@ -345,6 +345,6 @@
 				     [style wx:const-default-dialog-style]
 				     [name "dialogBox"])
 		   (super-init parent title modal x y w h
-			       (bitwise-ior style wx:const-allow-auto-resize)
+			       style
 			       name))
 		 args)))))

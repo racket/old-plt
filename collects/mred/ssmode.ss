@@ -32,7 +32,7 @@
     (define scheme-init-wordbreak-map
       (lambda (map)
 	(let ([v (send map get-map (char->integer #\-))])
-	  (unless (zero? (bitwise-ior v wx:const-break-for-line))
+	  (unless (zero? (bitwise-and v wx:const-break-for-line))
 	    (send map set-map 
 		  (char->integer #\-)
 		  (- v wx:const-break-for-line))))))

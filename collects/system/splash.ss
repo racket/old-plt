@@ -55,14 +55,14 @@
 	   [(bitmap-flag)
 	    (let ([len (string-length filename)])
 	      (if (<= len 4)
-		  wx:const-bitmap-type-default
+		  wx:const-bitmap-type-xpm
 		  (let ([suffix (substring filename (- len 4) len)])
 		    (cond
 		     [(string-ci=? ".xpm" suffix) wx:const-bitmap-type-xpm]
 		     [(string-ci=? ".xbm" suffix) wx:const-bitmap-type-xbm]
 		     [(string-ci=? ".gif" suffix) wx:const-bitmap-type-gif]
 		     [(string-ci=? "pict" suffix) wx:const-bitmap-type-pict]
-		     [else wx:const-bitmap-type-default]))))]
+		     [else wx:const-bitmap-type-xpm]))))]
 	   [(bitmap) (make-object wx:bitmap% filename bitmap-flag)]
 	   [(_) (unless (send bitmap ok?)
 		  (fprintf (current-error-port) "WARNING: bad bitmap ~s" filename)

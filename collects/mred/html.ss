@@ -15,7 +15,7 @@
 
     (define get-image-from-url
       (lambda (url)
-	(let ([tmp-filename (wx:get-temp-file-name "mredimg")])
+	(let ([tmp-filename (make-temporary-file "mredimg~a")])
 	  (call-with-output-file tmp-filename
 	    (lambda (op)
 	      (mred:url:call/input-url 

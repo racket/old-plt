@@ -32,21 +32,17 @@
   colour-display?
   colour-map%
   command-event%
-  concat-files
   const-align-bottom
   const-align-center
   const-align-top
-  const-allow-auto-resize
   const-always-sb
   const-and
   const-and-invert
   const-and-reverse
   const-base
   const-bdiagonal-hatch
-  const-bitmap-discard-colourmap
   const-bitmap-type-bmp
   const-bitmap-type-bmp-resource
-  const-bitmap-type-default
   const-bitmap-type-gif
   const-bitmap-type-pict
   const-bitmap-type-pict-resource
@@ -65,7 +61,6 @@
   const-cap-projecting
   const-cap-round
   const-caption
-  const-center
   const-centre
   const-change-alignment
   const-change-bigger
@@ -98,7 +93,7 @@
   const-cursor-magnifier
   const-cursor-middle-button
   const-cursor-no-entry
-  const-cursor-painr-brush
+  const-cursor-paint-brush
   const-cursor-pencil
   const-cursor-point-left
   const-cursor-point-right
@@ -133,7 +128,6 @@
   const-edit-undo
   const-equiv
   const-event-type-button-command
-  const-event-type-char
   const-event-type-checkbox-command
   const-event-type-choice-command
   const-event-type-enter-window
@@ -175,13 +169,10 @@
   const-horizontal
   const-horizontal-hatch
   const-hscroll
-  const-icon-asterisk
   const-icon-exclamation
   const-icon-hand
   const-icon-information
-  const-icon-mask
   const-icon-question
-  const-icon-stop
   const-iconize
   const-invert
   const-italic
@@ -296,7 +287,6 @@
   const-msnipbox-ymargin
   const-multiple
   const-nand
-  const-needed-sb
   const-no
   const-no-op
   const-nor
@@ -312,6 +302,9 @@
   const-password
   const-pasteboard-buffer
   const-pos-use-minus-one
+  const-print-ask
+  const-print-postscript
+  const-print-standard
   const-process-enter
   const-ps-file
   const-ps-landscape
@@ -417,7 +410,6 @@
   get-single-choice
   get-single-choice-data
   get-single-choice-index
-  get-temp-file-name
   get-text-from-user
   get-the-buffer-data-class-list
   get-the-snip-class-list
@@ -492,7 +484,6 @@
   snip-class%
   snip-class-list%
   special-control-key
-  string-match?
   strip-menu-codes
   style%
   style-delta%

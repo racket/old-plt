@@ -1062,12 +1062,12 @@ static void (*mzsleep)(float secs, void *fds);
 
 static void MrEdSleep(float secs, void *fds)
 {
-  double now;
+  long now;
 
   if (!(KEEP_GOING))
     return;
   
-  now = (double)scheme_get_milliseconds();
+  now = (long)scheme_get_milliseconds();
   {
     wxTimer *timer = mred_timers;
     
@@ -1075,9 +1075,9 @@ static void MrEdSleep(float secs, void *fds)
       timer = timer->next;
     
     if (timer) {
-      double done = (double)timer->expiration;
+      long done = (long)timer->expiration;
       float diff = done - now;
-      
+
       diff /= 1000;
       if (diff <= 0)
 	secs = 0.00001;

@@ -36,11 +36,11 @@
 	    (file-base-connection-timeout 30))
 	   (paths
 	    (configuration-root "conf")
-	    (host-root ,(build-path (collection-path "handin-server") "status-web-root"))
-	    (log-file-path ,(build-path (current-directory) "web-status-log.ss"))
+	    (host-root ,(path->string (build-path (collection-path "handin-server") "status-web-root")))
+	    (log-file-path ,(path->string (build-path (current-directory) "web-status-log.ss")))
 	    (file-root "htdocs")
-	    (servlet-root ,(build-path (collection-path "handin-server") "status-web-root"))
-	    (password-authentication ,(build-path (current-directory) "web-status-passwords")))))
+	    (servlet-root ,(path->string (build-path (collection-path "handin-server") "status-web-root")))
+	    (password-authentication ,(path->string (build-path (current-directory) "web-status-passwords"))))))
 	(virtual-host-table)))
 
     (define config@

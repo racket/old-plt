@@ -14,11 +14,6 @@
     (lambda (cl)
       (class cl
 	(inherit gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
 	(private*
 	  [delete
 	   (lambda (l p)
@@ -50,13 +45,13 @@
 	(override*
 	 [get-frame%
 	  (lambda ()
-	    (class (super-get-frame%)
+	    (class (super get-frame%)
 	      (inherit-field controls)
 	      (super-new)
 	      (public*
 	       [user-item (lambda (v)
 			    (mred:get-text-from-user "Item name:" "List Item Name" #f v))])
-	      (private
+	      (private-field
 		[items-panel (make-object mred:vertical-panel% controls)]
 		[items-list (make-object mred:list-box%
 					 "Items:" 
@@ -95,21 +90,21 @@
 	   (lambda ()
 	     (cons
 	      `[choices ',(get-items)]
-	      (super-gb-instantiate-arguments)))]
+	      (super gb-instantiate-arguments)))]
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o items-install items)
 	       o))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
+	     (super write stream)
 	     (stream-write-list stream items))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
-	     (items-install (stream-read-list stream)))])
-	(private
+	     (super read stream version)
+	     (items-install (stream-read-list stream version)))])
+	(private-field
 	  [items (init-items)])
 	(super-new))))
    
@@ -118,7 +113,6 @@
       (class cl
 	(inherit-field w h)
 	(inherit get-callback-names get-items get-item-height)
-	(rename [super-gb-get-style gb-get-style])
 	(field
 	  [min-body-width 50]
 	  [sb-width 10]
@@ -152,7 +146,7 @@
 	  [gb-get-style
 	   (lambda ()
 	     (cons 'single
-		   (super-gb-get-style)))]
+		   (super gb-get-style)))]
 	  [gb-get-unified-callback
 	   (lambda ()
 	     (let-values ([(sel dbl) (apply values (get-callback-names))])
@@ -179,8 +173,7 @@
 	(inherit-field w h vertical-layout?)
 	(inherit get-item-height get-max-item-width get-items
 		 gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%])
-	(private
+	(private-field
 	  [circle-size 10]
 	  [margin 2])
 	(override*

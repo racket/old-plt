@@ -20,16 +20,12 @@
 	 (lambda (drs:frame%)
 	   (class drs:frame%
 	     (inherit get-special-menu get-edit-target-object)
-	     (rename [super-get-definitions/interactions-panel-parent
-		      get-definitions/interactions-panel-parent]
-		     [super-add-show-menu-items
-		      add-show-menu-items])
 
 	     (define toolbar #f)
 	     (define toolbar-shown? #f)
 
 	     (define/override (get-definitions/interactions-panel-parent)
-	       (let ([p (super-get-definitions/interactions-panel-parent)])
+	       (let ([p (super get-definitions/interactions-panel-parent)])
 		 (set! toolbar (new toolbar% [parent p][style '(deleted)]))
 		 (add-tools toolbar #f
 			    (lambda (c%) 
@@ -47,7 +43,7 @@
 		 (new vertical-panel% (parent p))))
 
 	     (define/override (add-show-menu-items menu)
-	       (super-add-show-menu-items menu)
+	       (super add-show-menu-items menu)
 	       (make-object menu-item% 
 			    "Show GUI Toolbar"
 			    menu

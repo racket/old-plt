@@ -39,7 +39,7 @@
       (class cl
 	(inherit-field w h)
 	(inherit get-label get-label-size get-callback-names draw-label)
-	(private
+	(private-field
 	  [m 5])
 	(override*
 	  [get-classname (lambda () cn)]
@@ -63,7 +63,7 @@
       (class cl
 	(inherit-field w h)
 	(inherit get-style get-label get-callback-names get-label-size draw-label)
-	(private
+	(private-field
 	  [hspace 2]
 	  [boxsize 12])
 	(override*

@@ -8,17 +8,17 @@
 	   (lib "list.ss")
 	   "utils.ss")
 
-  (define GB:SNIP-VERSION 4)
+  (define GB:SNIP-VERSION 5)
   (define MINOR-VERSION 0)
 
   ;; Info about the output mode:
   (define-struct output-mode (as-class? no-free-vars?))
-  
+
   (define gb:snip%
     (class mred:snip% 
       (init-field [lm 5][tm 5][rm 5][bm 5])
       (inherit get-admin set-snipclass set-count)
-      (private
+      (private-field
 	(need-recalc? #t)
 	(prev-min-w 0)
 	(prev-min-h 0))
@@ -84,7 +84,7 @@
 	      [on-main (lambda (x) x)]
 	      [find-control (lambda (tag) #f)])
 	    (super-make-object (format "~a Settings" (get-kind)) #f 200 10)
-	    (private
+	    (private-field
 	      [main (on-main (make-object mred:vertical-panel% this))]
 	      [name-edit (make-one-line/callback-edit main "Scheme Name:"
 						      (lambda (txt)
@@ -92,7 +92,7 @@
 						      name)])
 	    (field
 	      [controls (make-object mred:vertical-panel% main)])
-	    (override*
+	    (augment*
 	     [on-close (lambda () (do-on-close))])
 	    (send controls set-alignment 'left 'center)
 	    (let* ([p (make-object mred:vertical-panel% main)]
@@ -376,7 +376,9 @@
 		[parent ,parent]
 		,@(gb-instantiate-arguments))))
        (gb-instantiate-arguments
-	(lambda () `([style ',(gb-get-style)])))
+	(lambda () `([style ',(gb-get-style)]
+		     [stretchable-width ,x-stretch?]
+		     [stretchable-height ,y-stretch?])))
 
        (gb-get-default-class (lambda () 'vertical-panel%))
        (gb-aux-instantiate
@@ -479,7 +481,7 @@
 	    o)))
        (write
 	(lambda (stream)
-	  (send stream put name)
+	  (send stream put (string->bytes/utf-8 name))
 	  (send stream put (if x-stretch? 1 0))
 	  (send stream put (if y-stretch? 1 0))
 	  (send stream put (floor (inexact->exact w)))
@@ -487,13 +489,16 @@
 	  (send stream put horizontal-child-alignment)
 	  (send stream put vertical-child-alignment)
 	  (send stream put (if with-border? 1 0))
-	  (send stream put (if id id "BAD"))
+	  (send stream put (string->bytes/utf-8 (if id id "BAD")))
 	  (stream-write-list stream (map (lambda (c) (gb-id c)) children)))))
       (public*
        (read
 	(lambda (stream version)
 	  (base-setup
-	   (if (>= version 3) (send stream get-string) name) ; name
+	   ;; name
+	   (if (>= version 3) 
+	       ((get-bytes->string version) (send stream get-bytes))
+	       name)
 	   (positive? (send stream get-exact))
 	   (positive? (send stream get-exact))
 	   (send stream get-exact) ; w
@@ -501,8 +506,8 @@
 	   (if (>= version 2) (send stream get-exact) horizontal-child-alignment) ; hca
 	   (if (>= version 2) (send stream get-exact) vertical-child-alignment) ; vca
 	   (if (>= version 2) (positive? (send stream get-exact)) #f) ; with-border?
-	   (send stream get-string)
-	   (let ([v (stream-read-list stream)])
+	   ((get-bytes->string version) (send stream get-bytes))
+	   (let ([v (stream-read-list stream version)])
 	     (if (null? v) #f v))))))
       (override*
        (resize 
@@ -575,5 +580,5 @@
 	   (struct output-mode (as-class? no-free-vars?))
 	   
 	   interface->class-table
-	   
+
 	   register-class))

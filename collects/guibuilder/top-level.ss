@@ -43,20 +43,7 @@
 	       invalidate-bitmap-cache
 	       begin-write-header-footer-to-file end-write-header-footer-to-file
 	       get-keymap)
-      (rename [super-interactive-adjust-move interactive-adjust-move]
-	      [super-interactive-adjust-resize interactive-adjust-resize]
-	      [super-on-interactive-move on-interactive-move]
-	      [super-after-interactive-move after-interactive-move]
-	      [super-after-interactive-resize after-interactive-resize]
-	      [super-on-default-event on-default-event]
-	      [super-after-delete after-delete]
-	      [super-after-insert after-insert]
-	      [super-do-paste do-paste]
-	      [super-do-copy do-copy]
-	      [super-copy-self-to copy-self-to]
-	      [super-write-footers-to-file write-footers-to-file]
-	      [super-read-footer-from-file read-footer-from-file])
-      (private 
+      (private-field 
 	[dragging? #f]
 	[pasting? #f]
 	[copying? #f]
@@ -136,7 +123,7 @@
 						  (+ (max old-h h) (* 2 margin)
 						     (or frame-label-h 0) 2)))))])
 
-      (override*
+      (augment*
 	[can-move-to?
 	 (lambda (snip x y dragging?)
 	   (or (not (eq? snip main-panel))
@@ -156,7 +143,7 @@
 	 (lambda (e)
 	   (set! dragging? #t)
 	   (for-each-snip (lambda (s) (send s gb-set-stable-position)))
-	   (super-on-interactive-move e))]
+	   (inner (void) on-interactive-move e))]
 	[on-select
 	 (lambda (s on?)
 	   (when (and (not copying?) on?)
@@ -175,9 +162,8 @@
 	[after-interactive-move
 	 (lambda (e)
 	   (set! dragging? #f)
-	   (super-after-interactive-move e)
 	   
-	   ; Adjust parent of selected snips & move selected snip's children
+	   ;; Adjust parent of selected snips & move selected snip's children
 	   (for-each-selected-snip
 	    (lambda (snip)
 	      (when (not (eq? snip main-panel))
@@ -199,10 +185,11 @@
 	   
 	   (when cur-hilite
 	     (send cur-hilite gb-hilite #f)
-	     (set! cur-hilite #f)))]
+	     (set! cur-hilite #f))
+
+	   (inner (void) after-interactive-move e))]
 	[interactive-adjust-move
 	 (lambda (snip x-box y-box)
-	   (super-interactive-adjust-move snip x-box y-box)
 	   ;; This doesn't really work very well.
 	   '(let ([parent (send snip gb-get-parent)])
 	     (when parent
@@ -216,21 +203,23 @@
 		 (when (and (<= x (unbox x-box) (+ x w))
 			    (<= y (unbox y-box) (+ y h)))
 		   (set-box! x-box (send snip gb-get-stable-x))
-		   (set-box! y-box (send snip gb-get-stable-y)))))))]
+		   (set-box! y-box (send snip gb-get-stable-y))))))
+	   (inner (void) interactive-adjust-move snip x-box y-box))]
 	[interactive-adjust-resize
 	 (lambda (snip wb hb)
-	   (super-interactive-adjust-resize snip wb hb)
 	   (let-values ([(x-min y-min) (send snip gb-get-saved-min-size)])
 	     (when (or (not (gb-x-stretch? snip))
 		       (<= (unbox wb) x-min))
 	       (set-box! wb x-min))
 	     (when (or (not (gb-y-stretch? snip))
 		       (<= (unbox hb) y-min))
-	       (set-box! hb y-min))))]
+	       (set-box! hb y-min)))
+	   (inner (void) interactive-adjust-resize snip wb hb))]
 	[after-interactive-resize
 	 (lambda (snip)
-	   (super-after-interactive-resize snip)
-	   (send snip gb-need-recalc-size))]
+	   (inner (void) after-interactive-resize snip)
+	   (send snip gb-need-recalc-size))])
+      (override*
 	[on-default-event
 	 (lambda (e)
 	   (unless dragging?
@@ -262,7 +251,8 @@
 		       (set! cur-hilite s)
 		       (send s gb-hilite #t))
 		     (end-edit-sequence))))))
-	   (super-on-default-event e))]
+	   (super on-default-event e))])
+      (augment*
 	[on-double-click
 	 (lambda (snip e)
 	   (send snip gb-open-dialog))]
@@ -272,23 +262,24 @@
 	   (let ([parent (send snip gb-get-parent)])
 	     (when parent
 	       (send parent gb-remove-child snip)))
-	   (super-after-delete snip))]
+	   (inner (void) after-delete snip))]
 	[can-insert?
 	 (lambda (snip before x y)
 	   (is-a? snip gb:snip%))]
 	[after-insert
 	 (lambda (snip behind x y)
-	   (super-after-insert snip behind x y)
 	   (when pasting?
 	     (dynamic-wind
 	      (lambda () (set! pasting? #f))
 	      (lambda () (send snip gb-install this #f))
-	      (lambda () (set! pasting? #t)))))]
-	[do-paste
+	      (lambda () (set! pasting? #t))))
+	   (inner (void) after-insert snip behind x y))])
+      (override*
+        [do-paste
 	 (lambda (time)
 	   (dynamic-wind
 	       (lambda () (set! pasting? #t))
-	       (lambda () (super-do-paste time))
+	       (lambda () (super do-paste time))
 	       (lambda () (set! pasting? #f)))
 	   (let ([a-paste #f])
 	     (for-each-snip
@@ -339,7 +330,7 @@
 				 ((close-selected method) child))
 			       (send s gb-get-children))))])
 		  (for-each (close-selected (lambda (x) (add-selected x))) selected)
-		  (super-do-copy time delete?)
+		  (super do-copy time delete?)
 		  (for-each (close-selected (lambda (x) (remove-selected x))) selected))))
 	    (lambda () (set! copying? #f))))])
       (public*
@@ -365,7 +356,7 @@
        [top-level-type FRAME-MODE]
        [frame-label "Frame"]
        [top-name "top"])
-      (private
+      (private-field
        [frame-label-w #f]
        [frame-label-h #f]
        [last-frame-paint-w 0]
@@ -386,12 +377,11 @@
 	   (unless configure-frame
 	     (set! configure-frame (make-object 
 				    (class mred:frame%
-				       (rename [super-on-close on-close])
-				       (override*
+				       (augment*
 					[on-close
 					 (lambda ()
-					   (super-on-close)
-					   (set! configure-frame #f))])
+					   (set! configure-frame #f)
+					   (inner (void) on-close))])
 				       (super-new))
 				    "Output"))
 	     (let ([p (make-object mred:vertical-panel% configure-frame)])
@@ -491,15 +481,15 @@
 			 (send dc set-font f)))))))))]
 	[write-footers-to-file
 	 (lambda (stream)
-	   (super-write-footers-to-file stream)
+	   (super write-footers-to-file stream)
 	   (let ([out (lambda (name val)
 			(let ([info (box 0)])
 			  (begin-write-header-footer-to-file stream name info)
 			  (send stream put val)
 			  (end-write-header-footer-to-file stream (unbox info))))])
 	     (out "gb:mode" top-level-type)
-	     (out "gb:title" frame-label)
-	     (out "gb:top-name" top-name)
+	     (out "gb:title-utf8" (string->bytes/utf-8 frame-label))
+	     (out "gb:top-name-utf8" (string->bytes/utf-8 top-name))
 	     (out "gb:show" (if auto-show? 1 0))))]
 	[read-footer-from-file
 	 (lambda (stream kind)
@@ -509,16 +499,20 @@
 		    (min -LAST-MODE- 
 			 (max -FIRST-MODE- (send stream get-exact))))]
 	     [(string=? kind "gb:title") 
-	      (set! frame-label (send stream get-string))]
+	      (set! frame-label (bytes->string/latin-1 (send stream get-bytes)))]
+	     [(string=? kind "gb:title-utf8") 
+	      (set! frame-label (bytes->string/utf-8 (send stream get-bytes)))]
+	     [(string=? kind "gb:top-name-utf8") 
+	      (set! top-name (bytes->string/latin-1 (send stream get-bytes)))]
 	     [(string=? kind "gb:top-name") 
-	      (set! top-name (send stream get-string))]
+	      (set! top-name (bytes->string/utf-8 (send stream get-bytes)))]
 	     [(string=? kind "gb:show") 
 	      (set! auto-show? (positive? (send stream get-exact)))]
-	     [else (super-read-footer-from-file stream kind)]))]
+	     [else (super read-footer-from-file stream kind)]))]
 	[copy-self-to (lambda (e)
-			(send e on-load-file #f #f)
-			(super-copy-self-to e)
-			(send e after-load-file #t))]
+			(send e prepare-to-load)
+			(super copy-self-to e)
+			(send e done-loading #t))]
 	[copy-self (lambda ()
 		     (let ([e (new gb:edit%
 				   [auto-show? auto-show?]
@@ -527,7 +521,7 @@
 				   [top-name top-name])])
 		       (copy-self-to e)
 		       e))])
-      (private
+      (private-field
 	[main-panel #f])
       (public*
 	[get-main-panel (lambda () main-panel)]
@@ -541,11 +535,11 @@
 	   (send main-panel set-id "0")
 	   (send main-panel gb-need-recalc-size)
 	   (set-modified #f))])
-      (override*
-	[on-load-file
-	 (lambda (file mode)
+      (public*
+	[prepare-to-load
+	 (lambda ()
 	   (set! pasting? #t))]
-	[after-load-file
+	[done-loading
 	 (lambda (ok?)
 	   (set! pasting? #f)
 	   (when ok?
@@ -553,6 +547,13 @@
 	     (send main-panel set-id "0")
 	     (handle-new-arrivals)
 	     (set-modified #f)))])
+      (augment*
+       [on-load-file
+	(lambda (file mode)
+	  (prepare-to-load))]
+       [after-load-file
+	(lambda (ok?)
+	  (done-loading ok?))])
 
       ;; Code generation:
       (public*

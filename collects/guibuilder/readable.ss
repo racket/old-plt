@@ -11,9 +11,9 @@
 
       (define/override (read f)
 	(let ([e (make-object gb:edit%)])
-	  (send e on-load-file #f #f)
+	  (send e prepare-to-load)
 	  (send e read-from-file f)
-	  (send e after-load-file #t)
+	  (send e done-loading #t)
 	  (make-object gui-code-snip% e)))
 
       (super-new)
@@ -28,12 +28,9 @@
   (define gui-code-snip%
     (class* editor-snip% (readable-snip<%>)
       (inherit get-editor set-min-width set-min-height set-snipclass get-admin)
-      (rename [super-on-event on-event])
 
-      (define/public (read-one-special index source line column position)
-	(values (send (get-editor) build-code #f #f)
-		1
-		#t))
+      (define/public (read-special source line column position)
+	(send (get-editor) build-code #f #f))
 
       (define/override (write f)
 	(send (get-editor) write-to-file f))
@@ -49,7 +46,7 @@
 		    tool-menu this 
 		    (- (send e get-x) x)
 		    (- (send e get-y) y)))
-	    (super-on-event dc x y editorx editory e)))
+	    (super on-event dc x y editorx editory e)))
 
       (super-new)
       (set-snipclass gui-snip-class)))

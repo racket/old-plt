@@ -14,11 +14,7 @@
     (lambda (cl)
       (class cl
 	(inherit gb-need-recalc-size get-style)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read])
-	(private
+	(private-field
 	  [initial "value"])
 	(public*
 	  [get-initial (lambda () initial)]
@@ -34,10 +30,10 @@
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class (super-get-frame%)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)
-	       (private
+	       (private-field
 		 [initial-text
 		  (make-one-line/callback-edit controls "Initial:"
 					       (lambda (txt)
@@ -47,17 +43,17 @@
 
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o initial-install initial)
 	       o))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
-	     (send stream put initial))]
+	     (super write stream)
+	     (send stream put (string->bytes/utf-8 initial)))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
-	     (initial-install (send stream get-string)))])
+	     (super read stream version)
+	     (initial-install ((get-bytes->string version) (send stream get-bytes))))])
 	(super-new))))
 
   (define gb:make-text-hscroll-checkable-snip%
@@ -69,7 +65,6 @@
 						      enable
 						      (send snip get-tagged-value 'multi))))
 	(inherit get-tagged-value)
-	(rename [super-gb-get-style gb-get-style])
 	(override*
 	  [gb-get-style
 	   (lambda () 
@@ -77,7 +72,7 @@
 	      (if (get-tagged-value 'hscroll)
 		  '(hscroll)
 		  null)
-	      (super-gb-get-style)))])
+	      (super gb-get-style)))])
 	(super-new))))
   
   (define gb:make-text-snip%
@@ -87,9 +82,7 @@
 	(inherit get-initial-size get-initial
 		 get-callback-names get-multi
 		 get-label)
-	(rename [super-gb-get-style gb-get-style]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
-	(private
+	(private-field
 	  [margin 2])
 	(override*
 	  [get-classname (lambda () cn)]
@@ -110,7 +103,7 @@
 				(list "-change-callback" "-return-callback" "-focus-callback"))]
 	  [gb-get-default-class (lambda () 'text-field%)]
 	  [gb-get-style (lambda () (append
-				    (super-gb-get-style)
+				    (super gb-get-style)
 				    (if (get-multi) '(multiple) '(single))))]
 	  [gb-get-unified-callback
 	   (lambda ()
@@ -126,7 +119,7 @@
 	   (lambda ()
 	     (cons
 	      `[init-value ,(get-initial)]
-	      (super-gb-instantiate-arguments)))])
+	      (super gb-instantiate-arguments)))])
 	(super-new))))
   
   (define gb:text-snip% (gb:make-text-snip%

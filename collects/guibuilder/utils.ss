@@ -5,7 +5,7 @@
 	   (lib "etc.ss")
 	   (lib "list.ss"))
 
-  (define-syntax (private stx)
+  (define-syntax (private-field stx)
     (syntax-case stx ()
       [(_ (id val) ...)
        (syntax/loc stx (begin (define id val) ...))]))
@@ -57,15 +57,21 @@
     (send stream put (length l))
     (for-each
      (lambda (i)
-       (send stream put i))
+       (send stream put (string->bytes/utf-8 i)))
      l))
   
-  (define (stream-read-list stream)
-    (let ([n (send stream get-exact)])
+  (define (get-bytes->string version)
+    (if (version . >= . 5)
+	bytes->string/utf-8
+	bytes->string/latin-1))
+
+  (define (stream-read-list stream version)
+    (let ([n (send stream get-exact)]
+	  [b->s (get-bytes->string version)])
       (let loop ([n n])
 	(if (zero? n)
 	    null
-	    (cons (send stream get-string) (loop (sub1 n)))))))
+	    (cons (b->s (send stream get-bytes)) (loop (sub1 n)))))))
 
   (define cached-region #f)
   (define cached-region-dc #f)
@@ -75,6 +81,7 @@
 	  [r2 (if (eq? dc cached-region-dc)
 		  cached-region
 		  (make-object mred:region% dc))])
+      (set! cached-region-dc #f)
       (send r2 set-rectangle x y w h)
       (send r2 intersect r)
       (send dc set-clipping-region r2)
@@ -83,10 +90,11 @@
       (set! cached-region r2)
       (set! cached-region-dc dc)))
   
-  (provide private
+  (provide private-field
 	   make-one-line/callback-edit
 	   make-number-control
 	   new-name
+	   get-bytes->string	   
 	   stream-write-list
 	   stream-read-list
 	   with-clipping-region))

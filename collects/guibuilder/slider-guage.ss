@@ -15,11 +15,6 @@
       (class cl
 	(inherit-field vertical-layout?)
 	(inherit get-label get-callback-names gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
 	(field
 	  [init-value 0]
 	  [min-value 0]
@@ -43,10 +38,10 @@
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class (super-get-frame%)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)
-	       (private
+	       (private-field
 		 [min-val (make-number-control controls "Minimum:" 0 (lambda () -10000) (lambda () 10000) 
 					       (lambda (x) 
 						 (set! min-value x) 
@@ -92,22 +87,22 @@
 	      `[min-value ,min-value]
 	      `[max-value ,max-value]
 	      `[init-value ,init-value]
-	      (super-gb-instantiate-arguments)))]
+	      (super gb-instantiate-arguments)))]
 	  
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o slider-install min-value max-value init-value)
 	       o))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
+	     (super write stream)
 	     (send stream put min-value)
 	     (send stream put max-value)
 	     (send stream put init-value))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
+	     (super read stream version)
 	     (slider-install (send stream get-exact)
 			     (send stream get-exact)
 			     (send stream get-exact)))])
@@ -127,11 +122,6 @@
       (class cl
 	(inherit-field vertical-layout?)
 	(inherit get-label gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
 	(field
 	  [max-value 10]
 	  [min-height 10]
@@ -143,10 +133,10 @@
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class (super-get-frame%)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)
-	       (private
+	       (private-field
 		 [max-val (make-number-control controls "Maximum:" 10 (lambda () 1) (lambda () 10000) 
 					       (lambda (x) 
 						 (set! max-value x) 
@@ -173,20 +163,20 @@
 	   (lambda ()
 	     (list*
 	      `[range ,max-value]
-	      (super-gb-instantiate-arguments)))]
+	      (super gb-instantiate-arguments)))]
 	  
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o gauge-install max-value)
 	       o))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
+	     (super write stream)
 	     (send stream put max-value))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
+	     (super read stream version)
 	     (gauge-install (send stream get-exact)))])
 	(super-new))))
   

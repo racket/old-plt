@@ -17,20 +17,15 @@
     (lambda (cl deflabel)
       (class cl
 	(inherit get-style gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class (super-get-frame%)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (override*
 		 [get-kind (lambda () deflabel)])
 	       (super-new)
-	       (private
+	       (private-field
 		 [label-buffer (make-one-line/callback-edit controls "Label:"
 							    (lambda (txt)
 							      (set! label txt)
@@ -38,7 +33,7 @@
 							    label)])))]
 	  [gb-instantiate-arguments
 	   (lambda ()
-	     `(,@(super-gb-instantiate-arguments)
+	     `(,@(super gb-instantiate-arguments)
 	       [label ,(get-label)]))])
 	(field
 	  [label deflabel])
@@ -61,25 +56,23 @@
 	(override*
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o label-install label)
 	       o))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
-	     (send stream put label))]
+	     (super write stream)
+	     (send stream put (string->bytes/utf-8 label)))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
-	     (label-install (send stream get-string)))])
+	     (super read stream version)
+	     (label-install ((get-bytes->string version) (send stream get-bytes))))])
 	(super-new))))
 
   (define gb:make-callback-snip%
     (lambda (cl)
       (class cl
 	(inherit-field name)
-	(rename [super-gb-aux-instantiate gb-aux-instantiate]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
 	(public*
 	  [get-callback-kinds (lambda () (list "-callback"))]
 	  [get-callback-code (lambda ()
@@ -96,7 +89,7 @@
 	(override*
 	  [gb-instantiate-arguments
 	   (lambda ()
-	     `(,@(super-gb-instantiate-arguments)
+	     `(,@(super gb-instantiate-arguments)
 	       [callback ,(gb-get-unified-callback)]))]
 	  [gb-aux-instantiate
 	   (lambda (mode)
@@ -109,7 +102,7 @@
 			     `(define ,n ,c)))
 		       (get-callback-names) (get-callback-code))
 		  null)
-	      (super-gb-aux-instantiate mode)))])
+	      (super gb-aux-instantiate mode)))])
 	(super-new))))
   
   (define gb:make-text-labelled-snip%
@@ -117,12 +110,7 @@
       (class (gb:make-text-label-snip% cl deflabel)
 	(inherit-field w h)
 	(inherit get-label-size draw-label gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-gb-get-style gb-get-style])
-	(private
+	(private-field
 	  [hmargin 2]
 	  [vertical-label? (init-vertical-label?)])
 	(public*
@@ -142,10 +130,10 @@
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class (super-get-frame%)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)
-	       (private
+	       (private-field
 		 [direction-radio
 		  (make-object mred:radio-box% "Label Position:" '("Top" "Left")
 			       controls 
@@ -178,20 +166,20 @@
 	     (cons (if vertical-label?
 		       'vertical-label
 		       'horizontal-label)
-		   (super-gb-get-style)))]
+		   (super gb-get-style)))]
 
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o labelpos-install vertical-label?)
 	       o))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
+	     (super write stream)
 	     (send stream put (if vertical-label? 1 0)))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
+	     (super read stream version)
 	     (labelpos-install (positive? (send stream get-exact))))])
 	(super-new))))
 
@@ -201,18 +189,13 @@
     (lambda (cl)
       (class cl
 	(inherit gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-gb-get-style gb-get-style])
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class (super-get-frame%)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)
-	       (private
+	       (private-field
 		 [layout-direction-radio
 		  (make-object mred:radio-box%
 			       "Layout:"
@@ -237,19 +220,19 @@
 	    (cons (if vertical-layout?
 		      'vertical
 		      'horizontal)
-		  (super-gb-get-style)))]
+		  (super gb-get-style)))]
 	 [copy
 	  (lambda ()
-	    (let ([o (super-copy)])
+	    (let ([o (super copy)])
 	      (send o layout-install vertical-layout?)
 	      o))]
 	 [write
 	  (lambda (stream)
-	    (super-write stream)
+	    (super write stream)
 	    (send stream put (if vertical-layout? 1 0)))]
 	 [read
 	  (lambda (stream version)
-	    (super-read stream version)
+	    (super read stream version)
 	    (layout-install (positive? (send stream get-exact))))])
 	(super-new))))
 
@@ -260,28 +243,23 @@
   (define gb:make-configure-snip%
     (lambda (cl tag init)
       (class cl
-	(rename [super-copy copy]
-		[super-write write]
-		[super-read read]
-		[super-get-tagged-value get-tagged-value]
-		[super-set-tagged-value set-tagged-value])
-	(private
+	(private-field
 	  [v init])
 	(override*
 	  [get-tagged-value
 	   (lambda (t)
 	     (if (eq? t tag)
 		 v
-		 (super-get-tagged-value t)))]
+		 (super get-tagged-value t)))]
 	  [set-tagged-value
 	   (lambda (t v-in)
 	     (if (eq? t tag)
 		 (set! v v-in)
-		 (super-set-tagged-value t v-in)))]
+		 (super set-tagged-value t v-in)))]
 
 	  [copy
 	   (lambda ()
-	     (let ([o (super-copy)])
+	     (let ([o (super copy)])
 	       (send o set-tagged-value tag v)
 	       o))])
 	(super-new))))
@@ -290,23 +268,20 @@
     (lambda (cl tag label init change-cb init-cb)
       (class (gb:make-configure-snip% cl tag init)
 	(inherit gb-need-recalc-size get-tagged-value set-tagged-value)
-	(rename [super-get-frame% get-frame%]
-		[super-write write]
-		[super-read read])
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class*/names (frame super-i super-mo super-new) (super-get-frame%) ()
+	     (define frame this)
+	     (class (super get-frame%)
 	       (inherit-field controls)
-	       (rename [super-find-control find-control])
 	       (override*
 		[find-control
 		 (lambda (t)
 		   (if (eq? t tag)
 		       c
-		       (super-find-control t)))])
+		       (super find-control t)))])
 	       (super-new)
-	       (private
+	       (private-field
 		 [c (make-object mred:check-box% 
 				 label controls
 				 (lambda (c e)
@@ -317,11 +292,11 @@
 	       (init-cb frame this)))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
+	     (super write stream)
 	     (send stream put (if (get-tagged-value tag) 1 0)))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
+	     (super read stream version)
 	     (set-tagged-value tag (positive? (send stream get-exact))))])
 	(super-new))))
 
@@ -344,16 +319,14 @@
     (lambda (cl tag label choices)
       (class (gb:make-configure-snip% cl tag 0)
 	(inherit gb-need-recalc-size get-tagged-value set-tagged-value)
-	(rename [super-get-frame% get-frame%]
-		[super-write write]
-		[super-read read])
 	(override*
 	  [get-frame%
 	   (lambda ()
-	     (class*/names (frame super-i super-mo super-new) (super-get-frame%) ()
+	     (define frame this)
+	     (class (super get-frame%)
 	       (inherit-field controls)
 	       (super-new)
-	       (private
+	       (private-field
 		 [c (make-object mred:choice% 
 				 label choices controls
 				 (lambda (c e)
@@ -362,11 +335,11 @@
 	       (send c set-selection (get-tagged-value tag))))]
 	  [write
 	   (lambda (stream)
-	     (super-write stream)
+	     (super write stream)
 	     (send stream put (get-tagged-value tag)))]
 	  [read
 	   (lambda (stream version)
-	     (super-read stream version)
+	     (super read stream version)
 	     (set-tagged-value tag (send stream get-exact)))])
 	(super-new))))
   

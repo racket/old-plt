@@ -35,14 +35,13 @@
       (class cl
 	(inherit-field w h)
 	(inherit get-hscroll get-vscroll)
-	(rename [super-get-frame% get-frame%])
 	(field
 	  [sb-width 10]
 	  [canvas-min-space 15])
 	(override*
 	 [get-frame%
 	  (lambda ()
-	    (class (super-get-frame%)
+	    (class (super get-frame%)
 	     (override*
 	      [get-kind (lambda () item-kind)])
 	     (super-new)))]
@@ -69,12 +68,11 @@
     (lambda (cl cn)
       (class cl
 	(inherit get-hscroll get-vscroll gb-get-instantiate-class-getter)
-	(rename [super-gb-get-style gb-get-style])
 	(override*
 	  [gb-get-style
 	   (lambda ()
 	     (append
-	      (super-gb-get-style)
+	      (super gb-get-style)
 	      (cond
 	       [(and (get-hscroll) (get-vscroll)) '(hscroll vscroll)]
 	       [(get-hscroll) '(hscroll)]
@@ -124,7 +122,6 @@
     (lambda (cl cn)
       (class cl
 	(inherit get-hscroll-val get-vscroll-val)
-	(rename [super-gb-get-style gb-get-style])
 	(override*
 	  [get-classname (lambda () cn)]
 	  [init-name (lambda () (new-name "ecanvas"))]
@@ -133,7 +130,7 @@
 	  [gb-get-style
 	   (lambda ()
 	     (append
-	      (super-gb-get-style)
+	      (super gb-get-style)
 	      (case (get-hscroll-val)
 		[(0) null]
 		[(1) '(hide-hscroll)]

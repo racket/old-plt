@@ -35,7 +35,7 @@
   (define toolbar%
     (class mred:canvas%
       (inherit min-height stretchable-height get-dc)
-      (private
+      (private-field
        [margin 2]
        [icon-size 16]
        [tools null]
@@ -61,7 +61,7 @@
 		       (set-tool-active?! active-tool #t)
 		       (on-paint))
 		     (loop (cdr l) (+ x w)))))))])
-      (private
+      (private-field
        [can-drag #f])
       (override*
        [on-paint

@@ -21,13 +21,12 @@
 	   "slider-guage.ss"
 	   "canvas.ss")
   
-  (define my-base-frame% framework:frame:text-info-file%)
+  (define my-base-frame% framework:frame:editor%)
 
   (define gb:frame%
     (class my-base-frame% 
       (init [file #f])
       (inherit get-editor show get-area-container get-menu-bar)
-      (rename [super-help-menu:after-about help-menu:after-about])
 
       (define gb-editor #f)
       (define (get-gb-editor)
@@ -36,10 +35,10 @@
       (override*	
 	[get-editor% (lambda () 
 		       (class framework:text:info%
-			  (inherit insert)
-			  (super-new)
-			  (set! gb-editor (new gb:edit%))
-			  (insert (make-object mred:editor-snip% gb-editor))))])
+			 (inherit insert)
+			 (super-new)
+			 (set! gb-editor (new gb:edit%))
+			 (insert (make-object mred:editor-snip% gb-editor))))])
       
       (define toolbar #f)
       (public*

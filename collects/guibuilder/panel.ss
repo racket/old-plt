@@ -19,12 +19,10 @@
 		 set-vertical-child-alignment
 		 set-with-border
 		 gb-need-recalc-size)
-	(rename [super-get-frame% get-frame%]
-		[super-gb-instantiate-arguments gb-instantiate-arguments])
 	(override*
 	 [get-frame%
 	  (lambda ()
-	    (class (super-get-frame%)
+	    (class (super get-frame%)
 	      (inherit-field controls)
 	      (super-new)
 	      (field
@@ -63,7 +61,7 @@
 	(override*
 	 [gb-instantiate-arguments
 	  (lambda ()
-	    `(,@(super-gb-instantiate-arguments)
+	    `(,@(super gb-instantiate-arguments)
 	      [alignment '(,(case horizontal-child-alignment
 			      [(1) 'left]
 			      [(2) 'center]

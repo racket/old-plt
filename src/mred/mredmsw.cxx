@@ -417,7 +417,7 @@ void RegisterGDIObject(HANDLE x)
 {
   if (!gdi_objects) {
     wxREGGLOB(gdi_objects);
-    gdi_objects = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+    gdi_objects = scheme_hash_table(7, SCHEME_hash_ptr);
     orig_exit = scheme_exit;
     scheme_exit = clean_up_and_exit;
   }

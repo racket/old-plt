@@ -214,6 +214,38 @@
 
 (test #f = 1+2i 2+i)
 
+;; Test transitivity in mixed exact--inexact settings
+;; (Thanks again to Aubrey Jaffer for the starting point.)
+(define (test-trans expect op nop a b c)
+  ;; Make sure the tests check what we want to check:
+  (test #t = (exact->inexact a) b)
+  (test #t = (exact->inexact c) b)
+  (test #t = (exact->inexact (- a)) (- b))
+  (test #t = (exact->inexact (- c)) (- b))
+  ;; The real tests:
+  (test expect op a b)
+  (test expect op b c)
+  (test expect op a b c)
+  (test expect nop (- a) (- b))
+  (test expect nop (- b) (- c))
+  (test expect nop (- a) (- b) (- c))
+  (test expect nop c b)
+  (test expect nop b a)
+  (test expect nop c b a)
+  (test expect op (- c) (- b))
+  (test expect op (- b) (- a))
+  (test expect op (- c) (- b) (- a)))
+(test-trans #t < >= 1237940039285380274899124223 1.2379400392853803e+27 1237940039285380274899124225)
+(test-trans #t < >= 3713820117856140824697372668/3 1.2379400392853803e+27 3713820117856140824697372676/3)
+(test-trans #f > <= 1237940039285380274899124223 1.2379400392853803e+27 1237940039285380274899124225)
+(test-trans #f > <= 3713820117856140824697372668/3 1.2379400392853803e+27 3713820117856140824697372676/3)
+(test-trans #f = = 1237940039285380274899124223 1.2379400392853803e+27 1237940039285380274899124225)
+(test-trans #f = = 3713820117856140824697372668/3 1.2379400392853803e+27 3713820117856140824697372676/3)
+(test-trans #t <= > 1237940039285380274899124223 1.2379400392853803e+27 1237940039285380274899124225)
+(test-trans #t <= > 3713820117856140824697372668/3 1.2379400392853803e+27 3713820117856140824697372676/3)
+(test-trans #f >= < 1237940039285380274899124223 1.2379400392853803e+27 1237940039285380274899124225)
+(test-trans #f >= < 3713820117856140824697372668/3 1.2379400392853803e+27 3713820117856140824697372676/3)
+
 (define (test-nan.0 f . args)
   (apply test +nan.0 f args))
 

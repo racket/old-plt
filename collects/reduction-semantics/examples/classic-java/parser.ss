@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.4 2004/08/10 15:55:58 cobbe Exp $
+;; $Id: parser.ss,v 1.5 2004/08/10 17:00:18 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -11,8 +11,7 @@
 
 (module parser mzscheme
 
-  (require (lib "list.ss" "lib")
-           (lib "etc.ss")
+  (require (lib "etc.ss")
            (lib "match.ss")
            (lib "contract.ss")
            "utils.ss"
@@ -187,21 +186,22 @@
          (fields ...)
          methods ...)
        (make-temp-class name superclass
-                        (map parse-field fields)
+                        (map (parse-field (make-class-type name)) fields)
                         (map parse-method methods))]
       [bogus (raise (make-exn:aj:parse "bad definition"
                                        (current-continuation-marks)
                                        bogus))]))
 
   ;; Parses a raw field definition.
-  ;; parse-field :: SExpr -> Field
+  ;; parse-field :: Type[Class] -> SExpr -> Field
   (define parse-field
-    (match-lambda
-      [((? type-name? type) (? field-name? fd))
-       (make-field (parse-type type) fd)]
-      [bogus (raise (make-exn:aj:parse "bad field definition"
-                                       (current-continuation-marks)
-                                       bogus))]))
+    (lambda (declaring-class)
+      (match-lambda
+        [((? type-name? type) (? field-name? fd))
+         (make-field (parse-type type) declaring-class fd)]
+        [bogus (raise (make-exn:aj:parse "bad field definition"
+                                         (current-continuation-marks)
+                                         bogus))])))
 
   ;; parses the raw representation of a type
   ;; parse-type :: SExpr -> Type

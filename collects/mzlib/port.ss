@@ -1,7 +1,8 @@
 
 (module port mzscheme
   (require (lib "etc.ss")
-	   (lib "contract.ss"))
+	   (lib "contract.ss")
+	   (lib "list.ss"))
 
   (provide open-output-nowhere
 	   make-pipe-with-specials
@@ -133,11 +134,20 @@
   ;;  0 always
   (define (make-input-port/read-to-peek name read fast-peek close)
     (define lock-semaphore (make-semaphore 1))
+    (define commit-semaphore (make-semaphore 1))
     (define-values (peeked-r peeked-w) (make-pipe))
     (define peeked-end 0)
     (define special-peeked null)
     (define special-peeked-tail #f)
     (define progress-requested? #f)
+    (define manager-th #f)
+    (define manager-ch #f)
+    (define (suspend-commit)
+      (when manager-ch
+	(channel-put manager-ch #f)))
+    (define (resume-commit)
+      (when manager-ch
+	(channel-put manager-ch #f)))
     (define (try-again)
       (wrap-evt
        (semaphore-peek-evt lock-semaphore)
@@ -150,7 +160,10 @@
       (call-with-semaphore
        lock-semaphore
        (lambda ()
-	 (do-read-it s))
+	 (suspend-commit)
+	 (begin0
+	  (do-read-it s)
+	  (resume-commit)))
        try-again))
     (define (do-read-it s)
       (if (char-ready? peeked-r)
@@ -180,7 +193,10 @@
       (call-with-semaphore
        lock-semaphore
        (lambda ()
-	 (do-peek-it s skip unless-evt))
+	 (suspend-commit)
+	 (begin0
+	  (do-peek-it s skip unless-evt)
+	  (resume-commit)))
        try-again))
     (define (do-peek-it s skip unless-evt)
       (let ([v (peek-bytes-avail!* s skip unless-evt peeked-r)])
@@ -264,12 +280,15 @@
 			    n)
 			  (loop (- sk len) (cdr l))))])))])
 	    v)))
-    (define (commit-it amt unless-evt dont-evt)
+    (define (commit-it amt unless-evt done-evt)
       (call-with-semaphore
        lock-semaphore
        (lambda ()
-	 (do-commit-it amt unless-evt dont-evt))))
-    (define (do-commit-it amt unless-evt dont-evt)
+	 (suspend-commit)
+	 (begin0
+	  (do-commit-it amt unless-evt done-evt)
+	  (resume-commit)))))
+    (define (do-commit-it amt unless-evt done-evt)
       (if (sync/timeout 0 unless-evt)
 	  #f
 	  (let* ([pos (file-position peeked-r)]
@@ -279,14 +298,8 @@
 		       [l special-peeked])
 	      (cond
 	       [(amt . <= . 0)
-		;; Enough has been peeked...
-		(unless (zero? p-commit)
-		  (peek-byte peeked-r (sub1 amt))
-		  (port-commit-peeked amt #f peeked-r))
-		(set! special-peeked l)
-		(when (null? special-peeked)
-		  (set! special-peeked-tail #f))
-		#t]
+		;; Enough has been peeked. Do commit...
+		(actual-commit p-commit l unless-evt done-evt)]
 	       [(null? l)
 		;; Requested commit was larger than previous peeks
 		#f]
@@ -306,6 +319,72 @@
 		      (loop  (- amt bl) (cdr l))))]
 	       [else
 		(loop (sub1 amt) (cdr l))])))))
+    (define (actual-commit p-commit l unless-evt done-evt)
+      ;; The `finish' proc finally, actually, will commit...
+      (define (finish)
+	(unless (zero? p-commit)
+	  (peek-byte peeked-r (sub1 p-commit))
+	  (port-commit-peeked p-commit unless-evt always-evt peeked-r))
+	(set! special-peeked l)
+	(when (null? special-peeked)
+	  (set! special-peeked-tail #f))
+	(when (and progress-requested? (zero? p-commit))
+	  (make-progress))
+	#t)
+      ;; If we can sync done-evt immediately, then finish.
+      (if (sync/timeout 0 (wrap-evt done-evt (lambda (x) #t)))
+	  (finish)
+	  ;; We need to wait, so we'll have to release the lock.
+	  ;; Send the work to a manager thread.
+	  (let ([result-ch (make-channel)])
+	    (unless manager-th
+	      (set! manager-ch (make-channel))
+	      (set! manager-th (thread manage-commits)))
+	    (thread-resume manager-th (current-thread))
+	    (channel-put manager-ch (list finish unless-evt done-evt result-ch))
+	    (semaphore-post lock-semaphore)
+	    (resume-commit)
+	    (begin0
+	     (sync result-ch)
+	     (semaphore-wait lock-semaphore)
+	     (suspend-commit)))))
+    (define (manage-commits)
+      (let loop ([commits null] [suspended? #t])
+	(apply
+	 sync
+	 (handle-evt manager-ch
+		     (lambda (c)
+		       (if c
+			   ;; adding a commit
+			   (loop (cons c commits) suspended?)
+			   ;; suspend/resume request:
+			   (loop commits (not suspended?)))))
+	 (if suspended?
+	     (list never-evt)
+	     (map (lambda (c)
+		    (define (send-result v)
+		      ;; Create a new thread to send the result asynchronously:
+		      (thread-resume
+		       (thread (lambda ()
+				 (channel-put (list-ref c 3) v)))
+		       (current-thread))
+		      (loop (remq c commits) #f))
+		    ;; Choose between done and unless:
+		    (choice-evt
+		     (handle-evt (list-ref c 1)
+				 (lambda (x)
+				   ;; unless ready, which means that the commit must fail
+				   (send-result #f)))
+		     (handle-evt (list-ref c 2)
+				 (lambda (x)
+				   ;; done-evt ready, which means that the commit
+				   ;;  must succeed.
+				   ;; If we get here, then commits are not
+				   ;; suspended, so we implicitly have the
+				   ;; lock.
+				   ((list-ref c 0))
+				   (send-result #t)))))
+		  commits)))))
     (make-input-port
      name
      ;; Read

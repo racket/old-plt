@@ -1067,7 +1067,7 @@ struct Scheme_Input_Port
   Scheme_Object *read_handler;
   Scheme_Object *name;
   Scheme_Object *peeked_read, *peeked_write;
-  Scheme_Object *progress_evt, *input_lock, *input_giveup;
+  Scheme_Object *progress_evt, *input_lock, *input_giveup, *input_extras, *input_extras_ready;
   unsigned char ungotten[24];
   int ungotten_count;
   Scheme_Object *special, *ungotten_special;

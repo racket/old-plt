@@ -193,7 +193,7 @@ static Scheme_Object *make_sema(int n, Scheme_Object **p)
 static Scheme_Object *make_sema_repost(int n, Scheme_Object **p)
 {
   if (!SCHEME_SEMAP(p[0]))
-    scheme_wrong_type("semaphore-peek-sbl", "semaphore", 0, n, p);
+    scheme_wrong_type("semaphore-peek-evt", "semaphore", 0, n, p);
  
   return scheme_make_sema_repost(p[0]);
 }

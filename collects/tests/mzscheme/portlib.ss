@@ -5,6 +5,78 @@
 
 (require (lib "port.ss"))
 
+;; pipe and pipe-with-specials commmit tests
+(define (test-pipe-commit make-pipe)
+  (let-values ([(in out) (make-pipe)])
+    (display "apple" out)
+    (test #"app" peek-bytes 3 0 in)
+    (let ([sema (make-semaphore 1)])
+      (test #t port-commit-peeked 3 (port-progress-evt in) sema in)
+      (test #f semaphore-try-wait? sema))
+    (test #"le" read-bytes 2 in)
+    (display "banana" out)
+    (test #"ban" peek-bytes 3 0 in)
+    ;; Set up a commit that fails, because the done-evt never becomes ready:
+    (let* ([r '?]
+	   [unless-evt (port-progress-evt in)]
+	   [th (thread
+		(lambda ()
+		  (set! r (port-commit-peeked 3 unless-evt never-evt in))))])
+      (sleep 0.01)
+      (test #t thread-running? th)
+      (test #\b peek-char in)
+      (sleep 0.01)
+      (test #t thread-running? th)
+      (test #f sync/timeout 0 unless-evt)
+      (test #\b read-char in)
+      (sleep 0.01)
+      (test th sync th)
+      (test #f values r))
+    (test "anana" read-string 5 in)
+    ;; Set up two commits, pick one to succeed:
+    (let ([go (lambda (which peek?)
+		(display "donut" out)
+		(test #"don" peek-bytes 3 0 in)
+		(let* ([r1 '?]
+		       [r2 '?]
+		       [s1 (make-semaphore)]
+		       [s2 (make-semaphore)]
+		       [unless-evt (port-progress-evt in)]
+		       [th1 (thread
+			     (lambda ()
+			       (set! r1 (port-commit-peeked 1 unless-evt (wrap-evt s1 void) in))))]
+		       [_ (sleep 0.01)]
+		       [th2 (thread
+			     (lambda ()
+			       (set! r2 (port-commit-peeked 2 unless-evt (semaphore-peek-evt s2) in))))])
+		  (sleep 0.01)
+		  (test #t thread-running? th1)
+		  (test #t thread-running? th2)
+		  (when peek?
+		    (test #"do" peek-bytes 2 0 in)
+		    (sleep 0.01))
+		  (unless (= which 3)
+		    (semaphore-post (if (= which 1) s1 s2)))
+		  (when (= which 3)
+		    (test #"do" read-bytes 2 in))
+		  (sleep 0.01)
+		  (test unless-evt sync/timeout 0 unless-evt)
+		  (test #f thread-running? th1)
+		  (sleep 0.01)
+		  (test #f thread-running? th2)
+		  (test (= which 1) values r1)
+		  (test (= which 2) values r2)
+		  (test (if (= which 1) #\o #\n) read-char in)
+		  (test (if (= which 1) #"nut" #"ut") read-bytes (if (= which 1) 3 2) in)))])
+      (go 1 #f)
+      (go 2 #f)
+      (go 1 #t)
+      (go 2 #t)
+      (go 3 #f))))
+(test-pipe-commit make-pipe)
+(test-pipe-commit make-pipe-with-specials)
+
+
 ;; copy-port and make-pipe-with-specials tests
 (let ([s (let loop ([n 10000][l null])
 	   (if (zero? n)

@@ -1663,23 +1663,6 @@ long scheme_get_byte_string(const char *who,
 				       NULL);
 }
 
-void scheme_wait_input_allowed(Scheme_Input_Port *ip, int nonblock)
-{
-  while (ip->input_lock) {
-    scheme_post_sema(ip->input_giveup);
-    scheme_wait_sema(ip->input_lock, nonblock ? -1 : 0);
-  }
-}
-
-static void release_input_lock(void *_ip)
-{
-  Scheme_Input_Port *ip = (Scheme_Input_Port *)_ip;
-
-  scheme_post_sema_all(ip->input_lock);
-  ip->input_lock = NULL;
-  ip->input_giveup = NULL;
-}
-
 int scheme_unless_ready(Scheme_Object *unless)
 {
   if (!unless)
@@ -1694,91 +1677,253 @@ int scheme_unless_ready(Scheme_Object *unless)
   return 0;
 }
 
-int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
-			       long _size,
-			       Scheme_Object *unless_evt,
-			       Scheme_Object *target_evt)
+
+void scheme_wait_input_allowed(Scheme_Input_Port *ip, int nonblock)
 {
-  Scheme_Object *v, *sema, *a[2];
-  volatile long size = _size;
-  int did;
+  while (ip->input_lock) {
+    scheme_post_sema_all(ip->input_giveup);
+    scheme_wait_sema(ip->input_lock, nonblock ? -1 : 0);
+  }
+}
 
-  if (scheme_wait_sema(unless_evt, 1))
-    return 0;
+static void release_input_lock(Scheme_Input_Port *ip)
+{
+  scheme_post_sema_all(ip->input_lock);
+  ip->input_lock = NULL;
+  ip->input_giveup = NULL;
+}
 
-  /* This sema makes other threads wait before reading: */
-  sema = scheme_make_sema(0);
-  ip->input_lock = sema;
+static void elect_new_main(Scheme_Input_Port *ip)
+{
+  if (ip->input_extras_ready) {
+    scheme_post_sema_all(ip->input_extras_ready);
+    ip->input_extras = NULL;
+    ip->input_extras_ready = NULL;
+  }
+}
 
-  /* This sema lets other threads try to make progress,
-     if the current target doesn't work out */
-  sema = scheme_make_sema(0);
-  ip->input_giveup = sema;
-  
-  a[0] = target_evt;
-  a[1] = ip->input_giveup;
-  
-  BEGIN_ESCAPEABLE(release_input_lock, ip);
-  v = scheme_sync(2, a);
-  END_ESCAPEABLE();
+static void release_input_lock_and_elect_new_main(void *_ip)
+{
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)_ip;
 
-  release_input_lock((void *)ip);
+  release_input_lock(ip);
+  elect_new_main(ip);
+}
 
-  did = 0;
+static void remove_extra(void *ip_v)
+{
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)SCHEME_CAR(ip_v);
+  Scheme_Object *v = SCHEME_CDR(ip_v), *ll, *prev;
 
-  if (!SAME_OBJ(v, a[1])) {
-    /* Read succeeded */
-    Scheme_Get_String_Fun gs;
-
-    /* First remove ungotten_count chars */
-    if (ip->ungotten_count) {
-      if (ip->ungotten_count > size)
-	ip->ungotten_count -= size;
-      else {
-	size -= ip->ungotten_count;
-	ip->ungotten_count = 0;
-      }
-      if (ip->progress_evt)
-	post_progress(ip);
-      did = 1;
+  prev = NULL;
+  for (ll = ip->input_extras; ll; prev = ll, ll = SCHEME_CDR(ll)) {
+    if (SAME_OBJ(ll, SCHEME_CDR(v))) {
+      if (prev)
+	SCHEME_CDR(prev) = SCHEME_CDR(ll);
+      else
+	ip->input_extras = SCHEME_CDR(ll);
+      SCHEME_CDR(ll) = NULL;
+      break;
     }
+  }
 
-    if (size) {
-      Scheme_Input_Port *pip;
+  /* Tell the main commit thread to reset */
+  scheme_post_sema_all(ip->input_giveup);
+}
 
-      if (ip->peek_string_fun) {
-	/* If the port supplies its own peek, then we don't
-	   have peeked_r, so pass NULL as a buffer to the port's
-	   read proc. The read proc must not block. */
-	gs = ip->get_string_fun;
-	pip = ip;
+static int complete_peeked_read_via_get(Scheme_Input_Port *ip,
+					long size)
+{
+  Scheme_Get_String_Fun gs;
+  int did;
+  
+  did = 0;
+  
+  /* Target event is ready, so commit must succeed */
+  
+  /* First remove ungotten_count chars */
+  if (ip->ungotten_count) {
+    if (ip->ungotten_count > size)
+      ip->ungotten_count -= size;
+    else {
+      size -= ip->ungotten_count;
+      ip->ungotten_count = 0;
+    }
+    if (ip->progress_evt)
+      post_progress(ip);
+    did = 1;
+  }
+  
+  if (size) {
+    Scheme_Input_Port *pip;
+
+    if (ip->peek_string_fun) {
+      /* If the port supplies its own peek, then we don't
+	 have peeked_r, so pass NULL as a buffer to the port's
+	 read proc. The read proc must not block. */
+      gs = ip->get_string_fun;
+      pip = ip;
+    } else {
+      /* Otherwise, peek was implemented through peeked_{w,r}: */
+      if (ip->peeked_read) {
+	int cnt;
+	cnt = pipe_char_count(ip->peeked_read);
+	if ((cnt < size) && (ip->pending_eof == 2))
+	  ip->pending_eof = 1;
+	pip = (Scheme_Input_Port *)ip->peeked_read;
+	gs = pip->get_string_fun;
       } else {
-	/* Otherwise, peek was implemented through peeked_{w,r}: */
-	if (ip->peeked_read) {
-	  int cnt;
-	  cnt = pipe_char_count(ip->peeked_read);
-	  if ((cnt < size) && (ip->pending_eof == 2))
-	    ip->pending_eof = 1;
-	  pip = (Scheme_Input_Port *)ip->peeked_read;
-	  gs = pip->get_string_fun;
-	} else {
-	  gs = NULL;
-	  pip = NULL;
-	}
+	gs = NULL;
+	pip = NULL;
       }
-
-      if (gs) {
-	size = gs(pip, NULL, 0, size, 1, NULL);
-	if (size > 0) {
-	  if (ip->progress_evt)
-	    post_progress(ip);
-	  did = 1;
-	}
+    }
+      
+    if (gs) {
+      size = gs(pip, NULL, 0, size, 1, NULL);
+      if (size > 0) {
+	if (ip->progress_evt)
+	  post_progress(ip);
+	did = 1;
       }
     }
   }
    
   return did;
+}
+
+static Scheme_Object *return_data(void *data, int argc, Scheme_Object **argv)
+{
+  return (Scheme_Object *)data;
+}
+
+int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
+			       long _size,
+			       Scheme_Object *unless_evt,
+			       Scheme_Object *target_evt)
+{
+  Scheme_Object *v, *sema, *a[2], **aa, *l;
+  volatile long size = _size;
+  int n, current_leader = 0;
+
+  if (!SCHEME_SEMAP(target_evt) 
+      && !SAME_TYPE(SCHEME_TYPE(target_evt), scheme_channel_put_type)
+      && !SAME_TYPE(SCHEME_TYPE(target_evt), scheme_semaphore_repost_type)) {
+    /* Make an event whose value is itself */
+    a[0] = target_evt;
+    v = scheme_make_closed_prim(return_data, target_evt);
+    a[1] = v;
+    target_evt = scheme_wrap_evt(2, a);
+    ((Scheme_Closed_Primitive_Proc *)v)->data = target_evt;
+  }
+
+  while (1) {
+    if (scheme_wait_sema(unless_evt, 1)) {
+      if (current_leader)
+	elect_new_main(ip);
+      return 0;
+    }
+
+    if (!current_leader && ip->input_giveup) {
+      /* Some other thread is already trying to commit.
+	 Ask it to sync on our target, too */
+      v = scheme_make_pair(scheme_make_integer(_size), target_evt);
+      l = scheme_make_pair(v, ip->input_extras);
+      ip->input_extras = l;
+      scheme_post_sema_all(ip->input_giveup);
+
+      if (!ip->input_extras_ready) {
+	sema = scheme_make_sema(0);
+	ip->input_extras_ready = sema;
+      }
+
+      a[0] = ip->input_extras_ready;
+      l = scheme_make_pair((Scheme_Object *)ip, v);
+      BEGIN_ESCAPEABLE(remove_extra, l);
+      scheme_sync(1, a);
+      END_ESCAPEABLE();
+
+      if (!SCHEME_CDR(v)) {
+	/* We were selected, so the commit succeeded. */
+	return SCHEME_TRUEP(SCHEME_CAR(v)) ? 1 : 0;
+      }
+    } else {
+      /* No other thread is trying to commit. This one is hereby
+	 elected "main" if multiple threads try to commit. */
+
+      /* This sema makes other threads wait before reading: */
+      sema = scheme_make_sema(0);
+      ip->input_lock = sema;
+      
+      /* This sema lets other threads try to make progress,
+	 if the current target doesn't work out */
+      sema = scheme_make_sema(0);
+      ip->input_giveup = sema;
+      
+      if (ip->input_extras) {
+	/* There are other threads trying to commit, and
+	   as main thread, we'll help them out. */
+	n = 2;
+	for (l = ip->input_extras; l ; l = SCHEME_CDR(l)) {
+	  n++;
+	}
+	n += 2;
+	aa = MALLOC_N(Scheme_Object *, n);
+	n = 2;
+	for (l = ip->input_extras; l ; l = SCHEME_CDR(l)) {
+	  aa[n++] = SCHEME_CDR(SCHEME_CAR(l));
+	}
+      } else {
+	/* This is the only thread trying to commit */
+	n = 2;
+	aa = a;
+      }
+
+      aa[0] = target_evt;
+      aa[1] = ip->input_giveup;
+
+      /* FIXME: suspend here is a problem */
+      BEGIN_ESCAPEABLE(release_input_lock_and_elect_new_main, ip);
+      v = scheme_sync(n, aa);
+      END_ESCAPEABLE();
+      
+      release_input_lock((void *)ip);
+      
+      if (SAME_OBJ(v, target_evt)) {
+	elect_new_main(ip);
+	return complete_peeked_read_via_get(ip, size);
+      }
+
+      if (n > 2) {
+	/* Check whether one of the others was selected: */
+	for (l = ip->input_extras; l; l = SCHEME_CDR(l)) {
+	  if (SAME_OBJ(v, SCHEME_CDR(SCHEME_CAR(l)))) {
+	    /* Yep. Clear the cdr to tell the relevant thread
+	       that it was selected, and reset the extras. */
+	    v = SCHEME_CAR(l);
+	    SCHEME_CDR(v) = NULL;
+	    size = SCHEME_INT_VAL(SCHEME_CAR(v));
+	    elect_new_main(ip);
+	    if (complete_peeked_read_via_get(ip, size))
+	      SCHEME_CAR(v) = scheme_true;
+	    else
+	      SCHEME_CAR(v) = scheme_false;
+	    return 0;
+	  }
+	}
+      }
+
+      current_leader = 1;
+
+      /* Technically redundant, but avoid a thread swap
+	 if we know the commit isn't going to work: */
+      if (scheme_wait_sema(unless_evt, 1)) {
+	elect_new_main(ip);
+	return 0;
+      }
+      
+      scheme_thread_block(0.0);
+    }
+  }
 }
 
 int scheme_peeked_read(Scheme_Object *port,

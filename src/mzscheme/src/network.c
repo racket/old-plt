@@ -75,6 +75,7 @@ static int mzerrno = 0;
 #endif
 
 #ifdef USE_WINSOCK_TCP
+# include <process.h>
 # include <winsock.h>
 struct SOCKADDR_IN {
   short sin_family;
@@ -1493,6 +1494,102 @@ static void closesocket_w_decrement(tcp_t s)
 }
 #endif
 
+#ifdef USE_WINSOCK_TCP
+# ifdef __BORLANDC__
+#  define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
+# else
+#  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
+# endif
+
+static int ghbn_lock;
+
+typedef struct {
+  HANDLE th;
+  long result;
+  int done;
+} GHBN_Rec;
+
+static char ghbn_hostname[256];
+
+static long gethostbyname_in_thread(void *data)
+{
+  return (long)gethostbyname(ghbn_hostname);
+}
+
+static void release_ghbn_lock(GHBN_Rec *rec)
+{
+  ghbn_lock = 0;
+}
+static int ghbn_lock_avail(Scheme_Object *_ignored)
+{
+  return !ghbn_lock;
+}
+
+static int ghbn_thread_done(Scheme_Object *_rec)
+{
+  GHBN_Rec *rec = (GHBN_Rec *)_rec;
+
+  if (rec->done)
+    return 1;
+
+  if (WaitForSingleObject(rec->th, 0) == WAIT_OBJECT_0) {
+    DWORD code;
+
+    GetExitCodeThread(rec->th, &code);
+    rec->result = code;
+    rec->done = 1;
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void ghbn_thread_need_wakeup(Scheme_Object *_rec, void *fds)
+{
+  GHBN_Rec *rec = (GHBN_Rec *)_rec;
+
+  scheme_add_fd_handle((void *)rec->th, fds, 0);
+}
+
+static struct hostent *MZ_GETHOSTBYNAME(const char *name)
+{
+  GHBN_Rec *rec;
+  long th;
+  DWORD id;
+
+  if (strlen(name) < 256)
+    strcpy(ghbn_hostname, name);
+  else
+    return NULL;
+
+  rec = MALLOC_ONE_ATOMIC(GHBN_Rec);
+  rec->done = 0;
+
+  scheme_block_until(ghbn_lock_avail, NULL, NULL, 0);
+
+  ghbn_lock = 1;
+
+  th = _beginthreadex(NULL, 5000, 
+		      (MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,
+		      NULL, 0, &id);
+
+  rec->th = (HANDLE)th;
+  
+  BEGIN_ESCAPEABLE(release_ghbn_lock, rec);
+  scheme_block_until(ghbn_thread_done, ghbn_thread_need_wakeup, (Scheme_Object *)rec, 0);
+  END_ESCAPEABLE();
+
+  CloseHandle(rec->th);
+
+  ghbn_lock = 0;
+
+  return (struct hostent *)rec->result;
+}
+#else
+# define MZ_GETHOSTBYNAME gethostbyname 
+#endif
+
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
   char * volatile address = "", * volatile errmsg = "";
@@ -1592,7 +1689,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_SOCKETS_TCP
-  host = gethostbyname(address);
+  host = MZ_GETHOSTBYNAME(address);
   if (host) {
     tcp_connect_dest_addr.sin_family = AF_INET;
     tcp_connect_dest_addr.sin_port = id;

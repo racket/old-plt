@@ -158,11 +158,18 @@ during the evaluation of the mzscheme code (in both examples)
      includes a particular editor and a visible range within the
      editor.
  
->   goto-url :: (send o goto-url url relative-to-url)
+>   goto-url :: (send o goto-url url relative-to-url [progress-proc])
      Changes to the given url, loading it by calling the `make-editor'
      method. If `relative-to-url' is not #f, it must be a URL for
      resolving `url' as a relative URL.
      `url' may also be a port. If it is, relative-to-url must be #f.
+
+     The `progres-proc' procedure is called with a boolean at the
+     point where the URL has been resolved and enough progress has
+     been made to dismiss any message that the URL is being
+     resolved. The procedure is called with #t if the URL will be
+     loaded into a browser window, #f otherwise (e.g., the user will
+     save the URL content to a file).
 
 >   set-page :: (send o set-page page notify?)
      Changes to the given page. If `notify?' is not #f, the canvas's

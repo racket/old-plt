@@ -19,6 +19,7 @@
            (lib "list.ss")
            (lib "string.ss")
            (lib "file.ss")
+           (lib "etc.ss")
            (lib "url.ss" "net"))
   
   (provide helpwin@)
@@ -101,8 +102,7 @@
                                                     (message-box (string-constant bad-url) 
                                                                  (format (string-constant bad-url:this)
                                                                          (exn-message x))
-                                                                 d)
-                                                    (done))))])
+                                                                 d))))])
                              (let ([url (string->url
                                          (cond
                                            [(regexp-match ":" s) s]
@@ -110,7 +110,7 @@
                                             (string-append "http://" s)]
                                            [else
                                             (string-append "file:" s)]))])
-                               (goto-url url)
+                               (goto-url url (lambda (will-display?) (done)))
                                (done)))))
                        '(border))]
                  [update-ok
@@ -136,7 +136,7 @@
       (define re:teach-notes (regexp "teach=(.*)"))
       
       (define go-unit
-        (unit (import initial-url)
+        (unit (import initial-url show-frame-mmediately? progress)
               (export)
               
               (define collecting-thread #f)
@@ -198,7 +198,7 @@
                        ((search-for-help/mumble run-search)
                         text type mode))]
                     
-                    [goto-url (lambda (url) (send results goto-url url #f))])
+                    [goto-url (opt-lambda (url [progress void]) (send results goto-url url #f progress))])
                   
                   (override 
                     [on-subwindow-char 
@@ -268,7 +268,7 @@
                     [file-menu:open-string (lambda () (string-constant open-url...))]
                     [file-menu:open-callback
                      (lambda (i e)
-                       (open-url-from-user this (lambda (x) (goto-url x))))]
+                       (open-url-from-user this (lambda (x progress) (goto-url x progress))))]
                     [file-menu:create-open? (lambda () #t)]
                     
                     [file-menu:print-callback 
@@ -537,7 +537,9 @@
               
               (set-font-size (framework:preferences:get 'drscheme:font-size))
               
-              (send help-desk-frame show #t)
+	      (if show-frame-mmediately?	
+                  (send help-desk-frame show #t)
+                  (send help-desk-frame on-close)) ; in case it's never shown
               
               (cond
                 [(equal? initial-url startup-url)
@@ -550,7 +552,11 @@
                                   (lambda (x)
                                     (send html-panel goto-init-page)
                                     (raise x))])
-                   (send results goto-url initial-url #f))])
+                   (send results goto-url initial-url #f (lambda (will-display?)
+                                                           (unless (or show-frame-mmediately?
+                                                                       (not will-display?))
+                                                             (send help-desk-frame show #t))
+                                                           (progress will-display?))))])
               
               (define searching-message-on? #f)
               (define (searching-done editor)
@@ -750,7 +756,8 @@
               ; Return the frame as the result
               help-desk-frame))
       
-      (define (new-help-frame initial-url)
-        (invoke-unit go-unit initial-url))
+      (define new-help-frame
+	(opt-lambda (initial-url [show-frame-mmediately? #t] [progress void])
+          (invoke-unit go-unit initial-url show-frame-mmediately? progress)))
       
       (values new-help-frame open-url-from-user))))

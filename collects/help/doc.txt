@@ -65,11 +65,21 @@ It exports
 
 which contains three items:
 
-> (new-help-frame startup-url) - takes a url (a string or a url
-       record) to use as the initial page for the window. Returns a
-       frame% object (more specifically, an instance of
+> (new-help-frame startup-url [show-immediately? progress-proc])
+       - takes a url (a string or a url record) to use as the initial
+       page for the window. Returns a frame% object (more
+       specifically, an instance of
        framework:frame:standard-menus%). See below for information
        about public methods of this object.
+
+       If `show-immediately?' is true (the default), the frame is
+       shown before the URL is resolved. Otherwise, the frame is shown
+       only if resolving URL results in content to display in the
+       frame.
+
+       The `progress-proc' is used in the same way as for the
+       `goto-url' method of `hyper-canvas-mixin' in the "browser"
+       collection. It takes a single Boolean argument.
 
 > (open-url-from-user parent-window open-url-proc) - opens a dialog
        from which the user selects a url to open. The `parent'
@@ -99,8 +109,11 @@ The frame returned by `new-help-frame' provides two extra methods:
     is the search input, `type' is 'keyword, 'keyword+index, or 'all,
     and `mode' is 'exact, 'contains, or 'regexp.
 
-> goto-url :: (send a-help-frame goto-url url) - opens the given URL
-    within the help frame.
+> goto-url :: (send a-help-frame goto-url url [progress-proc]) 
+    - opens the given URL within the help frame. The `progress-proc'
+    argument is used in the same way as for the `goto-url' method of
+    `hyper-canvas-mixin' in the "browser" collection. It takes a
+    single Boolean argument.
 
 All of the helpr.ss unit's imports must be initialized before the Help
 Desk unit itself. For dynamic-linking convenience, the

@@ -87,11 +87,6 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 {
   Cleanup();
 
-  x = dc->LogicalToDeviceX(x);
-  y = dc->LogicalToDeviceY(y);
-  width = dc->LogicalToDeviceXRel(width);
-  height = dc->LogicalToDeviceYRel(height);
-
   // A negative radius value is interpreted to mean
   // 'the proportion of the smallest X or Y dimension'
   if (radius < 0.0) {
@@ -104,15 +99,57 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
   } else
     radius = dc->LogicalToDeviceXRel(radius);
 
+#ifndef wx_x
+  if (ps) {
+#endif
+    wxRegion *lt = new wxRegion(dc);
+    wxRegion *rt = new wxRegion(dc);
+    wxRegion *lb = new wxRegion(dc);
+    wxRegion *rb = new wxRegion(dc);
+    wxRegion *w = new wxRegion(dc);
+    wxRegion *h = new wxRegion(dc);
+    wxRegion *r;
+
+    lt->SetEllipse(x, y, 2 * radius, 2 * radius);
+    rt->SetEllipse(x + width - 2 * radius, y, 2 * radius, 2 * radius);
+    rb->SetEllipse(x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius);
+    lb->SetEllipse(x, y + height - 2 * radius, 2 * radius, 2 * radius);
+
+    w->SetRectangle(x, y + radius, width, height - 2 * radius);
+    h->SetRectangle(x + radius, y, width - 2 * radius, height);
+
+    r = lt;
+    r->Union(rt);
+    r->Union(lb);
+    r->Union(rb);
+    r->Union(w);
+    r->Union(h);
+
+    ps = r->ps;
+#ifdef wx_x
+    /* A little hack: steal rgn from r: */
+    rgn = r->rgn;
+    r->rgn = NULL;
+#else
+  }
+#endif
+
+  x = dc->LogicalToDeviceX(x);
+  y = dc->LogicalToDeviceY(y);
+  width = dc->LogicalToDeviceXRel(width);
+  height = dc->LogicalToDeviceYRel(height);
+  int xradius = dc->LogicalToDeviceXRel(radius);
+  int yradius = dc->LogicalToDeviceYRel(radius);
+
 #ifdef wx_msw
-  rgn = CreateRoundRectRgn(x, y, x + width, y + height, radius, radius);
+  rgn = CreateRoundRectRgn(x, y, x + width, y + height, xradius, yradius);
 #endif
 #ifdef wx_mac
   rgn = NewRgn();
   OpenRgn();
   Rect r;
   SetRect(&r, x, y, x + width, y + height);
-  FrameRoundRect(&r, radius, radius);
+  FrameRoundRect(&r, xradius, yradius);
   CloseRgn(rgn);
 #endif
 }
@@ -136,6 +173,32 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   SetRect(&r, x, y, x + width, y + height);
   FrameOval(&r);
   CloseRgn(rgn);
+#endif
+
+#ifdef wx_x
+  int iwidth = (int)width + 2;
+  int is_odd = iwidth & 0x1;
+  int x_extent = (int)((iwidth + 1) / 2) + is_odd, i, dx, dy;
+  float w2 = (x_extent - 1) * (x_extent - 1);
+  XPoint *p = new XPoint[(4 * x_extent) - (2 * is_odd)];
+
+  dx = x + width / 2;
+  dy = y + height / 2;
+
+  for (i = 0; i < x_extent; i++) {
+    float y = (height / width) * sqrt(w2 - (i * i));
+    p[i].x = i + dx;
+    p[i].y = y + dy;
+    p[2 * x_extent - i - 1].x = i + dx;
+    p[2 * x_extent - i - 1].y = -y + dy;
+    p[2 * x_extent + i - is_odd].x = -i + dx;
+    p[2 * x_extent + i - is_odd].y = -y + dy;
+    if (i || !is_odd) {
+      p[4 * x_extent - i - 1 - 2 * is_odd].x = -i + dx;
+      p[4 * x_extent - i - 1 - 2 * is_odd].y = y + dy;
+    }
+  }
+  rgn = XPolygonRegion(p, 4 * x_extent, WindingRule);
 #endif
 }
 
@@ -177,7 +240,141 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
 
 void wxRegion::SetArc(float x, float y, float w, float h, float start, float end)
 {
+  SetEllipse(x, y, w, h);
+
+  if (start == end) return;
+
+  wxRegion *r = new wxRegion(dc);
+
+  static double pi;
+  if (!pi)
+    pi = 2 * asin(1);
+
+  start = fmod(start, 2*pi);
+  end = fmod(end, 2*pi);
+  if (start < 0)
+    start += 2*pi;
+  if (end < 0)
+    end += 2*pi;
+
+  float cx = x + w/2;
+  float cy = y + h/2;
+
+  wxPoint a[20];
+  int n;
+
+  a[0].x = (w / 2) * cos(end) + cx;
+  a[0].y = (h / 2) * (-sin(end)) + cy;
+
+  a[1].x = cx;
+  a[1].y = cy;
+
+  a[2].x = (w / 2) * cos(start) + cx;
+  a[2].y = (h / 2) * (-sin(start)) + cy;
+
+  n = 3;
+
+  int saw_start = 0, saw_end = 0, closed = 0;
+
+  if (!saw_start && (start < (pi / 2)))
+    saw_start = 1;
+  if (!saw_end && (end > start) && (end < (pi / 2)))
+    saw_end = 1;
+  if (saw_start && !closed) {
+    a[n].x = x + w;
+    a[n++].y = y;
+  }
+  if (saw_start && !saw_end) {
+    a[n].x = cx;
+    a[n++].y = y;
+  } else
+    closed = saw_start;
+
+  if (!saw_start && (start < pi))
+    saw_start = 1;
+  if (!saw_end && (end > start) && (end < pi))
+    saw_end = 1;
+  if (saw_start && !closed) {
+    a[n].x = x;
+    a[n++].y = y;
+  }
+  if (saw_start && !saw_end) {
+    a[n].x = x;
+    a[n++].y = cy;
+  } else
+    closed = saw_start;
+
+  if (!saw_start && (start < (1.5 * pi)))
+    saw_start = 1;
+  if (!saw_end && (end > start) && (end < (1.5 * pi)))
+    saw_end = 1;
+  if (saw_start && !closed) {
+    a[n].x = x;
+    a[n++].y = y + h;
+  }
+  if (saw_start && !saw_end) {
+    a[n].x = cx;
+    a[n++].y = y + h;
+  } else
+    closed = saw_start;
+
+  saw_start = 1;
+  saw_end = (end > start);
   
+  if (saw_start && !closed) {
+    a[n].x = x + w;
+    a[n++].y = y + h;
+  }
+  if (saw_start && !saw_end) {
+    a[n].x = x + w;
+    a[n++].y = cy;    
+  } else
+    closed = saw_start;
+
+  if (!saw_end && (end < (pi / 2)))
+    saw_end = 1;
+  if (saw_start && !closed) {
+    a[n].x = x + w;
+    a[n++].y = y;
+  }
+  if (saw_start && !saw_end) {
+    a[n].x = cx;
+    a[n++].y = y;    
+  } else
+    closed = saw_start;
+  
+  if (!saw_end && (end < pi))
+    saw_end = 1;
+  if (saw_start && !closed) {
+    a[n].x = x;
+    a[n++].y = y;
+  }
+  if (saw_start && !saw_end) {
+    a[n].x = x;
+    a[n++].y = cy;    
+  } else
+    closed = saw_start;
+
+  if (!saw_end && (end < (1.5 * pi)))
+    saw_end = 1;
+  if (saw_start && !closed) {
+    a[n].x = x;
+    a[n++].y = y + h;
+  } 
+  if (saw_start && !saw_end) {
+    a[n].x = cx;
+    a[n++].y = y + h;
+  } else
+    closed = saw_start;
+
+  if (!closed) {
+    a[n].x = x + w;
+    a[n++].y = y + h;
+  }
+
+  r->SetPolygon(n, a);
+
+  Intersect(r);
 }
 
 void wxRegion::Union(wxRegion *r)

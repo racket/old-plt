@@ -104,8 +104,8 @@ enum {
   scheme_lazy_macro_type,
   scheme_resolve_prefix_type,
   scheme_security_guard_type,
+  scheme_indent_type, /* 90 */
 
-  scheme_reserved_2_type, /* 90 */
   scheme_reserved_3_type,
   scheme_reserved_4_type,
   scheme_reserved_5_type,
@@ -168,6 +168,7 @@ enum {
   scheme_rt_user_input,
   scheme_rt_user_output,
   scheme_rt_compact_port,
+  scheme_rt_read_special_dw,
 #endif
 
   _scheme_last_type_

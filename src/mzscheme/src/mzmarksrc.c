@@ -1097,6 +1097,16 @@ mark_subprocess {
   gcBYTES_TO_WORDS(sizeof(Scheme_Subprocess));
 }
 
+mark_read_special {
+ mark:
+  Read_Special_DW *rs = (Read_Special_DW *)p;
+  gcMARK(rs->f);
+  gcMARK(rs->a);
+  gcMARK(rs->exn_handler);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
+}
+
 END port;
 
 /**********************************************************************/

@@ -26,6 +26,7 @@ enum {
   MZEXN_THREAD,
   MZEXN_MODULE,
   MZEXN_BREAK,
+  MZEXN_SPECIAL_COMMENT,
   MZEXN_MISC,
   MZEXN_MISC_UNSUPPORTED,
   MZEXN_MISC_OUT_OF_MEMORY,
@@ -63,9 +64,10 @@ static exn_rec exn_table[] = {
   { 2, NULL, NULL, 0, NULL, 0 },
   { 2, NULL, NULL, 0, NULL, 0 },
   { 3, NULL, NULL, 0, NULL, 0 },
+  { 3, NULL, NULL, 0, NULL, 0 },
   { 2, NULL, NULL, 0, NULL, 0 },
-  { 2, NULL, NULL, 0, NULL, 23 },
-  { 2, NULL, NULL, 0, NULL, 23 }
+  { 2, NULL, NULL, 0, NULL, 24 },
+  { 2, NULL, NULL, 0, NULL, 24 }
 };
 #else
 static exn_rec *exn_table;
@@ -100,6 +102,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_THREAD].args = 2;
   exn_table[MZEXN_MODULE].args = 2;
   exn_table[MZEXN_BREAK].args = 3;
+  exn_table[MZEXN_SPECIAL_COMMENT].args = 3;
   exn_table[MZEXN_MISC].args = 2;
   exn_table[MZEXN_MISC_UNSUPPORTED].args = 2;
   exn_table[MZEXN_MISC_OUT_OF_MEMORY].args = 2;
@@ -119,6 +122,7 @@ static const char *MZEXN_READ_FIELDS[5] = { "source", "line", "column", "positio
 static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_FILESYSTEM_FIELDS[2] = { "pathname", "detail" };
 static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
+static const char *MZEXN_SPECIAL_COMMENT_FIELDS[1] = { "width" };
 
 #endif
 
@@ -147,6 +151,7 @@ static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)
   SETUP_STRUCT(MZEXN_MODULE, EXN_PARENT(MZEXN), "exn:module", 0, NULL)
   SETUP_STRUCT(MZEXN_BREAK, EXN_PARENT(MZEXN), "exn:break", 1, MZEXN_BREAK_FIELDS)
+  SETUP_STRUCT(MZEXN_SPECIAL_COMMENT, EXN_PARENT(MZEXN), "exn:special-comment", 1, MZEXN_SPECIAL_COMMENT_FIELDS)
   SETUP_STRUCT(MZEXN_MISC, EXN_PARENT(MZEXN), "exn:misc", 0, NULL)
   SETUP_STRUCT(MZEXN_MISC_UNSUPPORTED, EXN_PARENT(MZEXN_MISC), "exn:misc:unsupported", 0, NULL)
   SETUP_STRUCT(MZEXN_MISC_OUT_OF_MEMORY, EXN_PARENT(MZEXN_MISC), "exn:misc:out-of-memory", 0, NULL)

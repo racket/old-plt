@@ -6314,6 +6314,7 @@ static void register_traversers(void)
 #endif
 
   GC_REG_TRAV(scheme_subprocess_type, mark_subprocess);
+  GC_REG_TRAV(scheme_rt_read_special_dw, mark_read_special);
 }
 
 END_XFORM_SKIP;

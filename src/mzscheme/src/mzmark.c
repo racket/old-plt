@@ -2772,6 +2772,33 @@ int mark_subprocess_FIXUP(void *p) {
 #define mark_subprocess_IS_CONST_SIZE 1
 
 
+int mark_read_special_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
+}
+
+int mark_read_special_MARK(void *p) {
+  Read_Special_DW *rs = (Read_Special_DW *)p;
+  gcMARK(rs->f);
+  gcMARK(rs->a);
+  gcMARK(rs->exn_handler);
+  return
+  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
+}
+
+int mark_read_special_FIXUP(void *p) {
+  Read_Special_DW *rs = (Read_Special_DW *)p;
+  gcFIXUP(rs->f);
+  gcFIXUP(rs->a);
+  gcFIXUP(rs->exn_handler);
+  return
+  gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
+}
+
+#define mark_read_special_IS_ATOMIC 0
+#define mark_read_special_IS_CONST_SIZE 1
+
+
 #endif  /* PORT */
 
 /**********************************************************************/

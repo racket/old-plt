@@ -1,10 +1,16 @@
 
 ; (require-library "errortrace.ss" "errortrace")
-(require-library "core.ss")
+(require (lib "list.ss")
+	 (lib "etc.ss")
+	 (lib "class100.ss")
+	 (lib "defmacro.ss"))
 
 (define example-list%
-  (class object% (name-in parents [filter (lambda (x) (not (void? x)))])
-      (public
+  (class100 object% (-name-in -parents [-filter (lambda (x) (not (void? x)))])
+    (private-field
+       [name-in -name-in]
+       [parents -parents]
+       [filter -filter]
        [name name-in]
        [items '()]
        [num-items 0]
@@ -13,15 +19,19 @@
        [parents-count 
 	(if parents
 	    (map (lambda (parent)
-		   (ivar parent count))
+		   (send parent get-count))
 		 parents)
 	    '())]
        [parents-choose
 	(if parents
 	    (map (lambda (parent)
-		   (ivar parent choose-example))
+		   (send parent get-choose-example))
 		 parents)
-	    '())]
+	    '())])
+      (public
+       [get-count (lambda () (lambda () (count)))]
+       [get-name (lambda () name)]
+       [get-choose-example (lambda () (opt-lambda ([which #f]) (choose-example which)))]
        [choose-parent-example
 	(lambda (which)
 	  (let loop ([pos which][counts parents-count][chooses parents-choose])
@@ -36,8 +46,10 @@
 	(lambda () (+ num-items (apply + (map (lambda (x) (x)) parents-count))))]
        [set-filter
 	(lambda (f)
-	  (set! filter f))]
-       [prepare values]
+	  (set! filter f))])
+      (private-field
+       [prepare values])
+      (public
        [set-prepare
 	(lambda (f)
 	  (set! prepare f))]
@@ -70,9 +82,10 @@
       (sequence (super-init))))
 
 (define boxed-example-list%
-  (class object% (parent)
+  (class100 object% (-parent)
+    (private-field [parent -parent])
     (public
-     [name `(boxed ,(ivar parent name))]
+     [get-name (lambda () `(boxed ,(send parent get-name)))]
      [all-examples
       (lambda ()
 	(let ([l (map box (send parent all-examples))])
@@ -88,9 +101,10 @@
     (sequence (super-init))))
 
 (define listed-example-list%
-  (class object% (parent)
+  (class100 object% (-parent)
+    (private-field [parent -parent])
     (public
-     [name `(listed ,(ivar parent name))]
+     [get-name (lambda () `(listed ,(send parent get-name)))]
      [all-examples
       (lambda ()
 	(let ([l (map list (send parent all-examples))])
@@ -115,9 +129,10 @@
     (sequence (super-init))))
 
 (define optional-example-list%
-  (class object% (parent val)
+  (class100 object% (-parent -val)
+    (private-field [parent -parent][val -val])
     (public
-     [name `(optional ,(ivar parent name))]
+     [get-name (lambda () `(optional ,(send parent get-name)))]
      [all-examples
       (lambda ()
 	(let ([l (map box (send parent all-examples))])
@@ -135,13 +150,14 @@
     (sequence (super-init))))
 
 (define choose-example-list%
-  (class object% (parents)
+  (class100 object% (-parents)
+    (private-field [parents -parents])
     (public
-     [name `(choose ,(map (lambda (p) (ivar p name)) parents))]
+     [get-name (lambda () `(choose ,(map (lambda (p) (send p get-name)) parents)))]
      [all-examples
       (lambda ()
 	(apply append (map (lambda (p) (send p all-examples)) parents)))]
-     [add void]
+     [add (lambda (x) (void))]
      [choose-example
       (opt-lambda ([which #f])
 	(send (list-ref parents (random (length parents)))
@@ -151,11 +167,12 @@
     (sequence (super-init))))
 
 (define unknown-example-list%
-  (class object% (who)
+  (class100 object% (-who)
+    (private-field [who -who])
     (public
-     [name `(unknown ,who)]
+     [get-name (lambda () `(unknown ,who))]
      [all-examples (lambda () null)]
-     [add void]
+     [add (lambda (x) (void))]
      [choose-example
       (opt-lambda ([which #f])
 	(format "[dummy for ~a]" name))]
@@ -164,9 +181,10 @@
     (sequence (super-init))))
 
 (define discrete-example-list%
-  (class object% (vals)
+  (class100 object% (-vals)
+    (private-field [vals -vals])
     (public
-     [name `(one-of ,@vals)]
+     [get-name (lambda () `(one-of ,@vals))]
      [all-examples (lambda () vals)]
      [add (lambda (x) (unless (member x vals)
 			(error '|add in discrete-example-list|
@@ -182,12 +200,15 @@
     (sequence (super-init))))
 
 (define number-example-list%
-  (class object% (parent start end)
+  (class100 object% (-parent -start -end)
+    (private-field [parent -parent]
+		   [start -start]
+		   [end -end])
     (public
-      [name `(number in ,start ,end)]
+      [get-name (lambda () `(number in ,start ,end))]
       [all-examples
        (lambda ()
-	 (filter ok (send parent all-examples)))]
+	 (filter (lambda (x) (ok x)) (send parent all-examples)))]
       [ok (lambda (v) (<= start v end))]
       [add (lambda (v)
 	     (send parent add v)
@@ -209,7 +230,7 @@
 		(send parent bad-examples)))])
     (sequence (super-init))))
 
-(define-struct (fatal-exn struct:exn) ())
+(define-struct (fatal-exn exn) ())
 
 (define (fatal-error name str . args)
   (raise (make-fatal-exn (apply format (string-append "~a: " str) name args)
@@ -268,6 +289,8 @@
   real-list
   string
   string-list
+  labelstring
+  labelstring-list
   boolean
   procedure
   eventspace
@@ -417,6 +440,7 @@
 (send boolean-example-list set-filter boolean?)
 (send char-example-list set-filter char?)
 (send string-example-list set-filter string?)
+(send labelstring-example-list set-filter (lambda (x) (and (string? x) ((string-length x) . <= . 200))))
 (send symbol-example-list set-filter symbol?)
 (send real-example-list set-filter real?)
 (send integer-example-list set-filter (lambda (x) (and (number? x) (exact? x) (integer? x))))
@@ -429,6 +453,8 @@
 
 (send char-example-list add-bad 'not-a-char)
 (send string-example-list add-bad 'not-a-string)
+(send labelstring-example-list add-bad 'not-a-string)
+(send labelstring-example-list add-bad (make-string 255 #\x))
 (send symbol-example-list add-bad "not a symbol")
 (send real-example-list add-bad 4+5i) 
 (send integer-example-list add-bad 5.0)
@@ -502,6 +528,9 @@
 (send* string-list-example-list
        (add '("apple" "banana" "coconut")))
 
+(send* labelstring-list-example-list
+       (add '("apple" "banana" "coconut")))
+
 (send* char-example-list
        (add #\nul)
        (add #\a)
@@ -531,6 +560,11 @@
        (add "system/mred.xbm")
        (add "system/mred.bmp")
        (add "mred.gif")
+       (add "goodbye adious see you later zai jian seeya bye-bye"))
+
+(send* labelstring-example-list
+       (add "")
+       (add "hello")
        (add "goodbye adious see you later zai jian seeya bye-bye"))
 
 (send procedure-example-list add void)
@@ -567,7 +601,7 @@
 	  (let* ([source (car l)]
 		 [value (send source choose-example #f)])
 	    (if (void? value)
-		(bad (format "no examples: ~a" (ivar source name)))
+		(bad (format "no examples: ~a" (send source get-name)))
 		(cons value (loop (cdr l)))))))))
 
 (define (get-all-args l)
@@ -595,7 +629,7 @@
 		 [good (send source choose-example #f)]
 		 [bads (send source bad-examples)])
 	    (if (void? good)
-		(bad (format "no examples: ~a" (ivar source name)))
+		(bad (format "no examples: ~a" (send source get-name)))
 		(cons (make-posargs good bads) (loop (cdr l)))))))))
 
 (define thread-output-port current-output-port)
@@ -738,7 +772,7 @@
 		     [iv (car method)]
 		     [resulttype (caddr method)]
 		     [argtypes (cdddr method)])
-		(set! trying-class (and source (ivar source name)))
+		(set! trying-class (and source (send source get-name)))
 		(set! trying-method iv)
 		(try argtypes resulttype (list name iv use)
 		     (lambda (args)
@@ -755,7 +789,7 @@
 			     (when (eq? iv 'set-scale)
 			       (set! args (map (lambda (x) (min x 10)) args)))
 
-			     (apply (ivar/proc use iv) args))
+			     (send-generic (make-generic (object->interface use) iv) . args))
 
 			   (apply (global-defined-value iv) args))))))
 	    (loop (cdr l)))))))
@@ -952,13 +986,13 @@
 				 (for-each
 				  (lambda (name method)
 				    (if (or (and (interface? key)
-						 (ivar-in-interface? name key))
+						 (method-in-interface? name key))
 					    (and (class? key)
-						 (ivar-in-interface? name (class->interface key))))
+						 (method-in-interface? name (class->interface key))))
 					
 					;; Method is there, check arity
-					(when (is-a? ex key)
-					  (let ([m (ivar/proc ex name)])
+					'(when (is-a? ex key)
+					  (let ([m (make-generic ex name)])
 					    (unless (equal? (arity m) (cadr method))
 					      (printf "Warning: arity mismatch for ~a in ~a, real: ~a documented: ~a~n" 
 						      name key

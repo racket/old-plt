@@ -173,11 +173,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
 	  } else {
 	    strcpy((char *)buffer, name);
 	    C2PStr((char *)buffer);
-#ifdef MRED_CARBON
-	    ::FMGetFontFamilyFromName(????)
-#else
 	    ::GetFNum((ConstStr255Param)buffer, &macFontId);
-#endif	    
 
 	    if (macFontId || tried_once)
 	      break;

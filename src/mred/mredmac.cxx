@@ -105,7 +105,9 @@ static int QueueTransferredEvent(EventRecord *e)
     for (q = first; q; q = q->next) {
       if ((q->event.what == updateEvt)
 	  && (w == ((WindowPtr)q->event.message))) {
-	UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
+        RgnHandle updateRegionHandle;
+        GetWindowRegion(w,kWindowUpdateRgn,updateRegionHandle);
+	UnionRgn(updateRegionHandle, q->rgn, q->rgn);
 	BeginUpdate(w);
 	EndUpdate(w);
 	done = 1;
@@ -133,9 +135,12 @@ static int QueueTransferredEvent(EventRecord *e)
     q->rgn = NULL;
       
     if (e->what == updateEvt) {
+      RgnHandle updateRegion;
+
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
-      CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
+      GetWindowRegion(w,kWindowUpdateRegion,updateRegion);
+      CopyRgn(updateRegion,q->rgn);
       BeginUpdate(w);
       EndUpdate(w);
     } else if ((e->what == osEvt)
@@ -248,7 +253,7 @@ static int WindowStillHere(WindowPtr win)
   while (f) {
     if (f == win)
       return TRUE;
-    f = (WindowPtr)((WindowRecord *)f)->nextWindow;
+    f = GetNextWindow(f);
   }
 
   return FALSE;
@@ -705,14 +710,8 @@ void MrEdDispatchEvent(EventRecord *e)
 	break;
       }
     }
-
-	if (!((WindowRecord *)w)->updateRgn)
-	  ((WindowRecord *)w)->updateRgn = rgn;
-	else {
-      RgnHandle update = ((WindowRecord *)w)->updateRgn;
-	  UnionRgn(update, rgn, update);
-      DisposeRgn(rgn);
-    }
+    
+    InvalWindowRgn(w,rgn);
   }
     
   wxTheApp->doMacPreEvent();

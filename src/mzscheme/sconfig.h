@@ -404,6 +404,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_TM_GMTOFF_FIELD
 
+# define MACINTOSH_EVENTS
+
 # define FLAGS_ALREADY_SET
 
 #endif

@@ -66,6 +66,13 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 			wxFatalError("Color QuickDraw is required, but not present.", "");
 		}
 	}
+        
+        // Version 1.0 of the Appearance Manager appeared in 8.0. We don't support pre-8.0
+        // any more.
+        myErr = ::Gestalt(gestaltAppearanceAttr, &dontcare);
+        if (myErr == gestaltUndefSelectorErr) {
+            wxFatalError("Version 1.0 of the Appearance Manager is required.", "");
+        }
 	
 	
 	myErr = ::Gestalt(gestaltWindowMgrAttr, &windowMgrAttributes);
@@ -920,7 +927,7 @@ wxFrame* wxApp::findMacWxFrame(WindowPtr theMacWindow)
 	return result;
 #else
 	if (theMacWindow)
-	  return (wxFrame *)((WindowRecord *)theMacWindow)->refCon;
+          return (wxFrame *)GetWRefCon(theMacWindow);
 	else
 	  return NULL;
 #endif

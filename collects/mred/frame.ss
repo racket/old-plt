@@ -103,16 +103,6 @@
 
     (define make-standard-menus-frame%
       (lambda (super%)
-	(let-macro main
-	  (lambda args
-	    `(class-asi super% ,args))
-	  (let-macro menu-item
-	    (lambda (name
-	
-	
-
-    (define make-standard-menus-frame%
-      (lambda (super%)
 	(class-asi super%
 	  (inherit make-menu on-close show)
 	  (rename [super-make-menu-bar make-menu-bar])

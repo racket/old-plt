@@ -248,6 +248,7 @@
 	[(null? args)
 	 (when (eq? mred:debug:on? 'compile-and-exit)
 	   (wx:exit))
+	 (user-break-poll-handler wx:check-for-break)
 	 (unless mred:non-unit-startup?
 	   (invoke-open-unit (mred:make-invokable-unit) #f)
 	   (when mred:load-user-setup?

@@ -174,11 +174,12 @@
           (match-lambda
            [() (list)]
            [(#\% char1 char2 . rest)
-            (cons
-	     ;; This used to consult the table again, but I think that's
-	     ;;  wrong. For exmaple %2b should produce +, not a space.
-	     (string->number (string char1 char2) 16)
-             (internal-decode rest))]
+            ;; This used to consult the table again, but I think that's
+            ;;  wrong. For exmaple %2b should produce +, not a space.
+            (let ([num (string->number (string char1 char2) 16)])
+              (if num
+                  (cons num (internal-decode rest))
+                  (internal-decode rest)))]
            [(char . rest)
             (cons
              (vector-ref table

@@ -7,7 +7,10 @@
     (mred:debug:printf 'invoke "mred:gui-utils@")
 
     (define cursor-delay
-      (mzlib:function:make-parameter 0.25))
+      (let ([x 0.25])
+	(case-lambda
+	 [() x]
+	 [(v) (set! x v)])))
 
     (define show-busy-cursor
       (lambda (thunk)

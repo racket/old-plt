@@ -3,15 +3,18 @@
   (require "private/archives.ss"
            "private/planet-web-page.ss"
            "server-config.ss"
+           "private/planet-shared.ss"
            (lib "list.ss")
            (lib "file.ss"))
   
   (define WEBROOT (make-parameter "/home/jacobm/html/planet-mockup/"))
 
+  (define this-version (language-version->repository (version)))
+  
   ; get-latest-version : string string -> (Nat | #f) (Nat | #f)
   (define (get-latest-version owner plt-file)
 
-    (let ((path (build-path (PLANET-SERVER-REPOSITORY) owner (file-name-from-path plt-file))))
+    (let ((path (build-path (PLANET-SERVER-REPOSITORY) this-version owner (file-name-from-path plt-file))))
       (if (not (directory-exists? path))
           (values #f #f)
           (let* ([major-versions (filter (lambda (x) x) (map string->number (directory-list path)))]
@@ -38,17 +41,17 @@
                  (list owner package-name (number->string (add1 curr-maj)) "0")]))
              (relative-path (lambda (base) (apply build-path base directories-to-create))))
         (begin
-          (make-directory* (relative-path (build-path (PLANET-SERVER-REPOSITORY) (version))))
+          (make-directory* (relative-path (build-path (PLANET-SERVER-REPOSITORY) this-version)))
           (copy-file plt-file (build-path (relative-path (build-path 
                                                           (PLANET-SERVER-REPOSITORY)
-                                                          (version)))
+                                                          this-version))
                                           package-name))
           (make-directory* (relative-path (build-path (WEBROOT) (DOCS-DIR))))
           #;(extract-files-from-archive plt-file 
-                                      (build-path (PLANET-SERVER-REPOSITORY) (version) owner package-name)
+                                      (build-path (PLANET-SERVER-REPOSITORY) this-version owner package-name)
                                       #rx"planet\\.txt")
           (extract-files-from-archive plt-file 
-                                      (build-path (PLANET-SERVER-REPOSITORY) (version) owner package-name)
+                                      (build-path (PLANET-SERVER-REPOSITORY) this-version owner package-name)
                                       #rx"info\\.ss")
           (extract-files-from-archive plt-file 
                                       (relative-path (build-path (WEBROOT) (DOCS-DIR)))

@@ -1,3 +1,7 @@
+(module paren-test mzscheme
+  (require "test-suite-utils.ss"
+	   (lib "list.ss"))
+
 (define balanced-tests
   `(("()" 0 2)
     ("(a)" 0 3)
@@ -137,3 +141,5 @@
 (for-each run-scheme-unbalanced-test unbalanced-tests)
 (for-each run-balanced-test balanced-tests)
 (for-each run-scheme-balanced-test balanced-tests)
+
+)

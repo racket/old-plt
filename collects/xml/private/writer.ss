@@ -85,7 +85,7 @@
 	       [content (element-content el)])
 	  (start "<~a")
 	  (for-each (lambda (att)
-		      (fprintf out " ~s=~s" (attribute-name att)
+		      (fprintf out " ~s=\"~a\"" (attribute-name att)
 			       (escape (attribute-value att) escape-attribute-table)))
 		    (element-attributes el))
 	  (if (and (null? content)

@@ -616,13 +616,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:new-callback
                       (lambda (item evt) (file-menu:new-callback item evt))))
                 file-menu:new-callback))
             (shortcut #\n)
-            (help (file-menu:new-help-string))
+            (help-string (file-menu:new-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:new-on-demand menu-item))))))
    (file-menu:between-new-and-open (get-file-menu))
@@ -638,13 +638,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:open-callback
                       (lambda (item evt) (file-menu:open-callback item evt))))
                 file-menu:open-callback))
             (shortcut #\o)
-            (help (file-menu:open-help-string))
+            (help-string (file-menu:open-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:open-on-demand menu-item))))))
    (file-menu:between-open-and-revert (get-file-menu))
@@ -660,14 +660,14 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:revert-callback
                       (lambda (item evt)
                         (file-menu:revert-callback item evt))))
                 file-menu:revert-callback))
             (shortcut #f)
-            (help (file-menu:revert-help-string))
+            (help-string (file-menu:revert-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:revert-on-demand menu-item))))))
    (file-menu:between-revert-and-save (get-file-menu))
@@ -683,13 +683,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:save-callback
                       (lambda (item evt) (file-menu:save-callback item evt))))
                 file-menu:save-callback))
             (shortcut #\s)
-            (help (file-menu:save-help-string))
+            (help-string (file-menu:save-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:save-on-demand menu-item))))))
    (define file-menu:save-as-item
@@ -704,14 +704,14 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:save-as-callback
                       (lambda (item evt)
                         (file-menu:save-as-callback item evt))))
                 file-menu:save-as-callback))
             (shortcut #f)
-            (help (file-menu:save-as-help-string))
+            (help-string (file-menu:save-as-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:save-as-on-demand menu-item))))))
    (file-menu:between-save-as-and-print (get-file-menu))
@@ -727,13 +727,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:print-callback
                       (lambda (item evt) (file-menu:print-callback item evt))))
                 file-menu:print-callback))
             (shortcut #\p)
-            (help (file-menu:print-help-string))
+            (help-string (file-menu:print-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:print-on-demand menu-item))))))
    (file-menu:between-print-and-close (get-file-menu))
@@ -749,13 +749,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:close-callback
                       (lambda (item evt) (file-menu:close-callback item evt))))
                 file-menu:close-callback))
             (shortcut #\w)
-            (help (file-menu:close-help-string))
+            (help-string (file-menu:close-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:close-on-demand menu-item))))))
    (file-menu:between-close-and-quit (get-file-menu))
@@ -771,13 +771,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent file-menu)
+            (menu file-menu)
             (callback
               (let ((file-menu:quit-callback
                       (lambda (item evt) (file-menu:quit-callback item evt))))
                 file-menu:quit-callback))
             (shortcut #\q)
-            (help (file-menu:quit-help-string))
+            (help-string (file-menu:quit-help-string))
             (demand-callback
               (lambda (menu-item) (file-menu:quit-on-demand menu-item))))))
    (file-menu:after-quit (get-file-menu))
@@ -793,13 +793,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:undo-callback
                       (lambda (item evt) (edit-menu:undo-callback item evt))))
                 edit-menu:undo-callback))
             (shortcut #\z)
-            (help (edit-menu:undo-help-string))
+            (help-string (edit-menu:undo-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:undo-on-demand menu-item))))))
    (define edit-menu:redo-item
@@ -814,13 +814,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:redo-callback
                       (lambda (item evt) (edit-menu:redo-callback item evt))))
                 edit-menu:redo-callback))
             (shortcut #\y)
-            (help (edit-menu:redo-help-string))
+            (help-string (edit-menu:redo-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:redo-on-demand menu-item))))))
    (edit-menu:between-redo-and-cut (get-edit-menu))
@@ -834,13 +834,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:cut-callback
                       (lambda (item evt) (edit-menu:cut-callback item evt))))
                 edit-menu:cut-callback))
             (shortcut #\x)
-            (help (edit-menu:cut-help-string))
+            (help-string (edit-menu:cut-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:cut-on-demand menu-item))))))
    (edit-menu:between-cut-and-copy (get-edit-menu))
@@ -856,13 +856,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:copy-callback
                       (lambda (item evt) (edit-menu:copy-callback item evt))))
                 edit-menu:copy-callback))
             (shortcut #\c)
-            (help (edit-menu:copy-help-string))
+            (help-string (edit-menu:copy-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:copy-on-demand menu-item))))))
    (edit-menu:between-copy-and-paste (get-edit-menu))
@@ -878,13 +878,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:paste-callback
                       (lambda (item evt) (edit-menu:paste-callback item evt))))
                 edit-menu:paste-callback))
             (shortcut #\v)
-            (help (edit-menu:paste-help-string))
+            (help-string (edit-menu:paste-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:paste-on-demand menu-item))))))
    (edit-menu:between-paste-and-clear (get-edit-menu))
@@ -900,13 +900,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:clear-callback
                       (lambda (item evt) (edit-menu:clear-callback item evt))))
                 edit-menu:clear-callback))
             (shortcut #f)
-            (help (edit-menu:clear-help-string))
+            (help-string (edit-menu:clear-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:clear-on-demand menu-item))))))
    (edit-menu:between-clear-and-select-all (get-edit-menu))
@@ -922,14 +922,14 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:select-all-callback
                       (lambda (item evt)
                         (edit-menu:select-all-callback item evt))))
                 edit-menu:select-all-callback))
             (shortcut #\a)
-            (help (edit-menu:select-all-help-string))
+            (help-string (edit-menu:select-all-help-string))
             (demand-callback
               (lambda (menu-item)
                 (edit-menu:select-all-on-demand menu-item))))))
@@ -946,13 +946,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:find-callback
                       (lambda (item evt) (edit-menu:find-callback item evt))))
                 edit-menu:find-callback))
             (shortcut #\f)
-            (help (edit-menu:find-help-string))
+            (help-string (edit-menu:find-help-string))
             (demand-callback
               (lambda (menu-item) (edit-menu:find-on-demand menu-item))))))
    (define edit-menu:find-again-item
@@ -967,14 +967,14 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:find-again-callback
                       (lambda (item evt)
                         (edit-menu:find-again-callback item evt))))
                 edit-menu:find-again-callback))
             (shortcut #\g)
-            (help (edit-menu:find-again-help-string))
+            (help-string (edit-menu:find-again-help-string))
             (demand-callback
               (lambda (menu-item)
                 (edit-menu:find-again-on-demand menu-item))))))
@@ -990,14 +990,14 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:replace-and-find-again-callback
                       (lambda (item evt)
                         (edit-menu:replace-and-find-again-callback item evt))))
                 edit-menu:replace-and-find-again-callback))
             (shortcut #\h)
-            (help (edit-menu:replace-and-find-again-help-string))
+            (help-string (edit-menu:replace-and-find-again-help-string))
             (demand-callback
               (lambda (menu-item)
                 (edit-menu:replace-and-find-again-on-demand menu-item))))))
@@ -1014,14 +1014,14 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent edit-menu)
+            (menu edit-menu)
             (callback
               (let ((edit-menu:preferences-callback
                       (lambda (item evt)
                         (edit-menu:preferences-callback item evt))))
                 edit-menu:preferences-callback))
             (shortcut #\;)
-            (help (edit-menu:preferences-help-string))
+            (help-string (edit-menu:preferences-help-string))
             (demand-callback
               (lambda (menu-item)
                 (edit-menu:preferences-on-demand menu-item))))))
@@ -1039,13 +1039,13 @@
                (if (string=? special "")
                  (string-append base suffix)
                  (string-append base " " special suffix))))
-            (parent help-menu)
+            (menu help-menu)
             (callback
               (let ((help-menu:about-callback
                       (lambda (item evt) (help-menu:about-callback item evt))))
                 help-menu:about-callback))
             (shortcut #f)
-            (help (help-menu:about-help-string))
+            (help-string (help-menu:about-help-string))
             (demand-callback
               (lambda (menu-item) (help-menu:about-on-demand menu-item))))))
    (help-menu:after-about (get-help-menu))

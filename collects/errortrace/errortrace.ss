@@ -148,9 +148,13 @@
   ;; with-mark : stx stx -> stx
   (define (with-mark mark expr)
     (with-syntax ([expr expr]
-		  [source (if (string? (syntax-source mark))
-			      (string->symbol (syntax-source mark))
-			      (string->symbol (format "~a" (syntax-source mark))))]
+		  [source (cond
+			    [(string? (syntax-source mark))
+			     (string->symbol (syntax-source mark))]
+			    [(not (syntax-source mark))
+			     #f]
+			    [else
+			     (string->symbol (format "~a" (syntax-source mark)))])]
 		  [line (syntax-line mark)]
 		  [col (syntax-column mark)]
 		  [key key])
@@ -196,22 +200,35 @@
   ;; effect: prints out the context surrounding the exception
   (define (print-error-trace p x)
     (let loop ([n (error-context-display-depth)]
+	       [unknown #f]
                [l (continuation-mark-set->list (exn-continuation-marks x) key)])
+
+      (define (print-unknown-count)
+	(when unknown
+	  (fprintf p "UNKNOWN (~a frame~a)~n"
+		   unknown
+		   (if (= 1 unknown) "" "s"))))
+
       (cond
-        [(or (zero? n) (null? l)) (void)]
+        [(or (zero? n) (null? l))
+	 (print-unknown-count)]
         [(pair? l)
-         (let ([m (car l)])
-           (fprintf p "~a~n"
-                    (let ([file (car m)]
-			  [line (cadr m)]
-			  [col (cddr m)])
-		      (format "~a, line ~a, char ~a." 
-                              (or file "UNKNOWN")
-                              (or line "???")
-                              (or col "???")))))
-         (loop (- n 1)
-               (cdr l))]
-        [else (void)])))
+	 (let* ([m (car l)]
+		[file (car m)]
+		[line (cadr m)]
+		[col (cddr m)])
+	   (if (or file line col)
+	       (begin
+		 (print-unknown-count)
+		 (fprintf p "~a, line ~a, char ~a.~n" 
+			  (or file "UNKNOWN")
+			  (or line "???")
+			  (or col "???"))
+		 (loop (- n 1) #f (cdr l)))
+	       (loop (- n 1)
+		     (if unknown (+ unknown 1) 1)
+		     (cdr l))))]
+        [else (print-unknown-count)])))
   
   (let* ([orig (error-display-handler)]
          [errortrace-error-display-handler

@@ -1,5 +1,6 @@
 (module client mzscheme
   (require "board.ss"
+           (lib "class.ss")
            "baseline.ss"
 	   "client-parameters.ss"
            "search.ss")
@@ -18,9 +19,11 @@
 	    (with-handlers (((lambda (ex)
 			       (eq? 'dead-robot ex))
 			     (lambda (ex)
-			       ;;(printf "~a~n" (read-line input))
-			       ;;(printf "~a~n" (read-line input))
-			       ;;(printf "~a~n" (read-line input))
+                               (cond
+                                 ((gui)
+                                  (send (gui) log (read-line input))
+                                  (send (gui) log (read-line input))
+                                  (send (gui) log (read-line input))))
 			       (close-output-port output)
 			       (close-input-port input)
 			       (score))))
@@ -69,32 +72,12 @@
   (define (do-turn update-score baseline? in out)
     (let loop ((packages (read-packages in))
                (robots null))
-;;      (printf "~a~n" (map
-;;		      (lambda (p)
-;;			(list (package-id p)
-;;			      (package-x p)
-;;			      (package-y p)
-;;			      (package-weight p)))
-;;		      packages))
       (cond
        ((null? packages) (fix-home!)))
       (cond
        (baseline? (send-command (compute-baseline-move packages robots) out))
        (else
         (let ((command (compute-move packages robots)))
-          (when (eq? (command-command command) 'p)
-            (printf "Robot ~a is picking up ~a~n" (player-id) (map package-id (command-arg command))))
-          (when (eq? (command-command command) 'd)
-            (printf "Robot ~a is dropping ~a for score ~a~n" 
-                    (player-id) 
-                    (map package-id (command-arg command))
-                    (apply + (map package-weight (command-arg command)))))
-;          (when (or (eq? (command-command command) 'n)
-;                    (eq? (command-command command) 's)
-;                    (eq? (command-command command) 'e)
-;                    (eq? (command-command command) 'w))
-;            (printf "Robot ~a is moving ~a from ~a,~a~n" (player-id) 
-;                    (command-command command) (get-player-x) (get-player-y)))
           (send-command command out))))
       (let ((robots (read-response! update-score
 				    packages

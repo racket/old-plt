@@ -268,10 +268,17 @@
 	     ((P)
 	      (cond
 	       ((= (response-id r) (player-id))
-		(packages-held
-		 (cons
-		  (hash-table-get package-table (response-arg r))
-		  (packages-held))))))
+                (let ((p (hash-table-get package-table (response-arg r))))
+                  (cond
+                    ((gui)
+                     (send (gui) log 
+                           (format "Picked up: ~a - dest: (~a, ~a) - weight: ~a"
+                                   (package-id p)
+                                   (package-x p)
+                                   (package-y p)
+                                   (package-weight p)))))
+                  (packages-held
+                   (cons p (packages-held)))))))
 	     ((D)
 	      (cond
 	       ((= (response-id r) (player-id))
@@ -281,7 +288,11 @@
 			       ((and (= (package-id p) drop)
 				     (= (get-player-x) (package-x p))
 				     (= (get-player-y) (package-y p)))
-				(add-score (package-weight p)))))
+				(cond
+                                  ((gui) (send (gui) log
+                                               (format "Dropped: ~a - ~a points"
+                                                       drop (package-weight p)))))
+                                (add-score (package-weight p)))))
 			    (packages-held))
 		  (packages-held
 		   (filter (lambda (p)
@@ -312,7 +323,8 @@
       (let ((robots (map (lambda (id) (hash-table-get (robot-table) id))
                          (robot-indexes))))
         (cond
-          ((gui) (send (gui) set-robots (map (lambda (robot)
+          ((gui)
+           (send (gui) set-robots (map (lambda (robot)
                                                (list (robot-id robot)
                                                      (robot-x robot)
                                                      (robot-y robot)))

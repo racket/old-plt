@@ -103,6 +103,10 @@
       
       (define/public (end) (send f show #t))
       
+      (define/public (log text)
+        (send log-text insert text)
+        (send log-text insert #\newline))
+      
       (define/public (set-robots l)
         (sleep/yield .05)
         (let ((b (list->vector (map string-copy board))))

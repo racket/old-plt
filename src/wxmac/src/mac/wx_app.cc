@@ -10,14 +10,14 @@
 static const char sccsid[] = "%W% %G%";
 
 // #include <stdlib.h>
-#include <Events.h>
-#include <AppleEvents.h>
 #ifndef OS_X
+ #include <Events.h>
+ #include <AppleEvents.h>
  #include <DiskInit.h>
+ #include <Devices.h>
+ #include <Resources.h>
+ #include <Balloons.h>
 #endif
-#include <Devices.h>
-#include <Resources.h>
-#include <Balloons.h>
 #include "wx_main.h"	// WCH : should split out stuff for wx_app.h and wb_app.h
 #include "wx_frame.h"
 #include "wx_menu.h"
@@ -668,8 +668,10 @@ void wxApp::doMacResumeEvent(void)
 	wxFrame* theMacWxFrame = findMacWxFrame(::FrontWindow());
 	if (theMacWxFrame)
 	{
+#ifndef OS_X
 		if (cCurrentEvent.message & convertClipboardFlag)
 			::TEFromScrap();
+#endif                        
 		Bool becomingActive = TRUE;
 		theMacWxFrame->Activate(becomingActive);
 	}
@@ -858,9 +860,12 @@ void wxApp::doMacInDrag(WindowPtr window)
 	wxFrame* theMacWxFrame = findMacWxFrame(window);
 	if (theMacWxFrame)
 	{
-		Rect dragBoundsRect = qd.screenBits.bounds;
-		::InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
-		::DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
+                BitMap screenBits;
+                Rect dragBoundsRect;
+                GetQDGlobalsScreenBits(&screenBits);
+                dragBoundsRect = screenBits.bounds;
+		InsetRect(&dragBoundsRect, 4, 4); // This is not really necessary
+		DragWindow(window, cCurrentEvent.where, &dragBoundsRect);
 		theMacWxFrame->wxMacRecalcNewSize(FALSE); // recalc new position only
 	}
 }
@@ -871,11 +876,15 @@ void wxApp::doMacInGrow(WindowPtr window)
 	wxFrame* theMacWxFrame = findMacWxFrame(window);
 	if (theMacWxFrame && theMacWxFrame->CanAcceptEvent())
 	{
+                BitMap screenBits;
+                
+                GetQDGlobalsScreenBits(&screenBits);
+                
 		Rect growSizeRect; // WCH: growSizeRect should be a member of wxFrame class
 		growSizeRect.top = 1; // minimum window height
 		growSizeRect.left = 1; // minimum window width
-		growSizeRect.bottom = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top;
-		growSizeRect.right = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
+		growSizeRect.bottom = screenBits.bounds.bottom - screenBits.bounds.top;
+		growSizeRect.right = screenBits.bounds.right - screenBits.bounds.left;
 		long windSize = ::GrowWindow(window, cCurrentEvent.where, &growSizeRect);
 		if (windSize != 0)
 		{

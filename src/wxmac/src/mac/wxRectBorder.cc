@@ -62,7 +62,7 @@ void wxRectBorder::DoShow(Bool on)
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
 		
 		::EraseRect(&clientRect);
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 	
 	wxWindow::DoShow(on);

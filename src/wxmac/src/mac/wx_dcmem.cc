@@ -12,7 +12,9 @@ static const char sccsid[] = "%W% %G%";
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <Quickdraw.h>
+#ifndef OS_X
+  #include <Quickdraw.h>
+#endif
 #include "wx_dcmem.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"

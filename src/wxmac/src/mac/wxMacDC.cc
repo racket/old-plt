@@ -6,7 +6,9 @@
 // Updated:	
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 #include "wxMacDC.h"
 
 //-----------------------------------------------------------------------------

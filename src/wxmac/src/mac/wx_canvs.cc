@@ -16,7 +16,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_sbar.h"
 #include "wxScroll.h"
 #include "wx_frame.h"
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif 
 #include "wxScrollArea.h"
 #include "wxBorderArea.h"
 
@@ -238,8 +240,8 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
         if (dw <= 0) {
           horizontal = -1;
         } else {
-          x_length = ceil((double)dw / horizontal);
-          x_page = floor((double)w / horizontal);
+          x_length = (int)ceil((double)dw / horizontal);
+          x_page = (int)floor((double)w / horizontal);
         }
       }
       if (vExtent) {
@@ -248,8 +250,8 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
         if (dh <= 0) {
           vertical = -1;
         } else {
-          y_length = ceil((double)dh / vertical);
-          y_page = floor((double)h / vertical);
+          y_length = (int)ceil((double)dh / vertical);
+          y_page = (int)floor((double)h / vertical);
         }
       }
     }
@@ -372,14 +374,14 @@ void wxCanvas::SetScrollData
 		{
 			int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
 						scrollData->GetValue(wxWhatScrollData::wxUnitW);
-			dH = newH - (-theDC->device_origin_x);
+			dH = (int)(newH - (-theDC->device_origin_x));
 		}
 	
 		int dV = 0;
 		{
 			int newV = scrollData->GetValue(wxWhatScrollData::wxPositionV) *
 						scrollData->GetValue(wxWhatScrollData::wxUnitH);
-			dV = newV - (-theDC->device_origin_y);
+			dV = (int)(newV - (-theDC->device_origin_y));
 		}
 	
 		if (dH != 0 || dV != 0)
@@ -513,8 +515,8 @@ void wxCanvas::ViewStart(int* x, int* y)
 {
   wxDC* theDC = GetDC();
   if (theDC) {
-    *x = -(theDC->device_origin_x);
-    *y = -(theDC->device_origin_y);
+    *x = (int)(-(theDC->device_origin_x));
+    *y = (int)(-(theDC->device_origin_y));
   } else
     *x = *y = 0;
 }
@@ -556,8 +558,8 @@ void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
 	{
 		float fX = theDC->DeviceToLogicalX(*x);
 		float fY = theDC->DeviceToLogicalY(*y);
-		*x = fX;
-		*y = fY;
+		*x = (int)fX;
+		*y = (int)fY;
     }
 }
 

@@ -8,7 +8,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 static const char sccsid[] = "%W% %G%";
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 #include "wx_gdi.h"
 #include "wx_dc.h"
 

@@ -12,7 +12,9 @@ static const char sccsid[] = "%W% %G%";
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 #include "wx_dccan.h"
 #include "wx_utils.h"
 
@@ -23,16 +25,12 @@ static const char sccsid[] = "%W% %G%";
 //#include "verti.xbm"
 //#include "cross.xbm"
 
-static PixMapHandle	bdiag,
-		cdiag,
-		fdiag,
-		cross,
-		horiz,
-		verti;
-
-// Declarations local to this file
-#define YSCALE(y) (yorigin - (y))
-#define     wx_round(a)    (int)((a)+.5)
+//static PixMapHandle	bdiag,
+//		cdiag,
+//		fdiag,
+//		cross,
+//		horiz,
+//		verti;
 
 extern CGrafPtr wxMainColormap;
 
@@ -71,7 +69,7 @@ float wxCanvasDC::GetCharHeight(void)
 {
 	int theCharHeight;
 	if (font)
-  		theCharHeight = font->GetCharHeight();
+  		theCharHeight = (int)font->GetCharHeight();
   	else
   		theCharHeight = 12;
 
@@ -84,7 +82,7 @@ float wxCanvasDC::GetCharWidth(void)
 {
 	int theCharWidth;
 	if (font)
-  		theCharWidth = font->GetCharWidth();
+  		theCharWidth = (int)font->GetCharWidth();
   	else
   		theCharWidth = 12;
 

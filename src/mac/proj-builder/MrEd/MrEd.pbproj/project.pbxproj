@@ -1528,12 +1528,9 @@
 				0E7DA84D00ECA5887F000001,
 				0E7DA84E00ECA5887F000001,
 				0E7DA85100ECA5887F000001,
-				0E7DA85200ECA5887F000001,
 				0E7DA85300ECA5887F000001,
 				0E7DA85400ECA5887F000001,
 				0E7DA85500ECA5887F000001,
-				0E7DA85600ECA5887F000001,
-				0E7DA85700ECA5887F000001,
 				0E7DA85800ECA5887F000001,
 				0E7DA85900ECA5887F000001,
 				0E7DA85A00ECA5887F000001,
@@ -1655,12 +1652,6 @@
 			path = /Users/clements/plt/src/wxmac/src/mac/wx_dialg.cc;
 			refType = 0;
 		};
-		0E7DA85200ECA5887F000001 = {
-			isa = PBXFileReference;
-			name = wx_dltxt.cc;
-			path = /Users/clements/plt/src/wxmac/src/mac/wx_dltxt.cc;
-			refType = 0;
-		};
 		0E7DA85300ECA5887F000001 = {
 			isa = PBXFileReference;
 			name = wx_frame.cc;
@@ -1677,18 +1668,6 @@
 			isa = PBXFileReference;
 			name = wx_gdi.cc;
 			path = /Users/clements/plt/src/wxmac/src/mac/wx_gdi.cc;
-			refType = 0;
-		};
-		0E7DA85600ECA5887F000001 = {
-			isa = PBXFileReference;
-			name = wx_group.cc;
-			path = /Users/clements/plt/src/wxmac/src/mac/wx_group.cc;
-			refType = 0;
-		};
-		0E7DA85700ECA5887F000001 = {
-			isa = PBXFileReference;
-			name = wx_ipc.cc;
-			path = /Users/clements/plt/src/wxmac/src/mac/wx_ipc.cc;
 			refType = 0;
 		};
 		0E7DA85800ECA5887F000001 = {

@@ -253,7 +253,7 @@ void wxListBox::Paint(void)
 	if (cHidden) return;
 
 	SetCurrentDC();
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	::ALUpdate(theMacWindow->visRgn, cListReference);
 	
 	/* White out any empty space in the list: */
@@ -313,7 +313,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	
 	if (!cHidden && (dW || dH || dX || dY))
 	{
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&viewRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
 	}
 	
 	wxWindow::OnClientAreaDSize(dW, dH, dX, dY);

@@ -16,7 +16,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_stdev.h"
 #include "wx_area.h"
 #include "wx_panel.h"
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 
 #define IC_BOX_SIZE 12
 #define IC_X_SPACE 3
@@ -78,8 +80,8 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 			fLabelWidth += 20; // add 20 for width of checkbox icon
 			if (fLabelHeight < 12) fLabelHeight = 12; // height of checkbox icon is 12
 		}
-		if (width <= 0) cWindowWidth = fLabelWidth;
-		if (height <= 0) cWindowHeight = fLabelHeight;
+		if (width <= 0) cWindowWidth = (int)fLabelWidth;
+		if (height <= 0) cWindowHeight = (int)fLabelHeight;
 	}
 
 #if 0
@@ -92,7 +94,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, theMacLabel(),
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
 			drawNow, offValue, minValue, maxValue, checkBoxProc + useWFont, refCon);
 	CheckMemOK(cMacControl);
 #else
@@ -138,7 +140,7 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, label)
 	if (cWindowHeight < IC_MIN_HEIGHT)
 	  cWindowHeight = IC_MIN_HEIGHT;
 	
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&bounds);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
 }
 
 //=============================================================================
@@ -234,8 +236,7 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 	  
 	SetCurrentDC();
 
-	Bool isVisible = (**cMacControl).contrlVis == 255;
-	Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
+	Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
 
 	if (dW || dH)
@@ -259,7 +260,7 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }
 
@@ -304,8 +305,8 @@ void wxCheckBox::Paint(void)
 		float fDescent = 0.0;
 		float fLeading = 0.0;
 		GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
-		int stop = (cWindowHeight + fHeight) / 2;
-		::MoveTo(IC_BOX_SIZE + IC_X_SPACE, stop - fDescent - fLeading);
+		int stop = (int)((cWindowHeight + fHeight) / 2);
+		::MoveTo(IC_BOX_SIZE + IC_X_SPACE, (short)(stop - fDescent - fLeading));
 	  	::DrawText(labelString, 0, strlen(labelString));
 	  }
 	  int top = (cWindowHeight - IC_BOX_SIZE) / 2;
@@ -385,8 +386,8 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 	
 		float fStartH, fStartV;
 		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = fStartH;
-		int startV = fStartV;
+		int startH = (int)fStartH;
+		int startV = (int)fStartV;
 	
 		Point startPt = {startH, startV}; // client c.s.
 		int trackResult;

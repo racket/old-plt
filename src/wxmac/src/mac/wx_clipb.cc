@@ -17,8 +17,10 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_list.h"
 #include "wx_main.h"
 #include "wx_utils.h"
-#include <Scrap.h>
-#include <TextEdit.h>
+#ifndef OS_X
+  #include <Scrap.h>
+  #include <TextEdit.h>
+#endif
 
 static wxList *ClipboardFormats = NULL;
 
@@ -68,7 +70,6 @@ Bool wxEmptyClipboard(void)
 
 Bool wxIsClipboardFormatAvailable(int dataFormat)
 {
-  long offset;
   long format;
 
   if (dataFormat == wxCF_OEMTEXT)
@@ -83,7 +84,7 @@ Bool wxIsClipboardFormatAvailable(int dataFormat)
   ScrapFlavorFlags dontcare;
   
   err = GetCurrentScrap(&scrap);
-  return (err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
+  return ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr));
 #else  
   return (GetScrap(NULL, format, &offset) > 0);
 #endif
@@ -119,7 +120,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
 {
   Handle h;
   char *result;
-  long format, length, offset;
+  long format, length;
 
   if (dataFormat == wxCF_OEMTEXT)
     dataFormat = wxCF_TEXT;
@@ -137,7 +138,7 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   err = GetScrapFlavorSize(scrap,format,&length);
   if (err != noErr)
     return NULL;
-  result = new char[scrapSize + 1];
+  result = new char[length + 1];
   err = GetScrapFlavorData(scrap,format,&length,result);
   if (err != noErr) {
     delete result;
@@ -196,7 +197,7 @@ int  wxEnumClipboardFormats(int dataFormat)
     ScrapFlavorFlags dontcare;
   
     err = GetCurrentScrap(&scrap);
-    if (err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
+    if ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
       return cf->format;
 #else      
     if (GetScrap(NULL, format, &offset) > 0)

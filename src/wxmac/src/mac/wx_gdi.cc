@@ -13,10 +13,13 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_utils.h"
 #include "wx_gdi.h"
 #include "wx_dcmem.h"
-#include <Strings.h>
-#include <Resources.h>
-#include <QDOffscreen.h>
+#ifndef OS_X
+  #include <Strings.h>
+  #include <Resources.h>
+  #include <QDOffscreen.h>
+#endif
 #if USE_XPM_IN_MAC
+#error "USE_XPM_IN_MAC defined"
 #define FOR_MAC
 #include "xpm34.h"
 #endif
@@ -554,10 +557,10 @@ void wxSetCursor(wxCursor *cursor)
   if (cursor != curCursor) {
       /* 0x1 is the arrow cursor */
       if (cursor) {
-	  if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1))
+	  if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1)) // this can't possibly be right...
 		::SetCursor(*(cursor->cMacCursor));
 	  else
-	 	::SetCursor(&(qd.arrow));
+	 	::SetCursor(GetQDGlobalsArrow(NULL));
       }
       curCursor = cursor;
   }
@@ -714,11 +717,13 @@ wxBitmap::~wxBitmap(void)
 
 	if (x_pixmap)
 		// Louis Birk Suggests:
+#error "REVIEW this code"
 #ifdef LkB
-		::DisposeCTable((*x_pixmap->portPixMap)->pmTable);
-		(*x_pixmap->portPixMap)->pmTable = 0;
-		::DisposePtr((Ptr) (*x_pixmap->portPixMap)->baseAddr);
-		(*x_pixmap->portPixMap)->baseAddr = 0;
+                BitMap pixMap = GetPortPixMap(*x_pixmap);
+		::DisposeCTable(pixMap->pmTable);
+		pixMap->pmTable = 0;
+		::DisposePtr((Ptr) pixMap->baseAddr);
+		pixMap->baseAddr = 0;
 		// End of birk@moonface.com mods
 #else
 		DisposeGWorld(x_pixmap);

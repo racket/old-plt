@@ -11,8 +11,10 @@ static const char sccsid[] = "%W% %G%";
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <QuickDraw.h>
+#ifndef OS_X
 #include <Printing.h>
+#include <QuickDraw.h>
+#endif
 #include "wx_dcpr.h"
 //#include "wx_canvs.h"
 #include "wx_privt.h"
@@ -23,124 +25,30 @@ static const char sccsid[] = "%W% %G%";
 //-----------------------------------------------------------------------------
 // Default constructor
 //-----------------------------------------------------------------------------
-#ifdef OS_X
-wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
-{
-  PMPrintSettings printSettings;
-  PMPageFormat pageFormat;
-  OSErr err;
-  
-  ok = true;
-  
-  if (wxPMBegin() != noErr) {
-    ok = false;
-    return;
-  }
-
-  if (PMCreatePrintSettings(&printSettings) != noErr) {
-    ok = false;
-    return;
-  }
-  
-  if (PMDefaultPrintSettings(printSettings) != noErr) {
-    ok = false;
-    PMDisposePrintSettings(printSettings);
-    return;
-  }
-  
-  if (PMCreatePageFormat(&pageFormat) != noErr) {
-    ok = false;
-    PMDisposePrintSettings(printSettings);
-    return;
-  }
-  
-  if (PMDefaultPageFormat(pageFormat) != noErr) {
-    ok = false;
-    PMDisposePrintSettings(printSettings);
-    PMDisposePageFormat(pageFormat);
-    return;
-  }
-
-  close_handle = 1;
-  Create(printSettings,pageFormat);
-}
-#else
-wxPrinterDC::wxPrinterDC(wxWindow *parent) : wxCanvasDC()
-{
-  THPrint pr;
-
-  ok = TRUE;
-
-  wxPrOpen();
-
-  pr = (THPrint)NewHandleClear(sizeof(TPrint));
-
-  PrintDefault(pr);
-  if (PrError() != fnfErr) {
-    if (!PrJobDialog(pr)) {
-      ok = FALSE;
-    }
-    if (PrError())
-      ok = FALSE;
-  } else
-    ok = FALSE;
-
-  if (ok) {
-    close_handle = 1;
-    Create(pr);
-  } else {
-    DisposeHandle((Handle)pr);
-  }
-}
-#endif
-
 
 //-----------------------------------------------------------------------------
-#ifdef OS_X
-wxPrinterDC::wxPrinterDC(PMPrintSettings printSettings, PMPageFormat pageFormat) : wxCanvasDC()
-#else
-wxPrinterDC::wxPrinterDC(THPrint pData) : wxCanvasDC()
-#endif
+wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 {
   ok = true;
-  close_handle = 0;
-  wxPrOpen();
-#ifdef OS_X
-  Create(pData);
-#else
-  Create(printSettings,pageFormat);
-#endif
-}
 
-#ifdef OS_X
-void wxPrinterDC::Create(PMPrintSettings printSettings, PMPageFormat pageFormat)
-#else
-void wxPrinterDC::Create(THPrint pData)
-#endif
-{
-    GrafPtr grafPtr;
+    GrafPtr theGrafPtr;
     __type = wxTYPE_DC_PRINTER;
 
+    cPrintData = printData;
+
 #ifdef OS_X
-    cPrintSettings = printSettings;
-    cPageFormat = pageFormat;
-    
-    if (PMOpenDocument(cPrintSettings,cPageFormat,&cPrintContext) != noErr) {
+    if (PMBeginDocument(cPrintData->cPrintSettings,cPrintData->cPageFormat,&cPrintContext) != noErr) {
       ok = false;
       return;
     }  
     
-    GrafPtr grafPtr;
-    
-    if (PMGetGrafPtr(cPrintContext, &grafPtr) != noErr) {
+    if (PMGetGrafPtr(cPrintContext, &theGrafPtr) != noErr) {
       ok = false;
       return;
     }
 
 #else    
-    prRecHandle = pData;
-
-    prPort = PrOpenDoc(prRecHandle, 0, 0);
+    prPort = PrOpenDoc(printData.macPrData, 0, 0);
 
     if (PrError()) {
       PrCloseDoc(prPort);
@@ -149,11 +57,10 @@ void wxPrinterDC::Create(THPrint pData)
       return;
     }
 
-    grafPtr = &(prPort->gPort);
+    theGrafPtr = &(prPort->gPort);
 #endif
 
-    cMacDC = new wxMacDC((CGrafPtr)grafPtr);
-    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    cMacDC = new wxMacDC((CGrafPtr)theGrafPtr);
 	
     cMacDoingDrawing = FALSE;
 
@@ -169,9 +76,9 @@ void wxPrinterDC::Create(THPrint pData)
 #ifdef OS_X
   PMRect pageRect;
   
-  PMGetAdjustedPageRect(cPageFormat,&pageRect)
-  pixmapWidth = pageRect.right - pageRect.left;
-  pixmapHeight = pageRect.bottom - pageRect.top;
+  PMGetAdjustedPageRect(cPrintData->cPageFormat,&pageRect);
+  pixmapWidth = (int)(pageRect.right - pageRect.left);
+  pixmapHeight = (int)(pageRect.bottom - pageRect.top);
 #else
   pixmapWidth = (**prRecHandle).prInfo.rPage.right;
   pixmapHeight = (**prRecHandle).prInfo.rPage.bottom;
@@ -228,21 +135,17 @@ wxPrinterDC::~wxPrinterDC(void)
   if (ok) {
 #ifdef OS_X
     PMEndDocument(cPrintContext);
-    if (close_handle) {
-        PMDisposePrintSettings(cPrintSettings);
-        PMDisposePageFormat(cPageFormat);
-    }
 #else    
     PrCloseDoc(prPort);
-    if (close_handle)
-      DisposeHandle((Handle)prRecHandle);
-  }
 #endif
-  wxPrClose();
+  }
 }
 
 //-----------------------------------------------------------------------------
-Bool wxPrinterDC::StartDoc(char *message) { return TRUE; }
+Bool wxPrinterDC::StartDoc(char *message) 
+{ 
+  return TRUE; 
+}
 
 //-----------------------------------------------------------------------------
 void wxPrinterDC::EndDoc(void) { }
@@ -264,7 +167,7 @@ void wxPrinterDC::EndPage(void)
 {
 #ifdef OS_X
     if (cPrintContext)
-        PMEndPage(cPrintContext,NULL);
+        PMEndPage(cPrintContext);
 #else
   if (prPort)
     PrClosePage(prPort);

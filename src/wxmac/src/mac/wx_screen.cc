@@ -11,7 +11,9 @@ static const char sccsid[] = "%W% %G%";
 
 #include "wx_screen.h"
 #include "wx_area.h"
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 
 wxScreen* wxScreen::gScreenWindow = NULL; // mac platform only
 

@@ -24,7 +24,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_main.h"
 #include "wx_menu.h"
 #include "wxTimeScale.h"
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 
 wxWindow* wxWindow::gMouseWindow = NULL; 
 
@@ -498,7 +500,7 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		Rect oldWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
 		SetCurrentMacDCNoMargin();
 		MacSetBackground();
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&oldWindowRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
 		::ClipRect(&oldWindowRect);
 		::EraseRect(&oldWindowRect);
 	}
@@ -514,7 +516,7 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
 		cMacDC->setCurrentUser(NULL); // macDC no longer valid
 		SetCurrentMacDCNoMargin(); // put newClientRect at (0, 0)
 		MacSetBackground();
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&newWindowRect); // force redraw of window
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
 		::ClipRect(&newWindowRect);
 		::EraseRect(&newWindowRect); /* MATTHEW: [5] */
 	}
@@ -528,7 +530,7 @@ void wxWindow::Refresh(void)
 
 	GetClipRect(cClientArea, &theClipRect);
 	SetCurrentMacDC(); // put newClientRect at (0, 0)
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&theClipRect); // force redraw of window
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&theClipRect); // force redraw of window
 }
 
 //-----------------------------------------------------------------------------
@@ -1556,7 +1558,7 @@ void wxWindow::DoShow(Bool v)
 		::EraseRect(&r);
 	}
 	
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&r);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
 
 	cHidden = v;
 

@@ -19,18 +19,18 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_messg.h"
 #include "wx_main.h"
 #include "wx_buttn.h"
-#include <StandardFile.h>
-#include <TextUtils.h>
-#include <Strings.h>
+#ifndef OS_X
+  #include <StandardFile.h>
+  #include <TextUtils.h>
+  #include <Strings.h>
+#endif
 #ifdef PYLIB
 extern "C" {
 #include "nfullpath.h"
 }
 #endif
 
-#ifdef powerc
 # define USE_NAVIGATION
-#endif
 
 #ifdef USE_NAVIGATION
 # include <Navigation.h>
@@ -297,7 +297,7 @@ char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,
                      char *wildcard, int flags,
                      wxWindow *parent, int x, int y)
-{	
+{
 #ifdef USE_NAVIGATION
   if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
     if (!navinited) {
@@ -401,7 +401,7 @@ char *wxFileSelector(char *message, char *default_path,
 		newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
 						       strlen(temp) +
 						       log_base_10(strlen(temp)) + 3];
-		sprintf(newpath,"%s %d %s",aggregate,strlen(temp),temp);
+		sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
 		aggregate = newpath;
 	    }
 	    
@@ -425,6 +425,7 @@ char *wxFileSelector(char *message, char *default_path,
 #endif
 #ifdef OS_X
     wxFatalError("Navigation Services Unavailable.","");
+    return NULL;
 #else
 	StandardFileReply	rep;
 	SFTypeList typeList = { 'TEXT' };

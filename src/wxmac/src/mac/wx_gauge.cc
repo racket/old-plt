@@ -49,7 +49,6 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
   wxbGauge(panel, label, _range, x, y, width, height, style, name)
 {
 	SetCurrentDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
 	float fWidth;
 	float fHeight;
@@ -68,13 +67,12 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 	
 	if (label) {
 		GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
-		lblh = fHeight;
-		lblw = fWidth;
+		lblh = (int)fHeight;
+		lblw = (int)fWidth;
 	}
 
 	valueRect.top = valueRect.left = 0;
 	
-	int adjust = 0;
 	if (style & wxVERTICAL) {
 		if (height < 0)
 			cWindowHeight = KDEFAULTW + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);

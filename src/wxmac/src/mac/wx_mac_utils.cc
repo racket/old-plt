@@ -16,10 +16,12 @@
 #include "wx_dialg.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
-#include <Memory.h>
-#include <QuickDraw.h>
-#include <ToolUtils.h>
-#include <Dialogs.h>
+#ifndef OS_X
+  #include <Memory.h>
+  #include <QuickDraw.h>
+  #include <ToolUtils.h>
+  #include <Dialogs.h>
+#endif
 
 //-----------------------------------------------------------------------------
 wxMacString::wxMacString(void)

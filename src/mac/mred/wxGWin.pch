@@ -9,6 +9,7 @@
 #ifdef OS_X
   #define TARGET_API_MAC_CARBON 1
   #define OPAQUE_TOOLBOX_STRUCTS 1
+  #define PM_USE_SESSION_APIS 0
   
   #include <Carbon/Carbon.h>
 #else

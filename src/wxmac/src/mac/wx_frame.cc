@@ -20,10 +20,12 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_area.h"
 #include "wx_screen.h"
 #include "wx_mac_utils.h"
-#include <QuickDraw.h>
-#include <TextEdit.h>
-#include <Menus.h>
-#include <Windows.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+  #include <TextEdit.h>
+  #include <Menus.h>
+  #include <Windows.h>
+#endif
 
 extern wxScreen *theScreen;
 static wxMenuBar *empty_menu_bar, *close_menu_bar;
@@ -114,9 +116,9 @@ wxFrame::wxFrame // Constructor (for frame window)
 			wxFatalError(error);
 		}
 
-		::SetWTitle((WindowPtr)theMacWindow, theWindowTitle);
+		::SetWTitle(theMacWindow, theWindowTitle);
 		
-		SetWRefCon((GrafPtr)GetWindowPort((WindowPtr)theMacWindow), (long)this);
+		SetWRefCon(GetWindowPort(theMacWindow), (long)this);
 		
 	} else {
 #endif
@@ -134,21 +136,23 @@ wxFrame::wxFrame // Constructor (for frame window)
 		const WindowPtr MoveToFront = WindowPtr(-1L);
 		const Bool HasGoAwayBox = TRUE;
 		long theRefCon = (long)this;
-		theMacWindow = (CWindowPtr)::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
+		theMacWindow = ::NewCWindow(NULL, &theBoundsRect, theWindowTitle,
 						!WindowIsVisible, theProcID, MoveToFront, HasGoAwayBox, theRefCon);
 
 #if (__powerc)
 
 	}
 #endif
-	
+
 	CheckMemOK(theMacWindow);
 	
-	cMacDC = new wxMacDC(theMacWindow);
+	cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
 
+#ifndef OS_X
  	WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;
 	(*wstatedata)->stdState.right -= 80;
 	//(*wstatedata)->stdState.top = GetMBarHeight() + 5;
+#endif
 
   // Calculate the platformArea size
 	Rect theStrucRect = wxMacGetStrucRect();
@@ -165,12 +169,12 @@ wxFrame::wxFrame // Constructor (for frame window)
 	wxMargin contentAreaMargin = ContentArea()->Margin(wxScreen::gScreenWindow);
 	int theMacX = contentAreaMargin.Offset(Direction::wxLeft);
 	int theMacY = contentAreaMargin.Offset(Direction::wxTop);
-	MoveWindow((WindowPtr)theMacWindow, theMacX, theMacY, FALSE);
+	MoveWindow(theMacWindow, theMacX, theMacY, FALSE);
 
   // The client has the requested window size, not the window: must resize
 	int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
-	SizeWindow((WindowPtr)theMacWindow, theMacWidth, theMacHeight, FALSE);
+	SizeWindow(theMacWindow, theMacWidth, theMacHeight, FALSE);
 	
 	wx_cursor = wxSTANDARD_CURSOR;
 	
@@ -196,8 +200,8 @@ wxFrame::~wxFrame(void)
 		cDialogPanel = NULL;
 	DestroyChildren();
 
-	CWindowPtr theMacWindow = cMacDC->macGrafPort();
-	::DisposeWindow((WindowPtr)theMacWindow);
+	CWindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
+	::DisposeWindow(theMacWindow);
 	delete cMacDC;
 	if (wx_menu_bar)
 		delete wx_menu_bar;
@@ -286,7 +290,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 		int oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
 	 		Rect oldGrowRect = {oldMacHeight - 15, oldMacWidth - 15, oldMacHeight, oldMacWidth};
 	 		SetCurrentMacDC();
-	 		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&oldGrowRect);
+	 		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldGrowRect);
 	 		::EraseRect(&oldGrowRect); // MATTHEW: [5] 
 	 	}
 	 }
@@ -302,7 +306,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	if (heightIsChanged) cWindowHeight = height;
 
 	SetCurrentDC();
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 
 	if (xIsChanged || yIsChanged)
 	{
@@ -331,14 +335,14 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 	 			r.bottom = h;
 	 			r.left = max(0, w - dw);
 	 			r.right = w;
-		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&r);
+		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
 	 		}
 	 		if (dh) {
 	 			r.top = max(0, h - dh);
 	 			r.bottom = h;
 	 			r.left = 0;
 	 			r.right = w;
-		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&r);
+		 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
 	 		}
 	 	}
  		
@@ -373,10 +377,11 @@ void wxFrame::Maximize(Bool maximize)
 		int oldWindowHeight = cWindowHeight;
 
 		SetCurrentDC();
-		WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
-		::EraseRect(&theMacWindow->portRect);
+                GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+                WindowPtr theMacWindow = GetWindowFromPort(theMacGrafPort);
+		::EraseRect(GetPortBounds(theMacGrafPort,NULL));
 		::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
-		InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&theMacWindow->portRect);
+		InvalWindowRect(theMacWindow,GetPortBounds(theMacGrafPort,NULL));
 		cMaximized = maximize;
 
 		wxMacRecalcNewSize();
@@ -437,7 +442,7 @@ void wxFrame::CreateStatusLine(int number, char* name)
 	cStatusPanel->SetEraser(cEraser);
 	cStatusText->SetEraser(cEraser);
 	cStatusText->SetFont(wxNORMAL_FONT);
-	int statusLineHeight = cStatusText->GetCharHeight() * nb_status;
+	int statusLineHeight = (int)(cStatusText->GetCharHeight() * nb_status);
 	int clientWidth, clientHeight;
 	GetClientSize(&clientWidth, &clientHeight);
 	cStatusText->SetWidthHeight(clientWidth - 18, statusLineHeight);
@@ -493,7 +498,7 @@ void wxFrame::SetMenuBar(wxMenuBar* menu_bar)
     if (menu_bar && menu_bar->menu_bar_frame)
 		return;
 
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	wxMenuBar* oldMenuBar = wx_menu_bar;
 	if (oldMenuBar)
 	{
@@ -585,7 +590,7 @@ void wxFrame::ShowAsActive(Bool flag)
 	 	// Erase it now if we're becoming inactive
 	 	if (!flag)
 	 		::EraseRect(&growRect);
-	 	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&growRect); 
+	 	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&growRect); 
 	 }
  	
  	if (!cFocusWindow && children) {
@@ -626,7 +631,7 @@ Bool wxFrame::Iconized(void) { return FALSE; } 	// not implemented
 //-----------------------------------------------------------------------------
 WindowPtr wxFrame::macWindow(void)
 {
-	return cMacDC ? (WindowPtr)cMacDC->macGrafPort() : NULL;
+	return cMacDC ? GetWindowFromPort(cMacDC->macGrafPort()) : NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -635,14 +640,10 @@ Bool wxFrame::IsMacWindow(void) { return TRUE; }
 //-----------------------------------------------------------------------------
 Bool wxFrame::IsVisible(void)
 {
-	Bool result = FALSE;
 	if (cMacDC)
-	{
-		WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
-		result = ((WindowPeek)theMacWindow)->visible;
-	}
-
-	return result;
+            return IsWindowVisible(GetWindowFromPort(cMacDC->macGrafPort()));
+        else
+            return FALSE;
 }
 
 //-----------------------------------------------------------------------------
@@ -651,11 +652,12 @@ void wxFrame::wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD,
 {
     ::GetGWorld(&oldPort, &oldGD);
 
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
-	::SetGWorld(GetWindowPort(theMacWindow), wxGetGDHandle());
+        // I AM RIGHT HERE!!
+        GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
-	savePortH = theMacWindow->portRect.left;
-	savePortV = theMacWindow->portRect.top;
+	savePortH = GetPortBounds(theMacGrafPort,NULL)->left;
+	savePortV = GetPortBounds(theMacGrafPort,NULL)->top;
 	::SetOrigin(0, 0);
 }
 
@@ -677,8 +679,7 @@ Rect wxFrame::wxMacGetContRect(void)
 	CGrafPtr oldPort; GDHandle oldGD;
 	int savePortH, savePortV;
 	wxMacStartDrawing(oldPort, oldGD, savePortH, savePortV);
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
-	Rect theContRect = theMacWindow->portRect; // client c.s.
+	Rect theContRect = *GetPortBounds(cMacDC->macGrafPort(),NULL); // client c.s.
 	Point topLeftPt = {0, 0};
 	::LocalToGlobal (&topLeftPt);
 	::OffsetRect(&theContRect, topLeftPt.h, topLeftPt.v); // screen window c.s.
@@ -700,22 +701,26 @@ Rect wxFrame::wxMacGetStrucRect(void)
 	int savePortH, savePortV;
 	wxMacStartDrawing(oldPort, oldGD, savePortH, savePortV);
 
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 
-	if (((WindowPeek)theMacWindow)->visible)
+	if (IsWindowVisible(theMacWindow))
 	{
-		theStrucRect = (**(WindowPeek(theMacWindow)->strucRgn)).rgnBBox; // screen window c.s.
+                RgnHandle strucRgn;
+                GetWindowRegion(theMacWindow,kWindowStructureRgn,strucRgn);
+		theStrucRect = *GetRegionBounds(strucRgn,NULL); // screen window c.s.
 	}
 	else
 	{
 		const int kOffScreenLocation = 0x4000;
 	
-		Rect theClientRect = theMacWindow->portRect; // client c.s.
+		Rect theClientRect = *GetPortBounds(cMacDC->macGrafPort(),NULL); // client c.s.
 		Point thePosition = {theClientRect.top, theClientRect.left}; // client c.s.
 		::LocalToGlobal(&thePosition); // screen window c.s.
 		::MoveWindow(theMacWindow, thePosition.h, kOffScreenLocation, FALSE);
 		::ShowHide(theMacWindow, TRUE);
-		theStrucRect = (**(WindowPeek(theMacWindow)->strucRgn)).rgnBBox;
+                RgnHandle strucRgn;
+                GetWindowRegion(theMacWindow,kWindowStructureRgn,strucRgn);
+		theStrucRect = *GetRegionBounds(strucRgn,NULL);
 		::ShowHide(theMacWindow, FALSE);
 		::MoveWindow(theMacWindow, thePosition.h, thePosition.v, FALSE);
 		::OffsetRect(&theStrucRect, 0, thePosition.v - kOffScreenLocation); // screen window c.s.
@@ -734,7 +739,7 @@ void wxFrame::MacUpdateWindow(void)
 	{
 		SetCurrentDC();
 		::BeginUpdate(theMacWindow);
-		if (!::EmptyRgn(theMacWindow->visRgn))
+		if (!::EmptyRgn(GetPortVisibleRegion(GetWindowPort(theMacWindow),NULL)))
 		{
  			// Erase update region
  			// ::EraseRect(&theMacWindow->portRect);
@@ -797,7 +802,7 @@ char* wxFrame::GetTitle(void) // WCH: return type should be "const char*"
 {
 	Str255		theTitle;
 
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	::GetWTitle(theMacWindow, theTitle);
 	wxMacPtoCString(theTitle, cWindowTitle);
 	return cWindowTitle;
@@ -807,7 +812,7 @@ char* wxFrame::GetTitle(void) // WCH: return type should be "const char*"
 void wxFrame::SetTitle(char* title)
 {
 	wxMacString theMacString = title;
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	::SetWTitle(theMacWindow, theMacString());
 }
 
@@ -816,7 +821,7 @@ void wxFrame::Show(Bool show)
 {
 	if (show == IsVisible()) {
 	  if (show)
-	    ::SelectWindow((WindowPtr)cMacDC->macGrafPort());
+	    ::SelectWindow(GetWindowFromPort(cMacDC->macGrafPort()));
 	  return;
 	}
 	
@@ -832,7 +837,7 @@ void wxFrame::Show(Bool show)
 		MakeModal(FALSE);
 #endif
 
-	WindowPtr theMacWindow = (WindowPtr)cMacDC->macGrafPort();
+	WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
 	if (show) {
 #if __WXGARBAGE_COLLECTION_ON
 	   wxTopLevelWindows(ContextWindow())->Append(this);

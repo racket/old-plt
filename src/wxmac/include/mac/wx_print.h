@@ -45,7 +45,9 @@
 #include "wx_choic.h"
 
 #ifdef wx_mac
+#ifndef OS_X
 #include <Printing.h>
+#endif
 #endif
 
 #ifdef IN_CPROTO
@@ -95,14 +97,15 @@ class wxPrintData: public wxObject
   void SetAllPages(Bool);
   void SetCollate(Bool);
   void SetPrintToFile(Bool);
-  void SetSetupDialog(Bool);
 
   void EnablePrintToFile(Bool);
   void EnableSelection(Bool);
   void EnablePageNumbers(Bool);
   void EnableHelp(Bool);
 
+#ifndef OS_X
   void operator=(const wxPrintData& data);
+#endif
 };
 
 /*
@@ -115,13 +118,17 @@ class wxPrintDialog: public wxDialogBox
  private:
   wxPrintData *printData;
   wxWindow *dialogParent;
+  
+  Bool cShowSetupDialog;
  public:
   wxPrintDialog(wxWindow *parent, wxPrintData *data);
   ~wxPrintDialog(void);
 
   virtual void Show(Bool flag);
+  
+  virtual void ShowSetupDialog(Bool flag);
 
-  virtual wxPrintData& GetPrintData(void) { return printData; }
+  virtual wxPrintData *GetPrintData(void) { return printData; }
 };
 
 /*
@@ -131,7 +138,7 @@ class wxPrintDialog: public wxDialogBox
 class wxPrinter: public wxObject
 {
  private:
-  wxPrintData printData;
+  wxPrintData *printData;
   wxPrintout *currentPrintout;
 #ifndef wx_mac
   FARPROC lpAbortProc;
@@ -140,15 +147,17 @@ class wxPrinter: public wxObject
   static wxWindow *abortWindow;
   static Bool abortIt;
 
-  wxPrinter(wxPrintData *data = NULL);
+  wxPrinter(wxPrintData *data);
   ~wxPrinter(void);
 
   virtual Bool Print(wxWindow *parent, wxPrintout *printout, Bool prompt = TRUE);
   virtual Bool PrintDialog(wxWindow *parent);
+#ifndef OS_X  
   virtual wxWindow *CreateAbortWindow(wxWindow *parent, wxPrintout *printout);
+#endif  
   virtual Bool Setup(wxWindow *parent);
   virtual void ReportError(wxWindow *parent, wxPrintout *printout, char *message);
-  virtual wxPrintData &GetPrintData(void);
+  virtual wxPrintData *GetPrintData(void);
   virtual inline Bool Abort(void) { return abortIt; }
   
 };

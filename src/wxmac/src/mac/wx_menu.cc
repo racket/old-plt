@@ -17,8 +17,10 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include "wx_main.h"
-#include <Strings.h>
-#include <Balloons.h>	
+#ifndef OS_X
+  #include <Strings.h>
+  #include <Balloons.h>	
+#endif
 
 int wxNumHelpItems;
 MenuHandle wxHelpMenu;

@@ -17,7 +17,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_stdev.h"
 #include "wx_area.h"
 #include "wx_frame.h"
-#include <Windows.h>
+#ifndef OS_X
+  #include <Windows.h>
+#endif
 
 pascal void	TrackActionProc(ControlHandle theControl,short partCode);
 
@@ -110,7 +112,7 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 	const short minValue = 0;
 	const short maxValue = 0;
 	long refCon = (long)this;
-	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, theMacLabel(),
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
 			drawNow, offValue, minValue, maxValue, scrollBarProc, refCon);
 	CheckMemOK(cMacControl);
 	
@@ -207,8 +209,7 @@ void wxScrollBar::Paint(void)
 
 	SetCurrentDC();
  	// GRW
- 	Bool isVisible = (**cMacControl).contrlVis == 255;
- 	if (isVisible)
+ 	if (IsControlVisible(cMacControl))
  	{
 	 	::Draw1Control(cMacControl);
  	}
@@ -380,8 +381,7 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 {
 	SetCurrentDC();
 
-	Bool isVisible = (**cMacControl).contrlVis == 255;
-	Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
+	Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
 
 	if (dW || dH)
@@ -405,6 +405,6 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }

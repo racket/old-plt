@@ -16,7 +16,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_stdev.h"
 #include "wx_panel.h"
 #include "wx_area.h"
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 
 #define IR_CIRCLE_SIZE 12
 #define IR_X_SPACE 3
@@ -90,7 +92,7 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, theMacLabel(),
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
 			drawNow, offValue, minValue, maxValue, radioButProc + useWFont, refCon);
 	CheckMemOK(cMacControl);
 #else
@@ -133,7 +135,7 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
 	if (cWindowHeight < IR_MIN_HEIGHT)
 	  cWindowHeight = IR_MIN_HEIGHT;
 
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&bounds);
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
 }
 
 //=============================================================================
@@ -348,8 +350,7 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 
 	SetCurrentDC();
 
-	Bool isVisible = (**cMacControl).contrlVis == 255;
-	Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
+	Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
 
 	if (dW || dH)
@@ -373,6 +374,6 @@ void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac pla
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }

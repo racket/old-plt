@@ -8,7 +8,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 static const char sccsid[] = "%W% %G%";
-#include <Windows.h>
+#ifndef OS_X
+  #include <Windows.h>
+#endif
 #include <stdlib.h>
 
 #include "wx_main.h"

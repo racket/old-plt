@@ -18,8 +18,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #if 1
-#include <Files.h>
-#include <PPCToolbox.h>
+#ifndef OS_X
+  #include <Files.h>
+  #include <PPCToolbox.h>
+#endif
 extern "C" long atol(char *);
 extern "C" int atoi(char *);
 #else

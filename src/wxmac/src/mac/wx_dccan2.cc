@@ -12,23 +12,21 @@ static const char sccsid[] = "%W% %G%";
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <QDOffscreen.h>
+#ifndef OS_X
+  #include <QDOffscreen.h>
+#endif
 #include "wx_dccan.h"
 #include "wx_utils.h"
 #include "wx_canvs.h"
 #include "wx_rgn.h"
 #include "wx_privt.h"
 
-static PixMapHandle	bdiag,
-		cdiag,
-		fdiag,
-		cross,
-		horiz,
-		verti;
-
-// Declarations local to this file
-#define YSCALE(y) (yorigin - (y))
-#define     wx_round(a)    (int)((a)+.5)
+//static PixMapHandle	bdiag,
+//		cdiag,
+//		fdiag,
+//		cross,
+//		horiz,
+//		verti;
 
 extern CGrafPtr wxMainColormap;
 
@@ -178,11 +176,11 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   w = dc->LogicalToDeviceXRel(w);
   h = dc->LogicalToDeviceYRel(h);
   
-  xstart = floor(x / bw);
-  xend = floor((x + w + bw - 0.00001) / bw);
+  xstart = (int)floor(x / bw);
+  xend = (int)floor((x + w + bw - 0.00001) / bw);
 
-  ystart = floor(y / bh);
-  yend = floor((y + h + bh - 0.00001) / bh);
+  ystart = (int)floor(y / bh);
+  yend = (int)floor((y + h + bh - 0.00001) / bh);
 
   dc->SetClippingRegion(r);
 
@@ -571,8 +569,8 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 				break;
 		}
 
-		int ixsrc = floor(xsrc);
-		int iysrc = floor(ysrc);
+		int ixsrc = (int)floor(xsrc);
+		int iysrc = (int)floor(ysrc);
 		
 		if (ixsrc > source->GetWidth())
 		  return TRUE;
@@ -589,19 +587,20 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		int x = XLOG2DEV(xdest);
 		int y = YLOG2DEV(ydest);
 		
-		Rect srcr = {iysrc, ixsrc, iysrc + height, ixsrc + width};
+		Rect srcr = {iysrc, ixsrc, iysrc + (int)height, ixsrc + (int)width};
 		Rect destr = {y, x, y+h, x+w };
 		
 		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-        BitMap *dstbm;
-        PixMapHandle destpixh;
-        if (((theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
-          destpixh = NULL;
-          dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
-        } else {
-          destpixh = (theMacGrafPort)->portPixMap;
-		  dstbm = (BitMap *)(* destpixh);
-        }
+
+                const BitMap *dstbm;
+                PixMapHandle destpixh;
+                if (! IsPortColor(theMacGrafPort)) {
+                    destpixh = NULL;
+                    dstbm = GetPortBitMapForCopyBits(theMacGrafPort);
+                } else {
+                    destpixh = GetPortPixMap(theMacGrafPort);
+                    dstbm = (BitMap *)(* destpixh);
+                }
 
 		// Lock PixMaps
 		PixMapHandle srpixh = pixmap = ::GetGWorldPixMap(source->x_pixmap);

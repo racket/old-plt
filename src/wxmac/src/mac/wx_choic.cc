@@ -24,7 +24,9 @@
 #include "wx_mac_utils.h"
 #include "wxMacDC.h"
 #include "wx_stdev.h"
-#include <Controls.h>
+#ifndef OS_X
+  #include <Controls.h>
+#endif
 
 /* 
    The Mac ctl manager routine for popup menus has a problem or two
@@ -104,7 +106,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	Callback (func);
 	
 	SetCurrentMacDC();
-	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 /*	if (!buttonFont)
 		buttonFont = wxNORMAL_FONT;
 */
@@ -127,14 +128,14 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 		sTitle = (StringPtr)new char[n+1];
 		sTitle[0] = n;
 		memcpy(&sTitle[1], Title, n);
-		labelbase = fDescent + fLeading;
+		labelbase = (int)(fDescent + fLeading);
 	}
 	else  {
 		sTitle = NULL;
 		fWidth = fHeight = 0;
 	}
-	int lblw = fWidth + (Title ? HSLOP : 0);
-	int lblh = fHeight+2;
+	int lblw = (int)(fWidth + (Title ? HSLOP : 0));
+	int lblh = (int)(fHeight+2);
 	
 	int maxdfltw;
 	int maxdflth;
@@ -146,8 +147,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	}
 
 	GetTextExtent("Test", &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-	maxdflth = fHeight;
-	valuebase = fDescent + fLeading;
+	maxdflth = (int)fHeight;
+	valuebase = (int)(fDescent + fLeading);
 
 	// Build the menu and find the width of the longest string
 	PopUpID = wxMenu::gMenuIdCounter++;
@@ -163,8 +164,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	for (n = 0; n < N; n++) {
 		// attempt to size control by width of largest string
 		GetTextExtent(Choices[n], &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-		w = fWidth;
-		h = fHeight;
+		w = (int)fWidth;
+		h = (int)fHeight;
 		maxdfltw = max(w, maxdfltw);
 		maxdflth = max(h, maxdflth);
                 CopyCStringToPascal(Choices[n],temp);
@@ -175,7 +176,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
 	char checkm[] = {18, 0};
 	GetTextExtent(checkm, &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-	maxdfltw += fWidth + TRIANGLE_WIDTH + TRANGLE_RIGHT_SPACE + MSPACEX;
+	maxdfltw += (int)(fWidth + TRIANGLE_WIDTH + TRANGLE_RIGHT_SPACE + MSPACEX);
 	// compute the Rects that contain everything.
 	// note valuebase and labelbase are changed from font descents
 	// to number of pixels to substract from the rect bottom.
@@ -237,8 +238,8 @@ void wxChoice::ReCalcRect(void) {
 		::GetMenuItemText(hDynMenu, n+1, temp);
 		temp[temp[0]+1] = '\0';
 		GetTextExtent((char *)&temp[1], &fWidth, &fHeight, &fDescent, &fLeading, valueFont);
-		w = fWidth;
-		h = fHeight;
+		w = (int)fWidth;
+		h = (int)fHeight;
 		maxdfltw = max(w, maxdfltw);
 		maxdflth = max(h, maxdflth);
 	}
@@ -513,13 +514,19 @@ void wxChoice::SetSelection (int n)
 
 int wxChoice::FindString (char *s)
 {
-	int n = strlen(s);
 	int i;
 	Str255	ps;
+        Str255  temp;
+        CopyCStringToPascal(s,temp);
 	for (i = 0; i < no_strings; i++) {
 		::GetMenuItemText(hDynMenu, i+1, ps);
-		if (!strcmp(PtoCstr(ps), s))
+#ifdef OS_X
+                if (!CompareString(ps,temp,NULL))
+                        return i;
+#else                        
+		if (!IUCompPString(ps,temp,NULL))
 			return i;
+#endif                        
 	}
 	return -1;
 }

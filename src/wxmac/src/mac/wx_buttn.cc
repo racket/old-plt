@@ -18,7 +18,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_area.h"
 #include "wxBorderArea.h"
 #include "wb_gdi.h"
+#ifndef OS_X
 #include <Windows.h>
+#endif
 #include "wxButtonBorder.h"
 
 #if 1
@@ -88,14 +90,14 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 		GetTextExtent(label, &fWidth, &fHeight, NULL, NULL, buttonFont);
 		if (width <= 0)
 		{
-			width = fWidth + BUTTON_H_SPACE;
+			width = (int)(fWidth + BUTTON_H_SPACE);
 			if (width < MIN_BUTTON_WIDTH) width = MIN_BUTTON_WIDTH;
 			cWindowWidth = width;
 		}
 
 		if (height <= 0)
 		{
-			height = fHeight + BUTTON_V_SPACE;
+			height = (int)(fHeight + BUTTON_V_SPACE);
 			cWindowHeight = height;
 		}
 	}
@@ -114,7 +116,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	const short minValue = 0;
 	const short maxValue = 1;
 	short refCon = 0;
-	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, theMacTitle(),
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
 	
@@ -164,7 +166,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cWindowHeight = bounds.bottom;
 	cWindowWidth = bounds.right;
 
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&bounds);
+	::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
 	
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -234,7 +236,6 @@ void wxButton::ChangeColour(void)
 char* wxButton::GetLabel(void)
 {
 	Str255	pTitle;
-	char	cTitle[256];
 	if (buttonBitmap)
 		return NULL;
 	if (cMacControl)
@@ -415,9 +416,8 @@ void wxButton::Paint(void)
 	    PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
 	} else if (cMacControl) {
 	    ::EraseRect(&r);
-	    Bool isVisible = (**cMacControl).contrlVis == 255;
-		if (!isVisible) return;
-		::Draw1Control(cMacControl);
+            if (!IsControlVisible(cMacControl)) return;
+            ::Draw1Control(cMacControl);
 	}
 	wxWindow::Paint();
 }
@@ -478,8 +478,8 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 	
 		float fStartH, fStartV;
 		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = fStartH;
-		int startV = fStartV;
+		int startH = (int)fStartH;
+		int startV = (int)fStartV;
 	
 		Point startPt = {startH, startV}; // client c.s.
 		int trackResult;
@@ -555,6 +555,6 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort),&clientRect);
+		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
 }

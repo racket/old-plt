@@ -140,7 +140,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	}
 	valuebase = fDescent;
 	
-	cMacControl = ::NewControl((WindowPtr)theMacGrafPort, &boundsRect, NULL,
+	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
 			TRUE, value, min_value, max_value, scrollBarProc, (long)this);
 	CheckMemOK(cMacControl);
 	

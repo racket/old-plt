@@ -12,7 +12,9 @@ static const char sccsid[] = "%W% %G%";
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <QuickDraw.h>
+#ifndef OS_X
+  #include <QuickDraw.h>
+#endif
 #include "wx_dccan.h"
 #include "wx_canvs.h"
 #include "wx_privt.h"
@@ -28,17 +30,14 @@ static const char sccsid[] = "%W% %G%";
 //#include "verti.xbm"
 //#include "cross.xbm"
 //#include "wx_area.h"
+//
+//static PixMapHandle	bdiag,
+//		cdiag,
+//		fdiag,
+//		cross,
+//		horiz,
+//		verti;
 
-static PixMapHandle	bdiag,
-		cdiag,
-		fdiag,
-		cross,
-		horiz,
-		verti;
-
-// Declarations local to this file
-#define YSCALE(y) (yorigin - (y))
-#define     wx_round(a)    (int)((a)+.5)
 
 extern CGrafPtr wxMainColormap;
 
@@ -66,7 +65,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
     WXGC_IGNORE(this, canvas);
    cMacDC = canvas->MacDC();
    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-   pixmap = theMacGrafPort->portPixMap;
+   pixmap = GetPortPixMap(theMacGrafPort);
   }
 
   cMacDoingDrawing = FALSE;
@@ -180,7 +179,7 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 	if (!Ok()) return;
 	 
         CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-	if ((GrafPtr)theMacGrafPort != qd.thePort)
+        if ((GrafPtr)theMacGrafPort != GetQDGlobalsThePort())
 	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
 
 	if (cMacDC->currentUser() != this)
@@ -240,7 +239,12 @@ void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
 
 	if (current_reg)
 	{
-		Rect theClipRect = (**(theMacGrafPort->clipRgn)).rgnBBox;
+                RgnHandle clipRgn;
+                Rect theClipRect;
+                
+                GetPortClipRegion(theMacGrafPort,clipRgn);
+                GetRegionBounds(clipRgn,&theClipRect);
+
 		int theX = theClipRect.left;
 		int theY = theClipRect.top;
 		int theWidth = theClipRect.right - theClipRect.left;
@@ -552,8 +556,6 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	if (whichTool == cMacCurrentTool)
 		return;
 
-	RGBColor pixel;
-
 	switch (whichTool)
 	{
 		case kNoTool:
@@ -565,15 +567,15 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			int theBrushStyle = current_brush->GetStyle();
 			int log = theBrushStyle == wxXOR ? patXor : patCopy;
 			if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
-				PenPat(&qd.black);
+				PenPat(GetQDGlobalsBlack(NULL));
 			else if (theBrushStyle == wxTRANSPARENT)
-				PenPat(&qd.white); // WCH : does this work??
+				PenPat(GetQDGlobalsWhite(NULL)); // WCH : does this work??
 			else if (IS_HATCH(theBrushStyle)) {
 				macGetHatchPattern(theBrushStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 				log = patOr;
 			} else {
-				PenPat(&qd.black);
+				PenPat(GetQDGlobalsBlack(NULL));
 			}
 	
 			InstallColor(current_background_color, FALSE);
@@ -620,7 +622,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
                           SetGWorld(bm->x_pixmap, 0);
 			  for (i = 0; i < 8; i++) {
 			    p[i] = 0;
-			    for (int k = 0; k < 8; k++) {
+			    for (k = 0; k < 8; k++) {
 			      RGBColor cpix;
 			      ::GetCPixel(k, i, &cpix);
 			      p[i] = p[i] << 1;
@@ -632,22 +634,22 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			  SetGWorld(saveport, savegd);
 			  PenPat((Pattern *)p);
 			} else if (thePenStyle == wxSOLID)
-				PenPat(&qd.black);
+				PenPat(GetQDGlobalsBlack(NULL));
 			else if (thePenStyle == wxTRANSPARENT)
-				PenPat(&qd.white);
+				PenPat(GetQDGlobalsWhite(NULL));
 			else if ((thePenStyle == wxDOT)
 			         || (thePenStyle == wxSHORT_DASH)) {
-				PenPat(&qd.ltGray);
+				PenPat(GetQDGlobalsLightGray(NULL));
 				if (log == patCopy) log = patOr;
 			} else if ((thePenStyle == wxLONG_DASH)
 			         || (thePenStyle == wxDOT_DASH)) {
-				PenPat(&qd.dkGray);
+				PenPat(GetQDGlobalsDarkGray(NULL));
 				if (log == patCopy) log = patOr;
 			} else if (IS_HATCH(thePenStyle)) {
 				macGetHatchPattern(thePenStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 			} else {
-				PenPat(&qd.black);
+				PenPat(GetQDGlobalsBlack(NULL));
 			}
 
 			InstallColor(current_pen->GetColour(), TRUE);

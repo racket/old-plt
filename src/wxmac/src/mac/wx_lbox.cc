@@ -96,8 +96,10 @@ wxListBox::wxListBox(
 }
 
 Boolean cellWasClicked = false;
-
 Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers modifiers, short numberClicks, ALReference hAL);
+#ifdef OS_X
+static ALHiliteCellUPP origHilite;
+#endif
 
 Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers modifiers, short numberClicks, ALReference hAL)
 {
@@ -106,7 +108,7 @@ Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers mo
   return true;
 }
 
-void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, ALReference hAL)
+static void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, ALReference hAL)
 {
   if (cellData) {
     FontInfo fontInfo;
@@ -119,8 +121,24 @@ void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, ALReferen
   }
 }
 
+#ifdef OS_X
+static void MyHiliteCell(ALData cellData, ALCellPtr cell, 
+			 Boolean active, Boolean doOutline,
+			 const Rect *cellRect, ALReference hAL)
+{
+  /* Hiliting on top of anti-aliased text looks bad. To make it
+     look good, highlight an empty cell, then re-paint the text. */
+  EraseRect(cellRect);
+  origHilite(cellData, cell, active, doOutline, cellRect, hAL);
+  MyDrawCell(cellData, cell,cellRect, hAL);
+}
+#endif
+
 static ALClickCellUPP MyClickInCellUPP = NewALClickCellProc(MyClickInCell);
 static ALDrawCellUPP MyDrawCellUPP = NewALDrawCellProc(MyDrawCell);
+#ifdef OS_X
+static ALHiliteCellUPP MyHiliteCellUPP = NewALHiliteCellProc(MyHiliteCell);
+#endif
 
 Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        char *Title, Bool Multiple,
@@ -212,6 +230,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   
   ALSetInfo(alClickCellHook,&MyClickInCellUPP,cListReference);
   ALSetInfo(alDrawCellHook,&MyDrawCellUPP,cListReference);
+#ifdef OS_X
+  ALGetInfo(alHiliteCellHook,&origHilite,cListReference);
+  ALSetInfo(alHiliteCellHook,&MyHiliteCellUPP,cListReference);
+#endif
 
   ReleaseCurrentDC();
 

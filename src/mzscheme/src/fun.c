@@ -2306,7 +2306,23 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       
       dst = localTime->tm_isdst;
 
-      tzoffset = timezone;
+      tzoffset = 0;
+# ifdef USE_TIMEZONE_VAR
+      tzoffset = MSC_IZE(timezone);
+# endif
+# ifdef USE_TIMEZONE_VAR_W_DLS
+      tzoffset = timezone + (dst ? 3600 : 0);
+# endif
+# ifdef USE_TIMEZONE_AND_ALTZONE_VAR
+      if (dst)
+	tzoffset = altzone;
+      else
+	tzoffset = timezone;
+# endif
+# ifdef USE_TM_GMTOFF_FIELD
+      tzoffset = localTime->tm_gmtoff;
+# endif
+
 #endif
 
       p[0] = scheme_make_integer(sec);

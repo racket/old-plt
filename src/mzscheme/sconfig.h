@@ -109,6 +109,8 @@
 
 # define UNISTD_INCLUDE
 
+# define USE_TIMEZONE_VAR
+
 # define FLAGS_ALREADY_SET
 
 #else  /* >>>>>>> close after all platforms <<<<<<<<<< */
@@ -136,6 +138,7 @@
 #  define NO_USLEEP
 #  define USE_ULIMIT
 #  define USE_FCNTL_O_NONBLOCK
+#  define USE_TIMEZONE_AND_ALTZONE_VAR
 
 #  ifdef SOLARIS_THREADS
 #   define MZ_REAL_THREADS
@@ -183,6 +186,7 @@ int scheme_solaris_semaphore_try_down(void *);
 /* SunOS4 */
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-sunos4"
 # define SIGSET_IS_SIGNAL
+# define USE_TM_GMTOFF_FIELD
 # endif
 
 # define FLAGS_ALREADY_SET
@@ -238,6 +242,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_DYNAMIC_FDSET_SIZE
 
+# define USE_TIMEZONE_VAR
+
 # define REGISTER_POOR_MACHINE
 
 # ifdef LINUX_THREADS
@@ -271,6 +277,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
+# define USE_TIMEZONE_VAR
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -300,6 +308,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define REGISTER_POOR_MACHINE
 
+# define USE_TM_GMTOFF_FIELD
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -326,6 +336,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define USE_DYNAMIC_FDSET_SIZE
 
 # define SIGSET_IS_SIGNAL
+
+# define USE_TM_GMTOFF_FIELD
 
 # define REGISTER_POOR_MACHINE
 
@@ -406,6 +418,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define NO_USLEEP
 # define USE_FCNTL_O_NONBLOCK
+
+# define USE_TIMEZONE_AND_ALTZONE_VAR
 
 #  ifdef MZ_X_THREADS
 #    ifndef MZ_FAKE_THREADS
@@ -525,6 +539,8 @@ int   scheme_sproc_semaphore_try_down(void *);
 
 # define USE_ULIMIT
 
+# define USE_TIMEZONE_VAR_W_DLS
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -603,6 +619,8 @@ int   scheme_sproc_semaphore_try_down(void *);
 # endif
 # define GETENV_FUNCTION
 # define DIR_FUNCTION
+
+# define USE_TIMEZONE_VAR
 
 # define STACK_GROWS_DOWN
 # define DO_STACK_CHECK
@@ -921,6 +939,15 @@ int scheme_pthread_semaphore_try_down(void *);
  /* DIR_FUNCTION adds (current-directory ...) function */
 
  /* GETENV_FUNCTION adds (getenv ...) function */
+
+ /* USE_TIMEZONE_VAR gets timezone offset from a timezone global.
+    USE_TIMEZONE_VAR_W_DLS is similar, but adds 1 hour when daylight 
+     savings is in effect.
+    USE_TIMEZONE_AND_ALTZONE_VAR is similar, but uses altzone when
+     daylight savings is in effect.
+    USE_TM_GMTOFF_FIELD gets timezone offset from the tm_gmtoff field
+     of the tm struct. */
+ 
 
   /*******************/
  /*   Filesystem    */

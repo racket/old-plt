@@ -13,16 +13,19 @@
   (define verbose? #t)
   (define binary-extensions '(exe dll lib obj o so def))
   (define xxxs "xxxxxxx")
-  (define xxxs-re       (format "lib(?:mzsch|mzgc|mred)(?:|3m)(~a)" xxxs))
-  (define renaming      (regexp (format "^~a[.](?:dll|lib)$" xxxs-re)))
-  (define substitutions (map (lambda (s) (format s xxxs-re))
-                             ;; pdb not needed, but this way we can expect no
-                             ;; `xxxxxxx's when we finish.
-                             '("~a[.](?:dll|lib|pdb)\0"
-                               "~a_NULL_THUNK_DATA\0"
-                               "__IMPORT_DESCRIPTOR_~a\0"
-                               "__head_~a_lib\0"
-                               "__~a_lib_iname\0")))
+  (define xxxs-re
+    (format "(?:lib(?:mzsch|mzgc|mred)(?:|3m)|(?:lib|ssl)eay32)(~a)" xxxs))
+  (define renaming
+    (regexp (format "^~a[.](?:dll|lib)$" xxxs-re)))
+  (define substitutions
+    (map (lambda (s) (format s xxxs-re))
+         ;; pdb not needed, but this way we can expect no
+         ;; `xxxxxxx's when we finish.
+         '("~a[.](?:dll|lib|pdb)\0"
+           "~a_NULL_THUNK_DATA\0"
+           "__IMPORT_DESCRIPTOR_~a\0"
+           "__head_~a_lib\0"
+           "__~a_lib_iname\0")))
 
   (define version-string
     (cond [(regexp-match "^([0-9]+)(?:[.]([0-9]+))?$" (version)) =>

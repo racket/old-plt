@@ -114,6 +114,10 @@
       (send t focus)
       (send d show #t)))
 
+  (define re:tools-notes (regexp "tools"))
+  (define re:mzlib-notes (regexp "MzLib=(.*)"))
+  (define re:teach-notes (regexp "teach=(.*)"))
+
   (define go-unit
     (unit (import initial-url)
 	  (export)
@@ -426,54 +430,64 @@
 		       (super-leaving-page page new-page))]
 		    [filter-notes
 		     (lambda (l url)
-		       (let ([lib (ormap
-				   (lambda (s)
-				     (let ([m (regexp-match "MzLib=(.*)" s)])
-				       (and m
-					    (format
-					     "Mz/Mr: load with (require-library \"~a.ss\")"
-					     (cadr m)))))
+		       (let ([toollibs
+			      (filter
+			       values
+			       (map
+				(lambda (s)
+				  (let ([m (regexp-match re:tools-notes s)])
+				    (and m (cadr m))))
+				l))])
+			 (if toollibs
+			     "Only available to tools"
+			     (let ([lib (ormap
+					 (lambda (s)
+					   (let ([m (regexp-match re:mzlib-notes s)])
+					     (and m
+						  (format
+						   "Mz/Mr: load with (require-library \"~a.ss\")"
+						   (cadr m)))))
 					 l)])
-			 (if lib
-			     (string-append
-			      (if (member "Core" l)
-				  ""
-				  "Beg/Int/Adv: not available   ")
-			      lib)
-			     (let ([drlibs
-				    (filter
-				     values
-				     (map
-				      (lambda (s)
-					(let ([m (regexp-match "teach=(.*)" s)])
-					  (and m (cadr m))))
-				      l))])
-			       (if (pair? drlibs)
-				   (format "Teachpack: select ~a using Language|Set Teachpack To... in DrScheme"
-					   (let loop ([s (format "~s" (car drlibs))]
-						      [l (cdr drlibs)])
-					     (if (null? l)
-						 s
-						 (loop (format "~a or ~s" s (car l)) (cdr l)))))
-				   (with-handlers ([(lambda (x) #t)
-						    (lambda (x) "")])
-				     (if (url? url)
-					 (let ([scheme (url-scheme url)])
-					   (if (string=? scheme "file")
-					       (let ([path (url-path url)])
-						 (let-values ([(cll-path doc.txt _1) (split-path path)])
-						   (if (string=? doc.txt "doc.txt")
-						       (let-values ([(_1 collection-name _2) (split-path cll-path)])
-							 (if (string=? (normalize-path (collection-path collection-name))
-								       (normalize-path cll-path))
-							     (let ([msg ((get-info (list collection-name)) 'help-desk-message (lambda () ""))])
-							       (if (string? msg)
-								   msg
+			       (if lib
+				   (string-append
+				    (if (member "Core" l)
+					""
+					"Beg/Int/Adv: not available   ")
+				    lib)
+				   (let ([drlibs
+					  (filter
+					   values
+					   (map
+					    (lambda (s)
+					      (let ([m (regexp-match re:teach-notes s)])
+						(and m (cadr m))))
+					    l))])
+				     (if (pair? drlibs)
+					 (format "Teachpack: select ~a using Language|Set Teachpack To... in DrScheme"
+						 (let loop ([s (format "~s" (car drlibs))]
+							    [l (cdr drlibs)])
+						   (if (null? l)
+						       s
+						       (loop (format "~a or ~s" s (car l)) (cdr l)))))
+					 (with-handlers ([(lambda (x) #t)
+							  (lambda (x) "")])
+					   (if (url? url)
+					       (let ([scheme (url-scheme url)])
+						 (if (string=? scheme "file")
+						     (let ([path (url-path url)])
+						       (let-values ([(cll-path doc.txt _1) (split-path path)])
+							 (if (string=? doc.txt "doc.txt")
+							     (let-values ([(_1 collection-name _2) (split-path cll-path)])
+							       (if (string=? (normalize-path (collection-path collection-name))
+									     (normalize-path cll-path))
+								   (let ([msg ((get-info (list collection-name)) 'help-desk-message (lambda () ""))])
+								     (if (string? msg)
+									 msg
+									 ""))
 								   ""))
-							     ""))
-						       "")))
-					       ""))
-					 "")))))))]
+							     "")))
+						     ""))
+					       "")))))))))]
 		    [on-navigate stop-search])
 		  (sequence (super-init #t (send help-desk-frame get-area-container))))))
           

@@ -358,7 +358,12 @@
 	[clone (lambda (env) (lookup-clone binding this env))]
 	[substitute (lambda (env) (lookup-clone binding this env))]
 
-	[sexpr (lambda () (send binding sexpr))])
+	[sexpr (lambda () 
+		 (let ([x (send binding sexpr)])
+		   (datum->syntax-object
+		    x
+		    (syntax-e x)
+		    stx)))])
       (public
 	[get-binding (lambda () binding)]
 	[orig-name
@@ -396,7 +401,7 @@
 				    [rest (loop (cdr subs))])
 				(cond
 				 [(send r no-side-effect?)
-				  (send (car subs) drop-uses)
+				  (send r drop-uses)
 				  rest]
 				 [(is-a? r begin%)
 				  (append (send r nonbind-sub-exprs)
@@ -1157,9 +1162,11 @@
 		     [(is-a? test constant%)
 		      (if (eq? (send test get-const-val) #f)
 			  (begin
+			    (send test drop-uses)
 			    (send then drop-uses)
 			    else)
 			  (begin
+			    (send test drop-uses)
 			    (send else drop-uses)
 			    then))]
 

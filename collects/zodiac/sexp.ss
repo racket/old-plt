@@ -1,4 +1,4 @@
-; $Id: sexp.ss,v 1.18 1997/08/11 20:28:21 shriram Exp $
+; $Id: sexp.ss,v 1.19 1997/08/13 20:05:15 shriram Exp mflatt $
 
 (unit/sig zodiac:sexp^
   (import zodiac:misc^
@@ -41,6 +41,10 @@
 			     (add1 length)
 			     (make-period start)
 			     '())))))
+		   ((vector? expr)
+		    (z:make-vector origin start finish
+				   (map structurize (vector->list expr))
+				   (vector-length expr)))
 		   ((symbol? expr)
 		     (z:make-symbol
 		       origin start finish expr expr marks))

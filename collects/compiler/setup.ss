@@ -1,8 +1,8 @@
 
-(parameterize ([require-library-use-compiled #f])
+(parameterize ([use-compiled-file-kinds 'none])
   (require-library "compile.ss" "compiler"))
 
-(parameterize ([require-library-use-compiled #f])
+(parameterize ([use-compiled-file-kinds 'none])
   (require-library "cmdline.ss")
   (require-relative-library "setupsig.ss")
 
@@ -49,10 +49,10 @@
 (specific-collections x-specific-collections)
 (archives x-archives)
 
-(parameterize ([require-library-use-compiled (not (clean))])
+(parameterize ([use-compiled-file-kinds (if (clean) 'none (use-compiled-file-kinds))])
   (require-relative-library "sig.ss"))
 
-(parameterize ([require-library-use-compiled (not (clean))])
+(parameterize ([use-compiled-file-kinds (if (clean) 'none (use-compiled-file-kinds))])
   (invoke-unit/sig
    (compound-unit/sig
     (import (SOPTION : compiler:setup-option^))

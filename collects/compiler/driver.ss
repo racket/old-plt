@@ -209,7 +209,7 @@
     (with-handlers ([void top-level-exn-handler])
       (with-handlers ([void elaboration-exn-handler])
 	(parameterize ([current-namespace elaborate-namespace]
-		       [require-library-use-compiled #f]
+		       [use-compiled-file-kinds 'non-elaboration]
 		       [compiler:escape-on-error #t]
 		       [current-load load-prefix-file])
 	  (eval prefix))
@@ -574,7 +574,7 @@
 		       (with-handlers ([void top-level-exn-handler])
 			 (with-handlers ([void elaboration-exn-handler])
 			   (parameterize ([current-namespace elaborate-namespace]
-					  [require-library-use-compiled #f]
+					  [use-compiled-file-kinds 'non-elaboration]
 					  [compiler:escape-on-error #t])
 			     (set-block-source! 
 			      s:file-block

@@ -4200,7 +4200,7 @@ file_position(int argc, Scheme_Object *argv[])
 		     scheme_make_provided_string(argv[0], 2, NULL),
 		     scheme_make_provided_string(argv[1], 2, NULL));
 
-  if (SCHEME_BIGNUMP(argv[1]))
+  if ((argc > 1) && SCHEME_BIGNUMP(argv[1]))
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[1],
 		     "file-position: new position is too large: %s for port: %s",

@@ -289,7 +289,7 @@
 
   (top-level-window<%> frame% dialog%)
 
-  (pane% horizontal-pane% vertical-pane%)
+  (pane% horizontal-pane% vertical-pane% grow-box-spacer-pane%)
   
   (panel% horizontal-panel% vertical-panel%)
 
@@ -311,6 +311,7 @@
 
   horizontal-pane%
   vertical-pane%
+  grow-box-spacer-pane%
 
   horizontal-panel%
   vertical-panel%
@@ -782,6 +783,8 @@
 (send horizontal-pane%-example-list add hp)
 (define vp (make-object vertical-pane% f))
 (send vertical-pane%-example-list add vp)
+(define sp (make-object grow-box-spacer-pane% f))
+(send grow-box-spacer-pane%-example-list add sp)
 
 (send message%-example-list add (make-object message% "Message 1" hpl))
 (send button%-example-list add (make-object button% "Button 1" vpl void))

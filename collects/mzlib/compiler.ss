@@ -139,6 +139,8 @@
 	   (dynamic-wind
 	    void
 	    (lambda ()
+	      (when keep-elab?
+		(display "'e " out)) ; mark of an elaboration-time file
 	      (write
 	       `(#%if (#%not (#%string=? (#%version) ,(version)))
 		    (#%error (#%quote ,(if (string? srcs)

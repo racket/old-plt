@@ -1,6 +1,7 @@
 (module compiler mzscheme
   (require (lib "class.ss")
           ; (lib "list.ss")
+           (lib "etc.ss")
            (lib "lex.ss" "parser-tools")
            (lib "readerr.ss" "syntax"))
            
@@ -70,6 +71,45 @@
       
       (super-instantiate ())))
 
+  ;; utility functions....
   
+  ;; first-atom: sxp -> atom
+  ;; if sxp is a list, find the first item in it (or its inner lists) that isn't a list
+  (define (first-atom s)
+    (if (and (list? s)
+             (not (null? s)))
+        (first-atom (car s))
+        s))
+  
+  ;; flatten: list -> list
+  ;; flattens a nested list
+  (define (flatten l)
+    (cond
+      [(null? l) null]
+      [(list? (car l)) (append (flatten (car l))
+                               (flatten (cdr l)))]
+      [else (cons (car l) (flatten (cdr l)))]))
+
+  
+  ;; flatten1: list -> list
+  ;; flattens only one level of a list
+  (define (flatten1 l)
+    (cond
+      [(null? l) l]
+      [(list? (car l)) (append (car l)
+                               (flatten1 (cdr l)))]
+      [else (cons (car l) (flatten1 (cdr l)))]))
+  
+  ;; normalize-assoc-list: list -> assoc-list
+  ;; turns '((a b) (c d) ((e f) (g h))) into '((a b) (c d) (e f) (g h)), etc
+  (define (normalize-assoc-list l)
+    (cond
+      [(null? l) l]
+      [(and (list? l)
+            (list? (car l))
+            (list? (car (car l)))) (append (car l)
+                                     (normalize-assoc-list (cdr l)))]
+      [else (cons (car l)
+                  (normalize-assoc-list (cdr l)))]))
 
   )

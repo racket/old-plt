@@ -83,6 +83,7 @@
       
       ;;daniel
       (define scope #f)
+      (define (top?) (is-a? scope module-scope%))
       
       ;;daniel, temporary for debugging
       (define/public (get-targs) targets)
@@ -101,12 +102,13 @@
             (eq? (send scope binding-tid t) t)))
       
       (define (def-targ? t)
-        (and (not (is-a? t tattribute-ref%))
+        (and (top?)
+             (not (attr-targ? t))
              (binding-targ? t)))
       
       (define (set-targ? t)
-        (and (not (is-a? t tattribute-ref%))
-             (not (binding-targ? t))))
+        (and (not (attr-targ? t))
+             (not (def-targ? t))))
       
       (define (attr-targ? t)
         (is-a? t tattribute-ref%))  
@@ -115,7 +117,7 @@
       (define (assignment-so target rhs)
         (->orig-so
          (cond
-           [(is-a? target tidentifier%) `(,(if (binding-targ? target)
+           [(is-a? target tidentifier%) `(,(if (def-targ? target)
                                                'define
                                                'set!) ,(send target to-scheme) ,rhs)]
            [(is-a? target tattribute-ref%) `(,(py-so 'python-set-member!)
@@ -127,47 +129,26 @@
                                                      to-scheme)
                                              ,rhs)]
            [(or (is-a? target ttuple%)
-                (is-a? target tlist-display%)) (let ([targets (send target get-sub-targets)])
-                   (let* ([indexes (build-list (length targets) identity)]
-                             [def-targs (filter (lambda (i)
-                                                  (def-targ? (list-ref targets i)))
-                                                indexes)]
-                             [set-targs (filter (lambda (i)
-                                                  (set-targ? (list-ref targets i)))
-                                                indexes)]
-                             [attr-targs (filter (lambda (i)
-                                                   (attr-targ? (list-ref targets i)))
-                                                 indexes)])
-                        `(define-values ,(map (lambda (i)
-                                                (send (list-ref targets i) to-scheme))
-                                              def-targs)
-                           (begin ,@(map (lambda (i)
-                                            `(set! ,(send (list-ref targets i) to-scheme)
-                                                   (,(py-so 'python-index) ,rhs ,i)))
-                                          set-targs)
-                                   ,@(map (lambda (i)
-                                            `(,(py-so 'python-set-member!)
-                                             ,(send ((class-field-accessor tattribute-ref%
-                                                                           expression) (list-ref targets i))
-                                                    to-scheme)
-                                             ',(send ((class-field-accessor tattribute-ref%
-                                                                            identifier) (list-ref targets i))
-                                                     to-scheme)
-                                             (,(py-so 'python-index) ,rhs ,i)))
-                                          attr-targs)
-                                   (values ,@(map (lambda (i)
-                                                    `(,(py-so 'python-index) ,rhs ,i))
-                                                  def-targs))))))]
+                (is-a? target tlist-display%))
+            `(begin ,@(let ([sub-targets (send target get-sub-targets)])
+                        (map (lambda (i)
+                               (assignment-so (list-ref sub-targets i)
+                                              #`(#,(py-so 'python-index) #,rhs #,i)))
+                             (build-list (length sub-targets) identity))))]
            [else (error "target type not supported yet")])))
       
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (let ([rhs (gensym 'rhs)])
-        (->orig-so `(begin (define ,rhs ,(send expression to-scheme))
-                             ,@(map (lambda (t)
-                                      (assignment-so t rhs))
-                                    targets)))))
+        (let* ([rhs (gensym 'rhs)]
+               [body (map (lambda (t)
+                            (assignment-so t rhs))
+                          targets)])
+          (->orig-so (if (top?)
+                         `(begin (define ,rhs ,(send expression to-scheme))
+                                 ,@body)
+                         `(begin (let ([,rhs ,(send expression to-scheme)])
+                                   ,@body))))))
       
       (super-instantiate ())))
   
@@ -412,8 +393,11 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override to-scheme
-        (opt-lambda ([escape-continuation-symbol #f])
-          (let ([[body (sub-stmt-map (lambda (s) (send s to-scheme)))]])
+        (opt-lambda ([escape-continuation-symbol #f] [insert-void-return? #f])
+          (let ([body (let ([statements (sub-stmt-map (lambda (s) (send s to-scheme)))])
+                        (if insert-void-return? ; functions that have no return must return None
+                            (append statements `(,(py-so 'py-none)))
+                            statements))])
             (->orig-so (if escape-continuation-symbol
                            `(call-with-escape-continuation
                              (lambda (,escape-continuation-symbol)
@@ -721,13 +705,49 @@
        (define/override (check-break/cont enclosing-loop)
          (send body check-break/cont #f))
        
+       (define pos (send parms get-pos))
+       (define key (send parms get-key))
+       (define seq (send parms get-seq))
+       (define dict (send parms get-dict))
+       
+       (define (unpack tuple var)
+         (cond
+           [(list? tuple) (map (lambda (i)
+                                 (unpack (list-ref tuple i)
+                                         `(,(py-so 'python-index) ,var ,i)))
+                               (build-list (length tuple) identity))]
+           [else `[,(send tuple to-scheme) ,var]]))
+       
        ;;daniel
        (inherit ->orig-so)
        (define/override (to-scheme)
          (->orig-so (let ([proc-name (send name to-scheme)])
                       `(define ,proc-name
-                         (,(py-so 'py-lambda) ',proc-name ,(send parms to-scheme)
-                                            ,(send body to-scheme return-symbol))))))
+                         (,(py-so 'procedure->py-function%)
+                          ;; this is where the outer "let" for default values should
+                          ;; be placed; I'll do that after I finish the rest of the def/call code.
+                          ;; it's bad design anyway...
+                          (opt-lambda ,(send parms to-scheme)
+                            (let ,(append (normalize-assoc-list
+                                           (flatten1
+                                            (map (lambda (tuple)
+                                                   (unpack tuple
+                                                           (send (first-atom tuple) to-scheme)))
+                                                 (filter list? pos))))
+                                          (map (lambda (b)
+                                                 `[,(send b to-scheme) (void)])
+                                               (send this get-bindings)))
+                              ,(send body to-scheme return-symbol #t)))
+                          ',proc-name
+                          (list ,@(map (lambda (p)
+                                         `',(send (first-atom p) to-scheme))
+                                       pos))
+                          (list ,@(map (lambda (k)
+                                         `(cons ',(send (car k) to-scheme)
+                                                ,(send (cdr k) to-scheme)))
+                                       key))
+                          ,(and seq (send seq to-scheme))
+                          ,(and dict (send dict to-scheme)))))))
        
        (super-instantiate ()))))
     
@@ -760,10 +780,10 @@
                [inherit-list (map (lambda (i) (send i to-scheme)) inherit-expr)])
          (->orig-so `(define ,class-name
                        (,(py-so 'python-method-call) ,(py-so 'py-type%) '__call__
-                        (,(py-so 'symbol->py-string%) #cs',class-name)
-                        (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
-                                                               `(,(->lex-so 'object empty-context))
-                                                               inherit-list)))
+                        (list (,(py-so 'symbol->py-string%) #cs',class-name)
+                              (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
+                                                                     `(,(->lex-so 'object empty-context))
+                                                                     inherit-list)))
                         ,(let* ([exprs null]
                                 [keys null]
                                 [values null]
@@ -790,7 +810,7 @@
                                                            #f)))
                                               (send body defs-and-exprs)))])
                            `(begin ,@(reverse exprs)
-                                   (list ,@defs))))))))
+                                   (list ,@defs)))))))))
                            
        
        (super-instantiate ()))))

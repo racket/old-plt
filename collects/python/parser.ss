@@ -1,10 +1,10 @@
-(module parser mzscheme
+#cs(module parser mzscheme
   (require (lib "lex.ss" "parser-tools")
            (lib "yacc.ss" "parser-tools")
            (lib "readerr.ss" "syntax")
            (lib "class.ss")
            (lib "contracts.ss")
-           (lib "mred.ss" "mred") ;; for text% in a contract.. :P
+          ; (lib "mred.ss" "mred") ;; for text% in a contract.. :P
 	   "compiler.ss"
            "compiler-expr.ss"
            "compiler-stmt.ss"
@@ -13,8 +13,9 @@
 ;  (provide build-ast) 
   (provide/contract
    (build-ast (input-port? . -> . (listof (is-a?/c ast-node%))))
-   (build-ast-from-file (string? . -> . (listof (is-a?/c ast-node%))))
-   (build-ast-from-port (input-port? (union (is-a?/c text%) string?) . -> . (listof (is-a?/c ast-node%)))))
+   (build-ast-from-file (string? . -> . (listof (is-a?/c ast-node%)))))
+  (provide build-ast-from-port)
+;   (build-ast-from-port (input-port? (union (is-a?/c text%) string?) . -> . (listof (is-a?/c ast-node%)))))
   
   (define (build-ast ip)
     (port-count-lines! ip)

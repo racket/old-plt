@@ -3,12 +3,13 @@
            "compiler.ss"
            "compiler-stmt.ss" ; for module-scope%
            ;"base.ss"
-           (lib "mred.ss" "mred")
+          ; (lib "mred.ss" "mred") ; for the text% in the contracts...
            (lib "contracts.ss")
            (lib "class.ss"))
   
-  (provide/contract (read-python (string? . -> . (listof (is-a?/c ast-node%))))
-                    (read-python-port (input-port? (union (is-a?/c text%) string?) . -> . (listof (is-a?/c ast-node%)))))
+  (provide/contract (read-python (string? . -> . (listof (is-a?/c ast-node%)))))
+  (provide read-python-port)
+              ;      (read-python-port (input-port? (union (is-a?/c text%) string?) . -> . (listof (is-a?/c ast-node%)))))
   
   (define (read-python path)
     (init-bindings (build-ast-from-file path)))

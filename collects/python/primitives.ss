@@ -127,9 +127,15 @@
     (python-get-member f scheme-procedure-key #f))
   
   (define procedure->py-function%
-    (opt-lambda (proc [name #f])
+    (opt-lambda (proc [name #f] [pos '()] [key '()] [seq #f] [dict #f])
       (let ([fn (python-new-object py-function%)])
-        (py-function%-init fn name proc)
+        (py-function%-init fn)
+        (python-set-name! fn name)
+        (python-set-member! fn scheme-procedure-key proc)
+        (python-set-member! fn python-function-pos-ids-key pos)
+        (python-set-member! fn python-function-key-ids-key key)
+        (python-set-member! fn python-function-seq-id-key seq)
+        (python-set-member! fn python-function-dict-id-key dict)
         fn)))
 
   (define (py-string%-init this value)
@@ -194,9 +200,9 @@
                                           (symbol->py-string% name)
                                           name)))
   
-  (define (py-function%-init this name v)
-    (python-set-name! this name)
-    (python-set-member! this scheme-procedure-key v))
+  (define (py-function%-init this)
+    (void))
+  
 
   
   ;; py-is?: python-object python-object -> bool
@@ -311,27 +317,35 @@
   
   
   ;; py-call: py-object%(X ... -> Y) arg-list -> ?
-  (define (py-call functor arg-list)
+  (define py-call
+    (opt-lambda (functor arg-list [kw-args '()])
     (dprintf "DEBUG: py-call~n")
     (cond
       [(procedure? functor) (dprintf "DEBUG: py-call got a procedure~n")
        (with-handlers ([exn:application:arity? (lambda (exn)
                                                  (printf "function: ~a" functor)
                                                  (error "Incorrect number of arguments:"
-                                                        (map py-object%->string arg-list)))])
+                                                        (map py-object%->string arg-list)
+                                                        (map py-object%->string kw-args)))])
          (apply functor arg-list))]
       [(and (py-type? functor)
             (not (py-is? functor py-type%))) (py-call python-create-object
                                                       (cons functor arg-list))]
-      [(py-is-a? functor py-function%) (dprintf "DEBUG: py-call got a py-function%~n")
+      [(py-is-a? functor py-function%) ;(dprintf "DEBUG: py-call got a py-function%~n")
+       (let ([pos (python-get-member functor python-function-pos-ids-key #f)]
+             [key (python-get-member functor python-function-key-ids-key #f)]
+             [seq (python-get-member functor python-function-seq-id-key #f)]
+             [dict (python-get-member functor python-function-dict-id-key #f)])
        (py-call (py-function%->procedure functor)
-                arg-list)]
+                arg-list
+                kw-args))]
       ;; else, it's a py-method% or some other thing that has a __call__ field
       [else (dprintf "DEBUG: py-call got something else~n")
        (py-call (python-get-member functor
                                    '__call__
                                    false)
-                (cons functor arg-list))]))
+                (cons functor arg-list)
+                kw-args)])))
   
   ;; create instance object
   (define (python-create-object class . init-args)
@@ -378,6 +392,7 @@
   ;; py-object%->string: py-object% -> string
   (define (py-object%->string x)
     (cond
+      [(py-is? x py-none) "None"]
       [(py-type? x) (format "<type ~a>"
                             (py-object%->string (python-get-type-name x)))]
       [(py-is-a? x py-string%) (string-append "'" (py-string%->string x) "'")]
@@ -506,15 +521,17 @@
   (define py-repr (lambda (x)
                     (string->py-string% (py-object%->string x))))
   
-  ;; python-method-call: python-object symbol X ... -> ?
-  (define (python-method-call obj method-name . args)
-    (let ([fn (python-get-member obj method-name)])
-      (py-call fn
-               (if (and (python-node? fn)
-                        (or (py-is-a? fn py-function%) ; static method
-                            (python-method-bound? fn))) ; bound method
-                   args
-                   (cons obj args))))) ; add the object to the arg-list for unbound methods or scheme procs
+  ;; python-method-call: python-object symbol (listof X) (listof (cons Symbol X) -> ?
+  (define python-method-call
+    (opt-lambda (obj method-name [pos-args '()] [key-args '()])
+      (let ([fn (python-get-member obj method-name)])
+        (py-call fn
+                 (if (and (python-node? fn)
+                          (or (py-is-a? fn py-function%) ; static method
+                              (python-method-bound? fn))) ; bound method
+                     pos-args
+                     (cons obj pos-args)) ; add the object to the arg-list for unbound methods or scheme procs
+                 key-args))))
   
   
   (dprintf "4~n")
@@ -733,7 +750,7 @@
          (list-to-sequence
           (map (lambda (i)
                  (python-method-call this '__getitem__
-                                     (number->py-number% i)))
+                                     (list (number->py-number% i))))
                (build-list (floor (/ (- stop start) step))
                            (lambda (i) (* (+ i start) step))))))]
       [else (error "Invalid key for __getitem__")]))
@@ -797,7 +814,8 @@
               (,py-list% ,(lambda (pl)
                             (map ->scheme (py-list%->list pl))))
               (,py-dict% ,py-dict%->hash-table)
-              (,py-function% ,py-function%->procedure)))
+              (,py-function% ,py-function%->procedure)
+              (,py-none% ,void)))
   
   (define (->scheme py-obj)
     (python-method-call py-obj python-to-scheme-method))
@@ -810,6 +828,7 @@
       [(hash-table? sxp) (hash-table->py-dict% sxp)]
       [(boolean? sxp) (bool->py-number% sxp)]
       [(procedure? sxp) (procedure->py-function% sxp)]
+      [(void? sxp) py-none]
       [else (error (format "Don't know how to make this a python object: ~a"
                            sxp))]))
   

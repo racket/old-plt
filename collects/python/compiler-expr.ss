@@ -22,6 +22,8 @@
       ;;    (and (list? x) (andmap (lambda (x) (parm-tup? x)) x))))
       (init parm-list)
       
+   ;   (printf "def parm-list: ~a~n" parm-list)
+      
       ;; pos: (listof parm-tup?)
       (define pos null)
       ;; key: (cons/p parm-tup? (is-a?/c expression%))
@@ -38,7 +40,9 @@
             (cond
               ((null? key) (set! pos (cons (cadr param) pos)))
               (else
-               (send (cadr param) stx-err "All parameters following a parameter with a default value must have a default value themselves"))))
+               (send (cadr param)
+                     stx-err
+                     "All parameters following a parameter with a default value must have a default value themselves"))))
            ((eq? 'key (car param))
             (set! key (cons (cons (cadr param) (caddr param)) key)))
            ((eq? 'seq (car param))
@@ -73,13 +77,32 @@
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (e) (send (cdr e) set-bindings! enclosing-scope)) key))
       
+      ;(printf "parm-bindings: ~a~n" parm-bindings)
+      ;(printf "def  pos: ~a~nkey: ~a~nseq: ~a~ndict: ~a~n" pos key seq dict)
+      
+      (define/public (get-pos) (reverse pos))
+      (define/public (get-key) (reverse key))
+      (define/public (get-seq) seq)
+      (define/public (get-dict) dict)
       
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (map (lambda (p)
-                          (send p to-scheme))
-                        (reverse pos))))
+        (let ([Ps (map (lambda (p)  ;; for tuple arguments, just use the id of the first item
+                           (send (first-atom p) to-scheme))
+                       (reverse pos))]
+              [Ks (map (lambda (k)
+                         `[,(send (car k) to-scheme) ,(send (cdr k) to-scheme)])
+                       (reverse key))])
+        (->orig-so (cond
+                     [(and seq dict)
+                       `(,(send dict to-scheme) ,@Ps ,@Ks . ,(send seq to-scheme))]
+                     [seq `(,@Ps ,@Ks . ,(send seq to-scheme))]
+                     [dict `(,(send dict to-scheme) ,@Ps ,@Ks)]
+                     [else `(,@Ps ,@Ks)]))))
+                       
+                           
+                           
       
       (super-instantiate ())))
   
@@ -360,7 +383,7 @@
       (define/override (to-scheme)
         (->orig-so `(,(py-so 'python-method-call) ,(send expression to-scheme)
                                                   '__getitem__
-                                                  ,(send sub to-scheme))))
+                                                  (list ,(send sub to-scheme)))))
       
       (super-instantiate ())))
   
@@ -388,14 +411,14 @@
         (->orig-so `(,(py-so 'python-method-call)
                      ,(send expression to-scheme)
                      '__getitem__
-                     (,(py-so 'py-create)
+                     (list (,(py-so 'py-create)
                       ,(py-so 'py-slice%)
                       ,(if lower
                            (send lower to-scheme)
                            `(,(py-so 'number->py-number) 0))
                       ,(if upper
                            (send upper to-scheme)
-                           `(,(py-so 'number->py-number) +inf.0))))))
+                           `(,(py-so 'number->py-number) +inf.0)))))))
       
       (super-instantiate ())))
   
@@ -412,6 +435,7 @@
       ;;                                 (is-a?/c identifier%)
       ;;                                 (is-a?/c expression%))))
       (init arg-list)
+     ; (printf "call arg-list: ~a~n" arg-list)
       ;; pos: (listof (is-a?/c expression%))
       (define pos null)
       ;; key: (listof (cons/p (is-a?/c identifier) (is-a?/c expression%)))
@@ -420,6 +444,8 @@
       (define seq #f)
       ;; dict: (or/f false? (is-a?/c expression%))
       (define dict #f)
+      
+      ;;;; from what I understand, seq and dict will always be false... - daniel
       
       (for-each (lambda (arg)
                   (cond
@@ -445,20 +471,29 @@
         (for-each (lambda (x) (send x set-bindings! enclosing-scope)) pos)
         (for-each (lambda (x) (send (cdr x) set-bindings! enclosing-scope)) key))
       
+       (printf "call  pos: ~a~nkey: ~a~nseq: ~a~ndict: ~a~n" pos key seq dict)
+     
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (let ([args (map (lambda (e)
-                                                      (send e to-scheme))
-                                                    (reverse pos))])
+        (->orig-so (let ([pos-args (map (lambda (e)
+                                          (send e to-scheme))
+                                        (reverse pos))]
+                         [key-args (map (lambda (e)
+                                          (cons (send (car e) to-scheme)
+                                                (send (cdr e) to-scheme)))
+                                        (reverse key))])
                      (if (is-a? expression attribute-ref%)
                          `(,(py-so 'python-method-call)
                                  ,(send ((class-field-accessor attribute-ref% expression) expression)
                                               to-scheme)
                                  ',(send ((class-field-accessor attribute-ref% identifier) expression)
                                               to-scheme)
-                                 ,@args)
-                         `(,(py-so 'py-call) ,(send expression to-scheme) (list ,@args))))))
+                                 (list ,@pos-args)
+                                 (list ,@key-args))
+                         `(,(py-so 'py-call) ,(send expression to-scheme)
+                                             (list ,@pos-args)
+                                             (list ,@key-args))))))
       
       (super-instantiate ())))
   
@@ -486,7 +521,7 @@
                                                        [(/) ''__div__]
                                                        [else (raise (format "binary% op unsupported: ~a" 
                                                                              op))])
-                                                     (send rhs to-scheme))))
+                                                     `(list ,(send rhs to-scheme)))))
       
       (super-instantiate ())))
   

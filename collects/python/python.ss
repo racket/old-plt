@@ -35,7 +35,7 @@
   
   (define (python path)
     ;; setup initial eval namespace
-    (let ([m-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+    (let ([m-path ((current-module-name-resolver) '"base.ss" #f #f)]
           [empty-namespace (make-namespace 'empty)]
           [n (current-namespace)])
       (dynamic-require m-path #f)

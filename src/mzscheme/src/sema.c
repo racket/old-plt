@@ -511,9 +511,11 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
     if (n > 1) {
       if (waiting)
 	start_pos = waiting->start_pos;
-      else
-	start_pos = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_current_config(), 
-									MZCONFIG_SCHEDULER_RANDOM_STATE));
+      else {
+	Scheme_Object *rand_state;
+	rand_state = scheme_get_param(scheme_current_config(), MZCONFIG_SCHEDULER_RANDOM_STATE);
+	start_pos = scheme_rand((Scheme_Random_State *)rand_state);
+      }
     } else
       start_pos = 0;
 

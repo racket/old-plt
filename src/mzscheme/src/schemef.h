@@ -61,7 +61,12 @@ MZ_EXTERN Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_
 MZ_EXTERN Scheme_Object *scheme_get_param(Scheme_Config *c, int pos);
 MZ_EXTERN void scheme_set_param(Scheme_Config *c, int pos, Scheme_Object *o);
 
+MZ_EXTERN Scheme_Object *scheme_get_thread_param(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos);
+MZ_EXTERN void scheme_set_thread_param(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos, Scheme_Object *o);
+
 MZ_EXTERN Scheme_Env *scheme_get_env(Scheme_Config *config);
+
+MZ_EXTERN Scheme_Thread_Cell_Table *scheme_inherit_cells(Scheme_Thread_Cell_Table *cells);
 
 /*========================================================================*/
 /*                                threads                                 */
@@ -100,8 +105,8 @@ MZ_EXTERN int scheme_in_main_thread(void);
 MZ_EXTERN void scheme_cancel_sleep(void);
 
 MZ_EXTERN Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited);
-MZ_EXTERN Scheme_Object *scheme_thread_cell_get(Scheme_Object *cell);
-MZ_EXTERN void scheme_thread_cell_set(Scheme_Object *cell, Scheme_Object *v);
+MZ_EXTERN Scheme_Object *scheme_thread_cell_get(Scheme_Object *cell, Scheme_Thread_Cell_Table *cells);
+MZ_EXTERN void scheme_thread_cell_set(Scheme_Object *cell, Scheme_Thread_Cell_Table *cells, Scheme_Object *v);
 
 MZ_EXTERN int scheme_tls_allocate();
 MZ_EXTERN void scheme_tls_set(int pos, void *v);

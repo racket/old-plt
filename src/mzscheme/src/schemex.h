@@ -51,7 +51,10 @@ Scheme_Config *(*scheme_current_config)(void);
 Scheme_Config *(*scheme_extend_config)(Scheme_Config *c, int pos, Scheme_Object *init_val);
 Scheme_Object *(*scheme_get_param)(Scheme_Config *c, int pos);
 void (*scheme_set_param)(Scheme_Config *c, int pos, Scheme_Object *o);
+Scheme_Object *(*scheme_get_thread_param)(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos);
+void (*scheme_set_thread_param)(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos, Scheme_Object *o);
 Scheme_Env *(*scheme_get_env)(Scheme_Config *config);
+Scheme_Thread_Cell_Table *(*scheme_inherit_cells)(Scheme_Thread_Cell_Table *cells);
 /*========================================================================*/
 /*                                threads                                 */
 /*========================================================================*/
@@ -80,8 +83,8 @@ int (*scheme_block_until)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Ob
 int (*scheme_in_main_thread)(void);
 void (*scheme_cancel_sleep)(void);
 Scheme_Object *(*scheme_make_thread_cell)(Scheme_Object *def_val, int inherited);
-Scheme_Object *(*scheme_thread_cell_get)(Scheme_Object *cell);
-void (*scheme_thread_cell_set)(Scheme_Object *cell, Scheme_Object *v);
+Scheme_Object *(*scheme_thread_cell_get)(Scheme_Object *cell, Scheme_Thread_Cell_Table *cells);
+void (*scheme_thread_cell_set)(Scheme_Object *cell, Scheme_Thread_Cell_Table *cells, Scheme_Object *v);
 int (*scheme_tls_allocate)();
 void (*scheme_tls_set)(int pos, void *v);
 void *(*scheme_tls_get)(int pos);

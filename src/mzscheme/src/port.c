@@ -954,6 +954,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
 			int must_close)
 {
   Scheme_Input_Port *ip;
+  int cl;
 
   ip = MALLOC_ONE_TAGGED(Scheme_Input_Port);
   ip->type = scheme_input_port_type;
@@ -974,7 +975,8 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->charsSinceNewline = 1;
   ip->closed = 0;
   ip->read_handler = NULL;
-  ip->count_lines = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_COUNT_LINES));
+  cl = SCHEME_TRUEP(scheme_get_param(scheme_current_config(), MZCONFIG_PORT_COUNT_LINES));
+  ip->count_lines = cl;
 
   if (must_close) {
     Scheme_Custodian_Reference *mref;
@@ -6070,8 +6072,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       }
 
       /* Set real CWD */
-      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_current_config(), 
-							MZCONFIG_CURRENT_DIRECTORY)), 0);
+      {
+	Scheme_Object *dir;
+	dir = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_DIRECTORY);
+	scheme_os_setcwd(SCHEME_PATH_VAL(dir), 0);
+      }
 
       /* Exec new process */
 

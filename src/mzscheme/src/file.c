@@ -2557,7 +2557,8 @@ static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt
     int skip_sep = 0;
 
     if (!wrt) {
-      Scheme_Object *wd = CURRENT_WD();
+      Scheme_Object *wd;
+      wd = CURRENT_WD();
       wrt = SCHEME_PATH_VAL(wd);
       wlen = SCHEME_PATH_LEN(wd);
       scheme_security_check_file("path->complete-path", NULL, SCHEME_GUARD_FILE_EXISTS);

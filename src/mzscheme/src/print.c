@@ -593,6 +593,7 @@ print_to_string(Scheme_Object *obj,
 		Scheme_Config *config)
 {
   Scheme_Hash_Table * volatile ht;
+  Scheme_Object *v;
   char *ca;
   int cycles;
 
@@ -603,14 +604,22 @@ print_to_string(Scheme_Object *obj,
   p->print_maxlen = maxl;
   p->print_port = port;
 
-  p->quick_print_graph = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_GRAPH));
-  p->quick_print_box = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_BOX));
-  p->quick_print_struct = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_STRUCT));
-  p->quick_print_vec_shorthand = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND));
-  p->quick_print_hash_table = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_PRINT_HASH_TABLE));
-  p->quick_can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
-  p->quick_case_sens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CASE_SENS));
-  p->quick_inspector = scheme_get_param(config, MZCONFIG_INSPECTOR);
+  v = scheme_get_param(config, MZCONFIG_PRINT_GRAPH);
+  p->quick_print_graph = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_PRINT_BOX);
+  p->quick_print_box = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_PRINT_STRUCT);
+  p->quick_print_struct = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_PRINT_VEC_SHORTHAND);
+  p->quick_print_vec_shorthand = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_PRINT_HASH_TABLE);
+  p->quick_print_hash_table = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE);
+  p->quick_can_read_pipe_quote = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CASE_SENS);
+  p->quick_case_sens = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_INSPECTOR);
+  p->quick_inspector = v;
 
   if (p->quick_print_graph)
     cycles = 1;

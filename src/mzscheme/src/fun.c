@@ -2345,7 +2345,8 @@ call_cc (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *continuation_marks(Scheme_Thread *p,
 					 Scheme_Object *_cont,
-					 Scheme_Object *econt)
+					 Scheme_Object *econt,
+					 int just_chain)
      /* cont => p is not used */
 {
   Scheme_Cont *cont = (Scheme_Cont *)_cont;
@@ -2407,6 +2408,9 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
     }
   }
 
+  if (just_chain)
+    return (Scheme_Object *)first;
+
   set = MALLOC_ONE_TAGGED(Scheme_Cont_Mark_Set);
   set->type = scheme_cont_mark_set_type;
   set->chain = first;
@@ -2417,7 +2421,7 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
 
 Scheme_Object *scheme_current_continuation_marks(void)
 {
-  return continuation_marks(scheme_current_thread, NULL, NULL);
+  return continuation_marks(scheme_current_thread, NULL, NULL, 0);
 }
 
 static Scheme_Object *
@@ -2439,9 +2443,9 @@ cont_marks(int argc, Scheme_Object *argv[])
 			  argv[0]);
     }
 
-    return continuation_marks(SCHEME_CONT_HOME(argv[0]), NULL, argv[0]);
+    return continuation_marks(SCHEME_CONT_HOME(argv[0]), NULL, argv[0], 0);
   } else
-    return continuation_marks(NULL, argv[0], NULL);
+    return continuation_marks(NULL, argv[0], NULL, 0);
 }
 
 static Scheme_Object *
@@ -2522,7 +2526,11 @@ scheme_extract_one_cc_mark(Scheme_Object *mark_set, Scheme_Object *key)
 {
   Scheme_Cont_Mark_Chain *chain;
 
-  chain = ((Scheme_Cont_Mark_Set *)mark_set)->chain;
+  if (mark_set) {
+    chain = ((Scheme_Cont_Mark_Set *)mark_set)->chain;
+  } else {
+    chain = (Scheme_Cont_Mark_Chain *)continuation_marks(scheme_current_thread, NULL, NULL, 1);
+  }
   
   while (chain) {
     if (chain->key == key)

@@ -296,7 +296,6 @@ static Scheme_Object *will_executor_go(int argc, Scheme_Object *args[]);
 static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost);
 
 static void make_initial_config(Scheme_Thread *p);
-static Scheme_Thread_Cell_Table *inherit_cells(Scheme_Thread_Cell_Table *cells);
 
 static int do_kill_thread(Scheme_Thread *p);
 static void suspend_thread(Scheme_Thread *p);
@@ -1770,10 +1769,6 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
 
   process->type = scheme_thread_type;
 
-#ifdef MZ_PRECISE_GC
-  GC_register_thread(process, mgr);
-#endif
-
   process->stack_start = 0;
 
   if (!scheme_main_thread) {
@@ -1825,14 +1820,21 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
     config = process->init_config;
   } else {
     process->init_config = config;
-    cells = inherit_cells(cells);
     process->cell_values = cells;
   }
 
   if (!mgr)
     mgr = (Scheme_Custodian *)scheme_get_param(config, MZCONFIG_CUSTODIAN);
-  
-  process->t_set_parent = (Scheme_Thread_Set *)scheme_get_param(config, MZCONFIG_THREAD_SET);
+
+#ifdef MZ_PRECISE_GC
+  GC_register_thread(process, mgr);
+#endif
+
+  {
+    Scheme_Object *t_set;
+    t_set = scheme_get_param(config, MZCONFIG_THREAD_SET);
+    process->t_set_parent = (Scheme_Thread_Set *)t_set;
+  }
   
   if (SAME_OBJ(process, scheme_first_thread)) {
     REGISTER_SO(thread_set_top);
@@ -2041,7 +2043,6 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
 #if WATCH_FOR_NESTED_SWAPS
     swapping = 0;
 #endif
-    scheme_reset_locale();
     scheme_gmp_tls_unload(scheme_current_thread->gmp_tls);
     {
       Scheme_Object *l, *o;
@@ -2310,6 +2311,11 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   
   scheme_ensure_stack_start(scheme_current_thread, child_start);
   
+  if (!config)
+    config = scheme_current_config();
+  if (!cells)
+    cells = scheme_inherit_cells(NULL);
+
   child = make_thread(config, cells, mgr);
 
   /* Use child_thunk name, if any, for the thread name: */
@@ -2332,8 +2338,9 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
     child->suspend_to_kill = 1;
 
   scheme_init_error_escape_proc(child);
-  scheme_set_param(child->init_config, MZCONFIG_EXN_HANDLER,
-		   scheme_get_param(child->init_config, MZCONFIG_INIT_EXN_HANDLER));
+  scheme_set_thread_param(child->init_config, child->cell_values, MZCONFIG_EXN_HANDLER,
+			  scheme_get_thread_param(child->init_config, child->cell_values, 
+						  MZCONFIG_INIT_EXN_HANDLER));
 
   child->stack_start = child_start;
   
@@ -2655,7 +2662,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   {
     Scheme_Thread_Cell_Table *cells;
-    cells = inherit_cells(p->cell_values);
+    cells = scheme_inherit_cells(p->cell_values);
     np->cell_values = cells;
   }
   {
@@ -2674,7 +2681,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   }
 
   scheme_init_error_escape_proc(np);
-  scheme_set_param(np->init_config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
+  scheme_set_thread_param(np->init_config, np->cell_values,
+			  MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
   /* zero out anything we need now, because nestee disables
      GC cleaning for this thread: */
@@ -4327,8 +4335,10 @@ static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, double s
 
   if (waitable_set->argc > 1) {
     Scheme_Config *config;
+    Scheme_Object *rand_state;
     config = scheme_current_config();
-    pos = scheme_rand((Scheme_Random_State *)scheme_get_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE));
+    rand_state = scheme_get_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE);
+    pos = scheme_rand((Scheme_Random_State *)rand_state);
     waiting->start_pos = (pos % waitable_set->argc);
   }
 
@@ -4885,6 +4895,8 @@ static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *argv[])
 /*                             thread cells                               */
 /*========================================================================*/
 
+#define SCHEME_THREAD_CELLP(x) (SAME_TYPE(SCHEME_TYPE(x), scheme_thread_cell_type))
+
 Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited)
 {
   Scheme_Object *c;
@@ -4897,30 +4909,31 @@ Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited)
   return c;
 }
 
-Scheme_Object *scheme_thread_cell_get(Scheme_Object *cell)
+Scheme_Object *scheme_thread_cell_get(Scheme_Object *cell, Scheme_Thread_Cell_Table *cells)
 {
   Scheme_Object *v;
 
-  v = scheme_lookup_in_table(scheme_current_thread->cell_values, (const char *)cell);
+  v = scheme_lookup_in_table(cells, (const char *)cell);
   if (v)
     return v;
   else
     return SCHEME_IPTR_VAL(cell);
 }
 
-void scheme_thread_cell_set(Scheme_Object *cell, Scheme_Object *v)
+void scheme_thread_cell_set(Scheme_Object *cell, Scheme_Thread_Cell_Table *cells, Scheme_Object *v)
 {
-  scheme_add_to_table(scheme_current_thread->cell_values, 
-		      (const char *)cell, (void *)v, 
-		      0);
+  scheme_add_to_table(cells, (const char *)cell, (void *)v, 0);
 }
 
-static Scheme_Thread_Cell_Table *inherit_cells(Scheme_Thread_Cell_Table *cells)
+Scheme_Thread_Cell_Table *scheme_inherit_cells(Scheme_Thread_Cell_Table *cells)
 {
   Scheme_Bucket_Table *t;
   Scheme_Bucket *bucket;
   Scheme_Object *cell, *v;
   int i;
+
+  if (!cells)
+    cells = scheme_current_thread->cell_values;
   
   t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
   
@@ -4943,8 +4956,6 @@ static Scheme_Object *make_thread_cell(int argc, Scheme_Object *argv[])
   return scheme_make_thread_cell(argv[0], argc && SCHEME_TRUEP(argv[1]));
 }
 
-#define SCHEME_THREAD_CELLP(x) (SAME_TYPE(SCHEME_TYPE(x), scheme_thread_cell_type))
-
 static Scheme_Object *thread_cell_p(int argc, Scheme_Object *argv[])
 {
   return (SCHEME_THREAD_CELLP(argv[0])
@@ -4956,14 +4967,14 @@ static Scheme_Object *thread_cell_get(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_THREAD_CELLP(argv[0]))
     scheme_wrong_type("thread-cell-ref", "thread cell", 0, argc, argv);
-  return scheme_thread_cell_get(argv[0]);
+  return scheme_thread_cell_get(argv[0], scheme_current_thread->cell_values);
 }
 
 static Scheme_Object *thread_cell_set(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_THREAD_CELLP(argv[0]))
     scheme_wrong_type("thread-cell-set!", "thread cell", 0, argc, argv);
-  scheme_thread_cell_set(argv[0], argv[1]);
+  scheme_thread_cell_set(argv[0], scheme_current_thread->cell_values, argv[1]);
   return scheme_void;
 }
 
@@ -4977,8 +4988,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[]);
 
 Scheme_Config *scheme_current_config()
 {
-  return (Scheme_Config *)scheme_extract_one_cc_mark(scheme_current_continuation_marks(), 
-						     scheme_parameterization_key);
+  return (Scheme_Config *)scheme_extract_one_cc_mark(NULL, scheme_parameterization_key);
 }
 
 static Scheme_Config *do_extend_config(Scheme_Config *c, Scheme_Object *key, Scheme_Object *cell)
@@ -4993,7 +5003,7 @@ static Scheme_Config *do_extend_config(Scheme_Config *c, Scheme_Object *key, Sch
   naya = MALLOC_ONE_TAGGED(Scheme_Config);
   naya->type = scheme_config_type;
   naya->key = key;
-  naya->cell = cell;
+  naya->cell = cell; /* could be just a value */
   naya->next = c;
 
   return naya;
@@ -5001,7 +5011,7 @@ static Scheme_Config *do_extend_config(Scheme_Config *c, Scheme_Object *key, Sch
 
 Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *init_val)
 {
-  return do_extend_config(c, scheme_make_integer(pos), scheme_make_thread_cell(init_val, 1));
+  return do_extend_config(c, scheme_make_integer(pos), init_val);
 }
 
 #ifdef MZTAG_REQUIRED
@@ -5010,12 +5020,19 @@ Scheme_Config *scheme_extend_config(Scheme_Config *c, int pos, Scheme_Object *in
 # define IS_VECTOR(c) (!(c)->is_param)
 #endif
 
-Scheme_Object *find_param_cell(Scheme_Config *c, Scheme_Object *k)
+Scheme_Object *find_param_cell(Scheme_Config *c, Scheme_Object *k, int force_cell)
+     /* Unless force_cell, the result may actually be a value, if there has been
+	no reason to set it before */
 {
   while (1) {
-    if (SAME_OBJ(c->key, k))
+    if (SAME_OBJ(c->key, k)) {
+      if (force_cell && !SCHEME_THREAD_CELLP(c->cell)) {
+	Scheme_Object *cell;
+	cell = scheme_make_thread_cell(c->cell, 1);
+	c->cell = cell;
+      }
       return c->cell;
-    else if (!c->next) {
+    } else if (!c->next) {
       /* Eventually bottoms out here */
       Scheme_Parameterization *p = (Scheme_Parameterization *)c->cell;
       if (SCHEME_INTP(k))
@@ -5031,14 +5048,31 @@ Scheme_Object *find_param_cell(Scheme_Config *c, Scheme_Object *k)
   }
 }
 
+Scheme_Object *scheme_get_thread_param(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos)
+{
+  Scheme_Object *cell;
+
+  cell = find_param_cell(c, scheme_make_integer(pos), 0);
+  if (SCHEME_THREAD_CELLP(cell))
+    return scheme_thread_cell_get(cell, cells);
+  return
+    cell;
+}
+
 Scheme_Object *scheme_get_param(Scheme_Config *c, int pos)
 {
-  return scheme_thread_cell_get(find_param_cell(c, scheme_make_integer(pos)));
+  return scheme_get_thread_param(c, scheme_current_thread->cell_values, pos);
+}
+
+void scheme_set_thread_param(Scheme_Config *c, Scheme_Thread_Cell_Table *cells, int pos, Scheme_Object *o)
+{
+  scheme_thread_cell_set(find_param_cell(c, scheme_make_integer(pos), 1), cells, o);
 }
 
 void scheme_set_param(Scheme_Config *c, int pos, Scheme_Object *o)
 {
-  scheme_thread_cell_set(find_param_cell(c, scheme_make_integer(pos)), o);
+  scheme_thread_cell_set(find_param_cell(c, scheme_make_integer(pos), 1), 
+			 scheme_current_thread->cell_values, o);
 }
 
 Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
@@ -5052,12 +5086,20 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
   if (orig_c->next) {
     paramz = (Scheme_Parameterization *)scheme_malloc_tagged(sizeof(Scheme_Parameterization) + 
 							     (max_configs - 1) * sizeof(Scheme_Object*));
+#ifdef MZTAG_REQUIRED
+    paramz->type = scheme_rt_parameterization;
+#endif
     
     c = orig_c;
     while (1) {
       if (c->key) {
 	if (SCHEME_INTP(c->key)) {
 	  pos = SCHEME_INT_VAL(c->key);
+	  if (!SCHEME_THREAD_CELLP(c->cell)) {
+	    Scheme_Object *cell;
+	    cell = scheme_make_thread_cell(c->cell, 1);
+	    c->cell = cell;
+	  }
 	  if (!paramz->prims[pos])
 	    paramz->prims[pos] = c->cell;
 	} else {
@@ -5067,8 +5109,14 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
 	    paramz->extensions = t;
 	  }
 	  b = scheme_bucket_from_table(paramz->extensions, (const char *)c->key);
-	  if (!b->val)
+	  if (!b->val) {
+	    if (!SCHEME_THREAD_CELLP(c->cell)) {
+	      Scheme_Object *cell;
+	      cell = scheme_make_thread_cell(c->cell, 1);
+	      c->cell = cell;
+	    }
 	    b->val = c->cell;
+	  }
 	}
 	c = c->next;
       } else {
@@ -5128,13 +5176,13 @@ static Scheme_Object *extend_parameterization(int argc, Scheme_Object *argv[])
 	return NULL;
       }
       a[0] = argv[i + 1];
-      a[1] = scheme_make_thread_cell(scheme_false, 1);
+      a[1] = scheme_false;
       if (SCHEME_PRIMP(argv[i])) {
 	Scheme_Prim *proc;
 	proc = ((Scheme_Primitive_Proc *)argv[i])->prim_val;
-	key = proc(2, a); /* leads to scheme_param_config to set the cell in a[1] */
+	key = proc(2, a); /* leads to scheme_param_config to set a[1] */
       } else {
-	/* sets the cell in a[1] */
+	/* sets a[1] */
 	key = do_param(((Scheme_Closed_Primitive_Proc *)argv[i])->data, 2, a);
       }
       c = do_extend_config(c, key, a[1]);
@@ -5166,7 +5214,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
 
       if (argc == 2) {
 	/* Special hook for parameterize: */
-	SCHEME_IPTR_VAL(argv[1]) = v;
+	argv[1] = v;
 	return ((ParamData *)data)->key;
       }
 
@@ -5175,7 +5223,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
       argv2[0] = v;
     } if (argc == 2) {
       /* Special hook for parameterize: */
-      SCHEME_IPTR_VAL(argv[1]) = argv[0];
+      argv[1] = argv[0];
       return ((ParamData *)data)->key;
     } else
       argv2 = argv;
@@ -5250,6 +5298,13 @@ static void init_param(Scheme_Thread_Cell_Table *cells,
   Scheme_Object *cell;
   cell = scheme_make_thread_cell(v, 1);
   params->prims[pos] = cell;
+}
+
+void scheme_set_root_param(int p, Scheme_Object *v)
+{
+  Scheme_Parameterization *paramz;
+  paramz = (Scheme_Parameterization *)scheme_current_thread->init_config->cell;
+  SCHEME_IPTR_VAL(paramz->prims[p]) = v;
 }
 
 static void make_initial_config(Scheme_Thread *p)
@@ -5441,11 +5496,14 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
     if (arity == -2) {
       Scheme_Object *cell;
 
-      cell = find_param_cell(config, ((Scheme_Object **)pos)[0]);
+      cell = find_param_cell(config, ((Scheme_Object **)pos)[0], 0);
       if (!cell)
 	cell = ((Scheme_Object **)pos)[1];
 
-      return scheme_thread_cell_get(cell);
+      if (SCHEME_THREAD_CELLP(cell))
+	return scheme_thread_cell_get(cell, scheme_current_thread->cell_values);
+      else
+	return cell; /* it's really the value, instead of a cell */
     } else {
       Scheme_Object *s;
       s = scheme_get_param(config, SCHEME_INT_VAL(pos));
@@ -5487,18 +5545,18 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 
       if (argc == 2) {
 	/* Special hook for parameterize: */
-	SCHEME_IPTR_VAL(argv[1]) = naya;
+	argv[1] = naya;
 	return pos;
       } else
 	scheme_set_param(config, SCHEME_INT_VAL(pos), naya);
     } else {
       Scheme_Object *cell;
       
-      cell = find_param_cell(config, ((Scheme_Object **)pos)[0]);
+      cell = find_param_cell(config, ((Scheme_Object **)pos)[0], 1);
       if (!cell)
 	cell = ((Scheme_Object **)pos)[1];
 
-      scheme_thread_cell_set(cell, naya);
+      scheme_thread_cell_set(cell, scheme_current_thread->cell_values, naya);
     }
   
     return scheme_void;

@@ -1301,19 +1301,18 @@ inline static int current_owner(Scheme_Custodian *c)
     }
   }
 
-  if(!scheme_current_thread || !scheme_current_thread->config)
-    return 1;
-
-  if(!c)
-    c = (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
-  
-  if(!has_gotten_root_custodian) {
+  if (!has_gotten_root_custodian && c) {
     has_gotten_root_custodian = 1;
     owner_table[1]->originator = c;
     return 1;
   }
 
-  return custodian_to_owner_set(c);
+  if (!scheme_current_thread)
+    return 1;
+  else if (!c)
+    return thread_get_owner(scheme_current_thread);
+  else
+    return custodian_to_owner_set(c);
 }
 
 inline static int custodian_member_owner_set(void *cust, int set)

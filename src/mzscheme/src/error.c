@@ -107,7 +107,7 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
 			       0, 0);
   }
 
-  scheme_set_param(p->init_config, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
+  scheme_set_thread_param(p->init_config, p->cell_values, MZCONFIG_ERROR_ESCAPE_HANDLER, def_error_esc_proc);
 }
 
 /*
@@ -519,22 +519,18 @@ void scheme_init_error(Scheme_Env *env)
 
 void scheme_init_error_config(void)
 {
-  Scheme_Config *config;
-
-  config = scheme_current_config();
-
-  scheme_set_param(config, MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
+  scheme_set_root_param(MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
 
   {
     Scheme_Object *edh;
     edh = scheme_make_prim_w_arity(def_error_display_proc,
 				   "default-error-display-handler",
 				   2, 2);
-    scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
+    scheme_set_root_param(MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
   }
 
-  scheme_set_param(config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
-		   def_err_val_proc);
+  scheme_set_root_param(MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
+			def_err_val_proc);
 }
 
 static void
@@ -2321,17 +2317,14 @@ void scheme_init_exn(Scheme_Env *env)
 
 void scheme_init_exn_config(void)
 {
-  Scheme_Config *config;
   Scheme_Object *h;
-
-  config = scheme_current_config();
 
   h = scheme_make_prim_w_arity(def_exn_handler,
 			       "default-exception-handler",
 			       1, 1);
 
-  scheme_set_param(config, MZCONFIG_EXN_HANDLER, h);
-  scheme_set_param(config, MZCONFIG_INIT_EXN_HANDLER, h);
+  scheme_set_root_param(MZCONFIG_EXN_HANDLER, h);
+  scheme_set_root_param(MZCONFIG_INIT_EXN_HANDLER, h);
 }
 
 #endif

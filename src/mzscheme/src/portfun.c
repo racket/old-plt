@@ -645,11 +645,8 @@ scheme_init_port_fun(Scheme_Env *env)
 
 void scheme_init_port_fun_config(void)
 {
-  Scheme_Config *config;
-
-  config = scheme_current_config();
-  scheme_set_param(config, MZCONFIG_LOAD_DIRECTORY, scheme_false);
-  scheme_set_param(config, MZCONFIG_USE_COMPILED_KIND, all_symbol);
+  scheme_set_root_param(MZCONFIG_LOAD_DIRECTORY, scheme_false);
+  scheme_set_root_param(MZCONFIG_USE_COMPILED_KIND, all_symbol);
 
   {
     Scheme_Object *dlh;
@@ -657,7 +654,7 @@ void scheme_init_port_fun_config(void)
 				    "default-load-handler",
 				    2, 2,
 				    0, -1);
-    scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
+    scheme_set_root_param(MZCONFIG_LOAD_HANDLER, dlh);
   }
 
   REGISTER_SO(scheme_default_global_print_handler);
@@ -665,9 +662,8 @@ void scheme_init_port_fun_config(void)
     = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
 			       "default-global-port-print-handler",
 			       2, 2);
-  scheme_set_param(config, 
-		   MZCONFIG_PORT_PRINT_HANDLER, 
-		   scheme_default_global_print_handler);
+  scheme_set_root_param(MZCONFIG_PORT_PRINT_HANDLER, 
+			scheme_default_global_print_handler);
 }
 
 /*========================================================================*/
@@ -3584,7 +3580,6 @@ START_XFORM_SKIP;
 
 static void register_traversers(void)
 {
-  GC_REG_TRAV(scheme_rt_breakable, mark_breakable);  
   GC_REG_TRAV(scheme_rt_indexed_string, mark_indexed_string);
   GC_REG_TRAV(scheme_rt_load_handler_data, mark_load_handler_data);
   GC_REG_TRAV(scheme_rt_user_input, mark_user_input);

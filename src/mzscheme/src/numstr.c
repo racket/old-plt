@@ -1951,7 +1951,7 @@ static Scheme_Object *
 random_seed(int argc, Scheme_Object *argv[])
 {
   long i = -1;
-  Scheme_Object *o = argv[0];
+  Scheme_Object *o = argv[0], *rand_state;
 
   if (scheme_get_int_val(o,  &i)) {
     if (i > 2147483647)
@@ -1961,7 +1961,8 @@ random_seed(int argc, Scheme_Object *argv[])
   if (i < 0)
     scheme_wrong_type("random-seed", "exact integer in [0, 2147483647]", 0, argc, argv);
 
-  sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE));
+  rand_state = scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE);
+  sch_srand(i, (Scheme_Random_State *)rand_state);
 
   return scheme_void;
 }
@@ -1970,7 +1971,7 @@ static Scheme_Object *
 sch_random(int argc, Scheme_Object *argv[])
 {
   long i = -1, v;
-  Scheme_Object *o = argv[0];
+  Scheme_Object *o = argv[0], *rand_state;
 
   if (scheme_get_int_val(o,  &i)) {
     if (i > 2147483647)
@@ -1980,7 +1981,8 @@ sch_random(int argc, Scheme_Object *argv[])
   if (i <= 0)
     scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
   
-  v = scheme_rand((Scheme_Random_State *)scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE)) % i;
+  rand_state = scheme_get_param(scheme_current_config(), MZCONFIG_RANDOM_STATE);
+  v = scheme_rand((Scheme_Random_State *)rand_state) % i;
 
   return scheme_make_integer_value(v);
 }

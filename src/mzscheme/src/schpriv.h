@@ -2103,6 +2103,8 @@ void scheme_count_generic(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table 
 /*                           miscellaneous                                */
 /*========================================================================*/
 
+void scheme_set_root_param(int p, Scheme_Object *v);
+
 Scheme_Object *scheme_intern_exact_parallel_symbol(const char *name, unsigned int len);
 Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
 Scheme_Object *scheme_copy_list(Scheme_Object *l);
@@ -2110,12 +2112,6 @@ Scheme_Object *scheme_copy_list(Scheme_Object *l);
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 int scheme_regexp_is_byte(Scheme_Object *re);
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int byte, int * volatile result_is_err_string);
-
-extern int scheme_locale_on;
-void scheme_reset_locale(void);
-/* "nonlocale" folding used to be folding, until we started using locales. */
-#define scheme_make_nonlocale_folding_prim(prim, name, mina, maxa, functional) \
-  scheme_make_folding_prim(prim, name, mina, maxa, 0)
 
 #define SCHEME_SYM_UNINTERNEDP(o) (((Scheme_Symbol *)o)->keyex & 0x1)
 #define SCHEME_SYM_PARALLELP(o) (((Scheme_Symbol *)o)->keyex & 0x2)

@@ -86,7 +86,7 @@ typedef struct Scheme_Converter {
 } Scheme_Converter;
 
 /* globals */
-int scheme_locale_on;
+static int locale_on;
 static const mzchar *current_locale_name = (mzchar *)"xxxx\0\0\0\0";
 
 static const char * const STRING_IS_NOT_UTF_8 = "string is not a well-formed UTF-8 encoding: ";
@@ -178,6 +178,7 @@ static Scheme_Object *byte_converter_p(int argc, Scheme_Object *argv[]);
 static void register_traversers(void);
 #endif
 
+static void reset_locale(void);
 static int mz_char_strcmp(const char *who, const mzchar *str1, int l1, const mzchar *str2, int l2, int locale);
 static int mz_char_strcmp_ci(const char *who, const mzchar *str1, int l1, const mzchar *str2, int l2, int locale);
 static int mz_strcmp(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2);
@@ -658,8 +659,6 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_CMDLINE_ARGS), 
 			     env);
 
-  scheme_reset_locale();
-
 #ifdef MZ_PRECISE_GC
   register_traversers();
 #endif
@@ -929,7 +928,7 @@ GEN_STRING_COMP(string_locale_ci_gt, "string-locale-ci>?", mz_char_strcmp_ci, >,
 static Scheme_Object *
 byte_p(int argc, Scheme_Object *argv[])
 {
-  return (SCHEME_CHARP(argv[0]) ? scheme_true : scheme_false);
+  return (SCHEME_BYTEP(argv[0]) ? scheme_true : scheme_false);
 }
 
 #define SCHEME_X_STR_VAL(x) SCHEME_BYTE_STR_VAL(x) 
@@ -1030,7 +1029,9 @@ do_byte_string_to_char_string_locale(const char *who,
   char *us;
   long olen;
 
-  if (mzLOCALE_IS_UTF_8(current_locale_name) || !scheme_locale_on)
+  reset_locale();
+
+  if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
     return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm);
 
   if (istart < ifinish) {
@@ -1151,7 +1152,9 @@ do_char_string_to_byte_string_locale(const char *who,
   char *s;
   long olen;
   
-  if (mzLOCALE_IS_UTF_8(current_locale_name) || !scheme_locale_on)
+  reset_locale();
+
+  if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
     return do_char_string_to_byte_string(cstr, istart, ifinish);
 
   if (istart < ifinish) {
@@ -1964,8 +1967,6 @@ static Scheme_Object *current_locale(int argc, Scheme_Object *argv[])
 			  argc, argv, 
 			  -1, ok_locale, "#f or string", 1);
 
-  scheme_reset_locale();
-
   return v;
 }
 
@@ -2670,6 +2671,8 @@ static Scheme_Object *mz_recase(const char *who, int to_up, mzchar *us, long ule
   recase_proc mz_do_recase = do_locale_recase;
   Scheme_Object *s, *parts = scheme_null;
 
+  reset_locale();
+
 #if defined(MACOS_UNICODE_SUPPORT) || defined(WINDOWS_UNICODE_SUPPORT)
   if (current_locale_name && !*current_locale_name) {
     utf16 = 1;
@@ -2753,18 +2756,17 @@ string_locale_downcase(int argc, Scheme_Object *argv[])
   return unicode_recase("string-locale-downcase", 0, argc, argv);
 }
 
-void scheme_reset_locale(void)
+static void reset_locale(void)
 {
   Scheme_Object *v;
   const mzchar *name;
 
   v = scheme_get_param(scheme_current_config(), MZCONFIG_LOCALE);
-  scheme_locale_on = SCHEME_TRUEP(v);
+  locale_on = SCHEME_TRUEP(v);
 
-  if (scheme_locale_on) {
+  if (locale_on) {
     name = SCHEME_CHAR_STR_VAL(v);
 #ifndef DONT_USE_LOCALE
-    /* This is probably ok to keep, but */
     if ((current_locale_name != name) 
 	&& mz_char_strcmp("result-locale",
 			  current_locale_name, scheme_char_strlen(current_locale_name),
@@ -2803,8 +2805,11 @@ static int mz_char_strcmp(const char *who, const mzchar *str1, int l1, const mzc
   int endres;
   
 #ifndef DONT_USE_LOCALE
-  if (use_locale && scheme_locale_on) {
-    return do_locale_comp(who, str1, l1, str2, l2, 0);
+  if (use_locale) {
+    reset_locale();
+    if (locale_on) {
+      return do_locale_comp(who, str1, l1, str2, l2, 0);
+    }
   }
 #endif
 
@@ -2837,8 +2842,11 @@ static int mz_char_strcmp_ci(const char *who, const mzchar *str1, int l1, const 
   int endres;
 
 #ifndef DONT_USE_LOCALE
-  if (use_locale && scheme_locale_on) {
-    return do_locale_comp(who, str1, l1, str2, l2, 1);
+  if (use_locale) {
+    reset_locale();
+    if (locale_on) {
+      return do_locale_comp(who, str1, l1, str2, l2, 1);
+    }
   }
 #endif
 

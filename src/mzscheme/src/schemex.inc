@@ -15,7 +15,10 @@
   scheme_extension_table->scheme_extend_config = scheme_extend_config;
   scheme_extension_table->scheme_get_param = scheme_get_param;
   scheme_extension_table->scheme_set_param = scheme_set_param;
+  scheme_extension_table->scheme_get_thread_param = scheme_get_thread_param;
+  scheme_extension_table->scheme_set_thread_param = scheme_set_thread_param;
   scheme_extension_table->scheme_get_env = scheme_get_env;
+  scheme_extension_table->scheme_inherit_cells = scheme_inherit_cells;
 #ifndef LINK_EXTENSIONS_BY_TABLE
   scheme_extension_table->scheme_current_thread = scheme_current_thread;
   scheme_extension_table->scheme_fuel_counter = scheme_fuel_counter;

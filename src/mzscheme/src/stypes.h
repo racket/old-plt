@@ -138,8 +138,8 @@ enum {
   scheme_rt_comp_env,
   scheme_rt_constant_binding,
   scheme_rt_resolve_info,
-  scheme_rt_compile_info,
-  scheme_rt_cont_mark,                  /* 120 */
+  scheme_rt_compile_info,               /* 120 */
+  scheme_rt_cont_mark,
   scheme_rt_saved_stack,
   scheme_rt_reply_item,
   scheme_rt_closure_info,
@@ -158,7 +158,7 @@ enum {
   scheme_rt_indexed_string,
   scheme_rt_output_file,
   scheme_rt_load_handler_data,
-  scheme_rt_pipe,
+  scheme_rt_pipe,                       /* 140 */
   scheme_rt_beos_process,
   scheme_rt_system_child,
   scheme_rt_tcp,
@@ -167,8 +167,8 @@ enum {
   scheme_rt_namespace_option,
   scheme_rt_param_data,
   scheme_rt_will,
-  scheme_rt_will_registration,          /* 150 */
-  scheme_rt_sema_waiter,
+  scheme_rt_will_registration,
+  scheme_rt_sema_waiter,                /* 150 */
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
   scheme_rt_param_map,
@@ -176,20 +176,19 @@ enum {
   scheme_rt_finalizations,
   scheme_rt_cpp_object,
   scheme_rt_cpp_array_object,
-  scheme_rt_stack_object,               /* 160 */
+  scheme_rt_stack_object,
   scheme_rt_preallocated_object,
-  scheme_thread_hop_type,
-  scheme_rt_breakable,
+  scheme_thread_hop_type,               /* 160 */
   scheme_rt_srcloc,
   scheme_rt_waitable,
   scheme_rt_waiting,
   scheme_rt_comp_prefix,
   scheme_rt_user_input,
   scheme_rt_user_output,
-  scheme_rt_compact_port,               /* 170 */
+  scheme_rt_compact_port,
   scheme_rt_read_special_dw,
   scheme_rt_regwork,
-  scheme_rt_buf_holder,
+  scheme_rt_buf_holder,                 /* 170 */
   scheme_rt_parameterization,
 #endif
 

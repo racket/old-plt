@@ -1218,15 +1218,24 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   config = scheme_current_config();
 
   params.can_read_compiled = crc;
-  params.can_read_pipe_quote = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE));
-  params.can_read_box = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_BOX));
-  params.can_read_graph = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_GRAPH));
-  params.case_sensitive = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CASE_SENS));
-  params.square_brackets_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS));
-  params.curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
-  params.read_decimal_inexact = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT));
-  params.can_read_quasi = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_QUASI));
-  params.can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_PIPE_QUOTE);
+  params.can_read_pipe_quote = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_BOX);
+  params.can_read_box = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_GRAPH);
+  params.can_read_graph = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CASE_SENS);
+  params.case_sensitive = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS);
+  params.square_brackets_are_parens = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS);
+  params.curly_braces_are_parens = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT);
+  params.read_decimal_inexact = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_QUASI);
+  params.can_read_quasi = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_CAN_READ_DOT);
+  params.can_read_dot = SCHEME_TRUEP(v);
   
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
   v = read_inner(port, stxsrc, ht, scheme_null, &params, 0);

@@ -529,6 +529,7 @@ thread_val {
   MARK_cjs(&pr->cjs);
 
   gcMARK(pr->cell_values);
+  gcMARK(pr->init_config);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -1005,18 +1006,6 @@ END fun;
 
 START portfun;
 
-mark_breakable {
- mark:
-  Breakable *b = (Breakable *)p;
-    
-  gcMARK(b->config);
-  gcMARK(b->orig_param_val);
-  gcMARK(b->argv);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Breakable));
-}
-
 mark_load_handler_data {
  mark:
   LoadHandlerData *d = (LoadHandlerData *)p;
@@ -1248,9 +1237,9 @@ END network;
 
 START thread;
 
-mark_paramz_val {
+mark_parameterization {
  mark:
-  Scheme_Parameterization *c = (Scheme_Config *)p;
+  Scheme_Parameterization *c = (Scheme_Parameterization *)p;
   int i;
     
   for (i = max_configs; i--; ) {
@@ -1263,9 +1252,9 @@ mark_paramz_val {
 		    + ((max_configs - 1) * sizeof(Scheme_Object*))));
 }
 
-mark_config_type {
+mark_config {
  mark:
-  Scheme_Config *c = (Scheme_Config *)p;
+  Scheme_Config *config = (Scheme_Config *)p;
   gcMARK(config->key);
   gcMARK(config->cell);
   gcMARK(config->next);
@@ -1331,7 +1320,7 @@ mark_param_data {
 
   gcMARK(d->key);
   gcMARK(d->guard);
-  gcMARK(d->defval);
+  gcMARK(d->defcell);
 
  size:
    gcBYTES_TO_WORDS(sizeof(ParamData));

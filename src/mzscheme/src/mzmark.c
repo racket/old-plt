@@ -1406,7 +1406,8 @@ int thread_val_MARK(void *p) {
 
   MARK_cjs(&pr->cjs);
 
-  gcMARK(pr->config);
+  gcMARK(pr->cell_values);
+  gcMARK(pr->init_config);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -1488,7 +1489,8 @@ int thread_val_FIXUP(void *p) {
 
   FIXUP_cjs(&pr->cjs);
 
-  gcFIXUP(pr->config);
+  gcFIXUP(pr->cell_values);
+  gcFIXUP(pr->init_config);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -2381,39 +2383,6 @@ int mark_saved_stack_FIXUP(void *p) {
 #define mark_saved_stack_IS_CONST_SIZE 1
 
 
-int mark_eval_in_env_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
-}
-
-int mark_eval_in_env_MARK(void *p) {
-  Eval_In_Env *ee = (Eval_In_Env *)p;
-  
-  gcMARK(ee->e);
-  gcMARK(ee->config);
-  gcMARK(ee->namespace);
-  gcMARK(ee->old);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
-}
-
-int mark_eval_in_env_FIXUP(void *p) {
-  Eval_In_Env *ee = (Eval_In_Env *)p;
-  
-  gcFIXUP(ee->e);
-  gcFIXUP(ee->config);
-  gcFIXUP(ee->namespace);
-  gcFIXUP(ee->old);
-  
-  return
-  gcBYTES_TO_WORDS(sizeof(Eval_In_Env));
-}
-
-#define mark_eval_in_env_IS_ATOMIC 0
-#define mark_eval_in_env_IS_CONST_SIZE 1
-
-
 #endif  /* EVAL */
 
 /**********************************************************************/
@@ -2581,37 +2550,6 @@ int mark_cont_mark_chain_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_PORTFUN_C
 
-int mark_breakable_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Breakable));
-}
-
-int mark_breakable_MARK(void *p) {
-  Breakable *b = (Breakable *)p;
-    
-  gcMARK(b->config);
-  gcMARK(b->orig_param_val);
-  gcMARK(b->argv);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Breakable));
-}
-
-int mark_breakable_FIXUP(void *p) {
-  Breakable *b = (Breakable *)p;
-    
-  gcFIXUP(b->config);
-  gcFIXUP(b->orig_param_val);
-  gcFIXUP(b->argv);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Breakable));
-}
-
-#define mark_breakable_IS_ATOMIC 0
-#define mark_breakable_IS_CONST_SIZE 1
-
-
 int mark_load_handler_data_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -2625,8 +2563,6 @@ int mark_load_handler_data_MARK(void *p) {
   gcMARK(d->p);
   gcMARK(d->stxsrc);
   gcMARK(d->expected_module);
-  /* reader_params has only #ts and #fs, which don't
-     have to be marked, because they don't move. */
   
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -2640,8 +2576,6 @@ int mark_load_handler_data_FIXUP(void *p) {
   gcFIXUP(d->p);
   gcFIXUP(d->stxsrc);
   gcFIXUP(d->expected_module);
-  /* reader_params has only #ts and #fs, which don't
-     have to be marked, because they don't move. */
   
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -2649,39 +2583,6 @@ int mark_load_handler_data_FIXUP(void *p) {
 
 #define mark_load_handler_data_IS_ATOMIC 0
 #define mark_load_handler_data_IS_CONST_SIZE 1
-
-
-int mark_load_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-int mark_load_data_MARK(void *p) {
-  LoadData *d = (LoadData *)p;
-  
-  gcMARK(d->filename);
-  gcMARK(d->config);
-  gcMARK(d->load_dir);
-  gcMARK(d->old_load_dir);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-int mark_load_data_FIXUP(void *p) {
-  LoadData *d = (LoadData *)p;
-  
-  gcFIXUP(d->filename);
-  gcFIXUP(d->config);
-  gcFIXUP(d->load_dir);
-  gcFIXUP(d->old_load_dir);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-#define mark_load_data_IS_ATOMIC 0
-#define mark_load_data_IS_CONST_SIZE 1
 
 
 int mark_indexed_string_SIZE(void *p) {
@@ -3203,44 +3104,69 @@ int mark_udp_waitable_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_THREAD_C
 
-int mark_config_val_SIZE(void *p) {
+int mark_parameterization_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS((sizeof(Scheme_Config)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Parameterization)
 		    + ((max_configs - 1) * sizeof(Scheme_Object*))));
 }
 
-int mark_config_val_MARK(void *p) {
-  Scheme_Config *c = (Scheme_Config *)p;
+int mark_parameterization_MARK(void *p) {
+  Scheme_Parameterization *c = (Scheme_Parameterization *)p;
   int i;
     
   for (i = max_configs; i--; ) {
-    gcMARK(c->configs[i]);
+    gcMARK(c->prims[i]);
   }
-  gcMARK(c->use_count);
   gcMARK(c->extensions);
 
   return
-  gcBYTES_TO_WORDS((sizeof(Scheme_Config)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Parameterization)
 		    + ((max_configs - 1) * sizeof(Scheme_Object*))));
 }
 
-int mark_config_val_FIXUP(void *p) {
-  Scheme_Config *c = (Scheme_Config *)p;
+int mark_parameterization_FIXUP(void *p) {
+  Scheme_Parameterization *c = (Scheme_Parameterization *)p;
   int i;
     
   for (i = max_configs; i--; ) {
-    gcFIXUP(c->configs[i]);
+    gcFIXUP(c->prims[i]);
   }
-  gcFIXUP(c->use_count);
   gcFIXUP(c->extensions);
 
   return
-  gcBYTES_TO_WORDS((sizeof(Scheme_Config)
+  gcBYTES_TO_WORDS((sizeof(Scheme_Parameterization)
 		    + ((max_configs - 1) * sizeof(Scheme_Object*))));
 }
 
-#define mark_config_val_IS_ATOMIC 0
-#define mark_config_val_IS_CONST_SIZE 0
+#define mark_parameterization_IS_ATOMIC 0
+#define mark_parameterization_IS_CONST_SIZE 0
+
+
+int mark_config_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Config));
+}
+
+int mark_config_MARK(void *p) {
+  Scheme_Config *config = (Scheme_Config *)p;
+  gcMARK(config->key);
+  gcMARK(config->cell);
+  gcMARK(config->next);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Config));
+}
+
+int mark_config_FIXUP(void *p) {
+  Scheme_Config *config = (Scheme_Config *)p;
+  gcFIXUP(config->key);
+  gcFIXUP(config->cell);
+  gcFIXUP(config->next);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Config));
+}
+
+#define mark_config_IS_ATOMIC 0
+#define mark_config_IS_CONST_SIZE 1
 
 
 int mark_will_executor_val_SIZE(void *p) {
@@ -3385,7 +3311,7 @@ int mark_param_data_MARK(void *p) {
 
   gcMARK(d->key);
   gcMARK(d->guard);
-  gcMARK(d->defval);
+  gcMARK(d->defcell);
 
   return
    gcBYTES_TO_WORDS(sizeof(ParamData));
@@ -3396,7 +3322,7 @@ int mark_param_data_FIXUP(void *p) {
 
   gcFIXUP(d->key);
   gcFIXUP(d->guard);
-  gcFIXUP(d->defval);
+  gcFIXUP(d->defcell);
 
   return
    gcBYTES_TO_WORDS(sizeof(ParamData));
@@ -3674,37 +3600,6 @@ int mark_finalizations_FIXUP(void *p) {
 /**********************************************************************/
 
 #ifdef MARKS_FOR_SEMA_C
-
-int mark_breakable_wait_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(BreakableWait));
-}
-
-int mark_breakable_wait_MARK(void *p) {
-  BreakableWait *w = (BreakableWait *)p;
-    
-  gcMARK(w->config);
-  gcMARK(w->orig_param_val);
-  gcMARK(w->sema);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(BreakableWait));
-}
-
-int mark_breakable_wait_FIXUP(void *p) {
-  BreakableWait *w = (BreakableWait *)p;
-    
-  gcFIXUP(w->config);
-  gcFIXUP(w->orig_param_val);
-  gcFIXUP(w->sema);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(BreakableWait));
-}
-
-#define mark_breakable_wait_IS_ATOMIC 0
-#define mark_breakable_wait_IS_CONST_SIZE 1
-
 
 int mark_sema_waiter_SIZE(void *p) {
   return

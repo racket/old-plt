@@ -1,6 +1,8 @@
 Version 205.3
 Changed syntax-local-get-shadower to add the current
  module expansion context, if any
+Added optional argument to file-or-directory-modify-seconds
+ for setting the modification date of a file or directory
 
 Version 205.1
 Fixed transitivity of numerical comparison for mixed
